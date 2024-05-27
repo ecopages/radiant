@@ -17,7 +17,37 @@ type ContextProviderOptions<T extends UnknownContext> = {
 
 export const HYDRATE_ATTRIBUTE = 'hydrate-context';
 
-export class ContextProvider<T extends Context<unknown, unknown>> {
+/**
+ * Represents a context provider that allows setting and getting the context,
+ * as well as subscribing to context updates.
+ *
+ * @template T - The type of the context.
+ */
+export interface IContextProvider<T extends Context<unknown, unknown>> {
+  /**
+   * Sets the context with the provided update and invokes the optional callback function.
+   *
+   * @param update - The partial update to be applied to the context.
+   * @param callback - An optional callback function that receives the updated context.
+   */
+  setContext: (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => void;
+
+  /**
+   * Gets the current context.
+   *
+   * @returns The current context.
+   */
+  getContext: () => ContextType<T>;
+
+  /**
+   * Subscribes to context updates.
+   *
+   * @param subscription - The subscription object that defines the callback function to be invoked on context updates.
+   */
+  subscribe: (subscription: ContextSubscription<T>) => void;
+}
+
+export class ContextProvider<T extends Context<unknown, unknown>> implements IContextProvider<T> {
   private host: RadiantElement;
   private context: UnknownContext;
   private value: ContextType<T> | undefined;
@@ -56,10 +86,6 @@ export class ContextProvider<T extends Context<unknown, unknown>> {
     this.host.dispatchEvent(new ContextOnMountEvent(this.context));
   }
 
-  private isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && !Array.isArray(value) && value !== null;
-  }
-
   setContext = (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => {
     if (typeof this.value === 'object') {
       const oldContext = { ...this.value };
@@ -73,6 +99,14 @@ export class ContextProvider<T extends Context<unknown, unknown>> {
     return this.value as ContextType<T>;
   };
 
+  subscribe = ({ select, callback }: ContextSubscription<T>) => {
+    this.subscriptions.push({ select, callback });
+  };
+
+  private isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && !Array.isArray(value) && value !== null;
+  }
+
   private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T>) => {
     for (const sub of this.subscriptions) {
       if (!sub.select) return this.sendSubscriptionUpdate(sub, newContext);
@@ -84,16 +118,12 @@ export class ContextProvider<T extends Context<unknown, unknown>> {
     }
   };
 
-  sendSubscriptionUpdate = ({ select, callback }: ContextSubscription<T>, context: ContextType<T>) => {
+  private sendSubscriptionUpdate = ({ select, callback }: ContextSubscription<T>, context: ContextType<T>) => {
     if (!select) callback(context);
     else callback(select(context));
   };
 
-  subscribe = ({ select, callback }: ContextSubscription<T>) => {
-    this.subscriptions.push({ select, callback });
-  };
-
-  handleSubscriptionRequest = ({
+  private handleSubscriptionRequest = ({
     select,
     callback,
     subscribe,
@@ -113,7 +143,7 @@ export class ContextProvider<T extends Context<unknown, unknown>> {
     }
   };
 
-  onSubscriptionRequest = (event: ContextSubscriptionRequestEvent<UnknownContext>) => {
+  private onSubscriptionRequest = (event: ContextSubscriptionRequestEvent<UnknownContext>) => {
     const { context, callback, subscribe, select, target } = event;
     if (context !== this.context) return;
 
@@ -124,14 +154,14 @@ export class ContextProvider<T extends Context<unknown, unknown>> {
     this.handleSubscriptionRequest({ select, callback, subscribe });
   };
 
-  onContextRequest = (event: ContextRequestEvent<UnknownContext>) => {
+  private onContextRequest = (event: ContextRequestEvent<UnknownContext>) => {
     const { context, callback } = event;
     if (context !== this.context) return;
     event.stopPropagation();
     callback(this);
   };
 
-  registerEvents = () => {
+  private registerEvents = () => {
     this.host.addEventListener(ContextEventsTypes.SUBSCRIPTION_REQUEST, this.onSubscriptionRequest);
     this.host.addEventListener(ContextEventsTypes.CONTEXT_REQUEST, this.onContextRequest);
   };

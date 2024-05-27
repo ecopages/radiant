@@ -3,7 +3,7 @@ import type { UnknownContext } from '@/context/types';
 export type RenderInsertPosition = 'replace' | 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend';
 
 /**
- * A type that represents an event listener subscription.
+ * Represents a Radiant element event listener.
  */
 export type RadiantElementEventListener = {
   selector: string;
@@ -13,50 +13,57 @@ export type RadiantElementEventListener = {
   options?: AddEventListenerOptions;
 };
 
+/**
+ * Represents an interface for a Radiant element.
+ */
 export interface IRadiantElement {
   /**
-   * A callback that is triggered when the element is connected to the DOM.
-   * @param changedProperty The properties that have changed.
+   * Called when a property of the element is updated.
+   * @param changedProperty - The name of the changed property.
+   * @param oldValue - The old value of the property.
+   * @param newValue - The new value of the property.
    */
   updated(changedProperty: string, oldValue: unknown, newValue: unknown): void;
+
   /**
-   * Subscribes to an event on the target element. The subscription will be removed when the element is disconnected.
-   * This method is intended to be mainly used by the `onEvent` decorator.
-   * @param target The target element to subscribe to.
-   * @param type The event type to subscribe to.
-   * @param listener The event listener to subscribe.
-   * @param options The options to pass to the event listener.
-   * @param id The id to assign to the event subscription.
+   * Subscribes to a Radiant element event.
+   * @param event - The event listener to subscribe to.
    */
   subscribeEvent(event: RadiantElementEventListener): void;
+
   /**
-   * Subscribes to multiple events on the target element. The subscriptions will be removed when the element is disconnected.
-   * @param events The events to subscribe to.
+   * Subscribes to multiple Radiant element events.
+   * @param events - The array of event listeners to subscribe to.
    */
   subscribeEvents(events: RadiantElementEventListener[]): void;
+
   /**
-   * Unsubscribes from an event on the target element.
-   * This method is intended to be mainly used by the `onEvent` decorator.
-   * @param id The id assigned on the event subscription.
+   * Unsubscribes from a Radiant element event.
+   * @param id - The ID of the event listener to unsubscribe from.
    */
   unsubscribeEvent(id: string): void;
+
   /**
-   * Removes all event subscriptions.
+   * Removes all subscribed events from the Radiant element.
    */
   removeAllSubscribedEvents(): void;
-  /*
-   * Renders a template to the target element.
-   * @param target The target element to render the template to.
-   * @param template The template to render.
-   * @param mode The mode to render the template in.
+
+  /**
+   * Renders a template into the specified target element.
+   * @param options - The rendering options.
+   * @param options.target - The target element to render the template into.
+   * @param options.template - The template string to render.
+   * @param options.insert - The position to insert the rendered template. (optional)
    */
   renderTemplate(options: {
     target: HTMLElement;
     template: string;
     insert?: RenderInsertPosition;
   }): void;
+
   /**
-   * A callback that is triggered when a context is received.
+   * Called when the Radiant element is connected to a context.
+   * @param context - The connected context.
    */
   connectedContextCallback(context: UnknownContext): void;
 }
