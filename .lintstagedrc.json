@@ -1,0 +1,6 @@
+{
+	"*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
+		"bun run lint",
+		"bun run format"
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"name": "@ecopages/radiant-monorepo",
+	"description": "A minimalist web component library designed for simplicity and flexibility",
+	"scripts": {
+		"clean": "rm -rf .eco node_modules bun.lockb && bun install && bun run prepare:lib",
+		"format": "bunx @biomejs/biome format --write .",
+		"lint": "bunx @biomejs/biome check --apply .",
+		"prepare": "husky",
+		"prepare:lib": "bun run --filter @ecopages/radiant build:lib",
+		"test:all": "bun run --filter '*' test:lib"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"husky": "^9.0.10",
+		"lint-staged": "^15.2.2"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"workspaces": ["packages/*"]
+}
