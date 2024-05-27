@@ -2,6 +2,12 @@ export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Numbe
 
 export type AttributeTypeDefault = Array<unknown> | boolean | number | Record<string, unknown> | string;
 
+/**
+ * Parses the given attribute type constant and returns its corresponding string representation.
+ *
+ * @param constant - The attribute type constant to parse.
+ * @returns The string representation of the attribute type constant.
+ */
 export function parseAttributeTypeConstant(constant?: AttributeTypeConstant) {
   switch (constant) {
     case Array:
@@ -17,6 +23,12 @@ export function parseAttributeTypeConstant(constant?: AttributeTypeConstant) {
   }
 }
 
+/**
+ * Parses the attribute type default value and returns its type as a string.
+ *
+ * @param defaultValue - The default value of the attribute type.
+ * @returns The type of the default value as a string.
+ */
 export function parseAttributeTypeDefault(defaultValue?: AttributeTypeDefault) {
   switch (typeof defaultValue) {
     case 'boolean':
@@ -31,6 +43,12 @@ export function parseAttributeTypeDefault(defaultValue?: AttributeTypeDefault) {
   if (Object.prototype.toString.call(defaultValue) === '[object Object]') return 'object';
 }
 
+/**
+ * Returns the default value for a given attribute type.
+ *
+ * @param type - The attribute type constant.
+ * @returns The default value for the specified attribute type.
+ */
 export function defaultValueForType(type: AttributeTypeConstant): unknown {
   switch (type) {
     case Number:
@@ -46,6 +64,9 @@ export function defaultValueForType(type: AttributeTypeConstant): unknown {
 
 type Reader = (value: string) => number | string | boolean | object | unknown[];
 
+/**
+ * Object containing various reader functions for parsing attribute values.
+ */
 const readers: { [type: string]: Reader } = {
   array(value: string): unknown[] {
     const array = JSON.parse(value);
@@ -84,6 +105,10 @@ const readers: { [type: string]: Reader } = {
 
 type Writer = (value: unknown) => string;
 
+/**
+ * Object that maps attribute types to writer functions.
+ * @type {Object.<string, Writer>}
+ */
 const writers: { [type: string]: Writer } = {
   default: writeString,
   array: writeJSON,
@@ -98,12 +123,27 @@ function writeString(value: unknown) {
   return `${value}`;
 }
 
+/**
+ * Reads the attribute value based on the provided type.
+ * @param value - The attribute value to be read.
+ * @param type - The type of the attribute.
+ * @returns The parsed attribute value.
+ * @throws {TypeError} If the provided type is unknown.
+ */
 export function readAttributeValue(value: string, type: AttributeTypeConstant) {
   const readerType = parseAttributeTypeConstant(type);
   if (!readerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
   return readers[readerType](value);
 }
 
+/**
+ * Writes the attribute value based on the provided type.
+ *
+ * @param value - The value to be written.
+ * @param type - The type of the attribute.
+ * @returns The written attribute value.
+ * @throws {TypeError} If the provided type is unknown.
+ */
 export function writeAttributeValue(value: unknown, type: AttributeTypeConstant) {
   const writerType = parseAttributeTypeConstant(type);
   if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
