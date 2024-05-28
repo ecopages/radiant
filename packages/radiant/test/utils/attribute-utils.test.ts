@@ -5,7 +5,7 @@ import {
   parseAttributeTypeDefault,
   readAttributeValue,
   writeAttributeValue,
-} from '@/utils/attribute-utils';
+} from '@/index';
 
 describe('readAttributeValue', async () => {
   test.each([

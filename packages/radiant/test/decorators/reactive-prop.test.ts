@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/core/radiant-element';
-import { customElement } from '@/decorators/custom-element';
-import { stringifyAttribute } from '..';
-import { onUpdated } from './on-updated';
-import { reactiveProp } from './reactive-prop';
+import { RadiantElement, customElement, reactiveProp, stringifyAttribute } from '@/index';
 
 @customElement('my-reactive-number')
 class MyReactiveNumber extends RadiantElement {

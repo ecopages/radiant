@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement, type RenderInsertPosition } from '@/core/radiant-element';
-import { reactiveProp } from '..';
-import { WithKita } from './with-kita';
+import { RadiantElement, type RenderInsertPosition, WithKita, reactiveProp } from '@/index';
 
 const Message = ({ children, extra }: { children: string; extra: string }) => {
   return (

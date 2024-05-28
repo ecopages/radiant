@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/core/radiant-element';
-import { query } from '@/decorators//query';
-import { customElement } from '@/decorators/custom-element';
+import { RadiantElement, customElement, query } from '@/index';
 
 @customElement('my-query-element')
 class MyQueryElement extends RadiantElement {
