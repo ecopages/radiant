@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/core/radiant-element';
-import { customElement } from '@/decorators/custom-element';
-import { event } from '@/decorators/event';
-import { onEvent } from '@/decorators/on-event';
-import { query } from '@/decorators/query';
-import type { EventEmitter } from '@/tools/event-emitter';
+import { type EventEmitter, RadiantElement, customElement, event, onEvent, query } from '@/index';
 
 enum RadiantEventEvents {
   CustomEvent = 'custom-event',

@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/core/radiant-element';
-import { customElement } from '@/decorators/custom-element';
-import { reactiveField } from '@/decorators/reactive-field';
-import { onUpdated } from './on-updated';
+import { RadiantElement, customElement, onUpdated, reactiveField } from '@/index';
 
 @customElement('my-reactive-field')
 class MyReactiveField extends RadiantElement {

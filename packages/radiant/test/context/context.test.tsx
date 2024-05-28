@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/core/radiant-element';
-import { customElement } from '@/decorators/custom-element';
-import type { ContextProvider } from './context-provider';
-import { createContext } from './create-context';
-import { consumeContext } from './decorators/consume-context';
-import { contextSelector } from './decorators/context-selector';
-import { provideContext } from './decorators/provide-context';
+import {
+  type ContextProvider,
+  RadiantElement,
+  consumeContext,
+  contextSelector,
+  createContext,
+  customElement,
+  provideContext,
+} from '@/index';
 
 type TestContext = {
   value: number;

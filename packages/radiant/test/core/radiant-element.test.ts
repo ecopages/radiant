@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from './radiant-element';
+import { RadiantElement } from '@/index';
 
 class MyRadiantElement extends RadiantElement {}
 

@@ -1,5 +1,5 @@
 {
-	"name": "@eco-pages/radiant",
+	"name": "@ecopages/radiant",
 	"version": "0.1.0",
 	"repository": "https://github.com/andeeplus/eco-pages.git",
 	"type": "module",
@@ -20,6 +20,30 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
+		},
+		"./context": {
+			"types": "./dist/context/index.d.ts",
+			"import": "./dist/context/index.js"
+		},
+		"./core": {
+			"types": "./dist/core/index.d.ts",
+			"import": "./dist/core/index.js"
+		},
+		"./decorators": {
+			"types": "./dist/decorators.d.ts",
+			"import": "./dist/decorators.js"
+		},
+		"./mixins": {
+			"types": "./dist/mixins/index.d.ts",
+			"import": "./dist/mixins/index.js"
+		},
+		"./tools": {
+			"types": "./dist/tools/index.d.ts",
+			"import": "./dist/tools/index.js"
+		},
+		"./utils": {
+			"types": "./dist/utils/index.d.ts",
+			"import": "./dist/utils/index.js"
 		},
 		"./context/create-context": {
 			"types": "./dist/context/create-context.d.ts",

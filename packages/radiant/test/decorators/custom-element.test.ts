@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/core/radiant-element';
-import { customElement } from './custom-element';
+import { RadiantElement, customElement } from '@/index';
 
 @customElement('my-custom-element')
 class MyCustomElement extends RadiantElement {

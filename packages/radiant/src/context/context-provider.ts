@@ -47,12 +47,36 @@ export interface IContextProvider<T extends Context<unknown, unknown>> {
   subscribe: (subscription: ContextSubscription<T>) => void;
 }
 
+/**
+ * It creates a context provider that allows setting and getting the context,
+ * It will also be in charge of notifying the subscribers when the context changes.
+ *
+ * @template T - The type of the context.
+ * @implements IContextProvider
+ *
+ * @example
+ * ```ts
+ * export class MyElement extends RadiantElement {
+ *  provider = new ContextProvider<typeof myContext>(this, {
+ *    context: myContext,
+ *    initialValue: {
+ *      value: 'Hello World',
+ *    },
+ * });
+ * ```
+ */
 export class ContextProvider<T extends Context<unknown, unknown>> implements IContextProvider<T> {
   private host: RadiantElement;
   private context: UnknownContext;
   private value: ContextType<T> | undefined;
   subscriptions: ContextSubscription<T>[] = [];
 
+  /**
+   * Creates a new instance of the ContextProvider.
+   *
+   * @param host - The host element that will contain the context provider.
+   * @param options - The options to configure the context provider.
+   */
   constructor(host: RadiantElement, options: ContextProviderOptions<T>) {
     this.host = host;
     this.context = options.context;

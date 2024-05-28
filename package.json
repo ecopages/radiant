@@ -6,7 +6,7 @@
 		"format": "bunx @biomejs/biome format --write .",
 		"lint": "bunx @biomejs/biome check --apply .",
 		"prepare": "husky",
-		"prepare:lib": "bun run --filter @ecopages/radiant build:lib",
+		"build:all": "bun run --filter '*' build:lib",
 		"test:all": "bun run --filter '*' test:lib"
 	},
 	"devDependencies": {

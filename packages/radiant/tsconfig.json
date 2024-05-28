@@ -12,7 +12,8 @@
 		"noImplicitOverride": true,
 		"outDir": "./dist",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"dist/*": ["./dist/*"]
 		},
 		"plugins": [
 			{
@@ -20,7 +21,7 @@
 			}
 		],
 		"resolveJsonModule": true,
-		"rootDir": "./src",
+		"rootDir": ".",
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ESNext",
@@ -28,5 +29,5 @@
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true
 	},
-	"include": ["src/**/*"]
+	"include": ["**/*"]
 }

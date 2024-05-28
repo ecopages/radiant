@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/core/radiant-element';
-import { customElement } from '@/decorators/custom-element';
-import { onUpdated } from '@/decorators/on-updated';
-import { query } from '@/decorators/query';
-import { reactiveProp } from '@/decorators/reactive-prop';
+import { RadiantElement, customElement, onUpdated, query, reactiveProp } from '@/index';
 
 @customElement('radiant-counter')
 class RadiantCounter extends RadiantElement {
