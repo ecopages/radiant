@@ -1,7 +1,12 @@
 {
 	"name": "@ecopages/radiant",
 	"version": "0.0.0",
-	"repository": "https://github.com/andeeplus/eco-pages.git",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git"
+	},
+	"author": "Andrea Zanenghi",
+	"license": "MIT",
 	"type": "module",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
