@@ -13,13 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
 
       - name: Install Dependencies
-      env:
-        BUN_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: bun install --frozen-lockfile
+        env:
+          BUN_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bun install --frozen-lockfile
 
       - name: Build Libraries
         run: bun run build:all
