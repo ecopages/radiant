@@ -1,0 +1,19 @@
+{
+	"name": "playground-html-esbuild",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"predev": "bun run build.ts",
+		"dev": "npx http-server dist"
+	},
+	"dependencies": {
+		"@ecopages/radiant": "workspace:*"
+	},
+	"peerDependencies": {
+		"typescript": "^5.2.2"
+	},
+	"devDependencies": {
+		"esbuild": "^0.23.0"
+	}
+}

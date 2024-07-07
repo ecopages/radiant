@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 const glob = new Bun.Glob('src/**/*.ts');
 const files = await Array.fromAsync(glob.scan({ cwd: '.' }));
 
@@ -16,4 +17,9 @@ if (!build.success) {
   for (const log of build.logs) {
     console.log('[@ecopages/radiant]', log);
   }
+}
+
+const www = fs.readdirSync('www');
+for (const file of www) {
+  fs.copyFileSync(`www/${file}`, `dist/${file}`);
 }
