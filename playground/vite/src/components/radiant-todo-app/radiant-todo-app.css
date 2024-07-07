@@ -1,5 +1,5 @@
 .todo {
-  @apply flex flex-col gap-4 items-start bg-background-accent rounded-md p-4  w-full;
+  @apply flex flex-col gap-4 items-start bg-gray-50 rounded-md p-4  w-full;
 
   &__board {
     @apply flex flex-col lg:flex-row gap-4 w-full;
@@ -13,7 +13,7 @@
   }
 
   &__list {
-    @apply flex flex-col bg-background gap-2 rounded-md p-2 w-full min-h-28;
+    @apply flex flex-col bg-white gap-2 rounded-md p-2 w-full min-h-28;
 
     &--complete {
       @apply border-2 border-green-500;
@@ -67,7 +67,7 @@
       @apply w-4 h-4 rounded-md accent-green-500 cursor-pointer;
     }
     &-remove {
-      @apply text-on-background bg-black/5 rounded-full p-1;
+      @apply text-gray-900 bg-black/5 rounded-full p-1;
     }
   }
 }

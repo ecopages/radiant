@@ -1,14 +1,14 @@
 import { stringifyAttribute } from '@ecopages/radiant/tools/stringify-attribute';
-import type { TodoContext } from './lite-todo-app.script';
-import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './lite-todo.templates';
-import './lite-todo-app.script';
-import './lite-todo-app.css';
+import type { TodoContext } from './radiant-todo-app.script';
+import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
+import './radiant-todo-app.script';
+import './radiant-todo-app.css';
 
-type LiteTodoAppTemplateProps = {
+type RadiantTodoAppTemplateProps = {
   todos: TodoContext['todos'];
 };
 
-const getData = async (): Promise<LiteTodoAppTemplateProps> => {
+const getData = async (): Promise<RadiantTodoAppTemplateProps> => {
   const now = Date.now();
   return {
     todos: [
@@ -50,12 +50,12 @@ const TodoForm = () => {
   );
 };
 
-export const LiteTodoApp = async () => {
+export const RadiantTodoApp = async () => {
   const data = await getData();
   const incompleteTodos = data.todos.filter((todo) => !todo.complete);
   const completedTodos = data.todos.filter((todo) => todo.complete);
   return (
-    <lite-todo-app class="todo" hydrate-context={stringifyAttribute<Partial<TodoContext>>({ todos: data.todos })}>
+    <radiant-todo-app class="todo" hydrate-context={stringifyAttribute<Partial<TodoContext>>({ todos: data.todos })}>
       <section class="todo__board">
         <TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
           {incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
@@ -65,6 +65,6 @@ export const LiteTodoApp = async () => {
         </TodoPanel>
       </section>
       <TodoForm />
-    </lite-todo-app>
+    </radiant-todo-app>
   );
 };

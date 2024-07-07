@@ -12,9 +12,9 @@ import {
   reactiveProp,
 } from '@ecopages/radiant';
 
-import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './lite-todo.templates';
+import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
 
-export type LiteTodoProps = {
+export type RadiantTodoProps = {
   complete?: boolean;
 };
 
@@ -37,8 +37,8 @@ class Logger {
   }
 }
 
-@customElement('lite-todo-item')
-export class LiteTodoItem extends WithKita(RadiantElement) {
+@customElement('radiant-todo-item')
+export class RadiantTodoItem extends WithKita(RadiantElement) {
   @query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
   @query({ selector: 'button' }) removeButton!: HTMLButtonElement;
   @reactiveProp({ type: Boolean, reflect: true }) complete = false;
@@ -76,8 +76,8 @@ export class LiteTodoItem extends WithKita(RadiantElement) {
   }
 }
 
-@customElement('lite-todo-app')
-export class LiteTodoApp extends WithKita(RadiantElement) {
+@customElement('radiant-todo-app')
+export class RadiantTodoApp extends WithKita(RadiantElement) {
   @query({ ref: 'list-complete' }) listComplete!: HTMLElement;
   @query({ ref: 'list-incomplete' }) listIncomplete!: HTMLElement;
   @query({ ref: 'count-complete' }) countComplete!: HTMLElement;
@@ -140,8 +140,8 @@ export class LiteTodoApp extends WithKita(RadiantElement) {
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'lite-todo-app': HtmlTag;
-      'lite-todo-item': HtmlTag & LiteTodoProps;
+      'radiant-todo-app': HtmlTag;
+      'radiant-todo-item': HtmlTag & RadiantTodoProps;
     }
   }
 }

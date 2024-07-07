@@ -1,7 +1,17 @@
+import type { RadiantElement } from '@/core';
+
+/**
+ * The base configuration object for the query.
+ */
 type BaseQueryConfig = {
   all?: boolean;
+  cache?: boolean;
 };
 
+/**
+ * The configuration object for the query.
+ * It can be configured to query by CSS selector or data-ref attribute.
+ */
 export type QueryConfig = BaseQueryConfig &
   (
     | {
@@ -18,6 +28,7 @@ export type QueryConfig = BaseQueryConfig &
  *
  * @param {QueryConfig} options - The configuration object for the query.
  * @param {boolean} [options.all] - A flag to query for all elements that match the selector. Defaults to `false`.
+ * @param {boolean} [options.cache] - A flag to cache the query result. Defaults to `true`.
  * @param {string} [options.selector] - A CSS selector to match elements against. This property is mutually exclusive with `options.ref`.
  * @param {string} [options.ref] - A reference to an element. This property is mutually exclusive with `options.selector`.
  *
@@ -31,18 +42,37 @@ export type QueryConfig = BaseQueryConfig &
  *
  * // Now, `myElement` will return the first element in the light DOM of `MyElement` that matches the selector '.my-class'.
  */
-export function query(options: QueryConfig) {
-  return (proto: unknown, propertyKey: string | symbol) => {
-    const getter = function (this: Element) {
+export function query({ cache: shouldBeCached = true, ...options }: QueryConfig) {
+  const cache = new WeakMap<Element, Element | NodeList | null>();
+
+  return (proto: RadiantElement, propertyKey: string | symbol) => {
+    const doQuery = function (this: Element) {
+      if (shouldBeCached) {
+        const cachedResult = cache.get(this);
+        if (cachedResult !== undefined) {
+          return cachedResult;
+        }
+      }
+
       const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
-      const query = options.all ? this.querySelectorAll(selector) : this.querySelector(selector);
-      return query;
+      const queryResult = options.all ? this.querySelectorAll(selector) : this.querySelector(selector);
+
+      if (shouldBeCached) {
+        cache.set(this, queryResult);
+      }
+
+      return queryResult;
     };
 
-    Object.defineProperty(proto, propertyKey, {
-      get: getter,
-      enumerable: true,
-      configurable: true,
-    });
+    const originalConnectedCallback = proto.connectedCallback;
+
+    proto.connectedCallback = function (this: RadiantElement) {
+      Object.defineProperty(this, propertyKey, {
+        get: doQuery,
+        enumerable: true,
+        configurable: true,
+      });
+      originalConnectedCallback?.call(this);
+    };
   };
 }

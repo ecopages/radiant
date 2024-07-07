@@ -5,12 +5,12 @@ import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
 import { query } from '@ecopages/radiant/decorators/query';
 import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
 
-export type LiteCounterProps = {
+export type RadiantCounterProps = {
   value?: number;
 };
 
-@customElement('lite-counter')
-export class LiteCounter extends RadiantElement {
+@customElement('radiant-counter')
+export class RadiantCounter extends RadiantElement {
   @reactiveProp({ type: Number, reflect: true }) declare value: number;
   @query({ ref: 'count' }) countText!: HTMLElement;
 
@@ -33,7 +33,7 @@ export class LiteCounter extends RadiantElement {
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'lite-counter': HtmlTag & LiteCounterProps;
+      'radiant-counter': HtmlTag & RadiantCounterProps;
     }
   }
 }

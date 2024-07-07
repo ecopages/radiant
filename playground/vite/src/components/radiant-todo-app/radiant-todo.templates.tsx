@@ -1,4 +1,4 @@
-import type { Todo } from './lite-todo-app.script';
+import type { Todo } from './radiant-todo-app.script';
 
 export const NoTodosMessage = () => {
   return <div>No todos to show</div>;
@@ -10,7 +10,7 @@ export const NoCompletedTodosMessage = () => {
 
 export const TodoItem = ({ id, complete, text }: Todo) => {
   return (
-    <lite-todo-item complete={complete} class="todo__item" id={id}>
+    <radiant-todo-item complete={complete} class="todo__item" id={id}>
       <label for={`todo-${id}`}>
         <input id={`todo-${id}`} name={id} type="checkbox" checked={complete} />
         {text as 'safe'}
@@ -33,7 +33,7 @@ export const TodoItem = ({ id, complete, text }: Todo) => {
           <path d="m6 6 12 12" />
         </svg>
       </button>
-    </lite-todo-item>
+    </radiant-todo-item>
   );
 };
 

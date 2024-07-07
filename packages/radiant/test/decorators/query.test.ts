@@ -4,7 +4,7 @@ import { RadiantElement, customElement, query } from '@/index';
 @customElement('my-query-element')
 class MyQueryElement extends RadiantElement {
   @query({ ref: 'my-ref' }) myRef!: HTMLDivElement;
-  @query({ ref: 'my-ref', all: true }) myRefs!: HTMLDivElement[];
+  @query({ ref: 'my-ref', all: true, cache: false }) myRefs!: HTMLDivElement[];
   @query({ selector: '.my-class' }) declare myClass: HTMLElement;
   @query({ selector: '.my-class', all: true }) declare myClasses: HTMLElement[];
 

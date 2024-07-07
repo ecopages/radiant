@@ -1,16 +1,23 @@
-import { LiteCounter } from './components/lite-counter/lite-counter.kita.tsx';
-import { LiteTodoApp } from './components/lite-todo-app/lite-todo-app.kita.tsx';
+import { RadiantCounter } from './components/radiant-counter/radiant-counter.kita.tsx';
+import { RadiantRefs } from './components/radiant-refs/radiant-refs.kita.tsx';
+import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.kita.tsx';
+import './styles/tailwind.css';
 
 const rootCounter = document.querySelector<HTMLDivElement>('#counter');
 const rootTodoApp = document.querySelector<HTMLDivElement>('#todo-app');
+const rootRadiantRefs = document.querySelector<HTMLDivElement>('#radiant-refs');
 
 if (rootCounter) {
-  rootCounter.innerHTML = LiteCounter({ value: 0 }) as string;
+  rootCounter.innerHTML = RadiantCounter({ value: 0 }) as string;
 }
 
 if (rootTodoApp) {
-  async function getLiteTodoApp() {
-    return await LiteTodoApp();
+  async function getRadiantTodoApp() {
+    return await RadiantTodoApp();
   }
-  rootTodoApp.innerHTML = await getLiteTodoApp();
+  rootTodoApp.innerHTML = await getRadiantTodoApp();
+}
+
+if (rootRadiantRefs) {
+  rootRadiantRefs.innerHTML = RadiantRefs() as string;
 }
