@@ -1,5 +1,11 @@
 # @ecopages/radiant
 
+## 0.1.1
+
+### Patch Changes
+
+- [#13](https://github.com/ecopages/radiant/pull/13) [`b1f6fe2`](https://github.com/ecopages/radiant/commit/b1f6fe27f61e4451f66dc2e188d5b6dfabc27d73) Thanks [@andeeplus](https://github.com/andeeplus)! - Updated query decorator logic and added playground to test it in a realenvironment, esbuild now can bundle the lib properly
+
 ## 0.1.0
 
 ### Minor Changes
