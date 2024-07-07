@@ -5,7 +5,7 @@ export const build = await Bun.build({
   entrypoints: files,
   outdir: 'dist',
   root: './src',
-  target: 'bun',
+  target: 'browser',
   minify: true,
   format: 'esm',
   splitting: true,
