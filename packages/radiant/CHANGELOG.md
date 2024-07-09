@@ -1,5 +1,11 @@
 # @ecopages/radiant
 
+## 0.1.2
+
+### Patch Changes
+
+- [#16](https://github.com/ecopages/radiant/pull/16) [`aeff3d8`](https://github.com/ecopages/radiant/commit/aeff3d827f59c326d130926e14c7060304e99852) Thanks [@andeeplus](https://github.com/andeeplus)! - Enhanced the @event decorator to ensure uniqueness of EventEmitter instances per class field by utilizing Symbol for keys, improving event handling isolation and configuration specificity.
+
 ## 0.1.1
 
 ### Patch Changes
