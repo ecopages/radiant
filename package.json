@@ -11,9 +11,7 @@
 		"changeset": "changeset",
 		"prerelease": "bun run build:all && bun run test:all",
 		"release": "changeset publish",
-		"dev:docs": "bun run --filter @ecopages/radiant-docs dev",
-		"dev:playground-vite": "bun run --filter playground-vite dev",
-		"dev:playground-html-bun": "bun run --filter playground-html-bun dev"
+		"dev:playground-vite": "bun run --filter playground-vite dev"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.5.0",
