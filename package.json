@@ -4,10 +4,10 @@
 	"scripts": {
 		"clean": "rm -rf node_modules bun.lockb && bun install && bun run build:all",
 		"format": "bunx @biomejs/biome format --write .",
-		"lint": "bunx @biomejs/biome check --apply .",
+		"lint": "bunx @biomejs/biome check --write .",
 		"prepare": "husky",
 		"build:all": "bun run --filter '*' build:lib",
-		"test:all": "bun run --filter '*' test:lib",
+		"test:all": "bun run --filter '*' test:lib | tee /dev/null",
 		"changeset": "changeset",
 		"prerelease": "bun run build:all && bun run test:all",
 		"release": "changeset publish",

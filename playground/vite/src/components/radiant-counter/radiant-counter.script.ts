@@ -11,7 +11,7 @@ export type RadiantCounterProps = {
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement {
-  @reactiveProp({ type: Number, reflect: true }) declare value: number;
+  @reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) declare value: number;
   @query({ ref: 'count' }) countText!: HTMLElement;
 
   @onEvent({ ref: 'decrement', type: 'click' })
