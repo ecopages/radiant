@@ -1,5 +1,11 @@
 # @ecopages/radiant
 
+## 0.1.3
+
+### Patch Changes
+
+- [#19](https://github.com/ecopages/radiant/pull/19) [`023e09c`](https://github.com/ecopages/radiant/commit/023e09c48ef4b8d0a34864c847475abf926baace) Thanks [@andeeplus](https://github.com/andeeplus)! - add defaultValue support to @reactiveProp decorator and improve attribute readers
+
 ## 0.1.2
 
 ### Patch Changes
