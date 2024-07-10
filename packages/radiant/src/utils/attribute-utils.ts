@@ -65,37 +65,63 @@ export function defaultValueForType(type: AttributeTypeConstant): unknown {
 type Reader = (value: string) => number | string | boolean | object | unknown[];
 
 /**
- * Object containing various reader functions for parsing attribute values.
+ * Utility function to parse a JSON string safely
+ */
+function parseJSON<T>(value: string): T {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    throw new TypeError('Invalid JSON string');
+  }
+}
+
+/**
+ * Utility function to ensure the parsed object is not an array
+ */
+function ensureObject(parsed: any): object {
+  if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+    return parsed;
+  }
+  throw new TypeError('Parsed value is not a valid object');
+}
+
+/**
+ * Object that maps attribute types to reader functions.
+ * @type {Object.<string, Reader>}
  */
 const readers: { [type: string]: Reader } = {
-  array(value: string): unknown[] {
-    const array = JSON.parse(value);
+  array(value: string | unknown[]): unknown[] {
+    if (Array.isArray(value)) return value;
+    const array = parseJSON<unknown[]>(value);
     if (!Array.isArray(array)) {
-      throw new TypeError(
-        `expected value of type "array" but instead got value "${value}" of type "${parseAttributeTypeDefault(array)}"`,
-      );
+      throw new TypeError(`Expected an array but got a value of type "${typeof array}"`);
     }
     return array;
   },
 
-  boolean(value: string): boolean {
+  boolean(value: string | boolean): boolean {
+    if (typeof value === 'boolean') return value;
     return !(value === '0' || String(value).toLowerCase() === 'false');
   },
 
-  number(value: string): number {
-    return Number(value.replace(/_/g, ''));
+  number(value: string | number): number {
+    if (typeof value === 'number') return value;
+    const number = Number(value.replace(/_/g, ''));
+    if (Number.isNaN(number)) {
+      throw new TypeError(`Expected a number but got "${value}"`);
+    }
+    return number;
   },
 
-  object(value: string): object {
-    const object = JSON.parse(value);
-    if (object === null || typeof object !== 'object' || Array.isArray(object)) {
-      throw new TypeError(
-        `expected value of type "object" but instead got value "${value}" of type "${parseAttributeTypeDefault(
-          object,
-        )}"`,
-      );
+  object(value: string | object): object {
+    if (typeof value === 'string') {
+      const parsedObject = parseJSON<object>(value);
+      return ensureObject(parsedObject);
     }
-    return object;
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      return value;
+    }
+    throw new TypeError(`Expected an object but got a value of type "${typeof value}"`);
   },
 
   string(value: string): string {
