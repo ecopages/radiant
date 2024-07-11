@@ -76,22 +76,11 @@ function parseJSON<T>(value: string): T {
 }
 
 /**
- * Utility function to ensure the parsed object is not an array
- */
-function ensureObject(parsed: any): object {
-  if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-    return parsed;
-  }
-  throw new TypeError('Parsed value is not a valid object');
-}
-
-/**
  * Object that maps attribute types to reader functions.
  * @type {Object.<string, Reader>}
  */
 const readers: { [type: string]: Reader } = {
-  array(value: string | unknown[]): unknown[] {
-    if (Array.isArray(value)) return value;
+  array(value: string): unknown[] {
     const array = parseJSON<unknown[]>(value);
     if (!Array.isArray(array)) {
       throw new TypeError(`Expected an array but got a value of type "${typeof array}"`);
@@ -99,29 +88,25 @@ const readers: { [type: string]: Reader } = {
     return array;
   },
 
-  boolean(value: string | boolean): boolean {
-    if (typeof value === 'boolean') return value;
+  boolean(value: string): boolean {
     return !(value === '0' || String(value).toLowerCase() === 'false');
   },
 
-  number(value: string | number): number {
-    if (typeof value === 'number') return value;
+  number(value: string): number {
     const number = Number(value.replace(/_/g, ''));
-    if (Number.isNaN(number)) {
-      throw new TypeError(`Expected a number but got "${value}"`);
-    }
     return number;
   },
 
-  object(value: string | object): object {
-    if (typeof value === 'string') {
-      const parsedObject = parseJSON<object>(value);
-      return ensureObject(parsedObject);
+  object(value: string): object {
+    const object = JSON.parse(value);
+    if (object === null || typeof object !== 'object' || Array.isArray(object)) {
+      throw new TypeError(
+        `expected value of type "object" but instead got value "${value}" of type "${parseAttributeTypeDefault(
+          object,
+        )}"`,
+      );
     }
-    if (typeof value === 'object' && !Array.isArray(value)) {
-      return value;
-    }
-    throw new TypeError(`Expected an object but got a value of type "${typeof value}"`);
+    return object;
   },
 
   string(value: string): string {
@@ -174,4 +159,47 @@ export function writeAttributeValue(value: unknown, type: AttributeTypeConstant)
   const writerType = parseAttributeTypeConstant(type);
   if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
   return (writers[writerType] || writers.default)(value);
+}
+
+/*
+ * Type guard functions for each type in AttributeTypeConstant
+ */
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === 'boolean';
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number';
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function isArray(value: unknown): value is Array<unknown> {
+  return Array.isArray(value);
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === 'object' && !Array.isArray(value) && value !== null;
+}
+
+/*
+ * Check function to ensure defaultValue matches the type
+ */
+export function isValueOfType(type: AttributeTypeConstant, defaultValue: unknown): boolean {
+  switch (type) {
+    case Boolean:
+      return isBoolean(defaultValue);
+    case Number:
+      return isNumber(defaultValue);
+    case String:
+      return isString(defaultValue);
+    case Array:
+      return isArray(defaultValue);
+    case Object:
+      return isObject(defaultValue);
+    default:
+      return false;
+  }
 }
