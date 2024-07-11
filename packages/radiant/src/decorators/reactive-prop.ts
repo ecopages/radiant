@@ -2,15 +2,16 @@ import type { RadiantElement } from '@/core/radiant-element';
 import {
   type AttributeTypeConstant,
   defaultValueForType,
+  isValueOfType,
   readAttributeValue,
   writeAttributeValue,
 } from '@/utils/attribute-utils';
 
-type ReactivePropertyOptions = {
+type ReactivePropertyOptions<T> = {
   type: AttributeTypeConstant;
   reflect?: boolean;
   attribute?: string;
-  defaultValue?: unknown;
+  defaultValue?: T;
 };
 
 /**
@@ -22,27 +23,37 @@ type ReactivePropertyOptions = {
  * @param options.attribute The name of the attribute.
  * @param options.defaultValue The default value of the property.
  */
-export function reactiveProp({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions) {
+export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions<T>) {
+  if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
+    throw new Error(`defaultValue does not match the expected type for ${type.name}`);
+  }
+
   return (proto: RadiantElement, propertyKey: string) => {
     const originalValues = new WeakMap<WeakKey, unknown>();
     const prefixedPropertyKey = `__${propertyKey}`;
     const attributeKey = attribute ?? propertyKey;
 
+    const getInitialValue = (context: RadiantElement) => {
+      if (type === Boolean) {
+        const hasAttribute = context.hasAttribute(attributeKey);
+        return hasAttribute || defaultValue;
+      }
+
+      const attributeValue = context.getAttribute(attributeKey);
+      return attributeValue !== null
+        ? readAttributeValue(attributeValue, type)
+        : defaultValue || defaultValueForType(type);
+    };
+
     Object.defineProperty(proto, prefixedPropertyKey, {
       get: function () {
         if (!originalValues.has(this)) {
-          let initialValue: any;
-          if (type === Boolean) {
-            initialValue = this.hasAttribute(attributeKey) ? true : defaultValue;
-          } else {
-            initialValue = this.getAttribute(attributeKey) ?? defaultValue ?? defaultValueForType(type);
-          }
-          const value = readAttributeValue(initialValue, type);
-          originalValues.set(this, value);
+          const initialValue = getInitialValue(this);
+          originalValues.set(this, initialValue);
         }
         return originalValues.get(this);
       },
-      set: function (newValue: string) {
+      set: function (newValue: T) {
         const oldValue = originalValues.get(this);
         if (oldValue === newValue) return;
         originalValues.set(this, newValue);
