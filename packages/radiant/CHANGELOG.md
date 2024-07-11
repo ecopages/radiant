@@ -1,5 +1,11 @@
 # @ecopages/radiant
 
+## 0.1.4
+
+### Patch Changes
+
+- [#21](https://github.com/ecopages/radiant/pull/21) [`de834a6`](https://github.com/ecopages/radiant/commit/de834a6692da41f5c671abeb16ddc325367aca7e) Thanks [@andeeplus](https://github.com/andeeplus)! - Improved type control on reactiveProp decorator
+
 ## 0.1.3
 
 ### Patch Changes
