@@ -13,7 +13,6 @@ export class RadiantCounter extends RadiantElement {
   toggleNavigation(): void {
     this.classList.toggle('hidden');
     (this.nextElementSibling as HTMLDivElement).classList.toggle('without-aside');
-    document.body.style.overflow = this.classList.contains('hidden') ? 'auto' : 'hidden';
   }
 }
 
