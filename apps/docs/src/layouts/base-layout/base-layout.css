@@ -1,0 +1,3 @@
+main {
+  @apply p-6 md:p-8 container mx-auto overflow-x-hidden;
+}
