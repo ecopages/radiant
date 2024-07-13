@@ -11,7 +11,10 @@
 		"changeset": "changeset",
 		"prerelease": "bun run build:all && bun run test:all",
 		"release": "changeset publish",
-		"dev:playground-vite": "bun run --filter playground-vite dev"
+		"dev:docs": "bun run --filter radiant-docs dev | tee /dev/null",
+		"dev:playground-vite": "bun run --filter playground-vite dev",
+		"build:docs": "bun run --filter radiant-docs build",
+		"preview:docs": "bun run --filter radiant-docs preview"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.5.0",
