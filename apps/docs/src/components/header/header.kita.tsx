@@ -14,7 +14,7 @@ export const Header: EcoComponent<HeaderProps> = ({ navigation }) => {
         <div class="header__inner-left-side">
           <Burger class="md:hidden" />
           <Logo href="/" target="_self" title="Radiant" />
-          <p class="version">v 0.1.3</p>
+          <p class="version">v 0.1.4</p>
         </div>
         <Navigation {...navigation} />
       </div>
