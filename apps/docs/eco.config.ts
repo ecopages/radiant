@@ -9,7 +9,7 @@ const config: EcoPagesConfig = {
   defaultMetadata: {
     title: 'Radiant | Docs',
     description: 'Radiant is a minimalist web component library designed for simplicity and flexibility.',
-    image: 'public/assets/images/default-og.png',
+    image: 'public/assets/images/default-og.webp',
     keywords: ['typescript', 'framework', 'static'],
   },
 };
