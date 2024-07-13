@@ -1,8 +1,5 @@
 .docs-layout {
   @apply grid grid-cols-[auto,1fr];
-}
-
-@scope (.docs-layout) {
   .docs-layout__aside {
     @apply pr-6 md:pr-8 border-r border-r-background-accent mr-8;
     ul,

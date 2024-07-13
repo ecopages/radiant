@@ -13,7 +13,7 @@
 		"release": "changeset publish",
 		"dev:docs": "bun run --filter radiant-docs dev | tee /dev/null",
 		"dev:playground-vite": "bun run --filter playground-vite dev",
-		"build:docs": "bun run --filter radiant-docs build",
+		"build:docs": "bun run --filter radiant-docs build | tee /dev/null",
 		"preview:docs": "bun run --filter radiant-docs preview"
 	},
 	"devDependencies": {
