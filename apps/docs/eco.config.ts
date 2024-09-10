@@ -12,6 +12,12 @@ const config: EcoPagesConfig = {
     image: 'public/assets/images/default-og.webp',
     keywords: ['typescript', 'framework', 'static'],
   },
+  includesTemplates: {
+    head: 'head.kita.tsx',
+    html: 'html.kita.tsx',
+    seo: 'seo.kita.tsx',
+  },
+  error404Template: '404.kita.tsx',
 };
 
 export default config;

@@ -12,7 +12,7 @@ export const config = {
 }
 
 export const getMetadata = () => ({
-  title: 'Docs | Lite Todo App',
+  title: 'Docs | Radiant Todo App',
   description: 'The place to learn about @ecopages/radiant',
 })
 
@@ -40,7 +40,7 @@ Let's check it together.
 
 ## Jsx Markup
 
-This is the jsx markup of the `LiteTodoApp` component.
+This is the jsx markup of the `RadiantTodoApp` component.
 
 As you can see we are using the `hydrate-context` attribute to pass the initial data to the `ContextProvider` provider.
 
@@ -114,7 +114,7 @@ export type TodoContext = {
 export const todoContext = createContext<TodoContext>(Symbol('todo-context'));
 
 @customElement('radiant-todo-app')
-export class LiteTodoApp extends WithKita(RadiantElement) {
+export class RadiantTodoApp extends WithKita(RadiantElement) {
   @query({ ref: 'list-complete' }) listComplete!: HTMLElement;
   @query({ ref: 'list-incomplete' }) listIncomplete!: HTMLElement;
   @query({ ref: 'count-complete' }) countComplete!: HTMLElement;
@@ -178,13 +178,13 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       'radiant-todo-app': HtmlTag;
-      'lite-todo-item': HtmlTag & LiteTodoProps;
+      'radiant-todo-item': HtmlTag & RadiantTodoProps;
     }
   }
 }
 `}</CodeBlock>
 
-In this second snippet we have the `lite-todo-item` component that is responsible for rendering the todo item.
+In this second snippet we have the `radiant-todo-item` component that is responsible for rendering the todo item.
 
 The features used in this component are:
 
@@ -192,12 +192,12 @@ The features used in this component are:
 - `@reactiveProp` decorator to define the complete attribute
 - `@consumeContext` decorator to consume the context from the parent component
 
-<CodeBlock lang='typescript'>{`export type LiteTodoProps = {
+<CodeBlock lang='typescript'>{`export type RadiantTodoProps = {
   complete?: boolean;
 };
 
-@customElement('lite-todo-item')
-export class LiteTodoItem extends WithKita(RadiantElement) {
+@customElement('radiant-todo-item')
+export class RadiantTodoItem extends WithKita(RadiantElement) {
   @query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
   @query({ selector: 'button' }) removeButton!: HTMLButtonElement;
   @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare complete;
@@ -236,7 +236,7 @@ export class LiteTodoItem extends WithKita(RadiantElement) {
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'lite-todo-item': HtmlTag & LiteTodoProps;
+      'radiant-todo-item': HtmlTag & RadiantTodoProps;
     }
   }
 }`}</CodeBlock>
@@ -259,7 +259,7 @@ export const NoCompletedTodosMessage = () => {
 
 export const TodoItem = ({ id, complete, text }: Todo) => {
   return (
-    <lite-todo-item complete={complete} class="todo__item" id={id}>
+    <radiant-todo-item complete={complete} class="todo__item" id={id}>
       {text as 'safe'}
       <span>
         <input type="checkbox" checked={complete} />
@@ -282,7 +282,7 @@ export const TodoItem = ({ id, complete, text }: Todo) => {
           <path d="m6 6 12 12" />
         </svg>
       </button>
-    </lite-todo-item>
+    </radiant-todo-item>
   );
 };
 

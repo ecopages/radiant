@@ -8,6 +8,8 @@ This approach deviates from conventional [web component best practices](https://
 
 Ideal for any kind of projects, Radiant provides a lightweight alternative to full web components implementations, reducing unnecessary overhead.
 
+For more details, see [go to the docs page](https://radiant.ecopages.app/).
+
 ## How to install it
 
 ```sh

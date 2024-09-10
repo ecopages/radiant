@@ -20,7 +20,7 @@ export class RadiantEventEmitter extends RadiantElement {
 }
 
 @customElement('radiant-event-listener')
-export class LiteEventListener extends RadiantElement {
+export class RadiantEventListener extends RadiantElement {
   @query({ ref: 'event-detail' }) eventDetail!: HTMLDivElement;
 
   @onEvent({ selector: 'radiant-event-emitter', type: RadiantEventEvents.CustomEvent })

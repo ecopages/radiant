@@ -34,7 +34,7 @@ export const docsConfig: DocsConfig = {
     {
       name: 'Core',
       subdirectory: 'core',
-      pages: [{ title: 'RadiantElement', slug: 'lite-element' }],
+      pages: [{ title: 'RadiantElement', slug: 'radiant-element' }],
     },
     {
       name: 'Decorators',
@@ -53,7 +53,7 @@ export const docsConfig: DocsConfig = {
       name: 'Context',
       subdirectory: 'context',
       pages: [
-        { title: 'Lite Context', slug: 'lite-context' },
+        { title: 'Context', slug: 'context' },
         { title: '@provideContext', slug: 'context-provider' },
         { title: '@consumeContext', slug: 'context-consumer' },
         { title: '@contextSelector', slug: 'context-selector' },
