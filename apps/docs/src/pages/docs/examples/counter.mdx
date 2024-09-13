@@ -36,15 +36,17 @@ If you want to use the `RadiantCounter` component, the only thing you need to do
 
 This can be done by using the `data-decrement`, `data-increment`, and `data-text` attributes.
 
-<CodeBlock lang="jsx">{`<radiant-counter count={count}>
-  <button type="button" data-ref="decrement" aria-label="Decrement">
-    -
-  </button>
-  <span data-ref="count">{count}</span>
-  <button type="button" data-ref="increment" aria-label="Increment">
-    +
-  </button>
-</radiant-counter>`}</CodeBlock>
+<CodeBlock lang="jsx">
+{`<radiant-counter count={count}>
+    <button type="button" data-ref="decrement" aria-label="Decrement">
+      -
+    </button>
+    <span data-ref="count">{count}</span>
+    <button type="button" data-ref="increment" aria-label="Increment">
+      +
+    </button>
+</radiant-counter>`}
+</CodeBlock>
 
 ## Typescript
 
@@ -54,37 +56,38 @@ Please note that the props in there are used mainly to provide type checking and
 
 The component is also dispatching a `change` event when the value is updated, this can be used to listen for changes in the value of the component.
 
-<CodeBlock lang='typescript'>{`@customElement("radiant-counter")
-export type RadiantCounterProps = {
-  value?: number;
+<CodeBlock lang='typescript'>
+{`export type RadiantCounterProps = {
+    value?: number;
 };
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement {
-  @reactiveProp({ type: Number, reflect: true }) declare value: number;
-  @query({ ref: 'count' }) countText!: HTMLElement;
+    @reactiveProp({ type: Number, reflect: true }) declare value: number;
+    @query({ ref: 'count' }) countText!: HTMLElement;
 
-  @onEvent({ ref: 'decrement', type: 'click' })
-  decrement() {
-    if (this.value > 0) this.value--;
-  }
+    @onEvent({ ref: 'decrement', type: 'click' })
+    decrement() {
+      if (this.value > 0) this.value--;
+    }
 
-  @onEvent({ ref: 'increment', type: 'click' })
-  increment() {
-    this.value++;
-  }
+    @onEvent({ ref: 'increment', type: 'click' })
+    increment() {
+      this.value++;
+    }
 
-  @onUpdated('value')
-  updateCount() {
-    this.countText.textContent = this.value.toString();
-    this.dispatchEvent(new Event('change'));
-  }
+    @onUpdated('value')
+    updateCount() {
+      this.countText.textContent = this.value.toString();
+      this.dispatchEvent(new Event('change'));
+    }
 }
 
 declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'radiant-counter': HtmlTag & RadiantCounterProps;
+    namespace JSX {
+      interface IntrinsicElements {
+        'radiant-counter': HtmlTag & RadiantCounterProps;
+      }
     }
-  }
-}`}</CodeBlock>
+}`}
+</CodeBlock>

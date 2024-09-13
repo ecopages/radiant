@@ -20,8 +20,8 @@ To consume a context in a component, you can use the `@consumeContext` decorator
 
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
-  @consumeContext(myContext)
-  consumer!: ContextProvider<typeof myContext>;
+    @consumeContext(myContext)
+    consumer!: ContextProvider<typeof myContext>;
 }`}</CodeBlock>
 
 Once you have a context consumer, you can access the context value using the `consumer` property and the following properties:
@@ -41,13 +41,9 @@ import { ContextRequestEvent } from '@ecopages/radiant';
 
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
-  context!: ContextProvider<typeof myContext>;
-  connectedCallback() {
-    super.connectedCallback();
-    this.dispatchEvent(
-      new ContextRequestEvent(contextToProvide, (context) => {
-        this.context = context;
-      }),
-    );
-  }
+    context!: ContextProvider<typeof myContext>;
+    connectedCallback() {
+        super.connectedCallback();
+        this.dispatchEvent(new ContextRequestEvent(myContext, (context) => this.context = context));
+    }
 }`}</CodeBlock>

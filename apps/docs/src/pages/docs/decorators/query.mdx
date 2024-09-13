@@ -15,13 +15,13 @@ A decorator to query by CSS selector or data-ref attribute.
 
 By default it queries for the first element that matches the selector, but it can be configured to query for all elements.
 
-<CodeBlock lang='typescript'>{`@query({ selector: "[data-text]"}) text: HTMLElement; `}</CodeBlock>
+<CodeBlock lang='typescript'>{`@query({ selector: "[data-text]"}) text: HTMLElement;`}</CodeBlock>
 
 It is possible to query for all elements that match the selector by setting the `all` property to true.
 
-<CodeBlock lang='typescript'>{`@query({ ref: my-ref", all: true }) allTexts: HTMLElement[]; `}</CodeBlock>
+<CodeBlock lang='typescript'>{`@query({ ref: "my-ref", all: true }) allTexts: HTMLElement[];`}</CodeBlock>
 
 By default it caches the result of the query, but it can be configured to not cache the result by setting the `cache` property to false.
 This can be very handful when dealing with dynamic content.
 
-<CodeBlock lang='typescript'>{`@query({ ref: "list-item", all:true, cache: false }) text: HTMLElement; `}</CodeBlock>
+<CodeBlock lang='typescript'>{`@query({ ref: "list-item", all:true, cache: false }) text: HTMLElement;`}</CodeBlock>
