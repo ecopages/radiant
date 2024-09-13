@@ -2,10 +2,10 @@
 	"name": "radiant-docs",
 	"private": true,
 	"scripts": {
-		"dev": "bun ../../node_modules/@ecopages/core/src/bin/ecopages.js dev",
-		"build": "bun ../../node_modules/@ecopages/core/src/bin/ecopages.js build",
-		"start": "bun ../../node_modules/@ecopages/core/src/bin/ecopages.js start",
-		"preview": "bun ../../node_modules/@ecopages/core/src/bin/ecopages.js preview"
+		"dev": "ecopages dev",
+		"build": "ecopages build",
+		"start": "ecopages start",
+		"preview": "ecopages preview"
 	},
 	"devDependencies": {
 		"@ecopages/core": "npm:@jsr/ecopages__core@latest",
