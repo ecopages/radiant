@@ -23,11 +23,12 @@ This decorator is a method decorator, so it should be used on a method of a clas
 
 Here is an example of how to use the `@contextSelector` decorator:
 
-<CodeBlock lang='typescript'>{`import { MyContext } from './my-element-provider'
+<CodeBlock lang='typescript'>
+{`import { MyContext } from './my-element-provider'
 
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
-    @contextSelector({ context: todoContext, select: ({ value }) => ({ value})})
+    @contextSelector({ context: todoContext, select: ({ value }) => ({ value }) })
     handleValue({ value }: Pick<MyContext, 'value'>) {
       console.log(value);
     }
@@ -35,8 +36,8 @@ export class MyElement extends RadiantElement {
 
 This can be very handy when you need to manipulate the context value before using it.
 
-<CodeBlock lang='typescript'>{`import { MyContext } from './my-element-provider'
-
+<CodeBlock lang='typescript'>
+{`import { MyContext } from './my-element-provider'
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
     @contextSelector({
@@ -50,8 +51,8 @@ export class MyElement extends RadiantElement {
 
 If for any reason you don't want to use the `@contextSelector` decorator, you can subscribe to the context changes manually.
 
-<CodeBlock lang='typescript'>{`import { MyContext } from './my-element-provider'
-
+<CodeBlock lang='typescript'>
+{`import { MyContext } from './my-element-provider'
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
     context!: ContextProvider<typeof myContext>;
@@ -70,4 +71,5 @@ export class MyElement extends RadiantElement {
     onChangeValue({ value }: Pick<MyContext, 'value'>) {
       console.log(value);
     }
-}`}</CodeBlock>
+}`}
+</CodeBlock>
