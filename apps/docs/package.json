@@ -15,7 +15,6 @@
 		"@ecopages/kitajs": "npm:@jsr/ecopages__kitajs@latest",
 		"@ecopages/mdx": "npm:@jsr/ecopages__mdx@latest",
 		"@ecopages/scripts-injector": "^0.1.1",
-		"shiki": "^1.17.6",
-		"@shikijs/transformers": "^1.17.6"
+		"shiki": "^1.17.6"
 	}
 }

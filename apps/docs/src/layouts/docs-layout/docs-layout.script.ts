@@ -1,4 +1,3 @@
-import { query } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 

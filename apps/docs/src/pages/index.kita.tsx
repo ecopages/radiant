@@ -1,6 +1,6 @@
 import { DocsLayout } from '@/layouts/docs-layout';
 import Introduction from '@/pages/docs/getting-started/introduction.mdx';
-import type { EcoPage, GetMetadata } from '@ecopages/core';
+import type { EcoPage } from '@ecopages/core';
 
 const HomePage: EcoPage = () => {
   return (
@@ -13,7 +13,6 @@ const HomePage: EcoPage = () => {
 HomePage.config = {
   importMeta: import.meta,
   dependencies: {
-    stylesheets: ['./index.css'],
     components: [DocsLayout],
   },
 };

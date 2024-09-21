@@ -48,7 +48,8 @@
     }
   }
 
-  p&__count {
+  p,
+  &__count {
     @apply flex w-full gap-1 m-0 text-sm text-gray-700;
     & span {
       @apply font-semibold;

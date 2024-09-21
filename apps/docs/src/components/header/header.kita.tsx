@@ -2,6 +2,7 @@ import { Burger } from '@/components/burger';
 import { Logo } from '@/components/logo';
 import { Navigation, type NavigationProps } from '@/components/navigation';
 import type { EcoComponent } from '@ecopages/core';
+import rootJson from '../../../../../packages/radiant/package.json';
 
 export type HeaderProps = {
   navigation: NavigationProps;
@@ -14,7 +15,7 @@ export const Header: EcoComponent<HeaderProps> = ({ navigation }) => {
         <div class="header__inner-left-side">
           <Burger class="md:hidden" />
           <Logo href="/" target="_self" title="Radiant" />
-          <p class="version">v 0.1.4</p>
+          <p class="version">v {rootJson.version as 'safe'}</p>
         </div>
         <Navigation {...navigation} />
       </div>

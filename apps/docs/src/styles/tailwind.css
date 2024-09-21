@@ -103,50 +103,49 @@ body {
   @apply bg-background text-on-background min-h-[100svh];
 }
 
-.prose h1 {
-  @apply text-4xl font-bold text-on-background-accent my-6;
-}
+.prose {
+  h1 {
+    @apply text-4xl font-bold text-on-background-accent my-6;
+  }
 
-.prose h2 {
-  @apply text-3xl font-bold text-on-background-accent my-6;
-}
+  h2 {
+    @apply text-3xl font-bold text-on-background-accent my-6;
+  }
 
-.prose h3 {
-  @apply text-2xl font-bold text-on-background-accent my-5;
-}
+  h3 {
+    @apply text-2xl font-bold text-on-background-accent my-5;
+  }
 
-.prose h4 {
-  @apply text-xl font-bold text-on-background-accent my-5;
-}
+  h4 {
+    @apply text-xl font-bold text-on-background-accent my-5;
+  }
 
-.prose h5 {
-  @apply text-lg font-bold text-on-background-accent my-4;
-}
+  h5 {
+    @apply text-lg font-bold text-on-background-accent my-4;
+  }
 
-.prose h6 {
-  @apply text-base font-bold text-on-background-accent my-4;
-}
+  h6 {
+    @apply text-base font-bold text-on-background-accent my-4;
+  }
 
-.prose p {
-  @apply text-base text-on-background my-4;
-}
+  p {
+    @apply text-base text-on-background my-4;
+  }
 
-.prose a {
-  @apply text-link underline;
-}
+  a {
+    @apply text-link underline;
+  }
 
-.prose ul,
-.prose.prose ol {
-  @apply list-disc pl-8 my-4;
-}
+  ul,
+  ol {
+    @apply list-disc pl-8 my-4;
+  }
 
-.prose code {
-  @apply bg-background-code text-sm text-on-background-code rounded-md;
-}
+  code {
+    @apply bg-background-code text-sm text-on-background-code rounded-md;
+  }
 
-.prose pre {
-}
-
-.prose pre > code {
-  @apply bg-transparent text-inherit rounded-md my-8;
+  pre > code {
+    @apply bg-transparent text-inherit rounded-md my-8;
+  }
 }
