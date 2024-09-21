@@ -8,6 +8,12 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
     | {
         ref: string;
       }
+    | {
+        window: boolean;
+      }
+    | {
+        document: boolean;
+      }
   );
 
 /**
@@ -27,6 +33,39 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
 export function onEvent(eventConfig: OnEventConfig) {
   return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
     const originalConnectedCallback = proto.connectedCallback;
+    const originalDisconnectedCallback = proto.disconnectedCallback;
+
+    if ('window' in eventConfig) {
+      proto.connectedCallback = function (this: RadiantElement) {
+        originalConnectedCallback.call(this);
+
+        window.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+      };
+
+      proto.disconnectedCallback = function (this: RadiantElement) {
+        originalDisconnectedCallback.call(this);
+
+        window.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+      };
+
+      return descriptor;
+    }
+
+    if ('document' in eventConfig) {
+      proto.connectedCallback = function (this: RadiantElement) {
+        originalConnectedCallback.call(this);
+
+        document.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+      };
+
+      proto.disconnectedCallback = function (this: RadiantElement) {
+        originalDisconnectedCallback.call(this);
+
+        document.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+      };
+
+      return descriptor;
+    }
 
     const selector = 'selector' in eventConfig ? eventConfig.selector : `[data-ref="${eventConfig.ref}"]`;
 
