@@ -15,9 +15,13 @@ A decorator that creates an EventEmitter on the target element.
 
 The EventEmitter can be used to dispatch custom events from the target element.
 
-<CodeBlock lang='typescript'>{`@event({ name: 'my-custom-event', bubbles: true, composed: true })
+<CodeBlock >
+```typescript
+@event({ name: 'my-custom-event', bubbles: true, composed: true })
 customEvent!: EventEmitter<RadiantEventDetail>;
   
 connectedCallback() {
     this.customEvent.emit({ detail: 'Hello, World!' });
-}`}</CodeBlock>
+}
+```
+</CodeBlock>

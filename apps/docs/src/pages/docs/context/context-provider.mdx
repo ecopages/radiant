@@ -56,20 +56,24 @@ Please note that the provider must be a parent of the consumer.
 
 To read the documentation relative to the consumer, click [here](/docs/context/context-consumer).
 
-<CodeBlock lang='html'>
-{`<my-element-provider>
+<CodeBlock>
+```html
+<my-element-provider>
   	<my-element-consumer></my-element-consumer>
-</my-element-provider>`}
+</my-element-provider>
+```
 </CodeBlock>
 
 If for any reason you don't want to use the \`@provideContext\` decorator, you can use the \`ContextProvider\` component directly.
 
-<CodeBlock lang='typescript'>
-{`@customElement("my-context")
+<CodeBlock >
+```typescript
+@customElement("my-context")
 export class MyElement extends RadiantElement {
 	  	provider = new ContextProvider<typeof myContext>(this, {
 			context: myContext,
 			initialValue: { value: "Hello World" },
 		});
-}`}
+}
+```
 </CodeBlock>

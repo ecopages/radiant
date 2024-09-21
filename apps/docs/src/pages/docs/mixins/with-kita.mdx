@@ -1,5 +1,6 @@
 import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
+
 export const layout = DocsLayout;
 
 # WithKita
@@ -13,5 +14,9 @@ It's very light and easy to use, and it's a great alternative to other rendering
 
 Gzip size is around 2kb.
 
-<CodeBlock lang='typescript'>{`@customElement('my-jsx-element')
-export class MyJsxElement extends WithKita(RadiantElement){}`}</CodeBlock>
+<CodeBlock >
+```typescript
+@customElement('my-jsx-element')
+export class MyJsxElement extends WithKita(RadiantElement){}
+```
+</CodeBlock>

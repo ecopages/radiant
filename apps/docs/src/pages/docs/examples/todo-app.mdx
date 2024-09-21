@@ -52,8 +52,9 @@ Please remember that due the nature of the web components, you need to stringify
 
 Since hydrate will merge the data with the initial value, you can pass only the properties that you want to update.
 
-<CodeBlock lang="jsx">
-{`<radiant-todo-app class="todo" hydrate-context={stringifyAttribute<TodoContext>({ todos: data.todos })}>
+<CodeBlock >
+```jsx
+<radiant-todo-app class="todo" hydrate-context={stringifyAttribute<TodoContext>({ todos: data.todos })}>
     <div>
       <article>
         <h4>Todo List</h4>
@@ -88,7 +89,7 @@ Since hydrate will merge the data with the initial value, you can pass only the 
       <button type="submit">Add</button>
     </form>
 </radiant-todo-app>
-`}
+```
 </CodeBlock>
 
 ## Typescript
@@ -103,8 +104,9 @@ The features used in this component are:
 - `@contextSelector` decorator to select the todos based on the complete status
 - `renderTemplate` method to render the templates. Here we are using WithKita mixin to render the JSX templates
 
-<CodeBlock lang='typescript'>
-{`export type Todo = {
+<CodeBlock >
+```typescript
+export type Todo = {
   id: string;
   text: string;
   complete: boolean;
@@ -185,7 +187,7 @@ declare global {
       }
     }
 }
-`}
+```
 </CodeBlock>
 
 In this second snippet we have the `radiant-todo-item` component that is responsible for rendering the todo item.
@@ -196,8 +198,9 @@ The features used in this component are:
 - `@reactiveProp` decorator to define the complete attribute
 - `@consumeContext` decorator to consume the context from the parent component
 
-<CodeBlock lang='typescript'>
-{`export type RadiantTodoProps = {
+<CodeBlock >
+```typescript
+export type RadiantTodoProps = {
     complete?: boolean;
 };
 
@@ -244,7 +247,8 @@ declare global {
         'radiant-todo-item': HtmlTag & RadiantTodoProps;
       }
     }
-}`}
+}
+```
 </CodeBlock>
 
 Finally, in this last snippet we have the `NoTodosMessage`, `NoCompletedTodosMessage`, `TodoItem` and `TodoList` components.
@@ -253,8 +257,9 @@ Theses components are responsible for rendering the messages when there are no t
 
 They are used both in the initial markup and in the custom elements.
 
-<CodeBlock lang='typescript'>
-{`import type { Todo } from './radiant-todo-app.script';
+<CodeBlock >
+```jsx
+import type { Todo } from './radiant-todo-app.script';
 
 export const NoTodosMessage = () => {
     return <div>No todos to show</div>;
@@ -301,5 +306,6 @@ export const TodoList = ({ todos }: { todos: Todo[] }) => {
         ))}
       </>
     );
-};`}
+};
+```
 </CodeBlock>

@@ -28,6 +28,14 @@ And the following properties:
 - `type`: The event type to listen for.
 - `options` (optional): `AddEventListenerOptions` An options object that specifies characteristics about the event listener.
 
-<CodeBlock lang='typescript'>{`@onEvent({ selector: "button", type: "click" }) doSomething() {...} `}</CodeBlock>
+<CodeBlock >
+```typescript
+@onEvent({ selector: "button", type: "click" }) doSomething() {...}
+```
+</CodeBlock>
 
-<CodeBlock lang='typescript'>{`@onEvent({ ref: "my-ref", type: "click" }) doSomething() {...} `}</CodeBlock>
+<CodeBlock >
+```typescript
+@onEvent({ ref: "my-ref", type: "click" }) doSomething() {...}
+```
+</CodeBlock>
