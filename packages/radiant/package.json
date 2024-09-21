@@ -78,6 +78,10 @@
 			"types": "./dist/decorators/custom-element.d.ts",
 			"import": "./dist/decorators/custom-element.js"
 		},
+		"./decorators/debounce": {
+			"types": "./dist/decorators/debounce.d.ts",
+			"import": "./dist/decorators/debounce.js"
+		},
 		"./decorators/event": {
 			"types": "./dist/decorators/event.d.ts",
 			"import": "./dist/decorators/event.js"
