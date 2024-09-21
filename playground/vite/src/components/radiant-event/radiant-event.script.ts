@@ -1,4 +1,5 @@
 import { type EventEmitter, RadiantElement, customElement, event, onEvent, query } from '@ecopages/radiant';
+import { debounce } from '@ecopages/radiant/decorators/debounce';
 
 enum RadiantEventEvents {
   CustomEvent = 'custom-event',
@@ -29,6 +30,34 @@ export class RadiantEventListener extends RadiantElement {
   }
 }
 
+@customElement('radiant-keyboard-keys')
+export class RadiantKeyboardKeys extends RadiantElement {
+  @query({ selector: 'span' }) key!: HTMLElement;
+
+  @onEvent({ document: true, type: 'keydown' })
+  logKeydown(event: KeyboardEvent) {
+    this.key.textContent = event.key;
+  }
+}
+
+@customElement('radiant-sizer')
+export class RadiantWindowSizer extends RadiantElement {
+  @query({ ref: 'window' }) windowSize!: HTMLElement;
+  @query({ ref: 'element' }) elementSize!: HTMLElement;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.onResize();
+  }
+
+  @onEvent({ window: true, type: 'resize' })
+  @debounce(200)
+  onResize() {
+    this.windowSize.textContent = `${window.innerWidth} x ${window.innerHeight}`;
+    this.elementSize.textContent = `${this.offsetWidth} x ${this.offsetHeight}`;
+  }
+}
+
 /**
  * Attaches an external listener for a custom event for demo purposes.
  * Since the component is rendered client-side, the listener is added post-render.
@@ -51,6 +80,8 @@ declare global {
     interface IntrinsicElements {
       'radiant-event-emitter': HtmlTag;
       'radiant-event-listener': HtmlTag;
+      'radiant-keyboard-keys': HtmlTag;
+      'radiant-sizer': HtmlTag;
     }
   }
 }
