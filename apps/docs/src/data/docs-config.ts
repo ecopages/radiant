@@ -41,6 +41,7 @@ export const docsConfig: DocsConfig = {
       subdirectory: 'decorators',
       pages: [
         { title: '@customElement', slug: 'custom-element' },
+        { title: '@debounce', slug: 'debounce' },
         { title: '@event', slug: 'event' },
         { title: '@onEvent', slug: 'on-event' },
         { title: '@onUpdated', slug: 'on-updated' },
@@ -54,8 +55,8 @@ export const docsConfig: DocsConfig = {
       subdirectory: 'context',
       pages: [
         { title: 'Context', slug: 'context' },
-        { title: '@provideContext', slug: 'context-provider' },
-        { title: '@consumeContext', slug: 'context-consumer' },
+        { title: '@provideContext', slug: 'provide-context' },
+        { title: '@consumeContext', slug: 'consume-context' },
         { title: '@contextSelector', slug: 'context-selector' },
       ],
     },

@@ -1,0 +1,20 @@
+import { CodeBlock } from '@/components/code-block/code-block.kita';
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+  title: 'Docs | @debounce',
+  description: 'The place to learn about @ecopages/radiant',
+})
+
+# @debounce
+---
+
+The debounce decorator delays the execution of a method until after a specified wait time has elapsed since the last time it was invoked. This is useful for limiting the rate at which a method is executed, such as in response to user input events.
+
+<CodeBlock >
+```typescript
+@debounce(1000) doSomething() {...}
+```
+</CodeBlock>

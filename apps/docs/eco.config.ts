@@ -18,6 +18,7 @@ const config = await new ConfigBuilder()
     image: 'public/assets/images/default-og.webp',
     keywords: ['typescript', 'framework', 'static'],
   })
+  .setAdditionalWatchPaths(['src/data'])
   .build();
 
 export default config;
