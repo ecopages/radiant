@@ -1,4 +1,5 @@
 import { RadiantAccordion } from './components/accordion/accordion.kita.tsx';
+import { RadiantDropdown } from './components/dropdown-menu/dropdown.kita.tsx';
 import { RadiantCounter } from './components/radiant-counter/radiant-counter.kita.tsx';
 import { RadiantEvent } from './components/radiant-event/radiant-event.kita.tsx';
 import { RadiantRefs } from './components/radiant-refs/radiant-refs.kita.tsx';
@@ -19,6 +20,7 @@ const App = async () => {
           { id: 'item-3', title: 'Accordion 3', children: <p>Content 3</p> },
         ]}
       />
+      <RadiantDropdown defaultOpen={false} open={false} placement="top" />
       <RadiantCounter value={1} />
       <RadiantRefs />
       <RadiantTodoApp />

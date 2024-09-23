@@ -24,6 +24,13 @@
 		"moduleDetection": "force",
 		"noEmit": true,
 
+		/* Paths */
+		"baseUrl": ".",
+		"rootDir": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+
 		/* Linting */
 		"strict": true,
 		"noUnusedLocals": true,
