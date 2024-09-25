@@ -153,7 +153,6 @@ describe('@reactiveField', () => {
   test('decorator has the correct default object value', () => {
     document.body.innerHTML = objectTemplateWithDefaultValue;
     const myReactiveObject = document.querySelector('my-reactive-object') as MyReactiveObject;
-    console.log(myReactiveObject.data);
     expect(myReactiveObject.data.name).toEqual('Frank');
   });
 

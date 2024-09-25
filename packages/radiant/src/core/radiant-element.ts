@@ -1,4 +1,5 @@
 import type { UnknownContext } from '@/context/types';
+import { type AttributeTypeConstant, getPrefixedPropertyKey } from '@/utils';
 
 export type RenderInsertPosition = 'replace' | 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend';
 
@@ -66,6 +67,10 @@ export interface IRadiantElement {
    * @param context - The connected context.
    */
   connectedContextCallback(context: UnknownContext): void;
+  /**
+   * Radiant uses copies of the attributes to avoid conflicts with the native properties.
+   * Those properties are prefixed with a double underscore.
+   */
 }
 
 /**
@@ -74,9 +79,14 @@ export interface IRadiantElement {
  * @implements IRadiantElement
  */
 export class RadiantElement extends HTMLElement implements IRadiantElement {
+  declare transformers: Map<string, (value: string | null) => unknown>;
+  declare updatesRegistry: Map<string, Set<string>>;
   private eventSubscriptions = new Map<string, RadiantElementEventListener>();
+  private elementReady = false;
 
-  connectedCallback() {}
+  connectedCallback() {
+    this.elementReady = true;
+  }
 
   connectedContextCallback(_contextName: UnknownContext): void {}
 
@@ -84,7 +94,30 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     this.removeAllSubscribedEvents();
   }
 
-  updated(_changedProperty: string, _oldValue: unknown, _value: unknown) {}
+  updated(changedProperty: string, oldValue: unknown, value: unknown) {
+    console.log('updated', changedProperty);
+    if (!this.elementReady || !this.updatesRegistry) return;
+    const updates = this.updatesRegistry.get(changedProperty);
+    if (updates) {
+      for (const update of updates) {
+        (this as any)[update]();
+      }
+    }
+  }
+
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
+    if (oldValue === newValue || !this.elementReady) return;
+    const prefixedPropertyKey = getPrefixedPropertyKey(name);
+
+    if (prefixedPropertyKey in this) {
+      const transformer = this.transformers.get(name);
+      if (!transformer) return;
+      const transformedValue = transformer(newValue);
+      const transformedOldValue = transformer(oldValue);
+      (this as any)[prefixedPropertyKey] = (this as any)[name] = transformedValue;
+      this.updated(name, transformedOldValue, transformedValue);
+    }
+  }
 
   renderTemplate({
     target = this,

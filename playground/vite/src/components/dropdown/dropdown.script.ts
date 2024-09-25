@@ -1,3 +1,4 @@
+import { onUpdated } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
@@ -6,10 +7,10 @@ import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
 import { type Coords, type Placement, arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 export type RadiantDropdownProps = {
-  defaultOpen: boolean;
-  open: boolean;
+  defaultOpen?: boolean;
   placement?: Placement;
   offset?: number;
+  arrow?: boolean;
 };
 
 @customElement('radiant-dropdown')
@@ -18,6 +19,7 @@ export class RadiantDropdown extends RadiantElement {
   @query({ ref: 'content' }) contentTarget!: HTMLElement;
   @query({ ref: 'arrow' }) arrowTarget!: HTMLElement;
 
+  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare defaultOpen: boolean;
   @reactiveProp({ type: String, reflect: true, defaultValue: 'left' }) declare placement: Placement;
   @reactiveProp({ type: Number, reflect: true, defaultValue: 6 }) declare offset: number;
 
@@ -27,9 +29,12 @@ export class RadiantDropdown extends RadiantElement {
     super.connectedCallback();
     this.updateFloatingUI = this.updateFloatingUI.bind(this);
     this.updateFloatingUI();
+    if (this.defaultOpen) this.toggleContent();
   }
 
+  @onUpdated(['offset', 'placement'])
   updateFloatingUI(): void {
+    if (!this.triggerTarget || !this.contentTarget) return;
     computePosition(this.triggerTarget, this.contentTarget, {
       placement: this.placement,
       middleware: [offset(this.offset), flip(), shift({ padding: 8 }), arrow({ element: this.arrowTarget })],
@@ -38,6 +43,8 @@ export class RadiantDropdown extends RadiantElement {
         left: `${x}px`,
         top: `${y}px`,
       });
+
+      if (!this.arrowTarget) return;
 
       const { x: arrowX, y: arrowY } = middlewareData.arrow as Coords;
 
@@ -67,7 +74,6 @@ export class RadiantDropdown extends RadiantElement {
     const isOpen = this.triggerTarget.ariaExpanded === 'true';
     this.contentTarget.style.display = isOpen ? 'block' : 'none';
 
-    console.log({ isOpen });
     if (isOpen) {
       this.cleanup = autoUpdate(this.triggerTarget, this.contentTarget, this.updateFloatingUI);
     } else {

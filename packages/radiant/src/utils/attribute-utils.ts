@@ -203,3 +203,9 @@ export function isValueOfType(type: AttributeTypeConstant, defaultValue: unknown
       return false;
   }
 }
+
+export const PROPERTY_KEY_PREFIX = '__';
+
+export const getPrefixedPropertyKey = (name: string) => `${PROPERTY_KEY_PREFIX}${name}`;
+
+export const getUnprefixedPropertyKey = (name: string) => name.replace(PROPERTY_KEY_PREFIX, '');

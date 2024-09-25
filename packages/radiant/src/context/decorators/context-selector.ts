@@ -29,7 +29,6 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 
     proto.connectedCallback = function (this: RadiantElement) {
       originalConnectedCallback.call(this);
-
       this.dispatchEvent(new ContextSubscriptionRequestEvent(context, originalMethod.bind(this), select, subscribe));
     };
 
