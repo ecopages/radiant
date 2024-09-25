@@ -34,31 +34,26 @@ export class RadiantValueTester extends RadiantElement {
   @onEvent({ ref: 'increment-number', type: 'click' })
   incrementNumber() {
     this.number++;
-    console.log(this.number);
   }
 
   @onEvent({ ref: 'increment-string', type: 'click' })
   randomString() {
     this.string = Math.random().toString(36).substring(7);
-    console.log(this.string);
   }
 
   @onEvent({ ref: 'toggle-boolean', type: 'click' })
   toggleBoolean() {
     this.boolean = !this.boolean;
-    console.log(this.boolean);
   }
 
   @onEvent({ ref: 'update-object', type: 'click' })
   updateObject() {
     this.object = { key: Math.random().toString(36).substring(7) };
-    console.log(this.object);
   }
 
   @onEvent({ ref: 'update-array', type: 'click' })
   updateArray() {
     this.array = [...this.array, Math.random().toString(36).substring(7)];
-    console.log(this.array);
   }
 
   @onUpdated('number')

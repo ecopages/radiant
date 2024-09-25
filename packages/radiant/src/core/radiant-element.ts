@@ -95,8 +95,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   }
 
   updated(changedProperty: string, oldValue: unknown, value: unknown) {
-    console.log('updated', changedProperty);
-    if (!this.elementReady || !this.updatesRegistry) return;
+    if (!this.elementReady || !this.updatesRegistry || oldValue === value) return;
     const updates = this.updatesRegistry.get(changedProperty);
     if (updates) {
       for (const update of updates) {
@@ -114,7 +113,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
       if (!transformer) return;
       const transformedValue = transformer(newValue);
       const transformedOldValue = transformer(oldValue);
-      (this as any)[prefixedPropertyKey] = (this as any)[name] = transformedValue;
+      (this as any)[name] = transformedValue;
       this.updated(name, transformedOldValue, transformedValue);
     }
   }
