@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { beforeEach, describe, expect, test } from 'bun:test';
 import { RadiantElement, customElement, query } from '@/index';
 
 @customElement('my-query-element')
@@ -10,57 +10,64 @@ class MyQueryElement extends RadiantElement {
 
   addElement() {
     const div = document.createElement('div');
-    div.textContent = 'My Ref 3';
+    div.textContent = `My Ref ${this.myRefs.length + 1}`;
     div.setAttribute('data-ref', 'my-ref');
     this.appendChild(div);
   }
 }
 
-const template = `
-<my-query-element>
-  <div data-ref="my-ref">My Ref 1</div>
-  <div data-ref="my-ref">My Ref 2</div>
-  <div class="my-class">My Class 1</div>
-  <div class="my-class">My Class 2</div>
-  <div class="my-class">My Class 3</div>
-</my-query-element>`;
+const createTemplate = () => {
+  const customElement = document.createElement('my-query-element');
+  customElement.innerHTML = `
+    <div data-ref="my-ref">My Ref 1</div>
+    <div data-ref="my-ref">My Ref 2</div>
+    <div class="my-class">My Class 1</div>
+    <div class="my-class">My Class 2</div>
+    <div class="my-class">My Class 3</div>
+  `;
+  return customElement as MyQueryElement;
+};
 
 describe('@query', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
   test('decorator queries ref correctly', () => {
-    document.body.innerHTML = template;
-    const myQueryElement = document.querySelector('my-query-element') as MyQueryElement;
-    expect(myQueryElement.myRef.textContent).toEqual('My Ref 1');
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myRef.textContent).toEqual('My Ref 1');
   });
 
   test('decorator queries all refs correctly', () => {
-    document.body.innerHTML = template;
-    const myQueryElement = document.querySelector('my-query-element') as MyQueryElement;
-    expect(myQueryElement.myRefs.length).toEqual(2);
-    expect(myQueryElement.myRefs[0].textContent).toEqual('My Ref 1');
-    expect(myQueryElement.myRefs[1].textContent).toEqual('My Ref 2');
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myRefs.length).toEqual(2);
+    expect(customElement.myRefs[0].textContent).toEqual('My Ref 1');
+    expect(customElement.myRefs[1].textContent).toEqual('My Ref 2');
   });
 
   test('decorator queries selector correctly', () => {
-    document.body.innerHTML = template;
-    const myQueryElement = document.querySelector('my-query-element') as MyQueryElement;
-    expect(myQueryElement.myClass.textContent).toEqual('My Class 1');
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myClass.textContent).toEqual('My Class 1');
   });
 
   test('decorator queries all selectors correctly', () => {
-    document.body.innerHTML = template;
-    const myQueryElement = document.querySelector('my-query-element') as MyQueryElement;
-    expect(myQueryElement.myClasses.length).toEqual(3);
-    expect(myQueryElement.myClasses[0].textContent).toEqual('My Class 1');
-    expect(myQueryElement.myClasses[1].textContent).toEqual('My Class 2');
-    expect(myQueryElement.myClasses[2].textContent).toEqual('My Class 3');
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myClasses.length).toEqual(3);
+    expect(customElement.myClasses[0].textContent).toEqual('My Class 1');
+    expect(customElement.myClasses[1].textContent).toEqual('My Class 2');
+    expect(customElement.myClasses[2].textContent).toEqual('My Class 3');
   });
 
   test('decorator queries ref correctly after adding element', () => {
-    document.body.innerHTML = template;
-    const myQueryElement = document.querySelector('my-query-element') as MyQueryElement;
-    expect(myQueryElement.myRefs.length).toEqual(2);
-    myQueryElement.addElement();
-    expect(myQueryElement.myRefs.length).toEqual(3);
-    expect(myQueryElement.myRefs[2].textContent).toEqual('My Ref 3');
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myRefs.length).toEqual(2);
+    customElement.addElement();
+    expect(customElement.myRefs.length).toEqual(3);
+    expect(customElement.myRefs[2].textContent).toEqual('My Ref 3');
   });
 });

@@ -7,8 +7,8 @@ export function RadiantRefs() {
         <button class="rui-button rui-button--primary rui-button--md" type="button" data-ref="create">
           Add Ref
         </button>
-        <div class="bg-surface text-black p-2 rounded-md" data-ref="count">
-          Ref Count: 1
+        <div class="bg-surface text-black p-2 rounded-md">
+          Ref Count: <span data-ref="count">1</span>
         </div>
         <button class="rui-button rui-button--primary rui-button--md" type="button" data-ref="reset">
           Reset Refs

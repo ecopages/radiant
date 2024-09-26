@@ -15,14 +15,13 @@ class MyReactiveField extends RadiantElement {
   }
 }
 
-const template = '<my-reactive-field>1</my-reactive-field>';
-
 describe('@reactiveField', () => {
   test('decorator updates the element correctly', () => {
-    document.body.innerHTML = template;
-    const myReactiveField = document.querySelector('my-reactive-field') as MyReactiveField;
-    expect(myReactiveField.innerHTML).toEqual('1');
-    myReactiveField.addClick();
-    expect(myReactiveField.innerHTML).toEqual('2');
+    const customElement = document.createElement('my-reactive-field') as MyReactiveField;
+    customElement.innerHTML = '1';
+    document.body.appendChild(customElement);
+    expect(customElement.innerHTML).toEqual('1');
+    customElement.addClick();
+    expect(customElement.innerHTML).toEqual('2');
   });
 });

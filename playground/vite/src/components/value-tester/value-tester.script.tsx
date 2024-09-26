@@ -90,7 +90,7 @@ export const ValueTester = ({ number, string, boolean, object, array }: RadiantV
       boolean={boolean}
       object={stringifyAttribute(object)}
       array={stringifyAttribute(array)}
-      class="grid grid-cols-5 gap-4 max-w-fit"
+      class="grid grid-cols-5 gap-4 w-full"
     >
       <button class="rui-button rui-button--md rui-button--primary" type="button" data-ref="increment-number">
         Increment Number

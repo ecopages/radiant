@@ -11,8 +11,8 @@ class MyCustomElement extends RadiantElement {
 
 describe('@customElement', () => {
   test('decorator register a custom element correctly', () => {
-    document.body.innerHTML = '<my-custom-element></my-custom-element>';
-    const myCustomElement = document.querySelector('my-custom-element') as MyCustomElement;
-    expect(myCustomElement.innerHTML).toEqual('Hello, world!');
+    const customElement = document.createElement('my-custom-element') as MyCustomElement;
+    document.body.appendChild(customElement);
+    expect(customElement.innerHTML).toEqual('Hello, world!');
   });
 });

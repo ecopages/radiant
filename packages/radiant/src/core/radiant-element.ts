@@ -1,6 +1,9 @@
 import type { UnknownContext } from '@/context/types';
-import { type AttributeTypeConstant, getPrefixedPropertyKey } from '@/utils';
+import type { AttributeTypeConstant, ReadAttributeValueReturnType, WriteAttributeValueReturnType } from '@/utils';
 
+/**
+ * Possible positions to insert a rendered template.
+ */
 export type RenderInsertPosition = 'replace' | 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend';
 
 /**
@@ -13,6 +16,19 @@ export type RadiantElementEventListener = {
   id: string;
   options?: AddEventListenerOptions;
 };
+
+/**
+ * Represents a property metadata object.
+ */
+export interface PropertyConfig {
+  type: AttributeTypeConstant;
+  propertyName: string;
+  attributeKey: string;
+  converter: {
+    fromAttribute: (value: string) => ReadAttributeValueReturnType;
+    toAttribute: (value: any) => WriteAttributeValueReturnType;
+  };
+}
 
 /**
  * Represents an interface for a Radiant element.
@@ -67,10 +83,6 @@ export interface IRadiantElement {
    * @param context - The connected context.
    */
   connectedContextCallback(context: UnknownContext): void;
-  /**
-   * Radiant uses copies of the attributes to avoid conflicts with the native properties.
-   * Those properties are prefixed with a double underscore.
-   */
 }
 
 /**
@@ -79,7 +91,7 @@ export interface IRadiantElement {
  * @implements IRadiantElement
  */
 export class RadiantElement extends HTMLElement implements IRadiantElement {
-  declare transformers: Map<string, (value: string | null) => unknown>;
+  declare propertyConfigMap: Map<string, PropertyConfig>;
   declare updatesRegistry: Map<string, Set<string>>;
   private eventSubscriptions = new Map<string, RadiantElementEventListener>();
   private elementReady = false;
@@ -106,14 +118,12 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (oldValue === newValue || !this.elementReady) return;
-    const prefixedPropertyKey = getPrefixedPropertyKey(name);
 
-    if (prefixedPropertyKey in this) {
-      const transformer = this.transformers.get(name);
-      if (!transformer) return;
-      const transformedValue = transformer(newValue);
-      const transformedOldValue = transformer(oldValue);
-      (this as any)[name] = transformedValue;
+    if (name in this) {
+      const config = this.propertyConfigMap.get(name);
+      const transformedValue = newValue ? config?.converter.fromAttribute(newValue) : newValue;
+      const transformedOldValue = oldValue ? config?.converter.fromAttribute(oldValue) : oldValue;
+      (this as RadiantElement & { [key: string]: any })[name] = transformedValue;
       this.updated(name, transformedOldValue, transformedValue);
     }
   }

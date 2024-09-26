@@ -35,20 +35,18 @@ describe('WithKita', () => {
     expect(element.innerHTML).toEqual('<div><h1>My Radiant Element</h1><p>Hello World</p></div>');
   });
   test('it renders template correctly using insert: beforeend', () => {
-    const element = document.createElement('my-with-kita-element');
+    const element = document.createElement('my-with-kita-element') as MyWithKitaElement;
     const contents = '<span>existing contents</span>';
     element.innerHTML = contents;
-    // @ts-expect-error
     element.insert = 'beforeend';
     document.body.appendChild(element);
     expect(element.innerHTML).toEqual(`${contents}<div><h1>My Radiant Element</h1><p>Hello World</p></div>`);
   });
 
   test('it renders template correctly using insert: afterbegin', () => {
-    const element = document.createElement('my-with-kita-element');
+    const element = document.createElement('my-with-kita-element') as MyWithKitaElement;
     const contents = '<span>existing contents</span>';
     element.innerHTML = contents;
-    // @ts-expect-error
     element.insert = 'afterbegin';
     document.body.appendChild(element);
     expect(element.innerHTML).toEqual(`<div><h1>My Radiant Element</h1><p>Hello World</p></div>${contents}`);

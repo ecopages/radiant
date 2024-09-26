@@ -3,16 +3,16 @@ import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant
 @customElement('radiant-refs')
 export class RadiantRefs extends RadiantElement {
   @query({ ref: 'container' }) refContainer!: HTMLDivElement;
-  @query({ ref: 'count' }) refCount!: HTMLDivElement;
-  @query({ ref: 'item', all: true, cache: false }) refItems!: HTMLDivElement[];
+  @query({ ref: 'count' }) countTarget!: HTMLDivElement;
+  @query({ ref: 'item', all: true, cache: false }) itemTargets!: HTMLDivElement[];
 
-  renderCountMessage() {
-    this.refCount.textContent = `Ref Count: ${this.refItems.length}`;
+  renderCount() {
+    this.countTarget.textContent = `${this.itemTargets.length}`;
   }
 
   override connectedCallback() {
     super.connectedCallback();
-    this.renderCountMessage();
+    this.renderCount();
   }
 
   @onEvent({ ref: 'create', type: 'click' })
@@ -24,24 +24,31 @@ export class RadiantRefs extends RadiantElement {
           Ref Item
         </div>
       `,
-      insert: 'beforeend',
+      insert: this.itemTargets.length ? 'beforeend' : 'replace',
     });
 
-    this.renderCountMessage();
+    this.renderCount();
   }
 
   @onEvent({ ref: 'item', type: 'click' })
   deleteRef(event: Event) {
     (event.target as HTMLDivElement).remove();
-    this.renderCountMessage();
+    this.renderCount();
   }
 
   @onEvent({ ref: 'reset', type: 'click' })
   resetRefs() {
-    for (const refItem of this.refItems) {
+    for (const refItem of this.itemTargets) {
       refItem.remove();
     }
-    this.renderCountMessage();
+
+    this.renderTemplate({
+      target: this.refContainer,
+      template: '<div class="text-center">No Refs</div>',
+      insert: 'replace',
+    });
+
+    this.renderCount();
   }
 }
 

@@ -9,7 +9,7 @@ export const RadiantEvent = () => {
           No Event
         </div>
         <radiant-event-emitter>
-          <button class="bg-blue-700 text-white px-2 py-1 rounded-md" type="button" data-ref="emit-button">
+          <button class="rui-button rui-button--md rui-button--primary" type="button" data-ref="emit-button">
             Emit Event
           </button>
         </radiant-event-emitter>

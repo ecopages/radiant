@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'bun:test';
+import { beforeEach, describe, expect, test } from 'bun:test';
 import { RadiantElement, customElement, onUpdated, query, reactiveProp } from '@/index';
 
 @customElement('radiant-counter')
@@ -34,7 +34,7 @@ const createRadiantCounter = (initialValue?: string) => {
 };
 
 describe('@onUpdated', () => {
-  afterEach(() => {
+  beforeEach(() => {
     document.body.innerHTML = '';
   });
 
@@ -58,16 +58,14 @@ describe('@onUpdated', () => {
   test('decorator updates the element correctly when setAttribute is used', () => {
     const customElement = createRadiantCounter('5');
     document.body.appendChild(customElement);
-    const counter = document.querySelector('radiant-counter') as RadiantCounter;
-    counter.setAttribute(REACTIVE_PROP, '10');
-    expect(counter.countText.innerHTML).toEqual('10');
+    customElement.setAttribute(REACTIVE_PROP, '10');
+    expect(customElement.countText.innerHTML).toEqual('10');
   });
 
   test('decorator updates the value on load if no value is provided', () => {
     const customElement = createRadiantCounter();
     document.body.appendChild(customElement);
-    const counter = document.querySelector('radiant-counter') as RadiantCounter;
-    expect(counter.value).toEqual(3);
-    expect(counter.countText.innerHTML).toEqual('3');
+    expect(customElement.value).toEqual(3);
+    expect(customElement.countText.innerHTML).toEqual('3');
   });
 });

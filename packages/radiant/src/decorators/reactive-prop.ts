@@ -1,8 +1,7 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type { PropertyConfig, RadiantElement } from '@/core/radiant-element';
 import {
   type AttributeTypeConstant,
   defaultValueForType,
-  getPrefixedPropertyKey,
   isValueOfType,
   readAttributeValue,
   writeAttributeValue,
@@ -31,13 +30,25 @@ export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultVal
 
   return (target: RadiantElement, propertyName: string) => {
     const originalValues = new WeakMap<WeakKey, unknown>();
-
-    const prefixedPropertyKey = getPrefixedPropertyKey(propertyName);
     const attributeKey = attribute ?? propertyName;
 
-    addTransformer(target, attributeKey, type);
+    if (propertyName in target) {
+      throw new Error(`Property "${propertyName}" already exists on ${target.constructor.name}`);
+    }
 
-    Object.defineProperty(target, prefixedPropertyKey, {
+    const propertyMapping: PropertyConfig = {
+      type,
+      propertyName,
+      attributeKey,
+      converter: {
+        fromAttribute: (value) => readAttributeValue(value, type),
+        toAttribute: (value) => writeAttributeValue(value, type),
+      },
+    };
+
+    addPropertyToMappings(target, propertyMapping);
+
+    Object.defineProperty(target, propertyName, {
       get: function () {
         if (!originalValues.has(this)) {
           const initialValue = getInitialValue(this, type, attributeKey, defaultValue as T);
@@ -49,19 +60,11 @@ export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultVal
         const oldValue = originalValues.get(this);
         if (oldValue === newValue) return;
         originalValues.set(this, newValue);
-        if (reflect) this.setAttribute(attributeKey, writeAttributeValue(newValue, type));
+        if (reflect) {
+          const attributeValue = propertyMapping.converter.toAttribute(newValue);
+          this.setAttribute(attributeKey, attributeValue);
+        }
         this.updated(propertyName, oldValue, newValue);
-      },
-      enumerable: true,
-      configurable: true,
-    });
-
-    Object.defineProperty(target, propertyName, {
-      get: function () {
-        return this[prefixedPropertyKey];
-      },
-      set: function (newValue: T) {
-        this[prefixedPropertyKey] = newValue;
       },
       enumerable: true,
       configurable: true,
@@ -86,6 +89,7 @@ const getInitialValue = (
 ) => {
   if (type === Boolean) {
     const hasAttribute = target.hasAttribute(attributeKey);
+    console.log('hasAttribute', hasAttribute);
     return hasAttribute || defaultValue;
   }
 
@@ -95,19 +99,15 @@ const getInitialValue = (
     : defaultValue || (defaultValueForType(type) as typeof defaultValue);
 };
 
-const addTransformer = (target: RadiantElement, attributeKey: string, type: AttributeTypeConstant) => {
-  if (!('transformers' in target)) {
-    Object.defineProperty(target, 'transformers', {
-      value: new Map<string, (value: string | null) => unknown>(),
+const addPropertyToMappings = (target: RadiantElement, propertyMapping: PropertyConfig) => {
+  if (!('propertyConfigMap' in target)) {
+    Object.defineProperty(target, 'propertyConfigMap', {
+      value: new Map<string, PropertyConfig>(),
       configurable: true,
     });
   }
 
-  target.transformers.set(attributeKey, (value) => {
-    if (value === null) return value;
-    const transformedValue = readAttributeValue(value, type);
-    return transformedValue;
-  });
+  target.propertyConfigMap.set(propertyMapping.propertyName, propertyMapping);
 };
 
 function addObservedAttribute(target: RadiantElement, attribute: string) {
