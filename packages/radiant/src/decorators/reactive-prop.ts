@@ -89,7 +89,6 @@ const getInitialValue = (
 ) => {
   if (type === Boolean) {
     const hasAttribute = target.hasAttribute(attributeKey);
-    console.log('hasAttribute', hasAttribute);
     return hasAttribute || defaultValue;
   }
 
