@@ -89,7 +89,7 @@
   --secondary-dark: var(--color-forest-green-700-hsla);
   --on-secondary: var(--color-timberwolf-50-hsla);
 
-  --secondary-container: var(--color-forest-green-50-hsla);
+  --secondary-container: var(--color-forest-green-100-hsla);
   --on-secondary-container: var(--color-forest-green-500-hsla);
 
   --error: var(--color-scarlet-500-hsla);

@@ -37,15 +37,13 @@ export function onEvent(eventConfig: OnEventConfig) {
 
     if ('window' in eventConfig) {
       proto.connectedCallback = function (this: RadiantElement) {
-        originalConnectedCallback.call(this);
-
         window.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+        originalConnectedCallback.call(this);
       };
 
       proto.disconnectedCallback = function (this: RadiantElement) {
-        originalDisconnectedCallback.call(this);
-
         window.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+        originalDisconnectedCallback.call(this);
       };
 
       return descriptor;
@@ -53,15 +51,13 @@ export function onEvent(eventConfig: OnEventConfig) {
 
     if ('document' in eventConfig) {
       proto.connectedCallback = function (this: RadiantElement) {
-        originalConnectedCallback.call(this);
-
         document.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+        originalConnectedCallback.call(this);
       };
 
       proto.disconnectedCallback = function (this: RadiantElement) {
-        originalDisconnectedCallback.call(this);
-
         document.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+        originalDisconnectedCallback.call(this);
       };
 
       return descriptor;
@@ -73,8 +69,6 @@ export function onEvent(eventConfig: OnEventConfig) {
     const subscriptionId = `${eventConfig.type}-${selector}`;
 
     proto.connectedCallback = function (this: RadiantElement) {
-      originalConnectedCallback.call(this);
-
       this.subscribeEvent({
         id: subscriptionId,
         selector: selector,
@@ -82,6 +76,8 @@ export function onEvent(eventConfig: OnEventConfig) {
         listener: originalMethod.bind(this),
         options: eventConfig?.options ?? undefined,
       });
+
+      originalConnectedCallback.call(this);
     };
 
     return descriptor;

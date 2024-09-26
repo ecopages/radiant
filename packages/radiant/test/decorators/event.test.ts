@@ -30,15 +30,19 @@ class RadiantEventListener extends RadiantElement {
   }
 }
 
-const template = `
-<radiant-event-listener>
-  <div data-ref="event-detail">Click to change the text</div>
-  <radiant-event-emitter></radiant-event-emitter>
-</radiant-event-listener>`;
+const createTemplate = () => {
+  const customElement = document.createElement('radiant-event-listener');
+  customElement.innerHTML = `
+    <div data-ref="event-detail">Click to change the text</div>
+    <radiant-event-emitter></radiant-event-emitter>
+  `;
+  return customElement;
+};
 
 describe('@event', () => {
   test('decorator emits and listens to custom event correctly', () => {
-    document.body.innerHTML = template;
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
     const radiantEventListener = document.querySelector('radiant-event-listener') as RadiantEventListener;
     const radiantEventEmitter = document.querySelector('radiant-event-emitter') as RadiantEventEmitter;
     expect(radiantEventListener.eventDetail.innerHTML).toEqual('Click to change the text');

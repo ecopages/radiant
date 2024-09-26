@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type { PropertyConfig, RadiantElement } from '@/core/radiant-element';
 import {
   type AttributeTypeConstant,
   defaultValueForType,
@@ -28,27 +28,30 @@ export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultVal
     throw new Error(`defaultValue does not match the expected type for ${type.name}`);
   }
 
-  return (proto: RadiantElement, propertyKey: string) => {
+  return (target: RadiantElement, propertyName: string) => {
     const originalValues = new WeakMap<WeakKey, unknown>();
-    const prefixedPropertyKey = `__${propertyKey}`;
-    const attributeKey = attribute ?? propertyKey;
+    const attributeKey = attribute ?? propertyName;
 
-    const getInitialValue = (context: RadiantElement) => {
-      if (type === Boolean) {
-        const hasAttribute = context.hasAttribute(attributeKey);
-        return hasAttribute || defaultValue;
-      }
+    if (propertyName in target) {
+      throw new Error(`Property "${propertyName}" already exists on ${target.constructor.name}`);
+    }
 
-      const attributeValue = context.getAttribute(attributeKey);
-      return attributeValue !== null
-        ? readAttributeValue(attributeValue, type)
-        : defaultValue || defaultValueForType(type);
+    const propertyMapping: PropertyConfig = {
+      type,
+      propertyName,
+      attributeKey,
+      converter: {
+        fromAttribute: (value) => readAttributeValue(value, type),
+        toAttribute: (value) => writeAttributeValue(value, type),
+      },
     };
 
-    Object.defineProperty(proto, prefixedPropertyKey, {
+    addPropertyToMappings(target, propertyMapping);
+
+    Object.defineProperty(target, propertyName, {
       get: function () {
         if (!originalValues.has(this)) {
-          const initialValue = getInitialValue(this);
+          const initialValue = getInitialValue(this, type, attributeKey, defaultValue as T);
           originalValues.set(this, initialValue);
         }
         return originalValues.get(this);
@@ -57,22 +60,65 @@ export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultVal
         const oldValue = originalValues.get(this);
         if (oldValue === newValue) return;
         originalValues.set(this, newValue);
-        if (reflect) this.setAttribute(attributeKey, writeAttributeValue(newValue, type));
-        this.updated(propertyKey, oldValue, newValue);
+        if (reflect) {
+          const attributeValue = propertyMapping.converter.toAttribute(newValue);
+          this.setAttribute(attributeKey, attributeValue);
+        }
+        this.updated(propertyName, oldValue, newValue);
       },
       enumerable: true,
       configurable: true,
     });
 
-    Object.defineProperty(proto, propertyKey, {
-      get: function () {
-        return this[prefixedPropertyKey];
-      },
-      set: function (newValue: string) {
-        this[prefixedPropertyKey] = newValue;
-      },
-      enumerable: true,
+    const originalConnectedCallback = target.connectedCallback;
+
+    target.connectedCallback = function (this: RadiantElement) {
+      originalConnectedCallback.call(this);
+      this.updated(propertyName, null, defaultValue);
+    };
+
+    addObservedAttribute(target, attributeKey);
+  };
+}
+
+const getInitialValue = (
+  target: RadiantElement,
+  type: AttributeTypeConstant,
+  attributeKey: string,
+  defaultValue: unknown,
+) => {
+  if (type === Boolean) {
+    const hasAttribute = target.hasAttribute(attributeKey);
+    return hasAttribute || defaultValue;
+  }
+
+  const attributeValue = target.getAttribute(attributeKey);
+  return attributeValue !== null
+    ? readAttributeValue(attributeValue, type)
+    : defaultValue || (defaultValueForType(type) as typeof defaultValue);
+};
+
+const addPropertyToMappings = (target: RadiantElement, propertyMapping: PropertyConfig) => {
+  if (!('propertyConfigMap' in target)) {
+    Object.defineProperty(target, 'propertyConfigMap', {
+      value: new Map<string, PropertyConfig>(),
       configurable: true,
     });
-  };
+  }
+
+  target.propertyConfigMap.set(propertyMapping.propertyName, propertyMapping);
+};
+
+function addObservedAttribute(target: RadiantElement, attribute: string) {
+  const ctor = target.constructor as typeof RadiantElement;
+  const existingObservedAttributes = (ctor as any).observedAttributes || [];
+  if (!existingObservedAttributes.includes(attribute)) {
+    const newObservedAttributes = [...existingObservedAttributes, attribute];
+    Object.defineProperty(ctor, 'observedAttributes', {
+      get() {
+        return newObservedAttributes;
+      },
+      configurable: true,
+    });
+  }
 }

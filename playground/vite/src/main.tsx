@@ -1,12 +1,25 @@
+import type { Placement } from '@floating-ui/dom';
 import { RadiantAccordion } from './components/accordion/accordion.kita.tsx';
-import { RadiantDropdown } from './components/dropdown-menu/dropdown.kita.tsx';
+import { RadiantDropdown } from './components/dropdown/dropdown.kita.tsx';
 import { RadiantCounter } from './components/radiant-counter/radiant-counter.kita.tsx';
 import { RadiantEvent } from './components/radiant-event/radiant-event.kita.tsx';
 import { RadiantRefs } from './components/radiant-refs/radiant-refs.kita.tsx';
 import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.kita.tsx';
 import './styles/tailwind.css';
+import { ValueTester } from './components/value-tester/value-tester.script.tsx';
 
 const appRoot = document.querySelector<HTMLDivElement>('#app');
+
+const changePlacement = (newPlacement: Placement) => {
+  document.querySelector('radiant-dropdown')?.setAttribute('placement', newPlacement);
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('#placement')?.addEventListener('change', (e: Event) => {
+    const target = e.target as HTMLSelectElement;
+    changePlacement(target.value as Placement);
+  });
+});
 
 const App = async () => {
   return (
@@ -20,11 +33,30 @@ const App = async () => {
           { id: 'item-3', title: 'Accordion 3', children: <p>Content 3</p> },
         ]}
       />
-      <RadiantDropdown defaultOpen={false} open={false} placement="top" />
-      <RadiantCounter value={1} />
+      <div class="flex items-center gap-4">
+        <RadiantDropdown placement="left-start" arrow />
+        <select id="placement">
+          <option value="left-start">Left Start</option>
+          <option value="left">Left</option>
+          <option value="left-end">Left End</option>
+          <option value="top-start">Top Start</option>
+          <option value="top">Top</option>
+          <option value="top-end">Top End</option>
+          <option value="right-start">Right Start</option>
+          <option value="right">Right</option>
+          <option value="right-end">Right End</option>
+          <option value="bottom-start">Bottom Start</option>
+          <option value="bottom">Bottom</option>
+          <option value="bottom-end">Bottom End</option>
+        </select>
+      </div>
+      <RadiantCounter value={5} />
+      <RadiantCounter value={8} />
+      <RadiantCounter />
       <RadiantRefs />
       <RadiantTodoApp />
       <RadiantEvent />
+      <ValueTester number={1} string="string" boolean={false} array={['value']} object={{ key: 'value' }} />
     </main>
   );
 };

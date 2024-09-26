@@ -147,6 +147,8 @@ export function readAttributeValue(value: string, type: AttributeTypeConstant) {
   return readers[readerType](value);
 }
 
+export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>;
+
 /**
  * Writes the attribute value based on the provided type.
  *
@@ -160,6 +162,8 @@ export function writeAttributeValue(value: unknown, type: AttributeTypeConstant)
   if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
   return (writers[writerType] || writers.default)(value);
 }
+
+export type WriteAttributeValueReturnType = ReturnType<typeof writeAttributeValue>;
 
 /*
  * Type guard functions for each type in AttributeTypeConstant

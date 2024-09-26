@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { beforeEach, describe, expect, test } from 'bun:test';
 import { RadiantElement } from '@/index';
 
 class MyRadiantElement extends RadiantElement {}
@@ -6,18 +6,22 @@ class MyRadiantElement extends RadiantElement {}
 customElements.define('my-radiant-element', MyRadiantElement);
 
 describe('RadiantElement', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
   test('it renders template correctly', () => {
-    document.body.innerHTML = '<my-radiant-element></my-radiant-element>';
-    const myElement = document.querySelector('my-radiant-element') as MyRadiantElement;
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
     const template = '<p>Hello, template!</p>';
-    myElement?.renderTemplate({ target: myElement, template, insert: 'replace' });
-    expect(myElement.innerHTML).toEqual(template);
+    customElement.renderTemplate({ target: customElement, template, insert: 'replace' });
+    expect(customElement.innerHTML).toEqual(template);
   });
 
   test('it can subscribe to events', () => {
-    document.body.innerHTML = '<my-radiant-element></my-radiant-element>';
-    const myElement = document.querySelector('my-radiant-element') as MyRadiantElement;
-    myElement.subscribeEvents([
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    customElement.subscribeEvents([
       {
         id: 'my-id',
         selector: '[data-ref="click-me"] ',
@@ -31,16 +35,16 @@ describe('RadiantElement', () => {
         listener: () => {},
       },
     ]);
-    // @ts-expect-error
-    expect(myElement.eventSubscriptions.has('my-id')).toBeTruthy();
-    // @ts-expect-error
-    expect(myElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
+    // @ts-expect-error: private property
+    expect(customElement.eventSubscriptions.has('my-id')).toBeTruthy();
+    // @ts-expect-error: private property
+    expect(customElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
   });
 
   test('it can unsubscribe from events', () => {
-    document.body.innerHTML = '<my-radiant-element></my-radiant-element>';
-    const myElement = document.querySelector('my-radiant-element') as MyRadiantElement;
-    myElement.subscribeEvents([
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    customElement.subscribeEvents([
       {
         id: 'my-id',
         selector: '[data-ref="click-me"] ',
@@ -54,10 +58,10 @@ describe('RadiantElement', () => {
         listener: () => {},
       },
     ]);
-    myElement.unsubscribeEvent('my-id');
-    // @ts-expect-error
-    expect(myElement.eventSubscriptions.has('my-id')).toBeFalsy();
-    // @ts-expect-error
-    expect(myElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
+    customElement.unsubscribeEvent('my-id');
+    // @ts-expect-error: private property
+    expect(customElement.eventSubscriptions.has('my-id')).toBeFalsy();
+    // @ts-expect-error: private property
+    expect(customElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
   });
 });

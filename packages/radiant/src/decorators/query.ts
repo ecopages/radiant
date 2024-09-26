@@ -42,7 +42,10 @@ export type QueryConfig = BaseQueryConfig &
  *
  * // Now, `myElement` will return the first element in the light DOM of `MyElement` that matches the selector '.my-class'.
  */
-export function query({ cache: shouldBeCached = true, ...options }: QueryConfig) {
+export function query({
+  cache: shouldBeCached = true,
+  ...options
+}: QueryConfig): (proto: RadiantElement, propertyKey: string | symbol) => void {
   const cache = new WeakMap<Element, Element | NodeList | null>();
 
   return (proto: RadiantElement, propertyKey: string | symbol) => {
@@ -72,7 +75,8 @@ export function query({ cache: shouldBeCached = true, ...options }: QueryConfig)
         enumerable: true,
         configurable: true,
       });
-      originalConnectedCallback?.call(this);
+
+      originalConnectedCallback.call(this);
     };
   };
 }

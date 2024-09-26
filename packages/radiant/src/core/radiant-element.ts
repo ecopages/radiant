@@ -1,5 +1,9 @@
 import type { UnknownContext } from '@/context/types';
+import type { AttributeTypeConstant, ReadAttributeValueReturnType, WriteAttributeValueReturnType } from '@/utils';
 
+/**
+ * Possible positions to insert a rendered template.
+ */
 export type RenderInsertPosition = 'replace' | 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend';
 
 /**
@@ -12,6 +16,19 @@ export type RadiantElementEventListener = {
   id: string;
   options?: AddEventListenerOptions;
 };
+
+/**
+ * Represents a property metadata object.
+ */
+export interface PropertyConfig {
+  type: AttributeTypeConstant;
+  propertyName: string;
+  attributeKey: string;
+  converter: {
+    fromAttribute: (value: string) => ReadAttributeValueReturnType;
+    toAttribute: (value: any) => WriteAttributeValueReturnType;
+  };
+}
 
 /**
  * Represents an interface for a Radiant element.
@@ -74,9 +91,14 @@ export interface IRadiantElement {
  * @implements IRadiantElement
  */
 export class RadiantElement extends HTMLElement implements IRadiantElement {
+  declare propertyConfigMap: Map<string, PropertyConfig>;
+  declare updatesRegistry: Map<string, Set<string>>;
   private eventSubscriptions = new Map<string, RadiantElementEventListener>();
+  private elementReady = false;
 
-  connectedCallback() {}
+  connectedCallback() {
+    this.elementReady = true;
+  }
 
   connectedContextCallback(_contextName: UnknownContext): void {}
 
@@ -84,7 +106,27 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     this.removeAllSubscribedEvents();
   }
 
-  updated(_changedProperty: string, _oldValue: unknown, _value: unknown) {}
+  updated(changedProperty: string, oldValue: unknown, value: unknown) {
+    if (!this.elementReady || !this.updatesRegistry || oldValue === value) return;
+    const updates = this.updatesRegistry.get(changedProperty);
+    if (updates) {
+      for (const update of updates) {
+        (this as any)[update]();
+      }
+    }
+  }
+
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
+    if (oldValue === newValue || !this.elementReady) return;
+
+    if (name in this) {
+      const config = this.propertyConfigMap.get(name);
+      const transformedValue = newValue ? config?.converter.fromAttribute(newValue) : newValue;
+      const transformedOldValue = oldValue ? config?.converter.fromAttribute(oldValue) : oldValue;
+      (this as RadiantElement & { [key: string]: any })[name] = transformedValue;
+      this.updated(name, transformedOldValue, transformedValue);
+    }
+  }
 
   renderTemplate({
     target = this,

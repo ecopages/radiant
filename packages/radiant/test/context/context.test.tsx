@@ -42,12 +42,12 @@ const template = '<my-context-provider><my-context-consumer></my-context-consume
 
 describe('Context', () => {
   test('it provides and consumes context correctly', () => {
-    document.body.innerHTML = template;
-    const provider = document.querySelector('my-context-provider') as MyContextProvider;
-    const consumer = document.querySelector('my-context-consumer') as MyContextConsumer;
-
-    expect(consumer.innerHTML).toBe('1');
-    provider.updateContextValue();
-    expect(consumer.innerHTML).toBe('2');
+    const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+    const contextConsumer = document.createElement('my-context-consumer') as MyContextConsumer;
+    contextProvider.appendChild(contextConsumer);
+    document.body.appendChild(contextProvider);
+    expect(contextConsumer.innerHTML).toEqual('1');
+    contextProvider.updateContextValue();
+    expect(contextConsumer.innerHTML).toEqual('2');
   });
 });

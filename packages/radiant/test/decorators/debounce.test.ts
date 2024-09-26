@@ -12,15 +12,10 @@ describe('@debounce', () => {
     }
 
     const test = new Test();
-
     Array.from({ length: 3 }, () => test.method());
-
     await new Promise((resolve) => setTimeout(resolve, 10));
-
     Array.from({ length: 3 }, () => test.method());
-
     await new Promise((resolve) => setTimeout(resolve, 10));
-
     expect(test.callCount).toBe(2);
   });
 });

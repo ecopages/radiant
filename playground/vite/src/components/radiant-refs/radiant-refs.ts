@@ -2,38 +2,53 @@ import { RadiantElement, customElement, onEvent, query } from '@ecopages/radiant
 
 @customElement('radiant-refs')
 export class RadiantRefs extends RadiantElement {
-  @query({ ref: 'ref-container' }) refContainer!: HTMLDivElement;
-  @query({ ref: 'ref-count' }) refCount!: HTMLDivElement;
-  @query({ ref: 'ref-item', all: true, cache: false }) refItems!: HTMLDivElement[];
+  @query({ ref: 'container' }) refContainer!: HTMLDivElement;
+  @query({ ref: 'count' }) countTarget!: HTMLDivElement;
+  @query({ ref: 'item', all: true, cache: false }) itemTargets!: HTMLDivElement[];
 
-  renderCountMessage() {
-    this.refCount.textContent = `Ref Count: ${this.refItems.length}`;
+  renderCount() {
+    this.countTarget.textContent = `${this.itemTargets.length}`;
   }
 
   override connectedCallback() {
     super.connectedCallback();
-    this.renderCountMessage();
+    this.renderCount();
   }
 
-  @onEvent({ ref: 'create-ref', type: 'click' })
-  onEmitButtonClick() {
+  @onEvent({ ref: 'create', type: 'click' })
+  createRef() {
     this.renderTemplate({
       target: this.refContainer,
       template: `
-        <div class="bg-gray-100 text-black p-3 cursor pointer" data-ref="ref-item">
+        <div class="bg-background cursor-pointer p-2" data-ref="item">
           Ref Item
         </div>
       `,
-      insert: 'beforeend',
+      insert: this.itemTargets.length ? 'beforeend' : 'replace',
     });
 
-    this.renderCountMessage();
+    this.renderCount();
   }
 
-  @onEvent({ ref: 'ref-item', type: 'click' })
-  onRefItemClick(event: Event) {
+  @onEvent({ ref: 'item', type: 'click' })
+  deleteRef(event: Event) {
     (event.target as HTMLDivElement).remove();
-    this.renderCountMessage();
+    this.renderCount();
+  }
+
+  @onEvent({ ref: 'reset', type: 'click' })
+  resetRefs() {
+    for (const refItem of this.itemTargets) {
+      refItem.remove();
+    }
+
+    this.renderTemplate({
+      target: this.refContainer,
+      template: '<div class="text-center">No Refs</div>',
+      insert: 'replace',
+    });
+
+    this.renderCount();
   }
 }
 
