@@ -1,5 +1,6 @@
 import type { RadiantElement } from '@/core/radiant-element';
 import { type AttributeTypeConstant, readAttributeValue } from '@/utils/attribute-utils';
+import { query } from '..';
 import {
   ContextEventsTypes,
   ContextOnMountEvent,
@@ -14,8 +15,6 @@ type ContextProviderOptions<T extends UnknownContext> = {
   initialValue?: T['__context__'];
   hydrate?: AttributeTypeConstant;
 };
-
-export const HYDRATE_ATTRIBUTE = 'hydrate-context';
 
 /**
  * Represents a context provider that allows setting and getting the context,
@@ -69,6 +68,7 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
   private host: RadiantElement;
   private context: UnknownContext;
   private value: ContextType<T> | undefined;
+
   subscriptions: ContextSubscription<T>[] = [];
 
   /**
@@ -83,11 +83,10 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
     let contextValue: T['__context__'] | undefined = options.initialValue;
 
     if (options.hydrate) {
-      const hydrationValue = this.host.getAttribute(HYDRATE_ATTRIBUTE);
-
-      if (hydrationValue) {
+      const hydrationScriptElement = this.host.querySelector('script[data-hydration]');
+      if (hydrationScriptElement?.textContent) {
+        const hydrationValue = hydrationScriptElement.textContent;
         const parsedHydrationValue = readAttributeValue(hydrationValue, options.hydrate) as ContextType<T>;
-        this.host.removeAttribute(HYDRATE_ATTRIBUTE);
 
         if (
           options.hydrate === Object &&

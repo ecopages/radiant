@@ -40,6 +40,6 @@ bun install @ecopages/radiant
 | `./mixins`                    | Contains mixin modules.                 |
 | `./mixins/with-kita`          | Mixin for Kita functionality.           |
 | `./tools`                     | Contains utility modules.               |
-| `./tools/stringify-attribute` | Utility for stringifying attributes.    |
+| `./tools/stringify-typed`     | Utility for stringifying attributes.    |
 | `./tools/event-emitter`       | Utility for emitting events.            |
 | `./utils`                     | Contains additional utility modules.    |

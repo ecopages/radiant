@@ -66,6 +66,11 @@ export const docsConfig: DocsConfig = {
       pages: [{ title: 'WithKita', slug: 'with-kita' }],
     },
     {
+      name: 'Tools',
+      subdirectory: 'tools',
+      pages: [{ title: 'stringifyTyped', slug: 'stringify-typed' }],
+    },
+    {
       name: 'Examples',
       subdirectory: 'examples',
       pages: [

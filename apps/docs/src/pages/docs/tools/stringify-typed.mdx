@@ -1,0 +1,49 @@
+import { CodeBlock } from '@/components/code-block/code-block.kita';
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+# StringifyTyped
+---
+
+This utility function is used to stringify attributes in a typed way.
+This is useful when you need to pass attributes to a component that expects a specific type.
+
+<CodeBlock >
+```tsx
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+
+export const MyComponent = ({ value }: { value: number }) => {
+    return <my-component complex-attribute={stringifyTyped<MyType>({ value })}></my-component>;
+};  
+
+// Output: <my-component complex-attribute="{&#34;value&#34;:1}"></my-component>
+```
+</CodeBlock>
+
+
+Or when you need to stringify a context value:
+
+<CodeBlock >
+```tsx
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+
+export const MyComponent = ({ value }: { value: number }) => {
+    return <my-context-provider>
+      {...}
+      <script type="application/json" data-hydration>
+        {stringifyTyped({ value })}
+      </script>
+    </my-context-provider>;
+};  
+
+/** Output 
+ * <my-context-provider>
+ *  {...}
+ *  <script type="application/json" data-hydration>
+ *    {"value":1}
+ *  </script>
+ * </my-context-provider>
+ */
+```
+</CodeBlock>

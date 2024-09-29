@@ -25,9 +25,7 @@ export class MyElement extends RadiantElement {
 }`}
 </CodeBlock>
 
-If you want to hydrate the context with the data from the server, you can use the `hydrate` property.
-
-It accepts an `AttributeType` that will be used to hydrate the context with the data from the server.
+If you want to hydrate the context with the data from the server, you can use the `hydrate` property and pass an `AttributeType` that will be used to hydrate the context with the data from the server.
 
 The attribute type can be a `String`, `Number`, `Boolean`, `Object`, or `Array`.
 
@@ -39,17 +37,37 @@ export class MyElement extends RadiantElement {
 }`}
 </CodeBlock>
 
-Please remember that due the nature of the web components, you need to stringify the data before passing it to the component.
+Once defined, the context provider will search for a script tag with the attribute `data-hydration` and will use the content of the script tag to hydrate the context.
 
-You can use the `stringifyAttribute` function to do this.
+This way we follow the best practices to provide complex data to a component.
 
-The `stringifyAttribute` function will convert the data to a string but being sure that the data will be parsed correctly when using JSX in a typescript environment.
+<CodeBlock>
+```html
+<my-context-provider>
+	<script type="application/json" data-hydration>
+		{"value": "Hello World"}
+	</script>
+</my-context-provider>
+```
+</CodeBlock>
 
-Due the nature of the web components, you need to stringify the data before passing it to the component, but context can also have properties that cannot be stringified.
+If you are using `jsx` you can use the `stringifyTyped` function to stringify the data.
+It will stringify the data in a typed way, which is useful when you need to pass attributes to a component that expects a specific type.
 
-Since hydrate will merge the data with the initial value, you can pass only the properties that you want to update.
+<CodeBlock>
+```tsx
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
-<CodeBlock lang='html'>{`<my-context hydrate-context={stringifyAttribute<Omit<MyContext, 'logger'>>(data)}>`}</CodeBlock>
+export const MyComponent = ({ value }: { value: number }) => {
+	return <my-context-provider>
+		{...}
+		<script type="application/json" data-hydration>
+			{stringifyTyped({ value })}
+		</script>
+	</my-context-provider>;
+};  
+```
+</CodeBlock>
 
 Once you have a context provider, all the children of the provider will have access to the context.
 Please note that the provider must be a parent of the consumer.
@@ -70,10 +88,10 @@ If for any reason you don't want to use the \`@provideContext\` decorator, you c
 ```typescript
 @customElement("my-context")
 export class MyElement extends RadiantElement {
-	  	provider = new ContextProvider<typeof myContext>(this, {
-			context: myContext,
-			initialValue: { value: "Hello World" },
-		});
+	provider = new ContextProvider<typeof myContext>(this, {
+		context: myContext,
+		initialValue: { value: "Hello World" },
+	});
 }
 ```
 </CodeBlock>

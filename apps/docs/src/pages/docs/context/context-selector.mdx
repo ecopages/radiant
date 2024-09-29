@@ -29,10 +29,10 @@ import { MyContext } from './my-element-provider'
 
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
-    @contextSelector({ context: todoContext, select: ({ value }) => ({ value }) })
-    handleValue({ value }: Pick<MyContext, 'value'>) {
-      console.log(value);
-    }
+  @contextSelector({ context: todoContext, select: ({ value }) => ({ value }) })
+  handleValue({ value }: Pick<MyContext, 'value'>) {
+    console.log(value);
+  }
 }
 ```
 </CodeBlock>
@@ -45,13 +45,13 @@ This can be very handy when you need to manipulate the context value before usin
 import { MyContext } from './my-element-provider'
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
-    @contextSelector({
-      context: todoContext,
-      select: ({ value }) => ({ value: value.map((item) => item + 1) }),
-    })
-    handleValue({ value }: Pick<MyContext, 'value'>) {
-      console.log(value);
-    }
+  @contextSelector({
+    context: todoContext,
+    select: ({ value }) => ({ value: value.map((item) => item + 1) }),
+  })
+  handleValue({ value }: Pick<MyContext, 'value'>) {
+    console.log(value);
+  }
 }
 ```
 </CodeBlock>
@@ -64,22 +64,22 @@ If for any reason you don't want to use the `@contextSelector` decorator, you ca
 import { MyContext } from './my-element-provider'
 @customElement("my-consumer")
 export class MyElement extends RadiantElement {
-    context!: ContextProvider<typeof myContext>;
+  context!: ContextProvider<typeof myContext>;
 
-    connectedCallback() {
-      super.connectedCallback();
-      this.onChangeValue = this.onChangeValue.bind(this);
-      this.dispatchEvent(
-        new ContextRequestEvent(contextToProvide, (context) => {
-          this.context = context;
-          this.context.subscribe({ select: 'value', callback: this.onChangeValue });
-        }),
-      );
-    }
+  connectedCallback() {
+    super.connectedCallback();
+    this.onChangeValue = this.onChangeValue.bind(this);
+    this.dispatchEvent(
+      new ContextRequestEvent(contextToProvide, (context) => {
+        this.context = context;
+        this.context.subscribe({ select: 'value', callback: this.onChangeValue });
+      }),
+    );
+  }
 
-    onChangeValue({ value }: Pick<MyContext, 'value'>) {
-      console.log(value);
-    }
+  onChangeValue({ value }: Pick<MyContext, 'value'>) {
+    console.log(value);
+  }
 }
 ```
 </CodeBlock>

@@ -1,4 +1,4 @@
-import { stringifyAttribute } from '@ecopages/radiant/tools/stringify-attribute';
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 import type { TodoContext } from './radiant-todo-app.script';
 import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
 import './radiant-todo-app.script';
@@ -55,16 +55,21 @@ export const RadiantTodoApp = async () => {
   const incompleteTodos = data.todos.filter((todo) => !todo.complete);
   const completedTodos = data.todos.filter((todo) => todo.complete);
   return (
-    <radiant-todo-app class="todo" hydrate-context={stringifyAttribute<Partial<TodoContext>>({ todos: data.todos })}>
-      <section class="todo__board">
-        <TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
-          {incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
-        </TodoPanel>
-        <TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
-          {completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
-        </TodoPanel>
-      </section>
-      <TodoForm />
-    </radiant-todo-app>
+    <>
+      <radiant-todo-app class="todo">
+        <section class="todo__board">
+          <TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
+            {incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
+          </TodoPanel>
+          <TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
+            {completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
+          </TodoPanel>
+        </section>
+        <TodoForm />
+        <script type="json" data-hydration>
+          {stringifyTyped<Partial<TodoContext>, string>({ todos: data.todos })}
+        </script>
+      </radiant-todo-app>
+    </>
   );
 };

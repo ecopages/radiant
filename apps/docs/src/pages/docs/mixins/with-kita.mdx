@@ -20,3 +20,18 @@ Gzip size is around 2kb.
 export class MyJsxElement extends WithKita(RadiantElement){}
 ```
 </CodeBlock>
+
+Once you have the mixin applied to your element, you can use jsx syntax to render your element.
+
+<CodeBlock >
+```tsx
+@customElement('my-jsx-element')
+export class MyJsxElement extends WithKita(RadiantElement){
+  ...
+  this.renderTemplate({
+    target: this,
+    template: <div>Hello World</div>
+  });
+}
+```
+</CodeBlock>
