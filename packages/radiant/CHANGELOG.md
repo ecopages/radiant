@@ -1,5 +1,11 @@
 # @ecopages/radiant
 
+## 0.1.8
+
+### Patch Changes
+
+- [`dd0689c`](https://github.com/ecopages/radiant/commit/dd0689c36181be128d393c37e014396373ffda16) - Added @bound decorator to simplify the binding of methods that runs in untracked events
+
 ## 0.1.7
 
 ### Patch Changes
