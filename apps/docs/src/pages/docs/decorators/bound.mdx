@@ -1,0 +1,21 @@
+import { CodeBlock } from '@/components/code-block/code-block.kita';
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+  title: 'Docs | @bound',
+  description: 'The place to learn about @ecopages/radiant',
+})
+
+# @bound
+---
+
+The bound decorator binds a method to the instance of the class it is defined in. This is useful when passing a method as a callback to another function, such as in response to an event listener.
+
+<CodeBlock >
+```typescript
+@bound doSomething() {...}
+```
+</CodeBlock>
+```

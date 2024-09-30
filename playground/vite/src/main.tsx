@@ -34,7 +34,19 @@ const App = async () => {
         ]}
       />
       <div class="flex items-center gap-4">
-        <RadiantDropdown placement="left-start" arrow />
+        <RadiantDropdown placement="left-end" arrow>
+          <ul class="flex flex-col gap-2">
+            <li>
+              <a href="/">Option 1</a>
+            </li>
+            <li>
+              <a href="/">Option 2</a>
+            </li>
+            <li>
+              <a href="/">Option 3</a>
+            </li>
+          </ul>
+        </RadiantDropdown>
         <select id="placement">
           <option value="left-start">Left Start</option>
           <option value="left">Left</option>

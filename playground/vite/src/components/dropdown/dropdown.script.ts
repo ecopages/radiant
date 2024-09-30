@@ -1,10 +1,21 @@
+import type { FocusableElement } from '@/types';
 import { onUpdated } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core';
+import { bound } from '@ecopages/radiant/decorators/bound';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { query } from '@ecopages/radiant/decorators/query';
 import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
-import { type Coords, type Placement, arrow, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import {
+  type Coords,
+  type Placement,
+  type ShiftOptions,
+  arrow,
+  autoUpdate,
+  computePosition,
+  flip,
+  offset,
+} from '@floating-ui/dom';
 
 export type RadiantDropdownProps = {
   defaultOpen?: boolean;
@@ -13,6 +24,18 @@ export type RadiantDropdownProps = {
   arrow?: boolean;
 };
 
+/**
+ * @element radiant-dropdown
+ * @description A dropdown component that can be toggled by a trigger element
+ *
+ * @ref trigger - The trigger element
+ * @ref content - The content container
+ * @ref arrow - The arrow element
+ * @prop {boolean} defaultOpen - Whether the dropdown should be open by default
+ * @prop {Placement} placement - The placement of the dropdown
+ * @prop {number} offset - The offset of the dropdown
+ * @prop {ShiftOptions} shiftOptions - The shift options of the dropdown {@link ShiftOptions}
+ */
 @customElement('radiant-dropdown')
 export class RadiantDropdown extends RadiantElement {
   @query({ ref: 'trigger' }) triggerTarget!: HTMLButtonElement;
@@ -20,24 +43,25 @@ export class RadiantDropdown extends RadiantElement {
   @query({ ref: 'arrow' }) arrowTarget!: HTMLElement;
 
   @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare defaultOpen: boolean;
-  @reactiveProp({ type: String, reflect: true, defaultValue: 'left' }) declare placement: Placement;
-  @reactiveProp({ type: Number, reflect: true, defaultValue: 6 }) declare offset: number;
+  @reactiveProp({ type: String, defaultValue: 'left' }) declare placement: Placement;
+  @reactiveProp({ type: Number, defaultValue: 6 }) declare offset: number;
+  @reactiveProp({ type: Boolean, defaultValue: true }) declare focusOnOpen: boolean;
 
   cleanup: ReturnType<typeof autoUpdate> | null = null;
 
   connectedCallback(): void {
     super.connectedCallback();
-    this.updateFloatingUI = this.updateFloatingUI.bind(this);
     this.updateFloatingUI();
     if (this.defaultOpen) this.toggleContent();
   }
 
+  @bound
   @onUpdated(['offset', 'placement'])
   updateFloatingUI(): void {
     if (!this.triggerTarget || !this.contentTarget) return;
     computePosition(this.triggerTarget, this.contentTarget, {
       placement: this.placement,
-      middleware: [offset(this.offset), flip(), shift({ padding: 8 }), arrow({ element: this.arrowTarget })],
+      middleware: [offset(this.offset), flip(), arrow({ element: this.arrowTarget })],
     }).then(({ x, y, placement, middlewareData }) => {
       Object.assign(this.contentTarget.style, {
         left: `${x}px`,
@@ -68,7 +92,7 @@ export class RadiantDropdown extends RadiantElement {
   }
 
   @onEvent({ ref: 'trigger', type: 'click' })
-  toggleContent() {
+  toggleContent(): void {
     if (typeof this.triggerTarget.ariaExpanded === 'undefined') this.triggerTarget.ariaExpanded = 'false';
     this.triggerTarget.setAttribute('aria-expanded', String(this.triggerTarget.ariaExpanded !== 'true'));
     const isOpen = this.triggerTarget.ariaExpanded === 'true';
@@ -76,16 +100,31 @@ export class RadiantDropdown extends RadiantElement {
 
     if (isOpen) {
       this.cleanup = autoUpdate(this.triggerTarget, this.contentTarget, this.updateFloatingUI);
+      document.addEventListener('click', this.closeContent);
+      this.focusOnOpenChanged();
     } else {
       this.cleanup?.();
     }
   }
 
-  @onEvent({ document: true, type: 'click' })
+  @bound
+  focusOnOpenChanged(): void {
+    if (this.triggerTarget.ariaExpanded === 'true' && this.focusOnOpen) {
+      const firstFocusableElement = this.contentTarget.querySelector(
+        'a, button, input, [tabindex]:not([tabindex="-1"])',
+      );
+      if (firstFocusableElement) {
+        (firstFocusableElement as FocusableElement).focus();
+      }
+    }
+  }
+
+  @bound
   closeContent(event: MouseEvent) {
     if (!this.triggerTarget.contains(event.target as Node) && !this.contentTarget.contains(event.target as Node)) {
       this.triggerTarget.setAttribute('aria-expanded', 'false');
       this.contentTarget.style.display = 'none';
+      document.removeEventListener('click', this.closeContent);
       this.cleanup?.();
     }
   }

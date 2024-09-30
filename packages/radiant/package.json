@@ -75,6 +75,10 @@
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
 		},
+		"./decorators/bound": {
+			"types": "./dist/decorators/bound.d.ts",
+			"import": "./dist/decorators/bound.js"
+		},
 		"./decorators/custom-element": {
 			"types": "./dist/decorators/custom-element.d.ts",
 			"import": "./dist/decorators/custom-element.js"

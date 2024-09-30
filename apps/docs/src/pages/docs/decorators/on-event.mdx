@@ -14,6 +14,8 @@ export const getMetadata = () => ({
 A decorator to subscribe to an event on the target element.
 The event listener will be automatically unsubscribed when the element is disconnected.
 
+Please note the method binding is not necessary, as the method is bound to the instance of the class by default.
+
 It accepts an object with one of the following properties:
 
 - `selector`: A CSS selector to match the target element.

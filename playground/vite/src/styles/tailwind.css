@@ -12,3 +12,14 @@ body {
 main {
   @apply flex flex-col gap-4;
 }
+
+a,
+button,
+input,
+select,
+textarea {
+  &:focus,
+  &:focus-visible {
+    @apply outline outline-2 outline-focus-ring rounded-sm;
+  }
+}
