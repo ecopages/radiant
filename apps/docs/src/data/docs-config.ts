@@ -40,6 +40,7 @@ export const docsConfig: DocsConfig = {
       name: 'Decorators',
       subdirectory: 'decorators',
       pages: [
+        { title: '@bound', slug: 'bound' },
         { title: '@customElement', slug: 'custom-element' },
         { title: '@debounce', slug: 'debounce' },
         { title: '@event', slug: 'event' },
