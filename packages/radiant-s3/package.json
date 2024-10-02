@@ -1,0 +1,18 @@
+{
+	"name": "radiant-s3",
+	"module": "index.ts",
+	"type": "module",
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@swc/core": "^1.7.26",
+		"@swc/helpers": "^0.5.13",
+		"tsup": "^8.3.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"scripts": {
+		"watch:tsc": "tsc -p tsconfig.json --watch",
+		"dev": "vite"
+	}
+}
