@@ -31,7 +31,10 @@
 		"noImplicitThis": true,
 		"strictBindCallApply": true,
 		"assumeChangesOnlyAffectDirectDependencies": true,
-		"stripInternal": true
+		"stripInternal": true,
+		"paths": {
+			"@/*": ["./src/*"]
+		}
 	},
 	"include": ["src/**/*"],
 	"exclude": ["../../node_modules", "public"]

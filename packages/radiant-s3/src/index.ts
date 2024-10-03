@@ -1,6 +1,13 @@
+import { RadiantElement } from './core';
 import { bound } from './decorators/bound';
 import { customElement } from './decorators/custom-element';
+import { event } from './decorators/event';
+import { onEvent } from './decorators/on-event';
+import { onUpdated } from './decorators/on-updated';
 import { query } from './decorators/query';
+import { reactiveField } from './decorators/reactive-field';
+import { reactiveProp } from './decorators/reactive-prop';
+import type { EventEmitter } from './tools/event-emitter';
 
 export type Constructor = { new (...args: any[]): NonNullable<unknown> };
 
@@ -144,22 +151,52 @@ export function debounce(timeout: number): Method {
   };
 }
 
+enum RadiantEventEvents {
+  CustomEvent = 'custom-event',
+}
+
+type RadiantEventDetail = {
+  value: string;
+};
+
+declare global {
+  interface GlobalEventHandlersEventMap {
+    [RadiantEventEvents.CustomEvent]: CustomEvent<RadiantEventDetail>;
+  }
+}
+
 @customElement('radiant-element')
 // @addFieldToPrototype('foo', 'bar')
 // @addFieldToObjectDefinition('currentDate', new Date())
 // @sealed
-export class RadiantElement extends HTMLElement {
+export class RadiantTester extends RadiantElement {
   @query({ ref: 'text', cache: true }) textTarget: HTMLElement;
   @query({ ref: 'debounce-button' }) buttonTarget: HTMLButtonElement;
   @query({ selector: 'ul', cache: true }) ulTarget: HTMLUListElement;
   @query({ selector: 'li', all: true, cache: true }) liTarget: NodeListOf<HTMLLIElement>;
+  @reactiveField reactiveField = 'my-value';
+  @reactiveProp({ type: String })
+  rprop = 'my-reactive-value';
+  @event({ name: RadiantEventEvents.CustomEvent, bubbles: true, composed: true })
+  customEvent!: EventEmitter<RadiantEventDetail>;
+
+  // Review @reactiveProp
+  static observedAttributes = ['rprop'];
+
   declare foo: string;
   declare currentDate: Date;
 
-  public connectedCallback(): void {
+  override connectedCallback(): void {
+    super.connectedCallback();
     this.buttonTarget.addEventListener('click', this.handleClick);
     console.info('This element is cached, lenght is:', this.liTarget.length);
     this.addListItem();
+    console.log('REACTIVE FIELD', this.reactiveField);
+    console.log('REACTIVE PROP', this.rprop);
+
+    setTimeout(() => {
+      this.customEvent.emit({ value: 'Hello World' });
+    }, 2000);
   }
 
   addListItem(): void {
@@ -173,8 +210,63 @@ export class RadiantElement extends HTMLElement {
   }
 
   @bound()
+  updateReactivityKeys(): void {
+    this.reactiveField = `[FIELD] ${new Date().toLocaleTimeString()}`;
+    this.rprop = `[PROP] ${new Date().toLocaleTimeString()}`;
+    this.textTarget.textContent = this.reactiveField;
+  }
+
+  @onUpdated('reactiveField')
+  updatedReactiveField(): void {
+    console.log('Reactive field has been updated');
+  }
+
+  @onUpdated('rprop')
+  updatedReactiveProp(): void {
+    console.log('Reactive prop has been updated', this.rprop);
+    this.renderTemplate({
+      template: `<p>${this.rprop}</p>`,
+      target: this,
+      insert: 'beforeend',
+    });
+  }
+
+  @bound()
   @debounce(1000)
   public handleClick(): void {
-    this.textTarget.textContent = new Date().toLocaleString();
+    this.updateReactivityKeys();
+  }
+}
+
+/**
+ * Attaches an external listener for a custom event for demo purposes.
+ * Since the component is rendered client-side, the listener is added post-render.
+ */
+setTimeout(() => {
+  (document.querySelector('radiant-element') as RadiantTester).addEventListener(
+    RadiantEventEvents.CustomEvent,
+    (event: CustomEvent<RadiantEventDetail>) => {
+      console.log('External Listener:', event.detail.value);
+    },
+  );
+  console.log('External listener added');
+}, 500);
+
+@customElement('radiant-sizer')
+export class RadiantWindowSizer extends RadiantElement {
+  @query({ ref: 'window' }) windowSize!: HTMLElement;
+  @query({ ref: 'element' }) elementSize!: HTMLElement;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.onResize();
+  }
+
+  @onEvent({ window: true, type: 'resize' })
+  @debounce(200)
+  onResize() {
+    console.log('Resized');
+    this.windowSize.textContent = `${window.innerWidth} x ${window.innerHeight}`;
+    this.elementSize.textContent = `${this.offsetWidth} x ${this.offsetHeight}`;
   }
 }
