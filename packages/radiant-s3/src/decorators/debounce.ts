@@ -1,4 +1,4 @@
-import type { Method } from '..';
+import type { Method } from '../types';
 
 export function debounce(timeout: number): Method {
   let timeoutRef: ReturnType<typeof setTimeout> | null = null;

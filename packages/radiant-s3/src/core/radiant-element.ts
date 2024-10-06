@@ -1,5 +1,9 @@
-import type { UnknownContext } from '@/context/types';
-import type { AttributeTypeConstant, ReadAttributeValueReturnType, WriteAttributeValueReturnType } from '@/utils';
+import type { UnknownContext } from '../context/types';
+import type {
+  AttributeTypeConstant,
+  ReadAttributeValueReturnType,
+  WriteAttributeValueReturnType,
+} from '../utils/attribute-utils';
 
 /**
  * Possible positions to insert a rendered template.

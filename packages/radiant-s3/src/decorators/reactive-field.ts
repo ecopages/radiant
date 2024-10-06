@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core';
+import type { RadiantElement } from '../core/radiant-element';
 
 export function reactiveField<T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
   const privatePropertyKey = Symbol(`__${String(context.name)}__value`);

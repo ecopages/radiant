@@ -1,6 +1,6 @@
-import { ContextRequestEvent } from '@/context/events';
-import type { UnknownContext } from '@/context/types';
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../../core/radiant-element';
+import { ContextRequestEvent } from '../events';
+import type { UnknownContext } from '../types';
 
 /**
  * A decorator to provide a context to the target element.
@@ -8,17 +8,15 @@ import type { RadiantElement } from '@/core/radiant-element';
  * @returns
  */
 export function consumeContext(contextToProvide: UnknownContext) {
-  return (proto: RadiantElement, propertyKey: string) => {
-    const originalConnectedCallback = proto.connectedCallback;
-
-    proto.connectedCallback = function (this: RadiantElement) {
-      originalConnectedCallback.call(this);
+  return <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) => {
+    const contextName = String(context.name);
+    context.addInitializer(function (this: T) {
       this.dispatchEvent(
         new ContextRequestEvent(contextToProvide, (context) => {
-          (this as any)[propertyKey] = context;
+          (this as any)[contextName] = context;
           this.connectedContextCallback(contextToProvide);
         }),
       );
-    };
+    });
   };
 }

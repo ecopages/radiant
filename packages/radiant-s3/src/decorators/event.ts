@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core';
+import type { RadiantElement } from '../core/radiant-element';
 import { EventEmitter, type EventEmitterConfig } from '../tools/event-emitter';
 
 const eventEmitters = new WeakMap();

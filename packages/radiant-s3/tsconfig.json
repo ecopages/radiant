@@ -23,7 +23,6 @@
 		"strictNullChecks": true,
 		"strictPropertyInitialization": false,
 		"strict": true,
-		"declaration": false,
 		"downlevelIteration": true,
 		"experimentalDecorators": false,
 		"target": "ES2022",
@@ -34,7 +33,10 @@
 		"stripInternal": true,
 		"paths": {
 			"@/*": ["./src/*"]
-		}
+		},
+		"jsx": "react-jsx",
+		"jsxImportSource": "@kitajs/html",
+		"plugins": [{ "name": "@kitajs/ts-html-plugin" }]
 	},
 	"include": ["src/**/*"],
 	"exclude": ["../../node_modules", "public"]

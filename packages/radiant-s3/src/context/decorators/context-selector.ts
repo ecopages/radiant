@@ -1,10 +1,6 @@
-import { ContextSubscriptionRequestEvent } from '@/context/events';
-import type { Context, ContextType, UnknownContext } from '@/context/types';
-import type { RadiantElement } from '@/core/radiant-element';
-
-type ArgsType<T extends UnknownContext> = SubscribeToContextOptions<T>['select'] extends (...args: any[]) => infer R
-  ? R
-  : ContextType<T>;
+import type { Method } from '../../types';
+import { ContextSubscriptionRequestEvent } from '../events';
+import type { Context, UnknownContext } from '../types';
 
 type SubscribeToContextOptions<T extends UnknownContext> = {
   context: T;
@@ -23,20 +19,9 @@ export function contextSelector<T extends Context<unknown, unknown>>({
   select,
   subscribe = true,
 }: SubscribeToContextOptions<T>) {
-  return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
-    const originalMethod = descriptor.value;
-    const originalConnectedCallback = proto.connectedCallback;
-
-    proto.connectedCallback = function (this: RadiantElement) {
-      originalConnectedCallback.call(this);
+  return function <T extends Method>(originalMethod: T, targetContext: ClassMethodDecoratorContext): void {
+    targetContext.addInitializer(function (this: any) {
       this.dispatchEvent(new ContextSubscriptionRequestEvent(context, originalMethod.bind(this), select, subscribe));
-    };
-
-    descriptor.value = function (...args: ArgsType<T>[]) {
-      const result = originalMethod.apply(this, args);
-      return result;
-    };
-
-    return descriptor;
+    });
   };
 }

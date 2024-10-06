@@ -1,4 +1,4 @@
-import type { Method } from '..';
+import type { Method } from '../types';
 
 export function bound(...args: unknown[]): Method {
   return function <T extends Method>(originalMethod: T, context: ClassMethodDecoratorContext<T, T>) {

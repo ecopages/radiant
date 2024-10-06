@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../core/radiant-element';
 
 export interface EventEmitterConfig {
   name: string;

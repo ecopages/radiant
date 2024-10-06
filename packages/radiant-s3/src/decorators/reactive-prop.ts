@@ -1,4 +1,4 @@
-import type { PropertyConfig, RadiantElement } from '@/core/radiant-element';
+import type { PropertyConfig, RadiantElement } from '../core/radiant-element';
 import {
   type AttributeTypeConstant,
   defaultValueForType,

@@ -1,5 +1,5 @@
-import type { RadiantElement } from '@/core/radiant-element';
-import type { Method } from '..';
+import type { RadiantElement } from '../core/radiant-element';
+import type { Method } from '../types';
 
 /**
  * A decorator to subscribe to an updated callback when a reactive field or property changes.

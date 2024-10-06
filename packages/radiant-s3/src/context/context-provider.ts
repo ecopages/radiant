@@ -1,5 +1,5 @@
-import type { RadiantElement } from '@/core/radiant-element';
-import { type AttributeTypeConstant, readAttributeValue } from '@/utils/attribute-utils';
+import type { RadiantElement } from '../core/radiant-element';
+import { type AttributeTypeConstant, readAttributeValue } from '../utils/attribute-utils';
 import {
   ContextEventsTypes,
   ContextOnMountEvent,

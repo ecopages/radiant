@@ -1,7 +1,7 @@
-import { ContextProvider } from '@/context/context-provider';
-import type { UnknownContext } from '@/context/types';
-import type { RadiantElement } from '@/core/radiant-element';
-import type { AttributeTypeConstant } from '@/utils/attribute-utils';
+import type { RadiantElement } from '../../core/radiant-element';
+import type { AttributeTypeConstant } from '../../utils/attribute-utils';
+import { ContextProvider } from '../context-provider';
+import type { UnknownContext } from '../types';
 
 type CreateContextOptions<T extends UnknownContext> = {
   context: T;
@@ -15,13 +15,15 @@ type CreateContextOptions<T extends UnknownContext> = {
  * @returns
  */
 export function provideContext<T extends UnknownContext>({ context, initialValue, hydrate }: CreateContextOptions<T>) {
-  return (proto: RadiantElement, propertyKey: string) => {
-    const originalConnectedCallback = proto.connectedCallback;
-
-    proto.connectedCallback = function (this: RadiantElement) {
-      originalConnectedCallback.call(this);
-      (this as any)[propertyKey] = new ContextProvider<T>(this, { context, initialValue, hydrate });
+  return <C extends RadiantElement, V>(_: undefined, targetContext: ClassFieldDecoratorContext<C, V>) => {
+    const contextName = String(targetContext.name);
+    targetContext.addInitializer(function (this: C) {
+      (this as any)[contextName] = new ContextProvider<T>(this, { context, initialValue, hydrate });
       this.connectedContextCallback(context);
+    });
+
+    return function (this: C) {
+      return (this as any)[contextName];
     };
   };
 }

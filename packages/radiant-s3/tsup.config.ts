@@ -9,7 +9,7 @@ export default tsup.defineConfig({
   splitting: true,
   sourcemap: true,
   clean: true,
-  entryPoints: ['src/index.ts'],
+  entryPoints: ['src/index.js'],
   outDir: 'public',
   target: 'es2020',
   format: ['esm'],
