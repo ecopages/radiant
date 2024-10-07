@@ -8,7 +8,7 @@
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/public/index.js"></script>
+    <script type="module" src="/src/playground.tsx"></script>
     <radiant-element>
       <p data-ref="text">Hello</p>
       <button data-ref="debounce-button">Click me</button>
@@ -33,5 +33,10 @@
       <button>Update render</button>
       <span data-ref="message"></span>
     </with-kita>
+    <radiant-counter value="3">
+      <button type="button" data-ref="decrement" aria-label="Decrement">-</button>
+      <span data-ref="count"></span>
+      <button type="button" data-ref="increment" aria-label="Increment">+</button>
+    </radiant-counter>
   </body>
 </html>

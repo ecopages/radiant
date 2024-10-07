@@ -10,30 +10,13 @@ export function onUpdated(keyOrKeys: string | string[]) {
     context.addInitializer(function (this: any) {
       const boundMethod = originalMethod.bind(this);
 
-      if (!('updatesRegistry' in this)) {
-        Object.defineProperty(this, 'updatesRegistry', {
-          value: new Map<string, Set<string>>(),
-          configurable: true,
-        });
-      }
-
-      const updatesRegistry = (this as RadiantElement).updatesRegistry;
-
       if (Array.isArray(keyOrKeys)) {
         for (const key of keyOrKeys) {
-          if (!updatesRegistry.has(key)) {
-            updatesRegistry.set(key, new Set());
-          }
-          updatesRegistry.get(key)?.add(boundMethod);
+          (this as RadiantElement).addUpdateToRegistry(key, boundMethod);
         }
       } else if (typeof keyOrKeys === 'string') {
-        if (!updatesRegistry.has(keyOrKeys)) {
-          updatesRegistry.set(keyOrKeys, new Set());
-        }
-        updatesRegistry.get(keyOrKeys)?.add(boundMethod);
+        (this as RadiantElement).addUpdateToRegistry(keyOrKeys, boundMethod);
       }
-
-      console.log('updatesRegistry', updatesRegistry);
     });
   };
 }

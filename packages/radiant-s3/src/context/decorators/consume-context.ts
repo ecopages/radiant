@@ -1,5 +1,5 @@
 import type { RadiantElement } from '../../core/radiant-element';
-import { ContextRequestEvent } from '../events';
+import { ContextEventsTypes, ContextRequestEvent } from '../events';
 import type { UnknownContext } from '../types';
 
 /**
@@ -15,6 +15,7 @@ export function consumeContext(contextToProvide: UnknownContext) {
         new ContextRequestEvent(contextToProvide, (context) => {
           (this as any)[contextName] = context;
           this.connectedContextCallback(contextToProvide);
+          this.dispatchEvent(new CustomEvent(ContextEventsTypes.MOUNTED, { detail: context }));
         }),
       );
     });

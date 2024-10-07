@@ -8,7 +8,7 @@ type WithKitaRenderTemplateProps = {
   insert?: RenderInsertPosition;
 };
 
-interface WithKitaMixin {
+export interface WithKitaMixin {
   renderTemplate: (props: WithKitaRenderTemplateProps) => Promise<void>;
 }
 

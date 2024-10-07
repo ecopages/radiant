@@ -1,3 +1,6 @@
+import { e } from '@kitajs/html';
+import type { E } from 'vitest/dist/chunks/environment.CzISCQ7o';
+
 type BaseQueryConfig = {
   all?: boolean;
   cache?: boolean;
@@ -14,7 +17,7 @@ type QueryConfig = BaseQueryConfig &
   );
 
 export function query(options: QueryConfig) {
-  return function <T extends HTMLElement, V extends Element | null | NodeListOf<Element>>(
+  return function <T extends HTMLElement, V extends Element | Element[]>(
     _: undefined,
     context: ClassFieldDecoratorContext<T, V>,
   ) {
@@ -24,9 +27,10 @@ export function query(options: QueryConfig) {
 
     const executeQuery = (instance: T) => {
       if (options?.all) {
-        return instance.querySelectorAll(selector) as V;
+        const result = instance.querySelectorAll(selector);
+        return Array.from(result) as V;
       }
-      return instance.querySelector(selector) as V;
+      return instance.querySelector(selector);
     };
 
     context.addInitializer(function (this: T) {
@@ -34,7 +38,7 @@ export function query(options: QueryConfig) {
         get() {
           if (options?.cache) {
             if (!this[privatePropertyKey]) {
-              this[privatePropertyKey] = executeQuery(this) as V;
+              this[privatePropertyKey] = executeQuery(this);
             }
             return this[privatePropertyKey];
           }
@@ -43,6 +47,12 @@ export function query(options: QueryConfig) {
         enumerable: true,
         configurable: true,
       });
+
+      (this as any)[privatePropertyKey] = executeQuery(this);
     });
+
+    return function (this: T) {
+      return executeQuery(this) as V;
+    };
   };
 }

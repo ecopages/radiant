@@ -104,12 +104,12 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   /**
    * A map of property metadata objects, it contains useful information about the properties configured via decorators.
    */
-  declare propertyConfigMap: Map<string, PropertyConfig>;
+  private propertyConfigMap = new Map<string, PropertyConfig>();
 
   /**
    * A map of property update callbacks. These callbacks are called when a property is updated.
    */
-  declare updatesRegistry: Map<string, Set<(...rest: any[]) => any>>;
+  private updatesRegistry = new Map<string, Set<(...rest: any[]) => any>>();
 
   /**
    * A map of event subscriptions used to manage event listeners on the Radiant element.
@@ -139,8 +139,8 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     }
   }
 
-  notifyPropertyChanged(changedProperty: string, oldValue: unknown, value: unknown) {
-    if (!this.elementReady || !this.updatesRegistry || oldValue === value) return;
+  public notifyPropertyChanged(changedProperty: string, oldValue: unknown, value: unknown) {
+    if (!this.updatesRegistry || oldValue === value) return;
     const updates = this.updatesRegistry.get(changedProperty);
     if (updates) {
       for (const update of updates) {
@@ -156,19 +156,19 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (oldValue === newValue || !this.elementReady) return;
 
-    if (name in this) {
+    if (this.propertyConfigMap.has(name)) {
       const config = this.propertyConfigMap.get(name);
 
       const transformedValue = this.transformAttributeValue(newValue, config);
       const transformedOldValue = this.transformAttributeValue(oldValue, config);
-      console.log(name, transformedOldValue, transformedValue, oldValue, newValue);
+
       const key = config ? config.symbol : name;
       (this as any)[key] = transformedValue;
       this.notifyPropertyChanged(name, transformedOldValue, transformedValue);
     }
   }
 
-  renderTemplate({
+  public renderTemplate({
     target = this,
     template,
     insert = 'replace',
@@ -188,6 +188,17 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
         target.insertAdjacentHTML('afterbegin', template);
         break;
     }
+  }
+
+  public addPropertyConfigMap(config: PropertyConfig) {
+    this.propertyConfigMap.set(config.name, config);
+  }
+
+  public addUpdateToRegistry(property: string, update: (...rest: any[]) => any) {
+    if (!this.updatesRegistry.has(property)) {
+      this.updatesRegistry.set(property, new Set());
+    }
+    this.updatesRegistry.get(property)?.add(update);
   }
 
   public subscribeEvents(events: RadiantElementEventListener[]): void {

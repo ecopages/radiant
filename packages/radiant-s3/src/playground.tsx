@@ -35,7 +35,7 @@ export class RadiantTester extends RadiantElement {
   @query({ ref: 'text', cache: true }) textTarget: HTMLElement;
   @query({ ref: 'debounce-button' }) buttonTarget: HTMLButtonElement;
   @query({ selector: 'ul', cache: true }) ulTarget: HTMLUListElement;
-  @query({ selector: 'li', all: true, cache: true }) liTarget: NodeListOf<HTMLLIElement>;
+  @query({ selector: 'li', all: true, cache: true }) liTarget: HTMLLIElement[];
   @reactiveField reactiveField = 'my-value';
   @reactiveProp({ type: String })
   rprop = 'my-reactive-value';
@@ -85,7 +85,7 @@ export class RadiantTester extends RadiantElement {
 
   @onUpdated('rprop')
   updatedReactiveProp(): void {
-    console.log('Reactive prop has been updated', this.rprop);
+    console.log('Reactive prop has been updated -->', this.rprop);
     this.renderTemplate({
       template: `<p>${this.rprop}</p>`,
       target: this,
@@ -173,7 +173,7 @@ const Message = ({ children, extra }: { children: string; extra: string }) => {
 
 @customElement('with-kita')
 export class MyWithKitaElement extends WithKita(RadiantElement) {
-  @reactiveProp({ type: String }) insert: RenderInsertPosition = 'replace';
+  @reactiveProp<RenderInsertPosition>({ type: String, defaultValue: 'replace' }) insert: RenderInsertPosition;
   @query({ ref: 'message' }) messageTarget: HTMLButtonElement;
 
   override connectedCallback(): void {
@@ -193,5 +193,26 @@ export class MyWithKitaElement extends WithKita(RadiantElement) {
       ),
       insert: this.insert,
     });
+  }
+}
+
+@customElement('radiant-counter')
+export class RadiantCounter extends RadiantElement {
+  @reactiveProp<number>({ type: Number, reflect: true, defaultValue: 3 }) value: number;
+  @query({ ref: 'count' }) countText!: HTMLElement;
+
+  @onEvent({ ref: 'decrement', type: 'click' })
+  decrement() {
+    if (this.value > 0) this.value--;
+  }
+
+  @onEvent({ ref: 'increment', type: 'click' })
+  increment() {
+    this.value++;
+  }
+
+  @onUpdated('value')
+  updateCount() {
+    this.countText.textContent = this.value.toString();
   }
 }

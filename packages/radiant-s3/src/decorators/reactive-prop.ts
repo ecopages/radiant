@@ -1,11 +1,11 @@
-import type { PropertyConfig, RadiantElement } from '../core/radiant-element';
+import type { PropertyConfig, RadiantElement } from '../core/radiant-element.js';
 import {
   type AttributeTypeConstant,
   defaultValueForType,
   isValueOfType,
   readAttributeValue,
   writeAttributeValue,
-} from '../utils/attribute-utils';
+} from '../utils/attribute-utils.js';
 
 type ReactivePropertyOptions<T> = {
   type: AttributeTypeConstant;
@@ -45,14 +45,10 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
     };
 
     context.addInitializer(function (this: T) {
-      addPropertyToMappings(this, propertyMapping);
+      this.addPropertyConfigMap(propertyMapping);
 
       Object.defineProperty(this, propertyName, {
         get: function () {
-          if (!this[privatePropertyKey]) {
-            const initialValue = getInitialValue(this, type, attributeKey, defaultValue);
-            this[privatePropertyKey] = initialValue;
-          }
           return this[privatePropertyKey];
         },
         set: function (newValue: T) {
@@ -72,14 +68,12 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
         configurable: true,
       });
 
-      this.notifyPropertyChanged(propertyName, null, defaultValue);
-      addObservedAttribute(this, attributeKey);
+      const initialValue = getInitialValue(this, type, attributeKey, defaultValue);
+      if (initialValue) {
+        (this as any)[propertyName] = initialValue;
+        this.notifyPropertyChanged(propertyName, null, initialValue);
+      }
     });
-
-    return function (this: T, value: V) {
-      (this as any)[privatePropertyKey] = value;
-      return value;
-    };
   };
 }
 
@@ -97,30 +91,5 @@ const getInitialValue = (
   const attributeValue = target.getAttribute(attributeKey);
   return attributeValue !== null
     ? readAttributeValue(attributeValue, type)
-    : defaultValue || (defaultValueForType(type) as typeof defaultValue);
+    : (defaultValue ?? (defaultValueForType(type) as typeof defaultValue));
 };
-
-const addPropertyToMappings = (target: RadiantElement, propertyMapping: PropertyConfig) => {
-  if (!('propertyConfigMap' in target)) {
-    Object.defineProperty(target, 'propertyConfigMap', {
-      value: new Map<string, PropertyConfig>(),
-      configurable: true,
-    });
-  }
-
-  target.propertyConfigMap.set(propertyMapping.name, propertyMapping);
-};
-
-function addObservedAttribute(target: RadiantElement, attribute: string) {
-  const ctor = target.constructor as typeof RadiantElement;
-  const existingObservedAttributes = (ctor as any).observedAttributes || [];
-  if (!existingObservedAttributes.includes(attribute)) {
-    const newObservedAttributes = [...existingObservedAttributes, attribute];
-    Object.defineProperty(ctor, 'observedAttributes', {
-      get() {
-        return newObservedAttributes;
-      },
-      configurable: true,
-    });
-  }
-}

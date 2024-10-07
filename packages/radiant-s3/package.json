@@ -4,17 +4,20 @@
 	"type": "module",
 	"devDependencies": {
 		"@types/bun": "latest",
-		"@swc/core": "^1.7.26",
-		"@swc/helpers": "^0.5.13",
-		"tsup": "^8.3.0"
+		"unplugin-swc": "^1.5.1",
+		"@happy-dom/global-registrator": "^15.7.4",
+		"vitest": "^2.1.2"
 	},
 	"peerDependencies": {
 		"typescript": "^5.0.0",
 		"@kitajs/html": "^4.0.1",
-		"@kitajs/ts-html-plugin": "^4.0.1"
+		"@kitajs/ts-html-plugin": "^4.0.1",
+		"@testing-library/dom": "^10.4.0",
+		"@testing-library/user-event": "^14.5.2"
 	},
 	"scripts": {
 		"watch:tsc": "tsc -p tsconfig.json --watch",
-		"dev": "vite"
+		"dev": "vite",
+		"test": "vitest"
 	}
 }

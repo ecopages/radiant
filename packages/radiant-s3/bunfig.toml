@@ -1,3 +1,2 @@
-preload = ["./reflect-metadata.js"]
-sourcemap = "external"
-tsconfig = "tsconfig.json"
+[test]
+preload = ["./happydom.ts"]
