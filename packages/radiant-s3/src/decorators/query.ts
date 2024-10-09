@@ -21,7 +21,8 @@ export function query(options: QueryConfig) {
     _: undefined,
     context: ClassFieldDecoratorContext<T, V>,
   ) {
-    const privatePropertyKey = Symbol(`__${String(context.name)}__cache`);
+    const propertyName = String(context.name);
+    const privatePropertyKey = Symbol(`__${String(propertyName)}__cache`);
 
     const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
 
@@ -34,7 +35,7 @@ export function query(options: QueryConfig) {
     };
 
     context.addInitializer(function (this: T) {
-      Object.defineProperty(this, context.name, {
+      Object.defineProperty(this, propertyName, {
         get() {
           if (options?.cache) {
             if (!this[privatePropertyKey]) {

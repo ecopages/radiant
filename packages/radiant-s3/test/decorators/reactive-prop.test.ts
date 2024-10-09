@@ -1,5 +1,3 @@
-// @vitest-environment happy-dom
-
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -13,7 +11,7 @@ describe('@reactiveProp', () => {
   describe('string', () => {
     @customElement('my-reactive-string')
     class MyReactiveString extends RadiantElement {
-      @reactiveProp({ type: String }) name = 'Frank';
+      @reactiveProp({ type: String, defaultValue: 'Frank' }) name: string;
 
       changeName(name: string) {
         this.name = name;
@@ -142,54 +140,55 @@ describe('@reactiveProp', () => {
   describe('reflect', () => {
     @customElement('my-reactive-reflect')
     class MyReactiveReflect extends RadiantElement {
-      @reactiveProp({ type: Number, reflect: true, defaultValue: 5 }) count: number;
+      @reactiveProp({ type: Number, reflect: true, defaultValue: 5 }) value: number;
 
       increment() {
-        this.count++;
+        this.value++;
       }
     }
 
     test('decorator updates the reflect correctly', () => {
       const customElement = document.createElement('my-reactive-reflect') as MyReactiveReflect;
-      customElement.count = 1;
+      customElement.value = 1;
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(1);
+      expect(customElement.value).toEqual(1);
       customElement.increment();
-      expect(customElement.count).toEqual(2);
-      expect(customElement.getAttribute('count')).toEqual('2');
+      expect(customElement.value).toEqual(2);
+      expect(customElement.getAttribute('value')).toEqual('2');
     });
 
     test('decorator has the correct default reflect value', () => {
       const customElement = document.createElement('my-reactive-reflect') as MyReactiveReflect;
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(5);
+      expect(customElement.value).toEqual(5);
     });
   });
 
   describe('not reflect', () => {
     @customElement('my-reactive-not-reflect')
     class MyReactiveNotReflect extends RadiantElement {
-      @reactiveProp({ type: Number, reflect: false, defaultValue: 5 }) count: number;
+      @reactiveProp({ type: Number, reflect: false, defaultValue: 5 }) value: number;
 
       increment() {
-        this.count++;
+        this.value++;
       }
     }
 
-    test('decorator updates the not reflect correctly', () => {
+    test('decorator updates the value correctly but does not reflect it to the attribute', () => {
       const customElement = document.createElement('my-reactive-not-reflect') as MyReactiveNotReflect;
-      customElement.count = 1;
+      customElement.value = 1;
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(1);
+      expect(customElement.value).toEqual(1);
       customElement.increment();
-      expect(customElement.count).toEqual(2);
-      expect(customElement.getAttribute('count')).toEqual('1');
+      expect(customElement.value).toEqual(2);
+      expect(customElement.getAttribute('value')).toEqual(null);
     });
 
-    test('decorator has the correct default not reflect value', () => {
+    test('decorator do not reflect the value to the attribute by default', () => {
       const customElement = document.createElement('my-reactive-not-reflect') as MyReactiveNotReflect;
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(5);
+      expect(customElement.value).toEqual(5);
+      expect(customElement.getAttribute('value')).toEqual(null);
     });
   });
 });

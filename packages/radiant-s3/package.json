@@ -16,6 +16,7 @@
 		"@testing-library/user-event": "^14.5.2"
 	},
 	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
 		"watch:tsc": "tsc -p tsconfig.json --watch",
 		"dev": "vite",
 		"test": "vitest"

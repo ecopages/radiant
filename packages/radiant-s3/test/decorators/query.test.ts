@@ -1,7 +1,3 @@
-// @vitest-environment happy-dom
-
-import { waitFor } from '@testing-library/dom';
-import { wait } from '@testing-library/user-event/dist/types/utils';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';

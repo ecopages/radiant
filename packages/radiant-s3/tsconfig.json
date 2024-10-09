@@ -17,7 +17,7 @@
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true,
 		"outDir": "lib",
-		"rootDir": "src",
+		"rootDir": ".",
 		"paths": {
 			"@/*": ["./src/*"]
 		},
@@ -25,5 +25,5 @@
 		"jsxImportSource": "@kitajs/html",
 		"plugins": [{ "name": "@kitajs/ts-html-plugin" }]
 	},
-	"exclude": ["test", "happydom.ts", "vite.config.ts"]
+	"exclude": ["happydom.ts", "vite.config.ts"]
 }

@@ -155,7 +155,6 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (oldValue === newValue || !this.elementReady) return;
-
     if (this.propertyConfigMap.has(name)) {
       const config = this.propertyConfigMap.get(name);
 

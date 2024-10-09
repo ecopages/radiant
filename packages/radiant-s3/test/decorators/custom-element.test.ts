@@ -1,5 +1,3 @@
-// @vitest-environment happy-dom
-
 import { describe, expect, test } from 'vitest';
 import { customElement } from '../../src/decorators/custom-element';
 

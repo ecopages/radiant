@@ -1,5 +1,3 @@
-// @vitest-environment happy-dom
-
 import { describe, expect, test } from 'vitest';
 import type { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';

@@ -1,5 +1,3 @@
-// @vitest-environment happy-dom
-
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 

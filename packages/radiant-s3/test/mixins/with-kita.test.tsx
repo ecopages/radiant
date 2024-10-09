@@ -1,5 +1,7 @@
-import { describe, expect, test } from 'bun:test';
-import { RadiantElement, type RenderInsertPosition, WithKita, reactiveProp } from '@/index';
+import { describe, expect, test } from 'vitest';
+import { RadiantElement, type RenderInsertPosition } from '../../src/core/radiant-element';
+import { reactiveProp } from '../../src/decorators/reactive-prop';
+import { WithKita } from '../../src/mixins/with-kita';
 
 const Message = ({ children, extra }: { children: string; extra: string }) => {
   return (
@@ -10,7 +12,7 @@ const Message = ({ children, extra }: { children: string; extra: string }) => {
 };
 
 class MyWithKitaElement extends WithKita(RadiantElement) {
-  @reactiveProp({ type: String }) insert: RenderInsertPosition = 'replace';
+  @reactiveProp({ type: String, defaultValue: 'replace' }) insert: RenderInsertPosition;
   override connectedCallback(): void {
     super.connectedCallback();
     this.renderTemplate({
@@ -29,7 +31,7 @@ class MyWithKitaElement extends WithKita(RadiantElement) {
 customElements.define('my-with-kita-element', MyWithKitaElement);
 
 describe('WithKita', () => {
-  test('it renders template correctly using insert: replace', () => {
+  test('it renders template correctly using insert: replace', async () => {
     const element = document.createElement('my-with-kita-element');
     document.body.appendChild(element);
     expect(element.innerHTML).toEqual('<div><h1>My Radiant Element</h1><p>Hello World</p></div>');

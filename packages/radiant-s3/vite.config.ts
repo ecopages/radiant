@@ -1,22 +1,11 @@
-import swc from 'unplugin-swc';
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [
-    swc.vite({
-      jsc: {
-        parser: {
-          syntax: 'typescript',
-          decorators: true,
-        },
-        transform: {
-          decoratorMetadata: true,
-          decoratorVersion: '2022-03',
-          react: {
-            runtime: 'automatic',
-          },
-        },
-      },
-    }),
-  ],
+  esbuild: {
+    target: 'es2022',
+  },
+  test: {
+    environmentMatchGlobs: [['test/**/*.test.*', 'happy-dom']],
+  },
 });

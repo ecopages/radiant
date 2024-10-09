@@ -32,6 +32,8 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
     const propertyName = String(context.name);
     const attributeKey = attribute ?? propertyName;
     const privatePropertyKey = Symbol(`__${String(context.name)}__value`);
+    let hasBeenInitialized = false;
+    let initialValue: P | undefined;
 
     const propertyMapping: PropertyConfig = {
       type,
@@ -47,20 +49,30 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
     context.addInitializer(function (this: T) {
       this.addPropertyConfigMap(propertyMapping);
 
+      initialValue = getInitialValue(this, type, attributeKey, defaultValue) as P;
+
+      const handleReflectRequest = (value: P) => {
+        if (reflect) {
+          const attributeValue = propertyMapping.converter.toAttribute(value);
+          this.setAttribute(attributeKey, attributeValue);
+        }
+      };
+
       Object.defineProperty(this, propertyName, {
         get: function () {
+          if (this[privatePropertyKey] === undefined && !hasBeenInitialized) {
+            this[privatePropertyKey] = initialValue;
+            hasBeenInitialized = true;
+          }
           return this[privatePropertyKey];
         },
-        set: function (newValue: T) {
+        set: function (newValue: P) {
           const oldValue = this[privatePropertyKey];
           if (oldValue === newValue) return;
 
           this[privatePropertyKey] = newValue;
 
-          if (reflect) {
-            const attributeValue = propertyMapping.converter.toAttribute(newValue);
-            this.setAttribute(attributeKey, attributeValue);
-          }
+          handleReflectRequest(newValue);
 
           this.notifyPropertyChanged(propertyName, oldValue, newValue);
         },
@@ -68,10 +80,11 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
         configurable: true,
       });
 
-      const initialValue = getInitialValue(this, type, attributeKey, defaultValue);
-      if (initialValue) {
-        (this as any)[propertyName] = initialValue;
-        this.notifyPropertyChanged(propertyName, null, initialValue);
+      if (initialValue !== undefined) {
+        queueMicrotask(() => {
+          this.notifyPropertyChanged(propertyName, undefined, initialValue);
+          handleReflectRequest(initialValue as P);
+        });
       }
     });
   };
@@ -91,5 +104,5 @@ const getInitialValue = (
   const attributeValue = target.getAttribute(attributeKey);
   return attributeValue !== null
     ? readAttributeValue(attributeValue, type)
-    : (defaultValue ?? (defaultValueForType(type) as typeof defaultValue));
+    : defaultValue || (defaultValueForType(type) as typeof defaultValue);
 };
