@@ -27,7 +27,6 @@ export type RadiantElementEventListener = {
 export interface PropertyConfig {
   type: AttributeTypeConstant;
   name: string;
-  symbol: symbol;
   attribute: string;
   converter: {
     fromAttribute: (value: string) => ReadAttributeValueReturnType;
@@ -155,13 +154,14 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (oldValue === newValue || !this.elementReady) return;
+
     if (this.propertyConfigMap.has(name)) {
       const config = this.propertyConfigMap.get(name);
 
       const transformedValue = this.transformAttributeValue(newValue, config);
       const transformedOldValue = this.transformAttributeValue(oldValue, config);
 
-      const key = config ? config.symbol : name;
+      const key = config ? config.attribute : name;
       (this as any)[key] = transformedValue;
       this.notifyPropertyChanged(name, transformedOldValue, transformedValue);
     }

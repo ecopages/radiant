@@ -1,24 +1,142 @@
 {
-	"name": "radiant-s3",
-	"module": "index.js",
-	"type": "module",
-	"devDependencies": {
-		"@types/bun": "latest",
-		"unplugin-swc": "^1.5.1",
-		"@happy-dom/global-registrator": "^15.7.4",
-		"vitest": "^2.1.2"
+	"name": "@ecopages/radiant-s3",
+	"version": "0.1.8",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git"
 	},
-	"peerDependencies": {
-		"typescript": "^5.0.0",
-		"@kitajs/html": "^4.0.1",
+	"author": "Andrea Zanenghi",
+	"license": "MIT",
+	"type": "module",
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build:lib": "bun run clean && bun run build:files && bun run build:types",
+		"build:files": "bun run ./build.ts",
+		"build:types": "tsc -p tsconfig.build.json && tsc-alias",
+		"dev": "vite",
+		"watch:lib": "bun run ./build.ts --watch",
+		"clean": "rm -rf ./dist",
+		"test:lib": "vitest run"
+	},
+	"dependencies": {
+		"@kitajs/html": "^4.1.0"
+	},
+	"devDependencies": {
+		"@happy-dom/global-registrator": "^15.7.4",
 		"@kitajs/ts-html-plugin": "^4.0.1",
+		"bun-types": "latest",
+		"tsc-alias": "1.8.10",
+		"esbuild": "^0.23.0",
+		"vitest": "^2.1.2",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/user-event": "^14.5.2"
 	},
-	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
-		"watch:tsc": "tsc -p tsconfig.json --watch",
-		"dev": "vite",
-		"test": "vitest"
+	"files": ["/dist/*"],
+	"exports": {
+		"./package.json": {
+			"import": "./package.json"
+		},
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./context": {
+			"types": "./dist/context/index.d.ts",
+			"import": "./dist/context/index.js"
+		},
+		"./core": {
+			"types": "./dist/core/index.d.ts",
+			"import": "./dist/core/index.js"
+		},
+		"./decorators": {
+			"types": "./dist/decorators.d.ts",
+			"import": "./dist/decorators.js"
+		},
+		"./mixins": {
+			"types": "./dist/mixins/index.d.ts",
+			"import": "./dist/mixins/index.js"
+		},
+		"./tools": {
+			"types": "./dist/tools/index.d.ts",
+			"import": "./dist/tools/index.js"
+		},
+		"./utils": {
+			"types": "./dist/utils/index.d.ts",
+			"import": "./dist/utils/index.js"
+		},
+		"./context/create-context": {
+			"types": "./dist/context/create-context.d.ts",
+			"import": "./dist/context/create-context.js"
+		},
+		"./context/context-provider": {
+			"types": "./dist/context/context-provider.d.ts",
+			"import": "./dist/context/context-provider.js"
+		},
+		"./context/consume-context": {
+			"types": "./dist/context/decorators/consume-context.d.ts",
+			"import": "./dist/context/decorators/consume-context.js"
+		},
+		"./context/provide-context": {
+			"types": "./dist/context/decorators/provide-context.d.ts",
+			"import": "./dist/context/decorators/provide-context.js"
+		},
+		"./context/context-selector": {
+			"types": "./dist/context/decorators/context-selector.d.ts",
+			"import": "./dist/context/decorators/context-selector.js"
+		},
+		"./core/radiant-element": {
+			"types": "./dist/core/radiant-element.d.ts",
+			"import": "./dist/core/radiant-element.js"
+		},
+		"./decorators/bound": {
+			"types": "./dist/decorators/bound.d.ts",
+			"import": "./dist/decorators/bound.js"
+		},
+		"./decorators/custom-element": {
+			"types": "./dist/decorators/custom-element.d.ts",
+			"import": "./dist/decorators/custom-element.js"
+		},
+		"./decorators/debounce": {
+			"types": "./dist/decorators/debounce.d.ts",
+			"import": "./dist/decorators/debounce.js"
+		},
+		"./decorators/event": {
+			"types": "./dist/decorators/event.d.ts",
+			"import": "./dist/decorators/event.js"
+		},
+		"./decorators/on-event": {
+			"types": "./dist/decorators/on-event.d.ts",
+			"import": "./dist/decorators/on-event.js"
+		},
+		"./decorators/on-updated": {
+			"types": "./dist/decorators/on-updated.d.ts",
+			"import": "./dist/decorators/on-updated.js"
+		},
+		"./decorators/query": {
+			"types": "./dist/decorators/query.d.ts",
+			"import": "./dist/decorators/query.js"
+		},
+		"./decorators/reactive-field": {
+			"types": "./dist/decorators/reactive-field.d.ts",
+			"import": "./dist/decorators/reactive-field.js"
+		},
+		"./decorators/reactive-prop": {
+			"types": "./dist/decorators/reactive-prop.d.ts",
+			"import": "./dist/decorators/reactive-prop.js"
+		},
+		"./mixins/with-kita": {
+			"types": "./dist/mixins/with-kita.d.ts",
+			"import": "./dist/mixins/with-kita.js"
+		},
+		"./tools/stringify-typed": {
+			"types": "./dist/tools/stringify-typed.d.ts",
+			"import": "./dist/tools/stringify-typed.js"
+		},
+		"./tools/event-emitter": {
+			"types": "./dist/tools/event-emitter.d.ts",
+			"import": "./dist/tools/event-emitter.js"
+		}
 	}
 }

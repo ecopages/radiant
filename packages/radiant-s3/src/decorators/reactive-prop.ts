@@ -14,6 +14,8 @@ type ReactivePropertyOptions<T> = {
   defaultValue?: T;
 };
 
+const instancePropertyValues = new WeakMap<RadiantElement, Map<string, unknown>>();
+
 /**
  * A decorator to define a reactive property.
  * Every time the property changes, the `updated` method will be called.
@@ -31,15 +33,12 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
   return function <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
     const propertyName = String(context.name);
     const attributeKey = attribute ?? propertyName;
-    const privatePropertyKey = Symbol(`__${String(context.name)}__value`);
-    let hasBeenInitialized = false;
     let initialValue: P | undefined;
 
     const propertyMapping: PropertyConfig = {
       type,
       name: propertyName,
       attribute: attributeKey,
-      symbol: privatePropertyKey,
       converter: {
         fromAttribute: (value) => readAttributeValue(value, type),
         toAttribute: (value) => writeAttributeValue(value, type),
@@ -49,7 +48,15 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
     context.addInitializer(function (this: T) {
       this.addPropertyConfigMap(propertyMapping);
 
+      if (!instancePropertyValues.has(this)) {
+        instancePropertyValues.set(this, new Map());
+      }
+
+      const propertyValues = instancePropertyValues.get(this) as Map<string, unknown>;
+
       initialValue = getInitialValue(this, type, attributeKey, defaultValue) as P;
+
+      propertyValues.set(propertyName, initialValue);
 
       const handleReflectRequest = (value: P) => {
         if (reflect) {
@@ -60,21 +67,15 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
 
       Object.defineProperty(this, propertyName, {
         get: function () {
-          if (this[privatePropertyKey] === undefined && !hasBeenInitialized) {
-            this[privatePropertyKey] = initialValue;
-            hasBeenInitialized = true;
-          }
-          return this[privatePropertyKey];
+          return propertyValues.get(propertyName);
         },
-        set: function (newValue: P) {
-          const oldValue = this[privatePropertyKey];
-          if (oldValue === newValue) return;
-
-          this[privatePropertyKey] = newValue;
-
-          handleReflectRequest(newValue);
-
-          this.notifyPropertyChanged(propertyName, oldValue, newValue);
+        set: function (this: T, newValue: P) {
+          const oldValue = propertyValues.get(propertyName);
+          if (oldValue !== newValue) {
+            propertyValues.set(propertyName, newValue);
+            handleReflectRequest(newValue);
+            this.notifyPropertyChanged(propertyName, oldValue, newValue);
+          }
         },
         enumerable: true,
         configurable: true,

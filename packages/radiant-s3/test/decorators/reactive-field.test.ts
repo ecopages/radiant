@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { bound } from '../../src/decorators/bound';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { reactiveField } from '../../src/decorators/reactive-field';

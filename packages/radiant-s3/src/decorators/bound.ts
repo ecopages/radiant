@@ -1,16 +1,11 @@
 import type { Method } from '../types';
 
-export function bound(...args: unknown[]): Method {
-  return function <T extends Method>(originalMethod: T, context: ClassMethodDecoratorContext<T, T>) {
-    const contextName = String(context.name);
-    const boundName = `${contextName}__bound`;
-
-    context.addInitializer(function (this: T) {
-      Object.defineProperty(this, contextName, {
-        configurable: true,
-        value: Object.defineProperty(originalMethod.bind(this, ...args), 'name', { value: boundName }),
-        writable: true,
-      });
-    });
-  };
+export function bound<T extends Method>(_: T, context: ClassMethodDecoratorContext) {
+  const methodName = String(context.name);
+  if (context.private) {
+    throw new Error(`'bound' cannot decorate private properties like ${methodName as string}.`);
+  }
+  context.addInitializer(function (this: any) {
+    this[methodName] = this[methodName].bind(this);
+  });
 }

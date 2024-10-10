@@ -1,6 +1,7 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { bound } from '../../src/decorators/bound';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { query } from '../../src/decorators/query';
@@ -73,5 +74,19 @@ describe('@onUpdated', () => {
     document.body.appendChild(customElement);
     expect(customElement[REACTIVE_PROP]).toEqual(3);
     await waitFor(() => expect(customElement.countText.innerHTML).toEqual('3'));
+  });
+
+  test('decorator works correctly when multiple elements are created', async () => {
+    const customElement1 = createRadiantCounter('5');
+    const customElement2 = createRadiantCounter('10');
+    const customElement3 = createRadiantCounter();
+    document.body.appendChild(customElement1);
+    document.body.appendChild(customElement2);
+    document.body.appendChild(customElement3);
+    customElement1[REACTIVE_PROP] = 15;
+    customElement2[REACTIVE_PROP] = 20;
+    expect(customElement1.countText.innerHTML).toEqual('15');
+    expect(customElement2.countText.innerHTML).toEqual('20');
+    await waitFor(() => expect(customElement3.countText.innerHTML).toEqual('3'));
   });
 });

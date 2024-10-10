@@ -6,7 +6,7 @@
 		"experimentalDecorators": false,
 		"forceConsistentCasingInFileNames": true,
 		"strictPropertyInitialization": false,
-		"moduleResolution": "node",
+		"moduleResolution": "Bundler",
 		"module": "ESNext",
 		"noImplicitOverride": true,
 		"resolveJsonModule": true,

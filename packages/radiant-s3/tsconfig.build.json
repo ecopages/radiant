@@ -2,9 +2,8 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"rootDir": "./src",
-		"declaration": true,
-		"emitDeclarationOnly": true
+		"declaration": true
 	},
 	"include": ["src"],
-	"exclude": ["playground.tsx"]
+	"exclude": ["./src/playground.tsx"]
 }

@@ -71,7 +71,7 @@ export class RadiantTester extends RadiantElement {
     );
   }
 
-  @bound()
+  @bound
   updateReactivityKeys(): void {
     this.reactiveField = `[FIELD] ${new Date().toLocaleTimeString()}`;
     this.rprop = `[PROP] ${new Date().toLocaleTimeString()}`;
@@ -93,7 +93,7 @@ export class RadiantTester extends RadiantElement {
     });
   }
 
-  @bound()
+  @bound
   @debounce(1000)
   public handleClick(): void {
     this.updateReactivityKeys();

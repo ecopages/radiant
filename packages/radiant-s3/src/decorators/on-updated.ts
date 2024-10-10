@@ -6,16 +6,15 @@ import type { Method } from '../types';
  * @param eventConfig The event configuration.
  */
 export function onUpdated(keyOrKeys: string | string[]) {
-  return function <T extends Method>(originalMethod: T, context: ClassMethodDecoratorContext): void {
+  return function <T extends Method>(_: T, context: ClassMethodDecoratorContext): void {
     context.addInitializer(function (this: any) {
-      const boundMethod = originalMethod.bind(this);
-
+      this[context.name] = this[context.name].bind(this);
       if (Array.isArray(keyOrKeys)) {
         for (const key of keyOrKeys) {
-          (this as RadiantElement).addUpdateToRegistry(key, boundMethod);
+          (this as RadiantElement).addUpdateToRegistry(key, this[context.name]);
         }
       } else if (typeof keyOrKeys === 'string') {
-        (this as RadiantElement).addUpdateToRegistry(keyOrKeys, boundMethod);
+        (this as RadiantElement).addUpdateToRegistry(keyOrKeys, this[context.name]);
       }
     });
   };
