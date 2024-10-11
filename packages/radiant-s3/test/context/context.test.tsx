@@ -1,10 +1,11 @@
-import { describe, expect, test } from 'vitest';
+import { waitFor } from '@testing-library/dom';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
 import { provideContext } from '../../src/context/decorators/provide-context';
-import { ContextEventsTypes } from '../../src/context/events';
+import { ContextEventsTypes, ContextRequestEvent } from '../../src/context/events';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 
@@ -38,6 +39,10 @@ class MyContextConsumer extends RadiantElement {
 }
 
 describe('Context', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
   test('it provides and consumes context correctly', async () => {
     const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
     const contextConsumer = document.createElement('my-context-consumer') as MyContextConsumer;
@@ -51,5 +56,40 @@ describe('Context', () => {
       contextProvider.updateContextValue(5);
       expect(contextConsumer.innerHTML).toEqual('5');
     });
+  });
+
+  test('it initializes with the provided context and initial value', () => {
+    const initialValue = { value: 10 };
+    const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+    contextProvider.updateContextValue(initialValue.value);
+
+    expect(contextProvider.context.getContext()).toEqual(initialValue);
+  });
+
+  test('it sets and gets context correctly', async () => {
+    const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+    const update = { value: 20 };
+    contextProvider.updateContextValue(update.value);
+
+    expect(contextProvider.context.getContext()).toEqual(update);
+  });
+
+  test('it notifies subscribers on context update', () => {
+    const callback = vi.fn();
+    class ManualConsumer extends RadiantElement {
+      context!: ContextProvider<typeof testContext>;
+      override connectedCallback() {
+        super.connectedCallback();
+        this.dispatchEvent(new ContextRequestEvent(testContext, callback, true));
+      }
+    }
+    customElements.define('manual-context-element', ManualConsumer);
+
+    const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+    const contextConsumer = document.createElement('manual-context-element') as MyContextConsumer;
+    contextProvider.appendChild(contextConsumer);
+    document.body.appendChild(contextProvider);
+
+    expect(callback).toHaveBeenCalled();
   });
 });

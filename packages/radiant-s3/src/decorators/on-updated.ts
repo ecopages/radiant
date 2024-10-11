@@ -11,10 +11,10 @@ export function onUpdated(keyOrKeys: string | string[]) {
       this[context.name] = this[context.name].bind(this);
       if (Array.isArray(keyOrKeys)) {
         for (const key of keyOrKeys) {
-          (this as RadiantElement).addUpdateToRegistry(key, this[context.name]);
+          (this as RadiantElement).registerEffect(key, this[context.name]);
         }
       } else if (typeof keyOrKeys === 'string') {
-        (this as RadiantElement).addUpdateToRegistry(keyOrKeys, this[context.name]);
+        (this as RadiantElement).registerEffect(keyOrKeys, this[context.name]);
       }
     });
   };

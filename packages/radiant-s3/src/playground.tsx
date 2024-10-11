@@ -36,7 +36,7 @@ export class RadiantTester extends RadiantElement {
   @query({ ref: 'debounce-button' }) buttonTarget: HTMLButtonElement;
   @query({ selector: 'ul', cache: true }) ulTarget: HTMLUListElement;
   @query({ selector: 'li', all: true, cache: true }) liTarget: HTMLLIElement[];
-  @reactiveField reactiveField = 'my-value';
+  @reactiveField createReactiveField = 'my-value';
   @reactiveProp({ type: String })
   rprop = 'my-reactive-value';
   @event({ name: RadiantEventEvents.CustomEvent, bubbles: true, composed: true })
@@ -53,7 +53,7 @@ export class RadiantTester extends RadiantElement {
     this.buttonTarget.addEventListener('click', this.handleClick);
     console.info('This element is cached, lenght is:', this.liTarget.length);
     this.addListItem();
-    console.log('REACTIVE FIELD', this.reactiveField);
+    console.log('REACTIVE FIELD', this.createReactiveField);
     console.log('REACTIVE PROP', this.rprop);
 
     setTimeout(() => {
@@ -73,9 +73,9 @@ export class RadiantTester extends RadiantElement {
 
   @bound
   updateReactivityKeys(): void {
-    this.reactiveField = `[FIELD] ${new Date().toLocaleTimeString()}`;
+    this.createReactiveField = `[FIELD] ${new Date().toLocaleTimeString()}`;
     this.rprop = `[PROP] ${new Date().toLocaleTimeString()}`;
-    this.textTarget.textContent = this.reactiveField;
+    this.textTarget.textContent = this.createReactiveField;
   }
 
   @onUpdated('reactiveField')

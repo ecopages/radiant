@@ -1,23 +1,26 @@
 import { describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { bound } from '../../src/decorators/bound';
-import { customElement } from '../../src/decorators/custom-element';
-import { onUpdated } from '../../src/decorators/on-updated';
 import { reactiveField } from '../../src/decorators/reactive-field';
 
-@customElement('my-reactive-field')
 class MyReactiveField extends RadiantElement {
   @reactiveField numberOfClicks = 1;
+
+  override connectedCallback() {
+    super.connectedCallback();
+    this.updateClicks = this.updateClicks.bind(this);
+    this.registerEffect('numberOfClicks', this.updateClicks);
+  }
 
   addClick() {
     this.numberOfClicks++;
   }
 
-  @onUpdated('numberOfClicks')
   updateClicks() {
     this.innerHTML = this.numberOfClicks.toString();
   }
 }
+
+customElements.define('my-reactive-field', MyReactiveField);
 
 describe('@reactiveField', () => {
   test('decorator updates the element correctly', () => {

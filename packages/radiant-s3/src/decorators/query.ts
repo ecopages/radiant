@@ -1,20 +1,13 @@
-import { e } from '@kitajs/html';
-import type { E } from 'vitest/dist/chunks/environment.CzISCQ7o';
-
 type BaseQueryConfig = {
   all?: boolean;
   cache?: boolean;
 };
 
-type QueryConfig = BaseQueryConfig &
-  (
-    | {
-        selector: string;
-      }
-    | {
-        ref: string;
-      }
-  );
+type QueryBySelector = { selector: string };
+
+type QueryByRef = { ref: string };
+
+type QueryConfig = BaseQueryConfig & (QueryBySelector | QueryByRef);
 
 export function query(options: QueryConfig) {
   return function <T extends HTMLElement, V extends Element | Element[]>(
@@ -27,10 +20,13 @@ export function query(options: QueryConfig) {
     const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
 
     const executeQuery = (instance: T) => {
+      let result: V | V[] = [];
       if (options?.all) {
-        const result = instance.querySelectorAll(selector);
-        return Array.from(result) as V;
+        const queried = instance.querySelectorAll(selector);
+        result = queried.length ? (Array.from(queried) as V) : [];
+        return result;
       }
+
       return instance.querySelector(selector);
     };
 
@@ -38,7 +34,7 @@ export function query(options: QueryConfig) {
       Object.defineProperty(this, propertyName, {
         get() {
           if (options?.cache) {
-            if (!this[privatePropertyKey]) {
+            if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
               this[privatePropertyKey] = executeQuery(this);
             }
             return this[privatePropertyKey];
@@ -48,12 +44,6 @@ export function query(options: QueryConfig) {
         enumerable: true,
         configurable: true,
       });
-
-      (this as any)[privatePropertyKey] = executeQuery(this);
     });
-
-    return function (this: T) {
-      return executeQuery(this) as V;
-    };
   };
 }

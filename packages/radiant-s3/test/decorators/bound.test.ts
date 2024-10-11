@@ -11,7 +11,6 @@ class MyBoundElement extends HTMLElement {
 
   @bound
   handleClick() {
-    console.log('CLICKED', this.nextValue);
     this.innerHTML = this.nextValue;
   }
 }
@@ -23,13 +22,11 @@ describe('@bound', () => {
     const customElement = document.createElement('my-bound-element') as MyBoundElement;
     document.body.appendChild(customElement);
 
-    // Simulate a click event
     customElement.click();
     await waitFor(() => expect(customElement.innerHTML).toEqual('Hello, bound!'));
 
-    // Use handleClick in a different context
     const unboundClick = customElement.handleClick;
-    unboundClick.call(null); // This would fail without @bound
+    unboundClick.call(null);
     await waitFor(() => expect(customElement.innerHTML).toEqual('Hello, bound!'));
   });
 });

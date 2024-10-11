@@ -1,8 +1,13 @@
 import type { UnknownContext } from '../context/types';
-import type {
-  AttributeTypeConstant,
-  ReadAttributeValueReturnType,
-  WriteAttributeValueReturnType,
+import {
+  type AttributeTypeConstant,
+  type ReadAttributeValueReturnType,
+  type WriteAttributeValueReturnType,
+  defaultValueForType,
+  getInitialValue,
+  isValueOfType,
+  readAttributeValue,
+  writeAttributeValue,
 } from '../utils/attribute-utils';
 
 /**
@@ -24,8 +29,10 @@ export type RadiantElementEventListener = {
 /**
  * Represents a property metadata object.
  */
-export interface PropertyConfig {
+export interface ReactiveProperty<T = unknown> {
   type: AttributeTypeConstant;
+  value: T;
+  initialValue: T;
   name: string;
   attribute: string;
   converter: {
@@ -33,6 +40,22 @@ export interface PropertyConfig {
     toAttribute: (value: any) => WriteAttributeValueReturnType;
   };
 }
+
+/**
+ * Represents the options for a reactive property.
+ */
+export type ReactivePropertyOptions<T> = {
+  type: AttributeTypeConstant;
+  reflect?: boolean;
+  attribute?: string;
+  defaultValue?: T;
+};
+
+export type ReactiveField<T = unknown> = {
+  name: string;
+  value: T;
+  initialValue: T;
+};
 
 /**
  * Represents an interface for a Radiant element.
@@ -92,6 +115,14 @@ export interface IRadiantElement {
    * @param context - The connected context.
    */
   connectedContextCallback(context: UnknownContext): void;
+
+  /**
+   * Gets a reference to a child element by its data-ref attribute.
+   * @param ref - The data-ref attribute value of the element to get.
+   * @param all - Whether to get all elements with the specified data-ref attribute value.
+   * @returns The element with the specified data-ref attribute value, an array of elements or null if no element was found.
+   */
+  getRef<T extends Element = Element>(ref: string, all: boolean): T | T[];
 }
 
 /**
@@ -103,12 +134,17 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   /**
    * A map of property metadata objects, it contains useful information about the properties configured via decorators.
    */
-  private propertyConfigMap = new Map<string, PropertyConfig>();
+  private reactiveProperties = new Map<string, ReactiveProperty>();
+
+  /**
+   * A map of reactive fields, it contains the reactive fields configured via decorators.
+   */
+  private reactiveFields = new Map<string, ReactiveField>();
 
   /**
    * A map of property update callbacks. These callbacks are called when a property is updated.
    */
-  private updatesRegistry = new Map<string, Set<(...rest: any[]) => any>>();
+  private effectsRegistry = new Map<string, Set<(...rest: any[]) => any>>();
 
   /**
    * A map of event subscriptions used to manage event listeners on the Radiant element.
@@ -139,8 +175,8 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   }
 
   public notifyPropertyChanged(changedProperty: string, oldValue: unknown, value: unknown) {
-    if (!this.updatesRegistry || oldValue === value) return;
-    const updates = this.updatesRegistry.get(changedProperty);
+    if (!this.effectsRegistry || oldValue === value) return;
+    const updates = this.effectsRegistry.get(changedProperty);
     if (updates) {
       for (const update of updates) {
         update();
@@ -155,8 +191,8 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
     if (oldValue === newValue || !this.elementReady) return;
 
-    if (this.propertyConfigMap.has(name)) {
-      const config = this.propertyConfigMap.get(name);
+    if (this.reactiveProperties.has(name)) {
+      const config = this.reactiveProperties.get(name);
 
       const transformedValue = this.transformAttributeValue(newValue, config);
       const transformedOldValue = this.transformAttributeValue(oldValue, config);
@@ -189,15 +225,19 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     }
   }
 
-  public addPropertyConfigMap(config: PropertyConfig) {
-    this.propertyConfigMap.set(config.name, config);
+  public registerReactiveProperty(config: ReactiveProperty) {
+    this.reactiveProperties.set(config.name, config);
   }
 
-  public addUpdateToRegistry(property: string, update: (...rest: any[]) => any) {
-    if (!this.updatesRegistry.has(property)) {
-      this.updatesRegistry.set(property, new Set());
+  public registerReactiveField<T>(config: ReactiveField<T>) {
+    this.reactiveFields.set(config.name, config);
+  }
+
+  public registerEffect(property: string, update: (...rest: any[]) => any) {
+    if (!this.effectsRegistry.has(property)) {
+      this.effectsRegistry.set(property, new Set());
     }
-    this.updatesRegistry.get(property)?.add(update);
+    this.effectsRegistry.get(property)?.add(update);
   }
 
   public subscribeEvents(events: RadiantElementEventListener[]): void {
@@ -234,5 +274,105 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
   public registerCleanupCallback(callback: () => void): void {
     this.onDisconnectedCallback.push(callback);
+  }
+
+  public getRef<T extends Element = Element>(ref: string, all: true): T[];
+  public getRef<T extends Element = Element>(ref: string, all?: false): T;
+  public getRef<T extends Element = Element>(ref: string, all = false): T | T[] {
+    const selector = `[data-ref="${ref}"]`;
+    let result: T | T[];
+    if (all) {
+      result = Array.from(this.querySelectorAll(selector)) as T[];
+      if (result.length === 0) result = [];
+    } else {
+      result = this.querySelector(selector) as T;
+      if (!result) {
+        const fragment = document.createDocumentFragment();
+        result = fragment as unknown as T;
+      }
+    }
+    return result;
+  }
+
+  public createReactiveField<T>(propertyName: string, initialValue: T): void {
+    const reactiveField: ReactiveField<T> = {
+      name: propertyName,
+      value: initialValue,
+      initialValue: initialValue,
+    };
+
+    this.registerReactiveField(reactiveField);
+
+    Object.defineProperty(this, propertyName, {
+      get(this: RadiantElement) {
+        return this.reactiveFields.get(propertyName)?.value ?? undefined;
+      },
+      set(this: RadiantElement, newValue: T) {
+        const oldValue = this.reactiveFields.get(propertyName)?.value;
+        if (oldValue !== newValue) {
+          this.reactiveFields.set(propertyName, { ...reactiveField, value: newValue });
+          this.notifyPropertyChanged(propertyName, oldValue, newValue);
+        }
+      },
+      enumerable: true,
+      configurable: true,
+    });
+
+    this.notifyPropertyChanged(propertyName, undefined, initialValue);
+  }
+
+  public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
+    const { type, attribute, reflect, defaultValue } = options;
+    const attributeKey = attribute ?? propertyName;
+
+    if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
+      throw new Error(`defaultValue does not match the expected type for ${type.name}`);
+    }
+
+    const initialValue: T | undefined = getInitialValue(this, type, attributeKey, defaultValue) as T;
+
+    const propertyMapping: ReactiveProperty<T> = {
+      type,
+      name: propertyName,
+      value: initialValue,
+      initialValue,
+      attribute: attributeKey,
+      converter: {
+        fromAttribute: (value) => readAttributeValue(value, type),
+        toAttribute: (value) => writeAttributeValue(value, type),
+      },
+    };
+
+    this.registerReactiveProperty(propertyMapping);
+
+    const handleReflectRequest = (value: T) => {
+      if (reflect) {
+        const attributeValue = propertyMapping.converter.toAttribute(value);
+        this.setAttribute(attributeKey, attributeValue);
+      }
+    };
+
+    Object.defineProperty(this, propertyName, {
+      get: function (this: RadiantElement) {
+        return this.reactiveProperties.get(propertyName)?.value ?? undefined;
+      },
+      set: function (this: RadiantElement, newValue: T) {
+        const oldValue = this.reactiveProperties.get(propertyName)?.value;
+        if (oldValue !== newValue) {
+          this.reactiveProperties.set(propertyName, { ...propertyMapping, value: newValue });
+          handleReflectRequest(newValue);
+          this.notifyPropertyChanged(propertyName, oldValue, newValue);
+        }
+      },
+      enumerable: true,
+      configurable: true,
+    });
+
+    if (initialValue !== undefined) {
+      queueMicrotask(() => {
+        this.notifyPropertyChanged(propertyName, undefined, initialValue);
+        handleReflectRequest(initialValue as T);
+      });
+    }
   }
 }

@@ -7,5 +7,10 @@ export default defineConfig({
   },
   test: {
     environmentMatchGlobs: [['test/**/*.test.*', 'happy-dom']],
+    coverage: {
+      provider: 'istanbul',
+      include: ['src'],
+      exclude: ['src/playground.tsx'],
+    },
   },
 });

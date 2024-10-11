@@ -1,12 +1,11 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { customElement } from '../../src/decorators/custom-element';
 import { query } from '../../src/decorators/query';
 
-@customElement('my-query-element')
 class MyQueryElement extends RadiantElement {
   @query({ ref: 'my-ref' }) myRef: HTMLDivElement;
   @query({ ref: 'my-ref', all: true, cache: false }) myRefs: HTMLDivElement[];
+  @query({ ref: 'my-ref', all: true, cache: true }) myRefsCache: HTMLDivElement[];
   @query({ selector: '.my-class' }) myClass: HTMLElement;
   @query({ selector: '.my-class', all: true }) myClasses: HTMLElement[];
 
@@ -17,6 +16,8 @@ class MyQueryElement extends RadiantElement {
     this.appendChild(div);
   }
 }
+
+customElements.define('my-query-element', MyQueryElement);
 
 const createElementWithRef = (text: string, dataRef: string) => {
   const div = document.createElement('div');
@@ -119,5 +120,21 @@ describe('@query', () => {
     customElement.addElement();
     expect(customElement.myRefs.length).toEqual(3);
     expect(customElement.myRefs[2].textContent).toEqual('My Ref 3');
+  });
+
+  test('decorator queries ref with cache true correctly after adding element', () => {
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myRefs.length).toEqual(2);
+    customElement.addElement();
+    expect(customElement.myRefs.length).toEqual(3);
+  });
+
+  test('decorator queries ref with cache true correctly after adding element', () => {
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myRefsCache.length).toEqual(2);
+    customElement.addElement();
+    expect(customElement.myRefsCache.length).toEqual(2);
   });
 });

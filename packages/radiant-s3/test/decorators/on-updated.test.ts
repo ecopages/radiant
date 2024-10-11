@@ -1,22 +1,30 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { bound } from '../../src/decorators/bound';
-import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
-import { query } from '../../src/decorators/query';
-import { reactiveProp } from '../../src/decorators/reactive-prop';
 
 describe('@onUpdated', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
 
-  @customElement('radiant-counter')
   class RadiantCounter extends RadiantElement {
     static observedAttributes = ['value'];
-    @reactiveProp({ type: Number, defaultValue: 3 }) value: number;
-    @query({ ref: 'count' }) countText!: HTMLElement;
+    declare value: number;
+    countText!: HTMLElement;
+
+    constructor() {
+      super();
+      this.createReactiveProp('value', {
+        type: Number,
+        defaultValue: 3,
+      });
+    }
+
+    override connectedCallback() {
+      super.connectedCallback();
+      this.countText = this.getRef<HTMLElement>('count');
+    }
 
     decrement() {
       if (this.value > 0) this.value--;
@@ -31,6 +39,8 @@ describe('@onUpdated', () => {
       this.countText.textContent = this.value.toString();
     }
   }
+
+  customElements.define('radiant-counter', RadiantCounter);
 
   const REACTIVE_PROP = 'value';
   const DATA_REF = 'count';
@@ -88,5 +98,42 @@ describe('@onUpdated', () => {
     expect(customElement1.countText.innerHTML).toEqual('15');
     expect(customElement2.countText.innerHTML).toEqual('20');
     await waitFor(() => expect(customElement3.countText.innerHTML).toEqual('3'));
+  });
+
+  test('decorator can be used with multiple reactive props', () => {
+    class StepperCounter extends RadiantElement {
+      static observedAttributes = ['value', 'step'];
+      declare value: number;
+      declare step: number;
+      sum = 0;
+
+      constructor() {
+        super();
+        this.createReactiveProp('value', {
+          type: Number,
+          defaultValue: 3,
+        });
+        this.createReactiveProp('step', {
+          type: Number,
+          defaultValue: 1,
+        });
+      }
+
+      @onUpdated(['value', 'step'])
+      updateCount() {
+        this.sum = this.value * this.step;
+      }
+    }
+
+    customElements.define('radiant-counter-2', StepperCounter);
+
+    const customElement = document.createElement('radiant-counter-2') as StepperCounter;
+    customElement.value = 3;
+    customElement.step = 5;
+    expect(customElement.sum).toEqual(15);
+    customElement.value = 5;
+    expect(customElement.sum).toEqual(25);
+    customElement.step = 2;
+    expect(customElement.sum).toEqual(10);
   });
 });
