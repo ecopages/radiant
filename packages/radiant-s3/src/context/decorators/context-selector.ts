@@ -21,7 +21,9 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 }: SubscribeToContextOptions<T>) {
   return function <T extends Method>(originalMethod: T, targetContext: ClassMethodDecoratorContext): void {
     targetContext.addInitializer(function (this: any) {
-      this.dispatchEvent(new ContextSubscriptionRequestEvent(context, originalMethod.bind(this), select, subscribe));
+      queueMicrotask(() => {
+        this.dispatchEvent(new ContextSubscriptionRequestEvent(context, originalMethod.bind(this), select, subscribe));
+      });
     });
   };
 }

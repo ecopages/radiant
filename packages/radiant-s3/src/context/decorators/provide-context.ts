@@ -21,9 +21,5 @@ export function provideContext<T extends UnknownContext>({ context, initialValue
       (this as any)[contextName] = new ContextProvider<T>(this, { context, initialValue, hydrate });
       this.connectedContextCallback(context);
     });
-
-    return function (this: C) {
-      return (this as any)[contextName];
-    };
   };
 }
