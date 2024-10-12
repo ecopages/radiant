@@ -14,7 +14,7 @@ export function reactiveField<T extends RadiantElement, V>(_: undefined, context
         const oldValue = this[privatePropertyKey];
         if (oldValue !== newValue) {
           this[privatePropertyKey] = newValue;
-          (this as RadiantElement).notifyPropertyChanged(contextName, oldValue, newValue);
+          (this as RadiantElement).notifyUpdate(contextName, oldValue, newValue);
         }
       },
       enumerable: true,

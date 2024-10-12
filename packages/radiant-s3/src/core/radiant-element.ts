@@ -67,7 +67,7 @@ export interface IRadiantElement {
    * @param oldValue - The old value of the property.
    * @param newValue - The new value of the property.
    */
-  notifyPropertyChanged(changedProperty: string, oldValue: unknown, newValue: unknown): void;
+  notifyUpdate(changedProperty: string, oldValue: unknown, newValue: unknown): void;
 
   /**
    * Subscribes to a Radiant element event.
@@ -144,7 +144,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   /**
    * A map of property update callbacks. These callbacks are called when a property is updated.
    */
-  private effectsRegistry = new Map<string, Set<(...rest: any[]) => any>>();
+  private updateCallbacks = new Map<string, Set<(...rest: any[]) => any>>();
 
   /**
    * A map of event subscriptions used to manage event listeners on the Radiant element.
@@ -174,9 +174,9 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     }
   }
 
-  public notifyPropertyChanged(changedProperty: string, oldValue: unknown, value: unknown) {
-    if (!this.effectsRegistry || oldValue === value) return;
-    const updates = this.effectsRegistry.get(changedProperty);
+  public notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown) {
+    if (!this.updateCallbacks || oldValue === value) return;
+    const updates = this.updateCallbacks.get(changedProperty);
     if (updates) {
       for (const update of updates) {
         update();
@@ -199,7 +199,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
       const key = config ? config.attribute : name;
       (this as any)[key] = transformedValue;
-      this.notifyPropertyChanged(name, transformedOldValue, transformedValue);
+      this.notifyUpdate(name, transformedOldValue, transformedValue);
     }
   }
 
@@ -233,11 +233,11 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     this.reactiveFields.set(config.name, config);
   }
 
-  public registerEffect(property: string, update: (...rest: any[]) => any) {
-    if (!this.effectsRegistry.has(property)) {
-      this.effectsRegistry.set(property, new Set());
+  public registerUpdateCallback(property: string, update: (...rest: any[]) => any) {
+    if (!this.updateCallbacks.has(property)) {
+      this.updateCallbacks.set(property, new Set());
     }
-    this.effectsRegistry.get(property)?.add(update);
+    this.updateCallbacks.get(property)?.add(update);
   }
 
   public subscribeEvents(events: RadiantElementEventListener[]): void {
@@ -311,14 +311,14 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
         const oldValue = this.reactiveFields.get(propertyName)?.value;
         if (oldValue !== newValue) {
           this.reactiveFields.set(propertyName, { ...reactiveField, value: newValue });
-          this.notifyPropertyChanged(propertyName, oldValue, newValue);
+          this.notifyUpdate(propertyName, oldValue, newValue);
         }
       },
       enumerable: true,
       configurable: true,
     });
 
-    this.notifyPropertyChanged(propertyName, undefined, initialValue);
+    this.notifyUpdate(propertyName, undefined, initialValue);
   }
 
   public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
@@ -361,7 +361,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
         if (oldValue !== newValue) {
           this.reactiveProperties.set(propertyName, { ...propertyMapping, value: newValue });
           handleReflectRequest(newValue);
-          this.notifyPropertyChanged(propertyName, oldValue, newValue);
+          this.notifyUpdate(propertyName, oldValue, newValue);
         }
       },
       enumerable: true,
@@ -370,7 +370,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
     if (initialValue !== undefined) {
       queueMicrotask(() => {
-        this.notifyPropertyChanged(propertyName, undefined, initialValue);
+        this.notifyUpdate(propertyName, undefined, initialValue);
         handleReflectRequest(initialValue as T);
       });
     }

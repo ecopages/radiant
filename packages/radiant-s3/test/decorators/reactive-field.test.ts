@@ -8,7 +8,7 @@ class MyReactiveField extends RadiantElement {
   override connectedCallback() {
     super.connectedCallback();
     this.updateClicks = this.updateClicks.bind(this);
-    this.registerEffect('numberOfClicks', this.updateClicks);
+    this.registerUpdateCallback('numberOfClicks', this.updateClicks);
   }
 
   addClick() {
