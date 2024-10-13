@@ -1,6 +1,6 @@
-import { ContextSubscriptionRequestEvent } from '@/context/events';
-import type { Context, ContextType, UnknownContext } from '@/context/types';
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../../core/radiant-element';
+import { ContextSubscriptionRequestEvent } from '../events';
+import type { Context, ContextType, UnknownContext } from '../types';
 
 type ArgsType<T extends UnknownContext> = SubscribeToContextOptions<T>['select'] extends (...args: any[]) => infer R
   ? R

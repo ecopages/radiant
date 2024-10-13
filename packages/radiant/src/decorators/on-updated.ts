@@ -1,32 +1,23 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../core/radiant-element';
 
 /**
  * A decorator to subscribe to an updated callback when a reactive field or property changes.
  * @param eventConfig The event configuration.
  */
 export function onUpdated(keyOrKeys: string | string[]) {
-  return (proto: RadiantElement, methodName: string) => {
-    if (!('updatesRegistry' in proto)) {
-      Object.defineProperty(proto, 'updatesRegistry', {
-        value: new Map<string, Set<string>>(),
-        configurable: true,
-      });
-    }
+  return (target: RadiantElement, methodName: string) => {
+    const originalConnectedCallback = target.connectedCallback;
 
-    const updatesRegistry = proto.updatesRegistry;
-
-    if (Array.isArray(keyOrKeys)) {
-      for (const key of keyOrKeys) {
-        if (!updatesRegistry.has(key)) {
-          updatesRegistry.set(key, new Set());
+    target.connectedCallback = function (this: RadiantElement) {
+      const boundedMethod = (this as any)[methodName].bind(this);
+      if (Array.isArray(keyOrKeys)) {
+        for (const key of keyOrKeys) {
+          (this as RadiantElement).registerUpdateCallback(key, boundedMethod);
         }
-        updatesRegistry.get(key)?.add(methodName);
+      } else if (typeof keyOrKeys === 'string') {
+        (this as RadiantElement).registerUpdateCallback(keyOrKeys, boundedMethod);
       }
-    } else if (typeof keyOrKeys === 'string') {
-      if (!updatesRegistry.has(keyOrKeys)) {
-        updatesRegistry.set(keyOrKeys, new Set());
-      }
-      updatesRegistry.get(keyOrKeys)?.add(methodName);
-    }
+      originalConnectedCallback.call(this);
+    };
   };
 }

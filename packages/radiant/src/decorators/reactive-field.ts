@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../core/radiant-element';
 
 /**
  * A decorator to define a reactive field.
@@ -8,25 +8,11 @@ import type { RadiantElement } from '@/core/radiant-element';
  * @param target The target element.
  * @param propertyKey The property key.
  */
-export function reactiveField(proto: RadiantElement, propertyKey: string) {
-  const originalValues = new WeakMap<WeakKey, unknown>();
-  const isDefined = new WeakSet<WeakKey>();
+export function reactiveField(target: RadiantElement, propertyKey: string) {
+  const originalConnectedCallback = target.connectedCallback;
 
-  Object.defineProperty(proto, propertyKey, {
-    get: function () {
-      return originalValues.get(this);
-    },
-    set: function (newValue: unknown) {
-      if (isDefined.has(this)) {
-        const oldValue = originalValues.get(this);
-        if (oldValue !== newValue) {
-          originalValues.set(this, newValue);
-          this.updated(propertyKey, oldValue, newValue);
-        }
-      } else {
-        originalValues.set(this, newValue);
-        isDefined.add(this);
-      }
-    },
-  });
+  target.connectedCallback = function (this: RadiantElement) {
+    this.createReactiveField(propertyKey, this[propertyKey as keyof typeof this]);
+    originalConnectedCallback.call(this);
+  };
 }

@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core';
+import type { RadiantElement } from '../core';
 
 /**
  * The base configuration object for the query.
@@ -42,40 +42,44 @@ export type QueryConfig = BaseQueryConfig &
  *
  * // Now, `myElement` will return the first element in the light DOM of `MyElement` that matches the selector '.my-class'.
  */
-export function query({
+export function query<T extends Element | Element[]>({
   cache: shouldBeCached = true,
   ...options
-}: QueryConfig): (proto: RadiantElement, propertyKey: string | symbol) => void {
-  const cache = new WeakMap<Element, Element | NodeList | null>();
+}: QueryConfig): (proto: RadiantElement, propertyName: string | symbol) => void {
+  const cache = new WeakMap<Element, T>();
 
   return (proto: RadiantElement, propertyKey: string | symbol) => {
-    const doQuery = function (this: Element) {
-      if (shouldBeCached) {
-        const cachedResult = cache.get(this);
-        if (cachedResult !== undefined) {
-          return cachedResult;
-        }
+    const privatePropertyKey = Symbol(`__${String(propertyKey)}__cache`);
+
+    const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
+
+    const executeQuery = (instance: RadiantElement) => {
+      let result: T | T[] = [];
+      if (options?.all) {
+        const queried = instance.querySelectorAll(selector);
+        result = queried.length ? (Array.from(queried) as T) : [];
+        return result;
       }
 
-      const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
-      const queryResult = options.all ? this.querySelectorAll(selector) : this.querySelector(selector);
-
-      if (shouldBeCached) {
-        cache.set(this, queryResult);
-      }
-
-      return queryResult;
+      return instance.querySelector(selector);
     };
 
     const originalConnectedCallback = proto.connectedCallback;
 
     proto.connectedCallback = function (this: RadiantElement) {
       Object.defineProperty(this, propertyKey, {
-        get: doQuery,
+        get() {
+          if (shouldBeCached) {
+            if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
+              this[privatePropertyKey] = executeQuery(this);
+            }
+            return this[privatePropertyKey];
+          }
+          return executeQuery(this) as T;
+        },
         enumerable: true,
         configurable: true,
       });
-
       originalConnectedCallback.call(this);
     };
   };

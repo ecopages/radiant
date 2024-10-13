@@ -1,6 +1,6 @@
-import { ContextRequestEvent } from '@/context/events';
-import type { UnknownContext } from '@/context/types';
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../../core/radiant-element';
+import { ContextRequestEvent } from '../events';
+import type { UnknownContext } from '../types';
 
 /**
  * A decorator to provide a context to the target element.

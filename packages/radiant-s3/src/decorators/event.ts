@@ -1,8 +1,6 @@
 import type { RadiantElement } from '../core/radiant-element';
 import { EventEmitter, type EventEmitterConfig } from '../tools/event-emitter';
 
-const eventEmitters = new WeakMap();
-
 /**
  * Decorator that attaches an EventEmitter to the class field property.
  * The EventEmitter can be used to dispatch custom events from the target element.
@@ -11,18 +9,12 @@ const eventEmitters = new WeakMap();
  */
 export function event(eventConfig: EventEmitterConfig) {
   return function <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
-    const uniqueKey = Symbol(eventConfig.name);
-
     context.addInitializer(function (this: T) {
+      this.registerEventEmitter(eventConfig.name, new EventEmitter(this, eventConfig));
+
       Object.defineProperty(this, context.name, {
         get() {
-          const emittersMap: Map<symbol, EventEmitter> = eventEmitters.get(this) || new Map();
-          if (!emittersMap.has(uniqueKey)) {
-            emittersMap.set(uniqueKey, new EventEmitter(this, eventConfig));
-            eventEmitters.set(this, emittersMap);
-          }
-
-          return emittersMap.get(uniqueKey);
+          return this.eventEmitters.get(eventConfig.name);
         },
         enumerable: true,
         configurable: true,

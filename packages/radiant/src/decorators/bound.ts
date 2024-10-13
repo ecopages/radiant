@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../core/radiant-element';
 
 /**
  * A decorator to bind a method to the instance.
@@ -13,16 +13,10 @@ export function bound(target: RadiantElement, propertyKey: string, descriptor: P
   return {
     configurable: true,
     get() {
-      /**
-       * Check if the method is already bound to the instance.
-       */
       if (this === (target as any).prototype || Object.hasOwn(this, propertyKey)) {
         return originalMethod;
       }
 
-      /**
-       * Bind the method to the instance.
-       */
       const boundMethod = originalMethod.bind(this);
       Object.defineProperty(this, propertyKey, {
         value: boundMethod,

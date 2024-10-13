@@ -4,9 +4,10 @@ import type { Context, ContextCallback, ContextType, UnknownContext } from './ty
  * List of events which can be emitted by a context provider or requester.
  */
 export enum ContextEventsTypes {
-  SUBSCRIPTION_REQUEST = 'context--subscription-request',
+  SUBSCRIPTION_REQUEST = 'context-subscription-request',
   CONTEXT_REQUEST = 'context-request',
-  ON_MOUNT = 'context--on-mount',
+  ON_MOUNT = 'context-on-mount',
+  MOUNTED = 'context-mounted',
 }
 
 /**

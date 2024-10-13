@@ -128,6 +128,7 @@ describe('@onUpdated', () => {
     customElements.define('radiant-counter-2', StepperCounter);
 
     const customElement = document.createElement('radiant-counter-2') as StepperCounter;
+    document.body.appendChild(customElement);
     customElement.value = 3;
     customElement.step = 5;
     expect(customElement.sum).toEqual(15);

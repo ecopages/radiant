@@ -1,12 +1,13 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
-import { RadiantElement, customElement, query } from '@/index';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { RadiantElement } from '../../src/core/radiant-element';
+import { query } from '../../src/decorators/query';
 
-@customElement('my-query-element')
 class MyQueryElement extends RadiantElement {
-  @query({ ref: 'my-ref' }) myRef!: HTMLDivElement;
-  @query({ ref: 'my-ref', all: true, cache: false }) myRefs!: HTMLDivElement[];
-  @query({ selector: '.my-class' }) declare myClass: HTMLElement;
-  @query({ selector: '.my-class', all: true }) declare myClasses: HTMLElement[];
+  @query({ ref: 'my-ref' }) myRef: HTMLDivElement;
+  @query({ ref: 'my-ref', all: true, cache: false }) myRefs: HTMLDivElement[];
+  @query({ ref: 'my-ref', all: true, cache: true }) myRefsCache: HTMLDivElement[];
+  @query({ selector: '.my-class' }) myClass: HTMLElement;
+  @query({ selector: '.my-class', all: true }) myClasses: HTMLElement[];
 
   addElement() {
     const div = document.createElement('div');
@@ -16,15 +17,65 @@ class MyQueryElement extends RadiantElement {
   }
 }
 
+customElements.define('my-query-element', MyQueryElement);
+
+const createElementWithRef = (text: string, dataRef: string) => {
+  const div = document.createElement('div');
+  div.textContent = text;
+  div.setAttribute('data-ref', dataRef);
+  return div;
+};
+
+const createElementWithClass = (text: string, className: string) => {
+  const div = document.createElement('div');
+  div.textContent = text;
+  div.classList.add(className);
+  return div;
+};
+
 const createTemplate = () => {
   const customElement = document.createElement('my-query-element');
-  customElement.innerHTML = `
-    <div data-ref="my-ref">My Ref 1</div>
-    <div data-ref="my-ref">My Ref 2</div>
-    <div class="my-class">My Class 1</div>
-    <div class="my-class">My Class 2</div>
-    <div class="my-class">My Class 3</div>
-  `;
+
+  const innerElementsMap: (
+    | {
+        text: string;
+        dataRef: string;
+      }
+    | {
+        text: string;
+        className: string;
+      }
+  )[] = [
+    {
+      text: 'My Ref 1',
+      dataRef: 'my-ref',
+    },
+    {
+      text: 'My Ref 2',
+      dataRef: 'my-ref',
+    },
+    {
+      text: 'My Class 1',
+      className: 'my-class',
+    },
+    {
+      text: 'My Class 2',
+      className: 'my-class',
+    },
+    {
+      text: 'My Class 3',
+      className: 'my-class',
+    },
+  ];
+
+  for (const innerElement of innerElementsMap) {
+    if ('dataRef' in innerElement) {
+      customElement.appendChild(createElementWithRef(innerElement.text, innerElement.dataRef));
+    } else {
+      customElement.appendChild(createElementWithClass(innerElement.text, innerElement.className));
+    }
+  }
+
   return customElement as MyQueryElement;
 };
 
@@ -33,7 +84,7 @@ describe('@query', () => {
     document.body.innerHTML = '';
   });
 
-  test('decorator queries ref correctly', () => {
+  test('decorator queries ref correctly', async () => {
     const customElement = createTemplate();
     document.body.appendChild(customElement);
     expect(customElement.myRef.textContent).toEqual('My Ref 1');
@@ -69,5 +120,21 @@ describe('@query', () => {
     customElement.addElement();
     expect(customElement.myRefs.length).toEqual(3);
     expect(customElement.myRefs[2].textContent).toEqual('My Ref 3');
+  });
+
+  test('decorator queries ref with cache true correctly after adding element', () => {
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myRefs.length).toEqual(2);
+    customElement.addElement();
+    expect(customElement.myRefs.length).toEqual(3);
+  });
+
+  test('decorator queries ref with cache true correctly after adding element', () => {
+    const customElement = createTemplate();
+    document.body.appendChild(customElement);
+    expect(customElement.myRefsCache.length).toEqual(2);
+    customElement.addElement();
+    expect(customElement.myRefsCache.length).toEqual(2);
   });
 });

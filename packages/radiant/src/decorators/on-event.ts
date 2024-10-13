@@ -1,4 +1,4 @@
-import type { RadiantElement, RadiantElementEventListener } from '@/core/radiant-element';
+import type { RadiantElement, RadiantElementEventListener } from '../core/radiant-element';
 
 type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
   (

@@ -1,10 +1,9 @@
-import { describe, expect, test } from 'bun:test';
-import { RadiantElement, customElement } from '@/index';
+import { describe, expect, test } from 'vitest';
+import { customElement } from '../../src/decorators/custom-element';
 
 @customElement('my-custom-element')
-class MyCustomElement extends RadiantElement {
-  override connectedCallback(): void {
-    super.connectedCallback();
+class MyCustomElement extends HTMLElement {
+  connectedCallback(): void {
     this.innerHTML = 'Hello, world!';
   }
 }

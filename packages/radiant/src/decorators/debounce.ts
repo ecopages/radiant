@@ -1,4 +1,4 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type { RadiantElement } from '../core/radiant-element';
 
 export function debounce(
   timeout: number,

@@ -1,9 +1,9 @@
 import type { UnknownContext } from '../context/types';
+import type { EventEmitter } from '../tools/event-emitter';
 import {
   type AttributeTypeConstant,
   type ReadAttributeValueReturnType,
   type WriteAttributeValueReturnType,
-  defaultValueForType,
   getInitialValue,
   isValueOfType,
   readAttributeValue,
@@ -152,6 +152,11 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
   private eventSubscriptions = new Map<string, RadiantElementEventListener>();
 
   /**
+   * A map for event emitters
+   */
+  private eventEmitters = new Map<string, EventEmitter>();
+
+  /**
    * An array of cleanup callbacks to be executed when the Radiant element is disconnected from the DOM.
    */
   private onDisconnectedCallback: (() => void)[] = [];
@@ -274,6 +279,10 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
   public registerCleanupCallback(callback: () => void): void {
     this.onDisconnectedCallback.push(callback);
+  }
+
+  public registerEventEmitter(name: string, emitter: EventEmitter) {
+    this.eventEmitters.set(name, emitter);
   }
 
   public getRef<T extends Element = Element>(ref: string, all: true): T[];
