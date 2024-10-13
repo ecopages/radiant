@@ -5,10 +5,8 @@ import { RadiantCounter } from './components/radiant-counter/radiant-counter.kit
 import { RadiantEvent } from './components/radiant-event/radiant-event.kita.tsx';
 import { RadiantRefs } from './components/radiant-refs/radiant-refs.kita.tsx';
 import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.kita.tsx';
-import './styles/tailwind.css';
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
 import { ValueTester } from './components/value-tester/value-tester.script.tsx';
+import './styles/tailwind.css';
 
 const appRoot = document.querySelector<HTMLDivElement>('#app');
 
@@ -23,36 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-class StepperCounter extends RadiantElement {
-  declare value: number;
-  declare step: number;
-  multiplied = 0;
-
-  constructor() {
-    super();
-    this.createReactiveProp('value', {
-      type: Number,
-      defaultValue: 3,
-    });
-    this.createReactiveProp('step', {
-      type: Number,
-      defaultValue: 1,
-    });
-  }
-
-  @onUpdated(['value', 'step'])
-  updateCount() {
-    this.multiplied = this.value * this.step;
-    console.log({ m: this.multiplied });
-  }
-}
-
-customElements.define('stepper-counter', StepperCounter);
-
 const App = async () => {
   return (
     <main class="grid gap-8">
-      <stepper-counter></stepper-counter>
       <RadiantAccordion
         shouldAnimate={true}
         multiple={false}

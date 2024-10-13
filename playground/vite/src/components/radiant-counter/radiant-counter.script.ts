@@ -1,4 +1,4 @@
-import { RadiantElement } from '@ecopages/radiant/core';
+import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
@@ -11,7 +11,7 @@ export type RadiantCounterProps = {
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement {
-  @reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) declare value: number;
+  @reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
   @query({ ref: 'count' }) countText!: HTMLElement;
 
   @onEvent({ ref: 'decrement', type: 'click' })

@@ -1,6 +1,6 @@
 import type { FocusableElement } from '@/types';
 import { onUpdated } from '@ecopages/radiant';
-import { RadiantElement } from '@ecopages/radiant/core';
+import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { bound } from '@ecopages/radiant/decorators/bound';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
@@ -42,10 +42,10 @@ export class RadiantDropdown extends RadiantElement {
   @query({ ref: 'content' }) contentTarget!: HTMLElement;
   @query({ ref: 'arrow' }) arrowTarget!: HTMLElement;
 
-  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare defaultOpen: boolean;
-  @reactiveProp({ type: String, defaultValue: 'left' }) declare placement: Placement;
-  @reactiveProp({ type: Number, defaultValue: 6 }) declare offset: number;
-  @reactiveProp({ type: Boolean, defaultValue: true }) declare focusOnOpen: boolean;
+  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) defaultOpen!: boolean;
+  @reactiveProp({ type: String, defaultValue: 'left' }) placement!: Placement;
+  @reactiveProp({ type: Number, defaultValue: 6 }) offset!: number;
+  @reactiveProp({ type: Boolean, defaultValue: true }) focusOnOpen!: boolean;
 
   cleanup: ReturnType<typeof autoUpdate> | null = null;
 

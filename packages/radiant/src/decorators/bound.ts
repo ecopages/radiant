@@ -1,29 +1,28 @@
-import type { RadiantElement } from '../core/radiant-element';
+import type {
+  LegacyMethodDecoratorArgs,
+  StandardMethodDecoratorArgs,
+  StandardOrLegacyMethodDecoratorArgs,
+} from '../types';
+import { bound as legacyBound } from './legacy/bound';
+import { bound as standardBound } from './standard/bound';
 
 /**
  * A decorator to bind a method to the instance.
- * @param target {@link RadiantElement}
- * @param propertyKey string
- * @param descriptor {@link PropertyDescriptor}
- * @returns
  */
-export function bound(target: RadiantElement, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor {
-  const originalMethod = descriptor.value;
-
-  return {
-    configurable: true,
-    get() {
-      if (this === (target as any).prototype || Object.hasOwn(this, propertyKey)) {
-        return originalMethod;
-      }
-
-      const boundMethod = originalMethod.bind(this);
-      Object.defineProperty(this, propertyKey, {
-        value: boundMethod,
-        configurable: true,
-        writable: true,
-      });
-      return boundMethod;
-    },
-  };
+export function bound(
+  protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
+  nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
+  descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
+): any {
+  if (typeof nameOrContext === 'object') {
+    return standardBound(
+      protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
+      nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
+    );
+  }
+  return legacyBound(
+    protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
+    nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
+    descriptor as LegacyMethodDecoratorArgs['descriptor'],
+  );
 }

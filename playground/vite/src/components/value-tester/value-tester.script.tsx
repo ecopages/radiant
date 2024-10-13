@@ -1,4 +1,4 @@
-import { RadiantElement } from '@ecopages/radiant/core';
+import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
@@ -16,14 +16,11 @@ export type RadiantValueTesterProps = {
 
 @customElement('radiant-tester')
 export class RadiantValueTester extends RadiantElement {
-  @reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) declare number: number;
-  @reactiveProp({ type: String, reflect: true, defaultValue: 'string' }) declare string: string;
-  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare boolean: boolean;
-  @reactiveProp({ type: Object, reflect: true, defaultValue: { key: 'value' } }) declare object: Record<
-    string,
-    unknown
-  >;
-  @reactiveProp({ type: Array, reflect: true, defaultValue: ['value'] }) declare array: unknown[];
+  @reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) number!: number;
+  @reactiveProp({ type: String, reflect: true, defaultValue: 'string' }) string!: string;
+  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) boolean!: boolean;
+  @reactiveProp({ type: Object, reflect: true, defaultValue: { key: 'value' } }) object!: Record<string, unknown>;
+  @reactiveProp({ type: Array, reflect: true, defaultValue: ['value'] }) array!: unknown[];
 
   @query({ ref: 'number' }) numberText!: HTMLElement;
   @query({ ref: 'string' }) stringText!: HTMLElement;
