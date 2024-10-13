@@ -17,7 +17,7 @@
 		"build:types": "tsc -p tsconfig.build.json && tsc-alias",
 		"watch:lib": "bun run ./build.ts --watch",
 		"clean": "rm -rf ./dist",
-		"test:lib": "vitest",
+		"test:lib": "vitest run",
 		"test:lib:coverage": "vitest --coverage"
 	},
 	"dependencies": {
