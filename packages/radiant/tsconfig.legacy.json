@@ -2,28 +2,33 @@
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
 		"baseUrl": ".",
+		"rootDir": ".",
 		"esModuleInterop": true,
-		"experimentalDecorators": false,
+		"experimentalDecorators": true,
 		"forceConsistentCasingInFileNames": true,
-		"strictPropertyInitialization": false,
-		"moduleResolution": "node",
+		"jsx": "react-jsx",
+		"jsxImportSource": "@kitajs/html",
 		"module": "ESNext",
+		"moduleResolution": "node",
 		"noImplicitOverride": true,
+		"strictPropertyInitialization": false,
+		"outDir": "./dist",
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"target": "ES2022",
+		"target": "ESNext",
 		"types": ["bun-types"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true,
-		"outDir": "dist",
-		"rootDir": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"dist/*": ["./dist/*"]
 		},
-		"jsx": "react-jsx",
-		"jsxImportSource": "@kitajs/html",
-		"plugins": [{ "name": "@kitajs/ts-html-plugin" }]
+		"plugins": [
+			{
+				"name": "@kitajs/ts-html-plugin"
+			}
+		]
 	},
-	"exclude": ["happydom.ts", "vite.config.ts"]
+	"include": ["**/*"]
 }

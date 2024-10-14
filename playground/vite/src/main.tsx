@@ -73,6 +73,10 @@ const App = async () => {
   );
 };
 
-if (appRoot) {
-  appRoot.innerHTML = await (<App />);
-}
+const renderApp = async () => {
+  if (appRoot) {
+    appRoot.innerHTML = await (<App />);
+  }
+};
+
+renderApp();
