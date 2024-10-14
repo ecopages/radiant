@@ -1,5 +1,11 @@
 # @ecopages/radiant
 
+## 0.2.0
+
+### Minor Changes
+
+- [#37](https://github.com/ecopages/radiant/pull/37) [`bf7d904`](https://github.com/ecopages/radiant/commit/bf7d9045b5c0ab06e8c111ff2a97e4ab6a278ab7) Thanks [@andeeplus](https://github.com/andeeplus)! - This update introduce the possibility to use stage 3 decorators. This refactor changed the RadiantElement class to be more concise and organised.
+
 ## 0.1.8
 
 ### Patch Changes
