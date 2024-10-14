@@ -11,17 +11,203 @@ export const getMetadata = () => ({
 # Radiant Element
 ---
 
-This is the base class for all Radiant. It provides a set of decorators that can be used to define the behavior of the element.
+The `RadiantElement` class serves as a base for creating custom web components with reactive properties, event handling, and template rendering capabilities. It extends the native `HTMLElement` and implements the `IRadiantElement` interface, providing a robust framework for building interactive and dynamic elements.
 
-Please note that this class is not meant to be used directly. Instead, you should extend it to create your own custom elements.
+The suggested way to create a custom element is to extend the `RadiantElement` class and use the provided decorators and methods to define reactive properties, event listeners, and template rendering logic. This approach simplifies the process of creating and managing custom elements, making it easier to build complex and interactive components.
 
-You can use the `@customElement` decorator to define a custom element.
+It is still possible to use the `RadiantElement` class without decorators by manually calling the corresponding methods. However, using decorators is the recommended way to take advantage of the built-in features and simplify the code.
 
-Go to the [Decorator Section](/docs/decorators/custom-element) to see all the available decorators.
+Please have a look to the [Decorator Section](/docs/decorators/custom-element) to see the available decorators.
 
-<CodeBlock >
+## Key Features
+
+- **Reactive Properties**: Automatically update the UI when properties change.
+- **Event Management**: Subscribe to and manage events easily.
+- **Template Rendering**: Render HTML templates dynamically within the component.
+
+
+### Example
+
+Following is an example of a custom element created using the `RadiantElement` class with decorators:
+
+<CodeBlock>
 ```typescript
-@customElement('lc-demo')
-export class MyElement extends RadiantElement {}
+@customElement('my-custom-element')
+class MyCustomElement extends RadiantElement {
+  @reactiveProp({ type: String, defaultValue: 'Foo' }) foo: string;
+  @query({ ref: 'paragraph' }) paragraph!: HTMLParagraphElement;
+
+  @onUpdated('foo')
+  updateParagraph() {
+    this.paragraph.textContent = `Hello ${this.foo}`;
+  }
+
+  @onEvent({ selector: 'button', type: 'click' })
+  handleClick() {
+    this.foo = 'World';
+  }
+}
 ```
 </CodeBlock>
+
+The above example demonstrates how to create a custom element using the `RadiantElement` class with decorators. The element has a reactive property `foo`, a reference to a paragraph element, and an event listener for a button click. When the button is clicked, the `foo` property is updated, triggering the `updateParagraph` method to update the paragraph text.
+
+## Example without Decorators
+
+<CodeBlock>
+```typescript
+class MyCustomElement extends RadiantElement {
+  declare foo: string;
+  paragraph = this.getRef<HTMLParagraphElement>('paragraph');
+
+  constructor() {
+    super();
+    this.createReactiveProp('foo', { type: String, defaultValue: 'Foo' });
+    this.registerUpdateCallback('foo', () => {
+      this.paragraph.textContent = `Hello ${this.foo}`;
+    });
+    this.subscribeEvent({
+      selector: 'button',
+      type: 'click',
+      listener: () => {
+        this.foo = 'World';
+      },
+    });
+  }
+}
+customElements.define('my-custom-element-plain', MyCustomElementPlain);
+```
+</CodeBlock>
+
+The above example demonstrates how to create a custom element using the `RadiantElement` class without decorators. The element has a reactive property `foo`, a reference to a paragraph element, and an event listener for a button click. When the button is clicked, the `foo` property is updated, triggering the update callback to update the paragraph text.
+
+## Usage
+
+<CodeBlock>
+```html
+<my-custom-element>
+  <p data-ref="paragraph"></p>
+  <button>Click me</button>
+</my-custom-element>
+```
+</CodeBlock>
+
+## Methods
+
+### createReactiveProp
+
+Creates a reactive property for the element.
+
+- **Parameters**:
+  - `name`: The name of the property.
+  - `options`: The property configuration options.
+
+This method defines a reactive property on the element, allowing it to automatically update the UI when the property changes.
+
+--- 
+### createReactiveField 
+
+Creates a reactive field for the element.
+
+- **Parameters**:
+  - `name`: The name of the field.
+
+This method defines a reactive field on the element, allowing it to automatically update the UI when the field changes.
+
+--- 
+### registerUpdateCallback
+
+Registers a callback to be executed when a property is updated.
+
+- **Parameters**:
+  - `property`: The name of the property to watch for updates.
+  - `callback`: The callback function to execute when the property is updated.
+
+This method allows you to define custom logic that runs when a specific property is updated.
+
+
+--- 
+### notifyUpdate
+
+Called when a property of the element is updated.
+
+- **Parameters**:
+  - `changedProperty`: The name of the changed property.
+  - `oldValue`: The old value of the property.
+  - `newValue`: The new value of the property.
+
+This method triggers any registered update callbacks for the specified property.
+
+--- 
+### subscribeEvent
+
+Subscribes to a specific event on the Radiant element.
+
+- **Parameters**:
+  - `event`: The event listener configuration to subscribe to.
+- **Returns**: An unsubscription callback for the event.
+
+This method allows you to listen for events and execute a callback when the event occurs.
+
+--- 
+### subscribeEvents
+
+Subscribes to multiple events at once.
+
+- **Parameters**:
+  - `events`: An array of event listener configurations to subscribe to.
+- **Returns**: An array of unsubscription callbacks for each event.
+
+This method is useful for batch subscribing to multiple events for the element.
+
+--- 
+### removeAllSubscribedEvents
+
+Removes all event listeners that have been subscribed to the Radiant element.
+
+This method is important for cleaning up event listeners to avoid memory leaks.
+
+--- 
+### registerCleanupCallback
+
+Registers a callback to be executed when the element is disconnected from the DOM.
+
+- **Parameters**:
+  - `callback`: The cleanup function to be executed.
+
+This method allows you to define cleanup logic that runs when the element is removed from the DOM.
+
+--- 
+### renderTemplate
+
+Renders a specified template into a target element.
+
+- **Parameters**:
+  - `options`: The rendering options.
+    - `target`: The target element to render the template into.
+    - `template`: The HTML template string to render.
+    - `insert`: The position to insert the rendered template (optional).
+
+This method allows you to dynamically insert HTML content into the element.
+
+--- 
+### connectedContextCallback
+
+Called when the Radiant element is connected to a specific context.
+
+- **Parameters**:
+  - `context`: The context to which the element is connected.
+
+This method can be overridden to perform actions when the element is connected to a context.
+
+--- 
+### getRef
+
+Retrieves a child element by its `data-ref` attribute.
+
+- **Parameters**:
+  - `ref`: The value of the `data-ref` attribute to search for.
+  - `all`: Whether to return all matching elements (true) or just the first one (false).
+- **Returns**: The matching element(s) or null if none are found.
+
+This method simplifies accessing child elements based on their `data-ref` attributes.

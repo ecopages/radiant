@@ -1,4 +1,4 @@
-import type { RadiantElement, RenderInsertPosition } from '@/core/radiant-element';
+import type { RadiantElement, RenderInsertPosition } from '../core/radiant-element';
 
 type Constructor<T> = new (...args: any[]) => T;
 

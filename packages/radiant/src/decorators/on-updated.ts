@@ -1,32 +1,29 @@
-import type { RadiantElement } from '@/core/radiant-element';
+import type {
+  LegacyMethodDecoratorArgs,
+  StandardMethodDecoratorArgs,
+  StandardOrLegacyMethodDecoratorArgs,
+} from '../types';
+import { onUpdated as legacyOnUpdated } from './legacy/on-updated';
+import { onUpdated as standardOnUpdated } from './standard/on-updated';
 
 /**
- * A decorator to subscribe to an updated callback when a reactive field or property changes.
- * @param eventConfig The event configuration.
+ * A decorator to bind a method to the instance.
  */
 export function onUpdated(keyOrKeys: string | string[]) {
-  return (proto: RadiantElement, methodName: string) => {
-    if (!('updatesRegistry' in proto)) {
-      Object.defineProperty(proto, 'updatesRegistry', {
-        value: new Map<string, Set<string>>(),
-        configurable: true,
-      });
+  return function (
+    protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
+    nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
+    descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
+  ): any {
+    if (typeof nameOrContext === 'object') {
+      return standardOnUpdated(keyOrKeys)(
+        protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
+        nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
+      );
     }
-
-    const updatesRegistry = proto.updatesRegistry;
-
-    if (Array.isArray(keyOrKeys)) {
-      for (const key of keyOrKeys) {
-        if (!updatesRegistry.has(key)) {
-          updatesRegistry.set(key, new Set());
-        }
-        updatesRegistry.get(key)?.add(methodName);
-      }
-    } else if (typeof keyOrKeys === 'string') {
-      if (!updatesRegistry.has(keyOrKeys)) {
-        updatesRegistry.set(keyOrKeys, new Set());
-      }
-      updatesRegistry.get(keyOrKeys)?.add(methodName);
-    }
+    return legacyOnUpdated(keyOrKeys)(
+      protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
+      nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
+    );
   };
 }

@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'bun:test';
-import { debounce } from '@/decorators/debounce';
+import { describe, expect, test } from 'vitest';
+import { debounce } from '../../src/decorators/debounce';
 
 describe('@debounce', () => {
   test('decorator debounces a method correctly', async () => {

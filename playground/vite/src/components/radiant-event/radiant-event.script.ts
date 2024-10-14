@@ -12,7 +12,7 @@ type RadiantEventDetail = {
 @customElement('radiant-event-emitter')
 export class RadiantEventEmitter extends RadiantElement {
   @event({ name: RadiantEventEvents.CustomEvent, bubbles: true, composed: true })
-  declare customEvent: EventEmitter<RadiantEventDetail>;
+  customEvent!: EventEmitter<RadiantEventDetail>;
 
   @onEvent({ ref: 'emit-button', type: 'click' })
   onEmitButtonClick() {

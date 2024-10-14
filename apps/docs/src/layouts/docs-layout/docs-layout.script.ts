@@ -1,6 +1,6 @@
 import { BurgerEvents } from '@/components/burger/burger.events';
 import { onEvent } from '@ecopages/radiant';
-import { RadiantElement } from '@ecopages/radiant/core';
+import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 
 @customElement('radiant-navigation')

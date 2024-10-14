@@ -1,6 +1,11 @@
-import { ContextRequestEvent } from '@/context/events';
-import type { UnknownContext } from '@/context/types';
-import type { RadiantElement } from '@/core/radiant-element';
+import type {
+  LegacyFieldDecoratorArgs,
+  StandardFieldDecoratorArgs,
+  StandardOrLegacyFieldDecoratorArgs,
+} from '../../types';
+import type { UnknownContext } from '../types';
+import { consumeContext as legacyConsumeContext } from './legacy/consume-context';
+import { consumeContext as standardConsumeContext } from './standard/consume-context';
 
 /**
  * A decorator to provide a context to the target element.
@@ -8,17 +13,19 @@ import type { RadiantElement } from '@/core/radiant-element';
  * @returns
  */
 export function consumeContext(contextToProvide: UnknownContext) {
-  return (proto: RadiantElement, propertyKey: string) => {
-    const originalConnectedCallback = proto.connectedCallback;
-
-    proto.connectedCallback = function (this: RadiantElement) {
-      originalConnectedCallback.call(this);
-      this.dispatchEvent(
-        new ContextRequestEvent(contextToProvide, (context) => {
-          (this as any)[propertyKey] = context;
-          this.connectedContextCallback(contextToProvide);
-        }),
+  return function (
+    protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
+    nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
+  ): any {
+    if (typeof nameOrContext === 'object') {
+      return standardConsumeContext(contextToProvide)(
+        protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
+        nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
       );
-    };
+    }
+    return legacyConsumeContext(contextToProvide)(
+      protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
+      nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+    );
   };
 }

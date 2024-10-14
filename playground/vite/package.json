@@ -4,6 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
+		"dev:legacy": "vite -- --legacy",
 		"build": "tsc && vite build",
 		"preview": "vite preview"
 	},

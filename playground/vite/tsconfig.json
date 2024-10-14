@@ -1,13 +1,12 @@
 {
 	"compilerOptions": {
-		"target": "ES2020",
+		"target": "ES2022",
 		"useDefineForClassFields": true,
 		"module": "ESNext",
 		"lib": ["ES2020", "DOM", "DOM.Iterable"],
 		"skipLibCheck": true,
-		"experimentalDecorators": true,
+		"experimentalDecorators": false,
 
-		/* JSX */
 		"jsx": "react-jsx",
 		"jsxImportSource": "@kitajs/html",
 		"plugins": [
@@ -16,7 +15,6 @@
 			}
 		],
 
-		/* Bundler mode */
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
 		"resolveJsonModule": true,
@@ -24,14 +22,12 @@
 		"moduleDetection": "force",
 		"noEmit": true,
 
-		/* Paths */
 		"baseUrl": ".",
 		"rootDir": ".",
 		"paths": {
 			"@/*": ["./src/*"]
 		},
 
-		/* Linting */
 		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,

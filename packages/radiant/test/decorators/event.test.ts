@@ -1,5 +1,8 @@
-import { describe, expect, test } from 'bun:test';
-import { type EventEmitter, RadiantElement, customElement, event, onEvent, query } from '@/index';
+import { describe, expect, test } from 'vitest';
+import { RadiantElement } from '../../src/core/radiant-element';
+import { event } from '../../src/decorators/event';
+import { onEvent } from '../../src/decorators/on-event';
+import type { EventEmitter } from '../../src/tools/event-emitter';
 
 enum RadiantEventEvents {
   CustomEvent = 'custom-event',
@@ -9,43 +12,51 @@ type RadiantEventDetail = {
   value: string;
 };
 
-@customElement('radiant-event-emitter')
 class RadiantEventEmitter extends RadiantElement {
   @event({ name: RadiantEventEvents.CustomEvent, bubbles: true, composed: true })
   customEvent!: EventEmitter<RadiantEventDetail>;
 
   @onEvent({ ref: 'emit-button', type: 'click' })
-  onEmitButtonClick() {
+  emitEvent() {
     this.customEvent.emit({ value: 'Hello, World!' });
   }
 }
 
-@customElement('radiant-event-listener')
+customElements.define('radiant-event-emitter', RadiantEventEmitter);
+
 class RadiantEventListener extends RadiantElement {
-  @query({ ref: 'event-detail' }) eventDetail!: HTMLDivElement;
+  eventDetail!: HTMLDivElement;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.eventDetail = this.getRef<HTMLDivElement>('event-detail');
+  }
 
   @onEvent({ selector: 'radiant-event-emitter', type: RadiantEventEvents.CustomEvent })
-  onCustomEvent(event: CustomEvent<RadiantEventDetail>) {
+  updateText(event: CustomEvent<RadiantEventDetail>) {
     this.eventDetail.textContent = event.detail.value;
   }
 }
 
+customElements.define('radiant-event-listener', RadiantEventListener);
+
 const createTemplate = () => {
-  const customElement = document.createElement('radiant-event-listener');
-  customElement.innerHTML = `
-    <div data-ref="event-detail">Click to change the text</div>
-    <radiant-event-emitter></radiant-event-emitter>
-  `;
-  return customElement;
+  const radiantEventListener = document.createElement('radiant-event-listener') as RadiantEventListener;
+  const divEventDetail = document.createElement('div');
+  divEventDetail.setAttribute('data-ref', 'event-detail');
+  divEventDetail.textContent = 'Click to change the text';
+  const radiantEventEmitter = document.createElement('radiant-event-emitter') as RadiantEventEmitter;
+  radiantEventListener.appendChild(divEventDetail);
+  radiantEventListener.appendChild(radiantEventEmitter);
+  document.body.appendChild(radiantEventListener);
+  return { radiantEventListener, radiantEventEmitter };
 };
 
 describe('@event', () => {
-  test('decorator emits and listens to custom event correctly', () => {
-    const customElement = createTemplate();
-    document.body.appendChild(customElement);
-    const radiantEventListener = document.querySelector('radiant-event-listener') as RadiantEventListener;
-    const radiantEventEmitter = document.querySelector('radiant-event-emitter') as RadiantEventEmitter;
+  test('decorator emits and listens to custom event correctly', async () => {
+    const { radiantEventListener, radiantEventEmitter } = createTemplate();
     expect(radiantEventListener.eventDetail.innerHTML).toEqual('Click to change the text');
+
     radiantEventEmitter.customEvent.emit({ value: 'Hello, World!' });
     expect(radiantEventListener.eventDetail.innerHTML).toEqual('Hello, World!');
   });

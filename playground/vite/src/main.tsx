@@ -5,8 +5,8 @@ import { RadiantCounter } from './components/radiant-counter/radiant-counter.kit
 import { RadiantEvent } from './components/radiant-event/radiant-event.kita.tsx';
 import { RadiantRefs } from './components/radiant-refs/radiant-refs.kita.tsx';
 import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.kita.tsx';
-import './styles/tailwind.css';
 import { ValueTester } from './components/value-tester/value-tester.script.tsx';
+import './styles/tailwind.css';
 
 const appRoot = document.querySelector<HTMLDivElement>('#app');
 
@@ -73,6 +73,10 @@ const App = async () => {
   );
 };
 
-if (appRoot) {
-  appRoot.innerHTML = await (<App />);
-}
+const renderApp = async () => {
+  if (appRoot) {
+    appRoot.innerHTML = await (<App />);
+  }
+};
+
+renderApp();

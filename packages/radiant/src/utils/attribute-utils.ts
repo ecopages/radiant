@@ -1,3 +1,5 @@
+import type { RadiantElement } from '../core/radiant-element';
+
 export type AttributeTypeConstant = typeof Array | typeof Boolean | typeof Number | typeof Object | typeof String;
 
 export type AttributeTypeDefault = Array<unknown> | boolean | number | Record<string, unknown> | string;
@@ -207,3 +209,20 @@ export function isValueOfType(type: AttributeTypeConstant, defaultValue: unknown
       return false;
   }
 }
+
+export const getInitialValue = (
+  target: RadiantElement,
+  type: AttributeTypeConstant,
+  attributeKey: string,
+  defaultValue: unknown,
+) => {
+  if (type === Boolean) {
+    const hasAttribute = target.hasAttribute(attributeKey);
+    return hasAttribute || defaultValue;
+  }
+
+  const attributeValue = target.getAttribute(attributeKey);
+  return attributeValue !== null
+    ? readAttributeValue(attributeValue, type)
+    : defaultValue || (defaultValueForType(type) as typeof defaultValue);
+};

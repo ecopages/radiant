@@ -1,7 +1,12 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
-import { RadiantElement } from '@/index';
+import { waitFor } from '@testing-library/dom';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { RadiantElement } from '../../src/core/radiant-element';
 
-class MyRadiantElement extends RadiantElement {}
+class MyRadiantElement extends RadiantElement {
+  static observedAttributes = ['number', 'string'];
+  declare number: number;
+  declare string: string;
+}
 
 customElements.define('my-radiant-element', MyRadiantElement);
 
@@ -23,45 +28,110 @@ describe('RadiantElement', () => {
     document.body.appendChild(customElement);
     customElement.subscribeEvents([
       {
-        id: 'my-id',
-        selector: '[data-ref="click-me"] ',
+        selector: '[data-ref="click-me"]',
         type: 'click',
         listener: () => {},
       },
       {
-        id: 'my-id-2',
-        selector: '[data-ref="click-it"] ',
+        selector: '[data-ref="click-it"]',
         type: 'click',
         listener: () => {},
       },
     ]);
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id')).toBeTruthy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-me"]')).toBeTruthy();
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-it"]')).toBeTruthy();
   });
 
   test('it can unsubscribe from events', () => {
     const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
     document.body.appendChild(customElement);
-    customElement.subscribeEvents([
+    const [unsubscribeClickMe] = customElement.subscribeEvents([
       {
-        id: 'my-id',
-        selector: '[data-ref="click-me"] ',
+        selector: '[data-ref="click-me"]',
         type: 'click',
         listener: () => {},
       },
       {
-        id: 'my-id-2',
-        selector: '[data-ref="click-it"] ',
+        selector: '[data-ref="click-it"]',
         type: 'click',
         listener: () => {},
       },
     ]);
-    customElement.unsubscribeEvent('my-id');
+
+    unsubscribeClickMe();
+
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id')).toBeFalsy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-me"]')).toBeFalsy();
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-it"]')).toBeTruthy();
+  });
+
+  test('it can create a reactive property', () => {
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    customElement.createReactiveProp('number', { type: Number, defaultValue: 5 });
+    expect(customElement.number).toEqual(5);
+    customElement.number = 10;
+    expect(customElement.number).toEqual(10);
+  });
+
+  test('it can reflect a reactive property to an attribute', async () => {
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    customElement.createReactiveProp('number', { type: Number, defaultValue: 5, reflect: true });
+    await waitFor(() => expect(customElement.getAttribute('number')).toEqual('5'));
+    customElement.setAttribute('number', '10');
+    expect(customElement.getAttribute('number')).toEqual('10');
+  });
+
+  test('it can add multiple reactive properties', () => {
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    customElement.createReactiveProp('number', { type: Number, defaultValue: 5 });
+    customElement.createReactiveProp('string', { type: String, defaultValue: 'John' });
+    expect(customElement.number).toEqual(5);
+    expect(customElement.string).toEqual('John');
+  });
+
+  test('it can create a reactive field', () => {
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    customElement.createReactiveField('number', 5);
+    expect(customElement.number).toEqual(5);
+    customElement.number = 10;
+    expect(customElement.number).toEqual(10);
+  });
+
+  test('it can create multiple reactive fields', () => {
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    customElement.createReactiveField('number', 5);
+    customElement.createReactiveField('string', 'John');
+    expect(customElement.number).toEqual(5);
+    expect(customElement.string).toEqual('John');
+  });
+
+  test('it can get a reference to an element', () => {
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    const span = document.createElement('span');
+    span.setAttribute('data-ref', 'my-ref');
+    customElement.appendChild(span);
+    const ref = customElement.getRef('my-ref');
+    expect(ref).toEqual(span);
+  });
+
+  test('it can get all references to elements', () => {
+    const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+    document.body.appendChild(customElement);
+    for (let i = 0; i < 3; i++) {
+      const span = document.createElement('span');
+      span.setAttribute('data-ref', 'my-ref');
+      customElement.appendChild(span);
+    }
+    const refs = customElement.getRef('my-ref', true);
+    expect(refs.length).toEqual(3);
   });
 });

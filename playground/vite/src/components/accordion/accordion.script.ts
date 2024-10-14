@@ -1,5 +1,5 @@
 import { reactiveField } from '@ecopages/radiant';
-import { RadiantElement } from '@ecopages/radiant/core';
+import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { query } from '@ecopages/radiant/decorators/query';
@@ -18,9 +18,9 @@ type DetailsAnimation = {
 
 @customElement('radiant-accordion')
 export class RadiantAccordion extends RadiantElement {
-  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare multiple: boolean;
-  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare shouldAnimate: boolean;
-  @reactiveField declare currentIndex: number;
+  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) multiple!: boolean;
+  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) shouldAnimate!: boolean;
+  @reactiveField currentIndex!: number;
   @query({ selector: 'details', all: true }) detailsTargets!: HTMLDetailsElement[];
   @query({ selector: 'summary', all: true }) toggleTargets!: HTMLElement[];
   @query({ ref: 'panel', all: true }) panelTargets!: HTMLElement[];

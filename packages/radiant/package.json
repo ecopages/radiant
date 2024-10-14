@@ -17,8 +17,27 @@
 		"build:types": "tsc -p tsconfig.build.json && tsc-alias",
 		"watch:lib": "bun run ./build.ts --watch",
 		"clean": "rm -rf ./dist",
-		"test:lib": "bun test --coverage"
+		"test:standard": "vitest run",
+		"test:legacy": "vitest run -- --legacy",
+		"test:lib": "bun run test:standard && bun run test:legacy",
+		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
+	"dependencies": {
+		"@kitajs/html": "^4.1.0"
+	},
+	"devDependencies": {
+		"@happy-dom/global-registrator": "^15.7.4",
+		"@kitajs/ts-html-plugin": "^4.0.1",
+		"@testing-library/dom": "^10.4.0",
+		"@testing-library/user-event": "^14.5.2",
+		"@vitest/coverage-istanbul": "^2.1.3",
+		"bun-types": "latest",
+		"tsc-alias": "1.8.10",
+		"esbuild": "^0.23.0",
+		"vitest": "^2.1.3"
+	},
+	"files": ["/dist/*"],
+	"sideEffects": false,
 	"exports": {
 		"./package.json": {
 			"import": "./package.json"
@@ -30,26 +49,6 @@
 		"./context": {
 			"types": "./dist/context/index.d.ts",
 			"import": "./dist/context/index.js"
-		},
-		"./core": {
-			"types": "./dist/core/index.d.ts",
-			"import": "./dist/core/index.js"
-		},
-		"./decorators": {
-			"types": "./dist/decorators.d.ts",
-			"import": "./dist/decorators.js"
-		},
-		"./mixins": {
-			"types": "./dist/mixins/index.d.ts",
-			"import": "./dist/mixins/index.js"
-		},
-		"./tools": {
-			"types": "./dist/tools/index.d.ts",
-			"import": "./dist/tools/index.js"
-		},
-		"./utils": {
-			"types": "./dist/utils/index.d.ts",
-			"import": "./dist/utils/index.js"
 		},
 		"./context/create-context": {
 			"types": "./dist/context/create-context.d.ts",
@@ -123,16 +122,5 @@
 			"types": "./dist/tools/event-emitter.d.ts",
 			"import": "./dist/tools/event-emitter.js"
 		}
-	},
-	"dependencies": {
-		"@kitajs/html": "^4.1.0"
-	},
-	"devDependencies": {
-		"@happy-dom/global-registrator": "^15.7.4",
-		"@kitajs/ts-html-plugin": "^4.0.1",
-		"bun-types": "latest",
-		"tsc-alias": "1.8.10",
-		"esbuild": "^0.23.0"
-	},
-	"files": ["/dist/*"]
+	}
 }

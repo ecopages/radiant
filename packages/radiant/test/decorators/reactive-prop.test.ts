@@ -1,5 +1,7 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
-import { RadiantElement, customElement, reactiveProp } from '@/index';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { RadiantElement } from '../../src/core/radiant-element';
+import { customElement } from '../../src/decorators/custom-element';
+import { reactiveProp } from '../../src/decorators/reactive-prop';
 
 describe('@reactiveProp', () => {
   beforeEach(() => {
@@ -9,7 +11,7 @@ describe('@reactiveProp', () => {
   describe('string', () => {
     @customElement('my-reactive-string')
     class MyReactiveString extends RadiantElement {
-      @reactiveProp({ type: String, defaultValue: 'Frank' }) declare name: string;
+      @reactiveProp({ type: String, defaultValue: 'Frank' }) name: string;
 
       changeName(name: string) {
         this.name = name;
@@ -18,8 +20,8 @@ describe('@reactiveProp', () => {
 
     test('decorator updates the string correctly', () => {
       const customElement = document.createElement('my-reactive-string') as MyReactiveString;
-      customElement.setAttribute('name', 'John');
       document.body.appendChild(customElement);
+      customElement.changeName('John');
       expect(customElement.name).toEqual('John');
       customElement.changeName('Jane');
       expect(customElement.name).toEqual('Jane');
@@ -35,7 +37,7 @@ describe('@reactiveProp', () => {
   describe('number', () => {
     @customElement('my-reactive-number')
     class MyReactiveNumber extends RadiantElement {
-      @reactiveProp({ type: Number }) declare num: number;
+      @reactiveProp({ type: Number }) num: number;
 
       add() {
         this.num++;
@@ -44,8 +46,8 @@ describe('@reactiveProp', () => {
 
     test('decorator updates the number correctly', () => {
       const customElement = document.createElement('my-reactive-number') as MyReactiveNumber;
-      customElement.setAttribute('num', '1');
       document.body.appendChild(customElement);
+      customElement.num = 1;
       expect(customElement.num).toEqual(1);
       customElement.add();
       expect(customElement.num).toEqual(2);
@@ -61,7 +63,7 @@ describe('@reactiveProp', () => {
   describe('boolean', () => {
     @customElement('my-reactive-boolean')
     class MyReactiveBoolean extends RadiantElement {
-      @reactiveProp({ type: Boolean, defaultValue: false }) declare bool: boolean;
+      @reactiveProp({ type: Boolean, defaultValue: false }) bool: boolean;
 
       toggleBoolean() {
         this.bool = !this.bool;
@@ -69,8 +71,8 @@ describe('@reactiveProp', () => {
     }
     test('decorator updates the boolean correctly', () => {
       const customElement = document.createElement('my-reactive-boolean') as MyReactiveBoolean;
-      customElement.setAttribute('bool', '');
       document.body.appendChild(customElement);
+      customElement.bool = true;
       expect(customElement.bool).toEqual(true);
       customElement.toggleBoolean();
       expect(customElement.bool).toEqual(false);
@@ -86,33 +88,33 @@ describe('@reactiveProp', () => {
   describe('object', () => {
     @customElement('my-reactive-object')
     class MyReactiveObject extends RadiantElement {
-      @reactiveProp({ type: Object, defaultValue: { name: 'Frank' } }) declare data: { name: string };
+      @reactiveProp({ type: Object, defaultValue: { name: 'Frank' } }) obj: { name: string };
 
       changeName(name: string) {
-        this.data.name = name;
+        this.obj.name = name;
       }
     }
 
     test('decorator updates the object correctly', () => {
       const customElement = document.createElement('my-reactive-object') as MyReactiveObject;
-      customElement.setAttribute('data', JSON.stringify({ name: 'John' }));
       document.body.appendChild(customElement);
-      expect(customElement.data.name).toEqual('John');
+      customElement.obj = { name: 'John' };
+      expect(customElement.obj.name).toEqual('John');
       customElement.changeName('Jane');
-      expect(customElement.data.name).toEqual('Jane');
+      expect(customElement.obj.name).toEqual('Jane');
     });
 
     test('decorator has the correct default object value', () => {
       const customElement = document.createElement('my-reactive-object') as MyReactiveObject;
       document.body.appendChild(customElement);
-      expect(customElement.data.name).toEqual('Frank');
+      expect(customElement.obj.name).toEqual('Frank');
     });
   });
 
   describe('array', () => {
     @customElement('my-reactive-array')
     class MyReactiveArray extends RadiantElement {
-      @reactiveProp({ type: Array, defaultValue: ['Frank'] }) declare names: string[];
+      @reactiveProp({ type: Array, defaultValue: ['Frank'] }) names: string[];
 
       addName(name: string) {
         this.names.push(name);
@@ -121,8 +123,8 @@ describe('@reactiveProp', () => {
 
     test('decorator updates the array correctly', () => {
       const customElement = document.createElement('my-reactive-array') as MyReactiveArray;
-      customElement.setAttribute('names', JSON.stringify(['John']));
       document.body.appendChild(customElement);
+      customElement.names = ['John'];
       expect(customElement.names).toEqual(['John']);
       customElement.addName('Jane');
       expect(customElement.names).toEqual(['John', 'Jane']);
@@ -138,54 +140,55 @@ describe('@reactiveProp', () => {
   describe('reflect', () => {
     @customElement('my-reactive-reflect')
     class MyReactiveReflect extends RadiantElement {
-      @reactiveProp({ type: Number, reflect: true, defaultValue: 5 }) declare count: number;
+      @reactiveProp({ type: Number, reflect: true, defaultValue: 5 }) value: number;
 
       increment() {
-        this.count++;
+        this.value++;
       }
     }
 
     test('decorator updates the reflect correctly', () => {
       const customElement = document.createElement('my-reactive-reflect') as MyReactiveReflect;
-      customElement.setAttribute('count', '1');
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(1);
+      customElement.value = 1;
+      expect(customElement.value).toEqual(1);
       customElement.increment();
-      expect(customElement.count).toEqual(2);
-      expect(customElement.getAttribute('count')).toEqual('2');
+      expect(customElement.value).toEqual(2);
+      expect(customElement.getAttribute('value')).toEqual('2');
     });
 
     test('decorator has the correct default reflect value', () => {
       const customElement = document.createElement('my-reactive-reflect') as MyReactiveReflect;
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(5);
+      expect(customElement.value).toEqual(5);
     });
   });
 
   describe('not reflect', () => {
     @customElement('my-reactive-not-reflect')
     class MyReactiveNotReflect extends RadiantElement {
-      @reactiveProp({ type: Number, reflect: false, defaultValue: 5 }) declare count: number;
+      @reactiveProp({ type: Number, reflect: false, defaultValue: 5 }) value: number;
 
       increment() {
-        this.count++;
+        this.value++;
       }
     }
 
-    test('decorator updates the not reflect correctly', () => {
+    test('decorator updates the value correctly but does not reflect it to the attribute', () => {
       const customElement = document.createElement('my-reactive-not-reflect') as MyReactiveNotReflect;
-      customElement.setAttribute('count', '1');
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(1);
+      customElement.value = 1;
+      expect(customElement.value).toEqual(1);
       customElement.increment();
-      expect(customElement.count).toEqual(2);
-      expect(customElement.getAttribute('count')).toEqual('1');
+      expect(customElement.value).toEqual(2);
+      expect(customElement.getAttribute('value')).toEqual(null);
     });
 
-    test('decorator has the correct default not reflect value', () => {
+    test('decorator do not reflect the value to the attribute by default', () => {
       const customElement = document.createElement('my-reactive-not-reflect') as MyReactiveNotReflect;
       document.body.appendChild(customElement);
-      expect(customElement.count).toEqual(5);
+      expect(customElement.value).toEqual(5);
+      expect(customElement.getAttribute('value')).toEqual(null);
     });
   });
 });

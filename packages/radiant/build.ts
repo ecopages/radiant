@@ -11,9 +11,9 @@ const build = await Bun.build({
   outdir: 'dist',
   root: './src',
   target: 'browser',
-  minify: watchMode,
+  minify: !watchMode,
   format: 'esm',
-  splitting: watchMode,
+  splitting: !watchMode,
   sourcemap: 'external',
 });
 

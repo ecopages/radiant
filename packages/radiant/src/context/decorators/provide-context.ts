@@ -1,9 +1,14 @@
-import { ContextProvider } from '@/context/context-provider';
-import type { UnknownContext } from '@/context/types';
-import type { RadiantElement } from '@/core/radiant-element';
-import type { AttributeTypeConstant } from '@/utils/attribute-utils';
+import type {
+  LegacyFieldDecoratorArgs,
+  StandardFieldDecoratorArgs,
+  StandardOrLegacyFieldDecoratorArgs,
+} from '../../types';
+import type { AttributeTypeConstant } from '../../utils';
+import type { UnknownContext } from '../types';
+import { provideContext as legacyProvideContext } from './legacy/provide-context';
+import { provideContext as standardProvideContext } from './standard/provide-context';
 
-type CreateContextOptions<T extends UnknownContext> = {
+export type ProvideContextOptions<T extends UnknownContext> = {
   context: T;
   initialValue?: T['__context__'];
   hydrate?: AttributeTypeConstant;
@@ -11,17 +16,23 @@ type CreateContextOptions<T extends UnknownContext> = {
 
 /**
  * A decorator to provide a context to the target element.
- * @param contextToProvide
+ * @param options {@link ProvideContextOptions}
  * @returns
  */
-export function provideContext<T extends UnknownContext>({ context, initialValue, hydrate }: CreateContextOptions<T>) {
-  return (proto: RadiantElement, propertyKey: string) => {
-    const originalConnectedCallback = proto.connectedCallback;
-
-    proto.connectedCallback = function (this: RadiantElement) {
-      originalConnectedCallback.call(this);
-      (this as any)[propertyKey] = new ContextProvider<T>(this, { context, initialValue, hydrate });
-      this.connectedContextCallback(context);
-    };
+export function provideContext<T extends UnknownContext>(options: ProvideContextOptions<T>) {
+  return function (
+    protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
+    nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
+  ): any {
+    if (typeof nameOrContext === 'object') {
+      return standardProvideContext(options)(
+        protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
+        nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
+      );
+    }
+    return legacyProvideContext(options)(
+      protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
+      nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+    );
   };
 }

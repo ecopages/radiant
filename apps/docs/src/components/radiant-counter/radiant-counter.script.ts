@@ -1,4 +1,4 @@
-import { RadiantElement } from '@ecopages/radiant/core';
+import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
