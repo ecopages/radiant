@@ -66,11 +66,9 @@ export function onEvent(eventConfig: OnEventConfig) {
     const selector = 'selector' in eventConfig ? eventConfig.selector : `[data-ref="${eventConfig.ref}"]`;
 
     const originalMethod = descriptor.value;
-    const subscriptionId = `${eventConfig.type}-${selector}`;
 
     proto.connectedCallback = function (this: RadiantElement) {
       this.subscribeEvent({
-        id: subscriptionId,
         selector: selector,
         type: eventConfig.type,
         listener: originalMethod.bind(this),

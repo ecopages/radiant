@@ -54,9 +54,7 @@ export function onEvent(eventConfig: OnEventConfig) {
         'selector' in eventConfig ? eventConfig.selector : 'ref' in eventConfig && `[data-ref="${eventConfig.ref}"]`;
 
       if (selector) {
-        const subscriptionId = `${eventConfig.type}:${selector}`;
         (this as RadiantElement).subscribeEvent({
-          id: subscriptionId,
           selector: selector,
           type: eventConfig.type,
           listener: boundMethod,

@@ -22,7 +22,6 @@ export type RadiantElementEventListener = {
   selector: string;
   type: string;
   listener: EventListener;
-  id: string;
   options?: AddEventListenerOptions;
 };
 
@@ -258,9 +257,12 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
         eventConfig.listener.call(this, delegatedEvent);
       }
     };
-
+    const subscriptionId = `${eventConfig.type}-${eventConfig.selector}`;
     this.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
-    this.eventSubscriptions.set(eventConfig.id, { ...eventConfig, listener: delegatedListener });
+    this.eventSubscriptions.set(subscriptionId, {
+      ...eventConfig,
+      listener: delegatedListener,
+    });
   }
 
   public unsubscribeEvent(id: string): void {

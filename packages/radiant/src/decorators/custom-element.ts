@@ -14,7 +14,7 @@ import { customElement as standardCustomElement } from './standard/custom-elemen
 export function customElement(name: string, options?: ElementDefinitionOptions) {
   return function (
     protoOrTarget: StandardOrLegacyClassDecoratorArgs['protoOrTarget'],
-    nameOrContext: StandardOrLegacyClassDecoratorArgs['nameOrContext'],
+    nameOrContext?: StandardOrLegacyClassDecoratorArgs['nameOrContext'],
   ): any {
     if (typeof nameOrContext !== 'undefined') {
       return standardCustomElement(name, options)(

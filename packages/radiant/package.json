@@ -37,6 +37,7 @@
 		"vitest": "^2.1.2"
 	},
 	"files": ["/dist/*"],
+	"sideEffects": false,
 	"exports": {
 		"./package.json": {
 			"import": "./package.json"
