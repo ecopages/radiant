@@ -28,46 +28,44 @@ describe('RadiantElement', () => {
     document.body.appendChild(customElement);
     customElement.subscribeEvents([
       {
-        id: 'my-id',
-        selector: '[data-ref="click-me"] ',
+        selector: '[data-ref="click-me"]',
         type: 'click',
         listener: () => {},
       },
       {
-        id: 'my-id-2',
-        selector: '[data-ref="click-it"] ',
+        selector: '[data-ref="click-it"]',
         type: 'click',
         listener: () => {},
       },
     ]);
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id')).toBeTruthy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-me"]')).toBeTruthy();
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-it"]')).toBeTruthy();
   });
 
   test('it can unsubscribe from events', () => {
     const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
     document.body.appendChild(customElement);
-    customElement.subscribeEvents([
+    const [unsubscribeClickMe] = customElement.subscribeEvents([
       {
-        id: 'my-id',
-        selector: '[data-ref="click-me"] ',
+        selector: '[data-ref="click-me"]',
         type: 'click',
         listener: () => {},
       },
       {
-        id: 'my-id-2',
-        selector: '[data-ref="click-it"] ',
+        selector: '[data-ref="click-it"]',
         type: 'click',
         listener: () => {},
       },
     ]);
-    customElement.unsubscribeEvent('my-id');
+
+    unsubscribeClickMe();
+
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id')).toBeFalsy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-me"]')).toBeFalsy();
     // @ts-expect-error: private property
-    expect(customElement.eventSubscriptions.has('my-id-2')).toBeTruthy();
+    expect(customElement.eventSubscriptions.has('click:[data-ref="click-it"]')).toBeTruthy();
   });
 
   test('it can create a reactive property', () => {

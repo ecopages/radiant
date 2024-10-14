@@ -81,17 +81,6 @@ export interface IRadiantElement {
   subscribeEvents(events: RadiantElementEventListener[]): void;
 
   /**
-   * Unsubscribes from a Radiant element event.
-   * @param id - The ID of the event listener to unsubscribe from.
-   */
-  unsubscribeEvent(id: string): void;
-
-  /**
-   * Removes all subscribed events from the Radiant element.
-   */
-  removeAllSubscribedEvents(): void;
-
-  /**
    * It adds a callback to be executed when the Radiant element is disconnected from the DOM.
    */
   registerCleanupCallback(callback: () => void): void;
@@ -245,27 +234,31 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     this.updateCallbacks.get(property)?.add(update);
   }
 
-  public subscribeEvents(events: RadiantElementEventListener[]): void {
+  public subscribeEvents(events: RadiantElementEventListener[]): Array<() => void> {
+    const unsubscribers: Array<() => void> = [];
     for (const event of events) {
-      this.subscribeEvent(event);
+      unsubscribers.push(this.subscribeEvent(event));
     }
+    return unsubscribers;
   }
 
-  public subscribeEvent(eventConfig: RadiantElementEventListener): void {
+  public subscribeEvent(eventConfig: RadiantElementEventListener): () => void {
     const delegatedListener = (delegatedEvent: Event) => {
       if (delegatedEvent.target && (delegatedEvent.target as Element).matches(eventConfig.selector)) {
         eventConfig.listener.call(this, delegatedEvent);
       }
     };
-    const subscriptionId = `${eventConfig.type}-${eventConfig.selector}`;
+    const subscriptionId = `${eventConfig.type}:${eventConfig.selector}`;
     this.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
     this.eventSubscriptions.set(subscriptionId, {
       ...eventConfig,
       listener: delegatedListener,
     });
+
+    return this.unsubscribeEvent.bind(this, subscriptionId);
   }
 
-  public unsubscribeEvent(id: string): void {
+  private unsubscribeEvent(id: string): void {
     const eventSubscription = this.eventSubscriptions.get(id);
     if (eventSubscription) {
       this.removeEventListener(eventSubscription.type, eventSubscription.listener, eventSubscription.options);
@@ -273,7 +266,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
     }
   }
 
-  public removeAllSubscribedEvents(): void {
+  private removeAllSubscribedEvents(): void {
     for (const eventSubscription of this.eventSubscriptions.values()) {
       this.removeEventListener(eventSubscription.type, eventSubscription.listener, eventSubscription.options);
     }

@@ -105,6 +105,16 @@ Creates a reactive property for the element.
 This method defines a reactive property on the element, allowing it to automatically update the UI when the property changes.
 
 --- 
+### createReactiveField 
+
+Creates a reactive field for the element.
+
+- **Parameters**:
+  - `name`: The name of the field.
+
+This method defines a reactive field on the element, allowing it to automatically update the UI when the field changes.
+
+--- 
 ### registerUpdateCallback
 
 Registers a callback to be executed when a property is updated.
@@ -115,15 +125,6 @@ Registers a callback to be executed when a property is updated.
 
 This method allows you to define custom logic that runs when a specific property is updated.
 
---- 
-### createReactiveField 
-
-Creates a reactive field for the element.
-
-- **Parameters**:
-  - `name`: The name of the field.
-
-This method defines a reactive field on the element, allowing it to automatically update the UI when the field changes.
 
 --- 
 ### notifyUpdate
@@ -144,6 +145,7 @@ Subscribes to a specific event on the Radiant element.
 
 - **Parameters**:
   - `event`: The event listener configuration to subscribe to.
+- **Returns**: An unsubscription callback for the event.
 
 This method allows you to listen for events and execute a callback when the event occurs.
 
@@ -154,18 +156,9 @@ Subscribes to multiple events at once.
 
 - **Parameters**:
   - `events`: An array of event listener configurations to subscribe to.
+- **Returns**: An array of unsubscription callbacks for each event.
 
 This method is useful for batch subscribing to multiple events for the element.
-
---- 
-### unsubscribeEvent
-
-Unsubscribes from a specific event using its ID.
-
-- **Parameters**:
-  - `id`: The ID of the event listener to unsubscribe from.
-
-This method removes a previously subscribed event listener, preventing it from being called again.
 
 --- 
 ### removeAllSubscribedEvents
