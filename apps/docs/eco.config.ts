@@ -1,6 +1,8 @@
+import '@ecopages/bun-mdx-kitajs-loader';
 import { ConfigBuilder } from '@ecopages/core';
 import { kitajsPlugin } from '@ecopages/kitajs';
 import { mdxPlugin } from '@ecopages/mdx';
+import { postcssProcessorPlugin } from '@ecopages/postcss-processor';
 
 const config = await new ConfigBuilder()
   .setRootDir(import.meta.dir)
@@ -18,6 +20,7 @@ const config = await new ConfigBuilder()
     image: 'public/assets/images/default-og.webp',
     keywords: ['typescript', 'framework', 'static'],
   })
+  .setProcessors([postcssProcessorPlugin()])
   .setAdditionalWatchPaths(['src/data'])
   .build();
 
