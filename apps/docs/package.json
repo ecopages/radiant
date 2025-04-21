@@ -2,10 +2,11 @@
 	"name": "radiant-docs",
 	"private": true,
 	"scripts": {
-		"dev": "ecopages dev",
-		"build": "ecopages build",
-		"start": "ecopages start",
-		"preview": "ecopages preview"
+		"start": "bun run app.ts",
+		"dev": "bun run app.ts --dev",
+		"build": "bun run app.ts --build",
+		"preview": "bun run app.ts --preview",
+		"watch:dev": "bun --watch run app.ts --dev"
 	},
 	"devDependencies": {
 		"@ecopages/core": "npm:@jsr/ecopages__core@latest",
@@ -14,7 +15,7 @@
 		"@ecopages/postcss-processor": "npm:@jsr/ecopages__postcss-processor@latest",
 		"@ecopages/kitajs": "npm:@jsr/ecopages__kitajs@latest",
 		"@ecopages/mdx": "npm:@jsr/ecopages__mdx@latest",
-		"@ecopages/scripts-injector": "^0.1.1",
+		"@ecopages/scripts-injector": "latest",
 		"shiki": "^1.17.6"
 	}
 }
