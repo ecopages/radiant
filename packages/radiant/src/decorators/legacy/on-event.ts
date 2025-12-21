@@ -1,20 +1,20 @@
 import type { RadiantElement, RadiantElementEventListener } from '../../core/radiant-element';
 
 type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
-  (
-    | {
-        selector: string;
-      }
-    | {
-        ref: string;
-      }
-    | {
-        window: boolean;
-      }
-    | {
-        document: boolean;
-      }
-  );
+	(
+		| {
+				selector: string;
+		  }
+		| {
+				ref: string;
+		  }
+		| {
+				window: boolean;
+		  }
+		| {
+				document: boolean;
+		  }
+	);
 
 /**
  * A decorator to subscribe to an event on the target element.
@@ -31,53 +31,53 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
  */
 export function onEvent(eventConfig: OnEventConfig) {
-  return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
-    const originalConnectedCallback = proto.connectedCallback;
-    const originalDisconnectedCallback = proto.disconnectedCallback;
+	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
+		const originalConnectedCallback = proto.connectedCallback;
+		const originalDisconnectedCallback = proto.disconnectedCallback;
 
-    if ('window' in eventConfig) {
-      proto.connectedCallback = function (this: RadiantElement) {
-        window.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-        originalConnectedCallback.call(this);
-      };
+		if ('window' in eventConfig) {
+			proto.connectedCallback = function (this: RadiantElement) {
+				window.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+				originalConnectedCallback.call(this);
+			};
 
-      proto.disconnectedCallback = function (this: RadiantElement) {
-        window.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-        originalDisconnectedCallback.call(this);
-      };
+			proto.disconnectedCallback = function (this: RadiantElement) {
+				window.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+				originalDisconnectedCallback.call(this);
+			};
 
-      return descriptor;
-    }
+			return descriptor;
+		}
 
-    if ('document' in eventConfig) {
-      proto.connectedCallback = function (this: RadiantElement) {
-        document.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-        originalConnectedCallback.call(this);
-      };
+		if ('document' in eventConfig) {
+			proto.connectedCallback = function (this: RadiantElement) {
+				document.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+				originalConnectedCallback.call(this);
+			};
 
-      proto.disconnectedCallback = function (this: RadiantElement) {
-        document.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-        originalDisconnectedCallback.call(this);
-      };
+			proto.disconnectedCallback = function (this: RadiantElement) {
+				document.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
+				originalDisconnectedCallback.call(this);
+			};
 
-      return descriptor;
-    }
+			return descriptor;
+		}
 
-    const selector = 'selector' in eventConfig ? eventConfig.selector : `[data-ref="${eventConfig.ref}"]`;
+		const selector = 'selector' in eventConfig ? eventConfig.selector : `[data-ref="${eventConfig.ref}"]`;
 
-    const originalMethod = descriptor.value;
+		const originalMethod = descriptor.value;
 
-    proto.connectedCallback = function (this: RadiantElement) {
-      this.subscribeEvent({
-        selector: selector,
-        type: eventConfig.type,
-        listener: originalMethod.bind(this),
-        options: eventConfig?.options ?? undefined,
-      });
+		proto.connectedCallback = function (this: RadiantElement) {
+			this.subscribeEvent({
+				selector: selector,
+				type: eventConfig.type,
+				listener: originalMethod.bind(this),
+				options: eventConfig?.options ?? undefined,
+			});
 
-      originalConnectedCallback.call(this);
-    };
+			originalConnectedCallback.call(this);
+		};
 
-    return descriptor;
-  };
+		return descriptor;
+	};
 }

@@ -22,42 +22,42 @@ import type { QueryConfig } from '../query';
  * // Now, `myElement` will return the first element in the light DOM of `MyElement` that matches the selector '.my-class'.
  */
 export function query<T extends Element | Element[]>({
-  cache: shouldBeCached = true,
-  ...options
+	cache: shouldBeCached = true,
+	...options
 }: QueryConfig): (proto: RadiantElement, propertyName: string | symbol) => void {
-  return (proto: RadiantElement, propertyKey: string | symbol) => {
-    const privatePropertyKey = Symbol(`__${String(propertyKey)}__cache`);
+	return (proto: RadiantElement, propertyKey: string | symbol) => {
+		const privatePropertyKey = Symbol(`__${String(propertyKey)}__cache`);
 
-    const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
+		const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
 
-    const executeQuery = (instance: RadiantElement) => {
-      let result: T | T[] = [];
-      if (options?.all) {
-        const queried = instance.querySelectorAll(selector);
-        result = queried.length ? (Array.from(queried) as T) : [];
-        return result;
-      }
+		const executeQuery = (instance: RadiantElement) => {
+			let result: T | T[] = [];
+			if (options?.all) {
+				const queried = instance.querySelectorAll(selector);
+				result = queried.length ? (Array.from(queried) as T) : [];
+				return result;
+			}
 
-      return instance.querySelector(selector);
-    };
+			return instance.querySelector(selector);
+		};
 
-    const originalConnectedCallback = proto.connectedCallback;
+		const originalConnectedCallback = proto.connectedCallback;
 
-    proto.connectedCallback = function (this: RadiantElement) {
-      Object.defineProperty(this, propertyKey, {
-        get() {
-          if (shouldBeCached) {
-            if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
-              this[privatePropertyKey] = executeQuery(this);
-            }
-            return this[privatePropertyKey];
-          }
-          return executeQuery(this) as T;
-        },
-        enumerable: true,
-        configurable: true,
-      });
-      originalConnectedCallback.call(this);
-    };
-  };
+		proto.connectedCallback = function (this: RadiantElement) {
+			Object.defineProperty(this, propertyKey, {
+				get() {
+					if (shouldBeCached) {
+						if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
+							this[privatePropertyKey] = executeQuery(this);
+						}
+						return this[privatePropertyKey];
+					}
+					return executeQuery(this) as T;
+				},
+				enumerable: true,
+				configurable: true,
+			});
+			originalConnectedCallback.call(this);
+		};
+	};
 }

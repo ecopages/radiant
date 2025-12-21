@@ -1,14 +1,14 @@
 import type {
-  LegacyFieldDecoratorArgs,
-  StandardFieldDecoratorArgs,
-  StandardOrLegacyFieldDecoratorArgs,
+	LegacyFieldDecoratorArgs,
+	StandardFieldDecoratorArgs,
+	StandardOrLegacyFieldDecoratorArgs,
 } from '../types';
 import { query as legacyQuery } from './legacy/query';
 import { query as standardQuery } from './standard/query';
 
 type BaseQueryConfig = {
-  all?: boolean;
-  cache?: boolean;
+	all?: boolean;
+	cache?: boolean;
 };
 
 type QueryBySelector = { selector: string };
@@ -24,19 +24,19 @@ export type QueryConfig = BaseQueryConfig & (QueryBySelector | QueryByRef);
  * @param options {@link QueryConfig} The options for the reactive property.
  */
 export function query<T extends Element | Element[]>(options: QueryConfig) {
-  return function (
-    protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-    nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-  ): any {
-    if (typeof nameOrContext === 'object') {
-      return standardQuery(options)(
-        protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-        nameOrContext as StandardFieldDecoratorArgs<HTMLElement, Element | Element[]>['nameOrContext'],
-      );
-    }
-    return legacyQuery<T>(options)(
-      protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-      nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-    );
-  };
+	return function (
+		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
+		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
+	): any {
+		if (typeof nameOrContext === 'object') {
+			return standardQuery(options)(
+				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
+				nameOrContext as StandardFieldDecoratorArgs<HTMLElement, Element | Element[]>['nameOrContext'],
+			);
+		}
+		return legacyQuery<T>(options)(
+			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
+			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+		);
+	};
 }

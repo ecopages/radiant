@@ -6,5 +6,5 @@ GlobalRegistrator.register();
 window.console = oldConsole;
 
 afterAll(() => {
-  GlobalRegistrator.unregister();
+	GlobalRegistrator.unregister();
 });

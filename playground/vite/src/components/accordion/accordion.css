@@ -1,16 +1,16 @@
 radiant-accordion {
-  @apply rounded-md overflow-hidden border border-gray-200;
+	@apply rounded-md overflow-hidden border border-gray-200;
 
-  summary {
-    @apply cursor-pointer bg-gray-100 p-3 border-b border-gray-200;
-    /* list-style-type: none; */
-  }
+	summary {
+		@apply cursor-pointer bg-gray-100 p-3 border-b border-gray-200;
+		/* list-style-type: none; */
+	}
 
-  [data-ref="panel"] {
-    @apply px-3 py-4;
-  }
+	[data-ref='panel'] {
+		@apply px-3 py-4;
+	}
 
-  details:last-of-type summary {
-    @apply border-b-0;
-  }
+	details:last-of-type summary {
+		@apply border-b-0;
+	}
 }

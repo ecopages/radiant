@@ -7,8 +7,8 @@ const LEGACY_ENVIRONMENT = process.argv.includes('--legacy');
 const tsconfigRaw = LEGACY_ENVIRONMENT ? JSON.stringify(legacyConfig) : JSON.stringify(standardConfig);
 
 export default defineConfig({
-  esbuild: {
-    target: 'es2022',
-    tsconfigRaw,
-  },
+	esbuild: {
+		target: 'es2022',
+		tsconfigRaw,
+	},
 });

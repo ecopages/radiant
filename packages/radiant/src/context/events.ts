@@ -4,10 +4,10 @@ import type { Context, ContextCallback, ContextType, UnknownContext } from './ty
  * List of events which can be emitted by a context provider or requester.
  */
 export enum ContextEventsTypes {
-  SUBSCRIPTION_REQUEST = 'context-subscription-request',
-  CONTEXT_REQUEST = 'context-request',
-  ON_MOUNT = 'context-on-mount',
-  MOUNTED = 'context-mounted',
+	SUBSCRIPTION_REQUEST = 'context-subscription-request',
+	CONTEXT_REQUEST = 'context-request',
+	ON_MOUNT = 'context-on-mount',
+	MOUNTED = 'context-mounted',
 }
 
 /**
@@ -21,34 +21,34 @@ export enum ContextEventsTypes {
  * function to the callback which requesters can invoke to indicate they no longer wish to receive these updates.
  */
 export class ContextRequestEvent<T extends UnknownContext> extends Event {
-  public constructor(
-    public readonly context: T,
-    public readonly callback: ContextCallback<ContextType<T>>,
-    public readonly subscribe?: boolean,
-  ) {
-    super(ContextEventsTypes.CONTEXT_REQUEST, { bubbles: true, composed: true });
-  }
+	public constructor(
+		public readonly context: T,
+		public readonly callback: ContextCallback<ContextType<T>>,
+		public readonly subscribe?: boolean,
+	) {
+		super(ContextEventsTypes.CONTEXT_REQUEST, { bubbles: true, composed: true });
+	}
 }
 
 /**
  * A type which represents a subscription to a context value.
  */
 export type ContextSubscription<T extends UnknownContext> = {
-  select?: (context: ContextType<T>) => unknown;
-  callback: (value: unknown) => void;
+	select?: (context: ContextType<T>) => unknown;
+	callback: (value: unknown) => void;
 };
 
 /**
  * An event fired by a context provider to signal that a context value has been mounted and is available for consumption.
  */
 export class ContextOnMountEvent extends CustomEvent<{ context: UnknownContext }> {
-  public constructor(context: UnknownContext) {
-    super(ContextEventsTypes.ON_MOUNT, {
-      detail: { context },
-      bubbles: true,
-      composed: true,
-    });
-  }
+	public constructor(context: UnknownContext) {
+		super(ContextEventsTypes.ON_MOUNT, {
+			detail: { context },
+			bubbles: true,
+			composed: true,
+		});
+	}
 }
 
 /**
@@ -64,35 +64,35 @@ export class ContextOnMountEvent extends CustomEvent<{ context: UnknownContext }
  * It accepts a `selector` property which can be used to request a specific property of the context value.
  */
 export class ContextSubscriptionRequestEvent<T extends UnknownContext> extends Event {
-  public constructor(
-    public readonly context: T,
-    public readonly callback: (value: ContextType<T> | { [K in keyof ContextType<T>]: ContextType<T>[K] }) => void,
-    public readonly select?: (context: ContextType<T>) => unknown,
-    public readonly subscribe?: boolean,
-  ) {
-    super(ContextEventsTypes.SUBSCRIPTION_REQUEST, {
-      bubbles: true,
-      composed: true,
-    });
-  }
+	public constructor(
+		public readonly context: T,
+		public readonly callback: (value: ContextType<T> | { [K in keyof ContextType<T>]: ContextType<T>[K] }) => void,
+		public readonly select?: (context: ContextType<T>) => unknown,
+		public readonly subscribe?: boolean,
+	) {
+		super(ContextEventsTypes.SUBSCRIPTION_REQUEST, {
+			bubbles: true,
+			composed: true,
+		});
+	}
 }
 
 declare global {
-  interface HTMLElementEventMap {
-    /**
-     * A 'context-request-subscription' event can be emitted by any element which desires
-     * a context value to be injected by an external provider.
-     */
-    [ContextEventsTypes.SUBSCRIPTION_REQUEST]: ContextSubscriptionRequestEvent<UnknownContext>;
-    /**
-     * A context-request-provider event can be emitted by a context requester to signal
-     * that it desires a context value to be provided by a context provider.
-     */
-    [ContextEventsTypes.CONTEXT_REQUEST]: ContextRequestEvent<Context<unknown, unknown>>;
-    /**
-     * A 'context-mount' event can be emitted by a context provider to signal
-     * that a context value has been mounted and is available for consumption.
-     */
-    [ContextEventsTypes.ON_MOUNT]: ContextOnMountEvent;
-  }
+	interface HTMLElementEventMap {
+		/**
+		 * A 'context-request-subscription' event can be emitted by any element which desires
+		 * a context value to be injected by an external provider.
+		 */
+		[ContextEventsTypes.SUBSCRIPTION_REQUEST]: ContextSubscriptionRequestEvent<UnknownContext>;
+		/**
+		 * A context-request-provider event can be emitted by a context requester to signal
+		 * that it desires a context value to be provided by a context provider.
+		 */
+		[ContextEventsTypes.CONTEXT_REQUEST]: ContextRequestEvent<Context<unknown, unknown>>;
+		/**
+		 * A 'context-mount' event can be emitted by a context provider to signal
+		 * that a context value has been mounted and is available for consumption.
+		 */
+		[ContextEventsTypes.ON_MOUNT]: ContextOnMountEvent;
+	}
 }

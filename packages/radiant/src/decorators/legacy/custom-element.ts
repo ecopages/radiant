@@ -4,9 +4,9 @@
  * @param options {@link ElementDefinitionOptions}
  */
 export function customElement(name: string, options?: ElementDefinitionOptions) {
-  return (target: CustomElementConstructor) => {
-    if (!window.customElements.get(name)) {
-      window.customElements.define(name, target, options);
-    }
-  };
+	return (target: CustomElementConstructor) => {
+		if (!window.customElements.get(name)) {
+			window.customElements.define(name, target, options);
+		}
+	};
 }

@@ -17,15 +17,15 @@
 ### Patch Changes
 
 - [`1504dff`](https://github.com/ecopages/radiant/commit/1504dffb70da7dfd955faf61ea45f03b2427803b) - - Changed the way hydration on context occurs to follow the best practices for web components. Now the hydration data is not passed anymore as an attribute but using a script tag of type json with a `data-hydration` attribute.
-  - Refactored `stringifyAttribute` to `stringifyTyped` for better clarity and flexibility. Updated the function to handle both JSON stringification and type preservation based on generic parameters. Now it is possible to return both the type (for jsx usage on atribute) or a string (i.e. for context hydration)
+    - Refactored `stringifyAttribute` to `stringifyTyped` for better clarity and flexibility. Updated the function to handle both JSON stringification and type preservation based on generic parameters. Now it is possible to return both the type (for jsx usage on atribute) or a string (i.e. for context hydration)
 
 ## 0.1.6
 
 ### Patch Changes
 
 - [#31](https://github.com/ecopages/radiant/pull/31) [`1af1051`](https://github.com/ecopages/radiant/commit/1af1051af5f119e92690b3aa6a653075faddbc03) Thanks [@andeeplus](https://github.com/andeeplus)! - - added propertyConfigMap and updatesRegistry to keep a more detailed overview of the element.
-  - Removed the prefixed property and just kept the base one to simplify the code in @reactiveProp
-  - Added observedAttributes to keep track of the dom changes happening via setAttribute
+    - Removed the prefixed property and just kept the base one to simplify the code in @reactiveProp
+    - Added observedAttributes to keep track of the dom changes happening via setAttribute
 
 ## 0.1.5
 

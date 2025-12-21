@@ -2,20 +2,20 @@ import type { RadiantElement, RadiantElementEventListener } from '../../core/rad
 import type { Method } from '../../types';
 
 type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
-  (
-    | {
-        selector: string;
-      }
-    | {
-        ref: string;
-      }
-    | {
-        window: boolean;
-      }
-    | {
-        document: boolean;
-      }
-  );
+	(
+		| {
+				selector: string;
+		  }
+		| {
+				ref: string;
+		  }
+		| {
+				window: boolean;
+		  }
+		| {
+				document: boolean;
+		  }
+	);
 
 /**
  * A decorator to subscribe to an event on the target element.
@@ -32,35 +32,37 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
  */
 export function onEvent(eventConfig: OnEventConfig) {
-  return function <T extends Method>(originalMethod: T, context: ClassMethodDecoratorContext): void {
-    context.addInitializer(function (this: any) {
-      const boundMethod = originalMethod.bind(this);
+	return function <T extends Method>(originalMethod: T, context: ClassMethodDecoratorContext): void {
+		context.addInitializer(function (this: any) {
+			const boundMethod = originalMethod.bind(this);
 
-      if ('window' in eventConfig) {
-        window.addEventListener(eventConfig.type, boundMethod, eventConfig.options);
-        (this as RadiantElement).registerCleanupCallback(() => {
-          window.removeEventListener(eventConfig.type, boundMethod, eventConfig.options);
-        });
-      }
+			if ('window' in eventConfig) {
+				window.addEventListener(eventConfig.type, boundMethod, eventConfig.options);
+				(this as RadiantElement).registerCleanupCallback(() => {
+					window.removeEventListener(eventConfig.type, boundMethod, eventConfig.options);
+				});
+			}
 
-      if ('document' in eventConfig) {
-        document.addEventListener(eventConfig.type, boundMethod, eventConfig.options);
-        (this as RadiantElement).registerCleanupCallback(() => {
-          document.removeEventListener(eventConfig.type, boundMethod, eventConfig.options);
-        });
-      }
+			if ('document' in eventConfig) {
+				document.addEventListener(eventConfig.type, boundMethod, eventConfig.options);
+				(this as RadiantElement).registerCleanupCallback(() => {
+					document.removeEventListener(eventConfig.type, boundMethod, eventConfig.options);
+				});
+			}
 
-      const selector =
-        'selector' in eventConfig ? eventConfig.selector : 'ref' in eventConfig && `[data-ref="${eventConfig.ref}"]`;
+			const selector =
+				'selector' in eventConfig
+					? eventConfig.selector
+					: 'ref' in eventConfig && `[data-ref="${eventConfig.ref}"]`;
 
-      if (selector) {
-        (this as RadiantElement).subscribeEvent({
-          selector: selector,
-          type: eventConfig.type,
-          listener: boundMethod,
-          options: eventConfig?.options ?? undefined,
-        });
-      }
-    });
-  };
+			if (selector) {
+				(this as RadiantElement).subscribeEvent({
+					selector: selector,
+					type: eventConfig.type,
+					listener: boundMethod,
+					options: eventConfig?.options ?? undefined,
+				});
+			}
+		});
+	};
 }

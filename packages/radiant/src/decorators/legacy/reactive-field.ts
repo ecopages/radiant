@@ -9,10 +9,10 @@ import type { RadiantElement } from '../../core/radiant-element';
  * @param propertyKey The property key.
  */
 export function reactiveField(target: RadiantElement, propertyKey: string) {
-  const originalConnectedCallback = target.connectedCallback;
+	const originalConnectedCallback = target.connectedCallback;
 
-  target.connectedCallback = function (this: RadiantElement) {
-    this.createReactiveField(propertyKey, this[propertyKey as keyof typeof this]);
-    originalConnectedCallback.call(this);
-  };
+	target.connectedCallback = function (this: RadiantElement) {
+		this.createReactiveField(propertyKey, this[propertyKey as keyof typeof this]);
+		originalConnectedCallback.call(this);
+	};
 }

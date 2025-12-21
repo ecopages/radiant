@@ -16,5 +16,5 @@
  * <my-app my-complex-attribute={stringifyTyped<MyType>(myData)}> // myData is of type MyType
  */
 export function stringifyTyped<T, R = T>(value: T): R extends string ? string : T {
-  return JSON.stringify(value) as unknown as R extends string ? string : T;
+	return JSON.stringify(value) as unknown as R extends string ? string : T;
 }

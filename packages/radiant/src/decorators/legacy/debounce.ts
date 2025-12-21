@@ -1,23 +1,23 @@
 import type { RadiantElement } from '../../core/radiant-element';
 
 export function debounce(
-  timeout: number,
+	timeout: number,
 ): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor {
-  let timeoutRef: ReturnType<typeof setTimeout> | null = null;
+	let timeoutRef: ReturnType<typeof setTimeout> | null = null;
 
-  return (_target: RadiantElement, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor => {
-    const originalMethod = descriptor.value;
+	return (_target: RadiantElement, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor => {
+		const originalMethod = descriptor.value;
 
-    descriptor.value = function debounce(...args: any[]) {
-      if (timeoutRef !== null) {
-        clearTimeout(timeoutRef);
-      }
+		descriptor.value = function debounce(...args: any[]) {
+			if (timeoutRef !== null) {
+				clearTimeout(timeoutRef);
+			}
 
-      timeoutRef = setTimeout(() => {
-        originalMethod.apply(this, args);
-      }, timeout);
-    };
+			timeoutRef = setTimeout(() => {
+				originalMethod.apply(this, args);
+			}, timeout);
+		};
 
-    return descriptor;
-  };
+		return descriptor;
+	};
 }

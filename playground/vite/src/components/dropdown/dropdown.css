@@ -1,23 +1,23 @@
 radiant-dropdown {
-  @apply block;
-  [data-ref="content"] {
-    @apply hidden;
-    @apply w-max absolute top-0 left-0;
-    @apply bg-surface p-3 md:p-4 border border-border rounded-md;
-  }
-  [data-ref="arrow"] {
-    @apply absolute w-2 h-2 bg-surface transform rotate-45 border-t border-l border-t-border border-l-border;
-    &[data-placement^="top"] {
-      @apply -rotate-[135deg];
-    }
-    &[data-placement^="right"] {
-      @apply -rotate-45;
-    }
-    &[data-placement^="bottom"] {
-      @apply rotate-45;
-    }
-    &[data-placement^="left"] {
-      @apply rotate-[135deg];
-    }
-  }
+	@apply block;
+	[data-ref='content'] {
+		@apply hidden;
+		@apply w-max absolute top-0 left-0;
+		@apply bg-surface p-3 md:p-4 border border-border rounded-md;
+	}
+	[data-ref='arrow'] {
+		@apply absolute w-2 h-2 bg-surface transform rotate-45 border-t border-l border-t-border border-l-border;
+		&[data-placement^='top'] {
+			@apply -rotate-[135deg];
+		}
+		&[data-placement^='right'] {
+			@apply -rotate-45;
+		}
+		&[data-placement^='bottom'] {
+			@apply rotate-45;
+		}
+		&[data-placement^='left'] {
+			@apply rotate-[135deg];
+		}
+	}
 }

@@ -1,7 +1,7 @@
 import type {
-  LegacyFieldDecoratorArgs,
-  StandardFieldDecoratorArgs,
-  StandardOrLegacyFieldDecoratorArgs,
+	LegacyFieldDecoratorArgs,
+	StandardFieldDecoratorArgs,
+	StandardOrLegacyFieldDecoratorArgs,
 } from '../../types';
 import type { AttributeTypeConstant } from '../../utils';
 import type { UnknownContext } from '../types';
@@ -9,9 +9,9 @@ import { provideContext as legacyProvideContext } from './legacy/provide-context
 import { provideContext as standardProvideContext } from './standard/provide-context';
 
 export type ProvideContextOptions<T extends UnknownContext> = {
-  context: T;
-  initialValue?: T['__context__'];
-  hydrate?: AttributeTypeConstant;
+	context: T;
+	initialValue?: T['__context__'];
+	hydrate?: AttributeTypeConstant;
 };
 
 /**
@@ -20,19 +20,19 @@ export type ProvideContextOptions<T extends UnknownContext> = {
  * @returns
  */
 export function provideContext<T extends UnknownContext>(options: ProvideContextOptions<T>) {
-  return function (
-    protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-    nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-  ): any {
-    if (typeof nameOrContext === 'object') {
-      return standardProvideContext(options)(
-        protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-        nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
-      );
-    }
-    return legacyProvideContext(options)(
-      protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-      nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-    );
-  };
+	return function (
+		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
+		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
+	): any {
+		if (typeof nameOrContext === 'object') {
+			return standardProvideContext(options)(
+				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
+				nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
+			);
+		}
+		return legacyProvideContext(options)(
+			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
+			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+		);
+	};
 }
