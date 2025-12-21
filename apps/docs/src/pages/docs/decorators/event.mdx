@@ -4,24 +4,90 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @event',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @event',
+	description: 'Dispatch custom events with type safety.',
 })
 
 # @event
----
 
-A decorator that creates an EventEmitter on the target element.
+The `@event` decorator creates an `EventEmitter` that provides a type-safe way to dispatch custom events from your component. Custom events are the primary way for components to communicate with their parents or other parts of the application.
 
-The EventEmitter can be used to dispatch custom events from the target element.
+## Usage
 
-<CodeBlock >
+<CodeBlock>
 ```typescript
-@event({ name: 'my-custom-event', bubbles: true, composed: true })
-customEvent!: EventEmitter<RadiantEventDetail>;
-  
-connectedCallback() {
-    this.customEvent.emit({ detail: 'Hello, World!' });
+import { RadiantElement, customElement, event, EventEmitter } from '@ecopages/radiant';
+
+@customElement('counter-button')
+export class CounterButton extends RadiantElement {
+	@event({ name: 'count-changed' })
+	countChanged!: EventEmitter<{ count: number }>;
+	
+	private count = 0;
+	
+	@onEvent({ selector: 'button', type: 'click' })
+	handleClick() {
+		this.count++;
+		this.countChanged.emit({ count: this.count });
+	}
 }
 ```
 </CodeBlock>
+
+## Parameters
+
+The decorator accepts a configuration object:
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `name` | `string` | Yes | The event name (e.g., 'value-changed', 'item-selected'). |
+| `bubbles` | `boolean` | No | Whether the event bubbles up the DOM (default: `true`). |
+| `composed` | `boolean` | No | Whether the event crosses shadow DOM boundaries (default: `true`). |
+| `cancelable` | `boolean` | No | Whether the event can be cancelled (default: `false`). |
+
+## Type Safety
+
+You can define interfaces for your event details to ensure type safety when emitting events:
+
+<CodeBlock>
+```typescript
+interface UserSelectedDetail {
+	userId: string;
+	userName: string;
+}
+
+@customElement('user-list')
+export class UserList extends RadiantElement {
+	@event({ name: 'user-selected' })
+	userSelected!: EventEmitter<UserSelectedDetail>;
+	
+	selectUser(user: User) {
+		this.userSelected.emit({
+			userId: user.id,
+			userName: user.name,
+		});
+	}
+}
+```
+</CodeBlock>
+
+## Listening to Events
+
+Components can listen to custom events from their children using the `@onEvent` decorator:
+
+<CodeBlock>
+```typescript
+@customElement('parent-component')
+export class ParentComponent extends RadiantElement {
+	@onEvent({ selector: 'counter-button', type: 'count-changed' })
+	handleCount(event: CustomEvent<{ count: number }>) {
+		console.log('Count is now:', event.detail.count);
+	}
+}
+```
+</CodeBlock>
+
+## Learn More
+
+- [@onEvent](/docs/decorators/on-event) - Subscribe to events.
+- [RadiantElement](/docs/core/radiant-element) - Base class with event support.

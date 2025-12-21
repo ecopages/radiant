@@ -4,36 +4,68 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @query',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @query',
+	description: 'Query and cache references to elements within your component.',
 })
 
 # @query
----
 
-A decorator to query by CSS selector or data-ref attribute.
+The `@query` decorator provides a convenient way to query and cache references to elements within your custom element's DOM. It creates a getter that performs the query on first access and caches the results by default.
 
-By default it queries for the first element that matches the selector, but it can be configured to query for all elements.
+## Usage
 
-<CodeBlock >
+<CodeBlock>
 ```typescript
-@query({ selector: "[data-text]"}) text: HTMLElement;
+import { RadiantElement, customElement, query } from '@ecopages/radiant';
+
+@customElement('user-profile')
+export class UserProfile extends RadiantElement {
+	// Query by data-ref (recommended)
+	@query({ ref: 'avatar' }) avatar!: HTMLImageElement;
+	
+	// Query by CSS selector
+	@query({ selector: 'button.action' }) submitButton!: HTMLButtonElement;
+	
+	// Query all matching elements
+	@query({ ref: 'item', all: true }) items!: HTMLElement[];
+}
 ```
 </CodeBlock>
 
-It is possible to query for all elements that match the selector by setting the `all` property to true.
+## Parameters
 
-<CodeBlock >
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `selector` | `string` | One of `selector`/`ref` | CSS selector to match elements. |
+| `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. |
+| `all` | `boolean` | No | Query for all matching elements (default: `false`). |
+| `cache` | `boolean` | No | Cache the query result (default: `true`). |
+
+## Feature Highlight
+
+### Caching Behavior
+
+By default, queries are cached for performance. For dynamic content that changes frequently, you can disable caching to re-query on every access.
+
+<CodeBlock>
 ```typescript
-@query({ ref: "my-ref", all: true }) allTexts: HTMLElement[]
+@query({ ref: 'dynamic-item', all: true, cache: false }) 
+items!: HTMLElement[];
 ```
 </CodeBlock>
 
-By default it caches the result of the query, but it can be configured to not cache the result by setting the `cache` property to false.
-This can be very handful when dealing with dynamic content.
+### Type Safety
 
-<CodeBlock >
+Use TypeScript's non-null assertion operator (`!`) for required elements, or the optional chaining operator (`?`) if the element might not be present.
+
+<CodeBlock>
 ```typescript
-@query({ ref: "list-item", all: true, cache: false }) text: HTMLElement;
+@query({ ref: 'required-el' }) element!: HTMLElement;
+@query({ ref: 'optional-el' }) optional?: HTMLElement;
 ```
 </CodeBlock>
+
+## Learn More
+
+- [@querySelectorAll](/docs/decorators/query-selector-all) - Alternative for multiple elements.
+- [RadiantElement](/docs/core/radiant-element) - Learn about `getRef` and other utility methods.

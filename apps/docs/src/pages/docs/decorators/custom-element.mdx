@@ -4,20 +4,72 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @customElement',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @customElement',
+	description: 'Register custom elements with the browser.',
 })
 
 # @customElement
----
 
-This is a simple decorator that can be used to define a custom element.
+The `@customElement` decorator provides a concise way to register custom elements with the browser's Custom Elements registry. It is a declarative wrapper around the standard `customElements.define()` API.
 
-It is a wrapper around the `customElements.define` method, providing a more concise and readable way to define custom elements.
+## Usage
 
-<CodeBlock >
+<CodeBlock>
 ```typescript
-@customElement('lc-demo')
-export class MyElement extends RadiantElement {}
+import { RadiantElement, customElement } from '@ecopages/radiant';
+
+@customElement('my-component')
+export class MyComponent extends RadiantElement {
+	connectedCallback() {
+		super.connectedCallback();
+		this.textContent = 'Hello from my-component!';
+	}
+}
 ```
 </CodeBlock>
+
+Usage in HTML:
+<CodeBlock>
+```html
+<my-component></my-component>
+```
+</CodeBlock>
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `tagName` | `string` | Yes | The custom element tag name. |
+| `options` | `ElementDefinitionOptions` | No | Options for element definition (e.g., `extends`). |
+
+## Extending Built-in Elements
+
+You can extend built-in HTML elements by providing the `options` parameter with the `extends` property. Note that you must also extend the corresponding HTML class.
+
+<CodeBlock>
+```typescript
+@customElement('fancy-button', { extends: 'button' })
+export class FancyButton extends HTMLButtonElement {
+	connectedCallback() {
+		this.classList.add('fancy');
+	}
+}
+```
+</CodeBlock>
+
+Usage in HTML:
+<CodeBlock>
+```html
+<button is="fancy-button">Click me</button>
+```
+</CodeBlock>
+
+<div class="banner banner--alert">
+  <p class="banner__title">WARNING</p>
+  <p>Customized built-in elements have limited browser support and are not supported in Safari. See <a href="/docs/getting-started/best-practices">Best Practices</a> for more information.</p>
+</div>
+
+## Learn More
+
+- [Naming Rules & Best Practices](/docs/getting-started/best-practices)
+- [RadiantElement](/docs/core/radiant-element)

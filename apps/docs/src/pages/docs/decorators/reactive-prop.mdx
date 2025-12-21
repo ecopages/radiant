@@ -4,41 +4,70 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @reactiveProp',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @reactiveProp',
+	description: 'Create reactive properties synchronized with HTML attributes.',
 })
 
 # @reactiveProp
----
 
-This is a decorator that allows you to define a reactive attribute on the element.
+The `@reactiveProp` decorator creates a reactive property that automatically synchronizes with HTML attributes and triggers component updates when changed.
 
-It takes an options object with the type of the attribute and whether it should be reflected to the attribute.
+## Usage
 
-Once an update is made to the field, it will inform the component that an update occured.
-
-In order to use this decorator, you need to declare the field with the type that you want to use, this defines how to read and write the attribute.
-
-The accepted types are `String`, `Number`, `Boolean`, `Object`, and `Array`.
-
-The `reflect` option is used to reflect the attribute to the DOM.
-
-It is possible to define the attribute name if it is different from the field name using the `attribute` option.
-
-It is also possible to define a default value for the attribute using the `defaultValue` option.
-
-It plays well in combination with the @onUpdated decorator.
-
-<CodeBlock >
+<CodeBlock>
 ```typescript
-@reactiveProp({ type: Number, reflect: true, defaultValue: 5 }) declare count: number;
+import { RadiantElement, customElement, reactiveProp } from '@ecopages/radiant';
+
+@customElement('user-card')
+export class UserCard extends RadiantElement {
+	@reactiveProp({ type: String }) declare name: string;
+	@reactiveProp({ type: Number, defaultValue: 0 }) declare age: number;
+	@reactiveProp({ type: Boolean }) declare active: boolean;
+}
 ```
 </CodeBlock>
 
-If in your markup you want to use a different attribute name, you can use the `attribute` option.
-
-<CodeBlock >
-```typescript
-@reactiveProp({ type: Number, attribute: 'my-count', reflect: true, defaultValue: 5 }) declare count: number;
+Usage in HTML:
+<CodeBlock>
+```html
+<user-card name="Alice" age="30" active></user-card>
 ```
 </CodeBlock>
+
+## Parameters
+
+The decorator accepts an options object:
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `type` | `AttributeTypeConstant` | Yes | `String`, `Number`, `Boolean`, `Object`, or `Array`. |
+| `reflect` | `boolean` | No | Whether to reflect changes back to the attribute (default: `false`). |
+| `attribute` | `string` | No | Custom attribute name (default: property name in kebab-case). |
+| `defaultValue` | `any` | No | Default value if the attribute is not present. |
+
+## Supported Types
+
+- **String**: Standard string attribute.
+- **Number**: Automatically converts string attributes to JavaScript numbers.
+- **Boolean**: Follows HTML boolean convention (presence = true, absence = false).
+- **Object / Array**: Complex types are serialized as JSON strings in the attribute.
+
+<div class="banner banner--tip">
+  <p class="banner__title">TIP</p>
+  <p>Objects and Arrays need reassignment to trigger updates (e.g., this.items = [...this.items, newItem]). See <a href="/docs/getting-started/best-practices#reactive-state-mutation">Best Practices</a> for more information.</p>
+</div>
+
+## Reflection
+
+Use the `reflect` option to keep the HTML attribute in sync with the property value. This is useful for styling elements based on their state using CSS attribute selectors.
+
+<CodeBlock>
+```typescript
+@reactiveProp({ type: Boolean, reflect: true }) declare active: boolean;
+```
+</CodeBlock>
+
+## Learn More
+
+- [@reactiveField](/docs/decorators/reactive-field) - For internal reactive state.
+- [@onUpdated](/docs/decorators/on-updated) - React to property changes.

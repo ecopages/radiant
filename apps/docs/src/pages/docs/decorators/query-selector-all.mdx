@@ -4,19 +4,54 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @querySelectorAll',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @querySelectorAll',
+	description: 'Query multiple elements within your component using a CSS selector.',
 })
 
 # @querySelectorAll
----
 
-This is a decorator that allows you to query for elements inside the component tree. 
+The `@querySelectorAll` decorator queries for multiple elements within your component using a CSS selector, returning them as an array. It converts the standard browser `NodeList` to a JavaScript array for easier manipulation.
 
-It takes a selector and a property to assign the element to. Behind the scenes, it uses querySelectorAll
+## Usage
 
-<CodeBlock >
+<CodeBlock>
 ```typescript
-@querySelectorAll("[data-text]") allTexts: HTMLElement[];
+import { RadiantElement, customElement, querySelectorAll } from '@ecopages/radiant';
+
+@customElement('list-component')
+export class ListComponent extends RadiantElement {
+	@querySelectorAll('li')
+	listItems!: HTMLLIElement[];
+	
+	connectedCallback() {
+		super.connectedCallback();
+		console.log(`Found ${this.listItems.length} list items`);
+	}
+}
 ```
 </CodeBlock>
+
+## Relationship to @query
+
+The `@querySelectorAll` decorator is equivalent to using `@query` with `all: true`.
+
+<CodeBlock>
+```typescript
+// These are equivalent:
+@querySelectorAll('.item')
+items1!: HTMLElement[];
+
+@query({ selector: '.item', all: true })
+items2!: HTMLElement[];
+```
+</CodeBlock>
+
+<div class="banner banner--tip">
+  <p class="banner__title">TIP</p>
+  <p>Recommend using <code>@query</code> with <code>all: true</code> instead, as it provides more configuration options (such as caching and <code>data-ref</code> support).</p>
+</div>
+
+## Learn More
+
+- [@query](/docs/decorators/query) - The recommended way to query elements.
+- [RadiantElement](/docs/core/radiant-element) - Base class for component-level APIs.

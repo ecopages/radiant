@@ -11,18 +11,18 @@ export type AttributeTypeDefault = Array<unknown> | boolean | number | Record<st
  * @returns The string representation of the attribute type constant.
  */
 export function parseAttributeTypeConstant(constant?: AttributeTypeConstant) {
-  switch (constant) {
-    case Array:
-      return 'array';
-    case Boolean:
-      return 'boolean';
-    case Number:
-      return 'number';
-    case Object:
-      return 'object';
-    case String:
-      return 'string';
-  }
+	switch (constant) {
+		case Array:
+			return 'array';
+		case Boolean:
+			return 'boolean';
+		case Number:
+			return 'number';
+		case Object:
+			return 'object';
+		case String:
+			return 'string';
+	}
 }
 
 /**
@@ -32,17 +32,17 @@ export function parseAttributeTypeConstant(constant?: AttributeTypeConstant) {
  * @returns The type of the default value as a string.
  */
 export function parseAttributeTypeDefault(defaultValue?: AttributeTypeDefault) {
-  switch (typeof defaultValue) {
-    case 'boolean':
-      return 'boolean';
-    case 'number':
-      return 'number';
-    case 'string':
-      return 'string';
-  }
+	switch (typeof defaultValue) {
+		case 'boolean':
+			return 'boolean';
+		case 'number':
+			return 'number';
+		case 'string':
+			return 'string';
+	}
 
-  if (Array.isArray(defaultValue)) return 'array';
-  if (Object.prototype.toString.call(defaultValue) === '[object Object]') return 'object';
+	if (Array.isArray(defaultValue)) return 'array';
+	if (Object.prototype.toString.call(defaultValue) === '[object Object]') return 'object';
 }
 
 /**
@@ -52,16 +52,16 @@ export function parseAttributeTypeDefault(defaultValue?: AttributeTypeDefault) {
  * @returns The default value for the specified attribute type.
  */
 export function defaultValueForType(type: AttributeTypeConstant): unknown {
-  switch (type) {
-    case Number:
-      return 0;
-    case String:
-      return '';
-    case Boolean:
-      return false;
-    default:
-      return null;
-  }
+	switch (type) {
+		case Number:
+			return 0;
+		case String:
+			return '';
+		case Boolean:
+			return false;
+		default:
+			return null;
+	}
 }
 
 type Reader = (value: string) => number | string | boolean | object | unknown[];
@@ -70,11 +70,11 @@ type Reader = (value: string) => number | string | boolean | object | unknown[];
  * Utility function to parse a JSON string safely
  */
 function parseJSON<T>(value: string): T {
-  try {
-    return JSON.parse(value);
-  } catch (error) {
-    throw new TypeError('Invalid JSON string');
-  }
+	try {
+		return JSON.parse(value);
+	} catch {
+		throw new TypeError('Invalid JSON string');
+	}
 }
 
 /**
@@ -82,38 +82,38 @@ function parseJSON<T>(value: string): T {
  * @type {Object.<string, Reader>}
  */
 const readers: { [type: string]: Reader } = {
-  array(value: string): unknown[] {
-    const array = parseJSON<unknown[]>(value);
-    if (!Array.isArray(array)) {
-      throw new TypeError(`Expected an array but got a value of type "${typeof array}"`);
-    }
-    return array;
-  },
+	array(value: string): unknown[] {
+		const array = parseJSON<unknown[]>(value);
+		if (!Array.isArray(array)) {
+			throw new TypeError(`Expected an array but got a value of type "${typeof array}"`);
+		}
+		return array;
+	},
 
-  boolean(value: string): boolean {
-    return !(value === '0' || String(value).toLowerCase() === 'false');
-  },
+	boolean(value: string): boolean {
+		return !(value === '0' || String(value).toLowerCase() === 'false');
+	},
 
-  number(value: string): number {
-    const number = Number(value.replace(/_/g, ''));
-    return number;
-  },
+	number(value: string): number {
+		const number = Number(value.replace(/_/g, ''));
+		return number;
+	},
 
-  object(value: string): object {
-    const object = JSON.parse(value);
-    if (object === null || typeof object !== 'object' || Array.isArray(object)) {
-      throw new TypeError(
-        `expected value of type "object" but instead got value "${value}" of type "${parseAttributeTypeDefault(
-          object,
-        )}"`,
-      );
-    }
-    return object;
-  },
+	object(value: string): object {
+		const object = JSON.parse(value);
+		if (object === null || typeof object !== 'object' || Array.isArray(object)) {
+			throw new TypeError(
+				`expected value of type "object" but instead got value "${value}" of type "${parseAttributeTypeDefault(
+					object,
+				)}"`,
+			);
+		}
+		return object;
+	},
 
-  string(value: string): string {
-    return value;
-  },
+	string(value: string): string {
+		return value;
+	},
 };
 
 type Writer = (value: unknown) => string;
@@ -123,17 +123,17 @@ type Writer = (value: unknown) => string;
  * @type {Object.<string, Writer>}
  */
 const writers: { [type: string]: Writer } = {
-  default: writeString,
-  array: writeJSON,
-  object: writeJSON,
+	default: writeString,
+	array: writeJSON,
+	object: writeJSON,
 };
 
 function writeJSON(value: unknown) {
-  return JSON.stringify(value);
+	return JSON.stringify(value);
 }
 
 function writeString(value: unknown) {
-  return `${value}`;
+	return `${value}`;
 }
 
 /**
@@ -144,9 +144,9 @@ function writeString(value: unknown) {
  * @throws {TypeError} If the provided type is unknown.
  */
 export function readAttributeValue(value: string, type: AttributeTypeConstant) {
-  const readerType = parseAttributeTypeConstant(type);
-  if (!readerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
-  return readers[readerType](value);
+	const readerType = parseAttributeTypeConstant(type);
+	if (!readerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
+	return readers[readerType](value);
 }
 
 export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>;
@@ -160,9 +160,9 @@ export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>
  * @throws {TypeError} If the provided type is unknown.
  */
 export function writeAttributeValue(value: unknown, type: AttributeTypeConstant) {
-  const writerType = parseAttributeTypeConstant(type);
-  if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
-  return (writers[writerType] || writers.default)(value);
+	const writerType = parseAttributeTypeConstant(type);
+	if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
+	return (writers[writerType] || writers.default)(value);
 }
 
 export type WriteAttributeValueReturnType = ReturnType<typeof writeAttributeValue>;
@@ -171,58 +171,58 @@ export type WriteAttributeValueReturnType = ReturnType<typeof writeAttributeValu
  * Type guard functions for each type in AttributeTypeConstant
  */
 function isBoolean(value: unknown): value is boolean {
-  return typeof value === 'boolean';
+	return typeof value === 'boolean';
 }
 
 function isNumber(value: unknown): value is number {
-  return typeof value === 'number';
+	return typeof value === 'number';
 }
 
 function isString(value: unknown): value is string {
-  return typeof value === 'string';
+	return typeof value === 'string';
 }
 
 function isArray(value: unknown): value is Array<unknown> {
-  return Array.isArray(value);
+	return Array.isArray(value);
 }
 
 function isObject(value: unknown): value is object {
-  return typeof value === 'object' && !Array.isArray(value) && value !== null;
+	return typeof value === 'object' && !Array.isArray(value) && value !== null;
 }
 
 /*
  * Check function to ensure defaultValue matches the type
  */
 export function isValueOfType(type: AttributeTypeConstant, defaultValue: unknown): boolean {
-  switch (type) {
-    case Boolean:
-      return isBoolean(defaultValue);
-    case Number:
-      return isNumber(defaultValue);
-    case String:
-      return isString(defaultValue);
-    case Array:
-      return isArray(defaultValue);
-    case Object:
-      return isObject(defaultValue);
-    default:
-      return false;
-  }
+	switch (type) {
+		case Boolean:
+			return isBoolean(defaultValue);
+		case Number:
+			return isNumber(defaultValue);
+		case String:
+			return isString(defaultValue);
+		case Array:
+			return isArray(defaultValue);
+		case Object:
+			return isObject(defaultValue);
+		default:
+			return false;
+	}
 }
 
 export const getInitialValue = (
-  target: RadiantElement,
-  type: AttributeTypeConstant,
-  attributeKey: string,
-  defaultValue: unknown,
+	target: RadiantElement,
+	type: AttributeTypeConstant,
+	attributeKey: string,
+	defaultValue: unknown,
 ) => {
-  if (type === Boolean) {
-    const hasAttribute = target.hasAttribute(attributeKey);
-    return hasAttribute || defaultValue;
-  }
+	if (type === Boolean) {
+		const hasAttribute = target.hasAttribute(attributeKey);
+		return hasAttribute || defaultValue;
+	}
 
-  const attributeValue = target.getAttribute(attributeKey);
-  return attributeValue !== null
-    ? readAttributeValue(attributeValue, type)
-    : defaultValue || (defaultValueForType(type) as typeof defaultValue);
+	const attributeValue = target.getAttribute(attributeKey);
+	return attributeValue !== null
+		? readAttributeValue(attributeValue, type)
+		: defaultValue || (defaultValueForType(type) as typeof defaultValue);
 };

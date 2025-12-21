@@ -3,186 +3,360 @@
 @tailwind utilities;
 
 :root {
-  --color-tropical-rain-forest-50-hsla: 100 14% 96%;
-  --color-tropical-rain-forest-100-hsla: 104 11% 81%;
-  --color-tropical-rain-forest-200-hsla: 107 11% 66%;
-  --color-tropical-rain-forest-300-hsla: 109 11% 52%;
-  --color-tropical-rain-forest-400-hsla: 108 19% 37%;
-  --color-tropical-rain-forest-500-hsla: 109 37% 23%;
-  --color-tropical-rain-forest-600-hsla: 108 38% 18%;
-  --color-tropical-rain-forest-700-hsla: 109 37% 14%;
-  --color-tropical-rain-forest-800-hsla: 107 37% 10%;
-  --color-tropical-rain-forest-900-hsla: 105 40% 6%;
-  --color-tropical-rain-forest-950-hsla: 100 33% 2%;
+	--color-black-hsla: 0 0% 0%;
+	--color-white-hsla: 0 0% 100%;
 
-  --color-scarlet-100-hsla: 353 100% 89%;
-  --color-scarlet-200-hsla: 351 100% 81%;
-  --color-scarlet-300-hsla: 350 100% 72%;
-  --color-scarlet-400-hsla: 350 100% 63%;
-  --color-scarlet-500-hsla: 350 100% 54%;
-  --color-scarlet-600-hsla: 350 84% 44%;
-  --color-scarlet-700-hsla: 351 83% 35%;
-  --color-scarlet-800-hsla: 351 81% 25%;
-  --color-scarlet-900-hsla: 353 76% 15%;
-  --color-scarlet-950-hsla: 8 60% 5%;
+	--color-meteor-50-hsla: 25 100% 98%;
+	--color-meteor-100-hsla: 27 90% 88%;
+	--color-meteor-200-hsla: 29 82% 78%;
+	--color-meteor-300-hsla: 30 77% 68%;
+	--color-meteor-400-hsla: 31 71% 56%;
+	--color-meteor-500-hsla: 35 100% 41%;
+	--color-meteor-600-hsla: 34 89% 36%;
+	--color-meteor-700-hsla: 33 81% 31%;
+	--color-meteor-800-hsla: 32 74% 25%;
+	--color-meteor-900-hsla: 32 66% 18%;
+	--color-meteor-950-hsla: 32 58% 12%;
+	--color-meteor-975-hsla: 33 64% 5%;
 
-  --color-silver-50-hsla: 0 0% 99%;
-  --color-silver-100-hsla: 0 0% 95%;
-  --color-silver-200-hsla: 0 0% 91%;
-  --color-silver-300-hsla: 0 1% 87%;
-  --color-silver-400-hsla: 0 1% 77%;
-  --color-silver-500-hsla: 0 1% 69%;
-  --color-silver-600-hsla: 0 0% 54%;
-  --color-silver-700-hsla: 0 0% 30%;
-  --color-silver-800-hsla: 0 0% 20%;
-  --color-silver-900-hsla: 0 0% 10%;
-  --color-silver-950-hsla: 0 0% 5%;
+	--color-scooter-50-hsla: 197 78% 98%;
+	--color-scooter-100-hsla: 197 82% 91%;
+	--color-scooter-200-hsla: 197 80% 84%;
+	--color-scooter-300-hsla: 196 82% 76%;
+	--color-scooter-400-hsla: 195 83% 67%;
+	--color-scooter-500-hsla: 191 100% 46%;
+	--color-scooter-600-hsla: 192 77% 44%;
+	--color-scooter-700-hsla: 193 66% 37%;
+	--color-scooter-800-hsla: 194 57% 30%;
+	--color-scooter-900-hsla: 195 48% 23%;
+	--color-scooter-950-hsla: 197 38% 15%;
+	--color-scooter-975-hsla: 198 28% 7%;
 
-  --color-laser-lemon-50-hsla: 60 100% 98%;
-  --color-laser-lemon-100-hsla: 60 100% 88%;
-  --color-laser-lemon-200-hsla: 60 100% 79%;
-  --color-laser-lemon-300-hsla: 60 100% 69%;
-  --color-laser-lemon-400-hsla: 60 100% 60%;
-  --color-laser-lemon-500-hsla: 60 100% 50%;
-  --color-laser-lemon-600-hsla: 60 99% 41%;
-  --color-laser-lemon-700-hsla: 60 98% 32%;
-  --color-laser-lemon-800-hsla: 59 93% 23%;
-  --color-laser-lemon-900-hsla: 58 86% 14%;
-  --color-laser-lemon-950-hsla: 55 50% 5%;
+	--color-medium-purple-50-hsla: 270 60% 98%;
+	--color-medium-purple-100-hsla: 268 64% 91%;
+	--color-medium-purple-200-hsla: 267 62% 85%;
+	--color-medium-purple-300-hsla: 266 61% 78%;
+	--color-medium-purple-400-hsla: 265 61% 71%;
+	--color-medium-purple-500-hsla: 263 60% 64%;
+	--color-medium-purple-600-hsla: 263 38% 54%;
+	--color-medium-purple-700-hsla: 264 32% 43%;
+	--color-medium-purple-800-hsla: 263 30% 34%;
+	--color-medium-purple-900-hsla: 265 29% 24%;
+	--color-medium-purple-950-hsla: 264 25% 16%;
+	--color-medium-purple-975-hsla: 270 22% 7%;
 
-  --color-navy-blue-50-hsla: 223 64% 98%;
-  --color-navy-blue-100-hsla: 214 65% 88%;
-  --color-navy-blue-200-hsla: 212 67% 78%;
-  --color-navy-blue-300-hsla: 212 66% 68%;
-  --color-navy-blue-400-hsla: 212 67% 58%;
-  --color-navy-blue-500-hsla: 211 74% 47%;
-  --color-navy-blue-600-hsla: 212 73% 39%;
-  --color-navy-blue-700-hsla: 212 71% 30%;
-  --color-navy-blue-800-hsla: 212 69% 22%;
-  --color-navy-blue-900-hsla: 214 64% 13%;
-  --color-navy-blue-950-hsla: 225 36% 4%;
+	--color-sand-dune-50-hsla: 30 14% 97%;
+	--color-sand-dune-100-hsla: 27 13% 86%;
+	--color-sand-dune-200-hsla: 28 12% 76%;
+	--color-sand-dune-300-hsla: 29 12% 66%;
+	--color-sand-dune-400-hsla: 28 12% 56%;
+	--color-sand-dune-500-hsla: 28 13% 46%;
+	--color-sand-dune-600-hsla: 29 13% 39%;
+	--color-sand-dune-700-hsla: 30 13% 31%;
+	--color-sand-dune-800-hsla: 28 12% 25%;
+	--color-sand-dune-900-hsla: 30 11% 18%;
+	--color-sand-dune-950-hsla: 30 10% 12%;
+	--color-sand-dune-975-hsla: 40 11% 5%;
 
-  --background: var(--color-silver-50-hsla);
-  --on-background: var(--color-silver-900-hsla);
-  --background-accent: var(--color-silver-100-hsla);
-  --on-background-accent: var(--color-silver-950-hsla);
-  --primary-container: var(--color-tropical-rain-forest-100-hsla);
-  --on-primary-container: var(--color-rain-forest-900-hsla);
-  --primary: var(--color-tropical-rain-forest-500-hsla);
-  --on-primary: var(--color-silver-50-hsla);
-  --secondary: var(--color-scarlet-500-hsla);
-  --on-secondary: var(--color-silver-50-hsla);
+	--color-cardinal-50-hsla: 5 85% 97%;
+	--color-cardinal-100-hsla: 5 75% 88%;
+	--color-cardinal-200-hsla: 4 67% 77%;
+	--color-cardinal-300-hsla: 2 61% 67%;
+	--color-cardinal-400-hsla: 360 55% 56%;
+	--color-cardinal-500-hsla: 351 76% 41%;
+	--color-cardinal-600-hsla: 353 70% 36%;
+	--color-cardinal-700-hsla: 355 65% 30%;
+	--color-cardinal-800-hsla: 358 58% 24%;
+	--color-cardinal-900-hsla: 0 51% 18%;
+	--color-cardinal-950-hsla: 4 48% 12%;
+	--color-cardinal-975-hsla: 8 57% 5%;
 
-  --border: var(--color-silver-200-hsla);
-  --link: var(--color-navy-blue-700-hsla);
+	--color-emerald-50-hsla: 158 95% 98%;
+	--color-emerald-100-hsla: 149 80% 90%;
+	--color-emerald-300-hsla: 149 80% 70%;
+	--color-emerald-500-hsla: 149 100% 35%;
+	--color-emerald-700-hsla: 149 100% 25%;
 
-  --background-code: var(--color-silver-100-hsla);
-  --on-background-code: var(--color-laser-lemon-800-hsla);
+	--background: var(--color-sand-dune-50-hsla);
+	--on-background: var(--color-sand-dune-900-hsla);
+	--background-accent: var(--color-white-hsla);
+	--on-background-accent: var(--color-sand-dune-950-hsla);
+	--primary-container: var(--color-scooter-50-hsla);
+	--on-primary-container: var(--color-scooter-900-hsla);
+	--primary: var(--color-scooter-600-hsla);
+	--on-primary: var(--color-white-hsla);
+	--secondary: var(--color-meteor-500-hsla);
+	--on-secondary: var(--color-white-hsla);
+	--secondary-container: var(--color-meteor-100-hsla);
+	--on-secondary-container: var(--color-meteor-900-hsla);
+
+	--border: var(--color-sand-dune-200-hsla);
+	--link: var(--color-scooter-700-hsla);
+
+	--background-code: var(--color-sand-dune-50-hsla);
+	--on-background-code: var(--color-meteor-800-hsla);
 }
 
 .dark {
-  --background: var(--color-silver-950-hsla);
-  --on-background: var(--color-silver-50-hsla);
-  --background-accent: var(--color-silver-900-hsla);
-  --on-background-accent: var(--color-silver-50-hsla);
-  --primary-container: var(--color-tropical-rain-forest-800-hsla);
-  --on-primary-container: var(--color-tropical-rain-forest-50-hsla);
-  --primary: var(--color-tropical-rain-forest-500-hsla);
-  --on-primary: var(--color-silver-950-hsla);
-  --secondary: var(--color-scarlet-500-hsla);
-  --on-secondary: var(--color-silver-950-hsla);
+	--background: var(--color-sand-dune-950-hsla);
+	--on-background: var(--color-sand-dune-50-hsla);
+	--background-accent: var(--color-sand-dune-975-hsla);
+	--on-background-accent: var(--color-sand-dune-50-hsla);
+	--primary-container: var(--color-scooter-900-hsla);
+	--on-primary-container: var(--color-scooter-50-hsla);
+	--primary: var(--color-scooter-400-hsla);
+	--on-primary: var(--color-black-hsla);
+	--secondary: var(--color-meteor-400-hsla);
+	--on-secondary: var(--color-black-hsla);
+	--secondary-container: var(--color-meteor-900-hsla);
+	--on-secondary-container: var(--color-white-hsla);
 
-  --border: var(--color-silver-900-hsla);
-  --link: var(--color-navy-blue-400-hsla);
+	--border: var(--color-sand-dune-950-hsla);
+	--link: var(--color-scooter-300-hsla);
 
-  --background-code: var(--color-silver-900-hsla);
-  --on-background-code: var(--color-laser-lemon-300-hsla);
+	--background-code: var(--color-sand-dune-950-hsla);
+	--on-background-code: var(--color-meteor-200-hsla);
 }
 
 body {
-  @apply bg-background text-on-background min-h-[100svh];
+	@apply bg-background-accent text-on-background min-h-[100svh] w-screen overflow-x-hidden font-sans;
 }
 
 .prose {
-  h1 {
-    @apply text-4xl font-bold text-on-background-accent my-6;
-  }
+	h1 {
+		@apply text-4xl font-bold text-on-background-accent my-6 font-heading;
+	}
 
-  h2 {
-    @apply text-3xl font-bold text-on-background-accent my-6;
-  }
+	h2 {
+		@apply text-3xl font-bold text-on-background-accent my-6 font-heading;
+	}
 
-  h3 {
-    @apply text-2xl font-bold text-on-background-accent my-5;
-  }
+	h3 {
+		@apply text-2xl font-bold text-on-background-accent my-5 font-heading;
+	}
 
-  h4 {
-    @apply text-xl font-bold text-on-background-accent my-5;
-  }
+	h4 {
+		@apply text-xl font-bold text-on-background-accent my-5 font-heading;
+	}
 
-  h5 {
-    @apply text-lg font-bold text-on-background-accent my-4;
-  }
+	h5 {
+		@apply text-lg font-bold text-on-background-accent my-4 font-heading;
+	}
 
-  h6 {
-    @apply text-base font-bold text-on-background-accent my-4;
-  }
+	h6 {
+		@apply text-base font-bold text-on-background-accent my-4 font-heading;
+	}
 
-  p {
-    @apply text-base text-on-background my-4;
-  }
+	p {
+		@apply text-base text-on-background my-4;
+	}
 
-  a {
-    @apply text-link underline;
-  }
+	a {
+		@apply text-link underline;
+	}
 
-  ul,
-  ol {
-    @apply list-disc pl-8 my-4;
-  }
+	ul,
+	ol {
+		@apply list-disc pl-8 my-4 text-on-background;
+	}
 
-  code {
-    @apply bg-background-code text-sm text-on-background-code rounded-md;
-  }
+	code {
+		@apply bg-background-code text-sm text-on-background-code rounded-md font-mono;
+	}
 
-  pre > code {
-    @apply bg-transparent text-inherit rounded-md my-8;
-  }
+	pre {
+		code {
+			@apply bg-transparent text-inherit rounded-md my-8;
+		}
+	}
+
+	table {
+		@apply w-full text-left border-collapse my-8 text-sm;
+
+		thead {
+			@apply border-b border-border bg-background-accent/50;
+
+			th {
+				@apply py-3 px-4 font-semibold text-on-background-accent;
+			}
+		}
+
+		tbody {
+			tr {
+				@apply border-b border-border/50 transition-colors hover:bg-background-accent/30;
+
+				td {
+					@apply py-3 px-4 text-on-background align-top;
+
+					code {
+						@apply whitespace-nowrap;
+					}
+				}
+
+				&:last-child {
+					@apply border-0;
+				}
+			}
+		}
+	}
 }
 
 .banner {
-  @apply border-l-4 px-4 py-4 rounded-md flex flex-col mt-4;
+	@apply relative pl-6 pr-4 py-4 rounded-md flex flex-col mt-4 shadow-sm;
 
-  p {
-    @apply my-1;
-  }
+	&::before {
+		content: '';
+		@apply absolute left-2 top-3 bottom-3 w-1 rounded-full bg-current opacity-50;
+	}
 
-  &--alert {
-    @apply bg-yellow-100 border-yellow-500;
+	p {
+		@apply my-1;
+	}
 
-    p,
-    span,
-    a {
-      @apply text-yellow-700;
-    }
-  }
+	code {
+		@apply p-2 my-1.5;
 
-  &--info {
-    @apply bg-blue-100 border-blue-800;
+		p {
+			@apply text-sm;
+		}
+	}
 
-    p,
-    span,
-    a {
-      @apply text-blue-700;
-    }
-  }
+	&--alert {
+		@apply bg-yellow-100 border border-yellow-300;
 
-  &__title {
-    @apply font-bold mb-0;
-  }
+		&::before {
+			@apply bg-yellow-500 opacity-100;
+		}
 
-  &__link {
-    @apply underline self-end inline-flex items-center gap-2 rounded-md p-2;
-    @apply hover:text-yellow-900 hover:bg-yellow-50;
-  }
+		p,
+		span,
+		a {
+			@apply text-yellow-700;
+		}
+	}
+
+	&--info {
+		@apply bg-blue-100 border border-blue-300;
+
+		&::before {
+			@apply bg-blue-500 opacity-100;
+		}
+
+		p,
+		span,
+		a {
+			@apply text-blue-700;
+		}
+
+		.banner__link {
+			@apply hover:text-blue-900 hover:bg-blue-50;
+		}
+	}
+
+	&--tip {
+		@apply bg-emerald-100 border border-emerald-300;
+
+		&::before {
+			@apply bg-emerald-500 opacity-100;
+		}
+
+		p,
+		span,
+		a {
+			@apply text-emerald-700;
+		}
+	}
+
+	&--caution {
+		@apply bg-red-100 border border-red-300;
+
+		&::before {
+			@apply bg-red-500 opacity-100;
+		}
+
+		p,
+		span,
+		a {
+			@apply text-red-700;
+		}
+	}
+
+	&__title {
+		@apply font-bold mb-0;
+	}
+
+	&__link {
+		@apply underline self-end inline-flex items-center gap-2 rounded-md p-2;
+		@apply hover:text-yellow-900 hover:bg-yellow-50;
+	}
+}
+
+@layer utilities {
+	.button-shape-base {
+		@apply px-4 py-2 leading-6;
+
+		&:has(> svg:first-child) {
+			@apply pl-2;
+		}
+		&:has(> svg:last-child) {
+			@apply pr-2;
+		}
+	}
+}
+.button,
+a.button {
+	@apply inline-flex items-center justify-center gap-2;
+	@apply no-underline font-semibold text-sm cursor-pointer transition-all duration-200 active:scale-[0.98];
+
+	&--default {
+		@apply button-shape-base rounded-md;
+		@apply bg-on-background text-background border-2 border-on-background;
+		@apply hover:bg-on-background/90 hover:shadow-sm;
+	}
+
+	&--primary {
+		@apply button-shape-base rounded-md;
+		@apply bg-primary text-on-primary border-2 border-primary;
+		@apply hover:bg-primary/90 hover:shadow-sm;
+	}
+
+	&--secondary {
+		@apply button-shape-base rounded-md;
+		@apply bg-secondary text-on-secondary border-2 border-secondary;
+		@apply hover:bg-secondary/90 hover:shadow-sm;
+	}
+
+	&--outline {
+		@apply button-shape-base rounded-md border-2 border-on-background;
+		@apply bg-transparent text-on-background;
+		@apply hover:bg-on-background/5;
+	}
+
+	&--ghost {
+		@apply button-shape-base rounded-md;
+		@apply bg-transparent text-on-background;
+		@apply hover:bg-on-background/5;
+	}
+
+	&--text {
+		@apply px-0 py-0 leading-6 rounded-sm;
+		@apply bg-transparent text-on-background;
+		@apply hover:underline hover:underline-offset-4;
+		&:hover {
+			svg {
+				@apply text-primary;
+			}
+		}
+	}
+
+	&--icon {
+		@apply p-2 rounded-md;
+		@apply bg-transparent text-on-background;
+		@apply hover:bg-on-background/5;
+	}
+}
+
+.button-group {
+	@apply flex gap-4;
+	@apply items-center;
 }

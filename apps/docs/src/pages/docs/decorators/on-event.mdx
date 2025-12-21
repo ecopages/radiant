@@ -4,57 +4,108 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @onEvent',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @onEvent',
+	description: 'Declarative event subscription for custom elements.',
 })
 
 # @onEvent
----
 
-A decorator to subscribe to an event on the target element.
-The event listener will be automatically unsubscribed when the element is disconnected.
+The `@onEvent` decorator provides a declarative way to subscribe to DOM events on elements within or outside your custom element. It automatically handles event subscription and unsubscription, ensuring no memory leaks when your component is removed from the DOM.
 
-Please note the method binding is not necessary, as the method is bound to the instance of the class by default.
+## Usage
 
-It accepts an object with one of the following properties:
-
-- `selector`: A CSS selector to match the target element.
-- `ref`: A reference to the target element.
-- `window`: (true) Listen to the event on the window object.
-- `document`: (true) Listen to the event on the document object.
-
-And the following properties:
-
-- `type`: The event type to listen for.
-- `options` (optional): `AddEventListenerOptions` An options object that specifies characteristics about the event listener.
-
-<div class="banner banner--info mt-4" role="alert">
-  <p class="banner__title">Notes</p>
-  <p>This decorator uses event delegation for `selector` and `ref`, which means it relies on event bubbling.
-Therefore, it will not work with events that do not bubble, such as `focus`, `blur`, `load`, `unload`, `scroll`, etc.
-For focus and blur events, consider using `focusin` and `focusout` which are similar but do bubble.</p>
-</div>
-
-<CodeBlock >
+<CodeBlock>
 ```typescript
-@onEvent({ selector: "button", type: "click" }) doSomething() {...}
+import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+
+@customElement('click-counter')
+export class ClickCounter extends RadiantElement {
+	private count = 0;
+	
+	@onEvent({ selector: 'button', type: 'click' })
+	handleClick(event: MouseEvent) {
+		this.count++;
+		console.log(`Clicked ${this.count} times`);
+	}
+}
 ```
 </CodeBlock>
 
-<CodeBlock >
+## Parameters
+
+The decorator accepts a configuration object. You must provide a target and an event type.
+
+### Target Selection (Choose one)
+
+| Parameter | Type | Description |
+| :-------- | :--- | :---------- |
+| `selector` | `string` | CSS selector to match target elements (uses event delegation). |
+| `ref` | `string` | Value of `data-ref` attribute to match (uses event delegation). |
+| `window` | `boolean` | Listen on the global `window` object. |
+| `document` | `boolean` | Listen on the global `document` object. |
+
+### Event Configuration
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `type` | `string` | Yes | Event type (e.g., 'click', 'input', 'keydown'). |
+| `options` | `AddEventListenerOptions` | No | Standard options like `{ passive: true, once: true }`. |
+
+## Common Use Cases
+
+### Using data-ref
+
+This is the recommended approach for referencing elements within your component's structure.
+
+<CodeBlock>
 ```typescript
-@onEvent({ ref: "my-ref", type: "click" }) doSomething() {...}
+@onEvent({ ref: 'submit-btn', type: 'click' })
+handleSubmit(event: MouseEvent) {
+	event.preventDefault();
+	console.log('Form submitted');
+}
 ```
 </CodeBlock>
 
-<CodeBlock >
-```typescript
-@onEvent({ window: true, type: "resize" }) doSomething() {...}
+HTML:
+<CodeBlock>
+```html
+<form-component>
+	<button data-ref="submit-btn" type="submit">Submit</button>
+</form-component>
 ```
 </CodeBlock>
 
-<CodeBlock >
+### Window and Document Events
+
+<CodeBlock>
 ```typescript
-@onEvent({ document: true, type: "keydown" }) doSomething() {...}
+@onEvent({ window: true, type: 'scroll', options: { passive: true } })
+handleScroll() {
+	console.log(`Scrolled to: ${window.scrollY}px`);
+}
+
+@onEvent({ document: true, type: 'keydown' })
+handleKeyDown(event: KeyboardEvent) {
+	if (event.key === 'Escape') this.close();
+}
 ```
 </CodeBlock>
+
+### Event Delegation for Non-Bubbling Events
+
+Since `selector` and `ref` use event delegation, they rely on event bubbling. For events that don't bubble (like `focus`), use their bubbling alternatives (like `focusin`).
+
+<CodeBlock>
+```typescript
+// ✅ Works: focusin bubbles
+@onEvent({ selector: 'input', type: 'focusin' })
+handleFocus() { /* ... */ }
+```
+</CodeBlock>
+
+## Learn More
+
+- [Best Practices](/docs/getting-started/best-practices) - Learn more about component design and events.
+- [@query](/docs/decorators/query) - Query elements to use with events.
+- [@debounce](/docs/decorators/debounce) - Debounce frequent event handlers.

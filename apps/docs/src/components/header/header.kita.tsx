@@ -5,28 +5,27 @@ import type { EcoComponent } from '@ecopages/core';
 import rootJson from '../../../../../packages/radiant/package.json';
 
 export type HeaderProps = {
-  navigation: NavigationProps;
+	navigation: NavigationProps;
 };
 
 export const Header: EcoComponent<HeaderProps> = ({ navigation }) => {
-  return (
-    <header class="header">
-      <div class="header__inner">
-        <div class="header__inner-left-side">
-          <Burger class="md:hidden" />
-          <Logo href="/" target="_self" title="Radiant" />
-          <p class="version">v {rootJson.version as 'safe'}</p>
-        </div>
-        <Navigation {...navigation} />
-      </div>
-    </header>
-  );
+	return (
+		<header class="header">
+			<div class="header__inner">
+				<div class="header__inner-left">
+					<Burger class="md:hidden" />
+					<Logo href="/" target="_self" title="Radiant" />
+					<p class="version">v {rootJson.version as 'safe'}</p>
+				</div>
+				<Navigation {...navigation} />
+			</div>
+		</header>
+	);
 };
 
 Header.config = {
-  importMeta: import.meta,
-  dependencies: {
-    stylesheets: ['./header.css'],
-    components: [Navigation, Logo, Burger],
-  },
+	dependencies: {
+		stylesheets: ['./header.css'],
+		components: [Navigation, Logo, Burger],
+	},
 };

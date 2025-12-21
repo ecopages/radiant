@@ -5,7 +5,6 @@ import { RadiantCounter } from '@/components/radiant-counter';
 export const layout = DocsLayout;
 
 export const config = {
-  importMeta: import.meta,
   dependencies: {
     components: [RadiantCounter]
   }
@@ -23,10 +22,10 @@ This is a simple counter component that increments and decrements a number.
 
 The features of this counter are:
 - Increment and decrement a number
-- Uses the [@reactiveProp](/docs/reactive-prop) decorator to define a property
-- Uses the [@querySelector](/docs/query-selector) decorator to query for an element
-- Uses the [@onEvent](/docs/on-event) decorator to listen for events
-- Uses the [@onUpdated](/docs/on-updated) decorator to update the text content of the element
+- Uses the [@reactiveProp](/docs/decorators/reactive-prop) decorator to define a property
+- Uses the [@query](/docs/decorators/query) decorator to query for an element
+- Uses the [@onEvent](/docs/decorators/on-event) decorator to listen for events
+- Uses the [@onUpdated](/docs/decorators/on-updated) decorator to update the text content of the element
 
 <RadiantCounter value={5} />
 

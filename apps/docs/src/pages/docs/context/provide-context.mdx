@@ -29,12 +29,18 @@ If you want to hydrate the context with the data from the server, you can use th
 
 The attribute type can be a `String`, `Number`, `Boolean`, `Object`, or `Array`.
 
-<CodeBlock lang='typescript'>
-{`@customElement("my-context")
+<CodeBlock>
+```typescript
+@customElement("my-context")
 export class MyElement extends RadiantElement {
-  	@provideContext({ context: myContext, initialValue: { logger: new Logger() }, hydrate: Object})
+  	@provideContext({ 
+		context: myContext, 
+		initialValue: { logger: new Logger() }, 
+		hydrate: Object
+	})
   	provider!: ContextProvider<typeof myContext>;
-}`}
+}
+```
 </CodeBlock>
 
 Once defined, the context provider will search for a script tag with the attribute `data-hydration` and will use the content of the script tag to hydrate the context.
@@ -82,7 +88,7 @@ Please note that the provider must be a parent of the consumer.
 ```
 </CodeBlock>
 
-If for any reason you don't want to use the \`@provideContext\` decorator, you can use the \`ContextProvider\` component directly.
+If for any reason you don't want to use the \`@provideContext\` decorator, you can use the `ContextProvider` component directly.
 
 <CodeBlock >
 ```typescript

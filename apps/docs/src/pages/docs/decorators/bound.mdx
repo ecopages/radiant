@@ -4,18 +4,105 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @bound',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @bound',
+	description: 'Automatically bind methods to the class instance.',
 })
 
 # @bound
----
 
-The bound decorator binds a method to the instance of the class it is defined in. This is useful when passing a method as a callback to another function, such as in response to an event listener.
+The `@bound` decorator automatically binds a method to its class instance, ensuring `this` always refers to the component. This is particularly useful when passing methods as callbacks (e.g., to event listeners or timers).
 
-<CodeBlock >
+## Usage
+
+<CodeBlock>
 ```typescript
-@bound doSomething() {...}
+import { RadiantElement, customElement, bound } from '@ecopages/radiant';
+
+@customElement('timer-component')
+export class TimerComponent extends RadiantElement {
+	private count = 0;
+	
+	@bound
+	increment() {
+		this.count++;
+		console.log(this.count);
+	}
+	
+	connectedCallback() {
+		super.connectedCallback();
+		// ✅ Works: 'this' is bound to the instance
+		setTimeout(this.increment, 1000);
+	}
+}
 ```
 </CodeBlock>
+
+## Common Use Cases
+
+### Event Listeners
+
+<CodeBlock>
+```typescript
+@customElement('scroll-tracker')
+export class ScrollTracker extends RadiantElement {
+	@bound
+	handleScroll() {
+		console.log(`Scrolled to: ${window.scrollY}px`);
+	}
+	
+	connectedCallback() {
+		super.connectedCallback();
+		window.addEventListener('scroll', this.handleScroll);
+	}
+	
+	disconnectedCallback() {
+		window.removeEventListener('scroll', this.handleScroll);
+	}
+}
 ```
+</CodeBlock>
+
+### Promise Callbacks
+
+<CodeBlock>
+```typescript
+@bound
+handleData(data: any[]) {
+	this.data = data;
+}
+
+async loadData() {
+	fetch('/api/data')
+		.then(res => res.json())
+		.then(this.handleData);
+}
+```
+</CodeBlock>
+
+## @bound vs Arrow Functions
+
+While arrow functions also capture `this`, `@bound` methods are defined on the prototype (shared across instances) but bound per instance on first access. This is generally more memory-efficient than creating a new arrow function for every class instance.
+
+<CodeBlock>
+```typescript
+@customElement('my-component')
+export class MyComponent extends RadiantElement {
+	// ✅ Prototype method, bound to instance
+	@bound
+	boundMethod() { }
+	
+	// ❌ Instance property (new function per instance)
+	arrowMethod = () => { }
+}
+```
+</CodeBlock>
+
+<div class="banner banner--tip">
+  <p class="banner__title">TIP</p>
+  <p>Use <code>@bound</code> for public methods that might be overridden in subclasses, as arrow functions cannot be easily overridden.</p>
+</div>
+
+## Learn More
+
+- [@onEvent](/docs/decorators/on-event) - Automatically binds event handlers.
+- [@debounce](/docs/decorators/debounce) - Often combined with `@bound`.

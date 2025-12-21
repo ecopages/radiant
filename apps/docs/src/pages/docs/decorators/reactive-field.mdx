@@ -4,21 +4,57 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @reactiveField',
-  description: 'The place to learn about @ecopages/radiant',
+	title: 'Docs | @reactiveField',
+	description: 'Create reactive internal state for your custom elements.',
 })
 
 # @reactiveField
----
 
-This is a decorator that allows you to define a reactive field on the element.
+The `@reactiveField` decorator creates a reactive internal state field that triggers component updates when changed. Unlike `@reactiveProp`, it does not synchronize with HTML attributes, making it ideal for purely internal component state.
 
-Once an update is made to the field, it will inform the component that an update occured.
+## Usage
 
-It plays well in combination with the @onUpdated decorator.
-
-<CodeBlock >
+<CodeBlock>
 ```typescript
-@reactiveField numberOfClicks = 1;
+import { RadiantElement, customElement, reactiveField, onUpdated } from '@ecopages/radiant';
+
+@customElement('counter-display')
+export class CounterDisplay extends RadiantElement {
+	@reactiveField private count = 0;
+	
+	@onUpdated('count')
+	updateDisplay() {
+		this.textContent = `Count: ${this.count}`;
+	}
+	
+	increment() {
+		this.count++; // Triggers update
+	}
+}
 ```
 </CodeBlock>
+
+## Parameters
+
+This decorator takes no parameters.
+
+## @reactiveField vs @reactiveProp
+
+Use `@reactiveField` for internal component state that should not be exposed to the outside world via HTML attributes.
+
+| Feature | @reactiveProp | @reactiveField |
+| :------ | :------------ | :------------- |
+| HTML Attribute Sync | ✅ Yes | ❌ No |
+| Type Conversion | ✅ Automatical | ❌ None |
+| Performance | Slower | Faster |
+| Typical Visibility| Public (declared) | Private / Protected |
+
+<div class="banner banner--tip">
+  <p class="banner__title">TIP</p>
+  <p>For internal state that doesn't need to trigger a re-render or be watched by <code>@onUpdated</code>, simple class properties are sufficient.</p>
+</div>
+
+## Learn More
+
+- [@reactiveProp](/docs/decorators/reactive-prop) - For public API with attribute sync.
+- [@onUpdated](/docs/decorators/on-updated) - React to field changes.

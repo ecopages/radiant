@@ -2,20 +2,20 @@
 	"name": "radiant-docs",
 	"private": true,
 	"scripts": {
-		"start": "bun run app.ts",
+		"start": "NODE_ENV=production bun run app.ts",
 		"dev": "bun run app.ts --dev",
-		"build": "bun run app.ts --build",
-		"preview": "bun run app.ts --preview",
+		"build": "NODE_ENV=production bun run app.ts --build",
+		"preview": "NODE_ENV=production bun run app.ts --preview",
 		"watch:dev": "bun --watch run app.ts --dev"
 	},
 	"devDependencies": {
 		"@ecopages/core": "npm:@jsr/ecopages__core@latest",
 		"@ecopages/radiant": "*",
-		"@ecopages/bun-mdx-kitajs-loader": "npm:@jsr/ecopages__bun-mdx-kitajs-loader@latest",
 		"@ecopages/postcss-processor": "npm:@jsr/ecopages__postcss-processor@latest",
 		"@ecopages/kitajs": "npm:@jsr/ecopages__kitajs@latest",
 		"@ecopages/mdx": "npm:@jsr/ecopages__mdx@latest",
 		"@ecopages/scripts-injector": "latest",
+		"remark-gfm": "^4.0.1",
 		"shiki": "^1.17.6"
 	}
 }

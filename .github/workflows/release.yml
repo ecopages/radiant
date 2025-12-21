@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -12,6 +13,7 @@ jobs:
     name: Release
     permissions:
       contents: write
+      id-token: write
       
     runs-on: ubuntu-latest
     steps:
@@ -21,19 +23,26 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+
+
       - name: Install Dependencies
-        env:
-          BUN_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
         run: bun install --frozen-lockfile
 
       - name: Build Libraries
         run: bun run build:all
 
-      - name: Create Release Pull Request or Publish to npm
+      - name: Create Release Pull Request or Publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: bun run release
+          version: bun run version
+          publish: npm publish --provenance --access public --workspace packages/radiant
         env:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

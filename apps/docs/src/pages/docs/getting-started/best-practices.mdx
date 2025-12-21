@@ -1,0 +1,136 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+import { CodeBlock } from '@/components/code-block/code-block.kita';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+  title: 'Docs | Best Practices',
+  description: 'General best practices and recommendations for building components with Radiant.',
+})
+
+# Best Practices
+
+While Radiant is designed for flexibility, following these best practices will lead to more maintainable and reliable component libraries.
+
+## Naming Custom Elements
+
+Custom element names must follow these browser-enforced rules:
+
+1. **Must contain a hyphen** (`-`) to avoid conflicts with standard HTML elements.
+2. **Must start with a lowercase letter**.
+3. **Cannot start with a hyphen**.
+4. **Cannot contain uppercase letters**.
+
+<CodeBlock>
+```typescript
+// ✅ Valid names
+@customElement('user-card')
+@customElement('my-app-button')
+
+// ❌ Invalid names
+@customElement('usercard')      // Missing hyphen
+@customElement('User-Card')     // Contains uppercase
+```
+</CodeBlock>
+
+### Recommendation: Namespace Your Components
+To avoid tag name collisions, especially if you're building a library, use a consistent prefix.
+
+<CodeBlock>
+```typescript
+@customElement('acme-button')
+@customElement('acme-card')
+```
+</CodeBlock>
+
+## Component Design
+
+### One Component Per File
+For better organization and ease of navigation, define only one custom element per file.
+
+### Export Your Class
+Always export the component class. This is crucial for:
+- Testing the component in isolation.
+- Type checking when using the component in other TypeScript files.
+
+### Use Descriptive Names
+Use clear, descriptive names. Avoid generic names like `my-component` or `custom-element`.
+
+## Typing Components
+
+Type safety is a core feature of Radiant. We recommend following these patterns to ensure your components are correctly typed for both TypeScript and JSX integration.
+
+### Defining Props
+
+Define a separate type for your component's public properties. This type can be shared between the component script and the JSX template.
+
+<CodeBlock>
+```typescript
+export type UserCardProps = {
+  name?: string;
+  avatarUrl?: string;
+  isAdmin?: boolean;
+};
+
+@customElement('user-card')
+export class UserCard extends RadiantElement {
+  @reactiveProp({ type: String }) declare name: string;
+  @reactiveProp({ type: String }) declare avatarUrl: string;
+  @reactiveProp({ type: Boolean }) declare isAdmin: boolean;
+}
+```
+</CodeBlock>
+
+### JSX Integration (Kita)
+
+To enable type checking for your custom element in JSX templates (using Kita), register it in the `JSX.IntrinsicElements` interface.
+
+<CodeBlock>
+```typescript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'user-card': HtmlTag & UserCardProps;
+    }
+  }
+}
+```
+</CodeBlock>
+
+## Technical Tips
+
+### Registration Timing
+Custom elements are registered immediately when the file is evaluated. If you import a file containing a `@customElement` decorator, the element is ready for use in the DOM.
+
+### Reactive State Mutation (Reference Equality)
+
+Radiant uses reference equality to detect changes in reactive properties and fields. 
+
+<div class="banner banner--alert">
+  <p class="banner__title">IMPORTANT</p>
+  <p>For complex types like Object or Array, <strong>in-place mutations (like push or splice) will not trigger a re-render</strong>. You must always reassign the property to a new reference.</p>
+</div>
+
+<CodeBlock>
+```typescript
+// ❌ Won't trigger update (same reference)
+this.items.push('new item');
+
+// ✅ Triggers update (new reference)
+this.items = [...this.items, 'new item'];
+```
+</CodeBlock>
+
+<div class="banner banner--info">
+  <p class="banner__title">NOTE</p>
+  <p>This behavior is intentional for performance and is verified by our core test suite.</p>
+</div>
+
+### Prefer autonomous elements over customized built-ins
+
+While Radiant supports extending built-in elements (e.g., `extends: 'button'`), browser support for customized built-in elements is limited.
+
+<div class="banner banner--alert">
+  <p class="banner__title">WARNING</p>
+  <p>Customized built-in elements have limited browser support and are not supported in Safari. For maximum compatibility, we recommend creating autonomous custom elements.</p>
+</div>
