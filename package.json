@@ -1,6 +1,9 @@
 {
 	"name": "@ecopages/radiant-monorepo",
 	"description": "A minimalist web component library designed for simplicity and flexibility",
+	"publishConfig": {
+		"access": "public"
+	},
 	"scripts": {
 		"clean": "clear && bunx npkill -D -y && rm -rf bun.lock && bun install",
 		"format": "bunx prettier --write .",

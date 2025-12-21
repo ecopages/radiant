@@ -1,6 +1,10 @@
 {
 	"name": "radiant-docs",
 	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant"
+	},
 	"scripts": {
 		"start": "NODE_ENV=production bun run app.ts",
 		"dev": "bun run app.ts --dev",
