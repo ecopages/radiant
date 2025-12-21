@@ -12,7 +12,7 @@
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build:lib": "bun run clean && bun run build:files && bun run build:types",
+		"build:lib": "bun run build:files && bun run build:types",
 		"build:files": "bun run ./build.ts",
 		"build:types": "tsc -p tsconfig.build.json && tsc-alias",
 		"watch:lib": "bun run ./build.ts --watch",
