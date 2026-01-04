@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -14,7 +13,6 @@ export const getMetadata = () => ({
 This utility function is used to stringify attributes in a typed way.
 This is useful when you need to pass attributes to a component that expects a specific type.
 
-<CodeBlock >
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
@@ -24,12 +22,10 @@ export const MyComponent = ({ value }: { value: number }) => {
 
 // Output: <my-component complex-attribute="{&#34;value&#34;:1}"></my-component>
 ```
-</CodeBlock>
 
 
 Or when you need to stringify a context value:
 
-<CodeBlock >
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
@@ -51,4 +47,3 @@ export const MyComponent = ({ value }: { value: number }) => {
  * </my-context-provider>
  */
 ```
-</CodeBlock>

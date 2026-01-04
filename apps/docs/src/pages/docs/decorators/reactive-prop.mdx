@@ -1,5 +1,5 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
+import { Banner } from '@/components/banner/banner.kita';
 
 export const layout = DocsLayout;
 
@@ -14,7 +14,6 @@ The `@reactiveProp` decorator creates a reactive property that automatically syn
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, reactiveProp } from '@ecopages/radiant';
 
@@ -25,14 +24,11 @@ export class UserCard extends RadiantElement {
 	@reactiveProp({ type: Boolean }) declare active: boolean;
 }
 ```
-</CodeBlock>
 
 Usage in HTML:
-<CodeBlock>
 ```html
 <user-card name="Alice" age="30" active></user-card>
 ```
-</CodeBlock>
 
 ## Parameters
 
@@ -52,20 +48,18 @@ The decorator accepts an options object:
 - **Boolean**: Follows HTML boolean convention (presence = true, absence = false).
 - **Object / Array**: Complex types are serialized as JSON strings in the attribute.
 
-<div class="banner banner--tip">
-  <p class="banner__title">TIP</p>
+<Banner type="info">
+  <Banner.Title>TIP</Banner.Title>
   <p>Objects and Arrays need reassignment to trigger updates (e.g., this.items = [...this.items, newItem]). See <a href="/docs/getting-started/best-practices#reactive-state-mutation">Best Practices</a> for more information.</p>
-</div>
+</Banner>
 
 ## Reflection
 
 Use the `reflect` option to keep the HTML attribute in sync with the property value. This is useful for styling elements based on their state using CSS attribute selectors.
 
-<CodeBlock>
 ```typescript
 @reactiveProp({ type: Boolean, reflect: true }) declare active: boolean;
 ```
-</CodeBlock>
 
 ## Learn More
 

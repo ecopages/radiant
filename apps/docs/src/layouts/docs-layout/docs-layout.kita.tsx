@@ -1,4 +1,4 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
+import { Banner } from '@/components/banner/banner.kita';
 import { docsConfig } from '@/data/docs-config';
 import { BaseLayout } from '@/layouts/base-layout';
 import type { EcoComponent } from '@ecopages/core';
@@ -208,6 +208,6 @@ DocsLayout.config = {
 	dependencies: {
 		stylesheets: ['./docs-layout.css'],
 		scripts: ['./docs-layout.script.ts'],
-		components: [BaseLayout, CodeBlock],
+		components: [BaseLayout, Banner],
 	},
 };

@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -19,10 +18,8 @@ It is based on the [community protocols proposal](https://github.com/webcomponen
 
 To create a context you can use the `createContext` function. This function takes a generic type that represents the type of the context.
 
-<CodeBlock >
 ```typescript
 export const myContext = createContext<{ value: string }>(Symbol('my-context'));
 ```
-</CodeBlock>
 
 Please read the [context provider documentation](/docs/context/provide-context) to learn how to provide a context to a component and the [context consumer documentation](/docs/context/consume-context) to learn how to consume it.

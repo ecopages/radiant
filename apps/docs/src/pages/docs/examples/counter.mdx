@@ -1,5 +1,4 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { RadiantCounter } from '@/components/radiant-counter';
 
 export const layout = DocsLayout;
@@ -35,7 +34,6 @@ If you want to use the `RadiantCounter` component, the only thing you need to do
 
 This can be done by using the `data-decrement`, `data-increment`, and `data-text` attributes.
 
-<CodeBlock>
 ```jsx
 <radiant-counter count={count}>
     <button type="button" data-ref="decrement" aria-label="Decrement">
@@ -47,7 +45,6 @@ This can be done by using the `data-decrement`, `data-increment`, and `data-text
     </button>
 </radiant-counter>
 ```
-</CodeBlock>
 
 ## Typescript
 
@@ -57,7 +54,6 @@ Please note that the props in there are used mainly to provide type checking and
 
 The component is also dispatching a `change` event when the value is updated, this can be used to listen for changes in the value of the component.
 
-<CodeBlock >
 ```typescript
 export type RadiantCounterProps = {
     value?: number;
@@ -93,4 +89,3 @@ declare global {
     }
 }
 ```
-</CodeBlock>

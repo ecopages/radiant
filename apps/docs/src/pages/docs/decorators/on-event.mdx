@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -14,7 +13,6 @@ The `@onEvent` decorator provides a declarative way to subscribe to DOM events o
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 
@@ -29,7 +27,6 @@ export class ClickCounter extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Parameters
 
@@ -57,7 +54,6 @@ The decorator accepts a configuration object. You must provide a target and an e
 
 This is the recommended approach for referencing elements within your component's structure.
 
-<CodeBlock>
 ```typescript
 @onEvent({ ref: 'submit-btn', type: 'click' })
 handleSubmit(event: MouseEvent) {
@@ -65,20 +61,16 @@ handleSubmit(event: MouseEvent) {
 	console.log('Form submitted');
 }
 ```
-</CodeBlock>
 
 HTML:
-<CodeBlock>
 ```html
 <form-component>
 	<button data-ref="submit-btn" type="submit">Submit</button>
 </form-component>
 ```
-</CodeBlock>
 
 ### Window and Document Events
 
-<CodeBlock>
 ```typescript
 @onEvent({ window: true, type: 'scroll', options: { passive: true } })
 handleScroll() {
@@ -90,19 +82,16 @@ handleKeyDown(event: KeyboardEvent) {
 	if (event.key === 'Escape') this.close();
 }
 ```
-</CodeBlock>
 
 ### Event Delegation for Non-Bubbling Events
 
 Since `selector` and `ref` use event delegation, they rely on event bubbling. For events that don't bubble (like `focus`), use their bubbling alternatives (like `focusin`).
 
-<CodeBlock>
 ```typescript
-// ✅ Works: focusin bubbles
+// Works: focusin bubbles
 @onEvent({ selector: 'input', type: 'focusin' })
 handleFocus() { /* ... */ }
 ```
-</CodeBlock>
 
 ## Learn More
 

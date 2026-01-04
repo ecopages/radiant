@@ -1,5 +1,4 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { RadiantTodoApp } from '@/components/radiant-todo-app'
 
 export const layout = DocsLayout;
@@ -47,7 +46,6 @@ The `hydrate` attribute is used to merge the data from the server with the initi
 
 Since hydrate will merge the data with the initial value, you can pass only the properties that you want to update.
 
-<CodeBlock >
 ```tsx
 const TodoPanel = ({
   title,
@@ -104,7 +102,6 @@ export const RadiantTodoApp = async () => {
   );
 };
 ```
-</CodeBlock>
 
 ## Typescript
 
@@ -118,7 +115,6 @@ The features used in this component are:
 - `@contextSelector` decorator to select the todos based on the complete status
 - `renderTemplate` method to render the templates. Here we are using WithKita mixin to render the JSX templates
 
-<CodeBlock >
 ```typescript
 import {
   type ContextProvider,
@@ -224,7 +220,6 @@ declare global {
   }
 }
 ```
-</CodeBlock>
 
 In this second snippet we have the `radiant-todo-item` component that is responsible for rendering the todo item.
 
@@ -234,7 +229,6 @@ The features used in this component are:
 - `@reactiveProp` decorator to define the complete attribute
 - `@consumeContext` decorator to consume the context from the parent component
 
-<CodeBlock >
 ```typescript
 export type RadiantTodoProps = {
     complete?: boolean;
@@ -287,7 +281,6 @@ declare global {
     }
 }
 ```
-</CodeBlock>
 
 Finally, in this last snippet we have the `NoTodosMessage`, `NoCompletedTodosMessage`, `TodoItem` and `TodoList` components.
 
@@ -295,7 +288,6 @@ Theses components are responsible for rendering the messages when there are no t
 
 They are used both in the initial markup and in the custom elements.
 
-<CodeBlock >
 ```tsx
 import type { Todo } from './radiant-todo-app.script';
 
@@ -346,4 +338,3 @@ export const TodoList = ({ todos }: { todos: Todo[] }) => {
     );
 };
 ```
-</CodeBlock>

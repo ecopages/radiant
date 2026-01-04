@@ -1,5 +1,5 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { CodeBlock } from '@/components/code-block/code-block.kita';
+import { Banner } from '@/components/banner/banner.kita';
 
 export const layout = DocsLayout;
 
@@ -21,27 +21,23 @@ Custom element names must follow these browser-enforced rules:
 3. **Cannot start with a hyphen**.
 4. **Cannot contain uppercase letters**.
 
-<CodeBlock>
 ```typescript
-// ✅ Valid names
+// Valid names
 @customElement('user-card')
 @customElement('my-app-button')
 
-// ❌ Invalid names
+// Invalid names
 @customElement('usercard')      // Missing hyphen
 @customElement('User-Card')     // Contains uppercase
 ```
-</CodeBlock>
 
 ### Recommendation: Namespace Your Components
 To avoid tag name collisions, especially if you're building a library, use a consistent prefix.
 
-<CodeBlock>
 ```typescript
 @customElement('acme-button')
 @customElement('acme-card')
 ```
-</CodeBlock>
 
 ## Component Design
 
@@ -64,7 +60,6 @@ Type safety is a core feature of Radiant. We recommend following these patterns 
 
 Define a separate type for your component's public properties. This type can be shared between the component script and the JSX template.
 
-<CodeBlock>
 ```typescript
 export type UserCardProps = {
   name?: string;
@@ -79,13 +74,11 @@ export class UserCard extends RadiantElement {
   @reactiveProp({ type: Boolean }) declare isAdmin: boolean;
 }
 ```
-</CodeBlock>
 
 ### JSX Integration (Kita)
 
 To enable type checking for your custom element in JSX templates (using Kita), register it in the `JSX.IntrinsicElements` interface.
 
-<CodeBlock>
 ```typescript
 declare global {
   namespace JSX {
@@ -95,7 +88,6 @@ declare global {
   }
 }
 ```
-</CodeBlock>
 
 ## Technical Tips
 
@@ -106,31 +98,29 @@ Custom elements are registered immediately when the file is evaluated. If you im
 
 Radiant uses reference equality to detect changes in reactive properties and fields. 
 
-<div class="banner banner--alert">
-  <p class="banner__title">IMPORTANT</p>
+<Banner type="alert" class="mb-4">
+  <Banner.Title>IMPORTANT</Banner.Title>
   <p>For complex types like Object or Array, <strong>in-place mutations (like push or splice) will not trigger a re-render</strong>. You must always reassign the property to a new reference.</p>
-</div>
+</Banner>
 
-<CodeBlock>
 ```typescript
-// ❌ Won't trigger update (same reference)
+// Won't trigger update (same reference)
 this.items.push('new item');
 
-// ✅ Triggers update (new reference)
+//Triggers update (new reference)
 this.items = [...this.items, 'new item'];
 ```
-</CodeBlock>
 
-<div class="banner banner--info">
-  <p class="banner__title">NOTE</p>
+<Banner type="info">
+  <Banner.Title>NOTE</Banner.Title>
   <p>This behavior is intentional for performance and is verified by our core test suite.</p>
-</div>
+</Banner>
 
 ### Prefer autonomous elements over customized built-ins
 
 While Radiant supports extending built-in elements (e.g., `extends: 'button'`), browser support for customized built-in elements is limited.
 
-<div class="banner banner--alert">
-  <p class="banner__title">WARNING</p>
+<Banner type="alert">
+  <Banner.Title>WARNING</Banner.Title>
   <p>Customized built-in elements have limited browser support and are not supported in Safari. For maximum compatibility, we recommend creating autonomous custom elements.</p>
-</div>
+</Banner>

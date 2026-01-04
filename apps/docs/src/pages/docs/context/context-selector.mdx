@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -22,8 +21,6 @@ If `subscribe` is set to `true`, the consumer will be updated whenever the conte
 This decorator is a method decorator, so it should be used on a method of a class that will be triggered when the context value changes.
 
 Here is an example of how to use the `@contextSelector` decorator:
-
-<CodeBlock >
 ```typescript
 import { MyContext } from './my-element-provider'
 
@@ -35,12 +32,10 @@ export class MyElement extends RadiantElement {
   }
 }
 ```
-</CodeBlock>
 
 
 This can be very handy when you need to manipulate the context value before using it.
 
-<CodeBlock >
 ```typescript
 import { MyContext } from './my-element-provider'
 @customElement("my-consumer")
@@ -54,12 +49,8 @@ export class MyElement extends RadiantElement {
   }
 }
 ```
-</CodeBlock>
-
-
 If for any reason you don't want to use the `@contextSelector` decorator, you can subscribe to the context changes manually.
 
-<CodeBlock >
 ```typescript
 import { MyContext } from './my-element-provider'
 @customElement("my-consumer")
@@ -82,5 +73,4 @@ export class MyElement extends RadiantElement {
   }
 }
 ```
-</CodeBlock>
 

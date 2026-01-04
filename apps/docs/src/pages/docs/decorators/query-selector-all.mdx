@@ -1,5 +1,5 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
+import { Banner } from '@/components/banner/banner.kita';
 
 export const layout = DocsLayout;
 
@@ -14,7 +14,6 @@ The `@querySelectorAll` decorator queries for multiple elements within your comp
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, querySelectorAll } from '@ecopages/radiant';
 
@@ -29,13 +28,11 @@ export class ListComponent extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Relationship to @query
 
 The `@querySelectorAll` decorator is equivalent to using `@query` with `all: true`.
 
-<CodeBlock>
 ```typescript
 // These are equivalent:
 @querySelectorAll('.item')
@@ -44,12 +41,11 @@ items1!: HTMLElement[];
 @query({ selector: '.item', all: true })
 items2!: HTMLElement[];
 ```
-</CodeBlock>
 
-<div class="banner banner--tip">
-  <p class="banner__title">TIP</p>
+<Banner type="info">
+  <Banner.Title>TIP</Banner.Title>
   <p>Recommend using <code>@query</code> with <code>all: true</code> instead, as it provides more configuration options (such as caching and <code>data-ref</code> support).</p>
-</div>
+</Banner>
 
 ## Learn More
 

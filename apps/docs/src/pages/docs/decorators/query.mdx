@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -14,7 +13,6 @@ The `@query` decorator provides a convenient way to query and cache references t
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, query } from '@ecopages/radiant';
 
@@ -30,7 +28,6 @@ export class UserProfile extends RadiantElement {
 	@query({ ref: 'item', all: true }) items!: HTMLElement[];
 }
 ```
-</CodeBlock>
 
 ## Parameters
 
@@ -47,23 +44,19 @@ export class UserProfile extends RadiantElement {
 
 By default, queries are cached for performance. For dynamic content that changes frequently, you can disable caching to re-query on every access.
 
-<CodeBlock>
 ```typescript
 @query({ ref: 'dynamic-item', all: true, cache: false }) 
 items!: HTMLElement[];
 ```
-</CodeBlock>
 
 ### Type Safety
 
 Use TypeScript's non-null assertion operator (`!`) for required elements, or the optional chaining operator (`?`) if the element might not be present.
 
-<CodeBlock>
 ```typescript
 @query({ ref: 'required-el' }) element!: HTMLElement;
 @query({ ref: 'optional-el' }) optional?: HTMLElement;
 ```
-</CodeBlock>
 
 ## Learn More
 

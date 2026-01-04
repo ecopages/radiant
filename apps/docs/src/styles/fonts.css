@@ -1,0 +1,49 @@
+@font-face {
+	font-family: 'Cambay';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/Cambay-Regular.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Cambay';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('/fonts/Cambay-Bold.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Libre Franklin';
+	font-style: normal;
+	font-weight: 300;
+	font-display: swap;
+	src: url('/fonts/LibreFranklin-Light.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Libre Franklin';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/LibreFranklin-Regular.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Libre Franklin';
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url('/fonts/LibreFranklin-Medium.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Libre Franklin';
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url('/fonts/LibreFranklin-SemiBold.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Libre Franklin';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('/fonts/LibreFranklin-Bold.ttf') format('truetype');
+}

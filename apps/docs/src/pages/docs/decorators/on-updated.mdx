@@ -1,5 +1,5 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
+import { Banner } from '@/components/banner/banner.kita';
 
 export const layout = DocsLayout;
 
@@ -14,7 +14,6 @@ The `@onUpdated` decorator registers a callback method that executes automatical
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, reactiveProp, onUpdated } from '@ecopages/radiant';
 
@@ -29,7 +28,6 @@ export class UserGreeting extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Parameters
 
@@ -43,7 +41,6 @@ export class UserGreeting extends RadiantElement {
 
 A single method can watch multiple properties by applying the decorator multiple times.
 
-<CodeBlock>
 ```typescript
 @onUpdated('firstName')
 @onUpdated('lastName')
@@ -51,13 +48,11 @@ updateFullName() {
 	this.fullNameElement.textContent = `${this.firstName} ${this.lastName}`;
 }
 ```
-</CodeBlock>
 
 ### Derived State
 
 Calculate and update internal state derived from public properties.
 
-<CodeBlock>
 ```typescript
 @reactiveProp({ type: Array }) declare items: CartItem[];
 @reactiveField private total = 0;
@@ -67,13 +62,11 @@ calculateTotals() {
 	this.total = this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 }
 ```
-</CodeBlock>
 
 ### DOM Synchronization
 
 Keep the DOM or external state in sync with component properties.
 
-<CodeBlock>
 ```typescript
 @onUpdated('theme')
 applyTheme() {
@@ -81,12 +74,11 @@ applyTheme() {
 	localStorage.setItem('theme', this.theme);
 }
 ```
-</CodeBlock>
 
-<div class="banner banner--caution">
-  <p class="banner__title">CAUTION</p>
+<Banner type="caution">
+  <Banner.Title>CAUTION</Banner.Title>
   <p>Avoid updating the same property you're watching, as this will trigger an infinite loop.</p>
-</div>
+</Banner>
 
 ## Learn More
 

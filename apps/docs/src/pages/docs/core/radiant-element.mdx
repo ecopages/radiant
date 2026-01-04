@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -30,7 +29,6 @@ Please have a look to the [Decorator Section](/docs/decorators/custom-element) t
 
 Following is an example of a custom element created using the `RadiantElement` class with decorators:
 
-<CodeBlock>
 ```typescript
 @customElement('my-custom-element')
 class MyCustomElement extends RadiantElement {
@@ -48,13 +46,11 @@ class MyCustomElement extends RadiantElement {
   }
 }
 ```
-</CodeBlock>
 
 The above example demonstrates how to create a custom element using the `RadiantElement` class with decorators. The element has a reactive property `foo`, a reference to a paragraph element, and an event listener for a button click. When the button is clicked, the `foo` property is updated, triggering the `updateParagraph` method to update the paragraph text.
 
 ## Example without Decorators
 
-<CodeBlock>
 ```typescript
 class MyCustomElement extends RadiantElement {
   declare foo: string;
@@ -77,20 +73,17 @@ class MyCustomElement extends RadiantElement {
 }
 customElements.define('my-custom-element-plain', MyCustomElementPlain);
 ```
-</CodeBlock>
 
 The above example demonstrates how to create a custom element using the `RadiantElement` class without decorators. The element has a reactive property `foo`, a reference to a paragraph element, and an event listener for a button click. When the button is clicked, the `foo` property is updated, triggering the update callback to update the paragraph text.
 
 ## Usage
 
-<CodeBlock>
 ```html
 <my-custom-element>
   <p data-ref="paragraph"></p>
   <button>Click me</button>
 </my-custom-element>
 ```
-</CodeBlock>
 
 ## Methods
 

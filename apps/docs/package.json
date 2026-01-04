@@ -14,12 +14,14 @@
 	},
 	"devDependencies": {
 		"@ecopages/core": "npm:@jsr/ecopages__core@latest",
-		"@ecopages/radiant": "*",
+		"@ecopages/radiant": "workspace:*",
 		"@ecopages/postcss-processor": "npm:@jsr/ecopages__postcss-processor@latest",
 		"@ecopages/kitajs": "npm:@jsr/ecopages__kitajs@latest",
 		"@ecopages/mdx": "npm:@jsr/ecopages__mdx@latest",
 		"@ecopages/scripts-injector": "latest",
+		"@tailwindcss/postcss": "^4.0.0",
 		"remark-gfm": "^4.0.1",
-		"shiki": "^1.17.6"
+		"shiki": "^3.20.0",
+		"tailwindcss": "^4.1.18"
 	}
 }

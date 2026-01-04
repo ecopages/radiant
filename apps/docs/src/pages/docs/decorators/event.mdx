@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -14,7 +13,6 @@ The `@event` decorator creates an `EventEmitter` that provides a type-safe way t
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, event, EventEmitter } from '@ecopages/radiant';
 
@@ -32,7 +30,6 @@ export class CounterButton extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Parameters
 
@@ -49,7 +46,6 @@ The decorator accepts a configuration object:
 
 You can define interfaces for your event details to ensure type safety when emitting events:
 
-<CodeBlock>
 ```typescript
 interface UserSelectedDetail {
 	userId: string;
@@ -69,13 +65,11 @@ export class UserList extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Listening to Events
 
 Components can listen to custom events from their children using the `@onEvent` decorator:
 
-<CodeBlock>
 ```typescript
 @customElement('parent-component')
 export class ParentComponent extends RadiantElement {
@@ -85,7 +79,6 @@ export class ParentComponent extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Learn More
 

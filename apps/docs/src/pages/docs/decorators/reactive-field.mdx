@@ -1,5 +1,5 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
+import { Banner } from '@/components/banner/banner.kita';
 
 export const layout = DocsLayout;
 
@@ -14,7 +14,6 @@ The `@reactiveField` decorator creates a reactive internal state field that trig
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, reactiveField, onUpdated } from '@ecopages/radiant';
 
@@ -32,7 +31,6 @@ export class CounterDisplay extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Parameters
 
@@ -49,10 +47,10 @@ Use `@reactiveField` for internal component state that should not be exposed to 
 | Performance | Slower | Faster |
 | Typical Visibility| Public (declared) | Private / Protected |
 
-<div class="banner banner--tip">
-  <p class="banner__title">TIP</p>
+<Banner type="tip">
+  <Banner.Title>TIP</Banner.Title>
   <p>For internal state that doesn't need to trigger a re-render or be watched by <code>@onUpdated</code>, simple class properties are sufficient.</p>
-</div>
+</Banner>
 
 ## Learn More
 

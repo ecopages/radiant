@@ -39,5 +39,8 @@
 		"apps/*",
 		"packages/*",
 		"playground/*"
-	]
+	],
+	"dependencies": {
+		"rehype-pretty-code": "^0.14.1"
+	}
 }

@@ -1,4 +1,3 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
 
 export const layout = DocsLayout;
@@ -17,19 +16,18 @@ To provide a context to a component, you can use the `@provideContext` decorator
 - `initialValue`: The initial value of the context.
 - `hydrate`: This is an `AttributeType` that will be used to hydrate the context with the data from the server. If provided, the context will be hydrated with the data from the server.
 
-<CodeBlock lang='typescript'>
-{`@customElement("my-context")
+```typescript
+@customElement("my-context")
 export class MyElement extends RadiantElement {
   	@provideContext({ context: myContext, initialValue: { value: "Hello World" } })
   	provider!: ContextProvider<typeof myContext>;
-}`}
-</CodeBlock>
+}
+```
 
 If you want to hydrate the context with the data from the server, you can use the `hydrate` property and pass an `AttributeType` that will be used to hydrate the context with the data from the server.
 
 The attribute type can be a `String`, `Number`, `Boolean`, `Object`, or `Array`.
 
-<CodeBlock>
 ```typescript
 @customElement("my-context")
 export class MyElement extends RadiantElement {
@@ -41,13 +39,11 @@ export class MyElement extends RadiantElement {
   	provider!: ContextProvider<typeof myContext>;
 }
 ```
-</CodeBlock>
 
 Once defined, the context provider will search for a script tag with the attribute `data-hydration` and will use the content of the script tag to hydrate the context.
 
 This way we follow the best practices to provide complex data to a component.
 
-<CodeBlock>
 ```html
 <my-context-provider>
 	<script type="application/json" data-hydration>
@@ -55,12 +51,10 @@ This way we follow the best practices to provide complex data to a component.
 	</script>
 </my-context-provider>
 ```
-</CodeBlock>
 
 If you are using `jsx` you can use the `stringifyTyped` function to stringify the data.
 It will stringify the data in a typed way, which is useful when you need to pass attributes to a component that expects a specific type.
 
-<CodeBlock>
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
@@ -73,24 +67,20 @@ export const MyComponent = ({ value }: { value: number }) => {
 	</my-context-provider>;
 };  
 ```
-</CodeBlock>
 
 Once you have a context provider, all the children of the provider will have access to the context.
 Please note that the provider must be a parent of the consumer.
 
 [Here you can find the documentation related to the context consumer.](/docs/context/consume-context)
 
-<CodeBlock>
 ```html
 <my-element-provider>
   	<my-element-consumer></my-element-consumer>
 </my-element-provider>
 ```
-</CodeBlock>
 
 If for any reason you don't want to use the \`@provideContext\` decorator, you can use the `ContextProvider` component directly.
 
-<CodeBlock >
 ```typescript
 @customElement("my-context")
 export class MyElement extends RadiantElement {
@@ -100,4 +90,3 @@ export class MyElement extends RadiantElement {
 	});
 }
 ```
-</CodeBlock>

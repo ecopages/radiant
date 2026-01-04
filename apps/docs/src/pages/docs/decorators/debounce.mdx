@@ -1,5 +1,5 @@
-import { CodeBlock } from '@/components/code-block/code-block.kita';
 import { DocsLayout } from '@/layouts/docs-layout';
+import { Banner } from '@/components/banner/banner.kita';
 
 export const layout = DocsLayout;
 
@@ -14,7 +14,6 @@ The `@debounce` decorator delays the execution of a method until a specified tim
 
 ## Usage
 
-<CodeBlock>
 ```typescript
 import { RadiantElement, customElement, debounce } from '@ecopages/radiant';
 
@@ -33,7 +32,6 @@ export class SearchInput extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ## Parameters
 
@@ -45,7 +43,6 @@ export class SearchInput extends RadiantElement {
 
 ### Window Resize
 
-<CodeBlock>
 ```typescript
 @customElement('responsive-chart')
 export class ResponsiveChart extends RadiantElement {
@@ -60,11 +57,9 @@ export class ResponsiveChart extends RadiantElement {
 	}
 }
 ```
-</CodeBlock>
 
 ### Auto-Save
 
-<CodeBlock>
 ```typescript
 @debounce(2000)
 async saveContent() {
@@ -80,7 +75,6 @@ handleInput(event: InputEvent) {
 	this.saveContent();
 }
 ```
-</CodeBlock>
 
 ## Guidelines for Delays
 
@@ -90,10 +84,10 @@ handleInput(event: InputEvent) {
 | Window resize | 200-300ms | Smooth but not too delayed. |
 | Auto-save | 1000-3000ms | Reduce server load, batch changes. |
 
-<div class="banner banner--info">
-  <p class="banner__title">NOTE</p>
+<Banner type="info">
+  <Banner.Title>NOTE</Banner.Title>
   <p>Debounced methods do not return values immediately and always returned <code>void</code> (or a Promise that resolves when execution completes).</p>
-</div>
+</Banner>
 
 ## Learn More
 
