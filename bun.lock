@@ -23,11 +23,12 @@
     "apps/docs": {
       "name": "radiant-docs",
       "devDependencies": {
+        "@ecopages/browser-router": "npm:@jsr/ecopages__browser-router@latest",
         "@ecopages/core": "npm:@jsr/ecopages__core@latest",
         "@ecopages/kitajs": "npm:@jsr/ecopages__kitajs@latest",
         "@ecopages/mdx": "npm:@jsr/ecopages__mdx@latest",
         "@ecopages/postcss-processor": "npm:@jsr/ecopages__postcss-processor@latest",
-        "@ecopages/radiant": "*",
+        "@ecopages/radiant": "workspace:*",
         "@ecopages/scripts-injector": "latest",
         "@tailwindcss/postcss": "^4.0.0",
         "remark-gfm": "^4.0.1",
@@ -149,6 +150,8 @@
     "@clack/core": ["@clack/core@0.3.5", "", { "dependencies": { "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-5cfhQNH+1VQ2xLQlmzXMqUoiaH0lRBq9/CLW9lTyMbuKLC3+xEK01tHVvyut++mLOn5urSHmkm6I0Lg9MaJSTQ=="],
 
     "@clack/prompts": ["@clack/prompts@0.7.0", "", { "dependencies": { "@clack/core": "^0.3.3", "is-unicode-supported": "*", "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-0MhX9/B4iL6Re04jPrttDm+BsP8y6mS7byuv0BvXgdXhbV5PdlsHt55dvNsuBCPZ7xq1oTAOOuotR9NFbQyMSA=="],
+
+    "@ecopages/browser-router": ["@jsr/ecopages__browser-router@0.1.56", "https://npm.jsr.io/~/11/@jsr/ecopages__browser-router/0.1.56.tgz", { "dependencies": { "morphdom": "^2.7.4" } }, "sha512-5wJt/lncP0sLg/uIoFJFQzAVlIFvLyhg/qXlx6ulPogU2pZVzGOxz2ZBpbERTS8/z8cWnLPgD7wrwovyES8uHg=="],
 
     "@ecopages/core": ["@jsr/ecopages__core@0.1.56", "https://npm.jsr.io/~/11/@jsr/ecopages__core/0.1.56.tgz", { "dependencies": { "@ecopages/logger": "latest", "@jsr/ecopages__file-system": "^0.1.56", "@types/bun": "latest", "chokidar": "^4.0.3", "ghtml": "^3.1.2" } }, "sha512-1su2rTYZM7np+ILuoOx7F457dZm7ky8FPCqps1L76eTy+ekvX3TsKnFXHwyTBv/hcNMgTefo7f6HPBeoTywVFA=="],
 
@@ -973,6 +976,8 @@
     "minimatch": ["minimatch@9.0.5", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow=="],
 
     "minipass": ["minipass@7.1.2", "", {}, "sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw=="],
+
+    "morphdom": ["morphdom@2.7.7", "", {}, "sha512-04GmsiBcalrSCNmzfo+UjU8tt3PhZJKzcOy+r1FlGA7/zri8wre3I1WkYN9PT3sIeIKfW9bpyElA+VzOg2E24g=="],
 
     "mri": ["mri@1.2.0", "", {}, "sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA=="],
 
