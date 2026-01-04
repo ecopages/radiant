@@ -191,9 +191,9 @@ const DocsNavigation = () => {
 	);
 };
 
-export const DocsLayout: EcoComponent<DocsLayoutProps> = ({ children }) => {
+export const DocsLayout: EcoComponent<DocsLayoutProps> = ({ children, class: className }) => {
 	return (
-		<BaseLayout class="docs-layout prose">
+		<BaseLayout class={`docs-layout prose ${className ?? ''}`.trim()}>
 			<>
 				<radiant-navigation class="docs-layout__aside hidden md:block">
 					<DocsNavigation />
