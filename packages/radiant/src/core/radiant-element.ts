@@ -370,9 +370,14 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		});
 
 		if (initialValue !== undefined) {
-			handleReflectRequest(initialValue as T);
 			queueMicrotask(() => {
-				this.notifyUpdate(propertyName, undefined, initialValue);
+				const currentValue = this.reactiveProperties.get(propertyName)?.value as T | undefined;
+				if (currentValue === undefined) {
+					return;
+				}
+
+				handleReflectRequest(currentValue);
+				this.notifyUpdate(propertyName, undefined, currentValue);
 			});
 		}
 	}

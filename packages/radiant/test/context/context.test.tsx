@@ -92,4 +92,39 @@ describe('Context', () => {
 			expect(callback).toHaveBeenCalled();
 		});
 	});
+
+	test('it notifies all subscribers even when mixed selector and non-selector subscriptions are present', async () => {
+		const selectorCallback = vi.fn();
+		const fullContextCallback = vi.fn();
+
+		class MixedSubscriberConsumer extends RadiantElement {
+			@contextSelector({ context: testContext })
+			onContext(context: TestContext) {
+				fullContextCallback(context);
+			}
+
+			@contextSelector({ context: testContext, select: (context) => context.value })
+			onValue(value: number) {
+				selectorCallback(value);
+			}
+		}
+
+		if (!customElements.get('mixed-subscriber-consumer')) {
+			customElements.define('mixed-subscriber-consumer', MixedSubscriberConsumer);
+		}
+
+		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextConsumer = document.createElement('mixed-subscriber-consumer') as MixedSubscriberConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await Promise.resolve();
+		expect(fullContextCallback).toHaveBeenCalledWith({ value: 1 });
+		expect(selectorCallback).toHaveBeenCalledWith(1);
+
+		contextProvider.context.setContext({ value: 4 });
+
+		expect(fullContextCallback).toHaveBeenLastCalledWith({ value: 4 });
+		expect(selectorCallback).toHaveBeenLastCalledWith(4);
+	});
 });

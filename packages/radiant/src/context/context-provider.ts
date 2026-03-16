@@ -131,7 +131,10 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
 
 	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T>) => {
 		for (const sub of this.subscriptions) {
-			if (!sub.select) return this.sendSubscriptionUpdate(sub, newContext);
+			if (!sub.select) {
+				this.sendSubscriptionUpdate(sub, newContext);
+				continue;
+			}
 			const newSelected = sub.select(newContext);
 			const prevSelected = sub.select(prevContext);
 			if (newSelected !== prevSelected) {
