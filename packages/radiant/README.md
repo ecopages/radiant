@@ -16,6 +16,37 @@ For more details, [see the docs page](https://radiant.ecopages.app/).
 bun install @ecopages/radiant
 ```
 
+To author components with automatic JSX runtime support, install `@ecopages/jsx` as well.
+
+```sh
+bun install @ecopages/radiant @ecopages/jsx
+```
+
+## JSX Integration
+
+Use `RadiantElementJsx` when you want a Radiant base class with JSX rendering built in.
+`render()` is the JSX-first API. `renderTemplate()` remains available as the lower-level compatibility hook.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantElementJsx } from '@ecopages/radiant';
+
+export class HelloCard extends RadiantElementJsx {
+	override connectedCallback() {
+		super.connectedCallback();
+		this.render(
+			<div>
+				<h1>Hello</h1>
+				<p>Radiant JSX</p>
+			</div>,
+		);
+	}
+}
+```
+
+For composition-based usage, import `WithJsx` from `@ecopages/radiant/mixins/with-jsx`.
+
 ## Import Structure
 
 | Folder/Module                 | Description                             |
@@ -29,6 +60,7 @@ bun install @ecopages/radiant
 | `./context/context-selector`  | Module for selecting context.           |
 | `./core`                      | Contains all core elements              |
 | `./core/radiant-element`      | Module for the Radiant Element.         |
+| `./core/radiant-element-jsx`  | Module for the JSX-aware Radiant base.  |
 | `./decorators`                | Contains decorator modules.             |
 | `./decorators/custom-element` | Decorator for custom elements.          |
 | `./decorators/event`          | Decorator for events.                   |
@@ -39,6 +71,7 @@ bun install @ecopages/radiant
 | `./decorators/reactive-prop`  | Decorator for reactive properties.      |
 | `./mixins`                    | Contains mixin modules.                 |
 | `./mixins/with-kita`          | Mixin for Kita functionality.           |
+| `./mixins/with-jsx`           | Mixin for JSX functionality.            |
 | `./tools`                     | Contains utility modules.               |
 | `./tools/stringify-typed`     | Utility for stringifying attributes.    |
 | `./tools/event-emitter`       | Utility for emitting events.            |
