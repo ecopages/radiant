@@ -23,18 +23,21 @@
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
 	"dependencies": {
+		"@ecopages/jsx": "workspace:*",
 		"@kitajs/html": "^4.1.0"
 	},
 	"devDependencies": {
-		"@happy-dom/global-registrator": "^15.7.4",
 		"@kitajs/ts-html-plugin": "^4.0.1",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/user-event": "^14.5.2",
-		"@vitest/coverage-istanbul": "^2.1.3",
+		"@vitest/browser": "^3.2.4",
+		"@vitest/coverage-istanbul": "^3.2.4",
 		"bun-types": "latest",
 		"tsc-alias": "1.8.10",
 		"esbuild": "^0.23.0",
-		"vitest": "^2.1.3"
+		"playwright": "^1.52.0",
+		"vite": "^7.1.3",
+		"vitest": "^3.2.4"
 	},
 	"files": [
 		"/dist/*"
@@ -76,6 +79,10 @@
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
 		},
+		"./core/radiant-element-jsx": {
+			"types": "./dist/core/radiant-element-jsx.d.ts",
+			"import": "./dist/core/radiant-element-jsx.js"
+		},
 		"./decorators/bound": {
 			"types": "./dist/decorators/bound.d.ts",
 			"import": "./dist/decorators/bound.js"
@@ -115,6 +122,10 @@
 		"./mixins/with-kita": {
 			"types": "./dist/mixins/with-kita.d.ts",
 			"import": "./dist/mixins/with-kita.js"
+		},
+		"./mixins/with-jsx": {
+			"types": "./dist/mixins/with-jsx.d.ts",
+			"import": "./dist/mixins/with-jsx.js"
 		},
 		"./tools/stringify-typed": {
 			"types": "./dist/tools/stringify-typed.d.ts",

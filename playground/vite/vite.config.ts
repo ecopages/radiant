@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+/// <reference types="@vitest/browser/providers/playwright" />
+import { defineConfig } from 'vitest/config';
 import standardConfig from './tsconfig.json';
 import legacyConfig from './tsconfig.legacy.json';
 
@@ -10,5 +11,13 @@ export default defineConfig({
 	esbuild: {
 		target: 'es2022',
 		tsconfigRaw,
+	},
+	test: {
+		browser: {
+			enabled: true,
+			headless: true,
+			provider: 'playwright',
+			instances: [{ browser: 'chromium' }],
+		},
 	},
 });

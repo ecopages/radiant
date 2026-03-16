@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+/// <reference types="@vitest/browser/providers/playwright" />
+import { defineConfig } from 'vitest/config';
 import standardConfig from './tsconfig.json';
 import legacyConfig from './tsconfig.legacy.json';
 
@@ -16,7 +17,12 @@ export default defineConfig({
 		tsconfigRaw,
 	},
 	test: {
-		environmentMatchGlobs: [['test/**/*.test.*', 'happy-dom']],
+		browser: {
+			enabled: true,
+			headless: true,
+			provider: 'playwright',
+			instances: [{ browser: 'chromium' }],
+		},
 		coverage: {
 			provider: 'istanbul',
 			include: ['src'],

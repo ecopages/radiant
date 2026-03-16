@@ -1,4 +1,5 @@
 export * from './core/radiant-element';
+export * from './core/radiant-element-jsx';
 export * from './decorators/custom-element';
 export * from './decorators/event';
 export * from './decorators/on-event';
@@ -12,5 +13,6 @@ export * from './context/decorators/consume-context';
 export * from './context/decorators/context-selector';
 export * from './context/decorators/provide-context';
 export * from './mixins/with-kita';
+export * from './mixins/with-jsx';
 export * from './tools';
 export * from './utils';

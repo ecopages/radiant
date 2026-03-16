@@ -19,7 +19,7 @@ describe('onEvent', () => {
 		}
 
 		const element = document.createElement('window-event-emitter') as WindowEventLister;
-		document.appendChild(element);
+		document.body.appendChild(element);
 		window.dispatchEvent(new Event('click'));
 		window.addEventListener('click', () => {
 			expect(element.received).toBeTruthy();
@@ -37,7 +37,7 @@ describe('onEvent', () => {
 		}
 
 		const element = document.createElement('window-event-emitter') as DocumentEventLister;
-		document.appendChild(element);
+		document.body.appendChild(element);
 		document.dispatchEvent(new Event('click'));
 		document.addEventListener('click', () => {
 			expect(element.received).toBeTruthy();
