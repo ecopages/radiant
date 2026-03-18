@@ -79,9 +79,17 @@
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
 		},
+		"./core/radiant-component": {
+			"types": "./dist/core/radiant-component.d.ts",
+			"import": "./dist/core/radiant-component.js"
+		},
 		"./core/radiant-element-jsx": {
 			"types": "./dist/core/radiant-element-jsx.d.ts",
 			"import": "./dist/core/radiant-element-jsx.js"
+		},
+		"./server/light-dom-shim": {
+			"types": "./dist/server/light-dom-shim.d.ts",
+			"import": "./dist/server/light-dom-shim.js"
 		},
 		"./decorators/bound": {
 			"types": "./dist/decorators/bound.d.ts",

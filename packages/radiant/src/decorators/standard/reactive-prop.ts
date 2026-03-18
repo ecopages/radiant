@@ -1,4 +1,5 @@
 import type { RadiantElement, ReactivePropertyOptions } from '../../core/radiant-element.js';
+import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 
 export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions<P>) {
 	return function <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
@@ -6,6 +7,12 @@ export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultVal
 		const attributeKey = attribute ?? propertyName;
 
 		context.addInitializer(function (this: T) {
+			registerReactivePropDefinition(this, propertyName, {
+				type,
+				reflect,
+				attribute: attributeKey,
+				defaultValue,
+			});
 			this.createReactiveProp(propertyName, { type, reflect, attribute: attributeKey, defaultValue });
 		});
 	};

@@ -219,6 +219,10 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		this.reactiveProperties.set(config.name, config);
 	}
 
+	protected getReactiveProperties(): ReactiveProperty[] {
+		return Array.from(this.reactiveProperties.values());
+	}
+
 	public registerReactiveField<T>(config: ReactiveField<T>) {
 		this.reactiveFields.set(config.name, config);
 	}

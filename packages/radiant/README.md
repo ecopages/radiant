@@ -24,6 +24,53 @@ bun install @ecopages/radiant @ecopages/jsx
 
 ## JSX Integration
 
+`RadiantComponent` is the current structured JSX-first base class.
+It keeps rerenders explicit:
+
+- `render()` returns JSX directly
+- `update()` is the single rerender entrypoint
+- `@onUpdated(...)` can be used to declare which reactive fields or props should call `update()`
+- first connect can either hydrate existing light-DOM SSR markup or do a fresh client render
+- `renderHost()` and `renderHostToString()` let the component own its host-aware SSR output
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantComponent, customElement, onUpdated, reactiveProp } from '@ecopages/radiant';
+
+@customElement('counter-card')
+export class CounterCard extends RadiantComponent {
+	@reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+	@reactiveProp({ type: String, defaultValue: 'Counter' }) label!: string;
+
+	@onUpdated(['count', 'label'])
+	override update(): void {
+		super.update();
+	}
+
+	private readonly increment = () => {
+		this.count += 1;
+	};
+
+	override render() {
+		return (
+			<section>
+				<h2>{this.label}</h2>
+				<p>Count: {this.count}</p>
+				<button type="button" on:click={this.increment}>
+					Increment
+				</button>
+			</section>
+		);
+	}
+}
+```
+
+`renderToString({ hydrate: true })` emits hydration markers for the component view only.
+`renderHostToString({ hydrate: true })` emits the custom-element host plus the component view, so SSR no longer needs to manually wrap `render()` output.
+The component will hydrate that SSR DOM on first connect.
+For the full lifecycle and SSR flow diagram, see [src/core/README.md](src/core/README.md).
+
 Use `RadiantElementJsx` when you want a Radiant base class with JSX rendering built in.
 `render()` is the JSX-first API. `renderTemplate()` remains available as the lower-level compatibility hook.
 

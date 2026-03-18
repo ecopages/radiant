@@ -1,4 +1,5 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { type AttributeTypeConstant, isValueOfType } from '../../utils/attribute-utils';
 
 type ReactivePropertyOptions<T> = {
@@ -24,6 +25,12 @@ export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultVal
 
 	return (target: RadiantElement, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;
+		registerReactivePropDefinition(target, propertyName, {
+			type,
+			reflect,
+			attribute: attributeKey,
+			defaultValue,
+		});
 
 		const originalConnectedCallback = target.connectedCallback;
 

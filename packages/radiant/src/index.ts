@@ -1,4 +1,5 @@
 export * from './core/radiant-element';
+export * from './core/radiant-component';
 export * from './core/radiant-element-jsx';
 export * from './decorators/custom-element';
 export * from './decorators/event';
