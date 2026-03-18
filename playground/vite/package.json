@@ -6,8 +6,7 @@
 		"dev": "vite",
 		"dev:legacy": "vite -- --legacy",
 		"build": "tsc && vite build",
-		"preview": "vite preview",
-		"test:lib": "cd ../../packages/radiant && bun run build:lib && cd ../../playground/vite && vitest run --passWithNoTests"
+		"preview": "vite preview"
 	},
 	"dependencies": {
 		"@ecopages/radiant": "workspace:*",
