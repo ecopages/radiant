@@ -12,4 +12,5 @@ export {
 	type TemplateResultLike,
 } from './jsx-runtime';
 
-export { createRoot, render, type JsxRoot } from './dom-render';
+export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render';
+export { renderToString, type RenderToStringOptions } from './server-render';

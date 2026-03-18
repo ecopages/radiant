@@ -34,9 +34,19 @@ export interface TemplateResultLike {
 }
 
 /**
+ * A lightweight node-like value that can be serialized on the server.
+ */
+export interface JsxNodeLike {
+	childNodes?: JsxNodeLike[];
+	nodeType: number;
+	outerHTML?: string;
+	textContent?: string | null;
+}
+
+/**
  * A value that can be returned from a JSX component.
  */
-export type JsxChild = JsxPrimitive | Node | TemplateResultLike | Iterable<JsxChild>;
+export type JsxChild = JsxPrimitive | JsxNodeLike | Node | TemplateResultLike | Iterable<JsxChild>;
 
 /**
  * Props received by a JSX component.

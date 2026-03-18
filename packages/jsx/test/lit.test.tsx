@@ -249,4 +249,60 @@ describe('Radiant JSX Lit interoperability smoke tests', () => {
 		expect(rerenderedInput?.selectionEnd).toBe(1);
 		expect(rerenderedInput?.value).toBe('axb');
 	});
+
+	test('hydrate attaches event listeners without replacing SSR DOM', async () => {
+		const [{ jsx }, { hydrate, renderToString }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const handleClick = vi.fn();
+
+		container.innerHTML = renderToString(
+			jsx('button', {
+				class: 'action',
+				'on:click': handleClick,
+				children: 'Hydrate me',
+			}),
+			{ hydrate: true },
+		);
+
+		const button = container.querySelector('button');
+
+		hydrate(
+			jsx('button', {
+				class: 'action',
+				'on:click': handleClick,
+				children: 'Hydrate me',
+			}),
+			container,
+		);
+
+		expect(container.querySelector('button')).toBe(button);
+		expect(button?.getAttributeNames().some((name) => name.startsWith('data-radiant-jsx-bind-'))).toBe(false);
+
+		button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+		expect(handleClick).toHaveBeenCalledTimes(1);
+	});
+
+	test('hydrate restores property bindings onto existing SSR DOM', async () => {
+		const [{ jsx }, { hydrate, renderToString }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const payload = { count: 2 };
+
+		container.innerHTML = renderToString(
+			jsx('property-receiver', {
+				'prop:payload': payload,
+			}),
+			{ hydrate: true },
+		);
+
+		hydrate(
+			jsx('property-receiver', {
+				'prop:payload': payload,
+			}),
+			container,
+		);
+
+		const receiver = container.querySelector('property-receiver') as PropertyReceiverElement | null;
+		expect(receiver?.payload).toBe(payload);
+	});
 });
