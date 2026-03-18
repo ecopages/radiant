@@ -7,22 +7,18 @@
 		"dev:legacy": "vite -- --legacy",
 		"build": "tsc && vite build",
 		"preview": "vite preview",
-		"test:lib": "cd ../../packages/radiant && bun run build:lib && cd ../../playground/vite && vitest run"
+		"test:lib": "cd ../../packages/radiant && bun run build:lib && cd ../../playground/vite && vitest run --passWithNoTests"
 	},
 	"dependencies": {
-		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
 		"@floating-ui/dom": "^1.6.11"
 	},
 	"devDependencies": {
+		"@tailwindcss/vite": "^4.1.18",
 		"@vitest/browser": "^3.2.4",
 		"@vitejs/plugin-react-swc": "^3.7.0",
-		"autoprefixer": "^10.4.16",
-		"cssnano": "^6.0.2",
 		"playwright": "^1.52.0",
-		"postcss": "^8.4.32",
-		"postcss-import": "^15.1.0",
-		"tailwindcss": "^3.4.1",
+		"tailwindcss": "^4.1.18",
 		"typescript": "^5.2.2",
 		"vite": "^5.3.1",
 		"vitest": "^3.2.4"

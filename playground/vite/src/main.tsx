@@ -1,24 +1,15 @@
 import type { Placement } from '@floating-ui/dom';
-import { createRoot } from '@ecopages/jsx';
-import { FunctionDemoView, type DemoState } from './components/radiant-jsx-function-demo/radiant-jsx-function-demo.tsx';
 import { PlaygroundSection } from './components/playground-section/playground-section.kita.tsx';
 import { RadiantAccordion } from './components/accordion/accordion.kita.tsx';
 import { RadiantDropdown } from './components/dropdown/dropdown.kita.tsx';
 import { RadiantCounter } from './components/radiant-counter/radiant-counter.kita.tsx';
 import { RadiantEvent } from './components/radiant-event/radiant-event.kita.tsx';
-import { RadiantJsxKitchenSink } from './components/radiant-jsx-kitchen-sink/radiant-jsx-kitchen-sink.kita.tsx';
 import { RadiantRefs } from './components/radiant-refs/radiant-refs.kita.tsx';
 import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.kita.tsx';
 import { ValueTester } from './components/value-tester/value-tester.script.tsx';
 import './styles/tailwind.css';
 
 const appRoot = document.querySelector<HTMLDivElement>('#app');
-const functionDemoState: DemoState = {
-	message: 'Idle',
-	clicks: 0,
-	query: '',
-	active: false,
-};
 
 const changePlacement = (newPlacement: Placement) => {
 	document.querySelector('radiant-dropdown')?.setAttribute('placement', newPlacement);
@@ -33,22 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const App = async () => {
 	return (
-		<main class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:px-8">
+		<main class="mx-auto flex flex-col max-w-[800px] gap-[2rem] px-[1.5rem] py-[2rem] pb-[4rem]">
+			<h1 class="text-[2.25rem] font-semibold tracking-tight text-[#020617] mb-[1rem] mt-[2rem] leading-[1.2]">
+				Radiant Components Playground
+			</h1>
+			<p class="text-[#64748b] text-[1.125rem]">Testing standard custom elements in Vite</p>
 			<PlaygroundSection
-				badge="Experimental"
-				title="JSX integration lab"
-				description="This section mounts a small network of JSX-native Radiant elements. Some pieces communicate through shared context, others receive structured props directly, so it doubles as a real kitchen sink for the new runtime."
-			>
-				<div class="grid gap-8">
-					<RadiantJsxKitchenSink heading="Kitchen sink for the new JSX runtime" count={3} />
-					<div id="radiant-jsx-function-demo" />
-				</div>
-			</PlaygroundSection>
-
-			<PlaygroundSection
-				badge="Controls"
+				badge="Light Dom Components"
 				title="Existing component demos"
-				description="The previous examples stay available below so it is easy to compare the older string-based flow with the new JSX-aware component above."
+				description="This playground now stays focused on the existing imperative and string-template examples. The new structured JSX-first component work lives in the Vite + Nitro playground."
 			>
 				<div class="grid gap-8">
 					<RadiantAccordion
@@ -62,21 +46,27 @@ const App = async () => {
 					/>
 					<div class="flex flex-wrap items-center gap-4">
 						<RadiantDropdown placement="left-end" arrow>
-							<ul class="flex flex-col gap-2">
+							<ul class="flex flex-col gap-2 m-0 p-0" style="list-style: none;">
 								<li>
-									<a href="/">Option 1</a>
+									<a href="/" class="text-[#2563eb] hover:underline">
+										Option 1
+									</a>
 								</li>
 								<li>
-									<a href="/">Option 2</a>
+									<a href="/" class="text-[#2563eb] hover:underline">
+										Option 2
+									</a>
 								</li>
 								<li>
-									<a href="/">Option 3</a>
+									<a href="/" class="text-[#2563eb] hover:underline">
+										Option 3
+									</a>
 								</li>
 							</ul>
 						</RadiantDropdown>
 						<select
 							id="placement"
-							class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm"
+							class="rounded-[6px] border border-[#cbd5e1] bg-[#ffffff] px-4 py-2 text-sm text-[#0f172a]"
 						>
 							<option value="left-start">Left Start</option>
 							<option value="left">Left</option>
@@ -100,13 +90,18 @@ const App = async () => {
 					<RadiantRefs />
 					<RadiantTodoApp />
 					<RadiantEvent />
-					<ValueTester
-						number={1}
-						string="string"
-						boolean={false}
-						array={['value']}
-						object={{ key: 'value' }}
-					/>
+					<div class="mt-[1.5rem] p-[1.5rem] border border-dashed border-[#cbd5e1] rounded-[6px] relative bg-[#f8fafc]">
+						<span class="absolute top-[-0.6em] left-[1rem] bg-[#f8fafc] px-[0.5rem] text-[0.75rem] text-[#64748b]">
+							Value Tester
+						</span>
+						<ValueTester
+							number={1}
+							string="string"
+							boolean={false}
+							array={['value']}
+							object={{ key: 'value' }}
+						/>
+					</div>
 				</div>
 			</PlaygroundSection>
 		</main>
@@ -116,27 +111,6 @@ const App = async () => {
 const renderApp = async () => {
 	if (appRoot) {
 		appRoot.innerHTML = await (<App />);
-		const functionDemoRoot = document.querySelector<HTMLElement>('#radiant-jsx-function-demo');
-		if (functionDemoRoot) {
-			const functionDemoRootApi = createRoot(functionDemoRoot);
-			const renderFunctionDemo = () => {
-				functionDemoRootApi.render(
-					FunctionDemoView({
-						state: functionDemoState,
-						onStateChange: (updater) => {
-							const nextState = updater(functionDemoState);
-							functionDemoState.message = nextState.message;
-							functionDemoState.clicks = nextState.clicks;
-							functionDemoState.query = nextState.query;
-							functionDemoState.active = nextState.active;
-							renderFunctionDemo();
-						},
-					}),
-				);
-			};
-
-			renderFunctionDemo();
-		}
 	}
 };
 

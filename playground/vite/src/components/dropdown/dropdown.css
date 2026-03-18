@@ -1,3 +1,5 @@
+@reference '../../styles/tailwind.css';
+
 radiant-dropdown {
 	@apply block;
 	[data-ref='content'] {
