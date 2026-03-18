@@ -19,7 +19,9 @@
 		"dev:docs": "bun run --elide-lines=0 --filter radiant-docs dev",
 		"watch:lib": "bun run --elide-lines=0 --filter '*' watch:lib",
 		"dev:playground-vite": "bun run --elide-lines=0 --filter playground-vite dev & bun run watch:lib ",
+		"dev:playground-vite-nitro": "bun run --elide-lines=0 --filter playground-vite-nitro dev & bun run watch:lib",
 		"dev:playground-vite:legacy": "bun run --elide-lines=0 --filter playground-vite dev:legacy & bun run watch:lib",
+		"build:playground-vite-nitro": "bun run --elide-lines=0 --filter playground-vite-nitro build",
 		"build:docs": "bun run --filter radiant-docs build",
 		"preview:docs": "bun run --elide-lines=0 --filter radiant-docs preview"
 	},
