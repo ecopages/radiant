@@ -250,6 +250,39 @@ describe('Radiant JSX Lit interoperability smoke tests', () => {
 		expect(rerenderedInput?.value).toBe('axb');
 	});
 
+	test('createRoot reapplies controlled prop values when the DOM drifts between renders', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let draft = 'Initial note';
+
+		const EditorView = () =>
+			jsx('div', {
+				children: jsx('input', {
+					'prop:value': draft,
+					'data-testid': 'note-input',
+					type: 'text',
+				}),
+			});
+
+		root.render(jsx(EditorView, {}));
+
+		const input = container.querySelector('[data-testid="note-input"]') as HTMLInputElement | null;
+		expect(input?.value).toBe('Initial note');
+
+		if (!input) {
+			throw new Error('expected controlled input to render');
+		}
+
+		draft = 'Published from JSX note editor';
+		root.render(jsx(EditorView, {}));
+		expect(input.value).toBe('Published from JSX note editor');
+
+		input.value = 'Unsaved local edit';
+		root.render(jsx(EditorView, {}));
+		expect(input.value).toBe('Published from JSX note editor');
+	});
+
 	test('hydrate attaches event listeners without replacing SSR DOM', async () => {
 		const [{ jsx }, { hydrate, renderToString }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -304,5 +337,128 @@ describe('Radiant JSX Lit interoperability smoke tests', () => {
 
 		const receiver = container.querySelector('property-receiver') as PropertyReceiverElement | null;
 		expect(receiver?.payload).toBe(payload);
+	});
+
+	test('hydrate preserves SSR DOM when a child value is subscribable', async () => {
+		const [{ createSubscribableJsxValue, jsx }, { hydrate, renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const subscribers = new Set<(value: import('../jsx-runtime.ts').JsxElement) => void>();
+		let count = 2;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		const template = jsx('p', {
+			class: 'component-metric',
+			children: ['Count: ', boundCount],
+		});
+
+		container.innerHTML = renderToString(template, { hydrate: true });
+
+		const paragraph = container.querySelector('p');
+		expect(paragraph?.textContent).toBe('Count: 2');
+
+		hydrate(template, container);
+
+		expect(container.querySelector('p')).toBe(paragraph);
+
+		count = 3;
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		await Promise.resolve();
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph?.textContent).toBe('Count: 3');
+	});
+
+	test('hydrate does not consume hydration markers inside descendant custom-element islands', async () => {
+		const [{ jsx }, { hydrate }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const outerHandler = vi.fn();
+
+		container.innerHTML =
+			'<div>' +
+			'<button data-radiant-jsx-bind-0="event:click">Outer</button>' +
+			'<nested-host><button data-radiant-jsx-bind-0="event:click">Island</button></nested-host>' +
+			'</div>';
+
+		hydrate(
+			jsx('div', {
+				children: [
+					jsx('button', {
+						'on:click': outerHandler,
+						children: 'Outer',
+					}),
+					jsx('nested-host', {}),
+				],
+			}),
+			container,
+		);
+
+		const outerButton = container.querySelector(':scope > div > button');
+		const islandButton = container.querySelector('nested-host button');
+
+		outerButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		islandButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+		expect(outerHandler).toHaveBeenCalledTimes(1);
+		expect(islandButton?.getAttribute('data-radiant-jsx-bind-0')).toBe('event:click');
+	});
+
+	test('hydrate preserves sibling child order for nested template children', async () => {
+		const [{ jsxs, jsx }, { hydrate, renderToString }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const incrementHandler = vi.fn();
+		const template = jsx('section', {
+			class: 'component-card component-card--context',
+			children: [
+				jsx('p', { class: 'component-tag', children: 'SSR context flow' }),
+				jsx('h3', { children: 'Nested RadiantComponent context' }),
+				jsxs('p', {
+					class: 'component-copy',
+					children: ['This card restores ', jsx('code', { children: 'provider context' }), ' from SSR.'],
+				}),
+				jsx('demo-leaf', {
+					children: jsx('p', {
+						class: 'component-metric',
+						'data-ref': 'context-summary',
+						children: 'Context: Nitro SSR context / 2',
+					}),
+				}),
+				jsx('div', {
+					class: 'component-actions',
+					children: jsx('button', {
+						'on:click': incrementHandler,
+						type: 'button',
+						children: 'Increase context level',
+					}),
+				}),
+			],
+		});
+
+		container.innerHTML = renderToString(template, { hydrate: true });
+		hydrate(template, container);
+
+		const section = container.querySelector('section');
+		const buttons = container.querySelectorAll('button');
+
+		expect(section?.firstElementChild?.tagName).toBe('P');
+		expect(section?.firstElementChild?.className).toBe('component-tag');
+		expect(Array.from(buttons)).toHaveLength(1);
+		expect(section?.querySelectorAll('[data-radiant-jsx-bind-]').length).toBe(0);
+
+		buttons[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(incrementHandler).toHaveBeenCalledTimes(1);
 	});
 });
