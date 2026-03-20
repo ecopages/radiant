@@ -249,6 +249,42 @@ That is why `@ecopages/jsx` can be rendered by Radiant's JSX mixin and also pass
 
 This is a compatibility boundary, not a promise that every Lit-specific feature is supported.
 
+## Server Rendering Performance
+
+The server renderer caches template interpolation analysis by template shape.
+
+- interpolation metadata is reused by template identity when available
+- when the runtime rebuilds a `TemplateStringsArray`, the renderer falls back to a stable shape key instead of reparsing every interpolation slot
+- HTML escaping uses `Bun.escapeHTML(...)` on Bun and a portable fast-path fallback on other runtimes
+
+This keeps the SSR hot path focused on traversing values and writing output rather than reparsing static template structure on each render.
+
+## Server Rendering Example
+
+Use `renderToString(...)` when you want a plain HTML string or SSR output with hydration markers.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+import { renderToString } from '@ecopages/jsx';
+
+const view = (
+	<button class="action" hidden={false} aria={{ label: 'Ship order' }}>
+		Ship
+	</button>
+);
+
+const html = renderToString(view);
+const hydratedHtml = renderToString(view, { hydrate: true });
+
+console.log(html);
+// <button class="action" aria-label="Ship order">Ship</button>
+
+console.log(hydratedHtml);
+// <button data-radiant-jsx-bind-0="attr:class" class="action" data-radiant-jsx-bind-1="bool:hidden" data-radiant-jsx-bind-2="attr:aria-label" aria-label="Ship order">Ship</button>
+```
+
+Use the hydrated form only when you plan to call `hydrate(...)` on the client. The plain form is the published-like server-render benchmark target.
+
 ## Direct Mounting
 
 If you want to mount plain JSX directly from an application entrypoint, use the DOM root helper from `@ecopages/jsx`.
@@ -291,7 +327,14 @@ The package exports:
 - `jsx`
 - `jsxs`
 - `Fragment`
-- types including `JsxChild`, `JsxComponent`, `JsxComponentProps`, `JsxElement`, `JsxFragment`, `JsxIntrinsicAttributes`, `JsxPrimitive`, and `TemplateResultLike`
+- `createRoot`
+- `render`
+- `hydrate`
+- `hasHydrationMarkers`
+- `renderToString`
+- `createSubscribableJsxValue`
+- helpers including `isKeyedJsxValue` and `isSubscribableJsxValue`
+- types including `JsxChild`, `JsxComponent`, `JsxComponentProps`, `JsxElement`, `JsxFragment`, `JsxIntrinsicAttributes`, `JsxPrimitive`, `JsxRoot`, `RenderToStringOptions`, `SubscribableJsxValue`, and `TemplateResultLike`
 
 The development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` for the automatic JSX transform.
 
