@@ -10,7 +10,7 @@ const loadJsxDevRuntime = async () => loadModule<typeof import('../jsx-dev-runti
 function expectTemplateResultLike(value: unknown): asserts value is import('../jsx-runtime.ts').TemplateResultLike {
 	expect(value).toEqual(
 		expect.objectContaining({
-			['_$litType$']: 1,
+			['_$rType$']: 1,
 			strings: expect.any(Array),
 			values: expect.any(Array),
 		}),
@@ -30,7 +30,7 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values).toEqual(['counter', 'Hello JSX']);
 	});
 
-	test('jsxs preserves child order in template values', async () => {
+	test('jsxs preserves sibling child order as positional template values', async () => {
 		const [{ jsxs }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsxs('section', {
 			children: ['Hello ', jsxs('strong', { children: ['Radiant'] }), '!'],
@@ -44,6 +44,32 @@ describe('Radiant JSX runtime', () => {
 		expectTemplateResultLike(result.values[1]);
 		expect(Array.from(result.values[1].strings)).toEqual(['<strong>', '</strong>']);
 		expect(result.values[1].values).toEqual(['Radiant']);
+	});
+
+	test('jsx keeps iterable children grouped as a single child binding', async () => {
+		const [{ jsx, isKeyedJsxValue }] = await Promise.all([loadJsxRuntime()]);
+		const result = jsx('ul', {
+			children: ['alpha', 'beta'].map((value) => jsx('li', { children: value, key: value })),
+		});
+
+		expectTemplateResultLike(result);
+		expect(Array.from(result.strings)).toEqual(['<ul>', '</ul>']);
+		expect(result.values).toHaveLength(1);
+		expect(Array.isArray(result.values[0])).toBe(true);
+		expect((result.values[0] as unknown[]).every((value) => isKeyedJsxValue(value))).toBe(true);
+	});
+
+	test('jsx preserves singleton iterables as iterable child bindings', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const result = jsx('ul', {
+			children: ['alpha'].map((value) => jsx('li', { children: value })),
+		});
+
+		expectTemplateResultLike(result);
+		expect(Array.from(result.strings)).toEqual(['<ul>', '</ul>']);
+		expect(result.values).toHaveLength(1);
+		expect(Array.isArray(result.values[0])).toBe(true);
+		expect(result.values[0] as unknown[]).toHaveLength(1);
 	});
 
 	test('function components receive props and children', async () => {

@@ -2,6 +2,9 @@ export {
 	Fragment,
 	jsx,
 	jsxs,
+	createSubscribableJsxValue,
+	type JsxKey,
+	type KeyedJsxValue,
 	type JsxChild,
 	type JsxComponent,
 	type JsxComponentProps,
@@ -9,6 +12,9 @@ export {
 	type JsxFragment,
 	type JsxIntrinsicAttributes,
 	type JsxPrimitive,
+	isKeyedJsxValue,
+	isSubscribableJsxValue,
+	type SubscribableJsxValue,
 	type TemplateResultLike,
 } from './jsx-runtime';
 

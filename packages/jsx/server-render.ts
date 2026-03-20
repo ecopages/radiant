@@ -1,12 +1,28 @@
-import type { JsxChild, JsxElement, JsxNodeLike, TemplateResultLike } from './jsx-runtime';
 import {
-	ATTRIBUTE_BINDING_PATTERN,
+	isKeyedJsxValue,
+	isSubscribableJsxValue,
+	type JsxChild,
+	type JsxElement,
+	type JsxNodeLike,
+	type TemplateResultLike,
+} from './jsx-runtime';
+import {
 	ATTRIBUTE_BINDING_PREFIX,
-	getBindingKind,
+	getTemplateInterpolationParts,
 	serializeBindingDescriptor,
 } from './hydration-bindings';
+import { escapeAttribute, escapeHtml } from './html-escape';
 
+/** Internal global slot used to propagate the active SSR hydrate mode into custom-element SSR helpers. */
+const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
+
+/** Options that control how JSX values are serialized during SSR. */
 export type RenderToStringOptions = {
+	/**
+	 * When `true`, emits hydration binding markers alongside the serialized HTML
+	 * so the DOM hydrator can reconnect listeners and property bindings without
+	 * replacing the SSR DOM tree.
+	 */
 	hydrate?: boolean;
 };
 
@@ -17,17 +33,46 @@ type RenderContext = {
 
 /**
  * Serializes a Radiant JSX value into an HTML string.
+ *
+ * The renderer resolves keyed and subscribable wrappers transparently, reuses
+ * cached interpolation metadata for template results, and optionally embeds
+ * hydration descriptors when `options.hydrate` is enabled.
+ *
+ * @param value JSX value to serialize.
+ * @param options Controls whether hydration metadata is emitted.
+ * @returns HTML string representation of the provided JSX value.
  */
 export function renderToString(value: JsxElement, options: RenderToStringOptions = {}): string {
-	return renderChild(value, {
-		hydrate: options.hydrate === true,
-		nextBindingIndex: 0,
-	});
+	const hydrate = options.hydrate === true;
+	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
+	const previousHydrateValue = globalScope[ACTIVE_SSR_HYDRATE_SYMBOL];
+	globalScope[ACTIVE_SSR_HYDRATE_SYMBOL] = hydrate;
+
+	try {
+		return renderChild(value, {
+			hydrate,
+			nextBindingIndex: 0,
+		});
+	} finally {
+		if (typeof previousHydrateValue === 'undefined') {
+			delete globalScope[ACTIVE_SSR_HYDRATE_SYMBOL];
+		} else {
+			globalScope[ACTIVE_SSR_HYDRATE_SYMBOL] = previousHydrateValue;
+		}
+	}
 }
 
 function renderChild(value: JsxChild, context: RenderContext): string {
 	if (value === undefined || value === null || value === false) {
 		return '';
+	}
+
+	if (isKeyedJsxValue(value)) {
+		return renderChild(value.value, context);
+	}
+
+	if (isSubscribableJsxValue(value)) {
+		return renderChild(value.getValue(), context);
 	}
 
 	if (typeof value === 'string') {
@@ -64,37 +109,36 @@ function renderChild(value: JsxChild, context: RenderContext): string {
 }
 
 function renderTemplateResult(template: TemplateResultLike, context: RenderContext): string {
+	const interpolationParts = getTemplateInterpolationParts(template.strings);
 	let html = '';
 
 	for (let index = 0; index < template.values.length; index += 1) {
-		const currentString = template.strings[index] ?? '';
+		const interpolationPart = interpolationParts[index];
 		const value = template.values[index];
-		const attributeBinding = currentString.match(ATTRIBUTE_BINDING_PATTERN);
 
-		if (!attributeBinding) {
-			html += currentString;
+		if (!interpolationPart || interpolationPart.type === 'child') {
+			html += interpolationPart?.string ?? template.strings[index] ?? '';
 			html += renderChild(value as JsxChild, context);
 			continue;
 		}
 
-		const [, leading, whitespace, bindingPrefix, bindingName] = attributeBinding;
-		const bindingKind = getBindingKind(bindingPrefix);
+		const bindingKind = interpolationPart.kind;
 		const bindingIndex = context.nextBindingIndex;
-		html += leading;
+		html += interpolationPart.leading;
 
 		if (context.hydrate) {
-			html += `${whitespace}${ATTRIBUTE_BINDING_PREFIX}${bindingIndex}="${serializeBindingDescriptor(bindingKind, bindingName)}"`;
+			html += `${interpolationPart.whitespace}${ATTRIBUTE_BINDING_PREFIX}${bindingIndex}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
 		}
 
 		context.nextBindingIndex += 1;
 
-		if (bindingPrefix === '@' || bindingPrefix === '.') {
+		if (interpolationPart.prefix === '@' || interpolationPart.prefix === '.') {
 			continue;
 		}
 
-		if (bindingPrefix === '?') {
+		if (interpolationPart.prefix === '?') {
 			if (value) {
-				html += `${whitespace}${bindingName}`;
+				html += `${interpolationPart.whitespace}${interpolationPart.name}`;
 			}
 			continue;
 		}
@@ -103,7 +147,7 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 			continue;
 		}
 
-		html += `${whitespace}${bindingName}="${escapeAttribute(String(value))}"`;
+		html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(String(value))}"`;
 	}
 
 	html += template.strings[template.strings.length - 1] ?? '';
@@ -126,19 +170,12 @@ function renderNodeLike(node: JsxNodeLike): string {
 	return escapeHtml(node.textContent ?? '');
 }
 
-function escapeHtml(value: string): string {
-	return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeAttribute(value: string): string {
-	return escapeHtml(value).replace(/"/g, '&quot;');
-}
-
 function isTemplateResultLike(value: unknown): value is TemplateResultLike {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
-		(value as Partial<TemplateResultLike>)['_$litType$'] === 1 &&
+		((value as Partial<TemplateResultLike>)['_$rType$'] === 1 ||
+			(value as { ['_$litType$']?: unknown })['_$litType$'] === 1) &&
 		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
 		Array.isArray((value as Partial<TemplateResultLike>).values)
 	);

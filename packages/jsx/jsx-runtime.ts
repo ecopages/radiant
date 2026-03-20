@@ -1,4 +1,10 @@
-const HTML_TEMPLATE_RESULT = 1;
+const RADIANT_TEMPLATE_RESULT = 1;
+const LEGACY_TEMPLATE_RESULT_FIELD = '_$litType$';
+const RADIANT_TEMPLATE_RESULT_FIELD = '_$rType$';
+const KEYED_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.keyed-value');
+const SUBSCRIBABLE_JSX_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.subscribable-value');
+const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
+const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
 
 const voidElementNames = new Set([
 	'area',
@@ -19,37 +25,105 @@ const voidElementNames = new Set([
 
 const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
 
+import { escapeHtml } from './html-escape';
+
 /**
- * A primitive child value that Lit can render directly.
+ * A primitive child value that the Radiant renderer can mount directly.
  */
 export type JsxPrimitive = boolean | bigint | number | null | string | undefined;
 
 /**
- * A Lit-compatible template result produced by the JSX runtime.
+ * A Radiant template result produced by the JSX runtime.
+ *
+ * The runtime keeps the Radiant marker on `_$rType$` and also writes the
+ * legacy Lit-compatible marker so existing detection paths can continue to
+ * recognize template results during the transition.
  */
 export interface TemplateResultLike {
-	readonly ['_$litType$']: typeof HTML_TEMPLATE_RESULT;
+	/** Stable Radiant template marker consumed by the client and server renderers. */
+	readonly ['_$rType$']: typeof RADIANT_TEMPLATE_RESULT;
+	/** Legacy compatibility marker preserved for existing Lit-style checks. */
+	readonly ['_$litType$']?: typeof RADIANT_TEMPLATE_RESULT;
+	/** Static HTML segments emitted by the JSX transform. */
 	readonly strings: TemplateStringsArray;
+	/** Dynamic values interpolated between the static string segments. */
 	readonly values: readonly unknown[];
 }
 
 /**
  * A lightweight node-like value that can be serialized on the server.
+ *
+ * This is primarily used by SSR helpers that can provide final HTML without
+ * constructing a real DOM node in the current environment.
  */
 export interface JsxNodeLike {
+	/** Optional serialized child nodes when `outerHTML` is not provided directly. */
 	childNodes?: JsxNodeLike[];
+	/** DOM-like node type identifier. */
 	nodeType: number;
+	/** Serialized HTML for element-like values. */
 	outerHTML?: string;
+	/** Serialized text content for text-like values. */
 	textContent?: string | null;
 }
 
 /**
- * A value that can be returned from a JSX component.
+ * Stable identity used to preserve ownership of a child value across keyed
+ * list updates.
+ *
+ * Keys are runtime metadata only and are never emitted into the DOM or SSR
+ * output directly.
  */
-export type JsxChild = JsxPrimitive | JsxNodeLike | Node | TemplateResultLike | Iterable<JsxChild>;
+export type JsxKey = number | string;
+
+/**
+ * Internal wrapper for a JSX value that carries keyed-child metadata.
+ *
+ * The current renderer treats keyed values as transparent wrappers. Future
+ * reconciliation layers use this shape to decide whether a child subtree may be
+ * reused instead of recreated.
+ */
+export interface KeyedJsxValue {
+	readonly key: JsxKey;
+	readonly value: JsxElement;
+	readonly [KEYED_VALUE_SYMBOL]: true;
+}
+
+/**
+ * A JSX child value backed by an external subscription source.
+ *
+ * The server renderer resolves the current value eagerly, while the client DOM
+ * renderer keeps the mounted child range subscribed so later updates can patch
+ * that range directly without requiring a parent rerender.
+ */
+export interface SubscribableJsxValue {
+	readonly [SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true;
+	getValue: () => JsxElement;
+	subscribe: (notify: (value: JsxElement) => void) => () => void;
+}
+
+/**
+ * A value that can be returned from a JSX component.
+ *
+ * Wrapper values such as keyed and subscribable children are transparent to the
+ * renderer. They carry reconciliation or subscription metadata while still
+ * behaving like regular child content.
+ */
+export type JsxChild =
+	| JsxPrimitive
+	| JsxNodeLike
+	| KeyedJsxValue
+	| Node
+	| SubscribableJsxValue
+	| TemplateResultLike
+	| Iterable<JsxChild>;
 
 /**
  * Props received by a JSX component.
+ *
+ * The runtime reserves `children` for nested JSX content and allows arbitrary
+ * additional keys so intrinsic bindings and component-specific props can share
+ * the same shape.
  */
 export type JsxComponentProps = {
 	children?: JsxChild;
@@ -63,6 +137,10 @@ export type JsxComponent<Props extends JsxComponentProps = JsxComponentProps> = 
 
 /**
  * A value returned from `jsx`, `jsxs`, or a function component.
+ *
+ * `JsxElement` is intentionally broader than a DOM node. It includes primitive
+ * content, template results, iterable child collections, and renderer-specific
+ * wrappers such as keyed and subscribable values.
  */
 export type JsxElement = JsxChild;
 
@@ -379,24 +457,36 @@ type JsxDomIntrinsicElements = {
 export const Fragment: JsxFragment = fragmentSymbol;
 
 /**
- * Generates a Lit-compatible template result for a JSX element.
+ * Creates a JSX element where the `children` slot is treated as a single
+ * logical value.
+ *
+ * This matches the behavior of the automatic JSX runtime for calls that come
+ * from `jsx(...)`, which is typically used when the original source had a
+ * single child expression.
  */
 export function jsx<Props extends JsxComponentProps>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
 ): JsxElement {
-	return createJsxElement(type, props);
+	return createJsxElement(type, props, 'single');
 }
 
 /**
- * Generates a Lit-compatible template result for a JSX element with multiple children.
+ * Creates a JSX element where sibling children are emitted as positional child
+ * slots.
+ *
+ * This matches the behavior of the automatic JSX runtime for calls that come
+ * from `jsxs(...)`, which is typically used when the original source had
+ * multiple sibling children.
  */
 export function jsxs<Props extends JsxComponentProps>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
 ): JsxElement {
-	return createJsxElement(type, props);
+	return createJsxElement(type, props, 'multiple');
 }
+
+type ChildSlotMode = 'multiple' | 'single';
 
 /**
  * Type information consumed by TypeScript when `jsxImportSource` points at this package.
@@ -410,7 +500,7 @@ export namespace JSX {
 	}
 
 	export interface IntrinsicAttributes {
-		key?: never;
+		key?: JsxKey;
 	}
 
 	export type IntrinsicElements = JsxDomIntrinsicElements & {
@@ -421,13 +511,22 @@ export namespace JSX {
 function createJsxElement<Props extends JsxComponentProps>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
+	childSlotMode: ChildSlotMode,
 ): JsxElement {
+	const keyedValue = props.key;
+
 	if (typeof type === 'function') {
-		return type(props);
+		return wrapKeyedValue(type(props), keyedValue);
 	}
 
 	if (type === fragmentSymbol) {
-		return normalizeChildren(props.children);
+		return wrapKeyedValue(normalizeChildrenWithMode(props.children, childSlotMode), keyedValue);
+	}
+
+	const serverRenderedCustomElement = createServerRenderedCustomElement(type, props);
+
+	if (serverRenderedCustomElement) {
+		return wrapKeyedValue(serverRenderedCustomElement, keyedValue);
 	}
 
 	const strings = [`<${type}`];
@@ -441,14 +540,265 @@ function createJsxElement<Props extends JsxComponentProps>(
 
 	if (voidElementNames.has(type)) {
 		strings[strings.length - 1] += '>';
-		return createTemplateResult(strings, values);
+		return wrapKeyedValue(createTemplateResult(strings, values), keyedValue);
 	}
 
 	strings[strings.length - 1] += '>';
-	appendChildren(strings, values, children);
+	appendChildren(strings, values, children, childSlotMode);
 	strings[strings.length - 1] += `</${type}>`;
 
-	return createTemplateResult(strings, values);
+	return wrapKeyedValue(createTemplateResult(strings, values), keyedValue);
+}
+
+type ServerRenderableCustomElement = {
+	renderHostToString: (options?: { hydrate?: boolean }) => string;
+	setAttribute?: (name: string, value: unknown) => void;
+	removeAttribute?: (name: string) => void;
+	[propertyName: string]: unknown;
+};
+
+function createServerRenderedCustomElement<Props extends JsxComponentProps>(
+	type: string,
+	props: Props,
+): JsxNodeLike | undefined {
+	if (!shouldServerRenderCustomElement(type)) {
+		return undefined;
+	}
+
+	const registry = (
+		globalThis as typeof globalThis & {
+			customElements?: {
+				get(name: string): CustomElementConstructor | undefined;
+			};
+		}
+	).customElements;
+	const constructor = registry?.get(type);
+
+	if (!constructor) {
+		return undefined;
+	}
+
+	const instance = new constructor() as unknown;
+
+	if (!isServerRenderableCustomElement(instance)) {
+		return undefined;
+	}
+
+	const { children, key: _key, ...rawAttributes } = props;
+	const normalizedAttributes = normalizeAttributes(rawAttributes);
+	applyServerCustomElementAttributes(instance, normalizedAttributes);
+	applyServerCustomElementChildren(instance, children);
+
+	return {
+		nodeType: 1,
+		get outerHTML() {
+			return instance.renderHostToString({ hydrate: getActiveSsrHydrateMode() });
+		},
+	};
+}
+
+function getActiveSsrHydrateMode(): boolean {
+	return (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[ACTIVE_SSR_HYDRATE_SYMBOL] === true;
+}
+
+function shouldServerRenderCustomElement(type: string): boolean {
+	return (
+		type.includes('-') &&
+		(typeof document === 'undefined' ||
+			(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+				FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL
+			] === true)
+	);
+}
+
+function isServerRenderableCustomElement(value: unknown): value is ServerRenderableCustomElement {
+	return typeof value === 'object' && value !== null && 'renderHostToString' in value;
+}
+
+function applyServerCustomElementAttributes(
+	element: ServerRenderableCustomElement,
+	attributes: Record<string, unknown>,
+): void {
+	for (const [name, value] of Object.entries(attributes)) {
+		if (value === undefined || name.startsWith('on:')) {
+			continue;
+		}
+
+		if (name.startsWith('prop:')) {
+			element[name.slice(5)] = value;
+			continue;
+		}
+
+		if (name in element && !name.includes('-')) {
+			element[name] = value;
+			continue;
+		}
+
+		if (typeof value === 'boolean') {
+			if (value) {
+				element.setAttribute?.(name, '');
+			} else {
+				element.removeAttribute?.(name);
+			}
+			continue;
+		}
+
+		element.setAttribute?.(name, String(value));
+	}
+}
+
+function applyServerCustomElementChildren(
+	element: ServerRenderableCustomElement,
+	children: JsxChild | undefined,
+): void {
+	if (children === undefined || !('children' in element || 'innerHTML' in element)) {
+		return;
+	}
+
+	const serializedChildren = renderJsxChildToString(children);
+
+	if ('children' in element) {
+		element.children = serializedChildren;
+	}
+
+	if ('innerHTML' in element) {
+		element.innerHTML = serializedChildren;
+	}
+}
+
+function renderJsxChildToString(value: JsxChild | undefined): string {
+	if (value === undefined || value === null || value === false) {
+		return '';
+	}
+
+	if (isKeyedJsxValue(value)) {
+		return renderJsxChildToString(value.value);
+	}
+
+	if (isSubscribableJsxValue(value)) {
+		return renderJsxChildToString(value.getValue());
+	}
+
+	if (typeof value === 'string') {
+		return escapeHtml(value);
+	}
+
+	if (typeof value === 'number' || typeof value === 'bigint') {
+		return String(value);
+	}
+
+	if (value === true) {
+		return '';
+	}
+
+	if (isTemplateResultLike(value)) {
+		let html = '';
+
+		for (let index = 0; index < value.values.length; index += 1) {
+			html += value.strings[index] ?? '';
+			html += renderJsxChildToString(value.values[index] as JsxChild);
+		}
+
+		html += value.strings[value.strings.length - 1] ?? '';
+		return html;
+	}
+
+	if (isJsxNodeLike(value)) {
+		if (typeof value.outerHTML === 'string') {
+			return value.outerHTML;
+		}
+
+		if (Array.isArray(value.childNodes)) {
+			return value.childNodes.map((child) => renderJsxNodeLikeToString(child)).join('');
+		}
+
+		return value.textContent ? escapeHtml(value.textContent) : '';
+	}
+
+	if (isIterableChild(value)) {
+		let html = '';
+
+		for (const child of value) {
+			html += renderJsxChildToString(child as JsxChild);
+		}
+
+		return html;
+	}
+
+	return escapeHtml(String(value));
+}
+
+function renderJsxNodeLikeToString(value: JsxNodeLike): string {
+	if (typeof value.outerHTML === 'string') {
+		return value.outerHTML;
+	}
+
+	if (Array.isArray(value.childNodes)) {
+		return value.childNodes.map((child) => renderJsxNodeLikeToString(child)).join('');
+	}
+
+	return value.textContent ? escapeHtml(value.textContent) : '';
+}
+
+function isTemplateResultLike(value: unknown): value is TemplateResultLike {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		((value as { ['_$rType$']?: unknown })['_$rType$'] === 1 ||
+			(value as { ['_$litType$']?: unknown })['_$litType$'] === 1) &&
+		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
+		Array.isArray((value as Partial<TemplateResultLike>).values)
+	);
+}
+
+function isJsxNodeLike(value: unknown): value is JsxNodeLike {
+	return typeof value === 'object' && value !== null && 'nodeType' in value;
+}
+
+/**
+ * Returns whether a value carries internal keyed-child metadata.
+ *
+ * Renderer internals use this to unwrap keyed values without exposing keyed
+ * wrapper details to application code.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when the value was produced from a keyed JSX child.
+ */
+export function isKeyedJsxValue(value: unknown): value is KeyedJsxValue {
+	return typeof value === 'object' && value !== null && KEYED_VALUE_SYMBOL in value;
+}
+
+/**
+ * Returns whether a value carries subscribable child metadata.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when the value can drive an independently subscribed child range.
+ */
+export function isSubscribableJsxValue(value: unknown): value is SubscribableJsxValue {
+	return typeof value === 'object' && value !== null && SUBSCRIBABLE_JSX_VALUE_SYMBOL in value;
+}
+
+/**
+ * Creates a subscribable JSX child value.
+ *
+ * Use this when a child binding should update from an external reactive source
+ * without forcing the parent JSX tree to rerender. The server renderer reads
+ * the current value synchronously, while the client renderer keeps the mounted
+ * child range subscribed.
+ *
+ * @param config Subscription hooks that expose the current child value and
+ * register future updates.
+ * @returns A JSX child wrapper that the renderer can subscribe to directly.
+ */
+export function createSubscribableJsxValue(config: {
+	getValue: () => JsxElement;
+	subscribe: (notify: (value: JsxElement) => void) => () => void;
+}): SubscribableJsxValue {
+	return {
+		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
+		getValue: config.getValue,
+		subscribe: config.subscribe,
+	};
 }
 
 function normalizeAttributes(attributes: Record<string, unknown>): Record<string, unknown> {
@@ -525,11 +875,77 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 	strings.push('');
 }
 
-function appendChildren(strings: string[], values: unknown[], children: JsxChild | undefined): void {
-	for (const child of flattenChildren(children)) {
-		values.push(child);
-		strings.push('');
+function appendChildren(
+	strings: string[],
+	values: unknown[],
+	children: JsxChild | undefined,
+	childSlotMode: ChildSlotMode,
+): void {
+	if (children === undefined || children === null || children === false) {
+		return;
 	}
+
+	if (childSlotMode === 'multiple' && isIterableChild(children)) {
+		for (const child of children) {
+			const normalizedChild = normalizeChildSlot(child as JsxChild);
+
+			if (normalizedChild === undefined) {
+				continue;
+			}
+
+			values.push(normalizedChild);
+			strings.push('');
+		}
+		return;
+	}
+
+	if (isIterableChild(children)) {
+		const flattenedChildren = flattenChildren(children);
+
+		if (flattenedChildren.length === 0) {
+			return;
+		}
+
+		values.push(flattenedChildren as JsxElement);
+		strings.push('');
+		return;
+	}
+
+	values.push(normalizeChildren(children));
+	strings.push('');
+}
+
+function normalizeChildrenWithMode(children: JsxChild | undefined, childSlotMode: ChildSlotMode): JsxElement {
+	if (childSlotMode === 'multiple' && isIterableChild(children)) {
+		const slots = Array.from(children)
+			.map((child) => normalizeChildSlot(child as JsxChild))
+			.filter((child): child is JsxElement => child !== undefined);
+
+		if (slots.length === 0) {
+			return '';
+		}
+
+		if (slots.length === 1) {
+			return slots[0];
+		}
+
+		return slots;
+	}
+
+	return normalizeChildren(children);
+}
+
+function normalizeChildSlot(child: JsxChild | undefined): JsxElement | undefined {
+	if (child === undefined || child === null || child === false) {
+		return undefined;
+	}
+
+	if (isIterableChild(child)) {
+		const flattenedChildren = flattenChildren(child);
+		return flattenedChildren.length === 0 ? undefined : (flattenedChildren as JsxElement);
+	}
+
+	return normalizeChildren(child);
 }
 
 function flattenChildren(children: JsxChild | undefined): unknown[] {
@@ -634,9 +1050,22 @@ function normalizeStyleValue(value: unknown): unknown {
 
 function createTemplateResult(strings: string[], values: unknown[]): TemplateResultLike {
 	return {
-		['_$litType$']: HTML_TEMPLATE_RESULT,
+		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
+		[LEGACY_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
 		strings: toTemplateStrings(strings),
 		values,
+	};
+}
+
+function wrapKeyedValue(value: JsxElement, key: unknown): JsxElement {
+	if (typeof key !== 'string' && typeof key !== 'number') {
+		return value;
+	}
+
+	return {
+		key,
+		value,
+		[KEYED_VALUE_SYMBOL]: true,
 	};
 }
 
