@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { ConfigBuilder } from '@ecopages/core';
+import { ConfigBuilder } from '@ecopages/core/config-builder';
 import { kitajsPlugin } from '@ecopages/kitajs';
 import { mdxPlugin } from '@ecopages/mdx';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor';
@@ -11,7 +11,7 @@ import { transformerEscapeHtml } from './src/plugins/transformer-escape-html';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dir)
-	.setBaseUrl(import.meta.env.ECOPAGES_BASE_URL)
+	.setBaseUrl(process.env.ECOPAGES_BASE_URL ?? 'http://localhost:3000')
 	.setIntegrations([
 		kitajsPlugin(),
 		mdxPlugin({

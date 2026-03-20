@@ -1,6 +1,6 @@
 import type { EcoComponent } from '@ecopages/core';
 import { DocsLayout } from '@/layouts/docs-layout';
-import Introduction from '@/pages/docs/getting-started/introduction.mdx';
+import Introduction from './docs/getting-started/introduction.mdx';
 
 const HomePage: EcoComponent = () => {
 	return (
