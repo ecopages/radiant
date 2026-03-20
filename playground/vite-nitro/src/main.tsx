@@ -1,5 +1,6 @@
 import { createRoot } from '@ecopages/jsx';
 import './components/radiant-component-counter.script';
+import './components/radiant-context-flow-shell.script';
 import './components/radiant-component-server-card.script';
 import { createInitialPlaygroundState, decodePlaygroundState, renderPlaygroundView } from './playground-view';
 import './style.css';
@@ -72,7 +73,11 @@ async function loadServerMessage() {
 	renderApp();
 }
 
-async function loadSsrMarkup() {
+async function loadSsrMarkup(endpoint = '/api/ssr/radiant-component') {
+	return loadSsrMarkupFrom(endpoint);
+}
+
+async function loadSsrMarkupFrom(endpoint = '/api/ssr/radiant-component') {
 	if (state.ssrStatus === 'loading') {
 		return;
 	}
@@ -81,7 +86,7 @@ async function loadSsrMarkup() {
 	renderApp();
 
 	try {
-		const response = await fetch('/api/ssr/radiant-component');
+		const response = await fetch(endpoint);
 
 		if (!response.ok) {
 			throw new Error(`Request failed with ${response.status}`);
@@ -105,7 +110,7 @@ async function loadSsrMarkup() {
 renderApp();
 
 if (!initialState) {
-	void loadSsrMarkup();
+	void loadSsrMarkupFrom();
 }
 
 function readInitialState(rootElement: HTMLElement) {
@@ -119,12 +124,16 @@ function createClientPreviewContent(state: { ssrMarkup: string; ssrStatus: strin
 		return state.ssrMarkup || 'Unknown error';
 	}
 
-	if (!state.ssrMarkup) {
-		return <p>No SSR markup loaded yet.</p>;
+	return createMarkupPreviewContent(state.ssrMarkup) ?? <p>No SSR markup loaded yet.</p>;
+}
+
+function createMarkupPreviewContent(markup: string) {
+	if (!markup) {
+		return undefined;
 	}
 
 	const template = document.createElement('template');
-	template.innerHTML = state.ssrMarkup;
+	template.innerHTML = markup;
 	return Array.from(template.content.childNodes);
 }
 

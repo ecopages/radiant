@@ -1,8 +1,8 @@
 import { defineHandler } from 'nitro';
-import { getSsrCounterPayload } from '../../render-playground';
+import { getSsrServerCardPayload } from '../../render-playground';
 import { createSsrComponentResponse } from '../../radiant-ssr.ts';
 
 export default defineHandler(async () => {
-	const payload = await getSsrCounterPayload();
+	const payload = await getSsrServerCardPayload();
 	return createSsrComponentResponse(payload);
 });

@@ -5,7 +5,8 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
-		"preview": "nitro preview"
+		"preview": "nitro preview",
+		"test:e2e": "node --test ./test/nitro-page.e2e.test.mjs"
 	},
 	"dependencies": {
 		"@ecopages/jsx": "workspace:*",

@@ -1,6 +1,6 @@
 import type { JsxChild } from '@ecopages/jsx';
 
-export type SsrCounterPayload = {
+export type SsrComponentPayload = {
 	generatedAt: string;
 	markup: string;
 	tagName: string;
@@ -20,7 +20,7 @@ export type PlaygroundState = {
 export type PlaygroundCallbacks = {
 	incrementClicks: () => void;
 	loadServerMessage: () => void | Promise<void>;
-	loadSsrMarkup: () => void | Promise<void>;
+	loadSsrMarkup: (endpoint?: string) => void | Promise<void>;
 };
 
 export type PlaygroundViewOptions = {
@@ -43,7 +43,7 @@ export function decodePlaygroundState(value?: string): PlaygroundState | undefin
 	}
 }
 
-export function createInitialPlaygroundState(initialSsrPayload?: SsrCounterPayload): PlaygroundState {
+export function createInitialPlaygroundState(initialSsrPayload?: SsrComponentPayload): PlaygroundState {
 	return {
 		clicks: 0,
 		ssrGeneratedAt: initialSsrPayload?.generatedAt ?? 'n/a',
@@ -55,6 +55,7 @@ export function createInitialPlaygroundState(initialSsrPayload?: SsrCounterPaylo
 		serverTime: 'n/a',
 	};
 }
+
 export function renderPlaygroundView(
 	state: PlaygroundState,
 	callbacks: PlaygroundCallbacks,
@@ -76,11 +77,13 @@ export function renderPlaygroundView(
 					<h2>RadiantComponent lab</h2>
 				</div>
 				<p>
-					The adapted JSX-first custom elements now live here instead of the pure Vite playground. They
-					exercise the new <code>render()</code> and <code>update()</code> contract directly.
+					The adapted JSX-first custom elements now live here instead of the pure Vite playground. This panel
+					shows the live client-hydrated host, while the SSR route below shows the host-aware server-rendered
+					fragment produced by <code>renderHostToString()</code>.
 				</p>
 				<div class="component-grid">
-					<radiant-component-counter count={2} label="Counter migrated to RadiantComponent" />
+					<radiant-component-counter count={2} />
+					<radiant-context-flow-shell />
 					<radiant-component-server-card />
 				</div>
 			</section>
@@ -88,9 +91,22 @@ export function renderPlaygroundView(
 			<section class="panel">
 				<div class="panel-header">
 					<h2>SSR route</h2>
-					<button type="button" on:click={callbacks.loadSsrMarkup} disabled={state.ssrStatus === 'loading'}>
-						{state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch SSR HTML fragment'}
-					</button>
+					<div class="component-actions">
+						<button
+							type="button"
+							on:click={() => callbacks.loadSsrMarkup('/api/ssr/radiant-component')}
+							disabled={state.ssrStatus === 'loading'}
+						>
+							{state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch counter fragment'}
+						</button>
+						<button
+							type="button"
+							on:click={() => callbacks.loadSsrMarkup('/api/ssr/radiant-component-server-card')}
+							disabled={state.ssrStatus === 'loading'}
+						>
+							{state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch server-card fragment'}
+						</button>
+					</div>
 				</div>
 				<p class="status" data-status={state.ssrStatus}>
 					Status: {state.ssrStatus}

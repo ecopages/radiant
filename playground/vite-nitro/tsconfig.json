@@ -5,7 +5,7 @@
 		"module": "ESNext",
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"skipLibCheck": true,
-		"experimentalDecorators": false,
+		"experimentalDecorators": true,
 		"jsx": "react-jsx",
 		"jsxImportSource": "@ecopages/jsx",
 		"moduleResolution": "bundler",
