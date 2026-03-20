@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
+import { jsxProp } from '../../src/decorators/jsx-prop';
+import { prop } from '../../src/decorators/prop';
 import { reactiveProp } from '../../src/decorators/reactive-prop';
 
 describe('@reactiveProp', () => {
@@ -189,6 +191,86 @@ describe('@reactiveProp', () => {
 			document.body.appendChild(customElement);
 			expect(customElement.value).toEqual(5);
 			expect(customElement.getAttribute('value')).toEqual(null);
+		});
+	});
+
+	describe('@prop alias', () => {
+		@customElement('my-prop-alias-element')
+		class MyPropAliasElement extends RadiantElement {
+			@prop({ type: Number, reflect: true, defaultValue: 2, bind: true }) count: number;
+		}
+
+		test('alias exposes the same reactive behavior and binding accessor', () => {
+			const customElement = document.createElement('my-prop-alias-element') as MyPropAliasElement;
+			document.body.appendChild(customElement);
+
+			expect(customElement.count).toEqual(2);
+			expect(customElement.bind('count').getValue()).toEqual(2);
+
+			customElement.count = 7;
+
+			expect(customElement.count).toEqual(7);
+			expect(customElement.getAttribute('count')).toEqual('7');
+			expect(customElement.bind('count').getValue()).toEqual(7);
+		});
+	});
+
+	describe('@jsxProp alias', () => {
+		@customElement('my-jsx-prop-alias-element')
+		class MyJsxPropAliasElement extends RadiantElement {
+			@jsxProp({ type: Number, reflect: true, defaultValue: 3 }) count: number;
+		}
+
+		test('alias enables a bound companion accessor by default', () => {
+			const customElement = document.createElement('my-jsx-prop-alias-element') as MyJsxPropAliasElement;
+			document.body.appendChild(customElement);
+
+			expect(customElement.count).toEqual(3);
+			expect(customElement.bind('count').getValue()).toEqual(3);
+
+			customElement.count = 8;
+
+			expect(customElement.count).toEqual(8);
+			expect(customElement.getAttribute('count')).toEqual('8');
+			expect(customElement.bind('count').getValue()).toEqual(8);
+		});
+	});
+
+	describe('field initializers', () => {
+		@customElement('my-inferred-reactive-prop')
+		class MyInferredReactiveProp extends RadiantElement {
+			@jsxProp({ type: Number, reflect: true }) count = 4;
+			@jsxProp({ type: String }) label = 'Hello Radiant';
+			@jsxProp({ type: Boolean }) enabled = false;
+		}
+
+		test('uses the field initializer as the reactive default when no decorator default is provided', async () => {
+			const customElement = document.createElement('my-inferred-reactive-prop') as MyInferredReactiveProp;
+			document.body.appendChild(customElement);
+
+			await Promise.resolve();
+
+			expect(customElement.count).toEqual(4);
+			expect(customElement.label).toEqual('Hello Radiant');
+			expect(customElement.enabled).toEqual(false);
+			expect(customElement.getAttribute('count')).toEqual('4');
+			expect(customElement.bind('count').getValue()).toEqual(4);
+			expect(customElement.bind('label').getValue()).toEqual('Hello Radiant');
+			expect(customElement.bind('enabled').getValue()).toEqual(false);
+		});
+
+		@customElement('my-inferred-reactive-prop-with-explicit-default')
+		class MyInferredReactivePropWithExplicitDefault extends RadiantElement {
+			@jsxProp({ type: Number, defaultValue: 9 }) count = 4;
+		}
+
+		test('keeps the decorator default value authoritative when one is provided', () => {
+			const customElement = document.createElement(
+				'my-inferred-reactive-prop-with-explicit-default',
+			) as MyInferredReactivePropWithExplicitDefault;
+			document.body.appendChild(customElement);
+
+			expect(customElement.count).toEqual(9);
 		});
 	});
 });

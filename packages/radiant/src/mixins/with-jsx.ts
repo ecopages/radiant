@@ -19,7 +19,12 @@ export interface WithJsxMixin {
 
 function isTemplateResultLike(value: unknown): value is TemplateResultLike {
 	return (
-		typeof value === 'object' && value !== null && '_$litType$' in value && 'strings' in value && 'values' in value
+		typeof value === 'object' &&
+		value !== null &&
+		((value as Partial<TemplateResultLike>)['_$rType$'] === 1 ||
+			(value as { ['_$litType$']?: unknown })['_$litType$'] === 1) &&
+		'strings' in value &&
+		'values' in value
 	);
 }
 

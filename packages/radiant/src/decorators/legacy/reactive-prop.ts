@@ -7,6 +7,7 @@ type ReactivePropertyOptions<T> = {
 	reflect?: boolean;
 	attribute?: string;
 	defaultValue?: T;
+	bind?: boolean | string;
 };
 
 /**
@@ -18,7 +19,13 @@ type ReactivePropertyOptions<T> = {
  * @param options.attribute The name of the attribute.
  * @param options.defaultValue The default value of the property.
  */
-export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions<T>) {
+export function reactiveProp<T = unknown>({
+	type,
+	attribute,
+	reflect,
+	defaultValue,
+	bind,
+}: ReactivePropertyOptions<T>) {
 	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
 		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
 	}
@@ -30,17 +37,22 @@ export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultVal
 			reflect,
 			attribute: attributeKey,
 			defaultValue,
+			bind,
 		});
 
 		const originalConnectedCallback = target.connectedCallback;
 
 		target.connectedCallback = function (this: RadiantElement) {
+			const initializerValue = this[propertyName as keyof typeof this] as T | undefined;
+			const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
+
 			originalConnectedCallback.call(this);
 			this.createReactiveProp(propertyName, {
 				type,
 				reflect,
 				attribute: attributeKey,
-				defaultValue,
+				defaultValue: resolvedDefaultValue,
+				bind,
 			});
 		};
 	};

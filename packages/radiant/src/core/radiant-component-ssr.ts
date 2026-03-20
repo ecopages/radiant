@@ -1,4 +1,6 @@
 import type { JsxElement, RenderToStringOptions } from '@ecopages/jsx';
+import type { SsrSerializableContextProvider } from '../context/context-provider';
+import { withSsrContextProviders } from '../context/context-ssr';
 import { getCustomElementTagName } from './custom-element-metadata';
 import type { ReactiveProperty } from './radiant-element';
 import type { ReactivePropDefinition } from './reactive-prop-metadata';
@@ -6,6 +8,7 @@ import { writeAttributeValue } from '../utils/attribute-utils';
 
 type RadiantComponentSsrHost = {
 	constructor: CustomElementConstructor;
+	getContextProviders: () => SsrSerializableContextProvider[];
 	renderToString: (options?: RenderToStringOptions) => string;
 	getReactiveProperties: () => ReactiveProperty[];
 	getReactivePropDefinitions: () => ReactivePropDefinition[];
@@ -26,8 +29,29 @@ export class RadiantComponentSsrService {
 
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
 		const tagName = this.getTagName();
+		const restoreSsrContexts = withSsrContextProviders(this.host.getContextProviders());
 
-		return `<${tagName}${serializeHostAttributes(attributes)}>${this.host.renderToString(options)}</${tagName}>`;
+		try {
+			return `<${tagName}${serializeHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`;
+		} finally {
+			restoreSsrContexts();
+		}
+	}
+
+	private renderHostContent(options: RenderToStringOptions): string {
+		const hostContent = this.host.renderToString(options);
+
+		if (!options.hydrate) {
+			return hostContent;
+		}
+
+		const hydrationScripts = this.host
+			.getContextProviders()
+			.map((provider) => provider.renderHydrationScriptTag())
+			.filter((markup): markup is string => typeof markup === 'string')
+			.join('');
+
+		return `${hostContent}${hydrationScripts}`;
 	}
 
 	public getHostAttributes(): Record<string, string> {

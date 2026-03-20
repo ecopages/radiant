@@ -25,6 +25,7 @@ export class RadiantComponent extends RadiantElement {
 	private readonly ssr = new RadiantComponentSsrService({
 		constructor: this.constructor as CustomElementConstructor,
 		renderToString: (options) => this.renderToString(options),
+		getContextProviders: () => this.getContextProviders(),
 		getReactiveProperties: () => this.getReactiveProperties(),
 		getReactivePropDefinitions: () => getReactivePropDefinitions(this),
 		getPropertyValue: (name) => (this as Record<string, unknown>)[name],
@@ -49,7 +50,13 @@ export class RadiantComponent extends RadiantElement {
 			}
 
 			if (hasHydrationMarkers(this)) {
+				this.needsRender = false;
 				this.hydrate();
+
+				if (this.needsRender) {
+					this.update();
+				}
+
 				return;
 			}
 
@@ -109,6 +116,10 @@ export class RadiantComponent extends RadiantElement {
 		this.needsRender = true;
 
 		if (!this.isConnected || this.isRendering) {
+			return;
+		}
+
+		if (this.isFirstConnectPending && hasHydrationMarkers(this)) {
 			return;
 		}
 

@@ -4,8 +4,35 @@ type MinimalCustomElementRegistry = {
 };
 
 type MinimalWindow = {
+	CustomEvent: typeof CustomEvent;
+	Event: typeof Event;
+	EventTarget: typeof EventTarget;
+	HTMLElement: typeof HTMLElement;
 	customElements: MinimalCustomElementRegistry;
 };
+
+class MinimalEvent {
+	public readonly bubbles: boolean;
+	public readonly cancelable: boolean;
+	public readonly composed: boolean;
+	public readonly type: string;
+
+	constructor(type: string, eventInitDict: EventInit = {}) {
+		this.type = type;
+		this.bubbles = eventInitDict.bubbles ?? false;
+		this.cancelable = eventInitDict.cancelable ?? false;
+		this.composed = eventInitDict.composed ?? false;
+	}
+}
+
+class MinimalCustomEvent<T = unknown> extends MinimalEvent {
+	public readonly detail: T;
+
+	constructor(type: string, eventInitDict: CustomEventInit<T> = {}) {
+		super(type, eventInitDict);
+		this.detail = eventInitDict.detail as T;
+	}
+}
 
 class MinimalHTMLElement extends EventTarget {
 	private attributes = new Map<string, string>();
@@ -72,18 +99,77 @@ class MinimalCustomElementsRegistry implements MinimalCustomElementRegistry {
 
 let installedWindow: MinimalWindow | undefined;
 
+function getExistingWindowLike(): MinimalWindow | undefined {
+	const globalScope = globalThis as typeof globalThis & {
+		CustomEvent?: typeof CustomEvent;
+		Event?: typeof Event;
+		EventTarget?: typeof EventTarget;
+		HTMLElement?: typeof HTMLElement;
+		customElements?: MinimalCustomElementRegistry;
+		window?: MinimalWindow;
+	};
+	const existingCustomElements = globalScope.customElements;
+
+	if (
+		typeof globalScope.HTMLElement === 'undefined' ||
+		!existingCustomElements ||
+		typeof existingCustomElements.define !== 'function' ||
+		typeof existingCustomElements.get !== 'function'
+	) {
+		return undefined;
+	}
+
+	return (
+		globalScope.window ?? {
+			CustomEvent: (globalScope.CustomEvent ?? MinimalCustomEvent) as typeof CustomEvent,
+			Event: (globalScope.Event ?? MinimalEvent) as typeof Event,
+			EventTarget: (globalScope.EventTarget ?? EventTarget) as typeof EventTarget,
+			HTMLElement: globalScope.HTMLElement,
+			customElements: existingCustomElements,
+		}
+	);
+}
+
+export function ensureLightDomShim(): MinimalWindow {
+	const existingWindow = getExistingWindowLike();
+
+	if (existingWindow) {
+		return existingWindow;
+	}
+
+	return installLightDomShim();
+}
+
 /**
  * Installs the smallest global surface needed to instantiate Radiant custom elements during SSR.
  */
 export function installLightDomShim(): MinimalWindow {
+	const existingWindow = getExistingWindowLike();
+
+	if (existingWindow) {
+		return existingWindow;
+	}
+
 	if (installedWindow) {
 		return installedWindow;
 	}
 
 	const customElements = new MinimalCustomElementsRegistry();
-	installedWindow = { customElements };
+	const EventConstructor = (globalThis.Event ?? MinimalEvent) as typeof Event;
+	const CustomEventConstructor = (globalThis.CustomEvent ?? MinimalCustomEvent) as typeof CustomEvent;
+	const EventTargetConstructor = (globalThis.EventTarget ?? EventTarget) as typeof EventTarget;
+	installedWindow = {
+		CustomEvent: CustomEventConstructor,
+		Event: EventConstructor,
+		EventTarget: EventTargetConstructor,
+		HTMLElement: MinimalHTMLElement as unknown as typeof HTMLElement,
+		customElements,
+	};
 
 	Object.assign(globalThis, {
+		CustomEvent: CustomEventConstructor,
+		Event: EventConstructor,
+		EventTarget: EventTargetConstructor,
 		HTMLElement: MinimalHTMLElement,
 		customElements,
 		window: installedWindow,

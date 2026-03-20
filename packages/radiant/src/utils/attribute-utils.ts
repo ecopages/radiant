@@ -146,7 +146,7 @@ function writeString(value: unknown) {
 export function readAttributeValue(value: string, type: AttributeTypeConstant) {
 	const readerType = parseAttributeTypeConstant(type);
 	if (!readerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
-	return readers[readerType](value);
+	return readers[readerType]!(value);
 }
 
 export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>;
@@ -162,7 +162,8 @@ export type ReadAttributeValueReturnType = ReturnType<typeof readAttributeValue>
 export function writeAttributeValue(value: unknown, type: AttributeTypeConstant) {
 	const writerType = parseAttributeTypeConstant(type);
 	if (!writerType) throw new TypeError(`[radiant-element] Unknown type "${type}"`);
-	return (writers[writerType] || writers.default)(value);
+	const writer: Writer = writers[writerType] ?? writers.default ?? writeString;
+	return writer(value);
 }
 
 export type WriteAttributeValueReturnType = ReturnType<typeof writeAttributeValue>;
@@ -218,11 +219,11 @@ export const getInitialValue = (
 ) => {
 	if (type === Boolean) {
 		const hasAttribute = target.hasAttribute(attributeKey);
-		return hasAttribute || defaultValue;
+		return hasAttribute ? true : defaultValue;
 	}
 
 	const attributeValue = target.getAttribute(attributeKey);
 	return attributeValue !== null
 		? readAttributeValue(attributeValue, type)
-		: defaultValue || (defaultValueForType(type) as typeof defaultValue);
+		: (defaultValue ?? (defaultValueForType(type) as typeof defaultValue));
 };

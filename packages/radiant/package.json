@@ -107,6 +107,14 @@
 			"types": "./dist/decorators/event.d.ts",
 			"import": "./dist/decorators/event.js"
 		},
+		"./decorators/jsx-prop": {
+			"types": "./dist/decorators/jsx-prop.d.ts",
+			"import": "./dist/decorators/jsx-prop.js"
+		},
+		"./decorators/jsx-state": {
+			"types": "./dist/decorators/jsx-state.d.ts",
+			"import": "./dist/decorators/jsx-state.js"
+		},
 		"./decorators/on-event": {
 			"types": "./dist/decorators/on-event.d.ts",
 			"import": "./dist/decorators/on-event.js"
@@ -114,6 +122,10 @@
 		"./decorators/on-updated": {
 			"types": "./dist/decorators/on-updated.d.ts",
 			"import": "./dist/decorators/on-updated.js"
+		},
+		"./decorators/prop": {
+			"types": "./dist/decorators/prop.d.ts",
+			"import": "./dist/decorators/prop.js"
 		},
 		"./decorators/query": {
 			"types": "./dist/decorators/query.d.ts",

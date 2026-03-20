@@ -1,5 +1,8 @@
-import type { EventEmitter } from '@/tools';
+import type { EventEmitter } from '../tools';
+import { createSubscribableJsxValue, type JsxElement, type SubscribableJsxValue } from '@ecopages/jsx';
+import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
+import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -9,6 +12,18 @@ import {
 	readAttributeValue,
 	writeAttributeValue,
 } from '../utils/attribute-utils';
+
+const RadiantElementBase = resolveRadiantElementBase();
+
+function resolveRadiantElementBase(): typeof HTMLElement {
+	if (typeof HTMLElement !== 'undefined') {
+		return HTMLElement;
+	}
+
+	throw new Error(
+		"RadiantElement requires HTMLElement. Install '@ecopages/radiant/server/light-dom-shim' before importing Radiant components in SSR.",
+	);
+}
 
 /**
  * Possible positions to insert a rendered template.
@@ -48,6 +63,28 @@ export type ReactivePropertyOptions<T> = {
 	reflect?: boolean;
 	attribute?: string;
 	defaultValue?: T;
+	/**
+	 * Exposes a JSX binding companion for the reactive property.
+	 *
+	 * - `true` creates a `$propertyName` accessor.
+	 * - a string creates a custom accessor with that name.
+	 *
+	 * The generated accessor returns a subscribable JSX child value so JSX can
+	 * patch only the affected child part when the property changes.
+	 */
+	bind?: boolean | string;
+};
+
+export type ReactiveBindingOption = boolean | string;
+
+export type ReactiveFieldOptions = {
+	/**
+	 * Exposes a JSX binding companion for the reactive field.
+	 *
+	 * - `true` creates a `$fieldName` accessor.
+	 * - a string creates a custom accessor with that name.
+	 */
+	bind?: ReactiveBindingOption;
 };
 
 export type ReactiveField<T = unknown> = {
@@ -73,6 +110,28 @@ export interface IRadiantElement {
 	 * @param event - The event listener to subscribe to.
 	 */
 	subscribeEvent(event: RadiantElementEventListener): void;
+
+	/**
+	 * Registers a callback to be invoked when a reactive property or field changes.
+	 *
+	 * @returns A cleanup function that unregisters the callback.
+	 */
+	registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void;
+
+	/**
+	 * Returns a subscribable JSX child binding for a reactive property or field.
+	 */
+	bind(property: string): SubscribableJsxValue;
+
+	/**
+	 * Returns a subscribable JSX child binding for a reactive property or field.
+	 */
+	getReactiveBinding(property: string): SubscribableJsxValue;
+
+	/**
+	 * Defines a stable JSX binding companion accessor for a reactive member.
+	 */
+	defineReactiveBinding(property: string, bind?: ReactiveBindingOption): void;
 
 	/**
 	 * Subscribes to multiple Radiant element events.
@@ -114,7 +173,7 @@ export interface IRadiantElement {
  * @extends HTMLElement
  * @implements IRadiantElement
  */
-export class RadiantElement extends HTMLElement implements IRadiantElement {
+export class RadiantElement extends RadiantElementBase implements IRadiantElement {
 	/**
 	 * A map of property metadata objects, it contains useful information about the properties configured via decorators.
 	 */
@@ -124,6 +183,16 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	 * A map of reactive fields, it contains the reactive fields configured via decorators.
 	 */
 	private reactiveFields = new Map<string, ReactiveField>();
+
+	/**
+	 * Stable subscribable JSX bindings keyed by reactive property name.
+	 */
+	private reactiveBindings = new Map<string, SubscribableJsxValue>();
+
+	/**
+	 * Registered context providers keyed by decorated property name.
+	 */
+	private contextProviders = new Map<string, SsrSerializableContextProvider>();
 
 	/**
 	 * A map of property update callbacks. These callbacks are called when a property is updated.
@@ -149,6 +218,11 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	 * A flag indicating whether the element has been connected to the DOM.
 	 */
 	private elementReady = false;
+
+	constructor() {
+		super();
+		runLegacyInstanceInitializers(this);
+	}
 
 	connectedCallback() {
 		this.elementReady = true;
@@ -227,11 +301,69 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		this.reactiveFields.set(config.name, config);
 	}
 
-	public registerUpdateCallback(property: string, update: (...rest: any[]) => any) {
+	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
+		this.contextProviders.set(name, provider);
+	}
+
+	protected getContextProviders(): SsrSerializableContextProvider[] {
+		return Array.from(this.contextProviders.values());
+	}
+
+	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
 		if (!this.updateCallbacks.has(property)) {
 			this.updateCallbacks.set(property, new Set());
 		}
-		this.updateCallbacks.get(property)?.add(update);
+
+		const callbacks = this.updateCallbacks.get(property)!;
+		callbacks.add(update);
+
+		return () => {
+			callbacks.delete(update);
+
+			if (callbacks.size === 0) {
+				this.updateCallbacks.delete(property);
+			}
+		};
+	}
+
+	public getReactiveBinding(property: string): SubscribableJsxValue {
+		const cachedBinding = this.reactiveBindings.get(property);
+
+		if (cachedBinding) {
+			return cachedBinding;
+		}
+
+		const host = this as unknown as Record<string, unknown>;
+		const binding = createSubscribableJsxValue({
+			getValue: () => host[property] as JsxElement,
+			subscribe: (notify) =>
+				this.registerUpdateCallback(property, () => {
+					notify(host[property] as JsxElement);
+				}),
+		});
+
+		this.reactiveBindings.set(property, binding);
+		return binding;
+	}
+
+	public bind(property: string): SubscribableJsxValue {
+		return this.getReactiveBinding(property);
+	}
+
+	public defineReactiveBinding(property: string, bind: ReactiveBindingOption = true): void {
+		const bindingPropertyName = typeof bind === 'string' ? bind : bind ? `$${property}` : undefined;
+
+		if (!bindingPropertyName || Object.prototype.hasOwnProperty.call(this, bindingPropertyName)) {
+			return;
+		}
+
+		Object.defineProperty(this, bindingPropertyName, {
+			get: function (this: RadiantElement) {
+				return this.getReactiveBinding(property);
+			},
+			enumerable: false,
+			configurable: true,
+		});
 	}
 
 	public subscribeEvents(events: RadiantElementEventListener[]): Array<() => void> {
@@ -299,7 +431,8 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		return result;
 	}
 
-	public createReactiveField<T>(propertyName: string, initialValue: T): void {
+	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
+		const { bind } = options;
 		const reactiveField: ReactiveField<T> = {
 			name: propertyName,
 			value: initialValue,
@@ -307,6 +440,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		};
 
 		this.registerReactiveField(reactiveField);
+		this.defineReactiveBinding(propertyName, bind);
 
 		Object.defineProperty(this, propertyName, {
 			get(this: RadiantElement) {
@@ -327,7 +461,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	}
 
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
-		const { type, attribute, reflect, defaultValue } = options;
+		const { type, attribute, reflect, defaultValue, bind } = options;
 		const attributeKey = attribute ?? propertyName;
 
 		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
@@ -349,6 +483,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		};
 
 		this.registerReactiveProperty(propertyMapping);
+		this.defineReactiveBinding(propertyName, bind);
 
 		const handleReflectRequest = (value: T) => {
 			if (reflect) {

@@ -69,6 +69,19 @@ export class CounterCard extends RadiantComponent {
 `renderToString({ hydrate: true })` emits hydration markers for the component view only.
 `renderHostToString({ hydrate: true })` emits the custom-element host plus the component view, so SSR no longer needs to manually wrap `render()` output.
 The component will hydrate that SSR DOM on first connect.
+When an SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant component modules.
+
+```ts
+// server/install-radiant-ssr.ts
+import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
+
+installLightDomShim();
+
+// server/entry.ts
+import './install-radiant-ssr';
+import '../components/counter-card';
+```
+
 For the full lifecycle and SSR flow diagram, see [src/core/README.md](src/core/README.md).
 
 Use `RadiantElementJsx` when you want a Radiant base class with JSX rendering built in.

@@ -1,5 +1,6 @@
+import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import type { ContextProvider } from '../../src/context/context-provider';
+import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
@@ -33,6 +34,34 @@ class MyContextConsumer extends RadiantElement {
 }
 
 customElements.define('my-context-consumer', MyContextConsumer);
+
+const nestedHydrationContext = createContext<TestContext>(Symbol('nested-hydration-context'));
+
+class NestedOuterContextProvider extends RadiantElement {
+	@provideContext<typeof nestedHydrationContext>({
+		context: nestedHydrationContext,
+		initialValue: { value: 1 },
+		hydrate: Object,
+	})
+	context!: ContextProvider<typeof nestedHydrationContext>;
+}
+
+if (!customElements.get('nested-outer-context-provider')) {
+	customElements.define('nested-outer-context-provider', NestedOuterContextProvider);
+}
+
+class NestedInnerContextProvider extends RadiantElement {
+	@provideContext<typeof nestedHydrationContext>({
+		context: nestedHydrationContext,
+		initialValue: { value: 2 },
+		hydrate: Object,
+	})
+	context!: ContextProvider<typeof nestedHydrationContext>;
+}
+
+if (!customElements.get('nested-inner-context-provider')) {
+	customElements.define('nested-inner-context-provider', NestedInnerContextProvider);
+}
 
 describe('Context', () => {
 	beforeEach(() => {
@@ -126,5 +155,71 @@ describe('Context', () => {
 
 		expect(fullContextCallback).toHaveBeenLastCalledWith({ value: 4 });
 		expect(selectorCallback).toHaveBeenLastCalledWith(4);
+	});
+
+	test('it hydrates provider context from SSR markup and delivers it to nested consumers on connect', async () => {
+		document.body.innerHTML = `<my-context-provider><script type="application/json" data-hydration>{"value":42}</script><my-context-consumer></my-context-consumer></my-context-provider>`;
+
+		const contextProvider = document.querySelector('my-context-provider') as MyContextProvider | null;
+		const contextConsumer = document.querySelector('my-context-consumer') as MyContextConsumer | null;
+
+		expect(contextProvider).not.toBeNull();
+		expect(contextConsumer).not.toBeNull();
+
+		await waitFor(() => {
+			expect(contextProvider?.context.getContext()).toEqual({ value: 42 });
+			expect(contextConsumer?.innerHTML).toEqual('42');
+		});
+	});
+
+	test('it exposes a first-class hydration script helper on providers', () => {
+		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		document.body.appendChild(contextProvider);
+		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
+
+		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-context-key="context">');
+		expect(scriptMarkup).toContain('{"value":1}');
+	});
+
+	test('it tolerates SSR hosts without a DOM children collection', () => {
+		const provider = new ContextProvider(
+			{
+				addEventListener: () => undefined,
+				children: undefined,
+				dispatchEvent: () => true,
+			} as unknown as MyContextProvider,
+			{
+				context: testContext,
+				initialValue: { value: 7 },
+				hydrate: Object,
+			},
+		);
+
+		expect(provider.getContext()).toEqual({ value: 7 });
+	});
+
+	test('it hydrates each nested provider from its own keyed SSR script', async () => {
+		document.body.innerHTML =
+			'<nested-outer-context-provider>' +
+			'<nested-inner-context-provider>' +
+			'<script type="application/json" data-hydration data-context-key="context">{"value":99}</script>' +
+			'</nested-inner-context-provider>' +
+			'<script type="application/json" data-hydration data-context-key="context">{"value":41}</script>' +
+			'</nested-outer-context-provider>';
+
+		const outerProvider = document.querySelector(
+			'nested-outer-context-provider',
+		) as NestedOuterContextProvider | null;
+		const innerProvider = document.querySelector(
+			'nested-inner-context-provider',
+		) as NestedInnerContextProvider | null;
+
+		expect(outerProvider).not.toBeNull();
+		expect(innerProvider).not.toBeNull();
+
+		await waitFor(() => {
+			expect(outerProvider?.context.getContext()).toEqual({ value: 41 });
+			expect(innerProvider?.context.getContext()).toEqual({ value: 99 });
+		});
 	});
 });
