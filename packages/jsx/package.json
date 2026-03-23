@@ -20,9 +20,9 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"bench:server": "bun run bench:server:bun && bun run bench:server:node",
-		"bench:server:bun": "bun run benchmarks/run.ts",
-		"bench:server:node": "node --import tsx benchmarks/run.ts",
+		"bench:server": "bun run benchmarks/run.ts",
+		"bench:server:bun": "bun run benchmarks/ssr.ts",
+		"bench:server:node": "node --import tsx benchmarks/ssr.ts",
 		"profile:hydrate": "bun run profile:hydrate:bun && bun run profile:hydrate:node",
 		"profile:hydrate:bun": "bun run benchmarks/profile-hydrate.ts",
 		"profile:hydrate:node": "node --import tsx benchmarks/profile-hydrate.ts",

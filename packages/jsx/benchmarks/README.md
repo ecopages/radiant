@@ -11,14 +11,25 @@ cd packages/jsx
 bun run bench:server
 ```
 
-`bench:server` now always runs the same benchmark twice:
+`bench:server` now measures the same two SSR tasks under both runtimes and then prints a direct comparison table:
+
+- `renderToString`
+- `renderToString hydrate`
+
+Under the hood the comparer runs the same measurement script twice:
 
 - once with Bun
 - once with Node via `tsx`
 
-This keeps benchmark output comparable across the two runtimes without requiring separate manual commands.
+That matters because the question we actually care about is per task: how does Bun compare with Node for the same `renderToString(...)` workload?
 
-The runner now uses `mitata` instead of `tinybench`. That change is intentional: the previous `tinybench` output overstated the Bun versus Node gap for this workload, while manual timing loops showed the real difference was much smaller.
+If you want the raw single-runtime numbers without the cross-runtime table, use:
+
+```bash
+cd packages/jsx
+bun run bench:server:bun
+bun run bench:server:node
+```
 
 Use the focused hydrate profiler when you want to isolate marker-heavy overhead instead of the full page benchmark:
 
@@ -37,7 +48,7 @@ The first task, `renderToString`, is the directly comparable metric.
 
 The second task, `renderToString hydrate`, is intentionally extra. It keeps the same page shape but includes Radiant hydration markers, so it should be treated as a framework-specific extension rather than a published-like comparison number.
 
-`mitata` prints the active runtime context itself, including the engine and architecture, so the Bun and Node results can be compared directly in one command output.
+The comparison runner validates that both runtimes serialize the same number of output bytes before reporting the timing delta, so the table only compares equivalent work.
 
 ## Current SSR Optimizations
 
@@ -50,33 +61,36 @@ These changes target algorithmic overhead in the renderer rather than only chang
 
 ## Benchmark Runner Choice
 
-We use `mitata` here because it generates tighter measurement loops and gives more trustworthy per-runtime output for this kind of hot synchronous SSR benchmark.
+The server benchmark now uses a small explicit timing harness instead of a benchmark framework.
 
-- `tinybench` was simple to wire up, but it produced misleadingly large Bun-versus-Node differences on this workload
-- manual warm-loop verification showed the real runtime gap was much smaller
-- `mitata` is a better fit for comparing the same synchronous function across Bun and Node
+- the same warmup and iteration counts run under both Bun and Node
+- the runner reports average microseconds per iteration for each SSR task
+- the comparer prints the runtime winner and the relative delta for each task
+
+This is a better fit for the current goal than a framework-oriented per-process benchmark report, because it answers the actual question directly: `renderToString` Bun vs Node, and `renderToString hydrate` Bun vs Node.
 
 ## Example Output
 
-Typical `mitata` output looks like this:
+Typical comparison output looks like this:
 
 ```text
 RealWorldPage output size: 169.1 KiB
-clk: ~4.00 GHz
-cpu: Apple M4
-runtime: bun 1.3.6 (arm64-darwin)
+Comparing identical renderToString workloads across Bun and Node. Lower avgUs is better.
 
-benchmark                   avg (min … max) p75 / p99    (min … top 1%)
-------------------------------------------- -------------------------------
-renderToString              516.18 µs/iter ...
-renderToString hydrate        2.37 ms/iter ...
+┌─────────┬──────────────────────────┬──────────┬───────────┬──────────────────────────────────────────────┬────────┐
+│ (index) │ benchmark                │ bunAvgUs │ nodeAvgUs │ delta                                        │ winner │
+├─────────┼──────────────────────────┼──────────┼───────────┼──────────────────────────────────────────────┼────────┤
+│ 0       │ renderToString           │ 516.18   │ 603.42    │ Bun 1.17x faster (14.5% less time)           │ Bun    │
+│ 1       │ renderToString hydrate   │ 2370.00  │ 2551.74   │ Bun 1.08x faster (7.1% less time)            │ Bun    │
+└─────────┴──────────────────────────┴──────────┴───────────┴──────────────────────────────────────────────┴────────┘
 ```
 
 Read it like this:
 
 - `renderToString` is the comparable server-render result
 - `renderToString hydrate` includes extra SSR marker output and is only meaningful as an internal regression signal
-- the runtime block is part of the benchmark result, not just shell metadata
+- `winner` tells you which runtime completed the same task faster
+- `delta` tells you the relative speed gap for that exact task
 
 ## Current Rendering Behavior
 
