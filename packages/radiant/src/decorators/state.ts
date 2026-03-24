@@ -3,27 +3,29 @@ import type {
 	StandardFieldDecoratorArgs,
 	StandardOrLegacyFieldDecoratorArgs,
 } from '../types';
-import { jsxState as legacyJsxState } from './legacy/jsx-state';
-import { jsxState as standardJsxState } from './standard/jsx-state';
+import { reactiveField as legacyReactiveField } from './legacy/reactive-field';
+import { reactiveField as standardReactiveField } from './standard/reactive-field';
 
 /**
- * JSX-first reactive state decorator.
+ * Semantic alias for `@reactiveField`.
  *
- * `@jsxState` models internal component state and exposes a bound JSX companion
- * accessor by default so JSX child updates can patch directly.
+ * `@state` models internal mutable component state. When no explicit binding
+ * option is supplied, `RadiantComponent` hosts expose a JSX companion binding
+ * accessor automatically while plain `RadiantElement` hosts keep binding
+ * opt-in.
  */
-export function jsxState(
+export function state(
 	protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 	nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 ): any {
 	if (typeof nameOrContext === 'object') {
-		return standardJsxState(
+		return standardReactiveField(
 			protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
 			nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
 		);
 	}
 
-	return legacyJsxState(
+	return legacyReactiveField(
 		protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
 		nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
 	);

@@ -3,7 +3,7 @@ import {
 	hydrate as hydrateJsx,
 	render as renderJsx,
 	renderToString as renderJsxToString,
-	type JsxElement,
+	type JsxRenderable,
 	type RenderToStringOptions,
 } from '@ecopages/jsx';
 import { RadiantComponentSsrService } from './radiant-component-ssr';
@@ -12,13 +12,24 @@ import { RadiantElement } from './radiant-element';
 
 /**
  * A structured JSX-first Radiant base class.
+ * @typeParam Bindings - Explicit internal bindable shape. Include only the
+ * prop/state keys that JSX bindings should accept.
+ *
+ * Treat this as the component's internal reactive/bindable surface, not as the
+ * default public custom-element attribute contract. When a component exposes a
+ * narrower external API than its internal state, declare a separate public
+ * props type for the JSX intrinsic element and keep internal-only state out of
+ * that contract.
+ *
+ * Reusing the same type for both is fine only when the public props and the
+ * bindable reactive members are intentionally the same surface.
  *
  * - `render()` describes the view.
  * - `update()` commits the current view into the host.
  * - first render happens automatically on connect.
  * - rerenders remain explicit through `update()` or decorators such as `@onUpdated`.
  */
-export class RadiantComponent extends RadiantElement {
+export class RadiantComponent<Bindings extends object = {}> extends RadiantElement<Bindings> {
 	private isRendering = false;
 	private isFirstConnectPending = false;
 	private needsRender = false;
@@ -67,7 +78,7 @@ export class RadiantComponent extends RadiantElement {
 	/**
 	 * Returns the current component view.
 	 */
-	public render(): JsxElement {
+	public render(): JsxRenderable {
 		return '';
 	}
 
@@ -81,7 +92,7 @@ export class RadiantComponent extends RadiantElement {
 	/**
 	 * Returns the component host and current view as a JSX element.
 	 */
-	public renderHost(): JsxElement {
+	public renderHost(): JsxRenderable {
 		return this.ssr.renderHost();
 	}
 
@@ -133,6 +144,10 @@ export class RadiantComponent extends RadiantElement {
 				this.isRendering = false;
 			}
 		}
+	}
+
+	protected override shouldAutoBindReactiveMembers(): boolean {
+		return true;
 	}
 
 	protected getHostSsrAttributes(): Record<string, string> {

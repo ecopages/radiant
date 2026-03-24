@@ -28,6 +28,7 @@ describe('@reactiveField', () => {
 		customElement.innerHTML = '1';
 		document.body.appendChild(customElement);
 		expect(customElement.innerHTML).toEqual('1');
+		expect(Object.prototype.hasOwnProperty.call(customElement, '$numberOfClicks')).toBe(false);
 		customElement.addClick();
 		expect(customElement.innerHTML).toEqual('2');
 	});

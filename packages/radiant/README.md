@@ -36,12 +36,17 @@ It keeps rerenders explicit:
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement, onUpdated, reactiveProp } from '@ecopages/radiant';
+import { RadiantComponent, customElement, onUpdated, prop } from '@ecopages/radiant';
+
+type CounterCardBindings = {
+	count: number;
+	label: string;
+};
 
 @customElement('counter-card')
-export class CounterCard extends RadiantComponent {
-	@reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
-	@reactiveProp({ type: String, defaultValue: 'Counter' }) label!: string;
+export class CounterCard extends RadiantComponent<CounterCardBindings> {
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+	@prop({ type: String, defaultValue: 'Counter' }) label!: string;
 
 	@onUpdated(['count', 'label'])
 	override update(): void {
@@ -55,13 +60,35 @@ export class CounterCard extends RadiantComponent {
 	override render() {
 		return (
 			<section>
-				<h2>{this.label}</h2>
-				<p>Count: {this.count}</p>
+				<h2>{this.bindings.label}</h2>
+				<p>Count: {this.$.count}</p>
 				<button type="button" on:click={this.increment}>
 					Increment
 				</button>
 			</section>
 		);
+	}
+}
+```
+
+When you use reactive JSX bindings, pass a dedicated binding shape to
+`RadiantComponent<...>` or `RadiantElement<...>` instead of the whole class type.
+That keeps binding keys limited to the reactive props or state you want JSX to
+accept.
+
+Use `this.bindings.key` for the explicit form or `this.$.key` for the short form.
+Both aliases resolve through the same cached binding objects as `bind('key')`.
+
+When the same shape also represents the component's public JSX attributes, you
+can reuse it in a custom element declaration via
+`JsxCustomElementAttributes<HTMLElement, Shape>` from `@ecopages/jsx`.
+
+```ts
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'counter-card': JsxCustomElementAttributes<HTMLElement, CounterCardBindings>;
 	}
 }
 ```
@@ -84,29 +111,6 @@ import '../components/counter-card';
 
 For the full lifecycle and SSR flow diagram, see [src/core/README.md](src/core/README.md).
 
-Use `RadiantElementJsx` when you want a Radiant base class with JSX rendering built in.
-`render()` is the JSX-first API. `renderTemplate()` remains available as the lower-level compatibility hook.
-
-```tsx
-/** @jsxImportSource @ecopages/jsx */
-
-import { RadiantElementJsx } from '@ecopages/radiant';
-
-export class HelloCard extends RadiantElementJsx {
-	override connectedCallback() {
-		super.connectedCallback();
-		this.render(
-			<div>
-				<h1>Hello</h1>
-				<p>Radiant JSX</p>
-			</div>,
-		);
-	}
-}
-```
-
-For composition-based usage, import `WithJsx` from `@ecopages/radiant/mixins/with-jsx`.
-
 ## Import Structure
 
 | Folder/Module                 | Description                             |
@@ -120,18 +124,17 @@ For composition-based usage, import `WithJsx` from `@ecopages/radiant/mixins/wit
 | `./context/context-selector`  | Module for selecting context.           |
 | `./core`                      | Contains all core elements              |
 | `./core/radiant-element`      | Module for the Radiant Element.         |
-| `./core/radiant-element-jsx`  | Module for the JSX-aware Radiant base.  |
+| `./core/radiant-component`    | Module for the JSX-first Radiant base.  |
 | `./decorators`                | Contains decorator modules.             |
 | `./decorators/custom-element` | Decorator for custom elements.          |
 | `./decorators/event`          | Decorator for events.                   |
 | `./decorators/on-event`       | Decorator for event handlers.           |
 | `./decorators/on-updated`     | Decorator for update handlers.          |
+| `./decorators/prop`           | Decorator for public reactive props.    |
 | `./decorators/query`          | Decorator for querying elements.        |
+| `./decorators/state`          | Decorator for internal reactive state.  |
 | `./decorators/reactive-field` | Decorator for reactive fields.          |
 | `./decorators/reactive-prop`  | Decorator for reactive properties.      |
-| `./mixins`                    | Contains mixin modules.                 |
-| `./mixins/with-kita`          | Mixin for Kita functionality.           |
-| `./mixins/with-jsx`           | Mixin for JSX functionality.            |
 | `./tools`                     | Contains utility modules.               |
 | `./tools/stringify-typed`     | Utility for stringifying attributes.    |
 | `./tools/event-emitter`       | Utility for emitting events.            |

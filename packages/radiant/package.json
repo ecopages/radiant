@@ -23,11 +23,9 @@
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
 	"dependencies": {
-		"@ecopages/jsx": "workspace:*",
-		"@kitajs/html": "^4.1.0"
+		"@ecopages/jsx": "workspace:*"
 	},
 	"devDependencies": {
-		"@kitajs/ts-html-plugin": "^4.0.1",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/user-event": "^14.5.2",
 		"@vitest/browser": "^3.2.4",
@@ -83,10 +81,6 @@
 			"types": "./dist/core/radiant-component.d.ts",
 			"import": "./dist/core/radiant-component.js"
 		},
-		"./core/radiant-element-jsx": {
-			"types": "./dist/core/radiant-element-jsx.d.ts",
-			"import": "./dist/core/radiant-element-jsx.js"
-		},
 		"./server/light-dom-shim": {
 			"types": "./dist/server/light-dom-shim.d.ts",
 			"import": "./dist/server/light-dom-shim.js"
@@ -106,14 +100,6 @@
 		"./decorators/event": {
 			"types": "./dist/decorators/event.d.ts",
 			"import": "./dist/decorators/event.js"
-		},
-		"./decorators/jsx-prop": {
-			"types": "./dist/decorators/jsx-prop.d.ts",
-			"import": "./dist/decorators/jsx-prop.js"
-		},
-		"./decorators/jsx-state": {
-			"types": "./dist/decorators/jsx-state.d.ts",
-			"import": "./dist/decorators/jsx-state.js"
 		},
 		"./decorators/on-event": {
 			"types": "./dist/decorators/on-event.d.ts",
@@ -139,13 +125,9 @@
 			"types": "./dist/decorators/reactive-prop.d.ts",
 			"import": "./dist/decorators/reactive-prop.js"
 		},
-		"./mixins/with-kita": {
-			"types": "./dist/mixins/with-kita.d.ts",
-			"import": "./dist/mixins/with-kita.js"
-		},
-		"./mixins/with-jsx": {
-			"types": "./dist/mixins/with-jsx.d.ts",
-			"import": "./dist/mixins/with-jsx.js"
+		"./decorators/state": {
+			"types": "./dist/decorators/state.d.ts",
+			"import": "./dist/decorators/state.js"
 		},
 		"./tools/stringify-typed": {
 			"types": "./dist/tools/stringify-typed.d.ts",

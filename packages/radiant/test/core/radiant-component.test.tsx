@@ -8,6 +8,7 @@ import { RadiantComponent } from '../../src/core/radiant-component';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { reactiveProp } from '../../src/decorators/reactive-prop';
+import { state } from '../../src/decorators/state';
 import { installLightDomShim } from '../../src/server/light-dom-shim';
 
 describe('RadiantComponent', () => {
@@ -201,8 +202,13 @@ describe('RadiantComponent', () => {
 	});
 
 	test('renderHostToString({ hydrate: true }) serializes bound JSX child values', () => {
+		type ServerHostBoundHydrateCardBindings = {
+			count: number;
+			label: string;
+		};
+
 		@customElement('server-host-bound-hydrate-card-test')
-		class ServerHostBoundHydrateCard extends RadiantComponent {
+		class ServerHostBoundHydrateCard extends RadiantComponent<ServerHostBoundHydrateCardBindings> {
 			@reactiveProp({ type: Number, reflect: true, defaultValue: 3, bind: true }) count!: number;
 			@reactiveProp({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
 
@@ -234,8 +240,13 @@ describe('RadiantComponent', () => {
 	});
 
 	test('renderHostToString({ hydrate: true }) serializes very nested component trees', () => {
+		type ServerHostDeepTreeBindings = {
+			count: number;
+			label: string;
+		};
+
 		@customElement('server-host-deep-tree-test')
-		class ServerHostDeepTree extends RadiantComponent {
+		class ServerHostDeepTree extends RadiantComponent<ServerHostDeepTreeBindings> {
 			@reactiveProp({ type: String, defaultValue: 'Deep SSR' }) label!: string;
 			@reactiveProp({ type: Number, reflect: true, defaultValue: 11, bind: true }) count!: number;
 
@@ -434,7 +445,11 @@ describe('RadiantComponent', () => {
 	});
 
 	test('bindReactiveValue updates the subscribed child without rerendering the component', async () => {
-		class BoundReactiveCounter extends RadiantComponent {
+		type BoundReactiveCounterBindings = {
+			count: number;
+		};
+
+		class BoundReactiveCounter extends RadiantComponent<BoundReactiveCounterBindings> {
 			static observedAttributes = ['count', 'label'];
 			declare count: number;
 			declare label: string;
@@ -507,7 +522,11 @@ describe('RadiantComponent', () => {
 	});
 
 	test('@reactiveProp({ bind: true }) exposes a stable companion binding accessor', () => {
-		class BoundPropElement extends RadiantComponent {
+		type BoundPropBindings = {
+			count: number;
+		};
+
+		class BoundPropElement extends RadiantComponent<BoundPropBindings> {
 			declare count: number;
 
 			constructor() {
@@ -521,11 +540,38 @@ describe('RadiantComponent', () => {
 		const element = document.createElement('bound-prop-element-test') as BoundPropElement;
 		const firstBinding = element.bind('count');
 		const secondBinding = element.bind('count');
+		const namespaceBinding = element.bindings.count;
+		const shortNamespaceBinding = element.$.count;
 
 		expect(firstBinding).toBe(secondBinding);
+		expect(firstBinding).toBe(namespaceBinding);
+		expect(namespaceBinding).toBe(shortNamespaceBinding);
 		expect(firstBinding.getValue()).toBe(1);
 
 		element.count = 4;
-		expect(element.bind('count').getValue()).toBe(4);
+		expect(element.bindings.count.getValue()).toBe(4);
+	});
+
+	test('createReactiveProp and createReactiveField auto-bind on RadiantComponent when bind is omitted', () => {
+		class AutoBoundMembersElement extends RadiantComponent {
+			declare count: number;
+			declare draft: string;
+
+			constructor() {
+				super();
+				this.createReactiveProp('count', { type: Number, defaultValue: 1 });
+				this.createReactiveField('draft', 'ready');
+			}
+		}
+
+		customElements.define('auto-bound-members-element-test', AutoBoundMembersElement);
+
+		const element = document.createElement('auto-bound-members-element-test') as AutoBoundMembersElement & {
+			$count: ReturnType<AutoBoundMembersElement['bind']>;
+			$draft: ReturnType<AutoBoundMembersElement['bind']>;
+		};
+
+		expect(element.$count.getValue()).toBe(1);
+		expect(element.$draft.getValue()).toBe('ready');
 	});
 });

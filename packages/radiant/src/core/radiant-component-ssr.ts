@@ -1,4 +1,4 @@
-import type { JsxElement, RenderToStringOptions } from '@ecopages/jsx';
+import type { JsxRenderable, RenderToStringOptions } from '@ecopages/jsx';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import { withSsrContextProviders } from '../context/context-ssr';
 import { getCustomElementTagName } from './custom-element-metadata';
@@ -20,7 +20,7 @@ type RadiantComponentSsrHost = {
 export class RadiantComponentSsrService {
 	constructor(private readonly host: RadiantComponentSsrHost) {}
 
-	public renderHost(): JsxElement {
+	public renderHost(): JsxRenderable {
 		return {
 			nodeType: 1,
 			outerHTML: this.renderHostToString({ hydrate: true }),

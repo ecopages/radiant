@@ -89,7 +89,7 @@ SSR works like this:
 By default, host serialization includes:
 
 - reflected reactive properties from `getReactiveProperties()`
-- reactive prop metadata registered through `@reactiveProp(...)`, `@prop(...)`, or `@jsxProp(...)`
+- reactive prop metadata registered through `@reactiveProp(...)` or `@prop(...)`
 - attributes already present on the element instance
 
 Subclasses can override `getHostSsrAttributes()` when they need custom host serialization.

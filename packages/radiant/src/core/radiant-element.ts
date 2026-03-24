@@ -1,5 +1,5 @@
 import type { EventEmitter } from '../tools';
-import { createSubscribableJsxValue, type JsxElement, type SubscribableJsxValue } from '@ecopages/jsx';
+import { createSubscribableJsxValue, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
@@ -68,6 +68,7 @@ export type ReactivePropertyOptions<T> = {
 	 *
 	 * - `true` creates a `$propertyName` accessor.
 	 * - a string creates a custom accessor with that name.
+	 * - `undefined` defers to the host default.
 	 *
 	 * The generated accessor returns a subscribable JSX child value so JSX can
 	 * patch only the affected child part when the property changes.
@@ -83,6 +84,7 @@ export type ReactiveFieldOptions = {
 	 *
 	 * - `true` creates a `$fieldName` accessor.
 	 * - a string creates a custom accessor with that name.
+	 * - `undefined` defers to the host default.
 	 */
 	bind?: ReactiveBindingOption;
 };
@@ -93,10 +95,54 @@ export type ReactiveField<T = unknown> = {
 	initialValue: T;
 };
 
+type StringPropertyKey<Value> = Extract<keyof Value, string>;
+
+/**
+ * Value type produced by a JSX binding for a selected reactive member.
+ *
+ * Bindings preserve the original property type when it is already renderable by
+ * the Ecopages JSX runtime. For non-renderable values, the binding falls back
+ * to the broader `JsxRenderable` contract consumed by the renderer.
+ */
+export type ReactiveBindingValue<Host extends object, Property extends StringPropertyKey<Host>> =
+	Host[Property] extends JsxRenderable ? Host[Property] : JsxRenderable;
+
+/**
+ * Namespace of cached JSX bindings keyed by the explicit bindable shape.
+ *
+ * Radiant exposes this namespace twice on every host:
+ *
+ * - `host.bindings.key` for the explicit form
+ * - `host.$.key` for the short form
+ *
+ * Both aliases resolve through the same cached binding objects as
+ * `host.bind('key')`.
+ */
+export type ReactiveBindings<Bindings extends object> = {
+	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValue<
+		ReactiveBindingValue<Bindings, Property>
+	>;
+};
+
 /**
  * Represents an interface for a Radiant element.
+ * @typeParam Bindings - Explicit internal bindable shape used to type `bind()` and `getReactiveBinding()`.
+ *
+ * This shape describes which reactive members are exposed through `bindings`,
+ * `$`, and `bind(...)`. It does not automatically define the public JSX
+ * attribute contract for the custom element.
  */
-export interface IRadiantElement {
+export interface IRadiantElement<Bindings extends object = {}> {
+	/**
+	 * Namespace of cached JSX bindings keyed by the explicit bindable shape.
+	 */
+	readonly bindings: ReactiveBindings<Bindings>;
+
+	/**
+	 * Short alias for {@link bindings}.
+	 */
+	readonly $: ReactiveBindings<Bindings>;
+
 	/**
 	 * Called when a property of the element is updated.
 	 * @param changedProperty - The name of the changed property.
@@ -120,16 +166,29 @@ export interface IRadiantElement {
 
 	/**
 	 * Returns a subscribable JSX child binding for a reactive property or field.
+	 *
+	 * Prefer `this.bindings.key` or `this.$.key` in JSX render code when you want
+	 * property access syntax without string literals.
 	 */
-	bind(property: string): SubscribableJsxValue;
+	bind<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 
 	/**
 	 * Returns a subscribable JSX child binding for a reactive property or field.
+	 *
+	 * This is the primitive lookup used by `bind()`, `bindings.key`, and `$.key`.
 	 */
-	getReactiveBinding(property: string): SubscribableJsxValue;
+	getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 
 	/**
 	 * Defines a stable JSX binding companion accessor for a reactive member.
+	 *
+	 * Companion bindings create properties such as `$count` directly on the host.
+	 * Prefer the `bindings` or `$` namespace for new code when you want typed,
+	 * explicit access to the configured bindable shape.
 	 */
 	defineReactiveBinding(property: string, bind?: ReactiveBindingOption): void;
 
@@ -170,10 +229,23 @@ export interface IRadiantElement {
 
 /**
  * A base class for creating custom elements with reactive properties and event subscriptions.
+ * @typeParam Bindings - Explicit internal bindable shape. Include only the
+ * prop/state keys that JSX bindings should accept.
+ *
+ * Prefer a separate public props type for custom-element JSX declarations when
+ * the external attribute contract differs from the component's internal
+ * reactive state. Reuse the same type only when the public props and bindable
+ * members are intentionally identical.
  * @extends HTMLElement
- * @implements IRadiantElement
+ * @implements IRadiantElement<Bindings>
  */
-export class RadiantElement extends RadiantElementBase implements IRadiantElement {
+export class RadiantElement<Bindings extends object = {}>
+	extends RadiantElementBase
+	implements IRadiantElement<Bindings>
+{
+	public readonly bindings: ReactiveBindings<Bindings>;
+	public readonly $: ReactiveBindings<Bindings>;
+
 	/**
 	 * A map of property metadata objects, it contains useful information about the properties configured via decorators.
 	 */
@@ -221,7 +293,22 @@ export class RadiantElement extends RadiantElementBase implements IRadiantElemen
 
 	constructor() {
 		super();
+		const bindingNamespace = this.createReactiveBindingNamespace();
+		this.bindings = bindingNamespace;
+		this.$ = bindingNamespace;
 		runLegacyInstanceInitializers(this);
+	}
+
+	private createReactiveBindingNamespace(): ReactiveBindings<Bindings> {
+		return new Proxy(Object.create(null) as ReactiveBindings<Bindings>, {
+			get: (_target, property) => {
+				if (typeof property !== 'string') {
+					return undefined;
+				}
+
+				return this.getReactiveBinding(property as StringPropertyKey<Bindings>);
+			},
+		}) as ReactiveBindings<Bindings>;
 	}
 
 	connectedCallback() {
@@ -309,6 +396,18 @@ export class RadiantElement extends RadiantElementBase implements IRadiantElemen
 		return Array.from(this.contextProviders.values());
 	}
 
+	/**
+	 * Returns the default JSX binding policy for reactive members on this host.
+	 *
+	 * Plain `RadiantElement` instances keep binding opt-in. JSX-first hosts such
+	 * as `RadiantComponent` override this hook to opt into automatic bindings for
+	 * `@prop`, `@state`, and direct `createReactiveProp`/`createReactiveField`
+	 * calls when no explicit `bind` option is supplied.
+	 */
+	protected shouldAutoBindReactiveMembers(): boolean {
+		return false;
+	}
+
 	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
 		if (!this.updateCallbacks.has(property)) {
 			this.updateCallbacks.set(property, new Set());
@@ -326,19 +425,21 @@ export class RadiantElement extends RadiantElementBase implements IRadiantElemen
 		};
 	}
 
-	public getReactiveBinding(property: string): SubscribableJsxValue {
+	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
 		const cachedBinding = this.reactiveBindings.get(property);
 
 		if (cachedBinding) {
-			return cachedBinding;
+			return cachedBinding as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 		}
 
 		const host = this as unknown as Record<string, unknown>;
-		const binding = createSubscribableJsxValue({
-			getValue: () => host[property] as JsxElement,
+		const binding = createSubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>({
+			getValue: () => host[property] as ReactiveBindingValue<Bindings, Property>,
 			subscribe: (notify) =>
 				this.registerUpdateCallback(property, () => {
-					notify(host[property] as JsxElement);
+					notify(host[property] as ReactiveBindingValue<Bindings, Property>);
 				}),
 		});
 
@@ -346,8 +447,10 @@ export class RadiantElement extends RadiantElementBase implements IRadiantElemen
 		return binding;
 	}
 
-	public bind(property: string): SubscribableJsxValue {
-		return this.getReactiveBinding(property);
+	public bind<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+		return this.getReactiveBinding(property) as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 	}
 
 	public defineReactiveBinding(property: string, bind: ReactiveBindingOption = true): void {
@@ -358,8 +461,8 @@ export class RadiantElement extends RadiantElementBase implements IRadiantElemen
 		}
 
 		Object.defineProperty(this, bindingPropertyName, {
-			get: function (this: RadiantElement) {
-				return this.getReactiveBinding(property);
+			get: function (this: RadiantElement<Bindings>) {
+				return this.getReactiveBinding(property as StringPropertyKey<Bindings>);
 			},
 			enumerable: false,
 			configurable: true,
@@ -432,7 +535,7 @@ export class RadiantElement extends RadiantElementBase implements IRadiantElemen
 	}
 
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
-		const { bind } = options;
+		const bind = options.bind ?? this.shouldAutoBindReactiveMembers();
 		const reactiveField: ReactiveField<T> = {
 			name: propertyName,
 			value: initialValue,
@@ -461,7 +564,8 @@ export class RadiantElement extends RadiantElementBase implements IRadiantElemen
 	}
 
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
-		const { type, attribute, reflect, defaultValue, bind } = options;
+		const { type, attribute, reflect, defaultValue } = options;
+		const bind = options.bind ?? this.shouldAutoBindReactiveMembers();
 		const attributeKey = attribute ?? propertyName;
 
 		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {

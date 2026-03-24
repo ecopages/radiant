@@ -1,4 +1,4 @@
-import type { JsxElement } from '@ecopages/jsx';
+import type { JsxRenderable } from '@ecopages/jsx';
 import type { RadiantElement } from '../core/radiant-element';
 import { type AttributeTypeConstant, readAttributeValue } from '../utils/attribute-utils';
 import {
@@ -29,7 +29,7 @@ export interface SsrSerializableContextProvider {
 	/** Returns the context token used to match nested SSR consumers and providers. */
 	getContextKey(): UnknownContext;
 	/** Returns the hydration script as JSX-friendly serialized markup, when available. */
-	renderHydrationScript(): JsxElement | undefined;
+	renderHydrationScript(): JsxRenderable | undefined;
 	/** Returns the hydration script as a raw HTML string, when available. */
 	renderHydrationScriptTag(): string | undefined;
 }
@@ -202,7 +202,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	 * This lets JSX-based host renderers append the script without needing a real
 	 * DOM element instance during SSR.
 	 */
-	renderHydrationScript = (): JsxElement | undefined => {
+	renderHydrationScript = (): JsxRenderable | undefined => {
 		const outerHTML = this.renderHydrationScriptTag();
 
 		if (!outerHTML) {

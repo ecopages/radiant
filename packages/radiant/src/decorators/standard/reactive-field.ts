@@ -6,6 +6,12 @@ export function reactiveField<T extends RadiantElement, V>(_: undefined, context
 	const contextName = String(context.name);
 
 	context.addInitializer(function (this: T) {
+		this.defineReactiveBinding(
+			contextName,
+			(this as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ??
+				false,
+		);
+
 		Object.defineProperty(this, context.name, {
 			get() {
 				return this[privatePropertyKey];
