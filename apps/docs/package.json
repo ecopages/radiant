@@ -14,10 +14,10 @@
 	},
 	"devDependencies": {
 		"@ecopages/core": "npm:@jsr/ecopages__core@latest",
+		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/postcss-processor": "npm:@jsr/ecopages__postcss-processor@latest",
 		"@ecopages/browser-router": "npm:@jsr/ecopages__browser-router@latest",
-		"@ecopages/kitajs": "npm:@jsr/ecopages__kitajs@latest",
 		"@ecopages/mdx": "npm:@jsr/ecopages__mdx@latest",
 		"@ecopages/scripts-injector": "latest",
 		"@tailwindcss/postcss": "^4.0.0",

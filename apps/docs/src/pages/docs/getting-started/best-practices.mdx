@@ -1,5 +1,5 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { Banner } from '@/components/banner/banner.kita';
+import { Banner } from '@/components/banner/banner';
 
 export const layout = DocsLayout;
 
@@ -75,19 +75,89 @@ export class UserCard extends RadiantElement {
 }
 ```
 
-### JSX Integration (Kita)
+### JSX Integration (Ecopages JSX)
 
-To enable type checking for your custom element in JSX templates (using Kita), register it in the `JSX.IntrinsicElements` interface.
+To enable type checking for your custom element in JSX templates with
+`jsxImportSource: "@ecopages/jsx"`, augment the Ecopages JSX runtime module.
 
 ```typescript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'user-card': HtmlTag & UserCardProps;
-    }
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+declare module '@ecopages/jsx/jsx-runtime' {
+  interface JsxCustomIntrinsicElements {
+    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
   }
 }
 ```
+
+### Public Props vs Internal Bindings
+
+For `RadiantComponent` and `RadiantElement`, keep the public JSX attribute type
+separate from the internal reactive binding shape when those two surfaces are
+not the same.
+
+- Public props describe what consumers may pass from JSX.
+- Internal bindings describe what `this.bind(...)`, `this.bindings`, and `this.$`
+  may read inside the component.
+- Internal-only state such as `@state` fields should usually stay out of the
+  public JSX contract.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import { RadiantComponent, customElement, prop, state } from '@ecopages/radiant';
+
+export type UserCardProps = {
+  name?: string;
+  avatarUrl?: string;
+};
+
+type UserCardBindings = UserCardProps & {
+  isExpanded: boolean;
+};
+
+@customElement('user-card')
+export class UserCard extends RadiantComponent<UserCardBindings> {
+  @prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
+  @prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
+  @state isExpanded = false;
+
+  toggleExpanded = () => {
+    this.isExpanded = !this.isExpanded;
+  };
+
+  override render() {
+    return (
+      <article>
+        <h2>{this.$.name}</h2>
+        {this.avatarUrl && <img src={this.avatarUrl} alt="" />}
+        <button type="button" on:click={this.toggleExpanded}>
+          {this.$.isExpanded ? 'Hide details' : 'Show details'}
+        </button>
+      </article>
+    );
+  }
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+  interface JsxCustomIntrinsicElements {
+    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+  }
+}
+```
+
+In this pattern:
+
+- `UserCardProps` is the external API used by JSX consumers.
+- `UserCardBindings` includes both public props and internal reactive state.
+- `isExpanded` is available inside the component through `this.$.isExpanded`, but
+  consumers cannot pass `<user-card isExpanded />` unless you intentionally add
+  that field to the public props type.
+
+If the public props and internal reactive members are intentionally the same
+surface, reusing one shared type is fine. Split them only when the external API
+should be narrower or more stable than the internal state.
 
 ## Technical Tips
 

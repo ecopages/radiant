@@ -1,0 +1,134 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+  title: 'Docs | RadiantComponent',
+  description: 'RadiantComponent is the JSX-first base class for Radiant custom elements.',
+})
+
+# RadiantComponent
+---
+
+`RadiantComponent` is the JSX-first base class in Radiant.
+
+It extends `RadiantElement` and adds the host render loop that connects `render()` to the `@ecopages/jsx` DOM and SSR renderers.
+
+Use it when the custom element itself should:
+
+- describe its host view with JSX
+- rerender through `update()`
+- hydrate SSR output in place
+- expose reactive JSX bindings by default for `@prop`, `@state`, `createReactiveProp(...)`, and `createReactiveField(...)`
+
+## Example
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantComponent, customElement, onUpdated, prop, state } from '@ecopages/radiant';
+
+type CounterCardBindings = {
+	count: number;
+	label: string;
+};
+
+@customElement('counter-card')
+export class CounterCard extends RadiantComponent<CounterCardBindings> {
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+	@state label = 'Counter';
+
+	@onUpdated(['count', 'label'])
+	override update(): void {
+		super.update();
+	}
+
+	private increment = () => {
+		this.count += 1;
+	};
+
+	override render() {
+		return (
+			<section>
+				<h2>{this.$.label}</h2>
+				<p>Count: {this.$.count}</p>
+				<button type="button" on:click={this.increment}>
+					Increment
+				</button>
+			</section>
+		);
+	}
+}
+```
+
+## Typing Public Props vs Internal Bindings
+
+The generic on `RadiantComponent<Bindings>` describes the component's internal
+bindable surface, not the public JSX attribute contract by default.
+
+Use a separate public props type when consumers should only see a subset of the
+reactive members exposed inside the component.
+
+- Public props: what `<my-element ... />` may pass.
+- Bindings: what `this.$.key`, `this.bindings.key`, and `this.bind('key')` may read.
+
+See [Best Practices](/docs/getting-started/best-practices) for the canonical
+`Props` plus `Bindings` pattern.
+
+## How It Works Behind The Scenes
+
+`RadiantComponent` adds four key behaviors on top of `RadiantElement`.
+
+### 1. First Connect Is Deferred To A Microtask
+
+On `connectedCallback()`, the component waits one microtask before the first render.
+
+That gives decorators, inherited setup, and context wiring a chance to finish before the initial JSX pass runs.
+
+### 2. Hydration And Client Render Share The Same `render()` Output
+
+On first connect, Radiant checks whether the host already contains hydration markers.
+
+- If markers exist, it calls `hydrate()` and reconnects listeners and property bindings onto the SSR DOM.
+- If markers do not exist, it calls `update()` and mounts fresh client DOM.
+
+In both cases the source of truth is still `render()`.
+
+### 3. `update()` Is Explicit
+
+`render()` only describes the view. It does not mutate the DOM by itself.
+
+`update()` runs the DOM renderer against the host element, and rerenders remain explicit. That is why decorators such as `@onUpdated(...)` or `@contextSelector(...)` usually call `this.update()` after state changes.
+
+### 4. Reactive JSX Bindings Default To On
+
+`RadiantComponent` overrides the host binding policy inherited from `RadiantElement`.
+
+That means when you omit `bind`, these APIs opt into JSX bindings automatically:
+
+- `@prop(...)`
+- `@state`
+- `createReactiveProp(...)`
+- `createReactiveField(...)`
+
+So `this.$.count`, `this.bindings.count`, and `this.bind('count')` are available by default for component-style hosts.
+
+## SSR Helpers
+
+`RadiantComponent` also exposes SSR helpers:
+
+- `renderToString(...)` serializes only the current view returned by `render()`.
+- `renderHostToString(...)` serializes the custom-element host plus the current view.
+- `renderHost()` returns the same host output as a JSX renderable.
+
+Use those methods when you need the host element and view to stay aligned across server and client rendering.
+
+## Relationship To RadiantElement
+
+`RadiantComponent` is not a replacement for `RadiantElement`. It is the JSX-host layer built on top of it.
+
+- `RadiantElement` is still the base for lower-level custom elements.
+- `RadiantElement` custom elements can still be rendered inside JSX trees.
+- `RadiantComponent` is what you extend when the host itself should own a JSX view.
+
+See [RadiantElement](/docs/core/radiant-element) and [Todo App](/docs/examples/todo-app).

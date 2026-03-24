@@ -35,7 +35,10 @@ export const docsConfig: DocsConfig = {
 		{
 			name: 'Core',
 			subdirectory: 'core',
-			pages: [{ title: 'RadiantElement', slug: 'radiant-element' }],
+			pages: [
+				{ title: 'RadiantElement', slug: 'radiant-element' },
+				{ title: 'RadiantComponent', slug: 'radiant-component' },
+			],
 		},
 		{
 			name: 'Decorators',
@@ -47,9 +50,9 @@ export const docsConfig: DocsConfig = {
 				{ title: '@event', slug: 'event' },
 				{ title: '@onEvent', slug: 'on-event' },
 				{ title: '@onUpdated', slug: 'on-updated' },
+				{ title: '@prop', slug: 'prop' },
 				{ title: '@query', slug: 'query' },
-				{ title: '@reactiveProp', slug: 'reactive-prop' },
-				{ title: '@reactiveField', slug: 'reactive-field' },
+				{ title: '@state', slug: 'state' },
 			],
 		},
 		{
@@ -61,11 +64,6 @@ export const docsConfig: DocsConfig = {
 				{ title: '@consumeContext', slug: 'consume-context' },
 				{ title: '@contextSelector', slug: 'context-selector' },
 			],
-		},
-		{
-			name: 'Mixins',
-			subdirectory: 'mixins',
-			pages: [{ title: 'WithKita', slug: 'with-kita' }],
 		},
 		{
 			name: 'Tools',

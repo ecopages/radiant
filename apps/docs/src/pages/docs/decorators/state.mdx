@@ -1,0 +1,70 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+  title: 'Docs | @state',
+  description: 'Use @state for internal reactive component state.',
+})
+
+# @state
+
+`@state` is the preferred name for internal reactive state in Radiant.
+
+Use it for values that should trigger updates but are not part of the custom element's public attribute API.
+
+## Example
+
+```typescript
+import { RadiantComponent, customElement, onEvent, state } from '@ecopages/radiant';
+
+@customElement('counter-display')
+export class CounterDisplay extends RadiantComponent {
+	@state count = 0;
+
+	@onEvent({ selector: 'button', type: 'click' })
+	increment() {
+		this.count += 1;
+		this.update();
+	}
+
+	override render() {
+		return (
+			<div>
+				<p>Count: {this.$.count}</p>
+				<button type="button">Increment</button>
+			</div>
+		);
+	}
+}
+```
+
+## How It Works Behind The Scenes
+
+`@state` is a semantic alias for `@reactiveField`.
+
+Under the hood it still registers a reactive field on the host and triggers `notifyUpdate(...)` when the field changes.
+
+The difference is naming and intent:
+
+- `@prop(...)` describes public external input.
+- `@state` describes internal mutable state.
+
+That split matters in docs, code review, and JSX typing because it keeps the public element contract separate from implementation-only state.
+
+## JSX Binding Defaults
+
+Just like `@prop(...)`, the default binding policy depends on the host type when `bind` is omitted.
+
+- `RadiantComponent` enables bindings automatically.
+- `RadiantElement` keeps bindings opt-in.
+
+So `@state count = 0` on `RadiantComponent` gives you `this.$.count` automatically, while a plain `RadiantElement` only gets a companion binding when you opt in explicitly.
+
+## When To Use It
+
+- Use `@state` for local UI state.
+- Use `@prop(...)` for public element API.
+- Use `@reactiveField` only when you need to discuss the lower-level primitive directly.
+
+See [@prop](/docs/decorators/prop) and [RadiantComponent](/docs/core/radiant-component).

@@ -42,11 +42,3 @@ export class RadiantSwitch extends RadiantElement {
 		this.switch.setAttribute('aria-checked', String(this.checked));
 	}
 }
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-switch': RadiantSwitchProps & HtmlTag;
-		}
-	}
-}

@@ -1,4 +1,4 @@
-import { Banner } from '@/components/banner/banner.kita';
+import { Banner } from '@/components/banner/banner';
 import { docsConfig } from '@/data/docs-config';
 import { BaseLayout } from '@/layouts/base-layout';
 import type { EcoComponent } from '@ecopages/core';
@@ -167,7 +167,7 @@ const DocsNavigation = () => {
 						<li>
 							<div class="docs-layout__nav-group">
 								<span class="docs-layout__nav-group-icon">{getGroupIcon(group.name)}</span>
-								<span safe>{group.name}</span>
+								<span>{group.name}</span>
 							</div>
 							<ul class="docs-layout__nav-group-list">
 								{group.pages.map((page) => {
@@ -176,7 +176,7 @@ const DocsNavigation = () => {
 										: `${docsConfig.settings.rootDir}/${page.slug}`;
 									return (
 										<li>
-											<a href={href} data-nav-link safe>
+											<a href={href} data-nav-link>
 												{page.title}
 											</a>
 										</li>

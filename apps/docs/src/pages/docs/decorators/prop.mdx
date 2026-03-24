@@ -1,0 +1,86 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+  title: 'Docs | @prop',
+  description: 'Use @prop for public reactive custom-element props.',
+})
+
+# @prop
+
+`@prop(...)` is the public, component-oriented name for Radiant reactive properties.
+
+Use it for values that belong to the custom element's external API and may need attribute sync, type conversion, reflection, or JSX bindings.
+
+## Example
+
+```typescript
+import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+
+@customElement('user-card')
+export class UserCard extends RadiantComponent {
+	@prop({ type: String }) declare name: string;
+	@prop({ type: Number, defaultValue: 0 }) declare visits: number;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare active: boolean;
+}
+```
+
+## Options
+
+| Option | Type | Description |
+| :----- | :--- | :---------- |
+| `type` | `String \| Number \| Boolean \| Object \| Array` | Attribute conversion strategy. |
+| `reflect` | `boolean` | Reflect property changes back to the host attribute. |
+| `attribute` | `string` | Override the attribute name. |
+| `defaultValue` | `T` | Default property value when the attribute is absent. |
+| `bind` | `boolean \| string` | Expose a JSX binding companion such as `$count` or a custom binding name. |
+
+## How It Works Behind The Scenes
+
+`@prop(...)` is a semantic alias for `@reactiveProp(...)`.
+
+That means it still uses the same reactive-property machinery underneath:
+
+- reads the attribute into the declared property type
+- writes the property back through the converter when reflection is enabled
+- stores reactive metadata for SSR host serialization
+- triggers `notifyUpdate(...)` when the value changes
+- can expose a subscribable JSX binding companion
+
+The newer name exists to make the public component model clearer: this is a **prop**, not an internal implementation field.
+
+## JSX Binding Defaults
+
+The `bind` option depends on the host base class when you omit it.
+
+- On `RadiantComponent`, bindings are enabled by default.
+- On `RadiantElement`, bindings stay opt-in by default.
+
+So this:
+
+```typescript
+class CounterCard extends RadiantComponent {
+	@prop({ type: Number, defaultValue: 0 }) count!: number;
+}
+```
+
+automatically gives you `this.$.count` and `this.bindings.count`.
+
+But this:
+
+```typescript
+class CounterElement extends RadiantElement {
+	@prop({ type: Number, defaultValue: 0 }) count!: number;
+}
+```
+
+does not create a JSX binding unless you opt in with `bind: true`.
+
+## When To Use It
+
+- Use `@prop(...)` for public custom-element API.
+- Use `@state` for internal mutable component state.
+- Use `@reactiveProp(...)` only when you want to talk about the lower-level primitive explicitly.
+
+See [@state](/docs/decorators/state) and [RadiantComponent](/docs/core/radiant-component).

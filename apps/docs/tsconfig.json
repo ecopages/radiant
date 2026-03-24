@@ -6,18 +6,13 @@
 		"experimentalDecorators": true,
 		"forceConsistentCasingInFileNames": true,
 		"jsx": "react-jsx",
-		"jsxImportSource": "@kitajs/html",
+		"jsxImportSource": "@ecopages/jsx",
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"noImplicitOverride": true,
 		"paths": {
 			"@/*": ["./src/*"]
 		},
-		"plugins": [
-			{
-				"name": "@kitajs/ts-html-plugin"
-			}
-		],
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"strict": true,

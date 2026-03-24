@@ -1,4 +1,4 @@
-import { Seo } from '@/includes/seo.kita';
+import { Seo } from '@/includes/seo';
 import type { EcoComponent, PageHeadProps } from '@ecopages/core';
 
 export const Head: EcoComponent<PageHeadProps> = ({ metadata, children }) => {
@@ -8,7 +8,7 @@ export const Head: EcoComponent<PageHeadProps> = ({ metadata, children }) => {
 			<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 			<Seo {...metadata} />
-			{children as 'safe'}
+			{children}
 		</head>
 	);
 };

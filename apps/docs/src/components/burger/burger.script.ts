@@ -30,11 +30,3 @@ export class RadiantCounter extends RadiantElement {
 		window.dispatchEvent(new CustomEvent(BurgerEvents.CLOSE_MENU));
 	}
 }
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-burger': HtmlTag;
-		}
-	}
-}

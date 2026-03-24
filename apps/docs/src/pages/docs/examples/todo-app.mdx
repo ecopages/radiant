@@ -17,9 +17,14 @@ export const getMetadata = () => ({
 # Radiant Todo App
 ---
 
-The `RadiantTodoApp` component is a simple todo app that uses the `ContextProvider` to share the data between components.
+The `RadiantTodoApp` component is a simple todo app that uses the `ContextProvider` to share data between components.
 
-In this example we are using `WithKita` mixin to use JSX in our components.
+In this example `RadiantComponent` owns the host JSX view, while `RadiantElement` still appears inside that JSX tree through the `radiant-todo-item` custom element.
+
+That split is important:
+
+- `RadiantTodoApp` extends `RadiantComponent` because the host itself renders JSX through `render()`.
+- `RadiantTodoItem` extends `RadiantElement` because it is a lower-level custom element that receives props, light-DOM children, and events from the JSX tree.
 
 The features of this todo app are:
 
@@ -34,13 +39,13 @@ Also if the list of the features seems not to be so big, there is a lot of conce
 
 Let's check it together.
 
-<RadiantTodoApp count={5} />
+<RadiantTodoApp />
 
 ## Jsx Markup
 
 This is the jsx markup of the `RadiantTodoApp` component.
 
-In this component we have a form to add a new todo, two sections to show the todos and completed todos, and a script tag to hydrate the context.
+In the server-rendered markup we have a form to add a new todo, two sections to show the todos and completed todos, and a script tag to hydrate the context.
 
 The `hydrate` attribute is used to merge the data from the server with the initial value of the context, please read the [provideContext](/docs/context/provide-context) documentation to understand how it works.
 
@@ -55,9 +60,9 @@ const TodoPanel = ({
 }: { title: string; count: number; children: JSX.Element; ref: string }) => {
   return (
     <article class="todo__panel">
-      <h2 safe>{title}</h2>
+      <h2>{title}</h2>
       <p class="todo__count">
-        {title as 'safe'}: <span data-ref={`count-${ref}`}>{count}</span>
+        {title}: <span data-ref={`count-${ref}`}>{count}</span>
       </p>
       <div class="todo__list" data-ref={`list-${ref}`}>
         {children}
@@ -78,30 +83,29 @@ const TodoForm = () => {
   );
 };
 
-export const RadiantTodoApp = async () => {
-  const data = await getData();
-  const incompleteTodos = data.todos.filter((todo) => !todo.complete);
-  const completedTodos = data.todos.filter((todo) => todo.complete);
+export const RadiantTodoApp = ({ todos }: { todos: Todo[] }) => {
+  const incompleteTodos = todos.filter((todo) => !todo.complete);
+  const completedTodos = todos.filter((todo) => todo.complete);
   return (
-    <>
-      <radiant-todo-app class="todo">
-        <section class="todo__board">
-          <TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
-            {incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
-          </TodoPanel>
-          <TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
-            {completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
-          </TodoPanel>
-        </section>
-        <TodoForm />
-        <script type="json" data-hydration>
-          {stringifyTyped<Partial<TodoContext>, string>({ todos: data.todos })}
-        </script>
-      </radiant-todo-app>
-    </>
+    <radiant-todo-app class="todo">
+      <section class="todo__board">
+        <TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
+          {incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
+        </TodoPanel>
+        <TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
+          {completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
+        </TodoPanel>
+      </section>
+      <TodoForm />
+      <script type="json" data-hydration>
+        {stringifyTyped<Partial<TodoContext>, string>({ todos })}
+      </script>
+    </radiant-todo-app>
   );
 };
 ```
+
+The docs app currently fetches the initial todo list before this JSX runs and passes the resolved data in. That keeps the JSX component itself synchronous, which matches the current `@ecopages/jsx` runtime model on both the server and client.
 
 ## Typescript
 
@@ -109,25 +113,24 @@ In this first snippet we have the `radiant-todo-app` component that is responsib
 
 The features used in this component are:
 
-- `@query` decorator to query for the elements inside the component that uses the `data-ref` attribute
 - `@provideContext` decorator to provide the context to the children components
 - `@onEvent` decorator to listen for the form submit event
-- `@contextSelector` decorator to select the todos based on the complete status
-- `renderTemplate` method to render the templates. Here we are using WithKita mixin to render the JSX templates
+- `@contextSelector` decorator to schedule a rerender when the todo context changes
+- `render()` method to describe the JSX view directly from the component state and context
 
 ```typescript
 import {
   type ContextProvider,
+  RadiantComponent,
   RadiantElement,
-  WithKita,
   consumeContext,
   contextSelector,
   createContext,
   customElement,
   onEvent,
+  prop,
   provideContext,
   query,
-  reactiveProp,
 } from '@ecopages/radiant';
 
 import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
@@ -152,12 +155,7 @@ class Logger {
 }
 
 @customElement('radiant-todo-app')
-export class RadiantTodoApp extends WithKita(RadiantElement) {
-  @query({ ref: 'list-complete' }) listComplete!: HTMLElement;
-  @query({ ref: 'list-incomplete' }) listIncomplete!: HTMLElement;
-  @query({ ref: 'count-complete' }) countComplete!: HTMLElement;
-  @query({ ref: 'count-incomplete' }) countIncomplete!: HTMLElement;
-
+export class RadiantTodoApp extends RadiantComponent {
   @provideContext<typeof todoContext>({
     context: todoContext,
     initialValue: { todos: [], logger: new Logger() },
@@ -180,43 +178,51 @@ export class RadiantTodoApp extends WithKita(RadiantElement) {
     }
   }
 
-  @contextSelector({
-    context: todoContext,
-    select: ({ todos }) => ({
-      todosCompleted: todos.filter((todo) => todo.complete),
-      todosIncomplete: todos.filter((todo) => !todo.complete),
-    }),
-  })
-  onTodosUpdated({ todosCompleted, todosIncomplete }: Record<string, TodoContext['todos']>) {
-    const todosMapping = [
-      { todos: todosCompleted, list: this.listComplete, noTodosMessage: <NoTodosMessage /> },
-      { todos: todosIncomplete, list: this.listIncomplete, noTodosMessage: <NoCompletedTodosMessage /> },
-    ];
+  @contextSelector({ context: todoContext })
+  onTodosUpdated() {
+    this.update();
+  }
 
-    for (const { todos, list, noTodosMessage } of todosMapping) {
-      if (todos.length === 0) {
-        this.renderTemplate({
-          target: list,
-          template: noTodosMessage,
-        });
-      } else {
-        this.renderTemplate({
-          target: list,
-          template: <TodoList todos={todos} />,
-        });
-      }
-    }
+  override render() {
+    const todos = this.provider.getContext().todos;
+    const todosCompleted = todos.filter((todo) => todo.complete);
+    const todosIncomplete = todos.filter((todo) => !todo.complete);
 
-    this.countComplete.textContent = todosCompleted.length.toString();
-    this.countIncomplete.textContent = todosIncomplete.length.toString();
+    return (
+      <>
+        <section class="todo__board">
+          <article class="todo__panel">
+            <h2>Incomplete Todos</h2>
+            <p class="todo__count">Incomplete Todos: <span data-ref="count-incomplete">{todosIncomplete.length}</span></p>
+            <div class="todo__list" data-ref="list-incomplete">
+              {todosIncomplete.length > 0 ? <TodoList todos={todosIncomplete} /> : <NoTodosMessage />}
+            </div>
+          </article>
+          <article class="todo__panel">
+            <h2>Completed Todos</h2>
+            <p class="todo__count">Completed Todos: <span data-ref="count-complete">{todosCompleted.length}</span></p>
+            <div class="todo__list" data-ref="list-complete">
+              {todosCompleted.length > 0 ? <TodoList todos={todosCompleted} /> : <NoCompletedTodosMessage />}
+            </div>
+          </article>
+        </section>
+        <form>
+          <div class="form-group">
+            <label for="new-todo">Add Todo</label>
+            <input id="new-todo" name="todo" />
+          </div>
+          <button type="submit">Add</button>
+        </form>
+      </>
+    );
   }
 }
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'radiant-todo-app': HtmlTag;
-    }
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+declare module '@ecopages/jsx/jsx-runtime' {
+  interface JsxCustomIntrinsicElements {
+    'radiant-todo-app': JsxCustomElementAttributes<HTMLElement>;
   }
 }
 ```
@@ -226,7 +232,7 @@ In this second snippet we have the `radiant-todo-item` component that is respons
 The features used in this component are:
 
 - `@query` decorator to query for the checkbox element
-- `@reactiveProp` decorator to define the complete attribute
+- `@prop` decorator to define the complete attribute
 - `@consumeContext` decorator to consume the context from the parent component
 
 ```typescript
@@ -235,10 +241,9 @@ export type RadiantTodoProps = {
 };
 
 @customElement('radiant-todo-item')
-export class RadiantTodoItem extends WithKita(RadiantElement) {
+export class RadiantTodoItem extends RadiantElement {
   @query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
-  @query({ selector: 'button' }) removeButton!: HTMLButtonElement;
-  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
+  @prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
   @consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
   override connectedCallback(): void {
@@ -273,20 +278,22 @@ export class RadiantTodoItem extends WithKita(RadiantElement) {
   }
 }
 
-declare global {
-    namespace JSX {
-      interface IntrinsicElements {
-        'radiant-todo-item': HtmlTag & RadiantTodoProps;
-      }
-    }
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+declare module '@ecopages/jsx/jsx-runtime' {
+  interface JsxCustomIntrinsicElements {
+    'radiant-todo-item': JsxCustomElementAttributes<HTMLElement, RadiantTodoProps>;
+  }
 }
 ```
 
 Finally, in this last snippet we have the `NoTodosMessage`, `NoCompletedTodosMessage`, `TodoItem` and `TodoList` components.
 
-Theses components are responsible for rendering the messages when there are no todos to show, the todo item and the todo list.
+These components are responsible for rendering the messages when there are no todos to show, the todo item and the todo list.
 
-They are used both in the initial markup and in the custom elements.
+They are used both in the initial markup and in the component rerender path.
+
+Notice that `TodoItem` returns `<radiant-todo-item ...>` directly. That is the proof point that a `RadiantElement` custom element still works inside the JSX tree rendered by `RadiantComponent`.
 
 ```tsx
 import type { Todo } from './radiant-todo-app.script';
@@ -302,7 +309,7 @@ export const NoCompletedTodosMessage = () => {
 export const TodoItem = ({ id, complete, text }: Todo) => {
     return (
       <radiant-todo-item complete={complete} class="todo__item" id={id}>
-        {text as 'safe'}
+        {text}
         <span>
           <input type="checkbox" checked={complete} />
         </span>

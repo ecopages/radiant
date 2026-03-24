@@ -40,11 +40,3 @@ export class RadiantCounter extends RadiantElement {
 		this.classList.add('hidden');
 	}
 }
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-navigation': HtmlTag;
-		}
-	}
-}

@@ -55,11 +55,3 @@ export class ThemeToggle extends RadiantSwitch {
 		}
 	}
 }
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'theme-toggle': RadiantSwitchProps & HtmlTag;
-		}
-	}
-}

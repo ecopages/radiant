@@ -30,9 +30,9 @@ const TodoPanel = ({
 }) => {
 	return (
 		<article class="todo__panel">
-			<h2 safe>{title}</h2>
+			<h2>{title}</h2>
 			<p class="todo__count">
-				{title as 'safe'}: <span data-ref={`count-${ref}`}>{count}</span>
+				{title}: <span data-ref={`count-${ref}`}>{count}</span>
 			</p>
 			<div class="todo__list" data-ref={`list-${ref}`}>
 				{children}

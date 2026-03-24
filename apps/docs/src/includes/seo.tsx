@@ -12,17 +12,17 @@ export function Seo({
 }: PageMetadataProps) {
 	return (
 		<>
-			<title safe>{title}</title>
+			<title>{title}</title>
 			<link rel="icon" type="image/x-icon" href="/public/assets/favicon.svg" />
 			<link rel="robots" href="/robots.txt" />
 			<meta name="description" content={description} />
-			{keywords?.length ? ((<meta name="keywords" content={keywords.join(',')} />) as 'safe') : null}
+			{keywords?.length ? <meta name="keywords" content={keywords.join(',')} /> : null}
 			<meta property="og:title" content={title} />
 			<meta property="og:description" content={description} />
 			<meta property="og:image" content={withBaseUrl(image)} />
 			<meta name="twitter:title" content={title} />
 			<meta name="twitter:description" content={description} />
-			{url ? ((<link rel="canonical" href={withBaseUrl(url)} />) as 'safe') : null}
+			{url ? <link rel="canonical" href={withBaseUrl(url)} /> : null}
 		</>
 	);
 }

@@ -30,11 +30,3 @@ export class RadiantCounter extends RadiantElement {
 		this.dispatchEvent(new Event('change'));
 	}
 }
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-counter': HtmlTag & RadiantCounterProps;
-		}
-	}
-}

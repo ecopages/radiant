@@ -1,5 +1,5 @@
 import type { EcoComponent } from '@ecopages/core';
-import { SwitchContent } from '../switch/switch.kita';
+import { SwitchContent } from '../switch/switch';
 import type { RadiantSwitchProps } from '../switch/switch.script';
 
 export const ThemeToggle: EcoComponent<
