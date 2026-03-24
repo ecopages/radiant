@@ -1,28 +1,30 @@
 import type { Placement } from '@floating-ui/dom';
-import { PlaygroundSection } from './components/playground-section/playground-section.kita.tsx';
-import { RadiantAccordion } from './components/accordion/accordion.kita.tsx';
-import { RadiantDropdown } from './components/dropdown/dropdown.kita.tsx';
-import { RadiantCounter } from './components/radiant-counter/radiant-counter.kita.tsx';
-import { RadiantEvent } from './components/radiant-event/radiant-event.kita.tsx';
-import { RadiantRefs } from './components/radiant-refs/radiant-refs.kita.tsx';
-import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.kita.tsx';
+import { createRoot } from '@ecopages/jsx';
+import { PlaygroundSection } from './components/playground-section/playground-section';
+import { RadiantAccordion } from './components/accordion/accordion';
+import { RadiantDropdown } from './components/dropdown/dropdown';
+import { RadiantCounter } from './components/radiant-counter/radiant-counter';
+import { RadiantEvent } from './components/radiant-event/radiant-event';
+import { RadiantRefs } from './components/radiant-refs/radiant-refs.view';
+import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.view';
 import { ValueTester } from './components/value-tester/value-tester.script.tsx';
 import './styles/tailwind.css';
 
 const appRoot = document.querySelector<HTMLDivElement>('#app');
+const root = appRoot ? createRoot(appRoot) : null;
 
 const changePlacement = (newPlacement: Placement) => {
 	document.querySelector('radiant-dropdown')?.setAttribute('placement', newPlacement);
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+const attachPlacementListener = () => {
 	document.querySelector('#placement')?.addEventListener('change', (e: Event) => {
 		const target = e.target as HTMLSelectElement;
 		changePlacement(target.value as Placement);
 	});
-});
+};
 
-const App = async () => {
+const App = () => {
 	return (
 		<main class="mx-auto flex flex-col max-w-[800px] gap-[2rem] px-[1.5rem] py-[2rem] pb-[4rem]">
 			<h1 class="text-[2.25rem] font-semibold tracking-tight text-[#020617] mb-[1rem] mt-[2rem] leading-[1.2]">
@@ -108,10 +110,17 @@ const App = async () => {
 	);
 };
 
-const renderApp = async () => {
-	if (appRoot) {
-		appRoot.innerHTML = await (<App />);
+const renderApp = () => {
+	if (!root) {
+		return;
 	}
+
+	root.render(<App />);
+	attachPlacementListener();
 };
 
-renderApp();
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', renderApp, { once: true });
+} else {
+	renderApp();
+}

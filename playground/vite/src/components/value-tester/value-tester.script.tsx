@@ -114,9 +114,4 @@ export const ValueTester = ({ number, string, boolean, object, array }: RadiantV
 };
 
 declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-tester': HtmlTag & RadiantValueTesterProps;
-		}
-	}
 }

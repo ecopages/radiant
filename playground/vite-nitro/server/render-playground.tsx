@@ -3,7 +3,7 @@ import { renderToString } from '@ecopages/jsx';
 import '../src/components/radiant-component-counter.script';
 import '../src/components/radiant-context-flow-shell.script';
 import '../src/components/radiant-component-server-card.script';
-import type { RadiantComponentCounterElement } from '../src/components/radiant-component-counter.script';
+import type { RadiantComponentCounter } from '../src/components/radiant-component-counter.script';
 import type { RadiantComponentServerCardElement } from '../src/components/radiant-component-server-card.script';
 import { createInitialPlaygroundState, renderPlaygroundView, type PlaygroundCallbacks } from '../src/playground-view';
 import {
@@ -24,11 +24,11 @@ export async function getSsrCounterPayload(): Promise<SsrComponentPayload> {
 }
 
 export async function getSsrCounterRender(): Promise<SsrComponentRender> {
-	return renderSsrRadiantComponent<RadiantComponentCounterElement>({
+	return renderSsrRadiantComponent<RadiantComponentCounter>({
 		load: async () => {
-			const { RadiantComponentCounterElement } =
+			const { RadiantComponentCounter: RadiantCounterComponent } =
 				await import('../src/components/radiant-component-counter.script');
-			return RadiantComponentCounterElement;
+			return RadiantCounterComponent;
 		},
 		configure: (component) => {
 			component.count = 6;

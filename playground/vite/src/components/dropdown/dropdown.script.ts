@@ -127,9 +127,4 @@ export class RadiantDropdown extends RadiantElement {
 }
 
 declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-dropdown': HtmlTag & RadiantDropdownProps;
-		}
-	}
 }

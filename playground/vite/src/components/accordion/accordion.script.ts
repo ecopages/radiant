@@ -167,9 +167,4 @@ export class RadiantAccordion extends RadiantElement {
 }
 
 declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-accordion': HtmlTag & RadiantAccordionProps;
-		}
-	}
 }

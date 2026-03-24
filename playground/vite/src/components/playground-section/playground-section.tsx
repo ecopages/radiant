@@ -1,10 +1,11 @@
+import type { JsxRenderable } from '@ecopages/jsx';
 import type { WithChildren } from '../../types';
 
 type PlaygroundSectionProps = WithChildren<{
 	badge?: string;
 	title: string;
 	description?: string;
-	actions?: JSX.Element | JSX.Element[];
+	actions?: JsxRenderable;
 }>;
 
 export const PlaygroundSection = ({ badge, title, description, actions, children }: PlaygroundSectionProps) => {

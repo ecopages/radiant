@@ -9,6 +9,7 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
 		"@floating-ui/dom": "^1.6.11"
 	},

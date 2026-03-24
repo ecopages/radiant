@@ -1,1 +1,1 @@
-export * from './radiant-todo-app.kita';
+export * from './radiant-todo-app.view';

@@ -1,4 +1,4 @@
-import type { JsxChild } from '@ecopages/jsx';
+import type { JsxRenderable } from '@ecopages/jsx';
 
 export type SsrComponentPayload = {
 	generatedAt: string;
@@ -24,7 +24,7 @@ export type PlaygroundCallbacks = {
 };
 
 export type PlaygroundViewOptions = {
-	ssrPreviewContent?: JsxChild;
+	ssrPreviewContent?: JsxRenderable;
 };
 
 export function encodePlaygroundState(state: PlaygroundState): string {

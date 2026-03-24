@@ -1,4 +1,4 @@
-import type { JsxElement } from '@ecopages/jsx';
+import type { JsxRenderable } from '@ecopages/jsx';
 import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
 
 /**
@@ -15,14 +15,14 @@ export type SsrComponentPayload = {
  * when composing the server-rendered playground page.
  */
 export type SsrComponentRender = SsrComponentPayload & {
-	preview: JsxElement;
+	preview: JsxRenderable;
 };
 
 /**
  * Minimal component contract required by the shared Nitro SSR helper.
  */
 export type SsrRenderableComponent = {
-	renderHost: () => JsxElement;
+	renderHost: () => JsxRenderable;
 	renderHostToString: (options?: { hydrate?: boolean }) => string;
 };
 

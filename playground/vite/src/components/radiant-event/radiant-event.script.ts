@@ -75,13 +75,4 @@ declare global {
 	interface HTMLElementEventMap {
 		[RadiantEventEvents.CustomEvent]: CustomEvent<RadiantEventDetail>;
 	}
-
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-event-emitter': HtmlTag;
-			'radiant-event-listener': HtmlTag;
-			'radiant-keyboard-keys': HtmlTag;
-			'radiant-sizer': HtmlTag;
-		}
-	}
 }
