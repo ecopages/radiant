@@ -32,7 +32,6 @@
 	"devDependencies": {
 		"@types/bun": "latest",
 		"@vitest/browser": "^3.2.4",
-		"lit": "^3.3.2",
 		"mitata": "^1.0.34",
 		"playwright": "^1.52.0",
 		"tsx": "^4.20.6",

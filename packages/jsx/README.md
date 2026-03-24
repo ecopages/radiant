@@ -24,7 +24,7 @@ Use `@ecopages/jsx` for JSX syntax, typings, and the automatic runtime entry poi
 - `classes` support with `clsx`/`classnames`-style merging
 - array-based `class` values with falsy entries removed
 - string or object-based `style` values
-- a Lit-compatible template result shape
+- a renderer-agnostic template result shape consumed by Radiant's DOM and SSR renderers
 
 This package does not provide component state, hooks, or a standalone renderer. Those come from Radiant.
 
@@ -64,11 +64,11 @@ Configure TypeScript to use `@ecopages/jsx` as the JSX import source.
 
 ## Quick Start With Radiant
 
-The most direct way to render JSX in a Radiant component is to extend `RadiantElementJsx`.
+The most direct way to render JSX in a Radiant component is to extend `RadiantComponent`.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
-import { RadiantElementJsx, customElement, reactiveProp } from '@ecopages/radiant';
+import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
 
 const CounterButton = ({ label, onPress }: { label: string; onPress: (event: MouseEvent) => void }) => (
 	<button type="button" on:click={onPress} aria={{ label }}>
@@ -77,33 +77,26 @@ const CounterButton = ({ label, onPress }: { label: string; onPress: (event: Mou
 );
 
 @customElement('radiant-counter')
-export class RadiantCounter extends RadiantElementJsx {
-	@reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
-
-	override connectedCallback() {
-		super.connectedCallback();
-		this.renderView();
-	}
+export class RadiantCounter extends RadiantComponent {
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
 
 	private readonly increment = () => {
 		this.count += 1;
-		this.renderView();
 	};
 
 	private readonly decrement = () => {
 		this.count -= 1;
-		this.renderView();
 	};
 
-	private renderView() {
-		this.render(
+	override render() {
+		return (
 			<section class="counter" data={{ state: this.count > 0 ? 'active' : 'idle' }}>
 				<h2>Count: {this.count}</h2>
 				<div class="controls">
 					<CounterButton label="Decrement" onPress={this.decrement} />
 					<CounterButton label="Increment" onPress={this.increment} />
 				</div>
-			</section>,
+			</section>
 		);
 	}
 }
@@ -136,6 +129,30 @@ const view = (
 );
 ```
 
+### Custom Elements
+
+When `jsxImportSource` points at `@ecopages/jsx`, custom element tag typing
+should augment the runtime module instead of the global `JSX` namespace.
+
+```tsx
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+type UserCardProps = {
+	name: string;
+	isAdmin: boolean;
+};
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+	}
+}
+```
+
+`JsxCustomElementAttributes<...>` combines the Ecopages intrinsic host
+attributes with `Partial<Props>`, so JSX call sites can provide only the props
+they need while still getting type checking for known keys.
+
 ### Plain Function Components
 
 Function components are part of the runtime today. They receive props and children and return JSX values.
@@ -143,7 +160,7 @@ Function components are part of the runtime today. They receive props and childr
 ```tsx
 type CardProps = {
 	title: string;
-	children?: import('@ecopages/jsx').JsxChild;
+	children?: import('@ecopages/jsx').JsxRenderable;
 };
 
 const Card = ({ title, children }: CardProps) => (
@@ -176,6 +193,7 @@ Use `on:*` to bind native DOM listeners.
 ```
 
 The handler type is bivariant and receives an event whose `currentTarget` matches the bound element type.
+Each rendered element gets its own native listener attachment. Rendering the same function component multiple times does not mix handlers: closures declared inside the component stay per invocation, and a rerender only swaps the listener when the handler reference changes. You only need `.bind(...)` when you intentionally need a specific `this` value.
 
 ### Property Bindings
 
@@ -235,19 +253,17 @@ Object-style `style` entries with `undefined`, `null`, or `''` are omitted durin
 
 ## Runtime Output
 
-`jsx()` and `jsxs()` return a renderer-agnostic object shaped like a Lit template result.
+`jsx()` and `jsxs()` return a renderer-agnostic template result consumed by the
+Radiant DOM renderer and the Radiant SSR renderer.
 
-That is why `@ecopages/jsx` can be rendered by Radiant's JSX mixin and also passes smoke tests through Lit for:
+The object carries:
 
-- intrinsic elements
-- function component composition
-- `on:*` event bindings
-- `prop:*` property bindings
-- boolean attributes
-- `data` and `aria` expansion
-- `jsxDEV` parity with the production runtime
+- static HTML string segments
+- dynamic binding values
+- a stable Radiant marker used by the runtime to recognize template results
 
-This is a compatibility boundary, not a promise that every Lit-specific feature is supported.
+This output format is an internal contract for Radiant renderers, not a public
+interop surface for third-party renderers.
 
 ## Server Rendering Performance
 
@@ -318,7 +334,7 @@ if (container instanceof HTMLElement) {
 }
 ```
 
-This is the intended escape hatch for app-level usage that does not involve `RadiantElementJsx` or `WithJsx`.
+This is the intended escape hatch for app-level usage that does not involve `RadiantComponent`.
 
 ## Exported Surface
 
@@ -334,14 +350,14 @@ The package exports:
 - `renderToString`
 - `createSubscribableJsxValue`
 - helpers including `isKeyedJsxValue` and `isSubscribableJsxValue`
-- types including `JsxChild`, `JsxComponent`, `JsxComponentProps`, `JsxElement`, `JsxFragment`, `JsxIntrinsicAttributes`, `JsxPrimitive`, `JsxRoot`, `RenderToStringOptions`, `SubscribableJsxValue`, and `TemplateResultLike`
+- types including `JsxComponent`, `JsxFragment`, `JsxIntrinsicAttributes`, `JsxPrimitive`, `JsxPropsWithChildren`, `JsxRenderable`, `JsxRoot`, `RenderToStringOptions`, `SubscribableJsxValue`, and `TemplateResultLike`
 
 The development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` for the automatic JSX transform.
 
 ## Limitations and Current Constraints
 
 - `@ecopages/jsx` only handles JSX authoring and template creation. It does not replace `@ecopages/radiant`.
-- When rendering through Radiant's `WithJsx` or `RadiantElementJsx`, JSX templates support `insert: 'replace'` only. Other insertion modes still require string templates.
+- RadiantComponent owns JSX rendering through `render()` and `update()`. Use `renderToString(...)` or `createRoot(...)` when you need lower-level control outside a component host.
 - Event bindings are native DOM listeners, not React-style synthetic events.
 - There is no hook system or component-local scheduler in this package.
 

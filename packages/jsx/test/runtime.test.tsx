@@ -72,10 +72,20 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values[0] as unknown[]).toHaveLength(1);
 	});
 
+	test('jsx drops true children the same way SSR does', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const result = jsx('div', {
+			children: ['prefix', true, 'suffix'],
+		});
+
+		expectTemplateResultLike(result);
+		expect(result.values).toEqual([['prefix', true, 'suffix']]);
+	});
+
 	test('function components receive props and children', async () => {
 		const [{ jsx, jsxs }] = await Promise.all([loadJsxRuntime()]);
 
-		const Card = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxChild }) =>
+		const Card = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxRenderable }) =>
 			jsxs('article', {
 				class: 'card',
 				children: [jsx('h2', { children: title }), children],

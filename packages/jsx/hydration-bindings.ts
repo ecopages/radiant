@@ -1,4 +1,4 @@
-import type { JsxChild, JsxElement, TemplateResultLike } from './jsx-runtime';
+import type { JsxRenderable, TemplateResultLike } from './jsx-runtime';
 
 /** Attribute prefix used for emitted SSR hydration markers. */
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';
@@ -58,7 +58,7 @@ export type HydrationBinding = {
  * @param value JSX value to inspect.
  * @returns Ordered binding map keyed by hydration binding index.
  */
-export function collectHydrationBindings(value: JsxElement): Map<number, HydrationBinding> {
+export function collectHydrationBindings(value: JsxRenderable): Map<number, HydrationBinding> {
 	const bindings = new Map<number, HydrationBinding>();
 	const state = { nextIndex: 0 };
 
@@ -184,7 +184,7 @@ function getTemplateCacheKey(strings: readonly string[]): string {
 }
 
 function collectValueBindings(
-	value: JsxChild,
+	value: JsxRenderable,
 	bindings: Map<number, HydrationBinding>,
 	state: { nextIndex: number },
 ): void {
@@ -199,7 +199,7 @@ function collectValueBindings(
 
 	if (isIterable(value)) {
 		for (const child of value) {
-			collectValueBindings(child as JsxChild, bindings, state);
+			collectValueBindings(child as JsxRenderable, bindings, state);
 		}
 	}
 }
@@ -224,7 +224,7 @@ function collectTemplateBindings(
 			continue;
 		}
 
-		collectValueBindings(template.values[index] as JsxChild, bindings, state);
+		collectValueBindings(template.values[index] as JsxRenderable, bindings, state);
 	}
 }
 
@@ -236,8 +236,7 @@ function isTemplateResultLike(value: unknown): value is TemplateResultLike {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
-		((value as Partial<TemplateResultLike>)['_$rType$'] === 1 ||
-			(value as { ['_$litType$']?: unknown })['_$litType$'] === 1) &&
+		(value as Partial<TemplateResultLike>)['_$rType$'] === 1 &&
 		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
 		Array.isArray((value as Partial<TemplateResultLike>).values)
 	);

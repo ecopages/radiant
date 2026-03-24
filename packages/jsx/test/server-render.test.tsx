@@ -25,7 +25,7 @@ describe('Radiant JSX server render', () => {
 		const [{ jsx, jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
 		const Label = ({ text }: { text: string }) => jsx('strong', { children: text });
-		const Card = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxChild }) =>
+		const Card = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxRenderable }) =>
 			jsxs('section', {
 				children: ['Hello ', jsx(Label, { text: title }), ' ', children],
 			});
@@ -45,7 +45,7 @@ describe('Radiant JSX server render', () => {
 		]);
 
 		const DeepLeaf = ({ value }: { value: string }) => jsx('em', { children: value });
-		const NestedBlock = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxChild }) =>
+		const NestedBlock = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxRenderable }) =>
 			jsxs('article', {
 				class: 'nested-block',
 				children: [jsx('h2', { children: title }), jsx('div', { class: 'nested-children', children })],
@@ -555,7 +555,7 @@ describe('Radiant JSX server render', () => {
 			const template = jsx('demo-fallback-panel', {
 				children: {
 					toString: () => 'Fallback object',
-				} as unknown as import('../jsx-runtime.ts').JsxChild,
+				} as unknown as import('../jsx-runtime.ts').JsxRenderable,
 			});
 
 			expect(renderToString(template)).toBe('<demo-fallback-panel>Fallback object</demo-fallback-panel>');

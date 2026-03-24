@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { render } from 'lit/html.js';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
 }
 
 const loadJsxRuntime = async () => loadModule<{ jsx: Function }>('../jsx-runtime.ts');
+const loadJsxModule = async () => loadModule<typeof import('../index.ts')>('../index.ts');
 
 type EventCase = {
 	readonly name: string;
@@ -228,15 +228,16 @@ const eventCases: readonly EventCase[] = [
 	},
 ];
 
-describe('Radiant JSX Lit browser interoperability event bindings', () => {
+describe('Radiant JSX browser event bindings', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 	});
 
 	for (const eventCase of eventCases) {
 		test(`on:${eventCase.name} receives the native browser event`, async () => {
-			const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+			const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 			const container = document.createElement('div');
+			const root = createRoot(container);
 			let receivedEvent: Event | undefined;
 			let receivedCurrentTarget: EventTarget | null | undefined;
 			const handler = vi.fn((event: Event) => {
@@ -244,12 +245,11 @@ describe('Radiant JSX Lit browser interoperability event bindings', () => {
 				receivedCurrentTarget = event.currentTarget;
 			});
 
-			render(
+			root.render(
 				jsx(eventCase.tagName, {
 					[`on:${eventCase.name}`]: handler,
 					children: eventCase.tagName === 'input' ? undefined : 'Event target',
 				}),
-				container,
 			);
 
 			const target = container.querySelector(eventCase.tagName) as HTMLElement | null;

@@ -1,11 +1,17 @@
+/** Numeric marker value stamped on every Radiant template result object. */
 const RADIANT_TEMPLATE_RESULT = 1;
-const LEGACY_TEMPLATE_RESULT_FIELD = '_$litType$';
+/** Key name written on all Radiant template result objects. */
 const RADIANT_TEMPLATE_RESULT_FIELD = '_$rType$';
+/** Symbol key present on every {@link KeyedJsxValue} wrapper object. */
 const KEYED_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.keyed-value');
+/** Symbol key present on every {@link SubscribableJsxValue} wrapper object. */
 const SUBSCRIBABLE_JSX_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.subscribable-value');
+/** When `true` on `globalThis`, bypasses the `document` check and forces server-side custom-element rendering. */
 const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
+/** When `true` on `globalThis`, signals that the current SSR pass should emit hydration binding markers. */
 const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
 
+/** HTML void element tag names — these elements must never receive a closing tag. */
 const voidElementNames = new Set([
 	'area',
 	'base',
@@ -23,6 +29,7 @@ const voidElementNames = new Set([
 	'wbr',
 ]);
 
+/** Well-known symbol that identifies a JSX fragment in the Radiant runtime. */
 const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
 
 import { escapeHtml } from './html-escape';
@@ -35,15 +42,13 @@ export type JsxPrimitive = boolean | bigint | number | null | string | undefined
 /**
  * A Radiant template result produced by the JSX runtime.
  *
- * The runtime keeps the Radiant marker on `_$rType$` and also writes the
- * legacy Lit-compatible marker so existing detection paths can continue to
- * recognize template results during the transition.
+ * The runtime stamps a stable Radiant marker on `_$rType$` so the client and
+ * server renderers can recognize template results without coupling JSX output
+ * to a specific external renderer.
  */
 export interface TemplateResultLike {
 	/** Stable Radiant template marker consumed by the client and server renderers. */
 	readonly ['_$rType$']: typeof RADIANT_TEMPLATE_RESULT;
-	/** Legacy compatibility marker preserved for existing Lit-style checks. */
-	readonly ['_$litType$']?: typeof RADIANT_TEMPLATE_RESULT;
 	/** Static HTML segments emitted by the JSX transform. */
 	readonly strings: TemplateStringsArray;
 	/** Dynamic values interpolated between the static string segments. */
@@ -85,7 +90,7 @@ export type JsxKey = number | string;
  */
 export interface KeyedJsxValue {
 	readonly key: JsxKey;
-	readonly value: JsxElement;
+	readonly value: JsxRenderable;
 	readonly [KEYED_VALUE_SYMBOL]: true;
 }
 
@@ -96,53 +101,39 @@ export interface KeyedJsxValue {
  * renderer keeps the mounted child range subscribed so later updates can patch
  * that range directly without requiring a parent rerender.
  */
-export interface SubscribableJsxValue {
+export interface SubscribableJsxValue<Value extends JsxRenderable = JsxRenderable> {
 	readonly [SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true;
-	getValue: () => JsxElement;
-	subscribe: (notify: (value: JsxElement) => void) => () => void;
+	getValue: () => Value;
+	subscribe: (notify: (value: Value) => void) => () => void;
 }
 
 /**
- * A value that can be returned from a JSX component.
+ * A value that can be rendered by the JSX runtime.
  *
  * Wrapper values such as keyed and subscribable children are transparent to the
  * renderer. They carry reconciliation or subscription metadata while still
  * behaving like regular child content.
  */
-export type JsxChild =
+export type JsxRenderable =
 	| JsxPrimitive
 	| JsxNodeLike
 	| KeyedJsxValue
 	| Node
 	| SubscribableJsxValue
 	| TemplateResultLike
-	| Iterable<JsxChild>;
+	| Iterable<JsxRenderable>;
 
 /**
- * Props received by a JSX component.
- *
- * The runtime reserves `children` for nested JSX content and allows arbitrary
- * additional keys so intrinsic bindings and component-specific props can share
- * the same shape.
+ * Minimal props contract shared by JSX components that accept children.
  */
-export type JsxComponentProps = {
-	children?: JsxChild;
-	[key: string]: unknown;
-};
+export interface JsxPropsWithChildren {
+	children?: JsxRenderable;
+}
 
 /**
  * A function component supported by the Radiant JSX runtime.
  */
-export type JsxComponent<Props extends JsxComponentProps = JsxComponentProps> = (props: Props) => JsxElement;
-
-/**
- * A value returned from `jsx`, `jsxs`, or a function component.
- *
- * `JsxElement` is intentionally broader than a DOM node. It includes primitive
- * content, template results, iterable child collections, and renderer-specific
- * wrappers such as keyed and subscribable values.
- */
-export type JsxElement = JsxChild;
+export type JsxComponent<Props extends object = JsxPropsWithChildren> = (props: Props) => JsxRenderable;
 
 /**
  * Internal fragment marker type used by the automatic JSX runtime.
@@ -429,7 +420,7 @@ export type AriaTypeNormalized = AriaAttributesNormalized;
  */
 export interface JsxSharedIntrinsicAttributes {
 	aria?: Partial<AriaAttributesNormalized> | undefined;
-	children?: JsxChild;
+	children?: JsxRenderable;
 	class?: unknown;
 	className?: unknown;
 	classes?: unknown;
@@ -444,6 +435,41 @@ export interface JsxSharedIntrinsicAttributes {
 export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes &
 	JsxEventBindings<ElementType> &
 	JsxPropertyBindings<ElementType>;
+
+/**
+ * JSX attribute shape for a custom element declaration in `JSX.IntrinsicElements`.
+ *
+ * This combines the standard Ecopages JSX intrinsic attributes for the host
+ * element with a partial props contract so JSX call sites can pass only the
+ * attributes they need while still receiving type checking for known props.
+ *
+ * Example:
+ *
+ * ```ts
+	 * declare module '@ecopages/jsx/jsx-runtime' {
+	 *   interface JsxCustomIntrinsicElements {
+	 *     'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+	 *   }
+	 * }
+ * ```
+ */
+export type JsxCustomElementAttributes<
+	ElementType extends Element = HTMLElement,
+	Props extends object = {},
+> = JsxIntrinsicAttributes<ElementType> & Partial<Props>;
+
+/**
+ * Module-augmentable registry of custom JSX intrinsic elements for the
+ * Ecopages JSX runtime.
+ *
+ * Augment this interface from `@ecopages/jsx/jsx-runtime` instead of declaring
+ * a global `namespace JSX` block when `jsxImportSource` points at
+ * `@ecopages/jsx`.
+ *
+ * Each property should map a custom tag name to a
+ * `JsxCustomElementAttributes<...>` declaration.
+ */
+export interface JsxCustomIntrinsicElements {}
 
 type JsxDomIntrinsicElements = {
 	[ElementName in keyof HTMLElementTagNameMap]: JsxIntrinsicAttributes<HTMLElementTagNameMap[ElementName]>;
@@ -464,10 +490,10 @@ export const Fragment: JsxFragment = fragmentSymbol;
  * from `jsx(...)`, which is typically used when the original source had a
  * single child expression.
  */
-export function jsx<Props extends JsxComponentProps>(
+export function jsx<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
-): JsxElement {
+): JsxRenderable {
 	return createJsxElement(type, props, 'single');
 }
 
@@ -479,20 +505,26 @@ export function jsx<Props extends JsxComponentProps>(
  * from `jsxs(...)`, which is typically used when the original source had
  * multiple sibling children.
  */
-export function jsxs<Props extends JsxComponentProps>(
+export function jsxs<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
-): JsxElement {
+): JsxRenderable {
 	return createJsxElement(type, props, 'multiple');
 }
 
+/**
+ * Controls how the `children` prop is distributed across child slots.
+ *
+ * - `'single'`   — `children` is treated as one logical value (emitted from `jsx`).
+ * - `'multiple'` — `children` is an array of positional siblings (emitted from `jsxs`).
+ */
 type ChildSlotMode = 'multiple' | 'single';
 
 /**
  * Type information consumed by TypeScript when `jsxImportSource` points at this package.
  */
 export namespace JSX {
-	export type Element = JsxElement;
+	export type Element = JsxRenderable;
 	export type ElementType = string | JsxFragment | JsxComponent<any>;
 
 	export interface ElementChildrenAttribute {
@@ -503,24 +535,45 @@ export namespace JSX {
 		key?: JsxKey;
 	}
 
-	export type IntrinsicElements = JsxDomIntrinsicElements & {
+	export type IntrinsicElements = JsxDomIntrinsicElements & JsxCustomIntrinsicElements & {
 		[elementName: string]: JsxIntrinsicAttributes<globalThis.Element>;
 	};
 }
 
-function createJsxElement<Props extends JsxComponentProps>(
+/**
+ * Core element factory called by both {@link jsx} and {@link jsxs}.
+ *
+ * Dispatch order:
+ * 1. Function component — invoked directly, result wrapped with any key.
+ * 2. Fragment — children normalized and wrapped with any key.
+ * 3. Custom element eligible for server rendering — delegated to
+ *    {@link createServerRenderedCustomElement}.
+ * 4. Intrinsic HTML element — a Radiant {@link TemplateResultLike} is built
+ *    from static strings and dynamic binding values.
+ *
+ * @param type Intrinsic tag name, fragment symbol, or function component.
+ * @param props Combined props and children for this renderable.
+ * @param childSlotMode Whether `children` holds a single value or multiple sibling values.
+ * @returns A {@link JsxRenderable} ready for DOM mounting or SSR serialization.
+ */
+function createJsxElement<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
 	childSlotMode: ChildSlotMode,
-): JsxElement {
-	const keyedValue = props.key;
+): JsxRenderable {
+	const keyedValue = (props as { key?: unknown }).key;
 
 	if (typeof type === 'function') {
 		return wrapKeyedValue(type(props), keyedValue);
 	}
 
 	if (type === fragmentSymbol) {
-		return wrapKeyedValue(normalizeChildrenWithMode(props.children, childSlotMode), keyedValue);
+		const fragmentChildren = (props as JsxPropsWithChildren).children;
+
+		return wrapKeyedValue(
+			normalizeChildrenWithMode(fragmentChildren, childSlotMode),
+			keyedValue,
+		);
 	}
 
 	const serverRenderedCustomElement = createServerRenderedCustomElement(type, props);
@@ -531,7 +584,9 @@ function createJsxElement<Props extends JsxComponentProps>(
 
 	const strings = [`<${type}`];
 	const values: unknown[] = [];
-	const { children, ...rawAttributes } = props;
+	const children = (props as JsxPropsWithChildren).children;
+	const rawAttributes = { ...(props as Record<string, unknown>) };
+	delete rawAttributes.children;
 	const normalizedAttributes = normalizeAttributes(rawAttributes);
 
 	for (const [name, value] of Object.entries(normalizedAttributes)) {
@@ -550,6 +605,13 @@ function createJsxElement<Props extends JsxComponentProps>(
 	return wrapKeyedValue(createTemplateResult(strings, values), keyedValue);
 }
 
+/**
+ * Minimal interface required of a custom element instance for server-side rendering.
+ *
+ * Elements that implement this interface can participate in the JSX SSR pipeline:
+ * the runtime instantiates the constructor, applies attributes and children, then
+ * calls `renderHostToString` to obtain the serialized HTML fragment.
+ */
 type ServerRenderableCustomElement = {
 	renderHostToString: (options?: { hydrate?: boolean }) => string;
 	setAttribute?: (name: string, value: unknown) => void;
@@ -557,7 +619,21 @@ type ServerRenderableCustomElement = {
 	[propertyName: string]: unknown;
 };
 
-function createServerRenderedCustomElement<Props extends JsxComponentProps>(
+/**
+ * Attempts to render a custom element on the server by instantiating its registered
+ * constructor and calling `renderHostToString`.
+ *
+ * Returns `undefined` when server rendering is not applicable: the tag name does not
+ * contain a hyphen, the runtime is running in a browser context (unless the force-render
+ * flag is set), the element is not registered in `customElements`, or the instance does
+ * not implement the {@link ServerRenderableCustomElement} interface.
+ *
+ * @param type Lowercase custom-element tag name (must contain a hyphen).
+ * @param props Combined JSX props including children.
+ * @returns A {@link JsxNodeLike} whose `outerHTML` getter delegates to the element's
+ *   `renderHostToString`, or `undefined` when SSR is not applicable.
+ */
+function createServerRenderedCustomElement<Props extends object>(
 	type: string,
 	props: Props,
 ): JsxNodeLike | undefined {
@@ -584,7 +660,7 @@ function createServerRenderedCustomElement<Props extends JsxComponentProps>(
 		return undefined;
 	}
 
-	const { children, key: _key, ...rawAttributes } = props;
+	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
 	const normalizedAttributes = normalizeAttributes(rawAttributes);
 	applyServerCustomElementAttributes(instance, normalizedAttributes);
 	applyServerCustomElementChildren(instance, children);
@@ -597,10 +673,29 @@ function createServerRenderedCustomElement<Props extends JsxComponentProps>(
 	};
 }
 
+/**
+ * Reads the active SSR hydrate flag from `globalThis`.
+ *
+ * The flag is set by `renderToString` in the server-render module before
+ * walking the JSX tree, ensuring that custom elements created during that
+ * pass emit hydration markers.
+ *
+ * @returns `true` when the current render pass should emit hydration binding markers.
+ */
 function getActiveSsrHydrateMode(): boolean {
 	return (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[ACTIVE_SSR_HYDRATE_SYMBOL] === true;
 }
 
+/**
+ * Decides whether a given element type should be rendered on the server.
+ *
+ * A custom element tag (containing a hyphen) qualifies when either:
+ * - `document` is not defined (Node.js / Bun / Deno environment), or
+ * - the {@link FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL} flag is set on `globalThis`.
+ *
+ * @param type Element tag name to evaluate.
+ * @returns `true` when server-side custom element rendering should be attempted.
+ */
 function shouldServerRenderCustomElement(type: string): boolean {
 	return (
 		type.includes('-') &&
@@ -611,10 +706,32 @@ function shouldServerRenderCustomElement(type: string): boolean {
 	);
 }
 
+/**
+ * Type guard that narrows `value` to {@link ServerRenderableCustomElement}.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when `value` is an object with a `renderHostToString` method.
+ */
 function isServerRenderableCustomElement(value: unknown): value is ServerRenderableCustomElement {
 	return typeof value === 'object' && value !== null && 'renderHostToString' in value;
 }
 
+/**
+ * Applies normalized attributes onto a server-renderable custom element instance.
+ *
+ * Binding rules (applied in order):
+ * - `on:*` bindings and `undefined` values are skipped (event handlers are
+ *   not serializable, so they are not applied during SSR).
+ * - `prop:*` bindings are set directly as properties on the element.
+ * - Known element properties (non-hyphenated names already present on the
+ *   instance) are set directly as properties.
+ * - Boolean attribute values emit an empty string attribute (truthy) or
+ *   remove the attribute (falsy).
+ * - All other values are serialized via `String()` and passed to `setAttribute`.
+ *
+ * @param element Target custom element instance.
+ * @param attributes Pre-normalized attribute map (output of {@link normalizeAttributes}).
+ */
 function applyServerCustomElementAttributes(
 	element: ServerRenderableCustomElement,
 	attributes: Record<string, unknown>,
@@ -647,15 +764,29 @@ function applyServerCustomElementAttributes(
 	}
 }
 
+/**
+ * Serializes JSX children and assigns them to the appropriate property on a
+ * server-renderable custom element.
+ *
+ * The function checks for the presence of `children` and `innerHTML` properties
+ * on the element instance and sets whichever are found. This allows custom
+ * elements to opt in to either convention. When both properties exist, both are
+ * set with the same serialized string.
+ *
+ * No-ops when `children` is `undefined` or the element exposes neither property.
+ *
+ * @param element Target custom element instance.
+ * @param children JSX children from the `props.children` slot.
+ */
 function applyServerCustomElementChildren(
 	element: ServerRenderableCustomElement,
-	children: JsxChild | undefined,
+	children: JsxRenderable | undefined,
 ): void {
 	if (children === undefined || !('children' in element || 'innerHTML' in element)) {
 		return;
 	}
 
-	const serializedChildren = renderJsxChildToString(children);
+	const serializedChildren = renderJsxRenderableToString(children);
 
 	if ('children' in element) {
 		element.children = serializedChildren;
@@ -666,17 +797,28 @@ function applyServerCustomElementChildren(
 	}
 }
 
-function renderJsxChildToString(value: JsxChild | undefined): string {
+/**
+ * Eagerly serializes a JSX child value to an HTML string.
+ *
+ * Used by `applyServerCustomElementChildren` to produce the inner HTML of a
+ * custom element during SSR before `renderHostToString` is called.
+ * This is a simplified serializer that does not emit hydration markers; for
+ * full SSR output, use `renderToString` from the server-render module instead.
+ *
+ * @param value JSX child value to serialize.
+ * @returns HTML string representing the child, with user-provided text content escaped.
+ */
+function renderJsxRenderableToString(value: JsxRenderable | undefined): string {
 	if (value === undefined || value === null || value === false) {
 		return '';
 	}
 
 	if (isKeyedJsxValue(value)) {
-		return renderJsxChildToString(value.value);
+		return renderJsxRenderableToString(value.value);
 	}
 
 	if (isSubscribableJsxValue(value)) {
-		return renderJsxChildToString(value.getValue());
+		return renderJsxRenderableToString(value.getValue());
 	}
 
 	if (typeof value === 'string') {
@@ -696,7 +838,7 @@ function renderJsxChildToString(value: JsxChild | undefined): string {
 
 		for (let index = 0; index < value.values.length; index += 1) {
 			html += value.strings[index] ?? '';
-			html += renderJsxChildToString(value.values[index] as JsxChild);
+			html += renderJsxRenderableToString(value.values[index] as JsxRenderable);
 		}
 
 		html += value.strings[value.strings.length - 1] ?? '';
@@ -719,7 +861,7 @@ function renderJsxChildToString(value: JsxChild | undefined): string {
 		let html = '';
 
 		for (const child of value) {
-			html += renderJsxChildToString(child as JsxChild);
+			html += renderJsxRenderableToString(child as JsxRenderable);
 		}
 
 		return html;
@@ -728,6 +870,17 @@ function renderJsxChildToString(value: JsxChild | undefined): string {
 	return escapeHtml(String(value));
 }
 
+/**
+ * Serializes a {@link JsxNodeLike} value to an HTML string.
+ *
+ * Preference order:
+ * 1. `outerHTML` string — returned as-is (assumed trusted/pre-escaped).
+ * 2. `childNodes` array — each child is recursively serialized and concatenated.
+ * 3. `textContent` — HTML-escaped and returned.
+ *
+ * @param value Node-like value to serialize.
+ * @returns HTML string for the given node.
+ */
 function renderJsxNodeLikeToString(value: JsxNodeLike): string {
 	if (typeof value.outerHTML === 'string') {
 		return value.outerHTML;
@@ -740,17 +893,29 @@ function renderJsxNodeLikeToString(value: JsxNodeLike): string {
 	return value.textContent ? escapeHtml(value.textContent) : '';
 }
 
+/**
+ * Type guard that narrows `value` to {@link TemplateResultLike}.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when `value` is a valid Radiant template result.
+ */
 function isTemplateResultLike(value: unknown): value is TemplateResultLike {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
-		((value as { ['_$rType$']?: unknown })['_$rType$'] === 1 ||
-			(value as { ['_$litType$']?: unknown })['_$litType$'] === 1) &&
+		(value as { ['_$rType$']?: unknown })['_$rType$'] === 1 &&
 		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
 		Array.isArray((value as Partial<TemplateResultLike>).values)
 	);
 }
 
+/**
+ * Type guard that narrows `value` to {@link JsxNodeLike}.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when `value` is an object with a `nodeType` property,
+ *   consistent with the DOM `Node` interface and SSR node-like helpers.
+ */
 function isJsxNodeLike(value: unknown): value is JsxNodeLike {
 	return typeof value === 'object' && value !== null && 'nodeType' in value;
 }
@@ -788,12 +953,12 @@ export function isSubscribableJsxValue(value: unknown): value is SubscribableJsx
  *
  * @param config Subscription hooks that expose the current child value and
  * register future updates.
- * @returns A JSX child wrapper that the renderer can subscribe to directly.
+ * @returns A JSX renderable wrapper that the renderer can subscribe to directly.
  */
-export function createSubscribableJsxValue(config: {
-	getValue: () => JsxElement;
-	subscribe: (notify: (value: JsxElement) => void) => () => void;
-}): SubscribableJsxValue {
+export function createSubscribableJsxValue<Value extends JsxRenderable>(config: {
+	getValue: () => Value;
+	subscribe: (notify: (value: Value) => void) => () => void;
+}): SubscribableJsxValue<Value> {
 	return {
 		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
 		getValue: config.getValue,
@@ -801,6 +966,20 @@ export function createSubscribableJsxValue(config: {
 	};
 }
 
+/**
+ * Normalizes raw JSX props attributes into a flat record ready for binding serialization.
+ *
+ * Processing steps (in order):
+ * 1. Merges `class`, `className`, and `classes` into a single `class` string
+ *    via {@link normalizeClassList}. Omits the key entirely when all three are empty.
+ * 2. Skips `undefined` values, the `key` prop, and the class-family aliases.
+ * 3. Expands `data` and `aria` objects into `data-*` / `aria-*` flat keys.
+ * 4. Serializes `style` objects to inline CSS strings via {@link normalizeStyleValue}.
+ * 5. Passes all remaining attribute values through {@link normalizeAttributeValue}.
+ *
+ * @param attributes Raw props object with the `children` prop already removed.
+ * @returns Normalized flat attribute record.
+ */
 function normalizeAttributes(attributes: Record<string, unknown>): Record<string, unknown> {
 	const normalized: Record<string, unknown> = {};
 	const classValue = normalizeClassList([attributes.class, attributes.className, attributes.classes]);
@@ -830,6 +1009,19 @@ function normalizeAttributes(attributes: Record<string, unknown>): Record<string
 	return normalized;
 }
 
+/**
+ * Expands a structured `data` or `aria` object into flat `data-*` / `aria-*` attributes.
+ *
+ * Each key is converted to kebab-case before the prefix is prepended so that
+ * camelCase property names (e.g. `{ labelledBy: 'x' }`) produce the correct
+ * hyphenated attribute name (`aria-labelled-by`).
+ *
+ * No-ops when `value` is not a plain object.
+ *
+ * @param attributes Mutable target record to write expanded keys into.
+ * @param prefix Either `'aria'` or `'data'`.
+ * @param value The structured object to expand.
+ */
 function appendStructuredAttributes(
 	attributes: Record<string, unknown>,
 	prefix: 'aria' | 'data',
@@ -844,6 +1036,24 @@ function appendStructuredAttributes(
 	}
 }
 
+/**
+ * Appends a single attribute binding to the growing template string / value arrays.
+ *
+ * Encodes bindings using the runtime's template binding syntax so the client DOM
+ * renderer can reconnect them after hydration:
+ * - `on:*`  →  `@eventName=` (event listener binding)
+ * - `prop:*` →  `.propertyName=` (property binding)
+ * - `boolean` →  `?attrName=` (boolean attribute binding)
+ * - all other values →  `attrName=` (standard attribute binding)
+ *
+ * `undefined` values are silently skipped so optional props do not emit
+ * extraneous attribute strings.
+ *
+ * @param strings Mutable array of static HTML string segments.
+ * @param values Mutable array of dynamic binding values.
+ * @param name Normalized attribute name.
+ * @param value Attribute value to bind.
+ */
 function appendBinding(strings: string[], values: unknown[], name: string, value: unknown): void {
 	if (value === undefined) {
 		return;
@@ -875,10 +1085,25 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 	strings.push('');
 }
 
+/**
+ * Appends JSX children onto the template string / value arrays.
+ *
+ * In `'multiple'` mode (`jsxs`), an iterable `children` value is iterated
+ * directly so each sibling child becomes its own dynamic slot. In `'single'`
+ * mode (`jsx`), iterables are first flattened then pushed as a single slot so
+ * the renderer receives them as a cohesive child group.
+ *
+ * Falsy leaf values (`undefined`, `null`, `false`) are omitted entirely.
+ *
+ * @param strings Mutable array of static HTML string segments.
+ * @param values Mutable array of dynamic binding values.
+ * @param children JSX children to append.
+ * @param childSlotMode Determines iteration strategy for iterable children.
+ */
 function appendChildren(
 	strings: string[],
 	values: unknown[],
-	children: JsxChild | undefined,
+	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
 ): void {
 	if (children === undefined || children === null || children === false) {
@@ -887,7 +1112,7 @@ function appendChildren(
 
 	if (childSlotMode === 'multiple' && isIterableChild(children)) {
 		for (const child of children) {
-			const normalizedChild = normalizeChildSlot(child as JsxChild);
+			const normalizedChild = normalizeChildSlot(child as JsxRenderable);
 
 			if (normalizedChild === undefined) {
 				continue;
@@ -906,7 +1131,7 @@ function appendChildren(
 			return;
 		}
 
-		values.push(flattenedChildren as JsxElement);
+		values.push(flattenedChildren as JsxRenderable);
 		strings.push('');
 		return;
 	}
@@ -915,11 +1140,23 @@ function appendChildren(
 	strings.push('');
 }
 
-function normalizeChildrenWithMode(children: JsxChild | undefined, childSlotMode: ChildSlotMode): JsxElement {
+/**
+ * Normalizes a `children` prop value respecting the active child-slot mode.
+ *
+ * In `'multiple'` mode, iterable children are mapped through
+ * {@link normalizeChildSlot}, filtered for defined slots, and returned as a
+ * single-element or multi-element array. In `'single'` mode the value is
+ * passed directly to {@link normalizeChildren}.
+ *
+ * @param children Raw `children` prop value.
+ * @param childSlotMode Controls how iterable children are handled.
+ * @returns Normalized JSX renderable ready to be returned from a fragment or component.
+ */
+function normalizeChildrenWithMode(children: JsxRenderable | undefined, childSlotMode: ChildSlotMode): JsxRenderable {
 	if (childSlotMode === 'multiple' && isIterableChild(children)) {
 		const slots = Array.from(children)
-			.map((child) => normalizeChildSlot(child as JsxChild))
-			.filter((child): child is JsxElement => child !== undefined);
+			.map((child) => normalizeChildSlot(child as JsxRenderable))
+			.filter((child): child is JsxRenderable => child !== undefined);
 
 		if (slots.length === 0) {
 			return '';
@@ -935,38 +1172,80 @@ function normalizeChildrenWithMode(children: JsxChild | undefined, childSlotMode
 	return normalizeChildren(children);
 }
 
-function normalizeChildSlot(child: JsxChild | undefined): JsxElement | undefined {
+/**
+ * Normalizes a single positional child slot value.
+ *
+ * Returns `undefined` for falsy leaf values and empty iterable groups so that
+ * callers can safely filter absent slots. Iterable children are recursively
+ * flattened before being wrapped as an array.
+ *
+ * @param child Raw child value from a positional slot.
+ * @returns Normalized child renderable, or `undefined` when the slot is empty.
+ */
+function normalizeChildSlot(child: JsxRenderable | undefined): JsxRenderable | undefined {
 	if (child === undefined || child === null || child === false) {
 		return undefined;
 	}
 
 	if (isIterableChild(child)) {
 		const flattenedChildren = flattenChildren(child);
-		return flattenedChildren.length === 0 ? undefined : (flattenedChildren as JsxElement);
+		return flattenedChildren.length === 0 ? undefined : (flattenedChildren as JsxRenderable);
 	}
 
 	return normalizeChildren(child);
 }
 
-function flattenChildren(children: JsxChild | undefined): unknown[] {
+/**
+ * Recursively flattens a JSX child value into a flat array of leaf values.
+ *
+ * Falsy leaves (`undefined`, `null`, `false`) are dropped. Iterable children
+ * are recursively expanded depth-first so the result is always a one-dimensional
+ * array of non-iterable child values.
+ *
+ * @param children JSX child value to flatten.
+ * @returns Flat array of non-iterable child values.
+ */
+function flattenChildren(children: JsxRenderable | undefined): unknown[] {
+	const flattenedChildren: unknown[] = [];
+	appendFlattenedChildren(flattenedChildren, children);
+	return flattenedChildren;
+}
+
+/**
+ * Appends the leaf values from `children` into an existing flat accumulator.
+ *
+ * This avoids allocating intermediate arrays at each recursion level when
+ * flattening nested iterable child structures.
+ *
+ * @param flattenedChildren Mutable accumulator receiving flattened child values.
+ * @param children JSX child value to flatten into the accumulator.
+ */
+function appendFlattenedChildren(flattenedChildren: unknown[], children: JsxRenderable | undefined): void {
 	if (children === undefined || children === null || children === false) {
-		return [];
+		return;
 	}
 
 	if (isIterableChild(children)) {
-		const flattened: unknown[] = [];
-
 		for (const child of children) {
-			flattened.push(...flattenChildren(child as JsxChild));
+			appendFlattenedChildren(flattenedChildren, child as JsxRenderable);
 		}
-
-		return flattened;
+		return;
 	}
 
-	return [children];
+	flattenedChildren.push(children);
 }
 
-function normalizeChildren(children: JsxChild | undefined): JsxElement {
+/**
+ * Normalizes a JSX child value by flattening it and unwrapping trivial arrays.
+ *
+ * - Empty → returns `''` (an empty string that the renderer treats as no-op).
+ * - Single element → unwrapped from its array container.
+ * - Multiple elements → returned as an array.
+ *
+ * @param children JSX child value to normalize.
+ * @returns Normalized {@link JsxRenderable}.
+ */
+function normalizeChildren(children: JsxRenderable | undefined): JsxRenderable {
 	const flattenedChildren = flattenChildren(children);
 
 	if (flattenedChildren.length === 0) {
@@ -974,12 +1253,23 @@ function normalizeChildren(children: JsxChild | undefined): JsxElement {
 	}
 
 	if (flattenedChildren.length === 1) {
-		return flattenedChildren[0] as JsxElement;
+		return flattenedChildren[0] as JsxRenderable;
 	}
 
-	return flattenedChildren as JsxElement;
+	return flattenedChildren as JsxRenderable;
 }
 
+/**
+ * Normalizes a single attribute value.
+ *
+ * Currently only the `class` attribute requires special treatment: its value
+ * is passed through {@link normalizeClassList} to merge any token arrays or
+ * conditional objects. All other values are returned unchanged.
+ *
+ * @param name Attribute name.
+ * @param value Raw attribute value.
+ * @returns Normalized attribute value.
+ */
 function normalizeAttributeValue(name: string, value: unknown): unknown {
 	if (name === 'class') {
 		return normalizeClassList([value]);
@@ -988,6 +1278,16 @@ function normalizeAttributeValue(name: string, value: unknown): unknown {
 	return value;
 }
 
+/**
+ * Merges one or more class values into a single space-separated string.
+ *
+ * Each value in `values` is processed by {@link appendClassTokens}, which
+ * understands strings, numbers, arrays, and conditional objects
+ * (`{ token: boolean }`).
+ *
+ * @param values Iterable of raw class values to merge.
+ * @returns Space-separated class string, or `undefined` when no tokens are produced.
+ */
 function normalizeClassList(values: Iterable<unknown>): string | undefined {
 	const tokens: string[] = [];
 
@@ -1002,6 +1302,19 @@ function normalizeClassList(values: Iterable<unknown>): string | undefined {
 	return tokens.join(' ');
 }
 
+/**
+ * Recursively collects class token strings from a single raw class value.
+ *
+ * Supported value shapes:
+ * - `string` — added as-is (non-empty only).
+ * - `number` / `bigint` — coerced to string and added.
+ * - `Array` — each element is recursively processed.
+ * - Plain object — keys whose values are truthy are added as tokens.
+ * - `undefined`, `null`, `true`, `false` — silently skipped.
+ *
+ * @param tokens Mutable accumulator array to push discovered tokens into.
+ * @param value Single raw class value to process.
+ */
 function appendClassTokens(tokens: string[], value: unknown): void {
 	if (value === undefined || value === null || value === false || value === true) {
 		return;
@@ -1037,27 +1350,70 @@ function appendClassTokens(tokens: string[], value: unknown): void {
 	}
 }
 
+/**
+ * Serializes a `style` prop value to an inline CSS string.
+ *
+ * When `value` is a plain object, each entry is converted to a
+ * `property: value` declaration where the property name is converted from
+ * camelCase to kebab-case. Entries with `undefined`, `null`, or empty-string
+ * values are omitted. Declarations are joined with `'; '`.
+ *
+ * Non-object values (e.g. an already-serialized CSS string) are returned
+ * unchanged.
+ *
+ * @param value Raw style prop value.
+ * @returns Inline CSS string, or the original value when it is not a plain object.
+ */
 function normalizeStyleValue(value: unknown): unknown {
 	if (!isPlainObject(value)) {
 		return value;
 	}
 
-	return Object.entries(value)
-		.filter(([, entry]) => entry !== undefined && entry !== null && entry !== '')
-		.map(([name, entry]) => `${toKebabCase(name)}: ${String(entry)}`)
-		.join('; ');
+	const declarations: string[] = [];
+
+	for (const [name, entry] of Object.entries(value)) {
+		if (entry === undefined || entry === null || entry === '') {
+			continue;
+		}
+
+		declarations.push(`${toKebabCase(name)}: ${String(entry)}`);
+	}
+
+	return declarations.join('; ');
 }
 
+/**
+ * Constructs a {@link TemplateResultLike} from static string segments and
+ * dynamic binding values.
+ *
+ * The `strings` array is frozen into a proper `TemplateStringsArray` (with a
+ * matching `raw` property) via {@link toTemplateStrings}.
+ *
+ * @param strings Static HTML string segments.
+ * @param values Dynamic binding values interleaved between the string segments.
+ * @returns A frozen, Radiant-compatible template result.
+ */
 function createTemplateResult(strings: string[], values: unknown[]): TemplateResultLike {
 	return {
 		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
-		[LEGACY_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
 		strings: toTemplateStrings(strings),
 		values,
 	};
 }
 
-function wrapKeyedValue(value: JsxElement, key: unknown): JsxElement {
+/**
+ * Wraps a JSX renderable with keyed reconciliation metadata when a valid key is
+ * provided, otherwise returns the value unchanged.
+ *
+ * Only `string` and `number` keys are accepted; any other type is treated as
+ * absent so the runtime does not carry keyed wrappers for elements whose `key`
+ * prop was omitted or set to a non-primitive.
+ *
+ * @param value JSX renderable to wrap.
+ * @param key Raw `key` prop value from the JSX renderable's props.
+ * @returns A {@link KeyedJsxValue} when `key` is a valid string or number, otherwise `value` as-is.
+ */
+function wrapKeyedValue(value: JsxRenderable, key: unknown): JsxRenderable {
 	if (typeof key !== 'string' && typeof key !== 'number') {
 		return value;
 	}
@@ -1069,6 +1425,17 @@ function wrapKeyedValue(value: JsxElement, key: unknown): JsxElement {
 	};
 }
 
+/**
+ * Converts a plain string array into a frozen `TemplateStringsArray`.
+ *
+ * The DOM and SSR renderers expect the `strings` field to conform to the
+ * frozen, non-enumerable-`raw` contract of a tagged template literal. This
+ * helper adds a writable-false `raw` property that mirrors the cooked array
+ * so interpolated values are handled identically to native template literals.
+ *
+ * @param strings Mutable array of static HTML string segments.
+ * @returns A frozen `TemplateStringsArray` with a matching `raw` property.
+ */
 function toTemplateStrings(strings: string[]): TemplateStringsArray {
 	const templateStrings = [...strings] as unknown as TemplateStringsArray;
 	Object.defineProperty(templateStrings, 'raw', {
@@ -1078,14 +1445,41 @@ function toTemplateStrings(strings: string[]): TemplateStringsArray {
 	return templateStrings;
 }
 
+/**
+ * Returns `true` when `value` is a non-null, non-array plain object.
+ *
+ * Used to distinguish `style` objects and `data`/`aria` objects from
+ * primitives, arrays, and class instances in the attribute normalization path.
+ *
+ * @param value Value to inspect.
+ */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isIterableChild(value: JsxChild): value is Iterable<JsxChild> {
+/**
+ * Returns `true` when `value` is an iterable JSX child (i.e., an array or any
+ * other iterable that is not a string or function).
+ *
+ * Strings are excluded because they are iterable by character but must be
+ * treated as atomic text nodes. Functions are excluded because they are not
+ * valid standalone iterables in the JSX child position.
+ *
+ * @param value JSX child value to test.
+ */
+function isIterableChild(value: JsxRenderable): value is Iterable<JsxRenderable> {
 	return typeof value !== 'string' && typeof value !== 'function' && Symbol.iterator in Object(value);
 }
 
+/**
+ * Converts a camelCase identifier to kebab-case for use in HTML attribute names
+ * and CSS property names.
+ *
+ * @example `toKebabCase('backgroundColor')` → `'background-color'`
+ *
+ * @param value camelCase input string.
+ * @returns Kebab-case output string.
+ */
 function toKebabCase(value: string): string {
 	return value.replace(/[A-Z]/g, (segment) => `-${segment.toLowerCase()}`);
 }

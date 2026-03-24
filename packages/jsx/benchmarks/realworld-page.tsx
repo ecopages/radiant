@@ -1,5 +1,7 @@
 /** @jsxImportSource @ecopages/jsx */
 
+import type { JsxRenderable } from '@ecopages/jsx/jsx-runtime';
+
 type Purchase = {
 	name: string;
 	price: number;
@@ -11,7 +13,7 @@ type RealWorldPageProps = {
 	purchases: Purchase[];
 };
 
-function Layout({ children, head }: { children: unknown; head: unknown }) {
+function Layout({ children, head }: { children: JsxRenderable; head: JsxRenderable }) {
 	return (
 		<html lang="en">
 			{head}
@@ -84,7 +86,7 @@ function Footer({ name }: { name: string }) {
 	);
 }
 
-function Main({ children, name }: { children: unknown; name: string }) {
+function Main({ children, name }: { children: JsxRenderable; name: string }) {
 	return (
 		<div>
 			<Header name={name} />

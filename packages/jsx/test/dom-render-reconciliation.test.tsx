@@ -199,6 +199,44 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).not.toContain('radiant-jsx-child-end');
 	});
 
+	test('treats true child values as empty content during DOM rendering', async () => {
+		const [{ jsx }, { createRoot, renderToString }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const template = jsx('p', {
+			children: ['Before', true, 'After'],
+		});
+
+		root.render(template);
+
+		expect(container.querySelector('p')?.textContent).toBe('BeforeAfter');
+		expect(container.innerHTML).toBe(renderToString(template));
+	});
+
+	test('does not lose generator children when keyed detection falls back to indexed mode', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		function* children() {
+			yield jsx('li', { children: 'alpha', key: 'alpha' });
+			yield jsx('li', { children: 'beta' });
+			yield jsx('li', { children: 'gamma' });
+		}
+
+		root.render(
+			jsx('ul', {
+				children: children(),
+			}),
+		);
+
+		expect(Array.from(container.querySelectorAll('li')).map((item) => item.textContent)).toEqual([
+			'alpha',
+			'beta',
+			'gamma',
+		]);
+	});
+
 	test('counter-style updates only mutate the reactive text node', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -257,7 +295,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
-		const subscribers = new Set<(value: import('../jsx-runtime.ts').JsxElement) => void>();
+		const subscribers = new Set<(value: number) => void>();
 		let count = 15;
 		const boundCount = createSubscribableJsxValue({
 			getValue: () => count,

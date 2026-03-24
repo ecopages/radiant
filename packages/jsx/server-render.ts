@@ -1,9 +1,8 @@
 import {
 	isKeyedJsxValue,
 	isSubscribableJsxValue,
-	type JsxChild,
-	type JsxElement,
 	type JsxNodeLike,
+	type JsxRenderable,
 	type TemplateResultLike,
 } from './jsx-runtime';
 import {
@@ -42,7 +41,7 @@ type RenderContext = {
  * @param options Controls whether hydration metadata is emitted.
  * @returns HTML string representation of the provided JSX value.
  */
-export function renderToString(value: JsxElement, options: RenderToStringOptions = {}): string {
+export function renderToString(value: JsxRenderable, options: RenderToStringOptions = {}): string {
 	const hydrate = options.hydrate === true;
 	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
 	const previousHydrateValue = globalScope[ACTIVE_SSR_HYDRATE_SYMBOL];
@@ -62,7 +61,7 @@ export function renderToString(value: JsxElement, options: RenderToStringOptions
 	}
 }
 
-function renderChild(value: JsxChild, context: RenderContext): string {
+function renderChild(value: JsxRenderable, context: RenderContext): string {
 	if (value === undefined || value === null || value === false) {
 		return '';
 	}
@@ -99,7 +98,7 @@ function renderChild(value: JsxChild, context: RenderContext): string {
 		let html = '';
 
 		for (const child of value) {
-			html += renderChild(child as JsxChild, context);
+			html += renderChild(child as JsxRenderable, context);
 		}
 
 		return html;
@@ -118,7 +117,7 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 
 		if (!interpolationPart || interpolationPart.type === 'child') {
 			html += interpolationPart?.string ?? template.strings[index] ?? '';
-			html += renderChild(value as JsxChild, context);
+			html += renderChild(value as JsxRenderable, context);
 			continue;
 		}
 
@@ -174,8 +173,7 @@ function isTemplateResultLike(value: unknown): value is TemplateResultLike {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
-		((value as Partial<TemplateResultLike>)['_$rType$'] === 1 ||
-			(value as { ['_$litType$']?: unknown })['_$litType$'] === 1) &&
+		(value as Partial<TemplateResultLike>)['_$rType$'] === 1 &&
 		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
 		Array.isArray((value as Partial<TemplateResultLike>).values)
 	);
