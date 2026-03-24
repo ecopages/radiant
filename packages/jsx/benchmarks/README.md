@@ -2,7 +2,7 @@
 
 ## Current Benchmark Harness
 
-There is now a local server-render benchmark that aligns its default page shape with the published Kita `RealWorldPage` benchmark.
+There is now a local server-render benchmark that aligns its default page shape with the shared `RealWorldPage` workload used by this repo.
 
 Run it with:
 
@@ -23,6 +23,8 @@ Under the hood the comparer runs the same measurement script twice:
 
 That matters because the question we actually care about is per task: how does Bun compare with Node for the same `renderToString(...)` workload?
 
+The cross-runtime command intentionally runs Mitata in quiet mode and suppresses the duplicated per-runtime preamble, so it prints the shared page-size note once and then a compact Bun-vs-Node summary table.
+
 If you want the raw single-runtime numbers without the cross-runtime table, use:
 
 ```bash
@@ -41,7 +43,7 @@ bun run profile:hydrate
 It measures the shared `RealWorldPage(name, purchases)` workload with:
 
 - a full document layout (`html`, `head`, `body`)
-- the same purchase-card tree shape used by the Kita benchmark suite
+- the same purchase-card tree shape used throughout this benchmark harness
 - `1,000` purchases by default
 
 The first task, `renderToString`, is the directly comparable metric.
@@ -75,52 +77,50 @@ Typical comparison output looks like this:
 
 ```text
 RealWorldPage output size: 169.1 KiB
-Comparing identical renderToString workloads across Bun and Node. Lower avgUs is better.
+renderToString hydrate includes Radiant SSR markers — treat it as an internal regression signal, not a baseline-comparable number.
 
-┌─────────┬──────────────────────────┬──────────┬───────────┬──────────────────────────────────────────────┬────────┐
-│ (index) │ benchmark                │ bunAvgUs │ nodeAvgUs │ delta                                        │ winner │
-├─────────┼──────────────────────────┼──────────┼───────────┼──────────────────────────────────────────────┼────────┤
-│ 0       │ renderToString           │ 516.18   │ 603.42    │ Bun 1.17x faster (14.5% less time)           │ Bun    │
-│ 1       │ renderToString hydrate   │ 2370.00  │ 2551.74   │ Bun 1.08x faster (7.1% less time)            │ Bun    │
-└─────────┴──────────────────────────┴──────────┴───────────┴──────────────────────────────────────────────┴────────┘
+Comparison (avg / p75, in µs)
+Lower avgUs is better.
+
+benchmark                bun avg/p75  node avg/p75  delta
+-----------------------  -----------  ------------  -----
+renderToString              516 / 503      603 / 590  Bun 1.17x
+renderToString hydrate    2370 / 2298    2552 / 2481  Bun 1.08x
 ```
 
 Read it like this:
 
 - `renderToString` is the comparable server-render result
 - `renderToString hydrate` includes extra SSR marker output and is only meaningful as an internal regression signal
-- `winner` tells you which runtime completed the same task faster
+- `bun avg/p75` and `node avg/p75` show average and p75 latency in microseconds
+- `delta` shows which runtime won and by what ratio
 - `delta` tells you the relative speed gap for that exact task
 
 ## Current Rendering Behavior
 
-The current client renderer is not doing Lit-style incremental DOM updates.
+The current client renderer performs its own incremental DOM updates.
 
-- `render(...)` replaces the target subtree with `target.replaceChildren(...)`.
-- There is no keyed reconciliation layer.
-- There is no memoization of child subtrees across renders.
-- `hydrate(...)` is incremental only for the first SSR pass: it attaches event and property bindings onto existing DOM without replacing nodes.
-- After hydration, subsequent `render(...)` calls rebuild the subtree again.
+- repeated renders of the same template shape reuse compiled template metadata
+- live attribute and child parts are updated in place when the template shape is stable
+- keyed child collections preserve DOM ownership by key during reordering
+- indexed child collections preserve DOM ownership by slot position
+- `hydrate(...)` restores bindings and reconstructs live range bookkeeping on top of existing SSR DOM
 
 The relevant implementation is in [dom-render.ts](../dom-render.ts).
 
-That means list updates currently behave closer to a full remount strategy than to Lit's `TemplateInstance` + part update model.
-
-## What Lit Does Differently
-
-Lit keeps a compiled template structure and updates only the dynamic parts.
-
-- Static DOM is created once per template shape.
-- Dynamic text, attributes, and child parts are patched in place.
-- Repeated collections can get keyed behavior when using directives such as `repeat(...)` with stable keys.
-
-Our current runtime does not have an equivalent structure yet.
+That means performance work is now mostly about improving hot paths and hydration
+recovery costs rather than replacing the renderer architecture wholesale.
 
 ## Evidence In This Repo
 
-The test [dom-render-reconciliation.test.tsx](../test/dom-render-reconciliation.test.tsx) proves that rerendering the same list creates new `<li>` nodes instead of preserving identity.
+The test [dom-render-reconciliation.test.tsx](../test/dom-render-reconciliation.test.tsx) covers:
 
-That is the first thing to improve before expecting strong results in list-heavy benchmarks.
+- stable template-instance patching
+- keyed child reordering with node preservation
+- indexed list updates by position
+- subscribable child patching without parent rerenders
+
+Those are the current foundations to measure before pursuing larger benchmark changes.
 
 ## Recommended Benchmark Plan
 
@@ -133,13 +133,13 @@ That is the first thing to improve before expecting strong results in list-heavy
 
 Use the local benchmark harness for:
 
-- Kita-aligned page-sized `renderToString(...)`
+- page-sized `renderToString(...)`
 - hydrated server output `renderToString(..., { hydrate: true })`
 - future string-render regressions in escaping and binding serialization
 
 Both numbers are directly comparable across revisions of the Radiant server renderer.
 
-Only the non-hydrate number should be compared with the published Kita methodology. The hydrate number is Radiant-specific because it measures extra SSR marker generation.
+Only the non-hydrate number should be treated as the baseline SSR number. The hydrate number is Radiant-specific because it measures extra SSR marker generation.
 
 ### 3. Local browser microbenchmarks
 

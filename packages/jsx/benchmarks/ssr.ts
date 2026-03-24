@@ -8,10 +8,12 @@ import { createBenchmarkProps, RealWorldPage } from './realworld-page.tsx';
 const props = createBenchmarkProps();
 const warmHtml = renderToString(jsx(RealWorldPage, props));
 
-console.log(`RealWorldPage output size: ${(warmHtml.length / 1024).toFixed(1)} KiB`);
-console.log(
-	'renderToString hydrate includes Radiant SSR markers — treat it as an internal regression signal, not a Kita-comparable number.',
-);
+if (process.env.BENCH_SUPPRESS_PREAMBLE !== '1') {
+	console.log(`RealWorldPage output size: ${(warmHtml.length / 1024).toFixed(1)} KiB`);
+	console.log(
+		'renderToString hydrate includes Radiant SSR markers — treat it as an internal regression signal, not a baseline-comparable number.',
+	);
+}
 
 summary(() => {
 	bench('renderToString', () => {
@@ -23,7 +25,10 @@ summary(() => {
 	});
 });
 
-const result = await run({ throw: true });
+const result = await run({
+	throw: true,
+	...(process.env.BENCH_FORMAT === 'quiet' ? { format: 'quiet' as const } : {}),
+});
 
 const jsonOut = process.env.BENCH_JSON_OUT;
 if (jsonOut) {
