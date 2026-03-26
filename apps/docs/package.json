@@ -13,12 +13,12 @@
 		"watch:dev": "bun --watch run app.ts --dev"
 	},
 	"devDependencies": {
-		"@ecopages/core": "^0.2.0-alpha.7",
+		"@ecopages/core": "^0.2.0-alpha.8",
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
-		"@ecopages/file-system": "^0.2.0-alpha.7",
-		"@ecopages/postcss-processor": "^0.2.0-alpha.7",
-		"@ecopages/browser-router": "^0.2.0-alpha.7",
+		"@ecopages/file-system": "^0.2.0-alpha.8",
+		"@ecopages/postcss-processor": "^0.2.0-alpha.8",
+		"@ecopages/browser-router": "^0.2.0-alpha.8",
 		"@ecopages/scripts-injector": "^0.1.5",
 		"@tailwindcss/postcss": "^4.0.0",
 		"@mdx-js/mdx": "^2.3.0",

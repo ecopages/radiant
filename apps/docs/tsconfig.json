@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
-		"baseUrl": ".",
+		"allowImportingTsExtensions": true,
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
 		"forceConsistentCasingInFileNames": true,
@@ -9,6 +9,7 @@
 		"jsxImportSource": "@ecopages/jsx",
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
+		"noEmit": true,
 		"noImplicitOverride": true,
 		"paths": {
 			"@/*": ["./src/*"]
@@ -17,7 +18,7 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ES2021",
-		"types": ["bun-types", "@ecopages/core"],
+		"types": ["bun"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true
 	}
