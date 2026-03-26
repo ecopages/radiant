@@ -1,0 +1,53 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | @querySlot',
+	description: 'Query projected light-DOM elements assigned to a RadiantComponent slot.',
+})
+
+# @querySlot
+
+The `@querySlot` decorator queries projected light-DOM elements assigned to a `RadiantComponent` slot.
+
+Use it when a component accepts content through literal `<slot>` tags and needs to inspect the assigned elements after projection.
+
+## Usage
+
+```tsx
+import { RadiantComponent, customElement, querySlot } from '@ecopages/radiant';
+
+@customElement('shell-card')
+export class ShellCard extends RadiantComponent {
+	@querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
+	@querySlot() body!: HTMLParagraphElement | null;
+
+	override render() {
+		return (
+			<article>
+				<header>
+					<slot name="heading" />
+				</header>
+				<div>
+					<slot />
+				</div>
+			</article>
+		);
+	}
+}
+```
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `name` | `string` | No | Named slot to query. Omit it for the default slot. |
+| `all` | `boolean` | No | Return every assigned element instead of only the first one. |
+| `cache` | `boolean` | No | Cache the query result until slot projection changes. Defaults to `true`. |
+
+## Notes
+
+- `@querySlot` returns elements only. Text nodes in projected content are ignored.
+- Cache invalidation follows slot projection changes, including later direct-host child mutations.
+- Use [@query](/docs/decorators/query) for selector or `data-ref` queries over the rendered light DOM subtree.

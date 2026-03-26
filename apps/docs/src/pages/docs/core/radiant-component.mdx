@@ -19,6 +19,7 @@ Use it when the custom element itself should:
 - describe its host view with JSX
 - rerender through `update()`
 - hydrate SSR output in place
+- project authored light-DOM content through literal `<slot>` tags
 - expose reactive JSX bindings by default for `@prop`, `@state`, `createReactiveProp(...)`, and `createReactiveField(...)`
 
 ## Example
@@ -122,6 +123,48 @@ So `this.$.count`, `this.bindings.count`, and `this.bind('count')` are available
 - `renderHost()` returns the same host output as a JSX renderable.
 
 Use those methods when you need the host element and view to stay aligned across server and client rendering.
+
+## Slots And Light-DOM Projection
+
+`RadiantComponent` supports literal `<slot>` tags in `render()` even though the component renders in the light DOM.
+
+- Omit `name` for the default slot.
+- Use `name="..."` for named slots.
+- Put fallback JSX inside the `<slot>` tag.
+- Assign authored host children with the standard `slot` attribute.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantComponent, customElement } from '@ecopages/radiant';
+
+@customElement('marketing-card')
+export class MarketingCard extends RadiantComponent {
+	override render() {
+		return (
+			<article class="card">
+				<slot name="heading">
+					<h2>Fallback heading</h2>
+				</slot>
+				<div class="card-body">
+					<slot>
+						<p>Fallback body copy</p>
+					</slot>
+				</div>
+			</article>
+		);
+	}
+}
+```
+
+```tsx
+<marketing-card>
+	<h2 slot="heading">Projected heading</h2>
+	<p>Projected body copy</p>
+</marketing-card>
+```
+
+This behaves like a Radiant-managed content projection model, not native shadow-DOM slot distribution. See [Slots](/docs/core/slots) and [@querySlot](/docs/decorators/query-slot).
 
 ## Relationship To RadiantElement
 
