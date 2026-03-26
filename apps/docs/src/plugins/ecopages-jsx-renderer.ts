@@ -1,18 +1,35 @@
 import type {
 	EcoComponent,
-	EcoPagesElement,
+	EcoComponentConfig,
+	EcoPageFile,
+	GetMetadata,
 	HtmlTemplateProps,
 	IntegrationRendererRenderOptions,
 	PageMetadataProps,
+	RouteRendererBody,
 } from '@ecopages/core';
 import { IntegrationRenderer, type RenderToResponseContext } from '@ecopages/core/route-renderer/integration-renderer';
+import { rapidhash } from '@ecopages/core/hash';
+import type { CompileOptions } from '@mdx-js/mdx';
 import { renderToString, type JsxRenderable } from '@ecopages/jsx';
+import { ECOPAGES_JSX_PLUGIN_NAME } from './ecopages-jsx.plugin';
 
 type AsyncEcoComponent<P = Record<string, unknown>, R = JsxRenderable> = EcoComponent<P, R | Promise<R>>;
+type MdxPageModule = EcoPageFile<{
+	config?: EcoComponentConfig;
+	layout?: EcoComponent;
+	getMetadata?: GetMetadata;
+}>;
 
 const renderComponent = async <P>(component: AsyncEcoComponent<P>, props: P): Promise<JsxRenderable> => {
 	return (await component(props)) as JsxRenderable;
 };
+
+const createEcoMeta = (file: string): NonNullable<EcoComponentConfig['__eco']> => ({
+	id: String(rapidhash(file)),
+	file,
+	integration: ECOPAGES_JSX_PLUGIN_NAME,
+});
 
 /**
  * Local Ecopages renderer for JSX templates in the docs app.
@@ -21,31 +38,66 @@ const renderComponent = async <P>(component: AsyncEcoComponent<P>, props: P): Pr
  * async page, layout, and html template components on the server.
  */
 export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
-	name = 'ecopages-jsx';
+	name = ECOPAGES_JSX_PLUGIN_NAME;
+	static mdxCompilerOptions: CompileOptions | undefined;
+	static mdxExtensions = ['.mdx'];
 
-	override async render(
-		options: IntegrationRendererRenderOptions<JsxRenderable>,
-	): Promise<EcoPagesElement> {
-		const page = await renderComponent(options.Page as AsyncEcoComponent<Record<string, unknown>>, {
-			...options.pageProps,
-			locals: options.pageLocals,
-		});
+	public isMdxFile(filePath: string): boolean {
+		return EcopagesJsxRenderer.mdxExtensions.some((ext) => filePath.endsWith(ext));
+	}
 
-		const content = options.Layout
-			? await renderComponent(options.Layout as AsyncEcoComponent<Record<string, unknown>>, {
+	protected override async importPageFile(file: string): Promise<MdxPageModule> {
+		const module = (await super.importPageFile(file)) as MdxPageModule;
+
+		if (!this.isMdxFile(file)) {
+			return module;
+		}
+
+		const Page = module.default as EcoComponent;
+		const normalizedConfig: EcoComponentConfig = {
+			...(module.config ?? Page.config ?? {}),
+			...(module.layout ? { layout: module.layout } : {}),
+			__eco: module.config?.__eco ?? Page.config?.__eco ?? createEcoMeta(file),
+		};
+
+		Page.config = normalizedConfig;
+
+		if (module.getMetadata) {
+			Page.metadata = module.getMetadata;
+		}
+
+		return {
+			...module,
+			default: Page,
+			config: normalizedConfig,
+		};
+	}
+
+	override async render(options: IntegrationRendererRenderOptions<JsxRenderable>): Promise<RouteRendererBody> {
+		try {
+			const page = await renderComponent(options.Page as AsyncEcoComponent<Record<string, unknown>>, {
 				...options.pageProps,
-				children: page,
-				locals: options.locals,
-			})
-			: page;
+				locals: options.pageLocals,
+			});
 
-		const document = await renderComponent(options.HtmlTemplate as AsyncEcoComponent<HtmlTemplateProps>, {
-			metadata: options.metadata,
-			pageProps: options.props ?? {},
-			children: content,
-		});
+			const content = options.Layout
+				? await renderComponent(options.Layout as AsyncEcoComponent<Record<string, unknown>>, {
+						...options.pageProps,
+						children: page,
+						locals: options.locals,
+					})
+				: page;
 
-		return `${this.DOC_TYPE}${renderToString(document)}`;
+			const document = await renderComponent(options.HtmlTemplate as AsyncEcoComponent<HtmlTemplateProps>, {
+				metadata: options.metadata,
+				pageProps: options.pageProps ?? {},
+				children: content,
+			});
+
+			return `${this.DOC_TYPE}${renderToString(document)}`;
+		} catch (error) {
+			throw this.createRenderError('Error rendering page', error);
+		}
 	}
 
 	override async renderToResponse<P = Record<string, unknown>>(
@@ -53,19 +105,52 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 		props: P,
 		ctx: RenderToResponseContext,
 	): Promise<Response> {
-		const layout = ctx.partial ? undefined : view.config?.layout;
-		await this.prepareViewDependencies(view, layout);
+		try {
+			const layout = ctx.partial ? undefined : view.config?.layout;
+			await this.prepareViewDependencies(view, layout);
 
-		const viewContent = await renderComponent(view as AsyncEcoComponent<P>, props);
-		const html = ctx.partial
-			? renderToString(viewContent)
-			: await this.renderDocument(viewContent, {
-				metadata: this.appConfig.defaultMetadata,
-				pageProps: props as Record<string, unknown>,
-				layout,
+			const HtmlTemplate = ctx.partial ? undefined : await this.getHtmlTemplate();
+			const metadata = ctx.partial ? undefined : await this.resolveViewMetadata(view, props);
+			const capturedRender = await this.captureHtmlRender(async () => {
+				const viewContent = await renderComponent(view as AsyncEcoComponent<P>, props);
+
+				if (ctx.partial) {
+					return renderToString(viewContent);
+				}
+
+				return this.renderDocument(viewContent, {
+					metadata: metadata as PageMetadataProps,
+					pageProps: (props ?? {}) as Record<string, unknown>,
+					layout,
+				});
 			});
 
-		return this.htmlTransformer.transform(this.createHtmlResponse(html, ctx));
+			const html = await this.finalizeCapturedHtmlRender({
+				html: capturedRender.html,
+				graphContext: capturedRender.graphContext,
+				componentsToResolve: HtmlTemplate
+					? layout
+						? [HtmlTemplate as EcoComponent, layout, view]
+						: [HtmlTemplate as EcoComponent, view]
+					: [view],
+				partial: ctx.partial,
+			});
+
+			return this.createHtmlResponse(html, ctx);
+		} catch (error) {
+			throw this.createRenderError('Error rendering view', error);
+		}
+	}
+
+	private async resolveViewMetadata<P>(view: EcoComponent<P>, props: P): Promise<PageMetadataProps> {
+		return view.metadata
+			? await view.metadata({
+					params: {},
+					query: {},
+					props: props as Record<string, unknown>,
+					appConfig: this.appConfig,
+				})
+			: this.appConfig.defaultMetadata;
 	}
 
 	private async renderDocument(
@@ -82,9 +167,9 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 	): Promise<string> {
 		const resolvedContent = layout
 			? await renderComponent(layout as AsyncEcoComponent<Record<string, unknown>>, {
-				...pageProps,
-				children: content,
-			})
+					...pageProps,
+					children: content,
+				})
 			: content;
 
 		const HtmlTemplate = await this.getHtmlTemplate();

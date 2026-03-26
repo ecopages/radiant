@@ -1,22 +1,19 @@
 import path from 'node:path';
 import { ConfigBuilder } from '@ecopages/core/config-builder';
-import { mdxPlugin } from '@ecopages/mdx';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
 import remarkGfm from 'remark-gfm';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { ecopagesJsxPlugin } from './src/plugins/ecopages-jsx.plugin';
 import { rehypeSimpleTableWrapper } from './src/plugins/rehype-simple-table-wrapper';
-import { transformerEscapeHtml } from './src/plugins/transformer-escape-html';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dir)
 	.setBaseUrl(process.env.ECOPAGES_BASE_URL ?? 'http://localhost:3000')
 	.setIntegrations([
-		ecopagesJsxPlugin(),
-		mdxPlugin({
-			compilerOptions: {
-				jsxImportSource: '@ecopages/jsx',
+		ecopagesJsxPlugin({
+			mdx: {
+				enabled: true,
 				remarkPlugins: [remarkGfm],
 				rehypePlugins: [
 					[
@@ -26,7 +23,6 @@ const config = await new ConfigBuilder()
 								light: 'light-plus',
 								dark: 'dark-plus',
 							},
-							transformers: [transformerEscapeHtml],
 						},
 					],
 					rehypeSimpleTableWrapper,
@@ -34,13 +30,6 @@ const config = await new ConfigBuilder()
 			},
 		}),
 	])
-
-	.setIncludesTemplates({
-		head: 'head.tsx',
-		html: 'html.tsx',
-		seo: 'seo.tsx',
-	})
-	.setError404Template('404.tsx')
 	.setDefaultMetadata({
 		title: 'Radiant | Docs',
 		description: 'Radiant is a minimalist web component library designed for simplicity and flexibility.',
