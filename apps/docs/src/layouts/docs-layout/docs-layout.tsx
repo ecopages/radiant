@@ -2,9 +2,10 @@ import { Banner } from '@/components/banner/banner';
 import { docsConfig } from '@/data/docs-config';
 import { BaseLayout } from '@/layouts/base-layout';
 import type { EcoComponent } from '@ecopages/core';
+import type { JsxRenderable } from '@ecopages/jsx';
 
 export type DocsLayoutProps = {
-	children: JSX.Element;
+	children: JsxRenderable;
 	class?: string;
 };
 
