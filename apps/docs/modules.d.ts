@@ -28,3 +28,8 @@ declare module '*.mdx' {
 	const MDXComponent: (props: any) => JSX.Element;
 	export default MDXComponent;
 }
+
+declare module 'postcss-import' {
+	const postcssImport: any;
+	export default postcssImport;
+}

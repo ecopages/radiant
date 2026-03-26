@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { ConfigBuilder } from '@ecopages/core/config-builder';
-import { postcssProcessorPlugin } from '@ecopages/postcss-processor';
+import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
 import remarkGfm from 'remark-gfm';
 import rehypePrettyCode from 'rehype-pretty-code';

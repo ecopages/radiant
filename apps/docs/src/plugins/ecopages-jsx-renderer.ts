@@ -8,11 +8,20 @@ import type {
 	PageMetadataProps,
 	RouteRendererBody,
 } from '@ecopages/core';
-import { IntegrationRenderer, type RenderToResponseContext } from '@ecopages/core/route-renderer/integration-renderer';
-import { rapidhash } from '@ecopages/core/hash';
-import type { CompileOptions } from '@mdx-js/mdx';
+import type { EcoPagesAppConfig } from '@ecopages/core/internal-types.ts';
+import {
+	IntegrationRenderer,
+	type RenderToResponseContext,
+} from '@ecopages/core/route-renderer/integration-renderer.ts';
+import type { AssetProcessingService, ProcessedAsset } from '@ecopages/core/services/asset-processing-service.ts';
+import { rapidhash } from '@ecopages/core/hash.ts';
 import { renderToString, type JsxRenderable } from '@ecopages/jsx';
 import { ECOPAGES_JSX_PLUGIN_NAME } from './ecopages-jsx.plugin';
+
+type DocsHtmlTemplateProps = Omit<HtmlTemplateProps, 'children' | 'headContent'> & {
+	children: JsxRenderable;
+	headContent?: JsxRenderable;
+};
 
 type AsyncEcoComponent<P = Record<string, unknown>, R = JsxRenderable> = EcoComponent<P, R | Promise<R>>;
 type MdxPageModule = EcoPageFile<{
@@ -22,7 +31,7 @@ type MdxPageModule = EcoPageFile<{
 }>;
 
 const renderComponent = async <P>(component: AsyncEcoComponent<P>, props: P): Promise<JsxRenderable> => {
-	return (await component(props)) as JsxRenderable;
+	return (await (component as (props: P) => JsxRenderable | Promise<JsxRenderable>)(props)) as JsxRenderable;
 };
 
 const createEcoMeta = (file: string): NonNullable<EcoComponentConfig['__eco']> => ({
@@ -39,8 +48,26 @@ const createEcoMeta = (file: string): NonNullable<EcoComponentConfig['__eco']> =
  */
 export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 	name = ECOPAGES_JSX_PLUGIN_NAME;
-	static mdxCompilerOptions: CompileOptions | undefined;
 	static mdxExtensions = ['.mdx'];
+
+	constructor({
+		appConfig,
+		assetProcessingService,
+		resolvedIntegrationDependencies,
+		runtimeOrigin,
+	}: {
+		appConfig: EcoPagesAppConfig;
+		assetProcessingService: AssetProcessingService;
+		resolvedIntegrationDependencies: ProcessedAsset[];
+		runtimeOrigin: string;
+	}) {
+		super({
+			appConfig,
+			assetProcessingService,
+			resolvedIntegrationDependencies,
+			runtimeOrigin,
+		});
+	}
 
 	public isMdxFile(filePath: string): boolean {
 		return EcopagesJsxRenderer.mdxExtensions.some((ext) => filePath.endsWith(ext));
@@ -88,7 +115,7 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 					})
 				: page;
 
-			const document = await renderComponent(options.HtmlTemplate as AsyncEcoComponent<HtmlTemplateProps>, {
+			const document = await renderComponent(options.HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>, {
 				metadata: options.metadata,
 				pageProps: options.pageProps ?? {},
 				children: content,
@@ -173,7 +200,7 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 			: content;
 
 		const HtmlTemplate = await this.getHtmlTemplate();
-		const document = await renderComponent(HtmlTemplate as AsyncEcoComponent<HtmlTemplateProps>, {
+		const document = await renderComponent(HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>, {
 			metadata,
 			pageProps,
 			children: resolvedContent,
