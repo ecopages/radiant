@@ -31,6 +31,7 @@ It keeps rerenders explicit:
 - `update()` is the single rerender entrypoint
 - `@onUpdated(...)` can be used to declare which reactive fields or props should call `update()`
 - first connect can either hydrate existing light-DOM SSR markup or do a fresh client render
+- literal `<slot>` tags project authored light-DOM children into default and named insertion points
 - `renderHost()` and `renderHostToString()` let the component own its host-aware SSR output
 
 ```tsx
@@ -60,8 +61,11 @@ export class CounterCard extends RadiantComponent<CounterCardBindings> {
 	override render() {
 		return (
 			<section>
-				<h2>{this.bindings.label}</h2>
+				<slot name="heading">
+					<h2>{this.bindings.label}</h2>
+				</slot>
 				<p>Count: {this.$.count}</p>
+				<slot />
 				<button type="button" on:click={this.increment}>
 					Increment
 				</button>
@@ -96,6 +100,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 `renderToString({ hydrate: true })` emits hydration markers for the component view only.
 `renderHostToString({ hydrate: true })` emits the custom-element host plus the component view, so SSR no longer needs to manually wrap `render()` output.
 The component will hydrate that SSR DOM on first connect.
+When a component uses literal `<slot>` tags, `renderHostToString()` also embeds the slot-projection payload needed to reconstruct default and named assignments on the client.
 When an SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant component modules.
 
 ```ts

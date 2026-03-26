@@ -1,4 +1,3 @@
-/** @jsxImportSource @ecopages/jsx */
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { ContextProvider } from '../../src/context/context-provider';
@@ -133,6 +132,100 @@ describe('RadiantComponent', () => {
 		const element = document.createElement('server-greeting-card-test') as ServerGreetingCard;
 
 		expect(element.renderToString()).toBe('<p data-ref="message">Hello SSR</p>');
+	});
+
+	test('projects default and named slot content in client rendering', async () => {
+		class SlotCard extends RadiantComponent {
+			override render() {
+				return (
+					<section>
+						<header>
+							<slot name="header">
+								<h2>Fallback heading</h2>
+							</slot>
+						</header>
+						<div data-ref="body">
+							<slot>
+								<p>Fallback body</p>
+							</slot>
+						</div>
+					</section>
+				);
+			}
+		}
+
+		customElements.define('slot-card-test', SlotCard);
+
+		const element = document.createElement('slot-card-test') as SlotCard;
+		const heading = document.createElement('h1');
+		heading.setAttribute('slot', 'header');
+		heading.textContent = 'Projected heading';
+		const body = document.createElement('p');
+		body.textContent = 'Projected body';
+		element.append(heading, body);
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.querySelector('header > h1')?.textContent).toBe('Projected heading');
+			expect(element.querySelector('[data-ref="body"] > p')?.textContent).toBe('Projected body');
+		});
+	});
+
+	test('falls back when a slot has no projected content', async () => {
+		class FallbackSlotCard extends RadiantComponent {
+			override render() {
+				return (
+					<section>
+						<header>
+							<slot name="header">
+								<h2 data-ref="fallback">Fallback heading</h2>
+							</slot>
+						</header>
+					</section>
+				);
+			}
+		}
+
+		customElements.define('fallback-slot-card-test', FallbackSlotCard);
+
+		const element = document.createElement('fallback-slot-card-test') as FallbackSlotCard;
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.querySelector('[data-ref="fallback"]')?.textContent).toBe('Fallback heading');
+		});
+	});
+
+	test('reprojects direct host child mutations after connect', async () => {
+		class DynamicSlotCard extends RadiantComponent {
+			override render() {
+				return (
+					<section>
+						<header data-ref="header">
+							<slot name="header" />
+						</header>
+					</section>
+				);
+			}
+		}
+
+		customElements.define('dynamic-slot-card-test', DynamicSlotCard);
+
+		const element = document.createElement('dynamic-slot-card-test') as DynamicSlotCard;
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.querySelector('[data-ref="header"]')?.children).toHaveLength(0);
+		});
+
+		const heading = document.createElement('h2');
+		heading.setAttribute('slot', 'header');
+		heading.textContent = 'Late heading';
+		element.appendChild(heading);
+
+		await waitFor(() => {
+			expect(element.querySelector('[data-ref="header"] > h2')?.textContent).toBe('Late heading');
+		});
 	});
 
 	test('renderHostToString() serializes the host tag and reactive attributes', () => {
@@ -315,6 +408,33 @@ describe('RadiantComponent', () => {
 		);
 	});
 
+	test('renderHostToString() serializes projected slot content and embeds slot projection payload', () => {
+		@customElement('server-host-slot-card-test')
+		class ServerHostSlotCard extends RadiantComponent {
+			override render() {
+				return (
+					<section>
+						<header>
+							<slot name="header" />
+						</header>
+						<div>
+							<slot />
+						</div>
+					</section>
+				);
+			}
+		}
+
+		const element = new ServerHostSlotCard();
+		element.innerHTML = '<h2 slot="header">Server heading</h2><p>Server body</p>';
+
+		const html = element.renderHostToString({ hydrate: true });
+
+		expect(html).toContain('<header><h2 slot="header">Server heading</h2></header>');
+		expect(html).toContain('<div><p>Server body</p></div>');
+		expect(html).toContain('data-radiant-slot-projection');
+	});
+
 	test('renderHostToString({ hydrate: true }) appends provider hydration scripts automatically', () => {
 		const serverContext = createContext<{ label: string; level: number }>(Symbol('server-context-card'));
 
@@ -386,6 +506,110 @@ describe('RadiantComponent', () => {
 		});
 
 		button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+		await waitFor(() => {
+			expect(element.querySelector('button')?.textContent).toBe('Count 1');
+		});
+	});
+
+	test('hydrates SSR markup that uses slot projection payloads', async () => {
+		@customElement('hydrated-slot-card-test')
+		class HydratedSlotCard extends RadiantComponent {
+			count = 0;
+
+			private readonly increment = () => {
+				this.count += 1;
+				this.update();
+			};
+
+			override render() {
+				return (
+					<section>
+						<header>
+							<slot name="header" />
+						</header>
+						<div>
+							<slot />
+						</div>
+						<button type="button" on:click={this.increment}>
+							Count {this.count}
+						</button>
+					</section>
+				);
+			}
+		}
+
+		const serverElement = new HydratedSlotCard();
+		serverElement.innerHTML = '<h2 slot="header">SSR header</h2><p>SSR body</p>';
+		const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+
+		document.body.innerHTML = serverMarkup;
+
+		const element = document.querySelector('hydrated-slot-card-test') as HydratedSlotCard;
+
+		await waitFor(() => {
+			expect(element.querySelector('header > h2')?.textContent).toBe('SSR header');
+			expect(element.querySelector('div > p')?.textContent).toBe('SSR body');
+			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+		});
+
+		element.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+		await waitFor(() => {
+			expect(element.querySelector('button')?.textContent).toBe('Count 1');
+		});
+	});
+
+	test('hydrates slot projection payloads with multiple projected roots and quoted attributes', async () => {
+		@customElement('hydrated-complex-slot-card-test')
+		class HydratedComplexSlotCard extends RadiantComponent {
+			count = 0;
+
+			private readonly increment = () => {
+				this.count += 1;
+				this.update();
+			};
+
+			override render() {
+				return (
+					<section>
+						<header>
+							<slot name="header" />
+						</header>
+						<div data-ref="body">
+							<slot />
+						</div>
+						<footer>
+							<slot name="footer" />
+						</footer>
+						<button type="button" on:click={this.increment}>
+							Count {this.count}
+						</button>
+					</section>
+				);
+			}
+		}
+
+		const serverElement = new HydratedComplexSlotCard();
+		serverElement.innerHTML =
+			'<h2 slot="header" data-note="1 > 0">SSR header</h2><article data-kind="primary"><p>SSR body</p></article><radiant-component-counter count="4" label="Projected SSR counter"></radiant-component-counter><p slot="footer">SSR footer</p>';
+		const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+
+		document.body.innerHTML = serverMarkup;
+
+		const element = document.querySelector('hydrated-complex-slot-card-test') as HydratedComplexSlotCard;
+
+		await waitFor(() => {
+			expect(element.querySelector('header > h2')?.getAttribute('data-note')).toBe('1 > 0');
+			expect(element.querySelector('[data-ref="body"] > article > p')?.textContent).toBe('SSR body');
+			expect(element.querySelector('[data-ref="body"] > radiant-component-counter')?.getAttribute('count')).toBe(
+				'4',
+			);
+			expect(element.querySelector('footer > p')?.textContent).toBe('SSR footer');
+			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
+		});
+
+		element.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
 		await waitFor(() => {
 			expect(element.querySelector('button')?.textContent).toBe('Count 1');

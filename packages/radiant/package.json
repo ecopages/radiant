@@ -117,6 +117,10 @@
 			"types": "./dist/decorators/query.d.ts",
 			"import": "./dist/decorators/query.js"
 		},
+		"./decorators/query-slot": {
+			"types": "./dist/decorators/query-slot.d.ts",
+			"import": "./dist/decorators/query-slot.js"
+		},
 		"./decorators/reactive-field": {
 			"types": "./dist/decorators/reactive-field.d.ts",
 			"import": "./dist/decorators/reactive-field.js"
