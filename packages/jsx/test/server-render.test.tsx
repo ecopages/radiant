@@ -45,7 +45,13 @@ describe('Radiant JSX server render', () => {
 		]);
 
 		const DeepLeaf = ({ value }: { value: string }) => jsx('em', { children: value });
-		const NestedBlock = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxRenderable }) =>
+		const NestedBlock = ({
+			title,
+			children,
+		}: {
+			title: string;
+			children: import('../jsx-runtime.ts').JsxRenderable;
+		}) =>
 			jsxs('article', {
 				class: 'nested-block',
 				children: [jsx('h2', { children: title }), jsx('div', { class: 'nested-children', children })],

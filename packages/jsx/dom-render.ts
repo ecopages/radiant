@@ -7,14 +7,14 @@ import {
 	type KeyedJsxValue,
 	type SubscribableJsxValue,
 	type TemplateResultLike,
-} from './jsx-runtime';
+} from './jsx-runtime.ts';
 import {
 	ATTRIBUTE_BINDING_PREFIX,
 	type BindingKind,
 	collectHydrationBindings,
 	getTemplateInterpolationParts,
 	parseBindingDescriptor,
-} from './hydration-bindings';
+} from './hydration-bindings.ts';
 
 /** Comment marker prefix that denotes the start of a dynamic child range in a compiled template blueprint. */
 const CHILD_BINDING_START_PREFIX = 'radiant-jsx-child-start:';

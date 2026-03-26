@@ -6,6 +6,8 @@ const RADIANT_TEMPLATE_RESULT_FIELD = '_$rType$';
 const KEYED_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.keyed-value');
 /** Symbol key present on every {@link SubscribableJsxValue} wrapper object. */
 const SUBSCRIBABLE_JSX_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.subscribable-value');
+/** Symbol key present on every slot placeholder emitted from literal `<slot>` JSX tags. */
+const SLOT_JSX_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.slot-value');
 /** When `true` on `globalThis`, bypasses the `document` check and forces server-side custom-element rendering. */
 const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 /** When `true` on `globalThis`, signals that the current SSR pass should emit hydration binding markers. */
@@ -32,7 +34,7 @@ const voidElementNames = new Set([
 /** Well-known symbol that identifies a JSX fragment in the Radiant runtime. */
 const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
 
-import { escapeHtml } from './html-escape';
+import { escapeHtml } from './html-escape.ts';
 
 /**
  * A primitive child value that the Radiant renderer can mount directly.
@@ -108,6 +110,18 @@ export interface SubscribableJsxValue<Value extends JsxRenderable = JsxRenderabl
 }
 
 /**
+ * Internal placeholder value produced from literal `<slot>` JSX tags.
+ *
+ * RadiantComponent resolves these placeholders against authored light-DOM
+ * children before passing the final tree to the DOM or SSR renderers.
+ */
+export interface SlotJsxValue {
+	readonly [SLOT_JSX_VALUE_SYMBOL]: true;
+	readonly fallback?: JsxRenderable;
+	readonly name?: string;
+}
+
+/**
  * A value that can be rendered by the JSX runtime.
  *
  * Wrapper values such as keyed and subscribable children are transparent to the
@@ -119,6 +133,7 @@ export type JsxRenderable =
 	| JsxNodeLike
 	| KeyedJsxValue
 	| Node
+	| SlotJsxValue
 	| SubscribableJsxValue
 	| TemplateResultLike
 	| Iterable<JsxRenderable>;
@@ -446,11 +461,11 @@ export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxS
  * Example:
  *
  * ```ts
-	 * declare module '@ecopages/jsx/jsx-runtime' {
-	 *   interface JsxCustomIntrinsicElements {
-	 *     'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-	 *   }
-	 * }
+ * declare module '@ecopages/jsx/jsx-runtime' {
+ *   interface JsxCustomIntrinsicElements {
+ *     'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+ *   }
+ * }
  * ```
  */
 export type JsxCustomElementAttributes<
@@ -535,9 +550,10 @@ export namespace JSX {
 		key?: JsxKey;
 	}
 
-	export type IntrinsicElements = JsxDomIntrinsicElements & JsxCustomIntrinsicElements & {
-		[elementName: string]: JsxIntrinsicAttributes<globalThis.Element>;
-	};
+	export type IntrinsicElements = JsxDomIntrinsicElements &
+		JsxCustomIntrinsicElements & {
+			[elementName: string]: JsxIntrinsicAttributes<globalThis.Element>;
+		};
 }
 
 /**
@@ -570,10 +586,11 @@ function createJsxElement<Props extends object>(
 	if (type === fragmentSymbol) {
 		const fragmentChildren = (props as JsxPropsWithChildren).children;
 
-		return wrapKeyedValue(
-			normalizeChildrenWithMode(fragmentChildren, childSlotMode),
-			keyedValue,
-		);
+		return wrapKeyedValue(normalizeChildrenWithMode(fragmentChildren, childSlotMode), keyedValue);
+	}
+
+	if (type === 'slot') {
+		return wrapKeyedValue(createSlotJsxValue(props as JsxPropsWithChildren & { name?: unknown }), keyedValue);
 	}
 
 	const serverRenderedCustomElement = createServerRenderedCustomElement(type, props);
@@ -633,10 +650,7 @@ type ServerRenderableCustomElement = {
  * @returns A {@link JsxNodeLike} whose `outerHTML` getter delegates to the element's
  *   `renderHostToString`, or `undefined` when SSR is not applicable.
  */
-function createServerRenderedCustomElement<Props extends object>(
-	type: string,
-	props: Props,
-): JsxNodeLike | undefined {
+function createServerRenderedCustomElement<Props extends object>(type: string, props: Props): JsxNodeLike | undefined {
 	if (!shouldServerRenderCustomElement(type)) {
 		return undefined;
 	}
@@ -941,6 +955,16 @@ export function isKeyedJsxValue(value: unknown): value is KeyedJsxValue {
  */
 export function isSubscribableJsxValue(value: unknown): value is SubscribableJsxValue {
 	return typeof value === 'object' && value !== null && SUBSCRIBABLE_JSX_VALUE_SYMBOL in value;
+}
+
+/**
+ * Returns whether a value carries internal slot placeholder metadata.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when the value was produced from a literal `<slot>` JSX tag.
+ */
+export function isSlotJsxValue(value: unknown): value is SlotJsxValue {
+	return typeof value === 'object' && value !== null && SLOT_JSX_VALUE_SYMBOL in value;
 }
 
 /**
@@ -1422,6 +1446,14 @@ function wrapKeyedValue(value: JsxRenderable, key: unknown): JsxRenderable {
 		key,
 		value,
 		[KEYED_VALUE_SYMBOL]: true,
+	};
+}
+
+function createSlotJsxValue(props: JsxPropsWithChildren & { name?: unknown }): SlotJsxValue {
+	return {
+		fallback: props.children,
+		name: typeof props.name === 'string' && props.name !== '' ? props.name : undefined,
+		[SLOT_JSX_VALUE_SYMBOL]: true,
 	};
 }
 

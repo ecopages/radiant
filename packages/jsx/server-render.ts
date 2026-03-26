@@ -4,13 +4,13 @@ import {
 	type JsxNodeLike,
 	type JsxRenderable,
 	type TemplateResultLike,
-} from './jsx-runtime';
+} from './jsx-runtime.ts';
 import {
 	ATTRIBUTE_BINDING_PREFIX,
 	getTemplateInterpolationParts,
 	serializeBindingDescriptor,
-} from './hydration-bindings';
-import { escapeAttribute, escapeHtml } from './html-escape';
+} from './hydration-bindings.ts';
+import { escapeAttribute, escapeHtml } from './html-escape.ts';
 
 /** Internal global slot used to propagate the active SSR hydrate mode into custom-element SSR helpers. */
 const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');

@@ -1,4 +1,4 @@
-import type { JsxRenderable, TemplateResultLike } from './jsx-runtime';
+import type { JsxRenderable, TemplateResultLike } from './jsx-runtime.ts';
 
 /** Attribute prefix used for emitted SSR hydration markers. */
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';
