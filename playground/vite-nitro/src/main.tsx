@@ -2,7 +2,14 @@ import { createRoot } from '@ecopages/jsx';
 import './components/radiant-component-counter.script';
 import './components/radiant-context-flow-shell.script';
 import './components/radiant-component-server-card.script';
-import { createInitialPlaygroundState, decodePlaygroundState, renderPlaygroundView } from './playground-view';
+import './components/radiant-slot-studio-board.script.tsx';
+import {
+	PLAYGROUND_STATE_SCRIPT_ATTRIBUTE,
+	createInitialPlaygroundState,
+	createPlaygroundStateScriptNode,
+	parsePlaygroundState,
+	renderPlaygroundView,
+} from './playground-view';
 import './style.css';
 
 const mountNode = document.querySelector<HTMLElement>('#app');
@@ -12,9 +19,12 @@ if (!mountNode) {
 }
 
 const root = createRoot(mountNode);
-const initialState = readInitialState(mountNode);
-const state = initialState ?? createInitialPlaygroundState();
+const initialBootstrap = readInitialState(mountNode);
+const state = initialBootstrap?.state ?? createInitialPlaygroundState();
 let shouldHydrate = mountNode.childNodes.length > 0;
+let bootstrapStateScript = initialBootstrap?.serializedState
+	? createPlaygroundStateScriptNode(initialBootstrap.serializedState)
+	: undefined;
 
 function renderApp() {
 	const view = renderPlaygroundView(
@@ -25,6 +35,7 @@ function renderApp() {
 			loadSsrMarkup,
 		},
 		{
+			bootstrapStateScript,
 			ssrPreviewContent: createClientPreviewContent(state),
 		},
 	);
@@ -32,9 +43,11 @@ function renderApp() {
 	if (shouldHydrate) {
 		root.hydrate(view);
 		shouldHydrate = false;
+		bootstrapStateScript = undefined;
 		return;
 	}
 
+	bootstrapStateScript = undefined;
 	root.render(view);
 }
 
@@ -109,14 +122,24 @@ async function loadSsrMarkupFrom(endpoint = '/api/ssr/radiant-component') {
 
 renderApp();
 
-if (!initialState) {
+if (!initialBootstrap) {
 	void loadSsrMarkupFrom();
 }
 
 function readInitialState(rootElement: HTMLElement) {
-	const encodedState = rootElement.querySelector<HTMLElement>('[data-playground-state]')?.dataset.playgroundState;
+	const serializedState = rootElement.querySelector<HTMLScriptElement>(
+		`script[${PLAYGROUND_STATE_SCRIPT_ATTRIBUTE}]`,
+	)?.textContent;
+	const state = parsePlaygroundState(serializedState);
 
-	return decodePlaygroundState(encodedState);
+	if (!state || !serializedState) {
+		return undefined;
+	}
+
+	return {
+		serializedState,
+		state,
+	};
 }
 
 function createClientPreviewContent(state: { ssrMarkup: string; ssrStatus: string }) {

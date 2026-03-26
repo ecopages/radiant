@@ -1,17 +1,16 @@
-/** @jsxImportSource @ecopages/jsx */
+import { RadiantComponent, customElement, state } from '@ecopages/radiant';
 
-import { RadiantComponent, customElement, onUpdated, reactiveField } from '@ecopages/radiant';
+type RadiantComponentServerCardBindings = {
+	message: string;
+	serverTime: string;
+	status: 'idle' | 'loading' | 'ready' | 'error';
+};
 
 @customElement('radiant-component-server-card')
-export class RadiantComponentServerCardElement extends RadiantComponent {
-	@reactiveField private status: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
-	@reactiveField private message = 'Press the button to fetch the Nitro endpoint from inside a RadiantComponent.';
-	@reactiveField private serverTime = 'n/a';
-
-	@onUpdated(['status', 'message', 'serverTime'])
-	protected rerenderView(): void {
-		this.update();
-	}
+export class RadiantComponentServerCardElement extends RadiantComponent<RadiantComponentServerCardBindings> {
+	@state status: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+	@state message = 'Press the button to fetch the Nitro endpoint from inside a RadiantComponent.';
+	@state serverTime = 'n/a';
 
 	private readonly fetchServerMessage = async () => {
 		this.status = 'loading';
@@ -43,20 +42,20 @@ export class RadiantComponentServerCardElement extends RadiantComponent {
 	override render() {
 		return (
 			<section class="component-card component-card--server">
-				<p class="component-tag">Decorator-driven rerender</p>
+				<p class="component-tag">State-driven rerender</p>
 				<h3>Nitro-backed update flow</h3>
 				<p class="component-copy">
-					This example keeps rerenders explicit: field changes trigger <code>@onUpdated</code>, and the
-					callback calls <code>update()</code>.
+					This example uses <code>@state</code> for internal data so async updates flow straight back into
+					render without manual <code>update()</code> calls.
 				</p>
-				<p class="component-status" data-status={this.status}>
-					Status: {this.status}
+				<p class="component-status" data-status={this.$.status}>
+					Status: {this.$.status}
 				</p>
-				<p class="component-copy">{this.message}</p>
-				<p class="component-meta">Server time: {this.serverTime}</p>
+				<p class="component-copy">{this.$.message}</p>
+				<p class="component-meta">Server time: {this.$.serverTime}</p>
 				<div class="component-actions">
-					<button type="button" on:click={this.fetchServerMessage} disabled={this.status === 'loading'}>
-						{this.status === 'loading' ? 'Loading...' : 'Fetch from Nitro'}
+					<button type="button" on:click={this.fetchServerMessage} disabled={this.$.status === 'loading'}>
+						{this.$.status === 'loading' ? 'Loading...' : 'Fetch from Nitro'}
 					</button>
 				</div>
 			</section>

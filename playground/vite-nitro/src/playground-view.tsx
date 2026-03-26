@@ -1,4 +1,8 @@
-import type { JsxRenderable } from '@ecopages/jsx';
+import type { JsxNodeLike, JsxRenderable } from '@ecopages/jsx';
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+
+/** Attribute marker used to find the one-shot SSR bootstrap payload for the playground shell. */
+export const PLAYGROUND_STATE_SCRIPT_ATTRIBUTE = 'data-playground-state';
 
 export type SsrComponentPayload = {
 	generatedAt: string;
@@ -25,22 +29,33 @@ export type PlaygroundCallbacks = {
 
 export type PlaygroundViewOptions = {
 	ssrPreviewContent?: JsxRenderable;
+	bootstrapStateScript?: JsxRenderable;
 };
 
-export function encodePlaygroundState(state: PlaygroundState): string {
-	return encodeURIComponent(JSON.stringify(state));
+/** Serializes the page-level playground state for SSR bootstrap. */
+export function serializePlaygroundState(state: PlaygroundState): string {
+	return stringifyTyped<PlaygroundState, string>(state);
 }
 
-export function decodePlaygroundState(value?: string): PlaygroundState | undefined {
-	if (!value) {
+/** Parses the SSR bootstrap payload for the page-level playground state. */
+export function parsePlaygroundState(serializedState?: string): PlaygroundState | undefined {
+	if (!serializedState) {
 		return undefined;
 	}
 
 	try {
-		return JSON.parse(decodeURIComponent(value)) as PlaygroundState;
+		return JSON.parse(serializedState) as PlaygroundState;
 	} catch {
 		return undefined;
 	}
+}
+
+/** Creates the static JSON script node used during the initial SSR hydration pass. */
+export function createPlaygroundStateScriptNode(serializedState: string): JsxNodeLike {
+	return {
+		nodeType: 1,
+		outerHTML: `<script type="application/json" ${PLAYGROUND_STATE_SCRIPT_ATTRIBUTE}>${escapePlaygroundStateJson(serializedState)}</script>`,
+	};
 }
 
 export function createInitialPlaygroundState(initialSsrPayload?: SsrComponentPayload): PlaygroundState {
@@ -62,7 +77,8 @@ export function renderPlaygroundView(
 	options: PlaygroundViewOptions = {},
 ) {
 	return (
-		<main class="shell" data-playground-state={encodePlaygroundState(state)}>
+		<main class="shell">
+			{options.bootstrapStateScript}
 			<section class="hero">
 				<p class="eyebrow">Radiant Playground</p>
 				<h1>Vite + Nitro with Ecopages JSX and RadiantComponent</h1>
@@ -85,6 +101,35 @@ export function renderPlaygroundView(
 					<radiant-component-counter count={2} />
 					<radiant-context-flow-shell />
 					<radiant-component-server-card />
+					<radiant-slot-studio-board>
+						<p slot="eyebrow" class="component-tag">
+							Creative composition lab
+						</p>
+						<h3 slot="heading">Launch board with projected planning rails</h3>
+						<div slot="sidebar" class="studio-note-stack">
+							<p class="studio-note-stack__title">Sidebar checklist</p>
+							<ul class="studio-checklist">
+								<li>Slots define editorial regions.</li>
+								<li>Nested consumers mirror shared context.</li>
+								<li>Buttons mutate provider state in place.</li>
+							</ul>
+						</div>
+						<div class="studio-story">
+							<p class="component-copy">
+								This board mixes a composed header, sidebar, and body with context-driven subcomponents
+								so the projection model feels useful beyond a simple card shell.
+							</p>
+							<p class="component-copy">
+								Use it as a pattern for dashboards, release notes, or guided workflows where consumers
+								need shared state but the host still wants authored content regions.
+							</p>
+						</div>
+						<radiant-component-counter count={5} label="Projected slot counter" />
+						<p slot="footer" class="studio-footer">
+							Footer slot: treat this as the handoff rail for approvals, publishing notes, or last-mile
+							QA.
+						</p>
+					</radiant-slot-studio-board>
 				</div>
 			</section>
 
@@ -150,4 +195,13 @@ export function renderPlaygroundView(
 			</section>
 		</main>
 	);
+}
+
+function escapePlaygroundStateJson(value: string): string {
+	return value
+		.replace(/&/g, '\\u0026')
+		.replace(/</g, '\\u003c')
+		.replace(/>/g, '\\u003e')
+		.replace(/\u2028/g, '\\u2028')
+		.replace(/\u2029/g, '\\u2029');
 }

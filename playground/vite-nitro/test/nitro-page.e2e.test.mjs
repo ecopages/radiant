@@ -57,7 +57,10 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	const html = await response.text();
 	assert.match(html, /<radiant-context-flow-shell>/);
 	assert.match(html, /<radiant-context-flow-leaf>/);
+	assert.match(html, /<radiant-slot-studio-board><section[^>]*class="component-card component-card--studio"/);
 	assert.match(html, /Context: Nitro SSR context \/ 2/);
+	assert.match(html, /<script type="application\/json" data-playground-state>.*<\/script>/);
+	assert.doesNotMatch(html, /data-playground-state="/);
 	assert.match(
 		html,
 		/<script type="application\/json" data-hydration data-context-key="context">\{"label":"Nitro SSR context","level":2\}<\/script>/,
@@ -130,6 +133,64 @@ test('Nitro playground component cards react to their own button clicks', browse
 	});
 });
 
+test('Nitro playground studio board composes slots and propagates context updates', browserTestOptions, async () => {
+	await withBrowserPage(async (page) => {
+		await gotoPlayground(page);
+
+		const studioBoard = page.locator('radiant-slot-studio-board').first();
+		await waitForLocatorText(
+			studioBoard.locator('h3[slot="heading"]'),
+			'Launch board with projected planning rails',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-summary'),
+			'Design systems is steering slot composition in build mode with 3 commits queued.',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-slot-meta'),
+			'@querySlot sees 2 body regions, sidebar ready, footer ready. Projected custom element: radiant-component-counter.',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-insight[data-kind="stage"] .studio-insight__value'),
+			'Build',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-insight[data-kind="tempo"] .studio-insight__value'),
+			'Calm',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-insight[data-kind="commits"] .studio-insight__value'),
+			'3 synced',
+		);
+
+		const projectedCounter = studioBoard.locator('radiant-component-counter').first();
+		await waitForLocatorText(projectedCounter.locator('.component-metric').first(), 'Count: 5');
+		await projectedCounter.getByRole('button', { name: 'Increment', exact: true }).click();
+		await waitForLocatorText(projectedCounter.locator('.component-metric').first(), 'Count: 6');
+
+		await studioBoard.getByRole('button', { name: 'Advance stage' }).click();
+		await studioBoard.getByRole('button', { name: 'Rotate tempo' }).click();
+		await studioBoard.getByRole('button', { name: 'Log commit' }).click();
+
+		await waitForLocatorText(
+			studioBoard.locator('.studio-insight[data-kind="stage"] .studio-insight__value'),
+			'Review',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-insight[data-kind="tempo"] .studio-insight__value'),
+			'Live',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-insight[data-kind="commits"] .studio-insight__value'),
+			'4 synced',
+		);
+		await waitForLocatorText(
+			studioBoard.locator('.studio-summary'),
+			'Design systems is steering slot composition in review mode with 4 commits queued.',
+		);
+	});
+});
+
 test(
 	'Nitro SSR fragment controls swap rendered components and hydrate fetched markup',
 	browserTestOptions,
@@ -151,7 +212,7 @@ test(
 			await waitForLocatorTextMatch(ssrPanel.locator('.ssr-html'), /SSR counter rendered in Nitro/);
 
 			const previewCounter = ssrPanel.locator('.ssr-preview radiant-component-counter');
-			await waitForLocatorText(previewCounter.locator('.component-metric'), 'Count: 6');
+			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
 
 			await ssrPanel.getByRole('button', { name: 'Fetch server-card fragment' }).click();
 
@@ -181,10 +242,10 @@ test(
 				'radiant-component-counter',
 			);
 			await waitForLocatorTextMatch(ssrPanel.locator('.ssr-html'), /SSR counter rendered in Nitro/);
-			await waitForLocatorText(previewCounter.locator('.component-metric'), 'Count: 6');
+			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
 
 			await previewCounter.getByRole('button', { name: 'Increment', exact: true }).click();
-			await waitForLocatorText(previewCounter.locator('.component-metric'), 'Count: 7');
+			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 7');
 		});
 	},
 );

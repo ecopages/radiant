@@ -1,5 +1,3 @@
-/** @jsxImportSource @ecopages/jsx */
-
 import { ContextProvider, RadiantComponent, customElement, provideContext } from '@ecopages/radiant';
 import './radiant-context-flow-leaf.script';
 import { radiantContextFlowContext } from './radiant-context-flow.context';
