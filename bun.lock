@@ -11,6 +11,7 @@
         "@changesets/changelog-github": "^0.5.0",
         "@changesets/cli": "^2.27.7",
         "@types/bun": "latest",
+        "@types/ws": "^8.18.1",
         "better-commits": "^1.18.1",
         "lint-staged": "^15.2.2",
         "oxlint": "^1.32.0",
@@ -23,11 +24,11 @@
     "apps/docs": {
       "name": "radiant-docs",
       "devDependencies": {
-        "@ecopages/browser-router": "^0.2.0-alpha.8",
-        "@ecopages/core": "^0.2.0-alpha.8",
-        "@ecopages/file-system": "^0.2.0-alpha.8",
+        "@ecopages/browser-router": "^0.2.0-alpha.10",
+        "@ecopages/core": "^0.2.0-alpha.10",
+        "@ecopages/file-system": "^0.2.0-alpha.10",
         "@ecopages/jsx": "workspace:*",
-        "@ecopages/postcss-processor": "^0.2.0-alpha.8",
+        "@ecopages/postcss-processor": "^0.2.0-alpha.10",
         "@ecopages/radiant": "workspace:*",
         "@ecopages/scripts-injector": "^0.1.5",
         "@mdx-js/esbuild": "^3.1.1",
@@ -183,17 +184,17 @@
 
     "@clack/prompts": ["@clack/prompts@0.7.0", "", { "dependencies": { "@clack/core": "^0.3.3", "is-unicode-supported": "*", "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-0MhX9/B4iL6Re04jPrttDm+BsP8y6mS7byuv0BvXgdXhbV5PdlsHt55dvNsuBCPZ7xq1oTAOOuotR9NFbQyMSA=="],
 
-    "@ecopages/browser-router": ["@ecopages/browser-router@0.2.0-alpha.8", "", { "dependencies": { "@ecopages/core": "0.2.0-alpha.8", "morphdom": "^2.7.8" } }, "sha512-nZkiWsUUn3dP6LRPDkE0TBvGSlUVunM10Zt40CyzmklDsdCOSqztVCYoGcnKBpwNJ8UBBryPpx6fQlNoqQromQ=="],
+    "@ecopages/browser-router": ["@ecopages/browser-router@0.2.0-alpha.10", "", { "dependencies": { "morphdom": "^2.7.8" }, "peerDependencies": { "@ecopages/core": "0.2.0-alpha.10" } }, "sha512-Q9wlgSMWUO9CB5hfyE/+l7exkOwfYnjxBSUAwCKGnYxweheS1YlNHqGdQMXFSfOvR9j1egXMZ+Smx8Td/ZXLww=="],
 
-    "@ecopages/core": ["@ecopages/core@0.2.0-alpha.8", "", { "dependencies": { "@ecopages/file-system": "0.2.0-alpha.8", "@ecopages/logger": "latest", "@ecopages/scripts-injector": "^0.1.3", "@worker-tools/html-rewriter": "0.1.0-pre.19", "chokidar": "^4.0.3", "esbuild": "^0.27.3", "ghtml": "^4.0.2", "oxc-parser": "^0.110.0", "ws": "^8.18.0" } }, "sha512-pWC1pzj9mczWucsJR6e7yTZSTwj+BPgjzz1FvvOIKhy/nLTAE70K8j8L3nKRdpQIQfgs/9TqAxWFDmY5W3GOYQ=="],
+    "@ecopages/core": ["@ecopages/core@0.2.0-alpha.10", "", { "dependencies": { "@ecopages/file-system": "0.2.0-alpha.10", "@ecopages/logger": "latest", "@ecopages/scripts-injector": "^0.1.3", "@worker-tools/html-rewriter": "0.1.0-pre.19", "chokidar": "^4.0.3", "esbuild": "^0.27.3", "ghtml": "^4.0.2", "oxc-parser": "^0.110.0", "ws": "^8.18.0" } }, "sha512-MOBk3N0F6EVXiRFULZ9bgJJQWBoWoJry/8zd+TYvpdONcUl72AoJ1TVdlCR5I3S6+HgpwwtE0ldyDQ5CinXe8Q=="],
 
-    "@ecopages/file-system": ["@ecopages/file-system@0.2.0-alpha.8", "", { "dependencies": { "fast-glob": "^3.3.2" }, "peerDependencies": { "bun": ">=1.0.0" }, "optionalPeers": ["bun"] }, "sha512-yqnG8p4hOiCMt9z4CdakqQ6imjOLgPgjIiUWHIrRvxnCFgXKbiFfPIy/m7RfPgfvQtQ62yEKOwEfXlXOBxPlXw=="],
+    "@ecopages/file-system": ["@ecopages/file-system@0.2.0-alpha.10", "", { "dependencies": { "fast-glob": "^3.3.2" }, "peerDependencies": { "bun": ">=1.0.0" }, "optionalPeers": ["bun"] }, "sha512-Pn7N3jysgBKptQYDtXgehZgs2nD+OZ2P3gfJoTSWUXlE+Kv8RYpKJI7HAnYCse7Ab8J2970SFo6HUfFyLRi7iw=="],
 
     "@ecopages/jsx": ["@ecopages/jsx@workspace:packages/jsx"],
 
     "@ecopages/logger": ["@ecopages/logger@0.2.3", "", { "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-Hkt5H9Kzv6y07aiPZPaDkJ6/Bp7+Aen5ZFuI5zQ6ON7PyeuVu1lMiQy9pL+9Wm8yeO3wnMO44Jmph84Cc0X0lQ=="],
 
-    "@ecopages/postcss-processor": ["@ecopages/postcss-processor@0.2.0-alpha.8", "", { "dependencies": { "@ecopages/core": "0.2.0-alpha.8", "@ecopages/file-system": "0.2.0-alpha.8", "@ecopages/logger": "latest", "autoprefixer": "^10.4.0", "browserslist": "^4.28.1", "cssnano": "^6.0.0", "postcss": "^8.4.32", "postcss-import": "^15.0.0", "postcss-nested": "^7.0.2" }, "peerDependencies": { "@tailwindcss/postcss": ">=4", "tailwindcss": ">=3" }, "optionalPeers": ["@tailwindcss/postcss", "tailwindcss"] }, "sha512-xgc8vIKpSZi/DVnGZmM6zSf/Dyp0wQro3aI3fOCsfJSm+ougDsp8J93iZkyt+iPdJdDw5rdvik3ZBcvqI8uB+A=="],
+    "@ecopages/postcss-processor": ["@ecopages/postcss-processor@0.2.0-alpha.10", "", { "dependencies": { "@ecopages/file-system": "0.2.0-alpha.10", "@ecopages/logger": "latest", "autoprefixer": "^10.4.0", "browserslist": "^4.28.1", "cssnano": "^6.0.0", "postcss": "^8.4.32", "postcss-import": "^15.0.0", "postcss-nested": "^7.0.2" }, "peerDependencies": { "@ecopages/core": "0.2.0-alpha.10", "@tailwindcss/postcss": ">=4", "tailwindcss": ">=3" }, "optionalPeers": ["@tailwindcss/postcss", "tailwindcss"] }, "sha512-Xfjh+0e4L3f/CKtgZP5e/ZrdB/4/BBPjuzIZQEuKEOduaN0Shr+YD/iVDhGH5y9kbJOfZlmEEm0arcmxnXcDjw=="],
 
     "@ecopages/radiant": ["@ecopages/radiant@workspace:packages/radiant"],
 
@@ -574,6 +575,8 @@
     "@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
 
     "@types/unist": ["@types/unist@3.0.3", "", {}, "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q=="],
+
+    "@types/ws": ["@types/ws@8.18.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="],
 
     "@ungap/structured-clone": ["@ungap/structured-clone@1.3.0", "", {}, "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="],
 

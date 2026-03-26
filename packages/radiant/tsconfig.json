@@ -17,7 +17,6 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ESNext",
-		"types": ["bun-types"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true,
 		"paths": {
