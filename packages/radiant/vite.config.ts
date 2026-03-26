@@ -12,6 +12,9 @@ const exclude = LEGACY_ENVIRONMENT
 	: ['src/decorators/legacy', 'src/context/decorators/legacy'];
 
 export default defineConfig({
+	define: {
+		__LEGACY_ENVIRONMENT__: JSON.stringify(LEGACY_ENVIRONMENT),
+	},
 	esbuild: {
 		target: 'es2022',
 		tsconfigRaw,
