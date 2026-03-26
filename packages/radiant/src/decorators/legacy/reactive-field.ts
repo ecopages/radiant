@@ -13,7 +13,10 @@ export function reactiveField(target: RadiantElement, propertyKey: string) {
 
 	target.connectedCallback = function (this: RadiantElement) {
 		this.createReactiveField(propertyKey, this[propertyKey as keyof typeof this], {
-			bind: (this as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ?? false,
+			bind:
+				(
+					this as unknown as { shouldAutoBindReactiveMembers?: () => boolean }
+				).shouldAutoBindReactiveMembers?.() ?? false,
 		});
 		originalConnectedCallback.call(this);
 	};

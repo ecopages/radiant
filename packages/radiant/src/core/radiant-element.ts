@@ -104,8 +104,10 @@ type StringPropertyKey<Value> = Extract<keyof Value, string>;
  * the Ecopages JSX runtime. For non-renderable values, the binding falls back
  * to the broader `JsxRenderable` contract consumed by the renderer.
  */
-export type ReactiveBindingValue<Host extends object, Property extends StringPropertyKey<Host>> =
-	Host[Property] extends JsxRenderable ? Host[Property] : JsxRenderable;
+export type ReactiveBindingValue<
+	Host extends object,
+	Property extends StringPropertyKey<Host>,
+> = Host[Property] extends JsxRenderable ? Host[Property] : JsxRenderable;
 
 /**
  * Namespace of cached JSX bindings keyed by the explicit bindable shape.
@@ -119,9 +121,7 @@ export type ReactiveBindingValue<Host extends object, Property extends StringPro
  * `host.bind('key')`.
  */
 export type ReactiveBindings<Bindings extends object> = {
-	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValue<
-		ReactiveBindingValue<Bindings, Property>
-	>;
+	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 };
 
 /**

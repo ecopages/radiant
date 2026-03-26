@@ -151,7 +151,11 @@ export class RadiantTodoApp extends RadiantComponent {
 							Completed Todos: <span data-ref="count-complete">{todosCompleted.length}</span>
 						</p>
 						<div class="todo__list" data-ref="list-complete">
-							{todosCompleted.length > 0 ? <TodoList todos={todosCompleted} /> : <NoCompletedTodosMessage />}
+							{todosCompleted.length > 0 ? (
+								<TodoList todos={todosCompleted} />
+							) : (
+								<NoCompletedTodosMessage />
+							)}
 						</div>
 					</article>
 				</section>
@@ -167,5 +171,4 @@ export class RadiantTodoApp extends RadiantComponent {
 	}
 }
 
-declare global {
-}
+declare global {}

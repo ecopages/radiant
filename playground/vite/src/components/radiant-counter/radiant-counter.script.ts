@@ -45,6 +45,3 @@ export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
 		this.statusText.textContent = this.lastAction;
 	}
 }
-
-declare global {
-}

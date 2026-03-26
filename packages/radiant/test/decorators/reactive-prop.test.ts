@@ -226,14 +226,22 @@ describe('@reactiveProp', () => {
 			document.body.appendChild(customElement);
 
 			expect(customElement.count).toEqual(3);
-			expect((customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }).$count.getValue()).toEqual(3);
+			expect(
+				(
+					customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }
+				).$count.getValue(),
+			).toEqual(3);
 			expect(Object.prototype.hasOwnProperty.call(customElement, '$silent')).toBe(false);
 
 			customElement.count = 8;
 
 			expect(customElement.count).toEqual(8);
 			expect(customElement.getAttribute('count')).toEqual('8');
-			expect((customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }).$count.getValue()).toEqual(8);
+			expect(
+				(
+					customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }
+				).$count.getValue(),
+			).toEqual(8);
 		});
 	});
 
@@ -255,9 +263,21 @@ describe('@reactiveProp', () => {
 			expect(customElement.label).toEqual('Hello Radiant');
 			expect(customElement.enabled).toEqual(false);
 			expect(customElement.getAttribute('count')).toEqual('4');
-			expect((customElement as MyInferredReactiveProp & { $count: ReturnType<MyInferredReactiveProp['bind']> }).$count.getValue()).toEqual(4);
-			expect((customElement as MyInferredReactiveProp & { $label: ReturnType<MyInferredReactiveProp['bind']> }).$label.getValue()).toEqual('Hello Radiant');
-			expect((customElement as MyInferredReactiveProp & { $enabled: ReturnType<MyInferredReactiveProp['bind']> }).$enabled.getValue()).toEqual(false);
+			expect(
+				(
+					customElement as MyInferredReactiveProp & { $count: ReturnType<MyInferredReactiveProp['bind']> }
+				).$count.getValue(),
+			).toEqual(4);
+			expect(
+				(
+					customElement as MyInferredReactiveProp & { $label: ReturnType<MyInferredReactiveProp['bind']> }
+				).$label.getValue(),
+			).toEqual('Hello Radiant');
+			expect(
+				(
+					customElement as MyInferredReactiveProp & { $enabled: ReturnType<MyInferredReactiveProp['bind']> }
+				).$enabled.getValue(),
+			).toEqual(false);
 		});
 
 		@customElement('my-inferred-reactive-prop-with-explicit-default')

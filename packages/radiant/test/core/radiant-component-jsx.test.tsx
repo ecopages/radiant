@@ -1,5 +1,3 @@
-/** @jsxImportSource @ecopages/jsx */
-
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
 import type { ContextProvider } from '../../src/context/context-provider';
@@ -258,7 +256,9 @@ describe('RadiantComponent JSX integration', () => {
 		document.body.appendChild(host);
 
 		const firstItem = await waitFor(() => {
-			const renderedItem = host.querySelector('radiant-element-todo-item-test') as RadiantElementTodoItemTest | null;
+			const renderedItem = host.querySelector(
+				'radiant-element-todo-item-test',
+			) as RadiantElementTodoItemTest | null;
 			expect(renderedItem).not.toBeNull();
 			expect(renderedItem?.connected).toBe(true);
 			expect(renderedItem?.complete).toBe(true);
@@ -272,7 +272,9 @@ describe('RadiantComponent JSX integration', () => {
 		host.update();
 
 		await waitFor(() => {
-			const rerenderedItem = host.querySelector('radiant-element-todo-item-test') as RadiantElementTodoItemTest | null;
+			const rerenderedItem = host.querySelector(
+				'radiant-element-todo-item-test',
+			) as RadiantElementTodoItemTest | null;
 			expect(rerenderedItem).toBe(firstItem);
 			expect(rerenderedItem?.hasAttribute('complete')).toBe(false);
 			expect(rerenderedItem?.textContent).toBe('Ship docs');

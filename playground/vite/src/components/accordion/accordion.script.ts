@@ -165,6 +165,3 @@ export class RadiantAccordion extends RadiantElement {
 		}
 	}
 }
-
-declare global {
-}

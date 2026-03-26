@@ -112,6 +112,3 @@ export const ValueTester = ({ number, string, boolean, object, array }: RadiantV
 		</radiant-tester>
 	);
 };
-
-declare global {
-}

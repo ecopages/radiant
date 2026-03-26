@@ -125,6 +125,3 @@ export class RadiantDropdown extends RadiantElement {
 		this.cleanup?.();
 	}
 }
-
-declare global {
-}

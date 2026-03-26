@@ -108,9 +108,7 @@ function printTable(rows: Array<{ benchmark: string; bun: string; node: string; 
 			columns[3],
 		].join('  ');
 
-	console.log(
-		formatRow([headers.benchmark, headers.bun, headers.node, headers.delta]),
-	);
+	console.log(formatRow([headers.benchmark, headers.bun, headers.node, headers.delta]));
 	console.log(
 		formatRow([
 			'-'.repeat(benchmarkWidth),

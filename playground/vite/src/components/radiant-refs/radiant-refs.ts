@@ -51,6 +51,3 @@ export class RadiantRefs extends RadiantElement {
 		this.renderCount();
 	}
 }
-
-declare global {
-}
