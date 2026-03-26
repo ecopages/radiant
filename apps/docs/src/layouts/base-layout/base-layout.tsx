@@ -1,8 +1,9 @@
 import { Header } from '@/components/header';
 import type { EcoComponent } from '@ecopages/core';
+import type { JsxRenderable } from '@ecopages/jsx';
 
 export type BaseLayoutProps = {
-	children: JSX.Element;
+	children: JsxRenderable;
 	class?: string;
 };
 

@@ -1,7 +1,12 @@
 import { Seo } from '@/includes/seo';
 import type { EcoComponent, PageHeadProps } from '@ecopages/core';
+import type { JsxRenderable } from '@ecopages/jsx';
 
-export const Head: EcoComponent<PageHeadProps> = ({ metadata, children }) => {
+type DocsHeadProps = Omit<PageHeadProps, 'children'> & {
+	children?: JsxRenderable;
+};
+
+export const Head: EcoComponent<DocsHeadProps, JsxRenderable> = ({ metadata, children }) => {
 	return (
 		<head>
 			<meta charset="UTF-8" />

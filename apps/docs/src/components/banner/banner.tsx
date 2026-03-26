@@ -1,8 +1,9 @@
 import type { EcoComponent } from '@ecopages/core';
+import type { JsxRenderable } from '@ecopages/jsx';
 import { cn } from '@/styles/utils';
 
 export type BannerProps = {
-	children: JSX.Element | JSX.Element[];
+	children: JsxRenderable;
 	type?: 'alert' | 'info' | 'tip' | 'caution';
 	class?: string;
 };

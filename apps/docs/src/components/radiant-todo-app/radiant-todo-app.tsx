@@ -1,4 +1,5 @@
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+import type { JsxRenderable } from '@ecopages/jsx';
 import type { TodoContext } from './radiant-todo-app.script';
 import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
 
@@ -25,7 +26,7 @@ const TodoPanel = ({
 }: {
 	title: string;
 	count: number;
-	children: JSX.Element;
+	children: JsxRenderable;
 	ref: string;
 }) => {
 	return (
