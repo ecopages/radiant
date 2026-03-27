@@ -206,7 +206,10 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerCleanupCallback(callback: () => void): void;
 
 	/**
-	 * Registers a callback to run each time the host connects to the DOM.
+	 * Registers a callback to run on each future host connection.
+	 *
+	 * The callback is only invoked from `connectedCallback()`. Registering it
+	 * after the host is already connected does not invoke it immediately.
 	 */
 	registerConnectedCallback(callback: () => void): void;
 
@@ -559,10 +562,20 @@ export class RadiantElement<Bindings extends object = {}>
 		this.eventSubscriptions.clear();
 	}
 
+	/**
+	 * Registers a callback that runs on every future disconnect.
+	 */
 	public registerCleanupCallback(callback: () => void): void {
 		this.onDisconnectedCallback.push(callback);
 	}
 
+	/**
+	 * Registers a callback that runs from `connectedCallback()` on future host
+	 * connections.
+	 *
+	 * Registering after the host is already connected does not invoke the
+	 * callback immediately.
+	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.onConnectedCallbacks.push(callback);
 	}
