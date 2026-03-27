@@ -5,6 +5,7 @@ import {
 	type JsxNodeLike,
 	type JsxRenderable,
 	type KeyedJsxValue,
+	type SignalLike,
 	type SubscribableJsxValue,
 	type TemplateResultLike,
 } from './jsx-runtime.ts';
@@ -113,7 +114,9 @@ type LiveAttributePart = {
 	element: Element;
 	index: number;
 	previousValue?: unknown;
+	source?: ReactiveAttributeSource;
 	type: 'attribute';
+	unsubscribe?: () => void;
 };
 
 /**
@@ -133,6 +136,8 @@ type LiveChildPart = {
 
 /** Union of all live template part state records attached to a mounted template instance. */
 type LiveTemplatePart = LiveAttributePart | LiveChildPart;
+
+type ReactiveAttributeSource = ReactiveChildSource;
 
 /** Static template blueprint plus path-based metadata for every dynamic part. */
 type CompiledTemplate = {
@@ -229,7 +234,8 @@ type MountedTemplate = {
 };
 
 /**
- * Mounted state for a child range driven by a {@link SubscribableJsxValue}.
+ * Mounted state for a child range driven by a subscribable wrapper or a plain
+ * signal-like value.
  *
  * The `unsubscribe` callback is invoked when the subscription source is replaced or the
  * range is torn down. `mounted` holds the structural shape of the current child content
@@ -238,9 +244,11 @@ type MountedTemplate = {
 type MountedSubscription = {
 	kind: 'subscription';
 	mounted: MountedRangeContent;
-	source: SubscribableJsxValue;
+	source: ReactiveChildSource;
 	unsubscribe: () => void;
 };
+
+type ReactiveChildSource = SignalLike | SubscribableJsxValue;
 
 /**
  * Mounted representation for the content inside a dynamic child range.
@@ -1031,7 +1039,7 @@ function isolateHydratedTextRange(
  */
 function resolveHydratedRangeValue(value: unknown): unknown {
 	const nextValue = unwrapKeyedValue(value);
-	return isSubscribableJsxValue(nextValue) ? unwrapKeyedValue(nextValue.getValue()) : nextValue;
+	return isReactiveChildSource(nextValue) ? unwrapKeyedValue(readReactiveChildSourceValue(nextValue)) : nextValue;
 }
 
 /**
@@ -1049,15 +1057,20 @@ function hydrateMountedRangeContent(
 ): MountedRangeContent {
 	const nextValue = unwrapKeyedValue(value);
 
-	if (isSubscribableJsxValue(nextValue)) {
+	if (isReactiveChildSource(nextValue)) {
 		const mountedSubscription: MountedSubscription = {
 			kind: 'subscription',
-			mounted: hydrateMountedRangeContent(startMarker, endMarker, nextValue.getValue(), existingNodes),
+			mounted: hydrateMountedRangeContent(
+				startMarker,
+				endMarker,
+				readReactiveChildSourceValue(nextValue),
+				existingNodes,
+			),
 			source: nextValue,
 			unsubscribe: () => undefined,
 		};
 
-		mountedSubscription.unsubscribe = nextValue.subscribe((nextChildValue) => {
+		mountedSubscription.unsubscribe = subscribeToReactiveChildSource(nextValue, (nextChildValue) => {
 			const nextDeferredProperties: DeferredPropertyBinding[] = [];
 			mountedSubscription.mounted = updateRangeContent(
 				startMarker,
@@ -1330,6 +1343,35 @@ function updateLiveAttributePart(
 	value: unknown,
 	deferredProperties: DeferredPropertyBinding[],
 ): void {
+	if (part.source) {
+		if (isReactiveAttributeSource(value) && part.source === value) {
+			return;
+		}
+
+		part.unsubscribe?.();
+		part.source = undefined;
+		part.unsubscribe = undefined;
+	}
+
+	if (isReactiveAttributeSource(value)) {
+		part.source = value;
+		part.unsubscribe = subscribeToReactiveChildSource(value, (nextValue) => {
+			const nextDeferredProperties: DeferredPropertyBinding[] = [];
+			applyResolvedAttributeBinding(part, resolveReactiveSnapshot(nextValue), nextDeferredProperties);
+			flushDeferredProperties(nextDeferredProperties);
+		});
+		applyResolvedAttributeBinding(part, resolveReactiveSnapshot(readReactiveChildSourceValue(value)), deferredProperties);
+		return;
+	}
+
+	applyResolvedAttributeBinding(part, resolveReactiveSnapshot(value), deferredProperties);
+}
+
+function applyResolvedAttributeBinding(
+	part: LiveAttributePart,
+	value: unknown,
+	deferredProperties: DeferredPropertyBinding[],
+): void {
 	switch (part.binding.kind) {
 		case 'attr': {
 			if (value === undefined || value === null) {
@@ -1409,7 +1451,7 @@ function updateRangeContent(
 	let currentContent = current;
 
 	if (currentContent.kind === 'subscription') {
-		if (isSubscribableJsxValue(nextValue) && currentContent.source === nextValue) {
+		if (isReactiveChildSource(nextValue) && currentContent.source === nextValue) {
 			return currentContent;
 		}
 
@@ -1417,8 +1459,8 @@ function updateRangeContent(
 		currentContent = currentContent.mounted;
 	}
 
-	if (isSubscribableJsxValue(nextValue)) {
-		return mountSubscribableValue(startMarker, endMarker, nextValue, currentContent, deferredProperties);
+	if (isReactiveChildSource(nextValue)) {
+		return mountReactiveChildSource(startMarker, endMarker, nextValue, currentContent, deferredProperties);
 	}
 
 	const iterableChildren = getIterableChildren(nextValue);
@@ -1607,13 +1649,13 @@ function updateIndexedChildren(
 }
 
 /**
- * Mounts a subscribable child source and keeps the enclosed range synced to its
+ * Mounts a reactive child source and keeps the enclosed range synced to its
  * latest value.
  */
-function mountSubscribableValue(
+function mountReactiveChildSource(
 	startMarker: Text,
 	endMarker: Text,
-	source: SubscribableJsxValue,
+	source: ReactiveChildSource,
 	current: MountedRangeContent,
 	deferredProperties: DeferredPropertyBinding[],
 ): MountedSubscription {
@@ -1636,14 +1678,54 @@ function mountSubscribableValue(
 		flushDeferredProperties(nextDeferredProperties);
 	};
 
-	mountedSubscription.unsubscribe = source.subscribe((nextValue) => {
+	mountedSubscription.unsubscribe = subscribeToReactiveChildSource(source, (nextValue) => {
 		applyValue(nextValue);
 	});
 
-	applyValue(source.getValue());
+	applyValue(readReactiveChildSourceValue(source));
 	flushDeferredProperties(deferredProperties);
 
 	return mountedSubscription;
+}
+
+function isReactiveAttributeSource(value: unknown): value is ReactiveAttributeSource {
+	return isReactiveChildSource(value);
+}
+
+function isReactiveChildSource(value: unknown): value is ReactiveChildSource {
+	return isSubscribableJsxValue(value) || isSignalLikeValue(value);
+}
+
+function isSignalLikeValue(value: unknown): value is SignalLike {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		typeof (value as Partial<SignalLike>).get === 'function' &&
+		typeof (value as Partial<SignalLike>).subscribe === 'function'
+	);
+}
+
+function readReactiveChildSourceValue(source: ReactiveChildSource): unknown {
+	return isSubscribableJsxValue(source) ? source.getValue() : source.get();
+}
+
+function subscribeToReactiveChildSource(
+	source: ReactiveChildSource,
+	notify: (value: unknown) => void,
+): () => void {
+	return isSubscribableJsxValue(source) ? source.subscribe((value) => notify(value)) : source.subscribe(notify);
+}
+
+function resolveReactiveSnapshot(value: unknown): unknown {
+	if (isSubscribableJsxValue(value)) {
+		return resolveReactiveSnapshot(value.getValue());
+	}
+
+	if (isSignalLikeValue(value)) {
+		return resolveReactiveSnapshot(value.get());
+	}
+
+	return value;
 }
 
 /**
@@ -1859,28 +1941,30 @@ function applyAttributeBinding(
 	value: unknown,
 	deferredProperties: DeferredPropertyBinding[],
 ): void {
+	const resolvedValue = resolveReactiveSnapshot(value);
+
 	switch (binding.kind) {
 		case 'attr':
-			if (value === undefined || value === null) {
+			if (resolvedValue === undefined || resolvedValue === null) {
 				return;
 			}
-			element.setAttribute(binding.name, String(value));
+			element.setAttribute(binding.name, String(resolvedValue));
 			return;
 
 		case 'bool':
-			if (value) {
+			if (resolvedValue) {
 				element.setAttribute(binding.name, '');
 			}
 			return;
 
 		case 'event':
-			if (typeof value === 'function' || isEventListenerObject(value)) {
-				element.addEventListener(binding.name, value as EventListenerOrEventListenerObject);
+			if (typeof resolvedValue === 'function' || isEventListenerObject(resolvedValue)) {
+				element.addEventListener(binding.name, resolvedValue as EventListenerOrEventListenerObject);
 			}
 			return;
 
 		case 'prop':
-			deferredProperties.push({ element, name: binding.name, value });
+			deferredProperties.push({ element, name: binding.name, value: resolvedValue });
 			return;
 	}
 }
@@ -2135,6 +2219,11 @@ function disposeMountedRoot(root: MountedRoot): void {
  */
 function disposeTemplateInstance(instance: TemplateInstance): void {
 	for (const part of instance.parts) {
+		if (part.type === 'attribute') {
+			part.unsubscribe?.();
+			continue;
+		}
+
 		if (part.type === 'child') {
 			disposeMountedRangeContent(part.mounted);
 		}
@@ -2274,5 +2363,13 @@ function unwrapKeyedValue(value: unknown): unknown {
  * @param element Element to test.
  */
 function isSelectableInput(element: HTMLElement): element is HTMLInputElement | HTMLTextAreaElement {
-	return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
+	if (element instanceof HTMLTextAreaElement) {
+		return true;
+	}
+
+	if (!(element instanceof HTMLInputElement)) {
+		return false;
+	}
+
+	return ['text', 'search', 'tel', 'url', 'password', 'email'].includes(element.type);
 }

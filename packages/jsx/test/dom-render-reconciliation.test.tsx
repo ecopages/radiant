@@ -340,4 +340,158 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('15');
 	});
+
+	test('signal-like child values patch their own text node without rerendering the parent tree', async () => {
+		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let count = 3;
+		const boundCount = {
+			get: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		};
+
+		root.render(
+			jsxs('p', {
+				class: 'component-metric',
+				children: ['Signal count: ', boundCount],
+			}),
+		);
+
+		const mutations: MutationRecord[] = [];
+		const observer = new MutationObserver((records) => {
+			mutations.push(...records);
+		});
+
+		observer.observe(container, {
+			characterData: true,
+			characterDataOldValue: true,
+			childList: true,
+			subtree: true,
+		});
+
+		count = 4;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		await Promise.resolve();
+		observer.disconnect();
+
+		expect(container.innerHTML).toBe('<p class="component-metric">Signal count: 4</p>');
+		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
+		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
+		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('3');
+	});
+
+	test('signal-like attribute values patch attributes without rerendering the parent tree', async () => {
+		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const statusSubscribers = new Set<(value: string) => void>();
+		const loadingSubscribers = new Set<(value: boolean) => void>();
+		let status = 'idle';
+		let loading = false;
+		const statusSignal = {
+			get: () => status,
+			subscribe: (notify: (value: string) => void) => {
+				statusSubscribers.add(notify);
+				return () => {
+					statusSubscribers.delete(notify);
+				};
+			},
+		};
+		const loadingSignal = {
+			get: () => loading,
+			subscribe: (notify: (value: boolean) => void) => {
+				loadingSubscribers.add(notify);
+				return () => {
+					loadingSubscribers.delete(notify);
+				};
+			},
+		};
+
+		root.render(
+			jsxs('button', {
+				class: 'fetch-button',
+				'aria-busy': loadingSignal,
+				data: { status: statusSignal },
+				disabled: loadingSignal,
+				children: ['Fetch'],
+			}),
+		);
+
+		const button = container.querySelector('button');
+		expect(button?.getAttribute('data-status')).toBe('idle');
+		expect(button?.hasAttribute('disabled')).toBe(false);
+
+		const mutations: MutationRecord[] = [];
+		const observer = new MutationObserver((records) => {
+			mutations.push(...records);
+		});
+
+		observer.observe(container, {
+			attributes: true,
+			childList: true,
+			subtree: true,
+		});
+
+		status = 'loading';
+		loading = true;
+
+		for (const subscriber of statusSubscribers) {
+			subscriber(status);
+		}
+
+		for (const subscriber of loadingSubscribers) {
+			subscriber(loading);
+		}
+
+		await Promise.resolve();
+		observer.disconnect();
+
+		expect(button?.getAttribute('data-status')).toBe('loading');
+		expect(button?.getAttribute('aria-busy')).toBe('true');
+		expect(button?.hasAttribute('disabled')).toBe(true);
+		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
+		expect(mutations.filter((mutation) => mutation.type === 'attributes').length).toBeGreaterThanOrEqual(2);
+	});
+
+	test('rerender preserves focus without calling setSelectionRange on checkbox inputs', async () => {
+		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		const renderForm = (checked: boolean) =>
+			jsxs('label', {
+				children: [
+					jsxs('span', {
+						children: ['Checked: ', checked ? 'yes' : 'no'],
+					}),
+					jsxs('input', {
+						type: 'checkbox',
+						checked,
+					}),
+				],
+			});
+
+		root.render(renderForm(false));
+
+		const checkbox = container.querySelector('input');
+		checkbox?.focus();
+
+		expect(() => {
+			root.render(renderForm(true));
+		}).not.toThrow();
+		expect((container.querySelector('input') as HTMLInputElement | null)?.checked).toBe(true);
+	});
 });

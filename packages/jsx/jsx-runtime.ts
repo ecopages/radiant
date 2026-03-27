@@ -110,6 +110,15 @@ export interface SubscribableJsxValue<Value extends JsxRenderable = JsxRenderabl
 }
 
 /**
+ * Generic read/subscribe contract that the JSX renderer can consume directly
+ * as a child binding.
+ */
+export interface SignalLike<Value extends JsxRenderable = JsxRenderable> {
+	get: () => Value;
+	subscribe: (notify: (value: Value) => void) => () => void;
+}
+
+/**
  * Internal placeholder value produced from literal `<slot>` JSX tags.
  *
  * RadiantComponent resolves these placeholders against authored light-DOM
@@ -133,6 +142,7 @@ export type JsxRenderable =
 	| JsxNodeLike
 	| KeyedJsxValue
 	| Node
+	| SignalLike
 	| SlotJsxValue
 	| SubscribableJsxValue
 	| TemplateResultLike
@@ -835,6 +845,10 @@ function renderJsxRenderableToString(value: JsxRenderable | undefined): string {
 		return renderJsxRenderableToString(value.getValue());
 	}
 
+	if (isSignalLikeValue(value)) {
+		return renderJsxRenderableToString(value.get());
+	}
+
 	if (typeof value === 'string') {
 		return escapeHtml(value);
 	}
@@ -975,6 +989,10 @@ export function isSlotJsxValue(value: unknown): value is SlotJsxValue {
  * the current value synchronously, while the client renderer keeps the mounted
  * child range subscribed.
  *
+ * Signal-like sources that already expose `get()` and `subscribe(...)` can be
+ * passed directly as JSX children. This wrapper remains useful for sources that
+ * do not already match that contract.
+ *
  * @param config Subscription hooks that expose the current child value and
  * register future updates.
  * @returns A JSX renderable wrapper that the renderer can subscribe to directly.
@@ -988,6 +1006,28 @@ export function createSubscribableJsxValue<Value extends JsxRenderable>(config: 
 		getValue: config.getValue,
 		subscribe: config.subscribe,
 	};
+}
+
+/**
+	 * Creates a lightweight node-like wrapper around trusted serialized markup.
+	 *
+	 * Use this when a caller already has final HTML and needs to hand it to the
+	 * JSX renderers without constructing a live DOM node first.
+ */
+export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
+	return {
+		nodeType: 1,
+		outerHTML,
+	};
+}
+
+function isSignalLikeValue(value: unknown): value is SignalLike {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		typeof (value as Partial<SignalLike>).get === 'function' &&
+		typeof (value as Partial<SignalLike>).subscribe === 'function'
+	);
 }
 
 /**
@@ -1083,6 +1123,8 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 		return;
 	}
 
+	const bindingShapeValue = resolveBindingShapeValue(value);
+
 	if (name.startsWith('on:')) {
 		strings[strings.length - 1] += ` @${name.slice(3)}=`;
 		values.push(value);
@@ -1097,7 +1139,7 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 		return;
 	}
 
-	if (typeof value === 'boolean') {
+	if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(name)) {
 		strings[strings.length - 1] += ` ?${name}=`;
 		values.push(value);
 		strings.push('');
@@ -1194,6 +1236,49 @@ function normalizeChildrenWithMode(children: JsxRenderable | undefined, childSlo
 	}
 
 	return normalizeChildren(children);
+}
+
+function resolveBindingShapeValue(value: unknown): unknown {
+	if (isSubscribableJsxValue(value)) {
+		return resolveBindingShapeValue(value.getValue());
+	}
+
+	if (isSignalLikeValue(value)) {
+		return resolveBindingShapeValue(value.get());
+	}
+
+	return value;
+}
+
+const htmlBooleanAttributes = new Set([
+	'allowfullscreen',
+	'async',
+	'autofocus',
+	'autoplay',
+	'checked',
+	'controls',
+	'default',
+	'defer',
+	'disabled',
+	'formnovalidate',
+	'hidden',
+	'inert',
+	'ismap',
+	'itemscope',
+	'loop',
+	'multiple',
+	'muted',
+	'novalidate',
+	'open',
+	'playsinline',
+	'readonly',
+	'required',
+	'reversed',
+	'selected',
+]);
+
+function shouldUseBooleanAttributeBinding(name: string): boolean {
+	return htmlBooleanAttributes.has(name);
 }
 
 /**

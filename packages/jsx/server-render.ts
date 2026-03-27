@@ -3,6 +3,7 @@ import {
 	isSubscribableJsxValue,
 	type JsxNodeLike,
 	type JsxRenderable,
+	type SignalLike,
 	type TemplateResultLike,
 } from './jsx-runtime.ts';
 import {
@@ -74,6 +75,10 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
 		return renderChild(value.getValue(), context);
 	}
 
+	if (isSignalLikeValue(value)) {
+		return renderChild(value.get(), context);
+	}
+
 	if (typeof value === 'string') {
 		return escapeHtml(value);
 	}
@@ -113,7 +118,7 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 
 	for (let index = 0; index < template.values.length; index += 1) {
 		const interpolationPart = interpolationParts[index];
-		const value = template.values[index];
+		const value = resolveReactiveSnapshot(template.values[index]);
 
 		if (!interpolationPart || interpolationPart.type === 'child') {
 			html += interpolationPart?.string ?? template.strings[index] ?? '';
@@ -151,6 +156,27 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 
 	html += template.strings[template.strings.length - 1] ?? '';
 	return html;
+}
+
+function isSignalLikeValue(value: unknown): value is SignalLike {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		typeof (value as Partial<SignalLike>).get === 'function' &&
+		typeof (value as Partial<SignalLike>).subscribe === 'function'
+	);
+}
+
+function resolveReactiveSnapshot(value: unknown): unknown {
+	if (isSubscribableJsxValue(value)) {
+		return resolveReactiveSnapshot(value.getValue());
+	}
+
+	if (isSignalLikeValue(value)) {
+		return resolveReactiveSnapshot(value.get());
+	}
+
+	return value;
 }
 
 function renderNodeLike(node: JsxNodeLike): string {

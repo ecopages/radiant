@@ -206,6 +206,52 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<p class="component-metric">Count: 29</p>');
 	});
 
+	test('serializes signal-like child values from their current value', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		let count = 11;
+		const boundCount = {
+			get: () => count,
+			subscribe: () => () => undefined,
+		};
+		const template = jsx('p', {
+			class: 'component-metric',
+			children: ['Count: ', boundCount],
+		});
+
+		expect(renderToString(template)).toBe('<p class="component-metric">Count: 11</p>');
+
+		count = 12;
+		expect(renderToString(template)).toBe('<p class="component-metric">Count: 12</p>');
+	});
+
+	test('serializes signal-like attribute values from their current value', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		let status = 'idle';
+		let busy = false;
+		const statusSignal = {
+			get: () => status,
+			subscribe: () => () => undefined,
+		};
+		const busySignal = {
+			get: () => busy,
+			subscribe: () => () => undefined,
+		};
+		const template = jsx('button', {
+			data: { status: statusSignal },
+			disabled: busySignal,
+			children: 'Fetch',
+		});
+
+		expect(renderToString(template)).toBe('<button data-status="idle">Fetch</button>');
+
+		status = 'loading';
+		busy = true;
+		const html = renderToString(template);
+		expect(html).toContain('data-status="loading"');
+		expect(html).toContain('disabled');
+		expect(html).toContain('Fetch');
+	});
+
 	test('serializes registered SSR-capable custom elements from plain intrinsic tags', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 

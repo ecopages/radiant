@@ -1,8 +1,10 @@
 export {
 	Fragment,
+	createMarkupNodeLike,
 	jsx,
 	jsxs,
 	createSubscribableJsxValue,
+	type SignalLike,
 	type JsxKey,
 	type KeyedJsxValue,
 	type SlotJsxValue,
