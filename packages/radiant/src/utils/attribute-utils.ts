@@ -218,8 +218,12 @@ export const getInitialValue = (
 	defaultValue: unknown,
 ) => {
 	if (type === Boolean) {
-		const hasAttribute = target.hasAttribute(attributeKey);
-		return hasAttribute ? true : defaultValue;
+		const attributeValue = target.getAttribute(attributeKey);
+		if (attributeValue === null) {
+			return defaultValue;
+		}
+
+		return attributeValue === '' ? true : readAttributeValue(attributeValue, type);
 	}
 
 	const attributeValue = target.getAttribute(attributeKey);

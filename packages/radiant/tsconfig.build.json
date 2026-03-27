@@ -4,7 +4,11 @@
 		"rootDir": "./src",
 		"allowImportingTsExtensions": true,
 		"declaration": true,
-		"emitDeclarationOnly": true
+		"emitDeclarationOnly": true,
+		"paths": {
+			"@/*": ["./src/*"],
+			"dist/*": ["./dist/*"]
+		}
 	},
 	"include": ["src"],
 	"exclude": ["**/*.test.ts", "**/*.test.tsx"]

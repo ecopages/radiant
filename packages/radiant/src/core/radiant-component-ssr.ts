@@ -4,11 +4,13 @@ import { withSsrContextProviders } from '../context/context-ssr';
 import { getCustomElementTagName } from './custom-element-metadata';
 import type { ReactiveProperty } from './radiant-element';
 import type { ReactivePropDefinition } from './reactive-prop-metadata';
+import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { writeAttributeValue } from '../utils/attribute-utils';
 
 type RadiantComponentSsrHost = {
 	constructor: CustomElementConstructor;
 	getContextProviders: () => SsrSerializableContextProvider[];
+	getHydrationBindings: () => SsrSerializableHydrationBinding[];
 	getSlotProjectionScriptTag?: () => string | undefined;
 	renderToString: (options?: RenderToStringOptions) => string;
 	getReactiveProperties: () => ReactiveProperty[];
@@ -48,8 +50,8 @@ export class RadiantComponentSsrService {
 		}
 
 		const hydrationScripts = this.host
-			.getContextProviders()
-			.map((provider) => provider.renderHydrationScriptTag())
+			.getHydrationBindings()
+			.map((binding) => binding.renderHydrationScriptTag())
 			.filter((markup): markup is string => typeof markup === 'string')
 			.join('');
 

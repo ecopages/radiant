@@ -3,6 +3,7 @@ import { createSubscribableJsxValue, type JsxRenderable, type SubscribableJsxVal
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
+import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import {
 	type AttributeTypeConstant,
@@ -268,6 +269,11 @@ export class RadiantElement<Bindings extends object = {}>
 	private contextProviders = new Map<string, SsrSerializableContextProvider>();
 
 	/**
+	 * Registered keyed hydration payload producers appended to SSR host output.
+	 */
+	private hydrationBindings = new Map<string, SsrSerializableHydrationBinding>();
+
+	/**
 	 * A map of property update callbacks. These callbacks are called when a property is updated.
 	 */
 	private updateCallbacks = new Map<string, Set<(...rest: any[]) => any>>();
@@ -337,7 +343,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	private transformAttributeValue(value: string | null, config: any): unknown {
-		return value ? config?.converter.fromAttribute(value) : value;
+		return value !== null ? config?.converter.fromAttribute(value) : value;
 	}
 
 	attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
@@ -391,10 +397,19 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
 		this.contextProviders.set(name, provider);
+		this.registerHydrationBinding(name, provider);
+	}
+
+	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
+		this.hydrationBindings.set(name, binding);
 	}
 
 	protected getContextProviders(): SsrSerializableContextProvider[] {
 		return Array.from(this.contextProviders.values());
+	}
+
+	protected getHydrationBindings(): SsrSerializableHydrationBinding[] {
+		return Array.from(this.hydrationBindings.values());
 	}
 
 	/**
@@ -448,10 +463,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 		const host = this as unknown as Record<string, unknown>;
 		const binding = createSubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>({
-			getValue: () => host[property] as ReactiveBindingValue<Bindings, Property>,
+			getValue: () => this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>,
 			subscribe: (notify) =>
 				this.registerUpdateCallback(property, () => {
-					notify(host[property] as ReactiveBindingValue<Bindings, Property>);
+					notify(this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>);
 				}),
 		});
 
@@ -479,6 +494,16 @@ export class RadiantElement<Bindings extends object = {}>
 			enumerable: false,
 			configurable: true,
 		});
+	}
+
+	private readReactiveBindingValue<Property extends StringPropertyKey<Bindings>>(property: Property): unknown {
+		const value = (this as unknown as Record<string, unknown>)[property];
+
+		if (isSignalLikeBindingValue(value)) {
+			return value.get();
+		}
+
+		return value;
 	}
 
 	public subscribeEvents(events: RadiantElementEventListener[]): Array<() => void> {
@@ -636,4 +661,8 @@ export class RadiantElement<Bindings extends object = {}>
 			});
 		}
 	}
+}
+
+function isSignalLikeBindingValue(value: unknown): value is { get(): unknown } {
+	return typeof value === 'object' && value !== null && typeof (value as { get?: unknown }).get === 'function';
 }

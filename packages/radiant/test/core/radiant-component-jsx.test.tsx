@@ -276,8 +276,24 @@ describe('RadiantComponent JSX integration', () => {
 				'radiant-element-todo-item-test',
 			) as RadiantElementTodoItemTest | null;
 			expect(rerenderedItem).toBe(firstItem);
-			expect(rerenderedItem?.hasAttribute('complete')).toBe(false);
+			expect(rerenderedItem?.getAttribute('complete')).toBe('false');
 			expect(rerenderedItem?.textContent).toBe('Ship docs');
+		});
+	});
+
+	test('keeps false boolean JSX props false during the initial custom element connection', async () => {
+		const host = document.createElement('radiant-element-todo-host-test') as RadiantElementTodoHostTest;
+		host.done = false;
+		document.body.appendChild(host);
+
+		await waitFor(() => {
+			const renderedItem = host.querySelector(
+				'radiant-element-todo-item-test',
+			) as RadiantElementTodoItemTest | null;
+			expect(renderedItem).not.toBeNull();
+			expect(renderedItem?.connected).toBe(true);
+			expect(renderedItem?.complete).toBe(false);
+			expect(renderedItem?.getAttribute('complete')).toBe('false');
 		});
 	});
 

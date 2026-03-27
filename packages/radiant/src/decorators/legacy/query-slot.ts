@@ -16,6 +16,10 @@ export function querySlot<T extends Element | Element[]>({
 	return (proto: RadiantElement, propertyKey: string | symbol) => {
 		const privateCacheKey = Symbol(`__${String(propertyKey)}__slot_cache`);
 		const privateVersionKey = Symbol(`__${String(propertyKey)}__slot_version`);
+		const hasDefinedInstanceQuery = (instance: SlotQueryHost) => {
+			const descriptor = Object.getOwnPropertyDescriptor(instance, propertyKey);
+			return typeof descriptor?.get === 'function';
+		};
 
 		const executeQuery = (instance: SlotQueryHost) => {
 			if (options.all) {
@@ -28,6 +32,10 @@ export function querySlot<T extends Element | Element[]>({
 		};
 
 		const defineSlotQueryProperty = (instance: SlotQueryHost) => {
+			if (hasDefinedInstanceQuery(instance)) {
+				return;
+			}
+
 			Object.defineProperty(instance, propertyKey, {
 				get() {
 					return readSlotQueryValue(instance);
@@ -63,10 +71,21 @@ export function querySlot<T extends Element | Element[]>({
 		});
 
 		const originalConnectedCallback = proto.connectedCallback;
+		const originalRender = (proto as SlotQueryHost & { render?: (...args: unknown[]) => unknown }).render;
 
 		proto.connectedCallback = function (this: SlotQueryHost) {
 			defineSlotQueryProperty(this);
 			originalConnectedCallback.call(this);
 		};
+
+		if (typeof originalRender === 'function') {
+			(proto as SlotQueryHost & { render: (...args: unknown[]) => unknown }).render = function (
+				this: SlotQueryHost,
+				...args: unknown[]
+			) {
+				defineSlotQueryProperty(this);
+				return originalRender.apply(this, args);
+			};
+		}
 	};
 }

@@ -42,12 +42,14 @@ import {
 export class RadiantComponent<Bindings extends object = {}> extends RadiantElement<Bindings> {
 	private isRendering = false;
 	private isFirstConnectPending = false;
+	private isRenderScheduled = false;
 	private needsRender = false;
 	private projectedSlotContent = new Map<string, JsxRenderable[]>();
 	private slotProjectionObserver?: MutationObserver;
 	private slotProjectionVersion = 0;
 	private readonly ssr = new RadiantComponentSsrService({
 		constructor: this.constructor as CustomElementConstructor,
+		getHydrationBindings: () => this.getHydrationBindings(),
 		getSlotProjectionScriptTag: () => this.getSlotProjectionScriptTag(),
 		renderToString: (options) => this.renderToString(options),
 		getContextProviders: () => this.getContextProviders(),
@@ -139,6 +141,33 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 			this.isRendering = false;
 			this.observeSlotProjection();
 		}
+	}
+
+	/**
+	 * Queues a component rerender and coalesces repeated requests into the same
+	 * microtask.
+	 *
+	 * Use this when reactive state may change multiple times in the same turn and
+	 * the current view should refresh once with the final values.
+	 */
+	public requestUpdate(): void {
+		this.needsRender = true;
+
+		if (this.isRenderScheduled) {
+			return;
+		}
+
+		this.isRenderScheduled = true;
+
+		queueMicrotask(() => {
+			this.isRenderScheduled = false;
+
+			if (!this.needsRender) {
+				return;
+			}
+
+			this.update();
+		});
 	}
 
 	/**

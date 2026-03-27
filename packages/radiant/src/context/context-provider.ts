@@ -1,6 +1,7 @@
-import type { JsxRenderable } from '@ecopages/jsx';
+import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import type { RadiantElement } from '../core/radiant-element';
-import { type AttributeTypeConstant, readAttributeValue } from '../utils/attribute-utils';
+import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
+import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import {
 	ContextEventsTypes,
 	ContextOnMountEvent,
@@ -23,15 +24,11 @@ type ContextProviderOptions<T extends UnknownContext> = {
 	hydrate?: AttributeTypeConstant;
 };
 
-export interface SsrSerializableContextProvider {
+export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
 	/** Returns the current context payload that should be visible to descendants. */
 	getContext(): unknown;
 	/** Returns the context token used to match nested SSR consumers and providers. */
 	getContextKey(): UnknownContext;
-	/** Returns the hydration script as JSX-friendly serialized markup, when available. */
-	renderHydrationScript(): JsxRenderable | undefined;
-	/** Returns the hydration script as a raw HTML string, when available. */
-	renderHydrationScriptTag(): string | undefined;
 }
 
 /**
@@ -109,8 +106,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		if (options.hydrate) {
 			const hydrationScriptElement = this.findHydrationScriptElement();
 			if (hydrationScriptElement?.textContent) {
-				const hydrationValue = hydrationScriptElement.textContent;
-				const parsedHydrationValue = readAttributeValue(hydrationValue, options.hydrate) as ContextType<T>;
+				const parsedHydrationValue = JSON.parse(hydrationScriptElement.textContent) as ContextType<T>;
 
 				if (
 					options.hydrate === Object &&
@@ -134,6 +130,14 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	}
 
 	setContext = (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => {
+		if (typeof this.value === 'undefined' && this.isObject(update)) {
+			const oldContext = this.value;
+			this.value = { ...update } as ContextType<T>;
+			if (callback) callback(this.value);
+			this.notifySubscribers(this.value, oldContext);
+			return;
+		}
+
 		if (this.isObject(this.value) && this.isObject(update)) {
 			const oldContext = { ...this.value };
 			this.value = { ...this.value, ...update };
@@ -209,10 +213,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			return undefined;
 		}
 
-		return {
-			nodeType: 1,
-			outerHTML,
-		};
+		return createMarkupNodeLike(outerHTML);
 	};
 
 	subscribe = ({ select, callback }: ContextSubscription<T>) => {
@@ -248,9 +249,9 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		);
 	}
 
-	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T>) => {
+	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T> | undefined) => {
 		for (const sub of this.subscriptions) {
-			if (!sub.select) {
+			if (!sub.select || typeof prevContext === 'undefined') {
 				this.sendSubscriptionUpdate(sub, newContext);
 				continue;
 			}

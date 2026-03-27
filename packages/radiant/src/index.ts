@@ -10,6 +10,7 @@ export * from './decorators/query';
 export * from './decorators/query-slot';
 export * from './decorators/reactive-prop';
 export * from './decorators/reactive-field';
+export * from './decorators/signal';
 export * from './decorators/state';
 export * from './context/context-provider';
 export * from './context/create-context';

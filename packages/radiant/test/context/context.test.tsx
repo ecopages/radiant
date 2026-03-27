@@ -13,6 +13,7 @@ type TestContext = {
 };
 
 const testContext = createContext<TestContext>(Symbol('todo-context'));
+const lazyContext = createContext<TestContext>(Symbol('lazy-context'));
 
 class MyContextProvider extends RadiantElement {
 	@provideContext<typeof testContext>({
@@ -63,6 +64,17 @@ if (!customElements.get('nested-inner-context-provider')) {
 	customElements.define('nested-inner-context-provider', NestedInnerContextProvider);
 }
 
+class LazyContextProvider extends RadiantElement {
+	@provideContext<typeof lazyContext>({
+		context: lazyContext,
+	})
+	context!: ContextProvider<typeof lazyContext>;
+}
+
+if (!customElements.get('lazy-context-provider')) {
+	customElements.define('lazy-context-provider', LazyContextProvider);
+}
+
 describe('Context', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -100,6 +112,18 @@ describe('Context', () => {
 			contextProvider.context.setContext(update);
 			expect(contextProvider.context.getContext()).toEqual(update);
 		});
+	});
+
+	test('it can initialize context from a later object update when no initial value is provided', () => {
+		const contextProvider = document.createElement('lazy-context-provider') as LazyContextProvider;
+		const update = { value: 42 };
+
+		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
+			contextProvider.context.setContext(update);
+			expect(contextProvider.context.getContext()).toEqual(update);
+		});
+
+		document.body.appendChild(contextProvider);
 	});
 
 	test('it notifies subscribers on context update', () => {

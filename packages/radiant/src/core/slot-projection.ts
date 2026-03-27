@@ -1,7 +1,7 @@
 import {
+	createMarkupNodeLike,
 	isKeyedJsxValue,
 	isSlotJsxValue,
-	type JsxNodeLike,
 	type JsxRenderable,
 	type KeyedJsxValue,
 	type SlotJsxValue,
@@ -245,13 +245,6 @@ function collectTopLevelHtmlFragments(html: string): string[] {
 	}
 
 	return fragments.filter((fragment) => fragment !== '');
-}
-
-function createMarkupNodeLike(fragment: string): JsxNodeLike {
-	return {
-		nodeType: 1,
-		outerHTML: fragment,
-	};
 }
 
 function getNodeSlotName(node: Node): string {

@@ -85,6 +85,15 @@ describe('@reactiveProp', () => {
 			document.body.appendChild(customElement);
 			expect(customElement.bool).toEqual(false);
 		});
+
+		test('decorator reads an explicit false attribute value as false on connect', () => {
+			const customElement = document.createElement('my-reactive-boolean') as MyReactiveBoolean;
+			customElement.setAttribute('bool', 'false');
+			document.body.appendChild(customElement);
+
+			expect(customElement.bool).toEqual(false);
+		});
+
 	});
 
 	describe('object', () => {

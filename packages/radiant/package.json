@@ -23,7 +23,8 @@
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
 	"dependencies": {
-		"@ecopages/jsx": "workspace:*"
+		"@ecopages/jsx": "workspace:*",
+		"@ecopages/signals": "workspace:*"
 	},
 	"devDependencies": {
 		"@testing-library/dom": "^10.4.0",
@@ -136,6 +137,10 @@
 		"./decorators/reactive-prop": {
 			"types": "./dist/decorators/reactive-prop.d.ts",
 			"import": "./dist/decorators/reactive-prop.js"
+		},
+		"./decorators/signal": {
+			"types": "./dist/decorators/signal.d.ts",
+			"import": "./dist/decorators/signal.js"
 		},
 		"./decorators/state": {
 			"types": "./dist/decorators/state.d.ts",
