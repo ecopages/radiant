@@ -8,15 +8,23 @@ import { contextSelector as legacyContextSelector } from './legacy/context-selec
 import { contextSelector as standardContextSelector } from './standard/context-selector';
 
 export type SubscribeToContextOptions<T extends UnknownContext> = {
+	/** Context token to resolve from ancestor providers. */
 	context: T;
+	/** Optional projection that narrows the resolved context before delivery. */
 	select?: (context: T['__context__']) => unknown;
+	/** Whether client-side event-channel subscriptions should stay active after the first value. */
 	subscribe?: boolean;
 };
 
 /**
- * A decorator to subscribe to a context selector.
- * @param option {@link SubscribeToContextOptions}
- * @returns
+ * Subscribes a method to the current value, or a selected slice, of a context.
+ *
+ * The decorated method is invoked during SSR when an ambient provider is
+ * available, and on the client it will keep receiving updates according to the
+ * `subscribe` option.
+ *
+ * @param options Context subscription configuration.
+ * @returns A standard-or-legacy decorator implementation for the target method.
  */
 export function contextSelector<T extends Context<unknown, unknown>>(options: SubscribeToContextOptions<T>) {
 	return function (

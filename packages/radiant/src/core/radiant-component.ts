@@ -103,6 +103,8 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	 * Serializes the current component view into HTML.
 	 */
 	public renderToString(options: RenderToStringOptions = {}): string {
+		this.prepareForSsr();
+
 		return renderJsxToString(this.resolveRenderOutput().value, options);
 	}
 
@@ -193,6 +195,8 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	 * @param name Optional slot name. Omit for the default slot.
 	 */
 	public getSlotElements<T extends Element = Element>(name?: string): T[] {
+		this.ensureSlotProjectionState();
+
 		return (this.projectedSlotContent.get(name ?? DEFAULT_SLOT_NAME) ?? []).filter(
 			(renderable): renderable is T => typeof Node !== 'undefined' && renderable instanceof Element,
 		);

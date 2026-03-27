@@ -1,6 +1,6 @@
 import type { RadiantElement } from '../../../core/radiant-element';
 import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
-import { initializeContextSelection, requestContextSelection } from '../../context-consumer-runtime';
+import { bootstrapSsrContextSelection, connectContextSelection } from '../../context-consumer-bootstrap';
 import type { Context, ContextType, UnknownContext } from '../../types';
 import type { SubscribeToContextOptions } from '../context-selector';
 
@@ -15,27 +15,29 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 }: SubscribeToContextOptions<T>) {
 	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
 		const originalMethod = descriptor.value;
-		const initializeSsrSelection = (element: RadiantElement) => {
-			return initializeContextSelection(
+		const applySelectedContext = (element: RadiantElement, value: unknown) => {
+			originalMethod.call(element, value);
+		};
+
+		registerLegacyInstanceInitializer(proto, (element) => {
+			bootstrapSsrContextSelection(
+				element,
 				context,
 				(value) => {
-					originalMethod.call(element, value);
+					applySelectedContext(element, value);
 				},
 				select,
 			);
-		};
+		});
 
-		registerLegacyInstanceInitializer(proto, initializeSsrSelection);
 		const originalConnectedCallback = proto.connectedCallback;
 
 		proto.connectedCallback = function (this: RadiantElement) {
 			originalConnectedCallback.call(this);
 
-			if (initializeSsrSelection(this)) {
+			if (connectContextSelection(this, context, (value) => applySelectedContext(this, value), { select, subscribe })) {
 				return;
 			}
-
-			requestContextSelection(this, context, originalMethod.bind(this), { select, subscribe });
 		};
 
 		descriptor.value = function (...args: ArgsType<T>[]) {

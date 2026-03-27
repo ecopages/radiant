@@ -1,14 +1,74 @@
 import { waitFor } from '@testing-library/dom';
+import { renderToString } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
+import { contextSelector } from '../../src/context/decorators/context-selector';
+import { provideContext } from '../../src/context/decorators/provide-context';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
 import { RadiantComponent } from '../../src/core/radiant-component';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
+import { querySlot } from '../../src/decorators/query-slot';
 import { reactiveProp } from '../../src/decorators/reactive-prop';
 import { state } from '../../src/decorators/state';
-import { installLightDomShim } from '../../src/server/light-dom-shim';
+import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
+
+const nestedSsrBoardContext = createContext<{ commits: number; owner: string; stage: string; tempo: string }>(
+	Symbol('nested-radiant-board-context'),
+);
+
+@customElement('nested-ssr-summary-card-test')
+class NestedSsrSummaryCard extends RadiantComponent {
+	@state summary = 'Awaiting board context';
+
+	@contextSelector({ context: nestedSsrBoardContext })
+	protected syncSummary(currentContext: { commits: number; owner: string; stage: string }): void {
+		this.summary = `${currentContext.owner} is steering ${currentContext.stage.toLowerCase()} with ${currentContext.commits} commits.`;
+	}
+
+	override render() {
+		return <p class="nested-summary">{this.$.summary}</p>;
+	}
+}
+
+@customElement('nested-ssr-insight-card-test')
+class NestedSsrInsightCard extends RadiantComponent<{ value: string }> {
+	@state value = 'Pending';
+
+	@contextSelector({ context: nestedSsrBoardContext })
+	protected syncValue(currentContext: { commits: number; stage: string; tempo: string }): void {
+		this.value = `${currentContext.stage} / ${currentContext.tempo} / ${currentContext.commits}`;
+	}
+
+	override render() {
+		return <p class="nested-insight">Stage: {this.$.value}</p>;
+	}
+}
+
+@customElement('nested-ssr-board-card-test')
+class NestedSsrBoardCard extends RadiantComponent {
+	@provideContext({
+		context: nestedSsrBoardContext,
+		initialValue: {
+			commits: 3,
+			owner: 'Design systems',
+			stage: 'Build',
+			tempo: 'Calm',
+		},
+		hydrate: Object,
+	})
+	context!: ContextProvider<typeof nestedSsrBoardContext>;
+
+	override render() {
+		return (
+			<section class="nested-board">
+				<nested-ssr-summary-card-test />
+				<nested-ssr-insight-card-test />
+			</section>
+		);
+	}
+}
 
 describe('RadiantComponent', () => {
 	beforeEach(() => {
@@ -250,6 +310,38 @@ describe('RadiantComponent', () => {
 		);
 	});
 
+	test('renderToString() serializes nested registered Radiant consumers with finalized SSR context state', () => {
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		];
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		] = true;
+
+		try {
+			const html = renderToString(<nested-ssr-board-card-test />, { hydrate: true });
+
+			expect(html).toContain('<nested-ssr-board-card-test>');
+			expect(html).toContain('<nested-ssr-summary-card-test>');
+			expect(html).toContain('Design systems is steering build with 3 commits.');
+			expect(html).toContain('<nested-ssr-insight-card-test>');
+			expect(html).toContain('Stage: Build / Calm / 3');
+			expect(html).not.toContain('Awaiting board context');
+			expect(html).not.toContain('Stage: Pending');
+		} finally {
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				] = previousForceServerCustomElementRender;
+			}
+		}
+	});
+
 	test('explicit SSR setup remains a safe no-op when a DOM is already available', () => {
 		const initialRegistry = globalThis.customElements;
 		const initialHTMLElement = globalThis.HTMLElement;
@@ -433,6 +525,38 @@ describe('RadiantComponent', () => {
 		expect(html).toContain('<header><h2 slot="header">Server heading</h2></header>');
 		expect(html).toContain('<div><p>Server body</p></div>');
 		expect(html).toContain('data-radiant-slot-projection');
+	});
+
+	test('createServerRenderEnvironment() prepares authored content for server-side slot queries', () => {
+		const environment = createServerRenderEnvironment();
+
+		@customElement('server-host-slot-query-card-test')
+		class ServerHostSlotQueryCard extends RadiantComponent {
+			@querySlot() defaultSlot!: HTMLParagraphElement | null;
+			@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
+
+			override render() {
+				return (
+					<section data-default-slot={this.defaultSlot?.textContent ?? 'missing'} data-header-slot={this.headerSlot?.textContent ?? 'missing'}>
+						<header>
+							<slot name="header" />
+						</header>
+						<div>
+							<slot />
+						</div>
+					</section>
+				);
+			}
+		}
+
+		const element = new ServerHostSlotQueryCard();
+		environment.prepareHost(element, {
+			authoredContent: '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>',
+		});
+
+		expect(element.headerSlot?.textContent).toBe('Prepared heading');
+		expect(element.defaultSlot?.textContent).toBe('Prepared body');
+		expect(element.renderHostToString({ hydrate: true })).toContain('data-header-slot="Prepared heading"');
 	});
 
 	test('renderHostToString({ hydrate: true }) appends provider hydration scripts automatically', () => {

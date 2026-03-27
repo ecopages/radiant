@@ -3,6 +3,7 @@ import { createSubscribableJsxValue, type JsxRenderable, type SubscribableJsxVal
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
+import { runSsrPreparationCallbacks } from './ssr-preparation';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -394,6 +395,17 @@ export class RadiantElement<Bindings extends object = {}>
 
 	protected getContextProviders(): SsrSerializableContextProvider[] {
 		return Array.from(this.contextProviders.values());
+	}
+
+	/**
+	 * Flushes any deferred SSR-only preparation work before the host is
+	 * serialized.
+	 *
+	 * Radiant uses this to reapply SSR consumer state after construction so the
+	 * first server render sees finalized fields, props, and authored content.
+	 */
+	protected prepareForSsr(): void {
+		runSsrPreparationCallbacks(this);
 	}
 
 	/**

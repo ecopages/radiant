@@ -58,6 +58,15 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	assert.match(html, /<radiant-context-flow-shell>/);
 	assert.match(html, /<radiant-context-flow-leaf>/);
 	assert.match(html, /<radiant-slot-studio-board><section[^>]*class="component-card component-card--studio"/);
+	assert.match(
+		html,
+		/Design systems is steering slot composition in build mode with 3 commits queued\./,
+	);
+	assert.match(html, /<p[^>]*class="studio-insight__value">Build<\/p>/);
+	assert.match(html, /<p[^>]*class="studio-insight__value">Calm<\/p>/);
+	assert.match(html, /<p[^>]*class="studio-insight__value">3 synced<\/p>/);
+	assert.doesNotMatch(html, /Awaiting board context/);
+	assert.doesNotMatch(html, /class="studio-insight__value">Pending<\/p>/);
 	assert.match(html, /Context: Nitro SSR context \/ 2/);
 	assert.match(html, /<script type="application\/json" data-playground-state>.*<\/script>/);
 	assert.doesNotMatch(html, /data-playground-state="/);
@@ -101,7 +110,7 @@ test('Nitro page-level controls update client and route state after clicks', bro
 	});
 });
 
-test('Nitro playground component cards react to their own button clicks', browserTestOptions, async () => {
+test('Nitro playground counter card reacts to its own button clicks', browserTestOptions, async () => {
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);
 
@@ -114,22 +123,6 @@ test('Nitro playground component cards react to their own button clicks', browse
 		await liveCounter.getByRole('button', { name: 'Decrement', exact: true }).click();
 		await liveCounter.getByRole('button', { name: 'Decrement', exact: true }).click();
 		await waitForLocatorText(liveCounter.locator('.component-metric'), 'Count: 1');
-
-		const serverCard = page.locator('radiant-component-server-card').first();
-		await waitForLocatorText(serverCard.locator('.component-status'), 'Status: idle');
-		await waitForLocatorText(
-			serverCard.locator('.component-copy').nth(1),
-			'Press the button to fetch the Nitro endpoint from inside a RadiantComponent.',
-		);
-
-		await serverCard.getByRole('button', { name: 'Fetch from Nitro' }).click();
-
-		await waitForLocatorText(serverCard.locator('.component-status'), 'Status: ready');
-		await waitForLocatorText(
-			serverCard.locator('.component-copy').nth(1),
-			'Hello from Nitro via Vite + Nitro playground',
-		);
-		await waitForLocatorTextMatch(serverCard.locator('.component-meta'), /^Server time: (?!n\/a).+/);
 	});
 });
 
@@ -199,6 +192,11 @@ test(
 			await gotoPlayground(page);
 
 			const ssrPanel = getPanel(page, 'SSR route');
+			assert.equal(await page.locator('radiant-component-server-card').count(), 0);
+			assert.equal(
+				await page.evaluate(() => customElements.get('radiant-component-server-card') === undefined),
+				true,
+			);
 			await waitForLocatorText(ssrPanel.locator('.status'), 'Status: ready');
 			await waitForLocatorAttribute(
 				ssrPanel.locator('.ssr-preview'),
@@ -225,6 +223,10 @@ test(
 			await waitForLocatorTextMatch(ssrPanel.locator('.ssr-html'), /radiant-component-server-card/);
 
 			const previewServerCard = ssrPanel.locator('.ssr-preview radiant-component-server-card');
+			assert.equal(
+				await page.evaluate(() => customElements.get('radiant-component-server-card') !== undefined),
+				true,
+			);
 			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: idle');
 			await previewServerCard.getByRole('button', { name: 'Fetch from Nitro' }).click();
 			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: ready');

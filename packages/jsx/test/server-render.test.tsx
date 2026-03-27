@@ -722,4 +722,5 @@ describe('Radiant JSX server render', () => {
 			}
 		}
 	});
+
 });

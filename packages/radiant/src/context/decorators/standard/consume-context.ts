@@ -1,17 +1,21 @@
 import type { RadiantElement } from '../../../core/radiant-element';
-import { initializeConsumedContext, requestConsumedContext } from '../../context-consumer-runtime';
+import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
 export function consumeContext(contextToProvide: UnknownContext) {
 	return <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) => {
 		const contextName = String(context.name);
+		const assignContextProvider = (host: T, provider: unknown) => {
+			(host as any)[contextName] = provider;
+		};
+
 		context.addInitializer(function (this: T) {
 			if (
-				initializeConsumedContext(
+				bootstrapSsrConsumedContext(
 					this,
 					contextToProvide,
 					(provider) => {
-						(this as any)[contextName] = provider;
+						assignContextProvider(this, provider);
 					},
 					{ emitMounted: true },
 				)
@@ -19,11 +23,11 @@ export function consumeContext(contextToProvide: UnknownContext) {
 				return;
 			}
 
-			requestConsumedContext(
+			connectConsumedContext(
 				this,
 				contextToProvide,
 				(provider) => {
-					(this as any)[contextName] = provider;
+					assignContextProvider(this, provider);
 				},
 				{ emitMounted: true },
 			);

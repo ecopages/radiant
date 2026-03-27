@@ -103,6 +103,52 @@ The component will hydrate that SSR DOM on first connect.
 When a component uses literal `<slot>` tags, `renderHostToString()` also embeds the slot-projection payload needed to reconstruct default and named assignments on the client.
 When an SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant component modules.
 
+For framework adapters that need to ship SSR fragments together with lazy hydration metadata, Radiant also exposes reusable server primitives from `@ecopages/radiant/server/render-component`.
+
+```ts
+import {
+	createRenderedComponentHeaders,
+	renderComponent,
+	toRenderedComponentPayload,
+} from '@ecopages/radiant/server/render-component';
+
+import { createServerRenderEnvironment } from '@ecopages/radiant/server/light-dom-shim';
+
+const environment = createServerRenderEnvironment();
+
+const rendered = await renderComponent({
+	component: CounterCard,
+	prepareHost: (host) => {
+		host.insertAdjacentHTML('beforeend', '<p>Server projected content</p>');
+	},
+	configure: (component) => {
+		component.count = 4;
+	},
+	clientModuleSrc: '/components/counter-card.js',
+	environment,
+});
+
+const payload = toRenderedComponentPayload(rendered);
+const headers = createRenderedComponentHeaders(rendered.metadata);
+```
+
+```ts
+const themedRender = await renderComponent({
+	component: ContextAwareCard,
+	ssrContext: [{ context: themeContext, value: { mode: 'studio' } }],
+});
+```
+
+`renderComponent()` returns the canonical render result with transport-agnostic metadata plus a JSX-compatible preview node for larger server-rendered page shells.
+`toRenderedComponentPayload()` converts that result into the flat payload shape that simple JSON or HTML fragment endpoints may prefer.
+`createServerRenderEnvironment()` gives adapters a single host-preparation entrypoint backed by the installed SSR shim.
+`prepareHost(...)` is the dedicated way to materialize authored light-DOM nodes before `querySlot()` and slot projection run during SSR.
+`authoredContent` remains the short form when the authored light DOM already exists as an HTML string.
+`ssrContext` lets standalone fragment renders consume parent-like context values during SSR without needing a real provider host.
+The shim is intentionally not a full DOM implementation; it only supports the host preparation and serialization surface used by component-aware SSR.
+All helpers infer the custom-element tag name from `@customElement(...)` metadata automatically unless you override it.
+When the framework adapter can derive the client module URL on its own, you can pass the component constructor directly and let `resolveClientModuleSrc(...)` fill that in automatically.
+
 ```ts
 // server/install-radiant-ssr.ts
 import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
@@ -130,6 +176,9 @@ For the full lifecycle and SSR flow diagram, see [src/core/README.md](src/core/R
 | `./core`                      | Contains all core elements              |
 | `./core/radiant-element`      | Module for the Radiant Element.         |
 | `./core/radiant-component`    | Module for the JSX-first Radiant base.  |
+| `./server/light-dom-shim`     | Minimal SSR window and host preparation helpers. |
+| `./server/render-component`   | Canonical component SSR helpers and metadata. |
+| `./server/project-root`       | Project-root resolution helper for server adapters. |
 | `./decorators`                | Contains decorator modules.             |
 | `./decorators/custom-element` | Decorator for custom elements.          |
 | `./decorators/event`          | Decorator for events.                   |

@@ -57,321 +57,387 @@ Configure TypeScript to use `@ecopages/jsx` as the JSX import source.
 {
 	"compilerOptions": {
 		"jsx": "react-jsx",
-		"jsxImportSource": "@ecopages/jsx"
-	}
-}
-```
+		# Radiant JSX
 
-## Quick Start With Radiant
+		Radiant JSX is the JSX authoring layer for the Radiant ecosystem.
 
-The most direct way to render JSX in a Radiant component is to extend `RadiantComponent`.
+		Use `@ecopages/jsx` when you want TSX syntax, intrinsic element typing, SSR serialization, hydration support, and direct DOM mounting. Keep using `@ecopages/radiant` when you need component classes, decorators, lifecycle, and reactive host state.
 
-```tsx
-/** @jsxImportSource @ecopages/jsx */
-import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+		[![Version](https://img.shields.io/npm/v/@ecopages/jsx.svg?style=flat-square)](https://www.npmjs.com/package/@ecopages/jsx)
+		[![License](https://img.shields.io/npm/l/@ecopages/jsx.svg?style=flat-square)](https://github.com/radiant/radiant/blob/main/LICENSE)
 
-const CounterButton = ({ label, onPress }: { label: string; onPress: (event: MouseEvent) => void }) => (
-	<button type="button" on:click={onPress} aria={{ label }}>
-		{label}
-	</button>
-);
+		## Start Here
 
-@customElement('radiant-counter')
-export class RadiantCounter extends RadiantComponent {
-	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+		The shortest accurate mental model is:
 
-	private readonly increment = () => {
-		this.count += 1;
-	};
+		1. JSX produces a renderer-neutral template result.
+		2. The same template result can go to the DOM renderer or the SSR renderer.
+		3. Fine-grained updates happen at bound child ranges, not through a hook scheduler.
 
-	private readonly decrement = () => {
-		this.count -= 1;
-	};
+		## What This Package Does
 
-	override render() {
-		return (
-			<section class="counter" data={{ state: this.count > 0 ? 'active' : 'idle' }}>
-				<h2>Count: {this.count}</h2>
-				<div class="controls">
-					<CounterButton label="Decrement" onPress={this.decrement} />
-					<CounterButton label="Increment" onPress={this.increment} />
-				</div>
+		`@ecopages/jsx` provides:
+
+		- automatic JSX runtime entry points through `@ecopages/jsx/jsx-runtime` and `@ecopages/jsx/jsx-dev-runtime`
+		- typed intrinsic HTML and SVG elements
+		- plain function components and fragments
+		- native DOM event bindings with `on:*`
+		- explicit property bindings with `prop:*`
+		- boolean, `data`, `aria`, `class`, `className`, `classes`, and `style` normalization
+		- direct DOM mounting with `createRoot(...)`
+		- HTML string rendering with `renderToString(...)`
+		- hydration markers and DOM hydration helpers
+		- subscribable child bindings through `createSubscribableJsxValue(...)`
+
+		`@ecopages/jsx` does not provide component state, hooks, decorators, or a standalone component model. Those stay in `@ecopages/radiant`.
+
+		## Package Boundary
+
+		This is the simplest way to place `@ecopages/jsx` inside the larger system.
+
+		```mermaid
+		flowchart LR
+		    Authoring["TSX authoring"] --> Runtime["@ecopages/jsx runtime"]
+		    Runtime --> Template["Template result"]
+		    Template --> DomRenderer["DOM renderer"]
+		    Template --> SsrRenderer["SSR renderer"]
+		    DomRenderer --> Browser["Browser DOM"]
+		    SsrRenderer --> Html["HTML string"]
+		    Radiant["@ecopages/radiant"] --> RuntimeUse["Components, decorators, host reactivity"]
+		    RuntimeUse --> Runtime
+		```
+
+		Read it like this:
+
+		- `@ecopages/jsx` owns TSX syntax, template creation, DOM mounting, hydration, and SSR serialization.
+		- `@ecopages/radiant` owns component behavior and decides when a component should render.
+		- Both DOM and SSR flows consume the same template result shape.
+
+		## Install And Configure
+
+		Install both packages:
+
+		```bash
+		npm install @ecopages/radiant @ecopages/jsx
+		```
+
+		Minimum TypeScript setup:
+
+		```json
+		{
+			"compilerOptions": {
+				"jsx": "react-jsx",
+				"jsxImportSource": "@ecopages/jsx"
+			}
+		}
+		```
+
+		Or enable it per file:
+
+		```tsx
+		/** @jsxImportSource @ecopages/jsx */
+		```
+
+		## Quick Start With Radiant
+
+		The most common path is still a `RadiantComponent` that returns JSX from `render()`.
+
+		```tsx
+		/** @jsxImportSource @ecopages/jsx */
+		import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+
+		const CounterButton = ({ label, onPress }: { label: string; onPress: (event: MouseEvent) => void }) => (
+			<button type="button" on:click={onPress} aria={{ label }}>
+				{label}
+			</button>
+		);
+
+		@customElement('radiant-counter')
+		export class RadiantCounter extends RadiantComponent {
+			@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+
+			private readonly increment = () => {
+				this.count += 1;
+			};
+
+			private readonly decrement = () => {
+				this.count -= 1;
+			};
+
+			override render() {
+				return (
+					<section class="counter" data={{ state: this.count > 0 ? 'active' : 'idle' }}>
+						<h2>Count: {this.count}</h2>
+						<div class="controls">
+							<CounterButton label="Decrement" onPress={this.decrement} />
+							<CounterButton label="Increment" onPress={this.increment} />
+						</div>
+					</section>
+				);
+			}
+		}
+		```
+
+		## Rendering Pipeline
+
+		There is one authoring output and two rendering targets.
+
+		```mermaid
+		flowchart TD
+		    View["JSX view"] --> Template["Template result"]
+		    Template --> Client["createRoot(...).render(...) or hydrate(...)"]
+		    Template --> Server["renderToString(...)"]
+		    Server --> Html["HTML string"]
+		    Html --> HydrateHtml["Optional hydration markers"]
+		    HydrateHtml --> Client
+		```
+
+		This is the key simplification:
+
+		- JSX authoring is shared.
+		- DOM rendering and SSR are different consumers of the same structure.
+		- Hydration is not a second authoring mode. It is an SSR output mode plus a client attach step.
+
+		## Direct DOM Usage
+
+		If you need app-level mounting outside a `RadiantComponent`, use the DOM root helper.
+
+		```tsx
+		/** @jsxImportSource @ecopages/jsx */
+		import { createRoot } from '@ecopages/jsx';
+
+		function DirectHandlers() {
+			function handleClick() {
+				console.log('Click');
+			}
+
+			const handleInput = (event: Event) => {
+				console.log((event.currentTarget as HTMLInputElement).value);
+			};
+
+			return (
+				<>
+					<button on:click={handleClick}>Log click</button>
+					<input on:input={handleInput} />
+				</>
+			);
+		}
+
+		const container = document.querySelector('#app');
+
+		if (container instanceof HTMLElement) {
+			const root = createRoot(container);
+			root.render(<DirectHandlers />);
+		}
+		```
+
+		## Fine-Grained Updates
+
+		The main non-obvious part of the package is that it already supports child-range subscriptions. A parent tree does not need to rerender when one bound child value changes.
+
+		```mermaid
+		sequenceDiagram
+		    participant App
+		    participant Root
+		    participant Renderer
+		    participant Binding as Subscribable child
+		    participant Dom as DOM range
+
+		    App->>Root: render(view)
+		    Root->>Renderer: mount template
+		    Renderer->>Binding: subscribe(notify)
+		    Binding-->>Renderer: getValue()
+		    Renderer->>Dom: mount initial child content
+		    Binding-->>Renderer: notify(nextValue)
+		    Renderer->>Dom: patch owned child range only
+		```
+
+		Use `createSubscribableJsxValue(...)` when a child value has its own update source and should patch in place.
+
+		```tsx
+		/** @jsxImportSource @ecopages/jsx */
+		import { createRoot, createSubscribableJsxValue } from '@ecopages/jsx';
+
+		let count = 0;
+		const subscribers = new Set<(value: number) => void>();
+
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		const root = createRoot(document.querySelector('#app') as HTMLElement);
+		root.render(<p>Count: {boundCount}</p>);
+
+		count += 1;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+		```
+
+		That contract is intentionally small. The package does not impose a single state container. It just gives the renderer a stable subscription surface.
+
+		## SSR And Hydration
+
+		Use `renderToString(...)` for HTML generation. Enable `hydrate: true` only when you plan to hydrate that exact view on the client.
+
+		```tsx
+		/** @jsxImportSource @ecopages/jsx */
+		import { renderToString } from '@ecopages/jsx';
+
+		const view = (
+			<button class="action" hidden={false} aria={{ label: 'Ship order' }}>
+				Ship
+			</button>
+		);
+
+		const html = renderToString(view);
+		const hydratedHtml = renderToString(view, { hydrate: true });
+		```
+
+		Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
+
+		## Authoring Patterns
+
+		### Intrinsic Elements
+
+		```tsx
+		const view = (
+			<section>
+				<h2>Status</h2>
+				<svg viewBox="0 0 24 24" aria={{ hidden: true }}>
+					<circle cx="12" cy="12" r="10" />
+				</svg>
 			</section>
 		);
-	}
-}
-```
+		```
+
+		### Custom Elements
+
+		When `jsxImportSource` points at `@ecopages/jsx`, custom elements should augment the runtime module instead of the global `JSX` namespace.
+
+		```tsx
+		import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+		type UserCardProps = {
+			name: string;
+			isAdmin: boolean;
+		};
+
+		declare module '@ecopages/jsx/jsx-runtime' {
+			interface JsxCustomIntrinsicElements {
+				'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+			}
+		}
+		```
 
-## Mental Model
+		### Function Components And Fragments
 
-Use the packages together like this:
+		```tsx
+		type CardProps = {
+			title: string;
+			children?: import('@ecopages/jsx').JsxRenderable;
+		};
 
-- `@ecopages/jsx`: JSX syntax, typings, and runtime entry points
-- `@ecopages/radiant`: component classes, decorators, reactivity, and rendering into the DOM
+		const Card = ({ title, children }: CardProps) => (
+			<>
+				<article class="card">
+					<h2>{title}</h2>
+					{children}
+				</article>
+			</>
+		);
+		```
 
-If you remove `@ecopages/jsx`, you lose JSX authoring.
-If you remove `@ecopages/radiant`, you lose the component runtime.
+		### Native Events
 
-## Supported Authoring Patterns
+		```tsx
+		<button on:click={this.handleClick}>Save</button>
+		```
 
-### Intrinsic Elements
+		Event bindings are native DOM listeners. They are not synthetic events.
 
-Standard HTML and SVG tags are typed through `JSX.IntrinsicElements`.
+		### Property Bindings
 
-```tsx
-const view = (
-	<section>
-		<h2>Status</h2>
-		<svg viewBox="0 0 24 24" aria={{ hidden: true }}>
-			<circle cx="12" cy="12" r="10" />
-		</svg>
-	</section>
-);
-```
+		```tsx
+		<custom-editor prop:value={draft} prop:config={editorConfig} />
+		```
 
-### Custom Elements
+		Use `prop:*` when the target must receive a real property value instead of a serialized attribute.
 
-When `jsxImportSource` points at `@ecopages/jsx`, custom element tag typing
-should augment the runtime module instead of the global `JSX` namespace.
+		### Structured `data`, `aria`, `class`, and `style`
 
-```tsx
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+		```tsx
+		<section
+			class={['panel', isActive && 'panel--active']}
+			classes={['surface', { interactive: true }]}
+			style={{ backgroundColor: 'white', fontSize: '14px' }}
+			data={{ tid: 'panel', state: 'ready' }}
+			aria={{ live: 'polite' }}
+		/>
+		```
 
-type UserCardProps = {
-	name: string;
-	isAdmin: boolean;
-};
+		## Runtime Output Contract
 
-declare module '@ecopages/jsx/jsx-runtime' {
-	interface JsxCustomIntrinsicElements {
-		'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-	}
-}
-```
+		`jsx()` and `jsxs()` return a template result object that contains:
 
-`JsxCustomElementAttributes<...>` combines the Ecopages intrinsic host
-attributes with `Partial<Props>`, so JSX call sites can provide only the props
-they need while still getting type checking for known keys.
+		- static string segments
+		- dynamic values
+		- a stable marker used by the Radiant renderers to recognize the object shape
 
-### Plain Function Components
+		That object is an internal contract between the JSX runtime and the Radiant renderers. It is not positioned as a generic third-party virtual DOM format.
 
-Function components are part of the runtime today. They receive props and children and return JSX values.
+		## Exported Surface
 
-```tsx
-type CardProps = {
-	title: string;
-	children?: import('@ecopages/jsx').JsxRenderable;
-};
+		Main exports:
 
-const Card = ({ title, children }: CardProps) => (
-	<article class="card">
-		<h2>{title}</h2>
-		{children}
-	</article>
-);
-```
+		- `Fragment`
+		- `jsx`
+		- `jsxs`
+		- `createRoot`
+		- `render`
+		- `hydrate`
+		- `hasHydrationMarkers`
+		- `renderToString`
+		- `createSubscribableJsxValue`
+		- `isKeyedJsxValue`
+		- `isSubscribableJsxValue`
 
-### Fragments
+		Key types:
 
-Fragments work with the automatic runtime.
+		- `JsxComponent`
+		- `JsxFragment`
+		- `JsxIntrinsicAttributes`
+		- `JsxNodeLike`
+		- `JsxPrimitive`
+		- `JsxPropsWithChildren`
+		- `JsxRenderable`
+		- `JsxRoot`
+		- `RenderToStringOptions`
+		- `SubscribableJsxValue`
+		- `TemplateResultLike`
 
-```tsx
-const fields = (
-	<>
-		<label for="email">Email</label>
-		<input id="email" type="email" />
-	</>
-);
-```
+		The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`.
 
-### Native Events
+		## Constraints
 
-Use `on:*` to bind native DOM listeners.
+		- This package is intentionally smaller than React-like frameworks. There is no hook system or component-local scheduler here.
+		- `@ecopages/jsx` handles authoring and rendering primitives. `@ecopages/radiant` handles component lifecycle and host reactivity.
+		- Use `renderToString(...)` and `createRoot(...)` directly when you need lower-level control outside a Radiant host.
 
-```tsx
-<button on:click={this.handleClick}>Save</button>
-```
+		## Why Use It
 
-The handler type is bivariant and receives an event whose `currentTarget` matches the bound element type.
-Each rendered element gets its own native listener attachment. Rendering the same function component multiple times does not mix handlers: closures declared inside the component stay per invocation, and a rerender only swaps the listener when the handler reference changes. You only need `.bind(...)` when you intentionally need a specific `this` value.
+		Use `@ecopages/jsx` if you want to:
 
-### Property Bindings
-
-Use `prop:*` when the target must receive a real property value instead of a string attribute.
-
-```tsx
-<custom-editor prop:value={draft} prop:config={editorConfig} />
-```
-
-### Boolean Attributes
-
-Boolean values are emitted as boolean bindings.
-
-```tsx
-<button disabled={loading} hidden={collapsed}>
-	{loading ? 'Saving...' : 'Save'}
-</button>
-```
-
-### Structured `data-*` and `aria-*`
-
-`data` and `aria` objects are expanded to kebab-cased attributes.
-
-```tsx
-<button
-	data={{ tid: 'save-button', state: loading ? 'loading' : 'idle' }}
-	aria={{ label: 'Save changes', live: 'polite' }}
-/>
-```
-
-This becomes the equivalent of:
-
-```html
-<button data-tid="save-button" data-state="idle" aria-label="Save changes" aria-live="polite"></button>
-```
-
-### Classes and Styles
-
-The runtime supports:
-
-- `class="value"`
-- `className="value"` merged into the final class list
-- `classes={...}` for `clsx`-style composition across strings, arrays, object maps, and numbers
-- `class={[...]}` arrays, with falsy entries removed before joining
-- `style="display: grid"`
-- `style={{ backgroundColor: 'white', fontSize: '14px' }}` object values, serialized to kebab-case CSS
-
-```tsx
-<section
-	class={['panel', isActive && 'panel--active', compact ? 'panel--compact' : undefined]}
-	classes={['surface', { interactive: true, muted: false }]}
-	style={{ backgroundColor: 'white', fontSize: '14px', display: compact ? 'grid' : 'block' }}
-/>
-```
-
-Object-style `style` entries with `undefined`, `null`, or `''` are omitted during serialization.
-
-## Runtime Output
-
-`jsx()` and `jsxs()` return a renderer-agnostic template result consumed by the
-Radiant DOM renderer and the Radiant SSR renderer.
-
-The object carries:
-
-- static HTML string segments
-- dynamic binding values
-- a stable Radiant marker used by the runtime to recognize template results
-
-This output format is an internal contract for Radiant renderers, not a public
-interop surface for third-party renderers.
-
-## Server Rendering Performance
-
-The server renderer caches template interpolation analysis by template shape.
-
-- interpolation metadata is reused by template identity when available
-- when the runtime rebuilds a `TemplateStringsArray`, the renderer falls back to a stable shape key instead of reparsing every interpolation slot
-- HTML escaping uses `Bun.escapeHTML(...)` on Bun and a portable fast-path fallback on other runtimes
-
-This keeps the SSR hot path focused on traversing values and writing output rather than reparsing static template structure on each render.
-
-## Server Rendering Example
-
-Use `renderToString(...)` when you want a plain HTML string or SSR output with hydration markers.
-
-```tsx
-/** @jsxImportSource @ecopages/jsx */
-import { renderToString } from '@ecopages/jsx';
-
-const view = (
-	<button class="action" hidden={false} aria={{ label: 'Ship order' }}>
-		Ship
-	</button>
-);
-
-const html = renderToString(view);
-const hydratedHtml = renderToString(view, { hydrate: true });
-
-console.log(html);
-// <button class="action" aria-label="Ship order">Ship</button>
-
-console.log(hydratedHtml);
-// <button data-radiant-jsx-bind-0="attr:class" class="action" data-radiant-jsx-bind-1="bool:hidden" data-radiant-jsx-bind-2="attr:aria-label" aria-label="Ship order">Ship</button>
-```
-
-Use the hydrated form only when you plan to call `hydrate(...)` on the client. The plain form is the published-like server-render benchmark target.
-
-## Direct Mounting
-
-If you want to mount plain JSX directly from an application entrypoint, use the DOM root helper from `@ecopages/jsx`.
-
-```tsx
-/** @jsxImportSource @ecopages/jsx */
-import { createRoot } from '@ecopages/jsx';
-
-function DirectHandlers() {
-	function handleClick() {
-		console.log('Click');
-	}
-
-	const handleInput = (event: Event) => {
-		console.log((event.currentTarget as HTMLInputElement).value);
-	};
-
-	return (
-		<>
-			<button on:click={handleClick}>Log click</button>
-			<input on:input={handleInput} />
-		</>
-	);
-}
-
-const container = document.querySelector('#app');
-
-if (container instanceof HTMLElement) {
-	const root = createRoot(container);
-	root.render(<DirectHandlers />);
-}
-```
-
-This is the intended escape hatch for app-level usage that does not involve `RadiantComponent`.
-
-## Exported Surface
-
-The package exports:
-
-- `jsx`
-- `jsxs`
-- `Fragment`
-- `createRoot`
-- `render`
-- `hydrate`
-- `hasHydrationMarkers`
-- `renderToString`
-- `createSubscribableJsxValue`
-- helpers including `isKeyedJsxValue` and `isSubscribableJsxValue`
-- types including `JsxComponent`, `JsxFragment`, `JsxIntrinsicAttributes`, `JsxPrimitive`, `JsxPropsWithChildren`, `JsxRenderable`, `JsxRoot`, `RenderToStringOptions`, `SubscribableJsxValue`, and `TemplateResultLike`
-
-The development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime` for the automatic JSX transform.
-
-## Limitations and Current Constraints
-
-- `@ecopages/jsx` only handles JSX authoring and template creation. It does not replace `@ecopages/radiant`.
-- RadiantComponent owns JSX rendering through `render()` and `update()`. Use `renderToString(...)` or `createRoot(...)` when you need lower-level control outside a component host.
-- Event bindings are native DOM listeners, not React-style synthetic events.
-- There is no hook system or component-local scheduler in this package.
-
-## Why Use It
-
-Use `@ecopages/jsx` if you want to:
-
-- author Radiant components with JSX instead of string templates
-- compose plain function components inside Web Component render trees
-- keep native DOM events and explicit property bindings visible in the template
-- get typed intrinsic elements without switching away from the Radiant runtime
-
-## Notes
-
-- The JSX configuration is opt-in per file or per project.
-- Runtime behavior is defined by the current implementation and tests, not by React conventions.
-- If you need lifecycle, decorators, context, or rendering into the DOM, those remain Radiant responsibilities.
+		- author Radiant components with TSX instead of string templates
+		- compose plain function components inside custom-element views
+		- keep bindings explicit and native instead of hiding them behind a synthetic event layer
+		- share one JSX authoring model across DOM rendering and SSR
+		- opt into fine-grained child updates without adopting a hook runtime

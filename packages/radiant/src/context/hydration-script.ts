@@ -1,3 +1,5 @@
+import { escapeScriptJson } from '../tools/escape-script-json';
+
 /** Attribute marker used to identify context hydration scripts inside a host. */
 export const CONTEXT_HYDRATION_ATTRIBUTE = 'data-hydration';
 /** Optional key that scopes a hydration payload to a specific provider property. */
@@ -20,12 +22,7 @@ export function createContextHydrationScriptTag(options: { hydrationKey?: string
  * script tag.
  */
 export function escapeContextHydrationJson(value: string): string {
-	return value
-		.replace(/&/g, '\\u0026')
-		.replace(/</g, '\\u003c')
-		.replace(/>/g, '\\u003e')
-		.replace(/\u2028/g, '\\u2028')
-		.replace(/\u2029/g, '\\u2029');
+	return escapeScriptJson(value);
 }
 
 function escapeHtmlAttribute(value: string): string {

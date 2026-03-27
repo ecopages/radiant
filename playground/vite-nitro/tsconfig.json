@@ -15,9 +15,17 @@
 		"moduleDetection": "force",
 		"noEmit": true,
 		"baseUrl": ".",
-		"rootDir": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@ecopages/jsx": ["../../packages/jsx/index.ts"],
+			"@ecopages/jsx/jsx-runtime": ["../../packages/jsx/jsx-runtime.ts"],
+			"@ecopages/jsx/jsx-dev-runtime": ["../../packages/jsx/jsx-dev-runtime.ts"],
+			"@ecopages/radiant": ["../../packages/radiant/src/index.ts"],
+			"@ecopages/radiant/server/light-dom-shim": ["../../packages/radiant/src/server/light-dom-shim.ts"],
+			"@ecopages/radiant/server/render-component": ["../../packages/radiant/src/server/render-component.ts"],
+			"@ecopages/radiant/server/project-root": ["../../packages/radiant/src/server/project-root.ts"],
+			"@ecopages/radiant/tools/escape-script-json": ["../../packages/radiant/src/tools/escape-script-json.ts"],
+			"@ecopages/radiant/tools/stringify-typed": ["../../packages/radiant/src/tools/stringify-typed.ts"]
 		},
 		"strict": true,
 		"noUnusedLocals": true,

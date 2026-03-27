@@ -16,5 +16,6 @@ export * from './context/create-context';
 export * from './context/decorators/consume-context';
 export * from './context/decorators/context-selector';
 export * from './context/decorators/provide-context';
+export * from './server/render-component';
 export * from './tools';
 export * from './utils';

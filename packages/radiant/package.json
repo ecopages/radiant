@@ -85,6 +85,14 @@
 			"types": "./dist/server/light-dom-shim.d.ts",
 			"import": "./dist/server/light-dom-shim.js"
 		},
+		"./server/render-component": {
+			"types": "./dist/server/render-component.d.ts",
+			"import": "./dist/server/render-component.js"
+		},
+		"./server/project-root": {
+			"types": "./dist/server/project-root.d.ts",
+			"import": "./dist/server/project-root.js"
+		},
 		"./decorators/bound": {
 			"types": "./dist/decorators/bound.d.ts",
 			"import": "./dist/decorators/bound.js"
@@ -136,6 +144,10 @@
 		"./tools/stringify-typed": {
 			"types": "./dist/tools/stringify-typed.d.ts",
 			"import": "./dist/tools/stringify-typed.js"
+		},
+		"./tools/escape-script-json": {
+			"types": "./dist/tools/escape-script-json.d.ts",
+			"import": "./dist/tools/escape-script-json.js"
 		},
 		"./tools/event-emitter": {
 			"types": "./dist/tools/event-emitter.d.ts",

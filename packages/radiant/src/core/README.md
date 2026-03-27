@@ -65,14 +65,17 @@ SSR works like this:
 
 1. Server code creates the component instance.
 2. Server code sets props, fields, or attributes exactly as client code would.
-3. `renderHost()` or `renderHostToString()` resolves the host tag name, gathers host attributes, and renders the current JSX view.
-4. The JSX server renderer turns `render()` output into HTML.
-5. When hydration is requested, hydration markers are emitted into the rendered view.
-6. The browser receives `<my-element ...>...</my-element>` markup.
-7. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.
+3. When authored light DOM is needed, a server render environment prepares the host before rendering.
+4. `renderHost()` or `renderHostToString()` resolves the host tag name, gathers host attributes, and renders the current JSX view.
+5. The JSX server renderer turns `render()` output into HTML.
+6. When hydration is requested, hydration markers are emitted into the rendered view.
+7. The browser receives `<my-element ...>...</my-element>` markup.
+8. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.
 
 `renderToString({ hydrate: true })` serializes only the component view with hydration markers.
 `renderHostToString({ hydrate: true })` serializes the full custom-element host together with the component view.
+When slot-aware SSR needs authored light DOM, server adapters can prepare the host explicitly before calling `renderHostToString()`.
+This host-preparation step is intentionally smaller than a full DOM emulation layer; nested JSX composition still needs a component-aware SSR path if it wants server-correct slot queries.
 
 ## Public API
 

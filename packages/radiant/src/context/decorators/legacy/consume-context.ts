@@ -1,33 +1,42 @@
 import type { RadiantElement } from '../../../core/radiant-element';
 import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
-import { initializeConsumedContext, requestConsumedContext } from '../../context-consumer-runtime';
+import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
 export function consumeContext(contextToProvide: UnknownContext) {
 	return (proto: RadiantElement, propertyKey: string) => {
-		const tryInitializeConsumedContext = (element: RadiantElement) => {
+		const assignContextProvider = (element: RadiantElement, provider: unknown) => {
+			(element as any)[propertyKey] = provider;
+		};
+		const initializeConsumedContextForHost = (element: RadiantElement, options: { emitMounted?: boolean } = {}) => {
 			if ((element as any)[propertyKey]) {
 				return true;
 			}
 
-			return initializeConsumedContext(element, contextToProvide, (provider) => {
-				(element as any)[propertyKey] = provider;
-			});
+			return connectConsumedContext(
+				element,
+				contextToProvide,
+				(provider) => {
+					assignContextProvider(element, provider);
+				},
+				options,
+			);
 		};
 
-		registerLegacyInstanceInitializer(proto, tryInitializeConsumedContext);
+		registerLegacyInstanceInitializer(proto, (element) => {
+			bootstrapSsrConsumedContext(element, contextToProvide, (provider) => {
+				assignContextProvider(element, provider);
+			});
+		});
+
 		const originalConnectedCallback = proto.connectedCallback;
 
 		proto.connectedCallback = function (this: RadiantElement) {
 			originalConnectedCallback.call(this);
 
-			if (tryInitializeConsumedContext(this)) {
+			if (initializeConsumedContextForHost(this, { emitMounted: true })) {
 				return;
 			}
-
-			requestConsumedContext(this, contextToProvide, (provider) => {
-				(this as any)[propertyKey] = provider;
-			});
 		};
 	};
 }

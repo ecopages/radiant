@@ -17,12 +17,24 @@ export default defineConfig({
 				replacement: resolve(__dirname, '../../packages/jsx/jsx-runtime.ts'),
 			},
 			{
+				find: '@ecopages/radiant/tools/escape-script-json',
+				replacement: resolve(__dirname, '../../packages/radiant/src/tools/escape-script-json.ts'),
+			},
+			{
 				find: '@ecopages/radiant/tools/stringify-typed',
 				replacement: resolve(__dirname, '../../packages/radiant/src/tools/stringify-typed.ts'),
 			},
 			{
 				find: '@ecopages/radiant/server/light-dom-shim',
 				replacement: resolve(__dirname, '../../packages/radiant/src/server/light-dom-shim.ts'),
+			},
+			{
+				find: '@ecopages/radiant/server/render-component',
+				replacement: resolve(__dirname, '../../packages/radiant/src/server/render-component.ts'),
+			},
+			{
+				find: '@ecopages/radiant/server/project-root',
+				replacement: resolve(__dirname, '../../packages/radiant/src/server/project-root.ts'),
 			},
 			{
 				find: '@ecopages/jsx',

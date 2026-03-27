@@ -54,8 +54,8 @@ export class RadiantComponentServerCardElement extends RadiantComponent<RadiantC
 				<p class="component-copy">{this.$.message}</p>
 				<p class="component-meta">Server time: {this.$.serverTime}</p>
 				<div class="component-actions">
-					<button type="button" on:click={this.fetchServerMessage} disabled={this.$.status === 'loading'}>
-						{this.$.status === 'loading' ? 'Loading...' : 'Fetch from Nitro'}
+					<button type="button" on:click={this.fetchServerMessage} disabled={this.status === 'loading'}>
+						{this.status === 'loading' ? 'Loading...' : 'Fetch from Nitro'}
 					</button>
 				</div>
 			</section>

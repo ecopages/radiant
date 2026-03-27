@@ -1,7 +1,11 @@
 import { createRoot } from '@ecopages/jsx';
+import {
+	RENDERED_COMPONENT_CLIENT_MODULE_HEADER,
+	RENDERED_COMPONENT_GENERATED_AT_HEADER,
+	RENDERED_COMPONENT_TAG_NAME_HEADER,
+} from '@ecopages/radiant/server/render-component';
 import './components/radiant-component-counter.script';
 import './components/radiant-context-flow-shell.script';
-import './components/radiant-component-server-card.script';
 import './components/radiant-slot-studio-board.script.tsx';
 import {
 	PLAYGROUND_STATE_SCRIPT_ATTRIBUTE,
@@ -11,6 +15,7 @@ import {
 	renderPlaygroundView,
 } from './playground-view';
 import './style.css';
+import { createWritableJsxValue } from './writable-jsx-value';
 
 const mountNode = document.querySelector<HTMLElement>('#app');
 
@@ -21,6 +26,7 @@ if (!mountNode) {
 const root = createRoot(mountNode);
 const initialBootstrap = readInitialState(mountNode);
 const state = initialBootstrap?.state ?? createInitialPlaygroundState();
+const clicksValue = createWritableJsxValue(state.clicks);
 let shouldHydrate = mountNode.childNodes.length > 0;
 let bootstrapStateScript = initialBootstrap?.serializedState
 	? createPlaygroundStateScriptNode(initialBootstrap.serializedState)
@@ -36,6 +42,7 @@ function renderApp() {
 		},
 		{
 			bootstrapStateScript,
+			clicksContent: clicksValue.renderable,
 			ssrPreviewContent: createClientPreviewContent(state),
 		},
 	);
@@ -53,7 +60,7 @@ function renderApp() {
 
 function incrementClicks() {
 	state.clicks += 1;
-	renderApp();
+	clicksValue.set(state.clicks);
 }
 
 async function loadServerMessage() {
@@ -106,11 +113,13 @@ async function loadSsrMarkupFrom(endpoint = '/api/ssr/radiant-component') {
 		}
 
 		const markup = await response.text();
+		const tagName = response.headers.get(RENDERED_COMPONENT_TAG_NAME_HEADER) ?? extractTagNameFromMarkup(markup);
+		await ensureFragmentClientModule(tagName, response.headers.get(RENDERED_COMPONENT_CLIENT_MODULE_HEADER));
 
 		state.ssrStatus = 'ready';
-		state.ssrGeneratedAt = response.headers.get('x-generated-at') ?? 'n/a';
+		state.ssrGeneratedAt = response.headers.get(RENDERED_COMPONENT_GENERATED_AT_HEADER) ?? 'n/a';
 		state.ssrMarkup = markup;
-		state.ssrTagName = response.headers.get('x-radiant-tag-name') ?? extractTagNameFromMarkup(markup);
+		state.ssrTagName = tagName;
 	} catch (error) {
 		state.ssrStatus = 'error';
 		state.ssrGeneratedAt = 'n/a';
@@ -166,4 +175,22 @@ function extractTagNameFromMarkup(markup: string): string {
 	const firstElement = template.content.firstElementChild;
 
 	return firstElement?.tagName.toLowerCase() ?? 'unknown';
+}
+
+async function ensureFragmentClientModule(tagName: string, clientModuleSrc: string | null) {
+	if (customElements.get(tagName)) {
+		return;
+	}
+
+	if (!clientModuleSrc) {
+		throw new Error(`Missing fragment client module for ${tagName}.`);
+	}
+
+	await import(/* @vite-ignore */ clientModuleSrc);
+
+	if (!customElements.get(tagName)) {
+		throw new Error(`Client module ${clientModuleSrc} did not register ${tagName}.`);
+	}
+
+	await customElements.whenDefined(tagName);
 }

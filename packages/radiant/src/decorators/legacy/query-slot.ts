@@ -28,8 +28,6 @@ export function querySlot<T extends Element | Element[]>({
 		};
 
 		const defineSlotQueryProperty = (instance: SlotQueryHost) => {
-			const cacheHost = instance as SlotQueryCacheHost;
-
 			Object.defineProperty(instance, propertyKey, {
 				get() {
 					return readSlotQueryValue(instance);

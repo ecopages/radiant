@@ -1,15 +1,12 @@
 import type { JsxNodeLike, JsxRenderable } from '@ecopages/jsx';
+import type { RenderedComponentPayload } from '@ecopages/radiant/server/render-component';
+import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
 /** Attribute marker used to find the one-shot SSR bootstrap payload for the playground shell. */
 export const PLAYGROUND_STATE_SCRIPT_ATTRIBUTE = 'data-playground-state';
 
-export type SsrComponentPayload = {
-	generatedAt: string;
-	markup: string;
-	tagName: string;
-};
-
+/** Serializable client bootstrap state used by the Nitro playground shell. */
 export type PlaygroundState = {
 	clicks: number;
 	ssrGeneratedAt: string;
@@ -21,15 +18,21 @@ export type PlaygroundState = {
 	serverTime: string;
 };
 
+/** UI actions exposed to the playground view. */
 export type PlaygroundCallbacks = {
 	incrementClicks: () => void;
 	loadServerMessage: () => void | Promise<void>;
 	loadSsrMarkup: (endpoint?: string) => void | Promise<void>;
 };
 
+/**
+ * Optional view fragments that let the client entrypoint swap specific regions
+ * with finer-grained bindings while keeping the SSR shell stable.
+ */
 export type PlaygroundViewOptions = {
 	ssrPreviewContent?: JsxRenderable;
 	bootstrapStateScript?: JsxRenderable;
+	clicksContent?: JsxRenderable;
 };
 
 /** Serializes the page-level playground state for SSR bootstrap. */
@@ -54,11 +57,12 @@ export function parsePlaygroundState(serializedState?: string): PlaygroundState 
 export function createPlaygroundStateScriptNode(serializedState: string): JsxNodeLike {
 	return {
 		nodeType: 1,
-		outerHTML: `<script type="application/json" ${PLAYGROUND_STATE_SCRIPT_ATTRIBUTE}>${escapePlaygroundStateJson(serializedState)}</script>`,
+		outerHTML: `<script type="application/json" ${PLAYGROUND_STATE_SCRIPT_ATTRIBUTE}>${escapeScriptJson(serializedState)}</script>`,
 	};
 }
 
-export function createInitialPlaygroundState(initialSsrPayload?: SsrComponentPayload): PlaygroundState {
+/** Creates the initial page state from an optional canonical SSR fragment payload. */
+export function createInitialPlaygroundState(initialSsrPayload?: RenderedComponentPayload): PlaygroundState {
 	return {
 		clicks: 0,
 		ssrGeneratedAt: initialSsrPayload?.generatedAt ?? 'n/a',
@@ -71,6 +75,10 @@ export function createInitialPlaygroundState(initialSsrPayload?: SsrComponentPay
 	};
 }
 
+/**
+ * Renders the Nitro playground shell used by both the server response and the
+ * hydrated client entrypoint.
+ */
 export function renderPlaygroundView(
 	state: PlaygroundState,
 	callbacks: PlaygroundCallbacks,
@@ -100,7 +108,6 @@ export function renderPlaygroundView(
 				<div class="component-grid">
 					<radiant-component-counter count={2} />
 					<radiant-context-flow-shell />
-					<radiant-component-server-card />
 					<radiant-slot-studio-board>
 						<p slot="eyebrow" class="component-tag">
 							Creative composition lab
@@ -157,9 +164,9 @@ export function renderPlaygroundView(
 					Status: {state.ssrStatus}
 				</p>
 				<p>
-					Nitro returns a real <code>{state.ssrTagName}</code> HTML fragment directly. The page already has
-					the client bundle loaded, so the custom element hydrates that existing DOM when the fragment is
-					inserted here.
+					Nitro returns a real <code>{state.ssrTagName}</code> HTML fragment plus a client module URL. The
+					counter example is already registered in the shell, while the server-card fragment loads its component
+					module on demand before the markup is inserted here.
 				</p>
 				<p data-generated-at={state.ssrGeneratedAt}>Generated at: {state.ssrGeneratedAt}</p>
 				<pre class="ssr-html">{state.ssrMarkup || 'SSR output will appear here.'}</pre>
@@ -176,7 +183,7 @@ export function renderPlaygroundView(
 					</button>
 				</div>
 				<p>
-					Clicks: <strong>{state.clicks}</strong>
+					Clicks: <strong>{options.clicksContent ?? state.clicks}</strong>
 				</p>
 			</section>
 
@@ -195,13 +202,4 @@ export function renderPlaygroundView(
 			</section>
 		</main>
 	);
-}
-
-function escapePlaygroundStateJson(value: string): string {
-	return value
-		.replace(/&/g, '\\u0026')
-		.replace(/</g, '\\u003c')
-		.replace(/>/g, '\\u003e')
-		.replace(/\u2028/g, '\\u2028')
-		.replace(/\u2029/g, '\\u2029');
 }
