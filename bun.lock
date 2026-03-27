@@ -60,6 +60,7 @@
       "version": "0.2.0",
       "dependencies": {
         "@ecopages/jsx": "workspace:*",
+        "@ecopages/signals": "workspace:*",
       },
       "devDependencies": {
         "@testing-library/dom": "^10.4.0",
@@ -72,6 +73,16 @@
         "tsc-alias": "1.8.10",
         "vite": "^7.1.3",
         "vitest": "^3.2.4",
+      },
+    },
+    "packages/signals": {
+      "name": "@ecopages/signals",
+      "version": "0.1.0",
+      "devDependencies": {
+        "vitest": "^3.2.4",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
       },
     },
     "playground/vite": {
@@ -97,9 +108,11 @@
       "dependencies": {
         "@ecopages/jsx": "workspace:*",
         "@ecopages/radiant": "workspace:*",
+        "@ecopages/signals": "workspace:*",
       },
       "devDependencies": {
         "nitro": "^3.0.260311-beta",
+        "playwright": "^1.52.0",
         "typescript": "^5.9.2",
         "vite": "^7.1.3",
       },
@@ -199,6 +212,8 @@
     "@ecopages/radiant": ["@ecopages/radiant@workspace:packages/radiant"],
 
     "@ecopages/scripts-injector": ["@ecopages/scripts-injector@0.1.5", "", { "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-4julGcmVkf4G8asK0/vAZ9o9bIWudEyGk4D/rRF/IE2J4ePT5FgmR8QdzRxD+DElzEnkJTnS7gyX2Dj7JeNtdg=="],
+
+    "@ecopages/signals": ["@ecopages/signals@workspace:packages/signals"],
 
     "@emnapi/core": ["@emnapi/core@1.9.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.0", "tslib": "^2.4.0" } }, "sha512-mukuNALVsoix/w1BJwFzwXBN/dHeejQtuVzcDsfOEsdpCumXb/E9j8w11h5S54tT1xhifGfbbSm/ICrObRb3KA=="],
 

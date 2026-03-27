@@ -1,0 +1,24 @@
+{
+	"name": "@ecopages/signals",
+	"version": "0.1.0",
+	"description": "Experimental signal primitives for Ecopages packages",
+	"module": "index.ts",
+	"types": "index.ts",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./index.ts",
+			"import": "./index.ts"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"test:lib": "vitest run"
+	},
+	"devDependencies": {
+		"vitest": "^3.2.4"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
+}
