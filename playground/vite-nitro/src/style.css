@@ -205,6 +205,11 @@ radiant-slot-studio-board {
 	grid-column: 1 / -1;
 }
 
+radiant-signal-release-board {
+	display: block;
+	grid-column: 1 / -1;
+}
+
 .ssr-preview {
 	margin-top: 1.5rem;
 	padding: 1.5rem;
@@ -296,6 +301,171 @@ strong {
 	background:
 		radial-gradient(circle at top right, rgb(14 165 233 / 0.12), transparent 28%),
 		linear-gradient(180deg, #fffdf8 0%, #f8fafc 100%);
+}
+
+.component-card--signals {
+	background:
+		radial-gradient(circle at top left, rgb(251 191 36 / 0.18), transparent 24%),
+		radial-gradient(circle at bottom right, rgb(37 99 235 / 0.12), transparent 32%),
+		linear-gradient(180deg, #fffdfa 0%, #f8fafc 100%);
+}
+
+.signal-story__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	align-items: center;
+	margin-top: 1rem;
+}
+
+.signal-story__chip {
+	margin: 0;
+	padding: 0.35rem 0.7rem;
+	border-radius: 9999px;
+	border: 1px solid #dbe5f0;
+	background: rgb(255 255 255 / 0.82);
+	color: #334155;
+	font-size: 0.82rem;
+	font-weight: 600;
+}
+
+.signal-story__headline {
+	margin: 0.95rem 0 0;
+	font-size: 1rem;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.signal-story__lane-summary {
+	margin: 0.45rem 0 0;
+	font-size: 0.84rem;
+	color: #64748b;
+}
+
+.signal-story__layout {
+	display: grid;
+	grid-template-columns: minmax(220px, 0.95fr) minmax(0, 1.4fr);
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.signal-story__focus-panel,
+.signal-story__queue-panel {
+	padding: 1rem;
+	border-radius: 14px;
+	border: 1px solid #dbe5f0;
+	background: rgb(255 255 255 / 0.82);
+	backdrop-filter: blur(10px);
+}
+
+.signal-story__section-label {
+	margin: 0;
+	font-size: 0.74rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #1d4ed8;
+}
+
+.signal-story__focus-panel h4 {
+	margin: 0.35rem 0 0.45rem;
+	font-size: 1.1rem;
+	color: #0f172a;
+}
+
+.signal-story__focus-meta {
+	margin: 0;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #475569;
+}
+
+.signal-story__checklist {
+	margin: 0.85rem 0 0;
+	padding-left: 1.1rem;
+	color: #334155;
+}
+
+.signal-story__checklist li + li {
+	margin-top: 0.45rem;
+}
+
+.signal-story__actions {
+	margin-top: 0;
+	margin-bottom: 0.9rem;
+	flex-wrap: wrap;
+}
+
+.signal-story__ticket-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 0.8rem;
+}
+
+.signal-story__ticket {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 0.9rem;
+	padding: 0.95rem;
+	border-radius: 14px;
+	border: 1px solid #dbe5f0;
+	background: #f8fafc;
+	transition:
+		transform 0.16s ease,
+		border-color 0.16s ease,
+		box-shadow 0.16s ease;
+}
+
+.signal-story__ticket[data-selected='true'] {
+	border-color: #2563eb;
+	box-shadow: 0 12px 26px -22px rgb(37 99 235 / 0.75);
+	transform: translateY(-1px);
+	background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+.signal-story__ticket[data-blocked='true'] {
+	border-color: #fca5a5;
+	background: linear-gradient(180deg, #fff1f2 0%, #fef2f2 100%);
+}
+
+.signal-story__ticket-copy {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.signal-story__ticket-title,
+.signal-story__ticket-meta,
+.signal-story__ticket-notes {
+	margin: 0;
+}
+
+.signal-story__ticket-title {
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.signal-story__ticket-meta {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #475569;
+}
+
+.signal-story__ticket-notes {
+	font-size: 0.9rem;
+	color: #475569;
+}
+
+.signal-story__ticket-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	justify-content: center;
+	align-items: stretch;
 }
 
 .studio-layout {
@@ -392,6 +562,20 @@ strong {
 }
 
 @media (max-width: 720px) {
+	.signal-story__layout {
+		grid-template-columns: 1fr;
+	}
+
+	.signal-story__ticket {
+		grid-template-columns: 1fr;
+	}
+
+	.signal-story__ticket-controls {
+		flex-direction: row;
+		justify-content: flex-start;
+		flex-wrap: wrap;
+	}
+
 	.studio-layout {
 		grid-template-columns: 1fr;
 	}

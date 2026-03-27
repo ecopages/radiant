@@ -1,4 +1,4 @@
-import type { JsxNodeLike, JsxRenderable } from '@ecopages/jsx';
+import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import type { RenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
@@ -33,6 +33,12 @@ export type PlaygroundViewOptions = {
 	ssrPreviewContent?: JsxRenderable;
 	bootstrapStateScript?: JsxRenderable;
 	clicksContent?: JsxRenderable;
+	nitroButtonDisabled?: unknown;
+	nitroButtonLabelContent?: JsxRenderable;
+	nitroMessageContent?: JsxRenderable;
+	nitroServerTimeContent?: JsxRenderable;
+	nitroStatusAttribute?: unknown;
+	nitroStatusContent?: JsxRenderable;
 };
 
 /** Serializes the page-level playground state for SSR bootstrap. */
@@ -54,11 +60,10 @@ export function parsePlaygroundState(serializedState?: string): PlaygroundState 
 }
 
 /** Creates the static JSON script node used during the initial SSR hydration pass. */
-export function createPlaygroundStateScriptNode(serializedState: string): JsxNodeLike {
-	return {
-		nodeType: 1,
-		outerHTML: `<script type="application/json" ${PLAYGROUND_STATE_SCRIPT_ATTRIBUTE}>${escapeScriptJson(serializedState)}</script>`,
-	};
+export function createPlaygroundStateScriptNode(serializedState: string): JsxRenderable {
+	return createMarkupNodeLike(
+		`<script type="application/json" ${PLAYGROUND_STATE_SCRIPT_ATTRIBUTE}>${escapeScriptJson(serializedState)}</script>`,
+	);
 }
 
 /** Creates the initial page state from an optional canonical SSR fragment payload. */
@@ -108,6 +113,7 @@ export function renderPlaygroundView(
 				<div class="component-grid">
 					<radiant-component-counter count={2} />
 					<radiant-context-flow-shell />
+					<radiant-signal-release-board />
 					<radiant-slot-studio-board>
 						<p slot="eyebrow" class="component-tag">
 							Creative composition lab
@@ -158,19 +164,26 @@ export function renderPlaygroundView(
 						>
 							{state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch server-card fragment'}
 						</button>
+						<button
+							type="button"
+							on:click={() => callbacks.loadSsrMarkup('/api/ssr/radiant-signal-release-board')}
+							disabled={state.ssrStatus === 'loading'}
+						>
+							{state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch signal-board fragment'}
+						</button>
 					</div>
 				</div>
-				<p class="status" data-status={state.ssrStatus}>
+				<p class="status" data-ref="ssr-status" data-status={state.ssrStatus}>
 					Status: {state.ssrStatus}
 				</p>
 				<p>
 					Nitro returns a real <code>{state.ssrTagName}</code> HTML fragment plus a client module URL. The
-					counter example is already registered in the shell, while the server-card fragment loads its component
-					module on demand before the markup is inserted here.
+					counter example is already registered in the shell, while the server-card and signal-board fragments
+					load richer client modules before the markup is inserted here.
 				</p>
 				<p data-generated-at={state.ssrGeneratedAt}>Generated at: {state.ssrGeneratedAt}</p>
-				<pre class="ssr-html">{state.ssrMarkup || 'SSR output will appear here.'}</pre>
-				<div class="ssr-preview" data-tag-name={state.ssrTagName}>
+				<pre class="ssr-html" data-ref="ssr-html">{state.ssrMarkup || 'SSR output will appear here.'}</pre>
+				<div class="ssr-preview" data-ref="ssr-preview" data-tag-name={state.ssrTagName}>
 					{options.ssrPreviewContent ?? <p>No SSR markup loaded yet.</p>}
 				</div>
 			</section>
@@ -190,15 +203,22 @@ export function renderPlaygroundView(
 			<section class="panel">
 				<div class="panel-header">
 					<h2>Nitro route</h2>
-					<button type="button" on:click={callbacks.loadServerMessage} disabled={state.status === 'loading'}>
-						{state.status === 'loading' ? 'Loading...' : 'Fetch /api/hello'}
+					<button
+						data-ref="nitro-fetch-button"
+						type="button"
+						on:click={callbacks.loadServerMessage}
+						disabled={options.nitroButtonDisabled ?? (state.status === 'loading')}
+					>
+						{options.nitroButtonLabelContent ?? (state.status === 'loading' ? 'Loading...' : 'Fetch /api/hello')}
 					</button>
 				</div>
-				<p class="status" data-status={state.status}>
-					Status: {state.status}
+				<p class="status" data-ref="nitro-status" data-status={options.nitroStatusAttribute ?? state.status}>
+					Status: {options.nitroStatusContent ?? state.status}
 				</p>
-				<p>{state.message}</p>
-				<p>Server time: {state.serverTime}</p>
+				<p data-ref="nitro-message">{options.nitroMessageContent ?? state.message}</p>
+				<p>
+					Server time: <span data-ref="nitro-server-time">{options.nitroServerTimeContent ?? state.serverTime}</span>
+				</p>
 			</section>
 		</main>
 	);

@@ -3,10 +3,10 @@ import { defineHandler } from 'nitro';
 
 export default defineHandler(async () => {
 	installLightDomShim();
-	const [{ getSsrCounterRender }, { createSsrComponentResponse }] = await Promise.all([
+	const [{ getSsrSignalReleaseBoardRender }, { createSsrComponentResponse }] = await Promise.all([
 		import('../../render-playground'),
 		import('../../radiant-ssr.ts'),
 	]);
-	const render = await getSsrCounterRender();
+	const render = await getSsrSignalReleaseBoardRender();
 	return createSsrComponentResponse(render);
 });

@@ -17,6 +17,10 @@ export default defineConfig({
 				replacement: resolve(__dirname, '../../packages/jsx/jsx-runtime.ts'),
 			},
 			{
+				find: '@ecopages/signals',
+				replacement: resolve(__dirname, '../../packages/signals/index.ts'),
+			},
+			{
 				find: '@ecopages/radiant/tools/escape-script-json',
 				replacement: resolve(__dirname, '../../packages/radiant/src/tools/escape-script-json.ts'),
 			},

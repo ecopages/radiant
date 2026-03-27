@@ -1,4 +1,4 @@
-import './install-radiant-ssr';
+import { radiantSsrWindow } from './install-radiant-ssr';
 import { renderToString } from '@ecopages/jsx';
 import {
 	renderComponent,
@@ -7,6 +7,7 @@ import {
 } from '@ecopages/radiant/server/render-component';
 import '../src/components/radiant-component-counter.script';
 import '../src/components/radiant-context-flow-shell.script';
+import '../src/components/radiant-signal-release-board.script';
 import '../src/components/radiant-slot-studio-board.script.tsx';
 import { RadiantComponentCounter } from '../src/components/radiant-component-counter.script';
 import {
@@ -17,6 +18,8 @@ import {
 	type PlaygroundCallbacks,
 } from '../src/playground-view';
 import { resolvePlaygroundSsrClientModuleSrc } from './ssr-component-module-resolver';
+
+void radiantSsrWindow;
 
 const noopCallbacks: PlaygroundCallbacks = {
 	incrementClicks: () => {},
@@ -39,6 +42,21 @@ export async function getSsrServerCardRender(): Promise<RenderedComponent> {
 
 	return renderComponent(RadiantComponentServerCardElement, {
 		configure: () => {},
+		resolveClientModuleSrc: resolvePlaygroundSsrClientModuleSrc,
+	});
+}
+
+export async function getSsrSignalReleaseBoardRender(): Promise<RenderedComponent> {
+	const { RadiantSignalReleaseBoardElement } = await import('../src/components/radiant-signal-release-board.script');
+
+	return renderComponent(RadiantSignalReleaseBoardElement, {
+		configure: (component) => {
+			component.filter.set('launch-ready');
+			component.selectedTicketId.set(103);
+			component.syncState.set('ready');
+			component.syncSummary.set('Nitro preloaded the release rehearsal with a launch-ready focus.');
+			component.lastSyncAt.set('SSR rehearsal snapshot');
+		},
 		resolveClientModuleSrc: resolvePlaygroundSsrClientModuleSrc,
 	});
 }

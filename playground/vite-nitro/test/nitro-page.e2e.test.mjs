@@ -1,11 +1,20 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
 import { dirname, resolve } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright';
+import {
+	browserTestOptions,
+	getPanel,
+	normalizeText,
+	poll,
+	runCommand,
+	startServer,
+	stopServer,
+	waitForLocatorAttribute,
+	waitForLocatorText,
+	waitForLocatorTextMatch,
+	withBrowserPage,
+} from '../../test-support/playwright-e2e.mjs';
 
 const testDirectory = dirname(fileURLToPath(import.meta.url));
 const playgroundDirectory = resolve(testDirectory, '..');
@@ -14,40 +23,25 @@ const port = '3211';
 const origin = `http://${host}:${port}`;
 
 let nitroServer;
-const browserTestOptions = { timeout: 15_000 };
 
 test.before(async () => {
 	await runCommand('bun', ['run', 'build'], playgroundDirectory);
-
-	nitroServer = spawn('node', ['.output/server/index.mjs'], {
+	nitroServer = await startServer({
+		command: 'node',
+		args: ['.output/server/index.mjs'],
 		cwd: playgroundDirectory,
 		env: {
-			...process.env,
 			HOST: host,
 			NITRO_HOST: host,
 			NITRO_PORT: port,
 			PORT: port,
 		},
-		stdio: ['ignore', 'pipe', 'pipe'],
+		origin,
 	});
-
-	nitroServer.stdout?.on('data', () => undefined);
-	nitroServer.stderr?.on('data', () => undefined);
-
-	await waitForServer(origin);
 });
 
 test.after(async () => {
-	if (!nitroServer || nitroServer.killed) {
-		return;
-	}
-
-	nitroServer.kill('SIGTERM');
-	await Promise.race([once(nitroServer, 'exit'), delay(5_000)]);
-
-	if (!nitroServer.killed) {
-		nitroServer.kill('SIGKILL');
-	}
+	await stopServer(nitroServer);
 });
 
 test('Nitro page SSR renders nested context flow and hydrates child updates', browserTestOptions, async () => {
@@ -58,10 +52,7 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	assert.match(html, /<radiant-context-flow-shell>/);
 	assert.match(html, /<radiant-context-flow-leaf>/);
 	assert.match(html, /<radiant-slot-studio-board><section[^>]*class="component-card component-card--studio"/);
-	assert.match(
-		html,
-		/Design systems is steering slot composition in build mode with 3 commits queued\./,
-	);
+	assert.match(html, /Design systems is steering slot composition in build mode with 3 commits queued\./);
 	assert.match(html, /<p[^>]*class="studio-insight__value">Build<\/p>/);
 	assert.match(html, /<p[^>]*class="studio-insight__value">Calm<\/p>/);
 	assert.match(html, /<p[^>]*class="studio-insight__value">3 synced<\/p>/);
@@ -86,27 +77,39 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	});
 });
 
+test('Nitro signal-board fragment serializes hydrated signal state', async () => {
+	const response = await fetch(`${origin}/api/ssr/radiant-signal-release-board`);
+	assert.equal(response.status, 200);
+
+	const html = await response.text();
+	assert.match(html, /<radiant-signal-release-board>/);
+	assert.match(html, /Board: ready/);
+	assert.match(html, /data-signal-hydration data-signal-key="filter">"launch-ready"<\/script>/);
+	assert.match(html, /data-signal-hydration data-signal-key="selectedTicketId">103<\/script>/);
+	assert.match(html, /data-signal-hydration data-signal-key="syncState">"ready"<\/script>/);
+	assert.match(html, /Nitro preloaded the release rehearsal with a launch-ready focus\./);
+});
+
 test('Nitro page-level controls update client and route state after clicks', browserTestOptions, async () => {
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);
-
 		const clientStatePanel = getPanel(page, 'Client state');
+
 		await waitForLocatorText(clientStatePanel.locator('strong'), '0');
 
 		await clientStatePanel.getByRole('button', { name: 'Increment', exact: true }).click();
 		await clientStatePanel.getByRole('button', { name: 'Increment', exact: true }).click();
 		await waitForLocatorText(clientStatePanel.locator('strong'), '2');
 
-		const nitroRoutePanel = getPanel(page, 'Nitro route');
-		await waitForLocatorText(nitroRoutePanel.locator('.status'), 'Status: idle');
-		await waitForLocatorText(nitroRoutePanel.locator('p').nth(1), 'Nitro endpoint has not been called yet.');
-		await waitForLocatorText(nitroRoutePanel.locator('p').nth(2), 'Server time: n/a');
+		await waitForLocatorText(page.locator('[data-ref="nitro-status"]'), 'Status: idle');
+		await waitForLocatorText(page.locator('[data-ref="nitro-message"]'), 'Nitro endpoint has not been called yet.');
+		await waitForLocatorText(page.locator('[data-ref="nitro-server-time"]'), 'n/a');
 
-		await nitroRoutePanel.getByRole('button', { name: 'Fetch /api/hello' }).click();
+		await page.locator('[data-ref="nitro-fetch-button"]').click();
 
-		await waitForLocatorText(nitroRoutePanel.locator('.status'), 'Status: ready');
-		await waitForLocatorText(nitroRoutePanel.locator('p').nth(1), 'Hello from Nitro via Vite + Nitro playground');
-		await waitForLocatorTextMatch(nitroRoutePanel.locator('p').nth(2), /^Server time: (?!n\/a).+/);
+		await waitForLocatorText(page.locator('[data-ref="nitro-status"]'), 'Status: ready');
+		await waitForLocatorText(page.locator('[data-ref="nitro-message"]'), 'Hello from Nitro via Vite + Nitro playground');
+		await waitForLocatorTextMatch(page.locator('[data-ref="nitro-server-time"]'), /^(?!n\/a).+/);
 	});
 });
 
@@ -184,73 +187,119 @@ test('Nitro playground studio board composes slots and propagates context update
 	});
 });
 
-test(
-	'Nitro SSR fragment controls swap rendered components and hydrate fetched markup',
-	browserTestOptions,
-	async () => {
-		await withBrowserPage(async (page) => {
-			await gotoPlayground(page);
+test('Nitro playground signal board handles filtered selection edge cases', browserTestOptions, async () => {
+	await withBrowserPage(async (page) => {
+		await gotoPlayground(page);
 
-			const ssrPanel = getPanel(page, 'SSR route');
-			assert.equal(await page.locator('radiant-component-server-card').count(), 0);
-			assert.equal(
-				await page.evaluate(() => customElements.get('radiant-component-server-card') === undefined),
-				true,
-			);
-			await waitForLocatorText(ssrPanel.locator('.status'), 'Status: ready');
-			await waitForLocatorAttribute(
-				ssrPanel.locator('.ssr-preview'),
-				'data-tag-name',
-				'radiant-component-counter',
-			);
-			await waitForLocatorText(
-				ssrPanel.locator('[data-generated-at]'),
-				await nonPlaceholderGeneratedAt(ssrPanel),
-			);
-			await waitForLocatorTextMatch(ssrPanel.locator('.ssr-html'), /SSR counter rendered in Nitro/);
+		const signalBoard = page.locator('radiant-signal-release-board').first();
+		await waitForLocatorText(signalBoard.locator('h3'), 'Release command deck');
+		await waitForLocatorText(
+			signalBoard.locator('.signal-story__headline'),
+			'Landing page orchestration is the current focus with 4 visible tickets in the rehearsal queue.',
+		);
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(1), 'Visible: 4');
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(2), 'Blocked: 1');
+		await waitForLocatorText(signalBoard.locator('.component-status').first(), 'Board: ready');
 
-			const previewCounter = ssrPanel.locator('.ssr-preview radiant-component-counter');
-			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
+		await signalBoard.getByRole('button', { name: 'Cycle filter' }).click();
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(0), 'Filter: Blocked only');
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(1), 'Visible: 1');
+		await waitForLocatorText(signalBoard.locator('.signal-story__focus-panel h4'), 'Nitro edge cache checklist');
 
-			await ssrPanel.getByRole('button', { name: 'Fetch server-card fragment' }).click();
+		await signalBoard.getByRole('button', { name: 'Clear blocker' }).click();
+		await waitForLocatorText(
+			signalBoard.locator('.signal-story__headline'),
+			'No tickets match the current filter. Cycle the view to restore the full release board.',
+		);
+		await waitForLocatorText(signalBoard.locator('.signal-story__focus-panel h4'), 'No ticket selected');
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(1), 'Visible: 0');
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(2), 'Blocked: 0');
+		await waitForLocatorText(signalBoard.locator('.component-status').first(), 'Board: ready');
 
-			await waitForLocatorText(ssrPanel.locator('.status'), 'Status: ready');
-			await waitForLocatorAttribute(
-				ssrPanel.locator('.ssr-preview'),
-				'data-tag-name',
-				'radiant-component-server-card',
-			);
-			await waitForLocatorTextMatch(ssrPanel.locator('.ssr-html'), /radiant-component-server-card/);
+		await signalBoard.getByRole('button', { name: 'Cycle filter' }).click();
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(0), 'Filter: Launch-ready');
+		await waitForLocatorText(signalBoard.locator('.signal-story__chip').nth(1), 'Visible: 1');
+		await waitForLocatorText(signalBoard.locator('.signal-story__focus-panel h4'), 'Docs release summary');
 
-			const previewServerCard = ssrPanel.locator('.ssr-preview radiant-component-server-card');
-			assert.equal(
-				await page.evaluate(() => customElements.get('radiant-component-server-card') !== undefined),
-				true,
-			);
-			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: idle');
-			await previewServerCard.getByRole('button', { name: 'Fetch from Nitro' }).click();
-			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: ready');
-			await waitForLocatorText(
-				previewServerCard.locator('.component-copy').nth(1),
-				'Hello from Nitro via Vite + Nitro playground',
-			);
-			await waitForLocatorTextMatch(previewServerCard.locator('.component-meta'), /^Server time: (?!n\/a).+/);
+		await signalBoard.getByRole('button', { name: 'Sync with Nitro brief' }).click();
+		await waitForLocatorText(signalBoard.locator('.component-status').nth(1), 'Sync: ready');
+		await waitForLocatorTextMatch(
+			signalBoard.locator('.component-meta').nth(0),
+			/Hello from Nitro via Vite \+ Nitro playground/,
+		);
+	});
+});
 
-			await ssrPanel.getByRole('button', { name: 'Fetch counter fragment' }).click();
+test('Nitro SSR fragment controls swap rendered components and hydrate fetched markup', browserTestOptions, async () => {
+	await withBrowserPage(async (page) => {
+		await gotoPlayground(page);
 
-			await waitForLocatorAttribute(
-				ssrPanel.locator('.ssr-preview'),
-				'data-tag-name',
-				'radiant-component-counter',
-			);
-			await waitForLocatorTextMatch(ssrPanel.locator('.ssr-html'), /SSR counter rendered in Nitro/);
-			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
+		const ssrPanel = getPanel(page, 'SSR route');
+		assert.equal(await page.locator('radiant-component-server-card').count(), 0);
+		assert.equal(await page.evaluate(() => customElements.get('radiant-component-server-card') === undefined), true);
+		await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
+		await waitForLocatorAttribute(ssrPanel.locator('[data-ref="ssr-preview"]'), 'data-tag-name', 'radiant-component-counter');
+		await waitForLocatorText(ssrPanel.locator('[data-generated-at]'), await nonPlaceholderGeneratedAt(ssrPanel));
+		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
 
-			await previewCounter.getByRole('button', { name: 'Increment', exact: true }).click();
-			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 7');
-		});
-	},
-);
+		const previewCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-counter');
+		await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
+
+		await ssrPanel.getByRole('button', { name: 'Fetch server-card fragment' }).click();
+		await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
+		await waitForLocatorAttribute(
+			ssrPanel.locator('[data-ref="ssr-preview"]'),
+			'data-tag-name',
+			'radiant-component-server-card',
+		);
+		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-component-server-card/);
+
+		const previewServerCard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-server-card');
+		assert.equal(await page.evaluate(() => customElements.get('radiant-component-server-card') !== undefined), true);
+		await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: idle');
+		await previewServerCard.getByRole('button', { name: 'Fetch from Nitro' }).click();
+		await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: ready');
+		await waitForLocatorText(
+			previewServerCard.locator('.component-copy').nth(1),
+			'Hello from Nitro via Vite + Nitro playground',
+		);
+		await waitForLocatorTextMatch(previewServerCard.locator('.component-meta'), /^Server time: (?!n\/a).+/);
+
+		await ssrPanel.getByRole('button', { name: 'Fetch signal-board fragment' }).click();
+		await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
+		await waitForLocatorAttribute(
+			ssrPanel.locator('[data-ref="ssr-preview"]'),
+			'data-tag-name',
+			'radiant-signal-release-board',
+		);
+		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-signal-release-board/);
+
+		const previewSignalBoard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-signal-release-board');
+		await waitForLocatorText(previewSignalBoard.locator('.component-status').first(), 'Board: ready');
+		await waitForLocatorText(
+			previewSignalBoard.locator('.signal-story__headline'),
+			'Docs release summary is the current focus with 1 visible tickets in the rehearsal queue.',
+		);
+		await waitForLocatorTextMatch(
+			previewSignalBoard.locator('.component-meta').nth(0),
+			/Nitro preloaded the release rehearsal with a launch-ready focus\./,
+		);
+
+		await previewSignalBoard.getByRole('button', { name: 'Advance selected' }).click();
+		await waitForLocatorText(
+			previewSignalBoard.locator('.signal-story__headline'),
+			'No tickets match the current filter. Cycle the view to restore the full release board.',
+		);
+
+		await ssrPanel.getByRole('button', { name: 'Fetch counter fragment' }).click();
+		await waitForLocatorAttribute(ssrPanel.locator('[data-ref="ssr-preview"]'), 'data-tag-name', 'radiant-component-counter');
+		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
+		await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
+
+		await previewCounter.getByRole('button', { name: 'Increment', exact: true }).click();
+		await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 7');
+	});
+});
 
 async function waitForContextSummary(page, expectedText) {
 	try {
@@ -272,70 +321,10 @@ async function waitForContextSummary(page, expectedText) {
 	}
 }
 
-async function withBrowserPage(run) {
-	const browser = await chromium.launch({ headless: true });
-
-	try {
-		const page = await browser.newPage();
-		attachPageDiagnostics(page);
-		await run(page);
-	} finally {
-		await browser.close();
-	}
-}
-
-function attachPageDiagnostics(page) {
-	page.on('console', (message) => {
-		console.log(`browser:console:${message.type()}:${message.text()}`);
-	});
-	page.on('pageerror', (error) => {
-		console.log(`browser:pageerror:${error.stack}`);
-	});
-	page.on('requestfailed', (request) => {
-		console.log(`browser:requestfailed:${request.url()}:${request.failure()?.errorText}`);
-	});
-}
-
 async function gotoPlayground(page) {
 	await page.goto(origin, { waitUntil: 'load' });
 	await page.waitForSelector('main.shell');
 	await page.waitForSelector('radiant-context-flow-shell');
-}
-
-function getPanel(page, headingName) {
-	return page.locator('section.panel').filter({
-		has: page.getByRole('heading', { name: headingName, exact: true }),
-	});
-}
-
-async function waitForLocatorText(locator, expectedText, timeout = 5_000) {
-	const actualText = await poll(async () => normalizeText(await locator.textContent()), {
-		description: `text ${JSON.stringify(expectedText)}`,
-		isDone: (value) => value === expectedText,
-		timeout,
-	});
-
-	assert.equal(actualText, expectedText);
-}
-
-async function waitForLocatorTextMatch(locator, expectedPattern, timeout = 5_000) {
-	const actualText = await poll(async () => normalizeText(await locator.textContent()), {
-		description: `text matching ${expectedPattern}`,
-		isDone: (value) => expectedPattern.test(value),
-		timeout,
-	});
-
-	assert.match(actualText, expectedPattern);
-}
-
-async function waitForLocatorAttribute(locator, attributeName, expectedValue, timeout = 5_000) {
-	const actualValue = await poll(async () => (await locator.getAttribute(attributeName)) ?? '', {
-		description: `${attributeName} ${JSON.stringify(expectedValue)}`,
-		isDone: (value) => value === expectedValue,
-		timeout,
-	});
-
-	assert.equal(actualValue, expectedValue);
 }
 
 async function nonPlaceholderGeneratedAt(ssrPanel) {
@@ -344,71 +333,4 @@ async function nonPlaceholderGeneratedAt(ssrPanel) {
 		isDone: (value) => /^Generated at: (?!n\/a).+/.test(value),
 		timeout: 5_000,
 	});
-}
-
-function normalizeText(value) {
-	return value?.replace(/\s+/g, ' ').trim() ?? '';
-}
-
-async function poll(readValue, options) {
-	const timeout = options.timeout ?? 5_000;
-	const interval = options.interval ?? 50;
-	const deadline = Date.now() + timeout;
-	let lastValue = '';
-
-	for (;;) {
-		lastValue = await readValue();
-
-		if (options.isDone(lastValue)) {
-			return lastValue;
-		}
-
-		if (Date.now() >= deadline) {
-			throw new Error(`Timed out waiting for ${options.description}. Last value: ${JSON.stringify(lastValue)}`);
-		}
-
-		await delay(interval);
-	}
-}
-
-async function runCommand(command, args, cwd) {
-	await new Promise((resolvePromise, rejectPromise) => {
-		const child = spawn(command, args, {
-			cwd,
-			env: process.env,
-			stdio: 'pipe',
-		});
-
-		let stderr = '';
-
-		child.stderr?.on('data', (chunk) => {
-			stderr += chunk.toString();
-		});
-
-		child.on('exit', (code) => {
-			if (code === 0) {
-				resolvePromise(undefined);
-				return;
-			}
-
-			rejectPromise(new Error(`${command} ${args.join(' ')} failed with code ${code}: ${stderr}`));
-		});
-		child.on('error', rejectPromise);
-	});
-}
-
-async function waitForServer(url) {
-	for (let attempt = 0; attempt < 80; attempt += 1) {
-		try {
-			const response = await fetch(url);
-
-			if (response.ok) {
-				return;
-			}
-		} catch {}
-
-		await delay(250);
-	}
-
-	throw new Error(`Timed out waiting for Nitro server at ${url}`);
 }

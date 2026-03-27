@@ -1,4 +1,5 @@
 import { createRoot } from '@ecopages/jsx';
+import { computed, createStore } from '@ecopages/signals';
 import {
 	RENDERED_COMPONENT_CLIENT_MODULE_HEADER,
 	RENDERED_COMPONENT_GENERATED_AT_HEADER,
@@ -6,6 +7,7 @@ import {
 } from '@ecopages/radiant/server/render-component';
 import './components/radiant-component-counter.script';
 import './components/radiant-context-flow-shell.script';
+import './components/radiant-signal-release-board.script';
 import './components/radiant-slot-studio-board.script.tsx';
 import {
 	PLAYGROUND_STATE_SCRIPT_ATTRIBUTE,
@@ -15,7 +17,6 @@ import {
 	renderPlaygroundView,
 } from './playground-view';
 import './style.css';
-import { createWritableJsxValue } from './writable-jsx-value';
 
 const mountNode = document.querySelector<HTMLElement>('#app');
 
@@ -23,11 +24,20 @@ if (!mountNode) {
 	throw new Error('Missing #app mount node.');
 }
 
-const root = createRoot(mountNode);
-const initialBootstrap = readInitialState(mountNode);
-const state = initialBootstrap?.state ?? createInitialPlaygroundState();
-const clicksValue = createWritableJsxValue(state.clicks);
-let shouldHydrate = mountNode.childNodes.length > 0;
+const appRootElement = mountNode;
+
+const root = createRoot(appRootElement);
+const initialBootstrap = readInitialState(appRootElement);
+const state = createStore(initialBootstrap?.state ?? createInitialPlaygroundState());
+const clicksSignal = computed(() => state.clicks);
+const nitroStatusSignal = computed(() => state.status);
+const nitroMessageSignal = computed(() => state.message);
+const nitroServerTimeSignal = computed(() => state.serverTime);
+const nitroLoadingSignal = computed(() => state.status === 'loading');
+const nitroButtonLabelSignal = computed(() => (state.status === 'loading' ? 'Loading...' : 'Fetch /api/hello'));
+
+let shouldHydrate = appRootElement.childNodes.length > 0;
+
 let bootstrapStateScript = initialBootstrap?.serializedState
 	? createPlaygroundStateScriptNode(initialBootstrap.serializedState)
 	: undefined;
@@ -42,7 +52,13 @@ function renderApp() {
 		},
 		{
 			bootstrapStateScript,
-			clicksContent: clicksValue.renderable,
+			clicksContent: clicksSignal,
+			nitroButtonDisabled: nitroLoadingSignal,
+			nitroButtonLabelContent: nitroButtonLabelSignal,
+			nitroMessageContent: nitroMessageSignal,
+			nitroServerTimeContent: nitroServerTimeSignal,
+			nitroStatusAttribute: nitroStatusSignal,
+			nitroStatusContent: nitroStatusSignal,
 			ssrPreviewContent: createClientPreviewContent(state),
 		},
 	);
@@ -60,13 +76,15 @@ function renderApp() {
 
 function incrementClicks() {
 	state.clicks += 1;
-	clicksValue.set(state.clicks);
 }
 
 async function loadServerMessage() {
+	if (state.status === 'loading') {
+		return;
+	}
+
 	state.status = 'loading';
 	state.message = 'Calling Nitro...';
-	renderApp();
 
 	try {
 		const response = await fetch('/api/hello');
@@ -89,8 +107,6 @@ async function loadServerMessage() {
 		state.message = error instanceof Error ? error.message : 'Unknown error';
 		state.serverTime = 'n/a';
 	}
-
-	renderApp();
 }
 
 async function loadSsrMarkup(endpoint = '/api/ssr/radiant-component') {
@@ -194,3 +210,4 @@ async function ensureFragmentClientModule(tagName: string, clientModuleSrc: stri
 
 	await customElements.whenDefined(tagName);
 }
+
