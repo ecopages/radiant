@@ -1,11 +1,13 @@
 import type { RadiantElement, ReactiveBindingOption } from '../../core/radiant-element';
-import { createHostSignal, HostSignal } from '../../signals/host-signal';
+import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
+import type { WritableSignal } from '@ecopages/signals';
 
 export type SignalDecoratorOptions<Value = unknown> = {
 	bind?: ReactiveBindingOption;
 	initial?: Value;
+	source?: WritableSignal<Value> | ((host: RadiantElement) => WritableSignal<Value>);
 	hydrate?: AttributeTypeConstant;
 };
 
@@ -18,6 +20,11 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				return currentValue;
 			}
 
+			const resolvedSource =
+				typeof options.source === 'function'
+					? options.source(element)
+					: options.source ?? (isWritableSignalLike(currentValue) ? currentValue : undefined);
+
 			const bind =
 				options.bind ??
 				(
@@ -25,7 +32,10 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				).shouldAutoBindReactiveMembers?.() ??
 				false;
 
-			const resolvedInitialValue = (currentValue === undefined ? options.initial : currentValue) as Value;
+			const resolvedInitialValue =
+				resolvedSource !== undefined
+					? options.initial
+					: ((currentValue === undefined ? options.initial : currentValue) as Value);
 			element.defineReactiveBinding(propertyName, bind);
 
 			const hostSignal = createHostSignal({
@@ -34,6 +44,15 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				hydrationKey: propertyName,
 				initialValue: resolvedInitialValue,
 				property: propertyName,
+				source: resolvedSource,
+			});
+
+			element.registerConnectedCallback(() => {
+				hostSignal.hydrateFromHost();
+				hostSignal.connectToSource();
+			});
+			element.registerCleanupCallback(() => {
+				hostSignal.disconnectFromSource();
 			});
 
 			if (options.hydrate) {
@@ -48,9 +67,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 		const originalConnectedCallback = target.connectedCallback;
 
 		target.connectedCallback = function (this: RadiantElement) {
-			const hostSignal = initializeSignal(this);
-			hostSignal.hydrateFromHost();
-
+			initializeSignal(this);
 			originalConnectedCallback.call(this);
 		};
 	};

@@ -6,6 +6,7 @@ import {
 	type JsxRenderable,
 	type RenderToStringOptions,
 } from '@ecopages/jsx';
+import { Computed, subtle } from '@ecopages/signals';
 import { RadiantComponentSsrService } from './radiant-component-ssr';
 import { getReactivePropDefinitions } from './reactive-prop-metadata';
 import { RadiantElement } from './radiant-element';
@@ -45,6 +46,10 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	private isRenderScheduled = false;
 	private needsRender = false;
 	private projectedSlotContent = new Map<string, JsxRenderable[]>();
+	private renderSignal?: Computed<{ containsSlots: boolean; value: JsxRenderable }>;
+	private readonly renderWatcher = new subtle.Watcher(() => {
+		this.requestUpdate();
+	});
 	private slotProjectionObserver?: MutationObserver;
 	private slotProjectionVersion = 0;
 	private readonly ssr = new RadiantComponentSsrService({
@@ -107,7 +112,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	public renderToString(options: RenderToStringOptions = {}): string {
 		this.prepareForSsr();
 
-		return renderJsxToString(this.resolveRenderOutput().value, options);
+		return renderJsxToString(this.resolveTrackedRenderOutput().value, options);
 	}
 
 	/**
@@ -136,7 +141,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 		this.disconnectSlotProjectionObserver();
 
 		try {
-			hydrateJsx(this.resolveRenderOutput().value, this);
+			hydrateJsx(this.resolveTrackedRenderOutput().value, this);
 		} finally {
 			this.isRendering = false;
 			this.observeSlotProjection();
@@ -190,7 +195,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 			this.disconnectSlotProjectionObserver();
 
 			try {
-				renderJsx(this.resolveRenderOutput().value, this);
+				renderJsx(this.resolveTrackedRenderOutput().value, this);
 			} finally {
 				this.isRendering = false;
 				this.observeSlotProjection();
@@ -200,6 +205,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 
 	override disconnectedCallback() {
 		this.disconnectSlotProjectionObserver();
+		this.disconnectRenderWatcher();
 		super.disconnectedCallback();
 	}
 
@@ -361,6 +367,32 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	private disconnectSlotProjectionObserver(): void {
 		this.slotProjectionObserver?.disconnect();
 		this.slotProjectionObserver = undefined;
+	}
+
+	private disconnectRenderWatcher(): void {
+		if (!this.renderSignal) {
+			return;
+		}
+
+		this.renderWatcher.unwatch(this.renderSignal);
+		this.renderSignal = undefined;
+	}
+
+	private resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
+		const nextRenderSignal = new Computed(() => this.resolveRenderOutput());
+		const output = nextRenderSignal.get();
+
+		if (!this.isConnected) {
+			return output;
+		}
+
+		if (this.renderSignal) {
+			this.renderWatcher.unwatch(this.renderSignal);
+		}
+
+		this.renderSignal = nextRenderSignal;
+		this.renderWatcher.watch(nextRenderSignal);
+		return output;
 	}
 
 	private resolveRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {

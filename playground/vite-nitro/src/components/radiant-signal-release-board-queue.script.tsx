@@ -2,65 +2,47 @@ import { RadiantComponent, contextSelector, customElement, state } from '@ecopag
 import { radiantSignalReleaseBoardContext } from './radiant-signal-release-board.context.ts';
 import {
 	createEmptyReleaseBoardQueueView,
-	type ReleaseBoardQueueView,
 	type ReleaseBoardStore,
 } from './radiant-signal-release-board.model.ts';
 
 @customElement('radiant-signal-release-board-queue')
-export class RadiantSignalReleaseBoardQueueElement extends RadiantComponent<{ view: ReleaseBoardQueueView }> {
-	@state view = createEmptyReleaseBoardQueueView();
-	private stopViewSync?: () => void;
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.registerCleanupCallback(() => {
-			this.stopViewSync?.();
-			this.stopViewSync = undefined;
-		});
-	}
+export class RadiantSignalReleaseBoardQueueElement extends RadiantComponent {
+	@state declare store: ReleaseBoardStore | undefined;
 
 	@contextSelector({ context: radiantSignalReleaseBoardContext, select: (value) => value?.store })
 	protected connectStore(store: ReleaseBoardStore | undefined): void {
-		if (!store) {
-			return;
-		}
-
-		this.stopViewSync?.();
-		this.view = store.views.queue.get();
-		this.requestUpdate();
-		this.stopViewSync = store.views.queue.subscribe((view) => {
-			this.view = view;
-			this.requestUpdate();
-		});
+		this.store = store;
 	}
 
 	override render() {
+		const view = this.store?.views.queue.get() ?? createEmptyReleaseBoardQueueView();
+
 		return (
 			<section class="signal-story__queue-panel">
 				<div class="component-actions signal-story__actions">
-					<button type="button" on:click={this.view.actions.cycleFilter}>
+					<button type="button" on:click={view.actions.cycleFilter}>
 						Cycle filter
 					</button>
 					<button
 						type="button"
-						on:click={this.view.actions.focusNextTicket}
-						disabled={!this.view.canFocusNext}
+						on:click={view.actions.focusNextTicket}
+						disabled={!view.canFocusNext}
 					>
 						Focus next
 					</button>
 					<button
 						type="button"
-						on:click={this.view.actions.advanceSelectedTicket}
-						disabled={!this.view.canAdvanceSelected}
+						on:click={view.actions.advanceSelectedTicket}
+						disabled={!view.canAdvanceSelected}
 					>
 						Advance selected
 					</button>
-					<button type="button" on:click={this.view.actions.syncWithNitro} disabled={this.view.isSyncing}>
-						{this.view.syncButtonLabel}
+					<button type="button" on:click={view.actions.syncWithNitro} disabled={view.isSyncing}>
+						{view.syncButtonLabel}
 					</button>
 				</div>
 				<ul class="signal-story__ticket-list">
-					{this.view.tickets.map((ticket) => (
+					{view.tickets.map((ticket) => (
 						<li
 							class="signal-story__ticket"
 							data-blocked={ticket.blocked ? 'true' : 'false'}
@@ -77,12 +59,12 @@ export class RadiantSignalReleaseBoardQueueElement extends RadiantComponent<{ vi
 							<div class="signal-story__ticket-controls">
 								<button
 									type="button"
-									on:click={() => this.view.actions.focusTicket(ticket.id)}
+									on:click={() => view.actions.focusTicket(ticket.id)}
 									disabled={ticket.isSelected}
 								>
 									{ticket.focusLabel}
 								</button>
-								<button type="button" on:click={() => this.view.actions.toggleBlocked(ticket.id)}>
+								<button type="button" on:click={() => view.actions.toggleBlocked(ticket.id)}>
 									{ticket.blockerLabel}
 								</button>
 							</div>

@@ -6,6 +6,7 @@ import { RadiantDropdown } from './components/dropdown/dropdown';
 import { RadiantCounter } from './components/radiant-counter/radiant-counter';
 import { RadiantEvent } from './components/radiant-event/radiant-event';
 import { RadiantRefs } from './components/radiant-refs/radiant-refs.view';
+import { RadiantSignalLab } from './components/radiant-signal-lab/radiant-signal-lab';
 import { RadiantTodoApp } from './components/radiant-todo-app/radiant-todo-app.view';
 import { ValueTester } from './components/value-tester/value-tester.script.tsx';
 import './styles/tailwind.css';
@@ -34,7 +35,7 @@ const App = () => {
 			<PlaygroundSection
 				badge="Light Dom Components"
 				title="Existing component demos"
-				description="This playground now stays focused on the existing imperative and string-template examples. The new structured JSX-first component work lives in the Vite + Nitro playground."
+				description="This playground stays focused on plain custom elements and light-DOM patterns, with a small signal lab showing how shared signals and stores can plug into that model."
 			>
 				<div class="grid gap-8">
 					<RadiantAccordion
@@ -105,6 +106,13 @@ const App = () => {
 						/>
 					</div>
 				</div>
+			</PlaygroundSection>
+			<PlaygroundSection
+				badge="Signals"
+				title="Shared signal and store lab"
+				description="The first pair uses a shared writable signal through @signal on plain RadiantElement hosts. The second pair reads a shared store directly inside RadiantComponent render(), so both components rerender from the same store without prop plumbing."
+			>
+				<RadiantSignalLab />
 			</PlaygroundSection>
 		</main>
 	);

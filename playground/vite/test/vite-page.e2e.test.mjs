@@ -131,6 +131,41 @@ test('Vite playground dropdown and accordion remain interactive', browserTestOpt
 	});
 });
 
+test('Vite playground signal lab keeps shared signals and stores in sync', browserTestOptions, async () => {
+	await withBrowserPage(async (page) => {
+		await gotoPlayground(page);
+
+		const alphaMeter = page.locator('radiant-shared-signal-meter[data-meter="alpha"]');
+		const betaMeter = page.locator('radiant-shared-signal-meter[data-meter="beta"]');
+
+		await waitForLocatorText(alphaMeter.locator('[data-ref="count"]'), '2');
+		await waitForLocatorText(betaMeter.locator('[data-ref="count"]'), '2');
+
+		await alphaMeter.getByRole('button', { name: 'Increment shared signal' }).click();
+
+		await waitForLocatorText(alphaMeter.locator('[data-ref="count"]'), '3');
+		await waitForLocatorText(betaMeter.locator('[data-ref="count"]'), '3');
+		await waitForLocatorTextMatch(betaMeter.locator('[data-ref="binding"]'), /\$\.count -> 3/);
+
+		const storeChip = page.locator('radiant-signal-store-chip').first();
+		const storeBoard = page.locator('radiant-signal-store-board').first();
+
+		await waitForLocatorText(storeChip.locator('[data-ref="store-chip"]'), 'Alpha handoff · Live sync');
+		await waitForLocatorText(storeBoard.locator('[data-ref="store-focus"]'), 'Alpha handoff · Review');
+
+		await storeBoard.getByRole('button', { name: 'Focus next ticket' }).click();
+		await waitForLocatorText(storeChip.locator('[data-ref="store-chip"]'), 'Beta migration · Live sync');
+		await waitForLocatorText(storeBoard.locator('[data-ref="store-focus"]'), 'Beta migration · Backlog');
+
+		await storeBoard.getByRole('button', { name: 'Advance focused ticket' }).click();
+		await waitForLocatorText(storeBoard.locator('[data-ref="store-focus"]'), 'Beta migration · Review');
+
+		await storeBoard.getByRole('button', { name: 'Toggle sync' }).click();
+		await waitForLocatorText(storeChip.locator('[data-ref="store-chip"]'), 'Beta migration · Offline sync');
+		await waitForLocatorText(storeBoard.locator('[data-ref="store-status"]'), 'Offline');
+	});
+});
+
 async function gotoPlayground(page) {
 	await page.goto(origin, { waitUntil: 'load' });
 	await page.waitForSelector('main');

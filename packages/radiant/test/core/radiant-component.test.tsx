@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom';
-import type { WritableSignal } from '@ecopages/signals';
+import { createStore, state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { renderToString } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { ContextProvider } from '../../src/context/context-provider';
@@ -181,6 +181,42 @@ describe('RadiantComponent', () => {
 
 		await waitFor(() => {
 			expect(element.querySelector('[data-ref="message"]')?.textContent).toBe('Queued render');
+		});
+	});
+
+	test('rerenders when render() reads shared signals and stores directly', async () => {
+		const sharedCount = createSignalState(1);
+		const sharedStore = createStore({ status: 'idle' });
+
+		class SharedSignalStoreCard extends RadiantComponent {
+			override render() {
+				return (
+					<p data-ref="summary">
+						{sharedCount.get()} / {sharedStore.status}
+					</p>
+				);
+			}
+		}
+
+		customElements.define('shared-signal-store-card-test', SharedSignalStoreCard);
+
+		const element = document.createElement('shared-signal-store-card-test') as SharedSignalStoreCard;
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.querySelector('[data-ref="summary"]')?.textContent).toBe('1 / idle');
+		});
+
+		sharedCount.set(3);
+
+		await waitFor(() => {
+			expect(element.querySelector('[data-ref="summary"]')?.textContent).toBe('3 / idle');
+		});
+
+		sharedStore.status = 'ready';
+
+		await waitFor(() => {
+			expect(element.querySelector('[data-ref="summary"]')?.textContent).toBe('3 / ready');
 		});
 	});
 

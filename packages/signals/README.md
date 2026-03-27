@@ -1,8 +1,8 @@
 # Ecopages Signals
 
-`@ecopages/signals` is an experimental reactive core package for the Ecopages monorepo.
+`@ecopages/signals` is a renderer-agnostic signals package that can be used standalone or underneath Radiant.
 
-It is intentionally smaller than the current TC39 Signals proposal and should be treated as a proving ground, not a frozen public design.
+Its core model is based on the [TC39 Signals proposal](https://github.com/tc39/proposal-signals/tree/main), with a smaller surface area and a few convenience helpers for application code today.
 
 ## Current Scope
 
@@ -24,12 +24,30 @@ This package is renderer-agnostic.
 
 - It does not know about JSX.
 - It does not know about Radiant components.
-- It is meant to sit underneath adapters in those packages.
+- It is meant to work both as a standalone package and underneath adapters in those packages.
+
+## TC39 Relationship
+
+This package is based on the current TC39 Signals proposal and tracks the same broad model around:
+
+- `State` and `Computed` signal classes
+- lazy pull-based recomputation with cached values
+- automatic dependency discovery during computed evaluation
+- custom equality functions for writable and computed signals
+- untracked reads as an escape hatch
+
+It is not a drop-in implementation of the current proposal draft.
+
+- It exposes convenience helpers such as `effect(...)`, `watch(...)`, `createStore(...)`, and `snapshot(...)` directly.
+- It currently exposes manual `subscribe(...)` hooks for adapter and library integration.
+- It exposes a proposal-shaped `subtle.Watcher` API, while still keeping the existing convenience helpers.
+- Its `subtle.Watcher` follows the proposal-style re-arm behavior, where calling `watch(...)` resets the pending set and notification latch for the next invalidation cycle.
+- It does not yet expose the full TC39 subtle introspection surface.
 
 ## Example
 
 ```ts
-import { Computed, State, createStore, effect } from '@ecopages/signals';
+import { Computed, State, createStore, effect, watch } from '@ecopages/signals';
 
 const count = new State(0);
 const parity = new Computed(() => ((count.get() & 1) === 0 ? 'even' : 'odd'));
@@ -54,10 +72,11 @@ stopWatching();
 
 ## Limits
 
-This implementation is still intentionally smaller than the current TC39 proposal.
+This implementation is still smaller than the current TC39 proposal draft.
 
-- no TC39-style `Watcher` API surface
+- no full TC39 `Watcher` and subtle semantics surface yet
+- no full proposal-style subtle introspection helpers yet
 - no batching or transaction model
 - no framework-owned disposal tree or component ownership integration yet
 
-Those omissions are deliberate. The goal is to validate a useful cross-package core before freezing a broader public contract.
+Those omissions are deliberate. The goal is to keep a small, useful standalone package while leaving room to align further as the proposal evolves.

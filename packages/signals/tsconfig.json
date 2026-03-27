@@ -14,5 +14,6 @@
 		"target": "ESNext",
 		"verbatimModuleSyntax": true
 	},
-	"include": ["**/*"]
+	"include": ["**/*"],
+	"exclude": ["dist", "node_modules"]
 }

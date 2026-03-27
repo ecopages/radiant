@@ -1,8 +1,8 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
+import { state, type WritableSignal } from '@ecopages/signals';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 import type { RadiantElement } from '../core/radiant-element';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
-import { state, type WritableSignal } from '@ecopages/signals';
 import {
 	SIGNAL_HYDRATION_ATTRIBUTE,
 	SIGNAL_HYDRATION_KEY_ATTRIBUTE,
@@ -14,13 +14,21 @@ type HostSignalOptions<Value> = {
 	host: RadiantElement;
 	hydrate?: AttributeTypeConstant;
 	hydrationKey?: string;
-	initialValue: Value;
+	initialValue?: Value;
 	property: string;
+	source?: WritableSignal<Value>;
 };
 
-type RenderRequestingHost = RadiantElement & {
-	requestUpdate?: () => void;
-};
+export function isWritableSignalLike<Value>(value: unknown): value is WritableSignal<Value> {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		typeof (value as WritableSignal<Value>).get === 'function' &&
+		typeof (value as WritableSignal<Value>).set === 'function' &&
+		typeof (value as WritableSignal<Value>).subscribe === 'function' &&
+		typeof (value as WritableSignal<Value>).update === 'function'
+	);
+}
 
 /**
  * Host-owned writable signal that bridges signal updates back into Radiant's
@@ -32,14 +40,17 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 	private readonly hydrationKey?: string;
 	private readonly property: string;
 	private readonly source: WritableSignal<Value>;
+	private currentValue: Value;
 	private hasAppliedHostHydration = false;
+	private sourceUnsubscribe?: () => void;
 
 	constructor(options: HostSignalOptions<Value>) {
 		this.host = options.host;
 		this.hydrate = options.hydrate;
 		this.hydrationKey = options.hydrationKey;
 		this.property = options.property;
-		this.source = state(this.resolveInitialValue(options.initialValue));
+		this.source = options.source ?? state(this.resolveInitialValue(options.initialValue as Value));
+		this.currentValue = this.source.get();
 	}
 
 	public get(): Value {
@@ -47,14 +58,7 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 	}
 
 	public set(nextValue: Value): void {
-		const previousValue = this.source.get();
 		this.source.set(nextValue);
-		const currentValue = this.source.get();
-
-		if (!Object.is(previousValue, currentValue)) {
-			this.host.notifyUpdate(this.property, previousValue, currentValue);
-			this.requestHostRender();
-		}
 	}
 
 	public subscribe(notify: (value: Value) => void): () => void {
@@ -63,6 +67,29 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 
 	public update(updater: (value: Value) => Value): void {
 		this.set(updater(this.get()));
+	}
+
+	public connectToSource(): void {
+		if (this.sourceUnsubscribe) {
+			return;
+		}
+
+		const nextValue = this.source.get();
+
+		if (!Object.is(this.currentValue, nextValue)) {
+			const previousValue = this.currentValue;
+			this.currentValue = nextValue;
+			this.host.notifyUpdate(this.property, previousValue, nextValue);
+		}
+
+		this.sourceUnsubscribe = this.source.subscribe((value) => {
+			this.handleSourceChange(value);
+		});
+	}
+
+	public disconnectFromSource(): void {
+		this.sourceUnsubscribe?.();
+		this.sourceUnsubscribe = undefined;
 	}
 
 	public hydrateFromHost(): void {
@@ -77,8 +104,8 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 
 		if (!Object.is(previousValue, hydratedValue)) {
 			this.source.set(hydratedValue);
-			this.host.notifyUpdate(this.property, previousValue, hydratedValue);
-			this.requestHostRender();
+			this.currentValue = this.source.get();
+			this.host.notifyUpdate(this.property, previousValue, this.currentValue);
 		}
 	}
 
@@ -171,11 +198,12 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 		return escapeSignalHydrationJson(serializedValue);
 	}
 
-	private requestHostRender(): void {
-		const renderRequestingHost = this.host as RenderRequestingHost;
+	private handleSourceChange(nextValue: Value): void {
+		const previousValue = this.currentValue;
+		this.currentValue = nextValue;
 
-		if (typeof renderRequestingHost.requestUpdate === 'function') {
-			renderRequestingHost.requestUpdate();
+		if (!Object.is(previousValue, nextValue)) {
+			this.host.notifyUpdate(this.property, previousValue, nextValue);
 		}
 	}
 }

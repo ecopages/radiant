@@ -12,7 +12,9 @@ export const RadiantCounter = ({ value }: RadiantCounterProps) => {
 			<button type="button" data-ref="increment" aria-label="Increment">
 				+
 			</button>
-			<p data-ref="status">Waiting for input</p>
+			<p data-ref="status" style="display:none;">
+				Waiting for input
+			</p>
 		</radiant-counter>
 	);
 };

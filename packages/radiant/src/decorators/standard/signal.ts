@@ -1,6 +1,6 @@
 import type { WritableSignal } from '@ecopages/signals';
 import type { RadiantElement, ReactiveBindingOption } from '../../core/radiant-element';
-import { createHostSignal } from '../../signals/host-signal';
+import { createHostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
 
 /** Options for the `@signal` decorator. */
@@ -24,6 +24,12 @@ export type SignalDecoratorOptions<Value = unknown> = {
 	initial?: Value;
 
 	/**
+	 * Connects an existing writable signal to the host instead of creating a
+	 * host-owned one.
+	 */
+	source?: WritableSignal<Value> | ((host: RadiantElement) => WritableSignal<Value>);
+
+	/**
 	 * Serializes the current signal value into a keyed hydration script during
 	 * SSR and restores it on the client.
 	 */
@@ -35,7 +41,14 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 		const propertyName = String(context.name);
 
 		return function (this: T, initialValue: Value) {
-			const resolvedInitialValue = (initialValue === undefined ? options.initial : initialValue) as Value;
+			const resolvedSource =
+				typeof options.source === 'function'
+					? options.source(this)
+					: options.source ?? (isWritableSignalLike<Value>(initialValue) ? initialValue : undefined);
+			const resolvedInitialValue =
+				resolvedSource !== undefined
+					? options.initial
+					: ((initialValue === undefined ? options.initial : initialValue) as Value);
 			const bind =
 				options.bind ??
 				(
@@ -51,6 +64,15 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				hydrationKey: propertyName,
 				initialValue: resolvedInitialValue,
 				property: propertyName,
+				source: resolvedSource,
+			});
+
+			this.registerConnectedCallback(() => {
+				hostSignal.hydrateFromHost();
+				hostSignal.connectToSource();
+			});
+			this.registerCleanupCallback(() => {
+				hostSignal.disconnectFromSource();
 			});
 
 			if (options.hydrate) {

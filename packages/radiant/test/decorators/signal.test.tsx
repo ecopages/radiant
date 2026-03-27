@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/dom';
-import type { WritableSignal } from '@ecopages/signals';
+import { state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantComponent } from '../../src/core/radiant-component';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -10,10 +10,28 @@ import { signal } from '../../src/decorators/signal';
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
 const testWhenStandard = __LEGACY_ENVIRONMENT__ ? test.skip : test;
+const sharedSignalElementCount = createSignalState(2);
+
+@customElement('shared-signal-element-test')
+class SharedSignalElement extends RadiantElement<{ count: number }> {
+	@signal({ bind: true, source: sharedSignalElementCount }) count!: WritableSignal<number>;
+
+	override connectedCallback(): void {
+		super.connectedCallback();
+		this.syncCount();
+	}
+
+	@onUpdated('count')
+	syncCount() {
+		this.getRef<HTMLElement>('count').textContent = String(this.count.get());
+		this.getRef<HTMLElement>('binding').textContent = String(this.$.count.getValue());
+	}
+}
 
 describe('@signal', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
+		sharedSignalElementCount.set(2);
 	});
 
 	@customElement('plain-signal-element-test')
@@ -122,5 +140,30 @@ describe('@signal', () => {
 		expect(html).toContain(
 			'<script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script>',
 		);
+	});
+
+	test('can connect a shared writable signal to a plain RadiantElement field', async () => {
+		const element = document.createElement('shared-signal-element-test') as SharedSignalElement;
+		element.innerHTML = '<p data-ref="count"></p><p data-ref="binding"></p>';
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.getRef<HTMLElement>('count').textContent).toBe('2');
+			expect(element.getRef<HTMLElement>('binding').textContent).toBe('2');
+		});
+
+		sharedSignalElementCount.set(5);
+
+		await waitFor(() => {
+			expect(element.getRef<HTMLElement>('count').textContent).toBe('5');
+			expect(element.getRef<HTMLElement>('binding').textContent).toBe('5');
+		});
+
+		element.count.set(7);
+
+		await waitFor(() => {
+			expect(sharedSignalElementCount.get()).toBe(7);
+			expect(element.getRef<HTMLElement>('count').textContent).toBe('7');
+		});
 	});
 });

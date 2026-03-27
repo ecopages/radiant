@@ -1,4 +1,4 @@
-import { computed, type Signal, type WritableSignal } from '@ecopages/signals';
+import { computed, createStore, snapshot, type Signal, type SignalStore } from '@ecopages/signals';
 import type {
 	ReleaseBoardActions,
 	ReleaseBoardTicketView,
@@ -54,14 +54,16 @@ export const initialReleaseBoardTickets: ReleaseStoryTicket[] = [
 	},
 ];
 
-export type ReleaseBoardState = {
-	filter: WritableSignal<ReleaseFilter>;
-	lastSyncAt: WritableSignal<string>;
-	selectedTicketId: WritableSignal<number>;
-	syncState: WritableSignal<ReleaseSyncState>;
-	syncSummary: WritableSignal<string>;
-	tickets: WritableSignal<ReleaseStoryTicket[]>;
+export type ReleaseBoardSnapshot = {
+	filter: ReleaseFilter;
+	lastSyncAt: string;
+	selectedTicketId: number;
+	syncState: ReleaseSyncState;
+	syncSummary: string;
+	tickets: ReleaseStoryTicket[];
 };
+
+export type ReleaseBoardState = SignalStore<ReleaseBoardSnapshot>;
 
 export type ReleaseBoardView = {
 	blockedCount: number;
@@ -101,6 +103,12 @@ export type ReleaseBoardStore = {
 	};
 };
 
+export type ReleaseBoardSyncPayload = {
+	generatedAt: string;
+	message: string;
+	runtime: string;
+};
+
 export function nextLane(lane: ReleaseLane): ReleaseLane {
 	return laneSequence[(laneSequence.indexOf(lane) + 1) % laneSequence.length] ?? 'Backlog';
 }
@@ -109,21 +117,69 @@ export function nextFilter(filter: ReleaseFilter): ReleaseFilter {
 	return filterSequence[(filterSequence.indexOf(filter) + 1) % filterSequence.length] ?? 'all';
 }
 
+/** Creates a fresh plain snapshot for the release-board app state. */
+export function createInitialReleaseBoardState(
+	overrides: Partial<ReleaseBoardSnapshot> = {},
+): ReleaseBoardSnapshot {
+	return {
+		filter: overrides.filter ?? 'all',
+		lastSyncAt: overrides.lastSyncAt ?? 'Not synced yet',
+		selectedTicketId: overrides.selectedTicketId ?? 101,
+		syncState: overrides.syncState ?? 'idle',
+		syncSummary:
+			overrides.syncSummary ??
+			'Rehearsal queue is ready. Pull a Nitro brief to simulate launch-day coordination.',
+		tickets: cloneReleaseBoardTickets(overrides.tickets ?? initialReleaseBoardTickets),
+	};
+}
+
+/** Materializes a per-instance signal store from a board snapshot. */
+export function createReleaseBoardState(initialState: ReleaseBoardSnapshot): ReleaseBoardState {
+	return createStore(snapshot(createInitialReleaseBoardState(initialState)));
+}
+
+export function patchReleaseBoardState(state: ReleaseBoardState, nextState: Partial<ReleaseBoardSnapshot>): void {
+	if (typeof nextState.filter !== 'undefined') {
+		state.filter = nextState.filter;
+	}
+
+	if (typeof nextState.lastSyncAt !== 'undefined') {
+		state.lastSyncAt = nextState.lastSyncAt;
+	}
+
+	if (typeof nextState.selectedTicketId !== 'undefined') {
+		state.selectedTicketId = nextState.selectedTicketId;
+	}
+
+	if (typeof nextState.syncState !== 'undefined') {
+		state.syncState = nextState.syncState;
+	}
+
+	if (typeof nextState.syncSummary !== 'undefined') {
+		state.syncSummary = nextState.syncSummary;
+	}
+
+	if (typeof nextState.tickets !== 'undefined') {
+		state.tickets = cloneReleaseBoardTickets(nextState.tickets);
+	}
+
+	ensureVisibleSelection(state);
+}
+
 export function createReleaseBoardStore(options: {
-	actions: ReleaseBoardActions;
 	state: ReleaseBoardState;
+	syncReleaseBrief: () => Promise<ReleaseBoardSyncPayload>;
 }): ReleaseBoardStore {
-	const { actions, state } = options;
-	const visibleTickets = computed(() => resolveVisibleTickets(state.filter.get(), state.tickets.get()));
+	const { state, syncReleaseBrief } = options;
+	const visibleTickets = computed(() => resolveVisibleTickets(state.filter, state.tickets));
 	const selectedTicket = computed(() => {
 		const tickets = visibleTickets.get();
-		return tickets.find((ticket) => ticket.id === state.selectedTicketId.get()) ?? tickets[0] ?? null;
+		return tickets.find((ticket) => ticket.id === state.selectedTicketId) ?? tickets[0] ?? null;
 	});
-	const blockedCount = computed(() => state.tickets.get().filter((ticket) => ticket.blocked).length);
-	const launchReadyCount = computed(
-		() => state.tickets.get().filter((ticket) => ticket.lane === 'Launch' && !ticket.blocked).length,
-	);
-	const isSyncing = computed(() => state.syncState.get() === 'loading');
+	const blockedCount = computed(() => state.tickets.filter((ticket) => ticket.blocked).length);
+	const launchReadyCount = computed(() => state.tickets.filter((ticket) => ticket.lane === 'Launch' && !ticket.blocked).length);
+	const isSyncing = computed(() => state.syncState === 'loading');
+	const actions = createReleaseBoardActions(state, syncReleaseBrief);
 
 	return {
 		actions,
@@ -131,21 +187,21 @@ export function createReleaseBoardStore(options: {
 		views: {
 			board: computed(() => ({
 				blockedCount: blockedCount.get(),
-				boardTone: resolveBoardTone(state.syncState.get(), launchReadyCount.get()),
-				filterLabel: formatFilter(state.filter.get()),
+				boardTone: resolveBoardTone(state.syncState, launchReadyCount.get()),
+				filterLabel: formatFilter(state.filter),
 				headline: createBoardHeadline(selectedTicket.get(), visibleTickets.get().length),
-				laneBreakdown: createLaneBreakdown(state.tickets.get()),
+				laneBreakdown: createLaneBreakdown(state.tickets),
 				visibleCount: visibleTickets.get().length,
 			})),
 			focus: computed(() => ({
 				checklist: createSelectedChecklist(selectedTicket.get()),
-				lastSyncAt: state.lastSyncAt.get(),
+				lastSyncAt: state.lastSyncAt,
 				selectedTicketMeta: createSelectedTicketMeta(selectedTicket.get()),
 				selectedTicketNotes:
 					selectedTicket.get()?.notes ?? 'Everything currently visible is outside the active focus lane.',
 				selectedTicketTitle: selectedTicket.get()?.title ?? 'No ticket selected',
-				syncState: state.syncState.get(),
-				syncSummary: state.syncSummary.get(),
+				syncState: state.syncState,
+				syncSummary: state.syncSummary,
 			})),
 			queue: computed(() => ({
 				actions,
@@ -273,4 +329,98 @@ function createSelectedChecklist(selectedTicket: ReleaseStoryTicket | null): str
 		`${selectedTicket.lane === 'Launch' ? 'Validate' : 'Prepare'} release evidence for the ${selectedTicket.lane.toLowerCase()} lane.`,
 		`${selectedTicket.impact === 'High' ? 'Schedule leadership review.' : 'Share'} a concise rollout note with stakeholders.`,
 	];
+}
+
+function cloneReleaseBoardTickets(tickets: ReleaseStoryTicket[]): ReleaseStoryTicket[] {
+	return tickets.map((ticket) => ({ ...ticket }));
+}
+
+function createReleaseBoardActions(
+	state: ReleaseBoardState,
+	syncReleaseBrief: () => Promise<ReleaseBoardSyncPayload>,
+): ReleaseBoardActions {
+	return {
+		advanceSelectedTicket: () => {
+			const selectedTicket = state.tickets.find((ticket) => ticket.id === state.selectedTicketId);
+
+			if (!selectedTicket) {
+				return;
+			}
+
+			const nextTicketLane = nextLane(selectedTicket.lane);
+			selectedTicket.blocked = false;
+			selectedTicket.notes =
+				selectedTicket.lane === 'Launch'
+					? 'Ticket looped back to backlog for the next rehearsal pass.'
+					: `Moved into ${nextTicketLane} with launch notes refreshed.`;
+			selectedTicket.lane = nextTicketLane;
+			ensureVisibleSelection(state);
+		},
+		cycleFilter: () => {
+			state.filter = nextFilter(state.filter);
+			ensureVisibleSelection(state);
+		},
+		focusNextTicket: () => {
+			const visibleTickets = resolveVisibleTickets(state.filter, state.tickets);
+
+			if (visibleTickets.length === 0) {
+				return;
+			}
+
+			const currentIndex = visibleTickets.findIndex((ticket) => ticket.id === state.selectedTicketId);
+			state.selectedTicketId = visibleTickets[(currentIndex + 1) % visibleTickets.length]?.id ?? visibleTickets[0].id;
+		},
+		focusTicket: (ticketId: number) => {
+			state.selectedTicketId = ticketId;
+		},
+		syncWithNitro: async () => {
+			if (state.syncState === 'loading') {
+				return;
+			}
+
+			state.syncState = 'loading';
+			state.syncSummary = 'Calling /api/hello to simulate a release-brief sync.';
+
+			try {
+				const payload = await syncReleaseBrief();
+				const selectedTicket = state.tickets.find((ticket) => ticket.id === state.selectedTicketId) ?? state.tickets[0] ?? null;
+				const launchReadyCount = state.tickets.filter((ticket) => ticket.lane === 'Launch' && !ticket.blocked).length;
+
+				state.syncState = 'ready';
+				state.syncSummary = `${payload.message} via ${payload.runtime}. ${selectedTicket?.title ?? 'Current focus'} now anchors ${launchReadyCount} launch-ready ticket${launchReadyCount === 1 ? '' : 's'}.`;
+				state.lastSyncAt = payload.generatedAt;
+			} catch (error) {
+				state.syncState = 'error';
+				state.syncSummary = error instanceof Error ? error.message : 'Unknown error';
+				state.lastSyncAt = 'n/a';
+			}
+		},
+		toggleBlocked: (ticketId: number) => {
+			const ticket = state.tickets.find((entry) => entry.id === ticketId);
+
+			if (!ticket) {
+				return;
+			}
+
+			ticket.blocked = !ticket.blocked;
+			ticket.notes = ticket.blocked
+				? `${ticket.title} is waiting on a cross-team dependency before it can proceed.`
+				: `${ticket.title} is unblocked and ready for the next handoff.`;
+			ensureVisibleSelection(state);
+		},
+	};
+}
+
+function ensureVisibleSelection(state: ReleaseBoardState): void {
+	const visibleTickets = resolveVisibleTickets(state.filter, state.tickets);
+
+	if (visibleTickets.length === 0) {
+		return;
+	}
+
+	if (visibleTickets.some((ticket) => ticket.id === state.selectedTicketId)) {
+		return;
+	}
+
+	state.selectedTicketId = visibleTickets[0].id;
 }

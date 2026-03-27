@@ -1,18 +1,50 @@
 {
 	"name": "@ecopages/signals",
 	"version": "0.1.0",
-	"description": "Experimental signal primitives for Ecopages packages",
-	"module": "index.ts",
-	"types": "index.ts",
+	"description": "Renderer-agnostic signal primitives based on the TC39 Signals proposal",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/signals"
+	},
+	"homepage": "https://github.com/ecopages/radiant/tree/main/packages/signals#readme",
+	"bugs": {
+		"url": "https://github.com/ecopages/radiant/issues"
+	},
+	"author": "Andrea Zanenghi",
+	"license": "MIT",
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
+	"sideEffects": false,
+	"files": [
+		"dist/*",
+		"README.md",
+		"package.json"
+	],
+	"keywords": [
+		"signals",
+		"reactivity",
+		"tc39",
+		"state-management",
+		"radiant"
+	],
 	"exports": {
 		".": {
-			"types": "./index.ts",
-			"import": "./index.ts"
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
 		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {
+		"build:lib": "bun run clean && bun run build:files && bun run build:types",
+		"build:files": "bun run ./build.ts",
+		"build:types": "tsc -p tsconfig.build.json",
+		"clean": "rm -rf ./dist",
 		"test:lib": "vitest run"
 	},
 	"devDependencies": {

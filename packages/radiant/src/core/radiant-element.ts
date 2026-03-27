@@ -206,6 +206,11 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerCleanupCallback(callback: () => void): void;
 
 	/**
+	 * Registers a callback to run each time the host connects to the DOM.
+	 */
+	registerConnectedCallback(callback: () => void): void;
+
+	/**
 	 * Renders a template into the specified target element.
 	 * @param options - The rendering options.
 	 * @param options.target - The target element to render the template into.
@@ -289,6 +294,11 @@ export class RadiantElement<Bindings extends object = {}>
 	private eventEmitters = new Map<string, EventEmitter>();
 
 	/**
+	 * Callbacks executed whenever the Radiant element is connected to the DOM.
+	 */
+	private onConnectedCallbacks: (() => void)[] = [];
+
+	/**
 	 * An array of cleanup callbacks to be executed when the Radiant element is disconnected from the DOM.
 	 */
 	private onDisconnectedCallback: (() => void)[] = [];
@@ -320,6 +330,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 	connectedCallback() {
 		this.elementReady = true;
+
+		for (const callback of this.onConnectedCallbacks) {
+			callback();
+		}
 	}
 
 	connectedContextCallback(_contextName: UnknownContext): void {}
@@ -547,6 +561,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public registerCleanupCallback(callback: () => void): void {
 		this.onDisconnectedCallback.push(callback);
+	}
+
+	public registerConnectedCallback(callback: () => void): void {
+		this.onConnectedCallbacks.push(callback);
 	}
 
 	public registerEventEmitter(name: string, emitter: EventEmitter) {

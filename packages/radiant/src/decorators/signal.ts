@@ -12,11 +12,16 @@ export type { SignalDecoratorOptions } from './standard/signal';
  * Declares a host-aware writable signal field.
  *
  * The decorated member becomes a real `WritableSignal` instance that JSX can
- * consume directly in child or attribute positions. Signal updates also flow
- * back through Radiant's update callback channel so `@onUpdated(...)` and
- * `this.$.name` bindings continue to work. On `RadiantComponent`, signal
- * writes also queue a rerender so `render()` logic that reads `signal.get()`
- * or derived snapshots stays in sync without manual `update()` calls.
+ * consume directly in child or attribute positions. By default the decorator
+ * creates a host-owned signal, but it can also connect an existing shared
+ * signal through the `source` option or a signal-valued field initializer.
+ *
+ * Connected signals still flow through Radiant's update callback channel so
+ * `@onUpdated(...)` and `this.$.name` bindings continue to work. On
+ * `RadiantComponent`, any signal or store reads performed during `render()`
+ * now participate in rerender invalidation directly, which makes module-level
+ * shared stores a natural fit without prop-bridging them through a second
+ * reactive layer.
  *
  * When `hydrate` is provided, SSR host output appends a keyed JSON script so
  * the client can restore the signal's initial value during hydration.

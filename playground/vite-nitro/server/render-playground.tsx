@@ -51,11 +51,13 @@ export async function getSsrSignalReleaseBoardRender(): Promise<RenderedComponen
 
 	return renderComponent(RadiantSignalReleaseBoardElement, {
 		configure: (component) => {
-			component.filter.set('launch-ready');
-			component.selectedTicketId.set(103);
-			component.syncState.set('ready');
-			component.syncSummary.set('Nitro preloaded the release rehearsal with a launch-ready focus.');
-			component.lastSyncAt.set('SSR rehearsal snapshot');
+			component.configureBoardState({
+				filter: 'launch-ready',
+				lastSyncAt: 'SSR rehearsal snapshot',
+				selectedTicketId: 103,
+				syncState: 'ready',
+				syncSummary: 'Nitro preloaded the release rehearsal with a launch-ready focus.',
+			});
 		},
 		resolveClientModuleSrc: resolvePlaygroundSsrClientModuleSrc,
 	});

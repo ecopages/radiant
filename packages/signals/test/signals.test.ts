@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { Computed, State, createStore, effect, snapshot, untrack, watch } from '../index';
+import { Computed, State, createStore, currentComputed, effect, snapshot, subtle, untrack, watch } from '../index';
 
 describe('signals', () => {
 	test('state exposes current value and notifies subscribers on change', () => {
@@ -163,5 +163,98 @@ describe('signals', () => {
 
 		expect(notify).toHaveBeenCalledTimes(1);
 		expect(notify).toHaveBeenCalledWith({ nextValue: 'Grace', previousValue: 'Ada' });
+	});
+
+	test('currentComputed exposes the computed currently being evaluated', () => {
+		let observedComputed: Computed<number> | null = null;
+		const count = new State(2);
+		const doubled = new Computed(function () {
+			observedComputed = currentComputed() as Computed<number> | null;
+			return count.get() * 2;
+		});
+
+		expect(doubled.get()).toBe(4);
+		expect(observedComputed).toBe(doubled);
+	});
+
+	test('computed caches thrown errors until one of its dependencies changes', () => {
+		const count = new State(0);
+		const failing = new Computed(() => {
+			if (count.get() === 0) {
+				throw new Error('boom');
+			}
+
+			return count.get();
+		});
+
+		expect(() => failing.get()).toThrow('boom');
+		expect(() => failing.get()).toThrow('boom');
+
+		count.set(1);
+
+		expect(failing.get()).toBe(1);
+	});
+
+	test('state and computed equals callbacks receive the signal as this', () => {
+		const stateContexts: unknown[] = [];
+		const computedContexts: unknown[] = [];
+		const count = new State(1, {
+			equals(previousValue, nextValue) {
+				stateContexts.push(this);
+				return previousValue === nextValue;
+			},
+		});
+		const doubled = new Computed(
+			function () {
+				return count.get() * 2;
+			},
+			{
+				equals(previousValue, nextValue) {
+					computedContexts.push(this);
+					return previousValue === nextValue;
+				},
+			},
+		);
+
+		expect(doubled.get()).toBe(2);
+
+		count.set(2);
+		expect(doubled.get()).toBe(4);
+
+		expect(stateContexts).toEqual([count]);
+		expect(computedContexts).toEqual([doubled]);
+	});
+
+	test('subtle watcher notifies for watched computed signals and tracks pending signals until reset', () => {
+		const count = new State(1);
+		const doubled = new Computed(() => count.get() * 2);
+		const notifications: string[] = [];
+		const watcher = new subtle.Watcher(function () {
+			notifications.push('notify');
+		});
+
+		watcher.watch(doubled);
+		count.set(2);
+		count.set(3);
+
+		expect(notifications).toEqual(['notify']);
+		expect(watcher.getPending()).toEqual([doubled]);
+
+		watcher.watch();
+		count.set(4);
+
+		expect(notifications).toEqual(['notify', 'notify']);
+		expect(watcher.getPending()).toEqual([doubled]);
+	});
+
+	test('subtle watcher notifications freeze signal reads and writes', () => {
+		const count = new State(1);
+		const watcher = new subtle.Watcher(() => {
+			expect(() => count.get()).toThrow('Cannot read or write signals during a Watcher notification.');
+			expect(() => count.set(3)).toThrow('Cannot read or write signals during a Watcher notification.');
+		});
+
+		watcher.watch(count);
+		count.set(2);
 	});
 });

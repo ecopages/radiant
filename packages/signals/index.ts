@@ -1,6 +1,17 @@
 /** Callback invoked when a signal's current value changes. */
 export type SignalSubscriber<Value> = (value: Value) => void;
 
+const COMPUTED_NO_ERROR = Symbol.for('@ecopages/signals.computed-no-error');
+
+/** Hook invoked when a signal becomes watched through `subtle.Watcher`. */
+export const watched = Symbol.for('@ecopages/signals.subtle.watched');
+
+/** Hook invoked when a signal stops being watched through `subtle.Watcher`. */
+export const unwatched = Symbol.for('@ecopages/signals.subtle.unwatched');
+
+type SignalEquals<Value> = (this: Signal<Value>, previousValue: Value, nextValue: Value) => boolean;
+type ComputedCallback<Value> = (this: Computed<Value>) => Value;
+
 /** Optional configuration shared by writable and computed signals. */
 export interface SignalOptions<Value> {
 	/**
@@ -8,7 +19,13 @@ export interface SignalOptions<Value> {
 	 *
 	 * Defaults to `Object.is`.
 	 */
-	equals?: (previousValue: Value, nextValue: Value) => boolean;
+	equals?: SignalEquals<Value>;
+
+	/** Called when the signal becomes watched through `subtle.Watcher`. */
+	[watched]?: (this: Signal<Value>) => void;
+
+	/** Called when the signal is no longer watched through `subtle.Watcher`. */
+	[unwatched]?: (this: Signal<Value>) => void;
 }
 
 /** Read-only signal contract. */
@@ -68,11 +85,16 @@ export interface WatchOptions<Value> extends SignalOptions<Value> {
 /** Marker interface returned from `createStore(...)`. */
 export type SignalStore<Value extends object> = Value;
 
-const defaultEquals = <Value>(previousValue: Value, nextValue: Value) => Object.is(previousValue, nextValue);
+const defaultEquals: SignalEquals<unknown> = function (previousValue, nextValue) {
+	return Object.is(previousValue, nextValue);
+};
 
 type DependencyNode = SignalNode<any>;
+type WatchableSignal = SignalNode<unknown>;
 
 let activeDependencyRecorder: ((dependency: DependencyNode) => void) | undefined;
+let activeComputedSignal: Computed<any> | undefined;
+let frozenWatcherDepth = 0;
 
 const STORE_BRANCH_SYMBOL = Symbol.for('@ecopages/signals.store-branch');
 const STORE_ABSENT = Symbol.for('@ecopages/signals.store-absent');
@@ -98,24 +120,96 @@ const scheduleMicrotask: EffectScheduler = (run) => {
 	queueMicrotask(run);
 };
 
+function assertSignalAccessAllowed(): void {
+	if (frozenWatcherDepth > 0) {
+		throw new Error('Cannot read or write signals during a Watcher notification.');
+	}
+}
+
+function currentComputedSignal(): Computed<unknown> | null {
+	return activeComputedSignal ?? null;
+}
+
 abstract class SignalNode<Value> implements Signal<Value> {
 	protected readonly subscribers = new Set<SignalSubscriber<Value>>();
 	protected version = 0;
+	private readonly watcherListeners = new Set<() => void>();
+	private readonly onWatched: ((this: Signal<Value>) => void) | undefined;
+	private readonly onUnwatched: ((this: Signal<Value>) => void) | undefined;
+
+	protected constructor(options: SignalOptions<Value> = {}) {
+		this.onWatched = options[watched];
+		this.onUnwatched = options[unwatched];
+	}
 
 	abstract get(): Value;
 	abstract subscribe(notify: SignalSubscriber<Value>): () => void;
 
+	public addWatcher(notify: () => void): () => void {
+		const wasEmpty = this.watcherListeners.size === 0;
+		this.watcherListeners.add(notify);
+
+		if (wasEmpty) {
+			try {
+				this.handleFirstWatcherAdded();
+				this.onWatched?.call(this);
+			} catch (error) {
+				this.watcherListeners.delete(notify);
+				throw error;
+			}
+		}
+
+		return () => {
+			if (!this.watcherListeners.delete(notify)) {
+				return;
+			}
+
+			if (this.watcherListeners.size === 0) {
+				this.handleLastWatcherRemoved();
+				this.onUnwatched?.call(this);
+			}
+		};
+	}
+
 	public getVersion(): number {
 		return this.version;
+	}
+
+	public getWatcherCount(): number {
+		return this.watcherListeners.size;
 	}
 
 	protected connectToActiveComputed(): void {
 		activeDependencyRecorder?.(this);
 	}
 
+	protected handleFirstWatcherAdded(): void {}
+
+	protected handleLastWatcherRemoved(): void {}
+
 	protected publish(nextValue: Value): void {
 		for (const subscriber of this.subscribers) {
 			subscriber(nextValue);
+		}
+	}
+
+	protected notifyWatchers(): void {
+		const errors: unknown[] = [];
+
+		for (const listener of this.watcherListeners) {
+			try {
+				listener();
+			} catch (error) {
+				errors.push(error);
+			}
+		}
+
+		if (errors.length === 1) {
+			throw errors[0];
+		}
+
+		if (errors.length > 1) {
+			throw new AggregateError(errors, 'Multiple watcher notifications failed.');
 		}
 	}
 }
@@ -126,28 +220,44 @@ abstract class SignalNode<Value> implements Signal<Value> {
  * State signals are the smallest unit of mutable reactive data in this package.
  */
 export class State<Value> extends SignalNode<Value> implements WritableSignal<Value> {
-	private readonly equals: (previousValue: Value, nextValue: Value) => boolean;
+	private readonly equals: SignalEquals<Value>;
 	private value: Value;
 
 	constructor(initialValue: Value, options: SignalOptions<Value> = {}) {
-		super();
+		super(options);
 		this.value = initialValue;
-		this.equals = options.equals ?? defaultEquals;
+		this.equals = (options.equals ?? defaultEquals) as SignalEquals<Value>;
 	}
 
 	public get(): Value {
+		assertSignalAccessAllowed();
 		this.connectToActiveComputed();
 		return this.value;
 	}
 
 	public set(nextValue: Value): void {
-		if (this.equals(this.value, nextValue)) {
+		assertSignalAccessAllowed();
+
+		if (this.equals.call(this, this.value, nextValue)) {
 			return;
 		}
 
 		this.value = nextValue;
 		this.version += 1;
+
+		let watcherError: unknown;
+
+		try {
+			this.notifyWatchers();
+		} catch (error) {
+			watcherError = error;
+		}
+
 		this.publish(nextValue);
+
+		if (watcherError) {
+			throw watcherError;
+		}
 	}
 
 	public update(updater: (value: Value) => Value): void {
@@ -169,25 +279,34 @@ export class State<Value> extends SignalNode<Value> implements WritableSignal<Va
  * Dependencies are discovered automatically each time the computation runs.
  */
 export class Computed<Value> extends SignalNode<Value> {
-	private readonly compute: () => Value;
+	private readonly compute: ComputedCallback<Value>;
 	private readonly dependencyUnsubscribers = new Map<SignalNode<unknown>, () => void>();
-	private readonly equals: (previousValue: Value, nextValue: Value) => boolean;
+	private readonly dependencyWatcherUnsubscribers = new Map<SignalNode<unknown>, () => void>();
+	private readonly equals: SignalEquals<Value>;
 	private dependencies = new Map<DependencyNode, number>();
 	private computing = false;
+	private error: unknown = undefined;
+	private hasError = false;
 	private initialized = false;
 	private pendingDependencies = new Map<DependencyNode, number>();
 	private stale = true;
 	private value!: Value;
 
-	constructor(compute: () => Value, options: SignalOptions<Value> = {}) {
-		super();
+	constructor(compute: ComputedCallback<Value>, options: SignalOptions<Value> = {}) {
+		super(options);
 		this.compute = compute;
-		this.equals = options.equals ?? defaultEquals;
+		this.equals = (options.equals ?? defaultEquals) as SignalEquals<Value>;
 	}
 
 	public get(): Value {
+		assertSignalAccessAllowed();
 		this.refreshIfNeeded();
 		this.connectToActiveComputed();
+
+		if (this.hasError) {
+			throw this.error;
+		}
+
 		return this.value;
 	}
 
@@ -196,8 +315,13 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.subscribers.add(notify);
 
 		if (wasEmpty) {
-			this.refreshIfNeeded();
-			this.syncDependencySubscriptions();
+			try {
+				this.refreshIfNeeded();
+				this.syncDependencySubscriptions();
+			} catch (error) {
+				this.subscribers.delete(notify);
+				throw error;
+			}
 		}
 
 		return () => {
@@ -217,6 +341,14 @@ export class Computed<Value> extends SignalNode<Value> {
 		this.dependencyUnsubscribers.clear();
 	}
 
+	private clearDependencyWatcherSubscriptions(): void {
+		for (const unsubscribe of this.dependencyWatcherUnsubscribers.values()) {
+			unsubscribe();
+		}
+
+		this.dependencyWatcherUnsubscribers.clear();
+	}
+
 	private handleDependencyChange = () => {
 		this.stale = true;
 
@@ -227,9 +359,14 @@ export class Computed<Value> extends SignalNode<Value> {
 		const previousVersion = this.version;
 		this.refreshIfNeeded();
 
-		if (this.version !== previousVersion) {
+		if (this.version !== previousVersion && !this.hasError) {
 			this.publish(this.value);
 		}
+	};
+
+	private handleDependencyWatcherChange = () => {
+		this.stale = true;
+		this.notifyWatchers();
 	};
 
 	private haveDependenciesChanged(): boolean {
@@ -250,21 +387,28 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 
 		const previousActiveDependencyRecorder = activeDependencyRecorder;
+		const previousActiveComputedSignal = activeComputedSignal;
 		const previousValue = this.value;
+		const previousError = this.error;
 		const wasInitialized = this.initialized;
 		let nextValue!: Value;
 		let nextDependencies = new Map<DependencyNode, number>();
+		let nextError: typeof COMPUTED_NO_ERROR | unknown = COMPUTED_NO_ERROR;
 
 		this.computing = true;
 		this.pendingDependencies = new Map();
 
 		try {
+			activeComputedSignal = this;
 			activeDependencyRecorder = (dependency) => {
 				this.trackDependency(dependency);
 			};
-			nextValue = this.compute();
-			nextDependencies = this.pendingDependencies;
+			nextValue = this.compute.call(this);
+		} catch (error) {
+			nextError = error;
 		} finally {
+			nextDependencies = this.pendingDependencies;
+			activeComputedSignal = previousActiveComputedSignal;
 			activeDependencyRecorder = previousActiveDependencyRecorder;
 			this.pendingDependencies = new Map();
 			this.computing = false;
@@ -272,8 +416,20 @@ export class Computed<Value> extends SignalNode<Value> {
 
 		this.dependencies = nextDependencies;
 		this.stale = false;
-		const hasChanged = !wasInitialized || !this.equals(previousValue, nextValue);
-		this.value = nextValue;
+		const hasChanged = !wasInitialized
+			|| (nextError === COMPUTED_NO_ERROR
+				? this.hasError || !this.equals.call(this, previousValue, nextValue)
+				: !this.hasError || previousError !== nextError);
+
+		if (nextError === COMPUTED_NO_ERROR) {
+			this.value = nextValue;
+			this.error = undefined;
+			this.hasError = false;
+		} else {
+			this.error = nextError;
+			this.hasError = true;
+		}
+
 		this.initialized = true;
 
 		if (hasChanged) {
@@ -282,6 +438,10 @@ export class Computed<Value> extends SignalNode<Value> {
 
 		if (this.subscribers.size > 0) {
 			this.syncDependencySubscriptions();
+		}
+
+		if (this.getWatcherCount() > 0) {
+			this.syncDependencyWatcherSubscriptions();
 		}
 	}
 
@@ -310,8 +470,36 @@ export class Computed<Value> extends SignalNode<Value> {
 		}
 	}
 
+	private syncDependencyWatcherSubscriptions(): void {
+		for (const [dependency, unsubscribe] of this.dependencyWatcherUnsubscribers) {
+			if (this.dependencies.has(dependency)) {
+				continue;
+			}
+
+			unsubscribe();
+			this.dependencyWatcherUnsubscribers.delete(dependency);
+		}
+
+		for (const dependency of this.dependencies.keys()) {
+			if (this.dependencyWatcherUnsubscribers.has(dependency)) {
+				continue;
+			}
+
+			this.dependencyWatcherUnsubscribers.set(dependency, dependency.addWatcher(this.handleDependencyWatcherChange));
+		}
+	}
+
 	private trackDependency(dependency: DependencyNode): void {
 		this.pendingDependencies.set(dependency, dependency.getVersion());
+	}
+
+	protected override handleFirstWatcherAdded(): void {
+		this.refreshIfNeeded();
+		this.syncDependencyWatcherSubscriptions();
+	}
+
+	protected override handleLastWatcherRemoved(): void {
+		this.clearDependencyWatcherSubscriptions();
 	}
 }
 
@@ -402,14 +590,140 @@ class EffectRunner {
 	}
 }
 
+function resolveSignalNode(signal: Signal<unknown>): WatchableSignal {
+	if (!(signal instanceof SignalNode)) {
+		throw new TypeError('Expected a signal created by @ecopages/signals.');
+	}
+
+	return signal;
+}
+
+function runWatcherNotify(callback: () => void): void {
+	frozenWatcherDepth += 1;
+
+	try {
+		callback();
+	} finally {
+		frozenWatcherDepth -= 1;
+	}
+}
+
+/**
+ * Low-level watcher used to schedule work when watched signals may have become
+ * stale.
+ *
+ * This API follows the proposal-shaped watcher model: each call to `watch(...)`
+ * re-arms the watcher by clearing the pending set and resetting its single
+ * notification latch so future invalidations can be observed as a fresh cycle.
+ */
+export class Watcher {
+	private notified = false;
+	private readonly pendingSignals = new Map<WatchableSignal, Signal<unknown>>();
+	private readonly signals = new Map<WatchableSignal, Signal<unknown>>();
+	private readonly unsubscribers = new Map<WatchableSignal, () => void>();
+
+	/** Creates a watcher with a callback invoked when any watched signal becomes stale. */
+	constructor(private readonly notifyCallback: (this: Watcher) => void) {}
+
+	/** Returns the signals invalidated since the last `watch(...)` reset. */
+	public getPending(): Signal<unknown>[] {
+		return Array.from(this.pendingSignals.values());
+	}
+
+	/**
+	 * Stops watching the provided signals.
+	 *
+	 * When the last watched signal is removed, the watcher also clears its pending
+	 * set and notification latch.
+	 */
+	public unwatch(...signals: Signal<unknown>[]): void {
+		assertSignalAccessAllowed();
+
+		for (const signal of signals) {
+			const node = resolveSignalNode(signal);
+			const unsubscribe = this.unsubscribers.get(node);
+
+			if (!unsubscribe) {
+				throw new Error('Signal is not watched by this watcher.');
+			}
+		}
+
+		for (const signal of signals) {
+			const node = resolveSignalNode(signal);
+			const unsubscribe = this.unsubscribers.get(node);
+
+			unsubscribe?.();
+			this.pendingSignals.delete(node);
+			this.signals.delete(node);
+			this.unsubscribers.delete(node);
+		}
+
+		if (this.signals.size === 0) {
+			this.pendingSignals.clear();
+			this.notified = false;
+		}
+	}
+
+	/**
+	 * Starts watching the provided signals.
+	 *
+	 * Re-watching is also a reset point: the watcher clears its pending set and
+	 * notification latch so `getPending()` only reports invalidations that happen
+	 * after this call.
+	 */
+	public watch(...signals: Signal<unknown>[]): void {
+		assertSignalAccessAllowed();
+
+		for (const signal of signals) {
+			const node = resolveSignalNode(signal);
+
+			if (this.signals.has(node)) {
+				continue;
+			}
+
+			this.signals.set(node, signal);
+			this.unsubscribers.set(node, node.addWatcher(() => {
+				this.handleSignalChange(node);
+			}));
+		}
+
+		this.pendingSignals.clear();
+		this.notified = false;
+	}
+
+	private handleSignalChange(node: WatchableSignal): void {
+		const signal = this.signals.get(node);
+
+		if (!signal) {
+			return;
+		}
+
+		this.pendingSignals.set(node, signal);
+
+		if (this.notified) {
+			return;
+		}
+
+		this.notified = true;
+		runWatcherNotify(() => {
+			this.notifyCallback.call(this);
+		});
+	}
+}
+
 /** Creates a writable state signal. */
 export function state<Value>(initialValue: Value, options?: SignalOptions<Value>): State<Value> {
 	return new State(initialValue, options);
 }
 
 /** Creates a computed signal. */
-export function computed<Value>(computeValue: () => Value, options?: SignalOptions<Value>): Computed<Value> {
+export function computed<Value>(computeValue: ComputedCallback<Value>, options?: SignalOptions<Value>): Computed<Value> {
 	return new Computed(computeValue, options);
+}
+
+/** Returns the computed signal currently being evaluated, if any. */
+export function currentComputed(): Computed<unknown> | null {
+	return currentComputedSignal();
 }
 
 /**
@@ -473,6 +787,15 @@ export function watch<Value>(
 		{ scheduler: options.scheduler },
 	);
 }
+
+/** Proposal-shaped low-level APIs for framework and adapter authors. */
+export const subtle = Object.freeze({
+	Watcher,
+	currentComputed,
+	untrack,
+	watched,
+	unwatched,
+});
 
 /** Returns `true` when `value` is a deep reactive store created by this package. */
 export function isStore(value: unknown): value is SignalStore<object> {
