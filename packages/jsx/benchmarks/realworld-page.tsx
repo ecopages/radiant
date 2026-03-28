@@ -1,6 +1,6 @@
 /** @jsxImportSource @ecopages/jsx */
 
-import type { JsxRenderable } from '@ecopages/jsx/jsx-runtime';
+import type { JsxRenderable } from '../jsx-runtime.ts';
 
 type Purchase = {
 	name: string;
