@@ -265,4 +265,71 @@ describe('Radiant JSX browser event bindings', () => {
 			expect(receivedCurrentTarget).toBe(target);
 		});
 	}
+
+	test('on-delegate:click dispatches from nested descendants with normalized currentTarget', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let receivedCurrentTarget: EventTarget | null | undefined;
+		let receivedTarget: EventTarget | null | undefined;
+		let receivedEvent: Event | undefined;
+
+		root.render(
+			jsx('button', {
+				'on-delegate:click': (event: Event) => {
+					receivedCurrentTarget = event.currentTarget;
+					receivedTarget = event.target;
+					receivedEvent = event;
+				},
+				children: jsx('span', { children: 'Nested label' }),
+			}),
+		);
+
+		const button = container.querySelector('button');
+		const nestedTarget = container.querySelector('span');
+
+		expect(button).not.toBeNull();
+		expect(nestedTarget).not.toBeNull();
+
+		nestedTarget?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+		expect(receivedEvent).toBeInstanceOf(MouseEvent);
+		expect(receivedCurrentTarget).toBe(button);
+		expect(receivedTarget).toBe(nestedTarget);
+	});
+
+	test('on-delegate:click removes stale handlers when the binding becomes empty', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let clickCount = 0;
+
+		root.render(
+			jsx('button', {
+				'on-delegate:click': () => {
+					clickCount += 1;
+				},
+				children: 'Delegate',
+			}),
+		);
+
+		const button = container.querySelector('button');
+		expect(button).not.toBeNull();
+
+		button?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+		expect(clickCount).toBe(1);
+
+		root.render(
+			jsx('button', {
+				'on-delegate:click': null,
+				children: 'Delegate',
+			}),
+		);
+
+		const updatedButton = container.querySelector('button');
+		expect(updatedButton).not.toBeNull();
+
+		updatedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+		expect(clickCount).toBe(1);
+	});
 });

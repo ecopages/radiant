@@ -23,6 +23,7 @@ The shortest accurate mental model is:
 - typed intrinsic HTML and SVG elements
 - plain function components and fragments
 - native DOM event bindings with `on:*`
+- opt-in delegated DOM event bindings with `on-delegate:*`
 - explicit property bindings with `prop:*`
 - boolean, `data`, `aria`, `class`, `className`, `classes`, and `style` normalization
 - direct DOM mounting with `createRoot(...)`
@@ -162,6 +163,9 @@ function DirectHandlers() {
   return (
     <>
       <button on:click={handleClick}>Log click</button>
+      <button on-delegate:click={handleClick}>
+        Delegated click
+      </button>
       <input on:input={handleInput} />
     </>
   );
@@ -174,6 +178,27 @@ if (container instanceof HTMLElement) {
   root.render(<DirectHandlers />);
 }
 ```
+
+## Event Handling
+
+Browser events are simpler than they first look. Something happens, the browser creates an `Event` object, and that event starts on the node where the interaction actually occurred. That original node is `event.target`.
+
+From there, the event may travel through the DOM tree. Most UI events you care about, like `click`, `input`, and `keydown`, bubble upward. When a handler runs, `event.currentTarget` is the element whose listener is currently executing. That difference matters: `target` answers "where did this start?" and `currentTarget` answers "which listener is running right now?"
+
+Event delegation is just using that travel on purpose. Instead of attaching one listener to every matching element, you attach fewer listeners higher in the tree and react based on where the event started. That is often a good trade for repeated interactive UI such as lists, tables, menus, and boards. The catch is that delegation only works for events that bubble, and it changes where the real DOM listener lives.
+
+Radiant keeps those choices explicit instead of hiding them behind a synthetic event system.
+
+| Use this | When you want | Runtime shape |
+| --- | --- | --- |
+| `on:*` | Exact browser listener semantics on that element | Radiant calls `addEventListener(...)` on the element itself |
+| `on-delegate:*` | Fewer listeners for common bubbling interactions | Radiant attaches one listener per event type on the render root and dispatches to matched elements |
+
+`on:*` is the safe default. It behaves like the platform, it works with bubbling and non-bubbling events, and the handler receives the native browser event object.
+
+`on-delegate:*` is the performance-oriented option. It is designed for common bubbling events such as `click`, `input`, `keydown`, pointer enter or leave style flows, and touch interactions. Delegated handlers still receive the native event object, `event.target` stays real, and Radiant normalizes `event.currentTarget` to the matched element so handler code reads naturally.
+
+Important: use `on:*` for events that do not bubble or that depend on exact native attachment semantics, such as `focus`, `blur`, `scroll`, `load`, `invalid`, or `dragstart`. If you write `on-delegate:*` for an event outside Radiant's delegated set, the current runtime falls back to a native listener on the element instead of forcing delegation.
 
 ## Fine-Grained Updates
 
@@ -300,13 +325,14 @@ const Card = ({ title, children }: CardProps) => (
 );
 ```
 
-### Native Events
+### Native And Delegated Events
 
 ```tsx
 <button on:click={this.handleClick}>Save</button>
+<button on-delegate:click={this.handleDelegatedClick}>Save all</button>
 ```
 
-Event bindings are native DOM listeners. They are not synthetic events.
+`on:*` binds a native DOM listener directly on the element. `on-delegate:*` opts into root-scoped delegation for common bubbling events. Neither mode wraps the browser event in a React-style synthetic object.
 
 ### Property Bindings
 

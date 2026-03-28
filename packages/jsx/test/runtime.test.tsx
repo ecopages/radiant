@@ -155,6 +155,19 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values).toEqual([handleClick, 'Increment']);
 	});
 
+	test('on-delegate:event encodes a delegated event listener binding', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const handleClick = vi.fn();
+		const result = jsx('button', {
+			'on-delegate:click': handleClick,
+			children: 'Increment',
+		});
+
+		expectTemplateResultLike(result);
+		expect(Array.from(result.strings)).toEqual(['<button !click=', '>', '</button>']);
+		expect(result.values).toEqual([handleClick, 'Increment']);
+	});
+
 	test('prop:name encodes a property binding without stringifying the value', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const payload = { value: 1 };

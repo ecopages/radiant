@@ -194,13 +194,43 @@ export type JsxEventListener<EventType extends Event = Event, CurrentTarget exte
 	| JsxEventHandler<EventType, CurrentTarget>
 	| JsxEventListenerObject<EventType>;
 
+/**
+ * Bubbling DOM event names that Radiant can service through root-scoped delegation.
+ */
+export type DelegatedEventName =
+	| 'beforeinput'
+	| 'click'
+	| 'contextmenu'
+	| 'dblclick'
+	| 'focusin'
+	| 'focusout'
+	| 'input'
+	| 'keydown'
+	| 'keyup'
+	| 'mousedown'
+	| 'mouseout'
+	| 'mouseover'
+	| 'mouseup'
+	| 'pointerdown'
+	| 'pointerout'
+	| 'pointerover'
+	| 'pointerup'
+	| 'touchend'
+	| 'touchmove'
+	| 'touchstart';
+
 type JsxEventBindings<ElementType extends EventTarget> = {
 	[EventName in keyof GlobalEventHandlersEventMap as `on:${EventName}`]?: JsxEventListener<
 		GlobalEventHandlersEventMap[EventName],
 		ElementType
 	>;
+	} & {
+	[EventName in DelegatedEventName as `on-delegate:${EventName}`]?: EventName extends keyof GlobalEventHandlersEventMap
+		? JsxEventListener<GlobalEventHandlersEventMap[EventName], ElementType>
+		: JsxEventListener<Event, ElementType>;
 } & {
 	[eventName: `on:${string}`]: JsxEventListener<Event, ElementType> | undefined;
+	[eventName: `on-delegate:${string}`]: JsxEventListener<Event, ElementType> | undefined;
 };
 
 type JsxPropertyBindings<ElementType extends object> = {
@@ -744,7 +774,7 @@ function isServerRenderableCustomElement(value: unknown): value is ServerRendera
  * Applies normalized attributes onto a server-renderable custom element instance.
  *
  * Binding rules (applied in order):
- * - `on:*` bindings and `undefined` values are skipped (event handlers are
+ * - `on:*`, `on-delegate:*`, and `undefined` values are skipped (event handlers are
  *   not serializable, so they are not applied during SSR).
  * - `prop:*` bindings are set directly as properties on the element.
  * - Known element properties (non-hyphenated names already present on the
@@ -761,7 +791,7 @@ function applyServerCustomElementAttributes(
 	attributes: Record<string, unknown>,
 ): void {
 	for (const [name, value] of Object.entries(attributes)) {
-		if (value === undefined || name.startsWith('on:')) {
+		if (value === undefined || name.startsWith('on:') || name.startsWith('on-delegate:')) {
 			continue;
 		}
 
@@ -1105,7 +1135,8 @@ function appendStructuredAttributes(
  *
  * Encodes bindings using the runtime's template binding syntax so the client DOM
  * renderer can reconnect them after hydration:
- * - `on:*`  →  `@eventName=` (event listener binding)
+ * - `on:*`  →  `@eventName=` (native event listener binding)
+ * - `on-delegate:*`  →  `!eventName=` (delegated event listener binding)
  * - `prop:*` →  `.propertyName=` (property binding)
  * - `boolean` →  `?attrName=` (boolean attribute binding)
  * - all other values →  `attrName=` (standard attribute binding)
@@ -1124,6 +1155,13 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 	}
 
 	const bindingShapeValue = resolveBindingShapeValue(value);
+
+	if (name.startsWith('on-delegate:')) {
+		strings[strings.length - 1] += ` !${name.slice('on-delegate:'.length)}=`;
+		values.push(value);
+		strings.push('');
+		return;
+	}
 
 	if (name.startsWith('on:')) {
 		strings[strings.length - 1] += ` @${name.slice(3)}=`;

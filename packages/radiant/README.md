@@ -162,6 +162,81 @@ import '../components/counter-card';
 
 For the full lifecycle and SSR flow diagram, see [src/core/README.md](src/core/README.md).
 
+## Event Handling
+
+The browser already gives you a solid event model. An interaction starts on one node, that node becomes `event.target`, and then the event may travel through the tree. When a handler runs, `event.currentTarget` is the element whose listener is active at that moment. If an event bubbles, a parent can react to something that started in a child without every child owning its own listener.
+
+That is the foundation for every event API in Radiant. Radiant does not invent a synthetic event layer. It uses the browser event object directly and then offers a few different ways to attach or emit events depending on the level you are working at.
+
+| Use this | When you want | Notes |
+| --- | --- | --- |
+| `on:*` in JSX | A native listener on the rendered element | Best default when you want exact browser semantics |
+| `on-delegate:*` in JSX | Fewer listeners for common bubbling interactions | Root-scoped delegation for the JSX render tree |
+| `@onEvent(...)` | Class-level listening from a `RadiantElement` or `RadiantComponent` | Supports `selector`, `ref`, `window`, and `document` targets |
+| `@event(...)` | A typed custom event emitter owned by the component | Emits a real `CustomEvent` from the host element |
+
+### How Radiant Listens
+
+Inside JSX, `on:*` attaches a native DOM listener to the element itself. `on-delegate:*` opts into root-scoped delegation for a curated set of bubbling events. That makes repeated interactive UI cheaper to mount without changing the event object into a framework-specific wrapper.
+
+At the class level, `@onEvent(...)` is the main decorator for incoming events. It can listen to:
+
+- descendants that match a CSS selector
+- descendants marked with `data-ref`
+- global `window` events
+- global `document` events
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantComponent, customElement, onEvent } from '@ecopages/radiant';
+
+@customElement('keyboard-panel')
+export class KeyboardPanel extends RadiantComponent {
+	private lastKey = '';
+
+	@onEvent({ document: true, type: 'keydown' })
+	onKeydown(event: KeyboardEvent) {
+		this.lastKey = event.key;
+		this.update();
+	}
+
+	override render() {
+		return <p>Last key: {this.lastKey || 'none'}</p>;
+	}
+}
+```
+
+Important: `@onEvent({ selector: ... })` and `@onEvent({ ref: ... })` rely on bubbling. Today that decorator path checks `event.target.matches(...)` directly on the bubbling event, so the match is strict. If you click a nested node inside a button, the nested node must match the selector for the handler to run. For `focus` and `blur`, use `focusin` and `focusout` instead because the native `focus` and `blur` events do not bubble.
+
+### How Radiant Emits
+
+Outgoing events use `@event(...)`, which gives the class a typed `EventEmitter`. Calling `.emit(detail)` dispatches a real `CustomEvent` from the host element.
+
+```ts
+import { type EventEmitter, RadiantElement, customElement, event } from '@ecopages/radiant';
+
+type SaveDetail = {
+	id: string;
+};
+
+@customElement('save-button')
+export class SaveButton extends RadiantElement {
+	@event({ name: 'save-requested', bubbles: true, composed: true })
+	saveRequested!: EventEmitter<SaveDetail>;
+
+	requestSave() {
+		this.saveRequested.emit({ id: 'draft-1' });
+	}
+}
+```
+
+This separation keeps the mental model clean:
+
+- DOM events come in through JSX handlers or `@onEvent(...)`
+- component events go out through `@event(...)`
+- both are still ordinary browser events at runtime
+
 ## Import Structure
 
 | Folder/Module                 | Description                             |

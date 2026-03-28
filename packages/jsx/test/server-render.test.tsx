@@ -119,6 +119,7 @@ describe('Radiant JSX server render', () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('demo-card', {
 			'on:click': () => undefined,
+			'on-delegate:click': () => undefined,
 			'prop:payload': { count: 2 },
 			title: 'Ready',
 		});
@@ -142,11 +143,12 @@ describe('Radiant JSX server render', () => {
 			class: 'action',
 			hidden: true,
 			'on:click': () => undefined,
+			'on-delegate:focusin': () => undefined,
 			children: 'Ship',
 		});
 
 		expect(renderToString(template, { hydrate: true })).toBe(
-			'<button data-radiant-jsx-bind-0="attr:class" class="action" data-radiant-jsx-bind-1="bool:hidden" hidden data-radiant-jsx-bind-2="event:click">Ship</button>',
+			'<button data-radiant-jsx-bind-0="attr:class" class="action" data-radiant-jsx-bind-1="bool:hidden" hidden data-radiant-jsx-bind-2="event:click" data-radiant-jsx-bind-3="delegate:focusin">Ship</button>',
 		);
 	});
 

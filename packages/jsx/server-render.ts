@@ -121,7 +121,7 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 		const value = resolveReactiveSnapshot(template.values[index]);
 
 		if (!interpolationPart || interpolationPart.type === 'child') {
-			html += interpolationPart?.string ?? template.strings[index] ?? '';
+			html += interpolationPart && interpolationPart.type === 'child' ? interpolationPart.string : (template.strings[index] ?? '');
 			html += renderChild(value as JsxRenderable, context);
 			continue;
 		}
@@ -136,7 +136,7 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 
 		context.nextBindingIndex += 1;
 
-		if (interpolationPart.prefix === '@' || interpolationPart.prefix === '.') {
+		if (interpolationPart.prefix === '@' || interpolationPart.prefix === '!' || interpolationPart.prefix === '.') {
 			continue;
 		}
 
