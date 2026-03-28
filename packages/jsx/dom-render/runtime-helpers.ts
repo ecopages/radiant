@@ -6,11 +6,7 @@ import {
 	type TemplateResultLike,
 } from '../jsx-runtime.ts';
 import { createNodesFromJsxNodeLike, isJsxNodeLike } from './dom-operations.ts';
-import type {
-	DeferredPropertyBinding,
-	ReactiveAttributeSource,
-	ReactiveChildSource,
-} from './types.ts';
+import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
 
 type TemplateMount = (
 	template: TemplateResultLike,

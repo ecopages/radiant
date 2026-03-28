@@ -51,7 +51,10 @@ class RenderComponentSlotQueryCard extends RadiantComponent {
 
 	override render() {
 		return (
-			<section data-default-slot={this.defaultSlot?.textContent ?? 'missing'} data-header-slot={this.headerSlot?.textContent ?? 'missing'}>
+			<section
+				data-default-slot={this.defaultSlot?.textContent ?? 'missing'}
+				data-header-slot={this.headerSlot?.textContent ?? 'missing'}
+			>
 				<header>
 					<slot name="header" />
 				</header>
@@ -75,7 +78,11 @@ class RenderComponentContextCard extends RadiantComponent {
 	}
 
 	override render() {
-		return <p data-context-provider={this.contextProvider ? 'resolved' : 'missing'}>{this.getAttribute('data-selected-label') ?? 'missing'}</p>;
+		return (
+			<p data-context-provider={this.contextProvider ? 'resolved' : 'missing'}>
+				{this.getAttribute('data-selected-label') ?? 'missing'}
+			</p>
+		);
 	}
 }
 
@@ -230,9 +237,11 @@ describe('render-component server helpers', () => {
 			}
 		}
 
-		await expect(renderStreamableComponent(UntaggedRenderable as unknown as CustomElementConstructor & { new (): UntaggedRenderable })).rejects.toThrow(
-			'UntaggedRenderable is missing @customElement metadata.',
-		);
+		await expect(
+			renderStreamableComponent(
+				UntaggedRenderable as unknown as CustomElementConstructor & { new (): UntaggedRenderable },
+			),
+		).rejects.toThrow('UntaggedRenderable is missing @customElement metadata.');
 	});
 
 	test('renderComponent() rejects host preparation for non-element renderables', async () => {
@@ -243,9 +252,14 @@ describe('render-component server helpers', () => {
 		}
 
 		await expect(
-			renderComponent(StringOnlyRenderable as unknown as CustomElementConstructor & { new (): StringOnlyRenderable }, {
-				prepareHost: () => {},
-			}),
-		).rejects.toThrow('StringOnlyRenderable cannot prepare SSR host content because it is not an HTMLElement host.');
+			renderComponent(
+				StringOnlyRenderable as unknown as CustomElementConstructor & { new (): StringOnlyRenderable },
+				{
+					prepareHost: () => {},
+				},
+			),
+		).rejects.toThrow(
+			'StringOnlyRenderable cannot prepare SSR host content because it is not an HTMLElement host.',
+		);
 	});
 });

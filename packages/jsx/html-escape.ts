@@ -9,10 +9,7 @@ type BunHtmlEscaper = {
 
 const bunGlobal = (globalThis as typeof globalThis & { Bun?: Partial<BunHtmlEscaper> }).Bun;
 
-const bunHtmlEscaper =
-	typeof bunGlobal?.escapeHTML === 'function'
-		? (bunGlobal as BunHtmlEscaper)
-		: undefined;
+const bunHtmlEscaper = typeof bunGlobal?.escapeHTML === 'function' ? (bunGlobal as BunHtmlEscaper) : undefined;
 
 /**
  * Escapes text content for HTML output using a fast no-op path for strings that

@@ -70,7 +70,7 @@ for (const bundle of budgetFile.bundles) {
 		maxGzipBytes: bundle.maxGzipBytes,
 		passed: bytes.length <= bundle.maxBytes && gzipBytes <= bundle.maxGzipBytes,
 	});
-	}
+}
 
 await $`rm -rf ${outputRoot}`;
 
@@ -86,7 +86,7 @@ for (const result of results) {
 	console.log(
 		`${status} ${result.label} (${result.entrypoint}) raw ${rawKb} KB / ${rawBudgetKb} KB, gzip ${gzipKb} KB / ${gzipBudgetKb} KB`,
 	);
-	}
+}
 
 if (!reportOnly && results.some((result) => !result.passed)) {
 	process.exit(1);

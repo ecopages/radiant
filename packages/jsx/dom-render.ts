@@ -1,17 +1,11 @@
-import {
-	type JsxRenderable,
-	type TemplateResultLike,
-} from './jsx-runtime.ts';
+import { type JsxRenderable, type TemplateResultLike } from './jsx-runtime.ts';
 import {
 	ATTRIBUTE_BINDING_PREFIX,
 	collectHydrationBindings,
 	getTemplateInterpolationParts,
 	parseBindingDescriptor,
 } from './hydration-bindings.ts';
-import {
-	collectElements,
-	createBoundaryMarker,
-} from './dom-render/dom-operations.ts';
+import { collectElements, createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
 import { getNodeAtPath, getNodePath } from './dom-render/path-utils.ts';
@@ -109,7 +103,9 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
 			disposeMountedRoot(currentRenderState);
 		}
 
-		target.replaceChildren(...createNodesFromValue(nextValue, target, deferredProperties, RENDER_RUNTIME.createTemplateInstance));
+		target.replaceChildren(
+			...createNodesFromValue(nextValue, target, deferredProperties, RENDER_RUNTIME.createTemplateInstance),
+		);
 		ROOT_RENDER_STATE.set(target, { kind: 'value' });
 	}
 
@@ -314,7 +310,9 @@ function getCompiledTemplate(template: TemplateResultLike): CompiledTemplate {
 		}
 
 		htmlParts.push(
-			interpolationPart && interpolationPart.type === 'child' ? interpolationPart.string : (template.strings[index] ?? ''),
+			interpolationPart && interpolationPart.type === 'child'
+				? interpolationPart.string
+				: (template.strings[index] ?? ''),
 			`<!--${CHILD_BINDING_START_PREFIX}${index}-->`,
 			`<!--${CHILD_BINDING_END_PREFIX}${index}-->`,
 		);

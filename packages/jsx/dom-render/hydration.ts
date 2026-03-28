@@ -206,7 +206,14 @@ function createHydratedLiveTemplateParts(
 		liveParts.set(partIndex, {
 			endMarker,
 			index: part.index,
-			mounted: hydrateMountedRangeContent(startMarker, endMarker, values[part.index], existingNodes, target, runtime),
+			mounted: hydrateMountedRangeContent(
+				startMarker,
+				endMarker,
+				values[part.index],
+				existingNodes,
+				target,
+				runtime,
+			),
 			startMarker,
 			type: 'child',
 		});
@@ -449,14 +456,26 @@ function hydrateMountedRangeContent(
 		const keyedChildren = getKeyedChildren(iterableChildren);
 
 		if (keyedChildren) {
-			const hydratedKeyedState = hydrateKeyedRangeContent(endMarker, keyedChildren, existingNodes, rootTarget, runtime);
+			const hydratedKeyedState = hydrateKeyedRangeContent(
+				endMarker,
+				keyedChildren,
+				existingNodes,
+				rootTarget,
+				runtime,
+			);
 
 			if (hydratedKeyedState) {
 				return hydratedKeyedState;
 			}
 		}
 
-		const hydratedIndexedState = hydrateIndexedRangeContent(endMarker, iterableChildren, existingNodes, rootTarget, runtime);
+		const hydratedIndexedState = hydrateIndexedRangeContent(
+			endMarker,
+			iterableChildren,
+			existingNodes,
+			rootTarget,
+			runtime,
+		);
 
 		if (hydratedIndexedState) {
 			return hydratedIndexedState;
@@ -655,7 +674,14 @@ function hydrateKeyedRangeContent(
 			childNodes,
 			existingNodes[nextNodeIndex + childNodeCount] ?? endMarker,
 		);
-		record.mounted = hydrateMountedRangeContent(record.start, record.end, child.value, childNodes, rootTarget, runtime);
+		record.mounted = hydrateMountedRangeContent(
+			record.start,
+			record.end,
+			child.value,
+			childNodes,
+			rootTarget,
+			runtime,
+		);
 		records.set(child.key, record);
 		order.push(child.key);
 		nextNodeIndex += childNodeCount;

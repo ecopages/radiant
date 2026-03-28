@@ -31,7 +31,8 @@ export function advanceFocusedSignalLabTicket(): void {
 		return;
 	}
 
-	focusedTicket.lane = laneSequence[(laneSequence.indexOf(focusedTicket.lane) + 1) % laneSequence.length] ?? 'Backlog';
+	focusedTicket.lane =
+		laneSequence[(laneSequence.indexOf(focusedTicket.lane) + 1) % laneSequence.length] ?? 'Backlog';
 }
 
 export function focusNextSignalLabTicket(): void {

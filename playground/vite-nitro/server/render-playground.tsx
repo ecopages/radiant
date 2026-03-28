@@ -38,7 +38,8 @@ export async function getSsrCounterRender(): Promise<RenderedComponent> {
 }
 
 export async function getSsrServerCardRender(): Promise<RenderedComponent> {
-	const { RadiantComponentServerCardElement } = await import('../src/components/radiant-component-server-card.script');
+	const { RadiantComponentServerCardElement } =
+		await import('../src/components/radiant-component-server-card.script');
 
 	return renderComponent(RadiantComponentServerCardElement, {
 		configure: () => {},

@@ -129,18 +129,20 @@ type RenderComponentSharedOptions<TComponent extends ServerRenderableComponent> 
 };
 
 /** Options accepted by the reusable SSR component rendering helpers. */
-export type RenderComponentOptions<TComponent extends ServerRenderableComponent> = RenderComponentSharedOptions<TComponent> &
-	(
-		| {
-			component: ServerRenderableComponentConstructor<TComponent>;
-		}
-		| {
-			load: () => Promise<ServerRenderableComponentConstructor<TComponent>>;
-		}
-	);
+export type RenderComponentOptions<TComponent extends ServerRenderableComponent> =
+	RenderComponentSharedOptions<TComponent> &
+		(
+			| {
+					component: ServerRenderableComponentConstructor<TComponent>;
+			  }
+			| {
+					load: () => Promise<ServerRenderableComponentConstructor<TComponent>>;
+			  }
+		);
 
 /** Call-site options used when the component constructor is passed directly. */
-export type RenderComponentCallOptions<TComponent extends ServerRenderableComponent> = RenderComponentSharedOptions<TComponent>;
+export type RenderComponentCallOptions<TComponent extends ServerRenderableComponent> =
+	RenderComponentSharedOptions<TComponent>;
 
 /**
  * Serializes a custom element into HTML, inferring its tag name from
@@ -230,10 +232,13 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 	normalizedOptions: RenderComponentOptions<TComponent>,
 ): Promise<RenderedComponent> {
 	const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
-	const restoreAmbientContext = withSsrContextProviders(createAmbientSsrContextProviders(normalizedOptions.ssrContext));
+	const restoreAmbientContext = withSsrContextProviders(
+		createAmbientSsrContextProviders(normalizedOptions.ssrContext),
+	);
 
 	try {
-		const Component = 'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
+		const Component =
+			'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
 		const component = new Component();
 		prepareRenderedComponentHost(
 			environment,
@@ -307,7 +312,9 @@ function createAmbientSsrContextProviders(
  * Drops the preview renderable so the result can be sent through lightweight
  * framework adapters or JSON/HTML fragment endpoints.
  */
-export function toRenderedComponentPayload(render: StreamableRenderedComponent | RenderedComponent): RenderedComponentPayload {
+export function toRenderedComponentPayload(
+	render: StreamableRenderedComponent | RenderedComponent,
+): RenderedComponentPayload {
 	if ('metadata' in render) {
 		return {
 			clientModuleSrc: render.metadata.clientModuleUrl,
@@ -326,11 +333,7 @@ export function toRenderedComponentPayload(render: StreamableRenderedComponent |
  * by client-side fragment loaders.
  */
 export function createRenderedComponentHeaders(
-	render:
-		| RenderedComponent
-		| RenderedComponentMetadata
-		| RenderedComponentPayload
-		| StreamableRenderedComponent,
+	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | StreamableRenderedComponent,
 ): Record<string, string> {
 	const metadata = toRenderedComponentMetadata(render);
 
@@ -342,11 +345,7 @@ export function createRenderedComponentHeaders(
 }
 
 function toRenderedComponentMetadata(
-	render:
-		| RenderedComponent
-		| RenderedComponentMetadata
-		| RenderedComponentPayload
-		| StreamableRenderedComponent,
+	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | StreamableRenderedComponent,
 ): RenderedComponentMetadata {
 	if ('metadata' in render) {
 		return render.metadata;

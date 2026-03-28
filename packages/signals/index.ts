@@ -416,8 +416,9 @@ export class Computed<Value> extends SignalNode<Value> {
 
 		this.dependencies = nextDependencies;
 		this.stale = false;
-		const hasChanged = !wasInitialized
-			|| (nextError === COMPUTED_NO_ERROR
+		const hasChanged =
+			!wasInitialized ||
+			(nextError === COMPUTED_NO_ERROR
 				? this.hasError || !this.equals.call(this, previousValue, nextValue)
 				: !this.hasError || previousError !== nextError);
 
@@ -485,7 +486,10 @@ export class Computed<Value> extends SignalNode<Value> {
 				continue;
 			}
 
-			this.dependencyWatcherUnsubscribers.set(dependency, dependency.addWatcher(this.handleDependencyWatcherChange));
+			this.dependencyWatcherUnsubscribers.set(
+				dependency,
+				dependency.addWatcher(this.handleDependencyWatcherChange),
+			);
 		}
 	}
 
@@ -682,9 +686,12 @@ export class Watcher {
 			}
 
 			this.signals.set(node, signal);
-			this.unsubscribers.set(node, node.addWatcher(() => {
-				this.handleSignalChange(node);
-			}));
+			this.unsubscribers.set(
+				node,
+				node.addWatcher(() => {
+					this.handleSignalChange(node);
+				}),
+			);
 		}
 
 		this.pendingSignals.clear();
@@ -717,7 +724,10 @@ export function state<Value>(initialValue: Value, options?: SignalOptions<Value>
 }
 
 /** Creates a computed signal. */
-export function computed<Value>(computeValue: ComputedCallback<Value>, options?: SignalOptions<Value>): Computed<Value> {
+export function computed<Value>(
+	computeValue: ComputedCallback<Value>,
+	options?: SignalOptions<Value>,
+): Computed<Value> {
 	return new Computed(computeValue, options);
 }
 

@@ -22,8 +22,7 @@
 		"test:lib": "bun run test:standard && bun run test:legacy",
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
-	"dependencies": {
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/signals": "workspace:*",

@@ -70,10 +70,10 @@ Minimum TypeScript setup:
 
 ```json
 {
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "@ecopages/jsx"
-  }
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx"
+	}
 }
 ```
 
@@ -92,34 +92,34 @@ The most common path is still a `RadiantComponent` that returns JSX from `render
 import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
 
 const CounterButton = ({ label, onPress }: { label: string; onPress: (event: MouseEvent) => void }) => (
-  <button type="button" on:click={onPress} aria={{ label }}>
-    {label}
-  </button>
+	<button type="button" on:click={onPress} aria={{ label }}>
+		{label}
+	</button>
 );
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantComponent {
-  @prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
 
-  private readonly increment = () => {
-    this.count += 1;
-  };
+	private readonly increment = () => {
+		this.count += 1;
+	};
 
-  private readonly decrement = () => {
-    this.count -= 1;
-  };
+	private readonly decrement = () => {
+		this.count -= 1;
+	};
 
-  override render() {
-    return (
-      <section class="counter" data={{ state: this.count > 0 ? 'active' : 'idle' }}>
-        <h2>Count: {this.count}</h2>
-        <div class="controls">
-          <CounterButton label="Decrement" onPress={this.decrement} />
-          <CounterButton label="Increment" onPress={this.increment} />
-        </div>
-      </section>
-    );
-  }
+	override render() {
+		return (
+			<section class="counter" data={{ state: this.count > 0 ? 'active' : 'idle' }}>
+				<h2>Count: {this.count}</h2>
+				<div class="controls">
+					<CounterButton label="Decrement" onPress={this.decrement} />
+					<CounterButton label="Increment" onPress={this.increment} />
+				</div>
+			</section>
+		);
+	}
 }
 ```
 
@@ -152,30 +152,28 @@ If you need app-level mounting outside a `RadiantComponent`, use the DOM root he
 import { createRoot } from '@ecopages/jsx';
 
 function DirectHandlers() {
-  function handleClick() {
-    console.log('Click');
-  }
+	function handleClick() {
+		console.log('Click');
+	}
 
-  const handleInput = (event: Event) => {
-    console.log((event.currentTarget as HTMLInputElement).value);
-  };
+	const handleInput = (event: Event) => {
+		console.log((event.currentTarget as HTMLInputElement).value);
+	};
 
-  return (
-    <>
-      <button on:click={handleClick}>Log click</button>
-      <button on-delegate:click={handleClick}>
-        Delegated click
-      </button>
-      <input on:input={handleInput} />
-    </>
-  );
+	return (
+		<>
+			<button on:click={handleClick}>Log click</button>
+			<button on-delegate:click={handleClick}>Delegated click</button>
+			<input on:input={handleInput} />
+		</>
+	);
 }
 
 const container = document.querySelector('#app');
 
 if (container instanceof HTMLElement) {
-  const root = createRoot(container);
-  root.render(<DirectHandlers />);
+	const root = createRoot(container);
+	root.render(<DirectHandlers />);
 }
 ```
 
@@ -189,9 +187,9 @@ Event delegation is just using that travel on purpose. Instead of attaching one 
 
 Radiant keeps those choices explicit instead of hiding them behind a synthetic event system.
 
-| Use this | When you want | Runtime shape |
-| --- | --- | --- |
-| `on:*` | Exact browser listener semantics on that element | Radiant calls `addEventListener(...)` on the element itself |
+| Use this        | When you want                                    | Runtime shape                                                                                      |
+| --------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `on:*`          | Exact browser listener semantics on that element | Radiant calls `addEventListener(...)` on the element itself                                        |
 | `on-delegate:*` | Fewer listeners for common bubbling interactions | Radiant attaches one listener per event type on the render root and dispatches to matched elements |
 
 `on:*` is the safe default. It behaves like the platform, it works with bubbling and non-bubbling events, and the handler receives the native browser event object.
@@ -231,14 +229,14 @@ let count = 0;
 const subscribers = new Set<(value: number) => void>();
 
 const boundCount = createSubscribableJsxValue({
-  getValue: () => count,
-  subscribe: (notify) => {
-    subscribers.add(notify);
+	getValue: () => count,
+	subscribe: (notify) => {
+		subscribers.add(notify);
 
-    return () => {
-      subscribers.delete(notify);
-    };
-  },
+		return () => {
+			subscribers.delete(notify);
+		};
+	},
 });
 
 const root = createRoot(document.querySelector('#app') as HTMLElement);
@@ -247,7 +245,7 @@ root.render(<p>Count: {boundCount}</p>);
 count += 1;
 
 for (const subscriber of subscribers) {
-  subscriber(count);
+	subscriber(count);
 }
 ```
 
@@ -262,9 +260,9 @@ Use `renderToString(...)` for HTML generation. Enable `hydrate: true` only when 
 import { renderToString } from '@ecopages/jsx';
 
 const view = (
-  <button class="action" hidden={false} aria={{ label: 'Ship order' }}>
-    Ship
-  </button>
+	<button class="action" hidden={false} aria={{ label: 'Ship order' }}>
+		Ship
+	</button>
 );
 
 const html = renderToString(view);
@@ -279,12 +277,12 @@ Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dyn
 
 ```tsx
 const view = (
-  <section>
-    <h2>Status</h2>
-    <svg viewBox="0 0 24 24" aria={{ hidden: true }}>
-      <circle cx="12" cy="12" r="10" />
-    </svg>
-  </section>
+	<section>
+		<h2>Status</h2>
+		<svg viewBox="0 0 24 24" aria={{ hidden: true }}>
+			<circle cx="12" cy="12" r="10" />
+		</svg>
+	</section>
 );
 ```
 
@@ -296,14 +294,14 @@ When `jsxImportSource` points at `@ecopages/jsx`, custom elements should augment
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 
 type UserCardProps = {
-  name: string;
-  isAdmin: boolean;
+	name: string;
+	isAdmin: boolean;
 };
 
 declare module '@ecopages/jsx/jsx-runtime' {
-  interface JsxCustomIntrinsicElements {
-    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
-  }
+	interface JsxCustomIntrinsicElements {
+		'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+	}
 }
 ```
 
@@ -311,17 +309,17 @@ declare module '@ecopages/jsx/jsx-runtime' {
 
 ```tsx
 type CardProps = {
-  title: string;
-  children?: import('@ecopages/jsx').JsxRenderable;
+	title: string;
+	children?: import('@ecopages/jsx').JsxRenderable;
 };
 
 const Card = ({ title, children }: CardProps) => (
-  <>
-    <article class="card">
-      <h2>{title}</h2>
-      {children}
-    </article>
-  </>
+	<>
+		<article class="card">
+			<h2>{title}</h2>
+			{children}
+		</article>
+	</>
 );
 ```
 
@@ -346,11 +344,11 @@ Use `prop:*` when the target must receive a real property value instead of a ser
 
 ```tsx
 <section
-  class={['panel', isActive && 'panel--active']}
-  classes={['surface', { interactive: true }]}
-  style={{ backgroundColor: 'white', fontSize: '14px' }}
-  data={{ tid: 'panel', state: 'ready' }}
-  aria={{ live: 'polite' }}
+	class={['panel', isActive && 'panel--active']}
+	classes={['surface', { interactive: true }]}
+	style={{ backgroundColor: 'white', fontSize: '14px' }}
+	data={{ tid: 'panel', state: 'ready' }}
+	aria={{ live: 'polite' }}
 />
 ```
 

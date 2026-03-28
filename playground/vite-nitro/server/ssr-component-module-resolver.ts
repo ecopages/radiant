@@ -1,4 +1,7 @@
-import type { ServerRenderableComponent, ServerRenderableComponentConstructor } from '@ecopages/radiant/server/render-component';
+import type {
+	ServerRenderableComponent,
+	ServerRenderableComponentConstructor,
+} from '@ecopages/radiant/server/render-component';
 import { getSsrClientModuleRoutePath } from './ssr-client-modules';
 
 type ModuleExportRecord = Record<string, unknown>;

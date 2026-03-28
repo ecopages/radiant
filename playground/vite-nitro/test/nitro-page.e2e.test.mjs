@@ -109,7 +109,10 @@ test('Nitro page-level controls update client and route state after clicks', bro
 		await page.locator('[data-ref="nitro-fetch-button"]').click();
 
 		await waitForLocatorText(page.locator('[data-ref="nitro-status"]'), 'Status: ready');
-		await waitForLocatorText(page.locator('[data-ref="nitro-message"]'), 'Hello from Nitro via Vite + Nitro playground');
+		await waitForLocatorText(
+			page.locator('[data-ref="nitro-message"]'),
+			'Hello from Nitro via Vite + Nitro playground',
+		);
 		await waitForLocatorTextMatch(page.locator('[data-ref="nitro-server-time"]'), /^(?!n\/a).+/);
 	});
 });
@@ -231,76 +234,97 @@ test('Nitro playground signal board handles filtered selection edge cases', brow
 	});
 });
 
-test('Nitro SSR fragment controls swap rendered components and hydrate fetched markup', browserTestOptions, async () => {
-	await withBrowserPage(async (page) => {
-		await gotoPlayground(page);
+test(
+	'Nitro SSR fragment controls swap rendered components and hydrate fetched markup',
+	browserTestOptions,
+	async () => {
+		await withBrowserPage(async (page) => {
+			await gotoPlayground(page);
 
-		const ssrPanel = getPanel(page, 'SSR route');
-		assert.equal(await page.locator('radiant-component-server-card').count(), 0);
-		assert.equal(await page.evaluate(() => customElements.get('radiant-component-server-card') === undefined), true);
-		await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
-		await waitForLocatorAttribute(ssrPanel.locator('[data-ref="ssr-preview"]'), 'data-tag-name', 'radiant-component-counter');
-		await waitForLocatorText(ssrPanel.locator('[data-generated-at]'), await nonPlaceholderGeneratedAt(ssrPanel));
-		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
+			const ssrPanel = getPanel(page, 'SSR route');
+			assert.equal(await page.locator('radiant-component-server-card').count(), 0);
+			assert.equal(
+				await page.evaluate(() => customElements.get('radiant-component-server-card') === undefined),
+				true,
+			);
+			await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
+			await waitForLocatorAttribute(
+				ssrPanel.locator('[data-ref="ssr-preview"]'),
+				'data-tag-name',
+				'radiant-component-counter',
+			);
+			await waitForLocatorText(
+				ssrPanel.locator('[data-generated-at]'),
+				await nonPlaceholderGeneratedAt(ssrPanel),
+			);
+			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
 
-		const previewCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-counter');
-		await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
+			const previewCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-counter');
+			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
 
-		await ssrPanel.getByRole('button', { name: 'Fetch server-card fragment' }).click();
-		await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
-		await waitForLocatorAttribute(
-			ssrPanel.locator('[data-ref="ssr-preview"]'),
-			'data-tag-name',
-			'radiant-component-server-card',
-		);
-		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-component-server-card/);
+			await ssrPanel.getByRole('button', { name: 'Fetch server-card fragment' }).click();
+			await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
+			await waitForLocatorAttribute(
+				ssrPanel.locator('[data-ref="ssr-preview"]'),
+				'data-tag-name',
+				'radiant-component-server-card',
+			);
+			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-component-server-card/);
 
-		const previewServerCard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-server-card');
-		assert.equal(await page.evaluate(() => customElements.get('radiant-component-server-card') !== undefined), true);
-		await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: idle');
-		await previewServerCard.getByRole('button', { name: 'Fetch from Nitro' }).click();
-		await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: ready');
-		await waitForLocatorText(
-			previewServerCard.locator('.component-copy').nth(1),
-			'Hello from Nitro via Vite + Nitro playground',
-		);
-		await waitForLocatorTextMatch(previewServerCard.locator('.component-meta'), /^Server time: (?!n\/a).+/);
+			const previewServerCard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-server-card');
+			assert.equal(
+				await page.evaluate(() => customElements.get('radiant-component-server-card') !== undefined),
+				true,
+			);
+			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: idle');
+			await previewServerCard.getByRole('button', { name: 'Fetch from Nitro' }).click();
+			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: ready');
+			await waitForLocatorText(
+				previewServerCard.locator('.component-copy').nth(1),
+				'Hello from Nitro via Vite + Nitro playground',
+			);
+			await waitForLocatorTextMatch(previewServerCard.locator('.component-meta'), /^Server time: (?!n\/a).+/);
 
-		await ssrPanel.getByRole('button', { name: 'Fetch signal-board fragment' }).click();
-		await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
-		await waitForLocatorAttribute(
-			ssrPanel.locator('[data-ref="ssr-preview"]'),
-			'data-tag-name',
-			'radiant-signal-release-board',
-		);
-		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-signal-release-board/);
+			await ssrPanel.getByRole('button', { name: 'Fetch signal-board fragment' }).click();
+			await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
+			await waitForLocatorAttribute(
+				ssrPanel.locator('[data-ref="ssr-preview"]'),
+				'data-tag-name',
+				'radiant-signal-release-board',
+			);
+			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-signal-release-board/);
 
-		const previewSignalBoard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-signal-release-board');
-		await waitForLocatorText(previewSignalBoard.locator('.component-status').first(), 'Board: ready');
-		await waitForLocatorText(
-			previewSignalBoard.locator('.signal-story__headline'),
-			'Docs release summary is the current focus with 1 visible tickets in the rehearsal queue.',
-		);
-		await waitForLocatorTextMatch(
-			previewSignalBoard.locator('.component-meta').nth(0),
-			/Nitro preloaded the release rehearsal with a launch-ready focus\./,
-		);
+			const previewSignalBoard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-signal-release-board');
+			await waitForLocatorText(previewSignalBoard.locator('.component-status').first(), 'Board: ready');
+			await waitForLocatorText(
+				previewSignalBoard.locator('.signal-story__headline'),
+				'Docs release summary is the current focus with 1 visible tickets in the rehearsal queue.',
+			);
+			await waitForLocatorTextMatch(
+				previewSignalBoard.locator('.component-meta').nth(0),
+				/Nitro preloaded the release rehearsal with a launch-ready focus\./,
+			);
 
-		await previewSignalBoard.getByRole('button', { name: 'Advance selected' }).click();
-		await waitForLocatorText(
-			previewSignalBoard.locator('.signal-story__headline'),
-			'No tickets match the current filter. Cycle the view to restore the full release board.',
-		);
+			await previewSignalBoard.getByRole('button', { name: 'Advance selected' }).click();
+			await waitForLocatorText(
+				previewSignalBoard.locator('.signal-story__headline'),
+				'No tickets match the current filter. Cycle the view to restore the full release board.',
+			);
 
-		await ssrPanel.getByRole('button', { name: 'Fetch counter fragment' }).click();
-		await waitForLocatorAttribute(ssrPanel.locator('[data-ref="ssr-preview"]'), 'data-tag-name', 'radiant-component-counter');
-		await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
-		await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
+			await ssrPanel.getByRole('button', { name: 'Fetch counter fragment' }).click();
+			await waitForLocatorAttribute(
+				ssrPanel.locator('[data-ref="ssr-preview"]'),
+				'data-tag-name',
+				'radiant-component-counter',
+			);
+			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
+			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
 
-		await previewCounter.getByRole('button', { name: 'Increment', exact: true }).click();
-		await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 7');
-	});
-});
+			await previewCounter.getByRole('button', { name: 'Increment', exact: true }).click();
+			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 7');
+		});
+	},
+);
 
 async function waitForContextSummary(page, expectedText) {
 	try {

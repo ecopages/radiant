@@ -121,7 +121,10 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 		const value = resolveReactiveSnapshot(template.values[index]);
 
 		if (!interpolationPart || interpolationPart.type === 'child') {
-			html += interpolationPart && interpolationPart.type === 'child' ? interpolationPart.string : (template.strings[index] ?? '');
+			html +=
+				interpolationPart && interpolationPart.type === 'child'
+					? interpolationPart.string
+					: (template.strings[index] ?? '');
 			html += renderChild(value as JsxRenderable, context);
 			continue;
 		}

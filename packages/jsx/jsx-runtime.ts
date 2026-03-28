@@ -224,7 +224,7 @@ type JsxEventBindings<ElementType extends EventTarget> = {
 		GlobalEventHandlersEventMap[EventName],
 		ElementType
 	>;
-	} & {
+} & {
 	[EventName in DelegatedEventName as `on-delegate:${EventName}`]?: EventName extends keyof GlobalEventHandlersEventMap
 		? JsxEventListener<GlobalEventHandlersEventMap[EventName], ElementType>
 		: JsxEventListener<Event, ElementType>;
@@ -1039,10 +1039,10 @@ export function createSubscribableJsxValue<Value extends JsxRenderable>(config: 
 }
 
 /**
-	 * Creates a lightweight node-like wrapper around trusted serialized markup.
-	 *
-	 * Use this when a caller already has final HTML and needs to hand it to the
-	 * JSX renderers without constructing a live DOM node first.
+ * Creates a lightweight node-like wrapper around trusted serialized markup.
+ *
+ * Use this when a caller already has final HTML and needs to hand it to the
+ * JSX renderers without constructing a live DOM node first.
  */
 export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
 	return {

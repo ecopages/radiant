@@ -1,9 +1,6 @@
 import { RadiantComponent, contextSelector, customElement, state } from '@ecopages/radiant';
 import { radiantSignalReleaseBoardContext } from './radiant-signal-release-board.context.ts';
-import {
-	createEmptyReleaseBoardFocusView,
-	type ReleaseBoardStore,
-} from './radiant-signal-release-board.model.ts';
+import { createEmptyReleaseBoardFocusView, type ReleaseBoardStore } from './radiant-signal-release-board.model.ts';
 
 @customElement('radiant-signal-release-board-focus')
 export class RadiantSignalReleaseBoardFocusElement extends RadiantComponent {

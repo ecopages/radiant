@@ -35,7 +35,12 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 		proto.connectedCallback = function (this: RadiantElement) {
 			originalConnectedCallback.call(this);
 
-			if (connectContextSelection(this, context, (value) => applySelectedContext(this, value), { select, subscribe })) {
+			if (
+				connectContextSelection(this, context, (value) => applySelectedContext(this, value), {
+					select,
+					subscribe,
+				})
+			) {
 				return;
 			}
 		};

@@ -85,7 +85,10 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 	part.unsubscribe = undefined;
 	part.source = undefined;
 
-	if (!part.previousValue || (!isEventListenerObject(part.previousValue) && typeof part.previousValue !== 'function')) {
+	if (
+		!part.previousValue ||
+		(!isEventListenerObject(part.previousValue) && typeof part.previousValue !== 'function')
+	) {
 		part.previousValue = undefined;
 		return;
 	}
@@ -170,7 +173,11 @@ export function updateLiveAttributePart(
 			applyResolvedAttributeBinding(part, resolveReactiveSnapshot(nextValue), nextDeferredProperties);
 			flushDeferredProperties(nextDeferredProperties);
 		});
-		applyResolvedAttributeBinding(part, resolveReactiveSnapshot(readReactiveChildSourceValue(value)), deferredProperties);
+		applyResolvedAttributeBinding(
+			part,
+			resolveReactiveSnapshot(readReactiveChildSourceValue(value)),
+			deferredProperties,
+		);
 		return;
 	}
 
@@ -360,7 +367,15 @@ export function updateRangeContent(
 	}
 
 	if (isReactiveChildSource(nextValue)) {
-		return mountReactiveChildSource(startMarker, endMarker, nextValue, currentContent, rootTarget, deferredProperties, runtime);
+		return mountReactiveChildSource(
+			startMarker,
+			endMarker,
+			nextValue,
+			currentContent,
+			rootTarget,
+			deferredProperties,
+			runtime,
+		);
 	}
 
 	const iterableChildren = getIterableChildren(nextValue);
@@ -392,7 +407,10 @@ export function updateRangeContent(
 	}
 
 	if (isTemplateResultLike(nextValue)) {
-		if (currentContent.kind === 'template' && currentContent.instance.compiled === runtime.getCompiledTemplate(nextValue)) {
+		if (
+			currentContent.kind === 'template' &&
+			currentContent.instance.compiled === runtime.getCompiledTemplate(nextValue)
+		) {
 			currentContent.instance.update(nextValue.values, deferredProperties);
 			return currentContent;
 		}
@@ -450,7 +468,7 @@ function updateKeyedChildren(
 					kind: 'keyed-list' as const,
 					order: [],
 					records: new Map<JsxKey, MountedRangeRecord>(),
-			  };
+				};
 
 	if (current.kind !== 'keyed-list') {
 		disposeMountedRangeContent(current);
@@ -522,7 +540,7 @@ function updateIndexedChildren(
 			: {
 					kind: 'indexed-list' as const,
 					records: [],
-			  };
+				};
 
 	if (current.kind !== 'indexed-list') {
 		disposeMountedRangeContent(current);

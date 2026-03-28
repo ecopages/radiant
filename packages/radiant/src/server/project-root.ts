@@ -23,9 +23,7 @@ export type ResolveProjectRootOptions = {
  */
 export function resolveProjectRoot(options: ResolveProjectRootOptions = {}): string {
 	const candidateStarts = dedupeDirectories(
-		options.startDirectories?.length
-			? options.startDirectories
-			: [process.cwd(), import.meta.dirname],
+		options.startDirectories?.length ? options.startDirectories : [process.cwd(), import.meta.dirname],
 	);
 	const stopAt = resolve(options.stopAt ?? '/');
 
@@ -97,13 +95,12 @@ function dedupeDirectories(directories: string[]): string[] {
 	return Array.from(new Set(directories.map((directory) => resolve(directory))));
 }
 
-function createResolveProjectRootError(
-	options: ResolveProjectRootOptions,
-	startDirectories: string[],
-): string {
+function createResolveProjectRootError(options: ResolveProjectRootOptions, startDirectories: string[]): string {
 	const markerSummary = [
 		options.packageName ? `package name ${JSON.stringify(options.packageName)}` : undefined,
-		options.requiredPaths?.length ? `paths ${options.requiredPaths.map((path) => JSON.stringify(path)).join(', ')}` : undefined,
+		options.requiredPaths?.length
+			? `paths ${options.requiredPaths.map((path) => JSON.stringify(path)).join(', ')}`
+			: undefined,
 	]
 		.filter((marker): marker is string => typeof marker === 'string')
 		.join(' and ');

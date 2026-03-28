@@ -1,9 +1,6 @@
 import { RadiantComponent, contextSelector, customElement, state } from '@ecopages/radiant';
 import { radiantSignalReleaseBoardContext } from './radiant-signal-release-board.context.ts';
-import {
-	createEmptyReleaseBoardQueueView,
-	type ReleaseBoardStore,
-} from './radiant-signal-release-board.model.ts';
+import { createEmptyReleaseBoardQueueView, type ReleaseBoardStore } from './radiant-signal-release-board.model.ts';
 
 @customElement('radiant-signal-release-board-queue')
 export class RadiantSignalReleaseBoardQueueElement extends RadiantComponent {
@@ -23,11 +20,7 @@ export class RadiantSignalReleaseBoardQueueElement extends RadiantComponent {
 					<button type="button" on:click={view.actions.cycleFilter}>
 						Cycle filter
 					</button>
-					<button
-						type="button"
-						on:click={view.actions.focusNextTicket}
-						disabled={!view.canFocusNext}
-					>
+					<button type="button" on:click={view.actions.focusNextTicket} disabled={!view.canFocusNext}>
 						Focus next
 					</button>
 					<button

@@ -93,7 +93,6 @@ describe('@reactiveProp', () => {
 
 			expect(customElement.bool).toEqual(false);
 		});
-
 	});
 
 	describe('object', () => {

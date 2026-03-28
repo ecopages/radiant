@@ -64,7 +64,9 @@ export function printComparisonReport(bunResult: MitataResult, nodeResult: Mitat
 	printTable(rows);
 
 	console.log('');
-	console.log('Metric guide: avg is the mean per iteration, min/max are the fastest and slowest observed iterations,');
+	console.log(
+		'Metric guide: avg is the mean per iteration, min/max are the fastest and slowest observed iterations,',
+	);
 	console.log('p75 is the 75th-percentile latency, and p99 is the 99th-percentile tail latency.');
 }
 

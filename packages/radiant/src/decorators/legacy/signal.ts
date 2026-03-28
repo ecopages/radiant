@@ -23,7 +23,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 			const resolvedSource =
 				typeof options.source === 'function'
 					? options.source(element)
-					: options.source ?? (isWritableSignalLike(currentValue) ? currentValue : undefined);
+					: (options.source ?? (isWritableSignalLike(currentValue) ? currentValue : undefined));
 
 			const bind =
 				options.bind ??

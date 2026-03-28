@@ -572,9 +572,10 @@ function parseHtmlTagToken(html: string, startIndex: number): ParsedHtmlToken | 
 	const tagName = tagBody.split(/[\s/>]/, 1)[0]?.toLowerCase() ?? '';
 	const attributesStart = tagName.length;
 	const rawAttributes = tagBody.slice(attributesStart).trim();
-	const innerHtml = selfClosing || voidElementNames.has(tagName)
-		? ''
-		: extractInnerHtmlFragment(html, startIndex, endIndex, tagName);
+	const innerHtml =
+		selfClosing || voidElementNames.has(tagName)
+			? ''
+			: extractInnerHtmlFragment(html, startIndex, endIndex, tagName);
 
 	return {
 		attributes: parseAttributes(rawAttributes),
@@ -603,12 +604,20 @@ function extractInnerHtmlFragment(html: string, startIndex: number, tagEndIndex:
 			return html.slice(tagEndIndex);
 		}
 
-		if (nextTag.type === 'open' && nextTag.tagName === tagName && !nextTag.selfClosing && !voidElementNames.has(tagName)) {
+		if (
+			nextTag.type === 'open' &&
+			nextTag.tagName === tagName &&
+			!nextTag.selfClosing &&
+			!voidElementNames.has(tagName)
+		) {
 			depth += 1;
 		}
 
 		if (nextTag.type === 'close') {
-			const closingName = html.slice(nextTagIndex + 2, nextTag.end - 1).trim().toLowerCase();
+			const closingName = html
+				.slice(nextTagIndex + 2, nextTag.end - 1)
+				.trim()
+				.toLowerCase();
 
 			if (closingName === tagName) {
 				depth -= 1;
@@ -646,7 +655,7 @@ function serializeNodeHtml(node: Node): string {
 		return node.textContent ?? '';
 	}
 
-	return 'outerHTML' in node && typeof node.outerHTML === 'string' ? node.outerHTML : node.textContent ?? '';
+	return 'outerHTML' in node && typeof node.outerHTML === 'string' ? node.outerHTML : (node.textContent ?? '');
 }
 
 const voidElementNames = new Set([

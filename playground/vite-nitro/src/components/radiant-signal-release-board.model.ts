@@ -118,9 +118,7 @@ export function nextFilter(filter: ReleaseFilter): ReleaseFilter {
 }
 
 /** Creates a fresh plain snapshot for the release-board app state. */
-export function createInitialReleaseBoardState(
-	overrides: Partial<ReleaseBoardSnapshot> = {},
-): ReleaseBoardSnapshot {
+export function createInitialReleaseBoardState(overrides: Partial<ReleaseBoardSnapshot> = {}): ReleaseBoardSnapshot {
 	return {
 		filter: overrides.filter ?? 'all',
 		lastSyncAt: overrides.lastSyncAt ?? 'Not synced yet',
@@ -177,7 +175,9 @@ export function createReleaseBoardStore(options: {
 		return tickets.find((ticket) => ticket.id === state.selectedTicketId) ?? tickets[0] ?? null;
 	});
 	const blockedCount = computed(() => state.tickets.filter((ticket) => ticket.blocked).length);
-	const launchReadyCount = computed(() => state.tickets.filter((ticket) => ticket.lane === 'Launch' && !ticket.blocked).length);
+	const launchReadyCount = computed(
+		() => state.tickets.filter((ticket) => ticket.lane === 'Launch' && !ticket.blocked).length,
+	);
 	const isSyncing = computed(() => state.syncState === 'loading');
 	const actions = createReleaseBoardActions(state, syncReleaseBrief);
 
@@ -368,7 +368,8 @@ function createReleaseBoardActions(
 			}
 
 			const currentIndex = visibleTickets.findIndex((ticket) => ticket.id === state.selectedTicketId);
-			state.selectedTicketId = visibleTickets[(currentIndex + 1) % visibleTickets.length]?.id ?? visibleTickets[0].id;
+			state.selectedTicketId =
+				visibleTickets[(currentIndex + 1) % visibleTickets.length]?.id ?? visibleTickets[0].id;
 		},
 		focusTicket: (ticketId: number) => {
 			state.selectedTicketId = ticketId;
@@ -383,8 +384,11 @@ function createReleaseBoardActions(
 
 			try {
 				const payload = await syncReleaseBrief();
-				const selectedTicket = state.tickets.find((ticket) => ticket.id === state.selectedTicketId) ?? state.tickets[0] ?? null;
-				const launchReadyCount = state.tickets.filter((ticket) => ticket.lane === 'Launch' && !ticket.blocked).length;
+				const selectedTicket =
+					state.tickets.find((ticket) => ticket.id === state.selectedTicketId) ?? state.tickets[0] ?? null;
+				const launchReadyCount = state.tickets.filter(
+					(ticket) => ticket.lane === 'Launch' && !ticket.blocked,
+				).length;
 
 				state.syncState = 'ready';
 				state.syncSummary = `${payload.message} via ${payload.runtime}. ${selectedTicket?.title ?? 'Current focus'} now anchors ${launchReadyCount} launch-ready ticket${launchReadyCount === 1 ? '' : 's'}.`;

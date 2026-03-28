@@ -579,7 +579,10 @@ describe('RadiantComponent', () => {
 
 			override render() {
 				return (
-					<section data-default-slot={this.defaultSlot?.textContent ?? 'missing'} data-header-slot={this.headerSlot?.textContent ?? 'missing'}>
+					<section
+						data-default-slot={this.defaultSlot?.textContent ?? 'missing'}
+						data-header-slot={this.headerSlot?.textContent ?? 'missing'}
+					>
 						<header>
 							<slot name="header" />
 						</header>
@@ -642,7 +645,7 @@ describe('RadiantComponent', () => {
 
 	testWhenStandard('renderHostToString({ hydrate: true }) appends signal hydration scripts automatically', () => {
 		class ServerHostSignalCard extends RadiantComponent {
-				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
+			@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
 
 			override render() {
 				return <p>{this.status}</p>;

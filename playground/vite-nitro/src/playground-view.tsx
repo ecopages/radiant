@@ -182,7 +182,9 @@ export function renderPlaygroundView(
 					load richer client modules before the markup is inserted here.
 				</p>
 				<p data-generated-at={state.ssrGeneratedAt}>Generated at: {state.ssrGeneratedAt}</p>
-				<pre class="ssr-html" data-ref="ssr-html">{state.ssrMarkup || 'SSR output will appear here.'}</pre>
+				<pre class="ssr-html" data-ref="ssr-html">
+					{state.ssrMarkup || 'SSR output will appear here.'}
+				</pre>
 				<div class="ssr-preview" data-ref="ssr-preview" data-tag-name={state.ssrTagName}>
 					{options.ssrPreviewContent ?? <p>No SSR markup loaded yet.</p>}
 				</div>
@@ -207,9 +209,10 @@ export function renderPlaygroundView(
 						data-ref="nitro-fetch-button"
 						type="button"
 						on:click={callbacks.loadServerMessage}
-						disabled={options.nitroButtonDisabled ?? (state.status === 'loading')}
+						disabled={options.nitroButtonDisabled ?? state.status === 'loading'}
 					>
-						{options.nitroButtonLabelContent ?? (state.status === 'loading' ? 'Loading...' : 'Fetch /api/hello')}
+						{options.nitroButtonLabelContent ??
+							(state.status === 'loading' ? 'Loading...' : 'Fetch /api/hello')}
 					</button>
 				</div>
 				<p class="status" data-ref="nitro-status" data-status={options.nitroStatusAttribute ?? state.status}>
@@ -217,7 +220,8 @@ export function renderPlaygroundView(
 				</p>
 				<p data-ref="nitro-message">{options.nitroMessageContent ?? state.message}</p>
 				<p>
-					Server time: <span data-ref="nitro-server-time">{options.nitroServerTimeContent ?? state.serverTime}</span>
+					Server time:{' '}
+					<span data-ref="nitro-server-time">{options.nitroServerTimeContent ?? state.serverTime}</span>
 				</p>
 			</section>
 		</main>

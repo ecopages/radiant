@@ -46,8 +46,9 @@ export class RadiantSignalStoreBoard extends RadiantComponent {
 				<p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[#0f766e]">Shared store</p>
 				<h3 class="mt-2 text-[1.3rem] font-semibold text-[#0f172a]">Signal store board</h3>
 				<p class="mt-2 text-sm leading-6 text-[#475569]">
-					This component reads a module-level <code>createStore(...)</code> directly during <code>render()</code>.
-					 The focused ticket and sync chip stay in sync without an intermediate prop bridge.
+					This component reads a module-level <code>createStore(...)</code> directly during{' '}
+					<code>render()</code>. The focused ticket and sync chip stay in sync without an intermediate prop
+					bridge.
 				</p>
 				<div class="mt-4 flex flex-wrap gap-3 text-sm text-[#0f172a]">
 					<p class="rounded-[999px] bg-[#e2e8f0] px-3 py-1" data-ref="store-status">
