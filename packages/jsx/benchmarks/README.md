@@ -11,10 +11,23 @@ cd packages/jsx
 bun run bench:server
 ```
 
-`bench:server` now measures the same two SSR tasks under both runtimes and then prints a direct comparison table:
+`bench:server` now runs the full local benchmark sequence in one go:
+
+- Bun with Mitata's native view
+- Node with Mitata's native view
+- the Bun-vs-Node comparison summary
+
+That gives you all three perspectives in one command for these two SSR tasks:
 
 - `renderToString`
 - `renderToString hydrate`
+
+If you only want the explicit Bun-vs-Node comparison view, use:
+
+```bash
+cd packages/jsx
+bun run bench:server:compare
+```
 
 Under the hood the comparer runs the same measurement script twice:
 
@@ -23,9 +36,11 @@ Under the hood the comparer runs the same measurement script twice:
 
 That matters because the question we actually care about is per task: how does Bun compare with Node for the same `renderToString(...)` workload?
 
-The cross-runtime command intentionally runs Mitata in quiet mode and suppresses the duplicated per-runtime preamble, so it prints the shared page-size note once and then a compact Bun-vs-Node summary table.
+The compare command intentionally runs Mitata in quiet mode and suppresses the duplicated per-runtime preamble, so it prints the shared page-size note once and then a compact Bun-vs-Node summary table.
 
-If you want the raw single-runtime numbers without the cross-runtime table, use:
+It now also keeps an individual runtime recap for both Bun and Node before the comparison table so you can inspect the latency spread instead of only the collapsed winner/loser view.
+
+If you want the raw single-runtime numbers explicitly, use the focused commands:
 
 ```bash
 cd packages/jsx
@@ -63,13 +78,28 @@ These changes target algorithmic overhead in the renderer rather than only chang
 
 ## Benchmark Runner Choice
 
-The server benchmark now uses a small explicit timing harness instead of a benchmark framework.
+The default server benchmark command is now a combined report.
 
-- the same warmup and iteration counts run under both Bun and Node
-- the runner reports average microseconds per iteration for each SSR task
-- the comparer prints the runtime winner and the relative delta for each task
+Inside that combined run you get:
 
-This is a better fit for the current goal than a framework-oriented per-process benchmark report, because it answers the actual question directly: `renderToString` Bun vs Node, and `renderToString hydrate` Bun vs Node.
+- Bun with Mitata's native single-runtime report
+- Node with Mitata's native single-runtime report
+- the optional cross-runtime entrypoint reshaped into two views:
+
+- an individual recap for Bun and Node with `avg`, `min`, `p75`, `p99`, and `max`
+- a compact Bun-vs-Node comparison table focused on `avg / p75`
+
+Mitata emits nanosecond stats internally. The comparer prints those stats in microseconds per iteration so the numbers stay readable for page-sized SSR work.
+
+Read the recap columns like this:
+
+- `avg`: mean latency per iteration
+- `min`: fastest observed iteration
+- `p75`: 75th-percentile latency
+- `p99`: 99th-percentile latency, useful for tail spikes
+- `max`: slowest observed iteration
+
+That keeps the native Mitata output visible for both runtimes while also preserving the direct Bun-vs-Node answer in the same default run.
 
 ## Example Output
 
@@ -79,6 +109,19 @@ Typical comparison output looks like this:
 RealWorldPage output size: 169.1 KiB
 renderToString hydrate includes Radiant SSR markers — treat it as an internal regression signal, not a baseline-comparable number.
 
+Individual runtime recap (µs per iteration)
+bun 1.3.6
+benchmark                  avg  min  p75  p99   max
+-----------------------  -----  ---  ---  ---  ----
+renderToString             516  492  503  621  1035
+renderToString hydrate    2370 2241 2298 2710  4188
+
+node v24.6.0
+benchmark                  avg  min  p75  p99   max
+-----------------------  -----  ---  ---  ---  ----
+renderToString             603  580  590  702  1098
+renderToString hydrate    2552 2431 2481 2890  4470
+
 Comparison (avg / p75, in µs)
 Lower avgUs is better.
 
@@ -86,12 +129,16 @@ benchmark                bun avg/p75  node avg/p75  delta
 -----------------------  -----------  ------------  -----
 renderToString              516 / 503      603 / 590  Bun 1.17x
 renderToString hydrate    2370 / 2298    2552 / 2481  Bun 1.08x
+
+Metric guide: avg is the mean per iteration, min/max are the fastest and slowest observed iterations,
+p75 is the 75th-percentile latency, and p99 is the 99th-percentile tail latency.
 ```
 
 Read it like this:
 
 - `renderToString` is the comparable server-render result
 - `renderToString hydrate` includes extra SSR marker output and is only meaningful as an internal regression signal
+- the individual recap shows the distribution for each runtime run in microseconds per iteration
 - `bun avg/p75` and `node avg/p75` show average and p75 latency in microseconds
 - `delta` shows which runtime won and by what ratio
 - `delta` tells you the relative speed gap for that exact task

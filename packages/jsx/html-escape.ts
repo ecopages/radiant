@@ -7,9 +7,11 @@ type BunHtmlEscaper = {
 	escapeHTML(value: string): string;
 };
 
+const bunGlobal = (globalThis as typeof globalThis & { Bun?: Partial<BunHtmlEscaper> }).Bun;
+
 const bunHtmlEscaper =
-	typeof Bun !== 'undefined' && typeof (Bun as Partial<BunHtmlEscaper>).escapeHTML === 'function'
-		? (Bun as BunHtmlEscaper)
+	typeof bunGlobal?.escapeHTML === 'function'
+		? (bunGlobal as BunHtmlEscaper)
 		: undefined;
 
 /**

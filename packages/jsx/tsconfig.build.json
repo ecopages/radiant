@@ -1,0 +1,22 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"noEmit": false,
+		"outDir": "./dist",
+		"rootDir": ".",
+		"types": []
+	},
+	"include": [
+		"./index.ts",
+		"./client.ts",
+		"./jsx-runtime.ts",
+		"./jsx-dev-runtime.ts",
+		"./dom-render.ts",
+		"./dom-render/**/*.ts",
+		"./server-render.ts",
+		"./hydration-bindings.ts",
+		"./html-escape.ts"
+	]
+}
