@@ -1,18 +1,8 @@
 import type { EcoComponent } from '@ecopages/core';
-import { SwitchContent } from '../switch/switch';
 import type { RadiantSwitchProps } from '../switch/switch.script';
 
-export const ThemeToggle: EcoComponent<
-	RadiantSwitchProps & {
-		label?: string;
-		hiddenLabel?: boolean;
-	}
-> = (props) => {
-	return (
-		<theme-toggle class="radiant-switch" {...props}>
-			<SwitchContent disabled={props.disabled} />
-		</theme-toggle>
-	);
+export const ThemeToggle: EcoComponent<RadiantSwitchProps> = (props) => {
+	return <theme-toggle class="radiant-switch" {...props} />;
 };
 
 ThemeToggle.config = {
