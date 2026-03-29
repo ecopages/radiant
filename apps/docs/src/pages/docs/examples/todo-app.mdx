@@ -22,9 +22,9 @@ This is the integration example, not the first base-class example.
 
 It combines three different jobs in one flow:
 
-- a server render entry that serializes the real custom-element host
-- a `RadiantComponent` host that owns the board view and rerender boundary
-- `RadiantElement` leaf items that handle lower-level DOM interaction
+- a JSX entry that authors the provider hydration payload directly under the host
+- a `RadiantComponent` host that owns the board view and shared context provider
+- `RadiantElement` leaf items that consume that context for local interactions
 
 ## Why This Example Exists
 
@@ -32,55 +32,62 @@ The todo app is useful because it shows that `RadiantComponent` and `RadiantElem
 
 `RadiantComponent` is not replacing the item element here. The host and the leaf nodes solve different problems.
 
-## 1. Server Render Entry
+## 1. JSX Entry
 
-The docs component returns the actual host preview from `renderComponent(...)`.
+The docs preview authors the host in plain JSX and seeds the provider with a real child hydration script.
 
 ```tsx
-import { renderComponent } from '@ecopages/radiant';
-import { RadiantTodoAppElement } from './radiant-todo-app.script';
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
-export const RadiantTodoApp = async () => {
-	const data = getData();
-	const { preview } = await renderComponent(RadiantTodoAppElement, {
-		configure: (component) => {
-			component.setAttribute('class', 'todo');
-			component.provider.setContext({ todos: data.todos });
-		},
-	});
+import { createTodoSamples, type Todo } from './radiant-todo-app.script';
 
-	return preview;
+export const RadiantTodoApp = () => {
+	const initialContext = stringifyTyped<{ todos: Todo[] }, string>({ todos: createTodoSamples() });
+
+	return (
+		<radiant-todo-app class="todo">
+			<script type="application/json" data-hydration data-context-key="provider">
+				{initialContext}
+			</script>
+		</radiant-todo-app>
+	);
 };
 ```
 
-That keeps SSR aligned with the same `RadiantComponent` class the browser hydrates later.
+This keeps the preview authored as the same host tag the browser upgrades later while still giving the provider a typed SSR payload. JSON child text inside `<script type="application/json">` is emitted as raw script text, so the provider can read it back without needing an `innerHTML` escape hatch.
+
+Notice that `stringifyTyped` comes from `@ecopages/radiant/tools/stringify-typed`, not the root entrypoint. It is a low-level serialization helper rather than a core component API.
 
 ## 2. RadiantComponent Host
 
-The host owns shared state, context, and the top-level JSX render loop.
+The host owns the provider and the rerender boundary. It does not need a temporary prop bridge because the provider can read its own hydration script directly from the authored host children.
 
 ```tsx
 import {
 	type ContextProvider,
 	RadiantComponent,
 	contextSelector,
-	createContext,
 	customElement,
 	onEvent,
 	provideContext,
 } from '@ecopages/radiant';
 
-export const todoContext = createContext<TodoContext>(Symbol('todo-context'));
+import { TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
 
 @customElement('radiant-todo-app')
 export class RadiantTodoAppElement extends RadiantComponent {
 	@provideContext<typeof todoContext>({
 		context: todoContext,
-		initialValue: { todos: [], logger: new Logger() },
+		initialValue: { todos: [], logger: new TodoLogger() },
 		hydrate: Object,
-		serialize: ({ todos }) => ({ todos }),
+		serialize: ({ todos }: TodoContext) => ({ todos }),
 	})
 	provider!: ContextProvider<typeof todoContext>;
+
+	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
+	onProvidedTodosChanged() {
+		this.requestUpdate();
+	}
 
 	@onEvent({ selector: 'form', type: 'submit' })
 	submitTodo(event: FormDataEvent) {
@@ -90,25 +97,25 @@ export class RadiantTodoAppElement extends RadiantComponent {
 		const todo = formData.get('todo');
 
 		if (todo) {
-			const prevTodos = this.provider.getContext().todos;
-			const todos = [...prevTodos, { id: Date.now().toString(), text: todo.toString(), complete: false }];
-			this.provider.setContext({ todos });
+			const currentContext = this.provider.getContext();
+			const nextTodos = [
+				...currentContext.todos,
+				{ id: Date.now().toString(), text: todo.toString(), complete: false },
+			];
+
+			currentContext.logger.log(`Todo added: ${todo.toString()}`);
+			this.provider.setContext({ todos: nextTodos });
 			form.reset();
 		}
-	}
-
-	@contextSelector({ context: todoContext })
-	onTodosUpdated() {
-		this.update();
 	}
 }
 ```
 
-This is exactly where `RadiantComponent` is strongest: the host owns the view and rerenders explicitly through `render()` and `update()`. The `serialize(...)` hook keeps `logger` client-only while the todos still hydrate from SSR.
+This is the point of the example. The host keeps ownership of the shared state boundary, but the provider lets lower-level descendants work with that state without threading props and custom events through every layer. `serialize(...)` keeps the logger client-only while the todo list still hydrates from SSR.
 
 ## 3. RadiantElement Leaf Nodes
 
-Each todo item stays a `RadiantElement` because it is a lower-level custom element with its own DOM queries and event handling.
+Each todo item stays a `RadiantElement` because it is a lower-level custom element with its own DOM interaction while shared mutations flow through the context provider.
 
 ```tsx
 import {
@@ -118,39 +125,39 @@ import {
 	customElement,
 	onEvent,
 	prop,
-	query,
 } from '@ecopages/radiant';
+
+import { todoContext } from './todo-context';
 
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement {
-	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.complete = this.checkbox.checked;
-	}
 
 	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
 	toggleComplete(event: Event) {
 		const checkbox = event.target as HTMLInputElement;
+		this.complete = checkbox.checked;
+		const currentContext = this.context.getContext();
+		const nextTodos = currentContext.todos.map((todo) =>
+			todo.id === this.id ? { ...todo, complete: checkbox.checked } : todo,
+		);
 
-		this.context.setContext({
-			todos: this.context
-				.getContext()
-				.todos.map((todo) => (todo.id === this.id ? { ...todo, complete: checkbox.checked } : todo)),
-		});
+		this.context.setContext({ todos: nextTodos });
+		currentContext.logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
 	}
 }
 ```
 
-This element does not need its own host JSX render loop to be valuable.
+This element does not need its own host JSX render loop to be valuable. Its job is local DOM work plus context-backed state transitions, not top-level SSR ownership.
 
 ## What This Example Should Teach
 
 - `RadiantElement` does not need SSR in order to work.
 - `RadiantComponent` is the host-owned render mode built on top of `RadiantElement`.
+- Context can keep leaf nodes small when several descendants need the same shared state.
+- `serialize(...)` lets a provider keep client-only members without leaking them into SSR JSON.
+- Typed child `<script>` payloads remain a valid pattern for provider hydration.
 - A larger app often uses both together.
 - SSR, slots, and leaf custom elements are different concerns and do not need to be collapsed into one base class explanation.
 

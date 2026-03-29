@@ -3,39 +3,13 @@
 import {
 	type ContextProvider,
 	RadiantComponent,
-	RadiantElement,
-	consumeContext,
 	contextSelector,
-	createContext,
 	customElement,
 	onEvent,
-	prop,
 	provideContext,
-	query,
 } from '@ecopages/radiant';
-
-export type RadiantTodoProps = {
-	complete?: boolean;
-};
-
-export type Todo = {
-	id: string;
-	text: string;
-	complete: boolean;
-};
-
-export type TodoContext = {
-	todos: Todo[];
-	logger: Logger;
-};
-
-export const todoContext = createContext<TodoContext>(Symbol('todo-context'));
-
-class Logger {
-	log(message: string) {
-		console.log('%cLOGGER', 'background: #222; color: #bada55', message);
-	}
-}
+import './radiant-todo-item.script';
+import { createTodoSamples, TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
 
 const NoTodosMessage = () => {
 	return <div>No todos to show</div>;
@@ -84,55 +58,20 @@ const TodoList = ({ todos }: { todos: Todo[] }) => {
 	);
 };
 
-@customElement('radiant-todo-item')
-export class RadiantTodoItem extends RadiantElement {
-	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
-	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.complete = this.checkbox.checked;
-	}
-
-	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
-	toggleComplete(event: Event) {
-		const checkbox = event.target as HTMLInputElement;
-		const todo = this.context.getContext().todos.find((t) => t.id === this.id);
-		if (!todo) return;
-
-		this.complete = checkbox.checked;
-
-		this.context.setContext({
-			todos: this.context
-				.getContext()
-				.todos.map((t) => (t.id === this.id ? { ...t, complete: checkbox.checked } : t)),
-		});
-
-		const logger = this.context.getContext().logger;
-		logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
-	}
-
-	@onEvent({ ref: 'remove-todo', type: 'click' })
-	removeTodo() {
-		this.context.setContext({
-			todos: this.context.getContext().todos.filter((t) => t.id !== this.id),
-		});
-
-		const logger = this.context.getContext().logger;
-		logger.log(`Todo ${this.id} removed`);
-	}
-}
-
 @customElement('radiant-todo-app')
 export class RadiantTodoAppElement extends RadiantComponent {
 	@provideContext<typeof todoContext>({
 		context: todoContext,
-		initialValue: { todos: [], logger: new Logger() },
+		initialValue: { todos: [], logger: new TodoLogger() },
 		hydrate: Object,
-		serialize: ({ todos }) => ({ todos }),
+		serialize: ({ todos }: TodoContext) => ({ todos }),
 	})
 	provider!: ContextProvider<typeof todoContext>;
+
+	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
+	onProvidedTodosChanged() {
+		this.requestUpdate();
+	}
 
 	@onEvent({ selector: 'form', type: 'submit' })
 	submitTodo(event: FormDataEvent) {
@@ -142,22 +81,20 @@ export class RadiantTodoAppElement extends RadiantComponent {
 		const todo = formData.get('todo');
 
 		if (todo) {
-			const prevTodos = this.provider.getContext().todos;
-			const todos = [...prevTodos, { id: Date.now().toString(), text: todo.toString(), complete: false }];
-			this.provider.setContext({ todos });
+			const currentContext = this.provider.getContext();
+			const nextTodos = [
+				...currentContext.todos,
+				{ id: Date.now().toString(), text: todo.toString(), complete: false },
+			];
+
+			currentContext.logger.log(`Todo added: ${todo.toString()}`);
+			this.provider.setContext({ todos: nextTodos });
 			form.reset();
 		}
 	}
 
-	@contextSelector({
-		context: todoContext,
-	})
-	onTodosUpdated() {
-		this.update();
-	}
-
 	override render() {
-		const todos = this.provider?.getContext().todos ?? [];
+		const todos = this.provider.getContext().todos;
 		const todosCompleted = todos.filter((todo) => todo.complete);
 		const todosIncomplete = todos.filter((todo) => !todo.complete);
 
@@ -198,3 +135,6 @@ export class RadiantTodoAppElement extends RadiantComponent {
 		);
 	}
 }
+
+export { createTodoSamples };
+export type { Todo };
