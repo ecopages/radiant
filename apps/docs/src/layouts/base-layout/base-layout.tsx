@@ -5,12 +5,14 @@ import type { JsxRenderable } from '@ecopages/jsx';
 export type BaseLayoutProps = {
 	children: JsxRenderable;
 	class?: string;
+	showBurger?: boolean;
 };
 
-export const BaseLayout: EcoComponent<BaseLayoutProps> = ({ children, class: className }) => {
+export const BaseLayout: EcoComponent<BaseLayoutProps> = ({ children, class: className, showBurger = false }) => {
 	return (
 		<body>
 			<Header
+				showBurger={showBurger}
 				navigation={{
 					items: [
 						{
