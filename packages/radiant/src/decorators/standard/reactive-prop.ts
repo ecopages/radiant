@@ -1,5 +1,6 @@
 import type { RadiantElement, ReactivePropertyOptions } from '../../core/radiant-element.js';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { isValueOfType } from '../../utils/attribute-utils';
 
 export function reactiveProp<P = unknown>({
 	type,
@@ -8,6 +9,9 @@ export function reactiveProp<P = unknown>({
 	defaultValue,
 	bind,
 }: ReactivePropertyOptions<P>) {
+	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
+		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
+	}
 	return function <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
 		const propertyName = String(context.name);
 		const attributeKey = attribute ?? propertyName;

@@ -40,6 +40,19 @@ export function reactiveProp<T = unknown>({
 			bind,
 		});
 
+		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
+
+		Object.defineProperty(target, propertyName, {
+			get(this: RadiantElement & Record<PropertyKey, unknown>) {
+				return this[ssrStoreKey] ?? defaultValue;
+			},
+			set(this: RadiantElement & Record<PropertyKey, unknown>, value: T) {
+				this[ssrStoreKey] = value;
+			},
+			configurable: true,
+			enumerable: true,
+		});
+
 		const originalConnectedCallback = target.connectedCallback;
 
 		target.connectedCallback = function (this: RadiantElement) {

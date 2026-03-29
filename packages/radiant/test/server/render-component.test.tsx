@@ -3,6 +3,7 @@ import type { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
+import { provideContext } from '../../src/context/decorators/provide-context';
 import { RadiantComponent } from '../../src/core/radiant-component';
 import { customElement } from '../../src/decorators/custom-element';
 import { querySlot } from '../../src/decorators/query-slot';
@@ -19,6 +20,10 @@ import {
 	toRenderedComponentPayload,
 	type ServerRenderableComponent,
 } from '../../src/server/render-component';
+
+declare const __LEGACY_ENVIRONMENT__: boolean;
+
+const testWhenStandard = __LEGACY_ENVIRONMENT__ ? test.skip : test;
 
 @customElement('render-component-card-test')
 class RenderComponentCard extends RadiantComponent {
@@ -83,6 +88,29 @@ class RenderComponentContextCard extends RadiantComponent {
 				{this.getAttribute('data-selected-label') ?? 'missing'}
 			</p>
 		);
+	}
+}
+
+class RenderComponentLogger {
+	log(_message: string) {}
+}
+
+const renderComponentHydrationContext = createContext<{ count: number; logger: RenderComponentLogger }>(
+	Symbol('render-component-hydration-context'),
+);
+
+@customElement('render-component-hydrated-provider-test')
+class RenderComponentHydratedProvider extends RadiantComponent {
+	@provideContext<typeof renderComponentHydrationContext>({
+		context: renderComponentHydrationContext,
+		initialValue: { count: 0, logger: new RenderComponentLogger() },
+		hydrate: Object,
+		serialize: ({ count }) => ({ count }),
+	})
+	provider!: ContextProvider<typeof renderComponentHydrationContext>;
+
+	override render() {
+		return <p>Count: {this.provider.getContext().count}</p>;
 	}
 }
 
@@ -152,6 +180,18 @@ describe('render-component server helpers', () => {
 
 		expect(rendered.markup).toContain('data-context-provider="resolved"');
 		expect(rendered.markup).toContain('SSR context value');
+	});
+
+	testWhenStandard('renderComponent() emits valid provider hydration markup without client-only fields', async () => {
+		const rendered = await renderComponent(RenderComponentHydratedProvider, {
+			configure: (component) => {
+				component.provider.setContext({ count: 5 });
+			},
+		});
+
+		expect(rendered.markup).toContain('<script type="application/json" data-hydration data-context-key="provider">{"count":5}</script>');
+		expect(rendered.markup).not.toContain('&quot;');
+		expect(rendered.markup).not.toContain('logger');
 	});
 
 	test('renderStreamableComponent() infers metadata and returns preview output', async () => {

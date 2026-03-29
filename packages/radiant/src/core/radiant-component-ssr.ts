@@ -9,6 +9,7 @@ import { writeAttributeValue } from '../utils/attribute-utils';
 
 type RadiantComponentSsrHost = {
 	constructor: CustomElementConstructor;
+	getAuthoredHydrationScriptMarkup?: () => string | undefined;
 	getContextProviders: () => SsrSerializableContextProvider[];
 	getHydrationBindings: () => SsrSerializableHydrationBinding[];
 	getSlotProjectionScriptTag?: () => string | undefined;
@@ -43,10 +44,11 @@ export class RadiantComponentSsrService {
 
 	private renderHostContent(options: RenderToStringOptions): string {
 		const hostContent = this.host.renderToString(options);
+		const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 		const slotProjectionScript = this.host.getSlotProjectionScriptTag?.() ?? '';
 
 		if (!options.hydrate) {
-			return `${hostContent}${slotProjectionScript}`;
+			return `${hostContent}${authoredHydrationMarkup}${slotProjectionScript}`;
 		}
 
 		const hydrationScripts = this.host

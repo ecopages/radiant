@@ -10,6 +10,7 @@ import {
 
 export const DEFAULT_SLOT_NAME = '';
 export const SLOT_PROJECTION_SCRIPT_ATTRIBUTE = 'data-radiant-slot-projection';
+const AUTHORED_HYDRATION_SCRIPT_ATTRIBUTE = 'data-hydration';
 
 type ResolvedSlotProjection = {
 	containsSlots: boolean;
@@ -23,7 +24,7 @@ export function captureProjectedSlotRenderables(host: HTMLElement): Map<string, 
 	const projectedContent = new Map<string, JsxRenderable[]>();
 
 	for (const node of Array.from(host.childNodes)) {
-		if (isSlotProjectionScriptNode(node)) {
+		if (isIgnoredProjectedNode(node)) {
 			continue;
 		}
 
@@ -61,6 +62,10 @@ export function parseProjectedSlotRenderablesFromHtml(html: string): Map<string,
 	const projectedContent = new Map<string, JsxRenderable[]>();
 
 	for (const fragment of collectTopLevelHtmlFragments(html)) {
+		if (isIgnoredProjectedHtmlFragment(fragment)) {
+			continue;
+		}
+
 		appendProjectedRenderable(
 			projectedContent,
 			getSlotNameFromHtmlFragment(fragment),
@@ -69,6 +74,21 @@ export function parseProjectedSlotRenderablesFromHtml(html: string): Map<string,
 	}
 
 	return projectedContent;
+}
+
+export function collectAuthoredHydrationScriptMarkup(host: HTMLElement): string | undefined {
+	const fragments = Array.from(host.childNodes)
+		.filter((node): node is HTMLScriptElement => isHydrationScriptNode(node))
+		.map((node) => renderableToHtmlFragment(node) ?? '')
+		.filter((fragment) => fragment !== '');
+
+	return fragments.length > 0 ? fragments.join('') : undefined;
+}
+
+export function collectAuthoredHydrationScriptMarkupFromHtml(html: string): string | undefined {
+	const fragments = collectTopLevelHtmlFragments(html).filter((fragment) => isHydrationScriptHtmlFragment(fragment));
+
+	return fragments.length > 0 ? fragments.join('') : undefined;
 }
 
 /**
@@ -274,6 +294,42 @@ function isIterableRenderable(value: JsxRenderable): value is Iterable<JsxRender
 
 function isSlotProjectionScriptNode(node: Node): node is HTMLScriptElement {
 	return node instanceof HTMLScriptElement && node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE);
+}
+
+function isHydrationScriptNode(node: Node): node is HTMLScriptElement {
+	return node instanceof HTMLScriptElement && node.hasAttribute(AUTHORED_HYDRATION_SCRIPT_ATTRIBUTE);
+}
+
+function isIgnoredProjectedNode(node: Node): boolean {
+	return isSlotProjectionScriptNode(node) || isHydrationScriptNode(node);
+}
+
+function isIgnoredProjectedHtmlFragment(fragment: string): boolean {
+	return isSlotProjectionScriptHtmlFragment(fragment) || isHydrationScriptHtmlFragment(fragment);
+}
+
+function isSlotProjectionScriptHtmlFragment(fragment: string): boolean {
+	const openingTagMatch = /^<script\b([^>]*)>/i.exec(fragment);
+
+	if (!openingTagMatch) {
+		return false;
+	}
+
+	return hasScriptAttribute(openingTagMatch[1] ?? '', SLOT_PROJECTION_SCRIPT_ATTRIBUTE);
+}
+
+function isHydrationScriptHtmlFragment(fragment: string): boolean {
+	const openingTagMatch = /^<script\b([^>]*)>/i.exec(fragment);
+
+	if (!openingTagMatch) {
+		return false;
+	}
+
+	return hasScriptAttribute(openingTagMatch[1] ?? '', AUTHORED_HYDRATION_SCRIPT_ATTRIBUTE);
+}
+
+function hasScriptAttribute(attributes: string, attributeName: string): boolean {
+	return new RegExp(`(?:^|\\s)${attributeName}(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+))?`, 'i').test(attributes);
 }
 
 function isTemplateResultLike(value: JsxRenderable): value is TemplateResultLike {

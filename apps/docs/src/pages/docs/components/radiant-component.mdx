@@ -19,7 +19,7 @@ It is additive in the type hierarchy, but it is not meant to make `RadiantElemen
 Use it when the custom element itself should:
 
 - describe its host view with JSX
-- rerender through `update()`
+- rerender from tracked reactive reads during `render()`
 - hydrate SSR output in place
 - project authored light-DOM content through literal `<slot>` tags
 - expose reactive JSX bindings by default for `@prop`, `@state`, `createReactiveProp(...)`, and `createReactiveField(...)`
@@ -31,7 +31,7 @@ If you do not override `render()`, the base implementation behaves like `<slot /
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement, onUpdated, prop, state } from '@ecopages/radiant';
+import { RadiantComponent, customElement, prop, state } from '@ecopages/radiant';
 
 type CounterCardBindings = {
 	count: number;
@@ -43,11 +43,6 @@ export class CounterCard extends RadiantComponent<CounterCardBindings> {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
 	@state label = 'Counter';
 
-	@onUpdated(['count', 'label'])
-	override update(): void {
-		super.update();
-	}
-
 	private increment = () => {
 		this.count += 1;
 	};
@@ -55,8 +50,8 @@ export class CounterCard extends RadiantComponent<CounterCardBindings> {
 	override render() {
 		return (
 			<section>
-				<h2>{this.$.label}</h2>
-				<p>Count: {this.$.count}</p>
+				<h2>{this.label}</h2>
+				<p>Count: {this.count}</p>
 				<button type="button" on:click={this.increment}>
 					Increment
 				</button>
@@ -99,13 +94,19 @@ On first connect, Radiant checks whether the host already contains hydration mar
 
 In both cases the source of truth is still `render()`.
 
-### 3. `update()` Is Explicit
+### 3. Render Reads Are Tracked
 
-`render()` only describes the view. It does not mutate the DOM by itself.
+Plain reads of `@prop`, `@state`, and `@signal` members during `render()` participate in tracked invalidation.
 
-`update()` runs the DOM renderer against the host element, and rerenders remain explicit. That is why decorators such as `@onUpdated(...)` or `@contextSelector(...)` usually call `this.update()` after state changes.
+That means `this.count` and `this.label` can rerender the host without extra `@onUpdated(...)` wiring when they are part of the rendered output.
 
-### 4. Reactive JSX Bindings Default To On
+### 4. `update()` And `requestUpdate()` Still Matter
+
+`render()` still only describes the view. It does not mutate the DOM by itself.
+
+`update()` runs the DOM renderer against the host element, and `requestUpdate()` schedules a coalesced rerender. Use them when state changes happen outside tracked render reads or when a decorator such as `@contextSelector(...)` needs to refresh the host after imperative work.
+
+### 5. Reactive JSX Bindings Default To On
 
 `RadiantComponent` overrides the host binding policy inherited from `RadiantElement`.
 

@@ -10,6 +10,7 @@ import { setCustomElementTagName } from '../../src/core/custom-element-metadata'
 import { RadiantComponent } from '../../src/core/radiant-component';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
+import { prop } from '../../src/decorators/prop';
 import { querySlot } from '../../src/decorators/query-slot';
 import { reactiveProp } from '../../src/decorators/reactive-prop';
 import { signal } from '../../src/decorators/signal';
@@ -73,6 +74,32 @@ class NestedSsrBoardCard extends RadiantComponent {
 				<nested-ssr-insight-card-test />
 			</section>
 		);
+	}
+}
+
+@customElement('tracked-reactive-reads-card-test')
+class TrackedReactiveReadsCard extends RadiantComponent {
+	@prop({ type: String, defaultValue: 'Count' }) label = 'Count';
+	@state count = 1;
+	renderCount = 0;
+
+	override render() {
+		this.renderCount += 1;
+
+		return (
+			<button type="button" data-active={this.count === 1 ? 'yes' : 'no'} aria-pressed={this.count === 1}>
+				{this.label}: {this.count}
+			</button>
+		);
+	}
+}
+
+@customElement('ssr-array-prop-card-test')
+class SsrArrayPropCard extends RadiantComponent {
+	@prop({ type: Array }) items = [] as Array<{ label: string }>;
+
+	override render() {
+		return <p>{this.items.map((item) => item.label).join(', ') || 'empty'}</p>;
 	}
 }
 
@@ -402,6 +429,34 @@ describe('RadiantComponent', () => {
 			expect(html).toContain('Stage: Build / Calm / 3');
 			expect(html).not.toContain('Awaiting board context');
 			expect(html).not.toContain('Stage: Pending');
+		} finally {
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				] = previousForceServerCustomElementRender;
+			}
+		}
+	});
+
+	test('renderToString() applies array @prop values before the first server render of a JSX custom element', () => {
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		];
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		] = true;
+
+		try {
+			const html = renderToString(<ssr-array-prop-card-test items={[{ label: 'first' }, { label: 'second' }]} />);
+
+			expect(html).toContain('<ssr-array-prop-card-test items="[{&quot;label&quot;:&quot;first&quot;},{&quot;label&quot;:&quot;second&quot;}]">');
+			expect(html).toContain('<p>first, second</p>');
+			expect(html).not.toContain('[object Object]');
 		} finally {
 			if (previousForceServerCustomElementRender === undefined) {
 				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
@@ -1025,5 +1080,35 @@ describe('RadiantComponent', () => {
 
 		expect(element.$count.getValue()).toBe(1);
 		expect(element.$draft.getValue()).toBe('ready');
+	});
+
+	test('tracks plain @prop and @state reads during render without manual rerender wiring', async () => {
+		const element = document.createElement('tracked-reactive-reads-card-test') as TrackedReactiveReadsCard;
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.textContent).toBe('Count: 1');
+			expect(element.querySelector('button')?.getAttribute('data-active')).toBe('yes');
+			expect(element.querySelector('button')?.getAttribute('aria-pressed')).toBe('true');
+		});
+
+		const initialRenderCount = element.renderCount;
+		element.count = 2;
+
+		await waitFor(() => {
+			expect(element.textContent).toBe('Count: 2');
+			expect(element.querySelector('button')?.getAttribute('data-active')).toBe('no');
+			expect(element.querySelector('button')?.getAttribute('aria-pressed')).toBe('false');
+		});
+
+		expect(element.renderCount).toBe(initialRenderCount + 1);
+
+		element.label = 'Clicks';
+
+		await waitFor(() => {
+			expect(element.textContent).toBe('Clicks: 2');
+		});
+
+		expect(element.renderCount).toBe(initialRenderCount + 2);
 	});
 });

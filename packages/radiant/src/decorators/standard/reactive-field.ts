@@ -8,18 +8,22 @@ export function reactiveField<T extends RadiantElement, V>(_: undefined, context
 	context.addInitializer(function (this: T) {
 		this.defineReactiveBinding(
 			contextName,
-			(this as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ??
-				false,
+			this.shouldAutoBindReactiveMembers?.() ?? false,
+		);
+		this.registerReactiveDependencyReader(
+			contextName,
+			() => (this as unknown as Record<PropertyKey, unknown>)[privatePropertyKey],
 		);
 
 		Object.defineProperty(this, context.name, {
 			get() {
-				return this[privatePropertyKey];
+				(this as RadiantElement).trackReactiveRead(contextName);
+				return (this as unknown as Record<PropertyKey, unknown>)[privatePropertyKey];
 			},
 			set(newValue: unknown) {
-				const oldValue = this[privatePropertyKey];
+				const oldValue = (this as unknown as Record<PropertyKey, unknown>)[privatePropertyKey];
 				if (oldValue !== newValue) {
-					this[privatePropertyKey] = newValue;
+					(this as unknown as Record<PropertyKey, unknown>)[privatePropertyKey] = newValue;
 					(this as RadiantElement).notifyUpdate(contextName, oldValue, newValue);
 				}
 			},

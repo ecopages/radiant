@@ -1,5 +1,6 @@
 import type { EventEmitter } from '../tools';
 import { createSubscribableJsxValue, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
+import { trackDependency, type DependencyNode, type SignalSubscriber } from '@ecopages/signals';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
@@ -16,6 +17,84 @@ import {
 } from '../utils/attribute-utils';
 
 const RadiantElementBase = resolveRadiantElementBase();
+
+type ReactiveDependencyReader = () => unknown;
+
+class ReactiveHostDependency implements DependencyNode {
+	private readonly subscribers = new Set<SignalSubscriber<unknown>>();
+	private readonly watcherListeners = new Set<() => void>();
+	private version = 0;
+
+	constructor(private readonly read: ReactiveDependencyReader) {}
+
+	public get(): unknown {
+		trackDependency(this);
+		return this.read();
+	}
+
+	public subscribe(notify: SignalSubscriber<unknown>): () => void {
+		this.subscribers.add(notify);
+
+		return () => {
+			this.subscribers.delete(notify);
+		};
+	}
+
+	public addWatcher(notify: () => void): () => void {
+		this.watcherListeners.add(notify);
+
+		return () => {
+			this.watcherListeners.delete(notify);
+		};
+	}
+
+	public getVersion(): number {
+		return this.version;
+	}
+
+	public notify(nextValue: unknown): void {
+		this.version += 1;
+		let watcherError: unknown;
+
+		try {
+			this.notifyWatchers();
+		} catch (error) {
+			watcherError = error;
+		}
+
+		this.publish(nextValue);
+
+		if (watcherError) {
+			throw watcherError;
+		}
+	}
+
+	private publish(nextValue: unknown): void {
+		for (const subscriber of this.subscribers) {
+			subscriber(nextValue);
+		}
+	}
+
+	private notifyWatchers(): void {
+		const errors: unknown[] = [];
+
+		for (const listener of this.watcherListeners) {
+			try {
+				listener();
+			} catch (error) {
+				errors.push(error);
+			}
+		}
+
+		if (errors.length === 1) {
+			throw errors[0];
+		}
+
+		if (errors.length > 1) {
+			throw new AggregateError(errors, 'Multiple reactive dependency notifications failed.');
+		}
+	}
+}
 
 function resolveRadiantElementBase(): typeof HTMLElement {
 	if (typeof HTMLElement !== 'undefined') {
@@ -214,6 +293,19 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerConnectedCallback(callback: () => void): void;
 
 	/**
+	 * Registers a raw value reader for a reactive member so that tracked render
+	 * dependencies can read the underlying value without triggering the public
+	 * getter's dependency tracking.
+	 */
+	registerReactiveDependencyReader(property: string, read: () => unknown): void;
+
+	/**
+	 * Records a tracked read of a reactive member during a component render,
+	 * allowing the signals runtime to re-render only the affected parts.
+	 */
+	trackReactiveRead(property: string): void;
+
+	/**
 	 * Renders a template into the specified target element.
 	 * @param options - The rendering options.
 	 * @param options.target - The target element to render the template into.
@@ -265,6 +357,18 @@ export class RadiantElement<Bindings extends object = {}>
 	 * A map of reactive fields, it contains the reactive fields configured via decorators.
 	 */
 	private reactiveFields = new Map<string, ReactiveField>();
+
+	/**
+	 * Stable dependency nodes used when plain reactive member reads participate
+	 * in tracked component renders.
+	 */
+	private reactiveDependencies = new Map<string, ReactiveHostDependency>();
+
+	/**
+	 * Raw value readers for reactive members whose public getter should also
+	 * register tracked render dependencies.
+	 */
+	private reactiveDependencyReaders = new Map<string, ReactiveDependencyReader>();
 
 	/**
 	 * Stable subscribable JSX bindings keyed by reactive property name.
@@ -349,7 +453,9 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown) {
-		if (!this.updateCallbacks || oldValue === value) return;
+		if (oldValue === value) return;
+
+		this.reactiveDependencies.get(changedProperty)?.notify(value);
 		const updates = this.updateCallbacks.get(changedProperty);
 
 		if (updates) {
@@ -410,6 +516,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public registerReactiveField<T>(config: ReactiveField<T>) {
 		this.reactiveFields.set(config.name, config);
+	}
+
+	public registerReactiveDependencyReader(property: string, read: ReactiveDependencyReader): void {
+		this.reactiveDependencyReaders.set(property, read);
 	}
 
 	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
@@ -478,7 +588,6 @@ export class RadiantElement<Bindings extends object = {}>
 			return cachedBinding as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 		}
 
-		const host = this as unknown as Record<string, unknown>;
 		const binding = createSubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>({
 			getValue: () => this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>,
 			subscribe: (notify) =>
@@ -511,6 +620,32 @@ export class RadiantElement<Bindings extends object = {}>
 			enumerable: false,
 			configurable: true,
 		});
+	}
+
+	private getReactiveDependency(property: string): ReactiveHostDependency {
+		const cachedDependency = this.reactiveDependencies.get(property);
+
+		if (cachedDependency) {
+			return cachedDependency;
+		}
+
+		const dependency = new ReactiveHostDependency(() => this.readReactiveDependencyValue(property));
+		this.reactiveDependencies.set(property, dependency);
+		return dependency;
+	}
+
+	public trackReactiveRead(property: string): void {
+		trackDependency(this.getReactiveDependency(property));
+	}
+
+	private readReactiveDependencyValue(property: string): unknown {
+		const reader = this.reactiveDependencyReaders.get(property);
+
+		if (reader) {
+			return reader();
+		}
+
+		return this.readReactiveBindingValue(property as StringPropertyKey<Bindings>);
 	}
 
 	private readReactiveBindingValue<Property extends StringPropertyKey<Bindings>>(property: Property): unknown {
@@ -612,9 +747,11 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.registerReactiveField(reactiveField);
 		this.defineReactiveBinding(propertyName, bind);
+		this.registerReactiveDependencyReader(propertyName, () => this.reactiveFields.get(propertyName)?.value);
 
 		Object.defineProperty(this, propertyName, {
 			get(this: RadiantElement) {
+				this.trackReactiveRead(propertyName);
 				return this.reactiveFields.get(propertyName)?.value ?? undefined;
 			},
 			set(this: RadiantElement, newValue: T) {
@@ -656,6 +793,7 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.registerReactiveProperty(propertyMapping);
 		this.defineReactiveBinding(propertyName, bind);
+		this.registerReactiveDependencyReader(propertyName, () => this.reactiveProperties.get(propertyName)?.value);
 
 		const handleReflectRequest = (value: T) => {
 			if (reflect) {
@@ -666,6 +804,7 @@ export class RadiantElement<Bindings extends object = {}>
 
 		Object.defineProperty(this, propertyName, {
 			get: function (this: RadiantElement) {
+				this.trackReactiveRead(propertyName);
 				return this.reactiveProperties.get(propertyName)?.value ?? undefined;
 			},
 			set: function (this: RadiantElement, newValue: T) {

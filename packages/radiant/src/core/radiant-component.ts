@@ -14,6 +14,8 @@ import { RadiantElement } from './radiant-element';
 import {
 	DEFAULT_SLOT_NAME,
 	SLOT_PROJECTION_SCRIPT_ATTRIBUTE,
+	collectAuthoredHydrationScriptMarkup,
+	collectAuthoredHydrationScriptMarkupFromHtml,
 	captureProjectedSlotRenderables,
 	deserializeProjectedSlotRenderables,
 	parseProjectedSlotRenderablesFromHtml,
@@ -39,7 +41,10 @@ import {
  * - `render()` describes the view.
  * - `update()` commits the current view into the host.
  * - first render happens automatically on connect.
- * - rerenders remain explicit through `update()` or decorators such as `@onUpdated`.
+ * - plain `@prop`, `@state`, and `@signal` reads performed during `render()`
+ *   participate in tracked rerender invalidation.
+ * - `update()` and `requestUpdate()` remain available when a rerender should be
+ *   scheduled from imperative work outside those tracked reads.
  */
 export class RadiantComponent<Bindings extends object = {}> extends RadiantElement<Bindings> {
 	private isRendering = false;
@@ -55,6 +60,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	private slotProjectionVersion = 0;
 	private readonly ssr = new RadiantComponentSsrService({
 		constructor: this.constructor as CustomElementConstructor,
+		getAuthoredHydrationScriptMarkup: () => this.getAuthoredHydrationScriptMarkup(),
 		getHydrationBindings: () => this.getHydrationBindings(),
 		getSlotProjectionScriptTag: () => this.getSlotProjectionScriptTag(),
 		renderToString: (options) => this.renderToString(options),
@@ -291,6 +297,22 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 		return `<script type="application/json" ${SLOT_PROJECTION_SCRIPT_ATTRIBUTE}>${escapeScriptText(payload)}</script>`;
 	}
 
+	private getAuthoredHydrationScriptMarkup(): string | undefined {
+		const authoredHydrationMarkup = collectAuthoredHydrationScriptMarkup(this);
+
+		if (authoredHydrationMarkup) {
+			return authoredHydrationMarkup;
+		}
+
+		const innerHtml = typeof this.innerHTML === 'string' ? this.innerHTML : '';
+
+		if (innerHtml === '') {
+			return undefined;
+		}
+
+		return collectAuthoredHydrationScriptMarkupFromHtml(innerHtml);
+	}
+
 	private handleSlotProjectionMutations(records: MutationRecord[]): void {
 		let hasProjectionChanges = false;
 
@@ -319,7 +341,10 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	}
 
 	private addProjectedSlotNode(node: Node): boolean {
-		if (node instanceof HTMLScriptElement && node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE)) {
+		if (
+			node instanceof HTMLScriptElement &&
+			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute('data-hydration'))
+		) {
 			return false;
 		}
 
