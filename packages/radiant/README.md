@@ -1,58 +1,69 @@
 # Radiant
 
-Radiant is a minimalist web component library designed for simplicity and flexibility.
+Radiant is a light-DOM custom element library.
 
-It leverages the light DOM, allowing components to be styled and manipulated with standard CSS and JavaScript, unlike traditional web components that use the shadow DOM.
+It keeps browser primitives visible instead of wrapping them in a synthetic component model. You work with real custom elements, real DOM events, real attributes, and real light-DOM children. When you want JSX-backed rendering, SSR host serialization, and hydration, use `RadiantComponent`. When you want a more imperative base without JSX, use `RadiantElement`.
 
-This approach deviates from conventional [web component best practices](https://web.dev/articles/custom-elements-best-practices), offering a trade-off for a more streamlined development experience.
+Radiant deliberately does not use shadow DOM by default. That makes styling, DOM inspection, and authored child content simpler, while giving up some of the encapsulation that conventional custom-element guidance usually prefers.
 
-Ideal for any kind of projects, Radiant provides a lightweight alternative to full web components implementations, reducing unnecessary overhead.
+For the full docs site, see [radiant.ecopages.app](https://radiant.ecopages.app/).
 
-For more details, [see the docs page](https://radiant.ecopages.app/).
+## Installation
 
-## How to install it
+`@ecopages/radiant` currently expects both `@ecopages/signals` and `@ecopages/jsx` as peer dependencies.
 
-```sh
-bun install @ecopages/radiant
-```
-
-To author components with automatic JSX runtime support, install `@ecopages/jsx` as well.
+Install all three packages:
 
 ```sh
-bun install @ecopages/radiant @ecopages/jsx
+bun install @ecopages/radiant @ecopages/signals @ecopages/jsx
 ```
 
-## JSX Integration
+Important: even if you are starting from `RadiantElement`, the current package surface still depends on `@ecopages/jsx`.
 
-`RadiantComponent` is the current structured JSX-first base class.
-It keeps rerenders explicit:
+## RadiantComponent Mental Model
 
-- `render()` returns JSX directly
-- `update()` is the single rerender entrypoint
-- `@onUpdated(...)` can be used to declare which reactive fields or props should call `update()`
-- first connect can either hydrate existing light-DOM SSR markup or do a fresh client render
-- literal `<slot>` tags project authored light-DOM children into default and named insertion points
-- `renderHost()` and `renderHostToString()` let the component own its host-aware SSR output
+`RadiantComponent` is the structured JSX-first base class.
+
+- `render()` returns the current JSX view.
+- First connect automatically chooses between hydration and a fresh client render.
+- `update()` reruns `render()` and commits the current view into the host immediately.
+- `requestUpdate()` schedules one rerender in a microtask and coalesces repeated requests.
+- `@prop(...)`, `@state`, and `@signal(...)` define reactive members.
+- `@onUpdated(...)` is the bridge from reactive member changes to `update()` or `requestUpdate()` when the rendered structure needs to be recomputed.
+- `this.bindings.key`, `this.$.key`, and `this.bind('key')` expose stable JSX bindings for reactive members.
+- If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged.
+- Literal `<slot>` tags project authored light-DOM content, and `getSlotElement(...)`, `getSlotElements(...)`, or `@querySlot(...)` let component logic read the assigned elements.
+
+The key distinction is this:
+
+- Use bindings such as `this.$.count` when the shape of the view stays the same and only child values need to change.
+- Use `update()` or `requestUpdate()` when a reactive change affects the structure of the JSX tree.
+
+Signal and store reads performed directly inside `render()` also participate in rerender invalidation, so shared reactive data can drive `RadiantComponent` views without an extra wrapper layer.
+
+## Counter Example
+
+This counter shows the intended `RadiantComponent` style for stable templates: public props stay explicit, internal state stays local, and bound child values update without forcing a full rerender of the whole template.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement, onUpdated, prop } from '@ecopages/radiant';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import { RadiantComponent, customElement, prop, state } from '@ecopages/radiant';
 
 type CounterCardBindings = {
 	count: number;
 	label: string;
 };
 
+type CounterCardAttributes = {
+	label?: string;
+};
+
 @customElement('counter-card')
 export class CounterCard extends RadiantComponent<CounterCardBindings> {
-	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
-	@prop({ type: String, defaultValue: 'Counter' }) label!: string;
-
-	@onUpdated(['count', 'label'])
-	override update(): void {
-		super.update();
-	}
+	@prop({ type: String, defaultValue: 'Clicks' }) label!: string;
+	@state count = 0;
 
 	private readonly increment = () => {
 		this.count += 1;
@@ -61,11 +72,8 @@ export class CounterCard extends RadiantComponent<CounterCardBindings> {
 	override render() {
 		return (
 			<section>
-				<slot name="heading">
-					<h2>{this.bindings.label}</h2>
-				</slot>
+				<h2>{this.$.label}</h2>
 				<p>Count: {this.$.count}</p>
-				<slot />
 				<button type="button" on:click={this.increment}>
 					Increment
 				</button>
@@ -73,37 +81,87 @@ export class CounterCard extends RadiantComponent<CounterCardBindings> {
 		);
 	}
 }
-```
-
-When you use reactive JSX bindings, pass a dedicated binding shape to
-`RadiantComponent<...>` or `RadiantElement<...>` instead of the whole class type.
-That keeps binding keys limited to the reactive props or state you want JSX to
-accept.
-
-Use `this.bindings.key` for the explicit form or `this.$.key` for the short form.
-Both aliases resolve through the same cached binding objects as `bind('key')`.
-
-When the same shape also represents the component's public JSX attributes, you
-can reuse it in a custom element declaration via
-`JsxCustomElementAttributes<HTMLElement, Shape>` from `@ecopages/jsx`.
-
-```ts
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 
 declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
-		'counter-card': JsxCustomElementAttributes<HTMLElement, CounterCardBindings>;
+		'counter-card': JsxCustomElementAttributes<HTMLElement, CounterCardAttributes>;
 	}
 }
 ```
 
-`renderToString({ hydrate: true })` emits hydration markers for the component view only.
-`renderHostToString({ hydrate: true })` emits the custom-element host plus the component view, so SSR no longer needs to manually wrap `render()` output.
-The component will hydrate that SSR DOM on first connect.
-When a component uses literal `<slot>` tags, `renderHostToString()` also embeds the slot-projection payload needed to reconstruct default and named assignments on the client.
-When an SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant component modules.
+How this works:
 
-For framework adapters that need to ship SSR fragments together with lazy hydration metadata, Radiant also exposes reusable server primitives from `@ecopages/radiant/server/render-component`.
+- `@prop(...)` makes `label` part of the component's public reactive property and attribute surface.
+- `@state` is internal mutable state.
+- `this.$.label` and `this.$.count` are cached JSX bindings, so those text positions can update directly when the underlying reactive members change.
+- This example does not call `update()` because the view structure is stable. Only the bound child values change.
+- The JSX intrinsic-element declaration uses a public attribute type that is narrower than the internal binding shape. That is usually the right split.
+
+If the same type truly represents both internal bindings and public JSX attributes, you can reuse it for both. Otherwise, keep those contracts separate.
+
+### When To Call `update()`
+
+Call `update()` or `requestUpdate()` when a reactive change affects which elements should exist, not just their child values.
+
+```ts
+import { RadiantComponent, onUpdated, state } from '@ecopages/radiant';
+
+export class ResultsPanel extends RadiantComponent<{ expanded: boolean }> {
+	@state expanded = false;
+
+	@onUpdated('expanded')
+	protected rerenderView(): void {
+		this.requestUpdate();
+	}
+}
+```
+
+Use `update()` when you want the rerender immediately. Use `requestUpdate()` when several changes may happen in the same turn and one final rerender is enough.
+
+## Reactive JSX Bindings
+
+Bindings are the non-obvious part of the API, and they are worth being explicit about.
+
+`RadiantComponent<Bindings>` and `RadiantElement<Bindings>` take a dedicated binding shape, not the full class type. That keeps the binding namespace limited to the reactive props or fields you want JSX to consume.
+
+These three forms are equivalent:
+
+- `this.bindings.count`
+- `this.$.count`
+- `this.bind('count')`
+
+They all resolve through the same cached binding object.
+
+Use bindings when:
+
+- the rendered element structure stays the same
+- only text, attribute, or child-value positions need to change
+- you want the renderer to patch the owned child range instead of rerunning the whole component view
+
+Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive change should rebuild the JSX tree.
+
+## SSR And Hydration
+
+`RadiantComponent` has two SSR surfaces:
+
+- `renderToString()` serializes the component view only.
+- `renderHostToString()` serializes the custom-element host together with the current view.
+
+In practice, `renderHostToString()` is the right default for full component SSR because it emits `<my-element>...</my-element>` instead of only the view fragment.
+
+`hydrate: true` adds hydration markers for the component view. On first connect, the component checks for those markers and hydrates in place instead of doing a fresh client render.
+
+When a component renders literal `<slot>` tags, `renderHostToString()` also serializes the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
+
+If your SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant component modules:
+
+```ts
+import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
+
+installLightDomShim();
+```
+
+For framework adapters and fragment rendering, Radiant also exposes reusable server helpers from `@ecopages/radiant/server/render-component`.
 
 ```ts
 import {
@@ -111,18 +169,18 @@ import {
 	renderComponent,
 	toRenderedComponentPayload,
 } from '@ecopages/radiant/server/render-component';
-
 import { createServerRenderEnvironment } from '@ecopages/radiant/server/light-dom-shim';
 
 const environment = createServerRenderEnvironment();
 
 const rendered = await renderComponent({
 	component: CounterCard,
+	configure: (component) => {
+		component.label = 'Server counter';
+		component.count = 4;
+	},
 	prepareHost: (host) => {
 		host.insertAdjacentHTML('beforeend', '<p>Server projected content</p>');
-	},
-	configure: (component) => {
-		component.count = 4;
 	},
 	clientModuleSrc: '/components/counter-card.js',
 	environment,
@@ -132,54 +190,62 @@ const payload = toRenderedComponentPayload(rendered);
 const headers = createRenderedComponentHeaders(rendered.metadata);
 ```
 
-```ts
-const themedRender = await renderComponent({
-	component: ContextAwareCard,
-	ssrContext: [{ context: themeContext, value: { mode: 'studio' } }],
-});
-```
+Other useful server helpers:
 
-`renderComponent()` returns the canonical render result with transport-agnostic metadata plus a JSX-compatible preview node for larger server-rendered page shells.
-`toRenderedComponentPayload()` converts that result into the flat payload shape that simple JSON or HTML fragment endpoints may prefer.
-`createServerRenderEnvironment()` gives adapters a single host-preparation entrypoint backed by the installed SSR shim.
-`prepareHost(...)` is the dedicated way to materialize authored light-DOM nodes before `querySlot()` and slot projection run during SSR.
-`authoredContent` remains the short form when the authored light DOM already exists as an HTML string.
-`ssrContext` lets standalone fragment renders consume parent-like context values during SSR without needing a real provider host.
-The shim is intentionally not a full DOM implementation; it only supports the host preparation and serialization surface used by component-aware SSR.
-All helpers infer the custom-element tag name from `@customElement(...)` metadata automatically unless you override it.
-When the framework adapter can derive the client module URL on its own, you can pass the component constructor directly and let `resolveClientModuleSrc(...)` fill that in automatically.
-
-```ts
-// server/install-radiant-ssr.ts
-import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
-
-installLightDomShim();
-
-// server/entry.ts
-import './install-radiant-ssr';
-import '../components/counter-card';
-```
+- `renderComponentToString()` returns only the host markup string.
+- `renderComponentToPayload()` returns the flat payload shape directly.
+- `renderStreamableComponent()` returns payload fields plus a JSX-compatible preview value.
+- `ssrContext` injects ambient context values for standalone fragment renders.
+- `prepareHost(...)` is the dedicated host-preparation hook when slot-aware SSR needs authored light-DOM nodes, not just an HTML string.
+- `resolveClientModuleSrc(...)` lets adapters derive the client module URL lazily from the component constructor.
 
 For the full lifecycle and SSR flow diagram, see [src/core/README.md](src/core/README.md).
 
 ## Event Handling
 
-The browser already gives you a solid event model. An interaction starts on one node, that node becomes `event.target`, and then the event may travel through the tree. When a handler runs, `event.currentTarget` is the element whose listener is active at that moment. If an event bubbles, a parent can react to something that started in a child without every child owning its own listener.
+Radiant does not invent a synthetic event layer. JSX handlers and decorators work with the native browser event object directly.
 
-That is the foundation for every event API in Radiant. Radiant does not invent a synthetic event layer. It uses the browser event object directly and then offers a few different ways to attach or emit events depending on the level you are working at.
+| Use this | When you want | Runtime shape |
+| --- | --- | --- |
+| `on:*` in JSX | The normal event API | Auto-delegates a fixed allowlist of bubbling events and falls back to direct listeners otherwise |
+| `on-native:*` in JSX | Exact element-level browser listener semantics | Always calls `addEventListener(...)` on that element |
+| `@onEvent(...)` | Class-level listening from `RadiantElement` or `RadiantComponent` | Supports `selector`, `ref`, `window`, and `document` targets |
+| `@event(...)` | A typed custom event emitter owned by the component | Dispatches a real `CustomEvent` from the host element |
 
-| Use this               | When you want                                                       | Notes                                                        |
-| ---------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `on:*` in JSX          | A native listener on the rendered element                           | Best default when you want exact browser semantics           |
-| `on-delegate:*` in JSX | Fewer listeners for common bubbling interactions                    | Root-scoped delegation for the JSX render tree               |
-| `@onEvent(...)`        | Class-level listening from a `RadiantElement` or `RadiantComponent` | Supports `selector`, `ref`, `window`, and `document` targets |
-| `@event(...)`          | A typed custom event emitter owned by the component                 | Emits a real `CustomEvent` from the host element             |
+### How JSX Event Binding Works
 
-### How Radiant Listens
+`on:*` is the default JSX event API. For a fixed allowlist of bubbling events, Radiant attaches one listener per event type on the render root and dispatches to matched elements. For all other events, `on:*` attaches directly on the element.
 
-Inside JSX, `on:*` attaches a native DOM listener to the element itself. `on-delegate:*` opts into root-scoped delegation for a curated set of bubbling events. That makes repeated interactive UI cheaper to mount without changing the event object into a framework-specific wrapper.
+Today the delegated allowlist is:
 
-At the class level, `@onEvent(...)` is the main decorator for incoming events. It can listen to:
+- `beforeinput`
+- `click`
+- `contextmenu`
+- `dblclick`
+- `focusin`
+- `focusout`
+- `input`
+- `keydown`
+- `keyup`
+- `mousedown`
+- `mouseout`
+- `mouseover`
+- `mouseup`
+- `pointerdown`
+- `pointerout`
+- `pointerover`
+- `pointerup`
+- `touchend`
+- `touchmove`
+- `touchstart`
+
+Use `on-native:*` when exact attachment semantics matter, such as when an ancestor may stop propagation before the delegated root listener runs or when you want to opt out of delegation for a supported bubbling event.
+
+Events outside the allowlist, such as `focus`, `blur`, `scroll`, `load`, `invalid`, or `dragstart`, already attach directly when authored with `on:*`.
+
+### `@onEvent(...)`
+
+At the class level, `@onEvent(...)` is the main decorator for incoming DOM events. It can listen to:
 
 - descendants that match a CSS selector
 - descendants marked with `data-ref`
@@ -189,29 +255,30 @@ At the class level, `@onEvent(...)` is the main decorator for incoming events. I
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement, onEvent } from '@ecopages/radiant';
+import { RadiantComponent, customElement, onEvent, state } from '@ecopages/radiant';
 
 @customElement('keyboard-panel')
-export class KeyboardPanel extends RadiantComponent {
-	private lastKey = '';
+export class KeyboardPanel extends RadiantComponent<{ lastKey: string }> {
+	@state lastKey = 'none';
 
 	@onEvent({ document: true, type: 'keydown' })
-	onKeydown(event: KeyboardEvent) {
+	protected onKeydown(event: KeyboardEvent): void {
 		this.lastKey = event.key;
-		this.update();
 	}
 
 	override render() {
-		return <p>Last key: {this.lastKey || 'none'}</p>;
+		return <p>Last key: {this.$.lastKey}</p>;
 	}
 }
 ```
 
-Important: `@onEvent({ selector: ... })` and `@onEvent({ ref: ... })` rely on bubbling. Today that decorator path checks `event.target.matches(...)` directly on the bubbling event, so the match is strict. If you click a nested node inside a button, the nested node must match the selector for the handler to run. For `focus` and `blur`, use `focusin` and `focusout` instead because the native `focus` and `blur` events do not bubble.
+Important: `@onEvent({ selector: ... })` and `@onEvent({ ref: ... })` currently check `event.target.matches(...)` directly. That means matching is strict against the original target, not ancestor-aware. If a nested element inside a button receives the click, the nested element must match for the handler to run.
 
-### How Radiant Emits
+Also note that selector- and ref-based `@onEvent(...)` handlers rely on bubbling. Use `focusin` and `focusout` instead of `focus` and `blur` for that pattern.
 
-Outgoing events use `@event(...)`, which gives the class a typed `EventEmitter`. Calling `.emit(detail)` dispatches a real `CustomEvent` from the host element.
+### `@event(...)`
+
+Outgoing component events use `@event(...)`, which gives the class a typed `EventEmitter`. Calling `.emit(detail)` dispatches a real `CustomEvent` from the host element.
 
 ```ts
 import { type EventEmitter, RadiantElement, customElement, event } from '@ecopages/radiant';
@@ -225,46 +292,51 @@ export class SaveButton extends RadiantElement {
 	@event({ name: 'save-requested', bubbles: true, composed: true })
 	saveRequested!: EventEmitter<SaveDetail>;
 
-	requestSave() {
+	requestSave(): void {
 		this.saveRequested.emit({ id: 'draft-1' });
 	}
 }
 ```
 
-This separation keeps the mental model clean:
+The mental model stays simple:
 
 - DOM events come in through JSX handlers or `@onEvent(...)`
 - component events go out through `@event(...)`
-- both are still ordinary browser events at runtime
+- both are ordinary browser events at runtime
 
-## Import Structure
+## Public Entry Points
 
-| Folder/Module                 | Description                                         |
-| ----------------------------- | --------------------------------------------------- |
-| `./`                          | Contains all modules.                               |
-| `./context`                   | Contains all modules related to contex.             |
-| `./context/create-context`    | Module for creating context.                        |
-| `./context/context-provider`  | Module for providing context.                       |
-| `./context/consume-context`   | Module for consuming context.                       |
-| `./context/provide-context`   | Module for providing context.                       |
-| `./context/context-selector`  | Module for selecting context.                       |
-| `./core`                      | Contains all core elements                          |
-| `./core/radiant-element`      | Module for the Radiant Element.                     |
-| `./core/radiant-component`    | Module for the JSX-first Radiant base.              |
-| `./server/light-dom-shim`     | Minimal SSR window and host preparation helpers.    |
-| `./server/render-component`   | Canonical component SSR helpers and metadata.       |
-| `./server/project-root`       | Project-root resolution helper for server adapters. |
-| `./decorators`                | Contains decorator modules.                         |
-| `./decorators/custom-element` | Decorator for custom elements.                      |
-| `./decorators/event`          | Decorator for events.                               |
-| `./decorators/on-event`       | Decorator for event handlers.                       |
-| `./decorators/on-updated`     | Decorator for update handlers.                      |
-| `./decorators/prop`           | Decorator for public reactive props.                |
-| `./decorators/query`          | Decorator for querying elements.                    |
-| `./decorators/state`          | Decorator for internal reactive state.              |
-| `./decorators/reactive-field` | Decorator for reactive fields.                      |
-| `./decorators/reactive-prop`  | Decorator for reactive properties.                  |
-| `./tools`                     | Contains utility modules.                           |
-| `./tools/stringify-typed`     | Utility for stringifying attributes.                |
-| `./tools/event-emitter`       | Utility for emitting events.                        |
-| `./utils`                     | Contains additional utility modules.                |
+These are the documented public import paths exposed by the package.
+
+| Path | Use for |
+| --- | --- |
+| `@ecopages/radiant` | Main entrypoint. Re-exports `RadiantElement`, `RadiantComponent`, common decorators, context helpers, server render helpers, and selected tools and utils |
+| `@ecopages/radiant/context` | Context-related exports as a grouped entrypoint |
+| `@ecopages/radiant/context/create-context` | Creating context keys |
+| `@ecopages/radiant/context/context-provider` | Low-level context provider class |
+| `@ecopages/radiant/context/consume-context` | `@consumeContext(...)` decorator |
+| `@ecopages/radiant/context/provide-context` | `@provideContext(...)` decorator |
+| `@ecopages/radiant/context/context-selector` | `@contextSelector(...)` decorator |
+| `@ecopages/radiant/core/radiant-element` | Non-JSX reactive custom-element base |
+| `@ecopages/radiant/core/radiant-component` | JSX-first component base |
+| `@ecopages/radiant/server/light-dom-shim` | Minimal SSR window and host-preparation helpers |
+| `@ecopages/radiant/server/render-component` | Canonical component SSR helpers and metadata utilities |
+| `@ecopages/radiant/server/project-root` | Project-root resolution helper for server adapters |
+| `@ecopages/radiant/decorators/bound` | `@bound` |
+| `@ecopages/radiant/decorators/custom-element` | `@customElement(...)` |
+| `@ecopages/radiant/decorators/debounce` | `@debounce(...)` |
+| `@ecopages/radiant/decorators/event` | `@event(...)` |
+| `@ecopages/radiant/decorators/on-event` | `@onEvent(...)` |
+| `@ecopages/radiant/decorators/on-updated` | `@onUpdated(...)` |
+| `@ecopages/radiant/decorators/prop` | `@prop(...)` |
+| `@ecopages/radiant/decorators/query` | `@query(...)` |
+| `@ecopages/radiant/decorators/query-slot` | `@querySlot(...)` |
+| `@ecopages/radiant/decorators/reactive-field` | `@reactiveField` |
+| `@ecopages/radiant/decorators/reactive-prop` | `@reactiveProp(...)` |
+| `@ecopages/radiant/decorators/signal` | `@signal(...)` |
+| `@ecopages/radiant/decorators/state` | `@state` |
+| `@ecopages/radiant/tools/stringify-typed` | Typed attribute serialization helper |
+| `@ecopages/radiant/tools/escape-script-json` | Safe JSON-for-script serialization helper |
+| `@ecopages/radiant/tools/event-emitter` | Low-level `EventEmitter` helper |
+
+Import from the root entrypoint unless you have a specific reason to pin a narrower public subpath.

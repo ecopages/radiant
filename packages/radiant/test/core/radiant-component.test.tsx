@@ -98,6 +98,26 @@ describe('RadiantComponent', () => {
 		});
 	});
 
+	test('projects direct host children by default when render() is omitted', async () => {
+		class PassthroughCard extends RadiantComponent {}
+
+		customElements.define('passthrough-card-test', PassthroughCard);
+
+		const element = document.createElement('passthrough-card-test') as PassthroughCard;
+		const summary = document.createElement('p');
+		summary.textContent = 'Projected summary';
+		const action = document.createElement('button');
+		action.type = 'button';
+		action.textContent = 'Review';
+		element.append(summary, action);
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.innerHTML).toContain('<p>Projected summary</p>');
+			expect(element.innerHTML).toContain('<button type="button">Review</button>');
+		});
+	});
+
 	test('update() rerenders the current view manually', async () => {
 		class CountCard extends RadiantComponent {
 			count = 0;
@@ -234,6 +254,17 @@ describe('RadiantComponent', () => {
 		const element = document.createElement('server-greeting-card-test') as ServerGreetingCard;
 
 		expect(element.renderToString()).toBe('<p data-ref="message">Hello SSR</p>');
+	});
+
+	test('renderToString() serializes projected default-slot content when render() is omitted', () => {
+		class ServerPassthroughCard extends RadiantComponent {}
+
+		customElements.define('server-passthrough-card-test', ServerPassthroughCard);
+
+		const element = document.createElement('server-passthrough-card-test') as ServerPassthroughCard;
+		element.innerHTML = '<p>Projected body</p><button type="button">Open</button>';
+
+		expect(element.renderToString()).toBe('<p>Projected body</p><button type="button">Open</button>');
 	});
 
 	test('projects default and named slot content in client rendering', async () => {

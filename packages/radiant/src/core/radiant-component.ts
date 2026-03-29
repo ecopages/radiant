@@ -1,6 +1,7 @@
 import {
 	hasHydrationMarkers,
 	hydrate as hydrateJsx,
+	jsx,
 	render as renderJsx,
 	renderToString as renderJsxToString,
 	type JsxRenderable,
@@ -101,9 +102,12 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 
 	/**
 	 * Returns the current component view.
+	 *
+	 * The base implementation behaves like `<slot />`, so authored host children
+	 * pass through unchanged when a subclass does not override `render()`.
 	 */
 	public render(): JsxRenderable {
-		return '';
+		return jsx('slot', {});
 	}
 
 	/**
