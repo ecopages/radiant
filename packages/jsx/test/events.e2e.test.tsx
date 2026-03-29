@@ -266,7 +266,7 @@ describe('Radiant JSX browser event bindings', () => {
 		});
 	}
 
-	test('on-delegate:click dispatches from nested descendants with normalized currentTarget', async () => {
+	test('on:click dispatches from nested descendants with normalized currentTarget', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -276,7 +276,7 @@ describe('Radiant JSX browser event bindings', () => {
 
 		root.render(
 			jsx('button', {
-				'on-delegate:click': (event: Event) => {
+				'on:click': (event: Event) => {
 					receivedCurrentTarget = event.currentTarget;
 					receivedTarget = event.target;
 					receivedEvent = event;
@@ -298,7 +298,7 @@ describe('Radiant JSX browser event bindings', () => {
 		expect(receivedTarget).toBe(nestedTarget);
 	});
 
-	test('on-delegate:click removes stale handlers when the binding becomes empty', async () => {
+	test('on:click removes stale handlers when the binding becomes empty', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -306,10 +306,10 @@ describe('Radiant JSX browser event bindings', () => {
 
 		root.render(
 			jsx('button', {
-				'on-delegate:click': () => {
+				'on:click': () => {
 					clickCount += 1;
 				},
-				children: 'Delegate',
+				children: 'Auto',
 			}),
 		);
 
@@ -321,8 +321,8 @@ describe('Radiant JSX browser event bindings', () => {
 
 		root.render(
 			jsx('button', {
-				'on-delegate:click': null,
-				children: 'Delegate',
+				'on:click': null,
+				children: 'Auto',
 			}),
 		);
 
@@ -331,5 +331,54 @@ describe('Radiant JSX browser event bindings', () => {
 
 		updatedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 		expect(clickCount).toBe(1);
+	});
+
+	test('on-native:click preserves element-level delivery when bubbling stops before the root', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let managedClickCount = 0;
+		let nativeClickCount = 0;
+
+		const stopPropagation = (event: Event) => {
+			event.stopPropagation();
+		};
+
+		root.render(
+			jsxs('section', {
+				children: [
+					jsx('div', {
+						'on-native:click': stopPropagation,
+						children: jsx('button', {
+							'on:click': () => {
+								managedClickCount += 1;
+							},
+							children: jsx('span', { children: 'Managed' }),
+						}),
+					}),
+					jsx('div', {
+						'on-native:click': stopPropagation,
+						children: jsx('button', {
+							'on-native:click': () => {
+								nativeClickCount += 1;
+							},
+							children: jsx('span', { children: 'Native' }),
+						}),
+					}),
+				],
+			}),
+		);
+
+		const managedTarget = container.querySelector('button span');
+		const nativeTarget = container.querySelectorAll('button span')[1];
+
+		expect(managedTarget).not.toBeNull();
+		expect(nativeTarget).not.toBeNull();
+
+		managedTarget?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+		expect(managedClickCount).toBe(0);
+
+		nativeTarget?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+		expect(nativeClickCount).toBe(1);
 	});
 });

@@ -35,6 +35,9 @@ const voidElementNames = new Set([
 const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
 
 import { escapeHtml } from './html-escape.ts';
+import { shouldDelegateEventBinding, type DelegatedEventName } from './event-binding-policy.ts';
+
+export type { DelegatedEventName } from './event-binding-policy.ts';
 
 /**
  * A primitive child value that the Radiant renderer can mount directly.
@@ -188,36 +191,11 @@ export interface JsxEventListenerObject<EventType extends Event = Event> {
 }
 
 /**
- * Accepted value for `on:*` bindings.
+ * Accepted value for `on:*` and `on-native:*` bindings.
  */
 export type JsxEventListener<EventType extends Event = Event, CurrentTarget extends EventTarget = EventTarget> =
 	| JsxEventHandler<EventType, CurrentTarget>
 	| JsxEventListenerObject<EventType>;
-
-/**
- * Bubbling DOM event names that Radiant can service through root-scoped delegation.
- */
-export type DelegatedEventName =
-	| 'beforeinput'
-	| 'click'
-	| 'contextmenu'
-	| 'dblclick'
-	| 'focusin'
-	| 'focusout'
-	| 'input'
-	| 'keydown'
-	| 'keyup'
-	| 'mousedown'
-	| 'mouseout'
-	| 'mouseover'
-	| 'mouseup'
-	| 'pointerdown'
-	| 'pointerout'
-	| 'pointerover'
-	| 'pointerup'
-	| 'touchend'
-	| 'touchmove'
-	| 'touchstart';
 
 type JsxEventBindings<ElementType extends EventTarget> = {
 	[EventName in keyof GlobalEventHandlersEventMap as `on:${EventName}`]?: JsxEventListener<
@@ -225,12 +203,13 @@ type JsxEventBindings<ElementType extends EventTarget> = {
 		ElementType
 	>;
 } & {
-	[EventName in DelegatedEventName as `on-delegate:${EventName}`]?: EventName extends keyof GlobalEventHandlersEventMap
-		? JsxEventListener<GlobalEventHandlersEventMap[EventName], ElementType>
-		: JsxEventListener<Event, ElementType>;
+	[EventName in keyof GlobalEventHandlersEventMap as `on-native:${EventName}`]?: JsxEventListener<
+		GlobalEventHandlersEventMap[EventName],
+		ElementType
+	>;
 } & {
 	[eventName: `on:${string}`]: JsxEventListener<Event, ElementType> | undefined;
-	[eventName: `on-delegate:${string}`]: JsxEventListener<Event, ElementType> | undefined;
+	[eventName: `on-native:${string}`]: JsxEventListener<Event, ElementType> | undefined;
 };
 
 type JsxPropertyBindings<ElementType extends object> = {
@@ -774,7 +753,7 @@ function isServerRenderableCustomElement(value: unknown): value is ServerRendera
  * Applies normalized attributes onto a server-renderable custom element instance.
  *
  * Binding rules (applied in order):
- * - `on:*`, `on-delegate:*`, and `undefined` values are skipped (event handlers are
+ * - `on:*`, `on-native:*`, and `undefined` values are skipped (event handlers are
  *   not serializable, so they are not applied during SSR).
  * - `prop:*` bindings are set directly as properties on the element.
  * - Known element properties (non-hyphenated names already present on the
@@ -791,7 +770,7 @@ function applyServerCustomElementAttributes(
 	attributes: Record<string, unknown>,
 ): void {
 	for (const [name, value] of Object.entries(attributes)) {
-		if (value === undefined || name.startsWith('on:') || name.startsWith('on-delegate:')) {
+		if (value === undefined || name.startsWith('on:') || name.startsWith('on-native:')) {
 			continue;
 		}
 
@@ -1135,8 +1114,8 @@ function appendStructuredAttributes(
  *
  * Encodes bindings using the runtime's template binding syntax so the client DOM
  * renderer can reconnect them after hydration:
- * - `on:*`  →  `@eventName=` (native event listener binding)
- * - `on-delegate:*`  →  `!eventName=` (delegated event listener binding)
+ * - `on:*`  →  `!eventName=` for delegated allowlist entries, otherwise `@eventName=`
+ * - `on-native:*`  →  `@eventName=` (always direct element listener binding)
  * - `prop:*` →  `.propertyName=` (property binding)
  * - `boolean` →  `?attrName=` (boolean attribute binding)
  * - all other values →  `attrName=` (standard attribute binding)
@@ -1156,15 +1135,16 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 
 	const bindingShapeValue = resolveBindingShapeValue(value);
 
-	if (name.startsWith('on-delegate:')) {
-		strings[strings.length - 1] += ` !${name.slice('on-delegate:'.length)}=`;
+	if (name.startsWith('on-native:')) {
+		strings[strings.length - 1] += ` @${name.slice('on-native:'.length)}=`;
 		values.push(value);
 		strings.push('');
 		return;
 	}
 
 	if (name.startsWith('on:')) {
-		strings[strings.length - 1] += ` @${name.slice(3)}=`;
+		const eventName = name.slice(3);
+		strings[strings.length - 1] += shouldDelegateEventBinding(eventName) ? ` !${eventName}=` : ` @${eventName}=`;
 		values.push(value);
 		strings.push('');
 		return;

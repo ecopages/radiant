@@ -4,12 +4,12 @@ import type { JsxRenderable, TemplateResultLike } from './jsx-runtime.ts';
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';
 /**
  * Matches a static template segment that ends with an attribute-like binding
- * placeholder such as ` class=`, ` ?hidden=`, ` @click=`, ` !click=`, or ` .value=`.
+ * placeholder such as ` class=`, ` ?hidden=`, ` @focus=`, ` !click=`, or ` .value=`.
  */
 export const ATTRIBUTE_BINDING_PATTERN = /^(.*?)(\s+)([@.?!]?)([^\s"'<>/=`]+)=$/s;
 
 /** Kinds of dynamic bindings that the JSX runtime can encode into templates. */
-export type BindingKind = 'attr' | 'bool' | 'delegate' | 'event' | 'prop';
+export type BindingKind = 'attr' | 'bool' | 'event' | 'native-event' | 'prop';
 
 /**
  * Cached metadata describing how one interpolation slot should be interpreted
@@ -77,9 +77,9 @@ export function collectHydrationBindings(value: JsxRenderable): Map<number, Hydr
 export function getBindingKind(prefix: string): BindingKind {
 	switch (prefix) {
 		case '!':
-			return 'delegate';
-		case '@':
 			return 'event';
+		case '@':
+			return 'native-event';
 		case '.':
 			return 'prop';
 		case '?':
@@ -105,7 +105,7 @@ export function parseBindingDescriptor(value: string): Pick<HydrationBinding, 'k
 	const kind = value.slice(0, separatorIndex) as BindingKind;
 	const name = value.slice(separatorIndex + 1);
 
-	if (!name || !['attr', 'bool', 'delegate', 'event', 'prop'].includes(kind)) {
+	if (!name || !['attr', 'bool', 'event', 'native-event', 'prop'].includes(kind)) {
 		return undefined;
 	}
 

@@ -142,7 +142,7 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values).toEqual(['panel stack wide surface active nested 2 0', 'Ready']);
 	});
 
-	test('on:event encodes a native event listener binding', async () => {
+	test('on:event encodes a delegated binding for supported bubbling events', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const handleClick = vi.fn();
 		const result = jsx('button', {
@@ -151,20 +151,33 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<button @click=', '>', '</button>']);
+		expect(Array.from(result.strings)).toEqual(['<button !click=', '>', '</button>']);
 		expect(result.values).toEqual([handleClick, 'Increment']);
 	});
 
-	test('on-delegate:event encodes a delegated event listener binding', async () => {
+	test('on:event encodes a direct binding when the event is outside the delegated allowlist', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const handleChange = vi.fn();
+		const result = jsx('button', {
+			'on:change': handleChange,
+			children: 'Save',
+		});
+
+		expectTemplateResultLike(result);
+		expect(Array.from(result.strings)).toEqual(['<button @change=', '>', '</button>']);
+		expect(result.values).toEqual([handleChange, 'Save']);
+	});
+
+	test('on-native:event always encodes a direct event listener binding', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const handleClick = vi.fn();
 		const result = jsx('button', {
-			'on-delegate:click': handleClick,
+			'on-native:click': handleClick,
 			children: 'Increment',
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<button !click=', '>', '</button>']);
+		expect(Array.from(result.strings)).toEqual(['<button @click=', '>', '</button>']);
 		expect(result.values).toEqual([handleClick, 'Increment']);
 	});
 

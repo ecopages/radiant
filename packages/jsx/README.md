@@ -22,8 +22,8 @@ The shortest accurate mental model is:
 - automatic JSX runtime entry points through `@ecopages/jsx/jsx-runtime` and `@ecopages/jsx/jsx-dev-runtime`
 - typed intrinsic HTML and SVG elements
 - plain function components and fragments
-- native DOM event bindings with `on:*`
-- opt-in delegated DOM event bindings with `on-delegate:*`
+- primary DOM event bindings with `on:*`
+- explicit native escape-hatch bindings with `on-native:*`
 - explicit property bindings with `prop:*`
 - boolean, `data`, `aria`, `class`, `className`, `classes`, and `style` normalization
 - direct DOM mounting with `createRoot(...)`
@@ -163,7 +163,7 @@ function DirectHandlers() {
 	return (
 		<>
 			<button on:click={handleClick}>Log click</button>
-			<button on-delegate:click={handleClick}>Delegated click</button>
+			<button on-native:click={handleClick}>Always native click</button>
 			<input on:input={handleInput} />
 		</>
 	);
@@ -187,16 +187,16 @@ Event delegation is just using that travel on purpose. Instead of attaching one 
 
 Radiant keeps those choices explicit instead of hiding them behind a synthetic event system.
 
-| Use this        | When you want                                    | Runtime shape                                                                                      |
-| --------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `on:*`          | Exact browser listener semantics on that element | Radiant calls `addEventListener(...)` on the element itself                                        |
-| `on-delegate:*` | Fewer listeners for common bubbling interactions | Radiant attaches one listener per event type on the render root and dispatches to matched elements |
+| Use this      | When you want                                                   | Runtime shape                                                                                       |
+| ------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `on:*`        | The normal event API                                            | Radiant delegates a fixed allowlist of bubbling events and falls back to direct listeners otherwise |
+| `on-native:*` | Exact element-level browser semantics even for delegated events | Radiant calls `addEventListener(...)` on the element itself                                         |
 
-`on:*` is the safe default. It behaves like the platform, it works with bubbling and non-bubbling events, and the handler receives the native browser event object.
+`on:*` is the default. For the delegated allowlist, Radiant attaches one listener per event type on the render root and dispatches to matched elements. For everything else, `on:*` attaches directly on the element. In both cases the handler receives the native browser event object.
 
-`on-delegate:*` is the performance-oriented option. It is designed for common bubbling events such as `click`, `input`, `keydown`, pointer enter or leave style flows, and touch interactions. Delegated handlers still receive the native event object, `event.target` stays real, and Radiant normalizes `event.currentTarget` to the matched element so handler code reads naturally.
+The delegated allowlist is fixed and documented: `beforeinput`, `click`, `contextmenu`, `dblclick`, `focusin`, `focusout`, `input`, `keydown`, `keyup`, `mousedown`, `mouseout`, `mouseover`, `mouseup`, `pointerdown`, `pointerout`, `pointerover`, `pointerup`, `touchend`, `touchmove`, and `touchstart`.
 
-Important: use `on:*` for events that do not bubble or that depend on exact native attachment semantics, such as `focus`, `blur`, `scroll`, `load`, `invalid`, or `dragstart`. If you write `on-delegate:*` for an event outside Radiant's delegated set, the current runtime falls back to a native listener on the element instead of forcing delegation.
+Use `on-native:*` when exact element-level attachment semantics matter, such as when an ancestor stops bubbling before the root listener runs or when you want to opt out of delegation for a supported bubbling event. Events outside the allowlist, such as `focus`, `blur`, `scroll`, `load`, `invalid`, or `dragstart`, already attach directly when authored with `on:*`.
 
 ## Fine-Grained Updates
 
@@ -323,14 +323,14 @@ const Card = ({ title, children }: CardProps) => (
 );
 ```
 
-### Native And Delegated Events
+### Event Bindings
 
 ```tsx
 <button on:click={this.handleClick}>Save</button>
-<button on-delegate:click={this.handleDelegatedClick}>Save all</button>
+<button on-native:click={this.handleNativeClick}>Save with native attachment</button>
 ```
 
-`on:*` binds a native DOM listener directly on the element. `on-delegate:*` opts into root-scoped delegation for common bubbling events. Neither mode wraps the browser event in a React-style synthetic object.
+`on:*` is the normal event API. Radiant automatically delegates compatible bubbling events for efficiency and attaches directly for everything else. `on-native:*` is the escape hatch when the handler must behave exactly like a browser listener attached on that element. Neither mode wraps the browser event in a React-style synthetic object.
 
 ### Property Bindings
 
@@ -356,9 +356,34 @@ Use `prop:*` when the target must receive a real property value instead of a ser
 
 `jsx()` and `jsxs()` return a template result object that contains:
 
+- `jsx()` is emitted when JSX produces one logical child value
+- `jsxs()` is emitted when JSX produces multiple sibling child values
+
 - static string segments
 - dynamic values
 - a stable marker used by the Radiant renderers to recognize the object shape
+
+That distinction is not cosmetic. It preserves child-slot structure from the automatic JSX transform.
+
+```tsx
+const single = <div>{items.map(renderItem)}</div>;
+const siblings = (
+	<div>
+		<span>A</span>
+		<span>B</span>
+	</div>
+);
+```
+
+The first case compiles to `jsx(...)` because the `div` has one logical child expression. Radiant keeps that iterable child grouped as one binding.
+
+The second case compiles to `jsxs(...)` because the `div` has multiple sibling children. Radiant expands those siblings into separate positional template slots.
+
+Why keep both instead of one export:
+
+- TypeScript's automatic JSX runtime emits both names, so removing one would break the compiler contract.
+- Radiant uses the distinction to decide whether `children` should stay as one grouped value or be split into sibling slots.
+- Guessing later inside one function would lose source-level intent and make the template `strings` and `values` shape less predictable.
 
 That object is an internal contract between the JSX runtime and the Radiant renderers. It is not positioned as a generic third-party virtual DOM format.
 

@@ -1,25 +1,4 @@
-const DELEGATED_EVENT_NAMES = new Set([
-	'beforeinput',
-	'click',
-	'contextmenu',
-	'dblclick',
-	'focusin',
-	'focusout',
-	'input',
-	'keydown',
-	'keyup',
-	'mousedown',
-	'mouseout',
-	'mouseover',
-	'mouseup',
-	'pointerdown',
-	'pointerout',
-	'pointerover',
-	'pointerup',
-	'touchend',
-	'touchmove',
-	'touchstart',
-]);
+import { shouldDelegateEventBinding } from '../event-binding-policy.ts';
 
 type DelegationRootState = {
 	handlers: Map<string, DelegatedEventDispatcher>;
@@ -43,13 +22,13 @@ export function isEventListenerObject(value: unknown): value is EventListenerObj
 	return typeof value === 'object' && value !== null && 'handleEvent' in value;
 }
 
-export function attachDelegatedEventListener(
+export function attachEventBindingListener(
 	rootTarget: HTMLElement,
 	element: Element,
 	eventName: string,
 	listener: EventListenerOrEventListenerObject,
 ): void {
-	if (!DELEGATED_EVENT_NAMES.has(eventName)) {
+	if (!shouldDelegateEventBinding(eventName)) {
 		element.addEventListener(eventName, listener);
 		return;
 	}
@@ -75,13 +54,13 @@ export function attachDelegatedEventListener(
 	dispatcher.elementHandlers.set(element, listener);
 }
 
-export function detachDelegatedEventListener(
+export function detachEventBindingListener(
 	rootTarget: HTMLElement,
 	element: Element,
 	eventName: string,
 	listener: EventListenerOrEventListenerObject,
 ): void {
-	if (!DELEGATED_EVENT_NAMES.has(eventName)) {
+	if (!shouldDelegateEventBinding(eventName)) {
 		element.removeEventListener(eventName, listener);
 		return;
 	}

@@ -1,9 +1,9 @@
 import type { JsxKey, KeyedJsxValue, TemplateResultLike } from '../jsx-runtime.ts';
 import { clearRangeBetween, createBoundaryMarker, insertNodesBefore, moveRangeBefore } from './dom-operations.ts';
 import {
-	attachDelegatedEventListener,
+	attachEventBindingListener,
 	clearDelegationRoot,
-	detachDelegatedEventListener,
+	detachEventBindingListener,
 	isEventListenerObject,
 } from './event-delegation.ts';
 import {
@@ -94,16 +94,16 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 	}
 
 	if (part.binding.kind === 'event') {
-		part.element.removeEventListener(part.binding.name, part.previousValue as EventListenerOrEventListenerObject);
-	}
-
-	if (part.binding.kind === 'delegate') {
-		detachDelegatedEventListener(
+		detachEventBindingListener(
 			part.rootTarget,
 			part.element,
 			part.binding.name,
 			part.previousValue as EventListenerOrEventListenerObject,
 		);
+	}
+
+	if (part.binding.kind === 'native-event') {
+		part.element.removeEventListener(part.binding.name, part.previousValue as EventListenerOrEventListenerObject);
 	}
 
 	part.previousValue = undefined;
@@ -227,21 +227,28 @@ function applyResolvedAttributeBinding(
 				part.previousValue &&
 				(typeof part.previousValue === 'function' || isEventListenerObject(part.previousValue))
 			) {
-				part.element.removeEventListener(
+				detachEventBindingListener(
+					part.rootTarget,
+					part.element,
 					part.binding.name,
 					part.previousValue as EventListenerOrEventListenerObject,
 				);
 			}
 
 			if (typeof value === 'function' || isEventListenerObject(value)) {
-				part.element.addEventListener(part.binding.name, value as EventListenerOrEventListenerObject);
+				attachEventBindingListener(
+					part.rootTarget,
+					part.element,
+					part.binding.name,
+					value as EventListenerOrEventListenerObject,
+				);
 			}
 
 			part.previousValue = value;
 			return;
 		}
 
-		case 'delegate': {
+		case 'native-event': {
 			if (part.previousValue === value) {
 				return;
 			}
@@ -250,21 +257,14 @@ function applyResolvedAttributeBinding(
 				part.previousValue &&
 				(typeof part.previousValue === 'function' || isEventListenerObject(part.previousValue))
 			) {
-				detachDelegatedEventListener(
-					part.rootTarget,
-					part.element,
+				part.element.removeEventListener(
 					part.binding.name,
 					part.previousValue as EventListenerOrEventListenerObject,
 				);
 			}
 
 			if (typeof value === 'function' || isEventListenerObject(value)) {
-				attachDelegatedEventListener(
-					part.rootTarget,
-					part.element,
-					part.binding.name,
-					value as EventListenerOrEventListenerObject,
-				);
+				part.element.addEventListener(part.binding.name, value as EventListenerOrEventListenerObject);
 			}
 
 			part.previousValue = value;
@@ -316,18 +316,18 @@ export function applyAttributeBinding(
 
 		case 'event':
 			if (typeof resolvedValue === 'function' || isEventListenerObject(resolvedValue)) {
-				element.addEventListener(binding.name, resolvedValue as EventListenerOrEventListenerObject);
-			}
-			return;
-
-		case 'delegate':
-			if (typeof resolvedValue === 'function' || isEventListenerObject(resolvedValue)) {
-				attachDelegatedEventListener(
+				attachEventBindingListener(
 					rootTarget,
 					element,
 					binding.name,
 					resolvedValue as EventListenerOrEventListenerObject,
 				);
+			}
+			return;
+
+		case 'native-event':
+			if (typeof resolvedValue === 'function' || isEventListenerObject(resolvedValue)) {
+				element.addEventListener(binding.name, resolvedValue as EventListenerOrEventListenerObject);
 			}
 			return;
 
