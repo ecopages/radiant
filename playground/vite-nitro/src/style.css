@@ -195,19 +195,8 @@ button:disabled {
 
 .component-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 	gap: 1.5rem;
 	margin-top: 1rem;
-}
-
-radiant-slot-studio-board {
-	display: block;
-	grid-column: 1 / -1;
-}
-
-radiant-signal-release-board {
-	display: block;
-	grid-column: 1 / -1;
 }
 
 .ssr-preview {
