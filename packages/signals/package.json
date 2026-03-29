@@ -24,6 +24,7 @@
 	"files": [
 		"dist/*",
 		"README.md",
+		"size-budget.json",
 		"package.json"
 	],
 	"keywords": [
@@ -45,6 +46,8 @@
 		"build:files": "bun run ./build.ts",
 		"build:types": "tsc -p tsconfig.build.json",
 		"clean": "rm -rf ./dist",
+		"size:check": "bun run ./check-size.ts",
+		"size:report": "bun run ./check-size.ts --report-only",
 		"test:lib": "vitest run"
 	},
 	"devDependencies": {

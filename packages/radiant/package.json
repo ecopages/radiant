@@ -17,6 +17,8 @@
 		"build:types": "tsc -p tsconfig.build.json && tsc-alias",
 		"clean": "rm -rf ./dist",
 		"watch:lib": "bun run ./build.ts --watch",
+		"size:check": "bun run ./check-size.ts",
+		"size:report": "bun run ./check-size.ts --report-only",
 		"test:standard": "vitest run",
 		"test:legacy": "vitest run -- --legacy",
 		"test:lib": "bun run test:standard && bun run test:legacy",
@@ -42,7 +44,8 @@
 		"@ecopages/signals": "^0.1.0"
 	},
 	"files": [
-		"/dist/*"
+		"/dist/*",
+		"size-budget.json"
 	],
 	"sideEffects": false,
 	"exports": {
@@ -152,6 +155,10 @@
 		"./tools/stringify-typed": {
 			"types": "./dist/tools/stringify-typed.d.ts",
 			"import": "./dist/tools/stringify-typed.js"
+		},
+		"./tools/render-jsx-template": {
+			"types": "./dist/tools/render-jsx-template.d.ts",
+			"import": "./dist/tools/render-jsx-template.js"
 		},
 		"./tools/escape-script-json": {
 			"types": "./dist/tools/escape-script-json.d.ts",

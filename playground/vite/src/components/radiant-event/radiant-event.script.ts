@@ -1,4 +1,5 @@
-import { type EventEmitter, RadiantElement, customElement, event, onEvent, query } from '@ecopages/radiant';
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, customElement, event, onEvent, query } from '@ecopages/radiant';
 import { debounce } from '@ecopages/radiant/decorators/debounce';
 
 enum RadiantEventEvents {

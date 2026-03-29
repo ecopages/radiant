@@ -1,0 +1,10 @@
+{
+	"bundles": [
+		{
+			"label": "index",
+			"entrypoint": "./index.ts",
+			"maxBytes": 11776,
+			"maxGzipBytes": 3584
+		}
+	]
+}

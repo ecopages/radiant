@@ -151,55 +151,9 @@ In practice, `renderHostToString()` is the right default for full component SSR 
 
 `hydrate: true` adds hydration markers for the component view. On first connect, the component checks for those markers and hydrates in place instead of doing a fresh client render.
 
-When a component renders literal `<slot>` tags, `renderHostToString()` also serializes the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
+Server runtime setup, fragment rendering helpers, and SSR-specific import guidance now live in [src/server/README.md](src/server/README.md).
 
-If your SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant component modules:
-
-```ts
-import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
-
-installLightDomShim();
-```
-
-For framework adapters and fragment rendering, Radiant also exposes reusable server helpers from `@ecopages/radiant/server/render-component`.
-
-```ts
-import {
-	createRenderedComponentHeaders,
-	renderComponent,
-	toRenderedComponentPayload,
-} from '@ecopages/radiant/server/render-component';
-import { createServerRenderEnvironment } from '@ecopages/radiant/server/light-dom-shim';
-
-const environment = createServerRenderEnvironment();
-
-const rendered = await renderComponent({
-	component: CounterCard,
-	configure: (component) => {
-		component.label = 'Server counter';
-		component.count = 4;
-	},
-	prepareHost: (host) => {
-		host.insertAdjacentHTML('beforeend', '<p>Server projected content</p>');
-	},
-	clientModuleSrc: '/components/counter-card.js',
-	environment,
-});
-
-const payload = toRenderedComponentPayload(rendered);
-const headers = createRenderedComponentHeaders(rendered.metadata);
-```
-
-Other useful server helpers:
-
-- `renderComponentToString()` returns only the host markup string.
-- `renderComponentToPayload()` returns the flat payload shape directly.
-- `renderStreamableComponent()` returns payload fields plus a JSX-compatible preview value.
-- `ssrContext` injects ambient context values for standalone fragment renders.
-- `prepareHost(...)` is the dedicated host-preparation hook when slot-aware SSR needs authored light-DOM nodes, not just an HTML string.
-- `resolveClientModuleSrc(...)` lets adapters derive the client module URL lazily from the component constructor.
-
-For the full lifecycle and SSR flow diagram, see [src/core/README.md](src/core/README.md).
+For the client lifecycle and hydration flow diagram, see [src/core/README.md](src/core/README.md).
 
 ## Event Handling
 
@@ -281,7 +235,8 @@ Also note that selector- and ref-based `@onEvent(...)` handlers rely on bubbling
 Outgoing component events use `@event(...)`, which gives the class a typed `EventEmitter`. Calling `.emit(detail)` dispatches a real `CustomEvent` from the host element.
 
 ```ts
-import { type EventEmitter, RadiantElement, customElement, event } from '@ecopages/radiant';
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, customElement, event } from '@ecopages/radiant';
 
 type SaveDetail = {
 	id: string;
@@ -310,7 +265,7 @@ These are the documented public import paths exposed by the package.
 
 | Path | Use for |
 | --- | --- |
-| `@ecopages/radiant` | Main entrypoint. Re-exports `RadiantElement`, `RadiantComponent`, common decorators, context helpers, server render helpers, and selected tools and utils |
+| `@ecopages/radiant` | Main client entrypoint. Re-exports `RadiantElement`, `RadiantComponent`, common decorators, and context helpers |
 | `@ecopages/radiant/context` | Context-related exports as a grouped entrypoint |
 | `@ecopages/radiant/context/create-context` | Creating context keys |
 | `@ecopages/radiant/context/context-provider` | Low-level context provider class |
@@ -336,7 +291,10 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/decorators/signal` | `@signal(...)` |
 | `@ecopages/radiant/decorators/state` | `@state` |
 | `@ecopages/radiant/tools/stringify-typed` | Typed attribute serialization helper |
+| `@ecopages/radiant/tools/render-jsx-template` | Render a JSX template result into an existing host |
 | `@ecopages/radiant/tools/escape-script-json` | Safe JSON-for-script serialization helper |
 | `@ecopages/radiant/tools/event-emitter` | Low-level `EventEmitter` helper |
 
-Import from the root entrypoint unless you have a specific reason to pin a narrower public subpath.
+Import component bases, decorators, and context helpers from the root entrypoint. Import server and low-level tool helpers from their explicit public subpaths.
+
+For SSR-specific guidance and examples, see [src/server/README.md](src/server/README.md).

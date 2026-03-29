@@ -13,6 +13,8 @@ export const getMetadata = () => ({
 This utility function is used to stringify attributes in a typed way.
 This is useful when you need to pass attributes to a component that expects a specific type.
 
+Import `stringifyTyped` from `@ecopages/radiant/tools/stringify-typed`. It is a low-level serialization helper, not part of the main root client surface.
+
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
@@ -36,6 +38,20 @@ export const MyComponent = ({ value }: { value: number }) => {
 };  
 ```
 
-Do not place the returned JSON string directly inside `<script>` children in JSX. JSX renderers escape text children, which turns quotes into HTML entities before the browser sees the script contents.
+If you want to author a hydration payload as a child `<script>`, pass the JSON string as the script child content:
 
-If you are hydrating a `ContextProvider` or `RadiantComponent` host, prefer the built-in SSR helpers such as `renderComponent(...)`, `renderHostToString(...)`, or `provider.renderHydrationScriptTag()` so the script markup is emitted raw.
+```tsx
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+
+export const MyComponent = ({ value }: { value: number }) => {
+  const hydrationPayload = stringifyTyped<{ value: number }, string>({ value });
+
+  return (
+    <my-component>
+      <script type="application/json" data-hydration>{hydrationPayload}</script>
+    </my-component>
+  );
+};
+```
+
+If you are hydrating an existing `ContextProvider` or `RadiantComponent` instance, the built-in helpers such as `renderComponent(...)`, `renderHostToString(...)`, `provider.renderHydrationScript()`, or `provider.renderHydrationScriptTag()` are still the most direct option. Those server-oriented helpers live under `@ecopages/radiant/server/*`.
