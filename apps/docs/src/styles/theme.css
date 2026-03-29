@@ -1,7 +1,7 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @theme {
-	--font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
 	--font-heading: 'Karla', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
