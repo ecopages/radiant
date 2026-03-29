@@ -84,7 +84,7 @@ for (const result of results) {
 	const status = result.passed ? styleText('green', 'PASS') : styleText('red', 'FAIL');
 
 	console.log(
-		`${status} ${result.label} (${result.entrypoint}) raw ${rawKb} KB / ${rawBudgetKb} KB, gzip ${gzipKb} KB / ${gzipBudgetKb} KB`,
+		`${status} ${result.label} (${result.entrypoint}) raw ${rawKb} KB / ${rawBudgetKb} KB, gzip ${styleText('blue', `${gzipKb} KB`)} / ${gzipBudgetKb} KB`,
 	);
 }
 

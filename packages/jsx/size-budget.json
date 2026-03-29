@@ -15,14 +15,14 @@
 		{
 			"label": "jsx-runtime",
 			"entrypoint": "./jsx-runtime.ts",
-			"maxBytes": 7680,
-			"maxGzipBytes": 2816
+			"maxBytes": 9216,
+			"maxGzipBytes": 3328
 		},
 		{
 			"label": "jsx-dev-runtime",
 			"entrypoint": "./jsx-dev-runtime.ts",
-			"maxBytes": 7168,
-			"maxGzipBytes": 2816
+			"maxBytes": 9216,
+			"maxGzipBytes": 3328
 		}
 	]
 }

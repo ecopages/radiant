@@ -1,6 +1,7 @@
 import {
 	isKeyedJsxValue,
 	isSubscribableJsxValue,
+	isTemplateResultLike,
 	type JsxNodeLike,
 	type JsxRenderable,
 	type SignalLike,
@@ -196,16 +197,6 @@ function renderNodeLike(node: JsxNodeLike): string {
 	}
 
 	return escapeHtml(node.textContent ?? '');
-}
-
-function isTemplateResultLike(value: unknown): value is TemplateResultLike {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		(value as Partial<TemplateResultLike>)['_$rType$'] === 1 &&
-		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
-		Array.isArray((value as Partial<TemplateResultLike>).values)
-	);
 }
 
 function isIterable(value: unknown): value is Iterable<unknown> {

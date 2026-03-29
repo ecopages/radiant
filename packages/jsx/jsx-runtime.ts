@@ -34,7 +34,8 @@ const voidElementNames = new Set([
 /** Well-known symbol that identifies a JSX fragment in the Radiant runtime. */
 const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
 
-import { escapeHtml } from './html-escape.ts';
+import { escapeAttribute, escapeHtml } from './html-escape.ts';
+import { getTemplateInterpolationParts } from './hydration-bindings.ts';
 import { shouldDelegateEventBinding, type DelegatedEventName } from './event-binding-policy.ts';
 
 export type { DelegatedEventName } from './event-binding-policy.ts';
@@ -635,10 +636,32 @@ function createJsxElement<Props extends object>(
 	}
 
 	strings[strings.length - 1] += '>';
-	appendChildren(strings, values, children, childSlotMode);
+	appendElementChildren(strings, values, type, children, childSlotMode);
 	strings[strings.length - 1] += `</${type}>`;
 
 	return wrapKeyedValue(createTemplateResult(strings, values), keyedValue);
+}
+
+function appendElementChildren(
+	strings: string[],
+	values: unknown[],
+	type: string,
+	children: JsxRenderable | undefined,
+	childSlotMode: ChildSlotMode,
+): void {
+	if (type === 'script') {
+		const rawTextContent = renderJsxRenderableToRawText(normalizeChildrenWithMode(children, childSlotMode));
+
+		if (rawTextContent === '') {
+			return;
+		}
+
+		values.push(createMarkupNodeLike(rawTextContent));
+		strings.push('');
+		return;
+	}
+
+	appendChildren(strings, values, children, childSlotMode);
 }
 
 /**
@@ -821,13 +844,29 @@ function applyServerCustomElementChildren(
 
 	const serializedChildren = renderJsxRenderableToString(children);
 
-	if ('children' in element) {
+	if (canAssignServerCustomElementProperty(element, 'children')) {
 		element.children = serializedChildren;
 	}
 
-	if ('innerHTML' in element) {
+	if (canAssignServerCustomElementProperty(element, 'innerHTML')) {
 		element.innerHTML = serializedChildren;
 	}
+}
+
+function canAssignServerCustomElementProperty(element: ServerRenderableCustomElement, propertyName: string): boolean {
+	let current: object | null = element as object;
+
+	while (current) {
+		const descriptor = Object.getOwnPropertyDescriptor(current, propertyName);
+
+		if (descriptor) {
+			return descriptor.writable === true || typeof descriptor.set === 'function';
+		}
+
+		current = Object.getPrototypeOf(current);
+	}
+
+	return false;
 }
 
 /**
@@ -871,11 +910,48 @@ function renderJsxRenderableToString(value: JsxRenderable | undefined): string {
 	}
 
 	if (isTemplateResultLike(value)) {
+		const interpolationParts = getTemplateInterpolationParts(value.strings);
 		let html = '';
 
 		for (let index = 0; index < value.values.length; index += 1) {
-			html += value.strings[index] ?? '';
-			html += renderJsxRenderableToString(value.values[index] as JsxRenderable);
+			const interpolationPart = interpolationParts[index];
+			let childValue: unknown = value.values[index];
+
+			while (isKeyedJsxValue(childValue)) childValue = childValue.value;
+			while (isSubscribableJsxValue(childValue)) childValue = childValue.getValue();
+			while (isSignalLikeValue(childValue)) childValue = childValue.get();
+
+			if (!interpolationPart || interpolationPart.type === 'child') {
+				html +=
+					interpolationPart && interpolationPart.type === 'child'
+						? interpolationPart.string
+						: (value.strings[index] ?? '');
+				html += renderJsxRenderableToString(childValue as JsxRenderable);
+				continue;
+			}
+
+			html += interpolationPart.leading;
+
+			if (
+				interpolationPart.prefix === '@' ||
+				interpolationPart.prefix === '!' ||
+				interpolationPart.prefix === '.'
+			) {
+				continue;
+			}
+
+			if (interpolationPart.prefix === '?') {
+				if (childValue) {
+					html += `${interpolationPart.whitespace}${interpolationPart.name}`;
+				}
+				continue;
+			}
+
+			if (childValue === undefined || childValue === null || childValue === false) {
+				continue;
+			}
+
+			html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(String(childValue))}"`;
 		}
 
 		html += value.strings[value.strings.length - 1] ?? '';
@@ -907,6 +983,36 @@ function renderJsxRenderableToString(value: JsxRenderable | undefined): string {
 	return escapeHtml(String(value));
 }
 
+function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string {
+	if (value === undefined || value === null || value === false || value === true) {
+		return '';
+	}
+
+	if (typeof value === 'string') {
+		return escapeRawTextElementText(value);
+	}
+
+	if (typeof value === 'number' || typeof value === 'bigint') {
+		return String(value);
+	}
+
+	if (isIterableChild(value)) {
+		let rawText = '';
+
+		for (const child of value) {
+			rawText += renderJsxRenderableToRawText(child as JsxRenderable);
+		}
+
+		return rawText;
+	}
+
+	return escapeRawTextElementText(String(value));
+}
+
+function escapeRawTextElementText(value: string): string {
+	return value.replace(/</g, '\\u003c');
+}
+
 /**
  * Serializes a {@link JsxNodeLike} value to an HTML string.
  *
@@ -936,7 +1042,7 @@ function renderJsxNodeLikeToString(value: JsxNodeLike): string {
  * @param value Value to inspect.
  * @returns `true` when `value` is a valid Radiant template result.
  */
-function isTemplateResultLike(value: unknown): value is TemplateResultLike {
+export function isTemplateResultLike(value: unknown): value is TemplateResultLike {
 	return (
 		typeof value === 'object' &&
 		value !== null &&

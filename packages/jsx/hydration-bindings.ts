@@ -1,4 +1,5 @@
 import type { JsxRenderable, TemplateResultLike } from './jsx-runtime.ts';
+import { isTemplateResultLike } from './jsx-runtime.ts';
 
 /** Attribute prefix used for emitted SSR hydration markers. */
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';
@@ -232,14 +233,4 @@ function collectTemplateBindings(
 
 function isIterable(value: unknown): value is Iterable<unknown> {
 	return typeof value !== 'string' && typeof value === 'object' && value !== null && Symbol.iterator in value;
-}
-
-function isTemplateResultLike(value: unknown): value is TemplateResultLike {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		(value as Partial<TemplateResultLike>)['_$rType$'] === 1 &&
-		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
-		Array.isArray((value as Partial<TemplateResultLike>).values)
-	);
 }

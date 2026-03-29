@@ -21,6 +21,16 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<div class="counter">Hello &lt;Radiant&gt;</div>');
 	});
 
+	test('serializes script text children as raw element content', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('script', {
+			type: 'application/json',
+			children: '{"count":5}',
+		});
+
+		expect(renderToString(template)).toBe('<script type="application/json">{"count":5}</script>');
+	});
+
 	test('serializes nested components and iterable children', async () => {
 		const [{ jsx, jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
@@ -625,6 +635,106 @@ describe('Radiant JSX server render', () => {
 				Object.defineProperty(globalThis, 'Node', previousNodeDescriptor);
 			} else {
 				Reflect.deleteProperty(globalThis, 'Node');
+			}
+
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					forceServerCustomElementRenderSymbol
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
+					previousForceServerCustomElementRender;
+			}
+		}
+	});
+
+	test('preserves an authored hydration child script on a Radiant host render', async () => {
+		const [
+			{ jsx },
+			{ renderToString },
+			{ ContextProvider },
+			{ createContext },
+			{ RadiantComponent },
+			{ setCustomElementTagName },
+		] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+			loadModule<typeof import('../../radiant/src/context/context-provider.ts')>(
+				'../../radiant/src/context/context-provider.ts',
+			),
+			loadModule<typeof import('../../radiant/src/context/create-context.ts')>(
+				'../../radiant/src/context/create-context.ts',
+			),
+			loadModule<typeof import('../../radiant/src/core/radiant-component.ts')>(
+				'../../radiant/src/core/radiant-component.ts',
+			),
+			loadModule<typeof import('../../radiant/src/core/custom-element-metadata.ts')>(
+				'../../radiant/src/core/custom-element-metadata.ts',
+			),
+		]);
+
+		const scriptedContext = createContext<{ count: number; label: string }>(Symbol('scripted-radiant-context'));
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		const registry = globalThis.customElements;
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			forceServerCustomElementRenderSymbol
+		];
+		const tagSuffix = Math.random().toString(36).slice(2);
+		const tagName = `scripted-radiant-provider-test-${tagSuffix}`;
+
+		class ScriptedRadiantProvider extends RadiantComponent {
+			declare provider: RadiantContextProvider<typeof scriptedContext>;
+
+			constructor() {
+				super();
+				this.provider = new ContextProvider(this, {
+					context: scriptedContext,
+					hydrationKey: 'provider',
+					initialValue: { count: 0, label: 'Pending' },
+					hydrate: Object,
+				});
+				this.registerContextProvider('provider', this.provider);
+			}
+
+			override render() {
+				const context = this.provider.getContext();
+
+				return jsx('p', {
+					children: `${context.label} / ${context.count}`,
+				});
+			}
+		}
+
+		setCustomElementTagName(ScriptedRadiantProvider, tagName);
+
+		if (!registry.get(tagName)) {
+			registry.define(tagName, ScriptedRadiantProvider as unknown as CustomElementConstructor);
+		}
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
+
+		try {
+			const html = renderToString(
+				jsx(tagName, {
+					children: jsx('script', {
+						type: 'application/json',
+						'data-hydration': true,
+						'data-context-key': 'provider',
+						children: '{"count":3,"label":"Authored child"}',
+					}),
+				}),
+			);
+
+			expect(html).toContain(`<${tagName}>`);
+			expect(html).toContain('<p>Authored child / 3</p>');
+			expect(html).not.toContain('data-radiant-slot-projection');
+			expect(html).toContain('<script type="application/json"');
+			expect(html).toContain('data-hydration="true"');
+			expect(html).toContain('data-context-key="provider"');
+			expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
 			}
 
 			if (previousForceServerCustomElementRender === undefined) {
