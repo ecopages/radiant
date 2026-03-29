@@ -76,7 +76,10 @@ export async function withBrowserPage(run) {
 
 export function attachPageDiagnostics(page) {
 	page.on('console', (message) => {
-		console.log(`browser:console:${message.type()}:${message.text()}`);
+		const type = message.type();
+		if (type === 'warning' || type === 'error') {
+			console.log(`browser:console:${type}:${message.text()}`);
+		}
 	});
 	page.on('pageerror', (error) => {
 		console.log(`browser:pageerror:${error.stack}`);
