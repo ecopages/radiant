@@ -1,6 +1,6 @@
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { RadiantSwitch, type RadiantSwitchProps } from '../switch/switch.script';
+import { RadiantSwitch } from '../switch/switch.script';
 
 @customElement('theme-toggle')
 export class ThemeToggle extends RadiantSwitch {

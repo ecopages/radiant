@@ -6,16 +6,17 @@ export type RadiantInstallCmdProps = {
 	packages?: string;
 };
 
-export type RadiantInstallBindingProps = RadiantInstallCmdProps & {
-	selected: PkgManager;
+type RadiantInstallCmdBindings = {
 	copied: boolean;
+	copyStatus: string;
 };
 
 @customElement('radiant-install-cmd')
-export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingProps> {
+export class RadiantInstallCmd extends RadiantComponent<RadiantInstallCmdBindings> {
 	@prop({ type: String }) packages = '';
 	@state selected: PkgManager = 'bun';
 	@state copied = false;
+	@state copyStatus = '';
 
 	private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -53,9 +54,11 @@ export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingPro
 		try {
 			await navigator.clipboard.writeText(this.getCommand());
 			this.copied = true;
+			this.copyStatus = 'Copied to clipboard';
 			if (this.timeoutId) clearTimeout(this.timeoutId);
 			this.timeoutId = setTimeout(() => {
 				this.copied = false;
+				this.copyStatus = '';
 			}, 2000);
 		} catch (err) {
 			console.error('Failed to copy text', err);
@@ -72,12 +75,8 @@ export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingPro
 						<button
 							key={manager}
 							type="button"
-							class={
-								this.selected === manager
-									? 'install-cmd__tab install-cmd__tab--active'
-									: 'install-cmd__tab'
-							}
-							aria-pressed={this.selected === manager}
+							class="install-cmd__tab"
+							aria={{ pressed: this.selected === manager }}
 							on:click={() => {
 								this.setSelected(manager);
 							}}
@@ -90,12 +89,16 @@ export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingPro
 					<span class="install-cmd__command">{command}</span>
 					<button
 						type="button"
-						class={this.copied ? 'install-cmd__copy install-cmd__copy--copied' : 'install-cmd__copy'}
-						aria-label={this.copied ? 'Copied to clipboard' : 'Copy install command'}
+						class="install-cmd__copy"
+						data={{ copied: this.$.copied }}
+						aria-label="Copy install command"
 						on:click={this.handleCopy}
 					>
 						<span class="install-cmd__icon" aria-hidden="true"></span>
 					</button>
+					<span class="install-cmd__status" aria-live="polite">
+						{this.$.copyStatus}
+					</span>
 				</div>
 			</div>
 		);
