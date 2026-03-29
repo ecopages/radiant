@@ -39,6 +39,7 @@ export class ThemeProvider extends RadiantComponent {
 | `context` | `Context` | The typed context token to provide |
 | `initialValue` | `T` | Initial provider value |
 | `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes and restores provider state during SSR hydration |
+| `serialize` | `(value: T) => unknown` | Projects the live context into an SSR-safe hydration payload |
 
 ## SSR Hydration
 
@@ -53,17 +54,27 @@ When `hydrate` is set, the provider can restore its context value from server-re
 provider!: ContextProvider<typeof themeContext>;
 ```
 
-If you are using JSX, `stringifyTyped(...)` is the normal way to emit typed hydration payloads.
+Use `serialize(...)` when the live client context includes members that should not be emitted into SSR JSON.
 
-```tsx
-import { stringifyTyped } from '@ecopages/radiant';
+```typescript
+class ThemeLogger {
+	log(message: string) {
+		console.log(message);
+	}
+}
 
-<theme-provider>
-	<script type="application/json" data-hydration>
-		{stringifyTyped({ mode: 'dark' })}
-	</script>
-</theme-provider>
+@provideContext({
+	context: themeContext,
+	initialValue: { mode: 'light', logger: new ThemeLogger() },
+	hydrate: Object,
+	serialize: ({ mode }) => ({ mode }),
+})
+provider!: ContextProvider<typeof themeContext>;
 ```
+
+When `hydrate: Object` is active, the parsed payload merges back into `initialValue`, so omitted client-only members keep their defaults.
+
+When Radiant owns SSR for the host, prefer `renderComponent(...)` or `renderHostToString(...)` so hydration scripts are emitted as raw markup. Avoid placing JSON strings directly inside `<script>` children in JSX, because they will be HTML-escaped before the browser parses them.
 
 ## Access From Descendants
 

@@ -125,11 +125,12 @@ export class RadiantTodoItem extends RadiantElement {
 }
 
 @customElement('radiant-todo-app')
-export class RadiantTodoApp extends RadiantComponent {
+export class RadiantTodoAppElement extends RadiantComponent {
 	@provideContext<typeof todoContext>({
 		context: todoContext,
 		initialValue: { todos: [], logger: new Logger() },
 		hydrate: Object,
+		serialize: ({ todos }) => ({ todos }),
 	})
 	provider!: ContextProvider<typeof todoContext>;
 

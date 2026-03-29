@@ -24,26 +24,18 @@ export const MyComponent = ({ value }: { value: number }) => {
 ```
 
 
-Or when you need to stringify a context value:
+It can also produce JSON strings for lower-level helpers or transport payloads:
 
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
 export const MyComponent = ({ value }: { value: number }) => {
-    return <my-context-provider>
-      {...}
-      <script type="application/json" data-hydration>
-        {stringifyTyped({ value })}
-      </script>
-    </my-context-provider>;
-};  
+    const hydrationPayload = stringifyTyped<{ value: number }, string>({ value });
 
-/** Output 
- * <my-context-provider>
- *  {...}
- *  <script type="application/json" data-hydration>
- *    {"value":1}
- *  </script>
- * </my-context-provider>
- */
+    return <my-component data-payload={hydrationPayload}></my-component>;
+};  
 ```
+
+Do not place the returned JSON string directly inside `<script>` children in JSX. JSX renderers escape text children, which turns quotes into HTML entities before the browser sees the script contents.
+
+If you are hydrating a `ContextProvider` or `RadiantComponent` host, prefer the built-in SSR helpers such as `renderComponent(...)`, `renderHostToString(...)`, or `provider.renderHydrationScriptTag()` so the script markup is emitted raw.

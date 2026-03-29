@@ -1,7 +1,6 @@
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
-import type { JsxRenderable } from '@ecopages/jsx';
+import { renderComponent } from '@ecopages/radiant';
 import type { TodoContext } from './radiant-todo-app.script';
-import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
+import { RadiantTodoAppElement } from './radiant-todo-app.script';
 
 type RadiantTodoAppTemplateProps = {
 	todos: TodoContext['todos'];
@@ -17,63 +16,16 @@ const getData = (): RadiantTodoAppTemplateProps => {
 		],
 	};
 };
-
-const TodoPanel = ({
-	title,
-	count,
-	children,
-	ref,
-}: {
-	title: string;
-	count: number;
-	children: JsxRenderable;
-	ref: string;
-}) => {
-	return (
-		<article class="todo__panel">
-			<h2>{title}</h2>
-			<p class="todo__count">
-				{title}: <span data-ref={`count-${ref}`}>{count}</span>
-			</p>
-			<div class="todo__list" data-ref={`list-${ref}`}>
-				{children}
-			</div>
-		</article>
-	);
-};
-
-const TodoForm = () => {
-	return (
-		<form>
-			<div class="form-group">
-				<label for="new-todo">Add Todo</label>
-				<input id="new-todo" name="todo" />
-			</div>
-			<button type="submit">Add</button>
-		</form>
-	);
-};
-
-export const RadiantTodoApp = () => {
+export const RadiantTodoApp = async () => {
 	const data = getData();
-	const incompleteTodos = data.todos.filter((todo) => !todo.complete);
-	const completedTodos = data.todos.filter((todo) => todo.complete);
-	return (
-		<radiant-todo-app class="todo">
-			<section class="todo__board">
-				<TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
-					{incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
-				</TodoPanel>
-				<TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
-					{completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
-				</TodoPanel>
-			</section>
-			<TodoForm />
-			<script type="json" data-hydration>
-				{stringifyTyped<Partial<TodoContext>, string>({ todos: data.todos })}
-			</script>
-		</radiant-todo-app>
-	);
+	const { preview } = await renderComponent(RadiantTodoAppElement, {
+		configure: (component) => {
+			component.setAttribute('class', 'todo');
+			component.provider.setContext({ todos: data.todos });
+		},
+	});
+
+	return preview;
 };
 
 RadiantTodoApp.config = {

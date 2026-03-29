@@ -11,7 +11,7 @@ export const config = {
 
 export const getMetadata = () => ({
 	title: 'Docs | Radiant Todo App',
-	description: 'An integrated example that combines SSR wrapper markup, a RadiantComponent host, and RadiantElement leaf nodes.',
+	description: 'An integrated example that combines server-rendered component hosts, a RadiantComponent view boundary, and RadiantElement leaf nodes.',
 });
 
 # Radiant Todo App
@@ -22,7 +22,7 @@ This is the integration example, not the first base-class example.
 
 It combines three different jobs in one flow:
 
-- an SSR-friendly wrapper that emits initial markup and hydration data
+- a server render entry that serializes the real custom-element host
 - a `RadiantComponent` host that owns the board view and rerender boundary
 - `RadiantElement` leaf items that handle lower-level DOM interaction
 
@@ -32,38 +32,28 @@ The todo app is useful because it shows that `RadiantComponent` and `RadiantElem
 
 `RadiantComponent` is not replacing the item element here. The host and the leaf nodes solve different problems.
 
-## 1. SSR Wrapper Markup
+## 1. Server Render Entry
 
-The wrapper emits initial HTML plus hydration data.
+The docs component returns the actual host preview from `renderComponent(...)`.
 
 ```tsx
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+import { renderComponent } from '@ecopages/radiant';
+import { RadiantTodoAppElement } from './radiant-todo-app.script';
 
-export const RadiantTodoApp = () => {
+export const RadiantTodoApp = async () => {
 	const data = getData();
-	const incompleteTodos = data.todos.filter((todo) => !todo.complete);
-	const completedTodos = data.todos.filter((todo) => todo.complete);
+	const { preview } = await renderComponent(RadiantTodoAppElement, {
+		configure: (component) => {
+			component.setAttribute('class', 'todo');
+			component.provider.setContext({ todos: data.todos });
+		},
+	});
 
-	return (
-		<radiant-todo-app class="todo">
-			<section class="todo__board">
-				<TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
-					{incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
-				</TodoPanel>
-				<TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
-					{completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
-				</TodoPanel>
-			</section>
-			<TodoForm />
-			<script type="json" data-hydration>
-				{stringifyTyped<Partial<TodoContext>, string>({ todos: data.todos })}
-			</script>
-		</radiant-todo-app>
-	);
+	return preview;
 };
 ```
 
-That part is about SSR and first paint, not about replacing `RadiantElement`.
+That keeps SSR aligned with the same `RadiantComponent` class the browser hydrates later.
 
 ## 2. RadiantComponent Host
 
@@ -83,11 +73,12 @@ import {
 export const todoContext = createContext<TodoContext>(Symbol('todo-context'));
 
 @customElement('radiant-todo-app')
-export class RadiantTodoApp extends RadiantComponent {
+export class RadiantTodoAppElement extends RadiantComponent {
 	@provideContext<typeof todoContext>({
 		context: todoContext,
 		initialValue: { todos: [], logger: new Logger() },
 		hydrate: Object,
+		serialize: ({ todos }) => ({ todos }),
 	})
 	provider!: ContextProvider<typeof todoContext>;
 
@@ -113,7 +104,7 @@ export class RadiantTodoApp extends RadiantComponent {
 }
 ```
 
-This is exactly where `RadiantComponent` is strongest: the host owns the view and rerenders explicitly through `render()` and `update()`.
+This is exactly where `RadiantComponent` is strongest: the host owns the view and rerenders explicitly through `render()` and `update()`. The `serialize(...)` hook keeps `logger` client-only while the todos still hydrate from SSR.
 
 ## 3. RadiantElement Leaf Nodes
 
