@@ -21,9 +21,20 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 				return;
 			}
 
-			queueMicrotask(() => {
-				connectContextSelection(this, context, originalMethod.bind(this), { select, subscribe });
+			const connectSelection = () => {
+				connectContextSelection(
+					this,
+					context,
+					(value) => applySelectedContext(this, value),
+					{ select, subscribe },
+				);
+			};
+
+			this.registerConnectedCallback(() => {
+				connectSelection();
 			});
+
+			queueMicrotask(connectSelection);
 		});
 	};
 }

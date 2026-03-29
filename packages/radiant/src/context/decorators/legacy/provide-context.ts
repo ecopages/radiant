@@ -4,7 +4,12 @@ import type { RadiantElement } from '../../../core/radiant-element';
 import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
 import type { ProvideContextOptions } from '../provide-context';
 
-export function provideContext<T extends UnknownContext>({ context, initialValue, hydrate }: ProvideContextOptions<T>) {
+export function provideContext<T extends UnknownContext>({
+	context,
+	initialValue,
+	hydrate,
+	serialize,
+}: ProvideContextOptions<T>) {
 	return (proto: RadiantElement, propertyKey: string) => {
 		const initializeProvider = (element: RadiantElement) => {
 			if ((element as any)[propertyKey]) {
@@ -16,6 +21,7 @@ export function provideContext<T extends UnknownContext>({ context, initialValue
 				hydrationKey: propertyKey,
 				initialValue,
 				hydrate,
+				serialize,
 			});
 			(element as any)[propertyKey] = provider;
 			element.registerContextProvider(propertyKey, provider);

@@ -8,12 +8,30 @@ import { provideContext } from '../../src/context/decorators/provide-context';
 import { ContextEventsTypes, ContextRequestEvent } from '../../src/context/events';
 import { RadiantElement } from '../../src/core/radiant-element';
 
+declare const __LEGACY_ENVIRONMENT__: boolean;
+
+const testWhenStandard = __LEGACY_ENVIRONMENT__ ? test.skip : test;
+
 type TestContext = {
 	value: number;
 };
 
+class TestLogger {
+	public messages: string[] = [];
+
+	public log(message: string) {
+		this.messages.push(message);
+	}
+}
+
+type LoggerContext = {
+	value: number;
+	logger: TestLogger;
+};
+
 const testContext = createContext<TestContext>(Symbol('todo-context'));
 const lazyContext = createContext<TestContext>(Symbol('lazy-context'));
+const loggerContext = createContext<LoggerContext>(Symbol('logger-context'));
 
 class MyContextProvider extends RadiantElement {
 	@provideContext<typeof testContext>({
@@ -73,6 +91,20 @@ class LazyContextProvider extends RadiantElement {
 
 if (!customElements.get('lazy-context-provider')) {
 	customElements.define('lazy-context-provider', LazyContextProvider);
+}
+
+class LoggerContextProvider extends RadiantElement {
+	@provideContext<typeof loggerContext>({
+		context: loggerContext,
+		initialValue: { value: 1, logger: new TestLogger() },
+		hydrate: Object,
+		serialize: ({ value }) => ({ value }),
+	})
+	context!: ContextProvider<typeof loggerContext>;
+}
+
+if (!customElements.get('logger-context-provider')) {
+	customElements.define('logger-context-provider', LoggerContextProvider);
 }
 
 describe('Context', () => {
@@ -205,6 +237,25 @@ describe('Context', () => {
 		expect(scriptMarkup).toContain('{"value":1}');
 	});
 
+	test('it can dehydrate only the serializable slice of a provider context', () => {
+		const contextProvider = document.createElement('logger-context-provider') as LoggerContextProvider;
+		document.body.appendChild(contextProvider);
+		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
+
+		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-context-key="context">');
+		expect(scriptMarkup).toContain('{"value":1}');
+		expect(scriptMarkup).not.toContain('logger');
+	});
+
+	testWhenStandard('it initializes a provided context before connect so server helpers can configure it', () => {
+		const contextProvider = new LoggerContextProvider();
+
+		expect(contextProvider.context).toBeInstanceOf(ContextProvider);
+		contextProvider.context.setContext({ value: 5 });
+		expect(contextProvider.context.getContext().value).toBe(5);
+		expect(contextProvider.context.getContext().logger).toBeInstanceOf(TestLogger);
+	});
+
 	test('it tolerates SSR hosts without a DOM children collection', () => {
 		const provider = new ContextProvider(
 			{
@@ -220,6 +271,31 @@ describe('Context', () => {
 		);
 
 		expect(provider.getContext()).toEqual({ value: 7 });
+	});
+
+	test('it hydrates from element childNodes when a host has no children collection', () => {
+		const hydrationScript = document.createElement('script');
+		hydrationScript.setAttribute('type', 'application/json');
+		hydrationScript.setAttribute('data-hydration', '');
+		hydrationScript.setAttribute('data-context-key', 'context');
+		hydrationScript.textContent = '{"value":42}';
+
+		const provider = new ContextProvider(
+			{
+				addEventListener: () => undefined,
+				children: undefined,
+				childNodes: [hydrationScript],
+				dispatchEvent: () => true,
+			} as unknown as MyContextProvider,
+			{
+				context: testContext,
+				hydrationKey: 'context',
+				initialValue: { value: 7 },
+				hydrate: Object,
+			},
+		);
+
+		expect(provider.getContext()).toEqual({ value: 42 });
 	});
 
 	test('it hydrates each nested provider from its own keyed SSR script', async () => {
@@ -245,5 +321,101 @@ describe('Context', () => {
 			expect(outerProvider?.context.getContext()).toEqual({ value: 41 });
 			expect(innerProvider?.context.getContext()).toEqual({ value: 99 });
 		});
+	});
+
+	test('it resolves consumeContext and contextSelector after a detached child connects under a provider', async () => {
+		class DelayedContextConsumer extends RadiantElement {
+			@consumeContext(testContext) context!: ContextProvider<typeof testContext>;
+
+			@contextSelector({ context: testContext, select: (context) => context.value })
+			onValue(value: number) {
+				this.textContent = String(value);
+			}
+
+			readValue() {
+				return this.context.getContext().value;
+			}
+		}
+
+		if (!customElements.get('delayed-context-consumer')) {
+			customElements.define('delayed-context-consumer', DelayedContextConsumer);
+		}
+
+		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextConsumer = document.createElement('delayed-context-consumer') as DelayedContextConsumer;
+
+		contextProvider.appendChild(contextConsumer);
+		expect(contextConsumer.isConnected).toBe(false);
+
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextConsumer.readValue()).toBe(1);
+			expect(contextConsumer.textContent).toBe('1');
+		});
+
+		contextProvider.context.setContext({ value: 6 });
+
+		await waitFor(() => {
+			expect(contextConsumer.readValue()).toBe(6);
+			expect(contextConsumer.textContent).toBe('6');
+		});
+	});
+
+	test('it resolves consumeContext when the provider custom element upgrades after the child connects', async () => {
+		const lateContext = createContext<TestContext>(Symbol('late-upgrade-context'));
+
+		class LateUpgradeConsumer extends RadiantElement {
+			@consumeContext(lateContext) context!: ContextProvider<typeof lateContext>;
+
+			readValue() {
+				return this.context.getContext().value;
+			}
+		}
+
+		if (!customElements.get('late-upgrade-consumer')) {
+			customElements.define('late-upgrade-consumer', LateUpgradeConsumer);
+		}
+
+		document.body.innerHTML = '<late-upgrade-provider><late-upgrade-consumer></late-upgrade-consumer></late-upgrade-provider>';
+
+		class LateUpgradeProvider extends RadiantElement {
+			@provideContext<typeof lateContext>({
+				context: lateContext,
+				initialValue: { value: 9 },
+			})
+			context!: ContextProvider<typeof lateContext>;
+		}
+
+		if (!customElements.get('late-upgrade-provider')) {
+			customElements.define('late-upgrade-provider', LateUpgradeProvider);
+		}
+
+		const consumer = document.querySelector('late-upgrade-consumer') as LateUpgradeConsumer | null;
+
+		expect(consumer).not.toBeNull();
+
+		await waitFor(() => {
+			expect(consumer?.readValue()).toBe(9);
+		});
+	});
+
+	test('it preserves client-only initial members when a dehydrated object payload hydrates back in', async () => {
+		document.body.innerHTML =
+			'<logger-context-provider>' +
+			'<script type="application/json" data-hydration data-context-key="context">{"value":42}</script>' +
+			'</logger-context-provider>';
+
+		const contextProvider = document.querySelector('logger-context-provider') as LoggerContextProvider | null;
+
+		expect(contextProvider).not.toBeNull();
+
+		await waitFor(() => {
+			expect(contextProvider?.context.getContext().value).toBe(42);
+			expect(contextProvider?.context.getContext().logger).toBeInstanceOf(TestLogger);
+		});
+
+		contextProvider?.context.getContext().logger.log('hydrated');
+		expect(contextProvider?.context.getContext().logger.messages).toEqual(['hydrated']);
 	});
 });

@@ -2,18 +2,32 @@ import type { RadiantElement } from '../../../core/radiant-element';
 import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
-export function consumeContext(contextToProvide: UnknownContext) {
+export function consumeContext(consumedContext: UnknownContext) {
 	return <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) => {
 		const contextName = String(context.name);
 		const assignContextProvider = (host: T, provider: unknown) => {
 			(host as any)[contextName] = provider;
+		};
+		const initializeConsumedContextForHost = (host: T, options: { emitMounted?: boolean } = {}) => {
+			if ((host as any)[contextName]) {
+				return true;
+			}
+
+			return connectConsumedContext(
+				host,
+				consumedContext,
+				(provider) => {
+					assignContextProvider(host, provider);
+				},
+				options,
+			);
 		};
 
 		context.addInitializer(function (this: T) {
 			if (
 				bootstrapSsrConsumedContext(
 					this,
-					contextToProvide,
+					consumedContext,
 					(provider) => {
 						assignContextProvider(this, provider);
 					},
@@ -23,14 +37,15 @@ export function consumeContext(contextToProvide: UnknownContext) {
 				return;
 			}
 
-			connectConsumedContext(
-				this,
-				contextToProvide,
-				(provider) => {
-					assignContextProvider(this, provider);
-				},
-				{ emitMounted: true },
-			);
+			this.registerConnectedCallback(() => {
+				if (initializeConsumedContextForHost(this, { emitMounted: true })) {
+					return;
+				}
+
+				queueMicrotask(() => {
+					initializeConsumedContextForHost(this, { emitMounted: true });
+				});
+			});
 		});
 	};
 }

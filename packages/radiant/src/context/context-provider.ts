@@ -22,6 +22,7 @@ type ContextProviderOptions<T extends UnknownContext> = {
 	hydrationKey?: string;
 	initialValue?: T['__context__'];
 	hydrate?: AttributeTypeConstant;
+	serialize?: (value: ContextType<T>) => unknown;
 };
 
 export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
@@ -86,6 +87,8 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	private context: UnknownContext;
 	private hydrationKey?: string;
 	private hydrate?: AttributeTypeConstant;
+	private serialize?: (value: ContextType<T>) => unknown;
+	private pendingHostHydration: boolean;
 	private value: ContextType<T> | undefined;
 
 	subscriptions: ContextSubscription<T>[] = [];
@@ -101,35 +104,19 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		this.context = options.context;
 		this.hydrationKey = options.hydrationKey;
 		this.hydrate = options.hydrate;
-		let contextValue: T['__context__'] | undefined = options.initialValue;
-
-		if (options.hydrate) {
-			const hydrationScriptElement = this.findHydrationScriptElement();
-			if (hydrationScriptElement?.textContent) {
-				const parsedHydrationValue = JSON.parse(hydrationScriptElement.textContent) as ContextType<T>;
-
-				if (
-					options.hydrate === Object &&
-					this.isObject(parsedHydrationValue) &&
-					(this.isObject(contextValue) || typeof contextValue === 'undefined')
-				) {
-					contextValue = {
-						...(contextValue ?? {}),
-						...parsedHydrationValue,
-					};
-				} else {
-					contextValue = parsedHydrationValue;
-				}
-			}
-		}
-
-		this.value = contextValue as ContextType<T>;
+		this.serialize = options.serialize;
+		this.pendingHostHydration = Boolean(options.hydrate);
+		this.value = options.initialValue as ContextType<T>;
+		this.tryHydrateFromHost();
 
 		this.registerEvents();
 		this.host.dispatchEvent(new ContextOnMountEvent(this.context));
 	}
 
 	setContext = (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => {
+		this.tryHydrateFromHost();
+		this.pendingHostHydration = false;
+
 		if (typeof this.value === 'undefined' && this.isObject(update)) {
 			const oldContext = this.value;
 			this.value = { ...update } as ContextType<T>;
@@ -147,6 +134,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	};
 
 	getContext = () => {
+		this.tryHydrateFromHost();
 		return this.value as ContextType<T>;
 	};
 
@@ -167,11 +155,19 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	 * `<script type="application/json">` tag.
 	 */
 	serializeHydrationValue = (): string | undefined => {
+		this.tryHydrateFromHost();
+
 		if (!this.hydrate || typeof this.value === 'undefined') {
 			return undefined;
 		}
 
-		const serializedValue = JSON.stringify(this.value);
+		const hydrationValue = this.serialize ? this.serialize(this.value) : this.value;
+
+		if (typeof hydrationValue === 'undefined') {
+			return undefined;
+		}
+
+		const serializedValue = JSON.stringify(hydrationValue);
 
 		if (typeof serializedValue !== 'string') {
 			return undefined;
@@ -220,12 +216,42 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		this.subscriptions.push({ select, callback });
 	};
 
+	private tryHydrateFromHost(): void {
+		if (!this.pendingHostHydration) {
+			return;
+		}
+
+		const hydrationScriptElement = this.findHydrationScriptElement();
+
+		if (!hydrationScriptElement?.textContent) {
+			return;
+		}
+
+		this.value = this.mergeHydrationValue(JSON.parse(hydrationScriptElement.textContent) as ContextType<T>);
+		this.pendingHostHydration = false;
+	}
+
+	private mergeHydrationValue(parsedHydrationValue: ContextType<T>): ContextType<T> {
+		if (
+			this.hydrate === Object &&
+			this.isObject(parsedHydrationValue) &&
+			(this.isObject(this.value) || typeof this.value === 'undefined')
+		) {
+			return {
+				...(this.value ?? {}),
+				...parsedHydrationValue,
+			} as ContextType<T>;
+		}
+
+		return parsedHydrationValue;
+	}
+
 	private isObject(value: unknown): value is Record<string, unknown> {
 		return typeof value === 'object' && !Array.isArray(value) && value !== null;
 	}
 
 	private findHydrationScriptElement(): Element | null {
-		const childElements = Array.from(this.host.children ?? []);
+		const childElements = this.getHostChildElements();
 		const keyedElement = this.hydrationKey
 			? (childElements.find(
 					(element) =>
@@ -246,6 +272,25 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 					element.hasAttribute(CONTEXT_HYDRATION_ATTRIBUTE) &&
 					!element.hasAttribute(CONTEXT_HYDRATION_KEY_ATTRIBUTE),
 			) ?? null
+		);
+	}
+
+	private getHostChildElements(): Element[] {
+		const hostWithChildren = this.host as Partial<{
+			childNodes: ArrayLike<{ nodeType: number }>;
+			children: ArrayLike<Element>;
+		}>;
+
+		if (hostWithChildren.children && hostWithChildren.children.length > 0) {
+			return Array.from(hostWithChildren.children);
+		}
+
+		if (!hostWithChildren.childNodes || hostWithChildren.childNodes.length === 0) {
+			return [];
+		}
+
+		return Array.from(hostWithChildren.childNodes).filter(
+			(node): node is Element => node.nodeType === 1,
 		);
 	}
 
@@ -277,6 +322,8 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		callback: ContextSubscription<T>['callback'];
 		subscribe?: boolean;
 	}) => {
+		this.tryHydrateFromHost();
+
 		if (subscribe) this.subscribe({ select, callback });
 
 		if (typeof this.value === 'undefined') return;

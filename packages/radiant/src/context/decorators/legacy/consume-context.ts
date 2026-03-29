@@ -3,7 +3,7 @@ import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/in
 import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
-export function consumeContext(contextToProvide: UnknownContext) {
+export function consumeContext(context: UnknownContext) {
 	return (proto: RadiantElement, propertyKey: string) => {
 		const assignContextProvider = (element: RadiantElement, provider: unknown) => {
 			(element as any)[propertyKey] = provider;
@@ -15,7 +15,7 @@ export function consumeContext(contextToProvide: UnknownContext) {
 
 			return connectConsumedContext(
 				element,
-				contextToProvide,
+				context,
 				(provider) => {
 					assignContextProvider(element, provider);
 				},
@@ -24,7 +24,7 @@ export function consumeContext(contextToProvide: UnknownContext) {
 		};
 
 		registerLegacyInstanceInitializer(proto, (element) => {
-			bootstrapSsrConsumedContext(element, contextToProvide, (provider) => {
+			bootstrapSsrConsumedContext(element, context, (provider) => {
 				assignContextProvider(element, provider);
 			});
 		});
@@ -37,6 +37,10 @@ export function consumeContext(contextToProvide: UnknownContext) {
 			if (initializeConsumedContextForHost(this, { emitMounted: true })) {
 				return;
 			}
+
+			queueMicrotask(() => {
+				initializeConsumedContextForHost(this, { emitMounted: true });
+			});
 		};
 	};
 }
