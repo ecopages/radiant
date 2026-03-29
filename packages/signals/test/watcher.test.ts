@@ -58,9 +58,7 @@ describe('Watcher', () => {
 			},
 		};
 
-		expect(() => watcher.watch(foreignSignal as never)).toThrow(
-			'Expected a signal created by @ecopages/signals.',
-		);
+		expect(() => watcher.watch(foreignSignal as never)).toThrow('Expected a signal created by @ecopages/signals.');
 	});
 
 	test('notifications freeze signal reads and writes', () => {

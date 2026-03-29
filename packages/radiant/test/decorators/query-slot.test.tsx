@@ -6,6 +6,7 @@ import { querySlot } from '../../src/decorators/query-slot';
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
 const LEGACY_ENVIRONMENT = __LEGACY_ENVIRONMENT__;
+const describeWhenStandard = LEGACY_ENVIRONMENT ? describe.skip : describe;
 
 @customElement('query-slot-card-test')
 class QuerySlotCard extends RadiantComponent {
@@ -32,7 +33,7 @@ describe('@querySlot', () => {
 		document.body.innerHTML = '';
 	});
 
-	if (!LEGACY_ENVIRONMENT) {
+	describeWhenStandard('standard decorators only', () => {
 		test('returns stable defaults before connect', () => {
 			const element = document.createElement('query-slot-card-test') as QuerySlotCard;
 
@@ -40,7 +41,7 @@ describe('@querySlot', () => {
 			expect(element.headerSlot).toBeNull();
 			expect(element.allHeaderSlots).toEqual([]);
 		});
-	}
+	});
 
 	test('queries projected elements from default and named slots', async () => {
 		const element = document.createElement('query-slot-card-test') as QuerySlotCard;

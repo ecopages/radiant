@@ -23,7 +23,7 @@ import {
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
-const testWhenStandard = __LEGACY_ENVIRONMENT__ ? test.skip : test;
+const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 @customElement('render-component-card-test')
 class RenderComponentCard extends RadiantComponent {
@@ -182,18 +182,20 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('SSR context value');
 	});
 
-	testWhenStandard('renderComponent() emits valid provider hydration markup without client-only fields', async () => {
-		const rendered = await renderComponent(RenderComponentHydratedProvider, {
-			configure: (component) => {
-				component.provider.setContext({ count: 5 });
-			},
-		});
+	describeWhenStandard('standard decorators only', () => {
+		test('renderComponent() emits valid provider hydration markup without client-only fields', async () => {
+			const rendered = await renderComponent(RenderComponentHydratedProvider, {
+				configure: (component) => {
+					component.provider.setContext({ count: 5 });
+				},
+			});
 
-		expect(rendered.markup).toContain(
-			'<script type="application/json" data-hydration data-context-key="provider">{"count":5}</script>',
-		);
-		expect(rendered.markup).not.toContain('&quot;');
-		expect(rendered.markup).not.toContain('logger');
+			expect(rendered.markup).toContain(
+				'<script type="application/json" data-hydration data-context-key="provider">{"count":5}</script>',
+			);
+			expect(rendered.markup).not.toContain('&quot;');
+			expect(rendered.markup).not.toContain('logger');
+		});
 	});
 
 	test('renderStreamableComponent() infers metadata and returns preview output', async () => {

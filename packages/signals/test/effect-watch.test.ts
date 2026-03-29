@@ -161,15 +161,11 @@ describe('watch', () => {
 		const count = new State(0);
 		const scheduledRuns: Array<() => void> = [];
 		const notify = vi.fn();
-		const dispose = watch(
-			() => count.get(),
-			notify,
-			{
-				scheduler(run) {
-					scheduledRuns.push(run);
-				},
+		const dispose = watch(() => count.get(), notify, {
+			scheduler(run) {
+				scheduledRuns.push(run);
 			},
-		);
+		});
 
 		count.set(1);
 		count.set(2);
@@ -187,15 +183,11 @@ describe('watch', () => {
 	test('uses watch equality to suppress redundant derived notifications', async () => {
 		const count = new State(0);
 		const notify = vi.fn();
-		const dispose = watch(
-			() => ((count.get() & 1) === 0 ? 'even' : 'odd'),
-			notify,
-			{
-				equals(previousValue, nextValue) {
-					return previousValue === nextValue;
-				},
+		const dispose = watch(() => ((count.get() & 1) === 0 ? 'even' : 'odd'), notify, {
+			equals(previousValue, nextValue) {
+				return previousValue === nextValue;
 			},
-		);
+		});
 
 		count.set(2);
 		await flushMicrotask();

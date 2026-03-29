@@ -10,7 +10,7 @@ import { RadiantElement } from '../../src/core/radiant-element';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
-const testWhenStandard = __LEGACY_ENVIRONMENT__ ? test.skip : test;
+const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 type TestContext = {
 	value: number;
@@ -247,13 +247,15 @@ describe('Context', () => {
 		expect(scriptMarkup).not.toContain('logger');
 	});
 
-	testWhenStandard('it initializes a provided context before connect so server helpers can configure it', () => {
-		const contextProvider = new LoggerContextProvider();
+	describeWhenStandard('standard decorators only', () => {
+		test('it initializes a provided context before connect so server helpers can configure it', () => {
+			const contextProvider = new LoggerContextProvider();
 
-		expect(contextProvider.context).toBeInstanceOf(ContextProvider);
-		contextProvider.context.setContext({ value: 5 });
-		expect(contextProvider.context.getContext().value).toBe(5);
-		expect(contextProvider.context.getContext().logger).toBeInstanceOf(TestLogger);
+			expect(contextProvider.context).toBeInstanceOf(ContextProvider);
+			contextProvider.context.setContext({ value: 5 });
+			expect(contextProvider.context.getContext().value).toBe(5);
+			expect(contextProvider.context.getContext().logger).toBeInstanceOf(TestLogger);
+		});
 	});
 
 	test('it tolerates SSR hosts without a DOM children collection', () => {

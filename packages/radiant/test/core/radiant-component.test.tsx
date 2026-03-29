@@ -19,7 +19,7 @@ import { createServerRenderEnvironment, installLightDomShim } from '../../src/se
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
-const testWhenStandard = __LEGACY_ENVIRONMENT__ ? test.skip : test;
+const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 const nestedSsrBoardContext = createContext<{ commits: number; owner: string; stage: string; tempo: string }>(
 	Symbol('nested-radiant-board-context'),
@@ -100,6 +100,28 @@ class SsrArrayPropCard extends RadiantComponent {
 
 	override render() {
 		return <p>{this.items.map((item) => item.label).join(', ') || 'empty'}</p>;
+	}
+}
+
+@customElement('server-host-slot-query-card-test')
+class ServerHostSlotQueryCard extends RadiantComponent {
+	@querySlot() defaultSlot!: HTMLParagraphElement | null;
+	@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
+
+	override render() {
+		return (
+			<section
+				data-default-slot={this.defaultSlot?.textContent ?? 'missing'}
+				data-header-slot={this.headerSlot?.textContent ?? 'missing'}
+			>
+				<header>
+					<slot name="header" />
+				</header>
+				<div>
+					<slot />
+				</div>
+			</section>
+		);
 	}
 }
 
@@ -660,39 +682,51 @@ describe('RadiantComponent', () => {
 	test('createServerRenderEnvironment() prepares authored content for server-side slot queries', () => {
 		const environment = createServerRenderEnvironment();
 
-		@customElement('server-host-slot-query-card-test')
-		class ServerHostSlotQueryCard extends RadiantComponent {
-			@querySlot() defaultSlot!: HTMLParagraphElement | null;
-			@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
-
-			override render() {
-				return (
-					<section
-						data-default-slot={this.defaultSlot?.textContent ?? 'missing'}
-						data-header-slot={this.headerSlot?.textContent ?? 'missing'}
-					>
-						<header>
-							<slot name="header" />
-						</header>
-						<div>
-							<slot />
-						</div>
-					</section>
-				);
-			}
-		}
-
 		const element = new ServerHostSlotQueryCard();
 		environment.prepareHost(element, {
 			authoredContent: '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>',
 		});
 
-		if (!__LEGACY_ENVIRONMENT__) {
+		expect(element.renderHostToString({ hydrate: true })).toContain('data-header-slot="Prepared heading"');
+	});
+
+	describeWhenStandard('standard decorators only', () => {
+		test('createServerRenderEnvironment() resolves slot query accessors before connect', () => {
+			const environment = createServerRenderEnvironment();
+			const element = new ServerHostSlotQueryCard();
+
+			environment.prepareHost(element, {
+				authoredContent: '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>',
+			});
+
 			expect(element.headerSlot?.textContent).toBe('Prepared heading');
 			expect(element.defaultSlot?.textContent).toBe('Prepared body');
-		}
+		});
 
-		expect(element.renderHostToString({ hydrate: true })).toContain('data-header-slot="Prepared heading"');
+		test('renderHostToString({ hydrate: true }) appends signal hydration scripts automatically', () => {
+			class ServerHostSignalCard extends RadiantComponent {
+				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
+
+				override render() {
+					return <p>{this.status}</p>;
+				}
+			}
+
+			if (!customElements.get('server-host-signal-card-test')) {
+				customElements.define('server-host-signal-card-test', ServerHostSignalCard);
+			}
+			setCustomElementTagName(ServerHostSignalCard, 'server-host-signal-card-test');
+
+			const element = new ServerHostSignalCard();
+			element.status.set('ready');
+			const html = element.renderHostToString({ hydrate: true });
+
+			expect(html).toContain('<server-host-signal-card-test>');
+			expect(html).toContain('<p>ready</p>');
+			expect(html).toContain(
+				'<script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script>',
+			);
+		});
 	});
 
 	test('renderHostToString({ hydrate: true }) appends provider hydration scripts automatically', () => {
@@ -729,31 +763,6 @@ describe('RadiantComponent', () => {
 		expect(html).toContain('<p>Provider host</p>');
 		expect(html).toContain('<script type="application/json" data-hydration data-context-key="context">');
 		expect(html).toContain('{"label":"SSR context","level":4}');
-	});
-
-	testWhenStandard('renderHostToString({ hydrate: true }) appends signal hydration scripts automatically', () => {
-		class ServerHostSignalCard extends RadiantComponent {
-			@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
-
-			override render() {
-				return <p>{this.status}</p>;
-			}
-		}
-
-		if (!customElements.get('server-host-signal-card-test')) {
-			customElements.define('server-host-signal-card-test', ServerHostSignalCard);
-		}
-		setCustomElementTagName(ServerHostSignalCard, 'server-host-signal-card-test');
-
-		const element = new ServerHostSignalCard();
-		element.status.set('ready');
-		const html = element.renderHostToString({ hydrate: true });
-
-		expect(html).toContain('<server-host-signal-card-test>');
-		expect(html).toContain('<p>ready</p>');
-		expect(html).toContain(
-			'<script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script>',
-		);
 	});
 
 	test('hydrates SSR markup in place on connect', async () => {

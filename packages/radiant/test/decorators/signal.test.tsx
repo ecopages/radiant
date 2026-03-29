@@ -9,7 +9,7 @@ import { signal } from '../../src/decorators/signal';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
-const testWhenStandard = __LEGACY_ENVIRONMENT__ ? test.skip : test;
+const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 const sharedSignalElementCount = createSignalState(2);
 
 @customElement('shared-signal-element-test')
@@ -119,27 +119,29 @@ describe('@signal', () => {
 		});
 	});
 
-	testWhenStandard('supports pre-connect signal reads and writes for host rendering', () => {
-		const element = new SignalComponent();
+	describeWhenStandard('standard decorators only', () => {
+		test('supports pre-connect signal reads and writes for host rendering', () => {
+			const element = new SignalComponent();
 
-		element.count.set(4);
-		element.status.set('loading');
+			element.count.set(4);
+			element.status.set('loading');
 
-		const html = element.renderHostToString();
+			const html = element.renderHostToString();
 
-		expect(html).toContain('Count: 4');
-		expect(html).toContain('Loading');
-	});
+			expect(html).toContain('Count: 4');
+			expect(html).toContain('Loading');
+		});
 
-	testWhenStandard('appends signal hydration scripts to SSR host output when requested', () => {
-		const element = new SignalComponent();
-		element.status.set('ready');
-		const html = element.renderHostToString({ hydrate: true });
+		test('appends signal hydration scripts to SSR host output when requested', () => {
+			const element = new SignalComponent();
+			element.status.set('ready');
+			const html = element.renderHostToString({ hydrate: true });
 
-		expect(html).toContain('<signal-component-test>');
-		expect(html).toContain(
-			'<script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script>',
-		);
+			expect(html).toContain('<signal-component-test>');
+			expect(html).toContain(
+				'<script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script>',
+			);
+		});
 	});
 
 	test('can connect a shared writable signal to a plain RadiantElement field', async () => {
