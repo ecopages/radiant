@@ -133,6 +133,48 @@ test('Nitro playground counter card reacts to its own button clicks', browserTes
 	});
 });
 
+test(
+	'Nitro playground event lab demonstrates auto delegation and the native escape hatch',
+	browserTestOptions,
+	async () => {
+		await withBrowserPage(async (page) => {
+			await gotoPlayground(page);
+
+			const eventLab = page.locator('radiant-event-binding-lab').first();
+			await waitForLocatorText(eventLab.locator('[data-ref="event-auto-count"]'), 'Auto on:click count: 0');
+			await waitForLocatorText(
+				eventLab.locator('[data-ref="event-blocked-auto-count"]'),
+				'Blocked on:click count: 0',
+			);
+			await waitForLocatorText(eventLab.locator('[data-ref="event-native-count"]'), 'on-native:click count: 0');
+
+			await eventLab.locator('[data-ref="event-auto-button"] span').click();
+			await waitForLocatorText(eventLab.locator('[data-ref="event-auto-count"]'), 'Auto on:click count: 1');
+			await waitForLocatorText(
+				eventLab.locator('[data-ref="event-auto-log"]'),
+				'Last auto event: on:click currentTarget: button / target: span',
+			);
+
+			await eventLab.locator('[data-ref="event-blocked-auto-button"] span').click();
+			await waitForLocatorText(
+				eventLab.locator('[data-ref="event-blocked-auto-count"]'),
+				'Blocked on:click count: 0',
+			);
+			await waitForLocatorText(
+				eventLab.locator('[data-ref="event-blocked-note"]'),
+				'Wrapper stopped bubbling before the root listener.',
+			);
+
+			await eventLab.locator('[data-ref="event-native-button"] span').click();
+			await waitForLocatorText(eventLab.locator('[data-ref="event-native-count"]'), 'on-native:click count: 1');
+			await waitForLocatorText(
+				eventLab.locator('[data-ref="event-native-log"]'),
+				'Last native event: on-native:click currentTarget: button / target: span',
+			);
+		});
+	},
+);
+
 test('Nitro playground studio board composes slots and propagates context updates', browserTestOptions, async () => {
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);

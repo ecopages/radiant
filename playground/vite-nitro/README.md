@@ -23,6 +23,7 @@ The current playground is tracking the `RadiantComponent` contract and the light
 - the client can hydrate that host markup instead of immediately replacing it
 - fragment endpoints can now ship a browser-importable client module URL with the SSR markup so lazy components register before insertion
 - the playground now consumes the canonical render result from `@ecopages/radiant/server/render-component`, while Nitro only adapts that metadata into route responses
+- the playground now includes an event policy lab that demonstrates `on:*` auto delegation and the `on-native:*` escape hatch under blocked bubbling
 
 ## Current Status
 

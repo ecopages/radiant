@@ -112,6 +112,7 @@ export function renderPlaygroundView(
 				</p>
 				<div class="component-grid">
 					<radiant-component-counter count={2} />
+					<radiant-event-binding-lab />
 					<radiant-context-flow-shell />
 					<radiant-signal-release-board />
 					<radiant-slot-studio-board>

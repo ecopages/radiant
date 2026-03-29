@@ -6,6 +6,7 @@ import {
 	type RenderedComponent,
 } from '@ecopages/radiant/server/render-component';
 import '../src/components/radiant-component-counter.script';
+import '../src/components/radiant-event-binding-lab.script';
 import '../src/components/radiant-context-flow-shell.script';
 import '../src/components/radiant-signal-release-board.script';
 import '../src/components/radiant-slot-studio-board.script.tsx';

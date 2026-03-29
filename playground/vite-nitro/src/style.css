@@ -310,6 +310,41 @@ strong {
 		linear-gradient(180deg, #fffdfa 0%, #f8fafc 100%);
 }
 
+.component-card--events {
+	background:
+		radial-gradient(circle at top right, rgb(16 185 129 / 0.14), transparent 30%),
+		radial-gradient(circle at bottom left, rgb(14 165 233 / 0.1), transparent 32%),
+		linear-gradient(180deg, #f8fffd 0%, #f8fafc 100%);
+}
+
+.event-lab__layout {
+	display: grid;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.event-lab__lane {
+	padding: 1rem;
+	border-radius: 14px;
+	border: 1px solid #dbe5f0;
+	background: rgb(255 255 255 / 0.84);
+	backdrop-filter: blur(10px);
+}
+
+.event-lab__lane p {
+	margin: 0.4rem 0;
+}
+
+.event-lab__blocked-zone {
+	display: grid;
+	gap: 0.65rem;
+	margin: 0.9rem 0;
+	padding: 0.9rem;
+	border-radius: 14px;
+	border: 1px dashed #94a3b8;
+	background: rgb(241 245 249 / 0.82);
+}
+
 .signal-story__toolbar {
 	display: flex;
 	flex-wrap: wrap;
