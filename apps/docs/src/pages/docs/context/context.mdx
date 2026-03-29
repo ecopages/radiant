@@ -3,23 +3,32 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | Radiant Context',
-  description: 'The place to learn about @ecopages/radiant',
-})
+	title: 'Docs | Radiant Context',
+	description: 'Share state across component boundaries with Radiant context.',
+});
 
 # Context
----
 
-Context is a way to share data between components without having to pass props down through the component tree.
+Context is the Radiant mechanism for sharing data across component boundaries without manually threading props through every intermediate host.
 
 It is based on the [community protocols proposal](https://github.com/webcomponents-cg/community-protocols/blob/main/proposals/context.md).
 
-## Creating a Context
+## Creating A Context
 
-To create a context you can use the `createContext` function. This function takes a generic type that represents the type of the context.
+Use `createContext(...)` to create a typed token.
 
 ```typescript
+import { createContext } from '@ecopages/radiant';
+
 export const myContext = createContext<{ value: string }>(Symbol('my-context'));
 ```
 
-Please read the [context provider documentation](/docs/context/provide-context) to learn how to provide a context to a component and the [context consumer documentation](/docs/context/consume-context) to learn how to consume it.
+## The Three Main APIs
+
+- [@provideContext](/docs/context/provide-context) attaches a provider to a host.
+- [@consumeContext](/docs/context/consume-context) injects the nearest matching provider onto a field.
+- [@contextSelector](/docs/context/context-selector) subscribes a method to the whole context or a selected slice of it.
+
+## Typical Shape
+
+Use context when several related components need shared state such as theme, auth state, carts, todo lists, or service objects.

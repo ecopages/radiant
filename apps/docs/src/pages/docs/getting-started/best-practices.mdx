@@ -10,7 +10,15 @@ export const getMetadata = () => ({
 
 # Best Practices
 
-While Radiant is designed for flexibility, following these best practices will lead to more maintainable and reliable component libraries.
+While Radiant is designed for flexibility, these patterns make the codebase easier to reason about and align with the current component-first model.
+
+## Prefer RadiantComponent First
+
+`RadiantComponent` is the primary path.
+
+Use it when the host itself should render JSX through `render()` and rerender through `update()`.
+
+Reach for `RadiantElement` when the host is mainly imperative, string-template based, or acting as a lower-level custom element inside a JSX tree.
 
 ## Naming Custom Elements
 
@@ -52,6 +60,15 @@ Always export the component class. This is crucial for:
 ### Use Descriptive Names
 Use clear, descriptive names. Avoid generic names like `my-component` or `custom-element`.
 
+### Prefer @prop And @state Names
+
+Use the semantic names in application code:
+
+- `@prop(...)` for public custom-element API
+- `@state` for internal mutable state
+
+`@reactiveProp(...)` and `@reactiveField` still exist, but the public names better communicate intent.
+
 ## Typing Components
 
 Type safety is a core feature of Radiant. We recommend following these patterns to ensure your components are correctly typed for both TypeScript and JSX integration.
@@ -68,10 +85,10 @@ export type UserCardProps = {
 };
 
 @customElement('user-card')
-export class UserCard extends RadiantElement {
-  @reactiveProp({ type: String }) declare name: string;
-  @reactiveProp({ type: String }) declare avatarUrl: string;
-  @reactiveProp({ type: Boolean }) declare isAdmin: boolean;
+export class UserCard extends RadiantComponent {
+  @prop({ type: String }) declare name: string;
+  @prop({ type: String }) declare avatarUrl: string;
+  @prop({ type: Boolean }) declare isAdmin: boolean;
 }
 ```
 
@@ -166,7 +183,7 @@ Custom elements are registered immediately when the file is evaluated. If you im
 
 ### Reactive State Mutation (Reference Equality)
 
-Radiant uses reference equality to detect changes in reactive properties and fields. 
+Radiant uses reference equality to detect changes in reactive props and state fields.
 
 <Banner type="alert" class="mb-4">
   <Banner.Title>IMPORTANT</Banner.Title>
@@ -185,6 +202,10 @@ this.items = [...this.items, 'new item'];
   <Banner.Title>NOTE</Banner.Title>
   <p>This behavior is intentional for performance and is verified by our core test suite.</p>
 </Banner>
+
+### Keep Public Props Narrow
+
+For `RadiantComponent<Bindings>` and `RadiantElement<Bindings>`, treat the generic binding shape as an internal reactive surface. When the public JSX API should be smaller, use a dedicated `Props` type and keep internal bindings separate.
 
 ### Prefer autonomous elements over customized built-ins
 

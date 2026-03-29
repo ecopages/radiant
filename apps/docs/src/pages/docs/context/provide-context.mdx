@@ -4,89 +4,82 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | Context Provider',
-	description: 'The place to learn about @ecopages/radiant',
-})
+	description: 'Provide a typed context value from a Radiant host.',
+});
 
 # @provideContext
----
 
-To provide a context to a component, you can use the `@provideContext` decorator. This decorator takes an object with the following properties:
+Use `@provideContext(...)` to attach a context provider to a host.
 
-- `context`: The context object that you want to provide.
-- `initialValue`: The initial value of the context.
-- `hydrate`: This is an `AttributeType` that will be used to hydrate the context with the data from the server. If provided, the context will be hydrated with the data from the server.
+## Example
 
 ```typescript
-@customElement("my-context")
-export class MyElement extends RadiantElement {
-  	@provideContext({ context: myContext, initialValue: { value: "Hello World" } })
-  	provider!: ContextProvider<typeof myContext>;
-}
-```
+import { type ContextProvider, RadiantComponent, createContext, customElement, provideContext } from '@ecopages/radiant';
 
-If you want to hydrate the context with the data from the server, you can use the `hydrate` property and pass an `AttributeType` that will be used to hydrate the context with the data from the server.
+type ThemeContext = {
+	mode: 'light' | 'dark';
+};
 
-The attribute type can be a `String`, `Number`, `Boolean`, `Object`, or `Array`.
+export const themeContext = createContext<ThemeContext>(Symbol('theme-context'));
 
-```typescript
-@customElement("my-context")
-export class MyElement extends RadiantElement {
-  	@provideContext({ 
-		context: myContext, 
-		initialValue: { logger: new Logger() }, 
-		hydrate: Object
+@customElement('theme-provider')
+export class ThemeProvider extends RadiantComponent {
+	@provideContext<typeof themeContext>({
+		context: themeContext,
+		initialValue: { mode: 'light' },
 	})
-  	provider!: ContextProvider<typeof myContext>;
+	provider!: ContextProvider<typeof themeContext>;
 }
 ```
 
-Once defined, the context provider will search for a script tag with the attribute `data-hydration` and will use the content of the script tag to hydrate the context.
+## Options
 
-This way we follow the best practices to provide complex data to a component.
+| Option | Type | Description |
+| :-- | :-- | :-- |
+| `context` | `Context` | The typed context token to provide |
+| `initialValue` | `T` | Initial provider value |
+| `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes and restores provider state during SSR hydration |
 
-```html
-<my-context-provider>
-	<script type="application/json" data-hydration>
-		{"value": "Hello World"}
-	</script>
-</my-context-provider>
+## SSR Hydration
+
+When `hydrate` is set, the provider can restore its context value from server-rendered hydration data.
+
+```typescript
+@provideContext({
+	context: themeContext,
+	initialValue: { mode: 'light' },
+	hydrate: Object,
+})
+provider!: ContextProvider<typeof themeContext>;
 ```
 
-If you are using `jsx` you can use the `stringifyTyped` function to stringify the data.
-It will stringify the data in a typed way, which is useful when you need to pass attributes to a component that expects a specific type.
+If you are using JSX, `stringifyTyped(...)` is the normal way to emit typed hydration payloads.
 
 ```tsx
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+import { stringifyTyped } from '@ecopages/radiant';
 
-export const MyComponent = ({ value }: { value: number }) => {
-	return <my-context-provider>
-		{...}
-		<script type="application/json" data-hydration>
-			{stringifyTyped({ value })}
-		</script>
-	</my-context-provider>;
-};  
+<theme-provider>
+	<script type="application/json" data-hydration>
+		{stringifyTyped({ mode: 'dark' })}
+	</script>
+</theme-provider>
 ```
 
-Once you have a context provider, all the children of the provider will have access to the context.
-Please note that the provider must be a parent of the consumer.
+## Access From Descendants
 
-[Here you can find the documentation related to the context consumer.](/docs/context/consume-context)
+Any descendant can resolve that provider through [@consumeContext](/docs/context/consume-context) or subscribe with [@contextSelector](/docs/context/context-selector).
 
-```html
-<my-element-provider>
-  	<my-element-consumer></my-element-consumer>
-</my-element-provider>
-```
+## Manual Provider Construction
 
-If for any reason you don't want to use the \`@provideContext\` decorator, you can use the `ContextProvider` component directly.
+If you need lower-level control, you can still construct `ContextProvider` yourself.
 
 ```typescript
-@customElement("my-context")
-export class MyElement extends RadiantElement {
-	provider = new ContextProvider<typeof myContext>(this, {
-		context: myContext,
-		initialValue: { value: "Hello World" },
+import { ContextProvider, RadiantElement } from '@ecopages/radiant';
+
+class ThemeHost extends RadiantElement {
+	provider = new ContextProvider<typeof themeContext>(this, {
+		context: themeContext,
+		initialValue: { mode: 'light' },
 	});
 }
 ```

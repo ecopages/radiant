@@ -7,7 +7,7 @@ type RadiantTodoAppTemplateProps = {
 	todos: TodoContext['todos'];
 };
 
-const getData = async (): Promise<RadiantTodoAppTemplateProps> => {
+const getData = (): RadiantTodoAppTemplateProps => {
 	const now = Date.now();
 	return {
 		todos: [
@@ -54,8 +54,8 @@ const TodoForm = () => {
 	);
 };
 
-export const RadiantTodoApp = async () => {
-	const data = await getData();
+export const RadiantTodoApp = () => {
+	const data = getData();
 	const incompleteTodos = data.todos.filter((todo) => !todo.complete);
 	const completedTodos = data.todos.filter((todo) => todo.complete);
 	return (

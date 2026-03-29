@@ -40,6 +40,29 @@ const createEcoMeta = (file: string): NonNullable<EcoComponentConfig['__eco']> =
 	integration: ECOPAGES_JSX_PLUGIN_NAME,
 });
 
+const wrapMdxPage = (
+	page: AsyncEcoComponent<Record<string, unknown>>,
+	{
+		config,
+		metadata,
+	}: {
+		config: EcoComponentConfig;
+		metadata?: GetMetadata;
+	},
+): AsyncEcoComponent<Record<string, unknown>> => {
+	const wrappedPage = (async (props: Record<string, unknown>) => renderComponent(page, props)) as AsyncEcoComponent<
+		Record<string, unknown>
+	>;
+
+	wrappedPage.config = config;
+
+	if (metadata) {
+		wrappedPage.metadata = metadata;
+	}
+
+	return wrappedPage;
+};
+
 /**
  * Local Ecopages renderer for JSX templates in the docs app.
  *
@@ -86,16 +109,14 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 			...(module.layout ? { layout: module.layout } : {}),
 			__eco: module.config?.__eco ?? Page.config?.__eco ?? createEcoMeta(file),
 		};
-
-		Page.config = normalizedConfig;
-
-		if (module.getMetadata) {
-			Page.metadata = module.getMetadata;
-		}
+		const wrappedPage = wrapMdxPage(Page as AsyncEcoComponent<Record<string, unknown>>, {
+			config: normalizedConfig,
+			metadata: module.getMetadata ?? Page.metadata,
+		});
 
 		return {
 			...module,
-			default: Page,
+			default: wrappedPage,
 			config: normalizedConfig,
 		};
 	}

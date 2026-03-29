@@ -1,1 +1,1 @@
-export * from './radiant-counter';
+export * from './radiant-element-counter';

@@ -14,6 +14,8 @@ export const getMetadata = () => ({
 
 It extends `RadiantElement` and adds the host render loop that connects `render()` to the `@ecopages/jsx` DOM and SSR renderers.
 
+It is additive in the type hierarchy, but it is not meant to make `RadiantElement` obsolete. The important docs distinction is host ownership: choose `RadiantComponent` when the host itself should own a JSX view.
+
 Use it when the custom element itself should:
 
 - describe its host view with JSX
@@ -21,6 +23,8 @@ Use it when the custom element itself should:
 - hydrate SSR output in place
 - project authored light-DOM content through literal `<slot>` tags
 - expose reactive JSX bindings by default for `@prop`, `@state`, `createReactiveProp(...)`, and `createReactiveField(...)`
+
+If you do not override `render()`, the base implementation behaves like `<slot />`, so direct host children become the default unnamed slot content.
 
 ## Example
 
@@ -164,14 +168,19 @@ export class MarketingCard extends RadiantComponent {
 </marketing-card>
 ```
 
-This behaves like a Radiant-managed content projection model, not native shadow-DOM slot distribution. See [Slots](/docs/core/slots) and [@querySlot](/docs/decorators/query-slot).
+This behaves like a Radiant-managed content projection model, not native shadow-DOM slot distribution. See [Slots](/docs/components/slots) and [@querySlot](/docs/decorators/query-slot).
 
 ## Relationship To RadiantElement
 
 `RadiantComponent` is not a replacement for `RadiantElement`. It is the JSX-host layer built on top of it.
 
-- `RadiantElement` is still the base for lower-level custom elements.
-- `RadiantElement` custom elements can still be rendered inside JSX trees.
-- `RadiantComponent` is what you extend when the host itself should own a JSX view.
+If you think of it as a superset, be careful about what that means. It inherits from `RadiantElement`, but the practical choice is still about what owns the host DOM.
 
-See [RadiantElement](/docs/core/radiant-element) and [Todo App](/docs/examples/todo-app).
+- `RadiantElement` is still the base for lower-level custom elements.
+- `RadiantElement` does not need SSR to be useful. It works perfectly well as a client-only reactive custom element.
+- `RadiantElement` custom elements can still be rendered inside JSX trees.
+- `RadiantComponent` is what you extend when the host itself should own a JSX view, hydrate SSR output, or project authored slot content.
+
+Use `RadiantComponent` because the host should render, not because `RadiantElement` is somehow incomplete.
+
+See [RadiantElement](/docs/components/radiant-element) and [Todo App](/docs/examples/todo-app).

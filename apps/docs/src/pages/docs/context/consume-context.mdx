@@ -3,49 +3,71 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-    title: 'Docs | Context Consumer',
-    description: 'The place to learn about @ecopages/radiant',
-})
+	title: 'Docs | Context Consumer',
+	description: 'Consume the nearest matching context provider on a Radiant host.',
+});
 
 # @consumeContext
----
 
-To consume a context in a component, you can use the `@consumeContext` decorator. This decorator takes an object with the following properties:
+Use `@consumeContext(...)` to inject the nearest matching context provider onto a field.
 
-- `context`: The context object that you want to consume.
-
+## Example
 
 ```typescript
-import { myContext } from './my-element-provider'
+import { type ContextProvider, RadiantElement, consumeContext, customElement } from '@ecopages/radiant';
 
-@customElement("my-consumer")
-export class MyElement extends RadiantElement {
-    @consumeContext(myContext)
-    consumer!: ContextProvider<typeof myContext>;
+import { themeContext } from './theme-provider';
+
+@customElement('theme-label')
+export class ThemeLabel extends RadiantElement {
+	@consumeContext(themeContext)
+	provider!: ContextProvider<typeof themeContext>;
+
+	override connectedCallback() {
+		super.connectedCallback();
+		this.textContent = `Theme: ${this.provider.getContext().mode}`;
+	}
+}
 ```
 
-Once you have a context consumer, you can access the context value using the `consumer` property and the following properties:
+The injected field gives you access to the provider API, including `getContext()` and `setContext(...)`.
 
-- `getContext()`: Returns the context value.
+## When To Use It
 
-- `setContext(value: Partial<T>)`: Sets the context value.
+- Use `@consumeContext(...)` when the host needs direct access to the provider object or needs to call provider methods explicitly.
+- Use [@contextSelector](/docs/context/context-selector) when a method should react to the current context value or a selected slice of it.
 
-Please note that is possible to consume multiple contexts in the same component.
+## Client And SSR Behavior
 
-If you need more fine-grained control over the context, you can use the `@contextSelector` decorator, [you can read more about it here](/docs/context/context-selector).
+- During SSR the field can resolve from the active SSR context stack.
+- On the client it falls back to the DOM event-based context channel.
 
-If for any reason you don't want to use the `@consumeContext` decorator, you can simply send a custom event to the provider element with the context value.
+## Multiple Contexts
+
+One host can consume multiple contexts by applying the decorator to multiple fields.
 
 ```typescript
-import { myContext } from './my-element-provider';
-import { ContextRequestEvent } from '@ecopages/radiant';
+@consumeContext(themeContext) theme!: ContextProvider<typeof themeContext>;
+@consumeContext(authContext) auth!: ContextProvider<typeof authContext>;
+```
 
-@customElement("my-consumer")
-export class MyElement extends RadiantElement {
-    context!: ContextProvider<typeof myContext>;
-    connectedCallback() {
-        super.connectedCallback();
-        this.dispatchEvent(new ContextRequestEvent(myContext, (context) => this.context = context));
-    }
+## Manual Alternative
+
+If you need lower-level control, you can still request context manually.
+
+```typescript
+import { ContextRequestEvent, RadiantElement, customElement } from '@ecopages/radiant';
+
+@customElement('theme-label')
+export class ThemeLabel extends RadiantElement {
+	override connectedCallback() {
+		super.connectedCallback();
+
+		this.dispatchEvent(
+			new ContextRequestEvent(themeContext, (provider) => {
+				this.textContent = `Theme: ${provider.getContext().mode}`;
+			}),
+		);
+	}
 }
 ```

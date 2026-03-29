@@ -4,15 +4,45 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
   title: 'Docs | Installation',
-  description: 'The place to learn about @ecopages/radiant',
+  description: 'Install Radiant, JSX, and Signals for the workflow you want.',
 })
 
 # Installation
----
 
-To get started with Radiant, you need to install the package in your project. You can do this by running the following command:
+The most common setup is `@ecopages/radiant` plus `@ecopages/jsx`.
 
 ```bash
-bun install @ecopages/radiant
+bun install @ecopages/radiant @ecopages/jsx
 ```
+
+## TypeScript Setup For JSX
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@ecopages/jsx"
+  }
+}
+```
+
+Or enable it per file:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+```
+
+## Signals Standalone
+
+If you only want the reactive core, install `@ecopages/signals` by itself:
+
+```bash
+bun install @ecopages/signals
+```
+
+## Which Packages To Install
+
+- Install `@ecopages/radiant` when you want custom elements, decorators, context, and host rendering behavior.
+- Install `@ecopages/radiant` plus `@ecopages/jsx` when you want the component-first TSX workflow.
+- Install `@ecopages/signals` when you want the standalone reactive layer.
 

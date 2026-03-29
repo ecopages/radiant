@@ -1,0 +1,93 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | JSX Overview',
+	description: 'What @ecopages/jsx provides and how it fits into the Radiant ecosystem.',
+});
+
+# JSX Overview
+
+`@ecopages/jsx` is the JSX authoring layer for the Radiant ecosystem.
+
+Use it when you want:
+
+- TSX syntax
+- typed intrinsic HTML and SVG elements
+- direct DOM mounting
+- server rendering and hydration helpers
+- fine-grained child bindings without a hook runtime
+
+Keep using `@ecopages/radiant` when you need custom-element classes, decorators, lifecycle, context, and host-managed reactivity.
+
+## Package Boundary
+
+This is the key split:
+
+- `@ecopages/jsx` owns TSX syntax, template creation, DOM mounting, hydration, and SSR serialization.
+- `@ecopages/radiant` owns component behavior and decides when a host should render.
+- Both the DOM and SSR flows consume the same template result shape.
+
+## Install And Configure
+
+```bash
+npm install @ecopages/radiant @ecopages/jsx
+```
+
+```json
+{
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx"
+	}
+}
+```
+
+Or enable it per file:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+```
+
+## Mental Model
+
+The shortest accurate model is:
+
+1. JSX produces a renderer-neutral template result.
+2. That template result can go to the DOM renderer or the SSR renderer.
+3. Fine-grained updates happen at bound child ranges, not through a hook scheduler.
+
+## Quick Start With RadiantComponent
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+
+@customElement('counter-card')
+export class CounterCard extends RadiantComponent {
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+
+	private readonly increment = () => {
+		this.count += 1;
+	};
+
+	override render() {
+		return (
+			<section>
+				<h2>Count: {this.count}</h2>
+				<button type="button" on:click={this.increment}>
+					Increment
+				</button>
+			</section>
+		);
+	}
+}
+```
+
+## Next Pages
+
+- See [JSX Event Handling](/docs/packages/jsx-events) for `on:*` and `on-native:*`.
+- See [JSX Rendering](/docs/packages/jsx-rendering) for `createRoot(...)`, `renderToString(...)`, and hydration.
+- See [RadiantComponent](/docs/components/radiant-component) for the component-level render loop.

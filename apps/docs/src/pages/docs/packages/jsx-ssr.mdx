@@ -1,0 +1,100 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | JSX SSR',
+	description: 'Server rendering and hydration rules for @ecopages/jsx.',
+});
+
+# JSX SSR
+
+`@ecopages/jsx` has one SSR entrypoint: `renderToString(...)`.
+
+It serializes the same JSX authoring output used by the DOM renderer.
+
+## The Two SSR Modes
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { renderToString } from '@ecopages/jsx';
+
+const view = <button class="action">Ship</button>;
+
+const html = renderToString(view);
+const hydratedHtml = renderToString(view, { hydrate: true });
+```
+
+- `renderToString(view)` returns plain HTML
+- `renderToString(view, { hydrate: true })` returns HTML plus binding markers that the client hydrator can reconnect later
+
+Use `hydrate: true` only when the client will hydrate that exact same view.
+
+## What Hydrated SSR Adds
+
+Hydrated output embeds binding descriptors for dynamic parts such as:
+
+- event bindings
+- property bindings
+- boolean and normal attribute bindings
+
+Those markers let `hydrate(...)` attach listeners and property wiring without rebuilding the existing DOM tree.
+
+## Client Attach Step
+
+The normal client follow-up is:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { createRoot } from '@ecopages/jsx';
+
+function App() {
+	return <button class="action">Ship</button>;
+}
+
+const container = document.querySelector('#app');
+
+if (container instanceof HTMLElement) {
+	createRoot(container).hydrate(<App />);
+}
+```
+
+If hydration markers are missing, the client runtime falls back to a normal render.
+
+## SSR And Custom Elements
+
+The JSX SSR pipeline can also serialize registered custom elements when their instances implement `renderHostToString(...)`.
+
+That is how Radiant component hosts can participate in JSX SSR while still owning their host render contract.
+
+At SSR time the runtime:
+
+1. instantiates the registered custom element constructor
+2. applies normalized attributes and serialized children
+3. calls `renderHostToString(...)`
+
+Event handlers are not serialized into HTML. They reconnect only during client hydration.
+
+## Server Rendering Rules
+
+- `on:*` and `on-native:*` bindings are skipped in raw HTML output
+- `prop:*` bindings are applied as properties on server-renderable custom element instances
+- plain text content is escaped
+- iterables are serialized by walking their children in order
+- subscribable and signal-like values are snapshotted to their current value during SSR
+
+## Mental Model
+
+The important distinction is:
+
+- SSR is HTML generation
+- hydration is the later client attach step
+
+They are related, but not the same operation.
+
+## Related APIs
+
+- [JSX Client Rendering](/docs/packages/jsx-rendering) for `createRoot(...)`, `hydrate(...)`, and `hasHydrationMarkers(...)`
+- [RadiantComponent](/docs/components/radiant-component) for host-owned render and `renderHostToString(...)`

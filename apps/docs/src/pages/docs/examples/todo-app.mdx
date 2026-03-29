@@ -1,347 +1,166 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { RadiantTodoApp } from '@/components/radiant-todo-app'
+import { RadiantTodoApp } from '@/components/radiant-todo-app';
 
 export const layout = DocsLayout;
 
 export const config = {
-  dependencies: {
-    components: [RadiantTodoApp]
-  }
-}
+	dependencies: {
+		components: [RadiantTodoApp],
+	},
+};
 
 export const getMetadata = () => ({
-  title: 'Docs | Radiant Todo App',
-  description: 'The place to learn about @ecopages/radiant',
-})
+	title: 'Docs | Radiant Todo App',
+	description: 'An integrated example that combines SSR wrapper markup, a RadiantComponent host, and RadiantElement leaf nodes.',
+});
 
 # Radiant Todo App
----
 
-The `RadiantTodoApp` component is a simple todo app that uses the `ContextProvider` to share data between components.
-
-In this example `RadiantComponent` owns the host JSX view, while `RadiantElement` still appears inside that JSX tree through the `radiant-todo-item` custom element.
-
-That split is important:
-
-- `RadiantTodoApp` extends `RadiantComponent` because the host itself renders JSX through `render()`.
-- `RadiantTodoItem` extends `RadiantElement` because it is a lower-level custom element that receives props, light-DOM children, and events from the JSX tree.
-
-The features of this todo app are:
-
-- Add a todo
-- Mark a todo as completed
-- Show the number of todos and completed todos
-- Move a todo to the completed list once it is marked as completed
-- Move a todo to the todo list once it is marked as incomplete
-- Show a message when there are no todos to show
-
-Also if the list of the features seems not to be so big, there is a lot of concepts that are being used in this example.
-
-Let's check it together.
+This is the integration example, not the first base-class example.
 
 <RadiantTodoApp />
 
-## Jsx Markup
+It combines three different jobs in one flow:
 
-This is the jsx markup of the `RadiantTodoApp` component.
+- an SSR-friendly wrapper that emits initial markup and hydration data
+- a `RadiantComponent` host that owns the board view and rerender boundary
+- `RadiantElement` leaf items that handle lower-level DOM interaction
 
-In the server-rendered markup we have a form to add a new todo, two sections to show the todos and completed todos, and a script tag to hydrate the context.
+## Why This Example Exists
 
-The `hydrate` attribute is used to merge the data from the server with the initial value of the context, please read the [provideContext](/docs/context/provide-context) documentation to understand how it works.
+The todo app is useful because it shows that `RadiantComponent` and `RadiantElement` are complementary.
 
-Since hydrate will merge the data with the initial value, you can pass only the properties that you want to update.
+`RadiantComponent` is not replacing the item element here. The host and the leaf nodes solve different problems.
+
+## 1. SSR Wrapper Markup
+
+The wrapper emits initial HTML plus hydration data.
 
 ```tsx
-const TodoPanel = ({
-  title,
-  count,
-  children,
-  ref,
-}: { title: string; count: number; children: JSX.Element; ref: string }) => {
-  return (
-    <article class="todo__panel">
-      <h2>{title}</h2>
-      <p class="todo__count">
-        {title}: <span data-ref={`count-${ref}`}>{count}</span>
-      </p>
-      <div class="todo__list" data-ref={`list-${ref}`}>
-        {children}
-      </div>
-    </article>
-  );
-};
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
-const TodoForm = () => {
-  return (
-    <form>
-      <div class="form-group">
-        <label for="new-todo">Add Todo</label>
-        <input id="new-todo" name="todo" />
-      </div>
-      <button type="submit">Add</button>
-    </form>
-  );
-};
+export const RadiantTodoApp = () => {
+	const data = getData();
+	const incompleteTodos = data.todos.filter((todo) => !todo.complete);
+	const completedTodos = data.todos.filter((todo) => todo.complete);
 
-export const RadiantTodoApp = ({ todos }: { todos: Todo[] }) => {
-  const incompleteTodos = todos.filter((todo) => !todo.complete);
-  const completedTodos = todos.filter((todo) => todo.complete);
-  return (
-    <radiant-todo-app class="todo">
-      <section class="todo__board">
-        <TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
-          {incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
-        </TodoPanel>
-        <TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
-          {completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
-        </TodoPanel>
-      </section>
-      <TodoForm />
-      <script type="json" data-hydration>
-        {stringifyTyped<Partial<TodoContext>, string>({ todos })}
-      </script>
-    </radiant-todo-app>
-  );
+	return (
+		<radiant-todo-app class="todo">
+			<section class="todo__board">
+				<TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
+					{incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
+				</TodoPanel>
+				<TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
+					{completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
+				</TodoPanel>
+			</section>
+			<TodoForm />
+			<script type="json" data-hydration>
+				{stringifyTyped<Partial<TodoContext>, string>({ todos: data.todos })}
+			</script>
+		</radiant-todo-app>
+	);
 };
 ```
 
-The docs app currently fetches the initial todo list before this JSX runs and passes the resolved data in. That keeps the JSX component itself synchronous, which matches the current `@ecopages/jsx` runtime model on both the server and client.
+That part is about SSR and first paint, not about replacing `RadiantElement`.
 
-## Typescript
+## 2. RadiantComponent Host
 
-In this first snippet we have the `radiant-todo-app` component that is responsible for managing the todos.
+The host owns shared state, context, and the top-level JSX render loop.
 
-The features used in this component are:
-
-- `@provideContext` decorator to provide the context to the children components
-- `@onEvent` decorator to listen for the form submit event
-- `@contextSelector` decorator to schedule a rerender when the todo context changes
-- `render()` method to describe the JSX view directly from the component state and context
-
-```typescript
+```tsx
 import {
-  type ContextProvider,
-  RadiantComponent,
-  RadiantElement,
-  consumeContext,
-  contextSelector,
-  createContext,
-  customElement,
-  onEvent,
-  prop,
-  provideContext,
-  query,
+	type ContextProvider,
+	RadiantComponent,
+	contextSelector,
+	createContext,
+	customElement,
+	onEvent,
+	provideContext,
 } from '@ecopages/radiant';
-
-import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
-
-export type Todo = {
-  id: string;
-  text: string;
-  complete: boolean;
-};
-
-export type TodoContext = {
-  todos: Todo[];
-  logger: Logger;
-};
 
 export const todoContext = createContext<TodoContext>(Symbol('todo-context'));
 
-class Logger {
-  log(message: string) {
-    console.log('%cLOGGER', 'background: #222; color: #bada55', message);
-  }
-}
-
 @customElement('radiant-todo-app')
 export class RadiantTodoApp extends RadiantComponent {
-  @provideContext<typeof todoContext>({
-    context: todoContext,
-    initialValue: { todos: [], logger: new Logger() },
-    hydrate: Object,
-  })
-  provider!: ContextProvider<typeof todoContext>;
+	@provideContext<typeof todoContext>({
+		context: todoContext,
+		initialValue: { todos: [], logger: new Logger() },
+		hydrate: Object,
+	})
+	provider!: ContextProvider<typeof todoContext>;
 
-  @onEvent({ selector: 'form', type: 'submit' })
-  submitTodo(event: FormDataEvent) {
-    event.preventDefault();
-    const form = event.target as HTMLFormElement;
-    const formData = new FormData(form);
-    const todo = formData.get('todo');
+	@onEvent({ selector: 'form', type: 'submit' })
+	submitTodo(event: FormDataEvent) {
+		event.preventDefault();
+		const form = event.target as HTMLFormElement;
+		const formData = new FormData(form);
+		const todo = formData.get('todo');
 
-    if (todo) {
-      const prevTodos = this.provider.getContext().todos;
-      const todos = [...prevTodos, { id: Date.now().toString(), text: todo.toString(), complete: false }];
-      this.provider.setContext({ todos });
-      form.reset();
-    }
-  }
+		if (todo) {
+			const prevTodos = this.provider.getContext().todos;
+			const todos = [...prevTodos, { id: Date.now().toString(), text: todo.toString(), complete: false }];
+			this.provider.setContext({ todos });
+			form.reset();
+		}
+	}
 
-  @contextSelector({ context: todoContext })
-  onTodosUpdated() {
-    this.update();
-  }
-
-  override render() {
-    const todos = this.provider.getContext().todos;
-    const todosCompleted = todos.filter((todo) => todo.complete);
-    const todosIncomplete = todos.filter((todo) => !todo.complete);
-
-    return (
-      <>
-        <section class="todo__board">
-          <article class="todo__panel">
-            <h2>Incomplete Todos</h2>
-            <p class="todo__count">Incomplete Todos: <span data-ref="count-incomplete">{todosIncomplete.length}</span></p>
-            <div class="todo__list" data-ref="list-incomplete">
-              {todosIncomplete.length > 0 ? <TodoList todos={todosIncomplete} /> : <NoTodosMessage />}
-            </div>
-          </article>
-          <article class="todo__panel">
-            <h2>Completed Todos</h2>
-            <p class="todo__count">Completed Todos: <span data-ref="count-complete">{todosCompleted.length}</span></p>
-            <div class="todo__list" data-ref="list-complete">
-              {todosCompleted.length > 0 ? <TodoList todos={todosCompleted} /> : <NoCompletedTodosMessage />}
-            </div>
-          </article>
-        </section>
-        <form>
-          <div class="form-group">
-            <label for="new-todo">Add Todo</label>
-            <input id="new-todo" name="todo" />
-          </div>
-          <button type="submit">Add</button>
-        </form>
-      </>
-    );
-  }
-}
-
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-
-declare module '@ecopages/jsx/jsx-runtime' {
-  interface JsxCustomIntrinsicElements {
-    'radiant-todo-app': JsxCustomElementAttributes<HTMLElement>;
-  }
+	@contextSelector({ context: todoContext })
+	onTodosUpdated() {
+		this.update();
+	}
 }
 ```
 
-In this second snippet we have the `radiant-todo-item` component that is responsible for rendering the todo item.
+This is exactly where `RadiantComponent` is strongest: the host owns the view and rerenders explicitly through `render()` and `update()`.
 
-The features used in this component are:
+## 3. RadiantElement Leaf Nodes
 
-- `@query` decorator to query for the checkbox element
-- `@prop` decorator to define the complete attribute
-- `@consumeContext` decorator to consume the context from the parent component
+Each todo item stays a `RadiantElement` because it is a lower-level custom element with its own DOM queries and event handling.
 
-```typescript
-export type RadiantTodoProps = {
-    complete?: boolean;
-};
+```tsx
+import {
+	type ContextProvider,
+	RadiantElement,
+	consumeContext,
+	customElement,
+	onEvent,
+	prop,
+	query,
+} from '@ecopages/radiant';
 
 @customElement('radiant-todo-item')
 export class RadiantTodoItem extends RadiantElement {
-  @query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
-  @prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
-  @consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
+	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
+	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.complete = this.checkbox.checked;
-  }
+	override connectedCallback(): void {
+		super.connectedCallback();
+		this.complete = this.checkbox.checked;
+	}
 
-  @onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
-  toggleComplete(event: Event) {
-    const checkbox = event.target as HTMLInputElement;
-    const todo = this.context.getContext().todos.find((t) => t.id === this.id);
-    if (!todo) return;
+	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
+	toggleComplete(event: Event) {
+		const checkbox = event.target as HTMLInputElement;
 
-    this.complete = checkbox.checked;
-
-    this.context.setContext({
-      todos: this.context.getContext().todos.map((t) => (t.id === this.id ? { ...t, complete: checkbox.checked } : t)),
-    });
-
-    const logger = this.context.getContext().logger;
-    logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
-  }
-
-  @onEvent({ ref: 'remove-todo', type: 'click' })
-  removeTodo() {
-    this.context.setContext({
-      todos: this.context.getContext().todos.filter((t) => t.id !== this.id),
-    });
-
-    const logger = this.context.getContext().logger;
-    logger.log(`Todo ${this.id} removed`);
-  }
-}
-
-import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-
-declare module '@ecopages/jsx/jsx-runtime' {
-  interface JsxCustomIntrinsicElements {
-    'radiant-todo-item': JsxCustomElementAttributes<HTMLElement, RadiantTodoProps>;
-  }
+		this.context.setContext({
+			todos: this.context
+				.getContext()
+				.todos.map((todo) => (todo.id === this.id ? { ...todo, complete: checkbox.checked } : todo)),
+		});
+	}
 }
 ```
 
-Finally, in this last snippet we have the `NoTodosMessage`, `NoCompletedTodosMessage`, `TodoItem` and `TodoList` components.
+This element does not need its own host JSX render loop to be valuable.
 
-These components are responsible for rendering the messages when there are no todos to show, the todo item and the todo list.
+## What This Example Should Teach
 
-They are used both in the initial markup and in the component rerender path.
+- `RadiantElement` does not need SSR in order to work.
+- `RadiantComponent` is the host-owned render mode built on top of `RadiantElement`.
+- A larger app often uses both together.
+- SSR, slots, and leaf custom elements are different concerns and do not need to be collapsed into one base class explanation.
 
-Notice that `TodoItem` returns `<radiant-todo-item ...>` directly. That is the proof point that a `RadiantElement` custom element still works inside the JSX tree rendered by `RadiantComponent`.
-
-```tsx
-import type { Todo } from './radiant-todo-app.script';
-
-export const NoTodosMessage = () => {
-    return <div>No todos to show</div>;
-};
-
-export const NoCompletedTodosMessage = () => {
-    return <div>No completed todos to show</div>;
-};
-
-export const TodoItem = ({ id, complete, text }: Todo) => {
-    return (
-      <radiant-todo-item complete={complete} class="todo__item" id={id}>
-        {text}
-        <span>
-          <input type="checkbox" checked={complete} />
-        </span>
-        <button type="button" class="todo__item-remove">
-          <svg
-            width="20"
-            height="20"
-            aria-hidden="true"
-            focusable="false"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-x"
-          >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
-        </button>
-      </radiant-todo-item>
-    );
-};
-
-export const TodoList = ({ todos }: { todos: Todo[] }) => {
-    return (
-      <>
-        {todos.map((todo) => (
-          <TodoItem {...todo} />
-        ))}
-      </>
-    );
-};
-```
+If you are learning the base classes, start with [Radiant Counter](/docs/examples/counter). If you want the mixed architecture example, this todo app is the right next step.

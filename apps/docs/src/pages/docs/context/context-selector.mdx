@@ -3,74 +3,64 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @contextSelector',
-  description: 'The place to learn about @ecopages/radiant',
-})
+	title: 'Docs | @contextSelector',
+	description: 'Subscribe a method to a whole context value or a selected slice of it.',
+});
 
 # @contextSelector
----
 
-The `@contextSelector` decorator is used to consume a specific property of a context. This decorator takes an object with the following properties:
+Use `@contextSelector(...)` when a method should run with the current context value, or a selected slice of it.
 
-- `context`: The context object that you want to consume.
-- `select`: The property of the context that you want to consume.
-- `subscribe`: A boolean that indicates if the consumer should subscribe to changes in the context.
+## Options
 
-If `subscribe` is set to `true`, the consumer will be updated whenever the context value changes.
+| Option | Type | Description |
+| :-- | :-- | :-- |
+| `context` | `Context` | The context token to resolve |
+| `select` | `(context) => unknown` | Optional projection that narrows the resolved value before delivery |
+| `subscribe` | `boolean` | Whether client-side subscriptions stay active after the first value |
 
-This decorator is a method decorator, so it should be used on a method of a class that will be triggered when the context value changes.
+## Example
 
-Here is an example of how to use the `@contextSelector` decorator:
 ```typescript
-import { MyContext } from './my-element-provider'
+import { RadiantComponent, contextSelector, customElement } from '@ecopages/radiant';
 
-@customElement("my-consumer")
-export class MyElement extends RadiantElement {
-  @contextSelector({ context: todoContext, select: ({ value }) => ({ value }) })
-  handleValue({ value }: Pick<MyContext, 'value'>) {
-    console.log(value);
-  }
+import { todoContext } from './todo-context';
+
+@customElement('todo-summary')
+export class TodoSummary extends RadiantComponent {
+	@contextSelector({
+		context: todoContext,
+		select: ({ todos }) => ({ count: todos.length }),
+	})
+	onTodoCountChanged({ count }: { count: number }) {
+		this.dataset.count = String(count);
+		this.update();
+	}
 }
 ```
 
-
-This can be very handy when you need to manipulate the context value before using it.
-
-```typescript
-import { MyContext } from './my-element-provider'
-@customElement("my-consumer")
-export class MyElement extends RadiantElement {
-  @contextSelector({
-    context: todoContext,
-    select: ({ value }) => ({ value: value.map((item) => item + 1) }),
-  })
-  handleValue({ value }: Pick<MyContext, 'value'>) {
-    console.log(value);
-  }
-}
-```
-If for any reason you don't want to use the `@contextSelector` decorator, you can subscribe to the context changes manually.
+`select` is useful when the method should react to a stable derived slice rather than the whole context object.
 
 ```typescript
-import { MyContext } from './my-element-provider'
-@customElement("my-consumer")
-export class MyElement extends RadiantElement {
-  context!: ContextProvider<typeof myContext>;
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.onChangeValue = this.onChangeValue.bind(this);
-    this.dispatchEvent(
-      new ContextRequestEvent(contextToProvide, (context) => {
-        this.context = context;
-        this.context.subscribe({ select: 'value', callback: this.onChangeValue });
-      }),
-    );
-  }
-
-  onChangeValue({ value }: Pick<MyContext, 'value'>) {
-    console.log(value);
-  }
+@customElement('todo-summary')
+export class TodoSummary extends RadiantComponent {
+	@contextSelector({
+		context: todoContext,
+		select: ({ todos }) => ({
+			completed: todos.filter((todo) => todo.complete).length,
+		}),
+	})
+	onCompletedCountChanged({ completed }: { completed: number }) {
+		this.dataset.completed = String(completed);
+	}
 }
 ```
 
+## Subscribe Behavior
+
+On the client, the decorated method keeps receiving updates according to the `subscribe` option. During SSR, the method can also run when an ambient provider is available.
+
+## When To Use It
+
+- Use `@contextSelector(...)` when a method should react to context changes.
+- Use [@consumeContext](/docs/context/consume-context) when the host needs the provider object itself.

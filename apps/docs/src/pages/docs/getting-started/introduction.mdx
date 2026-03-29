@@ -4,32 +4,42 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
   title: 'Docs | Introduction',
-  description: 'Learn about @ecopages/radiant - a minimalist web component library.',
+  description: 'Learn how Radiant, JSX, and Signals fit together in the Radiant ecosystem.',
 })
 
 # Introduction
 
-**Radiant** is a minimalist web component library designed for simplicity, flexibility, and performance. It provides a lightweight set of decorators and a base class to streamline the development of modern web components.
+Radiant is a light-DOM custom-element toolkit with three package layers that work together:
 
-## Key Features
+- `@ecopages/radiant` for custom-element classes, decorators, lifecycle, context, and host rendering behavior
+- `@ecopages/jsx` for TSX authoring, DOM mounting, SSR serialization, and hydration helpers
+- `@ecopages/signals` for renderer-agnostic signals, effects, watchers, and stores
 
-- **Light DOM by Default**: Leverages the light DOM for seamless integration with global CSS and easier manipulation.
-- **Declarative Reactivity**: Simple decorators for managing properties, internal state, and attribute synchronization.
-- **Event Management**: Built-in event emitters and declarative event subscription.
-- **Minimal Overhead**: Focuses on the core features needed for robust components without the bloat of larger frameworks.
+## Start Here
 
-## Why Radiant?
+The default path today is:
 
-While many web component libraries focus on isolating components via the Shadow DOM, Radiant embraces the **Light DOM**. This approach is ideal for projects that require:
+1. Install `@ecopages/radiant` and `@ecopages/jsx`
+2. Build host views with `RadiantComponent`
+3. Use `@prop` for public API and `@state` for internal state
+4. Reach for `RadiantElement` only when the host is primarily imperative or string-template based
 
-1. **Global Styling**: Use your existing CSS framework or utility-first CSS (like Tailwind) without additional configuration.
-2. **Simplified Interaction**: Easier integration with other libraries and standard browser APIs.
-3. **Performance**: Reduced overhead from shadow root creation and management.
+## Why Light DOM
+
+Radiant deliberately embraces the light DOM instead of making shadow DOM the default.
+
+That is a good fit when you want:
+
+1. Global styling without shadow-boundary workarounds
+2. Easier integration with existing CSS and DOM tooling
+3. A smaller runtime model centered on browser primitives
 
 ## Getting Started
 
 If you're new to Radiant, we recommend starting with the following guides:
 
-1. [Installation](/docs/getting-started/installation) - Set up Radiant in your project.
-2. [Best Practices](/docs/getting-started/best-practices) - Learn the recommended patterns for building components.
-3. [RadiantElement](/docs/core/radiant-element) - Understand the base class at the heart of Radiant.
+1. [Installation](/docs/getting-started/installation) - Set up the package combination you need.
+2. [Best Practices](/docs/getting-started/best-practices) - Learn the recommended component-first patterns.
+3. [RadiantComponent](/docs/components/radiant-component) - Start with the primary component model.
+4. [JSX Overview](/docs/packages/jsx-overview) - Understand the TSX authoring layer.
+5. [Signals Overview](/docs/packages/signals-overview) - Understand the standalone reactive core.

@@ -11,7 +11,9 @@ export const getMetadata = () => ({
 
 `RadiantElement` is the low-level base class for Radiant custom elements.
 
-Use it when the host is primarily imperative or string-template based and you still want Radiant's reactive model underneath.
+Use it when the host is primarily imperative, string-template based, or acting as a lower-level custom element inside a bigger JSX tree.
+
+It does not need SSR to be valuable. `RadiantElement` works perfectly well as a client-side reactive custom element.
 
 It gives you:
 
@@ -22,7 +24,7 @@ It gives you:
 - string-template rendering through `renderTemplate(...)`
 - opt-in JSX bindings through `bind(...)`, `bindings`, and `$`
 
-Use [RadiantComponent](/docs/core/radiant-component) instead when the host itself should render and hydrate JSX through `render()` and `update()`.
+Use [RadiantComponent](/docs/components/radiant-component) instead when the host itself should render and hydrate JSX through `render()` and `update()`.
 
 ## Example
 
@@ -68,6 +70,8 @@ This example keeps the host imperative while still using Radiant's reactive prop
 
 What `RadiantElement` does **not** provide by itself is the host JSX render loop. There is no built-in `render()` / `update()` / `hydrate()` flow on `RadiantElement`. That layer lives on `RadiantComponent`.
 
+That does not make `RadiantElement` a lesser API. It means the host can stay simpler when it does not need to own JSX rendering.
+
 The todo example uses exactly this split:
 
 - `RadiantTodoApp` extends `RadiantComponent` and owns the host JSX view.
@@ -88,4 +92,5 @@ See [Todo App](/docs/examples/todo-app).
 - Use `RadiantElement` when the host is mainly imperative or string-template based.
 - Use `RadiantComponent` when the host view should be authored in JSX.
 - Use either base class for reactive props, state, events, and context.
+- SSR is optional and separate from this choice. Pick the base class based on host ownership, not on whether the element might be server-rendered.
 - Use `RadiantElement` custom elements freely inside JSX trees rendered by `RadiantComponent`.

@@ -15,11 +15,11 @@ The `@onUpdated` decorator registers a callback method that executes automatical
 ## Usage
 
 ```typescript
-import { RadiantElement, customElement, reactiveProp, onUpdated } from '@ecopages/radiant';
+import { RadiantElement, customElement, onUpdated, prop } from '@ecopages/radiant';
 
 @customElement('user-greeting')
 export class UserGreeting extends RadiantElement {
-	@reactiveProp({ type: String }) declare name: string;
+	@prop({ type: String }) declare name: string;
 	
 	@onUpdated('name')
 	updateGreeting() {
@@ -54,8 +54,8 @@ updateFullName() {
 Calculate and update internal state derived from public properties.
 
 ```typescript
-@reactiveProp({ type: Array }) declare items: CartItem[];
-@reactiveField private total = 0;
+@prop({ type: Array }) declare items: CartItem[];
+@state total = 0;
 
 @onUpdated('items')
 calculateTotals() {
@@ -82,6 +82,6 @@ applyTheme() {
 
 ## Learn More
 
-- [@reactiveProp](/docs/decorators/reactive-prop) - Define public reactive properties.
-- [@reactiveField](/docs/decorators/reactive-field) - Define internal reactive fields.
+- [@prop](/docs/decorators/prop) - Define public reactive properties.
+- [@state](/docs/decorators/state) - Define internal reactive state.
 - [@debounce](/docs/decorators/debounce) - Debounce frequent updates.
