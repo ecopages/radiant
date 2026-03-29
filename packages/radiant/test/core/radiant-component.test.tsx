@@ -454,7 +454,9 @@ describe('RadiantComponent', () => {
 		try {
 			const html = renderToString(<ssr-array-prop-card-test items={[{ label: 'first' }, { label: 'second' }]} />);
 
-			expect(html).toContain('<ssr-array-prop-card-test items="[{&quot;label&quot;:&quot;first&quot;},{&quot;label&quot;:&quot;second&quot;}]">');
+			expect(html).toContain(
+				'<ssr-array-prop-card-test items="[{&quot;label&quot;:&quot;first&quot;},{&quot;label&quot;:&quot;second&quot;}]">',
+			);
 			expect(html).toContain('<p>first, second</p>');
 			expect(html).not.toContain('[object Object]');
 		} finally {

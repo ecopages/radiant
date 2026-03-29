@@ -289,9 +289,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			return [];
 		}
 
-		return Array.from(hostWithChildren.childNodes).filter(
-			(node): node is Element => node.nodeType === 1,
-		);
+		return Array.from(hostWithChildren.childNodes).filter((node): node is Element => node.nodeType === 1);
 	}
 
 	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T> | undefined) => {

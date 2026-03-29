@@ -36,14 +36,20 @@ export class TimerComponent extends RadiantElement {
 
 			<h2>When To Use It</h2>
 			<ul>
-				<li>timers such as <code>setTimeout(...)</code> and <code>setInterval(...)</code></li>
-				<li>DOM listeners added manually with <code>addEventListener(...)</code></li>
+				<li>
+					timers such as <code>setTimeout(...)</code> and <code>setInterval(...)</code>
+				</li>
+				<li>
+					DOM listeners added manually with <code>addEventListener(...)</code>
+				</li>
 				<li>promise chains or callback-based APIs</li>
 				<li>public methods that may be overridden in subclasses</li>
 			</ul>
 
 			<h2>@bound vs Arrow Functions</h2>
-			<p>Both solve <code>this</code> binding, but the tradeoff is different.</p>
+			<p>
+				Both solve <code>this</code> binding, but the tradeoff is different.
+			</p>
 			<ul>
 				<li>
 					<code>@bound</code> keeps the method on the prototype and binds it per instance on first access.
@@ -67,8 +73,8 @@ export class MyComponent extends RadiantElement {
 			<h2>Relationship To @onEvent(...)</h2>
 			<p>
 				You usually do not need <code>@bound</code> for methods decorated with{' '}
-				<a href="/docs/decorators/on-event">@onEvent</a>, because that decorator already manages method
-				wiring for its own subscription path.
+				<a href="/docs/decorators/on-event">@onEvent</a>, because that decorator already manages method wiring
+				for its own subscription path.
 			</p>
 			<p>
 				<code>@bound</code> is most useful for methods you pass manually.

@@ -22,12 +22,10 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 			}
 
 			const connectSelection = () => {
-				connectContextSelection(
-					this,
-					context,
-					(value) => applySelectedContext(this, value),
-					{ select, subscribe },
-				);
+				connectContextSelection(this, context, (value) => applySelectedContext(this, value), {
+					select,
+					subscribe,
+				});
 			};
 
 			this.registerConnectedCallback(() => {

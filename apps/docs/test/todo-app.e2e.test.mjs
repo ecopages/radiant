@@ -33,29 +33,33 @@ test.after(async () => {
 	await stopServer(docsPreviewServer);
 });
 
-test('Docs todo example preserves SSR todos after upgrade and keeps context interactions live', browserTestOptions, async () => {
-	await withBrowserPage(async (page) => {
-		await page.goto(`${origin}/docs/examples/todo-app.html`, { waitUntil: 'load' });
-		await page.waitForSelector('radiant-todo-app');
+test(
+	'Docs todo example preserves SSR todos after upgrade and keeps context interactions live',
+	browserTestOptions,
+	async () => {
+		await withBrowserPage(async (page) => {
+			await page.goto(`${origin}/docs/examples/todo-app.html`, { waitUntil: 'load' });
+			await page.waitForSelector('radiant-todo-app');
 
-		const todoApp = page.locator('radiant-todo-app').first();
+			const todoApp = page.locator('radiant-todo-app').first();
 
-		await waitForLocatorText(todoApp.locator('[data-ref="count-incomplete"]'), '2');
-		await waitForLocatorText(todoApp.locator('[data-ref="count-complete"]'), '1');
-		await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-complete"]'), /Create a todo app/);
-		await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Add a todo item/);
-		await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Complete a todo item/);
+			await waitForLocatorText(todoApp.locator('[data-ref="count-incomplete"]'), '2');
+			await waitForLocatorText(todoApp.locator('[data-ref="count-complete"]'), '1');
+			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-complete"]'), /Create a todo app/);
+			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Add a todo item/);
+			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Complete a todo item/);
 
-		await todoApp.locator('input[name="todo"]').fill('Verify docs hydration');
-		await todoApp.getByRole('button', { name: 'Add' }).click();
+			await todoApp.locator('input[name="todo"]').fill('Verify docs hydration');
+			await todoApp.getByRole('button', { name: 'Add' }).click();
 
-		await waitForLocatorText(todoApp.locator('[data-ref="count-incomplete"]'), '3');
-		await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Verify docs hydration/);
+			await waitForLocatorText(todoApp.locator('[data-ref="count-incomplete"]'), '3');
+			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Verify docs hydration/);
 
-		await todoApp.getByLabel('Verify docs hydration').check();
+			await todoApp.getByLabel('Verify docs hydration').check();
 
-		await waitForLocatorText(todoApp.locator('[data-ref="count-incomplete"]'), '2');
-		await waitForLocatorText(todoApp.locator('[data-ref="count-complete"]'), '2');
-		await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-complete"]'), /Verify docs hydration/);
-	});
-});
+			await waitForLocatorText(todoApp.locator('[data-ref="count-incomplete"]'), '2');
+			await waitForLocatorText(todoApp.locator('[data-ref="count-complete"]'), '2');
+			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-complete"]'), /Verify docs hydration/);
+		});
+	},
+);

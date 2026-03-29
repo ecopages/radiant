@@ -377,7 +377,8 @@ describe('Context', () => {
 			customElements.define('late-upgrade-consumer', LateUpgradeConsumer);
 		}
 
-		document.body.innerHTML = '<late-upgrade-provider><late-upgrade-consumer></late-upgrade-consumer></late-upgrade-provider>';
+		document.body.innerHTML =
+			'<late-upgrade-provider><late-upgrade-consumer></late-upgrade-consumer></late-upgrade-provider>';
 
 		class LateUpgradeProvider extends RadiantElement {
 			@provideContext<typeof lateContext>({

@@ -72,7 +72,11 @@ export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingPro
 						<button
 							key={manager}
 							type="button"
-							class={this.selected === manager ? 'install-cmd__tab install-cmd__tab--active' : 'install-cmd__tab'}
+							class={
+								this.selected === manager
+									? 'install-cmd__tab install-cmd__tab--active'
+									: 'install-cmd__tab'
+							}
 							aria-pressed={this.selected === manager}
 							on:click={() => {
 								this.setSelected(manager);

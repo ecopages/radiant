@@ -6,8 +6,7 @@ const DebouncePage: EcoComponent = () => {
 		<>
 			<h1>@debounce</h1>
 			<p>
-				<code>@debounce</code> delays a method until a configured quiet period has passed since the last
-				call.
+				<code>@debounce</code> delays a method until a configured quiet period has passed since the last call.
 			</p>
 			<p>Use it when a handler would otherwise run too often, such as during typing, resize, or scroll.</p>
 
@@ -67,7 +66,9 @@ export class SearchInput extends RadiantElement {
 				Use <a href="/docs/decorators/bound">@bound</a> when you need stable <code>this</code> binding for a
 				callback.
 			</p>
-			<p>Use <code>@debounce</code> when the call timing itself should be delayed.</p>
+			<p>
+				Use <code>@debounce</code> when the call timing itself should be delayed.
+			</p>
 			<p>Sometimes a method benefits from both decorators.</p>
 		</>
 	);

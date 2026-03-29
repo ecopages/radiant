@@ -189,7 +189,9 @@ describe('render-component server helpers', () => {
 			},
 		});
 
-		expect(rendered.markup).toContain('<script type="application/json" data-hydration data-context-key="provider">{"count":5}</script>');
+		expect(rendered.markup).toContain(
+			'<script type="application/json" data-hydration data-context-key="provider">{"count":5}</script>',
+		);
 		expect(rendered.markup).not.toContain('&quot;');
 		expect(rendered.markup).not.toContain('logger');
 	});
