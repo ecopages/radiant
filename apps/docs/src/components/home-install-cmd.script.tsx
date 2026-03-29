@@ -13,7 +13,7 @@ export type RadiantInstallBindingProps = RadiantInstallCmdProps & {
 
 @customElement('radiant-install-cmd')
 export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingProps> {
-	@prop({ type: String, defaultValue: '' }) declare packages: string;
+	@prop({ type: String }) packages = '';
 	@state selected: PkgManager = 'bun';
 	@state copied = false;
 
@@ -42,6 +42,10 @@ export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingPro
 	};
 
 	private readonly setSelected = (manager: PkgManager) => {
+		if (this.selected === manager) {
+			return;
+		}
+
 		this.selected = manager;
 	};
 
@@ -68,11 +72,7 @@ export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingPro
 						<button
 							key={manager}
 							type="button"
-							class={[
-								this.selected === manager
-									? 'install-cmd__tab install-cmd__tab--active'
-									: 'install-cmd__tab',
-							]}
+							class={this.selected === manager ? 'install-cmd__tab install-cmd__tab--active' : 'install-cmd__tab'}
 							aria-pressed={this.selected === manager}
 							on:click={() => {
 								this.setSelected(manager);
@@ -86,8 +86,8 @@ export class RadiantInstallCmd extends RadiantComponent<RadiantInstallBindingPro
 					<span class="install-cmd__command">{command}</span>
 					<button
 						type="button"
-						class={[this.$.copied ? 'install-cmd__copy install-cmd__copy--copied' : 'install-cmd__copy']}
-						aria={{ label: this.$.copied ? 'Copied to clipboard' : 'Copy install command' }}
+						class={this.copied ? 'install-cmd__copy install-cmd__copy--copied' : 'install-cmd__copy'}
+						aria-label={this.copied ? 'Copied to clipboard' : 'Copy install command'}
 						on:click={this.handleCopy}
 					>
 						<span class="install-cmd__icon" aria-hidden="true"></span>

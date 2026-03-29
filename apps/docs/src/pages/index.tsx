@@ -1,6 +1,6 @@
 import type { EcoComponent } from '@ecopages/core';
 import { BaseLayout } from '@/layouts/base-layout';
-import { HomeInstallCmd } from '../components/home-install-cmd';
+import '../components/home-install-cmd.script';
 
 const HomeCard = ({
 	href,
@@ -30,10 +30,6 @@ const HomePathCard = ({ href, title, description }: { href: string; title: strin
 	</a>
 );
 
-const InstallCmd = ({ packages }: { packages: string }) => (
-	<HomeInstallCmd packages={packages} class="home-install-cmd" />
-);
-
 const HomePage: EcoComponent = () => {
 	return (
 		<div class="home-layout not-prose">
@@ -45,7 +41,7 @@ const HomePage: EcoComponent = () => {
 					Signals when you need richer rendering and reactive state.
 				</p>
 
-				<InstallCmd packages="@radiant/core" />
+				<radiant-install-cmd class="home-install-cmd" prop:packages="@ecopages/radiant @ecopages/jsx" />
 
 				<div class="home-header__actions">
 					<a href="/docs/getting-started/introduction" class="button button--default">
