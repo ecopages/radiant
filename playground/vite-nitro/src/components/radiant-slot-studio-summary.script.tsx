@@ -1,8 +1,12 @@
 import { RadiantComponent, contextSelector, customElement, state } from '@ecopages/radiant';
 import { type RadiantSlotStudioContextValue, radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
 
+type RadiantSlotStudioSummaryBindings = {
+	summary: string;
+};
+
 @customElement('radiant-slot-studio-summary')
-export class RadiantSlotStudioSummaryElement extends RadiantComponent<{ summary: string }> {
+export class RadiantSlotStudioSummaryElement extends RadiantComponent<RadiantSlotStudioSummaryBindings> {
 	@state summary = 'Awaiting board context';
 
 	@contextSelector({ context: radiantSlotStudioContext })

@@ -35,13 +35,13 @@ import { RadiantComponent, customElement, prop, state } from '@ecopages/radiant'
 
 type CounterCardBindings = {
 	count: number;
-	label: string;
+	title: string;
 };
 
 @customElement('counter-card')
 export class CounterCard extends RadiantComponent<CounterCardBindings> {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
-	@state label = 'Counter';
+	@state title = 'Counter';
 
 	private increment = () => {
 		this.count += 1;
@@ -49,9 +49,9 @@ export class CounterCard extends RadiantComponent<CounterCardBindings> {
 
 	override render() {
 		return (
-			<section>
-				<h2>{this.label}</h2>
-				<p>Count: {this.count}</p>
+			<section class={this.count > 0 ? 'counter-card counter-card--active' : 'counter-card'}>
+				<h2>{this.$.title}</h2>
+				<p>Count: {this.$.count}</p>
 				<button type="button" on:click={this.increment}>
 					Increment
 				</button>
@@ -72,12 +72,15 @@ reactive members exposed inside the component.
 - Public props: what `<my-element ... />` may pass.
 - Bindings: what `this.$.key`, `this.bindings.key`, and `this.bind('key')` may read.
 
+If a component never uses `this.$`, `this.bindings`, or `this.bind(...)`, the
+generic can often be omitted entirely.
+
 See [Best Practices](/docs/getting-started/best-practices) for the canonical
 `Props` plus `Bindings` pattern.
 
 ## How It Works Behind The Scenes
 
-`RadiantComponent` adds four key behaviors on top of `RadiantElement`.
+`RadiantComponent` adds five key behaviors on top of `RadiantElement`.
 
 ### 1. First Connect Is Deferred To A Microtask
 
@@ -98,7 +101,19 @@ In both cases the source of truth is still `render()`.
 
 Plain reads of `@prop`, `@state`, and `@signal` members during `render()` participate in tracked invalidation.
 
-That means `this.count` and `this.label` can rerender the host without extra `@onUpdated(...)` wiring when they are part of the rendered output.
+That means `this.count` and `this.title` can rerender the host without extra `@onUpdated(...)` wiring when they are part of the rendered output.
+
+This guarantees correctness, but it is still a host rerender.
+
+Use plain reads when the raw value should drive render logic such as:
+
+- conditional branches
+- list shape
+- slot fallback decisions
+- comparisons and computed strings in render
+- `class` and `style` composition
+
+Those cases want the raw value and usually need the host render pass anyway.
 
 ### 4. `update()` And `requestUpdate()` Still Matter
 
@@ -118,6 +133,22 @@ That means when you omit `bind`, these APIs opt into JSX bindings automatically:
 - `createReactiveField(...)`
 
 So `this.$.count`, `this.bindings.count`, and `this.bind('count')` are available by default for component-style hosts.
+
+Bindings are not the same thing as plain reads.
+
+- `this.count` reads the raw value and participates in tracked host rerenders.
+- `this.$.count` gives JSX a subscribable value that can patch a stable child or attribute position directly.
+
+Prefer bindings when you want fine-grained updates for:
+
+- leaf text nodes such as `{this.$.count}`
+- whole attribute values such as `data-status={this.$.status}`
+- structured `data` and `aria` values when the bound value is the whole entry
+- boolean and property bindings such as `disabled={this.$.busy}` or `prop:value={this.$.draft}`
+
+Prefer plain render expressions for `class` and `style`. Those are normalized eagerly, so they should still be treated as render-time composition rather than as the default binding target.
+
+Also note that `this.$.count` is not the raw number. Use it in JSX binding positions, not in imperative code, conditionals, or comparisons.
 
 ## SSR Helpers
 

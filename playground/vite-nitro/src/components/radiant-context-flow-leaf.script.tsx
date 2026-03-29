@@ -9,7 +9,7 @@ import {
 import { radiantContextFlowContext } from './radiant-context-flow.context';
 
 @customElement('radiant-context-flow-leaf')
-export class RadiantContextFlowLeafElement extends RadiantComponent<{ summary?: string }> {
+export class RadiantContextFlowLeafElement extends RadiantComponent {
 	@consumeContext(radiantContextFlowContext)
 	declare context: ContextProvider<typeof radiantContextFlowContext>;
 
@@ -42,7 +42,7 @@ export class RadiantContextFlowLeafElement extends RadiantComponent<{ summary?: 
 
 		return (
 			<p class="component-metric" data-ref="context-summary">
-				Context: {this.summary ? this.$.summary : 'Pending context'}
+				Context: {this.summary ?? 'Pending context'}
 			</p>
 		);
 	}

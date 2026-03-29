@@ -6,7 +6,7 @@ export type RadiantComponentCounterProps = {
 	label: string;
 };
 
-type RadiantComponentCounterBindings = RadiantComponentCounterProps & {
+export type RadiantComponentCounterBindings = RadiantComponentCounterProps & {
 	lastAction: string;
 };
 
@@ -30,7 +30,7 @@ export class RadiantComponentCounter extends RadiantComponent<RadiantComponentCo
 		return (
 			<section class="component-card component-card--counter">
 				<p class="component-tag">RadiantComponent</p>
-				<h3>{this.bindings.label}</h3>
+				<h3>{this.label}</h3>
 				<p class="component-copy">
 					This card uses the new <code>render()</code> + <code>update()</code> flow instead of manual{' '}
 					<code>render(template)</code> calls.

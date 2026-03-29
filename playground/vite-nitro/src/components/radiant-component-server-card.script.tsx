@@ -1,9 +1,9 @@
 import { RadiantComponent, customElement, state } from '@ecopages/radiant';
 
 type RadiantComponentServerCardBindings = {
+	status: 'idle' | 'loading' | 'ready' | 'error';
 	message: string;
 	serverTime: string;
-	status: 'idle' | 'loading' | 'ready' | 'error';
 };
 
 @customElement('radiant-component-server-card')

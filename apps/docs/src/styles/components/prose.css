@@ -73,7 +73,7 @@
 	}
 
 	code {
-		@apply font-mono text-[0.875em] bg-background-accent/30 text-on-background-accent px-1.5 py-0.5 rounded-md border border-border/30;
+		@apply font-mono text-[0.875em] bg-background-accent text-on-background-accent px-1.5 py-0.5 rounded-md border border-border/30;
 	}
 
 	pre {

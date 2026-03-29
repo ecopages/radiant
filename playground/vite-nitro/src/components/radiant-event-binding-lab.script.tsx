@@ -1,17 +1,15 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantComponent, customElement, state } from '@ecopages/radiant';
 
-type RadiantEventBindingLabBindings = {
+@customElement('radiant-event-binding-lab')
+export class RadiantEventBindingLab extends RadiantComponent<{
 	autoClicks: number;
 	autoLog: string;
 	blockedAutoClicks: number;
 	blockedZoneLog: string;
 	nativeClicks: number;
 	nativeLog: string;
-};
-
-@customElement('radiant-event-binding-lab')
-export class RadiantEventBindingLab extends RadiantComponent<RadiantEventBindingLabBindings> {
+}> {
 	@state autoClicks = 0;
 	@state autoLog = 'Waiting for a delegated click.';
 	@state blockedAutoClicks = 0;
@@ -19,22 +17,22 @@ export class RadiantEventBindingLab extends RadiantComponent<RadiantEventBinding
 	@state nativeClicks = 0;
 	@state nativeLog = 'Waiting for a native click.';
 
-	private readonly handleAutoClick = (event: MouseEvent) => {
+	private readonly handleAutoClick = (event: Event) => {
 		this.autoClicks += 1;
 		this.autoLog = `on:click ${this.describeEvent(event)}`;
 	};
 
-	private readonly handleBlockedAutoClick = (event: MouseEvent) => {
+	private readonly handleBlockedAutoClick = (event: Event) => {
 		this.blockedAutoClicks += 1;
 		this.blockedZoneLog = `Blocked on:click unexpectedly fired with ${this.describeEvent(event)}`;
 	};
 
-	private readonly handleNativeClick = (event: MouseEvent) => {
+	private readonly handleNativeClick = (event: Event) => {
 		this.nativeClicks += 1;
 		this.nativeLog = `on-native:click ${this.describeEvent(event)}`;
 	};
 
-	private readonly stopBlockedBubble = (event: MouseEvent) => {
+	private readonly stopBlockedBubble = (event: Event) => {
 		event.stopPropagation();
 		this.blockedZoneLog = 'Wrapper stopped bubbling before the root listener.';
 	};
@@ -99,7 +97,7 @@ export class RadiantEventBindingLab extends RadiantComponent<RadiantEventBinding
 		);
 	}
 
-	private describeEvent(event: MouseEvent): string {
+	private describeEvent(event: Event): string {
 		const currentTarget =
 			event.currentTarget instanceof HTMLElement ? event.currentTarget.tagName.toLowerCase() : 'unknown';
 		const target = event.target instanceof HTMLElement ? event.target.tagName.toLowerCase() : 'unknown';

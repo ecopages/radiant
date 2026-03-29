@@ -146,7 +146,7 @@ export class UserCard extends RadiantComponent<UserCardBindings> {
 
   override render() {
     return (
-      <article>
+      <article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}>
         <h2>{this.$.name}</h2>
         {this.avatarUrl && <img src={this.avatarUrl} alt="" />}
         <button type="button" on:click={this.toggleExpanded}>
@@ -172,9 +172,39 @@ In this pattern:
   consumers cannot pass `<user-card isExpanded />` unless you intentionally add
   that field to the public props type.
 
+Notice the split inside `render()`:
+
+- `this.isExpanded` is used for the `class` expression because render logic needs the raw boolean.
+- `this.$.name` and `this.$.isExpanded` are used for stable text positions where fine-grained patching is desirable.
+
 If the public props and internal reactive members are intentionally the same
 surface, reusing one shared type is fine. Split them only when the external API
 should be narrower or more stable than the internal state.
+
+### Plain Reads vs Bindings
+
+Use both, but use them for different jobs.
+
+- Plain reads such as `this.count` or `this.isExpanded` are the normal choice when render logic needs the raw value.
+- Bindings such as `this.$.count` or `this.bindings.count` are the better choice when JSX should patch a stable child or attribute position directly.
+
+Practical rule of thumb:
+
+- Prefer plain reads for branching, comparisons, list shape, slot fallback, and `class` or `style` composition.
+- Prefer bindings for leaf text, whole `data-*` or `aria-*` values, boolean attributes, and `prop:*` bindings.
+
+```tsx
+<article
+  class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}
+  data={{ state: this.$.isExpanded }}
+>
+  <h2>{this.$.name}</h2>
+</article>
+```
+
+In that example, the `class` expression still belongs to the host render pass, while the bound `data-state` and heading text can patch in place.
+
+If a component never uses `this.$`, `this.bindings`, or `this.bind(...)`, you usually do not need a separate `Bindings` type at all.
 
 ## Technical Tips
 
