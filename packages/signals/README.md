@@ -4,19 +4,37 @@
 
 Its core model is based on the [TC39 Signals proposal](https://github.com/tc39/proposal-signals/tree/main), with a smaller surface area and a few convenience helpers for application code today.
 
+The public entrypoint remains `index.ts`, while the implementation now lives in focused modules under `src/` so the core runtime, effects, watcher support, and store logic can evolve independently.
+
 ## Current Scope
 
 This package currently provides:
 
 - `State<T>` for writable values
 - `Computed<T>` for lazily derived values
+- `currentComputed()` for advanced derived helpers that need the active computed context
 - `effect(...)` for reactive side effects with scheduled re-execution
 - `watch(...)` for observing derived values with previous-value access
 - `untrack(...)` and `peek(...)` for non-tracking reads
+- `subtle.Watcher` plus `watched` and `unwatched` hooks for low-level invalidation workflows
 - `createStore(...)` for deep reactive object and array state
+- `isStore(...)` for detecting signal-backed store proxies
 - `snapshot(...)` for materializing plain nested data
 - automatic dependency discovery during `Computed` evaluation
 - subscription support for renderer or framework adapters
+
+## Source Layout
+
+The package is organized around a stable public barrel and smaller implementation files:
+
+- `index.ts` re-exports the public API and exposes `subtle`
+- `src/types.ts` defines the public contracts, options, and low-level symbols
+- `src/state.ts` implements writable `State` signals
+- `src/computed.ts` implements lazy derived `Computed` signals and active-computation helpers
+- `src/effect.ts` and `src/watch.ts` implement effect scheduling and derived-value observation
+- `src/watcher.ts` implements proposal-shaped low-level watchers
+- `src/tracking.ts` contains non-tracking read helpers
+- `src/store.ts` contains deep store proxying and snapshot materialization
 
 ## Design Position
 
@@ -38,11 +56,20 @@ This package is based on the current TC39 Signals proposal and tracks the same b
 
 It is not a drop-in implementation of the current proposal draft.
 
+It is best understood as proposal-aligned in its core semantics, but not yet fully API-compatible with the draft surface.
+
 - It exposes convenience helpers such as `effect(...)`, `watch(...)`, `createStore(...)`, and `snapshot(...)` directly.
 - It currently exposes manual `subscribe(...)` hooks for adapter and library integration.
 - It exposes a proposal-shaped `subtle.Watcher` API, while still keeping the existing convenience helpers.
 - Its `subtle.Watcher` follows the proposal-style re-arm behavior, where calling `watch(...)` resets the pending set and notification latch for the next invalidation cycle.
 - It does not yet expose the full TC39 subtle introspection surface.
+
+## API Notes
+
+- `subscribe(...)` is intended for adapter-style push integration. Application-level derived work is usually better expressed with `Computed`, `effect(...)`, or `watch(...)`.
+- `watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling.
+- `subtle.Watcher` reports staleness rather than recalculated values. Calling `watch(...)` is both registration and reset.
+- `createStore(...)` wraps nested plain objects and arrays, while `snapshot(...)` detaches the current plain value graph for logging, serialization, or comparison.
 
 ## Example
 
