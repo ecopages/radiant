@@ -214,7 +214,7 @@ describe('Context', () => {
 	});
 
 	test('it hydrates provider context from SSR markup and delivers it to nested consumers on connect', async () => {
-		document.body.innerHTML = `<my-context-provider><script type="application/json" data-hydration>{"value":42}</script><my-context-consumer></my-context-consumer></my-context-provider>`;
+		document.body.innerHTML = `<my-context-provider><script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">{"value":42}</script><my-context-consumer></my-context-consumer></my-context-provider>`;
 
 		const contextProvider = document.querySelector('my-context-provider') as MyContextProvider | null;
 		const contextConsumer = document.querySelector('my-context-consumer') as MyContextConsumer | null;
@@ -233,7 +233,7 @@ describe('Context', () => {
 		document.body.appendChild(contextProvider);
 		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
 
-		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-context-key="context">');
+		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">');
 		expect(scriptMarkup).toContain('{"value":1}');
 	});
 
@@ -242,12 +242,12 @@ describe('Context', () => {
 		document.body.appendChild(contextProvider);
 		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
 
-		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-context-key="context">');
+		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">');
 		expect(scriptMarkup).toContain('{"value":1}');
 		expect(scriptMarkup).not.toContain('logger');
 	});
 
-	describeWhenStandard('standard decorators only', () => {
+	describeWhenStandard('pre-connect provider initialization', () => {
 		test('it initializes a provided context before connect so server helpers can configure it', () => {
 			const contextProvider = new LoggerContextProvider();
 
@@ -279,7 +279,8 @@ describe('Context', () => {
 		const hydrationScript = document.createElement('script');
 		hydrationScript.setAttribute('type', 'application/json');
 		hydrationScript.setAttribute('data-hydration', '');
-		hydrationScript.setAttribute('data-context-key', 'context');
+		hydrationScript.setAttribute('data-hydration-type', 'context');
+		hydrationScript.setAttribute('data-hydration-key', 'context');
 		hydrationScript.textContent = '{"value":42}';
 
 		const provider = new ContextProvider(
@@ -304,9 +305,9 @@ describe('Context', () => {
 		document.body.innerHTML =
 			'<nested-outer-context-provider>' +
 			'<nested-inner-context-provider>' +
-			'<script type="application/json" data-hydration data-context-key="context">{"value":99}</script>' +
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">{"value":99}</script>' +
 			'</nested-inner-context-provider>' +
-			'<script type="application/json" data-hydration data-context-key="context">{"value":41}</script>' +
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">{"value":41}</script>' +
 			'</nested-outer-context-provider>';
 
 		const outerProvider = document.querySelector(
@@ -406,7 +407,7 @@ describe('Context', () => {
 	test('it preserves client-only initial members when a dehydrated object payload hydrates back in', async () => {
 		document.body.innerHTML =
 			'<logger-context-provider>' +
-			'<script type="application/json" data-hydration data-context-key="context">{"value":42}</script>' +
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">{"value":42}</script>' +
 			'</logger-context-provider>';
 
 		const contextProvider = document.querySelector('logger-context-provider') as LoggerContextProvider | null;

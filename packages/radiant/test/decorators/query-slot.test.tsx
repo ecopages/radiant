@@ -5,8 +5,7 @@ import { querySlot } from '../../src/decorators/query-slot';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
-const LEGACY_ENVIRONMENT = __LEGACY_ENVIRONMENT__;
-const describeWhenStandard = LEGACY_ENVIRONMENT ? describe.skip : describe;
+const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 @customElement('query-slot-card-test')
 class QuerySlotCard extends RadiantComponent {
@@ -33,7 +32,7 @@ describe('@querySlot', () => {
 		document.body.innerHTML = '';
 	});
 
-	describeWhenStandard('standard decorators only', () => {
+	describeWhenStandard('pre-connect defaults', () => {
 		test('returns stable defaults before connect', () => {
 			const element = document.createElement('query-slot-card-test') as QuerySlotCard;
 

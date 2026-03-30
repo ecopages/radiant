@@ -690,7 +690,7 @@ describe('RadiantComponent', () => {
 		expect(element.renderHostToString({ hydrate: true })).toContain('data-header-slot="Prepared heading"');
 	});
 
-	describeWhenStandard('standard decorators only', () => {
+	describeWhenStandard('pre-connect SSR accessors', () => {
 		test('createServerRenderEnvironment() resolves slot query accessors before connect', () => {
 			const environment = createServerRenderEnvironment();
 			const element = new ServerHostSlotQueryCard();
@@ -724,7 +724,7 @@ describe('RadiantComponent', () => {
 			expect(html).toContain('<server-host-signal-card-test>');
 			expect(html).toContain('<p>ready</p>');
 			expect(html).toContain(
-				'<script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script>',
+				'<script type="application/json" data-hydration data-hydration-type="signal" data-hydration-key="status">"ready"</script>',
 			);
 		});
 	});
@@ -761,7 +761,7 @@ describe('RadiantComponent', () => {
 
 		expect(html).toContain('<server-host-context-card-test>');
 		expect(html).toContain('<p>Provider host</p>');
-		expect(html).toContain('<script type="application/json" data-hydration data-context-key="context">');
+		expect(html).toContain('<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">');
 		expect(html).toContain('{"label":"SSR context","level":4}');
 	});
 

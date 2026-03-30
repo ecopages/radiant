@@ -182,7 +182,7 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('SSR context value');
 	});
 
-	describeWhenStandard('standard decorators only', () => {
+	describeWhenStandard('provider hydration markup', () => {
 		test('renderComponent() emits valid provider hydration markup without client-only fields', async () => {
 			const rendered = await renderComponent(RenderComponentHydratedProvider, {
 				configure: (component) => {
@@ -191,7 +191,7 @@ describe('render-component server helpers', () => {
 			});
 
 			expect(rendered.markup).toContain(
-				'<script type="application/json" data-hydration data-context-key="provider">{"count":5}</script>',
+				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":5}</script>',
 			);
 			expect(rendered.markup).not.toContain('&quot;');
 			expect(rendered.markup).not.toContain('logger');
@@ -305,5 +305,35 @@ describe('render-component server helpers', () => {
 		).rejects.toThrow(
 			'StringOnlyRenderable cannot prepare SSR host content because it is not an HTMLElement host.',
 		);
+	});
+
+	test('concurrent renders resolve independent SSR context values', async () => {
+		const concurrentContext = createContext<{ id: number }>(Symbol('concurrent-context'));
+
+		@customElement('concurrent-context-card-test')
+		class ConcurrentContextCard extends RadiantComponent {
+			@consumeContext(concurrentContext) provider!: ContextProvider<typeof concurrentContext>;
+
+			@contextSelector({ context: concurrentContext, select: (ctx) => ctx.id, subscribe: false })
+			applyId(id: number) {
+				this.setAttribute('data-id', String(id));
+			}
+
+			override render() {
+				return <p data-id={this.getAttribute('data-id') ?? 'missing'}>Card</p>;
+			}
+		}
+
+		const [markupA, markupB] = await Promise.all([
+			renderComponentToString(ConcurrentContextCard, {
+				ssrContext: [{ context: concurrentContext, value: { id: 1 } }],
+			}),
+			renderComponentToString(ConcurrentContextCard, {
+				ssrContext: [{ context: concurrentContext, value: { id: 2 } }],
+			}),
+		]);
+
+		expect(markupA).toContain('data-id="1"');
+		expect(markupB).toContain('data-id="2"');
 	});
 });

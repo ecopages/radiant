@@ -109,7 +109,7 @@ describe('@signal', () => {
 
 	test('hydrates signal state from keyed SSR payload scripts', async () => {
 		document.body.innerHTML =
-			'<signal-component-test><script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script></signal-component-test>';
+			'<signal-component-test><script type="application/json" data-hydration data-hydration-type="signal" data-hydration-key="status">"ready"</script></signal-component-test>';
 		const element = document.querySelector('signal-component-test') as SignalComponent | null;
 
 		expect(element).not.toBeNull();
@@ -119,7 +119,7 @@ describe('@signal', () => {
 		});
 	});
 
-	describeWhenStandard('standard decorators only', () => {
+	describeWhenStandard('pre-connect signal and SSR', () => {
 		test('supports pre-connect signal reads and writes for host rendering', () => {
 			const element = new SignalComponent();
 
@@ -139,7 +139,7 @@ describe('@signal', () => {
 
 			expect(html).toContain('<signal-component-test>');
 			expect(html).toContain(
-				'<script type="application/json" data-signal-hydration data-signal-key="status">"ready"</script>',
+				'<script type="application/json" data-hydration data-hydration-type="signal" data-hydration-key="status">"ready"</script>',
 			);
 		});
 	});
