@@ -770,8 +770,8 @@ describe('Radiant JSX server render', () => {
 			loadModule<typeof import('../../radiant/src/core/radiant-component.ts')>(
 				'../../radiant/src/core/radiant-component.ts',
 			),
-			loadModule<typeof import('../../radiant/src/context/context-ssr.ts')>(
-				'../../radiant/src/context/context-ssr.ts',
+			loadModule<typeof import('../../radiant/src/server/context-ssr.ts')>(
+				'../../radiant/src/server/context-ssr.ts',
 			),
 			loadModule<typeof import('../../radiant/src/core/custom-element-metadata.ts')>(
 				'../../radiant/src/core/custom-element-metadata.ts',

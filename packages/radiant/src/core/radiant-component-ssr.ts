@@ -1,6 +1,6 @@
 import type { JsxRenderable, RenderToStringOptions } from '@ecopages/jsx';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
-import { withSsrContextProviders } from '../context/context-ssr';
+import { withSsrContextProviders } from '../server/context-ssr';
 import { getCustomElementTagName } from './custom-element-metadata';
 import type { ReactiveProperty } from './radiant-element';
 import type { ReactivePropDefinition } from './reactive-prop-metadata';

@@ -1,6 +1,6 @@
 import type { JsxRenderable, RenderToStringOptions } from '@ecopages/jsx';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
-import { withSsrContextProviders } from '../context/context-ssr';
+import { withSsrContextProviders } from './context-ssr';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';

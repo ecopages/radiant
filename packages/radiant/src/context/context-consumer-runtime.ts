@@ -1,5 +1,5 @@
 import type { RadiantElement } from '../core/radiant-element';
-import { resolveSsrContextProvider } from './context-ssr';
+import { resolveAmbientSsrContextProvider } from './context-ssr-bridge';
 import { ContextEventsTypes, ContextRequestEvent, ContextSubscriptionRequestEvent } from './events';
 import type { ContextType, UnknownContext } from './types';
 
@@ -19,7 +19,7 @@ export function initializeConsumedContext(
 	assign: ConsumedContextAssignment,
 	options: { emitMounted?: boolean } = {},
 ): boolean {
-	const provider = resolveSsrContextProvider(context);
+	const provider = resolveAmbientSsrContextProvider(context);
 
 	if (!provider) {
 		return false;
@@ -66,7 +66,7 @@ export function initializeContextSelection<TContext extends UnknownContext>(
 	callback: (value: unknown) => void,
 	select?: (context: ContextType<TContext>) => unknown,
 ): boolean {
-	const provider = resolveSsrContextProvider(context);
+	const provider = resolveAmbientSsrContextProvider(context);
 
 	if (!provider) {
 		return false;
