@@ -63,7 +63,7 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	assert.doesNotMatch(html, /data-playground-state="/);
 	assert.match(
 		html,
-		/<script type="application\/json" data-hydration data-context-key="context">\{"label":"Nitro SSR context","level":2\}<\/script>/,
+		/<script type="application\/json" data-hydration data-hydration-type="context" data-hydration-key="context">\{"label":"Nitro SSR context","level":2\}<\/script>/,
 	);
 
 	await withBrowserPage(async (page) => {
@@ -84,7 +84,7 @@ test('Nitro signal-board fragment serializes hydrated signal state', async () =>
 	const html = await response.text();
 	assert.match(html, /<radiant-signal-release-board>/);
 	assert.match(html, /Board: ready/);
-	assert.match(html, /data-signal-hydration data-signal-key="boardSeed">/);
+	assert.match(html, /data-hydration data-hydration-type="signal" data-hydration-key="boardSeed">/);
 	assert.match(html, /"filter":"launch-ready"/);
 	assert.match(html, /"selectedTicketId":103/);
 	assert.match(html, /"syncState":"ready"/);

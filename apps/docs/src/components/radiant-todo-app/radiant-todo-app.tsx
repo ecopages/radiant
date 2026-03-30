@@ -6,7 +6,7 @@ export const RadiantTodoApp = () => {
 
 	return (
 		<radiant-todo-app class="todo">
-			<script type="application/json" data-hydration data-context-key="provider">
+			<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">
 				{initialContext}
 			</script>
 		</radiant-todo-app>
