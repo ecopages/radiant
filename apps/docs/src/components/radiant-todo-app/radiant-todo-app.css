@@ -17,12 +17,12 @@
 		@apply flex min-h-28 w-full flex-col gap-2 rounded-md border border-border/70 bg-background p-2;
 	}
 
-		[data-ref='list-complete'] {
-			@apply border-primary/50;
-		}
+	[data-ref='list-complete'] {
+		@apply border-primary/50;
+	}
 
-		[data-ref='list-incomplete'] {
-			@apply border-secondary/50;
+	[data-ref='list-incomplete'] {
+		@apply border-secondary/50;
 	}
 
 	form {
