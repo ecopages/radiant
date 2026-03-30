@@ -54,11 +54,7 @@ export function parseHydrationPayload<T>(element: Element, fallback: T): T {
  * When a key is provided, looks for an exact `data-hydration-key` match.
  * Otherwise, returns the first unkeyed script matching the type.
  */
-export function findHydrationScript(
-	host: Element,
-	type: HydrationPayloadType,
-	hydrationKey?: string,
-): Element | null {
+export function findHydrationScript(host: Element, type: HydrationPayloadType, hydrationKey?: string): Element | null {
 	const children = host.children;
 
 	if (!children || children.length === 0) {

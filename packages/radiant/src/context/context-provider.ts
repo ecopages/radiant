@@ -223,7 +223,9 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			return;
 		}
 
-		this.value = this.mergeHydrationValue(parseHydrationPayload(hydrationScriptElement, this.value) as ContextType<T>);
+		this.value = this.mergeHydrationValue(
+			parseHydrationPayload(hydrationScriptElement, this.value) as ContextType<T>,
+		);
 		this.pendingHostHydration = false;
 	}
 

@@ -761,7 +761,9 @@ describe('RadiantComponent', () => {
 
 		expect(html).toContain('<server-host-context-card-test>');
 		expect(html).toContain('<p>Provider host</p>');
-		expect(html).toContain('<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">');
+		expect(html).toContain(
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+		);
 		expect(html).toContain('{"label":"SSR context","level":4}');
 	});
 

@@ -720,7 +720,7 @@ describe('Radiant JSX server render', () => {
 						type: 'application/json',
 						'data-hydration': true,
 						'data-hydration-type': 'context',
-					'data-hydration-key': 'provider',
+						'data-hydration-key': 'provider',
 						children: '{"count":3,"label":"Authored child"}',
 					}),
 				}),
@@ -854,7 +854,9 @@ describe('Radiant JSX server render', () => {
 			expect(nestedHtml).toContain('class="nested-child-card"');
 			expect(nestedHtml).toContain('<h3>Nested child SSR</h3>');
 			expect(nestedHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
-			expect(nestedHtml).toContain('<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">');
+			expect(nestedHtml).toContain(
+				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+			);
 			expect(nestedHtml).toContain('{"label":"Nitro SSR context","level":2}');
 
 			const parentHostHtml = parent.renderHostToString({ hydrate: true });

@@ -45,10 +45,7 @@ export function deserializeProjectedSlotRenderables(payload: string): Map<string
 		parsedPayload = JSON.parse(payload) as Record<string, string[]>;
 	} catch {
 		if (typeof console !== 'undefined') {
-			console.warn(
-				'[@ecopages/radiant] Failed to parse slot projection payload:',
-				payload.slice(0, 120),
-			);
+			console.warn('[@ecopages/radiant] Failed to parse slot projection payload:', payload.slice(0, 120));
 		}
 		return new Map();
 	}

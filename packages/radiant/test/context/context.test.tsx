@@ -233,7 +233,9 @@ describe('Context', () => {
 		document.body.appendChild(contextProvider);
 		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
 
-		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">');
+		expect(scriptMarkup).toContain(
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+		);
 		expect(scriptMarkup).toContain('{"value":1}');
 	});
 
@@ -242,7 +244,9 @@ describe('Context', () => {
 		document.body.appendChild(contextProvider);
 		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
 
-		expect(scriptMarkup).toContain('<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">');
+		expect(scriptMarkup).toContain(
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+		);
 		expect(scriptMarkup).toContain('{"value":1}');
 		expect(scriptMarkup).not.toContain('logger');
 	});
