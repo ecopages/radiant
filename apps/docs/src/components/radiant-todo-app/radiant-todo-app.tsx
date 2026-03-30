@@ -1,5 +1,6 @@
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
-import { createTodoSamples, type Todo } from './radiant-todo-app.script';
+import { createTodoSamples, type Todo } from './todo-context';
+import './radiant-todo-app.script';
 
 export const RadiantTodoApp = () => {
 	const initialContext = stringifyTyped<{ todos: Todo[] }, string>({ todos: createTodoSamples() });

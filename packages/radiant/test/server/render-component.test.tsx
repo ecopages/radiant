@@ -303,7 +303,7 @@ describe('render-component server helpers', () => {
 				},
 			),
 		).rejects.toThrow(
-			'StringOnlyRenderable cannot prepare SSR host content because it is not an HTMLElement host.',
+			'StringOnlyRenderable cannot prepare SSR host content because it does not expose an innerHTML host surface.',
 		);
 	});
 

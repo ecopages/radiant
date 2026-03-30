@@ -1,74 +1,76 @@
 .todo {
-	@apply flex flex-col gap-4 items-start bg-gray-50 rounded-md p-4  w-full;
+	@apply flex w-full flex-col items-start gap-4 rounded-xl border border-border/70 bg-background-accent/50 p-4 text-on-background shadow-xs;
 
 	&__board {
-		@apply flex flex-col lg:flex-row gap-4 w-full;
+		@apply flex w-full flex-col gap-4 lg:flex-row;
 	}
 
 	&__panel {
-		@apply flex flex-col gap-4 w-full;
+		@apply flex w-full flex-col gap-4 rounded-lg border border-border/60 bg-background/70 p-3;
+
 		h2 {
-			@apply m-0;
+			@apply m-0 font-heading text-lg text-on-background-accent;
 		}
 	}
 
 	&__list {
-		@apply flex flex-col bg-white gap-2 rounded-md p-2 w-full min-h-28;
-
-		&--complete {
-			@apply border-2 border-green-500;
-		}
-
-		&--incomplete {
-			@apply border-2 border-blue-500;
-		}
+		@apply flex min-h-28 w-full flex-col gap-2 rounded-md border border-border/70 bg-background p-2;
 	}
 
-	[data-todo-form] {
-		@apply flex gap-4 bg-gray-100 w-full;
+		[data-ref='list-complete'] {
+			@apply border-primary/50;
+		}
+
+		[data-ref='list-incomplete'] {
+			@apply border-secondary/50;
 	}
 
 	form {
-		@apply flex flex-col md:flex-row gap-2 w-full md:justify-between;
+		@apply flex w-full flex-col gap-3 rounded-lg border border-border/60 bg-background p-3 md:flex-row md:items-end md:justify-between;
 
 		.form-group {
-			@apply flex-col gap-1 w-full;
+			@apply flex w-full flex-col gap-1;
 		}
 
 		label {
-			@apply text-sm font-semibold;
+			@apply text-xs font-semibold uppercase tracking-wide text-on-background/80;
 		}
 
 		input {
-			@apply w-full p-2 border border-gray-300 rounded-md;
+			@apply w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-on-background outline-none transition-colors focus:border-primary;
 		}
 
 		button {
-			@apply bg-blue-700 self-end text-white p-2 rounded-md min-w-20;
+			@apply min-w-20 self-end rounded-md bg-primary px-3 py-2 text-sm font-semibold text-on-primary transition-colors hover:bg-primary/90;
 		}
 	}
 
 	p,
 	&__count {
-		@apply flex w-full gap-1 m-0 text-sm text-gray-700;
+		@apply m-0 flex w-full gap-1 text-sm text-on-background/80;
+
 		& span {
-			@apply font-semibold;
+			@apply font-semibold text-on-background;
 		}
 	}
 
 	&__item {
-		@apply flex items-center justify-between gap-2 p-2 bg-blue-100 rounded-md;
+		@apply flex items-center justify-between gap-2 rounded-md border border-secondary/30 bg-secondary/8 p-2 transition-colors;
+
 		&[complete='true'] {
-			@apply bg-green-200;
+			@apply border-primary/40 bg-primary/10;
 		}
+
 		& label {
-			@apply flex items-center gap-2 cursor-pointer;
+			@apply flex cursor-pointer items-center gap-2 text-sm text-on-background;
 		}
+
 		& input[type='checkbox'] {
-			@apply w-4 h-4 rounded-md accent-green-500 cursor-pointer;
+			@apply h-4 w-4 cursor-pointer rounded-sm accent-primary;
 		}
+
 		&-remove {
-			@apply text-gray-900 bg-black/5 rounded-full p-1;
+			@apply rounded-full border border-border/70 bg-background p-1 text-on-background/80 transition-colors hover:bg-background-accent hover:text-on-background;
 		}
 	}
 }

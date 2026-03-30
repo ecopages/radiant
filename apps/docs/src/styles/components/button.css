@@ -33,7 +33,7 @@ a.button {
 	}
 
 	&--outline {
-		@apply button-shape-base rounded-sm border border-on-background;
+		@apply button-shape-base rounded-sm border border-border;
 		@apply bg-transparent text-on-background;
 		@apply hover:bg-on-background/5;
 	}

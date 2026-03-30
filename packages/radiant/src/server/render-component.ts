@@ -275,13 +275,13 @@ function prepareRenderedComponentHost<TComponent extends ServerRenderableCompone
 	authoredContent: string | undefined,
 	prepareHost: PrepareRenderedComponentHost<TComponent> | undefined,
 ): void {
-	if (!isHTMLElementHost(component)) {
+	if (!canPrepareSsrHost(component)) {
 		if (authoredContent === undefined && prepareHost === undefined) {
 			return;
 		}
 
 		throw new Error(
-			`${component.constructor.name} cannot prepare SSR host content because it is not an HTMLElement host.`,
+			`${component.constructor.name} cannot prepare SSR host content because it does not expose an innerHTML host surface.`,
 		);
 	}
 
@@ -401,7 +401,7 @@ function normalizeRenderOptions(options: RenderToStringOptions | undefined): Ren
 	};
 }
 
-function isHTMLElementHost<TComponent extends ServerRenderableComponent>(
+function canPrepareSsrHost<TComponent extends ServerRenderableComponent>(
 	component: TComponent,
 ): component is TComponent & HTMLElement {
 	return 'innerHTML' in component;

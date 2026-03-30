@@ -11,7 +11,7 @@
 }
 
 .home-header__title {
-	@apply mt-3 font-heading text-4xl leading-tight text-on-background font-semibold md:text-5xl;
+	@apply mt-3 font-heading text-4xl leading-tight text-on-background font-semibold md:text-5xl text-balance;
 }
 
 .home-header__description {

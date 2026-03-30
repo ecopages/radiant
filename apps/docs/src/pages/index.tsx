@@ -35,10 +35,11 @@ const HomePage: EcoComponent = () => {
 		<div class="home-layout not-prose">
 			<header class="home-header">
 				<p class="home-header__subtitle">Radiant Docs</p>
-				<h1 class="home-header__title">Build typed custom elements with RadiantComponent, JSX, and Signals.</h1>
+				<h1 class="home-header__title">Build typed custom elements with WebComponents, JSX, and Signals.</h1>
 				<p class="home-header__description">
-					Start with the component model, add decorators where they clarify intent, then pull in JSX and
-					Signals when you need richer rendering and reactive state.
+					Start with the core component model, add decorators only when they make intent clearer, and bring in
+					JSX and Signals as your rendering and state needs grow, so you can adopt features incrementally
+					while staying close to the browser through light DOM and standard web APIs.
 				</p>
 
 				<radiant-install-cmd class="home-install-cmd" prop:packages="@ecopages/radiant @ecopages/jsx" />
