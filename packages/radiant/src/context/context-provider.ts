@@ -9,12 +9,8 @@ import {
 	type ContextSubscription,
 	type ContextSubscriptionRequestEvent,
 } from './events';
-import {
-	CONTEXT_HYDRATION_ATTRIBUTE,
-	CONTEXT_HYDRATION_KEY_ATTRIBUTE,
-	createContextHydrationScriptTag,
-	escapeContextHydrationJson,
-} from './hydration-script';
+import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
+import { createContextHydrationScriptTag, escapeContextHydrationJson } from './hydration-script';
 import type { Context, ContextType, UnknownContext } from './types';
 
 type ContextProviderOptions<T extends UnknownContext> = {
@@ -223,11 +219,11 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 
 		const hydrationScriptElement = this.findHydrationScriptElement();
 
-		if (!hydrationScriptElement?.textContent) {
+		if (!hydrationScriptElement) {
 			return;
 		}
 
-		this.value = this.mergeHydrationValue(JSON.parse(hydrationScriptElement.textContent) as ContextType<T>);
+		this.value = this.mergeHydrationValue(parseHydrationPayload(hydrationScriptElement, this.value) as ContextType<T>);
 		this.pendingHostHydration = false;
 	}
 
@@ -251,45 +247,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	}
 
 	private findHydrationScriptElement(): Element | null {
-		const childElements = this.getHostChildElements();
-		const keyedElement = this.hydrationKey
-			? (childElements.find(
-					(element) =>
-						element.tagName === 'SCRIPT' &&
-						element.hasAttribute(CONTEXT_HYDRATION_ATTRIBUTE) &&
-						element.getAttribute(CONTEXT_HYDRATION_KEY_ATTRIBUTE) === this.hydrationKey,
-				) ?? null)
-			: null;
-
-		if (keyedElement) {
-			return keyedElement;
-		}
-
-		return (
-			childElements.find(
-				(element) =>
-					element.tagName === 'SCRIPT' &&
-					element.hasAttribute(CONTEXT_HYDRATION_ATTRIBUTE) &&
-					!element.hasAttribute(CONTEXT_HYDRATION_KEY_ATTRIBUTE),
-			) ?? null
-		);
-	}
-
-	private getHostChildElements(): Element[] {
-		const hostWithChildren = this.host as Partial<{
-			childNodes: ArrayLike<{ nodeType: number }>;
-			children: ArrayLike<Element>;
-		}>;
-
-		if (hostWithChildren.children && hostWithChildren.children.length > 0) {
-			return Array.from(hostWithChildren.children);
-		}
-
-		if (!hostWithChildren.childNodes || hostWithChildren.childNodes.length === 0) {
-			return [];
-		}
-
-		return Array.from(hostWithChildren.childNodes).filter((node): node is Element => node.nodeType === 1);
+		return findHydrationScript(this.host as Element, 'context', this.hydrationKey);
 	}
 
 	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T> | undefined) => {

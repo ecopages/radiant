@@ -23,6 +23,7 @@ import {
 	serializeProjectedSlotRenderables,
 	takeSlotProjectionScriptPayload,
 } from './slot-projection';
+import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 
 /**
  * A structured JSX-first Radiant base class.
@@ -343,7 +344,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	private addProjectedSlotNode(node: Node): boolean {
 		if (
 			node instanceof HTMLScriptElement &&
-			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute('data-hydration'))
+			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute(HYDRATION_ATTRIBUTE))
 		) {
 			return false;
 		}

@@ -3,12 +3,8 @@ import { state, type WritableSignal } from '@ecopages/signals';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 import type { RadiantElement } from '../core/radiant-element';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
-import {
-	SIGNAL_HYDRATION_ATTRIBUTE,
-	SIGNAL_HYDRATION_KEY_ATTRIBUTE,
-	createSignalHydrationScriptTag,
-	escapeSignalHydrationJson,
-} from './hydration-script';
+import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
+import { createSignalHydrationScriptTag, escapeSignalHydrationJson } from './hydration-script';
 
 type HostSignalOptions<Value> = {
 	host: RadiantElement;
@@ -133,28 +129,7 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 	}
 
 	private findHydrationScriptElement(): Element | null {
-		const childElements = Array.from(this.host.children ?? []);
-		const keyedElement = this.hydrationKey
-			? (childElements.find(
-					(element) =>
-						element.tagName === 'SCRIPT' &&
-						element.hasAttribute(SIGNAL_HYDRATION_ATTRIBUTE) &&
-						element.getAttribute(SIGNAL_HYDRATION_KEY_ATTRIBUTE) === this.hydrationKey,
-				) ?? null)
-			: null;
-
-		if (keyedElement) {
-			return keyedElement;
-		}
-
-		return (
-			childElements.find(
-				(element) =>
-					element.tagName === 'SCRIPT' &&
-					element.hasAttribute(SIGNAL_HYDRATION_ATTRIBUTE) &&
-					!element.hasAttribute(SIGNAL_HYDRATION_KEY_ATTRIBUTE),
-			) ?? null
-		);
+		return findHydrationScript(this.host, 'signal', this.hydrationKey);
 	}
 
 	private isObject(value: unknown): value is Record<string, unknown> {
@@ -168,11 +143,11 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 
 		const hydrationScriptElement = this.findHydrationScriptElement();
 
-		if (!hydrationScriptElement?.textContent) {
+		if (!hydrationScriptElement) {
 			return initialValue;
 		}
 
-		const parsedHydrationValue = JSON.parse(hydrationScriptElement.textContent) as Value;
+		const parsedHydrationValue = parseHydrationPayload(hydrationScriptElement, initialValue);
 
 		if (this.hydrate === Object && this.isObject(parsedHydrationValue) && this.isObject(initialValue)) {
 			return {

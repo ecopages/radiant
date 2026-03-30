@@ -8,9 +8,10 @@ import {
 	type TemplateResultLike,
 } from '@ecopages/jsx';
 
+import { HYDRATION_ATTRIBUTE } from './hydration-codec';
+
 export const DEFAULT_SLOT_NAME = '';
 export const SLOT_PROJECTION_SCRIPT_ATTRIBUTE = 'data-radiant-slot-projection';
-const AUTHORED_HYDRATION_SCRIPT_ATTRIBUTE = 'data-hydration';
 
 type ResolvedSlotProjection = {
 	containsSlots: boolean;
@@ -38,7 +39,20 @@ export function captureProjectedSlotRenderables(host: HTMLElement): Map<string, 
  * Parses the SSR slot projection payload back into renderable fragments.
  */
 export function deserializeProjectedSlotRenderables(payload: string): Map<string, JsxRenderable[]> {
-	const parsedPayload = JSON.parse(payload) as Record<string, string[]>;
+	let parsedPayload: Record<string, string[]>;
+
+	try {
+		parsedPayload = JSON.parse(payload) as Record<string, string[]>;
+	} catch {
+		if (typeof console !== 'undefined') {
+			console.warn(
+				'[@ecopages/radiant] Failed to parse slot projection payload:',
+				payload.slice(0, 120),
+			);
+		}
+		return new Map();
+	}
+
 	const projectedContent = new Map<string, JsxRenderable[]>();
 
 	for (const [slotName, fragments] of Object.entries(parsedPayload)) {
@@ -297,7 +311,7 @@ function isSlotProjectionScriptNode(node: Node): node is HTMLScriptElement {
 }
 
 function isHydrationScriptNode(node: Node): node is HTMLScriptElement {
-	return node instanceof HTMLScriptElement && node.hasAttribute(AUTHORED_HYDRATION_SCRIPT_ATTRIBUTE);
+	return node instanceof HTMLScriptElement && node.hasAttribute(HYDRATION_ATTRIBUTE);
 }
 
 function isIgnoredProjectedNode(node: Node): boolean {
@@ -325,7 +339,7 @@ function isHydrationScriptHtmlFragment(fragment: string): boolean {
 		return false;
 	}
 
-	return hasScriptAttribute(openingTagMatch[1] ?? '', AUTHORED_HYDRATION_SCRIPT_ATTRIBUTE);
+	return hasScriptAttribute(openingTagMatch[1] ?? '', HYDRATION_ATTRIBUTE);
 }
 
 function hasScriptAttribute(attributes: string, attributeName: string): boolean {
