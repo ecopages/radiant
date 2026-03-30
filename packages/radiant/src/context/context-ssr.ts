@@ -1,11 +1,36 @@
+import type { AsyncLocalStorage } from 'node:async_hooks';
 import type { SsrSerializableContextProvider } from './context-provider';
 import type { ContextType, UnknownContext } from './types';
 
+type ProviderFrame = Map<UnknownContext, SsrSerializableContextProvider>;
+type ProviderStack = ProviderFrame[];
+
 const SSR_CONTEXT_PROVIDER_STACK_SYMBOL = Symbol.for('@ecopages/radiant.ssr-context-provider-stack');
 
-function getSsrContextProviderStack(): Array<Map<UnknownContext, SsrSerializableContextProvider>> {
+let resolvedAsyncLocalStorage: AsyncLocalStorage<ProviderStack> | null | undefined;
+
+function getAsyncLocalStorage(): AsyncLocalStorage<ProviderStack> | null {
+	if (resolvedAsyncLocalStorage !== undefined) {
+		return resolvedAsyncLocalStorage;
+	}
+
+	try {
+		if (typeof globalThis.process !== 'undefined') {
+			const { AsyncLocalStorage: ALS } = require('node:async_hooks') as typeof import('node:async_hooks');
+			resolvedAsyncLocalStorage = new ALS<ProviderStack>();
+			return resolvedAsyncLocalStorage;
+		}
+	} catch {
+		/* not available */
+	}
+
+	resolvedAsyncLocalStorage = null;
+	return null;
+}
+
+function getGlobalFallbackStack(): ProviderStack {
 	const globalScope = globalThis as typeof globalThis & {
-		[SSR_CONTEXT_PROVIDER_STACK_SYMBOL]?: Array<Map<UnknownContext, SsrSerializableContextProvider>>;
+		[SSR_CONTEXT_PROVIDER_STACK_SYMBOL]?: ProviderStack;
 	};
 
 	if (!globalScope[SSR_CONTEXT_PROVIDER_STACK_SYMBOL]) {
@@ -15,25 +40,45 @@ function getSsrContextProviderStack(): Array<Map<UnknownContext, SsrSerializable
 	return globalScope[SSR_CONTEXT_PROVIDER_STACK_SYMBOL];
 }
 
+function getSsrContextProviderStack(): ProviderStack {
+	return getAsyncLocalStorage()?.getStore() ?? getGlobalFallbackStack();
+}
+
+/**
+ * Pushes a temporary provider frame onto the SSR context stack.
+ *
+ * When `AsyncLocalStorage` is available (Node.js, Bun), the callback runs in
+ * an isolated async context so concurrent renders cannot corrupt each other.
+ *
+ * When `AsyncLocalStorage` is unavailable, the frame is pushed onto a global
+ * stack and the returned restore function **must** be called synchronously
+ * after the render completes. All code between the push and the restore must
+ * complete without yielding to avoid interleaving with other renders.
+ */
 export function withSsrContextProviders(providers: readonly SsrSerializableContextProvider[]): () => void {
-	/**
-	 * Pushes a temporary provider frame onto the SSR context stack.
-	 *
-	 * Callers must invoke the returned restore function after rendering the host
-	 * subtree so nested SSR operations resolve the correct nearest provider and do
-	 * not leak provider state into unrelated renders.
-	 */
 	if (providers.length === 0) {
 		return () => undefined;
 	}
 
-	const ssrContextProviderStack = getSsrContextProviderStack();
 	const frame = new Map<UnknownContext, SsrSerializableContextProvider>();
 
 	for (const provider of providers) {
 		frame.set(provider.getContextKey(), provider);
 	}
 
+	const als = getAsyncLocalStorage();
+
+	if (als) {
+		const parentStack = als.getStore() ?? [];
+		const childStack = [...parentStack, frame];
+		als.enterWith(childStack);
+
+		return () => {
+			als.enterWith(parentStack);
+		};
+	}
+
+	const ssrContextProviderStack = getGlobalFallbackStack();
 	ssrContextProviderStack.push(frame);
 
 	return () => {
