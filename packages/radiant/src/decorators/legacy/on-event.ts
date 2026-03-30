@@ -1,4 +1,5 @@
 import type { RadiantElement, RadiantElementEventListener } from '../../core/radiant-element';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
 	(
@@ -32,51 +33,47 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
  */
 export function onEvent(eventConfig: OnEventConfig) {
 	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
-		const originalConnectedCallback = proto.connectedCallback;
-		const originalDisconnectedCallback = proto.disconnectedCallback;
-
 		if ('window' in eventConfig) {
-			proto.connectedCallback = function (this: RadiantElement) {
-				window.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalConnectedCallback.call(this);
-			};
-
-			proto.disconnectedCallback = function (this: RadiantElement) {
-				window.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalDisconnectedCallback.call(this);
-			};
+			registerLegacyInstanceInitializer(proto, (element) => {
+				const boundHandler = descriptor.value.bind(element);
+				element.registerConnectedCallback(() => {
+					window.addEventListener(eventConfig.type, boundHandler, eventConfig.options);
+				});
+				element.registerCleanupCallback(() => {
+					window.removeEventListener(eventConfig.type, boundHandler, eventConfig.options);
+				});
+			});
 
 			return descriptor;
 		}
 
 		if ('document' in eventConfig) {
-			proto.connectedCallback = function (this: RadiantElement) {
-				document.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalConnectedCallback.call(this);
-			};
-
-			proto.disconnectedCallback = function (this: RadiantElement) {
-				document.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalDisconnectedCallback.call(this);
-			};
+			registerLegacyInstanceInitializer(proto, (element) => {
+				const boundHandler = descriptor.value.bind(element);
+				element.registerConnectedCallback(() => {
+					document.addEventListener(eventConfig.type, boundHandler, eventConfig.options);
+				});
+				element.registerCleanupCallback(() => {
+					document.removeEventListener(eventConfig.type, boundHandler, eventConfig.options);
+				});
+			});
 
 			return descriptor;
 		}
 
 		const selector = 'selector' in eventConfig ? eventConfig.selector : `[data-ref="${eventConfig.ref}"]`;
-
 		const originalMethod = descriptor.value;
 
-		proto.connectedCallback = function (this: RadiantElement) {
-			this.subscribeEvent({
-				selector: selector,
-				type: eventConfig.type,
-				listener: originalMethod.bind(this),
-				options: eventConfig?.options ?? undefined,
+		registerLegacyInstanceInitializer(proto, (element) => {
+			element.registerConnectedCallback(() => {
+				element.subscribeEvent({
+					selector: selector,
+					type: eventConfig.type,
+					listener: originalMethod.bind(element),
+					options: eventConfig?.options ?? undefined,
+				});
 			});
-
-			originalConnectedCallback.call(this);
-		};
+		});
 
 		return descriptor;
 	};

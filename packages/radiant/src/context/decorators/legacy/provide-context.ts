@@ -28,12 +28,11 @@ export function provideContext<T extends UnknownContext>({
 			element.connectedContextCallback(context);
 		};
 
-		registerLegacyInstanceInitializer(proto, initializeProvider);
-		const originalConnectedCallback = proto.connectedCallback;
-
-		proto.connectedCallback = function (this: RadiantElement) {
-			initializeProvider(this);
-			originalConnectedCallback.call(this);
-		};
+		registerLegacyInstanceInitializer(proto, (element) => {
+			initializeProvider(element);
+			element.registerConnectedCallback(() => {
+				initializeProvider(element);
+			});
+		});
 	};
 }

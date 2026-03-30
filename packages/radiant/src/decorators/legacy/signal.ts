@@ -63,12 +63,13 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 			return hostSignal as unknown as HostSignal<unknown>;
 		};
 
-		registerLegacyInstanceInitializer(target, initializeSignal);
-		const originalConnectedCallback = target.connectedCallback;
-
-		target.connectedCallback = function (this: RadiantElement) {
-			initializeSignal(this);
-			originalConnectedCallback.call(this);
-		};
+		registerLegacyInstanceInitializer(target, (element) => {
+			const hostSignal = initializeSignal(element);
+			element.registerConnectedCallback(() => {
+				if (!((element as any)[propertyName] instanceof HostSignal)) {
+					(element as unknown as Record<string, unknown>)[propertyName] = hostSignal;
+				}
+			});
+		});
 	};
 }

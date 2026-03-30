@@ -1,5 +1,7 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { registerSsrPreparationCallback } from '../../core/ssr-preparation';
 import type { QuerySlotConfig } from '../query-slot';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 type SlotQueryHost = RadiantElement & {
 	getSlotElement<T extends Element = Element>(name?: string): T | null;
@@ -70,22 +72,13 @@ export function querySlot<T extends Element | Element[]>({
 			configurable: true,
 		});
 
-		const originalConnectedCallback = proto.connectedCallback;
-		const originalRender = (proto as SlotQueryHost & { render?: (...args: unknown[]) => unknown }).render;
-
-		proto.connectedCallback = function (this: SlotQueryHost) {
-			defineSlotQueryProperty(this);
-			originalConnectedCallback.call(this);
-		};
-
-		if (typeof originalRender === 'function') {
-			(proto as SlotQueryHost & { render: (...args: unknown[]) => unknown }).render = function (
-				this: SlotQueryHost,
-				...args: unknown[]
-			) {
-				defineSlotQueryProperty(this);
-				return originalRender.apply(this, args);
-			};
-		}
+		registerLegacyInstanceInitializer(proto, (element) => {
+			registerSsrPreparationCallback(element, () => {
+				defineSlotQueryProperty(element as SlotQueryHost);
+			});
+			element.registerConnectedCallback(() => {
+				defineSlotQueryProperty(element as SlotQueryHost);
+			});
+		});
 	};
 }

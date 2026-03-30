@@ -27,20 +27,16 @@ export function consumeContext(context: UnknownContext) {
 			bootstrapSsrConsumedContext(element, context, (provider) => {
 				assignContextProvider(element, provider);
 			});
-		});
 
-		const originalConnectedCallback = proto.connectedCallback;
+			element.registerConnectedCallback(() => {
+				if (initializeConsumedContextForHost(element, { emitMounted: true })) {
+					return;
+				}
 
-		proto.connectedCallback = function (this: RadiantElement) {
-			originalConnectedCallback.call(this);
-
-			if (initializeConsumedContextForHost(this, { emitMounted: true })) {
-				return;
-			}
-
-			queueMicrotask(() => {
-				initializeConsumedContextForHost(this, { emitMounted: true });
+				queueMicrotask(() => {
+					initializeConsumedContextForHost(element, { emitMounted: true });
+				});
 			});
-		};
+		});
 	};
 }

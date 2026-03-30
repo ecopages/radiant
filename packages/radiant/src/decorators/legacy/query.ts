@@ -1,5 +1,6 @@
 import type { RadiantElement } from '../../core/radiant-element';
 import type { QueryConfig } from '../query';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
  * A decorator to query by CSS selector or data-ref attribute.
@@ -41,23 +42,22 @@ export function query<T extends Element | Element[]>({
 			return instance.querySelector(selector);
 		};
 
-		const originalConnectedCallback = proto.connectedCallback;
-
-		proto.connectedCallback = function (this: RadiantElement) {
-			Object.defineProperty(this, propertyKey, {
-				get() {
-					if (shouldBeCached) {
-						if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
-							this[privatePropertyKey] = executeQuery(this);
+		registerLegacyInstanceInitializer(proto, (element) => {
+			element.registerConnectedCallback(() => {
+				Object.defineProperty(element, propertyKey, {
+					get() {
+						if (shouldBeCached) {
+							if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
+								this[privatePropertyKey] = executeQuery(this);
+							}
+							return this[privatePropertyKey];
 						}
-						return this[privatePropertyKey];
-					}
-					return executeQuery(this) as T;
-				},
-				enumerable: true,
-				configurable: true,
+						return executeQuery(this) as T;
+					},
+					enumerable: true,
+					configurable: true,
+				});
 			});
-			originalConnectedCallback.call(this);
-		};
+		});
 	};
 }

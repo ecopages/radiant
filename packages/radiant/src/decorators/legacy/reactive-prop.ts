@@ -1,6 +1,7 @@
 import type { RadiantElement } from '../../core/radiant-element';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { type AttributeTypeConstant, isValueOfType } from '../../utils/attribute-utils';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 type ReactivePropertyOptions<T> = {
 	type: AttributeTypeConstant;
@@ -53,20 +54,19 @@ export function reactiveProp<T = unknown>({
 			enumerable: true,
 		});
 
-		const originalConnectedCallback = target.connectedCallback;
+		registerLegacyInstanceInitializer(target, (element) => {
+			element.registerConnectedCallback(() => {
+				const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+				const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
 
-		target.connectedCallback = function (this: RadiantElement) {
-			const initializerValue = this[propertyName as keyof typeof this] as T | undefined;
-			const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
-
-			originalConnectedCallback.call(this);
-			this.createReactiveProp(propertyName, {
-				type,
-				reflect,
-				attribute: attributeKey,
-				defaultValue: resolvedDefaultValue,
-				bind,
+				element.createReactiveProp(propertyName, {
+					type,
+					reflect,
+					attribute: attributeKey,
+					defaultValue: resolvedDefaultValue,
+					bind,
+				});
 			});
-		};
+		});
 	};
 }

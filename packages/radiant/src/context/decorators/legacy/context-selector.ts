@@ -24,29 +24,25 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 				},
 				select,
 			);
-		});
 
-		const originalConnectedCallback = proto.connectedCallback;
+			element.registerConnectedCallback(() => {
+				if (
+					connectContextSelection(element, context, (value) => applySelectedContext(element, value), {
+						select,
+						subscribe,
+					})
+				) {
+					return;
+				}
 
-		proto.connectedCallback = function (this: RadiantElement) {
-			originalConnectedCallback.call(this);
-
-			if (
-				connectContextSelection(this, context, (value) => applySelectedContext(this, value), {
-					select,
-					subscribe,
-				})
-			) {
-				return;
-			}
-
-			queueMicrotask(() => {
-				connectContextSelection(this, context, (value) => applySelectedContext(this, value), {
-					select,
-					subscribe,
+				queueMicrotask(() => {
+					connectContextSelection(element, context, (value) => applySelectedContext(element, value), {
+						select,
+						subscribe,
+					});
 				});
 			});
-		};
+		});
 
 		return descriptor;
 	};
