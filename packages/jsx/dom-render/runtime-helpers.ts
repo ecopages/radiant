@@ -37,6 +37,16 @@ export function unwrapKeyedValue(value: unknown): unknown {
  *
  * This is the escape hatch used when the renderer cannot update in place or
  * when it needs an exact node-count estimate for hydration planning.
+ *
+ * Recursive work is collected into a single local array so iterable children
+ * and reactive unwraps do not allocate intermediate `Node[]` instances.
+ *
+ * @param value JSX value to materialize.
+ * @param rootTarget Nearest mounted root element, used as event delegation root.
+ * @param deferredProperties Accumulator for property assignments to flush after the DOM is stable.
+ * @param mountTemplate Factory that mounts a {@link TemplateResultLike} and returns its root nodes.
+ * @param contextParent Optional parent node for template context; defaults to `rootTarget`.
+ * @returns Flat array of materialized DOM nodes.
  */
 export function createNodesFromValue(
 	value: unknown,
@@ -45,39 +55,66 @@ export function createNodesFromValue(
 	mountTemplate: TemplateMount,
 	contextParent: Node | null = rootTarget,
 ): Node[] {
-	const nextValue = unwrapKeyedValue(value);
+	const nodes: Node[] = [];
 
-	if (nextValue === undefined || nextValue === null || nextValue === false || nextValue === true) {
-		return [];
-	}
+	const collectNodes = (nextValue: unknown): void => {
+		const resolvedValue = unwrapKeyedValue(nextValue);
 
-	if (isSubscribableJsxValue(nextValue)) {
-		return createNodesFromValue(nextValue.getValue(), rootTarget, deferredProperties, mountTemplate, contextParent);
-	}
-
-	if (isTemplateResultLike(nextValue)) {
-		return [...mountTemplate(nextValue, rootTarget, deferredProperties, contextParent).rootNodes];
-	}
-
-	if (isJsxNodeLike(nextValue)) {
-		return createNodesFromJsxNodeLike(nextValue);
-	}
-
-	if (nextValue instanceof Node) {
-		return [nextValue];
-	}
-
-	if (isIterableValue(nextValue)) {
-		const nodes: Node[] = [];
-
-		for (const child of nextValue) {
-			nodes.push(...createNodesFromValue(child, rootTarget, deferredProperties, mountTemplate, contextParent));
+		if (resolvedValue == null || typeof resolvedValue === 'boolean') {
+			return;
 		}
 
-		return nodes;
-	}
+		if (isSubscribableJsxValue(resolvedValue)) {
+			collectNodes(resolvedValue.getValue());
+			return;
+		}
 
-	return [document.createTextNode(String(nextValue))];
+		if (isTemplateResultLike(resolvedValue)) {
+			const rootNodes = mountTemplate(resolvedValue, rootTarget, deferredProperties, contextParent).rootNodes;
+
+			for (let index = 0; index < rootNodes.length; index += 1) {
+				const node = rootNodes[index];
+
+				if (node) {
+					nodes.push(node);
+				}
+			}
+
+			return;
+		}
+
+		if (isJsxNodeLike(resolvedValue)) {
+			const childNodes = createNodesFromJsxNodeLike(resolvedValue);
+
+			for (let index = 0; index < childNodes.length; index += 1) {
+				const childNode = childNodes[index];
+
+				if (childNode) {
+					nodes.push(childNode);
+				}
+			}
+
+			return;
+		}
+
+		if (resolvedValue instanceof Node) {
+			nodes.push(resolvedValue);
+			return;
+		}
+
+		if (isIterableValue(resolvedValue)) {
+			for (const child of resolvedValue) {
+				collectNodes(child);
+			}
+
+			return;
+		}
+
+		nodes.push(document.createTextNode(String(resolvedValue)));
+	};
+
+	collectNodes(value);
+	return nodes;
 }
 
 /**
