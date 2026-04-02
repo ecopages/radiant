@@ -368,6 +368,56 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 	});
 
+	test('hydrates adjacent attribute-only child templates without crossing sibling ranges', async () => {
+		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderHydratedField = (id: string, label: string, hidden = false) =>
+			jsx('input', {
+				'aria-label': label,
+				'data-id': id,
+				hidden,
+				title: label,
+				type: 'text',
+			});
+
+		const renderHydratedFields = (alphaLabel: string, betaLabel: string, betaHidden = false) =>
+			jsx('section', {
+				children: [
+					renderHydratedField('alpha', alphaLabel),
+					renderHydratedField('beta', betaLabel, betaHidden),
+				],
+			});
+
+		container.innerHTML = renderToString(renderHydratedFields('Alpha', 'Beta'), { hydrate: true });
+		root.hydrate(renderHydratedFields('Alpha', 'Beta'));
+
+		const initialInputs = Array.from(container.querySelectorAll('input'));
+		const alphaInput = initialInputs[0];
+		const betaInput = initialInputs[1];
+
+		expect(alphaInput?.getAttribute('title')).toBe('Alpha');
+		expect(betaInput?.getAttribute('title')).toBe('Beta');
+
+		root.render(renderHydratedFields('Alpha updated', 'Beta updated', true));
+
+		const updatedInputs = Array.from(container.querySelectorAll('input'));
+
+		expect(updatedInputs).toHaveLength(2);
+		expect(updatedInputs[0]).toBe(alphaInput);
+		expect(updatedInputs[1]).toBe(betaInput);
+		expect(updatedInputs[0]?.getAttribute('title')).toBe('Alpha updated');
+		expect(updatedInputs[0]?.getAttribute('aria-label')).toBe('Alpha updated');
+		expect(updatedInputs[1]?.getAttribute('title')).toBe('Beta updated');
+		expect(updatedInputs[1]?.getAttribute('aria-label')).toBe('Beta updated');
+		expect(updatedInputs[1]?.hasAttribute('hidden')).toBe(true);
+	});
+
 	test('does not lose generator children when keyed detection falls back to indexed mode', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
