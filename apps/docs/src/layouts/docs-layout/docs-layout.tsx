@@ -68,7 +68,7 @@ export const DocsLayout: EcoComponent<DocsLayoutProps> = ({ children, class: cla
 DocsLayout.config = {
 	dependencies: {
 		stylesheets: ['./docs-layout.css'],
-		scripts: ['./docs-layout.script.ts'],
+		scripts: ['./docs-layout.script.tsx'],
 		components: [BaseLayout, Banner],
 	},
 };

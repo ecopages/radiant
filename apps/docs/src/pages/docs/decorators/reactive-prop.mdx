@@ -1,0 +1,67 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+import { Banner } from '@/components/banner/banner';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | @reactiveProp',
+	description: 'Create reactive properties synchronized with HTML attributes.',
+})
+
+# @reactiveProp
+
+The `@reactiveProp` decorator creates a reactive property that automatically synchronizes with HTML attributes and triggers component updates when changed.
+
+## Usage
+
+```typescript
+import { RadiantElement, customElement, reactiveProp } from '@ecopages/radiant';
+
+@customElement('user-card')
+export class UserCard extends RadiantElement {
+	@reactiveProp({ type: String }) declare name: string;
+	@reactiveProp({ type: Number, defaultValue: 0 }) declare age: number;
+	@reactiveProp({ type: Boolean }) declare active: boolean;
+}
+```
+
+Usage in HTML:
+```html
+<user-card name="Alice" age="30" active></user-card>
+```
+
+## Parameters
+
+The decorator accepts an options object:
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `type` | `AttributeTypeConstant` | Yes | `String`, `Number`, `Boolean`, `Object`, or `Array`. |
+| `reflect` | `boolean` | No | Whether to reflect changes back to the attribute (default: `false`). |
+| `attribute` | `string` | No | Custom attribute name (default: property name in kebab-case). |
+| `defaultValue` | `any` | No | Default value if the attribute is not present. |
+
+## Supported Types
+
+- **String**: Standard string attribute.
+- **Number**: Automatically converts string attributes to JavaScript numbers.
+- **Boolean**: Follows HTML boolean convention (presence = true, absence = false).
+- **Object / Array**: Complex types are serialized as JSON strings in the attribute.
+
+<Banner type="info">
+  <Banner.Title>TIP</Banner.Title>
+  <p>Objects and Arrays need reassignment to trigger updates (e.g., this.items = [...this.items, newItem]). See <a href="/docs/getting-started/best-practices#reactive-state-mutation">Best Practices</a> for more information.</p>
+</Banner>
+
+## Reflection
+
+Use the `reflect` option to keep the HTML attribute in sync with the property value. This is useful for styling elements based on their state using CSS attribute selectors.
+
+```typescript
+@reactiveProp({ type: Boolean, reflect: true }) declare active: boolean;
+```
+
+## Learn More
+
+- [@reactiveField](/docs/decorators/reactive-field) - For internal reactive state.
+- [@onUpdated](/docs/decorators/on-updated) - React to property changes.

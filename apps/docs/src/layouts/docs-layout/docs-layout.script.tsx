@@ -1,6 +1,4 @@
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { onEvent } from '@ecopages/radiant/decorators/on-event';
+import { RadiantComponent, RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { BurgerEvents } from '@/components/burger/burger.events';
 
 /**
@@ -60,66 +58,67 @@ export class RadiantCounter extends RadiantElement {
 }
 
 /**
- * Previous / Next pagination element that injects navigation links based on
- * the ordered list of nav links found inside `radiant-navigation`.
+ * Previous / Next pagination element that renders navigation links from the
+ * ordered list of nav links found inside `radiant-navigation`.
  */
 @customElement('radiant-docs-pagination')
-export class RadiantDocsPagination extends RadiantElement {
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.renderPagination();
-	}
-
+export class RadiantDocsPagination extends RadiantComponent {
 	@onEvent({ document: true, type: 'eco:page-load' })
 	onPageLoad(): void {
-		this.renderPagination();
+		this.requestUpdate();
 	}
 
 	@onEvent({ document: true, type: 'eco:after-swap' })
 	onAfterSwap(): void {
-		this.renderPagination();
+		this.requestUpdate();
 	}
 
-	/**
-	 * Reads the ordered nav links from `radiant-navigation`, locates the
-	 * current page, and injects Previous / Next anchor elements into this
-	 * element's innerHTML.
-	 */
-	renderPagination(): void {
+	private getPaginationLinks() {
 		const nav = document.querySelector('radiant-navigation');
-		if (!nav) return;
+		if (!nav) {
+			return null;
+		}
+
 		const links = Array.from(nav.querySelectorAll<HTMLAnchorElement>('[data-nav-link]'));
 		const currentPath = window.location.pathname;
-
 		const currentIndex = links.findIndex((link) => link.pathname === currentPath);
-		if (currentIndex === -1) return;
 
-		const prevLink = currentIndex > 0 ? links[currentIndex - 1] : null;
-		const nextLink = currentIndex < links.length - 1 ? links[currentIndex + 1] : null;
-
-		let html = '';
-
-		if (prevLink) {
-			html += `
-                <a href="${prevLink.pathname}" class="group prev" safe>
-                    <span class="pagination-label">Previous</span>
-                    <span class="pagination-title">${prevLink.textContent?.trim() || ''}</span>
-                </a>
-            `;
-		} else {
-			html += `<div></div>`;
+		if (currentIndex === -1) {
+			return null;
 		}
 
-		if (nextLink) {
-			html += `
-                <a href="${nextLink.pathname}" class="group next" safe>
-                    <span class="pagination-label">Next</span>
-                    <span class="pagination-title">${nextLink.textContent?.trim() || ''}</span>
-                </a>
-            `;
+		return {
+			prevLink: currentIndex > 0 ? links[currentIndex - 1] : null,
+			nextLink: currentIndex < links.length - 1 ? links[currentIndex + 1] : null,
+		};
+	}
+
+	override render() {
+		const paginationLinks = this.getPaginationLinks();
+		if (!paginationLinks) {
+			return null;
 		}
 
-		this.innerHTML = html;
+		const { prevLink, nextLink } = paginationLinks;
+
+		return (
+			<>
+				{prevLink ? (
+					<a href={prevLink.pathname} class="group prev">
+						<span class="pagination-label">Previous</span>
+						<span class="pagination-title">{prevLink.textContent?.trim() || ''}</span>
+					</a>
+				) : (
+					<div></div>
+				)}
+				{nextLink ? (
+					<a href={nextLink.pathname} class="group next">
+						<span class="pagination-label">Next</span>
+						<span class="pagination-title">{nextLink.textContent?.trim() || ''}</span>
+					</a>
+				) : null}
+			</>
+		);
 	}
 }
 
@@ -331,6 +330,7 @@ export class RadiantToc extends RadiantElement {
 			takeRecords: () => [],
 			root: null,
 			rootMargin: '',
+			scrollMargin: '',
 			thresholds: [],
 		} satisfies IntersectionObserver;
 

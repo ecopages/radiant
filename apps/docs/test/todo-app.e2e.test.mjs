@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import test from 'node:test';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,6 +49,17 @@ test(
 			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-complete"]'), /Create a todo app/);
 			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Add a todo item/);
 			await waitForLocatorTextMatch(todoApp.locator('[data-ref="list-incomplete"]'), /Complete a todo item/);
+
+			const removeIconDetails = await todoApp
+				.locator('.todo__item-remove path')
+				.first()
+				.evaluate((node) => ({
+					constructorName: node.constructor.name,
+					namespace: node.namespaceURI,
+				}));
+
+			assert.equal(removeIconDetails.namespace, 'http://www.w3.org/2000/svg');
+			assert.equal(removeIconDetails.constructorName, 'SVGPathElement');
 
 			await todoApp.locator('input[name="todo"]').fill('Verify docs hydration');
 			await todoApp.getByRole('button', { name: 'Add' }).click();
