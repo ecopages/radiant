@@ -621,14 +621,10 @@ function createJsxElement<Props extends object>(
 
 	const strings = [`<${type}`];
 	const values: unknown[] = [];
-	const children = (props as JsxPropsWithChildren).children;
-	const rawAttributes = { ...(props as Record<string, unknown>) };
-	delete rawAttributes.children;
-	const normalizedAttributes = normalizeAttributes(rawAttributes);
-
-	for (const [name, value] of Object.entries(normalizedAttributes)) {
+	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
+	forEachNormalizedAttribute(rawAttributes, (name, value) => {
 		appendBinding(strings, values, name, value);
-	}
+	});
 
 	if (voidElementNames.has(type)) {
 		strings[strings.length - 1] += '>';
@@ -717,8 +713,7 @@ function createServerRenderedCustomElement<Props extends object>(type: string, p
 	}
 
 	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
-	const normalizedAttributes = normalizeAttributes(rawAttributes);
-	applyServerCustomElementAttributes(instance, normalizedAttributes);
+	applyServerCustomElementAttributes(instance, rawAttributes);
 	applyServerCustomElementChildren(instance, children);
 
 	return {
@@ -786,25 +781,25 @@ function isServerRenderableCustomElement(value: unknown): value is ServerRendera
  * - All other values are serialized via `String()` and passed to `setAttribute`.
  *
  * @param element Target custom element instance.
- * @param attributes Pre-normalized attribute map (output of {@link normalizeAttributes}).
+ * @param attributes Raw JSX props with `children` and `key` already removed.
  */
 function applyServerCustomElementAttributes(
 	element: ServerRenderableCustomElement,
 	attributes: Record<string, unknown>,
 ): void {
-	for (const [name, value] of Object.entries(attributes)) {
+	forEachNormalizedAttribute(attributes, (name, value) => {
 		if (value === undefined || name.startsWith('on:') || name.startsWith('on-native:')) {
-			continue;
+			return;
 		}
 
 		if (name.startsWith('prop:')) {
 			element[name.slice(5)] = value;
-			continue;
+			return;
 		}
 
 		if (name in element && !name.includes('-')) {
 			element[name] = value;
-			continue;
+			return;
 		}
 
 		if (typeof value === 'boolean') {
@@ -813,11 +808,11 @@ function applyServerCustomElementAttributes(
 			} else {
 				element.removeAttribute?.(name);
 			}
-			continue;
+			return;
 		}
 
 		element.setAttribute?.(name, String(value));
-	}
+	});
 }
 
 /**
@@ -1146,46 +1141,50 @@ function isSignalLikeValue(value: unknown): value is SignalLike {
 }
 
 /**
- * Normalizes raw JSX props attributes into a flat record ready for binding serialization.
+ * Iterates normalized JSX attributes and invokes `append` for each resolved name/value
+ * pair. No intermediate record is created.
  *
  * Processing steps (in order):
- * 1. Merges `class`, `className`, and `classes` into a single `class` string
- *    via {@link normalizeClassList}. Omits the key entirely when all three are empty.
+ * 1. Merges `class`, `className`, and `classes` into a single `class` string via
+ *    {@link normalizeMergedClassValue}. The pair is omitted when all three are empty.
  * 2. Skips `undefined` values, the `key` prop, and the class-family aliases.
- * 3. Expands `data` and `aria` objects into `data-*` / `aria-*` flat keys.
+ * 3. Expands `data` and `aria` objects into `data-*` / `aria-*` flat keys via
+ *    {@link appendStructuredAttributes}.
  * 4. Serializes `style` objects to inline CSS strings via {@link normalizeStyleValue}.
- * 5. Passes all remaining attribute values through {@link normalizeAttributeValue}.
+ * 5. Passes all remaining attribute values to `append` unchanged.
  *
- * @param attributes Raw props object with the `children` prop already removed.
- * @returns Normalized flat attribute record.
+ * @param attributes Raw props object with `children` and `key` already removed.
+ * @param append Callback invoked once per resolved attribute with its final name and value.
  */
-function normalizeAttributes(attributes: Record<string, unknown>): Record<string, unknown> {
-	const normalized: Record<string, unknown> = {};
-	const classValue = normalizeClassList([attributes.class, attributes.className, attributes.classes]);
+function forEachNormalizedAttribute(
+	attributes: Record<string, unknown>,
+	append: (name: string, value: unknown) => void,
+): void {
+	const classValue = normalizeMergedClassValue(attributes.class, attributes.className, attributes.classes);
 
 	if (classValue !== undefined) {
-		normalized.class = classValue;
+		append('class', classValue);
 	}
 
-	for (const [name, value] of Object.entries(attributes)) {
+	for (const name in attributes) {
+		const value = attributes[name];
+
 		if (value === undefined || name === 'key' || name === 'class' || name === 'className' || name === 'classes') {
 			continue;
 		}
 
 		if (name === 'data' || name === 'aria') {
-			appendStructuredAttributes(normalized, name, value);
+			appendStructuredAttributes(name, value, append);
 			continue;
 		}
 
 		if (name === 'style') {
-			normalized.style = normalizeStyleValue(value);
+			append('style', normalizeStyleValue(value));
 			continue;
 		}
 
-		normalized[name] = normalizeAttributeValue(name, value);
+		append(name, value);
 	}
-
-	return normalized;
 }
 
 /**
@@ -1202,16 +1201,16 @@ function normalizeAttributes(attributes: Record<string, unknown>): Record<string
  * @param value The structured object to expand.
  */
 function appendStructuredAttributes(
-	attributes: Record<string, unknown>,
 	prefix: 'aria' | 'data',
 	value: unknown,
+	append: (name: string, value: unknown) => void,
 ): void {
 	if (!isPlainObject(value)) {
 		return;
 	}
 
-	for (const [name, entry] of Object.entries(value)) {
-		attributes[`${prefix}-${toKebabCase(name)}`] = entry;
+	for (const name in value) {
+		append(`${prefix}-${toKebabCase(name)}`, value[name]);
 	}
 }
 
@@ -1300,7 +1299,13 @@ function appendChildren(
 		return;
 	}
 
-	if (childSlotMode === 'multiple' && isIterableChild(children)) {
+	if (!isIterableChild(children)) {
+		values.push(normalizeChildren(children));
+		strings.push('');
+		return;
+	}
+
+	if (childSlotMode === 'multiple') {
 		for (const child of children) {
 			const normalizedChild = normalizeChildSlot(child as JsxRenderable);
 
@@ -1314,19 +1319,13 @@ function appendChildren(
 		return;
 	}
 
-	if (isIterableChild(children)) {
-		const flattenedChildren = flattenChildren(children);
+	const flattenedChildren = flattenChildren(children);
 
-		if (flattenedChildren.length === 0) {
-			return;
-		}
-
-		values.push(flattenedChildren as JsxRenderable);
-		strings.push('');
+	if (flattenedChildren.length === 0) {
 		return;
 	}
 
-	values.push(normalizeChildren(children));
+	values.push(flattenedChildren as JsxRenderable);
 	strings.push('');
 }
 
@@ -1344,9 +1343,15 @@ function appendChildren(
  */
 function normalizeChildrenWithMode(children: JsxRenderable | undefined, childSlotMode: ChildSlotMode): JsxRenderable {
 	if (childSlotMode === 'multiple' && isIterableChild(children)) {
-		const slots = Array.from(children)
-			.map((child) => normalizeChildSlot(child as JsxRenderable))
-			.filter((child): child is JsxRenderable => child !== undefined);
+		const slots: JsxRenderable[] = [];
+
+		for (const child of children) {
+			const normalizedChild = normalizeChildSlot(child as JsxRenderable);
+
+			if (normalizedChild !== undefined) {
+				slots.push(normalizedChild);
+			}
+		}
 
 		if (slots.length === 0) {
 			return '';
@@ -1420,12 +1425,12 @@ function normalizeChildSlot(child: JsxRenderable | undefined): JsxRenderable | u
 		return undefined;
 	}
 
-	if (isIterableChild(child)) {
-		const flattenedChildren = flattenChildren(child);
-		return flattenedChildren.length === 0 ? undefined : (flattenedChildren as JsxRenderable);
+	if (!isIterableChild(child)) {
+		return child;
 	}
 
-	return normalizeChildren(child);
+	const flattenedChildren = flattenChildren(child);
+	return flattenedChildren.length === 0 ? undefined : (flattenedChildren as JsxRenderable);
 }
 
 /**
@@ -1479,6 +1484,14 @@ function appendFlattenedChildren(flattenedChildren: unknown[], children: JsxRend
  * @returns Normalized {@link JsxRenderable}.
  */
 function normalizeChildren(children: JsxRenderable | undefined): JsxRenderable {
+	if (children === undefined || children === null || children === false) {
+		return '';
+	}
+
+	if (!isIterableChild(children)) {
+		return children;
+	}
+
 	const flattenedChildren = flattenChildren(children);
 
 	if (flattenedChildren.length === 0) {
@@ -1493,22 +1506,27 @@ function normalizeChildren(children: JsxRenderable | undefined): JsxRenderable {
 }
 
 /**
- * Normalizes a single attribute value.
+ * Merges the `class`, `className`, and `classes` JSX props into a single
+ * space-separated class string.
  *
- * Currently only the `class` attribute requires special treatment: its value
- * is passed through {@link normalizeClassList} to merge any token arrays or
- * conditional objects. All other values are returned unchanged.
+ * Each value is processed by {@link appendClassTokens}, which understands strings,
+ * numbers, arrays, and conditional objects (`{ token: boolean }`).
  *
- * @param name Attribute name.
- * @param value Raw attribute value.
- * @returns Normalized attribute value.
+ * @param classValue Value of the `class` prop.
+ * @param classNameValue Value of the `className` prop.
+ * @param classesValue Value of the `classes` prop.
+ * @returns Merged class string, or `undefined` when all three resolve to no tokens.
  */
-function normalizeAttributeValue(name: string, value: unknown): unknown {
-	if (name === 'class') {
-		return normalizeClassList([value]);
-	}
-
-	return value;
+function normalizeMergedClassValue(
+	classValue: unknown,
+	classNameValue: unknown,
+	classesValue: unknown,
+): string | undefined {
+	const tokens: string[] = [];
+	appendClassTokens(tokens, classValue);
+	appendClassTokens(tokens, classNameValue);
+	appendClassTokens(tokens, classesValue);
+	return tokens.length === 0 ? undefined : tokens.join(' ');
 }
 
 /**

@@ -331,6 +331,43 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector('.foreign-object-label')?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
 	});
 
+	test('hydrates iterable-root SSR bindings through the fallback marker scan', async () => {
+		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let clickTotal = 0;
+		const incrementAlpha = () => {
+			clickTotal += 1;
+		};
+		const incrementBeta = () => {
+			clickTotal += 10;
+		};
+		const renderIterableRoot = () => [
+			jsx('button', {
+				'on:click': incrementAlpha,
+				children: 'Alpha',
+			}),
+			jsx('button', {
+				'on:click': incrementBeta,
+				children: 'Beta',
+			}),
+		];
+
+		container.innerHTML = renderToString(renderIterableRoot(), { hydrate: true });
+		root.hydrate(renderIterableRoot());
+
+		const buttons = Array.from(container.querySelectorAll('button'));
+		buttons[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		buttons[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+		expect(clickTotal).toBe(11);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+	});
+
 	test('does not lose generator children when keyed detection falls back to indexed mode', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

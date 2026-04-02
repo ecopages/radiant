@@ -1,33 +1,41 @@
 import type { JsxNodeLike } from '../jsx-runtime.ts';
 
 /**
- * Collects all descendant elements of `target` in document order, stopping at
- * custom-element boundaries.
+ * Visits descendant elements of `target` in document order, stopping at custom-element
+ * boundaries.
  *
  * Custom elements (tag names containing a hyphen) are treated as opaque hydration
  * islands: their attributes are harvested but their descendants are skipped, since any
  * inner DOM belongs to the custom element's own shadow or light-DOM lifecycle.
  *
  * @param target Root element to walk.
- * @returns Flat array of elements including `target` itself.
+ * @param visit Callback invoked for every element including `target`. Returning `true`
+ * stops the traversal early.
  */
-export function collectElements(target: HTMLElement): Element[] {
-	const elements: Element[] = [];
-
-	const visit = (element: Element, allowDescendIntoChildren: boolean) => {
-		elements.push(element);
+export function visitElements(target: HTMLElement, visit: (element: Element) => boolean): boolean {
+	const walk = (element: Element, allowDescendIntoChildren: boolean): boolean => {
+		if (visit(element)) {
+			return true;
+		}
 
 		if (!allowDescendIntoChildren) {
-			return;
+			return false;
 		}
 
-		for (const child of Array.from(element.children)) {
-			visit(child, !isOpaqueHydrationIsland(child));
+		const children = element.children;
+
+		for (let index = 0; index < children.length; index += 1) {
+			const child = children.item(index);
+
+			if (child && walk(child, !isOpaqueHydrationIsland(child))) {
+				return true;
+			}
 		}
+
+		return false;
 	};
 
-	visit(target, true);
-	return elements;
+	return walk(target, true);
 }
 
 /**

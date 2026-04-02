@@ -5,7 +5,7 @@ import {
 	getTemplateInterpolationParts,
 	parseBindingDescriptor,
 } from './hydration-bindings.ts';
-import { collectElements, createBoundaryMarker } from './dom-render/dom-operations.ts';
+import { createBoundaryMarker, visitElements } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
 import {
@@ -138,14 +138,14 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 
 	ROOT_RENDER_STATE.delete(target);
 
-	if (!hasHydrationMarkers(target)) {
-		render(element, target);
-		return;
-	}
-
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
+		if (!hasHydrationMarkers(target)) {
+			render(element, target);
+			return;
+		}
+
 		const focusSnapshot = captureFocusSnapshot(target);
 		const deferredProperties: DeferredPropertyBinding[] = [];
 		const instance = hydrateTemplateInstance(nextValue, target, deferredProperties, RENDER_RUNTIME);
@@ -165,30 +165,27 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	const deferredProperties: DeferredPropertyBinding[] = [];
 	const bindings = collectHydrationBindings(element);
 
-	for (const hydratedElement of collectElements(target)) {
-		const attributes = Array.from(hydratedElement.attributes);
-
-		for (const attribute of attributes) {
-			if (!attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)) {
-				continue;
-			}
-
-			const index = Number(attribute.name.slice(ATTRIBUTE_BINDING_PREFIX.length));
+	if (
+		!visitHydrationBindingMarkers(target, (element, attribute) => {
+			const bindingIndex = Number(attribute.name.slice(ATTRIBUTE_BINDING_PREFIX.length));
 			const parsedBinding = parseBindingDescriptor(attribute.value);
-			hydratedElement.removeAttribute(attribute.name);
+			element.removeAttribute(attribute.name);
 
 			if (!parsedBinding) {
-				continue;
+				return;
 			}
 
-			const binding = bindings.get(index);
+			const binding = bindings.get(bindingIndex);
 
 			if (!binding) {
-				continue;
+				return;
 			}
 
-			applyAttributeBinding(hydratedElement, parsedBinding, binding.value, target, deferredProperties);
-		}
+			applyAttributeBinding(element, parsedBinding, binding.value, target, deferredProperties);
+		})
+	) {
+		render(element, target);
+		return;
 	}
 
 	flushDeferredProperties(deferredProperties);
@@ -206,15 +203,44 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
  * @param target Root element to inspect.
  */
 export function hasHydrationMarkers(target: HTMLElement): boolean {
-	for (const element of collectElements(target)) {
-		for (const attribute of Array.from(element.attributes)) {
-			if (attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)) {
-				return true;
-			}
-		}
-	}
+	return visitHydrationBindingMarkers(target, () => undefined);
+}
 
-	return false;
+/**
+ * Walks the subtree rooted at `target` and invokes `visit` for every attribute whose
+ * name starts with {@link ATTRIBUTE_BINDING_PREFIX}.
+ *
+ * Attributes are iterated in reverse index order so that callers may safely call
+ * `removeAttribute` inside `visit` without corrupting the live `NamedNodeMap`.
+ *
+ * @param target Root element to walk.
+ * @param visit Callback invoked for each binding marker attribute found.
+ * @returns `true` when at least one binding marker was found, `false` otherwise.
+ */
+function visitHydrationBindingMarkers(
+	target: HTMLElement,
+	visit: (element: Element, attribute: Attr) => void,
+): boolean {
+	let foundHydrationMarker = false;
+
+	visitElements(target, (element) => {
+		const attributes = element.attributes;
+
+		for (let index = attributes.length - 1; index >= 0; index -= 1) {
+			const attribute = attributes[index];
+
+			if (!attribute || !attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)) {
+				continue;
+			}
+
+			foundHydrationMarker = true;
+			visit(element, attribute);
+		}
+
+		return false;
+	});
+
+	return foundHydrationMarker;
 }
 
 /**
