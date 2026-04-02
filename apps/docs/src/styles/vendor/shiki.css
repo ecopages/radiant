@@ -1,4 +1,5 @@
 figure[data-rehype-pretty-code-figure] {
+	@apply my-8;
 }
 
 figure[data-rehype-pretty-code-figure] pre {
