@@ -14,7 +14,6 @@
 		"isolatedModules": true,
 		"moduleDetection": "force",
 		"noEmit": true,
-		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"],
 			"@ecopages/jsx": ["../../packages/jsx/index.ts"],
