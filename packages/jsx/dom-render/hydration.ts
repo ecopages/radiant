@@ -1,7 +1,7 @@
 import type { KeyedJsxValue, TemplateResultLike } from '../jsx-runtime.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { clearDelegationRoot } from './event-delegation.ts';
-import { getNodeAtPath, getNodePath, getPathKey } from './path-utils.ts';
+import { getNodeAtPath, getPathKey } from './path-utils.ts';
 import {
 	canRenderAsTextNode,
 	createNodesFromValue,
@@ -25,7 +25,6 @@ import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constant
 import type {
 	AttributeTemplatePart,
 	ChildTemplatePart,
-	CompiledTemplate,
 	DeferredPropertyBinding,
 	LiveAttributePart,
 	LiveTemplatePart,
@@ -561,7 +560,7 @@ function hydrateStaticTemplateRange(
 		return undefined;
 	}
 
-	const templateRoot = createHydratedRangeRoot(existingNodes, startMarker, endMarker);
+	const templateRoot = createHydratedRangeRoot(startMarker, endMarker);
 	const parts: LiveAttributePart[] = [];
 
 	for (const part of attributeParts) {
@@ -700,31 +699,42 @@ function hydrateKeyedRangeContent(
  *
  * Used by {@link hydrateStaticTemplateRange} so path-resolution helpers can walk
  * child-index paths relative to a hydrated range without needing to work from the
- * true document root.
+ * true document root. The child list is reconstructed by walking siblings between
+ * the two markers instead of indexing into the full parent child-node list.
  *
- * @param existingNodes Nodes expected to sit between `startMarker` and `endMarker`.
  * @param startMarker Start boundary marker.
  * @param endMarker End boundary marker.
  */
-function createHydratedRangeRoot(
-	existingNodes: readonly Node[],
-	startMarker: Text,
-	endMarker: Text,
-): { childNodes: readonly Node[] } {
-	if (existingNodes.length === 0) {
+function createHydratedRangeRoot(startMarker: Text, endMarker: Text): { childNodes: readonly ChildNode[] } {
+	const parentNode = startMarker.parentNode;
+
+	if (!parentNode || parentNode !== endMarker.parentNode) {
 		return { childNodes: [] };
 	}
 
-	const parentNode = existingNodes[0]?.parentNode;
-
-	if (!parentNode) {
-		return { childNodes: [] };
-	}
-
-	const childNodes = Array.from(parentNode.childNodes).slice(
-		Array.prototype.indexOf.call(parentNode.childNodes, startMarker) + 1,
-		Array.prototype.indexOf.call(parentNode.childNodes, endMarker),
-	);
+	const childNodes = collectNodesBetweenMarkers(startMarker, endMarker);
 
 	return { childNodes };
+}
+
+/**
+ * Collects the sibling nodes that sit strictly between `startMarker` and `endMarker`.
+ *
+ * This avoids copying the full `parentNode.childNodes` list when hydration only
+ * needs the bounded range owned by the current template fragment.
+ *
+ * @param startMarker Start boundary marker.
+ * @param endMarker End boundary marker.
+ * @returns Ordered child nodes between the two markers.
+ */
+function collectNodesBetweenMarkers(startMarker: Text, endMarker: Text): readonly ChildNode[] {
+	const nodes: ChildNode[] = [];
+	let currentNode = startMarker.nextSibling;
+
+	while (currentNode && currentNode !== endMarker) {
+		nodes.push(currentNode);
+		currentNode = currentNode.nextSibling;
+	}
+
+	return nodes;
 }
