@@ -6,6 +6,7 @@ async function loadModule<T>(path: string): Promise<T> {
 
 const loadJsxRuntime = async () => loadModule<typeof import('../jsx-runtime.ts')>('../jsx-runtime.ts');
 const loadJsxModule = async () => loadModule<typeof import('../index.ts')>('../index.ts');
+const loadServerRender = async () => loadModule<typeof import('../server-render.ts')>('../server-render.ts');
 
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {
@@ -213,6 +214,123 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).toBe(renderToString(template));
 	});
 
+	test('mounts SVG child templates with SVG namespaces under SVG parents', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(
+			jsx('button', {
+				children: jsxs('svg', {
+					viewBox: '0 0 24 24',
+					children: [jsx('path', { d: 'M18 6 6 18' }), jsx('path', { d: 'm6 6 12 12' })],
+				}),
+			}),
+		);
+
+		const svg = container.querySelector('svg');
+		const paths = Array.from(container.querySelectorAll('path'));
+
+		expect(svg?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(paths).toHaveLength(2);
+		expect(paths.every((path) => path.namespaceURI === 'http://www.w3.org/2000/svg')).toBe(true);
+		expect(paths.every((path) => path instanceof SVGElement)).toBe(true);
+	});
+
+	test('preserves namespaced SVG attributes across mount and update', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const xlinkNamespace = 'http://www.w3.org/1999/xlink';
+
+		const renderIconUse = (href: string) =>
+			jsx('svg', {
+				children: jsx('use', {
+					'xlink:href': href,
+				}),
+			});
+
+		root.render(renderIconUse('#alpha'));
+
+		const initialUse = container.querySelector('use');
+
+		expect(initialUse?.getAttributeNS(xlinkNamespace, 'href')).toBe('#alpha');
+
+		root.render(renderIconUse('#beta'));
+
+		const updatedUse = container.querySelector('use');
+
+		expect(updatedUse).toBe(initialUse);
+		expect(updatedUse?.getAttributeNS(xlinkNamespace, 'href')).toBe('#beta');
+	});
+
+	test('switches SVG children back to HTML inside foreignObject', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(
+			jsx('svg', {
+				children: jsx('foreignObject', {
+					children: jsx('button', {
+						class: 'foreign-object-action',
+						children: 'Launch',
+					}),
+				}),
+			}),
+		);
+
+		const button = container.querySelector('.foreign-object-action');
+
+		expect(button?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
+		expect(button instanceof HTMLButtonElement).toBe(true);
+	});
+
+	test('hydrates nested SVG content with preserved namespaces and updates', async () => {
+		const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const xlinkNamespace = 'http://www.w3.org/1999/xlink';
+
+		const renderHydratedIcon = (href: string) =>
+			jsx('button', {
+				children: jsxs('svg', {
+					viewBox: '0 0 24 24',
+					children: [
+						jsx('use', { 'xlink:href': href }),
+						jsx('path', { d: 'M18 6 6 18' }),
+						jsx('foreignObject', {
+							children: jsx('span', { class: 'foreign-object-label', children: 'HTML' }),
+						}),
+					],
+				}),
+			});
+
+		container.innerHTML = renderToString(renderHydratedIcon('#alpha'), { hydrate: true });
+		root.hydrate(renderHydratedIcon('#alpha'));
+
+		const hydratedUse = container.querySelector('use');
+		const hydratedPath = container.querySelector('path');
+		const hydratedForeignObjectLabel = container.querySelector('.foreign-object-label');
+
+		expect(hydratedUse?.getAttributeNS(xlinkNamespace, 'href')).toBe('#alpha');
+		expect(hydratedPath?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(hydratedPath instanceof SVGElement).toBe(true);
+		expect(hydratedForeignObjectLabel?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
+		expect(hydratedForeignObjectLabel instanceof HTMLSpanElement).toBe(true);
+
+		root.render(renderHydratedIcon('#beta'));
+
+		expect(container.querySelector('use')).toBe(hydratedUse);
+		expect(container.querySelector('use')?.getAttributeNS(xlinkNamespace, 'href')).toBe('#beta');
+		expect(container.querySelector('path')?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(container.querySelector('.foreign-object-label')?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
+	});
+
 	test('does not lose generator children when keyed detection falls back to indexed mode', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -349,7 +467,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		let count = 3;
 		const boundCount = {
 			get: () => count,
-			subscribe: (notify) => {
+			subscribe: (notify: (value: number) => void) => {
 				subscribers.add(notify);
 
 				return () => {

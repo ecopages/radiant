@@ -267,7 +267,7 @@ function collectHydratedChildRanges(
 				continue;
 			}
 
-			const nodeCount = countHydratedRangeNodes(values[part.index], runtime);
+			const nodeCount = countHydratedRangeNodes(values[part.index], runtime, parentNode);
 			ranges.set(part.index, {
 				actualStartIndex: actualIndex,
 				blueprintStartIndex: part.startPath[part.startPath.length - 1] ?? 0,
@@ -311,9 +311,9 @@ function getHydratedNodeContribution(node: Node | undefined): number {
  *
  * @param value JSX value whose node count should be estimated.
  */
-function countHydratedRangeNodes(value: unknown, runtime: ReconciliationRuntime): number {
+function countHydratedRangeNodes(value: unknown, runtime: ReconciliationRuntime, contextParent: Node | null): number {
 	const rootTarget = document.createElement('div');
-	const nodes = createNodesFromValue(value, rootTarget, [], runtime.createTemplateInstance);
+	const nodes = createNodesFromValue(value, rootTarget, [], runtime.createTemplateInstance, contextParent);
 	clearDelegationRoot(rootTarget);
 	return nodes.length;
 }
@@ -618,7 +618,7 @@ function hydrateIndexedRangeContent(
 	let nextNodeIndex = 0;
 
 	for (const child of children) {
-		const childNodeCount = countHydratedRangeNodes(child, runtime);
+		const childNodeCount = countHydratedRangeNodes(child, runtime, endMarker.parentNode);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
 
 		if (childNodes.length !== childNodeCount) {
@@ -663,7 +663,7 @@ function hydrateKeyedRangeContent(
 	let nextNodeIndex = 0;
 
 	for (const child of children) {
-		const childNodeCount = countHydratedRangeNodes(child.value, runtime);
+		const childNodeCount = countHydratedRangeNodes(child.value, runtime, endMarker.parentNode);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
 
 		if (childNodes.length !== childNodeCount) {

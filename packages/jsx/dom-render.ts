@@ -8,6 +8,12 @@ import {
 import { collectElements, createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
+import {
+	getChildNamespace,
+	HTML_NAMESPACE_URI,
+	setElementAttributeValue,
+	SVG_NAMESPACE_URI,
+} from './dom-render/namespaces.ts';
 import { getNodeAtPath, getNodePath } from './dom-render/path-utils.ts';
 import {
 	applyAttributeBinding,
@@ -94,7 +100,7 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
 				disposeMountedRoot(currentRenderState);
 			}
 
-			const instance = createTemplateInstance(nextValue, target, deferredProperties);
+			const instance = createTemplateInstance(nextValue, target, deferredProperties, target);
 			target.replaceChildren(...instance.rootNodes);
 			ROOT_RENDER_STATE.set(target, { instance, kind: 'template' });
 		}
@@ -104,7 +110,13 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
 		}
 
 		target.replaceChildren(
-			...createNodesFromValue(nextValue, target, deferredProperties, RENDER_RUNTIME.createTemplateInstance),
+			...createNodesFromValue(
+				nextValue,
+				target,
+				deferredProperties,
+				RENDER_RUNTIME.createTemplateInstance,
+				target,
+			),
 		);
 		ROOT_RENDER_STATE.set(target, { kind: 'value' });
 	}
@@ -237,9 +249,11 @@ function createTemplateInstance(
 	template: TemplateResultLike,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
+	contextParent: Node | null = rootTarget,
 ): TemplateInstance {
 	const compiledTemplate = getCompiledTemplate(template);
 	const fragment = compiledTemplate.blueprint.content.cloneNode(true) as DocumentFragment;
+	normalizeTemplateFragmentNamespaces(fragment, contextParent);
 	const parts = createLiveTemplateParts(fragment, compiledTemplate.parts, rootTarget);
 	const rootNodes = Array.from(fragment.childNodes);
 
@@ -270,6 +284,63 @@ function createTemplateInstance(
 
 	instance.update(template.values, deferredProperties);
 	return instance;
+}
+
+function normalizeTemplateFragmentNamespaces(fragment: DocumentFragment, contextParent: Node | null): void {
+	const contextElement = contextParent instanceof Element ? contextParent : contextParent?.parentElement;
+	const childNamespace = getChildNamespace(
+		contextElement?.namespaceURI ?? HTML_NAMESPACE_URI,
+		contextElement?.localName,
+	);
+
+	if (childNamespace !== SVG_NAMESPACE_URI) {
+		return;
+	}
+
+	for (const childNode of Array.from(fragment.childNodes)) {
+		const normalizedNode = normalizeNodeNamespace(childNode, childNamespace);
+
+		if (normalizedNode !== childNode) {
+			fragment.replaceChild(normalizedNode, childNode);
+		}
+	}
+}
+
+function normalizeNodeNamespace(node: Node, expectedNamespace: string): Node {
+	if (!(node instanceof Element)) {
+		return node;
+	}
+
+	const normalizedElement =
+		node.namespaceURI === expectedNamespace ? node : recreateElementInNamespace(node, expectedNamespace);
+	const childNamespace = getChildNamespace(expectedNamespace, normalizedElement.localName);
+
+	for (const childNode of Array.from(normalizedElement.childNodes)) {
+		const normalizedChild = normalizeNodeNamespace(childNode, childNamespace);
+
+		if (normalizedChild !== childNode) {
+			normalizedElement.replaceChild(normalizedChild, childNode);
+		}
+	}
+
+	return normalizedElement;
+}
+
+function recreateElementInNamespace(element: Element, namespace: string): Element {
+	const replacement = document.createElementNS(namespace, element.localName);
+
+	for (const attribute of Array.from(element.attributes)) {
+		if (attribute.namespaceURI) {
+			replacement.setAttributeNS(attribute.namespaceURI, attribute.name, attribute.value);
+			continue;
+		}
+
+		setElementAttributeValue(replacement, attribute.name, attribute.value);
+	}
+
+	replacement.append(...element.childNodes);
+
+	return replacement;
 }
 
 /**

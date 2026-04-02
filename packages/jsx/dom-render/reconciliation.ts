@@ -6,6 +6,7 @@ import {
 	detachEventBindingListener,
 	isEventListenerObject,
 } from './event-delegation.ts';
+import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
 import {
 	canRenderAsTextNode,
 	createNodesFromValue,
@@ -24,8 +25,6 @@ import type {
 	CompiledTemplate,
 	DeferredPropertyBinding,
 	LiveAttributePart,
-	MountedIndexedList,
-	MountedKeyedList,
 	MountedRangeContent,
 	MountedRangeRecord,
 	MountedRoot,
@@ -40,6 +39,7 @@ export type ReconciliationRuntime = {
 		template: TemplateResultLike,
 		rootTarget: HTMLElement,
 		deferredProperties: DeferredPropertyBinding[],
+		contextParent?: Node | null,
 	) => TemplateInstance;
 	getCompiledTemplate: (template: TemplateResultLike) => CompiledTemplate;
 };
@@ -154,7 +154,7 @@ export function updateLiveAttributePart(
 	part: LiveAttributePart,
 	value: unknown,
 	deferredProperties: DeferredPropertyBinding[],
-	runtime: ReconciliationRuntime,
+	_runtime: ReconciliationRuntime,
 ): void {
 	if (part.source) {
 		if (isReactiveAttributeSource(value) && part.source === value) {
@@ -192,15 +192,18 @@ function applyResolvedAttributeBinding(
 	switch (part.binding.kind) {
 		case 'attr': {
 			if (value === undefined || value === null) {
-				part.element.removeAttribute(part.binding.name);
+				removeElementAttribute(part.element, part.binding.name);
 				part.previousValue = value;
 				return;
 			}
 
 			const nextValue = String(value);
 
-			if (part.previousValue !== value || part.element.getAttribute(part.binding.name) !== nextValue) {
-				part.element.setAttribute(part.binding.name, nextValue);
+			if (
+				part.previousValue !== value ||
+				getElementAttributeValue(part.element, part.binding.name) !== nextValue
+			) {
+				setElementAttributeValue(part.element, part.binding.name, nextValue);
 			}
 
 			part.previousValue = value;
@@ -305,7 +308,7 @@ export function applyAttributeBinding(
 			if (resolvedValue === undefined || resolvedValue === null) {
 				return;
 			}
-			element.setAttribute(binding.name, String(resolvedValue));
+			setElementAttributeValue(element, binding.name, String(resolvedValue));
 			return;
 
 		case 'bool':
@@ -417,7 +420,12 @@ export function updateRangeContent(
 
 		disposeMountedRangeContent(currentContent);
 		clearRangeBetween(startMarker, endMarker);
-		const instance = runtime.createTemplateInstance(nextValue, rootTarget, deferredProperties);
+		const instance = runtime.createTemplateInstance(
+			nextValue,
+			rootTarget,
+			deferredProperties,
+			endMarker.parentNode,
+		);
 		insertNodesBefore(endMarker, instance.rootNodes);
 		return { instance, kind: 'template' };
 	}
@@ -447,7 +455,13 @@ export function updateRangeContent(
 		return { kind: 'text', node: textNode };
 	}
 
-	const nodes = createNodesFromValue(nextValue, rootTarget, deferredProperties, runtime.createTemplateInstance);
+	const nodes = createNodesFromValue(
+		nextValue,
+		rootTarget,
+		deferredProperties,
+		runtime.createTemplateInstance,
+		endMarker.parentNode,
+	);
 	insertNodesBefore(endMarker, nodes);
 	return { kind: 'nodes', nodes };
 }

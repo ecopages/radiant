@@ -12,6 +12,7 @@ type TemplateMount = (
 	template: TemplateResultLike,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
+	contextParent?: Node | null,
 ) => { rootNodes: readonly Node[] };
 
 /**
@@ -42,6 +43,7 @@ export function createNodesFromValue(
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
 	mountTemplate: TemplateMount,
+	contextParent: Node | null = rootTarget,
 ): Node[] {
 	const nextValue = unwrapKeyedValue(value);
 
@@ -50,11 +52,11 @@ export function createNodesFromValue(
 	}
 
 	if (isSubscribableJsxValue(nextValue)) {
-		return createNodesFromValue(nextValue.getValue(), rootTarget, deferredProperties, mountTemplate);
+		return createNodesFromValue(nextValue.getValue(), rootTarget, deferredProperties, mountTemplate, contextParent);
 	}
 
 	if (isTemplateResultLike(nextValue)) {
-		return [...mountTemplate(nextValue, rootTarget, deferredProperties).rootNodes];
+		return [...mountTemplate(nextValue, rootTarget, deferredProperties, contextParent).rootNodes];
 	}
 
 	if (isJsxNodeLike(nextValue)) {
@@ -69,7 +71,7 @@ export function createNodesFromValue(
 		const nodes: Node[] = [];
 
 		for (const child of nextValue) {
-			nodes.push(...createNodesFromValue(child, rootTarget, deferredProperties, mountTemplate));
+			nodes.push(...createNodesFromValue(child, rootTarget, deferredProperties, mountTemplate, contextParent));
 		}
 
 		return nodes;
