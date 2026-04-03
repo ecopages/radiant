@@ -20,6 +20,8 @@ interface DocsGlobalIntrinsicElements {
 	'radiant-switch': DocsGlobalCustomElementAttributes<RadiantSwitchProps>;
 	'radiant-todo-app': DocsGlobalCustomElementAttributes;
 	'radiant-todo-item': DocsGlobalCustomElementAttributes<RadiantTodoProps>;
+	'radiant-weather-app': DocsGlobalCustomElementAttributes;
+	'radiant-weather-summary': DocsGlobalCustomElementAttributes;
 	'theme-toggle': DocsGlobalCustomElementAttributes<RadiantSwitchProps>;
 	'radiant-docs-pagination': DocsGlobalCustomElementAttributes;
 	'radiant-toc': DocsGlobalCustomElementAttributes;
@@ -34,6 +36,8 @@ interface DocsRadiantJsxIntrinsicElements {
 	'radiant-switch': JsxCustomElementAttributes<HTMLElement, RadiantSwitchProps>;
 	'radiant-todo-app': JsxCustomElementAttributes<HTMLElement>;
 	'radiant-todo-item': JsxCustomElementAttributes<HTMLElement, RadiantTodoProps>;
+	'radiant-weather-app': JsxCustomElementAttributes<HTMLElement>;
+	'radiant-weather-summary': JsxCustomElementAttributes<HTMLElement>;
 	'theme-toggle': JsxCustomElementAttributes<HTMLElement, RadiantSwitchProps>;
 	'radiant-docs-pagination': JsxCustomElementAttributes<HTMLElement>;
 	'radiant-toc': JsxCustomElementAttributes<HTMLElement>;
