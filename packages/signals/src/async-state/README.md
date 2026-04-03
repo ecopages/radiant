@@ -15,27 +15,27 @@ function asyncState<S, T>(config: AsyncStateSourcedConfig<S, T>): AsyncStateResu
 
 ### Config
 
-| Property       | Type                                              | Default | Description                                                         |
-| -------------- | ------------------------------------------------- | ------- | ------------------------------------------------------------------- |
-| `fetcher`      | `(opts) => Promise<T>` / `(source, opts) => Promise<T>` | —       | **Required.** The async function to execute.                        |
-| `source`       | `() => S \| false \| null \| undefined`           | —       | Reactive source. Triggers refetch on change. Falsy = disabled.      |
-| `initialValue` | `T`                                               | —       | Seed value for `data` before the first successful resolution.       |
-| `staleTime`    | `number`                                          | `0`     | Milliseconds a response stays fresh. Cache hits skip the network.   |
-| `pendingDelay` | `number`                                          | `0`     | Milliseconds to wait before `status` moves to `'pending'`.          |
-| `onSuccess`    | `(data: T) => void`                               | —       | Called after each successful resolution, including cache hits.       |
-| `onError`      | `(error: unknown) => void`                        | —       | Called after each failed resolution. Not called for aborted requests.|
-| `onSettled`    | `(data: T \| undefined, error: unknown) => void`  | —       | Called after each resolution, whether successful or failed.          |
+| Property       | Type                                                    | Default | Description                                                           |
+| -------------- | ------------------------------------------------------- | ------- | --------------------------------------------------------------------- |
+| `fetcher`      | `(opts) => Promise<T>` / `(source, opts) => Promise<T>` | —       | **Required.** The async function to execute.                          |
+| `source`       | `() => S \| false \| null \| undefined`                 | —       | Reactive source. Triggers refetch on change. Falsy = disabled.        |
+| `initialValue` | `T`                                                     | —       | Seed value for `data` before the first successful resolution.         |
+| `staleTime`    | `number`                                                | `0`     | Milliseconds a response stays fresh. Cache hits skip the network.     |
+| `pendingDelay` | `number`                                                | `0`     | Milliseconds to wait before `status` moves to `'pending'`.            |
+| `onSuccess`    | `(data: T) => void`                                     | —       | Called after each successful resolution, including cache hits.        |
+| `onError`      | `(error: unknown) => void`                              | —       | Called after each failed resolution. Not called for aborted requests. |
+| `onSettled`    | `(data: T \| undefined, error: unknown) => void`        | —       | Called after each resolution, whether successful or failed.           |
 
 ### `AsyncStateResult<T>`
 
-| Member      | Type                       | Description                                                    |
-| ----------- | -------------------------- | -------------------------------------------------------------- |
-| `data`      | `Signal<T \| undefined>`   | Latest resolved value. Retains last success while refetching.  |
-| `status`    | `Signal<AsyncStatus>`      | `'idle'` · `'pending'` · `'success'` · `'error'`              |
-| `error`     | `Signal<unknown>`          | Latest rejection. Cleared when a new fetch starts.             |
-| `refetch()` | `() => void`               | Re-execute, aborting any in-flight request.                    |
-| `abort()`   | `() => void`               | Cancel the current request without changing status.            |
-| `dispose()` | `() => void`               | Abort + tear down source watcher.                              |
+| Member      | Type                     | Description                                                   |
+| ----------- | ------------------------ | ------------------------------------------------------------- |
+| `data`      | `Signal<T \| undefined>` | Latest resolved value. Retains last success while refetching. |
+| `status`    | `Signal<AsyncStatus>`    | `'idle'` · `'pending'` · `'success'` · `'error'`              |
+| `error`     | `Signal<unknown>`        | Latest rejection. Cleared when a new fetch starts.            |
+| `refetch()` | `() => void`             | Re-execute, aborting any in-flight request.                   |
+| `abort()`   | `() => void`             | Cancel the current request without changing status.           |
+| `dispose()` | `() => void`             | Abort + tear down source watcher.                             |
 
 ## Usage
 
@@ -45,11 +45,11 @@ Fetches immediately on creation. Call `.refetch()` to re-execute.
 
 ```typescript
 const todos = asyncState({
-  fetcher: ({ signal }) => fetch('/api/todos', { signal }).then(r => r.json()),
+	fetcher: ({ signal }) => fetch('/api/todos', { signal }).then((r) => r.json()),
 });
 
 todos.status.get(); // 'pending' → 'success'
-todos.data.get();   // Todo[] | undefined
+todos.data.get(); // Todo[] | undefined
 ```
 
 ### Sourced (reactive)
@@ -62,8 +62,8 @@ and preserve the current state — useful for deferred / conditional fetches.
 const cityId = state('venice');
 
 const weather = asyncState({
-  source: () => cityId.get(),
-  fetcher: (id, { signal }) => fetchWeather(id, signal),
+	source: () => cityId.get(),
+	fetcher: (id, { signal }) => fetchWeather(id, signal),
 });
 
 // Changing the source auto-triggers a new fetch:
@@ -112,9 +112,9 @@ synchronously — no network request, no pending state.
 
 ```typescript
 const weather = asyncState({
-  source: () => cityId.get(),
-  fetcher: (id, { signal }) => fetchWeather(id, signal),
-  staleTime: 60_000,  // 1 minute
+	source: () => cityId.get(),
+	fetcher: (id, { signal }) => fetchWeather(id, signal),
+	staleTime: 60_000, // 1 minute
 });
 ```
 
@@ -131,8 +131,8 @@ to `'success'` or `'error'`.
 
 ```typescript
 const todos = asyncState({
-  fetcher: ({ signal }) => fetch('/api/todos', { signal }).then(r => r.json()),
-  pendingDelay: 300,
+	fetcher: ({ signal }) => fetch('/api/todos', { signal }).then((r) => r.json()),
+	pendingDelay: 300,
 });
 
 // Fast response (< 300ms):
@@ -153,14 +153,14 @@ for side effects like syncing context providers, logging, or toast messages.
 
 ```typescript
 const weather = asyncState({
-  source: () => cityId.get(),
-  fetcher: (id, { signal }) => fetchWeather(id, signal),
-  onSuccess: (report) => {
-    provider.setContext({ activeCityId: report.cityId });
-  },
-  onError: (err) => {
-    console.error('Weather fetch failed', err);
-  },
+	source: () => cityId.get(),
+	fetcher: (id, { signal }) => fetchWeather(id, signal),
+	onSuccess: (report) => {
+		provider.setContext({ activeCityId: report.cityId });
+	},
+	onError: (err) => {
+		console.error('Weather fetch failed', err);
+	},
 });
 ```
 
@@ -206,8 +206,8 @@ Pass a falsy initial source to keep the query idle until ready:
 const trigger = state<string | false>(false);
 
 const report = asyncState({
-  source: () => trigger.get(),
-  fetcher: (cityId, { signal }) => fetchReport(cityId, signal),
+	source: () => trigger.get(),
+	fetcher: (cityId, { signal }) => fetchReport(cityId, signal),
 });
 
 // Stays idle until:

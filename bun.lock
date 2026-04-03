@@ -31,6 +31,7 @@
         "@ecopages/postcss-processor": "^0.2.0-alpha.10",
         "@ecopages/radiant": "workspace:*",
         "@ecopages/scripts-injector": "^0.1.5",
+        "@ecopages/signals": "workspace:*",
         "@mdx-js/esbuild": "^3.1.1",
         "@mdx-js/mdx": "^2.3.0",
         "@tailwindcss/postcss": "^4.0.0",
