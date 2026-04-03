@@ -1,3 +1,11 @@
+export {
+	asyncState,
+	type AsyncStateConfig,
+	type AsyncStateFetcherOptions,
+	type AsyncStateResult,
+	type AsyncStateSourcedConfig,
+	type AsyncStatus,
+} from './src/async-state';
 export { Computed, computed, currentComputed } from './src/computed';
 export { trackDependency } from './src/dependency';
 export { effect } from './src/effect';
