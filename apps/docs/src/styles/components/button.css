@@ -26,6 +26,10 @@ a.button {
 		@apply hover:bg-primary/90 hover:shadow-xs;
 	}
 
+	&--sm {
+		@apply px-3 py-1 leading-5;
+	}
+
 	&--secondary {
 		@apply button-shape-base rounded-sm;
 		@apply bg-secondary text-on-secondary border border-secondary;

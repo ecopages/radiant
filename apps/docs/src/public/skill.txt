@@ -315,6 +315,13 @@ When introducing new public APIs or significant internal architecture changes, a
 
 Do not add noisy inline comments.
 
+### 8. Keep Docs Examples Minimal
+
+For docs and playground examples, use the smallest number of custom elements that still demonstrates the target API clearly.
+
+- if the point is host-owned JSX, a single `RadiantComponent` is often enough
+- add a second custom element only when provider or consumer boundaries, leaf ownership, or lower-level composition is part of the lesson
+
 ## Review Checklist
 
 When reviewing a Radiant component, check these questions:

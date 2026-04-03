@@ -174,7 +174,7 @@ const HomePage: EcoComponent = () => {
 HomePage.config = {
 	layout: BaseLayout,
 	dependencies: {
-		stylesheets: ['./index.css', '../styles/components/button.css', '../components/home-install-cmd.css'],
+		stylesheets: ['./index.css', '../components/home-install-cmd.css'],
 		scripts: ['../components/home-install-cmd.script.tsx'],
 	},
 };

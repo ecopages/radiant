@@ -46,7 +46,7 @@ const DocsNavigation = () => {
 
 export const DocsLayout: EcoComponent<DocsLayoutProps> = ({ children, class: className }) => {
 	return (
-		<BaseLayout class={`docs-layout ${className ?? ''}`.trim()} showBurger>
+		<BaseLayout class={`docs-layout ${className ?? ''}`.trim()} showBurger showDocsLink={false}>
 			<>
 				<radiant-navigation
 					class="docs-layout__aside hidden md:block"

@@ -6,15 +6,29 @@ export type BaseLayoutProps = {
 	children: JsxRenderable;
 	class?: string;
 	showBurger?: boolean;
+	showDocsLink?: boolean;
 };
 
-export const BaseLayout: EcoComponent<BaseLayoutProps> = ({ children, class: className, showBurger = false }) => {
+export const BaseLayout: EcoComponent<BaseLayoutProps> = ({
+	children,
+	class: className,
+	showBurger = false,
+	showDocsLink = true,
+}) => {
 	return (
 		<body>
 			<Header
 				showBurger={showBurger}
 				navigation={{
 					items: [
+						...(showDocsLink
+							? [
+									{
+										label: 'Docs',
+										href: '/docs/getting-started/introduction',
+									},
+								]
+							: []),
 						{
 							label: (
 								<svg

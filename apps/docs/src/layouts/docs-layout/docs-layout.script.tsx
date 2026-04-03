@@ -100,21 +100,27 @@ export class RadiantDocsPagination extends RadiantComponent {
 		}
 
 		const { prevLink, nextLink } = paginationLinks;
+		const prevTitle = prevLink?.textContent?.trim() || '';
+		const nextTitle = nextLink?.textContent?.trim() || '';
 
 		return (
 			<>
 				{prevLink ? (
-					<a href={prevLink.pathname} class="group prev">
-						<span class="pagination-label">Previous</span>
-						<span class="pagination-title">{prevLink.textContent?.trim() || ''}</span>
+					<a href={prevLink.pathname} class="group prev" aria-label={prevTitle}>
+						<span class="pagination-label" aria-hidden="true">
+							Previous
+						</span>
+						<span class="pagination-title">{prevTitle}</span>
 					</a>
 				) : (
 					<div></div>
 				)}
 				{nextLink ? (
-					<a href={nextLink.pathname} class="group next">
-						<span class="pagination-label">Next</span>
-						<span class="pagination-title">{nextLink.textContent?.trim() || ''}</span>
+					<a href={nextLink.pathname} class="group next" aria-label={nextTitle}>
+						<span class="pagination-label" aria-hidden="true">
+							Next
+						</span>
+						<span class="pagination-title">{nextTitle}</span>
 					</a>
 				) : null}
 			</>
@@ -330,9 +336,8 @@ export class RadiantToc extends RadiantElement {
 			takeRecords: () => [],
 			root: null,
 			rootMargin: '',
-			scrollMargin: '',
 			thresholds: [],
-		} satisfies IntersectionObserver;
+		};
 
 		/** Run immediately so a heading is always highlighted on first render. */
 		updateActive();

@@ -98,6 +98,7 @@ export const docsConfig: DocsConfig = {
 			subdirectory: 'examples',
 			pages: [
 				{ title: 'Counter', slug: 'counter' },
+				{ title: 'Weather App', slug: 'weather-app' },
 				{ title: 'Todo App', slug: 'todo-app' },
 			],
 		},
