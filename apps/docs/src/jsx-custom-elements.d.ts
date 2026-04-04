@@ -3,7 +3,7 @@ import type { RadiantCounterProps } from '@/components/radiant-counter/radiant-c
 import type { RadiantElementCounterProps } from '@/components/radiant-counter/radiant-element-counter.script';
 import type { RadiantTodoProps } from '@/components/radiant-todo-app/radiant-todo-item.script';
 import type { RadiantSwitchProps } from '@/components/switch/switch.script';
-import type { RadiantCodeTabsProps } from './components/code-tabs.script';
+import type { RadiantCodeTabsProps } from './components/code-tabs/code-tabs.script';
 
 type DocsGlobalCustomElementAttributes<Props extends object = {}> = Partial<Props> & {
 	children?: unknown;
