@@ -271,9 +271,11 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/context/context-provider`  | Low-level context provider class                                                                                |
 | `@ecopages/radiant/context/consume-context`   | `@consumeContext(...)` decorator                                                                                |
 | `@ecopages/radiant/context/provide-context`   | `@provideContext(...)` decorator                                                                                |
-| `@ecopages/radiant/context/context-selector`  | `@contextSelector(...)` decorator                                                                               |
+| `@ecopages/radiant/context/context-selector`  | `@contextSelector(...)` decorator — bind a field to context                                                     |
+| `@ecopages/radiant/context/on-context-update` | `@onContextUpdate(...)` decorator — run a method on context change                                              |
 | `@ecopages/radiant/core/radiant-element`      | Non-JSX reactive custom-element base                                                                            |
 | `@ecopages/radiant/core/radiant-component`    | JSX-first component base                                                                                        |
+| `@ecopages/radiant/signals/host-resource`     | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                          |
 | `@ecopages/radiant/server/light-dom-shim`     | Minimal SSR window and host-preparation helpers                                                                 |
 | `@ecopages/radiant/server/render-component`   | Canonical component SSR helpers and metadata utilities                                                          |
 | `@ecopages/radiant/server/project-root`       | Project-root resolution helper for server adapters                                                              |
