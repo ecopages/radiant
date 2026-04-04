@@ -85,9 +85,7 @@ export class RadiantTodoAppElement extends RadiantComponent {
 	provider!: ContextProvider<typeof todoContext>;
 
 	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
-	onProvidedTodosChanged() {
-		this.requestUpdate();
-	}
+	todos: Todo[] = [];
 
 	@onEvent({ selector: 'form', type: 'submit' })
 	submitTodo(event: FormDataEvent) {
@@ -156,6 +154,7 @@ This element does not need its own host JSX render loop to be valuable. Its job 
 - `RadiantElement` does not need SSR in order to work.
 - `RadiantComponent` is the host-owned render mode built on top of `RadiantElement`.
 - Context can keep leaf nodes small when several descendants need the same shared state.
+- `@contextSelector` on a field means `render()` can read `this.todos` directly — no empty method body, no manual `this.update()`.
 - `serialize(...)` lets a provider keep client-only members without leaking them into SSR JSON.
 - Typed child `<script>` payloads remain a valid pattern for provider hydration.
 - A larger app often uses both together.

@@ -213,7 +213,8 @@ Core pieces:
 - `createContext(...)`: define the typed context token
 - `@provideContext(...)`: attach a provider to a host
 - `@consumeContext(...)`: inject the nearest matching provider object onto a field
-- `@contextSelector(...)`: run a method with the whole context value or a selected slice of it
+- `@contextSelector(...)`: bind a **field** to the whole context value or a selected slice — auto-rerenders `RadiantComponent` hosts on change
+- `@onContextUpdate(...)`: run a **method** when the context changes — use for imperative side effects
 
 ### When To Provide Context
 
@@ -230,16 +231,34 @@ Use `hydrate` and `serialize` options when SSR output must restore provider stat
 
 Use `@consumeContext(...)` when the host needs the provider object itself, for example to call `getContext()` or `setContext(...)` directly.
 
-Use `@contextSelector(...)` when a method should react to context changes or to a selected slice of context.
+`@consumeContext(...)` does not make later `provider.getContext()` reads reactive by itself. Treat those reads as snapshots for the current render or callback.
 
-Prefer `select` in `@contextSelector(...)` when the host only needs a stable derived slice. That keeps the subscription surface narrower and usually makes update intent clearer.
+Use `@contextSelector(...)` on a field when the host should render from the current context value. The field holds the selected value and `RadiantComponent` rerenders automatically when it changes. `render()` reads `this.myField` directly — no empty method body, no `this.update()` call.
+
+Use `@onContextUpdate(...)` on a method when a context change should trigger imperative work: DOM mutations, attribute writes, logging, or side-effect orchestration.
+
+When choosing whether to use `select`, prefer the narrowest subscription that covers the render:
+
+- If the derived value can be computed purely from the context object, use `select` to bind the result directly to the field.
+- If the derived value also depends on instance state (like a `@prop`), bind the full context to a field and compute the derived value inside `render()`. Do not introduce an intermediate `@state` field or an `@onContextUpdate` callback just to copy data.
+
+The two decorators are complementary. A host can use `@contextSelector` for render-driven fields and `@onContextUpdate` for imperative side effects at the same time.
+
+Avoid `@consumeContext` + `@onContextUpdate` + `@state` as a three-part pattern when a single `@contextSelector` field would suffice. The three-part pattern is only justified when the host genuinely needs to call `setContext(...)`.
+
+When the provider is intended to own shared UI state such as the active selection, keep that state authoritative in context and render from context consistently. Avoid splitting the same render decision across both a local signal and `provider.getContext()` unless one of them is clearly just an implementation detail for async sourcing.
 
 ### Context Performance Rule
 
 For context-driven rendering:
 
-- use `@contextSelector(...)` to translate provider state into local host state or side effects
-- then choose plain reads versus bindings inside `render()` using the same render-granularity rules as any other reactive source
+- do not assume a plain `provider.getContext()` read will rerender the host when the provider changes
+- use `@contextSelector(...)` on a field to bind the host to a context value — the field is updated and `requestUpdate()` is scheduled automatically
+- read `this.myField` directly in `render()` instead of calling `provider.getContext()` for render-critical values
+- when a derived view value depends on the context **and** a `@prop`, bind the full context to a field and compute the derivation in `render()` — do not reach for `@state` + `@onContextUpdate` as a workaround
+- use `@onContextUpdate(...)` only when the reaction is genuinely imperative (attribute writes, logging, external side effects) rather than a render-driven derivation
+- avoid mirroring context fields into local `@state` only to make rendering work; let the `@contextSelector` field be the single source of truth and derive everything else in `render()`
+- when stale display should persist across refetches or selection changes, prefer storing one explicit display value in context (such as `visibleReport`) rather than juggling local copies
 
 ## Public Props Vs Internal Bindings
 
@@ -331,8 +350,9 @@ When reviewing a Radiant component, check these questions:
 3. Are plain reads being used for control flow and class/style composition?
 4. Are bindings being used where fine-grained patching is desirable?
 5. Is any `Bindings` generic present only because of habit rather than actual usage?
-6. Are object or array updates using reassignment instead of mutation?
-7. Is the output teaching the Radiant model clearly if this is docs or example code?
+6. If render reads `provider.getContext()`, what is causing the host to rerender when that context changes?
+7. Are object or array updates using reassignment instead of mutation?
+8. Is the output teaching the Radiant model clearly if this is docs or example code?
 
 ## Output Expectations
 

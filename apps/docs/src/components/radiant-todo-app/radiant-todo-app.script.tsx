@@ -98,9 +98,7 @@ export class RadiantTodoAppElement extends RadiantComponent {
 	provider!: ContextProvider<typeof todoContext>;
 
 	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
-	onProvidedTodosChanged() {
-		this.requestUpdate();
-	}
+	todos: Todo[] = [];
 
 	@onEvent({ selector: 'form', type: 'submit' })
 	submitTodo(event: FormDataEvent) {
@@ -129,7 +127,7 @@ export class RadiantTodoAppElement extends RadiantComponent {
 	}
 
 	override render() {
-		const todos = this.provider.getContext().todos;
+		const todos = this.todos;
 		const todosCompleted = todos.filter((todo) => todo.complete);
 		const todosIncomplete = todos.filter((todo) => !todo.complete);
 
