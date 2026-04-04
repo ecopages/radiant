@@ -1,16 +1,13 @@
+import { CodeTabs } from '@/components/code-tabs';
 import { DocsLayout } from '@/layouts/docs-layout';
-import { createPackageManagerTabs } from '@/utils/package-manager-tabs';
 
 export const layout = DocsLayout;
 
 export const config = {
 	dependencies: {
-		stylesheets: ['../../../components/code-tabs.css'],
-		scripts: ['../../../components/code-tabs.script.tsx'],
+		components: [CodeTabs],
 	},
 };
-
-const installTabs = createPackageManagerTabs(['@ecopages/radiant', '@ecopages/jsx']);
 
 export const getMetadata = () => ({
 	title: 'Docs | JSX Overview',
@@ -41,11 +38,16 @@ This is the key split:
 
 ## Install And Configure
 
-<radiant-code-tabs
-	prop:label="Package managers"
-	prop:tabs={installTabs}
-	prop:copyLabel="Copy install command"
-	prop:initialTab="bun"
+<CodeTabs
+  label="Package managers"
+  tabs={[
+	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
+  ]}
+  copyLabel="Copy install command"
+  defaultSelectedKey="bun"		
+	
 />
 
 ```json

@@ -1,9 +1,9 @@
 import type { EcoComponent } from '@ecopages/core';
 import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
-import { createPackageManagerTabs } from '@/utils/package-manager-tabs';
 import { rawHtml } from '@/utils/raw-html';
-import '../components/code-tabs.script';
+import { CodeTabs } from '@/components/code-tabs';
+import { RadiantComponentCounter } from '@/components/radiant-counter/radiant-component-counter';
 
 const counterExample = await codeToHtml(
 	`import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
@@ -36,8 +36,6 @@ export class RadiantCounter extends RadiantComponent {
 		defaultColor: false,
 	},
 );
-
-const installCommandTabs = createPackageManagerTabs(['@ecopages/radiant', '@ecopages/jsx']);
 
 const HomeCard = ({
 	href,
@@ -83,12 +81,15 @@ const HomePage: EcoComponent = () => {
 							incrementally while staying close to the browser through light DOM and standard web APIs.
 						</p>
 
-						<radiant-code-tabs
-							class="home-code-tabs"
-							prop:label="Package managers"
-							prop:tabs={installCommandTabs}
-							prop:copyLabel="Copy install command"
-							prop:initialTab="bun"
+						<CodeTabs
+							label="Package managers"
+							tabs={[
+								{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+								{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
+								{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
+							]}
+							copyLabel="Copy install command"
+							defaultSelectedKey="bun"
 						/>
 
 						<div class="home-header__actions">
@@ -106,7 +107,7 @@ const HomePage: EcoComponent = () => {
 							`<figure data-rehype-pretty-code-figure class="home-code-block">${counterExample}</figure>`,
 						)}
 						<div class="home-hero__demo">
-							<radiant-counter prop:value={0} />
+							<RadiantComponentCounter value={0} />
 						</div>
 					</div>
 				</div>
@@ -229,15 +230,8 @@ const HomePage: EcoComponent = () => {
 HomePage.config = {
 	layout: BaseLayout,
 	dependencies: {
-		stylesheets: [
-			'./index.css',
-			'../components/code-tabs.css',
-			'../components/radiant-counter/radiant-counter.css',
-		],
-		scripts: [
-			'../components/code-tabs.script.tsx',
-			'../components/radiant-counter/radiant-component-counter.script.tsx',
-		],
+		components: [CodeTabs, RadiantComponentCounter],
+		stylesheets: ['./index.css'],
 	},
 };
 

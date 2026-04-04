@@ -1,17 +1,13 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { createPackageManagerTabs } from '@/utils/package-manager-tabs';
+import { CodeTabs } from '@/components/code-tabs';
 
 export const layout = DocsLayout;
 
 export const config = {
   dependencies: {
-    stylesheets: ['../../../components/code-tabs.css'],
-    scripts: ['../../../components/code-tabs.script.tsx'],
+    components: [CodeTabs],
   },
 };
-
-const ecosystemInstallTabs = createPackageManagerTabs(['@ecopages/radiant', '@ecopages/jsx']);
-const signalsInstallTabs = createPackageManagerTabs(['@ecopages/signals']);
 
 export const getMetadata = () => ({
   title: 'Docs | Installation',
@@ -22,11 +18,15 @@ export const getMetadata = () => ({
 
 The most common setup is `@ecopages/radiant` plus `@ecopages/jsx`.
 
-<radiant-code-tabs
-  prop:label="Package managers"
-  prop:tabs={ecosystemInstallTabs}
-  prop:copyLabel="Copy install command"
-  prop:initialTab="bun"
+<CodeTabs
+  label="Package managers"
+  tabs={[
+    { id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+    { id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
+    { id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
+  ]}
+  copyLabel="Copy install command"
+  defaultSelectedKey="bun"
 />
 
 ## TypeScript Setup For JSX
@@ -50,11 +50,15 @@ Or enable it per file:
 
 If you only want the reactive core, install `@ecopages/signals` by itself:
 
-<radiant-code-tabs
-  prop:label="Signals package managers"
-  prop:tabs={signalsInstallTabs}
-  prop:copyLabel="Copy install command"
-  prop:initialTab="bun"
+<CodeTabs
+  label="Signals package managers"
+  tabs={[
+    { id: 'bun', label: 'bun', code: 'bun add @ecopages/signals' },
+    { id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/signals' },
+    { id: 'npm', label: 'npm', code: 'npm install @ecopages/signals' },
+  ]}
+  copyLabel="Copy install command"
+  defaultSelectedKey="bun"
 />
 
 ## Which Packages To Install
