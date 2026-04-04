@@ -76,6 +76,7 @@ export const docsConfig: DocsConfig = {
 				{ title: 'State & Computed', slug: 'signals-state-computed' },
 				{ title: 'Effects & Watchers', slug: 'signals-effects' },
 				{ title: 'Stores', slug: 'signals-stores' },
+				{ title: 'Resources', slug: 'signals-resources' },
 			],
 		},
 		{

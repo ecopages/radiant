@@ -5,10 +5,10 @@ import {
 	createContext,
 	customElement,
 	provideContext,
-	state,
 } from '@ecopages/radiant';
-import { asyncState, state as signalState } from '@ecopages/signals';
-import type { WeatherCity, WeatherContext, WeatherReport, WeatherSummaryBindings } from './weather-app.types';
+import { createResource } from '@ecopages/radiant/signals/host-resource';
+import { state as signalState } from '@ecopages/signals';
+import type { WeatherCity, WeatherContext, WeatherReport } from './weather-app.types';
 import {
 	DEFAULT_CITY_ID,
 	WEATHER_CITIES,
@@ -20,56 +20,40 @@ import {
 const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
 
 @customElement('radiant-weather-summary')
-export class RadiantWeatherSummary extends RadiantComponent<WeatherSummaryBindings> {
-	@state city = getWeatherCity(DEFAULT_CITY_ID).label;
-	@state condition = '';
-	@state humidity = 0;
-	@state summary = '';
-	@state temperature = 0;
-	@state windKph = 0;
-
+export class RadiantWeatherSummary extends RadiantComponent {
 	@contextSelector({
 		context: weatherContext,
-		select: ({ activeCityId, reports }) => reports.find((report) => report.cityId === activeCityId),
+		select: ({ visibleReport }) => visibleReport,
 	})
-	syncSelectedReport(report?: WeatherReport) {
-		if (!report) {
-			return;
-		}
-
-		this.city = report.city;
-		this.condition = report.condition;
-		this.humidity = report.humidity;
-		this.summary = report.summary;
-		this.temperature = report.temperature;
-		this.windKph = report.windKph;
-	}
+	visibleReport: WeatherReport | undefined;
 
 	override render() {
+		if (!this.visibleReport) return null;
+
 		return (
 			<article
 				class="grid gap-3 rounded-sm border border-border bg-secondary-container/20 p-4"
-				data={{ city: this.$.city }}
+				data={{ city: this.visibleReport.city }}
 			>
 				<div class="flex items-start justify-between gap-3">
 					<div class="grid gap-1">
-						<p class="text-sm font-semibold text-on-background">{this.$.city}</p>
-						<p class="text-sm text-on-background/70">{this.$.condition}</p>
+						<p class="text-sm font-semibold text-on-background">{this.visibleReport.city}</p>
+						<p class="text-sm text-on-background/70">{this.visibleReport.condition}</p>
 					</div>
 					<p class="text-3xl font-semibold text-on-background">
-						{this.$.temperature}
+						{this.visibleReport.temperature}
 						<span class="text-base font-medium text-on-background/70">°C</span>
 					</p>
 				</div>
-				<p class="text-sm leading-6 text-on-background/80">{this.$.summary}</p>
+				<p class="text-sm leading-6 text-on-background/80">{this.visibleReport.summary}</p>
 				<dl class="grid grid-cols-2 gap-3 text-sm text-on-background/70">
 					<div class="grid gap-1 rounded-sm border border-border/60 bg-background/60 p-3">
 						<dt>Humidity</dt>
-						<dd class="font-medium text-on-background">{this.$.humidity}%</dd>
+						<dd class="font-medium text-on-background">{this.visibleReport.humidity}%</dd>
 					</div>
 					<div class="grid gap-1 rounded-sm border border-border/60 bg-background/60 p-3">
 						<dt>Wind</dt>
-						<dd class="font-medium text-on-background">{this.$.windKph} km/h</dd>
+						<dd class="font-medium text-on-background">{this.visibleReport.windKph} km/h</dd>
 					</div>
 				</dl>
 			</article>
@@ -81,32 +65,36 @@ export class RadiantWeatherSummary extends RadiantComponent<WeatherSummaryBindin
 export class RadiantWeatherAppElement extends RadiantComponent {
 	private activeCityId = signalState(DEFAULT_CITY_ID);
 
-	private weatherQuery = asyncState({
-		pendingDelay: 500,
-		staleTime: 1 * 60 * 1000,
-		source: () => this.activeCityId.get(),
-		fetcher: (cityId, { signal }) => fetchWeatherReport(getWeatherCity(cityId), signal),
-		onSuccess: (report) => {
-			this.provider.setContext({
-				activeCityId: report.cityId,
-				reports: upsertWeatherReport(this.provider.getContext().reports, report),
-			});
-		},
-	});
-
 	@provideContext<typeof weatherContext>({
 		context: weatherContext,
 		initialValue: {
 			activeCityId: DEFAULT_CITY_ID,
 			reports: [],
+			visibleReport: undefined,
 		},
 	})
 	provider!: ContextProvider<typeof weatherContext>;
 
-	override disconnectedCallback(): void {
-		this.weatherQuery.dispose();
-		super.disconnectedCallback();
-	}
+	private weatherQuery = createResource(this, {
+		pendingDelay: 500,
+		staleTime: 1 * 60 * 1000,
+		source: (ctx) => ctx.host.activeCityId.get(),
+		fetcher: (cityId, ctx) => fetchWeatherReport(getWeatherCity(cityId), ctx.signal),
+		onSuccess: (report, ctx) => {
+			ctx.host.provider.setContext({
+				activeCityId: report.cityId,
+				reports: upsertWeatherReport(ctx.host.provider.getContext().reports, report),
+				visibleReport: report,
+			});
+		},
+	});
+
+	@contextSelector({ context: weatherContext })
+	weatherState: WeatherContext = {
+		activeCityId: DEFAULT_CITY_ID,
+		reports: [],
+		visibleReport: undefined,
+	};
 
 	private readonly handleCityClick = (event: Event) => {
 		const button = event.currentTarget as HTMLButtonElement | null;
@@ -186,11 +174,9 @@ export class RadiantWeatherAppElement extends RadiantComponent {
 	override render() {
 		const status = this.weatherQuery.status.get();
 		const error = this.weatherQuery.error.get();
-		const lastResolvedReport = this.weatherQuery.data.get();
-		const { activeCityId, reports } = this.provider.getContext();
+		const { activeCityId, reports, visibleReport } = this.weatherState;
 		const activeCity = getWeatherCity(activeCityId);
 		const activeReport = reports.find((report) => report.cityId === activeCityId);
-		const visibleReport = activeReport ?? lastResolvedReport;
 		const isPending = status === 'pending';
 		const statusMessage = this.getStatusMessage(status, activeCity, activeReport, error);
 
@@ -199,8 +185,8 @@ export class RadiantWeatherAppElement extends RadiantComponent {
 				<div class="grid gap-2">
 					<p class="text-sm font-semibold">Weather</p>
 					<p class="text-sm text-on-background/70">
-						The host fetches each city from Open-Meteo on connect and on click. The summary subscribes to
-						the selected report through context.
+						The host fetches each city from Open-Meteo on connect and on click. The summary rerenders from
+						the visible report stored in context.
 					</p>
 				</div>
 				<p class="text-sm text-on-background/70" data-status={status}>
@@ -213,10 +199,11 @@ export class RadiantWeatherAppElement extends RadiantComponent {
 							data={{ cityId: city.id }}
 							on:click={this.handleCityClick}
 							aria={{ pressed: city.id === activeCityId }}
-							classes={[
-								'button button--sm',
-								city.id === activeCityId ? 'button--primary' : 'button--outline',
-							]}
+							class={
+								city.id === activeCityId
+									? 'button button--sm button--primary'
+									: 'button button--sm button--outline'
+							}
 						>
 							{city.label}
 						</button>

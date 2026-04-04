@@ -18,15 +18,7 @@ export type WeatherReport = {
 export type WeatherContext = {
 	activeCityId: string;
 	reports: WeatherReport[];
-};
-
-export type WeatherSummaryBindings = {
-	city: string;
-	condition: string;
-	humidity: number;
-	summary: string;
-	temperature: number;
-	windKph: number;
+	visibleReport?: WeatherReport;
 };
 
 export type OpenMeteoResponse = {
