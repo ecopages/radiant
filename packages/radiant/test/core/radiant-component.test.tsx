@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
+import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
 import { RadiantComponent } from '../../src/core/radiant-component';
@@ -26,10 +27,10 @@ const nestedSsrBoardContext = createContext<{ commits: number; owner: string; st
 );
 
 @customElement('nested-ssr-summary-card-test')
-class NestedSsrSummaryCard extends RadiantComponent {
+class NestedSsrSummaryCard extends RadiantComponent<{ summary: string }> {
 	@state summary = 'Awaiting board context';
 
-	@contextSelector({ context: nestedSsrBoardContext })
+	@onContextUpdate({ context: nestedSsrBoardContext })
 	protected syncSummary(currentContext: { commits: number; owner: string; stage: string }): void {
 		this.summary = `${currentContext.owner} is steering ${currentContext.stage.toLowerCase()} with ${currentContext.commits} commits.`;
 	}
@@ -43,7 +44,7 @@ class NestedSsrSummaryCard extends RadiantComponent {
 class NestedSsrInsightCard extends RadiantComponent<{ value: string }> {
 	@state value = 'Pending';
 
-	@contextSelector({ context: nestedSsrBoardContext })
+	@onContextUpdate({ context: nestedSsrBoardContext })
 	protected syncValue(currentContext: { commits: number; stage: string; tempo: string }): void {
 		this.value = `${currentContext.stage} / ${currentContext.tempo} / ${currentContext.commits}`;
 	}

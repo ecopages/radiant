@@ -4,8 +4,10 @@ import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
+import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { ContextEventsTypes, ContextRequestEvent } from '../../src/context/events';
+import { RadiantComponent } from '../../src/core/radiant-component';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
@@ -46,13 +48,90 @@ customElements.define('my-context-provider', MyContextProvider);
 
 class MyContextConsumer extends RadiantElement {
 	@consumeContext(testContext) context!: ContextProvider<typeof testContext>;
-	@contextSelector({ context: testContext, select: (context) => context.value })
+	@onContextUpdate({ context: testContext, select: (context) => context.value })
 	onUpdateValue(value: number) {
 		this.innerHTML = value.toString();
 	}
 }
 
 customElements.define('my-context-consumer', MyContextConsumer);
+
+class AutoUpdatingSelectedConsumer extends RadiantComponent {
+	@contextSelector({ context: testContext, select: (context) => context.value })
+	selectedValue: number = 0;
+
+	override render() {
+		return this.selectedValue.toString();
+	}
+}
+
+if (!customElements.get('auto-updating-selected-consumer')) {
+	customElements.define('auto-updating-selected-consumer', AutoUpdatingSelectedConsumer);
+}
+
+class AutoUpdatingFullContextConsumer extends RadiantComponent {
+	@contextSelector({ context: testContext })
+	contextValue: TestContext = { value: 0 };
+
+	override render() {
+		return this.contextValue.value.toString();
+	}
+}
+
+if (!customElements.get('auto-updating-full-context-consumer')) {
+	customElements.define('auto-updating-full-context-consumer', AutoUpdatingFullContextConsumer);
+}
+
+class OptOutAutoUpdatingConsumer extends RadiantComponent {
+	@consumeContext(testContext) context!: ContextProvider<typeof testContext>;
+	contextChangeCount = 0;
+
+	@onContextUpdate({ context: testContext, requestUpdate: false })
+	onContextChanged(_: TestContext) {
+		this.contextChangeCount += 1;
+	}
+
+	override render() {
+		return this.context.getContext().value.toString();
+	}
+}
+
+if (!customElements.get('opt-out-auto-updating-consumer')) {
+	customElements.define('opt-out-auto-updating-consumer', OptOutAutoUpdatingConsumer);
+}
+
+class SelectedSliceEffectConsumer extends RadiantElement {
+	changeCount = 0;
+
+	@onContextUpdate({ context: loggerContext, select: (context) => context.value })
+	onValueChanged(_: number) {
+		this.changeCount += 1;
+	}
+}
+
+if (!customElements.get('selected-slice-effect-consumer')) {
+	customElements.define('selected-slice-effect-consumer', SelectedSliceEffectConsumer);
+}
+
+class SelectedSliceRenderConsumer extends RadiantComponent {
+	requestUpdateCount = 0;
+
+	@contextSelector({ context: loggerContext, select: (context) => context.value })
+	selectedValue = 0;
+
+	override requestUpdate(): void {
+		this.requestUpdateCount += 1;
+		super.requestUpdate();
+	}
+
+	override render() {
+		return this.selectedValue.toString();
+	}
+}
+
+if (!customElements.get('selected-slice-render-consumer')) {
+	customElements.define('selected-slice-render-consumer', SelectedSliceRenderConsumer);
+}
 
 const nestedHydrationContext = createContext<TestContext>(Symbol('nested-hydration-context'));
 
@@ -183,12 +262,12 @@ describe('Context', () => {
 		const fullContextCallback = vi.fn();
 
 		class MixedSubscriberConsumer extends RadiantElement {
-			@contextSelector({ context: testContext })
+			@onContextUpdate({ context: testContext })
 			onContext(context: TestContext) {
 				fullContextCallback(context);
 			}
 
-			@contextSelector({ context: testContext, select: (context) => context.value })
+			@onContextUpdate({ context: testContext, select: (context) => context.value })
 			onValue(value: number) {
 				selectorCallback(value);
 			}
@@ -203,14 +282,112 @@ describe('Context', () => {
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
-		await Promise.resolve();
-		expect(fullContextCallback).toHaveBeenCalledWith({ value: 1 });
-		expect(selectorCallback).toHaveBeenCalledWith(1);
+		await waitFor(() => {
+			expect(fullContextCallback).toHaveBeenCalledWith({ value: 1 });
+			expect(selectorCallback).toHaveBeenCalledWith(1);
+		});
 
 		contextProvider.context.setContext({ value: 4 });
 
 		expect(fullContextCallback).toHaveBeenLastCalledWith({ value: 4 });
 		expect(selectorCallback).toHaveBeenLastCalledWith(4);
+	});
+
+	test('@onContextUpdate skips side effects when the selected slice is unchanged', async () => {
+		const contextProvider = document.createElement('logger-context-provider') as LoggerContextProvider;
+		const contextConsumer = document.createElement('selected-slice-effect-consumer') as SelectedSliceEffectConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextConsumer.changeCount).toBe(1);
+		});
+
+		contextProvider.context.setContext({ value: 1, logger: new TestLogger() });
+		expect(contextConsumer.changeCount).toBe(1);
+
+		contextProvider.context.setContext({ value: 2, logger: new TestLogger() });
+		expect(contextConsumer.changeCount).toBe(2);
+	});
+
+	test('field @contextSelector skips requestUpdate when the selected slice is unchanged', async () => {
+		const contextProvider = document.createElement('logger-context-provider') as LoggerContextProvider;
+		const contextConsumer = document.createElement('selected-slice-render-consumer') as SelectedSliceRenderConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextConsumer.innerHTML).toBe('1');
+		});
+
+		const initialRequestUpdateCount = contextConsumer.requestUpdateCount;
+		contextProvider.context.setContext({ value: 1, logger: new TestLogger() });
+		expect(contextConsumer.requestUpdateCount).toBe(initialRequestUpdateCount);
+
+		contextProvider.context.setContext({ value: 3, logger: new TestLogger() });
+
+		await waitFor(() => {
+			expect(contextConsumer.innerHTML).toBe('3');
+		});
+		expect(contextConsumer.requestUpdateCount).toBeGreaterThan(initialRequestUpdateCount);
+	});
+
+	test('field @contextSelector auto-rerenders RadiantComponent when a selected slice changes', async () => {
+		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextConsumer = document.createElement(
+			'auto-updating-selected-consumer',
+		) as AutoUpdatingSelectedConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextConsumer.innerHTML).toBe('1');
+		});
+
+		contextProvider.context.setContext({ value: 7 });
+
+		await waitFor(() => {
+			expect(contextConsumer.innerHTML).toBe('7');
+		});
+	});
+
+	test('field @contextSelector auto-rerenders RadiantComponent when the full context changes', async () => {
+		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextConsumer = document.createElement(
+			'auto-updating-full-context-consumer',
+		) as AutoUpdatingFullContextConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextConsumer.innerHTML).toBe('1');
+		});
+
+		contextProvider.context.setContext({ value: 9 });
+
+		await waitFor(() => {
+			expect(contextConsumer.innerHTML).toBe('9');
+		});
+	});
+
+	test('@onContextUpdate can opt out of automatic requestUpdate on RadiantComponent consumers', async () => {
+		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextConsumer = document.createElement('opt-out-auto-updating-consumer') as OptOutAutoUpdatingConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextConsumer.innerHTML).toBe('1');
+		});
+		expect(contextConsumer.contextChangeCount).toBe(1);
+
+		contextProvider.context.setContext({ value: 11 });
+
+		await waitFor(() => {
+			expect(contextConsumer.contextChangeCount).toBe(2);
+		});
+
+		expect(contextConsumer.innerHTML).toBe('1');
 	});
 
 	test('it hydrates provider context from SSR markup and delivers it to nested consumers on connect', async () => {
@@ -330,11 +507,11 @@ describe('Context', () => {
 		});
 	});
 
-	test('it resolves consumeContext and contextSelector after a detached child connects under a provider', async () => {
+	test('it resolves consumeContext and onContextUpdate after a detached child connects under a provider', async () => {
 		class DelayedContextConsumer extends RadiantElement {
 			@consumeContext(testContext) context!: ContextProvider<typeof testContext>;
 
-			@contextSelector({ context: testContext, select: (context) => context.value })
+			@onContextUpdate({ context: testContext, select: (context) => context.value })
 			onValue(value: number) {
 				this.textContent = String(value);
 			}

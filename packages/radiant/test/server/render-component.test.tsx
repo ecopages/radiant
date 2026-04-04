@@ -3,6 +3,7 @@ import type { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
+import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { RadiantComponent } from '../../src/core/radiant-component';
 import { customElement } from '../../src/decorators/custom-element';
@@ -77,7 +78,7 @@ const renderComponentContext = createContext<{ label: string }>(Symbol('render-c
 class RenderComponentContextCard extends RadiantComponent {
 	@consumeContext(renderComponentContext) contextProvider!: ContextProvider<typeof renderComponentContext>;
 
-	@contextSelector({ context: renderComponentContext, select: (context) => context.label, subscribe: false })
+	@onContextUpdate({ context: renderComponentContext, select: (context) => context.label, subscribe: false })
 	updateLabel(label: string) {
 		this.setAttribute('data-selected-label', label);
 	}
@@ -314,7 +315,7 @@ describe('render-component server helpers', () => {
 		class ConcurrentContextCard extends RadiantComponent {
 			@consumeContext(concurrentContext) provider!: ContextProvider<typeof concurrentContext>;
 
-			@contextSelector({ context: concurrentContext, select: (ctx) => ctx.id, subscribe: false })
+			@onContextUpdate({ context: concurrentContext, select: (ctx) => ctx.id, subscribe: false })
 			applyId(id: number) {
 				this.setAttribute('data-id', String(id));
 			}

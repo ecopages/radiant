@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import type { ContextProvider } from '../../src/context/context-provider';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { contextSelector } from '../../src/context/decorators/context-selector';
+import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { createContext } from '../../src/context/create-context';
 import { RadiantComponent } from '../../src/core/radiant-component';
@@ -80,20 +81,11 @@ const jsxSharedContext = createContext<JsxSharedState>(Symbol('jsx-shared-contex
 class JsxContextControls extends RadiantComponent {
 	@consumeContext(jsxSharedContext) context!: ContextProvider<typeof jsxSharedContext>;
 
-	private count = 0;
-	private tone: JsxSharedState['tone'] = 'emerald';
-
 	@contextSelector({ context: jsxSharedContext, select: (context) => context.count })
-	onCount(count: number) {
-		this.count = count;
-		this.update();
-	}
+	count = 0;
 
 	@contextSelector({ context: jsxSharedContext, select: (context) => context.tone })
-	onTone(tone: JsxSharedState['tone']) {
-		this.tone = tone;
-		this.update();
-	}
+	tone: JsxSharedState['tone'] = 'emerald';
 
 	private increment = () => {
 		this.context.setContext({ count: this.count + 1 });
@@ -126,13 +118,8 @@ if (!customElements.get('jsx-context-controls')) {
 }
 
 class JsxContextMirror extends RadiantComponent {
-	private snapshot: JsxSharedState = { count: 0, tone: 'emerald', note: 'Initial note' };
-
 	@contextSelector({ context: jsxSharedContext })
-	onState(snapshot: JsxSharedState) {
-		this.snapshot = snapshot;
-		this.update();
-	}
+	snapshot: JsxSharedState = { count: 0, tone: 'emerald', note: 'Initial note' };
 
 	override render() {
 		return (
@@ -155,11 +142,10 @@ class JsxContextNoteEditor extends RadiantComponent {
 	private localDraft = 'Initial note';
 	private committedNote = 'Initial note';
 
-	@contextSelector({ context: jsxSharedContext, select: (context) => context.note })
+	@onContextUpdate({ context: jsxSharedContext, select: (context) => context.note })
 	onNote(note: string) {
 		this.committedNote = note;
 		this.localDraft = note;
-		this.update();
 	}
 
 	private handleInput = (event: Event) => {
@@ -301,19 +287,22 @@ describe('RadiantComponent JSX integration', () => {
 		const element = document.createElement('jsx-context-provider');
 		document.body.appendChild(element);
 
-		await Promise.resolve();
-		await Promise.resolve();
-
-		const select = element.querySelector('[data-testid="tone-select"]') as HTMLSelectElement | null;
+		const select = await waitFor(() => {
+			const el = element.querySelector('[data-testid="tone-select"]') as HTMLSelectElement | null;
+			expect(el).not.toBeNull();
+			return el as HTMLSelectElement;
+		});
 		const incrementButton = element.querySelector('[data-testid="increment"]') as HTMLButtonElement | null;
 
-		expect(select?.value).toBe('emerald');
-		expect(element.querySelector('[data-testid="local-count"]')?.textContent).toBe('0');
-		expect(element.querySelector('[data-testid="mirrored-count"]')?.textContent).toBe('0');
-		expect(element.querySelector('[data-testid="mirrored-tone"]')?.textContent).toBe('emerald');
-		expect(element.querySelector('[data-testid="mirrored-note"]')?.textContent).toBe('Initial note');
+		await waitFor(() => {
+			expect(select.value).toBe('emerald');
+			expect(element.querySelector('[data-testid="local-count"]')?.textContent).toBe('0');
+			expect(element.querySelector('[data-testid="mirrored-count"]')?.textContent).toBe('0');
+			expect(element.querySelector('[data-testid="mirrored-tone"]')?.textContent).toBe('emerald');
+			expect(element.querySelector('[data-testid="mirrored-note"]')?.textContent).toBe('Initial note');
+		});
 
-		if (!select || !incrementButton) {
+		if (!incrementButton) {
 			throw new Error('expected JSX context controls to render');
 		}
 
@@ -322,13 +311,17 @@ describe('RadiantComponent JSX integration', () => {
 
 		const updatedSelect = element.querySelector('[data-testid="tone-select"]') as HTMLSelectElement | null;
 		expect(updatedSelect?.value).toBe('sky');
-		expect(element.querySelector('[data-testid="mirrored-tone"]')?.textContent).toBe('sky');
+		await waitFor(() => {
+			expect(element.querySelector('[data-testid="mirrored-tone"]')?.textContent).toBe('sky');
+		});
 
 		incrementButton.click();
 		incrementButton.click();
 
-		expect(element.querySelector('[data-testid="local-count"]')?.textContent).toBe('2');
-		expect(element.querySelector('[data-testid="mirrored-count"]')?.textContent).toBe('2');
+		await waitFor(() => {
+			expect(element.querySelector('[data-testid="local-count"]')?.textContent).toBe('2');
+			expect(element.querySelector('[data-testid="mirrored-count"]')?.textContent).toBe('2');
+		});
 
 		const noteInput = element.querySelector('[data-testid="note-input"]') as HTMLInputElement | null;
 		const publishButton = element.querySelector('[data-testid="publish-note"]') as HTMLButtonElement | null;
@@ -342,9 +335,11 @@ describe('RadiantComponent JSX integration', () => {
 		noteInput.dispatchEvent(new Event('input', { bubbles: true }));
 		publishButton.click();
 
-		expect(element.querySelector('[data-testid="mirrored-note"]')?.textContent).toBe(
-			'Published from JSX note editor',
-		);
+		await waitFor(() => {
+			expect(element.querySelector('[data-testid="mirrored-note"]')?.textContent).toBe(
+				'Published from JSX note editor',
+			);
+		});
 
 		const refreshedNoteInput = element.querySelector('[data-testid="note-input"]') as HTMLInputElement | null;
 		if (!refreshedNoteInput) {
