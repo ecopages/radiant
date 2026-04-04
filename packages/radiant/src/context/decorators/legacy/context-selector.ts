@@ -1,33 +1,33 @@
 import type { RadiantElement } from '../../../core/radiant-element';
 import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
 import { bootstrapSsrContextSelection, connectContextSelection } from '../../context-consumer-bootstrap';
-import type { Context } from '../../types';
-import type { SubscribeToContextOptions } from '../context-selector';
+import type { Context, ContextType } from '../../types';
+import type { OnContextUpdateOptions } from '../on-context-update';
+import { createContextSelectionDelivery } from '../context-selection-delivery';
 
-export function contextSelector<T extends Context<unknown, unknown>>({
+export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>({
 	context,
 	select,
 	subscribe = true,
-}: SubscribeToContextOptions<T>) {
+	requestUpdate = true,
+}: OnContextUpdateOptions<T, Selected>) {
 	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
 		const originalMethod = descriptor.value;
-		const applySelectedContext = (element: RadiantElement, value: unknown) => {
-			originalMethod.call(element, value);
-		};
 
 		registerLegacyInstanceInitializer(proto, (element) => {
-			bootstrapSsrContextSelection(
+			const applySelectedContext = createContextSelectionDelivery(
 				element,
-				context,
 				(value) => {
-					applySelectedContext(element, value);
+					originalMethod.call(element, value);
 				},
-				select,
+				requestUpdate,
 			);
+
+			bootstrapSsrContextSelection(element, context, applySelectedContext, select);
 
 			element.registerConnectedCallback(() => {
 				if (
-					connectContextSelection(element, context, (value) => applySelectedContext(element, value), {
+					connectContextSelection(element, context, applySelectedContext, {
 						select,
 						subscribe,
 					})
@@ -36,7 +36,7 @@ export function contextSelector<T extends Context<unknown, unknown>>({
 				}
 
 				queueMicrotask(() => {
-					connectContextSelection(element, context, (value) => applySelectedContext(element, value), {
+					connectContextSelection(element, context, applySelectedContext, {
 						select,
 						subscribe,
 					});
