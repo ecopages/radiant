@@ -12,6 +12,9 @@
 
 .home-hero__text {
 	@apply flex flex-col;
+	radiant-code-tabs {
+		@apply mt-8;
+	}
 }
 
 .home-hero__code {
