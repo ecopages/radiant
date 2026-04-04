@@ -97,6 +97,9 @@ const HomePage: EcoComponent = () => {
 						{rawHtml(
 							`<figure data-rehype-pretty-code-figure class="home-code-block">${counterExample}</figure>`,
 						)}
+						<div class="home-hero__demo">
+							<radiant-counter value="0" />
+						</div>
 					</div>
 				</div>
 			</header>
@@ -218,8 +221,15 @@ const HomePage: EcoComponent = () => {
 HomePage.config = {
 	layout: BaseLayout,
 	dependencies: {
-		stylesheets: ['./index.css', '../components/home-install-cmd.css'],
-		scripts: ['../components/home-install-cmd.script.tsx'],
+		stylesheets: [
+			'./index.css',
+			'../components/home-install-cmd.css',
+			'../components/radiant-counter/radiant-counter.css',
+		],
+		scripts: [
+			'../components/home-install-cmd.script.tsx',
+			'../components/radiant-counter/radiant-component-counter.script.tsx',
+		],
 	},
 };
 

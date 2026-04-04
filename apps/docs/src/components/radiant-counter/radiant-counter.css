@@ -1,10 +1,10 @@
 radiant-counter,
 radiant-element-counter {
-	@apply flex gap-4 items-center bg-indigo-200 rounded-md max-w-fit p-2;
+	@apply flex gap-3 items-center justify-center bg-background-accent rounded-sm max-w-fit p-2 border border-border;
 	button {
-		@apply flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-md w-8 h-8;
+		@apply flex items-center justify-center rounded-sm border border-border bg-background text-on-background w-8 h-8 text-sm font-mono transition-colors hover:bg-border/50 active:bg-border;
 	}
 	span {
-		@apply text-gray-900 font-bold p-2 bg-gray-100 min-w-20 h-10 flex items-center justify-center rounded-md;
+		@apply text-on-background font-mono text-sm p-2 bg-background min-w-16 h-8 flex items-center justify-center rounded-sm;
 	}
 }

@@ -7,7 +7,7 @@
 }
 
 .home-hero {
-	@apply flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12;
+	@apply flex flex-col gap-8 lg:grid lg:grid-cols-[7fr_5fr] lg:items-center lg:gap-12;
 }
 
 .home-hero__text {
@@ -15,7 +15,13 @@
 }
 
 .home-hero__code {
-	@apply hidden lg:block;
+	@apply hidden lg:flex lg:flex-col;
+}
+
+.home-hero__demo {
+	radiant-counter {
+		@apply w-full max-w-full rounded-t-none border-t-0;
+	}
 }
 
 .home-header__subtitle {
@@ -98,8 +104,8 @@
 	@apply flex flex-wrap gap-2 mt-1;
 }
 
-.home-code-block {
-	@apply my-0 rounded-sm border border-border bg-background-accent overflow-x-auto;
+.home-code-block[data-rehype-pretty-code-figure] {
+	@apply my-0 rounded-sm rounded-b-none border border-border bg-background-accent overflow-x-auto;
 
 	pre code {
 		@apply font-mono text-[0.875em] leading-relaxed;
