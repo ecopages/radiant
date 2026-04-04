@@ -80,6 +80,10 @@
 			"types": "./dist/context/decorators/context-selector.d.ts",
 			"import": "./dist/context/decorators/context-selector.js"
 		},
+		"./context/on-context-update": {
+			"types": "./dist/context/decorators/on-context-update.d.ts",
+			"import": "./dist/context/decorators/on-context-update.js"
+		},
 		"./core/radiant-element": {
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
@@ -87,6 +91,10 @@
 		"./core/radiant-component": {
 			"types": "./dist/core/radiant-component.d.ts",
 			"import": "./dist/core/radiant-component.js"
+		},
+		"./signals/host-resource": {
+			"types": "./dist/signals/host-resource.d.ts",
+			"import": "./dist/signals/host-resource.js"
 		},
 		"./server/light-dom-shim": {
 			"types": "./dist/server/light-dom-shim.d.ts",
@@ -143,6 +151,10 @@
 		"./decorators/reactive-prop": {
 			"types": "./dist/decorators/reactive-prop.d.ts",
 			"import": "./dist/decorators/reactive-prop.js"
+		},
+		"./decorators/resource": {
+			"types": "./dist/decorators/resource.d.ts",
+			"import": "./dist/decorators/resource.js"
 		},
 		"./decorators/signal": {
 			"types": "./dist/decorators/signal.d.ts",
