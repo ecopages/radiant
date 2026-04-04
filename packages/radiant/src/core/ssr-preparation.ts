@@ -1,6 +1,7 @@
 type SsrPreparationCallback = () => void;
 
-const SSR_PREPARATION_CALLBACKS = Symbol.for('@ecopages/radiant.ssr-preparation-callbacks');
+const SSR_PREPARATION_CALLBACKS = Symbol();
+export const SSR_PREPARATION_RUNNING = Symbol();
 
 /**
  * Registers instance-local SSR preparation work that should run immediately
@@ -31,13 +32,20 @@ export function registerSsrPreparationCallback(host: object, callback: SsrPrepar
  * deterministic after later host mutations.
  */
 export function runSsrPreparationCallbacks(host: object): void {
-	const callbacks = (host as Record<PropertyKey, unknown>)[SSR_PREPARATION_CALLBACKS];
+	const target = host as Record<PropertyKey, unknown>;
+	const callbacks = target[SSR_PREPARATION_CALLBACKS];
 
 	if (!Array.isArray(callbacks)) {
 		return;
 	}
 
-	for (const callback of callbacks as SsrPreparationCallback[]) {
-		callback();
+	target[SSR_PREPARATION_RUNNING] = true;
+
+	try {
+		for (const callback of callbacks as SsrPreparationCallback[]) {
+			callback();
+		}
+	} finally {
+		delete target[SSR_PREPARATION_RUNNING];
 	}
 }
