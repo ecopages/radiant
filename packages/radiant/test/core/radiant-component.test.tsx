@@ -704,6 +704,21 @@ describe('RadiantComponent', () => {
 			expect(element.defaultSlot?.textContent).toBe('Prepared body');
 		});
 
+		test('hydrates array @prop values from SSR host attributes before the first client render', async () => {
+			const serverElement = new SsrArrayPropCard();
+			serverElement.items = [{ label: 'first' }, { label: 'second' }];
+			const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+
+			document.body.innerHTML = serverMarkup;
+
+			const element = document.querySelector('ssr-array-prop-card-test') as SsrArrayPropCard;
+
+			await waitFor(() => {
+				expect(element.items).toEqual([{ label: 'first' }, { label: 'second' }]);
+				expect(element.querySelector('p')?.textContent).toBe('first, second');
+			});
+		});
+
 		test('renderHostToString({ hydrate: true }) appends signal hydration scripts automatically', () => {
 			class ServerHostSignalCard extends RadiantComponent {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;

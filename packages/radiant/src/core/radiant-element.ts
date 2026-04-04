@@ -779,6 +779,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 		const initialValue: T | undefined = getInitialValue(this, type, attributeKey, defaultValue) as T;
 
+		if (this.hasAttribute(attributeKey) && (!reflect || initialValue == null || initialValue === '')) {
+			this.removeAttribute(attributeKey);
+		}
+
 		const propertyMapping: ReactiveProperty<T> = {
 			type,
 			name: propertyName,
@@ -797,8 +801,12 @@ export class RadiantElement<Bindings extends object = {}>
 
 		const handleReflectRequest = (value: T) => {
 			if (reflect) {
-				const attributeValue = propertyMapping.converter.toAttribute(value);
-				this.setAttribute(attributeKey, attributeValue);
+				if (value == null || value === '' || value === false) {
+					this.removeAttribute(attributeKey);
+				} else {
+					const attributeValue = propertyMapping.converter.toAttribute(value);
+					this.setAttribute(attributeKey, attributeValue);
+				}
 			}
 		};
 
