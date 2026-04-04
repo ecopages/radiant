@@ -1,6 +1,17 @@
 import { DocsLayout } from '@/layouts/docs-layout';
+import { createPackageManagerTabs } from '@/utils/package-manager-tabs';
 
 export const layout = DocsLayout;
+
+export const config = {
+  dependencies: {
+    stylesheets: ['../../../components/code-tabs.css'],
+    scripts: ['../../../components/code-tabs.script.tsx'],
+  },
+};
+
+const ecosystemInstallTabs = createPackageManagerTabs(['@ecopages/radiant', '@ecopages/jsx']);
+const signalsInstallTabs = createPackageManagerTabs(['@ecopages/signals']);
 
 export const getMetadata = () => ({
   title: 'Docs | Installation',
@@ -11,9 +22,12 @@ export const getMetadata = () => ({
 
 The most common setup is `@ecopages/radiant` plus `@ecopages/jsx`.
 
-```bash
-bun install @ecopages/radiant @ecopages/jsx
-```
+<radiant-code-tabs
+  prop:label="Package managers"
+  prop:tabs={ecosystemInstallTabs}
+  prop:copyLabel="Copy install command"
+  prop:initialTab="bun"
+/>
 
 ## TypeScript Setup For JSX
 
@@ -36,9 +50,12 @@ Or enable it per file:
 
 If you only want the reactive core, install `@ecopages/signals` by itself:
 
-```bash
-bun install @ecopages/signals
-```
+<radiant-code-tabs
+  prop:label="Signals package managers"
+  prop:tabs={signalsInstallTabs}
+  prop:copyLabel="Copy install command"
+  prop:initialTab="bun"
+/>
 
 ## Which Packages To Install
 
