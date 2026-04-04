@@ -3,7 +3,7 @@ import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
 import { transformerEscapeHtml } from '@/plugins/transformer-escape-html';
 import { rawHtml } from '@/utils/raw-html';
-import '../components/home-install-cmd.script';
+import '../components/code-tabs.script';
 
 const counterExample = await codeToHtml(
 	`import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
@@ -37,6 +37,12 @@ export class RadiantCounter extends RadiantComponent {
 	},
 );
 
+const installCommandTabs = JSON.stringify([
+	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
+]);
+
 const HomeCard = ({
 	href,
 	label,
@@ -49,9 +55,11 @@ const HomeCard = ({
 	description: string;
 }) => (
 	<a href={href} class="home-card group">
-		<p class="home-card__label">{label}</p>
-		<h3 class="home-card__title">{title}</h3>
-		<p class="home-card__text">{description}</p>
+		<article>
+			<p class="home-card__label">{label}</p>
+			<h3 class="home-card__title">{title}</h3>
+			<p class="home-card__text">{description}</p>
+		</article>
 	</a>
 );
 
@@ -72,16 +80,20 @@ const HomePage: EcoComponent = () => {
 				<div class="home-hero">
 					<div class="home-hero__text">
 						<p class="home-header__subtitle">Radiant Docs</p>
-						<h1 class="home-header__title">
-							Build typed custom elements with WebComponents, JSX, and Signals.
-						</h1>
+						<h1 class="home-header__title">Build typed web components with JSX and Signals.</h1>
 						<p class="home-header__description">
 							Start with the core component model, add decorators only when they make intent clearer, and
 							bring in JSX and Signals as your rendering and state needs grow, so you can adopt features
 							incrementally while staying close to the browser through light DOM and standard web APIs.
 						</p>
 
-						<radiant-install-cmd class="home-install-cmd" prop:packages="@ecopages/radiant @ecopages/jsx" />
+						<radiant-code-tabs
+							class="home-install-cmd"
+							prop:label="Package managers"
+							prop:tabs={installCommandTabs}
+							prop:copyLabel="Copy install command"
+							prop:initialTab="bun"
+						/>
 
 						<div class="home-header__actions">
 							<a href="/docs/getting-started/introduction" class="button button--default">
@@ -223,11 +235,11 @@ HomePage.config = {
 	dependencies: {
 		stylesheets: [
 			'./index.css',
-			'../components/home-install-cmd.css',
+				'../components/code-tabs.css',
 			'../components/radiant-counter/radiant-counter.css',
 		],
 		scripts: [
-			'../components/home-install-cmd.script.tsx',
+				'../components/code-tabs.script.tsx',
 			'../components/radiant-counter/radiant-component-counter.script.tsx',
 		],
 	},
