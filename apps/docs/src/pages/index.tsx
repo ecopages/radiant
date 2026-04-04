@@ -90,9 +90,6 @@ const HomePage: EcoComponent = () => {
 							<a href="/docs/components/radiant-component" class="button button--outline">
 								Start with RadiantComponent
 							</a>
-							<a href="/docs/packages/jsx-overview" class="button button--outline">
-								Explore the packages
-							</a>
 						</div>
 					</div>
 
