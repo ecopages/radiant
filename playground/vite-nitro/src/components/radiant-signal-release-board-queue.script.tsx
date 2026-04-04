@@ -1,15 +1,11 @@
-import { RadiantComponent, contextSelector, customElement, state } from '@ecopages/radiant';
+import { RadiantComponent, contextSelector, customElement } from '@ecopages/radiant';
 import { radiantSignalReleaseBoardContext } from './radiant-signal-release-board.context.ts';
 import { createEmptyReleaseBoardQueueView, type ReleaseBoardStore } from './radiant-signal-release-board.model.ts';
 
 @customElement('radiant-signal-release-board-queue')
 export class RadiantSignalReleaseBoardQueueElement extends RadiantComponent {
-	@state declare store: ReleaseBoardStore | undefined;
-
 	@contextSelector({ context: radiantSignalReleaseBoardContext, select: (value) => value?.store })
-	protected connectStore(store: ReleaseBoardStore | undefined): void {
-		this.store = store;
-	}
+	store: ReleaseBoardStore | undefined;
 
 	override render() {
 		const view = this.store?.views.queue.get() ?? createEmptyReleaseBoardQueueView();

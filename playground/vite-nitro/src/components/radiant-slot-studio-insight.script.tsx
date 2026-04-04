@@ -1,31 +1,18 @@
-import { RadiantComponent, contextSelector, customElement, prop, state } from '@ecopages/radiant';
+import { RadiantComponent, contextSelector, customElement, prop } from '@ecopages/radiant';
 import { type RadiantSlotStudioContextValue, radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
 
 type InsightKind = 'commits' | 'stage' | 'tempo';
 
 type RadiantSlotStudioInsightBindings = {
 	kind: InsightKind;
-	summary: string;
 };
 
 @customElement('radiant-slot-studio-insight')
 export class RadiantSlotStudioInsightElement extends RadiantComponent<RadiantSlotStudioInsightBindings> {
 	@prop({ type: String }) kind: InsightKind = 'stage';
-	@state summary = 'Pending';
 
 	@contextSelector({ context: radiantSlotStudioContext })
-	protected syncSummary(currentContext: RadiantSlotStudioContextValue): void {
-		switch (this.kind) {
-			case 'commits':
-				this.summary = `${currentContext.commits} synced`;
-				break;
-			case 'tempo':
-				this.summary = currentContext.tempo;
-				break;
-			default:
-				this.summary = currentContext.stage;
-		}
-	}
+	context: RadiantSlotStudioContextValue | undefined;
 
 	override render() {
 		const labels: Record<InsightKind, string> = {
@@ -34,10 +21,24 @@ export class RadiantSlotStudioInsightElement extends RadiantComponent<RadiantSlo
 			tempo: 'Tempo',
 		};
 
+		let summary = 'Pending';
+		if (this.context) {
+			switch (this.kind) {
+				case 'commits':
+					summary = `${this.context.commits} synced`;
+					break;
+				case 'tempo':
+					summary = this.context.tempo;
+					break;
+				default:
+					summary = this.context.stage;
+			}
+		}
+
 		return (
 			<div class="studio-insight" data-kind={this.kind}>
 				<p class="studio-insight__label">{labels[this.kind]}</p>
-				<p class="studio-insight__value">{this.$.summary}</p>
+				<p class="studio-insight__value">{summary}</p>
 			</div>
 		);
 	}

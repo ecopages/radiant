@@ -121,15 +121,11 @@ export class RadiantTodoApp extends RadiantComponent {
 		}
 	}
 
-	@contextSelector({
-		context: todoContext,
-	})
-	onTodosUpdated() {
-		this.update();
-	}
+	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
+	todos: Todo[] = [];
 
 	override render() {
-		const todos = this.provider?.getContext().todos ?? [];
+		const todos = this.todos;
 		const todosCompleted = todos.filter((todo) => todo.complete);
 		const todosIncomplete = todos.filter((todo) => !todo.complete);
 
