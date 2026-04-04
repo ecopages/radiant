@@ -23,11 +23,12 @@ import { createContext } from '@ecopages/radiant';
 export const myContext = createContext<{ value: string }>(Symbol('my-context'));
 ```
 
-## The Three Main APIs
+## The Four Main APIs
 
 - [@provideContext](/docs/context/provide-context) attaches a provider to a host.
 - [@consumeContext](/docs/context/consume-context) injects the nearest matching provider onto a field.
-- [@contextSelector](/docs/context/context-selector) subscribes a method to the whole context or a selected slice of it.
+- [@contextSelector](/docs/context/context-selector) binds a field to the whole context or a selected slice. Rerenders the host automatically on change.
+- [@onContextUpdate](/docs/context/on-context-update) runs a method when the context changes. Use this for imperative side effects.
 
 ## Typical Shape
 

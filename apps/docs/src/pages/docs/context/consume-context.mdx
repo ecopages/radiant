@@ -34,8 +34,9 @@ The injected field gives you access to the provider API, including `getContext()
 
 ## When To Use It
 
-- Use `@consumeContext(...)` when the host needs direct access to the provider object or needs to call provider methods explicitly.
-- Use [@contextSelector](/docs/context/context-selector) when a method should react to the current context value or a selected slice of it.
+- Use `@consumeContext(...)` when the host needs the provider object to call `getContext()` or `setContext(...)`.
+- Use [@contextSelector](/docs/context/context-selector) when the host should bind a field to the current context value and rerender automatically.
+- Use [@onContextUpdate](/docs/context/on-context-update) when a context change should trigger imperative side effects.
 
 ## Client And SSR Behavior
 

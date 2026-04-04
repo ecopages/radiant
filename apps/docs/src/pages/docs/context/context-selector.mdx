@@ -4,63 +4,107 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | @contextSelector',
-	description: 'Subscribe a method to a whole context value or a selected slice of it.',
+	description: 'Bind a field to a context value or a selected slice of it. The field stays in sync automatically and triggers a rerender on change.',
 });
 
 # @contextSelector
 
-Use `@contextSelector(...)` when a method should run with the current context value, or a selected slice of it.
+Use `@contextSelector(...)` on a **field** to bind it to the current context value or a selected slice of it.
+
+When the selected value changes, the field is updated and — on a `RadiantComponent` host — a coalesced `requestUpdate()` is scheduled automatically. No empty method body. No manual `this.update()` call.
 
 ## Options
 
 | Option | Type | Description |
 | :-- | :-- | :-- |
 | `context` | `Context` | The context token to resolve |
-| `select` | `(context) => unknown` | Optional projection that narrows the resolved value before delivery |
-| `subscribe` | `boolean` | Whether client-side subscriptions stay active after the first value |
+| `select` | `(context) => Selected` | Optional projection. Narrows the resolved value before it is written to the field |
+| `subscribe` | `boolean` | Whether client-side subscriptions stay active after the first value. Defaults to `true` |
 
 ## Example
 
 ```typescript
 import { RadiantComponent, contextSelector, customElement } from '@ecopages/radiant';
 
-import { todoContext } from './todo-context';
+import { todoContext, type Todo } from './todo-context';
 
-@customElement('todo-summary')
-export class TodoSummary extends RadiantComponent {
-	@contextSelector({
-		context: todoContext,
-		select: ({ todos }) => ({ count: todos.length }),
-	})
-	onTodoCountChanged({ count }: { count: number }) {
-		this.dataset.count = String(count);
-		this.update();
+@customElement('todo-board')
+export class TodoBoard extends RadiantComponent {
+	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
+	todos: Todo[] = [];
+
+	override render() {
+		return (
+			<ul>
+				{this.todos.map((todo) => (
+					<li>{todo.text}</li>
+				))}
+			</ul>
+		);
 	}
 }
 ```
 
-`select` is useful when the method should react to a stable derived slice rather than the whole context object.
+`render()` reads `this.todos` directly. When the todo list changes in context, the field is updated and the host rerenders automatically.
+
+## Full context on a field
+
+Omit `select` to bind the whole context value to the field. This is the right choice when the derived view value also depends on instance state — such as a `@prop` — that the `select` function cannot access.
 
 ```typescript
-@customElement('todo-summary')
-export class TodoSummary extends RadiantComponent {
-	@contextSelector({
-		context: todoContext,
-		select: ({ todos }) => ({
-			completed: todos.filter((todo) => todo.complete).length,
-		}),
-	})
-	onCompletedCountChanged({ completed }: { completed: number }) {
-		this.dataset.completed = String(completed);
+@customElement('insight-card')
+export class InsightCard extends RadiantComponent {
+	@prop({ type: String }) kind: 'commits' | 'stage' | 'tempo' = 'stage';
+
+	@contextSelector({ context: boardContext })
+	context: BoardContext | undefined;
+
+	override render() {
+		let summary = 'Pending';
+		if (this.context) {
+			switch (this.kind) {
+				case 'commits': summary = `${this.context.commits} synced`; break;
+				case 'tempo':   summary = this.context.tempo; break;
+				default:        summary = this.context.stage;
+			}
+		}
+		return <p>{summary}</p>;
 	}
 }
 ```
+
+The key constraint: `select` only receives the context value — it has no access to `this`. Whenever the derived value depends on instance state, bind the full context and compute in `render()`. Do not introduce an intermediate `@state` field or an `@onContextUpdate` callback just to copy the result.
+
+## For side effects: use @onContextUpdate
+
+When the context change should trigger imperative work rather than a rerender, use [@onContextUpdate](/docs/context/on-context-update) on a method instead.
+
+```typescript
+import { onContextUpdate } from '@ecopages/radiant';
+
+@customElement('analytics-tracker')
+export class AnalyticsTracker extends RadiantElement {
+	@onContextUpdate({ context: cartContext, select: ({ total }) => total })
+	onTotalChanged(total: number) {
+		this.setAttribute('data-cart-total', String(total));
+	}
+}
+```
+
+## When To Use Which
+
+| Decorator | Target | Use when |
+|-----------|--------|----------|
+| `@contextSelector(...)` | field | The host should render from the current context value |
+| `@onContextUpdate(...)` | method | A context change should trigger imperative side effects |
+| `@consumeContext(...)` | field | The host needs the provider object to call `setContext(...)` |
 
 ## Subscribe Behavior
 
-On the client, the decorated method keeps receiving updates according to the `subscribe` option. During SSR, the method can also run when an ambient provider is available.
+On the client, the field keeps receiving updates according to `subscribe`. During SSR, the field can also be written when an ambient provider is available.
 
 ## When To Use It
 
-- Use `@contextSelector(...)` when a method should react to context changes.
-- Use [@consumeContext](/docs/context/consume-context) when the host needs the provider object itself.
+- Use `@contextSelector(...)` on a `RadiantComponent` field when `render()` should read from the current context value.
+- Use [@onContextUpdate](/docs/context/on-context-update) when the response is imperative work.
+- Use [@consumeContext](/docs/context/consume-context) when the host needs to write to context via `setContext(...)`.

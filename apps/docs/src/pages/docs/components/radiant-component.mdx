@@ -119,7 +119,7 @@ Those cases want the raw value and usually need the host render pass anyway.
 
 `render()` still only describes the view. It does not mutate the DOM by itself.
 
-`update()` runs the DOM renderer against the host element, and `requestUpdate()` schedules a coalesced rerender. Use them when state changes happen outside tracked render reads or when a decorator such as `@contextSelector(...)` needs to refresh the host after imperative work.
+`update()` runs the DOM renderer against the host element, and `requestUpdate()` schedules a coalesced rerender. Use them when state changes happen outside tracked render reads or after imperative work that the framework cannot observe automatically. `@contextSelector(...)` fields on a `RadiantComponent` automatically schedule `requestUpdate()` whenever the bound value changes — no manual call needed.
 
 ### 5. Reactive JSX Bindings Default To On
 
