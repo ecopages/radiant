@@ -13,7 +13,6 @@ import {
 	DEFAULT_CITY_ID,
 	WEATHER_CITIES,
 	fetchWeatherReport,
-	getWeatherButtonClass,
 	getWeatherCity,
 	upsertWeatherReport,
 } from './weather-app.utils';
@@ -214,7 +213,10 @@ export class RadiantWeatherAppElement extends RadiantComponent {
 							data={{ cityId: city.id }}
 							on:click={this.handleCityClick}
 							aria={{ pressed: city.id === activeCityId }}
-							class={getWeatherButtonClass(city.id === activeCityId)}
+							classes={[
+								'button button--sm',
+								city.id === activeCityId ? 'button--primary' : 'button--outline',
+							]}
 						>
 							{city.label}
 						</button>
