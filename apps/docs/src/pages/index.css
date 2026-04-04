@@ -6,6 +6,18 @@
 	@apply col-span-full border-b border-border pb-8 mb-4;
 }
 
+.home-hero {
+	@apply flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-12;
+}
+
+.home-hero__text {
+	@apply flex flex-col;
+}
+
+.home-hero__code {
+	@apply hidden lg:block;
+}
+
 .home-header__subtitle {
 	@apply text-sm font-bold uppercase tracking-[0.15em] text-on-background/60;
 }
@@ -84,4 +96,12 @@
 
 .home-sidebar__tags {
 	@apply flex flex-wrap gap-2 mt-1;
+}
+
+.home-code-block {
+	@apply my-0 rounded-sm border border-border bg-background-accent overflow-x-auto;
+
+	pre code {
+		@apply font-mono text-[0.875em] leading-relaxed;
+	}
 }

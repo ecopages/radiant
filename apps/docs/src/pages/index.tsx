@@ -1,6 +1,41 @@
 import type { EcoComponent } from '@ecopages/core';
+import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
+import { transformerEscapeHtml } from '@/plugins/transformer-escape-html';
+import { rawHtml } from '@/utils/raw-html';
 import '../components/home-install-cmd.script';
+
+const counterExample = await codeToHtml(
+	`import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+
+@customElement('radiant-counter')
+export class RadiantCounter extends RadiantComponent {
+  @prop({ type: Number, reflect: true }) value = 0;
+
+  private readonly decrement = () => {
+    if (this.value > 0) this.value -= 1;
+  };
+
+  private readonly increment = () => {
+    this.value += 1;
+  };
+
+  override render() {
+    return (
+      <>
+        <button type="button" on:click={this.decrement}>-</button>
+        <span>{this.$.value}</span>
+        <button type="button" on:click={this.increment}>+</button>
+      </>
+    );
+  }
+}`,
+	{
+		lang: 'tsx',
+		themes: { light: 'light-plus', dark: 'dark-plus' },
+		defaultColor: false,
+	},
+);
 
 const HomeCard = ({
 	href,
@@ -34,26 +69,38 @@ const HomePage: EcoComponent = () => {
 	return (
 		<div class="home-layout not-prose">
 			<header class="home-header">
-				<p class="home-header__subtitle">Radiant Docs</p>
-				<h1 class="home-header__title">Build typed custom elements with WebComponents, JSX, and Signals.</h1>
-				<p class="home-header__description">
-					Start with the core component model, add decorators only when they make intent clearer, and bring in
-					JSX and Signals as your rendering and state needs grow, so you can adopt features incrementally
-					while staying close to the browser through light DOM and standard web APIs.
-				</p>
+				<div class="home-hero">
+					<div class="home-hero__text">
+						<p class="home-header__subtitle">Radiant Docs</p>
+						<h1 class="home-header__title">
+							Build typed custom elements with WebComponents, JSX, and Signals.
+						</h1>
+						<p class="home-header__description">
+							Start with the core component model, add decorators only when they make intent clearer, and
+							bring in JSX and Signals as your rendering and state needs grow, so you can adopt features
+							incrementally while staying close to the browser through light DOM and standard web APIs.
+						</p>
 
-				<radiant-install-cmd class="home-install-cmd" prop:packages="@ecopages/radiant @ecopages/jsx" />
+						<radiant-install-cmd class="home-install-cmd" prop:packages="@ecopages/radiant @ecopages/jsx" />
 
-				<div class="home-header__actions">
-					<a href="/docs/getting-started/introduction" class="button button--default">
-						Read the overview
-					</a>
-					<a href="/docs/components/radiant-component" class="button button--outline">
-						Start with RadiantComponent
-					</a>
-					<a href="/docs/packages/jsx-overview" class="button button--outline">
-						Explore the packages
-					</a>
+						<div class="home-header__actions">
+							<a href="/docs/getting-started/introduction" class="button button--default">
+								Read the overview
+							</a>
+							<a href="/docs/components/radiant-component" class="button button--outline">
+								Start with RadiantComponent
+							</a>
+							<a href="/docs/packages/jsx-overview" class="button button--outline">
+								Explore the packages
+							</a>
+						</div>
+					</div>
+
+					<div class="home-hero__code">
+						{rawHtml(
+							`<figure data-rehype-pretty-code-figure class="home-code-block">${counterExample}</figure>`,
+						)}
+					</div>
 				</div>
 			</header>
 

@@ -16,14 +16,6 @@ export const DEFAULT_CITY_ID = WEATHER_CITIES[0].id;
 export const getWeatherCity = (cityId: string) =>
 	WEATHER_CITIES.find((city) => city.id === cityId) ?? WEATHER_CITIES[0];
 
-export const getWeatherButtonClass = (isActive: boolean) => {
-	if (isActive) {
-		return 'button button--sm button--primary';
-	}
-
-	return 'button button--sm button--outline';
-};
-
 export const upsertWeatherReport = (reports: WeatherReport[], nextReport: WeatherReport) => {
 	const reportIndex = reports.findIndex((report) => report.cityId === nextReport.cityId);
 

@@ -11,6 +11,10 @@ figure[data-rehype-pretty-code-figure] pre > code {
 	display: grid;
 }
 
+figure[data-rehype-pretty-code-figure] pre > code .line {
+	min-height: 1lh;
+}
+
 figure[data-rehype-pretty-code-figure] pre > code,
 figure[data-rehype-pretty-code-figure] pre > code span {
 	color: var(--shiki-light);
