@@ -1,7 +1,7 @@
 import type { EcoComponent } from '@ecopages/core';
 import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
-import { transformerEscapeHtml } from '@/plugins/transformer-escape-html';
+import { createPackageManagerTabs } from '@/utils/package-manager-tabs';
 import { rawHtml } from '@/utils/raw-html';
 import '../components/code-tabs.script';
 
@@ -37,11 +37,7 @@ export class RadiantCounter extends RadiantComponent {
 	},
 );
 
-const installCommandTabs = JSON.stringify([
-	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
-	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
-	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
-]);
+const installCommandTabs = createPackageManagerTabs(['@ecopages/radiant', '@ecopages/jsx']);
 
 const HomeCard = ({
 	href,
@@ -57,7 +53,7 @@ const HomeCard = ({
 	<a href={href} class="home-card group">
 		<article>
 			<p class="home-card__label">{label}</p>
-			<h3 class="home-card__title">{title}</h3>
+			<h1 class="home-card__title">{title}</h1>
 			<p class="home-card__text">{description}</p>
 		</article>
 	</a>
@@ -88,7 +84,7 @@ const HomePage: EcoComponent = () => {
 						</p>
 
 						<radiant-code-tabs
-							class="home-install-cmd"
+							class="home-code-tabs"
 							prop:label="Package managers"
 							prop:tabs={installCommandTabs}
 							prop:copyLabel="Copy install command"
@@ -110,7 +106,7 @@ const HomePage: EcoComponent = () => {
 							`<figure data-rehype-pretty-code-figure class="home-code-block">${counterExample}</figure>`,
 						)}
 						<div class="home-hero__demo">
-							<radiant-counter value="0" />
+							<radiant-counter prop:value={0} />
 						</div>
 					</div>
 				</div>
@@ -235,11 +231,11 @@ HomePage.config = {
 	dependencies: {
 		stylesheets: [
 			'./index.css',
-				'../components/code-tabs.css',
+			'../components/code-tabs.css',
 			'../components/radiant-counter/radiant-counter.css',
 		],
 		scripts: [
-				'../components/code-tabs.script.tsx',
+			'../components/code-tabs.script.tsx',
 			'../components/radiant-counter/radiant-component-counter.script.tsx',
 		],
 	},

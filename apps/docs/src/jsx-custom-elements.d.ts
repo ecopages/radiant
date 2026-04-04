@@ -3,8 +3,7 @@ import type { RadiantCounterProps } from '@/components/radiant-counter/radiant-c
 import type { RadiantElementCounterProps } from '@/components/radiant-counter/radiant-element-counter.script';
 import type { RadiantTodoProps } from '@/components/radiant-todo-app/radiant-todo-item.script';
 import type { RadiantSwitchProps } from '@/components/switch/switch.script';
-import type { InstallPackageOptions } from 'typescript';
-import type { RadiantInstallCmdProps } from './components/home-install-cmd.script';
+import type { RadiantCodeTabsProps } from './components/code-tabs.script';
 
 type DocsGlobalCustomElementAttributes<Props extends object = {}> = Partial<Props> & {
 	children?: unknown;
@@ -13,7 +12,7 @@ type DocsGlobalCustomElementAttributes<Props extends object = {}> = Partial<Prop
 
 interface DocsGlobalIntrinsicElements {
 	'radiant-burger': DocsGlobalCustomElementAttributes;
-	'radiant-install-cmd': DocsGlobalCustomElementAttributes<{ packages?: string }>;
+	'radiant-code-tabs': DocsGlobalCustomElementAttributes<RadiantCodeTabsProps>;
 	'radiant-counter': DocsGlobalCustomElementAttributes<RadiantCounterProps>;
 	'radiant-element-counter': DocsGlobalCustomElementAttributes<RadiantElementCounterProps>;
 	'radiant-navigation': DocsGlobalCustomElementAttributes;
@@ -29,7 +28,7 @@ interface DocsGlobalIntrinsicElements {
 
 interface DocsRadiantJsxIntrinsicElements {
 	'radiant-burger': JsxCustomElementAttributes<HTMLElement>;
-	'radiant-install-cmd': JsxCustomElementAttributes<HTMLElement, RadiantInstallCmdProps>;
+	'radiant-code-tabs': JsxCustomElementAttributes<HTMLElement, RadiantCodeTabsProps>;
 	'radiant-counter': JsxCustomElementAttributes<HTMLElement, RadiantCounterProps>;
 	'radiant-element-counter': JsxCustomElementAttributes<HTMLElement, RadiantElementCounterProps>;
 	'radiant-navigation': JsxCustomElementAttributes<HTMLElement>;
