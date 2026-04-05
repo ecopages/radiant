@@ -11,9 +11,13 @@ export const getMetadata = () => ({
 
 `RadiantElement` is the low-level base class for Radiant custom elements.
 
-Use it when the host is primarily imperative, string-template based, or acting as a lower-level custom element inside a bigger JSX tree.
+Its original role is not "small `RadiantComponent`". It is the base for hosts that should still behave like ordinary light-DOM custom elements: keep authored children visible, move or wrap those children manually when needed, and stay out of the host JSX render loop.
 
-It does not need SSR to be valuable. `RadiantElement` works perfectly well as a client-side reactive custom element.
+That is why it does not need SSR to be valuable. `RadiantElement` works perfectly well as a client-side reactive custom element when the host should stay imperative but still benefit from reactivity.
+
+Use it when the host is primarily imperative, manually manages its light DOM, string-template based, or acting as a lower-level custom element inside a bigger JSX tree.
+
+`renderTemplate(...)`, `bind(...)`, `bindings`, and `$` are additive tools. They help an imperative host participate in Radiant's reactive model without turning that host into a `RadiantComponent`.
 
 It gives you:
 
@@ -21,7 +25,8 @@ It gives you:
 - update callbacks
 - delegated event wiring
 - context integration
-- string-template rendering through `renderTemplate(...)`
+- manual light-DOM ownership over authored children
+- optional string-template rendering through `renderTemplate(...)`
 - opt-in JSX bindings through `bind(...)`, `bindings`, and `$`
 
 Use [RadiantComponent](/docs/components/radiant-component) instead when the host itself should render and hydrate JSX through `render()` and `update()`.
@@ -29,39 +34,57 @@ Use [RadiantComponent](/docs/components/radiant-component) instead when the host
 ## Example
 
 ```typescript
-import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, onUpdated, query, reactiveProp } from '@ecopages/radiant';
 
-@customElement('my-custom-element')
-class MyCustomElement extends RadiantElement {
-  @prop({ type: String, defaultValue: 'Foo' }) declare foo: string;
-  @query({ ref: 'paragraph' }) paragraph!: HTMLParagraphElement;
+type CounterProps = {
+  value?: number;
+};
 
-  override connectedCallback() {
-    super.connectedCallback();
-    this.renderTemplate({
-      target: this,
-      template: '<p data-ref="paragraph"></p><button type="button">Update</button>',
-    });
-    this.updateParagraph();
+@customElement('radiant-counter')
+class RadiantCounter extends RadiantElement<CounterProps> {
+  @reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
+  @query({ ref: 'count' }) countText!: HTMLSpanElement;
+
+  @onEvent({ ref: 'decrement', type: 'click' })
+  decrement() {
+    if (this.value > 0) {
+      this.value -= 1;
+    }
   }
 
-  @onUpdated('foo')
-  updateParagraph() {
-    this.paragraph.textContent = `Hello ${this.foo}`;
+  @onEvent({ ref: 'increment', type: 'click' })
+  increment() {
+    this.value += 1;
   }
 
-  @onEvent({ selector: 'button', type: 'click' })
-  handleClick() {
-    this.foo = 'World';
+  @onUpdated('value')
+  updateCount() {
+    this.countText.textContent = String(this.value);
   }
 }
 ```
 
-This example keeps the host imperative while still using Radiant's reactive property and event system.
+Authored HTML can stay simple:
+
+```html
+<radiant-counter value="5">
+  <button type="button" data-ref="decrement" aria-label="Decrement">-</button>
+  <span data-ref="count">5</span>
+  <button type="button" data-ref="increment" aria-label="Increment">+</button>
+</radiant-counter>
+```
+
+This matches the real counter pattern: the authored DOM already exists, the `data-ref` markers make those nodes addressable, and `RadiantElement` just wires them together through `@query(...)`, `@onEvent(...)`, and `@onUpdated(...)`.
+
+This is closer to the original `RadiantElement` mental model: authored light DOM stays visible and owned by the host, while reactive props and update callbacks handle the behavior.
+
+`renderTemplate(...)` is still available when the host wants help generating or replacing a shell later, but it is not required for this style of component.
 
 ## JSX And RadiantElement
 
 `RadiantElement` does work with the JSX runtime, but not in the same role as `RadiantComponent`.
+
+JSX support is additive here. A `RadiantElement` can appear inside JSX trees, but that is different from making the host itself a JSX-owned render boundary.
 
 - A `RadiantElement` custom element can appear inside JSX trees such as `<radiant-todo-item complete />`.
 - `@prop(...)` values passed from JSX become real attributes or properties on the custom element.
@@ -85,11 +108,13 @@ See [Todo App](/docs/examples/todo-app).
 - `@state` and `@reactiveField` register internal reactive fields.
 - `registerUpdateCallback(...)` listeners are triggered by `notifyUpdate(...)` whenever a reactive member changes.
 - `bind(...)`, `bindings.key`, and `$.key` cache `SubscribableJsxValue` wrappers so JSX child ranges can subscribe directly.
+- `renderTemplate(...)` is a convenience for imperative hosts. It is not the defining feature of `RadiantElement`.
 - `RadiantElement` keeps bindings opt-in by default. If you omit `bind`, no `$count`-style companion is created automatically.
 
 ## Choose Between RadiantElement And RadiantComponent
 
 - Use `RadiantElement` when the host is mainly imperative or string-template based.
+- Use `RadiantElement` when the host should keep direct ownership of authored light-DOM children.
 - Use `RadiantComponent` when the host view should be authored in JSX.
 - Use either base class for reactive props, state, events, and context.
 - SSR is optional and separate from this choice. Pick the base class based on host ownership, not on whether the element might be server-rendered.

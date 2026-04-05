@@ -90,6 +90,17 @@ export const docsConfig: DocsConfig = {
 			],
 		},
 		{
+			name: 'Helpers',
+			subdirectory: 'helpers',
+			pages: [
+				{ title: 'createQuery()', slug: 'create-query' },
+				{ title: 'createQuerySlot()', slug: 'create-query-slot' },
+				{ title: 'createEvent()', slug: 'create-event' },
+				{ title: 'createEventListener()', slug: 'create-event-listener' },
+				{ title: 'debounce()', slug: 'debounce' },
+			],
+		},
+		{
 			name: 'Tools',
 			subdirectory: 'tools',
 			pages: [{ title: 'stringifyTyped()', slug: 'stringify-typed' }],

@@ -1,0 +1,103 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | debounce',
+	description: 'Debounce any function with cancel, flush, and pending control.',
+})
+
+# debounce
+
+`debounce` creates a debounced wrapper around any function. The returned function delays invocation until the configured timeout has passed since the last call. It is the functional equivalent of the [`@debounce`](/docs/decorators/debounce) decorator, usable without decorators or classes.
+
+## Usage
+
+```typescript
+import { debounce } from '@ecopages/radiant/helpers/debounce';
+
+const search = debounce((query: string) => {
+	console.log('Searching for:', query);
+}, 300);
+
+search('rad');
+search('radi');
+search('radiant'); // only this call executes, after 300ms
+```
+
+## Parameters
+
+`debounce<T>(callback, timeout)` accepts:
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `callback` | `T extends (...args) => any` | Yes | The function to debounce. |
+| `timeout` | `number` | Yes | Delay in milliseconds before execution. |
+
+## Return Value
+
+Returns a `DebouncedFunction<T>` with the same call signature as the original, plus three imperative helpers:
+
+| Method | Returns | Description |
+| :----- | :------ | :---------- |
+| `cancel()` | `void` | Cancels the pending invocation. |
+| `flush()` | `ReturnType<T> \| undefined` | Immediately executes the pending call and returns its result. Returns the last completed result if nothing is pending. |
+| `pending()` | `boolean` | Reports whether a call is currently scheduled. |
+
+## Imperative Control
+
+```typescript
+const save = debounce(async (data: string) => {
+	await fetch('/api/save', { method: 'POST', body: data });
+}, 2000);
+
+save('draft content');
+
+save.pending();  // true
+save.flush();    // executes immediately, returns the result
+save.pending();  // false
+
+save('more content');
+save.cancel();   // cancels the scheduled call
+```
+
+## Using with a Custom Element
+
+```typescript
+import { RadiantComponent } from '@ecopages/radiant';
+import { createEventListener } from '@ecopages/radiant/helpers/create-event-listener';
+import { debounce } from '@ecopages/radiant/helpers/debounce';
+
+class SearchInput extends RadiantComponent {
+	#search = debounce((query: string) => {
+		console.log('Searching:', query);
+	}, 300);
+
+	constructor() {
+		super();
+		createEventListener(this, { selector: 'input', type: 'input' }, (event) => {
+			this.#search((event.target as HTMLInputElement).value);
+		});
+	}
+
+	override disconnectedCallback() {
+		super.disconnectedCallback();
+		this.#search.cancel();
+	}
+}
+
+customElements.define('search-input', SearchInput);
+```
+
+## Guidelines for Delays
+
+| Use Case | Recommended Delay | Reasoning |
+| :------- | :---------------- | :-------- |
+| Search input | `300–500ms` | Balance responsiveness with fewer requests. |
+| Window resize | `200–300ms` | Let layout settle before recomputing. |
+| Auto-save | `1000–3000ms` | Batch edits and reduce server traffic. |
+
+## Learn More
+
+- [`@debounce`](/docs/decorators/debounce) — Decorator equivalent.
+- [`createEventListener`](/docs/helpers/create-event-listener) — Event handlers are a common place to use debouncing.
