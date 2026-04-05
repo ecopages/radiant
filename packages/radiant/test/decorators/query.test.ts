@@ -19,6 +19,20 @@ class MyQueryElement extends RadiantElement {
 
 customElements.define('my-query-element', MyQueryElement);
 
+class ShadowQueryDecoratorElement extends RadiantElement {
+	@query({ ref: 'shadow-ref', scope: 'shadow' }) shadowRef: HTMLDivElement;
+	@query({ selector: '.shared-class', all: true, scope: 'both' }) sharedClasses: HTMLDivElement[];
+
+	constructor() {
+		super();
+		const shadowRoot = this.attachShadow({ mode: 'open' });
+		shadowRoot.appendChild(createElementWithRef('Shadow Ref', 'shadow-ref'));
+		shadowRoot.appendChild(createElementWithClass('Shadow Class', 'shared-class'));
+	}
+}
+
+customElements.define('shadow-query-decorator-element', ShadowQueryDecoratorElement);
+
 const createElementWithRef = (text: string, dataRef: string) => {
 	const div = document.createElement('div');
 	div.textContent = text;
@@ -79,6 +93,13 @@ const createTemplate = () => {
 	return customElement as MyQueryElement;
 };
 
+const createShadowTemplate = () => {
+	const customElement = document.createElement('shadow-query-decorator-element') as ShadowQueryDecoratorElement;
+	customElement.appendChild(createElementWithClass('Light Class', 'shared-class'));
+	document.body.appendChild(customElement);
+	return customElement;
+};
+
 describe('@query', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -136,5 +157,19 @@ describe('@query', () => {
 		expect(customElement.myRefsCache.length).toEqual(2);
 		customElement.addElement();
 		expect(customElement.myRefsCache.length).toEqual(2);
+	});
+
+	test('decorator queries shadow DOM when scope is shadow', () => {
+		const customElement = createShadowTemplate();
+		expect(customElement.shadowRef.textContent).toEqual('Shadow Ref');
+	});
+
+	test('decorator queries light and shadow DOM when scope is both', () => {
+		const customElement = createShadowTemplate();
+		expect(customElement.sharedClasses).toHaveLength(2);
+		expect(customElement.sharedClasses.map((element) => element.textContent)).toEqual([
+			'Light Class',
+			'Shadow Class',
+		]);
 	});
 });

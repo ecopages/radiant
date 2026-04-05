@@ -60,4 +60,14 @@ describe('@event', () => {
 		radiantEventEmitter.customEvent.emit({ value: 'Hello, World!' });
 		expect(radiantEventListener.eventDetail.innerHTML).toEqual('Hello, World!');
 	});
+
+	test('decorator preserves the same emitter instance across reconnects', () => {
+		const { radiantEventEmitter } = createTemplate();
+		const firstEmitter = radiantEventEmitter.customEvent;
+
+		radiantEventEmitter.remove();
+		document.body.appendChild(radiantEventEmitter);
+
+		expect(radiantEventEmitter.customEvent).toBe(firstEmitter);
+	});
 });
