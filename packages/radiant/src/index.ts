@@ -20,3 +20,7 @@ export * from './context/decorators/consume-context';
 export * from './context/decorators/context-selector';
 export * from './context/decorators/on-context-update';
 export * from './context/decorators/provide-context';
+export * from './helpers/create-query';
+export * from './helpers/create-query-slot';
+export * from './helpers/create-event';
+export * from './helpers/create-event-listener';

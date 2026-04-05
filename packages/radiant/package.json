@@ -120,6 +120,26 @@
 			"types": "./dist/decorators/debounce.d.ts",
 			"import": "./dist/decorators/debounce.js"
 		},
+		"./helpers/debounce": {
+			"types": "./dist/helpers/debounce.d.ts",
+			"import": "./dist/helpers/debounce.js"
+		},
+		"./helpers/create-query": {
+			"types": "./dist/helpers/create-query.d.ts",
+			"import": "./dist/helpers/create-query.js"
+		},
+		"./helpers/create-query-slot": {
+			"types": "./dist/helpers/create-query-slot.d.ts",
+			"import": "./dist/helpers/create-query-slot.js"
+		},
+		"./helpers/create-event": {
+			"types": "./dist/helpers/create-event.d.ts",
+			"import": "./dist/helpers/create-event.js"
+		},
+		"./helpers/create-event-listener": {
+			"types": "./dist/helpers/create-event-listener.d.ts",
+			"import": "./dist/helpers/create-event-listener.js"
+		},
 		"./decorators/event": {
 			"types": "./dist/decorators/event.d.ts",
 			"import": "./dist/decorators/event.js"
