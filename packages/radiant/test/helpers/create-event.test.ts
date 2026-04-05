@@ -24,13 +24,9 @@ class EventListenerHelperElement extends RadiantElement {
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		createEventListener(
-			this,
-			{ selector: 'event-helper-element', type: 'custom-event' },
-			(e: Event) => {
-				this.receivedValue = (e as CustomEvent<{ value: string }>).detail.value;
-			},
-		);
+		createEventListener(this, { selector: 'event-helper-element', type: 'custom-event' }, (e: Event) => {
+			this.receivedValue = (e as CustomEvent<{ value: string }>).detail.value;
+		});
 	}
 }
 

@@ -4,7 +4,10 @@ import type {
 	StandardMethodDecoratorArgs,
 	StandardOrLegacyMethodDecoratorArgs,
 } from '../types';
-import type { OnEventConfig as HelperOnEventConfig, OnEventScope as HelperOnEventScope } from '../helpers/create-event-listener';
+import type {
+	OnEventConfig as HelperOnEventConfig,
+	OnEventScope as HelperOnEventScope,
+} from '../helpers/create-event-listener';
 import { onEvent as legacyOnEvent } from './legacy/on-event';
 import { onEvent as standardOnEvent } from './standard/on-event';
 
