@@ -87,6 +87,7 @@ export const docsConfig: DocsConfig = {
 				{ title: 'Provide Context', slug: 'provide-context' },
 				{ title: 'Consume Context', slug: 'consume-context' },
 				{ title: 'Select Context', slug: 'context-selector' },
+				{ title: 'On Context Update', slug: 'on-context-update' },
 			],
 		},
 		{
