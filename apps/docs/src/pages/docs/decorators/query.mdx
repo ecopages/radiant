@@ -37,6 +37,7 @@ export class UserProfile extends RadiantElement {
 | `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. |
 | `all` | `boolean` | No | Query for all matching elements (default: `false`). |
 | `cache` | `boolean` | No | Cache the query result (default: `true`). |
+| `scope` | `'light' \| 'shadow' \| 'both'` | No | Which DOM tree to search (default: `'light'`). |
 
 ## Feature Highlight
 
@@ -47,6 +48,21 @@ By default, queries are cached for performance. For dynamic content that changes
 ```typescript
 @query({ ref: 'dynamic-item', all: true, cache: false }) 
 items!: HTMLElement[];
+```
+
+### Shadow DOM Scope
+
+By default, queries run against the host's light DOM. Use the `scope` option to query inside a shadow root or both trees.
+
+| Scope | Searches |
+| :---- | :------- |
+| `'light'` (default) | Host element only |
+| `'shadow'` | `host.shadowRoot` only |
+| `'both'` | Light DOM first, then shadow root |
+
+```typescript
+@query({ selector: '.inner', scope: 'shadow' }) shadowEl!: HTMLElement;
+@query({ selector: '.anywhere', scope: 'both', all: true }) allEls!: HTMLElement[];
 ```
 
 ### Type Safety

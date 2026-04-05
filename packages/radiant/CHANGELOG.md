@@ -8,6 +8,10 @@
 - Removed `@reactiveProp(...)` decorator. Use `@prop(...)` instead (drop-in replacement).
 - Removed `@ecopages/radiant/decorators/reactive-field` and `@ecopages/radiant/decorators/reactive-prop` export paths.
 
+### Features
+
+- Added `scope` option to `@query(...)` and `createQuery(...)`: query light DOM (`'light'`, default), shadow DOM (`'shadow'`), or both (`'both'`).
+
 ## 0.2.0
 
 ### Minor Changes
