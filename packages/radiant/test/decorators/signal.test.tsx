@@ -23,8 +23,8 @@ class SharedSignalElement extends RadiantElement<{ count: number }> {
 
 	@onUpdated('count')
 	syncCount() {
-		this.getRef<HTMLElement>('count').textContent = String(this.count.get());
-		this.getRef<HTMLElement>('binding').textContent = String(this.$.count.getValue());
+		this.getRef<HTMLElement>('count')!.textContent = String(this.count.get());
+		this.getRef<HTMLElement>('binding')!.textContent = String(this.$.count.getValue());
 	}
 }
 
@@ -150,22 +150,22 @@ describe('@signal', () => {
 		document.body.appendChild(element);
 
 		await waitFor(() => {
-			expect(element.getRef<HTMLElement>('count').textContent).toBe('2');
-			expect(element.getRef<HTMLElement>('binding').textContent).toBe('2');
+			expect(element.getRef<HTMLElement>('count')!.textContent).toBe('2');
+			expect(element.getRef<HTMLElement>('binding')!.textContent).toBe('2');
 		});
 
 		sharedSignalElementCount.set(5);
 
 		await waitFor(() => {
-			expect(element.getRef<HTMLElement>('count').textContent).toBe('5');
-			expect(element.getRef<HTMLElement>('binding').textContent).toBe('5');
+			expect(element.getRef<HTMLElement>('count')!.textContent).toBe('5');
+			expect(element.getRef<HTMLElement>('binding')!.textContent).toBe('5');
 		});
 
 		element.count.set(7);
 
 		await waitFor(() => {
 			expect(sharedSignalElementCount.get()).toBe(7);
-			expect(element.getRef<HTMLElement>('count').textContent).toBe('7');
+			expect(element.getRef<HTMLElement>('count')!.textContent).toBe('7');
 		});
 	});
 });

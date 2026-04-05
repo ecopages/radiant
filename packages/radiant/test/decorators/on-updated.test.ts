@@ -23,7 +23,7 @@ describe('@onUpdated', () => {
 
 		override connectedCallback() {
 			super.connectedCallback();
-			this.countText = this.getRef<HTMLElement>('count');
+			this.countText = this.getRef<HTMLElement>('count')!;
 		}
 
 		decrement() {

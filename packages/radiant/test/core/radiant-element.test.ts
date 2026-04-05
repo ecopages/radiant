@@ -123,6 +123,20 @@ describe('RadiantElement', () => {
 		expect(ref).toEqual(span);
 	});
 
+	test('it returns null when a single ref is not found', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const ref = customElement.getRef('nonexistent');
+		expect(ref).toBeNull();
+	});
+
+	test('it returns an empty array when all refs are not found', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const refs = customElement.getRef('nonexistent', true);
+		expect(refs).toEqual([]);
+	});
+
 	test('it can get all references to elements', () => {
 		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
 		document.body.appendChild(customElement);

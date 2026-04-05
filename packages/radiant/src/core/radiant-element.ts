@@ -326,7 +326,8 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 * @param all - Whether to get all elements with the specified data-ref attribute value.
 	 * @returns The element with the specified data-ref attribute value, an array of elements or null if no element was found.
 	 */
-	getRef<T extends Element = Element>(ref: string, all: boolean): T | T[];
+	getRef<T extends Element = Element>(ref: string, all: true): T[];
+	getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 }
 
 /**
@@ -720,21 +721,13 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public getRef<T extends Element = Element>(ref: string, all: true): T[];
-	public getRef<T extends Element = Element>(ref: string, all?: false): T;
-	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] {
+	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
+	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
 		const selector = `[data-ref="${ref}"]`;
-		let result: T | T[];
 		if (all) {
-			result = Array.from(this.querySelectorAll(selector)) as T[];
-			if (result.length === 0) result = [];
-		} else {
-			result = this.querySelector(selector) as T;
-			if (!result) {
-				const fragment = document.createDocumentFragment();
-				result = fragment as unknown as T;
-			}
+			return Array.from(this.querySelectorAll(selector)) as T[];
 		}
-		return result;
+		return (this.querySelector(selector) as T) ?? null;
 	}
 
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {

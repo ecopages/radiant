@@ -28,7 +28,7 @@ export class RadiantSharedSignalMeter extends RadiantElement<{ count: number }> 
 	@onUpdated('count')
 	syncCount(): void {
 		const nextValue = String(this.count.get());
-		this.getRef<HTMLElement>('count').textContent = nextValue;
-		this.getRef<HTMLElement>('binding').textContent = `$.count -> ${this.$.count.getValue()}`;
+		this.getRef<HTMLElement>('count')!.textContent = nextValue;
+		this.getRef<HTMLElement>('binding')!.textContent = `$.count -> ${this.$.count.getValue()}`;
 	}
 }

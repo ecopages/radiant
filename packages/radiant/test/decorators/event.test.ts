@@ -29,7 +29,7 @@ class RadiantEventListener extends RadiantElement {
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.eventDetail = this.getRef<HTMLDivElement>('event-detail');
+		this.eventDetail = this.getRef<HTMLDivElement>('event-detail')!;
 	}
 
 	@onEvent({ selector: 'radiant-event-emitter', type: RadiantEventEvents.CustomEvent })
