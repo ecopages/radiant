@@ -7,7 +7,6 @@ export type QuerySlotConfig = {
 type SlotQueryHost = HTMLElement & {
 	getSlotElement<T extends Element = Element>(name?: string): T | null;
 	getSlotElements<T extends Element = Element>(name?: string): T[];
-	slotProjectionVersion?: number;
 };
 
 type QuerySlotResult<T extends Element | Element[]> = {
@@ -40,7 +39,7 @@ export function createQuerySlot<T extends Element | Element[] = Element>(
 				return executeQuery();
 			}
 
-			const currentVersion = host.slotProjectionVersion ?? 0;
+			const currentVersion = (host as unknown as Record<string, number | undefined>).slotProjectionVersion ?? 0;
 
 			if (cachedVersion !== currentVersion) {
 				cached = executeQuery();

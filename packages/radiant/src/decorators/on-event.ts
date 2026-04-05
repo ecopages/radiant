@@ -1,15 +1,11 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
 import type { StandardOrLegacyMethodDecoratorArgs } from '../types';
-import type {
-	OnEventConfig as HelperOnEventConfig,
-	OnEventScope as HelperOnEventScope,
-} from '../helpers/create-event-listener';
+import type { OnEventConfig, OnEventScope } from '../helpers/create-event-listener';
 import { onEvent as legacyOnEvent } from './legacy/on-event';
 import { onEvent as standardOnEvent } from './standard/on-event';
 import { methodDecoratorBridge } from './bridge';
 
-export type OnEventScope = HelperOnEventScope;
-export type OnEventConfig = HelperOnEventConfig;
+export type { OnEventConfig, OnEventScope };
 
 /**
  * A decorator to subscribe to an event on the target element.

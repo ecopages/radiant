@@ -1,11 +1,10 @@
 import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
-import type { QueryConfig as HelperQueryConfig, QueryScope as HelperQueryScope } from '../helpers/create-query';
+import type { QueryConfig, QueryScope } from '../helpers/create-query';
 import { query as legacyQuery } from './legacy/query';
 import { query as standardQuery } from './standard/query';
 import { fieldDecoratorBridge } from './bridge';
 
-export type QueryScope = HelperQueryScope;
-export type QueryConfig = HelperQueryConfig;
+export type { QueryConfig, QueryScope };
 
 /**
  * A decorator to query by CSS selector or data-ref attribute.
