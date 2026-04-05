@@ -306,13 +306,25 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	trackReactiveRead(property: string): void;
 
 	/**
-	 * Renders a template into the specified target element.
+	 * Renders a trusted HTML template string into the specified target element.
+	 *
+	 * **Security:** The `template` string is written to the DOM via `innerHTML`
+	 * or `insertAdjacentHTML` without built-in sanitization. Callers are
+	 * responsible for ensuring the input is trusted. Supply a `sanitize`
+	 * function to transform the template before insertion.
+	 *
 	 * @param options - The rendering options.
 	 * @param options.target - The target element to render the template into.
 	 * @param options.template - The template string to render.
 	 * @param options.insert - The position to insert the rendered template. (optional)
+	 * @param options.sanitize - An optional function that transforms the template string before insertion.
 	 */
-	renderTemplate(options: { target: HTMLElement; template: string; insert?: RenderInsertPosition }): void;
+	renderTemplate(options: {
+		target: HTMLElement;
+		template: string;
+		insert?: RenderInsertPosition;
+		sanitize?: (html: string) => string;
+	}): void;
 
 	/**
 	 * Called when the Radiant element is connected to a context.
@@ -485,30 +497,41 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 	}
 
+	/**
+	 * Renders a trusted HTML template string into the specified target element.
+	 *
+	 * **Security:** The `template` string is written to the DOM via `innerHTML`
+	 * or `insertAdjacentHTML` without built-in sanitization. Callers are
+	 * responsible for ensuring the input is trusted. Supply a `sanitize`
+	 * function to transform the template before insertion.
+	 */
 	public renderTemplate({
 		target = this,
 		template,
 		insert = 'replace',
+		sanitize,
 	}: {
 		target: HTMLElement;
 		template: string;
 		insert?: RenderInsertPosition;
+		sanitize?: (html: string) => string;
 	}) {
+		const html = sanitize ? sanitize(template) : template;
 		switch (insert) {
 			case 'replace':
-				target.innerHTML = template;
+				target.innerHTML = html;
 				break;
 			case 'beforeend':
-				target.insertAdjacentHTML('beforeend', template);
+				target.insertAdjacentHTML('beforeend', html);
 				break;
 			case 'afterbegin':
-				target.insertAdjacentHTML('afterbegin', template);
+				target.insertAdjacentHTML('afterbegin', html);
 				break;
 			case 'beforebegin':
-				target.insertAdjacentHTML('beforebegin', template);
+				target.insertAdjacentHTML('beforebegin', html);
 				break;
 			case 'afterend':
-				target.insertAdjacentHTML('afterend', template);
+				target.insertAdjacentHTML('afterend', html);
 				break;
 		}
 	}

@@ -63,6 +63,26 @@ describe('RadiantElement', () => {
 		expect(wrapper.innerHTML).toEqual('<div id="target"></div><span>after</span>');
 	});
 
+	test('renderTemplate without sanitize passes template through unchanged', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const template = '<p>raw</p>';
+		customElement.renderTemplate({ target: customElement, template });
+		expect(customElement.innerHTML).toEqual('<p>raw</p>');
+	});
+
+	test('renderTemplate with sanitize transforms template before insertion', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const sanitize = (html: string) => html.replace(/<script[^>]*>.*?<\/script>/gi, '');
+		customElement.renderTemplate({
+			target: customElement,
+			template: '<p>safe</p><script>alert(1)</script>',
+			sanitize,
+		});
+		expect(customElement.innerHTML).toEqual('<p>safe</p>');
+	});
+
 	test('it can subscribe to events', () => {
 		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
 		document.body.appendChild(customElement);
