@@ -504,6 +504,12 @@ export class RadiantElement<Bindings extends object = {}>
 			case 'afterbegin':
 				target.insertAdjacentHTML('afterbegin', template);
 				break;
+			case 'beforebegin':
+				target.insertAdjacentHTML('beforebegin', template);
+				break;
+			case 'afterend':
+				target.insertAdjacentHTML('afterend', template);
+				break;
 		}
 	}
 
