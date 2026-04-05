@@ -164,14 +164,6 @@
 			"types": "./dist/decorators/query-slot.d.ts",
 			"import": "./dist/decorators/query-slot.js"
 		},
-		"./decorators/reactive-field": {
-			"types": "./dist/decorators/reactive-field.d.ts",
-			"import": "./dist/decorators/reactive-field.js"
-		},
-		"./decorators/reactive-prop": {
-			"types": "./dist/decorators/reactive-prop.d.ts",
-			"import": "./dist/decorators/reactive-prop.js"
-		},
 		"./decorators/resource": {
 			"types": "./dist/decorators/resource.d.ts",
 			"import": "./dist/decorators/resource.js"
