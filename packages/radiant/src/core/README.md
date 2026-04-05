@@ -92,7 +92,7 @@ This host-preparation step is intentionally smaller than a full DOM emulation la
 By default, host serialization includes:
 
 - reflected reactive properties from `getReactiveProperties()`
-- reactive prop metadata registered through `@reactiveProp(...)` or `@prop(...)`
+- reactive property metadata registered through `@prop(...)`
 - attributes already present on the element instance
 
 Subclasses can override `getHostSsrAttributes()` when they need custom host serialization.

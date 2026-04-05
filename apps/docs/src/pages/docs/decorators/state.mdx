@@ -41,9 +41,9 @@ export class CounterDisplay extends RadiantComponent {
 
 ## How It Works Behind The Scenes
 
-`@state` is a semantic alias for `@reactiveField`.
+`@state` registers host-managed internal mutable state.
 
-Under the hood it still registers a reactive field on the host and triggers `notifyUpdate(...)` when the field changes.
+Under the hood it sets up a tracked state member on the host and triggers `notifyUpdate(...)` when the value changes.
 
 The difference is naming and intent:
 
@@ -65,6 +65,5 @@ So `@state count = 0` on `RadiantComponent` gives you `this.$.count` automatical
 
 - Use `@state` for local UI state.
 - Use `@prop(...)` for public element API.
-- Use `@reactiveField` only when you need to discuss the lower-level primitive directly.
 
 See [@prop](/docs/decorators/prop) and [RadiantComponent](/docs/components/radiant-component).
