@@ -1,11 +1,8 @@
 import type { ReactivePropertyOptions } from '../core/radiant-element';
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../types';
+import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
 import { reactiveProp as legacyReactiveProp } from './legacy/reactive-prop';
 import { reactiveProp as standardReactiveProp } from './standard/reactive-prop';
+import { fieldDecoratorBridge } from './bridge';
 
 /**
  * A decorator to define a reactive property.
@@ -17,15 +14,11 @@ export function reactiveProp<T = unknown>(options: ReactivePropertyOptions<T>) {
 		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardReactiveProp(options)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyReactiveProp(options)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+		return fieldDecoratorBridge(
+			standardReactiveProp(options),
+			legacyReactiveProp(options),
+			protoOrTarget,
+			nameOrContext,
 		);
 	};
 }

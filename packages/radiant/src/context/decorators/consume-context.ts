@@ -1,11 +1,8 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../../types';
+import type { StandardOrLegacyFieldDecoratorArgs } from '../../types';
 import type { UnknownContext } from '../types';
 import { consumeContext as legacyConsumeContext } from './legacy/consume-context';
 import { consumeContext as standardConsumeContext } from './standard/consume-context';
+import { fieldDecoratorBridge } from '../../decorators/bridge';
 
 /**
  * Injects the nearest matching context provider onto a decorated field.
@@ -21,15 +18,11 @@ export function consumeContext(context: UnknownContext) {
 		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardConsumeContext(context)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyConsumeContext(context)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+		return fieldDecoratorBridge(
+			standardConsumeContext(context),
+			legacyConsumeContext(context),
+			protoOrTarget,
+			nameOrContext,
 		);
 	};
 }

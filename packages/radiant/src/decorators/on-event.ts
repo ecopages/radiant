@@ -1,15 +1,12 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
-import type {
-	LegacyMethodDecoratorArgs,
-	StandardMethodDecoratorArgs,
-	StandardOrLegacyMethodDecoratorArgs,
-} from '../types';
+import type { StandardOrLegacyMethodDecoratorArgs } from '../types';
 import type {
 	OnEventConfig as HelperOnEventConfig,
 	OnEventScope as HelperOnEventScope,
 } from '../helpers/create-event-listener';
 import { onEvent as legacyOnEvent } from './legacy/on-event';
 import { onEvent as standardOnEvent } from './standard/on-event';
+import { methodDecoratorBridge } from './bridge';
 
 export type OnEventScope = HelperOnEventScope;
 export type OnEventConfig = HelperOnEventConfig;
@@ -31,16 +28,12 @@ export function onEvent(options: OnEventConfig) {
 		nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
 		descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardOnEvent(options)(
-				protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyOnEvent(options)(
-			protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
-			descriptor as LegacyMethodDecoratorArgs['descriptor'],
+		return methodDecoratorBridge(
+			standardOnEvent(options),
+			legacyOnEvent(options),
+			protoOrTarget,
+			nameOrContext,
+			descriptor,
 		);
 	};
 }

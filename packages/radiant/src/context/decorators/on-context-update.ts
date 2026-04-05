@@ -1,12 +1,9 @@
-import type {
-	LegacyMethodDecoratorArgs,
-	StandardMethodDecoratorArgs,
-	StandardOrLegacyMethodDecoratorArgs,
-} from '../../types';
+import type { StandardOrLegacyMethodDecoratorArgs } from '../../types';
 import type { RadiantElement } from '../../core/radiant-element';
 import type { Context, ContextType, UnknownContext } from '../types';
 import { contextSelector as legacyContextSelectorMethod } from './legacy/context-selector';
 import { contextSelector as standardContextSelectorMethod } from './standard/context-selector';
+import { methodDecoratorBridge } from '../../decorators/bridge';
 
 type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
 
@@ -53,16 +50,12 @@ export function onContextUpdate<T extends Context<unknown, unknown>, Selected = 
 		nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
 		descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
 	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void {
-		if (typeof nameOrContext === 'object') {
-			return standardContextSelectorMethod(options)(
-				protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyContextSelectorMethod(options)(
-			protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
-			descriptor as LegacyMethodDecoratorArgs['descriptor'],
-		);
+		return methodDecoratorBridge(
+			standardContextSelectorMethod(options),
+			legacyContextSelectorMethod(options),
+			protoOrTarget,
+			nameOrContext,
+			descriptor,
+		) as TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
 	} as OnContextUpdateDecorator<Selected>;
 }

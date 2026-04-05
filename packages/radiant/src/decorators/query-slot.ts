@@ -1,11 +1,8 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../types';
+import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
 import type { QuerySlotConfig as HelperQuerySlotConfig } from '../helpers/create-query-slot';
 import { querySlot as legacyQuerySlot } from './legacy/query-slot';
 import { querySlot as standardQuerySlot } from './standard/query-slot';
+import { fieldDecoratorBridge } from './bridge';
 
 export type QuerySlotConfig = HelperQuerySlotConfig;
 
@@ -23,16 +20,11 @@ export function querySlot<T extends Element | Element[]>(options: QuerySlotConfi
 		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardQuerySlot(options)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardFieldDecoratorArgs<HTMLElement, Element | Element[]>['nameOrContext'],
-			);
-		}
-
-		return legacyQuerySlot<T>(options)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+		return fieldDecoratorBridge(
+			standardQuerySlot(options),
+			legacyQuerySlot<T>(options),
+			protoOrTarget,
+			nameOrContext,
 		);
 	};
 }

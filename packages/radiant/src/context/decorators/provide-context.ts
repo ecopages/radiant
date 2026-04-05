@@ -1,12 +1,9 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../../types';
+import type { StandardOrLegacyFieldDecoratorArgs } from '../../types';
 import type { AttributeTypeConstant } from '../../utils';
 import type { UnknownContext } from '../types';
 import { provideContext as legacyProvideContext } from './legacy/provide-context';
 import { provideContext as standardProvideContext } from './standard/provide-context';
+import { fieldDecoratorBridge } from '../../decorators/bridge';
 
 export type ProvideContextOptions<T extends UnknownContext> = {
 	/** Context token made available to descendant consumers. */
@@ -36,15 +33,11 @@ export function provideContext<T extends UnknownContext>(options: ProvideContext
 		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardProvideContext(options)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyProvideContext(options)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
+		return fieldDecoratorBridge(
+			standardProvideContext(options),
+			legacyProvideContext(options),
+			protoOrTarget,
+			nameOrContext,
 		);
 	};
 }

@@ -1,16 +1,14 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../types';
+import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
 import { reactiveField as legacyReactiveField } from './legacy/reactive-field';
 import { reactiveField as standardReactiveField } from './standard/reactive-field';
+import { fieldDecoratorBridge } from './bridge';
 
 /**
- * Semantic alias for `@reactiveField`.
+ * Declares internal mutable component state.
  *
- * `@state` models internal mutable component state. When no explicit binding
- * option is supplied, `RadiantComponent` hosts expose a JSX companion binding
+ * Each write triggers `notifyUpdate` so update callbacks, bindings, and
+ * `RadiantComponent` renders stay in sync. When no explicit binding option
+ * is supplied, `RadiantComponent` hosts expose a JSX companion binding
  * accessor automatically while plain `RadiantElement` hosts keep binding
  * opt-in.
  */
@@ -18,15 +16,5 @@ export function state(
 	protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 	nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 ): any {
-	if (typeof nameOrContext === 'object') {
-		return standardReactiveField(
-			protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
-		);
-	}
-
-	return legacyReactiveField(
-		protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-		nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-	);
+	return fieldDecoratorBridge(standardReactiveField, legacyReactiveField, protoOrTarget, nameOrContext);
 }

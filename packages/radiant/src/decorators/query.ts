@@ -1,11 +1,8 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../types';
+import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
 import type { QueryConfig as HelperQueryConfig, QueryScope as HelperQueryScope } from '../helpers/create-query';
 import { query as legacyQuery } from './legacy/query';
 import { query as standardQuery } from './standard/query';
+import { fieldDecoratorBridge } from './bridge';
 
 export type QueryScope = HelperQueryScope;
 export type QueryConfig = HelperQueryConfig;
@@ -22,15 +19,6 @@ export function query<T extends Element | Element[]>(options: QueryConfig) {
 		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardQuery(options)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardFieldDecoratorArgs<HTMLElement, Element | Element[]>['nameOrContext'],
-			);
-		}
-		return legacyQuery<T>(options)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-		);
+		return fieldDecoratorBridge(standardQuery(options), legacyQuery<T>(options), protoOrTarget, nameOrContext);
 	};
 }
