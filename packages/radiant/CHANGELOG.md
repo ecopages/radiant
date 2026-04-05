@@ -1,5 +1,13 @@
 # @ecopages/radiant
 
+## Unreleased
+
+### Breaking Changes
+
+- Removed `@reactiveField` decorator. Use `@state` instead (drop-in replacement).
+- Removed `@reactiveProp(...)` decorator. Use `@prop(...)` instead (drop-in replacement).
+- Removed `@ecopages/radiant/decorators/reactive-field` and `@ecopages/radiant/decorators/reactive-prop` export paths.
+
 ## 0.2.0
 
 ### Minor Changes
