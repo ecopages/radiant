@@ -13,7 +13,6 @@ import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
 import { querySlot } from '../../src/decorators/query-slot';
-import { reactiveProp } from '../../src/decorators/reactive-prop';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
@@ -416,8 +415,8 @@ describe('RadiantComponent', () => {
 
 		@customElement('server-host-card-test')
 		class ServerHostCard extends RadiantComponent {
-			@reactiveProp({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
-			@reactiveProp({ type: String, defaultValue: 'Host SSR' }) label!: string;
+			@prop({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
+			@prop({ type: String, defaultValue: 'Host SSR' }) label!: string;
 
 			override render() {
 				return <p data-ref="message">{this.label}</p>;
@@ -507,8 +506,8 @@ describe('RadiantComponent', () => {
 	test('renderHostToString({ hydrate: true }) keeps hydration output free of internal child markers', () => {
 		@customElement('server-host-hydrate-card-test')
 		class ServerHostHydrateCard extends RadiantComponent {
-			@reactiveProp({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
-			@reactiveProp({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
+			@prop({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
+			@prop({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
 
 			override render() {
 				return (
@@ -547,8 +546,8 @@ describe('RadiantComponent', () => {
 
 		@customElement('server-host-bound-hydrate-card-test')
 		class ServerHostBoundHydrateCard extends RadiantComponent<ServerHostBoundHydrateCardBindings> {
-			@reactiveProp({ type: Number, reflect: true, defaultValue: 3, bind: true }) count!: number;
-			@reactiveProp({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
+			@prop({ type: Number, reflect: true, defaultValue: 3, bind: true }) count!: number;
+			@prop({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
 
 			override render() {
 				return (
@@ -585,8 +584,8 @@ describe('RadiantComponent', () => {
 
 		@customElement('server-host-deep-tree-test')
 		class ServerHostDeepTree extends RadiantComponent<ServerHostDeepTreeBindings> {
-			@reactiveProp({ type: String, defaultValue: 'Deep SSR' }) label!: string;
-			@reactiveProp({ type: Number, reflect: true, defaultValue: 11, bind: true }) count!: number;
+			@prop({ type: String, defaultValue: 'Deep SSR' }) label!: string;
+			@prop({ type: Number, reflect: true, defaultValue: 11, bind: true }) count!: number;
 
 			override render() {
 				return (
@@ -1057,7 +1056,7 @@ describe('RadiantComponent', () => {
 		expect(element.renderCount).toBe(initialRenderCount + 1);
 	});
 
-	test('@reactiveProp({ bind: true }) exposes a stable companion binding accessor', () => {
+	test('@prop({ bind: true }) exposes a stable companion binding accessor', () => {
 		type BoundPropBindings = {
 			count: number;
 		};

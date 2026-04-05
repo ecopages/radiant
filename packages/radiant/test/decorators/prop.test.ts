@@ -3,9 +3,8 @@ import { RadiantComponent } from '../../src/core/radiant-component';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
-import { reactiveProp } from '../../src/decorators/reactive-prop';
 
-describe('@reactiveProp', () => {
+describe('@prop', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 	});
@@ -13,7 +12,7 @@ describe('@reactiveProp', () => {
 	describe('string', () => {
 		@customElement('my-reactive-string')
 		class MyReactiveString extends RadiantElement {
-			@reactiveProp({ type: String, defaultValue: 'Frank' }) name: string;
+			@prop({ type: String, defaultValue: 'Frank' }) name: string;
 
 			changeName(name: string) {
 				this.name = name;
@@ -39,7 +38,7 @@ describe('@reactiveProp', () => {
 	describe('number', () => {
 		@customElement('my-reactive-number')
 		class MyReactiveNumber extends RadiantElement {
-			@reactiveProp({ type: Number }) num: number;
+			@prop({ type: Number }) num: number;
 
 			add() {
 				this.num++;
@@ -65,7 +64,7 @@ describe('@reactiveProp', () => {
 	describe('boolean', () => {
 		@customElement('my-reactive-boolean')
 		class MyReactiveBoolean extends RadiantElement {
-			@reactiveProp({ type: Boolean, defaultValue: false }) bool: boolean;
+			@prop({ type: Boolean, defaultValue: false }) bool: boolean;
 
 			toggleBoolean() {
 				this.bool = !this.bool;
@@ -98,7 +97,7 @@ describe('@reactiveProp', () => {
 	describe('object', () => {
 		@customElement('my-reactive-object')
 		class MyReactiveObject extends RadiantElement {
-			@reactiveProp({ type: Object, defaultValue: { name: 'Frank' } }) obj: { name: string };
+			@prop({ type: Object, defaultValue: { name: 'Frank' } }) obj: { name: string };
 
 			changeName(name: string) {
 				this.obj.name = name;
@@ -124,7 +123,7 @@ describe('@reactiveProp', () => {
 	describe('array', () => {
 		@customElement('my-reactive-array')
 		class MyReactiveArray extends RadiantElement {
-			@reactiveProp({ type: Array, defaultValue: ['Frank'] }) names: string[];
+			@prop({ type: Array, defaultValue: ['Frank'] }) names: string[];
 
 			addName(name: string) {
 				this.names.push(name);
@@ -150,7 +149,7 @@ describe('@reactiveProp', () => {
 	describe('reflect', () => {
 		@customElement('my-reactive-reflect')
 		class MyReactiveReflect extends RadiantElement {
-			@reactiveProp({ type: Number, reflect: true, defaultValue: 5 }) value: number;
+			@prop({ type: Number, reflect: true, defaultValue: 5 }) value: number;
 
 			increment() {
 				this.value++;
@@ -177,7 +176,7 @@ describe('@reactiveProp', () => {
 	describe('not reflect', () => {
 		@customElement('my-reactive-not-reflect')
 		class MyReactiveNotReflect extends RadiantElement {
-			@reactiveProp({ type: Number, reflect: false, defaultValue: 5 }) value: number;
+			@prop({ type: Number, reflect: false, defaultValue: 5 }) value: number;
 
 			increment() {
 				this.value++;
