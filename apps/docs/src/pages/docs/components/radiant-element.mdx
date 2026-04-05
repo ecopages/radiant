@@ -34,7 +34,7 @@ Use [RadiantComponent](/docs/components/radiant-component) instead when the host
 ## Example
 
 ```typescript
-import { RadiantElement, customElement, onEvent, onUpdated, query, reactiveProp } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, onUpdated, query, prop } from '@ecopages/radiant';
 
 type CounterProps = {
   value?: number;
@@ -42,7 +42,7 @@ type CounterProps = {
 
 @customElement('radiant-counter')
 class RadiantCounter extends RadiantElement<CounterProps> {
-  @reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
+  @prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
   @query({ ref: 'count' }) countText!: HTMLSpanElement;
 
   @onEvent({ ref: 'decrement', type: 'click' })
@@ -104,8 +104,8 @@ See [Todo App](/docs/examples/todo-app).
 
 ## Behind The Scenes
 
-- `@prop(...)` delegates to the same reactive-property machinery as `@reactiveProp(...)`.
-- `@state` and `@reactiveField` register internal reactive fields.
+- `@prop(...)` uses the reactive-property machinery underneath.
+- `@state` registers internal reactive fields.
 - `registerUpdateCallback(...)` listeners are triggered by `notifyUpdate(...)` whenever a reactive member changes.
 - `bind(...)`, `bindings.key`, and `$.key` cache `SubscribableJsxValue` wrappers so JSX child ranges can subscribe directly.
 - `renderTemplate(...)` is a convenience for imperative hosts. It is not the defining feature of `RadiantElement`.

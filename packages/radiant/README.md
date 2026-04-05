@@ -288,8 +288,6 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/decorators/prop`           | `@prop(...)`                                                                                                    |
 | `@ecopages/radiant/decorators/query`          | `@query(...)`                                                                                                   |
 | `@ecopages/radiant/decorators/query-slot`     | `@querySlot(...)`                                                                                               |
-| `@ecopages/radiant/decorators/reactive-field` | `@reactiveField`                                                                                                |
-| `@ecopages/radiant/decorators/reactive-prop`  | `@reactiveProp(...)`                                                                                            |
 | `@ecopages/radiant/decorators/signal`         | `@signal(...)`                                                                                                  |
 | `@ecopages/radiant/decorators/state`          | `@state`                                                                                                        |
 | `@ecopages/radiant/tools/stringify-typed`     | Typed attribute serialization helper                                                                            |

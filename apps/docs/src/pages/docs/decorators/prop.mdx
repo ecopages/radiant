@@ -9,7 +9,7 @@ export const getMetadata = () => ({
 
 # @prop
 
-`@prop(...)` is the public, component-oriented name for Radiant reactive properties.
+`@prop(...)` declares a reactive property backed by an HTML attribute.
 
 Use it for values that belong to the custom element's external API and may need attribute sync, type conversion, reflection, or JSX bindings.
 
@@ -36,19 +36,15 @@ export class UserCard extends RadiantComponent {
 | `defaultValue` | `T` | Default property value when the attribute is absent. |
 | `bind` | `boolean \| string` | Expose a JSX binding companion such as `$count` or a custom binding name. |
 
-## How It Works Behind The Scenes
+## How It Works
 
-`@prop(...)` is a semantic alias for `@reactiveProp(...)`.
-
-That means it still uses the same reactive-property machinery underneath:
+`@prop(...)` uses the reactive-property machinery underneath:
 
 - reads the attribute into the declared property type
 - writes the property back through the converter when reflection is enabled
 - stores reactive metadata for SSR host serialization
 - triggers `notifyUpdate(...)` when the value changes
 - can expose a subscribable JSX binding companion
-
-The newer name exists to make the public component model clearer: this is a **prop**, not an internal implementation field.
 
 ## JSX Binding Defaults
 
@@ -81,6 +77,5 @@ does not create a JSX binding unless you opt in with `bind: true`.
 
 - Use `@prop(...)` for public custom-element API.
 - Use `@state` for internal mutable component state.
-- Use `@reactiveProp(...)` only when you want to talk about the lower-level primitive explicitly.
 
 See [@state](/docs/decorators/state) and [RadiantComponent](/docs/components/radiant-component).

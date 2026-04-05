@@ -45,8 +45,6 @@ const DOCS_JSX_RADIANT_ROOT_SPECIFIERS = [
 	'@ecopages/radiant/decorators/prop',
 	'@ecopages/radiant/decorators/query',
 	'@ecopages/radiant/decorators/query-slot',
-	'@ecopages/radiant/decorators/reactive-field',
-	'@ecopages/radiant/decorators/reactive-prop',
 	'@ecopages/radiant/decorators/signal',
 	'@ecopages/radiant/decorators/state',
 ] as const;

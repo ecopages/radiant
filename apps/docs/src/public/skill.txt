@@ -26,7 +26,7 @@ Base assumptions:
 Use this skill whenever the task involves any of the following:
 
 - creating or editing a `RadiantComponent` or `RadiantElement`
-- choosing between `@prop(...)`, `@state`, `@signal`, `@reactiveProp(...)`, or `@reactiveField`
+- choosing between `@prop(...)`, `@state`, or `@signal`
 - deciding whether code should use plain reads like `this.count` or bindings like `this.$.count`
 - defining public props versus internal bindings types
 - wiring SSR, hydration, host rendering, or slot projection for Radiant custom elements
@@ -144,7 +144,6 @@ Use it once per host class.
 - `@prop(...)`: public custom-element API with attribute conversion, reflection, and optional bindings
 - `@state`: internal mutable state for the host
 - `@signal(...)`: signal-backed host state when signal semantics or signal interop are desirable
-- `@reactiveProp(...)` and `@reactiveField`: lower-level forms; prefer `@prop(...)` and `@state` in application code
 
 Selection rule:
 
