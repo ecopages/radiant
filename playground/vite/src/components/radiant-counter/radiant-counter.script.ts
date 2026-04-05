@@ -3,7 +3,7 @@ import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
 import { query } from '@ecopages/radiant/decorators/query';
-import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
+import { prop } from '@ecopages/radiant/decorators/prop';
 import { state } from '@ecopages/radiant/decorators/state';
 
 export type RadiantCounterProps = {
@@ -16,7 +16,7 @@ type RadiantCounterBindings = RadiantCounterProps & {
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
-	@reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
 	@state lastAction = 'Waiting for input';
 	@query({ ref: 'count' }) countText!: HTMLElement;
 	@query({ ref: 'status' }) statusText!: HTMLElement;

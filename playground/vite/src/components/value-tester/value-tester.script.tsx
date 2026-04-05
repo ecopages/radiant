@@ -3,7 +3,7 @@ import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
 import { query } from '@ecopages/radiant/decorators/query';
-import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
+import { prop } from '@ecopages/radiant/decorators/prop';
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
 export type RadiantValueTesterProps = {
@@ -16,11 +16,11 @@ export type RadiantValueTesterProps = {
 
 @customElement('radiant-tester')
 export class RadiantValueTester extends RadiantElement {
-	@reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) number!: number;
-	@reactiveProp({ type: String, reflect: true, defaultValue: 'string' }) string!: string;
-	@reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) boolean!: boolean;
-	@reactiveProp({ type: Object, reflect: true, defaultValue: { key: 'value' } }) object!: Record<string, unknown>;
-	@reactiveProp({ type: Array, reflect: true, defaultValue: ['value'] }) array!: unknown[];
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) number!: number;
+	@prop({ type: String, reflect: true, defaultValue: 'string' }) string!: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) boolean!: boolean;
+	@prop({ type: Object, reflect: true, defaultValue: { key: 'value' } }) object!: Record<string, unknown>;
+	@prop({ type: Array, reflect: true, defaultValue: ['value'] }) array!: unknown[];
 
 	@query({ ref: 'number' }) numberText!: HTMLElement;
 	@query({ ref: 'string' }) stringText!: HTMLElement;
