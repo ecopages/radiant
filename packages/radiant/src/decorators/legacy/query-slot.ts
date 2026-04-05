@@ -1,4 +1,5 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { createQuerySlot } from '../../helpers/create-query-slot';
 import { registerSsrPreparationCallback } from '../../core/ssr-preparation';
 import type { QuerySlotConfig } from '../query-slot';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
@@ -9,28 +10,13 @@ type SlotQueryHost = RadiantElement & {
 	slotProjectionVersion?: number;
 };
 
-type SlotQueryCacheHost = SlotQueryHost & Record<symbol, unknown>;
-
-export function querySlot<T extends Element | Element[]>({
-	cache: shouldCache = true,
-	...options
-}: QuerySlotConfig = {}): (proto: RadiantElement, propertyName: string | symbol) => void {
+export function querySlot<T extends Element | Element[]>(
+	options: QuerySlotConfig = {},
+): (proto: RadiantElement, propertyName: string | symbol) => void {
 	return (proto: RadiantElement, propertyKey: string | symbol) => {
-		const privateCacheKey = Symbol(`__${String(propertyKey)}__slot_cache`);
-		const privateVersionKey = Symbol(`__${String(propertyKey)}__slot_version`);
 		const hasDefinedInstanceQuery = (instance: SlotQueryHost) => {
 			const descriptor = Object.getOwnPropertyDescriptor(instance, propertyKey);
 			return typeof descriptor?.get === 'function';
-		};
-
-		const executeQuery = (instance: SlotQueryHost) => {
-			if (options.all) {
-				return (
-					typeof instance.getSlotElements === 'function' ? instance.getSlotElements(options.name) : []
-				) as T;
-			}
-
-			return (typeof instance.getSlotElement === 'function' ? instance.getSlotElement(options.name) : null) as T;
 		};
 
 		const defineSlotQueryProperty = (instance: SlotQueryHost) => {
@@ -38,35 +24,27 @@ export function querySlot<T extends Element | Element[]>({
 				return;
 			}
 
+			const accessor = createQuerySlot<T>(instance, options);
+
 			Object.defineProperty(instance, propertyKey, {
 				get() {
-					return readSlotQueryValue(instance);
+					return accessor.value;
 				},
 				enumerable: true,
 				configurable: true,
 			});
 		};
 
-		const readSlotQueryValue = (instance: SlotQueryHost): T => {
-			const cacheHost = instance as SlotQueryCacheHost;
-
-			if (!shouldCache) {
-				return executeQuery(instance);
-			}
-
-			const currentVersion = instance.slotProjectionVersion ?? 0;
-
-			if (cacheHost[privateVersionKey] !== currentVersion) {
-				cacheHost[privateCacheKey] = executeQuery(instance);
-				cacheHost[privateVersionKey] = currentVersion;
-			}
-
-			return cacheHost[privateCacheKey] as T;
-		};
+		const protoAccessorCache = new WeakMap<SlotQueryHost, ReturnType<typeof createQuerySlot<T>>>();
 
 		Object.defineProperty(proto, propertyKey, {
 			get(this: SlotQueryHost) {
-				return readSlotQueryValue(this);
+				let accessor = protoAccessorCache.get(this);
+				if (!accessor) {
+					accessor = createQuerySlot<T>(this, options);
+					protoAccessorCache.set(this, accessor);
+				}
+				return accessor.value;
 			},
 			enumerable: true,
 			configurable: true,

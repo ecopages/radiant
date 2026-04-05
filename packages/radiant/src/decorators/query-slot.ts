@@ -3,14 +3,11 @@ import type {
 	StandardFieldDecoratorArgs,
 	StandardOrLegacyFieldDecoratorArgs,
 } from '../types';
+import type { QuerySlotConfig as HelperQuerySlotConfig } from '../helpers/create-query-slot';
 import { querySlot as legacyQuerySlot } from './legacy/query-slot';
 import { querySlot as standardQuerySlot } from './standard/query-slot';
 
-export type QuerySlotConfig = {
-	all?: boolean;
-	cache?: boolean;
-	name?: string;
-};
+export type QuerySlotConfig = HelperQuerySlotConfig;
 
 /**
  * Queries projected light-DOM content assigned to a RadiantComponent slot.

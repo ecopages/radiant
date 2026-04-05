@@ -1,4 +1,5 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { createQuery } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
@@ -27,32 +28,13 @@ export function query<T extends Element | Element[]>({
 	...options
 }: QueryConfig): (proto: RadiantElement, propertyName: string | symbol) => void {
 	return (proto: RadiantElement, propertyKey: string | symbol) => {
-		const privatePropertyKey = Symbol(`__${String(propertyKey)}__cache`);
-
-		const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
-
-		const executeQuery = (instance: RadiantElement) => {
-			let result: T | T[] = [];
-			if (options?.all) {
-				const queried = instance.querySelectorAll(selector);
-				result = queried.length ? (Array.from(queried) as T) : [];
-				return result;
-			}
-
-			return instance.querySelector(selector);
-		};
-
 		registerLegacyInstanceInitializer(proto, (element) => {
 			element.registerConnectedCallback(() => {
+				const accessor = createQuery<T>(element, { cache: shouldBeCached, ...options });
+
 				Object.defineProperty(element, propertyKey, {
 					get() {
-						if (shouldBeCached) {
-							if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
-								this[privatePropertyKey] = executeQuery(this);
-							}
-							return this[privatePropertyKey];
-						}
-						return executeQuery(this) as T;
+						return accessor.value;
 					},
 					enumerable: true,
 					configurable: true,

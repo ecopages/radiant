@@ -1,21 +1,7 @@
-import type { RadiantElement, RadiantElementEventListener } from '../../core/radiant-element';
+import type { RadiantElement } from '../../core/radiant-element';
+import { createEventListener } from '../../helpers/create-event-listener';
+import type { OnEventConfig } from '../on-event';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
-
-type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
-	(
-		| {
-				selector: string;
-		  }
-		| {
-				ref: string;
-		  }
-		| {
-				window: boolean;
-		  }
-		| {
-				document: boolean;
-		  }
-	);
 
 /**
  * A decorator to subscribe to an event on the target element.
@@ -33,46 +19,10 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
  */
 export function onEvent(eventConfig: OnEventConfig) {
 	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
-		if ('window' in eventConfig) {
-			registerLegacyInstanceInitializer(proto, (element) => {
-				const boundHandler = descriptor.value.bind(element);
-				element.registerConnectedCallback(() => {
-					window.addEventListener(eventConfig.type, boundHandler, eventConfig.options);
-				});
-				element.registerCleanupCallback(() => {
-					window.removeEventListener(eventConfig.type, boundHandler, eventConfig.options);
-				});
-			});
-
-			return descriptor;
-		}
-
-		if ('document' in eventConfig) {
-			registerLegacyInstanceInitializer(proto, (element) => {
-				const boundHandler = descriptor.value.bind(element);
-				element.registerConnectedCallback(() => {
-					document.addEventListener(eventConfig.type, boundHandler, eventConfig.options);
-				});
-				element.registerCleanupCallback(() => {
-					document.removeEventListener(eventConfig.type, boundHandler, eventConfig.options);
-				});
-			});
-
-			return descriptor;
-		}
-
-		const selector = 'selector' in eventConfig ? eventConfig.selector : `[data-ref="${eventConfig.ref}"]`;
 		const originalMethod = descriptor.value;
 
 		registerLegacyInstanceInitializer(proto, (element) => {
-			element.registerConnectedCallback(() => {
-				element.subscribeEvent({
-					selector: selector,
-					type: eventConfig.type,
-					listener: originalMethod.bind(element),
-					options: eventConfig?.options ?? undefined,
-				});
-			});
+			createEventListener(element, eventConfig, originalMethod.bind(element));
 		});
 
 		return descriptor;

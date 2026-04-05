@@ -1,5 +1,6 @@
 import type { RadiantElement } from '../../core/radiant-element';
-import { EventEmitter, type EventEmitterConfig } from '../../tools/event-emitter';
+import { createEvent } from '../../helpers/create-event';
+import type { EventEmitterConfig } from '../../tools/event-emitter';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
@@ -11,12 +12,12 @@ import { registerLegacyInstanceInitializer } from './instance-initializers';
 export function event(eventConfig: EventEmitterConfig) {
 	return (proto: RadiantElement, propertyKey: string) => {
 		registerLegacyInstanceInitializer(proto, (element) => {
-			element.registerEventEmitter(eventConfig.name, new EventEmitter(element, eventConfig));
+			const emitter = createEvent(element, eventConfig);
 
 			element.registerConnectedCallback(() => {
 				Object.defineProperty(element, propertyKey, {
 					get() {
-						return this.eventEmitters.get(eventConfig.name);
+						return emitter;
 					},
 					enumerable: true,
 					configurable: true,
