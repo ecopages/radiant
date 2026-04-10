@@ -77,6 +77,28 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	});
 });
 
+test('Nitro page can opt into client-only app boot', browserTestOptions, async () => {
+	const response = await fetch(`${origin}/?client-only=1`);
+	assert.equal(response.status, 200);
+
+	const html = await response.text();
+	assert.doesNotMatch(html, /<radiant-context-flow-shell>/);
+	assert.doesNotMatch(html, /data-playground-state/);
+	assert.doesNotMatch(html, /radiant-component-counter/);
+
+	await withBrowserPage(async (page) => {
+		await gotoPlayground(page, '/?client-only=1');
+
+		const clientStatePanel = getPanel(page, 'Client state');
+		await waitForLocatorText(clientStatePanel.locator('strong'), '0');
+
+		const liveCounter = page.locator('radiant-component-counter').first();
+		await waitForLocatorText(liveCounter.locator('.component-metric'), 'Count: 2');
+		await liveCounter.getByRole('button', { name: 'Increment', exact: true }).click();
+		await waitForLocatorText(liveCounter.locator('.component-metric'), 'Count: 3');
+	});
+});
+
 test('Nitro signal-board fragment serializes hydrated signal state', async () => {
 	const response = await fetch(`${origin}/api/ssr/radiant-signal-release-board`);
 	assert.equal(response.status, 200);
@@ -388,8 +410,8 @@ async function waitForContextSummary(page, expectedText) {
 	}
 }
 
-async function gotoPlayground(page) {
-	await page.goto(origin, { waitUntil: 'load' });
+async function gotoPlayground(page, path = '/') {
+	await page.goto(`${origin}${path}`, { waitUntil: 'load' });
 	await page.waitForSelector('main.shell');
 	await page.waitForSelector('radiant-context-flow-shell');
 }

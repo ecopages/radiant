@@ -16,9 +16,6 @@
 		"noEmit": true,
 		"baseUrl": ".",
 		"rootDir": ".",
-		"paths": {
-			"@/*": ["./src/*"]
-		},
 		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
