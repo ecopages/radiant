@@ -2,6 +2,11 @@ import { posix } from 'node:path';
 
 export type RadiantAppLoadMode = 'ssr' | 'client-only';
 
+export function createComponentsModule(componentGlob: string): string {
+	return `import.meta.glob(${JSON.stringify(componentGlob)}, { eager: true });
+`;
+}
+
 export function createClientRegistryModule(componentGlob: string): string {
 	return `const radiantClientModuleLoaders = import.meta.glob(${JSON.stringify(componentGlob)});
 

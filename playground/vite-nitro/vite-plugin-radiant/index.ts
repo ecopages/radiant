@@ -4,6 +4,7 @@ import { normalizePath } from 'vite';
 import {
 	createAppLoadModeModule,
 	createClientRegistryModule,
+	createComponentsModule,
 	createSsrRegistryModule,
 	joinComponentGlob,
 	normalizeAppLoadMode,
@@ -25,9 +26,11 @@ const defaultInclude = '**/*.script.tsx';
 const defaultAppLoadMode = 'ssr';
 const defaultAppLoadModeHeader = 'x-radiant-app-load-mode';
 const defaultClientOnlySearchParam = 'client-only';
+const radiantComponentsId = 'virtual:radiant/components';
 const radiantClientRegistryId = 'virtual:radiant/client-module-registry';
 const radiantSsrRegistryId = 'virtual:radiant/ssr-client-module-registry';
 const radiantAppLoadModeId = 'virtual:radiant/app-load-mode';
+const resolvedRadiantComponentsId = `\0${radiantComponentsId}`;
 const resolvedRadiantClientRegistryId = `\0${radiantClientRegistryId}`;
 const resolvedRadiantSsrRegistryId = `\0${radiantSsrRegistryId}`;
 const resolvedRadiantAppLoadModeId = `\0${radiantAppLoadModeId}`;
@@ -55,6 +58,7 @@ export function radiantComponents(options: RadiantVitePluginOptions = {}): Plugi
 		}
 
 		for (const virtualModuleId of [
+			resolvedRadiantComponentsId,
 			resolvedRadiantClientRegistryId,
 			resolvedRadiantSsrRegistryId,
 			resolvedRadiantAppLoadModeId,
@@ -97,6 +101,10 @@ export function radiantComponents(options: RadiantVitePluginOptions = {}): Plugi
 			invalidateVirtualModules();
 		},
 		resolveId(source) {
+			if (source === radiantComponentsId) {
+				return resolvedRadiantComponentsId;
+			}
+
 			if (source === radiantClientRegistryId) {
 				return resolvedRadiantClientRegistryId;
 			}
@@ -110,6 +118,10 @@ export function radiantComponents(options: RadiantVitePluginOptions = {}): Plugi
 			}
 		},
 		load(id) {
+			if (id === resolvedRadiantComponentsId) {
+				return createComponentsModule(componentGlob);
+			}
+
 			if (id === resolvedRadiantClientRegistryId) {
 				return createClientRegistryModule(componentGlob);
 			}

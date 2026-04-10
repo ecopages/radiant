@@ -22,5 +22,5 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true
 	},
-	"include": ["src", "server", "nitro.config.ts", "vite.config.ts"]
+	"include": ["src", "app", "server", "nitro.config.ts", "vite.config.ts"]
 }

@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+declare module 'virtual:radiant/components' {}
+
 declare module 'virtual:radiant/client-module-registry' {
 	export function hasRadiantClientModule(moduleKey: string): boolean;
 	export function loadRadiantClientModule(moduleKey: string): Promise<Record<string, unknown>>;
