@@ -2,5 +2,10 @@ import { defineHandler } from 'nitro';
 
 export default defineHandler(async () => {
 	const { renderSsrComponent, createSsrResponse } = await import('../../render');
-	return createSsrResponse(await renderSsrComponent('server-card'));
+	const { RadiantComponentServerCardElement } = await import('@/components/radiant-component-server-card.script');
+	return createSsrResponse(
+		await renderSsrComponent({
+			component: RadiantComponentServerCardElement,
+		}),
+	);
 });
