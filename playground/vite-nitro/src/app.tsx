@@ -18,7 +18,6 @@ import {
 export {
 	createInitialPlaygroundState,
 	createPlaygroundStateScriptNode,
-	playgroundInitialComponent,
 	setPlaygroundState,
 	type PlaygroundState,
 } from './playground-state';

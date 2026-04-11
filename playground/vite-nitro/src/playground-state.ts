@@ -3,7 +3,6 @@ import type { RenderedComponentPayload } from '@ecopages/radiant/server/render-c
 import { createSsrStateScriptNode, readSsrStateFromDom, serializeSsrState } from '../vite-plugin-radiant/ssr-state';
 
 export const PLAYGROUND_STATE_ATTRIBUTE = 'data-playground-state';
-export const playgroundInitialComponent = 'counter' as const;
 
 export type PlaygroundState = {
 	clicks: number;
