@@ -42,21 +42,26 @@ import {
 	createRenderedComponentHeaders,
 	renderComponent,
 	toRenderedComponentPayload,
+	type RenderedComponentAsset,
 } from '@ecopages/radiant/server/render-component';
 import { createServerRenderEnvironment } from '@ecopages/radiant/server/light-dom-shim';
 
 const environment = createServerRenderEnvironment();
 
+const assets: readonly RenderedComponentAsset[] = [
+	{ kind: 'script-module', src: '/components/counter-card.js', stage: 'hydrate' },
+];
+
 const rendered = await renderComponent({
 	component: CounterCard,
-	configure: (component) => {
+	initialize: (component) => {
 		component.label = 'Server counter';
 		component.count = 4;
 	},
 	prepareHost: (host) => {
 		host.insertAdjacentHTML('beforeend', '<p>Server projected content</p>');
 	},
-	clientModuleSrc: '/components/counter-card.js',
+	assets,
 	environment,
 });
 
@@ -70,8 +75,9 @@ Other useful server helpers:
 - `renderComponentToPayload()` returns the flat payload shape directly.
 - `renderStreamableComponent()` returns payload fields plus a JSX-compatible preview value.
 - `ssrContext` injects ambient context values for standalone fragment renders.
+- `assets` and `resolveAssets(...)` describe runtime scripts, styles, and preload hints through a transport-agnostic metadata model.
 - `prepareHost(...)` is the dedicated host-preparation hook when slot-aware SSR needs authored light-DOM nodes, not just an HTML string.
-- `resolveClientModuleSrc(...)` lets adapters derive the client module URL lazily from the component constructor.
+- `clientModuleSrc` and `resolveClientModuleSrc(...)` remain as compatibility shorthands for one hydration module.
 
 ## Related Docs
 

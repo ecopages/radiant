@@ -1,3 +1,4 @@
+import '../../src/server/install-light-dom-shim';
 import { describe, expect, test } from 'vitest';
 import type { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
@@ -11,6 +12,8 @@ import { querySlot } from '../../src/decorators/query-slot';
 import { createServerRenderEnvironment } from '../../src/server/light-dom-shim';
 import {
 	createRenderedComponentHeaders,
+	modulePreloadAsset,
+	RENDERED_COMPONENT_ASSETS_HEADER,
 	RENDERED_COMPONENT_CLIENT_MODULE_HEADER,
 	RENDERED_COMPONENT_GENERATED_AT_HEADER,
 	RENDERED_COMPONENT_TAG_NAME_HEADER,
@@ -18,9 +21,16 @@ import {
 	renderComponentToPayload,
 	renderComponentToString,
 	renderStreamableComponent,
+	scriptModuleAsset,
+	styleAsset,
 	toRenderedComponentPayload,
+	type RenderedComponentAsset,
 	type ServerRenderableComponent,
 } from '../../src/server/render-component';
+
+const cardAssets: readonly RenderedComponentAsset[] = [
+	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
+];
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
@@ -118,7 +128,7 @@ class RenderComponentHydratedProvider extends RadiantComponent {
 describe('render-component server helpers', () => {
 	test('renderComponent() returns the canonical server render descriptor', async () => {
 		const rendered = await renderComponent(RenderComponentCard, {
-			configure: (component) => {
+			initialize: (component) => {
 				component.count = 9;
 				component.label = 'Canonical render';
 			},
@@ -129,6 +139,7 @@ describe('render-component server helpers', () => {
 		expect(rendered).toEqual({
 			markup: expect.stringContaining('<render-component-card-test'),
 			metadata: {
+				assets: cardAssets,
 				clientModuleUrl: '/assets/render-component-card.js',
 				generatedAt: '2026-03-27T13:30:00.000Z',
 				tagName: 'render-component-card-test',
@@ -138,11 +149,13 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('Count: 9');
 		expect(rendered.markup).toContain('Canonical render');
 		expect(createRenderedComponentHeaders(rendered.metadata)).toEqual({
+			[RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(cardAssets),
 			[RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: '/assets/render-component-card.js',
 			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: '2026-03-27T13:30:00.000Z',
 			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'render-component-card-test',
 		});
 		expect(toRenderedComponentPayload(rendered)).toEqual({
+			assets: cardAssets,
 			clientModuleSrc: '/assets/render-component-card.js',
 			generatedAt: '2026-03-27T13:30:00.000Z',
 			markup: expect.stringContaining('<render-component-card-test'),
@@ -186,7 +199,7 @@ describe('render-component server helpers', () => {
 	describeWhenStandard('provider hydration markup', () => {
 		test('renderComponent() emits valid provider hydration markup without client-only fields', async () => {
 			const rendered = await renderComponent(RenderComponentHydratedProvider, {
-				configure: (component) => {
+				initialize: (component) => {
 					component.provider.setContext({ count: 5 });
 				},
 			});
@@ -204,7 +217,7 @@ describe('render-component server helpers', () => {
 		let resolvedComponent: CustomElementConstructor | undefined;
 
 		const rendered = await renderStreamableComponent(RenderComponentCard, {
-			configure: (component) => {
+			initialize: (component) => {
 				component.count = 7;
 				component.label = 'Configured label';
 			},
@@ -216,6 +229,7 @@ describe('render-component server helpers', () => {
 		});
 
 		expect(resolvedComponent).toBe(RenderComponentCard);
+		expect(rendered.assets).toEqual(cardAssets);
 		expect(rendered.generatedAt).toBe(now.toISOString());
 		expect(rendered.clientModuleSrc).toBe('/assets/render-component-card.js');
 		expect(rendered.tagName).toBe('render-component-card-test');
@@ -226,6 +240,7 @@ describe('render-component server helpers', () => {
 
 		const headers = createRenderedComponentHeaders(rendered);
 		expect(headers).toEqual({
+			[RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(cardAssets),
 			[RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: '/assets/render-component-card.js',
 			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: now.toISOString(),
 			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'render-component-card-test',
@@ -235,13 +250,14 @@ describe('render-component server helpers', () => {
 	test('renderComponentToPayload() accepts load() options and omits preview output', async () => {
 		const payload = await renderComponentToPayload({
 			load: async () => RenderComponentLoaderCard,
-			configure: (component) => {
+			initialize: (component) => {
 				component.message = 'Loaded message';
 			},
 			clientModuleSrc: '/assets/loader-card.js',
 		});
 
 		expect(payload).toEqual({
+			assets: [{ kind: 'script-module', src: '/assets/loader-card.js', stage: 'hydrate' }],
 			clientModuleSrc: '/assets/loader-card.js',
 			generatedAt: expect.any(String),
 			markup: '<render-component-loader-card-test><p>Loaded message</p></render-component-loader-card-test>',
@@ -251,7 +267,7 @@ describe('render-component server helpers', () => {
 
 	test('renderComponentToString() returns markup for constructor calls', async () => {
 		const markup = await renderComponentToString(RenderComponentCard, {
-			configure: (component) => {
+			initialize: (component) => {
 				component.count = 3;
 				component.label = 'String only';
 			},
@@ -273,6 +289,66 @@ describe('render-component server helpers', () => {
 			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: '2026-03-27T12:00:00.000Z',
 			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'plain-render-card',
 		});
+	});
+
+	test('renderComponent() resolves explicit asset metadata', async () => {
+		const rendered = await renderComponent(RenderComponentCard, {
+			resolveAssets: () => [
+				{ kind: 'style', href: '/assets/render-component-card.css' },
+				{ kind: 'modulepreload', href: '/assets/render-component-card.js' },
+			],
+		});
+
+		expect(rendered.metadata.assets).toEqual([
+			{ kind: 'style', href: '/assets/render-component-card.css' },
+			{ kind: 'modulepreload', href: '/assets/render-component-card.js' },
+		]);
+		expect(rendered.metadata.clientModuleUrl).toBeUndefined();
+	});
+
+	test('renderComponent() deduplicates clientModuleSrc when assets already contain the same script-module', async () => {
+		const rendered = await renderComponent(RenderComponentCard, {
+			clientModuleSrc: '/assets/render-component-card.js',
+			assets: [
+				{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
+				{ kind: 'style', href: '/assets/render-component-card.css' },
+			],
+		});
+
+		expect(rendered.metadata.assets).toEqual([
+			{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
+			{ kind: 'style', href: '/assets/render-component-card.css' },
+		]);
+	});
+
+	test('renderComponent() prepends clientModuleSrc when assets do not contain it', async () => {
+		const rendered = await renderComponent(RenderComponentCard, {
+			clientModuleSrc: '/assets/render-component-card.js',
+			assets: [{ kind: 'style', href: '/assets/render-component-card.css' }],
+		});
+
+		expect(rendered.metadata.assets).toEqual([
+			{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
+			{ kind: 'style', href: '/assets/render-component-card.css' },
+		]);
+	});
+
+	test('scriptModuleAsset() creates a script-module asset with default stage', () => {
+		expect(scriptModuleAsset('/entry.js')).toEqual({ kind: 'script-module', src: '/entry.js', stage: 'hydrate' });
+		expect(scriptModuleAsset('/entry.js', 'idle')).toEqual({
+			kind: 'script-module',
+			src: '/entry.js',
+			stage: 'idle',
+		});
+	});
+
+	test('modulePreloadAsset() creates a modulepreload asset', () => {
+		expect(modulePreloadAsset('/dep.js')).toEqual({ kind: 'modulepreload', href: '/dep.js' });
+	});
+
+	test('styleAsset() creates a style asset with optional media', () => {
+		expect(styleAsset('/style.css')).toEqual({ kind: 'style', href: '/style.css' });
+		expect(styleAsset('/print.css', 'print')).toEqual({ kind: 'style', href: '/print.css', media: 'print' });
 	});
 
 	test('renderStreamableComponent() throws when tag metadata is missing', async () => {

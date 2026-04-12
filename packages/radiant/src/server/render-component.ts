@@ -14,8 +14,56 @@ export const RENDERED_COMPONENT_TAG_NAME_HEADER = 'x-radiant-tag-name';
 /** Default response header carrying the client module URL for the fragment. */
 export const RENDERED_COMPONENT_CLIENT_MODULE_HEADER = 'x-radiant-client-module';
 
+/** Default response header carrying serialized fragment asset metadata. */
+export const RENDERED_COMPONENT_ASSETS_HEADER = 'x-radiant-assets';
+
+/** Asset dependency emitted by a rendered fragment. */
+export type RenderedComponentAsset =
+	| {
+			/** Browser module specifier that must be loaded to activate the fragment. */
+			kind: 'script-module';
+			/** Runtime loading policy for the module. */
+			stage?: 'hydrate' | 'idle' | 'immediate';
+			/** Module specifier or browser-importable URL. */
+			src: string;
+	  }
+	| {
+			/** Module graph preload hint for adapters that control the document head. */
+			kind: 'modulepreload';
+			/** Module specifier or browser-importable URL. */
+			href: string;
+	  }
+	| {
+			/** Stylesheet dependency required by the rendered fragment. */
+			kind: 'style';
+			/** Browser-importable stylesheet URL. */
+			href: string;
+			/** Optional media query applied to the stylesheet link. */
+			media?: string;
+	  };
+
+/** Creates a module asset entry for a rendered fragment. */
+export function scriptModuleAsset(
+	src: string,
+	stage: 'hydrate' | 'idle' | 'immediate' = 'hydrate',
+): RenderedComponentAsset {
+	return { kind: 'script-module', src, stage };
+}
+
+/** Creates a modulepreload hint for a rendered fragment. */
+export function modulePreloadAsset(href: string): RenderedComponentAsset {
+	return { kind: 'modulepreload', href };
+}
+
+/** Creates a stylesheet asset entry for a rendered fragment. */
+export function styleAsset(href: string, media?: string): RenderedComponentAsset {
+	return media ? { kind: 'style', href, media } : { kind: 'style', href };
+}
+
 /** Portable metadata for a server-rendered custom-element fragment. */
 export type RenderedComponentMetadata = {
+	/** Asset dependencies required by the rendered fragment. */
+	assets: readonly RenderedComponentAsset[];
 	/** Browser-importable client module URL used to register the component before hydration. */
 	clientModuleUrl?: string;
 	/** ISO timestamp describing when the fragment was rendered. */
@@ -36,6 +84,8 @@ export type RenderedComponent = {
 
 /** Serializable metadata for a server-rendered custom-element fragment. */
 export type RenderedComponentPayload = {
+	/** Asset dependencies required by the rendered fragment. */
+	assets?: readonly RenderedComponentAsset[];
 	/** Browser-importable client module URL used to register the component before hydration. */
 	clientModuleSrc?: string;
 	/** ISO timestamp describing when the fragment was rendered. */
@@ -75,6 +125,16 @@ export type ResolveRenderedComponentClientModule<TComponent extends ServerRender
 ) => string | undefined | Promise<string | undefined>;
 
 /**
+ * Resolves fragment assets for a component constructor.
+ *
+ * Prefer this over `resolveClientModuleSrc(...)` for new adapters so assets can
+ * describe scripts, styles, and preload hints through one transport-agnostic shape.
+ */
+export type ResolveRenderedComponentAssets<TComponent extends ServerRenderableComponent> = (
+	component: ServerRenderableComponentConstructor<TComponent>,
+) => readonly RenderedComponentAsset[] | undefined | Promise<readonly RenderedComponentAsset[] | undefined>;
+
+/**
  * Prepares a component host before SSR so slot-aware logic can observe authored
  * light-DOM content during render.
  */
@@ -95,12 +155,14 @@ export type RenderComponentSsrContextEntry<TContext extends UnknownContext = Unk
 };
 
 type RenderComponentSharedOptions<TComponent extends ServerRenderableComponent> = {
+	/** Asset dependencies required by the rendered fragment. */
+	assets?: readonly RenderedComponentAsset[];
 	/** Serialized authored light-DOM content to attach to the host before rendering. */
 	authoredContent?: string;
 	/** Browser-importable client module URL used to register the component before hydration. */
 	clientModuleSrc?: string;
-	/** Mutates the component instance before the host is rendered. */
-	configure?: (component: TComponent) => void;
+	/** Initializes the component instance before the host is rendered. */
+	initialize?: (component: TComponent) => void;
 	/** SSR environment responsible for preparing the host runtime and authored content. */
 	environment?: ServerRenderEnvironment;
 	/**
@@ -122,6 +184,8 @@ type RenderComponentSharedOptions<TComponent extends ServerRenderableComponent> 
 	now?: () => Date;
 	/** JSX server-renderer options forwarded to `renderHostToString()`. */
 	renderOptions?: RenderToStringOptions;
+	/** Lazy asset resolver used when `assets` are not provided directly. */
+	resolveAssets?: ResolveRenderedComponentAssets<TComponent>;
 	/** Lazy client-module resolver used when `clientModuleSrc` is not provided directly. */
 	resolveClientModuleSrc?: ResolveRenderedComponentClientModule<TComponent>;
 	/** Explicit tag-name override when `@customElement(...)` metadata is not desired. */
@@ -246,10 +310,13 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 			normalizedOptions.authoredContent,
 			normalizedOptions.prepareHost,
 		);
-		normalizedOptions.configure?.(component);
+		normalizedOptions.initialize?.(component);
 
-		const clientModuleSrc =
+		const legacyClientModuleSrc =
 			normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
+		const resolvedAssets = normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
+		const assets = mergeRenderedComponentAssets(resolvedAssets, legacyClientModuleSrc);
+		const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? legacyClientModuleSrc;
 		const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
 		const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
 		const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
@@ -258,6 +325,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 		return {
 			markup,
 			metadata: {
+				assets,
 				clientModuleUrl: clientModuleSrc,
 				generatedAt,
 				tagName,
@@ -317,6 +385,7 @@ export function toRenderedComponentPayload(
 ): RenderedComponentPayload {
 	if ('metadata' in render) {
 		return {
+			assets: render.metadata.assets,
 			clientModuleSrc: render.metadata.clientModuleUrl,
 			generatedAt: render.metadata.generatedAt,
 			markup: render.markup,
@@ -338,6 +407,7 @@ export function createRenderedComponentHeaders(
 	const metadata = toRenderedComponentMetadata(render);
 
 	return {
+		...(metadata.assets.length > 0 ? { [RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(metadata.assets) } : {}),
 		...(metadata.clientModuleUrl ? { [RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: metadata.clientModuleUrl } : {}),
 		[RENDERED_COMPONENT_GENERATED_AT_HEADER]: metadata.generatedAt,
 		[RENDERED_COMPONENT_TAG_NAME_HEADER]: metadata.tagName,
@@ -353,6 +423,7 @@ function toRenderedComponentMetadata(
 
 	if ('markup' in render) {
 		return {
+			assets: render.assets ?? createLegacyRenderedComponentAssets(render.clientModuleSrc),
 			clientModuleUrl: render.clientModuleSrc,
 			generatedAt: render.generatedAt,
 			tagName: render.tagName,
@@ -364,6 +435,7 @@ function toRenderedComponentMetadata(
 
 function toStreamableRenderedComponent(render: RenderedComponent): StreamableRenderedComponent {
 	return {
+		assets: render.metadata.assets,
 		clientModuleSrc: render.metadata.clientModuleUrl,
 		generatedAt: render.metadata.generatedAt,
 		markup: render.markup,
@@ -374,6 +446,33 @@ function toStreamableRenderedComponent(render: RenderedComponent): StreamableRen
 
 function createDefaultRenderTimestamp(): Date {
 	return new Date();
+}
+
+function createLegacyRenderedComponentAssets(clientModuleSrc: string | undefined): readonly RenderedComponentAsset[] {
+	if (!clientModuleSrc) {
+		return [];
+	}
+
+	return [scriptModuleAsset(clientModuleSrc)];
+}
+
+function mergeRenderedComponentAssets(
+	assets: readonly RenderedComponentAsset[],
+	legacyClientModuleSrc: string | undefined,
+): readonly RenderedComponentAsset[] {
+	if (!legacyClientModuleSrc) {
+		return assets;
+	}
+
+	if (assets.some((asset) => asset.kind === 'script-module' && asset.src === legacyClientModuleSrc)) {
+		return assets;
+	}
+
+	return [...createLegacyRenderedComponentAssets(legacyClientModuleSrc), ...assets];
+}
+
+function resolvePrimaryClientModuleSrc(assets: readonly RenderedComponentAsset[]): string | undefined {
+	return assets.find((asset) => asset.kind === 'script-module')?.src;
 }
 
 function normalizeRenderComponentOptions<TComponent extends ServerRenderableComponent>(

@@ -11,6 +11,7 @@
 ### Features
 
 - Added `scope` option to `@query(...)` and `createQuery(...)`: query light DOM (`'light'`, default), shadow DOM (`'shadow'`), or both (`'both'`).
+- Added normalized SSR fragment asset metadata in `@ecopages/radiant/server/render-component`, including transport-friendly asset headers and helpers for script, preload, and stylesheet dependencies.
 
 ## 0.2.0
 

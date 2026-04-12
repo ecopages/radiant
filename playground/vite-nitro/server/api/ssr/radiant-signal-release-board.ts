@@ -4,9 +4,8 @@ export default defineHandler(async () => {
 	const { renderSsrComponent, createSsrResponse } = await import('../../render');
 	const { RadiantSignalReleaseBoardElement } = await import('@/components/radiant-signal-release-board.script');
 	return createSsrResponse(
-		await renderSsrComponent({
-			load: async () => RadiantSignalReleaseBoardElement,
-			configure: (component) => {
+		await renderSsrComponent(RadiantSignalReleaseBoardElement, {
+			initialize: (component) => {
 				component.configureBoardState({
 					filter: 'launch-ready',
 					lastSyncAt: 'SSR rehearsal snapshot',

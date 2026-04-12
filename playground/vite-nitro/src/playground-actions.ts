@@ -1,8 +1,10 @@
 import type { RenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import {
+	RENDERED_COMPONENT_ASSETS_HEADER,
 	RENDERED_COMPONENT_CLIENT_MODULE_HEADER,
 	RENDERED_COMPONENT_GENERATED_AT_HEADER,
 	RENDERED_COMPONENT_TAG_NAME_HEADER,
+	type RenderedComponentAsset,
 } from '@ecopages/radiant/server/render-component';
 import { loadRadiantClientModule } from 'virtual:radiant/client-module-registry';
 import type { PlaygroundState } from './playground-state';
@@ -46,16 +48,21 @@ export async function loadSsrMarkupIntoState(state: PlaygroundState, endpoint = 
 	}
 
 	state.ssrStatus = 'loading';
+	state.ssrLoadingEndpoint = endpoint;
 
 	try {
 		const payload = await requestRenderedComponent(endpoint);
 
 		state.ssrStatus = 'ready';
+		state.ssrLoadingEndpoint = '';
+		state.ssrAssets = payload.assets ?? [];
 		state.ssrGeneratedAt = payload.generatedAt;
 		state.ssrMarkup = payload.markup;
 		state.ssrTagName = payload.tagName;
 	} catch (error) {
+		state.ssrAssets = [];
 		state.ssrStatus = 'error';
+		state.ssrLoadingEndpoint = '';
 		state.ssrGeneratedAt = 'n/a';
 		state.ssrMarkup = error instanceof Error ? error.message : 'Unknown error';
 	}
@@ -70,9 +77,14 @@ export async function requestRenderedComponent(endpoint: string): Promise<Render
 
 	const markup = await response.text();
 	const tagName = response.headers.get(RENDERED_COMPONENT_TAG_NAME_HEADER) ?? extractTagNameFromMarkup(markup);
-	await ensureFragmentClientModule(tagName, response.headers.get(RENDERED_COMPONENT_CLIENT_MODULE_HEADER));
+	const assets = readRenderedComponentAssets(
+		response.headers.get(RENDERED_COMPONENT_ASSETS_HEADER),
+		response.headers.get(RENDERED_COMPONENT_CLIENT_MODULE_HEADER),
+	);
+	await ensureFragmentAssets(tagName, assets);
 
 	return {
+		assets,
 		generatedAt: response.headers.get(RENDERED_COMPONENT_GENERATED_AT_HEADER) ?? 'n/a',
 		markup,
 		tagName,
@@ -105,20 +117,75 @@ function createMarkupPreviewContent(markup: string) {
 	return Array.from(template.content.childNodes);
 }
 
-async function ensureFragmentClientModule(tagName: string, clientModuleKey: string | null) {
-	if (customElements.get(tagName)) {
-		return;
+function readRenderedComponentAssets(
+	serializedAssets: string | null,
+	legacyClientModuleKey: string | null,
+): readonly RenderedComponentAsset[] {
+	if (serializedAssets) {
+		return JSON.parse(serializedAssets) as RenderedComponentAsset[];
 	}
 
-	if (!clientModuleKey) {
+	if (!legacyClientModuleKey) {
+		return [];
+	}
+
+	return [{ kind: 'script-module', src: legacyClientModuleKey, stage: 'hydrate' }];
+}
+
+async function ensureFragmentAssets(tagName: string, assets: readonly RenderedComponentAsset[]) {
+	for (const asset of assets) {
+		switch (asset.kind) {
+			case 'script-module':
+				if (!customElements.get(tagName)) {
+					await loadRadiantClientModule(asset.src);
+				}
+				break;
+
+			case 'modulepreload':
+				ensureHeadLink('modulepreload', asset.href);
+				break;
+
+			case 'style':
+				ensureStylesheet(asset.href, asset.media);
+				break;
+		}
+	}
+
+	if (!customElements.get(tagName)) {
 		throw new Error(`Missing fragment client module for ${tagName}.`);
 	}
 
-	await loadRadiantClientModule(clientModuleKey);
+	await customElements.whenDefined(tagName);
+}
 
-	if (!customElements.get(tagName)) {
-		throw new Error(`Client module ${clientModuleKey} did not register ${tagName}.`);
+function ensureHeadLink(rel: string, href: string) {
+	const head = document.head;
+	if (head.querySelector(`link[rel="${CSS.escape(rel)}"][href="${CSS.escape(href)}"]`)) {
+		return;
 	}
 
-	await customElements.whenDefined(tagName);
+	const link = document.createElement('link');
+	link.rel = rel;
+	link.href = href;
+	head.append(link);
+}
+
+function ensureStylesheet(href: string, media?: string) {
+	const head = document.head;
+	const escapedHref = CSS.escape(href);
+	const selector = media
+		? `link[rel="stylesheet"][href="${escapedHref}"][media="${CSS.escape(media)}"]`
+		: `link[rel="stylesheet"][href="${escapedHref}"]`;
+
+	if (head.querySelector(selector)) {
+		return;
+	}
+
+	const link = document.createElement('link');
+	link.rel = 'stylesheet';
+	link.href = href;
+	if (media) {
+		link.media = media;
+	}
+	head.append(link);
 }

@@ -11,10 +11,10 @@ import { usePlaygroundState } from './playground-state';
 export function HeroSection() {
 	return (
 		<section class="hero">
-			<p class="eyebrow">Radiant Playground</p>
+			<p class="eyebrow">Radiant Kitchen Sink</p>
 			<h1>Radiant kitchen sink for Vite + Nitro hydration and SSR</h1>
 			<p class="lede">
-				This playground is meant to be the full-stack showcase: custom elements, signals, context, slots,
+				This kitchen sink is meant to be the full-stack showcase: custom elements, signals, context, slots,
 				server-rendered fragments, and client hydration all running together inside a Nitro app backed by Vite
 				and the Ecopages JSX runtime.
 			</p>
@@ -73,18 +73,30 @@ export function RadiantComponentLabSection() {
 
 export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: JsxRenderable }) {
 	const state = usePlaygroundState();
+	const assetItems = computed(() => {
+		if (state.ssrAssets.length === 0) {
+			return [<li>No fragment assets recorded yet.</li>];
+		}
+
+		return state.ssrAssets.map((asset) => {
+			if (asset.kind === 'script-module') {
+				return <li>{`${asset.kind}:${asset.stage ?? 'hydrate'} ${asset.src}`}</li>;
+			}
+
+			if (asset.kind === 'modulepreload') {
+				return <li>{`${asset.kind}:${asset.href}`}</li>;
+			}
+
+			return (
+				<li>{asset.media ? `${asset.kind}:${asset.href} (${asset.media})` : `${asset.kind}:${asset.href}`}</li>
+			);
+		});
+	});
 	const status = computed(() => state.ssrStatus);
 	const isLoading = computed(() => state.ssrStatus === 'loading');
 	const generatedAt = computed(() => state.ssrGeneratedAt);
 	const markup = computed(() => state.ssrMarkup || 'SSR output will appear here.');
 	const tagName = computed(() => state.ssrTagName);
-	const counterLabel = computed(() => (state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch counter fragment'));
-	const serverCardLabel = computed(() =>
-		state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch server-card fragment',
-	);
-	const signalBoardLabel = computed(() =>
-		state.ssrStatus === 'loading' ? 'Rendering...' : 'Fetch signal-board fragment',
-	);
 	const preview = ssrPreviewContent ?? computed(() => createClientPreviewContent(state));
 
 	async function loadSsrMarkup(endpoint = DEFAULT_SSR_ENDPOINT) {
@@ -97,21 +109,28 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 				<h2>SSR route</h2>
 				<div class="component-actions">
 					<button type="button" on:click={() => loadSsrMarkup(DEFAULT_SSR_ENDPOINT)} disabled={isLoading}>
-						{counterLabel}
+						Fetch counter fragment
 					</button>
 					<button
 						type="button"
 						on:click={() => loadSsrMarkup('/api/ssr/radiant-component-server-card')}
 						disabled={isLoading}
 					>
-						{serverCardLabel}
+						Fetch server-card fragment
 					</button>
 					<button
 						type="button"
 						on:click={() => loadSsrMarkup('/api/ssr/radiant-signal-release-board')}
 						disabled={isLoading}
 					>
-						{signalBoardLabel}
+						Fetch signal-board fragment
+					</button>
+					<button
+						type="button"
+						on:click={() => loadSsrMarkup('/api/ssr/radiant-component-asset-counter')}
+						disabled={isLoading}
+					>
+						Fetch asset-backed fragment
 					</button>
 				</div>
 			</div>
@@ -119,11 +138,17 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 				Status: {status}
 			</p>
 			<p>
-				Nitro returns a real <code>{tagName}</code> HTML fragment plus a client module URL. The counter example
-				is already registered in the shell, while the server-card and signal-board fragments load richer client
-				modules before the markup is inserted here.
+				Nitro returns a real <code>{tagName}</code> HTML fragment plus the normalized asset metadata needed to
+				activate it. The counter example only needs the hydration module, while richer routes can add stylesheet
+				or preload assets before the markup is inserted here.
 			</p>
 			<p data-generated-at={generatedAt}>Generated at: {generatedAt}</p>
+			<div class="panel-subsection">
+				<h3>Assets</h3>
+				<ul class="component-copy component-copy--asset-list" data-ref="ssr-assets">
+					{assetItems}
+				</ul>
+			</div>
 			<pre class="ssr-html" data-ref="ssr-html">
 				{markup}
 			</pre>

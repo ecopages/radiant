@@ -133,13 +133,13 @@ test('Nitro page-level controls update client and route state after clicks', bro
 		await waitForLocatorText(page.locator('[data-ref="nitro-status"]'), 'Status: ready');
 		await waitForLocatorText(
 			page.locator('[data-ref="nitro-message"]'),
-			'Hello from Nitro via Vite + Nitro playground',
+			'Hello from Nitro via Vite + Nitro kitchen sink',
 		);
 		await waitForLocatorTextMatch(page.locator('[data-ref="nitro-server-time"]'), /^(?!n\/a).+/);
 	});
 });
 
-test('Nitro playground counter card reacts to its own button clicks', browserTestOptions, async () => {
+test('Nitro kitchen sink counter card reacts to its own button clicks', browserTestOptions, async () => {
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);
 
@@ -156,7 +156,7 @@ test('Nitro playground counter card reacts to its own button clicks', browserTes
 });
 
 test(
-	'Nitro playground event lab demonstrates auto delegation and the native escape hatch',
+	'Nitro kitchen sink event lab demonstrates auto delegation and the native escape hatch',
 	browserTestOptions,
 	async () => {
 		await withBrowserPage(async (page) => {
@@ -197,7 +197,7 @@ test(
 	},
 );
 
-test('Nitro playground studio board composes slots and propagates context updates', browserTestOptions, async () => {
+test('Nitro kitchen sink studio board composes slots and propagates context updates', browserTestOptions, async () => {
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);
 
@@ -255,7 +255,7 @@ test('Nitro playground studio board composes slots and propagates context update
 	});
 });
 
-test('Nitro playground signal board handles filtered selection edge cases', browserTestOptions, async () => {
+test('Nitro kitchen sink signal board handles filtered selection edge cases', browserTestOptions, async () => {
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);
 
@@ -293,7 +293,7 @@ test('Nitro playground signal board handles filtered selection edge cases', brow
 		await waitForLocatorText(signalBoard.locator('.component-status').nth(1), 'Sync: ready');
 		await waitForLocatorTextMatch(
 			signalBoard.locator('.component-meta').nth(0),
-			/Hello from Nitro via Vite \+ Nitro playground/,
+			/Hello from Nitro via Vite \+ Nitro kitchen sink/,
 		);
 	});
 });
@@ -345,7 +345,7 @@ test(
 			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: ready');
 			await waitForLocatorText(
 				previewServerCard.locator('.component-copy').nth(1),
-				'Hello from Nitro via Vite + Nitro playground',
+				'Hello from Nitro via Vite + Nitro kitchen sink',
 			);
 			await waitForLocatorTextMatch(previewServerCard.locator('.component-meta'), /^Server time: (?!n\/a).+/);
 
@@ -374,6 +374,50 @@ test(
 				previewSignalBoard.locator('.signal-story__headline'),
 				'No tickets match the current filter. Cycle the view to restore the full release board.',
 			);
+
+			await ssrPanel.getByRole('button', { name: 'Fetch asset-backed fragment' }).click();
+			await waitForLocatorAttribute(
+				ssrPanel.locator('[data-ref="ssr-preview"]'),
+				'data-tag-name',
+				'radiant-component-counter',
+			);
+			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /Asset-backed SSR counter/);
+			await waitForLocatorTextMatch(
+				ssrPanel.locator('[data-ref="ssr-assets"] li').nth(0),
+				/^script-module:hydrate /,
+			);
+			const assetBackedStyleHref = await poll(
+				async () => {
+					const value = normalizeText(
+						await ssrPanel.locator('[data-ref="ssr-assets"] li').nth(1).textContent(),
+					);
+					return value.startsWith('style:') ? value.slice('style:'.length) : '';
+				},
+				{
+					description: 'asset-backed fragment style asset href',
+					isDone: (value) => /^\/assets\/.+\.css(?:\?.*)?$/.test(value),
+					timeout: 5_000,
+				},
+			);
+			await poll(
+				async () =>
+					page.evaluate(
+						(expectedHref) =>
+							document.head
+								.querySelector(`link[rel="stylesheet"][href="${expectedHref}"]`)
+								?.getAttribute('href') ?? '',
+						assetBackedStyleHref,
+					),
+				{
+					description: 'asset-backed fragment stylesheet link',
+					isDone: (value) => value === assetBackedStyleHref,
+					timeout: 5_000,
+				},
+			);
+
+			const previewAssetCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-counter');
+			await waitForLocatorAttribute(previewAssetCounter, 'data-fragment-variant', 'asset-demo');
+			await waitForLocatorText(previewAssetCounter.locator('.component-metric').first(), 'Count: 11');
 
 			await ssrPanel.getByRole('button', { name: 'Fetch counter fragment' }).click();
 			await waitForLocatorAttribute(

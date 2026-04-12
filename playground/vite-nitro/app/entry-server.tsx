@@ -11,11 +11,10 @@ export default {
 			return new Response('', { headers: { 'content-type': 'text/html; charset=utf-8' } });
 		}
 
-		const rendered = await renderSsrComponent({
-			component: RadiantComponentCounter,
-			configure: (component) => {
-				component.count = 6;
-				component.label = 'SSR counter rendered in Nitro';
+		const rendered = await renderSsrComponent(RadiantComponentCounter, {
+			props: {
+				count: 6,
+				label: 'SSR counter rendered in Nitro',
 			},
 		});
 		const state = createInitialPlaygroundState(toRenderedComponentPayload(rendered));

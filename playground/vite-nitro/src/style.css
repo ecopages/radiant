@@ -131,6 +131,7 @@ h2 {
 	border-bottom: 1px solid #e2e8f0;
 	padding-bottom: 1rem;
 	margin-bottom: 1.5rem;
+	flex-wrap: wrap;
 }
 
 .panel-header h2 {

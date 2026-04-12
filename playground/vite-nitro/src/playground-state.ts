@@ -1,5 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RenderedComponentPayload } from '@ecopages/radiant/server/render-component';
+import type { RenderedComponentAsset, RenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import { createSsrStateScriptNode, readSsrStateFromDom, serializeSsrState } from '../vite-plugin-radiant/ssr-state';
 
 export const PLAYGROUND_STATE_ATTRIBUTE = 'data-playground-state';
@@ -7,8 +7,10 @@ export const PLAYGROUND_STATE_ATTRIBUTE = 'data-playground-state';
 export type PlaygroundState = {
 	clicks: number;
 	ssrGeneratedAt: string;
+	ssrAssets: readonly RenderedComponentAsset[];
 	ssrMarkup: string;
 	ssrStatus: 'idle' | 'loading' | 'ready' | 'error';
+	ssrLoadingEndpoint: string;
 	ssrTagName: string;
 	status: 'idle' | 'loading' | 'ready' | 'error';
 	message: string;
@@ -32,9 +34,11 @@ export function usePlaygroundState(): PlaygroundState {
 export function createInitialPlaygroundState(initialSsrPayload?: RenderedComponentPayload): PlaygroundState {
 	return {
 		clicks: 0,
+		ssrAssets: initialSsrPayload?.assets ?? [],
 		ssrGeneratedAt: initialSsrPayload?.generatedAt ?? 'n/a',
 		ssrMarkup: initialSsrPayload?.markup ?? '',
 		ssrStatus: initialSsrPayload ? 'ready' : 'idle',
+		ssrLoadingEndpoint: '',
 		ssrTagName: initialSsrPayload?.tagName ?? 'radiant-component-counter',
 		status: 'idle',
 		message: 'Nitro endpoint has not been called yet.',

@@ -2,11 +2,23 @@ import { posix } from 'node:path';
 
 export type RadiantAppLoadMode = 'ssr' | 'client-only';
 
+/**
+ * Generates the virtual module body for `virtual:radiant/components`.
+ *
+ * Emits an eager `import.meta.glob` that side-effect-imports every component entry
+ * matching `componentGlob`, ensuring custom-element registrations execute at SSR startup.
+ */
 export function createComponentsModule(componentGlob: string): string {
 	return `import.meta.glob(${JSON.stringify(componentGlob)}, { eager: true });
 `;
 }
 
+/**
+ * Generates the virtual module body for `virtual:radiant/client-module-registry`.
+ *
+ * Produces `hasRadiantClientModule` and `loadRadiantClientModule` backed by a lazy
+ * `import.meta.glob` over `componentGlob`.
+ */
 export function createClientRegistryModule(componentGlob: string): string {
 	return `const radiantClientModuleLoaders = import.meta.glob(${JSON.stringify(componentGlob)});
 
@@ -26,6 +38,13 @@ export async function loadRadiantClientModule(moduleKey) {
 `;
 }
 
+/**
+ * Generates the virtual module body for `virtual:radiant/ssr-client-module-registry`.
+ *
+ * Produces `resolveRadiantSsrClientModuleKey`, which scans an eager `import.meta.glob`
+ * of all component entries and returns the source path for a given constructor.
+ * Results are memoized in a `WeakMap` keyed on the constructor.
+ */
 export function createSsrRegistryModule(componentGlob: string): string {
 	return `const radiantComponentModules = import.meta.glob(${JSON.stringify(componentGlob)}, { eager: true });
 const radiantClientModuleKeyCache = new WeakMap();
@@ -52,6 +71,84 @@ export async function resolveRadiantSsrClientModuleKey(component) {
 `;
 }
 
+/**
+ * Generates the virtual module body for `virtual:radiant/ssr-asset-registry`.
+ *
+ * Produces four exports:
+ * - `resolveRadiantSsrAssets` — resolves the canonical asset list for a component (script-module entry).
+ * - `resolveRadiantSsrAssetUrl` — returns the Vite-hashed URL for a component-colocated CSS path.
+ * - `resolveRadiantSsrStyleAsset` — resolves a single CSS path to a `style` asset descriptor.
+ * - `resolveRadiantSsrStyleAssets` — variadic form; silently omits unresolved paths, always returns an array.
+ *
+ * CSS URLs are resolved via an eager `import.meta.glob(..., { query: '?url' })` over `styleGlob`,
+ * which Vite expands to Vite-hashed, browser-importable URLs at build time. Component-to-module
+ * key resolution delegates to `virtual:radiant/ssr-client-module-registry`.
+ *
+ * @param styleGlob - Glob covering all `*.css` files under the component directory.
+ */
+export function createSsrAssetRegistryModule(styleGlob: string): string {
+	return `import { resolveRadiantSsrClientModuleKey } from 'virtual:radiant/ssr-client-module-registry';
+
+const radiantStyleAssetUrls = import.meta.glob(${JSON.stringify(styleGlob)}, { eager: true, import: 'default', query: '?url' });
+
+export async function resolveRadiantSsrAssets(component) {
+	const moduleKey = await resolveRadiantSsrClientModuleKey(component);
+
+	if (!moduleKey) {
+		return [];
+	}
+
+	return [{ kind: 'script-module', src: moduleKey, stage: 'hydrate' }];
+}
+
+export function resolveRadiantSsrAssetUrl(source) {
+	return radiantStyleAssetUrls[normalizeRadiantAssetSource(source)];
+}
+
+export function resolveRadiantSsrStyleAsset(source, media) {
+	const href = resolveRadiantSsrAssetUrl(source);
+
+	if (!href) {
+		return undefined;
+	}
+
+	return media ? { kind: 'style', href, media } : { kind: 'style', href };
+}
+
+export function resolveRadiantSsrStyleAssets(...styles) {
+	const resolvedAssets = [];
+
+	for (const style of styles) {
+		const resolvedAsset = Array.isArray(style)
+			? resolveRadiantSsrStyleAsset(style[0], style[1])
+			: resolveRadiantSsrStyleAsset(style);
+
+		if (resolvedAsset) {
+			resolvedAssets.push(resolvedAsset);
+		}
+	}
+
+	return resolvedAssets;
+}
+
+function normalizeRadiantAssetSource(source) {
+	const normalizedSource = String(source).replaceAll('\\\\', '/');
+
+	if (normalizedSource.startsWith('/')) {
+		return normalizedSource;
+	}
+
+	return normalizedSource.startsWith('./') ? normalizedSource.slice(1) : normalizedSource;
+}
+`;
+}
+
+/**
+ * Generates the virtual module body for `virtual:radiant/app-load-mode`.
+ *
+ * Produces `resolveRadiantAppLoadMode`, which reads the rendering mode from the
+ * configured request header and URL search param, falling back to `appLoadMode`.
+ */
 export function createAppLoadModeModule({
 	appLoadMode,
 	appLoadModeHeader,
