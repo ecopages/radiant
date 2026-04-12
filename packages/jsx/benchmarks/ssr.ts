@@ -1,4 +1,4 @@
-/** @jsxImportSource @ecopages/jsx */
+/** @jsxImportSource .. */
 import { writeFileSync } from 'node:fs';
 import { bench, do_not_optimize, run, summary } from 'mitata';
 import { jsx } from '../jsx-runtime.ts';

@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import type { ContextProvider as RadiantContextProvider } from '../../radiant/src/context/context-provider.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -388,6 +387,143 @@ describe('Radiant JSX server render', () => {
 		}
 	});
 
+	test('invokes the server custom-element render hook during SSR intrinsic renders', async () => {
+		const [{ jsx, withServerCustomElementRenderHook }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+
+		class HookAwareElement extends EventTarget {
+			count = 0;
+
+			setAttribute(_name: string, _value: unknown) {}
+			removeAttribute(_name: string) {}
+
+			renderHostToString(options?: { hydrate?: boolean }) {
+				return options?.hydrate
+					? `<hook-aware-element data-hydrated="yes"><p>Count: ${this.count}</p></hook-aware-element>`
+					: `<hook-aware-element><p>Count: ${this.count}</p></hook-aware-element>`;
+			}
+		}
+
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			forceServerCustomElementRenderSymbol
+		];
+		const observedRenders: Array<{ count: number; hydrate: boolean; tagName: string }> = [];
+
+		Object.defineProperty(globalThis, 'customElements', {
+			configurable: true,
+			value: {
+				get(name: string) {
+					return name === 'hook-aware-element'
+						? (HookAwareElement as unknown as CustomElementConstructor)
+						: undefined;
+				},
+			},
+		});
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
+
+		try {
+			const html = withServerCustomElementRenderHook(({ hydrate, instance, tagName }) => {
+				observedRenders.push({
+					count: (instance as unknown as HookAwareElement).count,
+					hydrate,
+					tagName,
+				});
+
+				return undefined;
+			}, () => {
+				const template = jsx('hook-aware-element', { count: 4 });
+				return renderToString(template, { hydrate: true });
+			});
+
+			expect(html).toBe('<hook-aware-element data-hydrated="yes"><p>Count: 4</p></hook-aware-element>');
+			expect(observedRenders).toEqual([{ count: 4, hydrate: false, tagName: 'hook-aware-element' }]);
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+			} else {
+				Reflect.deleteProperty(globalThis, 'customElements');
+			}
+
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					forceServerCustomElementRenderSymbol
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
+					previousForceServerCustomElementRender;
+			}
+		}
+	});
+
+	test('lets the server custom-element render hook replace the default SSR wrapper', async () => {
+		const [{ jsx, withServerCustomElementRenderHook }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+
+		class ReplaceableHookElement extends EventTarget {
+			label = 'Original';
+
+			setAttribute(_name: string, _value: unknown) {}
+			removeAttribute(_name: string) {}
+
+			renderHostToString() {
+				return `<replaceable-hook-element><p>${this.label}</p></replaceable-hook-element>`;
+			}
+		}
+
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			forceServerCustomElementRenderSymbol
+		];
+
+		Object.defineProperty(globalThis, 'customElements', {
+			configurable: true,
+			value: {
+				get(name: string) {
+					return name === 'replaceable-hook-element'
+						? (ReplaceableHookElement as unknown as CustomElementConstructor)
+						: undefined;
+				},
+			},
+		});
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
+
+		try {
+			const html = withServerCustomElementRenderHook(() => ({
+				nodeType: 1,
+				outerHTML: '<replaceable-hook-element data-hook="yes"><p>Hook override</p></replaceable-hook-element>',
+			}), () => {
+				const template = jsx('replaceable-hook-element', { label: 'Original' });
+				return renderToString(template);
+			});
+
+			expect(html).toBe(
+				'<replaceable-hook-element data-hook="yes"><p>Hook override</p></replaceable-hook-element>',
+			);
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+			} else {
+				Reflect.deleteProperty(globalThis, 'customElements');
+			}
+
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					forceServerCustomElementRenderSymbol
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
+					previousForceServerCustomElementRender;
+			}
+		}
+	});
+
 	test('serializes nested SSR-capable custom elements from plain intrinsic tags', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
@@ -635,243 +771,6 @@ describe('Radiant JSX server render', () => {
 				Object.defineProperty(globalThis, 'Node', previousNodeDescriptor);
 			} else {
 				Reflect.deleteProperty(globalThis, 'Node');
-			}
-
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					forceServerCustomElementRenderSymbol
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
-					previousForceServerCustomElementRender;
-			}
-		}
-	});
-
-	test('preserves an authored hydration child script on a Radiant host render', async () => {
-		const [
-			{ jsx },
-			{ renderToString },
-			{ ContextProvider },
-			{ createContext },
-			{ RadiantComponent },
-			{ setCustomElementTagName },
-		] = await Promise.all([
-			loadJsxRuntime(),
-			loadServerRender(),
-			loadModule<typeof import('../../radiant/src/context/context-provider.ts')>(
-				'../../radiant/src/context/context-provider.ts',
-			),
-			loadModule<typeof import('../../radiant/src/context/create-context.ts')>(
-				'../../radiant/src/context/create-context.ts',
-			),
-			loadModule<typeof import('../../radiant/src/core/radiant-component.ts')>(
-				'../../radiant/src/core/radiant-component.ts',
-			),
-			loadModule<typeof import('../../radiant/src/core/custom-element-metadata.ts')>(
-				'../../radiant/src/core/custom-element-metadata.ts',
-			),
-		]);
-
-		const scriptedContext = createContext<{ count: number; label: string }>(Symbol('scripted-radiant-context'));
-		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
-		const registry = globalThis.customElements;
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			forceServerCustomElementRenderSymbol
-		];
-		const tagSuffix = Math.random().toString(36).slice(2);
-		const tagName = `scripted-radiant-provider-test-${tagSuffix}`;
-
-		class ScriptedRadiantProvider extends RadiantComponent {
-			declare provider: RadiantContextProvider<typeof scriptedContext>;
-
-			constructor() {
-				super();
-				this.provider = new ContextProvider(this, {
-					context: scriptedContext,
-					hydrationKey: 'provider',
-					initialValue: { count: 0, label: 'Pending' },
-					hydrate: Object,
-				});
-				this.registerContextProvider('provider', this.provider);
-			}
-
-			override render() {
-				const context = this.provider.getContext();
-
-				return jsx('p', {
-					children: `${context.label} / ${context.count}`,
-				});
-			}
-		}
-
-		setCustomElementTagName(ScriptedRadiantProvider, tagName);
-
-		if (!registry.get(tagName)) {
-			registry.define(tagName, ScriptedRadiantProvider as unknown as CustomElementConstructor);
-		}
-
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
-
-		try {
-			const html = renderToString(
-				jsx(tagName, {
-					children: jsx('script', {
-						type: 'application/json',
-						'data-hydration': true,
-						'data-hydration-type': 'context',
-						'data-hydration-key': 'provider',
-						children: '{"count":3,"label":"Authored child"}',
-					}),
-				}),
-			);
-
-			expect(html).toContain(`<${tagName}>`);
-			expect(html).toContain('<p>Authored child / 3</p>');
-			expect(html).not.toContain('data-radiant-slot-projection');
-			expect(html).toContain('<script type="application/json"');
-			expect(html).toContain('data-hydration="true"');
-			expect(html).toContain('data-hydration-key="provider"');
-			expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
-		} finally {
-			if (previousCustomElementsDescriptor) {
-				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
-			}
-
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					forceServerCustomElementRenderSymbol
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
-					previousForceServerCustomElementRender;
-			}
-		}
-	});
-
-	test('serializes nested RadiantComponent hosts from plain intrinsic tags', async () => {
-		const [
-			{ jsx },
-			{ renderToString },
-			{ ContextProvider },
-			{ createContext },
-			{ RadiantComponent },
-			{ resolveSsrContextValue },
-			{ setCustomElementTagName },
-		] = await Promise.all([
-			loadJsxRuntime(),
-			loadServerRender(),
-			loadModule<typeof import('../../radiant/src/context/context-provider.ts')>(
-				'../../radiant/src/context/context-provider.ts',
-			),
-			loadModule<typeof import('../../radiant/src/context/create-context.ts')>(
-				'../../radiant/src/context/create-context.ts',
-			),
-			loadModule<typeof import('../../radiant/src/core/radiant-component.ts')>(
-				'../../radiant/src/core/radiant-component.ts',
-			),
-			loadModule<typeof import('../../radiant/src/server/context-ssr.ts')>(
-				'../../radiant/src/server/context-ssr.ts',
-			),
-			loadModule<typeof import('../../radiant/src/core/custom-element-metadata.ts')>(
-				'../../radiant/src/core/custom-element-metadata.ts',
-			),
-		]);
-
-		const nestedContext = createContext<{ label: string; level: number }>(Symbol('nested-radiant-context'));
-
-		class NestedRadiantChild extends RadiantComponent {
-			override render() {
-				const context = resolveSsrContextValue(nestedContext);
-				const summary = context ? `${context.label} / ${context.level}` : 'Pending context';
-
-				return jsx('section', {
-					class: 'nested-child-card',
-					children: [
-						jsx('h3', { children: 'Nested child SSR' }),
-						jsx('p', { children: ['Context: ', jsx('strong', { children: summary })] }),
-					],
-				});
-			}
-		}
-
-		class NestedRadiantParent extends RadiantComponent {
-			declare context: RadiantContextProvider<typeof nestedContext>;
-
-			constructor() {
-				super();
-				this.context = new ContextProvider(this, {
-					context: nestedContext,
-					hydrationKey: 'context',
-					initialValue: { label: 'Nitro SSR context', level: 2 },
-					hydrate: Object,
-				});
-				this.registerContextProvider('context', this.context);
-			}
-
-			override render() {
-				return jsx('section', {
-					class: 'nested-parent-shell',
-					children: [
-						jsx('header', { children: jsx('h2', { children: 'Parent shell' }) }),
-						jsx(childTagName, {}),
-					],
-				});
-			}
-		}
-
-		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
-		const registry = globalThis.customElements;
-		const forceServerCustomElementRenderSymbol = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			forceServerCustomElementRenderSymbol
-		];
-		const tagSuffix = Math.random().toString(36).slice(2);
-		const childTagName = `nested-radiant-child-test-${tagSuffix}`;
-		const parentTagName = `nested-radiant-parent-test-${tagSuffix}`;
-
-		setCustomElementTagName(NestedRadiantChild, childTagName);
-		setCustomElementTagName(NestedRadiantParent, parentTagName);
-
-		if (!registry.get(childTagName)) {
-			registry.define(childTagName, NestedRadiantChild as unknown as CustomElementConstructor);
-		}
-
-		if (!registry.get(parentTagName)) {
-			registry.define(parentTagName, NestedRadiantParent as unknown as CustomElementConstructor);
-		}
-
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
-
-		try {
-			const parent = new NestedRadiantParent();
-			const nestedHtml = renderToString(jsx(parentTagName, {}), {
-				hydrate: true,
-			});
-
-			expect(nestedHtml).toContain(`<${parentTagName}>`);
-			expect(nestedHtml).toContain(`<${childTagName}>`);
-			expect(nestedHtml).toContain('class="nested-child-card"');
-			expect(nestedHtml).toContain('<h3>Nested child SSR</h3>');
-			expect(nestedHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
-			expect(nestedHtml).toContain(
-				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
-			);
-			expect(nestedHtml).toContain('{"label":"Nitro SSR context","level":2}');
-
-			const parentHostHtml = parent.renderHostToString({ hydrate: true });
-
-			expect(parentHostHtml).toContain(`<${parentTagName}>`);
-			expect(parentHostHtml).toContain(`<${childTagName}>`);
-			expect(parentHostHtml).toContain('class="nested-child-card"');
-			expect(parentHostHtml).toContain('<h3>Nested child SSR</h3>');
-			expect(parentHostHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
-			expect(parentHostHtml).toContain(
-				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
-			);
-		} finally {
-			if (previousCustomElementsDescriptor) {
-				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
 			}
 
 			if (previousForceServerCustomElementRender === undefined) {

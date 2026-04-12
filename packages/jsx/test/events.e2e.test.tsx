@@ -4,7 +4,7 @@ async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
 }
 
-const loadJsxRuntime = async () => loadModule<{ jsx: Function }>('../jsx-runtime.ts');
+const loadJsxRuntime = async () => loadModule<typeof import('../jsx-runtime.ts')>('../jsx-runtime.ts');
 const loadJsxModule = async () => loadModule<typeof import('../index.ts')>('../index.ts');
 
 type EventCase = {

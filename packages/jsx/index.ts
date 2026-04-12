@@ -17,11 +17,15 @@ export {
 	type JsxPropsWithChildren,
 	type JsxPrimitive,
 	type JsxRenderable,
+	type ServerCustomElementRenderHook,
+	type ServerCustomElementRenderHookContext,
+	type ServerRenderableCustomElement,
 	isKeyedJsxValue,
 	isSlotJsxValue,
 	isSubscribableJsxValue,
 	type SubscribableJsxValue,
 	type TemplateResultLike,
+	withServerCustomElementRenderHook,
 } from './jsx-runtime.ts';
 
 export { jsxDEV } from './jsx-dev-runtime.ts';

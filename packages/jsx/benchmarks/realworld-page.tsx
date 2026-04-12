@@ -1,4 +1,4 @@
-/** @jsxImportSource @ecopages/jsx */
+/** @jsxImportSource .. */
 
 import type { JsxRenderable } from '../jsx-runtime.ts';
 

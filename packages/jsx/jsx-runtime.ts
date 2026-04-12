@@ -12,6 +12,8 @@ const SLOT_JSX_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.slot-value');
 const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 /** When `true` on `globalThis`, signals that the current SSR pass should emit hydration binding markers. */
 const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
+/** Global slot used by SSR adapters to observe or augment custom-element renders. */
+const SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL = Symbol.for('@ecopages/jsx.server-custom-element-render-hook');
 
 /** HTML void element tag names — these elements must never receive a closing tag. */
 const voidElementNames = new Set([
@@ -77,6 +79,47 @@ export interface JsxNodeLike {
 	/** Serialized text content for text-like values. */
 	textContent?: string | null;
 }
+
+/**
+ * Minimal custom-element contract used by the JSX SSR pipeline.
+ *
+ * Custom elements that implement `renderHostToString(...)` can be instantiated by
+ * the runtime during SSR. Adapters may observe these renders through
+ * `withServerCustomElementRenderHook(...)` without replacing the default host
+ * rendering path.
+ */
+export interface ServerRenderableCustomElement {
+	renderHostToString: (options?: { hydrate?: boolean }) => string;
+	setAttribute?: (name: string, value: unknown) => void;
+	removeAttribute?: (name: string) => void;
+	[propertyName: string]: unknown;
+}
+
+/**
+ * Context passed to server custom-element render hooks.
+ *
+ * Hooks can inspect the constructor, instance, and normalized props for the
+ * current intrinsic custom-element render. Returning a node-like value replaces
+ * the default SSR wrapper for this element; returning `undefined` preserves the
+ * default host render output.
+ */
+export type ServerCustomElementRenderHookContext = {
+	constructor: CustomElementConstructor;
+	hydrate: boolean;
+	instance: ServerRenderableCustomElement;
+	props: Record<string, unknown>;
+	tagName: string;
+};
+
+/**
+ * Hook invoked when the JSX SSR runtime renders a registered intrinsic custom element.
+ *
+ * Return a custom node-like value to replace the default wrapper, or `undefined`
+ * to keep the built-in `renderHostToString(...)` behavior.
+ */
+export type ServerCustomElementRenderHook = (
+	context: ServerCustomElementRenderHookContext,
+) => JsxNodeLike | undefined;
 
 /**
  * Stable identity used to preserve ownership of a child value across keyed
@@ -667,13 +710,6 @@ function appendElementChildren(
  * the runtime instantiates the constructor, applies attributes and children, then
  * calls `renderHostToString` to obtain the serialized HTML fragment.
  */
-type ServerRenderableCustomElement = {
-	renderHostToString: (options?: { hydrate?: boolean }) => string;
-	setAttribute?: (name: string, value: unknown) => void;
-	removeAttribute?: (name: string) => void;
-	[propertyName: string]: unknown;
-};
-
 /**
  * Attempts to render a custom element on the server by instantiating its registered
  * constructor and calling `renderHostToString`.
@@ -715,6 +751,17 @@ function createServerRenderedCustomElement<Props extends object>(type: string, p
 	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
 	applyServerCustomElementAttributes(instance, rawAttributes);
 	applyServerCustomElementChildren(instance, children);
+	const hookRender = getServerCustomElementRenderHook()?.({
+		constructor,
+		hydrate: getActiveSsrHydrateMode(),
+		instance,
+		props: rawAttributes,
+		tagName: type,
+	});
+
+	if (hookRender) {
+		return hookRender;
+	}
 
 	return {
 		nodeType: 1,
@@ -735,6 +782,55 @@ function createServerRenderedCustomElement<Props extends object>(type: string, p
  */
 function getActiveSsrHydrateMode(): boolean {
 	return (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[ACTIVE_SSR_HYDRATE_SYMBOL] === true;
+}
+
+/**
+ * Runs a synchronous SSR render with a temporary intrinsic custom-element hook.
+ *
+ * This is intended for server adapters that need to collect metadata while the
+ * JSX runtime walks a tree. The previous hook is restored immediately after the
+ * callback returns or throws.
+ */
+export function withServerCustomElementRenderHook<T>(
+	hook: ServerCustomElementRenderHook,
+	render: () => T,
+): T {
+	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
+	const previousHook = globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL];
+	globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL] = hook;
+	const restoreHook = () => {
+		if (previousHook === undefined) {
+			delete globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL];
+		} else {
+			globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL] = previousHook;
+		}
+	};
+
+	try {
+		const result = render();
+
+		if (isPromiseLike(result)) {
+			return Promise.resolve(result).finally(restoreHook) as T;
+		}
+
+		restoreHook();
+		return result;
+	} catch (error) {
+		restoreHook();
+		throw error;
+	}
+}
+
+function isPromiseLike<T>(value: T | PromiseLike<T>): value is PromiseLike<T> {
+	return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
+}
+
+function getServerCustomElementRenderHook(): ServerCustomElementRenderHook | undefined {
+	const hook = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+		SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL
+	];
+
+	return typeof hook === 'function' ? (hook as ServerCustomElementRenderHook) : undefined;
 }
 
 /**
