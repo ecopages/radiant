@@ -1,5 +1,8 @@
 import type {
+	ComponentRenderInput,
+	ComponentRenderResult,
 	EcoComponent,
+	EcoFunctionComponent,
 	EcoComponentConfig,
 	EcoPageFile,
 	GetMetadata,
@@ -15,7 +18,7 @@ import {
 } from '@ecopages/core/route-renderer/integration-renderer.ts';
 import type { AssetProcessingService, ProcessedAsset } from '@ecopages/core/services/asset-processing-service.ts';
 import { rapidhash } from '@ecopages/core/hash.ts';
-import { renderToString, type JsxRenderable } from '@ecopages/jsx';
+import { renderToString, type JsxRenderable, withServerCustomElementRenderHook } from '@ecopages/jsx';
 import { ECOPAGES_JSX_PLUGIN_NAME } from './ecopages-jsx.plugin';
 
 type DocsHtmlTemplateProps = Omit<HtmlTemplateProps, 'children' | 'headContent'> & {
@@ -29,6 +32,10 @@ type MdxPageModule = EcoPageFile<{
 	layout?: EcoComponent;
 	getMetadata?: GetMetadata;
 }>;
+
+const isEcoFunctionComponent = (component: EcoComponent): component is EcoFunctionComponent<any, any> => {
+	return typeof component === 'function';
+};
 
 const renderComponent = async <P>(component: AsyncEcoComponent<P>, props: P): Promise<JsxRenderable> => {
 	return (await (component as (props: P) => JsxRenderable | Promise<JsxRenderable>)(props)) as JsxRenderable;
@@ -72,6 +79,8 @@ const wrapMdxPage = (
 export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 	name = ECOPAGES_JSX_PLUGIN_NAME;
 	static mdxExtensions = ['.mdx'];
+	private intrinsicCustomElementAssets = new Map<string, readonly ProcessedAsset[]>();
+	private collectedAssetFrames: ProcessedAsset[][] = [];
 
 	constructor({
 		appConfig,
@@ -92,8 +101,19 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 		});
 	}
 
+	/** Returns whether the requested page file should be treated as MDX. */
 	public isMdxFile(filePath: string): boolean {
 		return EcopagesJsxRenderer.mdxExtensions.some((ext) => filePath.endsWith(ext));
+	}
+
+	/**
+	 * Supplies the intrinsic custom-element assets discovered by the plugin so
+	 * component renders can attach the correct client scripts.
+	 */
+	public setIntrinsicCustomElementAssets(
+		assetsByTagName: Map<string, readonly ProcessedAsset[]>,
+	): void {
+		this.intrinsicCustomElementAssets = assetsByTagName;
 	}
 
 	protected override async importPageFile(file: string): Promise<MdxPageModule> {
@@ -122,56 +142,92 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 	}
 
 	override async render(options: IntegrationRendererRenderOptions<JsxRenderable>): Promise<RouteRendererBody> {
+		const assetFrame = this.beginCollectedAssetFrame();
+
 		try {
-			const page = await renderComponent(options.Page as AsyncEcoComponent<Record<string, unknown>>, {
+			const page = await this.renderEcoComponent(options.Page as AsyncEcoComponent<Record<string, unknown>>, {
 				...options.pageProps,
 				locals: options.pageLocals,
 			});
 
 			const content = options.Layout
-				? await renderComponent(options.Layout as AsyncEcoComponent<Record<string, unknown>>, {
+				? await this.renderEcoComponent(options.Layout as AsyncEcoComponent<Record<string, unknown>>, {
 						...options.pageProps,
 						children: page,
 						locals: options.locals,
 					})
 				: page;
 
-			const document = await renderComponent(options.HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>, {
+			const document = await this.renderEcoComponent(options.HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>, {
 				metadata: options.metadata,
 				pageProps: options.pageProps ?? {},
 				children: content,
 			});
+			const renderedDocument = this.renderJsx(document);
+			this.mergeCollectedAssets(this.endCollectedAssetFrame(assetFrame));
 
-			return `${this.DOC_TYPE}${renderToString(document)}`;
+			return `${this.DOC_TYPE}${renderedDocument.html}`;
 		} catch (error) {
+			this.endCollectedAssetFrame(assetFrame);
 			throw this.createRenderError('Error rendering page', error);
 		}
 	}
 
-	override async renderToResponse<P = Record<string, unknown>>(
+	override async renderComponent(input: ComponentRenderInput): Promise<ComponentRenderResult> {
+		const assetFrame = this.beginCollectedAssetFrame();
+
+		try {
+			if (!isEcoFunctionComponent(input.component)) {
+				throw new TypeError('JSX renderer expected a callable component.');
+			}
+
+			const response = await this.renderToResponse<any>(input.component, input.props, { partial: true });
+			const html = await response.text();
+			const assets = this.endCollectedAssetFrame(assetFrame);
+
+			return {
+				html,
+				canAttachAttributes: true,
+				rootTag: this.getRootTagName(html),
+				integrationName: this.name,
+				assets,
+			};
+		} catch (error) {
+			this.endCollectedAssetFrame(assetFrame);
+			throw this.createRenderError('Error rendering component', error);
+		}
+	}
+
+	override async renderToResponse<P = any>(
 		view: EcoComponent<P>,
 		props: P,
 		ctx: RenderToResponseContext,
 	): Promise<Response> {
 		try {
+			if (!isEcoFunctionComponent(view)) {
+				throw new TypeError('JSX renderer expected a callable view component.');
+			}
+
 			const layout = ctx.partial ? undefined : view.config?.layout;
 			await this.prepareViewDependencies(view, layout);
 
 			const HtmlTemplate = ctx.partial ? undefined : await this.getHtmlTemplate();
 			const metadata = ctx.partial ? undefined : await this.resolveViewMetadata(view, props);
+			const assetFrame = this.beginCollectedAssetFrame();
 			const capturedRender = await this.captureHtmlRender(async () => {
-				const viewContent = await renderComponent(view as AsyncEcoComponent<P>, props);
+				const viewContent = await this.renderEcoComponent(view as AsyncEcoComponent<P>, props);
 
 				if (ctx.partial) {
-					return renderToString(viewContent);
+					return this.renderJsx(viewContent).html;
 				}
 
-				return this.renderDocument(viewContent, {
+				return (await this.renderDocument(viewContent, {
 					metadata: metadata as PageMetadataProps,
 					pageProps: (props ?? {}) as Record<string, unknown>,
 					layout,
-				});
+				})).html;
 			});
+			this.mergeCollectedAssets(this.endCollectedAssetFrame(assetFrame));
 
 			const html = await this.finalizeCapturedHtmlRender({
 				html: capturedRender.html,
@@ -212,21 +268,96 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 			pageProps: Record<string, unknown>;
 			layout?: EcoComponent;
 		},
-	): Promise<string> {
+	): Promise<{ assets: ProcessedAsset[]; html: string }> {
 		const resolvedContent = layout
-			? await renderComponent(layout as AsyncEcoComponent<Record<string, unknown>>, {
+			? await this.renderEcoComponent(layout as AsyncEcoComponent<Record<string, unknown>>, {
 					...pageProps,
 					children: content,
 				})
 			: content;
 
 		const HtmlTemplate = await this.getHtmlTemplate();
-		const document = await renderComponent(HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>, {
+		const document = await this.renderEcoComponent(HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>, {
 			metadata,
 			pageProps,
 			children: resolvedContent,
 		});
+		const renderedDocument = this.renderJsx(document);
 
-		return `${this.DOC_TYPE}${renderToString(document)}`;
+		return {
+			assets: renderedDocument.assets,
+			html: `${this.DOC_TYPE}${renderedDocument.html}`,
+		};
+	}
+
+	private beginCollectedAssetFrame(): ProcessedAsset[] {
+		const frame: ProcessedAsset[] = [];
+		this.collectedAssetFrames.push(frame);
+		return frame;
+	}
+
+	private endCollectedAssetFrame(frame: ProcessedAsset[]): ProcessedAsset[] {
+		const activeFrame = this.collectedAssetFrames.pop();
+
+		if (!activeFrame || activeFrame !== frame) {
+			return this.htmlTransformer.dedupeProcessedAssets(frame);
+		}
+
+		return this.htmlTransformer.dedupeProcessedAssets(activeFrame);
+	}
+
+	private mergeCollectedAssets(assets: readonly ProcessedAsset[]): void {
+		if (assets.length === 0) {
+			return;
+		}
+
+		this.htmlTransformer.setProcessedDependencies(
+			this.htmlTransformer.dedupeProcessedAssets([...this.htmlTransformer.getProcessedDependencies(), ...assets]),
+		);
+	}
+
+	private renderJsx(value: JsxRenderable): { assets: ProcessedAsset[]; html: string } {
+		const collectedAssets: ProcessedAsset[] = [];
+		const html = withServerCustomElementRenderHook(this.createIntrinsicCustomElementRenderHook(collectedAssets), () =>
+			renderToString(value),
+		);
+		const dedupedAssets = this.htmlTransformer.dedupeProcessedAssets(collectedAssets);
+		const activeFrame = this.collectedAssetFrames[this.collectedAssetFrames.length - 1];
+
+		if (activeFrame) {
+			activeFrame.push(...dedupedAssets);
+		}
+
+		return {
+			assets: dedupedAssets,
+			html,
+		};
+	}
+
+	private async renderEcoComponent<P>(component: AsyncEcoComponent<P>, props: P): Promise<JsxRenderable> {
+		const collectedAssets: ProcessedAsset[] = [];
+		const rendered = await withServerCustomElementRenderHook(
+			this.createIntrinsicCustomElementRenderHook(collectedAssets),
+			() => renderComponent(component, props),
+		);
+		const activeFrame = this.collectedAssetFrames[this.collectedAssetFrames.length - 1];
+
+		if (activeFrame) {
+			activeFrame.push(...this.htmlTransformer.dedupeProcessedAssets(collectedAssets));
+		}
+
+		return rendered;
+	}
+
+	private createIntrinsicCustomElementRenderHook(target: ProcessedAsset[]) {
+		return ({ tagName }: { tagName: string }) => {
+			const assets = this.intrinsicCustomElementAssets.get(tagName);
+
+			if (assets) {
+				target.push(...assets);
+			}
+
+			return undefined;
+		};
 	}
 }

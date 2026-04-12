@@ -1,7 +1,13 @@
+import { readFile, readdir } from 'node:fs/promises';
+import path from 'node:path';
 import type { Options as MdxEsbuildOptions } from '@mdx-js/esbuild';
 import type { EcoBuildLoader, EcoBuildPlugin } from '@ecopages/core/build/build-types.ts';
 import { IntegrationPlugin, type IntegrationPluginConfig } from '@ecopages/core/plugins/integration-plugin.ts';
-import { AssetFactory, type AssetDefinition } from '@ecopages/core/services/asset-processing-service.ts';
+import {
+	AssetFactory,
+	type AssetDefinition,
+	type ProcessedAsset,
+} from '@ecopages/core/services/asset-processing-service.ts';
 import type { JsxRenderable } from '@ecopages/jsx';
 import * as esbuild from 'esbuild';
 import type { PartialMessage, Plugin as EsbuildPlugin, PluginBuild as EsbuildPluginBuild } from 'esbuild';
@@ -250,7 +256,12 @@ const createEcoBuildPluginFromEsbuild = (plugin: EsbuildPlugin): EcoBuildPlugin 
 	},
 });
 
-/** The integration name for the docs-local JSX renderer. */
+/**
+ * Stable integration name shared by the docs-local JSX plugin and renderer.
+ *
+ * Ecopages uses this identifier to match route files, renderer instances, and
+ * cross-integration component boundaries.
+ */
 export const ECOPAGES_JSX_PLUGIN_NAME = 'ecopages-jsx';
 
 /**
@@ -284,7 +295,9 @@ export type EcopagesJsxPluginOptions = Omit<IntegrationPluginConfig, 'name' | 'e
 
 /** Local docs-only JSX integration for `.tsx` templates. */
 export class EcopagesJsxPlugin extends IntegrationPlugin<JsxRenderable> {
+	/** Renderer implementation used for JSX and MDX docs routes. */
 	renderer = EcopagesJsxRenderer as unknown as IntegrationPlugin<JsxRenderable>['renderer'];
+	private intrinsicCustomElementAssets = new Map<string, readonly ProcessedAsset[]>();
 	private mdxEnabled: boolean;
 	private mdxCompilerOptions?: ResolvedDocsMdxCompileOptions;
 	private mdxExtensions: string[];
@@ -293,16 +306,39 @@ export class EcopagesJsxPlugin extends IntegrationPlugin<JsxRenderable> {
 	private runtimeExternalPlugin?: EcoBuildPlugin;
 	private runtimeSpecifierMap: Record<string, string>;
 
+	/** Returns the build plugins required by the docs JSX integration. */
 	override get plugins(): EcoBuildPlugin[] {
 		return [this.runtimeExternalPlugin, this.mdxLoaderPlugin].filter(
 			(plugin): plugin is EcoBuildPlugin => plugin !== undefined,
 		);
 	}
 
+	/**
+	 * Exposes the bare-module specifier map used by the docs import map.
+	 *
+	 * Client bundles keep these imports external so the docs app can load the
+	 * shared runtime packages from the generated vendor assets.
+	 */
 	override getRuntimeSpecifierMap(): Record<string, string> {
 		return this.runtimeSpecifierMap;
 	}
 
+	/**
+	 * Creates the renderer instance and attaches the discovered intrinsic custom
+	 * element assets before the renderer handles any requests.
+	 */
+	override initializeRenderer() {
+		const renderer = super.initializeRenderer() as EcopagesJsxRenderer;
+		renderer.setIntrinsicCustomElementAssets(this.intrinsicCustomElementAssets);
+		return renderer;
+	}
+
+	/**
+	 * Creates a docs-local JSX integration.
+	 *
+	 * When MDX is enabled, the plugin also claims the configured MDX extensions
+	 * and prepares compiler options around the shared `@ecopages/jsx` runtime.
+	 */
 	constructor(options?: EcopagesJsxPluginOptions) {
 		const { extensions: _ignoredExtensions, ...restOptions } = options ?? {};
 		const extensions = [...(options?.extensions ?? ['.tsx'])];
@@ -360,10 +396,15 @@ export class EcopagesJsxPlugin extends IntegrationPlugin<JsxRenderable> {
 		}
 	}
 
+	/** Ensures MDX build hooks are ready before Ecopages collects contributions. */
 	override async prepareBuildContributions(): Promise<void> {
 		await this.ensureMdxLoaderPlugin();
 	}
 
+	/**
+	 * Registers MDX tooling, discovers intrinsic custom-element assets, and then
+	 * completes the base integration setup.
+	 */
 	override async setup(): Promise<void> {
 		await this.ensureMdxLoaderPlugin();
 
@@ -371,9 +412,15 @@ export class EcopagesJsxPlugin extends IntegrationPlugin<JsxRenderable> {
 			await this.setupMdxBunPlugin();
 		}
 
+		await this.buildIntrinsicCustomElementAssetRegistry();
+
 		await super.setup();
 	}
 
+	/**
+	 * Defers boundaries only when another integration renders a component that is
+	 * owned by this JSX integration.
+	 */
 	override shouldDeferComponentBoundary(input: { currentIntegration: string; targetIntegration?: string }): boolean {
 		return input.targetIntegration === this.name && input.currentIntegration !== this.name;
 	}
@@ -400,7 +447,86 @@ export class EcopagesJsxPlugin extends IntegrationPlugin<JsxRenderable> {
 		// @ts-expect-error Bun accepts esbuild-compatible plugins here.
 		await Bun.plugin(this.mdxBunPlugin);
 	}
+
+	private async buildIntrinsicCustomElementAssetRegistry(): Promise<void> {
+		if (!this.appConfig || !this.assetProcessingService) {
+			return;
+		}
+
+		this.intrinsicCustomElementAssets = new Map();
+		const scriptFiles = await this.collectScriptEntryFiles(this.appConfig.absolutePaths.srcDir);
+
+		for (const scriptFile of scriptFiles) {
+			const processedAsset = await this.resolveIntrinsicCustomElementAsset(scriptFile);
+
+			if (!processedAsset) {
+				continue;
+			}
+
+			for (const tagName of await this.extractIntrinsicCustomElementTagNames(scriptFile)) {
+				this.intrinsicCustomElementAssets.set(tagName, [processedAsset]);
+			}
+		}
+	}
+
+	private async collectScriptEntryFiles(directory: string): Promise<string[]> {
+		const directoryEntries = await readdir(directory, { withFileTypes: true });
+		const scriptFiles: string[] = [];
+
+		for (const directoryEntry of directoryEntries) {
+			const entryPath = path.join(directory, directoryEntry.name);
+
+			if (directoryEntry.isDirectory()) {
+				scriptFiles.push(...(await this.collectScriptEntryFiles(entryPath)));
+				continue;
+			}
+
+			if (/\.script\.(?:ts|tsx)$/.test(directoryEntry.name)) {
+				scriptFiles.push(entryPath);
+			}
+		}
+
+		return scriptFiles;
+	}
+
+	private async resolveIntrinsicCustomElementAsset(scriptFile: string): Promise<ProcessedAsset | undefined> {
+		if (!this.assetProcessingService) {
+			return undefined;
+		}
+
+		const [processedAsset] = await this.assetProcessingService.processDependencies(
+			[
+				AssetFactory.createFileScript({
+					filepath: scriptFile,
+					position: 'head',
+				}),
+			],
+			`${this.name}:intrinsic-custom-elements:${scriptFile}`,
+		);
+
+		return processedAsset;
+	}
+
+	private async extractIntrinsicCustomElementTagNames(scriptFile: string): Promise<string[]> {
+		const source = await readFile(scriptFile, 'utf8');
+		const tagNames = new Set<string>();
+
+		for (const match of source.matchAll(/@customElement\(\s*['"]([^'"]+)['"]/g)) {
+			const tagName = match[1];
+
+			if (tagName) {
+				tagNames.add(tagName);
+			}
+		}
+
+		return [...tagNames];
+	}
 }
 
-/** Creates the docs-local JSX integration plugin. */
+/**
+ * Creates the docs-local JSX integration plugin.
+ *
+ * This is the preferred entry point for configuring docs-local `.tsx` and
+ * optional `.mdx` route handling.
+ */
 export const ecopagesJsxPlugin = (options?: EcopagesJsxPluginOptions) => new EcopagesJsxPlugin(options);
