@@ -40,8 +40,8 @@
 		"vitest": "^3.2.4"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": "^0.1.0",
-		"@ecopages/signals": "^0.1.0"
+		"@ecopages/jsx": "^0.2.0",
+		"@ecopages/signals": "^0.2.0"
 	},
 	"files": [
 		"/dist/*",
