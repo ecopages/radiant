@@ -4,7 +4,6 @@ import { renderToString } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
-import { contextSelector } from '../../src/context/decorators/context-selector';
 import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
@@ -15,67 +14,12 @@ import { prop } from '../../src/decorators/prop';
 import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
+import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
 const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
-
-const nestedSsrBoardContext = createContext<{ commits: number; owner: string; stage: string; tempo: string }>(
-	Symbol('nested-radiant-board-context'),
-);
-
-@customElement('nested-ssr-summary-card-test')
-class NestedSsrSummaryCard extends RadiantComponent<{ summary: string }> {
-	@state summary = 'Awaiting board context';
-
-	@onContextUpdate({ context: nestedSsrBoardContext })
-	protected syncSummary(currentContext: { commits: number; owner: string; stage: string }): void {
-		this.summary = `${currentContext.owner} is steering ${currentContext.stage.toLowerCase()} with ${currentContext.commits} commits.`;
-	}
-
-	override render() {
-		return <p class="nested-summary">{this.$.summary}</p>;
-	}
-}
-
-@customElement('nested-ssr-insight-card-test')
-class NestedSsrInsightCard extends RadiantComponent<{ value: string }> {
-	@state value = 'Pending';
-
-	@onContextUpdate({ context: nestedSsrBoardContext })
-	protected syncValue(currentContext: { commits: number; stage: string; tempo: string }): void {
-		this.value = `${currentContext.stage} / ${currentContext.tempo} / ${currentContext.commits}`;
-	}
-
-	override render() {
-		return <p class="nested-insight">Stage: {this.$.value}</p>;
-	}
-}
-
-@customElement('nested-ssr-board-card-test')
-class NestedSsrBoardCard extends RadiantComponent {
-	@provideContext({
-		context: nestedSsrBoardContext,
-		initialValue: {
-			commits: 3,
-			owner: 'Design systems',
-			stage: 'Build',
-			tempo: 'Calm',
-		},
-		hydrate: Object,
-	})
-	context!: ContextProvider<typeof nestedSsrBoardContext>;
-
-	override render() {
-		return (
-			<section class="nested-board">
-				<nested-ssr-summary-card-test />
-				<nested-ssr-insight-card-test />
-			</section>
-		);
-	}
-}
 
 @customElement('tracked-reactive-reads-card-test')
 class TrackedReactiveReadsCard extends RadiantComponent {
@@ -433,6 +377,75 @@ describe('RadiantComponent', () => {
 	});
 
 	test('renderToString() serializes nested registered Radiant consumers with finalized SSR context state', () => {
+		const nestedSsrBoardContext = createContext<{ commits: number; owner: string; stage: string; tempo: string }>(
+			Symbol('nested-radiant-board-context'),
+		);
+
+		class NestedSsrSummaryCard extends RadiantComponent<{ summary: string }> {
+			@state summary = 'Awaiting board context';
+
+			@onContextUpdate({ context: nestedSsrBoardContext })
+			protected syncSummary(currentContext: { commits: number; owner: string; stage: string }): void {
+				this.summary = `${currentContext.owner} is steering ${currentContext.stage.toLowerCase()} with ${currentContext.commits} commits.`;
+			}
+
+			override render() {
+				return <p class="nested-summary">{this.$.summary}</p>;
+			}
+		}
+
+		class NestedSsrInsightCard extends RadiantComponent<{ value: string }> {
+			@state value = 'Pending';
+
+			@onContextUpdate({ context: nestedSsrBoardContext })
+			protected syncValue(currentContext: { commits: number; stage: string; tempo: string }): void {
+				this.value = `${currentContext.stage} / ${currentContext.tempo} / ${currentContext.commits}`;
+			}
+
+			override render() {
+				return <p class="nested-insight">Stage: {this.$.value}</p>;
+			}
+		}
+
+		class NestedSsrBoardCard extends RadiantComponent {
+			@provideContext({
+				context: nestedSsrBoardContext,
+				initialValue: {
+					commits: 3,
+					owner: 'Design systems',
+					stage: 'Build',
+					tempo: 'Calm',
+				},
+				hydrate: Object,
+			})
+			context!: ContextProvider<typeof nestedSsrBoardContext>;
+
+			override render() {
+				return (
+					<section class="nested-board">
+						<nested-ssr-summary-card-test />
+						<nested-ssr-insight-card-test />
+					</section>
+				);
+			}
+		}
+
+		setCustomElementTagName(NestedSsrSummaryCard, 'nested-ssr-summary-card-test');
+		setCustomElementTagName(NestedSsrInsightCard, 'nested-ssr-insight-card-test');
+		setCustomElementTagName(NestedSsrBoardCard, 'nested-ssr-board-card-test');
+
+		if (!customElements.get('nested-ssr-summary-card-test')) {
+			customElements.define('nested-ssr-summary-card-test', NestedSsrSummaryCard);
+		}
+
+		if (!customElements.get('nested-ssr-insight-card-test')) {
+			customElements.define('nested-ssr-insight-card-test', NestedSsrInsightCard);
+		}
+
+		if (!customElements.get('nested-ssr-board-card-test')) {
+			customElements.define('nested-ssr-board-card-test', NestedSsrBoardCard);
+		}
+
 		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
 			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
 		];
@@ -780,6 +793,179 @@ describe('RadiantComponent', () => {
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
 		);
 		expect(html).toContain('{"label":"SSR context","level":4}');
+	});
+
+	test('preserves an authored hydration child script on a Radiant host render', () => {
+		const scriptedContext = createContext<{ count: number; label: string }>(Symbol('scripted-radiant-context'));
+		const tagName = 'scripted-radiant-provider-host-test';
+
+		class ScriptedRadiantProviderHost extends RadiantComponent {
+			declare provider: ContextProvider<typeof scriptedContext>;
+
+			constructor() {
+				super();
+				this.provider = new ContextProvider(this, {
+					context: scriptedContext,
+					hydrationKey: 'provider',
+					initialValue: { count: 0, label: 'Pending' },
+					hydrate: Object,
+				});
+				this.registerContextProvider('provider', this.provider);
+			}
+
+			override render() {
+				const context = this.provider.getContext();
+
+				return <p>{`${context.label} / ${context.count}`}</p>;
+			}
+		}
+
+		if (!customElements.get(tagName)) {
+			customElements.define(tagName, ScriptedRadiantProviderHost);
+		}
+		setCustomElementTagName(ScriptedRadiantProviderHost, tagName);
+
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		];
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		] = true;
+
+		try {
+			const html = renderToString(
+				<scripted-radiant-provider-host-test>
+					<script
+						type="application/json"
+						data-hydration={true}
+						data-hydration-type="context"
+						data-hydration-key="provider"
+					>
+						{'{"count":3,"label":"Authored child"}'}
+					</script>
+				</scripted-radiant-provider-host-test>,
+			);
+
+			expect(html).toContain(`<${tagName}>`);
+			expect(html).toContain('<p>Authored child / 3</p>');
+			expect(html).not.toContain('data-radiant-slot-projection');
+			expect(html).toContain('<script type="application/json"');
+			expect(html).toContain('data-hydration="true"');
+			expect(html).toContain('data-hydration-key="provider"');
+			expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
+		} finally {
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				] = previousForceServerCustomElementRender;
+			}
+		}
+	});
+
+	test('serializes nested RadiantComponent hosts from plain intrinsic tags', () => {
+		const nestedContext = createContext<{ label: string; level: number }>(Symbol('nested-radiant-context'));
+		const childTagName = 'nested-radiant-child-host-test';
+		const parentTagName = 'nested-radiant-parent-host-test';
+
+		class NestedRadiantChildHost extends RadiantComponent {
+			override render() {
+				const context = resolveSsrContextValue(nestedContext);
+				const summary = context ? `${context.label} / ${context.level}` : 'Pending context';
+
+				return (
+					<section class="nested-child-card">
+						<h3>Nested child SSR</h3>
+						<p>
+							Context: <strong>{summary}</strong>
+						</p>
+					</section>
+				);
+			}
+		}
+
+		class NestedRadiantParentHost extends RadiantComponent {
+			declare context: ContextProvider<typeof nestedContext>;
+
+			constructor() {
+				super();
+				this.context = new ContextProvider(this, {
+					context: nestedContext,
+					hydrationKey: 'context',
+					initialValue: { label: 'Nitro SSR context', level: 2 },
+					hydrate: Object,
+				});
+				this.registerContextProvider('context', this.context);
+			}
+
+			override render() {
+				return (
+					<section class="nested-parent-shell">
+						<header>
+							<h2>Parent shell</h2>
+						</header>
+						<nested-radiant-child-host-test />
+					</section>
+				);
+			}
+		}
+
+		if (!customElements.get(childTagName)) {
+			customElements.define(childTagName, NestedRadiantChildHost);
+		}
+		if (!customElements.get(parentTagName)) {
+			customElements.define(parentTagName, NestedRadiantParentHost);
+		}
+		setCustomElementTagName(NestedRadiantChildHost, childTagName);
+		setCustomElementTagName(NestedRadiantParentHost, parentTagName);
+
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		];
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		] = true;
+
+		try {
+			const parent = new NestedRadiantParentHost();
+			const nestedHtml = renderToString(<nested-radiant-parent-host-test />, { hydrate: true });
+
+			expect(nestedHtml).toContain(`<${parentTagName}>`);
+			expect(nestedHtml).toContain(`<${childTagName}>`);
+			expect(nestedHtml).toContain('class="nested-child-card"');
+			expect(nestedHtml).toContain('<h3>Nested child SSR</h3>');
+			expect(nestedHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
+			expect(nestedHtml).toContain(
+				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+			);
+			expect(nestedHtml).toContain('{"label":"Nitro SSR context","level":2}');
+
+			const parentHostHtml = parent.renderHostToString({ hydrate: true });
+
+			expect(parentHostHtml).toContain(`<${parentTagName}>`);
+			expect(parentHostHtml).toContain(`<${childTagName}>`);
+			expect(parentHostHtml).toContain('class="nested-child-card"');
+			expect(parentHostHtml).toContain('<h3>Nested child SSR</h3>');
+			expect(parentHostHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
+			expect(parentHostHtml).toContain(
+				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+			);
+		} finally {
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				] = previousForceServerCustomElementRender;
+			}
+		}
 	});
 
 	test('hydrates SSR markup in place on connect', async () => {
