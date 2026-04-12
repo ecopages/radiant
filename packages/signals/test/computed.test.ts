@@ -115,7 +115,7 @@ describe('Computed', () => {
 	});
 
 	test('prevents recursive computed reads', () => {
-		const recursive = new Computed(() => recursive.get());
+		const recursive: Computed<unknown> = new Computed((): unknown => recursive.get());
 
 		expect(() => recursive.get()).toThrow('Cannot read a computed signal recursively.');
 	});

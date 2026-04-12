@@ -85,10 +85,11 @@ describe('store', () => {
 
 	test('deleting properties removes them from reads and snapshots', () => {
 		const store = createStore({ profile: { name: 'Ada', age: 32 } });
-		const summary = new Computed(() => `${'age' in store.profile}:${store.profile.age ?? 'none'}`);
+		const profile = store.profile as { age?: number; name: string };
+		const summary = new Computed(() => `${'age' in profile}:${profile.age ?? 'none'}`);
 
 		expect(summary.get()).toBe('true:32');
-		delete store.profile.age;
+		delete profile.age;
 
 		expect(summary.get()).toBe('false:none');
 		expect(snapshot(store)).toEqual({ profile: { name: 'Ada' } });
