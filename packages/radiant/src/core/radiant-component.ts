@@ -3,10 +3,9 @@ import {
 	hydrate as hydrateJsx,
 	jsx,
 	render as renderJsx,
-	renderToString as renderJsxToString,
 	type JsxRenderable,
-	type RenderToStringOptions,
 } from '@ecopages/jsx';
+import { renderToString as renderJsxToString, type RenderToStringOptions } from '@ecopages/jsx/server';
 import { Computed, subtle } from '@ecopages/signals';
 import { RadiantComponentSsrService } from './radiant-component-ssr';
 import { getReactivePropDefinitions } from './reactive-prop-metadata';

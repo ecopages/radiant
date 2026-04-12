@@ -32,6 +32,8 @@ The shortest accurate mental model is:
 - direct signal-like child bindings through `get()` and `subscribe(...)`
 - subscribable child bindings through `createSubscribableJsxValue(...)`
 
+Use `@ecopages/jsx/server` for server-only helpers such as `renderToString(...)` and server custom-element render hooks.
+
 `@ecopages/jsx` does not provide component state, hooks, decorators, or a standalone component model. Those stay in `@ecopages/radiant`.
 
 Signal-like values that expose `get()` and `subscribe(...)` can be passed directly as child bindings. `createSubscribableJsxValue(...)` remains useful when an external source does not already speak that shape but still needs fine-grained child updates.
@@ -257,7 +259,7 @@ Use `renderToString(...)` for HTML generation. Enable `hydrate: true` only when 
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
-import { renderToString } from '@ecopages/jsx';
+import { renderToString } from '@ecopages/jsx/server';
 
 const view = (
 	<button class="action" hidden={false} aria={{ label: 'Ship order' }}>

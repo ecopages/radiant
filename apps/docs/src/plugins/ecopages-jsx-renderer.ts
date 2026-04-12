@@ -11,14 +11,12 @@ import type {
 	PageMetadataProps,
 	RouteRendererBody,
 } from '@ecopages/core';
-import type { EcoPagesAppConfig } from '@ecopages/core/internal-types.ts';
-import {
-	IntegrationRenderer,
-	type RenderToResponseContext,
-} from '@ecopages/core/route-renderer/integration-renderer.ts';
-import type { AssetProcessingService, ProcessedAsset } from '@ecopages/core/services/asset-processing-service.ts';
-import { rapidhash } from '@ecopages/core/hash.ts';
-import { renderToString, type JsxRenderable, withServerCustomElementRenderHook } from '@ecopages/jsx';
+import { rapidhash } from '@ecopages/core/hash';
+import type { EcoPagesAppConfig } from '@ecopages/core/internal-types';
+import { IntegrationRenderer, type RenderToResponseContext } from '@ecopages/core/route-renderer/integration-renderer';
+import type { AssetProcessingService, ProcessedAsset } from '@ecopages/core/services/asset-processing-service';
+import type { JsxRenderable } from '@ecopages/jsx';
+import { renderToString, withServerCustomElementRenderHook } from '@ecopages/jsx/server';
 import { ECOPAGES_JSX_PLUGIN_NAME } from './ecopages-jsx.plugin';
 
 type DocsHtmlTemplateProps = Omit<HtmlTemplateProps, 'children' | 'headContent'> & {
@@ -110,9 +108,7 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 	 * Supplies the intrinsic custom-element assets discovered by the plugin so
 	 * component renders can attach the correct client scripts.
 	 */
-	public setIntrinsicCustomElementAssets(
-		assetsByTagName: Map<string, readonly ProcessedAsset[]>,
-	): void {
+	public setIntrinsicCustomElementAssets(assetsByTagName: Map<string, readonly ProcessedAsset[]>): void {
 		this.intrinsicCustomElementAssets = assetsByTagName;
 	}
 
@@ -158,11 +154,14 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 					})
 				: page;
 
-			const document = await this.renderEcoComponent(options.HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>, {
-				metadata: options.metadata,
-				pageProps: options.pageProps ?? {},
-				children: content,
-			});
+			const document = await this.renderEcoComponent(
+				options.HtmlTemplate as AsyncEcoComponent<DocsHtmlTemplateProps>,
+				{
+					metadata: options.metadata,
+					pageProps: options.pageProps ?? {},
+					children: content,
+				},
+			);
 			const renderedDocument = this.renderJsx(document);
 			this.mergeCollectedAssets(this.endCollectedAssetFrame(assetFrame));
 
@@ -221,11 +220,13 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 					return this.renderJsx(viewContent).html;
 				}
 
-				return (await this.renderDocument(viewContent, {
-					metadata: metadata as PageMetadataProps,
-					pageProps: (props ?? {}) as Record<string, unknown>,
-					layout,
-				})).html;
+				return (
+					await this.renderDocument(viewContent, {
+						metadata: metadata as PageMetadataProps,
+						pageProps: (props ?? {}) as Record<string, unknown>,
+						layout,
+					})
+				).html;
 			});
 			this.mergeCollectedAssets(this.endCollectedAssetFrame(assetFrame));
 
@@ -318,8 +319,9 @@ export class EcopagesJsxRenderer extends IntegrationRenderer<JsxRenderable> {
 
 	private renderJsx(value: JsxRenderable): { assets: ProcessedAsset[]; html: string } {
 		const collectedAssets: ProcessedAsset[] = [];
-		const html = withServerCustomElementRenderHook(this.createIntrinsicCustomElementRenderHook(collectedAssets), () =>
-			renderToString(value),
+		const html = withServerCustomElementRenderHook(
+			this.createIntrinsicCustomElementRenderHook(collectedAssets),
+			() => renderToString(value),
 		);
 		const dedupedAssets = this.htmlTransformer.dedupeProcessedAssets(collectedAssets);
 		const activeFrame = this.collectedAssetFrames[this.collectedAssetFrames.length - 1];

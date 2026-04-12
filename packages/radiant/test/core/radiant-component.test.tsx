@@ -1,6 +1,6 @@
 import { waitFor } from '@testing-library/dom';
+import { renderToString } from '@ecopages/jsx/server';
 import { createStore, state as createSignalState, type WritableSignal } from '@ecopages/signals';
-import { renderToString } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';

@@ -426,18 +426,21 @@ describe('Radiant JSX server render', () => {
 		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
 
 		try {
-			const html = withServerCustomElementRenderHook(({ hydrate, instance, tagName }) => {
-				observedRenders.push({
-					count: (instance as unknown as HookAwareElement).count,
-					hydrate,
-					tagName,
-				});
+			const html = withServerCustomElementRenderHook(
+				({ hydrate, instance, tagName }) => {
+					observedRenders.push({
+						count: (instance as unknown as HookAwareElement).count,
+						hydrate,
+						tagName,
+					});
 
-				return undefined;
-			}, () => {
-				const template = jsx('hook-aware-element', { count: 4 });
-				return renderToString(template, { hydrate: true });
-			});
+					return undefined;
+				},
+				() => {
+					const template = jsx('hook-aware-element', { count: 4 });
+					return renderToString(template, { hydrate: true });
+				},
+			);
 
 			expect(html).toBe('<hook-aware-element data-hydrated="yes"><p>Count: 4</p></hook-aware-element>');
 			expect(observedRenders).toEqual([{ count: 4, hydrate: false, tagName: 'hook-aware-element' }]);
@@ -495,13 +498,17 @@ describe('Radiant JSX server render', () => {
 		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
 
 		try {
-			const html = withServerCustomElementRenderHook(() => ({
-				nodeType: 1,
-				outerHTML: '<replaceable-hook-element data-hook="yes"><p>Hook override</p></replaceable-hook-element>',
-			}), () => {
-				const template = jsx('replaceable-hook-element', { label: 'Original' });
-				return renderToString(template);
-			});
+			const html = withServerCustomElementRenderHook(
+				() => ({
+					nodeType: 1,
+					outerHTML:
+						'<replaceable-hook-element data-hook="yes"><p>Hook override</p></replaceable-hook-element>',
+				}),
+				() => {
+					const template = jsx('replaceable-hook-element', { label: 'Original' });
+					return renderToString(template);
+				},
+			);
 
 			expect(html).toBe(
 				'<replaceable-hook-element data-hook="yes"><p>Hook override</p></replaceable-hook-element>',

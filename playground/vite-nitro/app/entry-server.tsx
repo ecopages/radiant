@@ -1,4 +1,4 @@
-import { renderToString } from '@ecopages/jsx';
+import { renderToString } from '@ecopages/jsx/server';
 import { toRenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import { resolveRadiantAppLoadMode } from 'virtual:radiant/app-load-mode';
 import { renderSsrComponent } from '../server/render';

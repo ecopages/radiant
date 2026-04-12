@@ -117,9 +117,7 @@ export type ServerCustomElementRenderHookContext = {
  * Return a custom node-like value to replace the default wrapper, or `undefined`
  * to keep the built-in `renderHostToString(...)` behavior.
  */
-export type ServerCustomElementRenderHook = (
-	context: ServerCustomElementRenderHookContext,
-) => JsxNodeLike | undefined;
+export type ServerCustomElementRenderHook = (context: ServerCustomElementRenderHookContext) => JsxNodeLike | undefined;
 
 /**
  * Stable identity used to preserve ownership of a child value across keyed
@@ -791,10 +789,7 @@ function getActiveSsrHydrateMode(): boolean {
  * JSX runtime walks a tree. The previous hook is restored immediately after the
  * callback returns or throws.
  */
-export function withServerCustomElementRenderHook<T>(
-	hook: ServerCustomElementRenderHook,
-	render: () => T,
-): T {
+export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRenderHook, render: () => T): T {
 	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
 	const previousHook = globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL];
 	globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL] = hook;

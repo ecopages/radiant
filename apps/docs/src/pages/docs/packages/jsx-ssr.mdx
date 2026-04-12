@@ -9,7 +9,7 @@ export const getMetadata = () => ({
 
 # JSX SSR
 
-`@ecopages/jsx` has one SSR entrypoint: `renderToString(...)`.
+`@ecopages/jsx/server` is the dedicated SSR entrypoint for `renderToString(...)`.
 
 It serializes the same JSX authoring output used by the DOM renderer.
 
@@ -18,7 +18,7 @@ It serializes the same JSX authoring output used by the DOM renderer.
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { renderToString } from '@ecopages/jsx';
+import { renderToString } from '@ecopages/jsx/server';
 
 const view = <button class="action">Ship</button>;
 

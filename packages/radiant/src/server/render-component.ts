@@ -1,4 +1,5 @@
-import type { JsxRenderable, RenderToStringOptions } from '@ecopages/jsx';
+import type { JsxRenderable } from '@ecopages/jsx';
+import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import { withSsrContextProviders } from './context-ssr';
 import type { ContextType, UnknownContext } from '../context/types';

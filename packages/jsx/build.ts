@@ -2,7 +2,8 @@ import { watch } from 'node:fs';
 import path from 'node:path';
 import { $ } from 'bun';
 
-const publicEntrypoints = ['index.ts', 'client.ts', 'jsx-runtime.ts', 'jsx-dev-runtime.ts'];
+const browserEntrypoints = ['index.ts', 'client.ts', 'jsx-runtime.ts', 'jsx-dev-runtime.ts'];
+const serverEntrypoints = ['server.ts'];
 
 function shouldRebuild(filename: string): boolean {
 	return (
@@ -15,8 +16,8 @@ function shouldRebuild(filename: string): boolean {
 
 const watchMode = process.argv.includes('--watch');
 
-const build = await Bun.build({
-	entrypoints: publicEntrypoints,
+const browserBuild = await Bun.build({
+	entrypoints: browserEntrypoints,
 	format: 'esm',
 	minify: !watchMode,
 	outdir: 'dist',
@@ -24,7 +25,20 @@ const build = await Bun.build({
 	target: 'browser',
 });
 
-if (!build.success) {
+const serverBuild = await Bun.build({
+	entrypoints: serverEntrypoints,
+	format: 'esm',
+	minify: !watchMode,
+	outdir: 'dist',
+	sourcemap: 'external',
+	target: 'node',
+});
+
+for (const build of [browserBuild, serverBuild]) {
+	if (build.success) {
+		continue;
+	}
+
 	for (const log of build.logs) {
 		console.log('[@ecopages/jsx]', log);
 	}
