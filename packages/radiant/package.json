@@ -47,7 +47,9 @@
 		"/dist/*",
 		"size-budget.json"
 	],
-	"sideEffects": false,
+	"sideEffects": [
+		"./dist/server/install-light-dom-shim.js"
+	],
 	"exports": {
 		"./package.json": {
 			"import": "./package.json"
@@ -99,6 +101,10 @@
 		"./server/light-dom-shim": {
 			"types": "./dist/server/light-dom-shim.d.ts",
 			"import": "./dist/server/light-dom-shim.js"
+		},
+		"./server/install-light-dom-shim": {
+			"types": "./dist/server/install-light-dom-shim.d.ts",
+			"import": "./dist/server/install-light-dom-shim.js"
 		},
 		"./server/render-component": {
 			"types": "./dist/server/render-component.d.ts",
