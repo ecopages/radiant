@@ -18,6 +18,7 @@ import {
 	RENDERED_COMPONENT_GENERATED_AT_HEADER,
 	RENDERED_COMPONENT_TAG_NAME_HEADER,
 	renderComponent,
+	renderComponentWithPreview,
 	renderComponentToPayload,
 	renderComponentToString,
 	renderStreamableComponent,
@@ -212,11 +213,11 @@ describe('render-component server helpers', () => {
 		});
 	});
 
-	test('renderStreamableComponent() infers metadata and returns preview output', async () => {
+	test('renderComponentWithPreview() infers metadata and returns preview output', async () => {
 		const now = new Date('2026-03-27T12:00:00.000Z');
 		let resolvedComponent: CustomElementConstructor | undefined;
 
-		const rendered = await renderStreamableComponent(RenderComponentCard, {
+		const rendered = await renderComponentWithPreview(RenderComponentCard, {
 			initialize: (component) => {
 				component.count = 7;
 				component.label = 'Configured label';
@@ -245,6 +246,17 @@ describe('render-component server helpers', () => {
 			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: now.toISOString(),
 			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'render-component-card-test',
 		});
+	});
+
+	test('renderStreamableComponent() remains a compatibility alias for preview renders', async () => {
+		const aliased = await renderStreamableComponent(RenderComponentCard, {
+			initialize: (component) => {
+				component.count = 4;
+			},
+		});
+
+		expect(aliased.preview).toEqual(expect.any(Object));
+		expect(aliased.markup).toContain('Count: 4');
 	});
 
 	test('renderComponentToPayload() accepts load() options and omits preview output', async () => {
@@ -351,7 +363,7 @@ describe('render-component server helpers', () => {
 		expect(styleAsset('/print.css', 'print')).toEqual({ kind: 'style', href: '/print.css', media: 'print' });
 	});
 
-	test('renderStreamableComponent() throws when tag metadata is missing', async () => {
+	test('renderComponentWithPreview() throws when tag metadata is missing', async () => {
 		class UntaggedRenderable implements ServerRenderableComponent {
 			renderHostToString(): string {
 				return '<untagged-renderable></untagged-renderable>';
@@ -359,7 +371,7 @@ describe('render-component server helpers', () => {
 		}
 
 		await expect(
-			renderStreamableComponent(
+			renderComponentWithPreview(
 				UntaggedRenderable as unknown as CustomElementConstructor & { new (): UntaggedRenderable },
 			),
 		).rejects.toThrow('UntaggedRenderable is missing @customElement metadata.');

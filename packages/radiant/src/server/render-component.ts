@@ -98,10 +98,13 @@ export type RenderedComponentPayload = {
 };
 
 /** Full SSR result including a JSX-compatible preview value for shell composition. */
-export type StreamableRenderedComponent = RenderedComponentPayload & {
+export type RenderedComponentWithPreview = RenderedComponentPayload & {
 	/** JSX-compatible preview value that can be embedded into a larger SSR shell. */
 	preview: JsxRenderable;
 };
+
+/** @deprecated Use `RenderedComponentWithPreview`; this result is not a byte stream. */
+export type StreamableRenderedComponent = RenderedComponentWithPreview;
 
 /** Minimal component contract needed for framework-agnostic SSR helpers. */
 export type ServerRenderableComponent = {
@@ -284,13 +287,36 @@ export function renderStreamableComponent<TComponent extends ServerRenderableCom
 	options: RenderComponentOptions<TComponent>,
 ): Promise<StreamableRenderedComponent>;
 
+/**
+ * Renders a component into fragment metadata plus a JSX-compatible preview
+ * value that can be embedded into a larger server-rendered shell.
+ */
+export function renderComponentWithPreview<TComponent extends ServerRenderableComponent>(
+	component: ServerRenderableComponentConstructor<TComponent>,
+	options?: RenderComponentCallOptions<TComponent>,
+): Promise<RenderedComponentWithPreview>;
+
+export function renderComponentWithPreview<TComponent extends ServerRenderableComponent>(
+	options: RenderComponentOptions<TComponent>,
+): Promise<RenderedComponentWithPreview>;
+
+export async function renderComponentWithPreview<TComponent extends ServerRenderableComponent>(
+	componentOrOptions: ServerRenderableComponentConstructor<TComponent> | RenderComponentOptions<TComponent>,
+	options?: RenderComponentCallOptions<TComponent>,
+): Promise<RenderedComponentWithPreview> {
+	return toRenderedComponentWithPreview(
+		await renderResolvedComponent(normalizeRenderComponentOptions(componentOrOptions, options)),
+	);
+}
+
+/**
+ * @deprecated Use `renderComponentWithPreview(...)`; this helper returns a preview renderable, not a byte stream.
+ */
 export async function renderStreamableComponent<TComponent extends ServerRenderableComponent>(
 	componentOrOptions: ServerRenderableComponentConstructor<TComponent> | RenderComponentOptions<TComponent>,
 	options?: RenderComponentCallOptions<TComponent>,
 ): Promise<StreamableRenderedComponent> {
-	return toStreamableRenderedComponent(
-		await renderResolvedComponent(normalizeRenderComponentOptions(componentOrOptions, options)),
-	);
+	return renderComponentWithPreview(componentOrOptions, options);
 }
 
 async function renderResolvedComponent<TComponent extends ServerRenderableComponent>(
@@ -382,7 +408,7 @@ function createAmbientSsrContextProviders(
  * framework adapters or JSON/HTML fragment endpoints.
  */
 export function toRenderedComponentPayload(
-	render: StreamableRenderedComponent | RenderedComponent,
+	render: RenderedComponentWithPreview | RenderedComponent,
 ): RenderedComponentPayload {
 	if ('metadata' in render) {
 		return {
@@ -403,7 +429,7 @@ export function toRenderedComponentPayload(
  * by client-side fragment loaders.
  */
 export function createRenderedComponentHeaders(
-	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | StreamableRenderedComponent,
+	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | RenderedComponentWithPreview,
 ): Record<string, string> {
 	const metadata = toRenderedComponentMetadata(render);
 
@@ -416,7 +442,7 @@ export function createRenderedComponentHeaders(
 }
 
 function toRenderedComponentMetadata(
-	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | StreamableRenderedComponent,
+	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | RenderedComponentWithPreview,
 ): RenderedComponentMetadata {
 	if ('metadata' in render) {
 		return render.metadata;
@@ -434,7 +460,7 @@ function toRenderedComponentMetadata(
 	return render;
 }
 
-function toStreamableRenderedComponent(render: RenderedComponent): StreamableRenderedComponent {
+function toRenderedComponentWithPreview(render: RenderedComponent): RenderedComponentWithPreview {
 	return {
 		assets: render.metadata.assets,
 		clientModuleSrc: render.metadata.clientModuleUrl,
