@@ -692,6 +692,37 @@ describe('RadiantComponent', () => {
 		expect(html).toContain('data-radiant-slot-projection');
 	});
 
+	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
+		test('renderHostToString({ hydrate: true }) emits host content before slot projection and hydration scripts', () => {
+			@customElement('server-host-ordering-card-test')
+			class ServerHostOrderingCard extends RadiantComponent {
+				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
+
+				override render() {
+					return (
+						<section>
+							<slot />
+							<p>{this.status}</p>
+						</section>
+					);
+				}
+			}
+
+			const element = new ServerHostOrderingCard();
+			element.innerHTML = '<p>Projected body</p>';
+			element.status.set('ready');
+
+			const html = element.renderHostToString({ hydrate: true });
+			const hostContentIndex = html.indexOf('<section><p>Projected body</p><p>ready</p></section>');
+			const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
+			const hydrationScriptIndex = html.indexOf('data-hydration-key="status"');
+
+			expect(hostContentIndex).toBeGreaterThanOrEqual(0);
+			expect(slotProjectionIndex).toBeGreaterThan(hostContentIndex);
+			expect(hydrationScriptIndex).toBeGreaterThan(slotProjectionIndex);
+		});
+	});
+
 	test('createServerRenderEnvironment() prepares authored content for server-side slot queries', () => {
 		const environment = createServerRenderEnvironment();
 
@@ -865,6 +896,34 @@ describe('RadiantComponent', () => {
 				] = previousForceServerCustomElementRender;
 			}
 		}
+	});
+
+	test('renderHostToString({ hydrate: false }) emits authored hydration markup before slot projection payloads', () => {
+		@customElement('server-host-authored-hydration-order-card-test')
+		class ServerHostAuthoredHydrationOrderCard extends RadiantComponent {
+			override render() {
+				return (
+					<section>
+						<slot />
+					</section>
+				);
+			}
+		}
+
+		const element = new ServerHostAuthoredHydrationOrderCard();
+		element.innerHTML =
+			'<p>Projected body</p>' +
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":3}</script>';
+
+		const html = element.renderHostToString({ hydrate: false });
+		const hostContentIndex = html.indexOf('<section><p>Projected body</p></section>');
+		const authoredHydrationIndex = html.indexOf('data-hydration-key="provider"');
+		const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
+
+		expect(hostContentIndex).toBeGreaterThanOrEqual(0);
+		expect(authoredHydrationIndex).toBeGreaterThan(hostContentIndex);
+		expect(slotProjectionIndex).toBeGreaterThan(authoredHydrationIndex);
+		expect(html.match(/data-hydration-key="provider"/g)).toHaveLength(1);
 	});
 
 	test('serializes nested RadiantComponent hosts from plain intrinsic tags', () => {

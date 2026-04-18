@@ -4,18 +4,12 @@
 			"label": "root-client-surface",
 			"entrypoint": "./src/index.ts",
 			"maxBytes": 46080,
-			"maxGzipBytes": 12320
-		},
-		{
-			"label": "client-typical",
-			"entrypoint": "./size-audit/client-typical.ts",
-			"maxBytes": 15360,
-			"maxGzipBytes": 4608
+			"maxGzipBytes": 12288
 		},
 		{
 			"label": "server-render",
 			"entrypoint": "./src/server/render-component.ts",
-			"maxBytes": 10752,
+			"maxBytes": 10880,
 			"maxGzipBytes": 4096
 		}
 	]

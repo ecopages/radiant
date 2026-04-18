@@ -14,14 +14,12 @@ import {
 	DEFAULT_SLOT_NAME,
 	SLOT_PROJECTION_SCRIPT_ATTRIBUTE,
 	collectAuthoredHydrationScriptMarkup,
-	collectAuthoredHydrationScriptMarkupFromHtml,
 	captureProjectedSlotRenderables,
 	deserializeProjectedSlotRenderables,
-	parseProjectedSlotRenderablesFromHtml,
 	resolveSlotProjection,
 	serializeProjectedSlotRenderables,
 	takeSlotProjectionScriptPayload,
-} from './slot-projection';
+} from './slot-projection-runtime';
 import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 
 /**
@@ -271,14 +269,6 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 		if (this.getHostChildNodeCount() > 0) {
 			this.projectedSlotContent = captureProjectedSlotRenderables(this);
 			this.slotProjectionVersion += 1;
-			return;
-		}
-
-		const innerHtml = typeof this.innerHTML === 'string' ? this.innerHTML : '';
-
-		if (!this.isConnected && innerHtml !== '') {
-			this.projectedSlotContent = parseProjectedSlotRenderablesFromHtml(innerHtml);
-			this.slotProjectionVersion += 1;
 		}
 	}
 
@@ -304,13 +294,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 			return authoredHydrationMarkup;
 		}
 
-		const innerHtml = typeof this.innerHTML === 'string' ? this.innerHTML : '';
-
-		if (innerHtml === '') {
-			return undefined;
-		}
-
-		return collectAuthoredHydrationScriptMarkupFromHtml(innerHtml);
+		return undefined;
 	}
 
 	private handleSlotProjectionMutations(records: MutationRecord[]): void {
