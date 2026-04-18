@@ -1,9 +1,6 @@
-import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
-import { EcopagesApp } from '@ecopages/core';
+import { createApp } from '@ecopages/core/create-app';
 import appConfig from './eco.config';
 
-installLightDomShim();
-
-const app = new EcopagesApp({ appConfig });
+const app = await createApp({ appConfig });
 
 await app.start();

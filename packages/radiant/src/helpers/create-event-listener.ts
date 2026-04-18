@@ -36,10 +36,6 @@ type ShadowRootHookHost = RadiantElement & {
 	[shadowRootListenerHooksKey]?: Set<() => void>;
 };
 
-function matchesDelegatedTarget(event: Event, selector: string): boolean {
-	return event.target instanceof Element && event.target.matches(selector);
-}
-
 function addDelegatedListener(
 	root: DelegatedEventRoot,
 	config: Pick<OnEventConfig, 'type' | 'options'>,
@@ -47,7 +43,7 @@ function addDelegatedListener(
 	listener: EventListener,
 ): () => void {
 	const delegatedListener = (event: Event) => {
-		if (matchesDelegatedTarget(event, selector)) {
+		if (event.target instanceof Element && event.target.matches(selector)) {
 			listener(event);
 		}
 	};
@@ -137,7 +133,7 @@ export function createEventListener(
 		}
 
 		if ('selector' in config || 'ref' in config) {
-			const selector = 'selector' in config ? config.selector : `[data-ref="${config.ref}"]`;
+			const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
 
 			if (config.scope !== 'shadow' && !lightCleanup) {
 				lightCleanup = addDelegatedListener(host, config, selector, boundCallback);

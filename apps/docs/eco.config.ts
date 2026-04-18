@@ -2,9 +2,9 @@ import path from 'node:path';
 import { ConfigBuilder } from '@ecopages/core/config-builder';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
+import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
 import remarkGfm from 'remark-gfm';
 import rehypePrettyCode from 'rehype-pretty-code';
-import { ecopagesJsxPlugin } from './src/plugins/ecopages-jsx.plugin';
 import { rehypeSimpleTableWrapper } from './src/plugins/rehype-simple-table-wrapper';
 
 const config = await new ConfigBuilder()

@@ -134,6 +134,23 @@ describe('createEventListener', () => {
 		expect(clicked).toBe(true);
 	});
 
+	test('subscribes to events by ref when the ref contains selector metacharacters', () => {
+		const host = document.createElement('event-helper-element') as EventHelperElement;
+		const button = document.createElement('button');
+		const ref = 'button"[]\\ref';
+		button.setAttribute('data-ref', ref);
+		host.appendChild(button);
+		document.body.appendChild(host);
+
+		let clicked = false;
+		createEventListener(host, { ref, type: 'click' }, () => {
+			clicked = true;
+		});
+
+		button.click();
+		expect(clicked).toBe(true);
+	});
+
 	test('returns a cleanup function', () => {
 		const host = document.createElement('event-helper-element') as EventHelperElement;
 		const button = document.createElement('button');
