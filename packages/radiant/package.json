@@ -87,6 +87,10 @@
 			"types": "./dist/context/decorators/on-context-update.d.ts",
 			"import": "./dist/context/decorators/on-context-update.js"
 		},
+		"./context/events": {
+			"types": "./dist/context/events.d.ts",
+			"import": "./dist/context/events.js"
+		},
 		"./core/radiant-element": {
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
