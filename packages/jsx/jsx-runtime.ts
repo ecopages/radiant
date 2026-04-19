@@ -64,6 +64,19 @@ export interface TemplateResultLike {
 }
 
 /**
+ * Subset of standard DOM `Node.nodeType` values used by the JSX serialization layer.
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType | MDN – Node.nodeType}
+ */
+export type JsxNodeType =
+	/** `Node.ELEMENT_NODE` */
+	| 1
+	/** `Node.TEXT_NODE` */
+	| 3
+	/** `Node.DOCUMENT_FRAGMENT_NODE` */
+	| 11;
+
+/**
  * A lightweight node-like value that can be serialized on the server.
  *
  * This is primarily used by SSR helpers that can provide final HTML without
@@ -72,8 +85,8 @@ export interface TemplateResultLike {
 export interface JsxNodeLike {
 	/** Optional serialized child nodes when `outerHTML` is not provided directly. */
 	childNodes?: JsxNodeLike[];
-	/** DOM-like node type identifier. */
-	nodeType: number;
+	/** Standard DOM node type — see {@link JsxNodeType}. */
+	nodeType: JsxNodeType;
 	/** Serialized HTML for element-like values. */
 	outerHTML?: string;
 	/** Serialized text content for text-like values. */
@@ -492,16 +505,39 @@ export interface AriaAttributesNormalized {
 export type AriaTypeNormalized = AriaAttributesNormalized;
 
 /**
+ * Accepted value for the `classes` JSX prop.
+ *
+ * Works like Astro's `class:list` — supports strings, numbers, conditional
+ * objects (`{ token: boolean }`), and nested arrays of the same.
+ */
+export type ClassList = string | number | bigint | boolean | null | undefined | Record<string, unknown> | ClassList[];
+
+/** Accepted value for individual entries inside a `style` object. */
+export type StylePropertyValue = string | number | null | undefined;
+
+/**
+ * Accepted value for the `style` JSX prop.
+ *
+ * Either a pre-serialized CSS string or an object whose keys are camelCase CSS
+ * property names and values are serializable declarations.
+ */
+export type StyleValue = string | Record<string, StylePropertyValue>;
+
+/** Accepted value for individual entries inside a `data` object. */
+export type DataAttributeValue = string | number | boolean | null | undefined;
+
+/**
  * Shared attribute shape for intrinsic elements.
  */
 export interface JsxSharedIntrinsicAttributes {
 	aria?: Partial<AriaAttributesNormalized> | undefined;
 	children?: JsxRenderable;
-	class?: unknown;
-	className?: unknown;
-	classes?: unknown;
-	data?: Record<string, unknown>;
-	style?: Record<string, unknown> | string;
+	/** Plain class string — merged with `classes` when both are provided. */
+	class?: string;
+	/** Dynamic class list — like Astro's `class:list`. Merged with `class` when both are provided. */
+	classes?: ClassList;
+	data?: Record<string, DataAttributeValue>;
+	style?: StyleValue;
 	[key: string]: unknown;
 }
 
@@ -1236,9 +1272,9 @@ function isSignalLikeValue(value: unknown): value is SignalLike {
  * pair. No intermediate record is created.
  *
  * Processing steps (in order):
- * 1. Merges `class`, `className`, and `classes` into a single `class` string via
- *    {@link normalizeMergedClassValue}. The pair is omitted when all three are empty.
- * 2. Skips `undefined` values, the `key` prop, and the class-family aliases.
+ * 1. Merges `class` and `classes` into a single `class` string via
+ *    {@link normalizeMergedClassValue}. The pair is omitted when both are empty.
+ * 2. Skips `undefined` values, the `key` prop, and the class-family props.
  * 3. Expands `data` and `aria` objects into `data-*` / `aria-*` flat keys via
  *    {@link appendStructuredAttributes}.
  * 4. Serializes `style` objects to inline CSS strings via {@link normalizeStyleValue}.
@@ -1251,7 +1287,7 @@ function forEachNormalizedAttribute(
 	attributes: Record<string, unknown>,
 	append: (name: string, value: unknown) => void,
 ): void {
-	const classValue = normalizeMergedClassValue(attributes.class, attributes.className, attributes.classes);
+	const classValue = normalizeMergedClassValue(attributes.class, attributes.classes);
 
 	if (classValue !== undefined) {
 		append('class', classValue);
@@ -1260,7 +1296,7 @@ function forEachNormalizedAttribute(
 	for (const name in attributes) {
 		const value = attributes[name];
 
-		if (value === undefined || name === 'key' || name === 'class' || name === 'className' || name === 'classes') {
+		if (value === undefined || name === 'key' || name === 'class' || name === 'classes') {
 			continue;
 		}
 
@@ -1597,25 +1633,20 @@ function normalizeChildren(children: JsxRenderable | undefined): JsxRenderable {
 }
 
 /**
- * Merges the `class`, `className`, and `classes` JSX props into a single
+ * Merges the `class` and `classes` JSX props into a single
  * space-separated class string.
  *
- * Each value is processed by {@link appendClassTokens}, which understands strings,
- * numbers, arrays, and conditional objects (`{ token: boolean }`).
+ * `class` is treated as a plain string token. `classes` is processed by
+ * {@link appendClassTokens}, which understands strings, numbers, arrays,
+ * and conditional objects (`{ token: boolean }`).
  *
  * @param classValue Value of the `class` prop.
- * @param classNameValue Value of the `className` prop.
  * @param classesValue Value of the `classes` prop.
- * @returns Merged class string, or `undefined` when all three resolve to no tokens.
+ * @returns Merged class string, or `undefined` when both resolve to no tokens.
  */
-function normalizeMergedClassValue(
-	classValue: unknown,
-	classNameValue: unknown,
-	classesValue: unknown,
-): string | undefined {
+function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): string | undefined {
 	const tokens: string[] = [];
 	appendClassTokens(tokens, classValue);
-	appendClassTokens(tokens, classNameValue);
 	appendClassTokens(tokens, classesValue);
 	return tokens.length === 0 ? undefined : tokens.join(' ');
 }
