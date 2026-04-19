@@ -22,11 +22,6 @@ export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextT
 	subscribe?: boolean;
 };
 
-/**
- * @deprecated Use `ContextSelectorOptions` for field usage or `OnContextUpdateOptions` for method usage.
- */
-export type SubscribeToContextOptions<T extends UnknownContext> = OnContextUpdateOptions<T>;
-
 type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
 
 type ContextSelectorDecorator<Selected> = {

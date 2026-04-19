@@ -21,14 +21,6 @@ export type ClassDecorator = <T extends Constructor>(target: T, context: Context
 
 export type Method = (...args: any[]) => any;
 
-/**
- * @deprecated
- */
-export type StanderOrLegacyClassDecorator = {
-	(target: Constructor): typeof target | void;
-	(target: CustomElementConstructor, context: ClassDecoratorContext): void;
-};
-
 export type LegacyClassDecoratorArgs = {
 	protoOrTarget: CustomElementConstructor;
 	nameOrContext: string;
@@ -41,14 +33,6 @@ export type StandardClassDecoratorArgs = {
 };
 
 export type StandardOrLegacyClassDecoratorArgs = LegacyClassDecoratorArgs | StandardClassDecoratorArgs;
-
-/**
- * @deprecated
- */
-export type StandardOrLegacMethodDecorator = {
-	(proto: Constructor<HTMLElement>): PropertyDescriptor;
-	(target: Method, context: ClassMethodDecoratorContext): void;
-};
 
 export type LegacyMethodDecoratorArgs = {
 	protoOrTarget: RadiantElement;
@@ -63,14 +47,6 @@ export type StandardMethodDecoratorArgs = {
 };
 
 export type StandardOrLegacyMethodDecoratorArgs = LegacyMethodDecoratorArgs | StandardMethodDecoratorArgs;
-
-/**
- * @deprecated
- */
-export type StandardOrLegacyClassFieldDecorator = {
-	(proto: RadiantElement, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor;
-	(target: undefined, context: ClassFieldDecoratorContext): void;
-};
 
 export type LegacyFieldDecoratorArgs = {
 	protoOrTarget: RadiantElement;
