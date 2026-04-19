@@ -147,7 +147,7 @@ export class RadiantWeatherAppElement extends RadiantComponent {
 		}
 
 		return (
-			<div class={{ 'transition-opacity': true, 'opacity-50': isPending }}>
+			<div classes={{ 'transition-opacity': true, 'opacity-50': isPending }}>
 				<radiant-weather-summary />
 			</div>
 		);
