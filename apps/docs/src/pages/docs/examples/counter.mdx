@@ -16,7 +16,7 @@ export const getMetadata = () => ({
 
 # Radiant Counter
 
-This is the smallest example for explaining the two host styles in Radiant.
+The smallest example comparing `RadiantComponent` and `RadiantElement` host patterns.
 
 ## Live Comparison
 
@@ -48,8 +48,8 @@ export type RadiantCounterProps = {
 };
 
 @customElement('radiant-counter')
-export class RadiantCounter extends RadiantComponent {
-	@prop({ type: Number, reflect: true, defaultValue: 0 }) declare value: number;
+export class RadiantCounter extends RadiantComponent<RadiantCounterProps> {
+	@prop({ type: Number, reflect: true }) value = 0;
 
 	private readonly decrement = () => {
 		if (this.value > 0) {
@@ -67,7 +67,7 @@ export class RadiantCounter extends RadiantComponent {
 				<button type="button" on:click={this.decrement} aria-label="Decrement">
 					-
 				</button>
-				<span>{this.value}</span>
+				<span>{this.$.value}</span>
 				<button type="button" on:click={this.increment} aria-label="Increment">
 					+
 				</button>
@@ -79,7 +79,17 @@ export class RadiantCounter extends RadiantComponent {
 
 ## The Same Behavior With RadiantElement
 
-The second live demo uses `RadiantElement` when the host is imperative or string-template based.
+`RadiantElement` does not own the view — the HTML is authored or server-rendered, and the component enhances it with behavior.
+
+```html
+<counter-element value="5">
+	<button type="button" data-ref="decrement" aria-label="Decrement">-</button>
+	<span data-ref="count">5</span>
+	<button type="button" data-ref="increment" aria-label="Increment">+</button>
+</counter-element>
+```
+
+The script attaches to existing markup using `data-ref` queries and decorator-driven event listeners.
 
 ```ts
 import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
@@ -88,16 +98,6 @@ import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '
 export class CounterElement extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) declare value: number;
 	@query({ ref: 'count' }) countText!: HTMLSpanElement;
-
-	override connectedCallback() {
-		super.connectedCallback();
-		this.renderTemplate({
-			target: this,
-			template:
-				'<button type="button" data-ref="decrement" aria-label="Decrement">-</button><span data-ref="count"></span><button type="button" data-ref="increment" aria-label="Increment">+</button>',
-		});
-		this.syncCount();
-	}
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {
@@ -118,16 +118,7 @@ export class CounterElement extends RadiantElement {
 }
 ```
 
-## What This Example Should Teach
-
-- `RadiantComponent` is not a replacement for `RadiantElement`.
-- `RadiantElement` works perfectly well without SSR.
-- `RadiantComponent` is the right host when the element itself should own a JSX view, hydrate SSR output, or project slot content.
-- `RadiantElement` is the right host when the DOM is imperative, string-template based, or supplied from outside the host render loop.
-
-Technically, `RadiantComponent` extends `RadiantElement`, but the important distinction in docs is host ownership, not feature count.
-
-## Related Examples
+## See Also
 
 - See [RadiantElement](/docs/components/radiant-element) for the lower-level base class.
 - See [RadiantComponent](/docs/components/radiant-component) for the host JSX render loop.

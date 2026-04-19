@@ -11,35 +11,28 @@ export const config = {
 
 export const getMetadata = () => ({
 	title: 'Docs | Radiant Todo App',
-	description: 'An integrated example that combines server-rendered component hosts, a RadiantComponent view boundary, and RadiantElement leaf nodes.',
+	description: 'An integrated example combining a RadiantComponent host with provider-backed child components.',
 });
 
 # Radiant Todo App
 
-This is the integration example, not the first base-class example.
+A `RadiantComponent` host that owns a shared todo context, with child components that consume it for local interactions.
 
 <RadiantTodoApp />
 
-It combines three different jobs in one flow:
+The example combines three pieces:
 
 - a JSX entry that authors the provider hydration payload directly under the host
 - a `RadiantComponent` host that owns the board view and shared context provider
-- `RadiantElement` leaf items that consume that context for local interactions
-
-## Why This Example Exists
-
-The todo app is useful because it shows that `RadiantComponent` and `RadiantElement` are complementary.
-
-`RadiantComponent` is not replacing the item element here. The host and the leaf nodes solve different problems.
+- `RadiantComponent` child items that consume that context for toggle and remove interactions
 
 ## 1. JSX Entry
 
-The docs preview authors the host in plain JSX and seeds the provider with a real child hydration script.
+The docs preview authors the host in plain JSX and seeds the provider with a typed hydration script.
 
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
-
-import { createTodoSamples, type Todo } from './radiant-todo-app.script';
+import { createTodoSamples, type Todo } from './todo-context';
 
 export const RadiantTodoApp = () => {
 	const initialContext = stringifyTyped<{ todos: Todo[] }, string>({ todos: createTodoSamples() });
@@ -54,13 +47,13 @@ export const RadiantTodoApp = () => {
 };
 ```
 
-This keeps the preview authored as the same host tag the browser upgrades later while still giving the provider a typed SSR payload. JSON child text inside `<script type="application/json">` is emitted as raw script text, so the provider can read it back without needing an `innerHTML` escape hatch.
+JSON child text inside `<script type="application/json">` is emitted as raw script text, so the provider can read it back without an `innerHTML` escape hatch.
 
-Notice that `stringifyTyped` comes from `@ecopages/radiant/tools/stringify-typed`, not the root entrypoint. It is a low-level serialization helper rather than a core component API.
+`stringifyTyped` comes from `@ecopages/radiant/tools/stringify-typed`, not the root entrypoint.
 
-## 2. RadiantComponent Host
+## 2. Host
 
-The host owns the provider and the rerender boundary. It does not need a temporary prop bridge because the provider can read its own hydration script directly from the authored host children.
+The host owns the provider and the rerender boundary. The provider reads its own hydration script directly from the authored host children.
 
 ```tsx
 import {
@@ -106,19 +99,65 @@ export class RadiantTodoAppElement extends RadiantComponent {
 			form.reset();
 		}
 	}
+
+	renderTodoList({ todos }: { todos: Todo[] }) {
+		return todos.map(({ id, complete, text }) => (
+			<radiant-todo-item complete={complete} class="todo__item" id={id} text={text} />
+		));
+	}
+
+	override render() {
+		const todos = this.todos;
+		const todosCompleted = todos.filter((todo) => todo.complete);
+		const todosIncomplete = todos.filter((todo) => !todo.complete);
+
+		return (
+			<>
+				<section class="todo__board">
+					<article class="todo__panel">
+						<h2>Incomplete Todos</h2>
+						<div class="todo__list">
+							{todosIncomplete.length > 0 ? (
+								this.renderTodoList({ todos: todosIncomplete })
+							) : (
+								<div>No todos to show</div>
+							)}
+						</div>
+					</article>
+					<article class="todo__panel">
+						<h2>Completed Todos</h2>
+						<div class="todo__list">
+							{todosCompleted.length > 0 ? (
+								this.renderTodoList({ todos: todosCompleted })
+							) : (
+								<div>No completed todos to show</div>
+							)}
+						</div>
+					</article>
+				</section>
+				<form>
+					<div class="form-group">
+						<label for="new-todo">Add Todo</label>
+						<input id="new-todo" name="todo" />
+					</div>
+					<button type="submit">Add</button>
+				</form>
+			</>
+		);
+	}
 }
 ```
 
-This is the point of the example. The host keeps ownership of the shared state boundary, but the provider lets lower-level descendants work with that state without threading props and custom events through every layer. `serialize(...)` keeps the logger client-only while the todo list still hydrates from SSR.
+`serialize(...)` keeps the `TodoLogger` instance client-only while the todo list still hydrates from SSR.
 
-## 3. RadiantElement Leaf Nodes
+## 3. Child Items
 
-Each todo item stays a `RadiantElement` because it is a lower-level custom element with its own DOM interaction while shared mutations flow through the context provider.
+Each todo item is a `RadiantComponent` that renders its own view and consumes context for shared state mutations.
 
 ```tsx
 import {
 	type ContextProvider,
-	RadiantElement,
+	RadiantComponent,
 	consumeContext,
 	customElement,
 	onEvent,
@@ -127,9 +166,15 @@ import {
 
 import { todoContext } from './todo-context';
 
+type RadiantTodoBindings = {
+	complete: boolean;
+	text: string;
+};
+
 @customElement('radiant-todo-item')
-export class RadiantTodoItem extends RadiantElement {
+export class RadiantTodoItem extends RadiantComponent<RadiantTodoBindings> {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
+	@prop({ type: String, defaultValue: '' }) declare text: string;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
 	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
@@ -144,20 +189,43 @@ export class RadiantTodoItem extends RadiantElement {
 		this.context.setContext({ todos: nextTodos });
 		currentContext.logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
 	}
+
+	@onEvent({ ref: 'remove-todo', type: 'click' })
+	removeTodo() {
+		const currentContext = this.context.getContext();
+		const nextTodos = currentContext.todos.filter((todo) => todo.id !== this.id);
+
+		this.context.setContext({ todos: nextTodos });
+		currentContext.logger.log(`Todo ${this.id} removed`);
+	}
+
+	override render() {
+		return (
+			<>
+				<label for={`todo-${this.id}`}>
+					<input id={`todo-${this.id}`} name={this.id} type="checkbox" checked={this.$.complete} />
+					{this.$.text}
+				</label>
+				<button type="button" data-ref="remove-todo" aria-label={`Remove todo: ${this.id}`}>
+					&times;
+				</button>
+			</>
+		);
+	}
 }
 ```
 
-This element does not need its own host JSX render loop to be valuable. Its job is local DOM work plus context-backed state transitions, not top-level SSR ownership.
+The item uses `@consumeContext` because it needs the provider object to call `getContext()` and `setContext(...)`. It also uses `this.$.complete` and `this.$.text` for fine-grained binding positions in its own `render()`.
 
-## What This Example Should Teach
+## Key Patterns
 
-- `RadiantElement` does not need SSR in order to work.
-- `RadiantComponent` is the host-owned render mode built on top of `RadiantElement`.
-- Context can keep leaf nodes small when several descendants need the same shared state.
-- `@contextSelector` on a field means `render()` can read `this.todos` directly — no empty method body, no manual `this.update()`.
-- `serialize(...)` lets a provider keep client-only members without leaking them into SSR JSON.
-- Typed child `<script>` payloads remain a valid pattern for provider hydration.
-- A larger app often uses both together.
-- SSR, slots, and leaf custom elements are different concerns and do not need to be collapsed into one base class explanation.
+- **`@contextSelector` on the host field** means `render()` reads `this.todos` directly. When the todo list changes in context, the host rerenders automatically.
+- **`@consumeContext` on the child** gives it the provider object for read-write access. Use `@consumeContext` when the component calls `setContext(...)`.
+- **`serialize(...)` on the provider** keeps the `TodoLogger` out of SSR JSON while the todo list round-trips through hydration.
+- **Typed `<script>` payloads** remain a valid pattern for provider hydration when the JSX entry authors the host directly.
 
-If you are learning the base classes, start with [Radiant Counter](/docs/examples/counter). If you want the mixed architecture example, this todo app is the right next step.
+## See Also
+
+- [Radiant Counter](/docs/examples/counter) for the smallest host-render example
+- [Weather App](/docs/examples/weather-app) for a resource-driven context example
+- [@provideContext](/docs/context/provide-context) and [@consumeContext](/docs/context/consume-context) for the decorator APIs
