@@ -12,7 +12,7 @@
 		"lint-staged": "lint-staged",
 		"prepare:husky": "husky",
 		"build:all": "bun run --elide-lines=0 --filter @ecopages/jsx build:lib && bun run --elide-lines=0 --filter @ecopages/signals build:lib && bun run --elide-lines=0 --filter @ecopages/radiant build:lib",
-		"test:all": "bun run --elide-lines=0 --filter @ecopages/jsx test:lib && bun run --elide-lines=0 --filter @ecopages/signals test:lib && bun run --elide-lines=0 --filter @ecopages/radiant test:lib && bun run --elide-lines=0 --filter radiant-docs test:e2e && bun run --elide-lines=0 --filter kitchen-sink-vite-nitro test:e2e && bun run --elide-lines=0 --filter playground-vite test:e2e && bun run size:check",
+		"test:all": "bun run --filter @ecopages/jsx test:lib && bun run --filter @ecopages/signals test:lib && bun run --filter @ecopages/radiant test:lib && bun run --filter radiant-docs test:e2e && bun run --filter kitchen-sink-vite-nitro test:e2e && bun run --filter playground-vite test:e2e && bun run size:check",
 		"size:check": "bun run --filter '*' size:check",
 		"size:report": "bun run --filter '*' size:report",
 		"changeset": "changeset",
