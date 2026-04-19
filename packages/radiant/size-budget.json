@@ -9,8 +9,8 @@
 		{
 			"label": "server-render",
 			"entrypoint": "./src/server/render-component.ts",
-			"maxBytes": 10880,
-			"maxGzipBytes": 4096
+			"maxBytes": 15360,
+			"maxGzipBytes": 5120
 		}
 	]
 }

@@ -149,7 +149,9 @@ Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive cha
 
 In practice, `renderHostToString()` is the right default for full component SSR because it emits `<my-element>...</my-element>` instead of only the view fragment.
 
-`hydrate: true` adds hydration markers for the component view. On first connect, the component checks for those markers and hydrates in place instead of doing a fresh client render.
+`hydrate: true` adds hydration markers for the component view. First-connect hydration is now explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
+
+For component-owned SSR, the instance methods still work. For adapters, fragment responses, and shared server utilities, prefer the explicit helpers under `@ecopages/radiant/server/render-component`.
 
 Server runtime setup, fragment rendering helpers, and SSR-specific import guidance now live in [src/server/README.md](src/server/README.md).
 
@@ -275,6 +277,8 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/context/on-context-update` | `@onContextUpdate(...)` decorator — run a method on context change                                              |
 | `@ecopages/radiant/core/radiant-element`      | Non-JSX reactive custom-element base                                                                            |
 | `@ecopages/radiant/core/radiant-component`    | JSX-first component base                                                                                        |
+| `@ecopages/radiant/client/hydrator`           | Explicit client hydrator installer and status helpers for SSR pages                                             |
+| `@ecopages/radiant/client/install-hydrator`   | Side-effect entrypoint that enables first-connect hydration before component modules load                       |
 | `@ecopages/radiant/signals/host-resource`     | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                          |
 | `@ecopages/radiant/server/light-dom-shim`     | Minimal SSR window and host-preparation helpers                                                                 |
 | `@ecopages/radiant/server/render-component`   | Canonical component SSR helpers and metadata utilities                                                          |

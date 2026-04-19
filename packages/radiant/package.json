@@ -48,6 +48,7 @@
 		"size-budget.json"
 	],
 	"sideEffects": [
+		"./dist/client/install-hydrator.js",
 		"./dist/server/install-light-dom-shim.js"
 	],
 	"exports": {
@@ -93,6 +94,14 @@
 		"./core/radiant-component": {
 			"types": "./dist/core/radiant-component.d.ts",
 			"import": "./dist/core/radiant-component.js"
+		},
+		"./client/hydrator": {
+			"types": "./dist/client/hydrator.d.ts",
+			"import": "./dist/client/hydrator.js"
+		},
+		"./client/install-hydrator": {
+			"types": "./dist/client/install-hydrator.d.ts",
+			"import": "./dist/client/install-hydrator.js"
 		},
 		"./signals/host-resource": {
 			"types": "./dist/signals/host-resource.d.ts",

@@ -1,10 +1,16 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
+import {
+	getRadiantComponentSsrRuntime,
+	type RadiantComponentRenderBridge,
+	type RadiantComponentSsrCapable,
+} from '../core/radiant-component-ssr-registry';
 import { withSsrContextProviders } from './context-ssr';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
+import { ensureRadiantComponentSsrRuntimeRegistered } from './radiant-component-ssr-runtime';
 
 /** Default response header carrying the fragment render timestamp. */
 export const RENDERED_COMPONENT_GENERATED_AT_HEADER = 'x-generated-at';
@@ -17,6 +23,8 @@ export const RENDERED_COMPONENT_CLIENT_MODULE_HEADER = 'x-radiant-client-module'
 
 /** Default response header carrying serialized fragment asset metadata. */
 export const RENDERED_COMPONENT_ASSETS_HEADER = 'x-radiant-assets';
+
+ensureRadiantComponentSsrRuntimeRegistered();
 
 /** Asset dependency emitted by a rendered fragment. */
 export type RenderedComponentAsset =
@@ -102,9 +110,6 @@ export type RenderedComponentWithPreview = RenderedComponentPayload & {
 	/** JSX-compatible preview value that can be embedded into a larger SSR shell. */
 	preview: JsxRenderable;
 };
-
-/** @deprecated Use `RenderedComponentWithPreview`; this result is not a byte stream. */
-export type StreamableRenderedComponent = RenderedComponentWithPreview;
 
 /** Minimal component contract needed for framework-agnostic SSR helpers. */
 export type ServerRenderableComponent = {
@@ -278,19 +283,6 @@ export async function renderComponentToPayload<TComponent extends ServerRenderab
  * Renders a component into both fragment metadata and a JSX-compatible preview
  * value that can be embedded into a larger server-rendered shell.
  */
-export function renderStreamableComponent<TComponent extends ServerRenderableComponent>(
-	component: ServerRenderableComponentConstructor<TComponent>,
-	options?: RenderComponentCallOptions<TComponent>,
-): Promise<StreamableRenderedComponent>;
-
-export function renderStreamableComponent<TComponent extends ServerRenderableComponent>(
-	options: RenderComponentOptions<TComponent>,
-): Promise<StreamableRenderedComponent>;
-
-/**
- * Renders a component into fragment metadata plus a JSX-compatible preview
- * value that can be embedded into a larger server-rendered shell.
- */
 export function renderComponentWithPreview<TComponent extends ServerRenderableComponent>(
 	component: ServerRenderableComponentConstructor<TComponent>,
 	options?: RenderComponentCallOptions<TComponent>,
@@ -309,19 +301,11 @@ export async function renderComponentWithPreview<TComponent extends ServerRender
 	);
 }
 
-/**
- * @deprecated Use `renderComponentWithPreview(...)`; this helper returns a preview renderable, not a byte stream.
- */
-export async function renderStreamableComponent<TComponent extends ServerRenderableComponent>(
-	componentOrOptions: ServerRenderableComponentConstructor<TComponent> | RenderComponentOptions<TComponent>,
-	options?: RenderComponentCallOptions<TComponent>,
-): Promise<StreamableRenderedComponent> {
-	return renderComponentWithPreview(componentOrOptions, options);
-}
-
 async function renderResolvedComponent<TComponent extends ServerRenderableComponent>(
 	normalizedOptions: RenderComponentOptions<TComponent>,
 ): Promise<RenderedComponent> {
+	ensureRadiantComponentSsrRuntimeRegistered();
+
 	const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
 	const restoreAmbientContext = withSsrContextProviders(
 		createAmbientSsrContextProviders(normalizedOptions.ssrContext),
@@ -347,7 +331,10 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 		const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
 		const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
 		const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
-		const markup = component.renderHostToString(renderOptions);
+		const radiantSsrBridge = getRadiantComponentRenderBridge(component as unknown as RadiantComponentSsrCapable);
+		const markup =
+			radiantSsrBridge?.renderHostToString?.(renderOptions) ?? component.renderHostToString(renderOptions);
+		const preview = resolveRenderedComponentPreview(component, radiantSsrBridge, markup);
 
 		return {
 			markup,
@@ -357,11 +344,42 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 				generatedAt,
 				tagName,
 			},
-			preview: component.renderHost?.() ?? { nodeType: 1, outerHTML: markup },
+			preview,
 		};
 	} finally {
 		restoreAmbientContext();
 	}
+}
+
+function getRadiantComponentRenderBridge(
+	component: RadiantComponentSsrCapable,
+): RadiantComponentRenderBridge | undefined {
+	return getRadiantComponentSsrRuntime()?.resolveRenderBridge(component);
+}
+
+/**
+ * Chooses the preview renderable returned by `renderComponent()`.
+ *
+ * When a component overrides only `renderHostToString()`, the inherited
+ * `renderHost()` implementation would otherwise generate a different preview
+ * tree than the final serialized markup. In that case the preview falls back to
+ * the already-computed markup so shell composition stays aligned with the real
+ * SSR output.
+ */
+function resolveRenderedComponentPreview<TComponent extends ServerRenderableComponent>(
+	component: TComponent,
+	radiantSsrBridge: RadiantComponentRenderBridge | undefined,
+	markup: string,
+): JsxRenderable {
+	if (!radiantSsrBridge) {
+		return component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
+	}
+
+	if (!radiantSsrBridge.renderHostToString && radiantSsrBridge.renderHost) {
+		return { nodeType: 1, outerHTML: markup };
+	}
+
+	return radiantSsrBridge.renderHost?.() ?? component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
 }
 
 function prepareRenderedComponentHost<TComponent extends ServerRenderableComponent>(

@@ -2,7 +2,7 @@
 
 ## RadiantComponent Flow
 
-`RadiantComponent` is the JSX-first base class for explicit client rendering, SSR host serialization, and hydration.
+`RadiantComponent` is the JSX-first base class for explicit client rendering, component-owned SSR host serialization, and opt-in hydration.
 
 Its main responsibilities are:
 
@@ -53,7 +53,7 @@ Client rendering works like this:
 
 1. The browser upgrades the custom element and calls `connectedCallback()`.
 2. `RadiantComponent` waits one microtask before doing any work.
-3. If the host already contains hydration markers, `hydrate()` attaches behavior to that DOM in place.
+3. If the host already contains hydration markers and the explicit client hydrator is installed, `hydrate()` attaches behavior to that DOM in place.
 4. Otherwise `update()` renders fresh light DOM into the host.
 5. Later state changes do nothing automatically unless user code calls `update()` directly or a decorator such as `@onUpdated(...)` calls it.
 
@@ -66,7 +66,7 @@ SSR works like this:
 1. Server code creates the component instance.
 2. Server code sets props, fields, or attributes exactly as client code would.
 3. When authored light DOM is needed, a server render environment prepares the host before rendering.
-4. `renderHost()` or `renderHostToString()` resolves the host tag name, gathers host attributes, and renders the current JSX view.
+4. Prefer the explicit server helpers in `@ecopages/radiant/server/render-component` for adapters and fragment responses.
 5. The JSX server renderer turns `render()` output into HTML.
 6. When hydration is requested, hydration markers are emitted into the rendered view.
 7. The browser receives `<my-element ...>...</my-element>` markup.
@@ -86,6 +86,12 @@ This host-preparation step is intentionally smaller than a full DOM emulation la
 - `renderHost()` returns a host-aware JSX node-like value.
 - `renderHostToString()` serializes the custom-element host and current view into HTML.
 - `getHostSsrAttributes()` returns the attributes that should be included on the serialized host.
+
+For first-connect hydration on SSR pages, install the explicit client hydrator before loading component modules:
+
+```ts
+import '@ecopages/radiant/client/install-hydrator';
+```
 
 ## Host Attributes
 

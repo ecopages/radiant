@@ -5,10 +5,8 @@ import {
 	render as renderJsx,
 	type JsxRenderable,
 } from '@ecopages/jsx';
-import { renderToString as renderJsxToString, type RenderToStringOptions } from '@ecopages/jsx/server';
+import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { Computed, subtle } from '@ecopages/signals';
-import { RadiantComponentSsrService } from './radiant-component-ssr';
-import { getReactivePropDefinitions } from './reactive-prop-metadata';
 import { RadiantElement } from './radiant-element';
 import {
 	DEFAULT_SLOT_NAME,
@@ -21,6 +19,12 @@ import {
 	takeSlotProjectionScriptPayload,
 } from './slot-projection-runtime';
 import { HYDRATION_ATTRIBUTE } from './hydration-codec';
+import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
+import {
+	getRadiantComponentSsrRuntime,
+	type RadiantComponentRenderBridge,
+	type RadiantComponentSsrCapable,
+} from './radiant-component-ssr-registry';
 
 /**
  * A structured JSX-first Radiant base class.
@@ -56,19 +60,6 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	});
 	private slotProjectionObserver?: MutationObserver;
 	private slotProjectionVersion = 0;
-	private readonly ssr = new RadiantComponentSsrService({
-		constructor: this.constructor as CustomElementConstructor,
-		getAuthoredHydrationScriptMarkup: () => this.getAuthoredHydrationScriptMarkup(),
-		getHydrationBindings: () => this.getHydrationBindings(),
-		getSlotProjectionScriptTag: () => this.getSlotProjectionScriptTag(),
-		renderToString: (options) => this.renderToString(options),
-		getContextProviders: () => this.getContextProviders(),
-		getReactiveProperties: () => this.getReactiveProperties(),
-		getReactivePropDefinitions: () => getReactivePropDefinitions(this),
-		getPropertyValue: (name) => (this as Record<string, unknown>)[name],
-		listAttributeNames: () => (typeof this.getAttributeNames === 'function' ? this.getAttributeNames() : []),
-		getAttributeValue: (name) => this.getAttribute(name),
-	});
 
 	override connectedCallback() {
 		super.connectedCallback();
@@ -89,7 +80,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 			this.ensureSlotProjectionState();
 			this.observeSlotProjection();
 
-			if (hasHydrationMarkers(this)) {
+			if (shouldHydrateOnConnect(this)) {
 				this.needsRender = false;
 				this.hydrate();
 
@@ -120,21 +111,24 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	public renderToString(options: RenderToStringOptions = {}): string {
 		this.prepareForSsr();
 
-		return renderJsxToString(this.resolveTrackedRenderOutput().value, options);
+		return requireRadiantComponentSsrRuntime().renderView(this as unknown as RadiantComponentSsrCapable, options);
 	}
 
 	/**
 	 * Returns the component host and current view as a JSX element.
 	 */
 	public renderHost(): JsxRenderable {
-		return this.ssr.renderHost();
+		return requireRadiantComponentSsrRuntime().renderHost(this as unknown as RadiantComponentSsrCapable);
 	}
 
 	/**
 	 * Serializes the component host and current view into HTML.
 	 */
 	public renderHostToString(options: RenderToStringOptions = {}): string {
-		return this.ssr.renderHostToString(options, this.getHostSsrAttributes());
+		return requireRadiantComponentSsrRuntime().renderHostToString(
+			this as unknown as RadiantComponentSsrCapable,
+			options,
+		);
 	}
 
 	/**
@@ -193,7 +187,7 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 			return;
 		}
 
-		if (this.isFirstConnectPending && hasHydrationMarkers(this)) {
+		if (this.isFirstConnectPending && shouldHydrateOnConnect(this)) {
 			return;
 		}
 
@@ -250,7 +244,28 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 	}
 
 	protected getHostSsrAttributes(): Record<string, string> {
-		return this.ssr.getHostAttributes();
+		return requireRadiantComponentSsrRuntime().getHostAttributes(this as unknown as RadiantComponentSsrCapable);
+	}
+
+	/**
+	 * Exposes the inherited SSR helper path to internal server renderers.
+	 *
+	 * The bridge is intentionally empty when a subclass overrides the host SSR
+	 * methods so that custom host serialization remains the source of truth.
+	 */
+	protected resolveSsrRenderBridge(): RadiantComponentRenderBridge {
+		const bridge: RadiantComponentRenderBridge = {};
+
+		if (this.renderHostToString === RadiantComponent.prototype.renderHostToString) {
+			bridge.renderHostToString = (options: RenderToStringOptions | undefined) =>
+				this.renderHostToString(options);
+		}
+
+		if (this.renderHost === RadiantComponent.prototype.renderHost) {
+			bridge.renderHost = () => this.renderHost();
+		}
+
+		return bridge;
 	}
 
 	private ensureSlotProjectionState(): void {
@@ -412,6 +427,22 @@ export class RadiantComponent<Bindings extends object = {}> extends RadiantEleme
 		this.ensureSlotProjectionState();
 		return resolveSlotProjection(this.render(), this.projectedSlotContent);
 	}
+}
+
+function requireRadiantComponentSsrRuntime() {
+	const runtime = getRadiantComponentSsrRuntime();
+
+	if (!runtime) {
+		throw new Error(
+			'Radiant SSR runtime is unavailable. Import `@ecopages/radiant/server/render-component` before using instance SSR methods.',
+		);
+	}
+
+	return runtime;
+}
+
+function shouldHydrateOnConnect(component: HTMLElement): boolean {
+	return isRadiantHydratorInstalled() && hasHydrationMarkers(component);
 }
 
 function escapeScriptText(value: string): string {
