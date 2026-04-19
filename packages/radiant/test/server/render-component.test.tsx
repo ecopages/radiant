@@ -21,7 +21,6 @@ import {
 	renderComponentWithPreview,
 	renderComponentToPayload,
 	renderComponentToString,
-	renderStreamableComponent,
 	scriptModuleAsset,
 	styleAsset,
 	toRenderedComponentPayload,
@@ -248,17 +247,6 @@ describe('render-component server helpers', () => {
 		});
 	});
 
-	test('renderStreamableComponent() remains a compatibility alias for preview renders', async () => {
-		const aliased = await renderStreamableComponent(RenderComponentCard, {
-			initialize: (component) => {
-				component.count = 4;
-			},
-		});
-
-		expect(aliased.preview).toEqual(expect.any(Object));
-		expect(aliased.markup).toContain('Count: 4');
-	});
-
 	test('renderComponentToPayload() accepts load() options and omits preview output', async () => {
 		const payload = await renderComponentToPayload({
 			load: async () => RenderComponentLoaderCard,
@@ -394,6 +382,58 @@ describe('render-component server helpers', () => {
 		).rejects.toThrow(
 			'StringOnlyRenderable cannot prepare SSR host content because it does not expose an innerHTML host surface.',
 		);
+	});
+
+	test('renderComponent() preserves explicit Radiant SSR method overrides as a compatibility fallback', async () => {
+		@customElement('render-component-overridden-host-test')
+		class OverriddenRadiantHost extends RadiantComponent {
+			override renderHostToString(): string {
+				return '<render-component-overridden-host-test data-source="override">override markup</render-component-overridden-host-test>';
+			}
+
+			override renderHost() {
+				return {
+					nodeType: 1,
+					outerHTML:
+						'<render-component-overridden-host-test data-source="override-preview">override preview</render-component-overridden-host-test>',
+				};
+			}
+		}
+
+		const rendered = await renderComponent(OverriddenRadiantHost);
+
+		expect(rendered.markup).toBe(
+			'<render-component-overridden-host-test data-source="override">override markup</render-component-overridden-host-test>',
+		);
+		expect(rendered.preview).toEqual({
+			nodeType: 1,
+			outerHTML:
+				'<render-component-overridden-host-test data-source="override-preview">override preview</render-component-overridden-host-test>',
+		});
+	});
+
+	test('renderComponent() keeps preview aligned when only renderHostToString() is overridden', async () => {
+		@customElement('render-component-markup-only-host-test')
+		class MarkupOnlyOverriddenRadiantHost extends RadiantComponent {
+			override renderHostToString(): string {
+				return '<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>';
+			}
+
+			override render() {
+				return <p>Default inherited renderHost() path should not leak into preview</p>;
+			}
+		}
+
+		const rendered = await renderComponent(MarkupOnlyOverriddenRadiantHost);
+
+		expect(rendered.markup).toBe(
+			'<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>',
+		);
+		expect(rendered.preview).toEqual({
+			nodeType: 1,
+			outerHTML:
+				'<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>',
+		});
 	});
 
 	test('concurrent renders resolve independent SSR context values', async () => {

@@ -6,6 +6,7 @@ import { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
+import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
 import { RadiantComponent } from '../../src/core/radiant-component';
 import { customElement } from '../../src/decorators/custom-element';
@@ -15,6 +16,7 @@ import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
+import '../../src/server/render-component';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
@@ -72,6 +74,7 @@ class ServerHostSlotQueryCard extends RadiantComponent {
 describe('RadiantComponent', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
+		uninstallRadiantHydrator();
 	});
 
 	test('renders its view on connect', async () => {
@@ -1027,6 +1030,109 @@ describe('RadiantComponent', () => {
 		}
 	});
 
+	test('nested Radiant SSR keeps explicit child host overrides when rendered from intrinsic custom-element tags', () => {
+		@customElement('nested-radiant-overridden-child-host-test')
+		class NestedOverriddenChildHost extends RadiantComponent {
+			override renderHostToString(): string {
+				return '<nested-radiant-overridden-child-host-test data-source="override"><p>Overridden child host</p></nested-radiant-overridden-child-host-test>';
+			}
+
+			override render() {
+				return <p>Default child render should be bypassed</p>;
+			}
+		}
+
+		@customElement('nested-radiant-overridden-parent-host-test')
+		class NestedOverriddenParentHost extends RadiantComponent {
+			override render() {
+				return (
+					<section>
+						<nested-radiant-overridden-child-host-test />
+					</section>
+				);
+			}
+		}
+
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		];
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		] = true;
+
+		try {
+			const nestedHtml = renderToString(<nested-radiant-overridden-parent-host-test />, { hydrate: true });
+
+			expect(nestedHtml).toContain(
+				'<nested-radiant-overridden-child-host-test data-source="override"><p>Overridden child host</p></nested-radiant-overridden-child-host-test>',
+			);
+			expect(nestedHtml).not.toContain('Default child render should be bypassed');
+		} finally {
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				] = previousForceServerCustomElementRender;
+			}
+		}
+	});
+
+	test('renderToString() keeps explicit nested child host overrides in component views', () => {
+		@customElement('nested-radiant-render-view-child-host-test')
+		class NestedRenderViewChildHost extends RadiantComponent {
+			override renderHostToString(): string {
+				return '<nested-radiant-render-view-child-host-test data-source="override"><p>Nested renderToString child</p></nested-radiant-render-view-child-host-test>';
+			}
+
+			override render() {
+				return <p>Default nested child render should be bypassed</p>;
+			}
+		}
+
+		@customElement('nested-radiant-render-view-parent-host-test')
+		class NestedRenderViewParentHost extends RadiantComponent {
+			override render() {
+				return (
+					<section>
+						<nested-radiant-render-view-child-host-test />
+					</section>
+				);
+			}
+		}
+
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		];
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+		] = true;
+
+		try {
+			const parent = new NestedRenderViewParentHost();
+			const html = parent.renderToString({ hydrate: true });
+
+			expect(html).toContain(
+				'<nested-radiant-render-view-child-host-test data-source="override"><p>Nested renderToString child</p></nested-radiant-render-view-child-host-test>',
+			);
+			expect(html).not.toContain('Default nested child render should be bypassed');
+		} finally {
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
+				] = previousForceServerCustomElementRender;
+			}
+		}
+	});
+
 	test('hydrates SSR markup in place on connect', async () => {
 		class HydratedCounter extends RadiantComponent {
 			count = 0;
@@ -1049,6 +1155,7 @@ describe('RadiantComponent', () => {
 
 		const serverElement = document.createElement('hydrated-counter-test') as HydratedCounter;
 		const serverMarkup = serverElement.renderToString({ hydrate: true });
+		installRadiantHydrator();
 
 		document.body.innerHTML = `<hydrated-counter-test>${serverMarkup}</hydrated-counter-test>`;
 
@@ -1098,6 +1205,7 @@ describe('RadiantComponent', () => {
 		const serverElement = new HydratedSlotCard();
 		serverElement.innerHTML = '<h2 slot="header">SSR header</h2><p>SSR body</p>';
 		const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+		installRadiantHydrator();
 
 		document.body.innerHTML = serverMarkup;
 
@@ -1150,6 +1258,7 @@ describe('RadiantComponent', () => {
 		serverElement.innerHTML =
 			'<h2 slot="header" data-note="1 > 0">SSR header</h2><article data-kind="primary"><p>SSR body</p></article><radiant-component-counter count="4" label="Projected SSR counter"></radiant-component-counter><p slot="footer">SSR footer</p>';
 		const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+		installRadiantHydrator();
 
 		document.body.innerHTML = serverMarkup;
 
@@ -1169,6 +1278,33 @@ describe('RadiantComponent', () => {
 
 		await waitFor(() => {
 			expect(element.querySelector('button')?.textContent).toBe('Count 1');
+		});
+	});
+
+	test('SSR hosts fall back to a fresh client render when the explicit hydrator is not installed', async () => {
+		class NonHydratedCounter extends RadiantComponent {
+			count = 0;
+
+			override render() {
+				return <button type="button">Count {this.count}</button>;
+			}
+		}
+
+		customElements.define('non-hydrated-counter-test', NonHydratedCounter);
+
+		const serverElement = document.createElement('non-hydrated-counter-test') as NonHydratedCounter;
+		const serverMarkup = serverElement.renderToString({ hydrate: true });
+
+		document.body.innerHTML = `<non-hydrated-counter-test>${serverMarkup}</non-hydrated-counter-test>`;
+
+		const element = document.querySelector('non-hydrated-counter-test') as NonHydratedCounter;
+		const initialButton = element.querySelector('button');
+
+		expect(initialButton).not.toBeNull();
+
+		await waitFor(() => {
+			expect(element.querySelector('button')).not.toBe(initialButton);
+			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
 		});
 	});
 
@@ -1206,6 +1342,7 @@ describe('RadiantComponent', () => {
 
 		const serverElement = document.createElement('deferred-hydrated-card-test') as DeferredHydratedCard;
 		const serverMarkup = serverElement.renderToString({ hydrate: true });
+		installRadiantHydrator();
 
 		document.body.innerHTML = `<deferred-hydrated-card-test>${serverMarkup}</deferred-hydrated-card-test>`;
 

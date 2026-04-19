@@ -6,6 +6,7 @@ import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { signal } from '../../src/decorators/signal';
+import '../../src/server/render-component';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
