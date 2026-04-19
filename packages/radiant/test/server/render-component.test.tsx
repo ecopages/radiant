@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vitest';
 import type { ContextProvider } from '../../src/context/context-provider';
 import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
-import { contextSelector } from '../../src/context/decorators/context-selector';
 import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { RadiantComponent } from '../../src/core/radiant-component';
@@ -393,7 +392,7 @@ describe('render-component server helpers', () => {
 
 			override renderHost() {
 				return {
-					nodeType: 1,
+					nodeType: 1 as const,
 					outerHTML:
 						'<render-component-overridden-host-test data-source="override-preview">override preview</render-component-overridden-host-test>',
 				};
