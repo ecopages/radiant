@@ -95,12 +95,12 @@ What `RadiantElement` does **not** provide by itself is the host JSX render loop
 
 That does not make `RadiantElement` a lesser API. It means the host can stay simpler when it does not need to own JSX rendering.
 
-The todo example uses exactly this split:
+The counter example uses exactly this split:
 
-- `RadiantTodoApp` extends `RadiantComponent` and owns the host JSX view.
-- `RadiantTodoItem` extends `RadiantElement` and is rendered inside that JSX tree as a custom element.
+- `RadiantCounter` extends `RadiantComponent` and owns the host JSX view.
+- `CounterElement` extends `RadiantElement` and is the same counter with an imperative host instead.
 
-See [Todo App](/docs/examples/todo-app).
+See [Counter](/docs/examples/counter).
 
 ## Behind The Scenes
 

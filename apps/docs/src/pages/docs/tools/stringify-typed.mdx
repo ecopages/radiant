@@ -4,14 +4,12 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
   title: 'Docs | StringifyTyped',
-  description: 'The place to learn about @ecopages/radiant',
+  description: 'Type-safe JSON serialization helper for attributes and hydration payloads.',
 })
 
-# StringifyTyped
----
+# stringifyTyped
 
-This utility function is used to stringify attributes in a typed way.
-This is useful when you need to pass attributes to a component that expects a specific type.
+A type-safe wrapper around `JSON.stringify` for attributes and hydration payloads.
 
 Import `stringifyTyped` from `@ecopages/radiant/tools/stringify-typed`. It is a low-level serialization helper, not part of the main root client surface.
 
