@@ -214,6 +214,33 @@ export interface JsxPropsWithChildren {
 }
 
 /**
+ * Standard HTML-level props available to any JSX element — `children`, `class`,
+ * `classes`, `style`, `aria`, and `data`. Use this to type function components
+ * that forward standard element attributes.
+ *
+ * @example
+ * ```tsx
+ * interface CardProps extends JsxHtmlProps {
+ *   title: string;
+ * }
+ *
+ * function Card({ title, children, class: cls, style }: CardProps) {
+ *   return <div class={cls} style={style}><h2>{title}</h2>{children}</div>;
+ * }
+ * ```
+ */
+export interface JsxHtmlProps {
+	children?: JsxRenderable;
+	/** Plain class string — merged with `classes` when both are provided. */
+	class?: string;
+	/** Dynamic class list — like Astro's `class:list`. Merged with `class` when both are provided. */
+	classes?: ClassList;
+	style?: StyleValue;
+	aria?: Partial<AriaAttributesNormalized> | undefined;
+	data?: Record<string, DataAttributeValue>;
+}
+
+/**
  * A function component supported by the Radiant JSX runtime.
  */
 export type JsxComponent<Props extends object = JsxPropsWithChildren> = (props: Props) => JsxRenderable;
@@ -547,6 +574,14 @@ export interface JsxSharedIntrinsicAttributes {
 export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes &
 	JsxEventBindings<ElementType> &
 	JsxPropertyBindings<ElementType>;
+
+/**
+ * All base props accepted by any JSX element — `children`, `class`, `classes`,
+ * `style`, `aria`, `data`, `on:*` event bindings, and `prop:*` property bindings.
+ *
+ * This is a consumer-friendly alias for {@link JsxIntrinsicAttributes}.
+ */
+export type JsxElementProps<ElementType extends Element = HTMLElement> = JsxIntrinsicAttributes<ElementType>;
 
 /**
  * JSX attribute shape for a custom element declaration in `JSX.IntrinsicElements`.
@@ -1649,30 +1684,6 @@ function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): 
 	appendClassTokens(tokens, classValue);
 	appendClassTokens(tokens, classesValue);
 	return tokens.length === 0 ? undefined : tokens.join(' ');
-}
-
-/**
- * Merges one or more class values into a single space-separated string.
- *
- * Each value in `values` is processed by {@link appendClassTokens}, which
- * understands strings, numbers, arrays, and conditional objects
- * (`{ token: boolean }`).
- *
- * @param values Iterable of raw class values to merge.
- * @returns Space-separated class string, or `undefined` when no tokens are produced.
- */
-function normalizeClassList(values: Iterable<unknown>): string | undefined {
-	const tokens: string[] = [];
-
-	for (const value of values) {
-		appendClassTokens(tokens, value);
-	}
-
-	if (tokens.length === 0) {
-		return undefined;
-	}
-
-	return tokens.join(' ');
 }
 
 /**
