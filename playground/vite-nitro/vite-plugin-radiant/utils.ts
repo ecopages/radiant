@@ -46,7 +46,9 @@ export async function loadRadiantClientModule(moduleKey) {
  * Results are memoized in a `WeakMap` keyed on the constructor.
  */
 export function createSsrRegistryModule(componentGlob: string): string {
-	return `const radiantComponentModules = import.meta.glob(${JSON.stringify(componentGlob)}, { eager: true });
+	return `import '@ecopages/radiant/server/render-component';
+
+const radiantComponentModules = import.meta.glob(${JSON.stringify(componentGlob)}, { eager: true });
 const radiantClientModuleKeyCache = new WeakMap();
 
 export async function resolveRadiantSsrClientModuleKey(component) {

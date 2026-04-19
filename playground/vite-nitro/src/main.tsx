@@ -1,3 +1,4 @@
+import '@ecopages/radiant/client/install-hydrator';
 import './components/radiant-component-counter.script';
 import './components/radiant-event-binding-lab.script';
 import './components/radiant-context-flow-shell.script';
