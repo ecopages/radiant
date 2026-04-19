@@ -132,8 +132,7 @@ describe('Radiant JSX runtime', () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('div', {
 			class: 'panel',
-			className: ['stack', false, 'wide'],
-			classes: ['surface', { active: true, muted: false }, ['nested', 2, 0], true],
+			classes: ['stack', false, 'wide', 'surface', { active: true, muted: false }, ['nested', 2, 0], true],
 			children: 'Ready',
 		});
 
