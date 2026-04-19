@@ -14,7 +14,7 @@ This page is about the client entrypoints.
 - mount new DOM with `createRoot(...).render(...)`
 - hydrate existing SSR markup with `hydrate(...)` or `createRoot(...).hydrate(...)`
 
-For server HTML generation, see [JSX SSR](/docs/packages/jsx-ssr).
+For server HTML generation, see [JSX SSR](/docs/ssr/jsx-ssr).
 
 ## Direct DOM Rendering
 
@@ -81,6 +81,8 @@ if (container instanceof HTMLElement) {
 ```
 
 If the target does not contain hydration markers, the runtime falls back to a normal client render.
+
+For `RadiantComponent` custom-element hosts, there is one extra gate: the explicit Radiant hydrator must also be installed. See [Hydration](/docs/ssr/hydration).
 
 ## Checking SSR Output
 

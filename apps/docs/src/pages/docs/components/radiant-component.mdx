@@ -90,12 +90,20 @@ That gives decorators, inherited setup, and context wiring a chance to finish be
 
 ### 2. Hydration And Client Render Share The Same `render()` Output
 
-On first connect, Radiant checks whether the host already contains hydration markers.
+On first connect, Radiant checks whether the host already contains hydration markers and whether the explicit client hydrator is installed.
 
-- If markers exist, it calls `hydrate()` and reconnects listeners and property bindings onto the SSR DOM.
+- If markers exist and the explicit client hydrator is installed, it calls `hydrate()` and reconnects listeners and property bindings onto the SSR DOM.
 - If markers do not exist, it calls `update()` and mounts fresh client DOM.
 
+For SSR pages, install the client hydrator before component modules load:
+
+```ts
+import '@ecopages/radiant/client/install-hydrator';
+```
+
 In both cases the source of truth is still `render()`.
+
+See [Hydration](/docs/ssr/hydration) for the full server-plus-client contract and the fallback behavior when the explicit hydrator is missing.
 
 ### 3. Render Reads Are Tracked
 
@@ -158,7 +166,9 @@ Also note that `this.$.count` is not the raw number. Use it in JSX binding posit
 - `renderHostToString(...)` serializes the custom-element host plus the current view.
 - `renderHost()` returns the same host output as a JSX renderable.
 
-Use those methods when you need the host element and view to stay aligned across server and client rendering.
+Prefer the explicit server helpers in `@ecopages/radiant/server/render-component` for new SSR code.
+
+See [Hydration](/docs/ssr/hydration) for when those server helpers need to be paired with the client hydrator.
 
 ## Slots And Light-DOM Projection
 

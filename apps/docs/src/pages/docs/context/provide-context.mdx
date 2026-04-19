@@ -76,6 +76,8 @@ When `hydrate: Object` is active, the parsed payload merges back into `initialVa
 
 When Radiant owns SSR for the host, prefer `renderComponent(...)` or `renderHostToString(...)` so hydration scripts are emitted as raw markup. Those SSR helpers live under `@ecopages/radiant/server/*`. Avoid placing JSON strings directly inside `<script>` children in JSX, because they will be HTML-escaped before the browser parses them.
 
+For the full server-plus-client host hydration flow, including the explicit client hydrator requirement, see [Hydration](/docs/ssr/hydration).
+
 ## Access From Descendants
 
 Any descendant can resolve that provider through [@consumeContext](/docs/context/consume-context), bind a field to it through [@contextSelector](/docs/context/context-selector), or react to it with a method through [@onContextUpdate](/docs/context/on-context-update).

@@ -65,7 +65,14 @@ export const docsConfig: DocsConfig = {
 				{ title: 'JSX Overview', slug: 'jsx-overview' },
 				{ title: 'Events', slug: 'jsx-events' },
 				{ title: 'Client Rendering', slug: 'jsx-rendering' },
-				{ title: 'SSR', slug: 'jsx-ssr' },
+			],
+		},
+		{
+			name: 'SSR',
+			subdirectory: 'ssr',
+			pages: [
+				{ title: 'JSX SSR', slug: 'jsx-ssr' },
+				{ title: 'Hydration', slug: 'hydration' },
 			],
 		},
 		{
