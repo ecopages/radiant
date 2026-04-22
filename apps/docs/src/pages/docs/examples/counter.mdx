@@ -1,11 +1,11 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { RadiantElementCounter } from '@/components/radiant-counter';
+import { RadiantComponentCounter, RadiantElementCounter } from '@/components/radiant-counter';
 
 export const layout = DocsLayout;
 
 export const config = {
 	dependencies: {
-		components: [RadiantElementCounter],
+		components: [RadiantComponentCounter, RadiantElementCounter],
 	},
 };
 
@@ -22,7 +22,7 @@ The smallest example comparing `RadiantComponent` and `RadiantElement` host patt
 
 ### RadiantComponent Host
 
-<radiant-counter value={5} />
+<RadiantComponentCounter value={5} />
 
 ### RadiantElement Host
 
