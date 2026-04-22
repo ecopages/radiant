@@ -9,8 +9,8 @@ Author and review Radiant components according to the framework's intended rende
 
 Start with the canonical references:
 
-- Docs: https://radiant.ecopages.com/docs
-- LLM index: https://radiant.ecopages.com/llms.txt
+- Docs: https://radiant.ecopages.app/docs
+- LLM index: https://radiant.ecopages.app/llms.txt
 
 Use `llms.txt` first when you need a compact machine-oriented map of the framework, then follow through to the full docs for API details and examples.
 
@@ -143,13 +143,22 @@ Use it once per host class.
 
 - `@prop(...)`: public custom-element API with attribute conversion, reflection, and optional bindings
 - `@state`: internal mutable state for the host
-- `@signal(...)`: signal-backed host state when signal semantics or signal interop are desirable
+- `@signal` or `@signal(options)`: signal-backed host state when signal semantics or signal interop are desirable
 
 Selection rule:
 
 - choose `@prop(...)` for values owned by the element's external API
 - choose `@state` for internal UI state
-- choose `@signal(...)` when the host field should behave like a signal and participate in the same update model
+- choose `@signal` when the host field should behave like a signal and participate in the same update model
+
+`@signal` accepts an optional options object with:
+
+- `bind`: create a JSX binding companion (`true`, or a custom name string)
+- `initial`: default value when the field initializer is not provided
+- `source`: connect to an existing shared `WritableSignal` or a factory `(host) => WritableSignal`
+- `hydrate`: attribute type constant to enable SSR hydration via keyed JSON script
+
+Bare `@signal` (no parentheses) is valid and creates a host-owned signal with default behavior.
 
 ### Side Effects And Derived Updates
 
@@ -165,8 +174,15 @@ Avoid updating the same watched property directly inside its own `@onUpdated(...
 
 ### DOM Queries
 
-- `@query(...)`: read rendered light-DOM descendants by `data-ref` or selector
+- `@query(...)`: read rendered descendants by `data-ref` or selector
 - `@querySlot(...)`: read projected slot-assigned elements from a `RadiantComponent`
+
+`@query` options:
+
+- `ref` or `selector`: target by `data-ref` attribute or CSS selector
+- `all`: return all matches (`Element[]`) instead of the first match
+- `cache`: cache the result (`false` by default)
+- `scope`: `'light'` (default), `'shadow'`, or `'both'`
 
 Selection rule:
 
@@ -181,6 +197,17 @@ Prefer `ref` lookups over broad selectors when practical.
 - `@event(...)`: typed custom-event emitter for host-to-parent communication
 
 Use `@onEvent(...)` when the host should own event subscription lifecycle declaratively.
+
+`@onEvent` targets are a union — exactly one of:
+
+- `{ ref: string }`: match by `data-ref`
+- `{ selector: string }`: match by CSS selector with event delegation
+- `{ window: true }`: listen on `window`
+- `{ document: true }`: listen on `document`
+
+The `scope` option (`'light'` | `'shadow'` | `'both'`) controls which DOM tree is observed. Default is `'light'`.
+
+`@onEvent` uses event delegation and requires bubbling events. Non-bubbling events like `focus` and `blur` will not work — use `focusin` and `focusout` instead.
 
 Prefer:
 
