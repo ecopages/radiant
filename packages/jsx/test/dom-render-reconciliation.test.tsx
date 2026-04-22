@@ -4,9 +4,9 @@ async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
 }
 
-const loadJsxRuntime = async () => loadModule<typeof import('../jsx-runtime.ts')>('../jsx-runtime.ts');
-const loadJsxModule = async () => loadModule<typeof import('../index.ts')>('../index.ts');
-const loadServerRender = async () => loadModule<typeof import('../server-render.ts')>('../server-render.ts');
+const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
+const loadJsxModule = async () => loadModule<typeof import('../src/index.ts')>('../src/index.ts');
+const loadServerRender = async () => loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts');
 
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {

@@ -2,25 +2,25 @@
 	"bundles": [
 		{
 			"label": "client",
-			"entrypoint": "./client.ts",
+			"entrypoint": "./src/client.ts",
 			"maxBytes": 30208,
 			"maxGzipBytes": 9472
 		},
 		{
 			"label": "index",
-			"entrypoint": "./index.ts",
+			"entrypoint": "./src/index.ts",
 			"maxBytes": 32256,
 			"maxGzipBytes": 10240
 		},
 		{
 			"label": "jsx-runtime",
-			"entrypoint": "./jsx-runtime.ts",
+			"entrypoint": "./src/jsx-runtime.ts",
 			"maxBytes": 9728,
 			"maxGzipBytes": 3584
 		},
 		{
 			"label": "jsx-dev-runtime",
-			"entrypoint": "./jsx-dev-runtime.ts",
+			"entrypoint": "./src/jsx-dev-runtime.ts",
 			"maxBytes": 9216,
 			"maxGzipBytes": 3328
 		}

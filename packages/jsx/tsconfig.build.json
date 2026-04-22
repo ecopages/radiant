@@ -5,19 +5,19 @@
 		"emitDeclarationOnly": true,
 		"noEmit": false,
 		"outDir": "./dist",
-		"rootDir": ".",
+		"rootDir": "./src",
 		"types": []
 	},
 	"include": [
-		"./index.ts",
-		"./server.ts",
-		"./client.ts",
-		"./jsx-runtime.ts",
-		"./jsx-dev-runtime.ts",
-		"./dom-render.ts",
-		"./dom-render/**/*.ts",
-		"./server-render.ts",
-		"./hydration-bindings.ts",
-		"./html-escape.ts"
+		"./src/index.ts",
+		"./src/server.ts",
+		"./src/client.ts",
+		"./src/jsx-runtime.ts",
+		"./src/jsx-dev-runtime.ts",
+		"./src/dom-render.ts",
+		"./src/dom-render/**/*.ts",
+		"./src/server-render.ts",
+		"./src/hydration-bindings.ts",
+		"./src/html-escape.ts"
 	]
 }

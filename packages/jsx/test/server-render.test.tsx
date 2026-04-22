@@ -4,8 +4,8 @@ async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
 }
 
-const loadJsxRuntime = async () => loadModule<typeof import('../jsx-runtime.ts')>('../jsx-runtime.ts');
-const loadServerRender = async () => loadModule<typeof import('../server-render.ts')>('../server-render.ts');
+const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
+const loadServerRender = async () => loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts');
 
 const forceServerCustomElementRenderSymbol = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 
@@ -34,7 +34,13 @@ describe('Radiant JSX server render', () => {
 		const [{ jsx, jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
 		const Label = ({ text }: { text: string }) => jsx('strong', { children: text });
-		const Card = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxRenderable }) =>
+		const Card = ({
+			title,
+			children,
+		}: {
+			title: string;
+			children: import('../src/jsx-runtime.ts').JsxRenderable;
+		}) =>
 			jsxs('section', {
 				children: ['Hello ', jsx(Label, { text: title }), ' ', children],
 			});
@@ -59,7 +65,7 @@ describe('Radiant JSX server render', () => {
 			children,
 		}: {
 			title: string;
-			children: import('../jsx-runtime.ts').JsxRenderable;
+			children: import('../src/jsx-runtime.ts').JsxRenderable;
 		}) =>
 			jsxs('article', {
 				class: 'nested-block',
@@ -763,7 +769,7 @@ describe('Radiant JSX server render', () => {
 			const template = jsx('demo-fallback-panel', {
 				children: {
 					toString: () => 'Fallback object',
-				} as unknown as import('../jsx-runtime.ts').JsxRenderable,
+				} as unknown as import('../src/jsx-runtime.ts').JsxRenderable,
 			});
 
 			expect(renderToString(template)).toBe('<demo-fallback-panel>Fallback object</demo-fallback-panel>');

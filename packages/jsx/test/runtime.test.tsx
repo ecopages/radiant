@@ -4,10 +4,11 @@ async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
 }
 
-const loadJsxRuntime = async () => loadModule<typeof import('../jsx-runtime.ts')>('../jsx-runtime.ts');
-const loadJsxDevRuntime = async () => loadModule<typeof import('../jsx-dev-runtime.ts')>('../jsx-dev-runtime.ts');
+const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
+const loadJsxDevRuntime = async () =>
+	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
 
-function expectTemplateResultLike(value: unknown): asserts value is import('../jsx-runtime.ts').TemplateResultLike {
+function expectTemplateResultLike(value: unknown): asserts value is import('../src/jsx-runtime.ts').TemplateResultLike {
 	expect(value).toEqual(
 		expect.objectContaining({
 			['_$rType$']: 1,
@@ -85,7 +86,13 @@ describe('Radiant JSX runtime', () => {
 	test('function components receive props and children', async () => {
 		const [{ jsx, jsxs }] = await Promise.all([loadJsxRuntime()]);
 
-		const Card = ({ title, children }: { title: string; children: import('../jsx-runtime.ts').JsxRenderable }) =>
+		const Card = ({
+			title,
+			children,
+		}: {
+			title: string;
+			children: import('../src/jsx-runtime.ts').JsxRenderable;
+		}) =>
 			jsxs('article', {
 				class: 'card',
 				children: [jsx('h2', { children: title }), children],

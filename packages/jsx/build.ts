@@ -2,8 +2,8 @@ import { watch } from 'node:fs';
 import path from 'node:path';
 import { $ } from 'bun';
 
-const browserEntrypoints = ['index.ts', 'client.ts', 'jsx-runtime.ts', 'jsx-dev-runtime.ts'];
-const serverEntrypoints = ['server.ts'];
+const browserEntrypoints = ['src/index.ts', 'src/client.ts', 'src/jsx-runtime.ts', 'src/jsx-dev-runtime.ts'];
+const serverEntrypoints = ['src/server.ts'];
 
 function shouldRebuild(filename: string): boolean {
 	return (
