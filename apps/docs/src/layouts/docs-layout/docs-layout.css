@@ -2,7 +2,7 @@
 	@apply md:grid md:grid-cols-[250px_1fr] xl:grid-cols-[250px_minmax(0,1fr)_250px] xl:max-w-7xl xl:mx-auto min-h-screen relative;
 
 	.docs-layout__aside {
-		@apply fixed inset-0 z-40 md:z-0 md:relative md:block;
+		@apply fixed inset-0 z-40 md:z-0 md:relative md:block bg-background/95 md:bg-transparent;
 		@apply h-svh md:h-[calc(100svh_-_4rem)] md:sticky md:top-16 overflow-y-auto;
 		@apply backdrop-blur-md md:backdrop-blur-none border-r border-border/60;
 

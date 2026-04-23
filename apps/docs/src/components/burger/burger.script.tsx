@@ -41,8 +41,10 @@ export class RadiantBurger extends RadiantComponent<RadiantBurgerBindings> {
 			<button
 				type="button"
 				class="burger"
-				aria-expanded={this.$.expanded}
-				aria-label={this.expanded ? 'Close navigation' : 'Open navigation'}
+				aria={{
+					expanded: this.$.expanded,
+					label: this.expanded ? 'Close navigation' : 'Open navigation',
+				}}
 				data={{ expanded: this.$.expanded }}
 				on:click={this.toggleMenu}
 			>
