@@ -1,13 +1,62 @@
-/** Numeric marker value stamped on every Radiant template result object. */
-const RADIANT_TEMPLATE_RESULT = 1;
-/** Key name written on all Radiant template result objects. */
-const RADIANT_TEMPLATE_RESULT_FIELD = '_$rType$';
-/** Symbol key present on every {@link KeyedJsxValue} wrapper object. */
-const KEYED_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.keyed-value');
-/** Symbol key present on every {@link SubscribableJsxValue} wrapper object. */
-const SUBSCRIBABLE_JSX_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.subscribable-value');
-/** Symbol key present on every slot placeholder emitted from literal `<slot>` JSX tags. */
-const SLOT_JSX_VALUE_SYMBOL = Symbol.for('@ecopages/jsx.slot-value');
+import { shouldDelegateEventBinding } from './event-binding-policy.ts';
+import { escapeAttribute, escapeHtml } from './html-escape.ts';
+import { getTemplateInterpolationParts } from './hydration-bindings.ts';
+import {
+	KEYED_VALUE_SYMBOL,
+	RADIANT_TEMPLATE_RESULT,
+	RADIANT_TEMPLATE_RESULT_FIELD,
+	SLOT_JSX_VALUE_SYMBOL,
+	SUBSCRIBABLE_JSX_VALUE_SYMBOL,
+} from './types.ts';
+import type {
+	KeyedJsxValue,
+	JsxComponent,
+	JsxCustomIntrinsicElements,
+	JsxIntrinsicAttributes,
+	JsxKey,
+	JsxNodeLike,
+	JsxNodeType,
+	JsxPrimitive,
+	JsxPropsWithChildren,
+	JsxRenderable,
+	SignalLike,
+	SlotJsxValue,
+	SubscribableJsxValue,
+	ServerCustomElementRenderHook,
+	ServerCustomElementRenderHookContext,
+	ServerRenderableCustomElement,
+	TemplateResultLike,
+} from './types.ts';
+export type {
+	AriaAttributesNormalized,
+	ClassList,
+	DataAttributeValue,
+	KeyedJsxValue,
+	JsxComponent,
+	JsxCustomElementAttributes,
+	JsxCustomIntrinsicElements,
+	JsxElementProps,
+	JsxEventHandler,
+	JsxEventListener,
+	JsxEventListenerObject,
+	JsxHtmlProps,
+	JsxIntrinsicAttributes,
+	JsxKey,
+	JsxNodeLike,
+	JsxNodeType,
+	JsxPrimitive,
+	JsxPropsWithChildren,
+	JsxRenderable,
+	SignalLike,
+	ServerCustomElementRenderHook,
+	ServerCustomElementRenderHookContext,
+	ServerRenderableCustomElement,
+	SlotJsxValue,
+	StylePropertyValue,
+	StyleValue,
+	SubscribableJsxValue,
+	TemplateResultLike,
+} from './types.ts';
 /** When `true` on `globalThis`, bypasses the `document` check and forces server-side custom-element rendering. */
 const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 /** When `true` on `globalThis`, signals that the current SSR pass should emit hydration binding markers. */
@@ -36,587 +85,10 @@ const voidElementNames = new Set([
 /** Well-known symbol that identifies a JSX fragment in the Radiant runtime. */
 const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
 
-import { escapeAttribute, escapeHtml } from './html-escape.ts';
-import { getTemplateInterpolationParts } from './hydration-bindings.ts';
-import { shouldDelegateEventBinding, type DelegatedEventName } from './event-binding-policy.ts';
-
-export type { DelegatedEventName } from './event-binding-policy.ts';
-
-/**
- * A primitive child value that the Radiant renderer can mount directly.
- */
-export type JsxPrimitive = boolean | bigint | number | null | string | undefined;
-
-/**
- * A Radiant template result produced by the JSX runtime.
- *
- * The runtime stamps a stable Radiant marker on `_$rType$` so the client and
- * server renderers can recognize template results without coupling JSX output
- * to a specific external renderer.
- */
-export interface TemplateResultLike {
-	/** Stable Radiant template marker consumed by the client and server renderers. */
-	readonly ['_$rType$']: typeof RADIANT_TEMPLATE_RESULT;
-	/** Static HTML segments emitted by the JSX transform. */
-	readonly strings: TemplateStringsArray;
-	/** Dynamic values interpolated between the static string segments. */
-	readonly values: readonly unknown[];
-}
-
-/**
- * Subset of standard DOM `Node.nodeType` values used by the JSX serialization layer.
- *
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeType | MDN – Node.nodeType}
- */
-export type JsxNodeType =
-	/** `Node.ELEMENT_NODE` */
-	| 1
-	/** `Node.TEXT_NODE` */
-	| 3
-	/** `Node.DOCUMENT_FRAGMENT_NODE` */
-	| 11;
-
-/**
- * A lightweight node-like value that can be serialized on the server.
- *
- * This is primarily used by SSR helpers that can provide final HTML without
- * constructing a real DOM node in the current environment.
- */
-export interface JsxNodeLike {
-	/** Optional serialized child nodes when `outerHTML` is not provided directly. */
-	childNodes?: JsxNodeLike[];
-	/** Standard DOM node type — see {@link JsxNodeType}. */
-	nodeType: JsxNodeType;
-	/** Serialized HTML for element-like values. */
-	outerHTML?: string;
-	/** Serialized text content for text-like values. */
-	textContent?: string | null;
-}
-
-/**
- * Minimal custom-element contract used by the JSX SSR pipeline.
- *
- * Custom elements that implement `renderHostToString(...)` can be instantiated by
- * the runtime during SSR. Adapters may observe these renders through
- * `withServerCustomElementRenderHook(...)` without replacing the default host
- * rendering path.
- */
-export interface ServerRenderableCustomElement {
-	renderHostToString: (options?: { hydrate?: boolean }) => string;
-	setAttribute?: (name: string, value: unknown) => void;
-	removeAttribute?: (name: string) => void;
-	[propertyName: string]: unknown;
-}
-
-/**
- * Context passed to server custom-element render hooks.
- *
- * Hooks can inspect the constructor, instance, and normalized props for the
- * current intrinsic custom-element render. Returning a node-like value replaces
- * the default SSR wrapper for this element; returning `undefined` preserves the
- * default host render output.
- */
-export type ServerCustomElementRenderHookContext = {
-	constructor: CustomElementConstructor;
-	hydrate: boolean;
-	instance: ServerRenderableCustomElement;
-	props: Record<string, unknown>;
-	tagName: string;
-};
-
-/**
- * Hook invoked when the JSX SSR runtime renders a registered intrinsic custom element.
- *
- * Return a custom node-like value to replace the default wrapper, or `undefined`
- * to keep the built-in `renderHostToString(...)` behavior.
- */
-export type ServerCustomElementRenderHook = (context: ServerCustomElementRenderHookContext) => JsxNodeLike | undefined;
-
-/**
- * Stable identity used to preserve ownership of a child value across keyed
- * list updates.
- *
- * Keys are runtime metadata only and are never emitted into the DOM or SSR
- * output directly.
- */
-export type JsxKey = number | string;
-
-/**
- * Internal wrapper for a JSX value that carries keyed-child metadata.
- *
- * The current renderer treats keyed values as transparent wrappers. Future
- * reconciliation layers use this shape to decide whether a child subtree may be
- * reused instead of recreated.
- */
-export interface KeyedJsxValue {
-	readonly key: JsxKey;
-	readonly value: JsxRenderable;
-	readonly [KEYED_VALUE_SYMBOL]: true;
-}
-
-/**
- * A JSX child value backed by an external subscription source.
- *
- * The server renderer resolves the current value eagerly, while the client DOM
- * renderer keeps the mounted child range subscribed so later updates can patch
- * that range directly without requiring a parent rerender.
- */
-export interface SubscribableJsxValue<Value extends JsxRenderable = JsxRenderable> {
-	readonly [SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true;
-	getValue: () => Value;
-	subscribe: (notify: (value: Value) => void) => () => void;
-}
-
-/**
- * Generic read/subscribe contract that the JSX renderer can consume directly
- * as a child binding.
- */
-export interface SignalLike<Value extends JsxRenderable = JsxRenderable> {
-	get: () => Value;
-	subscribe: (notify: (value: Value) => void) => () => void;
-}
-
-/**
- * Internal placeholder value produced from literal `<slot>` JSX tags.
- *
- * RadiantComponent resolves these placeholders against authored light-DOM
- * children before passing the final tree to the DOM or SSR renderers.
- */
-export interface SlotJsxValue {
-	readonly [SLOT_JSX_VALUE_SYMBOL]: true;
-	readonly fallback?: JsxRenderable;
-	readonly name?: string;
-}
-
-/**
- * A value that can be rendered by the JSX runtime.
- *
- * Wrapper values such as keyed and subscribable children are transparent to the
- * renderer. They carry reconciliation or subscription metadata while still
- * behaving like regular child content.
- */
-export type JsxRenderable =
-	| JsxPrimitive
-	| JsxNodeLike
-	| KeyedJsxValue
-	| Node
-	| SignalLike
-	| SlotJsxValue
-	| SubscribableJsxValue
-	| TemplateResultLike
-	| Iterable<JsxRenderable>;
-
-/**
- * Minimal props contract shared by JSX components that accept children.
- */
-export interface JsxPropsWithChildren {
-	children?: JsxRenderable;
-}
-
-/**
- * Standard HTML-level props available to any JSX element — `children`, `class`,
- * `classes`, `style`, `aria`, and `data`. Use this to type function components
- * that forward standard element attributes.
- *
- * @example
- * ```tsx
- * interface CardProps extends JsxHtmlProps {
- *   title: string;
- * }
- *
- * function Card({ title, children, class: cls, style }: CardProps) {
- *   return <div class={cls} style={style}><h2>{title}</h2>{children}</div>;
- * }
- * ```
- */
-export interface JsxHtmlProps {
-	children?: JsxRenderable;
-	/** Plain class string — merged with `classes` when both are provided. */
-	class?: string;
-	/** Dynamic class list — like Astro's `class:list`. Merged with `class` when both are provided. */
-	classes?: ClassList;
-	style?: StyleValue;
-	aria?: Partial<AriaAttributesNormalized> | undefined;
-	data?: Record<string, DataAttributeValue>;
-}
-
-/**
- * A function component supported by the Radiant JSX runtime.
- */
-export type JsxComponent<Props extends object = JsxPropsWithChildren> = (props: Props) => JsxRenderable;
-
 /**
  * Internal fragment marker type used by the automatic JSX runtime.
  */
 export type JsxFragment = typeof fragmentSymbol;
-
-type Booleanish = boolean | 'true' | 'false';
-type StringKeyOf<Value> = Extract<keyof Value, string>;
-type JsxBindablePropertyName<ElementType extends object> = {
-	[PropertyName in StringKeyOf<ElementType>]: ElementType[PropertyName] extends (...args: any[]) => any
-		? never
-		: PropertyName;
-}[StringKeyOf<ElementType>];
-
-/**
- * Bivariant event handler type for native DOM events.
- */
-export type JsxEventHandler<EventType extends Event = Event, CurrentTarget extends EventTarget = EventTarget> = {
-	bivarianceHack(event: EventType & { readonly currentTarget: CurrentTarget }): void;
-}['bivarianceHack'];
-
-/**
- * Object-style DOM event listener.
- */
-export interface JsxEventListenerObject<EventType extends Event = Event> {
-	handleEvent(event: EventType): void;
-}
-
-/**
- * Accepted value for `on:*` and `on-native:*` bindings.
- */
-export type JsxEventListener<EventType extends Event = Event, CurrentTarget extends EventTarget = EventTarget> =
-	| JsxEventHandler<EventType, CurrentTarget>
-	| JsxEventListenerObject<EventType>;
-
-type JsxEventBindings<ElementType extends EventTarget> = {
-	[EventName in keyof GlobalEventHandlersEventMap as `on:${EventName}`]?: JsxEventListener<
-		GlobalEventHandlersEventMap[EventName],
-		ElementType
-	>;
-} & {
-	[EventName in keyof GlobalEventHandlersEventMap as `on-native:${EventName}`]?: JsxEventListener<
-		GlobalEventHandlersEventMap[EventName],
-		ElementType
-	>;
-} & {
-	[eventName: `on:${string}`]: JsxEventListener<Event, ElementType> | undefined;
-	[eventName: `on-native:${string}`]: JsxEventListener<Event, ElementType> | undefined;
-};
-
-type JsxPropertyBindings<ElementType extends object> = {
-	[PropertyName in JsxBindablePropertyName<ElementType> as `prop:${PropertyName}`]?: ElementType[PropertyName];
-} & {
-	[propertyName: `prop:${string}`]: unknown;
-};
-
-/*
- * All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
- */
-export interface AriaAttributesNormalized {
-	/** Identifies the currently active element when DOM focus is on a composite widget, textbox, group, or application. */
-	activedescendant?: string | undefined;
-	/** Indicates whether assistive technologies will present all, or only parts of, the changed region based on the change notifications defined by the aria-relevant attribute. */
-	atomic?: Booleanish | undefined;
-	/**
-	 * Indicates whether inputting text could trigger display of one or more predictions of the user's intended value for an input and specifies how predictions would be
-	 * presented if they are made.
-	 */
-	autocomplete?: 'none' | 'inline' | 'list' | 'both' | undefined;
-	/** Indicates an element is being modified and that assistive technologies MAY want to wait until the modifications are complete before exposing them to the user. */
-	/**
-	 * Defines a string value that labels the current element, which is intended to be converted into Braille.
-	 * @see aria-label.
-	 */
-	braillelabel?: string | undefined;
-	/**
-	 * Defines a human-readable, author-localized abbreviated description for the role of an element, which is intended to be converted into Braille.
-	 * @see aria-roledescription.
-	 */
-	brailleroledescription?: string | undefined;
-	busy?: Booleanish | undefined;
-	/**
-	 * Indicates the current "checked" state of checkboxes, radio buttons, and other widgets.
-	 * @see aria-pressed @see aria-selected.
-	 */
-	checked?: boolean | 'false' | 'mixed' | 'true' | undefined;
-	/**
-	 * Defines the total number of columns in a table, grid, or treegrid.
-	 * @see aria-colindex.
-	 */
-	colcount?: number | undefined;
-	/**
-	 * Defines an element's column index or position with respect to the total number of columns within a table, grid, or treegrid.
-	 * @see aria-colcount @see aria-colspan.
-	 */
-	colindex?: number | undefined;
-	/**
-	 * Defines a human readable text alternative of aria-colindex.
-	 * @see aria-rowindextext.
-	 */
-	colindextext?: string | undefined;
-	/**
-	 * Defines the number of columns spanned by a cell or gridcell within a table, grid, or treegrid.
-	 * @see aria-colindex @see aria-rowspan.
-	 */
-	colspan?: number | undefined;
-	/**
-	 * Identifies the element (or elements) whose contents or presence are controlled by the current element.
-	 * @see aria-owns.
-	 */
-	controls?: string | undefined;
-	/** Indicates the element that represents the current item within a container or set of related elements. */
-	current?: boolean | 'false' | 'true' | 'page' | 'step' | 'location' | 'date' | 'time' | undefined;
-	/**
-	 * Identifies the element (or elements) that describes the object.
-	 * @see aria-labelledby
-	 */
-	describedby?: string | undefined;
-	/**
-	 * Defines a string value that describes or annotates the current element.
-	 * @see related aria-describedby.
-	 */
-	description?: string | undefined;
-	/**
-	 * Identifies the element that provides a detailed, extended description for the object.
-	 * @see aria-describedby.
-	 */
-	details?: string | undefined;
-	/**
-	 * Indicates that the element is perceivable but disabled, so it is not editable or otherwise operable.
-	 * @see aria-hidden @see aria-readonly.
-	 */
-	disabled?: Booleanish | undefined;
-	/**
-	 * Indicates what functions can be performed when a dragged object is released on the drop target.
-	 * @deprecated in ARIA 1.1
-	 */
-	dropeffect?: 'none' | 'copy' | 'execute' | 'link' | 'move' | 'popup' | undefined;
-	/**
-	 * Identifies the element that provides an error message for the object.
-	 * @see aria-invalid @see aria-describedby.
-	 */
-	errormessage?: string | undefined;
-	/** Indicates whether the element, or another grouping element it controls, is currently expanded or collapsed. */
-	expanded?: Booleanish | undefined;
-	/**
-	 * Identifies the next element (or elements) in an alternate reading order of content which, at the user's discretion,
-	 * allows assistive technology to override the general default of reading in document source order.
-	 */
-	flowto?: string | undefined;
-	/**
-	 * Indicates an element's "grabbed" state in a drag-and-drop operation.
-	 * @deprecated in ARIA 1.1
-	 */
-	grabbed?: Booleanish | undefined;
-	/** Indicates the availability and type of interactive popup element, such as menu or dialog, that can be triggered by an element. */
-	haspopup?: boolean | 'false' | 'true' | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog' | undefined;
-	/**
-	 * Indicates whether the element is exposed to an accessibility API.
-	 * @see aria-disabled.
-	 */
-	hidden?: Booleanish | undefined;
-	/**
-	 * Indicates the entered value does not conform to the format expected by the application.
-	 * @see aria-errormessage.
-	 */
-	invalid?: boolean | 'false' | 'true' | 'grammar' | 'spelling' | undefined;
-	/** Indicates keyboard shortcuts that an author has implemented to activate or give focus to an element. */
-	keyshortcuts?: string | undefined;
-	/**
-	 * Defines a string value that labels the current element.
-	 * @see aria-labelledby.
-	 */
-	label?: string | undefined;
-	/**
-	 * Identifies the element (or elements) that labels the current element.
-	 * @see aria-describedby.
-	 */
-	labelledby?: string | undefined;
-	/** Defines the hierarchical level of an element within a structure. */
-	level?: number | undefined;
-	/** Indicates that an element will be updated, and describes the types of updates the user agents, assistive technologies, and user can expect from the live region. */
-	live?: 'off' | 'assertive' | 'polite' | undefined;
-	/** Indicates whether an element is modal when displayed. */
-	modal?: Booleanish | undefined;
-	/** Indicates whether a text box accepts multiple lines of input or only a single line. */
-	multiline?: Booleanish | undefined;
-	/** Indicates that the user may select more than one item from the current selectable descendants. */
-	multiselectable?: Booleanish | undefined;
-	/** Indicates whether the element's orientation is horizontal, vertical, or unknown/ambiguous. */
-	orientation?: 'horizontal' | 'vertical' | undefined;
-	/**
-	 * Identifies an element (or elements) in order to define a visual, functional, or contextual parent/child relationship
-	 * between DOM elements where the DOM hierarchy cannot be used to represent the relationship.
-	 * @see aria-controls.
-	 */
-	owns?: string | undefined;
-	/**
-	 * Defines a short hint (a word or short phrase) intended to aid the user with data entry when the control has no value.
-	 * A hint could be a sample value or a brief description of the expected format.
-	 */
-	placeholder?: string | undefined;
-	/**
-	 * Defines an element's number or position in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM.
-	 * @see aria-setsize.
-	 */
-	posinset?: number | undefined;
-	/**
-	 * Indicates the current "pressed" state of toggle buttons.
-	 * @see aria-checked @see aria-selected.
-	 */
-	pressed?: boolean | 'false' | 'mixed' | 'true' | undefined;
-	/**
-	 * Indicates that the element is not editable, but is otherwise operable.
-	 * @see aria-disabled.
-	 */
-	readonly?: Booleanish | undefined;
-	/**
-	 * Indicates what notifications the user agent will trigger when the accessibility tree within a live region is modified.
-	 * @see aria-atomic.
-	 */
-	relevant?:
-		| 'additions'
-		| 'additions removals'
-		| 'additions text'
-		| 'all'
-		| 'removals'
-		| 'removals additions'
-		| 'removals text'
-		| 'text'
-		| 'text additions'
-		| 'text removals'
-		| undefined;
-	/** Indicates that user input is required on the element before a form may be submitted. */
-	required?: Booleanish | undefined;
-	/** Defines a human-readable, author-localized description for the role of an element. */
-	roledescription?: string | undefined;
-	/**
-	 * Defines the total number of rows in a table, grid, or treegrid.
-	 * @see aria-rowindex.
-	 */
-	rowcount?: number | undefined;
-	/**
-	 * Defines an element's row index or position with respect to the total number of rows within a table, grid, or treegrid.
-	 * @see aria-rowcount @see aria-rowspan.
-	 */
-	rowindex?: number | undefined;
-	/**
-	 * Defines a human readable text alternative of aria-rowindex.
-	 * @see aria-colindextext.
-	 */
-	rowindextext?: string | undefined;
-	/**
-	 * Defines the number of rows spanned by a cell or gridcell within a table, grid, or treegrid.
-	 * @see aria-rowindex @see aria-colspan.
-	 */
-	rowspan?: number | undefined;
-	/**
-	 * Indicates the current "selected" state of various widgets.
-	 * @see aria-checked @see aria-pressed.
-	 */
-	selected?: Booleanish | undefined;
-	/**
-	 * Defines the number of items in the current set of listitems or treeitems. Not required if all elements in the set are present in the DOM.
-	 * @see aria-posinset.
-	 */
-	setsize?: number | undefined;
-	/** Indicates if items in a table or grid are sorted in ascending or descending order. */
-	sort?: 'none' | 'ascending' | 'descending' | 'other' | undefined;
-	/** Defines the maximum allowed value for a range widget. */
-	valuemax?: number | undefined;
-	/** Defines the minimum allowed value for a range widget. */
-	valuemin?: number | undefined;
-	/**
-	 * Defines the current value for a range widget.
-	 * @see aria-valuetext.
-	 */
-	valuenow?: number | undefined;
-	/** Defines the human readable text alternative of aria-valuenow for a range widget. */
-	valuetext?: string | undefined;
-}
-
-/**
- * Alias for normalized ARIA authoring values.
- */
-export type AriaTypeNormalized = AriaAttributesNormalized;
-
-/**
- * Accepted value for the `classes` JSX prop.
- *
- * Works like Astro's `class:list` — supports strings, numbers, conditional
- * objects (`{ token: boolean }`), and nested arrays of the same.
- */
-export type ClassList = string | number | bigint | boolean | null | undefined | Record<string, unknown> | ClassList[];
-
-/** Accepted value for individual entries inside a `style` object. */
-export type StylePropertyValue = string | number | null | undefined;
-
-/**
- * Accepted value for the `style` JSX prop.
- *
- * Either a pre-serialized CSS string or an object whose keys are camelCase CSS
- * property names and values are serializable declarations.
- */
-export type StyleValue = string | Record<string, StylePropertyValue>;
-
-/** Accepted value for individual entries inside a `data` object. */
-export type DataAttributeValue = string | number | boolean | null | undefined;
-
-/**
- * Shared attribute shape for intrinsic elements.
- */
-export interface JsxSharedIntrinsicAttributes {
-	aria?: Partial<AriaAttributesNormalized> | undefined;
-	children?: JsxRenderable;
-	/** Plain class string — merged with `classes` when both are provided. */
-	class?: string;
-	/** Dynamic class list — like Astro's `class:list`. Merged with `class` when both are provided. */
-	classes?: ClassList;
-	data?: Record<string, DataAttributeValue>;
-	style?: StyleValue;
-	[key: string]: unknown;
-}
-
-/**
- * Shared attribute shape for intrinsic elements.
- */
-export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes &
-	JsxEventBindings<ElementType> &
-	JsxPropertyBindings<ElementType>;
-
-/**
- * All base props accepted by any JSX element — `children`, `class`, `classes`,
- * `style`, `aria`, `data`, `on:*` event bindings, and `prop:*` property bindings.
- *
- * This is a consumer-friendly alias for {@link JsxIntrinsicAttributes}.
- */
-export type JsxElementProps<ElementType extends Element = HTMLElement> = JsxIntrinsicAttributes<ElementType>;
-
-/**
- * JSX attribute shape for a custom element declaration in `JSX.IntrinsicElements`.
- *
- * This combines the standard Ecopages JSX intrinsic attributes for the host
- * element with a partial props contract so JSX call sites can pass only the
- * attributes they need while still receiving type checking for known props.
- *
- * Example:
- *
- * ```ts
- * declare module '@ecopages/jsx/jsx-runtime' {
- *   interface JsxCustomIntrinsicElements {
- *     'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
- *   }
- * }
- * ```
- */
-export type JsxCustomElementAttributes<
-	ElementType extends Element = HTMLElement,
-	Props extends object = {},
-> = JsxIntrinsicAttributes<ElementType> & Partial<Props>;
-
-/**
- * Module-augmentable registry of custom JSX intrinsic elements for the
- * Ecopages JSX runtime.
- *
- * Augment this interface from `@ecopages/jsx/jsx-runtime` instead of declaring
- * a global `namespace JSX` block when `jsxImportSource` points at
- * `@ecopages/jsx`.
- *
- * Each property should map a custom tag name to a
- * `JsxCustomElementAttributes<...>` declaration.
- */
-export interface JsxCustomIntrinsicElements {}
 
 type JsxDomIntrinsicElements = {
 	[ElementName in keyof HTMLElementTagNameMap]: JsxIntrinsicAttributes<HTMLElementTagNameMap[ElementName]>;

@@ -1,6 +1,6 @@
-/** @jsxImportSource .. */
+/** @jsxImportSource ../src */
 
-import type { JsxRenderable } from '../jsx-runtime.ts';
+import type { JsxRenderable } from '../src/jsx-runtime.ts';
 
 type Purchase = {
 	name: string;

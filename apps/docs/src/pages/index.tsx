@@ -73,7 +73,7 @@ const HomePage: EcoComponent = () => {
 			<header class="home-header">
 				<div class="home-hero">
 					<div class="home-hero__text">
-						<p class="home-header__subtitle">Radiant Docs</p>
+						<p class="home-header__subtitle">Radiant</p>
 						<h1 class="home-header__title">Build typed web components with JSX and Signals.</h1>
 						<p class="home-header__description">
 							Radiant gives you a typed component base class, a small decorator surface for props and

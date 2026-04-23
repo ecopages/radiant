@@ -1,8 +1,8 @@
-/** @jsxImportSource .. */
+/** @jsxImportSource ../src */
 import { writeFileSync } from 'node:fs';
 import { bench, do_not_optimize, run, summary } from 'mitata';
-import { jsx } from '../jsx-runtime.ts';
-import { renderToString } from '../server-render.ts';
+import { jsx } from '../src/jsx-runtime.ts';
+import { renderToString } from '../src/server-render.ts';
 import { createBenchmarkProps, RealWorldPage } from './realworld-page.tsx';
 
 const props = createBenchmarkProps();

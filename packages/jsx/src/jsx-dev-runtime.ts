@@ -1,6 +1,7 @@
 export { Fragment, jsx, jsxs } from './jsx-runtime.ts';
 
-import { jsx, type JsxComponent, type JsxFragment, type JsxRenderable } from './jsx-runtime.ts';
+import { jsx, type JsxFragment, type JsxRenderable } from './jsx-runtime.ts';
+import type { JsxComponent } from './types.ts';
 
 /**
  * Development runtime entrypoint required by the automatic JSX transform.
