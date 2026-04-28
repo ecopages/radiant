@@ -26,8 +26,6 @@ export type RenderToStringOptions = {
 	 * When `true`, emits hydration binding markers alongside the serialized HTML
 	 * so the DOM hydrator can reconnect listeners and property bindings without
 	 * replacing the SSR DOM tree.
-	 *
-	 * @deprecated Prefer `mode: 'hydrate'` for explicit intent.
 	 */
 	hydrate?: boolean;
 	/**
