@@ -1,4 +1,5 @@
 import { waitFor } from '@testing-library/dom';
+import { jsx, jsxs, render as renderJsx } from '@ecopages/jsx';
 import { renderToString } from '@ecopages/jsx/server';
 import { createStore, state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { beforeEach, describe, expect, test } from 'vitest';
@@ -355,6 +356,104 @@ describe('RadiantComponent', () => {
 		await waitFor(() => {
 			expect(element.querySelector('[data-ref="header"] > h2')?.textContent).toBe('Late heading');
 		});
+	});
+
+	test('client rendering in a RadiantComponent host preserves camel-cased SVG markup', async () => {
+		@customElement('client-svg-host-test')
+		class ClientSvgHost extends RadiantComponent {
+			override render() {
+				return (
+					<div>
+						<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+							<defs>
+								<linearGradient id="gradient">
+									<stop offset="0%" stop-color="#000" />
+									<stop offset="100%" stop-color="#fff" />
+								</linearGradient>
+								<filter id="shadow">
+									<feDropShadow dx="0" dy="2" stdDeviation="2" />
+								</filter>
+							</defs>
+							<rect width="100" height="100" fill="url(#gradient)" filter="url(#shadow)" />
+						</svg>
+					</div>
+				);
+			}
+		}
+
+		const element = document.createElement('client-svg-host-test') as ClientSvgHost;
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.querySelector('linearGradient')).not.toBeNull();
+			expect(element.querySelector('feDropShadow')).not.toBeNull();
+		});
+
+		const gradient = element.querySelector('linearGradient');
+		const dropShadow = element.querySelector('feDropShadow');
+
+		expect(gradient?.localName).toBe('linearGradient');
+		expect(gradient?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(dropShadow?.localName).toBe('feDropShadow');
+		expect(dropShadow?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+
+		expect(element.innerHTML).toContain('<linearGradient id="gradient">');
+		expect(element.innerHTML).toContain('<feDropShadow dx="0" dy="2" stdDeviation="2"></feDropShadow>');
+	});
+
+	test('direct JSX render into a custom-element host preserves camel-cased SVG markup', () => {
+		class PlainJsxSvgHost extends HTMLElement {}
+
+		if (!customElements.get('plain-jsx-svg-host-test')) {
+			customElements.define('plain-jsx-svg-host-test', PlainJsxSvgHost);
+		}
+
+		const host = document.createElement('plain-jsx-svg-host-test') as PlainJsxSvgHost;
+
+		renderJsx(
+			jsx('div', {
+				children: jsxs('svg', {
+					viewBox: '0 0 100 100',
+					xmlns: 'http://www.w3.org/2000/svg',
+					children: [
+						jsxs('defs', {
+							children: [
+								jsxs('linearGradient', {
+									id: 'gradient',
+									children: [
+										jsx('stop', { offset: '0%', 'stop-color': '#000' }),
+										jsx('stop', { offset: '100%', 'stop-color': '#fff' }),
+									],
+								}),
+								jsx('filter', {
+									id: 'shadow',
+									children: jsx('feDropShadow', {
+										dx: '0',
+										dy: '2',
+										stdDeviation: '2',
+									}),
+								}),
+							],
+						}),
+						jsx('rect', {
+							width: '100',
+							height: '100',
+							fill: 'url(#gradient)',
+							filter: 'url(#shadow)',
+						}),
+					],
+				}),
+			}),
+			host,
+		);
+
+		const gradient = host.querySelector('linearGradient');
+		const dropShadow = host.querySelector('feDropShadow');
+
+		expect(gradient?.localName).toBe('linearGradient');
+		expect(dropShadow?.localName).toBe('feDropShadow');
+		expect(host.innerHTML).toContain('<linearGradient id="gradient">');
+		expect(host.innerHTML).toContain('<feDropShadow dx="0" dy="2" stdDeviation="2"></feDropShadow>');
 	});
 
 	test('renderHostToString() serializes the host tag and reactive attributes', () => {

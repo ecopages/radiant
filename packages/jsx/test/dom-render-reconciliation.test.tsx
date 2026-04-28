@@ -369,6 +369,8 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(gradient?.namespaceURI).toBe('http://www.w3.org/2000/svg');
 		expect(dropShadow?.localName).toBe('feDropShadow');
 		expect(dropShadow?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(container.innerHTML).toContain('<linearGradient id="gradient">');
+		expect(container.innerHTML).toContain('<feDropShadow dx="0" dy="2" stdDeviation="2"></feDropShadow>');
 	});
 
 	test('manual template results without root metadata do not poison later intrinsic SVG mounts', async () => {
@@ -551,6 +553,8 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(gradient?.namespaceURI).toBe('http://www.w3.org/2000/svg');
 		expect(dropShadow?.localName).toBe('feDropShadow');
 		expect(dropShadow?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(container.innerHTML).toContain('<linearGradient id="gradient">');
+		expect(container.innerHTML).toContain('<feDropShadow dx="0" dy="2" stdDeviation="2"></feDropShadow>');
 	});
 
 	test('hydrates iterable-root SSR bindings through the fallback marker scan', async () => {

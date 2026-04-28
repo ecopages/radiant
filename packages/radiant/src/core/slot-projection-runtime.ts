@@ -106,6 +106,7 @@ export function resolveSlotProjection(
 		if (isTemplateResultLike(currentValue)) {
 			return {
 				_$rType$: 1,
+				rootLocalName: currentValue.rootLocalName,
 				strings: currentValue.strings,
 				values: currentValue.values.map((entry) => resolveValue(entry as JsxRenderable)),
 			} satisfies TemplateResultLike;
