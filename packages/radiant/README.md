@@ -149,7 +149,7 @@ Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive cha
 
 In practice, `renderHostToString()` is the right default for full component SSR because it emits `<my-element>...</my-element>` instead of only the view fragment.
 
-`hydrate: true` adds hydration markers for the component view. First-connect hydration is now explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
+`mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is now explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 
 For component-owned SSR, the instance methods still work. For adapters, fragment responses, and shared server utilities, prefer the explicit helpers under `@ecopages/radiant/server/render-component`.
 

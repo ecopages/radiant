@@ -458,7 +458,7 @@ describe('RadiantComponent', () => {
 		] = true;
 
 		try {
-			const html = renderToString(<nested-ssr-board-card-test />, { hydrate: true });
+			const html = renderToString(<nested-ssr-board-card-test />, { mode: 'hydrate' });
 
 			expect(html).toContain('<nested-ssr-board-card-test>');
 			expect(html).toContain('<nested-ssr-summary-card-test>');
@@ -519,7 +519,7 @@ describe('RadiantComponent', () => {
 		expect(runtime.HTMLElement).toBe(initialHTMLElement);
 	});
 
-	test('renderHostToString({ hydrate: true }) keeps hydration output free of internal child markers', () => {
+	test("renderHostToString({ mode: 'hydrate' }) keeps hydration output free of internal child markers", () => {
 		@customElement('server-host-hydrate-card-test')
 		class ServerHostHydrateCard extends RadiantComponent {
 			@prop({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
@@ -544,7 +544,7 @@ describe('RadiantComponent', () => {
 		element.count = 28;
 		element.label = 'SSR counter rendered in Nitro';
 
-		const html = element.renderHostToString({ hydrate: true });
+		const html = element.renderHostToString({ mode: 'hydrate' });
 
 		expect(html).toContain('<server-host-hydrate-card-test count="28" label="SSR counter rendered in Nitro">');
 		expect(html).toContain('class="component-tag">RadiantComponent</p>');
@@ -554,7 +554,7 @@ describe('RadiantComponent', () => {
 		expect(html).not.toContain('radiant-jsx-child-end');
 	});
 
-	test('renderHostToString({ hydrate: true }) serializes bound JSX child values', () => {
+	test("renderHostToString({ mode: 'hydrate' }) serializes bound JSX child values", () => {
 		type ServerHostBoundHydrateCardBindings = {
 			count: number;
 			label: string;
@@ -580,7 +580,7 @@ describe('RadiantComponent', () => {
 		element.count = 28;
 		element.label = 'SSR counter rendered in Nitro';
 
-		const html = element.renderHostToString({ hydrate: true });
+		const html = element.renderHostToString({ mode: 'hydrate' });
 
 		expect(html).toContain(
 			'<server-host-bound-hydrate-card-test count="28" label="SSR counter rendered in Nitro">',
@@ -592,7 +592,7 @@ describe('RadiantComponent', () => {
 		expect(html).not.toContain('radiant-jsx-child-end');
 	});
 
-	test('renderHostToString({ hydrate: true }) serializes very nested component trees', () => {
+	test("renderHostToString({ mode: 'hydrate' }) serializes very nested component trees", () => {
 		type ServerHostDeepTreeBindings = {
 			count: number;
 			label: string;
@@ -632,7 +632,7 @@ describe('RadiantComponent', () => {
 		const element = new ServerHostDeepTree();
 		element.label = 'Deep SSR';
 		element.count = 11;
-		const html = element.renderHostToString({ hydrate: true });
+		const html = element.renderHostToString({ mode: 'hydrate' });
 
 		expect(html).toContain('<server-host-deep-tree-test');
 		expect(html).toContain('count="11"');
@@ -688,7 +688,7 @@ describe('RadiantComponent', () => {
 		const element = new ServerHostSlotCard();
 		element.innerHTML = '<h2 slot="header">Server heading</h2><p>Server body</p>';
 
-		const html = element.renderHostToString({ hydrate: true });
+		const html = element.renderHostToString({ mode: 'hydrate' });
 
 		expect(html).toContain('<header><h2 slot="header">Server heading</h2></header>');
 		expect(html).toContain('<div><p>Server body</p></div>');
@@ -696,7 +696,7 @@ describe('RadiantComponent', () => {
 	});
 
 	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
-		test('renderHostToString({ hydrate: true }) emits host content before slot projection and hydration scripts', () => {
+		test("renderHostToString({ mode: 'hydrate' }) emits host content before slot projection and hydration scripts", () => {
 			@customElement('server-host-ordering-card-test')
 			class ServerHostOrderingCard extends RadiantComponent {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
@@ -715,7 +715,7 @@ describe('RadiantComponent', () => {
 			element.innerHTML = '<p>Projected body</p>';
 			element.status.set('ready');
 
-			const html = element.renderHostToString({ hydrate: true });
+			const html = element.renderHostToString({ mode: 'hydrate' });
 			const hostContentIndex = html.indexOf('<section><p>Projected body</p><p>ready</p></section>');
 			const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
 			const hydrationScriptIndex = html.indexOf('data-hydration-key="status"');
@@ -734,7 +734,7 @@ describe('RadiantComponent', () => {
 			authoredContent: '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>',
 		});
 
-		expect(element.renderHostToString({ hydrate: true })).toContain('data-header-slot="Prepared heading"');
+		expect(element.renderHostToString({ mode: 'hydrate' })).toContain('data-header-slot="Prepared heading"');
 	});
 
 	describeWhenStandard('pre-connect SSR accessors', () => {
@@ -753,7 +753,7 @@ describe('RadiantComponent', () => {
 		test('hydrates array @prop values from SSR host attributes before the first client render', async () => {
 			const serverElement = new SsrArrayPropCard();
 			serverElement.items = [{ label: 'first' }, { label: 'second' }];
-			const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+			const serverMarkup = serverElement.renderHostToString({ mode: 'hydrate' });
 
 			document.body.innerHTML = serverMarkup;
 
@@ -765,7 +765,7 @@ describe('RadiantComponent', () => {
 			});
 		});
 
-		test('renderHostToString({ hydrate: true }) appends signal hydration scripts automatically', () => {
+		test("renderHostToString({ mode: 'hydrate' }) appends signal hydration scripts automatically", () => {
 			class ServerHostSignalCard extends RadiantComponent {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
 
@@ -781,7 +781,7 @@ describe('RadiantComponent', () => {
 
 			const element = new ServerHostSignalCard();
 			element.status.set('ready');
-			const html = element.renderHostToString({ hydrate: true });
+			const html = element.renderHostToString({ mode: 'hydrate' });
 
 			expect(html).toContain('<server-host-signal-card-test>');
 			expect(html).toContain('<p>ready</p>');
@@ -791,7 +791,7 @@ describe('RadiantComponent', () => {
 		});
 	});
 
-	test('renderHostToString({ hydrate: true }) appends provider hydration scripts automatically', () => {
+	test("renderHostToString({ mode: 'hydrate' }) appends provider hydration scripts automatically", () => {
 		const serverContext = createContext<{ label: string; level: number }>(Symbol('server-context-card'));
 
 		class ServerHostContextCard extends RadiantComponent {
@@ -819,7 +819,7 @@ describe('RadiantComponent', () => {
 		setCustomElementTagName(ServerHostContextCard, 'server-host-context-card-test');
 
 		const element = new ServerHostContextCard();
-		const html = element.renderHostToString({ hydrate: true });
+		const html = element.renderHostToString({ mode: 'hydrate' });
 
 		expect(html).toContain('<server-host-context-card-test>');
 		expect(html).toContain('<p>Provider host</p>');
@@ -901,7 +901,7 @@ describe('RadiantComponent', () => {
 		}
 	});
 
-	test('renderHostToString({ hydrate: false }) emits authored hydration markup before slot projection payloads', () => {
+	test("renderHostToString({ mode: 'plain' }) emits authored hydration markup before slot projection payloads", () => {
 		@customElement('server-host-authored-hydration-order-card-test')
 		class ServerHostAuthoredHydrationOrderCard extends RadiantComponent {
 			override render() {
@@ -918,7 +918,7 @@ describe('RadiantComponent', () => {
 			'<p>Projected body</p>' +
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":3}</script>';
 
-		const html = element.renderHostToString({ hydrate: false });
+		const html = element.renderHostToString({ mode: 'plain' });
 		const hostContentIndex = html.indexOf('<section><p>Projected body</p></section>');
 		const authoredHydrationIndex = html.indexOf('data-hydration-key="provider"');
 		const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
@@ -995,7 +995,7 @@ describe('RadiantComponent', () => {
 
 		try {
 			const parent = new NestedRadiantParentHost();
-			const nestedHtml = renderToString(<nested-radiant-parent-host-test />, { hydrate: true });
+			const nestedHtml = renderToString(<nested-radiant-parent-host-test />, { mode: 'hydrate' });
 
 			expect(nestedHtml).toContain(`<${parentTagName}>`);
 			expect(nestedHtml).toContain(`<${childTagName}>`);
@@ -1007,7 +1007,7 @@ describe('RadiantComponent', () => {
 			);
 			expect(nestedHtml).toContain('{"label":"Nitro SSR context","level":2}');
 
-			const parentHostHtml = parent.renderHostToString({ hydrate: true });
+			const parentHostHtml = parent.renderHostToString({ mode: 'hydrate' });
 
 			expect(parentHostHtml).toContain(`<${parentTagName}>`);
 			expect(parentHostHtml).toContain(`<${childTagName}>`);
@@ -1062,7 +1062,7 @@ describe('RadiantComponent', () => {
 		] = true;
 
 		try {
-			const nestedHtml = renderToString(<nested-radiant-overridden-parent-host-test />, { hydrate: true });
+			const nestedHtml = renderToString(<nested-radiant-overridden-parent-host-test />, { mode: 'hydrate' });
 
 			expect(nestedHtml).toContain(
 				'<nested-radiant-overridden-child-host-test data-source="override"><p>Overridden child host</p></nested-radiant-overridden-child-host-test>',
@@ -1114,7 +1114,7 @@ describe('RadiantComponent', () => {
 
 		try {
 			const parent = new NestedRenderViewParentHost();
-			const html = parent.renderToString({ hydrate: true });
+			const html = parent.renderToString({ mode: 'hydrate' });
 
 			expect(html).toContain(
 				'<nested-radiant-render-view-child-host-test data-source="override"><p>Nested renderToString child</p></nested-radiant-render-view-child-host-test>',
@@ -1154,7 +1154,7 @@ describe('RadiantComponent', () => {
 		customElements.define('hydrated-counter-test', HydratedCounter);
 
 		const serverElement = document.createElement('hydrated-counter-test') as HydratedCounter;
-		const serverMarkup = serverElement.renderToString({ hydrate: true });
+		const serverMarkup = serverElement.renderToString({ mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = `<hydrated-counter-test>${serverMarkup}</hydrated-counter-test>`;
@@ -1204,7 +1204,7 @@ describe('RadiantComponent', () => {
 
 		const serverElement = new HydratedSlotCard();
 		serverElement.innerHTML = '<h2 slot="header">SSR header</h2><p>SSR body</p>';
-		const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+		const serverMarkup = serverElement.renderHostToString({ mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = serverMarkup;
@@ -1257,7 +1257,7 @@ describe('RadiantComponent', () => {
 		const serverElement = new HydratedComplexSlotCard();
 		serverElement.innerHTML =
 			'<h2 slot="header" data-note="1 > 0">SSR header</h2><article data-kind="primary"><p>SSR body</p></article><radiant-component-counter count="4" label="Projected SSR counter"></radiant-component-counter><p slot="footer">SSR footer</p>';
-		const serverMarkup = serverElement.renderHostToString({ hydrate: true });
+		const serverMarkup = serverElement.renderHostToString({ mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = serverMarkup;
@@ -1293,7 +1293,7 @@ describe('RadiantComponent', () => {
 		customElements.define('non-hydrated-counter-test', NonHydratedCounter);
 
 		const serverElement = document.createElement('non-hydrated-counter-test') as NonHydratedCounter;
-		const serverMarkup = serverElement.renderToString({ hydrate: true });
+		const serverMarkup = serverElement.renderToString({ mode: 'hydrate' });
 
 		document.body.innerHTML = `<non-hydrated-counter-test>${serverMarkup}</non-hydrated-counter-test>`;
 
@@ -1341,7 +1341,7 @@ describe('RadiantComponent', () => {
 		customElements.define('deferred-hydrated-card-test', DeferredHydratedCard);
 
 		const serverElement = document.createElement('deferred-hydrated-card-test') as DeferredHydratedCard;
-		const serverMarkup = serverElement.renderToString({ hydrate: true });
+		const serverMarkup = serverElement.renderToString({ mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = `<deferred-hydrated-card-test>${serverMarkup}</deferred-hydrated-card-test>`;

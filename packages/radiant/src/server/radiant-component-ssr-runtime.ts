@@ -43,7 +43,7 @@ const hostAttributeResolutionInProgress = new WeakSet<object>();
 function renderRadiantComponentHost(component: RadiantComponentSsrCapable): JsxRenderable {
 	return {
 		nodeType: 1,
-		outerHTML: renderRadiantComponentHostToString(component, { hydrate: true }),
+		outerHTML: renderRadiantComponentHostToString(component, { mode: 'hydrate' }),
 	};
 }
 
@@ -132,7 +132,8 @@ function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 		return {
 			nodeType: 1,
 			get outerHTML() {
-				return renderHostToString({ hydrate: isActiveSsrHydrateMode() });
+				const hydrate = isActiveSsrHydrateMode();
+				return renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' });
 			},
 		};
 	}, render);

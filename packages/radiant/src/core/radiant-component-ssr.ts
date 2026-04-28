@@ -28,7 +28,7 @@ export class RadiantComponentSsrService {
 	public renderHost(): JsxRenderable {
 		return {
 			nodeType: 1,
-			outerHTML: this.renderHostToString({ hydrate: true }),
+			outerHTML: this.renderHostToString({ mode: 'hydrate' }),
 		};
 	}
 
@@ -47,8 +47,9 @@ export class RadiantComponentSsrService {
 		const hostContent = this.host.renderToString(options);
 		const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 		const slotProjectionScript = this.host.getSlotProjectionScriptTag?.() ?? '';
+		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
 
-		if (!options.hydrate) {
+		if (!hydrate) {
 			return `${hostContent}${authoredHydrationMarkup}${slotProjectionScript}`;
 		}
 

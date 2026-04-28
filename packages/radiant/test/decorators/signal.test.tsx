@@ -136,7 +136,7 @@ describe('@signal', () => {
 		test('appends signal hydration scripts to SSR host output when requested', () => {
 			const element = new SignalComponent();
 			element.status.set('ready');
-			const html = element.renderHostToString({ hydrate: true });
+			const html = element.renderHostToString({ mode: 'hydrate' });
 
 			expect(html).toContain('<signal-component-test>');
 			expect(html).toContain(

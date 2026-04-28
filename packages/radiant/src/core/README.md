@@ -72,8 +72,8 @@ SSR works like this:
 7. The browser receives `<my-element ...>...</my-element>` markup.
 8. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.
 
-`renderToString({ hydrate: true })` serializes only the component view with hydration markers.
-`renderHostToString({ hydrate: true })` serializes the full custom-element host together with the component view.
+`renderToString({ mode: 'hydrate'  })` serializes only the component view with hydration markers.
+`renderHostToString({ mode: 'hydrate'  })` serializes the full custom-element host together with the component view.
 When slot-aware SSR needs authored light DOM, server adapters can prepare the host explicitly before calling `renderHostToString()`.
 This host-preparation step is intentionally smaller than a full DOM emulation layer; nested JSX composition still needs a component-aware SSR path if it wants server-correct slot queries.
 

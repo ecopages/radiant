@@ -535,13 +535,13 @@ function normalizeRenderComponentOptions<TComponent extends ServerRenderableComp
 }
 
 function normalizeRenderOptions(options: RenderToStringOptions | undefined): RenderToStringOptions {
-	if (options?.hydrate !== undefined) {
+	if (options?.mode !== undefined || options?.hydrate !== undefined) {
 		return options;
 	}
 
 	return {
 		...options,
-		hydrate: true,
+		mode: 'hydrate',
 	};
 }
 
