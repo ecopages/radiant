@@ -44,7 +44,7 @@ The root API is intentionally small:
 
 ## Hydrating Existing Markup
 
-Hydration is the client attach step for markup that was produced with `renderToString(..., { hydrate: true })`.
+Hydration is the client attach step for markup that was produced with `renderToString(..., { mode: 'hydrate' })`.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -109,6 +109,46 @@ if (container instanceof HTMLElement && hasHydrationMarkers(container)) {
 Child values can update without rerendering the parent tree when they expose `get()` and `subscribe(...)` or when you wrap an external source with `createSubscribableJsxValue(...)`.
 
 That makes this package useful both as a plain JSX runtime and as a renderer that can consume signal-like values directly.
+
+## Empty Values During Updates
+
+Use normal JavaScript values for removals and empty output:
+
+- `null`, `undefined`, and `false` clear child content
+- `null` and `undefined` remove standard attributes
+- `false` removes boolean attributes
+- `null` removes event listeners
+- `undefined` clears property bindings
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { createRoot } from '@ecopages/jsx';
+
+const root = createRoot(document.querySelector('#app') as HTMLElement);
+
+const handleTogglePin = () => {
+	console.log('toggle pin');
+};
+
+const renderPinAction = (phase: 'idle' | 'saving') => (
+	<button
+		class={phase === 'saving' ? 'toolbar-action toolbar-action--saving' : null}
+		aria={{ pressed: phase === 'saving' ? false : true }}
+		data={{ phase }}
+		disabled={phase === 'saving'}
+		on:click={phase === 'saving' ? null : handleTogglePin}
+		prop:payload={phase === 'saving' ? undefined : { phase }}
+	>
+		{phase === 'saving' ? 'Saving pin state...' : 'Pinned'}
+	</button>
+);
+
+root.render(renderPinAction('idle'));
+root.render(renderPinAction('saving'));
+```
+
+These updates go through the normal renderer path. If the template shape changes, the client renderer may replace the affected node rather than preserve the previously committed instance.
 
 ## Runtime Output Contract
 

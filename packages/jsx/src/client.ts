@@ -1,6 +1,6 @@
 export {
 	Fragment,
-	createMarkupNodeLike,
+	unsafeHtml,
 	jsx,
 	jsxs,
 	createSubscribableJsxValue,

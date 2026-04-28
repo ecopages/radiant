@@ -132,6 +132,19 @@ export function jsxs<Props extends object>(
 }
 
 /**
+ * Development JSX entrypoint used by toolchains that emit `jsxDEV(...)` calls.
+ *
+ * Extra debug-only arguments are ignored, matching the runtime behavior needed
+ * for bundled output that aliases the dev/runtime entrypoints together.
+ */
+export function jsxDEV<Props extends object>(
+	type: string | JsxFragment | JsxComponent<Props>,
+	props: Props,
+): JsxRenderable {
+	return jsx(type, props);
+}
+
+/**
  * Controls how the `children` prop is distributed across child slots.
  *
  * - `'single'`   — `children` is treated as one logical value (emitted from `jsx`).
@@ -294,7 +307,7 @@ function createServerRenderedCustomElement<Props extends object>(type: string, p
 	applyServerCustomElementChildren(instance, children);
 	const hookRender = getServerCustomElementRenderHook()?.({
 		constructor,
-		hydrate: getActiveSsrHydrateMode(),
+		hydrate: getActiveSsrHydrate(),
 		instance,
 		props: rawAttributes,
 		tagName: type,
@@ -307,21 +320,22 @@ function createServerRenderedCustomElement<Props extends object>(type: string, p
 	return {
 		nodeType: 1,
 		get outerHTML() {
-			return instance.renderHostToString({ hydrate: getActiveSsrHydrateMode() });
+			const hydrateActive = getActiveSsrHydrate();
+			return instance.renderHostToString({ hydrate: hydrateActive, mode: hydrateActive ? 'hydrate' : 'plain' });
 		},
 	};
 }
 
 /**
- * Reads the active SSR hydrate flag from `globalThis`.
+ * Reads the active SSR output mode from `globalThis`.
  *
  * The flag is set by `renderToString` in the server-render module before
  * walking the JSX tree, ensuring that custom elements created during that
  * pass emit hydration markers.
  *
- * @returns `true` when the current render pass should emit hydration binding markers.
+ * @returns The current SSR output mode for the active render pass.
  */
-function getActiveSsrHydrateMode(): boolean {
+function getActiveSsrHydrate(): boolean {
 	return (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[ACTIVE_SSR_HYDRATE_SYMBOL] === true;
 }
 
@@ -752,17 +766,21 @@ export function createSubscribableJsxValue<Value extends JsxRenderable>(config: 
 	};
 }
 
-/**
- * Creates a lightweight node-like wrapper around trusted serialized markup.
- *
- * Use this when a caller already has final HTML and needs to hand it to the
- * JSX renderers without constructing a live DOM node first.
- */
 export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
 	return {
 		nodeType: 1,
 		outerHTML,
 	};
+}
+
+/**
+ * Marks a string as trusted HTML and hands it to the JSX runtime as opaque markup.
+ *
+ * This is an unsafe opt-in escape hatch. The input is not sanitized or escaped
+ * again, so untrusted user input must never flow through this helper.
+ */
+export function unsafeHtml(html: string): JsxNodeLike {
+	return createMarkupNodeLike(html);
 }
 
 function isSignalLikeValue(value: unknown): value is SignalLike {
@@ -1151,7 +1169,7 @@ function normalizeChildren(children: JsxRenderable | undefined): JsxRenderable {
  * @param classesValue Value of the `classes` prop.
  * @returns Merged class string, or `undefined` when both resolve to no tokens.
  */
-function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): string | undefined {
+function normalizeMergedClassValue(classValue: unknown, classesValue: unknown): unknown {
 	const tokens: string[] = [];
 	appendClassTokens(tokens, classValue);
 	appendClassTokens(tokens, classesValue);

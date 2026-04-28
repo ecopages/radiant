@@ -26,6 +26,13 @@ Use it when you want:
 - server rendering and hydration helpers
 - fine-grained child bindings without a hook runtime
 
+`@ecopages/jsx` also gives you:
+
+- explicit DOM event bindings with `on:*`
+- native listener escape hatches with `on-native:*`
+- property bindings with `prop:*`
+- direct child bindings from reactive sources that expose `get()` and `subscribe(...)`
+
 Keep using `@ecopages/radiant` when you need custom-element classes, decorators, lifecycle, context, and host-managed reactivity.
 
 ## Package Boundary
@@ -72,6 +79,33 @@ The shortest accurate model is:
 1. JSX produces a renderer-neutral template result.
 2. That template result can go to the DOM renderer or the SSR renderer.
 3. Fine-grained updates happen at bound child ranges, not through a hook scheduler.
+
+## Empty Values And Removal
+
+Most code should use plain JavaScript values for empty output and removal semantics.
+
+- `null`, `undefined`, and `false` render no child content
+- `null` and `undefined` remove normal attributes
+- `false` removes boolean attributes such as `hidden` or `disabled`
+- `null` removes event handlers by leaving no next listener to attach
+- `undefined` clears property bindings by writing `undefined`
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+return (
+	<button
+		class={shouldResetClass ? null : 'toolbar-action'}
+		hidden={isVisible ? false : true}
+		on:click={isInteractive ? handleClick : null}
+		prop:payload={hasPayload ? payload : undefined}
+	>
+		{shouldShowLabel ? statusLabel : null}
+	</button>
+);
+```
+
+Removing a binding this way follows the normal renderer path. If the next render changes the template shape, the DOM renderer may replace the affected node rather than preserve the previous instance.
 
 ## Quick Start With RadiantComponent
 

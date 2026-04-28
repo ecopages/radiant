@@ -74,7 +74,23 @@ export type LiveAttributePart = {
 	index: number;
 	previousValue?: unknown;
 	rootTarget: HTMLElement;
+	/**
+	 * Currently bound reactive source for this attribute part, when the binding value is subscribable.
+	 *
+	 * Ownership is attached to the live part instance, not to the source object. Rebinding the same
+	 * DOM slot to a different source replaces this reference and invalidates callbacks captured by the
+	 * previous subscription epoch.
+	 */
 	source?: ReactiveAttributeSource;
+	/**
+	 * Monotonic ownership epoch for the current reactive subscription attached to this part.
+	 *
+	 * The renderer increments this value whenever it subscribes, rebinds, or disposes the part.
+	 * Each callback closes over the epoch that created it and exits early when the part has advanced
+	 * since then. This prevents stale notifications from a previous source from mutating a DOM slot
+	 * that now belongs to a newer binding.
+	 */
+	subscriptionSerial: number;
 	type: 'attribute';
 	unsubscribe?: () => void;
 };
@@ -206,6 +222,15 @@ export type MountedSubscription = {
 	kind: 'subscription';
 	mounted: MountedRangeContent;
 	source: ReactiveChildSource;
+	/**
+	 * Monotonic ownership epoch for the child-range subscription currently attached to this record.
+	 *
+	 * Child subscriptions can outlive the source that originally created them because unsubscribe is
+	 * asynchronous from the renderer's point of view: a stale callback may still fire after a rebind,
+	 * keyed move, or disposal. Incrementing this epoch lets the callback prove it still owns the range
+	 * before applying an update.
+	 */
+	subscriptionSerial: number;
 	unsubscribe: () => void;
 };
 

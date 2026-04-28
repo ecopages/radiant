@@ -2,7 +2,8 @@ import { watch } from 'node:fs';
 import path from 'node:path';
 import { $ } from 'bun';
 
-const browserEntrypoints = ['src/index.ts', 'src/client.ts', 'src/jsx-runtime.ts', 'src/jsx-dev-runtime.ts'];
+const prodBrowserEntrypoints = ['src/index.ts', 'src/client.ts', 'src/jsx-runtime.ts'];
+const devBrowserEntrypoints = ['src/jsx-dev-runtime.ts'];
 const serverEntrypoints = ['src/server.ts'];
 
 function shouldRebuild(filename: string): boolean {
@@ -17,7 +18,7 @@ function shouldRebuild(filename: string): boolean {
 const watchMode = process.argv.includes('--watch');
 
 const browserBuild = await Bun.build({
-	entrypoints: browserEntrypoints,
+	entrypoints: [...prodBrowserEntrypoints, ...devBrowserEntrypoints],
 	format: 'esm',
 	minify: !watchMode,
 	outdir: 'dist',

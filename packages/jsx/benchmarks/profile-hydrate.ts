@@ -75,7 +75,7 @@ const rows = cases.flatMap((testCase) => {
 console.table(rows);
 
 function profile(label: string, value: unknown, hydrate: boolean): ProfileResult {
-	const options = hydrate ? { hydrate: true } : undefined;
+	const options = hydrate ? { mode: 'hydrate' as const } : undefined;
 	const warmupIterations = label === 'realWorldPage' ? 200 : 500;
 	const iterations = label === 'realWorldPage' ? 1_000 : 2_000;
 

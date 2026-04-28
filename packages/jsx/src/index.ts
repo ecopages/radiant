@@ -1,7 +1,9 @@
 export {
 	Fragment,
+	unsafeHtml,
 	createMarkupNodeLike,
 	jsx,
+	jsxDEV,
 	jsxs,
 	createSubscribableJsxValue,
 	type JsxFragment,
@@ -10,8 +12,6 @@ export {
 	isSubscribableJsxValue,
 	withServerCustomElementRenderHook,
 } from './jsx-runtime.ts';
-
-export { jsxDEV } from './jsx-dev-runtime.ts';
 
 export type { DelegatedEventName } from './event-binding-policy.ts';
 export type {
@@ -46,4 +46,4 @@ export type {
 } from './types.ts';
 
 export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
-export { renderToString, type RenderToStringOptions } from './server-render.ts';
+export { renderToString, type RenderToStringMode, type RenderToStringOptions } from './server-render.ts';

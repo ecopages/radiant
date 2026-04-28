@@ -7,6 +7,7 @@ async function loadModule<T>(path: string): Promise<T> {
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
 const loadJsxDevRuntime = async () =>
 	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
+const loadDevWarnings = async () => loadModule<typeof import('../src/dev-warnings.ts')>('../src/dev-warnings.ts');
 
 function expectTemplateResultLike(value: unknown): asserts value is import('../src/jsx-runtime.ts').TemplateResultLike {
 	expect(value).toEqual(
@@ -19,6 +20,45 @@ function expectTemplateResultLike(value: unknown): asserts value is import('../s
 }
 
 describe('Radiant JSX runtime', () => {
+	test('SSR treats nullish child content as empty', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts'),
+		]);
+
+		expect(renderToString(jsx('p', { children: undefined }))).toBe('<p></p>');
+		expect(renderToString(jsx('p', { children: null }))).toBe('<p></p>');
+	});
+
+	test('dev warning helper supports global enablement and once-only warnings', async () => {
+		const [
+			{ resetRuntimeWarningsForTests, setDevWarningsEnabled },
+			{ HYDRATION_INVALID_BINDING_INDEX_WARNING, warnRuntime },
+		] = await Promise.all([loadJsxDevRuntime(), loadDevWarnings()]);
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			warnRuntime(HYDRATION_INVALID_BINDING_INDEX_WARNING, 'first', { code: 'alpha' });
+			warnRuntime(HYDRATION_INVALID_BINDING_INDEX_WARNING, 'first', { code: 'alpha' });
+			warnRuntime(HYDRATION_INVALID_BINDING_INDEX_WARNING, 'second', { code: 'beta', once: false });
+			warnRuntime(HYDRATION_INVALID_BINDING_INDEX_WARNING, 'second', { code: 'beta', once: false });
+
+			expect(warnSpy).toHaveBeenCalledTimes(3);
+			warnSpy.mockClear();
+
+			setDevWarningsEnabled(false);
+			warnRuntime(HYDRATION_INVALID_BINDING_INDEX_WARNING, 'suppressed', { code: 'gamma' });
+			expect(warnSpy).not.toHaveBeenCalled();
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
 	test('jsx returns a renderer-agnostic template result for intrinsic elements', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('div', {

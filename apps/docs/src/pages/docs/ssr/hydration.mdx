@@ -37,7 +37,7 @@ function App() {
 	return <button on:click={() => console.log('clicked')}>Ship</button>;
 }
 
-const html = renderToString(<App />, { hydrate: true });
+const html = renderToString(<App />, { mode: 'hydrate' });
 
 const container = document.querySelector('#app');
 
@@ -82,15 +82,15 @@ The server render must emit hydration markers.
 For JSX this means:
 
 ```ts
-renderToString(view, { hydrate: true });
+renderToString(view, { mode: 'hydrate' });
 ```
 
 For `RadiantComponent` hosts this usually means one of:
 
 - `renderComponent(...)`
 - `renderComponentWithPreview(...)`
-- `renderHostToString({ hydrate: true })`
-- `renderToString({ hydrate: true })` when you only need the view fragment
+- `renderHostToString({ mode: 'hydrate' })`
+- `renderToString({ mode: 'hydrate' })` when you only need the view fragment
 
 ### 3. Explicit client hydrator install
 
@@ -126,7 +126,7 @@ That last fallback is intentional. It means a page can still work without the hy
 
 Install the explicit hydrator when:
 
-- the server emitted `RadiantComponent` markup with `hydrate: true`
+- the server emitted `RadiantComponent` markup with `mode: 'hydrate'`
 - you want to preserve the SSR DOM in place on first connect
 - you want server-emitted event and property bindings to reconnect without replacing nodes
 

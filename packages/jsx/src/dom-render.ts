@@ -5,6 +5,12 @@ import {
 	getTemplateInterpolationParts,
 	parseBindingDescriptor,
 } from './hydration-bindings.ts';
+import {
+	HYDRATION_INVALID_BINDING_INDEX_WARNING,
+	HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING,
+	HYDRATION_MISSING_BINDING_WARNING,
+	warnRuntime,
+} from './dev-warnings.ts';
 import { createBoundaryMarker, visitElements } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
@@ -72,6 +78,30 @@ export interface JsxRoot {
 	unmount: () => void;
 }
 
+type TemplateHydrationOutcome =
+	| {
+			deferredProperties: DeferredPropertyBinding[];
+			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
+			instance: TemplateInstance;
+			kind: 'safe-reconnect';
+	  }
+	| {
+			kind: 'recoverable-mismatch';
+	  }
+	| {
+			kind: 'full-rerender';
+	  };
+
+type FlatHydrationOutcome =
+	| {
+			deferredProperties: DeferredPropertyBinding[];
+			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
+			kind: 'safe-reconnect';
+	  }
+	| {
+			kind: 'full-rerender';
+	  };
+
 /**
  * Renders a JSX value into a target element.
  *
@@ -136,26 +166,55 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
-		if (!hasHydrationMarkers(target)) {
-			render(element, target);
-			return;
+		const outcome = attemptTemplateHydration(nextValue, target);
+
+		switch (outcome.kind) {
+			case 'full-rerender':
+			case 'recoverable-mismatch':
+				render(element, target);
+				return;
+
+			case 'safe-reconnect':
+				ROOT_RENDER_STATE.set(target, { instance: outcome.instance, kind: 'template' });
+				flushDeferredProperties(outcome.deferredProperties);
+				restoreFocusSnapshot(target, outcome.focusSnapshot);
+				return;
 		}
+	}
 
-		const focusSnapshot = captureFocusSnapshot(target);
-		const deferredProperties: DeferredPropertyBinding[] = [];
-		const instance = hydrateTemplateInstance(nextValue, target, deferredProperties, RENDER_RUNTIME);
+	const outcome = attemptFlatHydration(element, target);
 
-		if (!instance) {
-			render(element, target);
-			return;
-		}
-
-		ROOT_RENDER_STATE.set(target, { instance, kind: 'template' });
-		flushDeferredProperties(deferredProperties);
-		restoreFocusSnapshot(target, focusSnapshot);
+	if (outcome.kind === 'full-rerender') {
+		render(element, target);
 		return;
 	}
 
+	flushDeferredProperties(outcome.deferredProperties);
+	restoreFocusSnapshot(target, outcome.focusSnapshot);
+}
+
+function attemptTemplateHydration(template: TemplateResultLike, target: HTMLElement): TemplateHydrationOutcome {
+	if (!hasHydrationMarkers(target)) {
+		return { kind: 'full-rerender' };
+	}
+
+	const focusSnapshot = captureFocusSnapshot(target);
+	const deferredProperties: DeferredPropertyBinding[] = [];
+	const instance = hydrateTemplateInstance(template, target, deferredProperties, RENDER_RUNTIME);
+
+	if (!instance) {
+		return { kind: 'recoverable-mismatch' };
+	}
+
+	return {
+		deferredProperties,
+		focusSnapshot,
+		instance,
+		kind: 'safe-reconnect',
+	};
+}
+
+function attemptFlatHydration(element: JsxRenderable, target: HTMLElement): FlatHydrationOutcome {
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
 	const bindings = collectHydrationBindings(element);
@@ -166,26 +225,40 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 			const parsedBinding = parseBindingDescriptor(attribute.value);
 			element.removeAttribute(attribute.name);
 
+			if (Number.isNaN(bindingIndex)) {
+				warnRuntime(HYDRATION_INVALID_BINDING_INDEX_WARNING, attribute.name, {
+					code: `hydrate-invalid-binding-index:${attribute.name}`,
+				});
+				return;
+			}
+
 			if (!parsedBinding) {
+				warnRuntime(HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING, attribute.value, {
+					code: `hydrate-invalid-binding-descriptor:${attribute.value}`,
+				});
 				return;
 			}
 
 			const binding = bindings.get(bindingIndex);
 
 			if (!binding) {
+				warnRuntime(HYDRATION_MISSING_BINDING_WARNING, attribute.name, {
+					code: `hydrate-missing-binding:${bindingIndex}`,
+				});
 				return;
 			}
 
 			applyAttributeBinding(element, parsedBinding, binding.value, target, deferredProperties);
 		})
 	) {
-		render(element, target);
-		return;
+		return { kind: 'full-rerender' };
 	}
 
-	flushDeferredProperties(deferredProperties);
-
-	restoreFocusSnapshot(target, focusSnapshot);
+	return {
+		deferredProperties,
+		focusSnapshot,
+		kind: 'safe-reconnect',
+	};
 }
 
 /**
@@ -538,6 +611,7 @@ function createLiveTemplateParts(
 				element: targetNode,
 				index: part.index,
 				rootTarget,
+				subscriptionSerial: 0,
 				type: 'attribute',
 			});
 			continue;

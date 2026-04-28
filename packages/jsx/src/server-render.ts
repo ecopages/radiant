@@ -17,14 +17,26 @@ import { escapeAttribute, escapeHtml } from './html-escape.ts';
 /** Internal global slot used to propagate the active SSR hydrate mode into custom-element SSR helpers. */
 const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
 
+/** Public vocabulary for the SSR output modes supported by `renderToString(...)`. */
+export type RenderToStringMode = 'hydrate' | 'plain';
+
 /** Options that control how JSX values are serialized during SSR. */
 export type RenderToStringOptions = {
 	/**
 	 * When `true`, emits hydration binding markers alongside the serialized HTML
 	 * so the DOM hydrator can reconnect listeners and property bindings without
 	 * replacing the SSR DOM tree.
+	 *
+	 * @deprecated Prefer `mode: 'hydrate'` for explicit intent.
 	 */
 	hydrate?: boolean;
+	/**
+	 * Explicit SSR mode selection. Takes precedence over `hydrate` when both are present.
+	 *
+	 * - `'plain'` emits plain HTML without hydration binding markers.
+	 * - `'hydrate'` emits HTML plus hydration binding markers.
+	 */
+	mode?: RenderToStringMode;
 };
 
 type RenderContext = {
@@ -37,14 +49,14 @@ type RenderContext = {
  *
  * The renderer resolves keyed and subscribable wrappers transparently, reuses
  * cached interpolation metadata for template results, and optionally embeds
- * hydration descriptors when `options.hydrate` is enabled.
+ * hydration descriptors when `options.mode === 'hydrate'`.
  *
  * @param value JSX value to serialize.
  * @param options Controls whether hydration metadata is emitted.
  * @returns HTML string representation of the provided JSX value.
  */
 export function renderToString(value: JsxRenderable, options: RenderToStringOptions = {}): string {
-	const hydrate = options.hydrate === true;
+	const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
 	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
 	const previousHydrateValue = globalScope[ACTIVE_SSR_HYDRATE_SYMBOL];
 	globalScope[ACTIVE_SSR_HYDRATE_SYMBOL] = hydrate;

@@ -1,10 +1,11 @@
 import type { JsxNodeLike } from './renderable-types.ts';
+import type { RenderToStringOptions } from './server-render.ts';
 
 /**
  * Minimal custom-element contract used by the JSX SSR pipeline.
  */
 export interface ServerRenderableCustomElement {
-	renderHostToString: (options?: { hydrate?: boolean }) => string;
+	renderHostToString: (options?: RenderToStringOptions) => string;
 	setAttribute?: (name: string, value: unknown) => void;
 	removeAttribute?: (name: string) => void;
 	[propertyName: string]: unknown;

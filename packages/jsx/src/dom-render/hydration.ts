@@ -162,6 +162,7 @@ function createHydratedLiveTemplateParts(
 				element: targetNode,
 				index: part.index,
 				rootTarget: target,
+				subscriptionSerial: 0,
 				type: 'attribute',
 			});
 		}
@@ -416,6 +417,7 @@ function hydrateMountedRangeContent(
 				runtime,
 			),
 			source: nextValue,
+			subscriptionSerial: 0,
 			unsubscribe: () => undefined,
 		};
 
@@ -515,7 +517,14 @@ function subscribeReactiveHydratedValue(
 	rootTarget: HTMLElement,
 	runtime: ReconciliationRuntime,
 ): () => void {
+	const subscriptionSerial = mountedSubscription.subscriptionSerial + 1;
+	mountedSubscription.subscriptionSerial = subscriptionSerial;
+
 	return subscribeToReactiveChildSource(source, (nextChildValue) => {
+		if (mountedSubscription.subscriptionSerial !== subscriptionSerial || mountedSubscription.source !== source) {
+			return;
+		}
+
 		const nextDeferredProperties: DeferredPropertyBinding[] = [];
 		mountedSubscription.mounted = updateRangeContent(
 			startMarker,
@@ -576,6 +585,7 @@ function hydrateStaticTemplateRange(
 			element: targetNode,
 			index: part.index,
 			rootTarget,
+			subscriptionSerial: 0,
 			type: 'attribute',
 		});
 	}

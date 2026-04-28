@@ -23,13 +23,13 @@ import { renderToString } from '@ecopages/jsx/server';
 const view = <button class="action">Ship</button>;
 
 const html = renderToString(view);
-const hydratedHtml = renderToString(view, { hydrate: true });
+const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 ```
 
 - `renderToString(view)` returns plain HTML
-- `renderToString(view, { hydrate: true })` returns HTML plus binding markers that the client hydrator can reconnect later
+- `renderToString(view, { mode: 'hydrate' })` returns HTML plus binding markers that the client hydrator can reconnect later
 
-Use `hydrate: true` only when the client will hydrate that exact same view.
+Use `mode: 'hydrate'` only when the client will hydrate that exact same view.
 
 ## What Hydrated SSR Adds
 

@@ -181,7 +181,7 @@ Those are the current foundations to measure before pursuing larger benchmark ch
 Use the local benchmark harness for:
 
 - page-sized `renderToString(...)`
-- hydrated server output `renderToString(..., { hydrate: true })`
+- hydrated server output `renderToString(..., { mode: 'hydrate'  })`
 - future string-render regressions in escaping and binding serialization
 
 Both numbers are directly comparable across revisions of the Radiant server renderer.

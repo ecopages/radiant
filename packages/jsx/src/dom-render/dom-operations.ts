@@ -1,4 +1,5 @@
 import type { JsxNodeLike } from '../jsx-runtime.ts';
+import { DETACHED_INSERTION_POINT_WARNING, DOM_RANGE_ANCHOR_DRIFT_WARNING, warnRuntime } from '../dev-warnings.ts';
 
 /**
  * Visits descendant elements of `target` in document order, stopping at custom-element
@@ -57,6 +58,10 @@ export function clearRangeBetween(startMarker: Text, endMarker: Text): void {
 		range.deleteContents();
 		return;
 	}
+
+	warnRuntime(DOM_RANGE_ANCHOR_DRIFT_WARNING, 'clearRangeBetween', {
+		code: 'dom-range-anchor-drift:clear',
+	});
 
 	let currentNode = startMarker.nextSibling;
 
@@ -121,13 +126,20 @@ export function insertNodesBefore(referenceNode: Node, nodes: readonly Node[]): 
 		return;
 	}
 
+	if (!referenceNode.parentNode) {
+		warnRuntime(DETACHED_INSERTION_POINT_WARNING, undefined, {
+			code: 'dom-range-anchor-drift:insert',
+		});
+		return;
+	}
+
 	const fragment = document.createDocumentFragment();
 
 	for (const node of nodes) {
 		fragment.append(node);
 	}
 
-	referenceNode.parentNode?.insertBefore(fragment, referenceNode);
+	referenceNode.parentNode.insertBefore(fragment, referenceNode);
 }
 
 /**
@@ -153,6 +165,13 @@ export function isJsxNodeLike(value: unknown): value is JsxNodeLike {
  */
 export function moveRangeBefore(start: Text, end: Text, referenceNode: Node): void {
 	if (referenceNode === start || isNodeWithinRange(referenceNode, start, end)) {
+		return;
+	}
+
+	if (!start.parentNode || start.parentNode !== end.parentNode) {
+		warnRuntime(DOM_RANGE_ANCHOR_DRIFT_WARNING, 'moveRangeBefore', {
+			code: 'dom-range-anchor-drift:move',
+		});
 		return;
 	}
 

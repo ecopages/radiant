@@ -30,6 +30,15 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<script type="application/json">{"count":5}</script>');
 	});
 
+	test('serializes unsafeHtml content without escaping it again', async () => {
+		const [{ jsx, unsafeHtml }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('div', {
+			children: ['safe ', unsafeHtml('<strong>trusted</strong>')],
+		});
+
+		expect(renderToString(template)).toBe('<div>safe <strong>trusted</strong></div>');
+	});
+
 	test('serializes nested components and iterable children', async () => {
 		const [{ jsx, jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
@@ -92,7 +101,7 @@ describe('Radiant JSX server render', () => {
 			],
 		});
 
-		const html = renderToString(template, { hydrate: true });
+		const html = renderToString(template, { mode: 'hydrate' });
 
 		expect(html).toContain('class="nested-block"');
 		expect(html).toContain('<h2>Outer</h2>');
@@ -142,6 +151,20 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<demo-card title="Ready"></demo-card>');
 	});
 
+	test('omits nullish bindings from SSR attribute output', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('button', {
+			class: null,
+			hidden: false,
+			'on:click': null,
+			'on-native:change': undefined,
+			'prop:payload': undefined,
+			children: 'Ship',
+		});
+
+		expect(renderToString(template)).toBe('<button>Ship</button>');
+	});
+
 	test('serializes void elements without closing tags', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('input', {
@@ -163,8 +186,22 @@ describe('Radiant JSX server render', () => {
 			children: 'Ship',
 		});
 
-		expect(renderToString(template, { hydrate: true })).toBe(
+		expect(renderToString(template, { mode: 'hydrate' })).toBe(
 			'<button data-radiant-jsx-bind-0="attr:class" class="action" data-radiant-jsx-bind-1="bool:hidden" hidden data-radiant-jsx-bind-2="event:click" data-radiant-jsx-bind-3="native-event:change" data-radiant-jsx-bind-4="native-event:focusin">Ship</button>',
+		);
+	});
+
+	test('supports explicit SSR mode vocabulary', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('button', {
+			class: 'action',
+			'on:click': () => undefined,
+			children: 'Ship',
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe('<button class="action">Ship</button>');
+		expect(renderToString(template, { mode: 'hydrate' })).toBe(
+			'<button data-radiant-jsx-bind-0="attr:class" class="action" data-radiant-jsx-bind-1="event:click">Ship</button>',
 		);
 	});
 
@@ -183,7 +220,7 @@ describe('Radiant JSX server render', () => {
 			],
 		});
 
-		const html = renderToString(template, { hydrate: true });
+		const html = renderToString(template, { mode: 'hydrate' });
 
 		expect(html).toContain('class="component-copy"');
 		expect(html).toContain(
@@ -343,8 +380,8 @@ describe('Radiant JSX server render', () => {
 			setAttribute(_name: string, _value: unknown) {}
 			removeAttribute(_name: string) {}
 
-			renderHostToString(options?: { hydrate?: boolean }) {
-				return options?.hydrate
+			renderHostToString(options?: { mode?: import('../src/server-render.ts').RenderToStringMode }) {
+				return options?.mode === 'hydrate'
 					? '<demo-hydration-aware data-hydrated="yes"><p>Hydrated host</p></demo-hydration-aware>'
 					: '<demo-hydration-aware><p>Plain host</p></demo-hydration-aware>';
 			}
@@ -372,7 +409,7 @@ describe('Radiant JSX server render', () => {
 			const template = jsx('demo-hydration-aware', {});
 
 			expect(renderToString(template)).toBe('<demo-hydration-aware><p>Plain host</p></demo-hydration-aware>');
-			expect(renderToString(template, { hydrate: true })).toBe(
+			expect(renderToString(template, { mode: 'hydrate' })).toBe(
 				'<demo-hydration-aware data-hydrated="yes"><p>Hydrated host</p></demo-hydration-aware>',
 			);
 		} finally {
@@ -405,8 +442,8 @@ describe('Radiant JSX server render', () => {
 			setAttribute(_name: string, _value: unknown) {}
 			removeAttribute(_name: string) {}
 
-			renderHostToString(options?: { hydrate?: boolean }) {
-				return options?.hydrate
+			renderHostToString(options?: { mode?: import('../src/server-render.ts').RenderToStringMode }) {
+				return options?.mode === 'hydrate'
 					? `<hook-aware-element data-hydrated="yes"><p>Count: ${this.count}</p></hook-aware-element>`
 					: `<hook-aware-element><p>Count: ${this.count}</p></hook-aware-element>`;
 			}
@@ -444,7 +481,7 @@ describe('Radiant JSX server render', () => {
 				},
 				() => {
 					const template = jsx('hook-aware-element', { count: 4 });
-					return renderToString(template, { hydrate: true });
+					return renderToString(template, { mode: 'hydrate' });
 				},
 			);
 

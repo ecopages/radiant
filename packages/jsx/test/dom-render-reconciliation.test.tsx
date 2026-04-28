@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -7,6 +7,8 @@ async function loadModule<T>(path: string): Promise<T> {
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
 const loadJsxModule = async () => loadModule<typeof import('../src/index.ts')>('../src/index.ts');
 const loadServerRender = async () => loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts');
+const loadJsxDevRuntime = async () =>
+	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
 
 function toTemplateStrings(strings: string[]): TemplateStringsArray {
 	const templateStrings = [...strings] as unknown as TemplateStringsArray;
@@ -223,6 +225,79 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).toBe(renderToString(template));
 	});
 
+	test('nullish children remove existing child content', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(jsx('p', { children: 'alpha' }));
+		const paragraph = container.querySelector('p');
+		expect(paragraph?.textContent).toBe('alpha');
+
+		root.render(jsx('p', { children: null }));
+		expect(container.querySelector('p')).not.toBeNull();
+		expect(container.querySelector('p')?.textContent).toBe('');
+
+		root.render(jsx('p', { children: undefined }));
+		expect(container.querySelector('p')).not.toBeNull();
+		expect(container.querySelector('p')?.textContent).toBe('');
+	});
+
+	test('nullish bindings remove existing attributes, listeners, and properties', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const tagName = 'radiant-jsx-binding-receiver';
+
+		if (!customElements.get(tagName)) {
+			class BindingReceiverElement extends HTMLElement {
+				payload: unknown = 'unset';
+			}
+
+			customElements.define(tagName, BindingReceiverElement);
+		}
+
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let clicks = 0;
+		const handleClick = () => {
+			clicks += 1;
+		};
+
+		root.render(
+			jsx(tagName, {
+				class: 'alpha',
+				hidden: true,
+				'on:click': handleClick,
+				'prop:payload': { count: 1 },
+			}),
+		);
+
+		const element = container.querySelector(tagName) as HTMLElement & { payload?: unknown };
+		expect(element.getAttribute('class')).toBe('alpha');
+		expect(element.hasAttribute('hidden')).toBe(true);
+		expect(element.payload).toEqual({ count: 1 });
+
+		element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clicks).toBe(1);
+
+		root.render(
+			jsx(tagName, {
+				class: null,
+				hidden: false,
+				'on:click': null,
+				'prop:payload': undefined,
+			}),
+		);
+
+		const updatedElement = container.querySelector(tagName) as HTMLElement & { payload?: unknown };
+		expect(updatedElement).not.toBeNull();
+		expect(updatedElement.hasAttribute('class')).toBe(false);
+		expect(updatedElement.hasAttribute('hidden')).toBe(false);
+		expect(updatedElement.payload).toBeUndefined();
+
+		updatedElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clicks).toBe(1);
+	});
+
 	test('mounts SVG child templates with SVG namespaces under SVG parents', async () => {
 		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -401,7 +476,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				}),
 			});
 
-		container.innerHTML = renderToString(renderHydratedIcon('#alpha'), { hydrate: true });
+		container.innerHTML = renderToString(renderHydratedIcon('#alpha'), { mode: 'hydrate' });
 		root.hydrate(renderHydratedIcon('#alpha'));
 
 		const hydratedUse = container.querySelector('use');
@@ -466,7 +541,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				}),
 			});
 
-		container.innerHTML = renderToString(renderGradientIcon(), { hydrate: true });
+		container.innerHTML = renderToString(renderGradientIcon(), { mode: 'hydrate' });
 		root.hydrate(renderGradientIcon());
 
 		const gradient = container.querySelector('linearGradient');
@@ -504,7 +579,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			}),
 		];
 
-		container.innerHTML = renderToString(renderIterableRoot(), { hydrate: true });
+		container.innerHTML = renderToString(renderIterableRoot(), { mode: 'hydrate' });
 		root.hydrate(renderIterableRoot());
 
 		const buttons = Array.from(container.querySelectorAll('button'));
@@ -513,6 +588,126 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		expect(clickTotal).toBe(11);
 		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+	});
+
+	test('warns when fallback hydration markers are malformed or unmatched', async () => {
+		const [{ jsx }, { createRoot }, { renderToString }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
+			await Promise.all([loadJsxRuntime(), loadJsxModule(), loadServerRender(), loadJsxDevRuntime()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+		const renderIterableRoot = () => [
+			jsx('button', {
+				class: 'alpha',
+				'on:click': () => undefined,
+				children: 'Alpha',
+			}),
+		];
+
+		container.innerHTML = renderToString(renderIterableRoot(), { mode: 'hydrate' })
+			.replace('attr:class', 'not-a-binding')
+			.replace('data-radiant-jsx-bind-1', 'data-radiant-jsx-bind-99');
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			root.hydrate(renderIterableRoot());
+			expect(warnSpy).toHaveBeenCalledTimes(2);
+			const warningMessages = warnSpy.mock.calls.map((call) => String(call[0] ?? ''));
+			expect(
+				warningMessages.some((message) => message.includes('Ignored malformed hydration binding descriptor')),
+			).toBe(true);
+			expect(
+				warningMessages.some((message) =>
+					message.includes('Ignored hydration marker without a matching binding value'),
+				),
+			).toBe(true);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
+	});
+
+	test('template hydration falls back through a recoverable mismatch when SSR DOM shape drifts', async () => {
+		const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderHydratedCard = (label: string) =>
+			jsx('section', {
+				children: jsxs('p', {
+					children: ['Count: ', label],
+				}),
+			});
+
+		container.innerHTML = renderToString(renderHydratedCard('alpha'), { mode: 'hydrate' });
+		container.querySelector('p')?.remove();
+
+		root.hydrate(renderHydratedCard('beta'));
+
+		expect(container.innerHTML).toBe('<section><p>Count: beta</p></section>');
+	});
+
+	test('hydrate performs a full rerender when the target has no hydration markers', async () => {
+		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderView = (label: string) => jsx('button', { class: 'action', children: label });
+
+		container.innerHTML = renderToString(renderView('alpha'));
+		const serverButton = container.querySelector('button');
+
+		root.hydrate(renderView('beta'));
+
+		const hydratedButton = container.querySelector('button');
+		expect(hydratedButton).not.toBe(serverButton);
+		expect(container.innerHTML).toBe('<button class="action">beta</button>');
+	});
+
+	test('warns when external DOM mutation detaches renderer-managed child anchors', async () => {
+		const [{ jsx }, { createRoot }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadJsxDevRuntime(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+		const renderNestedChild = (value: string) =>
+			jsx('p', {
+				children: jsx('strong', { children: value }),
+			});
+
+		root.render(renderNestedChild('alpha'));
+		const paragraph = container.querySelector('p');
+		paragraph!.innerHTML = 'external';
+
+		resetRuntimeWarningsForTests();
+		setDevWarningsEnabled(true);
+
+		try {
+			root.render(jsx('p', { children: 'beta' }));
+			expect(warnSpy).toHaveBeenCalled();
+			expect(String(warnSpy.mock.calls[0]?.[0] ?? '')).toContain(
+				'A renderer-managed DOM range was mutated outside Radiant JSX control',
+			);
+		} finally {
+			resetRuntimeWarningsForTests();
+			setDevWarningsEnabled(undefined);
+			warnSpy.mockRestore();
+		}
 	});
 
 	test('hydrates adjacent attribute-only child templates without crossing sibling ranges', async () => {
@@ -541,7 +736,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				],
 			});
 
-		container.innerHTML = renderToString(renderHydratedFields('Alpha', 'Beta'), { hydrate: true });
+		container.innerHTML = renderToString(renderHydratedFields('Alpha', 'Beta'), { mode: 'hydrate' });
 		root.hydrate(renderHydratedFields('Alpha', 'Beta'));
 
 		const initialInputs = Array.from(container.querySelectorAll('input'));
@@ -638,6 +833,21 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
 		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('15');
+	});
+
+	test('unsafeHtml mounts trusted markup as DOM nodes instead of escaped text', async () => {
+		const [{ jsx, unsafeHtml }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(
+			jsx('div', {
+				children: unsafeHtml('<span data-trusted="yes">Trusted</span>'),
+			}),
+		);
+
+		expect(container.innerHTML).toBe('<div><span data-trusted="yes">Trusted</span></div>');
+		expect(container.querySelector('span')?.getAttribute('data-trusted')).toBe('yes');
 	});
 
 	test('subscribable child values patch their own text node without rerendering the parent tree', async () => {
@@ -815,6 +1025,186 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(button?.hasAttribute('disabled')).toBe(true);
 		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
 		expect(mutations.filter((mutation) => mutation.type === 'attributes').length).toBeGreaterThanOrEqual(2);
+	});
+
+	test('stale child subscription callbacks are ignored after reactive rebind', async () => {
+		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let firstValue = 'alpha';
+		let secondValue = 'beta';
+		let firstNotify: ((value: string) => void) | undefined;
+		let secondNotify: ((value: string) => void) | undefined;
+		let firstUnsubscribeCount = 0;
+		let secondUnsubscribeCount = 0;
+		const firstSignal = {
+			get: () => firstValue,
+			subscribe: (notify: (value: string) => void) => {
+				firstNotify = notify;
+				return () => {
+					firstUnsubscribeCount += 1;
+				};
+			},
+		};
+		const secondSignal = {
+			get: () => secondValue,
+			subscribe: (notify: (value: string) => void) => {
+				secondNotify = notify;
+				return () => {
+					secondUnsubscribeCount += 1;
+				};
+			},
+		};
+
+		root.render(
+			jsxs('p', {
+				children: ['Value: ', firstSignal],
+			}),
+		);
+		expect(container.innerHTML).toBe('<p>Value: alpha</p>');
+
+		root.render(
+			jsxs('p', {
+				children: ['Value: ', secondSignal],
+			}),
+		);
+
+		expect(container.innerHTML).toBe('<p>Value: beta</p>');
+		expect(firstUnsubscribeCount).toBe(1);
+		expect(secondUnsubscribeCount).toBe(0);
+
+		firstNotify?.('stale');
+		await Promise.resolve();
+		expect(container.innerHTML).toBe('<p>Value: beta</p>');
+
+		secondValue = 'gamma';
+		secondNotify?.(secondValue);
+		await Promise.resolve();
+		expect(container.innerHTML).toBe('<p>Value: gamma</p>');
+	});
+
+	test('stale attribute subscription callbacks are ignored after reactive rebind', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let firstStatus = 'idle';
+		let secondStatus = 'loading';
+		let firstNotify: ((value: string) => void) | undefined;
+		let secondNotify: ((value: string) => void) | undefined;
+		let firstUnsubscribeCount = 0;
+		const firstSignal = {
+			get: () => firstStatus,
+			subscribe: (notify: (value: string) => void) => {
+				firstNotify = notify;
+				return () => {
+					firstUnsubscribeCount += 1;
+				};
+			},
+		};
+		const secondSignal = {
+			get: () => secondStatus,
+			subscribe: (notify: (value: string) => void) => {
+				secondNotify = notify;
+				return () => undefined;
+			},
+		};
+
+		root.render(
+			jsx('button', {
+				data: { status: firstSignal },
+				children: 'Fetch',
+			}),
+		);
+		expect(container.querySelector('button')?.getAttribute('data-status')).toBe('idle');
+
+		root.render(
+			jsx('button', {
+				data: { status: secondSignal },
+				children: 'Fetch',
+			}),
+		);
+
+		const button = container.querySelector('button');
+		expect(button?.getAttribute('data-status')).toBe('loading');
+		expect(firstUnsubscribeCount).toBe(1);
+
+		firstNotify?.('stale');
+		await Promise.resolve();
+		expect(button?.getAttribute('data-status')).toBe('loading');
+
+		secondStatus = 'ready';
+		secondNotify?.(secondStatus);
+		await Promise.resolve();
+		expect(button?.getAttribute('data-status')).toBe('ready');
+	});
+
+	test('keyed reactive children move without resubscribing nested owners', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const createSignalSource = (initialValue: string) => {
+			let value = initialValue;
+			let subscribeCount = 0;
+			let unsubscribeCount = 0;
+			const subscribers = new Set<(nextValue: string) => void>();
+
+			return {
+				counts: () => ({ subscribeCount, unsubscribeCount }),
+				signal: {
+					get: () => value,
+					subscribe: (notify: (nextValue: string) => void) => {
+						subscribeCount += 1;
+						subscribers.add(notify);
+
+						return () => {
+							unsubscribeCount += 1;
+							subscribers.delete(notify);
+						};
+					},
+				},
+				set: (nextValue: string) => {
+					value = nextValue;
+
+					for (const subscriber of subscribers) {
+						subscriber(nextValue);
+					}
+				},
+			};
+		};
+
+		const sources = new Map([
+			['alpha', createSignalSource('A')],
+			['beta', createSignalSource('B')],
+		]);
+
+		const renderList = (order: string[]) =>
+			jsx('ul', {
+				children: order.map((key) =>
+					jsx('li', {
+						children: sources.get(key)?.signal,
+						key,
+					}),
+				),
+			});
+
+		root.render(renderList(['alpha', 'beta']));
+
+		const initialItems = Array.from(container.querySelectorAll('li'));
+		expect(initialItems.map((item) => item.textContent)).toEqual(['A', 'B']);
+
+		root.render(renderList(['beta', 'alpha']));
+
+		const movedItems = Array.from(container.querySelectorAll('li'));
+		expect(movedItems.map((item) => item.textContent)).toEqual(['B', 'A']);
+		expect(movedItems[0]).toBe(initialItems[1]);
+		expect(movedItems[1]).toBe(initialItems[0]);
+		expect(sources.get('alpha')?.counts()).toEqual({ subscribeCount: 1, unsubscribeCount: 0 });
+		expect(sources.get('beta')?.counts()).toEqual({ subscribeCount: 1, unsubscribeCount: 0 });
+
+		sources.get('alpha')?.set('A2');
+		await Promise.resolve();
+		expect(Array.from(container.querySelectorAll('li')).map((item) => item.textContent)).toEqual(['B', 'A2']);
 	});
 
 	test('rerender preserves focus without calling setSelectionRange on checkbox inputs', async () => {

@@ -53,7 +53,7 @@ export type HydrationBinding = {
  * order.
  *
  * The resulting map uses the same binding indexes that `renderToString(...,
- * { hydrate: true })` writes into the HTML, allowing the DOM hydrator to match
+ * { mode: 'hydrate' })` writes into the HTML, allowing the DOM hydrator to match
  * serialized markers back to their original values.
  *
  * @param value JSX value to inspect.
@@ -218,10 +218,12 @@ function collectTemplateBindings(
 		const interpolationPart = interpolationParts[index];
 
 		if (interpolationPart?.type === 'attribute') {
+			const bindingValue = template.values[index];
+
 			bindings.set(state.nextIndex, {
 				kind: interpolationPart.kind,
 				name: interpolationPart.name,
-				value: template.values[index],
+				value: bindingValue,
 			});
 			state.nextIndex += 1;
 			continue;

@@ -253,9 +253,67 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
+## Empty Values And Removal
+
+Most code should use normal JavaScript values for empty output and removal semantics.
+
+Use this rule of thumb:
+
+- `null`, `undefined`, and `false` render no child content
+- `null` and `undefined` remove normal attributes
+- `false` removes boolean attributes such as `hidden` or `disabled`
+- `null` removes delegated and native event handlers by omitting the next listener
+- `undefined` clears deferred property bindings by writing `undefined`
+
+For child content:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+const nextLabel = shouldShowLabel ? 'Ready' : null;
+
+return <p>{nextLabel}</p>;
+```
+
+For attributes and bindings:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+return (
+	<button
+		class={shouldResetClass ? null : 'toolbar-action'}
+		hidden={isVisible ? false : true}
+		on:click={isInteractive ? handleClick : null}
+		prop:payload={hasPayload ? payload : undefined}
+	/>
+);
+```
+
+Important consequence: removing a binding by switching to `null`, `undefined`, or `false` follows normal template update semantics. If that changes the template shape, the renderer may replace the affected DOM node instead of preserving the previously committed instance.
+
+## Dev Warnings
+
+The runtime warnings are intentionally defensive around hydration markers and renderer-owned DOM anchors because those failures are otherwise silent and hard to debug.
+
+They are already off in production by default. In development, you can force them on or off globally:
+
+```ts
+import { setDevWarningsEnabled } from '@ecopages/jsx/jsx-dev-runtime';
+
+setDevWarningsEnabled(false);
+setDevWarningsEnabled(true);
+setDevWarningsEnabled(undefined);
+```
+
+Pass `undefined` to return to the default behavior, which is "on in development, off in production".
+
 ## SSR And Hydration
 
-Use `renderToString(...)` for HTML generation. Enable `hydrate: true` only when you plan to hydrate that exact view on the client.
+`renderToString(...)` now has two explicit output modes:
+
+- `mode: 'plain'` emits plain HTML without hydration markers
+- `mode: 'hydrate'` emits hydratable HTML with binding markers
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -267,8 +325,8 @@ const view = (
 	</button>
 );
 
-const html = renderToString(view);
-const hydratedHtml = renderToString(view, { hydrate: true });
+const html = renderToString(view, { mode: 'plain' });
+const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 ```
 
 Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
@@ -389,11 +447,35 @@ Why keep both instead of one export:
 
 That object is an internal contract between the JSX runtime and the Radiant renderers. It is not positioned as a generic third-party virtual DOM format.
 
+## Trusted Markup
+
+`@ecopages/jsx` escapes normal text and attribute values by default.
+
+If you already have final, trusted HTML and need to hand it to the runtime as markup, use `unsafeHtml(...)`.
+
+```tsx
+import { unsafeHtml } from '@ecopages/jsx';
+
+const trustedSnippet = unsafeHtml('<strong>Trusted</strong>');
+
+const view = <p>{trustedSnippet}</p>;
+```
+
+Important:
+
+- this is an unsafe opt-in escape hatch
+- the input is not sanitized
+- the input is not escaped again
+- untrusted user input must not flow through this helper
+
+The runtime treats trusted markup as opaque HTML content. It is inserted as markup for DOM mounting and emitted as-is during SSR, but it does not become a live JSX template or a hydratable binding boundary.
+
 ## Exported Surface
 
 Main exports:
 
 - `Fragment`
+- `unsafeHtml`
 - `jsx`
 - `jsxs`
 - `createRoot`

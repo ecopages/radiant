@@ -21,7 +21,7 @@ summary(() => {
 	});
 
 	bench('renderToString hydrate', () => {
-		do_not_optimize(renderToString(jsx(RealWorldPage, props), { hydrate: true }));
+		do_not_optimize(renderToString(jsx(RealWorldPage, props), { mode: 'hydrate' }));
 	});
 });
 

@@ -81,9 +81,7 @@ export function disposeTemplateInstance(instance: TemplateInstance): void {
 }
 
 export function disposeLiveAttributePart(part: LiveAttributePart): void {
-	part.unsubscribe?.();
-	part.unsubscribe = undefined;
-	part.source = undefined;
+	releaseLiveAttributeSubscription(part);
 
 	if (
 		!part.previousValue ||
@@ -110,6 +108,35 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 }
 
 /**
+ * Ends the current reactive ownership epoch for a live attribute part.
+ *
+ * Bumping `subscriptionSerial` before running `unsubscribe` ensures that any queued callback from
+ * the previous source becomes a no-op even if it fires after teardown. This keeps ownership scoped
+ * to the DOM part instance rather than to whichever source happened to subscribe first.
+ */
+function releaseLiveAttributeSubscription(part: LiveAttributePart): void {
+	const unsubscribe = part.unsubscribe;
+	part.subscriptionSerial += 1;
+	part.unsubscribe = undefined;
+	part.source = undefined;
+	unsubscribe?.();
+}
+
+/**
+ * Ends the current child-range subscription epoch and returns the last mounted child state.
+ *
+ * The returned `mounted` subtree remains structurally owned by the same DOM range and can be
+ * reconciled in place against the next value. Only the reactive source ownership is released.
+ */
+function releaseMountedSubscription(mounted: MountedSubscription): MountedRangeContent {
+	const unsubscribe = mounted.unsubscribe;
+	mounted.subscriptionSerial += 1;
+	mounted.unsubscribe = () => undefined;
+	unsubscribe();
+	return mounted.mounted;
+}
+
+/**
  * Recursively releases runtime bookkeeping for a mounted child range.
  *
  * Disposal is intentionally structural: subscriptions are unsubscribed and
@@ -119,8 +146,7 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 export function disposeMountedRangeContent(mounted: MountedRangeContent): void {
 	switch (mounted.kind) {
 		case 'subscription':
-			mounted.unsubscribe();
-			disposeMountedRangeContent(mounted.mounted);
+			disposeMountedRangeContent(releaseMountedSubscription(mounted));
 			return;
 
 		case 'template':
@@ -161,14 +187,18 @@ export function updateLiveAttributePart(
 			return;
 		}
 
-		part.unsubscribe?.();
-		part.source = undefined;
-		part.unsubscribe = undefined;
+		releaseLiveAttributeSubscription(part);
 	}
 
 	if (isReactiveAttributeSource(value)) {
+		const subscriptionSerial = part.subscriptionSerial + 1;
+		part.subscriptionSerial = subscriptionSerial;
 		part.source = value;
 		part.unsubscribe = subscribeToReactiveChildSource(value, (nextValue) => {
+			if (part.subscriptionSerial !== subscriptionSerial || part.source !== value) {
+				return;
+			}
+
 			const nextDeferredProperties: DeferredPropertyBinding[] = [];
 			applyResolvedAttributeBinding(part, resolveReactiveSnapshot(nextValue), nextDeferredProperties);
 			flushDeferredProperties(nextDeferredProperties);
@@ -190,96 +220,115 @@ function applyResolvedAttributeBinding(
 	deferredProperties: DeferredPropertyBinding[],
 ): void {
 	switch (part.binding.kind) {
-		case 'attr': {
-			if (value === undefined || value === null) {
-				removeElementAttribute(part.element, part.binding.name);
-				part.previousValue = value;
-				return;
-			}
-
-			const nextValue = String(value);
-
-			if (
-				part.previousValue !== value ||
-				getElementAttributeValue(part.element, part.binding.name) !== nextValue
-			) {
-				setElementAttributeValue(part.element, part.binding.name, nextValue);
-			}
-
-			part.previousValue = value;
+		case 'attr':
+			applyAttributeValueBinding(part, value);
 			return;
-		}
 
-		case 'bool': {
-			if (value) {
-				part.element.setAttribute(part.binding.name, '');
-			} else {
-				part.element.removeAttribute(part.binding.name);
-			}
-
-			part.previousValue = value;
+		case 'bool':
+			applyBooleanValueBinding(part, value);
 			return;
-		}
 
-		case 'event': {
-			if (part.previousValue === value) {
-				return;
-			}
-
-			if (
-				part.previousValue &&
-				(typeof part.previousValue === 'function' || isEventListenerObject(part.previousValue))
-			) {
-				detachEventBindingListener(
-					part.rootTarget,
-					part.element,
-					part.binding.name,
-					part.previousValue as EventListenerOrEventListenerObject,
-				);
-			}
-
-			if (typeof value === 'function' || isEventListenerObject(value)) {
-				attachEventBindingListener(
-					part.rootTarget,
-					part.element,
-					part.binding.name,
-					value as EventListenerOrEventListenerObject,
-				);
-			}
-
-			part.previousValue = value;
+		case 'event':
+			applyDelegatedEventValueBinding(part, value);
 			return;
-		}
 
-		case 'native-event': {
-			if (part.previousValue === value) {
-				return;
-			}
-
-			if (
-				part.previousValue &&
-				(typeof part.previousValue === 'function' || isEventListenerObject(part.previousValue))
-			) {
-				part.element.removeEventListener(
-					part.binding.name,
-					part.previousValue as EventListenerOrEventListenerObject,
-				);
-			}
-
-			if (typeof value === 'function' || isEventListenerObject(value)) {
-				part.element.addEventListener(part.binding.name, value as EventListenerOrEventListenerObject);
-			}
-
-			part.previousValue = value;
+		case 'native-event':
+			applyNativeEventValueBinding(part, value);
 			return;
-		}
 
-		case 'prop': {
-			deferredProperties.push({ element: part.element, name: part.binding.name, value });
-			part.previousValue = value;
+		case 'prop':
+			applyPropertyValueBinding(part, value, deferredProperties);
 			return;
-		}
 	}
+}
+
+function applyAttributeValueBinding(part: LiveAttributePart, value: unknown): void {
+	if (value === undefined || value === null) {
+		removeElementAttribute(part.element, part.binding.name);
+		part.previousValue = value;
+		return;
+	}
+
+	const nextValue = String(value);
+
+	if (part.previousValue !== value || getElementAttributeValue(part.element, part.binding.name) !== nextValue) {
+		setElementAttributeValue(part.element, part.binding.name, nextValue);
+	}
+
+	part.previousValue = value;
+}
+
+function applyBooleanValueBinding(part: LiveAttributePart, value: unknown): void {
+	if (value) {
+		part.element.setAttribute(part.binding.name, '');
+	} else {
+		part.element.removeAttribute(part.binding.name);
+	}
+
+	part.previousValue = value;
+}
+
+function applyDelegatedEventValueBinding(part: LiveAttributePart, value: unknown): void {
+	const nextListener = asEventBindingListener(value);
+	const previousListener = asEventBindingListener(part.previousValue);
+
+	if (part.previousValue === value) {
+		return;
+	}
+
+	if (previousListener) {
+		detachEventBindingListener(part.rootTarget, part.element, part.binding.name, previousListener);
+	}
+
+	if (nextListener) {
+		attachEventBindingListener(part.rootTarget, part.element, part.binding.name, nextListener);
+	}
+
+	part.previousValue = value;
+}
+
+function applyNativeEventValueBinding(part: LiveAttributePart, value: unknown): void {
+	const nextListener = asEventBindingListener(value);
+	const previousListener = asEventBindingListener(part.previousValue);
+
+	if (part.previousValue === value) {
+		return;
+	}
+
+	if (previousListener) {
+		part.element.removeEventListener(part.binding.name, previousListener);
+	}
+
+	if (nextListener) {
+		part.element.addEventListener(part.binding.name, nextListener);
+	}
+
+	part.previousValue = value;
+}
+
+function applyPropertyValueBinding(
+	part: LiveAttributePart,
+	value: unknown,
+	deferredProperties: DeferredPropertyBinding[],
+): void {
+	deferredProperties.push({
+		element: part.element,
+		name: part.binding.name,
+		value,
+	});
+	part.previousValue = value;
+}
+
+function asEventBindingListener(value: unknown): EventListenerOrEventListenerObject | null {
+	if (typeof value === 'function') {
+		return value as EventListener;
+	}
+
+	if (isEventListenerObject(value)) {
+		return value;
+	}
+
+	return null;
 }
 
 /**
@@ -306,6 +355,7 @@ export function applyAttributeBinding(
 	switch (binding.kind) {
 		case 'attr':
 			if (resolvedValue === undefined || resolvedValue === null) {
+				element.removeAttribute(binding.name);
 				return;
 			}
 			setElementAttributeValue(element, binding.name, String(resolvedValue));
@@ -314,28 +364,41 @@ export function applyAttributeBinding(
 		case 'bool':
 			if (resolvedValue) {
 				element.setAttribute(binding.name, '');
+			} else {
+				element.removeAttribute(binding.name);
 			}
 			return;
 
 		case 'event':
-			if (typeof resolvedValue === 'function' || isEventListenerObject(resolvedValue)) {
-				attachEventBindingListener(
-					rootTarget,
-					element,
-					binding.name,
-					resolvedValue as EventListenerOrEventListenerObject,
-				);
+			{
+				const listener = asEventBindingListener(resolvedValue);
+
+				if (!listener) {
+					return;
+				}
+
+				attachEventBindingListener(rootTarget, element, binding.name, listener);
 			}
 			return;
 
 		case 'native-event':
-			if (typeof resolvedValue === 'function' || isEventListenerObject(resolvedValue)) {
-				element.addEventListener(binding.name, resolvedValue as EventListenerOrEventListenerObject);
+			{
+				const listener = asEventBindingListener(resolvedValue);
+
+				if (!listener) {
+					return;
+				}
+
+				element.addEventListener(binding.name, listener);
 			}
 			return;
 
 		case 'prop':
-			deferredProperties.push({ element, name: binding.name, value: resolvedValue });
+			deferredProperties.push({
+				element,
+				name: binding.name,
+				value: resolvedValue,
+			});
 			return;
 	}
 }
@@ -365,8 +428,7 @@ export function updateRangeContent(
 			return currentContent;
 		}
 
-		currentContent.unsubscribe();
-		currentContent = currentContent.mounted;
+		currentContent = releaseMountedSubscription(currentContent);
 	}
 
 	if (isReactiveChildSource(nextValue)) {
@@ -418,22 +480,17 @@ export function updateRangeContent(
 			return currentContent;
 		}
 
-		disposeMountedRangeContent(currentContent);
-		clearRangeBetween(startMarker, endMarker);
 		const instance = runtime.createTemplateInstance(
 			nextValue,
 			rootTarget,
 			deferredProperties,
 			endMarker.parentNode,
 		);
-		insertNodesBefore(endMarker, instance.rootNodes);
-		return { instance, kind: 'template' };
+		return replaceMountedRangeWithTemplate(startMarker, endMarker, currentContent, instance);
 	}
 
 	if (nextValue === undefined || nextValue === null || nextValue === false || nextValue === true) {
-		disposeMountedRangeContent(currentContent);
-		clearRangeBetween(startMarker, endMarker);
-		return { kind: 'empty' };
+		return replaceMountedRangeWithEmpty(startMarker, endMarker, currentContent);
 	}
 
 	if (currentContent.kind === 'text' && canRenderAsTextNode(nextValue)) {
@@ -446,13 +503,9 @@ export function updateRangeContent(
 		return currentContent;
 	}
 
-	disposeMountedRangeContent(currentContent);
-	clearRangeBetween(startMarker, endMarker);
-
 	if (canRenderAsTextNode(nextValue)) {
 		const textNode = document.createTextNode(String(nextValue));
-		insertNodesBefore(endMarker, [textNode]);
-		return { kind: 'text', node: textNode };
+		return replaceMountedRangeWithText(startMarker, endMarker, currentContent, textNode);
 	}
 
 	const nodes = createNodesFromValue(
@@ -462,6 +515,51 @@ export function updateRangeContent(
 		runtime.createTemplateInstance,
 		endMarker.parentNode,
 	);
+	return replaceMountedRangeWithNodes(startMarker, endMarker, currentContent, nodes);
+}
+
+function replaceMountedRangeWithEmpty(
+	startMarker: Text,
+	endMarker: Text,
+	current: MountedRangeContent,
+): MountedRangeContent {
+	disposeMountedRangeContent(current);
+	clearRangeBetween(startMarker, endMarker);
+	return { kind: 'empty' };
+}
+
+function replaceMountedRangeWithTemplate(
+	startMarker: Text,
+	endMarker: Text,
+	current: MountedRangeContent,
+	instance: TemplateInstance,
+): MountedRangeContent {
+	disposeMountedRangeContent(current);
+	clearRangeBetween(startMarker, endMarker);
+	insertNodesBefore(endMarker, instance.rootNodes);
+	return { instance, kind: 'template' };
+}
+
+function replaceMountedRangeWithText(
+	startMarker: Text,
+	endMarker: Text,
+	current: MountedRangeContent,
+	textNode: Text,
+): MountedRangeContent {
+	disposeMountedRangeContent(current);
+	clearRangeBetween(startMarker, endMarker);
+	insertNodesBefore(endMarker, [textNode]);
+	return { kind: 'text', node: textNode };
+}
+
+function replaceMountedRangeWithNodes(
+	startMarker: Text,
+	endMarker: Text,
+	current: MountedRangeContent,
+	nodes: readonly Node[],
+): MountedRangeContent {
+	disposeMountedRangeContent(current);
+	clearRangeBetween(startMarker, endMarker);
 	insertNodesBefore(endMarker, nodes);
 	return { kind: 'nodes', nodes };
 }
@@ -613,8 +711,11 @@ function mountReactiveChildSource(
 		kind: 'subscription',
 		mounted: current,
 		source,
+		subscriptionSerial: 0,
 		unsubscribe: () => undefined,
 	};
+	const subscriptionSerial = mountedSubscription.subscriptionSerial + 1;
+	mountedSubscription.subscriptionSerial = subscriptionSerial;
 
 	const applyValue = (nextValue: unknown) => {
 		const nextDeferredProperties: DeferredPropertyBinding[] = [];
@@ -631,6 +732,10 @@ function mountReactiveChildSource(
 	};
 
 	mountedSubscription.unsubscribe = subscribeToReactiveChildSource(source, (nextValue) => {
+		if (mountedSubscription.subscriptionSerial !== subscriptionSerial || mountedSubscription.source !== source) {
+			return;
+		}
+
 		applyValue(nextValue);
 	});
 
