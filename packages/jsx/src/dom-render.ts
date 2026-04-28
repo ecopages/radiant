@@ -8,12 +8,7 @@ import {
 import { createBoundaryMarker, visitElements } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
-import {
-	getChildNamespace,
-	HTML_NAMESPACE_URI,
-	setElementAttributeValue,
-	SVG_NAMESPACE_URI,
-} from './dom-render/namespaces.ts';
+import { getElementNamespace, HTML_NAMESPACE_URI, setElementAttributeValue } from './dom-render/namespaces.ts';
 import { getNodeAtPath, getNodePath } from './dom-render/path-utils.ts';
 import {
 	applyAttributeBinding,
@@ -279,7 +274,7 @@ function createTemplateInstance(
 ): TemplateInstance {
 	const compiledTemplate = getCompiledTemplate(template);
 	const fragment = compiledTemplate.blueprint.content.cloneNode(true) as DocumentFragment;
-	normalizeTemplateFragmentNamespaces(fragment, contextParent);
+	normalizeTemplateFragmentNamespaces(fragment, contextParent, template.rootLocalName);
 	const parts = createLiveTemplateParts(fragment, compiledTemplate.parts, rootTarget);
 	const rootNodes = Array.from(fragment.childNodes);
 
@@ -312,48 +307,38 @@ function createTemplateInstance(
 	return instance;
 }
 
-function normalizeTemplateFragmentNamespaces(fragment: DocumentFragment, contextParent: Node | null): void {
+function normalizeTemplateFragmentNamespaces(
+	fragment: DocumentFragment,
+	contextParent: Node | null,
+	rootLocalName: string | undefined,
+): void {
+	// Intrinsic JSX templates compile to a single element shell with dynamic child slots,
+	// so namespace repair only needs to fix that root element. Nested intrinsic children
+	// are mounted through their own template instances with their own authored root tags.
 	const contextElement = contextParent instanceof Element ? contextParent : contextParent?.parentElement;
-	const childNamespace = getChildNamespace(
-		contextElement?.namespaceURI ?? HTML_NAMESPACE_URI,
-		contextElement?.localName,
-	);
+	const contextNamespace = contextElement?.namespaceURI ?? HTML_NAMESPACE_URI;
+	const contextLocalName = contextElement?.localName;
+	const rootElement = fragment.firstElementChild;
 
-	if (childNamespace !== SVG_NAMESPACE_URI) {
+	if (!rootElement) {
 		return;
 	}
 
-	for (const childNode of Array.from(fragment.childNodes)) {
-		const normalizedNode = normalizeNodeNamespace(childNode, childNamespace);
+	const authoredRootLocalName = rootLocalName ?? rootElement.localName;
+	const expectedAuthoredNamespace = getElementNamespace(contextNamespace, contextLocalName, authoredRootLocalName);
 
-		if (normalizedNode !== childNode) {
-			fragment.replaceChild(normalizedNode, childNode);
-		}
+	if (rootElement.namespaceURI === expectedAuthoredNamespace && rootElement.localName === authoredRootLocalName) {
+		return;
 	}
+
+	fragment.replaceChild(
+		recreateElementInNamespace(rootElement, expectedAuthoredNamespace, authoredRootLocalName),
+		rootElement,
+	);
 }
 
-function normalizeNodeNamespace(node: Node, expectedNamespace: string): Node {
-	if (!(node instanceof Element)) {
-		return node;
-	}
-
-	const normalizedElement =
-		node.namespaceURI === expectedNamespace ? node : recreateElementInNamespace(node, expectedNamespace);
-	const childNamespace = getChildNamespace(expectedNamespace, normalizedElement.localName);
-
-	for (const childNode of Array.from(normalizedElement.childNodes)) {
-		const normalizedChild = normalizeNodeNamespace(childNode, childNamespace);
-
-		if (normalizedChild !== childNode) {
-			normalizedElement.replaceChild(normalizedChild, childNode);
-		}
-	}
-
-	return normalizedElement;
-}
-
-function recreateElementInNamespace(element: Element, namespace: string): Element {
-	const replacement = document.createElementNS(namespace, element.localName);
+function recreateElementInNamespace(element: Element, namespace: string, localName: string): Element {
+	const replacement = document.createElementNS(namespace, localName);
 
 	for (const attribute of Array.from(element.attributes)) {
 		if (attribute.namespaceURI) {

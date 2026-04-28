@@ -212,14 +212,14 @@ function createJsxElement<Props extends object>(
 
 	if (voidElementNames.has(type)) {
 		strings[strings.length - 1] += '>';
-		return wrapKeyedValue(createTemplateResult(strings, values), keyedValue);
+		return wrapKeyedValue(createTemplateResult(strings, values, type), keyedValue);
 	}
 
 	strings[strings.length - 1] += '>';
 	appendElementChildren(strings, values, type, children, childSlotMode);
 	strings[strings.length - 1] += `</${type}>`;
 
-	return wrapKeyedValue(createTemplateResult(strings, values), keyedValue);
+	return wrapKeyedValue(createTemplateResult(strings, values, type), keyedValue);
 }
 
 function appendElementChildren(
@@ -1249,9 +1249,10 @@ function normalizeStyleValue(value: unknown): unknown {
  * @param values Dynamic binding values interleaved between the string segments.
  * @returns A frozen, Radiant-compatible template result.
  */
-function createTemplateResult(strings: string[], values: unknown[]): TemplateResultLike {
+function createTemplateResult(strings: string[], values: unknown[], rootLocalName: string): TemplateResultLike {
 	return {
 		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
+		rootLocalName,
 		strings: toTemplateStrings(strings),
 		values,
 	};

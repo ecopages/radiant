@@ -8,6 +8,15 @@ const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.
 const loadJsxModule = async () => loadModule<typeof import('../src/index.ts')>('../src/index.ts');
 const loadServerRender = async () => loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts');
 
+function toTemplateStrings(strings: string[]): TemplateStringsArray {
+	const templateStrings = [...strings] as unknown as TemplateStringsArray;
+	Object.defineProperty(templateStrings, 'raw', {
+		value: [...strings],
+		writable: false,
+	});
+	return templateStrings;
+}
+
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -237,6 +246,88 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(paths.every((path) => path instanceof SVGElement)).toBe(true);
 	});
 
+	test('mounts nested SVG defs with canonical camel-cased element names under HTML parents', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(
+			jsx('div', {
+				children: jsxs('svg', {
+					viewBox: '0 0 100 100',
+					xmlns: 'http://www.w3.org/2000/svg',
+					children: [
+						jsxs('defs', {
+							children: [
+								jsxs('linearGradient', {
+									id: 'gradient',
+									children: [
+										jsx('stop', { offset: '0%', 'stop-color': '#000' }),
+										jsx('stop', { offset: '100%', 'stop-color': '#fff' }),
+									],
+								}),
+								jsx('filter', {
+									id: 'shadow',
+									children: jsx('feDropShadow', {
+										dx: '0',
+										dy: '2',
+										stdDeviation: '2',
+									}),
+								}),
+							],
+						}),
+						jsx('rect', {
+							width: '100',
+							height: '100',
+							fill: 'url(#gradient)',
+							filter: 'url(#shadow)',
+						}),
+					],
+				}),
+			}),
+		);
+
+		const gradient = container.querySelector('linearGradient');
+		const dropShadow = container.querySelector('feDropShadow');
+
+		expect(gradient?.localName).toBe('linearGradient');
+		expect(gradient?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(dropShadow?.localName).toBe('feDropShadow');
+		expect(dropShadow?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+	});
+
+	test('manual template results without root metadata do not poison later intrinsic SVG mounts', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const primeContainer = document.createElement('div');
+		const primeRoot = createRoot(primeContainer);
+		const verifyContainer = document.createElement('div');
+		const verifyRoot = createRoot(verifyContainer);
+		const manualTemplate = {
+			['_$rType$']: 1 as const,
+			strings: toTemplateStrings(['<linearGradient id=', '></linearGradient>']),
+			values: ['gradient'],
+		};
+
+		primeRoot.render(
+			jsx('svg', {
+				children: manualTemplate,
+			}),
+		);
+
+		verifyRoot.render(
+			jsx('svg', {
+				children: jsx('linearGradient', {
+					id: 'gradient',
+				}),
+			}),
+		);
+
+		const gradient = verifyContainer.querySelector('svg')?.firstElementChild;
+
+		expect(gradient?.localName).toBe('linearGradient');
+		expect(gradient?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+	});
+
 	test('preserves namespaced SVG attributes across mount and update', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -329,6 +420,62 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector('use')?.getAttributeNS(xlinkNamespace, 'href')).toBe('#beta');
 		expect(container.querySelector('path')?.namespaceURI).toBe('http://www.w3.org/2000/svg');
 		expect(container.querySelector('.foreign-object-label')?.namespaceURI).toBe('http://www.w3.org/1999/xhtml');
+	});
+
+	test('hydrates nested SVG defs with canonical camel-cased element names under HTML parents', async () => {
+		const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderGradientIcon = () =>
+			jsx('div', {
+				children: jsxs('svg', {
+					viewBox: '0 0 100 100',
+					xmlns: 'http://www.w3.org/2000/svg',
+					children: [
+						jsxs('defs', {
+							children: [
+								jsxs('linearGradient', {
+									id: 'gradient',
+									children: [
+										jsx('stop', { offset: '0%', 'stop-color': '#000' }),
+										jsx('stop', { offset: '100%', 'stop-color': '#fff' }),
+									],
+								}),
+								jsx('filter', {
+									id: 'shadow',
+									children: jsx('feDropShadow', {
+										dx: '0',
+										dy: '2',
+										stdDeviation: '2',
+									}),
+								}),
+							],
+						}),
+						jsx('rect', {
+							width: '100',
+							height: '100',
+							fill: 'url(#gradient)',
+							filter: 'url(#shadow)',
+						}),
+					],
+				}),
+			});
+
+		container.innerHTML = renderToString(renderGradientIcon(), { hydrate: true });
+		root.hydrate(renderGradientIcon());
+
+		const gradient = container.querySelector('linearGradient');
+		const dropShadow = container.querySelector('feDropShadow');
+
+		expect(gradient?.localName).toBe('linearGradient');
+		expect(gradient?.namespaceURI).toBe('http://www.w3.org/2000/svg');
+		expect(dropShadow?.localName).toBe('feDropShadow');
+		expect(dropShadow?.namespaceURI).toBe('http://www.w3.org/2000/svg');
 	});
 
 	test('hydrates iterable-root SSR bindings through the fallback marker scan', async () => {
