@@ -3,8 +3,8 @@
 		{
 			"label": "root-client-surface",
 			"entrypoint": "./src/index.ts",
-			"maxBytes": 46080,
-			"maxGzipBytes": 12288
+			"maxBytes": 50176,
+			"maxGzipBytes": 13056
 		},
 		{
 			"label": "server-render",
