@@ -139,7 +139,6 @@
 	margin: 0;
 }
 
-
 .controller-decorator-visualizer__card-head {
 	grid-template-columns: auto minmax(0, 1fr) auto;
 	align-items: center;
@@ -575,8 +574,7 @@
 			'state'
 			'transmissions'
 			'events'
-			'queries'
-		;
+			'queries';
 	}
 
 	.controller-decorator-visualizer__metric-grid {
