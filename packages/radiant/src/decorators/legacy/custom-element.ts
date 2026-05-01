@@ -9,8 +9,8 @@ export function customElement(name: string, options?: ElementDefinitionOptions) 
 	return (target: CustomElementConstructor) => {
 		setCustomElementTagName(target, name);
 
-		if (!window.customElements.get(name)) {
-			window.customElements.define(name, target, options);
+		if (typeof customElements !== 'undefined' && !customElements.get(name)) {
+			customElements.define(name, target, options);
 		}
 	};
 }
