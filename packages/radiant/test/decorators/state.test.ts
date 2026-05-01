@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { state } from '../../src/decorators/state';
 
@@ -21,7 +20,7 @@ class MyStateElement extends RadiantElement {
 	}
 }
 
-class MyComponentStateElement extends RadiantComponent {
+class MyComponentStateElement extends RadiantElement {
 	@state numberOfClicks = 1;
 
 	override connectedCallback() {
@@ -61,7 +60,7 @@ describe('@state', () => {
 		expect(customElement.innerHTML).toEqual('2');
 	});
 
-	test('enables a bound companion accessor by default on RadiantComponent', () => {
+	test('enables a bound companion accessor by default on RadiantElement', () => {
 		const customElement = document.createElement('my-component-state-field') as MyComponentStateElement & {
 			$numberOfClicks: ReturnType<MyComponentStateElement['bind']>;
 		};

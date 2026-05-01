@@ -1,16 +1,29 @@
-import type { RadiantElement } from '../../core/radiant-element';
 import type { Method } from '../../types';
 
+type UpdatedHost = {
+	registerUpdateCallback(key: string, update: (...args: unknown[]) => unknown): () => void;
+};
+
 export function onUpdated(keyOrKeys: string | string[]) {
-	return function <T extends Method>(_: T, context: ClassMethodDecoratorContext): void {
-		context.addInitializer(function (this: any) {
-			this[context.name] = this[context.name].bind(this);
+	return function <THost extends UpdatedHost, T extends Method>(
+		originalMethod: T,
+		context: ClassMethodDecoratorContext<THost, T>,
+	): void {
+		context.addInitializer(function (this: THost) {
+			const boundMethod = originalMethod.bind(this);
+
+			Object.defineProperty(this, context.name, {
+				value: boundMethod,
+				configurable: true,
+				writable: true,
+			});
+
 			if (Array.isArray(keyOrKeys)) {
 				for (const key of keyOrKeys) {
-					(this as RadiantElement).registerUpdateCallback(key, this[context.name]);
+					this.registerUpdateCallback(key, boundMethod);
 				}
 			} else if (typeof keyOrKeys === 'string') {
-				(this as RadiantElement).registerUpdateCallback(keyOrKeys, this[context.name]);
+				this.registerUpdateCallback(keyOrKeys, boundMethod);
 			}
 		});
 	};

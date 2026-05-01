@@ -1,12 +1,18 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../types';
+import type { LegacyFieldDecoratorArgs } from '../types';
+import type { ReactiveHostLike } from '../core/reactive-host';
 import { signal as legacySignal, type SignalDecoratorOptions } from './legacy/signal';
 import { signal as standardSignal } from './standard/signal';
+import type { WritableSignal } from '@ecopages/signals';
 
 export type { SignalDecoratorOptions } from './standard/signal';
+
+type SignalDecorator<Value = unknown> = {
+	<THost extends ReactiveHostLike>(
+		protoOrTarget: undefined,
+		nameOrContext: ClassFieldDecoratorContext<THost, WritableSignal<Value>>,
+	): (this: THost, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>;
+	(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
+};
 
 /**
  * Declares a host-aware writable signal field.
@@ -26,39 +32,60 @@ export type { SignalDecoratorOptions } from './standard/signal';
  * When `hydrate` is provided, SSR host output appends a keyed JSON script so
  * the client can restore the signal's initial value during hydration.
  */
-export function signal(
-	protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-	nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-): any;
-export function signal(options?: SignalDecoratorOptions): any;
-export function signal(
-	protoOrOptions?: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'] | SignalDecoratorOptions,
-	nameOrContext?: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-): any {
+export function signal<THost extends ReactiveHostLike, Value>(
+	protoOrTarget: undefined,
+	nameOrContext: ClassFieldDecoratorContext<THost, WritableSignal<Value>>,
+): (this: THost, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>;
+export function signal(protoOrTarget: ReactiveHostLike, nameOrContext: string): void;
+export function signal<Value = unknown>(options?: SignalDecoratorOptions<Value>): SignalDecorator<Value>;
+export function signal<Value = unknown>(
+	protoOrOptions?: ReactiveHostLike | SignalDecoratorOptions<Value>,
+	nameOrContext?: string | ClassFieldDecoratorContext<ReactiveHostLike, WritableSignal<Value>>,
+):
+	| ((this: ReactiveHostLike, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>)
+	| SignalDecorator<Value>
+	| void {
 	if (typeof nameOrContext !== 'undefined') {
 		if (typeof nameOrContext === 'object') {
-			return standardSignal()(protoOrOptions as StandardFieldDecoratorArgs['protoOrTarget'], nameOrContext);
+			if (protoOrOptions !== undefined) {
+				throw new TypeError('@signal standard decorators require an undefined target');
+			}
+
+			return standardSignal<Value>()(undefined, nameOrContext);
 		}
 
-		return legacySignal()(protoOrOptions as LegacyFieldDecoratorArgs['protoOrTarget'], nameOrContext);
+		if (protoOrOptions === undefined) {
+			throw new TypeError('@signal legacy decorators require a host target');
+		}
+
+		return legacySignal<Value>()(protoOrOptions as LegacyFieldDecoratorArgs['protoOrTarget'], nameOrContext);
 	}
 
-	const options = (protoOrOptions ?? {}) as SignalDecoratorOptions;
+	const options = (protoOrOptions ?? {}) as SignalDecoratorOptions<Value>;
 
-	return function (
-		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-		contextOrName: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-	): any {
+	function decorator<THost extends ReactiveHostLike>(
+		protoOrTarget: undefined,
+		contextOrName: ClassFieldDecoratorContext<THost, WritableSignal<Value>>,
+	): (this: THost, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>;
+	function decorator(protoOrTarget: ReactiveHostLike, contextOrName: string): void;
+	function decorator(
+		protoOrTarget: ReactiveHostLike | undefined,
+		contextOrName: string | ClassFieldDecoratorContext<ReactiveHostLike, WritableSignal<Value>>,
+	): ((this: ReactiveHostLike, initialValue: Value | WritableSignal<Value>) => WritableSignal<Value>) | void {
 		if (typeof contextOrName === 'object') {
-			return standardSignal(options)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				contextOrName as StandardFieldDecoratorArgs['nameOrContext'],
-			);
+			if (protoOrTarget !== undefined) {
+				throw new TypeError('@signal standard decorators require an undefined target');
+			}
+
+			return standardSignal<Value>(options)(undefined, contextOrName);
 		}
 
-		return legacySignal(options)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			contextOrName as LegacyFieldDecoratorArgs['nameOrContext'],
-		);
-	};
+		if (protoOrTarget === undefined) {
+			throw new TypeError('@signal legacy decorators require a host target');
+		}
+
+		return legacySignal<Value>(options)(protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'], contextOrName);
+	}
+
+	return decorator;
 }

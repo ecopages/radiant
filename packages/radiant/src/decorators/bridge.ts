@@ -1,60 +1,95 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	LegacyMethodDecoratorArgs,
-	StandardMethodDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-	StandardOrLegacyMethodDecoratorArgs,
-} from '../types';
+import type { Method } from '../types';
 
-type StandardFieldFn = (target: undefined, context: ClassFieldDecoratorContext<any, any>) => any;
+type StandardFieldFn<Host extends object, Value, Result> = (
+	target: undefined,
+	context: ClassFieldDecoratorContext<Host, Value>,
+) => Result;
 
-type LegacyFieldFn = (
-	proto: LegacyFieldDecoratorArgs['protoOrTarget'],
-	name: LegacyFieldDecoratorArgs['nameOrContext'],
-) => any;
+type LegacyFieldFn<Proto, Result> = (proto: Proto, name: string) => Result;
 
-type StandardMethodFn = (
-	target: StandardMethodDecoratorArgs['protoOrTarget'],
-	context: StandardMethodDecoratorArgs['nameOrContext'],
-) => any;
+type StandardMethodFn<Host extends object, TMethod extends Method, Result> = (
+	target: TMethod,
+	context: ClassMethodDecoratorContext<Host, TMethod>,
+) => Result;
 
-type LegacyMethodFn = (
-	proto: LegacyMethodDecoratorArgs['protoOrTarget'],
-	name: LegacyMethodDecoratorArgs['nameOrContext'],
-	descriptor: LegacyMethodDecoratorArgs['descriptor'],
-) => any;
+type LegacyMethodFn<Proto, Result> = (proto: Proto, name: string, descriptor: PropertyDescriptor) => Result;
 
-export function fieldDecoratorBridge(
-	standard: StandardFieldFn,
-	legacy: LegacyFieldFn,
-	protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-	nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-): any {
-	if (typeof nameOrContext === 'object') {
-		return standard(protoOrTarget as undefined, nameOrContext as ClassFieldDecoratorContext<any, any>);
-	}
-	return legacy(
-		protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-		nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-	);
+function isMethod(value: unknown): value is Method {
+	return typeof value === 'function';
 }
 
-export function methodDecoratorBridge(
-	standard: StandardMethodFn,
-	legacy: LegacyMethodFn,
-	protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
-	nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
-	descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
-): any {
+export function fieldDecoratorBridge<Host extends object, Value, Result, Proto>(
+	standard: StandardFieldFn<Host, Value, Result>,
+	legacy: LegacyFieldFn<Proto, void>,
+	protoOrTarget: undefined,
+	nameOrContext: ClassFieldDecoratorContext<Host, Value>,
+): Result;
+export function fieldDecoratorBridge<Host extends object, Value, Proto, Result>(
+	standard: StandardFieldFn<Host, Value, void>,
+	legacy: LegacyFieldFn<Proto, Result>,
+	protoOrTarget: Proto,
+	nameOrContext: string,
+): Result;
+export function fieldDecoratorBridge<Host extends object, Value, StandardResult, Proto, LegacyResult>(
+	standard: StandardFieldFn<Host, Value, StandardResult>,
+	legacy: LegacyFieldFn<Proto, LegacyResult>,
+	protoOrTarget: Proto | undefined,
+	nameOrContext: string | ClassFieldDecoratorContext<Host, Value>,
+): StandardResult | LegacyResult;
+
+export function fieldDecoratorBridge(
+	standard: StandardFieldFn<object, unknown, unknown>,
+	legacy: LegacyFieldFn<unknown, unknown>,
+	protoOrTarget: unknown,
+	nameOrContext: string | ClassFieldDecoratorContext<object, unknown>,
+): unknown {
 	if (typeof nameOrContext === 'object') {
-		return standard(
-			protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-			nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-		);
+		return standard(undefined, nameOrContext);
 	}
-	return legacy(
-		protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-		nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
-		descriptor as LegacyMethodDecoratorArgs['descriptor'],
-	);
+
+	return legacy(protoOrTarget, nameOrContext);
+}
+
+export function methodDecoratorBridge<Host extends object, TMethod extends Method, Result, Proto>(
+	standard: StandardMethodFn<Host, TMethod, Result>,
+	legacy: LegacyMethodFn<Proto, void>,
+	protoOrTarget: TMethod,
+	nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
+	descriptor?: undefined,
+): Result;
+export function methodDecoratorBridge<Host extends object, TMethod extends Method, Proto, Result>(
+	standard: StandardMethodFn<Host, TMethod, void>,
+	legacy: LegacyMethodFn<Proto, Result>,
+	protoOrTarget: Proto,
+	nameOrContext: string,
+	descriptor: PropertyDescriptor,
+): Result;
+export function methodDecoratorBridge<Host extends object, TMethod extends Method, StandardResult, Proto, LegacyResult>(
+	standard: StandardMethodFn<Host, TMethod, StandardResult>,
+	legacy: LegacyMethodFn<Proto, LegacyResult>,
+	protoOrTarget: Proto | TMethod,
+	nameOrContext: string | ClassMethodDecoratorContext<Host, TMethod>,
+	descriptor?: PropertyDescriptor,
+): StandardResult | LegacyResult;
+
+export function methodDecoratorBridge(
+	standard: StandardMethodFn<object, Method, unknown>,
+	legacy: LegacyMethodFn<unknown, unknown>,
+	protoOrTarget: unknown,
+	nameOrContext: string | ClassMethodDecoratorContext<object, Method>,
+	descriptor?: PropertyDescriptor,
+): unknown {
+	if (typeof nameOrContext === 'object') {
+		if (!isMethod(protoOrTarget)) {
+			throw new TypeError('Standard method decorators require a method target');
+		}
+
+		return standard(protoOrTarget, nameOrContext);
+	}
+
+	if (!descriptor) {
+		throw new TypeError('Legacy method decorators require a property descriptor');
+	}
+
+	return legacy(protoOrTarget, nameOrContext, descriptor);
 }

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
@@ -221,9 +221,9 @@ describe('@prop', () => {
 		});
 	});
 
-	describe('@prop on RadiantComponent', () => {
+	describe('@prop on RadiantElement', () => {
 		@customElement('my-component-prop-element')
-		class MyComponentPropElement extends RadiantComponent {
+		class MyComponentPropElement extends RadiantElement {
 			@prop({ type: Number, reflect: true, defaultValue: 3 }) count: number;
 			@prop({ type: Number, defaultValue: 9, bind: false }) silent: number;
 		}
@@ -254,7 +254,7 @@ describe('@prop', () => {
 
 	describe('field initializers', () => {
 		@customElement('my-inferred-reactive-prop')
-		class MyInferredReactiveProp extends RadiantComponent {
+		class MyInferredReactiveProp extends RadiantElement {
 			@prop({ type: Number, reflect: true }) count = 4;
 			@prop({ type: String }) label = 'Hello Radiant';
 			@prop({ type: Boolean }) enabled = false;
@@ -288,7 +288,7 @@ describe('@prop', () => {
 		});
 
 		@customElement('my-inferred-reactive-prop-with-explicit-default')
-		class MyInferredReactivePropWithExplicitDefault extends RadiantComponent {
+		class MyInferredReactivePropWithExplicitDefault extends RadiantElement {
 			@prop({ type: Number, defaultValue: 9 }) count = 4;
 		}
 
@@ -300,5 +300,80 @@ describe('@prop', () => {
 
 			expect(customElement.count).toEqual(9);
 		});
+	});
+});
+
+describe('RadiantController @prop', () => {
+	class PropController extends RadiantController<{ model: { id: number; name: string } | null; count: number }> {
+		@prop({ type: Object }) model!: { id: number; name: string } | null;
+		@prop({ type: Number, defaultValue: 0 }) count!: number;
+	}
+
+	test('reads an initial host property without attribute serialization', () => {
+		const host = document.createElement('section') as HTMLElement & {
+			model?: { id: number; name: string };
+			count?: number;
+		};
+		host.model = { id: 1, name: 'Ada' };
+
+		const controller = new PropController(host);
+		controller.connect();
+
+		expect(controller.model).toEqual({ id: 1, name: 'Ada' });
+		expect(host.model).toEqual({ id: 1, name: 'Ada' });
+		expect(host.hasAttribute('model')).toBe(false);
+	});
+
+	test('keeps the host property and controller field in sync', () => {
+		const host = document.createElement('section') as HTMLElement & {
+			model?: { id: number; name: string } | null;
+			count?: number;
+		};
+		const controller = new PropController(host);
+		controller.connect();
+
+		host.model = { id: 2, name: 'Grace' };
+		host.count = 4;
+
+		expect(controller.model).toEqual({ id: 2, name: 'Grace' });
+		expect(controller.count).toBe(4);
+		expect(controller.bindings.count.getValue()).toBe(4);
+
+		controller.model = { id: 3, name: 'Lin' };
+		controller.count = 7;
+
+		expect(host.model).toEqual({ id: 3, name: 'Lin' });
+		expect(host.count).toBe(7);
+		expect(host.hasAttribute('count')).toBe(false);
+	});
+
+	test('restores inherited host accessors on disconnect', () => {
+		const host = document.createElement('section') as HTMLElement & { count?: number };
+		let storedCount = 2;
+		const originalPrototype = Object.getPrototypeOf(host);
+		const prototypeWithAccessor = Object.create(originalPrototype, {
+			count: {
+				get() {
+					return storedCount;
+				},
+				set(value: number) {
+					storedCount = value;
+				},
+				configurable: true,
+				enumerable: true,
+			},
+		});
+
+		Object.setPrototypeOf(host, prototypeWithAccessor);
+
+		const controller = new PropController(host);
+		controller.connect();
+		controller.count = 5;
+		controller.disconnect();
+
+		expect(host.count).toBe(5);
+		host.count = 9;
+		expect(storedCount).toBe(9);
+		expect(Object.prototype.hasOwnProperty.call(host, 'count')).toBe(false);
 	});
 });

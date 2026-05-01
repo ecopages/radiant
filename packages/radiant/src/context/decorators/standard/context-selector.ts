@@ -1,5 +1,4 @@
-import type { Method } from '../../../types';
-import type { RadiantElement } from '../../../core/radiant-element';
+import type { ContextHostLike } from '../../context-host';
 import { bootstrapSsrContextSelection, connectContextSelection } from '../../context-consumer-bootstrap';
 import type { Context, ContextType } from '../../types';
 import type { OnContextUpdateOptions } from '../on-context-update';
@@ -11,35 +10,48 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 	subscribe = true,
 	requestUpdate = true,
 }: OnContextUpdateOptions<T, Selected>) {
-	return function <Host extends RadiantElement, TMethod extends Method>(
+	return function <Host extends ContextHostLike, TMethod extends (value: Selected) => unknown>(
 		originalMethod: TMethod,
 		targetContext: ClassMethodDecoratorContext<Host, TMethod>,
 	): void {
 		targetContext.addInitializer(function (this: Host) {
-			const applySelectedContext = createContextSelectionDelivery(
+			let activeUnsubscribe: (() => void) | undefined;
+			const applySelectedContext = createContextSelectionDelivery<Selected>(
 				this,
 				(value) => {
-					originalMethod.call(this, value as never);
+					originalMethod.call(this, value);
 				},
 				requestUpdate,
 			);
 
-			if (bootstrapSsrContextSelection(this, context, applySelectedContext, select)) {
+			if (bootstrapSsrContextSelection<T, Selected>(this, context, applySelectedContext, select)) {
 				return;
 			}
 
 			const connectSelection = () => {
-				connectContextSelection(this, context, applySelectedContext, {
+				return connectContextSelection<T, Selected>(this, context, applySelectedContext, {
+					onSubscribe: (unsubscribe) => {
+						activeUnsubscribe = unsubscribe;
+					},
 					select,
 					subscribe,
 				});
 			};
 
-			this.registerConnectedCallback(() => {
-				connectSelection();
+			this.registerCleanupCallback(() => {
+				activeUnsubscribe?.();
+				activeUnsubscribe = undefined;
 			});
 
-			queueMicrotask(connectSelection);
+			this.registerConnectedCallback(() => {
+				if (connectSelection()) {
+					return;
+				}
+
+				queueMicrotask(() => {
+					connectSelection();
+				});
+			});
 		});
 	};
 }

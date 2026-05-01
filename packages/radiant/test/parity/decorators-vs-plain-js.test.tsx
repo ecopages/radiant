@@ -1,6 +1,6 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onEvent } from '../../src/decorators/on-event';
 import { prop } from '../../src/decorators/prop';
@@ -20,7 +20,7 @@ type CounterSnapshot = {
 	rendered: string | null;
 };
 
-type CounterComponentContract = RadiantComponent & {
+type CounterComponentContract = RadiantElement & {
 	count: number;
 	draft: string;
 };
@@ -34,8 +34,7 @@ function readCounterSnapshot(element: CounterComponentContract): CounterSnapshot
 	};
 }
 
-@customElement('parity-decorator-counter-component')
-class DecoratorCounterParityComponent extends RadiantComponent {
+class DecoratorCounterParityComponent extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 1 }) count = 1;
 	@state draft = 'ready';
 
@@ -59,7 +58,9 @@ class DecoratorCounterParityComponent extends RadiantComponent {
 	}
 }
 
-class PlainCounterParityComponent extends RadiantComponent {
+defineElement('parity-decorator-counter-component', DecoratorCounterParityComponent);
+
+class PlainCounterParityComponent extends RadiantElement {
 	declare count: number;
 	declare draft: string;
 
@@ -111,7 +112,7 @@ type ToggleSnapshot = {
 	rendered: string | null;
 };
 
-type ToggleComponentContract = RadiantComponent & {
+type ToggleComponentContract = RadiantElement & {
 	active: boolean;
 };
 
@@ -122,8 +123,7 @@ function readToggleSnapshot(element: ToggleComponentContract): ToggleSnapshot {
 	};
 }
 
-@customElement('parity-decorator-toggle-component')
-class DecoratorToggleParityComponent extends RadiantComponent {
+class DecoratorToggleParityComponent extends RadiantElement {
 	@state active = false;
 
 	@onEvent({ ref: 'toggle', type: 'click' })
@@ -143,7 +143,9 @@ class DecoratorToggleParityComponent extends RadiantComponent {
 	}
 }
 
-class PlainToggleParityComponent extends RadiantComponent {
+defineElement('parity-decorator-toggle-component', DecoratorToggleParityComponent);
+
+class PlainToggleParityComponent extends RadiantElement {
 	declare active: boolean;
 
 	constructor() {
@@ -190,7 +192,7 @@ type ListSnapshot = {
 	rendered: string | null;
 };
 
-type ListComponentContract = RadiantComponent & {
+type ListComponentContract = RadiantElement & {
 	label: string;
 	items: string[];
 };
@@ -203,8 +205,7 @@ function readListSnapshot(element: ListComponentContract): ListSnapshot {
 	};
 }
 
-@customElement('parity-decorator-list-component')
-class DecoratorListParityComponent extends RadiantComponent {
+class DecoratorListParityComponent extends RadiantElement {
 	@prop({ type: String, defaultValue: 'Items' }) label = 'Items';
 	@state items: string[] = [];
 
@@ -218,7 +219,9 @@ class DecoratorListParityComponent extends RadiantComponent {
 	}
 }
 
-class PlainListParityComponent extends RadiantComponent {
+defineElement('parity-decorator-list-component', DecoratorListParityComponent);
+
+class PlainListParityComponent extends RadiantElement {
 	declare label: string;
 	declare items: string[];
 
@@ -261,7 +264,7 @@ beforeEach(() => {
 	document.body.innerHTML = '';
 });
 
-describe('RadiantComponent decorators vs plain JS parity', () => {
+describe('RadiantElement decorators vs plain JS parity', () => {
 	describe('counter component', () => {
 		test.each(counterVariants)('$label renders the same initial JSX output', async ({ create }) => {
 			const element = create();

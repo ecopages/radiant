@@ -9,9 +9,10 @@ type SlotQueryHost = HTMLElement & {
 
 export function querySlot(options: QuerySlotConfig = {}) {
 	return function <T extends SlotQueryHost, V extends Element | Element[]>(
-		_: undefined,
+		target: undefined,
 		context: ClassFieldDecoratorContext<T, V>,
 	) {
+		void target;
 		const propertyName = String(context.name);
 
 		context.addInitializer(function (this: T) {

@@ -1,10 +1,16 @@
-import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
 import type { QuerySlotConfig } from '../helpers/create-query-slot';
+import type { RadiantElement } from '../core/radiant-element';
 import { querySlot as legacyQuerySlot } from './legacy/query-slot';
 import { querySlot as standardQuerySlot } from './standard/query-slot';
 import { fieldDecoratorBridge } from './bridge';
 
 export type { QuerySlotConfig };
+
+type SlotQueryHost = HTMLElement & {
+	getSlotElement<T extends Element = Element>(name?: string): T | null;
+	getSlotElements<T extends Element = Element>(name?: string): T[];
+	slotProjectionVersion?: number;
+};
 
 /**
  * Queries projected light-DOM content assigned to a RadiantComponent slot.
@@ -16,15 +22,22 @@ export type { QuerySlotConfig };
  * @param options Slot query options.
  */
 export function querySlot<T extends Element | Element[]>(options: QuerySlotConfig = {}) {
-	return function (
-		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-	): any {
+	function decorator<THost extends SlotQueryHost>(
+		protoOrTarget: undefined,
+		nameOrContext: ClassFieldDecoratorContext<THost, T>,
+	): void;
+	function decorator(protoOrTarget: RadiantElement, nameOrContext: string): void;
+	function decorator(
+		protoOrTarget: RadiantElement | undefined,
+		nameOrContext: string | ClassFieldDecoratorContext<SlotQueryHost, T>,
+	): void {
 		return fieldDecoratorBridge(
 			standardQuerySlot(options),
 			legacyQuerySlot<T>(options),
 			protoOrTarget,
 			nameOrContext,
 		);
-	};
+	}
+
+	return decorator;
 }

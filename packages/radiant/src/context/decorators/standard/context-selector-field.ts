@@ -1,4 +1,4 @@
-import type { RadiantElement } from '../../../core/radiant-element';
+import type { ContextHostLike } from '../../context-host';
 import { bootstrapSsrContextSelection, connectContextSelection } from '../../context-consumer-bootstrap';
 import type { Context, ContextType } from '../../types';
 import { createContextSelectionDelivery } from '../context-selection-delivery';
@@ -14,14 +14,15 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 ) {
 	const { context, select, subscribe = true } = options;
 
-	return function <Host extends RadiantElement>(
+	return function <Host extends ContextHostLike>(
 		_: undefined,
 		fieldContext: ClassFieldDecoratorContext<Host, Selected>,
 	) {
 		const propertyName = String(fieldContext.name);
 
 		fieldContext.addInitializer(function (this: Host) {
-			const applyValue = createContextSelectionDelivery(
+			let activeUnsubscribe: (() => void) | undefined;
+			const applyValue = createContextSelectionDelivery<Selected>(
 				this,
 				(value) => {
 					const record = this as unknown as Record<string, unknown>;
@@ -30,22 +31,34 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 				true,
 			);
 
-			if (bootstrapSsrContextSelection(this, context, applyValue, select as any)) {
+			if (bootstrapSsrContextSelection<T, Selected>(this, context, applyValue, select)) {
 				return;
 			}
 
 			const connectSelection = () => {
-				connectContextSelection(this, context, applyValue, {
-					select: select as any,
+				return connectContextSelection<T, Selected>(this, context, applyValue, {
+					onSubscribe: (unsubscribe) => {
+						activeUnsubscribe = unsubscribe;
+					},
+					select,
 					subscribe,
 				});
 			};
 
-			this.registerConnectedCallback(() => {
-				connectSelection();
+			this.registerCleanupCallback(() => {
+				activeUnsubscribe?.();
+				activeUnsubscribe = undefined;
 			});
 
-			queueMicrotask(connectSelection);
+			this.registerConnectedCallback(() => {
+				if (connectSelection()) {
+					return;
+				}
+
+				queueMicrotask(() => {
+					connectSelection();
+				});
+			});
 		});
 
 		return function (this: Host, initialValue: Selected) {

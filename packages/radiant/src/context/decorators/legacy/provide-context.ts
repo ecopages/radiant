@@ -1,6 +1,6 @@
 import { ContextProvider } from '../../../context/context-provider';
 import type { UnknownContext } from '../../../context/types';
-import type { RadiantElement } from '../../../core/radiant-element';
+import type { ContextHostLike } from '../../context-host';
 import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
 import type { ProvideContextOptions } from '../provide-context';
 
@@ -10,8 +10,8 @@ export function provideContext<T extends UnknownContext>({
 	hydrate,
 	serialize,
 }: ProvideContextOptions<T>) {
-	return (proto: RadiantElement, propertyKey: string) => {
-		const initializeProvider = (element: RadiantElement) => {
+	return (proto: ContextHostLike, propertyKey: string) => {
+		const initializeProvider = (element: ContextHostLike) => {
 			if ((element as any)[propertyKey]) {
 				return;
 			}

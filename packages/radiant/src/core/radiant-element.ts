@@ -1,11 +1,37 @@
 import type { EventEmitter } from '../tools';
-import { createSubscribableJsxValue, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
-import { trackDependency, type DependencyNode, type SignalSubscriber } from '@ecopages/signals';
+import {
+	hasHydrationMarkers,
+	hydrate as hydrateJsx,
+	jsx,
+	render as renderJsx,
+	type JsxRenderable,
+	type SubscribableJsxValue,
+} from '@ecopages/jsx';
+import type { RenderToStringOptions } from '@ecopages/jsx/server';
+import { Computed, subtle } from '@ecopages/signals';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
+import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
+import {
+	DEFAULT_SLOT_NAME,
+	SLOT_PROJECTION_SCRIPT_ATTRIBUTE,
+	collectAuthoredHydrationScriptMarkup,
+	captureProjectedSlotRenderables,
+	deserializeProjectedSlotRenderables,
+	resolveSlotProjection,
+	serializeProjectedSlotRenderables,
+	takeSlotProjectionScriptPayload,
+} from './slot-projection-runtime';
+import { HYDRATION_ATTRIBUTE } from './hydration-codec';
+import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
+import {
+	getRadiantComponentSsrRuntime,
+	type RadiantComponentRenderBridge,
+	type RadiantComponentSsrCapable,
+} from './radiant-component-ssr-registry';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -17,84 +43,6 @@ import {
 } from '../utils/attribute-utils';
 
 const RadiantElementBase = resolveRadiantElementBase();
-
-type ReactiveDependencyReader = () => unknown;
-
-class ReactiveHostDependency implements DependencyNode {
-	private readonly subscribers = new Set<SignalSubscriber<unknown>>();
-	private readonly watcherListeners = new Set<() => void>();
-	private version = 0;
-
-	constructor(private readonly read: ReactiveDependencyReader) {}
-
-	public get(): unknown {
-		trackDependency(this);
-		return this.read();
-	}
-
-	public subscribe(notify: SignalSubscriber<unknown>): () => void {
-		this.subscribers.add(notify);
-
-		return () => {
-			this.subscribers.delete(notify);
-		};
-	}
-
-	public addWatcher(notify: () => void): () => void {
-		this.watcherListeners.add(notify);
-
-		return () => {
-			this.watcherListeners.delete(notify);
-		};
-	}
-
-	public getVersion(): number {
-		return this.version;
-	}
-
-	public notify(nextValue: unknown): void {
-		this.version += 1;
-		let watcherError: unknown;
-
-		try {
-			this.notifyWatchers();
-		} catch (error) {
-			watcherError = error;
-		}
-
-		this.publish(nextValue);
-
-		if (watcherError) {
-			throw watcherError;
-		}
-	}
-
-	private publish(nextValue: unknown): void {
-		for (const subscriber of this.subscribers) {
-			subscriber(nextValue);
-		}
-	}
-
-	private notifyWatchers(): void {
-		const errors: unknown[] = [];
-
-		for (const listener of this.watcherListeners) {
-			try {
-				listener();
-			} catch (error) {
-				errors.push(error);
-			}
-		}
-
-		if (errors.length === 1) {
-			throw errors[0];
-		}
-
-		if (errors.length > 1) {
-			throw new AggregateError(errors, 'Multiple reactive dependency notifications failed.');
-		}
-	}
-}
 
 function resolveRadiantElementBase(): typeof HTMLElement {
 	if (typeof HTMLElement !== 'undefined') {
@@ -360,33 +308,12 @@ export class RadiantElement<Bindings extends object = {}>
 {
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
+	private readonly reactiveHost: ReactiveHost<this, Bindings>;
 
 	/**
 	 * A map of property metadata objects, it contains useful information about the properties configured via decorators.
 	 */
 	private reactiveProperties = new Map<string, ReactiveProperty>();
-
-	/**
-	 * A map of reactive fields, it contains the reactive fields configured via decorators.
-	 */
-	private reactiveFields = new Map<string, ReactiveField>();
-
-	/**
-	 * Stable dependency nodes used when plain reactive member reads participate
-	 * in tracked component renders.
-	 */
-	private reactiveDependencies = new Map<string, ReactiveHostDependency>();
-
-	/**
-	 * Raw value readers for reactive members whose public getter should also
-	 * register tracked render dependencies.
-	 */
-	private reactiveDependencyReaders = new Map<string, ReactiveDependencyReader>();
-
-	/**
-	 * Stable subscribable JSX bindings keyed by reactive property name.
-	 */
-	private reactiveBindings = new Map<string, SubscribableJsxValue>();
 
 	/**
 	 * Registered context providers keyed by decorated property name.
@@ -399,11 +326,6 @@ export class RadiantElement<Bindings extends object = {}>
 	private hydrationBindings = new Map<string, SsrSerializableHydrationBinding>();
 
 	/**
-	 * A map of property update callbacks. These callbacks are called when a property is updated.
-	 */
-	private updateCallbacks = new Map<string, Set<(...rest: any[]) => any>>();
-
-	/**
 	 * A map of event subscriptions used to manage event listeners on the Radiant element.
 	 */
 	private eventSubscriptions = new Map<string, RadiantElementEventListener>();
@@ -414,68 +336,91 @@ export class RadiantElement<Bindings extends object = {}>
 	private eventEmitters = new Map<string, EventEmitter>();
 
 	/**
-	 * Callbacks executed whenever the Radiant element is connected to the DOM.
-	 */
-	private onConnectedCallbacks: (() => void)[] = [];
-
-	/**
-	 * An array of cleanup callbacks to be executed when the Radiant element is disconnected from the DOM.
-	 */
-	private onDisconnectedCallback: (() => void)[] = [];
-
-	/**
 	 * A flag indicating whether the element has been connected to the DOM.
 	 */
 	private elementReady = false;
+	private isRendering = false;
+	private isFirstConnectPending = false;
+	private isRenderScheduled = false;
+	private needsRender = false;
+	private projectedSlotContent = new Map<string, JsxRenderable[]>();
+	private renderSignal?: Computed<{ containsSlots: boolean; value: JsxRenderable }>;
+	private readonly renderWatcher = new subtle.Watcher(() => {
+		this.requestUpdate();
+	});
+	private slotProjectionObserver?: MutationObserver;
+	private slotProjectionVersion = 0;
 
 	constructor() {
 		super();
-		const bindingNamespace = this.createReactiveBindingNamespace();
-		this.bindings = bindingNamespace;
-		this.$ = bindingNamespace;
+		this.reactiveHost = new ReactiveHost<this, Bindings>(
+			this,
+			{
+				defineProperty: (target, property, descriptor) => Object.defineProperty(target, property, descriptor),
+				getBindingTarget: (target) => Object.getPrototypeOf(target) ?? target,
+				hasProperty: (target, property) => property in target,
+				readProperty: (target, property) => (target as Record<string, unknown>)[property],
+			},
+			() => this.shouldAutoBindReactiveMembers(),
+		);
+		this.bindings = this.reactiveHost.bindings;
+		this.$ = this.reactiveHost.$;
 		runLegacyInstanceInitializers(this);
 	}
 
-	private createReactiveBindingNamespace(): ReactiveBindings<Bindings> {
-		return new Proxy(Object.create(null) as ReactiveBindings<Bindings>, {
-			get: (_target, property) => {
-				if (typeof property !== 'string') {
-					return undefined;
-				}
-
-				return this.getReactiveBinding(property as StringPropertyKey<Bindings>);
-			},
-		}) as ReactiveBindings<Bindings>;
-	}
-
 	connectedCallback() {
+		const isReconnectDuringPendingFirstConnect = this.isFirstConnectPending;
+
 		this.elementReady = true;
 
-		for (const callback of this.onConnectedCallbacks) {
-			callback();
+		this.reactiveHost.connectHost();
+
+		if (isReconnectDuringPendingFirstConnect) {
+			return;
 		}
+
+		this.isFirstConnectPending = true;
+
+		queueMicrotask(() => {
+			this.isFirstConnectPending = false;
+
+			if (!this.isConnected) {
+				return;
+			}
+
+			if (!this.shouldRunRenderLifecycle()) {
+				return;
+			}
+
+			this.ensureSlotProjectionState();
+			this.observeSlotProjection();
+
+			if (shouldHydrateOnConnect(this)) {
+				this.needsRender = false;
+				this.hydrate();
+
+				if (this.needsRender) {
+					this.update();
+				}
+
+				return;
+			}
+
+			this.update();
+		});
 	}
 
 	connectedContextCallback(_contextName: UnknownContext): void {}
 
 	disconnectedCallback() {
+		this.disconnectSlotProjectionObserver();
+		this.disconnectRenderWatcher();
 		this.removeAllSubscribedEvents();
-		for (const cleanup of this.onDisconnectedCallback) {
-			cleanup();
-		}
+		this.reactiveHost.disconnectHost();
 	}
 
 	public notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown) {
-		if (oldValue === value) return;
-
-		this.reactiveDependencies.get(changedProperty)?.notify(value);
-		const updates = this.updateCallbacks.get(changedProperty);
-
-		if (updates) {
-			for (const update of updates) {
-				update();
-			}
-		}
+		this.reactiveHost.notifyUpdate(changedProperty, oldValue, value);
 	}
 
 	private transformAttributeValue(value: string | null, config: any): unknown {
@@ -536,6 +481,100 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 	}
 
+	public render(): JsxRenderable {
+		return jsx('slot', {});
+	}
+
+	public renderToString(options: RenderToStringOptions = {}): string {
+		if (!this.shouldRunRenderLifecycle()) {
+			return this.innerHTML;
+		}
+
+		this.prepareForSsr();
+
+		return requireRadiantComponentSsrRuntime().renderView(this as unknown as RadiantComponentSsrCapable, options);
+	}
+
+	public renderHost(): JsxRenderable {
+		return requireRadiantComponentSsrRuntime().renderHost(this as unknown as RadiantComponentSsrCapable);
+	}
+
+	public renderHostToString(options: RenderToStringOptions = {}): string {
+		return requireRadiantComponentSsrRuntime().renderHostToString(
+			this as unknown as RadiantComponentSsrCapable,
+			options,
+		);
+	}
+
+	public hydrate(): void {
+		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.isRendering) {
+			return;
+		}
+
+		this.isRendering = true;
+		this.disconnectSlotProjectionObserver();
+
+		try {
+			hydrateJsx(this.resolveTrackedRenderOutput().value, this);
+		} finally {
+			this.isRendering = false;
+			this.observeSlotProjection();
+		}
+	}
+
+	public requestUpdate(): void {
+		if (!this.shouldRunRenderLifecycle()) {
+			return;
+		}
+
+		this.needsRender = true;
+
+		if (this.isRenderScheduled) {
+			return;
+		}
+
+		this.isRenderScheduled = true;
+
+		queueMicrotask(() => {
+			this.isRenderScheduled = false;
+
+			if (!this.needsRender) {
+				return;
+			}
+
+			this.update();
+		});
+	}
+
+	public update(): void {
+		if (!this.shouldRunRenderLifecycle()) {
+			return;
+		}
+
+		this.needsRender = true;
+
+		if (!this.isConnected || this.isRendering) {
+			return;
+		}
+
+		if (this.isFirstConnectPending && shouldHydrateOnConnect(this)) {
+			return;
+		}
+
+		while (this.needsRender && this.isConnected) {
+			this.needsRender = false;
+			this.isRendering = true;
+			this.disconnectSlotProjectionObserver();
+
+			try {
+				renderJsx(this.resolveTrackedRenderOutput().value, this);
+			} finally {
+				this.isRendering = false;
+				this.observeSlotProjection();
+			}
+		}
+	}
+
 	public registerReactiveProperty(config: ReactiveProperty) {
 		this.reactiveProperties.set(config.name, config);
 	}
@@ -544,12 +583,8 @@ export class RadiantElement<Bindings extends object = {}>
 		return Array.from(this.reactiveProperties.values());
 	}
 
-	public registerReactiveField<T>(config: ReactiveField<T>) {
-		this.reactiveFields.set(config.name, config);
-	}
-
-	public registerReactiveDependencyReader(property: string, read: ReactiveDependencyReader): void {
-		this.reactiveDependencyReaders.set(property, read);
+	public registerReactiveDependencyReader(property: string, read: () => unknown): void {
+		this.reactiveHost.registerReactiveDependencyReader(property, read);
 	}
 
 	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
@@ -589,103 +624,54 @@ export class RadiantElement<Bindings extends object = {}>
 	 * calls when no explicit `bind` option is supplied.
 	 */
 	protected shouldAutoBindReactiveMembers(): boolean {
-		return false;
+		return true;
+	}
+
+	protected shouldRunRenderLifecycle(): boolean {
+		return this.render !== RadiantElement.prototype.render;
+	}
+
+	protected getHostSsrAttributes(): Record<string, string> {
+		return requireRadiantComponentSsrRuntime().getHostAttributes(this as unknown as RadiantComponentSsrCapable);
+	}
+
+	protected resolveSsrRenderBridge(): RadiantComponentRenderBridge {
+		const bridge: RadiantComponentRenderBridge = {};
+
+		if (this.renderHostToString === RadiantElement.prototype.renderHostToString) {
+			bridge.renderHostToString = (options: RenderToStringOptions | undefined) =>
+				this.renderHostToString(options);
+		}
+
+		if (this.renderHost === RadiantElement.prototype.renderHost) {
+			bridge.renderHost = () => this.renderHost();
+		}
+
+		return bridge;
 	}
 
 	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
-		if (!this.updateCallbacks.has(property)) {
-			this.updateCallbacks.set(property, new Set());
-		}
-
-		const callbacks = this.updateCallbacks.get(property)!;
-		callbacks.add(update);
-
-		return () => {
-			callbacks.delete(update);
-
-			if (callbacks.size === 0) {
-				this.updateCallbacks.delete(property);
-			}
-		};
+		return this.reactiveHost.registerUpdateCallback(property, update);
 	}
 
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
-		const cachedBinding = this.reactiveBindings.get(property);
-
-		if (cachedBinding) {
-			return cachedBinding as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
-		}
-
-		const binding = createSubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>({
-			getValue: () => this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>,
-			subscribe: (notify) =>
-				this.registerUpdateCallback(property, () => {
-					notify(this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>);
-				}),
-		});
-
-		this.reactiveBindings.set(property, binding);
-		return binding;
+		return this.reactiveHost.getReactiveBinding(property);
 	}
 
 	public bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
-		return this.getReactiveBinding(property) as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+		return this.reactiveHost.bind(property);
 	}
 
 	public defineReactiveBinding(property: string, bind: ReactiveBindingOption = true): void {
-		const bindingPropertyName = typeof bind === 'string' ? bind : bind ? `$${property}` : undefined;
-
-		if (!bindingPropertyName || Object.prototype.hasOwnProperty.call(this, bindingPropertyName)) {
-			return;
-		}
-
-		Object.defineProperty(this, bindingPropertyName, {
-			get: function (this: RadiantElement<Bindings>) {
-				return this.getReactiveBinding(property as StringPropertyKey<Bindings>);
-			},
-			enumerable: false,
-			configurable: true,
-		});
-	}
-
-	private getReactiveDependency(property: string): ReactiveHostDependency {
-		const cachedDependency = this.reactiveDependencies.get(property);
-
-		if (cachedDependency) {
-			return cachedDependency;
-		}
-
-		const dependency = new ReactiveHostDependency(() => this.readReactiveDependencyValue(property));
-		this.reactiveDependencies.set(property, dependency);
-		return dependency;
+		this.reactiveHost.defineReactiveBinding(property, bind);
 	}
 
 	public trackReactiveRead(property: string): void {
-		trackDependency(this.getReactiveDependency(property));
-	}
-
-	private readReactiveDependencyValue(property: string): unknown {
-		const reader = this.reactiveDependencyReaders.get(property);
-
-		if (reader) {
-			return reader();
-		}
-
-		return this.readReactiveBindingValue(property as StringPropertyKey<Bindings>);
-	}
-
-	private readReactiveBindingValue<Property extends StringPropertyKey<Bindings>>(property: Property): unknown {
-		const value = (this as unknown as Record<string, unknown>)[property];
-
-		if (isSignalLikeBindingValue(value)) {
-			return value.get();
-		}
-
-		return value;
+		this.reactiveHost.trackReactiveRead(property);
 	}
 
 	public subscribeEvents(events: RadiantElementEventListener[]): Array<() => void> {
@@ -731,7 +717,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * Registers a callback that runs on every future disconnect.
 	 */
 	public registerCleanupCallback(callback: () => void): void {
-		this.onDisconnectedCallback.push(callback);
+		this.reactiveHost.registerCleanupCallback(callback);
 	}
 
 	/**
@@ -742,7 +728,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * callback immediately.
 	 */
 	public registerConnectedCallback(callback: () => void): void {
-		this.onConnectedCallbacks.push(callback);
+		this.reactiveHost.registerConnectedCallback(callback);
 	}
 
 	public registerEventEmitter(name: string, emitter: EventEmitter) {
@@ -759,40 +745,24 @@ export class RadiantElement<Bindings extends object = {}>
 		return (this.querySelector(selector) as T) ?? null;
 	}
 
+	public getSlotElement<T extends Element = Element>(name?: string): T | null {
+		return (this.getSlotElements<T>(name)[0] ?? null) as T | null;
+	}
+
+	public getSlotElements<T extends Element = Element>(name?: string): T[] {
+		this.ensureSlotProjectionState();
+
+		return (this.projectedSlotContent.get(name ?? DEFAULT_SLOT_NAME) ?? []).filter(
+			(renderable): renderable is T => typeof Node !== 'undefined' && renderable instanceof Element,
+		);
+	}
+
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
-		const bind = options.bind ?? this.shouldAutoBindReactiveMembers();
-		const reactiveField: ReactiveField<T> = {
-			name: propertyName,
-			value: initialValue,
-			initialValue: initialValue,
-		};
-
-		this.registerReactiveField(reactiveField);
-		this.defineReactiveBinding(propertyName, bind);
-		this.registerReactiveDependencyReader(propertyName, () => this.reactiveFields.get(propertyName)?.value);
-
-		Object.defineProperty(this, propertyName, {
-			get(this: RadiantElement) {
-				this.trackReactiveRead(propertyName);
-				return this.reactiveFields.get(propertyName)?.value ?? undefined;
-			},
-			set(this: RadiantElement, newValue: T) {
-				const oldValue = this.reactiveFields.get(propertyName)?.value;
-				if (oldValue !== newValue) {
-					this.reactiveFields.set(propertyName, { ...reactiveField, value: newValue });
-					this.notifyUpdate(propertyName, oldValue, newValue);
-				}
-			},
-			enumerable: true,
-			configurable: true,
-		});
-
-		this.notifyUpdate(propertyName, undefined, initialValue);
+		this.reactiveHost.createReactiveField(propertyName, initialValue, options);
 	}
 
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, attribute, reflect, defaultValue } = options;
-		const bind = options.bind ?? this.shouldAutoBindReactiveMembers();
 		const attributeKey = attribute ?? propertyName;
 
 		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
@@ -818,8 +788,6 @@ export class RadiantElement<Bindings extends object = {}>
 		};
 
 		this.registerReactiveProperty(propertyMapping);
-		this.defineReactiveBinding(propertyName, bind);
-		this.registerReactiveDependencyReader(propertyName, () => this.reactiveProperties.get(propertyName)?.value);
 
 		const handleReflectRequest = (value: T) => {
 			if (reflect) {
@@ -832,21 +800,13 @@ export class RadiantElement<Bindings extends object = {}>
 			}
 		};
 
-		Object.defineProperty(this, propertyName, {
-			get: function (this: RadiantElement) {
-				this.trackReactiveRead(propertyName);
-				return this.reactiveProperties.get(propertyName)?.value ?? undefined;
+		this.reactiveHost.defineReactiveAccessor(propertyName, {
+			bind: options.bind,
+			getValue: () => this.reactiveProperties.get(propertyName)?.value as T | undefined,
+			setValue: (newValue: T) => {
+				this.reactiveProperties.set(propertyName, { ...propertyMapping, value: newValue });
+				handleReflectRequest(newValue);
 			},
-			set: function (this: RadiantElement, newValue: T) {
-				const oldValue = this.reactiveProperties.get(propertyName)?.value;
-				if (oldValue !== newValue) {
-					this.reactiveProperties.set(propertyName, { ...propertyMapping, value: newValue });
-					handleReflectRequest(newValue);
-					this.notifyUpdate(propertyName, oldValue, newValue);
-				}
-			},
-			enumerable: true,
-			configurable: true,
 		});
 
 		if (initialValue !== undefined) {
@@ -861,8 +821,184 @@ export class RadiantElement<Bindings extends object = {}>
 			});
 		}
 	}
+
+	private ensureSlotProjectionState(): void {
+		if (this.projectedSlotContent.size > 0) {
+			return;
+		}
+
+		const scriptPayload = this.isConnected ? takeSlotProjectionScriptPayload(this) : undefined;
+
+		if (typeof scriptPayload === 'string' && scriptPayload !== '') {
+			this.projectedSlotContent = deserializeProjectedSlotRenderables(scriptPayload);
+			this.slotProjectionVersion += 1;
+			return;
+		}
+
+		if (this.getHostChildNodeCount() > 0) {
+			this.projectedSlotContent = captureProjectedSlotRenderables(this);
+			this.slotProjectionVersion += 1;
+		}
+	}
+
+	private getHostChildNodeCount(): number {
+		return 'childNodes' in this && this.childNodes ? this.childNodes.length : 0;
+	}
+
+	private getSlotProjectionScriptTag(): string | undefined {
+		this.ensureSlotProjectionState();
+		const payload = serializeProjectedSlotRenderables(this.projectedSlotContent);
+
+		if (!payload) {
+			return undefined;
+		}
+
+		return `<script type="application/json" ${SLOT_PROJECTION_SCRIPT_ATTRIBUTE}>${escapeScriptText(payload)}</script>`;
+	}
+
+	private getAuthoredHydrationScriptMarkup(): string | undefined {
+		const authoredHydrationMarkup = collectAuthoredHydrationScriptMarkup(this);
+
+		if (authoredHydrationMarkup) {
+			return authoredHydrationMarkup;
+		}
+
+		return undefined;
+	}
+
+	private handleSlotProjectionMutations(records: MutationRecord[]): void {
+		let hasProjectionChanges = false;
+
+		for (const record of records) {
+			for (const removedNode of Array.from(record.removedNodes)) {
+				if (this.removeProjectedSlotNode(removedNode)) {
+					hasProjectionChanges = true;
+				}
+			}
+
+			for (const addedNode of Array.from(record.addedNodes)) {
+				if (addedNode.parentNode !== this) {
+					continue;
+				}
+
+				if (this.addProjectedSlotNode(addedNode)) {
+					hasProjectionChanges = true;
+				}
+			}
+		}
+
+		if (hasProjectionChanges) {
+			this.slotProjectionVersion += 1;
+			this.update();
+		}
+	}
+
+	private addProjectedSlotNode(node: Node): boolean {
+		if (
+			node instanceof HTMLScriptElement &&
+			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute(HYDRATION_ATTRIBUTE))
+		) {
+			return false;
+		}
+
+		const slotName = node instanceof Element ? (node.getAttribute('slot') ?? DEFAULT_SLOT_NAME) : DEFAULT_SLOT_NAME;
+		const bucket = this.projectedSlotContent.get(slotName);
+
+		if (bucket) {
+			if (bucket.includes(node)) {
+				return false;
+			}
+
+			bucket.push(node);
+			return true;
+		}
+
+		this.projectedSlotContent.set(slotName, [node]);
+		return true;
+	}
+
+	private removeProjectedSlotNode(node: Node): boolean {
+		for (const [slotName, bucket] of this.projectedSlotContent.entries()) {
+			const nodeIndex = bucket.indexOf(node);
+
+			if (nodeIndex === -1) {
+				continue;
+			}
+
+			bucket.splice(nodeIndex, 1);
+
+			if (bucket.length === 0) {
+				this.projectedSlotContent.delete(slotName);
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private observeSlotProjection(): void {
+		if (typeof MutationObserver === 'undefined' || this.slotProjectionObserver || !this.isConnected) {
+			return;
+		}
+
+		this.slotProjectionObserver = new MutationObserver((records) => this.handleSlotProjectionMutations(records));
+		this.slotProjectionObserver.observe(this, { childList: true });
+	}
+
+	private disconnectSlotProjectionObserver(): void {
+		this.slotProjectionObserver?.disconnect();
+		this.slotProjectionObserver = undefined;
+	}
+
+	private disconnectRenderWatcher(): void {
+		if (!this.renderSignal) {
+			return;
+		}
+
+		this.renderWatcher.unwatch(this.renderSignal);
+		this.renderSignal = undefined;
+	}
+
+	private resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
+		const nextRenderSignal = new Computed(() => this.resolveRenderOutput());
+		const output = nextRenderSignal.get();
+
+		if (!this.isConnected) {
+			return output;
+		}
+
+		if (this.renderSignal) {
+			this.renderWatcher.unwatch(this.renderSignal);
+		}
+
+		this.renderSignal = nextRenderSignal;
+		this.renderWatcher.watch(nextRenderSignal);
+		return output;
+	}
+
+	private resolveRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
+		this.ensureSlotProjectionState();
+		return resolveSlotProjection(this.render(), this.projectedSlotContent);
+	}
 }
 
-function isSignalLikeBindingValue(value: unknown): value is { get(): unknown } {
-	return typeof value === 'object' && value !== null && typeof (value as { get?: unknown }).get === 'function';
+function requireRadiantComponentSsrRuntime() {
+	const runtime = getRadiantComponentSsrRuntime();
+
+	if (!runtime) {
+		throw new Error(
+			'Radiant SSR runtime is unavailable. Import `@ecopages/radiant/server/render-component` before using instance SSR methods.',
+		);
+	}
+
+	return runtime;
+}
+
+function shouldHydrateOnConnect(component: HTMLElement): boolean {
+	return isRadiantHydratorInstalled() && hasHydrationMarkers(component);
+}
+
+function escapeScriptText(value: string): string {
+	return value.replace(/</g, '\\u003c');
 }

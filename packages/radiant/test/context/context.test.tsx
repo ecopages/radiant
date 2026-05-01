@@ -7,7 +7,6 @@ import { contextSelector } from '../../src/context/decorators/context-selector';
 import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
 import { ContextEventsTypes, ContextRequestEvent } from '../../src/context/events';
-import { RadiantComponent } from '../../src/core/radiant-component';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
@@ -56,7 +55,7 @@ class MyContextConsumer extends RadiantElement {
 
 customElements.define('my-context-consumer', MyContextConsumer);
 
-class AutoUpdatingSelectedConsumer extends RadiantComponent {
+class AutoUpdatingSelectedConsumer extends RadiantElement {
 	@contextSelector({ context: testContext, select: (context) => context.value })
 	selectedValue: number = 0;
 
@@ -69,7 +68,7 @@ if (!customElements.get('auto-updating-selected-consumer')) {
 	customElements.define('auto-updating-selected-consumer', AutoUpdatingSelectedConsumer);
 }
 
-class AutoUpdatingFullContextConsumer extends RadiantComponent {
+class AutoUpdatingFullContextConsumer extends RadiantElement {
 	@contextSelector({ context: testContext })
 	contextValue: TestContext = { value: 0 };
 
@@ -82,7 +81,7 @@ if (!customElements.get('auto-updating-full-context-consumer')) {
 	customElements.define('auto-updating-full-context-consumer', AutoUpdatingFullContextConsumer);
 }
 
-class OptOutAutoUpdatingConsumer extends RadiantComponent {
+class OptOutAutoUpdatingConsumer extends RadiantElement {
 	@consumeContext(testContext) context!: ContextProvider<typeof testContext>;
 	contextChangeCount = 0;
 
@@ -113,7 +112,7 @@ if (!customElements.get('selected-slice-effect-consumer')) {
 	customElements.define('selected-slice-effect-consumer', SelectedSliceEffectConsumer);
 }
 
-class SelectedSliceRenderConsumer extends RadiantComponent {
+class SelectedSliceRenderConsumer extends RadiantElement {
 	requestUpdateCount = 0;
 
 	@contextSelector({ context: loggerContext, select: (context) => context.value })
@@ -170,6 +169,19 @@ class LazyContextProvider extends RadiantElement {
 
 if (!customElements.get('lazy-context-provider')) {
 	customElements.define('lazy-context-provider', LazyContextProvider);
+}
+
+class LazySelectedConsumer extends RadiantElement {
+	@contextSelector({ context: lazyContext, select: (context) => context.value })
+	selectedValue = 0;
+
+	override render() {
+		return this.selectedValue.toString();
+	}
+}
+
+if (!customElements.get('lazy-selected-consumer')) {
+	customElements.define('lazy-selected-consumer', LazySelectedConsumer);
 }
 
 class LoggerContextProvider extends RadiantElement {
@@ -235,6 +247,68 @@ describe('Context', () => {
 		});
 
 		document.body.appendChild(contextProvider);
+	});
+
+	test('it cleans up lazy selector subscriptions before the provider gets its first value', async () => {
+		const contextProvider = document.createElement('lazy-context-provider') as LazyContextProvider;
+		const contextConsumer = document.createElement('lazy-selected-consumer') as LazySelectedConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextProvider.context.subscriptions).toHaveLength(1);
+			expect(contextConsumer.textContent).toBe('0');
+		});
+
+		contextConsumer.remove();
+
+		await waitFor(() => {
+			expect(contextProvider.context.subscriptions).toHaveLength(0);
+		});
+
+		contextProvider.context.setContext({ value: 9 });
+		expect(contextProvider.context.getContext()).toEqual({ value: 9 });
+
+		contextProvider.appendChild(contextConsumer);
+
+		await waitFor(() => {
+			expect(contextProvider.context.subscriptions).toHaveLength(1);
+			expect(contextConsumer.textContent).toBe('9');
+		});
+	});
+
+	test('it does not duplicate selector subscriptions across disconnect and reconnect', async () => {
+		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextConsumer = document.createElement(
+			'auto-updating-selected-consumer',
+		) as AutoUpdatingSelectedConsumer;
+		contextProvider.appendChild(contextConsumer);
+		document.body.appendChild(contextProvider);
+
+		await waitFor(() => {
+			expect(contextProvider.context.subscriptions).toHaveLength(1);
+			expect(contextConsumer.textContent).toBe('1');
+		});
+
+		contextConsumer.remove();
+
+		await waitFor(() => {
+			expect(contextProvider.context.subscriptions).toHaveLength(0);
+		});
+
+		contextProvider.appendChild(contextConsumer);
+
+		await waitFor(() => {
+			expect(contextProvider.context.subscriptions).toHaveLength(1);
+			expect(contextConsumer.textContent).toBe('1');
+		});
+
+		contextProvider.context.setContext({ value: 5 });
+
+		await waitFor(() => {
+			expect(contextProvider.context.subscriptions).toHaveLength(1);
+			expect(contextConsumer.textContent).toBe('5');
+		});
 	});
 
 	test('it notifies subscribers on context update', () => {
@@ -332,7 +406,7 @@ describe('Context', () => {
 		expect(contextConsumer.requestUpdateCount).toBeGreaterThan(initialRequestUpdateCount);
 	});
 
-	test('field @contextSelector auto-rerenders RadiantComponent when a selected slice changes', async () => {
+	test('field @contextSelector auto-rerenders RadiantElement when a selected slice changes', async () => {
 		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
 		const contextConsumer = document.createElement(
 			'auto-updating-selected-consumer',
@@ -351,7 +425,7 @@ describe('Context', () => {
 		});
 	});
 
-	test('field @contextSelector auto-rerenders RadiantComponent when the full context changes', async () => {
+	test('field @contextSelector auto-rerenders RadiantElement when the full context changes', async () => {
 		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
 		const contextConsumer = document.createElement(
 			'auto-updating-full-context-consumer',
@@ -370,7 +444,7 @@ describe('Context', () => {
 		});
 	});
 
-	test('@onContextUpdate can opt out of automatic requestUpdate on RadiantComponent consumers', async () => {
+	test('@onContextUpdate can opt out of automatic requestUpdate on RadiantElement consumers', async () => {
 		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
 		const contextConsumer = document.createElement('opt-out-auto-updating-consumer') as OptOutAutoUpdatingConsumer;
 		contextProvider.appendChild(contextConsumer);

@@ -1,4 +1,3 @@
-import type { RadiantElement } from '../core/radiant-element';
 import type { RadiantElementEventListener } from '../core/radiant-element';
 
 /**
@@ -26,15 +25,39 @@ export type OnEventConfig = BaseOnEventConfig &
 		  }
 	);
 
-type DelegatedEventRoot = HTMLElement | ShadowRoot;
+type DelegatedEventRoot = Element | ShadowRoot;
+
+type EventListenerLifecycleHost = {
+	registerConnectedCallback(callback: () => void): void;
+	registerCleanupCallback(callback: () => void): void;
+	isConnected: boolean;
+	shadowRoot: ShadowRoot | null;
+};
+
+export type EventListenerHost =
+	| (EventListenerLifecycleHost & Element)
+	| (EventListenerLifecycleHost & { host: Element })
+	| (EventListenerLifecycleHost & { element: Element });
 
 const shadowRootListenerHooksKey = Symbol('radiant.shadowRootListenerHooks');
 const patchedAttachShadowKey = Symbol('radiant.patchedAttachShadow');
 
-type ShadowRootHookHost = RadiantElement & {
+type ShadowRootHookHost = Element & {
 	[patchedAttachShadowKey]?: true;
 	[shadowRootListenerHooksKey]?: Set<() => void>;
 };
+
+function resolveEventListenerHostElement(host: EventListenerHost): Element {
+	if (host instanceof Element) {
+		return host;
+	}
+
+	if ('host' in host) {
+		return host.host;
+	}
+
+	return host.element;
+}
 
 function addDelegatedListener(
 	root: DelegatedEventRoot,
@@ -55,8 +78,8 @@ function addDelegatedListener(
 	};
 }
 
-function registerShadowRootHook(host: RadiantElement, hook: () => void): void {
-	const shadowAwareHost = host as ShadowRootHookHost;
+function registerShadowRootHook(host: EventListenerHost, hook: () => void): void {
+	const shadowAwareHost = resolveEventListenerHostElement(host) as ShadowRootHookHost;
 
 	if (!shadowAwareHost[shadowRootListenerHooksKey]) {
 		shadowAwareHost[shadowRootListenerHooksKey] = new Set();
@@ -68,9 +91,9 @@ function registerShadowRootHook(host: RadiantElement, hook: () => void): void {
 		return;
 	}
 
-	const originalAttachShadow = host.attachShadow;
+	const originalAttachShadow = shadowAwareHost.attachShadow;
 
-	host.attachShadow = function patchedAttachShadow(init: ShadowRootInit): ShadowRoot {
+	shadowAwareHost.attachShadow = function patchedAttachShadow(init: ShadowRootInit): ShadowRoot {
 		const shadowRoot = originalAttachShadow.call(this, init);
 		for (const shadowRootHook of shadowAwareHost[shadowRootListenerHooksKey] ?? []) {
 			shadowRootHook();
@@ -90,10 +113,11 @@ function registerShadowRootHook(host: RadiantElement, hook: () => void): void {
  * @param callback The event handler function.
  */
 export function createEventListener(
-	host: RadiantElement,
+	host: EventListenerHost,
 	config: OnEventConfig,
 	callback: (event: Event) => void,
 ): () => void {
+	const hostElement = resolveEventListenerHostElement(host);
 	const boundCallback = callback.bind(host);
 	let windowCleanup: (() => void) | null = null;
 	let documentCleanup: (() => void) | null = null;
@@ -136,11 +160,11 @@ export function createEventListener(
 			const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
 
 			if (config.scope !== 'shadow' && !lightCleanup) {
-				lightCleanup = addDelegatedListener(host, config, selector, boundCallback);
+				lightCleanup = addDelegatedListener(hostElement, config, selector, boundCallback);
 			}
 
-			if (config.scope !== 'light' && host.shadowRoot && !shadowCleanup) {
-				shadowCleanup = addDelegatedListener(host.shadowRoot, config, selector, boundCallback);
+			if (config.scope !== 'light' && hostElement.shadowRoot && !shadowCleanup) {
+				shadowCleanup = addDelegatedListener(hostElement.shadowRoot, config, selector, boundCallback);
 			}
 		}
 	};

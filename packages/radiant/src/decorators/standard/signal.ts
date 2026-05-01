@@ -1,5 +1,6 @@
 import type { WritableSignal } from '@ecopages/signals';
-import type { RadiantElement, ReactiveBindingOption } from '../../core/radiant-element';
+import type { ReactiveBindingOption } from '../../core/radiant-element';
+import type { ReactiveHostLike } from '../../core/reactive-host';
 import { createHostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
 
@@ -27,7 +28,7 @@ export type SignalDecoratorOptions<Value = unknown> = {
 	 * Connects an existing writable signal to the host instead of creating a
 	 * host-owned one.
 	 */
-	source?: WritableSignal<Value> | ((host: RadiantElement) => WritableSignal<Value>);
+	source?: WritableSignal<Value> | ((host: ReactiveHostLike) => WritableSignal<Value>);
 
 	/**
 	 * Serializes the current signal value into a keyed hydration script during
@@ -37,10 +38,10 @@ export type SignalDecoratorOptions<Value = unknown> = {
 };
 
 export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> = {}) {
-	return function <T extends RadiantElement, Value>(_: undefined, context: ClassFieldDecoratorContext<T, unknown>) {
+	return function <T extends ReactiveHostLike, Value>(_: undefined, context: ClassFieldDecoratorContext<T, unknown>) {
 		const propertyName = String(context.name);
 
-		return function (this: T, initialValue: Value) {
+		return function (this: T, initialValue: Value | WritableSignal<Value>) {
 			const resolvedSource =
 				typeof options.source === 'function'
 					? options.source(this)

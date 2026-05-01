@@ -91,13 +91,17 @@
 			"types": "./dist/context/events.d.ts",
 			"import": "./dist/context/events.js"
 		},
+		"./controller-registry": {
+			"types": "./dist/controller-registry.d.ts",
+			"import": "./dist/controller-registry.js"
+		},
 		"./core/radiant-element": {
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
 		},
-		"./core/radiant-component": {
-			"types": "./dist/core/radiant-component.d.ts",
-			"import": "./dist/core/radiant-component.js"
+		"./core/radiant-controller": {
+			"types": "./dist/core/radiant-controller.d.ts",
+			"import": "./dist/core/radiant-controller.js"
 		},
 		"./client/hydrator": {
 			"types": "./dist/client/hydrator.d.ts",
@@ -130,6 +134,14 @@
 		"./decorators/bound": {
 			"types": "./dist/decorators/bound.d.ts",
 			"import": "./dist/decorators/bound.js"
+		},
+		"./decorators/attr": {
+			"types": "./dist/decorators/attr.d.ts",
+			"import": "./dist/decorators/attr.js"
+		},
+		"./decorators/controller": {
+			"types": "./dist/decorators/controller.d.ts",
+			"import": "./dist/decorators/controller.js"
 		},
 		"./decorators/custom-element": {
 			"types": "./dist/decorators/custom-element.d.ts",

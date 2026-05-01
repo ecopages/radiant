@@ -1,7 +1,10 @@
-import type { RadiantElement } from '../../core/radiant-element';
 import { createQuery } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
+
+type QueryDecoratorInstance = (Element | { host: Element }) & {
+	registerConnectedCallback(callback: () => void): void;
+};
 
 /**
  * A decorator to query by CSS selector or data-ref attribute.
@@ -26,11 +29,14 @@ import { registerLegacyInstanceInitializer } from './instance-initializers';
 export function query<T extends Element | Element[]>({
 	cache: shouldBeCached = true,
 	...options
-}: QueryConfig): (proto: RadiantElement, propertyName: string | symbol) => void {
-	return (proto: RadiantElement, propertyKey: string | symbol) => {
+}: QueryConfig): (proto: QueryDecoratorInstance, propertyName: string | symbol) => void {
+	return (proto: QueryDecoratorInstance, propertyKey: string | symbol) => {
 		registerLegacyInstanceInitializer(proto, (element) => {
 			element.registerConnectedCallback(() => {
-				const accessor = createQuery<T>(element, { cache: shouldBeCached, ...options });
+				const accessor = createQuery<T>(element, {
+					cache: shouldBeCached,
+					...options,
+				});
 
 				Object.defineProperty(element, propertyKey, {
 					get() {

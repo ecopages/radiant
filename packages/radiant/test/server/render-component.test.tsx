@@ -5,7 +5,7 @@ import { createContext } from '../../src/context/create-context';
 import { consumeContext } from '../../src/context/decorators/consume-context';
 import { onContextUpdate } from '../../src/context/decorators/on-context-update';
 import { provideContext } from '../../src/context/decorators/provide-context';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { querySlot } from '../../src/decorators/query-slot';
 import { createServerRenderEnvironment } from '../../src/server/light-dom-shim';
@@ -36,7 +36,7 @@ declare const __LEGACY_ENVIRONMENT__: boolean;
 const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 @customElement('render-component-card-test')
-class RenderComponentCard extends RadiantComponent {
+class RenderComponentCard extends RadiantElement {
 	count = 1;
 	label = 'Initial label';
 
@@ -51,7 +51,7 @@ class RenderComponentCard extends RadiantComponent {
 }
 
 @customElement('render-component-loader-card-test')
-class RenderComponentLoaderCard extends RadiantComponent {
+class RenderComponentLoaderCard extends RadiantElement {
 	message = 'loader default';
 
 	override render() {
@@ -60,7 +60,7 @@ class RenderComponentLoaderCard extends RadiantComponent {
 }
 
 @customElement('render-component-slot-query-card-test')
-class RenderComponentSlotQueryCard extends RadiantComponent {
+class RenderComponentSlotQueryCard extends RadiantElement {
 	@querySlot() defaultSlot!: HTMLParagraphElement | null;
 	@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
 
@@ -84,7 +84,7 @@ class RenderComponentSlotQueryCard extends RadiantComponent {
 const renderComponentContext = createContext<{ label: string }>(Symbol('render-component-context'));
 
 @customElement('render-component-context-card-test')
-class RenderComponentContextCard extends RadiantComponent {
+class RenderComponentContextCard extends RadiantElement {
 	@consumeContext(renderComponentContext) contextProvider!: ContextProvider<typeof renderComponentContext>;
 
 	@onContextUpdate({ context: renderComponentContext, select: (context) => context.label, subscribe: false })
@@ -110,7 +110,7 @@ const renderComponentHydrationContext = createContext<{ count: number; logger: R
 );
 
 @customElement('render-component-hydrated-provider-test')
-class RenderComponentHydratedProvider extends RadiantComponent {
+class RenderComponentHydratedProvider extends RadiantElement {
 	@provideContext<typeof renderComponentHydrationContext>({
 		context: renderComponentHydrationContext,
 		initialValue: { count: 0, logger: new RenderComponentLogger() },
@@ -385,7 +385,7 @@ describe('render-component server helpers', () => {
 
 	test('renderComponent() preserves explicit Radiant SSR method overrides as a compatibility fallback', async () => {
 		@customElement('render-component-overridden-host-test')
-		class OverriddenRadiantHost extends RadiantComponent {
+		class OverriddenRadiantHost extends RadiantElement {
 			override renderHostToString(): string {
 				return '<render-component-overridden-host-test data-source="override">override markup</render-component-overridden-host-test>';
 			}
@@ -413,7 +413,7 @@ describe('render-component server helpers', () => {
 
 	test('renderComponent() keeps preview aligned when only renderHostToString() is overridden', async () => {
 		@customElement('render-component-markup-only-host-test')
-		class MarkupOnlyOverriddenRadiantHost extends RadiantComponent {
+		class MarkupOnlyOverriddenRadiantHost extends RadiantElement {
 			override renderHostToString(): string {
 				return '<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>';
 			}
@@ -439,7 +439,7 @@ describe('render-component server helpers', () => {
 		const concurrentContext = createContext<{ id: number }>(Symbol('concurrent-context'));
 
 		@customElement('concurrent-context-card-test')
-		class ConcurrentContextCard extends RadiantComponent {
+		class ConcurrentContextCard extends RadiantElement {
 			@consumeContext(concurrentContext) provider!: ContextProvider<typeof concurrentContext>;
 
 			@onContextUpdate({ context: concurrentContext, select: (ctx) => ctx.id, subscribe: false })
