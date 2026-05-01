@@ -1,4 +1,4 @@
-import { RadiantComponent } from '@ecopages/radiant/core/radiant-component';
+import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import {
 	advanceFocusedSignalLabTicket,
@@ -8,8 +8,8 @@ import {
 } from './radiant-signal-lab.store';
 
 @customElement('radiant-signal-store-chip')
-export class RadiantSignalStoreChip extends RadiantComponent {
-	override render() {
+export class RadiantSignalStoreChip extends RadiantElement {
+	render() {
 		const focusedTicket = signalLabStore.tickets[signalLabStore.focusedIndex];
 
 		return (
@@ -24,7 +24,7 @@ export class RadiantSignalStoreChip extends RadiantComponent {
 }
 
 @customElement('radiant-signal-store-board')
-export class RadiantSignalStoreBoard extends RadiantComponent {
+export class RadiantSignalStoreBoard extends RadiantElement {
 	private readonly advanceFocusedTicket = () => {
 		advanceFocusedSignalLabTicket();
 	};
@@ -37,7 +37,7 @@ export class RadiantSignalStoreBoard extends RadiantComponent {
 		toggleSignalLabSync();
 	};
 
-	override render() {
+	render() {
 		const focusedTicket = signalLabStore.tickets[signalLabStore.focusedIndex];
 		const launchCount = signalLabStore.tickets.filter((ticket) => ticket.lane === 'Launch').length;
 

@@ -1,4 +1,4 @@
-import { ContextProvider, RadiantComponent, customElement, provideContext, querySlot } from '@ecopages/radiant';
+import { ContextProvider, RadiantElement, customElement, provideContext, querySlot } from '@ecopages/radiant';
 import './radiant-slot-studio-insight.script.tsx';
 import './radiant-slot-studio-summary.script.tsx';
 import { radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
@@ -7,7 +7,7 @@ const stageSequence: Array<'Build' | 'Review' | 'Ship'> = ['Build', 'Review', 'S
 const tempoSequence: Array<'Calm' | 'Live' | 'Review'> = ['Calm', 'Live', 'Review'];
 
 @customElement('radiant-slot-studio-board')
-export class RadiantSlotStudioBoardElement extends RadiantComponent {
+export class RadiantSlotStudioBoardElement extends RadiantElement {
 	@querySlot({ all: true }) declare defaultSlotElements: Element[];
 	@querySlot({ name: 'sidebar' }) declare sidebarSlotElement: Element | null;
 	@querySlot({ name: 'footer' }) declare footerSlotElement: Element | null;

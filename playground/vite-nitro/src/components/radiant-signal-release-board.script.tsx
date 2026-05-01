@@ -1,5 +1,5 @@
 import type { WritableSignal } from '@ecopages/signals';
-import { ContextProvider, RadiantComponent, customElement, provideContext, signal } from '@ecopages/radiant';
+import { ContextProvider, RadiantElement, customElement, provideContext, signal } from '@ecopages/radiant';
 import './radiant-signal-release-board-focus.script.tsx';
 import './radiant-signal-release-board-queue.script.tsx';
 import { radiantSignalReleaseBoardContext } from './radiant-signal-release-board.context.ts';
@@ -14,7 +14,7 @@ import {
 } from './radiant-signal-release-board.model.ts';
 
 @customElement('radiant-signal-release-board')
-export class RadiantSignalReleaseBoardElement extends RadiantComponent {
+export class RadiantSignalReleaseBoardElement extends RadiantElement {
 	@provideContext({ context: radiantSignalReleaseBoardContext })
 	declare boardContext: ContextProvider<typeof radiantSignalReleaseBoardContext>;
 

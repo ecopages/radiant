@@ -1,8 +1,8 @@
-import { RadiantComponent, contextSelector, customElement } from '@ecopages/radiant';
+import { RadiantElement, contextSelector, customElement } from '@ecopages/radiant';
 import { radiantContextFlowContext } from './radiant-context-flow.context';
 
 @customElement('radiant-context-flow-leaf')
-export class RadiantContextFlowLeafElement extends RadiantComponent {
+export class RadiantContextFlowLeafElement extends RadiantElement {
 	@contextSelector({
 		context: radiantContextFlowContext,
 		select: (context) => `${context.label} / ${context.level}`,

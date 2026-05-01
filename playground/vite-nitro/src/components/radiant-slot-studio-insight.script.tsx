@@ -1,4 +1,4 @@
-import { RadiantComponent, contextSelector, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, contextSelector, customElement, prop } from '@ecopages/radiant';
 import { type RadiantSlotStudioContextValue, radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
 
 type InsightKind = 'commits' | 'stage' | 'tempo';
@@ -8,7 +8,7 @@ type RadiantSlotStudioInsightBindings = {
 };
 
 @customElement('radiant-slot-studio-insight')
-export class RadiantSlotStudioInsightElement extends RadiantComponent<RadiantSlotStudioInsightBindings> {
+export class RadiantSlotStudioInsightElement extends RadiantElement<RadiantSlotStudioInsightBindings> {
 	@prop({ type: String }) kind: InsightKind = 'stage';
 
 	@contextSelector({ context: radiantSlotStudioContext })

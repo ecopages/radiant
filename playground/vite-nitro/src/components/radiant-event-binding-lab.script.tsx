@@ -1,8 +1,8 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantComponent, customElement, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, state } from '@ecopages/radiant';
 
 @customElement('radiant-event-binding-lab')
-export class RadiantEventBindingLab extends RadiantComponent<{
+export class RadiantEventBindingLab extends RadiantElement<{
 	autoClicks: number;
 	autoLog: string;
 	blockedAutoClicks: number;

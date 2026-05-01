@@ -1,5 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantComponent, customElement, prop, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 export type RadiantComponentCounterProps = {
 	count: number;
@@ -11,7 +11,7 @@ export type RadiantComponentCounterBindings = RadiantComponentCounterProps & {
 };
 
 @customElement('radiant-component-counter')
-export class RadiantComponentCounter extends RadiantComponent<RadiantComponentCounterBindings> {
+export class RadiantComponentCounter extends RadiantElement<RadiantComponentCounterBindings> {
 	@prop({ type: Number, reflect: true }) count = 0;
 	@prop({ type: String }) label = 'RadiantComponent counter';
 	@state lastAction = 'Waiting for input';

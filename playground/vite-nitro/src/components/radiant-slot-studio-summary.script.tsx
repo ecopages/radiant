@@ -1,4 +1,4 @@
-import { RadiantComponent, contextSelector, customElement } from '@ecopages/radiant';
+import { RadiantElement, contextSelector, customElement } from '@ecopages/radiant';
 import { radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
 
 type RadiantSlotStudioSummaryBindings = {
@@ -6,7 +6,7 @@ type RadiantSlotStudioSummaryBindings = {
 };
 
 @customElement('radiant-slot-studio-summary')
-export class RadiantSlotStudioSummaryElement extends RadiantComponent<RadiantSlotStudioSummaryBindings> {
+export class RadiantSlotStudioSummaryElement extends RadiantElement<RadiantSlotStudioSummaryBindings> {
 	@contextSelector({
 		context: radiantSlotStudioContext,
 		select: ({ owner, highlight, stage, commits }) =>

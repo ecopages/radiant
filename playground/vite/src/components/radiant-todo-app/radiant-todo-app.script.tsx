@@ -1,6 +1,5 @@
 import {
 	type ContextProvider,
-	RadiantComponent,
 	RadiantElement,
 	consumeContext,
 	contextSelector,
@@ -82,7 +81,7 @@ export class RadiantTodoItem extends RadiantElement {
 }
 
 @customElement('radiant-todo-app')
-export class RadiantTodoApp extends RadiantComponent {
+export class RadiantTodoApp extends RadiantElement {
 	@prop({ type: Array, defaultValue: [] }) initialTodos!: Todo[];
 
 	@provideContext<typeof todoContext>({

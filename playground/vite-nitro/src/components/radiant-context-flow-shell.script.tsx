@@ -1,9 +1,9 @@
-import { ContextProvider, RadiantComponent, customElement, provideContext } from '@ecopages/radiant';
+import { ContextProvider, RadiantElement, customElement, provideContext } from '@ecopages/radiant';
 import './radiant-context-flow-leaf.script';
 import { radiantContextFlowContext } from './radiant-context-flow.context';
 
 @customElement('radiant-context-flow-shell')
-export class RadiantContextFlowShellElement extends RadiantComponent {
+export class RadiantContextFlowShellElement extends RadiantElement {
 	@provideContext({
 		context: radiantContextFlowContext,
 		initialValue: { label: 'Nitro SSR context', level: 2 },

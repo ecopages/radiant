@@ -1,4 +1,4 @@
-import { RadiantComponent, customElement, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, state } from '@ecopages/radiant';
 
 type RadiantComponentServerCardBindings = {
 	status: 'idle' | 'loading' | 'ready' | 'error';
@@ -7,7 +7,7 @@ type RadiantComponentServerCardBindings = {
 };
 
 @customElement('radiant-component-server-card')
-export class RadiantComponentServerCardElement extends RadiantComponent<RadiantComponentServerCardBindings> {
+export class RadiantComponentServerCardElement extends RadiantElement<RadiantComponentServerCardBindings> {
 	@state status: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 	@state message = 'Press the button to fetch the Nitro endpoint from inside a RadiantComponent.';
 	@state serverTime = 'n/a';
