@@ -31,7 +31,6 @@ type EventListenerLifecycleHost = {
 	registerConnectedCallback(callback: () => void): void;
 	registerCleanupCallback(callback: () => void): void;
 	isConnected: boolean;
-	shadowRoot: ShadowRoot | null;
 };
 
 export type EventListenerHost =
@@ -57,6 +56,10 @@ function resolveEventListenerHostElement(host: EventListenerHost): Element {
 	}
 
 	return host.element;
+}
+
+function isControllerEventHost(host: EventListenerHost): host is EventListenerLifecycleHost & { host: Element } {
+	return !(host instanceof Element);
 }
 
 function addDelegatedListener(
@@ -117,6 +120,10 @@ export function createEventListener(
 	config: OnEventConfig,
 	callback: (event: Event) => void,
 ): () => void {
+	if (isControllerEventHost(host) && 'scope' in config && config.scope && config.scope !== 'light') {
+		throw new Error('RadiantController event listeners only support light DOM scope.');
+	}
+
 	const hostElement = resolveEventListenerHostElement(host);
 	const boundCallback = callback.bind(host);
 	let windowCleanup: (() => void) | null = null;

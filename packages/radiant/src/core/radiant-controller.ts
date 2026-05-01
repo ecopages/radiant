@@ -90,12 +90,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		return this.connected;
 	}
 
-	public get shadowRoot(): ShadowRoot | null {
-		return 'shadowRoot' in this.host
-			? ((this.host as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot ?? null)
-			: null;
-	}
-
 	/**
 	 * Returns the JSX tree rendered into the attached host.
 	 *

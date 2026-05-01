@@ -40,6 +40,10 @@ class QueryController extends RadiantController {
 	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement;
 }
 
+class ShadowQueryController extends RadiantController {
+	@query({ ref: 'shadow-ref', scope: 'shadow' }) shadowRef!: HTMLDivElement;
+}
+
 const createElementWithRef = (text: string, dataRef: string) => {
 	const div = document.createElement('div');
 	div.textContent = text;
@@ -197,5 +201,15 @@ describe('RadiantController @query', () => {
 		expect(controller.form).toBeInstanceOf(HTMLFormElement);
 		expect(controller.emailInput.value).toBe('ada@example.com');
 		expect(controller.statusNode.textContent).toBe('Ready');
+	});
+
+	test('rejects shadow-scoped queries for controllers', () => {
+		const host = document.createElement('section');
+		host.attachShadow({ mode: 'open' }).innerHTML = '<div data-ref="shadow-ref">Shadow Ref</div>';
+
+		expect(() => {
+			const controller = new ShadowQueryController(host);
+			controller.connect();
+		}).toThrowError('RadiantController queries only support light DOM scope.');
 	});
 });

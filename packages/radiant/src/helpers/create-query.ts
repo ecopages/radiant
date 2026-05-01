@@ -23,6 +23,10 @@ type QueryResult<T extends Element | Element[]> = {
 	get value(): T | null;
 };
 
+function isControllerQueryTarget(target: QueryHostTarget): target is { host: Element } {
+	return !(target instanceof Element);
+}
+
 function resolveShadowRoot(host: Element): ShadowRoot | null {
 	return 'shadowRoot' in host ? ((host as Element & { shadowRoot?: ShadowRoot | null }).shadowRoot ?? null) : null;
 }
@@ -62,6 +66,10 @@ export function createQuery<T extends Element | Element[] = Element>(
 	target: QueryHostTarget,
 	options: QueryConfig,
 ): QueryResult<T> {
+	if (isControllerQueryTarget(target) && options.scope && options.scope !== 'light') {
+		throw new Error('RadiantController queries only support light DOM scope.');
+	}
+
 	const host = resolveQueryHost(target);
 	const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
 	let cached: T | null = null;
