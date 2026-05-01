@@ -4,17 +4,19 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | Context Provider',
-	description: 'Provide a typed context value from a Radiant host.',
+	description: 'Provide a typed context value from a RadiantElement or RadiantController host.',
 });
 
 # @provideContext
 
 Use `@provideContext(...)` to attach a context provider to a host.
 
+It works on both `RadiantElement` and `RadiantController` hosts.
+
 ## Example
 
 ```typescript
-import { type ContextProvider, RadiantComponent, createContext, customElement, provideContext } from '@ecopages/radiant';
+import { type ContextProvider, RadiantElement, createContext, customElement, provideContext } from '@ecopages/radiant';
 
 type ThemeContext = {
 	mode: 'light' | 'dark';
@@ -23,7 +25,7 @@ type ThemeContext = {
 export const themeContext = createContext<ThemeContext>(Symbol('theme-context'));
 
 @customElement('theme-provider')
-export class ThemeProvider extends RadiantComponent {
+export class ThemeProvider extends RadiantElement {
 	@provideContext<typeof themeContext>({
 		context: themeContext,
 		initialValue: { mode: 'light' },
@@ -81,6 +83,26 @@ For the full server-plus-client host hydration flow, including the explicit clie
 ## Access From Descendants
 
 Any descendant can resolve that provider through [@consumeContext](/docs/context/consume-context), bind a field to it through [@contextSelector](/docs/context/context-selector), or react to it with a method through [@onContextUpdate](/docs/context/on-context-update).
+
+## RadiantController Example
+
+```typescript
+import { type ContextProvider, RadiantController, createContext, provideContext } from '@ecopages/radiant';
+
+type ThemeContext = {
+	mode: 'light' | 'dark';
+};
+
+export const themeContext = createContext<ThemeContext>(Symbol('theme-context'));
+
+export class ThemeController extends RadiantController {
+	@provideContext<typeof themeContext>({
+		context: themeContext,
+		initialValue: { mode: 'light' },
+	})
+	provider!: ContextProvider<typeof themeContext>;
+	}
+```
 
 ## Manual Provider Construction
 

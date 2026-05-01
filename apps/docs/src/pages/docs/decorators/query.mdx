@@ -4,12 +4,14 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | @query',
-	description: 'Query and cache references to elements within your component.',
+	description: 'Query and cache references to elements within your host DOM.',
 })
 
 # @query
 
-The `@query` decorator provides a convenient way to query and cache references to elements within your custom element's DOM. It creates a getter that performs the query on first access and caches the results by default.
+The `@query` decorator provides a convenient way to query and cache references to elements within your host DOM. It creates a getter that performs the query on first access and caches the results by default.
+
+It works on both `RadiantElement` and `RadiantController`.
 
 ## Usage
 
@@ -77,5 +79,5 @@ Use TypeScript's non-null assertion operator (`!`) for required elements, or the
 ## Learn More
 
 - Use `@query({ all: true })` when you want every matching element instead of only the first one.
-- [@querySlot](/docs/decorators/query-slot) - Query projected elements assigned to a RadiantComponent slot.
+- [@querySlot](/docs/decorators/query-slot) - Query projected elements assigned to a render-owning RadiantElement slot.
 - [RadiantElement](/docs/components/radiant-element) - Learn about `getRef` and other utility methods.

@@ -38,7 +38,13 @@ async function cleanGeneratedOutput() {
 function formatTitle(value: string) {
 	return value
 		.split('-')
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.map((word) => {
+			if (word === 'ssr' || word === 'jsx') {
+				return word.toUpperCase();
+			}
+
+			return word.charAt(0).toUpperCase() + word.slice(1);
+		})
 		.join(' ');
 }
 
@@ -117,7 +123,7 @@ async function main() {
 
 	const outputLines: string[] = [
 		'# Radiant Documentation',
-		'> Build typed custom elements with RadiantComponent, JSX, and Signals.',
+		'> Build typed custom elements, controller hosts, JSX views, and Signals with Radiant.',
 		'> Find your skill here: https://radiant.ecopages.app/skill.txt',
 		'',
 	];

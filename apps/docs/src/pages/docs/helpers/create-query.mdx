@@ -5,7 +5,7 @@ export const layout = DocsLayout;
 export const getMetadata = () => ({
 	title: 'Docs | createQuery',
 	description: 'Query DOM elements without decorators.',
-})
+});
 
 # createQuery
 
@@ -14,10 +14,10 @@ export const getMetadata = () => ({
 ## Usage
 
 ```typescript
-import { RadiantComponent } from '@ecopages/radiant';
+import { RadiantElement } from '@ecopages/radiant';
 import { createQuery } from '@ecopages/radiant/helpers/create-query';
 
-class UserProfile extends RadiantComponent {
+class UserProfile extends RadiantElement {
 	#avatar = createQuery<HTMLImageElement>(this, { ref: 'avatar' });
 	#items = createQuery<HTMLElement[]>(this, { selector: '.item', all: true });
 

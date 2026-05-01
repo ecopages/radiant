@@ -4,12 +4,12 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | Slots',
-	description: 'Project authored light-DOM content through default and named slots in RadiantComponent.',
-})
+	description: 'Project authored light-DOM content through default and named slots in a render-owning RadiantElement host.',
+});
 
 # Slots
 
-`RadiantComponent` supports default and named slots through literal `<slot>` tags in `render()`.
+Render-owning `RadiantElement` hosts support default and named slots through literal `<slot>` tags in `render()`.
 
 This gives you a composition model that feels familiar from Vue or native web components, while still rendering in the light DOM.
 
@@ -18,10 +18,10 @@ This gives you a composition model that feels familiar from Vue or native web co
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
 
 @customElement('shell-card')
-export class ShellCard extends RadiantComponent {
+export class ShellCard extends RadiantElement {
 	override render() {
 		return (
 			<section class="shell-card">

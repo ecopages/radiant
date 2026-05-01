@@ -4,22 +4,22 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | @querySlot',
-	description: 'Query projected light-DOM elements assigned to a RadiantComponent slot.',
-})
+	description: 'Query projected light-DOM elements assigned to a RadiantElement slot.',
+});
 
 # @querySlot
 
-The `@querySlot` decorator queries projected light-DOM elements assigned to a `RadiantComponent` slot.
+The `@querySlot` decorator queries projected light-DOM elements assigned to a `RadiantElement` slot.
 
 Use it when a component accepts content through literal `<slot>` tags and needs to inspect the assigned elements after projection.
 
 ## Usage
 
 ```tsx
-import { RadiantComponent, customElement, querySlot } from '@ecopages/radiant';
+import { RadiantElement, customElement, querySlot } from '@ecopages/radiant';
 
 @customElement('shell-card')
-export class ShellCard extends RadiantComponent {
+export class ShellCard extends RadiantElement {
 	@querySlot({ name: 'heading' }) heading!: HTMLHeadingElement | null;
 	@querySlot() body!: HTMLParagraphElement | null;
 

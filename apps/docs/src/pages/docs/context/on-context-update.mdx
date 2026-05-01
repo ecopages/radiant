@@ -11,7 +11,7 @@ export const getMetadata = () => ({
 
 Use `@onContextUpdate(...)` when a context change should trigger imperative work on the host.
 
-The decorated method receives the current value (or the result of `select`) as its first argument and runs whenever that delivered value changes. Unlike `@contextSelector(...)`, `@onContextUpdate` does not write to a field. On `RadiantComponent` hosts it schedules `requestUpdate()` by default unless `requestUpdate: false` is set.
+The decorated method receives the current value (or the result of `select`) as its first argument and runs whenever that delivered value changes. Unlike `@contextSelector(...)`, `@onContextUpdate` does not write to a field. On a render-owning host it schedules `requestUpdate()` by default unless `requestUpdate: false` is set.
 
 ## Options
 
@@ -20,7 +20,7 @@ The decorated method receives the current value (or the result of `select`) as i
 | `context` | `Context` | The context token to resolve |
 | `select` | `(context) => unknown` | Optional projection that narrows the resolved value before delivery |
 | `subscribe` | `boolean` | Whether client-side subscriptions stay active after the first value. Defaults to `true` |
-| `requestUpdate` | `boolean` | Whether `RadiantComponent` hosts should schedule `requestUpdate()` after delivery. Defaults to `true` |
+| `requestUpdate` | `boolean` | Whether render-owning hosts should schedule `requestUpdate()` after delivery. Defaults to `true` |
 
 ## Example
 
@@ -38,11 +38,11 @@ export class CartBadge extends RadiantElement {
 }
 ```
 
-The method runs with each delivered value. The host manages its own DOM update logic — no automatic rerender is scheduled in this example because `CartBadge` is a `RadiantElement`.
+The method runs with each delivered value. The host manages its own DOM update logic.
 
 ## Opt out of automatic rerenders
 
-On a `RadiantComponent` host, `requestUpdate()` is scheduled by default. Pass `requestUpdate: false` to suppress it when the method is doing its own imperative DOM work and does not need the render loop.
+On a render-owning host, `requestUpdate()` is scheduled by default. Pass `requestUpdate: false` to suppress it when the method is doing its own imperative DOM work and does not need the render loop.
 
 ```typescript
 @onContextUpdate({ context: authContext, requestUpdate: false })
@@ -59,6 +59,21 @@ Set `subscribe: false` to receive the resolved value once — useful during SSR 
 @onContextUpdate({ context: pageContext, select: ({ id }) => id, subscribe: false })
 applyId(id: string) {
 	this.setAttribute('data-page-id', id);
+}
+```
+
+## RadiantController Example
+
+```typescript
+import { RadiantController, onContextUpdate } from '@ecopages/radiant';
+
+import { cartContext } from './cart-context';
+
+export class CartBadgeController extends RadiantController {
+	@onContextUpdate({ context: cartContext, select: ({ total }) => total })
+	onTotalChanged(total: number) {
+		this.host.setAttribute('data-total', String(total));
+	}
 }
 ```
 

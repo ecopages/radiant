@@ -3,9 +3,9 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @state',
-  description: 'Use @state for internal reactive component state.',
-})
+	title: 'Docs | @state',
+	description: 'Use @state for internal reactive host state.',
+});
 
 # @state
 
@@ -16,16 +16,15 @@ Use it for values that should trigger updates but are not part of the custom ele
 ## Example
 
 ```typescript
-import { RadiantComponent, customElement, onEvent, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 
 @customElement('counter-display')
-export class CounterDisplay extends RadiantComponent {
+export class CounterDisplay extends RadiantElement {
 	@state count = 0;
 
 	@onEvent({ selector: 'button', type: 'click' })
 	increment() {
 		this.count += 1;
-		this.update();
 	}
 
 	override render() {
@@ -52,18 +51,24 @@ The difference is naming and intent:
 
 That split matters in docs, code review, and JSX typing because it keeps the public element contract separate from implementation-only state.
 
+Unlike [@signal](/docs/decorators/signal), the field stays a plain host property. You read and write it with normal property syntax such as `this.count += 1`.
+
 ## JSX Binding Defaults
 
-Just like `@prop(...)`, the default binding policy depends on the host type when `bind` is omitted.
+Just like `@prop(...)`, `@state` exposes companion bindings by default when `bind` is omitted.
 
-- `RadiantComponent` enables bindings automatically.
-- `RadiantElement` keeps bindings opt-in.
+So `@state count = 0` gives you `this.$.count` automatically on `RadiantElement` hosts.
 
-So `@state count = 0` on `RadiantComponent` gives you `this.$.count` automatically, while a plain `RadiantElement` only gets a companion binding when you opt in explicitly.
+```tsx
+override render() {
+	return <p>Count: {this.$.count}</p>;
+}
+```
 
 ## When To Use It
 
 - Use `@state` for local UI state.
 - Use `@prop(...)` for public element API.
+- Use `@signal` when the field itself should be a writable signal instance.
 
-See [@prop](/docs/decorators/prop) and [RadiantComponent](/docs/components/radiant-component).
+See [@prop](/docs/decorators/prop) and [RadiantElement](/docs/components/radiant-element).

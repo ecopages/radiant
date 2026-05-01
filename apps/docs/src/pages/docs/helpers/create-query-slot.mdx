@@ -5,19 +5,19 @@ export const layout = DocsLayout;
 export const getMetadata = () => ({
 	title: 'Docs | createQuerySlot',
 	description: 'Query projected slot content without decorators.',
-})
+});
 
 # createQuerySlot
 
-`createQuerySlot` creates a lazy accessor for projected light-DOM elements assigned to a `RadiantComponent` slot. It is the functional equivalent of the [`@querySlot`](/docs/decorators/query-slot) decorator.
+`createQuerySlot` creates a lazy accessor for projected light-DOM elements assigned to a render-owning `RadiantElement` slot. It is the functional equivalent of the [`@querySlot`](/docs/decorators/query-slot) decorator.
 
 ## Usage
 
 ```tsx
-import { RadiantComponent } from '@ecopages/radiant';
+import { RadiantElement } from '@ecopages/radiant';
 import { createQuerySlot } from '@ecopages/radiant/helpers/create-query-slot';
 
-class InfoCard extends RadiantComponent {
+class InfoCard extends RadiantElement {
 	#heading = createQuerySlot<HTMLHeadingElement>(this, { name: 'heading' });
 	#body = createQuerySlot<HTMLParagraphElement>(this, {});
 
@@ -48,7 +48,7 @@ customElements.define('info-card', InfoCard);
 
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
-| `host` | `HTMLElement` | Yes | A `RadiantComponent` or any element that implements `getSlotElement`/`getSlotElements`. |
+| `host` | `HTMLElement` | Yes | A render-owning `RadiantElement` or any element that implements `getSlotElement`/`getSlotElements`. |
 | `options` | `QuerySlotConfig` | No | Slot query configuration (see below). |
 
 ### QuerySlotConfig
@@ -82,4 +82,4 @@ const allHeaders = createQuerySlot<HTMLHeadingElement[]>(this, {
 
 - [`@querySlot`](/docs/decorators/query-slot) — Decorator equivalent.
 - [`createQuery`](/docs/helpers/create-query) — Query by CSS selector or `data-ref` attribute.
-- [Slots](/docs/components/slots) — How slot projection works in RadiantComponent.
+- [Slots](/docs/components/slots) — How slot projection works in a render-owning RadiantElement host.

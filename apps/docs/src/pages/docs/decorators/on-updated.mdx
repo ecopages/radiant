@@ -5,12 +5,12 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | @onUpdated',
-	description: 'React to state changes with declarative callbacks.',
-})
+	description: 'React to state changes with declarative callbacks on RadiantElement or RadiantController hosts.',
+});
 
 # @onUpdated
 
-The `@onUpdated` decorator registers a callback method that executes automatically whenever a specific reactive property or field changes. It is the primary way to perform side effects in Radiant components.
+The `@onUpdated` decorator registers a callback method that executes automatically whenever a specific reactive property or field changes. It is the primary way to perform side effects on Radiant hosts.
 
 ## Usage
 
@@ -72,6 +72,23 @@ Keep the DOM or external state in sync with component properties.
 applyTheme() {
 	document.documentElement.setAttribute('data-theme', this.theme);
 	localStorage.setItem('theme', this.theme);
+}
+```
+
+### RadiantController usage
+
+`@onUpdated(...)` also works on `RadiantController`, which makes it useful for synchronizing host attributes or imperative DOM after controller state changes.
+
+```typescript
+import { RadiantController, onUpdated, state } from '@ecopages/radiant';
+
+export class ThemeController extends RadiantController {
+	@state theme = 'light';
+
+	@onUpdated('theme')
+	applyTheme() {
+		this.host.setAttribute('data-theme', this.theme);
+	}
 }
 ```
 

@@ -36,8 +36,9 @@ export const docsConfig: DocsConfig = {
 			name: 'Components',
 			subdirectory: 'components',
 			pages: [
-				{ title: 'RadiantComponent', slug: 'radiant-component' },
 				{ title: 'RadiantElement', slug: 'radiant-element' },
+				{ title: 'RadiantController', slug: 'radiant-controller' },
+				{ title: 'Controller Tooling & HMR', slug: 'controller-tooling-hmr' },
 				{ title: 'Slots', slug: 'slots' },
 			],
 		},
@@ -46,9 +47,11 @@ export const docsConfig: DocsConfig = {
 			subdirectory: 'decorators',
 			pages: [
 				{ title: '@customElement', slug: 'custom-element' },
+				{ title: '@attr', slug: 'attr' },
 				{ title: '@prop', slug: 'prop' },
 				{ title: '@state', slug: 'state' },
 				{ title: '@signal', slug: 'signal' },
+				{ title: '@controller', slug: 'controller' },
 				{ title: '@query', slug: 'query' },
 				{ title: '@querySlot', slug: 'query-slot' },
 				{ title: '@event', slug: 'event' },
@@ -118,6 +121,8 @@ export const docsConfig: DocsConfig = {
 			subdirectory: 'examples',
 			pages: [
 				{ title: 'Counter', slug: 'counter' },
+				{ title: 'Controller Decorator Visualizer', slug: 'controller-decorator-visualizer' },
+				{ title: 'Controller Context Visualizer', slug: 'controller-context-visualizer' },
 				{ title: 'Weather App', slug: 'weather-app' },
 				{ title: 'Todo App', slug: 'todo-app' },
 			],

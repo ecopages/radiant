@@ -107,15 +107,15 @@ return (
 
 Removing a binding this way follows the normal renderer path. If the next render changes the template shape, the DOM renderer may replace the affected node rather than preserve the previous instance.
 
-## Quick Start With RadiantComponent
+## Quick Start With RadiantElement
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 @customElement('counter-card')
-export class CounterCard extends RadiantComponent {
+export class CounterCard extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
 
 	private readonly increment = () => {
@@ -139,4 +139,4 @@ export class CounterCard extends RadiantComponent {
 
 - See [JSX Event Handling](/docs/packages/jsx-events) for `on:*` and `on-native:*`.
 - See [JSX Rendering](/docs/packages/jsx-rendering) for `createRoot(...)`, `renderToString(...)`, and hydration.
-- See [RadiantComponent](/docs/components/radiant-component) for the component-level render loop.
+- See [RadiantElement](/docs/components/radiant-element) for the host render lifecycle.

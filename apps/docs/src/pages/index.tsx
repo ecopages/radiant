@@ -3,13 +3,13 @@ import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
 import { rawHtml } from '@/utils/raw-html';
 import { CodeTabs } from '@/components/code-tabs';
-import { RadiantComponentCounter } from '@/components/radiant-counter/radiant-component-counter';
+import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-component-counter';
 
 const counterExample = await codeToHtml(
-	`import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+	`import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 @customElement('radiant-counter')
-export class RadiantCounter extends RadiantComponent {
+export class RadiantCounter extends RadiantElement {
   @prop({ type: Number, reflect: true }) value = 0;
 
   private readonly decrement = () => {
@@ -96,8 +96,8 @@ const HomePage: EcoComponent = () => {
 							<a href="/docs/getting-started/introduction" class="button button--default">
 								Read the overview
 							</a>
-							<a href="/docs/components/radiant-component" class="button button--outline">
-								Start with RadiantComponent
+							<a href="/docs/components/radiant-element" class="button button--outline">
+								Start with RadiantElement
 							</a>
 						</div>
 					</div>
@@ -107,7 +107,7 @@ const HomePage: EcoComponent = () => {
 							`<figure data-rehype-pretty-code-figure class="home-code-block">${counterExample}</figure>`,
 						)}
 						<div class="home-hero__demo">
-							<RadiantComponentCounter value={0} />
+							<RadiantCounterDemo value={0} />
 						</div>
 					</div>
 				</div>
@@ -123,10 +123,10 @@ const HomePage: EcoComponent = () => {
 							description="Installation options and the mental model behind the component-first API."
 						/>
 						<HomeCard
-							href="/docs/components/radiant-component"
+							href="/docs/components/radiant-element"
 							label="Components"
-							title="Build with RadiantComponent"
-							description="Use RadiantComponent as the main host API. Reach for RadiantElement when you need lower-level DOM control."
+							title="Build with RadiantElement"
+							description="Use RadiantElement for custom-element hosts. Reach for RadiantController when the HTML should stay authored outside the element class."
 						/>
 						<HomeCard
 							href="/docs/decorators/prop"
@@ -147,7 +147,10 @@ const HomePage: EcoComponent = () => {
 					<p class="home-card__label">Suggested Path</p>
 					<ol class="home-path__list">
 						<li>Read the overview and install the package set you need.</li>
-						<li>Start with RadiantComponent, then learn the small decorator surface around it.</li>
+						<li>
+							Start with RadiantElement, then learn when a controller is a better fit than a custom
+							element host.
+						</li>
 						<li>Add JSX and Signals once the base component model is clear.</li>
 						<li>Use the examples to see the recommended architecture assembled end to end.</li>
 					</ol>
@@ -166,7 +169,7 @@ const HomePage: EcoComponent = () => {
 						<HomePathCard
 							href="/docs/examples/todo-app"
 							title="Study a complete example"
-							description="The todo app shows RadiantComponent, RadiantElement, context, and JSX together."
+							description="The todo app shows a render-owning RadiantElement host, child elements, context, and JSX together."
 						/>
 					</div>
 				</section>
@@ -230,7 +233,7 @@ const HomePage: EcoComponent = () => {
 HomePage.config = {
 	layout: BaseLayout,
 	dependencies: {
-		components: [CodeTabs, RadiantComponentCounter],
+		components: [CodeTabs, RadiantCounterDemo],
 		stylesheets: ['./index.css'],
 	},
 };

@@ -5,7 +5,7 @@ export const layout = DocsLayout;
 export const getMetadata = () => ({
   title: 'Docs | Introduction',
   description: 'Learn how Radiant, JSX, and Signals fit together in the Radiant ecosystem.',
-})
+});
 
 # Introduction
 
@@ -20,9 +20,9 @@ Radiant is a light-DOM custom-element toolkit with three package layers that wor
 The default path today is:
 
 1. Install `@ecopages/radiant` and `@ecopages/jsx`
-2. Build host views with `RadiantComponent`
-3. Use `@prop` for public API and `@state` for internal state
-4. Reach for `RadiantElement` only when the host is primarily imperative or string-template based
+2. Build custom-element hosts with `RadiantElement`
+3. Override `render()` when the host should own a JSX view
+4. Reach for `RadiantController` when existing HTML should stay authored outside a custom element
 
 ## Why Light DOM
 
@@ -40,7 +40,7 @@ If you're new to Radiant, we recommend starting with the following guides:
 
 1. [Installation](/docs/getting-started/installation) - Set up the package combination you need.
 2. [Hydration](/docs/ssr/hydration) - Learn the current SSR-to-client attach model for JSX and Radiant hosts.
-3. [Best Practices](/docs/getting-started/best-practices) - Learn the recommended component-first patterns.
-4. [RadiantComponent](/docs/components/radiant-component) - Start with the primary component model.
+3. [Best Practices](/docs/getting-started/best-practices) - Learn the recommended host patterns.
+4. [RadiantElement](/docs/components/radiant-element) - Start with the main custom-element base class.
 5. [JSX Overview](/docs/packages/jsx-overview) - Understand the TSX authoring layer.
 6. [Signals Overview](/docs/packages/signals-overview) - Understand the standalone reactive core.

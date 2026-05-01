@@ -6,19 +6,22 @@ export const layout = DocsLayout;
 export const getMetadata = () => ({
   title: 'Docs | Best Practices',
   description: 'General best practices and recommendations for building components with Radiant.',
-})
+});
 
 # Best Practices
 
-While Radiant is designed for flexibility, these patterns make the codebase easier to reason about and align with the current component-first model.
+While Radiant is designed for flexibility, these patterns keep the docs, runtime, and type surfaces aligned with the current host model.
 
-## Prefer RadiantComponent First
+## Prefer RadiantElement For Custom Elements
 
-`RadiantComponent` is the primary path.
+`RadiantElement` is the primary custom-element base class.
 
-Use it when the host itself should render JSX through `render()` and rerender through `update()`.
+Use it in both of these cases:
 
-Reach for `RadiantElement` when the host is mainly imperative, string-template based, or acting as a lower-level custom element inside a JSX tree.
+- The host enhances authored light DOM and stays mostly imperative.
+- The host overrides `render()` and owns a JSX view directly.
+
+Use `RadiantController` when the DOM is authored elsewhere and you only need controller behavior on top of that existing markup.
 
 ## Naming Custom Elements
 
@@ -83,7 +86,7 @@ export type UserCardProps = {
 };
 
 @customElement('user-card')
-export class UserCard extends RadiantComponent {
+export class UserCard extends RadiantElement {
   @prop({ type: String }) declare name: string;
   @prop({ type: String }) declare avatarUrl: string;
   @prop({ type: Boolean }) declare isAdmin: boolean;
@@ -107,7 +110,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 
 ### Public Props vs Internal Bindings
 
-For `RadiantComponent` and `RadiantElement`, keep the public JSX attribute type
+For `RadiantElement`, keep the public JSX attribute type
 separate from the internal reactive binding shape when those two surfaces are
 not the same.
 
@@ -121,7 +124,7 @@ not the same.
 /** @jsxImportSource @ecopages/jsx */
 
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantComponent, customElement, prop, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 export type UserCardProps = {
   name?: string;
@@ -133,7 +136,7 @@ type UserCardBindings = UserCardProps & {
 };
 
 @customElement('user-card')
-export class UserCard extends RadiantComponent<UserCardBindings> {
+export class UserCard extends RadiantElement<UserCardBindings> {
   @prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
   @prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
   @state isExpanded = false;
@@ -233,7 +236,7 @@ this.items = [...this.items, 'new item'];
 
 ### Keep Public Props Narrow
 
-For `RadiantComponent<Bindings>` and `RadiantElement<Bindings>`, treat the generic binding shape as an internal reactive surface. When the public JSX API should be smaller, use a dedicated `Props` type and keep internal bindings separate.
+For `RadiantElement<Bindings>`, treat the generic binding shape as an internal reactive surface. When the public JSX API should be smaller, use a dedicated `Props` type and keep internal bindings separate.
 
 ### Prefer autonomous elements over customized built-ins
 

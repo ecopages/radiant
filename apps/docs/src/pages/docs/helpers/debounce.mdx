@@ -5,7 +5,7 @@ export const layout = DocsLayout;
 export const getMetadata = () => ({
 	title: 'Docs | debounce',
 	description: 'Debounce any function with cancel, flush, and pending control.',
-})
+});
 
 # debounce
 
@@ -64,11 +64,11 @@ save.cancel();   // cancels the scheduled call
 ## Using with a Custom Element
 
 ```typescript
-import { RadiantComponent } from '@ecopages/radiant';
+import { RadiantElement } from '@ecopages/radiant';
 import { createEventListener } from '@ecopages/radiant/helpers/create-event-listener';
 import { debounce } from '@ecopages/radiant/helpers/debounce';
 
-class SearchInput extends RadiantComponent {
+class SearchInput extends RadiantElement {
 	#search = debounce((query: string) => {
 		console.log('Searching:', query);
 	}, 300);

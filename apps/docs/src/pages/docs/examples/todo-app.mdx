@@ -11,20 +11,20 @@ export const config = {
 
 export const getMetadata = () => ({
 	title: 'Docs | Radiant Todo App',
-	description: 'An integrated example combining a RadiantComponent host with provider-backed child components.',
+	description: 'An integrated example combining a RadiantElement host with provider-backed child components.',
 });
 
 # Radiant Todo App
 
-A `RadiantComponent` host that owns a shared todo context, with child components that consume it for local interactions.
+A `RadiantElement` host that owns a shared todo context, with child components that consume it for local interactions.
 
 <RadiantTodoApp />
 
 The example combines three pieces:
 
 - a JSX entry that authors the provider hydration payload directly under the host
-- a `RadiantComponent` host that owns the board view and shared context provider
-- `RadiantComponent` child items that consume that context for toggle and remove interactions
+- a `RadiantElement` host that owns the board view and shared context provider
+- `RadiantElement` child items that consume that context for toggle and remove interactions
 
 ## 1. JSX Entry
 
@@ -58,7 +58,7 @@ The host owns the provider and the rerender boundary. The provider reads its own
 ```tsx
 import {
 	type ContextProvider,
-	RadiantComponent,
+	RadiantElement,
 	contextSelector,
 	customElement,
 	onEvent,
@@ -68,7 +68,7 @@ import {
 import { TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
 
 @customElement('radiant-todo-app')
-export class RadiantTodoAppElement extends RadiantComponent {
+export class RadiantTodoAppElement extends RadiantElement {
 	@provideContext<typeof todoContext>({
 		context: todoContext,
 		initialValue: { todos: [], logger: new TodoLogger() },
@@ -152,12 +152,12 @@ export class RadiantTodoAppElement extends RadiantComponent {
 
 ## 3. Child Items
 
-Each todo item is a `RadiantComponent` that renders its own view and consumes context for shared state mutations.
+Each todo item is a `RadiantElement` that renders its own view and consumes context for shared state mutations.
 
 ```tsx
 import {
 	type ContextProvider,
-	RadiantComponent,
+	RadiantElement,
 	consumeContext,
 	customElement,
 	onEvent,
@@ -172,7 +172,7 @@ type RadiantTodoBindings = {
 };
 
 @customElement('radiant-todo-item')
-export class RadiantTodoItem extends RadiantComponent<RadiantTodoBindings> {
+export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
 	@prop({ type: String, defaultValue: '' }) declare text: string;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;

@@ -1,11 +1,11 @@
-import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 export type RadiantCounterProps = {
 	value?: number;
 };
 
 @customElement('radiant-counter')
-export class RadiantCounter extends RadiantComponent<RadiantCounterProps> {
+export class RadiantCounter extends RadiantElement<RadiantCounterProps> {
 	@prop({ type: Number, reflect: true }) value = 0;
 
 	private readonly decrement = () => {

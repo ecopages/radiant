@@ -13,7 +13,7 @@ export const getMetadata = () => ({
 
 Its model is based on the [TC39 Signals proposal](https://github.com/tc39/proposal-signals/tree/main), with a smaller surface area and a few convenience helpers for real application code today.
 
-## Current Scope
+## Scope
 
 This package provides:
 
@@ -45,8 +45,21 @@ The package tracks the same broad model around:
 
 It is not a drop-in implementation of the current proposal draft.
 
+## How It Connects To Radiant
+
+Radiant builds on top of this package in two main ways:
+
+- `@signal` turns a host field into a real writable signal
+- `createResource(...)` from `@ecopages/radiant/signals/host-resource` ties async state to a host lifecycle
+
+That split is intentional:
+
+- `@ecopages/signals` stays renderer-agnostic
+- `@ecopages/radiant` adds host-aware behavior on top of signals
+
 ## Next Pages
 
 - See [Signals State & Computed](/docs/packages/signals-state-computed)
 - See [Signals Effects](/docs/packages/signals-effects)
 - See [Signals Stores](/docs/packages/signals-stores)
+- See [Resources](/docs/packages/signals-resources)

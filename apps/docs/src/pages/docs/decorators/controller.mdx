@@ -1,0 +1,75 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | @controller',
+	description: 'Register a RadiantController class for data-controller discovery.',
+});
+
+# @controller
+
+`@controller(identifier)` registers a `RadiantController` class for `data-controller` discovery.
+
+It is equivalent to calling `registerController(identifier, ControllerClass)` directly.
+
+If controller runtimes are already running, newly registered identifiers are reconciled against the live DOM immediately.
+
+## Example
+
+```ts
+import { RadiantController, controller } from '@ecopages/radiant';
+import { startControllers } from '@ecopages/radiant/controller-registry';
+
+@controller('search')
+class SearchController extends RadiantController {
+	connect() {
+		super.connect();
+	}
+}
+
+startControllers(document);
+```
+
+```html
+<form data-controller="search"></form>
+```
+
+## Identifier Rules
+
+- the identifier must be unique across the page runtime
+- re-registering the same constructor is a no-op
+- registering a different constructor for an existing identifier keeps the original controller by default
+
+That default prevents an accidental second registration from mutating already-connected controller instances.
+
+When tooling does need mutation, use the explicit runtime APIs instead of changing the default decorator contract.
+
+## Tooling Hooks
+
+The registry also exposes explicit mutation hooks through the `@ecopages/radiant/controller-registry` subpath:
+
+- `replaceController(...)`
+- `enableControllerReplacementForHmr()`
+
+Use those APIs for HMR or code-generation workflows that intentionally replace a controller class after the first registration.
+
+## Related Runtime API
+
+The registry also exposes an explicit runtime surface through the public subpath `@ecopages/radiant/controller-registry`:
+
+- `registerController(...)`
+- `replaceController(...)`
+- `enableControllerReplacementForHmr()`
+- `startControllers(...)`
+- `stopControllers()`
+- `CONTROLLER_ATTRIBUTE`
+- `ControllerRegistryRuntime`
+
+Use the subpath when you want direct registry control without the decorator, or when a framework shell needs to start or stop controller discovery explicitly.
+
+## See Also
+
+- [RadiantController](/docs/components/radiant-controller)
+- [Controller Tooling & HMR](/docs/components/controller-tooling-hmr)
+- [@attr](/docs/decorators/attr)

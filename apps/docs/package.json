@@ -8,7 +8,7 @@
 	"scripts": {
 		"start": "bun run app.ts",
 		"dev": "bun run app.ts --dev",
-		"build": "bun generate:llms && bun run app.ts --build",
+		"build": "cd ../.. && bun run --filter @ecopages/jsx build:lib && bun run --filter @ecopages/signals build:lib && bun run --filter @ecopages/radiant build:lib && cd apps/docs && bun generate:llms && bun run app.ts --build && bun run scripts/create-clean-url-aliases.ts",
 		"preview": "bun generate:llms && bun run app.ts --preview",
 		"test:e2e": "node --test ./test/*.e2e.test.mjs",
 		"watch:dev": "bun --watch run app.ts --dev",

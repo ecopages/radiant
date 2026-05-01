@@ -3,28 +3,63 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | @prop',
-  description: 'Use @prop for public reactive custom-element props.',
-})
+	title: 'Docs | @prop',
+	description: 'Use @prop for public reactive host inputs.',
+});
 
 # @prop
 
-`@prop(...)` declares a reactive property backed by an HTML attribute.
+`@prop(...)` declares a reactive property on a Radiant host.
 
-Use it for values that belong to the custom element's external API and may need attribute sync, type conversion, reflection, or JSX bindings.
+On `RadiantElement`, use it for values that belong to the custom element's external API and may need attribute sync, type conversion, reflection, or JSX bindings.
+
+On `RadiantController`, `@prop(...)` instead exposes a host property channel. That lets surrounding JS assign real values like objects or arrays directly on the attached host element without serializing them into attributes.
 
 ## Example
 
 ```typescript
-import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 @customElement('user-card')
-export class UserCard extends RadiantComponent {
+export class UserCard extends RadiantElement {
 	@prop({ type: String }) declare name: string;
 	@prop({ type: Number, defaultValue: 0 }) declare visits: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare active: boolean;
 }
 ```
+
+## Controller Host Props
+
+`RadiantController` can use the same decorator when the input should come from a real host property instead of markup.
+
+```typescript
+import { RadiantController, controller, prop } from '@ecopages/radiant';
+import { startControllers } from '@ecopages/radiant/controller-registry';
+
+@controller('results-list')
+export class ResultsListController extends RadiantController {
+	@prop({ type: Array, defaultValue: [] }) declare items: Array<{ id: string; label: string }>;
+
+	override render() {
+		return <ul>{this.items.map((item) => <li key={item.id}>{item.label}</li>)}</ul>;
+	}
+}
+
+document.body.innerHTML = '<section data-controller="results-list"></section>';
+
+const host = document.querySelector('[data-controller="results-list"]') as HTMLElement & {
+	items: Array<{ id: string; label: string }>;
+};
+
+host.items = [
+	{ id: '1', label: 'Alpha' },
+	{ id: '2', label: 'Beta' },
+];
+
+startControllers(document);
+```
+
+`startControllers(...)` comes from the public subpath `@ecopages/radiant/controller-registry`.
 
 ## Options
 
@@ -46,36 +81,31 @@ export class UserCard extends RadiantComponent {
 - triggers `notifyUpdate(...)` when the value changes
 - can expose a subscribable JSX binding companion
 
+On `RadiantController`, the same decorator reads and writes a real property on the attached host element instead of going through attribute serialization.
+
+That means this split is intentional:
+
+- use `@attr(...)` when the value should stay in markup
+- use `@prop(...)` when JS code should pass structured values directly
+
 ## JSX Binding Defaults
 
-The `bind` option depends on the host base class when you omit it.
-
-- On `RadiantComponent`, bindings are enabled by default.
-- On `RadiantElement`, bindings stay opt-in by default.
+When you omit `bind`, Radiant exposes companion bindings by default.
 
 So this:
 
 ```typescript
-class CounterCard extends RadiantComponent {
+class CounterCard extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) count!: number;
 }
 ```
 
 automatically gives you `this.$.count` and `this.bindings.count`.
 
-But this:
-
-```typescript
-class CounterElement extends RadiantElement {
-	@prop({ type: Number, defaultValue: 0 }) count!: number;
-}
-```
-
-does not create a JSX binding unless you opt in with `bind: true`.
-
 ## When To Use It
 
 - Use `@prop(...)` for public custom-element API.
+- Use `@prop(...)` on `RadiantController` when surrounding JS should pass values through the host element as real properties.
 - Use `@state` for internal mutable component state.
 
-See [@state](/docs/decorators/state) and [RadiantComponent](/docs/components/radiant-component).
+See [@state](/docs/decorators/state) and [@attr](/docs/decorators/attr).

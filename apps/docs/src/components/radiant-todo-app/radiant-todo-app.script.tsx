@@ -1,6 +1,6 @@
 import {
 	type ContextProvider,
-	RadiantComponent,
+	RadiantElement,
 	contextSelector,
 	customElement,
 	onEvent,
@@ -21,7 +21,7 @@ type RadiantTodoBindings = {
 };
 
 @customElement('radiant-todo-item')
-export class RadiantTodoItem extends RadiantComponent<RadiantTodoBindings> {
+export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
 	@prop({ type: String, defaultValue: '' }) declare text: string;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
@@ -88,7 +88,7 @@ export class RadiantTodoItem extends RadiantComponent<RadiantTodoBindings> {
 }
 
 @customElement('radiant-todo-app')
-export class RadiantTodoAppElement extends RadiantComponent {
+export class RadiantTodoAppElement extends RadiantElement {
 	@provideContext<typeof todoContext>({
 		context: todoContext,
 		initialValue: { todos: [], logger: new TodoLogger() },

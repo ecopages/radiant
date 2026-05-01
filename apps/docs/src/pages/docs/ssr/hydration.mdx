@@ -4,7 +4,7 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | Hydration',
-	description: 'How Radiant and JSX hydration work today, including the explicit client hydrator contract for SSR pages.',
+	description: 'How Radiant and JSX hydration work, including the explicit client hydrator contract for SSR pages.',
 });
 
 # Hydration
@@ -17,7 +17,7 @@ The important distinction is:
 - hydration attaches behavior to that existing HTML.
 - a normal client render replaces that HTML with a fresh DOM tree.
 
-Radiant now makes that boundary explicit for `RadiantComponent` hosts.
+Radiant makes that boundary explicit for render-owning `RadiantElement` hosts.
 
 ## Two Hydration Models
 
@@ -50,18 +50,18 @@ That flow only cares about JSX hydration markers inside a normal target element.
 
 ### Radiant host hydration
 
-Use the explicit Radiant hydrator when the server rendered a custom-element host such as `<my-card>...</my-card>` through `RadiantComponent` SSR.
+Use the explicit Radiant hydrator when the server rendered a custom-element host such as `<my-card>...</my-card>` through a render-owning `RadiantElement`.
 
 That flow has one extra rule: the component hydrates in place only when both of these are true on first connect:
 
 1. the host already contains hydration markers
 2. the explicit Radiant hydrator has been installed on the client
 
-If either condition is missing, `RadiantComponent` falls back to a fresh client render.
+If either condition is missing, the host falls back to a fresh client render.
 
-## The Current Radiant Contract
+## The Radiant Contract
 
-For a hydratable `RadiantComponent` page today, you need three pieces.
+For a hydratable render-owning `RadiantElement` page today, you need three pieces.
 
 ### 1. Server-side Radiant SSR runtime
 
@@ -85,7 +85,7 @@ For JSX this means:
 renderToString(view, { mode: 'hydrate' });
 ```
 
-For `RadiantComponent` hosts this usually means one of:
+For render-owning `RadiantElement` hosts this usually means one of:
 
 - `renderComponent(...)`
 - `renderComponentWithPreview(...)`
@@ -108,11 +108,11 @@ import { installRadiantHydrator } from '@ecopages/radiant/client/hydrator';
 installRadiantHydrator();
 ```
 
-This sets the global hydration gate that `RadiantComponent` checks on first connect.
+This sets the global hydration gate that Radiant checks on first connect for render-owning hosts.
 
 ## What Happens On First Connect
 
-When the browser upgrades a server-rendered `RadiantComponent` host, the runtime does this:
+When the browser upgrades a server-rendered render-owning `RadiantElement` host, the runtime does this:
 
 1. wait one microtask after `connectedCallback()`
 2. inspect the host for hydration markers
@@ -126,7 +126,7 @@ That last fallback is intentional. It means a page can still work without the hy
 
 Install the explicit hydrator when:
 
-- the server emitted `RadiantComponent` markup with `mode: 'hydrate'`
+- the server emitted render-owning `RadiantElement` markup with `mode: 'hydrate'`
 - you want to preserve the SSR DOM in place on first connect
 - you want server-emitted event and property bindings to reconnect without replacing nodes
 
@@ -141,7 +141,7 @@ You do not need it for:
 If you omit the Radiant hydrator import:
 
 - the page can still become interactive
-- `RadiantComponent` hosts fall back to a fresh client render
+- render-owning hosts fall back to a fresh client render
 - SSR nodes may be replaced instead of being hydrated in place
 
 So this is not usually a catastrophic failure. It is a hydration-semantics regression, not necessarily a visible blank-page failure.
@@ -150,7 +150,7 @@ So this is not usually a catastrophic failure. It is a hydration-semantics regre
 
 Hydration scripts for providers and signals still depend on server-rendered markup being present under the host.
 
-That means the current safest path for SSR pages is:
+That means the safest path for SSR pages is:
 
 - use the Radiant server helpers to emit host markup
 - install the explicit client hydrator before component modules load
@@ -162,12 +162,12 @@ This keeps host HTML, hydration markers, context payloads, and signal payloads o
 Use this rule of thumb:
 
 - `@ecopages/jsx` owns container-level hydration.
-- `@ecopages/radiant` owns host-level hydration for `RadiantComponent` custom elements.
-- Radiant host hydration is now explicit on the client.
+- `@ecopages/radiant` owns host-level hydration for render-owning `RadiantElement` custom elements.
+- Radiant host hydration is explicit on the client.
 
 ## Related Guides
 
-- [RadiantComponent](/docs/components/radiant-component) for the component-host lifecycle
+- [RadiantElement](/docs/components/radiant-element) for the component-host lifecycle
 - [JSX Rendering](/docs/packages/jsx-rendering) for container-level client rendering and hydration
 - [JSX SSR](/docs/ssr/jsx-ssr) for server-side HTML generation and marker emission
 - [Provide Context](/docs/context/provide-context) for provider hydration payloads inside SSR hosts

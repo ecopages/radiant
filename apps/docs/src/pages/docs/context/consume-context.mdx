@@ -4,12 +4,14 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | Context Consumer',
-	description: 'Consume the nearest matching context provider on a Radiant host.',
+	description: 'Consume the nearest matching context provider on a RadiantElement or RadiantController host.',
 });
 
 # @consumeContext
 
 Use `@consumeContext(...)` to inject the nearest matching context provider onto a field.
+
+It works on both `RadiantElement` and `RadiantController` hosts.
 
 ## Example
 
@@ -32,11 +34,30 @@ export class ThemeLabel extends RadiantElement {
 
 The injected field gives you access to the provider API, including `getContext()` and `setContext(...)`.
 
+On controllers, this is often the simplest way to read and write shared state imperatively from event handlers or `render()`.
+
 ## When To Use It
 
 - Use `@consumeContext(...)` when the host needs the provider object to call `getContext()` or `setContext(...)`.
 - Use [@contextSelector](/docs/context/context-selector) when the host should bind a field to the current context value and rerender automatically.
 - Use [@onContextUpdate](/docs/context/on-context-update) when a context change should trigger imperative side effects.
+
+## RadiantController Example
+
+```typescript
+import { type ContextProvider, RadiantController, consumeContext } from '@ecopages/radiant';
+
+import { themeContext } from './theme-provider';
+
+export class ThemePanelController extends RadiantController {
+	@consumeContext(themeContext)
+	provider!: ContextProvider<typeof themeContext>;
+
+	override render() {
+		return <p>Theme: {this.provider.getContext().mode}</p>;
+	}
+}
+```
 
 ## Client And SSR Behavior
 

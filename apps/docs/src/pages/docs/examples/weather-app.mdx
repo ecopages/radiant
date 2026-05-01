@@ -16,7 +16,7 @@ export const getMetadata = () => ({
 
 # Weather App
 
-A `RadiantComponent` host that fetches live weather data from Open-Meteo, shares it through context, and lets a child summary card subscribe to a single slice.
+A `RadiantElement` host that fetches live weather data from Open-Meteo, shares it through context, and lets a child summary card subscribe to a single slice.
 
 <WeatherApp />
 <br />
@@ -28,6 +28,8 @@ The example covers:
 - `@contextSelector` with `select` on the summary card for read-only slice subscriptions
 - `@contextSelector` without `select` on the host for full-context access in `render()`
 - stale-while-revalidate rendering via `staleTime` and `pendingDelay`
+
+`createResource(...)` comes from the public subpath `@ecopages/radiant/signals/host-resource`, not the root entrypoint.
 
 ## Architecture
 
@@ -41,7 +43,7 @@ Utility code (city list, fetch helper, types) lives in `weather-app.utils.ts` an
 
 ```tsx
 import {
-	RadiantComponent,
+	RadiantElement,
 	contextSelector,
 	customElement,
 } from '@ecopages/radiant';
@@ -50,7 +52,7 @@ import type { WeatherReport } from './weather-app.types';
 // weatherContext created via createContext<WeatherContext>(Symbol('weather-context'))
 
 @customElement('radiant-weather-summary')
-export class RadiantWeatherSummary extends RadiantComponent {
+export class RadiantWeatherSummary extends RadiantElement {
 	@contextSelector({
 		context: weatherContext,
 		select: ({ visibleReport }) => visibleReport,
@@ -85,14 +87,14 @@ export class RadiantWeatherSummary extends RadiantComponent {
 }
 ```
 
-`@contextSelector` on the field keeps the value in sync and schedules `requestUpdate()` automatically when the selected slice changes.
+`@contextSelector` on the field keeps the value in sync and schedules `requestUpdate()` automatically when the selected slice changes on a render-owning host.
 
 ## Host
 
 ```tsx
 import {
 	type ContextProvider,
-	RadiantComponent,
+	RadiantElement,
 	contextSelector,
 	createContext,
 	customElement,
@@ -112,7 +114,7 @@ import {
 const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
 
 @customElement('radiant-weather-app')
-export class RadiantWeatherAppElement extends RadiantComponent {
+export class RadiantWeatherAppElement extends RadiantElement {
 	private activeCityId = signalState(DEFAULT_CITY_ID);
 
 	@provideContext<typeof weatherContext>({
@@ -198,7 +200,7 @@ The host uses `@contextSelector` without `select` so it receives the full `Weath
 - **Read-only consumers use `@contextSelector` alone.** The summary card does not need `@consumeContext` because it never writes to context.
 - **The host uses both `@provideContext` and `@contextSelector`.** It writes via `provider.setContext(...)` and reads via the `weatherState` field.
 - **`createResource` manages the async lifecycle.** Source changes abort previous requests, `staleTime` caches responses, and `pendingDelay` avoids flash-of-loading for fast responses. No manual cleanup is needed.
-- **`@contextSelector` on a field schedules `requestUpdate()` automatically.** No empty method body and no manual `this.update()` call.
+- **`@contextSelector` on a field schedules `requestUpdate()` automatically on render-owning hosts.** No empty method body and no manual `this.update()` call.
 
 ## See Also
 

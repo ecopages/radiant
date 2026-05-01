@@ -1,12 +1,12 @@
 import { BurgerEvents } from '@/components/burger/burger.events';
-import { RadiantComponent, customElement, debounce, onEvent, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, debounce, onEvent, state } from '@ecopages/radiant';
 
 type RadiantBurgerBindings = {
 	expanded: boolean;
 };
 
 @customElement('radiant-burger')
-export class RadiantBurger extends RadiantComponent<RadiantBurgerBindings> {
+export class RadiantBurger extends RadiantElement<RadiantBurgerBindings> {
 	@state expanded = false;
 
 	override disconnectedCallback(): void {

@@ -1,36 +1,36 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { RadiantComponentCounter, RadiantElementCounter } from '@/components/radiant-counter';
+import { RadiantJsxCounter, RadiantElementCounter } from '@/components/radiant-counter';
 
 export const layout = DocsLayout;
 
 export const config = {
 	dependencies: {
-		components: [RadiantComponentCounter, RadiantElementCounter],
+		components: [RadiantJsxCounter, RadiantElementCounter],
 	},
 };
 
 export const getMetadata = () => ({
 	title: 'Docs | Radiant Counter',
-	description: 'A small counter used to compare RadiantComponent and RadiantElement host patterns.',
+	description: 'A small counter used to compare JSX-owned and authored-light-DOM RadiantElement host patterns.',
 });
 
 # Radiant Counter
 
-The smallest example comparing `RadiantComponent` and `RadiantElement` host patterns.
+The smallest example comparing the two main `RadiantElement` host modes.
 
 ## Live Comparison
 
-### RadiantComponent Host
+### JSX-Owned Host
 
-<RadiantComponentCounter value={5} />
+<RadiantJsxCounter value={5} />
 
 ### RadiantElement Host
 
 <RadiantElementCounter value={5} />
 
-## Live Example: RadiantComponent
+## Live Example: JSX-Owned RadiantElement
 
-The live demo renders the custom element directly, so the server HTML comes from the `RadiantComponent` host itself rather than from a wrapper component.
+The live demo renders the custom element directly, so the server HTML comes from the `RadiantElement` host itself rather than from a wrapper component.
 
 It demonstrates:
 
@@ -41,14 +41,14 @@ It demonstrates:
 - no imperative DOM syncing step for the counter text
 
 ```tsx
-import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 export type RadiantCounterProps = {
 	value?: number;
 };
 
 @customElement('radiant-counter')
-export class RadiantCounter extends RadiantComponent<RadiantCounterProps> {
+export class RadiantCounter extends RadiantElement<RadiantCounterProps> {
 	@prop({ type: Number, reflect: true }) value = 0;
 
 	private readonly decrement = () => {
@@ -77,7 +77,7 @@ export class RadiantCounter extends RadiantComponent<RadiantCounterProps> {
 }
 ```
 
-## The Same Behavior With RadiantElement
+## The Same Behavior With Authored Light DOM
 
 `RadiantElement` does not own the view — the HTML is authored or server-rendered, and the component enhances it with behavior.
 
@@ -121,7 +121,6 @@ export class CounterElement extends RadiantElement {
 ## See Also
 
 - See [RadiantElement](/docs/components/radiant-element) for the lower-level base class.
-- See [RadiantComponent](/docs/components/radiant-component) for the host JSX render loop.
 - See [Slots](/docs/components/slots) for projected authored markup.
 - See [JSX SSR](/docs/ssr/jsx-ssr) for SSR and hydration.
 - See [Radiant Todo App](/docs/examples/todo-app) for a mixed architecture example.

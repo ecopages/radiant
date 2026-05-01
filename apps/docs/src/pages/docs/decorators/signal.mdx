@@ -13,15 +13,17 @@ export const getMetadata = () => ({
 
 The decorated member becomes a real `WritableSignal` instance that JSX can consume directly in child or attribute positions.
 
+Use it when the field itself should behave like a signal object. If you only need ordinary reactive host state, use [@state](/docs/decorators/state) instead.
+
 ## Example
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement, signal } from '@ecopages/radiant';
+import { RadiantElement, customElement, signal } from '@ecopages/radiant';
 
 @customElement('signal-counter')
-export class SignalCounter extends RadiantComponent {
+export class SignalCounter extends RadiantElement {
 	@signal count = 0;
 
 	private readonly increment = () => {
@@ -55,7 +57,17 @@ export class SignalCounter extends RadiantComponent {
 - the field becomes a real writable signal instance
 - connected signals still flow through Radiant's update callback channel
 - `@onUpdated(...)` and JSX bindings keep working with the same host update model
-- on `RadiantComponent`, signal and store reads performed during `render()` participate in rerender invalidation directly
+- on render-owning `RadiantElement` hosts, signal and store reads performed during `render()` participate in rerender invalidation directly
+
+That last point is the main difference from `@state`: a render method can read the signal directly and let the signals runtime invalidate the view.
+
+```tsx
+override render() {
+	return <p>Count: {this.count}</p>;
+}
+```
+
+If the signal changes through `this.count.set(...)`, the rendered output updates without an extra imperative sync step.
 
 ## Shared Signals
 
@@ -77,5 +89,11 @@ export class SharedCounter extends RadiantElement {
 
 - Use `@state` when the member should stay a plain host field managed by Radiant's reactive field system.
 - Use `@signal` when the member itself should be a writable signal value.
+
+## Related Subpaths
+
+Signal primitives come from `@ecopages/signals`.
+
+If you need host-owned async state built on top of signals, use the public subpath `@ecopages/radiant/signals/host-resource` documented in [Resources](/docs/packages/signals-resources).
 
 See [Signals Overview](/docs/packages/signals-overview) for the underlying signal model.

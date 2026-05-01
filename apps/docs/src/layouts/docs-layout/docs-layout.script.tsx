@@ -1,4 +1,4 @@
-import { RadiantComponent, RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { BurgerEvents } from '@/components/burger/burger.events';
 
 /**
@@ -62,7 +62,7 @@ export class RadiantCounter extends RadiantElement {
  * ordered list of nav links found inside `radiant-navigation`.
  */
 @customElement('radiant-docs-pagination')
-export class RadiantDocsPagination extends RadiantComponent {
+export class RadiantDocsPagination extends RadiantElement {
 	@onEvent({ document: true, type: 'eco:page-load' })
 	onPageLoad(): void {
 		this.requestUpdate();

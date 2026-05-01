@@ -1,6 +1,6 @@
 import {
 	type ContextProvider,
-	RadiantComponent,
+	RadiantElement,
 	contextSelector,
 	createContext,
 	customElement,
@@ -20,7 +20,7 @@ import {
 const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
 
 @customElement('radiant-weather-summary')
-export class RadiantWeatherSummary extends RadiantComponent {
+export class RadiantWeatherSummary extends RadiantElement {
 	@contextSelector({
 		context: weatherContext,
 		select: ({ visibleReport }) => visibleReport,
@@ -62,7 +62,7 @@ export class RadiantWeatherSummary extends RadiantComponent {
 }
 
 @customElement('radiant-weather-app')
-export class RadiantWeatherAppElement extends RadiantComponent {
+export class RadiantWeatherAppElement extends RadiantElement {
 	private activeCityId = signalState(DEFAULT_CITY_ID);
 
 	@provideContext<typeof weatherContext>({
