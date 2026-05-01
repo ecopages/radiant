@@ -436,6 +436,8 @@ function applyServerCustomElementAttributes(
 	attributes: Record<string, unknown>,
 ): void {
 	forEachNormalizedAttribute(attributes, (name, value) => {
+		const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
+
 		if (value === undefined || name.startsWith('on:') || name.startsWith('on-native:')) {
 			return;
 		}
@@ -445,21 +447,21 @@ function applyServerCustomElementAttributes(
 			return;
 		}
 
-		if (name in element && !name.includes('-')) {
-			element[name] = value;
+		if (normalizedName in element && !normalizedName.includes('-')) {
+			element[normalizedName] = value;
 			return;
 		}
 
 		if (typeof value === 'boolean') {
 			if (value) {
-				element.setAttribute?.(name, '');
+				element.setAttribute?.(normalizedName, '');
 			} else {
-				element.removeAttribute?.(name);
+				element.removeAttribute?.(normalizedName);
 			}
 			return;
 		}
 
-		element.setAttribute?.(name, String(value));
+		element.setAttribute?.(normalizedName, String(value));
 	});
 }
 
@@ -891,6 +893,7 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 	}
 
 	const bindingShapeValue = resolveBindingShapeValue(value);
+	const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
 
 	if (name.startsWith('on-native:')) {
 		strings[strings.length - 1] += ` @${name.slice('on-native:'.length)}=`;
@@ -914,14 +917,14 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 		return;
 	}
 
-	if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(name)) {
-		strings[strings.length - 1] += ` ?${name}=`;
+	if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
+		strings[strings.length - 1] += ` ?${normalizedName}=`;
 		values.push(value);
 		strings.push('');
 		return;
 	}
 
-	strings[strings.length - 1] += ` ${name}=`;
+	strings[strings.length - 1] += ` ${normalizedName}=`;
 	values.push(value);
 	strings.push('');
 }

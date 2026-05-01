@@ -63,6 +63,10 @@ type JsxPropertyBindings<ElementType extends object> = {
 	[propertyName: `prop:${string}`]: unknown;
 };
 
+type JsxAttributeBindings = {
+	[AttributeName in `attr:${string}`]?: ReactiveAttributeValue<StructuredAttributePrimitive>;
+};
+
 /*
  * All the WAI-ARIA 1.1 attributes from https://www.w3.org/TR/wai-aria-1.1/
  */
@@ -198,6 +202,7 @@ export interface JsxSharedIntrinsicAttributes {
  */
 export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes &
 	JsxEventBindings<ElementType> &
+	JsxAttributeBindings &
 	JsxPropertyBindings<ElementType>;
 
 /**

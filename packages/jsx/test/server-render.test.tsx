@@ -151,6 +151,18 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<demo-card title="Ready"></demo-card>');
 	});
 
+	test('serializes attr:name as a literal attribute in plain and hydrate modes', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('demo-card', {
+			'attr:value': 'draft',
+		});
+
+		expect(renderToString(template, { mode: 'plain' })).toBe('<demo-card value="draft"></demo-card>');
+		expect(renderToString(template, { mode: 'hydrate' })).toBe(
+			'<demo-card data-radiant-jsx-bind-0="attr:value" value="draft"></demo-card>',
+		);
+	});
+
 	test('omits nullish bindings from SSR attribute output', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('button', {

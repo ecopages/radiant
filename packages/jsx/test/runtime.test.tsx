@@ -239,6 +239,17 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values).toEqual([payload]);
 	});
 
+	test('attr:name encodes an explicit attribute binding with the stripped name', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const result = jsx('property-receiver', {
+			'attr:value': 'draft',
+		});
+
+		expectTemplateResultLike(result);
+		expect(Array.from(result.strings)).toEqual(['<property-receiver value=', '></property-receiver>']);
+		expect(result.values).toEqual(['draft']);
+	});
+
 	test('boolean, data, and aria bindings encode the expected template syntax', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('button', {
