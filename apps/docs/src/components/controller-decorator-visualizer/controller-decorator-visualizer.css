@@ -1,0 +1,571 @@
+.controller-decorator-visualizer {
+	--controller-decorator-visualizer-border: color-mix(in srgb, var(--color-primary) 20%, transparent);
+	--controller-decorator-visualizer-panel-border: color-mix(in srgb, var(--color-border) 92%, transparent);
+	--controller-decorator-visualizer-surface:
+		radial-gradient(
+			circle at top left,
+			color-mix(in srgb, var(--color-secondary-container) 52%, transparent),
+			transparent 34%
+		),
+		radial-gradient(
+			circle at bottom right,
+			color-mix(in srgb, var(--color-primary-container) 68%, transparent),
+			transparent 30%
+		),
+		linear-gradient(
+			155deg,
+			color-mix(in srgb, var(--color-background) 98%, transparent),
+			color-mix(in srgb, var(--color-background-accent) 97%, transparent)
+		);
+	--controller-decorator-visualizer-panel: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-background) 95%, transparent),
+		color-mix(in srgb, var(--color-background-accent) 88%, transparent)
+	);
+	--controller-decorator-visualizer-accent: var(--color-primary);
+	--controller-decorator-visualizer-accent-warm: var(--color-secondary);
+	--controller-decorator-visualizer-accent-cool: var(--color-link);
+	@apply my-6 grid gap-5 rounded-3xl border p-4 text-on-background shadow-lg md:p-6;
+	background: var(--controller-decorator-visualizer-surface);
+	box-shadow: 0 24px 60px color-mix(in srgb, var(--color-on-background) 8%, transparent);
+	border-color: var(--controller-decorator-visualizer-border);
+	display: grid;
+	gap: 1.25rem;
+	position: relative;
+	overflow: clip;
+	isolation: isolate;
+}
+
+.controller-decorator-visualizer::before {
+	content: '';
+	position: absolute;
+	inset: -18% auto auto -8%;
+	width: 16rem;
+	height: 16rem;
+	border-radius: 999px;
+	background: radial-gradient(
+		circle,
+		color-mix(in srgb, var(--color-secondary-container) 45%, transparent),
+		transparent 72%
+	);
+	pointer-events: none;
+	z-index: -1;
+}
+
+.controller-decorator-visualizer__header,
+.controller-decorator-visualizer__intro,
+.controller-decorator-visualizer__actions,
+.controller-decorator-visualizer__stage,
+.controller-decorator-visualizer__diagram,
+.controller-decorator-visualizer__rail,
+.controller-decorator-visualizer__snapshot,
+.controller-decorator-visualizer__core,
+.controller-decorator-visualizer__transmissions {
+	display: grid;
+	gap: 1rem;
+}
+
+.controller-decorator-visualizer__header {
+	grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+	align-items: start;
+}
+
+.controller-decorator-visualizer__eyebrow,
+.controller-decorator-visualizer__label,
+.controller-decorator-visualizer__meta {
+	@apply m-0 text-[0.78rem] font-bold uppercase tracking-[0.08em];
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: color-mix(in srgb, var(--controller-decorator-visualizer-accent) 82%, var(--color-on-background));
+}
+
+.controller-decorator-visualizer__header h3,
+.controller-decorator-visualizer__node h4,
+.controller-decorator-visualizer__core h4,
+.controller-decorator-visualizer__rail-step h4,
+.controller-decorator-visualizer__transmissions h4 {
+	margin: 0;
+	line-height: 1.1;
+	color: var(--color-on-background);
+}
+
+.controller-decorator-visualizer__header h3,
+.controller-decorator-visualizer__header p,
+.controller-decorator-visualizer__copy,
+.controller-decorator-visualizer__detail,
+.controller-decorator-visualizer__value,
+.controller-decorator-visualizer__snapshot-label {
+	margin: 0;
+}
+
+.controller-decorator-visualizer__header h3 {
+	@apply font-heading text-2xl font-semibold tracking-tight md:text-[1.75rem];
+}
+
+.controller-decorator-visualizer__legend,
+.controller-decorator-visualizer__snapshot-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.55rem;
+}
+
+.controller-decorator-visualizer__legend li {
+	@apply rounded-full border px-3 py-1.5 text-[0.8rem] font-bold tracking-[0.02em];
+	padding: 0.42rem 0.7rem;
+	border: 1px solid color-mix(in srgb, var(--controller-decorator-visualizer-accent) 18%, transparent);
+	background: color-mix(in srgb, var(--color-background) 84%, transparent);
+	color: color-mix(in srgb, var(--controller-decorator-visualizer-accent-cool) 70%, var(--color-on-background));
+	backdrop-filter: blur(10px);
+}
+
+.controller-decorator-visualizer__snapshot-label {
+	@apply text-[0.82rem] font-bold uppercase tracking-[0.08em];
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--controller-decorator-visualizer-accent-cool) 76%, var(--color-on-background));
+}
+
+.controller-decorator-visualizer__snapshot-list {
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.controller-decorator-visualizer__snapshot-list li {
+	position: relative;
+	padding-left: 1rem;
+	line-height: 1.5;
+	color: color-mix(in srgb, var(--color-on-background) 78%, transparent);
+}
+
+.controller-decorator-visualizer__snapshot-list li::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0.52rem;
+	width: 0.45rem;
+	height: 0.45rem;
+	border-radius: 999px;
+	background: linear-gradient(
+		180deg,
+		var(--controller-decorator-visualizer-accent-warm),
+		var(--controller-decorator-visualizer-accent)
+	);
+	box-shadow: 0 0 0.7rem color-mix(in srgb, var(--controller-decorator-visualizer-accent) 45%, transparent);
+}
+
+.controller-decorator-visualizer__snapshot,
+.controller-decorator-visualizer__panel,
+.controller-decorator-visualizer__core,
+.controller-decorator-visualizer__rail-step,
+.controller-decorator-visualizer__transmissions {
+	@apply min-w-0 gap-3 rounded-2xl border p-4 shadow-xs transition-transform duration-200;
+	border: 1px solid var(--controller-decorator-visualizer-panel-border);
+	background: var(--controller-decorator-visualizer-panel);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+	min-width: 0;
+	gap: 0.65rem;
+	position: relative;
+}
+
+.controller-decorator-visualizer__actions {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	max-width: 34rem;
+}
+
+.controller-decorator-visualizer__actions button {
+	@apply rounded-full border bg-background px-4 py-3 font-semibold text-on-background transition-all duration-200;
+	min-height: 2.9rem;
+	appearance: none;
+	border: 1px solid var(--controller-decorator-visualizer-border);
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+	transition:
+		transform 160ms ease,
+		border-color 160ms ease,
+		background-color 160ms ease;
+}
+
+.controller-decorator-visualizer__actions button[aria-pressed='true'] {
+	border-color: color-mix(in srgb, var(--controller-decorator-visualizer-accent) 48%, transparent);
+	background: color-mix(in srgb, var(--color-primary-container) 82%, transparent);
+	color: color-mix(in srgb, var(--controller-decorator-visualizer-accent) 76%, var(--color-on-background));
+}
+
+.controller-decorator-visualizer__actions button:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--controller-decorator-visualizer-accent) 58%, white);
+	outline-offset: 2px;
+}
+
+.controller-decorator-visualizer__actions button:active {
+	transform: translateY(0);
+}
+
+.controller-decorator-visualizer__diagram {
+	position: relative;
+	grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.78fr) minmax(0, 1fr) minmax(0, 1fr) minmax(14rem, 0.88fr);
+	grid-template-areas:
+		'host core events state transmissions'
+		'host core queries state transmissions';
+	align-items: stretch;
+	padding: 0.3rem;
+	gap: 1rem;
+}
+
+.controller-decorator-visualizer__node {
+	display: grid;
+	gap: 0.65rem;
+	align-content: start;
+	min-height: 14.5rem;
+}
+
+.controller-decorator-visualizer__node::before,
+.controller-decorator-visualizer__core::before,
+.controller-decorator-visualizer__transmissions::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 36%);
+	pointer-events: none;
+}
+
+.controller-decorator-visualizer__node--host {
+	grid-area: host;
+}
+
+.controller-decorator-visualizer__node--events {
+	grid-area: events;
+}
+
+.controller-decorator-visualizer__node--queries {
+	grid-area: queries;
+}
+
+.controller-decorator-visualizer__node--state {
+	grid-area: state;
+}
+
+.controller-decorator-visualizer__core {
+	grid-area: core;
+	align-content: center;
+	text-align: center;
+	background:
+		radial-gradient(
+			circle at center,
+			color-mix(in srgb, var(--color-secondary-container) 54%, transparent),
+			transparent 58%
+		),
+		linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--color-background) 94%, transparent),
+			color-mix(in srgb, var(--color-primary-container) 52%, transparent)
+		);
+}
+
+.controller-decorator-visualizer__transmissions {
+	grid-area: transmissions;
+	align-content: start;
+}
+
+.controller-decorator-visualizer__beam {
+	position: absolute;
+	z-index: 0;
+	pointer-events: none;
+	border-radius: 999px;
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--color-secondary) 18%, transparent),
+		color-mix(in srgb, var(--color-primary) 26%, transparent),
+		color-mix(in srgb, var(--color-link) 18%, transparent)
+	);
+	box-shadow: 0 0 1.7rem color-mix(in srgb, var(--color-primary) 14%, transparent);
+	overflow: hidden;
+	opacity: 0.78;
+}
+
+.controller-decorator-visualizer__beam::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.78), transparent);
+	transform: translateX(-100%);
+	animation: controller-decorator-visualizer-beam 2.8s ease-in-out infinite;
+}
+
+.controller-decorator-visualizer__beam span:last-child {
+	@apply rounded-full border px-2 py-1 text-[0.68rem] font-extrabold uppercase tracking-[0.04em];
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	background: color-mix(in srgb, var(--color-background) 92%, transparent);
+	border: 1px solid rgba(148, 163, 184, 0.28);
+	white-space: nowrap;
+	color: color-mix(in srgb, var(--controller-decorator-visualizer-accent-cool) 74%, var(--color-on-background));
+}
+
+.controller-decorator-visualizer__packet {
+	position: absolute;
+	left: 0;
+	top: 50%;
+	width: 0.72rem;
+	height: 0.72rem;
+	border-radius: 999px;
+	background: radial-gradient(
+		circle,
+		color-mix(in srgb, var(--color-background) 96%, transparent),
+		color-mix(in srgb, var(--color-secondary) 86%, transparent) 45%,
+		color-mix(in srgb, var(--color-primary) 88%, transparent) 70%
+	);
+	box-shadow: 0 0 1rem color-mix(in srgb, var(--color-secondary) 42%, transparent);
+	transform: translate3d(0, -50%, 0) scale(0.72);
+	opacity: 0;
+	will-change: transform, opacity;
+}
+
+.controller-decorator-visualizer__beam--attr {
+	left: 17%;
+	top: 23%;
+	width: 20%;
+	height: 0.28rem;
+	transform: rotate(-10deg);
+}
+
+.controller-decorator-visualizer__beam--query {
+	left: 18%;
+	bottom: 24%;
+	width: 19%;
+	height: 0.28rem;
+	transform: rotate(12deg);
+}
+
+.controller-decorator-visualizer__beam--event {
+	left: 43%;
+	top: 26%;
+	width: 18%;
+	height: 0.28rem;
+}
+
+.controller-decorator-visualizer__beam--state {
+	left: 59%;
+	top: 50%;
+	width: 16%;
+	height: 0.28rem;
+	transform: rotate(90deg);
+}
+
+.controller-decorator-visualizer__beam--state span:last-child {
+	top: auto;
+	bottom: calc(100% + 0.55rem);
+	transform: translateX(-50%);
+}
+
+.controller-decorator-visualizer__beam--attr .controller-decorator-visualizer__packet {
+	animation: controller-decorator-visualizer-packet-attr 2.6s ease-in-out infinite;
+	animation-play-state: paused;
+}
+
+.controller-decorator-visualizer__beam--query .controller-decorator-visualizer__packet {
+	animation: controller-decorator-visualizer-packet-query 2.6s ease-in-out infinite;
+	animation-play-state: paused;
+}
+
+.controller-decorator-visualizer__beam--event .controller-decorator-visualizer__packet {
+	animation: controller-decorator-visualizer-packet-event 2.6s ease-in-out infinite;
+	animation-play-state: paused;
+}
+
+.controller-decorator-visualizer__beam--state .controller-decorator-visualizer__packet {
+	animation: controller-decorator-visualizer-packet-state 2.6s ease-in-out infinite;
+	animation-play-state: paused;
+}
+
+.controller-decorator-visualizer[data-flow] .controller-decorator-visualizer__packet {
+	animation-play-state: running;
+}
+
+.controller-decorator-visualizer__metric-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.75rem;
+}
+
+.controller-decorator-visualizer__metric-grid p {
+	@apply m-0 grid rounded-2xl border;
+	gap: 0.25rem;
+	padding: 0.7rem 0.8rem;
+	background: color-mix(in srgb, var(--color-primary-container) 46%, var(--color-background));
+	border: 1px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+
+.controller-decorator-visualizer__metric-grid span {
+	@apply text-[0.72rem] font-extrabold uppercase tracking-[0.08em];
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: color-mix(in srgb, var(--controller-decorator-visualizer-accent-cool) 72%, var(--color-on-background));
+}
+
+.controller-decorator-visualizer__value {
+	font-size: clamp(2rem, 4vw, 3rem);
+	line-height: 1;
+	font-weight: 800;
+	color: var(--color-on-background);
+	font-variant-numeric: tabular-nums;
+}
+
+.controller-decorator-visualizer__copy,
+.controller-decorator-visualizer__detail {
+	font-size: 0.95rem;
+	color: color-mix(in srgb, var(--color-on-background) 78%, transparent);
+	line-height: 1.55;
+}
+
+.controller-decorator-visualizer__rail {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.controller-decorator-visualizer__rail-step p:last-child {
+	margin: 0;
+	line-height: 1.55;
+	color: color-mix(in srgb, var(--color-on-background) 74%, transparent);
+}
+
+@media (hover: hover) {
+	.controller-decorator-visualizer__actions button:hover {
+		transform: translateY(-1px);
+		border-color: color-mix(in srgb, var(--controller-decorator-visualizer-accent) 38%, transparent);
+		background: color-mix(in srgb, var(--color-primary-container) 72%, var(--color-background));
+	}
+
+	.controller-decorator-visualizer__node:hover,
+	.controller-decorator-visualizer__core:hover,
+	.controller-decorator-visualizer__transmissions:hover,
+	.controller-decorator-visualizer__rail-step:hover {
+		border-color: color-mix(in srgb, var(--controller-decorator-visualizer-accent) 24%, transparent);
+		transform: translateY(-1px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.controller-decorator-visualizer__actions button,
+	.controller-decorator-visualizer__node,
+	.controller-decorator-visualizer__core,
+	.controller-decorator-visualizer__transmissions,
+	.controller-decorator-visualizer__rail-step {
+		transition: none;
+	}
+
+	.controller-decorator-visualizer__beam::after,
+	.controller-decorator-visualizer__packet {
+		animation: none;
+	}
+}
+
+@media (max-width: 820px) {
+	.controller-decorator-visualizer__header,
+	.controller-decorator-visualizer__actions,
+	.controller-decorator-visualizer__rail {
+		grid-template-columns: 1fr;
+	}
+
+	.controller-decorator-visualizer__diagram {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			'host'
+			'core'
+			'events'
+			'queries'
+			'state'
+			'transmissions';
+	}
+
+	.controller-decorator-visualizer__beam {
+		display: none;
+	}
+}
+
+@keyframes controller-decorator-visualizer-beam {
+	0% {
+		transform: translateX(-100%);
+	}
+	50% {
+		transform: translateX(0%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes controller-decorator-visualizer-packet-attr {
+	0%,
+	10% {
+		opacity: 0;
+		transform: translate3d(0, -50%, 0) scale(0.72);
+	}
+	36% {
+		opacity: 1;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(1);
+	}
+	56%,
+	100% {
+		opacity: 0;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(0.72);
+	}
+}
+
+@keyframes controller-decorator-visualizer-packet-query {
+	0%,
+	18% {
+		opacity: 0;
+		transform: translate3d(0, -50%, 0) scale(0.72);
+	}
+	44% {
+		opacity: 1;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(1);
+	}
+	64%,
+	100% {
+		opacity: 0;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(0.72);
+	}
+}
+
+@keyframes controller-decorator-visualizer-packet-event {
+	0%,
+	22% {
+		opacity: 0;
+		transform: translate3d(0, -50%, 0) scale(0.72);
+	}
+	46% {
+		opacity: 1;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(1);
+	}
+	66%,
+	100% {
+		opacity: 0;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(0.72);
+	}
+}
+
+@keyframes controller-decorator-visualizer-packet-state {
+	0%,
+	30% {
+		opacity: 0;
+		transform: translate3d(0, -50%, 0) scale(0.72);
+	}
+	56% {
+		opacity: 1;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(1);
+	}
+	76%,
+	100% {
+		opacity: 0;
+		transform: translate3d(calc(100% - 0.72rem), -50%, 0) scale(0.72);
+	}
+}
