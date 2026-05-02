@@ -8,9 +8,36 @@ export type ControllerConstructor<TController extends RadiantController = Radian
 
 export type ControllerRegistrationStrategy = 'keep-current' | 'replace';
 
-const controllerRegistry = new Map<string, ControllerConstructor>();
-const activeRuntimes = new Set<ControllerRegistryRuntime>();
-let controllerRegistrationStrategy: ControllerRegistrationStrategy = 'keep-current';
+type ControllerRegistryGlobalState = {
+	activeRuntimes: Set<ControllerRegistryRuntime>;
+	controllerRegistrationStrategy: ControllerRegistrationStrategy;
+	controllerRegistry: Map<string, ControllerConstructor>;
+};
+
+const CONTROLLER_REGISTRY_STATE_KEY = Symbol.for('@ecopages/radiant.controller-registry-state');
+
+function getControllerRegistryGlobalState(): ControllerRegistryGlobalState {
+	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
+	const existingState = globalScope[CONTROLLER_REGISTRY_STATE_KEY];
+
+	if (existingState) {
+		return existingState as ControllerRegistryGlobalState;
+	}
+
+	const nextState: ControllerRegistryGlobalState = {
+		activeRuntimes: new Set<ControllerRegistryRuntime>(),
+		controllerRegistrationStrategy: 'keep-current',
+		controllerRegistry: new Map<string, ControllerConstructor>(),
+	};
+
+	globalScope[CONTROLLER_REGISTRY_STATE_KEY] = nextState;
+
+	return nextState;
+}
+
+const controllerRegistryState = getControllerRegistryGlobalState();
+const controllerRegistry = controllerRegistryState.controllerRegistry;
+const activeRuntimes = controllerRegistryState.activeRuntimes;
 
 function parseControllerIdentifiers(element: Element): string[] {
 	const value = element.getAttribute(CONTROLLER_ATTRIBUTE);
@@ -248,7 +275,7 @@ export function replaceController<
 }
 
 export function setControllerRegistrationStrategy(strategy: ControllerRegistrationStrategy): void {
-	controllerRegistrationStrategy = strategy;
+	controllerRegistryState.controllerRegistrationStrategy = strategy;
 }
 
 export function enableControllerReplacementForHmr(): void {
@@ -263,7 +290,7 @@ export function registerControllerWithConfiguredStrategy<
 	TController extends RadiantController,
 	TConstructor extends ControllerConstructor<TController>,
 >(identifier: string, controller: TConstructor): TConstructor {
-	if (controllerRegistrationStrategy === 'replace') {
+	if (controllerRegistryState.controllerRegistrationStrategy === 'replace') {
 		return replaceController(identifier, controller);
 	}
 

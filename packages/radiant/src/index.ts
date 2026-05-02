@@ -17,6 +17,7 @@ export * from './decorators/state';
 export * from './context/context-provider';
 export * from './context/create-context';
 export * from './context/events';
+export * from './controller-registry';
 export * from './context/decorators/consume-context';
 export * from './context/decorators/context-selector';
 export * from './context/decorators/on-context-update';

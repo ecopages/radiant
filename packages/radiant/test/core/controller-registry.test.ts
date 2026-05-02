@@ -1,3 +1,4 @@
+import { jsx } from '@ecopages/jsx';
 import { waitFor } from '@testing-library/dom';
 import { afterEach, describe, expect, test } from 'vitest';
 import { ContextProvider } from '../../src/context/context-provider';
@@ -43,6 +44,21 @@ class RegistryController extends RadiantController {
 	}
 }
 
+class RegistryRenderedClickController extends RadiantController<{ count: number }> {
+	count = 0;
+
+	override render() {
+		return jsx('button', {
+			'data-ref': 'toggle',
+			'on:click': () => {
+				this.count += 1;
+				this.requestUpdate();
+			},
+			children: String(this.count),
+		});
+	}
+}
+
 class RegistryContextProviderController extends RadiantController {
 	@provideContext<typeof registryContext>({
 		context: registryContext,
@@ -85,6 +101,7 @@ class RegistryContextConsumerElement extends RadiantElement {
 }
 
 registerController('registry-controller-test', RegistryController);
+registerController('registry-rendered-click', RegistryRenderedClickController);
 registerController('registry-context-provider', RegistryContextProviderController);
 registerController('registry-context-consumer', RegistryContextConsumerController);
 
@@ -162,6 +179,25 @@ describe('controller registry', () => {
 		await waitFor(() => {
 			const host = document.querySelector<HTMLElement>('[data-id="gamma"]');
 			expect(host?.getAttribute('data-connected')).toBe('late');
+		});
+	});
+
+	test('renders and wires event bindings for registry-started render controllers over existing host content', async () => {
+		document.body.innerHTML =
+			'<section data-controller="registry-rendered-click" data-id="rendered-click"><button data-ref="toggle">0</button></section>';
+
+		startControllers(document.body);
+
+		const host = document.querySelector<HTMLElement>('[data-id="rendered-click"]');
+
+		await waitFor(() => {
+			expect(host?.querySelector('[data-ref="toggle"]')?.textContent).toBe('0');
+		});
+
+		host?.querySelector<HTMLButtonElement>('[data-ref="toggle"]')?.click();
+
+		await waitFor(() => {
+			expect(host?.querySelector('[data-ref="toggle"]')?.textContent).toBe('1');
 		});
 	});
 

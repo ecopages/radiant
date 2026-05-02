@@ -16,7 +16,6 @@ const build = await Bun.build({
 	target: 'browser',
 	minify: !watchMode,
 	format: 'esm',
-	splitting: !watchMode,
 	external: externalPackages,
 	sourcemap: 'external',
 });

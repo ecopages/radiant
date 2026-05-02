@@ -27,6 +27,7 @@ export default defineConfig({
 		},
 	},
 	test: {
+		exclude: ['test-dist/**'],
 		browser: {
 			enabled: true,
 			headless: true,
