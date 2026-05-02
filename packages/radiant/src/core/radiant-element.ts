@@ -28,9 +28,9 @@ import {
 import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import {
-	getRadiantComponentSsrRuntime,
-	type RadiantComponentRenderBridge,
-	type RadiantComponentSsrCapable,
+	getRadiantElementSsrRuntime,
+	type RadiantElementRenderBridge,
+	type RadiantElementSsrCapable,
 } from './radiant-component-ssr-registry';
 import {
 	type AttributeTypeConstant,
@@ -492,16 +492,16 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.prepareForSsr();
 
-		return requireRadiantComponentSsrRuntime().renderView(this as unknown as RadiantComponentSsrCapable, options);
+		return requireRadiantElementSsrRuntime().renderView(this as unknown as RadiantElementSsrCapable, options);
 	}
 
 	public renderHost(): JsxRenderable {
-		return requireRadiantComponentSsrRuntime().renderHost(this as unknown as RadiantComponentSsrCapable);
+		return requireRadiantElementSsrRuntime().renderHost(this as unknown as RadiantElementSsrCapable);
 	}
 
 	public renderHostToString(options: RenderToStringOptions = {}): string {
-		return requireRadiantComponentSsrRuntime().renderHostToString(
-			this as unknown as RadiantComponentSsrCapable,
+		return requireRadiantElementSsrRuntime().renderHostToString(
+			this as unknown as RadiantElementSsrCapable,
 			options,
 		);
 	}
@@ -618,10 +618,12 @@ export class RadiantElement<Bindings extends object = {}>
 	/**
 	 * Returns the default JSX binding policy for reactive members on this host.
 	 *
-	 * Plain `RadiantElement` instances keep binding opt-in. JSX-first hosts such
-	 * as `RadiantComponent` override this hook to opt into automatic bindings for
-	 * `@prop`, `@state`, and direct `createReactiveProp`/`createReactiveField`
-	 * calls when no explicit `bind` option is supplied.
+	 * `RadiantElement` hosts default to automatic bindings for reactive members
+	 * when no explicit `bind` option is supplied.
+	 *
+	 * Lower-level hosts can override this hook to opt out when they want binding
+	 * creation to stay fully explicit across `@prop`, `@state`, and direct
+	 * `createReactiveProp`/`createReactiveField` calls.
 	 */
 	protected shouldAutoBindReactiveMembers(): boolean {
 		return true;
@@ -632,11 +634,11 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	protected getHostSsrAttributes(): Record<string, string> {
-		return requireRadiantComponentSsrRuntime().getHostAttributes(this as unknown as RadiantComponentSsrCapable);
+		return requireRadiantElementSsrRuntime().getHostAttributes(this as unknown as RadiantElementSsrCapable);
 	}
 
-	protected resolveSsrRenderBridge(): RadiantComponentRenderBridge {
-		const bridge: RadiantComponentRenderBridge = {};
+	protected resolveSsrRenderBridge(): RadiantElementRenderBridge {
+		const bridge: RadiantElementRenderBridge = {};
 
 		if (this.renderHostToString === RadiantElement.prototype.renderHostToString) {
 			bridge.renderHostToString = (options: RenderToStringOptions | undefined) =>
@@ -983,8 +985,8 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 }
 
-function requireRadiantComponentSsrRuntime() {
-	const runtime = getRadiantComponentSsrRuntime();
+function requireRadiantElementSsrRuntime() {
+	const runtime = getRadiantElementSsrRuntime();
 
 	if (!runtime) {
 		throw new Error(

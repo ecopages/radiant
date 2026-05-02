@@ -38,7 +38,7 @@ type ContextSelectorDecorator<Selected> = {
  * Subscribes a field or method to the current value, or a selected slice, of a context.
  *
  * **Field form (preferred):** The field holds the latest context value and is
- * updated whenever the provider changes. On `RadiantComponent` hosts, each
+ * updated whenever the provider changes. On `RadiantElement` hosts, each
  * update schedules `requestUpdate()` automatically so `render()` stays in sync.
  *
  * **Method form (deprecated — use `@onContextUpdate`):** The method is called

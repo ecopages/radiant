@@ -13,7 +13,7 @@ type SlotQueryHost = HTMLElement & {
 };
 
 /**
- * Queries projected light-DOM content assigned to a RadiantComponent slot.
+ * Queries projected light-DOM content assigned to a RadiantElement slot.
  *
  * The decorator returns assigned elements from the default slot when `name` is
  * omitted, or from the named slot when `name` is provided. Results are cached

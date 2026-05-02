@@ -13,6 +13,7 @@ import {
 	createRenderedComponentHeaders,
 	modulePreloadAsset,
 	RENDERED_COMPONENT_ASSETS_HEADER,
+	RENDERED_COMPONENT_FRAGMENT_HEADER,
 	RENDERED_COMPONENT_CLIENT_MODULE_HEADER,
 	RENDERED_COMPONENT_GENERATED_AT_HEADER,
 	RENDERED_COMPONENT_TAG_NAME_HEADER,
@@ -148,6 +149,7 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('Count: 9');
 		expect(rendered.markup).toContain('Canonical render');
 		expect(createRenderedComponentHeaders(rendered.metadata)).toEqual({
+			[RENDERED_COMPONENT_FRAGMENT_HEADER]: '1',
 			[RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(cardAssets),
 			[RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: '/assets/render-component-card.js',
 			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: '2026-03-27T13:30:00.000Z',
@@ -239,6 +241,7 @@ describe('render-component server helpers', () => {
 
 		const headers = createRenderedComponentHeaders(rendered);
 		expect(headers).toEqual({
+			[RENDERED_COMPONENT_FRAGMENT_HEADER]: '1',
 			[RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(cardAssets),
 			[RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: '/assets/render-component-card.js',
 			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: now.toISOString(),
@@ -285,6 +288,7 @@ describe('render-component server helpers', () => {
 				tagName: 'plain-render-card',
 			}),
 		).toEqual({
+			[RENDERED_COMPONENT_FRAGMENT_HEADER]: '1',
 			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: '2026-03-27T12:00:00.000Z',
 			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'plain-render-card',
 		});

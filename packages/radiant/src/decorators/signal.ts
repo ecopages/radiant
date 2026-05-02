@@ -24,7 +24,7 @@ type SignalDecorator<Value = unknown> = {
  *
  * Connected signals still flow through Radiant's update callback channel so
  * `@onUpdated(...)` and `this.$.name` bindings continue to work. On
- * `RadiantComponent`, any signal or store reads performed during `render()`
+ * `RadiantElement`, any signal or store reads performed during `render()`
  * now participate in rerender invalidation directly, which makes module-level
  * shared stores a natural fit without prop-bridging them through a second
  * reactive layer.

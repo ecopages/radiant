@@ -26,7 +26,7 @@ export type OnContextUpdateOptions<T extends UnknownContext, Selected = ContextT
 	select?: (context: ContextType<T>) => Selected;
 	/** Whether client-side event-channel subscriptions should stay active after the first value. */
 	subscribe?: boolean;
-	/** Whether RadiantComponent hosts should schedule `requestUpdate()` after delivery. */
+	/** Whether RadiantElement hosts should schedule `requestUpdate()` after delivery. */
 	requestUpdate?: boolean;
 };
 
@@ -37,7 +37,7 @@ export type OnContextUpdateOptions<T extends UnknownContext, Selected = ContextT
  * available, and on the client it keeps receiving updates according to the
  * `subscribe` option.
  *
- * On `RadiantComponent` hosts, each delivery also schedules `requestUpdate()`
+ * On `RadiantElement` hosts, each delivery also schedules `requestUpdate()`
  * unless `requestUpdate: false` is set explicitly.
  *
  * @param options Context subscription configuration.

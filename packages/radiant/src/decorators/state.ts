@@ -7,9 +7,9 @@ import { fieldDecoratorBridge } from './bridge';
  * Declares internal mutable component state.
  *
  * Each write triggers `notifyUpdate` so update callbacks, bindings, and
- * `RadiantComponent` renders stay in sync. When no explicit binding option
- * is supplied, `RadiantComponent` hosts expose a JSX companion binding
- * accessor automatically while plain `RadiantElement` hosts keep binding
+ * `RadiantElement` renders stay in sync. When no explicit binding option
+ * is supplied, `RadiantElement` hosts expose a JSX companion binding
+ * accessor automatically while plain imperative hosts keep binding
  * opt-in.
  */
 export function state<THost extends ReactiveHostLike, TValue>(

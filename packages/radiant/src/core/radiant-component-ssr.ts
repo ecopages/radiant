@@ -8,7 +8,7 @@ import type { ReactivePropDefinition } from './reactive-prop-metadata';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { writeAttributeValue } from '../utils/attribute-utils';
 
-type RadiantComponentSsrHost = {
+type RadiantElementSsrHost = {
 	constructor: CustomElementConstructor;
 	getAuthoredHydrationScriptMarkup?: () => string | undefined;
 	getContextProviders: () => SsrSerializableContextProvider[];
@@ -22,8 +22,8 @@ type RadiantComponentSsrHost = {
 	getAttributeValue: (name: string) => string | null;
 };
 
-export class RadiantComponentSsrService {
-	constructor(private readonly host: RadiantComponentSsrHost) {}
+export class RadiantElementSsrService {
+	constructor(private readonly host: RadiantElementSsrHost) {}
 
 	public renderHost(): JsxRenderable {
 		return {

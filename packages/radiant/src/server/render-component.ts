@@ -2,15 +2,15 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import {
-	getRadiantComponentSsrRuntime,
-	type RadiantComponentRenderBridge,
-	type RadiantComponentSsrCapable,
+	getRadiantElementSsrRuntime,
+	type RadiantElementRenderBridge,
+	type RadiantElementSsrCapable,
 } from '../core/radiant-component-ssr-registry';
 import { withSsrContextProviders } from './context-ssr';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
-import { ensureRadiantComponentSsrRuntimeRegistered } from './radiant-component-ssr-runtime';
+import { ensureRadiantElementSsrRuntimeRegistered } from './radiant-component-ssr-runtime';
 
 /** Default response header carrying the fragment render timestamp. */
 export const RENDERED_COMPONENT_GENERATED_AT_HEADER = 'x-generated-at';
@@ -18,13 +18,16 @@ export const RENDERED_COMPONENT_GENERATED_AT_HEADER = 'x-generated-at';
 /** Default response header carrying the custom-element tag name for the fragment. */
 export const RENDERED_COMPONENT_TAG_NAME_HEADER = 'x-radiant-tag-name';
 
+/** Default response header marking an SSR payload as a Radiant-managed fragment. */
+export const RENDERED_COMPONENT_FRAGMENT_HEADER = 'x-radiant-fragment';
+
 /** Default response header carrying the client module URL for the fragment. */
 export const RENDERED_COMPONENT_CLIENT_MODULE_HEADER = 'x-radiant-client-module';
 
 /** Default response header carrying serialized fragment asset metadata. */
 export const RENDERED_COMPONENT_ASSETS_HEADER = 'x-radiant-assets';
 
-ensureRadiantComponentSsrRuntimeRegistered();
+ensureRadiantElementSsrRuntimeRegistered();
 
 /** Asset dependency emitted by a rendered fragment. */
 export type RenderedComponentAsset =
@@ -304,7 +307,7 @@ export async function renderComponentWithPreview<TComponent extends ServerRender
 async function renderResolvedComponent<TComponent extends ServerRenderableComponent>(
 	normalizedOptions: RenderComponentOptions<TComponent>,
 ): Promise<RenderedComponent> {
-	ensureRadiantComponentSsrRuntimeRegistered();
+	ensureRadiantElementSsrRuntimeRegistered();
 
 	const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
 	const restoreAmbientContext = withSsrContextProviders(
@@ -331,7 +334,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 		const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
 		const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
 		const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
-		const radiantSsrBridge = getRadiantComponentRenderBridge(component as unknown as RadiantComponentSsrCapable);
+		const radiantSsrBridge = getRadiantElementRenderBridge(component as unknown as RadiantElementSsrCapable);
 		const markup =
 			radiantSsrBridge?.renderHostToString?.(renderOptions) ?? component.renderHostToString(renderOptions);
 		const preview = resolveRenderedComponentPreview(component, radiantSsrBridge, markup);
@@ -351,10 +354,8 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 	}
 }
 
-function getRadiantComponentRenderBridge(
-	component: RadiantComponentSsrCapable,
-): RadiantComponentRenderBridge | undefined {
-	return getRadiantComponentSsrRuntime()?.resolveRenderBridge(component);
+function getRadiantElementRenderBridge(component: RadiantElementSsrCapable): RadiantElementRenderBridge | undefined {
+	return getRadiantElementSsrRuntime()?.resolveRenderBridge(component);
 }
 
 /**
@@ -368,7 +369,7 @@ function getRadiantComponentRenderBridge(
  */
 function resolveRenderedComponentPreview<TComponent extends ServerRenderableComponent>(
 	component: TComponent,
-	radiantSsrBridge: RadiantComponentRenderBridge | undefined,
+	radiantSsrBridge: RadiantElementRenderBridge | undefined,
 	markup: string,
 ): JsxRenderable {
 	if (!radiantSsrBridge) {
@@ -452,6 +453,7 @@ export function createRenderedComponentHeaders(
 	const metadata = toRenderedComponentMetadata(render);
 
 	return {
+		[RENDERED_COMPONENT_FRAGMENT_HEADER]: '1',
 		...(metadata.assets.length > 0 ? { [RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(metadata.assets) } : {}),
 		...(metadata.clientModuleUrl ? { [RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: metadata.clientModuleUrl } : {}),
 		[RENDERED_COMPONENT_GENERATED_AT_HEADER]: metadata.generatedAt,
