@@ -1,8 +1,8 @@
 # Radiant
 
-Radiant is a light-DOM custom element library.
+Radiant is a light-DOM platform for custom elements and DOM-attached controllers.
 
-It keeps browser primitives visible instead of wrapping them in a synthetic component model. You work with real custom elements, real DOM events, real attributes, and real light-DOM children. When you want JSX-backed rendering, SSR host serialization, and hydration, use `RadiantComponent`. When you want a more imperative base without JSX, use `RadiantElement`.
+It keeps browser primitives visible instead of wrapping them in a synthetic component model. You work with real custom elements, real DOM events, real attributes, and real light-DOM children. Use `RadiantElement` when you want reactive fields, JSX-backed rendering, SSR host serialization, and hydration on a real custom element. Use `RadiantController` when you want behavior attached to existing DOM instead of defining a custom element.
 
 Radiant deliberately does not use shadow DOM by default. That makes styling, DOM inspection, and authored child content simpler, while giving up some of the encapsulation that conventional custom-element guidance usually prefers.
 
@@ -20,9 +20,9 @@ bun install @ecopages/radiant @ecopages/signals @ecopages/jsx
 
 Important: even if you are starting from `RadiantElement`, the current package surface still depends on `@ecopages/jsx`.
 
-## RadiantComponent Mental Model
+## RadiantElement Mental Model
 
-`RadiantComponent` is the structured JSX-first base class.
+`RadiantElement` is the structured base class for reactive custom elements.
 
 - `render()` returns the current JSX view.
 - First connect automatically chooses between hydration and a fresh client render.
@@ -39,17 +39,17 @@ The key distinction is this:
 - Use bindings such as `this.$.count` when the shape of the view stays the same and only child values need to change.
 - Use `update()` or `requestUpdate()` when a reactive change affects the structure of the JSX tree.
 
-Signal and store reads performed directly inside `render()` also participate in rerender invalidation, so shared reactive data can drive `RadiantComponent` views without an extra wrapper layer.
+Signal and store reads performed directly inside `render()` also participate in rerender invalidation, so shared reactive data can drive `RadiantElement` views without an extra wrapper layer.
 
 ## Counter Example
 
-This counter shows the intended `RadiantComponent` style for stable templates: public props stay explicit, internal state stays local, and bound child values update without forcing a full rerender of the whole template.
+This counter shows the intended `RadiantElement` style for stable templates: public props stay explicit, internal state stays local, and bound child values update without forcing a full rerender of the whole template.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantComponent, customElement, prop, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
 type CounterCardBindings = {
 	count: number;
@@ -61,7 +61,7 @@ type CounterCardAttributes = {
 };
 
 @customElement('counter-card')
-export class CounterCard extends RadiantComponent<CounterCardBindings> {
+export class CounterCard extends RadiantElement<CounterCardBindings> {
 	@prop({ type: String, defaultValue: 'Clicks' }) label!: string;
 	@state count = 0;
 
@@ -104,9 +104,9 @@ If the same type truly represents both internal bindings and public JSX attribut
 Call `update()` or `requestUpdate()` when a reactive change affects which elements should exist, not just their child values.
 
 ```ts
-import { RadiantComponent, onUpdated, state } from '@ecopages/radiant';
+import { RadiantElement, onUpdated, state } from '@ecopages/radiant';
 
-export class ResultsPanel extends RadiantComponent<{ expanded: boolean }> {
+export class ResultsPanel extends RadiantElement<{ expanded: boolean }> {
 	@state expanded = false;
 
 	@onUpdated('expanded')
@@ -122,7 +122,7 @@ Use `update()` when you want the rerender immediately. Use `requestUpdate()` whe
 
 Bindings are the non-obvious part of the API, and they are worth being explicit about.
 
-`RadiantComponent<Bindings>` and `RadiantElement<Bindings>` take a dedicated binding shape, not the full class type. That keeps the binding namespace limited to the reactive props or fields you want JSX to consume.
+`RadiantElement<Bindings>` takes a dedicated binding shape, not the full class type. That keeps the binding namespace limited to the reactive props or fields you want JSX to consume.
 
 These three forms are equivalent:
 
@@ -142,7 +142,7 @@ Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive cha
 
 ## SSR And Hydration
 
-`RadiantComponent` has two SSR surfaces:
+`RadiantElement` has two SSR surfaces:
 
 - `renderToString()` serializes the component view only.
 - `renderHostToString()` serializes the custom-element host together with the current view.
@@ -151,7 +151,7 @@ In practice, `renderHostToString()` is the right default for full component SSR 
 
 `mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is now explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 
-For component-owned SSR, the instance methods still work. For adapters, fragment responses, and shared server utilities, prefer the explicit helpers under `@ecopages/radiant/server/render-component`.
+For element-owned SSR, the instance methods still work. For adapters, fragment responses, and shared server utilities, prefer the explicit helpers under `@ecopages/radiant/server/render-component`.
 
 Server runtime setup, fragment rendering helpers, and SSR-specific import guidance now live in [src/server/README.md](src/server/README.md).
 
@@ -165,7 +165,7 @@ Radiant does not invent a synthetic event layer. JSX handlers and decorators wor
 | -------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `on:*` in JSX        | The normal event API                                              | Auto-delegates a fixed allowlist of bubbling events and falls back to direct listeners otherwise |
 | `on-native:*` in JSX | Exact element-level browser listener semantics                    | Always calls `addEventListener(...)` on that element                                             |
-| `@onEvent(...)`      | Class-level listening from `RadiantElement` or `RadiantComponent` | Supports `selector`, `ref`, `window`, and `document` targets                                     |
+| `@onEvent(...)`      | Class-level listening from `RadiantElement`                      | Supports `selector`, `ref`, `window`, and `document` targets                                     |
 | `@event(...)`        | A typed custom event emitter owned by the component               | Dispatches a real `CustomEvent` from the host element                                            |
 
 ### How JSX Event Binding Works
@@ -211,10 +211,10 @@ At the class level, `@onEvent(...)` is the main decorator for incoming DOM event
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantComponent, customElement, onEvent, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 
 @customElement('keyboard-panel')
-export class KeyboardPanel extends RadiantComponent<{ lastKey: string }> {
+export class KeyboardPanel extends RadiantElement<{ lastKey: string }> {
 	@state lastKey = 'none';
 
 	@onEvent({ document: true, type: 'keydown' })
@@ -267,7 +267,7 @@ These are the documented public import paths exposed by the package.
 
 | Path                                          | Use for                                                                                                         |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `@ecopages/radiant`                           | Main client entrypoint. Re-exports `RadiantElement`, `RadiantComponent`, common decorators, and context helpers |
+| `@ecopages/radiant`                           | Main client entrypoint. Re-exports `RadiantElement`, `RadiantController`, common decorators, and context helpers |
 | `@ecopages/radiant/context`                   | Context-related exports as a grouped entrypoint                                                                 |
 | `@ecopages/radiant/context/create-context`    | Creating context keys                                                                                           |
 | `@ecopages/radiant/context/context-provider`  | Low-level context provider class                                                                                |
@@ -275,8 +275,9 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/context/provide-context`   | `@provideContext(...)` decorator                                                                                |
 | `@ecopages/radiant/context/context-selector`  | `@contextSelector(...)` decorator — bind a field to context                                                     |
 | `@ecopages/radiant/context/on-context-update` | `@onContextUpdate(...)` decorator — run a method on context change                                              |
+| `@ecopages/radiant/controller-registry`       | Controller registration and activation helpers                                                                  |
 | `@ecopages/radiant/core/radiant-element`      | Non-JSX reactive custom-element base                                                                            |
-| `@ecopages/radiant/core/radiant-component`    | JSX-first component base                                                                                        |
+| `@ecopages/radiant/core/radiant-controller`   | DOM-attached controller base                                                                                    |
 | `@ecopages/radiant/client/hydrator`           | Explicit client hydrator installer and status helpers for SSR pages                                             |
 | `@ecopages/radiant/client/install-hydrator`   | Side-effect entrypoint that enables first-connect hydration before component modules load                       |
 | `@ecopages/radiant/signals/host-resource`     | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                          |

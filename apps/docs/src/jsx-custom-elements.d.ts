@@ -1,5 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { RadiantCounterProps } from '@/components/radiant-counter/radiant-component-counter.script';
+import type { RadiantCounterProps } from '@/components/radiant-counter/radiant-jsx-counter.script';
 import type { RadiantElementCounterProps } from '@/components/radiant-counter/radiant-element-counter.script';
 import type { RadiantTodoProps } from '@/components/radiant-todo-app/radiant-todo-item.script';
 import type { RadiantSwitchProps } from '@/components/switch/switch.script';

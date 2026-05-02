@@ -797,7 +797,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			jsxs('section', {
 				class: 'component-card component-card--counter',
 				children: [
-					jsxs('p', { class: 'component-tag', children: ['RadiantComponent'] }),
+					jsxs('p', { class: 'component-tag', children: ['RadiantElement'] }),
 					jsxs('h3', { children: ['SSR counter rendered in Nitro'] }),
 					jsxs('p', {
 						class: 'component-copy',

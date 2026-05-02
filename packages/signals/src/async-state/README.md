@@ -2,7 +2,7 @@
 
 Reactive primitive for tracking async operations. Exposes `data`, `status`, and
 `error` as dependency-tracked signals so any computed, effect, or
-`RadiantComponent.render()` that reads them re-evaluates automatically when the
+`RadiantElement.render()` that reads them re-evaluates automatically when the
 fetch lifecycle advances.
 
 ## API
@@ -164,14 +164,14 @@ const weather = asyncState({
 });
 ```
 
-## Usage in RadiantComponent
+## Usage in RadiantElement
 
 Signal reads during `render()` participate in automatic rerender tracking.
 No decorator or special integration is needed — just read the signals:
 
 ```typescript
 @customElement('my-user-card')
-class MyUserCard extends RadiantComponent {
+class MyUserCard extends RadiantElement {
   @prop({ type: String }) userId = '';
 
   private userQuery = asyncState({

@@ -110,7 +110,7 @@ const App = () => {
 			<PlaygroundSection
 				badge="Signals"
 				title="Shared signal and store lab"
-				description="The first pair uses a shared writable signal through @signal on plain RadiantElement hosts. The second pair reads a shared store directly inside RadiantComponent render(), so both components rerender from the same store without prop plumbing."
+				description="The first pair uses a shared writable signal through @signal on plain RadiantElement hosts. The second pair reads a shared store directly inside RadiantElement render(), so both components rerender from the same store without prop plumbing."
 			>
 				<RadiantSignalLab />
 			</PlaygroundSection>

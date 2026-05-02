@@ -87,11 +87,11 @@ Or enable it per file:
 
 ## Quick Start With Radiant
 
-The most common path is still a `RadiantComponent` that returns JSX from `render()`.
+The most common path is a `RadiantElement` that returns JSX from `render()`.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
-import { RadiantComponent, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 const CounterButton = ({ label, onPress }: { label: string; onPress: (event: MouseEvent) => void }) => (
 	<button type="button" on:click={onPress} aria={{ label }}>
@@ -100,7 +100,7 @@ const CounterButton = ({ label, onPress }: { label: string; onPress: (event: Mou
 );
 
 @customElement('radiant-counter')
-export class RadiantCounter extends RadiantComponent {
+export class RadiantCounter extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
 
 	private readonly increment = () => {
@@ -147,7 +147,7 @@ This is the key simplification:
 
 ## Direct DOM Usage
 
-If you need app-level mounting outside a `RadiantComponent`, use the DOM root helper.
+If you need app-level mounting outside a `RadiantElement`, use the DOM root helper.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */

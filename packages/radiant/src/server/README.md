@@ -2,7 +2,7 @@
 
 Radiant's server-facing APIs live on explicit `@ecopages/radiant/server/*` entrypoints.
 
-Use the root `@ecopages/radiant` entrypoint for component bases, decorators, and context helpers that are primarily consumed on the client. Use the server subpaths when you are building SSR adapters, pre-rendering custom-element hosts, or preparing a server runtime.
+Use the root `@ecopages/radiant` entrypoint for `RadiantElement`, `RadiantController`, decorators, and context helpers that are primarily consumed on the client. Use the server subpaths when you are building SSR adapters, pre-rendering custom-element hosts, or preparing a server runtime.
 
 When SSR markup should hydrate in the browser, pair these server entrypoints with the explicit client hydrator import:
 
@@ -18,7 +18,7 @@ import '@ecopages/radiant/client/install-hydrator';
 
 ## SSR Surfaces
 
-`RadiantComponent` exposes two host serialization methods:
+`RadiantElement` exposes two host serialization methods:
 
 - `renderToString()` serializes the component view only.
 - `renderHostToString()` serializes the custom-element host together with the current view.
@@ -31,7 +31,7 @@ For adapters, fragment responses, and framework integrations, prefer the explici
 
 ## Runtime Preparation
 
-If your SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant component modules:
+If your SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant element modules:
 
 ```ts
 import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
@@ -89,5 +89,5 @@ Other useful server helpers:
 
 ## Related Docs
 
-- See [../core/README.md](../core/README.md) for the `RadiantComponent` lifecycle and hydration flow.
+- See [../core/README.md](../core/README.md) for the `RadiantElement` lifecycle and hydration flow.
 - See [../../README.md](../../README.md) for the top-level package overview and public entrypoints.

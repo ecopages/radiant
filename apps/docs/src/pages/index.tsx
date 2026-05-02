@@ -3,7 +3,7 @@ import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
 import { rawHtml } from '@/utils/raw-html';
 import { CodeTabs } from '@/components/code-tabs';
-import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-component-counter';
+import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-jsx-counter';
 
 const counterExample = await codeToHtml(
 	`import { RadiantElement, customElement, prop } from '@ecopages/radiant';

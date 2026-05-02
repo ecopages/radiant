@@ -1,9 +1,9 @@
 ---
-name: radiant-component-author
-description: "Author, refactor, review, or explain Radiant custom elements built with @ecopages/radiant. Use this whenever the user asks for a RadiantComponent or RadiantElement, custom elements with @prop/@state/@signal, JSX-host rendering, slot projection, SSR hydration, internal bindings, or guidance about when to use plain reactive reads versus this.$ / this.bindings / this.bind(...). Also use it when updating docs, examples, or playground code so the output follows Radiant's current intent and best practices rather than generic web-component or React habits."
+name: radiant-element-author
+description: "Author, refactor, review, or explain Radiant custom elements and controllers built with @ecopages/radiant. Use this whenever the user asks for a RadiantElement or RadiantController, custom elements with @prop/@state/@signal, JSX-host rendering, slot projection, SSR hydration, internal bindings, or guidance about when to use plain reactive reads versus this.$ / this.bindings / this.bind(...). Also use it when updating docs, examples, or playground code so the output follows Radiant's current intent and best practices rather than generic web-component or React habits."
 ---
 
-# Radiant Component Author
+# Radiant Element Author
 
 Author and review Radiant components according to the framework's intended rendering model.
 
@@ -16,8 +16,8 @@ Use `llms.txt` first when you need a compact machine-oriented map of the framewo
 
 Base assumptions:
 
-- Use `RadiantComponent` when the host owns a JSX view.
-- Use `RadiantElement` for lower-level or imperative hosts.
+- Use `RadiantElement` when the host owns a custom-element view, whether the implementation is JSX-first or more imperative.
+- Use `RadiantController` when behavior should attach to authored DOM instead of a custom-element host.
 - Plain reactive reads and JSX bindings are both valid and should be chosen intentionally.
 - Bindings are subscribable JSX values used for fine-grained patching.
 
@@ -25,7 +25,7 @@ Base assumptions:
 
 Use this skill whenever the task involves any of the following:
 
-- creating or editing a `RadiantComponent` or `RadiantElement`
+- creating or editing a `RadiantElement` or `RadiantController`
 - choosing between `@prop(...)`, `@state`, or `@signal`
 - deciding whether code should use plain reads like `this.count` or bindings like `this.$.count`
 - defining public props versus internal bindings types
@@ -44,7 +44,7 @@ Treat these as different tools, not interchangeable syntax:
 
 ### Plain Reads
 
-Plain reads such as `this.count` or `this.isExpanded` are tracked when used during `render()` on a `RadiantComponent`.
+Plain reads such as `this.count` or `this.isExpanded` are tracked when used during `render()` on a `RadiantElement`.
 
 They are correct and reactive by default, but they participate in host rerenders.
 
@@ -121,9 +121,11 @@ If styling should react without host rerender, prefer a bound state attribute su
 
 ## Choosing The Base Class
 
-Default to `RadiantComponent` when the host should own a JSX view.
+Default to `RadiantElement` when the host should own a custom-element view.
 
-Choose `RadiantElement` when the host is mainly:
+Choose `RadiantController` when behavior should attach to existing DOM without defining a custom element.
+
+Choose a simpler `RadiantElement` shape when the host is mainly:
 
 - imperative
 - string-template based
@@ -175,7 +177,7 @@ Avoid updating the same watched property directly inside its own `@onUpdated(...
 ### DOM Queries
 
 - `@query(...)`: read rendered descendants by `data-ref` or selector
-- `@querySlot(...)`: read projected slot-assigned elements from a `RadiantComponent`
+- `@querySlot(...)`: read projected slot-assigned elements from a `RadiantElement`
 
 `@query` options:
 
@@ -239,7 +241,7 @@ Core pieces:
 - `createContext(...)`: define the typed context token
 - `@provideContext(...)`: attach a provider to a host
 - `@consumeContext(...)`: inject the nearest matching provider object onto a field
-- `@contextSelector(...)`: bind a **field** to the whole context value or a selected slice — auto-rerenders `RadiantComponent` hosts on change
+- `@contextSelector(...)`: bind a **field** to the whole context value or a selected slice — auto-rerenders `RadiantElement` hosts on change
 - `@onContextUpdate(...)`: run a **method** when the context changes — use for imperative side effects
 
 ### When To Provide Context
@@ -259,7 +261,7 @@ Use `@consumeContext(...)` when the host needs the provider object itself, for e
 
 `@consumeContext(...)` does not make later `provider.getContext()` reads reactive by itself. Treat those reads as snapshots for the current render or callback.
 
-Use `@contextSelector(...)` on a field when the host should render from the current context value. The field holds the selected value and `RadiantComponent` rerenders automatically when it changes. `render()` reads `this.myField` directly — no empty method body, no `this.update()` call.
+Use `@contextSelector(...)` on a field when the host should render from the current context value. The field holds the selected value and `RadiantElement` rerenders automatically when it changes. `render()` reads `this.myField` directly — no empty method body, no `this.update()` call.
 
 Use `@onContextUpdate(...)` on a method when a context change should trigger imperative work: DOM mutations, attribute writes, logging, or side-effect orchestration.
 
@@ -307,7 +309,7 @@ type UserCardBindings = UserCardProps & {
 	isExpanded: boolean;
 };
 
-export class UserCard extends RadiantComponent<UserCardBindings> {
+export class UserCard extends RadiantElement<UserCardBindings> {
 	@prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
 	@prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
 	@state isExpanded = false;
@@ -364,14 +366,14 @@ Do not add noisy inline comments.
 
 For docs and playground examples, use the smallest number of custom elements that still demonstrates the target API clearly.
 
-- if the point is host-owned JSX, a single `RadiantComponent` is often enough
+- if the point is host-owned JSX, a single `RadiantElement` is often enough
 - add a second custom element only when provider or consumer boundaries, leaf ownership, or lower-level composition is part of the lesson
 
 ## Review Checklist
 
 When reviewing a Radiant component, check these questions:
 
-1. Should this be `RadiantComponent` or `RadiantElement`?
+1. Should this be `RadiantElement` or `RadiantController`?
 2. Are public props separated from internal bindings when they should be?
 3. Are plain reads being used for control flow and class/style composition?
 4. Are bindings being used where fine-grained patching is desirable?
