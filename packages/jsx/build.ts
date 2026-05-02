@@ -1,4 +1,4 @@
-import { watch } from 'node:fs';
+import { copyFile, watch } from 'node:fs';
 import path from 'node:path';
 import { $ } from 'bun';
 
@@ -45,6 +45,17 @@ for (const build of [browserBuild, serverBuild]) {
 	}
 
 	process.exitCode = 1;
+}
+
+if (browserBuild.success && serverBuild.success) {
+	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
+		if (!error) {
+			return;
+		}
+
+		console.log('[@ecopages/jsx]', error);
+		process.exitCode = 1;
+	});
 }
 
 if (watchMode) {

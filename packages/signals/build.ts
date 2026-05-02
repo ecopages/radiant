@@ -1,3 +1,6 @@
+import { copyFile } from 'node:fs';
+import path from 'node:path';
+
 const watchMode = process.argv.includes('--watch');
 
 const build = await Bun.build({
@@ -15,4 +18,15 @@ if (!build.success) {
 	}
 
 	process.exitCode = 1;
+}
+
+if (build.success) {
+	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
+		if (!error) {
+			return;
+		}
+
+		console.log('[@ecopages/signals]', error);
+		process.exitCode = 1;
+	});
 }

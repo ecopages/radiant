@@ -1,4 +1,4 @@
-import { watch } from 'node:fs';
+import { copyFile, watch } from 'node:fs';
 import path from 'node:path';
 import { $ } from 'bun';
 
@@ -25,6 +25,17 @@ if (!build.success) {
 	for (const log of build.logs) {
 		console.log('[@ecopages/radiant]', log);
 	}
+}
+
+if (build.success) {
+	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
+		if (!error) {
+			return;
+		}
+
+		console.log('[@ecopages/radiant]', error);
+		process.exitCode = 1;
+	});
 }
 
 if (process.argv.includes('--watch')) {
