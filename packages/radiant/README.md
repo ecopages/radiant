@@ -161,12 +161,12 @@ For the client lifecycle and hydration flow diagram, see [src/core/README.md](sr
 
 Radiant does not invent a synthetic event layer. JSX handlers and decorators work with the native browser event object directly.
 
-| Use this             | When you want                                                     | Runtime shape                                                                                    |
-| -------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `on:*` in JSX        | The normal event API                                              | Auto-delegates a fixed allowlist of bubbling events and falls back to direct listeners otherwise |
-| `on-native:*` in JSX | Exact element-level browser listener semantics                    | Always calls `addEventListener(...)` on that element                                             |
-| `@onEvent(...)`      | Class-level listening from `RadiantElement`                      | Supports `selector`, `ref`, `window`, and `document` targets                                     |
-| `@event(...)`        | A typed custom event emitter owned by the component               | Dispatches a real `CustomEvent` from the host element                                            |
+| Use this             | When you want                                       | Runtime shape                                                                                    |
+| -------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `on:*` in JSX        | The normal event API                                | Auto-delegates a fixed allowlist of bubbling events and falls back to direct listeners otherwise |
+| `on-native:*` in JSX | Exact element-level browser listener semantics      | Always calls `addEventListener(...)` on that element                                             |
+| `@onEvent(...)`      | Class-level listening from `RadiantElement`         | Supports `selector`, `ref`, `window`, and `document` targets                                     |
+| `@event(...)`        | A typed custom event emitter owned by the component | Dispatches a real `CustomEvent` from the host element                                            |
 
 ### How JSX Event Binding Works
 
@@ -265,40 +265,40 @@ The mental model stays simple:
 
 These are the documented public import paths exposed by the package.
 
-| Path                                          | Use for                                                                                                         |
-| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Path                                          | Use for                                                                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `@ecopages/radiant`                           | Main client entrypoint. Re-exports `RadiantElement`, `RadiantController`, common decorators, and context helpers |
-| `@ecopages/radiant/context`                   | Context-related exports as a grouped entrypoint                                                                 |
-| `@ecopages/radiant/context/create-context`    | Creating context keys                                                                                           |
-| `@ecopages/radiant/context/context-provider`  | Low-level context provider class                                                                                |
-| `@ecopages/radiant/context/consume-context`   | `@consumeContext(...)` decorator                                                                                |
-| `@ecopages/radiant/context/provide-context`   | `@provideContext(...)` decorator                                                                                |
-| `@ecopages/radiant/context/context-selector`  | `@contextSelector(...)` decorator — bind a field to context                                                     |
-| `@ecopages/radiant/context/on-context-update` | `@onContextUpdate(...)` decorator — run a method on context change                                              |
-| `@ecopages/radiant/controller-registry`       | Controller registration and activation helpers                                                                  |
-| `@ecopages/radiant/core/radiant-element`      | Non-JSX reactive custom-element base                                                                            |
-| `@ecopages/radiant/core/radiant-controller`   | DOM-attached controller base                                                                                    |
-| `@ecopages/radiant/client/hydrator`           | Explicit client hydrator installer and status helpers for SSR pages                                             |
-| `@ecopages/radiant/client/install-hydrator`   | Side-effect entrypoint that enables first-connect hydration before component modules load                       |
-| `@ecopages/radiant/signals/host-resource`     | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                          |
-| `@ecopages/radiant/server/light-dom-shim`     | Minimal SSR window and host-preparation helpers                                                                 |
-| `@ecopages/radiant/server/render-component`   | Canonical component SSR helpers and metadata utilities                                                          |
-| `@ecopages/radiant/server/project-root`       | Project-root resolution helper for server adapters                                                              |
-| `@ecopages/radiant/decorators/bound`          | `@bound`                                                                                                        |
-| `@ecopages/radiant/decorators/custom-element` | `@customElement(...)`                                                                                           |
-| `@ecopages/radiant/decorators/debounce`       | `@debounce(...)`                                                                                                |
-| `@ecopages/radiant/decorators/event`          | `@event(...)`                                                                                                   |
-| `@ecopages/radiant/decorators/on-event`       | `@onEvent(...)`                                                                                                 |
-| `@ecopages/radiant/decorators/on-updated`     | `@onUpdated(...)`                                                                                               |
-| `@ecopages/radiant/decorators/prop`           | `@prop(...)`                                                                                                    |
-| `@ecopages/radiant/decorators/query`          | `@query(...)`                                                                                                   |
-| `@ecopages/radiant/decorators/query-slot`     | `@querySlot(...)`                                                                                               |
-| `@ecopages/radiant/decorators/signal`         | `@signal(...)`                                                                                                  |
-| `@ecopages/radiant/decorators/state`          | `@state`                                                                                                        |
-| `@ecopages/radiant/tools/stringify-typed`     | Typed attribute serialization helper                                                                            |
-| `@ecopages/radiant/tools/render-jsx-template` | Render a JSX template result into an existing host                                                              |
-| `@ecopages/radiant/tools/escape-script-json`  | Safe JSON-for-script serialization helper                                                                       |
-| `@ecopages/radiant/tools/event-emitter`       | Low-level `EventEmitter` helper                                                                                 |
+| `@ecopages/radiant/context`                   | Context-related exports as a grouped entrypoint                                                                  |
+| `@ecopages/radiant/context/create-context`    | Creating context keys                                                                                            |
+| `@ecopages/radiant/context/context-provider`  | Low-level context provider class                                                                                 |
+| `@ecopages/radiant/context/consume-context`   | `@consumeContext(...)` decorator                                                                                 |
+| `@ecopages/radiant/context/provide-context`   | `@provideContext(...)` decorator                                                                                 |
+| `@ecopages/radiant/context/context-selector`  | `@contextSelector(...)` decorator — bind a field to context                                                      |
+| `@ecopages/radiant/context/on-context-update` | `@onContextUpdate(...)` decorator — run a method on context change                                               |
+| `@ecopages/radiant/controller-registry`       | Controller registration and activation helpers                                                                   |
+| `@ecopages/radiant/core/radiant-element`      | Non-JSX reactive custom-element base                                                                             |
+| `@ecopages/radiant/core/radiant-controller`   | DOM-attached controller base                                                                                     |
+| `@ecopages/radiant/client/hydrator`           | Explicit client hydrator installer and status helpers for SSR pages                                              |
+| `@ecopages/radiant/client/install-hydrator`   | Side-effect entrypoint that enables first-connect hydration before component modules load                        |
+| `@ecopages/radiant/signals/host-resource`     | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                           |
+| `@ecopages/radiant/server/light-dom-shim`     | Minimal SSR window and host-preparation helpers                                                                  |
+| `@ecopages/radiant/server/render-component`   | Canonical component SSR helpers and metadata utilities                                                           |
+| `@ecopages/radiant/server/project-root`       | Project-root resolution helper for server adapters                                                               |
+| `@ecopages/radiant/decorators/bound`          | `@bound`                                                                                                         |
+| `@ecopages/radiant/decorators/custom-element` | `@customElement(...)`                                                                                            |
+| `@ecopages/radiant/decorators/debounce`       | `@debounce(...)`                                                                                                 |
+| `@ecopages/radiant/decorators/event`          | `@event(...)`                                                                                                    |
+| `@ecopages/radiant/decorators/on-event`       | `@onEvent(...)`                                                                                                  |
+| `@ecopages/radiant/decorators/on-updated`     | `@onUpdated(...)`                                                                                                |
+| `@ecopages/radiant/decorators/prop`           | `@prop(...)`                                                                                                     |
+| `@ecopages/radiant/decorators/query`          | `@query(...)`                                                                                                    |
+| `@ecopages/radiant/decorators/query-slot`     | `@querySlot(...)`                                                                                                |
+| `@ecopages/radiant/decorators/signal`         | `@signal(...)`                                                                                                   |
+| `@ecopages/radiant/decorators/state`          | `@state`                                                                                                         |
+| `@ecopages/radiant/tools/stringify-typed`     | Typed attribute serialization helper                                                                             |
+| `@ecopages/radiant/tools/render-jsx-template` | Render a JSX template result into an existing host                                                               |
+| `@ecopages/radiant/tools/escape-script-json`  | Safe JSON-for-script serialization helper                                                                        |
+| `@ecopages/radiant/tools/event-emitter`       | Low-level `EventEmitter` helper                                                                                  |
 
 Import component bases, decorators, and context helpers from the root entrypoint. Import server and low-level tool helpers from their explicit public subpaths.
 
