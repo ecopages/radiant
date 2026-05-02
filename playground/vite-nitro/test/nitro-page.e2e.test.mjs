@@ -84,7 +84,7 @@ test('Nitro page can opt into client-only app boot', browserTestOptions, async (
 	const html = await response.text();
 	assert.doesNotMatch(html, /<radiant-context-flow-shell>/);
 	assert.doesNotMatch(html, /data-playground-state/);
-	assert.doesNotMatch(html, /radiant-component-counter/);
+	assert.doesNotMatch(html, /radiant-counter/);
 
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page, '/?client-only=1');
@@ -92,7 +92,7 @@ test('Nitro page can opt into client-only app boot', browserTestOptions, async (
 		const clientStatePanel = getPanel(page, 'Client state');
 		await waitForLocatorText(clientStatePanel.locator('strong'), '0');
 
-		const liveCounter = page.locator('radiant-component-counter').first();
+		const liveCounter = page.locator('radiant-counter').first();
 		await waitForLocatorText(liveCounter.locator('.component-metric'), 'Count: 2');
 		await liveCounter.getByRole('button', { name: 'Increment', exact: true }).click();
 		await waitForLocatorText(liveCounter.locator('.component-metric'), 'Count: 3');
@@ -111,6 +111,33 @@ test('Nitro signal-board fragment serializes hydrated signal state', async () =>
 	assert.match(html, /"selectedTicketId":103/);
 	assert.match(html, /"syncState":"ready"/);
 	assert.match(html, /Nitro preloaded the release rehearsal with a launch-ready focus\./);
+});
+
+test('Nitro controller-decorator fragment serializes authored controller markup', async () => {
+	const response = await fetch(`${origin}/api/ssr/radiant-controller-decorator-visualizer`);
+	assert.equal(response.status, 200);
+
+	const html = await response.text();
+	assert.match(html, /<section class="controller-decorator-visualizer unstyled"/);
+	assert.match(html, /data-controller="controller-dom-flow-visualizer"/);
+	assert.match(html, /Controller-owned render/);
+	assert.match(html, /controller-dom-flow-visualizer/);
+	assert.match(html, /controller-decorator-visualizer__host-signal">ready</);
+	assert.match(html, /controller-decorator-visualizer__manual-ref-count">0</);
+	assert.match(html, /Ping render/);
+});
+
+test('Nitro controller-context fragment serializes provider and consumer surfaces', async () => {
+	const response = await fetch(`${origin}/api/ssr/radiant-controller-context-visualizer`);
+	assert.equal(response.status, 200);
+
+	const html = await response.text();
+	assert.match(html, /<section class="controller-context-visualizer unstyled"/);
+	assert.match(html, /data-controller="controller-context-visualizer"/);
+	assert.match(html, /Controller-owned context view/);
+	assert.match(html, /controllerVisualizerContext/);
+	assert.match(html, /controller-context-visualizer__consumer-count">2</);
+	assert.match(html, /controller-context-visualizer__provider-count">2</);
 });
 
 test('Nitro page-level controls update client and route state after clicks', browserTestOptions, async () => {
@@ -143,7 +170,7 @@ test('Nitro kitchen sink counter card reacts to its own button clicks', browserT
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);
 
-		const liveCounter = page.locator('radiant-component-counter').first();
+		const liveCounter = page.locator('radiant-counter').first();
 		await waitForLocatorText(liveCounter.locator('.component-metric'), 'Count: 2');
 
 		await liveCounter.getByRole('button', { name: 'Increment', exact: true }).click();
@@ -212,7 +239,7 @@ test('Nitro kitchen sink studio board composes slots and propagates context upda
 		);
 		await waitForLocatorText(
 			studioBoard.locator('.studio-slot-meta'),
-			'@querySlot sees 2 body regions, sidebar ready, footer ready. Projected custom element: radiant-component-counter.',
+			'@querySlot sees 2 body regions, sidebar ready, footer ready. Projected custom element: radiant-counter.',
 		);
 		await waitForLocatorText(
 			studioBoard.locator('.studio-insight[data-kind="stage"] .studio-insight__value'),
@@ -227,7 +254,7 @@ test('Nitro kitchen sink studio board composes slots and propagates context upda
 			'3 synced',
 		);
 
-		const projectedCounter = studioBoard.locator('radiant-component-counter').first();
+		const projectedCounter = studioBoard.locator('radiant-counter').first();
 		await waitForLocatorText(projectedCounter.locator('.component-metric').first(), 'Count: 5');
 		await projectedCounter.getByRole('button', { name: 'Increment', exact: true }).click();
 		await waitForLocatorText(projectedCounter.locator('.component-metric').first(), 'Count: 6');
@@ -299,6 +326,53 @@ test('Nitro kitchen sink signal board handles filtered selection edge cases', br
 });
 
 test(
+	'Nitro kitchen sink controller visualizers hydrate controller-owned authored DOM',
+	browserTestOptions,
+	async () => {
+		await withBrowserPage(async (page) => {
+			await gotoPlayground(page);
+
+			const decoratorVisualizer = page.locator('[data-controller="controller-dom-flow-visualizer"]').first();
+			await waitForLocatorText(
+				decoratorVisualizer.locator('.controller-decorator-visualizer__host-signal'),
+				'ready',
+			);
+			await waitForLocatorText(
+				decoratorVisualizer.locator('.controller-decorator-visualizer__manual-ref-count'),
+				'0',
+			);
+			await decoratorVisualizer.getByRole('button', { name: 'Alert' }).click();
+			await waitForLocatorText(
+				decoratorVisualizer.locator('.controller-decorator-visualizer__host-signal'),
+				'alert',
+			);
+			await waitForLocatorText(
+				decoratorVisualizer.locator('.controller-decorator-visualizer__host-busy'),
+				'true',
+			);
+			await waitForLocatorText(
+				decoratorVisualizer.locator('.controller-decorator-visualizer__state-pulses'),
+				'1',
+			);
+			await waitForLocatorText(
+				decoratorVisualizer.locator('.controller-decorator-visualizer__state-last-action'),
+				'Host attribute changed to data-signal="alert"',
+			);
+
+			const contextVisualizer = page.locator('[data-controller="controller-context-visualizer"]').first();
+			await waitForLocatorText(contextVisualizer.locator('.controller-context-visualizer__provider-count'), '2');
+			await waitForLocatorText(contextVisualizer.locator('.controller-context-visualizer__consumer-count'), '2');
+			await waitForLocatorText(contextVisualizer.locator('.controller-context-visualizer__selector-count'), '2');
+			await contextVisualizer.getByRole('button', { name: '+1' }).click();
+			await waitForLocatorText(contextVisualizer.locator('.controller-context-visualizer__provider-count'), '3');
+			await waitForLocatorText(contextVisualizer.locator('.controller-context-visualizer__consumer-count'), '3');
+			await waitForLocatorText(contextVisualizer.locator('.controller-context-visualizer__consumer-mode'), 'odd');
+			await waitForLocatorText(contextVisualizer.locator('.controller-context-visualizer__selector-count'), '3');
+		});
+	},
+);
+
+test(
 	'Nitro SSR fragment controls swap rendered components and hydrate fetched markup',
 	browserTestOptions,
 	async () => {
@@ -306,16 +380,13 @@ test(
 			await gotoPlayground(page);
 
 			const ssrPanel = getPanel(page, 'SSR route');
-			assert.equal(await page.locator('radiant-component-server-card').count(), 0);
-			assert.equal(
-				await page.evaluate(() => customElements.get('radiant-component-server-card') === undefined),
-				true,
-			);
+			assert.equal(await page.locator('radiant-server-card').count(), 0);
+			assert.equal(await page.evaluate(() => customElements.get('radiant-server-card') === undefined), true);
 			await waitForLocatorText(ssrPanel.locator('[data-ref="ssr-status"]'), 'Status: ready');
 			await waitForLocatorAttribute(
 				ssrPanel.locator('[data-ref="ssr-preview"]'),
 				'data-tag-name',
-				'radiant-component-counter',
+				'radiant-counter',
 			);
 			await waitForLocatorText(
 				ssrPanel.locator('[data-generated-at]'),
@@ -323,7 +394,7 @@ test(
 			);
 			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
 
-			const previewCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-counter');
+			const previewCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-counter');
 			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');
 
 			await ssrPanel.getByRole('button', { name: 'Fetch server-card fragment' }).click();
@@ -331,15 +402,12 @@ test(
 			await waitForLocatorAttribute(
 				ssrPanel.locator('[data-ref="ssr-preview"]'),
 				'data-tag-name',
-				'radiant-component-server-card',
+				'radiant-server-card',
 			);
-			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-component-server-card/);
+			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /radiant-server-card/);
 
-			const previewServerCard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-server-card');
-			assert.equal(
-				await page.evaluate(() => customElements.get('radiant-component-server-card') !== undefined),
-				true,
-			);
+			const previewServerCard = ssrPanel.locator('[data-ref="ssr-preview"] radiant-server-card');
+			assert.equal(await page.evaluate(() => customElements.get('radiant-server-card') !== undefined), true);
 			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: idle');
 			await previewServerCard.getByRole('button', { name: 'Fetch from Nitro' }).click();
 			await waitForLocatorText(previewServerCard.locator('.component-status'), 'Status: ready');
@@ -379,7 +447,7 @@ test(
 			await waitForLocatorAttribute(
 				ssrPanel.locator('[data-ref="ssr-preview"]'),
 				'data-tag-name',
-				'radiant-component-counter',
+				'radiant-counter',
 			);
 			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /Asset-backed SSR counter/);
 			await waitForLocatorTextMatch(
@@ -415,7 +483,7 @@ test(
 				},
 			);
 
-			const previewAssetCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-component-counter');
+			const previewAssetCounter = ssrPanel.locator('[data-ref="ssr-preview"] radiant-counter');
 			await waitForLocatorAttribute(previewAssetCounter, 'data-fragment-variant', 'asset-demo');
 			await waitForLocatorText(previewAssetCounter.locator('.component-metric').first(), 'Count: 11');
 
@@ -423,7 +491,7 @@ test(
 			await waitForLocatorAttribute(
 				ssrPanel.locator('[data-ref="ssr-preview"]'),
 				'data-tag-name',
-				'radiant-component-counter',
+				'radiant-counter',
 			);
 			await waitForLocatorTextMatch(ssrPanel.locator('[data-ref="ssr-html"]'), /SSR counter rendered in Nitro/);
 			await waitForLocatorText(previewCounter.locator('.component-metric').first(), 'Count: 6');

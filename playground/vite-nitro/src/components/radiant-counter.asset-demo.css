@@ -1,15 +1,15 @@
-radiant-component-counter[data-fragment-variant='asset-demo'] .component-card--counter {
+radiant-counter[data-fragment-variant='asset-demo'] .component-card--counter {
 	background: linear-gradient(135deg, color-mix(in srgb, #f6e8c8 78%, white), color-mix(in srgb, #db6d43 18%, white));
 	border-color: #db6d43;
 	box-shadow: 0 1.4rem 2.8rem rgb(146 58 32 / 18%);
 }
 
-radiant-component-counter[data-fragment-variant='asset-demo'] .component-tag {
+radiant-counter[data-fragment-variant='asset-demo'] .component-tag {
 	color: #9c3f23;
 	letter-spacing: 0.18em;
 }
 
-radiant-component-counter[data-fragment-variant='asset-demo'] .component-metric {
+radiant-counter[data-fragment-variant='asset-demo'] .component-metric {
 	color: #6a2412;
 	font-variant-numeric: tabular-nums;
 }

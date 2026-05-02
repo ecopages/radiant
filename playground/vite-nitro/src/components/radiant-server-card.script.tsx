@@ -1,15 +1,15 @@
 import { RadiantElement, customElement, state } from '@ecopages/radiant';
 
-type RadiantComponentServerCardBindings = {
+type RadiantServerCardBindings = {
 	status: 'idle' | 'loading' | 'ready' | 'error';
 	message: string;
 	serverTime: string;
 };
 
-@customElement('radiant-component-server-card')
-export class RadiantComponentServerCardElement extends RadiantElement<RadiantComponentServerCardBindings> {
+@customElement('radiant-server-card')
+export class RadiantServerCardElement extends RadiantElement<RadiantServerCardBindings> {
 	@state status: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
-	@state message = 'Press the button to fetch the Nitro endpoint from inside a RadiantComponent.';
+	@state message = 'Press the button to fetch the Nitro endpoint from inside a RadiantElement.';
 	@state serverTime = 'n/a';
 
 	private readonly fetchServerMessage = async () => {

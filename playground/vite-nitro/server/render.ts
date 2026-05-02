@@ -9,7 +9,7 @@ import {
 	type ServerRenderableComponentConstructor,
 } from '@ecopages/radiant/server/render-component';
 import { resolveRadiantSsrAssets } from 'virtual:radiant/ssr-asset-registry';
-import '../src/components/radiant-component-counter.script';
+import '../src/components/radiant-counter.script';
 import '../src/components/radiant-event-binding-lab.script';
 import '../src/components/radiant-context-flow-shell.script';
 import '../src/components/radiant-signal-release-board.script';

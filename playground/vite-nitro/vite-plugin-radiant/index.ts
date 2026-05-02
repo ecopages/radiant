@@ -15,7 +15,7 @@ import {
 } from './utils';
 
 /**
- * Configuration options for the `radiantComponents` Vite plugin.
+ * Configuration options for the `radiantElements` Vite plugin.
  * All fields are optional; the plugin applies sensible defaults when omitted.
  */
 export type RadiantVitePluginOptions = {
@@ -36,12 +36,12 @@ const defaultInclude = '**/*.script.tsx';
 const defaultAppLoadMode = 'ssr';
 const defaultAppLoadModeHeader = 'x-radiant-app-load-mode';
 const defaultClientOnlySearchParam = 'client-only';
-const radiantComponentsId = 'virtual:radiant/components';
+const radiantElementsId = 'virtual:radiant/components';
 const radiantClientRegistryId = 'virtual:radiant/client-module-registry';
 const radiantSsrRegistryId = 'virtual:radiant/ssr-client-module-registry';
 const radiantSsrAssetRegistryId = 'virtual:radiant/ssr-asset-registry';
 const radiantAppLoadModeId = 'virtual:radiant/app-load-mode';
-const resolvedRadiantComponentsId = `\0${radiantComponentsId}`;
+const resolvedRadiantElementsId = `\0${radiantElementsId}`;
 const resolvedRadiantClientRegistryId = `\0${radiantClientRegistryId}`;
 const resolvedRadiantSsrRegistryId = `\0${radiantSsrRegistryId}`;
 const resolvedRadiantSsrAssetRegistryId = `\0${radiantSsrAssetRegistryId}`;
@@ -60,7 +60,7 @@ const resolvedRadiantAppLoadModeId = `\0${radiantAppLoadModeId}`;
  * In the dev server, all virtual modules are invalidated when a component file matching the
  * configured glob is added or removed, keeping the module graph in sync with the file system.
  */
-export function radiantComponents(options: RadiantVitePluginOptions = {}): Plugin {
+export function radiantElements(options: RadiantVitePluginOptions = {}): Plugin {
 	const componentDirectory = normalizeComponentDirectory(options.componentDirectory ?? defaultComponentDirectory);
 	const include = normalizeInclude(options.include ?? defaultInclude);
 	const appLoadMode = normalizeAppLoadMode(options.defaultAppLoadMode ?? defaultAppLoadMode);
@@ -84,7 +84,7 @@ export function radiantComponents(options: RadiantVitePluginOptions = {}): Plugi
 		}
 
 		for (const virtualModuleId of [
-			resolvedRadiantComponentsId,
+			resolvedRadiantElementsId,
 			resolvedRadiantClientRegistryId,
 			resolvedRadiantSsrRegistryId,
 			resolvedRadiantSsrAssetRegistryId,
@@ -128,8 +128,8 @@ export function radiantComponents(options: RadiantVitePluginOptions = {}): Plugi
 			invalidateVirtualModules();
 		},
 		resolveId(source) {
-			if (source === radiantComponentsId) {
-				return resolvedRadiantComponentsId;
+			if (source === radiantElementsId) {
+				return resolvedRadiantElementsId;
 			}
 
 			if (source === radiantClientRegistryId) {
@@ -149,7 +149,7 @@ export function radiantComponents(options: RadiantVitePluginOptions = {}): Plugi
 			}
 		},
 		load(id) {
-			if (id === resolvedRadiantComponentsId) {
+			if (id === resolvedRadiantElementsId) {
 				return createComponentsModule(componentGlob);
 			}
 

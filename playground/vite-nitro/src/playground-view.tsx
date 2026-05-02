@@ -1,5 +1,7 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { computed } from '@ecopages/signals';
+import { RadiantControllerContextVisualizer } from './components/radiant-controller-context-visualizer';
+import { RadiantControllerDecoratorVisualizer } from './components/radiant-controller-decorator-visualizer';
 import {
 	DEFAULT_SSR_ENDPOINT,
 	createClientPreviewContent,
@@ -22,11 +24,11 @@ export function HeroSection() {
 	);
 }
 
-export function RadiantComponentLabSection() {
+export function RadiantElementLabSection() {
 	return (
 		<section class="panel panel--stack">
 			<div class="panel-header">
-				<h2>RadiantComponent lab</h2>
+				<h2>RadiantElement lab</h2>
 			</div>
 			<p>
 				Use this as the kitchen-sink surface for Radiant authoring patterns. The host below hydrates client
@@ -34,10 +36,12 @@ export function RadiantComponentLabSection() {
 				upgraded with the matching client module.
 			</p>
 			<div class="component-grid">
-				<radiant-component-counter count={2} />
-				<radiant-event-binding-lab />
-				<radiant-context-flow-shell />
-				<radiant-signal-release-board />
+				<radiant-counter count={2} />
+				<radiant-event-binding-lab></radiant-event-binding-lab>
+				<radiant-context-flow-shell></radiant-context-flow-shell>
+				<radiant-signal-release-board></radiant-signal-release-board>
+				<RadiantControllerDecoratorVisualizer />
+				<RadiantControllerContextVisualizer />
 				<radiant-slot-studio-board>
 					<p slot="eyebrow" class="component-tag">
 						Creative composition lab
@@ -61,7 +65,7 @@ export function RadiantComponentLabSection() {
 							shared state but the host still wants authored content regions.
 						</p>
 					</div>
-					<radiant-component-counter count={5} label="Projected slot counter" />
+					<radiant-counter count={5} label="Projected slot counter" />
 					<p slot="footer" class="studio-footer">
 						Footer slot: treat this as the handoff rail for approvals, publishing notes, or last-mile QA.
 					</p>
@@ -113,7 +117,7 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 					</button>
 					<button
 						type="button"
-						on:click={() => loadSsrMarkup('/api/ssr/radiant-component-server-card')}
+						on:click={() => loadSsrMarkup('/api/ssr/radiant-server-card')}
 						disabled={isLoading}
 					>
 						Fetch server-card fragment
@@ -127,7 +131,21 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 					</button>
 					<button
 						type="button"
-						on:click={() => loadSsrMarkup('/api/ssr/radiant-component-asset-counter')}
+						on:click={() => loadSsrMarkup('/api/ssr/radiant-controller-decorator-visualizer')}
+						disabled={isLoading}
+					>
+						Fetch controller-decorator fragment
+					</button>
+					<button
+						type="button"
+						on:click={() => loadSsrMarkup('/api/ssr/radiant-controller-context-visualizer')}
+						disabled={isLoading}
+					>
+						Fetch controller-context fragment
+					</button>
+					<button
+						type="button"
+						on:click={() => loadSsrMarkup('/api/ssr/radiant-counter-asset-demo')}
 						disabled={isLoading}
 					>
 						Fetch asset-backed fragment

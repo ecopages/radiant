@@ -48,7 +48,7 @@ export async function loadRadiantClientModule(moduleKey) {
 export function createSsrRegistryModule(componentGlob: string): string {
 	return `import '@ecopages/radiant/server/render-component';
 
-const radiantComponentModules = import.meta.glob(${JSON.stringify(componentGlob)}, { eager: true });
+const radiantElementModules = import.meta.glob(${JSON.stringify(componentGlob)}, { eager: true });
 const radiantClientModuleKeyCache = new WeakMap();
 
 export async function resolveRadiantSsrClientModuleKey(component) {
@@ -58,7 +58,7 @@ export async function resolveRadiantSsrClientModuleKey(component) {
 		return cachedModuleKey;
 	}
 
-	for (const [moduleKey, moduleExports] of Object.entries(radiantComponentModules)) {
+	for (const [moduleKey, moduleExports] of Object.entries(radiantElementModules)) {
 
 		if (!Object.values(moduleExports).includes(component)) {
 			continue;

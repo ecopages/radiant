@@ -2,7 +2,9 @@ import { renderToString } from '@ecopages/jsx/server';
 import { toRenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import { resolveRadiantAppLoadMode } from 'virtual:radiant/app-load-mode';
 import { renderSsrComponent } from '../server/render';
-import { RadiantComponentCounter } from '../src/components/radiant-component-counter.script';
+import { RadiantCounter } from '../src/components/radiant-counter.script';
+import '../src/components/radiant-controller-context-visualizer.script';
+import '../src/components/radiant-controller-decorator-visualizer.script';
 import { App, createInitialPlaygroundState, createPlaygroundStateScriptNode, setPlaygroundState } from '../src/app';
 
 export default {
@@ -11,7 +13,7 @@ export default {
 			return new Response('', { headers: { 'content-type': 'text/html; charset=utf-8' } });
 		}
 
-		const rendered = await renderSsrComponent(RadiantComponentCounter, {
+		const rendered = await renderSsrComponent(RadiantCounter, {
 			props: {
 				count: 6,
 				label: 'SSR counter rendered in Nitro',

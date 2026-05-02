@@ -20,9 +20,9 @@ export class RadiantContextFlowShellElement extends RadiantElement {
 		return (
 			<section class="component-card component-card--context">
 				<p class="component-tag">SSR context flow</p>
-				<h3>Nested RadiantComponent context</h3>
+				<h3>Nested RadiantElement context</h3>
 				<p class="component-copy">
-					This card SSR-renders a nested RadiantComponent consumer and restores provider context from an
+					This card SSR-renders a nested RadiantElement consumer and restores provider context from an
 					automatic hydration script inside the host.
 				</p>
 				<radiant-context-flow-leaf />

@@ -2,6 +2,7 @@ import type { RenderedComponentPayload } from '@ecopages/radiant/server/render-c
 import {
 	RENDERED_COMPONENT_ASSETS_HEADER,
 	RENDERED_COMPONENT_CLIENT_MODULE_HEADER,
+	RENDERED_COMPONENT_FRAGMENT_HEADER,
 	RENDERED_COMPONENT_GENERATED_AT_HEADER,
 	RENDERED_COMPONENT_TAG_NAME_HEADER,
 	type RenderedComponentAsset,
@@ -9,7 +10,7 @@ import {
 import { loadRadiantClientModule } from 'virtual:radiant/client-module-registry';
 import type { PlaygroundState } from './playground-state';
 
-export const DEFAULT_SSR_ENDPOINT = '/api/ssr/radiant-component';
+export const DEFAULT_SSR_ENDPOINT = '/api/ssr/radiant-counter';
 
 export async function loadServerMessageIntoState(state: PlaygroundState) {
 	if (state.status === 'loading') {
@@ -76,12 +77,18 @@ export async function requestRenderedComponent(endpoint: string): Promise<Render
 	}
 
 	const markup = await response.text();
+	const isRadiantFragment = response.headers.get(RENDERED_COMPONENT_FRAGMENT_HEADER) === '1';
 	const tagName = response.headers.get(RENDERED_COMPONENT_TAG_NAME_HEADER) ?? extractTagNameFromMarkup(markup);
-	const assets = readRenderedComponentAssets(
-		response.headers.get(RENDERED_COMPONENT_ASSETS_HEADER),
-		response.headers.get(RENDERED_COMPONENT_CLIENT_MODULE_HEADER),
-	);
-	await ensureFragmentAssets(tagName, assets);
+	const assets = isRadiantFragment
+		? readRenderedComponentAssets(
+				response.headers.get(RENDERED_COMPONENT_ASSETS_HEADER),
+				response.headers.get(RENDERED_COMPONENT_CLIENT_MODULE_HEADER),
+			)
+		: [];
+
+	if (isRadiantFragment) {
+		await ensureFragmentAssets(tagName, assets);
+	}
 
 	return {
 		assets,
@@ -133,10 +140,12 @@ function readRenderedComponentAssets(
 }
 
 async function ensureFragmentAssets(tagName: string, assets: readonly RenderedComponentAsset[]) {
+	const isCustomElementTag = tagName.includes('-');
+
 	for (const asset of assets) {
 		switch (asset.kind) {
 			case 'script-module':
-				if (!customElements.get(tagName)) {
+				if (!isCustomElementTag || !customElements.get(tagName)) {
 					await loadRadiantClientModule(asset.src);
 				}
 				break;
@@ -149,6 +158,10 @@ async function ensureFragmentAssets(tagName: string, assets: readonly RenderedCo
 				ensureStylesheet(asset.href, asset.media);
 				break;
 		}
+	}
+
+	if (!isCustomElementTag) {
+		return;
 	}
 
 	if (!customElements.get(tagName)) {

@@ -21,12 +21,12 @@ Use the repo-level Nitro kitchen-sink dev flow so the library watch/build proces
 
 ## Current Tracking
 
-The current kitchen sink is tracking the `RadiantComponent` contract and the light-DOM SSR work:
+The current kitchen sink is tracking the merged `RadiantElement` contract and the light-DOM SSR work:
 
 - `render()` returns JSX directly from the web component file
 - `update()` is the explicit rerender entrypoint
 - `@onUpdated([...])` can decorate `update()` directly to declare rerender dependencies
-- `RadiantComponent` now owns host-aware SSR through `renderHost()` / `renderHostToString()`
+- `RadiantElement` now owns host-aware SSR through `renderHost()` / `renderHostToString()`
 - Nitro can server-render a real custom-element host with light-DOM markup and hydration markers
 - the client can hydrate that host markup instead of immediately replacing it
 - fragment endpoints now ship normalized render assets with the SSR markup so lazy components can register through Vite and request extra styles when needed
@@ -38,10 +38,37 @@ The current kitchen sink is tracking the `RadiantComponent` contract and the lig
 The kitchen sink now first-response SSR renders the page shell through Nitro using the standard `<!--ssr-outlet-->` flow.
 That means it demonstrates:
 
-- server rendering of a `RadiantComponent` host
+- server rendering of a `RadiantElement` host
 - Nitro page-level SSR for the initial document
 - light-DOM hydration of that host on the client
 - page-level hydration from server HTML on first paint
 - on-demand SSR fragment hydration for components that were not in the initial client bundle via a Vite-managed module registry
 - opt-in client-only boot for the page shell via the local Radiant Vite integration
 - a thin transport adapter where route headers are derived from canonical render metadata instead of a kitchen-sink-specific SSR payload type
+
+## Fragment Transport Contract
+
+Fetched SSR fragments use a small response-header contract so the client does not have to guess how to treat arbitrary HTML.
+
+- `x-radiant-fragment: 1` marks the response as a Radiant-managed fragment payload
+- `x-radiant-tag-name` describes the fragment root tag
+- `x-radiant-assets` carries the normalized asset list used to activate the fragment
+- `x-radiant-client-module` remains as the legacy single-module fallback for older payloads
+- `x-generated-at` carries render metadata only
+
+The important split is between ownership and dependencies:
+
+- the fragment header says the client should run the Radiant fragment loading pipeline for this response
+- the asset list says which modules, styles, or preload hints are required once that pipeline is active
+
+That avoids brittle checks based on tag names alone. A dashed tag may be a custom element, but that does not mean the response should automatically be treated as a Radiant fragment.
+
+## Controller Activation Model
+
+`RadiantController` fragments do not hydrate through the custom-element path. They activate through the controller registry.
+
+- if a controller module is already present on the page, inserting markup with `data-controller` is enough for the running registry to connect it
+- if a fetched fragment introduces a controller that is not loaded yet, the fragment must ship a `script-module` asset for that controller module
+- once that module loads and registers the controller, the active registry reconciles the existing DOM and connects the new host
+
+In other words, fragment assets load missing code, while the controller registry is what actually attaches controller behavior to fetched markup.

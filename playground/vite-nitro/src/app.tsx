@@ -11,7 +11,7 @@ import {
 	ClientStateSection,
 	HeroSection,
 	NitroRouteSection,
-	RadiantComponentLabSection,
+	RadiantElementLabSection,
 	SsrRouteSection,
 } from './playground-view';
 
@@ -47,7 +47,7 @@ export function App({ ssrPreviewContent, bootstrapStateScript }: AppProps = {}) 
 		<main class="shell">
 			{stateScript}
 			<HeroSection />
-			<RadiantComponentLabSection />
+			<RadiantElementLabSection />
 			<SsrRouteSection ssrPreviewContent={ssrPreviewContent} />
 			<ClientStateSection />
 			<NitroRouteSection />

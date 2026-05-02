@@ -1,19 +1,19 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
 
-export type RadiantComponentCounterProps = {
+export type RadiantCounterProps = {
 	count: number;
 	label: string;
 };
 
-export type RadiantComponentCounterBindings = RadiantComponentCounterProps & {
+export type RadiantCounterBindings = RadiantCounterProps & {
 	lastAction: string;
 };
 
-@customElement('radiant-component-counter')
-export class RadiantComponentCounter extends RadiantElement<RadiantComponentCounterBindings> {
+@customElement('radiant-counter')
+export class RadiantCounter extends RadiantElement<RadiantCounterBindings> {
 	@prop({ type: Number, reflect: true }) count = 0;
-	@prop({ type: String }) label = 'RadiantComponent counter';
+	@prop({ type: String }) label = 'RadiantElement counter';
 	@state lastAction = 'Waiting for input';
 
 	private readonly increment = () => {
@@ -29,7 +29,7 @@ export class RadiantComponentCounter extends RadiantElement<RadiantComponentCoun
 	override render() {
 		return (
 			<section class="component-card component-card--counter">
-				<p class="component-tag">RadiantComponent</p>
+				<p class="component-tag">RadiantElement</p>
 				<h3>{this.label}</h3>
 				<p class="component-copy">
 					This card uses the new <code>render()</code> + <code>update()</code> flow instead of manual{' '}
@@ -52,6 +52,6 @@ export class RadiantComponentCounter extends RadiantElement<RadiantComponentCoun
 
 declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
-		'radiant-component-counter': JsxCustomElementAttributes<HTMLElement, RadiantComponentCounterProps>;
+		'radiant-counter': JsxCustomElementAttributes<HTMLElement, RadiantCounterProps>;
 	}
 }

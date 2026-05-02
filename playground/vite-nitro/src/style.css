@@ -551,7 +551,7 @@ strong {
 	color: #64748b;
 }
 
-.studio-main > radiant-component-counter {
+.studio-main > radiant-counter {
 	display: block;
 	margin-top: 1rem;
 }

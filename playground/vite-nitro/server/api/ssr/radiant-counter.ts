@@ -2,9 +2,9 @@ import { defineHandler } from 'nitro';
 
 export default defineHandler(async () => {
 	const { renderSsrComponent, createSsrResponse } = await import('../../render');
-	const { RadiantComponentCounter } = await import('@/components/radiant-component-counter.script');
+	const { RadiantCounter } = await import('@/components/radiant-counter.script');
 	return createSsrResponse(
-		await renderSsrComponent(RadiantComponentCounter, {
+		await renderSsrComponent(RadiantCounter, {
 			props: {
 				count: 6,
 				label: 'SSR counter rendered in Nitro',

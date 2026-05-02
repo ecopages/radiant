@@ -39,7 +39,7 @@ export function createInitialPlaygroundState(initialSsrPayload?: RenderedCompone
 		ssrMarkup: initialSsrPayload?.markup ?? '',
 		ssrStatus: initialSsrPayload ? 'ready' : 'idle',
 		ssrLoadingEndpoint: '',
-		ssrTagName: initialSsrPayload?.tagName ?? 'radiant-component-counter',
+		ssrTagName: initialSsrPayload?.tagName ?? 'radiant-counter',
 		status: 'idle',
 		message: 'Nitro endpoint has not been called yet.',
 		serverTime: 'n/a',
