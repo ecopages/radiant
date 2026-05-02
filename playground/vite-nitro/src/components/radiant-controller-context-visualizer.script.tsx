@@ -1,4 +1,4 @@
-import { RadiantController, controller, state } from '@ecopages/radiant';
+import { controller, RadiantController, state } from '@ecopages/radiant';
 
 export type ContextVisualizerState = {
 	count: number;
@@ -240,6 +240,31 @@ const ContextRail = () => (
 	</div>
 );
 
+export function renderContextVisualizerView(
+	viewState: ContextVisualizerState,
+	viewHandlers: ContextVisualizerHandlers = {},
+) {
+	return (
+		<>
+			<ContextHeader />
+			<ContextActions {...viewHandlers} />
+			<div class="controller-context-visualizer__stage">
+				<div
+					class="controller-context-visualizer__diagram"
+					aria={{ label: 'Controller-owned context diagram' }}
+				>
+					<ContextProviderCard {...viewState} />
+					<ContextSnapshotCard />
+					<ContextConsumerCard {...viewState} />
+					<ContextSelectorCard {...viewState} />
+				</div>
+				<ContextTransmissionPanel {...viewState} />
+				<ContextRail />
+			</div>
+		</>
+	);
+}
+
 @controller('controller-context-visualizer')
 export class ControllerContextVisualizer extends RadiantController {
 	@state count = INITIAL_CONTEXT_VISUALIZER_STATE.count;
@@ -287,24 +312,6 @@ export class ControllerContextVisualizer extends RadiantController {
 			onReset: () => this.reset(),
 		};
 
-		return (
-			<>
-				<ContextHeader />
-				<ContextActions {...viewHandlers} />
-				<div class="controller-context-visualizer__stage">
-					<div
-						class="controller-context-visualizer__diagram"
-						aria={{ label: 'Controller-owned context diagram' }}
-					>
-						<ContextProviderCard {...viewState} />
-						<ContextSnapshotCard />
-						<ContextConsumerCard {...viewState} />
-						<ContextSelectorCard {...viewState} />
-					</div>
-					<ContextTransmissionPanel {...viewState} />
-					<ContextRail />
-				</div>
-			</>
-		);
+		return renderContextVisualizerView(viewState, viewHandlers);
 	}
 }

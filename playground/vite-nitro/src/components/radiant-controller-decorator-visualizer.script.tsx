@@ -1,4 +1,4 @@
-import { RadiantController, attr, controller, state } from '@ecopages/radiant';
+import { attr, controller, RadiantController, state } from '@ecopages/radiant';
 
 export type DecoratorVisualizerState = {
 	signal: string;
@@ -268,6 +268,32 @@ const DecoratorRail = () => (
 	</div>
 );
 
+export function renderDecoratorVisualizerView(
+	viewState: DecoratorVisualizerState,
+	viewHandlers: DecoratorVisualizerHandlers = {},
+) {
+	return (
+		<>
+			<DecoratorHeader />
+			<DecoratorActions {...viewHandlers} />
+			<div class="controller-decorator-visualizer__stage">
+				<div
+					class="controller-decorator-visualizer__diagram"
+					aria={{ label: 'Controller render lifecycle diagram' }}
+				>
+					<DecoratorHostCard {...viewState} />
+					<DecoratorCoreCard />
+					<DecoratorEventCard {...viewState} />
+					<DecoratorInputsCard {...viewState} />
+					<DecoratorStateCard {...viewState} />
+					<DecoratorTransmissionPanel {...viewState} />
+				</div>
+				<DecoratorRail />
+			</div>
+		</>
+	);
+}
+
 @controller('controller-dom-flow-visualizer')
 export class ControllerDomFlowVisualizer extends RadiantController {
 	@attr({ source: 'data-signal' }) signal = INITIAL_DECORATOR_VISUALIZER_STATE.signal;
@@ -322,25 +348,6 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 			onPing: () => this.pingRender(),
 		};
 
-		return (
-			<>
-				<DecoratorHeader />
-				<DecoratorActions {...viewHandlers} />
-				<div class="controller-decorator-visualizer__stage">
-					<div
-						class="controller-decorator-visualizer__diagram"
-						aria={{ label: 'Controller render lifecycle diagram' }}
-					>
-						<DecoratorHostCard {...viewState} />
-						<DecoratorCoreCard />
-						<DecoratorEventCard {...viewState} />
-						<DecoratorInputsCard {...viewState} />
-						<DecoratorStateCard {...viewState} />
-						<DecoratorTransmissionPanel {...viewState} />
-					</div>
-					<DecoratorRail />
-				</div>
-			</>
-		);
+		return renderDecoratorVisualizerView(viewState, viewHandlers);
 	}
 }
