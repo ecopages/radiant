@@ -18,8 +18,7 @@ If controller runtimes are already running, newly registered identifiers are rec
 ## Example
 
 ```ts
-import { RadiantController, controller } from '@ecopages/radiant';
-import { startControllers } from '@ecopages/radiant/controller-registry';
+import { RadiantController, controller, startControllers } from '@ecopages/radiant';
 
 @controller('search')
 class SearchController extends RadiantController {
@@ -47,7 +46,7 @@ When tooling does need mutation, use the explicit runtime APIs instead of changi
 
 ## Tooling Hooks
 
-The registry also exposes explicit mutation hooks through the `@ecopages/radiant/controller-registry` subpath:
+The registry also exposes explicit mutation hooks. You can import them from `@ecopages/radiant`, or reach for the focused `@ecopages/radiant/controller-registry` subpath when you want registry-only imports:
 
 - `replaceController(...)`
 - `enableControllerReplacementForHmr()`
@@ -56,7 +55,7 @@ Use those APIs for HMR or code-generation workflows that intentionally replace a
 
 ## Related Runtime API
 
-The registry also exposes an explicit runtime surface through the public subpath `@ecopages/radiant/controller-registry`:
+The registry also exposes an explicit runtime surface through `@ecopages/radiant` and the focused `@ecopages/radiant/controller-registry` subpath:
 
 - `registerController(...)`
 - `replaceController(...)`
@@ -66,7 +65,7 @@ The registry also exposes an explicit runtime surface through the public subpath
 - `CONTROLLER_ATTRIBUTE`
 - `ControllerRegistryRuntime`
 
-Use the subpath when you want direct registry control without the decorator, or when a framework shell needs to start or stop controller discovery explicitly.
+Use the root entry when you are already importing controller APIs, or the focused subpath when you want direct registry control without the decorator.
 
 ## See Also
 

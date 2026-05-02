@@ -34,11 +34,10 @@ Use it when the HTML already exists in a document, a server template, or CMS-aut
 
 Register a controller with `@controller(...)` and start the registry on a root.
 
-`startControllers(...)` is a real public subpath export from `@ecopages/radiant/controller-registry`. Use it when a DOM subtree should opt into controller discovery.
+`startControllers(...)` is available from `@ecopages/radiant`. Use it when a DOM subtree should opt into controller discovery.
 
 ```ts
-import { RadiantController, controller } from '@ecopages/radiant';
-import { startControllers } from '@ecopages/radiant/controller-registry';
+import { RadiantController, controller, startControllers } from '@ecopages/radiant';
 
 @controller('search')
 class SearchController extends RadiantController {
@@ -192,8 +191,7 @@ export class NewsletterFormController extends RadiantController {
 Use `@prop(...)` on a controller when the surrounding app code should pass real JS values through the attached host element instead of serializing them into attributes.
 
 ```ts
-import { RadiantController, controller, prop } from '@ecopages/radiant';
-import { startControllers } from '@ecopages/radiant/controller-registry';
+import { RadiantController, controller, prop, startControllers } from '@ecopages/radiant';
 
 type ResultItem = {
 	id: string;

@@ -33,12 +33,15 @@ export class UserCard extends RadiantElement {
 `RadiantController` can use the same decorator when the input should come from a real host property instead of markup.
 
 ```typescript
-import { RadiantController, controller, prop } from '@ecopages/radiant';
-import { startControllers } from '@ecopages/radiant/controller-registry';
+import { RadiantController, controller, prop, startControllers } from '@ecopages/radiant';
+
+type ResultsListProps = {
+	items: Array<{ id: string; label: string }>;
+};
 
 @controller('results-list')
 export class ResultsListController extends RadiantController {
-	@prop({ type: Array, defaultValue: [] }) declare items: Array<{ id: string; label: string }>;
+	@prop({ type: Array, defaultValue: [] }) declare items: ResultsListProps;
 
 	override render() {
 		return <ul>{this.items.map((item) => <li key={item.id}>{item.label}</li>)}</ul>;
@@ -47,9 +50,7 @@ export class ResultsListController extends RadiantController {
 
 document.body.innerHTML = '<section data-controller="results-list"></section>';
 
-const host = document.querySelector('[data-controller="results-list"]') as HTMLElement & {
-	items: Array<{ id: string; label: string }>;
-};
+const host = document.querySelector('[data-controller="results-list"]') as HTMLElement & ResultsListProps
 
 host.items = [
 	{ id: '1', label: 'Alpha' },
@@ -59,7 +60,7 @@ host.items = [
 startControllers(document);
 ```
 
-`startControllers(...)` comes from the public subpath `@ecopages/radiant/controller-registry`.
+`startControllers(...)` is available from `@ecopages/radiant`.
 
 ## Options
 
