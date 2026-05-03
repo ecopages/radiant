@@ -1,13 +1,21 @@
-import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
+import type { JsxNodeLike, JsxRenderable } from '@ecopages/jsx/jsx-runtime';
+import { RadiantElement, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 
 /**
  * A single tab definition for the docs code-tabs custom element.
  */
-export type RadiantCodeTabItem = {
-	id: string;
-	label: string;
-	code: string;
-};
+export type RadiantCodeTabItem =
+	| {
+			id: string;
+			label: string;
+			code: string;
+	  }
+	| {
+			id: string;
+			label: string;
+			code: JsxNodeLike | JsxRenderable;
+			content: string;
+	  };
 
 /**
  * Public props for the docs code-tabs custom element.
@@ -33,8 +41,31 @@ export class RadiantCodeTabs extends RadiantElement {
 	private static nextInstanceId = 0;
 	private readonly instanceId = `radiant-code-tabs-${++RadiantCodeTabs.nextInstanceId}`;
 	private timeoutId: ReturnType<typeof setTimeout> | null = null;
+	private tabMetricsFrameId: number | null = null;
+	private resizeObserver: ResizeObserver | null = null;
+
+	override connectedCallback(): void {
+		super.connectedCallback();
+		this.scheduleTabMetricsSync();
+
+		if (typeof ResizeObserver === 'undefined') {
+			return;
+		}
+
+		this.resizeObserver ??= new ResizeObserver(() => {
+			this.scheduleTabMetricsSync();
+		});
+		this.resizeObserver.observe(this);
+	}
 
 	override disconnectedCallback(): void {
+		if (this.tabMetricsFrameId !== null) {
+			cancelAnimationFrame(this.tabMetricsFrameId);
+			this.tabMetricsFrameId = null;
+		}
+
+		this.resizeObserver?.disconnect();
+
 		if (this.timeoutId) {
 			clearTimeout(this.timeoutId);
 			this.timeoutId = null;
@@ -60,6 +91,79 @@ export class RadiantCodeTabs extends RadiantElement {
 			return Array.isArray(this.tabs) ? this.tabs : [];
 		}
 	};
+
+	private readonly scheduleTabMetricsSync = () => {
+		if (this.tabMetricsFrameId !== null) {
+			cancelAnimationFrame(this.tabMetricsFrameId);
+		}
+
+		this.tabMetricsFrameId = requestAnimationFrame(() => {
+			this.tabMetricsFrameId = null;
+			this.syncTabMetrics();
+		});
+	};
+
+	private readonly syncTabMetrics = () => {
+		const tabButtons = Array.from(this.querySelectorAll<HTMLButtonElement>('.code-tabs__tab'));
+		if (tabButtons.length === 0) {
+			this.style.removeProperty('--code-tabs-tab-width');
+			this.style.removeProperty('--code-tabs-tab-height');
+			this.style.removeProperty('--code-tabs-panel-width');
+			this.style.removeProperty('--code-tabs-panel-height');
+			return;
+		}
+
+		const measurementRoot = document.createElement('div');
+		measurementRoot.className = 'code-tabs__measure';
+		measurementRoot.style.setProperty('--code-tabs-tab-width', 'auto');
+		measurementRoot.style.setProperty('--code-tabs-tab-height', 'auto');
+
+		for (const tabButton of tabButtons) {
+			const clonedTabButton = tabButton.cloneNode(true) as HTMLButtonElement;
+			clonedTabButton.removeAttribute('id');
+			clonedTabButton.removeAttribute('aria-controls');
+			clonedTabButton.setAttribute('aria-selected', 'true');
+			clonedTabButton.tabIndex = -1;
+			measurementRoot.append(clonedTabButton);
+		}
+
+		this.append(measurementRoot);
+
+		let maxWidth = 0;
+		let maxHeight = 0;
+		for (const tabButton of measurementRoot.querySelectorAll<HTMLButtonElement>('.code-tabs__tab')) {
+			const { width, height } = tabButton.getBoundingClientRect();
+			maxWidth = Math.max(maxWidth, Math.ceil(width));
+			maxHeight = Math.max(maxHeight, Math.ceil(height));
+		}
+
+		measurementRoot.remove();
+
+		this.style.setProperty('--code-tabs-tab-width', `${String(maxWidth)}px`);
+		this.style.setProperty('--code-tabs-tab-height', `${String(maxHeight)}px`);
+
+		const measuredPanels = Array.from(this.querySelectorAll<HTMLElement>('.code-tabs__measure-panel'));
+		let maxPanelWidth = 0;
+		let maxPanelHeight = 0;
+		for (const measuredPanel of measuredPanels) {
+			const { width, height } = measuredPanel.getBoundingClientRect();
+			maxPanelWidth = Math.max(maxPanelWidth, Math.ceil(width));
+			maxPanelHeight = Math.max(maxPanelHeight, Math.ceil(height));
+		}
+
+		if (maxPanelWidth > 0) {
+			this.style.setProperty('--code-tabs-panel-width', `${String(maxPanelWidth)}px`);
+		}
+
+		if (maxPanelHeight > 0) {
+			this.style.setProperty('--code-tabs-panel-height', `${String(maxPanelHeight)}px`);
+		}
+	};
+
+	@onUpdated(['tabs', 'selectedKey'])
+	private handleTabMetricsDependenciesChanged(): void {
+		this.scheduleTabMetricsSync();
+	}
 
 	private readonly getActiveTab = (tabs: RadiantCodeTabItem[]): RadiantCodeTabItem | null => {
 		if (tabs.length === 0) {
@@ -149,7 +253,8 @@ export class RadiantCodeTabs extends RadiantElement {
 		}
 
 		try {
-			await navigator.clipboard.writeText(activeTab.code);
+			const content = 'content' in activeTab ? activeTab.content : activeTab.code;
+			await navigator.clipboard.writeText(content);
 			this.copiedTabId = activeTab.id;
 			this.copyStatus = `${activeTab.label} copied to clipboard`;
 			if (this.timeoutId) {
@@ -218,6 +323,17 @@ export class RadiantCodeTabs extends RadiantElement {
 					<span class="code-tabs__status" aria-live="polite">
 						{this.copyStatus}
 					</span>
+				</div>
+				<div class="code-tabs__measure" aria-hidden="true">
+					{tabs.map((tab) => {
+						return (
+							<div class="code-tabs__measure-panel" key={`measure-${tab.id}`}>
+								<div class="code-tabs__body">
+									<span class="code-tabs__code">{tab.code}</span>
+								</div>
+							</div>
+						);
+					})}
 				</div>
 			</div>
 		);

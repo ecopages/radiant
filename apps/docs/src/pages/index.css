@@ -19,6 +19,9 @@
 
 .home-hero__code {
 	@apply hidden lg:flex lg:flex-col;
+	.code-tabs {
+		@apply rounded-none;
+	}
 }
 
 .home-hero__demo {

@@ -75,28 +75,6 @@ Use this split:
 - override `render()` when the controller should own the host's inner DOM
 - keep authored HTML in place when the server, CMS, or template already owns the markup
 
-## Live DOM Wiring Example
-
-This diagram stays entirely on authored HTML and shows how the main controller-only decorators cooperate:
-
-- `@attr(...)` turns host attributes into reactive controller inputs
-- `@query(...)` resolves stable refs from authored markup
-- `@onEvent(...)` reacts to DOM events without the controller owning the subtree
-- `@state` and `@onUpdated(...)` push controller-only state back into the DOM
-
-<ControllerDecoratorVisualizer />
-
-## Live Context Example
-
-This example keeps the provider on authored HTML with a `RadiantController`, then fans the same context into two different consumers:
-
-- another `RadiantController` attached to authored DOM
-- a nested `RadiantElement` that renders from a selected slice
-
-<ControllerContextVisualizer />
-
-The important part is the boundary: context is not limited to custom elements. Once the provider sits on a DOM ancestor, controller and element consumers can share the same token and react to the same updates.
-
 ## Render-Owned Example
 
 ```ts

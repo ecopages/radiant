@@ -1,7 +1,6 @@
 import type { EcoComponent, HtmlTemplateProps } from '@ecopages/core';
-import type { JsxRenderable } from '@ecopages/jsx';
+import { unsafeHtml, type JsxRenderable } from '@ecopages/jsx';
 import { Head } from '@/includes/head';
-import { rawHtml } from '@/utils/raw-html';
 
 type DocsHtmlTemplateProps = Omit<HtmlTemplateProps, 'children' | 'headContent'> & {
 	children: JsxRenderable;
@@ -18,7 +17,10 @@ const HtmlTemplate: EcoComponent<DocsHtmlTemplateProps, JsxRenderable> = ({
 }) => {
 	return (
 		<html lang={language}>
-			<Head metadata={metadata}>{rawHtml(`<script>${themeScript}</script>${headContent ?? ''}`)}</Head>
+			<Head metadata={metadata}>
+				<script>{unsafeHtml(themeScript)}</script>
+				{headContent ?? ''}
+			</Head>
 			{children}
 		</html>
 	);

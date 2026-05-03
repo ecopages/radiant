@@ -1,15 +1,14 @@
 import type { EcoComponent } from '@ecopages/core';
 import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
-import { rawHtml } from '@/utils/raw-html';
 import { CodeTabs } from '@/components/code-tabs';
 import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-jsx-counter';
+import { unsafeHtml } from '@ecopages/jsx/jsx-runtime';
 
-const counterExample = await codeToHtml(
-	`import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+const counterElementExampleCode = `import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 @customElement('radiant-counter')
-export class RadiantCounter extends RadiantElement {
+export class RadiantCounter extends RadiantElement<{ value: number }> {
   @prop({ type: Number, reflect: true }) value = 0;
 
   private readonly decrement = () => {
@@ -29,13 +28,44 @@ export class RadiantCounter extends RadiantElement {
       </>
     );
   }
-}`,
-	{
-		lang: 'tsx',
-		themes: { light: 'light-plus', dark: 'dark-plus' },
-		defaultColor: false,
-	},
-);
+}`;
+
+const counterControllerExampleCode = `import { RadiantController, controller, prop } from '@ecopages/radiant';
+
+@controller('radiant-counter')
+export class RadiantCounter extends RadiantController<{ value: number }> {
+  @prop({ type: Number, reflect: true }) value = 0;
+
+  private readonly decrement = () => {
+	if (this.value > 0) this.value -= 1;
+  };
+
+  private readonly increment = () => {
+	this.value += 1;
+  };
+
+  override render() {
+	return (
+	  <>
+		<button type="button" on:click={this.decrement}>-</button>
+		<span>{this.$.value}</span>
+		<button type="button" on:click={this.increment}>+</button>
+	  </>
+	);
+  }
+}`;
+
+const counterElementExample = await codeToHtml(counterElementExampleCode, {
+	lang: 'tsx',
+	themes: { light: 'light-plus', dark: 'dark-plus' },
+	defaultColor: false,
+});
+
+const counterControllerExample = await codeToHtml(counterControllerExampleCode, {
+	lang: 'tsx',
+	themes: { light: 'light-plus', dark: 'dark-plus' },
+	defaultColor: false,
+});
 
 const HomeCard = ({
 	href,
@@ -74,7 +104,7 @@ const HomePage: EcoComponent = () => {
 				<div class="home-hero">
 					<div class="home-hero__text">
 						<p class="home-header__subtitle">Radiant</p>
-						<h1 class="home-header__title">Build typed web components with JSX and Signals.</h1>
+						<h1 class="home-header__title">Build typed elements with JSX and Signals.</h1>
 						<p class="home-header__description">
 							Radiant gives you a typed component base class, a small decorator surface for props and
 							events, optional JSX for rendering, and a signals package for reactivity. Use what you need.
@@ -103,9 +133,34 @@ const HomePage: EcoComponent = () => {
 					</div>
 
 					<div class="home-hero__code">
-						{rawHtml(
-							`<figure data-rehype-pretty-code-figure class="home-code-block">${counterExample}</figure>`,
-						)}
+						<CodeTabs
+							label="Package managers"
+							tabs={[
+								{
+									id: 'radiant-element',
+									label: 'radiant-element.tsx',
+									code: (
+										<figure data-rehype-pretty-code-figure class="home-code-block">
+											{unsafeHtml(counterElementExample)}
+										</figure>
+									),
+									content: counterElementExampleCode,
+								},
+								{
+									id: 'radiant-controller',
+									label: 'radiant-controller.tsx',
+									code: (
+										<figure data-rehype-pretty-code-figure class="home-code-block">
+											{unsafeHtml(counterControllerExample)}
+										</figure>
+									),
+									content: counterControllerExampleCode,
+								},
+							]}
+							copyLabel="Copy install command"
+							defaultSelectedKey="bun"
+						/>
+
 						<div class="home-hero__demo">
 							<RadiantCounterDemo value={0} />
 						</div>
@@ -239,3 +294,5 @@ HomePage.config = {
 };
 
 export default HomePage;
+
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
