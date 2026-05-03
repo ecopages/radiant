@@ -11,10 +11,13 @@ export const getMetadata = () => ({
 
 The `@event` decorator creates an `EventEmitter` that provides a type-safe way to dispatch custom events from your component. Custom events are the primary way for components to communicate with their parents or other parts of the application.
 
+Import the `@event(...)` decorator from `@ecopages/radiant`, but import the `EventEmitter` type from `@ecopages/radiant/tools/event-emitter` because it is a lower-level helper type.
+
 ## Usage
 
 ```typescript
-import { RadiantElement, customElement, event, EventEmitter } from '@ecopages/radiant';
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, customElement, event, onEvent } from '@ecopages/radiant';
 
 @customElement('counter-button')
 export class CounterButton extends RadiantElement {
@@ -83,4 +86,4 @@ export class ParentComponent extends RadiantElement {
 ## Learn More
 
 - [@onEvent](/docs/decorators/on-event) - Subscribe to events.
-- [RadiantElement](/docs/core/radiant-element) - Base class with event support.
+- [RadiantElement](/docs/components/radiant-element) - Base class with event support.

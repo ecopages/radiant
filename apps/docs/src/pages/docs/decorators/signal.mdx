@@ -1,0 +1,101 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | @signal',
+	description: 'Declare host-aware writable signal fields on Radiant elements and components.',
+});
+
+# @signal
+
+`@signal` declares a host-aware writable signal field.
+
+The decorated member becomes a real `WritableSignal` instance that JSX can consume directly in child or attribute positions.
+
+Use it when the field itself should behave like a signal object. If you only need ordinary reactive host state, use [@state](/docs/decorators/state) instead.
+
+## Example
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { signal } from '@ecopages/radiant/decorators/signal';
+
+@customElement('signal-counter')
+export class SignalCounter extends RadiantElement {
+	@signal count = 0;
+
+	private readonly increment = () => {
+		this.count.update((value) => value + 1);
+	};
+
+	override render() {
+		return (
+			<section>
+				<p>Count: {this.count}</p>
+				<button type="button" on:click={this.increment}>
+					Increment
+				</button>
+			</section>
+		);
+	}
+}
+```
+
+## Options
+
+| Option | Type | Description |
+| :-- | :-- | :-- |
+| `bind` | `boolean \| string` | Exposes a JSX binding companion such as `$count` or a custom binding name |
+| `initial` | `T` | Optional initial value when the field does not provide one directly |
+| `source` | `WritableSignal<T> \| (host) => WritableSignal<T>` | Connects an existing writable signal instead of creating a host-owned one |
+| `hydrate` | `String \| Number \| Boolean \| Object \| Array` | Serializes the current signal value into SSR host output and restores it during hydration |
+
+## What It Changes
+
+- the field becomes a real writable signal instance
+- connected signals still flow through Radiant's update callback channel
+- `@onUpdated(...)` and JSX bindings keep working with the same host update model
+- on render-owning `RadiantElement` hosts, signal and store reads performed during `render()` participate in rerender invalidation directly
+
+That last point is the main difference from `@state`: a render method can read the signal directly and let the signals runtime invalidate the view.
+
+```tsx
+override render() {
+	return <p>Count: {this.count}</p>;
+}
+```
+
+If the signal changes through `this.count.set(...)`, the rendered output updates without an extra imperative sync step.
+
+## Shared Signals
+
+You can connect an existing signal instead of creating a host-owned one.
+
+```ts
+import { State } from '@ecopages/signals';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { signal } from '@ecopages/radiant/decorators/signal';
+
+const sharedCount = new State(0);
+
+@customElement('shared-counter')
+export class SharedCounter extends RadiantElement {
+	@signal({ source: sharedCount }) declare count: State<number>;
+}
+```
+
+## Relationship To @state
+
+- Use `@state` when the member should stay a plain host field managed by Radiant's reactive field system.
+- Use `@signal` when the member itself should be a writable signal value.
+
+## Related Subpaths
+
+Signal primitives come from `@ecopages/signals`.
+
+If you need host-owned async state built on top of signals, use the public subpath `@ecopages/radiant/signals/host-resource` documented in [Resources](/docs/packages/signals-resources).
+
+See [Signals Overview](/docs/packages/signals-overview) for the underlying signal model.

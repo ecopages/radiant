@@ -1,340 +1,231 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { RadiantTodoApp } from '@/components/radiant-todo-app'
+import { RadiantTodoApp } from '@/components/radiant-todo-app';
 
 export const layout = DocsLayout;
 
 export const config = {
-  dependencies: {
-    components: [RadiantTodoApp]
-  }
-}
+	dependencies: {
+		components: [RadiantTodoApp],
+	},
+};
 
 export const getMetadata = () => ({
-  title: 'Docs | Radiant Todo App',
-  description: 'The place to learn about @ecopages/radiant',
-})
+	title: 'Docs | Radiant Todo App',
+	description: 'An integrated example combining a RadiantElement host with provider-backed child components.',
+});
 
 # Radiant Todo App
----
 
-The `RadiantTodoApp` component is a simple todo app that uses the `ContextProvider` to share the data between components.
+A `RadiantElement` host that owns a shared todo context, with child components that consume it for local interactions.
 
-In this example we are using `WithKita` mixin to use JSX in our components.
+<RadiantTodoApp />
 
-The features of this todo app are:
+The example combines three pieces:
 
-- Add a todo
-- Mark a todo as completed
-- Show the number of todos and completed todos
-- Move a todo to the completed list once it is marked as completed
-- Move a todo to the todo list once it is marked as incomplete
-- Show a message when there are no todos to show
+- a JSX entry that authors the provider hydration payload directly under the host
+- a `RadiantElement` host that owns the board view and shared context provider
+- `RadiantElement` child items that consume that context for toggle and remove interactions
 
-Also if the list of the features seems not to be so big, there is a lot of concepts that are being used in this example.
+## 1. JSX Entry
 
-Let's check it together.
-
-<RadiantTodoApp count={5} />
-
-## Jsx Markup
-
-This is the jsx markup of the `RadiantTodoApp` component.
-
-In this component we have a form to add a new todo, two sections to show the todos and completed todos, and a script tag to hydrate the context.
-
-The `hydrate` attribute is used to merge the data from the server with the initial value of the context, please read the [provideContext](/docs/context/provide-context) documentation to understand how it works.
-
-Since hydrate will merge the data with the initial value, you can pass only the properties that you want to update.
+The docs preview authors the host in plain JSX and seeds the provider with a typed hydration script.
 
 ```tsx
-const TodoPanel = ({
-  title,
-  count,
-  children,
-  ref,
-}: { title: string; count: number; children: JSX.Element; ref: string }) => {
-  return (
-    <article class="todo__panel">
-      <h2 safe>{title}</h2>
-      <p class="todo__count">
-        {title as 'safe'}: <span data-ref={`count-${ref}`}>{count}</span>
-      </p>
-      <div class="todo__list" data-ref={`list-${ref}`}>
-        {children}
-      </div>
-    </article>
-  );
-};
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+import { createTodoSamples, type Todo } from './todo-context';
 
-const TodoForm = () => {
-  return (
-    <form>
-      <div class="form-group">
-        <label for="new-todo">Add Todo</label>
-        <input id="new-todo" name="todo" />
-      </div>
-      <button type="submit">Add</button>
-    </form>
-  );
-};
+export const RadiantTodoApp = () => {
+	const initialContext = stringifyTyped<{ todos: Todo[] }, string>({ todos: createTodoSamples() });
 
-export const RadiantTodoApp = async () => {
-  const data = await getData();
-  const incompleteTodos = data.todos.filter((todo) => !todo.complete);
-  const completedTodos = data.todos.filter((todo) => todo.complete);
-  return (
-    <>
-      <radiant-todo-app class="todo">
-        <section class="todo__board">
-          <TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
-            {incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
-          </TodoPanel>
-          <TodoPanel title="Completed Todos" count={completedTodos.length} ref="complete">
-            {completedTodos.length > 0 ? <TodoList todos={completedTodos} /> : <NoCompletedTodosMessage />}
-          </TodoPanel>
-        </section>
-        <TodoForm />
-        <script type="json" data-hydration>
-          {stringifyTyped<Partial<TodoContext>, string>({ todos: data.todos })}
-        </script>
-      </radiant-todo-app>
-    </>
-  );
+	return (
+		<radiant-todo-app class="todo">
+			<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">
+				{initialContext}
+			</script>
+		</radiant-todo-app>
+	);
 };
 ```
 
-## Typescript
+JSON child text inside `<script type="application/json">` is emitted as raw script text, so the provider can read it back without an `innerHTML` escape hatch.
 
-In this first snippet we have the `radiant-todo-app` component that is responsible for managing the todos.
+`stringifyTyped` comes from `@ecopages/radiant/tools/stringify-typed`, not the root entrypoint.
 
-The features used in this component are:
+## 2. Host
 
-- `@query` decorator to query for the elements inside the component that uses the `data-ref` attribute
-- `@provideContext` decorator to provide the context to the children components
-- `@onEvent` decorator to listen for the form submit event
-- `@contextSelector` decorator to select the todos based on the complete status
-- `renderTemplate` method to render the templates. Here we are using WithKita mixin to render the JSX templates
+The host owns the provider and the rerender boundary. The provider reads its own hydration script directly from the authored host children.
 
-```typescript
+```tsx
 import {
-  type ContextProvider,
-  RadiantElement,
-  WithKita,
-  consumeContext,
-  contextSelector,
-  createContext,
-  customElement,
-  onEvent,
-  provideContext,
-  query,
-  reactiveProp,
+	type ContextProvider,
+	RadiantElement,
+	contextSelector,
+	customElement,
+	onEvent,
+	provideContext,
 } from '@ecopages/radiant';
 
-import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
-
-export type Todo = {
-  id: string;
-  text: string;
-  complete: boolean;
-};
-
-export type TodoContext = {
-  todos: Todo[];
-  logger: Logger;
-};
-
-export const todoContext = createContext<TodoContext>(Symbol('todo-context'));
-
-class Logger {
-  log(message: string) {
-    console.log('%cLOGGER', 'background: #222; color: #bada55', message);
-  }
-}
+import { TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
 
 @customElement('radiant-todo-app')
-export class RadiantTodoApp extends WithKita(RadiantElement) {
-  @query({ ref: 'list-complete' }) listComplete!: HTMLElement;
-  @query({ ref: 'list-incomplete' }) listIncomplete!: HTMLElement;
-  @query({ ref: 'count-complete' }) countComplete!: HTMLElement;
-  @query({ ref: 'count-incomplete' }) countIncomplete!: HTMLElement;
+export class RadiantTodoAppElement extends RadiantElement {
+	@provideContext<typeof todoContext>({
+		context: todoContext,
+		initialValue: { todos: [], logger: new TodoLogger() },
+		hydrate: Object,
+		serialize: ({ todos }: TodoContext) => ({ todos }),
+	})
+	provider!: ContextProvider<typeof todoContext>;
 
-  @provideContext<typeof todoContext>({
-    context: todoContext,
-    initialValue: { todos: [], logger: new Logger() },
-    hydrate: Object,
-  })
-  provider!: ContextProvider<typeof todoContext>;
+	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
+	todos: Todo[] = [];
 
-  @onEvent({ selector: 'form', type: 'submit' })
-  submitTodo(event: FormDataEvent) {
-    event.preventDefault();
-    const form = event.target as HTMLFormElement;
-    const formData = new FormData(form);
-    const todo = formData.get('todo');
+	@onEvent({ selector: 'form', type: 'submit' })
+	submitTodo(event: FormDataEvent) {
+		event.preventDefault();
+		const form = event.target as HTMLFormElement;
+		const formData = new FormData(form);
+		const todo = formData.get('todo');
 
-    if (todo) {
-      const prevTodos = this.provider.getContext().todos;
-      const todos = [...prevTodos, { id: Date.now().toString(), text: todo.toString(), complete: false }];
-      this.provider.setContext({ todos });
-      form.reset();
-    }
-  }
+		if (todo) {
+			const currentContext = this.provider.getContext();
+			const nextTodos = [
+				...currentContext.todos,
+				{ id: Date.now().toString(), text: todo.toString(), complete: false },
+			];
 
-  @contextSelector({
-    context: todoContext,
-    select: ({ todos }) => ({
-      todosCompleted: todos.filter((todo) => todo.complete),
-      todosIncomplete: todos.filter((todo) => !todo.complete),
-    }),
-  })
-  onTodosUpdated({ todosCompleted, todosIncomplete }: Record<string, TodoContext['todos']>) {
-    const todosMapping = [
-      { todos: todosCompleted, list: this.listComplete, noTodosMessage: <NoTodosMessage /> },
-      { todos: todosIncomplete, list: this.listIncomplete, noTodosMessage: <NoCompletedTodosMessage /> },
-    ];
+			currentContext.logger.log(`Todo added: ${todo.toString()}`);
+			this.provider.setContext({ todos: nextTodos });
+			form.reset();
+		}
+	}
 
-    for (const { todos, list, noTodosMessage } of todosMapping) {
-      if (todos.length === 0) {
-        this.renderTemplate({
-          target: list,
-          template: noTodosMessage,
-        });
-      } else {
-        this.renderTemplate({
-          target: list,
-          template: <TodoList todos={todos} />,
-        });
-      }
-    }
+	renderTodoList({ todos }: { todos: Todo[] }) {
+		return todos.map(({ id, complete, text }) => (
+			<radiant-todo-item complete={complete} class="todo__item" id={id} text={text} />
+		));
+	}
 
-    this.countComplete.textContent = todosCompleted.length.toString();
-    this.countIncomplete.textContent = todosIncomplete.length.toString();
-  }
-}
+	override render() {
+		const todos = this.todos;
+		const todosCompleted = todos.filter((todo) => todo.complete);
+		const todosIncomplete = todos.filter((todo) => !todo.complete);
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'radiant-todo-app': HtmlTag;
-    }
-  }
+		return (
+			<>
+				<section class="todo__board">
+					<article class="todo__panel">
+						<h2>Incomplete Todos</h2>
+						<div class="todo__list">
+							{todosIncomplete.length > 0 ? (
+								this.renderTodoList({ todos: todosIncomplete })
+							) : (
+								<div>No todos to show</div>
+							)}
+						</div>
+					</article>
+					<article class="todo__panel">
+						<h2>Completed Todos</h2>
+						<div class="todo__list">
+							{todosCompleted.length > 0 ? (
+								this.renderTodoList({ todos: todosCompleted })
+							) : (
+								<div>No completed todos to show</div>
+							)}
+						</div>
+					</article>
+				</section>
+				<form>
+					<div class="form-group">
+						<label for="new-todo">Add Todo</label>
+						<input id="new-todo" name="todo" />
+					</div>
+					<button type="submit">Add</button>
+				</form>
+			</>
+		);
+	}
 }
 ```
 
-In this second snippet we have the `radiant-todo-item` component that is responsible for rendering the todo item.
+`serialize(...)` keeps the `TodoLogger` instance client-only while the todo list still hydrates from SSR.
 
-The features used in this component are:
+## 3. Child Items
 
-- `@query` decorator to query for the checkbox element
-- `@reactiveProp` decorator to define the complete attribute
-- `@consumeContext` decorator to consume the context from the parent component
+Each todo item is a `RadiantElement` that renders its own view and consumes context for shared state mutations.
 
-```typescript
-export type RadiantTodoProps = {
-    complete?: boolean;
+```tsx
+import {
+	type ContextProvider,
+	RadiantElement,
+	consumeContext,
+	customElement,
+	onEvent,
+	prop,
+} from '@ecopages/radiant';
+
+import { todoContext } from './todo-context';
+
+type RadiantTodoBindings = {
+	complete: boolean;
+	text: string;
 };
 
 @customElement('radiant-todo-item')
-export class RadiantTodoItem extends WithKita(RadiantElement) {
-  @query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
-  @query({ selector: 'button' }) removeButton!: HTMLButtonElement;
-  @reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
-  @consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
+export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
+	@prop({ type: String, defaultValue: '' }) declare text: string;
+	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.complete = this.checkbox.checked;
-  }
+	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
+	toggleComplete(event: Event) {
+		const checkbox = event.target as HTMLInputElement;
+		this.complete = checkbox.checked;
+		const currentContext = this.context.getContext();
+		const nextTodos = currentContext.todos.map((todo) =>
+			todo.id === this.id ? { ...todo, complete: checkbox.checked } : todo,
+		);
 
-  @onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
-  toggleComplete(event: Event) {
-    const checkbox = event.target as HTMLInputElement;
-    const todo = this.context.getContext().todos.find((t) => t.id === this.id);
-    if (!todo) return;
+		this.context.setContext({ todos: nextTodos });
+		currentContext.logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
+	}
 
-    this.complete = checkbox.checked;
+	@onEvent({ ref: 'remove-todo', type: 'click' })
+	removeTodo() {
+		const currentContext = this.context.getContext();
+		const nextTodos = currentContext.todos.filter((todo) => todo.id !== this.id);
 
-    this.context.setContext({
-      todos: this.context.getContext().todos.map((t) => (t.id === this.id ? { ...t, complete: checkbox.checked } : t)),
-    });
+		this.context.setContext({ todos: nextTodos });
+		currentContext.logger.log(`Todo ${this.id} removed`);
+	}
 
-    const logger = this.context.getContext().logger;
-    logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
-  }
-
-  @onEvent({ ref: 'remove-todo', type: 'click' })
-  removeTodo() {
-    this.context.setContext({
-      todos: this.context.getContext().todos.filter((t) => t.id !== this.id),
-    });
-
-    const logger = this.context.getContext().logger;
-    logger.log(`Todo ${this.id} removed`);
-  }
-}
-
-declare global {
-    namespace JSX {
-      interface IntrinsicElements {
-        'radiant-todo-item': HtmlTag & RadiantTodoProps;
-      }
-    }
+	override render() {
+		return (
+			<>
+				<label for={`todo-${this.id}`}>
+					<input id={`todo-${this.id}`} name={this.id} type="checkbox" checked={this.$.complete} />
+					{this.$.text}
+				</label>
+				<button type="button" data-ref="remove-todo" aria-label={`Remove todo: ${this.id}`}>
+					&times;
+				</button>
+			</>
+		);
+	}
 }
 ```
 
-Finally, in this last snippet we have the `NoTodosMessage`, `NoCompletedTodosMessage`, `TodoItem` and `TodoList` components.
+The item uses `@consumeContext` because it needs the provider object to call `getContext()` and `setContext(...)`. It also uses `this.$.complete` and `this.$.text` for fine-grained binding positions in its own `render()`.
 
-Theses components are responsible for rendering the messages when there are no todos to show, the todo item and the todo list.
+## Key Patterns
 
-They are used both in the initial markup and in the custom elements.
+- **`@contextSelector` on the host field** means `render()` reads `this.todos` directly. When the todo list changes in context, the host rerenders automatically.
+- **`@consumeContext` on the child** gives it the provider object for read-write access. Use `@consumeContext` when the component calls `setContext(...)`.
+- **`serialize(...)` on the provider** keeps the `TodoLogger` out of SSR JSON while the todo list round-trips through hydration.
+- **Typed `<script>` payloads** remain a valid pattern for provider hydration when the JSX entry authors the host directly.
 
-```tsx
-import type { Todo } from './radiant-todo-app.script';
+## See Also
 
-export const NoTodosMessage = () => {
-    return <div>No todos to show</div>;
-};
-
-export const NoCompletedTodosMessage = () => {
-    return <div>No completed todos to show</div>;
-};
-
-export const TodoItem = ({ id, complete, text }: Todo) => {
-    return (
-      <radiant-todo-item complete={complete} class="todo__item" id={id}>
-        {text as 'safe'}
-        <span>
-          <input type="checkbox" checked={complete} />
-        </span>
-        <button type="button" class="todo__item-remove">
-          <svg
-            width="20"
-            height="20"
-            aria-hidden="true"
-            focusable="false"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-x"
-          >
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
-        </button>
-      </radiant-todo-item>
-    );
-};
-
-export const TodoList = ({ todos }: { todos: Todo[] }) => {
-    return (
-      <>
-        {todos.map((todo) => (
-          <TodoItem {...todo} />
-        ))}
-      </>
-    );
-};
-```
+- [Radiant Counter](/docs/examples/counter) for the smallest host-render example
+- [Weather App](/docs/examples/weather-app) for a resource-driven context example
+- [@provideContext](/docs/context/provide-context) and [@consumeContext](/docs/context/consume-context) for the decorator APIs

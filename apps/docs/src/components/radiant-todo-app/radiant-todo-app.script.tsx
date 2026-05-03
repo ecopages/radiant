@@ -1,96 +1,96 @@
-import {
-	type ContextProvider,
-	RadiantElement,
-	WithKita,
-	consumeContext,
-	contextSelector,
-	createContext,
-	customElement,
-	onEvent,
-	provideContext,
-	query,
-	reactiveProp,
-} from '@ecopages/radiant';
-
-import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
+import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
+import { type ContextProvider, consumeContext, contextSelector, provideContext } from '@ecopages/radiant/context';
+import { TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
 
 export type RadiantTodoProps = {
 	complete?: boolean;
+	text?: string;
 };
 
-export type Todo = {
-	id: string;
-	text: string;
+type RadiantTodoBindings = {
 	complete: boolean;
+	text: string;
 };
-
-export type TodoContext = {
-	todos: Todo[];
-	logger: Logger;
-};
-
-export const todoContext = createContext<TodoContext>(Symbol('todo-context'));
-
-class Logger {
-	log(message: string) {
-		console.log('%cLOGGER', 'background: #222; color: #bada55', message);
-	}
-}
 
 @customElement('radiant-todo-item')
-export class RadiantTodoItem extends WithKita(RadiantElement) {
-	@query({ selector: 'input[type="checkbox"]' }) checkbox!: HTMLInputElement;
-	@query({ selector: 'button' }) removeButton!: HTMLButtonElement;
-	@reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
+export class RadiantTodoItem extends RadiantElement<RadiantTodoBindings> {
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare complete: boolean;
+	@prop({ type: String, defaultValue: '' }) declare text: string;
 	@consumeContext(todoContext) context!: ContextProvider<typeof todoContext>;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.complete = this.checkbox.checked;
+	private getInputId() {
+		return `todo-${this.id}`;
 	}
 
 	@onEvent({ selector: 'input[type="checkbox"]', type: 'change' })
 	toggleComplete(event: Event) {
 		const checkbox = event.target as HTMLInputElement;
-		const todo = this.context.getContext().todos.find((t) => t.id === this.id);
-		if (!todo) return;
-
 		this.complete = checkbox.checked;
+		const currentContext = this.context.getContext();
+		const nextTodos = currentContext.todos.map((todo) =>
+			todo.id === this.id ? { ...todo, complete: checkbox.checked } : todo,
+		);
 
-		this.context.setContext({
-			todos: this.context
-				.getContext()
-				.todos.map((t) => (t.id === this.id ? { ...t, complete: checkbox.checked } : t)),
-		});
-
-		const logger = this.context.getContext().logger;
-		logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
+		this.context.setContext({ todos: nextTodos });
+		currentContext.logger.log(`Todo ${this.id} is now ${checkbox.checked ? 'complete' : 'incomplete'}`);
 	}
 
 	@onEvent({ ref: 'remove-todo', type: 'click' })
 	removeTodo() {
-		this.context.setContext({
-			todos: this.context.getContext().todos.filter((t) => t.id !== this.id),
-		});
+		const currentContext = this.context.getContext();
+		const nextTodos = currentContext.todos.filter((todo) => todo.id !== this.id);
 
-		const logger = this.context.getContext().logger;
-		logger.log(`Todo ${this.id} removed`);
+		this.context.setContext({ todos: nextTodos });
+		currentContext.logger.log(`Todo ${this.id} removed`);
+	}
+
+	override render() {
+		return (
+			<>
+				<label for={this.getInputId()}>
+					<input id={this.getInputId()} name={this.id} type="checkbox" checked={this.$.complete} />
+					{this.$.text}
+				</label>
+				<button
+					type="button"
+					data-ref="remove-todo"
+					aria-label={`Remove todo: ${this.id}`}
+					class="todo__item-remove"
+				>
+					<svg
+						width="20"
+						height="20"
+						aria-hidden="true"
+						focusable="false"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="pointer-events-none"
+					>
+						<path d="M18 6 6 18" />
+						<path d="m6 6 12 12" />
+					</svg>
+				</button>
+			</>
+		);
 	}
 }
 
 @customElement('radiant-todo-app')
-export class RadiantTodoApp extends WithKita(RadiantElement) {
-	@query({ ref: 'list-complete' }) listComplete!: HTMLElement;
-	@query({ ref: 'list-incomplete' }) listIncomplete!: HTMLElement;
-	@query({ ref: 'count-complete' }) countComplete!: HTMLElement;
-	@query({ ref: 'count-incomplete' }) countIncomplete!: HTMLElement;
-
+export class RadiantTodoAppElement extends RadiantElement {
 	@provideContext<typeof todoContext>({
 		context: todoContext,
-		initialValue: { todos: [], logger: new Logger() },
+		initialValue: { todos: [], logger: new TodoLogger() },
 		hydrate: Object,
+		serialize: ({ todos }: TodoContext) => ({ todos }),
 	})
 	provider!: ContextProvider<typeof todoContext>;
+
+	@contextSelector({ context: todoContext, select: ({ todos }) => todos })
+	todos: Todo[] = [];
 
 	@onEvent({ selector: 'form', type: 'submit' })
 	submitTodo(event: FormDataEvent) {
@@ -100,50 +100,67 @@ export class RadiantTodoApp extends WithKita(RadiantElement) {
 		const todo = formData.get('todo');
 
 		if (todo) {
-			const prevTodos = this.provider.getContext().todos;
-			const todos = [...prevTodos, { id: Date.now().toString(), text: todo.toString(), complete: false }];
-			this.provider.setContext({ todos });
+			const currentContext = this.provider.getContext();
+			const nextTodos = [
+				...currentContext.todos,
+				{ id: Date.now().toString(), text: todo.toString(), complete: false },
+			];
+
+			currentContext.logger.log(`Todo added: ${todo.toString()}`);
+			this.provider.setContext({ todos: nextTodos });
 			form.reset();
 		}
 	}
 
-	@contextSelector({
-		context: todoContext,
-		select: ({ todos }) => ({
-			todosCompleted: todos.filter((todo) => todo.complete),
-			todosIncomplete: todos.filter((todo) => !todo.complete),
-		}),
-	})
-	onTodosUpdated({ todosCompleted, todosIncomplete }: Record<string, TodoContext['todos']>) {
-		const todosMapping = [
-			{ todos: todosCompleted, list: this.listComplete, noTodosMessage: <NoTodosMessage /> },
-			{ todos: todosIncomplete, list: this.listIncomplete, noTodosMessage: <NoCompletedTodosMessage /> },
-		];
-
-		for (const { todos, list, noTodosMessage } of todosMapping) {
-			if (todos.length === 0) {
-				this.renderTemplate({
-					target: list,
-					template: noTodosMessage,
-				});
-			} else {
-				this.renderTemplate({
-					target: list,
-					template: <TodoList todos={todos} />,
-				});
-			}
-		}
-
-		this.countComplete.textContent = todosCompleted.length.toString();
-		this.countIncomplete.textContent = todosIncomplete.length.toString();
+	renderTodoList({ todos }: { todos: Todo[] }) {
+		return todos.map(({ id, complete, text }) => (
+			<radiant-todo-item complete={complete} class="todo__item" id={id} text={text} />
+		));
 	}
-}
 
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-todo-app': HtmlTag;
-			'radiant-todo-item': HtmlTag & RadiantTodoProps;
-		}
+	override render() {
+		const todos = this.todos;
+		const todosCompleted = todos.filter((todo) => todo.complete);
+		const todosIncomplete = todos.filter((todo) => !todo.complete);
+
+		return (
+			<>
+				<section class="todo__board">
+					<article class="todo__panel">
+						<h2>Incomplete Todos</h2>
+						<p class="todo__count">
+							Incomplete Todos: <span data-ref="count-incomplete">{todosIncomplete.length}</span>
+						</p>
+						<div class="todo__list" data-ref="list-incomplete">
+							{todosIncomplete.length > 0 ? (
+								this.renderTodoList({ todos: todosIncomplete })
+							) : (
+								<div>No todos to show</div>
+							)}
+						</div>
+					</article>
+					<article class="todo__panel">
+						<h2>Completed Todos</h2>
+						<p class="todo__count">
+							Completed Todos: <span data-ref="count-complete">{todosCompleted.length}</span>
+						</p>
+						<div class="todo__list" data-ref="list-complete">
+							{todosCompleted.length > 0 ? (
+								this.renderTodoList({ todos: todosCompleted })
+							) : (
+								<div>No completed todos to show</div>
+							)}
+						</div>
+					</article>
+				</section>
+				<form>
+					<div class="form-group">
+						<label for="new-todo">Add Todo</label>
+						<input id="new-todo" name="todo" />
+					</div>
+					<button type="submit">Add</button>
+				</form>
+			</>
+		);
 	}
 }

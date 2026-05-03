@@ -1,0 +1,50 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | Signals Stores',
+	description: 'Deep reactive stores in @ecopages/signals.',
+});
+
+# Signals Stores
+
+Use `createStore(...)` when you want deep reactive state over nested plain objects and arrays.
+
+```ts
+import { createStore, effect } from '@ecopages/signals';
+
+const store = createStore({
+	profile: { name: 'Ada' },
+	todos: ['Ship docs'],
+});
+
+const dispose = effect(() => {
+	console.log(store.profile.name, store.todos.length);
+});
+
+store.profile.name = 'Grace';
+store.todos.push('Review examples');
+dispose();
+```
+
+## What createStore(...) Does
+
+- wraps nested plain objects and arrays in a signal-backed proxy
+- tracks both leaf values and container shape changes
+- lets normal property reads participate in dependency tracking
+
+## snapshot(...)
+
+Use `snapshot(...)` when you need a plain detached value graph for logging, serialization, or comparison.
+
+```ts
+import { createStore, snapshot } from '@ecopages/signals';
+
+const store = createStore({ profile: { name: 'Ada' } });
+const plain = snapshot(store);
+```
+
+## Limits
+
+Stores are for plain object and array data. If you need richer class instances or framework-owned ownership trees, keep that logic outside the store layer.

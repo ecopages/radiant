@@ -1,16 +1,27 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { Banner } from '@/components/banner/banner.kita';
+import { Banner } from '@/components/banner/banner';
 
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
   title: 'Docs | Best Practices',
   description: 'General best practices and recommendations for building components with Radiant.',
-})
+});
 
 # Best Practices
 
-While Radiant is designed for flexibility, following these best practices will lead to more maintainable and reliable component libraries.
+While Radiant is designed for flexibility, these patterns keep the docs, runtime, and type surfaces aligned with the current host model.
+
+## Prefer RadiantElement For Custom Elements
+
+`RadiantElement` is the primary custom-element base class.
+
+Use it in both of these cases:
+
+- The host enhances authored light DOM and stays mostly imperative.
+- The host overrides `render()` and owns a JSX view directly.
+
+Use `RadiantController` when the DOM is authored elsewhere and you only need controller behavior on top of that existing markup.
 
 ## Naming Custom Elements
 
@@ -52,6 +63,13 @@ Always export the component class. This is crucial for:
 ### Use Descriptive Names
 Use clear, descriptive names. Avoid generic names like `my-component` or `custom-element`.
 
+### Prefer @prop And @state Names
+
+Use the semantic names in application code:
+
+- `@prop(...)` for public custom-element API
+- `@state` for internal mutable state
+
 ## Typing Components
 
 Type safety is a core feature of Radiant. We recommend following these patterns to ensure your components are correctly typed for both TypeScript and JSX integration.
@@ -69,25 +87,125 @@ export type UserCardProps = {
 
 @customElement('user-card')
 export class UserCard extends RadiantElement {
-  @reactiveProp({ type: String }) declare name: string;
-  @reactiveProp({ type: String }) declare avatarUrl: string;
-  @reactiveProp({ type: Boolean }) declare isAdmin: boolean;
+  @prop({ type: String }) declare name: string;
+  @prop({ type: String }) declare avatarUrl: string;
+  @prop({ type: Boolean }) declare isAdmin: boolean;
 }
 ```
 
-### JSX Integration (Kita)
+### JSX Integration (Ecopages JSX)
 
-To enable type checking for your custom element in JSX templates (using Kita), register it in the `JSX.IntrinsicElements` interface.
+To enable type checking for your custom element in JSX templates with
+`jsxImportSource: "@ecopages/jsx"`, augment the Ecopages JSX runtime module.
 
 ```typescript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'user-card': HtmlTag & UserCardProps;
-    }
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+declare module '@ecopages/jsx/jsx-runtime' {
+  interface JsxCustomIntrinsicElements {
+    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
   }
 }
 ```
+
+### Public Props vs Internal Bindings
+
+For `RadiantElement`, keep the public JSX attribute type
+separate from the internal reactive binding shape when those two surfaces are
+not the same.
+
+- Public props describe what consumers may pass from JSX.
+- Internal bindings describe what `this.bind(...)`, `this.bindings`, and `this.$`
+  may read inside the component.
+- Internal-only state such as `@state` fields should usually stay out of the
+  public JSX contract.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import { RadiantElement, customElement, prop, state } from '@ecopages/radiant';
+
+export type UserCardProps = {
+  name?: string;
+  avatarUrl?: string;
+};
+
+type UserCardBindings = UserCardProps & {
+  isExpanded: boolean;
+};
+
+@customElement('user-card')
+export class UserCard extends RadiantElement<UserCardBindings> {
+  @prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
+  @prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
+  @state isExpanded = false;
+
+  toggleExpanded = () => {
+    this.isExpanded = !this.isExpanded;
+  };
+
+  override render() {
+    return (
+      <article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}>
+        <h2>{this.$.name}</h2>
+        {this.avatarUrl && <img src={this.avatarUrl} alt="" />}
+        <button type="button" on:click={this.toggleExpanded}>
+          {this.$.isExpanded ? 'Hide details' : 'Show details'}
+        </button>
+      </article>
+    );
+  }
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+  interface JsxCustomIntrinsicElements {
+    'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+  }
+}
+```
+
+In this pattern:
+
+- `UserCardProps` is the external API used by JSX consumers.
+- `UserCardBindings` includes both public props and internal reactive state.
+- `isExpanded` is available inside the component through `this.$.isExpanded`, but
+  consumers cannot pass `<user-card isExpanded />` unless you intentionally add
+  that field to the public props type.
+
+Notice the split inside `render()`:
+
+- `this.isExpanded` is used for the `class` expression because render logic needs the raw boolean.
+- `this.$.name` and `this.$.isExpanded` are used for stable text positions where fine-grained patching is desirable.
+
+If the public props and internal reactive members are intentionally the same
+surface, reusing one shared type is fine. Split them only when the external API
+should be narrower or more stable than the internal state.
+
+### Plain Reads vs Bindings
+
+Use both, but use them for different jobs.
+
+- Plain reads such as `this.count` or `this.isExpanded` are the normal choice when render logic needs the raw value.
+- Bindings such as `this.$.count` or `this.bindings.count` are the better choice when JSX should patch a stable child or attribute position directly.
+
+Practical rule of thumb:
+
+- Prefer plain reads for branching, comparisons, list shape, slot fallback, and `class` or `style` composition.
+- Prefer bindings for leaf text, whole `data-*` or `aria-*` values, boolean attributes, and `prop:*` bindings.
+
+```tsx
+<article
+  class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}
+  data={{ state: this.$.isExpanded }}
+>
+  <h2>{this.$.name}</h2>
+</article>
+```
+
+In that example, the `class` expression still belongs to the host render pass, while the bound `data-state` and heading text can patch in place.
+
+If a component never uses `this.$`, `this.bindings`, or `this.bind(...)`, you usually do not need a separate `Bindings` type at all.
 
 ## Technical Tips
 
@@ -96,7 +214,7 @@ Custom elements are registered immediately when the file is evaluated. If you im
 
 ### Reactive State Mutation (Reference Equality)
 
-Radiant uses reference equality to detect changes in reactive properties and fields. 
+Radiant uses reference equality to detect changes in reactive props and state fields.
 
 <Banner type="alert" class="mb-4">
   <Banner.Title>IMPORTANT</Banner.Title>
@@ -115,6 +233,10 @@ this.items = [...this.items, 'new item'];
   <Banner.Title>NOTE</Banner.Title>
   <p>This behavior is intentional for performance and is verified by our core test suite.</p>
 </Banner>
+
+### Keep Public Props Narrow
+
+For `RadiantElement<Bindings>`, treat the generic binding shape as an internal reactive surface. When the public JSX API should be smaller, use a dedicated `Props` type and keep internal bindings separate.
 
 ### Prefer autonomous elements over customized built-ins
 

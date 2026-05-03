@@ -3,47 +3,74 @@ import { DocsLayout } from '@/layouts/docs-layout';
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
-  title: 'Docs | StringifyTyped',
-  description: 'The place to learn about @ecopages/radiant',
-})
+	title: 'Docs | stringifyTyped',
+	description: 'Type-safe JSON serialization helper for attributes and hydration payloads.',
+});
 
-# StringifyTyped
----
+# stringifyTyped
 
-This utility function is used to stringify attributes in a typed way.
-This is useful when you need to pass attributes to a component that expects a specific type.
+A typed wrapper around `JSON.stringify` for attributes, inline payloads, and SSR hydration helpers.
+
+Import `stringifyTyped` from the public subpath `@ecopages/radiant/tools/stringify-typed`.
+
+It is intentionally not re-exported from the root `@ecopages/radiant` entrypoint.
+
+## What It Does
+
+`stringifyTyped(value)` always calls `JSON.stringify(value)` at runtime.
+
+The extra generic parameter only changes the static TypeScript return type so JSX attribute code can stay readable without extra casts.
+
+```tsx
+import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+
+type Payload = { value: number };
+
+export const MyComponent = ({ value }: { value: number }) => {
+	return <my-component complex-attribute={stringifyTyped<Payload>({ value })}></my-component>;
+};
+```
+
+In JSX, that keeps the attribute expression typed as `Payload` even though the emitted HTML contains a JSON string.
+
+## Returning A String Explicitly
+
+It can also produce JSON strings for lower-level helpers or transport payloads:
 
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
 export const MyComponent = ({ value }: { value: number }) => {
-    return <my-component complex-attribute={stringifyTyped<MyType>({ value })}></my-component>;
-};  
+	const hydrationPayload = stringifyTyped<{ value: number }, string>({ value });
 
-// Output: <my-component complex-attribute="{&#34;value&#34;:1}"></my-component>
+	return <my-component data-payload={hydrationPayload}></my-component>;
+};
 ```
 
+Use the explicit `string` return type when the value leaves JSX and you want TypeScript to treat it as an ordinary serialized payload.
 
-Or when you need to stringify a context value:
+## Script Payloads
+
+If you want to author a hydration payload as a child `<script>`, pass the JSON string as the script child content:
 
 ```tsx
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
 export const MyComponent = ({ value }: { value: number }) => {
-    return <my-context-provider>
-      {...}
-      <script type="application/json" data-hydration>
-        {stringifyTyped({ value })}
-      </script>
-    </my-context-provider>;
-};  
+  const hydrationPayload = stringifyTyped<{ value: number }, string>({ value });
 
-/** Output 
- * <my-context-provider>
- *  {...}
- *  <script type="application/json" data-hydration>
- *    {"value":1}
- *  </script>
- * </my-context-provider>
- */
+  return (
+    <my-component>
+      <script type="application/json" data-hydration>{hydrationPayload}</script>
+    </my-component>
+  );
+};
 ```
+
+## When To Use It
+
+- use `stringifyTyped(...)` when you need JSON in an attribute or script payload from JSX
+- use the explicit `string` generic when the serialized value leaves JSX and should be typed as a string
+- prefer higher-level helpers when they already own the hydration contract
+
+If you are hydrating an existing `ContextProvider` or a render-owning `RadiantElement` instance, the built-in helpers such as `renderComponent(...)`, `renderHostToString(...)`, `provider.renderHydrationScript()`, or `provider.renderHydrationScriptTag()` are usually a better fit. Those server-oriented helpers live under `@ecopages/radiant/server/*`.

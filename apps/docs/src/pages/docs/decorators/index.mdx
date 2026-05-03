@@ -1,0 +1,38 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | Decorators',
+	description: 'Overview of the Radiant decorator surface across RadiantElement and RadiantController.',
+});
+
+# Decorators
+
+Radiant decorators fall into a few groups:
+
+- host registration and HTML input: [@customElement](/docs/decorators/custom-element), [@controller](/docs/decorators/controller), [@attr](/docs/decorators/attr), [@prop](/docs/decorators/prop)
+- reactive state and bindings: [@state](/docs/decorators/state), [@signal](/docs/decorators/signal), [@onUpdated](/docs/decorators/on-updated)
+- DOM and event wiring: [@onEvent](/docs/decorators/on-event), [@event](/docs/decorators/event), [@query](/docs/decorators/query), [@querySlot](/docs/decorators/query-slot)
+- method helpers: [@bound](/docs/decorators/bound), [@debounce](/docs/decorators/debounce)
+
+## Host Support
+
+- `RadiantElement` supports the full custom-element decorator surface.
+- `RadiantController` supports the controller-oriented subset plus render-driven state and context authoring.
+
+For the controller capability matrix, see [RadiantController](/docs/components/radiant-controller).
+
+## Choosing A Reactive Field Type
+
+- use [@attr](/docs/decorators/attr) when the value should come from markup
+- use [@prop](/docs/decorators/prop) when the value is public API on a host
+- use [@state](/docs/decorators/state) for plain internal host state
+- use [@signal](/docs/decorators/signal) when the field itself should be a writable signal
+
+## Recommended Reading Order
+
+1. Start with [@attr](/docs/decorators/attr), [@state](/docs/decorators/state), and [@signal](/docs/decorators/signal).
+2. If the host renders, read [@onUpdated](/docs/decorators/on-updated) and [@onEvent](/docs/decorators/on-event).
+3. For custom-element public API, add [@prop](/docs/decorators/prop).
+4. For controller discovery, add [@controller](/docs/decorators/controller).

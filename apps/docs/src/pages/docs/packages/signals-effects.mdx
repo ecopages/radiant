@@ -1,0 +1,59 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | Signals Effects',
+	description: 'Effects, watch, scheduling, and low-level watchers in @ecopages/signals.',
+});
+
+# Signals Effects
+
+Use `effect(...)` when you want reactive side effects that rerun after dependencies change.
+
+```ts
+import { State, effect } from '@ecopages/signals';
+
+const count = new State(0);
+
+const dispose = effect(() => {
+	console.log('count =', count.get());
+});
+
+count.set(1);
+dispose();
+```
+
+## watch(...)
+
+Use `watch(...)` when you want the next and previous derived values.
+
+```ts
+import { State, watch } from '@ecopages/signals';
+
+const count = new State(0);
+
+const stopWatching = watch(
+	() => count.get(),
+	(nextValue, previousValue) => {
+		console.log(previousValue, '->', nextValue);
+	},
+);
+
+count.set(1);
+stopWatching();
+```
+
+`watch(...)` is built on top of a computed signal plus an effect, so it inherits computed equality behavior and effect scheduling.
+
+## Scheduling
+
+Effects and watchers accept a scheduler option. The default uses a microtask queue.
+
+## subtle.Watcher
+
+Use `subtle.Watcher` when you need lower-level invalidation workflows.
+
+- it reports staleness rather than recalculated values
+- calling `watch(...)` re-arms the watcher by resetting the pending set and notification latch
+- `watched` and `unwatched` hooks let signals react when a low-level watcher starts or stops observing them

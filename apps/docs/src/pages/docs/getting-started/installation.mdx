@@ -1,18 +1,82 @@
 import { DocsLayout } from '@/layouts/docs-layout';
+import { CodeTabs } from '@/components/code-tabs';
 
 export const layout = DocsLayout;
 
+export const config = {
+  dependencies: {
+    components: [CodeTabs],
+  },
+};
+
 export const getMetadata = () => ({
   title: 'Docs | Installation',
-  description: 'The place to learn about @ecopages/radiant',
+  description: 'Install Radiant, JSX, and Signals for the workflow you want.',
 })
 
 # Installation
----
 
-To get started with Radiant, you need to install the package in your project. You can do this by running the following command:
+Radiant is the core package. JSX and Signals are companion packages that extend it with TSX rendering and standalone signal primitives.
 
-```bash
-bun install @ecopages/radiant
+For the current package contract, install all three together.
+
+That is the simplest setup today:
+
+- `@ecopages/radiant` provides the custom-element and controller runtime
+- `@ecopages/jsx` backs `render()` and the TSX authoring flow
+- `@ecopages/signals` backs host reactivity, `@signal`, and resource helpers
+
+You do not need to import JSX or Signals APIs directly in every Radiant component. A component can use `render()` without importing `@ecopages/jsx` symbols itself, and `@state` does not require importing `@ecopages/signals` in application code.
+
+`@ecopages/radiant` currently declares both companion packages as peer dependencies, and its published surface expects them to be present. Installing all three avoids peer-dependency and module-resolution issues.
+
+<CodeTabs
+  label="Package managers"
+  tabs={[
+    { id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+    { id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+    { id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+  ]}
+  copyLabel="Copy install command"
+  defaultSelectedKey="bun"
+/>
+
+## TypeScript Setup For JSX
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@ecopages/jsx"
+  }
+}
 ```
+<br/>
+Or enable it per file:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+```
+
+## Signals Standalone
+
+If you only want the reactive core, install `@ecopages/signals` by itself:
+
+<CodeTabs
+  label="Signals package managers"
+  tabs={[
+    { id: 'bun', label: 'bun', code: 'bun add @ecopages/signals' },
+    { id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/signals' },
+    { id: 'npm', label: 'npm', code: 'npm install @ecopages/signals' },
+  ]}
+  copyLabel="Copy install command"
+  defaultSelectedKey="bun"
+/>
+
+## Which Packages To Install
+
+- Install `@ecopages/radiant`, `@ecopages/jsx`, and `@ecopages/signals` for the standard Radiant setup.
+- Add `@ecopages/jsx` when you want TSX authoring, hydration helpers, or SSR rendering.
+- Add `@ecopages/signals` when you want standalone signal primitives, `@signal`, or host-owned async resources.
+- Install `@ecopages/signals` when you want the standalone reactive layer.
 
