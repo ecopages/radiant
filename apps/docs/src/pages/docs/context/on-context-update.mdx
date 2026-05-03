@@ -25,7 +25,8 @@ The decorated method receives the current value (or the result of `select`) as i
 ## Example
 
 ```typescript
-import { RadiantElement, onContextUpdate, customElement } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { onContextUpdate } from '@ecopages/radiant/context';
 
 import { cartContext } from './cart-context';
 
@@ -65,7 +66,8 @@ applyId(id: string) {
 ## RadiantController Example
 
 ```typescript
-import { RadiantController, onContextUpdate } from '@ecopages/radiant';
+import { RadiantController } from '@ecopages/radiant';
+import { onContextUpdate } from '@ecopages/radiant/context';
 
 import { cartContext } from './cart-context';
 

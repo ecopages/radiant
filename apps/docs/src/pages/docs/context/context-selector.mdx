@@ -24,7 +24,8 @@ When the selected value changes, the field is updated and — on a render-owning
 ## Example
 
 ```typescript
-import { RadiantElement, contextSelector, customElement } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { contextSelector } from '@ecopages/radiant/context';
 
 import { todoContext, type Todo } from './todo-context';
 
@@ -50,7 +51,8 @@ export class TodoBoard extends RadiantElement {
 ## RadiantController Example
 
 ```typescript
-import { RadiantController, contextSelector } from '@ecopages/radiant';
+import { RadiantController } from '@ecopages/radiant';
+import { contextSelector } from '@ecopages/radiant/context';
 
 import { todoContext, type Todo } from './todo-context';
 
@@ -103,7 +105,7 @@ The key constraint: `select` only receives the context value — it has no acces
 When the context change should trigger imperative work rather than a rerender, use [@onContextUpdate](/docs/context/on-context-update) on a method instead.
 
 ```typescript
-import { onContextUpdate } from '@ecopages/radiant';
+import { onContextUpdate } from '@ecopages/radiant/context';
 
 @customElement('analytics-tracker')
 export class AnalyticsTracker extends RadiantElement {

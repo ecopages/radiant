@@ -16,7 +16,8 @@ It works on both `RadiantElement` and `RadiantController` hosts.
 ## Example
 
 ```typescript
-import { type ContextProvider, RadiantElement, consumeContext, customElement } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { consumeContext, type ContextProvider } from '@ecopages/radiant/context';
 
 import { themeContext } from './theme-provider';
 
@@ -45,7 +46,8 @@ On controllers, this is often the simplest way to read and write shared state im
 ## RadiantController Example
 
 ```typescript
-import { type ContextProvider, RadiantController, consumeContext } from '@ecopages/radiant';
+import { RadiantController } from '@ecopages/radiant';
+import { consumeContext, type ContextProvider } from '@ecopages/radiant/context';
 
 import { themeContext } from './theme-provider';
 
@@ -78,7 +80,8 @@ One host can consume multiple contexts by applying the decorator to multiple fie
 If you need lower-level control, you can dispatch a context request event directly.
 
 ```typescript
-import { ContextRequestEvent, RadiantElement, customElement } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { ContextRequestEvent } from '@ecopages/radiant/context';
 
 import { themeContext } from './theme-provider';
 
@@ -98,4 +101,4 @@ export class ThemeLabel extends RadiantElement {
 
 `ContextRequestEvent` follows the [community context protocol](https://github.com/webcomponents-cg/community-protocols/blob/main/proposals/context.md). Pass `true` as the third argument to subscribe to future updates.
 
-`ContextSubscriptionRequestEvent` and `ContextEventsTypes` are also available from `@ecopages/radiant` or `@ecopages/radiant/context/events`.
+`ContextSubscriptionRequestEvent` and `ContextEventsTypes` are also available from `@ecopages/radiant/context`.

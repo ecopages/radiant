@@ -16,7 +16,8 @@ It works on both `RadiantElement` and `RadiantController` hosts.
 ## Example
 
 ```typescript
-import { type ContextProvider, RadiantElement, createContext, customElement, provideContext } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { createContext, provideContext, type ContextProvider } from '@ecopages/radiant/context';
 
 type ThemeContext = {
 	mode: 'light' | 'dark';
@@ -87,7 +88,8 @@ Any descendant can resolve that provider through [@consumeContext](/docs/context
 ## RadiantController Example
 
 ```typescript
-import { type ContextProvider, RadiantController, createContext, provideContext } from '@ecopages/radiant';
+import { RadiantController } from '@ecopages/radiant';
+import { createContext, provideContext, type ContextProvider } from '@ecopages/radiant/context';
 
 type ThemeContext = {
 	mode: 'light' | 'dark';
@@ -109,7 +111,8 @@ export class ThemeController extends RadiantController {
 If you need lower-level control, you can still construct `ContextProvider` yourself.
 
 ```typescript
-import { ContextProvider, RadiantElement } from '@ecopages/radiant';
+import { RadiantElement } from '@ecopages/radiant';
+import { ContextProvider } from '@ecopages/radiant/context';
 
 class ThemeHost extends RadiantElement {
 	provider = new ContextProvider<typeof themeContext>(this, {

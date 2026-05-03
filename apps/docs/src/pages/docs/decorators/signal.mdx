@@ -20,7 +20,8 @@ Use it when the field itself should behave like a signal object. If you only nee
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
 
-import { RadiantElement, customElement, signal } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { signal } from '@ecopages/radiant/decorators/signal';
 
 @customElement('signal-counter')
 export class SignalCounter extends RadiantElement {
@@ -75,7 +76,8 @@ You can connect an existing signal instead of creating a host-owned one.
 
 ```ts
 import { State } from '@ecopages/signals';
-import { RadiantElement, customElement, signal } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { signal } from '@ecopages/radiant/decorators/signal';
 
 const sharedCount = new State(0);
 

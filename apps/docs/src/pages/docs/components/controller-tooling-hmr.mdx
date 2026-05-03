@@ -62,17 +62,13 @@ This is the current best integration point inside the repo because it is:
 - isolated from production builds
 - independent from individual controller example modules
 
-## Why It Is Not In The Plugin Yet
+## Shared Runtime Integration
 
-The real upstream home is the Ecopages JSX browser-runtime bootstrap, not each app shell.
+The long-term integration point is the Ecopages JSX browser-runtime bootstrap, not each application shell.
 
-Today, `@ecopages/ecopages-jsx` already emits a global Radiant bootstrap script for hydration. That logic lives in the installed package here:
+Today that bootstrap only installs the Radiant hydrator. In practice, that means the docs app still owns the HMR-specific opt-in in its shared browser shell.
 
-- `node_modules/@ecopages/ecopages-jsx/src/services/jsx-runtime-bundle.service.js`
-
-The current seam is the method named `createRadiantHydratorBootstrapSource()`.
-
-Right now it emits only:
+The current bootstrap output is:
 
 ```ts
 import { installRadiantHydrator } from '@ecopages/radiant/client/hydrator';

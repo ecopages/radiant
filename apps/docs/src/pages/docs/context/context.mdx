@@ -18,7 +18,7 @@ It is based on the [community protocols proposal](https://github.com/webcomponen
 Use `createContext(...)` to create a typed token. The key (typically a `Symbol`) is the runtime identity used for matching providers to consumers. The generic parameter carries the value type at the TypeScript level. At runtime `createContext` is zero-cost — the returned token is just the key itself.
 
 ```typescript
-import { createContext } from '@ecopages/radiant';
+import { createContext } from '@ecopages/radiant/context';
 
 export const myContext = createContext<{ value: string }>(Symbol('my-context'));
 ```

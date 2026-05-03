@@ -1,6 +1,8 @@
 # Radiant
 
-Bun Monorepo for Radiant, a minimalist web component library designed for simplicity and flexibility.
+Radiant is a light-DOM custom-element platform built around visible browser primitives.
+
+Use real custom elements, real DOM events, real attributes, and authored light-DOM children, with `@ecopages/jsx` for TSX rendering and `@ecopages/signals` for renderer-agnostic reactivity.
 
 For more details, [see the docs page](https://radiant.ecopages.app/).
 
