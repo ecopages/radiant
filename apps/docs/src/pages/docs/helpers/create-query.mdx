@@ -1,0 +1,105 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | createQuery',
+	description: 'Query DOM elements without decorators.',
+});
+
+# createQuery
+
+`createQuery` creates a lazy DOM query accessor bound to a host element. It is the functional equivalent of the [`@query`](/docs/decorators/query) decorator, designed for vanilla JS usage or cases where decorators are not available.
+
+## Usage
+
+```typescript
+import { RadiantElement } from '@ecopages/radiant';
+import { createQuery } from '@ecopages/radiant/helpers/create-query';
+
+class UserProfile extends RadiantElement {
+	#avatar = createQuery<HTMLImageElement>(this, { ref: 'avatar' });
+	#items = createQuery<HTMLElement[]>(this, { selector: '.item', all: true });
+
+	get avatar() {
+		return this.#avatar.value;
+	}
+
+	get items() {
+		return this.#items.value;
+	}
+}
+
+customElements.define('user-profile', UserProfile);
+```
+
+The accessor returns an object with a `.value` getter. Each read of `.value` runs the query unless caching is enabled.
+
+## Parameters
+
+`createQuery<T>(host, options)` accepts:
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `host` | `HTMLElement` | Yes | The element to query within. |
+| `options` | `QueryConfig` | Yes | Query configuration (see below). |
+
+### QueryConfig
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `selector` | `string` | One of `selector`/`ref` | CSS selector to match elements. |
+| `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. |
+| `all` | `boolean` | No | Return all matching elements instead of the first (default: `false`). |
+| `cache` | `boolean` | No | Cache the query result (default: `false`). |
+| `scope` | `'light' \| 'shadow' \| 'both'` | No | Which DOM tree to query (default: `'light'`). |
+
+## Return Value
+
+Returns a `QueryResult<T>` object with a single `.value` getter:
+
+- When `all` is `false`: returns `T | null`.
+- When `all` is `true`: returns `T` (an array), or an empty array if nothing matches.
+
+## Caching
+
+By default, every `.value` read re-runs the query. Set `cache: true` to store the result and return it on subsequent reads.
+
+```typescript
+const items = createQuery<HTMLElement[]>(host, {
+	selector: '.item',
+	all: true,
+	cache: true,
+});
+
+items.value; // queries the DOM
+items.value; // returns cached result
+```
+
+## Querying Shadow DOM
+
+Use `scope` to control which DOM tree is queried.
+
+```typescript
+const shadowRef = createQuery<HTMLDivElement>(host, {
+	ref: 'panel',
+	scope: 'shadow',
+});
+
+const everywhere = createQuery<HTMLDivElement[]>(host, {
+	selector: '.shared',
+	all: true,
+	scope: 'both',
+});
+```
+
+| Scope | Behavior |
+| :---- | :------- |
+| `'light'` | Queries the host element's light DOM (default). |
+| `'shadow'` | Queries the host's shadow root. Returns nothing if no shadow root exists. |
+| `'both'` | Queries light DOM first, then shadow root. Results are merged in order. |
+
+## Learn More
+
+- [`@query`](/docs/decorators/query) — Decorator equivalent.
+- [`createQuerySlot`](/docs/helpers/create-query-slot) — Query projected slot content.

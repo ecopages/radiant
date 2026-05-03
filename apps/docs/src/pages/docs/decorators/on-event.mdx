@@ -4,12 +4,12 @@ export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | @onEvent',
-	description: 'Declarative event subscription for custom elements.',
-})
+	description: 'Declarative event subscription for RadiantElement and RadiantController hosts.',
+});
 
 # @onEvent
 
-The `@onEvent` decorator provides a declarative way to subscribe to DOM events on elements within or outside your custom element. It automatically handles event subscription and unsubscription, ensuring no memory leaks when your component is removed from the DOM.
+The `@onEvent` decorator provides a declarative way to subscribe to DOM events on elements within or outside your host. It automatically handles event subscription and unsubscription, ensuring no memory leaks when your host disconnects.
 
 ## Usage
 
@@ -81,6 +81,35 @@ handleScroll() {
 handleKeyDown(event: KeyboardEvent) {
 	if (event.key === 'Escape') this.close();
 }
+```
+
+### RadiantController usage
+
+`@onEvent(...)` also works on `RadiantController`.
+
+Use it when the controller is enhancing authored HTML, delegating across DOM it does not own through `render()`, or listening on `window` / `document`.
+
+If the controller owns the markup through `render()`, prefer direct JSX handlers such as `on:click` for local interactions.
+
+```typescript
+import { RadiantController, onEvent, state } from '@ecopages/radiant';
+
+export class ClickCounterController extends RadiantController {
+	@state count = 0;
+
+	@onEvent({ ref: 'button', type: 'click' })
+	handleClick() {
+		this.count += 1;
+	}
+}
+```
+
+HTML:
+
+```html
+<section data-controller="click-counter">
+	<button data-ref="button">Clicked 0 times</button>
+</section>
 ```
 
 ### Event Delegation for Non-Bubbling Events

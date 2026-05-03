@@ -1,0 +1,119 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | createEvent',
+	description: 'Dispatch custom events with type safety, without decorators.',
+})
+
+# createEvent
+
+`createEvent` creates a type-safe `EventEmitter` bound to a host element and registers it on the host's internal emitter registry. It is the functional equivalent of the [`@event`](/docs/decorators/event) decorator.
+
+## Usage
+
+```typescript
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement } from '@ecopages/radiant';
+import { createEvent } from '@ecopages/radiant/helpers/create-event';
+import { createEventListener } from '@ecopages/radiant/helpers/create-event-listener';
+
+class CounterButton extends RadiantElement {
+	#countChanged: EventEmitter<{ count: number }>;
+	#count = 0;
+
+	constructor() {
+		super();
+		this.#countChanged = createEvent(this, {
+			name: 'count-changed',
+			bubbles: true,
+			composed: true,
+		});
+
+		createEventListener(this, { selector: 'button', type: 'click' }, () => {
+			this.#count++;
+			this.#countChanged.emit({ count: this.#count });
+		});
+	}
+}
+
+customElements.define('counter-button', CounterButton);
+```
+
+Use it with authored light DOM:
+
+```html
+<counter-button>
+	<button type="button">Increment</button>
+</counter-button>
+```
+
+## Parameters
+
+`createEvent<T>(host, config)` accepts:
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `host` | `RadiantElement` | Yes | The element that will dispatch events. |
+| `config` | `EventEmitterConfig` | Yes | Event configuration (see below). |
+
+### EventEmitterConfig
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `name` | `string` | Yes | The event name (e.g., `'value-changed'`). |
+| `bubbles` | `boolean` | No | Whether the event bubbles up the DOM. If omitted, `CustomEvent` uses its platform default of `false`. |
+| `composed` | `boolean` | No | Whether the event crosses shadow DOM boundaries. If omitted, `CustomEvent` uses its platform default of `false`. |
+| `cancelable` | `boolean` | No | Whether the event can be cancelled (default: `false`). |
+
+If parent elements should observe the event through bubbling or delegated listeners, set `bubbles: true` explicitly.
+
+## Return Value
+
+Returns an `EventEmitter<T>` instance. Call `.emit(detail)` to dispatch a `CustomEvent` with the provided detail payload.
+
+```typescript
+const emitter = createEvent<{ value: string }>(host, { name: 'change' });
+emitter.emit({ value: 'hello' });
+```
+
+## Listening to Emitted Events
+
+Pair `createEvent` with [`createEventListener`](/docs/helpers/create-event-listener) on a parent element.
+
+```typescript
+import { RadiantElement } from '@ecopages/radiant';
+import { createEventListener } from '@ecopages/radiant/helpers/create-event-listener';
+
+class ParentComponent extends RadiantElement {
+	constructor() {
+		super();
+		createEventListener(
+			this,
+			{ selector: 'counter-button', type: 'count-changed' },
+			(event) => {
+				const detail = (event as CustomEvent<{ count: number }>).detail;
+				console.log('Count:', detail.count);
+			},
+		);
+	}
+}
+
+customElements.define('parent-component', ParentComponent);
+```
+
+Use it with nested authored elements:
+
+```html
+<parent-component>
+	<counter-button>
+		<button type="button">Increment</button>
+	</counter-button>
+</parent-component>
+```
+
+## Learn More
+
+- [`@event`](/docs/decorators/event) — Decorator equivalent.
+- [`createEventListener`](/docs/helpers/create-event-listener) — Subscribe to events without decorators.

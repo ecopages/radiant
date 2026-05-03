@@ -1,0 +1,559 @@
+.controller-context-visualizer {
+	--controller-context-visualizer-border: color-mix(in srgb, var(--color-on-background) 12%, transparent);
+	--controller-context-visualizer-panel-border: color-mix(in srgb, var(--color-border) 92%, transparent);
+	--controller-context-visualizer-panel: color-mix(in srgb, var(--color-background) 88%, transparent);
+	--controller-context-visualizer-panel-soft: color-mix(
+		in srgb,
+		var(--color-background-accent) 84%,
+		var(--color-background)
+	);
+	--controller-context-visualizer-accent: var(--color-primary);
+	--controller-context-visualizer-accent-cool: var(--color-link);
+	--controller-context-visualizer-accent-soft: color-mix(
+		in srgb,
+		var(--color-secondary-container) 55%,
+		var(--color-background)
+	);
+	@apply my-6 grid gap-4 rounded-2xl border p-4 text-on-background shadow-xs md:p-5;
+	background:
+		radial-gradient(
+			circle at top right,
+			color-mix(in srgb, var(--controller-context-visualizer-accent-soft) 68%, transparent),
+			transparent 58%
+		),
+		linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--color-background-accent) 92%, transparent),
+			color-mix(in srgb, var(--color-background) 94%, transparent)
+		);
+	border-color: var(--controller-context-visualizer-border);
+	position: relative;
+	overflow: clip;
+	isolation: isolate;
+}
+
+.controller-context-visualizer::before {
+	content: '';
+	position: absolute;
+	inset: auto -5rem -6rem auto;
+	width: 14rem;
+	height: 14rem;
+	border-radius: 999px;
+	background: radial-gradient(
+		circle,
+		color-mix(in srgb, var(--color-secondary-container) 35%, transparent),
+		transparent 72%
+	);
+	pointer-events: none;
+	z-index: -1;
+}
+
+.controller-context-visualizer__header,
+.controller-context-visualizer__actions,
+.controller-context-visualizer__stage,
+.controller-context-visualizer__diagram,
+.controller-context-visualizer {
+	@apply grid gap-4;
+}
+
+.controller-context-visualizer__header,
+.controller-context-visualizer__stage,
+.controller-context-visualizer__diagram,
+.controller-context-visualizer__rail,
+.controller-context-visualizer__transmissions,
+.controller-context-visualizer__transmissions-copy,
+.controller-context-visualizer__intro,
+.controller-context-visualizer__card-head {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.controller-context-visualizer__header {
+	grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 1fr);
+	align-items: start;
+}
+
+.controller-context-visualizer__eyebrow,
+.controller-context-visualizer__label,
+.controller-context-visualizer__meta,
+.controller-context-visualizer__snapshot-label,
+.controller-context-visualizer__transmission-tag,
+.controller-context-visualizer__metric-grid span {
+	margin: 0;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: color-mix(in srgb, var(--color-on-background) 70%, transparent);
+}
+
+.controller-context-visualizer__header h3,
+.controller-context-visualizer__node h4,
+.controller-context-visualizer__transmissions h4,
+.controller-context-visualizer__rail-step h4 {
+	margin: 0;
+	line-height: 1.2;
+	color: var(--color-on-background);
+}
+
+.controller-context-visualizer__header h3 {
+	@apply font-heading text-2xl font-semibold tracking-tight;
+}
+
+.controller-context-visualizer__header p,
+.controller-context-visualizer__copy,
+.controller-context-visualizer__detail,
+.controller-context-visualizer__connection-note,
+.controller-context-visualizer__rail-step p:last-child {
+	margin: 0;
+	font-size: 0.94rem;
+	line-height: 1.55;
+	color: color-mix(in srgb, var(--color-on-background) 78%, transparent);
+}
+
+.controller-context-visualizer__snapshot,
+.controller-context-visualizer__panel,
+.controller-context-visualizer__rail-step,
+.controller-context-visualizer__transmissions {
+	@apply min-w-0 grid content-start gap-2 rounded-xl border bg-background/85 p-4 shadow-xs transition-transform duration-200;
+	border-color: var(--controller-context-visualizer-panel-border);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--controller-context-visualizer-panel) 96%, transparent),
+		color-mix(in srgb, var(--controller-context-visualizer-panel-soft) 92%, transparent)
+	);
+	min-width: 0;
+	display: grid;
+	gap: 0.6rem;
+	align-content: start;
+}
+
+.controller-context-visualizer__snapshot-list,
+.controller-context-visualizer__decorators,
+.controller-context-visualizer__history,
+.controller-context-visualizer__transmission-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.controller-context-visualizer__snapshot-list {
+	display: grid;
+	gap: 0.65rem;
+}
+
+.controller-context-visualizer__snapshot-list li {
+	@apply relative pl-4;
+	line-height: 1.45;
+	color: color-mix(in srgb, var(--color-on-background) 80%, transparent);
+}
+
+.controller-context-visualizer__snapshot-list li::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0.45rem;
+	width: 0.42rem;
+	height: 0.42rem;
+	border-radius: 999px;
+	background: var(--color-primary);
+}
+
+.controller-context-visualizer__actions {
+	@apply grid justify-start;
+	grid-template-columns: repeat(3, max-content);
+	gap: 0.65rem;
+}
+
+.controller-context-visualizer__actions button {
+	min-height: 2rem;
+}
+
+.controller-context-visualizer__actions button:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-primary) 55%, white);
+	outline-offset: 2px;
+}
+
+.controller-context-visualizer__diagram {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	grid-template-areas:
+		'provider context'
+		'controller element';
+	gap: 0.85rem;
+	align-items: start;
+}
+
+.controller-context-visualizer__node--provider {
+	grid-area: provider;
+}
+
+.controller-context-visualizer__node--context {
+	grid-area: context;
+}
+
+.controller-context-visualizer__node--controller {
+	grid-area: controller;
+}
+
+.controller-context-visualizer__element-slot,
+.controller-context-visualizer__node--element-shell {
+	grid-area: element;
+	display: grid;
+	min-width: 0;
+}
+
+.controller-context-visualizer__card-head {
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.controller-context-visualizer__card-id {
+	@apply inline-flex items-center justify-center;
+	min-width: 2rem;
+	height: 2rem;
+	padding: 0 0.45rem;
+	border-radius: 0.55rem;
+	border: 1px solid color-mix(in srgb, var(--color-primary) 18%, white);
+	background: color-mix(in srgb, var(--color-primary-container) 82%, var(--color-background));
+	color: var(--color-on-background);
+	font-size: 0.76rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	font-variant-numeric: tabular-nums;
+}
+
+.controller-context-visualizer__decorators {
+	@apply flex flex-wrap;
+	gap: 0.45rem;
+}
+
+.controller-context-visualizer__decorators li {
+	@apply rounded-sm border px-2 py-1;
+	padding: 0.32rem 0.55rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 92%, transparent);
+	background: color-mix(in srgb, var(--color-background) 94%, transparent);
+	color: color-mix(in srgb, var(--color-on-background) 84%, transparent);
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.controller-context-visualizer__connection-note {
+	@apply rounded-sm border px-3 py-2;
+	padding: 0.55rem 0.65rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+	background: color-mix(in srgb, var(--color-background) 96%, white);
+}
+
+.controller-context-visualizer__metric-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.5rem;
+}
+
+.controller-context-visualizer__metric-grid p {
+	@apply m-0 grid rounded-sm border;
+	gap: 0.25rem;
+	padding: 0.65rem 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 86%, transparent);
+	background: color-mix(in srgb, var(--color-primary-container) 24%, var(--color-background));
+}
+
+.controller-context-visualizer__value {
+	margin: 0;
+	font-size: clamp(1.7rem, 3vw, 2.35rem);
+	line-height: 1;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--color-on-background);
+}
+
+.controller-context-visualizer__history {
+	display: grid;
+	gap: 0.35rem;
+	font-size: 0.88rem;
+	color: color-mix(in srgb, var(--color-on-background) 74%, transparent);
+}
+
+.controller-context-visualizer__history li {
+	padding-top: 0.45rem;
+	border-top: 1px dashed color-mix(in srgb, var(--color-border) 88%, transparent);
+	font-variant-numeric: tabular-nums;
+}
+
+.controller-context-visualizer__transmissions {
+	@apply grid gap-4 items-center;
+}
+
+.controller-context-visualizer__transmission-list {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.6rem;
+}
+
+.controller-context-visualizer__transmission-list li {
+	@apply grid rounded-sm border;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 0.55rem;
+	align-items: start;
+	padding: 0.7rem 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+	background: color-mix(in srgb, var(--color-background) 94%, white);
+}
+
+.controller-context-visualizer__transmission-dot {
+	width: 0.6rem;
+	height: 0.6rem;
+	border-radius: 999px;
+	background: var(--color-primary);
+	margin-top: 0.4rem;
+}
+
+.controller-context-visualizer__transmission-step {
+	display: grid;
+	gap: 0.25rem;
+}
+
+.controller-context-visualizer__transmission-copy {
+	margin: 0;
+	font-size: 0.9rem;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--color-on-background);
+}
+
+.controller-context-visualizer__rail {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.75rem;
+}
+
+.controller-context-visualizer__status {
+	position: relative;
+	display: inline-flex;
+	width: 0.6rem;
+	height: 0.6rem;
+	flex: 0 0 auto;
+	opacity: 0.8;
+}
+
+.controller-context-visualizer__status-ping,
+.controller-context-visualizer__status-dot {
+	position: absolute;
+	inset: 0;
+	border-radius: 999px;
+}
+
+.controller-context-visualizer__status-ping {
+	background: color-mix(in srgb, var(--color-primary) 60%, white);
+	opacity: 0;
+	transform: scale(0.8);
+}
+
+.controller-context-visualizer__status-dot {
+	background: var(--color-primary);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 14%, white);
+}
+
+.controller-context-visualizer[data-updated] .controller-context-visualizer__status-ping {
+	animation: controller-context-visualizer-ping 900ms ease-out;
+}
+
+.controller-context-visualizer[data-updated] .controller-context-visualizer__status-dot,
+.controller-context-visualizer[data-updated] .controller-context-visualizer__transmission-dot {
+	animation: controller-context-visualizer-blink 900ms ease-out;
+}
+
+.controller-context-visualizer[data-updated] .controller-context-visualizer__metric-grid p,
+.controller-context-visualizer[data-updated] .controller-context-visualizer__transmission-list li {
+	animation: controller-context-visualizer-card-flash 900ms ease-out;
+}
+
+@media (hover: hover) {
+	.controller-context-visualizer__node:hover,
+	.controller-context-visualizer__rail-step:hover,
+	.controller-context-visualizer__transmissions:hover {
+		border-color: color-mix(in srgb, var(--color-border) 100%, transparent);
+		transform: translateY(-1px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.controller-context-visualizer__node,
+	.controller-context-visualizer__rail-step,
+	.controller-context-visualizer__transmissions {
+		transition: none;
+	}
+
+	.controller-context-visualizer[data-updated] .controller-context-visualizer__status-ping,
+	.controller-context-visualizer[data-updated] .controller-context-visualizer__status-dot,
+	.controller-context-visualizer[data-updated] .controller-context-visualizer__transmission-dot,
+	.controller-context-visualizer[data-updated] .controller-context-visualizer__metric-grid p,
+	.controller-context-visualizer[data-updated] .controller-context-visualizer__transmission-list li {
+		animation: none;
+	}
+}
+
+@media (max-width: 1080px) {
+	.controller-context-visualizer__header,
+	.controller-context-visualizer__transmissions,
+	.controller-context-visualizer__rail {
+		grid-template-columns: 1fr;
+	}
+
+	.controller-context-visualizer__transmission-list {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 720px) {
+	.controller-context-visualizer__diagram {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			'provider'
+			'context'
+			'controller'
+			'element';
+	}
+
+	.controller-context-visualizer__actions {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.controller-context-visualizer__metric-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 520px) {
+	.controller-context-visualizer {
+		padding: 1rem;
+	}
+
+	.controller-context-visualizer__actions {
+		grid-template-columns: 1fr;
+	}
+}
+
+@keyframes controller-context-visualizer-ping {
+	0% {
+		opacity: 0.7;
+		transform: scale(0.75);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(2.1);
+	}
+}
+
+@keyframes controller-context-visualizer-blink {
+	0%,
+	100% {
+		filter: brightness(1);
+	}
+	35% {
+		filter: brightness(1.55);
+	}
+}
+
+@keyframes controller-context-visualizer-card-flash {
+	0%,
+	100% {
+		background: color-mix(in srgb, var(--color-background) 94%, white);
+	}
+	35% {
+		background: color-mix(in srgb, var(--color-secondary-container) 22%, white);
+	}
+}
+
+@media (max-width: 1080px) {
+	.controller-context-visualizer__header {
+		grid-template-columns: 1fr;
+	}
+
+	.controller-context-visualizer__actions {
+		grid-template-columns: repeat(3, max-content);
+	}
+
+	.controller-context-visualizer__transmissions {
+		grid-template-columns: 1fr;
+	}
+
+	.controller-context-visualizer__transmission-list {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 720px) {
+	.controller-context-visualizer__header,
+	.controller-context-visualizer__rail {
+		grid-template-columns: 1fr;
+	}
+
+	.controller-context-visualizer__actions {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.controller-context-visualizer__diagram {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			'provider'
+			'context'
+			'controller'
+			'element';
+	}
+
+	.controller-context-visualizer__transmissions {
+		padding: 0.9rem;
+	}
+
+	.controller-context-visualizer__transmission-list li {
+		padding: 0.75rem 0.8rem;
+	}
+}
+
+@media (max-width: 520px) {
+	.controller-context-visualizer {
+		padding: 1rem;
+	}
+
+	.controller-context-visualizer__actions {
+		grid-template-columns: 1fr;
+	}
+
+	.controller-context-visualizer__metric-grid,
+	.controller-context-visualizer__transmission-list {
+		grid-template-columns: 1fr;
+	}
+}
+
+@keyframes controller-context-visualizer-ping {
+	0% {
+		opacity: 0.7;
+		transform: scale(0.75);
+	}
+	100% {
+		opacity: 0;
+		transform: scale(2.1);
+	}
+}
+
+@keyframes controller-context-visualizer-blink {
+	0%,
+	100% {
+		filter: brightness(1);
+	}
+	35% {
+		filter: brightness(1.55);
+	}
+}
+
+@keyframes controller-context-visualizer-card-flash {
+	0%,
+	100% {
+		background: color-mix(in srgb, var(--color-background) 92%, transparent);
+	}
+	35% {
+		background: color-mix(in srgb, var(--color-secondary-container) 32%, white);
+	}
+}

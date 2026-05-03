@@ -1,25 +1,25 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { Banner } from '@/components/banner/banner.kita';
+import { Banner } from '@/components/banner/banner';
 
 export const layout = DocsLayout;
 
 export const getMetadata = () => ({
 	title: 'Docs | @onUpdated',
-	description: 'React to state changes with declarative callbacks.',
-})
+	description: 'React to state changes with declarative callbacks on RadiantElement or RadiantController hosts.',
+});
 
 # @onUpdated
 
-The `@onUpdated` decorator registers a callback method that executes automatically whenever a specific reactive property or field changes. It is the primary way to perform side effects in Radiant components.
+The `@onUpdated` decorator registers a callback method that executes automatically whenever a specific reactive property or field changes. It is the primary way to perform side effects on Radiant hosts.
 
 ## Usage
 
 ```typescript
-import { RadiantElement, customElement, reactiveProp, onUpdated } from '@ecopages/radiant';
+import { RadiantElement, customElement, onUpdated, prop } from '@ecopages/radiant';
 
 @customElement('user-greeting')
 export class UserGreeting extends RadiantElement {
-	@reactiveProp({ type: String }) declare name: string;
+	@prop({ type: String }) declare name: string;
 	
 	@onUpdated('name')
 	updateGreeting() {
@@ -54,8 +54,8 @@ updateFullName() {
 Calculate and update internal state derived from public properties.
 
 ```typescript
-@reactiveProp({ type: Array }) declare items: CartItem[];
-@reactiveField private total = 0;
+@prop({ type: Array }) declare items: CartItem[];
+@state total = 0;
 
 @onUpdated('items')
 calculateTotals() {
@@ -75,6 +75,23 @@ applyTheme() {
 }
 ```
 
+### RadiantController usage
+
+`@onUpdated(...)` also works on `RadiantController`, which makes it useful for synchronizing host attributes or imperative DOM after controller state changes.
+
+```typescript
+import { RadiantController, onUpdated, state } from '@ecopages/radiant';
+
+export class ThemeController extends RadiantController {
+	@state theme = 'light';
+
+	@onUpdated('theme')
+	applyTheme() {
+		this.host.setAttribute('data-theme', this.theme);
+	}
+}
+```
+
 <Banner type="caution">
   <Banner.Title>CAUTION</Banner.Title>
   <p>Avoid updating the same property you're watching, as this will trigger an infinite loop.</p>
@@ -82,6 +99,6 @@ applyTheme() {
 
 ## Learn More
 
-- [@reactiveProp](/docs/decorators/reactive-prop) - Define public reactive properties.
-- [@reactiveField](/docs/decorators/reactive-field) - Define internal reactive fields.
+- [@prop](/docs/decorators/prop) - Define public reactive properties.
+- [@state](/docs/decorators/state) - Define internal reactive state.
 - [@debounce](/docs/decorators/debounce) - Debounce frequent updates.

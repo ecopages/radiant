@@ -1,0 +1,85 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | createQuerySlot',
+	description: 'Query projected slot content without decorators.',
+});
+
+# createQuerySlot
+
+`createQuerySlot` creates a lazy accessor for projected light-DOM elements assigned to a render-owning `RadiantElement` slot. It is the functional equivalent of the [`@querySlot`](/docs/decorators/query-slot) decorator.
+
+## Usage
+
+```tsx
+import { RadiantElement } from '@ecopages/radiant';
+import { createQuerySlot } from '@ecopages/radiant/helpers/create-query-slot';
+
+class InfoCard extends RadiantElement {
+	#heading = createQuerySlot<HTMLHeadingElement>(this, { name: 'heading' });
+	#body = createQuerySlot<HTMLParagraphElement>(this, {});
+
+	get heading() {
+		return this.#heading.value;
+	}
+
+	get body() {
+		return this.#body.value;
+	}
+
+	override render() {
+		return (
+			<article>
+				<header><slot name="heading" /></header>
+				<div><slot /></div>
+			</article>
+		);
+	}
+}
+
+customElements.define('info-card', InfoCard);
+```
+
+## Parameters
+
+`createQuerySlot<T>(host, options)` accepts:
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `host` | `HTMLElement` | Yes | A render-owning `RadiantElement` or any element that implements `getSlotElement`/`getSlotElements`. |
+| `options` | `QuerySlotConfig` | No | Slot query configuration (see below). |
+
+### QuerySlotConfig
+
+| Field | Type | Required | Description |
+| :---- | :--- | :------- | :---------- |
+| `name` | `string` | No | Named slot to query. Omit for the default slot. |
+| `all` | `boolean` | No | Return every assigned element instead of only the first (default: `false`). |
+| `cache` | `boolean` | No | Cache the result until slot projection changes (default: `true`). |
+
+## Return Value
+
+Returns a `QuerySlotResult<T>` object with a single `.value` getter:
+
+- When `all` is `false`: returns `T | null`.
+- When `all` is `true`: returns `T` (an array), or an empty array if nothing is projected.
+
+## Cache Invalidation
+
+Cached results are automatically invalidated when the host's `slotProjectionVersion` counter changes. This happens when slot content is added, removed, or re-projected. Set `cache: false` to re-query on every `.value` read.
+
+```typescript
+const allHeaders = createQuerySlot<HTMLHeadingElement[]>(this, {
+	name: 'heading',
+	all: true,
+	cache: false,
+});
+```
+
+## Learn More
+
+- [`@querySlot`](/docs/decorators/query-slot) — Decorator equivalent.
+- [`createQuery`](/docs/helpers/create-query) — Query by CSS selector or `data-ref` attribute.
+- [Slots](/docs/components/slots) — How slot projection works in a render-owning RadiantElement host.

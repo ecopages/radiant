@@ -1,0 +1,168 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+  title: 'Docs | RadiantElement',
+  description: 'RadiantElement is the main base class for reactive Radiant custom elements.',
+});
+
+# RadiantElement
+
+`RadiantElement` is the main base class for Radiant custom elements.
+
+It covers both common host styles:
+
+- imperative hosts that enhance authored light DOM
+- JSX-owned hosts that override `render()` and let Radiant own the host view
+
+The distinction is no longer the base class. It is whether the class overrides `render()`.
+
+- If you **do not** override `render()`, the host behaves like an authored light-DOM custom element and keeps its children visible.
+- If you **do** override `render()`, Radiant enables the host render lifecycle: `update()`, `requestUpdate()`, SSR helpers, hydration, and slot projection.
+
+It gives you one consistent host API:
+
+- reactive properties and fields
+- reactive attribute-backed fields through `@attr(...)`
+- update callbacks
+- delegated event wiring
+- context integration
+- JSX bindings through `bind(...)`, `bindings`, and `$`
+- optional string-template rendering through `renderTemplate(...)`
+- host rendering, hydration, and SSR when `render()` is overridden
+
+Use [RadiantController](/docs/components/radiant-controller) instead when you want Radiant reactivity attached to existing HTML without defining a custom element.
+
+## Two Host Modes
+
+### 1. Authored Light-DOM Host
+
+This mode keeps the HTML in the document and uses decorators plus imperative DOM reads to wire behavior.
+
+```typescript
+import { RadiantElement, customElement, onEvent, onUpdated, query, prop } from '@ecopages/radiant';
+
+type CounterProps = {
+  value?: number;
+};
+
+@customElement('radiant-counter')
+class RadiantCounter extends RadiantElement<CounterProps> {
+  @prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
+  @query({ ref: 'count' }) countText!: HTMLSpanElement;
+
+  @onEvent({ ref: 'decrement', type: 'click' })
+  decrement() {
+    if (this.value > 0) {
+      this.value -= 1;
+    }
+  }
+
+  @onEvent({ ref: 'increment', type: 'click' })
+  increment() {
+    this.value += 1;
+  }
+
+  @onUpdated('value')
+  updateCount() {
+    this.countText.textContent = String(this.value);
+  }
+}
+```
+
+Authored HTML stays in place:
+
+```html
+<radiant-counter value="5">
+  <button type="button" data-ref="decrement" aria-label="Decrement">-</button>
+  <span data-ref="count">5</span>
+  <button type="button" data-ref="increment" aria-label="Increment">+</button>
+</radiant-counter>
+```
+
+### 2. JSX-Owned Host
+
+This mode overrides `render()` so the custom element owns its host view directly.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+
+type CounterBindings = {
+  value: number;
+};
+
+@customElement('radiant-counter')
+export class RadiantCounter extends RadiantElement<CounterBindings> {
+  @prop({ type: Number, reflect: true, defaultValue: 0 }) value = 0;
+
+  private readonly decrement = () => {
+    if (this.value > 0) {
+      this.value -= 1;
+    }
+  };
+
+  private readonly increment = () => {
+    this.value += 1;
+  };
+
+  override render() {
+    return (
+      <>
+        <button type="button" on:click={this.decrement} aria-label="Decrement">
+          -
+        </button>
+        <span>{this.$.value}</span>
+        <button type="button" on:click={this.increment} aria-label="Increment">
+          +
+        </button>
+      </>
+    );
+  }
+}
+```
+
+Once `render()` is overridden, `RadiantElement` exposes the full host render lifecycle:
+
+- `update()` to apply the current JSX view
+- `requestUpdate()` for coalesced rerenders
+- `renderToString()` for the rendered view only
+- `renderHost()` and `renderHostToString()` for full host SSR output
+- `hydrate()` when SSR markers exist and the explicit client hydrator is installed
+- light-DOM slot projection through literal `<slot>` tags
+
+## Render Lifecycle Gate
+
+`RadiantElement` only runs the host render lifecycle when `render()` is overridden.
+
+- The base `render()` returns `<slot />`.
+- A plain `RadiantElement` instance with no override keeps authored children visible and does not call `update()` on first connect.
+- An overridden `render()` opt-in turns the host into a JSX-owned render boundary.
+
+This means the correct question is not "element or component?" anymore. The question is whether the host should keep authored DOM or own a JSX view.
+
+## Bindings And Reactive Reads
+
+`RadiantElement` exposes three ways to wire reactive values into JSX:
+
+- `this.value` for the raw value
+- `this.bind('value')` for an explicit JSX binding
+- `this.bindings.value` or `this.$.value` for property-style JSX bindings
+
+Use the raw value in imperative code and render logic. Use bindings in stable JSX leaf positions such as text, attributes, `aria`, `data`, and boolean props.
+
+## When To Use RadiantElement
+
+- Use `RadiantElement` when you want a custom element host, whether the host is imperative or JSX-owned.
+- Override `render()` when the host itself should own a JSX view.
+- Skip `render()` when the host should enhance authored light DOM instead.
+- Use [RadiantController](/docs/components/radiant-controller) when the DOM is authored elsewhere and a custom element wrapper would be unnecessary.
+
+## See Also
+
+- [RadiantController](/docs/components/radiant-controller)
+- [Slots](/docs/components/slots)
+- [Counter](/docs/examples/counter)
+- [Hydration](/docs/ssr/hydration)

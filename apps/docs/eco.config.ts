@@ -1,22 +1,19 @@
 import path from 'node:path';
-import { ConfigBuilder } from '@ecopages/core';
-import { kitajsPlugin } from '@ecopages/kitajs';
-import { mdxPlugin } from '@ecopages/mdx';
-import { postcssProcessorPlugin } from '@ecopages/postcss-processor';
+import { ConfigBuilder } from '@ecopages/core/config-builder';
+import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
+import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
 import remarkGfm from 'remark-gfm';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { rehypeSimpleTableWrapper } from './src/plugins/rehype-simple-table-wrapper';
-import { transformerEscapeHtml } from './src/plugins/transformer-escape-html';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dir)
-	.setBaseUrl(import.meta.env.ECOPAGES_BASE_URL)
+	.setBaseUrl(process.env.ECOPAGES_BASE_URL ?? 'http://localhost:3000')
 	.setIntegrations([
-		kitajsPlugin(),
-		mdxPlugin({
-			compilerOptions: {
-				jsxImportSource: '@kitajs/html',
+		ecopagesJsxPlugin({
+			mdx: {
+				enabled: true,
 				remarkPlugins: [remarkGfm],
 				rehypePlugins: [
 					[
@@ -26,7 +23,6 @@ const config = await new ConfigBuilder()
 								light: 'light-plus',
 								dark: 'dark-plus',
 							},
-							transformers: [transformerEscapeHtml],
 						},
 					],
 					rehypeSimpleTableWrapper,
@@ -34,13 +30,6 @@ const config = await new ConfigBuilder()
 			},
 		}),
 	])
-
-	.setIncludesTemplates({
-		head: 'head.kita.tsx',
-		html: 'html.kita.tsx',
-		seo: 'seo.kita.tsx',
-	})
-	.setError404Template('404.kita.tsx')
 	.setDefaultMetadata({
 		title: 'Radiant | Docs',
 		description: 'Radiant is a minimalist web component library designed for simplicity and flexibility.',

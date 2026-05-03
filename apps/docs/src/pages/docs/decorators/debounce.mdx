@@ -1,5 +1,5 @@
 import { DocsLayout } from '@/layouts/docs-layout';
-import { Banner } from '@/components/banner/banner.kita';
+import { Banner } from '@/components/banner/banner';
 
 export const layout = DocsLayout;
 
@@ -10,21 +10,20 @@ export const getMetadata = () => ({
 
 # @debounce
 
-The `@debounce` decorator delays the execution of a method until a specified time has passed since its last invocation. This is essential for performance when handling frequent events like scrolling, resizing, or typing.
+The `@debounce` decorator delays a method until a specified time has passed since its last invocation. Use it to reduce redundant work when a handler is triggered in bursts, such as typing, resize, scroll, autosave, or analytics.
 
 ## Usage
 
 ```typescript
-import { RadiantElement, customElement, debounce } from '@ecopages/radiant';
+import { RadiantElement, customElement, debounce, onEvent } from '@ecopages/radiant';
 
 @customElement('search-input')
 export class SearchInput extends RadiantElement {
 	@debounce(300)
 	performSearch(query: string) {
 		console.log('Searching for:', query);
-		// Expensive search operation
 	}
-	
+
 	@onEvent({ selector: 'input', type: 'input' })
 	handleInput(event: InputEvent) {
 		const query = (event.target as HTMLInputElement).value;
@@ -50,7 +49,7 @@ export class ResponsiveChart extends RadiantElement {
 	updateDimensions() {
 		this.redrawChart();
 	}
-	
+
 	@onEvent({ window: true, type: 'resize' })
 	handleResize() {
 		this.updateDimensions();
@@ -65,7 +64,7 @@ export class ResponsiveChart extends RadiantElement {
 async saveContent() {
 	await fetch('/api/save', {
 		method: 'POST',
-		body: JSON.stringify({ content: this.content })
+		body: JSON.stringify({ content: this.content }),
 	});
 }
 
@@ -80,16 +79,16 @@ handleInput(event: InputEvent) {
 
 | Use Case | Recommended Delay | Reasoning |
 | :------- | :---------------- | :-------- |
-| Search input | 300-500ms | Balance between responsiveness and API calls. |
-| Window resize | 200-300ms | Smooth but not too delayed. |
-| Auto-save | 1000-3000ms | Reduce server load, batch changes. |
+| Search input | `300-500ms` | Balance responsiveness with fewer duplicate searches. |
+| Window resize | `200-300ms` | Let layout settle before recomputing expensive work. |
+| Auto-save | `1000-3000ms` | Batch edits and reduce server chatter. |
 
 <Banner type="info">
   <Banner.Title>NOTE</Banner.Title>
-  <p>Debounced methods do not return values immediately and always returned <code>void</code> (or a Promise that resolves when execution completes).</p>
+  <p>Debounced methods should be treated as side-effect entry points. Do not depend on an immediate synchronous return value.</p>
 </Banner>
 
 ## Learn More
 
-- [@bound](/docs/decorators/bound) - Often combined with `@debounce`.
-- [@onEvent](/docs/decorators/on-event) - Event handlers that benefit from debouncing.
+- [@bound](/docs/decorators/bound) - Useful when the delayed method is also passed as a callback.
+- [@onEvent](/docs/decorators/on-event) - Event handlers are a common place to use debouncing.

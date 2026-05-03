@@ -1,0 +1,86 @@
+import { DocsLayout } from '@/layouts/docs-layout';
+
+export const layout = DocsLayout;
+
+export const getMetadata = () => ({
+	title: 'Docs | @onContextUpdate',
+	description: 'Run a method when a context value or a selected slice of it changes.',
+});
+
+# @onContextUpdate
+
+Use `@onContextUpdate(...)` when a context change should trigger imperative work on the host.
+
+The decorated method receives the current value (or the result of `select`) as its first argument and runs whenever that delivered value changes. Unlike `@contextSelector(...)`, `@onContextUpdate` does not write to a field. On a render-owning host it schedules `requestUpdate()` by default unless `requestUpdate: false` is set.
+
+## Options
+
+| Option | Type | Description |
+| :-- | :-- | :-- |
+| `context` | `Context` | The context token to resolve |
+| `select` | `(context) => unknown` | Optional projection that narrows the resolved value before delivery |
+| `subscribe` | `boolean` | Whether client-side subscriptions stay active after the first value. Defaults to `true` |
+| `requestUpdate` | `boolean` | Whether render-owning hosts should schedule `requestUpdate()` after delivery. Defaults to `true` |
+
+## Example
+
+```typescript
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { onContextUpdate } from '@ecopages/radiant/context';
+
+import { cartContext } from './cart-context';
+
+@customElement('cart-badge')
+export class CartBadge extends RadiantElement {
+	@onContextUpdate({ context: cartContext, select: ({ total }) => total })
+	onTotalChanged(total: number) {
+		this.setAttribute('data-total', String(total));
+	}
+}
+```
+
+The method runs with each delivered value. The host manages its own DOM update logic.
+
+## Opt out of automatic rerenders
+
+On a render-owning host, `requestUpdate()` is scheduled by default. Pass `requestUpdate: false` to suppress it when the method is doing its own imperative DOM work and does not need the render loop.
+
+```typescript
+@onContextUpdate({ context: authContext, requestUpdate: false })
+onAuthChanged(auth: AuthContext) {
+	document.cookie = `session=${auth.token}; path=/`;
+}
+```
+
+## One-shot subscriptions
+
+Set `subscribe: false` to receive the resolved value once — useful during SSR or initial hydration — without staying active for later updates.
+
+```typescript
+@onContextUpdate({ context: pageContext, select: ({ id }) => id, subscribe: false })
+applyId(id: string) {
+	this.setAttribute('data-page-id', id);
+}
+```
+
+## RadiantController Example
+
+```typescript
+import { RadiantController } from '@ecopages/radiant';
+import { onContextUpdate } from '@ecopages/radiant/context';
+
+import { cartContext } from './cart-context';
+
+export class CartBadgeController extends RadiantController {
+	@onContextUpdate({ context: cartContext, select: ({ total }) => total })
+	onTotalChanged(total: number) {
+		this.host.setAttribute('data-total', String(total));
+	}
+}
+```
+
+## When To Use It
+
+- Use `@onContextUpdate(...)` when the context change requires imperative work: DOM mutations, attribute writes, logging, or side-effect orchestration.
+- Use [@contextSelector](/docs/context/context-selector) when the host should rerender from the current context value.
+- Use [@consumeContext](/docs/context/consume-context) when the host needs the provider object to call `setContext(...)`.

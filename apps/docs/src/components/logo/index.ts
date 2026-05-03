@@ -1,1 +1,2 @@
-export * from './logo.kita';
+export * from './logo';
+export type { LogoVariant } from './logo.constants';
