@@ -9,7 +9,7 @@ type SlotQueryHost = HTMLElement & {
 	getSlotElements<T extends Element = Element>(name?: string): T[];
 };
 
-type QuerySlotResult<T extends Element | Element[]> = {
+type QuerySlotResult<T extends Element | Element[] | null> = {
 	get value(): T | null;
 };
 
@@ -19,7 +19,7 @@ type QuerySlotResult<T extends Element | Element[]> = {
  * @param host The host element to query slots within.
  * @param options {@link QuerySlotConfig} The slot query configuration.
  */
-export function createQuerySlot<T extends Element | Element[] = Element>(
+export function createQuerySlot<T extends Element | Element[] | null = Element | null>(
 	host: SlotQueryHost,
 	options: QuerySlotConfig = {},
 ): QuerySlotResult<T> {

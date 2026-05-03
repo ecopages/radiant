@@ -9,6 +9,11 @@ export const HYDRATION_KEY_ATTRIBUTE = 'data-hydration-key';
 
 export type HydrationPayloadType = 'signal' | 'context';
 
+type HydrationScriptHost = {
+	children?: ArrayLike<Element> | undefined;
+	childNodes?: ArrayLike<{ nodeType: number }> | undefined;
+};
+
 /** Creates a `<script type="application/json">` tag for a hydration payload. */
 export function createHydrationScriptTag(options: {
 	type: HydrationPayloadType;
@@ -54,7 +59,11 @@ export function parseHydrationPayload<T>(element: Element, fallback: T): T {
  * When a key is provided, looks for an exact `data-hydration-key` match.
  * Otherwise, returns the first unkeyed script matching the type.
  */
-export function findHydrationScript(host: Element, type: HydrationPayloadType, hydrationKey?: string): Element | null {
+export function findHydrationScript(
+	host: HydrationScriptHost,
+	type: HydrationPayloadType,
+	hydrationKey?: string,
+): Element | null {
 	const children = host.children;
 
 	if (!children || children.length === 0) {

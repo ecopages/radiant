@@ -1,13 +1,16 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import { state, type WritableSignal } from '@ecopages/signals';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
-import type { RadiantElement } from '../core/radiant-element';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 import { createSignalHydrationScriptTag, escapeSignalHydrationJson } from './hydration-script';
 
+type HostSignalOwner = {
+	notifyUpdate(property: string, oldValue: unknown, value: unknown): void;
+};
+
 type HostSignalOptions<Value> = {
-	host: RadiantElement;
+	host: HostSignalOwner;
 	hydrate?: AttributeTypeConstant;
 	hydrationKey?: string;
 	initialValue?: Value;
@@ -31,7 +34,7 @@ export function isWritableSignalLike<Value>(value: unknown): value is WritableSi
  * update callback channel and optional SSR hydration pipeline.
  */
 export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializableHydrationBinding {
-	private readonly host: RadiantElement;
+	private readonly host: HostSignalOwner;
 	private readonly hydrate?: AttributeTypeConstant;
 	private readonly hydrationKey?: string;
 	private readonly property: string;
@@ -129,6 +132,10 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 	}
 
 	private findHydrationScriptElement(): Element | null {
+		if (!(this.host instanceof Element)) {
+			return null;
+		}
+
 		return findHydrationScript(this.host, 'signal', this.hydrationKey);
 	}
 

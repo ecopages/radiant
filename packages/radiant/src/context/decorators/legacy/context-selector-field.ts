@@ -1,4 +1,4 @@
-import type { RadiantElement } from '../../../core/radiant-element';
+import type { ContextHostLike } from '../../context-host';
 import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
 import { bootstrapSsrContextSelection, connectContextSelection } from '../../context-consumer-bootstrap';
 import type { Context, ContextType } from '../../types';
@@ -15,22 +15,26 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 ) {
 	const { context, select, subscribe = true } = options;
 
-	return (target: RadiantElement, propertyName: string) => {
+	return (target: ContextHostLike, propertyName: string) => {
 		registerLegacyInstanceInitializer(target, (element) => {
-			const applyValue = createContextSelectionDelivery(
+			let activeUnsubscribe: (() => void) | undefined;
+			const applyValue = createContextSelectionDelivery<Selected>(
 				element,
 				(value) => {
-					(element as unknown as Record<string, unknown>)[propertyName] = value as Selected;
+					(element as unknown as Record<string, unknown>)[propertyName] = value;
 				},
 				true,
 			);
 
-			bootstrapSsrContextSelection(element, context, applyValue, select as any);
+			bootstrapSsrContextSelection<T, Selected>(element, context, applyValue, select);
 
 			element.registerConnectedCallback(() => {
 				if (
-					connectContextSelection(element, context, applyValue, {
-						select: select as any,
+					connectContextSelection<T, Selected>(element, context, applyValue, {
+						onSubscribe: (unsubscribe) => {
+							activeUnsubscribe = unsubscribe;
+						},
+						select,
 						subscribe,
 					})
 				) {
@@ -38,11 +42,19 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 				}
 
 				queueMicrotask(() => {
-					connectContextSelection(element, context, applyValue, {
-						select: select as any,
+					connectContextSelection<T, Selected>(element, context, applyValue, {
+						onSubscribe: (unsubscribe) => {
+							activeUnsubscribe = unsubscribe;
+						},
+						select,
 						subscribe,
 					});
 				});
+			});
+
+			element.registerCleanupCallback(() => {
+				activeUnsubscribe?.();
+				activeUnsubscribe = undefined;
 			});
 		});
 	};

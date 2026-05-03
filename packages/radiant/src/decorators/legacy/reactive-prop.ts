@@ -1,24 +1,19 @@
-import type { RadiantElement } from '../../core/radiant-element';
+import type { ReactivePropertyOptions } from '../../core/radiant-element';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { type AttributeTypeConstant, isValueOfType } from '../../utils/attribute-utils';
+import { isValueOfType } from '../../utils/attribute-utils';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
-type ReactivePropertyOptions<T> = {
-	type: AttributeTypeConstant;
-	reflect?: boolean;
-	attribute?: string;
-	defaultValue?: T;
-	bind?: boolean | string;
+type ReactivePropHost<T> = {
+	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
+	registerConnectedCallback(callback: () => void): void;
 };
 
 /**
- * A decorator to define a reactive property.
- * Every time the property changes, the `updated` method will be called.
- * @param options The options for the reactive property.
- * @param options.type The type of the property value.
- * @param options.reflect Whether to reflect the property to the attribute.
- * @param options.attribute The name of the attribute.
- * @param options.defaultValue The default value of the property.
+ * Legacy-decorator implementation for `@prop(...)`.
+ *
+ * The decorated host is expected to expose `createReactiveProp(...)`, which
+ * lets both `RadiantElement` and `RadiantController` share the same public
+ * decorator while keeping their runtime channels different.
  */
 export function reactiveProp<T = unknown>({
 	type,
@@ -31,7 +26,7 @@ export function reactiveProp<T = unknown>({
 		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
 	}
 
-	return (target: RadiantElement, propertyName: string) => {
+	return (target: ReactivePropHost<T>, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;
 		registerReactivePropDefinition(target, propertyName, {
 			type,
@@ -44,10 +39,10 @@ export function reactiveProp<T = unknown>({
 		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
 
 		Object.defineProperty(target, propertyName, {
-			get(this: RadiantElement & Record<PropertyKey, unknown>) {
+			get(this: ReactivePropHost<T> & Record<PropertyKey, unknown>) {
 				return this[ssrStoreKey] ?? defaultValue;
 			},
-			set(this: RadiantElement & Record<PropertyKey, unknown>, value: T) {
+			set(this: ReactivePropHost<T> & Record<PropertyKey, unknown>, value: T) {
 				this[ssrStoreKey] = value;
 			},
 			configurable: true,

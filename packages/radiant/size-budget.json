@@ -1,16 +1,25 @@
 {
 	"bundles": [
 		{
+			"control": "strict",
 			"label": "root-client-surface",
 			"entrypoint": "./src/index.ts",
-			"maxBytes": 46080,
-			"maxGzipBytes": 12288
+			"maxBytes": 44032,
+			"maxGzipBytes": 11776
 		},
 		{
+			"control": "advisory",
 			"label": "server-render",
 			"entrypoint": "./src/server/render-component.ts",
 			"maxBytes": 15360,
 			"maxGzipBytes": 5184
+		},
+		{
+			"control": "advisory",
+			"label": "server-render-controller",
+			"entrypoint": "./src/server/render-controller.ts",
+			"maxBytes": 15360,
+			"maxGzipBytes": 5376
 		}
 	]
 }

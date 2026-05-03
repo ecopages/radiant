@@ -1,21 +1,22 @@
 import '../../src/server/install-light-dom-shim';
 import { describe, expect, test } from 'vitest';
-import type { ContextProvider } from '../../src/context/context-provider';
-import { createContext } from '../../src/context/create-context';
-import { consumeContext } from '../../src/context/decorators/consume-context';
-import { onContextUpdate } from '../../src/context/decorators/on-context-update';
-import { provideContext } from '../../src/context/decorators/provide-context';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import {
+	type ContextProvider,
+	consumeContext,
+	createContext,
+	onContextUpdate,
+	provideContext,
+} from '../../src/context';
+import { attr } from '../../src/decorators/attr';
+import { RadiantController } from '../../src/core/radiant-controller';
+import { RadiantElement } from '../../src/core/radiant-element';
+import { controller } from '../../src/decorators/controller';
 import { customElement } from '../../src/decorators/custom-element';
 import { querySlot } from '../../src/decorators/query-slot';
+import { registerController } from '../../src/controller-registry';
 import { createServerRenderEnvironment } from '../../src/server/light-dom-shim';
 import {
-	createRenderedComponentHeaders,
 	modulePreloadAsset,
-	RENDERED_COMPONENT_ASSETS_HEADER,
-	RENDERED_COMPONENT_CLIENT_MODULE_HEADER,
-	RENDERED_COMPONENT_GENERATED_AT_HEADER,
-	RENDERED_COMPONENT_TAG_NAME_HEADER,
 	renderComponent,
 	renderComponentWithPreview,
 	renderComponentToPayload,
@@ -26,6 +27,7 @@ import {
 	type RenderedComponentAsset,
 	type ServerRenderableComponent,
 } from '../../src/server/render-component';
+import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
 
 const cardAssets: readonly RenderedComponentAsset[] = [
 	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
@@ -36,7 +38,7 @@ declare const __LEGACY_ENVIRONMENT__: boolean;
 const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 @customElement('render-component-card-test')
-class RenderComponentCard extends RadiantComponent {
+class RenderComponentCard extends RadiantElement {
 	count = 1;
 	label = 'Initial label';
 
@@ -51,7 +53,7 @@ class RenderComponentCard extends RadiantComponent {
 }
 
 @customElement('render-component-loader-card-test')
-class RenderComponentLoaderCard extends RadiantComponent {
+class RenderComponentLoaderCard extends RadiantElement {
 	message = 'loader default';
 
 	override render() {
@@ -60,7 +62,7 @@ class RenderComponentLoaderCard extends RadiantComponent {
 }
 
 @customElement('render-component-slot-query-card-test')
-class RenderComponentSlotQueryCard extends RadiantComponent {
+class RenderComponentSlotQueryCard extends RadiantElement {
 	@querySlot() defaultSlot!: HTMLParagraphElement | null;
 	@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
 
@@ -84,7 +86,7 @@ class RenderComponentSlotQueryCard extends RadiantComponent {
 const renderComponentContext = createContext<{ label: string }>(Symbol('render-component-context'));
 
 @customElement('render-component-context-card-test')
-class RenderComponentContextCard extends RadiantComponent {
+class RenderComponentContextCard extends RadiantElement {
 	@consumeContext(renderComponentContext) contextProvider!: ContextProvider<typeof renderComponentContext>;
 
 	@onContextUpdate({ context: renderComponentContext, select: (context) => context.label, subscribe: false })
@@ -110,7 +112,7 @@ const renderComponentHydrationContext = createContext<{ count: number; logger: R
 );
 
 @customElement('render-component-hydrated-provider-test')
-class RenderComponentHydratedProvider extends RadiantComponent {
+class RenderComponentHydratedProvider extends RadiantElement {
 	@provideContext<typeof renderComponentHydrationContext>({
 		context: renderComponentHydrationContext,
 		initialValue: { count: 0, logger: new RenderComponentLogger() },
@@ -123,6 +125,30 @@ class RenderComponentHydratedProvider extends RadiantComponent {
 		return <p>Count: {this.provider.getContext().count}</p>;
 	}
 }
+
+@controller('render-controller-card')
+class RenderControllerCard extends RadiantController<{ signal: string }> {
+	label = 'Initial label';
+
+	@attr({ source: 'data-signal' }) signal = 'idle';
+
+	override render() {
+		return (
+			<section>
+				<p data-signal={this.signal}>Signal: {this.signal}</p>
+				<p>{this.label}</p>
+			</section>
+		);
+	}
+}
+
+class ProgrammaticRenderControllerCard extends RadiantController {
+	override render() {
+		return <p>Programmatic controller</p>;
+	}
+}
+
+registerController('programmatic-render-controller-card', ProgrammaticRenderControllerCard);
 
 describe('render-component server helpers', () => {
 	test('renderComponent() returns the canonical server render descriptor', async () => {
@@ -147,12 +173,6 @@ describe('render-component server helpers', () => {
 		});
 		expect(rendered.markup).toContain('Count: 9');
 		expect(rendered.markup).toContain('Canonical render');
-		expect(createRenderedComponentHeaders(rendered.metadata)).toEqual({
-			[RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(cardAssets),
-			[RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: '/assets/render-component-card.js',
-			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: '2026-03-27T13:30:00.000Z',
-			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'render-component-card-test',
-		});
 		expect(toRenderedComponentPayload(rendered)).toEqual({
 			assets: cardAssets,
 			clientModuleSrc: '/assets/render-component-card.js',
@@ -160,6 +180,89 @@ describe('render-component server helpers', () => {
 			markup: expect.stringContaining('<render-component-card-test'),
 			tagName: 'render-component-card-test',
 		});
+	});
+
+	test('renderController() returns the canonical server render descriptor for an explicit host', async () => {
+		const rendered = await renderController(RenderControllerCard, {
+			host: {
+				class: 'render-controller-card-test',
+				data: {
+					signal: 'ready',
+				},
+			},
+			clientModuleSrc: '/assets/render-controller-card.js',
+			initialize: (controller) => {
+				controller.label = 'Controller render';
+				controller.host.setAttribute('data-stage', 'server');
+			},
+			now: () => new Date('2026-03-27T13:31:00.000Z'),
+			tagName: 'div',
+		});
+
+		expect(rendered.markup).toContain('class="render-controller-card-test"');
+		expect(rendered.markup).toContain('data-controller="render-controller-card"');
+		expect(rendered.markup).toContain('data-signal="ready"');
+		expect(rendered.markup).toContain('data-stage="server"');
+		expect(rendered.metadata).toEqual({
+			assets: [{ kind: 'script-module', src: '/assets/render-controller-card.js', stage: 'hydrate' }],
+			clientModuleUrl: '/assets/render-controller-card.js',
+			generatedAt: '2026-03-27T13:31:00.000Z',
+			tagName: 'div',
+		});
+		expect(rendered.markup).toContain('Signal: ready');
+		expect(rendered.markup).toContain('Controller render');
+	});
+
+	test('renderControllerToPayload() returns the portable fragment payload shape', async () => {
+		const payload = await renderControllerToPayload(RenderControllerCard, {
+			host: {
+				data: {
+					signal: 'steady',
+				},
+			},
+			tagName: 'section',
+		});
+
+		expect(payload.assets).toEqual([]);
+		expect(payload.clientModuleSrc).toBeUndefined();
+		expect(payload.generatedAt).toEqual(expect.any(String));
+		expect(payload.tagName).toBe('section');
+		expect(payload.markup).toContain('<section');
+		expect(payload.markup).toContain('data-controller="render-controller-card"');
+		expect(payload.markup).toContain('data-signal="steady"');
+		expect(payload.markup).toContain('Signal: steady');
+	});
+
+	test('renderController() expands jsx-like host data and aria objects and lets explicit flat attributes override inference', async () => {
+		const rendered = await renderController(RenderControllerCard, {
+			host: {
+				aria: {
+					labelledBy: 'controller-title',
+				},
+				class: ['render-controller-card-test', { emphasized: true }],
+				data: {
+					signal: 'armed',
+				},
+			},
+			attributes: {
+				'data-controller': 'flat-controller',
+			},
+			tagName: 'div',
+		});
+
+		expect(rendered.markup).toContain('class="render-controller-card-test emphasized"');
+		expect(rendered.markup).toContain('aria-labelled-by="controller-title"');
+		expect(rendered.markup).toContain('data-signal="armed"');
+		expect(rendered.markup).toContain('data-controller="flat-controller"');
+	});
+
+	test('renderController() infers data-controller metadata from programmatic registration', async () => {
+		const rendered = await renderController(ProgrammaticRenderControllerCard, {
+			tagName: 'article',
+		});
+
+		expect(rendered.markup).toContain('data-controller="programmatic-render-controller-card"');
+		expect(rendered.markup).toContain('Programmatic controller');
 	});
 
 	test('renderComponent() prepares authored content through a server render environment', async () => {
@@ -236,14 +339,6 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('Count: 7');
 		expect(rendered.markup).toContain('Configured label');
 		expect(rendered.preview).toEqual(expect.any(Object));
-
-		const headers = createRenderedComponentHeaders(rendered);
-		expect(headers).toEqual({
-			[RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(cardAssets),
-			[RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: '/assets/render-component-card.js',
-			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: now.toISOString(),
-			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'render-component-card-test',
-		});
 	});
 
 	test('renderComponentToPayload() accepts load() options and omits preview output', async () => {
@@ -275,19 +370,6 @@ describe('render-component server helpers', () => {
 		expect(markup).toContain('<render-component-card-test');
 		expect(markup).toContain('Count: 3');
 		expect(markup).toContain('String only');
-	});
-
-	test('createRenderedComponentHeaders() omits client module header when absent', () => {
-		expect(
-			createRenderedComponentHeaders({
-				generatedAt: '2026-03-27T12:00:00.000Z',
-				markup: '<plain-render-card></plain-render-card>',
-				tagName: 'plain-render-card',
-			}),
-		).toEqual({
-			[RENDERED_COMPONENT_GENERATED_AT_HEADER]: '2026-03-27T12:00:00.000Z',
-			[RENDERED_COMPONENT_TAG_NAME_HEADER]: 'plain-render-card',
-		});
 	});
 
 	test('renderComponent() resolves explicit asset metadata', async () => {
@@ -385,7 +467,7 @@ describe('render-component server helpers', () => {
 
 	test('renderComponent() preserves explicit Radiant SSR method overrides as a compatibility fallback', async () => {
 		@customElement('render-component-overridden-host-test')
-		class OverriddenRadiantHost extends RadiantComponent {
+		class OverriddenRadiantHost extends RadiantElement {
 			override renderHostToString(): string {
 				return '<render-component-overridden-host-test data-source="override">override markup</render-component-overridden-host-test>';
 			}
@@ -413,7 +495,7 @@ describe('render-component server helpers', () => {
 
 	test('renderComponent() keeps preview aligned when only renderHostToString() is overridden', async () => {
 		@customElement('render-component-markup-only-host-test')
-		class MarkupOnlyOverriddenRadiantHost extends RadiantComponent {
+		class MarkupOnlyOverriddenRadiantHost extends RadiantElement {
 			override renderHostToString(): string {
 				return '<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>';
 			}
@@ -439,7 +521,7 @@ describe('render-component server helpers', () => {
 		const concurrentContext = createContext<{ id: number }>(Symbol('concurrent-context'));
 
 		@customElement('concurrent-context-card-test')
-		class ConcurrentContextCard extends RadiantComponent {
+		class ConcurrentContextCard extends RadiantElement {
 			@consumeContext(concurrentContext) provider!: ContextProvider<typeof concurrentContext>;
 
 			@onContextUpdate({ context: concurrentContext, select: (ctx) => ctx.id, subscribe: false })

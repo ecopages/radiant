@@ -1,5 +1,4 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
-import type { RadiantElement } from '../core/radiant-element';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import {
@@ -12,6 +11,7 @@ import {
 import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 import { createContextHydrationScriptTag, escapeContextHydrationJson } from './hydration-script';
 import type { Context, ContextType, UnknownContext } from './types';
+import { resolveContextHydrationHost, type ContextHostLike } from './context-host';
 
 type ContextProviderOptions<T extends UnknownContext> = {
 	context: UnknownContext;
@@ -19,6 +19,12 @@ type ContextProviderOptions<T extends UnknownContext> = {
 	initialValue?: T['__context__'];
 	hydrate?: AttributeTypeConstant;
 	serialize?: (value: ContextType<T>) => unknown;
+};
+
+type ActiveContextSubscription<T extends UnknownContext> = {
+	hasChanged(newContext: ContextType<T>, prevContext: ContextType<T> | undefined): boolean;
+	notify(context: ContextType<T>): void;
+	unsubscribe: () => void;
 };
 
 export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
@@ -55,7 +61,7 @@ export interface IContextProvider<T extends Context<unknown, unknown>> {
 	 *
 	 * @param subscription - The subscription object that defines the callback function to be invoked on context updates.
 	 */
-	subscribe: (subscription: ContextSubscription<T>) => void;
+	subscribe: <Selected = ContextType<T>>(subscription: ContextSubscription<T, Selected>) => () => void;
 }
 
 /**
@@ -79,7 +85,7 @@ export interface IContextProvider<T extends Context<unknown, unknown>> {
 export class ContextProvider<T extends Context<unknown, unknown>>
 	implements IContextProvider<T>, SsrSerializableContextProvider
 {
-	private host: RadiantElement;
+	private host: ContextHostLike;
 	private context: UnknownContext;
 	private hydrationKey?: string;
 	private hydrate?: AttributeTypeConstant;
@@ -87,7 +93,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	private pendingHostHydration: boolean;
 	private value: ContextType<T> | undefined;
 
-	subscriptions: ContextSubscription<T>[] = [];
+	subscriptions: ActiveContextSubscription<T>[] = [];
 
 	/**
 	 * Creates a new instance of the ContextProvider.
@@ -95,7 +101,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	 * @param host - The host element that will contain the context provider.
 	 * @param options - The options to configure the context provider.
 	 */
-	constructor(host: RadiantElement, options: ContextProviderOptions<T>) {
+	constructor(host: ContextHostLike, options: ContextProviderOptions<T>) {
 		this.host = host;
 		this.context = options.context;
 		this.hydrationKey = options.hydrationKey;
@@ -208,8 +214,34 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		return createMarkupNodeLike(outerHTML);
 	};
 
-	subscribe = ({ select, callback }: ContextSubscription<T>) => {
-		this.subscriptions.push({ select, callback });
+	subscribe = <Selected = ContextType<T>>(subscriptionSpec: ContextSubscription<T, Selected>) => {
+		const subscription: ActiveContextSubscription<T> = {
+			hasChanged: (newContext, prevContext) => {
+				if (typeof prevContext === 'undefined' || !subscriptionSpec.select) {
+					return true;
+				}
+
+				return subscriptionSpec.select(newContext) !== subscriptionSpec.select(prevContext);
+			},
+			notify: (context) => {
+				if (subscriptionSpec.select) {
+					subscriptionSpec.callback(subscriptionSpec.select(context), subscription.unsubscribe);
+					return;
+				}
+
+				subscriptionSpec.callback(context, subscription.unsubscribe);
+			},
+			unsubscribe: () => {
+				const index = this.subscriptions.indexOf(subscription);
+
+				if (index !== -1) {
+					this.subscriptions.splice(index, 1);
+				}
+			},
+		};
+		this.subscriptions.push(subscription);
+
+		return subscription.unsubscribe;
 	};
 
 	private tryHydrateFromHost(): void {
@@ -249,70 +281,75 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	}
 
 	private findHydrationScriptElement(): Element | null {
-		return findHydrationScript(this.host as Element, 'context', this.hydrationKey);
+		return findHydrationScript(resolveContextHydrationHost(this.host), 'context', this.hydrationKey);
 	}
 
 	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T> | undefined) => {
 		for (const sub of this.subscriptions) {
-			if (!sub.select || typeof prevContext === 'undefined') {
-				this.sendSubscriptionUpdate(sub, newContext);
-				continue;
-			}
-			const newSelected = sub.select(newContext);
-			const prevSelected = sub.select(prevContext);
-			if (newSelected !== prevSelected) {
-				this.sendSubscriptionUpdate(sub, newContext);
+			if (sub.hasChanged(newContext, prevContext)) {
+				sub.notify(newContext);
 			}
 		}
 	};
 
-	private sendSubscriptionUpdate = ({ select, callback }: ContextSubscription<T>, context: ContextType<T>) => {
-		if (!select) callback(context);
-		else callback(select(context));
-	};
-
-	private handleSubscriptionRequest = ({
-		select,
-		callback,
-		subscribe,
-	}: {
-		select?: ContextSubscription<T>['select'];
-		callback: ContextSubscription<T>['callback'];
-		subscribe?: boolean;
-	}) => {
+	private handleSubscriptionRequest = (
+		subscription: ContextSubscription<T, unknown>,
+		{
+			subscribe,
+			onSubscribe,
+		}: {
+			subscribe?: boolean;
+			onSubscribe?: (unsubscribe: () => void) => void;
+		},
+	) => {
 		this.tryHydrateFromHost();
+		const unsubscribe = subscribe ? this.subscribe(subscription) : undefined;
 
-		if (subscribe) this.subscribe({ select, callback });
+		if (unsubscribe) {
+			onSubscribe?.(unsubscribe);
+		}
 
 		if (typeof this.value === 'undefined') return;
 
-		if (select) {
-			callback(select(this.value));
+		if (subscription.select) {
+			subscription.callback(subscription.select(this.value), unsubscribe);
 		} else {
-			callback(this.value as ContextType<T>);
+			subscription.callback(this.value, unsubscribe);
 		}
 	};
 
 	private onSubscriptionRequest = (event: ContextSubscriptionRequestEvent<UnknownContext>) => {
-		const { context, callback, subscribe, select, target } = event;
+		const { context, callback, subscribe, select, target, onSubscribe } = event;
 		if (context !== this.context) return;
 
+		event.markHandled();
 		event.stopPropagation();
 
-		(target as HTMLElement).dispatchEvent(new ContextOnMountEvent(this.context));
+		if (target instanceof EventTarget) {
+			target.dispatchEvent(new ContextOnMountEvent(this.context));
+		}
 
-		this.handleSubscriptionRequest({ select, callback, subscribe });
+		if (select) {
+			this.handleSubscriptionRequest({ select, callback }, { subscribe, onSubscribe });
+			return;
+		}
+
+		this.handleSubscriptionRequest({ callback }, { subscribe, onSubscribe });
 	};
 
 	private onContextRequest = (event: ContextRequestEvent<UnknownContext>) => {
 		const { context, callback } = event;
 		if (context !== this.context) return;
+		event.markHandled();
 		event.stopPropagation();
 		callback(this);
 	};
 
 	private registerEvents = () => {
-		this.host.addEventListener(ContextEventsTypes.SUBSCRIPTION_REQUEST, this.onSubscriptionRequest);
-		this.host.addEventListener(ContextEventsTypes.CONTEXT_REQUEST, this.onContextRequest);
+		this.host.addEventListener(
+			ContextEventsTypes.SUBSCRIPTION_REQUEST,
+			this.onSubscriptionRequest as EventListener,
+		);
+		this.host.addEventListener(ContextEventsTypes.CONTEXT_REQUEST, this.onContextRequest as EventListener);
 	};
 }

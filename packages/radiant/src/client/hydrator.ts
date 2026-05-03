@@ -5,7 +5,7 @@ import {
 } from '../core/radiant-hydrator-state';
 
 /**
- * Enables first-connect hydration for SSR-rendered RadiantComponent hosts.
+ * Enables first-connect hydration for SSR-rendered RadiantElement hosts.
  *
  * Import this from SSR pages before loading component modules so upgraded
  * custom elements hydrate their existing DOM instead of performing a fresh

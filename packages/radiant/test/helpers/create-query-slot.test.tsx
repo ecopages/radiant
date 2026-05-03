@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { createQuerySlot } from '../../src/helpers/create-query-slot';
 
 @customElement('query-slot-helper-test')
-class QuerySlotHelperCard extends RadiantComponent {
+class QuerySlotHelperCard extends RadiantElement {
 	#defaultSlot = createQuerySlot<HTMLParagraphElement>(this, {});
 	#headerSlot = createQuerySlot<HTMLHeadingElement>(this, { name: 'header' });
 	#allHeaderSlots = createQuerySlot<HTMLHeadingElement[]>(this, { name: 'header', all: true });

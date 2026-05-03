@@ -1,9 +1,23 @@
-import type { RadiantElement } from '../core/radiant-element';
+import type { ContextHostLike } from './context-host';
 import { resolveAmbientSsrContextProvider } from './context-ssr-bridge';
 import { ContextEventsTypes, ContextRequestEvent, ContextSubscriptionRequestEvent } from './events';
-import type { ContextType, UnknownContext } from './types';
+import type { ContextCallback, ContextType, UnknownContext } from './types';
 
 type ConsumedContextAssignment = (provider: unknown) => void;
+
+type DirectContextSelectionRequest<TContext extends UnknownContext> = {
+	callback: (value: ContextType<TContext>) => void;
+	select?: undefined;
+};
+
+type SelectedContextSelectionRequest<TContext extends UnknownContext, Selected> = {
+	callback: (value: Selected) => void;
+	select: (context: ContextType<TContext>) => Selected;
+};
+
+type ContextSelectionRequest<TContext extends UnknownContext, Selected = ContextType<TContext>> =
+	| DirectContextSelectionRequest<TContext>
+	| SelectedContextSelectionRequest<TContext, Selected>;
 
 /**
  * Resolves a consumed context from the active SSR provider stack when one is available.
@@ -14,7 +28,7 @@ type ConsumedContextAssignment = (provider: unknown) => void;
  * @returns `true` when the context was resolved synchronously from SSR state.
  */
 export function initializeConsumedContext(
-	host: RadiantElement,
+	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
 	options: { emitMounted?: boolean } = {},
@@ -39,21 +53,22 @@ export function initializeConsumedContext(
  * Requests a context provider through the DOM event channel when SSR state is not active.
  */
 export function requestConsumedContext(
-	host: RadiantElement,
+	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
 	options: { emitMounted?: boolean } = {},
-): void {
-	host.dispatchEvent(
-		new ContextRequestEvent(context, (provider) => {
-			assign(provider);
-			host.connectedContextCallback(context);
+): boolean {
+	const event = new ContextRequestEvent(context, (provider) => {
+		assign(provider);
+		host.connectedContextCallback(context);
 
-			if (options.emitMounted) {
-				host.dispatchEvent(new CustomEvent(ContextEventsTypes.MOUNTED, { detail: provider }));
-			}
-		}),
-	);
+		if (options.emitMounted) {
+			host.dispatchEvent(new CustomEvent(ContextEventsTypes.MOUNTED, { detail: provider }));
+		}
+	});
+
+	host.dispatchEvent(event);
+	return event.handled;
 }
 
 /**
@@ -63,8 +78,15 @@ export function requestConsumedContext(
  */
 export function initializeContextSelection<TContext extends UnknownContext>(
 	context: TContext,
-	callback: (value: unknown) => void,
-	select?: (context: ContextType<TContext>) => unknown,
+	request: DirectContextSelectionRequest<TContext>,
+): boolean;
+export function initializeContextSelection<TContext extends UnknownContext, Selected>(
+	context: TContext,
+	request: SelectedContextSelectionRequest<TContext, Selected>,
+): boolean;
+export function initializeContextSelection<TContext extends UnknownContext, Selected = ContextType<TContext>>(
+	context: TContext,
+	request: ContextSelectionRequest<TContext, Selected>,
 ): boolean {
 	const provider = resolveAmbientSsrContextProvider(context);
 
@@ -73,7 +95,13 @@ export function initializeContextSelection<TContext extends UnknownContext>(
 	}
 
 	const resolvedContext = provider.getContext() as ContextType<TContext>;
-	callback(select ? select(resolvedContext) : resolvedContext);
+
+	if (request.select) {
+		request.callback(request.select(resolvedContext));
+		return true;
+	}
+
+	request.callback(resolvedContext);
 	return true;
 }
 
@@ -81,13 +109,40 @@ export function initializeContextSelection<TContext extends UnknownContext>(
  * Requests a selected context value through the DOM event channel.
  */
 export function requestContextSelection<TContext extends UnknownContext>(
-	host: RadiantElement,
+	host: ContextHostLike,
 	context: TContext,
-	callback: (value: unknown) => void,
+	request: DirectContextSelectionRequest<TContext>,
 	options: {
-		select?: (context: ContextType<TContext>) => unknown;
 		subscribe?: boolean;
+		onSubscribe?: (unsubscribe: () => void) => void;
 	},
-): void {
-	host.dispatchEvent(new ContextSubscriptionRequestEvent(context, callback, options.select, options.subscribe));
+): boolean;
+export function requestContextSelection<TContext extends UnknownContext, Selected>(
+	host: ContextHostLike,
+	context: TContext,
+	request: SelectedContextSelectionRequest<TContext, Selected>,
+	options: {
+		subscribe?: boolean;
+		onSubscribe?: (unsubscribe: () => void) => void;
+	},
+): boolean;
+export function requestContextSelection<TContext extends UnknownContext, Selected = ContextType<TContext>>(
+	host: ContextHostLike,
+	context: TContext,
+	request: ContextSelectionRequest<TContext, Selected>,
+	options: {
+		subscribe?: boolean;
+		onSubscribe?: (unsubscribe: () => void) => void;
+	},
+): boolean {
+	const event = new ContextSubscriptionRequestEvent(
+		context,
+		request.callback as ContextCallback<Selected>,
+		request.select,
+		options.subscribe,
+		options.onSubscribe,
+	);
+
+	host.dispatchEvent(event);
+	return event.handled;
 }

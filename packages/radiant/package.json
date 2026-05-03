@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant",
-	"version": "0.3.0-alpha.4",
+	"version": "0.3.0-alpha.7",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ecopages/radiant.git"
@@ -91,13 +91,21 @@
 			"types": "./dist/context/events.d.ts",
 			"import": "./dist/context/events.js"
 		},
+		"./controller-registry": {
+			"types": "./dist/controller-registry.d.ts",
+			"import": "./dist/controller-registry.js"
+		},
 		"./core/radiant-element": {
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
 		},
-		"./core/radiant-component": {
-			"types": "./dist/core/radiant-component.d.ts",
-			"import": "./dist/core/radiant-component.js"
+		"./core/radiant-controller": {
+			"types": "./dist/core/radiant-controller.d.ts",
+			"import": "./dist/core/radiant-controller.js"
+		},
+		"./core/reactive-jsx-value": {
+			"types": "./dist/core/reactive-jsx-value.d.ts",
+			"import": "./dist/core/reactive-jsx-value.js"
 		},
 		"./client/hydrator": {
 			"types": "./dist/client/hydrator.d.ts",
@@ -123,6 +131,10 @@
 			"types": "./dist/server/render-component.d.ts",
 			"import": "./dist/server/render-component.js"
 		},
+		"./server/render-controller": {
+			"types": "./dist/server/render-controller.d.ts",
+			"import": "./dist/server/render-controller.js"
+		},
 		"./server/project-root": {
 			"types": "./dist/server/project-root.d.ts",
 			"import": "./dist/server/project-root.js"
@@ -130,6 +142,14 @@
 		"./decorators/bound": {
 			"types": "./dist/decorators/bound.d.ts",
 			"import": "./dist/decorators/bound.js"
+		},
+		"./decorators/attr": {
+			"types": "./dist/decorators/attr.d.ts",
+			"import": "./dist/decorators/attr.js"
+		},
+		"./decorators/controller": {
+			"types": "./dist/decorators/controller.d.ts",
+			"import": "./dist/decorators/controller.js"
 		},
 		"./decorators/custom-element": {
 			"types": "./dist/decorators/custom-element.d.ts",

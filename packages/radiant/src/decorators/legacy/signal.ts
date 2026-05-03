@@ -1,4 +1,5 @@
-import type { RadiantElement, ReactiveBindingOption } from '../../core/radiant-element';
+import type { ReactiveBindingOption } from '../../core/radiant-element';
+import type { ReactiveHostLike } from '../../core/reactive-host';
 import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
@@ -7,13 +8,13 @@ import type { WritableSignal } from '@ecopages/signals';
 export type SignalDecoratorOptions<Value = unknown> = {
 	bind?: ReactiveBindingOption;
 	initial?: Value;
-	source?: WritableSignal<Value> | ((host: RadiantElement) => WritableSignal<Value>);
+	source?: WritableSignal<Value> | ((host: ReactiveHostLike) => WritableSignal<Value>);
 	hydrate?: AttributeTypeConstant;
 };
 
 export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> = {}) {
-	return (target: RadiantElement, propertyName: string) => {
-		const initializeSignal = (element: RadiantElement): HostSignal<unknown> => {
+	return (target: ReactiveHostLike, propertyName: string) => {
+		const initializeSignal = (element: ReactiveHostLike): HostSignal<unknown> => {
 			const currentValue = element[propertyName as keyof typeof element] as unknown;
 
 			if (currentValue instanceof HostSignal) {

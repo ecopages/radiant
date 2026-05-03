@@ -4,12 +4,16 @@ type RequestUpdateCapable = {
 	requestUpdate(): void;
 };
 
-export function createContextSelectionDelivery(host: object, apply: (value: unknown) => void, requestUpdate: boolean) {
+export function createContextSelectionDelivery<Value>(
+	host: object,
+	apply: (value: Value) => void,
+	requestUpdate: boolean,
+) {
 	let hasDeliveredValue = false;
-	let previousValue: unknown;
+	let previousValue: Value;
 	const target = host as Record<PropertyKey, unknown>;
 
-	return (value: unknown) => {
+	return (value: Value) => {
 		if (target[SSR_PREPARATION_RUNNING] !== true && hasDeliveredValue && Object.is(previousValue, value)) {
 			return;
 		}

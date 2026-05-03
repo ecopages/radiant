@@ -1,11 +1,12 @@
-import { createQuery } from '../../helpers/create-query';
+import { createQuery, type QueryHostTarget } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
 
 export function query(options: QueryConfig) {
-	return function <T extends HTMLElement, V extends Element | Element[]>(
-		_: undefined,
+	return function <T extends QueryHostTarget, V extends Element | Element[]>(
+		target: undefined,
 		context: ClassFieldDecoratorContext<T, V>,
 	) {
+		void target;
 		const propertyName = String(context.name);
 
 		context.addInitializer(function (this: T) {

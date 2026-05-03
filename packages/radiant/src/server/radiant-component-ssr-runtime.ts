@@ -3,19 +3,19 @@ import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
 import { withServerCustomElementRenderHook } from '@ecopages/jsx/server';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getReactivePropDefinitions } from '../core/reactive-prop-metadata';
-import { RadiantComponentSsrService } from '../core/radiant-component-ssr';
+import { RadiantElementSsrService } from '../core/radiant-component-ssr';
 import {
-	getRadiantComponentSsrRuntime,
-	registerRadiantComponentSsrRuntime,
-	type RadiantComponentRenderBridge,
-	type RadiantComponentSsrCapable,
-	type RadiantComponentSsrRuntime,
+	getRadiantElementSsrRuntime,
+	registerRadiantElementSsrRuntime,
+	type RadiantElementRenderBridge,
+	type RadiantElementSsrCapable,
+	type RadiantElementSsrRuntime,
 } from '../core/radiant-component-ssr-registry';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { ReactiveProperty } from '../core/radiant-element';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 
-type RadiantComponentSsrHostBridge = Record<string, unknown> & {
+type RadiantElementSsrHostBridge = Record<string, unknown> & {
 	constructor: CustomElementConstructor;
 	getAttribute(name: string): string | null;
 	getAttributeNames?(): string[];
@@ -27,55 +27,55 @@ type RadiantComponentSsrHostBridge = Record<string, unknown> & {
 	getSlotProjectionScriptTag(): string | undefined;
 	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
 	renderToString(options?: RenderToStringOptions): string;
-	resolveSsrRenderBridge(): RadiantComponentRenderBridge;
+	resolveSsrRenderBridge(): RadiantElementRenderBridge;
 };
 
 const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
 const hostAttributeResolutionInProgress = new WeakSet<object>();
 
 /**
- * Produces a JSX-compatible host preview for a Radiant component.
+ * Produces a JSX-compatible host preview for a Radiant element.
  *
  * The preview always serializes with hydration enabled because it is intended
  * for shell composition, where nested client islands must preserve hydration
  * markers when embedded into a larger SSR document.
  */
-function renderRadiantComponentHost(component: RadiantComponentSsrCapable): JsxRenderable {
+function renderRadiantElementHost(component: RadiantElementSsrCapable): JsxRenderable {
 	return {
 		nodeType: 1,
-		outerHTML: renderRadiantComponentHostToString(component, { mode: 'hydrate' }),
+		outerHTML: renderRadiantElementHostToString(component, { mode: 'hydrate' }),
 	};
 }
 
 /**
- * Serializes a Radiant component host through the shared SSR service.
+ * Serializes a Radiant element host through the shared SSR service.
  *
  * This path centralizes host serialization so direct component renders and
  * nested JSX custom-element renders follow the same attribute and hydration
  * rules.
  */
-function renderRadiantComponentHostToString(
-	component: RadiantComponentSsrCapable,
+function renderRadiantElementHostToString(
+	component: RadiantElementSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
-	return createRadiantComponentSsrService(component).renderHostToString(
+	return createRadiantElementSsrService(component).renderHostToString(
 		options,
-		getRadiantComponentHostSsrAttributes(component),
+		getRadiantElementHostSsrAttributes(component),
 	);
 }
 
 /**
- * Resolves the final host attribute map for a Radiant component.
+ * Resolves the final host attribute map for a Radiant element.
  *
  * The recursion guard is required because `getHostSsrAttributes()` can itself
  * delegate back into the shared runtime. When that happens, the runtime falls
  * back to the raw SSR service attribute collector for the current call.
  */
-function getRadiantComponentHostSsrAttributes(component: RadiantComponentSsrCapable): Record<string, string> {
-	const bridge = component as unknown as RadiantComponentSsrHostBridge;
+function getRadiantElementHostSsrAttributes(component: RadiantElementSsrCapable): Record<string, string> {
+	const bridge = component as unknown as RadiantElementSsrHostBridge;
 
 	if (hostAttributeResolutionInProgress.has(component)) {
-		return createRadiantComponentSsrService(component).getHostAttributes();
+		return createRadiantElementSsrService(component).getHostAttributes();
 	}
 
 	hostAttributeResolutionInProgress.add(component);
@@ -88,16 +88,16 @@ function getRadiantComponentHostSsrAttributes(component: RadiantComponentSsrCapa
 }
 
 /**
- * Adapts a `RadiantComponent` instance to the older `RadiantComponentSsrService`
+ * Adapts a `RadiantElement` instance to the shared `RadiantElementSsrService`
  * contract.
  *
  * Keeping this adapter local lets the base class shed its eager SSR service
  * instance while preserving the established host serialization behavior.
  */
-function createRadiantComponentSsrService(component: RadiantComponentSsrCapable): RadiantComponentSsrService {
-	const bridge = component as unknown as RadiantComponentSsrHostBridge;
+function createRadiantElementSsrService(component: RadiantElementSsrCapable): RadiantElementSsrService {
+	const bridge = component as unknown as RadiantElementSsrHostBridge;
 
-	return new RadiantComponentSsrService({
+	return new RadiantElementSsrService({
 		constructor: bridge.constructor,
 		getAuthoredHydrationScriptMarkup: () => bridge.getAuthoredHydrationScriptMarkup(),
 		getHydrationBindings: () => bridge.getHydrationBindings(),
@@ -114,14 +114,14 @@ function createRadiantComponentSsrService(component: RadiantComponentSsrCapable)
 
 /**
  * Installs a temporary JSX custom-element render hook that understands
- * `RadiantComponent` SSR bridges.
+ * `RadiantElement` SSR bridges.
  *
  * This makes nested intrinsic custom-element renders honor explicit host SSR
  * overrides instead of always falling back to the inherited JSX runtime path.
  */
 function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withServerCustomElementRenderHook(({ instance }) => {
-		const nestedBridge = resolveRadiantComponentRenderBridge(instance as unknown as RadiantComponentSsrCapable);
+		const nestedBridge = resolveRadiantElementRenderBridge(instance as unknown as RadiantElementSsrCapable);
 
 		if (!nestedBridge?.renderHostToString) {
 			return undefined;
@@ -142,9 +142,9 @@ function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 /**
  * Resolves the SSR bridge exposed by a component instance, when present.
  */
-function resolveRadiantComponentRenderBridge(
-	component: RadiantComponentSsrCapable,
-): RadiantComponentRenderBridge | undefined {
+function resolveRadiantElementRenderBridge(
+	component: RadiantElementSsrCapable,
+): RadiantElementRenderBridge | undefined {
 	return component.resolveSsrRenderBridge?.();
 }
 
@@ -165,20 +165,20 @@ function isActiveSsrHydrateMode(): boolean {
  * custom-element SSR, and portable server helpers all share one implementation
  * and one bridge-resolution strategy.
  */
-export function ensureRadiantComponentSsrRuntimeRegistered() {
-	const existingRuntime = getRadiantComponentSsrRuntime();
+export function ensureRadiantElementSsrRuntimeRegistered() {
+	const existingRuntime = getRadiantElementSsrRuntime();
 
 	if (existingRuntime) {
 		return existingRuntime;
 	}
 
-	const runtime: RadiantComponentSsrRuntime = {
-		getHostAttributes: getRadiantComponentHostSsrAttributes,
-		renderHost: renderRadiantComponentHost,
-		renderHostToString: renderRadiantComponentHostToString,
-		resolveRenderBridge: resolveRadiantComponentRenderBridge,
+	const runtime: RadiantElementSsrRuntime = {
+		getHostAttributes: getRadiantElementHostSsrAttributes,
+		renderHost: renderRadiantElementHost,
+		renderHostToString: renderRadiantElementHostToString,
+		resolveRenderBridge: resolveRadiantElementRenderBridge,
 		renderView: (component, options = {}) => {
-			const bridge = component as unknown as RadiantComponentSsrHostBridge;
+			const bridge = component as unknown as RadiantElementSsrHostBridge;
 
 			return withRadiantServerCustomElementRenderBridge(() =>
 				renderJsxToString(bridge.resolveTrackedRenderOutput().value, options),
@@ -186,8 +186,8 @@ export function ensureRadiantComponentSsrRuntimeRegistered() {
 		},
 	};
 
-	registerRadiantComponentSsrRuntime(runtime);
+	registerRadiantElementSsrRuntime(runtime);
 	return runtime;
 }
 
-ensureRadiantComponentSsrRuntimeRegistered();
+ensureRadiantElementSsrRuntimeRegistered();

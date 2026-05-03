@@ -1,5 +1,4 @@
-import type { RadiantElement } from '../../core/radiant-element';
-import { createEventListener } from '../../helpers/create-event-listener';
+import { createEventListener, type EventListenerHost } from '../../helpers/create-event-listener';
 import type { OnEventConfig } from '../on-event';
 import type { Method } from '../../types';
 
@@ -18,9 +17,12 @@ import type { Method } from '../../types';
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
  */
 export function onEvent(eventConfig: OnEventConfig) {
-	return function <T extends Method>(originalMethod: T, context: ClassMethodDecoratorContext): void {
-		context.addInitializer(function (this: any) {
-			createEventListener(this as RadiantElement, eventConfig, originalMethod.bind(this));
+	return function <Host extends EventListenerHost, T extends Method>(
+		originalMethod: T,
+		context: ClassMethodDecoratorContext<Host, T>,
+	): void {
+		context.addInitializer(function (this: Host) {
+			createEventListener(this, eventConfig, originalMethod.bind(this));
 		});
 	};
 }

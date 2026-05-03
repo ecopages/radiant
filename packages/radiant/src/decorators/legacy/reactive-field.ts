@@ -1,4 +1,4 @@
-import type { RadiantElement } from '../../core/radiant-element';
+import type { ReactiveHostLike } from '../../core/reactive-host';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
@@ -9,7 +9,7 @@ import { registerLegacyInstanceInitializer } from './instance-initializers';
  * @param target The target element.
  * @param propertyKey The property key.
  */
-export function reactiveField(target: RadiantElement, propertyKey: string) {
+export function reactiveField(target: ReactiveHostLike, propertyKey: string) {
 	registerLegacyInstanceInitializer(target, (element) => {
 		element.registerConnectedCallback(() => {
 			element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {

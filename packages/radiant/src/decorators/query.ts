@@ -1,10 +1,13 @@
-import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
 import type { QueryConfig, QueryScope } from '../helpers/create-query';
 import { query as legacyQuery } from './legacy/query';
 import { query as standardQuery } from './standard/query';
 import { fieldDecoratorBridge } from './bridge';
 
 export type { QueryConfig, QueryScope };
+
+type QueryDecoratorHost = (Element | { host: Element }) & {
+	registerConnectedCallback(callback: () => void): void;
+};
 
 /**
  * A decorator to query by CSS selector or data-ref attribute.
@@ -14,10 +17,17 @@ export type { QueryConfig, QueryScope };
  * @param options {@link QueryConfig} The options for the reactive property.
  */
 export function query<T extends Element | Element[]>(options: QueryConfig) {
-	return function (
-		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-	): any {
+	function decorator<Host extends QueryDecoratorHost>(
+		protoOrTarget: undefined,
+		nameOrContext: ClassFieldDecoratorContext<Host, T>,
+	): void;
+	function decorator(protoOrTarget: QueryDecoratorHost, nameOrContext: string): void;
+	function decorator(
+		protoOrTarget: QueryDecoratorHost | undefined,
+		nameOrContext: string | ClassFieldDecoratorContext<QueryDecoratorHost, T>,
+	): void {
 		return fieldDecoratorBridge(standardQuery(options), legacyQuery<T>(options), protoOrTarget, nameOrContext);
-	};
+	}
+
+	return decorator;
 }

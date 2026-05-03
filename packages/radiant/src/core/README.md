@@ -1,8 +1,8 @@
 # Radiant Core
 
-## RadiantComponent Flow
+## RadiantElement Flow
 
-`RadiantComponent` is the JSX-first base class for explicit client rendering, component-owned SSR host serialization, and opt-in hydration.
+`RadiantElement` is the JSX-first custom-element base for explicit client rendering, host serialization, and opt-in hydration.
 
 Its main responsibilities are:
 
@@ -52,7 +52,7 @@ flowchart TD
 Client rendering works like this:
 
 1. The browser upgrades the custom element and calls `connectedCallback()`.
-2. `RadiantComponent` waits one microtask before doing any work.
+2. `RadiantElement` waits one microtask before doing any work.
 3. If the host already contains hydration markers and the explicit client hydrator is installed, `hydrate()` attaches behavior to that DOM in place.
 4. Otherwise `update()` renders fresh light DOM into the host.
 5. Later state changes do nothing automatically unless user code calls `update()` directly or a decorator such as `@onUpdated(...)` calls it.

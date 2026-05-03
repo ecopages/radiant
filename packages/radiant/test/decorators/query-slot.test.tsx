@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { querySlot } from '../../src/decorators/query-slot';
 
@@ -8,7 +8,7 @@ declare const __LEGACY_ENVIRONMENT__: boolean;
 const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 @customElement('query-slot-card-test')
-class QuerySlotCard extends RadiantComponent {
+class QuerySlotCard extends RadiantElement {
 	@querySlot() defaultSlot!: HTMLParagraphElement | null;
 	@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
 	@querySlot({ name: 'header', all: true }) allHeaderSlots!: HTMLHeadingElement[];

@@ -1,5 +1,5 @@
-import type { StandardOrLegacyMethodDecoratorArgs } from '../../types';
-import type { RadiantElement } from '../../core/radiant-element';
+import type { Method } from '../../types';
+import type { ContextHostLike } from '../context-host';
 import type { Context, ContextType, UnknownContext } from '../types';
 import { contextSelector as legacyContextSelectorMethod } from './legacy/context-selector';
 import { contextSelector as standardContextSelectorMethod } from './standard/context-selector';
@@ -8,12 +8,12 @@ import { methodDecoratorBridge } from '../../decorators/bridge';
 type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
 
 type OnContextUpdateDecorator<Selected> = {
-	<Host extends RadiantElement, TMethod extends ContextUpdateMethod<Selected>>(
+	<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
 		protoOrTarget: TMethod,
 		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
 	): void;
 	(
-		protoOrTarget: RadiantElement,
+		protoOrTarget: ContextHostLike,
 		nameOrContext: string,
 		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
@@ -26,7 +26,7 @@ export type OnContextUpdateOptions<T extends UnknownContext, Selected = ContextT
 	select?: (context: ContextType<T>) => Selected;
 	/** Whether client-side event-channel subscriptions should stay active after the first value. */
 	subscribe?: boolean;
-	/** Whether RadiantComponent hosts should schedule `requestUpdate()` after delivery. */
+	/** Whether RadiantElement hosts should schedule `requestUpdate()` after delivery. */
 	requestUpdate?: boolean;
 };
 
@@ -37,7 +37,7 @@ export type OnContextUpdateOptions<T extends UnknownContext, Selected = ContextT
  * available, and on the client it keeps receiving updates according to the
  * `subscribe` option.
  *
- * On `RadiantComponent` hosts, each delivery also schedules `requestUpdate()`
+ * On `RadiantElement` hosts, each delivery also schedules `requestUpdate()`
  * unless `requestUpdate: false` is set explicitly.
  *
  * @param options Context subscription configuration.
@@ -45,10 +45,19 @@ export type OnContextUpdateOptions<T extends UnknownContext, Selected = ContextT
 export function onContextUpdate<T extends Context<unknown, unknown>, Selected = ContextType<T>>(
 	options: OnContextUpdateOptions<T, Selected>,
 ): OnContextUpdateDecorator<Selected> {
-	return function (
-		protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
-		descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
+	function decorator<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
+		protoOrTarget: TMethod,
+		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
+	): void;
+	function decorator(
+		protoOrTarget: ContextHostLike,
+		nameOrContext: string,
+		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
+	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
+	function decorator(
+		protoOrTarget: ContextHostLike | Method,
+		nameOrContext: string | ClassMethodDecoratorContext<ContextHostLike, ContextUpdateMethod<Selected>>,
+		descriptor?: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void {
 		return methodDecoratorBridge(
 			standardContextSelectorMethod(options),
@@ -56,6 +65,8 @@ export function onContextUpdate<T extends Context<unknown, unknown>, Selected = 
 			protoOrTarget,
 			nameOrContext,
 			descriptor,
-		) as TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
-	} as OnContextUpdateDecorator<Selected>;
+		);
+	}
+
+	return decorator;
 }

@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
@@ -221,9 +220,9 @@ describe('@prop', () => {
 		});
 	});
 
-	describe('@prop on RadiantComponent', () => {
+	describe('@prop on RadiantElement', () => {
 		@customElement('my-component-prop-element')
-		class MyComponentPropElement extends RadiantComponent {
+		class MyComponentPropElement extends RadiantElement {
 			@prop({ type: Number, reflect: true, defaultValue: 3 }) count: number;
 			@prop({ type: Number, defaultValue: 9, bind: false }) silent: number;
 		}
@@ -254,7 +253,7 @@ describe('@prop', () => {
 
 	describe('field initializers', () => {
 		@customElement('my-inferred-reactive-prop')
-		class MyInferredReactiveProp extends RadiantComponent {
+		class MyInferredReactiveProp extends RadiantElement {
 			@prop({ type: Number, reflect: true }) count = 4;
 			@prop({ type: String }) label = 'Hello Radiant';
 			@prop({ type: Boolean }) enabled = false;
@@ -288,7 +287,7 @@ describe('@prop', () => {
 		});
 
 		@customElement('my-inferred-reactive-prop-with-explicit-default')
-		class MyInferredReactivePropWithExplicitDefault extends RadiantComponent {
+		class MyInferredReactivePropWithExplicitDefault extends RadiantElement {
 			@prop({ type: Number, defaultValue: 9 }) count = 4;
 		}
 

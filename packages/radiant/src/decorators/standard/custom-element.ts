@@ -5,7 +5,7 @@ export function customElement(name: string, options?: ElementDefinitionOptions) 
 		context.addInitializer(function () {
 			setCustomElementTagName(this, name);
 
-			if (!window.customElements.get(name)) {
+			if (typeof customElements !== 'undefined' && !customElements.get(name)) {
 				customElements.define(name, this, options);
 			}
 		});

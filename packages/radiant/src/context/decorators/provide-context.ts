@@ -1,5 +1,5 @@
-import type { StandardOrLegacyFieldDecoratorArgs } from '../../types';
 import type { AttributeTypeConstant } from '../../utils';
+import type { ContextHostLike } from '../context-host';
 import type { UnknownContext } from '../types';
 import { provideContext as legacyProvideContext } from './legacy/provide-context';
 import { provideContext as standardProvideContext } from './standard/provide-context';
@@ -29,15 +29,22 @@ export type ProvideContextOptions<T extends UnknownContext> = {
  * @returns
  */
 export function provideContext<T extends UnknownContext>(options: ProvideContextOptions<T>) {
-	return function (
-		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-	): any {
+	function decorator<Host extends ContextHostLike, V>(
+		protoOrTarget: undefined,
+		nameOrContext: ClassFieldDecoratorContext<Host, V>,
+	): void;
+	function decorator(protoOrTarget: ContextHostLike, nameOrContext: string): void;
+	function decorator(
+		protoOrTarget: ContextHostLike | undefined,
+		nameOrContext: string | ClassFieldDecoratorContext<ContextHostLike, unknown>,
+	): void {
 		return fieldDecoratorBridge(
 			standardProvideContext(options),
 			legacyProvideContext(options),
 			protoOrTarget,
 			nameOrContext,
 		);
-	};
+	}
+
+	return decorator;
 }
