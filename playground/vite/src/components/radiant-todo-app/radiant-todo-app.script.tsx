@@ -1,15 +1,18 @@
 import {
-	type ContextProvider,
 	RadiantElement,
-	consumeContext,
-	contextSelector,
-	createContext,
 	customElement,
 	onEvent,
 	prop,
-	provideContext,
 	query,
 } from '@ecopages/radiant';
+
+import {
+	type ContextProvider,
+	consumeContext,
+	contextSelector,
+	createContext,
+	provideContext,
+} from '@ecopages/radiant/context';
 
 import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
 

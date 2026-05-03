@@ -1,4 +1,4 @@
-import { createContext } from '@ecopages/radiant';
+import { createContext } from '@ecopages/radiant/context';
 
 export type RadiantContextFlowValue = {
 	label: string;

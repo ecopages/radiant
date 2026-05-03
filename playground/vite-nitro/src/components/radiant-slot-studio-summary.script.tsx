@@ -1,4 +1,5 @@
-import { RadiantElement, contextSelector, customElement } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { contextSelector } from '@ecopages/radiant/context';
 import { radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
 
 type RadiantSlotStudioSummaryBindings = {

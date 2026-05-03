@@ -1,4 +1,5 @@
-import { RadiantElement, contextSelector, customElement } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { contextSelector } from '@ecopages/radiant/context';
 import { radiantSignalReleaseBoardContext } from './radiant-signal-release-board.context.ts';
 import { createEmptyReleaseBoardFocusView, type ReleaseBoardStore } from './radiant-signal-release-board.model.ts';
 

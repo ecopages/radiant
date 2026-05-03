@@ -1,5 +1,7 @@
 import type { WritableSignal } from '@ecopages/signals';
-import { ContextProvider, RadiantElement, customElement, provideContext, signal } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { ContextProvider, provideContext } from '@ecopages/radiant/context';
+import { signal } from '@ecopages/radiant/decorators/signal';
 import './radiant-signal-release-board-focus.script.tsx';
 import './radiant-signal-release-board-queue.script.tsx';
 import { radiantSignalReleaseBoardContext } from './radiant-signal-release-board.context.ts';

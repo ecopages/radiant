@@ -1,4 +1,5 @@
-import { ContextProvider, RadiantElement, customElement, provideContext, querySlot } from '@ecopages/radiant';
+import { RadiantElement, customElement, querySlot } from '@ecopages/radiant';
+import { ContextProvider, provideContext } from '@ecopages/radiant/context';
 import './radiant-slot-studio-insight.script.tsx';
 import './radiant-slot-studio-summary.script.tsx';
 import { radiantSlotStudioContext } from './radiant-slot-studio.context.ts';

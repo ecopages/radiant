@@ -1,4 +1,4 @@
-import { createContext } from '@ecopages/radiant';
+import { createContext } from '@ecopages/radiant/context';
 import type { ReleaseBoardStore } from './radiant-signal-release-board.model.ts';
 
 export type ReleaseLane = 'Backlog' | 'Build' | 'Review' | 'Launch';

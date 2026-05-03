@@ -1,20 +1,23 @@
 export {
-	type ContextProvider,
 	attr,
 	RadiantController,
 	RadiantElement,
-	consumeContext,
-	contextSelector,
 	controller,
-	createContext,
 	onUpdated,
-	onContextUpdate,
 	onEvent,
-	provideContext,
 	query,
 	state,
 	customElement,
 } from '../../../../packages/radiant/src/index.ts';
+
+export {
+	type ContextProvider,
+	consumeContext,
+	contextSelector,
+	createContext,
+	onContextUpdate,
+	provideContext,
+} from '../../../../packages/radiant/src/context/index.ts';
 
 export {
 	type ControllerRegistryRuntime,

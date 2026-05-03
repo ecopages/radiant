@@ -1,4 +1,5 @@
-import { RadiantElement, contextSelector, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+import { contextSelector } from '@ecopages/radiant/context';
 import { type RadiantSlotStudioContextValue, radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
 
 type InsightKind = 'commits' | 'stage' | 'tempo';

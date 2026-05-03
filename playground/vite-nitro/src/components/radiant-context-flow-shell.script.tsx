@@ -1,4 +1,5 @@
-import { ContextProvider, RadiantElement, customElement, provideContext } from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { ContextProvider, provideContext } from '@ecopages/radiant/context';
 import { radiantContextFlowContext } from './radiant-context-flow.context';
 import './radiant-context-flow-leaf.script';
 
