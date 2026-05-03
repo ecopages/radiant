@@ -1,11 +1,13 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { ContextProvider } from '../../src/context/context-provider';
-import { consumeContext } from '../../src/context/decorators/consume-context';
-import { contextSelector } from '../../src/context/decorators/context-selector';
-import { onContextUpdate } from '../../src/context/decorators/on-context-update';
-import { provideContext } from '../../src/context/decorators/provide-context';
-import { createContext } from '../../src/context/create-context';
+import {
+	type ContextProvider,
+	consumeContext,
+	contextSelector,
+	createContext,
+	onContextUpdate,
+	provideContext,
+} from '../../src/context';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 class JsxReceiverElement extends HTMLElement {

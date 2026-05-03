@@ -1,12 +1,15 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { ContextProvider } from '../../src/context/context-provider';
-import { createContext } from '../../src/context/create-context';
-import { consumeContext } from '../../src/context/decorators/consume-context';
-import { contextSelector } from '../../src/context/decorators/context-selector';
-import { onContextUpdate } from '../../src/context/decorators/on-context-update';
-import { provideContext } from '../../src/context/decorators/provide-context';
-import { ContextEventsTypes, ContextRequestEvent } from '../../src/context/events';
+import {
+	ContextEventsTypes,
+	ContextProvider,
+	ContextRequestEvent,
+	consumeContext,
+	contextSelector,
+	createContext,
+	onContextUpdate,
+	provideContext,
+} from '../../src/context';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;

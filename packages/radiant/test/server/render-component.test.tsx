@@ -1,10 +1,6 @@
 import '../../src/server/install-light-dom-shim';
 import { describe, expect, test } from 'vitest';
-import type { ContextProvider } from '../../src/context/context-provider';
-import { createContext } from '../../src/context/create-context';
-import { consumeContext } from '../../src/context/decorators/consume-context';
-import { onContextUpdate } from '../../src/context/decorators/on-context-update';
-import { provideContext } from '../../src/context/decorators/provide-context';
+import { type ContextProvider, consumeContext, createContext, onContextUpdate, provideContext } from '../../src/context';
 import { attr } from '../../src/decorators/attr';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
