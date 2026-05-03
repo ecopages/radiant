@@ -10,7 +10,7 @@ export const RadiantDropdown = ({ defaultOpen, placement, arrow, children }: Wit
 				Open
 			</button>
 			<div data-ref="content">
-				{children as 'safe'}
+				{children}
 				{arrow ? <div data-ref="arrow"></div> : null}
 			</div>
 		</radiant-dropdown>

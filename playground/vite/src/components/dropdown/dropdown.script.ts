@@ -5,7 +5,7 @@ import { bound } from '@ecopages/radiant/decorators/bound';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { query } from '@ecopages/radiant/decorators/query';
-import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
+import { prop } from '@ecopages/radiant/decorators/prop';
 import { type Coords, type Placement, arrow, autoUpdate, computePosition, flip, offset } from '@floating-ui/dom';
 
 export type RadiantDropdownProps = {
@@ -33,10 +33,10 @@ export class RadiantDropdown extends RadiantElement {
 	@query({ ref: 'content' }) contentTarget!: HTMLElement;
 	@query({ ref: 'arrow' }) arrowTarget!: HTMLElement;
 
-	@reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) defaultOpen!: boolean;
-	@reactiveProp({ type: String, defaultValue: 'left' }) placement!: Placement;
-	@reactiveProp({ type: Number, defaultValue: 6 }) offset!: number;
-	@reactiveProp({ type: Boolean, defaultValue: true }) focusOnOpen!: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) defaultOpen!: boolean;
+	@prop({ type: String, defaultValue: 'left' }) placement!: Placement;
+	@prop({ type: Number, defaultValue: 6 }) offset!: number;
+	@prop({ type: Boolean, defaultValue: true }) focusOnOpen!: boolean;
 
 	cleanup: ReturnType<typeof autoUpdate> | null = null;
 
@@ -123,13 +123,5 @@ export class RadiantDropdown extends RadiantElement {
 	disconnectedCallback(): void {
 		super.disconnectedCallback();
 		this.cleanup?.();
-	}
-}
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-dropdown': HtmlTag & RadiantDropdownProps;
-		}
 	}
 }

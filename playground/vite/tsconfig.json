@@ -8,12 +8,7 @@
 		"experimentalDecorators": false,
 
 		"jsx": "react-jsx",
-		"jsxImportSource": "@kitajs/html",
-		"plugins": [
-			{
-				"name": "@kitajs/ts-html-plugin"
-			}
-		],
+		"jsxImportSource": "@ecopages/jsx",
 
 		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
@@ -22,8 +17,6 @@
 		"moduleDetection": "force",
 		"noEmit": true,
 
-		"baseUrl": ".",
-		"rootDir": ".",
 		"paths": {
 			"@/*": ["./src/*"]
 		},

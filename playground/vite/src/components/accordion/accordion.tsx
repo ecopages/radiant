@@ -1,3 +1,4 @@
+import type { JsxRenderable } from '@ecopages/jsx';
 import type { RadiantAccordionProps } from './accordion.script';
 import './accordion.script';
 import './accordion.css';
@@ -5,14 +6,14 @@ import './accordion.css';
 type AccordionItemProps = {
 	id: string;
 	title: string;
-	children: JSX.Element;
+	children: JsxRenderable;
 	defaultOpen?: boolean;
 };
 
 const RadiantAccordionItem = ({ id, title, children, defaultOpen }: AccordionItemProps) => {
 	return (
 		<details data-id={id} open={defaultOpen}>
-			<summary safe>{title}</summary>
+			<summary>{title}</summary>
 			<div data-ref="panel">{children}</div>
 		</details>
 	);
