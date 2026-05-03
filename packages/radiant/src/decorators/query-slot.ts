@@ -6,10 +6,9 @@ import { fieldDecoratorBridge } from './bridge';
 
 export type { QuerySlotConfig };
 
-type SlotQueryHost = HTMLElement & {
-	getSlotElement<T extends Element = Element>(name?: string): T | null;
-	getSlotElements<T extends Element = Element>(name?: string): T[];
-	slotProjectionVersion?: number;
+type QuerySlotDecorator<T extends Element | Element[] | null> = {
+	(protoOrTarget: undefined, nameOrContext: ClassFieldDecoratorContext<any, T>): void;
+	(protoOrTarget: RadiantElement, nameOrContext: string): void;
 };
 
 /**
@@ -21,18 +20,15 @@ type SlotQueryHost = HTMLElement & {
  *
  * @param options Slot query options.
  */
-export function querySlot<T extends Element | Element[]>(options: QuerySlotConfig = {}) {
-	function decorator<THost extends SlotQueryHost>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<THost, T>,
-	): void;
+export function querySlot<T extends Element | Element[] | null>(options: QuerySlotConfig = {}): QuerySlotDecorator<T> {
+	function decorator(protoOrTarget: undefined, nameOrContext: ClassFieldDecoratorContext<any, T>): void;
 	function decorator(protoOrTarget: RadiantElement, nameOrContext: string): void;
 	function decorator(
 		protoOrTarget: RadiantElement | undefined,
-		nameOrContext: string | ClassFieldDecoratorContext<SlotQueryHost, T>,
+		nameOrContext: string | ClassFieldDecoratorContext<any, T>,
 	): void {
 		return fieldDecoratorBridge(
-			standardQuerySlot(options),
+			standardQuerySlot(options) as (target: undefined, context: ClassFieldDecoratorContext<any, T>) => void,
 			legacyQuerySlot<T>(options),
 			protoOrTarget,
 			nameOrContext,

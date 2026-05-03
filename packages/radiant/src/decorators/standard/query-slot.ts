@@ -8,7 +8,7 @@ type SlotQueryHost = HTMLElement & {
 };
 
 export function querySlot(options: QuerySlotConfig = {}) {
-	return function <T extends SlotQueryHost, V extends Element | Element[]>(
+	return function <T extends SlotQueryHost, V extends Element | Element[] | null>(
 		target: undefined,
 		context: ClassFieldDecoratorContext<T, V>,
 	) {
