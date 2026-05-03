@@ -1,14 +1,9 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { computed } from '@ecopages/signals';
-import { RadiantControllerContextVisualizer } from './components/radiant-controller-context-visualizer';
-import { RadiantControllerDecoratorVisualizer } from './components/radiant-controller-decorator-visualizer';
-import {
-	DEFAULT_SSR_ENDPOINT,
-	createClientPreviewContent,
-	loadServerMessageIntoState,
-	loadSsrMarkupIntoState,
-} from './playground-actions';
-import { usePlaygroundState } from './playground-state';
+import { createClientPreview, DEFAULT_SSR_ENDPOINT, loadServerMessage, loadSsrMarkup } from '../store/actions';
+import { useAppStore } from '../store/store';
+import { RadiantControllerContextVisualizer } from './radiant-controller-context-visualizer';
+import { RadiantControllerDecoratorVisualizer } from './radiant-controller-decorator-visualizer';
 
 export function HeroSection() {
 	return (
@@ -76,13 +71,13 @@ export function RadiantElementLabSection() {
 }
 
 export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: JsxRenderable }) {
-	const state = usePlaygroundState();
+	const store = useAppStore();
 	const assetItems = computed(() => {
-		if (state.ssrAssets.length === 0) {
+		if (store.ssrAssets.length === 0) {
 			return [<li>No fragment assets recorded yet.</li>];
 		}
 
-		return state.ssrAssets.map((asset) => {
+		return store.ssrAssets.map((asset) => {
 			if (asset.kind === 'script-module') {
 				return <li>{`${asset.kind}:${asset.stage ?? 'hydrate'} ${asset.src}`}</li>;
 			}
@@ -96,15 +91,15 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 			);
 		});
 	});
-	const status = computed(() => state.ssrStatus);
-	const isLoading = computed(() => state.ssrStatus === 'loading');
-	const generatedAt = computed(() => state.ssrGeneratedAt);
-	const markup = computed(() => state.ssrMarkup || 'SSR output will appear here.');
-	const tagName = computed(() => state.ssrTagName);
-	const preview = ssrPreviewContent ?? computed(() => createClientPreviewContent(state));
+	const status = computed(() => store.ssrStatus);
+	const isLoading = computed(() => store.ssrStatus === 'loading');
+	const generatedAt = computed(() => store.ssrGeneratedAt);
+	const markup = computed(() => store.ssrMarkup || 'SSR output will appear here.');
+	const tagName = computed(() => store.ssrTagName);
+	const preview = ssrPreviewContent ?? computed(() => createClientPreview(store));
 
-	async function loadSsrMarkup(endpoint = DEFAULT_SSR_ENDPOINT) {
-		await loadSsrMarkupIntoState(state, endpoint);
+	async function loadSsrRoute(endpoint = DEFAULT_SSR_ENDPOINT) {
+		await loadSsrMarkup(store, endpoint);
 	}
 
 	return (
@@ -112,40 +107,40 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 			<div class="panel-header">
 				<h2>SSR route</h2>
 				<div class="component-actions">
-					<button type="button" on:click={() => loadSsrMarkup(DEFAULT_SSR_ENDPOINT)} disabled={isLoading}>
+					<button type="button" on:click={() => loadSsrRoute(DEFAULT_SSR_ENDPOINT)} disabled={isLoading}>
 						Fetch counter fragment
 					</button>
 					<button
 						type="button"
-						on:click={() => loadSsrMarkup('/api/ssr/radiant-server-card')}
+						on:click={() => loadSsrRoute('/api/ssr/radiant-server-card')}
 						disabled={isLoading}
 					>
 						Fetch server-card fragment
 					</button>
 					<button
 						type="button"
-						on:click={() => loadSsrMarkup('/api/ssr/radiant-signal-release-board')}
+						on:click={() => loadSsrRoute('/api/ssr/radiant-signal-release-board')}
 						disabled={isLoading}
 					>
 						Fetch signal-board fragment
 					</button>
 					<button
 						type="button"
-						on:click={() => loadSsrMarkup('/api/ssr/radiant-controller-decorator-visualizer')}
+						on:click={() => loadSsrRoute('/api/ssr/radiant-controller-decorator-visualizer')}
 						disabled={isLoading}
 					>
 						Fetch controller-decorator fragment
 					</button>
 					<button
 						type="button"
-						on:click={() => loadSsrMarkup('/api/ssr/radiant-controller-context-visualizer')}
+						on:click={() => loadSsrRoute('/api/ssr/radiant-controller-context-visualizer')}
 						disabled={isLoading}
 					>
 						Fetch controller-context fragment
 					</button>
 					<button
 						type="button"
-						on:click={() => loadSsrMarkup('/api/ssr/radiant-counter-asset-demo')}
+						on:click={() => loadSsrRoute('/api/ssr/radiant-counter-asset-demo')}
 						disabled={isLoading}
 					>
 						Fetch asset-backed fragment
@@ -178,11 +173,11 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 }
 
 export function ClientStateSection() {
-	const state = usePlaygroundState();
-	const clicks = computed(() => state.clicks);
+	const store = useAppStore();
+	const clicks = computed(() => store.clicks);
 
 	function incrementClicks() {
-		state.clicks += 1;
+		store.clicks += 1;
 	}
 
 	return (
@@ -201,22 +196,27 @@ export function ClientStateSection() {
 }
 
 export function NitroRouteSection() {
-	const state = usePlaygroundState();
-	const status = computed(() => state.status);
-	const message = computed(() => state.message);
-	const serverTime = computed(() => state.serverTime);
-	const isLoading = computed(() => state.status === 'loading');
-	const buttonLabel = computed(() => (state.status === 'loading' ? 'Loading...' : 'Fetch /api/hello'));
+	const store = useAppStore();
+	const status = computed(() => store.status);
+	const message = computed(() => store.message);
+	const serverTime = computed(() => store.serverTime);
+	const isLoading = computed(() => store.status === 'loading');
+	const buttonLabel = computed(() => (store.status === 'loading' ? 'Loading...' : 'Fetch /api/hello'));
 
-	async function loadServerMessage() {
-		await loadServerMessageIntoState(state);
+	async function loadNitroRouteMessage() {
+		await loadServerMessage(store);
 	}
 
 	return (
 		<section class="panel">
 			<div class="panel-header">
 				<h2>Nitro route</h2>
-				<button data-ref="nitro-fetch-button" type="button" on:click={loadServerMessage} disabled={isLoading}>
+				<button
+					data-ref="nitro-fetch-button"
+					type="button"
+					on:click={loadNitroRouteMessage}
+					disabled={isLoading}
+				>
 					{buttonLabel}
 				</button>
 			</div>

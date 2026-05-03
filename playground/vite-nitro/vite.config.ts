@@ -12,6 +12,6 @@ export default defineConfig({
 		tsconfigRaw: JSON.stringify(standardConfig),
 	},
 	resolve: {
-		alias: { '@': path.resolve(__dirname, 'src') },
+		alias: [{ find: '@', replacement: path.resolve(__dirname, 'src') }],
 	},
 });

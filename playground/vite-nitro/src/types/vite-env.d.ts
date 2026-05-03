@@ -16,6 +16,12 @@ declare module 'virtual:radiant/client-module-registry' {
 	export function loadRadiantClientModule(moduleKey: string): Promise<Record<string, unknown>>;
 }
 
+declare module 'virtual:radiant/dom-module-registry' {
+	export function resolveRadiantElementModuleKey(tagName: string): string | undefined;
+	export function resolveRadiantControllerModuleKey(identifier: string): string | undefined;
+	export function loadRadiantDomModules(root?: ParentNode): Promise<string[]>;
+}
+
 declare module 'virtual:radiant/ssr-client-module-registry' {
 	import type {
 		ServerRenderableComponent,
@@ -32,6 +38,9 @@ declare module 'virtual:radiant/ssr-client-module-registry' {
 	export function resolveRadiantSsrClientModuleKey<TComponent extends ServerRenderableComponent>(
 		component: ServerRenderableComponentConstructor<TComponent>,
 	): Promise<string | undefined>;
+
+	export function resolveRadiantSsrClientModuleKeyByTagName(tagName: string): string | undefined;
+	export function resolveRadiantSsrClientModuleKeyByControllerIdentifier(identifier: string): string | undefined;
 }
 
 declare module 'virtual:radiant/ssr-asset-registry' {
@@ -47,13 +56,25 @@ declare module 'virtual:radiant/ssr-asset-registry' {
 	 * Always includes a `script-module` asset pointing to the Vite-resolved client entry.
 	 * Returns an empty array when the component is not found in the SSR module registry.
 	 *
-	 * Called automatically by the framework adapter in `server/render.ts`. Routes do not
+	 * Called automatically by the framework adapter in `vite-plugin-radiant/nitro/render.ts`. Routes do not
 	 * need to call this directly unless bypassing the adapter layer.
 	 */
 	export function resolveRadiantSsrAssets<TComponent extends ServerRenderableComponent>(
 		component: ServerRenderableComponentConstructor<TComponent>,
 	): Promise<readonly RenderedComponentAsset[]>;
 
+	export function resolveRadiantSsrAssetsForCustomElementTag(
+		tagName: string,
+	): Promise<readonly RenderedComponentAsset[]>;
+
+	export function resolveRadiantSsrAssetsForControllerIdentifier(
+		identifier: string,
+	): Promise<readonly RenderedComponentAsset[]>;
+
+	export function resolveRadiantDocumentAssets(documentUsage?: {
+		customElementTagNames?: readonly string[];
+		controllerIdentifiers?: readonly string[];
+	}): Promise<readonly RenderedComponentAsset[]>;
 	/**
 	 * Returns the Vite-hashed, browser-importable URL for a component-colocated CSS file.
 	 *

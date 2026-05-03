@@ -1,35 +1,30 @@
 import '@ecopages/radiant/server/install-light-dom-shim';
 import {
 	renderComponent,
-	createRenderedComponentHeaders,
 	type RenderComponentCallOptions,
 	type RenderedComponentAsset,
 	type RenderedComponent,
+	type RenderedComponentMetadata,
+	type RenderedComponentPayload,
+	type RenderedComponentWithPreview,
 	type ServerRenderableComponent,
 	type ServerRenderableComponentConstructor,
 } from '@ecopages/radiant/server/render-component';
+import {
+	renderController,
+	type RenderControllerCallOptions,
+	type ServerRenderableControllerConstructor,
+} from '@ecopages/radiant/server/render-controller';
+import type { RadiantController } from '@ecopages/radiant';
 import { resolveRadiantSsrAssets } from 'virtual:radiant/ssr-asset-registry';
-import '../src/components/radiant-counter.script';
-import '../src/components/radiant-event-binding-lab.script';
-import '../src/components/radiant-context-flow-shell.script';
-import '../src/components/radiant-signal-release-board.script';
-import '../src/components/radiant-slot-studio-board.script.tsx';
+import { createRadiantFragmentHeaders } from './fragment-transport';
 
 type StringKeyOf<T> = Extract<keyof T, string>;
 
-/** Maps non-function own properties of a component instance to an optional partial for pre-render assignment. */
 type RenderSsrComponentProps<T extends object> = Partial<{
 	[Key in StringKeyOf<T> as T[Key] extends (...args: any[]) => any ? never : Key]: T[Key];
 }>;
 
-/**
- * Options for `renderSsrComponent`.
- *
- * Extends `RenderComponentCallOptions` but omits `resolveClientModuleSrc` (handled internally
- * by the framework adapter via `virtual:radiant/ssr-asset-registry`) and makes `initialize`
- * optional. The `props` shorthand assigns non-function component properties to the instance
- * before the SSR render executes.
- */
 export type RenderSsrComponentOptions<T extends ServerRenderableComponent> = Omit<
 	RenderComponentCallOptions<T>,
 	'initialize' | 'resolveClientModuleSrc'
@@ -38,14 +33,6 @@ export type RenderSsrComponentOptions<T extends ServerRenderableComponent> = Omi
 	props?: RenderSsrComponentProps<T>;
 };
 
-/**
- * Framework-level SSR entry point for Radiant components in the Vite/Nitro adapter.
- *
- * Wraps `renderComponent` with two additions:
- * - `props` shorthand: non-function properties are assigned to the component instance before render.
- * - Asset merging: a `script-module` asset from `virtual:radiant/ssr-asset-registry` is merged
- *   with any `assets` and `resolveAssets` overrides supplied by the route, deduplicated by kind and key.
- */
 export async function renderSsrComponent<T extends ServerRenderableComponent>(
 	component: ServerRenderableComponentConstructor<T>,
 	options: RenderSsrComponentOptions<T> = {},
@@ -69,13 +56,6 @@ export async function renderSsrComponent<T extends ServerRenderableComponent>(
 	});
 }
 
-/**
- * Merges two asset lists with deduplication by a content-derived key.
- *
- * `explicitAssets` are placed first; any asset in `resolvedAssets` whose key already
- * appears in `explicitAssets` is dropped. Key format: `kind:stage:src` for `script-module`,
- * `kind:href` for `modulepreload`, `kind:href:media` for `style`.
- */
 function mergeRenderedComponentAssets(
 	explicitAssets: readonly RenderedComponentAsset[],
 	resolvedAssets: readonly RenderedComponentAsset[],
@@ -102,16 +82,40 @@ function mergeRenderedComponentAssets(
 	return mergedAssets;
 }
 
-/**
- * Wraps a `RenderedComponent` in a `Response` with the fragment HTML as the body and the
- * standard Radiant fragment headers (`x-radiant-tag-name`, `x-radiant-client-module`,
- * `x-radiant-assets`, `x-generated-at`) set via `createRenderedComponentHeaders`.
- */
-export function createSsrResponse(rendered: RenderedComponent): Response {
-	return new Response(rendered.markup, {
+export function createSsrResponse(
+	rendered: RenderedComponent | RenderedComponentPayload | RenderedComponentWithPreview,
+	headers?: HeadersInit,
+): Response {
+	return createSsrFragmentResponse(rendered, headers);
+}
+
+export function createSsrFragmentResponse(
+	rendered: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | RenderedComponentWithPreview,
+	headers?: HeadersInit,
+): Response {
+	const markup = 'markup' in rendered ? rendered.markup : '';
+
+	return new Response(markup, {
 		headers: {
 			'content-type': 'text/html; charset=utf-8',
-			...createRenderedComponentHeaders(rendered.metadata),
+			...createRadiantFragmentHeaders(rendered),
+			...Object.fromEntries(new Headers(headers).entries()),
 		},
 	});
+}
+
+export async function renderSsrComponentResponse<T extends ServerRenderableComponent>(
+	component: ServerRenderableComponentConstructor<T>,
+	options: RenderSsrComponentOptions<T> = {},
+	headers?: HeadersInit,
+): Promise<Response> {
+	return createSsrFragmentResponse(await renderSsrComponent(component, options), headers);
+}
+
+export async function renderSsrControllerResponse<T extends RadiantController>(
+	controller: ServerRenderableControllerConstructor<T>,
+	options: RenderControllerCallOptions<T>,
+	headers?: HeadersInit,
+): Promise<Response> {
+	return createSsrFragmentResponse(await renderController(controller, options), headers);
 }

@@ -1,26 +1,17 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import { createStore } from '@ecopages/signals';
-import { loadSsrMarkupIntoState } from './playground-actions';
+import { loadSsrMarkup } from './store/actions';
 import {
-	createInitialPlaygroundState,
-	createPlaygroundStateScriptNode,
-	readPlaygroundStateFromDom,
-	setPlaygroundState,
-} from './playground-state';
+	createRadiantDocumentStateScriptNode,
+	readRadiantDocumentStateFromDom,
+} from '../vite-plugin-radiant/runtime/document-state';
+import { createAppStore, createStateScriptNode, readStateFromDom, setAppStore } from './store/store';
 import {
 	ClientStateSection,
 	HeroSection,
 	NitroRouteSection,
 	RadiantElementLabSection,
 	SsrRouteSection,
-} from './playground-view';
-
-export {
-	createInitialPlaygroundState,
-	createPlaygroundStateScriptNode,
-	setPlaygroundState,
-	type PlaygroundState,
-} from './playground-state';
+} from './components/playground-sections';
 
 export type AppProps = {
 	ssrPreviewContent?: JsxRenderable;
@@ -29,22 +20,29 @@ export type AppProps = {
 
 export function App({ ssrPreviewContent, bootstrapStateScript }: AppProps = {}) {
 	let stateScript = bootstrapStateScript;
+	const documentStateScript =
+		typeof document === 'undefined'
+			? undefined
+			: readRadiantDocumentStateFromDom(document)?.state
+				? createRadiantDocumentStateScriptNode(readRadiantDocumentStateFromDom(document)!.state)
+				: undefined;
 
 	if (!stateScript) {
 		const root = typeof document !== 'undefined' ? document.getElementById('app') : undefined;
-		const bootstrap = root ? readPlaygroundStateFromDom(root) : undefined;
-		const state = createStore(bootstrap?.state ?? createInitialPlaygroundState());
-		setPlaygroundState(state);
+		const bootstrap = root ? readStateFromDom(root) : undefined;
+		const store = createAppStore(bootstrap?.state);
+		setAppStore(store);
 
-		stateScript = bootstrap ? createPlaygroundStateScriptNode(bootstrap.state) : undefined;
+		stateScript = bootstrap ? createStateScriptNode(bootstrap.state) : undefined;
 
 		if (!bootstrap) {
-			void loadSsrMarkupIntoState(state);
+			void loadSsrMarkup(store);
 		}
 	}
 
 	return (
 		<main class="shell">
+			{documentStateScript}
 			{stateScript}
 			<HeroSection />
 			<RadiantElementLabSection />

@@ -28,7 +28,7 @@ test.before(async () => {
 	await runCommand('bun', ['run', 'build'], playgroundDirectory);
 	nitroServer = await startServer({
 		command: 'node',
-		args: ['.output/server/index.mjs'],
+		args: [resolve(playgroundDirectory, '.output/server/index.mjs')],
 		cwd: playgroundDirectory,
 		env: {
 			HOST: host,
@@ -59,8 +59,11 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	assert.doesNotMatch(html, /Awaiting board context/);
 	assert.doesNotMatch(html, /class="studio-insight__value">Pending<\/p>/);
 	assert.match(html, /Context: Nitro SSR context \/ 2/);
-	assert.match(html, /<script type="application\/json" data-playground-state>.*<\/script>/);
-	assert.doesNotMatch(html, /data-playground-state="/);
+	assert.match(html, /<script type="application\/json" id="app-state">.*<\/script>/);
+	assert.match(html, /<script type="application\/json" id="radiant-document-state">.*<\/script>/);
+	assert.match(html, /"customElementTagNames":\[[^\]]*"radiant-context-flow-shell"/);
+	assert.match(html, /"controllerIdentifiers":\[[^\]]*"controller-context-visualizer"/);
+	assert.doesNotMatch(html, /data-playground-state/);
 	assert.match(
 		html,
 		/<script type="application\/json" data-hydration data-hydration-type="context" data-hydration-key="context">\{"label":"Nitro SSR context","level":2\}<\/script>/,

@@ -1,6 +1,6 @@
 import { ContextProvider, RadiantElement, customElement, provideContext } from '@ecopages/radiant';
-import './radiant-context-flow-leaf.script';
 import { radiantContextFlowContext } from './radiant-context-flow.context';
+import './radiant-context-flow-leaf.script';
 
 @customElement('radiant-context-flow-shell')
 export class RadiantContextFlowShellElement extends RadiantElement {

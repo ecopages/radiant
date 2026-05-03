@@ -1,8 +1,8 @@
 export function RadiantControllerDecoratorVisualizer() {
 	return (
-		<section
+		<div
 			class="controller-decorator-visualizer unstyled"
 			data={{ controller: 'controller-dom-flow-visualizer', signal: 'ready' }}
-		></section>
+		></div>
 	);
 }

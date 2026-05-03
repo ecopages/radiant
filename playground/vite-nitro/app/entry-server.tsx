@@ -1,32 +1,27 @@
-import { renderToString } from '@ecopages/jsx/server';
 import { toRenderedComponentPayload } from '@ecopages/radiant/server/render-component';
-import { resolveRadiantAppLoadMode } from 'virtual:radiant/app-load-mode';
-import { renderSsrComponent } from '../server/render';
-import { RadiantCounter } from '../src/components/radiant-counter.script';
-import '../src/components/radiant-controller-context-visualizer.script';
-import '../src/components/radiant-controller-decorator-visualizer.script';
-import { App, createInitialPlaygroundState, createPlaygroundStateScriptNode, setPlaygroundState } from '../src/app';
+import { renderRadiantNitroPage } from '../vite-plugin-radiant/nitro/index';
+import { App } from '../src/app';
+import { createAppStore, createStateScriptNode, setAppStore } from '../src/store/store';
 
 export default {
 	async fetch(request: Request) {
-		if (resolveRadiantAppLoadMode(request) === 'client-only') {
-			return new Response('', { headers: { 'content-type': 'text/html; charset=utf-8' } });
-		}
+		const { RadiantCounter } = await import('../src/components/radiant-counter.script');
 
-		const rendered = await renderSsrComponent(RadiantCounter, {
-			props: {
-				count: 6,
-				label: 'SSR counter rendered in Nitro',
+		return renderRadiantNitroPage({
+			request,
+			component: RadiantCounter,
+			componentOptions: {
+				props: {
+					count: 6,
+					label: 'SSR counter rendered in Nitro',
+				},
+			},
+			renderPage: ({ rendered }) => {
+				const store = createAppStore(toRenderedComponentPayload(rendered));
+				setAppStore(store);
+
+				return <App bootstrapStateScript={createStateScriptNode(store)} ssrPreviewContent={rendered.preview} />;
 			},
 		});
-		const state = createInitialPlaygroundState(toRenderedComponentPayload(rendered));
-		setPlaygroundState(state);
-
-		const html = renderToString(
-			<App bootstrapStateScript={createPlaygroundStateScriptNode(state)} ssrPreviewContent={rendered.preview} />,
-			{ mode: 'hydrate' },
-		);
-
-		return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } });
 	},
 };
