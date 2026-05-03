@@ -17,7 +17,7 @@
 		"size:report": "bun run --filter '*' size:report",
 		"changeset": "changeset",
 		"commit": "better-commits",
-		"prerelease": "bun run build:all && bun run test:all",
+		"prerelease": "bun run typecheck && bun run build:all && bun run test:all",
 		"release": "changeset publish",
 		"dev:docs": "bun run --elide-lines=0 --filter radiant-docs dev",
 		"watch:lib": "bun run --elide-lines=0 --filter '*' watch:lib",
