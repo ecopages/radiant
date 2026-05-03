@@ -15,7 +15,7 @@ type ControllerRegistryGlobalState = {
 	controllerRegistry: Map<string, ControllerConstructor>;
 };
 
-const CONTROLLER_REGISTRY_STATE_KEY = Symbol.for('@ecopages/radiant.controller-registry-state');
+export const CONTROLLER_REGISTRY_STATE_KEY = Symbol.for('@ecopages/radiant.controller-registry-state');
 
 function getControllerRegistryGlobalState(): ControllerRegistryGlobalState {
 	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
@@ -40,7 +40,7 @@ const controllerRegistryState = getControllerRegistryGlobalState();
 const controllerRegistry = controllerRegistryState.controllerRegistry;
 const activeRuntimes = controllerRegistryState.activeRuntimes;
 
-function parseControllerIdentifiers(element: Element): string[] {
+export function parseControllerIdentifiers(element: Element): string[] {
 	const value = element.getAttribute(CONTROLLER_ATTRIBUTE);
 
 	if (!value) {
@@ -53,7 +53,7 @@ function parseControllerIdentifiers(element: Element): string[] {
 		.filter((identifier) => identifier.length > 0);
 }
 
-function visitControllerElements(root: ParentNode, visit: (element: Element) => void): void {
+export function visitControllerElements(root: ParentNode, visit: (element: Element) => void): void {
 	if (root instanceof Element && root.hasAttribute(CONTROLLER_ATTRIBUTE)) {
 		visit(root);
 	}

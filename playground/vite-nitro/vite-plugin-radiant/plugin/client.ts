@@ -18,7 +18,12 @@ export async function loadRadiantClientModule(moduleKey) {
 }
 
 export function createDomRegistryModule(componentGlob: string, metadataQuery: string): string {
-	return `import { CONTROLLER_ATTRIBUTE } from '@ecopages/radiant';
+	return `import {
+	CONTROLLER_ATTRIBUTE,
+	CONTROLLER_REGISTRY_STATE_KEY,
+	parseControllerIdentifiers,
+	visitControllerElements,
+} from '@ecopages/radiant/controller-registry';
 
 const radiantDomModuleMetadata = import.meta.glob(${JSON.stringify(componentGlob)}, {
 	eager: true,
@@ -28,7 +33,6 @@ const radiantDomModuleMetadata = import.meta.glob(${JSON.stringify(componentGlob
 const radiantClientModuleLoaders = import.meta.glob(${JSON.stringify(componentGlob)});
 const radiantElementModuleKeys = new Map();
 const radiantControllerModuleKeys = new Map();
-const controllerRegistryStateKey = Symbol.for('@ecopages/radiant.controller-registry-state');
 
 for (const [moduleKey, metadata] of Object.entries(radiantDomModuleMetadata)) {
 	for (const tagName of metadata.customElementTagNames ?? []) {
@@ -88,7 +92,7 @@ function collectRadiantElementModuleKeys(root, moduleKeys) {
 }
 
 function collectRadiantControllerModuleKeys(root, moduleKeys) {
-	for (const element of visitControllerElements(root)) {
+	visitControllerElements(root, (element) => {
 		for (const identifier of parseControllerIdentifiers(element)) {
 			if (hasRegisteredRadiantController(identifier)) {
 				continue;
@@ -100,7 +104,7 @@ function collectRadiantControllerModuleKeys(root, moduleKeys) {
 				moduleKeys.add(moduleKey);
 			}
 		}
-	}
+	});
 }
 
 function* visitElements(root) {
@@ -113,31 +117,8 @@ function* visitElements(root) {
 	}
 }
 
-function* visitControllerElements(root) {
-	if (root instanceof Element && root.hasAttribute(CONTROLLER_ATTRIBUTE)) {
-		yield root;
-	}
-
-	for (const element of Array.from(root.querySelectorAll(\`[\${CONTROLLER_ATTRIBUTE}]\`))) {
-		yield element;
-	}
-}
-
-function parseControllerIdentifiers(element) {
-	const value = element.getAttribute(CONTROLLER_ATTRIBUTE);
-
-	if (!value) {
-		return [];
-	}
-
-	return value
-		.split(/\\s+/)
-		.map((identifier) => identifier.trim())
-		.filter((identifier) => identifier.length > 0);
-}
-
 function hasRegisteredRadiantController(identifier) {
-	const controllerRegistryState = globalThis[controllerRegistryStateKey];
+	const controllerRegistryState = globalThis[CONTROLLER_REGISTRY_STATE_KEY];
 	return Boolean(controllerRegistryState?.controllerRegistry?.has(identifier));
 }
 
