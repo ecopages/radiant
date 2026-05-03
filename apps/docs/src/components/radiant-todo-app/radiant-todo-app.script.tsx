@@ -1,9 +1,4 @@
-import {
-	RadiantElement,
-	customElement,
-	onEvent,
-	prop,
-} from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { type ContextProvider, consumeContext, contextSelector, provideContext } from '@ecopages/radiant/context';
 import { TodoLogger, todoContext, type Todo, type TodoContext } from './todo-context';
 

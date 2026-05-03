@@ -1,7 +1,4 @@
-import {
-	RadiantElement,
-	customElement,
-} from '@ecopages/radiant';
+import { RadiantElement, customElement } from '@ecopages/radiant';
 import { createResource } from '@ecopages/radiant/signals/host-resource';
 import { type ContextProvider, contextSelector, createContext, provideContext } from '@ecopages/radiant/context';
 import { state as signalState } from '@ecopages/signals';

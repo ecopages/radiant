@@ -1,10 +1,4 @@
-import {
-	RadiantElement,
-	customElement,
-	onEvent,
-	prop,
-	query,
-} from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, prop, query } from '@ecopages/radiant';
 
 import {
 	type ContextProvider,
