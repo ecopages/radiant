@@ -104,6 +104,10 @@
 			"types": "./dist/core/radiant-controller.d.ts",
 			"import": "./dist/core/radiant-controller.js"
 		},
+		"./core/reactive-jsx-value": {
+			"types": "./dist/core/reactive-jsx-value.d.ts",
+			"import": "./dist/core/reactive-jsx-value.js"
+		},
 		"./client/hydrator": {
 			"types": "./dist/client/hydrator.d.ts",
 			"import": "./dist/client/hydrator.js"
