@@ -300,6 +300,6 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/tools/escape-script-json`  | Safe JSON-for-script serialization helper                                                                        |
 | `@ecopages/radiant/tools/event-emitter`       | Low-level `EventEmitter` helper                                                                                  |
 
-Import component bases, decorators, and context helpers from the root entrypoint. Import server and low-level tool helpers from their explicit public subpaths.
+Prefer focused public subpaths when bundle size matters or when a module only needs one narrow runtime surface. The root entrypoint remains the ergonomic default for common app code, but registry, server, signal-resource, and low-level tool imports are better taken from their explicit public subpaths.
 
 For SSR-specific guidance and examples, see [src/server/README.md](src/server/README.md).

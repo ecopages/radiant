@@ -1,4 +1,4 @@
-import { RadiantController } from './core/radiant-controller';
+import type { RadiantController } from './core/radiant-controller';
 
 export const CONTROLLER_ATTRIBUTE = 'data-controller';
 

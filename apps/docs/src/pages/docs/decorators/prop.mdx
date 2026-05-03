@@ -33,7 +33,8 @@ export class UserCard extends RadiantElement {
 `RadiantController` can use the same decorator when the input should come from a real host property instead of markup.
 
 ```typescript
-import { RadiantController, controller, prop, startControllers } from '@ecopages/radiant';
+import { RadiantController, controller, prop } from '@ecopages/radiant';
+import { startControllers } from '@ecopages/radiant/controller-registry';
 
 type ResultsListProps = {
 	items: Array<{ id: string; label: string }>;
@@ -60,7 +61,7 @@ host.items = [
 startControllers(document);
 ```
 
-`startControllers(...)` is available from `@ecopages/radiant`.
+Prefer `@ecopages/radiant/controller-registry` for `startControllers(...)` when a module only needs controller activation.
 
 ## Options
 

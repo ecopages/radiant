@@ -34,10 +34,11 @@ Use it when the HTML already exists in a document, a server template, or CMS-aut
 
 Register a controller with `@controller(...)` and start the registry on a root.
 
-`startControllers(...)` is available from `@ecopages/radiant`. Use it when a DOM subtree should opt into controller discovery.
+`startControllers(...)` is available from `@ecopages/radiant/controller-registry`. Prefer that focused subpath when a module only needs registry setup.
 
 ```ts
-import { RadiantController, controller, startControllers } from '@ecopages/radiant';
+import { RadiantController, controller } from '@ecopages/radiant';
+import { startControllers } from '@ecopages/radiant/controller-registry';
 
 @controller('search')
 class SearchController extends RadiantController {
@@ -56,6 +57,8 @@ startControllers(document);
 Important: controller identifiers are global. By default, later registrations for an existing identifier are ignored and the first registered controller stays active.
 
 If a tooling or HMR environment needs live replacement semantics, use the explicit registry runtime APIs instead of changing default registration behavior. See [Controller Tooling & HMR](/docs/components/controller-tooling-hmr).
+
+If the same module also needs other common Radiant decorators or bases, importing everything from the root entrypoint is still valid. The focused registry subpath is mainly the better default for bundle-sensitive setup code.
 
 ## Render Authoring
 
@@ -191,7 +194,8 @@ export class NewsletterFormController extends RadiantController {
 Use `@prop(...)` on a controller when the surrounding app code should pass real JS values through the attached host element instead of serializing them into attributes.
 
 ```ts
-import { RadiantController, controller, prop, startControllers } from '@ecopages/radiant';
+import { RadiantController, controller, prop } from '@ecopages/radiant';
+import { startControllers } from '@ecopages/radiant/controller-registry';
 
 type ResultItem = {
 	id: string;
@@ -228,6 +232,8 @@ startControllers(document);
 ```
 
 `@prop(...)` on `RadiantController` uses a host property channel. It does not stringify objects into attributes, and it does not require JSON in markup.
+
+Prefer the focused registry subpath for `startControllers(...)` in setup modules like this one.
 
 ## DOM Access
 

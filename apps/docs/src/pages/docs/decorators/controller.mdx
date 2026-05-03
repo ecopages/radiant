@@ -18,7 +18,8 @@ If controller runtimes are already running, newly registered identifiers are rec
 ## Example
 
 ```ts
-import { RadiantController, controller, startControllers } from '@ecopages/radiant';
+import { RadiantController, controller } from '@ecopages/radiant';
+import { startControllers } from '@ecopages/radiant/controller-registry';
 
 @controller('search')
 class SearchController extends RadiantController {
@@ -46,7 +47,7 @@ When tooling does need mutation, use the explicit runtime APIs instead of changi
 
 ## Tooling Hooks
 
-The registry also exposes explicit mutation hooks. You can import them from `@ecopages/radiant`, or reach for the focused `@ecopages/radiant/controller-registry` subpath when you want registry-only imports:
+The registry also exposes explicit mutation hooks. Prefer the focused `@ecopages/radiant/controller-registry` subpath when a module only needs registry APIs:
 
 - `replaceController(...)`
 - `enableControllerReplacementForHmr()`
@@ -55,7 +56,7 @@ Use those APIs for HMR or code-generation workflows that intentionally replace a
 
 ## Related Runtime API
 
-The registry also exposes an explicit runtime surface through `@ecopages/radiant` and the focused `@ecopages/radiant/controller-registry` subpath:
+The registry also exposes an explicit runtime surface through the focused `@ecopages/radiant/controller-registry` subpath, and also re-exports it from `@ecopages/radiant` for convenience:
 
 - `registerController(...)`
 - `replaceController(...)`
@@ -65,7 +66,7 @@ The registry also exposes an explicit runtime surface through `@ecopages/radiant
 - `CONTROLLER_ATTRIBUTE`
 - `ControllerRegistryRuntime`
 
-Use the root entry when you are already importing controller APIs, or the focused subpath when you want direct registry control without the decorator.
+Prefer the focused subpath for setup modules and tooling hooks. Reach for the root entry only when that module is already importing broader controller APIs and the convenience matters more than the narrower import boundary.
 
 ## See Also
 
