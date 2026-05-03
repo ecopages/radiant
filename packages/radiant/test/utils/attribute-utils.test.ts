@@ -173,4 +173,13 @@ describe('getInitialValue with attribute', () => {
 		const parsed = getInitialValue(radiantElement, type, attributeKey, null);
 		expect(parsed).toEqual(expectedValue);
 	});
+
+	test('treats an empty boolean attribute as true', () => {
+		const radiantElement = document.createElement('radiant-counter') as any;
+		radiantElement.setAttribute('value', '');
+
+		const parsed = getInitialValue(radiantElement, Boolean, 'value', false);
+
+		expect(parsed).toBe(true);
+	});
 });

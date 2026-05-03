@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant",
-	"version": "0.2.0",
+	"version": "0.3.0-alpha.4",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ecopages/radiant.git"
@@ -17,29 +17,40 @@
 		"build:types": "tsc -p tsconfig.build.json && tsc-alias",
 		"clean": "rm -rf ./dist",
 		"watch:lib": "bun run ./build.ts --watch",
+		"size:check": "bun run ./check-size.ts",
+		"size:report": "bun run ./check-size.ts --report-only",
 		"test:standard": "vitest run",
 		"test:legacy": "vitest run -- --legacy",
 		"test:lib": "bun run test:standard && bun run test:legacy",
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
-	"dependencies": {
-		"@kitajs/html": "^4.1.0"
-	},
+	"dependencies": {},
 	"devDependencies": {
-		"@happy-dom/global-registrator": "^15.7.4",
-		"@kitajs/ts-html-plugin": "^4.0.1",
+		"@ecopages/jsx": "workspace:*",
+		"@ecopages/signals": "workspace:*",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/user-event": "^14.5.2",
-		"@vitest/coverage-istanbul": "^2.1.3",
+		"@vitest/browser": "^3.2.4",
+		"@vitest/coverage-istanbul": "^3.2.4",
 		"bun-types": "latest",
 		"tsc-alias": "1.8.10",
-		"esbuild": "^0.23.0",
-		"vitest": "^2.1.3"
+		"esbuild": "^0.25.0",
+		"playwright": "^1.52.0",
+		"vite": "^7.1.3",
+		"vitest": "^3.2.4"
+	},
+	"peerDependencies": {
+		"@ecopages/jsx": ">=0.3.0-alpha.0 <1.0.0",
+		"@ecopages/signals": ">=0.3.0-alpha.0 <1.0.0"
 	},
 	"files": [
-		"/dist/*"
+		"/dist/*",
+		"size-budget.json"
 	],
-	"sideEffects": false,
+	"sideEffects": [
+		"./dist/client/install-hydrator.js",
+		"./dist/server/install-light-dom-shim.js"
+	],
 	"exports": {
 		"./package.json": {
 			"import": "./package.json"
@@ -72,9 +83,49 @@
 			"types": "./dist/context/decorators/context-selector.d.ts",
 			"import": "./dist/context/decorators/context-selector.js"
 		},
+		"./context/on-context-update": {
+			"types": "./dist/context/decorators/on-context-update.d.ts",
+			"import": "./dist/context/decorators/on-context-update.js"
+		},
+		"./context/events": {
+			"types": "./dist/context/events.d.ts",
+			"import": "./dist/context/events.js"
+		},
 		"./core/radiant-element": {
 			"types": "./dist/core/radiant-element.d.ts",
 			"import": "./dist/core/radiant-element.js"
+		},
+		"./core/radiant-component": {
+			"types": "./dist/core/radiant-component.d.ts",
+			"import": "./dist/core/radiant-component.js"
+		},
+		"./client/hydrator": {
+			"types": "./dist/client/hydrator.d.ts",
+			"import": "./dist/client/hydrator.js"
+		},
+		"./client/install-hydrator": {
+			"types": "./dist/client/install-hydrator.d.ts",
+			"import": "./dist/client/install-hydrator.js"
+		},
+		"./signals/host-resource": {
+			"types": "./dist/signals/host-resource.d.ts",
+			"import": "./dist/signals/host-resource.js"
+		},
+		"./server/light-dom-shim": {
+			"types": "./dist/server/light-dom-shim.d.ts",
+			"import": "./dist/server/light-dom-shim.js"
+		},
+		"./server/install-light-dom-shim": {
+			"types": "./dist/server/install-light-dom-shim.d.ts",
+			"import": "./dist/server/install-light-dom-shim.js"
+		},
+		"./server/render-component": {
+			"types": "./dist/server/render-component.d.ts",
+			"import": "./dist/server/render-component.js"
+		},
+		"./server/project-root": {
+			"types": "./dist/server/project-root.d.ts",
+			"import": "./dist/server/project-root.js"
 		},
 		"./decorators/bound": {
 			"types": "./dist/decorators/bound.d.ts",
@@ -88,6 +139,26 @@
 			"types": "./dist/decorators/debounce.d.ts",
 			"import": "./dist/decorators/debounce.js"
 		},
+		"./helpers/debounce": {
+			"types": "./dist/helpers/debounce.d.ts",
+			"import": "./dist/helpers/debounce.js"
+		},
+		"./helpers/create-query": {
+			"types": "./dist/helpers/create-query.d.ts",
+			"import": "./dist/helpers/create-query.js"
+		},
+		"./helpers/create-query-slot": {
+			"types": "./dist/helpers/create-query-slot.d.ts",
+			"import": "./dist/helpers/create-query-slot.js"
+		},
+		"./helpers/create-event": {
+			"types": "./dist/helpers/create-event.d.ts",
+			"import": "./dist/helpers/create-event.js"
+		},
+		"./helpers/create-event-listener": {
+			"types": "./dist/helpers/create-event-listener.d.ts",
+			"import": "./dist/helpers/create-event-listener.js"
+		},
 		"./decorators/event": {
 			"types": "./dist/decorators/event.d.ts",
 			"import": "./dist/decorators/event.js"
@@ -100,25 +171,41 @@
 			"types": "./dist/decorators/on-updated.d.ts",
 			"import": "./dist/decorators/on-updated.js"
 		},
+		"./decorators/prop": {
+			"types": "./dist/decorators/prop.d.ts",
+			"import": "./dist/decorators/prop.js"
+		},
 		"./decorators/query": {
 			"types": "./dist/decorators/query.d.ts",
 			"import": "./dist/decorators/query.js"
 		},
-		"./decorators/reactive-field": {
-			"types": "./dist/decorators/reactive-field.d.ts",
-			"import": "./dist/decorators/reactive-field.js"
+		"./decorators/query-slot": {
+			"types": "./dist/decorators/query-slot.d.ts",
+			"import": "./dist/decorators/query-slot.js"
 		},
-		"./decorators/reactive-prop": {
-			"types": "./dist/decorators/reactive-prop.d.ts",
-			"import": "./dist/decorators/reactive-prop.js"
+		"./decorators/resource": {
+			"types": "./dist/decorators/resource.d.ts",
+			"import": "./dist/decorators/resource.js"
 		},
-		"./mixins/with-kita": {
-			"types": "./dist/mixins/with-kita.d.ts",
-			"import": "./dist/mixins/with-kita.js"
+		"./decorators/signal": {
+			"types": "./dist/decorators/signal.d.ts",
+			"import": "./dist/decorators/signal.js"
+		},
+		"./decorators/state": {
+			"types": "./dist/decorators/state.d.ts",
+			"import": "./dist/decorators/state.js"
 		},
 		"./tools/stringify-typed": {
 			"types": "./dist/tools/stringify-typed.d.ts",
 			"import": "./dist/tools/stringify-typed.js"
+		},
+		"./tools/render-jsx-template": {
+			"types": "./dist/tools/render-jsx-template.d.ts",
+			"import": "./dist/tools/render-jsx-template.js"
+		},
+		"./tools/escape-script-json": {
+			"types": "./dist/tools/escape-script-json.d.ts",
+			"import": "./dist/tools/escape-script-json.js"
 		},
 		"./tools/event-emitter": {
 			"types": "./dist/tools/event-emitter.d.ts",

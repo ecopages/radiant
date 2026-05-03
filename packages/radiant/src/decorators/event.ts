@@ -1,11 +1,8 @@
 import { type EventEmitterConfig } from '../tools/event-emitter';
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../types';
+import type { StandardOrLegacyFieldDecoratorArgs } from '../types';
 import { event as legacyEvent } from './legacy/event';
 import { event as standardEvent } from './standard/event';
+import { fieldDecoratorBridge } from './bridge';
 
 /**
  * Decorator that attaches an EventEmitter to the class field property.
@@ -18,15 +15,6 @@ export function event(eventConfig: EventEmitterConfig) {
 		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
 		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardEvent(eventConfig)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardFieldDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyEvent(eventConfig)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-		);
+		return fieldDecoratorBridge(standardEvent(eventConfig), legacyEvent(eventConfig), protoOrTarget, nameOrContext);
 	};
 }

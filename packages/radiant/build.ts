@@ -1,6 +1,9 @@
 import { watch } from 'node:fs';
 import path from 'node:path';
 import { $ } from 'bun';
+
+const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
+
 const glob = new Bun.Glob('src/**/*.ts');
 const files = await Array.fromAsync(glob.scan({ cwd: '.' }));
 
@@ -14,6 +17,7 @@ const build = await Bun.build({
 	minify: !watchMode,
 	format: 'esm',
 	splitting: !watchMode,
+	external: externalPackages,
 	sourcemap: 'external',
 });
 

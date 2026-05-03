@@ -1,12 +1,47 @@
 import type { RadiantElement, ReactivePropertyOptions } from '../../core/radiant-element.js';
+import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { isValueOfType } from '../../utils/attribute-utils';
 
-export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions<P>) {
+export function reactiveProp<P = unknown>({
+	type,
+	attribute,
+	reflect,
+	defaultValue,
+	bind,
+}: ReactivePropertyOptions<P>) {
+	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
+		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
+	}
 	return function <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
 		const propertyName = String(context.name);
 		const attributeKey = attribute ?? propertyName;
+		const initializerValueKey = Symbol(`@ecopages/radiant/reactive-prop:${propertyName}:initializer`);
 
 		context.addInitializer(function (this: T) {
-			this.createReactiveProp(propertyName, { type, reflect, attribute: attributeKey, defaultValue });
+			const initializerValue = (this as T & Record<PropertyKey, V | undefined>)[initializerValueKey];
+			const resolvedDefaultValue = (defaultValue === undefined ? initializerValue : defaultValue) as
+				| P
+				| undefined;
+
+			registerReactivePropDefinition(this, propertyName, {
+				type,
+				reflect,
+				attribute: attributeKey,
+				defaultValue,
+				bind,
+			});
+			this.createReactiveProp(propertyName, {
+				type,
+				reflect,
+				attribute: attributeKey,
+				defaultValue: resolvedDefaultValue,
+				bind,
+			});
 		});
+
+		return function (this: T, value: V) {
+			(this as Record<PropertyKey, V | undefined>)[initializerValueKey] = value;
+			return value;
+		};
 	};
 }

@@ -1,15 +1,13 @@
 {
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
-		"baseUrl": ".",
-		"rootDir": ".",
 		"esModuleInterop": true,
 		"experimentalDecorators": false,
 		"forceConsistentCasingInFileNames": true,
 		"jsx": "react-jsx",
-		"jsxImportSource": "@kitajs/html",
+		"jsxImportSource": "@ecopages/jsx",
 		"module": "ESNext",
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"noImplicitOverride": true,
 		"strictPropertyInitialization": false,
 		"outDir": "./dist",
@@ -17,18 +15,11 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ESNext",
-		"types": ["bun-types"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true,
 		"paths": {
-			"@/*": ["./src/*"],
-			"dist/*": ["./dist/*"]
-		},
-		"plugins": [
-			{
-				"name": "@kitajs/ts-html-plugin"
-			}
-		]
+			"@/*": ["./src/*"]
+		}
 	},
 	"include": ["**/*"]
 }

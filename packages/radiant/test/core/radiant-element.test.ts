@@ -15,12 +15,72 @@ describe('RadiantElement', () => {
 		document.body.innerHTML = '';
 	});
 
-	test('it renders template correctly', () => {
+	test('renderTemplate replace replaces inner content', () => {
 		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
 		document.body.appendChild(customElement);
-		const template = '<p>Hello, template!</p>';
-		customElement.renderTemplate({ target: customElement, template, insert: 'replace' });
-		expect(customElement.innerHTML).toEqual(template);
+		customElement.innerHTML = '<span>old</span>';
+		customElement.renderTemplate({ target: customElement, template: '<p>new</p>', insert: 'replace' });
+		expect(customElement.innerHTML).toEqual('<p>new</p>');
+	});
+
+	test('renderTemplate beforeend appends inside target', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		customElement.innerHTML = '<span>first</span>';
+		customElement.renderTemplate({ target: customElement, template: '<span>second</span>', insert: 'beforeend' });
+		expect(customElement.innerHTML).toEqual('<span>first</span><span>second</span>');
+	});
+
+	test('renderTemplate afterbegin prepends inside target', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		customElement.innerHTML = '<span>first</span>';
+		customElement.renderTemplate({ target: customElement, template: '<span>zero</span>', insert: 'afterbegin' });
+		expect(customElement.innerHTML).toEqual('<span>zero</span><span>first</span>');
+	});
+
+	test('renderTemplate beforebegin inserts before the target', () => {
+		const wrapper = document.createElement('div');
+		const target = document.createElement('div');
+		target.id = 'target';
+		wrapper.appendChild(target);
+		document.body.appendChild(wrapper);
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		customElement.renderTemplate({ target, template: '<span>before</span>', insert: 'beforebegin' });
+		expect(wrapper.innerHTML).toEqual('<span>before</span><div id="target"></div>');
+	});
+
+	test('renderTemplate afterend inserts after the target', () => {
+		const wrapper = document.createElement('div');
+		const target = document.createElement('div');
+		target.id = 'target';
+		wrapper.appendChild(target);
+		document.body.appendChild(wrapper);
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		customElement.renderTemplate({ target, template: '<span>after</span>', insert: 'afterend' });
+		expect(wrapper.innerHTML).toEqual('<div id="target"></div><span>after</span>');
+	});
+
+	test('renderTemplate without sanitize passes template through unchanged', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const template = '<p>raw</p>';
+		customElement.renderTemplate({ target: customElement, template });
+		expect(customElement.innerHTML).toEqual('<p>raw</p>');
+	});
+
+	test('renderTemplate with sanitize transforms template before insertion', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const sanitize = (html: string) => html.replace(/<script[^>]*>.*?<\/script>/gi, '');
+		customElement.renderTemplate({
+			target: customElement,
+			template: '<p>safe</p><script>alert(1)</script>',
+			sanitize,
+		});
+		expect(customElement.innerHTML).toEqual('<p>safe</p>');
 	});
 
 	test('it can subscribe to events', () => {
@@ -121,6 +181,20 @@ describe('RadiantElement', () => {
 		customElement.appendChild(span);
 		const ref = customElement.getRef('my-ref');
 		expect(ref).toEqual(span);
+	});
+
+	test('it returns null when a single ref is not found', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const ref = customElement.getRef('nonexistent');
+		expect(ref).toBeNull();
+	});
+
+	test('it returns an empty array when all refs are not found', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		document.body.appendChild(customElement);
+		const refs = customElement.getRef('nonexistent', true);
+		expect(refs).toEqual([]);
 	});
 
 	test('it can get all references to elements', () => {

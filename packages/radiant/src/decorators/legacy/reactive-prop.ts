@@ -1,11 +1,14 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { type AttributeTypeConstant, isValueOfType } from '../../utils/attribute-utils';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 type ReactivePropertyOptions<T> = {
 	type: AttributeTypeConstant;
 	reflect?: boolean;
 	attribute?: string;
 	defaultValue?: T;
+	bind?: boolean | string;
 };
 
 /**
@@ -17,24 +20,53 @@ type ReactivePropertyOptions<T> = {
  * @param options.attribute The name of the attribute.
  * @param options.defaultValue The default value of the property.
  */
-export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions<T>) {
+export function reactiveProp<T = unknown>({
+	type,
+	attribute,
+	reflect,
+	defaultValue,
+	bind,
+}: ReactivePropertyOptions<T>) {
 	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
 		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
 	}
 
 	return (target: RadiantElement, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;
+		registerReactivePropDefinition(target, propertyName, {
+			type,
+			reflect,
+			attribute: attributeKey,
+			defaultValue,
+			bind,
+		});
 
-		const originalConnectedCallback = target.connectedCallback;
+		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
 
-		target.connectedCallback = function (this: RadiantElement) {
-			originalConnectedCallback.call(this);
-			this.createReactiveProp(propertyName, {
-				type,
-				reflect,
-				attribute: attributeKey,
-				defaultValue,
+		Object.defineProperty(target, propertyName, {
+			get(this: RadiantElement & Record<PropertyKey, unknown>) {
+				return this[ssrStoreKey] ?? defaultValue;
+			},
+			set(this: RadiantElement & Record<PropertyKey, unknown>, value: T) {
+				this[ssrStoreKey] = value;
+			},
+			configurable: true,
+			enumerable: true,
+		});
+
+		registerLegacyInstanceInitializer(target, (element) => {
+			element.registerConnectedCallback(() => {
+				const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+				const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
+
+				element.createReactiveProp(propertyName, {
+					type,
+					reflect,
+					attribute: attributeKey,
+					defaultValue: resolvedDefaultValue,
+					bind,
+				});
 			});
-		};
+		});
 	};
 }

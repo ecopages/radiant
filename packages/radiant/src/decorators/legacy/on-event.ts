@@ -1,20 +1,7 @@
-import type { RadiantElement, RadiantElementEventListener } from '../../core/radiant-element';
-
-type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
-	(
-		| {
-				selector: string;
-		  }
-		| {
-				ref: string;
-		  }
-		| {
-				window: boolean;
-		  }
-		| {
-				document: boolean;
-		  }
-	);
+import type { RadiantElement } from '../../core/radiant-element';
+import { createEventListener } from '../../helpers/create-event-listener';
+import type { OnEventConfig } from '../on-event';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
  * A decorator to subscribe to an event on the target element.
@@ -32,51 +19,11 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
  */
 export function onEvent(eventConfig: OnEventConfig) {
 	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
-		const originalConnectedCallback = proto.connectedCallback;
-		const originalDisconnectedCallback = proto.disconnectedCallback;
-
-		if ('window' in eventConfig) {
-			proto.connectedCallback = function (this: RadiantElement) {
-				window.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalConnectedCallback.call(this);
-			};
-
-			proto.disconnectedCallback = function (this: RadiantElement) {
-				window.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalDisconnectedCallback.call(this);
-			};
-
-			return descriptor;
-		}
-
-		if ('document' in eventConfig) {
-			proto.connectedCallback = function (this: RadiantElement) {
-				document.addEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalConnectedCallback.call(this);
-			};
-
-			proto.disconnectedCallback = function (this: RadiantElement) {
-				document.removeEventListener(eventConfig.type, descriptor.value.bind(this), eventConfig.options);
-				originalDisconnectedCallback.call(this);
-			};
-
-			return descriptor;
-		}
-
-		const selector = 'selector' in eventConfig ? eventConfig.selector : `[data-ref="${eventConfig.ref}"]`;
-
 		const originalMethod = descriptor.value;
 
-		proto.connectedCallback = function (this: RadiantElement) {
-			this.subscribeEvent({
-				selector: selector,
-				type: eventConfig.type,
-				listener: originalMethod.bind(this),
-				options: eventConfig?.options ?? undefined,
-			});
-
-			originalConnectedCallback.call(this);
-		};
+		registerLegacyInstanceInitializer(proto, (element) => {
+			createEventListener(element, eventConfig, originalMethod.bind(element));
+		});
 
 		return descriptor;
 	};

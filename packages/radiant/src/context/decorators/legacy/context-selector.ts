@@ -1,32 +1,48 @@
 import type { RadiantElement } from '../../../core/radiant-element';
-import { ContextSubscriptionRequestEvent } from '../../events';
-import type { Context, ContextType, UnknownContext } from '../../types';
-import type { SubscribeToContextOptions } from '../context-selector';
+import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
+import { bootstrapSsrContextSelection, connectContextSelection } from '../../context-consumer-bootstrap';
+import type { Context, ContextType } from '../../types';
+import type { OnContextUpdateOptions } from '../on-context-update';
+import { createContextSelectionDelivery } from '../context-selection-delivery';
 
-type ArgsType<T extends UnknownContext> = SubscribeToContextOptions<T>['select'] extends (...args: any[]) => infer R
-	? R
-	: ContextType<T>;
-
-export function contextSelector<T extends Context<unknown, unknown>>({
+export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>({
 	context,
 	select,
 	subscribe = true,
-}: SubscribeToContextOptions<T>) {
+	requestUpdate = true,
+}: OnContextUpdateOptions<T, Selected>) {
 	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
 		const originalMethod = descriptor.value;
-		const originalConnectedCallback = proto.connectedCallback;
 
-		proto.connectedCallback = function (this: RadiantElement) {
-			originalConnectedCallback.call(this);
-			this.dispatchEvent(
-				new ContextSubscriptionRequestEvent(context, originalMethod.bind(this), select, subscribe),
+		registerLegacyInstanceInitializer(proto, (element) => {
+			const applySelectedContext = createContextSelectionDelivery(
+				element,
+				(value) => {
+					originalMethod.call(element, value);
+				},
+				requestUpdate,
 			);
-		};
 
-		descriptor.value = function (...args: ArgsType<T>[]) {
-			const result = originalMethod.apply(this, args);
-			return result;
-		};
+			bootstrapSsrContextSelection(element, context, applySelectedContext, select);
+
+			element.registerConnectedCallback(() => {
+				if (
+					connectContextSelection(element, context, applySelectedContext, {
+						select,
+						subscribe,
+					})
+				) {
+					return;
+				}
+
+				queueMicrotask(() => {
+					connectContextSelection(element, context, applySelectedContext, {
+						select,
+						subscribe,
+					});
+				});
+			});
+		});
 
 		return descriptor;
 	};

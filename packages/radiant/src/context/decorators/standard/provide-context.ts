@@ -3,11 +3,24 @@ import { ContextProvider } from '../../context-provider';
 import type { UnknownContext } from '../../types';
 import type { ProvideContextOptions } from '../provide-context';
 
-export function provideContext<T extends UnknownContext>({ context, initialValue, hydrate }: ProvideContextOptions<T>) {
+export function provideContext<T extends UnknownContext>({
+	context,
+	initialValue,
+	hydrate,
+	serialize,
+}: ProvideContextOptions<T>) {
 	return <C extends RadiantElement, V>(_: undefined, targetContext: ClassFieldDecoratorContext<C, V>) => {
 		const contextName = String(targetContext.name);
 		targetContext.addInitializer(function (this: C) {
-			(this as any)[contextName] = new ContextProvider<T>(this, { context, initialValue, hydrate });
+			const provider = new ContextProvider<T>(this, {
+				context,
+				hydrationKey: contextName,
+				initialValue,
+				hydrate,
+				serialize,
+			});
+			(this as any)[contextName] = provider;
+			this.registerContextProvider(contextName, provider);
 			this.connectedContextCallback(context);
 		});
 	};
