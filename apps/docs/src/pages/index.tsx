@@ -104,19 +104,31 @@ const HomePage: EcoComponent = () => {
 				<div class="home-hero">
 					<div class="home-hero__text">
 						<p class="home-header__subtitle">Radiant</p>
-						<h1 class="home-header__title">Build typed elements with JSX and Signals.</h1>
+						<h1 class="home-header__title">Build reactive hosts with JSX and Signals.</h1>
 						<p class="home-header__description">
-							Radiant gives you a typed component base class, a small decorator surface for props and
-							events, optional JSX for rendering, and a signals package for reactivity. Use what you need.
-							The browser APIs stay in control.
+							Radiant gives you one reactive host model for both custom elements and DOM-attached
+							controllers. Use RadiantElement when the host owns its contract, or RadiantController when
+							the HTML should stay authored outside the class. JSX and Signals stay optional companions.
 						</p>
 
 						<CodeTabs
 							label="Package managers"
 							tabs={[
-								{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
-								{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
-								{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
+								{
+									id: 'bun',
+									label: 'bun',
+									code: 'bun add @ecopages/radiant @ecopages/jsx @ecopages/signals',
+								},
+								{
+									id: 'pnpm',
+									label: 'pnpm',
+									code: 'pnpm add @ecopages/radiant @ecopages/jsx @ecopages/signals',
+								},
+								{
+									id: 'npm',
+									label: 'npm',
+									code: 'npm install @ecopages/radiant @ecopages/jsx @ecopages/signals',
+								},
 							]}
 							copyLabel="Copy install command"
 							defaultSelectedKey="bun"
@@ -175,25 +187,25 @@ const HomePage: EcoComponent = () => {
 							href="/docs/getting-started/introduction"
 							label="Get Started"
 							title="Learn the model"
-							description="Installation options and the mental model behind the component-first API."
+							description="See how RadiantElement and RadiantController share one reactive host surface, and where JSX and Signals fit."
 						/>
 						<HomeCard
 							href="/docs/components/radiant-element"
 							label="Components"
-							title="Build with RadiantElement"
-							description="Use RadiantElement for custom-element hosts. Reach for RadiantController when the HTML should stay authored outside the element class."
+							title="Choose the right host"
+							description="Use RadiantElement for custom-element hosts. Reach for RadiantController when existing markup should stay authored outside the host class."
 						/>
 						<HomeCard
 							href="/docs/decorators/prop"
 							label="Decorators"
 							title="Add intent without boilerplate"
-							description="Typed decorators for props, state, DOM queries, events, and lifecycle, each with a single responsibility."
+							description="Typed decorators for public inputs, local state, DOM queries, events, and lifecycle across both host types."
 						/>
 						<HomeCard
 							href="/docs/packages/signals-overview"
 							label="Packages"
 							title="Bring in JSX and Signals"
-							description="JSX rendering and renderer-agnostic signals. Both are optional add-ons to the core component model."
+							description="JSX rendering and renderer-agnostic signals sit alongside the core host model and are installed with Radiant today."
 						/>
 					</div>
 				</section>
@@ -201,30 +213,33 @@ const HomePage: EcoComponent = () => {
 				<section class="home-path">
 					<p class="home-card__label">Suggested Path</p>
 					<ol class="home-path__list">
-						<li>Read the overview and install the package set you need.</li>
 						<li>
-							Start with RadiantElement, then learn when a controller is a better fit than a custom
-							element host.
+							Read the overview to learn the shared reactive host model and install the current package
+							set.
 						</li>
-						<li>Add JSX and Signals once the base component model is clear.</li>
-						<li>Use the examples to see the recommended architecture assembled end to end.</li>
+						<li>
+							Start with RadiantElement when you own the custom-element contract, then learn when
+							RadiantController is a better fit for authored DOM.
+						</li>
+						<li>Add JSX and Signals once the host model is clear.</li>
+						<li>Use the examples to see element-owned and controller-owned flows assembled end to end.</li>
 					</ol>
 
 					<div class="mt-8 grid gap-3">
 						<HomePathCard
 							href="/docs/getting-started/installation"
 							title="Install the ecosystem"
-							description="Pick Radiant alone or pair it with JSX and Signals."
+							description="Install Radiant with its current JSX and Signals companions, then choose the host style you need."
 						/>
 						<HomePathCard
 							href="/docs/context/context"
 							title="Share state with context"
-							description="Move provider, consumer, and selector patterns into one place."
+							description="Use the same context model across custom-element hosts and DOM-attached controllers."
 						/>
 						<HomePathCard
 							href="/docs/examples/todo-app"
 							title="Study a complete example"
-							description="The todo app shows a render-owning RadiantElement host, child elements, context, and JSX together."
+							description="The todo app shows a render-owning RadiantElement host, child elements, context, and JSX working together."
 						/>
 					</div>
 				</section>
@@ -294,5 +309,3 @@ HomePage.config = {
 };
 
 export default HomePage;
-
-import { RadiantElement, customElement, prop } from '@ecopages/radiant';

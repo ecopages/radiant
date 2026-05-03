@@ -1,11 +1,11 @@
 ---
-name: radiant-element-author
-description: "Author, refactor, review, or explain Radiant custom elements and controllers built with @ecopages/radiant. Use this whenever the user asks for a RadiantElement or RadiantController, custom elements with @prop/@state/@signal, JSX-host rendering, slot projection, SSR hydration, internal bindings, or guidance about when to use plain reactive reads versus this.$ / this.bindings / this.bind(...). Also use it when updating docs, examples, or playground code so the output follows Radiant's current intent and best practices rather than generic web-component or React habits."
+name: radiant-reactive-host-author
+description: "Author, refactor, review, or explain Radiant reactive hosts built with @ecopages/radiant. Use this whenever the user asks for a RadiantElement or RadiantController, custom elements with @prop/@state/@signal, controller-attached authored DOM, JSX-host rendering, slot projection, SSR hydration, internal bindings, or guidance about when to use plain reactive reads versus this.$ / this.bindings / this.bind(...). Also use it when updating docs, examples, or playground code so the output follows Radiant's current shared reactive host model rather than generic web-component or React habits."
 ---
 
-# Radiant Element Author
+# Radiant Reactive Host Author
 
-Author and review Radiant components according to the framework's intended rendering model.
+Author and review Radiant hosts according to the framework's intended rendering model.
 
 Start with the canonical references:
 
@@ -14,10 +14,17 @@ Start with the canonical references:
 
 Use `llms.txt` first when you need a compact machine-oriented map of the framework, then follow through to the full docs for API details and examples.
 
+Import-path rule:
+
+- import `RadiantElement`, `RadiantController`, `@customElement(...)`, `@controller(...)`, and the common host decorators from `@ecopages/radiant`
+- import context APIs such as `createContext(...)`, `@provideContext(...)`, `@consumeContext(...)`, `@contextSelector(...)`, and `@onContextUpdate(...)` from `@ecopages/radiant/context`
+- import SSR helpers from explicit `@ecopages/radiant/server/*` entrypoints
+
 Base assumptions:
 
 - Use `RadiantElement` when the host owns a custom-element view, whether the implementation is JSX-first or more imperative.
 - Use `RadiantController` when behavior should attach to authored DOM instead of a custom-element host.
+- `RadiantElement` and `RadiantController` share the same reactive host contract.
 - Plain reactive reads and JSX bindings are both valid and should be chosen intentionally.
 - Bindings are subscribable JSX values used for fine-grained patching.
 
@@ -27,9 +34,10 @@ Use this skill whenever the task involves any of the following:
 
 - creating or editing a `RadiantElement` or `RadiantController`
 - choosing between `@prop(...)`, `@state`, or `@signal`
+- deciding whether a host needs `@customElement(...)` or `@controller(...)`
 - deciding whether code should use plain reads like `this.count` or bindings like `this.$.count`
 - defining public props versus internal bindings types
-- wiring SSR, hydration, host rendering, or slot projection for Radiant custom elements
+- wiring SSR, hydration, host rendering, or slot projection for Radiant hosts
 - reviewing docs or examples to ensure they teach the intended Radiant model
 - translating React-like instincts into the Radiant model without accidentally importing React assumptions
 
@@ -44,7 +52,7 @@ Treat these as different tools, not interchangeable syntax:
 
 ### Plain Reads
 
-Plain reads such as `this.count` or `this.isExpanded` are tracked when used during `render()` on a `RadiantElement`.
+Plain reads such as `this.count` or `this.isExpanded` are tracked when used during `render()` on a render-owning host.
 
 They are correct and reactive by default, but they participate in host rerenders.
 
@@ -125,6 +133,8 @@ Default to `RadiantElement` when the host should own a custom-element view.
 
 Choose `RadiantController` when behavior should attach to existing DOM without defining a custom element.
 
+Both hosts share the same decorator-driven reactive model. The main choice is ownership of the outer host contract, not a different state model.
+
 Choose a simpler `RadiantElement` shape when the host is mainly:
 
 - imperative
@@ -138,8 +148,12 @@ Choose decorators and context APIs by purpose.
 ### Host Definition
 
 - `@customElement(...)`: register the custom element class
+- `@controller(...)`: register a controller identifier for DOM-attached hosts
 
-Use it once per host class.
+Selection rule:
+
+- use `@customElement(...)` once per custom-element host class
+- use `@controller(...)` once per controller class when the host should attach through `data-controller="..."` registration metadata
 
 ### Reactive Data
 
@@ -236,6 +250,8 @@ Selection rule:
 
 Use context to share typed state or services across component boundaries without threading props through every intermediate host.
 
+Import all context APIs from `@ecopages/radiant/context`, not from the root `@ecopages/radiant` entrypoint.
+
 Core pieces:
 
 - `createContext(...)`: define the typed context token
@@ -261,7 +277,7 @@ Use `@consumeContext(...)` when the host needs the provider object itself, for e
 
 `@consumeContext(...)` does not make later `provider.getContext()` reads reactive by itself. Treat those reads as snapshots for the current render or callback.
 
-Use `@contextSelector(...)` on a field when the host should render from the current context value. The field holds the selected value and `RadiantElement` rerenders automatically when it changes. `render()` reads `this.myField` directly — no empty method body, no `this.update()` call.
+Use `@contextSelector(...)` on a field when the host should render from the current context value. The field holds the selected value and render-owning hosts rerender automatically when it changes. `render()` reads `this.myField` directly — no empty method body, no `this.update()` call.
 
 Use `@onContextUpdate(...)` on a method when a context change should trigger imperative work: DOM mutations, attribute writes, logging, or side-effect orchestration.
 
@@ -364,7 +380,7 @@ Do not add noisy inline comments.
 
 ### 8. Keep Docs Examples Minimal
 
-For docs and playground examples, use the smallest number of custom elements that still demonstrates the target API clearly.
+For docs and playground examples, use the smallest number of hosts that still demonstrates the target API clearly.
 
 - if the point is host-owned JSX, a single `RadiantElement` is often enough
 - add a second custom element only when provider or consumer boundaries, leaf ownership, or lower-level composition is part of the lesson
@@ -386,7 +402,7 @@ When reviewing a Radiant component, check these questions:
 
 When producing code, aim for:
 
-- one custom element per file
+- one host class per file
 - exported component classes
 - explicit public props types when JSX consumers need them
 - internal bindings types only when the code uses binding APIs
