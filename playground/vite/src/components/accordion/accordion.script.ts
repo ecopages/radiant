@@ -1,9 +1,9 @@
-import { reactiveField } from '@ecopages/radiant';
+import { state } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { query } from '@ecopages/radiant/decorators/query';
-import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
+import { prop } from '@ecopages/radiant/decorators/prop';
 
 export type RadiantAccordionProps = {
 	multiple?: boolean;
@@ -18,9 +18,9 @@ type DetailsAnimation = {
 
 @customElement('radiant-accordion')
 export class RadiantAccordion extends RadiantElement {
-	@reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) multiple!: boolean;
-	@reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) shouldAnimate!: boolean;
-	@reactiveField currentIndex!: number;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) multiple!: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) shouldAnimate!: boolean;
+	@state currentIndex!: number;
 	@query({ selector: 'details', all: true }) detailsTargets!: HTMLDetailsElement[];
 	@query({ selector: 'summary', all: true }) toggleTargets!: HTMLElement[];
 	@query({ ref: 'panel', all: true }) panelTargets!: HTMLElement[];
@@ -162,14 +162,6 @@ export class RadiantAccordion extends RadiantElement {
 	disconnectedCallback(): void {
 		for (const animation of this.animations) {
 			animation.reference?.cancel();
-		}
-	}
-}
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-accordion': HtmlTag & RadiantAccordionProps;
 		}
 	}
 }

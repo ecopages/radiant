@@ -1,3 +1,4 @@
+import type { JsxRenderable } from '@ecopages/jsx';
 import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 import type { TodoContext } from './radiant-todo-app.script';
 import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
@@ -8,7 +9,7 @@ type RadiantTodoAppTemplateProps = {
 	todos: TodoContext['todos'];
 };
 
-const getData = async (): Promise<RadiantTodoAppTemplateProps> => {
+const getData = (): RadiantTodoAppTemplateProps => {
 	const now = Date.now();
 	return {
 		todos: [
@@ -27,14 +28,14 @@ const TodoPanel = ({
 }: {
 	title: string;
 	count: number;
-	children: JSX.Element;
+	children: JsxRenderable;
 	ref: string;
 }) => {
 	return (
 		<article class="todo__panel">
-			<h2 safe>{title}</h2>
+			<h2>{title}</h2>
 			<p class="todo__count">
-				{title as 'safe'}: <span data-ref={`count-${ref}`}>{count}</span>
+				{title}: <span data-ref={`count-${ref}`}>{count}</span>
 			</p>
 			<div class="todo__list" data-ref={`list-${ref}`}>
 				{children}
@@ -55,13 +56,13 @@ const TodoForm = () => {
 	);
 };
 
-export const RadiantTodoApp = async () => {
-	const data = await getData();
+export const RadiantTodoApp = () => {
+	const data = getData();
 	const incompleteTodos = data.todos.filter((todo) => !todo.complete);
 	const completedTodos = data.todos.filter((todo) => todo.complete);
 	return (
 		<>
-			<radiant-todo-app class="todo">
+			<radiant-todo-app class="todo" initialTodos={stringifyTyped<TodoContext['todos'], string>(data.todos)}>
 				<section class="todo__board">
 					<TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
 						{incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}
@@ -71,9 +72,6 @@ export const RadiantTodoApp = async () => {
 					</TodoPanel>
 				</section>
 				<TodoForm />
-				<script type="json" data-hydration>
-					{stringifyTyped<Partial<TodoContext>, string>({ todos: data.todos })}
-				</script>
 			</radiant-todo-app>
 		</>
 	);
