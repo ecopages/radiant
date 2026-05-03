@@ -1,7 +1,7 @@
 type SsrPreparationCallback = () => void;
 
-const SSR_PREPARATION_CALLBACKS = Symbol();
-export const SSR_PREPARATION_RUNNING = Symbol();
+const SSR_PREPARATION_CALLBACKS = Symbol.for('@ecopages/radiant.ssr-preparation-callbacks');
+export const SSR_PREPARATION_RUNNING = Symbol.for('@ecopages/radiant.ssr-preparation-running');
 
 /**
  * Registers instance-local SSR preparation work that should run immediately
