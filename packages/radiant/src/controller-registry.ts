@@ -1,4 +1,5 @@
 import type { RadiantController } from './core/radiant-controller';
+import { setControllerIdentifier } from './core/controller-metadata';
 
 export const CONTROLLER_ATTRIBUTE = 'data-controller';
 
@@ -246,6 +247,7 @@ export function registerController<
 		return existingController as TConstructor;
 	}
 
+	setControllerIdentifier(controller as unknown as CustomElementConstructor, identifier);
 	controllerRegistry.set(identifier, controller);
 
 	for (const runtime of Array.from(activeRuntimes)) {
@@ -253,6 +255,10 @@ export function registerController<
 	}
 
 	return controller;
+}
+
+export function hasRegisteredController(identifier: string): boolean {
+	return controllerRegistry.has(identifier);
 }
 
 export function replaceController<
@@ -265,6 +271,7 @@ export function replaceController<
 		return controller;
 	}
 
+	setControllerIdentifier(controller as unknown as CustomElementConstructor, identifier);
 	controllerRegistry.set(identifier, controller);
 
 	for (const runtime of Array.from(activeRuntimes)) {

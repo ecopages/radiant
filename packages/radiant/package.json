@@ -128,6 +128,10 @@
 			"types": "./dist/server/render-component.d.ts",
 			"import": "./dist/server/render-component.js"
 		},
+		"./server/render-controller": {
+			"types": "./dist/server/render-controller.d.ts",
+			"import": "./dist/server/render-controller.js"
+		},
 		"./server/project-root": {
 			"types": "./dist/server/project-root.d.ts",
 			"import": "./dist/server/project-root.js"

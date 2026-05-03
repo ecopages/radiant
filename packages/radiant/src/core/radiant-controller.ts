@@ -78,12 +78,30 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	}
 
 	/**
+	 * Connects the controller for server-side rendering without running the
+	 * browser render/update lifecycle.
+	 */
+	public connectForSsrRender(): void {
+		this.connected = true;
+		this.reactiveHost.connectHost();
+	}
+
+	/**
 	 * Disconnects the controller from its host and tears down reactive work.
 	 */
 	public disconnect(): void {
 		this.connected = false;
 		this.disconnectRenderWatcher();
 		this.reactiveHost.disconnectHost();
+	}
+
+	/**
+	 * Disconnects a controller that was attached through the SSR-only lifecycle.
+	 */
+	public disconnectForSsrRender(): void {
+		this.disconnectRenderWatcher();
+		this.reactiveHost.disconnectHost();
+		this.connected = false;
 	}
 
 	public get isConnected(): boolean {

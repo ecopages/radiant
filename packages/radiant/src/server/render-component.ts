@@ -12,21 +12,6 @@ import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
 import { ensureRadiantElementSsrRuntimeRegistered } from './radiant-component-ssr-runtime';
 
-/** Default response header carrying the fragment render timestamp. */
-export const RENDERED_COMPONENT_GENERATED_AT_HEADER = 'x-generated-at';
-
-/** Default response header carrying the custom-element tag name for the fragment. */
-export const RENDERED_COMPONENT_TAG_NAME_HEADER = 'x-radiant-tag-name';
-
-/** Default response header marking an SSR payload as a Radiant-managed fragment. */
-export const RENDERED_COMPONENT_FRAGMENT_HEADER = 'x-radiant-fragment';
-
-/** Default response header carrying the client module URL for the fragment. */
-export const RENDERED_COMPONENT_CLIENT_MODULE_HEADER = 'x-radiant-client-module';
-
-/** Default response header carrying serialized fragment asset metadata. */
-export const RENDERED_COMPONENT_ASSETS_HEADER = 'x-radiant-assets';
-
 ensureRadiantElementSsrRuntimeRegistered();
 
 /** Asset dependency emitted by a rendered fragment. */
@@ -326,11 +311,11 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 		);
 		normalizedOptions.initialize?.(component);
 
-		const legacyClientModuleSrc =
+		const resolvedClientModuleSrc =
 			normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
 		const resolvedAssets = normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
-		const assets = mergeRenderedComponentAssets(resolvedAssets, legacyClientModuleSrc);
-		const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? legacyClientModuleSrc;
+		const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
+		const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
 		const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
 		const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
 		const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
@@ -442,44 +427,6 @@ export function toRenderedComponentPayload(
 	const { preview: _preview, ...payload } = render;
 	return payload;
 }
-
-/**
- * Converts a rendered fragment payload into the standard metadata headers used
- * by client-side fragment loaders.
- */
-export function createRenderedComponentHeaders(
-	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | RenderedComponentWithPreview,
-): Record<string, string> {
-	const metadata = toRenderedComponentMetadata(render);
-
-	return {
-		[RENDERED_COMPONENT_FRAGMENT_HEADER]: '1',
-		...(metadata.assets.length > 0 ? { [RENDERED_COMPONENT_ASSETS_HEADER]: JSON.stringify(metadata.assets) } : {}),
-		...(metadata.clientModuleUrl ? { [RENDERED_COMPONENT_CLIENT_MODULE_HEADER]: metadata.clientModuleUrl } : {}),
-		[RENDERED_COMPONENT_GENERATED_AT_HEADER]: metadata.generatedAt,
-		[RENDERED_COMPONENT_TAG_NAME_HEADER]: metadata.tagName,
-	};
-}
-
-function toRenderedComponentMetadata(
-	render: RenderedComponent | RenderedComponentMetadata | RenderedComponentPayload | RenderedComponentWithPreview,
-): RenderedComponentMetadata {
-	if ('metadata' in render) {
-		return render.metadata;
-	}
-
-	if ('markup' in render) {
-		return {
-			assets: render.assets ?? createLegacyRenderedComponentAssets(render.clientModuleSrc),
-			clientModuleUrl: render.clientModuleSrc,
-			generatedAt: render.generatedAt,
-			tagName: render.tagName,
-		};
-	}
-
-	return render;
-}
-
 function toRenderedComponentWithPreview(render: RenderedComponent): RenderedComponentWithPreview {
 	return {
 		assets: render.metadata.assets,
@@ -495,7 +442,9 @@ function createDefaultRenderTimestamp(): Date {
 	return new Date();
 }
 
-function createLegacyRenderedComponentAssets(clientModuleSrc: string | undefined): readonly RenderedComponentAsset[] {
+function createRenderedComponentClientModuleAssets(
+	clientModuleSrc: string | undefined,
+): readonly RenderedComponentAsset[] {
 	if (!clientModuleSrc) {
 		return [];
 	}
@@ -503,22 +452,22 @@ function createLegacyRenderedComponentAssets(clientModuleSrc: string | undefined
 	return [scriptModuleAsset(clientModuleSrc)];
 }
 
-function mergeRenderedComponentAssets(
+export function mergeRenderedComponentAssets(
 	assets: readonly RenderedComponentAsset[],
-	legacyClientModuleSrc: string | undefined,
+	clientModuleSrc: string | undefined,
 ): readonly RenderedComponentAsset[] {
-	if (!legacyClientModuleSrc) {
+	if (!clientModuleSrc) {
 		return assets;
 	}
 
-	if (assets.some((asset) => asset.kind === 'script-module' && asset.src === legacyClientModuleSrc)) {
+	if (assets.some((asset) => asset.kind === 'script-module' && asset.src === clientModuleSrc)) {
 		return assets;
 	}
 
-	return [...createLegacyRenderedComponentAssets(legacyClientModuleSrc), ...assets];
+	return [...createRenderedComponentClientModuleAssets(clientModuleSrc), ...assets];
 }
 
-function resolvePrimaryClientModuleSrc(assets: readonly RenderedComponentAsset[]): string | undefined {
+export function resolvePrimaryClientModuleSrc(assets: readonly RenderedComponentAsset[]): string | undefined {
 	return assets.find((asset) => asset.kind === 'script-module')?.src;
 }
 
@@ -536,7 +485,7 @@ function normalizeRenderComponentOptions<TComponent extends ServerRenderableComp
 	return componentOrOptions;
 }
 
-function normalizeRenderOptions(options: RenderToStringOptions | undefined): RenderToStringOptions {
+export function normalizeRenderOptions(options: RenderToStringOptions | undefined): RenderToStringOptions {
 	if (options?.mode !== undefined || options?.hydrate !== undefined) {
 		return options;
 	}
