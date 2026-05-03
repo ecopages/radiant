@@ -1,5 +1,7 @@
+import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import type { RadiantElement } from '../core/radiant-element';
-import { type AttributeTypeConstant, readAttributeValue } from '../utils/attribute-utils';
+import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
+import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import {
 	ContextEventsTypes,
 	ContextOnMountEvent,
@@ -7,13 +9,24 @@ import {
 	type ContextSubscription,
 	type ContextSubscriptionRequestEvent,
 } from './events';
+import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
+import { createContextHydrationScriptTag, escapeContextHydrationJson } from './hydration-script';
 import type { Context, ContextType, UnknownContext } from './types';
 
 type ContextProviderOptions<T extends UnknownContext> = {
 	context: UnknownContext;
+	hydrationKey?: string;
 	initialValue?: T['__context__'];
 	hydrate?: AttributeTypeConstant;
+	serialize?: (value: ContextType<T>) => unknown;
 };
+
+export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
+	/** Returns the current context payload that should be visible to descendants. */
+	getContext(): unknown;
+	/** Returns the context token used to match nested SSR consumers and providers. */
+	getContextKey(): UnknownContext;
+}
 
 /**
  * Represents a context provider that allows setting and getting the context,
@@ -63,9 +76,15 @@ export interface IContextProvider<T extends Context<unknown, unknown>> {
  * });
  * ```
  */
-export class ContextProvider<T extends Context<unknown, unknown>> implements IContextProvider<T> {
+export class ContextProvider<T extends Context<unknown, unknown>>
+	implements IContextProvider<T>, SsrSerializableContextProvider
+{
 	private host: RadiantElement;
 	private context: UnknownContext;
+	private hydrationKey?: string;
+	private hydrate?: AttributeTypeConstant;
+	private serialize?: (value: ContextType<T>) => unknown;
+	private pendingHostHydration: boolean;
 	private value: ContextType<T> | undefined;
 
 	subscriptions: ContextSubscription<T>[] = [];
@@ -79,37 +98,30 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
 	constructor(host: RadiantElement, options: ContextProviderOptions<T>) {
 		this.host = host;
 		this.context = options.context;
-		let contextValue: T['__context__'] | undefined = options.initialValue;
-
-		if (options.hydrate) {
-			const hydrationScriptElement = this.host.querySelector('script[data-hydration]');
-			if (hydrationScriptElement?.textContent) {
-				const hydrationValue = hydrationScriptElement.textContent;
-				const parsedHydrationValue = readAttributeValue(hydrationValue, options.hydrate) as ContextType<T>;
-
-				if (
-					options.hydrate === Object &&
-					this.isObject(parsedHydrationValue) &&
-					(this.isObject(contextValue) || typeof contextValue === 'undefined')
-				) {
-					contextValue = {
-						...(contextValue ?? {}),
-						...parsedHydrationValue,
-					};
-				} else {
-					contextValue = parsedHydrationValue;
-				}
-			}
-		}
-
-		this.value = contextValue as ContextType<T>;
+		this.hydrationKey = options.hydrationKey;
+		this.hydrate = options.hydrate;
+		this.serialize = options.serialize;
+		this.pendingHostHydration = Boolean(options.hydrate);
+		this.value = options.initialValue as ContextType<T>;
+		this.tryHydrateFromHost();
 
 		this.registerEvents();
 		this.host.dispatchEvent(new ContextOnMountEvent(this.context));
 	}
 
 	setContext = (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => {
-		if (typeof this.value === 'object') {
+		this.tryHydrateFromHost();
+		this.pendingHostHydration = false;
+
+		if (typeof this.value === 'undefined' && this.isObject(update)) {
+			const oldContext = this.value;
+			this.value = { ...update } as ContextType<T>;
+			if (callback) callback(this.value);
+			this.notifySubscribers(this.value, oldContext);
+			return;
+		}
+
+		if (this.isObject(this.value) && this.isObject(update)) {
 			const oldContext = { ...this.value };
 			this.value = { ...this.value, ...update };
 			if (callback) callback(this.value);
@@ -118,20 +130,134 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
 	};
 
 	getContext = () => {
+		this.tryHydrateFromHost();
 		return this.value as ContextType<T>;
+	};
+
+	/**
+	 * Returns the provider's logical context token.
+	 *
+	 * SSR helpers use this token to resolve the closest matching provider while a
+	 * host subtree is being serialized.
+	 */
+	getContextKey = () => {
+		return this.context;
+	};
+
+	/**
+	 * Serializes the current provider value for inclusion in a hydration script.
+	 *
+	 * The serialized payload is JSON-escaped so it can be embedded safely inside a
+	 * `<script type="application/json">` tag.
+	 */
+	serializeHydrationValue = (): string | undefined => {
+		this.tryHydrateFromHost();
+
+		if (!this.hydrate || typeof this.value === 'undefined') {
+			return undefined;
+		}
+
+		const hydrationValue = this.serialize ? this.serialize(this.value) : this.value;
+
+		if (typeof hydrationValue === 'undefined') {
+			return undefined;
+		}
+
+		const serializedValue = JSON.stringify(hydrationValue);
+
+		if (typeof serializedValue !== 'string') {
+			return undefined;
+		}
+
+		return escapeContextHydrationJson(serializedValue);
+	};
+
+	/**
+	 * Builds the raw HTML hydration script for this provider.
+	 *
+	 * When `hydrationKey` is present, the marker is scoped so sibling or nested
+	 * providers can recover their own payloads without accidentally reading a
+	 * descendant script.
+	 */
+	renderHydrationScriptTag = (): string | undefined => {
+		const serializedValue = this.serializeHydrationValue();
+
+		if (!serializedValue) {
+			return undefined;
+		}
+
+		return createContextHydrationScriptTag({
+			hydrationKey: this.hydrationKey,
+			serializedValue,
+		});
+	};
+
+	/**
+	 * Wraps the provider hydration script in a minimal JSX node-like value.
+	 *
+	 * This lets JSX-based host renderers append the script without needing a real
+	 * DOM element instance during SSR.
+	 */
+	renderHydrationScript = (): JsxRenderable | undefined => {
+		const outerHTML = this.renderHydrationScriptTag();
+
+		if (!outerHTML) {
+			return undefined;
+		}
+
+		return createMarkupNodeLike(outerHTML);
 	};
 
 	subscribe = ({ select, callback }: ContextSubscription<T>) => {
 		this.subscriptions.push({ select, callback });
 	};
 
+	private tryHydrateFromHost(): void {
+		if (!this.pendingHostHydration) {
+			return;
+		}
+
+		const hydrationScriptElement = this.findHydrationScriptElement();
+
+		if (!hydrationScriptElement) {
+			return;
+		}
+
+		this.value = this.mergeHydrationValue(
+			parseHydrationPayload(hydrationScriptElement, this.value) as ContextType<T>,
+		);
+		this.pendingHostHydration = false;
+	}
+
+	private mergeHydrationValue(parsedHydrationValue: ContextType<T>): ContextType<T> {
+		if (
+			this.hydrate === Object &&
+			this.isObject(parsedHydrationValue) &&
+			(this.isObject(this.value) || typeof this.value === 'undefined')
+		) {
+			return {
+				...(this.value ?? {}),
+				...parsedHydrationValue,
+			} as ContextType<T>;
+		}
+
+		return parsedHydrationValue;
+	}
+
 	private isObject(value: unknown): value is Record<string, unknown> {
 		return typeof value === 'object' && !Array.isArray(value) && value !== null;
 	}
 
-	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T>) => {
+	private findHydrationScriptElement(): Element | null {
+		return findHydrationScript(this.host as Element, 'context', this.hydrationKey);
+	}
+
+	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T> | undefined) => {
 		for (const sub of this.subscriptions) {
-			if (!sub.select) return this.sendSubscriptionUpdate(sub, newContext);
+			if (!sub.select || typeof prevContext === 'undefined') {
+				this.sendSubscriptionUpdate(sub, newContext);
+				continue;
+			}
 			const newSelected = sub.select(newContext);
 			const prevSelected = sub.select(prevContext);
 			if (newSelected !== prevSelected) {
@@ -154,9 +280,11 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
 		callback: ContextSubscription<T>['callback'];
 		subscribe?: boolean;
 	}) => {
+		this.tryHydrateFromHost();
+
 		if (subscribe) this.subscribe({ select, callback });
 
-		if (!this.value) return;
+		if (typeof this.value === 'undefined') return;
 
 		if (select) {
 			callback(select(this.value));

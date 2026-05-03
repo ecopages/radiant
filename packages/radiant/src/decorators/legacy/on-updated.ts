@@ -1,4 +1,5 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
  * A decorator to subscribe to an updated callback when a reactive field or property changes.
@@ -6,18 +7,17 @@ import type { RadiantElement } from '../../core/radiant-element';
  */
 export function onUpdated(keyOrKeys: string | string[]) {
 	return (target: RadiantElement, methodName: string) => {
-		const originalConnectedCallback = target.connectedCallback;
-
-		target.connectedCallback = function (this: RadiantElement) {
-			const boundedMethod = (this as any)[methodName].bind(this);
-			if (Array.isArray(keyOrKeys)) {
-				for (const key of keyOrKeys) {
-					(this as RadiantElement).registerUpdateCallback(key, boundedMethod);
+		registerLegacyInstanceInitializer(target, (element) => {
+			element.registerConnectedCallback(() => {
+				const boundedMethod = (element as any)[methodName].bind(element);
+				if (Array.isArray(keyOrKeys)) {
+					for (const key of keyOrKeys) {
+						element.registerUpdateCallback(key, boundedMethod);
+					}
+				} else if (typeof keyOrKeys === 'string') {
+					element.registerUpdateCallback(keyOrKeys, boundedMethod);
 				}
-			} else if (typeof keyOrKeys === 'string') {
-				(this as RadiantElement).registerUpdateCallback(keyOrKeys, boundedMethod);
-			}
-			originalConnectedCallback.call(this);
-		};
+			});
+		});
 	};
 }

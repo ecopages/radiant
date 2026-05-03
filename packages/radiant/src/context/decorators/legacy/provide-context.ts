@@ -1,16 +1,38 @@
 import { ContextProvider } from '../../../context/context-provider';
 import type { UnknownContext } from '../../../context/types';
 import type { RadiantElement } from '../../../core/radiant-element';
+import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
 import type { ProvideContextOptions } from '../provide-context';
 
-export function provideContext<T extends UnknownContext>({ context, initialValue, hydrate }: ProvideContextOptions<T>) {
+export function provideContext<T extends UnknownContext>({
+	context,
+	initialValue,
+	hydrate,
+	serialize,
+}: ProvideContextOptions<T>) {
 	return (proto: RadiantElement, propertyKey: string) => {
-		const originalConnectedCallback = proto.connectedCallback;
+		const initializeProvider = (element: RadiantElement) => {
+			if ((element as any)[propertyKey]) {
+				return;
+			}
 
-		proto.connectedCallback = function (this: RadiantElement) {
-			(this as any)[propertyKey] = new ContextProvider<T>(this, { context, initialValue, hydrate });
-			originalConnectedCallback.call(this);
-			this.connectedContextCallback(context);
+			const provider = new ContextProvider<T>(element, {
+				context,
+				hydrationKey: propertyKey,
+				initialValue,
+				hydrate,
+				serialize,
+			});
+			(element as any)[propertyKey] = provider;
+			element.registerContextProvider(propertyKey, provider);
+			element.connectedContextCallback(context);
 		};
+
+		registerLegacyInstanceInitializer(proto, (element) => {
+			initializeProvider(element);
+			element.registerConnectedCallback(() => {
+				initializeProvider(element);
+			});
+		});
 	};
 }

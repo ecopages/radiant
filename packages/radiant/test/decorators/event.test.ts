@@ -29,7 +29,7 @@ class RadiantEventListener extends RadiantElement {
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.eventDetail = this.getRef<HTMLDivElement>('event-detail');
+		this.eventDetail = this.getRef<HTMLDivElement>('event-detail')!;
 	}
 
 	@onEvent({ selector: 'radiant-event-emitter', type: RadiantEventEvents.CustomEvent })
@@ -59,5 +59,15 @@ describe('@event', () => {
 
 		radiantEventEmitter.customEvent.emit({ value: 'Hello, World!' });
 		expect(radiantEventListener.eventDetail.innerHTML).toEqual('Hello, World!');
+	});
+
+	test('decorator preserves the same emitter instance across reconnects', () => {
+		const { radiantEventEmitter } = createTemplate();
+		const firstEmitter = radiantEventEmitter.customEvent;
+
+		radiantEventEmitter.remove();
+		document.body.appendChild(radiantEventEmitter);
+
+		expect(radiantEventEmitter.customEvent).toBe(firstEmitter);
 	});
 });

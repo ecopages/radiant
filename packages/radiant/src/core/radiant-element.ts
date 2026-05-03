@@ -1,5 +1,11 @@
-import type { EventEmitter } from '@/tools';
+import type { EventEmitter } from '../tools';
+import { createSubscribableJsxValue, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
+import { trackDependency, type DependencyNode, type SignalSubscriber } from '@ecopages/signals';
+import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
+import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
+import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
+import { runSsrPreparationCallbacks } from './ssr-preparation';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -9,6 +15,96 @@ import {
 	readAttributeValue,
 	writeAttributeValue,
 } from '../utils/attribute-utils';
+
+const RadiantElementBase = resolveRadiantElementBase();
+
+type ReactiveDependencyReader = () => unknown;
+
+class ReactiveHostDependency implements DependencyNode {
+	private readonly subscribers = new Set<SignalSubscriber<unknown>>();
+	private readonly watcherListeners = new Set<() => void>();
+	private version = 0;
+
+	constructor(private readonly read: ReactiveDependencyReader) {}
+
+	public get(): unknown {
+		trackDependency(this);
+		return this.read();
+	}
+
+	public subscribe(notify: SignalSubscriber<unknown>): () => void {
+		this.subscribers.add(notify);
+
+		return () => {
+			this.subscribers.delete(notify);
+		};
+	}
+
+	public addWatcher(notify: () => void): () => void {
+		this.watcherListeners.add(notify);
+
+		return () => {
+			this.watcherListeners.delete(notify);
+		};
+	}
+
+	public getVersion(): number {
+		return this.version;
+	}
+
+	public notify(nextValue: unknown): void {
+		this.version += 1;
+		let watcherError: unknown;
+
+		try {
+			this.notifyWatchers();
+		} catch (error) {
+			watcherError = error;
+		}
+
+		this.publish(nextValue);
+
+		if (watcherError) {
+			throw watcherError;
+		}
+	}
+
+	private publish(nextValue: unknown): void {
+		for (const subscriber of this.subscribers) {
+			subscriber(nextValue);
+		}
+	}
+
+	private notifyWatchers(): void {
+		const errors: unknown[] = [];
+
+		for (const listener of this.watcherListeners) {
+			try {
+				listener();
+			} catch (error) {
+				errors.push(error);
+			}
+		}
+
+		if (errors.length === 1) {
+			throw errors[0];
+		}
+
+		if (errors.length > 1) {
+			throw new AggregateError(errors, 'Multiple reactive dependency notifications failed.');
+		}
+	}
+}
+
+function resolveRadiantElementBase(): typeof HTMLElement {
+	if (typeof HTMLElement !== 'undefined') {
+		return HTMLElement;
+	}
+
+	throw new Error(
+		"RadiantElement requires HTMLElement. Install '@ecopages/radiant/server/light-dom-shim' before importing Radiant components in SSR.",
+	);
+}
 
 /**
  * Possible positions to insert a rendered template.
@@ -48,6 +144,30 @@ export type ReactivePropertyOptions<T> = {
 	reflect?: boolean;
 	attribute?: string;
 	defaultValue?: T;
+	/**
+	 * Exposes a JSX binding companion for the reactive property.
+	 *
+	 * - `true` creates a `$propertyName` accessor.
+	 * - a string creates a custom accessor with that name.
+	 * - `undefined` defers to the host default.
+	 *
+	 * The generated accessor returns a subscribable JSX child value so JSX can
+	 * patch only the affected child part when the property changes.
+	 */
+	bind?: boolean | string;
+};
+
+export type ReactiveBindingOption = boolean | string;
+
+export type ReactiveFieldOptions = {
+	/**
+	 * Exposes a JSX binding companion for the reactive field.
+	 *
+	 * - `true` creates a `$fieldName` accessor.
+	 * - a string creates a custom accessor with that name.
+	 * - `undefined` defers to the host default.
+	 */
+	bind?: ReactiveBindingOption;
 };
 
 export type ReactiveField<T = unknown> = {
@@ -56,10 +176,54 @@ export type ReactiveField<T = unknown> = {
 	initialValue: T;
 };
 
+type StringPropertyKey<Value> = Extract<keyof Value, string>;
+
+/**
+ * Value type produced by a JSX binding for a selected reactive member.
+ *
+ * Bindings preserve the original property type when it is already renderable by
+ * the Ecopages JSX runtime. For non-renderable values, the binding falls back
+ * to the broader `JsxRenderable` contract consumed by the renderer.
+ */
+export type ReactiveBindingValue<
+	Host extends object,
+	Property extends StringPropertyKey<Host>,
+> = Host[Property] extends JsxRenderable ? Host[Property] : JsxRenderable;
+
+/**
+ * Namespace of cached JSX bindings keyed by the explicit bindable shape.
+ *
+ * Radiant exposes this namespace twice on every host:
+ *
+ * - `host.bindings.key` for the explicit form
+ * - `host.$.key` for the short form
+ *
+ * Both aliases resolve through the same cached binding objects as
+ * `host.bind('key')`.
+ */
+export type ReactiveBindings<Bindings extends object> = {
+	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+};
+
 /**
  * Represents an interface for a Radiant element.
+ * @typeParam Bindings - Explicit internal bindable shape used to type `bind()` and `getReactiveBinding()`.
+ *
+ * This shape describes which reactive members are exposed through `bindings`,
+ * `$`, and `bind(...)`. It does not automatically define the public JSX
+ * attribute contract for the custom element.
  */
-export interface IRadiantElement {
+export interface IRadiantElement<Bindings extends object = {}> {
+	/**
+	 * Namespace of cached JSX bindings keyed by the explicit bindable shape.
+	 */
+	readonly bindings: ReactiveBindings<Bindings>;
+
+	/**
+	 * Short alias for {@link bindings}.
+	 */
+	readonly $: ReactiveBindings<Bindings>;
+
 	/**
 	 * Called when a property of the element is updated.
 	 * @param changedProperty - The name of the changed property.
@@ -75,6 +239,41 @@ export interface IRadiantElement {
 	subscribeEvent(event: RadiantElementEventListener): void;
 
 	/**
+	 * Registers a callback to be invoked when a reactive property or field changes.
+	 *
+	 * @returns A cleanup function that unregisters the callback.
+	 */
+	registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void;
+
+	/**
+	 * Returns a subscribable JSX child binding for a reactive property or field.
+	 *
+	 * Prefer `this.bindings.key` or `this.$.key` in JSX render code when you want
+	 * property access syntax without string literals.
+	 */
+	bind<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+
+	/**
+	 * Returns a subscribable JSX child binding for a reactive property or field.
+	 *
+	 * This is the primitive lookup used by `bind()`, `bindings.key`, and `$.key`.
+	 */
+	getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+
+	/**
+	 * Defines a stable JSX binding companion accessor for a reactive member.
+	 *
+	 * Companion bindings create properties such as `$count` directly on the host.
+	 * Prefer the `bindings` or `$` namespace for new code when you want typed,
+	 * explicit access to the configured bindable shape.
+	 */
+	defineReactiveBinding(property: string, bind?: ReactiveBindingOption): void;
+
+	/**
 	 * Subscribes to multiple Radiant element events.
 	 * @param events - The array of event listeners to subscribe to.
 	 */
@@ -86,13 +285,46 @@ export interface IRadiantElement {
 	registerCleanupCallback(callback: () => void): void;
 
 	/**
-	 * Renders a template into the specified target element.
+	 * Registers a callback to run on each future host connection.
+	 *
+	 * The callback is only invoked from `connectedCallback()`. Registering it
+	 * after the host is already connected does not invoke it immediately.
+	 */
+	registerConnectedCallback(callback: () => void): void;
+
+	/**
+	 * Registers a raw value reader for a reactive member so that tracked render
+	 * dependencies can read the underlying value without triggering the public
+	 * getter's dependency tracking.
+	 */
+	registerReactiveDependencyReader(property: string, read: () => unknown): void;
+
+	/**
+	 * Records a tracked read of a reactive member during a component render,
+	 * allowing the signals runtime to re-render only the affected parts.
+	 */
+	trackReactiveRead(property: string): void;
+
+	/**
+	 * Renders a trusted HTML template string into the specified target element.
+	 *
+	 * **Security:** The `template` string is written to the DOM via `innerHTML`
+	 * or `insertAdjacentHTML` without built-in sanitization. Callers are
+	 * responsible for ensuring the input is trusted. Supply a `sanitize`
+	 * function to transform the template before insertion.
+	 *
 	 * @param options - The rendering options.
 	 * @param options.target - The target element to render the template into.
 	 * @param options.template - The template string to render.
 	 * @param options.insert - The position to insert the rendered template. (optional)
+	 * @param options.sanitize - An optional function that transforms the template string before insertion.
 	 */
-	renderTemplate(options: { target: HTMLElement; template: string; insert?: RenderInsertPosition }): void;
+	renderTemplate(options: {
+		target: HTMLElement;
+		template: string;
+		insert?: RenderInsertPosition;
+		sanitize?: (html: string) => string;
+	}): void;
 
 	/**
 	 * Called when the Radiant element is connected to a context.
@@ -106,15 +338,29 @@ export interface IRadiantElement {
 	 * @param all - Whether to get all elements with the specified data-ref attribute value.
 	 * @returns The element with the specified data-ref attribute value, an array of elements or null if no element was found.
 	 */
-	getRef<T extends Element = Element>(ref: string, all: boolean): T | T[];
+	getRef<T extends Element = Element>(ref: string, all: true): T[];
+	getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 }
 
 /**
  * A base class for creating custom elements with reactive properties and event subscriptions.
+ * @typeParam Bindings - Explicit internal bindable shape. Include only the
+ * prop/state keys that JSX bindings should accept.
+ *
+ * Prefer a separate public props type for custom-element JSX declarations when
+ * the external attribute contract differs from the component's internal
+ * reactive state. Reuse the same type only when the public props and bindable
+ * members are intentionally identical.
  * @extends HTMLElement
- * @implements IRadiantElement
+ * @implements IRadiantElement<Bindings>
  */
-export class RadiantElement extends HTMLElement implements IRadiantElement {
+export class RadiantElement<Bindings extends object = {}>
+	extends RadiantElementBase
+	implements IRadiantElement<Bindings>
+{
+	public readonly bindings: ReactiveBindings<Bindings>;
+	public readonly $: ReactiveBindings<Bindings>;
+
 	/**
 	 * A map of property metadata objects, it contains useful information about the properties configured via decorators.
 	 */
@@ -124,6 +370,33 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	 * A map of reactive fields, it contains the reactive fields configured via decorators.
 	 */
 	private reactiveFields = new Map<string, ReactiveField>();
+
+	/**
+	 * Stable dependency nodes used when plain reactive member reads participate
+	 * in tracked component renders.
+	 */
+	private reactiveDependencies = new Map<string, ReactiveHostDependency>();
+
+	/**
+	 * Raw value readers for reactive members whose public getter should also
+	 * register tracked render dependencies.
+	 */
+	private reactiveDependencyReaders = new Map<string, ReactiveDependencyReader>();
+
+	/**
+	 * Stable subscribable JSX bindings keyed by reactive property name.
+	 */
+	private reactiveBindings = new Map<string, SubscribableJsxValue>();
+
+	/**
+	 * Registered context providers keyed by decorated property name.
+	 */
+	private contextProviders = new Map<string, SsrSerializableContextProvider>();
+
+	/**
+	 * Registered keyed hydration payload producers appended to SSR host output.
+	 */
+	private hydrationBindings = new Map<string, SsrSerializableHydrationBinding>();
 
 	/**
 	 * A map of property update callbacks. These callbacks are called when a property is updated.
@@ -141,6 +414,11 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	private eventEmitters = new Map<string, EventEmitter>();
 
 	/**
+	 * Callbacks executed whenever the Radiant element is connected to the DOM.
+	 */
+	private onConnectedCallbacks: (() => void)[] = [];
+
+	/**
 	 * An array of cleanup callbacks to be executed when the Radiant element is disconnected from the DOM.
 	 */
 	private onDisconnectedCallback: (() => void)[] = [];
@@ -150,8 +428,32 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	 */
 	private elementReady = false;
 
+	constructor() {
+		super();
+		const bindingNamespace = this.createReactiveBindingNamespace();
+		this.bindings = bindingNamespace;
+		this.$ = bindingNamespace;
+		runLegacyInstanceInitializers(this);
+	}
+
+	private createReactiveBindingNamespace(): ReactiveBindings<Bindings> {
+		return new Proxy(Object.create(null) as ReactiveBindings<Bindings>, {
+			get: (_target, property) => {
+				if (typeof property !== 'string') {
+					return undefined;
+				}
+
+				return this.getReactiveBinding(property as StringPropertyKey<Bindings>);
+			},
+		}) as ReactiveBindings<Bindings>;
+	}
+
 	connectedCallback() {
 		this.elementReady = true;
+
+		for (const callback of this.onConnectedCallbacks) {
+			callback();
+		}
 	}
 
 	connectedContextCallback(_contextName: UnknownContext): void {}
@@ -164,7 +466,9 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	}
 
 	public notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown) {
-		if (!this.updateCallbacks || oldValue === value) return;
+		if (oldValue === value) return;
+
+		this.reactiveDependencies.get(changedProperty)?.notify(value);
 		const updates = this.updateCallbacks.get(changedProperty);
 
 		if (updates) {
@@ -175,7 +479,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	}
 
 	private transformAttributeValue(value: string | null, config: any): unknown {
-		return value ? config?.converter.fromAttribute(value) : value;
+		return value !== null ? config?.converter.fromAttribute(value) : value;
 	}
 
 	attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
@@ -193,24 +497,41 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		}
 	}
 
+	/**
+	 * Renders a trusted HTML template string into the specified target element.
+	 *
+	 * **Security:** The `template` string is written to the DOM via `innerHTML`
+	 * or `insertAdjacentHTML` without built-in sanitization. Callers are
+	 * responsible for ensuring the input is trusted. Supply a `sanitize`
+	 * function to transform the template before insertion.
+	 */
 	public renderTemplate({
 		target = this,
 		template,
 		insert = 'replace',
+		sanitize,
 	}: {
 		target: HTMLElement;
 		template: string;
 		insert?: RenderInsertPosition;
+		sanitize?: (html: string) => string;
 	}) {
+		const html = sanitize ? sanitize(template) : template;
 		switch (insert) {
 			case 'replace':
-				target.innerHTML = template;
+				target.innerHTML = html;
 				break;
 			case 'beforeend':
-				target.insertAdjacentHTML('beforeend', template);
+				target.insertAdjacentHTML('beforeend', html);
 				break;
 			case 'afterbegin':
-				target.insertAdjacentHTML('afterbegin', template);
+				target.insertAdjacentHTML('afterbegin', html);
+				break;
+			case 'beforebegin':
+				target.insertAdjacentHTML('beforebegin', html);
+				break;
+			case 'afterend':
+				target.insertAdjacentHTML('afterend', html);
 				break;
 		}
 	}
@@ -219,15 +540,152 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		this.reactiveProperties.set(config.name, config);
 	}
 
+	protected getReactiveProperties(): ReactiveProperty[] {
+		return Array.from(this.reactiveProperties.values());
+	}
+
 	public registerReactiveField<T>(config: ReactiveField<T>) {
 		this.reactiveFields.set(config.name, config);
 	}
 
-	public registerUpdateCallback(property: string, update: (...rest: any[]) => any) {
+	public registerReactiveDependencyReader(property: string, read: ReactiveDependencyReader): void {
+		this.reactiveDependencyReaders.set(property, read);
+	}
+
+	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
+		this.contextProviders.set(name, provider);
+		this.registerHydrationBinding(name, provider);
+	}
+
+	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
+		this.hydrationBindings.set(name, binding);
+	}
+
+	protected getContextProviders(): SsrSerializableContextProvider[] {
+		return Array.from(this.contextProviders.values());
+	}
+
+	protected getHydrationBindings(): SsrSerializableHydrationBinding[] {
+		return Array.from(this.hydrationBindings.values());
+	}
+
+	/**
+	 * Flushes any deferred SSR-only preparation work before the host is
+	 * serialized.
+	 *
+	 * Radiant uses this to reapply SSR consumer state after construction so the
+	 * first server render sees finalized fields, props, and authored content.
+	 */
+	protected prepareForSsr(): void {
+		runSsrPreparationCallbacks(this);
+	}
+
+	/**
+	 * Returns the default JSX binding policy for reactive members on this host.
+	 *
+	 * Plain `RadiantElement` instances keep binding opt-in. JSX-first hosts such
+	 * as `RadiantComponent` override this hook to opt into automatic bindings for
+	 * `@prop`, `@state`, and direct `createReactiveProp`/`createReactiveField`
+	 * calls when no explicit `bind` option is supplied.
+	 */
+	protected shouldAutoBindReactiveMembers(): boolean {
+		return false;
+	}
+
+	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
 		if (!this.updateCallbacks.has(property)) {
 			this.updateCallbacks.set(property, new Set());
 		}
-		this.updateCallbacks.get(property)?.add(update);
+
+		const callbacks = this.updateCallbacks.get(property)!;
+		callbacks.add(update);
+
+		return () => {
+			callbacks.delete(update);
+
+			if (callbacks.size === 0) {
+				this.updateCallbacks.delete(property);
+			}
+		};
+	}
+
+	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+		const cachedBinding = this.reactiveBindings.get(property);
+
+		if (cachedBinding) {
+			return cachedBinding as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+		}
+
+		const binding = createSubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>({
+			getValue: () => this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>,
+			subscribe: (notify) =>
+				this.registerUpdateCallback(property, () => {
+					notify(this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>);
+				}),
+		});
+
+		this.reactiveBindings.set(property, binding);
+		return binding;
+	}
+
+	public bind<Property extends StringPropertyKey<Bindings>>(
+		property: Property,
+	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+		return this.getReactiveBinding(property) as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	}
+
+	public defineReactiveBinding(property: string, bind: ReactiveBindingOption = true): void {
+		const bindingPropertyName = typeof bind === 'string' ? bind : bind ? `$${property}` : undefined;
+
+		if (!bindingPropertyName || Object.prototype.hasOwnProperty.call(this, bindingPropertyName)) {
+			return;
+		}
+
+		Object.defineProperty(this, bindingPropertyName, {
+			get: function (this: RadiantElement<Bindings>) {
+				return this.getReactiveBinding(property as StringPropertyKey<Bindings>);
+			},
+			enumerable: false,
+			configurable: true,
+		});
+	}
+
+	private getReactiveDependency(property: string): ReactiveHostDependency {
+		const cachedDependency = this.reactiveDependencies.get(property);
+
+		if (cachedDependency) {
+			return cachedDependency;
+		}
+
+		const dependency = new ReactiveHostDependency(() => this.readReactiveDependencyValue(property));
+		this.reactiveDependencies.set(property, dependency);
+		return dependency;
+	}
+
+	public trackReactiveRead(property: string): void {
+		trackDependency(this.getReactiveDependency(property));
+	}
+
+	private readReactiveDependencyValue(property: string): unknown {
+		const reader = this.reactiveDependencyReaders.get(property);
+
+		if (reader) {
+			return reader();
+		}
+
+		return this.readReactiveBindingValue(property as StringPropertyKey<Bindings>);
+	}
+
+	private readReactiveBindingValue<Property extends StringPropertyKey<Bindings>>(property: Property): unknown {
+		const value = (this as unknown as Record<string, unknown>)[property];
+
+		if (isSignalLikeBindingValue(value)) {
+			return value.get();
+		}
+
+		return value;
 	}
 
 	public subscribeEvents(events: RadiantElementEventListener[]): Array<() => void> {
@@ -269,8 +727,22 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		this.eventSubscriptions.clear();
 	}
 
+	/**
+	 * Registers a callback that runs on every future disconnect.
+	 */
 	public registerCleanupCallback(callback: () => void): void {
 		this.onDisconnectedCallback.push(callback);
+	}
+
+	/**
+	 * Registers a callback that runs from `connectedCallback()` on future host
+	 * connections.
+	 *
+	 * Registering after the host is already connected does not invoke the
+	 * callback immediately.
+	 */
+	public registerConnectedCallback(callback: () => void): void {
+		this.onConnectedCallbacks.push(callback);
 	}
 
 	public registerEventEmitter(name: string, emitter: EventEmitter) {
@@ -278,24 +750,17 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 	}
 
 	public getRef<T extends Element = Element>(ref: string, all: true): T[];
-	public getRef<T extends Element = Element>(ref: string, all?: false): T;
-	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] {
+	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
+	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
 		const selector = `[data-ref="${ref}"]`;
-		let result: T | T[];
 		if (all) {
-			result = Array.from(this.querySelectorAll(selector)) as T[];
-			if (result.length === 0) result = [];
-		} else {
-			result = this.querySelector(selector) as T;
-			if (!result) {
-				const fragment = document.createDocumentFragment();
-				result = fragment as unknown as T;
-			}
+			return Array.from(this.querySelectorAll(selector)) as T[];
 		}
-		return result;
+		return (this.querySelector(selector) as T) ?? null;
 	}
 
-	public createReactiveField<T>(propertyName: string, initialValue: T): void {
+	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
+		const bind = options.bind ?? this.shouldAutoBindReactiveMembers();
 		const reactiveField: ReactiveField<T> = {
 			name: propertyName,
 			value: initialValue,
@@ -303,9 +768,12 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		};
 
 		this.registerReactiveField(reactiveField);
+		this.defineReactiveBinding(propertyName, bind);
+		this.registerReactiveDependencyReader(propertyName, () => this.reactiveFields.get(propertyName)?.value);
 
 		Object.defineProperty(this, propertyName, {
 			get(this: RadiantElement) {
+				this.trackReactiveRead(propertyName);
 				return this.reactiveFields.get(propertyName)?.value ?? undefined;
 			},
 			set(this: RadiantElement, newValue: T) {
@@ -324,6 +792,7 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, attribute, reflect, defaultValue } = options;
+		const bind = options.bind ?? this.shouldAutoBindReactiveMembers();
 		const attributeKey = attribute ?? propertyName;
 
 		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
@@ -331,6 +800,10 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		}
 
 		const initialValue: T | undefined = getInitialValue(this, type, attributeKey, defaultValue) as T;
+
+		if (this.hasAttribute(attributeKey) && (!reflect || initialValue == null || initialValue === '')) {
+			this.removeAttribute(attributeKey);
+		}
 
 		const propertyMapping: ReactiveProperty<T> = {
 			type,
@@ -345,16 +818,23 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		};
 
 		this.registerReactiveProperty(propertyMapping);
+		this.defineReactiveBinding(propertyName, bind);
+		this.registerReactiveDependencyReader(propertyName, () => this.reactiveProperties.get(propertyName)?.value);
 
 		const handleReflectRequest = (value: T) => {
 			if (reflect) {
-				const attributeValue = propertyMapping.converter.toAttribute(value);
-				this.setAttribute(attributeKey, attributeValue);
+				if (value == null || value === '' || value === false) {
+					this.removeAttribute(attributeKey);
+				} else {
+					const attributeValue = propertyMapping.converter.toAttribute(value);
+					this.setAttribute(attributeKey, attributeValue);
+				}
 			}
 		};
 
 		Object.defineProperty(this, propertyName, {
 			get: function (this: RadiantElement) {
+				this.trackReactiveRead(propertyName);
 				return this.reactiveProperties.get(propertyName)?.value ?? undefined;
 			},
 			set: function (this: RadiantElement, newValue: T) {
@@ -370,10 +850,19 @@ export class RadiantElement extends HTMLElement implements IRadiantElement {
 		});
 
 		if (initialValue !== undefined) {
-			handleReflectRequest(initialValue as T);
 			queueMicrotask(() => {
-				this.notifyUpdate(propertyName, undefined, initialValue);
+				const currentValue = this.reactiveProperties.get(propertyName)?.value as T | undefined;
+				if (currentValue === undefined) {
+					return;
+				}
+
+				handleReflectRequest(currentValue);
+				this.notifyUpdate(propertyName, undefined, currentValue);
 			});
 		}
 	}
+}
+
+function isSignalLikeBindingValue(value: unknown): value is { get(): unknown } {
+	return typeof value === 'object' && value !== null && typeof (value as { get?: unknown }).get === 'function';
 }

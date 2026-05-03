@@ -1,27 +1,11 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
-import type {
-	LegacyMethodDecoratorArgs,
-	StandardMethodDecoratorArgs,
-	StandardOrLegacyMethodDecoratorArgs,
-} from '../types';
+import type { StandardOrLegacyMethodDecoratorArgs } from '../types';
+import type { OnEventConfig, OnEventScope } from '../helpers/create-event-listener';
 import { onEvent as legacyOnEvent } from './legacy/on-event';
 import { onEvent as standardOnEvent } from './standard/on-event';
+import { methodDecoratorBridge } from './bridge';
 
-type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
-	(
-		| {
-				selector: string;
-		  }
-		| {
-				ref: string;
-		  }
-		| {
-				window: boolean;
-		  }
-		| {
-				document: boolean;
-		  }
-	);
+export type { OnEventConfig, OnEventScope };
 
 /**
  * A decorator to subscribe to an event on the target element.
@@ -30,6 +14,7 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
  * Note: This decorator uses event delegation, which means it relies on event bubbling.
  * Therefore, it will not work with events that do not bubble, such as `focus`, `blur`, `load`, `unload`, `scroll`, etc.
  * For focus and blur events, consider using `focusin` and `focusout` which are similar but do bubble.
+ * Delegated listeners observe the host light DOM by default, and can optionally observe the shadow root or both trees.
  *
  * @param options {@link OnEventConfig} The event configuration.
  */
@@ -39,16 +24,12 @@ export function onEvent(options: OnEventConfig) {
 		nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
 		descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
 	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardOnEvent(options)(
-				protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyOnEvent(options)(
-			protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
-			descriptor as LegacyMethodDecoratorArgs['descriptor'],
+		return methodDecoratorBridge(
+			standardOnEvent(options),
+			legacyOnEvent(options),
+			protoOrTarget,
+			nameOrContext,
+			descriptor,
 		);
 	};
 }

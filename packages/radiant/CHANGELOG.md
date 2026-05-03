@@ -1,5 +1,18 @@
 # @ecopages/radiant
 
+## Unreleased
+
+### Breaking Changes
+
+- Removed the legacy internal-state decorator alias. Use `@state` instead (drop-in replacement).
+- Removed the legacy property decorator alias. Use `@prop(...)` instead (drop-in replacement).
+- Removed the legacy decorator alias subpath exports.
+
+### Features
+
+- Added `scope` option to `@query(...)` and `createQuery(...)`: query light DOM (`'light'`, default), shadow DOM (`'shadow'`), or both (`'both'`).
+- Added normalized SSR fragment asset metadata in `@ecopages/radiant/server/render-component`, including transport-friendly asset headers and helpers for script, preload, and stylesheet dependencies.
+
 ## 0.2.0
 
 ### Minor Changes
@@ -24,7 +37,7 @@
 ### Patch Changes
 
 - [#31](https://github.com/ecopages/radiant/pull/31) [`1af1051`](https://github.com/ecopages/radiant/commit/1af1051af5f119e92690b3aa6a653075faddbc03) Thanks [@andeeplus](https://github.com/andeeplus)! - - added propertyConfigMap and updatesRegistry to keep a more detailed overview of the element.
-    - Removed the prefixed property and just kept the base one to simplify the code in @reactiveProp
+    - Removed the prefixed property and just kept the base one to simplify the code in the legacy prop decorator alias
     - Added observedAttributes to keep track of the dom changes happening via setAttribute
 
 ## 0.1.5
@@ -39,13 +52,13 @@
 
 ### Patch Changes
 
-- [#21](https://github.com/ecopages/radiant/pull/21) [`de834a6`](https://github.com/ecopages/radiant/commit/de834a6692da41f5c671abeb16ddc325367aca7e) Thanks [@andeeplus](https://github.com/andeeplus)! - Improved type control on reactiveProp decorator
+- [#21](https://github.com/ecopages/radiant/pull/21) [`de834a6`](https://github.com/ecopages/radiant/commit/de834a6692da41f5c671abeb16ddc325367aca7e) Thanks [@andeeplus](https://github.com/andeeplus)! - Improved type control on the legacy prop decorator alias
 
 ## 0.1.3
 
 ### Patch Changes
 
-- [#19](https://github.com/ecopages/radiant/pull/19) [`023e09c`](https://github.com/ecopages/radiant/commit/023e09c48ef4b8d0a34864c847475abf926baace) Thanks [@andeeplus](https://github.com/andeeplus)! - add defaultValue support to @reactiveProp decorator and improve attribute readers
+- [#19](https://github.com/ecopages/radiant/pull/19) [`023e09c`](https://github.com/ecopages/radiant/commit/023e09c48ef4b8d0a34864c847475abf926baace) Thanks [@andeeplus](https://github.com/andeeplus)! - added defaultValue support to the legacy prop decorator alias and improved attribute readers
 
 ## 0.1.2
 

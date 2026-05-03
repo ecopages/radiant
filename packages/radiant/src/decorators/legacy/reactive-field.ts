@@ -1,4 +1,5 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
  * A decorator to define a reactive field.
@@ -9,10 +10,14 @@ import type { RadiantElement } from '../../core/radiant-element';
  * @param propertyKey The property key.
  */
 export function reactiveField(target: RadiantElement, propertyKey: string) {
-	const originalConnectedCallback = target.connectedCallback;
-
-	target.connectedCallback = function (this: RadiantElement) {
-		this.createReactiveField(propertyKey, this[propertyKey as keyof typeof this]);
-		originalConnectedCallback.call(this);
-	};
+	registerLegacyInstanceInitializer(target, (element) => {
+		element.registerConnectedCallback(() => {
+			element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
+				bind:
+					(
+						element as unknown as { shouldAutoBindReactiveMembers?: () => boolean }
+					).shouldAutoBindReactiveMembers?.() ?? false,
+			});
+		});
+	});
 }

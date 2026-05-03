@@ -1,5 +1,6 @@
 import type { RadiantElement } from '../../core/radiant-element';
-import { EventEmitter, type EventEmitterConfig } from '../../tools/event-emitter';
+import { createEvent } from '../../helpers/create-event';
+import type { EventEmitterConfig } from '../../tools/event-emitter';
 
 /**
  * Decorator that attaches an EventEmitter to the class field property.
@@ -10,11 +11,11 @@ import { EventEmitter, type EventEmitterConfig } from '../../tools/event-emitter
 export function event(eventConfig: EventEmitterConfig) {
 	return function <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
 		context.addInitializer(function (this: T) {
-			this.registerEventEmitter(eventConfig.name, new EventEmitter(this, eventConfig));
+			const emitter = createEvent(this, eventConfig);
 
 			Object.defineProperty(this, context.name, {
 				get() {
-					return this.eventEmitters.get(eventConfig.name);
+					return emitter;
 				},
 				enumerable: true,
 				configurable: true,
