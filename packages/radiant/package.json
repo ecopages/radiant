@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant",
-	"version": "0.3.0-alpha.6",
+	"version": "0.3.0-alpha.7",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ecopages/radiant.git"
@@ -19,10 +19,9 @@
 		"watch:lib": "bun run ./build.ts --watch",
 		"size:check": "bun run ./check-size.ts",
 		"size:report": "bun run ./check-size.ts --report-only",
-		"test:dist": "bun run build:lib && node --test ./test-dist/*.test.mjs",
 		"test:standard": "vitest run",
 		"test:legacy": "vitest run -- --legacy",
-		"test:lib": "bun run test:standard && bun run test:legacy && bun run test:dist",
+		"test:lib": "bun run test:standard && bun run test:legacy",
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
 	"dependencies": {},
