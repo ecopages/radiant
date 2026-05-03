@@ -2,7 +2,7 @@
 
 Radiant's server-facing APIs live on explicit `@ecopages/radiant/server/*` entrypoints.
 
-Use the root `@ecopages/radiant` entrypoint for `RadiantElement`, `RadiantController`, decorators, and context helpers that are primarily consumed on the client. Use the server subpaths when you are building SSR adapters, pre-rendering custom-element hosts, or preparing a server runtime.
+Use the root `@ecopages/radiant` entrypoint for `RadiantElement`, `RadiantController`, `bindReactiveValue(...)`, and the common decorators that are primarily consumed on the client. Import context APIs, controller-registry helpers, and the low-level helper factories from their explicit public subpaths. Use the server subpaths when you are building SSR adapters, pre-rendering custom-element hosts, or preparing a server runtime.
 
 When SSR markup should hydrate in the browser, pair these server entrypoints with the explicit client hydrator import:
 
@@ -13,7 +13,8 @@ import '@ecopages/radiant/client/install-hydrator';
 ## Import Paths
 
 - `@ecopages/radiant/server/light-dom-shim` prepares a minimal SSR runtime and host environment.
-- `@ecopages/radiant/server/render-component` exposes portable component rendering helpers and metadata utilities.
+- `@ecopages/radiant/server/render-component` exposes portable component rendering helpers and shared transport-neutral metadata.
+- `@ecopages/radiant/server/render-controller` exposes controller-host rendering helpers and controller-specific host option types.
 - `@ecopages/radiant/server/project-root` resolves a project root for adapters that need to discover client modules or config files.
 
 ## SSR Surfaces
@@ -28,6 +29,10 @@ In practice, `renderHostToString()` is the right default for full component SSR 
 When a component renders literal `<slot>` tags, `renderHostToString()` also serializes the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
 
 For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component`.
+
+`RadiantController` does not expose host-owned SSR instance methods. For controller-owned SSR, use the explicit `renderController*()` helpers from `@ecopages/radiant/server/render-controller` and provide the authored host tag and attributes declaratively.
+
+Important: `renderController()` owns only the inner view plus the serialized host attributes. The caller still owns the outer host contract through `tagName`, `host`, and `attributes`, and `data-controller` is inferred only when the controller constructor carries `@controller(...)` metadata.
 
 ## Runtime Preparation
 
@@ -47,7 +52,6 @@ For framework adapters and fragment rendering, import the reusable server helper
 
 ```ts
 import {
-	createRenderedComponentHeaders,
 	renderComponent,
 	toRenderedComponentPayload,
 	type RenderedComponentAsset,
@@ -74,7 +78,6 @@ const rendered = await renderComponent({
 });
 
 const payload = toRenderedComponentPayload(rendered);
-const headers = createRenderedComponentHeaders(rendered.metadata);
 ```
 
 Other useful server helpers:
@@ -86,6 +89,17 @@ Other useful server helpers:
 - `assets` and `resolveAssets(...)` describe runtime scripts, styles, and preload hints through a transport-agnostic metadata model.
 - `prepareHost(...)` is the dedicated host-preparation hook when slot-aware SSR needs authored light-DOM nodes, not just an HTML string.
 - `clientModuleSrc` and `resolveClientModuleSrc(...)` are focused shorthands for one hydration module.
+
+Controller-specific server helpers live on `@ecopages/radiant/server/render-controller`:
+
+- `renderController()` renders a controller-owned host into the same portable fragment shape used by `renderComponent()`.
+- `renderControllerToString()` returns only the controller host markup string.
+- `renderControllerToPayload()` returns the flat controller fragment payload shape directly.
+- `renderControllerWithPreview()` returns controller fragment fields plus a JSX-compatible preview value.
+
+Controller SSR follows one extra rule: the caller still owns the outer host markup contract. Pass the host `tagName`, use `host.data` and `host.aria` for JSX-like structured attributes, and let `renderController()` infer `data-controller` from `@controller(...)` metadata unless you need to override it through the low-level `attributes` option.
+
+Note: the server helpers are transport-neutral. The package no longer ships the older fragment-header constants or header-builder helpers from this module. Adapter-specific response headers now belong in the integration layer that turns `RenderedComponent` metadata into HTTP responses.
 
 ## Related Docs
 

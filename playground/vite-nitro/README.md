@@ -1,74 +1,113 @@
-# Radiant Vite Nitro Kitchen Sink
+# Radiant Vite + Nitro Kitchen Sink
 
-This kitchen sink is the clean full-stack test bed for the JSX work.
+This playground is the full-stack test bed for the current Radiant + Ecopages JSX runtime work.
 
-It differs from the existing Vite playground in two ways:
+It exists to prove three things together:
 
-- it uses `jsxImportSource: "@ecopages/jsx"` in `tsconfig.json`, so Ecopages JSX is the default runtime for `.tsx` files
-- it includes Nitro through the Vite plugin, so client code and server routes can evolve together in one package
+1. Nitro can SSR the initial page shell and individual Radiant fragments.
+2. The client can boot from server HTML, lazy-load only the Radiant modules the DOM actually uses, and then hydrate or render the app root.
+3. The local Vite plugin can own the discovery and asset-mapping work instead of requiring a hand-maintained import list.
 
-This is now the only kitchen sink that contains the JSX-first component experiments. The plain Vite playground has been reduced back to the older client-only Radiant demos so the two sandboxes do not duplicate each other.
+## What This Playground Covers
 
-Use it to prototype JSX runtime changes, client rendering behavior, and future SSR-related work without carrying over the older alternative JSX setup.
+- `RadiantElement` SSR and hydration
+- `RadiantController` activation from plain `data-controller` hosts
+- on-demand fragment loading with script and style assets
+- client-only page boot through a request-level mode switch
+- context, slots, signals, and event-policy demos running under the same app shell
 
 ## Resolution Model
 
-The kitchen sink resolves `@ecopages/*` imports through the workspace-linked package dependencies declared in `package.json`.
-That keeps Nitro aligned with how an external consumer sees the packages through their export maps instead of forcing local source aliases in Vite.
+The playground resolves `@ecopages/*` packages through the workspace-linked dependencies declared in [package.json](./package.json).
 
-In local development that means the package `dist` outputs need to exist and stay current.
-Use the repo-level Nitro kitchen-sink dev flow so the library watch/build process runs alongside the kitchen-sink server.
+That means local development still depends on the workspace package outputs being current. The only local path alias in [vite.config.ts](./vite.config.ts) is `@ -> src` for playground-internal imports.
 
-## Current Tracking
+## Important Files
 
-The current kitchen sink is tracking the merged `RadiantElement` contract and the light-DOM SSR work:
+- [app/entry-server.tsx](./app/entry-server.tsx) - Nitro page-shell SSR entry. Chooses SSR vs client-only mode and renders the initial shell.
 
-- `render()` returns JSX directly from the web component file
-- `update()` is the explicit rerender entrypoint
-- `@onUpdated([...])` can decorate `update()` directly to declare rerender dependencies
-- `RadiantElement` now owns host-aware SSR through `renderHost()` / `renderHostToString()`
-- Nitro can server-render a real custom-element host with light-DOM markup and hydration markers
-- the client can hydrate that host markup instead of immediately replacing it
-- fragment endpoints now ship normalized render assets with the SSR markup so lazy components can register through Vite and request extra styles when needed
-- the kitchen sink now consumes the canonical render result from `@ecopages/radiant/server/render-component`, while Nitro only adapts that metadata into route responses
-- the kitchen sink now includes an event policy lab that demonstrates `on:*` auto delegation and the `on-native:*` escape hatch under blocked bubbling
+- [vite-plugin-radiant/nitro/index.ts](./vite-plugin-radiant/nitro/index.ts) - Nitro page/document adapter. Handles SSR vs client-only mode negotiation, renders the app shell, and can discover Radiant custom elements plus authored `data-controller` hosts from the final document HTML.
 
-## Current Status
+- [vite-plugin-radiant/nitro/render.ts](./vite-plugin-radiant/nitro/render.ts) - Lower-level SSR fragment adapter around `@ecopages/radiant/server/render-component` and `@ecopages/radiant/server/render-controller`. Installs the light-DOM shim and merges resolved fragment assets.
 
-The kitchen sink now first-response SSR renders the page shell through Nitro using the standard `<!--ssr-outlet-->` flow.
-That means it demonstrates:
+- [vite-plugin-radiant/runtime/start-radiant-app.tsx](./vite-plugin-radiant/runtime/start-radiant-app.tsx) - Plugin-owned client bootstrap. Installs the hydrator by default, scans the DOM for required Radiant modules, mounts the app root, rescans client-only output, then starts controllers.
 
-- server rendering of a `RadiantElement` host
-- Nitro page-level SSR for the initial document
-- light-DOM hydration of that host on the client
-- page-level hydration from server HTML on first paint
-- on-demand SSR fragment hydration for components that were not in the initial client bundle via a Vite-managed module registry
-- opt-in client-only boot for the page shell via the local Radiant Vite integration
-- a thin transport adapter where route headers are derived from canonical render metadata instead of a kitchen-sink-specific SSR payload type
+- [src/main.tsx](./src/main.tsx) - Thin client entrypoint.
+
+- [vite-plugin-radiant/README.md](./vite-plugin-radiant/README.md) - Detailed plugin-specific documentation.
+
+The plugin is now organized directly by concern under `vite-plugin-radiant/plugin/`, `vite-plugin-radiant/runtime/`, and `vite-plugin-radiant/nitro/`.
+
+## Runtime Model
+
+### Initial Page Request
+
+1. Nitro receives the request in [app/entry-server.tsx](./app/entry-server.tsx).
+2. The entry delegates SSR vs client-only handling to [vite-plugin-radiant/nitro/index.ts](./vite-plugin-radiant/nitro/index.ts).
+3. For SSR mode, the Nitro adapter renders the page-level Radiant fragment through `renderSsrComponent(...)` in [vite-plugin-radiant/nitro/render.ts](./vite-plugin-radiant/nitro/render.ts).
+4. The document helper in [vite-plugin-radiant/nitro/index.ts](./vite-plugin-radiant/nitro/index.ts) renders the full app shell, scans the final HTML for custom elements and authored controller hosts, and resolves their client assets through `virtual:radiant/ssr-asset-registry`.
+5. The Nitro adapter returns HTML that already contains the initial shell, embedded app state, and a `radiant-document-state` script describing the resolved Radiant surface.
+
+Important: the current document helper discovers usage by parsing the rendered HTML through `document.createElement('template')`. In this playground that works because the normal SSR path already imports [vite-plugin-radiant/nitro/render.ts](./vite-plugin-radiant/nitro/render.ts), which installs Radiant's server light-DOM shim. If you call the document helper standalone in another server entry, install the shim first or you will not have the required DOM globals.
+
+### Client Boot
+
+1. [src/main.tsx](./src/main.tsx) calls `startRadiantApp(...)`.
+2. The bootstrap installs the Radiant hydrator by default.
+3. The bootstrap consumes the server-emitted document state when present and activates those assets directly; client-only paths still fall back to DOM discovery through `virtual:radiant/dom-module-registry`.
+4. The app root hydrates by default, or renders if `hydrate: false` is passed.
+5. The bootstrap rescans the mounted root only when it started from a client-only path.
+6. Controllers start after those modules are available.
+
+### Fragment Loading
+
+1. A client action fetches a fragment endpoint.
+2. The response headers identify whether the payload is a Radiant-managed fragment and which assets it needs.
+3. The client loads missing script modules and styles before expecting the fragment to activate.
+4. Custom elements upgrade through the browser registry.
+5. Controllers connect through the Radiant controller registry once their module registers the identifier.
 
 ## Fragment Transport Contract
 
-Fetched SSR fragments use a small response-header contract so the client does not have to guess how to treat arbitrary HTML.
+Fetched SSR fragments use response headers so the client does not have to guess how to treat arbitrary HTML.
 
-- `x-radiant-fragment: 1` marks the response as a Radiant-managed fragment payload
-- `x-radiant-tag-name` describes the fragment root tag
-- `x-radiant-assets` carries the normalized asset list used to activate the fragment
-- `x-radiant-client-module` remains as the legacy single-module fallback for older payloads
-- `x-generated-at` carries render metadata only
+- `x-radiant-fragment: 1`
+  Marks the response as a Radiant-managed fragment payload.
 
-The important split is between ownership and dependencies:
+- `x-radiant-assets`
+  Carries the normalized asset list used to activate the fragment.
 
-- the fragment header says the client should run the Radiant fragment loading pipeline for this response
-- the asset list says which modules, styles, or preload hints are required once that pipeline is active
+- `x-generated-at`
+  Carries render metadata only.
 
-That avoids brittle checks based on tag names alone. A dashed tag may be a custom element, but that does not mean the response should automatically be treated as a Radiant fragment.
+The split is intentional:
+
+- the fragment header says the client should use the Radiant fragment pipeline
+- the asset list says which modules and styles are required for activation
+
+That avoids guessing based on tag names alone.
+
+Note: the playground transport no longer mirrors the older package-level header constants for tag name or client module URL. The adapter now treats `RenderedComponent` metadata as the source of truth and exposes only the fragment marker, the asset list, and the render timestamp over HTTP.
 
 ## Controller Activation Model
 
-`RadiantController` fragments do not hydrate through the custom-element path. They activate through the controller registry.
+`RadiantController` fragments do not hydrate through the custom-element path.
 
-- if a controller module is already present on the page, inserting markup with `data-controller` is enough for the running registry to connect it
-- if a fetched fragment introduces a controller that is not loaded yet, the fragment must ship a `script-module` asset for that controller module
-- once that module loads and registers the controller, the active registry reconciles the existing DOM and connects the new host
+- If a controller module is already loaded, inserting markup with `data-controller` is enough for the running registry to connect it.
+- If a fragment introduces a controller that is not loaded yet, the fragment must ship a `script-module` asset for that controller module.
+- Once that module loads and registers the controller, the active registry reconciles the existing DOM and connects the host.
 
-In other words, fragment assets load missing code, while the controller registry is what actually attaches controller behavior to fetched markup.
+So fragment assets load missing code, while the controller registry is what actually attaches controller behavior to fetched markup.
+
+## Scope
+
+This playground is intentionally a proving ground, not a framework.
+
+It is here to validate:
+
+- the current Radiant SSR and hydration contracts
+- the Vite plugin runtime model
+- the fragment asset transport contract
+- the ergonomics of a thin client boot API
+
+It is not trying to be a file-router or a full Next-style application layer.

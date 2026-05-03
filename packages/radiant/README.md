@@ -265,41 +265,50 @@ The mental model stays simple:
 
 These are the documented public import paths exposed by the package.
 
-| Path                                          | Use for                                                                                                          |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `@ecopages/radiant`                           | Main client entrypoint. Re-exports `RadiantElement`, `RadiantController`, common decorators, and context helpers |
-| `@ecopages/radiant/context`                   | Context-related exports as a grouped entrypoint                                                                  |
-| `@ecopages/radiant/context/create-context`    | Creating context keys                                                                                            |
-| `@ecopages/radiant/context/context-provider`  | Low-level context provider class                                                                                 |
-| `@ecopages/radiant/context/consume-context`   | `@consumeContext(...)` decorator                                                                                 |
-| `@ecopages/radiant/context/provide-context`   | `@provideContext(...)` decorator                                                                                 |
-| `@ecopages/radiant/context/context-selector`  | `@contextSelector(...)` decorator — bind a field to context                                                      |
-| `@ecopages/radiant/context/on-context-update` | `@onContextUpdate(...)` decorator — run a method on context change                                               |
-| `@ecopages/radiant/controller-registry`       | Controller registration and activation helpers                                                                   |
-| `@ecopages/radiant/core/radiant-element`      | Non-JSX reactive custom-element base                                                                             |
-| `@ecopages/radiant/core/radiant-controller`   | DOM-attached controller base                                                                                     |
-| `@ecopages/radiant/client/hydrator`           | Explicit client hydrator installer and status helpers for SSR pages                                              |
-| `@ecopages/radiant/client/install-hydrator`   | Side-effect entrypoint that enables first-connect hydration before component modules load                        |
-| `@ecopages/radiant/signals/host-resource`     | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                           |
-| `@ecopages/radiant/server/light-dom-shim`     | Minimal SSR window and host-preparation helpers                                                                  |
-| `@ecopages/radiant/server/render-component`   | Canonical component SSR helpers and metadata utilities                                                           |
-| `@ecopages/radiant/server/project-root`       | Project-root resolution helper for server adapters                                                               |
-| `@ecopages/radiant/decorators/bound`          | `@bound`                                                                                                         |
-| `@ecopages/radiant/decorators/custom-element` | `@customElement(...)`                                                                                            |
-| `@ecopages/radiant/decorators/debounce`       | `@debounce(...)`                                                                                                 |
-| `@ecopages/radiant/decorators/event`          | `@event(...)`                                                                                                    |
-| `@ecopages/radiant/decorators/on-event`       | `@onEvent(...)`                                                                                                  |
-| `@ecopages/radiant/decorators/on-updated`     | `@onUpdated(...)`                                                                                                |
-| `@ecopages/radiant/decorators/prop`           | `@prop(...)`                                                                                                     |
-| `@ecopages/radiant/decorators/query`          | `@query(...)`                                                                                                    |
-| `@ecopages/radiant/decorators/query-slot`     | `@querySlot(...)`                                                                                                |
-| `@ecopages/radiant/decorators/signal`         | `@signal(...)`                                                                                                   |
-| `@ecopages/radiant/decorators/state`          | `@state`                                                                                                         |
-| `@ecopages/radiant/tools/stringify-typed`     | Typed attribute serialization helper                                                                             |
-| `@ecopages/radiant/tools/render-jsx-template` | Render a JSX template result into an existing host                                                               |
-| `@ecopages/radiant/tools/escape-script-json`  | Safe JSON-for-script serialization helper                                                                        |
-| `@ecopages/radiant/tools/event-emitter`       | Low-level `EventEmitter` helper                                                                                  |
+| Path                                              | Use for                                                                                                                                                                             |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@ecopages/radiant`                               | Main client entrypoint. Re-exports `RadiantElement`, `RadiantController`, reactive JSX bindings, common decorators, and controller-registry helpers such as `startControllers(...)` |
+| `@ecopages/radiant/context`                       | Context-related exports as a grouped entrypoint                                                                                                                                     |
+| `@ecopages/radiant/context/create-context`        | Creating context keys                                                                                                                                                               |
+| `@ecopages/radiant/context/context-provider`      | Low-level context provider class                                                                                                                                                    |
+| `@ecopages/radiant/context/consume-context`       | `@consumeContext(...)` decorator                                                                                                                                                    |
+| `@ecopages/radiant/context/provide-context`       | `@provideContext(...)` decorator                                                                                                                                                    |
+| `@ecopages/radiant/context/context-selector`      | `@contextSelector(...)` decorator — bind a field to context                                                                                                                         |
+| `@ecopages/radiant/context/on-context-update`     | `@onContextUpdate(...)` decorator — run a method on context change                                                                                                                  |
+| `@ecopages/radiant/controller-registry`           | Controller registration and activation helpers                                                                                                                                      |
+| `@ecopages/radiant/core/radiant-element`          | Non-JSX reactive custom-element base                                                                                                                                                |
+| `@ecopages/radiant/core/radiant-controller`       | DOM-attached controller base                                                                                                                                                        |
+| `@ecopages/radiant/helpers/create-query`          | Low-level query helper for component fields                                                                                                                                         |
+| `@ecopages/radiant/helpers/create-query-slot`     | Low-level slot query helper for component fields                                                                                                                                    |
+| `@ecopages/radiant/helpers/create-event`          | Low-level typed custom-event helper                                                                                                                                                 |
+| `@ecopages/radiant/helpers/create-event-listener` | Low-level DOM event-listener helper                                                                                                                                                 |
+| `@ecopages/radiant/client/hydrator`               | Explicit client hydrator installer and status helpers for SSR pages                                                                                                                 |
+| `@ecopages/radiant/client/install-hydrator`       | Side-effect entrypoint that enables first-connect hydration before component modules load                                                                                           |
+| `@ecopages/radiant/signals/host-resource`         | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                                                                                              |
+| `@ecopages/radiant/server/light-dom-shim`         | Minimal SSR window and host-preparation helpers                                                                                                                                     |
+| `@ecopages/radiant/server/render-component`       | Canonical component SSR helpers and shared fragment metadata utilities                                                                                                              |
+| `@ecopages/radiant/server/render-controller`      | Controller-host SSR helpers and controller-specific host option types                                                                                                               |
+| `@ecopages/radiant/server/project-root`           | Project-root resolution helper for server adapters                                                                                                                                  |
+| `@ecopages/radiant/decorators/bound`              | `@bound`                                                                                                                                                                            |
+| `@ecopages/radiant/decorators/custom-element`     | `@customElement(...)`                                                                                                                                                               |
+| `@ecopages/radiant/decorators/debounce`           | `@debounce(...)`                                                                                                                                                                    |
+| `@ecopages/radiant/decorators/event`              | `@event(...)`                                                                                                                                                                       |
+| `@ecopages/radiant/decorators/on-event`           | `@onEvent(...)`                                                                                                                                                                     |
+| `@ecopages/radiant/decorators/on-updated`         | `@onUpdated(...)`                                                                                                                                                                   |
+| `@ecopages/radiant/decorators/prop`               | `@prop(...)`                                                                                                                                                                        |
+| `@ecopages/radiant/decorators/query`              | `@query(...)`                                                                                                                                                                       |
+| `@ecopages/radiant/decorators/query-slot`         | `@querySlot(...)`                                                                                                                                                                   |
+| `@ecopages/radiant/decorators/signal`             | `@signal(...)`                                                                                                                                                                      |
+| `@ecopages/radiant/decorators/state`              | `@state`                                                                                                                                                                            |
+| `@ecopages/radiant/tools/stringify-typed`         | Typed attribute serialization helper                                                                                                                                                |
+| `@ecopages/radiant/tools/render-jsx-template`     | Render a JSX template result into an existing host                                                                                                                                  |
+| `@ecopages/radiant/tools/escape-script-json`      | Safe JSON-for-script serialization helper                                                                                                                                           |
+| `@ecopages/radiant/tools/event-emitter`           | Low-level `EventEmitter` helper                                                                                                                                                     |
 
-Prefer focused public subpaths when bundle size matters or when a module only needs one narrow runtime surface. The root entrypoint remains the ergonomic default for common app code, but registry, server, signal-resource, and low-level tool imports are better taken from their explicit public subpaths.
+Prefer focused public subpaths when bundle size matters or when a module only needs one narrow runtime surface. The root entrypoint remains the ergonomic default for common app code, but context, registry, helper, server, signal-resource, and low-level tool imports are better taken from their explicit public subpaths.
+
+For controller authoring, prefer a single import surface per module. If a file mixes `RadiantController`, `@controller(...)`, `@state`, `@attr(...)`, or `startControllers(...)`, default to `@ecopages/radiant` so controller registration and startup come from the same entrypoint.
+
+Important: context APIs, controller registry helpers, helper factories, server APIs, and low-level tools have explicit public subpaths. Prefer those focused paths for library and adapter code, or when a module intentionally wants only the registry runtime without the broader client surface; the root entrypoint remains the ergonomic app entrypoint for the common client surface.
 
 For SSR-specific guidance and examples, see [src/server/README.md](src/server/README.md).
