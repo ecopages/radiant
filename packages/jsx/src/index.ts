@@ -1,3 +1,7 @@
+export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
+
+export { renderToString, type RenderToStringMode, type RenderToStringOptions } from './server-render.ts';
+
 export {
 	Fragment,
 	unsafeHtml,
@@ -44,6 +48,3 @@ export type {
 	SubscribableJsxValue,
 	TemplateResultLike,
 } from './types.ts';
-
-export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
-export { renderToString, type RenderToStringMode, type RenderToStringOptions } from './server-render.ts';

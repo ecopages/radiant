@@ -15,6 +15,13 @@ The shortest accurate mental model is:
 2. The same template result can go to the DOM renderer or the SSR renderer.
 3. Fine-grained updates happen at bound child ranges, not through a hook scheduler.
 
+The package surface is intentionally split by use case:
+
+- `@ecopages/jsx` is the full authoring surface. Use it when a file needs both JSX primitives and rendering helpers.
+- `@ecopages/jsx/client` is the browser mounting surface. Use it when code should stay client-only.
+- `@ecopages/jsx/server` is the SSR surface. Use it when code should stay server-only.
+- `@ecopages/jsx/jsx-runtime` and `@ecopages/jsx/jsx-dev-runtime` are the automatic runtime entry points used by TypeScript and bundlers.
+
 ## What This Package Does
 
 `@ecopages/jsx` provides:
@@ -38,27 +45,28 @@ Use `@ecopages/jsx/server` for server-only helpers such as `renderToString(...)`
 
 Signal-like values that expose `get()` and `subscribe(...)` can be passed directly as child bindings. `createSubscribableJsxValue(...)` remains useful when an external source does not already speak that shape but still needs fine-grained child updates.
 
-## Package Boundary
+## Package Scope
 
-This is the simplest way to place `@ecopages/jsx` inside the larger system.
+`@ecopages/jsx` owns the rendering primitives for JSX authoring and output.
 
-```mermaid
-flowchart LR
-    Authoring["TSX authoring"] --> Runtime["@ecopages/jsx runtime"]
-    Runtime --> Template["Template result"]
-    Template --> DomRenderer["DOM renderer"]
-    Template --> SsrRenderer["SSR renderer"]
-    DomRenderer --> Browser["Browser DOM"]
-    SsrRenderer --> Html["HTML string"]
-    Radiant["@ecopages/radiant"] --> RuntimeUse["Components, decorators, host reactivity"]
-    RuntimeUse --> Runtime
-```
+- TSX authoring compiles to the package runtime entrypoints.
+- The runtime produces a renderer-neutral template result and related renderable values.
+- The DOM renderer mounts and hydrates those values in the browser.
+- The server renderer serializes the same values to HTML.
 
-Read it like this:
+## Entrypoints
 
-- `@ecopages/jsx` owns TSX syntax, template creation, DOM mounting, hydration, and SSR serialization.
-- `@ecopages/radiant` owns component behavior and decides when a component should render.
-- Both DOM and SSR flows consume the same template result shape.
+Choose the narrowest entrypoint that matches the environment you are writing for.
+
+| Entrypoint                      | Use it for                                                                | Includes                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `@ecopages/jsx`                 | shared library code, examples, and app code that wants one import path    | JSX primitives, DOM mounting, hydration, SSR rendering, advanced SSR hooks, and shared types |
+| `@ecopages/jsx/client`          | browser entry files and DOM-only helpers                                  | JSX primitives, DOM mounting, hydration, and shared renderable types                         |
+| `@ecopages/jsx/server`          | SSR adapters, Node or Bun HTML rendering, and custom server-element hooks | `renderToString(...)` and server custom-element render hooks                                 |
+| `@ecopages/jsx/jsx-runtime`     | automatic JSX runtime wiring                                              | `jsx`, `jsxs`, `Fragment`, and runtime JSX types                                             |
+| `@ecopages/jsx/jsx-dev-runtime` | dev-mode automatic JSX runtime wiring                                     | development runtime alias for toolchains that emit `jsxDEV(...)`                             |
+
+If a module is environment-specific, prefer the subpath import even when the root barrel would also work. That keeps browser-only and server-only code obvious at the import site.
 
 ## Install And Configure
 
@@ -145,13 +153,33 @@ This is the key simplification:
 - DOM rendering and SSR are different consumers of the same structure.
 - Hydration is not a second authoring mode. It is an SSR output mode plus a client attach step.
 
+## Internal Architecture
+
+The public entrypoints stay small because the implementation is split by responsibility instead of bundling DOM and SSR behavior into one renderer file.
+
+```mermaid
+flowchart LR
+	Runtime["jsx-runtime"] --> Values["template results and renderable values"]
+	Values --> Client["dom-render"]
+	Values --> Server["server-render"]
+	Client --> DomInternals["dom-render/* reconciliation, hydration, namespaces, event delegation"]
+	Server --> Html["HTML string output"]
+```
+
+Read it like this:
+
+- `jsx-runtime` owns authoring output, child-slot semantics, attribute normalization, and runtime value wrappers.
+- `dom-render` owns DOM mounting, reconciliation, and hydration.
+- `server-render` owns HTML serialization of the same renderable values.
+- `dom-render/*` holds the browser-only internals so the public surface can stay small.
+
 ## Direct DOM Usage
 
 If you need app-level mounting outside a `RadiantElement`, use the DOM root helper.
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
-import { createRoot } from '@ecopages/jsx';
+import { createRoot } from '@ecopages/jsx/client';
 
 function DirectHandlers() {
 	function handleClick() {
@@ -225,7 +253,7 @@ Pass a signal-like child value directly when it already exposes `get()` and `sub
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
-import { createRoot, createSubscribableJsxValue } from '@ecopages/jsx';
+import { createRoot, createSubscribableJsxValue } from '@ecopages/jsx/client';
 
 let count = 0;
 const subscribers = new Set<(value: number) => void>();
