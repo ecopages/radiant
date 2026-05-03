@@ -1,15 +1,19 @@
-import type { RadiantElement } from '../../../core/radiant-element';
+import type { ContextHostLike } from '../../context-host';
 import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
 export function consumeContext(consumedContext: UnknownContext) {
-	return <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) => {
+	return <T extends ContextHostLike, V>(target: undefined, context: ClassFieldDecoratorContext<T, V>) => {
+		void target;
 		const contextName = String(context.name);
 		const assignContextProvider = (host: T, provider: unknown) => {
-			(host as any)[contextName] = provider;
+			const hostRecord = host as T & Record<string, unknown>;
+			hostRecord[contextName] = provider;
 		};
 		const initializeConsumedContextForHost = (host: T, options: { emitMounted?: boolean } = {}) => {
-			if ((host as any)[contextName]) {
+			const hostRecord = host as T & Record<string, unknown>;
+
+			if (hostRecord[contextName]) {
 				return true;
 			}
 

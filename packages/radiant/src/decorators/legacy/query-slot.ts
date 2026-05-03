@@ -10,7 +10,7 @@ type SlotQueryHost = RadiantElement & {
 	slotProjectionVersion?: number;
 };
 
-export function querySlot<T extends Element | Element[]>(
+export function querySlot<T extends Element | Element[] | null>(
 	options: QuerySlotConfig = {},
 ): (proto: RadiantElement, propertyName: string | symbol) => void {
 	return (proto: RadiantElement, propertyKey: string | symbol) => {

@@ -1,13 +1,6 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	LegacyMethodDecoratorArgs,
-	Method,
-	StandardFieldDecoratorArgs,
-	StandardMethodDecoratorArgs,
-} from '../../types';
-import type { RadiantElement } from '../../core/radiant-element';
+import type { Method } from '../../types';
+import type { ContextHostLike } from '../context-host';
 import type { Context, ContextType, UnknownContext } from '../types';
-import type { OnContextUpdateOptions } from './on-context-update';
 import { contextSelector as legacyContextSelectorMethod } from './legacy/context-selector';
 import { contextSelector as standardContextSelectorMethod } from './standard/context-selector';
 import { contextSelectorField as legacyContextSelectorField } from './legacy/context-selector-field';
@@ -25,17 +18,17 @@ export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextT
 type ContextUpdateMethod<Selected> = (value: Selected) => unknown;
 
 type ContextSelectorDecorator<Selected> = {
-	<Host extends RadiantElement>(
+	<Host extends ContextHostLike>(
 		protoOrTarget: undefined,
 		nameOrContext: ClassFieldDecoratorContext<Host, Selected>,
 	): (this: Host, initialValue: Selected) => Selected;
-	<Host extends RadiantElement, TMethod extends ContextUpdateMethod<Selected>>(
+	<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
 		protoOrTarget: TMethod,
 		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
 	): void;
-	(protoOrTarget: RadiantElement, nameOrContext: string): void;
+	(protoOrTarget: ContextHostLike, nameOrContext: string): void;
 	(
-		protoOrTarget: RadiantElement,
+		protoOrTarget: ContextHostLike,
 		nameOrContext: string,
 		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
@@ -45,7 +38,7 @@ type ContextSelectorDecorator<Selected> = {
  * Subscribes a field or method to the current value, or a selected slice, of a context.
  *
  * **Field form (preferred):** The field holds the latest context value and is
- * updated whenever the provider changes. On `RadiantComponent` hosts, each
+ * updated whenever the provider changes. On `RadiantElement` hosts, each
  * update schedules `requestUpdate()` automatically so `render()` stays in sync.
  *
  * **Method form (deprecated — use `@onContextUpdate`):** The method is called
@@ -56,42 +49,61 @@ type ContextSelectorDecorator<Selected> = {
 export function contextSelector<T extends Context<unknown, unknown>, Selected = ContextType<T>>(
 	options: ContextSelectorOptions<T, Selected>,
 ): ContextSelectorDecorator<Selected> {
-	return function (
-		protoOrTarget: RadiantElement | Method | undefined,
+	function decorator<Host extends ContextHostLike>(
+		protoOrTarget: undefined,
+		nameOrContext: ClassFieldDecoratorContext<Host, Selected>,
+	): (this: Host, initialValue: Selected) => Selected;
+	function decorator<Host extends ContextHostLike, TMethod extends ContextUpdateMethod<Selected>>(
+		protoOrTarget: TMethod,
+		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
+	): void;
+	function decorator(protoOrTarget: ContextHostLike, nameOrContext: string): void;
+	function decorator(
+		protoOrTarget: ContextHostLike,
+		nameOrContext: string,
+		descriptor: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
+	): TypedPropertyDescriptor<ContextUpdateMethod<Selected>> | void;
+	function decorator(
+		protoOrTarget: ContextHostLike | Method | undefined,
 		nameOrContext:
 			| string
-			| ClassFieldDecoratorContext<RadiantElement, Selected>
-			| ClassMethodDecoratorContext<RadiantElement, ContextUpdateMethod<Selected>>,
+			| ClassFieldDecoratorContext<ContextHostLike, Selected>
+			| ClassMethodDecoratorContext<ContextHostLike, ContextUpdateMethod<Selected>>,
 		descriptor?: TypedPropertyDescriptor<ContextUpdateMethod<Selected>>,
 	):
-		| ((this: RadiantElement, initialValue: Selected) => Selected)
+		| ((this: ContextHostLike, initialValue: Selected) => Selected)
 		| TypedPropertyDescriptor<ContextUpdateMethod<Selected>>
 		| void {
 		if (typeof nameOrContext === 'object') {
 			if (nameOrContext.kind === 'field') {
-				return standardContextSelectorField(options)(
-					protoOrTarget as StandardFieldDecoratorArgs<RadiantElement, Selected>['protoOrTarget'],
-					nameOrContext as StandardFieldDecoratorArgs<RadiantElement, Selected>['nameOrContext'],
-				);
+				if (protoOrTarget !== undefined) {
+					throw new TypeError('@contextSelector field decorators require an undefined target');
+				}
+
+				return standardContextSelectorField(options)(undefined, nameOrContext);
 			}
 
-			return standardContextSelectorMethod(options as OnContextUpdateOptions<T, Selected>)(
-				protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-			);
+			if (typeof protoOrTarget !== 'function') {
+				throw new TypeError('@contextSelector standard method decorators require a method target');
+			}
+
+			return standardContextSelectorMethod(options)(protoOrTarget, nameOrContext);
 		}
 
 		if (descriptor) {
-			return legacyContextSelectorMethod(options as OnContextUpdateOptions<T, Selected>)(
-				protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-				nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
-				descriptor as LegacyMethodDecoratorArgs['descriptor'],
-			);
+			if (typeof protoOrTarget === 'function' || protoOrTarget === undefined) {
+				throw new TypeError('@contextSelector legacy method decorators require a host target');
+			}
+
+			return legacyContextSelectorMethod(options)(protoOrTarget, nameOrContext, descriptor);
 		}
 
-		return legacyContextSelectorField(options)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-		);
-	} as ContextSelectorDecorator<Selected>;
+		if (typeof protoOrTarget === 'function' || protoOrTarget === undefined) {
+			throw new TypeError('@contextSelector legacy field decorators require a host target');
+		}
+
+		return legacyContextSelectorField(options)(protoOrTarget, nameOrContext);
+	}
+
+	return decorator;
 }

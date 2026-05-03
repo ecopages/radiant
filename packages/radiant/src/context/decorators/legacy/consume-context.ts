@@ -1,14 +1,17 @@
-import type { RadiantElement } from '../../../core/radiant-element';
+import type { ContextHostLike } from '../../context-host';
 import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
 import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
 export function consumeContext(context: UnknownContext) {
-	return (proto: RadiantElement, propertyKey: string) => {
-		const assignContextProvider = (element: RadiantElement, provider: unknown) => {
+	return (proto: ContextHostLike, propertyKey: string) => {
+		const assignContextProvider = (element: ContextHostLike, provider: unknown) => {
 			(element as any)[propertyKey] = provider;
 		};
-		const initializeConsumedContextForHost = (element: RadiantElement, options: { emitMounted?: boolean } = {}) => {
+		const initializeConsumedContextForHost = (
+			element: ContextHostLike,
+			options: { emitMounted?: boolean } = {},
+		) => {
 			if ((element as any)[propertyKey]) {
 				return true;
 			}

@@ -4,6 +4,7 @@ import { gzipSync } from 'node:zlib';
 import { $ } from 'bun';
 
 type BundleBudget = {
+	control?: 'strict' | 'advisory';
 	entrypoint: string;
 	label: string;
 	maxBytes: number;
@@ -16,12 +17,13 @@ type SizeBudgetFile = {
 
 type SizeResult = {
 	bytes: number;
+	control: 'strict' | 'advisory';
 	entrypoint: string;
 	gzipBytes: number;
 	label: string;
 	maxBytes: number;
 	maxGzipBytes: number;
-	passed: boolean;
+	withinBudget: boolean;
 };
 
 const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
@@ -63,15 +65,17 @@ for (const bundle of budgetFile.bundles) {
 
 	const bytes = Buffer.from(await Bun.file(outputFile.path).arrayBuffer());
 	const gzipBytes = gzipSync(bytes).length;
+	const control = bundle.control ?? 'strict';
 
 	results.push({
 		bytes: bytes.length,
+		control,
 		entrypoint: bundle.entrypoint,
 		gzipBytes,
 		label: bundle.label,
 		maxBytes: bundle.maxBytes,
 		maxGzipBytes: bundle.maxGzipBytes,
-		passed: bytes.length <= bundle.maxBytes && gzipBytes <= bundle.maxGzipBytes,
+		withinBudget: bytes.length <= bundle.maxBytes && gzipBytes <= bundle.maxGzipBytes,
 	});
 }
 
@@ -84,13 +88,18 @@ for (const result of results) {
 	const gzipKb = (result.gzipBytes / 1024).toFixed(2);
 	const rawBudgetKb = (result.maxBytes / 1024).toFixed(2);
 	const gzipBudgetKb = (result.maxGzipBytes / 1024).toFixed(2);
-	const status = result.passed ? styleText('green', 'PASS') : styleText('red', 'FAIL');
+	const status = result.withinBudget
+		? styleText('green', 'PASS')
+		: result.control === 'advisory'
+			? styleText('yellow', 'WARN')
+			: styleText('red', 'FAIL');
+	const controlLabel = result.control === 'advisory' ? 'advisory' : 'strict';
 
 	console.log(
-		`${status} ${result.label} (${result.entrypoint}) raw ${rawKb} KB / ${rawBudgetKb} KB, gzip ${styleText('blue', `${gzipKb} KB`)} / ${gzipBudgetKb} KB`,
+		`${status} [${controlLabel}] ${result.label} (${result.entrypoint}) raw ${rawKb} KB / ${rawBudgetKb} KB, gzip ${styleText('blue', `${gzipKb} KB`)} / ${gzipBudgetKb} KB`,
 	);
 }
 
-if (!reportOnly && results.some((result) => !result.passed)) {
+if (!reportOnly && results.some((result) => !result.withinBudget && result.control === 'strict')) {
 	process.exit(1);
 }

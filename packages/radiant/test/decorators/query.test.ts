@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
+import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { query } from '../../src/decorators/query';
 
@@ -32,6 +33,16 @@ class ShadowQueryDecoratorElement extends RadiantElement {
 }
 
 customElements.define('shadow-query-decorator-element', ShadowQueryDecoratorElement);
+
+class QueryController extends RadiantController {
+	@query({ ref: 'form' }) form!: HTMLFormElement;
+	@query({ ref: 'email' }) emailInput!: HTMLInputElement;
+	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement;
+}
+
+class ShadowQueryController extends RadiantController {
+	@query({ ref: 'shadow-ref', scope: 'shadow' }) shadowRef!: HTMLDivElement;
+}
 
 const createElementWithRef = (text: string, dataRef: string) => {
 	const div = document.createElement('div');
@@ -171,5 +182,34 @@ describe('@query', () => {
 			'Light Class',
 			'Shadow Class',
 		]);
+	});
+});
+
+describe('RadiantController @query', () => {
+	test('queries authored form markup inside the controller host', () => {
+		const host = document.createElement('section');
+		host.innerHTML = `
+			<form data-ref="form">
+				<input data-ref="email" type="email" value="ada@example.com" />
+				<p data-ref="status">Ready</p>
+			</form>
+		`;
+
+		const controller = new QueryController(host);
+		controller.connect();
+
+		expect(controller.form).toBeInstanceOf(HTMLFormElement);
+		expect(controller.emailInput.value).toBe('ada@example.com');
+		expect(controller.statusNode.textContent).toBe('Ready');
+	});
+
+	test('rejects shadow-scoped queries for controllers', () => {
+		const host = document.createElement('section');
+		host.attachShadow({ mode: 'open' }).innerHTML = '<div data-ref="shadow-ref">Shadow Ref</div>';
+
+		expect(() => {
+			const controller = new ShadowQueryController(host);
+			controller.connect();
+		}).toThrowError('RadiantController queries only support light DOM scope.');
 	});
 });

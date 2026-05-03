@@ -1,6 +1,5 @@
-import type { RadiantElementEventListener } from '../core/radiant-element';
-import type { StandardOrLegacyMethodDecoratorArgs } from '../types';
-import type { OnEventConfig, OnEventScope } from '../helpers/create-event-listener';
+import type { Method } from '../types';
+import type { EventListenerHost, OnEventConfig, OnEventScope } from '../helpers/create-event-listener';
 import { onEvent as legacyOnEvent } from './legacy/on-event';
 import { onEvent as standardOnEvent } from './standard/on-event';
 import { methodDecoratorBridge } from './bridge';
@@ -19,11 +18,20 @@ export type { OnEventConfig, OnEventScope };
  * @param options {@link OnEventConfig} The event configuration.
  */
 export function onEvent(options: OnEventConfig) {
-	return function (
-		protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
-		descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
-	): any {
+	function decorator<Host extends EventListenerHost, TMethod extends Method>(
+		protoOrTarget: TMethod,
+		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
+	): void;
+	function decorator(
+		protoOrTarget: EventListenerHost,
+		nameOrContext: string,
+		descriptor: TypedPropertyDescriptor<Method>,
+	): TypedPropertyDescriptor<Method> | void;
+	function decorator(
+		protoOrTarget: EventListenerHost | Method,
+		nameOrContext: string | ClassMethodDecoratorContext<EventListenerHost, Method>,
+		descriptor?: TypedPropertyDescriptor<Method>,
+	): TypedPropertyDescriptor<Method> | void {
 		return methodDecoratorBridge(
 			standardOnEvent(options),
 			legacyOnEvent(options),
@@ -31,5 +39,7 @@ export function onEvent(options: OnEventConfig) {
 			nameOrContext,
 			descriptor,
 		);
-	};
+	}
+
+	return decorator;
 }

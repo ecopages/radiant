@@ -21,6 +21,8 @@ export enum ContextEventsTypes {
  * function to the callback which requesters can invoke to indicate they no longer wish to receive these updates.
  */
 export class ContextRequestEvent<T extends UnknownContext> extends Event {
+	public handled = false;
+
 	public constructor(
 		public readonly context: T,
 		public readonly callback: ContextCallback<ContextType<T>>,
@@ -28,15 +30,28 @@ export class ContextRequestEvent<T extends UnknownContext> extends Event {
 	) {
 		super(ContextEventsTypes.CONTEXT_REQUEST, { bubbles: true, composed: true });
 	}
+
+	public markHandled(): void {
+		this.handled = true;
+	}
 }
 
 /**
  * A type which represents a subscription to a context value.
  */
-export type ContextSubscription<T extends UnknownContext> = {
-	select?: (context: ContextType<T>) => unknown;
-	callback: (value: unknown) => void;
+type DirectContextSubscription<T extends UnknownContext> = {
+	select?: undefined;
+	callback: ContextCallback<ContextType<T>>;
 };
+
+type SelectedContextSubscription<T extends UnknownContext, Selected> = {
+	select: (context: ContextType<T>) => Selected;
+	callback: ContextCallback<Selected>;
+};
+
+export type ContextSubscription<T extends UnknownContext, Selected = ContextType<T>> =
+	| DirectContextSubscription<T>
+	| SelectedContextSubscription<T, Selected>;
 
 /**
  * An event fired by a context provider to signal that a context value has been mounted and is available for consumption.
@@ -63,17 +78,24 @@ export class ContextOnMountEvent extends CustomEvent<{ context: UnknownContext }
  *
  * It accepts a `selector` property which can be used to request a specific property of the context value.
  */
-export class ContextSubscriptionRequestEvent<T extends UnknownContext> extends Event {
+export class ContextSubscriptionRequestEvent<T extends UnknownContext, Selected = ContextType<T>> extends Event {
+	public handled = false;
+
 	public constructor(
 		public readonly context: T,
-		public readonly callback: (value: ContextType<T> | { [K in keyof ContextType<T>]: ContextType<T>[K] }) => void,
-		public readonly select?: (context: ContextType<T>) => unknown,
+		public readonly callback: ContextCallback<Selected>,
+		public readonly select?: (context: ContextType<T>) => Selected,
 		public readonly subscribe?: boolean,
+		public readonly onSubscribe?: (unsubscribe: () => void) => void,
 	) {
 		super(ContextEventsTypes.SUBSCRIPTION_REQUEST, {
 			bubbles: true,
 			composed: true,
 		});
+	}
+
+	public markHandled(): void {
+		this.handled = true;
 	}
 }
 

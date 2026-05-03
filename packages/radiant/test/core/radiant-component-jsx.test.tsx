@@ -1,12 +1,13 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { ContextProvider } from '../../src/context/context-provider';
-import { consumeContext } from '../../src/context/decorators/consume-context';
-import { contextSelector } from '../../src/context/decorators/context-selector';
-import { onContextUpdate } from '../../src/context/decorators/on-context-update';
-import { provideContext } from '../../src/context/decorators/provide-context';
-import { createContext } from '../../src/context/create-context';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import {
+	type ContextProvider,
+	consumeContext,
+	contextSelector,
+	createContext,
+	onContextUpdate,
+	provideContext,
+} from '../../src/context';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 class JsxReceiverElement extends HTMLElement {
@@ -17,7 +18,7 @@ if (!customElements.get('jsx-receiver')) {
 	customElements.define('jsx-receiver', JsxReceiverElement);
 }
 
-class MyRadiantComponentElement extends RadiantComponent {
+class MyRadiantElementElement extends RadiantElement {
 	clicks = 0;
 
 	private handleClick = () => {
@@ -35,7 +36,7 @@ class MyRadiantComponentElement extends RadiantComponent {
 }
 
 if (!customElements.get('my-radiant-component-jsx')) {
-	customElements.define('my-radiant-component-jsx', MyRadiantComponentElement);
+	customElements.define('my-radiant-component-jsx', MyRadiantElementElement);
 }
 
 class RadiantElementTodoItemTest extends RadiantElement {
@@ -57,7 +58,7 @@ if (!customElements.get('radiant-element-todo-item-test')) {
 	customElements.define('radiant-element-todo-item-test', RadiantElementTodoItemTest);
 }
 
-class RadiantElementTodoHostTest extends RadiantComponent {
+class RadiantElementTodoHostTest extends RadiantElement {
 	done = true;
 	label = 'Ship docs';
 
@@ -78,7 +79,7 @@ type JsxSharedState = {
 
 const jsxSharedContext = createContext<JsxSharedState>(Symbol('jsx-shared-context'));
 
-class JsxContextControls extends RadiantComponent {
+class JsxContextControls extends RadiantElement {
 	@consumeContext(jsxSharedContext) context!: ContextProvider<typeof jsxSharedContext>;
 
 	@contextSelector({ context: jsxSharedContext, select: (context) => context.count })
@@ -117,7 +118,7 @@ if (!customElements.get('jsx-context-controls')) {
 	customElements.define('jsx-context-controls', JsxContextControls);
 }
 
-class JsxContextMirror extends RadiantComponent {
+class JsxContextMirror extends RadiantElement {
 	@contextSelector({ context: jsxSharedContext })
 	snapshot: JsxSharedState = { count: 0, tone: 'emerald', note: 'Initial note' };
 
@@ -136,7 +137,7 @@ if (!customElements.get('jsx-context-mirror')) {
 	customElements.define('jsx-context-mirror', JsxContextMirror);
 }
 
-class JsxContextNoteEditor extends RadiantComponent {
+class JsxContextNoteEditor extends RadiantElement {
 	@consumeContext(jsxSharedContext) context!: ContextProvider<typeof jsxSharedContext>;
 
 	private localDraft = 'Initial note';
@@ -181,7 +182,7 @@ if (!customElements.get('jsx-context-note-editor')) {
 	customElements.define('jsx-context-note-editor', JsxContextNoteEditor);
 }
 
-class JsxContextProviderElement extends RadiantComponent {
+class JsxContextProviderElement extends RadiantElement {
 	@provideContext<typeof jsxSharedContext>({
 		context: jsxSharedContext,
 		initialValue: { count: 0, tone: 'emerald', note: 'Initial note' },
@@ -203,7 +204,7 @@ if (!customElements.get('jsx-context-provider')) {
 	customElements.define('jsx-context-provider', JsxContextProviderElement);
 }
 
-describe('RadiantComponent JSX integration', () => {
+describe('RadiantElement JSX integration', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 	});
@@ -224,7 +225,7 @@ describe('RadiantComponent JSX integration', () => {
 	});
 
 	test('binds native events and direct property values', async () => {
-		const element = document.createElement('my-radiant-component-jsx') as MyRadiantComponentElement;
+		const element = document.createElement('my-radiant-component-jsx') as MyRadiantElementElement;
 		document.body.appendChild(element);
 
 		const button = await waitFor(() => {
@@ -237,7 +238,7 @@ describe('RadiantComponent JSX integration', () => {
 		expect(element.clicks).toBe(1);
 	});
 
-	test('renders RadiantElement custom elements correctly inside a RadiantComponent JSX tree', async () => {
+	test('renders RadiantElement custom elements correctly inside a RadiantElement JSX tree', async () => {
 		const host = document.createElement('radiant-element-todo-host-test') as RadiantElementTodoHostTest;
 		document.body.appendChild(host);
 

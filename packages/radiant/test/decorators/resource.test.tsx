@@ -1,7 +1,7 @@
 import { waitFor } from '@testing-library/dom';
 import { state as createSignalState } from '@ecopages/signals';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { createResource, type ResourceRequestContext } from '../../src/signals/host-resource';
 
@@ -25,7 +25,7 @@ let connectFetcher = createFetcher();
 let reconnectFetcher = createFetcher();
 
 @customElement('resource-component-connect-test')
-class ResourceComponent extends RadiantComponent {
+class ResourceComponent extends RadiantElement {
 	cityId = createSignalState('venice');
 
 	weather = createResource(this, {
@@ -44,7 +44,7 @@ class ResourceComponent extends RadiantComponent {
 }
 
 @customElement('resource-component-reconnect-test')
-class ResourceReconnectComponent extends RadiantComponent {
+class ResourceReconnectComponent extends RadiantElement {
 	cityId = createSignalState('venice');
 
 	weather = createResource(this, {

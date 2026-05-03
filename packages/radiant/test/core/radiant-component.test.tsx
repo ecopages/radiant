@@ -3,13 +3,10 @@ import { jsx, jsxs, render as renderJsx } from '@ecopages/jsx';
 import { renderToString } from '@ecopages/jsx/server';
 import { createStore, state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { ContextProvider } from '../../src/context/context-provider';
-import { createContext } from '../../src/context/create-context';
-import { onContextUpdate } from '../../src/context/decorators/on-context-update';
-import { provideContext } from '../../src/context/decorators/provide-context';
+import { ContextProvider, createContext, onContextUpdate, provideContext } from '../../src/context';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
-import { RadiantComponent } from '../../src/core/radiant-component';
+import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { prop } from '../../src/decorators/prop';
@@ -25,7 +22,7 @@ declare const __LEGACY_ENVIRONMENT__: boolean;
 const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
 
 @customElement('tracked-reactive-reads-card-test')
-class TrackedReactiveReadsCard extends RadiantComponent {
+class TrackedReactiveReadsCard extends RadiantElement {
 	@prop({ type: String, defaultValue: 'Count' }) label = 'Count';
 	@state count = 1;
 	renderCount = 0;
@@ -42,7 +39,7 @@ class TrackedReactiveReadsCard extends RadiantComponent {
 }
 
 @customElement('ssr-array-prop-card-test')
-class SsrArrayPropCard extends RadiantComponent {
+class SsrArrayPropCard extends RadiantElement {
 	@prop({ type: Array }) items = [] as Array<{ label: string }>;
 
 	override render() {
@@ -51,7 +48,7 @@ class SsrArrayPropCard extends RadiantComponent {
 }
 
 @customElement('server-host-slot-query-card-test')
-class ServerHostSlotQueryCard extends RadiantComponent {
+class ServerHostSlotQueryCard extends RadiantElement {
 	@querySlot() defaultSlot!: HTMLParagraphElement | null;
 	@querySlot({ name: 'header' }) headerSlot!: HTMLHeadingElement | null;
 
@@ -72,14 +69,14 @@ class ServerHostSlotQueryCard extends RadiantComponent {
 	}
 }
 
-describe('RadiantComponent', () => {
+describe('RadiantElement', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 		uninstallRadiantHydrator();
 	});
 
 	test('renders its view on connect', async () => {
-		class GreetingCard extends RadiantComponent {
+		class GreetingCard extends RadiantElement {
 			override render() {
 				return <p data-ref="message">Hello component</p>;
 			}
@@ -96,7 +93,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('projects direct host children by default when render() is omitted', async () => {
-		class PassthroughCard extends RadiantComponent {}
+		class PassthroughCard extends RadiantElement {}
 
 		customElements.define('passthrough-card-test', PassthroughCard);
 
@@ -116,7 +113,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('update() rerenders the current view manually', async () => {
-		class CountCard extends RadiantComponent {
+		class CountCard extends RadiantElement {
 			count = 0;
 
 			override render() {
@@ -142,7 +139,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('@onUpdated can trigger update() for reactive props', async () => {
-		class ReactiveCountCard extends RadiantComponent {
+		class ReactiveCountCard extends RadiantElement {
 			static observedAttributes = ['count'];
 			declare count: number;
 
@@ -178,7 +175,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('update() defers rendering until the element is connected', async () => {
-		class DeferredCard extends RadiantComponent {
+		class DeferredCard extends RadiantElement {
 			message = 'Before connect';
 
 			override render() {
@@ -205,7 +202,7 @@ describe('RadiantComponent', () => {
 		const sharedCount = createSignalState(1);
 		const sharedStore = createStore({ status: 'idle' });
 
-		class SharedSignalStoreCard extends RadiantComponent {
+		class SharedSignalStoreCard extends RadiantElement {
 			override render() {
 				return (
 					<p data-ref="summary">
@@ -238,7 +235,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('renderToString() serializes the current view without connecting', () => {
-		class ServerGreetingCard extends RadiantComponent {
+		class ServerGreetingCard extends RadiantElement {
 			message = 'Hello SSR';
 
 			override render() {
@@ -254,7 +251,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('renderToString() serializes projected default-slot content when render() is omitted', () => {
-		class ServerPassthroughCard extends RadiantComponent {}
+		class ServerPassthroughCard extends RadiantElement {}
 
 		customElements.define('server-passthrough-card-test', ServerPassthroughCard);
 
@@ -265,7 +262,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('projects default and named slot content in client rendering', async () => {
-		class SlotCard extends RadiantComponent {
+		class SlotCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
@@ -302,7 +299,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('falls back when a slot has no projected content', async () => {
-		class FallbackSlotCard extends RadiantComponent {
+		class FallbackSlotCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
@@ -327,7 +324,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('reprojects direct host child mutations after connect', async () => {
-		class DynamicSlotCard extends RadiantComponent {
+		class DynamicSlotCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
@@ -358,9 +355,9 @@ describe('RadiantComponent', () => {
 		});
 	});
 
-	test('client rendering in a RadiantComponent host preserves camel-cased SVG markup', async () => {
+	test('client rendering in a RadiantElement host preserves camel-cased SVG markup', async () => {
 		@customElement('client-svg-host-test')
-		class ClientSvgHost extends RadiantComponent {
+		class ClientSvgHost extends RadiantElement {
 			override render() {
 				return (
 					<div>
@@ -460,7 +457,7 @@ describe('RadiantComponent', () => {
 		installLightDomShim();
 
 		@customElement('server-host-card-test')
-		class ServerHostCard extends RadiantComponent {
+		class ServerHostCard extends RadiantElement {
 			@prop({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
 			@prop({ type: String, defaultValue: 'Host SSR' }) label!: string;
 
@@ -483,7 +480,7 @@ describe('RadiantComponent', () => {
 			Symbol('nested-radiant-board-context'),
 		);
 
-		class NestedSsrSummaryCard extends RadiantComponent<{ summary: string }> {
+		class NestedSsrSummaryCard extends RadiantElement<{ summary: string }> {
 			@state summary = 'Awaiting board context';
 
 			@onContextUpdate({ context: nestedSsrBoardContext })
@@ -496,7 +493,7 @@ describe('RadiantComponent', () => {
 			}
 		}
 
-		class NestedSsrInsightCard extends RadiantComponent<{ value: string }> {
+		class NestedSsrInsightCard extends RadiantElement<{ value: string }> {
 			@state value = 'Pending';
 
 			@onContextUpdate({ context: nestedSsrBoardContext })
@@ -509,7 +506,7 @@ describe('RadiantComponent', () => {
 			}
 		}
 
-		class NestedSsrBoardCard extends RadiantComponent {
+		class NestedSsrBoardCard extends RadiantElement {
 			@provideContext({
 				context: nestedSsrBoardContext,
 				initialValue: {
@@ -620,14 +617,14 @@ describe('RadiantComponent', () => {
 
 	test("renderHostToString({ mode: 'hydrate' }) keeps hydration output free of internal child markers", () => {
 		@customElement('server-host-hydrate-card-test')
-		class ServerHostHydrateCard extends RadiantComponent {
+		class ServerHostHydrateCard extends RadiantElement {
 			@prop({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
 			@prop({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
 
 			override render() {
 				return (
 					<section class="component-card component-card--counter">
-						<p class="component-tag">RadiantComponent</p>
+						<p class="component-tag">RadiantElement</p>
 						<h3>{this.label}</h3>
 						<p class="component-copy">
 							This card uses the new <code>render()</code> + <code>update()</code> flow instead of manual{' '}
@@ -646,7 +643,7 @@ describe('RadiantComponent', () => {
 		const html = element.renderHostToString({ mode: 'hydrate' });
 
 		expect(html).toContain('<server-host-hydrate-card-test count="28" label="SSR counter rendered in Nitro">');
-		expect(html).toContain('class="component-tag">RadiantComponent</p>');
+		expect(html).toContain('class="component-tag">RadiantElement</p>');
 		expect(html).toContain('<h3>SSR counter rendered in Nitro</h3>');
 		expect(html).toContain('class="component-metric">Count: 28</p>');
 		expect(html).not.toContain('radiant-jsx-child-start');
@@ -660,14 +657,14 @@ describe('RadiantComponent', () => {
 		};
 
 		@customElement('server-host-bound-hydrate-card-test')
-		class ServerHostBoundHydrateCard extends RadiantComponent<ServerHostBoundHydrateCardBindings> {
+		class ServerHostBoundHydrateCard extends RadiantElement<ServerHostBoundHydrateCardBindings> {
 			@prop({ type: Number, reflect: true, defaultValue: 3, bind: true }) count!: number;
 			@prop({ type: String, defaultValue: 'SSR counter rendered in Nitro' }) label!: string;
 
 			override render() {
 				return (
 					<section class="component-card component-card--counter">
-						<p class="component-tag">RadiantComponent</p>
+						<p class="component-tag">RadiantElement</p>
 						<h3>{this.label}</h3>
 						<p class="component-metric">Count: {this.bind('count')}</p>
 					</section>
@@ -698,7 +695,7 @@ describe('RadiantComponent', () => {
 		};
 
 		@customElement('server-host-deep-tree-test')
-		class ServerHostDeepTree extends RadiantComponent<ServerHostDeepTreeBindings> {
+		class ServerHostDeepTree extends RadiantElement<ServerHostDeepTreeBindings> {
 			@prop({ type: String, defaultValue: 'Deep SSR' }) label!: string;
 			@prop({ type: Number, reflect: true, defaultValue: 11, bind: true }) count!: number;
 
@@ -747,7 +744,7 @@ describe('RadiantComponent', () => {
 
 	test('renderHostToString() keeps subclass host attribute overrides', () => {
 		@customElement('server-host-override-card-test')
-		class ServerHostOverrideCard extends RadiantComponent {
+		class ServerHostOverrideCard extends RadiantElement {
 			override render() {
 				return <p>Override</p>;
 			}
@@ -769,7 +766,7 @@ describe('RadiantComponent', () => {
 
 	test('renderHostToString() serializes projected slot content and embeds slot projection payload', () => {
 		@customElement('server-host-slot-card-test')
-		class ServerHostSlotCard extends RadiantComponent {
+		class ServerHostSlotCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
@@ -797,7 +794,7 @@ describe('RadiantComponent', () => {
 	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
 		test("renderHostToString({ mode: 'hydrate' }) emits host content before slot projection and hydration scripts", () => {
 			@customElement('server-host-ordering-card-test')
-			class ServerHostOrderingCard extends RadiantComponent {
+			class ServerHostOrderingCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
 
 				override render() {
@@ -865,7 +862,7 @@ describe('RadiantComponent', () => {
 		});
 
 		test("renderHostToString({ mode: 'hydrate' }) appends signal hydration scripts automatically", () => {
-			class ServerHostSignalCard extends RadiantComponent {
+			class ServerHostSignalCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
 
 				override render() {
@@ -893,7 +890,7 @@ describe('RadiantComponent', () => {
 	test("renderHostToString({ mode: 'hydrate' }) appends provider hydration scripts automatically", () => {
 		const serverContext = createContext<{ label: string; level: number }>(Symbol('server-context-card'));
 
-		class ServerHostContextCard extends RadiantComponent {
+		class ServerHostContextCard extends RadiantElement {
 			declare context: ContextProvider<typeof serverContext>;
 
 			constructor() {
@@ -932,7 +929,7 @@ describe('RadiantComponent', () => {
 		const scriptedContext = createContext<{ count: number; label: string }>(Symbol('scripted-radiant-context'));
 		const tagName = 'scripted-radiant-provider-host-test';
 
-		class ScriptedRadiantProviderHost extends RadiantComponent {
+		class ScriptedRadiantProviderHost extends RadiantElement {
 			declare provider: ContextProvider<typeof scriptedContext>;
 
 			constructor() {
@@ -1002,7 +999,7 @@ describe('RadiantComponent', () => {
 
 	test("renderHostToString({ mode: 'plain' }) emits authored hydration markup before slot projection payloads", () => {
 		@customElement('server-host-authored-hydration-order-card-test')
-		class ServerHostAuthoredHydrationOrderCard extends RadiantComponent {
+		class ServerHostAuthoredHydrationOrderCard extends RadiantElement {
 			override render() {
 				return (
 					<section>
@@ -1028,12 +1025,12 @@ describe('RadiantComponent', () => {
 		expect(html.match(/data-hydration-key="provider"/g)).toHaveLength(1);
 	});
 
-	test('serializes nested RadiantComponent hosts from plain intrinsic tags', () => {
+	test('serializes nested RadiantElement hosts from plain intrinsic tags', () => {
 		const nestedContext = createContext<{ label: string; level: number }>(Symbol('nested-radiant-context'));
 		const childTagName = 'nested-radiant-child-host-test';
 		const parentTagName = 'nested-radiant-parent-host-test';
 
-		class NestedRadiantChildHost extends RadiantComponent {
+		class NestedRadiantChildHost extends RadiantElement {
 			override render() {
 				const context = resolveSsrContextValue(nestedContext);
 				const summary = context ? `${context.label} / ${context.level}` : 'Pending context';
@@ -1049,7 +1046,7 @@ describe('RadiantComponent', () => {
 			}
 		}
 
-		class NestedRadiantParentHost extends RadiantComponent {
+		class NestedRadiantParentHost extends RadiantElement {
 			declare context: ContextProvider<typeof nestedContext>;
 
 			constructor() {
@@ -1131,7 +1128,7 @@ describe('RadiantComponent', () => {
 
 	test('nested Radiant SSR keeps explicit child host overrides when rendered from intrinsic custom-element tags', () => {
 		@customElement('nested-radiant-overridden-child-host-test')
-		class NestedOverriddenChildHost extends RadiantComponent {
+		class NestedOverriddenChildHost extends RadiantElement {
 			override renderHostToString(): string {
 				return '<nested-radiant-overridden-child-host-test data-source="override"><p>Overridden child host</p></nested-radiant-overridden-child-host-test>';
 			}
@@ -1141,8 +1138,12 @@ describe('RadiantComponent', () => {
 			}
 		}
 
+		if (!customElements.get('nested-radiant-overridden-child-host-test')) {
+			customElements.define('nested-radiant-overridden-child-host-test', NestedOverriddenChildHost);
+		}
+
 		@customElement('nested-radiant-overridden-parent-host-test')
-		class NestedOverriddenParentHost extends RadiantComponent {
+		class NestedOverriddenParentHost extends RadiantElement {
 			override render() {
 				return (
 					<section>
@@ -1150,6 +1151,10 @@ describe('RadiantComponent', () => {
 					</section>
 				);
 			}
+		}
+
+		if (!customElements.get('nested-radiant-overridden-parent-host-test')) {
+			customElements.define('nested-radiant-overridden-parent-host-test', NestedOverriddenParentHost);
 		}
 
 		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
@@ -1182,7 +1187,7 @@ describe('RadiantComponent', () => {
 
 	test('renderToString() keeps explicit nested child host overrides in component views', () => {
 		@customElement('nested-radiant-render-view-child-host-test')
-		class NestedRenderViewChildHost extends RadiantComponent {
+		class NestedRenderViewChildHost extends RadiantElement {
 			override renderHostToString(): string {
 				return '<nested-radiant-render-view-child-host-test data-source="override"><p>Nested renderToString child</p></nested-radiant-render-view-child-host-test>';
 			}
@@ -1192,8 +1197,12 @@ describe('RadiantComponent', () => {
 			}
 		}
 
+		if (!customElements.get('nested-radiant-render-view-child-host-test')) {
+			customElements.define('nested-radiant-render-view-child-host-test', NestedRenderViewChildHost);
+		}
+
 		@customElement('nested-radiant-render-view-parent-host-test')
-		class NestedRenderViewParentHost extends RadiantComponent {
+		class NestedRenderViewParentHost extends RadiantElement {
 			override render() {
 				return (
 					<section>
@@ -1233,7 +1242,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('hydrates SSR markup in place on connect', async () => {
-		class HydratedCounter extends RadiantComponent {
+		class HydratedCounter extends RadiantElement {
 			count = 0;
 
 			private readonly increment = () => {
@@ -1276,7 +1285,7 @@ describe('RadiantComponent', () => {
 
 	test('hydrates SSR markup that uses slot projection payloads', async () => {
 		@customElement('hydrated-slot-card-test')
-		class HydratedSlotCard extends RadiantComponent {
+		class HydratedSlotCard extends RadiantElement {
 			count = 0;
 
 			private readonly increment = () => {
@@ -1325,7 +1334,7 @@ describe('RadiantComponent', () => {
 
 	test('hydrates slot projection payloads with multiple projected roots and quoted attributes', async () => {
 		@customElement('hydrated-complex-slot-card-test')
-		class HydratedComplexSlotCard extends RadiantComponent {
+		class HydratedComplexSlotCard extends RadiantElement {
 			count = 0;
 
 			private readonly increment = () => {
@@ -1381,7 +1390,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('SSR hosts fall back to a fresh client render when the explicit hydrator is not installed', async () => {
-		class NonHydratedCounter extends RadiantComponent {
+		class NonHydratedCounter extends RadiantElement {
 			count = 0;
 
 			override render() {
@@ -1408,7 +1417,7 @@ describe('RadiantComponent', () => {
 	});
 
 	test('first-connect hydration ignores stale pre-connect update requests', async () => {
-		class DeferredHydratedCard extends RadiantComponent {
+		class DeferredHydratedCard extends RadiantElement {
 			count = 0;
 
 			constructor() {
@@ -1465,7 +1474,7 @@ describe('RadiantComponent', () => {
 			count: number;
 		};
 
-		class BoundReactiveCounter extends RadiantComponent<BoundReactiveCounterBindings> {
+		class BoundReactiveCounter extends RadiantElement<BoundReactiveCounterBindings> {
 			static observedAttributes = ['count', 'label'];
 			declare count: number;
 			declare label: string;
@@ -1542,7 +1551,7 @@ describe('RadiantComponent', () => {
 			count: number;
 		};
 
-		class BoundPropElement extends RadiantComponent<BoundPropBindings> {
+		class BoundPropElement extends RadiantElement<BoundPropBindings> {
 			declare count: number;
 
 			constructor() {
@@ -1568,8 +1577,8 @@ describe('RadiantComponent', () => {
 		expect(element.bindings.count.getValue()).toBe(4);
 	});
 
-	test('createReactiveProp and createReactiveField auto-bind on RadiantComponent when bind is omitted', () => {
-		class AutoBoundMembersElement extends RadiantComponent {
+	test('createReactiveProp and createReactiveField auto-bind on RadiantElement when bind is omitted', () => {
+		class AutoBoundMembersElement extends RadiantElement {
 			declare count: number;
 			declare draft: string;
 

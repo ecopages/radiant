@@ -1,5 +1,4 @@
-import type { RadiantElement } from '../../core/radiant-element';
-import { createEventListener } from '../../helpers/create-event-listener';
+import { createEventListener, type EventListenerHost } from '../../helpers/create-event-listener';
 import type { OnEventConfig } from '../on-event';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
@@ -18,7 +17,7 @@ import { registerLegacyInstanceInitializer } from './instance-initializers';
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
  */
 export function onEvent(eventConfig: OnEventConfig) {
-	return (proto: RadiantElement, _: string, descriptor: PropertyDescriptor) => {
+	return (proto: EventListenerHost, _: string, descriptor: PropertyDescriptor) => {
 		const originalMethod = descriptor.value;
 
 		registerLegacyInstanceInitializer(proto, (element) => {

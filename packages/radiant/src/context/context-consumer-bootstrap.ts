@@ -1,4 +1,4 @@
-import type { RadiantElement } from '../core/radiant-element';
+import type { ContextHostLike } from './context-host';
 import { registerSsrPreparationCallback } from '../core/ssr-preparation';
 import {
 	initializeConsumedContext,
@@ -18,7 +18,7 @@ type ConsumedContextAssignment = (provider: unknown) => void;
  * instance fields, props, or authored host content change during SSR setup.
  */
 export function bootstrapSsrConsumedContext(
-	host: RadiantElement,
+	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
 	options: { emitMounted?: boolean } = {},
@@ -33,13 +33,21 @@ export function bootstrapSsrConsumedContext(
  * This lets nested SSR renders recompute selector-backed state after the host
  * has finished construction and any server-side configuration hooks have run.
  */
-export function bootstrapSsrContextSelection<TContext extends UnknownContext>(
+export function bootstrapSsrContextSelection<TContext extends UnknownContext, Selected = ContextType<TContext>>(
 	host: object,
 	context: TContext,
-	callback: (value: unknown) => void,
-	select?: (context: ContextType<TContext>) => unknown,
+	callback: (value: Selected) => void,
+	select?: (context: ContextType<TContext>) => Selected,
 ): boolean {
-	return registerAndResolveConsumerBootstrap(host, () => initializeContextSelection(context, callback, select));
+	return registerAndResolveConsumerBootstrap(host, () => {
+		if (select) {
+			return initializeContextSelection(context, { callback, select });
+		}
+
+		return initializeContextSelection(context, {
+			callback: callback as (value: ContextType<TContext>) => void,
+		});
+	});
 }
 
 /**
@@ -49,7 +57,7 @@ export function bootstrapSsrContextSelection<TContext extends UnknownContext>(
  * @returns `true` when the value was satisfied synchronously from SSR state.
  */
 export function connectConsumedContext(
-	host: RadiantElement,
+	host: ContextHostLike,
 	context: UnknownContext,
 	assign: ConsumedContextAssignment,
 	options: { emitMounted?: boolean } = {},
@@ -58,8 +66,7 @@ export function connectConsumedContext(
 		return true;
 	}
 
-	requestConsumedContext(host, context, assign, options);
-	return false;
+	return requestConsumedContext(host, context, assign, options);
 }
 
 /**
@@ -68,21 +75,41 @@ export function connectConsumedContext(
  *
  * @returns `true` when the value was satisfied synchronously from SSR state.
  */
-export function connectContextSelection<TContext extends UnknownContext>(
-	host: RadiantElement,
+export function connectContextSelection<TContext extends UnknownContext, Selected = ContextType<TContext>>(
+	host: ContextHostLike,
 	context: TContext,
-	callback: (value: unknown) => void,
+	callback: (value: Selected) => void,
 	options: {
-		select?: (context: ContextType<TContext>) => unknown;
+		select?: (context: ContextType<TContext>) => Selected;
 		subscribe?: boolean;
+		onSubscribe?: (unsubscribe: () => void) => void;
 	} = {},
 ): boolean {
-	if (initializeContextSelection(context, callback, options.select)) {
+	if (options.select) {
+		const request = { callback, select: options.select };
+
+		if (initializeContextSelection(context, request)) {
+			return true;
+		}
+
+		return requestContextSelection(host, context, request, {
+			subscribe: options.subscribe,
+			onSubscribe: options.onSubscribe,
+		});
+	}
+
+	const request = {
+		callback: callback as (value: ContextType<TContext>) => void,
+	};
+
+	if (initializeContextSelection(context, request)) {
 		return true;
 	}
 
-	requestContextSelection(host, context, callback, options);
-	return false;
+	return requestContextSelection(host, context, request, {
+		subscribe: options.subscribe,
+		onSubscribe: options.onSubscribe,
+	});
 }
 
 function registerAndResolveConsumerBootstrap<TResult>(host: object, resolve: () => TResult): TResult {

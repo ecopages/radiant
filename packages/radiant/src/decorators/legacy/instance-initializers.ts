@@ -1,6 +1,4 @@
-import type { RadiantElement } from '../../core/radiant-element';
-
-type LegacyInstanceInitializer = (instance: RadiantElement) => void;
+type LegacyInstanceInitializer<T extends object = object> = (instance: T) => void;
 
 const LEGACY_INSTANCE_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-instance-initializers');
 
@@ -10,7 +8,10 @@ const LEGACY_INSTANCE_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-instan
  * Legacy decorators execute against the prototype, so any initialization that
  * needs the concrete element instance must be deferred until construction time.
  */
-export function registerLegacyInstanceInitializer(proto: object, initializer: LegacyInstanceInitializer): void {
+export function registerLegacyInstanceInitializer<T extends object>(
+	proto: T,
+	initializer: LegacyInstanceInitializer<T>,
+): void {
 	const target = proto as Record<PropertyKey, unknown>;
 	const ownInitializers = target[LEGACY_INSTANCE_INITIALIZERS];
 
@@ -31,7 +32,7 @@ export function registerLegacyInstanceInitializer(proto: object, initializer: Le
  * Initializers are collected from the prototype chain and executed from base to
  * derived class so inherited setup remains stable.
  */
-export function runLegacyInstanceInitializers(instance: RadiantElement): void {
+export function runLegacyInstanceInitializers<T extends object>(instance: T): void {
 	const prototypes: object[] = [];
 	let currentPrototype = Object.getPrototypeOf(instance);
 
@@ -42,7 +43,7 @@ export function runLegacyInstanceInitializers(instance: RadiantElement): void {
 
 	for (let index = prototypes.length - 1; index >= 0; index -= 1) {
 		const initializers = (prototypes[index] as Record<PropertyKey, unknown>)[LEGACY_INSTANCE_INITIALIZERS] as
-			| LegacyInstanceInitializer[]
+			| LegacyInstanceInitializer<T>[]
 			| undefined;
 
 		if (!Array.isArray(initializers)) {

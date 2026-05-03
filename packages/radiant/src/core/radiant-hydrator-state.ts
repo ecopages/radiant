@@ -6,7 +6,7 @@ type GlobalHydratorState = typeof globalThis & Record<PropertyKey, unknown>;
  * Marks the current JavaScript environment as hydration-enabled for first
  * custom-element connect.
  *
- * `RadiantComponent` reads this flag before deciding whether SSR markup should
+ * `RadiantElement` reads this flag before deciding whether SSR markup should
  * hydrate in place or be replaced by a fresh client render.
  */
 export function installRadiantHydratorState(): void {

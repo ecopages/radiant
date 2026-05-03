@@ -1,7 +1,6 @@
 import { waitFor } from '@testing-library/dom';
 import { state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { RadiantComponent } from '../../src/core/radiant-component';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
@@ -50,7 +49,7 @@ describe('@signal', () => {
 	}
 
 	@customElement('signal-component-test')
-	class SignalComponent extends RadiantComponent<{ count: number }> {
+	class SignalComponent extends RadiantElement<{ count: number }> {
 		@signal({ initial: 1 }) count!: WritableSignal<number>;
 		@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
 

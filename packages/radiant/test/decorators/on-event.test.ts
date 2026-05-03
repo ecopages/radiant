@@ -1,7 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onEvent } from '../../src/decorators/on-event';
+
+class ShadowOnEventController extends RadiantController {
+	received = false;
+
+	@onEvent({ ref: 'shadow-btn', type: 'click', scope: 'shadow' })
+	onShadowClick() {
+		this.received = true;
+	}
+}
 
 describe('onEvent', () => {
 	beforeEach(() => {
@@ -91,5 +101,14 @@ describe('onEvent', () => {
 		button.click();
 
 		expect(element.clickCount).toBe(2);
+	});
+
+	it('rejects shadow-scoped delegated listeners for controllers', () => {
+		const host = document.createElement('section');
+		host.attachShadow({ mode: 'open' }).innerHTML = '<button data-ref="shadow-btn">Shadow</button>';
+
+		expect(() => new ShadowOnEventController(host)).toThrowError(
+			'RadiantController event listeners only support light DOM scope.',
+		);
 	});
 });
