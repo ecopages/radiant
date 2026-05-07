@@ -1,4 +1,10 @@
 import { startControllers } from '@ecopages/radiant';
+import {
+	prepareRadiantApp,
+	type RadiantAppBootstrap,
+	type RadiantAppBootstrapContext,
+	type RadiantAppBootstrapResult,
+} from '@ecopages/radiant/client/app-bootstrap';
 import { createRoot } from '@ecopages/jsx';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { resolveRadiantAppLoadMode } from 'virtual:radiant/app-load-mode';
@@ -6,8 +12,13 @@ import { loadRadiantDomModules } from 'virtual:radiant/dom-module-registry';
 import { ensureRadiantAssets } from './client-assets';
 import { readRadiantDocumentStateFromDom } from './document-state';
 
-export type StartRadiantAppOptions = {
-	app: () => JsxRenderable;
+export type StartRadiantAppBootstrapContext = RadiantAppBootstrapContext;
+
+export type StartRadiantAppBootstrapResult<AppProps> = RadiantAppBootstrapResult<AppProps>;
+
+export type StartRadiantAppOptions<AppProps = void> = {
+	app: (props: AppProps) => JsxRenderable;
+	bootstrap?: RadiantAppBootstrap<AppProps>;
 	documentRoot?: Document;
 	hydrate?: boolean;
 	installHydrator?: boolean;
@@ -15,15 +26,26 @@ export type StartRadiantAppOptions = {
 	rootId?: string;
 };
 
-export async function startRadiantApp(options: StartRadiantAppOptions) {
+export async function startRadiantApp<AppProps = void>(options: StartRadiantAppOptions<AppProps>) {
 	const documentRoot = options.documentRoot ?? document;
 	const requestedAppLoadMode = resolveRadiantAppLoadMode(globalThis.location?.href ?? '');
 	const shouldHydrate = options.hydrate ?? requestedAppLoadMode !== 'client-only';
 	const shouldInstallHydrator = options.installHydrator ?? shouldHydrate;
+	const rootElement = resolveRadiantAppRoot(options, documentRoot);
 
 	if (shouldInstallHydrator) {
 		await import('@ecopages/radiant/client/install-hydrator');
 	}
+
+	const preparedApp = await prepareRadiantApp({
+		app: options.app,
+		bootstrap: options.bootstrap,
+		context: {
+			documentRoot,
+			rootElement,
+			shouldHydrate,
+		},
+	});
 
 	const documentState = readRadiantDocumentStateFromDom(documentRoot);
 
@@ -33,10 +55,9 @@ export async function startRadiantApp(options: StartRadiantAppOptions) {
 		await loadRadiantDomModules(documentRoot);
 	}
 
-	const rootElement = resolveRadiantAppRoot(options, documentRoot);
 	const root = createRoot(rootElement);
 	const renderApp = () => {
-		const app = options.app();
+		const app = preparedApp.app;
 
 		if (shouldHydrate) {
 			root.hydrate(app);
@@ -53,11 +74,15 @@ export async function startRadiantApp(options: StartRadiantAppOptions) {
 	}
 
 	startControllers(documentRoot);
+	await preparedApp.onStarted?.();
 
 	return root;
 }
 
-function resolveRadiantAppRoot(options: StartRadiantAppOptions, documentRoot: Document): HTMLElement {
+function resolveRadiantAppRoot<AppProps>(
+	options: StartRadiantAppOptions<AppProps>,
+	documentRoot: Document,
+): HTMLElement {
 	if (options.root) {
 		return options.root;
 	}

@@ -111,6 +111,10 @@
 			"types": "./dist/client/hydrator.d.ts",
 			"import": "./dist/client/hydrator.js"
 		},
+		"./client/app-bootstrap": {
+			"types": "./dist/client/app-bootstrap.d.ts",
+			"import": "./dist/client/app-bootstrap.js"
+		},
 		"./client/install-hydrator": {
 			"types": "./dist/client/install-hydrator.d.ts",
 			"import": "./dist/client/install-hydrator.js"
