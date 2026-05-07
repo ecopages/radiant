@@ -1,6 +1,5 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 import type { RenderedComponentAsset } from '@ecopages/radiant/server/render-component';
 
 export const RADIANT_DOCUMENT_STATE_SCRIPT_ID = 'radiant-document-state';
@@ -33,7 +32,7 @@ export function hasRadiantDocumentState(state: RadiantDocumentState): boolean {
 }
 
 export function serializeRadiantDocumentState(state: RadiantDocumentState): string {
-	return stringifyTyped<RadiantDocumentState, string>(state);
+	return JSON.stringify(state);
 }
 
 export function readRadiantDocumentStateFromDom(root: ParentNode = document) {

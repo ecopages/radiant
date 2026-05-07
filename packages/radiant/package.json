@@ -215,10 +215,6 @@
 			"types": "./dist/decorators/state.d.ts",
 			"import": "./dist/decorators/state.js"
 		},
-		"./tools/stringify-typed": {
-			"types": "./dist/tools/stringify-typed.d.ts",
-			"import": "./dist/tools/stringify-typed.js"
-		},
 		"./tools/render-jsx-template": {
 			"types": "./dist/tools/render-jsx-template.d.ts",
 			"import": "./dist/tools/render-jsx-template.js"

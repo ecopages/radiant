@@ -91,15 +91,16 @@ export class RadiantTodoApp extends RadiantElement {
 	private didInitializeTodos = false;
 
 	override connectedCallback(): void {
-		if (!this.didInitializeTodos) {
-			this.didInitializeTodos = true;
-
-			if (this.initialTodos.length > 0) {
-				this.provider.setContext({ todos: this.initialTodos });
-			}
-		}
-
 		super.connectedCallback();
+
+		queueMicrotask(() => {
+			if (this.didInitializeTodos || !this.isConnected || this.initialTodos.length === 0) {
+				return;
+			}
+
+			this.didInitializeTodos = true;
+			this.provider.setContext({ todos: this.initialTodos });
+		});
 	}
 
 	@onEvent({ selector: 'form', type: 'submit' })

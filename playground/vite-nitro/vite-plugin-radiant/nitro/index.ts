@@ -1,12 +1,14 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { renderToString, type RenderToStringOptions } from '@ecopages/jsx/server';
 import '@ecopages/radiant/server/install-light-dom-shim';
+import { RadiantController, resolveRegisteredController } from '@ecopages/radiant';
 import type {
 	RenderedComponent,
 	RenderedComponentAsset,
 	ServerRenderableComponent,
 	ServerRenderableComponentConstructor,
 } from '@ecopages/radiant/server/render-component';
+import { renderControllerToString } from '@ecopages/radiant/server/render-controller';
 import 'virtual:radiant/components';
 import { resolveRadiantAppLoadMode } from 'virtual:radiant/app-load-mode';
 import { resolveRadiantDocumentAssets } from 'virtual:radiant/ssr-asset-registry';
@@ -76,7 +78,7 @@ export async function renderRadiantDocument({
 	renderOptions = { mode: 'hydrate' },
 	resolveAssets = resolveRadiantDocumentAssets,
 }: RenderRadiantDocumentOptions): Promise<RenderedRadiantDocument> {
-	const html = renderToString(renderDocument(), renderOptions);
+	const html = await expandRadiantDocumentControllers(renderToString(renderDocument(), renderOptions), renderOptions);
 	const usage = discoverRadiantDocumentUsage(html);
 	const assets = await resolveAssets(usage);
 	const generatedAt = now().toISOString();
@@ -206,3 +208,48 @@ function injectRadiantDocumentStateIntoHtml(html: string, scriptMarkup: string):
 
 	return `${html.slice(0, rootTagEnd + 1)}${scriptMarkup}${html.slice(rootTagEnd + 1)}`;
 }
+
+async function expandRadiantDocumentControllers(html: string, renderOptions: RenderToStringOptions): Promise<string> {
+	let expandedHtml = html;
+
+	/*
+	 * Full-page SSR needs to expand render-owning controllers before usage
+	 * discovery runs, otherwise authored `data-controller` hosts stay empty in
+	 * JS-disabled responses and the document state only knows about hydration.
+	 *
+	 * This pass intentionally targets empty authored hosts only. It preserves the
+	 * host tag and attributes, then swaps in the controller-owned inner HTML
+	 * produced by the server render helper.
+	 */
+	for (const match of html.matchAll(EMPTY_CONTROLLER_HOST_PATTERN)) {
+		const [fullMatch, rawTagName = '', rawAttributes = ''] = match;
+		const attributes = parseRadiantDocumentAttributes(rawAttributes);
+		const controllerIdentifiers = (attributes[RADIANT_CONTROLLER_ATTRIBUTE] ?? '')
+			.split(/\s+/)
+			.map((identifier) => identifier.trim())
+			.filter((identifier) => identifier.length > 0);
+
+		for (const identifier of controllerIdentifiers) {
+			const controller = resolveRegisteredController(identifier);
+
+			if (!controller || controller.prototype.render === RadiantController.prototype.render) {
+				continue;
+			}
+
+			expandedHtml = expandedHtml.replace(
+				fullMatch,
+				await renderControllerToString(controller, {
+					attributes,
+					renderOptions,
+					tagName: rawTagName.toLowerCase(),
+				}),
+			);
+			break;
+		}
+	}
+
+	return expandedHtml;
+}
+
+const EMPTY_CONTROLLER_HOST_PATTERN =
+	/<([a-z][a-z0-9-]*)([^<>]*\sdata-controller=(?:"[^"]*"|'[^']*'|[^\s"'>/]+)[^<>]*)>\s*<\/\1>/gi;

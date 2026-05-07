@@ -1,6 +1,7 @@
 import { startControllers } from '@ecopages/radiant';
 import { createRoot } from '@ecopages/jsx';
 import type { JsxRenderable } from '@ecopages/jsx';
+import { resolveRadiantAppLoadMode } from 'virtual:radiant/app-load-mode';
 import { loadRadiantDomModules } from 'virtual:radiant/dom-module-registry';
 import { ensureRadiantAssets } from './client-assets';
 import { readRadiantDocumentStateFromDom } from './document-state';
@@ -16,7 +17,8 @@ export type StartRadiantAppOptions = {
 
 export async function startRadiantApp(options: StartRadiantAppOptions) {
 	const documentRoot = options.documentRoot ?? document;
-	const shouldHydrate = options.hydrate ?? true;
+	const requestedAppLoadMode = resolveRadiantAppLoadMode(globalThis.location?.href ?? '');
+	const shouldHydrate = options.hydrate ?? requestedAppLoadMode !== 'client-only';
 	const shouldInstallHydrator = options.installHydrator ?? shouldHydrate;
 
 	if (shouldInstallHydrator) {
@@ -33,13 +35,18 @@ export async function startRadiantApp(options: StartRadiantAppOptions) {
 
 	const rootElement = resolveRadiantAppRoot(options, documentRoot);
 	const root = createRoot(rootElement);
-	const app = options.app();
+	const renderApp = () => {
+		const app = options.app();
 
-	if (shouldHydrate) {
-		root.hydrate(app);
-	} else {
+		if (shouldHydrate) {
+			root.hydrate(app);
+			return;
+		}
+
 		root.render(app);
-	}
+	};
+
+	renderApp();
 
 	if (!documentState) {
 		await loadRadiantDomModules(rootElement);

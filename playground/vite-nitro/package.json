@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
+		"build": "cd ../.. && bun run --filter @ecopages/jsx build:lib && bun run --filter @ecopages/signals build:lib && bun run --filter @ecopages/radiant build:lib && cd playground/vite-nitro && vite build",
 		"preview": "nitro preview",
 		"test:e2e": "node --test ./test/nitro-page.e2e.test.mjs"
 	},

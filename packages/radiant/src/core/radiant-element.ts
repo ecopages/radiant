@@ -343,6 +343,22 @@ export class RadiantElement<Bindings extends object = {}>
 	private isFirstConnectPending = false;
 	private isRenderScheduled = false;
 	private needsRender = false;
+	/**
+	 * Snapshot of own-property values that existed before Radiant installs the
+	 * reactive accessors for declared props.
+	 *
+	 * "Pre-upgrade" refers to the custom-element upgrade window where user code,
+	 * SSR boot code, or another framework assigns `element.someProp = value`
+	 * before the browser has finished constructing the final custom-element class
+	 * instance with its accessors in place.
+	 *
+	 * Those early assignments land as plain own properties on the element. If we
+	 * define a reactive accessor later without first capturing them, the accessor
+	 * would either miss the assigned value or remain shadowed by the own property.
+	 * `createReactiveProp()` consumes this snapshot so the early value becomes the
+	 * prop's initial reactive state.
+	 */
+	private readonly preUpgradePropertyValues = new Map<string, unknown>();
 	private projectedSlotContent = new Map<string, JsxRenderable[]>();
 	private renderSignal?: Computed<{ containsSlots: boolean; value: JsxRenderable }>;
 	private readonly renderWatcher = new subtle.Watcher(() => {
@@ -353,6 +369,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 	constructor() {
 		super();
+		for (const propertyName of Object.getOwnPropertyNames(this)) {
+			this.preUpgradePropertyValues.set(propertyName, (this as Record<string, unknown>)[propertyName]);
+		}
+
 		this.reactiveHost = new ReactiveHost<this, Bindings>(
 			this,
 			{
@@ -763,18 +783,33 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactiveHost.createReactiveField(propertyName, initialValue, options);
 	}
 
+	/**
+	 * Defines a reactive custom-element property backed by a Radiant accessor.
+	 *
+	 * When the host was assigned a value before upgrade, that pre-upgrade value is
+	 * preferred over attribute parsing and `defaultValue` so early `.prop = value`
+	 * writes survive into the reactive lifecycle.
+	 */
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, attribute, reflect, defaultValue } = options;
 		const attributeKey = attribute ?? propertyName;
+		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
+		const preUpgradeValue = hasPreUpgradeValue ? (this.preUpgradePropertyValues.get(propertyName) as T) : undefined;
 
 		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
 			throw new Error(`defaultValue does not match the expected type for ${type.name}`);
 		}
 
-		const initialValue: T | undefined = getInitialValue(this, type, attributeKey, defaultValue) as T;
+		const initialValue: T | undefined = hasPreUpgradeValue
+			? preUpgradeValue
+			: (getInitialValue(this, type, attributeKey, defaultValue) as T);
 
 		if (this.hasAttribute(attributeKey) && (!reflect || initialValue == null || initialValue === '')) {
 			this.removeAttribute(attributeKey);
+		}
+
+		if (hasPreUpgradeValue && Object.prototype.hasOwnProperty.call(this, propertyName)) {
+			Reflect.deleteProperty(this, propertyName);
 		}
 
 		const propertyMapping: ReactiveProperty<T> = {

@@ -50,6 +50,7 @@
 		"size:check": "bun run ./check-size.ts",
 		"size:report": "bun run ./check-size.ts --report-only",
 		"test:lib": "vitest run",
+		"test:custom-elements": "vitest run test/custom-elements.e2e.test.tsx",
 		"test:e2e": "vitest run test/events.e2e.test.tsx",
 		"watch:lib": "bun run ./build.ts --watch"
 	},

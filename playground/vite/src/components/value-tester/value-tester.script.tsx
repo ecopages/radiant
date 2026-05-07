@@ -4,7 +4,6 @@ import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
 import { query } from '@ecopages/radiant/decorators/query';
 import { prop } from '@ecopages/radiant/decorators/prop';
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
 export type RadiantValueTesterProps = {
 	number?: number;
@@ -85,8 +84,8 @@ export const ValueTester = ({ number, string, boolean, object, array }: RadiantV
 			number={number}
 			string={string}
 			boolean={boolean}
-			object={stringifyTyped(object)}
-			array={stringifyTyped(array)}
+			object={object}
+			array={array}
 			class="grid grid-cols-5 gap-4 w-full"
 		>
 			<button class="rui-button rui-button--md rui-button--primary" type="button" data-ref="increment-number">

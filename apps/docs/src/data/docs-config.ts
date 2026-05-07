@@ -112,11 +112,6 @@ export const docsConfig: DocsConfig = {
 			],
 		},
 		{
-			name: 'Tools',
-			subdirectory: 'tools',
-			pages: [{ title: 'stringifyTyped()', slug: 'stringify-typed' }],
-		},
-		{
 			name: 'Examples',
 			subdirectory: 'examples',
 			pages: [

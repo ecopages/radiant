@@ -5,7 +5,7 @@
 	"scripts": {
 		"dev": "vite",
 		"dev:legacy": "vite -- --legacy",
-		"build": "tsc && vite build",
+		"build": "cd ../.. && bun run --filter @ecopages/jsx build:lib && bun run --filter @ecopages/radiant build:lib && cd playground/vite && tsc && vite build",
 		"preview": "vite preview",
 		"test:e2e": "node --test ./test/vite-page.e2e.test.mjs"
 	},

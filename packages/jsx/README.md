@@ -393,6 +393,19 @@ declare module '@ecopages/jsx/jsx-runtime' {
 }
 ```
 
+Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly.
+
+```tsx
+<user-grid
+	id="people"
+	class="panel"
+	items={rows}
+	selection={currentRow}
+	attr:status="ready"
+	prop:controller={controller}
+/>
+```
+
 ### Function Components And Fragments
 
 ```tsx
@@ -426,7 +439,7 @@ const Card = ({ title, children }: CardProps) => (
 <custom-editor prop:value={draft} prop:config={editorConfig} />
 ```
 
-Use `prop:*` when the target must receive a real property value instead of a serialized attribute.
+Use `prop:*` when the target must receive a real property value instead of a serialized attribute, or when you want to be explicit even though custom elements already default most unprefixed names to properties.
 
 ### Structured `data`, `aria`, `class`, and `style`
 
