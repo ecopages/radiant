@@ -92,6 +92,59 @@ describe('RadiantElement', () => {
 		});
 	});
 
+	test('renders into an internal shadow root when renderRootMode is shadow', async () => {
+		class ShadowGreetingCard extends RadiantElement {
+			protected override readonly renderRootMode = 'shadow';
+			declare count: number;
+
+			constructor() {
+				super();
+				this.createReactiveField('count', 0);
+			}
+
+			override connectedCallback(): void {
+				super.connectedCallback();
+				this.subscribeEvent({
+					selector: '[data-ref="increment"]',
+					type: 'click',
+					listener: () => {
+						this.count += 1;
+					},
+				});
+			}
+
+			override render() {
+				return (
+					<section>
+						<p data-ref="message">Count: {this.count}</p>
+						<button type="button" data-ref="increment">
+							Increment
+						</button>
+					</section>
+				);
+			}
+		}
+
+		customElements.define('shadow-greeting-card-test', ShadowGreetingCard);
+
+		const element = document.createElement('shadow-greeting-card-test') as ShadowGreetingCard;
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.shadowRoot?.querySelector('[data-ref="message"]')?.textContent).toBe('Count: 0');
+		});
+
+		expect(element.getRef('message')?.textContent).toBe('Count: 0');
+		expect(element.querySelector('[data-ref="message"]')).toBeNull();
+
+		const incrementButton = element.getRef<HTMLButtonElement>('increment');
+		incrementButton?.click();
+
+		await waitFor(() => {
+			expect(element.shadowRoot?.querySelector('[data-ref="message"]')?.textContent).toBe('Count: 1');
+		});
+	});
+
 	test('projects direct host children by default when render() is omitted', async () => {
 		class PassthroughCard extends RadiantElement {}
 
@@ -248,6 +301,24 @@ describe('RadiantElement', () => {
 		const element = document.createElement('server-greeting-card-test') as ServerGreetingCard;
 
 		expect(element.renderToString()).toBe('<p data-ref="message">Hello SSR</p>');
+	});
+
+	test('renderHostToString() serializes the host and current view', () => {
+		class ServerHostGreetingCard extends RadiantElement {
+			message = 'Hello host SSR';
+
+			override render() {
+				return <p data-ref="message">{this.message}</p>;
+			}
+		}
+
+		customElement('server-host-greeting-card-test')(ServerHostGreetingCard);
+
+		const element = document.createElement('server-host-greeting-card-test') as ServerHostGreetingCard;
+
+		expect(element.renderHostToString()).toBe(
+			'<server-host-greeting-card-test><p data-ref="message">Hello host SSR</p></server-host-greeting-card-test>',
+		);
 	});
 
 	test('renderToString() serializes projected default-slot content when render() is omitted', () => {

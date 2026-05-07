@@ -44,6 +44,8 @@ import {
 
 const RadiantElementBase = resolveRadiantElementBase();
 
+type RadiantRenderTarget = HTMLElement | ShadowRoot;
+
 function resolveRadiantElementBase(): typeof HTMLElement {
 	if (typeof HTMLElement !== 'undefined') {
 		return HTMLElement;
@@ -67,6 +69,10 @@ export type RadiantElementEventListener = {
 	type: string;
 	listener: EventListener;
 	options?: AddEventListenerOptions;
+};
+
+type RadiantElementEventSubscription = RadiantElementEventListener & {
+	target: EventTarget;
 };
 
 /**
@@ -306,6 +312,14 @@ export class RadiantElement<Bindings extends object = {}>
 	extends RadiantElementBase
 	implements IRadiantElement<Bindings>
 {
+	/**
+	 * Controls where the JSX render lifecycle mounts the component view.
+	 *
+	 * Subclasses can override this with `'shadow'` to force an internal open
+	 * shadow root for client-side rendering. Host SSR helpers remain light-DOM
+	 * only and throw when shadow render mode is enabled.
+	 */
+	protected readonly renderRootMode: 'light' | 'shadow' = 'light';
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
@@ -328,7 +342,7 @@ export class RadiantElement<Bindings extends object = {}>
 	/**
 	 * A map of event subscriptions used to manage event listeners on the Radiant element.
 	 */
-	private eventSubscriptions = new Map<string, RadiantElementEventListener>();
+	private eventSubscriptions = new Map<string, RadiantElementEventSubscription>();
 
 	/**
 	 * A map for event emitters
@@ -516,10 +530,12 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public renderHost(): JsxRenderable {
+		this.assertSupportsHostSsrRendering();
 		return requireRadiantElementSsrRuntime().renderHost(this as unknown as RadiantElementSsrCapable);
 	}
 
 	public renderHostToString(options: RenderToStringOptions = {}): string {
+		this.assertSupportsHostSsrRendering();
 		return requireRadiantElementSsrRuntime().renderHostToString(
 			this as unknown as RadiantElementSsrCapable,
 			options,
@@ -531,11 +547,13 @@ export class RadiantElement<Bindings extends object = {}>
 			return;
 		}
 
+		const renderTarget = this.getRenderTarget();
+
 		this.isRendering = true;
 		this.disconnectSlotProjectionObserver();
 
 		try {
-			hydrateJsx(this.resolveTrackedRenderOutput().value, this);
+			hydrateJsx(this.resolveTrackedRenderOutput().value, renderTarget as HTMLElement);
 		} finally {
 			this.isRendering = false;
 			this.observeSlotProjection();
@@ -571,6 +589,8 @@ export class RadiantElement<Bindings extends object = {}>
 			return;
 		}
 
+		const renderTarget = this.getRenderTarget();
+
 		this.needsRender = true;
 
 		if (!this.isConnected || this.isRendering) {
@@ -587,7 +607,7 @@ export class RadiantElement<Bindings extends object = {}>
 			this.disconnectSlotProjectionObserver();
 
 			try {
-				renderJsx(this.resolveTrackedRenderOutput().value, this);
+				renderJsx(this.resolveTrackedRenderOutput().value, renderTarget as HTMLElement);
 			} finally {
 				this.isRendering = false;
 				this.observeSlotProjection();
@@ -653,6 +673,23 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.render !== RadiantElement.prototype.render;
 	}
 
+	/** Returns the DOM root used by client-side render and hydrate work. */
+	protected getRenderTarget(): RadiantRenderTarget {
+		if (this.renderRootMode !== 'shadow') {
+			return this;
+		}
+
+		if (this.shadowRoot) {
+			return this.shadowRoot;
+		}
+
+		if (typeof this.attachShadow !== 'function') {
+			throw new Error('RadiantElement shadow render mode requires attachShadow().');
+		}
+
+		return this.attachShadow({ mode: 'open' });
+	}
+
 	protected getHostSsrAttributes(): Record<string, string> {
 		return requireRadiantElementSsrRuntime().getHostAttributes(this as unknown as RadiantElementSsrCapable);
 	}
@@ -705,16 +742,18 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public subscribeEvent(eventConfig: RadiantElementEventListener): () => void {
+		const eventTarget = this.getEventSubscriptionTarget();
 		const delegatedListener = (delegatedEvent: Event) => {
 			if (delegatedEvent.target && (delegatedEvent.target as Element).matches(eventConfig.selector)) {
 				eventConfig.listener.call(this, delegatedEvent);
 			}
 		};
 		const subscriptionId = `${eventConfig.type}:${eventConfig.selector}`;
-		this.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
+		eventTarget.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
 		this.eventSubscriptions.set(subscriptionId, {
 			...eventConfig,
 			listener: delegatedListener,
+			target: eventTarget,
 		});
 
 		return this.unsubscribeEvent.bind(this, subscriptionId);
@@ -723,14 +762,22 @@ export class RadiantElement<Bindings extends object = {}>
 	private unsubscribeEvent(id: string): void {
 		const eventSubscription = this.eventSubscriptions.get(id);
 		if (eventSubscription) {
-			this.removeEventListener(eventSubscription.type, eventSubscription.listener, eventSubscription.options);
+			eventSubscription.target.removeEventListener(
+				eventSubscription.type,
+				eventSubscription.listener,
+				eventSubscription.options,
+			);
 			this.eventSubscriptions.delete(id);
 		}
 	}
 
 	private removeAllSubscribedEvents(): void {
 		for (const eventSubscription of this.eventSubscriptions.values()) {
-			this.removeEventListener(eventSubscription.type, eventSubscription.listener, eventSubscription.options);
+			eventSubscription.target.removeEventListener(
+				eventSubscription.type,
+				eventSubscription.listener,
+				eventSubscription.options,
+			);
 		}
 		this.eventSubscriptions.clear();
 	}
@@ -761,10 +808,11 @@ export class RadiantElement<Bindings extends object = {}>
 	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
 		const selector = `[data-ref="${ref}"]`;
+		const queryRoot = this.getQueryRoot();
 		if (all) {
-			return Array.from(this.querySelectorAll(selector)) as T[];
+			return Array.from(queryRoot.querySelectorAll(selector)) as T[];
 		}
-		return (this.querySelector(selector) as T) ?? null;
+		return (queryRoot.querySelector(selector) as T) ?? null;
 	}
 
 	public getSlotElement<T extends Element = Element>(name?: string): T | null {
@@ -1017,6 +1065,22 @@ export class RadiantElement<Bindings extends object = {}>
 	private resolveRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
 		this.ensureSlotProjectionState();
 		return resolveSlotProjection(this.render(), this.projectedSlotContent);
+	}
+
+	private getEventSubscriptionTarget(): HTMLElement | ShadowRoot {
+		const renderTarget = this.getRenderTarget();
+		return renderTarget instanceof ShadowRoot ? renderTarget : this;
+	}
+
+	private getQueryRoot(): ParentNode {
+		const renderTarget = this.getRenderTarget();
+		return renderTarget instanceof ShadowRoot ? renderTarget : this;
+	}
+
+	private assertSupportsHostSsrRendering(): void {
+		if (this.renderRootMode === 'shadow') {
+			throw new Error('RadiantElement shadow render mode does not support renderHost() or renderHostToString().');
+		}
 	}
 }
 

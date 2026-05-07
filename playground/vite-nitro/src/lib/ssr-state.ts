@@ -1,5 +1,6 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
+import { escapeCssIdentifier } from './escape-css-identifier';
 
 export function serializeSsrState<T>(state: T): string {
 	return JSON.stringify(state);
@@ -22,7 +23,7 @@ export function createSsrStateScriptNode(serialized: string, id: string): JsxRen
 }
 
 export function readSsrStateFromDom<T>(id: string, root: ParentNode = document): { raw: string; state: T } | undefined {
-	const raw = root.querySelector<HTMLScriptElement>(`script#${CSS.escape(id)}`)?.textContent;
+	const raw = root.querySelector<HTMLScriptElement>(`script#${escapeCssIdentifier(id)}`)?.textContent;
 	const state = parseSsrState<T>(raw);
 
 	if (!raw || !state) {

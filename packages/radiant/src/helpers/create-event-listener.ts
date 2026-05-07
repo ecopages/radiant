@@ -1,4 +1,5 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
+import { escapeCssIdentifier } from '../tools/escape-css-identifier';
 
 /**
  * Selects which DOM tree delegated event listeners should observe.
@@ -164,7 +165,7 @@ export function createEventListener(
 		}
 
 		if ('selector' in config || 'ref' in config) {
-			const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
+			const selector = 'selector' in config ? config.selector : `[data-ref='${escapeCssIdentifier(config.ref)}']`;
 
 			if (config.scope !== 'shadow' && !lightCleanup) {
 				lightCleanup = addDelegatedListener(hostElement, config, selector, boundCallback);

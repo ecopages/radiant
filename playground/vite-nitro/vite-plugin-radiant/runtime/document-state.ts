@@ -1,6 +1,7 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
 import type { RenderedComponentAsset } from '@ecopages/radiant/server/render-component';
+import { escapeCssIdentifier } from '../../src/lib/escape-css-identifier';
 
 export const RADIANT_DOCUMENT_STATE_SCRIPT_ID = 'radiant-document-state';
 
@@ -37,7 +38,7 @@ export function serializeRadiantDocumentState(state: RadiantDocumentState): stri
 
 export function readRadiantDocumentStateFromDom(root: ParentNode = document) {
 	const raw = root.querySelector<HTMLScriptElement>(
-		`script#${CSS.escape(RADIANT_DOCUMENT_STATE_SCRIPT_ID)}`,
+		`script#${escapeCssIdentifier(RADIANT_DOCUMENT_STATE_SCRIPT_ID)}`,
 	)?.textContent;
 
 	if (!raw) {

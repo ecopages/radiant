@@ -213,6 +213,57 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('Controller render');
 	});
 
+	test('renderController() runs subclass connect logic before serializing markup', async () => {
+		class LifecycleRenderController extends RadiantController {
+			label = 'before connect';
+
+			override connect(): void {
+				super.connect();
+				this.label = 'after connect';
+				this.host.toggleAttribute('aria-busy', true);
+			}
+
+			override render() {
+				return <p>{this.label}</p>;
+			}
+		}
+
+		const rendered = await renderController(LifecycleRenderController, {
+			tagName: 'div',
+		});
+
+		expect(rendered.markup).toContain('aria-busy');
+		expect(rendered.markup).toContain('<p>after connect</p>');
+	});
+
+	test('renderController() supports connect-time dataset, classList, ownerDocument, and getRootNode access', async () => {
+		class HostApiRenderController extends RadiantController {
+			override connect(): void {
+				super.connect();
+				const host = this.host as HTMLElement;
+
+				host.dataset.phase = 'connected';
+				host.classList.add('ssr-ready');
+				host.setAttribute('data-owner-document', host.ownerDocument ? 'yes' : 'no');
+				host.setAttribute('data-root-node-type', String(host.getRootNode().nodeType));
+			}
+
+			override render() {
+				return <p>Host API SSR</p>;
+			}
+		}
+
+		const rendered = await renderController(HostApiRenderController, {
+			tagName: 'section',
+		});
+
+		expect(rendered.markup).toContain('class="ssr-ready"');
+		expect(rendered.markup).toContain('data-phase="connected"');
+		expect(rendered.markup).toContain('data-owner-document="yes"');
+		expect(rendered.markup).toContain('data-root-node-type="1"');
+		expect(rendered.markup).toContain('<p>Host API SSR</p>');
+	});
+
 	test('renderControllerToPayload() returns the portable fragment payload shape', async () => {
 		const payload = await renderControllerToPayload(RenderControllerCard, {
 			host: {
