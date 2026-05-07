@@ -1,9 +1,9 @@
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
 import { createTodoSamples, type Todo } from './todo-context';
 import './radiant-todo-app.script';
 
 export const RadiantTodoApp = () => {
-	const initialContext = stringifyTyped<{ todos: Todo[] }, string>({ todos: createTodoSamples() });
+	const initialContext = escapeScriptJson(JSON.stringify({ todos: createTodoSamples() } satisfies { todos: Todo[] }));
 
 	return (
 		<radiant-todo-app class="todo">

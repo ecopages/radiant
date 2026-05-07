@@ -31,11 +31,13 @@ The example combines three pieces:
 The docs preview authors the host in plain JSX and seeds the provider with a typed hydration script.
 
 ```tsx
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
 import { createTodoSamples, type Todo } from './todo-context';
 
 export const RadiantTodoApp = () => {
-	const initialContext = stringifyTyped<{ todos: Todo[] }, string>({ todos: createTodoSamples() });
+	const initialContext = escapeScriptJson(JSON.stringify({
+		todos: createTodoSamples(),
+	} satisfies { todos: Todo[] }));
 
 	return (
 		<radiant-todo-app class="todo">
@@ -47,9 +49,7 @@ export const RadiantTodoApp = () => {
 };
 ```
 
-JSON child text inside `<script type="application/json">` is emitted as raw script text, so the provider can read it back without an `innerHTML` escape hatch.
-
-`stringifyTyped` comes from `@ecopages/radiant/tools/stringify-typed`, not the root entrypoint.
+JSON child text inside `<script type="application/json">` is emitted as raw script text, so serialize explicitly with `JSON.stringify(...)` and escape it for safe script embedding.
 
 ## 2. Host
 

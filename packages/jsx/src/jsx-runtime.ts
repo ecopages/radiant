@@ -220,7 +220,7 @@ function createJsxElement<Props extends object>(
 	const values: unknown[] = [];
 	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
 	forEachNormalizedAttribute(rawAttributes, (name, value) => {
-		appendBinding(strings, values, name, value);
+		appendBinding(strings, values, type, name, value);
 	});
 
 	if (voidElementNames.has(type)) {
@@ -422,8 +422,8 @@ function isServerRenderableCustomElement(value: unknown): value is ServerRendera
  * - `on:*`, `on-native:*`, and `undefined` values are skipped (event handlers are
  *   not serializable, so they are not applied during SSR).
  * - `prop:*` bindings are set directly as properties on the element.
- * - Known element properties (non-hyphenated names already present on the
- *   instance) are set directly as properties.
+ * - Unprefixed names default to properties unless they match the custom-element
+ *   attribute allowlist used by the JSX runtime.
  * - Boolean attribute values emit an empty string attribute (truthy) or
  *   remove the attribute (falsy).
  * - All other values are serialized via `String()` and passed to `setAttribute`.
@@ -437,6 +437,7 @@ function applyServerCustomElementAttributes(
 ): void {
 	forEachNormalizedAttribute(attributes, (name, value) => {
 		const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
+		const bindingShapeValue = resolveBindingShapeValue(value);
 
 		if (value === undefined || name.startsWith('on:') || name.startsWith('on-native:')) {
 			return;
@@ -447,13 +448,16 @@ function applyServerCustomElementAttributes(
 			return;
 		}
 
-		if (normalizedName in element && !normalizedName.includes('-')) {
+		if (
+			!name.startsWith('attr:') &&
+			!shouldUseAttributeBindingByDefaultForElement('custom-element', normalizedName)
+		) {
 			element[normalizedName] = value;
 			return;
 		}
 
-		if (typeof value === 'boolean') {
-			if (value) {
+		if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
+			if (bindingShapeValue) {
 				element.setAttribute?.(normalizedName, '');
 			} else {
 				element.removeAttribute?.(normalizedName);
@@ -877,6 +881,7 @@ function appendStructuredAttributes(
  * - `on-native:*`  →  `@eventName=` (always direct element listener binding)
  * - `prop:*` →  `.propertyName=` (property binding)
  * - `boolean` →  `?attrName=` (boolean attribute binding)
+ * - custom elements default unprefixed non-allowlisted names to `.property=`
  * - all other values →  `attrName=` (standard attribute binding)
  *
  * `undefined` values are silently skipped so optional props do not emit
@@ -887,7 +892,7 @@ function appendStructuredAttributes(
  * @param name Normalized attribute name.
  * @param value Attribute value to bind.
  */
-function appendBinding(strings: string[], values: unknown[], name: string, value: unknown): void {
+function appendBinding(strings: string[], values: unknown[], elementName: string, name: string, value: unknown): void {
 	if (value === undefined) {
 		return;
 	}
@@ -917,8 +922,22 @@ function appendBinding(strings: string[], values: unknown[], name: string, value
 		return;
 	}
 
+	if (name.startsWith('attr:')) {
+		strings[strings.length - 1] += ` ${normalizedName}=`;
+		values.push(value);
+		strings.push('');
+		return;
+	}
+
 	if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
 		strings[strings.length - 1] += ` ?${normalizedName}=`;
+		values.push(value);
+		strings.push('');
+		return;
+	}
+
+	if (!shouldUseAttributeBindingByDefaultForElement(elementName, normalizedName)) {
+		strings[strings.length - 1] += ` .${normalizedName}=`;
 		values.push(value);
 		strings.push('');
 		return;
@@ -1061,8 +1080,36 @@ const htmlBooleanAttributes = new Set([
 	'selected',
 ]);
 
+const customElementAttributeDefaults = new Set([
+	'class',
+	'dir',
+	'hidden',
+	'id',
+	'lang',
+	'part',
+	'role',
+	'slot',
+	'style',
+	'tabindex',
+	'title',
+]);
+
 function shouldUseBooleanAttributeBinding(name: string): boolean {
-	return htmlBooleanAttributes.has(name);
+	return htmlBooleanAttributes.has(name.toLowerCase());
+}
+
+function shouldUseAttributeBindingByDefaultForElement(elementName: string, name: string): boolean {
+	if (!elementName.includes('-')) {
+		return true;
+	}
+
+	const normalizedName = name.toLowerCase();
+
+	if (normalizedName.startsWith('aria-') || normalizedName.startsWith('data-')) {
+		return true;
+	}
+
+	return customElementAttributeDefaults.has(normalizedName);
 }
 
 /**

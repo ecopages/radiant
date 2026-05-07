@@ -261,6 +261,16 @@ export function hasRegisteredController(identifier: string): boolean {
 	return controllerRegistry.has(identifier);
 }
 
+/**
+ * Returns the registered controller constructor for an identifier, if one is available.
+ *
+ * This is primarily used by SSR adapters that need to render controller-owned
+ * authored hosts before the browser registry attaches controllers at runtime.
+ */
+export function resolveRegisteredController(identifier: string): ControllerConstructor | undefined {
+	return controllerRegistry.get(identifier);
+}
+
 export function replaceController<
 	TController extends RadiantController,
 	TConstructor extends ControllerConstructor<TController>,

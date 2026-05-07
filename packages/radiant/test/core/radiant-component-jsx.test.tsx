@@ -263,7 +263,7 @@ describe('RadiantElement JSX integration', () => {
 				'radiant-element-todo-item-test',
 			) as RadiantElementTodoItemTest | null;
 			expect(rerenderedItem).toBe(firstItem);
-			expect(rerenderedItem?.getAttribute('complete')).toBe('false');
+			expect(rerenderedItem?.hasAttribute('complete')).toBe(false);
 			expect(rerenderedItem?.textContent).toBe('Ship docs');
 		});
 	});
@@ -280,7 +280,7 @@ describe('RadiantElement JSX integration', () => {
 			expect(renderedItem).not.toBeNull();
 			expect(renderedItem?.connected).toBe(true);
 			expect(renderedItem?.complete).toBe(false);
-			expect(renderedItem?.getAttribute('complete')).toBe('false');
+			expect(renderedItem?.hasAttribute('complete')).toBe(false);
 		});
 	});
 

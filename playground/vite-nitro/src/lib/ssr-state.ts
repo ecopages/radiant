@@ -1,9 +1,8 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import { escapeScriptJson } from '@ecopages/radiant/tools/escape-script-json';
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 
 export function serializeSsrState<T>(state: T): string {
-	return stringifyTyped<T, string>(state);
+	return JSON.stringify(state);
 }
 
 export function parseSsrState<T>(raw?: string | null): T | undefined {

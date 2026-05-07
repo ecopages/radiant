@@ -1,5 +1,4 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
 import type { TodoContext } from './radiant-todo-app.script';
 import { NoCompletedTodosMessage, NoTodosMessage, TodoList } from './radiant-todo.templates';
 import './radiant-todo-app.script';
@@ -62,7 +61,7 @@ export const RadiantTodoApp = () => {
 	const completedTodos = data.todos.filter((todo) => todo.complete);
 	return (
 		<>
-			<radiant-todo-app class="todo" initialTodos={stringifyTyped<TodoContext['todos'], string>(data.todos)}>
+			<radiant-todo-app class="todo" initialTodos={data.todos}>
 				<section class="todo__board">
 					<TodoPanel title="Incomplete Todos" count={incompleteTodos.length} ref="incomplete">
 						{incompleteTodos.length > 0 ? <TodoList todos={incompleteTodos} /> : <NoTodosMessage />}

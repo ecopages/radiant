@@ -239,6 +239,19 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values).toEqual([payload]);
 	});
 
+	test('custom elements default non-allowlisted props to property bindings', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const items = [{ id: 1 }];
+		const result = jsx('property-receiver', {
+			items,
+			id: 'receiver',
+		});
+
+		expectTemplateResultLike(result);
+		expect(Array.from(result.strings)).toEqual(['<property-receiver .items=', ' id=', '></property-receiver>']);
+		expect(result.values).toEqual([items, 'receiver']);
+	});
+
 	test('attr:name encodes an explicit attribute binding with the stripped name', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('property-receiver', {
@@ -248,6 +261,18 @@ describe('Radiant JSX runtime', () => {
 		expectTemplateResultLike(result);
 		expect(Array.from(result.strings)).toEqual(['<property-receiver value=', '></property-receiver>']);
 		expect(result.values).toEqual(['draft']);
+	});
+
+	test('native intrinsic elements keep unprefixed props as attribute bindings', async () => {
+		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
+		const result = jsx('button', {
+			type: 'button',
+			children: 'Save',
+		});
+
+		expectTemplateResultLike(result);
+		expect(Array.from(result.strings)).toEqual(['<button type=', '>', '</button>']);
+		expect(result.values).toEqual(['button', 'Save']);
 	});
 
 	test('boolean, data, and aria bindings encode the expected template syntax', async () => {
