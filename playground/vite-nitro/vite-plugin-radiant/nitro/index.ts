@@ -217,9 +217,8 @@ async function expandRadiantDocumentControllers(html: string, renderOptions: Ren
 	 * discovery runs, otherwise authored `data-controller` hosts stay empty in
 	 * JS-disabled responses and the document state only knows about hydration.
 	 *
-	 * This pass intentionally targets empty authored hosts only. It preserves the
-	 * host tag and attributes, then swaps in the controller-owned inner HTML
-	 * produced by the server render helper.
+	 * Custom-element SSR now happens in the shared JSX/Radiant SSR runtime, so
+	 * this document pass only needs to handle authored controller hosts.
 	 */
 	for (const match of html.matchAll(EMPTY_CONTROLLER_HOST_PATTERN)) {
 		const [fullMatch, rawTagName = '', rawAttributes = ''] = match;

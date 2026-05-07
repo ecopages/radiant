@@ -26,6 +26,12 @@ export function createAppStore(initialState?: AppState | RenderedComponentPayloa
 	return createStore(createInitialState(initialState));
 }
 
+export function initializeAppStore(initialState?: AppState | RenderedComponentPayload): AppStore {
+	const store = createAppStore(initialState);
+	setAppStore(store);
+	return store;
+}
+
 export function setAppStore(store: AppStore): void {
 	currentStore.set(store);
 }

@@ -1,7 +1,7 @@
 import { toRenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import { renderRadiantNitroPage } from '../vite-plugin-radiant/nitro/index';
 import { App } from '../src/app';
-import { createAppStore, createStateScriptNode, setAppStore } from '../src/store/store';
+import { createStateScriptNode, initializeAppStore } from '../src/store/store';
 
 export default {
 	async fetch(request: Request) {
@@ -17,8 +17,7 @@ export default {
 				},
 			},
 			renderPage: ({ rendered }) => {
-				const store = createAppStore(toRenderedComponentPayload(rendered));
-				setAppStore(store);
+				const store = initializeAppStore(toRenderedComponentPayload(rendered));
 
 				return <App bootstrapStateScript={createStateScriptNode(store)} ssrPreviewContent={rendered.preview} />;
 			},
