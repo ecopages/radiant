@@ -8,20 +8,19 @@
 	"scripts": {
 		"start": "bun run app.ts",
 		"dev": "bun run app.ts --dev",
-		"build": "cd ../.. && bun run --filter @ecopages/jsx build:lib && bun run --filter @ecopages/signals build:lib && bun run --filter @ecopages/radiant build:lib && cd apps/docs && bun generate:llms && bun patch:jsx-runtime-bundle && bun run app.ts --build && bun run scripts/create-clean-url-aliases.ts",
-		"preview": "bun generate:llms && bun patch:jsx-runtime-bundle && bun run app.ts --preview",
+		"build": "cd ../.. && bun run --filter @ecopages/jsx build:lib && bun run --filter @ecopages/signals build:lib && bun run --filter @ecopages/radiant build:lib && cd apps/docs && bun generate:llms && bun run app.ts --build && bun run scripts/create-clean-url-aliases.ts",
+		"preview": "bun generate:llms && bun run app.ts --preview",
 		"test:e2e": "node --test ./test/*.e2e.test.mjs",
 		"watch:dev": "bun --watch run app.ts --dev",
-		"generate:llms": "bun run scripts/generate-llm-docs.ts",
-		"patch:jsx-runtime-bundle": "bun run scripts/patch-jsx-runtime-bundle.ts"
+		"generate:llms": "bun run scripts/generate-llm-docs.ts"
 	},
 	"devDependencies": {
-		"@ecopages/browser-router": "0.2.0-alpha.23",
-		"@ecopages/core": "0.2.0-alpha.23",
-		"@ecopages/file-system": "0.2.0-alpha.23",
-		"@ecopages/ecopages-jsx": "0.2.0-alpha.23",
+		"@ecopages/browser-router": "0.2.0-alpha.26",
+		"@ecopages/core": "0.2.0-alpha.26",
+		"@ecopages/file-system": "0.2.0-alpha.26",
+		"@ecopages/ecopages-jsx": "0.2.0-alpha.26",
 		"@ecopages/jsx": "workspace:*",
-		"@ecopages/postcss-processor": "0.2.0-alpha.23",
+		"@ecopages/postcss-processor": "0.2.0-alpha.26",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/signals": "workspace:*",
 		"@ecopages/scripts-injector": "^0.1.5",
