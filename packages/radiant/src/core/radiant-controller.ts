@@ -39,6 +39,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private connected = false;
 	private isRendering = false;
 	private isRenderScheduled = false;
+	private isSsrLifecycle = false;
 	private needsRender = false;
 	private renderSignal?: Computed<JsxRenderable>;
 	private readonly renderWatcher = new subtle.Watcher(() => {
@@ -82,8 +83,13 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * browser render/update lifecycle.
 	 */
 	public connectForSsrRender(): void {
-		this.connected = true;
-		this.reactiveHost.connectHost();
+		this.isSsrLifecycle = true;
+
+		try {
+			this.connect();
+		} finally {
+			this.isSsrLifecycle = false;
+		}
 	}
 
 	/**
@@ -99,9 +105,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * Disconnects a controller that was attached through the SSR-only lifecycle.
 	 */
 	public disconnectForSsrRender(): void {
-		this.disconnectRenderWatcher();
-		this.reactiveHost.disconnectHost();
-		this.connected = false;
+		this.disconnect();
 	}
 
 	public get isConnected(): boolean {
@@ -355,7 +359,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	}
 
 	protected shouldRunRenderLifecycle(): boolean {
-		return this.render !== RadiantController.prototype.render;
+		return !this.isSsrLifecycle && this.render !== RadiantController.prototype.render;
 	}
 
 	private getRenderTarget(): HTMLElement | null {

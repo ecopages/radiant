@@ -1,6 +1,7 @@
 import type { RenderedComponentAsset } from '@ecopages/radiant/server/render-component';
 import { loadRadiantClientModule } from 'virtual:radiant/client-module-registry';
 import type { RadiantDocumentUsage } from './document-state';
+import { escapeCssIdentifier } from '../../src/lib/escape-css-identifier';
 
 export async function ensureRadiantAssets({
 	assets,
@@ -42,7 +43,7 @@ async function ensureDefinedCustomElements(tagNames: readonly string[]) {
 
 function ensureHeadLink(rel: string, href: string) {
 	const head = document.head;
-	if (head.querySelector(`link[rel="${CSS.escape(rel)}"][href="${CSS.escape(href)}"]`)) {
+	if (head.querySelector(`link[rel="${escapeCssIdentifier(rel)}"][href="${escapeCssIdentifier(href)}"]`)) {
 		return;
 	}
 
@@ -54,9 +55,9 @@ function ensureHeadLink(rel: string, href: string) {
 
 function ensureStylesheet(href: string, media?: string) {
 	const head = document.head;
-	const escapedHref = CSS.escape(href);
+	const escapedHref = escapeCssIdentifier(href);
 	const selector = media
-		? `link[rel="stylesheet"][href="${escapedHref}"][media="${CSS.escape(media)}"]`
+		? `link[rel="stylesheet"][href="${escapedHref}"][media="${escapeCssIdentifier(media)}"]`
 		: `link[rel="stylesheet"][href="${escapedHref}"]`;
 
 	if (head.querySelector(selector)) {

@@ -5,6 +5,10 @@ type MinimalCustomElementRegistry = {
 	get(name: string): CustomElementConstructor | undefined;
 };
 
+type MinimalCssNamespace = {
+	escape(value: string): string;
+};
+
 /**
  * Minimal window-like runtime surface exposed by the SSR light-DOM shim.
  *
@@ -14,6 +18,8 @@ type MinimalCustomElementRegistry = {
 export type LightDomShimWindow = {
 	/** Event constructor exposed to SSR-created components. */
 	CustomEvent: typeof CustomEvent;
+	/** Document constructor exposed to SSR-created components. */
+	Document: typeof Document;
 	/** Element constructor exposed to SSR-created components. */
 	Element: typeof Element;
 	/** Event constructor exposed to SSR-created components. */
@@ -26,6 +32,10 @@ export type LightDomShimWindow = {
 	HTMLElement: typeof HTMLElement;
 	/** Node constructor exposed to SSR-created components. */
 	Node: typeof Node;
+	/** Minimal document instance exposed to SSR-created components. */
+	document: Document;
+	/** Minimal CSS namespace exposed to SSR-created components. */
+	CSS: MinimalCssNamespace;
 	/** Custom element registry used while rendering in SSR. */
 	customElements: MinimalCustomElementRegistry;
 };
@@ -45,14 +55,20 @@ export type ServerRenderEnvironment = {
 type MinimalParentNode = Node & ParentNode;
 
 class MinimalNode extends EventTarget {
+	static readonly DOCUMENT_NODE = 9;
 	static readonly ELEMENT_NODE = 1;
 	static readonly TEXT_NODE = 3;
 
 	public childNodes: Node[] = [];
+	public ownerDocument: Document | null;
 	public parentNode: MinimalParentNode | null = null;
 
-	constructor(public readonly nodeType: number) {
+	constructor(
+		public readonly nodeType: number,
+		ownerDocument: Document | null = null,
+	) {
 		super();
+		this.ownerDocument = ownerDocument;
 	}
 
 	append(...nodes: Array<Node | string>): void {
@@ -67,6 +83,8 @@ class MinimalNode extends EventTarget {
 		}
 
 		this.childNodes.push(node);
+		(node as Node & { ownerDocument: Document | null }).ownerDocument =
+			this.nodeType === MinimalNode.DOCUMENT_NODE ? (this as unknown as Document) : this.ownerDocument;
 		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = this as unknown as MinimalParentNode;
 		return node;
 	}
@@ -99,11 +117,24 @@ class MinimalNode extends EventTarget {
 	set textContent(value: string | null) {
 		this.replaceChildren(value ?? '');
 	}
+
+	getRootNode(): Node {
+		let current: Node = this as unknown as Node;
+
+		while ('parentNode' in current && current.parentNode) {
+			current = current.parentNode;
+		}
+
+		return current;
+	}
 }
 
 class MinimalTextNode extends MinimalNode {
-	constructor(private value: string) {
-		super(MinimalNode.TEXT_NODE);
+	constructor(
+		private value: string,
+		ownerDocument: Document | null = getInstalledDocumentLike(),
+	) {
+		super(MinimalNode.TEXT_NODE, ownerDocument);
 	}
 
 	override get textContent(): string {
@@ -115,18 +146,145 @@ class MinimalTextNode extends MinimalNode {
 	}
 }
 
+class MinimalClassList {
+	constructor(private readonly element: MinimalElement) {}
+
+	add(...tokens: string[]): void {
+		const nextTokens = new Set(this.readTokens());
+
+		for (const token of tokens) {
+			if (token !== '') {
+				nextTokens.add(token);
+			}
+		}
+
+		this.writeTokens([...nextTokens]);
+	}
+
+	remove(...tokens: string[]): void {
+		const nextTokens = new Set(this.readTokens());
+
+		for (const token of tokens) {
+			nextTokens.delete(token);
+		}
+
+		this.writeTokens([...nextTokens]);
+	}
+
+	toggle(token: string, force?: boolean): boolean {
+		const hasToken = this.contains(token);
+		const shouldAdd = force ?? !hasToken;
+
+		if (shouldAdd) {
+			this.add(token);
+			return true;
+		}
+
+		this.remove(token);
+		return false;
+	}
+
+	contains(token: string): boolean {
+		return this.readTokens().includes(token);
+	}
+
+	toString(): string {
+		return this.value;
+	}
+
+	get value(): string {
+		return this.element.getAttribute('class') ?? '';
+	}
+
+	private readTokens(): string[] {
+		return this.value
+			.split(/\s+/)
+			.map((token) => token.trim())
+			.filter((token) => token.length > 0);
+	}
+
+	private writeTokens(tokens: string[]): void {
+		if (tokens.length === 0) {
+			this.element.removeAttribute('class');
+			return;
+		}
+
+		this.element.setAttribute('class', tokens.join(' '));
+	}
+}
+
 class MinimalElement extends MinimalNode {
 	private attributes = new Map<string, string>();
+	private classListValue?: MinimalClassList;
+	private datasetValue?: DOMStringMap;
 	private fragmentHtml?: string;
 	private fragmentText?: string;
 
 	public readonly localName: string;
 	public readonly tagName: string;
 
-	constructor(tagName = 'div') {
-		super(MinimalNode.ELEMENT_NODE);
+	constructor(tagName = 'div', ownerDocument: Document | null = getInstalledDocumentLike()) {
+		super(MinimalNode.ELEMENT_NODE, ownerDocument);
 		this.localName = tagName.toLowerCase();
 		this.tagName = this.localName.toUpperCase();
+	}
+
+	get classList(): DOMTokenList {
+		this.classListValue ??= new MinimalClassList(this);
+		return this.classListValue as unknown as DOMTokenList;
+	}
+
+	get dataset(): DOMStringMap {
+		this.datasetValue ??= new Proxy(
+			{},
+			{
+				deleteProperty: (_target, property) => {
+					if (typeof property !== 'string') {
+						return false;
+					}
+
+					this.removeAttribute(toDataAttributeName(property));
+					return true;
+				},
+				get: (_target, property) => {
+					if (typeof property !== 'string') {
+						return undefined;
+					}
+
+					return this.getAttribute(toDataAttributeName(property)) ?? undefined;
+				},
+				getOwnPropertyDescriptor: (_target, property) => {
+					if (typeof property !== 'string') {
+						return undefined;
+					}
+
+					return {
+						configurable: true,
+						enumerable: true,
+						value: this.getAttribute(toDataAttributeName(property)) ?? undefined,
+						writable: true,
+					};
+				},
+				has: (_target, property) => {
+					return typeof property === 'string' && this.hasAttribute(toDataAttributeName(property));
+				},
+				ownKeys: () => {
+					return this.getAttributeNames()
+						.filter((name) => name.startsWith('data-'))
+						.map((name) => toDatasetPropertyName(name.slice(5)));
+				},
+				set: (_target, property, value) => {
+					if (typeof property !== 'string') {
+						return false;
+					}
+
+					this.setAttribute(toDataAttributeName(property), String(value));
+					return true;
+				},
+			},
+		) as DOMStringMap;
+
+		return this.datasetValue;
 	}
 
 	hasAttribute(name: string): boolean {
@@ -144,6 +302,18 @@ class MinimalElement extends MinimalNode {
 	setAttribute(name: string, value: unknown): void {
 		this.fragmentHtml = undefined;
 		this.attributes.set(name, String(value));
+	}
+
+	toggleAttribute(name: string, force?: boolean): boolean {
+		const shouldHaveAttribute = force ?? !this.hasAttribute(name);
+
+		if (shouldHaveAttribute) {
+			this.setAttribute(name, '');
+			return true;
+		}
+
+		this.removeAttribute(name);
+		return false;
 	}
 
 	removeAttribute(name: string): void {
@@ -182,7 +352,7 @@ class MinimalElement extends MinimalNode {
 	set innerHTML(html: string) {
 		this.fragmentHtml = undefined;
 		this.fragmentText = undefined;
-		this.replaceChildren(...parseHtmlToNodes(html));
+		this.replaceChildren(...parseHtmlToNodes(html, this.ownerDocument));
 	}
 
 	override get textContent(): string {
@@ -229,12 +399,12 @@ class MinimalCustomEvent<T = unknown> extends MinimalEvent {
 class MinimalHTMLElement extends MinimalElement {
 	public isConnected = false;
 
-	constructor(tagName = 'div') {
-		super(tagName);
+	constructor(tagName = 'div', ownerDocument: Document | null = getInstalledDocumentLike()) {
+		super(tagName, ownerDocument);
 	}
 
 	insertAdjacentHTML(_position: InsertPosition, html: string): void {
-		this.append(...parseHtmlToNodes(html));
+		this.append(...parseHtmlToNodes(html, this.ownerDocument));
 	}
 
 	connectedCallback?(): void;
@@ -243,8 +413,32 @@ class MinimalHTMLElement extends MinimalElement {
 }
 
 class MinimalHtmlScriptElement extends MinimalHTMLElement {
+	constructor(ownerDocument: Document | null = getInstalledDocumentLike()) {
+		super('script', ownerDocument);
+	}
+}
+
+class MinimalDocument extends MinimalNode {
 	constructor() {
-		super('script');
+		super(MinimalNode.DOCUMENT_NODE);
+	}
+
+	createElement(tagName: string): HTMLElement {
+		return (tagName.toLowerCase() === 'script'
+			? new MinimalHtmlScriptElement(this as unknown as Document)
+			: new MinimalHTMLElement(tagName, this as unknown as Document)) as unknown as HTMLElement;
+	}
+
+	createTextNode(value: string): Text {
+		return new MinimalTextNode(value, this as unknown as Document) as unknown as Text;
+	}
+
+	querySelector(): Element | null {
+		return null;
+	}
+
+	querySelectorAll(): Element[] {
+		return [];
 	}
 }
 
@@ -266,19 +460,32 @@ class MinimalCustomElementsRegistry implements MinimalCustomElementRegistry {
 
 let installedWindow: LightDomShimWindow | undefined;
 
+const minimalCssNamespace: MinimalCssNamespace = {
+	escape(value: string): string {
+		return escapeCssIdentifier(String(value));
+	},
+};
+
 function createTextNode(value: string): Node {
-	return new MinimalTextNode(value) as unknown as Node;
+	return new MinimalTextNode(value, getInstalledDocumentLike()) as unknown as Node;
+}
+
+function getInstalledDocumentLike(): Document | null {
+	return ((globalThis as typeof globalThis & { document?: Document }).document ?? null) as Document | null;
 }
 
 function getExistingWindowLike(): LightDomShimWindow | undefined {
 	const globalScope = globalThis as typeof globalThis & {
+		CSS?: MinimalCssNamespace;
 		CustomEvent?: typeof CustomEvent;
+		Document?: typeof Document;
 		Element?: typeof Element;
 		Event?: typeof Event;
 		EventTarget?: typeof EventTarget;
 		HTMLScriptElement?: typeof HTMLScriptElement;
 		HTMLElement?: typeof HTMLElement;
 		Node?: typeof Node;
+		document?: Document;
 		customElements?: MinimalCustomElementRegistry;
 		window?: LightDomShimWindow;
 	};
@@ -286,8 +493,10 @@ function getExistingWindowLike(): LightDomShimWindow | undefined {
 
 	if (
 		typeof globalScope.Node === 'undefined' ||
+		typeof globalScope.Document === 'undefined' ||
 		typeof globalScope.Element === 'undefined' ||
 		typeof globalScope.HTMLElement === 'undefined' ||
+		typeof globalScope.document === 'undefined' ||
 		!existingCustomElements ||
 		typeof existingCustomElements.define !== 'function' ||
 		typeof existingCustomElements.get !== 'function'
@@ -297,13 +506,16 @@ function getExistingWindowLike(): LightDomShimWindow | undefined {
 
 	return (
 		globalScope.window ?? {
+			CSS: globalScope.CSS ?? minimalCssNamespace,
 			CustomEvent: (globalScope.CustomEvent ?? MinimalCustomEvent) as typeof CustomEvent,
+			Document: globalScope.Document,
 			Element: globalScope.Element,
 			Event: (globalScope.Event ?? MinimalEvent) as typeof Event,
 			EventTarget: (globalScope.EventTarget ?? EventTarget) as typeof EventTarget,
 			HTMLScriptElement: (globalScope.HTMLScriptElement ?? globalScope.HTMLElement) as typeof HTMLScriptElement,
 			HTMLElement: globalScope.HTMLElement,
 			Node: globalScope.Node,
+			document: globalScope.document,
 			customElements: existingCustomElements,
 		}
 	);
@@ -355,28 +567,36 @@ export function installLightDomShim(): LightDomShimWindow {
 	}
 
 	const customElements = new MinimalCustomElementsRegistry();
+	const document = new MinimalDocument() as unknown as Document;
 	const EventConstructor = (globalThis.Event ?? MinimalEvent) as typeof Event;
 	const CustomEventConstructor = (globalThis.CustomEvent ?? MinimalCustomEvent) as typeof CustomEvent;
+	const DocumentConstructor = MinimalDocument as unknown as typeof Document;
 	const EventTargetConstructor = (globalThis.EventTarget ?? EventTarget) as typeof EventTarget;
 	installedWindow = {
+		CSS: (globalThis.CSS as MinimalCssNamespace | undefined) ?? minimalCssNamespace,
 		CustomEvent: CustomEventConstructor,
+		Document: DocumentConstructor,
 		Element: MinimalElement as unknown as typeof Element,
 		Event: EventConstructor,
 		EventTarget: EventTargetConstructor,
 		HTMLScriptElement: MinimalHtmlScriptElement as unknown as typeof HTMLScriptElement,
 		HTMLElement: MinimalHTMLElement as unknown as typeof HTMLElement,
 		Node: MinimalNode as unknown as typeof Node,
+		document,
 		customElements,
 	};
 
 	Object.assign(globalThis, {
+		CSS: (globalThis.CSS as MinimalCssNamespace | undefined) ?? minimalCssNamespace,
 		CustomEvent: CustomEventConstructor,
+		Document: DocumentConstructor,
 		Element: MinimalElement,
 		Event: EventConstructor,
 		EventTarget: EventTargetConstructor,
 		HTMLScriptElement: MinimalHtmlScriptElement,
 		HTMLElement: MinimalHTMLElement,
 		Node: MinimalNode,
+		document,
 		customElements,
 		window: installedWindow,
 	});
@@ -384,11 +604,11 @@ export function installLightDomShim(): LightDomShimWindow {
 	return installedWindow;
 }
 
-function createElementFromFragment(fragment: string, tag: ParsedHtmlTag): Node {
+function createElementFromFragment(fragment: string, tag: ParsedHtmlTag, ownerDocument: Document | null): Node {
 	const element =
 		tag.tagName === 'script'
-			? (new MinimalHtmlScriptElement() as MinimalElement)
-			: new MinimalHTMLElement(tag.tagName);
+			? (new MinimalHtmlScriptElement(ownerDocument) as MinimalElement)
+			: new MinimalHTMLElement(tag.tagName, ownerDocument);
 
 	element.setSerializedFragment(fragment, extractTextContent(tag.innerHtml), tag.attributes);
 	return element as unknown as Node;
@@ -402,20 +622,69 @@ function extractTextContent(html: string): string {
 	return html.replace(/<!--.*?-->/gs, '').replace(/<[^>]+>/g, '');
 }
 
-function parseHtmlToNodes(html: string): Node[] {
+function parseHtmlToNodes(html: string, ownerDocument: Document | null = getInstalledDocumentLike()): Node[] {
 	return collectTopLevelHtmlFragments(html).map((fragment) => {
 		if (!fragment.startsWith('<')) {
-			return createTextNode(fragment);
+			return new MinimalTextNode(fragment, ownerDocument) as unknown as Node;
 		}
 
 		const tag = parseHtmlTagToken(fragment, 0);
 
 		if (!tag || tag.type !== 'open') {
-			return createTextNode(fragment);
+			return new MinimalTextNode(fragment, ownerDocument) as unknown as Node;
 		}
 
-		return createElementFromFragment(fragment, tag);
+		return createElementFromFragment(fragment, tag, ownerDocument);
 	});
+}
+
+function toDataAttributeName(property: string): string {
+	return `data-${property.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+}
+
+function toDatasetPropertyName(attributeName: string): string {
+	return attributeName.replace(/-([a-z])/g, (_match, character: string) => character.toUpperCase());
+}
+
+function escapeCssIdentifier(value: string): string {
+	let escaped = '';
+
+	for (let index = 0; index < value.length; index += 1) {
+		const character = value[index] ?? '';
+		const codePoint = character.codePointAt(0) ?? 0;
+
+		if (codePoint === 0) {
+			escaped += '\uFFFD';
+			continue;
+		}
+
+		const isControlCharacter = (codePoint >= 0x0001 && codePoint <= 0x001f) || codePoint === 0x007f;
+		const startsWithDigit = index === 0 && codePoint >= 0x0030 && codePoint <= 0x0039;
+		const startsWithHyphenDigit =
+			index === 1 && codePoint >= 0x0030 && codePoint <= 0x0039 && (value[0] ?? '') === '-';
+		const isSingleHyphen = index === 0 && character === '-' && value.length === 1;
+
+		if (isControlCharacter || startsWithDigit || startsWithHyphenDigit) {
+			escaped += `\\${codePoint.toString(16)} `;
+			continue;
+		}
+
+		if (
+			codePoint >= 0x0080 ||
+			character === '-' ||
+			character === '_' ||
+			(codePoint >= 0x0030 && codePoint <= 0x0039) ||
+			(codePoint >= 0x0041 && codePoint <= 0x005a) ||
+			(codePoint >= 0x0061 && codePoint <= 0x007a)
+		) {
+			escaped += isSingleHyphen ? `\\${character}` : character;
+			continue;
+		}
+
+		escaped += `\\${character}`;
+	}
+
+	return escaped;
 }
 
 function serializeNodeHtml(node: Node): string {

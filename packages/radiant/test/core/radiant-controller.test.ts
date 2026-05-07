@@ -1,4 +1,5 @@
 import { jsx, jsxs } from '@ecopages/jsx';
+import { renderToString } from '@ecopages/jsx/server';
 import type { WritableSignal } from '@ecopages/signals';
 import { waitFor } from '@testing-library/dom';
 import { describe, expect, test } from 'vitest';
@@ -222,6 +223,34 @@ describeWhenStandard('RadiantController', () => {
 			expect(host.querySelector('[data-ref="count"]')?.textContent).toBe('2');
 			expect(host.querySelector('[data-ref="status"]')?.textContent).toBe('ready');
 		});
+	});
+
+	test('runs subclass connect logic during SSR setup without performing a client DOM render', () => {
+		class SsrLifecycleController extends RadiantController {
+			label = 'before connect';
+
+			override connect(): void {
+				super.connect();
+				this.label = 'after connect';
+				this.host.setAttribute('data-ssr-ready', 'yes');
+			}
+
+			override render() {
+				return jsx('p', { children: this.label });
+			}
+		}
+
+		const host = document.createElement('div');
+		const controller = new SsrLifecycleController(host);
+
+		controller.connectForSsrRender();
+
+		expect(host.getAttribute('data-ssr-ready')).toBe('yes');
+		expect(host.innerHTML).toBe('');
+		expect(renderToString(controller.render())).toBe('<p>after connect</p>');
+
+		controller.disconnectForSsrRender();
+		expect(controller.isConnected).toBe(false);
 	});
 
 	test('supports @onUpdated callbacks', () => {
