@@ -15,15 +15,12 @@ import type {
 	JsxIntrinsicAttributes,
 	JsxKey,
 	JsxNodeLike,
-	JsxNodeType,
-	JsxPrimitive,
 	JsxPropsWithChildren,
 	JsxRenderable,
 	SignalLike,
 	SlotJsxValue,
 	SubscribableJsxValue,
 	ServerCustomElementRenderHook,
-	ServerCustomElementRenderHookContext,
 	ServerRenderableCustomElement,
 	TemplateResultLike,
 } from './types.ts';
@@ -399,6 +396,8 @@ function shouldServerRenderCustomElement(type: string): boolean {
 	return (
 		type.includes('-') &&
 		(typeof document === 'undefined' ||
+			typeof globalThis.window === 'undefined' ||
+			typeof globalThis.location === 'undefined' ||
 			(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
 				FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL
 			] === true)
