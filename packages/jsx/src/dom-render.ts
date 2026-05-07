@@ -380,14 +380,17 @@ function createTemplateInstance(
 	return instance;
 }
 
+/**
+ * Repairs the namespace of a cloned template root before live part resolution.
+ *
+ * Intrinsic JSX nodes compile as one-element templates, so repair only needs
+ * to recreate the authored root for each mounted template instance.
+ */
 function normalizeTemplateFragmentNamespaces(
 	fragment: DocumentFragment,
 	contextParent: Node | null,
 	rootLocalName: string | undefined,
 ): void {
-	// Intrinsic JSX templates compile to a single element shell with dynamic child slots,
-	// so namespace repair only needs to fix that root element. Nested intrinsic children
-	// are mounted through their own template instances with their own authored root tags.
 	const contextElement = contextParent instanceof Element ? contextParent : contextParent?.parentElement;
 	const contextNamespace = contextElement?.namespaceURI ?? HTML_NAMESPACE_URI;
 	const contextLocalName = contextElement?.localName;

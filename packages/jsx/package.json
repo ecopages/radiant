@@ -49,6 +49,7 @@
 		"profile:hydrate:node": "node --import tsx benchmarks/profile-hydrate.ts",
 		"size:check": "bun run ./check-size.ts",
 		"size:report": "bun run ./check-size.ts --report-only",
+		"test:dist": "bun run build:files && vitest run test/dom-render-dist-parity.test.tsx",
 		"test:lib": "vitest run",
 		"test:custom-elements": "vitest run test/custom-elements.e2e.test.tsx",
 		"test:e2e": "vitest run test/events.e2e.test.tsx",
