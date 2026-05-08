@@ -62,12 +62,20 @@ function createDistPackageJson(): PackageJsonShape {
 		module: packageJson.module ? stripDistPrefix(packageJson.module) : undefined,
 		types: packageJson.types ? stripDistPrefix(packageJson.types) : undefined,
 		files: ['**/*'],
-		sideEffects: packageJson.sideEffects,
+		sideEffects: rewriteSideEffects(packageJson.sideEffects),
 		exports: packageJson.exports
 			? Object.fromEntries(Object.entries(packageJson.exports).map(([key, value]) => [key, rewriteExport(value)]))
 			: undefined,
 		peerDependencies: packageJson.peerDependencies,
 	};
+}
+
+function rewriteSideEffects(value: PackageJsonShape['sideEffects']): PackageJsonShape['sideEffects'] {
+	if (!Array.isArray(value)) {
+		return value;
+	}
+
+	return value.map((entry) => stripDistPrefix(entry));
 }
 
 const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
