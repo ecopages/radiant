@@ -100,9 +100,9 @@ export type RenderedComponentWithPreview = RenderedComponentPayload & {
 };
 
 /** Minimal component contract needed for framework-agnostic SSR helpers. */
-export type ServerRenderableComponent = {
+export type ServerRenderableComponent = object & {
 	renderHost?: () => JsxRenderable;
-	renderHostToString: (options?: RenderToStringOptions) => string;
+	renderHostToString?: (options?: RenderToStringOptions) => string;
 };
 
 /** Constructor shape for a server-renderable component. */
@@ -321,7 +321,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 		const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
 		const markup =
 			renderRegisteredRadiantElementHostToString(component, renderOptions) ??
-			component.renderHostToString(renderOptions);
+			requireServerRenderableMarkup(component, renderOptions);
 		const preview = resolveRenderedComponentPreview(component, markup);
 
 		return {
@@ -342,11 +342,8 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 /**
  * Chooses the preview renderable returned by `renderComponent()`.
  *
- * When a component overrides only `renderHostToString()`, the inherited
- * `renderHost()` implementation would otherwise generate a different preview
- * tree than the final serialized markup. In that case the preview falls back to
- * the already-computed markup so shell composition stays aligned with the real
- * SSR output.
+ * Falls back to the serialized host markup when a generic server-renderable
+ * component does not expose a JSX preview surface.
  */
 function resolveRenderedComponentPreview<TComponent extends ServerRenderableComponent>(
 	component: TComponent,
@@ -491,6 +488,19 @@ function canPrepareSsrHost<TComponent extends ServerRenderableComponent>(
 	component: TComponent,
 ): component is TComponent & HTMLElement {
 	return 'innerHTML' in component;
+}
+
+function requireServerRenderableMarkup<TComponent extends ServerRenderableComponent>(
+	component: TComponent,
+	options: RenderToStringOptions,
+): string {
+	if (typeof component.renderHostToString === 'function') {
+		return component.renderHostToString(options);
+	}
+
+	throw new Error(
+		`${component.constructor.name} cannot be server-rendered without a registered Radiant SSR host or renderHostToString().`,
+	);
 }
 
 function resolveRenderedComponentTagName(target: CustomElementConstructor): string {

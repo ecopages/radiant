@@ -54,6 +54,7 @@ export type {
 	SubscribableJsxValue,
 	TemplateResultLike,
 } from './types.ts';
+
 /** When `true` on `globalThis`, bypasses the `document` check and forces server-side custom-element rendering. */
 const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 /** When `true` on `globalThis`, signals that the current SSR pass should emit hydration binding markers. */
@@ -263,7 +264,8 @@ function appendElementChildren(
  */
 /**
  * Attempts to render a custom element on the server by instantiating its registered
- * constructor and calling `renderHostToString`.
+ * constructor, giving the active server hook a chance to render it, and falling
+ * back to `renderHostToString` when the instance exposes the generic SSR surface.
  *
  * Returns `undefined` when server rendering is not applicable: the tag name does not
  * contain a hyphen, the runtime is running in a browser context (unless the force-render
@@ -293,11 +295,7 @@ function createServerRenderedCustomElement<Props extends object>(type: string, p
 		return undefined;
 	}
 
-	const instance = new constructor() as unknown;
-
-	if (!isServerRenderableCustomElement(instance)) {
-		return undefined;
-	}
+	const instance = new constructor();
 
 	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
 	applyServerCustomElementAttributes(instance, rawAttributes);
@@ -312,6 +310,10 @@ function createServerRenderedCustomElement<Props extends object>(type: string, p
 
 	if (hookRender) {
 		return hookRender;
+	}
+
+	if (!isServerRenderableCustomElement(instance)) {
+		return undefined;
 	}
 
 	return {
@@ -430,10 +432,9 @@ function isServerRenderableCustomElement(value: unknown): value is ServerRendera
  * @param element Target custom element instance.
  * @param attributes Raw JSX props with `children` and `key` already removed.
  */
-function applyServerCustomElementAttributes(
-	element: ServerRenderableCustomElement,
-	attributes: Record<string, unknown>,
-): void {
+function applyServerCustomElementAttributes(element: HTMLElement, attributes: Record<string, unknown>): void {
+	const assignableElement = element as HTMLElement & Record<string, unknown>;
+
 	forEachNormalizedAttribute(attributes, (name, value) => {
 		const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
 		const bindingShapeValue = resolveBindingShapeValue(value);
@@ -443,7 +444,7 @@ function applyServerCustomElementAttributes(
 		}
 
 		if (name.startsWith('prop:')) {
-			element[name.slice(5)] = value;
+			assignableElement[name.slice(5)] = value;
 			return;
 		}
 
@@ -451,7 +452,7 @@ function applyServerCustomElementAttributes(
 			!name.startsWith('attr:') &&
 			!shouldUseAttributeBindingByDefaultForElement('custom-element', normalizedName)
 		) {
-			element[normalizedName] = value;
+			assignableElement[normalizedName] = value;
 			return;
 		}
 
@@ -482,10 +483,7 @@ function applyServerCustomElementAttributes(
  * @param element Target custom element instance.
  * @param children JSX children from the `props.children` slot.
  */
-function applyServerCustomElementChildren(
-	element: ServerRenderableCustomElement,
-	children: JsxRenderable | undefined,
-): void {
+function applyServerCustomElementChildren(element: HTMLElement, children: JsxRenderable | undefined): void {
 	if (children === undefined || !('children' in element || 'innerHTML' in element)) {
 		return;
 	}
@@ -493,15 +491,15 @@ function applyServerCustomElementChildren(
 	const serializedChildren = renderJsxRenderableToString(children);
 
 	if (canAssignServerCustomElementProperty(element, 'children')) {
-		element.children = serializedChildren;
+		Reflect.set(element, 'children', serializedChildren);
 	}
 
 	if (canAssignServerCustomElementProperty(element, 'innerHTML')) {
-		element.innerHTML = serializedChildren;
+		Reflect.set(element, 'innerHTML', serializedChildren);
 	}
 }
 
-function canAssignServerCustomElementProperty(element: ServerRenderableCustomElement, propertyName: string): boolean {
+function canAssignServerCustomElementProperty(element: HTMLElement, propertyName: string): boolean {
 	let current: object | null = element as object;
 
 	while (current) {

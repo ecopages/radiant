@@ -1,48 +1,24 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 
-/**
- * Optional SSR hooks exposed by `RadiantElement` instances to the shared
- * server runtime.
- *
- * The bridge lets the runtime detect whether a component is still using the
- * inherited host SSR implementation or has taken ownership of host rendering
- * through explicit overrides.
- */
 export type RadiantElementRenderBridge = {
 	renderHost?: () => JsxRenderable;
 	renderHostToString?: (options?: RenderToStringOptions) => string;
 };
 
 /**
- * SSR host shape exposed to hydration-aware render helpers.
+ * SSR host shape used by explicit server rendering entrypoints.
  *
- * This stays limited to bridge resolution and host render entrypoints so
- * client-reachable code does not need to describe server-only host attribute
- * collection behavior.
+ * Server-side attribute serialization is derived from ordinary host state in
+ * the server pipeline rather than through a dedicated host SSR hook.
  */
-export type RadiantElementHydrationSsrCapable = {
-	resolveSsrRenderBridge?: () => RadiantElementRenderBridge;
-	renderToString(options?: RenderToStringOptions): string;
-	renderHost?(): JsxRenderable;
-	renderHostToString(options?: RenderToStringOptions): string;
-};
-
-/**
- * SSR host shape required when the server runtime needs serialized host
- * attributes in addition to the hydration-facing render entrypoints.
- */
-export type RadiantElementServerRenderSsrCapable = RadiantElementHydrationSsrCapable & {
-	getHostSsrAttributes?: () => Record<string, string>;
-};
+export type RadiantElementServerRenderSsrCapable = object;
 
 /**
  * SSR host shape required when the server runtime renders the tracked component
  * view directly.
  */
-export type RadiantElementTrackedRenderSsrCapable = RadiantElementHydrationSsrCapable & {
-	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
-};
+export type RadiantElementTrackedRenderSsrCapable = object;
 
 /**
  * Shared SSR runtime contract registered on `globalThis`.
@@ -53,9 +29,9 @@ export type RadiantElementTrackedRenderSsrCapable = RadiantElementHydrationSsrCa
  */
 export type RadiantElementSsrRuntime = {
 	getHostAttributes(component: RadiantElementServerRenderSsrCapable): Record<string, string>;
-	renderHost(component: RadiantElementHydrationSsrCapable): JsxRenderable;
-	renderHostToString(component: RadiantElementHydrationSsrCapable, options?: RenderToStringOptions): string;
-	resolveRenderBridge(component: RadiantElementHydrationSsrCapable): RadiantElementRenderBridge | undefined;
+	renderHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable;
+	renderHostToString(component: RadiantElementServerRenderSsrCapable, options?: RenderToStringOptions): string;
+	resolveRenderBridge(component: object): RadiantElementRenderBridge | undefined;
 	renderView(component: RadiantElementTrackedRenderSsrCapable, options?: RenderToStringOptions): string;
 };
 

@@ -1,6 +1,5 @@
 import { waitFor } from '@testing-library/dom';
 import { jsx, jsxs, render as renderJsx } from '@ecopages/jsx';
-import { renderToString } from '@ecopages/jsx/server';
 import { createStore, state as createSignalState, type WritableSignal } from '@ecopages/signals';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { ContextProvider, createContext, onContextUpdate, provideContext } from '../../src/context';
@@ -14,7 +13,11 @@ import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
-import '../../src/server/render-component';
+import {
+	renderRadiantElementHostToString,
+	renderRadiantElementViewToString,
+} from '../../src/server/radiant-component-ssr-bridge';
+import { renderComponentToString } from '../../src/server/render-component';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
@@ -300,7 +303,7 @@ describe('RadiantElement', () => {
 
 		const element = document.createElement('server-greeting-card-test') as ServerGreetingCard;
 
-		expect(element.renderToString()).toBe('<p data-ref="message">Hello SSR</p>');
+		expect(renderRadiantElementViewToString(element)).toBe('<p data-ref="message">Hello SSR</p>');
 	});
 
 	test('renderHostToString() serializes the host and current view', () => {
@@ -316,7 +319,7 @@ describe('RadiantElement', () => {
 
 		const element = document.createElement('server-host-greeting-card-test') as ServerHostGreetingCard;
 
-		expect(element.renderHostToString()).toBe(
+		expect(renderRadiantElementHostToString(element)).toBe(
 			'<server-host-greeting-card-test><p data-ref="message">Hello host SSR</p></server-host-greeting-card-test>',
 		);
 	});
@@ -329,7 +332,9 @@ describe('RadiantElement', () => {
 		const element = document.createElement('server-passthrough-card-test') as ServerPassthroughCard;
 		element.innerHTML = '<p>Projected body</p><button type="button">Open</button>';
 
-		expect(element.renderToString()).toBe('<p>Projected body</p><button type="button">Open</button>');
+		expect(renderRadiantElementViewToString(element)).toBe(
+			'<p>Projected body</p><button type="button">Open</button>',
+		);
 	});
 
 	test('projects default and named slot content in client rendering', async () => {
@@ -541,12 +546,12 @@ describe('RadiantElement', () => {
 		element.count = 7;
 		element.label = 'Host ready';
 
-		expect(element.renderHostToString()).toBe(
+		expect(renderRadiantElementHostToString(element)).toBe(
 			'<server-host-card-test count="7" label="Host ready"><p data-ref="message">Host ready</p></server-host-card-test>',
 		);
 	});
 
-	test('renderToString() serializes nested registered Radiant consumers with finalized SSR context state', () => {
+	test('renderRadiantElementHostToString() preserves nested registered Radiant consumer hosts and finalized parent context hydration state', () => {
 		const nestedSsrBoardContext = createContext<{ commits: number; owner: string; stage: string; tempo: string }>(
 			Symbol('nested-radiant-board-context'),
 		);
@@ -616,65 +621,34 @@ describe('RadiantElement', () => {
 			customElements.define('nested-ssr-board-card-test', NestedSsrBoardCard);
 		}
 
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		];
+		const html = renderRadiantElementHostToString(new NestedSsrBoardCard(), { mode: 'hydrate' });
 
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		] = true;
-
-		try {
-			const html = renderToString(<nested-ssr-board-card-test />, { mode: 'hydrate' });
-
-			expect(html).toContain('<nested-ssr-board-card-test>');
-			expect(html).toContain('<nested-ssr-summary-card-test>');
-			expect(html).toContain('Design systems is steering build with 3 commits.');
-			expect(html).toContain('<nested-ssr-insight-card-test>');
-			expect(html).toContain('Stage: Build / Calm / 3');
-			expect(html).not.toContain('Awaiting board context');
-			expect(html).not.toContain('Stage: Pending');
-		} finally {
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				] = previousForceServerCustomElementRender;
-			}
-		}
+		expect(html).toContain('<nested-ssr-board-card-test>');
+		expect(html).toContain('<nested-ssr-summary-card-test>');
+		expect(html).toContain('Design systems is steering build with 3 commits.');
+		expect(html).toContain('<nested-ssr-insight-card-test>');
+		expect(html).toContain('Stage: Build / Calm / 3');
+		expect(html).toContain(
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+		);
+		expect(html).toContain('{"commits":3,"owner":"Design systems","stage":"Build","tempo":"Calm"}');
+		expect(html).not.toContain('Awaiting board context');
+		expect(html).not.toContain('Stage: Pending');
 	});
 
-	test('renderToString() applies array @prop values before the first server render of a JSX custom element', () => {
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		];
+	test('renderComponentToString() applies array @prop values before the first server render', async () => {
+		const html = await renderComponentToString<SsrArrayPropCard>(SsrArrayPropCard, {
+			initialize: (component) => {
+				component.items = [{ label: 'first' }, { label: 'second' }];
+			},
+			renderOptions: { mode: 'plain' },
+		});
 
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		] = true;
-
-		try {
-			const html = renderToString(<ssr-array-prop-card-test items={[{ label: 'first' }, { label: 'second' }]} />);
-
-			expect(html).toContain(
-				'<ssr-array-prop-card-test items="[{&quot;label&quot;:&quot;first&quot;},{&quot;label&quot;:&quot;second&quot;}]">',
-			);
-			expect(html).toContain('<p>first, second</p>');
-			expect(html).not.toContain('[object Object]');
-		} finally {
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				] = previousForceServerCustomElementRender;
-			}
-		}
+		expect(html).toContain(
+			'<ssr-array-prop-card-test items="[{&quot;label&quot;:&quot;first&quot;},{&quot;label&quot;:&quot;second&quot;}]">',
+		);
+		expect(html).toContain('<p>first, second</p>');
+		expect(html).not.toContain('[object Object]');
 	});
 
 	test('explicit SSR setup remains a safe no-op when a DOM is already available', () => {
@@ -711,7 +685,7 @@ describe('RadiantElement', () => {
 		element.count = 28;
 		element.label = 'SSR counter rendered in Nitro';
 
-		const html = element.renderHostToString({ mode: 'hydrate' });
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain('<server-host-hydrate-card-test count="28" label="SSR counter rendered in Nitro">');
 		expect(html).toContain('class="component-tag">RadiantElement</p>');
@@ -747,7 +721,7 @@ describe('RadiantElement', () => {
 		element.count = 28;
 		element.label = 'SSR counter rendered in Nitro';
 
-		const html = element.renderHostToString({ mode: 'hydrate' });
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain(
 			'<server-host-bound-hydrate-card-test count="28" label="SSR counter rendered in Nitro">',
@@ -799,7 +773,7 @@ describe('RadiantElement', () => {
 		const element = new ServerHostDeepTree();
 		element.label = 'Deep SSR';
 		element.count = 11;
-		const html = element.renderHostToString({ mode: 'hydrate' });
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain('<server-host-deep-tree-test');
 		expect(html).toContain('count="11"');
@@ -813,24 +787,19 @@ describe('RadiantElement', () => {
 		expect(html).not.toContain('radiant-jsx-child-end');
 	});
 
-	test('renderHostToString() keeps subclass host attribute overrides', () => {
+	test('renderHostToString() derives host attributes from ordinary host state', () => {
 		@customElement('server-host-override-card-test')
 		class ServerHostOverrideCard extends RadiantElement {
 			override render() {
 				return <p>Override</p>;
 			}
-
-			protected override getHostSsrAttributes(): Record<string, string> {
-				return {
-					role: 'status',
-					'aria-live': 'polite',
-				};
-			}
 		}
 
 		const element = new ServerHostOverrideCard();
+		element.setAttribute('role', 'status');
+		element.setAttribute('aria-live', 'polite');
 
-		expect(element.renderHostToString()).toBe(
+		expect(renderRadiantElementHostToString(element)).toBe(
 			'<server-host-override-card-test role="status" aria-live="polite"><p>Override</p></server-host-override-card-test>',
 		);
 	});
@@ -855,7 +824,7 @@ describe('RadiantElement', () => {
 		const element = new ServerHostSlotCard();
 		element.innerHTML = '<h2 slot="header">Server heading</h2><p>Server body</p>';
 
-		const html = element.renderHostToString({ mode: 'hydrate' });
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain('<header><h2 slot="header">Server heading</h2></header>');
 		expect(html).toContain('<div><p>Server body</p></div>');
@@ -882,7 +851,7 @@ describe('RadiantElement', () => {
 			element.innerHTML = '<p>Projected body</p>';
 			element.status.set('ready');
 
-			const html = element.renderHostToString({ mode: 'hydrate' });
+			const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 			const hostContentIndex = html.indexOf('<section><p>Projected body</p><p>ready</p></section>');
 			const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
 			const hydrationScriptIndex = html.indexOf('data-hydration-key="status"');
@@ -901,7 +870,9 @@ describe('RadiantElement', () => {
 			authoredContent: '<h2 slot="header">Prepared heading</h2><p>Prepared body</p>',
 		});
 
-		expect(element.renderHostToString({ mode: 'hydrate' })).toContain('data-header-slot="Prepared heading"');
+		expect(renderRadiantElementHostToString(element, { mode: 'hydrate' })).toContain(
+			'data-header-slot="Prepared heading"',
+		);
 	});
 
 	describeWhenStandard('pre-connect SSR accessors', () => {
@@ -920,7 +891,7 @@ describe('RadiantElement', () => {
 		test('hydrates array @prop values from SSR host attributes before the first client render', async () => {
 			const serverElement = new SsrArrayPropCard();
 			serverElement.items = [{ label: 'first' }, { label: 'second' }];
-			const serverMarkup = serverElement.renderHostToString({ mode: 'hydrate' });
+			const serverMarkup = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
 
 			document.body.innerHTML = serverMarkup;
 
@@ -948,7 +919,7 @@ describe('RadiantElement', () => {
 
 			const element = new ServerHostSignalCard();
 			element.status.set('ready');
-			const html = element.renderHostToString({ mode: 'hydrate' });
+			const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 			expect(html).toContain('<server-host-signal-card-test>');
 			expect(html).toContain('<p>ready</p>');
@@ -986,7 +957,7 @@ describe('RadiantElement', () => {
 		setCustomElementTagName(ServerHostContextCard, 'server-host-context-card-test');
 
 		const element = new ServerHostContextCard();
-		const html = element.renderHostToString({ mode: 'hydrate' });
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain('<server-host-context-card-test>');
 		expect(html).toContain('<p>Provider host</p>');
@@ -996,7 +967,7 @@ describe('RadiantElement', () => {
 		expect(html).toContain('{"label":"SSR context","level":4}');
 	});
 
-	test('preserves an authored hydration child script on a Radiant host render', () => {
+	test('preserves an authored hydration child script on an explicit Radiant server render', async () => {
 		const scriptedContext = createContext<{ count: number; label: string }>(Symbol('scripted-radiant-context'));
 		const tagName = 'scripted-radiant-provider-host-test';
 
@@ -1026,46 +997,19 @@ describe('RadiantElement', () => {
 		}
 		setCustomElementTagName(ScriptedRadiantProviderHost, tagName);
 
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		];
+		const html = await renderComponentToString(ScriptedRadiantProviderHost, {
+			authoredContent:
+				'<script type="application/json" data-hydration="true" data-hydration-type="context" data-hydration-key="provider">{"count":3,"label":"Authored child"}</script>',
+			renderOptions: { mode: 'plain' },
+		});
 
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		] = true;
-
-		try {
-			const html = renderToString(
-				<scripted-radiant-provider-host-test>
-					<script
-						type="application/json"
-						data-hydration={true}
-						data-hydration-type="context"
-						data-hydration-key="provider"
-					>
-						{'{"count":3,"label":"Authored child"}'}
-					</script>
-				</scripted-radiant-provider-host-test>,
-			);
-
-			expect(html).toContain(`<${tagName}>`);
-			expect(html).toContain('<p>Authored child / 3</p>');
-			expect(html).not.toContain('data-radiant-slot-projection');
-			expect(html).toContain('<script type="application/json"');
-			expect(html).toContain('data-hydration="true"');
-			expect(html).toContain('data-hydration-key="provider"');
-			expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
-		} finally {
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				] = previousForceServerCustomElementRender;
-			}
-		}
+		expect(html).toContain(`<${tagName}>`);
+		expect(html).toContain('<p>Authored child / 3</p>');
+		expect(html).not.toContain('data-radiant-slot-projection');
+		expect(html).toContain('<script type="application/json"');
+		expect(html).toContain('data-hydration="true"');
+		expect(html).toContain('data-hydration-key="provider"');
+		expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
 	});
 
 	test("renderHostToString({ mode: 'plain' }) emits authored hydration markup before slot projection payloads", () => {
@@ -1085,7 +1029,7 @@ describe('RadiantElement', () => {
 			'<p>Projected body</p>' +
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":3}</script>';
 
-		const html = element.renderHostToString({ mode: 'plain' });
+		const html = renderRadiantElementHostToString(element, { mode: 'plain' });
 		const hostContentIndex = html.indexOf('<section><p>Projected body</p></section>');
 		const authoredHydrationIndex = html.indexOf('data-hydration-key="provider"');
 		const slotProjectionIndex = html.indexOf('data-radiant-slot-projection');
@@ -1096,7 +1040,7 @@ describe('RadiantElement', () => {
 		expect(html.match(/data-hydration-key="provider"/g)).toHaveLength(1);
 	});
 
-	test('serializes nested RadiantElement hosts from plain intrinsic tags', () => {
+	test('renderRadiantElementHostToString() preserves nested RadiantElement child hosts and parent hydration state', () => {
 		const nestedContext = createContext<{ label: string; level: number }>(Symbol('nested-radiant-context'));
 		const childTagName = 'nested-radiant-child-host-test';
 		const parentTagName = 'nested-radiant-parent-host-test';
@@ -1152,164 +1096,31 @@ describe('RadiantElement', () => {
 		setCustomElementTagName(NestedRadiantChildHost, childTagName);
 		setCustomElementTagName(NestedRadiantParentHost, parentTagName);
 
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		];
+		const parent = new NestedRadiantParentHost();
+		const nestedHtml = renderRadiantElementHostToString(parent, { mode: 'hydrate' });
 
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		] = true;
+		expect(nestedHtml).toContain(`<${parentTagName}>`);
+		expect(nestedHtml).toContain(`<${childTagName}>`);
+		expect(nestedHtml).toContain('class="nested-child-card"');
+		expect(nestedHtml).toContain('<h3>Nested child SSR</h3>');
+		expect(nestedHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
+		expect(nestedHtml).toContain('class="nested-parent-shell"');
+		expect(nestedHtml).toContain(
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+		);
+		expect(nestedHtml).toContain('{"label":"Nitro SSR context","level":2}');
 
-		try {
-			const parent = new NestedRadiantParentHost();
-			const nestedHtml = renderToString(<nested-radiant-parent-host-test />, { mode: 'hydrate' });
+		const parentHostHtml = renderRadiantElementHostToString(parent, { mode: 'hydrate' });
 
-			expect(nestedHtml).toContain(`<${parentTagName}>`);
-			expect(nestedHtml).toContain(`<${childTagName}>`);
-			expect(nestedHtml).toContain('class="nested-child-card"');
-			expect(nestedHtml).toContain('<h3>Nested child SSR</h3>');
-			expect(nestedHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
-			expect(nestedHtml).toContain(
-				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
-			);
-			expect(nestedHtml).toContain('{"label":"Nitro SSR context","level":2}');
-
-			const parentHostHtml = parent.renderHostToString({ mode: 'hydrate' });
-
-			expect(parentHostHtml).toContain(`<${parentTagName}>`);
-			expect(parentHostHtml).toContain(`<${childTagName}>`);
-			expect(parentHostHtml).toContain('class="nested-child-card"');
-			expect(parentHostHtml).toContain('<h3>Nested child SSR</h3>');
-			expect(parentHostHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
-			expect(parentHostHtml).toContain(
-				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
-			);
-		} finally {
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				] = previousForceServerCustomElementRender;
-			}
-		}
-	});
-
-	test('nested Radiant SSR keeps explicit child host overrides when rendered from intrinsic custom-element tags', () => {
-		@customElement('nested-radiant-overridden-child-host-test')
-		class NestedOverriddenChildHost extends RadiantElement {
-			override renderHostToString(): string {
-				return '<nested-radiant-overridden-child-host-test data-source="override"><p>Overridden child host</p></nested-radiant-overridden-child-host-test>';
-			}
-
-			override render() {
-				return <p>Default child render should be bypassed</p>;
-			}
-		}
-
-		if (!customElements.get('nested-radiant-overridden-child-host-test')) {
-			customElements.define('nested-radiant-overridden-child-host-test', NestedOverriddenChildHost);
-		}
-
-		@customElement('nested-radiant-overridden-parent-host-test')
-		class NestedOverriddenParentHost extends RadiantElement {
-			override render() {
-				return (
-					<section>
-						<nested-radiant-overridden-child-host-test />
-					</section>
-				);
-			}
-		}
-
-		if (!customElements.get('nested-radiant-overridden-parent-host-test')) {
-			customElements.define('nested-radiant-overridden-parent-host-test', NestedOverriddenParentHost);
-		}
-
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		];
-
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		] = true;
-
-		try {
-			const nestedHtml = renderToString(<nested-radiant-overridden-parent-host-test />, { mode: 'hydrate' });
-
-			expect(nestedHtml).toContain(
-				'<nested-radiant-overridden-child-host-test data-source="override"><p>Overridden child host</p></nested-radiant-overridden-child-host-test>',
-			);
-			expect(nestedHtml).not.toContain('Default child render should be bypassed');
-		} finally {
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				] = previousForceServerCustomElementRender;
-			}
-		}
-	});
-
-	test('renderToString() keeps explicit nested child host overrides in component views', () => {
-		@customElement('nested-radiant-render-view-child-host-test')
-		class NestedRenderViewChildHost extends RadiantElement {
-			override renderHostToString(): string {
-				return '<nested-radiant-render-view-child-host-test data-source="override"><p>Nested renderToString child</p></nested-radiant-render-view-child-host-test>';
-			}
-
-			override render() {
-				return <p>Default nested child render should be bypassed</p>;
-			}
-		}
-
-		if (!customElements.get('nested-radiant-render-view-child-host-test')) {
-			customElements.define('nested-radiant-render-view-child-host-test', NestedRenderViewChildHost);
-		}
-
-		@customElement('nested-radiant-render-view-parent-host-test')
-		class NestedRenderViewParentHost extends RadiantElement {
-			override render() {
-				return (
-					<section>
-						<nested-radiant-render-view-child-host-test />
-					</section>
-				);
-			}
-		}
-
-		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		];
-
-		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-			Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-		] = true;
-
-		try {
-			const parent = new NestedRenderViewParentHost();
-			const html = parent.renderToString({ mode: 'hydrate' });
-
-			expect(html).toContain(
-				'<nested-radiant-render-view-child-host-test data-source="override"><p>Nested renderToString child</p></nested-radiant-render-view-child-host-test>',
-			);
-			expect(html).not.toContain('Default nested child render should be bypassed');
-		} finally {
-			if (previousForceServerCustomElementRender === undefined) {
-				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				];
-			} else {
-				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-					Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-				] = previousForceServerCustomElementRender;
-			}
-		}
+		expect(parentHostHtml).toContain(`<${parentTagName}>`);
+		expect(parentHostHtml).toContain(`<${childTagName}>`);
+		expect(parentHostHtml).toContain('class="nested-child-card"');
+		expect(parentHostHtml).toContain('<h3>Nested child SSR</h3>');
+		expect(parentHostHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
+		expect(parentHostHtml).toContain('class="nested-parent-shell"');
+		expect(parentHostHtml).toContain(
+			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
+		);
 	});
 
 	test('hydrates SSR markup in place on connect', async () => {
@@ -1333,7 +1144,7 @@ describe('RadiantElement', () => {
 		customElements.define('hydrated-counter-test', HydratedCounter);
 
 		const serverElement = document.createElement('hydrated-counter-test') as HydratedCounter;
-		const serverMarkup = serverElement.renderToString({ mode: 'hydrate' });
+		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = `<hydrated-counter-test>${serverMarkup}</hydrated-counter-test>`;
@@ -1383,7 +1194,7 @@ describe('RadiantElement', () => {
 
 		const serverElement = new HydratedSlotCard();
 		serverElement.innerHTML = '<h2 slot="header">SSR header</h2><p>SSR body</p>';
-		const serverMarkup = serverElement.renderHostToString({ mode: 'hydrate' });
+		const serverMarkup = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = serverMarkup;
@@ -1436,7 +1247,7 @@ describe('RadiantElement', () => {
 		const serverElement = new HydratedComplexSlotCard();
 		serverElement.innerHTML =
 			'<h2 slot="header" data-note="1 > 0">SSR header</h2><article data-kind="primary"><p>SSR body</p></article><radiant-component-counter count="4" label="Projected SSR counter"></radiant-component-counter><p slot="footer">SSR footer</p>';
-		const serverMarkup = serverElement.renderHostToString({ mode: 'hydrate' });
+		const serverMarkup = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = serverMarkup;
@@ -1472,7 +1283,7 @@ describe('RadiantElement', () => {
 		customElements.define('non-hydrated-counter-test', NonHydratedCounter);
 
 		const serverElement = document.createElement('non-hydrated-counter-test') as NonHydratedCounter;
-		const serverMarkup = serverElement.renderToString({ mode: 'hydrate' });
+		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
 
 		document.body.innerHTML = `<non-hydrated-counter-test>${serverMarkup}</non-hydrated-counter-test>`;
 
@@ -1520,7 +1331,7 @@ describe('RadiantElement', () => {
 		customElements.define('deferred-hydrated-card-test', DeferredHydratedCard);
 
 		const serverElement = document.createElement('deferred-hydrated-card-test') as DeferredHydratedCard;
-		const serverMarkup = serverElement.renderToString({ mode: 'hydrate' });
+		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
 		installRadiantHydrator();
 
 		document.body.innerHTML = `<deferred-hydrated-card-test>${serverMarkup}</deferred-hydrated-card-test>`;

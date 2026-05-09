@@ -17,7 +17,7 @@ export interface ServerRenderableCustomElement {
 export type ServerCustomElementRenderHookContext = {
 	constructor: CustomElementConstructor;
 	hydrate: boolean;
-	instance: ServerRenderableCustomElement;
+	instance: HTMLElement;
 	props: Record<string, unknown>;
 	tagName: string;
 };

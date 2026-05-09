@@ -8,13 +8,13 @@ import type { ReactivePropDefinition } from './reactive-prop-metadata';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { writeAttributeValue } from '../utils/attribute-utils';
 
-type RadiantElementSsrHost = {
+export type RadiantElementSsrHost = {
 	constructor: CustomElementConstructor;
 	getAuthoredHydrationScriptMarkup?: () => string | undefined;
 	getContextProviders: () => SsrSerializableContextProvider[];
 	getHydrationBindings: () => SsrSerializableHydrationBinding[];
 	getSlotProjectionScriptTag?: () => string | undefined;
-	renderToString: (options?: RenderToStringOptions) => string;
+	renderViewToString: (options?: RenderToStringOptions) => string;
 	getReactiveProperties: () => ReactiveProperty[];
 	getReactivePropDefinitions: () => ReactivePropDefinition[];
 	getPropertyValue: (name: string) => unknown;
@@ -44,7 +44,7 @@ export class RadiantElementSsrService {
 	}
 
 	private renderHostContent(options: RenderToStringOptions): string {
-		const hostContent = this.host.renderToString(options);
+		const hostContent = this.host.renderViewToString(options);
 		const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
 		const slotProjectionScript = this.host.getSlotProjectionScriptTag?.() ?? '';
 		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);

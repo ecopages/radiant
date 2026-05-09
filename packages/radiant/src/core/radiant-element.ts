@@ -20,7 +20,7 @@ import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import { getRadiantElementSsrRuntime, type RadiantElementRenderBridge } from './radiant-component-ssr-registry';
+import { getRadiantElementSsrRuntime } from './radiant-component-ssr-registry';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -504,7 +504,7 @@ export class RadiantElement<Bindings extends object = {}>
 		return jsx('slot', {});
 	}
 
-	public renderToString(options: RenderToStringOptions = {}): string {
+	private renderViewToString(options: RenderToStringOptions = {}): string {
 		if (!this.shouldRunRenderLifecycle()) {
 			return this.innerHTML;
 		}
@@ -512,16 +512,6 @@ export class RadiantElement<Bindings extends object = {}>
 		this.prepareForSsr();
 
 		return requireRadiantElementSsrRuntime().renderView(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE](), options);
-	}
-
-	public renderHost(): JsxRenderable {
-		this.assertSupportsHostSsrRendering();
-		return requireRadiantElementSsrRuntime().renderHost(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE]());
-	}
-
-	public renderHostToString(options: RenderToStringOptions = {}): string {
-		this.assertSupportsHostSsrRendering();
-		return requireRadiantElementSsrRuntime().renderHostToString(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE](), options);
 	}
 
 	public hydrate(): void {
@@ -668,25 +658,6 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 
 		return this.attachShadow({ mode: 'open' });
-	}
-
-	protected getHostSsrAttributes(): Record<string, string> {
-		return requireRadiantElementSsrRuntime().getHostAttributes(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE]());
-	}
-
-	protected resolveSsrRenderBridge(): RadiantElementRenderBridge {
-		const bridge: RadiantElementRenderBridge = {};
-
-		if (this.renderHostToString === RadiantElement.prototype.renderHostToString) {
-			bridge.renderHostToString = (options: RenderToStringOptions | undefined) =>
-				this.renderHostToString(options);
-		}
-
-		if (this.renderHost === RadiantElement.prototype.renderHost) {
-			bridge.renderHost = () => this.renderHost();
-		}
-
-		return bridge;
 	}
 
 	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
@@ -900,7 +871,19 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	protected [RADIANT_ELEMENT_SSR_HOST_BRIDGE](): RadiantElementSsrHostBridge {
-		return getOrCreateRadiantElementSsrHostBridge(this as RadiantElementSsrHostSource);
+		return getOrCreateRadiantElementSsrHostBridge(this, {
+			constructor: this.constructor as CustomElementConstructor,
+			getAttribute: (name) => this.getAttribute(name),
+			getAttributeNames: () => this.getAttributeNames(),
+			getAuthoredHydrationScriptMarkup: () => this.getAuthoredHydrationScriptMarkup(),
+			getContextProviders: () => this.getContextProviders(),
+			getHydrationBindings: () => this.getHydrationBindings(),
+			getPropertyValue: (name) => (this as RadiantElementSsrHostSource & Record<string, unknown>)[name],
+			getReactiveProperties: () => this.getReactiveProperties(),
+			getSlotProjectionScriptTag: () => this.getSlotProjectionScriptTag(),
+			resolveTrackedRenderOutput: () => this.resolveTrackedRenderOutput(),
+			renderViewToString: (options) => this.renderViewToString(options),
+		});
 	}
 
 	private getEventSubscriptionTarget(): HTMLElement | ShadowRoot {
@@ -912,12 +895,6 @@ export class RadiantElement<Bindings extends object = {}>
 		const renderTarget = this.getRenderTarget();
 		return renderTarget instanceof ShadowRoot ? renderTarget : this;
 	}
-
-	private assertSupportsHostSsrRendering(): void {
-		if (this.renderRootMode === 'shadow') {
-			throw new Error('RadiantElement shadow render mode does not support renderHost() or renderHostToString().');
-		}
-	}
 }
 
 function requireRadiantElementSsrRuntime() {
@@ -925,7 +902,7 @@ function requireRadiantElementSsrRuntime() {
 
 	if (!runtime) {
 		throw new Error(
-			'Radiant SSR runtime is unavailable. Import `@ecopages/radiant/server/render-component` before using instance SSR methods.',
+			'Radiant SSR runtime is unavailable. Import `@ecopages/radiant/server/render-component` before using server rendering helpers.',
 		);
 	}
 

@@ -2,7 +2,6 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type {
-	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementTrackedRenderSsrCapable,
 } from './radiant-component-ssr-registry';
@@ -18,16 +17,12 @@ export type RadiantElementSsrHostBridge = RadiantElementServerRenderSsrCapable &
 		getAttributeNames(): string[];
 		getAuthoredHydrationScriptMarkup(): string | undefined;
 		getContextProviders(): SsrSerializableContextProvider[];
-		getHostSsrAttributes(): Record<string, string>;
 		getHydrationBindings(): SsrSerializableHydrationBinding[];
 		getPropertyValue(name: string): unknown;
 		getReactiveProperties(): ReactiveProperty[];
 		getSlotProjectionScriptTag(): string | undefined;
 		resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
-		resolveSsrRenderBridge(): RadiantElementRenderBridge;
-		renderHost(): JsxRenderable;
-		renderHostToString(options?: RenderToStringOptions): string;
-		renderToString(options?: RenderToStringOptions): string;
+		renderViewToString(options?: RenderToStringOptions): string;
 	};
 
 export type RadiantElementSsrHostSource = {
@@ -36,16 +31,13 @@ export type RadiantElementSsrHostSource = {
 	getAttributeNames(): string[];
 	getAuthoredHydrationScriptMarkup(): string | undefined;
 	getContextProviders(): SsrSerializableContextProvider[];
-	getHostSsrAttributes(): Record<string, string>;
 	getHydrationBindings(): SsrSerializableHydrationBinding[];
+	getPropertyValue(name: string): unknown;
 	getReactiveProperties(): ReactiveProperty[];
 	getSlotProjectionScriptTag(): string | undefined;
 	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
-	resolveSsrRenderBridge(): RadiantElementRenderBridge;
-	renderHost(): JsxRenderable;
-	renderHostToString(options?: RenderToStringOptions): string;
-	renderToString(options?: RenderToStringOptions): string;
-} & Record<string, unknown>;
+	renderViewToString(options?: RenderToStringOptions): string;
+};
 
 type RadiantElementSsrHostBridgeProvider = {
 	[RADIANT_ELEMENT_SSR_HOST_BRIDGE]?: () => RadiantElementSsrHostBridge;
@@ -54,7 +46,8 @@ type RadiantElementSsrHostBridgeProvider = {
 const ssrHostBridgeCache = new WeakMap<object, RadiantElementSsrHostBridge>();
 
 export function getOrCreateRadiantElementSsrHostBridge(
-	component: RadiantElementSsrHostSource,
+	component: object,
+	source: RadiantElementSsrHostSource,
 ): RadiantElementSsrHostBridge {
 	const cachedBridge = ssrHostBridgeCache.get(component);
 
@@ -63,21 +56,17 @@ export function getOrCreateRadiantElementSsrHostBridge(
 	}
 
 	const bridge: RadiantElementSsrHostBridge = {
-		constructor: component.constructor,
-		getAttribute: (name) => component.getAttribute(name),
-		getAttributeNames: () => component.getAttributeNames(),
-		getAuthoredHydrationScriptMarkup: () => component.getAuthoredHydrationScriptMarkup(),
-		getContextProviders: () => component.getContextProviders(),
-		getHostSsrAttributes: () => component.getHostSsrAttributes(),
-		getHydrationBindings: () => component.getHydrationBindings(),
-		getPropertyValue: (name) => component[name],
-		getReactiveProperties: () => component.getReactiveProperties(),
-		getSlotProjectionScriptTag: () => component.getSlotProjectionScriptTag(),
-		resolveTrackedRenderOutput: () => component.resolveTrackedRenderOutput(),
-		resolveSsrRenderBridge: () => component.resolveSsrRenderBridge(),
-		renderHost: () => component.renderHost(),
-		renderHostToString: (options) => component.renderHostToString(options),
-		renderToString: (options) => component.renderToString(options),
+		constructor: source.constructor,
+		getAttribute: (name) => source.getAttribute(name),
+		getAttributeNames: () => source.getAttributeNames(),
+		getAuthoredHydrationScriptMarkup: () => source.getAuthoredHydrationScriptMarkup(),
+		getContextProviders: () => source.getContextProviders(),
+		getHydrationBindings: () => source.getHydrationBindings(),
+		getPropertyValue: (name) => source.getPropertyValue(name),
+		getReactiveProperties: () => source.getReactiveProperties(),
+		getSlotProjectionScriptTag: () => source.getSlotProjectionScriptTag(),
+		resolveTrackedRenderOutput: () => source.resolveTrackedRenderOutput(),
+		renderViewToString: (options) => source.renderViewToString(options),
 	};
 
 	ssrHostBridgeCache.set(component, bridge);
@@ -105,14 +94,11 @@ function isRadiantElementSsrHostBridge(component: object): component is RadiantE
 		typeof (component as { getAuthoredHydrationScriptMarkup?: unknown }).getAuthoredHydrationScriptMarkup ===
 			'function' &&
 		typeof (component as { getContextProviders?: unknown }).getContextProviders === 'function' &&
-		typeof (component as { getHostSsrAttributes?: unknown }).getHostSsrAttributes === 'function' &&
 		typeof (component as { getHydrationBindings?: unknown }).getHydrationBindings === 'function' &&
+		typeof (component as { getPropertyValue?: unknown }).getPropertyValue === 'function' &&
 		typeof (component as { getReactiveProperties?: unknown }).getReactiveProperties === 'function' &&
 		typeof (component as { getSlotProjectionScriptTag?: unknown }).getSlotProjectionScriptTag === 'function' &&
 		typeof (component as { resolveTrackedRenderOutput?: unknown }).resolveTrackedRenderOutput === 'function' &&
-		typeof (component as { resolveSsrRenderBridge?: unknown }).resolveSsrRenderBridge === 'function' &&
-		typeof (component as { renderHost?: unknown }).renderHost === 'function' &&
-		typeof (component as { renderHostToString?: unknown }).renderHostToString === 'function' &&
-		typeof (component as { renderToString?: unknown }).renderToString === 'function'
+		typeof (component as { renderViewToString?: unknown }).renderViewToString === 'function'
 	);
 }

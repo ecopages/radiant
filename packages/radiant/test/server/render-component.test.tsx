@@ -516,58 +516,6 @@ describe('render-component server helpers', () => {
 		);
 	});
 
-	test('renderComponent() preserves explicit Radiant SSR method overrides as a compatibility fallback', async () => {
-		@customElement('render-component-overridden-host-test')
-		class OverriddenRadiantHost extends RadiantElement {
-			override renderHostToString(): string {
-				return '<render-component-overridden-host-test data-source="override">override markup</render-component-overridden-host-test>';
-			}
-
-			override renderHost() {
-				return {
-					nodeType: 1 as const,
-					outerHTML:
-						'<render-component-overridden-host-test data-source="override-preview">override preview</render-component-overridden-host-test>',
-				};
-			}
-		}
-
-		const rendered = await renderComponent(OverriddenRadiantHost);
-
-		expect(rendered.markup).toBe(
-			'<render-component-overridden-host-test data-source="override">override markup</render-component-overridden-host-test>',
-		);
-		expect(rendered.preview).toEqual({
-			nodeType: 1,
-			outerHTML:
-				'<render-component-overridden-host-test data-source="override-preview">override preview</render-component-overridden-host-test>',
-		});
-	});
-
-	test('renderComponent() keeps preview aligned when only renderHostToString() is overridden', async () => {
-		@customElement('render-component-markup-only-host-test')
-		class MarkupOnlyOverriddenRadiantHost extends RadiantElement {
-			override renderHostToString(): string {
-				return '<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>';
-			}
-
-			override render() {
-				return <p>Default inherited renderHost() path should not leak into preview</p>;
-			}
-		}
-
-		const rendered = await renderComponent(MarkupOnlyOverriddenRadiantHost);
-
-		expect(rendered.markup).toBe(
-			'<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>',
-		);
-		expect(rendered.preview).toEqual({
-			nodeType: 1,
-			outerHTML:
-				'<render-component-markup-only-host-test data-source="override">markup only override</render-component-markup-only-host-test>',
-		});
-	});
-
 	test('concurrent renders resolve independent SSR context values', async () => {
 		const concurrentContext = createContext<{ id: number }>(Symbol('concurrent-context'));
 
