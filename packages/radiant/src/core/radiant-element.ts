@@ -4,10 +4,7 @@ import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
-import {
-	RenderRuntime,
-	type RenderRuntimeHost,
-} from './render-runtime';
+import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
