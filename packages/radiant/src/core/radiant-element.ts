@@ -29,6 +29,14 @@ type RadiantRenderSurface = {
 	interactionTarget: RadiantInteractionTarget;
 	queryRoot: ParentNode;
 };
+type ReactiveAccessorDefinition<T> = {
+	bind?: ReactiveBindingOption;
+	getValue: () => T | undefined;
+	setValue: (value: T) => void;
+};
+type ReactivePropertyStateHost = HTMLElement & {
+	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
+};
 
 function resolveRadiantElementBase(): typeof HTMLElement {
 	if (typeof HTMLElement !== 'undefined') {
@@ -307,11 +315,7 @@ export class RadiantElement<Bindings extends object = {}>
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
-
-	/**
-	 * A map of property metadata objects, it contains useful information about the properties configured via decorators.
-	 */
-	private reactiveProperties = new Map<string, ReactiveProperty>();
+	private readonly reactivePropertyState: ReactivePropertyState;
 
 	/**
 	 * Registered context providers keyed by decorated property name.
@@ -342,28 +346,10 @@ export class RadiantElement<Bindings extends object = {}>
 	private isRenderScheduled = false;
 	private needsRender = false;
 	private renderRuntime?: RenderRuntime;
-	/**
-	 * Snapshot of own-property values that existed before Radiant installs the
-	 * reactive accessors for declared props.
-	 *
-	 * "Pre-upgrade" refers to the custom-element upgrade window where user code,
-	 * SSR boot code, or another framework assigns `element.someProp = value`
-	 * before the browser has finished constructing the final custom-element class
-	 * instance with its accessors in place.
-	 *
-	 * Those early assignments land as plain own properties on the element. If we
-	 * define a reactive accessor later without first capturing them, the accessor
-	 * would either miss the assigned value or remain shadowed by the own property.
-	 * `createReactiveProp()` consumes this snapshot so the early value becomes the
-	 * prop's initial reactive state.
-	 */
-	private readonly preUpgradePropertyValues = new Map<string, unknown>();
 
 	constructor() {
 		super();
-		for (const propertyName of Object.getOwnPropertyNames(this)) {
-			this.preUpgradePropertyValues.set(propertyName, (this as Record<string, unknown>)[propertyName]);
-		}
+		this.reactivePropertyState = new ReactivePropertyState(this);
 
 		this.reactiveHost = new ReactiveHost<this, Bindings>(
 			this,
@@ -439,23 +425,10 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactiveHost.notifyUpdate(changedProperty, oldValue, value);
 	}
 
-	private transformAttributeValue(value: string | null, config: any): unknown {
-		return value !== null ? config?.converter.fromAttribute(value) : value;
-	}
-
 	attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
 		if (oldValue === newValue || !this.elementReady) return;
 
-		if (this.reactiveProperties.has(name)) {
-			const config = this.reactiveProperties.get(name);
-
-			const transformedValue = this.transformAttributeValue(newValue, config);
-			const transformedOldValue = this.transformAttributeValue(oldValue, config);
-
-			const key = config ? config.attribute : name;
-			(this as any)[key] = transformedValue;
-			this.notifyUpdate(name, transformedOldValue, transformedValue);
-		}
+		this.reactivePropertyState.applyAttributeChange(name, oldValue, newValue);
 	}
 
 	/**
@@ -583,11 +556,11 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public registerReactiveProperty(config: ReactiveProperty) {
-		this.reactiveProperties.set(config.name, config);
+		this.reactivePropertyState.register(config);
 	}
 
 	protected getReactiveProperties(): ReactiveProperty[] {
-		return Array.from(this.reactiveProperties.values());
+		return this.reactivePropertyState.getAll();
 	}
 
 	public registerReactiveDependencyReader(property: string, read: () => unknown): void {
@@ -783,72 +756,14 @@ export class RadiantElement<Bindings extends object = {}>
 	 * writes survive into the reactive lifecycle.
 	 */
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
-		const { type, attribute, reflect, defaultValue } = options;
-		const attributeKey = attribute ?? propertyName;
-		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
-		const preUpgradeValue = hasPreUpgradeValue ? (this.preUpgradePropertyValues.get(propertyName) as T) : undefined;
-
-		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
-			throw new Error(`defaultValue does not match the expected type for ${type.name}`);
-		}
-
-		const initialValue: T | undefined = hasPreUpgradeValue
-			? preUpgradeValue
-			: (getInitialValue(this, type, attributeKey, defaultValue) as T);
-
-		if (this.hasAttribute(attributeKey) && (!reflect || initialValue == null || initialValue === '')) {
-			this.removeAttribute(attributeKey);
-		}
-
-		if (hasPreUpgradeValue && Object.prototype.hasOwnProperty.call(this, propertyName)) {
-			Reflect.deleteProperty(this, propertyName);
-		}
-
-		const propertyMapping: ReactiveProperty<T> = {
-			type,
-			name: propertyName,
-			value: initialValue,
-			initialValue,
-			attribute: attributeKey,
-			converter: {
-				fromAttribute: (value) => readAttributeValue(value, type),
-				toAttribute: (value) => writeAttributeValue(value, type),
+		this.reactivePropertyState.create(
+			propertyName,
+			options,
+			(type, attributeKey, defaultValue) => getInitialValue(this, type, attributeKey, defaultValue) as T,
+			(name, config) => {
+				this.reactiveHost.defineReactiveAccessor(name, config);
 			},
-		};
-
-		this.registerReactiveProperty(propertyMapping);
-
-		const handleReflectRequest = (value: T) => {
-			if (reflect) {
-				if (value == null || value === '' || value === false) {
-					this.removeAttribute(attributeKey);
-				} else {
-					const attributeValue = propertyMapping.converter.toAttribute(value);
-					this.setAttribute(attributeKey, attributeValue);
-				}
-			}
-		};
-
-		this.reactiveHost.defineReactiveAccessor(propertyName, {
-			bind: options.bind,
-			getValue: () => this.reactiveProperties.get(propertyName)?.value as T | undefined,
-			setValue: (newValue: T) => {
-				this.reactiveProperties.set(propertyName, { ...propertyMapping, value: newValue });
-				handleReflectRequest(newValue);
-			},
-		});
-
-		if (initialValue !== undefined) {
-			queueMicrotask(() => {
-				const currentValue = this.reactiveProperties.get(propertyName)?.value as T | undefined;
-				if (currentValue === undefined) {
-					return;
-				}
-
-				handleReflectRequest(currentValue);
-				this.notifyUpdate(propertyName, undefined, currentValue);
-			});
-		}
+		);
 	}
 
 	private getSlotProjectionScriptTag(): string | undefined {
@@ -898,4 +813,123 @@ function requireRadiantElementSsrRuntime() {
 
 function shouldHydrateOnConnect(component: HTMLElement): boolean {
 	return isRadiantHydratorInstalled() && hasHydrationMarkers(component);
+}
+
+class ReactivePropertyState {
+	private readonly properties = new Map<string, ReactiveProperty>();
+	private readonly preUpgradePropertyValues = new Map<string, unknown>();
+
+	constructor(private readonly host: ReactivePropertyStateHost) {
+		for (const propertyName of Object.getOwnPropertyNames(host)) {
+			this.preUpgradePropertyValues.set(propertyName, Reflect.get(host, propertyName));
+		}
+	}
+
+	public register(config: ReactiveProperty): void {
+		this.properties.set(config.name, config);
+	}
+
+	public getAll(): ReactiveProperty[] {
+		return Array.from(this.properties.values());
+	}
+
+	public applyAttributeChange(name: string, oldValue: string | null, newValue: string | null): void {
+		const config = this.properties.get(name);
+
+		if (!config) {
+			return;
+		}
+
+		const transformedValue = this.transformAttributeValue(newValue, config);
+		const transformedOldValue = this.transformAttributeValue(oldValue, config);
+
+		Reflect.set(this.host, config.attribute, transformedValue);
+		this.host.notifyUpdate(name, transformedOldValue, transformedValue);
+	}
+
+	public create<T>(
+		propertyName: string,
+		options: ReactivePropertyOptions<T>,
+		resolveInitialValue: (type: AttributeTypeConstant, attributeKey: string, defaultValue: unknown) => T,
+		defineReactiveAccessor: (propertyName: string, config: ReactiveAccessorDefinition<T>) => void,
+	): void {
+		const { type, attribute, reflect, defaultValue } = options;
+		const attributeKey = attribute ?? propertyName;
+		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
+		const preUpgradeValue = hasPreUpgradeValue ? (this.preUpgradePropertyValues.get(propertyName) as T) : undefined;
+
+		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
+			throw new Error(`defaultValue does not match the expected type for ${type.name}`);
+		}
+
+		const initialValue: T | undefined = hasPreUpgradeValue
+			? preUpgradeValue
+			: resolveInitialValue(type, attributeKey, defaultValue);
+
+		if (this.host.hasAttribute(attributeKey) && (!reflect || initialValue == null || initialValue === '')) {
+			this.host.removeAttribute(attributeKey);
+		}
+
+		if (hasPreUpgradeValue && Object.prototype.hasOwnProperty.call(this.host, propertyName)) {
+			Reflect.deleteProperty(this.host, propertyName);
+		}
+
+		const propertyMapping: ReactiveProperty<T> = {
+			type,
+			name: propertyName,
+			value: initialValue,
+			initialValue,
+			attribute: attributeKey,
+			converter: {
+				fromAttribute: (value) => readAttributeValue(value, type),
+				toAttribute: (value) => writeAttributeValue(value, type),
+			},
+		};
+
+		this.register(propertyMapping);
+
+		defineReactiveAccessor(propertyName, {
+			bind: options.bind,
+			getValue: () => this.properties.get(propertyName)?.value as T | undefined,
+			setValue: (newValue: T) => {
+				this.properties.set(propertyName, { ...propertyMapping, value: newValue });
+				this.reflectValue(attributeKey, reflect, propertyMapping, newValue);
+			},
+		});
+
+		if (initialValue !== undefined) {
+			queueMicrotask(() => {
+				const currentValue = this.properties.get(propertyName)?.value as T | undefined;
+				if (currentValue === undefined) {
+					return;
+				}
+
+				this.reflectValue(attributeKey, reflect, propertyMapping, currentValue);
+				this.host.notifyUpdate(propertyName, undefined, currentValue);
+			});
+		}
+	}
+
+	private transformAttributeValue(value: string | null, config: ReactiveProperty): unknown {
+		return value !== null ? config.converter.fromAttribute(value) : value;
+	}
+
+	private reflectValue<T>(
+		attributeKey: string,
+		reflect: boolean | undefined,
+		property: ReactiveProperty<T>,
+		value: T,
+	): void {
+		if (!reflect) {
+			return;
+		}
+
+		if (value == null || value === '' || value === false) {
+			this.host.removeAttribute(attributeKey);
+			return;
+		}
+
+		const attributeValue = property.converter.toAttribute(value);
+		this.host.setAttribute(attributeKey, attributeValue);
+	}
 }
