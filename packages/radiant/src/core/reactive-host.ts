@@ -1,5 +1,5 @@
 import { createSubscribableJsxValue, type SubscribableJsxValue } from '@ecopages/jsx';
-import { trackDependency, type DependencyNode, type SignalSubscriber } from '@ecopages/signals';
+import { trackReactiveDependency, type ReactiveDependencyNode, type ReactiveSubscriber } from './reactivity-adapter';
 import type {
 	ReactiveBindingOption,
 	ReactiveBindingValue,
@@ -61,19 +61,19 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
  * Internal dependency node that bridges Radiant host members into the signals
  * tracking graph.
  */
-class ReactiveHostDependency implements DependencyNode {
-	private readonly subscribers = new Set<SignalSubscriber<unknown>>();
+class ReactiveHostDependency implements ReactiveDependencyNode {
+	private readonly subscribers = new Set<ReactiveSubscriber<unknown>>();
 	private readonly watcherListeners = new Set<() => void>();
 	private version = 0;
 
 	constructor(private readonly read: ReactiveDependencyReader) {}
 
 	public get(): unknown {
-		trackDependency(this);
+		trackReactiveDependency(this);
 		return this.read();
 	}
 
-	public subscribe(notify: SignalSubscriber<unknown>): () => void {
+	public subscribe(notify: ReactiveSubscriber<unknown>): () => void {
 		this.subscribers.add(notify);
 
 		return () => {
@@ -321,7 +321,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	 * Records a dependency read for the named reactive member.
 	 */
 	public trackReactiveRead(property: string): void {
-		trackDependency(this.getReactiveDependency(property));
+		trackReactiveDependency(this.getReactiveDependency(property));
 	}
 
 	/**

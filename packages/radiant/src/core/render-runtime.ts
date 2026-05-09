@@ -1,5 +1,10 @@
 import { hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
-import { Computed, subtle } from '@ecopages/signals';
+import {
+	createReactiveComputed,
+	createReactiveWatcher,
+	type ReactiveComputed,
+	type ReactiveWatcher,
+} from './reactivity-adapter';
 
 import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 import {
@@ -21,14 +26,14 @@ export type RenderRuntimeHost = HTMLElement & {
 export class RenderRuntime {
 	#host: RenderRuntimeHost;
 	#projectedSlotContent = new Map<string, JsxRenderable[]>();
-	#renderSignal?: Computed<{ containsSlots: boolean; value: JsxRenderable }>;
-	readonly #renderWatcher: InstanceType<typeof subtle.Watcher>;
+	#renderSignal?: ReactiveComputed<{ containsSlots: boolean; value: JsxRenderable }>;
+	readonly #renderWatcher: ReactiveWatcher;
 	#slotProjectionObserver?: MutationObserver;
 	#slotProjectionVersion = 0;
 
 	constructor(host: RenderRuntimeHost) {
 		this.#host = host;
-		this.#renderWatcher = new subtle.Watcher(() => {
+		this.#renderWatcher = createReactiveWatcher(() => {
 			this.#host.requestUpdate();
 		});
 	}
@@ -108,7 +113,7 @@ export class RenderRuntime {
 	}
 
 	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
-		const nextRenderSignal = new Computed(() => this.resolveRenderOutput());
+		const nextRenderSignal = createReactiveComputed(() => this.resolveRenderOutput());
 		const output = nextRenderSignal.get();
 
 		if (!this.#host.isConnected) {

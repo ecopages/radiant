@@ -1,5 +1,5 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
-import { Computed, subtle } from '@ecopages/signals';
+import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } from './reactivity-adapter';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
 import { ReactiveHost, type ReactiveHostLike } from './reactive-host';
@@ -42,8 +42,8 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private isRenderScheduled = false;
 	private isSsrLifecycle = false;
 	private needsRender = false;
-	private renderSignal?: Computed<JsxRenderable>;
-	private readonly renderWatcher = new subtle.Watcher(() => {
+	private renderSignal?: ReactiveComputed<JsxRenderable>;
+	private readonly renderWatcher = createReactiveWatcher(() => {
 		this.requestUpdate();
 	});
 
@@ -344,7 +344,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	}
 
 	private resolveTrackedRenderOutput(): JsxRenderable {
-		const nextRenderSignal = new Computed(() => this.render());
+		const nextRenderSignal = createReactiveComputed(() => this.render());
 		const output = nextRenderSignal.get();
 
 		if (!this.connected) {
