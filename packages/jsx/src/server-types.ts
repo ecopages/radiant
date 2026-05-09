@@ -3,6 +3,12 @@ import type { RenderToStringOptions } from './server-render.ts';
 
 /**
  * Minimal custom-element contract used by the JSX SSR pipeline.
+ *
+ * JSX itself only understands one generic SSR-capable custom-element shape:
+ * an instance that can produce host HTML through `renderHostToString(...)`.
+ * Framework-specific element models, such as `RadiantElement`, are adapted into
+ * this contract through the server custom-element render hook rather than by
+ * teaching the JSX core about each framework type directly.
  */
 export interface ServerRenderableCustomElement {
 	renderHostToString: (options?: RenderToStringOptions) => string;
@@ -24,5 +30,9 @@ export type ServerCustomElementRenderHookContext = {
 
 /**
  * Hook invoked when the runtime renders a registered intrinsic custom element.
+ *
+ * This hook is the seam where framework-owned custom elements can intercept
+ * plain registered custom-element instances and replace the default generic SSR
+ * behavior with framework-aware host rendering.
  */
 export type ServerCustomElementRenderHook = (context: ServerCustomElementRenderHookContext) => JsxNodeLike | undefined;

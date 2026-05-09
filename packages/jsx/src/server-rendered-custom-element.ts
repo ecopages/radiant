@@ -134,18 +134,7 @@ function resolveServerRenderedCustomElementRender(
 }
 
 function shouldServerRenderCustomElement(type: string): boolean {
-	const ssr = getActiveSsrRenderContext();
-
-	return (
-		type.includes('-') &&
-		(typeof document === 'undefined' ||
-			typeof globalThis.window === 'undefined' ||
-			typeof globalThis.location === 'undefined' ||
-			ssr?.forceServerCustomElementRender === true ||
-			(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-				Symbol.for('@ecopages/jsx.force-server-custom-element-render')
-			] === true)
-	);
+	return type.includes('-');
 }
 
 function isServerRenderableCustomElement(value: unknown): value is ServerRenderableCustomElement {

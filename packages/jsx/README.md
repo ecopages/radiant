@@ -359,6 +359,30 @@ const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 
 Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
 
+### SSR-Capable Custom Elements
+
+Within the JSX SSR pipeline, any registered intrinsic tag containing `-` is treated as a custom-element candidate.
+
+There are three practical outcomes during SSR:
+
+- generic SSR-capable custom elements implement `renderHostToString(...)` and can be serialized directly by `@ecopages/jsx/server`
+- framework-owned custom elements, such as `RadiantElement`, are adapted through the server custom-element render hook so JSX does not need framework-specific branches in its core renderer
+- plain registered custom elements without an SSR contract fall back to their authored markup so the client can still upgrade them later
+
+The generic contract is intentionally small:
+
+```ts
+import type { RenderToStringOptions } from '@ecopages/jsx/server';
+
+type ServerRenderableCustomElement = {
+	renderHostToString(options?: RenderToStringOptions): string;
+};
+```
+
+That means JSX itself does not distinguish between "Radiant custom element" and "standard custom element" as first-class renderer categories. Instead, it understands one generic SSR-capable shape plus one hook seam for frameworks that need richer host rendering.
+
+Use `withServerCustomElementRenderHook(...)` from `@ecopages/jsx/server` when a framework wants to intercept a registered custom-element instance and replace the default generic SSR path with framework-aware host rendering.
+
 ## Authoring Patterns
 
 ### Intrinsic Elements
@@ -523,7 +547,6 @@ Main exports:
 - `render`
 - `hydrate`
 - `hasHydrationMarkers`
-- `renderToString`
 - `createSubscribableJsxValue`
 - `isKeyedJsxValue`
 - `isSubscribableJsxValue`
@@ -538,11 +561,17 @@ Key types:
 - `JsxPropsWithChildren`
 - `JsxRenderable`
 - `JsxRoot`
-- `RenderToStringOptions`
 - `SubscribableJsxValue`
 - `TemplateResultLike`
 
 The automatic development runtime also exports `jsxDEV` from `@ecopages/jsx/jsx-dev-runtime`.
+
+Server-only exports from `@ecopages/jsx/server` include:
+
+- `renderToString`
+- `RenderToStringOptions`
+- `withServerCustomElementRenderHook`
+- `isServerRenderHydrationActive`
 
 ## Constraints
 
