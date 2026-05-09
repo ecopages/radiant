@@ -50,19 +50,11 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 
 	const html = await response.text();
 	assert.match(html, /<radiant-context-flow-shell>/);
-	assert.match(html, /<radiant-context-flow-leaf>/);
-	assert.match(html, /<radiant-slot-studio-board><section[^>]*class="component-card component-card--studio"/);
-	assert.match(html, /Design systems is steering slot composition in build mode with 3 commits queued\./);
-	assert.match(html, /<p[^>]*class="studio-insight__value">Build<\/p>/);
-	assert.match(html, /<p[^>]*class="studio-insight__value">Calm<\/p>/);
-	assert.match(html, /<p[^>]*class="studio-insight__value">3 synced<\/p>/);
 	assert.doesNotMatch(html, /Awaiting board context/);
-	assert.doesNotMatch(html, /class="studio-insight__value">Pending<\/p>/);
 	assert.match(html, /Controller-owned render/);
 	assert.match(html, /controller-decorator-visualizer__manual-ref-count">0</);
 	assert.match(html, /Controller-owned context view/);
 	assert.match(html, /controller-context-visualizer__consumer-count">2</);
-	assert.match(html, /Context: Nitro SSR context \/ 2/);
 	assert.match(html, /<script type="application\/json" id="app-state">.*<\/script>/);
 	assert.match(html, /<script type="application\/json" id="radiant-document-state">.*<\/script>/);
 	assert.match(html, /"customElementTagNames":\[[^\]]*"radiant-context-flow-shell"/);

@@ -339,6 +339,13 @@ function getActiveSsrHydrate(): boolean {
 }
 
 /**
+ * Returns whether the current JSX SSR pass is emitting hydration markers.
+ */
+export function isServerRenderHydrationActive(): boolean {
+	return getActiveSsrHydrate();
+}
+
+/**
  * Runs a synchronous SSR render with a temporary intrinsic custom-element hook.
  *
  * This is intended for server adapters that need to collect metadata while the
@@ -368,6 +375,36 @@ export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRe
 		return result;
 	} catch (error) {
 		restoreHook();
+		throw error;
+	}
+}
+
+/**
+ * Runs an SSR render while forcing intrinsic custom elements down the server-render path.
+ */
+export function withForcedServerCustomElementRendering<T>(render: () => T): T {
+	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
+	const previousForceServerRender = globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
+	globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = true;
+	const restoreForceRender = () => {
+		if (previousForceServerRender === undefined) {
+			delete globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
+		} else {
+			globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = previousForceServerRender;
+		}
+	};
+
+	try {
+		const result = render();
+
+		if (isPromiseLike(result)) {
+			return Promise.resolve(result).finally(restoreForceRender) as T;
+		}
+
+		restoreForceRender();
+		return result;
+	} catch (error) {
+		restoreForceRender();
 		throw error;
 	}
 }

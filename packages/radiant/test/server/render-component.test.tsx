@@ -1,4 +1,5 @@
 import '../../src/server/install-light-dom-shim';
+import { renderToString } from '@ecopages/jsx/server';
 import { describe, expect, test } from 'vitest';
 import {
 	type ContextProvider,
@@ -28,6 +29,7 @@ import {
 	type ServerRenderableComponent,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
+import { ensureRadiantElementSsrRuntimeRegistered } from '../../src/server/radiant-component-ssr-runtime';
 
 const cardAssets: readonly RenderedComponentAsset[] = [
 	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
@@ -151,6 +153,14 @@ class ProgrammaticRenderControllerCard extends RadiantController {
 registerController('programmatic-render-controller-card', ProgrammaticRenderControllerCard);
 
 describe('render-component server helpers', () => {
+	test('runtime registration does not install a process-global JSX custom-element hook', () => {
+		ensureRadiantElementSsrRuntimeRegistered();
+
+		expect(renderToString(<render-component-card-test />)).toBe(
+			'<render-component-card-test></render-component-card-test>',
+		);
+	});
+
 	test('renderComponent() returns the canonical server render descriptor', async () => {
 		const rendered = await renderComponent(RenderComponentCard, {
 			initialize: (component) => {
