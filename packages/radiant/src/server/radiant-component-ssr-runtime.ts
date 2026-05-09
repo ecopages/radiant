@@ -1,1 +1,4 @@
-export { getOrCreateRadiantElementSsrRuntime, withServerRadiantElementSsrRuntime } from './radiant-component-ssr-bridge';
+export {
+	getOrCreateRadiantElementSsrRuntime,
+	withServerRadiantElementSsrRuntime,
+} from './radiant-component-ssr-bridge';
