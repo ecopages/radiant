@@ -63,8 +63,8 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	const activeSsrContext = getActiveSsrRenderContext();
 	const ssr: SsrRenderContext = {
 		hydrate,
-		forceServerCustomElementRender: activeSsrContext?.forceServerCustomElementRender ?? false,
 		customElementRenderHook: activeSsrContext?.customElementRenderHook,
+		scopeValues: activeSsrContext?.scopeValues,
 	};
 
 	return withActiveSsrRenderContext(ssr, () =>
@@ -84,16 +84,15 @@ export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRe
 }
 
 export function withForcedServerCustomElementRendering<T>(render: () => T): T {
-	return withSsrRenderOverrides({ forceServerCustomElementRender: true }, render);
+	return render();
 }
 
 function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render: () => T): T {
 	const parentContext = getActiveSsrRenderContext();
 	const nextContext: SsrRenderContext = {
 		hydrate: overrides.hydrate ?? parentContext?.hydrate ?? false,
-		forceServerCustomElementRender:
-			overrides.forceServerCustomElementRender ?? parentContext?.forceServerCustomElementRender ?? false,
 		customElementRenderHook: overrides.customElementRenderHook ?? parentContext?.customElementRenderHook,
+		scopeValues: parentContext?.scopeValues,
 	};
 
 	return withActiveSsrRenderContext(nextContext, render);
