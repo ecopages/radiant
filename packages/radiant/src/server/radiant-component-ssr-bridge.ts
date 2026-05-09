@@ -2,41 +2,25 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
 import { withServerCustomElementRenderHook } from '@ecopages/jsx/server';
-import { getReactivePropDefinitions } from '../core/reactive-prop-metadata';
 import { RadiantElementSsrService } from '../core/radiant-component-ssr';
-import { resolveRadiantElementSsrHostBridge, type RadiantElementSsrHostBridge } from '../core/radiant-element-ssr-host';
-import { getRadiantElementSsrRuntime } from '../core/radiant-component-ssr-registry';
+import { resolveRadiantElementSsrHostBridge as resolveInternalRadiantElementSsrHostBridge } from '../core/radiant-element-ssr-host';
 import type {
-	RadiantElementHydrationSsrCapable,
 	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementTrackedRenderSsrCapable,
 } from '../core/radiant-component-ssr-registry';
+import { extractRadiantElementServerRenderHost } from './radiant-component-ssr-extractor';
 
 const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
-const hostAttributeResolutionInProgress = new WeakSet<object>();
+const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 
 export function createRadiantElementSsrService(
 	component: RadiantElementServerRenderSsrCapable,
 ): RadiantElementSsrService {
-	const bridge = getRadiantElementSsrHostBridge(component);
-
-	return new RadiantElementSsrService({
-		constructor: bridge.constructor,
-		getAuthoredHydrationScriptMarkup: () => bridge.getAuthoredHydrationScriptMarkup(),
-		getHydrationBindings: () => bridge.getHydrationBindings(),
-		getSlotProjectionScriptTag: () => bridge.getSlotProjectionScriptTag(),
-		renderToString: (options) => bridge.renderToString(options),
-		getContextProviders: () => bridge.getContextProviders(),
-		getReactiveProperties: () => bridge.getReactiveProperties(),
-		getReactivePropDefinitions: () => getReactivePropDefinitions(component),
-		getPropertyValue: (name) => bridge.getPropertyValue(name),
-		listAttributeNames: () => (typeof bridge.getAttributeNames === 'function' ? bridge.getAttributeNames() : []),
-		getAttributeValue: (name) => bridge.getAttribute(name),
-	});
+	return new RadiantElementSsrService(extractRadiantElementServerRenderHost(component));
 }
 
-export function renderRadiantElementHost(component: RadiantElementHydrationSsrCapable): JsxRenderable {
+export function renderRadiantElementHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable {
 	return {
 		nodeType: 1,
 		outerHTML: renderRadiantElementHostToString(component, { mode: 'hydrate' }),
@@ -44,18 +28,12 @@ export function renderRadiantElementHost(component: RadiantElementHydrationSsrCa
 }
 
 export function renderRegisteredRadiantElementHost(component: unknown): JsxRenderable | undefined {
-	if (!isRadiantElementHydrationSsrCapable(component)) {
+	if (isRadiantElementServerRenderable(component)) {
+		return renderRadiantElementHost(component);
+	}
+
+	if (!isLegacyServerRenderable(component)) {
 		return undefined;
-	}
-
-	const bridge = resolveRadiantElementRenderBridge(component);
-
-	if (bridge?.renderHost) {
-		return bridge.renderHost();
-	}
-
-	if (bridge?.renderHostToString) {
-		return { nodeType: 1, outerHTML: bridge.renderHostToString({ mode: 'hydrate' }) };
 	}
 
 	return component.renderHost?.() ?? { nodeType: 1, outerHTML: component.renderHostToString({ mode: 'hydrate' }) };
@@ -75,35 +53,27 @@ export function renderRegisteredRadiantElementHostToString(
 	component: unknown,
 	options: RenderToStringOptions = {},
 ): string | undefined {
-	if (!isRadiantElementHydrationSsrCapable(component)) {
-		return undefined;
+	if (isRadiantElementServerRenderable(component)) {
+		return renderRadiantElementHostToString(component, options);
 	}
 
-	const bridge = resolveRadiantElementRenderBridge(component);
-
-	if (bridge?.renderHostToString) {
-		return bridge.renderHostToString(options);
+	if (!isLegacyServerRenderable(component)) {
+		return undefined;
 	}
 
 	return component.renderHostToString(options);
 }
 
 export function resolveRegisteredRadiantElementPreview(component: unknown, markup: string): JsxRenderable | undefined {
-	if (!isRadiantElementHydrationSsrCapable(component)) {
+	if (isRadiantElementServerRenderable(component)) {
+		return renderRadiantElementHost(component);
+	}
+
+	if (!isLegacyServerRenderable(component)) {
 		return undefined;
 	}
 
-	const bridge = resolveRadiantElementRenderBridge(component);
-
-	if (!bridge) {
-		return component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
-	}
-
-	if (!bridge.renderHostToString && bridge.renderHost) {
-		return { nodeType: 1, outerHTML: markup };
-	}
-
-	return bridge.renderHost?.() ?? component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
+	return component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
 }
 
 export function renderRadiantElementViewToString(
@@ -118,68 +88,75 @@ export function renderRadiantElementViewToString(
 export function getRadiantElementHostSsrAttributes(
 	component: RadiantElementServerRenderSsrCapable,
 ): Record<string, string> {
-	const bridge = getRadiantElementSsrHostBridge(component);
-
-	if (hostAttributeResolutionInProgress.has(bridge)) {
-		return createRadiantElementSsrService(component).getHostAttributes();
-	}
-
-	hostAttributeResolutionInProgress.add(bridge);
-
-	try {
-		return bridge.getHostSsrAttributes();
-	} finally {
-		hostAttributeResolutionInProgress.delete(bridge);
-	}
+	return createRadiantElementSsrService(component).getHostAttributes();
 }
 
-export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
-	return withServerCustomElementRenderHook(({ instance }) => {
-		if (!isRadiantElementHydrationSsrCapable(instance)) {
-			return undefined;
-		}
-
-		const nestedBridge = resolveRadiantElementRenderBridge(instance);
-
-		if (!nestedBridge?.renderHostToString) {
-			return undefined;
-		}
-
-		const renderHostToString = nestedBridge.renderHostToString;
-
-		return {
-			nodeType: 1,
-			get outerHTML() {
-				const hydrate = isActiveSsrHydrateMode();
-				return renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' });
-			},
-		};
-	}, render);
-}
-
-export function resolveRadiantElementRenderBridge(
-	component: RadiantElementHydrationSsrCapable,
-): RadiantElementRenderBridge | undefined {
-	return component.resolveSsrRenderBridge?.();
-}
-
-export function getRegisteredRadiantElementRenderBridge(component: unknown): RadiantElementRenderBridge | undefined {
-	if (!isRadiantElementHydrationSsrCapable(component)) {
+export function resolveRadiantElementRenderBridge(component: object): RadiantElementRenderBridge | undefined {
+	if (!isRadiantElementServerRenderable(component)) {
 		return undefined;
 	}
 
-	return getRadiantElementSsrRuntime()?.resolveRenderBridge(component);
+	return {
+		renderHost: () => renderRadiantElementHost(component),
+		renderHostToString: (options) => renderRadiantElementHostToString(component, options),
+	};
+}
+
+export function resolveRadiantElementSsrHostBridge(component: object): object | undefined {
+	return resolveInternalRadiantElementSsrHostBridge(component);
+}
+
+export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
+	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
+	const previousForceServerRender = globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
+	globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = true;
+
+	try {
+		return withServerCustomElementRenderHook(({ instance }) => {
+			if (isRadiantElementServerRenderable(instance)) {
+				return {
+					nodeType: 1,
+					get outerHTML() {
+						const hydrate = isActiveSsrHydrateMode();
+						const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
+
+						return renderRadiantElementHostToString(instance, options);
+					},
+				};
+			}
+
+			if (!isLegacyServerRenderable(instance)) {
+				return undefined;
+			}
+
+			const legacyInstance: { renderHostToString(options?: RenderToStringOptions): string } = instance;
+
+			return {
+				nodeType: 1,
+				get outerHTML() {
+					const hydrate = isActiveSsrHydrateMode();
+					return legacyInstance.renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' });
+				},
+			};
+		}, render);
+	} finally {
+		if (previousForceServerRender === undefined) {
+			delete globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
+		} else {
+			globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = previousForceServerRender;
+		}
+	}
 }
 
 export function getRadiantElementTrackedRenderOutput(component: RadiantElementTrackedRenderSsrCapable): {
 	containsSlots: boolean;
 	value: JsxRenderable;
 } {
-	if (typeof component.resolveTrackedRenderOutput === 'function') {
+	if (hasTrackedRenderOutput(component)) {
 		return component.resolveTrackedRenderOutput();
 	}
 
-	const bridge = resolveRadiantElementSsrHostBridge(component as object);
+	const bridge = resolveInternalRadiantElementSsrHostBridge(component as object);
 
 	if (!bridge) {
 		throw new Error('Radiant SSR runtime requires tracked render output support on the component.');
@@ -192,23 +169,31 @@ function isActiveSsrHydrateMode(): boolean {
 	return (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[ACTIVE_SSR_HYDRATE_SYMBOL] === true;
 }
 
-function getRadiantElementSsrHostBridge(component: object): RadiantElementSsrHostBridge {
-	const bridge = resolveRadiantElementSsrHostBridge(component);
-
-	if (!bridge) {
-		throw new Error('Radiant SSR runtime requires a full SSR host bridge on the component.');
-	}
-
-	return bridge;
-}
-
-function isRadiantElementHydrationSsrCapable(component: unknown): component is RadiantElementHydrationSsrCapable {
+function isRadiantElementServerRenderable(component: unknown): component is RadiantElementServerRenderSsrCapable {
 	if (typeof component !== 'object' || component === null) {
 		return false;
 	}
 
-	return (
-		typeof (component as { renderToString?: unknown }).renderToString === 'function' &&
-		typeof (component as { renderHostToString?: unknown }).renderHostToString === 'function'
-	);
+	return resolveInternalRadiantElementSsrHostBridge(component) !== undefined;
+}
+
+function isLegacyServerRenderable(component: unknown): component is {
+	renderHost?: () => JsxRenderable;
+	renderHostToString(options?: RenderToStringOptions): string;
+} {
+	if (typeof component !== 'object' || component === null) {
+		return false;
+	}
+
+	return typeof (component as { renderHostToString?: unknown }).renderHostToString === 'function';
+}
+
+function hasTrackedRenderOutput(component: unknown): component is {
+	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
+} {
+	if (typeof component !== 'object' || component === null) {
+		return false;
+	}
+
+	return typeof (component as { resolveTrackedRenderOutput?: unknown }).resolveTrackedRenderOutput === 'function';
 }

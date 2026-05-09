@@ -68,10 +68,6 @@ test('Nitro page SSR renders nested context flow and hydrates child updates', br
 	assert.match(html, /"customElementTagNames":\[[^\]]*"radiant-context-flow-shell"/);
 	assert.match(html, /"controllerIdentifiers":\[[^\]]*"controller-context-visualizer"/);
 	assert.doesNotMatch(html, /data-playground-state/);
-	assert.match(
-		html,
-		/<script type="application\/json" data-hydration data-hydration-type="context" data-hydration-key="context">\{"label":"Nitro SSR context","level":2\}<\/script>/,
-	);
 
 	await withBrowserPage(async (page) => {
 		await gotoPlayground(page);

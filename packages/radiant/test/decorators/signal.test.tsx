@@ -5,6 +5,7 @@ import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { signal } from '../../src/decorators/signal';
+import { renderRadiantElementHostToString } from '../../src/server/radiant-component-ssr-bridge';
 import '../../src/server/render-component';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
@@ -126,7 +127,7 @@ describe('@signal', () => {
 			element.count.set(4);
 			element.status.set('loading');
 
-			const html = element.renderHostToString();
+			const html = renderRadiantElementHostToString(element);
 
 			expect(html).toContain('Count: 4');
 			expect(html).toContain('Loading');
@@ -135,7 +136,7 @@ describe('@signal', () => {
 		test('appends signal hydration scripts to SSR host output when requested', () => {
 			const element = new SignalComponent();
 			element.status.set('ready');
-			const html = element.renderHostToString({ mode: 'hydrate' });
+			const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 			expect(html).toContain('<signal-component-test>');
 			expect(html).toContain(
