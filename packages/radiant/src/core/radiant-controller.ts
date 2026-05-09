@@ -4,14 +4,15 @@ import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
 import { ReactiveHost, type ReactiveHostLike } from './reactive-host';
 import type {
+	ReactiveBindingOption,
 	ReactivePropertyOptions,
 	ReactiveBindingValue,
 	ReactiveBindings,
 	ReactiveFieldOptions,
-} from './radiant-element';
-import type { ReactiveBindingOption } from './radiant-element';
+} from './reactive-prop-core';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
-import { defaultValueForType, isValueOfType } from '../utils/attribute-utils';
+import { defaultValueForType } from '../utils/attribute-utils';
+import { validateReactivePropertyDefault } from './reactive-prop-core';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
 
@@ -222,9 +223,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
 		const { type, defaultValue, bind } = options;
 
-		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
-			throw new Error(`defaultValue does not match the expected type for ${type.name}`);
-		}
+		validateReactivePropertyDefault(type, defaultValue);
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
 		const initialHostValue = hostPropertyBridge.getInitialValue();

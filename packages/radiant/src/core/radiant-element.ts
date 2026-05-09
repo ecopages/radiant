@@ -4,6 +4,17 @@ import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
+import {
+	createReactivePropertyMapping,
+	type ReactiveAccessorDefinition,
+	type ReactiveBindingOption,
+	type ReactiveBindingValue,
+	type ReactiveBindings,
+	type ReactiveFieldOptions,
+	type ReactiveProperty,
+	type ReactivePropertyOptions,
+	validateReactivePropertyDefault,
+} from './reactive-prop-core';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
@@ -12,13 +23,18 @@ import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { getRadiantElementSsrRuntime } from './radiant-component-ssr-registry';
 import {
 	type AttributeTypeConstant,
-	type ReadAttributeValueReturnType,
-	type WriteAttributeValueReturnType,
 	getInitialValue,
-	isValueOfType,
-	readAttributeValue,
-	writeAttributeValue,
 } from '../utils/attribute-utils';
+
+export type {
+	ReactiveBindingOption,
+	ReactiveBindingValue,
+	ReactiveBindings,
+	ReactiveField,
+	ReactiveFieldOptions,
+	ReactiveProperty,
+	ReactivePropertyOptions,
+} from './reactive-prop-core';
 
 const RadiantElementBase = resolveRadiantElementBase();
 
@@ -28,11 +44,6 @@ type RadiantRenderSurface = {
 	renderTarget: RadiantRenderTarget;
 	interactionTarget: RadiantInteractionTarget;
 	queryRoot: ParentNode;
-};
-type ReactiveAccessorDefinition<T> = {
-	bind?: ReactiveBindingOption;
-	getValue: () => T | undefined;
-	setValue: (value: T) => void;
 };
 type ReactivePropertyStateHost = HTMLElement & {
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
@@ -67,89 +78,7 @@ type RadiantElementEventSubscription = RadiantElementEventListener & {
 	target: EventTarget;
 };
 
-/**
- * Represents a property metadata object.
- */
-export interface ReactiveProperty<T = unknown> {
-	type: AttributeTypeConstant;
-	value?: T;
-	initialValue?: T;
-	name: string;
-	attribute: string;
-	converter: {
-		fromAttribute: (value: string) => ReadAttributeValueReturnType;
-		toAttribute: (value: any) => WriteAttributeValueReturnType;
-	};
-}
-
-/**
- * Represents the options for a reactive property.
- */
-export type ReactivePropertyOptions<T> = {
-	type: AttributeTypeConstant;
-	reflect?: boolean;
-	attribute?: string;
-	defaultValue?: T;
-	/**
-	 * Exposes a JSX binding companion for the reactive property.
-	 *
-	 * - `true` creates a `$propertyName` accessor.
-	 * - a string creates a custom accessor with that name.
-	 * - `undefined` defers to the host default.
-	 *
-	 * The generated accessor returns a subscribable JSX child value so JSX can
-	 * patch only the affected child part when the property changes.
-	 */
-	bind?: boolean | string;
-};
-
-export type ReactiveBindingOption = boolean | string;
-
-export type ReactiveFieldOptions = {
-	/**
-	 * Exposes a JSX binding companion for the reactive field.
-	 *
-	 * - `true` creates a `$fieldName` accessor.
-	 * - a string creates a custom accessor with that name.
-	 * - `undefined` defers to the host default.
-	 */
-	bind?: ReactiveBindingOption;
-};
-
-export type ReactiveField<T = unknown> = {
-	name: string;
-	value: T;
-	initialValue: T;
-};
-
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
-
-/**
- * Value type produced by a JSX binding for a selected reactive member.
- *
- * Bindings preserve the original property type when it is already renderable by
- * the Ecopages JSX runtime. For non-renderable values, the binding falls back
- * to the broader `JsxRenderable` contract consumed by the renderer.
- */
-export type ReactiveBindingValue<
-	Host extends object,
-	Property extends StringPropertyKey<Host>,
-> = Host[Property] extends JsxRenderable ? Host[Property] : JsxRenderable;
-
-/**
- * Namespace of cached JSX bindings keyed by the explicit bindable shape.
- *
- * Radiant exposes this namespace twice on every host:
- *
- * - `host.bindings.key` for the explicit form
- * - `host.$.key` for the short form
- *
- * Both aliases resolve through the same cached binding objects as
- * `host.bind('key')`.
- */
-export type ReactiveBindings<Bindings extends object> = {
-	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
-};
 
 /**
  * Represents an interface for a Radiant element.
@@ -858,9 +787,7 @@ class ReactivePropertyState {
 		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
 		const preUpgradeValue = hasPreUpgradeValue ? (this.preUpgradePropertyValues.get(propertyName) as T) : undefined;
 
-		if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
-			throw new Error(`defaultValue does not match the expected type for ${type.name}`);
-		}
+		validateReactivePropertyDefault(type, defaultValue);
 
 		const initialValue: T | undefined = hasPreUpgradeValue
 			? preUpgradeValue
@@ -874,17 +801,7 @@ class ReactivePropertyState {
 			Reflect.deleteProperty(this.host, propertyName);
 		}
 
-		const propertyMapping: ReactiveProperty<T> = {
-			type,
-			name: propertyName,
-			value: initialValue,
-			initialValue,
-			attribute: attributeKey,
-			converter: {
-				fromAttribute: (value) => readAttributeValue(value, type),
-				toAttribute: (value) => writeAttributeValue(value, type),
-			},
-		};
+		const propertyMapping = createReactivePropertyMapping(propertyName, attributeKey, type, initialValue);
 
 		this.register(propertyMapping);
 

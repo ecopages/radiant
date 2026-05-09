@@ -1,5 +1,5 @@
 import type { WritableSignal } from '@ecopages/signals';
-import type { ReactiveBindingOption } from '../../core/radiant-element';
+import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { createHostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';

@@ -1,4 +1,4 @@
-import type { ReactivePropertyOptions } from '../core/radiant-element';
+import type { ReactivePropertyOptions } from '../core/reactive-prop-core';
 import { reactiveProp as legacyReactiveProp } from './legacy/reactive-prop';
 import { reactiveProp as standardReactiveProp } from './standard/reactive-prop';
 import { fieldDecoratorBridge } from './bridge';

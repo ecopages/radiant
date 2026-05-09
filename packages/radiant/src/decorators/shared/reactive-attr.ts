@@ -1,5 +1,5 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import type { ReactiveBindingOption } from '../../core/radiant-element';
+import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import {
 	defaultValueForType,
 	isValueOfType,
