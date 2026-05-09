@@ -15,17 +15,33 @@ export type RadiantElementRenderBridge = {
 };
 
 /**
- * Runtime shape required by the shared Radiant SSR helpers.
+ * SSR host shape exposed to hydration-aware render helpers.
  *
- * This is intentionally narrower than `RadiantElement` itself so the server
- * runtime can stay decoupled from the full client base-class implementation.
+ * This stays limited to bridge resolution and host render entrypoints so
+ * client-reachable code does not need to describe server-only host attribute
+ * collection behavior.
  */
-export type RadiantElementSsrCapable = {
+export type RadiantElementHydrationSsrCapable = {
 	resolveSsrRenderBridge?: () => RadiantElementRenderBridge;
-	getHostSsrAttributes?: () => Record<string, string>;
 	renderToString(options?: RenderToStringOptions): string;
 	renderHost?(): JsxRenderable;
 	renderHostToString(options?: RenderToStringOptions): string;
+};
+
+/**
+ * SSR host shape required when the server runtime needs serialized host
+ * attributes in addition to the hydration-facing render entrypoints.
+ */
+export type RadiantElementServerRenderSsrCapable = RadiantElementHydrationSsrCapable & {
+	getHostSsrAttributes?: () => Record<string, string>;
+};
+
+/**
+ * SSR host shape required when the server runtime renders the tracked component
+ * view directly.
+ */
+export type RadiantElementTrackedRenderSsrCapable = RadiantElementHydrationSsrCapable & {
+	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
 };
 
 /**
@@ -36,11 +52,11 @@ export type RadiantElementSsrCapable = {
  * internals into every call site.
  */
 export type RadiantElementSsrRuntime = {
-	getHostAttributes(component: RadiantElementSsrCapable): Record<string, string>;
-	renderHost(component: RadiantElementSsrCapable): JsxRenderable;
-	renderHostToString(component: RadiantElementSsrCapable, options?: RenderToStringOptions): string;
-	resolveRenderBridge(component: RadiantElementSsrCapable): RadiantElementRenderBridge | undefined;
-	renderView(component: RadiantElementSsrCapable, options?: RenderToStringOptions): string;
+	getHostAttributes(component: RadiantElementServerRenderSsrCapable): Record<string, string>;
+	renderHost(component: RadiantElementHydrationSsrCapable): JsxRenderable;
+	renderHostToString(component: RadiantElementHydrationSsrCapable, options?: RenderToStringOptions): string;
+	resolveRenderBridge(component: RadiantElementHydrationSsrCapable): RadiantElementRenderBridge | undefined;
+	renderView(component: RadiantElementTrackedRenderSsrCapable, options?: RenderToStringOptions): string;
 };
 
 const RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL = Symbol.for('@ecopages/radiant.component-ssr-runtime');
