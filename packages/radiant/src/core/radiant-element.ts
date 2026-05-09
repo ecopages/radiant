@@ -20,7 +20,7 @@ import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import { getRadiantElementSsrRuntime } from './radiant-component-ssr-registry';
+import { getRadiantElementSsrRuntime } from './radiant-element-ssr-registry';
 import { type AttributeTypeConstant, getInitialValue } from '../utils/attribute-utils';
 
 export type {

@@ -35,10 +35,10 @@ export type RadiantElementSsrRuntime = {
 	renderView(component: RadiantElementTrackedRenderSsrCapable, options?: RenderToStringOptions): string;
 };
 
-const RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL = Symbol.for('@ecopages/radiant.component-ssr-runtime');
+const RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL = Symbol.for('@ecopages/radiant.element-ssr-runtime');
 
 type GlobalSsrRuntimeState = typeof globalThis & {
-	[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL]?: RadiantElementSsrRuntime[];
+	[RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL]?: RadiantElementSsrRuntime[];
 };
 
 /**
@@ -47,7 +47,7 @@ type GlobalSsrRuntimeState = typeof globalThis & {
  * Returns `undefined` when no server render is currently in progress.
  */
 export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefined {
-	const runtimeStack = (globalThis as GlobalSsrRuntimeState)[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL];
+	const runtimeStack = (globalThis as GlobalSsrRuntimeState)[RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL];
 	return runtimeStack?.[runtimeStack.length - 1];
 }
 
@@ -59,9 +59,9 @@ export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefi
  */
 export function withRadiantElementSsrRuntime<T>(runtime: RadiantElementSsrRuntime, render: () => T): T {
 	const runtimeState = globalThis as GlobalSsrRuntimeState;
-	const runtimeStack = runtimeState[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL] ?? [];
+	const runtimeStack = runtimeState[RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL] ?? [];
 
-	runtimeState[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL] = runtimeStack;
+	runtimeState[RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL] = runtimeStack;
 	runtimeStack.push(runtime);
 
 	let result: T;
@@ -85,6 +85,6 @@ function popRadiantElementSsrRuntime(runtimeState: GlobalSsrRuntimeState, runtim
 	runtimeStack.pop();
 
 	if (runtimeStack.length === 0) {
-		delete runtimeState[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL];
+		delete runtimeState[RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL];
 	}
 }

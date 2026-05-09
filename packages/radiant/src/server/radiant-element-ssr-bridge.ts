@@ -13,9 +13,9 @@ import type {
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementSsrRuntime,
 	RadiantElementTrackedRenderSsrCapable,
-} from '../core/radiant-component-ssr-registry';
-import { withRadiantElementSsrRuntime } from '../core/radiant-component-ssr-registry';
-import { extractRadiantElementServerRenderHost } from './radiant-component-ssr-extractor';
+} from '../core/radiant-element-ssr-registry';
+import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
+import { extractRadiantElementServerRenderHost } from './radiant-element-ssr-extractor';
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 
