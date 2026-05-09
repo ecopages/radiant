@@ -4,7 +4,7 @@ import type { SsrSerializableContextProvider } from '../context/context-provider
 import type {
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementTrackedRenderSsrCapable,
-} from './radiant-component-ssr-registry';
+} from './radiant-element-ssr-registry';
 import type { ReactiveProperty } from './reactive-prop-core';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 

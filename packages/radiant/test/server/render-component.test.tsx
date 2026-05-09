@@ -10,7 +10,7 @@ import {
 } from '../../src/context';
 import { attr } from '../../src/decorators/attr';
 import { RadiantController } from '../../src/core/radiant-controller';
-import { getRadiantElementSsrRuntime } from '../../src/core/radiant-component-ssr-registry';
+import { getRadiantElementSsrRuntime } from '../../src/core/radiant-element-ssr-registry';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { controller } from '../../src/decorators/controller';
 import { customElement } from '../../src/decorators/custom-element';
@@ -30,7 +30,7 @@ import {
 	type ServerRenderableComponent,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
-import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-component-ssr-runtime';
+import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-element-ssr-runtime';
 
 const cardAssets: readonly RenderedComponentAsset[] = [
 	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },

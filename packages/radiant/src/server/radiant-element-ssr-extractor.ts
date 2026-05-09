@@ -1,6 +1,6 @@
 import { getReactivePropDefinitions } from '../core/reactive-prop-metadata';
 import { resolveRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
-import type { RadiantElementServerRenderSsrCapable } from '../core/radiant-component-ssr-registry';
+import type { RadiantElementServerRenderSsrCapable } from '../core/radiant-element-ssr-registry';
 import type { RadiantElementSsrHost } from '../core/radiant-element-ssr-service';
 
 export function extractRadiantElementServerRenderHost(

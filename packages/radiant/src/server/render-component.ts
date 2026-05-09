@@ -9,9 +9,9 @@ import {
 	resolveRegisteredRadiantElementPreview,
 	renderRegisteredRadiantElementHost,
 	renderRegisteredRadiantElementHostToString,
-} from './radiant-component-ssr-bridge';
-import { withRadiantElementSsrRuntime } from '../core/radiant-component-ssr-registry';
-import { getOrCreateRadiantElementSsrRuntime } from './radiant-component-ssr-runtime';
+} from './radiant-element-ssr-bridge';
+import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
+import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr-runtime';
 
 /** Asset dependency emitted by a rendered fragment. */
 export type RenderedComponentAsset =
