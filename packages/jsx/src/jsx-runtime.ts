@@ -208,7 +208,12 @@ function createJsxElement<Props extends object>(
 	if (voidElementNames.has(type)) {
 		strings[strings.length - 1] += '>';
 		return wrapKeyedValue(
-			createTemplateResult(strings, values, type, type.includes('-') ? (props as Record<string, unknown>) : undefined),
+			createTemplateResult(
+				strings,
+				values,
+				type,
+				type.includes('-') ? (props as Record<string, unknown>) : undefined,
+			),
 			keyedValue,
 		);
 	}
@@ -218,7 +223,12 @@ function createJsxElement<Props extends object>(
 	strings[strings.length - 1] += `</${type}>`;
 
 	return wrapKeyedValue(
-		createTemplateResult(strings, values, type, type.includes('-') ? (props as Record<string, unknown>) : undefined),
+		createTemplateResult(
+			strings,
+			values,
+			type,
+			type.includes('-') ? (props as Record<string, unknown>) : undefined,
+		),
 		keyedValue,
 	);
 }
