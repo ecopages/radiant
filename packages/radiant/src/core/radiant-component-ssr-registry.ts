@@ -42,9 +42,9 @@ type GlobalSsrRuntimeState = typeof globalThis & {
 };
 
 /**
-	* Reads the active Radiant SSR runtime from the current render scope.
+ * Reads the active Radiant SSR runtime from the current render scope.
  *
-	* Returns `undefined` when no server render is currently in progress.
+ * Returns `undefined` when no server render is currently in progress.
  */
 export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefined {
 	const runtimeStack = (globalThis as GlobalSsrRuntimeState)[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL];
@@ -52,10 +52,10 @@ export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefi
 }
 
 /**
-	* Runs work within an active Radiant SSR runtime scope.
+ * Runs work within an active Radiant SSR runtime scope.
  *
-	* The runtime remains visible across built entrypoint boundaries through
-	* `globalThis`, but only for the duration of the active render call.
+ * The runtime remains visible across built entrypoint boundaries through
+ * `globalThis`, but only for the duration of the active render call.
  */
 export function withRadiantElementSsrRuntime<T>(runtime: RadiantElementSsrRuntime, render: () => T): T {
 	const runtimeState = globalThis as GlobalSsrRuntimeState;
