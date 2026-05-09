@@ -5,9 +5,7 @@ import type { SsrSerializableContextProvider } from '../context/context-provider
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
 import {
-	disposeRenderRuntime,
-	getOrCreateRenderRuntime,
-	getRenderRuntimeSlotProjectionVersion,
+	RenderRuntime,
 	type RenderRuntimeHost,
 } from './render-runtime';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
@@ -340,6 +338,7 @@ export class RadiantElement<Bindings extends object = {}>
 	private isFirstConnectPending = false;
 	private isRenderScheduled = false;
 	private needsRender = false;
+	private renderRuntime?: RenderRuntime;
 	/**
 	 * Snapshot of own-property values that existed before Radiant installs the
 	 * reactive accessors for declared props.
@@ -379,7 +378,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public get slotProjectionVersion(): number {
-		return getRenderRuntimeSlotProjectionVersion(this as RenderRuntimeHost);
+		return this.renderRuntime?.slotProjectionVersion ?? 0;
 	}
 
 	connectedCallback() {
@@ -427,7 +426,8 @@ export class RadiantElement<Bindings extends object = {}>
 	connectedContextCallback(_contextName: UnknownContext): void {}
 
 	disconnectedCallback() {
-		disposeRenderRuntime(this as RenderRuntimeHost);
+		this.renderRuntime?.dispose();
+		this.renderRuntime = undefined;
 		this.removeAllSubscribedEvents();
 		this.reactiveHost.disconnectHost();
 	}
@@ -861,7 +861,12 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	private getOrCreateRenderRuntime() {
-		return getOrCreateRenderRuntime(this as RenderRuntimeHost);
+		if (this.renderRuntime) {
+			return this.renderRuntime;
+		}
+
+		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost);
+		return this.renderRuntime;
 	}
 
 	private getEventSubscriptionTarget(): HTMLElement | ShadowRoot {
