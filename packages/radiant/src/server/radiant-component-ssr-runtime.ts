@@ -14,8 +14,8 @@ import {
 /**
  * Registers the shared Radiant SSR runtime if it is not already present.
  *
-	 * Server entrypoints call this eagerly so direct host SSR and view SSR share
-	 * one implementation without every call site importing the bridge internals.
+ * Server entrypoints call this eagerly so direct host SSR and view SSR share
+ * one implementation without every call site importing the bridge internals.
  */
 export function ensureRadiantElementSsrRuntimeRegistered() {
 	const existingRuntime = getRadiantElementSsrRuntime();
