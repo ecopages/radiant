@@ -1,7 +1,12 @@
 import {
+	forEachNormalizedAttribute,
 	isKeyedJsxValue,
 	isSubscribableJsxValue,
 	isTemplateResultLike,
+	renderJsxRenderableToString,
+	resolveBindingShapeValue,
+	shouldUseAttributeBindingByDefaultForElement,
+	shouldUseBooleanAttributeBinding,
 	type JsxNodeLike,
 	type JsxRenderable,
 	type SignalLike,
@@ -13,9 +18,13 @@ import {
 	serializeBindingDescriptor,
 } from './hydration-bindings.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
-
-/** Internal global slot used to propagate the active SSR hydrate mode into custom-element SSR helpers. */
-const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
+import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
+import {
+	getActiveSsrRenderContext,
+	type SsrRenderContext,
+	withActiveSsrRenderContext,
+} from './ssr-render-scope.ts';
+import type { ServerCustomElementRenderHook } from './types.ts';
 
 /** Public vocabulary for the SSR output modes supported by `renderToString(...)`. */
 export type RenderToStringMode = 'hydrate' | 'plain';
@@ -38,7 +47,7 @@ export type RenderToStringOptions = {
 };
 
 type RenderContext = {
-	hydrate: boolean;
+	ssr: SsrRenderContext;
 	nextBindingIndex: number;
 };
 
@@ -55,22 +64,43 @@ type RenderContext = {
  */
 export function renderToString(value: JsxRenderable, options: RenderToStringOptions = {}): string {
 	const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
-	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
-	const previousHydrateValue = globalScope[ACTIVE_SSR_HYDRATE_SYMBOL];
-	globalScope[ACTIVE_SSR_HYDRATE_SYMBOL] = hydrate;
+	const activeSsrContext = getActiveSsrRenderContext();
+	const ssr: SsrRenderContext = {
+		hydrate,
+		forceServerCustomElementRender: activeSsrContext?.forceServerCustomElementRender ?? false,
+		customElementRenderHook: activeSsrContext?.customElementRenderHook,
+	};
 
-	try {
-		return renderChild(value, {
-			hydrate,
+	return withActiveSsrRenderContext(ssr, () =>
+		renderChild(value, {
+			ssr,
 			nextBindingIndex: 0,
-		});
-	} finally {
-		if (typeof previousHydrateValue === 'undefined') {
-			delete globalScope[ACTIVE_SSR_HYDRATE_SYMBOL];
-		} else {
-			globalScope[ACTIVE_SSR_HYDRATE_SYMBOL] = previousHydrateValue;
-		}
-	}
+		}),
+	);
+}
+
+export function isServerRenderHydrationActive(): boolean {
+	return getActiveSsrRenderContext()?.hydrate === true;
+}
+
+export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRenderHook, render: () => T): T {
+	return withSsrRenderOverrides({ customElementRenderHook: hook }, render);
+}
+
+export function withForcedServerCustomElementRendering<T>(render: () => T): T {
+	return withSsrRenderOverrides({ forceServerCustomElementRender: true }, render);
+}
+
+function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render: () => T): T {
+	const parentContext = getActiveSsrRenderContext();
+	const nextContext: SsrRenderContext = {
+		hydrate: overrides.hydrate ?? parentContext?.hydrate ?? false,
+		forceServerCustomElementRender:
+			overrides.forceServerCustomElementRender ?? parentContext?.forceServerCustomElementRender ?? false,
+		customElementRenderHook: overrides.customElementRenderHook ?? parentContext?.customElementRenderHook,
+	};
+
+	return withActiveSsrRenderContext(nextContext, render);
 }
 
 function renderChild(value: JsxRenderable, context: RenderContext): string {
@@ -124,6 +154,24 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
 }
 
 function renderTemplateResult(template: TemplateResultLike, context: RenderContext): string {
+	if (template.rootLocalName?.includes('-') && template.ssrIntrinsicProps) {
+		const serverRenderedCustomElement = createServerRenderedIntrinsicCustomElement(
+			template.rootLocalName,
+			template.ssrIntrinsicProps,
+			{
+				forEachNormalizedAttribute,
+				renderValueToString: renderJsxRenderableToString,
+				resolveBindingShapeValue,
+				shouldUseAttributeBindingByDefaultForElement,
+				shouldUseBooleanAttributeBinding,
+			},
+		);
+
+		if (serverRenderedCustomElement) {
+			return renderNodeLike(serverRenderedCustomElement);
+		}
+	}
+
 	const interpolationParts = getTemplateInterpolationParts(template.strings);
 	let html = '';
 
@@ -144,7 +192,7 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 		const bindingIndex = context.nextBindingIndex;
 		html += interpolationPart.leading;
 
-		if (context.hydrate) {
+		if (context.ssr.hydrate) {
 			html += `${interpolationPart.whitespace}${ATTRIBUTE_BINDING_PREFIX}${bindingIndex}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
 		}
 
@@ -194,8 +242,10 @@ function resolveReactiveSnapshot(value: unknown): unknown {
 }
 
 function renderNodeLike(node: JsxNodeLike): string {
-	if (typeof node.outerHTML === 'string') {
-		return node.outerHTML;
+	const outerHTML = node.outerHTML;
+
+	if (typeof outerHTML === 'string') {
+		return outerHTML;
 	}
 
 	if (node.nodeType === 3) {

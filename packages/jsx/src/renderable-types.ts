@@ -44,6 +44,7 @@ export interface JsxNodeLike {
 export interface TemplateResultLike {
 	readonly ['_$rType$']: typeof RADIANT_TEMPLATE_RESULT;
 	readonly rootLocalName?: string;
+	readonly ssrIntrinsicProps?: Readonly<Record<string, unknown>>;
 	readonly strings: TemplateStringsArray;
 	readonly values: readonly unknown[];
 }
