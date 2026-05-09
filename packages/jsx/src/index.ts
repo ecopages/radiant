@@ -1,7 +1,5 @@
 export { createRoot, hasHydrationMarkers, hydrate, render, type JsxRoot } from './dom-render.ts';
 
-export { renderToString, type RenderToStringMode, type RenderToStringOptions } from './server-render.ts';
-
 export {
 	Fragment,
 	unsafeHtml,
@@ -14,7 +12,6 @@ export {
 	isKeyedJsxValue,
 	isSlotJsxValue,
 	isSubscribableJsxValue,
-	withServerCustomElementRenderHook,
 } from './jsx-runtime.ts';
 
 export type { DelegatedEventName } from './event-binding-policy.ts';

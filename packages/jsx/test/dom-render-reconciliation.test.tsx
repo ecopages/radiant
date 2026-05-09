@@ -212,7 +212,11 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('treats true child values as empty content during DOM rendering', async () => {
-		const [{ jsx }, { createRoot, renderToString }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const template = jsx('p', {

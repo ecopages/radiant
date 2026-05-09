@@ -20,8 +20,6 @@ import type {
 	SignalLike,
 	SlotJsxValue,
 	SubscribableJsxValue,
-	ServerCustomElementRenderHook,
-	ServerRenderableCustomElement,
 	TemplateResultLike,
 } from './types.ts';
 export type {
@@ -45,7 +43,6 @@ export type {
 	JsxPropsWithChildren,
 	JsxRenderable,
 	SignalLike,
-	ServerCustomElementRenderHook,
 	ServerCustomElementRenderHookContext,
 	ServerRenderableCustomElement,
 	SlotJsxValue,
@@ -54,13 +51,6 @@ export type {
 	SubscribableJsxValue,
 	TemplateResultLike,
 } from './types.ts';
-
-/** When `true` on `globalThis`, bypasses the `document` check and forces server-side custom-element rendering. */
-const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
-/** When `true` on `globalThis`, signals that the current SSR pass should emit hydration binding markers. */
-const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
-/** Global slot used by SSR adapters to observe or augment custom-element renders. */
-const SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL = Symbol.for('@ecopages/jsx.server-custom-element-render-hook');
 
 /** HTML void element tag names — these elements must never receive a closing tag. */
 const voidElementNames = new Set([
@@ -208,12 +198,6 @@ function createJsxElement<Props extends object>(
 		return wrapKeyedValue(createSlotJsxValue(props as JsxPropsWithChildren & { name?: unknown }), keyedValue);
 	}
 
-	const serverRenderedCustomElement = createServerRenderedCustomElement(type, props);
-
-	if (serverRenderedCustomElement) {
-		return wrapKeyedValue(serverRenderedCustomElement, keyedValue);
-	}
-
 	const strings = [`<${type}`];
 	const values: unknown[] = [];
 	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
@@ -223,14 +207,20 @@ function createJsxElement<Props extends object>(
 
 	if (voidElementNames.has(type)) {
 		strings[strings.length - 1] += '>';
-		return wrapKeyedValue(createTemplateResult(strings, values, type), keyedValue);
+		return wrapKeyedValue(
+			createTemplateResult(strings, values, type, type.includes('-') ? (props as Record<string, unknown>) : undefined),
+			keyedValue,
+		);
 	}
 
 	strings[strings.length - 1] += '>';
 	appendElementChildren(strings, values, type, children, childSlotMode);
 	strings[strings.length - 1] += `</${type}>`;
 
-	return wrapKeyedValue(createTemplateResult(strings, values, type), keyedValue);
+	return wrapKeyedValue(
+		createTemplateResult(strings, values, type, type.includes('-') ? (props as Record<string, unknown>) : undefined),
+		keyedValue,
+	);
 }
 
 function appendElementChildren(
@@ -256,303 +246,6 @@ function appendElementChildren(
 }
 
 /**
- * Minimal interface required of a custom element instance for server-side rendering.
- *
- * Elements that implement this interface can participate in the JSX SSR pipeline:
- * the runtime instantiates the constructor, applies attributes and children, then
- * calls `renderHostToString` to obtain the serialized HTML fragment.
- */
-/**
- * Attempts to render a custom element on the server by instantiating its registered
- * constructor, giving the active server hook a chance to render it, and falling
- * back to `renderHostToString` when the instance exposes the generic SSR surface.
- *
- * Returns `undefined` when server rendering is not applicable: the tag name does not
- * contain a hyphen, the runtime is running in a browser context (unless the force-render
- * flag is set), the element is not registered in `customElements`, or the instance does
- * not implement the {@link ServerRenderableCustomElement} interface.
- *
- * @param type Lowercase custom-element tag name (must contain a hyphen).
- * @param props Combined JSX props including children.
- * @returns A {@link JsxNodeLike} whose `outerHTML` getter delegates to the element's
- *   `renderHostToString`, or `undefined` when SSR is not applicable.
- */
-function createServerRenderedCustomElement<Props extends object>(type: string, props: Props): JsxNodeLike | undefined {
-	if (!shouldServerRenderCustomElement(type)) {
-		return undefined;
-	}
-
-	const registry = (
-		globalThis as typeof globalThis & {
-			customElements?: {
-				get(name: string): CustomElementConstructor | undefined;
-			};
-		}
-	).customElements;
-	const constructor = registry?.get(type);
-
-	if (!constructor) {
-		return undefined;
-	}
-
-	const instance = new constructor();
-
-	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
-	applyServerCustomElementAttributes(instance, rawAttributes);
-	applyServerCustomElementChildren(instance, children);
-	const hookRender = getServerCustomElementRenderHook()?.({
-		constructor,
-		hydrate: getActiveSsrHydrate(),
-		instance,
-		props: rawAttributes,
-		tagName: type,
-	});
-
-	if (hookRender) {
-		return hookRender;
-	}
-
-	if (!isServerRenderableCustomElement(instance)) {
-		return undefined;
-	}
-
-	return {
-		nodeType: 1,
-		get outerHTML() {
-			const hydrateActive = getActiveSsrHydrate();
-			return instance.renderHostToString({ hydrate: hydrateActive, mode: hydrateActive ? 'hydrate' : 'plain' });
-		},
-	};
-}
-
-/**
- * Reads the active SSR output mode from `globalThis`.
- *
- * The flag is set by `renderToString` in the server-render module before
- * walking the JSX tree, ensuring that custom elements created during that
- * pass emit hydration markers.
- *
- * @returns The current SSR output mode for the active render pass.
- */
-function getActiveSsrHydrate(): boolean {
-	return (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[ACTIVE_SSR_HYDRATE_SYMBOL] === true;
-}
-
-/**
- * Returns whether the current JSX SSR pass is emitting hydration markers.
- */
-export function isServerRenderHydrationActive(): boolean {
-	return getActiveSsrHydrate();
-}
-
-/**
- * Runs a synchronous SSR render with a temporary intrinsic custom-element hook.
- *
- * This is intended for server adapters that need to collect metadata while the
- * JSX runtime walks a tree. The previous hook is restored immediately after the
- * callback returns or throws.
- */
-export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRenderHook, render: () => T): T {
-	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
-	const previousHook = globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL];
-	globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL] = hook;
-	const restoreHook = () => {
-		if (previousHook === undefined) {
-			delete globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL];
-		} else {
-			globalScope[SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL] = previousHook;
-		}
-	};
-
-	try {
-		const result = render();
-
-		if (isPromiseLike(result)) {
-			return Promise.resolve(result).finally(restoreHook) as T;
-		}
-
-		restoreHook();
-		return result;
-	} catch (error) {
-		restoreHook();
-		throw error;
-	}
-}
-
-/**
- * Runs an SSR render while forcing intrinsic custom elements down the server-render path.
- */
-export function withForcedServerCustomElementRendering<T>(render: () => T): T {
-	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
-	const previousForceServerRender = globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
-	globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = true;
-	const restoreForceRender = () => {
-		if (previousForceServerRender === undefined) {
-			delete globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
-		} else {
-			globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = previousForceServerRender;
-		}
-	};
-
-	try {
-		const result = render();
-
-		if (isPromiseLike(result)) {
-			return Promise.resolve(result).finally(restoreForceRender) as T;
-		}
-
-		restoreForceRender();
-		return result;
-	} catch (error) {
-		restoreForceRender();
-		throw error;
-	}
-}
-
-function isPromiseLike<T>(value: T | PromiseLike<T>): value is PromiseLike<T> {
-	return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
-}
-
-function getServerCustomElementRenderHook(): ServerCustomElementRenderHook | undefined {
-	const hook = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-		SERVER_CUSTOM_ELEMENT_RENDER_HOOK_SYMBOL
-	];
-
-	return typeof hook === 'function' ? (hook as ServerCustomElementRenderHook) : undefined;
-}
-
-/**
- * Decides whether a given element type should be rendered on the server.
- *
- * A custom element tag (containing a hyphen) qualifies when either:
- * - `document` is not defined (Node.js / Bun / Deno environment), or
- * - the {@link FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL} flag is set on `globalThis`.
- *
- * @param type Element tag name to evaluate.
- * @returns `true` when server-side custom element rendering should be attempted.
- */
-function shouldServerRenderCustomElement(type: string): boolean {
-	return (
-		type.includes('-') &&
-		(typeof document === 'undefined' ||
-			typeof globalThis.window === 'undefined' ||
-			typeof globalThis.location === 'undefined' ||
-			(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
-				FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL
-			] === true)
-	);
-}
-
-/**
- * Type guard that narrows `value` to {@link ServerRenderableCustomElement}.
- *
- * @param value Value to inspect.
- * @returns `true` when `value` is an object with a `renderHostToString` method.
- */
-function isServerRenderableCustomElement(value: unknown): value is ServerRenderableCustomElement {
-	return typeof value === 'object' && value !== null && 'renderHostToString' in value;
-}
-
-/**
- * Applies normalized attributes onto a server-renderable custom element instance.
- *
- * Binding rules (applied in order):
- * - `on:*`, `on-native:*`, and `undefined` values are skipped (event handlers are
- *   not serializable, so they are not applied during SSR).
- * - `prop:*` bindings are set directly as properties on the element.
- * - Unprefixed names default to properties unless they match the custom-element
- *   attribute allowlist used by the JSX runtime.
- * - Boolean attribute values emit an empty string attribute (truthy) or
- *   remove the attribute (falsy).
- * - All other values are serialized via `String()` and passed to `setAttribute`.
- *
- * @param element Target custom element instance.
- * @param attributes Raw JSX props with `children` and `key` already removed.
- */
-function applyServerCustomElementAttributes(element: HTMLElement, attributes: Record<string, unknown>): void {
-	const assignableElement = element as HTMLElement & Record<string, unknown>;
-
-	forEachNormalizedAttribute(attributes, (name, value) => {
-		const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
-		const bindingShapeValue = resolveBindingShapeValue(value);
-
-		if (value === undefined || name.startsWith('on:') || name.startsWith('on-native:')) {
-			return;
-		}
-
-		if (name.startsWith('prop:')) {
-			assignableElement[name.slice(5)] = value;
-			return;
-		}
-
-		if (
-			!name.startsWith('attr:') &&
-			!shouldUseAttributeBindingByDefaultForElement('custom-element', normalizedName)
-		) {
-			assignableElement[normalizedName] = value;
-			return;
-		}
-
-		if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
-			if (bindingShapeValue) {
-				element.setAttribute?.(normalizedName, '');
-			} else {
-				element.removeAttribute?.(normalizedName);
-			}
-			return;
-		}
-
-		element.setAttribute?.(normalizedName, String(value));
-	});
-}
-
-/**
- * Serializes JSX children and assigns them to the appropriate property on a
- * server-renderable custom element.
- *
- * The function checks for the presence of `children` and `innerHTML` properties
- * on the element instance and sets whichever are found. This allows custom
- * elements to opt in to either convention. When both properties exist, both are
- * set with the same serialized string.
- *
- * No-ops when `children` is `undefined` or the element exposes neither property.
- *
- * @param element Target custom element instance.
- * @param children JSX children from the `props.children` slot.
- */
-function applyServerCustomElementChildren(element: HTMLElement, children: JsxRenderable | undefined): void {
-	if (children === undefined || !('children' in element || 'innerHTML' in element)) {
-		return;
-	}
-
-	const serializedChildren = renderJsxRenderableToString(children);
-
-	if (canAssignServerCustomElementProperty(element, 'children')) {
-		Reflect.set(element, 'children', serializedChildren);
-	}
-
-	if (canAssignServerCustomElementProperty(element, 'innerHTML')) {
-		Reflect.set(element, 'innerHTML', serializedChildren);
-	}
-}
-
-function canAssignServerCustomElementProperty(element: HTMLElement, propertyName: string): boolean {
-	let current: object | null = element as object;
-
-	while (current) {
-		const descriptor = Object.getOwnPropertyDescriptor(current, propertyName);
-
-		if (descriptor) {
-			return descriptor.writable === true || typeof descriptor.set === 'function';
-		}
-
-		current = Object.getPrototypeOf(current);
-	}
-
-	return false;
-}
-
-/**
  * Eagerly serializes a JSX child value to an HTML string.
  *
  * Used by `applyServerCustomElementChildren` to produce the inner HTML of a
@@ -563,7 +256,7 @@ function canAssignServerCustomElementProperty(element: HTMLElement, propertyName
  * @param value JSX child value to serialize.
  * @returns HTML string representing the child, with user-provided text content escaped.
  */
-function renderJsxRenderableToString(value: JsxRenderable | undefined): string {
+export function renderJsxRenderableToString(value: JsxRenderable | undefined): string {
 	if (value === undefined || value === null || value === false) {
 		return '';
 	}
@@ -642,8 +335,10 @@ function renderJsxRenderableToString(value: JsxRenderable | undefined): string {
 	}
 
 	if (isJsxNodeLike(value)) {
-		if (typeof value.outerHTML === 'string') {
-			return value.outerHTML;
+		const outerHTML = value.outerHTML;
+
+		if (typeof outerHTML === 'string') {
+			return outerHTML;
 		}
 
 		if (Array.isArray(value.childNodes)) {
@@ -708,8 +403,10 @@ function escapeRawTextElementText(value: string): string {
  * @returns HTML string for the given node.
  */
 function renderJsxNodeLikeToString(value: JsxNodeLike): string {
-	if (typeof value.outerHTML === 'string') {
-		return value.outerHTML;
+	const outerHTML = value.outerHTML;
+
+	if (typeof outerHTML === 'string') {
+		return outerHTML;
 	}
 
 	if (Array.isArray(value.childNodes)) {
@@ -848,7 +545,7 @@ function isSignalLikeValue(value: unknown): value is SignalLike {
  * @param attributes Raw props object with `children` and `key` already removed.
  * @param append Callback invoked once per resolved attribute with its final name and value.
  */
-function forEachNormalizedAttribute(
+export function forEachNormalizedAttribute(
 	attributes: Record<string, unknown>,
 	append: (name: string, value: unknown) => void,
 ): void {
@@ -1075,7 +772,7 @@ function normalizeChildrenWithMode(children: JsxRenderable | undefined, childSlo
 	return normalizeChildren(children);
 }
 
-function resolveBindingShapeValue(value: unknown): unknown {
+export function resolveBindingShapeValue(value: unknown): unknown {
 	if (isSubscribableJsxValue(value)) {
 		return resolveBindingShapeValue(value.getValue());
 	}
@@ -1128,11 +825,11 @@ const customElementAttributeDefaults = new Set([
 	'title',
 ]);
 
-function shouldUseBooleanAttributeBinding(name: string): boolean {
+export function shouldUseBooleanAttributeBinding(name: string): boolean {
 	return htmlBooleanAttributes.has(name.toLowerCase());
 }
 
-function shouldUseAttributeBindingByDefaultForElement(elementName: string, name: string): boolean {
+export function shouldUseAttributeBindingByDefaultForElement(elementName: string, name: string): boolean {
 	if (!elementName.includes('-')) {
 		return true;
 	}
@@ -1351,10 +1048,16 @@ function normalizeStyleValue(value: unknown): unknown {
  * @param values Dynamic binding values interleaved between the string segments.
  * @returns A frozen, Radiant-compatible template result.
  */
-function createTemplateResult(strings: string[], values: unknown[], rootLocalName: string): TemplateResultLike {
+function createTemplateResult(
+	strings: string[],
+	values: unknown[],
+	rootLocalName: string,
+	ssrIntrinsicProps?: Readonly<Record<string, unknown>>,
+): TemplateResultLike {
 	return {
 		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
 		rootLocalName,
+		ssrIntrinsicProps,
 		strings: toTemplateStrings(strings),
 		values,
 	};

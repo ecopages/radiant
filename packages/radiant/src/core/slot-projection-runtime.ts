@@ -107,6 +107,7 @@ export function resolveSlotProjection(
 			return {
 				_$rType$: 1,
 				rootLocalName: currentValue.rootLocalName,
+				ssrIntrinsicProps: currentValue.ssrIntrinsicProps,
 				strings: currentValue.strings,
 				values: currentValue.values.map((entry) => resolveValue(entry as JsxRenderable)),
 			} satisfies TemplateResultLike;

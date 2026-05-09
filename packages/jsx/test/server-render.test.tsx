@@ -385,6 +385,59 @@ describe('Radiant JSX server render', () => {
 		}
 	});
 
+	test('preserves authored markup for registered custom elements without SSR host rendering', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		class ClientOnlyElement extends EventTarget {
+			setAttribute(_name: string, _value: unknown) {}
+			removeAttribute(_name: string) {}
+		}
+
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			forceServerCustomElementRenderSymbol
+		];
+
+		Object.defineProperty(globalThis, 'customElements', {
+			configurable: true,
+			value: {
+				get(name: string) {
+					return name === 'client-only-element'
+						? (ClientOnlyElement as unknown as CustomElementConstructor)
+						: undefined;
+				},
+			},
+		});
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
+
+		try {
+			const template = jsx('client-only-element', {
+				class: 'preview',
+				children: jsx('span', { children: 'Client upgrade fallback' }),
+			});
+
+			expect(renderToString(template)).toBe(
+				'<client-only-element class="preview"><span>Client upgrade fallback</span></client-only-element>',
+			);
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+			} else {
+				Reflect.deleteProperty(globalThis, 'customElements');
+			}
+
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					forceServerCustomElementRenderSymbol
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
+					previousForceServerCustomElementRender;
+			}
+		}
+	});
+
 	test('respects the caller hydrate mode for SSR-capable intrinsic custom elements', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
@@ -443,7 +496,7 @@ describe('Radiant JSX server render', () => {
 	});
 
 	test('invokes the server custom-element render hook during SSR intrinsic renders', async () => {
-		const [{ jsx, withServerCustomElementRenderHook }, { renderToString }] = await Promise.all([
+		const [{ jsx }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
 			loadJsxRuntime(),
 			loadServerRender(),
 		]);
@@ -498,7 +551,7 @@ describe('Radiant JSX server render', () => {
 			);
 
 			expect(html).toBe('<hook-aware-element data-hydrated="yes"><p>Count: 4</p></hook-aware-element>');
-			expect(observedRenders).toEqual([{ count: 4, hydrate: false, tagName: 'hook-aware-element' }]);
+			expect(observedRenders).toEqual([{ count: 4, hydrate: true, tagName: 'hook-aware-element' }]);
 		} finally {
 			if (previousCustomElementsDescriptor) {
 				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
@@ -518,7 +571,7 @@ describe('Radiant JSX server render', () => {
 	});
 
 	test('lets the server custom-element render hook replace the default SSR wrapper', async () => {
-		const [{ jsx, withServerCustomElementRenderHook }, { renderToString }] = await Promise.all([
+		const [{ jsx }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
 			loadJsxRuntime(),
 			loadServerRender(),
 		]);
