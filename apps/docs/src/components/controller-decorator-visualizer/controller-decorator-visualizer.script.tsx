@@ -2,7 +2,7 @@ import { attr, controller, onEvent, onUpdated, query, RadiantController, state }
 import { ensureDocsControllersStarted } from '@/utils/start-docs-controllers';
 
 @controller('controller-dom-flow-visualizer')
-class ControllerDomFlowVisualizer extends RadiantController {
+export class ControllerDomFlowVisualizer extends RadiantController {
 	@attr({ source: 'data-signal' }) signal = 'ready';
 	@state pulses = 0;
 	@state lastAction = 'Hydrated from host attribute';

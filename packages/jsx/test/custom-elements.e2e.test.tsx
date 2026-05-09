@@ -136,8 +136,9 @@ describe('Radiant JSX custom-element interop', () => {
 			element?.dispatchEvent(new CustomEvent(eventName, { bubbles: true, detail: { ok: true } }));
 
 			expect(handler).toHaveBeenCalledTimes(1);
-			expect(handler.mock.calls[0]?.[0]).toBeInstanceOf(CustomEvent);
-			expect((handler.mock.calls[0]?.[0] as Event).type).toBe(eventName);
+			const [firstEvent] = handler.mock.calls[0] ?? [];
+			expect(firstEvent).toBeInstanceOf(CustomEvent);
+			expect((firstEvent as Event | undefined)?.type).toBe(eventName);
 		});
 	}
 });
