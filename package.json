@@ -9,7 +9,6 @@
 		"format": "bunx prettier --write .",
 		"lint": "bunx oxlint . --fix",
 		"typecheck": "tsc --noEmit -p packages/jsx/tsconfig.json && tsc --noEmit -p packages/signals/tsconfig.json && tsc --noEmit -p packages/radiant/tsconfig.json && tsc --noEmit -p playground/vite/tsconfig.json && tsc --noEmit -p playground/vite-nitro/tsconfig.json && tsc --noEmit -p apps/docs/tsconfig.json",
-		"lint-staged": "lint-staged",
 		"prepare:husky": "husky",
 		"build:all": "bun run --elide-lines=0 --filter @ecopages/jsx build:lib && bun run --elide-lines=0 --filter @ecopages/signals build:lib && bun run --elide-lines=0 --filter @ecopages/radiant build:lib",
 		"test:all": "bun run --filter @ecopages/jsx test:lib && bun run --filter @ecopages/signals test:lib && bun run --filter @ecopages/radiant test:lib && bun run --filter radiant-docs test:e2e && bun run --filter kitchen-sink-vite-nitro test:e2e && bun run --filter playground-vite test:e2e && bun run size:check",
@@ -34,7 +33,6 @@
 		"@types/bun": "latest",
 		"@types/ws": "^8.18.1",
 		"better-commits": "^1.18.1",
-		"lint-staged": "^15.2.2",
 		"oxlint": "^1.32.0",
 		"prettier": "^3.7.4"
 	},
