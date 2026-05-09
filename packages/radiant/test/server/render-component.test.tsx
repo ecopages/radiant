@@ -10,6 +10,7 @@ import {
 } from '../../src/context';
 import { attr } from '../../src/decorators/attr';
 import { RadiantController } from '../../src/core/radiant-controller';
+import { getRadiantElementSsrRuntime } from '../../src/core/radiant-component-ssr-registry';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { controller } from '../../src/decorators/controller';
 import { customElement } from '../../src/decorators/custom-element';
@@ -29,7 +30,7 @@ import {
 	type ServerRenderableComponent,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
-import { ensureRadiantElementSsrRuntimeRegistered } from '../../src/server/radiant-component-ssr-runtime';
+import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-component-ssr-runtime';
 
 const cardAssets: readonly RenderedComponentAsset[] = [
 	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
@@ -153,8 +154,19 @@ class ProgrammaticRenderControllerCard extends RadiantController {
 registerController('programmatic-render-controller-card', ProgrammaticRenderControllerCard);
 
 describe('render-component server helpers', () => {
-	test('runtime registration does not install a process-global JSX custom-element hook', () => {
-		ensureRadiantElementSsrRuntimeRegistered();
+	test('component SSR activates runtime only for the active render and does not leak JSX hook state', async () => {
+		let runtimeDuringInitialize = getRadiantElementSsrRuntime();
+
+		expect(runtimeDuringInitialize).toBeUndefined();
+
+		await renderComponent(RenderComponentCard, {
+			initialize: () => {
+				runtimeDuringInitialize = getRadiantElementSsrRuntime();
+			},
+		});
+
+		expect(runtimeDuringInitialize).toBe(getOrCreateRadiantElementSsrRuntime());
+		expect(getRadiantElementSsrRuntime()).toBeUndefined();
 
 		expect(renderToString(<render-component-card-test />)).toBe(
 			'<render-component-card-test></render-component-card-test>',
