@@ -178,13 +178,8 @@ function normalizeRenderedControllerTagName(tagName: string): string {
 }
 
 function createRenderedControllerHost(tagName: string, attributes: RenderedControllerHostAttributes): Element {
-	ensureLightDomShim();
-	const documentLike = (globalThis as typeof globalThis & { document?: Document }).document;
-	const host = documentLike
-		? documentLike.createElement(tagName)
-		: new (globalThis as typeof globalThis & { HTMLElement: new (tagName?: string) => HTMLElement }).HTMLElement(
-				tagName,
-			);
+	const windowLike = ensureLightDomShim();
+	const host = windowLike.document.createElement(tagName);
 
 	for (const [name, value] of Object.entries(attributes)) {
 		if (value === undefined || value === null || value === false) {

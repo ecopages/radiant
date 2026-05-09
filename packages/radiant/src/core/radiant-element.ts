@@ -10,12 +10,6 @@ import {
 	getRenderRuntimeSlotProjectionVersion,
 	type RenderRuntimeHost,
 } from './render-runtime';
-import {
-	getOrCreateRadiantElementSsrHostBridge,
-	RADIANT_ELEMENT_SSR_HOST_BRIDGE,
-	type RadiantElementSsrHostBridge,
-	type RadiantElementSsrHostSource,
-} from './radiant-element-ssr-host';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
@@ -511,7 +505,7 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE](), options);
+		return requireRadiantElementSsrRuntime().renderView(this, options);
 	}
 
 	public hydrate(): void {
@@ -868,22 +862,6 @@ export class RadiantElement<Bindings extends object = {}>
 
 	private getOrCreateRenderRuntime() {
 		return getOrCreateRenderRuntime(this as RenderRuntimeHost);
-	}
-
-	protected [RADIANT_ELEMENT_SSR_HOST_BRIDGE](): RadiantElementSsrHostBridge {
-		return getOrCreateRadiantElementSsrHostBridge(this, {
-			constructor: this.constructor as CustomElementConstructor,
-			getAttribute: (name) => this.getAttribute(name),
-			getAttributeNames: () => this.getAttributeNames(),
-			getAuthoredHydrationScriptMarkup: () => this.getAuthoredHydrationScriptMarkup(),
-			getContextProviders: () => this.getContextProviders(),
-			getHydrationBindings: () => this.getHydrationBindings(),
-			getPropertyValue: (name) => (this as RadiantElementSsrHostSource & Record<string, unknown>)[name],
-			getReactiveProperties: () => this.getReactiveProperties(),
-			getSlotProjectionScriptTag: () => this.getSlotProjectionScriptTag(),
-			resolveTrackedRenderOutput: () => this.resolveTrackedRenderOutput(),
-			renderViewToString: (options) => this.renderViewToString(options),
-		});
 	}
 
 	private getEventSubscriptionTarget(): HTMLElement | ShadowRoot {

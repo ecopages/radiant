@@ -1,18 +1,19 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
-import { withServerCustomElementRenderHook } from '@ecopages/jsx/server';
+import {
+	isServerRenderHydrationActive,
+	withForcedServerCustomElementRendering,
+	withServerCustomElementRenderHook,
+} from '@ecopages/jsx/server';
 import { RadiantElementSsrService } from '../core/radiant-component-ssr';
-import { resolveRadiantElementSsrHostBridge as resolveInternalRadiantElementSsrHostBridge } from '../core/radiant-element-ssr-host';
+import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
 import type {
 	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementTrackedRenderSsrCapable,
 } from '../core/radiant-component-ssr-registry';
 import { extractRadiantElementServerRenderHost } from './radiant-component-ssr-extractor';
-
-const ACTIVE_SSR_HYDRATE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-hydrate');
-const FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 
 export function createRadiantElementSsrService(
 	component: RadiantElementServerRenderSsrCapable,
@@ -103,21 +104,17 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
 }
 
 export function resolveRadiantElementSsrHostBridge(component: object): object | undefined {
-	return resolveInternalRadiantElementSsrHostBridge(component);
+	return resolveInternalRadiantElementSsrHostSource(component);
 }
 
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
-	const globalScope = globalThis as typeof globalThis & Record<PropertyKey, unknown>;
-	const previousForceServerRender = globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
-	globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = true;
-
-	try {
-		return withServerCustomElementRenderHook(({ instance }) => {
+	return withForcedServerCustomElementRendering(() =>
+		withServerCustomElementRenderHook(({ instance }) => {
 			if (isRadiantElementServerRenderable(instance)) {
 				return {
 					nodeType: 1,
 					get outerHTML() {
-						const hydrate = isActiveSsrHydrateMode();
+						const hydrate = isServerRenderHydrationActive();
 						const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
 
 						return renderRadiantElementHostToString(instance, options);
@@ -134,18 +131,12 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 			return {
 				nodeType: 1,
 				get outerHTML() {
-					const hydrate = isActiveSsrHydrateMode();
+					const hydrate = isServerRenderHydrationActive();
 					return legacyInstance.renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' });
 				},
 			};
-		}, render);
-	} finally {
-		if (previousForceServerRender === undefined) {
-			delete globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL];
-		} else {
-			globalScope[FORCE_SERVER_CUSTOM_ELEMENT_RENDER_SYMBOL] = previousForceServerRender;
-		}
-	}
+		}, render),
+	);
 }
 
 export function getRadiantElementTrackedRenderOutput(component: RadiantElementTrackedRenderSsrCapable): {
@@ -156,17 +147,13 @@ export function getRadiantElementTrackedRenderOutput(component: RadiantElementTr
 		return component.resolveTrackedRenderOutput();
 	}
 
-	const bridge = resolveInternalRadiantElementSsrHostBridge(component as object);
+	const source = resolveInternalRadiantElementSsrHostSource(component);
 
-	if (!bridge) {
+	if (!source) {
 		throw new Error('Radiant SSR runtime requires tracked render output support on the component.');
 	}
 
-	return bridge.resolveTrackedRenderOutput();
-}
-
-function isActiveSsrHydrateMode(): boolean {
-	return (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[ACTIVE_SSR_HYDRATE_SYMBOL] === true;
+	return source.resolveTrackedRenderOutput();
 }
 
 function isRadiantElementServerRenderable(component: unknown): component is RadiantElementServerRenderSsrCapable {
@@ -174,7 +161,7 @@ function isRadiantElementServerRenderable(component: unknown): component is Radi
 		return false;
 	}
 
-	return resolveInternalRadiantElementSsrHostBridge(component) !== undefined;
+	return resolveInternalRadiantElementSsrHostSource(component) !== undefined;
 }
 
 function isLegacyServerRenderable(component: unknown): component is {
