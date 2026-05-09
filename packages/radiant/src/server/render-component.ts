@@ -1,15 +1,15 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
-import {
-	getRadiantElementSsrRuntime,
-	type RadiantElementRenderBridge,
-	type RadiantElementSsrCapable,
-} from '../core/radiant-component-ssr-registry';
 import { withSsrContextProviders } from './context-ssr';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
+import {
+	resolveRegisteredRadiantElementPreview,
+	renderRegisteredRadiantElementHost,
+	renderRegisteredRadiantElementHostToString,
+} from './radiant-component-ssr-bridge';
 import { ensureRadiantElementSsrRuntimeRegistered } from './radiant-component-ssr-runtime';
 
 ensureRadiantElementSsrRuntimeRegistered();
@@ -319,10 +319,10 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 		const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
 		const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
 		const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
-		const radiantSsrBridge = getRadiantElementRenderBridge(component as unknown as RadiantElementSsrCapable);
 		const markup =
-			radiantSsrBridge?.renderHostToString?.(renderOptions) ?? component.renderHostToString(renderOptions);
-		const preview = resolveRenderedComponentPreview(component, radiantSsrBridge, markup);
+			renderRegisteredRadiantElementHostToString(component, renderOptions) ??
+			component.renderHostToString(renderOptions);
+		const preview = resolveRenderedComponentPreview(component, markup);
 
 		return {
 			markup,
@@ -339,10 +339,6 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 	}
 }
 
-function getRadiantElementRenderBridge(component: RadiantElementSsrCapable): RadiantElementRenderBridge | undefined {
-	return getRadiantElementSsrRuntime()?.resolveRenderBridge(component);
-}
-
 /**
  * Chooses the preview renderable returned by `renderComponent()`.
  *
@@ -354,18 +350,13 @@ function getRadiantElementRenderBridge(component: RadiantElementSsrCapable): Rad
  */
 function resolveRenderedComponentPreview<TComponent extends ServerRenderableComponent>(
 	component: TComponent,
-	radiantSsrBridge: RadiantElementRenderBridge | undefined,
 	markup: string,
 ): JsxRenderable {
-	if (!radiantSsrBridge) {
-		return component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
-	}
-
-	if (!radiantSsrBridge.renderHostToString && radiantSsrBridge.renderHost) {
-		return { nodeType: 1, outerHTML: markup };
-	}
-
-	return radiantSsrBridge.renderHost?.() ?? component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
+	return (
+		resolveRegisteredRadiantElementPreview(component, markup) ??
+		renderRegisteredRadiantElementHost(component) ??
+		component.renderHost?.() ?? { nodeType: 1, outerHTML: markup }
+	);
 }
 
 function prepareRenderedComponentHost<TComponent extends ServerRenderableComponent>(

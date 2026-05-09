@@ -1,10 +1,5 @@
 import type { EventEmitter } from '../tools';
-import {
-	hasHydrationMarkers,
-	jsx,
-	type JsxRenderable,
-	type SubscribableJsxValue,
-} from '@ecopages/jsx';
+import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
@@ -15,15 +10,17 @@ import {
 	getRenderRuntimeSlotProjectionVersion,
 	type RenderRuntimeHost,
 } from './render-runtime';
+import {
+	getOrCreateRadiantElementSsrHostBridge,
+	RADIANT_ELEMENT_SSR_HOST_BRIDGE,
+	type RadiantElementSsrHostBridge,
+	type RadiantElementSsrHostSource,
+} from './radiant-element-ssr-host';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import {
-	getRadiantElementSsrRuntime,
-	type RadiantElementRenderBridge,
-	type RadiantElementSsrCapable,
-} from './radiant-component-ssr-registry';
+import { getRadiantElementSsrRuntime, type RadiantElementRenderBridge } from './radiant-component-ssr-registry';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -81,20 +78,6 @@ export interface ReactiveProperty<T = unknown> {
 		toAttribute: (value: any) => WriteAttributeValueReturnType;
 	};
 }
-
-type RadiantElementSsrRuntimeHost = RadiantElementSsrCapable & {
-	constructor: CustomElementConstructor;
-	getAttribute(name: string): string | null;
-	getAttributeNames(): string[];
-	getAuthoredHydrationScriptMarkup(): string | undefined;
-	getContextProviders(): SsrSerializableContextProvider[];
-	getHydrationBindings(): SsrSerializableHydrationBinding[];
-	getPropertyValue(name: string): unknown;
-	getReactiveProperties(): ReactiveProperty[];
-	getSlotProjectionScriptTag(): string | undefined;
-	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
-	resolveSsrRenderBridge(): RadiantElementRenderBridge;
-};
 
 /**
  * Represents the options for a reactive property.
@@ -379,7 +362,6 @@ export class RadiantElement<Bindings extends object = {}>
 	 * prop's initial reactive state.
 	 */
 	private readonly preUpgradePropertyValues = new Map<string, unknown>();
-	private ssrCapableHost?: RadiantElementSsrRuntimeHost;
 
 	constructor() {
 		super();
@@ -529,17 +511,17 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this.getSsrCapableHost(), options);
+		return requireRadiantElementSsrRuntime().renderView(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE](), options);
 	}
 
 	public renderHost(): JsxRenderable {
 		this.assertSupportsHostSsrRendering();
-		return requireRadiantElementSsrRuntime().renderHost(this.getSsrCapableHost());
+		return requireRadiantElementSsrRuntime().renderHost(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE]());
 	}
 
 	public renderHostToString(options: RenderToStringOptions = {}): string {
 		this.assertSupportsHostSsrRendering();
-		return requireRadiantElementSsrRuntime().renderHostToString(this.getSsrCapableHost(), options);
+		return requireRadiantElementSsrRuntime().renderHostToString(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE](), options);
 	}
 
 	public hydrate(): void {
@@ -689,7 +671,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	protected getHostSsrAttributes(): Record<string, string> {
-		return requireRadiantElementSsrRuntime().getHostAttributes(this.getSsrCapableHost());
+		return requireRadiantElementSsrRuntime().getHostAttributes(this[RADIANT_ELEMENT_SSR_HOST_BRIDGE]());
 	}
 
 	protected resolveSsrRenderBridge(): RadiantElementRenderBridge {
@@ -917,30 +899,8 @@ export class RadiantElement<Bindings extends object = {}>
 		return getOrCreateRenderRuntime(this as RenderRuntimeHost);
 	}
 
-	private getSsrCapableHost(): RadiantElementSsrCapable {
-		if (this.ssrCapableHost) {
-			return this.ssrCapableHost;
-		}
-
-		this.ssrCapableHost = {
-			constructor: this.constructor as CustomElementConstructor,
-			getAttribute: (name: string) => this.getAttribute(name),
-			getAttributeNames: () => this.getAttributeNames(),
-			getAuthoredHydrationScriptMarkup: () => this.getAuthoredHydrationScriptMarkup(),
-			getHostSsrAttributes: () => this.getHostSsrAttributes(),
-			getContextProviders: () => this.getContextProviders(),
-			getHydrationBindings: () => this.getHydrationBindings(),
-			getPropertyValue: (name: string) => (this as Record<string, unknown>)[name],
-			getReactiveProperties: () => this.getReactiveProperties(),
-			getSlotProjectionScriptTag: () => this.getSlotProjectionScriptTag(),
-			renderHost: () => this.renderHost(),
-			renderHostToString: (options?: RenderToStringOptions) => this.renderHostToString(options),
-			renderToString: (options?: RenderToStringOptions) => this.renderToString(options),
-			resolveTrackedRenderOutput: () => this.resolveTrackedRenderOutput(),
-			resolveSsrRenderBridge: () => this.resolveSsrRenderBridge(),
-		};
-
-		return this.ssrCapableHost;
+	protected [RADIANT_ELEMENT_SSR_HOST_BRIDGE](): RadiantElementSsrHostBridge {
+		return getOrCreateRadiantElementSsrHostBridge(this as RadiantElementSsrHostSource);
 	}
 
 	private getEventSubscriptionTarget(): HTMLElement | ShadowRoot {
