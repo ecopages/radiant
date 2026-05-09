@@ -20,7 +20,7 @@ export type RadiantElementRenderBridge = {
  * This is intentionally narrower than `RadiantElement` itself so the server
  * runtime can stay decoupled from the full client base-class implementation.
  */
-export type RadiantElementSsrCapable = HTMLElement & {
+export type RadiantElementSsrCapable = {
 	resolveSsrRenderBridge?: () => RadiantElementRenderBridge;
 	getHostSsrAttributes?: () => Record<string, string>;
 	renderToString(options?: RenderToStringOptions): string;

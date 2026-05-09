@@ -1,31 +1,23 @@
 import type { EventEmitter } from '../tools';
 import {
 	hasHydrationMarkers,
-	hydrate as hydrateJsx,
 	jsx,
-	render as renderJsx,
 	type JsxRenderable,
 	type SubscribableJsxValue,
 } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import { Computed, subtle } from '@ecopages/signals';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
+import {
+	disposeRenderRuntime,
+	getOrCreateRenderRuntime,
+	getRenderRuntimeSlotProjectionVersion,
+	type RenderRuntimeHost,
+} from './render-runtime';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
-import {
-	DEFAULT_SLOT_NAME,
-	SLOT_PROJECTION_SCRIPT_ATTRIBUTE,
-	collectAuthoredHydrationScriptMarkup,
-	captureProjectedSlotRenderables,
-	deserializeProjectedSlotRenderables,
-	resolveSlotProjection,
-	serializeProjectedSlotRenderables,
-	takeSlotProjectionScriptPayload,
-} from './slot-projection-runtime';
-import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import {
 	getRadiantElementSsrRuntime,
@@ -89,6 +81,20 @@ export interface ReactiveProperty<T = unknown> {
 		toAttribute: (value: any) => WriteAttributeValueReturnType;
 	};
 }
+
+type RadiantElementSsrRuntimeHost = RadiantElementSsrCapable & {
+	constructor: CustomElementConstructor;
+	getAttribute(name: string): string | null;
+	getAttributeNames(): string[];
+	getAuthoredHydrationScriptMarkup(): string | undefined;
+	getContextProviders(): SsrSerializableContextProvider[];
+	getHydrationBindings(): SsrSerializableHydrationBinding[];
+	getPropertyValue(name: string): unknown;
+	getReactiveProperties(): ReactiveProperty[];
+	getSlotProjectionScriptTag(): string | undefined;
+	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
+	resolveSsrRenderBridge(): RadiantElementRenderBridge;
+};
 
 /**
  * Represents the options for a reactive property.
@@ -373,13 +379,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * prop's initial reactive state.
 	 */
 	private readonly preUpgradePropertyValues = new Map<string, unknown>();
-	private projectedSlotContent = new Map<string, JsxRenderable[]>();
-	private renderSignal?: Computed<{ containsSlots: boolean; value: JsxRenderable }>;
-	private readonly renderWatcher = new subtle.Watcher(() => {
-		this.requestUpdate();
-	});
-	private slotProjectionObserver?: MutationObserver;
-	private slotProjectionVersion = 0;
+	private ssrCapableHost?: RadiantElementSsrRuntimeHost;
 
 	constructor() {
 		super();
@@ -400,6 +400,10 @@ export class RadiantElement<Bindings extends object = {}>
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
 		runLegacyInstanceInitializers(this);
+	}
+
+	public get slotProjectionVersion(): number {
+		return getRenderRuntimeSlotProjectionVersion(this as RenderRuntimeHost);
 	}
 
 	connectedCallback() {
@@ -426,8 +430,8 @@ export class RadiantElement<Bindings extends object = {}>
 				return;
 			}
 
-			this.ensureSlotProjectionState();
-			this.observeSlotProjection();
+			const renderRuntime = this.getOrCreateRenderRuntime();
+			renderRuntime.observeSlotProjection();
 
 			if (shouldHydrateOnConnect(this)) {
 				this.needsRender = false;
@@ -447,8 +451,7 @@ export class RadiantElement<Bindings extends object = {}>
 	connectedContextCallback(_contextName: UnknownContext): void {}
 
 	disconnectedCallback() {
-		this.disconnectSlotProjectionObserver();
-		this.disconnectRenderWatcher();
+		disposeRenderRuntime(this as RenderRuntimeHost);
 		this.removeAllSubscribedEvents();
 		this.reactiveHost.disconnectHost();
 	}
@@ -526,20 +529,17 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this as unknown as RadiantElementSsrCapable, options);
+		return requireRadiantElementSsrRuntime().renderView(this.getSsrCapableHost(), options);
 	}
 
 	public renderHost(): JsxRenderable {
 		this.assertSupportsHostSsrRendering();
-		return requireRadiantElementSsrRuntime().renderHost(this as unknown as RadiantElementSsrCapable);
+		return requireRadiantElementSsrRuntime().renderHost(this.getSsrCapableHost());
 	}
 
 	public renderHostToString(options: RenderToStringOptions = {}): string {
 		this.assertSupportsHostSsrRendering();
-		return requireRadiantElementSsrRuntime().renderHostToString(
-			this as unknown as RadiantElementSsrCapable,
-			options,
-		);
+		return requireRadiantElementSsrRuntime().renderHostToString(this.getSsrCapableHost(), options);
 	}
 
 	public hydrate(): void {
@@ -548,15 +548,14 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 
 		const renderTarget = this.getRenderTarget();
+		const renderRuntime = this.getOrCreateRenderRuntime();
 
 		this.isRendering = true;
-		this.disconnectSlotProjectionObserver();
 
 		try {
-			hydrateJsx(this.resolveTrackedRenderOutput().value, renderTarget as HTMLElement);
+			renderRuntime.hydrate(renderTarget as HTMLElement);
 		} finally {
 			this.isRendering = false;
-			this.observeSlotProjection();
 		}
 	}
 
@@ -590,6 +589,7 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 
 		const renderTarget = this.getRenderTarget();
+		const renderRuntime = this.getOrCreateRenderRuntime();
 
 		this.needsRender = true;
 
@@ -604,13 +604,11 @@ export class RadiantElement<Bindings extends object = {}>
 		while (this.needsRender && this.isConnected) {
 			this.needsRender = false;
 			this.isRendering = true;
-			this.disconnectSlotProjectionObserver();
 
 			try {
-				renderJsx(this.resolveTrackedRenderOutput().value, renderTarget as HTMLElement);
+				renderRuntime.render(renderTarget as HTMLElement);
 			} finally {
 				this.isRendering = false;
-				this.observeSlotProjection();
 			}
 		}
 	}
@@ -691,7 +689,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	protected getHostSsrAttributes(): Record<string, string> {
-		return requireRadiantElementSsrRuntime().getHostAttributes(this as unknown as RadiantElementSsrCapable);
+		return requireRadiantElementSsrRuntime().getHostAttributes(this.getSsrCapableHost());
 	}
 
 	protected resolveSsrRenderBridge(): RadiantElementRenderBridge {
@@ -816,15 +814,11 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public getSlotElement<T extends Element = Element>(name?: string): T | null {
-		return (this.getSlotElements<T>(name)[0] ?? null) as T | null;
+		return this.getOrCreateRenderRuntime().getSlotElement<T>(name);
 	}
 
 	public getSlotElements<T extends Element = Element>(name?: string): T[] {
-		this.ensureSlotProjectionState();
-
-		return (this.projectedSlotContent.get(name ?? DEFAULT_SLOT_NAME) ?? []).filter(
-			(renderable): renderable is T => typeof Node !== 'undefined' && renderable instanceof Element,
-		);
+		return this.getOrCreateRenderRuntime().getSlotElements<T>(name);
 	}
 
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
@@ -907,164 +901,46 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 	}
 
-	private ensureSlotProjectionState(): void {
-		if (this.projectedSlotContent.size > 0) {
-			return;
-		}
-
-		const scriptPayload = this.isConnected ? takeSlotProjectionScriptPayload(this) : undefined;
-
-		if (typeof scriptPayload === 'string' && scriptPayload !== '') {
-			this.projectedSlotContent = deserializeProjectedSlotRenderables(scriptPayload);
-			this.slotProjectionVersion += 1;
-			return;
-		}
-
-		if (this.getHostChildNodeCount() > 0) {
-			this.projectedSlotContent = captureProjectedSlotRenderables(this);
-			this.slotProjectionVersion += 1;
-		}
-	}
-
-	private getHostChildNodeCount(): number {
-		return 'childNodes' in this && this.childNodes ? this.childNodes.length : 0;
-	}
-
 	private getSlotProjectionScriptTag(): string | undefined {
-		this.ensureSlotProjectionState();
-		const payload = serializeProjectedSlotRenderables(this.projectedSlotContent);
-
-		if (!payload) {
-			return undefined;
-		}
-
-		return `<script type="application/json" ${SLOT_PROJECTION_SCRIPT_ATTRIBUTE}>${escapeScriptText(payload)}</script>`;
+		return this.getOrCreateRenderRuntime().getSlotProjectionScriptTag();
 	}
 
 	private getAuthoredHydrationScriptMarkup(): string | undefined {
-		const authoredHydrationMarkup = collectAuthoredHydrationScriptMarkup(this);
-
-		if (authoredHydrationMarkup) {
-			return authoredHydrationMarkup;
-		}
-
-		return undefined;
-	}
-
-	private handleSlotProjectionMutations(records: MutationRecord[]): void {
-		let hasProjectionChanges = false;
-
-		for (const record of records) {
-			for (const removedNode of Array.from(record.removedNodes)) {
-				if (this.removeProjectedSlotNode(removedNode)) {
-					hasProjectionChanges = true;
-				}
-			}
-
-			for (const addedNode of Array.from(record.addedNodes)) {
-				if (addedNode.parentNode !== this) {
-					continue;
-				}
-
-				if (this.addProjectedSlotNode(addedNode)) {
-					hasProjectionChanges = true;
-				}
-			}
-		}
-
-		if (hasProjectionChanges) {
-			this.slotProjectionVersion += 1;
-			this.update();
-		}
-	}
-
-	private addProjectedSlotNode(node: Node): boolean {
-		if (
-			node instanceof HTMLScriptElement &&
-			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute(HYDRATION_ATTRIBUTE))
-		) {
-			return false;
-		}
-
-		const slotName = node instanceof Element ? (node.getAttribute('slot') ?? DEFAULT_SLOT_NAME) : DEFAULT_SLOT_NAME;
-		const bucket = this.projectedSlotContent.get(slotName);
-
-		if (bucket) {
-			if (bucket.includes(node)) {
-				return false;
-			}
-
-			bucket.push(node);
-			return true;
-		}
-
-		this.projectedSlotContent.set(slotName, [node]);
-		return true;
-	}
-
-	private removeProjectedSlotNode(node: Node): boolean {
-		for (const [slotName, bucket] of this.projectedSlotContent.entries()) {
-			const nodeIndex = bucket.indexOf(node);
-
-			if (nodeIndex === -1) {
-				continue;
-			}
-
-			bucket.splice(nodeIndex, 1);
-
-			if (bucket.length === 0) {
-				this.projectedSlotContent.delete(slotName);
-			}
-
-			return true;
-		}
-
-		return false;
-	}
-
-	private observeSlotProjection(): void {
-		if (typeof MutationObserver === 'undefined' || this.slotProjectionObserver || !this.isConnected) {
-			return;
-		}
-
-		this.slotProjectionObserver = new MutationObserver((records) => this.handleSlotProjectionMutations(records));
-		this.slotProjectionObserver.observe(this, { childList: true });
-	}
-
-	private disconnectSlotProjectionObserver(): void {
-		this.slotProjectionObserver?.disconnect();
-		this.slotProjectionObserver = undefined;
-	}
-
-	private disconnectRenderWatcher(): void {
-		if (!this.renderSignal) {
-			return;
-		}
-
-		this.renderWatcher.unwatch(this.renderSignal);
-		this.renderSignal = undefined;
+		return this.getOrCreateRenderRuntime().getAuthoredHydrationScriptMarkup();
 	}
 
 	private resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
-		const nextRenderSignal = new Computed(() => this.resolveRenderOutput());
-		const output = nextRenderSignal.get();
-
-		if (!this.isConnected) {
-			return output;
-		}
-
-		if (this.renderSignal) {
-			this.renderWatcher.unwatch(this.renderSignal);
-		}
-
-		this.renderSignal = nextRenderSignal;
-		this.renderWatcher.watch(nextRenderSignal);
-		return output;
+		return this.getOrCreateRenderRuntime().resolveTrackedRenderOutput();
 	}
 
-	private resolveRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
-		this.ensureSlotProjectionState();
-		return resolveSlotProjection(this.render(), this.projectedSlotContent);
+	private getOrCreateRenderRuntime() {
+		return getOrCreateRenderRuntime(this as RenderRuntimeHost);
+	}
+
+	private getSsrCapableHost(): RadiantElementSsrCapable {
+		if (this.ssrCapableHost) {
+			return this.ssrCapableHost;
+		}
+
+		this.ssrCapableHost = {
+			constructor: this.constructor as CustomElementConstructor,
+			getAttribute: (name: string) => this.getAttribute(name),
+			getAttributeNames: () => this.getAttributeNames(),
+			getAuthoredHydrationScriptMarkup: () => this.getAuthoredHydrationScriptMarkup(),
+			getHostSsrAttributes: () => this.getHostSsrAttributes(),
+			getContextProviders: () => this.getContextProviders(),
+			getHydrationBindings: () => this.getHydrationBindings(),
+			getPropertyValue: (name: string) => (this as Record<string, unknown>)[name],
+			getReactiveProperties: () => this.getReactiveProperties(),
+			getSlotProjectionScriptTag: () => this.getSlotProjectionScriptTag(),
+			renderHost: () => this.renderHost(),
+			renderHostToString: (options?: RenderToStringOptions) => this.renderHostToString(options),
+			renderToString: (options?: RenderToStringOptions) => this.renderToString(options),
+			resolveTrackedRenderOutput: () => this.resolveTrackedRenderOutput(),
+			resolveSsrRenderBridge: () => this.resolveSsrRenderBridge(),
+		};
+
+		return this.ssrCapableHost;
 	}
 
 	private getEventSubscriptionTarget(): HTMLElement | ShadowRoot {
@@ -1098,8 +974,4 @@ function requireRadiantElementSsrRuntime() {
 
 function shouldHydrateOnConnect(component: HTMLElement): boolean {
 	return isRadiantHydratorInstalled() && hasHydrationMarkers(component);
-}
-
-function escapeScriptText(value: string): string {
-	return value.replace(/</g, '\\u003c');
 }
