@@ -11,9 +11,13 @@ import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrH
 import type {
 	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
+	RadiantElementSsrRuntime,
 	RadiantElementTrackedRenderSsrCapable,
 } from '../core/radiant-component-ssr-registry';
+import { withRadiantElementSsrRuntime } from '../core/radiant-component-ssr-registry';
 import { extractRadiantElementServerRenderHost } from './radiant-component-ssr-extractor';
+
+let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 
 export function createRadiantElementSsrService(
 	component: RadiantElementServerRenderSsrCapable,
@@ -44,9 +48,11 @@ export function renderRadiantElementHostToString(
 	component: RadiantElementServerRenderSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
-	return createRadiantElementSsrService(component).renderHostToString(
-		options,
-		getRadiantElementHostSsrAttributes(component),
+	return withServerRadiantElementSsrRuntime(() =>
+		createRadiantElementSsrService(component).renderHostToString(
+			options,
+			getRadiantElementHostSsrAttributes(component),
+		),
 	);
 }
 
@@ -81,8 +87,10 @@ export function renderRadiantElementViewToString(
 	component: RadiantElementTrackedRenderSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
-	return withRadiantServerCustomElementRenderBridge(() =>
-		renderJsxToString(getRadiantElementTrackedRenderOutput(component).value, options),
+	return withServerRadiantElementSsrRuntime(() =>
+		withRadiantServerCustomElementRenderBridge(() =>
+			renderJsxToString(getRadiantElementTrackedRenderOutput(component).value, options),
+		),
 	);
 }
 
@@ -183,4 +191,24 @@ function hasTrackedRenderOutput(component: unknown): component is {
 	}
 
 	return typeof (component as { resolveTrackedRenderOutput?: unknown }).resolveTrackedRenderOutput === 'function';
+}
+
+export function getOrCreateRadiantElementSsrRuntime(): RadiantElementSsrRuntime {
+	if (radiantElementSsrRuntime) {
+		return radiantElementSsrRuntime;
+	}
+
+	radiantElementSsrRuntime = {
+		getHostAttributes: getRadiantElementHostSsrAttributes,
+		renderHost: renderRadiantElementHost,
+		renderHostToString: renderRadiantElementHostToString,
+		resolveRenderBridge: resolveRadiantElementRenderBridge,
+		renderView: renderRadiantElementViewToString,
+	};
+
+	return radiantElementSsrRuntime;
+}
+
+export function withServerRadiantElementSsrRuntime<T>(render: () => T): T {
+	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), render);
 }

@@ -38,24 +38,53 @@ export type RadiantElementSsrRuntime = {
 const RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL = Symbol.for('@ecopages/radiant.component-ssr-runtime');
 
 type GlobalSsrRuntimeState = typeof globalThis & {
-	[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL]?: RadiantElementSsrRuntime;
+	[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL]?: RadiantElementSsrRuntime[];
 };
 
 /**
- * Reads the currently registered Radiant SSR runtime from `globalThis`.
+	* Reads the active Radiant SSR runtime from the current render scope.
  *
- * Returns `undefined` when no server entrypoint has installed the runtime yet.
+	* Returns `undefined` when no server render is currently in progress.
  */
 export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefined {
-	return (globalThis as GlobalSsrRuntimeState)[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL];
+	const runtimeStack = (globalThis as GlobalSsrRuntimeState)[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL];
+	return runtimeStack?.[runtimeStack.length - 1];
 }
 
 /**
- * Registers the shared Radiant SSR runtime on `globalThis`.
+	* Runs work within an active Radiant SSR runtime scope.
  *
- * The latest registration wins, which keeps server adapters free to install
- * the runtime eagerly from their own explicit entrypoint.
+	* The runtime remains visible across built entrypoint boundaries through
+	* `globalThis`, but only for the duration of the active render call.
  */
-export function registerRadiantElementSsrRuntime(runtime: RadiantElementSsrRuntime): void {
-	(globalThis as GlobalSsrRuntimeState)[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL] = runtime;
+export function withRadiantElementSsrRuntime<T>(runtime: RadiantElementSsrRuntime, render: () => T): T {
+	const runtimeState = globalThis as GlobalSsrRuntimeState;
+	const runtimeStack = runtimeState[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL] ?? [];
+
+	runtimeState[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL] = runtimeStack;
+	runtimeStack.push(runtime);
+
+	let result: T;
+
+	try {
+		result = render();
+	} catch (error) {
+		popRadiantElementSsrRuntime(runtimeState, runtimeStack);
+		throw error;
+	}
+
+	if (result instanceof Promise) {
+		return result.finally(() => popRadiantElementSsrRuntime(runtimeState, runtimeStack)) as T;
+	}
+
+	popRadiantElementSsrRuntime(runtimeState, runtimeStack);
+	return result;
+}
+
+function popRadiantElementSsrRuntime(runtimeState: GlobalSsrRuntimeState, runtimeStack: RadiantElementSsrRuntime[]) {
+	runtimeStack.pop();
+
+	if (runtimeStack.length === 0) {
+		delete runtimeState[RADIANT_COMPONENT_SSR_RUNTIME_SYMBOL];
+	}
 }

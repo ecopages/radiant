@@ -13,7 +13,6 @@ import {
 	type RenderedComponentPayload,
 	type RenderedComponentWithPreview,
 } from './render-component';
-import { ensureRadiantElementSsrRuntimeRegistered } from './radiant-component-ssr-runtime';
 
 /** Constructor shape for a server-renderable controller. */
 export type ServerRenderableControllerConstructor<TController extends RadiantController = RadiantController> = new (
@@ -119,8 +118,6 @@ async function renderResolvedController<TController extends RadiantController>(
 	Controller: ServerRenderableControllerConstructor<TController>,
 	options: RenderControllerCallOptions<TController>,
 ): Promise<RenderedComponent> {
-	ensureRadiantElementSsrRuntimeRegistered();
-
 	const tagName = normalizeRenderedControllerTagName(options.tagName);
 	const host = createRenderedControllerHost(tagName, normalizeRenderedControllerHostAttributes(Controller, options));
 	const controller = new Controller(host);

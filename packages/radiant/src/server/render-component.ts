@@ -10,9 +10,8 @@ import {
 	renderRegisteredRadiantElementHost,
 	renderRegisteredRadiantElementHostToString,
 } from './radiant-component-ssr-bridge';
-import { ensureRadiantElementSsrRuntimeRegistered } from './radiant-component-ssr-runtime';
-
-ensureRadiantElementSsrRuntimeRegistered();
+import { withRadiantElementSsrRuntime } from '../core/radiant-component-ssr-registry';
+import { getOrCreateRadiantElementSsrRuntime } from './radiant-component-ssr-runtime';
 
 /** Asset dependency emitted by a rendered fragment. */
 export type RenderedComponentAsset =
@@ -292,51 +291,52 @@ export async function renderComponentWithPreview<TComponent extends ServerRender
 async function renderResolvedComponent<TComponent extends ServerRenderableComponent>(
 	normalizedOptions: RenderComponentOptions<TComponent>,
 ): Promise<RenderedComponent> {
-	ensureRadiantElementSsrRuntimeRegistered();
-
-	const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
-	const restoreAmbientContext = withSsrContextProviders(
-		createAmbientSsrContextProviders(normalizedOptions.ssrContext),
-	);
-
-	try {
-		const Component =
-			'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
-		const component = new Component();
-		prepareRenderedComponentHost(
-			environment,
-			component,
-			normalizedOptions.authoredContent,
-			normalizedOptions.prepareHost,
+	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), async () => {
+		const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
+		const restoreAmbientContext = withSsrContextProviders(
+			createAmbientSsrContextProviders(normalizedOptions.ssrContext),
 		);
-		normalizedOptions.initialize?.(component);
 
-		const resolvedClientModuleSrc =
-			normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
-		const resolvedAssets = normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
-		const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
-		const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
-		const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
-		const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
-		const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
-		const markup =
-			renderRegisteredRadiantElementHostToString(component, renderOptions) ??
-			requireServerRenderableMarkup(component, renderOptions);
-		const preview = resolveRenderedComponentPreview(component, markup);
+		try {
+			const Component =
+				'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
+			const component = new Component();
+			prepareRenderedComponentHost(
+				environment,
+				component,
+				normalizedOptions.authoredContent,
+				normalizedOptions.prepareHost,
+			);
+			normalizedOptions.initialize?.(component);
 
-		return {
-			markup,
-			metadata: {
-				assets,
-				clientModuleUrl: clientModuleSrc,
-				generatedAt,
-				tagName,
-			},
-			preview,
-		};
-	} finally {
-		restoreAmbientContext();
-	}
+			const resolvedClientModuleSrc =
+				normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
+			const resolvedAssets =
+				normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
+			const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
+			const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
+			const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
+			const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
+			const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
+			const markup =
+				renderRegisteredRadiantElementHostToString(component, renderOptions) ??
+				requireServerRenderableMarkup(component, renderOptions);
+			const preview = resolveRenderedComponentPreview(component, markup);
+
+			return {
+				markup,
+				metadata: {
+					assets,
+					clientModuleUrl: clientModuleSrc,
+					generatedAt,
+					tagName,
+				},
+				preview,
+			};
+		} finally {
+			restoreAmbientContext();
+		}
+	});
 }
 
 /**
