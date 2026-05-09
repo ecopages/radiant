@@ -226,9 +226,8 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			throw new Error(`defaultValue does not match the expected type for ${type.name}`);
 		}
 
-		const ownDescriptor = Object.getOwnPropertyDescriptor(this.host, propertyName);
-		const hostRecord = this.host as unknown as Record<PropertyKey, unknown>;
-		const initialHostValue = hostRecord[propertyName] as T | undefined;
+		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
+		const initialHostValue = hostPropertyBridge.getInitialValue();
 		let currentValue = (initialHostValue ?? defaultValue ?? defaultValueForType(type)) as T;
 
 		this.reactiveHost.defineReactiveAccessor(propertyName, {
@@ -240,40 +239,10 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			notifyInitialValue: currentValue,
 		});
 
-		Object.defineProperty(this.host, propertyName, {
-			get: () => (this as Record<PropertyKey, unknown>)[propertyName],
-			set: (newValue: T) => {
-				(this as Record<PropertyKey, unknown>)[propertyName] = newValue;
-			},
-			enumerable: ownDescriptor?.enumerable ?? true,
-			configurable: true,
-		});
+		hostPropertyBridge.install();
 
 		this.registerCleanupCallback(() => {
-			const finalValue = (this as Record<PropertyKey, unknown>)[propertyName];
-
-			if (ownDescriptor) {
-				Object.defineProperty(this.host, propertyName, ownDescriptor);
-
-				if ('value' in ownDescriptor && ownDescriptor.writable) {
-					hostRecord[propertyName] = finalValue;
-				}
-
-				return;
-			}
-
-			delete hostRecord[propertyName];
-
-			try {
-				hostRecord[propertyName] = finalValue;
-			} catch {
-				Object.defineProperty(this.host, propertyName, {
-					value: finalValue,
-					writable: true,
-					enumerable: true,
-					configurable: true,
-				});
-			}
+			hostPropertyBridge.restore();
 		});
 	}
 
@@ -390,5 +359,59 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		this.renderSignal = nextRenderSignal;
 		this.renderWatcher.watch(nextRenderSignal);
 		return output;
+	}
+}
+
+class ControllerHostPropertyBridge<T> {
+	private readonly ownDescriptor: PropertyDescriptor | undefined;
+
+	constructor(
+		private readonly host: Element,
+		private readonly controller: object,
+		private readonly propertyName: string,
+	) {
+		this.ownDescriptor = Object.getOwnPropertyDescriptor(this.host, this.propertyName);
+	}
+
+	public getInitialValue(): T | undefined {
+		return Reflect.get(this.host, this.propertyName) as T | undefined;
+	}
+
+	public install(): void {
+		Object.defineProperty(this.host, this.propertyName, {
+			get: () => Reflect.get(this.controller, this.propertyName),
+			set: (newValue: T) => {
+				Reflect.set(this.controller, this.propertyName, newValue);
+			},
+			enumerable: this.ownDescriptor?.enumerable ?? true,
+			configurable: true,
+		});
+	}
+
+	public restore(): void {
+		const finalValue = Reflect.get(this.controller, this.propertyName);
+
+		if (this.ownDescriptor) {
+			Object.defineProperty(this.host, this.propertyName, this.ownDescriptor);
+
+			if ('value' in this.ownDescriptor && this.ownDescriptor.writable) {
+				Reflect.set(this.host, this.propertyName, finalValue);
+			}
+
+			return;
+		}
+
+		Reflect.deleteProperty(this.host, this.propertyName);
+
+		try {
+			Reflect.set(this.host, this.propertyName, finalValue);
+		} catch {
+			Object.defineProperty(this.host, this.propertyName, {
+				value: finalValue,
+				writable: true,
+				enumerable: true,
+				configurable: true,
+			});
+		}
 	}
 }
