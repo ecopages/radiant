@@ -6,7 +6,7 @@ import {
 	withForcedServerCustomElementRendering,
 	withServerCustomElementRenderHook,
 } from '@ecopages/jsx/server';
-import { RadiantElementSsrService } from '../core/radiant-component-ssr';
+import { RadiantElementSsrService } from '../core/radiant-element-ssr-service';
 import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
 import type {
 	RadiantElementRenderBridge,

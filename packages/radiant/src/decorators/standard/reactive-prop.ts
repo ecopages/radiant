@@ -1,4 +1,4 @@
-import type { ReactivePropertyOptions } from '../../core/radiant-element.js';
+import type { ReactivePropertyOptions } from '../../core/reactive-prop-core.js';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { isValueOfType } from '../../utils/attribute-utils';
 

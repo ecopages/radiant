@@ -3,7 +3,7 @@ import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import { withSsrContextProviders } from '../server/context-ssr';
 import { getCustomElementTagName } from './custom-element-metadata';
-import type { ReactiveProperty } from './radiant-element';
+import type { ReactiveProperty } from './reactive-prop-core';
 import type { ReactivePropDefinition } from './reactive-prop-metadata';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { writeAttributeValue } from '../utils/attribute-utils';

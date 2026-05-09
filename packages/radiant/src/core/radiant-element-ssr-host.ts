@@ -5,7 +5,7 @@ import type {
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementTrackedRenderSsrCapable,
 } from './radiant-component-ssr-registry';
-import type { ReactiveProperty } from './radiant-element';
+import type { ReactiveProperty } from './reactive-prop-core';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 
 export type RadiantElementSsrHostSource = RadiantElementServerRenderSsrCapable &

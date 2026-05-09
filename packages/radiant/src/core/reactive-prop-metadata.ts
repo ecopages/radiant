@@ -1,4 +1,4 @@
-import type { ReactivePropertyOptions } from './radiant-element';
+import type { ReactivePropertyOptions } from './reactive-prop-core';
 
 const REACTIVE_PROP_DEFINITIONS = Symbol.for('@ecopages/radiant.reactivePropDefinitions');
 

@@ -1,4 +1,4 @@
-import type { ReactiveBindingOption } from '../../core/radiant-element';
+import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import { registerLegacyInstanceInitializer } from './instance-initializers';

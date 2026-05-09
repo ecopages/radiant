@@ -5,7 +5,7 @@ import type {
 	ReactiveBindingValue,
 	ReactiveBindings,
 	ReactiveFieldOptions,
-} from './radiant-element';
+} from './reactive-prop-core';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;

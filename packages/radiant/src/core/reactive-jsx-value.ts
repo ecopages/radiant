@@ -1,5 +1,6 @@
 import type { SubscribableJsxValue } from '@ecopages/jsx';
-import type { RadiantElement, ReactiveBindingValue } from './radiant-element';
+import type { RadiantElement } from './radiant-element';
+import type { ReactiveBindingValue } from './reactive-prop-core';
 
 /**
  * Creates a stable JSX child binding backed by a Radiant reactive property or field.

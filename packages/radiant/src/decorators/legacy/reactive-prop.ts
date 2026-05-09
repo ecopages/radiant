@@ -1,4 +1,4 @@
-import type { ReactivePropertyOptions } from '../../core/radiant-element';
+import type { ReactivePropertyOptions } from '../../core/reactive-prop-core';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { isValueOfType } from '../../utils/attribute-utils';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
