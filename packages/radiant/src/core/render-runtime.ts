@@ -18,12 +18,6 @@ export type RenderRuntimeHost = HTMLElement & {
 	requestUpdate(): void;
 };
 
-const RENDER_RUNTIME = Symbol('radiant.renderRuntime');
-
-type RenderRuntimeOwner = RenderRuntimeHost & {
-	[RENDER_RUNTIME]?: RenderRuntime;
-};
-
 export class RenderRuntime {
 	#host: RenderRuntimeHost;
 	#projectedSlotContent = new Map<string, JsxRenderable[]>();
@@ -229,31 +223,6 @@ export class RenderRuntime {
 		this.ensureSlotProjectionState();
 		return resolveSlotProjection(this.#host.render(), this.#projectedSlotContent);
 	}
-}
-
-export function getRenderRuntime(host: RenderRuntimeHost): RenderRuntime | undefined {
-	return (host as RenderRuntimeOwner)[RENDER_RUNTIME];
-}
-
-export function getOrCreateRenderRuntime(host: RenderRuntimeHost): RenderRuntime {
-	const owner = host as RenderRuntimeOwner;
-	const existingRuntime = owner[RENDER_RUNTIME];
-
-	if (existingRuntime) {
-		return existingRuntime;
-	}
-
-	const runtime = new RenderRuntime(host);
-	owner[RENDER_RUNTIME] = runtime;
-	return runtime;
-}
-
-export function getRenderRuntimeSlotProjectionVersion(host: RenderRuntimeHost): number {
-	return getRenderRuntime(host)?.slotProjectionVersion ?? 0;
-}
-
-export function disposeRenderRuntime(host: RenderRuntimeHost): void {
-	getRenderRuntime(host)?.dispose();
 }
 
 function escapeScriptText(value: string): string {
