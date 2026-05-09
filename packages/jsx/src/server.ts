@@ -6,10 +6,7 @@ export {
 	type RenderToStringOptions,
 } from './server-render.ts';
 
-export {
-	getActiveSsrScopeValue,
-	withActiveSsrScopeValue,
-} from './ssr-render-scope.ts';
+export { getActiveSsrScopeValue, withActiveSsrScopeValue } from './ssr-render-scope.ts';
 
 export {
 	type ServerCustomElementRenderHook,
