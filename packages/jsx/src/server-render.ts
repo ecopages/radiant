@@ -75,14 +75,29 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	);
 }
 
+/** Returns whether the active SSR render scope is currently emitting hydration markers. */
 export function isServerRenderHydrationActive(): boolean {
 	return getActiveSsrRenderContext()?.hydrate === true;
 }
 
+/**
+ * Runs work with a framework hook that can intercept intrinsic custom-element SSR.
+ *
+ * Frameworks use this to adapt richer host rendering models, such as
+ * `RadiantElement`, without teaching the core JSX renderer about framework-
+ * specific element classes.
+ */
 export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRenderHook, render: () => T): T {
 	return withSsrRenderOverrides({ customElementRenderHook: hook }, render);
 }
 
+/**
+ * Legacy compatibility wrapper for older integrations that expected an explicit
+ * "force custom-element SSR" toggle.
+ *
+ * The server-render pipeline now owns intrinsic custom-element SSR directly, so
+ * this helper only preserves the old call shape and immediately runs `render()`.
+ */
 export function withForcedServerCustomElementRendering<T>(render: () => T): T {
 	return render();
 }

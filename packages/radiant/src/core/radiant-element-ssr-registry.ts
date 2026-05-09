@@ -1,5 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import { getActiveSsrRenderValue, type RenderToStringOptions, withActiveSsrRenderValue } from '@ecopages/jsx/server';
+import { getActiveSsrScopeValue, type RenderToStringOptions, withActiveSsrScopeValue } from '@ecopages/jsx/server';
 
 export type RadiantElementRenderBridge = {
 	renderHost?: () => JsxRenderable;
@@ -43,7 +43,7 @@ const RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL = Symbol.for('@ecopages/radiant.element
  * Returns `undefined` when no server render is currently in progress.
  */
 export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefined {
-	return getActiveSsrRenderValue<RadiantElementSsrRuntime>(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL);
+	return getActiveSsrScopeValue<RadiantElementSsrRuntime>(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL);
 }
 
 /**
@@ -53,5 +53,5 @@ export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefi
  * active JSX SSR render scope, but only for the duration of the active render call.
  */
 export function withRadiantElementSsrRuntime<T>(runtime: RadiantElementSsrRuntime, render: () => T): T {
-	return withActiveSsrRenderValue(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL, runtime, render);
+	return withActiveSsrScopeValue(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL, runtime, render);
 }
