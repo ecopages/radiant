@@ -1,7 +1,6 @@
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { customElement } from '../../src/decorators/custom-element';
 import { onEvent } from '../../src/decorators/on-event';
 import { prop } from '../../src/decorators/prop';
 import { state } from '../../src/decorators/state';
