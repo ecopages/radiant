@@ -275,6 +275,47 @@ describeWhenStandard('RadiantController', () => {
 		});
 	});
 
+	test('createReactiveProp reads initial host property values through the host property channel', () => {
+		class HostPropController extends RadiantController<{ items: string[] }> {
+			declare items: string[];
+
+			constructor(host: Element) {
+				super(host);
+				this.createReactiveProp('items', { type: Array, defaultValue: [] });
+			}
+		}
+
+		const host = document.createElement('div');
+		Reflect.set(host, 'items', ['initial']);
+		const controller = new HostPropController(host);
+
+		expect(controller.items).toEqual(['initial']);
+
+		Reflect.set(host, 'items', ['next']);
+
+		expect(controller.items).toEqual(['next']);
+	});
+
+	test('createReactiveProp restores the host property value on disconnect', () => {
+		class HostPropController extends RadiantController<{ status: string }> {
+			declare status: string;
+
+			constructor(host: Element) {
+				super(host);
+				this.createReactiveProp('status', { type: String, defaultValue: 'idle' });
+			}
+		}
+
+		const host = document.createElement('div');
+		const controller = new HostPropController(host);
+
+		controller.connect();
+		controller.status = 'ready';
+		controller.disconnect();
+
+		expect(Reflect.get(host, 'status')).toBe('ready');
+	});
+
 	test('supports provideContext, consumeContext, and contextSelector on controllers', async () => {
 		const providerHost = document.createElement('div');
 		const consumerHost = document.createElement('div');
