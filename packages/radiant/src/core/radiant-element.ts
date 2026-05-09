@@ -23,6 +23,12 @@ import {
 const RadiantElementBase = resolveRadiantElementBase();
 
 type RadiantRenderTarget = HTMLElement | ShadowRoot;
+type RadiantInteractionTarget = HTMLElement | ShadowRoot;
+type RadiantRenderSurface = {
+	renderTarget: RadiantRenderTarget;
+	interactionTarget: RadiantInteractionTarget;
+	queryRoot: ParentNode;
+};
 
 function resolveRadiantElementBase(): typeof HTMLElement {
 	if (typeof HTMLElement !== 'undefined') {
@@ -510,7 +516,7 @@ export class RadiantElement<Bindings extends object = {}>
 			return;
 		}
 
-		const renderTarget = this.getRenderTarget();
+		const { renderTarget } = this.resolveRenderSurface();
 		const renderRuntime = this.getOrCreateRenderRuntime();
 
 		this.isRendering = true;
@@ -551,7 +557,7 @@ export class RadiantElement<Bindings extends object = {}>
 			return;
 		}
 
-		const renderTarget = this.getRenderTarget();
+		const { renderTarget } = this.resolveRenderSurface();
 		const renderRuntime = this.getOrCreateRenderRuntime();
 
 		this.needsRender = true;
@@ -684,18 +690,18 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public subscribeEvent(eventConfig: RadiantElementEventListener): () => void {
-		const eventTarget = this.getEventSubscriptionTarget();
+		const { interactionTarget } = this.resolveRenderSurface();
 		const delegatedListener = (delegatedEvent: Event) => {
 			if (delegatedEvent.target && (delegatedEvent.target as Element).matches(eventConfig.selector)) {
 				eventConfig.listener.call(this, delegatedEvent);
 			}
 		};
 		const subscriptionId = `${eventConfig.type}:${eventConfig.selector}`;
-		eventTarget.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
+		interactionTarget.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
 		this.eventSubscriptions.set(subscriptionId, {
 			...eventConfig,
 			listener: delegatedListener,
-			target: eventTarget,
+			target: interactionTarget,
 		});
 
 		return this.unsubscribeEvent.bind(this, subscriptionId);
@@ -750,7 +756,7 @@ export class RadiantElement<Bindings extends object = {}>
 	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
 		const selector = `[data-ref="${ref}"]`;
-		const queryRoot = this.getQueryRoot();
+		const { queryRoot } = this.resolveRenderSurface();
 		if (all) {
 			return Array.from(queryRoot.querySelectorAll(selector)) as T[];
 		}
@@ -866,14 +872,15 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.renderRuntime;
 	}
 
-	private getEventSubscriptionTarget(): HTMLElement | ShadowRoot {
+	private resolveRenderSurface(): RadiantRenderSurface {
 		const renderTarget = this.getRenderTarget();
-		return renderTarget instanceof ShadowRoot ? renderTarget : this;
-	}
+		const interactionTarget = renderTarget instanceof ShadowRoot ? renderTarget : this;
 
-	private getQueryRoot(): ParentNode {
-		const renderTarget = this.getRenderTarget();
-		return renderTarget instanceof ShadowRoot ? renderTarget : this;
+		return {
+			interactionTarget,
+			queryRoot: interactionTarget,
+			renderTarget,
+		};
 	}
 }
 
