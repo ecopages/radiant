@@ -19,11 +19,7 @@ import {
 } from './hydration-bindings.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
-import {
-	getActiveSsrRenderContext,
-	type SsrRenderContext,
-	withActiveSsrRenderContext,
-} from './ssr-render-scope.ts';
+import { getActiveSsrRenderContext, type SsrRenderContext, withActiveSsrRenderContext } from './ssr-render-scope.ts';
 import type { ServerCustomElementRenderHook } from './types.ts';
 
 /** Public vocabulary for the SSR output modes supported by `renderToString(...)`. */

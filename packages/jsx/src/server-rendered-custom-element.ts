@@ -1,11 +1,12 @@
 import { escapeAttribute } from './html-escape.ts';
-import {
-	getActiveSsrRenderContext,
-} from './ssr-render-scope.ts';
+import { getActiveSsrRenderContext } from './ssr-render-scope.ts';
 import type { JsxNodeLike, JsxPropsWithChildren, JsxRenderable, ServerRenderableCustomElement } from './types.ts';
 
 type ServerRenderedCustomElementRuntime = {
-	forEachNormalizedAttribute: (attributes: Record<string, unknown>, append: (name: string, value: unknown) => void) => void;
+	forEachNormalizedAttribute: (
+		attributes: Record<string, unknown>,
+		append: (name: string, value: unknown) => void,
+	) => void;
 	renderValueToString: (value: JsxRenderable | undefined) => string;
 	resolveBindingShapeValue: (value: unknown) => unknown;
 	shouldUseAttributeBindingByDefaultForElement: (elementName: string, name: string) => boolean;
