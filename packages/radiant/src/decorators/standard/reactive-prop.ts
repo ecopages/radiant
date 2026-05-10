@@ -1,6 +1,5 @@
-import type { ReactivePropertyOptions } from '../../core/reactive-prop-core.js';
+import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core.js';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { isValueOfType } from '../../utils/attribute-utils';
 
 type ReactivePropHost<P> = {
 	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<P>): void;
@@ -20,9 +19,7 @@ export function reactiveProp<P = unknown>({
 	defaultValue,
 	bind,
 }: ReactivePropertyOptions<P>) {
-	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
-		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
-	}
+	validateReactivePropertyDefault(type, defaultValue);
 	return function <T extends ReactivePropHost<P>, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
 		const propertyName = String(context.name);
 		const attributeKey = attribute ?? propertyName;
