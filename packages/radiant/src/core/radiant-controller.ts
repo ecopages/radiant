@@ -260,12 +260,31 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		return this.reactiveHost.registerUpdateCallback(property, update);
 	}
 
+	/**
+	 * Notifies context decorators that a provider or consumer for `contextName`
+	 * finished connecting on this controller host.
+	 *
+	 * Controllers currently rely on the shared client-side context event flow, so
+	 * the base implementation does not need extra bookkeeping here.
+	 */
 	public connectedContextCallback(_contextName: UnknownContext): void {}
 
-	public registerContextProvider(_name: string, _provider: unknown): void {
-		// Controller context support is currently client-only.
-	}
+	/**
+	 * Registers a decorated context provider on the controller host.
+	 *
+	 * Client-side controller context works through `ContextProvider`'s event-based
+	 * resolution, so the base controller does not store providers here. Unlike
+	 * `RadiantElement`, controller SSR does not currently serialize provider
+	 * registrations into hydration metadata.
+	 */
+	public registerContextProvider(_name: string, _provider: unknown): void {}
 
+	/**
+	 * Registers a keyed SSR hydration binding for the controller host.
+	 *
+	 * The base controller does not currently emit SSR hydration payloads, so this
+	 * hook is a no-op placeholder for the shared reactive host contract.
+	 */
 	public registerHydrationBinding(_name: string, _binding: SsrSerializableHydrationBinding): void {}
 
 	public registerCleanupCallback(callback: () => void): void {

@@ -34,6 +34,16 @@ For adapters, fragment responses, and framework integrations, prefer the explici
 
 Important: `renderController()` owns only the inner view plus the serialized host attributes. The caller still owns the outer host contract through `tagName`, `host`, and `attributes`, and `data-controller` is inferred only when the controller constructor carries `@controller(...)` metadata.
 
+## Async Boundary
+
+The `renderComponent*()` and `renderController*()` helpers are async so adapters can
+resolve assets, client module URLs, and server-side data before rendering.
+
+The actual JSX serialization pass is still synchronous. Fetch or prepare data
+before calling the render helper, then inject resolved values through
+`initialize`, `prepareHost`, or explicit host attributes. Do not perform async
+work inside `render()`.
+
 ## Runtime Preparation
 
 If your SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant element modules:

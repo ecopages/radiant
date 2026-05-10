@@ -85,6 +85,29 @@ Event handlers are not serialized into HTML. They reconnect only during client h
 - iterables are serialized by walking their children in order
 - subscribable and signal-like values are snapshotted to their current value during SSR
 
+## Async SSR Pattern
+
+Async work belongs before the render pass starts, not inside it.
+
+- fetch data, resolve assets, or build view models before calling the SSR helper
+- pass resolved values into the component or controller before `renderToString(...)` runs
+- keep `render()` synchronous and treat SSR as a snapshot of current state
+
+For example, this is the intended shape:
+
+```ts
+const product = await api.getProduct(productId);
+
+const rendered = await renderController(ProductController, {
+	tagName: 'section',
+	initialize: (controller) => {
+		controller.product = product;
+	},
+});
+```
+
+By contrast, fetching inside `render()` is not part of the current SSR model.
+
 ## Mental Model
 
 The important distinction is:
