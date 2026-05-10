@@ -1,5 +1,5 @@
 import type { ContextHostLike } from '../../context-host';
-import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
+import { registerLegacyPostConstructionInitializer } from '../../../decorators/legacy/instance-initializers';
 import { bootstrapSsrContextSelection, connectContextSelection } from '../../context-consumer-bootstrap';
 import type { Context, ContextType } from '../../types';
 import type { OnContextUpdateOptions } from '../on-context-update';
@@ -14,7 +14,7 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 	return (proto: ContextHostLike, _: string, descriptor: PropertyDescriptor) => {
 		const originalMethod = descriptor.value;
 
-		registerLegacyInstanceInitializer(proto, (element) => {
+		registerLegacyPostConstructionInitializer(proto, (element) => {
 			let activeUnsubscribe: (() => void) | undefined;
 			const applySelectedContext = createContextSelectionDelivery(
 				element,
@@ -24,35 +24,32 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 				requestUpdate,
 			);
 
-			bootstrapSsrContextSelection<T, Selected>(element, context, applySelectedContext, select);
+			if (bootstrapSsrContextSelection<T, Selected>(element, context, applySelectedContext, select)) {
+				return;
+			}
 
-			element.registerConnectedCallback(() => {
-				if (
-					connectContextSelection<T, Selected>(element, context, applySelectedContext, {
-						onSubscribe: (unsubscribe) => {
-							activeUnsubscribe = unsubscribe;
-						},
-						select,
-						subscribe,
-					})
-				) {
-					return;
-				}
-
-				queueMicrotask(() => {
-					connectContextSelection<T, Selected>(element, context, applySelectedContext, {
-						onSubscribe: (unsubscribe) => {
-							activeUnsubscribe = unsubscribe;
-						},
-						select,
-						subscribe,
-					});
+			const connectSelection = () =>
+				connectContextSelection<T, Selected>(element, context, applySelectedContext, {
+					onSubscribe: (unsubscribe) => {
+						activeUnsubscribe = unsubscribe;
+					},
+					select,
+					subscribe,
 				});
-			});
 
 			element.registerCleanupCallback(() => {
 				activeUnsubscribe?.();
 				activeUnsubscribe = undefined;
+			});
+
+			element.registerConnectedCallback(() => {
+				if (connectSelection()) {
+					return;
+				}
+
+				queueMicrotask(() => {
+					connectSelection();
+				});
 			});
 		});
 

@@ -1,7 +1,11 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
 import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } from './reactivity-adapter';
+import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
-import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
+import {
+	runLegacyInstanceInitializers,
+	runLegacyPostConstructionInitializers,
+} from '../decorators/legacy/instance-initializers';
 import { ReactiveHost, type ReactiveHostLike } from './reactive-host';
 import type {
 	ReactiveBindingOption,
@@ -42,6 +46,8 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private isRenderScheduled = false;
 	private isSsrLifecycle = false;
 	private needsRender = false;
+	private contextProviders = new Map<string, SsrSerializableContextProvider>();
+	private hydrationBindings = new Map<string, SsrSerializableHydrationBinding>();
 	private renderSignal?: ReactiveComputed<JsxRenderable>;
 	private readonly renderWatcher = createReactiveWatcher(() => {
 		this.requestUpdate();
@@ -71,6 +77,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * first update runs immediately after connection.
 	 */
 	public connect(): void {
+		runLegacyPostConstructionInitializers(this);
 		this.connected = true;
 		this.reactiveHost.connectHost();
 
@@ -272,20 +279,35 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	/**
 	 * Registers a decorated context provider on the controller host.
 	 *
-	 * Client-side controller context works through `ContextProvider`'s event-based
-	 * resolution, so the base controller does not store providers here. Unlike
-	 * `RadiantElement`, controller SSR does not currently serialize provider
-	 * registrations into hydration metadata.
+	 * Controller providers participate in the same client-side event-based context
+	 * flow as `RadiantElement` providers. During SSR, the registered providers are
+	 * also exposed to descendant consumers and hydration payload collection.
 	 */
-	public registerContextProvider(_name: string, _provider: unknown): void {}
+	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
+		this.contextProviders.set(name, provider);
+		this.hydrationBindings.set(name, provider);
+	}
 
 	/**
 	 * Registers a keyed SSR hydration binding for the controller host.
-	 *
-	 * The base controller does not currently emit SSR hydration payloads, so this
-	 * hook is a no-op placeholder for the shared reactive host contract.
 	 */
-	public registerHydrationBinding(_name: string, _binding: SsrSerializableHydrationBinding): void {}
+	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
+		this.hydrationBindings.set(name, binding);
+	}
+
+	/**
+	 * Returns SSR-visible context providers registered on this controller.
+	 */
+	public getSsrContextProviders(): SsrSerializableContextProvider[] {
+		return [...this.contextProviders.values()];
+	}
+
+	/**
+	 * Returns keyed hydration payload producers registered on this controller.
+	 */
+	public getSsrHydrationBindings(): SsrSerializableHydrationBinding[] {
+		return [...this.hydrationBindings.values()];
+	}
 
 	public registerCleanupCallback(callback: () => void): void {
 		this.reactiveHost.registerCleanupCallback(callback);

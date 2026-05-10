@@ -1,7 +1,7 @@
 import { ContextProvider } from '../../../context/context-provider';
 import type { UnknownContext } from '../../../context/types';
 import type { ContextHostLike } from '../../context-host';
-import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
+import { registerLegacyPostConstructionInitializer } from '../../../decorators/legacy/instance-initializers';
 import type { ProvideContextOptions } from '../provide-context';
 
 export function provideContext<T extends UnknownContext>({
@@ -28,7 +28,7 @@ export function provideContext<T extends UnknownContext>({
 			element.connectedContextCallback(context);
 		};
 
-		registerLegacyInstanceInitializer(proto, (element) => {
+		registerLegacyPostConstructionInitializer(proto, (element) => {
 			initializeProvider(element);
 			element.registerConnectedCallback(() => {
 				initializeProvider(element);

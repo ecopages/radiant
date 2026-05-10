@@ -1,8 +1,13 @@
 import { renderToString as renderJsxToString, type RenderToStringOptions } from '@ecopages/jsx/server';
 import { getControllerIdentifier } from '../core/controller-metadata';
+import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
 import type { RadiantController } from '../core/radiant-controller';
 import { CONTROLLER_ATTRIBUTE } from '../controller-registry';
+import { runLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
+import { withSsrContextProviders } from './context-ssr';
 import { ensureLightDomShim } from './light-dom-shim';
+import { withRadiantServerCustomElementRenderBridge } from './radiant-element-ssr-bridge';
+import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr-runtime';
 import {
 	mergeRenderedComponentAssets,
 	normalizeRenderOptions,
@@ -118,35 +123,42 @@ async function renderResolvedController<TController extends RadiantController>(
 	Controller: ServerRenderableControllerConstructor<TController>,
 	options: RenderControllerCallOptions<TController>,
 ): Promise<RenderedComponent> {
-	const tagName = normalizeRenderedControllerTagName(options.tagName);
-	const host = createRenderedControllerHost(tagName, normalizeRenderedControllerHostAttributes(Controller, options));
-	const controller = new Controller(host);
+	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), async () => {
+		const tagName = normalizeRenderedControllerTagName(options.tagName);
+		const host = createRenderedControllerHost(
+			tagName,
+			normalizeRenderedControllerHostAttributes(Controller, options),
+		);
+		const controller = new Controller(host);
+		runLegacyPostConstructionInitializers(controller);
 
-	try {
-		options.initialize?.(controller);
-		controller.connectForSsrRender();
+		try {
+			options.initialize?.(controller);
+			controller.connectForSsrRender();
 
-		const resolvedClientModuleSrc = options.clientModuleSrc ?? (await options.resolveClientModuleSrc?.(Controller));
-		const resolvedAssets = options.assets ?? (await options.resolveAssets?.(Controller)) ?? [];
-		const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
-		const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
-		const generatedAt = (options.now ?? createDefaultRenderTimestamp)().toISOString();
-		const renderOptions = normalizeRenderOptions(options.renderOptions);
-		const markup = renderRenderedControllerHost(controller, tagName, renderOptions);
+			const resolvedClientModuleSrc =
+				options.clientModuleSrc ?? (await options.resolveClientModuleSrc?.(Controller));
+			const resolvedAssets = options.assets ?? (await options.resolveAssets?.(Controller)) ?? [];
+			const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
+			const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
+			const generatedAt = (options.now ?? createDefaultRenderTimestamp)().toISOString();
+			const renderOptions = normalizeRenderOptions(options.renderOptions);
+			const markup = renderRenderedControllerHost(controller, tagName, renderOptions);
 
-		return {
-			markup,
-			metadata: {
-				assets,
-				clientModuleUrl: clientModuleSrc,
-				generatedAt,
-				tagName,
-			},
-			preview: { nodeType: 1, outerHTML: markup },
-		};
-	} finally {
-		controller.disconnectForSsrRender();
-	}
+			return {
+				markup,
+				metadata: {
+					assets,
+					clientModuleUrl: clientModuleSrc,
+					generatedAt,
+					tagName,
+				},
+				preview: { nodeType: 1, outerHTML: markup },
+			};
+		} finally {
+			controller.disconnectForSsrRender();
+		}
+	});
 }
 
 function toRenderedComponentWithPreview(render: RenderedComponent): RenderedComponentWithPreview {
@@ -307,7 +319,25 @@ function renderRenderedControllerHost(
 	tagName: string,
 	options: RenderToStringOptions,
 ): string {
-	return `<${tagName}${serializeRenderedControllerHostAttributes(controller.host)}>${renderJsxToString(controller.render(), options)}</${tagName}>`;
+	const restoreSsrContexts = withSsrContextProviders(controller.getSsrContextProviders());
+
+	try {
+		const hostContent = withRadiantServerCustomElementRenderBridge(() =>
+			renderJsxToString(controller.render(), options),
+		);
+		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
+		const hydrationScripts = hydrate
+			? controller
+					.getSsrHydrationBindings()
+					.map((binding) => binding.renderHydrationScriptTag())
+					.filter((markup): markup is string => typeof markup === 'string')
+					.join('')
+			: '';
+
+		return `<${tagName}${serializeRenderedControllerHostAttributes(controller.host)}>${hostContent}${hydrationScripts}</${tagName}>`;
+	} finally {
+		restoreSsrContexts();
+	}
 }
 
 function serializeRenderedControllerHostAttributes(host: Element): string {

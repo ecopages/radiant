@@ -1,7 +1,7 @@
 import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
-import { registerLegacyInstanceInitializer } from './instance-initializers';
+import { registerLegacyPostConstructionInitializer } from './instance-initializers';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
 import type { WritableSignal } from '@ecopages/signals';
 
@@ -64,7 +64,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 			return hostSignal as unknown as HostSignal<unknown>;
 		};
 
-		registerLegacyInstanceInitializer(target, (element) => {
+		registerLegacyPostConstructionInitializer(target, (element) => {
 			const hostSignal = initializeSignal(element);
 			element.registerConnectedCallback(() => {
 				if (!((element as any)[propertyName] instanceof HostSignal)) {
