@@ -9,7 +9,7 @@ export const Logo = eco.component<LogoProps, JsxRenderable>({
 	dependencies: {
 		stylesheets: ['./logo.css'],
 	},
-	render: ({ children = 'ecopages', href, target, title }) => {
+	render: ({ children = 'radiant', href, target, title }) => {
 		return (
 			<a
 				href={href}
