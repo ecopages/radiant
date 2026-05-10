@@ -1,5 +1,5 @@
 import { Burger } from '@/components/burger';
-import { Logo } from '@/components/logo';
+import { Logo } from '@/components/logo/logo';
 import { Navigation, type NavigationProps } from '@/components/navigation';
 import type { EcoComponent } from '@ecopages/core';
 import rootJson from '../../../../../packages/radiant/package.json';
