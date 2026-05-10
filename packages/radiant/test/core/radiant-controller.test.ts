@@ -243,13 +243,13 @@ describeWhenStandard('RadiantController', () => {
 		const host = document.createElement('div');
 		const controller = new SsrLifecycleController(host);
 
-		controller.connectForSsrRender();
+		controller.runWithSsrLifecycle(() => controller.connect());
 
 		expect(host.getAttribute('data-ssr-ready')).toBe('yes');
 		expect(host.innerHTML).toBe('');
 		expect(renderToString(controller.render())).toBe('<p>after connect</p>');
 
-		controller.disconnectForSsrRender();
+		controller.disconnect();
 		expect(controller.isConnected).toBe(false);
 	});
 

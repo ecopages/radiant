@@ -2,7 +2,6 @@ import { createQuerySlot } from '../../helpers/create-query-slot';
 import type { QuerySlotConfig } from '../query-slot';
 
 type SlotQueryHost = HTMLElement & {
-	getSlotElement<T extends Element = Element>(name?: string): T | null;
 	getSlotElements<T extends Element = Element>(name?: string): T[];
 	slotProjectionVersion?: number;
 };

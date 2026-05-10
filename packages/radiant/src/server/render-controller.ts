@@ -134,7 +134,7 @@ async function renderResolvedController<TController extends RadiantController>(
 
 		try {
 			options.initialize?.(controller);
-			controller.connectForSsrRender();
+			controller.runWithSsrLifecycle(() => controller.connect());
 
 			const resolvedClientModuleSrc =
 				options.clientModuleSrc ?? (await options.resolveClientModuleSrc?.(Controller));
@@ -156,7 +156,7 @@ async function renderResolvedController<TController extends RadiantController>(
 				preview: { nodeType: 1, outerHTML: markup },
 			};
 		} finally {
-			controller.disconnectForSsrRender();
+			controller.disconnect();
 		}
 	});
 }

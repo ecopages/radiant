@@ -154,7 +154,7 @@ function isSignalLikeBindingValue(value: unknown): value is { get(): unknown } {
  * Host-specific concerns such as attribute reflection, render lifecycles, and
  * custom-element APIs stay in the outer host classes.
  */
-export class ReactiveHost<Host extends object, Bindings extends object = {}> implements ReactiveHostLike<Bindings> {
+export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 
@@ -287,15 +287,6 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 
 		this.reactiveBindings.set(property, binding);
 		return binding;
-	}
-
-	/**
-	 * Short alias for `getReactiveBinding(...)`.
-	 */
-	public bind<Property extends StringPropertyKey<Bindings>>(
-		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
-		return this.getReactiveBinding(property) as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 	}
 
 	/**

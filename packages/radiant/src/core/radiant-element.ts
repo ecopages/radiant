@@ -576,7 +576,7 @@ export class RadiantElement<Bindings extends object = {}>
 	public bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
-		return this.reactiveHost.bind(property);
+		return this.reactiveHost.getReactiveBinding(property);
 	}
 
 	public defineReactiveBinding(property: string, bind: ReactiveBindingOption = true): void {
@@ -670,7 +670,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public getSlotElement<T extends Element = Element>(name?: string): T | null {
-		return this.getOrCreateRenderRuntime().getSlotElement<T>(name);
+		return (this.getSlotElements<T>(name)[0] ?? null) as T | null;
 	}
 
 	public getSlotElements<T extends Element = Element>(name?: string): T[] {

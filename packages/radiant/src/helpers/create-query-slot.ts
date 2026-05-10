@@ -5,7 +5,6 @@ export type QuerySlotConfig = {
 };
 
 type SlotQueryHost = HTMLElement & {
-	getSlotElement<T extends Element = Element>(name?: string): T | null;
 	getSlotElements<T extends Element = Element>(name?: string): T[];
 };
 
@@ -28,9 +27,9 @@ export function createQuerySlot<T extends Element | Element[] | null = Element |
 
 	const executeQuery = (): T | null => {
 		if (options.all) {
-			return (typeof host.getSlotElements === 'function' ? host.getSlotElements(options.name) : []) as T;
+			return host.getSlotElements(options.name) as T;
 		}
-		return (typeof host.getSlotElement === 'function' ? host.getSlotElement(options.name) : null) as T | null;
+		return (host.getSlotElements(options.name)[0] ?? null) as T | null;
 	};
 
 	return {
