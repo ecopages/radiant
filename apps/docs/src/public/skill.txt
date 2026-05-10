@@ -19,6 +19,7 @@ Import-path rule:
 - import `RadiantElement`, `RadiantController`, `@customElement(...)`, `@controller(...)`, and the common host decorators from `@ecopages/radiant`
 - import context APIs such as `createContext(...)`, `@provideContext(...)`, `@consumeContext(...)`, `@contextSelector(...)`, and `@onContextUpdate(...)` from `@ecopages/radiant/context`
 - import SSR helpers from explicit `@ecopages/radiant/server/*` entrypoints
+- import JSX SSR helpers such as `renderToString(...)`, `withServerCustomElementRenderHook(...)`, `getActiveSsrScopeValue(...)`, and `withActiveSsrScopeValue(...)` from `@ecopages/jsx/server` when the task is about framework SSR integration rather than ordinary host authoring alone
 
 Base assumptions:
 
@@ -27,6 +28,9 @@ Base assumptions:
 - `RadiantElement` and `RadiantController` share the same reactive host contract.
 - Plain reactive reads and JSX bindings are both valid and should be chosen intentionally.
 - Bindings are subscribable JSX values used for fine-grained patching.
+- Radiant SSR composes on top of `@ecopages/jsx/server` rather than teaching JSX core about Radiant-specific host models directly.
+- Shared SSR runtime state should flow through the active JSX SSR render scope with `Symbol.for(...)` keys instead of ad hoc module-global storage.
+- Prefer explicit SSR output modes with `mode: 'plain'` or `mode: 'hydrate'` when authoring or reviewing server-rendering code.
 
 ## When To Use This Skill
 
@@ -38,6 +42,7 @@ Use this skill whenever the task involves any of the following:
 - deciding whether code should use plain reads like `this.count` or bindings like `this.$.count`
 - defining public props versus internal bindings types
 - wiring SSR, hydration, host rendering, or slot projection for Radiant hosts
+- adapting custom-element SSR bridges or render-scoped SSR runtime state
 - reviewing docs or examples to ensure they teach the intended Radiant model
 - translating React-like instincts into the Radiant model without accidentally importing React assumptions
 
@@ -140,6 +145,17 @@ Choose a simpler `RadiantElement` shape when the host is mainly:
 - imperative
 - string-template based
 - a lower-level custom element embedded inside another JSX tree
+
+## SSR And Hydration Model
+
+Use the server pipeline as the integration boundary, not a host-owned bag of SSR-only escape hatches.
+
+- Prefer explicit server entrypoints from `@ecopages/radiant/server/*` and `@ecopages/jsx/server` instead of custom globals or implicit ambient state.
+- Treat `renderHostToString(options?)` as the generic SSR-capable custom-element contract. JSX can serialize that contract directly.
+- When a framework-owned custom element needs richer SSR behavior, adapt it through `withServerCustomElementRenderHook(...)` instead of adding framework-specific branches to generic JSX guidance.
+- When server code needs shared runtime state across nested renders or split entrypoints, store it on the active JSX SSR scope with `withActiveSsrScopeValue(...)` and read it with `getActiveSsrScopeValue(...)`. Use `Symbol.for(...)` keys so the state survives entrypoint boundaries.
+- When authoring SSR examples or reviewing server code, prefer `renderToString(view, { mode: 'plain' })` or `renderToString(view, { mode: 'hydrate' })` over relying on the legacy `hydrate: true` shape alone.
+- If code wraps, clones, or transforms JSX template results during SSR work, preserve template metadata such as `rootLocalName` and `ssrIntrinsicProps` so intrinsic custom-element SSR specialization still works.
 
 ## API Selection Guide
 
