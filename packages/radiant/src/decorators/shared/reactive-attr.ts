@@ -1,8 +1,7 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
+import { type ReactiveBindingOption, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import {
 	defaultValueForType,
-	isValueOfType,
 	readAttributeValue,
 	type AttributeTypeConstant,
 	writeAttributeValue,
@@ -115,8 +114,8 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	propertyName: string,
 	options: AttrOptions<TValue> = {},
 ): void {
-	if (options.type && options.defaultValue !== undefined && !isValueOfType(options.type, options.defaultValue)) {
-		throw new Error(`defaultValue does not match the expected type for ${options.type.name}`);
+	if (options.type) {
+		validateReactivePropertyDefault(options.type, options.defaultValue);
 	}
 
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;

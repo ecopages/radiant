@@ -1,6 +1,5 @@
-import type { ReactivePropertyOptions } from '../../core/reactive-prop-core';
+import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { isValueOfType } from '../../utils/attribute-utils';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 type ReactivePropHost<T> = {
@@ -22,9 +21,7 @@ export function reactiveProp<T = unknown>({
 	defaultValue,
 	bind,
 }: ReactivePropertyOptions<T>) {
-	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
-		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
-	}
+	validateReactivePropertyDefault(type, defaultValue);
 
 	return (target: ReactivePropHost<T>, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;
