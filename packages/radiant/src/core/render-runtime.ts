@@ -42,10 +42,6 @@ export class RenderRuntime {
 		return this.#slotProjectionVersion;
 	}
 
-	getSlotElement<T extends Element = Element>(name?: string): T | null {
-		return (this.getSlotElements<T>(name)[0] ?? null) as T | null;
-	}
-
 	getSlotElements<T extends Element = Element>(name?: string): T[] {
 		this.ensureSlotProjectionState();
 

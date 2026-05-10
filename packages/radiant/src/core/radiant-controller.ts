@@ -87,14 +87,14 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	}
 
 	/**
-	 * Connects the controller for server-side rendering without running the
-	 * browser render/update lifecycle.
+	 * Runs controller lifecycle work in SSR mode so `connect()` skips the client
+	 * render/update path even when subclasses override it.
 	 */
-	public connectForSsrRender(): void {
+	public runWithSsrLifecycle<T>(work: () => T): T {
 		this.isSsrLifecycle = true;
 
 		try {
-			this.connect();
+			return work();
 		} finally {
 			this.isSsrLifecycle = false;
 		}
@@ -107,13 +107,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		this.connected = false;
 		this.disconnectRenderWatcher();
 		this.reactiveHost.disconnectHost();
-	}
-
-	/**
-	 * Disconnects a controller that was attached through the SSR-only lifecycle.
-	 */
-	public disconnectForSsrRender(): void {
-		this.disconnect();
 	}
 
 	public get isConnected(): boolean {
@@ -200,7 +193,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	public bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
-		return this.reactiveHost.bind(property);
+		return this.reactiveHost.getReactiveBinding(property);
 	}
 
 	/**

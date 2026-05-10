@@ -5,7 +5,6 @@ import type { QuerySlotConfig } from '../query-slot';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 type SlotQueryHost = RadiantElement & {
-	getSlotElement<T extends Element = Element>(name?: string): T | null;
 	getSlotElements<T extends Element = Element>(name?: string): T[];
 	slotProjectionVersion?: number;
 };
