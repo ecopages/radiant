@@ -30,6 +30,7 @@ import {
 	type ServerRenderableComponent,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
+import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-element-ssr-runtime';
 
 const cardAssets: readonly RenderedComponentAsset[] = [
@@ -114,6 +115,12 @@ const renderComponentHydrationContext = createContext<{ count: number; logger: R
 	Symbol('render-component-hydration-context'),
 );
 
+const renderControllerContext = createContext<{ label: string }>(Symbol('render-controller-context'));
+
+const renderControllerHydrationContext = createContext<{ count: number; logger: RenderComponentLogger }>(
+	Symbol('render-controller-hydration-context'),
+);
+
 @customElement('render-component-hydrated-provider-test')
 class RenderComponentHydratedProvider extends RadiantElement {
 	@provideContext<typeof renderComponentHydrationContext>({
@@ -123,6 +130,49 @@ class RenderComponentHydratedProvider extends RadiantElement {
 		serialize: ({ count }) => ({ count }),
 	})
 	provider!: ContextProvider<typeof renderComponentHydrationContext>;
+
+	override render() {
+		return <p>Count: {this.provider.getContext().count}</p>;
+	}
+}
+
+@controller('render-controller-context-provider')
+class RenderControllerContextProvider extends RadiantController {
+	@provideContext<typeof renderControllerContext>({
+		context: renderControllerContext,
+		initialValue: { label: 'initial controller context' },
+	})
+	provider!: ContextProvider<typeof renderControllerContext>;
+
+	override render() {
+		const context = resolveSsrContextValue(renderControllerContext);
+
+		return <p data-context-provider={context ? 'resolved' : 'missing'}>{context?.label ?? 'missing'}</p>;
+	}
+}
+
+@controller('render-controller-element-context-provider')
+class RenderControllerElementContextProvider extends RadiantController {
+	@provideContext<typeof renderComponentContext>({
+		context: renderComponentContext,
+		initialValue: { label: 'initial nested controller context' },
+	})
+	provider!: ContextProvider<typeof renderComponentContext>;
+
+	override render() {
+		return <render-component-context-card-test />;
+	}
+}
+
+@controller('render-controller-hydrated-provider')
+class RenderControllerHydratedProvider extends RadiantController {
+	@provideContext<typeof renderControllerHydrationContext>({
+		context: renderControllerHydrationContext,
+		initialValue: { count: 0, logger: new RenderComponentLogger() },
+		hydrate: Object,
+		serialize: ({ count }) => ({ count }),
+	})
+	provider!: ContextProvider<typeof renderControllerHydrationContext>;
 
 	override render() {
 		return <p>Count: {this.provider.getContext().count}</p>;
@@ -338,6 +388,61 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('Programmatic controller');
 	});
 
+	test('renderController() exposes controller-provided SSR context during server render', async () => {
+		const rendered = await renderController(RenderControllerContextProvider, {
+			tagName: 'section',
+			initialize: (controller) => {
+				controller.provider.setContext({ label: 'SSR controller context value' });
+			},
+		});
+
+		expect(rendered.markup).toContain('data-context-provider="resolved"');
+		expect(rendered.markup).toContain('SSR controller context value');
+	});
+
+	test('renderController() exposes controller-provided SSR context to nested custom elements', async () => {
+		const rendered = await renderController(RenderControllerElementContextProvider, {
+			tagName: 'section',
+			initialize: (controller) => {
+				controller.provider.setContext({ label: 'nested controller context value' });
+			},
+		});
+
+		expect(rendered.markup).toContain('<render-component-context-card-test');
+		expect(rendered.markup).toContain('data-context-provider="resolved"');
+		expect(rendered.markup).toContain('nested controller context value');
+	});
+
+	describe('controller provider hydration markup', () => {
+		test('renderController() emits valid provider hydration markup without client-only fields', async () => {
+			const rendered = await renderController(RenderControllerHydratedProvider, {
+				tagName: 'section',
+				initialize: (controller) => {
+					controller.provider.setContext({ count: 5 });
+				},
+			});
+
+			expect(rendered.markup).toContain(
+				'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">{"count":5}</script>',
+			);
+			expect(rendered.markup).not.toContain('&quot;');
+			expect(rendered.markup).not.toContain('logger');
+		});
+
+		test('renderController() omits provider hydration markup in plain mode', async () => {
+			const rendered = await renderController(RenderControllerHydratedProvider, {
+				tagName: 'section',
+				renderOptions: { mode: 'plain' },
+				initialize: (controller) => {
+					controller.provider.setContext({ count: 5 });
+				},
+			});
+
+			expect(rendered.markup).not.toContain('data-hydration-type="context"');
+			expect(rendered.markup).not.toContain('{"count":5}');
+		});
+	});
+
 	test('renderComponent() prepares authored content through a server render environment', async () => {
 		const rendered = await renderComponent(RenderComponentSlotQueryCard, {
 			authoredContent: '<h2 slot="header">Server heading</h2><p>Server body</p>',
@@ -371,7 +476,7 @@ describe('render-component server helpers', () => {
 		expect(rendered.markup).toContain('SSR context value');
 	});
 
-	describeWhenStandard('provider hydration markup', () => {
+	describe('provider hydration markup', () => {
 		test('renderComponent() emits valid provider hydration markup without client-only fields', async () => {
 			const rendered = await renderComponent(RenderComponentHydratedProvider, {
 				initialize: (component) => {

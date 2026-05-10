@@ -3,7 +3,10 @@ import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValue
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
-import { runLegacyInstanceInitializers } from '../decorators/legacy/instance-initializers';
+import {
+	runLegacyInstanceInitializers,
+	runLegacyPostConstructionInitializers,
+} from '../decorators/legacy/instance-initializers';
 import {
 	createReactivePropertyMapping,
 	type ReactiveAccessorDefinition,
@@ -52,7 +55,7 @@ function resolveRadiantElementBase(): typeof HTMLElement {
 	}
 
 	throw new Error(
-		"RadiantElement requires HTMLElement. Install '@ecopages/radiant/server/light-dom-shim' before importing Radiant components in SSR.",
+		"RadiantElement requires HTMLElement. Install '@ecopages/radiant/server/light-dom-shim' before SSR imports.",
 	);
 }
 
@@ -297,6 +300,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	connectedCallback() {
+		runLegacyPostConstructionInitializers(this);
 		const isReconnectDuringPendingFirstConnect = this.isFirstConnectPending;
 
 		this.elementReady = true;
@@ -400,11 +404,12 @@ export class RadiantElement<Bindings extends object = {}>
 		return jsx('slot', {});
 	}
 
-	private renderViewToString(options: RenderToStringOptions = {}): string {
+	public renderViewToString(options: RenderToStringOptions = {}): string {
 		if (!this.shouldRunRenderLifecycle()) {
 			return this.innerHTML;
 		}
 
+		runLegacyPostConstructionInitializers(this);
 		this.prepareForSsr();
 
 		return requireRadiantElementSsrRuntime().renderView(this, options);
@@ -485,7 +490,7 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactivePropertyState.register(config);
 	}
 
-	protected getReactiveProperties(): ReactiveProperty[] {
+	public getReactiveProperties(): ReactiveProperty[] {
 		return this.reactivePropertyState.getAll();
 	}
 
@@ -495,19 +500,21 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
 		this.contextProviders.set(name, provider);
-		this.registerHydrationBinding(name, provider);
+		this.hydrationBindings.set(name, provider);
 	}
 
 	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
 		this.hydrationBindings.set(name, binding);
 	}
 
-	protected getContextProviders(): SsrSerializableContextProvider[] {
-		return Array.from(this.contextProviders.values());
+	public getContextProviders(): SsrSerializableContextProvider[] {
+		runLegacyPostConstructionInitializers(this);
+		return [...this.contextProviders.values()];
 	}
 
-	protected getHydrationBindings(): SsrSerializableHydrationBinding[] {
-		return Array.from(this.hydrationBindings.values());
+	public getHydrationBindings(): SsrSerializableHydrationBinding[] {
+		runLegacyPostConstructionInitializers(this);
+		return [...this.hydrationBindings.values()];
 	}
 
 	/**
@@ -692,15 +699,15 @@ export class RadiantElement<Bindings extends object = {}>
 		);
 	}
 
-	private getSlotProjectionScriptTag(): string | undefined {
+	public getSlotProjectionScriptTag(): string | undefined {
 		return this.getOrCreateRenderRuntime().getSlotProjectionScriptTag();
 	}
 
-	private getAuthoredHydrationScriptMarkup(): string | undefined {
+	public getAuthoredHydrationScriptMarkup(): string | undefined {
 		return this.getOrCreateRenderRuntime().getAuthoredHydrationScriptMarkup();
 	}
 
-	private resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
+	public resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable } {
 		return this.getOrCreateRenderRuntime().resolveTrackedRenderOutput();
 	}
 
@@ -729,9 +736,7 @@ function requireRadiantElementSsrRuntime() {
 	const runtime = getRadiantElementSsrRuntime();
 
 	if (!runtime) {
-		throw new Error(
-			'Radiant SSR runtime is unavailable. Import `@ecopages/radiant/server/render-component` before using server rendering helpers.',
-		);
+		throw new Error('Radiant SSR runtime unavailable. Import `@ecopages/radiant/server/render-component` first.');
 	}
 
 	return runtime;

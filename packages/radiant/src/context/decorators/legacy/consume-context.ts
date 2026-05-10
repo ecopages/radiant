@@ -1,5 +1,5 @@
 import type { ContextHostLike } from '../../context-host';
-import { registerLegacyInstanceInitializer } from '../../../decorators/legacy/instance-initializers';
+import { registerLegacyPostConstructionInitializer } from '../../../decorators/legacy/instance-initializers';
 import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
@@ -26,10 +26,14 @@ export function consumeContext(context: UnknownContext) {
 			);
 		};
 
-		registerLegacyInstanceInitializer(proto, (element) => {
-			bootstrapSsrConsumedContext(element, context, (provider) => {
-				assignContextProvider(element, provider);
-			});
+		registerLegacyPostConstructionInitializer(proto, (element) => {
+			if (
+				bootstrapSsrConsumedContext(element, context, (provider) => {
+					assignContextProvider(element, provider);
+				})
+			) {
+				return;
+			}
 
 			element.registerConnectedCallback(() => {
 				if (initializeConsumedContextForHost(element, { emitMounted: true })) {

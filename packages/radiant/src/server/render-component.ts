@@ -4,6 +4,7 @@ import type { SsrSerializableContextProvider } from '../context/context-provider
 import { withSsrContextProviders } from './context-ssr';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
+import { runLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
 import {
 	resolveRegisteredRadiantElementPreview,
@@ -301,6 +302,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 			const Component =
 				'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
 			const component = new Component();
+			runLegacyPostConstructionInitializers(component);
 			prepareRenderedComponentHost(
 				environment,
 				component,

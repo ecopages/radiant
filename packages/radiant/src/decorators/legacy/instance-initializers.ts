@@ -1,6 +1,10 @@
 type LegacyInstanceInitializer<T extends object = object> = (instance: T) => void;
 
 const LEGACY_INSTANCE_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-instance-initializers');
+const LEGACY_POST_CONSTRUCTION_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-post-construction-initializers');
+const LEGACY_EXECUTED_POST_CONSTRUCTION_INITIALIZERS = Symbol.for(
+	'@ecopages/radiant.legacy-executed-post-construction-initializers',
+);
 
 /**
  * Registers per-instance initialization work for a legacy decorator.
@@ -12,18 +16,21 @@ export function registerLegacyInstanceInitializer<T extends object>(
 	proto: T,
 	initializer: LegacyInstanceInitializer<T>,
 ): void {
-	const target = proto as Record<PropertyKey, unknown>;
-	const ownInitializers = target[LEGACY_INSTANCE_INITIALIZERS];
+	registerInitializer(proto, LEGACY_INSTANCE_INITIALIZERS, initializer);
+}
 
-	if (Array.isArray(ownInitializers)) {
-		ownInitializers.push(initializer);
-		return;
-	}
-
-	Object.defineProperty(proto, LEGACY_INSTANCE_INITIALIZERS, {
-		value: [initializer],
-		configurable: true,
-	});
+/**
+ * Registers post-construction work for a legacy decorator.
+ *
+ * This phase exists for decorators that eagerly write instance fields. With
+ * legacy decorators plus `useDefineForClassFields`, subclass field definition
+ * can overwrite values written during the base-class constructor.
+ */
+export function registerLegacyPostConstructionInitializer<T extends object>(
+	proto: T,
+	initializer: LegacyInstanceInitializer<T>,
+): void {
+	registerInitializer(proto, LEGACY_POST_CONSTRUCTION_INITIALIZERS, initializer);
 }
 
 /**
@@ -33,25 +40,64 @@ export function registerLegacyInstanceInitializer<T extends object>(
  * derived class so inherited setup remains stable.
  */
 export function runLegacyInstanceInitializers<T extends object>(instance: T): void {
-	const prototypes: object[] = [];
-	let currentPrototype = Object.getPrototypeOf(instance);
+	runLegacyInitializers(instance, LEGACY_INSTANCE_INITIALIZERS);
+}
 
-	while (currentPrototype && currentPrototype !== Object.prototype) {
-		prototypes.push(currentPrototype);
-		currentPrototype = Object.getPrototypeOf(currentPrototype);
+/**
+ * Runs legacy decorator setup that must happen after subclass field
+ * initialization has completed.
+ *
+ * Each initializer runs at most once per instance even if multiple lifecycle
+ * entrypoints call this helper.
+ */
+export function runLegacyPostConstructionInitializers<T extends object>(instance: T): void {
+	const target = instance as Record<PropertyKey, unknown>;
+
+	runLegacyInitializers(
+		instance,
+		LEGACY_POST_CONSTRUCTION_INITIALIZERS,
+		(target[LEGACY_EXECUTED_POST_CONSTRUCTION_INITIALIZERS] ??= new Set()) as Set<LegacyInstanceInitializer<T>>,
+	);
+}
+
+function registerInitializer<T extends object>(proto: T, key: symbol, initializer: LegacyInstanceInitializer<T>): void {
+	const target = proto as Record<PropertyKey, unknown>;
+	const ownInitializers = Object.prototype.hasOwnProperty.call(target, key) ? target[key] : undefined;
+
+	if (Array.isArray(ownInitializers)) {
+		ownInitializers.push(initializer);
+		return;
 	}
 
-	for (let index = prototypes.length - 1; index >= 0; index -= 1) {
-		const initializers = (prototypes[index] as Record<PropertyKey, unknown>)[LEGACY_INSTANCE_INITIALIZERS] as
-			| LegacyInstanceInitializer<T>[]
-			| undefined;
+	Object.defineProperty(target, key, {
+		value: [initializer],
+	});
+}
 
-		if (!Array.isArray(initializers)) {
+function runLegacyInitializers<T extends object>(
+	instance: T,
+	key: symbol,
+	executedInitializers?: Set<LegacyInstanceInitializer<T>>,
+	prototype: object | null = Object.getPrototypeOf(instance),
+): void {
+	if (!prototype || prototype === Object.prototype) {
+		return;
+	}
+
+	runLegacyInitializers(instance, key, executedInitializers, Object.getPrototypeOf(prototype));
+
+	const initializers = (prototype as Record<PropertyKey, unknown>)[key] as LegacyInstanceInitializer<T>[] | undefined;
+
+	if (!Array.isArray(initializers)) {
+		return;
+	}
+
+	for (const initializer of initializers) {
+		if (executedInitializers?.has(initializer)) {
 			continue;
 		}
 
-		for (const initializer of initializers) {
-			initializer(instance);
-		}
+		initializer(instance);
+		executedInitializers?.add(initializer);
 	}
 }
