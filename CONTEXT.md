@@ -20,11 +20,11 @@ _Avoid_: platform, ecosystem, @ecopages/radiant
 
 **Ecopages JSX**:
 The JSX authoring and rendering package, usable on its own or alongside Radiant.
-_Avoid_: Radiant core, component model, Radiant JSX, @ecopages/jsx
+_Avoid_: Radiant core, component model, Radiant JSX
 
 **Ecopages Signals**:
 The renderer-agnostic reactivity package, usable on its own or underneath Radiant.
-_Avoid_: Ecopages Signal, Radiant internals, JSX runtime, @ecopages/signals
+_Avoid_: Radiant internals, JSX runtime
 
 **Reactive Host**:
 The shared host model that gives RadiantElement and RadiantController the same reactive fields, bindings, context, and update behavior.
