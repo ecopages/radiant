@@ -3,57 +3,8 @@ import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
 import { CodeTabs } from '@/components/code-tabs';
 import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-jsx-counter';
+import { counterControllerExampleCode, counterElementExampleCode } from '@/data/home-code-examples';
 import { unsafeHtml } from '@ecopages/jsx/jsx-runtime';
-
-const counterElementExampleCode = `import { RadiantElement, customElement, prop } from '@ecopages/radiant';
-
-@customElement('radiant-counter')
-export class RadiantCounter extends RadiantElement<{ value: number }> {
-  @prop({ type: Number, reflect: true }) value = 0;
-
-  private readonly decrement = () => {
-    if (this.value > 0) this.value -= 1;
-  };
-
-  private readonly increment = () => {
-    this.value += 1;
-  };
-
-  override render() {
-    return (
-      <>
-        <button type="button" on:click={this.decrement}>-</button>
-        <span>{this.$.value}</span>
-        <button type="button" on:click={this.increment}>+</button>
-      </>
-    );
-  }
-}`;
-
-const counterControllerExampleCode = `import { RadiantController, controller, prop } from '@ecopages/radiant';
-
-@controller('radiant-counter')
-export class RadiantCounter extends RadiantController<{ value: number }> {
-  @prop({ type: Number, reflect: true }) value = 0;
-
-  private readonly decrement = () => {
-	if (this.value > 0) this.value -= 1;
-  };
-
-  private readonly increment = () => {
-	this.value += 1;
-  };
-
-  override render() {
-	return (
-	  <>
-		<button type="button" on:click={this.decrement}>-</button>
-		<span>{this.$.value}</span>
-		<button type="button" on:click={this.increment}>+</button>
-	  </>
-	);
-  }
-}`;
 
 const counterElementExample = await codeToHtml(counterElementExampleCode, {
 	lang: 'tsx',
