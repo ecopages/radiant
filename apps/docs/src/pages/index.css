@@ -1,26 +1,29 @@
 .home-layout {
-	@apply flex flex-col gap-8 px-6 py-8 md:py-12 lg:grid lg:grid-cols-[1fr_280px] lg:items-start;
+	@apply flex flex-col gap-8 px-6 py-8 md:py-12 lg:grid lg:grid-cols-12 lg:items-start;
 }
 
 .home-header {
-	@apply col-span-full border-b border-border pb-8 mb-4;
+	@apply col-span-full border-b border-border pb-8 mb-4 lg:col-span-12 lg:grid lg:grid-cols-subgrid;
 }
 
 .home-hero {
-	@apply flex flex-col gap-8 lg:grid lg:grid-cols-[7fr_5fr] lg:items-center lg:gap-12;
+	@apply flex flex-col gap-8 lg:col-span-12 lg:grid lg:grid-cols-subgrid lg:items-center lg:gap-12;
 }
 
 .home-hero__text {
-	@apply flex flex-col;
+	@apply flex flex-col lg:col-span-7;
 	radiant-code-tabs {
 		@apply mt-8;
 	}
 }
 
 .home-hero__code {
-	@apply hidden lg:flex lg:flex-col;
+	@apply hidden lg:col-span-5 lg:flex lg:flex-col;
 	.code-tabs {
 		@apply rounded-none;
+	}
+	radiant-code-tabs {
+		@apply my-0;
 	}
 }
 
@@ -47,7 +50,7 @@
 }
 
 .home-main {
-	@apply flex flex-col gap-10;
+	@apply flex flex-col gap-10 lg:col-span-8;
 }
 
 .home-section__title {
@@ -83,7 +86,7 @@
 }
 
 .home-sidebar {
-	@apply flex flex-col gap-6 lg:border-l lg:border-border lg:pl-8 pt-4 lg:pt-0;
+	@apply flex flex-col gap-6 pt-4 lg:col-span-4 lg:border-l lg:border-border lg:pl-8 lg:pt-0;
 }
 
 .home-sidebar__section {
@@ -111,7 +114,7 @@
 }
 
 .home-code-block[data-rehype-pretty-code-figure] {
-	@apply my-0 rounded-sm rounded-b-none border border-border bg-background-accent overflow-x-auto;
+	@apply my-0 border-0 rounded-sm rounded-b-none border border-border bg-background-accent overflow-x-auto;
 
 	pre code {
 		@apply font-mono text-[0.875em] leading-relaxed;
