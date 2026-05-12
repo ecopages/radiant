@@ -422,14 +422,7 @@ Custom elements default to property bindings for unprefixed names, with a small 
 Typing follows the same ergonomic split. Put public unprefixed JSX props on `Props`, and use the element instance type for explicit `prop:*` bindings. `Props` keeps its own required and optional fields, so required public JSX props stay required. That means `items={rows}` is typed from `Props`, while `prop:api={gridApi}` is typed from the custom element class property.
 
 ```tsx
-<user-grid
-	id="people"
-	class="panel"
-	items={rows}
-	selection={currentRow}
-	attr:status="ready"
-	prop:api={gridApi}
-/>
+<user-grid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
 ```
 
 ```tsx

@@ -32,9 +32,7 @@ type KnownPropBindingsAcceptElementProperty = Assert<
 type KnownPropBindingsRejectWrongType = Assert<
 	IsNotAssignable<{ 'prop:options': 'wrong'; label: 'Label' }, RadiantSelectAttributes>
 >;
-type RequiredPublicPropsAreEnforced = Assert<
-	IsNotAssignable<{ description: 'Helper' }, RadiantSelectAttributes>
->;
+type RequiredPublicPropsAreEnforced = Assert<IsNotAssignable<{ description: 'Helper' }, RadiantSelectAttributes>>;
 type UnprefixedPublicPropsAcceptPropsShape = Assert<
 	IsAssignable<{ label: 'Label'; options: RadiantSelectOption[] }, RadiantSelectAttributes>
 >;
