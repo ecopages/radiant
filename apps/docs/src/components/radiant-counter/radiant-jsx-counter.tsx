@@ -8,6 +8,6 @@ export const RadiantJsxCounter = eco.component({
 		stylesheets: ['./radiant-counter.css'],
 	},
 	render(props: RadiantCounterProps) {
-		return <radiant-counter prop:value={props.value}></radiant-counter>;
+		return <radiant-counter value={props.value}></radiant-counter>;
 	},
 });

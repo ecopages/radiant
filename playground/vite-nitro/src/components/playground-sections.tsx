@@ -31,7 +31,7 @@ export function RadiantElementLabSection() {
 				upgraded with the matching client module.
 			</p>
 			<div class="component-grid">
-				<radiant-counter count={2} />
+				<radiant-counter count={2} label="Kitchen sink counter" />
 				<radiant-event-binding-lab></radiant-event-binding-lab>
 				<radiant-context-flow-shell></radiant-context-flow-shell>
 				<radiant-signal-release-board></radiant-signal-release-board>

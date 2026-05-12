@@ -1,4 +1,5 @@
 import { waitFor } from '@testing-library/dom';
+import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import {
 	type ContextProvider,
@@ -12,6 +13,19 @@ import { RadiantElement } from '../../src/core/radiant-element';
 
 class JsxReceiverElement extends HTMLElement {
 	value: unknown;
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'jsx-receiver': JsxCustomElementAttributes<JsxReceiverElement>;
+		'radiant-element-todo-item-test': JsxCustomElementAttributes<
+			RadiantElementTodoItemTest,
+			{
+				children?: JsxRenderable;
+				complete?: boolean;
+			}
+		>;
+	}
 }
 
 if (!customElements.get('jsx-receiver')) {

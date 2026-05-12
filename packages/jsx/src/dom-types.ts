@@ -191,8 +191,16 @@ export interface JsxSharedIntrinsicAttributes {
 	class?: string;
 	classes?: ClassList;
 	data?: Record<string, DataAttributeValue>;
+	dir?: string;
+	hidden?: boolean;
+	id?: string;
+	lang?: string;
+	part?: string;
+	role?: string;
+	slot?: string;
 	style?: StyleValue;
-	[key: string]: unknown;
+	tabindex?: number | string;
+	title?: string;
 }
 
 /**
