@@ -794,6 +794,13 @@ export function resolveBindingShapeValue(value: unknown): unknown {
 	return value;
 }
 
+/**
+ * HTML attribute names that should keep boolean-attribute binding semantics
+ * when authored without a prefix.
+ *
+ * This list is consulted before the custom-element property-first fallback so
+ * values like `hidden={true}` still encode as `?hidden=` instead of `.hidden=`.
+ */
 const htmlBooleanAttributes = new Set([
 	'allowfullscreen',
 	'async',
@@ -821,6 +828,13 @@ const htmlBooleanAttributes = new Set([
 	'selected',
 ]);
 
+/**
+ * Unprefixed custom-element names that should still serialize as attributes by
+ * default instead of falling through to property bindings.
+ *
+ * This keeps obvious HTML semantics ergonomic while leaving most authored names
+ * property-first for custom elements.
+ */
 const customElementAttributeDefaults = new Set([
 	'class',
 	'dir',
@@ -839,6 +853,14 @@ export function shouldUseBooleanAttributeBinding(name: string): boolean {
 	return htmlBooleanAttributes.has(name.toLowerCase());
 }
 
+/**
+ * Returns whether an unprefixed authored name should default to attribute
+ * binding for the given element.
+ *
+ * Native elements remain attribute-first. Custom elements are property-first,
+ * except for the small attribute-default allowlist plus expanded `aria-*` and
+ * `data-*` names. Use `attr:*` or `prop:*` to override the default explicitly.
+ */
 export function shouldUseAttributeBindingByDefaultForElement(elementName: string, name: string): boolean {
 	if (!elementName.includes('-')) {
 		return true;

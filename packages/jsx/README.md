@@ -417,7 +417,9 @@ declare module '@ecopages/jsx/jsx-runtime' {
 }
 ```
 
-Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly.
+Custom elements default to property bindings for unprefixed names, with a small attribute-default set for obvious HTML semantics: `id`, `class`, `style`, `title`, `role`, `slot`, `part`, `tabindex`, `hidden`, `lang`, `dir`, plus expanded `data-*` and `aria-*`. Use `attr:*` when a non-default name must serialize to markup, and `prop:*` when you want to override the default explicitly.
+
+Typing follows the same ergonomic split. Put public unprefixed JSX props on `Props`, and use the element instance type for explicit `prop:*` bindings. `Props` keeps its own required and optional fields, so required public JSX props stay required. That means `items={rows}` is typed from `Props`, while `prop:api={gridApi}` is typed from the custom element class property.
 
 ```tsx
 <user-grid
@@ -426,8 +428,43 @@ Custom elements default to property bindings for unprefixed names, with a small 
 	items={rows}
 	selection={currentRow}
 	attr:status="ready"
-	prop:controller={controller}
+	prop:api={gridApi}
 />
+```
+
+```tsx
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+type UserGridRow = {
+	id: string;
+};
+
+type UserGridProps = {
+	items: UserGridRow[];
+	selection?: UserGridRow;
+};
+
+class UserGridElement extends HTMLElement {
+	api?: UserGridApi;
+}
+
+type UserGridApi = {
+	focusRow(id: string): void;
+};
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'user-grid': JsxCustomElementAttributes<UserGridElement, UserGridProps>;
+	}
+}
+
+const rows: UserGridRow[] = [{ id: '1' }];
+const currentRow = rows[0];
+const gridApi: UserGridApi = {
+	focusRow: (_id) => undefined,
+};
+
+<user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
 ```
 
 ### Function Components And Fragments

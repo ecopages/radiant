@@ -59,8 +59,6 @@ type JsxEventBindings<ElementType extends EventTarget> = {
 
 type JsxPropertyBindings<ElementType extends object> = {
 	[PropertyName in JsxBindablePropertyName<ElementType> as `prop:${PropertyName}`]?: ElementType[PropertyName];
-} & {
-	[propertyName: `prop:${string}`]: unknown;
 };
 
 type JsxAttributeBindings = {
@@ -212,11 +210,19 @@ export type JsxElementProps<ElementType extends Element = HTMLElement> = JsxIntr
 
 /**
  * JSX attribute shape for a custom element declaration in `JSX.IntrinsicElements`.
+ *
+ * `Props` describes the public, unprefixed JSX surface for the custom element,
+ * while `ElementType` supplies strongly typed `prop:*` bindings for real instance
+ * properties. Runtime custom-element binding remains permissive: unprefixed names
+ * still default to property bindings unless they are in the small attribute
+ * allowlist or expand from `data` / `aria`. Required versus optional public
+ * props are taken directly from `Props`; wrap `Props` in `Partial<...>` at the
+ * call site if you want an entirely optional public prop surface.
  */
 export type JsxCustomElementAttributes<
 	ElementType extends Element = HTMLElement,
 	Props extends object = {},
-> = JsxIntrinsicAttributes<ElementType> & Partial<Props>;
+> = JsxIntrinsicAttributes<ElementType> & Props;
 
 /**
  * Module-augmentable registry of custom JSX intrinsic elements for the Ecopages JSX runtime.
