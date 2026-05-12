@@ -1,3 +1,4 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import type { JsxNodeLike, JsxRenderable } from '@ecopages/jsx/jsx-runtime';
 import { RadiantElement, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 
@@ -337,5 +338,11 @@ export class RadiantCodeTabs extends RadiantElement {
 				</div>
 			</div>
 		);
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-code-tabs': JsxCustomElementAttributes<RadiantCodeTabs, RadiantCodeTabsProps>;
 	}
 }

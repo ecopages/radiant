@@ -1,3 +1,4 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement } from '@ecopages/radiant';
 import { createResource } from '@ecopages/radiant/signals/host-resource';
 import { type ContextProvider, contextSelector, createContext, provideContext } from '@ecopages/radiant/context';
@@ -209,5 +210,12 @@ export class RadiantWeatherAppElement extends RadiantElement {
 				</div>
 			</section>
 		);
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-weather-app': JsxCustomElementAttributes<RadiantWeatherAppElement>;
+		'radiant-weather-summary': JsxCustomElementAttributes<RadiantWeatherSummary>;
 	}
 }

@@ -1,3 +1,4 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 export type RadiantSwitchProps = {
@@ -73,5 +74,11 @@ export class RadiantSwitch extends RadiantElement<RadiantSwitchBindings> {
 				</button>
 			</label>
 		);
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-switch': JsxCustomElementAttributes<RadiantSwitch, RadiantSwitchProps>;
 	}
 }
