@@ -1,3 +1,4 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 import { contextSelector } from '@ecopages/radiant/context';
 import { type RadiantSlotStudioContextValue, radiantSlotStudioContext } from './radiant-slot-studio.context.ts';
@@ -7,6 +8,12 @@ type InsightKind = 'commits' | 'stage' | 'tempo';
 type RadiantSlotStudioInsightBindings = {
 	kind: InsightKind;
 };
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-slot-studio-insight': JsxCustomElementAttributes<HTMLElement, RadiantSlotStudioInsightBindings>;
+	}
+}
 
 @customElement('radiant-slot-studio-insight')
 export class RadiantSlotStudioInsightElement extends RadiantElement<RadiantSlotStudioInsightBindings> {

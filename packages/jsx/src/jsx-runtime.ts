@@ -78,10 +78,14 @@ const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
  */
 export type JsxFragment = typeof fragmentSymbol;
 
+type JsxDomIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttributes<ElementType> & {
+	[key: string]: unknown;
+};
+
 type JsxDomIntrinsicElements = {
-	[ElementName in keyof HTMLElementTagNameMap]: JsxIntrinsicAttributes<HTMLElementTagNameMap[ElementName]>;
+	[ElementName in keyof HTMLElementTagNameMap]: JsxDomIntrinsicAttributes<HTMLElementTagNameMap[ElementName]>;
 } & {
-	[ElementName in keyof SVGElementTagNameMap]: JsxIntrinsicAttributes<SVGElementTagNameMap[ElementName]>;
+	[ElementName in keyof SVGElementTagNameMap]: JsxDomIntrinsicAttributes<SVGElementTagNameMap[ElementName]>;
 };
 
 /**
