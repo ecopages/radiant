@@ -1,3 +1,4 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 
 export type RadiantElementCounterProps = {
@@ -24,5 +25,11 @@ export class RadiantElementCounter extends RadiantElement {
 	@onUpdated('value')
 	syncCount() {
 		this.countText.textContent = String(this.value);
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-element-counter': JsxCustomElementAttributes<RadiantElementCounter, RadiantElementCounterProps>;
 	}
 }

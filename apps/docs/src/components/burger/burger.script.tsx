@@ -1,3 +1,4 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { BurgerEvents } from '@/components/burger/burger.events';
 import { RadiantElement, customElement, debounce, onEvent, state } from '@ecopages/radiant';
 
@@ -53,5 +54,11 @@ export class RadiantBurger extends RadiantElement<RadiantBurgerBindings> {
 				<span class="burger__line"></span>
 			</button>
 		);
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-burger': JsxCustomElementAttributes<RadiantBurger>;
 	}
 }

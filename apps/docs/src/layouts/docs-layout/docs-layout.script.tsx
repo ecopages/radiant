@@ -1,3 +1,4 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { BurgerEvents } from '@/components/burger/burger.events';
 
@@ -341,5 +342,13 @@ export class RadiantToc extends RadiantElement {
 
 		/** Run immediately so a heading is always highlighted on first render. */
 		updateActive();
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-navigation': JsxCustomElementAttributes<RadiantCounter>;
+		'radiant-docs-pagination': JsxCustomElementAttributes<RadiantDocsPagination>;
+		'radiant-toc': JsxCustomElementAttributes<RadiantToc>;
 	}
 }

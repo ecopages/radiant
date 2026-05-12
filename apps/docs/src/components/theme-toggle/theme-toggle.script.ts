@@ -1,5 +1,7 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { customElement, onEvent } from '@ecopages/radiant';
 import { RadiantSwitch } from '../switch/switch.script';
+import type { RadiantSwitchProps } from '../switch/switch.script';
 
 type ThemeChangeDetail = {
 	theme: 'dark' | 'light';
@@ -78,5 +80,11 @@ export class ThemeToggle extends RadiantSwitch {
 		if (this.checked !== isDark) {
 			this.applyTheme(isDark);
 		}
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'theme-toggle': JsxCustomElementAttributes<ThemeToggle, RadiantSwitchProps>;
 	}
 }
