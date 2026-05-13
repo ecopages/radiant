@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -18,38 +18,28 @@ type InteropElement = HTMLElement & {
 	status?: unknown;
 };
 
-function defineInteropElement(): void {
-	if (customElements.get(tagName)) {
-		return;
-	}
+class RadiantJsxInteropElement extends HTMLElement {
+	camelCaseValue?: unknown;
+	config?: unknown;
+	controller?: unknown;
+	items?: unknown;
+	label?: unknown;
+	status?: unknown;
 
-	class RadiantJsxInteropElement extends HTMLElement {
-		camelCaseValue?: unknown;
-		config?: unknown;
-		controller?: unknown;
-		items?: unknown;
-		label?: unknown;
-		status?: unknown;
-
-		connectedCallback(): void {
-			if (this.shadowRoot) {
-				return;
-			}
-
-			const shadowRoot = this.attachShadow({ mode: 'open' });
-			const slot = document.createElement('slot');
-			shadowRoot.append(slot);
+	connectedCallback(): void {
+		if (this.shadowRoot) {
+			return;
 		}
-	}
 
-	customElements.define(tagName, RadiantJsxInteropElement);
+		const shadowRoot = this.attachShadow({ mode: 'open' });
+		const slot = document.createElement('slot');
+		shadowRoot.append(slot);
+	}
 }
 
-describe('Radiant JSX custom-element interop', () => {
-	beforeAll(() => {
-		defineInteropElement();
-	});
+customElements.define(tagName, RadiantJsxInteropElement);
 
+describe('Radiant JSX custom-element interop', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
 	});

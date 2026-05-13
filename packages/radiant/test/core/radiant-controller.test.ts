@@ -17,6 +17,7 @@ import { onEvent } from '../../src/decorators/on-event';
 import { onUpdated } from '../../src/decorators/on-updated';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
+import { createCustomElement } from '../utils/create-custom-element';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
@@ -136,9 +137,7 @@ class ContextProviderElement extends RadiantElement {
 	context!: ContextProvider<typeof controllerContext>;
 }
 
-if (!customElements.get('controller-context-provider-element')) {
-	customElements.define('controller-context-provider-element', ContextProviderElement);
-}
+customElements.define('controller-context-provider-element', ContextProviderElement);
 
 class ContextConsumerElement extends RadiantElement {
 	@consumeContext(controllerContext) context!: ContextProvider<typeof controllerContext>;
@@ -149,9 +148,7 @@ class ContextConsumerElement extends RadiantElement {
 	}
 }
 
-if (!customElements.get('controller-context-consumer-element')) {
-	customElements.define('controller-context-consumer-element', ContextConsumerElement);
-}
+customElements.define('controller-context-consumer-element', ContextConsumerElement);
 
 class ShadowBoundaryHost extends HTMLElement {
 	constructor() {
@@ -160,9 +157,7 @@ class ShadowBoundaryHost extends HTMLElement {
 	}
 }
 
-if (!customElements.get('controller-shadow-boundary')) {
-	customElements.define('controller-shadow-boundary', ShadowBoundaryHost);
-}
+customElements.define('controller-shadow-boundary', ShadowBoundaryHost);
 
 describeWhenStandard('RadiantController', () => {
 	test('supports shared reactive field bindings', () => {
@@ -431,7 +426,7 @@ describeWhenStandard('RadiantController', () => {
 
 	test('resolves context from a RadiantController provider into a nested RadiantElement consumer', async () => {
 		const providerHost = document.createElement('div');
-		const consumer = document.createElement('controller-context-consumer-element') as ContextConsumerElement;
+		const consumer = createCustomElement<ContextConsumerElement>('controller-context-consumer-element');
 		providerHost.appendChild(consumer);
 		document.body.appendChild(providerHost);
 
@@ -451,7 +446,7 @@ describeWhenStandard('RadiantController', () => {
 	});
 
 	test('resolves context from a RadiantElement provider into a nested RadiantController consumer', async () => {
-		const provider = document.createElement('controller-context-provider-element') as ContextProviderElement;
+		const provider = createCustomElement<ContextProviderElement>('controller-context-provider-element');
 		const consumerHost = document.createElement('div');
 		provider.appendChild(consumerHost);
 		document.body.appendChild(provider);
@@ -473,7 +468,7 @@ describeWhenStandard('RadiantController', () => {
 
 	test('resolves controller context across a descendant shadow boundary into a RadiantController consumer', async () => {
 		const providerHost = document.createElement('div');
-		const shadowBoundary = document.createElement('controller-shadow-boundary') as ShadowBoundaryHost;
+		const shadowBoundary = createCustomElement<ShadowBoundaryHost>('controller-shadow-boundary');
 		const consumerHost = document.createElement('div');
 		shadowBoundary.shadowRoot?.appendChild(consumerHost);
 		providerHost.appendChild(shadowBoundary);
@@ -499,8 +494,8 @@ describeWhenStandard('RadiantController', () => {
 
 	test('resolves controller context across a descendant shadow boundary into a RadiantElement consumer', async () => {
 		const providerHost = document.createElement('div');
-		const shadowBoundary = document.createElement('controller-shadow-boundary') as ShadowBoundaryHost;
-		const consumer = document.createElement('controller-context-consumer-element') as ContextConsumerElement;
+		const shadowBoundary = createCustomElement<ShadowBoundaryHost>('controller-shadow-boundary');
+		const consumer = createCustomElement<ContextConsumerElement>('controller-context-consumer-element');
 		shadowBoundary.shadowRoot?.appendChild(consumer);
 		providerHost.appendChild(shadowBoundary);
 		document.body.appendChild(providerHost);
@@ -521,7 +516,7 @@ describeWhenStandard('RadiantController', () => {
 	});
 
 	test('reconnects a RadiantController consumer to context updates after disconnect', async () => {
-		const provider = document.createElement('controller-context-provider-element') as ContextProviderElement;
+		const provider = createCustomElement<ContextProviderElement>('controller-context-provider-element');
 		const consumerHost = document.createElement('div');
 		provider.appendChild(consumerHost);
 		document.body.appendChild(provider);

@@ -12,12 +12,6 @@ import { createEventListener } from '../../src/helpers/create-event-listener';
 import { createQuery } from '../../src/helpers/create-query';
 import type { EventEmitter } from '../../src/tools/event-emitter';
 
-function defineElement(tag: string, constructor: CustomElementConstructor): void {
-	if (!customElements.get(tag)) {
-		customElements.define(tag, constructor);
-	}
-}
-
 type CounterSnapshot = {
 	count: number;
 	draft: string;
@@ -76,7 +70,7 @@ class DecoratorCounterParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-decorator-counter-element', DecoratorCounterParityElement);
+customElements.define('parity-decorator-counter-element', DecoratorCounterParityElement);
 
 class PlainCounterParityElement extends RadiantElement {
 	declare count: number;
@@ -120,7 +114,7 @@ class PlainCounterParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-plain-counter-element', PlainCounterParityElement);
+customElements.define('parity-plain-counter-element', PlainCounterParityElement);
 
 const counterVariants = [
 	{
@@ -157,7 +151,7 @@ class DecoratorEventEmitterParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-decorator-event-emitter', DecoratorEventEmitterParityElement);
+customElements.define('parity-decorator-event-emitter', DecoratorEventEmitterParityElement);
 
 class DecoratorEventListenerParityElement extends RadiantElement {
 	lastMessage = 'idle';
@@ -179,7 +173,7 @@ class DecoratorEventListenerParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-decorator-event-listener', DecoratorEventListenerParityElement);
+customElements.define('parity-decorator-event-listener', DecoratorEventListenerParityElement);
 
 class PlainEventEmitterParityElement extends RadiantElement {
 	readonly messageEvent: EventEmitter<{ value: string }>;
@@ -198,7 +192,7 @@ class PlainEventEmitterParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-plain-event-emitter', PlainEventEmitterParityElement);
+customElements.define('parity-plain-event-emitter', PlainEventEmitterParityElement);
 
 class PlainEventListenerParityElement extends RadiantElement {
 	lastMessage = 'idle';
@@ -226,7 +220,7 @@ class PlainEventListenerParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-plain-event-listener', PlainEventListenerParityElement);
+customElements.define('parity-plain-event-listener', PlainEventListenerParityElement);
 
 const eventVariants = [
 	{
@@ -304,7 +298,7 @@ class DecoratorShadowParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-decorator-shadow-element', DecoratorShadowParityElement);
+customElements.define('parity-decorator-shadow-element', DecoratorShadowParityElement);
 
 class PlainShadowParityElement extends RadiantElement {
 	declare clicks: number;
@@ -354,7 +348,7 @@ class PlainShadowParityElement extends RadiantElement {
 	}
 }
 
-defineElement('parity-plain-shadow-element', PlainShadowParityElement);
+customElements.define('parity-plain-shadow-element', PlainShadowParityElement);
 
 const shadowVariants = [
 	{

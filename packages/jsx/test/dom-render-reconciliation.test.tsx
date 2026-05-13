@@ -251,13 +251,11 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const tagName = 'radiant-jsx-binding-receiver';
 
-		if (!customElements.get(tagName)) {
-			class BindingReceiverElement extends HTMLElement {
-				payload: unknown = 'unset';
-			}
-
-			customElements.define(tagName, BindingReceiverElement);
+		class BindingReceiverElement extends HTMLElement {
+			payload: unknown = 'unset';
 		}
+
+		customElements.define(tagName, BindingReceiverElement);
 
 		const container = document.createElement('div');
 		const root = createRoot(container);

@@ -28,9 +28,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 	}
 }
 
-if (!customElements.get('jsx-receiver')) {
-	customElements.define('jsx-receiver', JsxReceiverElement);
-}
+customElements.define('jsx-receiver', JsxReceiverElement);
 
 class MyRadiantElementElement extends RadiantElement {
 	clicks = 0;
@@ -49,9 +47,7 @@ class MyRadiantElementElement extends RadiantElement {
 	}
 }
 
-if (!customElements.get('my-radiant-component-jsx')) {
-	customElements.define('my-radiant-component-jsx', MyRadiantElementElement);
-}
+customElements.define('my-radiant-component-jsx', MyRadiantElementElement);
 
 class RadiantElementTodoItemTest extends RadiantElement {
 	declare complete: boolean;
@@ -68,9 +64,7 @@ class RadiantElementTodoItemTest extends RadiantElement {
 	}
 }
 
-if (!customElements.get('radiant-element-todo-item-test')) {
-	customElements.define('radiant-element-todo-item-test', RadiantElementTodoItemTest);
-}
+customElements.define('radiant-element-todo-item-test', RadiantElementTodoItemTest);
 
 class RadiantElementTodoHostTest extends RadiantElement {
 	done = true;
@@ -81,9 +75,7 @@ class RadiantElementTodoHostTest extends RadiantElement {
 	}
 }
 
-if (!customElements.get('radiant-element-todo-host-test')) {
-	customElements.define('radiant-element-todo-host-test', RadiantElementTodoHostTest);
-}
+customElements.define('radiant-element-todo-host-test', RadiantElementTodoHostTest);
 
 type JsxSharedState = {
 	count: number;
@@ -128,9 +120,7 @@ class JsxContextControls extends RadiantElement {
 	}
 }
 
-if (!customElements.get('jsx-context-controls')) {
-	customElements.define('jsx-context-controls', JsxContextControls);
-}
+customElements.define('jsx-context-controls', JsxContextControls);
 
 class JsxContextMirror extends RadiantElement {
 	@contextSelector({ context: jsxSharedContext })
@@ -147,9 +137,7 @@ class JsxContextMirror extends RadiantElement {
 	}
 }
 
-if (!customElements.get('jsx-context-mirror')) {
-	customElements.define('jsx-context-mirror', JsxContextMirror);
-}
+customElements.define('jsx-context-mirror', JsxContextMirror);
 
 class JsxContextNoteEditor extends RadiantElement {
 	@consumeContext(jsxSharedContext) context!: ContextProvider<typeof jsxSharedContext>;
@@ -192,9 +180,7 @@ class JsxContextNoteEditor extends RadiantElement {
 	}
 }
 
-if (!customElements.get('jsx-context-note-editor')) {
-	customElements.define('jsx-context-note-editor', JsxContextNoteEditor);
-}
+customElements.define('jsx-context-note-editor', JsxContextNoteEditor);
 
 class JsxContextProviderElement extends RadiantElement {
 	@provideContext<typeof jsxSharedContext>({
@@ -214,9 +200,7 @@ class JsxContextProviderElement extends RadiantElement {
 	}
 }
 
-if (!customElements.get('jsx-context-provider')) {
-	customElements.define('jsx-context-provider', JsxContextProviderElement);
-}
+customElements.define('jsx-context-provider', JsxContextProviderElement);
 
 describe('RadiantElement JSX integration', () => {
 	beforeEach(() => {

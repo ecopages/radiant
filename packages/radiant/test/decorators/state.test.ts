@@ -38,13 +38,9 @@ class MyComponentStateElement extends RadiantElement {
 	}
 }
 
-if (!customElements.get('my-state-field')) {
-	customElements.define('my-state-field', MyStateElement);
-}
+customElements.define('my-state-field', MyStateElement);
 
-if (!customElements.get('my-component-state-field')) {
-	customElements.define('my-component-state-field', MyComponentStateElement);
-}
+customElements.define('my-component-state-field', MyComponentStateElement);
 
 describe('@state', () => {
 	test('updates a plain RadiantElement without implicit binding', () => {
