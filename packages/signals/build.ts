@@ -20,7 +20,7 @@ type PackageJsonShape = {
 	module?: string;
 	types?: string;
 	type?: string;
-	publishConfig?: { access: string };
+	publishConfig?: { access?: string; directory?: string };
 	sideEffects?: boolean | string[];
 	keywords?: string[];
 	files?: string[];
@@ -69,7 +69,7 @@ function createDistPackageJson(): PackageJsonShape {
 		module: packageJson.module ? stripDistPrefix(packageJson.module) : undefined,
 		types: packageJson.types ? stripDistPrefix(packageJson.types) : undefined,
 		type: packageJson.type,
-		publishConfig: packageJson.publishConfig,
+		publishConfig: packageJson.publishConfig?.access ? { access: packageJson.publishConfig.access } : undefined,
 		sideEffects: packageJson.sideEffects,
 		files: ['**/*'],
 		keywords: packageJson.keywords,
@@ -101,6 +101,15 @@ if (!build.success) {
 
 if (build.success) {
 	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
+		if (!error) {
+			return;
+		}
+
+		console.log('[@ecopages/signals]', error);
+		process.exitCode = 1;
+	});
+
+	copyFile(path.join(import.meta.dir, 'README.md'), path.join(import.meta.dir, 'dist', 'README.md'), (error) => {
 		if (!error) {
 			return;
 		}
