@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/signals",
-	"version": "0.3.0-alpha.19",
+	"version": "0.3.0-alpha.20",
 	"description": "Renderer-agnostic signal primitives based on the TC39 Signals proposal",
 	"repository": {
 		"type": "git",
