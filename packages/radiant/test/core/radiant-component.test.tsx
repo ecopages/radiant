@@ -12,6 +12,7 @@ import { prop } from '../../src/decorators/prop';
 import { querySlot } from '../../src/decorators/query-slot';
 import { signal } from '../../src/decorators/signal';
 import { state } from '../../src/decorators/state';
+import { createCustomElement } from '../utils/create-custom-element';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import {
 	renderRadiantElementHostToString,
@@ -87,7 +88,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('greeting-card-test', GreetingCard);
 
-		const element = document.createElement('greeting-card-test') as GreetingCard;
+		const element = createCustomElement<GreetingCard>('greeting-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -130,7 +131,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('shadow-greeting-card-test', ShadowGreetingCard);
 
-		const element = document.createElement('shadow-greeting-card-test') as ShadowGreetingCard;
+		const element = createCustomElement<ShadowGreetingCard>('shadow-greeting-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -153,7 +154,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('passthrough-card-test', PassthroughCard);
 
-		const element = document.createElement('passthrough-card-test') as PassthroughCard;
+		const element = createCustomElement<PassthroughCard>('passthrough-card-test');
 		const summary = document.createElement('p');
 		summary.textContent = 'Projected summary';
 		const action = document.createElement('button');
@@ -179,7 +180,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('count-card-test', CountCard);
 
-		const element = document.createElement('count-card-test') as CountCard;
+		const element = createCustomElement<CountCard>('count-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -216,7 +217,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('reactive-count-card-test', ReactiveCountCard);
 
-		const element = document.createElement('reactive-count-card-test') as ReactiveCountCard;
+		const element = createCustomElement<ReactiveCountCard>('reactive-count-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -241,7 +242,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('deferred-card-test', DeferredCard);
 
-		const element = document.createElement('deferred-card-test') as DeferredCard;
+		const element = createCustomElement<DeferredCard>('deferred-card-test');
 		element.message = 'Queued render';
 		element.update();
 
@@ -270,7 +271,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('shared-signal-store-card-test', SharedSignalStoreCard);
 
-		const element = document.createElement('shared-signal-store-card-test') as SharedSignalStoreCard;
+		const element = createCustomElement<SharedSignalStoreCard>('shared-signal-store-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -301,7 +302,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('server-greeting-card-test', ServerGreetingCard);
 
-		const element = document.createElement('server-greeting-card-test') as ServerGreetingCard;
+		const element = createCustomElement<ServerGreetingCard>('server-greeting-card-test');
 
 		expect(renderRadiantElementViewToString(element)).toBe('<p data-ref="message">Hello SSR</p>');
 	});
@@ -317,7 +318,7 @@ describe('RadiantElement', () => {
 
 		customElement('server-host-greeting-card-test')(ServerHostGreetingCard);
 
-		const element = document.createElement('server-host-greeting-card-test') as ServerHostGreetingCard;
+		const element = createCustomElement<ServerHostGreetingCard>('server-host-greeting-card-test');
 
 		expect(renderRadiantElementHostToString(element)).toBe(
 			'<server-host-greeting-card-test><p data-ref="message">Hello host SSR</p></server-host-greeting-card-test>',
@@ -329,7 +330,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('server-passthrough-card-test', ServerPassthroughCard);
 
-		const element = document.createElement('server-passthrough-card-test') as ServerPassthroughCard;
+		const element = createCustomElement<ServerPassthroughCard>('server-passthrough-card-test');
 		element.innerHTML = '<p>Projected body</p><button type="button">Open</button>';
 
 		expect(renderRadiantElementViewToString(element)).toBe(
@@ -359,7 +360,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('slot-card-test', SlotCard);
 
-		const element = document.createElement('slot-card-test') as SlotCard;
+		const element = createCustomElement<SlotCard>('slot-card-test');
 		const heading = document.createElement('h1');
 		heading.setAttribute('slot', 'header');
 		heading.textContent = 'Projected heading';
@@ -391,7 +392,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('fallback-slot-card-test', FallbackSlotCard);
 
-		const element = document.createElement('fallback-slot-card-test') as FallbackSlotCard;
+		const element = createCustomElement<FallbackSlotCard>('fallback-slot-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -414,7 +415,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('dynamic-slot-card-test', DynamicSlotCard);
 
-		const element = document.createElement('dynamic-slot-card-test') as DynamicSlotCard;
+		const element = createCustomElement<DynamicSlotCard>('dynamic-slot-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -454,7 +455,7 @@ describe('RadiantElement', () => {
 			}
 		}
 
-		const element = document.createElement('client-svg-host-test') as ClientSvgHost;
+		const element = createCustomElement<ClientSvgHost>('client-svg-host-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -477,11 +478,9 @@ describe('RadiantElement', () => {
 	test('direct JSX render into a custom-element host preserves camel-cased SVG markup', () => {
 		class PlainJsxSvgHost extends HTMLElement {}
 
-		if (!customElements.get('plain-jsx-svg-host-test')) {
-			customElements.define('plain-jsx-svg-host-test', PlainJsxSvgHost);
-		}
+		customElements.define('plain-jsx-svg-host-test', PlainJsxSvgHost);
 
-		const host = document.createElement('plain-jsx-svg-host-test') as PlainJsxSvgHost;
+		const host = createCustomElement<PlainJsxSvgHost>('plain-jsx-svg-host-test');
 
 		renderJsx(
 			jsx('div', {
@@ -609,17 +608,11 @@ describe('RadiantElement', () => {
 		setCustomElementTagName(NestedSsrInsightCard, 'nested-ssr-insight-card-test');
 		setCustomElementTagName(NestedSsrBoardCard, 'nested-ssr-board-card-test');
 
-		if (!customElements.get('nested-ssr-summary-card-test')) {
-			customElements.define('nested-ssr-summary-card-test', NestedSsrSummaryCard);
-		}
+		customElements.define('nested-ssr-summary-card-test', NestedSsrSummaryCard);
 
-		if (!customElements.get('nested-ssr-insight-card-test')) {
-			customElements.define('nested-ssr-insight-card-test', NestedSsrInsightCard);
-		}
+		customElements.define('nested-ssr-insight-card-test', NestedSsrInsightCard);
 
-		if (!customElements.get('nested-ssr-board-card-test')) {
-			customElements.define('nested-ssr-board-card-test', NestedSsrBoardCard);
-		}
+		customElements.define('nested-ssr-board-card-test', NestedSsrBoardCard);
 
 		const html = renderRadiantElementHostToString(new NestedSsrBoardCard(), { mode: 'hydrate' });
 
@@ -912,9 +905,7 @@ describe('RadiantElement', () => {
 				}
 			}
 
-			if (!customElements.get('server-host-signal-card-test')) {
-				customElements.define('server-host-signal-card-test', ServerHostSignalCard);
-			}
+			customElements.define('server-host-signal-card-test', ServerHostSignalCard);
 			setCustomElementTagName(ServerHostSignalCard, 'server-host-signal-card-test');
 
 			const element = new ServerHostSignalCard();
@@ -951,9 +942,7 @@ describe('RadiantElement', () => {
 			}
 		}
 
-		if (!customElements.get('server-host-context-card-test')) {
-			customElements.define('server-host-context-card-test', ServerHostContextCard);
-		}
+		customElements.define('server-host-context-card-test', ServerHostContextCard);
 		setCustomElementTagName(ServerHostContextCard, 'server-host-context-card-test');
 
 		const element = new ServerHostContextCard();
@@ -992,9 +981,7 @@ describe('RadiantElement', () => {
 			}
 		}
 
-		if (!customElements.get(tagName)) {
-			customElements.define(tagName, ScriptedRadiantProviderHost);
-		}
+		customElements.define(tagName, ScriptedRadiantProviderHost);
 		setCustomElementTagName(ScriptedRadiantProviderHost, tagName);
 
 		const html = await renderComponentToString(ScriptedRadiantProviderHost, {
@@ -1087,12 +1074,8 @@ describe('RadiantElement', () => {
 			}
 		}
 
-		if (!customElements.get(childTagName)) {
-			customElements.define(childTagName, NestedRadiantChildHost);
-		}
-		if (!customElements.get(parentTagName)) {
-			customElements.define(parentTagName, NestedRadiantParentHost);
-		}
+		customElements.define(childTagName, NestedRadiantChildHost);
+		customElements.define(parentTagName, NestedRadiantParentHost);
 		setCustomElementTagName(NestedRadiantChildHost, childTagName);
 		setCustomElementTagName(NestedRadiantParentHost, parentTagName);
 
@@ -1143,7 +1126,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('hydrated-counter-test', HydratedCounter);
 
-		const serverElement = document.createElement('hydrated-counter-test') as HydratedCounter;
+		const serverElement = createCustomElement<HydratedCounter>('hydrated-counter-test');
 		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
 		installRadiantHydrator();
 
@@ -1282,7 +1265,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('non-hydrated-counter-test', NonHydratedCounter);
 
-		const serverElement = document.createElement('non-hydrated-counter-test') as NonHydratedCounter;
+		const serverElement = createCustomElement<NonHydratedCounter>('non-hydrated-counter-test');
 		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
 
 		document.body.innerHTML = `<non-hydrated-counter-test>${serverMarkup}</non-hydrated-counter-test>`;
@@ -1330,7 +1313,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('deferred-hydrated-card-test', DeferredHydratedCard);
 
-		const serverElement = document.createElement('deferred-hydrated-card-test') as DeferredHydratedCard;
+		const serverElement = createCustomElement<DeferredHydratedCard>('deferred-hydrated-card-test');
 		const serverMarkup = renderRadiantElementViewToString(serverElement, { mode: 'hydrate' });
 		installRadiantHydrator();
 
@@ -1386,7 +1369,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('bound-reactive-counter-test', BoundReactiveCounter);
 
-		const element = document.createElement('bound-reactive-counter-test') as BoundReactiveCounter;
+		const element = createCustomElement<BoundReactiveCounter>('bound-reactive-counter-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {
@@ -1444,7 +1427,7 @@ describe('RadiantElement', () => {
 
 		customElements.define('bound-prop-element-test', BoundPropElement);
 
-		const element = document.createElement('bound-prop-element-test') as BoundPropElement;
+		const element = createCustomElement<BoundPropElement>('bound-prop-element-test');
 		const firstBinding = element.bind('count');
 		const secondBinding = element.bind('count');
 		const namespaceBinding = element.bindings.count;
@@ -1483,7 +1466,7 @@ describe('RadiantElement', () => {
 	});
 
 	test('tracks plain @prop and @state reads during render without manual rerender wiring', async () => {
-		const element = document.createElement('tracked-reactive-reads-card-test') as TrackedReactiveReadsCard;
+		const element = createCustomElement<TrackedReactiveReadsCard>('tracked-reactive-reads-card-test');
 		document.body.appendChild(element);
 
 		await waitFor(() => {

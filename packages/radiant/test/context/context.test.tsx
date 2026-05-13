@@ -11,6 +11,7 @@ import {
 	provideContext,
 } from '../../src/context';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { createCustomElement } from '../utils/create-custom-element';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
@@ -67,9 +68,7 @@ class AutoUpdatingSelectedConsumer extends RadiantElement {
 	}
 }
 
-if (!customElements.get('auto-updating-selected-consumer')) {
-	customElements.define('auto-updating-selected-consumer', AutoUpdatingSelectedConsumer);
-}
+customElements.define('auto-updating-selected-consumer', AutoUpdatingSelectedConsumer);
 
 class AutoUpdatingFullContextConsumer extends RadiantElement {
 	@contextSelector({ context: testContext })
@@ -80,9 +79,7 @@ class AutoUpdatingFullContextConsumer extends RadiantElement {
 	}
 }
 
-if (!customElements.get('auto-updating-full-context-consumer')) {
-	customElements.define('auto-updating-full-context-consumer', AutoUpdatingFullContextConsumer);
-}
+customElements.define('auto-updating-full-context-consumer', AutoUpdatingFullContextConsumer);
 
 class OptOutAutoUpdatingConsumer extends RadiantElement {
 	@consumeContext(testContext) context!: ContextProvider<typeof testContext>;
@@ -98,9 +95,7 @@ class OptOutAutoUpdatingConsumer extends RadiantElement {
 	}
 }
 
-if (!customElements.get('opt-out-auto-updating-consumer')) {
-	customElements.define('opt-out-auto-updating-consumer', OptOutAutoUpdatingConsumer);
-}
+customElements.define('opt-out-auto-updating-consumer', OptOutAutoUpdatingConsumer);
 
 class SelectedSliceEffectConsumer extends RadiantElement {
 	changeCount = 0;
@@ -111,9 +106,7 @@ class SelectedSliceEffectConsumer extends RadiantElement {
 	}
 }
 
-if (!customElements.get('selected-slice-effect-consumer')) {
-	customElements.define('selected-slice-effect-consumer', SelectedSliceEffectConsumer);
-}
+customElements.define('selected-slice-effect-consumer', SelectedSliceEffectConsumer);
 
 class SelectedSliceRenderConsumer extends RadiantElement {
 	requestUpdateCount = 0;
@@ -131,9 +124,7 @@ class SelectedSliceRenderConsumer extends RadiantElement {
 	}
 }
 
-if (!customElements.get('selected-slice-render-consumer')) {
-	customElements.define('selected-slice-render-consumer', SelectedSliceRenderConsumer);
-}
+customElements.define('selected-slice-render-consumer', SelectedSliceRenderConsumer);
 
 const nestedHydrationContext = createContext<TestContext>(Symbol('nested-hydration-context'));
 
@@ -146,9 +137,7 @@ class NestedOuterContextProvider extends RadiantElement {
 	context!: ContextProvider<typeof nestedHydrationContext>;
 }
 
-if (!customElements.get('nested-outer-context-provider')) {
-	customElements.define('nested-outer-context-provider', NestedOuterContextProvider);
-}
+customElements.define('nested-outer-context-provider', NestedOuterContextProvider);
 
 class NestedInnerContextProvider extends RadiantElement {
 	@provideContext<typeof nestedHydrationContext>({
@@ -159,9 +148,7 @@ class NestedInnerContextProvider extends RadiantElement {
 	context!: ContextProvider<typeof nestedHydrationContext>;
 }
 
-if (!customElements.get('nested-inner-context-provider')) {
-	customElements.define('nested-inner-context-provider', NestedInnerContextProvider);
-}
+customElements.define('nested-inner-context-provider', NestedInnerContextProvider);
 
 class LazyContextProvider extends RadiantElement {
 	@provideContext<typeof lazyContext>({
@@ -170,9 +157,7 @@ class LazyContextProvider extends RadiantElement {
 	context!: ContextProvider<typeof lazyContext>;
 }
 
-if (!customElements.get('lazy-context-provider')) {
-	customElements.define('lazy-context-provider', LazyContextProvider);
-}
+customElements.define('lazy-context-provider', LazyContextProvider);
 
 class LazySelectedConsumer extends RadiantElement {
 	@contextSelector({ context: lazyContext, select: (context) => context.value })
@@ -183,9 +168,7 @@ class LazySelectedConsumer extends RadiantElement {
 	}
 }
 
-if (!customElements.get('lazy-selected-consumer')) {
-	customElements.define('lazy-selected-consumer', LazySelectedConsumer);
-}
+customElements.define('lazy-selected-consumer', LazySelectedConsumer);
 
 class LoggerContextProvider extends RadiantElement {
 	@provideContext<typeof loggerContext>({
@@ -197,9 +180,7 @@ class LoggerContextProvider extends RadiantElement {
 	context!: ContextProvider<typeof loggerContext>;
 }
 
-if (!customElements.get('logger-context-provider')) {
-	customElements.define('logger-context-provider', LoggerContextProvider);
-}
+customElements.define('logger-context-provider', LoggerContextProvider);
 
 describe('Context', () => {
 	beforeEach(() => {
@@ -207,8 +188,8 @@ describe('Context', () => {
 	});
 
 	test('it provides and consumes context correctly', async () => {
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
-		const contextConsumer = document.createElement('my-context-consumer') as MyContextConsumer;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
+		const contextConsumer = createCustomElement<MyContextConsumer>('my-context-consumer');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
@@ -223,7 +204,7 @@ describe('Context', () => {
 
 	test('it initializes with the provided context and initial value', () => {
 		const initialValue = { value: 10 };
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
 
 		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
 			contextProvider.context.setContext(initialValue);
@@ -232,7 +213,7 @@ describe('Context', () => {
 	});
 
 	test('it sets and gets context correctly', async () => {
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
 		const update = { value: 20 };
 		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
 			contextProvider.context.setContext(update);
@@ -241,7 +222,7 @@ describe('Context', () => {
 	});
 
 	test('it can initialize context from a later object update when no initial value is provided', () => {
-		const contextProvider = document.createElement('lazy-context-provider') as LazyContextProvider;
+		const contextProvider = createCustomElement<LazyContextProvider>('lazy-context-provider');
 		const update = { value: 42 };
 
 		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
@@ -253,8 +234,8 @@ describe('Context', () => {
 	});
 
 	test('it cleans up lazy selector subscriptions before the provider gets its first value', async () => {
-		const contextProvider = document.createElement('lazy-context-provider') as LazyContextProvider;
-		const contextConsumer = document.createElement('lazy-selected-consumer') as LazySelectedConsumer;
+		const contextProvider = createCustomElement<LazyContextProvider>('lazy-context-provider');
+		const contextConsumer = createCustomElement<LazySelectedConsumer>('lazy-selected-consumer');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
@@ -281,7 +262,7 @@ describe('Context', () => {
 	});
 
 	test('it does not duplicate selector subscriptions across disconnect and reconnect', async () => {
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
 		const contextConsumer = document.createElement(
 			'auto-updating-selected-consumer',
 		) as AutoUpdatingSelectedConsumer;
@@ -325,8 +306,8 @@ describe('Context', () => {
 		}
 		customElements.define('manual-context-element', ManualConsumer);
 
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
-		const contextConsumer = document.createElement('manual-context-element') as MyContextConsumer;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
+		const contextConsumer = createCustomElement<MyContextConsumer>('manual-context-element');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 		contextProvider.addEventListener(ContextEventsTypes.MOUNTED, () => {
@@ -350,12 +331,10 @@ describe('Context', () => {
 			}
 		}
 
-		if (!customElements.get('mixed-subscriber-consumer')) {
-			customElements.define('mixed-subscriber-consumer', MixedSubscriberConsumer);
-		}
+		customElements.define('mixed-subscriber-consumer', MixedSubscriberConsumer);
 
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
-		const contextConsumer = document.createElement('mixed-subscriber-consumer') as MixedSubscriberConsumer;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
+		const contextConsumer = createCustomElement<MixedSubscriberConsumer>('mixed-subscriber-consumer');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
@@ -371,8 +350,8 @@ describe('Context', () => {
 	});
 
 	test('@onContextUpdate skips side effects when the selected slice is unchanged', async () => {
-		const contextProvider = document.createElement('logger-context-provider') as LoggerContextProvider;
-		const contextConsumer = document.createElement('selected-slice-effect-consumer') as SelectedSliceEffectConsumer;
+		const contextProvider = createCustomElement<LoggerContextProvider>('logger-context-provider');
+		const contextConsumer = createCustomElement<SelectedSliceEffectConsumer>('selected-slice-effect-consumer');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
@@ -388,8 +367,8 @@ describe('Context', () => {
 	});
 
 	test('field @contextSelector skips requestUpdate when the selected slice is unchanged', async () => {
-		const contextProvider = document.createElement('logger-context-provider') as LoggerContextProvider;
-		const contextConsumer = document.createElement('selected-slice-render-consumer') as SelectedSliceRenderConsumer;
+		const contextProvider = createCustomElement<LoggerContextProvider>('logger-context-provider');
+		const contextConsumer = createCustomElement<SelectedSliceRenderConsumer>('selected-slice-render-consumer');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
@@ -410,7 +389,7 @@ describe('Context', () => {
 	});
 
 	test('field @contextSelector auto-rerenders RadiantElement when a selected slice changes', async () => {
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
 		const contextConsumer = document.createElement(
 			'auto-updating-selected-consumer',
 		) as AutoUpdatingSelectedConsumer;
@@ -429,7 +408,7 @@ describe('Context', () => {
 	});
 
 	test('field @contextSelector auto-rerenders RadiantElement when the full context changes', async () => {
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
 		const contextConsumer = document.createElement(
 			'auto-updating-full-context-consumer',
 		) as AutoUpdatingFullContextConsumer;
@@ -448,8 +427,8 @@ describe('Context', () => {
 	});
 
 	test('@onContextUpdate can opt out of automatic requestUpdate on RadiantElement consumers', async () => {
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
-		const contextConsumer = document.createElement('opt-out-auto-updating-consumer') as OptOutAutoUpdatingConsumer;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
+		const contextConsumer = createCustomElement<OptOutAutoUpdatingConsumer>('opt-out-auto-updating-consumer');
 		contextProvider.appendChild(contextConsumer);
 		document.body.appendChild(contextProvider);
 
@@ -483,7 +462,7 @@ describe('Context', () => {
 	});
 
 	test('it exposes a first-class hydration script helper on providers', () => {
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
 		document.body.appendChild(contextProvider);
 		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
 
@@ -494,7 +473,7 @@ describe('Context', () => {
 	});
 
 	test('it can dehydrate only the serializable slice of a provider context', () => {
-		const contextProvider = document.createElement('logger-context-provider') as LoggerContextProvider;
+		const contextProvider = createCustomElement<LoggerContextProvider>('logger-context-provider');
 		document.body.appendChild(contextProvider);
 		const scriptMarkup = contextProvider.context.renderHydrationScriptTag();
 
@@ -598,12 +577,10 @@ describe('Context', () => {
 			}
 		}
 
-		if (!customElements.get('delayed-context-consumer')) {
-			customElements.define('delayed-context-consumer', DelayedContextConsumer);
-		}
+		customElements.define('delayed-context-consumer', DelayedContextConsumer);
 
-		const contextProvider = document.createElement('my-context-provider') as MyContextProvider;
-		const contextConsumer = document.createElement('delayed-context-consumer') as DelayedContextConsumer;
+		const contextProvider = createCustomElement<MyContextProvider>('my-context-provider');
+		const contextConsumer = createCustomElement<DelayedContextConsumer>('delayed-context-consumer');
 
 		contextProvider.appendChild(contextConsumer);
 		expect(contextConsumer.isConnected).toBe(false);
@@ -634,9 +611,7 @@ describe('Context', () => {
 			}
 		}
 
-		if (!customElements.get('late-upgrade-consumer')) {
-			customElements.define('late-upgrade-consumer', LateUpgradeConsumer);
-		}
+		customElements.define('late-upgrade-consumer', LateUpgradeConsumer);
 
 		document.body.innerHTML =
 			'<late-upgrade-provider><late-upgrade-consumer></late-upgrade-consumer></late-upgrade-provider>';
@@ -649,9 +624,7 @@ describe('Context', () => {
 			context!: ContextProvider<typeof lateContext>;
 		}
 
-		if (!customElements.get('late-upgrade-provider')) {
-			customElements.define('late-upgrade-provider', LateUpgradeProvider);
-		}
+		customElements.define('late-upgrade-provider', LateUpgradeProvider);
 
 		const consumer = document.querySelector('late-upgrade-consumer') as LateUpgradeConsumer | null;
 

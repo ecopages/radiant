@@ -1,3 +1,5 @@
+/** @jsxImportSource @ecopages/jsx */
+
 import { waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -5,12 +7,6 @@ import { onEvent } from '../../src/decorators/on-event';
 import { prop } from '../../src/decorators/prop';
 import { state } from '../../src/decorators/state';
 import { createEventListener } from '../../src/helpers/create-event-listener';
-
-function defineElement(tag: string, constructor: CustomElementConstructor): void {
-	if (!customElements.get(tag)) {
-		customElements.define(tag, constructor);
-	}
-}
 
 type CounterSnapshot = {
 	count: number;
@@ -57,7 +53,7 @@ class DecoratorCounterParityComponent extends RadiantElement {
 	}
 }
 
-defineElement('parity-decorator-counter-component', DecoratorCounterParityComponent);
+customElements.define('parity-decorator-counter-component', DecoratorCounterParityComponent);
 
 class PlainCounterParityComponent extends RadiantElement {
 	declare count: number;
@@ -93,7 +89,7 @@ class PlainCounterParityComponent extends RadiantElement {
 	}
 }
 
-defineElement('parity-plain-counter-component', PlainCounterParityComponent);
+customElements.define('parity-plain-counter-component', PlainCounterParityComponent);
 
 const counterVariants = [
 	{
@@ -142,7 +138,7 @@ class DecoratorToggleParityComponent extends RadiantElement {
 	}
 }
 
-defineElement('parity-decorator-toggle-component', DecoratorToggleParityComponent);
+customElements.define('parity-decorator-toggle-component', DecoratorToggleParityComponent);
 
 class PlainToggleParityComponent extends RadiantElement {
 	declare active: boolean;
@@ -172,7 +168,7 @@ class PlainToggleParityComponent extends RadiantElement {
 	}
 }
 
-defineElement('parity-plain-toggle-component', PlainToggleParityComponent);
+customElements.define('parity-plain-toggle-component', PlainToggleParityComponent);
 
 const toggleVariants = [
 	{
@@ -218,7 +214,7 @@ class DecoratorListParityComponent extends RadiantElement {
 	}
 }
 
-defineElement('parity-decorator-list-component', DecoratorListParityComponent);
+customElements.define('parity-decorator-list-component', DecoratorListParityComponent);
 
 class PlainListParityComponent extends RadiantElement {
 	declare label: string;
@@ -246,7 +242,7 @@ class PlainListParityComponent extends RadiantElement {
 	}
 }
 
-defineElement('parity-plain-list-component', PlainListParityComponent);
+customElements.define('parity-plain-list-component', PlainListParityComponent);
 
 const listVariants = [
 	{

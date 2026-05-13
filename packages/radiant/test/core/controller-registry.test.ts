@@ -107,13 +107,9 @@ registerController('registry-rendered-click', RegistryRenderedClickController);
 registerController('registry-context-provider', RegistryContextProviderController);
 registerController('registry-context-consumer', RegistryContextConsumerController);
 
-if (!customElements.get('registry-context-consumer-element')) {
-	customElements.define('registry-context-consumer-element', RegistryContextConsumerElement);
-}
+customElements.define('registry-context-consumer-element', RegistryContextConsumerElement);
 
-if (!customElements.get('registry-shadow-boundary')) {
-	customElements.define('registry-shadow-boundary', RegistryShadowBoundaryHost);
-}
+customElements.define('registry-shadow-boundary', RegistryShadowBoundaryHost);
 
 afterEach(() => {
 	connectedHosts.length = 0;
