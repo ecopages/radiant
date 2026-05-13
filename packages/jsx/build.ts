@@ -16,6 +16,7 @@ type PackageJsonShape = {
 	module?: string;
 	types?: string;
 	type?: string;
+	publishConfig?: { access?: string; directory?: string };
 	files?: string[];
 	exports?: Record<string, PackageJsonExport>;
 	peerDependencies?: Record<string, string>;
@@ -67,6 +68,7 @@ function createDistPackageJson(): PackageJsonShape {
 		module: packageJson.module ? stripDistPrefix(packageJson.module) : undefined,
 		types: packageJson.types ? stripDistPrefix(packageJson.types) : undefined,
 		type: packageJson.type,
+		publishConfig: packageJson.publishConfig?.access ? { access: packageJson.publishConfig.access } : undefined,
 		files: ['**/*'],
 		exports: packageJson.exports
 			? Object.fromEntries(Object.entries(packageJson.exports).map(([key, value]) => [key, rewriteExport(value)]))
@@ -110,6 +112,15 @@ for (const build of [browserBuild, serverBuild]) {
 
 if (browserBuild.success && serverBuild.success) {
 	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
+		if (!error) {
+			return;
+		}
+
+		console.log('[@ecopages/jsx]', error);
+		process.exitCode = 1;
+	});
+
+	copyFile(path.join(import.meta.dir, 'README.md'), path.join(import.meta.dir, 'dist', 'README.md'), (error) => {
 		if (!error) {
 			return;
 		}

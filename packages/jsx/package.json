@@ -1,16 +1,17 @@
 {
 	"name": "@ecopages/jsx",
-	"version": "0.3.0-alpha.16",
+	"version": "0.3.0-alpha.19",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"type": "module",
+	"publishConfig": {
+		"access": "public",
+		"directory": "dist"
+	},
 	"files": [
-		"dist/**",
-		"README.md",
-		"size-budget.json",
-		"package.json"
+		"dist/**"
 	],
 	"exports": {
 		".": {

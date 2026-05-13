@@ -17,6 +17,7 @@ type PackageJsonShape = {
 	main?: string;
 	module?: string;
 	types?: string;
+	publishConfig?: { access?: string; directory?: string };
 	files?: string[];
 	sideEffects?: boolean | string[];
 	exports?: Record<string, PackageJsonExport>;
@@ -58,6 +59,7 @@ function createDistPackageJson(): PackageJsonShape {
 		author: packageJson.author,
 		license: packageJson.license,
 		type: packageJson.type,
+		publishConfig: packageJson.publishConfig?.access ? { access: packageJson.publishConfig.access } : undefined,
 		main: packageJson.main ? stripDistPrefix(packageJson.main) : undefined,
 		module: packageJson.module ? stripDistPrefix(packageJson.module) : undefined,
 		types: packageJson.types ? stripDistPrefix(packageJson.types) : undefined,
@@ -104,6 +106,15 @@ if (!build.success) {
 
 if (build.success) {
 	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
+		if (!error) {
+			return;
+		}
+
+		console.log('[@ecopages/radiant]', error);
+		process.exitCode = 1;
+	});
+
+	copyFile(path.join(import.meta.dir, 'README.md'), path.join(import.meta.dir, 'dist', 'README.md'), (error) => {
 		if (!error) {
 			return;
 		}

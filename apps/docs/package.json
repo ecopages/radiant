@@ -15,12 +15,12 @@
 		"generate:llms": "bun run scripts/generate-llm-docs.ts"
 	},
 	"devDependencies": {
-		"@ecopages/browser-router": "0.2.0-alpha.28",
-		"@ecopages/core": "0.2.0-alpha.28",
-		"@ecopages/file-system": "0.2.0-alpha.28",
-		"@ecopages/ecopages-jsx": "0.2.0-alpha.28",
+		"@ecopages/browser-router": "0.2.0-alpha.34",
+		"@ecopages/core": "0.2.0-alpha.34",
+		"@ecopages/file-system": "0.2.0-alpha.34",
+		"@ecopages/ecopages-jsx": "0.2.0-alpha.34",
 		"@ecopages/jsx": "workspace:*",
-		"@ecopages/postcss-processor": "0.2.0-alpha.28",
+		"@ecopages/postcss-processor": "0.2.0-alpha.34",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/signals": "workspace:*",
 		"@ecopages/scripts-injector": "^0.1.5",

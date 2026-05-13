@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant",
-	"version": "0.3.0-alpha.16",
+	"version": "0.3.0-alpha.19",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ecopages/radiant.git"
@@ -11,6 +11,10 @@
 	"main": "dist/index.js",
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
+	"publishConfig": {
+		"access": "public",
+		"directory": "dist"
+	},
 	"scripts": {
 		"build:lib": "bun run clean && bun run build:files && bun run build:types",
 		"build:files": "bun run ./build.ts",
@@ -44,8 +48,7 @@
 		"@ecopages/signals": ">=0.3.0-alpha.0 <1.0.0"
 	},
 	"files": [
-		"/dist/*",
-		"size-budget.json"
+		"dist/**"
 	],
 	"sideEffects": [
 		"./dist/client/install-hydrator.js",

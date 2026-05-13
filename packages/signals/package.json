@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/signals",
-	"version": "0.3.0-alpha.16",
+	"version": "0.3.0-alpha.19",
 	"description": "Renderer-agnostic signal primitives based on the TC39 Signals proposal",
 	"repository": {
 		"type": "git",
@@ -18,14 +18,12 @@
 	"types": "dist/index.d.ts",
 	"type": "module",
 	"publishConfig": {
-		"access": "public"
+		"access": "public",
+		"directory": "dist"
 	},
 	"sideEffects": false,
 	"files": [
-		"dist/*",
-		"README.md",
-		"size-budget.json",
-		"package.json"
+		"dist/**"
 	],
 	"keywords": [
 		"signals",
