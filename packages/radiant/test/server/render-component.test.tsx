@@ -37,10 +37,6 @@ const cardAssets: readonly RenderedComponentAsset[] = [
 	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },
 ];
 
-declare const __LEGACY_ENVIRONMENT__: boolean;
-
-const describeWhenStandard = __LEGACY_ENVIRONMENT__ ? describe.skip : describe;
-
 @customElement('render-component-card-test')
 class RenderComponentCard extends RadiantElement {
 	count = 1;
