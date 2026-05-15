@@ -213,7 +213,7 @@
 
     "@ecopages/core": ["@ecopages/core@0.2.0-alpha.34", "", { "dependencies": { "@ecopages/file-system": "0.2.0-alpha.34", "@ecopages/logger": "^0.2.3", "@ecopages/scripts-injector": "^0.1.3", "@worker-tools/html-rewriter": "0.1.0-pre.19", "chokidar": "^5.0.0", "esbuild": "^0.28.0", "ghtml": "^4.0.2", "oxc-parser": "^0.124.0", "ws": "^8.18.0" } }, "sha512-Y428z2MIy+Vykez+2dTdx8W2bhg2qSGbe8aXD/i1ciHDIXfiAHfgygZUrEKQB7Fj+KjqEtNWiLhl1hyFLpEMGA=="],
 
-    "@ecopages/ecopages-jsx": ["@ecopages/ecopages-jsx@0.2.0-alpha.34", "", { "dependencies": { "@mdx-js/mdx": "^3.1.1", "vfile": "^6.0.3" }, "peerDependencies": { "@ecopages/core": "0.2.0-alpha.34", "@ecopages/jsx": "0.3.0-alpha.19", "@ecopages/radiant": "0.3.0-alpha.19" } }, "sha512-7sMzC2pZww6hkSp8zO4oqKqz4OCczrvquA57gddYpre9eQ14U8M+IEsd9ohjMdecbc9JbCmr0emWgwys7LfOhg=="],
+    "@ecopages/ecopages-jsx": ["@ecopages/ecopages-jsx@0.2.0-alpha.34", "", { "dependencies": { "@mdx-js/mdx": "^3.1.1", "vfile": "^6.0.3" }, "peerDependencies": { "@ecopages/core": "0.2.0-alpha.34", "@ecopages/jsx": "0.3.0-alpha.21", "@ecopages/radiant": "0.3.0-alpha.21" } }, "sha512-7sMzC2pZww6hkSp8zO4oqKqz4OCczrvquA57gddYpre9eQ14U8M+IEsd9ohjMdecbc9JbCmr0emWgwys7LfOhg=="],
 
     "@ecopages/file-system": ["@ecopages/file-system@0.2.0-alpha.34", "", { "peerDependencies": { "bun": ">=1.0.0" }, "optionalPeers": ["bun"] }, "sha512-QQb1LZ6VMK4EJMNswaBuVdR1SaULpacXkYQuFnWdGWVO3ynRVH4qG3r4kJumJqv4FvdeWVQo6hZ7x0Sr5eg7hg=="],
 
