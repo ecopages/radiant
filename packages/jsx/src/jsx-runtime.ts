@@ -17,6 +17,7 @@ import type {
 	JsxNodeLike,
 	JsxPropsWithChildren,
 	JsxRenderable,
+	SerializableTemplateResultLike,
 	SignalLike,
 	SlotJsxValue,
 	SubscribableJsxValue,
@@ -42,6 +43,7 @@ export type {
 	JsxPrimitive,
 	JsxPropsWithChildren,
 	JsxRenderable,
+	SerializableTemplateResultLike,
 	SignalLike,
 	ServerCustomElementRenderHookContext,
 	ServerRenderableCustomElement,
@@ -299,13 +301,14 @@ export function renderJsxRenderableToString(value: JsxRenderable | undefined): s
 		return '';
 	}
 
-	if (isTemplateResultLike(value)) {
-		const interpolationParts = getTemplateInterpolationParts(value.strings);
+	if (isTemplateResultLike(value) || isSerializableTemplateResultLike(value)) {
+		const template = toTemplateResultLike(value);
+		const interpolationParts = getTemplateInterpolationParts(template.strings);
 		let html = '';
 
-		for (let index = 0; index < value.values.length; index += 1) {
+		for (let index = 0; index < template.values.length; index += 1) {
 			const interpolationPart = interpolationParts[index];
-			let childValue: unknown = value.values[index];
+			let childValue: unknown = template.values[index];
 
 			while (isKeyedJsxValue(childValue)) childValue = childValue.value;
 			while (isSubscribableJsxValue(childValue)) childValue = childValue.getValue();
@@ -315,7 +318,7 @@ export function renderJsxRenderableToString(value: JsxRenderable | undefined): s
 				html +=
 					interpolationPart && interpolationPart.type === 'child'
 						? interpolationPart.string
-						: (value.strings[index] ?? '');
+						: (template.strings[index] ?? '');
 				html += renderJsxRenderableToString(childValue as JsxRenderable);
 				continue;
 			}
@@ -344,7 +347,7 @@ export function renderJsxRenderableToString(value: JsxRenderable | undefined): s
 			html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(String(childValue))}"`;
 		}
 
-		html += value.strings[value.strings.length - 1] ?? '';
+		html += template.strings[template.strings.length - 1] ?? '';
 		return html;
 	}
 
@@ -444,6 +447,45 @@ export function isTemplateResultLike(value: unknown): value is TemplateResultLik
 		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
 		Array.isArray((value as Partial<TemplateResultLike>).values)
 	);
+}
+
+/**
+ * Type guard that narrows `value` to a transport-safe template payload shape.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when `value` exposes the static strings and optional values
+ *   needed to reconstruct a standard template result for rendering.
+ */
+export function isSerializableTemplateResultLike(value: unknown): value is SerializableTemplateResultLike {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		Array.isArray((value as Partial<SerializableTemplateResultLike>).strings) &&
+		((value as Partial<SerializableTemplateResultLike>).values === undefined ||
+			Array.isArray((value as Partial<SerializableTemplateResultLike>).values))
+	);
+}
+
+/**
+ * Normalizes transported template payloads into the canonical runtime template result shape.
+ *
+ * @param value Template payload to normalize.
+ * @returns Runtime template result compatible with the standard rendering pipeline.
+ */
+export function toTemplateResultLike(
+	value: SerializableTemplateResultLike | TemplateResultLike,
+): TemplateResultLike {
+	if (isTemplateResultLike(value)) {
+		return value;
+	}
+
+	return {
+		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
+		rootLocalName: value.rootLocalName,
+		ssrIntrinsicProps: value.ssrIntrinsicProps,
+		strings: value.strings as TemplateStringsArray,
+		values: value.values ?? [],
+	};
 }
 
 /**

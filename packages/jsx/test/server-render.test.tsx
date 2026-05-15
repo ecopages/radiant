@@ -62,6 +62,18 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<section>Hello <strong>SSR</strong> <span>ready</span>!</section>');
 	});
 
+	test('serializes transported template payloads without leaking object coercions', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const deferredTemplate = {
+			strings: ['<div class=', ' ?data-ready=', '>', '</div>'],
+			values: ['shell-stack', true, ['Hello ', jsx('strong', { children: 'transport' })]],
+		} as const;
+
+		expect(renderToString(deferredTemplate as unknown as import('../src/jsx-runtime.ts').JsxRenderable)).toBe(
+			'<div class="shell-stack" data-ready>Hello <strong>transport</strong></div>',
+		);
+	});
+
 	test('serializes very nested mixed trees without leaking wrapper artifacts', async () => {
 		const [{ jsx, jsxs, createSubscribableJsxValue }, { renderToString }] = await Promise.all([
 			loadJsxRuntime(),
