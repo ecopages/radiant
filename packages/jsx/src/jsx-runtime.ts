@@ -472,9 +472,7 @@ export function isSerializableTemplateResultLike(value: unknown): value is Seria
  * @param value Template payload to normalize.
  * @returns Runtime template result compatible with the standard rendering pipeline.
  */
-export function toTemplateResultLike(
-	value: SerializableTemplateResultLike | TemplateResultLike,
-): TemplateResultLike {
+export function toTemplateResultLike(value: SerializableTemplateResultLike | TemplateResultLike): TemplateResultLike {
 	if (isTemplateResultLike(value)) {
 		return value;
 	}
