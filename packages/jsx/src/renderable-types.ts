@@ -50,6 +50,17 @@ export interface TemplateResultLike {
 }
 
 /**
+ * Template payload shape that can be transported across process or integration
+ * boundaries and later rehydrated into a standard template result.
+ */
+export interface SerializableTemplateResultLike {
+	readonly rootLocalName?: string;
+	readonly ssrIntrinsicProps?: Readonly<Record<string, unknown>>;
+	readonly strings: readonly string[];
+	readonly values?: readonly unknown[];
+}
+
+/**
  * Stable identity used to preserve keyed child ownership.
  */
 export type JsxKey = number | string;
@@ -100,6 +111,7 @@ export type JsxRenderable =
 	| SignalLike
 	| SlotJsxValue
 	| SubscribableJsxValue
+	| SerializableTemplateResultLike
 	| TemplateResultLike
 	| Iterable<JsxRenderable>;
 

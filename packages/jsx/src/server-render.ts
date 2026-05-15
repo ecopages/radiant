@@ -1,12 +1,14 @@
 import {
 	forEachNormalizedAttribute,
 	isKeyedJsxValue,
+	isSerializableTemplateResultLike,
 	isSubscribableJsxValue,
 	isTemplateResultLike,
 	renderJsxRenderableToString,
 	resolveBindingShapeValue,
 	shouldUseAttributeBindingByDefaultForElement,
 	shouldUseBooleanAttributeBinding,
+	toTemplateResultLike,
 	type JsxNodeLike,
 	type JsxRenderable,
 	type SignalLike,
@@ -142,8 +144,8 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
 		return '';
 	}
 
-	if (isTemplateResultLike(value)) {
-		return renderTemplateResult(value, context);
+	if (isTemplateResultLike(value) || isSerializableTemplateResultLike(value)) {
+		return renderTemplateResult(toTemplateResultLike(value), context);
 	}
 
 	if (isNodeLike(value)) {
