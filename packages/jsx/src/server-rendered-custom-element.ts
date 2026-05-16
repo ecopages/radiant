@@ -170,6 +170,8 @@ function applyServerCustomElementAttributes(
 		}
 
 		if (typeof bindingShapeValue === 'boolean' && runtime.shouldUseBooleanAttributeBinding(normalizedName)) {
+			syncServerCustomElementProperty(assignableElement, normalizedName, bindingShapeValue);
+
 			if (bindingShapeValue) {
 				element.setAttribute?.(normalizedName, '');
 			} else {
@@ -178,6 +180,7 @@ function applyServerCustomElementAttributes(
 			return;
 		}
 
+		syncServerCustomElementProperty(assignableElement, normalizedName, value);
 		element.setAttribute?.(normalizedName, String(value));
 	});
 }
@@ -216,4 +219,16 @@ function canAssignServerCustomElementProperty(element: HTMLElement, propertyName
 	}
 
 	return false;
+}
+
+function syncServerCustomElementProperty(
+	element: HTMLElement & Record<string, unknown>,
+	propertyName: string,
+	value: unknown,
+): void {
+	if (!canAssignServerCustomElementProperty(element, propertyName)) {
+		return;
+	}
+
+	Reflect.set(element, propertyName, value);
 }

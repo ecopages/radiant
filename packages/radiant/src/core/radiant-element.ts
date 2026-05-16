@@ -722,7 +722,8 @@ export class RadiantElement<Bindings extends object = {}>
 
 	private resolveRenderSurface(): RadiantRenderSurface {
 		const renderTarget = this.getRenderTarget();
-		const interactionTarget = renderTarget instanceof ShadowRoot ? renderTarget : this;
+		const interactionTarget =
+			typeof ShadowRoot !== 'undefined' && renderTarget instanceof ShadowRoot ? renderTarget : this;
 
 		return {
 			interactionTarget,
