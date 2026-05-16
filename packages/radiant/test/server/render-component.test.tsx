@@ -1,6 +1,6 @@
 import '../../src/server/install-light-dom-shim';
 import { renderToString } from '@ecopages/jsx/server';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import {
 	type ContextProvider,
 	consumeContext,
@@ -58,6 +58,45 @@ class RenderComponentLoaderCard extends RadiantElement {
 
 	override render() {
 		return <p>{this.message}</p>;
+	}
+}
+
+@customElement('render-component-nested-child-test')
+class RenderComponentNestedChild extends RadiantElement {
+	override render() {
+		return (
+			<button class="todo__item-remove" type="button" data-ref="remove-todo" aria-label="Remove todo">
+				<svg
+					class="pointer-events-none"
+					width="20"
+					height="20"
+					aria-hidden="true"
+					focusable="false"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M18 6 6 18" />
+					<path d="m6 6 12 12" />
+				</svg>
+			</button>
+		);
+	}
+}
+
+@customElement('render-component-nested-parent-test')
+class RenderComponentNestedParent extends RadiantElement {
+	override render() {
+		return (
+			<section class="nested-parent-shell" data-label="parent-shell">
+				<p class="nested-parent-copy">Parent bindings first</p>
+				<render-component-nested-child-test />
+				<render-component-nested-child-test />
+			</section>
+		);
 	}
 }
 
@@ -544,6 +583,46 @@ describe('render-component server helpers', () => {
 		expect(markup).toContain('<render-component-card-test');
 		expect(markup).toContain('Count: 3');
 		expect(markup).toContain('String only');
+	});
+
+	test('renderComponentToString() renders light DOM hosts when ShadowRoot is unavailable globally', async () => {
+		const originalShadowRoot = globalThis.ShadowRoot;
+
+		vi.stubGlobal('ShadowRoot', undefined);
+
+		try {
+			const markup = await renderComponentToString(RenderComponentCard, {
+				initialize: (component) => {
+					component.count = 5;
+					component.label = 'Node SSR';
+				},
+			});
+
+			expect(markup).toContain('<render-component-card-test');
+			expect(markup).toContain('Count: 5');
+			expect(markup).toContain('Node SSR');
+		} finally {
+			vi.stubGlobal('ShadowRoot', originalShadowRoot);
+		}
+	});
+
+	test('renderComponentToString() resets hydration marker indexes for nested custom-element hosts', async () => {
+		expect(RenderComponentNestedChild).toBeDefined();
+
+		const markup = await renderComponentToString(RenderComponentNestedParent);
+
+		const childMatches = Array.from(
+			markup.matchAll(/<render-component-nested-child-test>([\s\S]*?)<\/render-component-nested-child-test>/g),
+		).map((match) => match[1] ?? '');
+
+		expect(childMatches).toHaveLength(2);
+
+		for (const childMarkup of childMatches) {
+			expect(childMarkup).toContain('data-radiant-jsx-bind-0="attr:class"');
+			expect(childMarkup).toContain('data-radiant-jsx-bind-9="attr:viewBox"');
+			expect(childMarkup).toContain('data-radiant-jsx-bind-16="attr:d"');
+			expect(childMarkup).not.toContain('data-radiant-jsx-bind-17');
+		}
 	});
 
 	test('renderComponent() resolves explicit asset metadata', async () => {
