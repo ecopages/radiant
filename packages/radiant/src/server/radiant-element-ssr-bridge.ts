@@ -2,9 +2,11 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
 import {
+	createServerHydrationBindingState,
 	isServerRenderHydrationActive,
 	withForcedServerCustomElementRendering,
 	withServerCustomElementRenderHook,
+	withServerHydrationBindingState,
 } from '@ecopages/jsx/server';
 import { RadiantElementSsrService } from '../core/radiant-element-ssr-service';
 import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
@@ -125,7 +127,13 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 						const hydrate = isServerRenderHydrationActive();
 						const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
 
-						return renderRadiantElementHostToString(instance, options);
+						if (!hydrate) {
+							return renderRadiantElementHostToString(instance, options);
+						}
+
+						return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
+							renderRadiantElementHostToString(instance, options),
+						);
 					},
 				};
 			}
@@ -140,7 +148,14 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 				nodeType: 1,
 				get outerHTML() {
 					const hydrate = isServerRenderHydrationActive();
-					return legacyInstance.renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' });
+
+					if (!hydrate) {
+						return legacyInstance.renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' });
+					}
+
+					return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
+						legacyInstance.renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' }),
+					);
 				},
 			};
 		}, render),
