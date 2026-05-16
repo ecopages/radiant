@@ -1,9 +1,12 @@
 export {
+	createServerHydrationBindingState,
+	withServerHydrationBindingState,
 	renderToString,
 	isServerRenderHydrationActive,
 	withForcedServerCustomElementRendering,
 	withServerCustomElementRenderHook,
 	type RenderToStringOptions,
+	type ServerHydrationBindingState,
 } from './server-render.ts';
 
 export { getActiveSsrScopeValue, withActiveSsrScopeValue } from './ssr-render-scope.ts';
