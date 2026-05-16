@@ -229,6 +229,19 @@ class MinimalElement extends MinimalNode {
 		this.tagName = this.localName.toUpperCase();
 	}
 
+	get id(): string {
+		return this.getAttribute('id') ?? '';
+	}
+
+	set id(value: string) {
+		if (value === '') {
+			this.removeAttribute('id');
+			return;
+		}
+
+		this.setAttribute('id', value);
+	}
+
 	get classList(): DOMTokenList {
 		this.classListValue ??= new MinimalClassList(this);
 		return this.classListValue as unknown as DOMTokenList;
