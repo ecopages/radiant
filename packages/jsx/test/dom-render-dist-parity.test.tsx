@@ -122,4 +122,73 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 		expect(container.innerHTML).toContain('<linearGradient id="gradient">');
 		expect(container.innerHTML).toContain('<feDropShadow dx="0" dy="2" stdDeviation="2"></feDropShadow>');
 	});
+
+	test('hydrates SVG attribute markers without transient value drift', async () => {
+		const [jsxRuntime, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const { jsx, jsxs } = jsxRuntime;
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderIconButton = () =>
+			jsxs(jsxRuntime.Fragment, {
+				children: [
+					jsx('label', {
+						for: 'todo-1',
+						children: [jsx('input', { id: 'todo-1', name: '1', type: 'checkbox', checked: false }), 'Task'],
+					}),
+					jsx('button', {
+						class: 'todo__item-remove',
+						type: 'button',
+						'data-ref': 'remove-todo',
+						'aria-label': 'Remove todo: 1',
+						children: jsxs('svg', {
+							class: 'pointer-events-none',
+							width: '20',
+							height: '20',
+							'aria-hidden': 'true',
+							focusable: 'false',
+							viewBox: '0 0 24 24',
+							fill: 'none',
+							stroke: 'currentColor',
+							'stroke-width': '2',
+							'stroke-linecap': 'round',
+							'stroke-linejoin': 'round',
+							children: [jsx('path', { d: 'M18 6 6 18' }), jsx('path', { d: 'm6 6 12 12' })],
+						}),
+					}),
+				],
+			});
+
+		container.innerHTML = renderToString(renderIconButton(), { mode: 'hydrate' });
+
+		const invalidAssignments: Array<{ name: string; value: string | null }> = [];
+		const originalSetAttribute = Element.prototype.setAttribute;
+
+		Element.prototype.setAttribute = function patchedSetAttribute(name: string, value: string) {
+			if (
+				this.localName === 'svg' &&
+				((name === 'width' && value === 'none') ||
+					(name === 'height' && value === 'currentColor') ||
+					(name === 'viewBox' && value === 'round') ||
+					(name === 'width' && value === 'currentColor') ||
+					(name === 'viewBox' && value === 'M18 6 6 18'))
+			) {
+				invalidAssignments.push({ name, value });
+			}
+
+			return originalSetAttribute.call(this, name, value);
+		};
+
+		try {
+			root.hydrate(renderIconButton());
+		} finally {
+			Element.prototype.setAttribute = originalSetAttribute;
+		}
+
+		expect(invalidAssignments).toEqual([]);
+	});
 });

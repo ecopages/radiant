@@ -2,25 +2,16 @@ import type { JsxNodeLike } from '../jsx-runtime.ts';
 import { DETACHED_INSERTION_POINT_WARNING, DOM_RANGE_ANCHOR_DRIFT_WARNING, warnRuntime } from '../dev-warnings.ts';
 
 /**
- * Visits descendant elements of `target` in document order, stopping at custom-element
- * boundaries.
- *
- * Custom elements (tag names containing a hyphen) are treated as opaque hydration
- * islands: their attributes are harvested but their descendants are skipped, since any
- * inner DOM belongs to the custom element's own shadow or light-DOM lifecycle.
+ * Visits descendant elements of `target` in document order.
  *
  * @param target Root element to walk.
  * @param visit Callback invoked for every element including `target`. Returning `true`
  * stops the traversal early.
  */
 export function visitElements(target: HTMLElement, visit: (element: Element) => boolean): boolean {
-	const walk = (element: Element, allowDescendIntoChildren: boolean): boolean => {
+	const walk = (element: Element): boolean => {
 		if (visit(element)) {
 			return true;
-		}
-
-		if (!allowDescendIntoChildren) {
-			return false;
 		}
 
 		const children = element.children;
@@ -28,7 +19,7 @@ export function visitElements(target: HTMLElement, visit: (element: Element) => 
 		for (let index = 0; index < children.length; index += 1) {
 			const child = children.item(index);
 
-			if (child && walk(child, !isOpaqueHydrationIsland(child))) {
+			if (child && walk(child)) {
 				return true;
 			}
 		}
@@ -36,7 +27,7 @@ export function visitElements(target: HTMLElement, visit: (element: Element) => 
 		return false;
 	};
 
-	return walk(target, true);
+	return walk(target);
 }
 
 /**
@@ -203,19 +194,6 @@ export function moveRangeBefore(start: Text, end: Text, referenceNode: Node): vo
 
 		parentNode.insertBefore(fragment, referenceNode);
 	}
-}
-
-/**
- * Returns `true` when `element` is a custom element that should be treated as an
- * opaque hydration island.
- *
- * Custom elements manage their own internal DOM; the hydrator should not descend
- * into their children to avoid double-applying bindings.
- *
- * @param element Element to test.
- */
-function isOpaqueHydrationIsland(element: Element): boolean {
-	return element.tagName.includes('-');
 }
 
 /**
