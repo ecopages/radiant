@@ -48,6 +48,10 @@ export type HydrationBinding = {
 	value: unknown;
 };
 
+type CollectHydrationBindingsOptions = {
+	skipNestedCustomElementRoots?: boolean;
+};
+
 /**
  * Walks a JSX value tree and records the hydration bindings in SSR encounter
  * order.
@@ -59,11 +63,14 @@ export type HydrationBinding = {
  * @param value JSX value to inspect.
  * @returns Ordered binding map keyed by hydration binding index.
  */
-export function collectHydrationBindings(value: JsxRenderable): Map<number, HydrationBinding> {
+export function collectHydrationBindings(
+	value: JsxRenderable,
+	options: CollectHydrationBindingsOptions = {},
+): Map<number, HydrationBinding> {
 	const bindings = new Map<number, HydrationBinding>();
 	const state = { nextIndex: 0 };
 
-	collectValueBindings(value, bindings, state);
+	collectValueBindings(value, bindings, state, options);
 
 	return bindings;
 }
@@ -190,19 +197,20 @@ function collectValueBindings(
 	value: JsxRenderable,
 	bindings: Map<number, HydrationBinding>,
 	state: { nextIndex: number },
+	options: CollectHydrationBindingsOptions,
 ): void {
 	if (value === undefined || value === null || value === false || value === true) {
 		return;
 	}
 
 	if (isTemplateResultLike(value)) {
-		collectTemplateBindings(value, bindings, state);
+		collectTemplateBindings(value, bindings, state, options);
 		return;
 	}
 
 	if (isIterable(value)) {
 		for (const child of value) {
-			collectValueBindings(child as JsxRenderable, bindings, state);
+			collectValueBindings(child as JsxRenderable, bindings, state, options);
 		}
 	}
 }
@@ -211,7 +219,12 @@ function collectTemplateBindings(
 	template: TemplateResultLike,
 	bindings: Map<number, HydrationBinding>,
 	state: { nextIndex: number },
+	options: CollectHydrationBindingsOptions,
 ): void {
+	if (options.skipNestedCustomElementRoots && isCustomElementTemplateRoot(template)) {
+		return;
+	}
+
 	const interpolationParts = getTemplateInterpolationParts(template.strings);
 
 	for (let index = 0; index < template.values.length; index += 1) {
@@ -229,8 +242,15 @@ function collectTemplateBindings(
 			continue;
 		}
 
-		collectValueBindings(template.values[index] as JsxRenderable, bindings, state);
+		collectValueBindings(template.values[index] as JsxRenderable, bindings, state, options);
 	}
+}
+
+function isCustomElementTemplateRoot(template: TemplateResultLike): boolean {
+	const openingSegment = template.strings[0]?.trimStart() ?? '';
+	const tagMatch = /^<([a-z][\w.-]*)\b/i.exec(openingSegment);
+
+	return tagMatch?.[1]?.includes('-') === true;
 }
 
 function isIterable(value: unknown): value is Iterable<unknown> {

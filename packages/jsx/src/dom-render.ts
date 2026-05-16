@@ -11,7 +11,7 @@ import {
 	HYDRATION_MISSING_BINDING_WARNING,
 	warnRuntime,
 } from './dev-warnings.ts';
-import { createBoundaryMarker, visitElements } from './dom-render/dom-operations.ts';
+import { createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
 import { getElementNamespace, HTML_NAMESPACE_URI, setElementAttributeValue } from './dom-render/namespaces.ts';
@@ -217,7 +217,7 @@ function attemptTemplateHydration(template: TemplateResultLike, target: HTMLElem
 function attemptFlatHydration(element: JsxRenderable, target: HTMLElement): FlatHydrationOutcome {
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
-	const bindings = collectHydrationBindings(element);
+	const bindings = collectHydrationBindings(element, { skipNestedCustomElementRoots: true });
 
 	if (
 		!visitHydrationBindingMarkers(target, (element, attribute) => {
@@ -290,14 +290,15 @@ function visitHydrationBindingMarkers(
 	visit: (element: Element, attribute: Attr) => void,
 ): boolean {
 	let foundHydrationMarker = false;
-
-	visitElements(target, (element) => {
-		const attributes = element.attributes;
+	const walk = (element: Element): void => {
+		const attributes = Array.from(element.attributes).filter((attribute) =>
+			attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX),
+		);
 
 		for (let index = attributes.length - 1; index >= 0; index -= 1) {
 			const attribute = attributes[index];
 
-			if (!attribute || !attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)) {
+			if (!attribute) {
 				continue;
 			}
 
@@ -305,8 +306,22 @@ function visitHydrationBindingMarkers(
 			visit(element, attribute);
 		}
 
-		return false;
-	});
+		if (element !== target && element.localName.includes('-')) {
+			return;
+		}
+
+		const children = element.children;
+
+		for (let index = 0; index < children.length; index += 1) {
+			const child = children.item(index);
+
+			if (child) {
+				walk(child);
+			}
+		}
+	};
+
+	walk(target);
 
 	return foundHydrationMarker;
 }
