@@ -1,6 +1,7 @@
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import { getTemplateInterpolationParts } from './hydration-bindings.ts';
+import { isClientOnlyBinding } from './hydration-marker-policy.ts';
 import {
 	KEYED_VALUE_SYMBOL,
 	RADIANT_TEMPLATE_RESULT,
@@ -325,11 +326,7 @@ export function renderJsxRenderableToString(value: JsxRenderable | undefined): s
 
 			html += interpolationPart.leading;
 
-			if (
-				interpolationPart.prefix === '@' ||
-				interpolationPart.prefix === '!' ||
-				interpolationPart.prefix === '.'
-			) {
+			if (isClientOnlyBinding(interpolationPart.kind)) {
 				continue;
 			}
 

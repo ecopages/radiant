@@ -191,4 +191,47 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 
 		expect(invalidAssignments).toEqual([]);
 	});
+
+	test('removes SSR hydration marker attributes after template hydration', async () => {
+		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let clickCount = 0;
+		const handleClick = () => {
+			clickCount += 1;
+		};
+		const renderHydratedButton = (label: string, hidden = false) =>
+			jsx('button', {
+				class: 'action',
+				hidden,
+				'on:click': handleClick,
+				title: label,
+				children: label,
+			});
+
+		container.innerHTML = renderToString(renderHydratedButton('Alpha'), { mode: 'hydrate' });
+		root.hydrate(renderHydratedButton('Alpha'));
+
+		const initialButton = container.querySelector('button');
+
+		expect(initialButton).not.toBeNull();
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		initialButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clickCount).toBe(1);
+
+		root.render(renderHydratedButton('Beta', true));
+
+		const updatedButton = container.querySelector('button');
+
+		expect(updatedButton).toBe(initialButton);
+		expect(updatedButton?.textContent).toBe('Beta');
+		expect(updatedButton?.getAttribute('title')).toBe('Beta');
+		expect(updatedButton?.hasAttribute('hidden')).toBe(true);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+	});
 });

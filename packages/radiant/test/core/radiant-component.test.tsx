@@ -1187,6 +1187,7 @@ describe('RadiantElement', () => {
 		await waitFor(() => {
 			expect(element.querySelector('header > h2')?.textContent).toBe('SSR header');
 			expect(element.querySelector('div > p')?.textContent).toBe('SSR body');
+			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
 			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
 		});
 
@@ -1244,6 +1245,7 @@ describe('RadiantElement', () => {
 				'4',
 			);
 			expect(element.querySelector('footer > p')?.textContent).toBe('SSR footer');
+			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
 			expect(element.querySelector('script[data-radiant-slot-projection]')).toBeNull();
 		});
 

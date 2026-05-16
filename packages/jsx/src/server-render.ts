@@ -19,6 +19,7 @@ import {
 	getTemplateInterpolationParts,
 	serializeBindingDescriptor,
 } from './hydration-bindings.ts';
+import { isClientOnlyBinding, needsHydrationMarker } from './hydration-marker-policy.ts';
 import { getJsxGlobalSymbol } from './global-symbol.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
@@ -283,13 +284,13 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 		const bindingIndex = context.hydrationBindingState.nextBindingIndex;
 		html += interpolationPart.leading;
 
-		if (context.ssr.hydrate) {
+		if (context.ssr.hydrate && needsHydrationMarker(bindingKind)) {
 			html += `${interpolationPart.whitespace}${ATTRIBUTE_BINDING_PREFIX}${bindingIndex}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
 		}
 
 		context.hydrationBindingState.nextBindingIndex += 1;
 
-		if (interpolationPart.prefix === '@' || interpolationPart.prefix === '!' || interpolationPart.prefix === '.') {
+		if (isClientOnlyBinding(bindingKind)) {
 			continue;
 		}
 
