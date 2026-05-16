@@ -6,7 +6,8 @@ import { getCustomElementTagName } from './custom-element-metadata';
 import type { ReactiveProperty } from './reactive-prop-core';
 import type { ReactivePropDefinition } from './reactive-prop-metadata';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
-import { writeAttributeValue } from '../utils/attribute-utils';
+import { resolveHostAttributes, stringifyHostAttributes } from '../server/host-attribute-serialization';
+import { composeHostContent } from '../server/host-script-composition';
 
 export type RadiantElementSsrHost = {
 	constructor: CustomElementConstructor;
@@ -37,70 +38,36 @@ export class RadiantElementSsrService {
 		const restoreSsrContexts = withSsrContextProviders(this.host.getContextProviders());
 
 		try {
-			return `<${tagName}${serializeHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`;
+			return `<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`;
 		} finally {
 			restoreSsrContexts();
 		}
 	}
 
 	private renderHostContent(options: RenderToStringOptions): string {
-		const hostContent = this.host.renderViewToString(options);
-		const authoredHydrationMarkup = this.host.getAuthoredHydrationScriptMarkup?.() ?? '';
-		const slotProjectionScript = this.host.getSlotProjectionScriptTag?.() ?? '';
 		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
 
-		if (!hydrate) {
-			return `${hostContent}${authoredHydrationMarkup}${slotProjectionScript}`;
-		}
+		const hydrationScripts = hydrate
+			? this.host
+					.getHydrationBindings()
+					.map((binding) => binding.renderHydrationScriptTag())
+					.filter((markup): markup is string => typeof markup === 'string')
+					.join('')
+			: '';
 
-		const hydrationScripts = this.host
-			.getHydrationBindings()
-			.map((binding) => binding.renderHydrationScriptTag())
-			.filter((markup): markup is string => typeof markup === 'string')
-			.join('');
-
-		return `${hostContent}${slotProjectionScript}${hydrationScripts}`;
+		return composeHostContent(
+			{
+				hostContent: this.host.renderViewToString(options),
+				authoredHydrationMarkup: this.host.getAuthoredHydrationScriptMarkup?.() ?? '',
+				slotProjectionScript: this.host.getSlotProjectionScriptTag?.() ?? '',
+				hydrationScripts,
+			},
+			hydrate,
+		);
 	}
 
 	public getHostAttributes(): Record<string, string> {
-		const attributes: Record<string, string> = {};
-		const seenAttributes = new Set<string>();
-
-		for (const property of this.host.getReactiveProperties()) {
-			const currentValue = this.host.getPropertyValue(property.name);
-			if (currentValue === undefined || currentValue === null || currentValue === false) {
-				continue;
-			}
-
-			attributes[property.attribute] = String(property.converter.toAttribute(currentValue));
-			seenAttributes.add(property.attribute);
-		}
-
-		for (const definition of this.host.getReactivePropDefinitions()) {
-			const attributeName = definition.options.attribute ?? definition.name;
-
-			if (seenAttributes.has(attributeName)) {
-				continue;
-			}
-
-			const currentValue = this.host.getPropertyValue(definition.name);
-
-			if (currentValue === undefined || currentValue === null || currentValue === false) {
-				continue;
-			}
-
-			attributes[attributeName] = String(writeAttributeValue(currentValue, definition.options.type));
-			seenAttributes.add(attributeName);
-		}
-
-		for (const attributeName of this.host.listAttributeNames()) {
-			const attributeValue = this.host.getAttributeValue(attributeName);
-			if (attributeValue !== null) {
-				attributes[attributeName] = attributeValue;
-			}
-		}
-
-		return attributes;
+		return resolveHostAttributes(this.host);
 	}
 
 	private getTagName(): string {
@@ -112,14 +79,4 @@ export class RadiantElementSsrService {
 
 		return tagName;
 	}
-}
-
-function serializeHostAttributes(attributes: Record<string, string>): string {
-	return Object.entries(attributes)
-		.map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`)
-		.join('');
-}
-
-function escapeAttribute(value: string): string {
-	return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
