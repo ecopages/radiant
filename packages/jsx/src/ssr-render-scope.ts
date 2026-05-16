@@ -1,3 +1,4 @@
+import { getJsxGlobalSymbol } from './global-symbol.ts';
 import type { ServerCustomElementRenderHook } from './types.ts';
 
 /**
@@ -13,10 +14,10 @@ import type { ServerCustomElementRenderHook } from './types.ts';
 export type SsrRenderContext = {
 	hydrate: boolean;
 	customElementRenderHook?: ServerCustomElementRenderHook;
-	scopeValues?: ReadonlyMap<symbol, unknown>;
+	scopeValues?: Map<symbol, unknown>;
 };
 
-const ACTIVE_SSR_RENDER_SCOPE_SYMBOL = Symbol.for('@ecopages/jsx.active-ssr-render-scope');
+const ACTIVE_SSR_RENDER_SCOPE_SYMBOL = getJsxGlobalSymbol('active-ssr-render-scope');
 
 type GlobalSsrRenderScopeState = typeof globalThis & {
 	[ACTIVE_SSR_RENDER_SCOPE_SYMBOL]?: SsrRenderContext[];

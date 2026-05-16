@@ -229,6 +229,38 @@ describe('Radiant JSX server render', () => {
 		);
 	});
 
+	test('continues hydrate binding indexes across renders in one shared SSR scope', async () => {
+		const [{ jsx }, { renderToString, withActiveSsrScopeValue }] = await Promise.all([
+			loadJsxRuntime(),
+			loadModule<typeof import('../src/server.ts')>('../src/server.ts'),
+		]);
+		const sharedScopeKey = Symbol.for('@ecopages/jsx.test.shared-ssr-scope');
+		const sharedScopeState = {};
+
+		const html = withActiveSsrScopeValue(sharedScopeKey, sharedScopeState, () => {
+			const pageHtml = renderToString(
+				jsx('section', {
+					class: 'page',
+					children: 'Page',
+				}),
+				{ mode: 'hydrate' },
+			);
+			const layoutHtml = renderToString(
+				jsx('main', {
+					class: 'layout',
+					children: 'Layout',
+				}),
+				{ mode: 'hydrate' },
+			);
+
+			return `${pageHtml}${layoutHtml}`;
+		});
+
+		expect(html).toBe(
+			'<section data-radiant-jsx-bind-0="attr:class" class="page">Page</section><main data-radiant-jsx-bind-1="attr:class" class="layout">Layout</main>',
+		);
+	});
+
 	test('does not serialize internal child markers for mixed sibling content', async () => {
 		const [{ jsx, jsxs }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsxs('p', {

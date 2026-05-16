@@ -19,9 +19,15 @@ import {
 	getTemplateInterpolationParts,
 	serializeBindingDescriptor,
 } from './hydration-bindings.ts';
+import { getJsxGlobalSymbol } from './global-symbol.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
-import { getActiveSsrRenderContext, type SsrRenderContext, withActiveSsrRenderContext } from './ssr-render-scope.ts';
+import {
+	getActiveSsrRenderContext,
+	type SsrRenderContext,
+	withActiveSsrRenderContext,
+	withActiveSsrScopeValue,
+} from './ssr-render-scope.ts';
 import type { ServerCustomElementRenderHook } from './types.ts';
 
 /** Public vocabulary for the SSR output modes supported by `renderToString(...)`. */
@@ -44,10 +50,29 @@ export type RenderToStringOptions = {
 	mode?: RenderToStringMode;
 };
 
-type RenderContext = {
-	ssr: SsrRenderContext;
+/**
+ * Mutable hydrate binding namespace shared by one server-owned hydration root.
+ *
+ * Framework adapters can pass one state across multiple sibling
+ * `renderToString(...)` calls when those renders belong to the same client-
+ * owned root, or create a fresh state for a nested SSR root that hydrates
+ * independently.
+ */
+export type ServerHydrationBindingState = {
 	nextBindingIndex: number;
 };
+
+type RenderContext = {
+	ssr: SsrRenderContext;
+	hydrationBindingState: ServerHydrationBindingState;
+};
+
+type HydrationBindingScope = {
+	hydrationBindingState: ServerHydrationBindingState;
+	scopeValues?: Map<symbol, unknown>;
+};
+
+const ACTIVE_HYDRATION_BINDING_STATE_KEY = getJsxGlobalSymbol('hydration-binding-state');
 
 /**
  * Serializes a Radiant JSX value into an HTML string.
@@ -63,16 +88,17 @@ type RenderContext = {
 export function renderToString(value: JsxRenderable, options: RenderToStringOptions = {}): string {
 	const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
 	const activeSsrContext = getActiveSsrRenderContext();
+	const hydrationBindingScope = getHydrationBindingScope(activeSsrContext, hydrate);
 	const ssr: SsrRenderContext = {
 		hydrate,
 		customElementRenderHook: activeSsrContext?.customElementRenderHook,
-		scopeValues: activeSsrContext?.scopeValues,
+		scopeValues: hydrationBindingScope.scopeValues,
 	};
 
 	return withActiveSsrRenderContext(ssr, () =>
 		renderChild(value, {
 			ssr,
-			nextBindingIndex: 0,
+			hydrationBindingState: hydrationBindingScope.hydrationBindingState,
 		}),
 	);
 }
@@ -91,6 +117,22 @@ export function isServerRenderHydrationActive(): boolean {
  */
 export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRenderHook, render: () => T): T {
 	return withSsrRenderOverrides({ customElementRenderHook: hook }, render);
+}
+
+/** Creates a fresh hydrate binding namespace for one server-owned hydration root. */
+export function createServerHydrationBindingState(): ServerHydrationBindingState {
+	return { nextBindingIndex: 0 };
+}
+
+/**
+ * Runs work with an explicit hydrate binding namespace attached to the active SSR scope.
+ *
+ * Framework integrations can use this to share one binding sequence across
+ * sibling `renderToString(...)` calls that belong to the same client-owned root,
+ * or to fork a fresh local sequence for nested SSR roots such as custom-element hosts.
+ */
+export function withServerHydrationBindingState<T>(state: ServerHydrationBindingState, render: () => T): T {
+	return withActiveSsrScopeValue(ACTIVE_HYDRATION_BINDING_STATE_KEY, state, render);
 }
 
 /**
@@ -113,6 +155,43 @@ function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render:
 	};
 
 	return withActiveSsrRenderContext(nextContext, render);
+}
+
+/**
+ * Resolves the hydrate binding state visible to the current `renderToString(...)`
+ * call and returns the scope values that should flow into the nested SSR context.
+ */
+function getHydrationBindingScope(
+	activeSsrContext: SsrRenderContext | undefined,
+	hydrate: boolean,
+): HydrationBindingScope {
+	if (!hydrate) {
+		return {
+			hydrationBindingState: { nextBindingIndex: 0 },
+			scopeValues: activeSsrContext?.scopeValues,
+		};
+	}
+
+	const activeBindingState = activeSsrContext?.scopeValues?.get(ACTIVE_HYDRATION_BINDING_STATE_KEY) as
+		| ServerHydrationBindingState
+		| undefined;
+
+	if (activeBindingState) {
+		return {
+			hydrationBindingState: activeBindingState,
+			scopeValues: activeSsrContext?.scopeValues,
+		};
+	}
+
+	const nextBindingState: ServerHydrationBindingState = { nextBindingIndex: 0 };
+	const scopeValues = activeSsrContext?.scopeValues ?? new Map<symbol, unknown>();
+
+	scopeValues.set(ACTIVE_HYDRATION_BINDING_STATE_KEY, nextBindingState);
+
+	return {
+		hydrationBindingState: nextBindingState,
+		scopeValues,
+	};
 }
 
 function renderChild(value: JsxRenderable, context: RenderContext): string {
@@ -201,14 +280,14 @@ function renderTemplateResult(template: TemplateResultLike, context: RenderConte
 		}
 
 		const bindingKind = interpolationPart.kind;
-		const bindingIndex = context.nextBindingIndex;
+		const bindingIndex = context.hydrationBindingState.nextBindingIndex;
 		html += interpolationPart.leading;
 
 		if (context.ssr.hydrate) {
 			html += `${interpolationPart.whitespace}${ATTRIBUTE_BINDING_PREFIX}${bindingIndex}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
 		}
 
-		context.nextBindingIndex += 1;
+		context.hydrationBindingState.nextBindingIndex += 1;
 
 		if (interpolationPart.prefix === '@' || interpolationPart.prefix === '!' || interpolationPart.prefix === '.') {
 			continue;

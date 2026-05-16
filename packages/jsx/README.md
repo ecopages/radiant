@@ -39,7 +39,7 @@ The package surface is intentionally split by use case:
 - direct signal-like child bindings through `get()` and `subscribe(...)`
 - subscribable child adapters through `createSubscribableJsxValue(...)`
 
-Use `@ecopages/jsx/server` for server-only helpers such as `renderToString(...)` and server custom-element render hooks.
+Use `@ecopages/jsx/server` for server-only helpers such as `renderToString(...)`, server custom-element render hooks, and SSR hydration binding scope helpers for framework adapters.
 
 `@ecopages/jsx` does not provide component state, hooks, decorators, or a standalone component model. Those stay in `@ecopages/radiant`.
 
@@ -62,11 +62,26 @@ Choose the narrowest entrypoint that matches the environment you are writing for
 | ------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `@ecopages/jsx`                 | shared library code, examples, and app code that wants one import path    | JSX primitives, DOM mounting, hydration, SSR rendering, advanced SSR hooks, and shared types |
 | `@ecopages/jsx/client`          | browser entry files and DOM-only helpers                                  | JSX primitives, DOM mounting, hydration, and shared renderable types                         |
-| `@ecopages/jsx/server`          | SSR adapters, Node or Bun HTML rendering, and custom server-element hooks | `renderToString(...)` and server custom-element render hooks                                 |
+| `@ecopages/jsx/server`          | SSR adapters, Node or Bun HTML rendering, and custom server-element hooks | `renderToString(...)`, custom-element render hooks, and hydration binding scope helpers      |
 | `@ecopages/jsx/jsx-runtime`     | automatic JSX runtime wiring                                              | `jsx`, `jsxs`, `Fragment`, and runtime JSX types                                             |
 | `@ecopages/jsx/jsx-dev-runtime` | dev-mode automatic JSX runtime wiring                                     | development runtime alias for toolchains that emit `jsxDEV(...)`                             |
 
 If a module is environment-specific, prefer the subpath import even when the root barrel would also work. That keeps browser-only and server-only code obvious at the import site.
+
+## SSR Integration Scopes
+
+`renderToString(...)` emits hydration markers by consuming one hydrate binding sequence. Most app code should let the renderer own that sequence implicitly.
+
+Framework adapters are the exception. If an integration composes one page from multiple sibling `renderToString(...)` calls, those calls must share one binding namespace so the client sees one continuous marker stream for that hydration root.
+
+Use `createServerHydrationBindingState()` and `withServerHydrationBindingState(...)` from `@ecopages/jsx/server` when you need that explicit control:
+
+- share one binding state across sibling page, layout, and document-shell renders that belong to the same client-owned root
+- fork a fresh binding state for a nested SSR root, such as an intrinsic custom-element host that hydrates independently
+
+At nested custom-element boundaries, the parent hydration root still owns the custom-element host itself. The nested root starts at the host's rendered internal subtree, not at the host tag.
+
+If you only call `renderToString(...)` once for a root, you do not need these helpers.
 
 ## Install And Configure
 
