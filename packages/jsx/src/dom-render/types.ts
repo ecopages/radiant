@@ -194,7 +194,6 @@ export type MountedIndexedList = {
  */
 export type MountedKeyedList = {
 	kind: 'keyed-list';
-	order: readonly JsxKey[];
 	records: Map<JsxKey, MountedRangeRecord>;
 };
 
