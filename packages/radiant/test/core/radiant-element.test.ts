@@ -98,10 +98,8 @@ describe('RadiantElement', () => {
 				listener: () => {},
 			},
 		]);
-		// @ts-expect-error: private property
-		expect(customElement.eventSubscriptions.has('click:[data-ref="click-me"]')).toBeTruthy();
-		// @ts-expect-error: private property
-		expect(customElement.eventSubscriptions.has('click:[data-ref="click-it"]')).toBeTruthy();
+		expect(customElement.hasEventSubscription('click:[data-ref="click-me"]')).toBeTruthy();
+		expect(customElement.hasEventSubscription('click:[data-ref="click-it"]')).toBeTruthy();
 	});
 
 	test('it can unsubscribe from events', () => {
@@ -122,10 +120,8 @@ describe('RadiantElement', () => {
 
 		unsubscribeClickMe();
 
-		// @ts-expect-error: private property
-		expect(customElement.eventSubscriptions.has('click:[data-ref="click-me"]')).toBeFalsy();
-		// @ts-expect-error: private property
-		expect(customElement.eventSubscriptions.has('click:[data-ref="click-it"]')).toBeTruthy();
+		expect(customElement.hasEventSubscription('click:[data-ref="click-me"]')).toBeFalsy();
+		expect(customElement.hasEventSubscription('click:[data-ref="click-it"]')).toBeTruthy();
 	});
 
 	test('it can create a reactive property', () => {
