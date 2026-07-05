@@ -1,4 +1,5 @@
-import { escapeAttribute } from './html-escape.ts';
+import { jsxs } from './jsx-runtime.ts';
+import { serializeRenderable } from './serialize-renderable.ts';
 import { getActiveSsrRenderContext } from './ssr-render-scope.ts';
 import type { JsxNodeLike, JsxPropsWithChildren, JsxRenderable, ServerRenderableCustomElement } from './types.ts';
 
@@ -59,42 +60,12 @@ function renderFallbackCustomElementMarkup(
 	tagName: string,
 	attributes: Record<string, unknown>,
 	children: JsxRenderable | undefined,
-	runtime: ServerRenderedCustomElementRuntime,
+	_runtime: ServerRenderedCustomElementRuntime,
 ): string {
-	let html = `<${tagName}`;
-
-	runtime.forEachNormalizedAttribute(attributes, (name, value) => {
-		const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
-		const bindingShapeValue = runtime.resolveBindingShapeValue(value);
-
-		if (
-			value === undefined ||
-			name.startsWith('on:') ||
-			name.startsWith('on-native:') ||
-			name.startsWith('prop:')
-		) {
-			return;
-		}
-
-		if (
-			!name.startsWith('attr:') &&
-			!runtime.shouldUseAttributeBindingByDefaultForElement('custom-element', normalizedName)
-		) {
-			return;
-		}
-
-		if (typeof bindingShapeValue === 'boolean' && runtime.shouldUseBooleanAttributeBinding(normalizedName)) {
-			if (bindingShapeValue) {
-				html += ` ${normalizedName}`;
-			}
-			return;
-		}
-
-		html += ` ${normalizedName}="${escapeAttribute(String(value))}"`;
-	});
-
-	html += `>${runtime.renderValueToString(children)}</${tagName}>`;
-	return html;
+	return serializeRenderable(
+		jsxs(tagName, { ...attributes, children } as JsxPropsWithChildren & Record<string, unknown>),
+		{ mode: 'plain' },
+	);
 }
 
 function resolveServerRenderedCustomElementRender(

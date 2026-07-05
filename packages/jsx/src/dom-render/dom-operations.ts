@@ -134,16 +134,6 @@ export function insertNodesBefore(referenceNode: Node, nodes: readonly Node[]): 
 }
 
 /**
- * Type guard that narrows `value` to {@link JsxNodeLike}.
- *
- * @param value Value to inspect.
- * @returns `true` when `value` is an object with a `nodeType` property.
- */
-export function isJsxNodeLike(value: unknown): value is JsxNodeLike {
-	return typeof value === 'object' && value !== null && 'nodeType' in value;
-}
-
-/**
  * Moves the entire node range `[start, end]` (inclusive) to immediately before
  * `referenceNode` in a single fragment operation.
  *
@@ -223,3 +213,5 @@ function isNodeWithinRange(target: Node, start: Text, end: Text): boolean {
 
 	return false;
 }
+
+export { isJsxNodeLike } from '../renderable-guards.ts';
