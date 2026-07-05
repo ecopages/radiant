@@ -3,9 +3,8 @@ import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } 
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import {
-	runLegacyInstanceInitializers,
-	runLegacyPostConstructionInitializers,
-} from '../decorators/legacy/instance-initializers';
+	ensureLegacyHostReady,
+} from '../decorators/legacy/host-readiness';
 import { ReactiveHost, type ReactiveHostLike } from './reactive-host';
 import type {
 	ReactiveBindingOption,
@@ -14,7 +13,9 @@ import type {
 	ReactiveBindings,
 	ReactiveFieldOptions,
 } from './reactive-prop-core';
+import { HostSsrRegistry } from './host-ssr-registry';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
+import { RenderScheduler } from './render-scheduler';
 import { defaultValueForType } from '../utils/attribute-utils';
 import { validateReactivePropertyDefault } from './reactive-prop-core';
 
@@ -42,12 +43,9 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
 	private connected = false;
-	private isRendering = false;
-	private isRenderScheduled = false;
+	private readonly renderScheduler: RenderScheduler;
 	private isSsrLifecycle = false;
-	private needsRender = false;
-	private contextProviders = new Map<string, SsrSerializableContextProvider>();
-	private hydrationBindings = new Map<string, SsrSerializableHydrationBinding>();
+	private readonly hostSsrRegistry = new HostSsrRegistry();
 	private renderSignal?: ReactiveComputed<JsxRenderable>;
 	private readonly renderWatcher = createReactiveWatcher(() => {
 		this.requestUpdate();
@@ -67,7 +65,19 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
-		runLegacyInstanceInitializers(this);
+		this.renderScheduler = new RenderScheduler({
+			canFlush: () => this.connected && !this.renderScheduler.rendering,
+			commit: () => {
+				const renderTarget = this.getRenderTarget();
+
+				if (!renderTarget) {
+					return;
+				}
+
+				renderJsx(this.resolveTrackedRenderOutput(), renderTarget);
+			},
+		});
+		ensureLegacyHostReady(this, 'construct');
 	}
 
 	/**
@@ -77,7 +87,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * first update runs immediately after connection.
 	 */
 	public connect(): void {
-		runLegacyPostConstructionInitializers(this);
+		ensureLegacyHostReady(this, 'connect');
 		this.connected = true;
 		this.reactiveHost.connectHost();
 
@@ -134,23 +144,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			return;
 		}
 
-		this.needsRender = true;
-
-		if (this.isRenderScheduled) {
-			return;
-		}
-
-		this.isRenderScheduled = true;
-
-		queueMicrotask(() => {
-			this.isRenderScheduled = false;
-
-			if (!this.needsRender) {
-				return;
-			}
-
-			this.update();
-		});
+		this.renderScheduler.requestUpdate();
 	}
 
 	/**
@@ -163,28 +157,12 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			return;
 		}
 
-		const renderTarget = this.getRenderTarget();
-
-		if (!renderTarget) {
+		if (!this.getRenderTarget()) {
 			return;
 		}
 
-		this.needsRender = true;
-
-		if (!this.connected || this.isRendering) {
-			return;
-		}
-
-		while (this.needsRender) {
-			this.needsRender = false;
-			this.isRendering = true;
-
-			try {
-				renderJsx(this.resolveTrackedRenderOutput(), renderTarget);
-			} finally {
-				this.isRendering = false;
-			}
-		}
+		this.renderScheduler.markPending();
+		this.renderScheduler.flush();
 	}
 
 	/**
@@ -256,7 +234,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		this.reactiveHost.notifyUpdate(changedProperty, oldValue, value);
 	}
 
-	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
+	public registerUpdateCallback(property: string, update: () => void): () => void {
 		return this.reactiveHost.registerUpdateCallback(property, update);
 	}
 
@@ -277,29 +255,28 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * also exposed to descendant consumers and hydration payload collection.
 	 */
 	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
-		this.contextProviders.set(name, provider);
-		this.hydrationBindings.set(name, provider);
+		this.hostSsrRegistry.registerContextProvider(name, provider);
 	}
 
 	/**
 	 * Registers a keyed SSR hydration binding for the controller host.
 	 */
 	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
-		this.hydrationBindings.set(name, binding);
+		this.hostSsrRegistry.registerHydrationBinding(name, binding);
 	}
 
 	/**
 	 * Returns SSR-visible context providers registered on this controller.
 	 */
 	public getSsrContextProviders(): SsrSerializableContextProvider[] {
-		return [...this.contextProviders.values()];
+		return this.hostSsrRegistry.getContextProviders();
 	}
 
 	/**
 	 * Returns keyed hydration payload producers registered on this controller.
 	 */
 	public getSsrHydrationBindings(): SsrSerializableHydrationBinding[] {
-		return [...this.hydrationBindings.values()];
+		return this.hostSsrRegistry.getHydrationBindings();
 	}
 
 	public registerCleanupCallback(callback: () => void): void {
