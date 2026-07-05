@@ -3,21 +3,24 @@ import { getControllerIdentifier } from '../core/controller-metadata';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
 import type { RadiantController } from '../core/radiant-controller';
 import { CONTROLLER_ATTRIBUTE } from '../controller-registry';
-import { runLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
+import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { withSsrContextProviders } from './context-ssr';
 import { ensureLightDomShim } from './light-dom-shim';
 import { withRadiantServerCustomElementRenderBridge } from './radiant-element-ssr-bridge';
-import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr-runtime';
+import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
 import {
 	mergeRenderedComponentAssets,
 	normalizeRenderOptions,
 	resolvePrimaryClientModuleSrc,
 	toRenderedComponentPayload,
+	toRenderedComponentWithPreview,
+	createDefaultRenderTimestamp,
 	type RenderedComponent,
 	type RenderedComponentAsset,
 	type RenderedComponentPayload,
 	type RenderedComponentWithPreview,
 } from './render-component';
+import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
 
 /** Constructor shape for a server-renderable controller. */
 export type ServerRenderableControllerConstructor<TController extends RadiantController = RadiantController> = new (
@@ -130,7 +133,7 @@ async function renderResolvedController<TController extends RadiantController>(
 			normalizeRenderedControllerHostAttributes(Controller, options),
 		);
 		const controller = new Controller(host);
-		runLegacyPostConstructionInitializers(controller);
+		ensureLegacyHostReady(controller, 'ssr');
 
 		try {
 			options.initialize?.(controller);
@@ -159,21 +162,6 @@ async function renderResolvedController<TController extends RadiantController>(
 			controller.disconnect();
 		}
 	});
-}
-
-function toRenderedComponentWithPreview(render: RenderedComponent): RenderedComponentWithPreview {
-	return {
-		assets: render.metadata.assets,
-		clientModuleSrc: render.metadata.clientModuleUrl,
-		generatedAt: render.metadata.generatedAt,
-		markup: render.markup,
-		preview: render.preview,
-		tagName: render.metadata.tagName,
-	};
-}
-
-function createDefaultRenderTimestamp(): Date {
-	return new Date();
 }
 
 function normalizeRenderedControllerTagName(tagName: string): string {
@@ -352,9 +340,6 @@ function serializeRenderedControllerAttribute(name: string, value: string | null
 		return ` ${name}`;
 	}
 
-	return ` ${name}="${escapeRenderedControllerAttributeValue(value ?? '')}"`;
+	return ` ${name}="${escapeHtmlAttribute(value ?? '')}"`;
 }
 
-function escapeRenderedControllerAttributeValue(value: string): string {
-	return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-}

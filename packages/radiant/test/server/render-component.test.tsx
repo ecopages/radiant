@@ -31,7 +31,7 @@ import {
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
-import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-element-ssr-runtime';
+import { getOrCreateRadiantElementSsrRuntime } from '../../src/server/radiant-element-ssr';
 
 const cardAssets: readonly RenderedComponentAsset[] = [
 	{ kind: 'script-module', src: '/assets/render-component-card.js', stage: 'hydrate' },

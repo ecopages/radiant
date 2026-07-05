@@ -8,6 +8,7 @@ import {
 	registerLegacyPostConstructionInitializer,
 	runLegacyPostConstructionInitializers,
 } from '../../src/decorators/legacy/instance-initializers';
+import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
 import { signal } from '../../src/decorators/signal';
 import { renderController } from '../../src/server/render-controller';
 
@@ -46,6 +47,8 @@ describe('legacy post-construction decorator setup', () => {
 			'legacy-post-construction-element-test',
 		) as LegacyPostConstructionElement;
 
+		ensureLegacyHostReady(element, 'ssr');
+
 		const providers = element.getContextProviders();
 		const bindings = element.getHydrationBindings();
 
@@ -60,6 +63,8 @@ describe('legacy post-construction decorator setup', () => {
 		const element = document.createElement(
 			'legacy-post-construction-element-test',
 		) as LegacyPostConstructionElement;
+
+		ensureLegacyHostReady(element, 'ssr');
 
 		const firstProviders = element.getContextProviders();
 		const firstBindings = element.getHydrationBindings();
