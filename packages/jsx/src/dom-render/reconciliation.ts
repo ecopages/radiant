@@ -1,4 +1,6 @@
-import type { JsxKey, KeyedJsxValue, TemplateResultLike } from '../jsx-runtime.ts';
+import type { JsxKey, KeyedJsxValue } from '../jsx-runtime.ts';
+import { getCompiledTemplate } from './template-compiler.ts';
+import { createTemplateInstance } from './template-instance.ts';
 import { clearRangeBetween, createBoundaryMarker, insertNodesBefore, moveRangeBefore } from './dom-operations.ts';
 import {
 	attachEventBindingListener,
@@ -6,7 +8,6 @@ import {
 	detachEventBindingListener,
 	isEventListenerObject,
 } from './event-delegation.ts';
-import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
 import {
 	canRenderAsTextNode,
 	createNodesFromValue,
@@ -22,7 +23,6 @@ import {
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
 import type {
-	CompiledTemplate,
 	DeferredPropertyBinding,
 	LiveAttributePart,
 	MountedRangeContent,
@@ -33,16 +33,6 @@ import type {
 	TemplateInstance,
 	BindingDescriptor,
 } from './types.ts';
-
-export type ReconciliationRuntime = {
-	createTemplateInstance: (
-		template: TemplateResultLike,
-		rootTarget: HTMLElement,
-		deferredProperties: DeferredPropertyBinding[],
-		contextParent?: Node | null,
-	) => TemplateInstance;
-	getCompiledTemplate: (template: TemplateResultLike) => CompiledTemplate;
-};
 
 /**
  * Releases runtime state associated with a root-level mounted tree.
@@ -180,7 +170,6 @@ export function updateLiveAttributePart(
 	part: LiveAttributePart,
 	value: unknown,
 	deferredProperties: DeferredPropertyBinding[],
-	_runtime: ReconciliationRuntime,
 ): void {
 	if (part.source) {
 		if (isReactiveAttributeSource(value) && part.source === value) {
@@ -214,195 +203,9 @@ export function updateLiveAttributePart(
 	applyResolvedAttributeBinding(part, resolveReactiveSnapshot(value), deferredProperties);
 }
 
-function applyResolvedAttributeBinding(
-	part: LiveAttributePart,
-	value: unknown,
-	deferredProperties: DeferredPropertyBinding[],
-): void {
-	switch (part.binding.kind) {
-		case 'attr':
-			applyAttributeValueBinding(part, value);
-			return;
+import { applyAttributeBinding, applyResolvedAttributeBinding } from './bindings.ts';
 
-		case 'bool':
-			applyBooleanValueBinding(part, value);
-			return;
-
-		case 'event':
-			applyDelegatedEventValueBinding(part, value);
-			return;
-
-		case 'native-event':
-			applyNativeEventValueBinding(part, value);
-			return;
-
-		case 'prop':
-			applyPropertyValueBinding(part, value, deferredProperties);
-			return;
-	}
-}
-
-function applyAttributeValueBinding(part: LiveAttributePart, value: unknown): void {
-	if (value === undefined || value === null) {
-		removeElementAttribute(part.element, part.binding.name);
-		part.previousValue = value;
-		return;
-	}
-
-	const nextValue = String(value);
-
-	if (part.previousValue !== value || getElementAttributeValue(part.element, part.binding.name) !== nextValue) {
-		setElementAttributeValue(part.element, part.binding.name, nextValue);
-	}
-
-	part.previousValue = value;
-}
-
-function applyBooleanValueBinding(part: LiveAttributePart, value: unknown): void {
-	if (value) {
-		part.element.setAttribute(part.binding.name, '');
-	} else {
-		part.element.removeAttribute(part.binding.name);
-	}
-
-	part.previousValue = value;
-}
-
-function applyDelegatedEventValueBinding(part: LiveAttributePart, value: unknown): void {
-	const nextListener = asEventBindingListener(value);
-	const previousListener = asEventBindingListener(part.previousValue);
-
-	if (part.previousValue === value) {
-		return;
-	}
-
-	if (previousListener) {
-		detachEventBindingListener(part.rootTarget, part.element, part.binding.name, previousListener);
-	}
-
-	if (nextListener) {
-		attachEventBindingListener(part.rootTarget, part.element, part.binding.name, nextListener);
-	}
-
-	part.previousValue = value;
-}
-
-function applyNativeEventValueBinding(part: LiveAttributePart, value: unknown): void {
-	const nextListener = asEventBindingListener(value);
-	const previousListener = asEventBindingListener(part.previousValue);
-
-	if (part.previousValue === value) {
-		return;
-	}
-
-	if (previousListener) {
-		part.element.removeEventListener(part.binding.name, previousListener);
-	}
-
-	if (nextListener) {
-		part.element.addEventListener(part.binding.name, nextListener);
-	}
-
-	part.previousValue = value;
-}
-
-function applyPropertyValueBinding(
-	part: LiveAttributePart,
-	value: unknown,
-	deferredProperties: DeferredPropertyBinding[],
-): void {
-	deferredProperties.push({
-		element: part.element,
-		name: part.binding.name,
-		value,
-	});
-	part.previousValue = value;
-}
-
-function asEventBindingListener(value: unknown): EventListenerOrEventListenerObject | null {
-	if (typeof value === 'function') {
-		return value as EventListener;
-	}
-
-	if (isEventListenerObject(value)) {
-		return value;
-	}
-
-	return null;
-}
-
-/**
- * Applies a single attribute binding during non-incremental hydration of a flat JSX value.
- *
- * This is a simplified variant of {@link updateLiveAttributePart} used when the renderer
- * is reconnecting event and property bindings to existing SSR attributes without building
- * a full live template instance.
- *
- * @param element Target element.
- * @param binding Parsed binding descriptor from the hydration marker attribute.
- * @param value Current binding value from the JSX tree.
- * @param deferredProperties Accumulator for property assignments to flush after this pass.
- */
-export function applyAttributeBinding(
-	element: Element,
-	binding: Exclude<BindingDescriptor, { kind: 'child' }>,
-	value: unknown,
-	rootTarget: HTMLElement,
-	deferredProperties: DeferredPropertyBinding[],
-): void {
-	const resolvedValue = resolveReactiveSnapshot(value);
-
-	switch (binding.kind) {
-		case 'attr':
-			if (resolvedValue === undefined || resolvedValue === null) {
-				element.removeAttribute(binding.name);
-				return;
-			}
-			setElementAttributeValue(element, binding.name, String(resolvedValue));
-			return;
-
-		case 'bool':
-			if (resolvedValue) {
-				element.setAttribute(binding.name, '');
-			} else {
-				element.removeAttribute(binding.name);
-			}
-			return;
-
-		case 'event':
-			{
-				const listener = asEventBindingListener(resolvedValue);
-
-				if (!listener) {
-					return;
-				}
-
-				attachEventBindingListener(rootTarget, element, binding.name, listener);
-			}
-			return;
-
-		case 'native-event':
-			{
-				const listener = asEventBindingListener(resolvedValue);
-
-				if (!listener) {
-					return;
-				}
-
-				element.addEventListener(binding.name, listener);
-			}
-			return;
-
-		case 'prop':
-			deferredProperties.push({
-				element,
-				name: binding.name,
-				value: resolvedValue,
-			});
-			return;
-	}
-}
-
+export { applyAttributeBinding } from './bindings.ts';
 /**
  * Reconciles the content between two boundary markers against the next child
  * value.
@@ -418,7 +221,6 @@ export function updateRangeContent(
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-	runtime: ReconciliationRuntime,
 ): MountedRangeContent {
 	const nextValue = unwrapKeyedValue(value);
 	let currentContent = current;
@@ -439,7 +241,6 @@ export function updateRangeContent(
 			currentContent,
 			rootTarget,
 			deferredProperties,
-			runtime,
 		);
 	}
 
@@ -456,7 +257,6 @@ export function updateRangeContent(
 				currentContent,
 				rootTarget,
 				deferredProperties,
-				runtime,
 			);
 		}
 
@@ -467,25 +267,16 @@ export function updateRangeContent(
 			currentContent,
 			rootTarget,
 			deferredProperties,
-			runtime,
 		);
 	}
 
 	if (isTemplateResultLike(nextValue)) {
-		if (
-			currentContent.kind === 'template' &&
-			currentContent.instance.compiled === runtime.getCompiledTemplate(nextValue)
-		) {
+		if (currentContent.kind === 'template' && currentContent.instance.compiled === getCompiledTemplate(nextValue)) {
 			currentContent.instance.update(nextValue.values, deferredProperties);
 			return currentContent;
 		}
 
-		const instance = runtime.createTemplateInstance(
-			nextValue,
-			rootTarget,
-			deferredProperties,
-			endMarker.parentNode,
-		);
+		const instance = createTemplateInstance(nextValue, rootTarget, deferredProperties, endMarker.parentNode);
 		return replaceMountedRangeWithTemplate(startMarker, endMarker, currentContent, instance);
 	}
 
@@ -512,7 +303,7 @@ export function updateRangeContent(
 		nextValue,
 		rootTarget,
 		deferredProperties,
-		runtime.createTemplateInstance,
+		createTemplateInstance,
 		endMarker.parentNode,
 	);
 	return replaceMountedRangeWithNodes(startMarker, endMarker, currentContent, nodes);
@@ -571,14 +362,12 @@ function updateKeyedChildren(
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-	runtime: ReconciliationRuntime,
 ): MountedRangeContent {
 	const keyedState =
 		current.kind === 'keyed-list'
 			? current
 			: {
 					kind: 'keyed-list' as const,
-					order: [],
 					records: new Map<JsxKey, MountedRangeRecord>(),
 				};
 
@@ -587,7 +376,6 @@ function updateKeyedChildren(
 		clearRangeBetween(startMarker, endMarker);
 	}
 
-	const nextOrder: JsxKey[] = [];
 	const nextKeys = new Set<JsxKey>();
 	let insertionPoint: Node = endMarker;
 
@@ -598,7 +386,6 @@ function updateKeyedChildren(
 			continue;
 		}
 
-		nextOrder.unshift(child.key);
 		nextKeys.add(child.key);
 
 		let record = keyedState.records.get(child.key);
@@ -616,7 +403,6 @@ function updateKeyedChildren(
 			record.mounted,
 			rootTarget,
 			deferredProperties,
-			runtime,
 		);
 		insertionPoint = record.start;
 	}
@@ -633,7 +419,6 @@ function updateKeyedChildren(
 		keyedState.records.delete(key);
 	}
 
-	keyedState.order = nextOrder;
 	return keyedState;
 }
 
@@ -644,7 +429,6 @@ function updateIndexedChildren(
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-	runtime: ReconciliationRuntime,
 ): MountedRangeContent {
 	const indexedState =
 		current.kind === 'indexed-list'
@@ -677,7 +461,6 @@ function updateIndexedChildren(
 			record.mounted,
 			rootTarget,
 			deferredProperties,
-			runtime,
 		);
 		insertionPoint = record.start;
 	}
@@ -705,7 +488,6 @@ function mountReactiveChildSource(
 	current: MountedRangeContent,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-	runtime: ReconciliationRuntime,
 ): MountedSubscription {
 	const mountedSubscription: MountedSubscription = {
 		kind: 'subscription',
@@ -726,7 +508,6 @@ function mountReactiveChildSource(
 			mountedSubscription.mounted,
 			rootTarget,
 			nextDeferredProperties,
-			runtime,
 		);
 		flushDeferredProperties(nextDeferredProperties);
 	};

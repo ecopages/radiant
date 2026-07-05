@@ -1,15 +1,18 @@
-import {
-	isKeyedJsxValue,
-	isSubscribableJsxValue,
-	type KeyedJsxValue,
-	type SignalLike,
-	type TemplateResultLike,
-} from '../jsx-runtime.ts';
-import { createNodesFromJsxNodeLike, isJsxNodeLike } from './dom-operations.ts';
+import { isKeyedJsxValue, isSubscribableJsxValue, type KeyedJsxValue } from '../jsx-runtime.ts';
+import { isIterableRenderable, isJsxNodeLike, isSignalLikeValue, isTemplateResultLike } from '../renderable-guards.ts';
+import { createNodesFromJsxNodeLike } from './dom-operations.ts';
 import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
 
+export {
+	isIterableRenderable as isIterableValue,
+	isJsxNodeLike,
+	isSignalLikeValue,
+	isTemplateResultLike,
+	resolveReactiveSnapshot,
+} from '../renderable-guards.ts';
+
 type TemplateMount = (
-	template: TemplateResultLike,
+	template: import('../jsx-runtime.ts').TemplateResultLike,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
 	contextParent?: Node | null,
@@ -102,7 +105,7 @@ export function createNodesFromValue(
 			return;
 		}
 
-		if (isIterableValue(resolvedValue)) {
+		if (isIterableRenderable(resolvedValue)) {
 			for (const child of resolvedValue) {
 				collectNodes(child);
 			}
@@ -161,39 +164,11 @@ export function getKeyedChildren(children: readonly unknown[]): KeyedJsxValue[] 
  * @param value Value to inspect.
  */
 export function getIterableChildren(value: unknown): unknown[] | undefined {
-	if (!isIterableValue(value)) {
+	if (!isIterableRenderable(value)) {
 		return undefined;
 	}
 
 	return Array.from(value);
-}
-
-/**
- * Returns `true` when `value` is a non-string iterable object.
- *
- * Strings are excluded because they are iterable by character but must be
- * treated as atomic text nodes by the renderer.
- *
- * @param value Value to test.
- */
-export function isIterableValue(value: unknown): value is Iterable<unknown> {
-	return typeof value !== 'string' && typeof value === 'object' && value !== null && Symbol.iterator in value;
-}
-
-/**
- * Type guard that narrows `value` to {@link TemplateResultLike}.
- *
- * @param value Value to inspect.
- * @returns `true` when `value` is a valid Radiant template result.
- */
-export function isTemplateResultLike(value: unknown): value is TemplateResultLike {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		(value as { ['_$rType$']?: unknown })['_$rType$'] === 1 &&
-		'strings' in value &&
-		'values' in value
-	);
 }
 
 export function isReactiveAttributeSource(value: unknown): value is ReactiveAttributeSource {
@@ -202,15 +177,6 @@ export function isReactiveAttributeSource(value: unknown): value is ReactiveAttr
 
 export function isReactiveChildSource(value: unknown): value is ReactiveChildSource {
 	return isSubscribableJsxValue(value) || isSignalLikeValue(value);
-}
-
-export function isSignalLikeValue(value: unknown): value is SignalLike {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		typeof (value as Partial<SignalLike>).get === 'function' &&
-		typeof (value as Partial<SignalLike>).subscribe === 'function'
-	);
 }
 
 export function readReactiveChildSourceValue(source: ReactiveChildSource): unknown {
@@ -222,16 +188,4 @@ export function subscribeToReactiveChildSource(
 	notify: (value: unknown) => void,
 ): () => void {
 	return isSubscribableJsxValue(source) ? source.subscribe((value) => notify(value)) : source.subscribe(notify);
-}
-
-export function resolveReactiveSnapshot(value: unknown): unknown {
-	if (isSubscribableJsxValue(value)) {
-		return resolveReactiveSnapshot(value.getValue());
-	}
-
-	if (isSignalLikeValue(value)) {
-		return resolveReactiveSnapshot(value.get());
-	}
-
-	return value;
 }
