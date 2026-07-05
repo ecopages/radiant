@@ -13,8 +13,8 @@ export type HostAttributeSource = {
 	getReactiveProperties: () => ReactiveProperty[];
 	getReactivePropDefinitions: () => ReactivePropDefinition[];
 	getPropertyValue: (name: string) => unknown;
-	listAttributeNames: () => string[];
-	getAttributeValue: (name: string) => string | null;
+	getAttributeNames: () => string[];
+	getAttribute: (name: string) => string | null;
 };
 
 /**
@@ -121,8 +121,8 @@ function appendReactivePropDefinitionAttributes(
  * markup, that intent takes precedence over reactive property reflection.
  */
 function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<string, string>): void {
-	for (const attributeName of host.listAttributeNames()) {
-		const attributeValue = host.getAttributeValue(attributeName);
+	for (const attributeName of host.getAttributeNames()) {
+		const attributeValue = host.getAttribute(attributeName);
 		if (attributeValue !== null) {
 			attributes[attributeName] = attributeValue;
 		}

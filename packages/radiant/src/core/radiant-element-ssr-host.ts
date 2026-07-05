@@ -1,40 +1,43 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
-import type {
-	RadiantElementServerRenderSsrCapable,
-	RadiantElementTrackedRenderSsrCapable,
-} from './radiant-element-ssr-registry';
 import type { ReactiveProperty } from './reactive-prop-core';
+import type { ReactivePropDefinition } from './reactive-prop-metadata';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 
-export type RadiantElementSsrHostSource = RadiantElementServerRenderSsrCapable &
-	RadiantElementTrackedRenderSsrCapable & {
-		constructor: CustomElementConstructor;
-		getAttribute(name: string): string | null;
-		getAttributeNames(): string[];
-		getAuthoredHydrationScriptMarkup(): string | undefined;
-		getContextProviders(): SsrSerializableContextProvider[];
-		getHydrationBindings(): SsrSerializableHydrationBinding[];
-		getPropertyValue(name: string): unknown;
-		getReactiveProperties(): ReactiveProperty[];
-		getSlotProjectionScriptTag(): string | undefined;
-		resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
-		renderViewToString(options?: RenderToStringOptions): string;
-	};
+/**
+ * Unified SSR host shape shared by core resolution and server serialization.
+ */
+export type InternalRadiantSsrHost = {
+	constructor: CustomElementConstructor;
+	getAttribute(name: string): string | null;
+	getAttributeNames(): string[];
+	getAuthoredHydrationScriptMarkup?: () => string | undefined;
+	getContextProviders: () => SsrSerializableContextProvider[];
+	getHydrationBindings: () => SsrSerializableHydrationBinding[];
+	getReactiveProperties: () => ReactiveProperty[];
+	getReactivePropDefinitions: () => ReactivePropDefinition[];
+	getPropertyValue: (name: string) => unknown;
+	getSlotProjectionScriptTag?: () => string | undefined;
+	resolveTrackedRenderOutput: () => { containsSlots: boolean; value: JsxRenderable };
+	renderViewToString: (options?: RenderToStringOptions) => string;
+};
 
-export function resolveRadiantElementSsrHostSource(component: object): RadiantElementSsrHostSource | undefined {
-	if (isRadiantElementSsrHostSource(component)) {
+export type RadiantElementSsrHostSource = InternalRadiantSsrHost;
+
+export function resolveRadiantElementSsrHostSource(component: object): InternalRadiantSsrHost | undefined {
+	if (isInternalRadiantSsrHost(component)) {
 		return component;
 	}
 
 	return undefined;
 }
 
-function isRadiantElementSsrHostSource(component: object): component is RadiantElementSsrHostSource {
+export function isInternalRadiantSsrHost(component: object): component is InternalRadiantSsrHost {
 	return (
 		typeof component.constructor === 'function' &&
 		typeof (component as { getAttribute?: unknown }).getAttribute === 'function' &&
+		typeof (component as { getAttributeNames?: unknown }).getAttributeNames === 'function' &&
 		typeof (component as { getAuthoredHydrationScriptMarkup?: unknown }).getAuthoredHydrationScriptMarkup ===
 			'function' &&
 		typeof (component as { getContextProviders?: unknown }).getContextProviders === 'function' &&

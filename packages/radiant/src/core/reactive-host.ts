@@ -6,7 +6,6 @@ import type {
 	ReactiveBindings,
 	ReactiveFieldOptions,
 } from './reactive-prop-core';
-import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
 type ReactiveDependencyReader = () => unknown;
@@ -52,7 +51,6 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
 	registerCleanupCallback(callback: () => void): void;
 	registerConnectedCallback(callback: () => void): void;
-	registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void;
 	registerReactiveDependencyReader(property: string, read: () => unknown): void;
 	trackReactiveRead(property: string): void;
 }
@@ -162,7 +160,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	private reactiveDependencies = new Map<string, ReactiveHostDependency>();
 	private reactiveDependencyReaders = new Map<string, ReactiveDependencyReader>();
 	private reactiveBindings = new Map<string, SubscribableJsxValue>();
-	private updateCallbacks = new Map<string, Set<(...rest: any[]) => any>>();
+	private updateCallbacks = new Map<string, Set<() => void>>();
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 
@@ -228,14 +226,6 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	}
 
 	/**
-	 * Placeholder hydration hook so shared decorators can target both host types.
-	 *
-	 * `ReactiveHost` itself does not persist hydration bindings; concrete hosts
-	 * such as `RadiantElement` can override this behavior at the outer layer.
-	 */
-	public registerHydrationBinding(_name: string, _binding: SsrSerializableHydrationBinding): void {}
-
-	/**
 	 * Registers a raw reader for a reactive member so tracked dependency reads do
 	 * not need to go back through the public accessor.
 	 */
@@ -248,7 +238,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	 *
 	 * Returns a disposer that removes the callback.
 	 */
-	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
+	public registerUpdateCallback(property: string, update: () => void): () => void {
 		if (!this.updateCallbacks.has(property)) {
 			this.updateCallbacks.set(property, new Set());
 		}
@@ -368,7 +358,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 			setValue: (newValue: T) => {
 				this.reactiveFields.set(propertyName, { ...reactiveField, value: newValue });
 			},
-			notifyInitialValue: initialValue,
+			notifyInitialValue: options.suppressInitialNotify ? undefined : initialValue,
 		});
 	}
 

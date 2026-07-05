@@ -1,29 +1,29 @@
 import type { EventEmitter } from '../tools';
 import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
+import { HostSsrRegistry } from './host-ssr-registry';
+import { getReactivePropDefinitions, type ReactivePropDefinition } from './reactive-prop-metadata';
+import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import {
-	runLegacyInstanceInitializers,
-	runLegacyPostConstructionInitializers,
-} from '../decorators/legacy/instance-initializers';
-import {
-	createReactivePropertyMapping,
-	type ReactiveAccessorDefinition,
 	type ReactiveBindingOption,
 	type ReactiveBindingValue,
 	type ReactiveBindings,
 	type ReactiveFieldOptions,
 	type ReactiveProperty,
 	type ReactivePropertyOptions,
-	validateReactivePropertyDefault,
 } from './reactive-prop-core';
+import { EventSubscriptionRegistry } from './event-subscription-registry';
+import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
+import { RenderScheduler } from './render-scheduler';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { getRadiantElementSsrRuntime } from './radiant-element-ssr-registry';
+import type { InternalRadiantSsrHost } from './radiant-element-ssr-host';
 import { type AttributeTypeConstant, getInitialValue } from '../utils/attribute-utils';
 
 export type {
@@ -44,9 +44,6 @@ type RadiantRenderSurface = {
 	renderTarget: RadiantRenderTarget;
 	interactionTarget: RadiantInteractionTarget;
 	queryRoot: ParentNode;
-};
-type ReactivePropertyStateHost = HTMLElement & {
-	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
 };
 
 function resolveRadiantElementBase(): typeof HTMLElement {
@@ -72,10 +69,6 @@ export type RadiantElementEventListener = {
 	type: string;
 	listener: EventListener;
 	options?: AddEventListenerOptions;
-};
-
-type RadiantElementEventSubscription = RadiantElementEventListener & {
-	target: EventTarget;
 };
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
@@ -118,7 +111,7 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 *
 	 * @returns A cleanup function that unregisters the callback.
 	 */
-	registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void;
+	registerUpdateCallback(property: string, update: () => void): () => void;
 
 	/**
 	 * Returns a subscribable JSX child binding for a reactive property or field.
@@ -245,21 +238,12 @@ export class RadiantElement<Bindings extends object = {}>
 	public readonly $: ReactiveBindings<Bindings>;
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
 	private readonly reactivePropertyState: ReactivePropertyState;
+	private readonly eventSubscriptionRegistry: EventSubscriptionRegistry;
 
 	/**
-	 * Registered context providers keyed by decorated property name.
+	 * Registered context providers and hydration bindings for SSR.
 	 */
-	private contextProviders = new Map<string, SsrSerializableContextProvider>();
-
-	/**
-	 * Registered keyed hydration payload producers appended to SSR host output.
-	 */
-	private hydrationBindings = new Map<string, SsrSerializableHydrationBinding>();
-
-	/**
-	 * A map of event subscriptions used to manage event listeners on the Radiant element.
-	 */
-	private eventSubscriptions = new Map<string, RadiantElementEventSubscription>();
+	private readonly hostSsrRegistry = new HostSsrRegistry();
 
 	/**
 	 * A map for event emitters
@@ -270,15 +254,27 @@ export class RadiantElement<Bindings extends object = {}>
 	 * A flag indicating whether the element has been connected to the DOM.
 	 */
 	private elementReady = false;
-	private isRendering = false;
 	private isFirstConnectPending = false;
-	private isRenderScheduled = false;
-	private needsRender = false;
+	private readonly renderScheduler: RenderScheduler;
 	private renderRuntime?: RenderRuntime;
 
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
+		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(
+			() => this.resolveRenderSurface().interactionTarget,
+			() => this,
+		);
+		this.renderScheduler = new RenderScheduler({
+			canFlush: () =>
+				this.isConnected &&
+				!this.renderScheduler.rendering &&
+				!(this.isFirstConnectPending && shouldHydrateOnConnect(this)),
+			commit: () => {
+				const { renderTarget } = this.resolveRenderSurface();
+				this.getOrCreateRenderRuntime().render(renderTarget as HTMLElement);
+			},
+		});
 
 		this.reactiveHost = new ReactiveHost<this, Bindings>(
 			this,
@@ -292,7 +288,7 @@ export class RadiantElement<Bindings extends object = {}>
 		);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
-		runLegacyInstanceInitializers(this);
+		ensureLegacyHostReady(this, 'construct');
 	}
 
 	public get slotProjectionVersion(): number {
@@ -300,7 +296,7 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	connectedCallback() {
-		runLegacyPostConstructionInitializers(this);
+		ensureLegacyHostReady(this, 'connect');
 		const isReconnectDuringPendingFirstConnect = this.isFirstConnectPending;
 
 		this.elementReady = true;
@@ -328,10 +324,10 @@ export class RadiantElement<Bindings extends object = {}>
 			renderRuntime.observeSlotProjection();
 
 			if (shouldHydrateOnConnect(this)) {
-				this.needsRender = false;
+				this.renderScheduler.clearPending();
 				this.hydrate();
 
-				if (this.needsRender) {
+				if (this.renderScheduler.pending) {
 					this.update();
 				}
 
@@ -347,7 +343,7 @@ export class RadiantElement<Bindings extends object = {}>
 	disconnectedCallback() {
 		this.renderRuntime?.dispose();
 		this.renderRuntime = undefined;
-		this.removeAllSubscribedEvents();
+		this.eventSubscriptionRegistry.removeAll();
 		this.reactiveHost.disconnectHost();
 	}
 
@@ -404,32 +400,36 @@ export class RadiantElement<Bindings extends object = {}>
 		return jsx('slot', {});
 	}
 
+	public getReactivePropDefinitions(): ReactivePropDefinition[] {
+		return getReactivePropDefinitions(this);
+	}
+
+	public getPropertyValue(name: string): unknown {
+		return Reflect.get(this, name);
+	}
+
 	public renderViewToString(options: RenderToStringOptions = {}): string {
 		if (!this.shouldRunRenderLifecycle()) {
 			return this.innerHTML;
 		}
 
-		runLegacyPostConstructionInitializers(this);
+		ensureLegacyHostReady(this, 'ssr');
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this, options);
+		return requireRadiantElementSsrRuntime().renderView(this as unknown as InternalRadiantSsrHost, options);
 	}
 
 	public hydrate(): void {
-		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.isRendering) {
+		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.renderScheduler.rendering) {
 			return;
 		}
 
 		const { renderTarget } = this.resolveRenderSurface();
 		const renderRuntime = this.getOrCreateRenderRuntime();
 
-		this.isRendering = true;
-
-		try {
+		this.renderScheduler.runExclusive(() => {
 			renderRuntime.hydrate(renderTarget as HTMLElement);
-		} finally {
-			this.isRendering = false;
-		}
+		});
 	}
 
 	public requestUpdate(): void {
@@ -437,23 +437,7 @@ export class RadiantElement<Bindings extends object = {}>
 			return;
 		}
 
-		this.needsRender = true;
-
-		if (this.isRenderScheduled) {
-			return;
-		}
-
-		this.isRenderScheduled = true;
-
-		queueMicrotask(() => {
-			this.isRenderScheduled = false;
-
-			if (!this.needsRender) {
-				return;
-			}
-
-			this.update();
-		});
+		this.renderScheduler.requestUpdate();
 	}
 
 	public update(): void {
@@ -461,29 +445,8 @@ export class RadiantElement<Bindings extends object = {}>
 			return;
 		}
 
-		const { renderTarget } = this.resolveRenderSurface();
-		const renderRuntime = this.getOrCreateRenderRuntime();
-
-		this.needsRender = true;
-
-		if (!this.isConnected || this.isRendering) {
-			return;
-		}
-
-		if (this.isFirstConnectPending && shouldHydrateOnConnect(this)) {
-			return;
-		}
-
-		while (this.needsRender && this.isConnected) {
-			this.needsRender = false;
-			this.isRendering = true;
-
-			try {
-				renderRuntime.render(renderTarget as HTMLElement);
-			} finally {
-				this.isRendering = false;
-			}
-		}
+		this.renderScheduler.markPending();
+		this.renderScheduler.flush();
 	}
 
 	public registerReactiveProperty(config: ReactiveProperty) {
@@ -499,22 +462,19 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
-		this.contextProviders.set(name, provider);
-		this.hydrationBindings.set(name, provider);
+		this.hostSsrRegistry.registerContextProvider(name, provider);
 	}
 
 	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
-		this.hydrationBindings.set(name, binding);
+		this.hostSsrRegistry.registerHydrationBinding(name, binding);
 	}
 
 	public getContextProviders(): SsrSerializableContextProvider[] {
-		runLegacyPostConstructionInitializers(this);
-		return [...this.contextProviders.values()];
+		return this.hostSsrRegistry.getContextProviders();
 	}
 
 	public getHydrationBindings(): SsrSerializableHydrationBinding[] {
-		runLegacyPostConstructionInitializers(this);
-		return [...this.hydrationBindings.values()];
+		return this.hostSsrRegistry.getHydrationBindings();
 	}
 
 	/**
@@ -563,7 +523,7 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.attachShadow({ mode: 'open' });
 	}
 
-	public registerUpdateCallback(property: string, update: (...rest: any[]) => any): () => void {
+	public registerUpdateCallback(property: string, update: () => void): () => void {
 		return this.reactiveHost.registerUpdateCallback(property, update);
 	}
 
@@ -595,45 +555,12 @@ export class RadiantElement<Bindings extends object = {}>
 		return unsubscribers;
 	}
 
+	public hasEventSubscription(subscriptionId: string): boolean {
+		return this.eventSubscriptionRegistry.hasEventSubscription(subscriptionId);
+	}
+
 	public subscribeEvent(eventConfig: RadiantElementEventListener): () => void {
-		const { interactionTarget } = this.resolveRenderSurface();
-		const delegatedListener = (delegatedEvent: Event) => {
-			if (delegatedEvent.target && (delegatedEvent.target as Element).matches(eventConfig.selector)) {
-				eventConfig.listener.call(this, delegatedEvent);
-			}
-		};
-		const subscriptionId = `${eventConfig.type}:${eventConfig.selector}`;
-		interactionTarget.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
-		this.eventSubscriptions.set(subscriptionId, {
-			...eventConfig,
-			listener: delegatedListener,
-			target: interactionTarget,
-		});
-
-		return this.unsubscribeEvent.bind(this, subscriptionId);
-	}
-
-	private unsubscribeEvent(id: string): void {
-		const eventSubscription = this.eventSubscriptions.get(id);
-		if (eventSubscription) {
-			eventSubscription.target.removeEventListener(
-				eventSubscription.type,
-				eventSubscription.listener,
-				eventSubscription.options,
-			);
-			this.eventSubscriptions.delete(id);
-		}
-	}
-
-	private removeAllSubscribedEvents(): void {
-		for (const eventSubscription of this.eventSubscriptions.values()) {
-			eventSubscription.target.removeEventListener(
-				eventSubscription.type,
-				eventSubscription.listener,
-				eventSubscription.options,
-			);
-		}
-		this.eventSubscriptions.clear();
+		return this.eventSubscriptionRegistry.subscribe(eventConfig);
 	}
 
 	/**
@@ -745,111 +672,4 @@ function requireRadiantElementSsrRuntime() {
 
 function shouldHydrateOnConnect(component: HTMLElement): boolean {
 	return isRadiantHydratorInstalled() && hasHydrationMarkers(component);
-}
-
-class ReactivePropertyState {
-	private readonly properties = new Map<string, ReactiveProperty>();
-	private readonly preUpgradePropertyValues = new Map<string, unknown>();
-
-	constructor(private readonly host: ReactivePropertyStateHost) {
-		for (const propertyName of Object.getOwnPropertyNames(host)) {
-			this.preUpgradePropertyValues.set(propertyName, Reflect.get(host, propertyName));
-		}
-	}
-
-	public register(config: ReactiveProperty): void {
-		this.properties.set(config.name, config);
-	}
-
-	public getAll(): ReactiveProperty[] {
-		return Array.from(this.properties.values());
-	}
-
-	public applyAttributeChange(name: string, oldValue: string | null, newValue: string | null): void {
-		const config = this.properties.get(name);
-
-		if (!config) {
-			return;
-		}
-
-		const transformedValue = this.transformAttributeValue(newValue, config);
-		const transformedOldValue = this.transformAttributeValue(oldValue, config);
-
-		Reflect.set(this.host, config.attribute, transformedValue);
-		this.host.notifyUpdate(name, transformedOldValue, transformedValue);
-	}
-
-	public create<T>(
-		propertyName: string,
-		options: ReactivePropertyOptions<T>,
-		resolveInitialValue: (type: AttributeTypeConstant, attributeKey: string, defaultValue: unknown) => T,
-		defineReactiveAccessor: (propertyName: string, config: ReactiveAccessorDefinition<T>) => void,
-	): void {
-		const { type, attribute, reflect, defaultValue } = options;
-		const attributeKey = attribute ?? propertyName;
-		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
-		const preUpgradeValue = hasPreUpgradeValue ? (this.preUpgradePropertyValues.get(propertyName) as T) : undefined;
-
-		validateReactivePropertyDefault(type, defaultValue);
-
-		const initialValue: T | undefined = hasPreUpgradeValue
-			? preUpgradeValue
-			: resolveInitialValue(type, attributeKey, defaultValue);
-
-		if (this.host.hasAttribute(attributeKey) && (!reflect || initialValue == null || initialValue === '')) {
-			this.host.removeAttribute(attributeKey);
-		}
-
-		if (hasPreUpgradeValue && Object.prototype.hasOwnProperty.call(this.host, propertyName)) {
-			Reflect.deleteProperty(this.host, propertyName);
-		}
-
-		const propertyMapping = createReactivePropertyMapping(propertyName, attributeKey, type, initialValue);
-
-		this.register(propertyMapping);
-
-		defineReactiveAccessor(propertyName, {
-			bind: options.bind,
-			getValue: () => this.properties.get(propertyName)?.value as T | undefined,
-			setValue: (newValue: T) => {
-				this.properties.set(propertyName, { ...propertyMapping, value: newValue });
-				this.reflectValue(attributeKey, reflect, propertyMapping, newValue);
-			},
-		});
-
-		if (initialValue !== undefined) {
-			queueMicrotask(() => {
-				const currentValue = this.properties.get(propertyName)?.value as T | undefined;
-				if (currentValue === undefined) {
-					return;
-				}
-
-				this.reflectValue(attributeKey, reflect, propertyMapping, currentValue);
-				this.host.notifyUpdate(propertyName, undefined, currentValue);
-			});
-		}
-	}
-
-	private transformAttributeValue(value: string | null, config: ReactiveProperty): unknown {
-		return value !== null ? config.converter.fromAttribute(value) : value;
-	}
-
-	private reflectValue<T>(
-		attributeKey: string,
-		reflect: boolean | undefined,
-		property: ReactiveProperty<T>,
-		value: T,
-	): void {
-		if (!reflect) {
-			return;
-		}
-
-		if (value == null || value === '' || value === false) {
-			this.host.removeAttribute(attributeKey);
-			return;
-		}
-
-		const attributeValue = property.converter.toAttribute(value);
-		this.host.setAttribute(attributeKey, attributeValue);
-	}
 }
