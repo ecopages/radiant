@@ -7,7 +7,7 @@ import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { withSsrContextProviders } from './context-ssr';
 import { ensureLightDomShim } from './light-dom-shim';
 import { withRadiantServerCustomElementRenderBridge } from './radiant-element-ssr-bridge';
-import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
+import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr-runtime';
 import {
 	mergeRenderedComponentAssets,
 	normalizeRenderOptions,

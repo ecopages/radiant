@@ -12,7 +12,7 @@ import {
 	renderRegisteredRadiantElementHostToString,
 } from './radiant-element-ssr-bridge';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
-import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
+import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr-runtime';
 import {
 	createDefaultRenderTimestamp,
 	toRenderedComponentPayload,
