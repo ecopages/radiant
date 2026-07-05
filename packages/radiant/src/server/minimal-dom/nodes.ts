@@ -1,0 +1,397 @@
+import { escapeHtmlAttribute } from '../../utils/escape-html-attribute';
+
+type MinimalParentNode = Node & ParentNode;
+
+type HtmlModule = typeof import('./html');
+
+let htmlModule: HtmlModule | undefined;
+
+function getHtmlModule(): HtmlModule {
+	htmlModule ??= require('./html') as HtmlModule;
+	return htmlModule;
+}
+
+export class MinimalNode extends EventTarget {
+	static readonly DOCUMENT_NODE = 9;
+	static readonly ELEMENT_NODE = 1;
+	static readonly TEXT_NODE = 3;
+
+	public childNodes: Node[] = [];
+	public ownerDocument: Document | null;
+	public parentNode: MinimalParentNode | null = null;
+
+	constructor(
+		public readonly nodeType: number,
+		ownerDocument: Document | null = null,
+	) {
+		super();
+		this.ownerDocument = ownerDocument;
+	}
+
+	append(...nodes: Array<Node | string>): void {
+		for (const node of nodes) {
+			this.appendChild(typeof node === 'string' ? createTextNode(node) : node);
+		}
+	}
+
+	appendChild<TNode extends Node>(node: TNode): TNode {
+		if ('parentNode' in node && node.parentNode && 'removeChild' in node.parentNode) {
+			(node.parentNode as Node & { removeChild(node: Node): Node }).removeChild(node);
+		}
+
+		this.childNodes.push(node);
+		(node as Node & { ownerDocument: Document | null }).ownerDocument =
+			this.nodeType === MinimalNode.DOCUMENT_NODE ? (this as unknown as Document) : this.ownerDocument;
+		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = this as unknown as MinimalParentNode;
+		return node;
+	}
+
+	removeChild<TNode extends Node>(node: TNode): TNode {
+		const nodeIndex = this.childNodes.indexOf(node);
+
+		if (nodeIndex === -1) {
+			return node;
+		}
+
+		this.childNodes.splice(nodeIndex, 1);
+		(node as Node & { parentNode: MinimalParentNode | null }).parentNode = null;
+		return node;
+	}
+
+	replaceChildren(...nodes: Array<Node | string>): void {
+		for (const child of this.childNodes) {
+			(child as Node & { parentNode: MinimalParentNode | null }).parentNode = null;
+		}
+
+		this.childNodes = [];
+		this.append(...nodes);
+	}
+
+	get textContent(): string | null {
+		return this.childNodes.map((child) => child.textContent ?? '').join('');
+	}
+
+	set textContent(value: string | null) {
+		this.replaceChildren(value ?? '');
+	}
+
+	getRootNode(): Node {
+		let current: Node = this as unknown as Node;
+
+		while ('parentNode' in current && current.parentNode) {
+			current = current.parentNode;
+		}
+
+		return current;
+	}
+}
+
+export class MinimalTextNode extends MinimalNode {
+	constructor(
+		private value: string,
+		ownerDocument: Document | null = getInstalledDocumentLike(),
+	) {
+		super(MinimalNode.TEXT_NODE, ownerDocument);
+	}
+
+	override get textContent(): string {
+		return this.value;
+	}
+
+	override set textContent(value: string | null) {
+		this.value = value ?? '';
+	}
+}
+
+class MinimalClassList {
+	constructor(private readonly element: MinimalElement) {}
+
+	add(...tokens: string[]): void {
+		const nextTokens = new Set(this.readTokens());
+
+		for (const token of tokens) {
+			if (token !== '') {
+				nextTokens.add(token);
+			}
+		}
+
+		this.writeTokens([...nextTokens]);
+	}
+
+	remove(...tokens: string[]): void {
+		const nextTokens = new Set(this.readTokens());
+
+		for (const token of tokens) {
+			nextTokens.delete(token);
+		}
+
+		this.writeTokens([...nextTokens]);
+	}
+
+	toggle(token: string, force?: boolean): boolean {
+		const hasToken = this.contains(token);
+		const shouldAdd = force ?? !hasToken;
+
+		if (shouldAdd) {
+			this.add(token);
+			return true;
+		}
+
+		this.remove(token);
+		return false;
+	}
+
+	contains(token: string): boolean {
+		return this.readTokens().includes(token);
+	}
+
+	toString(): string {
+		return this.value;
+	}
+
+	get value(): string {
+		return this.element.getAttribute('class') ?? '';
+	}
+
+	private readTokens(): string[] {
+		return this.value
+			.split(/\s+/)
+			.map((token) => token.trim())
+			.filter((token) => token.length > 0);
+	}
+
+	private writeTokens(tokens: string[]): void {
+		if (tokens.length === 0) {
+			this.element.removeAttribute('class');
+			return;
+		}
+
+		this.element.setAttribute('class', tokens.join(' '));
+	}
+}
+
+export class MinimalElement extends MinimalNode {
+	private attributes = new Map<string, string>();
+	private classListValue?: MinimalClassList;
+	private datasetValue?: DOMStringMap;
+	private fragmentHtml?: string;
+	private fragmentText?: string;
+
+	public readonly localName: string;
+	public readonly tagName: string;
+
+	constructor(tagName = 'div', ownerDocument: Document | null = getInstalledDocumentLike()) {
+		super(MinimalNode.ELEMENT_NODE, ownerDocument);
+		this.localName = tagName.toLowerCase();
+		this.tagName = this.localName.toUpperCase();
+	}
+
+	get id(): string {
+		return this.getAttribute('id') ?? '';
+	}
+
+	set id(value: string) {
+		if (value === '') {
+			this.removeAttribute('id');
+			return;
+		}
+
+		this.setAttribute('id', value);
+	}
+
+	get classList(): DOMTokenList {
+		this.classListValue ??= new MinimalClassList(this);
+		return this.classListValue as unknown as DOMTokenList;
+	}
+
+	get dataset(): DOMStringMap {
+		this.datasetValue ??= new Proxy(
+			{},
+			{
+				deleteProperty: (_target, property) => {
+					if (typeof property !== 'string') {
+						return false;
+					}
+
+					this.removeAttribute(getHtmlModule().toDataAttributeName(property));
+					return true;
+				},
+				get: (_target, property) => {
+					if (typeof property !== 'string') {
+						return undefined;
+					}
+
+					return this.getAttribute(getHtmlModule().toDataAttributeName(property)) ?? undefined;
+				},
+				getOwnPropertyDescriptor: (_target, property) => {
+					if (typeof property !== 'string') {
+						return undefined;
+					}
+
+					return {
+						configurable: true,
+						enumerable: true,
+						value: this.getAttribute(getHtmlModule().toDataAttributeName(property)) ?? undefined,
+						writable: true,
+					};
+				},
+				has: (_target, property) => {
+					return typeof property === 'string' && this.hasAttribute(getHtmlModule().toDataAttributeName(property));
+				},
+				ownKeys: () => {
+					return this.getAttributeNames()
+						.filter((name) => name.startsWith('data-'))
+						.map((name) => getHtmlModule().toDatasetPropertyName(name.slice(5)));
+				},
+				set: (_target, property, value) => {
+					if (typeof property !== 'string') {
+						return false;
+					}
+
+					this.setAttribute(getHtmlModule().toDataAttributeName(property), String(value));
+					return true;
+				},
+			},
+		) as DOMStringMap;
+
+		return this.datasetValue;
+	}
+
+	hasAttribute(name: string): boolean {
+		return this.attributes.has(name);
+	}
+
+	getAttribute(name: string): string | null {
+		return this.attributes.get(name) ?? null;
+	}
+
+	getAttributeNames(): string[] {
+		return Array.from(this.attributes.keys());
+	}
+
+	setAttribute(name: string, value: unknown): void {
+		this.fragmentHtml = undefined;
+		this.attributes.set(name, String(value));
+	}
+
+	toggleAttribute(name: string, force?: boolean): boolean {
+		const shouldHaveAttribute = force ?? !this.hasAttribute(name);
+
+		if (shouldHaveAttribute) {
+			this.setAttribute(name, '');
+			return true;
+		}
+
+		this.removeAttribute(name);
+		return false;
+	}
+
+	removeAttribute(name: string): void {
+		this.fragmentHtml = undefined;
+		this.attributes.delete(name);
+	}
+
+	querySelector(): Element | null {
+		return null;
+	}
+
+	querySelectorAll(): Element[] {
+		return [];
+	}
+
+	matches(): boolean {
+		return false;
+	}
+
+	get outerHTML(): string {
+		if (this.fragmentHtml !== undefined) {
+			return this.fragmentHtml;
+		}
+
+		const attributes = Array.from(this.attributes.entries())
+			.map(([name, value]) => ` ${name}="${escapeHtmlAttribute(value)}"`)
+			.join('');
+
+		return `<${this.localName}${attributes}>${this.innerHTML}</${this.localName}>`;
+	}
+
+	get innerHTML(): string {
+		return this.childNodes.map((child) => getHtmlModule().serializeNodeHtml(child)).join('');
+	}
+
+	set innerHTML(html: string) {
+		this.fragmentHtml = undefined;
+		this.fragmentText = undefined;
+		this.replaceChildren(...getHtmlModule().parseHtmlToNodes(html, this.ownerDocument));
+	}
+
+	override get textContent(): string {
+		return this.fragmentText ?? super.textContent ?? '';
+	}
+
+	override set textContent(value: string | null) {
+		this.fragmentHtml = undefined;
+		this.fragmentText = value ?? '';
+		super.textContent = value;
+	}
+
+	setSerializedFragment(fragmentHtml: string, fragmentText: string, attributes: Record<string, string>): void {
+		this.fragmentHtml = fragmentHtml;
+		this.fragmentText = fragmentText;
+		this.attributes = new Map(Object.entries(attributes));
+		this.replaceChildren();
+	}
+}
+
+export class MinimalEvent {
+	public readonly bubbles: boolean;
+	public readonly cancelable: boolean;
+	public readonly composed: boolean;
+	public readonly type: string;
+
+	constructor(type: string, eventInitDict: EventInit = {}) {
+		this.type = type;
+		this.bubbles = eventInitDict.bubbles ?? false;
+		this.cancelable = eventInitDict.cancelable ?? false;
+		this.composed = eventInitDict.composed ?? false;
+	}
+}
+
+export class MinimalCustomEvent<T = unknown> extends MinimalEvent {
+	public readonly detail: T;
+
+	constructor(type: string, eventInitDict: CustomEventInit<T> = {}) {
+		super(type, eventInitDict);
+		this.detail = eventInitDict.detail as T;
+	}
+}
+
+export class MinimalHTMLElement extends MinimalElement {
+	public isConnected = false;
+
+	constructor(tagName = 'div', ownerDocument: Document | null = getInstalledDocumentLike()) {
+		super(tagName, ownerDocument);
+	}
+
+	insertAdjacentHTML(_position: InsertPosition, html: string): void {
+		this.append(...getHtmlModule().parseHtmlToNodes(html, this.ownerDocument));
+	}
+
+	connectedCallback?(): void;
+	attributeChangedCallback?(name: string, oldValue: string | null, newValue: string | null): void;
+	disconnectedCallback?(): void;
+}
+
+export class MinimalHtmlScriptElement extends MinimalHTMLElement {
+	constructor(ownerDocument: Document | null = getInstalledDocumentLike()) {
+		super('script', ownerDocument);
+	}
+}
+
+export function createTextNode(value: string): Node {
+	return new MinimalTextNode(value, getInstalledDocumentLike()) as unknown as Node;
+}
+
+export function getInstalledDocumentLike(): Document | null {
+	return ((globalThis as typeof globalThis & { document?: Document }).document ?? null) as Document | null;
+}
