@@ -1,11 +1,8 @@
 import { getReactivePropDefinitions } from '../core/reactive-prop-metadata';
 import { resolveRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
-import type { RadiantElementServerRenderSsrCapable } from '../core/radiant-element-ssr-registry';
-import type { RadiantElementSsrHost } from '../core/radiant-element-ssr-service';
+import type { InternalRadiantSsrHost } from './internal-radiant-host';
 
-export function extractRadiantElementServerRenderHost(
-	component: RadiantElementServerRenderSsrCapable,
-): RadiantElementSsrHost {
+export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrHost {
 	const source = resolveRadiantElementSsrHostSource(component);
 
 	if (!source) {
@@ -14,15 +11,16 @@ export function extractRadiantElementServerRenderHost(
 
 	return {
 		constructor: source.constructor,
-		getAuthoredHydrationScriptMarkup: () => source.getAuthoredHydrationScriptMarkup(),
+		getAttribute: (name) => source.getAttribute(name),
+		getAttributeNames: () => source.getAttributeNames(),
+		getAuthoredHydrationScriptMarkup: () => source.getAuthoredHydrationScriptMarkup?.(),
 		getContextProviders: () => source.getContextProviders(),
 		getHydrationBindings: () => source.getHydrationBindings(),
-		getSlotProjectionScriptTag: () => source.getSlotProjectionScriptTag(),
-		renderViewToString: (options) => source.renderViewToString(options),
 		getReactiveProperties: () => source.getReactiveProperties(),
 		getReactivePropDefinitions: () => getReactivePropDefinitions(component),
 		getPropertyValue: (name) => Reflect.get(component, name),
-		listAttributeNames: () => source.getAttributeNames(),
-		getAttributeValue: (name) => source.getAttribute(name),
+		getSlotProjectionScriptTag: () => source.getSlotProjectionScriptTag?.(),
+		resolveTrackedRenderOutput: () => source.resolveTrackedRenderOutput(),
+		renderViewToString: (options) => source.renderViewToString(options),
 	};
 }
