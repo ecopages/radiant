@@ -1,32 +1,29 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import type { SsrSerializableContextProvider } from '../context/context-provider';
-import { withSsrContextProviders } from '../server/context-ssr';
-import { getCustomElementTagName } from './custom-element-metadata';
-import type { ReactiveProperty } from './reactive-prop-core';
-import type { ReactivePropDefinition } from './reactive-prop-metadata';
-import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
-import { resolveHostAttributes, stringifyHostAttributes } from '../server/host-attribute-serialization';
-import { composeHostContent } from '../server/host-script-composition';
-
-export type RadiantElementSsrHost = {
-	constructor: CustomElementConstructor;
-	getAuthoredHydrationScriptMarkup?: () => string | undefined;
-	getContextProviders: () => SsrSerializableContextProvider[];
-	getHydrationBindings: () => SsrSerializableHydrationBinding[];
-	getSlotProjectionScriptTag?: () => string | undefined;
-	renderViewToString: (options?: RenderToStringOptions) => string;
-	getReactiveProperties: () => ReactiveProperty[];
-	getReactivePropDefinitions: () => ReactivePropDefinition[];
-	getPropertyValue: (name: string) => unknown;
-	listAttributeNames: () => string[];
-	getAttributeValue: (name: string) => string | null;
-};
+import { getCustomElementTagName } from '../core/custom-element-metadata';
+import { withSsrContextProviders } from './context-ssr';
+import { composeHostContent } from './host-script-composition';
+import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
+import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
+import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
+import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
 
 export class RadiantElementSsrService {
-	constructor(private readonly host: RadiantElementSsrHost) {}
+	private readonly component: object;
+	private readonly host: InternalRadiantSsrHost;
+
+	constructor(component: object) {
+		this.component = component;
+		this.host = toInternalRadiantSsrHost(component);
+	}
+
+	private ensureReady(): void {
+		ensureLegacyHostReady(this.component, 'ssr');
+	}
 
 	public renderHost(): JsxRenderable {
+		this.ensureReady();
+
 		return {
 			nodeType: 1,
 			outerHTML: this.renderHostToString({ mode: 'hydrate' }),
@@ -34,6 +31,7 @@ export class RadiantElementSsrService {
 	}
 
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
+		this.ensureReady();
 		const tagName = this.getTagName();
 		const restoreSsrContexts = withSsrContextProviders(this.host.getContextProviders());
 
@@ -42,6 +40,11 @@ export class RadiantElementSsrService {
 		} finally {
 			restoreSsrContexts();
 		}
+	}
+
+	public getHostAttributes(): Record<string, string> {
+		this.ensureReady();
+		return resolveHostAttributes(this.host);
 	}
 
 	private renderHostContent(options: RenderToStringOptions): string {
@@ -64,10 +67,6 @@ export class RadiantElementSsrService {
 			},
 			hydrate,
 		);
-	}
-
-	public getHostAttributes(): Record<string, string> {
-		return resolveHostAttributes(this.host);
 	}
 
 	private getTagName(): string {

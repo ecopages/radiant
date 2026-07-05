@@ -8,7 +8,7 @@ import {
 	withServerCustomElementRenderHook,
 	withServerHydrationBindingState,
 } from '@ecopages/jsx/server';
-import { RadiantElementSsrService } from '../core/radiant-element-ssr-service';
+import { RadiantElementSsrService } from './radiant-element-ssr-service';
 import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
 import type {
 	RadiantElementRenderBridge,
@@ -17,14 +17,11 @@ import type {
 	RadiantElementTrackedRenderSsrCapable,
 } from '../core/radiant-element-ssr-registry';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
-import { extractRadiantElementServerRenderHost } from './radiant-element-ssr-extractor';
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 
-export function createRadiantElementSsrService(
-	component: RadiantElementServerRenderSsrCapable,
-): RadiantElementSsrService {
-	return new RadiantElementSsrService(extractRadiantElementServerRenderHost(component));
+export function createRadiantElementSsrService(component: object): RadiantElementSsrService {
+	return new RadiantElementSsrService(component);
 }
 
 export function renderRadiantElementHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable {
