@@ -1,6 +1,7 @@
 import type { ReactiveProperty } from '../core/reactive-prop-core';
 import type { ReactivePropDefinition } from '../core/reactive-prop-metadata';
 import { writeAttributeValue } from '../utils/attribute-utils';
+import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
 
 /**
  * Minimal host shape needed by the attribute serialization policy.
@@ -58,7 +59,7 @@ export function resolveHostAttributes(host: HostAttributeSource): Record<string,
  */
 export function stringifyHostAttributes(attributes: Record<string, string>): string {
 	return Object.entries(attributes)
-		.map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`)
+		.map(([name, value]) => ` ${name}="${escapeHtmlAttribute(value)}"`)
 		.join('');
 }
 
@@ -128,6 +129,3 @@ function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<
 	}
 }
 
-function escapeAttribute(value: string): string {
-	return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}

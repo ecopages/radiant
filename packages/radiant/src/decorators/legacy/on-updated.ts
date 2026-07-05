@@ -1,7 +1,7 @@
 type LegacyUpdatedHost = {
 	registerCleanupCallback(callback: () => void): void;
 	registerConnectedCallback(callback: () => void): void;
-	registerUpdateCallback(key: string, update: (...rest: any[]) => any): () => void;
+	registerUpdateCallback(key: string, update: () => void): () => void;
 };
 
 import { registerLegacyInstanceInitializer } from './instance-initializers';
