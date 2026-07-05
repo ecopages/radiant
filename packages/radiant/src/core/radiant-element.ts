@@ -23,7 +23,9 @@ import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
+import { getReactivePropDefinitions, type ReactivePropDefinition } from './reactive-prop-metadata';
 import { getRadiantElementSsrRuntime } from './radiant-element-ssr-registry';
+import type { InternalRadiantSsrHost } from './radiant-element-ssr-host';
 import { type AttributeTypeConstant, getInitialValue } from '../utils/attribute-utils';
 
 export type {
@@ -404,6 +406,14 @@ export class RadiantElement<Bindings extends object = {}>
 		return jsx('slot', {});
 	}
 
+	public getReactivePropDefinitions(): ReactivePropDefinition[] {
+		return getReactivePropDefinitions(this);
+	}
+
+	public getPropertyValue(name: string): unknown {
+		return Reflect.get(this, name);
+	}
+
 	public renderViewToString(options: RenderToStringOptions = {}): string {
 		if (!this.shouldRunRenderLifecycle()) {
 			return this.innerHTML;
@@ -412,7 +422,7 @@ export class RadiantElement<Bindings extends object = {}>
 		runLegacyPostConstructionInitializers(this);
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this, options);
+		return requireRadiantElementSsrRuntime().renderView(this as unknown as InternalRadiantSsrHost, options);
 	}
 
 	public hydrate(): void {

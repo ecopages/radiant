@@ -4,7 +4,7 @@ import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { withSsrContextProviders } from './context-ssr';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
-import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
+import { runLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
 import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
 
@@ -18,7 +18,7 @@ export class RadiantElementSsrService {
 	}
 
 	private ensureReady(): void {
-		ensureLegacyHostReady(this.component, 'ssr');
+		runLegacyPostConstructionInitializers(this.component);
 	}
 
 	public renderHost(): JsxRenderable {
