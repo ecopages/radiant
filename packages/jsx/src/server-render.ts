@@ -1,27 +1,14 @@
+import { getJsxGlobalSymbol } from './global-symbol.ts';
+import { resolveBindingShapeValue } from './renderable-guards.ts';
 import {
 	forEachNormalizedAttribute,
-	isKeyedJsxValue,
-	isSerializableTemplateResultLike,
-	isSubscribableJsxValue,
-	isTemplateResultLike,
-	renderJsxRenderableToString,
-	resolveBindingShapeValue,
 	shouldUseAttributeBindingByDefaultForElement,
 	shouldUseBooleanAttributeBinding,
-	toTemplateResultLike,
-	type JsxNodeLike,
 	type JsxRenderable,
-	type SignalLike,
 	type TemplateResultLike,
 } from './jsx-runtime.ts';
-import {
-	ATTRIBUTE_BINDING_PREFIX,
-	getTemplateInterpolationParts,
-	serializeBindingDescriptor,
-} from './hydration-bindings.ts';
-import { isClientOnlyBinding, needsHydrationMarker } from './hydration-marker-policy.ts';
-import { getJsxGlobalSymbol } from './global-symbol.ts';
-import { escapeAttribute, escapeHtml } from './html-escape.ts';
+import { renderJsxRenderableToString } from './serialize-plain.ts';
+import { serializeRenderable } from './serialize-renderable.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
 import {
 	getActiveSsrRenderContext,
@@ -196,165 +183,33 @@ function getHydrationBindingScope(
 }
 
 function renderChild(value: JsxRenderable, context: RenderContext): string {
-	if (value === undefined || value === null || value === false) {
-		return '';
-	}
-
-	if (isKeyedJsxValue(value)) {
-		return renderChild(value.value, context);
-	}
-
-	if (isSubscribableJsxValue(value)) {
-		return renderChild(value.getValue(), context);
-	}
-
-	if (isSignalLikeValue(value)) {
-		return renderChild(value.get(), context);
-	}
-
-	if (typeof value === 'string') {
-		return escapeHtml(value);
-	}
-
-	if (typeof value === 'number' || typeof value === 'bigint') {
-		return String(value);
-	}
-
-	if (value === true) {
-		return '';
-	}
-
-	if (isTemplateResultLike(value) || isSerializableTemplateResultLike(value)) {
-		return renderTemplateResult(toTemplateResultLike(value), context);
-	}
-
-	if (isNodeLike(value)) {
-		return renderNodeLike(value);
-	}
-
-	if (isIterable(value)) {
-		let html = '';
-
-		for (const child of value) {
-			html += renderChild(child as JsxRenderable, context);
-		}
-
-		return html;
-	}
-
-	return escapeHtml(String(value));
+	return serializeRenderable(value, {
+		mode: context.ssr.hydrate ? 'hydrate' : 'plain',
+		hydrationBindingState: context.hydrationBindingState,
+		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
+	});
 }
 
-function renderTemplateResult(template: TemplateResultLike, context: RenderContext): string {
-	if (template.rootLocalName?.includes('-') && template.ssrIntrinsicProps) {
-		const serverRenderedCustomElement = createServerRenderedIntrinsicCustomElement(
-			template.rootLocalName,
-			template.ssrIntrinsicProps,
-			{
-				forEachNormalizedAttribute,
-				renderValueToString: renderJsxRenderableToString,
-				resolveBindingShapeValue,
-				shouldUseAttributeBindingByDefaultForElement,
-				shouldUseBooleanAttributeBinding,
-			},
-		);
-
-		if (serverRenderedCustomElement) {
-			return renderNodeLike(serverRenderedCustomElement);
-		}
+function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
+	if (!template.rootLocalName?.includes('-') || !template.ssrIntrinsicProps) {
+		return undefined;
 	}
 
-	const interpolationParts = getTemplateInterpolationParts(template.strings);
-	let html = '';
-
-	for (let index = 0; index < template.values.length; index += 1) {
-		const interpolationPart = interpolationParts[index];
-		const value = resolveReactiveSnapshot(template.values[index]);
-
-		if (!interpolationPart || interpolationPart.type === 'child') {
-			html +=
-				interpolationPart && interpolationPart.type === 'child'
-					? interpolationPart.string
-					: (template.strings[index] ?? '');
-			html += renderChild(value as JsxRenderable, context);
-			continue;
-		}
-
-		const bindingKind = interpolationPart.kind;
-		const bindingIndex = context.hydrationBindingState.nextBindingIndex;
-		html += interpolationPart.leading;
-
-		if (context.ssr.hydrate && needsHydrationMarker(bindingKind)) {
-			html += `${interpolationPart.whitespace}${ATTRIBUTE_BINDING_PREFIX}${bindingIndex}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
-		}
-
-		context.hydrationBindingState.nextBindingIndex += 1;
-
-		if (isClientOnlyBinding(bindingKind)) {
-			continue;
-		}
-
-		if (interpolationPart.prefix === '?') {
-			if (value) {
-				html += `${interpolationPart.whitespace}${interpolationPart.name}`;
-			}
-			continue;
-		}
-
-		if (value === undefined || value === null || value === false) {
-			continue;
-		}
-
-		html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(String(value))}"`;
-	}
-
-	html += template.strings[template.strings.length - 1] ?? '';
-	return html;
-}
-
-function isSignalLikeValue(value: unknown): value is SignalLike {
-	return (
-		typeof value === 'object' &&
-		value !== null &&
-		typeof (value as Partial<SignalLike>).get === 'function' &&
-		typeof (value as Partial<SignalLike>).subscribe === 'function'
+	const serverRenderedCustomElement = createServerRenderedIntrinsicCustomElement(
+		template.rootLocalName,
+		template.ssrIntrinsicProps,
+		{
+			forEachNormalizedAttribute,
+			renderValueToString: renderJsxRenderableToString,
+			resolveBindingShapeValue,
+			shouldUseAttributeBindingByDefaultForElement,
+			shouldUseBooleanAttributeBinding,
+		},
 	);
-}
 
-function resolveReactiveSnapshot(value: unknown): unknown {
-	if (isSubscribableJsxValue(value)) {
-		return resolveReactiveSnapshot(value.getValue());
+	if (!serverRenderedCustomElement) {
+		return undefined;
 	}
 
-	if (isSignalLikeValue(value)) {
-		return resolveReactiveSnapshot(value.get());
-	}
-
-	return value;
-}
-
-function renderNodeLike(node: JsxNodeLike): string {
-	const outerHTML = node.outerHTML;
-
-	if (typeof outerHTML === 'string') {
-		return outerHTML;
-	}
-
-	if (node.nodeType === 3) {
-		return escapeHtml(node.textContent ?? '');
-	}
-
-	if (Array.isArray(node.childNodes)) {
-		return node.childNodes.map((child) => renderNodeLike(child)).join('');
-	}
-
-	return escapeHtml(node.textContent ?? '');
-}
-
-function isIterable(value: unknown): value is Iterable<unknown> {
-	return typeof value !== 'string' && typeof value === 'object' && value !== null && Symbol.iterator in value;
-}
-
-function isNodeLike(value: unknown): value is JsxNodeLike {
-	return typeof value === 'object' && value !== null && 'nodeType' in value;
+	return serializeRenderable(serverRenderedCustomElement, { mode: 'plain' });
 }

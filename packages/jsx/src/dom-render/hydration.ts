@@ -15,12 +15,9 @@ import {
 	subscribeToReactiveChildSource,
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
-import {
-	createHydratedRangeRecord,
-	type ReconciliationRuntime,
-	updateLiveAttributePart,
-	updateRangeContent,
-} from './reconciliation.ts';
+import { getCompiledTemplate } from './template-compiler.ts';
+import { createTemplateInstance, createTemplateInstanceUpdate } from './template-instance.ts';
+import { createHydratedRangeRecord, updateLiveAttributePart, updateRangeContent } from './reconciliation.ts';
 import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
 import type {
 	AttributeTemplatePart,
@@ -55,15 +52,13 @@ export function hydrateTemplateInstance(
 	template: TemplateResultLike,
 	target: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-	runtime: ReconciliationRuntime,
 ): TemplateInstance | undefined {
-	const compiledTemplate = runtime.getCompiledTemplate(template);
+	const compiledTemplate = getCompiledTemplate(template);
 	const childParts = compiledTemplate.parts.filter((part): part is ChildTemplatePart => part.type === 'child');
 	const hydratedChildRanges = collectHydratedChildRanges(
 		compiledTemplate.blueprint.content,
 		childParts,
 		template.values,
-		runtime,
 	);
 	const parts = createHydratedLiveTemplateParts(
 		target,
@@ -71,7 +66,6 @@ export function hydrateTemplateInstance(
 		compiledTemplate.parts,
 		template.values,
 		hydratedChildRanges,
-		runtime,
 	);
 
 	if (parts.length !== compiledTemplate.parts.length) {
@@ -83,29 +77,12 @@ export function hydrateTemplateInstance(
 		parts,
 		rootTarget: target,
 		rootNodes: Array.from(target.childNodes),
-		update(values, nextDeferredProperties) {
-			for (const part of parts) {
-				if (part.type === 'attribute') {
-					updateLiveAttributePart(part, values[part.index], nextDeferredProperties, runtime);
-					continue;
-				}
-
-				part.mounted = updateRangeContent(
-					part.startMarker,
-					part.endMarker,
-					values[part.index],
-					part.mounted,
-					target,
-					nextDeferredProperties,
-					runtime,
-				);
-			}
-		},
+		update: createTemplateInstanceUpdate(parts, target),
 	};
 
 	for (const part of parts) {
 		if (part.type === 'attribute') {
-			updateLiveAttributePart(part, template.values[part.index], deferredProperties, runtime);
+			updateLiveAttributePart(part, template.values[part.index], deferredProperties);
 		}
 	}
 
@@ -125,7 +102,6 @@ function createHydratedLiveTemplateParts(
 	parts: readonly TemplatePart[],
 	values: readonly unknown[],
 	hydratedChildRanges: ReadonlyMap<number, HydratedChildRange>,
-	runtime: ReconciliationRuntime,
 ): LiveTemplatePart[] {
 	const liveParts = new Map<number, LiveTemplatePart>();
 	const childPartEntries = parts
@@ -206,14 +182,7 @@ function createHydratedLiveTemplateParts(
 		liveParts.set(partIndex, {
 			endMarker,
 			index: part.index,
-			mounted: hydrateMountedRangeContent(
-				startMarker,
-				endMarker,
-				values[part.index],
-				existingNodes,
-				target,
-				runtime,
-			),
+			mounted: hydrateMountedRangeContent(startMarker, endMarker, values[part.index], existingNodes, target),
 			startMarker,
 			type: 'child',
 		});
@@ -233,7 +202,6 @@ function collectHydratedChildRanges(
 	blueprint: DocumentFragment,
 	childParts: readonly ChildTemplatePart[],
 	values: readonly unknown[],
-	runtime: ReconciliationRuntime,
 ): Map<number, HydratedChildRange> {
 	const ranges = new Map<number, HydratedChildRange>();
 	const childPartsByParent = new Map<string, ChildTemplatePart[]>();
@@ -267,7 +235,7 @@ function collectHydratedChildRanges(
 				continue;
 			}
 
-			const nodeCount = countHydratedRangeNodes(values[part.index], runtime, parentNode);
+			const nodeCount = countHydratedRangeNodes(values[part.index], parentNode);
 			ranges.set(part.index, {
 				actualStartIndex: actualIndex,
 				blueprintStartIndex: part.startPath[part.startPath.length - 1] ?? 0,
@@ -311,9 +279,9 @@ function getHydratedNodeContribution(node: Node | undefined): number {
  *
  * @param value JSX value whose node count should be estimated.
  */
-function countHydratedRangeNodes(value: unknown, runtime: ReconciliationRuntime, contextParent: Node | null): number {
+function countHydratedRangeNodes(value: unknown, contextParent: Node | null): number {
 	const rootTarget = document.createElement('div');
-	const nodes = createNodesFromValue(value, rootTarget, [], runtime.createTemplateInstance, contextParent);
+	const nodes = createNodesFromValue(value, rootTarget, [], createTemplateInstance, contextParent);
 	clearDelegationRoot(rootTarget);
 	return nodes.length;
 }
@@ -401,20 +369,18 @@ function hydrateMountedRangeContent(
 	value: unknown,
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
-	runtime: ReconciliationRuntime,
 ): MountedRangeContent {
 	const nextValue = unwrapKeyedValue(value);
 
 	if (isReactiveChildSource(nextValue)) {
 		const mountedSubscription: MountedSubscription = {
 			kind: 'subscription',
-			mounted: hydrateMountedRangeContent(
+			mounted: hydrateMountedRangeContentSnapshot(
 				startMarker,
 				endMarker,
 				readReactiveChildSourceValue(nextValue),
 				existingNodes,
 				rootTarget,
-				runtime,
 			),
 			source: nextValue,
 			subscriptionSerial: 0,
@@ -427,11 +393,22 @@ function hydrateMountedRangeContent(
 			endMarker,
 			mountedSubscription,
 			rootTarget,
-			runtime,
 		);
 
 		return mountedSubscription;
 	}
+
+	return hydrateMountedRangeContentSnapshot(startMarker, endMarker, nextValue, existingNodes, rootTarget);
+}
+
+function hydrateMountedRangeContentSnapshot(
+	startMarker: Text,
+	endMarker: Text,
+	nextValue: unknown,
+	existingNodes: readonly Node[],
+	rootTarget: HTMLElement,
+): MountedRangeContent {
+	const bootstrapMounted = createHydratedBootstrapMounted(existingNodes);
 
 	if (isTemplateResultLike(nextValue)) {
 		const hydratedTemplateInstance = hydrateStaticTemplateRange(
@@ -440,7 +417,6 @@ function hydrateMountedRangeContent(
 			startMarker,
 			endMarker,
 			rootTarget,
-			runtime,
 		);
 
 		if (hydratedTemplateInstance) {
@@ -457,26 +433,14 @@ function hydrateMountedRangeContent(
 		const keyedChildren = getKeyedChildren(iterableChildren);
 
 		if (keyedChildren) {
-			const hydratedKeyedState = hydrateKeyedRangeContent(
-				endMarker,
-				keyedChildren,
-				existingNodes,
-				rootTarget,
-				runtime,
-			);
+			const hydratedKeyedState = hydrateKeyedRangeContent(endMarker, keyedChildren, existingNodes, rootTarget);
 
 			if (hydratedKeyedState) {
 				return hydratedKeyedState;
 			}
 		}
 
-		const hydratedIndexedState = hydrateIndexedRangeContent(
-			endMarker,
-			iterableChildren,
-			existingNodes,
-			rootTarget,
-			runtime,
-		);
+		const hydratedIndexedState = hydrateIndexedRangeContent(endMarker, iterableChildren, existingNodes, rootTarget);
 
 		if (hydratedIndexedState) {
 			return hydratedIndexedState;
@@ -492,21 +456,40 @@ function hydrateMountedRangeContent(
 			existingNodes.length === 0 ? { kind: 'empty' } : { kind: 'nodes', nodes: existingNodes },
 			rootTarget,
 			nextDeferredProperties,
-			runtime,
 		);
 		flushDeferredProperties(nextDeferredProperties);
 		return mounted;
 	}
 
 	if (nextValue === undefined || nextValue === null || nextValue === false) {
-		return { kind: 'empty' };
+		const nextDeferredProperties: DeferredPropertyBinding[] = [];
+		const mounted = updateRangeContent(
+			startMarker,
+			endMarker,
+			nextValue,
+			bootstrapMounted,
+			rootTarget,
+			nextDeferredProperties,
+		);
+		flushDeferredProperties(nextDeferredProperties);
+		return mounted;
 	}
 
 	if (existingNodes.length === 1 && existingNodes[0] instanceof Text && canRenderAsTextNode(nextValue)) {
-		return { kind: 'text', node: existingNodes[0] };
+		const nextDeferredProperties: DeferredPropertyBinding[] = [];
+		const mounted = updateRangeContent(
+			startMarker,
+			endMarker,
+			nextValue,
+			{ kind: 'text', node: existingNodes[0] },
+			rootTarget,
+			nextDeferredProperties,
+		);
+		flushDeferredProperties(nextDeferredProperties);
+		return mounted;
 	}
 
-	return existingNodes.length === 0 ? { kind: 'empty' } : { kind: 'nodes', nodes: existingNodes };
+	return bootstrapMounted;
 }
 
 function subscribeReactiveHydratedValue(
@@ -515,7 +498,6 @@ function subscribeReactiveHydratedValue(
 	endMarker: Text,
 	mountedSubscription: MountedSubscription,
 	rootTarget: HTMLElement,
-	runtime: ReconciliationRuntime,
 ): () => void {
 	const subscriptionSerial = mountedSubscription.subscriptionSerial + 1;
 	mountedSubscription.subscriptionSerial = subscriptionSerial;
@@ -533,10 +515,21 @@ function subscribeReactiveHydratedValue(
 			mountedSubscription.mounted,
 			rootTarget,
 			nextDeferredProperties,
-			runtime,
 		);
 		flushDeferredProperties(nextDeferredProperties);
 	});
+}
+
+function createHydratedBootstrapMounted(existingNodes: readonly Node[]): MountedRangeContent {
+	if (existingNodes.length === 0) {
+		return { kind: 'empty' };
+	}
+
+	if (existingNodes.length === 1 && existingNodes[0] instanceof Text) {
+		return { kind: 'text', node: existingNodes[0] };
+	}
+
+	return { kind: 'nodes', nodes: existingNodes };
 }
 
 /**
@@ -558,9 +551,8 @@ function hydrateStaticTemplateRange(
 	startMarker: Text,
 	endMarker: Text,
 	rootTarget: HTMLElement,
-	runtime: ReconciliationRuntime,
 ): TemplateInstance | undefined {
-	const compiledTemplate = runtime.getCompiledTemplate(template);
+	const compiledTemplate = getCompiledTemplate(template);
 	const attributeParts = compiledTemplate.parts.filter(
 		(part): part is AttributeTemplatePart => part.type === 'attribute',
 	);
@@ -595,11 +587,7 @@ function hydrateStaticTemplateRange(
 		parts,
 		rootTarget,
 		rootNodes: existingNodes,
-		update(values, deferredProperties) {
-			for (const part of parts) {
-				updateLiveAttributePart(part, values[part.index], deferredProperties, runtime);
-			}
-		},
+		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
 
 	return instance;
@@ -621,13 +609,12 @@ function hydrateIndexedRangeContent(
 	children: readonly unknown[],
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
-	runtime: ReconciliationRuntime,
 ): MountedIndexedList | undefined {
 	const records = [];
 	let nextNodeIndex = 0;
 
 	for (const child of children) {
-		const childNodeCount = countHydratedRangeNodes(child, runtime, endMarker.parentNode);
+		const childNodeCount = countHydratedRangeNodes(child, endMarker.parentNode);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
 
 		if (childNodes.length !== childNodeCount) {
@@ -638,7 +625,7 @@ function hydrateIndexedRangeContent(
 			childNodes,
 			existingNodes[nextNodeIndex + childNodeCount] ?? endMarker,
 		);
-		record.mounted = hydrateMountedRangeContent(record.start, record.end, child, childNodes, rootTarget, runtime);
+		record.mounted = hydrateMountedRangeContent(record.start, record.end, child, childNodes, rootTarget);
 		records.push(record);
 		nextNodeIndex += childNodeCount;
 	}
@@ -665,14 +652,12 @@ function hydrateKeyedRangeContent(
 	children: readonly KeyedJsxValue[],
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
-	runtime: ReconciliationRuntime,
 ): MountedKeyedList | undefined {
 	const records = new Map();
-	const order = [];
 	let nextNodeIndex = 0;
 
 	for (const child of children) {
-		const childNodeCount = countHydratedRangeNodes(child.value, runtime, endMarker.parentNode);
+		const childNodeCount = countHydratedRangeNodes(child.value, endMarker.parentNode);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
 
 		if (childNodes.length !== childNodeCount) {
@@ -683,16 +668,8 @@ function hydrateKeyedRangeContent(
 			childNodes,
 			existingNodes[nextNodeIndex + childNodeCount] ?? endMarker,
 		);
-		record.mounted = hydrateMountedRangeContent(
-			record.start,
-			record.end,
-			child.value,
-			childNodes,
-			rootTarget,
-			runtime,
-		);
+		record.mounted = hydrateMountedRangeContent(record.start, record.end, child.value, childNodes, rootTarget);
 		records.set(child.key, record);
-		order.push(child.key);
 		nextNodeIndex += childNodeCount;
 	}
 
@@ -700,7 +677,7 @@ function hydrateKeyedRangeContent(
 		return undefined;
 	}
 
-	return { kind: 'keyed-list', order, records };
+	return { kind: 'keyed-list', records };
 }
 
 /**
