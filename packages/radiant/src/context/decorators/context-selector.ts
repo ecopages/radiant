@@ -5,7 +5,6 @@ import { contextSelector as legacyContextSelectorMethod } from './legacy/context
 import { contextSelector as standardContextSelectorMethod } from './standard/context-selector';
 import { contextSelectorField as legacyContextSelectorField } from './legacy/context-selector-field';
 import { contextSelectorField as standardContextSelectorField } from './standard/context-selector-field';
-import { dispatchContextSelectorDecorator } from './standard-legacy-dispatch';
 
 export type ContextSelectorOptions<T extends UnknownContext, Selected = ContextType<T>> = {
 	/** Context token to resolve from ancestor providers. */
@@ -75,15 +74,35 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 		| ((this: ContextHostLike, initialValue: Selected) => Selected)
 		| TypedPropertyDescriptor<ContextUpdateMethod<Selected>>
 		| void {
-		return dispatchContextSelectorDecorator(
-			standardContextSelectorField(options),
-			standardContextSelectorMethod(options),
-			legacyContextSelectorField(options),
-			legacyContextSelectorMethod(options),
-			protoOrTarget,
-			nameOrContext,
-			descriptor,
-		);
+		if (typeof nameOrContext === 'object') {
+			if (nameOrContext.kind === 'field') {
+				if (protoOrTarget !== undefined) {
+					throw new TypeError('@contextSelector field decorators require an undefined target');
+				}
+
+				return standardContextSelectorField(options)(undefined, nameOrContext);
+			}
+
+			if (typeof protoOrTarget !== 'function') {
+				throw new TypeError('@contextSelector standard method decorators require a method target');
+			}
+
+			return standardContextSelectorMethod(options)(protoOrTarget, nameOrContext);
+		}
+
+		if (descriptor) {
+			if (typeof protoOrTarget === 'function' || protoOrTarget === undefined) {
+				throw new TypeError('@contextSelector legacy method decorators require a host target');
+			}
+
+			return legacyContextSelectorMethod(options)(protoOrTarget, nameOrContext, descriptor);
+		}
+
+		if (typeof protoOrTarget === 'function' || protoOrTarget === undefined) {
+			throw new TypeError('@contextSelector legacy field decorators require a host target');
+		}
+
+		return legacyContextSelectorField(options)(protoOrTarget, nameOrContext);
 	}
 
 	return decorator;
