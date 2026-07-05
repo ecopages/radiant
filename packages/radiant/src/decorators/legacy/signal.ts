@@ -1,6 +1,7 @@
 import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { createHostSignal, HostSignal, isWritableSignalLike } from '../../signals/host-signal';
+import { isHydrationCapableHost } from '../../core/hydration-capable-host';
 import { registerLegacyPostConstructionInitializer } from './instance-initializers';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
 import type { WritableSignal } from '@ecopages/signals';
@@ -56,7 +57,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				hostSignal.disconnectFromSource();
 			});
 
-			if (options.hydrate) {
+			if (options.hydrate && isHydrationCapableHost(element)) {
 				element.registerHydrationBinding(propertyName, hostSignal);
 			}
 
