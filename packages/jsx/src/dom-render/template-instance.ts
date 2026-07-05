@@ -4,7 +4,8 @@ import {
 	getCompiledTemplate,
 	normalizeTemplateFragmentNamespaces,
 } from './template-compiler.ts';
-import { updateLiveAttributePart, updateRangeContent } from './reconciliation.ts';
+import { updateRangeContent } from './child-range-update.ts';
+import { updateLiveAttributePart } from './live-attribute-update.ts';
 import type { DeferredPropertyBinding, LiveTemplatePart, TemplateInstance } from './types.ts';
 
 /**
