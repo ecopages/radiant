@@ -4,7 +4,7 @@ import type { SsrSerializableContextProvider } from '../context/context-provider
 import { withSsrContextProviders } from './context-ssr';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
-import { runLegacyPostConstructionInitializers } from '../decorators/legacy/instance-initializers';
+import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
 import {
 	resolveRegisteredRadiantElementPreview,
@@ -12,9 +12,15 @@ import {
 	renderRegisteredRadiantElementHostToString,
 } from './radiant-element-ssr-bridge';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
-import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr-runtime';
+import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
+import {
+	createDefaultRenderTimestamp,
+	toRenderedComponentPayload,
+	toRenderedComponentWithPreview,
+} from './render-fragment';
 
-/** Asset dependency emitted by a rendered fragment. */
+export { createDefaultRenderTimestamp, toRenderedComponentPayload, toRenderedComponentWithPreview } from './render-fragment';
+
 export type RenderedComponentAsset =
 	| {
 			/** Browser module specifier that must be loaded to activate the fragment. */
@@ -302,7 +308,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 			const Component =
 				'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
 			const component = new Component();
-			runLegacyPostConstructionInitializers(component);
+			ensureLegacyHostReady(component, 'ssr');
 			prepareRenderedComponentHost(
 				environment,
 				component,
@@ -395,41 +401,6 @@ function createAmbientSsrContextProviders(
 		renderHydrationScript: () => undefined,
 		renderHydrationScriptTag: () => undefined,
 	}));
-}
-
-/**
- * Drops the preview renderable so the result can be sent through lightweight
- * framework adapters or JSON/HTML fragment endpoints.
- */
-export function toRenderedComponentPayload(
-	render: RenderedComponentWithPreview | RenderedComponent,
-): RenderedComponentPayload {
-	if ('metadata' in render) {
-		return {
-			assets: render.metadata.assets,
-			clientModuleSrc: render.metadata.clientModuleUrl,
-			generatedAt: render.metadata.generatedAt,
-			markup: render.markup,
-			tagName: render.metadata.tagName,
-		};
-	}
-
-	const { preview: _preview, ...payload } = render;
-	return payload;
-}
-function toRenderedComponentWithPreview(render: RenderedComponent): RenderedComponentWithPreview {
-	return {
-		assets: render.metadata.assets,
-		clientModuleSrc: render.metadata.clientModuleUrl,
-		generatedAt: render.metadata.generatedAt,
-		markup: render.markup,
-		preview: render.preview,
-		tagName: render.metadata.tagName,
-	};
-}
-
-function createDefaultRenderTimestamp(): Date {
-	return new Date();
 }
 
 function createRenderedComponentClientModuleAssets(
