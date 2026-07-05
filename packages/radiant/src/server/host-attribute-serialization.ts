@@ -1,6 +1,7 @@
 import type { ReactiveProperty } from '../core/reactive-prop-core';
 import type { ReactivePropDefinition } from '../core/reactive-prop-metadata';
 import { writeAttributeValue } from '../utils/attribute-utils';
+import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
 
 /**
  * Minimal host shape needed by the attribute serialization policy.
@@ -12,8 +13,8 @@ export type HostAttributeSource = {
 	getReactiveProperties: () => ReactiveProperty[];
 	getReactivePropDefinitions: () => ReactivePropDefinition[];
 	getPropertyValue: (name: string) => unknown;
-	listAttributeNames: () => string[];
-	getAttributeValue: (name: string) => string | null;
+	getAttributeNames: () => string[];
+	getAttribute: (name: string) => string | null;
 };
 
 /**
@@ -58,7 +59,7 @@ export function resolveHostAttributes(host: HostAttributeSource): Record<string,
  */
 export function stringifyHostAttributes(attributes: Record<string, string>): string {
 	return Object.entries(attributes)
-		.map(([name, value]) => ` ${name}="${escapeAttribute(value)}"`)
+		.map(([name, value]) => ` ${name}="${escapeHtmlAttribute(value)}"`)
 		.join('');
 }
 
@@ -120,14 +121,11 @@ function appendReactivePropDefinitionAttributes(
  * markup, that intent takes precedence over reactive property reflection.
  */
 function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<string, string>): void {
-	for (const attributeName of host.listAttributeNames()) {
-		const attributeValue = host.getAttributeValue(attributeName);
+	for (const attributeName of host.getAttributeNames()) {
+		const attributeValue = host.getAttribute(attributeName);
 		if (attributeValue !== null) {
 			attributes[attributeName] = attributeValue;
 		}
 	}
 }
 
-function escapeAttribute(value: string): string {
-	return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}

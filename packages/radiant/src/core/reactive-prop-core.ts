@@ -34,6 +34,8 @@ export type ReactiveBindingOption = boolean | string;
 
 export type ReactiveFieldOptions = {
 	bind?: ReactiveBindingOption;
+	/** When true, skip the initial notifyUpdate emitted while defining the field. */
+	suppressInitialNotify?: boolean;
 };
 
 export type ReactiveField<T = unknown> = {
