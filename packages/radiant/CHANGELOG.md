@@ -1,5 +1,9 @@
 # @ecopages/radiant
 
+## 0.3.0-beta.0
+
+First beta prerelease of the 0.3.0 line.
+
 ## Unreleased
 
 ### Breaking Changes
