@@ -362,7 +362,10 @@ describe('Radiant JSX server render', () => {
 	});
 
 	test('serializes mapSubscribable derived signal values from their projected value', async () => {
-		const [{ jsx, mapSubscribable }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const [{ jsx, mapSubscribable }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
 		let count = 3;
 		const countSignal = {
 			get: () => count,
