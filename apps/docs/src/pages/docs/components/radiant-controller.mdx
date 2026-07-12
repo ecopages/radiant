@@ -235,6 +235,38 @@ Controllers also support `render()`, `requestUpdate()`, and `update()` when you 
 
 Those lower-level helpers are useful for plain-JS integrations or abstraction layers. Prefer decorators first when the host shape is stable and readable.
 
+## Derived Bindings
+
+Controllers expose the same derive API as element hosts.
+
+### Member access in JSX
+
+For object-like bindings, member access is fine directly in `render()`:
+
+```tsx
+render() {
+  return <p>{this.$.config.label}</p>;
+}
+```
+
+The runtime memoizes each key, so this stays identity-stable across renders.
+
+### `map` for transforms and lookups
+
+Use `map` for record lookups, transforms, and anything that is not a plain property read:
+
+```tsx
+private readonly statusLabel = this.$.status.map((status) => STATUS_COPY[status]);
+
+render() {
+  return <p>{this.statusLabel}</p>;
+}
+```
+
+Hoist `map` to a create-once host field. Do not call `.map(...)` inside `render()` — each call produces a new derived binding.
+
+Object props are shallow: projections update on whole-object replacement, not in-place nested mutation.
+
 ## Supported Decorators
 
 These decorators are part of the `RadiantController` authoring model today:

@@ -89,6 +89,35 @@ Prefer bindings for:
 
 Do not treat bindings as raw values for comparisons or control flow. If logic needs a boolean, string, or number, use the plain property.
 
+### Derived Bindings
+
+Use derived bindings when JSX needs a projection of a reactive value.
+
+**Member access** — simple object keys, inline in JSX:
+
+```tsx
+render() {
+  return <p>{this.$.config.label}</p>;
+}
+```
+
+Equivalent to `map`, but memoized per key on the binding. No field initializer needed for normal use.
+
+**`map`** — transforms, record lookups, non-property reads. Hoist to a create-once field:
+
+```tsx
+private readonly themeLabel = this.$.preference.map((preference) => THEME_CONFIG[preference].label);
+```
+
+Do not call `.map(...)` inside `render()` — each call creates a new derived binding.
+
+Rules:
+
+- member access inline in JSX is fine for simple object keys
+- hoist `map` to a field initializer or cached host field
+- object props are shallow — projections update on whole-object replacement, not in-place nested mutation
+- bracket lookups need `map`: `this.$.preference.map((p) => THEME_CONFIG[p].label)`, never `THEME_CONFIG[this.$.preference]`
+
 ## Performance Rule
 
 Use this rule to choose the update strategy:
