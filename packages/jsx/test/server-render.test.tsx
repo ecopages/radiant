@@ -336,7 +336,7 @@ describe('Radiant JSX server render', () => {
 	});
 
 	test('serializes mapped derived JSX child values from their projected value', async () => {
-		const [{ createSubscribableJsxValue, jsx, mapSubscribable }, { renderToString }] = await Promise.all([
+		const [{ createSubscribableJsxValue, jsx }, { renderToString }] = await Promise.all([
 			loadJsxRuntime(),
 			loadServerRender(),
 		]);
