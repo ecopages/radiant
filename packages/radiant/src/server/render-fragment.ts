@@ -1,8 +1,4 @@
-import type {
-	RenderedComponent,
-	RenderedComponentPayload,
-	RenderedComponentWithPreview,
-} from './render-component';
+import type { RenderedComponent, RenderedComponentPayload, RenderedComponentWithPreview } from './render-component';
 
 /** Returns the current time for deterministic SSR metadata in tests. */
 export function createDefaultRenderTimestamp(): Date {

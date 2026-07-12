@@ -24,7 +24,7 @@ import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { getRadiantElementSsrRuntime } from './radiant-element-ssr-registry';
 import type { InternalRadiantSsrHost } from './radiant-element-ssr-host';
-import { type AttributeTypeConstant, getInitialValue } from '../utils/attribute-utils';
+import { getInitialValue } from '../utils/attribute-utils';
 
 export type {
 	ReactiveBindingOption,

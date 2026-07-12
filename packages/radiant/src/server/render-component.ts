@@ -19,7 +19,11 @@ import {
 	toRenderedComponentWithPreview,
 } from './render-fragment';
 
-export { createDefaultRenderTimestamp, toRenderedComponentPayload, toRenderedComponentWithPreview } from './render-fragment';
+export {
+	createDefaultRenderTimestamp,
+	toRenderedComponentPayload,
+	toRenderedComponentWithPreview,
+} from './render-fragment';
 
 export type RenderedComponentAsset =
 	| {
