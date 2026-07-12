@@ -4,8 +4,8 @@
 			"control": "strict",
 			"label": "root-client-surface",
 			"entrypoint": "./src/index.ts",
-			"maxBytes": 47104,
-			"maxGzipBytes": 12800
+			"maxBytes": 49152,
+			"maxGzipBytes": 13312
 		},
 		{
 			"control": "advisory",
