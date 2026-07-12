@@ -4,6 +4,7 @@ export {
 	jsx,
 	jsxs,
 	createSubscribableJsxValue,
+	mapSubscribable,
 	type SignalLike,
 	type JsxKey,
 	type KeyedJsxValue,
@@ -23,6 +24,7 @@ export {
 	isSlotJsxValue,
 	isSubscribableJsxValue,
 	type SubscribableJsxValue,
+	type SubscribableJsxValueWithAccess,
 	type TemplateResultLike,
 } from './jsx-runtime.ts';
 

@@ -335,6 +335,50 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<p class="component-metric">Count: 12</p>');
 	});
 
+	test('serializes mapped derived JSX child values from their projected value', async () => {
+		const [{ createSubscribableJsxValue, jsx, mapSubscribable }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const THEME_CONFIG = {
+			light: { label: 'Light', icon: 'sun' },
+			dark: { label: 'Dark', icon: 'moon' },
+		} as const;
+		type ThemeKey = keyof typeof THEME_CONFIG;
+		let preference: ThemeKey = 'light';
+		const boundPreference = createSubscribableJsxValue({
+			getValue: () => preference,
+			subscribe: () => () => undefined,
+		});
+		const themeLabel = boundPreference.map((p) => THEME_CONFIG[p].label);
+		const template = jsx('p', {
+			children: ['Theme: ', themeLabel],
+		});
+
+		expect(renderToString(template)).toBe('<p>Theme: Light</p>');
+
+		preference = 'dark';
+		expect(renderToString(template)).toBe('<p>Theme: Dark</p>');
+	});
+
+	test('serializes mapSubscribable derived signal values from their projected value', async () => {
+		const [{ jsx, mapSubscribable }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		let count = 3;
+		const countSignal = {
+			get: () => count,
+			subscribe: () => () => undefined,
+		};
+		const doubled = mapSubscribable(countSignal, (value) => value * 2);
+		const template = jsx('p', {
+			children: ['Double: ', doubled],
+		});
+
+		expect(renderToString(template)).toBe('<p>Double: 6</p>');
+
+		count = 5;
+		expect(renderToString(template)).toBe('<p>Double: 10</p>');
+	});
+
 	test('serializes signal-like attribute values from their current value', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		let status = 'idle';
