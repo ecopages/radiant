@@ -8,8 +8,9 @@ export function reactiveField<T extends ReactiveHostLike, V>(_: undefined, conte
 		const initializerValue = (this as Record<PropertyKey, V | undefined>)[initializerValueKey];
 		this.createReactiveField(contextName, initializerValue as V, {
 			bind:
-				(this as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ??
-				false,
+				(
+					this as unknown as { shouldAutoBindReactiveMembers?: () => boolean }
+				).shouldAutoBindReactiveMembers?.() ?? false,
 			suppressInitialNotify: true,
 		});
 	});
