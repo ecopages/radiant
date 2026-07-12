@@ -205,6 +205,60 @@ Practical rule of thumb:
 
 In that example, the `class` expression still belongs to the host render pass, while the bound `data-state` and heading text can patch in place.
 
+### Derived Bindings
+
+Use derived bindings when JSX needs a **projection** of a reactive value — not the raw binding itself.
+
+#### Member access — use inline in JSX
+
+For object keys, write member access directly in `render()`:
+
+```tsx
+render() {
+  return <p>{this.$.config.label}</p>;
+}
+```
+
+This is equivalent to `this.$.config.map((config) => config.label)`, but the runtime caches each key on the binding. You do not need a field initializer for simple reads like this.
+
+Note: TypeScript may need a narrow cast on object `@prop` bindings when the inferred binding type is wider than your object shape. Runtime behavior is unchanged.
+
+#### `map` — hoist to a create-once field
+
+Use `map` for record lookups, transforms, and non-property projections:
+
+```tsx
+private readonly themeLabel = this.$.preference.map((preference) => THEME_CONFIG[preference].label);
+
+render() {
+  return <p>{this.themeLabel}</p>;
+}
+```
+
+Do **not** call `.map(...)` inside `render()`. Each call creates a new derived binding and defeats fine-grained patching.
+
+#### Anti-patterns
+
+```tsx
+// Wrong — subscribable object used as a record key
+THEME_CONFIG[this.$.preference]
+
+// Wrong — new derived binding every render
+render() {
+  return <p>{this.$.preference.map((p) => THEME_CONFIG[p].label)}</p>;
+}
+
+// Right — simple object key inline
+render() {
+  return <p>{this.$.config.label}</p>;
+}
+
+// Right — transform hoisted once
+private readonly themeLabel = this.$.preference.map((p) => THEME_CONFIG[p].label);
+```
+
+Object props are shallow: `map` and member access track **whole-object replacement**, not in-place nested mutation.
+
 If a component never uses `this.$`, `this.bindings`, or `this.bind(...)`, you usually do not need a separate `Bindings` type at all.
 
 ## Technical Tips

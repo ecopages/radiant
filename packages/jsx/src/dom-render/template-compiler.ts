@@ -9,9 +9,7 @@ import type {
 	BindingDescriptor,
 	ChildTemplatePart,
 	CompiledTemplate,
-	DeferredPropertyBinding,
 	LiveTemplatePart,
-	TemplateInstance,
 	TemplatePart,
 } from './types.ts';
 

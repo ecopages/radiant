@@ -236,7 +236,9 @@ export class MinimalElement extends MinimalNode {
 					};
 				},
 				has: (_target, property) => {
-					return typeof property === 'string' && this.hasAttribute(getHtmlModule().toDataAttributeName(property));
+					return (
+						typeof property === 'string' && this.hasAttribute(getHtmlModule().toDataAttributeName(property))
+					);
 				},
 				ownKeys: () => {
 					return this.getAttributeNames()

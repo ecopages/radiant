@@ -1,7 +1,4 @@
-import {
-	runLegacyInstanceInitializers,
-	runLegacyPostConstructionInitializers,
-} from './instance-initializers';
+import { runLegacyInstanceInitializers, runLegacyPostConstructionInitializers } from './instance-initializers';
 
 export type LegacyHostReadinessPhase = 'construct' | 'connect' | 'ssr';
 

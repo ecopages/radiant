@@ -335,6 +335,31 @@ strong {
 	background: rgb(241 245 249 / 0.82);
 }
 
+.component-card--bindings {
+	background:
+		radial-gradient(circle at top left, rgb(99 102 241 / 0.14), transparent 28%),
+		radial-gradient(circle at bottom right, rgb(236 72 153 / 0.1), transparent 32%),
+		linear-gradient(180deg, #fdfaff 0%, #f8fafc 100%);
+}
+
+.binding-lab__layout {
+	display: grid;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.binding-lab__lane {
+	padding: 1rem;
+	border-radius: 14px;
+	border: 1px solid #dbe5f0;
+	background: rgb(255 255 255 / 0.84);
+	backdrop-filter: blur(10px);
+}
+
+.binding-lab__lane p {
+	margin: 0.4rem 0;
+}
+
 .signal-story__toolbar {
 	display: flex;
 	flex-wrap: wrap;

@@ -128,4 +128,3 @@ function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<
 		}
 	}
 }
-

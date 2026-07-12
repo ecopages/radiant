@@ -107,6 +107,28 @@ return (
 
 Removing a binding this way follows the normal renderer path. If the next render changes the template shape, the DOM renderer may replace the affected node rather than preserve the previous instance.
 
+## Derived Bindings
+
+`SubscribableJsxValue` bindings can be projected in two ways:
+
+**Member access** — for object keys, use inline in JSX:
+
+```tsx
+<p>{this.$.config.label}</p>
+```
+
+The runtime memoizes each key on the binding, so this is identity-stable across renders.
+
+**`map`** — for transforms, record lookups, and non-property projections:
+
+```tsx
+const themeLabel = boundPreference.map((preference) => THEME_CONFIG[preference].label);
+```
+
+On Radiant hosts: `this.$.field.map(...)`. Hoist `map` to a create-once host field. Do not call `.map(...)` inside `render()` — each call creates a new derived binding.
+
+Derived bindings reuse the source `getValue` / `subscribe` contract and mount through the same reactive engines as any other binding.
+
 ## Quick Start With RadiantElement
 
 ```tsx

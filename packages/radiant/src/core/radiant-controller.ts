@@ -2,9 +2,7 @@ import { render as renderJsx, type JsxRenderable, type SubscribableJsxValue } fr
 import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } from './reactivity-adapter';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
-import {
-	ensureLegacyHostReady,
-} from '../decorators/legacy/host-readiness';
+import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { ReactiveHost, type ReactiveHostLike } from './reactive-host';
 import type {
 	ReactiveBindingOption,
