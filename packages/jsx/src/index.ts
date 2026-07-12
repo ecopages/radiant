@@ -8,6 +8,7 @@ export {
 	jsxDEV,
 	jsxs,
 	createSubscribableJsxValue,
+	mapSubscribable,
 	type JsxFragment,
 	isKeyedJsxValue,
 	isSlotJsxValue,
@@ -43,5 +44,6 @@ export type {
 	StylePropertyValue,
 	StyleValue,
 	SubscribableJsxValue,
+	SubscribableJsxValueWithAccess,
 	TemplateResultLike,
 } from './types.ts';

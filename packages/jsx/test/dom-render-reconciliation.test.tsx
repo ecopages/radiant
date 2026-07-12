@@ -1285,4 +1285,268 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		}).not.toThrow();
 		expect((container.querySelector('input') as HTMLInputElement | null)?.checked).toBe(true);
 	});
+
+	test('map derives a record lookup and patches only the text node without rerendering', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const THEME_CONFIG = {
+			light: { label: 'Light', icon: 'sun' },
+			dark: { label: 'Dark', icon: 'moon' },
+		} as const;
+		type ThemeKey = keyof typeof THEME_CONFIG;
+		const subscribers = new Set<(value: ThemeKey) => void>();
+		let preference: ThemeKey = 'light';
+		const boundPreference = createSubscribableJsxValue({
+			getValue: () => preference,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const themeLabel = boundPreference.map((p) => THEME_CONFIG[p].label);
+
+		root.render(jsxs('p', { children: ['Theme: ', themeLabel] }));
+		expect(container.innerHTML).toBe('<p>Theme: Light</p>');
+
+		const mutations: MutationRecord[] = [];
+		const observer = new MutationObserver((records) => {
+			mutations.push(...records);
+		});
+
+		observer.observe(container, {
+			characterData: true,
+			characterDataOldValue: true,
+			childList: true,
+			subtree: true,
+		});
+
+		preference = 'dark';
+
+		for (const subscriber of subscribers) {
+			subscriber(preference);
+		}
+
+		await Promise.resolve();
+		observer.disconnect();
+
+		expect(container.innerHTML).toBe('<p>Theme: Dark</p>');
+		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
+		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
+		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('Light');
+	});
+
+	test('map projects an object prop key and patches on whole-object replacement', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		type ConfigValue = { label: string };
+		const subscribers = new Set<(value: import('../src/jsx-runtime.ts').JsxRenderable) => void>();
+		let config: unknown = { label: 'Hello' };
+		const boundConfig = createSubscribableJsxValue<import('../src/jsx-runtime.ts').JsxRenderable>({
+			getValue: () => config as import('../src/jsx-runtime.ts').JsxRenderable,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const configLabel = boundConfig.map((c) => (c as unknown as ConfigValue).label);
+
+		root.render(jsxs('p', { children: ['Config: ', configLabel] }));
+		expect(container.innerHTML).toBe('<p>Config: Hello</p>');
+
+		const mutations: MutationRecord[] = [];
+		const observer = new MutationObserver((records) => {
+			mutations.push(...records);
+		});
+
+		observer.observe(container, {
+			characterData: true,
+			characterDataOldValue: true,
+			childList: true,
+			subtree: true,
+		});
+
+		config = { label: 'Next' };
+
+		for (const subscriber of subscribers) {
+			subscriber(config as import('../src/jsx-runtime.ts').JsxRenderable);
+		}
+
+		await Promise.resolve();
+		observer.disconnect();
+
+		expect(container.innerHTML).toBe('<p>Config: Next</p>');
+		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
+		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
+		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('Hello');
+	});
+
+	test('mapSubscribable derives over a signal-like source and patches in place', async () => {
+		const [{ jsxs, mapSubscribable }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let count = 3;
+		const countSignal = {
+			get: () => count,
+			subscribe: (notify: (value: number) => void) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		};
+		const doubled = mapSubscribable(countSignal, (value) => value * 2);
+
+		root.render(jsxs('p', { children: ['Double: ', doubled] }));
+		expect(container.innerHTML).toBe('<p>Double: 6</p>');
+
+		count = 5;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		await Promise.resolve();
+		expect(container.innerHTML).toBe('<p>Double: 10</p>');
+	});
+
+	test('a derived binding created once reuses its live subscription across re-renders', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let subscribeCount = 0;
+		let unsubscribeCount = 0;
+		const subscribers = new Set<(value: number) => void>();
+		let count = 1;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribeCount += 1;
+				subscribers.add(notify);
+				return () => {
+					unsubscribeCount += 1;
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const doubled = boundCount.map((value) => value * 2);
+
+		const render = () => root.render(jsxs('p', { children: ['Double: ', doubled] }));
+		render();
+		expect(container.innerHTML).toBe('<p>Double: 2</p>');
+		render();
+		expect(container.innerHTML).toBe('<p>Double: 2</p>');
+		expect(subscribeCount).toBe(1);
+		expect(unsubscribeCount).toBe(0);
+
+		count = 4;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		await Promise.resolve();
+		expect(container.innerHTML).toBe('<p>Double: 8</p>');
+	});
+
+	test('proxy member access derives an object prop and patches on whole-object replacement', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		type ConfigValue = { label: string };
+		const subscribers = new Set<(value: import('../src/jsx-runtime.ts').JsxRenderable) => void>();
+		let config: unknown = { label: 'Hello' };
+		const boundConfig = createSubscribableJsxValue<import('../src/jsx-runtime.ts').JsxRenderable>({
+			getValue: () => config as import('../src/jsx-runtime.ts').JsxRenderable,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const configLabel = (boundConfig as unknown as ConfigValue).label;
+
+		root.render(jsxs('p', { children: ['Config: ', configLabel] }));
+		expect(container.innerHTML).toBe('<p>Config: Hello</p>');
+
+		const mutations: MutationRecord[] = [];
+		const observer = new MutationObserver((records) => {
+			mutations.push(...records);
+		});
+
+		observer.observe(container, {
+			characterData: true,
+			characterDataOldValue: true,
+			childList: true,
+			subtree: true,
+		});
+
+		config = { label: 'Next' };
+
+		for (const subscriber of subscribers) {
+			subscriber(config as import('../src/jsx-runtime.ts').JsxRenderable);
+		}
+
+		await Promise.resolve();
+		observer.disconnect();
+
+		expect(container.innerHTML).toBe('<p>Config: Next</p>');
+		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
+		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
+		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('Hello');
+	});
+
+	test('proxy member access supports chained keys via repeated map delegation', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		type ThemeValue = { label: string };
+		type ConfigValue = { theme: ThemeValue };
+		const subscribers = new Set<(value: import('../src/jsx-runtime.ts').JsxRenderable) => void>();
+		let config: unknown = { theme: { label: 'Hello' } };
+		const boundConfig = createSubscribableJsxValue<import('../src/jsx-runtime.ts').JsxRenderable>({
+			getValue: () => config as import('../src/jsx-runtime.ts').JsxRenderable,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const themeLabel = (boundConfig as unknown as ConfigValue).theme.label;
+
+		root.render(jsxs('p', { children: ['Theme: ', themeLabel] }));
+		expect(container.innerHTML).toBe('<p>Theme: Hello</p>');
+
+		config = { theme: { label: 'Next' } };
+
+		for (const subscriber of subscribers) {
+			subscriber(config as import('../src/jsx-runtime.ts').JsxRenderable);
+		}
+
+		await Promise.resolve();
+		expect(container.innerHTML).toBe('<p>Theme: Next</p>');
+	});
 });

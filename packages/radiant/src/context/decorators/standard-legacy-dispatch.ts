@@ -5,8 +5,14 @@ import type { ContextHostLike } from '../context-host';
  * Dispatches context selector decorators to standard or legacy implementations.
  */
 export function dispatchContextSelectorDecorator<Selected>(
-	standardField: (protoOrTarget: undefined, nameOrContext: ClassFieldDecoratorContext<ContextHostLike, Selected>) => unknown,
-	standardMethod: (protoOrTarget: Method, nameOrContext: ClassMethodDecoratorContext<ContextHostLike, (value: Selected) => unknown>) => unknown,
+	standardField: (
+		protoOrTarget: undefined,
+		nameOrContext: ClassFieldDecoratorContext<ContextHostLike, Selected>,
+	) => unknown,
+	standardMethod: (
+		protoOrTarget: Method,
+		nameOrContext: ClassMethodDecoratorContext<ContextHostLike, (value: Selected) => unknown>,
+	) => unknown,
 	legacyField: (protoOrTarget: ContextHostLike, nameOrContext: string) => unknown,
 	legacyMethod: (
 		protoOrTarget: ContextHostLike,
@@ -29,7 +35,10 @@ export function dispatchContextSelectorDecorator<Selected>(
 				throw new TypeError('@contextSelector field decorators require an undefined target');
 			}
 
-			return standardField(undefined, nameOrContext) as (this: ContextHostLike, initialValue: Selected) => Selected;
+			return standardField(undefined, nameOrContext) as (
+				this: ContextHostLike,
+				initialValue: Selected,
+			) => Selected;
 		}
 
 		if (typeof protoOrTarget !== 'function') {
@@ -44,9 +53,9 @@ export function dispatchContextSelectorDecorator<Selected>(
 			throw new TypeError('@contextSelector legacy method decorators require a host target');
 		}
 
-		return legacyMethod(protoOrTarget, nameOrContext, descriptor) as
-			| TypedPropertyDescriptor<(value: Selected) => unknown>
-			| void;
+		return legacyMethod(protoOrTarget, nameOrContext, descriptor) as TypedPropertyDescriptor<
+			(value: Selected) => unknown
+		> | void;
 	}
 
 	if (typeof protoOrTarget === 'function' || protoOrTarget === undefined) {

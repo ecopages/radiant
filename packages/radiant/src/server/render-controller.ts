@@ -342,4 +342,3 @@ function serializeRenderedControllerAttribute(name: string, value: string | null
 
 	return ` ${name}="${escapeHtmlAttribute(value ?? '')}"`;
 }
-

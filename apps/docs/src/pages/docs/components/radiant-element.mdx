@@ -153,6 +153,52 @@ This means the correct question is not "element or component?" anymore. The ques
 
 Use the raw value in imperative code and render logic. Use bindings in stable JSX leaf positions such as text, attributes, `aria`, `data`, and boolean props.
 
+## Derived Bindings
+
+Bindings expose the current reactive value, but sometimes JSX needs a **projection** of that value — a record lookup, an object key, or a transform.
+
+### Member access in JSX
+
+For object-like bindings, use member access directly in `render()`:
+
+```tsx
+render() {
+  return <p>{this.$.config.label}</p>;
+}
+```
+
+This is sugar for `this.$.config.map((config) => config.label)`. The runtime memoizes each key on the binding, so repeated reads in `render()` reuse the same derived binding identity.
+
+Use this for simple object-key reads. You do not need a field initializer for `{this.$.config.label}` in normal components.
+
+### `map` for transforms and lookups
+
+Use `map` when the projection is not a plain property read — record lookups, computed strings, or method calls:
+
+```tsx
+private readonly themeLabel = this.$.preference.map((preference) => THEME_CONFIG[preference].label);
+
+render() {
+  return <p>Theme: {this.themeLabel}</p>;
+}
+```
+
+**Create `map` results once** (field initializer or cached host field). Calling `.map(...)` inside `render()` creates a new binding on every pass, which breaks the live-subscription fast path.
+
+```tsx
+// Avoid — new derived binding every render
+render() {
+  return <p>{this.$.preference.map((p) => THEME_CONFIG[p].label)}</p>;
+}
+```
+
+### Rules
+
+- **Member access** (`this.$.config.label`) — fine inline in JSX for simple keys.
+- **`map`** — hoist transforms and lookups to a create-once host field.
+- **Object props are shallow** — projections update when the whole object is replaced (`this.config = { ... }`), not when nested keys are mutated in place.
+- **Bracket lookups need `map`** — use `this.$.preference.map((p) => THEME_CONFIG[p].label)`, not `THEME_CONFIG[this.$.preference]`.
+
 ## When To Use RadiantElement
 
 - Use `RadiantElement` when you want a custom element host, whether the host is imperative or JSX-owned.

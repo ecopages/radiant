@@ -89,7 +89,36 @@ export interface SubscribableJsxValue<Value extends JsxRenderable = JsxRenderabl
 	readonly [SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true;
 	getValue: () => Value;
 	subscribe: (notify: (value: Value) => void) => () => void;
+	/**
+	 * Projects the current value through `project` into a new derived binding.
+	 *
+	 * The returned binding keeps the same `getValue`/`subscribe`/`SUBSCRIBABLE_JSX_VALUE_SYMBOL`
+	 * contract, so it mounts through the existing reactive child/attribute engines with no
+	 * special-casing. Because the result is itself a `SubscribableJsxValue`, derivations can be
+	 * chained (`.map(a).map(b)`). Create the derived binding once (e.g. a host field) rather than
+	 * inside `render()`, because the live-subscription fast path keys on source identity.
+	 */
+	map<Out extends JsxRenderable>(project: (value: Value) => Out): SubscribableJsxValueWithAccess<Out>;
 }
+
+/**
+ * Maps a binding value to a subscribable per member key. For object-like values
+ * this is the type behind ergonomic member access (`value.key`); the runtime
+ * Proxy in `createSubscribableJsxValue` provides the matching behavior.
+ */
+type SubscribableMemberAccess<Value> = Value extends object
+	? {
+			readonly [K in keyof Value]: SubscribableJsxValue<Extract<Value[K], JsxRenderable>>;
+		}
+	: Record<string, never>;
+
+/**
+ * `SubscribableJsxValue` enriched with ergonomic per-key member access
+ * (`value.key`) for object-like values. Returned by `createSubscribableJsxValue`
+ * and `mapSubscribable`; the runtime Proxy provides the matching behavior.
+ */
+export type SubscribableJsxValueWithAccess<Value extends JsxRenderable = JsxRenderable> = SubscribableJsxValue<Value> &
+	SubscribableMemberAccess<Value>;
 
 /**
  * Internal placeholder emitted from literal `<slot>` JSX tags.
