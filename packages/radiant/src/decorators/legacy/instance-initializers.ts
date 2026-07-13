@@ -1,4 +1,10 @@
+export type LegacyPostConstructionPhase = 'connect' | 'ssr';
+
 type LegacyInstanceInitializer<T extends object = object> = (instance: T) => void;
+type LegacyPostConstructionInitializer<T extends object = object> = (
+	instance: T,
+	phase: LegacyPostConstructionPhase,
+) => void;
 
 const LEGACY_INSTANCE_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-instance-initializers');
 const LEGACY_POST_CONSTRUCTION_INITIALIZERS = Symbol.for('@ecopages/radiant.legacy-post-construction-initializers');
@@ -28,7 +34,7 @@ export function registerLegacyInstanceInitializer<T extends object>(
  */
 export function registerLegacyPostConstructionInitializer<T extends object>(
 	proto: T,
-	initializer: LegacyInstanceInitializer<T>,
+	initializer: LegacyPostConstructionInitializer<T>,
 ): void {
 	registerInitializer(proto, LEGACY_POST_CONSTRUCTION_INITIALIZERS, initializer);
 }
@@ -50,17 +56,22 @@ export function runLegacyInstanceInitializers<T extends object>(instance: T): vo
  * Each initializer runs at most once per instance even if multiple lifecycle
  * entrypoints call this helper.
  */
-export function runLegacyPostConstructionInitializers<T extends object>(instance: T): void {
+export function runLegacyPostConstructionInitializers<T extends object>(
+	instance: T,
+	phase: LegacyPostConstructionPhase,
+): void {
 	const target = instance as Record<PropertyKey, unknown>;
 
-	runLegacyInitializers(
+	runLegacyPostConstructionInitializersOnPrototypeChain(
 		instance,
-		LEGACY_POST_CONSTRUCTION_INITIALIZERS,
-		(target[LEGACY_EXECUTED_POST_CONSTRUCTION_INITIALIZERS] ??= new Set()) as Set<LegacyInstanceInitializer<T>>,
+		phase,
+		(target[LEGACY_EXECUTED_POST_CONSTRUCTION_INITIALIZERS] ??= new Set()) as Set<
+			LegacyPostConstructionInitializer<T>
+		>,
 	);
 }
 
-function registerInitializer<T extends object>(proto: T, key: symbol, initializer: LegacyInstanceInitializer<T>): void {
+function registerInitializer<T extends object>(proto: T, key: symbol, initializer: LegacyInstanceInitializer<T> | LegacyPostConstructionInitializer<T>): void {
 	const target = proto as Record<PropertyKey, unknown>;
 	const ownInitializers = Object.prototype.hasOwnProperty.call(target, key) ? target[key] : undefined;
 
@@ -74,30 +85,59 @@ function registerInitializer<T extends object>(proto: T, key: symbol, initialize
 	});
 }
 
-function runLegacyInitializers<T extends object>(
+function runLegacyInitializers<T extends object>(instance: T, key: symbol): void {
+	walkPrototypeChain(instance, (prototype) => {
+		const initializers = (prototype as Record<PropertyKey, unknown>)[key] as LegacyInstanceInitializer<T>[] | undefined;
+
+		if (!Array.isArray(initializers)) {
+			return;
+		}
+
+		for (const initializer of initializers) {
+			initializer(instance);
+		}
+	});
+}
+
+function runLegacyPostConstructionInitializersOnPrototypeChain<T extends object>(
 	instance: T,
-	key: symbol,
-	executedInitializers?: Set<LegacyInstanceInitializer<T>>,
-	prototype: object | null = Object.getPrototypeOf(instance),
+	phase: LegacyPostConstructionPhase,
+	executedInitializers: Set<LegacyPostConstructionInitializer<T>>,
 ): void {
-	if (!prototype || prototype === Object.prototype) {
-		return;
-	}
+	for (const prototype of collectPrototypeChain(instance)) {
+		const initializers = (prototype as Record<PropertyKey, unknown>)[LEGACY_POST_CONSTRUCTION_INITIALIZERS] as
+			| LegacyPostConstructionInitializer<T>[]
+			| undefined;
 
-	runLegacyInitializers(instance, key, executedInitializers, Object.getPrototypeOf(prototype));
-
-	const initializers = (prototype as Record<PropertyKey, unknown>)[key] as LegacyInstanceInitializer<T>[] | undefined;
-
-	if (!Array.isArray(initializers)) {
-		return;
-	}
-
-	for (const initializer of initializers) {
-		if (executedInitializers?.has(initializer)) {
+		if (!Array.isArray(initializers)) {
 			continue;
 		}
 
-		initializer(instance);
-		executedInitializers?.add(initializer);
+		for (const initializer of initializers) {
+			if (executedInitializers.has(initializer)) {
+				continue;
+			}
+
+			initializer(instance, phase);
+			executedInitializers.add(initializer);
+		}
+	}
+}
+
+function collectPrototypeChain<T extends object>(instance: T): object[] {
+	const prototypes: object[] = [];
+	let prototype: object | null = Object.getPrototypeOf(instance);
+
+	while (prototype && prototype !== Object.prototype) {
+		prototypes.unshift(prototype);
+		prototype = Object.getPrototypeOf(prototype);
+	}
+
+	return prototypes;
+}
+
+function walkPrototypeChain<T extends object>(instance: T, visit: (prototype: object) => void): void {
+	for (const prototype of collectPrototypeChain(instance)) {
+		visit(prototype);
 	}
 }
