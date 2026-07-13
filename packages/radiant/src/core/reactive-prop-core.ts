@@ -1,4 +1,4 @@
-import type { JsxRenderable, SubscribableJsxValue } from '@ecopages/jsx';
+import type { JsxBindingSourceValue, JsxRenderable, SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import type { ReactiveState } from './reactivity-contract';
 import {
 	type AttributeTypeConstant,
@@ -41,10 +41,12 @@ export type ReactiveFieldOptions = {
 export type ReactiveBindingValue<
 	Host extends object,
 	Property extends StringPropertyKey<Host>,
-> = Host[Property] extends JsxRenderable ? Host[Property] : JsxRenderable;
+> = Host[Property] extends JsxBindingSourceValue ? Host[Property] : JsxRenderable;
 
 export type ReactiveBindings<Bindings extends object> = {
-	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValueWithAccess<
+		ReactiveBindingValue<Bindings, Property>
+	>;
 };
 
 export type ReactiveAccessorDefinition<T> = {

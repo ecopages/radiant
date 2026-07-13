@@ -21,6 +21,8 @@ export type {
 	ClassList,
 	DataAttributeValue,
 	KeyedJsxValue,
+	JsxBindingObjectValue,
+	JsxBindingSourceValue,
 	JsxComponent,
 	JsxCustomElementAttributes,
 	JsxCustomIntrinsicElements,

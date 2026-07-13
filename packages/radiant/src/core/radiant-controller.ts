@@ -1,4 +1,4 @@
-import { render as renderJsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
+import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } from './reactivity-adapter';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
@@ -169,7 +169,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 */
 	public bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 
@@ -178,7 +178,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 */
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 

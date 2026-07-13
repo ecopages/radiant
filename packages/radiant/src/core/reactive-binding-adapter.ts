@@ -1,4 +1,8 @@
-import { mapSubscribable, type JsxRenderable, type SignalLike, type SubscribableJsxValue } from '@ecopages/jsx';
+import {
+	createSubscribableJsxValue,
+	type JsxBindingSourceValue,
+	type SubscribableJsxValueWithAccess,
+} from '@ecopages/jsx';
 import type { ReactiveState } from './reactivity-contract';
 
 /**
@@ -8,8 +12,11 @@ import type { ReactiveState } from './reactivity-contract';
  * `@ecopages/jsx` imports while bindings still expose `getValue`, `subscribe`,
  * and `map` for derived child updates.
  */
-export function adaptReactiveStateToJsxBinding<Value extends JsxRenderable>(
+export function adaptReactiveStateToJsxBinding<Value extends JsxBindingSourceValue>(
 	state: ReactiveState<Value>,
-): SubscribableJsxValue<Value> {
-	return mapSubscribable(state as SignalLike<Value>, (value) => value);
+): SubscribableJsxValueWithAccess<Value> {
+	return createSubscribableJsxValue({
+		getValue: () => state.get(),
+		subscribe: (notify) => state.subscribe(notify),
+	});
 }
