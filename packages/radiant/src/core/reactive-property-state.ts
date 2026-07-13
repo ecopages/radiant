@@ -75,8 +75,7 @@ export class ReactivePropertyState {
 		this.register(propertyMapping);
 
 		const existingMember = this.host.getReactiveMember<T>(propertyName);
-		const signal =
-			existingMember ?? createReactiveMember(propertyName, initialValue as T);
+		const signal = existingMember ?? createReactiveMember(propertyName, initialValue as T);
 
 		if (existingMember && initialValue !== undefined) {
 			existingMember.set(initialValue as T);

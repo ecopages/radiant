@@ -71,7 +71,11 @@ export function runLegacyPostConstructionInitializers<T extends object>(
 	);
 }
 
-function registerInitializer<T extends object>(proto: T, key: symbol, initializer: LegacyInstanceInitializer<T> | LegacyPostConstructionInitializer<T>): void {
+function registerInitializer<T extends object>(
+	proto: T,
+	key: symbol,
+	initializer: LegacyInstanceInitializer<T> | LegacyPostConstructionInitializer<T>,
+): void {
 	const target = proto as Record<PropertyKey, unknown>;
 	const ownInitializers = Object.prototype.hasOwnProperty.call(target, key) ? target[key] : undefined;
 
@@ -87,7 +91,8 @@ function registerInitializer<T extends object>(proto: T, key: symbol, initialize
 
 function runLegacyInitializers<T extends object>(instance: T, key: symbol): void {
 	walkPrototypeChain(instance, (prototype) => {
-		const initializers = (prototype as Record<PropertyKey, unknown>)[key] as LegacyInstanceInitializer<T>[] | undefined;
+		const initializers = (prototype as Record<PropertyKey, unknown>)[key] as
+			LegacyInstanceInitializer<T>[] | undefined;
 
 		if (!Array.isArray(initializers)) {
 			return;
@@ -106,8 +111,7 @@ function runLegacyPostConstructionInitializersOnPrototypeChain<T extends object>
 ): void {
 	for (const prototype of collectPrototypeChain(instance)) {
 		const initializers = (prototype as Record<PropertyKey, unknown>)[LEGACY_POST_CONSTRUCTION_INITIALIZERS] as
-			| LegacyPostConstructionInitializer<T>[]
-			| undefined;
+			LegacyPostConstructionInitializer<T>[] | undefined;
 
 		if (!Array.isArray(initializers)) {
 			continue;

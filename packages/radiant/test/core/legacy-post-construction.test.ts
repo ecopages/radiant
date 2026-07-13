@@ -190,7 +190,17 @@ describe('legacy post-construction decorator setup', () => {
 
 		expect(element.bind('preference').getValue()).toBe('light');
 		expect(element.bind('config').getValue()).toEqual({ label: 'Hello' });
-		expect(element.bind('preference').map((preference) => `pref:${preference}`).getValue()).toBe('pref:light');
-		expect(element.bind('config').map((config) => config.label).getValue()).toBe('Hello');
+		expect(
+			element
+				.bind('preference')
+				.map((preference) => `pref:${preference}`)
+				.getValue(),
+		).toBe('pref:light');
+		expect(
+			element
+				.bind('config')
+				.map((config) => config.label)
+				.getValue(),
+		).toBe('Hello');
 	});
 });

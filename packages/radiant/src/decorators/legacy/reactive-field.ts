@@ -1,8 +1,5 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import {
-	registerLegacyInstanceInitializer,
-	registerLegacyPostConstructionInitializer,
-} from './instance-initializers';
+import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 
 /**
  * A decorator to define a reactive field.
@@ -21,8 +18,9 @@ export function reactiveField(target: ReactiveHostLike, propertyKey: string) {
 		element.createReactiveMember(propertyKey, element[propertyKey as keyof typeof element]);
 
 		const bind =
-			(element as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ??
-			false;
+			(
+				element as unknown as { shouldAutoBindReactiveMembers?: () => boolean }
+			).shouldAutoBindReactiveMembers?.() ?? false;
 
 		if (bind) {
 			element.defineReactiveBinding(propertyKey, bind);
@@ -32,8 +30,9 @@ export function reactiveField(target: ReactiveHostLike, propertyKey: string) {
 	registerLegacyPostConstructionInitializer(target, (element, _phase) => {
 		element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
 			bind:
-				(element as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ??
-				false,
+				(
+					element as unknown as { shouldAutoBindReactiveMembers?: () => boolean }
+				).shouldAutoBindReactiveMembers?.() ?? false,
 		});
 	});
 }

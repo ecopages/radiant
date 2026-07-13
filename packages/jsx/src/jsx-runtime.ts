@@ -134,8 +134,7 @@ export function isSlotJsxValue(value: unknown): value is SlotJsxValue {
 }
 
 type MapSource<Value extends JsxBindingSourceValue> =
-	| SubscribableJsxValue<Value>
-	| (Value extends JsxRenderable ? SignalLike<Value> : never);
+	SubscribableJsxValue<Value> | (Value extends JsxRenderable ? SignalLike<Value> : never);
 
 type MappableSubscribable<Value extends JsxBindingSourceValue> = SubscribableJsxValue<Value>;
 
