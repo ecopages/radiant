@@ -48,14 +48,16 @@ This is the key split:
 <CodeTabs
   label="Package managers"
   tabs={[
-	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
-	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
-	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
+	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx @ecopages/signals' },
   ]}
   copyLabel="Copy install command"
   defaultSelectedKey="bun"		
 	
 />
+
+`@ecopages/jsx` declares `@ecopages/signals` as a peer dependency. Install it when you use `mapSubscribable(...)` with signal-like sources or when you mix standalone signals into JSX templates.
 
 ```json
 {

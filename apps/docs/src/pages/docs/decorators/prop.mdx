@@ -28,6 +28,19 @@ export class UserCard extends RadiantElement {
 }
 ```
 
+## SSR Property Staging
+
+Before the first server render, assign properties directly on a disconnected host:
+
+```typescript
+const element = new UserCard();
+element.visits = 7;
+
+const html = element.renderHostToString();
+```
+
+Those staged values are serialized into the SSR host tag and used for the first render. This is the supported way to pass non-default props into SSR without attributes.
+
 ## Controller Host Props
 
 `RadiantController` can use the same decorator when the input should come from a real host property instead of markup.
@@ -80,7 +93,7 @@ Prefer `@ecopages/radiant/controller-registry` for `startControllers(...)` when 
 - reads the attribute into the declared property type
 - writes the property back through the converter when reflection is enabled
 - stores reactive metadata for SSR host serialization
-- triggers `notifyUpdate(...)` when the value changes
+- notifies `@onUpdated` listeners when the member state changes
 - can expose a subscribable JSX binding companion
 
 On `RadiantController`, the same decorator reads and writes a real property on the attached host element instead of going through attribute serialization.

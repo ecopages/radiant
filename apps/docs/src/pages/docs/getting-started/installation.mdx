@@ -28,7 +28,9 @@ That is the simplest setup today:
 
 You do not need to import JSX or Signals APIs directly in every Radiant component. A component can use `render()` without importing `@ecopages/jsx` symbols itself, and `@state` does not require importing `@ecopages/signals` in application code.
 
-`@ecopages/radiant` currently declares both companion packages as peer dependencies, and its published surface expects them to be present. Installing all three avoids peer-dependency and module-resolution issues.
+`@ecopages/radiant` currently declares `@ecopages/jsx` as a peer dependency. It also depends on `@ecopages/signals` directly for host member state. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency for signal-backed derived bindings such as `mapSubscribable(...)`.
+
+Installing all three together avoids peer-dependency and module-resolution issues.
 
 <CodeTabs
   label="Package managers"
