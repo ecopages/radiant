@@ -47,6 +47,8 @@ It is not a drop-in implementation of the current proposal draft.
 
 ## How It Connects To Radiant
 
+`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing radiant brings this package transitively. You do not need a separate signals install for the standard radiant + jsx setup.
+
 Radiant builds on top of this package in two main ways:
 
 - `@signal` turns a host field into a real writable signal
