@@ -109,7 +109,9 @@ export function clearContentCache(): void {
 
 function requireConfig(): ContentSourceConfig {
 	if (!config) {
-		throw new Error('Content source is not configured. Call ensureContentSource() from @/content-source.instance before using content-source.');
+		throw new Error(
+			'Content source is not configured. Call ensureContentSource() from @/content-source.instance before using content-source.',
+		);
 	}
 	return config;
 }
