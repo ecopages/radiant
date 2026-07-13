@@ -11,7 +11,7 @@ import {
 	runCommand,
 	startServer,
 	stopServer,
-	fetchPageText,
+	fetchOkText,
 	waitForLocatorAttribute,
 	waitForLocatorText,
 	waitForLocatorTextMatch,
@@ -50,7 +50,7 @@ test.after(async () => {
 });
 
 test('Nitro page SSR renders nested context flow and hydrates child updates', browserTestOptions, async () => {
-	const html = await fetchPageText(origin);
+	const html = await fetchOkText(origin);
 	assert.match(html, /<radiant-context-flow-shell>/);
 	assert.doesNotMatch(html, /Awaiting board context/);
 	assert.match(html, /Controller-owned render/);
