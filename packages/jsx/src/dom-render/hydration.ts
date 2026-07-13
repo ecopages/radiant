@@ -1,5 +1,5 @@
 import type { TemplateResultLike } from '../jsx-runtime.ts';
-import { ATTRIBUTE_BINDING_PREFIX } from '../hydration-bindings.ts';
+import { resolveHydrationMarkerAttributeName } from '../hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
 import { collectHydratedChildRanges, isolateHydratedTextRange, type HydratedChildRange } from './hydration-planning.ts';
@@ -81,6 +81,13 @@ export function hydrateTemplateInstance(
 	return instance;
 }
 
+/**
+ * Maps blueprint-relative paths onto a host slice when hydrating one
+ * single-root template child inside an iterable root.
+ *
+ * Assumes each iterable child template owns one root node at blueprint path
+ * `[0]`; multi-root template children are not supported in iterable hydration.
+ */
 function mapBlueprintPathToHostPath(path: readonly number[], pathRootOffset: number): readonly number[] {
 	if (path.length === 0) {
 		return [pathRootOffset];
@@ -131,10 +138,9 @@ function createHydratedLiveTemplateParts(
 				continue;
 			}
 
-			const markerName =
-				attributeBindingIndices?.get(part.index) === undefined
-					? part.markerName
-					: `${ATTRIBUTE_BINDING_PREFIX}${attributeBindingIndices.get(part.index)}`;
+			const markerName = attributeBindingIndices?.has(part.index)
+				? resolveHydrationMarkerAttributeName(attributeBindingIndices.get(part.index)!)
+				: part.markerName;
 
 			targetNode.removeAttribute(markerName);
 			liveParts.set(partIndex, {

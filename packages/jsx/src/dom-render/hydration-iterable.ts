@@ -1,50 +1,37 @@
-import { needsHydrationMarker } from '../hydration-marker-policy.ts';
-import { getTemplateInterpolationParts } from '../template-shape.ts';
-import type { TemplateResultLike } from '../jsx-runtime.ts';
+import { collectTemplateAttributeMarkerIndices, visitHydrationBindingMarkers } from '../hydration-bindings.ts';
 import { isIterableRenderable, isTemplateResultLike } from '../renderable-guards.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
 import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './hydration.ts';
 import { unwrapKeyedValue } from './runtime-helpers.ts';
-import type { BindingKind } from '../hydration-bindings.ts';
-import type { DeferredPropertyBinding, TemplateInstance } from './types.ts';
+import type { DeferredPropertyBinding } from './types.ts';
 
 function getHydratableChildNodes(target: HTMLElement): readonly ChildNode[] {
 	return Array.from(target.childNodes).filter((node) => !(node instanceof HTMLScriptElement));
 }
 
-function collectTemplateAttributeBindingIndices(
-	template: TemplateResultLike,
-	startIndex: number,
-): { indices: Map<number, number>; nextIndex: number } {
-	const indices = new Map<number, number>();
-	const interpolationParts = getTemplateInterpolationParts(template.strings);
-	let nextIndex = startIndex;
-
-	for (let index = 0; index < template.values.length; index += 1) {
-		const interpolationPart = interpolationParts[index];
-
-		if (interpolationPart?.type === 'attribute' && needsHydrationMarker(interpolationPart.kind as BindingKind)) {
-			indices.set(index, nextIndex);
-			nextIndex += 1;
-		}
-	}
-
-	return { indices, nextIndex };
-}
-
 /**
- * Reconnects every template child inside an iterable JSX root (for example a
- * fragment) against the matching SSR DOM slice on `target`.
+ * Reconnects iterable JSX roots (for example fragments) against existing SSR DOM.
+ *
+ * Supported shapes:
+ * - a flat list of intrinsic template children (`<>...</>` with elements such as
+ *   `<button>`, `<span>`, and other single-root templates)
+ * - static primitive or markup children mixed between templates
+ *
+ * Unsupported shapes fall back to a full client render:
+ * - nested iterable children (fragments inside fragments)
+ * - bare reactive child sources at the fragment root without a wrapping template
+ * - DOM/script child counts that no longer match the JSX child list
+ *
+ * Success requires every expected hydration marker to be removed from `target`.
  */
 export function hydrateIterableRoot(
 	value: Iterable<unknown>,
 	target: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
 	options: HydrateTemplateInstanceOptions = {},
-): readonly TemplateInstance[] | undefined {
+): boolean {
 	const jsxChildren = Array.from(value, (child) => unwrapKeyedValue(child));
 	const domChildren = getHydratableChildNodes(target);
-	const instances: TemplateInstance[] = [];
 	let domOffset = 0;
 	let nextBindingIndex = 0;
 
@@ -53,11 +40,11 @@ export function hydrateIterableRoot(
 		const slice = domChildren.slice(domOffset, domOffset + nodeCount);
 
 		if (slice.length !== nodeCount) {
-			return undefined;
+			return false;
 		}
 
 		if (isTemplateResultLike(child)) {
-			const attributeBindingIndices = collectTemplateAttributeBindingIndices(child, nextBindingIndex);
+			const attributeBindingIndices = collectTemplateAttributeMarkerIndices(child, nextBindingIndex);
 			nextBindingIndex = attributeBindingIndices.nextIndex;
 			const instance = hydrateTemplateInstance(child, target, deferredProperties, {
 				...options,
@@ -67,20 +54,18 @@ export function hydrateIterableRoot(
 			});
 
 			if (!instance) {
-				return undefined;
+				return false;
 			}
-
-			instances.push(instance);
 		} else if (isIterableRenderable(child)) {
-			return undefined;
+			return false;
 		}
 
 		domOffset += nodeCount;
 	}
 
 	if (domOffset !== domChildren.length) {
-		return undefined;
+		return false;
 	}
 
-	return instances;
+	return !visitHydrationBindingMarkers(target, () => undefined);
 }

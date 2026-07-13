@@ -376,6 +376,95 @@ const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 
 Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
 
+### Hydration Root Shapes
+
+`hydrate(...)` chooses one of three recovery paths based on the JSX root shape:
+
+| Root shape                                 | Recovery path      | Notes                                                          |
+| ------------------------------------------ | ------------------ | -------------------------------------------------------------- |
+| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place                  |
+| Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each single-root template child against its DOM slice |
+| Other values with markers                  | Flat marker scan   | Reconnects attribute bindings only                             |
+
+Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Nested fragments, bare reactive children at the fragment root, and DOM/script child mismatches fall back to a full client render.
+
+Global SSR marker indexes are shared across all three paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
+
+### SSR Marker Lifecycle
+
+Hydration markers are not ad hoc attributes. They are one shared index namespace that connects server serialization to client recovery.
+
+```mermaid
+flowchart TD
+  JSX["JSX view"] --> Serialize["renderToString({ mode: 'hydrate' })"]
+  Serialize --> Markers["data-radiant-jsx-bind-N descriptors"]
+  Markers --> DOM["SSR DOM in the page"]
+  DOM --> Dispatch["hydrate(value, target)"]
+  Dispatch --> Path{"Root shape?"}
+  Path -->|single template| Template["hydrateTemplateInstance"]
+  Path -->|fragment / iterable| Iterable["hydrateIterableRoot"]
+  Path -->|leftover markers| Flat["visitHydrationBindingMarkers"]
+  Template --> Live["Live template parts + subscriptions"]
+  Iterable --> Live
+  Flat --> Attrs["Attribute bindings only"]
+```
+
+**1. Serialize.** `serializeRenderable(...)` walks the JSX tree depth-first. Each attribute interpolation that needs a marker calls `takeNextHydrationMarkerIndex(...)` and writes `data-radiant-jsx-bind-N="kind:name"` through `resolveHydrationMarkerAttributeName(...)`.
+
+**2. Index contract.** `hydration-bindings.ts` owns the marker prefix, descriptor format, index advancement, and DOM walks. Iterable hydration uses `collectTemplateAttributeMarkerIndices(...)` per single-root child so fragment siblings stay aligned with the same global namespace.
+
+**3. Recover.** `hydrate(...)` picks a recovery path from the root shape. Template and iterable paths rebuild live parts in place. Unsupported shapes, or DOM/script mismatches, return a recoverable mismatch and fall back to a full client render.
+
+**Counter-shaped fragment example:**
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+import { createSubscribableJsxValue, Fragment, jsx, jsxs } from '@ecopages/jsx';
+import { renderToString } from '@ecopages/jsx/server';
+import { createRoot } from '@ecopages/jsx';
+
+let count = 0;
+
+const boundCount = createSubscribableJsxValue({
+	getValue: () => count,
+	subscribe: (notify) => {
+		/* store + call notify(count) on updates */
+	},
+});
+
+const view = () =>
+	jsxs(Fragment, {
+		children: [
+			jsx('button', { id: 'dec', children: '-' }),
+			jsx('span', { id: 'metric', children: boundCount }),
+			jsx('button', { id: 'inc', children: '+' }),
+		],
+	});
+
+// SSR: one global namespace, allocated depth-first across fragment siblings.
+const html = renderToString(view(), { mode: 'hydrate' });
+
+// Client: iterable hydration reconnects each child template against its DOM slice,
+// including subscribable child text inside <span> without rerendering the fragment root.
+const container = document.querySelector('#counter')!;
+container.innerHTML = html;
+createRoot(container).hydrate(view());
+```
+
+For that fragment, attribute markers are allocated like this:
+
+| Global index | Template child | Binding |
+| ------------ | -------------- | ------- |
+| `0` | `<button id="dec">` | `attr:id` |
+| `1` | `<span id="metric">` | `attr:id` |
+| `2` | `<button id="inc">` | `attr:id` |
+
+Iterable hydration resolves each child with `collectTemplateAttributeMarkerIndices(child, startIndex)` so sibling templates reuse the same numbering that `renderToString(..., { mode: 'hydrate' })` wrote into the HTML.
+
+Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`.
+
+Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook.
+
 ### SSR-Capable Custom Elements
 
 Within the JSX SSR pipeline, any registered intrinsic tag containing `-` is treated as a custom-element candidate.

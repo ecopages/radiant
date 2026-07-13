@@ -1,3 +1,16 @@
+/**
+ * Hydration binding contract shared by SSR serialization and client recovery.
+ *
+ * Lifecycle overview:
+ * 1. `serializeRenderable(..., { mode: 'hydrate' })` writes `data-radiant-jsx-bind-N`
+ *    attributes through {@link takeNextHydrationMarkerIndex} and
+ *    {@link resolveHydrationMarkerAttributeName}.
+ * 2. {@link collectHydrationBindings} and {@link collectTemplateAttributeMarkerIndices}
+ *    resolve the same global namespace for iterable fragment children.
+ * 3. `hydrate(...)` walks markers back to live bindings via template, iterable, or flat paths.
+ *
+ * See `packages/jsx/README.md` → "SSR Marker Lifecycle" for the full walkthrough.
+ */
 import type { JsxRenderable, TemplateResultLike } from './jsx-runtime.ts';
 import { isIterableRenderable, isTemplateResultLike } from './renderable-guards.ts';
 import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
@@ -16,6 +29,12 @@ export type HydrationBinding = {
 	name: string;
 	/** Original dynamic value that will be rebound during hydration. */
 	value: unknown;
+};
+
+/** Maps template value indexes to global SSR hydration marker indexes. */
+export type TemplateAttributeMarkerIndices = {
+	indices: ReadonlyMap<number, number>;
+	nextIndex: number;
 };
 
 type CollectHydrationBindingsOptions = {
@@ -43,6 +62,48 @@ export function collectHydrationBindings(
 	collectValueBindings(value, bindings, state, options);
 
 	return bindings;
+}
+
+/**
+ * Records the global SSR marker indexes for every attribute interpolation in
+ * `template`, starting at `startIndex`.
+ *
+ * This mirrors the index advancement performed by `serializeRenderable(...,
+ * { mode: 'hydrate' })` and by {@link collectHydrationBindings}, so iterable
+ * fragment hydration can resolve per-child markers against the same namespace.
+ */
+export function collectTemplateAttributeMarkerIndices(
+	template: TemplateResultLike,
+	startIndex: number,
+): TemplateAttributeMarkerIndices {
+	const indices = new Map<number, number>();
+	const interpolationParts = getTemplateInterpolationParts(template.strings);
+	const state = { nextBindingIndex: startIndex };
+
+	for (let index = 0; index < template.values.length; index += 1) {
+		const interpolationPart = interpolationParts[index];
+
+		if (interpolationPart?.type === 'attribute') {
+			indices.set(index, takeNextHydrationMarkerIndex(state));
+		}
+	}
+
+	return { indices, nextIndex: state.nextBindingIndex };
+}
+
+/** Resolves the DOM attribute name for a global SSR hydration marker index. */
+export function resolveHydrationMarkerAttributeName(globalIndex: number): string {
+	return `${ATTRIBUTE_BINDING_PREFIX}${globalIndex}`;
+}
+
+/**
+ * Reserves the next global SSR marker index for one template attribute
+ * interpolation during depth-first serialization.
+ */
+export function takeNextHydrationMarkerIndex(state: { nextBindingIndex: number }): number {
+	const index = state.nextBindingIndex;
+	state.nextBindingIndex += 1;
+	return index;
 }
 
 /**
@@ -80,6 +141,54 @@ export function serializeBindingDescriptor(kind: BindingKind, name: string): str
 	return `${kind}:${name}`;
 }
 
+/**
+ * Walks the subtree rooted at `target` and invokes `visit` for every attribute
+ * whose name starts with {@link ATTRIBUTE_BINDING_PREFIX}.
+ *
+ * Attributes are iterated in reverse index order so that callers may safely call
+ * `removeAttribute` inside `visit` without corrupting the live `NamedNodeMap`.
+ */
+export function visitHydrationBindingMarkers(
+	target: HTMLElement,
+	visit: (element: Element, attribute: Attr) => void,
+): boolean {
+	let foundHydrationMarker = false;
+	const walk = (element: Element): void => {
+		const attributes = Array.from(element.attributes).filter((attribute) =>
+			attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX),
+		);
+
+		for (let index = attributes.length - 1; index >= 0; index -= 1) {
+			const attribute = attributes[index];
+
+			if (!attribute) {
+				continue;
+			}
+
+			foundHydrationMarker = true;
+			visit(element, attribute);
+		}
+
+		if (element !== target && shouldSkipHydrationSubtree(element)) {
+			return;
+		}
+
+		const children = element.children;
+
+		for (let index = 0; index < children.length; index += 1) {
+			const child = children.item(index);
+
+			if (child) {
+				walk(child);
+			}
+		}
+	};
+
+	walk(target);
+
+	return foundHydrationMarker;
+}
+
 function collectValueBindings(
 	value: JsxRenderable,
 	bindings: Map<number, HydrationBinding>,
@@ -113,23 +222,25 @@ function collectTemplateBindings(
 	}
 
 	const interpolationParts = getTemplateInterpolationParts(template.strings);
+	const markerIndices = collectTemplateAttributeMarkerIndices(template, state.nextIndex);
+	state.nextIndex = markerIndices.nextIndex;
 
-	for (let index = 0; index < template.values.length; index += 1) {
-		const interpolationPart = interpolationParts[index];
+	for (const [valueIndex, globalIndex] of markerIndices.indices) {
+		const interpolationPart = interpolationParts[valueIndex];
 
 		if (interpolationPart?.type === 'attribute') {
-			const bindingValue = template.values[index];
-
-			bindings.set(state.nextIndex, {
+			bindings.set(globalIndex, {
 				kind: interpolationPart.kind,
 				name: interpolationPart.name,
-				value: bindingValue,
+				value: template.values[valueIndex],
 			});
-			state.nextIndex += 1;
-			continue;
 		}
+	}
 
-		collectValueBindings(template.values[index] as JsxRenderable, bindings, state, options);
+	for (let index = 0; index < template.values.length; index += 1) {
+		if (interpolationParts[index]?.type !== 'attribute') {
+			collectValueBindings(template.values[index] as JsxRenderable, bindings, state, options);
+		}
 	}
 }
 

@@ -1,6 +1,10 @@
 import { type JsxRenderable, type TemplateResultLike } from './jsx-runtime.ts';
-import { ATTRIBUTE_BINDING_PREFIX, collectHydrationBindings, parseBindingDescriptor } from './hydration-bindings.ts';
-import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
+import {
+	ATTRIBUTE_BINDING_PREFIX,
+	collectHydrationBindings,
+	parseBindingDescriptor,
+	visitHydrationBindingMarkers,
+} from './hydration-bindings.ts';
 import {
 	HYDRATION_INVALID_BINDING_INDEX_WARNING,
 	HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING,
@@ -68,7 +72,6 @@ type IterableHydrationOutcome =
 	| {
 			deferredProperties: DeferredPropertyBinding[];
 			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
-			instances: readonly TemplateInstance[];
 			kind: 'safe-reconnect';
 	  }
 	| {
@@ -208,16 +211,14 @@ function attemptIterableHydration(value: Iterable<unknown>, target: HTMLElement)
 
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
-	const instances = hydrateIterableRoot(value, target, deferredProperties, { rootTarget: target });
 
-	if (!instances || visitHydrationBindingMarkers(target, () => undefined)) {
+	if (!hydrateIterableRoot(value, target, deferredProperties, { rootTarget: target })) {
 		return { kind: 'recoverable-mismatch' };
 	}
 
 	return {
 		deferredProperties,
 		focusSnapshot,
-		instances,
 		kind: 'safe-reconnect',
 	};
 }
@@ -280,58 +281,6 @@ function attemptFlatHydration(element: JsxRenderable, target: HTMLElement): Flat
  */
 export function hasHydrationMarkers(target: HTMLElement): boolean {
 	return visitHydrationBindingMarkers(target, () => undefined);
-}
-
-/**
- * Walks the subtree rooted at `target` and invokes `visit` for every attribute whose
- * name starts with {@link ATTRIBUTE_BINDING_PREFIX}.
- *
- * Attributes are iterated in reverse index order so that callers may safely call
- * `removeAttribute` inside `visit` without corrupting the live `NamedNodeMap`.
- *
- * @param target Root element to walk.
- * @param visit Callback invoked for each binding marker attribute found.
- * @returns `true` when at least one binding marker was found, `false` otherwise.
- */
-function visitHydrationBindingMarkers(
-	target: HTMLElement,
-	visit: (element: Element, attribute: Attr) => void,
-): boolean {
-	let foundHydrationMarker = false;
-	const walk = (element: Element): void => {
-		const attributes = Array.from(element.attributes).filter((attribute) =>
-			attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX),
-		);
-
-		for (let index = attributes.length - 1; index >= 0; index -= 1) {
-			const attribute = attributes[index];
-
-			if (!attribute) {
-				continue;
-			}
-
-			foundHydrationMarker = true;
-			visit(element, attribute);
-		}
-
-		if (element !== target && shouldSkipHydrationSubtree(element)) {
-			return;
-		}
-
-		const children = element.children;
-
-		for (let index = 0; index < children.length; index += 1) {
-			const child = children.item(index);
-
-			if (child) {
-				walk(child);
-			}
-		}
-	};
-
-	walk(target);
-
-	return foundHydrationMarker;
 }
 
 /**

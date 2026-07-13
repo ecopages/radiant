@@ -71,7 +71,7 @@ describe('counter binding repro', () => {
 
 	test('this.value plain updates on click', async () => {
 		document.body.innerHTML = '<repro-counter-plain></repro-counter-plain>';
-		const el = document.querySelector('repro-counter-plain') as RadiantElement;
+		const el = document.querySelector('repro-counter-plain') as ReproCounterPlain;
 		await waitFor(() => expect(el.querySelector('[data-testid="plain"]')?.textContent).toBe('0'));
 		(el.querySelector('[data-testid="inc-plain"]') as HTMLButtonElement).click();
 		await waitFor(() => expect(el.querySelector('[data-testid="plain"]')?.textContent).toBe('1'));
