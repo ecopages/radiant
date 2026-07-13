@@ -26,7 +26,7 @@ export function consumeContext(context: UnknownContext) {
 			);
 		};
 
-		registerLegacyPostConstructionInitializer(proto, (element, _phase) => {
+		registerLegacyPostConstructionInitializer(proto, (element) => {
 			if (
 				bootstrapSsrConsumedContext(element, context, (provider) => {
 					assignContextProvider(element, provider);
