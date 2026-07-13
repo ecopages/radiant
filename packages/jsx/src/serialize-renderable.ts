@@ -11,9 +11,10 @@ import {
 	toTemplateResultLike,
 } from './renderable-guards.ts';
 import {
-	ATTRIBUTE_BINDING_PREFIX,
 	getTemplateInterpolationParts,
+	resolveHydrationMarkerAttributeName,
 	serializeBindingDescriptor,
+	takeNextHydrationMarkerIndex,
 } from './hydration-bindings.ts';
 import { isClientOnlyBinding, needsHydrationMarker } from './hydration-marker-policy.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
@@ -99,6 +100,7 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	}
 
 	const interpolationParts = getTemplateInterpolationParts(template.strings);
+	const hydrationState = options.hydrationBindingState;
 	let html = '';
 
 	for (let index = 0; index < template.values.length; index += 1) {
@@ -115,15 +117,11 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 		}
 
 		const bindingKind = interpolationPart.kind;
-		const bindingIndex = options.hydrationBindingState?.nextBindingIndex ?? 0;
+		const bindingIndex = hydrationState ? takeNextHydrationMarkerIndex(hydrationState) : 0;
 		html += interpolationPart.leading;
 
-		if (options.mode === 'hydrate' && options.hydrationBindingState && needsHydrationMarker(bindingKind)) {
-			html += `${interpolationPart.whitespace}${ATTRIBUTE_BINDING_PREFIX}${bindingIndex}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
-		}
-
-		if (options.hydrationBindingState) {
-			options.hydrationBindingState.nextBindingIndex += 1;
+		if (options.mode === 'hydrate' && hydrationState && needsHydrationMarker(bindingKind)) {
+			html += `${interpolationPart.whitespace}${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
 		}
 
 		if (isClientOnlyBinding(bindingKind)) {
