@@ -199,6 +199,18 @@ render() {
 - **Object props are shallow** — projections update when the whole object is replaced (`this.config = { ... }`), not when nested keys are mutated in place.
 - **Bracket lookups need `map`** — use `this.$.preference.map((p) => THEME_CONFIG[p].label)`, not `THEME_CONFIG[this.$.preference]`.
 
+## Advanced Host Integration
+
+Every reactive host member (`@state`, `@prop`, `@attr`, and `signal()`) is backed by a signals `State` inside the host. Decorator APIs are unchanged, but advanced integrations can work with that member registry directly:
+
+- `createReactiveMember(name, initialValue)` — create and register host-owned member state
+- `registerReactiveMember(name, signal)` — register externally owned state, such as a user `signal()`
+- `getReactiveMember(name)` — read the member state registered for a property name
+
+Use these when you build host adapters, tests, or custom decorators. Prefer `@state`, `@prop`, `@attr`, and `signal()` in application code.
+
+**Removed in 0.3.0:** `trackReactiveRead(...)`, `registerReactiveDependencyReader(...)`, and the exported `ReactiveField` metadata type. Dependency tracking now flows through member `State.get()` and JSX bindings adapted from that state.
+
 ## When To Use RadiantElement
 
 - Use `RadiantElement` when you want a custom element host, whether the host is imperative or JSX-owned.
