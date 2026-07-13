@@ -300,7 +300,7 @@ function updateIndexedChildren(
 	return indexedState;
 }
 
-function mountReactiveChildSource(
+export function mountReactiveChildSource(
 	startMarker: Text,
 	endMarker: Text,
 	source: ReactiveChildSource,
