@@ -1,9 +1,10 @@
-import { render as renderJsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
+import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } from './reactivity-adapter';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { ReactiveHost, type ReactiveHostLike } from './reactive-host';
+import type { ReactiveState } from './reactivity-contract';
 import type {
 	ReactiveBindingOption,
 	ReactivePropertyOptions,
@@ -168,7 +169,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 */
 	public bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 
@@ -177,7 +178,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 */
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 
@@ -203,16 +204,11 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
 		const initialHostValue = hostPropertyBridge.getInitialValue();
-		let currentValue = (initialHostValue ?? defaultValue ?? defaultValueForType(type)) as T;
+		const initialValue = (initialHostValue ?? defaultValue ?? defaultValueForType(type)) as T;
 
-		this.reactiveHost.defineReactiveAccessor(propertyName, {
-			bind,
-			getValue: () => currentValue,
-			setValue: (newValue: T) => {
-				currentValue = newValue;
-			},
-			notifyInitialValue: currentValue,
-		});
+		const signal = this.reactiveHost.createReactiveMember(propertyName, initialValue);
+
+		this.reactiveHost.defineReactiveAccessor(propertyName, { bind, signal });
 
 		hostPropertyBridge.install();
 
@@ -285,12 +281,16 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		this.reactiveHost.registerConnectedCallback(callback);
 	}
 
-	public registerReactiveDependencyReader(property: string, read: () => unknown): void {
-		this.reactiveHost.registerReactiveDependencyReader(property, read);
+	public createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {
+		return this.reactiveHost.createReactiveMember(propertyName, initialValue);
 	}
 
-	public trackReactiveRead(property: string): void {
-		this.reactiveHost.trackReactiveRead(property);
+	public registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void {
+		this.reactiveHost.registerReactiveMember(propertyName, signal);
+	}
+
+	public getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
+		return this.reactiveHost.getReactiveMember(propertyName);
 	}
 
 	public addEventListener(

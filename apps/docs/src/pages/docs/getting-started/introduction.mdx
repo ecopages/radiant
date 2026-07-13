@@ -19,10 +19,12 @@ Radiant is a reactive host toolkit with three package layers that work together:
 
 The primary workflow is:
 
-1. Install `@ecopages/radiant`, `@ecopages/jsx`, and `@ecopages/signals`
+1. Install `@ecopages/radiant` and `@ecopages/jsx`
 2. Choose a host style: `RadiantElement` for custom elements, or `RadiantController` for behavior attached to authored DOM
 3. Override `render()` when that host should own a JSX view
 4. Reuse the same decorators, bindings, context, and reactive patterns across both host types
+
+> **Note:** `@ecopages/signals` installs automatically with `@ecopages/radiant`. Add it explicitly only for standalone reactive use outside Radiant.
 
 ## Shared Reactive Host
 

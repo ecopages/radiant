@@ -1,5 +1,7 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import { registerLegacyInstanceInitializer } from './instance-initializers';
+import { resolveHostAutoBind } from '../shared/auto-bind';
+import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
+import { bootstrapReactiveMemberBinding } from './member-bootstrap';
 
 /**
  * A decorator to define a reactive field.
@@ -11,13 +13,17 @@ import { registerLegacyInstanceInitializer } from './instance-initializers';
  */
 export function reactiveField(target: ReactiveHostLike, propertyKey: string) {
 	registerLegacyInstanceInitializer(target, (element) => {
-		element.registerConnectedCallback(() => {
-			element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
-				bind:
-					(
-						element as unknown as { shouldAutoBindReactiveMembers?: () => boolean }
-					).shouldAutoBindReactiveMembers?.() ?? false,
-			});
+		bootstrapReactiveMemberBinding(
+			element,
+			propertyKey,
+			element[propertyKey as keyof typeof element],
+			resolveHostAutoBind(element),
+		);
+	});
+
+	registerLegacyPostConstructionInitializer(target, (element) => {
+		element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
+			bind: resolveHostAutoBind(element),
 		});
 	});
 }

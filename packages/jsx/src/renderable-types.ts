@@ -75,6 +75,19 @@ export interface KeyedJsxValue {
 }
 
 /**
+ * Plain object or array state that may back a subscribable binding source when it
+ * is not directly {@link JsxRenderable}, but can be projected through `map` or
+ * member access.
+ */
+export type JsxBindingObjectValue = Record<string, unknown> | readonly unknown[];
+
+/**
+ * Value that may back a subscribable binding source, including non-renderable
+ * object state projected through `map` or member access.
+ */
+export type JsxBindingSourceValue = JsxRenderable | JsxBindingObjectValue;
+
+/**
  * Generic read/subscribe contract consumable as a JSX child binding.
  */
 export interface SignalLike<Value extends JsxRenderable = JsxRenderable> {
@@ -85,7 +98,7 @@ export interface SignalLike<Value extends JsxRenderable = JsxRenderable> {
 /**
  * JSX child value backed by an external subscription source.
  */
-export interface SubscribableJsxValue<Value extends JsxRenderable = JsxRenderable> {
+export interface SubscribableJsxValue<Value extends JsxBindingSourceValue = JsxRenderable> {
 	readonly [SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true;
 	getValue: () => Value;
 	subscribe: (notify: (value: Value) => void) => () => void;
@@ -117,8 +130,8 @@ type SubscribableMemberAccess<Value> = Value extends object
  * (`value.key`) for object-like values. Returned by `createSubscribableJsxValue`
  * and `mapSubscribable`; the runtime Proxy provides the matching behavior.
  */
-export type SubscribableJsxValueWithAccess<Value extends JsxRenderable = JsxRenderable> = SubscribableJsxValue<Value> &
-	SubscribableMemberAccess<Value>;
+export type SubscribableJsxValueWithAccess<Value extends JsxBindingSourceValue = JsxRenderable> =
+	SubscribableJsxValue<Value> & SubscribableMemberAccess<Value>;
 
 /**
  * Internal placeholder emitted from literal `<slot>` JSX tags.

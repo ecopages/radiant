@@ -6,6 +6,7 @@ import { $ } from 'bun';
 type BundleBudget = {
 	control?: 'strict' | 'advisory';
 	entrypoint: string;
+	external?: string[];
 	label: string;
 	maxBytes: number;
 	maxGzipBytes: number;
@@ -41,7 +42,7 @@ for (const bundle of budgetFile.bundles) {
 	const bundleDir = path.join(outputRoot, bundle.label);
 	const build = await Bun.build({
 		entrypoints: [path.resolve(import.meta.dir, bundle.entrypoint)],
-		external: externalPackages,
+		external: bundle.external ?? externalPackages,
 		format: 'esm',
 		minify: true,
 		outdir: bundleDir,

@@ -1,5 +1,6 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { type ReactiveBindingOption, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
+import { resolveHostAutoBind } from './auto-bind';
 import {
 	defaultValueForType,
 	readAttributeValue,
@@ -121,33 +122,21 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;
 	const attributeName = options.source ?? toAttributeName(propertyName);
 	const observerKey = Symbol(`@ecopages/radiant/attr:${propertyName}:observer`);
-	const lastValueKey = Symbol(`@ecopages/radiant/attr:${propertyName}:last-value`);
-	const bind =
-		options.bind ??
-		(host as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ??
-		false;
+	const bind = options.bind ?? resolveHostAutoBind(host);
 
 	host.defineReactiveBinding(propertyName, bind);
-	host.registerReactiveDependencyReader(propertyName, () => readReactiveAttributeValue(host, attributeName, options));
-	hostRecord[lastValueKey] = readReactiveAttributeValue(host, attributeName, options);
+
+	const initialValue = readReactiveAttributeValue(host, attributeName, options);
+	const signal = host.createReactiveMember(propertyName, initialValue);
 
 	Object.defineProperty(host, propertyName, {
 		get() {
-			host.trackReactiveRead(propertyName);
-			return readReactiveAttributeValue(this as ReactiveAttributeHostLike, attributeName, options);
+			return signal.get();
 		},
 		set(newValue: TValue) {
 			const target = resolveAttributeTarget(this as ReactiveAttributeHostLike);
-			const oldValue = readReactiveAttributeValue(this as ReactiveAttributeHostLike, attributeName, options);
 			writeReactiveAttributeValue(target, attributeName, newValue, options);
-			const nextValue = readReactiveAttributeValue(this as ReactiveAttributeHostLike, attributeName, options);
-
-			if (Object.is(oldValue, nextValue)) {
-				return;
-			}
-
-			(this as Record<PropertyKey, unknown>)[lastValueKey] = nextValue;
-			host.notifyUpdate(propertyName, oldValue, nextValue);
+			signal.set(readReactiveAttributeValue(this as ReactiveAttributeHostLike, attributeName, options));
 		},
 		enumerable: true,
 		configurable: true,
@@ -159,13 +148,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	};
 
 	const syncAndObserve = () => {
-		const nextValue = readReactiveAttributeValue(host, attributeName, options);
-		const previousValue = hostRecord[lastValueKey];
-
-		if (!Object.is(previousValue, nextValue)) {
-			hostRecord[lastValueKey] = nextValue;
-			host.notifyUpdate(propertyName, previousValue, nextValue);
-		}
+		signal.set(readReactiveAttributeValue(host, attributeName, options));
 
 		if (typeof MutationObserver === 'undefined') {
 			return;
@@ -176,15 +159,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 		disconnectObserver();
 
 		const observer = new MutationObserver(() => {
-			const currentValue = readReactiveAttributeValue(host, attributeName, options);
-			const lastValue = hostRecord[lastValueKey];
-
-			if (Object.is(lastValue, currentValue)) {
-				return;
-			}
-
-			hostRecord[lastValueKey] = currentValue;
-			host.notifyUpdate(propertyName, lastValue, currentValue);
+			signal.set(readReactiveAttributeValue(host, attributeName, options));
 		});
 
 		observer.observe(target, {

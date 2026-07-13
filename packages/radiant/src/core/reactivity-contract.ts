@@ -18,6 +18,20 @@ export interface ReactiveSubscriber<T> {
 	(value: T): void;
 }
 
+/**
+ * Writable reactive state owned by Radiant core for a single host member.
+ *
+ * The shape intentionally mirrors only the capabilities core needs (read,
+ * write, imperative subscribe) rather than exposing any concrete Signals types
+ * to the rest of the package.
+ */
+export interface ReactiveState<T> {
+	get(): T;
+	set(value: T): void;
+	subscribe(notify: (value: T) => void): () => void;
+	update?(updater: (value: T) => T): void;
+}
+
 /** Read-only computed value consumed by Radiant core render lifecycles. */
 export interface ReactiveComputed<T> {
 	get(): T;
@@ -40,4 +54,5 @@ export interface ReactiveRuntime {
 	trackDependency(node: ReactiveDependencyNode): void;
 	createComputed<T>(read: () => T): ReactiveComputed<T>;
 	createWatcher(notify: () => void): ReactiveWatcher;
+	createState<T>(initial: T): ReactiveState<T>;
 }

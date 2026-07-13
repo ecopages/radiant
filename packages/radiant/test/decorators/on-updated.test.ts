@@ -79,6 +79,43 @@ describe('@onUpdated', () => {
 		expect(customElement.countText.innerHTML).toEqual('10');
 	});
 
+	test('setAttribute triggers @onUpdated once per attribute change', async () => {
+		let updateCount = 0;
+
+		class AttributeCounter extends RadiantElement {
+			static observedAttributes = ['value'];
+			declare value: number;
+
+			constructor() {
+				super();
+				this.createReactiveProp('value', {
+					type: Number,
+					defaultValue: 3,
+				});
+			}
+
+			@onUpdated('value')
+			onValueUpdated() {
+				updateCount++;
+			}
+		}
+
+		customElements.define('attribute-counter-on-updated', AttributeCounter);
+
+		const element = document.createElement('attribute-counter-on-updated') as AttributeCounter;
+		document.body.appendChild(element);
+
+		await waitFor(() => expect(updateCount).toBeGreaterThan(0));
+		updateCount = 0;
+
+		element.setAttribute('value', '10');
+		expect(element.value).toBe(10);
+		expect(updateCount).toBe(1);
+
+		element.setAttribute('value', '10');
+		expect(updateCount).toBe(1);
+	});
+
 	test('decorator updates the value on load if no value is provided', async () => {
 		const customElement = createRadiantCounter();
 		document.body.appendChild(customElement);

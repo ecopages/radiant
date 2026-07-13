@@ -1,4 +1,5 @@
-import type { JsxRenderable, SubscribableJsxValue } from '@ecopages/jsx';
+import type { JsxBindingSourceValue, JsxRenderable, SubscribableJsxValueWithAccess } from '@ecopages/jsx';
+import type { ReactiveState } from './reactivity-contract';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -12,7 +13,6 @@ type StringPropertyKey<Value> = Extract<keyof Value, string>;
 
 export interface ReactiveProperty<T = unknown> {
 	type: AttributeTypeConstant;
-	value?: T;
 	initialValue?: T;
 	name: string;
 	attribute: string;
@@ -38,25 +38,21 @@ export type ReactiveFieldOptions = {
 	suppressInitialNotify?: boolean;
 };
 
-export type ReactiveField<T = unknown> = {
-	name: string;
-	value: T;
-	initialValue: T;
-};
-
 export type ReactiveBindingValue<
 	Host extends object,
 	Property extends StringPropertyKey<Host>,
-> = Host[Property] extends JsxRenderable ? Host[Property] : JsxRenderable;
+> = Host[Property] extends JsxBindingSourceValue ? Host[Property] : JsxRenderable;
 
 export type ReactiveBindings<Bindings extends object> = {
-	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	readonly [Property in StringPropertyKey<Bindings>]: SubscribableJsxValueWithAccess<
+		ReactiveBindingValue<Bindings, Property>
+	>;
 };
 
 export type ReactiveAccessorDefinition<T> = {
 	bind?: ReactiveBindingOption;
-	getValue: () => T | undefined;
-	setValue: (value: T) => void;
+	signal: ReactiveState<T>;
+	onSet?: (value: T) => void;
 };
 
 export function validateReactivePropertyDefault(type: AttributeTypeConstant, defaultValue: unknown): void {
@@ -74,7 +70,6 @@ export function createReactivePropertyMapping<T>(
 	return {
 		type,
 		name: propertyName,
-		value: initialValue,
 		initialValue,
 		attribute: attributeKey,
 		converter: {

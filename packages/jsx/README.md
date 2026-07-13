@@ -91,6 +91,8 @@ Install both packages:
 npm install @ecopages/radiant @ecopages/jsx
 ```
 
+`@ecopages/signals` is a peer dependency of jsx. Installing radiant brings signals transitively, which satisfies that peer requirement.
+
 Minimum TypeScript setup:
 
 ```json

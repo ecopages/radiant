@@ -1,5 +1,5 @@
 import type { EventEmitter } from '../tools';
-import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
+import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { HostSsrRegistry } from './host-ssr-registry';
 import { getReactivePropDefinitions, type ReactivePropDefinition } from './reactive-prop-metadata';
@@ -20,6 +20,7 @@ import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import { RenderScheduler } from './render-scheduler';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { ReactiveHost } from './reactive-host';
+import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { getRadiantElementSsrRuntime } from './radiant-element-ssr-registry';
@@ -30,7 +31,6 @@ export type {
 	ReactiveBindingOption,
 	ReactiveBindingValue,
 	ReactiveBindings,
-	ReactiveField,
 	ReactiveFieldOptions,
 	ReactiveProperty,
 	ReactivePropertyOptions,
@@ -121,7 +121,7 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 */
 	bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 
 	/**
 	 * Returns a subscribable JSX child binding for a reactive property or field.
@@ -130,7 +130,7 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 */
 	getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 
 	/**
 	 * Defines a stable JSX binding companion accessor for a reactive member.
@@ -161,17 +161,19 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerConnectedCallback(callback: () => void): void;
 
 	/**
-	 * Registers a raw value reader for a reactive member so that tracked render
-	 * dependencies can read the underlying value without triggering the public
-	 * getter's dependency tracking.
+	 * Creates a new reactive member state and registers it under `propertyName`.
 	 */
-	registerReactiveDependencyReader(property: string, read: () => unknown): void;
+	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
 
 	/**
-	 * Records a tracked read of a reactive member during a component render,
-	 * allowing the signals runtime to re-render only the affected parts.
+	 * Registers an externally-owned reactive member state (used by `signal()`).
 	 */
-	trackReactiveRead(property: string): void;
+	registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void;
+
+	/**
+	 * Returns the member state registered under `propertyName`, if any.
+	 */
+	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
 
 	/**
 	 * Renders a trusted HTML template string into the specified target element.
@@ -457,10 +459,6 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.reactivePropertyState.getAll();
 	}
 
-	public registerReactiveDependencyReader(property: string, read: () => unknown): void {
-		this.reactiveHost.registerReactiveDependencyReader(property, read);
-	}
-
 	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
 		this.hostSsrRegistry.registerContextProvider(name, provider);
 	}
@@ -529,13 +527,13 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 
 	public bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 
@@ -543,8 +541,16 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactiveHost.defineReactiveBinding(property, bind);
 	}
 
-	public trackReactiveRead(property: string): void {
-		this.reactiveHost.trackReactiveRead(property);
+	public createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {
+		return this.reactiveHost.createReactiveMember(propertyName, initialValue);
+	}
+
+	public registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void {
+		this.reactiveHost.registerReactiveMember(propertyName, signal);
+	}
+
+	public getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
+		return this.reactiveHost.getReactiveMember(propertyName);
 	}
 
 	public subscribeEvents(events: RadiantElementEventListener[]): Array<() => void> {
@@ -623,6 +629,7 @@ export class RadiantElement<Bindings extends object = {}>
 			(name, config) => {
 				this.reactiveHost.defineReactiveAccessor(name, config);
 			},
+			(name, initial) => this.createReactiveMember(name, initial),
 		);
 	}
 

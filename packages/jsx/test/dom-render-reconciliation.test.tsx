@@ -1394,29 +1394,16 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 	test('mapSubscribable derives over a signal-like source and patches in place', async () => {
 		const [{ jsxs, mapSubscribable }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const { state } = await import('@ecopages/signals');
 		const container = document.createElement('div');
 		const root = createRoot(container);
-		const subscribers = new Set<(value: number) => void>();
-		let count = 3;
-		const countSignal = {
-			get: () => count,
-			subscribe: (notify: (value: number) => void) => {
-				subscribers.add(notify);
-				return () => {
-					subscribers.delete(notify);
-				};
-			},
-		};
+		const countSignal = state(3);
 		const doubled = mapSubscribable(countSignal, (value) => value * 2);
 
 		root.render(jsxs('p', { children: ['Double: ', doubled] }));
 		expect(container.innerHTML).toBe('<p>Double: 6</p>');
 
-		count = 5;
-
-		for (const subscriber of subscribers) {
-			subscriber(count);
-		}
+		countSignal.set(5);
 
 		await Promise.resolve();
 		expect(container.innerHTML).toBe('<p>Double: 10</p>');

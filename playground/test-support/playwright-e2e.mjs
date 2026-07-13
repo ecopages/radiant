@@ -32,7 +32,8 @@ export async function runCommand(command, args, cwd) {
 	});
 }
 
-export async function startServer({ command, args, cwd, env, origin }) {
+export async function startServer({ command, args, cwd, env, origin, healthCheckUrl = origin }) {
+	const serverLogs = { stdout: '', stderr: '' };
 	const server = spawn(command, args, {
 		cwd,
 		env: {
@@ -42,11 +43,51 @@ export async function startServer({ command, args, cwd, env, origin }) {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
 
-	server.stdout?.on('data', () => undefined);
-	server.stderr?.on('data', () => undefined);
+	server.stdout?.on('data', (chunk) => {
+		serverLogs.stdout += chunk.toString();
+	});
+	server.stderr?.on('data', (chunk) => {
+		serverLogs.stderr += chunk.toString();
+	});
 
-	await waitForServer(origin);
+	let serverExited = false;
+	let exitCode;
+	let exitSignal;
+
+	server.on('exit', (code, signal) => {
+		serverExited = true;
+		exitCode = code;
+		exitSignal = signal;
+	});
+
+	try {
+		await waitForServer(healthCheckUrl, {
+			isServerAlive: () => !serverExited,
+		});
+	} catch (error) {
+		await stopServer(server);
+
+		if (serverExited) {
+			throw new Error(
+				`Server exited before becoming ready (code=${exitCode ?? 'null'}, signal=${exitSignal ?? 'null'}): ${formatServerLogs(serverLogs)}`,
+			);
+		}
+
+		throw new Error(`${error.message}\n${formatServerLogs(serverLogs)}`);
+	}
+
 	return server;
+}
+
+function formatServerLogs(serverLogs) {
+	const stderr = serverLogs.stderr.trim();
+	const stdout = serverLogs.stdout.trim();
+
+	if (stderr && stdout) {
+		return `${stderr}\n${stdout}`;
+	}
+
+	return stderr || stdout || '(no server output captured)';
 }
 
 export async function stopServer(server) {
@@ -89,20 +130,37 @@ export function attachPageDiagnostics(page) {
 	});
 }
 
-export async function waitForServer(url) {
+export async function waitForServer(url, options = {}) {
 	for (let attempt = 0; attempt < 80; attempt += 1) {
+		if (options.isServerAlive && !options.isServerAlive()) {
+			throw new Error(`Server process exited while waiting for ${url}`);
+		}
+
 		try {
 			const response = await fetch(url);
 
 			if (response.ok) {
+				await response.arrayBuffer();
 				return;
 			}
+
+			await response.arrayBuffer();
 		} catch {}
 
 		await delay(250);
 	}
 
 	throw new Error(`Timed out waiting for server at ${url}`);
+}
+
+export async function fetchOkText(url) {
+	const response = await fetch(url);
+
+	if (!response.ok) {
+		throw new Error(`GET ${url} returned ${response.status}`);
+	}
+
+	return response.text();
 }
 
 export async function poll(readValue, options) {

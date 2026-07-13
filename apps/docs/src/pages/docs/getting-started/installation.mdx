@@ -11,14 +11,14 @@ export const config = {
 
 export const getMetadata = () => ({
   title: 'Docs | Installation',
-  description: 'Install Radiant, JSX, and Signals for the workflow you want.',
+  description: 'Install Radiant and JSX for the standard setup, or Signals for standalone reactive use.',
 })
 
 # Installation
 
 Radiant is the core package. JSX and Signals are companion packages that extend it with TSX rendering and standalone signal primitives.
 
-For the current package contract, install all three together.
+For the standard Radiant setup, install `@ecopages/radiant` and `@ecopages/jsx`. `@ecopages/signals` is installed automatically with `@ecopages/radiant`.
 
 That is the simplest setup today:
 
@@ -28,14 +28,16 @@ That is the simplest setup today:
 
 You do not need to import JSX or Signals APIs directly in every Radiant component. A component can use `render()` without importing `@ecopages/jsx` symbols itself, and `@state` does not require importing `@ecopages/signals` in application code.
 
-`@ecopages/radiant` currently declares both companion packages as peer dependencies, and its published surface expects them to be present. Installing all three avoids peer-dependency and module-resolution issues.
+`@ecopages/radiant` currently declares `@ecopages/jsx` as a peer dependency. It also depends on `@ecopages/signals` directly for host member state. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency for signal-backed derived bindings such as `mapSubscribable(...)`.
+
+Installing `@ecopages/radiant` brings `@ecopages/signals` transitively, which satisfies `@ecopages/jsx`'s peer dependency. The packages still ship as separate npm artifacts; your app bundler resolves and dedupes them at build time.
 
 <CodeTabs
   label="Package managers"
   tabs={[
-    { id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
-    { id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx @ecopages/signals' },
-    { id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx @ecopages/signals' },
+    { id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+    { id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
+    { id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
   ]}
   copyLabel="Copy install command"
   defaultSelectedKey="bun"
@@ -75,8 +77,7 @@ If you only want the reactive core, install `@ecopages/signals` by itself:
 
 ## Which Packages To Install
 
-- Install `@ecopages/radiant`, `@ecopages/jsx`, and `@ecopages/signals` for the standard Radiant setup.
-- Add `@ecopages/jsx` when you want TSX authoring, hydration helpers, or SSR rendering.
-- Add `@ecopages/signals` when you want standalone signal primitives, `@signal`, or host-owned async resources.
-- Install `@ecopages/signals` when you want the standalone reactive layer.
+- Install `@ecopages/radiant` and `@ecopages/jsx` for the standard Radiant setup. `@ecopages/signals` comes in with `@ecopages/radiant`.
+- `@ecopages/jsx` is required for TSX authoring, `render()`, hydration helpers, and SSR rendering.
+- `@ecopages/signals` backs `@signal`, host-owned async resources, and standalone reactive code. Install it explicitly only when you want the reactive layer outside Radiant, or when using `@ecopages/jsx` without radiant.
 

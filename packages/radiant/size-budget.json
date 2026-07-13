@@ -9,6 +9,14 @@
 		},
 		{
 			"control": "advisory",
+			"label": "root-client-surface-with-signals",
+			"entrypoint": "./src/index.ts",
+			"external": ["@ecopages/jsx", "@ecopages/jsx/*"],
+			"maxBytes": 62464,
+			"maxGzipBytes": 17408
+		},
+		{
+			"control": "advisory",
 			"label": "server-render",
 			"entrypoint": "./src/server/render-component.ts",
 			"maxBytes": 15360,
