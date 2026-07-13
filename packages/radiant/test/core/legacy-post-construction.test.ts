@@ -1,6 +1,7 @@
 import type { WritableSignal } from '@ecopages/signals';
 import { describe, expect, test } from 'vitest';
 import { ContextProvider, createContext, provideContext } from '../../src/context';
+import { setCustomElementTagName } from '../../src/core/custom-element-metadata';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -9,8 +10,10 @@ import {
 	runLegacyPostConstructionInitializers,
 } from '../../src/decorators/legacy/instance-initializers';
 import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
+import { reactiveProp as legacyReactiveProp } from '../../src/decorators/legacy/reactive-prop';
 import { signal } from '../../src/decorators/signal';
 import { renderController } from '../../src/server/render-controller';
+import { installLightDomShim } from '../../src/server/light-dom-shim';
 
 const postConstructionContext = createContext<{ count: number }>(Symbol('post-construction-context'));
 
@@ -96,11 +99,11 @@ describe('legacy post-construction decorator setup', () => {
 			calls.push('derived');
 		});
 
-		runLegacyPostConstructionInitializers(new BaseHost());
+		runLegacyPostConstructionInitializers(new BaseHost(), 'ssr');
 		expect(calls).toEqual(['base']);
 
 		calls.length = 0;
-		runLegacyPostConstructionInitializers(new DerivedHost());
+		runLegacyPostConstructionInitializers(new DerivedHost(), 'ssr');
 		expect(calls).toEqual(['base', 'derived']);
 	});
 
@@ -125,5 +128,38 @@ describe('legacy post-construction decorator setup', () => {
 
 		expect(rendered.markup).toContain('data-context-count="9"');
 		expect(rendered.markup).toContain('data-status="server-ready"');
+	});
+
+	test('registers legacy reactive members before SSR binding reads', () => {
+		installLightDomShim();
+
+		type LegacySsrBindingCardBindings = {
+			count: number;
+			label: string;
+		};
+
+		class LegacySsrBindingCard extends RadiantElement<LegacySsrBindingCardBindings> {
+			override render() {
+				return this.bind('count');
+			}
+		}
+
+		legacyReactiveProp({
+			type: Number,
+			reflect: true,
+			defaultValue: 3,
+			bind: true,
+		})(LegacySsrBindingCard.prototype, 'count');
+
+		setCustomElementTagName(LegacySsrBindingCard, 'legacy-ssr-binding-card-test');
+		customElements.define('legacy-ssr-binding-card-test', LegacySsrBindingCard);
+
+		const element = document.createElement('legacy-ssr-binding-card-test') as LegacySsrBindingCard;
+		element.count = 28;
+
+		ensureLegacyHostReady(element, 'ssr');
+
+		expect(element.getReactiveMember('count')?.get()).toBe(28);
+		expect(element.bind('count').getValue()).toBe(28);
 	});
 });

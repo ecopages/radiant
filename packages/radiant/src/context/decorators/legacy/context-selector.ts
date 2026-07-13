@@ -14,7 +14,7 @@ export function contextSelector<T extends Context<unknown, unknown>, Selected = 
 	return (proto: ContextHostLike, _: string, descriptor: PropertyDescriptor) => {
 		const originalMethod = descriptor.value;
 
-		registerLegacyPostConstructionInitializer(proto, (element) => {
+		registerLegacyPostConstructionInitializer(proto, (element, _phase) => {
 			let activeUnsubscribe: (() => void) | undefined;
 			const applySelectedContext = createContextSelectionDelivery(
 				element,

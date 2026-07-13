@@ -1,10 +1,9 @@
 import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { registerLegacyInstanceInitializer } from './instance-initializers';
+import { registerLegacyPostConstructionInitializer } from './instance-initializers';
 
 type ReactivePropHost<T> = {
 	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
-	registerConnectedCallback(callback: () => void): void;
 };
 
 /**
@@ -34,6 +33,7 @@ export function reactiveProp<T = unknown>({
 		});
 
 		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
+		const ssrAssignedKey = Symbol.for(`@ecopages/radiant.ssr-prop-assigned:${propertyName}`);
 
 		Object.defineProperty(target, propertyName, {
 			get(this: ReactivePropHost<T> & Record<PropertyKey, unknown>) {
@@ -41,23 +41,34 @@ export function reactiveProp<T = unknown>({
 			},
 			set(this: ReactivePropHost<T> & Record<PropertyKey, unknown>, value: T) {
 				this[ssrStoreKey] = value;
+				this[ssrAssignedKey] = true;
 			},
 			configurable: true,
 			enumerable: true,
 		});
 
-		registerLegacyInstanceInitializer(target, (element) => {
-			element.registerConnectedCallback(() => {
-				const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
-				const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
+		registerLegacyPostConstructionInitializer(target, (element, phase) => {
+			const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
+			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+			const wasAssigned = host[ssrAssignedKey] === true;
+			const hasOwnStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName);
+			const ownStagingValue = hasOwnStagingValue
+				? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
+				: undefined;
+			const resolvedDefaultValue = wasAssigned
+				? initializerValue
+				: phase === 'ssr' && hasOwnStagingValue && ownStagingValue !== defaultValue
+					? ownStagingValue
+					: defaultValue === undefined
+						? initializerValue
+						: defaultValue;
 
-				element.createReactiveProp(propertyName, {
-					type,
-					reflect,
-					attribute: attributeKey,
-					defaultValue: resolvedDefaultValue,
-					bind,
-				});
+			element.createReactiveProp(propertyName, {
+				type,
+				reflect,
+				attribute: attributeKey,
+				defaultValue: resolvedDefaultValue,
+				bind,
 			});
 		});
 	};

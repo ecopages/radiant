@@ -16,7 +16,7 @@ export function contextSelectorField<T extends Context<unknown, unknown>, Select
 	const { context, select, subscribe = true } = options;
 
 	return (target: ContextHostLike, propertyName: string) => {
-		registerLegacyPostConstructionInitializer(target, (element) => {
+		registerLegacyPostConstructionInitializer(target, (element, _phase) => {
 			let activeUnsubscribe: (() => void) | undefined;
 			const applyValue = createContextSelectionDelivery<Selected>(
 				element,
