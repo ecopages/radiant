@@ -1,3 +1,4 @@
+import { computed } from '@ecopages/signals';
 import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragment } from './jsx-factory.ts';
 import { isSubscribableJsxValue } from './renderable-guards.ts';
 import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types.ts';
@@ -133,22 +134,26 @@ type MapSource<Value extends JsxRenderable> = SubscribableJsxValue<Value> | Sign
 
 type MappableSubscribable<Value extends JsxRenderable> = SubscribableJsxValue<Value>;
 
-function readMapSourceValue<Value extends JsxRenderable>(source: MapSource<Value>): Value {
-	if (isSubscribableJsxValue(source)) {
-		return source.getValue();
-	}
-
-	return source.get();
-}
-
 function createDerivedSubscribable<Value extends JsxRenderable, Out extends JsxRenderable>(
 	source: MapSource<Value>,
 	project: (value: Value) => Out,
 ): MappableSubscribable<Out> {
+	if (isSubscribableJsxValue(source)) {
+		return {
+			[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
+			getValue: () => project(source.getValue()),
+			subscribe: (notify) => source.subscribe((value) => notify(project(value))),
+			map: <Out2 extends JsxRenderable>(project2: (value: Out) => Out2) =>
+				mapSubscribable(source, (value) => project2(project(value))),
+		};
+	}
+
+	const derived = computed(() => project(source.get()));
+
 	return {
 		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
-		getValue: () => project(readMapSourceValue(source)),
-		subscribe: (notify) => source.subscribe((value) => notify(project(value))),
+		getValue: () => derived.get(),
+		subscribe: (notify) => derived.subscribe(notify),
 		map: <Out2 extends JsxRenderable>(project2: (value: Out) => Out2) =>
 			mapSubscribable(source, (value) => project2(project(value))),
 	};

@@ -78,10 +78,13 @@ function createDistPackageJson(): PackageJsonShape {
 	};
 }
 
+const externalPackages = ['@ecopages/signals', '@ecopages/signals/*'];
+
 const watchMode = process.argv.includes('--watch');
 
 const browserBuild = await Bun.build({
 	entrypoints: [...prodBrowserEntrypoints, ...devBrowserEntrypoints],
+	external: externalPackages,
 	format: 'esm',
 	minify: !watchMode,
 	outdir: 'dist',
@@ -91,6 +94,7 @@ const browserBuild = await Bun.build({
 
 const serverBuild = await Bun.build({
 	entrypoints: serverEntrypoints,
+	external: externalPackages,
 	format: 'esm',
 	minify: !watchMode,
 	outdir: 'dist',
