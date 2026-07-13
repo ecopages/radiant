@@ -11,6 +11,8 @@ import {
 } from '../../src/decorators/legacy/instance-initializers';
 import { ensureLegacyHostReady } from '../../src/decorators/legacy/host-readiness';
 import { reactiveProp as legacyReactiveProp } from '../../src/decorators/legacy/reactive-prop';
+import { prop } from '../../src/decorators/prop';
+import { state } from '../../src/decorators/state';
 import { signal } from '../../src/decorators/signal';
 import { renderController } from '../../src/server/render-controller';
 import { installLightDomShim } from '../../src/server/light-dom-shim';
@@ -161,5 +163,34 @@ describe('legacy post-construction decorator setup', () => {
 
 		expect(element.getReactiveMember('count')?.get()).toBe(28);
 		expect(element.bind('count').getValue()).toBe(28);
+	});
+
+	test('registers legacy @state and @prop members before subclass field initializers read bindings', () => {
+		type LegacyFieldInitializerBindings = {
+			preference: string;
+			config: { label: string };
+		};
+
+		@customElement('legacy-field-initializer-lab-test')
+		class LegacyFieldInitializerLab extends RadiantElement<LegacyFieldInitializerBindings> {
+			@state preference = 'light';
+			@prop({ type: Object, defaultValue: { label: 'Hello' }, bind: true })
+			config: { label: string } = { label: 'Hello' };
+
+			private readonly preferenceLabel = this.$.preference.map((preference) => `pref:${preference}`);
+			private readonly configLabel = this.$.config.map((config) => config.label);
+
+			override render() {
+				return `${this.preferenceLabel.getValue()}|${this.configLabel.getValue()}`;
+			}
+		}
+
+		const element = document.createElement('legacy-field-initializer-lab-test') as LegacyFieldInitializerLab;
+		document.body.appendChild(element);
+
+		expect(element.bind('preference').getValue()).toBe('light');
+		expect(element.bind('config').getValue()).toEqual({ label: 'Hello' });
+		expect(element.bind('preference').map((preference) => `pref:${preference}`).getValue()).toBe('pref:light');
+		expect(element.bind('config').map((config) => config.label).getValue()).toBe('Hello');
 	});
 });

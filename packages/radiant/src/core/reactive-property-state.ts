@@ -74,7 +74,13 @@ export class ReactivePropertyState {
 
 		this.register(propertyMapping);
 
-		const signal = createReactiveMember(propertyName, initialValue as T);
+		const existingMember = this.host.getReactiveMember<T>(propertyName);
+		const signal =
+			existingMember ?? createReactiveMember(propertyName, initialValue as T);
+
+		if (existingMember && initialValue !== undefined) {
+			existingMember.set(initialValue as T);
+		}
 
 		defineReactiveAccessor(propertyName, {
 			bind: options.bind,
