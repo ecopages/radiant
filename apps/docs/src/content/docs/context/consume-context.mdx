@@ -1,0 +1,102 @@
+---
+title: "Consume Context"
+description: "Consume the nearest matching context provider on a RadiantElement or RadiantController host."
+group: Context
+order: 3
+---
+
+# @consumeContext
+
+Use `@consumeContext(...)` to inject the nearest matching context provider onto a field.
+
+It works on both `RadiantElement` and `RadiantController` hosts.
+
+## Example
+
+```typescript
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { consumeContext, type ContextProvider } from '@ecopages/radiant/context';
+
+import { themeContext } from './theme-provider';
+
+@customElement('theme-label')
+export class ThemeLabel extends RadiantElement {
+	@consumeContext(themeContext)
+	provider!: ContextProvider<typeof themeContext>;
+
+	override connectedCallback() {
+		super.connectedCallback();
+		this.textContent = `Theme: ${this.provider.getContext().mode}`;
+	}
+}
+```
+
+The injected field gives you access to the provider API, including `getContext()` and `setContext(...)`.
+
+On controllers, this is often the simplest way to read and write shared state imperatively from event handlers or `render()`.
+
+## When To Use It
+
+- Use `@consumeContext(...)` when the host needs the provider object to call `getContext()` or `setContext(...)`.
+- Use [@contextSelector](/docs/context/context-selector) when the host should bind a field to the current context value and rerender automatically.
+- Use [@onContextUpdate](/docs/context/on-context-update) when a context change should trigger imperative side effects.
+
+## RadiantController Example
+
+```typescript
+import { RadiantController } from '@ecopages/radiant';
+import { consumeContext, type ContextProvider } from '@ecopages/radiant/context';
+
+import { themeContext } from './theme-provider';
+
+export class ThemePanelController extends RadiantController {
+	@consumeContext(themeContext)
+	provider!: ContextProvider<typeof themeContext>;
+
+	override render() {
+		return <p>Theme: {this.provider.getContext().mode}</p>;
+	}
+}
+```
+
+## Client And SSR Behavior
+
+- During SSR the field can resolve from the active SSR context stack.
+- On the client it falls back to the DOM event-based context channel.
+
+## Multiple Contexts
+
+One host can consume multiple contexts by applying the decorator to multiple fields.
+
+```typescript
+@consumeContext(themeContext) theme!: ContextProvider<typeof themeContext>;
+@consumeContext(authContext) auth!: ContextProvider<typeof authContext>;
+```
+
+## Manual Alternative
+
+If you need lower-level control, you can dispatch a context request event directly.
+
+```typescript
+import { RadiantElement, customElement } from '@ecopages/radiant';
+import { ContextRequestEvent } from '@ecopages/radiant/context';
+
+import { themeContext } from './theme-provider';
+
+@customElement('theme-label')
+export class ThemeLabel extends RadiantElement {
+	override connectedCallback() {
+		super.connectedCallback();
+
+		this.dispatchEvent(
+			new ContextRequestEvent(themeContext, (provider) => {
+				this.textContent = `Theme: ${provider.getContext().mode}`;
+			}),
+		);
+	}
+}
+```
+
+`ContextRequestEvent` follows the [community context protocol](https://github.com/webcomponents-cg/community-protocols/blob/main/proposals/context.md). Pass `true` as the third argument to subscribe to future updates.
+
+`ContextSubscriptionRequestEvent` and `ContextEventsTypes` are also available from `@ecopages/radiant/context`.

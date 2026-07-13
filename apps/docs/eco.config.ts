@@ -1,4 +1,5 @@
 import path from 'node:path';
+import '@ecopages/radiant/server/install-light-dom-shim';
 import { ConfigBuilder } from '@ecopages/core/config-builder';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
@@ -6,6 +7,7 @@ import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
 import remarkGfm from 'remark-gfm';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { rehypeSimpleTableWrapper } from './src/plugins/rehype-simple-table-wrapper';
+import { contentRemarkPlugins } from './src/plugins/content-remark';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dir)
@@ -14,7 +16,7 @@ const config = await new ConfigBuilder()
 		ecopagesJsxPlugin({
 			mdx: {
 				enabled: true,
-				remarkPlugins: [remarkGfm],
+				remarkPlugins: contentRemarkPlugins,
 				rehypePlugins: [
 					[
 						rehypePrettyCode,
@@ -43,7 +45,7 @@ const config = await new ConfigBuilder()
 			}),
 		),
 	])
-	.setAdditionalWatchPaths(['src/data'])
+	.setAdditionalWatchPaths(['src/data', 'src/content'])
 	.build();
 
 export default config;

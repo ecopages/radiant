@@ -1,9 +1,15 @@
+import { eco } from '@ecopages/core';
 import { BaseLayout } from '@/layouts/base-layout';
-import type { EcoComponent, Error404TemplateProps } from '@ecopages/core';
+import type { JsxRenderable } from '@ecopages/jsx';
+import type { Error404TemplateProps } from '@ecopages/core';
 
-const Error404: EcoComponent<Error404TemplateProps> = () => {
-	return (
-		<BaseLayout>
+const Error404 = eco.page<Error404TemplateProps, JsxRenderable>({
+	layout: BaseLayout,
+	dependencies: {
+		stylesheets: ['./404.css'],
+	},
+	render: () => {
+		return (
 			<div class="error404">
 				<div class="error404__content">
 					<div class="error404__code" aria-hidden="true">
@@ -20,15 +26,8 @@ const Error404: EcoComponent<Error404TemplateProps> = () => {
 					</div>
 				</div>
 			</div>
-		</BaseLayout>
-	);
-};
-
-Error404.config = {
-	dependencies: {
-		stylesheets: ['./404.css'],
-		components: [BaseLayout],
+		);
 	},
-};
+});
 
 export default Error404;

@@ -31,5 +31,10 @@
 		"remark-gfm": "^4.0.1",
 		"shiki": "^3.20.0",
 		"tailwindcss": "^4.1.18"
+	},
+	"dependencies": {
+		"remark-frontmatter": "^5.0.0",
+		"vfile-matter": "^5.0.1",
+		"zod": "^4.4.3"
 	}
 }
