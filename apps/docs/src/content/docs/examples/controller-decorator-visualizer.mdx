@@ -1,0 +1,38 @@
+---
+title: "Controller Decorator Visualizer"
+description: "An interactive example showing how RadiantController decorators wire authored DOM, host attributes, and reactive controller state together."
+group: Examples
+order: 2
+---
+
+import { ControllerDecoratorVisualizer } from '@/components/controller-decorator-visualizer';
+
+
+
+
+# Controller Decorator Visualizer
+
+An interactive controller-only diagram that stays on authored HTML and visualizes how the main DOM-wiring decorators cooperate.
+
+The host remains plain markup with `data-controller`. From there, the same controller:
+
+- reads host attributes with `@attr(...)`
+- resolves authored refs with `@query(...)`
+- reacts to button input with `@onEvent(...)`
+- stores controller-local values with `@state`
+- mirrors changes back into the DOM with `@onUpdated(...)`
+
+<ControllerDecoratorVisualizer />
+
+## What It Shows
+
+- controllers can build a reactive authoring layer on top of ordinary DOM without custom elements
+- host attributes can remain the source of truth for controller inputs
+- queried refs create a stable bridge between controller logic and authored markup
+- event handling and controller state can still feel declarative when the DOM is not render-owned
+
+## Why This Example Matters
+
+`RadiantController` is not only about context or render ownership. A large part of its value is making authored DOM programmable without abandoning server markup, CMS output, or hand-written HTML.
+
+This diagram makes that explicit: one controller sits between attributes, events, refs, and reactive state, then keeps the graph synchronized as users interact.

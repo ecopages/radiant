@@ -1,4 +1,4 @@
-import type { EcoComponent } from '@ecopages/core';
+import { eco } from '@ecopages/core';
 import { codeToHtml } from 'shiki';
 import { BaseLayout } from '@/layouts/base-layout';
 import { CodeTabs } from '@/components/code-tabs';
@@ -48,7 +48,7 @@ const HomePathCard = ({ href, title, description }: { href: string; title: strin
 	</a>
 );
 
-const HomePage: EcoComponent = () => {
+const HomePage = () => {
 	return (
 		<div class="home-layout not-prose">
 			<header class="home-header">
@@ -251,12 +251,11 @@ const HomePage: EcoComponent = () => {
 	);
 };
 
-HomePage.config = {
-	layouts: [BaseLayout],
+export default eco.page({
+	layout: BaseLayout,
 	dependencies: {
 		components: [CodeTabs, RadiantCounterDemo],
 		stylesheets: ['./index.css'],
 	},
-};
-
-export default HomePage;
+	render: HomePage,
+});

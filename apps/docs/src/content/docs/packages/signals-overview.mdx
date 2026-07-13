@@ -1,0 +1,65 @@
+---
+title: "Signals Overview"
+description: "What @ecopages/signals provides and how it relates to Radiant."
+group: Signals
+order: 1
+---
+
+# Signals Overview
+
+`@ecopages/signals` is a renderer-agnostic signals package that can be used standalone or underneath Radiant.
+
+Its model is based on the [TC39 Signals proposal](https://github.com/tc39/proposal-signals/tree/main), with a smaller surface area and a few convenience helpers for real application code today.
+
+## Scope
+
+This package provides:
+
+- `State<T>` for writable values
+- `Computed<T>` for lazily derived values
+- `effect(...)` for reactive side effects
+- `watch(...)` for observing derived values with previous-value access
+- `untrack(...)` and `peek(...)` for non-tracking reads
+- `subtle.Watcher` plus `watched` and `unwatched` hooks for low-level invalidation workflows
+- `createStore(...)` and `snapshot(...)` for deep reactive object and array state
+
+## Design Position
+
+This package is intentionally renderer-agnostic.
+
+- It does not know about JSX.
+- It does not know about Radiant components.
+- It is meant to work standalone or underneath adapters in those packages.
+
+## TC39 Relationship
+
+The package tracks the same broad model around:
+
+- `State` and `Computed`
+- lazy pull-based recomputation with caching
+- automatic dependency discovery during computed evaluation
+- custom equality functions
+- untracked reads as an escape hatch
+
+It is not a drop-in implementation of the current proposal draft.
+
+## How It Connects To Radiant
+
+`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing radiant brings this package transitively. You do not need a separate signals install for the standard radiant + jsx setup.
+
+Radiant builds on top of this package in two main ways:
+
+- `@signal` turns a host field into a real writable signal
+- `createResource(...)` from `@ecopages/radiant/signals/host-resource` ties async state to a host lifecycle
+
+That split is intentional:
+
+- `@ecopages/signals` stays renderer-agnostic
+- `@ecopages/radiant` adds host-aware behavior on top of signals
+
+## Next Pages
+
+- See [Signals State & Computed](/docs/packages/signals-state-computed)
+- See [Signals Effects](/docs/packages/signals-effects)
+- See [Signals Stores](/docs/packages/signals-stores)
+- See [Resources](/docs/packages/signals-resources)

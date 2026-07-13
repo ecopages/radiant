@@ -1,0 +1,206 @@
+---
+title: "Weather App"
+description: "A Radiant weather example built with createResource, context, and render-driven components."
+group: Examples
+order: 4
+---
+
+import { WeatherApp } from '@/components/weather-app/weather-app';
+
+
+
+
+# Weather App
+
+A `RadiantElement` host that fetches live weather data from Open-Meteo, shares it through context, and lets a child summary card subscribe to a single slice.
+
+<WeatherApp />
+<br />
+
+The example covers:
+
+- `createResource(this, {...})` for abortable, source-driven async fetches
+- `@provideContext` on the host for shared state ownership
+- `@contextSelector` with `select` on the summary card for read-only slice subscriptions
+- `@contextSelector` without `select` on the host for full-context access in `render()`
+- stale-while-revalidate rendering via `staleTime` and `pendingDelay`
+
+`createResource(...)` comes from the public subpath `@ecopages/radiant/signals/host-resource`, not the root entrypoint.
+
+## Architecture
+
+The host owns the city signal, the provider, and the resource lifecycle. Source changes abort older requests automatically, and successful responses update the shared context via `this.provider.setContext(...)`.
+
+The summary card only cares about the visible report. It subscribes to that slice with `@contextSelector({ select: ... })` and reads `this.visibleReport` directly in `render()`. It does not need `@consumeContext` because it never calls `setContext(...)`.
+
+Utility code (city list, fetch helper, types) lives in `weather-app.utils.ts` and `weather-app.types.ts`. The example below focuses on the Radiant-specific part.
+
+## Summary Card
+
+```tsx
+import {
+	RadiantElement,
+	contextSelector,
+	customElement,
+} from '@ecopages/radiant';
+import type { WeatherReport } from './weather-app.types';
+
+// weatherContext created via createContext<WeatherContext>(Symbol('weather-context'))
+
+@customElement('radiant-weather-summary')
+export class RadiantWeatherSummary extends RadiantElement {
+	@contextSelector({
+		context: weatherContext,
+		select: ({ visibleReport }) => visibleReport,
+	})
+	visibleReport: WeatherReport | undefined;
+
+	override render() {
+		if (!this.visibleReport) return null;
+
+		return (
+			<article data={{ city: this.visibleReport.city }}>
+				<p>{this.visibleReport.city}</p>
+				<p>{this.visibleReport.condition}</p>
+				<p>
+					{this.visibleReport.temperature}
+					<span>°C</span>
+				</p>
+				<p>{this.visibleReport.summary}</p>
+				<dl>
+					<div>
+						<dt>Humidity</dt>
+						<dd>{this.visibleReport.humidity}%</dd>
+					</div>
+					<div>
+						<dt>Wind</dt>
+						<dd>{this.visibleReport.windKph} km/h</dd>
+					</div>
+				</dl>
+			</article>
+		);
+	}
+}
+```
+
+`@contextSelector` on the field keeps the value in sync and schedules `requestUpdate()` automatically when the selected slice changes on a render-owning host.
+
+## Host
+
+```tsx
+import {
+	type ContextProvider,
+	RadiantElement,
+	contextSelector,
+	createContext,
+	customElement,
+	provideContext,
+} from '@ecopages/radiant';
+import { createResource } from '@ecopages/radiant/signals/host-resource';
+import { state as signalState } from '@ecopages/signals';
+import type { WeatherCity, WeatherContext, WeatherReport } from './weather-app.types';
+import {
+	DEFAULT_CITY_ID,
+	WEATHER_CITIES,
+	fetchWeatherReport,
+	getWeatherCity,
+	upsertWeatherReport,
+} from './weather-app.utils';
+
+const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
+
+@customElement('radiant-weather-app')
+export class RadiantWeatherAppElement extends RadiantElement {
+	private activeCityId = signalState(DEFAULT_CITY_ID);
+
+	@provideContext<typeof weatherContext>({
+		context: weatherContext,
+		initialValue: {
+			activeCityId: DEFAULT_CITY_ID,
+			reports: [],
+			visibleReport: undefined,
+		},
+	})
+	provider!: ContextProvider<typeof weatherContext>;
+
+	private weatherQuery = createResource(this, {
+		pendingDelay: 500,
+		staleTime: 1 * 60 * 1000,
+		source: (ctx) => ctx.host.activeCityId.get(),
+		fetcher: (cityId, ctx) => fetchWeatherReport(getWeatherCity(cityId), ctx.signal),
+		onSuccess: (report, ctx) => {
+			ctx.host.provider.setContext({
+				activeCityId: report.cityId,
+				reports: upsertWeatherReport(ctx.host.provider.getContext().reports, report),
+				visibleReport: report,
+			});
+		},
+	});
+
+	@contextSelector({ context: weatherContext })
+	weatherState: WeatherContext = {
+		activeCityId: DEFAULT_CITY_ID,
+		reports: [],
+		visibleReport: undefined,
+	};
+
+	private readonly handleCityClick = (event: Event) => {
+		const button = event.currentTarget as HTMLButtonElement | null;
+		const cityId = button?.dataset.cityId;
+		if (!cityId) return;
+		this.activeCityId.set(cityId);
+		this.provider.setContext({ activeCityId: cityId });
+	};
+
+	override render() {
+		const status = this.weatherQuery.status.get();
+		const error = this.weatherQuery.error.get();
+		const { activeCityId, reports, visibleReport } = this.weatherState;
+		const activeCity = getWeatherCity(activeCityId);
+		const activeReport = reports.find((report) => report.cityId === activeCityId);
+		const isPending = status === 'pending';
+
+		return (
+			<section>
+				<div>
+					{WEATHER_CITIES.map((city) => (
+						<button
+							type="button"
+							data={{ cityId: city.id }}
+							on:click={this.handleCityClick}
+							aria={{ pressed: city.id === activeCityId }}
+						>
+							{city.label}
+						</button>
+					))}
+				</div>
+				<div>
+					{visibleReport ? (
+						<radiant-weather-summary />
+					) : (
+						<div>Waiting for {activeCity.label} to resolve...</div>
+					)}
+				</div>
+			</section>
+		);
+	}
+}
+```
+
+The host uses `@contextSelector` without `select` so it receives the full `WeatherContext`. This is necessary here because `render()` reads `activeCityId`, `reports`, and `visibleReport` together, and some of that logic depends on instance state (`weatherQuery.status.get()`).
+
+> **Note:** The live example includes additional styling, status messages, and a pending overlay omitted here for clarity. See the full source in the repository.
+
+## Key Patterns
+
+- **Read-only consumers use `@contextSelector` alone.** The summary card does not need `@consumeContext` because it never writes to context.
+- **The host uses both `@provideContext` and `@contextSelector`.** It writes via `provider.setContext(...)` and reads via the `weatherState` field.
+- **`createResource` manages the async lifecycle.** Source changes abort previous requests, `staleTime` caches responses, and `pendingDelay` avoids flash-of-loading for fast responses. No manual cleanup is needed.
+- **`@contextSelector` on a field schedules `requestUpdate()` automatically on render-owning hosts.** No empty method body and no manual `this.update()` call.
+
+## See Also
+
+- [Radiant Counter](/docs/examples/counter) for the smallest host-render example
+- [Radiant Todo App](/docs/examples/todo-app) for a provider-plus-consumer architecture
+- [Resources](/docs/packages/signals-resources) for the `createResource` API reference
+- [@provideContext](/docs/context/provide-context), [@contextSelector](/docs/context/context-selector), and [@onContextUpdate](/docs/context/on-context-update) for the decorator APIs

@@ -2,7 +2,7 @@ import { join, dirname, basename } from 'path';
 import { exists, mkdir, readdir, rm } from 'node:fs/promises';
 
 const ROOT_DIR = join(import.meta.dir, '..');
-const SRC_DOCS_DIR = join(ROOT_DIR, 'src/pages/docs');
+const SRC_DOCS_DIR = join(ROOT_DIR, 'src/content/docs');
 const PUBLIC_DIR = join(ROOT_DIR, 'src/public');
 const OUTPUT_CONTENT_DIR = join(PUBLIC_DIR, 'llms-content');
 const OUTPUT_LLMS_FILE = join(PUBLIC_DIR, 'llms.txt');

@@ -1,0 +1,127 @@
+---
+title: "@onEvent"
+description: "Declarative event subscription for RadiantElement and RadiantController hosts."
+group: Decorators
+order: 10
+---
+
+# @onEvent
+
+The `@onEvent` decorator provides a declarative way to subscribe to DOM events on elements within or outside your host. It automatically handles event subscription and unsubscription, ensuring no memory leaks when your host disconnects.
+
+## Usage
+
+```typescript
+import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+
+@customElement('click-counter')
+export class ClickCounter extends RadiantElement {
+	private count = 0;
+	
+	@onEvent({ selector: 'button', type: 'click' })
+	handleClick(event: MouseEvent) {
+		this.count++;
+		console.log(`Clicked ${this.count} times`);
+	}
+}
+```
+
+## Parameters
+
+The decorator accepts a configuration object. You must provide a target and an event type.
+
+### Target Selection (Choose one)
+
+| Parameter | Type | Description |
+| :-------- | :--- | :---------- |
+| `selector` | `string` | CSS selector to match target elements (uses event delegation). |
+| `ref` | `string` | Value of `data-ref` attribute to match (uses event delegation). |
+| `window` | `boolean` | Listen on the global `window` object. |
+| `document` | `boolean` | Listen on the global `document` object. |
+
+### Event Configuration
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `type` | `string` | Yes | Event type (e.g., 'click', 'input', 'keydown'). |
+| `options` | `AddEventListenerOptions` | No | Standard options like `{ passive: true, once: true }`. |
+
+## Common Use Cases
+
+### Using data-ref
+
+This is the recommended approach for referencing elements within your component's structure.
+
+```typescript
+@onEvent({ ref: 'submit-btn', type: 'click' })
+handleSubmit(event: MouseEvent) {
+	event.preventDefault();
+	console.log('Form submitted');
+}
+```
+
+HTML:
+```html
+<form-component>
+	<button data-ref="submit-btn" type="submit">Submit</button>
+</form-component>
+```
+
+### Window and Document Events
+
+```typescript
+@onEvent({ window: true, type: 'scroll', options: { passive: true } })
+handleScroll() {
+	console.log(`Scrolled to: ${window.scrollY}px`);
+}
+
+@onEvent({ document: true, type: 'keydown' })
+handleKeyDown(event: KeyboardEvent) {
+	if (event.key === 'Escape') this.close();
+}
+```
+
+### RadiantController usage
+
+`@onEvent(...)` also works on `RadiantController`.
+
+Use it when the controller is enhancing authored HTML, delegating across DOM it does not own through `render()`, or listening on `window` / `document`.
+
+If the controller owns the markup through `render()`, prefer direct JSX handlers such as `on:click` for local interactions.
+
+```typescript
+import { RadiantController, onEvent, state } from '@ecopages/radiant';
+
+export class ClickCounterController extends RadiantController {
+	@state count = 0;
+
+	@onEvent({ ref: 'button', type: 'click' })
+	handleClick() {
+		this.count += 1;
+	}
+}
+```
+
+HTML:
+
+```html
+<section data-controller="click-counter">
+	<button data-ref="button">Clicked 0 times</button>
+</section>
+```
+
+### Event Delegation for Non-Bubbling Events
+
+Since `selector` and `ref` use event delegation, they rely on event bubbling. For events that don't bubble (like `focus`), use their bubbling alternatives (like `focusin`).
+
+```typescript
+// Works: focusin bubbles
+@onEvent({ selector: 'input', type: 'focusin' })
+handleFocus() { /* ... */ }
+```
+
+## Learn More
+
+- [Best Practices](/docs/getting-started/best-practices) - Learn more about component design and events.
+- [@query](/docs/decorators/query) - Query elements to use with events.
+- [@debounce](/docs/decorators/debounce) - Debounce frequent event handlers.

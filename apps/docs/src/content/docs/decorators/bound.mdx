@@ -1,0 +1,103 @@
+---
+title: "@bound"
+description: "Automatically bind methods to the class instance."
+group: Decorators
+order: 12
+---
+
+import { Banner } from '@/components/banner/banner';
+
+
+
+# @bound
+
+The `@bound` decorator automatically binds a method to its class instance, ensuring `this` always refers to the component. This is particularly useful when passing methods as callbacks to event listeners, timers, or callback-style APIs.
+
+## Usage
+
+```typescript
+import { RadiantElement, bound, customElement } from '@ecopages/radiant';
+
+@customElement('timer-component')
+export class TimerComponent extends RadiantElement {
+	private count = 0;
+
+	@bound
+	increment() {
+		this.count++;
+		console.log(this.count);
+	}
+
+	connectedCallback() {
+		super.connectedCallback();
+		setTimeout(this.increment, 1000);
+	}
+}
+```
+
+## Common Use Cases
+
+### Event Listeners
+
+```typescript
+@customElement('scroll-tracker')
+export class ScrollTracker extends RadiantElement {
+	@bound
+	handleScroll() {
+		console.log(`Scrolled to: ${window.scrollY}px`);
+	}
+
+	connectedCallback() {
+		super.connectedCallback();
+		window.addEventListener('scroll', this.handleScroll);
+	}
+
+	disconnectedCallback() {
+		window.removeEventListener('scroll', this.handleScroll);
+	}
+}
+```
+
+### Promise Callbacks
+
+```typescript
+@customElement('data-loader')
+export class DataLoader extends RadiantElement {
+	data: unknown[] = [];
+
+	@bound
+	handleData(data: unknown[]) {
+		this.data = data;
+	}
+
+	async loadData() {
+		fetch('/api/data')
+			.then((response) => response.json())
+			.then(this.handleData);
+	}
+}
+```
+
+## @bound vs Arrow Functions
+
+While arrow functions also capture `this`, `@bound` methods stay on the prototype and are bound per instance on first access. This is generally more memory-efficient than creating a new arrow function for every class instance.
+
+```typescript
+@customElement('my-component')
+export class MyComponent extends RadiantElement {
+	@bound
+	boundMethod() {}
+
+	arrowMethod = () => {}
+}
+```
+
+<Banner type="info" class="unstyled">
+  <Banner.Title>TIP</Banner.Title>
+  <p>Use <code>@bound</code> for methods that may be passed around, removed later with the same identity, or overridden in a subclass.</p>
+</Banner>
+
+## Learn More
+
+- [@onEvent](/docs/decorators/on-event) - Declarative event subscription for DOM events.
+- [@debounce](/docs/decorators/debounce) - Often combined with <code>@bound</code> when handlers are both passed around and delayed.

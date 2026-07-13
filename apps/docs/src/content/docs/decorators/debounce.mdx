@@ -1,0 +1,95 @@
+---
+title: "@debounce"
+description: "Delay method execution until a quiet period has passed."
+group: Decorators
+order: 13
+---
+
+import { Banner } from '@/components/banner/banner';
+
+
+
+# @debounce
+
+The `@debounce` decorator delays a method until a specified time has passed since its last invocation. Use it to reduce redundant work when a handler is triggered in bursts, such as typing, resize, scroll, autosave, or analytics.
+
+## Usage
+
+```typescript
+import { RadiantElement, customElement, debounce, onEvent } from '@ecopages/radiant';
+
+@customElement('search-input')
+export class SearchInput extends RadiantElement {
+	@debounce(300)
+	performSearch(query: string) {
+		console.log('Searching for:', query);
+	}
+
+	@onEvent({ selector: 'input', type: 'input' })
+	handleInput(event: InputEvent) {
+		const query = (event.target as HTMLInputElement).value;
+		this.performSearch(query);
+	}
+}
+```
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `delay` | `number` | Yes | Delay in milliseconds before execution. |
+
+## Common Use Cases
+
+### Window Resize
+
+```typescript
+@customElement('responsive-chart')
+export class ResponsiveChart extends RadiantElement {
+	@debounce(250)
+	updateDimensions() {
+		this.redrawChart();
+	}
+
+	@onEvent({ window: true, type: 'resize' })
+	handleResize() {
+		this.updateDimensions();
+	}
+}
+```
+
+### Auto-Save
+
+```typescript
+@debounce(2000)
+async saveContent() {
+	await fetch('/api/save', {
+		method: 'POST',
+		body: JSON.stringify({ content: this.content }),
+	});
+}
+
+@onEvent({ selector: 'textarea', type: 'input' })
+handleInput(event: InputEvent) {
+	this.content = (event.target as HTMLTextAreaElement).value;
+	this.saveContent();
+}
+```
+
+## Guidelines for Delays
+
+| Use Case | Recommended Delay | Reasoning |
+| :------- | :---------------- | :-------- |
+| Search input | `300-500ms` | Balance responsiveness with fewer duplicate searches. |
+| Window resize | `200-300ms` | Let layout settle before recomputing expensive work. |
+| Auto-save | `1000-3000ms` | Batch edits and reduce server chatter. |
+
+<Banner type="info" class="unstyled">
+  <Banner.Title>NOTE</Banner.Title>
+  <p>Debounced methods should be treated as side-effect entry points. Do not depend on an immediate synchronous return value.</p>
+</Banner>
+
+## Learn More
+
+- [@bound](/docs/decorators/bound) - Useful when the delayed method is also passed as a callback.
+- [@onEvent](/docs/decorators/on-event) - Event handlers are a common place to use debouncing.
