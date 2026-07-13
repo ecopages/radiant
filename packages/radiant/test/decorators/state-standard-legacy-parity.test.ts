@@ -30,10 +30,10 @@ describe('@state standard vs legacy parity', () => {
 
 		const legacyElement = document.createElement('legacy-state-parity-element') as InstanceType<
 			typeof LegacyStateElement
-		> & { $count: ReturnType<LegacyStateElement['bind']> };
+		> & { $count: ReturnType<InstanceType<typeof LegacyStateElement>['bind']> };
 		const standardElement = document.createElement('standard-state-parity-element') as InstanceType<
 			typeof StandardStateElement
-		> & { $count: ReturnType<StandardStateElement['bind']> };
+		> & { $count: ReturnType<InstanceType<typeof StandardStateElement>['bind']> };
 
 		document.body.append(legacyElement, standardElement);
 

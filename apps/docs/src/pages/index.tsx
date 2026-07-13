@@ -252,7 +252,7 @@ const HomePage: EcoComponent = () => {
 };
 
 HomePage.config = {
-	layout: BaseLayout,
+	layouts: [BaseLayout],
 	dependencies: {
 		components: [CodeTabs, RadiantCounterDemo],
 		stylesheets: ['./index.css'],
