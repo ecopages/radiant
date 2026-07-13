@@ -50,8 +50,7 @@ type SelectedContextSubscription<T extends UnknownContext, Selected> = {
 };
 
 export type ContextSubscription<T extends UnknownContext, Selected = ContextType<T>> =
-	| DirectContextSubscription<T>
-	| SelectedContextSubscription<T, Selected>;
+	DirectContextSubscription<T> | SelectedContextSubscription<T, Selected>;
 
 /**
  * An event fired by a context provider to signal that a context value has been mounted and is available for consumption.

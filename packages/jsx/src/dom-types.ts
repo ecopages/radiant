@@ -39,8 +39,7 @@ export interface JsxEventListenerObject<EventType extends Event = Event> {
  * Accepted value for `on:*` and `on-native:*` bindings.
  */
 export type JsxEventListener<EventType extends Event = Event, CurrentTarget extends EventTarget = EventTarget> =
-	| JsxEventHandler<EventType, CurrentTarget>
-	| JsxEventListenerObject<EventType>;
+	JsxEventHandler<EventType, CurrentTarget> | JsxEventListenerObject<EventType>;
 
 type JsxEventBindings<ElementType extends EventTarget> = {
 	[EventName in keyof GlobalEventHandlersEventMap as `on:${EventName}`]?: JsxEventListener<

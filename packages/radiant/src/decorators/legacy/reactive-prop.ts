@@ -1,9 +1,6 @@
 import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import {
-	registerLegacyInstanceInitializer,
-	registerLegacyPostConstructionInitializer,
-} from './instance-initializers';
+import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 
 type ReactivePropHost<T> = {
 	createReactiveMember<U>(propertyName: string, initialValue: U): unknown;

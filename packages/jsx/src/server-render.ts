@@ -161,8 +161,7 @@ function getHydrationBindingScope(
 	}
 
 	const activeBindingState = activeSsrContext?.scopeValues?.get(ACTIVE_HYDRATION_BINDING_STATE_KEY) as
-		| ServerHydrationBindingState
-		| undefined;
+		ServerHydrationBindingState | undefined;
 
 	if (activeBindingState) {
 		return {
