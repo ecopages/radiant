@@ -68,17 +68,17 @@ const HomePage: EcoComponent = () => {
 								{
 									id: 'bun',
 									label: 'bun',
-									code: 'bun add @ecopages/radiant @ecopages/jsx @ecopages/signals',
+									code: 'bun add @ecopages/radiant @ecopages/jsx',
 								},
 								{
 									id: 'pnpm',
 									label: 'pnpm',
-									code: 'pnpm add @ecopages/radiant @ecopages/jsx @ecopages/signals',
+									code: 'pnpm add @ecopages/radiant @ecopages/jsx',
 								},
 								{
 									id: 'npm',
 									label: 'npm',
-									code: 'npm install @ecopages/radiant @ecopages/jsx @ecopages/signals',
+									code: 'npm install @ecopages/radiant @ecopages/jsx',
 								},
 							]}
 							copyLabel="Copy install command"
@@ -155,8 +155,8 @@ const HomePage: EcoComponent = () => {
 						<HomeCard
 							href="/docs/packages/signals-overview"
 							label="Packages"
-							title="Bring in JSX and Signals"
-							description="JSX rendering and renderer-agnostic signals sit alongside the core host model and are installed with Radiant today."
+							title="Understand the package layers"
+							description="Signals ships with radiant; jsx installs alongside radiant for TSX. Both sit on the shared reactive host model."
 						/>
 					</div>
 				</section>
@@ -165,14 +165,14 @@ const HomePage: EcoComponent = () => {
 					<p class="home-card__label">Suggested Path</p>
 					<ol class="home-path__list">
 						<li>
-							Read the overview to learn the shared reactive host model and install the current package
-							set.
+							Read the overview, then install `@ecopages/radiant` and `@ecopages/jsx` for the standard
+							setup.
 						</li>
 						<li>
 							Start with RadiantElement when you own the custom-element contract, then learn when
 							RadiantController is a better fit for authored DOM.
 						</li>
-						<li>Add JSX and Signals once the host model is clear.</li>
+						<li>Learn how signals, JSX bindings, and host decorators fit together.</li>
 						<li>Use the examples to see element-owned and controller-owned flows assembled end to end.</li>
 					</ol>
 
@@ -180,7 +180,7 @@ const HomePage: EcoComponent = () => {
 						<HomePathCard
 							href="/docs/getting-started/installation"
 							title="Install the ecosystem"
-							description="Install Radiant with its current JSX and Signals companions, then choose the host style you need."
+							description="Install radiant and jsx for the standard setup. Signals comes with radiant automatically."
 						/>
 						<HomePathCard
 							href="/docs/context/context"
