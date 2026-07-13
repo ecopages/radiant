@@ -1,4 +1,5 @@
 import type { JsxRenderable, SubscribableJsxValue } from '@ecopages/jsx';
+import type { ReactiveState } from './reactivity-contract';
 import {
 	type AttributeTypeConstant,
 	type ReadAttributeValueReturnType,
@@ -12,7 +13,6 @@ type StringPropertyKey<Value> = Extract<keyof Value, string>;
 
 export interface ReactiveProperty<T = unknown> {
 	type: AttributeTypeConstant;
-	value?: T;
 	initialValue?: T;
 	name: string;
 	attribute: string;
@@ -38,12 +38,6 @@ export type ReactiveFieldOptions = {
 	suppressInitialNotify?: boolean;
 };
 
-export type ReactiveField<T = unknown> = {
-	name: string;
-	value: T;
-	initialValue: T;
-};
-
 export type ReactiveBindingValue<
 	Host extends object,
 	Property extends StringPropertyKey<Host>,
@@ -55,8 +49,8 @@ export type ReactiveBindings<Bindings extends object> = {
 
 export type ReactiveAccessorDefinition<T> = {
 	bind?: ReactiveBindingOption;
-	getValue: () => T | undefined;
-	setValue: (value: T) => void;
+	signal: ReactiveState<T>;
+	onSet?: (value: T) => void;
 };
 
 export function validateReactivePropertyDefault(type: AttributeTypeConstant, defaultValue: unknown): void {
@@ -74,7 +68,6 @@ export function createReactivePropertyMapping<T>(
 	return {
 		type,
 		name: propertyName,
-		value: initialValue,
 		initialValue,
 		attribute: attributeKey,
 		converter: {

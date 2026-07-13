@@ -1,10 +1,17 @@
 import {
 	Computed as SignalsComputed,
+	state as signalsState,
 	subtle,
 	trackDependency,
 	type DependencyNode as SignalsDependencyNode,
 } from '@ecopages/signals';
-import type { ReactiveComputed, ReactiveDependencyNode, ReactiveRuntime, ReactiveWatcher } from './reactivity-contract';
+import type {
+	ReactiveComputed,
+	ReactiveDependencyNode,
+	ReactiveRuntime,
+	ReactiveState,
+	ReactiveWatcher,
+} from './reactivity-contract';
 
 function asSignalsDependencyNode(node: ReactiveDependencyNode): SignalsDependencyNode {
 	return node as SignalsDependencyNode;
@@ -40,5 +47,8 @@ export const signalsReactiveRuntime: ReactiveRuntime = {
 				watcher.unwatch(asSignalsComputed(signal));
 			},
 		};
+	},
+	createState<T>(initial: T): ReactiveState<T> {
+		return signalsState(initial) as unknown as ReactiveState<T>;
 	},
 };

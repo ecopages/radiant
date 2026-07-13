@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant",
-	"version": "0.3.0-beta.0",
+	"version": "0.3.0-beta.1",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ecopages/radiant.git"
@@ -28,7 +28,9 @@
 		"test:lib": "bun run test:standard && bun run test:legacy",
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
-	"dependencies": {},
+	"dependencies": {
+		"@ecopages/signals": ">=0.3.0-beta.1 <1.0.0"
+	},
 	"devDependencies": {
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/signals": "workspace:*",
@@ -44,8 +46,7 @@
 		"vitest": "^3.2.4"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-beta.0 <1.0.0",
-		"@ecopages/signals": ">=0.3.0-beta.0 <1.0.0"
+		"@ecopages/jsx": ">=0.3.0-beta.1 <1.0.0"
 	},
 	"files": [
 		"dist/**"

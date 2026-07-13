@@ -1,6 +1,9 @@
-import { createSubscribableJsxValue, type SubscribableJsxValue } from '@ecopages/jsx';
-import { trackReactiveDependency, type ReactiveDependencyNode, type ReactiveSubscriber } from './reactivity-adapter';
+import type { SubscribableJsxValue } from '@ecopages/jsx';
+import { adaptReactiveStateToJsxBinding } from './reactive-binding-adapter';
+import { getReactiveRuntime } from './reactivity-runtime';
+import type { ReactiveState } from './reactivity-contract';
 import type {
+	ReactiveAccessorDefinition,
 	ReactiveBindingOption,
 	ReactiveBindingValue,
 	ReactiveBindings,
@@ -8,34 +11,13 @@ import type {
 } from './reactive-prop-core';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
-type ReactiveDependencyReader = () => unknown;
-
-type ReactiveHostAccess<Host extends object> = {
-	defineProperty(target: object, property: string, descriptor: PropertyDescriptor): void;
-	getBindingTarget?(host: Host): object;
-	hasProperty(host: Host, property: string): boolean;
-	readProperty(host: Host, property: string): unknown;
-};
-
-type ReactiveField<T = unknown> = {
-	name: string;
-	value: T;
-	initialValue: T;
-};
-
-type ReactiveAccessorOptions<T> = {
-	bind?: ReactiveBindingOption;
-	getValue: () => T | undefined;
-	setValue: (value: T) => void;
-	notifyInitialValue?: T;
-};
 
 /**
  * Shared reactive-host contract consumed by decorators and host adapters.
  *
  * `RadiantElement` and `RadiantController` both implement this surface so the
- * decorator layer can define fields, bindings, context reactions, and tracked
- * reads without depending on a specific host class.
+ * decorator layer can define fields, bindings, and context reactions without
+ * depending on a specific host class.
  */
 export interface ReactiveHostLike<Bindings extends object = {}> {
 	readonly bindings: ReactiveBindings<Bindings>;
@@ -46,108 +28,26 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
 	createReactiveField<T>(propertyName: string, initialValue: T, options?: ReactiveFieldOptions): void;
+	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
+	registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void;
 	defineReactiveBinding(property: string, bind?: ReactiveBindingOption): void;
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
 	registerCleanupCallback(callback: () => void): void;
 	registerConnectedCallback(callback: () => void): void;
-	registerReactiveDependencyReader(property: string, read: () => unknown): void;
-	trackReactiveRead(property: string): void;
-}
-
-/**
- * Internal dependency node that bridges Radiant host members into the signals
- * tracking graph.
- */
-class ReactiveHostDependency implements ReactiveDependencyNode {
-	private readonly subscribers = new Set<ReactiveSubscriber<unknown>>();
-	private readonly watcherListeners = new Set<() => void>();
-	private version = 0;
-
-	constructor(private readonly read: ReactiveDependencyReader) {}
-
-	public get(): unknown {
-		trackReactiveDependency(this);
-		return this.read();
-	}
-
-	public subscribe(notify: ReactiveSubscriber<unknown>): () => void {
-		this.subscribers.add(notify);
-
-		return () => {
-			this.subscribers.delete(notify);
-		};
-	}
-
-	public addWatcher(notify: () => void): () => void {
-		this.watcherListeners.add(notify);
-
-		return () => {
-			this.watcherListeners.delete(notify);
-		};
-	}
-
-	public getVersion(): number {
-		return this.version;
-	}
-
-	public notify(nextValue: unknown): void {
-		this.version += 1;
-		let watcherError: unknown;
-
-		try {
-			this.notifyWatchers();
-		} catch (error) {
-			watcherError = error;
-		}
-
-		this.publish(nextValue);
-
-		if (watcherError) {
-			throw watcherError;
-		}
-	}
-
-	private publish(nextValue: unknown): void {
-		for (const subscriber of this.subscribers) {
-			subscriber(nextValue);
-		}
-	}
-
-	private notifyWatchers(): void {
-		const errors: unknown[] = [];
-
-		for (const listener of this.watcherListeners) {
-			try {
-				listener();
-			} catch (error) {
-				errors.push(error);
-			}
-		}
-
-		if (errors.length === 1) {
-			throw errors[0];
-		}
-
-		if (errors.length > 1) {
-			throw new AggregateError(errors, 'Multiple reactive dependency notifications failed.');
-		}
-	}
-}
-
-function isSignalLikeBindingValue(value: unknown): value is { get(): unknown } {
-	return typeof value === 'object' && value !== null && typeof (value as { get?: unknown }).get === 'function';
+	registerUpdateCallback(property: string, update: () => void): () => void;
 }
 
 /**
  * Shared reactivity engine used by both `RadiantElement` and
  * `RadiantController`.
  *
- * This class owns three pieces of shared behavior:
- *
- * - defining reactive accessors on the host object
- * - exposing cached JSX bindings such as `bindings.count` and `$count`
- * - publishing tracked updates into the signals graph and update callbacks
+ * Every reactive host member owns a single signals-backed `ReactiveState`
+ * (a `State` for fields/props/attributes, or a user `signal()` for the signal
+ * decorator). The jsx binding, `onUpdated` callbacks, and `ReactiveComputed`
+ * tracking all read that one state directly, so there is no parallel
+ * notification bus or dependency shim.
  *
  * Host-specific concerns such as attribute reflection, render lifecycles, and
  * custom-element APIs stay in the outer host classes.
@@ -156,11 +56,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 
-	private reactiveFields = new Map<string, ReactiveField>();
-	private reactiveDependencies = new Map<string, ReactiveHostDependency>();
-	private reactiveDependencyReaders = new Map<string, ReactiveDependencyReader>();
-	private reactiveBindings = new Map<string, SubscribableJsxValue>();
-	private updateCallbacks = new Map<string, Set<() => void>>();
+	private reactiveMembers = new Map<string, ReactiveState<unknown>>();
+	private jsxBindings = new Map<string, SubscribableJsxValue>();
+	/** `onUpdated` callbacks keyed by property; values are signal unsubscribe disposers when subscribed. */
+	private updateCallbacks = new Map<string, Map<() => void, (() => void) | undefined>>();
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 
@@ -193,90 +92,152 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	}
 
 	/**
-	 * Publishes a reactive member change to tracked dependencies and explicit
-	 * update callbacks.
-	 */
-	public notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void {
-		if (oldValue === value) {
-			return;
-		}
-
-		this.reactiveDependencies.get(changedProperty)?.notify(value);
-		const updates = this.updateCallbacks.get(changedProperty);
-
-		if (updates) {
-			for (const update of updates) {
-				update();
-			}
-		}
-	}
-
-	/**
-	 * Registers a callback that should run when the outer host disconnects.
+	 * Registers a callback that should run on host disconnect.
 	 */
 	public registerCleanupCallback(callback: () => void): void {
 		this.onDisconnectedCallback.push(callback);
 	}
 
 	/**
-	 * Registers a callback that should run whenever the outer host connects.
+	 * Registers a callback that should run whenever the host connects.
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.onConnectedCallbacks.push(callback);
 	}
 
 	/**
-	 * Registers a raw reader for a reactive member so tracked dependency reads do
-	 * not need to go back through the public accessor.
-	 */
-	public registerReactiveDependencyReader(property: string, read: ReactiveDependencyReader): void {
-		this.reactiveDependencyReaders.set(property, read);
-	}
-
-	/**
-	 * Registers a callback that runs whenever a named reactive member changes.
+	 * Fires the `onUpdated` callbacks registered for a member.
 	 *
-	 * Returns a disposer that removes the callback.
+	 * This is the only remaining use of the update-callback bus: an initial
+	 * emit for members that want one (currently `@prop`). Change notifications
+	 * flow through the member `State`'s own subscription, not through here.
 	 */
-	public registerUpdateCallback(property: string, update: () => void): () => void {
-		if (!this.updateCallbacks.has(property)) {
-			this.updateCallbacks.set(property, new Set());
+	public notifyUpdate(changedProperty: string, _oldValue: unknown, _value: unknown): void {
+		const callbacks = this.updateCallbacks.get(changedProperty);
+
+		if (!callbacks) {
+			return;
 		}
 
-		const callbacks = this.updateCallbacks.get(property)!;
-		callbacks.add(update);
-
-		return () => {
-			callbacks.delete(update);
-
-			if (callbacks.size === 0) {
-				this.updateCallbacks.delete(property);
-			}
-		};
+		for (const update of [...callbacks.keys()]) {
+			update();
+		}
 	}
 
 	/**
-	 * Returns the cached JSX binding object for a named reactive member.
+	 * Returns the member state registered under `propertyName`, if any.
+	 */
+	public getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined {
+		return this.reactiveMembers.get(propertyName) as ReactiveState<T> | undefined;
+	}
+
+	/**
+	 * Creates a new reactive member state and registers it under `propertyName`.
+	 */
+	public createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {
+		const signal = getReactiveRuntime().createState(initialValue) as ReactiveState<T>;
+		this.registerMember(propertyName, signal as ReactiveState<unknown>);
+		return signal;
+	}
+
+	/**
+	 * Registers an externally-owned reactive member state (used by the
+	 * `signal()` decorator, whose state is a user-provided signals `Signal`).
+	 */
+	public registerReactiveMember<T>(propertyName: string, signal: ReactiveState<T>): void {
+		this.registerMember(propertyName, signal as ReactiveState<unknown>);
+	}
+
+	/**
+	 * Stores the member state and subscribes any `onUpdated` callbacks that were
+	 * registered before the member existed (decorator initializer ordering).
+	 */
+	private registerMember(propertyName: string, signal: ReactiveState<unknown>): void {
+		this.reactiveMembers.set(propertyName, signal);
+		this.jsxBindings.delete(propertyName);
+
+		const callbacks = this.updateCallbacks.get(propertyName);
+
+		if (callbacks) {
+			for (const update of callbacks.keys()) {
+				this.subscribeCallback(propertyName, update);
+			}
+		}
+	}
+
+	/**
+	 * Subscribes an `onUpdated` callback to the member state if the member is
+	 * already registered and not yet subscribed.
+	 */
+	private subscribeCallback(propertyName: string, update: () => void): void {
+		const callbacks = this.updateCallbacks.get(propertyName);
+		const signal = this.reactiveMembers.get(propertyName);
+
+		if (!callbacks || !signal || callbacks.get(update)) {
+			return;
+		}
+
+		const unsubscribe = signal.subscribe(() => update());
+		callbacks.set(update, unsubscribe);
+	}
+
+	/**
+	 * Returns the jsx binding for a named reactive member.
+	 *
+	 * The binding is adapted from the member `State` once and cached so derived
+	 * transforms (`map`, member access) share a stable source identity.
 	 */
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
-		const cachedBinding = this.reactiveBindings.get(property);
+		const key = property as string;
+		const cached = this.jsxBindings.get(key);
 
-		if (cachedBinding) {
-			return cachedBinding as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+		if (cached) {
+			return cached as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
 		}
 
-		const binding = createSubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>({
-			getValue: () => this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>,
-			subscribe: (notify) =>
-				this.registerUpdateCallback(property, () => {
-					notify(this.readReactiveBindingValue(property) as ReactiveBindingValue<Bindings, Property>);
-				}),
-		});
+		const signal = this.reactiveMembers.get(key);
 
-		this.reactiveBindings.set(property, binding);
+		if (!signal) {
+			throw new Error(`No reactive binding registered for "${String(property)}".`);
+		}
+
+		const binding = adaptReactiveStateToJsxBinding(
+			signal as ReactiveState<ReactiveBindingValue<Bindings, Property>>,
+		);
+
+		this.jsxBindings.set(key, binding);
 		return binding;
+	}
+
+	/**
+	 * Registers an `onUpdated`-style callback for a named reactive member.
+	 *
+	 * Change notifications flow through the member `State`'s own subscription
+	 * (D1). The callback is also kept in the update-callback bus so an initial
+	 * emit (currently `@prop`) can still reach it once after definition.
+	 */
+	public registerUpdateCallback(property: string, update: () => void): () => void {
+		let callbacks = this.updateCallbacks.get(property);
+
+		if (!callbacks) {
+			callbacks = new Map();
+			this.updateCallbacks.set(property, callbacks);
+		}
+
+		callbacks.set(update, undefined);
+		this.subscribeCallback(property, update);
+
+		return () => {
+			const perProperty = this.updateCallbacks.get(property);
+			perProperty?.get(update)?.();
+			perProperty?.delete(update);
+
+			if (perProperty && perProperty.size === 0) {
+				this.updateCallbacks.delete(property);
+			}
+		};
 	}
 
 	/**
@@ -299,44 +260,23 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	}
 
 	/**
-	 * Records a dependency read for the named reactive member.
+	 * Defines a reactive getter/setter pair on the host backed by a member
+	 * `State`, and wires it into the jsx binding namespace.
 	 */
-	public trackReactiveRead(property: string): void {
-		trackReactiveDependency(this.getReactiveDependency(property));
-	}
-
-	/**
-	 * Defines a reactive getter/setter pair on the host and wires it into
-	 * bindings, dependency tracking, and update notifications.
-	 */
-	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorOptions<T>): void {
+	public defineReactiveAccessor<T>(propertyName: string, options: ReactiveAccessorDefinition<T>): void {
 		const bind = options.bind ?? this.shouldAutoBind();
 
 		this.defineReactiveBinding(propertyName, bind);
-		this.registerReactiveDependencyReader(propertyName, options.getValue);
 
 		this.access.defineProperty(this.host, propertyName, {
-			get: () => {
-				this.trackReactiveRead(propertyName);
-				return options.getValue();
-			},
+			get: () => options.signal.get(),
 			set: (newValue: T) => {
-				const oldValue = options.getValue();
-
-				if (oldValue === newValue) {
-					return;
-				}
-
-				options.setValue(newValue);
-				this.notifyUpdate(propertyName, oldValue, newValue);
+				options.signal.set(newValue);
+				options.onSet?.(newValue);
 			},
 			enumerable: true,
 			configurable: true,
 		});
-
-		if (options.notifyInitialValue !== undefined) {
-			this.notifyUpdate(propertyName, undefined, options.notifyInitialValue);
-		}
 	}
 
 	/**
@@ -344,22 +284,13 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	 * binding exposure.
 	 */
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
-		const reactiveField: ReactiveField<T> = {
-			name: propertyName,
-			value: initialValue,
-			initialValue,
-		};
+		const signal = this.createReactiveMember(propertyName, initialValue);
 
-		this.reactiveFields.set(propertyName, reactiveField);
+		this.defineReactiveAccessor(propertyName, { bind: options.bind, signal });
 
-		this.defineReactiveAccessor(propertyName, {
-			bind: options.bind,
-			getValue: () => this.reactiveFields.get(propertyName)?.value as T | undefined,
-			setValue: (newValue: T) => {
-				this.reactiveFields.set(propertyName, { ...reactiveField, value: newValue });
-			},
-			notifyInitialValue: options.suppressInitialNotify ? undefined : initialValue,
-		});
+		if (!options.suppressInitialNotify) {
+			this.notifyUpdate(propertyName, undefined, initialValue);
+		}
 	}
 
 	private createReactiveBindingNamespace(): ReactiveBindings<Bindings> {
@@ -373,36 +304,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 			},
 		}) as ReactiveBindings<Bindings>;
 	}
-
-	private getReactiveDependency(property: string): ReactiveHostDependency {
-		const cachedDependency = this.reactiveDependencies.get(property);
-
-		if (cachedDependency) {
-			return cachedDependency;
-		}
-
-		const dependency = new ReactiveHostDependency(() => this.readReactiveDependencyValue(property));
-		this.reactiveDependencies.set(property, dependency);
-		return dependency;
-	}
-
-	private readReactiveDependencyValue(property: string): unknown {
-		const reader = this.reactiveDependencyReaders.get(property);
-
-		if (reader) {
-			return reader();
-		}
-
-		return this.readReactiveBindingValue(property as StringPropertyKey<Bindings>);
-	}
-
-	private readReactiveBindingValue<Property extends StringPropertyKey<Bindings>>(property: Property): unknown {
-		const value = this.access.readProperty(this.host, property);
-
-		if (isSignalLikeBindingValue(value)) {
-			return value.get();
-		}
-
-		return value;
-	}
 }
+
+type ReactiveHostAccess<Host extends object> = {
+	defineProperty(target: object, property: string, descriptor: PropertyDescriptor): void;
+	getBindingTarget?(host: Host): object;
+	hasProperty(host: Host, property: string): boolean;
+	readProperty(host: Host, property: string): unknown;
+};

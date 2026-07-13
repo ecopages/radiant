@@ -1,12 +1,13 @@
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import { state, type WritableSignal } from '@ecopages/signals';
+import type { ReactiveState } from '../core/reactivity-contract';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 import { createSignalHydrationScriptTag, escapeSignalHydrationJson } from './hydration-script';
 
 type HostSignalOwner = {
-	notifyUpdate(property: string, oldValue: unknown, value: unknown): void;
+	registerReactiveMember<Value>(property: string, signal: ReactiveState<Value>): void;
 };
 
 type HostSignalOptions<Value> = {
@@ -50,6 +51,7 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 		this.property = options.property;
 		this.source = options.source ?? state(this.resolveInitialValue(options.initialValue as Value));
 		this.currentValue = this.source.get();
+		this.host.registerReactiveMember(this.property, this.source);
 	}
 
 	public get(): Value {
@@ -76,9 +78,7 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 		const nextValue = this.source.get();
 
 		if (!Object.is(this.currentValue, nextValue)) {
-			const previousValue = this.currentValue;
 			this.currentValue = nextValue;
-			this.host.notifyUpdate(this.property, previousValue, nextValue);
 		}
 
 		this.sourceUnsubscribe = this.source.subscribe((value) => {
@@ -104,7 +104,6 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 		if (!Object.is(previousValue, hydratedValue)) {
 			this.source.set(hydratedValue);
 			this.currentValue = this.source.get();
-			this.host.notifyUpdate(this.property, previousValue, this.currentValue);
 		}
 	}
 
@@ -181,12 +180,7 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 	}
 
 	private handleSourceChange(nextValue: Value): void {
-		const previousValue = this.currentValue;
 		this.currentValue = nextValue;
-
-		if (!Object.is(previousValue, nextValue)) {
-			this.host.notifyUpdate(this.property, previousValue, nextValue);
-		}
 	}
 }
 
