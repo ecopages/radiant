@@ -10,11 +10,18 @@ export const RadiantTodoApp = eco.component<{}, JsxRenderable>({
 		stylesheets: ['./radiant-todo-app.css'],
 	},
 	render: () => {
-		const initialContext = escapeScriptJson(JSON.stringify({ todos: createTodoSamples() } satisfies { todos: Todo[] }));
+		const initialContext = escapeScriptJson(
+			JSON.stringify({ todos: createTodoSamples() } satisfies { todos: Todo[] }),
+		);
 
 		return (
 			<radiant-todo-app class="todo">
-				<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="provider">
+				<script
+					type="application/json"
+					data-hydration
+					data-hydration-type="context"
+					data-hydration-key="provider"
+				>
 					{initialContext}
 				</script>
 			</radiant-todo-app>
