@@ -1,7 +1,12 @@
 import { ensureContentSource } from '@/content-source.instance';
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { getContentComponent, getContentEntryBySegments, getContentManifest, type ContentEntry } from '@/content-source';
+import {
+	getContentComponent,
+	getContentEntryBySegments,
+	getContentManifest,
+	type ContentEntry,
+} from '@/content-source';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { Banner } from '@/components/banner/banner';
 import { CodeTabs } from '@/components/code-tabs';

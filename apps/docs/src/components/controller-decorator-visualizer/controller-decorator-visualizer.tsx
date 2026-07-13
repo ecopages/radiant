@@ -226,7 +226,8 @@ export const ControllerDecoratorVisualizer = eco.component<{}, JsxRenderable>({
 								updates.
 							</p>
 							<p class="controller-decorator-visualizer__connection-note">
-								<b>Connects N1 to N3, N4, and N5</b> by coordinating reads, events, state, and DOM writes.
+								<b>Connects N1 to N3, N4, and N5</b> by coordinating reads, events, state, and DOM
+								writes.
 							</p>
 						</div>
 
