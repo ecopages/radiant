@@ -1,0 +1,81 @@
+---
+title: "@query"
+description: "Query and cache references to elements within your host DOM."
+group: Decorators
+order: 7
+---
+
+# @query
+
+The `@query` decorator provides a convenient way to query and cache references to elements within your host DOM. It creates a getter that performs the query on first access and caches the results by default.
+
+It works on both `RadiantElement` and `RadiantController`.
+
+## Usage
+
+```typescript
+import { RadiantElement, customElement, query } from '@ecopages/radiant';
+
+@customElement('user-profile')
+export class UserProfile extends RadiantElement {
+	// Query by data-ref (recommended)
+	@query({ ref: 'avatar' }) avatar!: HTMLImageElement;
+	
+	// Query by CSS selector
+	@query({ selector: 'button.action' }) submitButton!: HTMLButtonElement;
+	
+	// Query all matching elements
+	@query({ ref: 'item', all: true }) items!: HTMLElement[];
+}
+```
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `selector` | `string` | One of `selector`/`ref` | CSS selector to match elements. |
+| `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. |
+| `all` | `boolean` | No | Query for all matching elements (default: `false`). |
+| `cache` | `boolean` | No | Cache the query result (default: `true`). |
+| `scope` | `'light' \| 'shadow' \| 'both'` | No | Which DOM tree to search (default: `'light'`). |
+
+## Feature Highlight
+
+### Caching Behavior
+
+By default, queries are cached for performance. For dynamic content that changes frequently, you can disable caching to re-query on every access.
+
+```typescript
+@query({ ref: 'dynamic-item', all: true, cache: false }) 
+items!: HTMLElement[];
+```
+
+### Shadow DOM Scope
+
+By default, queries run against the host's light DOM. Use the `scope` option to query inside a shadow root or both trees.
+
+| Scope | Searches |
+| :---- | :------- |
+| `'light'` (default) | Host element only |
+| `'shadow'` | `host.shadowRoot` only |
+| `'both'` | Light DOM first, then shadow root |
+
+```typescript
+@query({ selector: '.inner', scope: 'shadow' }) shadowEl!: HTMLElement;
+@query({ selector: '.anywhere', scope: 'both', all: true }) allEls!: HTMLElement[];
+```
+
+### Type Safety
+
+Use TypeScript's non-null assertion operator (`!`) for required elements, or the optional chaining operator (`?`) if the element might not be present.
+
+```typescript
+@query({ ref: 'required-el' }) element!: HTMLElement;
+@query({ ref: 'optional-el' }) optional?: HTMLElement;
+```
+
+## Learn More
+
+- Use `@query({ all: true })` when you want every matching element instead of only the first one.
+- [@querySlot](/docs/decorators/query-slot) - Query projected elements assigned to a render-owning RadiantElement slot.
+- [RadiantElement](/docs/components/radiant-element) - Learn about `getRef` and other utility methods.

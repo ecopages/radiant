@@ -1,0 +1,37 @@
+---
+title: "Controller Context Visualizer"
+description: "An interactive example showing one RadiantController provider sharing context with both controller and RadiantElement consumers."
+group: Examples
+order: 3
+---
+
+import { ControllerContextVisualizer } from '@/components/controller-context-visualizer';
+
+
+
+
+# Controller Context Visualizer
+
+An interactive context example built as a living diagram around authored HTML and `RadiantController` registration.
+
+The provider lives on plain DOM marked with `data-controller`. From there, one shared context token fans out through lit connections to two different consumers:
+
+- a `RadiantController` attached to authored markup
+- a nested `RadiantElement` rendering from a selected slice of the same context
+
+<ControllerContextVisualizer />
+
+## What It Shows
+
+- how `@controller`, `@provideContext`, `@consumeContext`, `@onContextUpdate`, and `@contextSelector` each occupy different roles in the same graph
+- controller-provided context is available to descendants without requiring a custom-element provider host
+- controller and element consumers can react to the same context updates at the same time while presenting those updates differently
+- `startControllers(...)` can enhance authored markup while `RadiantElement` continues to render its own view normally
+
+## Why This Example Matters
+
+This is the main boundary that `RadiantController` opens up. You can keep server-authored or CMS-authored HTML as the source of truth for structure, attach behavior with controllers, and still share typed context with custom elements lower in the tree.
+
+That makes mixed trees practical: controller-owned DOM for enhancement, custom elements where isolated rendering is useful, and one context graph across both.
+
+The diagram format makes that split easier to reason about. You can see which decorator owns events, which one publishes context, which consumers subscribe imperatively, and which ones only re-render from selected slices.

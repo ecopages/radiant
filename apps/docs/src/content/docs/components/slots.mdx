@@ -1,0 +1,59 @@
+---
+title: "Slots"
+description: "Project authored light-DOM content through default and named slots in a render-owning RadiantElement host."
+group: Components
+order: 4
+---
+
+# Slots
+
+Render-owning `RadiantElement` hosts support default and named slots through literal `<slot>` tags in `render()`.
+
+This gives you a composition model that feels familiar from Vue or native web components, while still rendering in the light DOM.
+
+## Authoring Slots
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantElement, customElement } from '@ecopages/radiant';
+
+@customElement('shell-card')
+export class ShellCard extends RadiantElement {
+	override render() {
+		return (
+			<section class="shell-card">
+				<slot name="heading">
+					<h2>Fallback heading</h2>
+				</slot>
+				<div class="shell-card__body">
+					<slot>
+						<p>Fallback body content</p>
+					</slot>
+				</div>
+			</section>
+		);
+	}
+}
+```
+
+## Providing Content
+
+```tsx
+<shell-card>
+	<h2 slot="heading">Projected heading</h2>
+	<p>Projected body content</p>
+</shell-card>
+```
+
+## Semantics
+
+- Slots are resolved from direct host children.
+- The default slot receives direct host children without a `slot` attribute.
+- Named slots receive direct host children whose `slot` attribute matches the slot `name`.
+- Fallback JSX inside `<slot>` renders only when no matching projected content exists.
+- SSR host rendering serializes the projected content and embeds the metadata needed to reconstruct slot assignments on the client.
+
+## Querying Assigned Content
+
+Use [@querySlot](/docs/decorators/query-slot) when component logic needs the assigned elements for a default or named slot.

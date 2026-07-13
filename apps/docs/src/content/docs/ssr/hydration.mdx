@@ -1,0 +1,171 @@
+---
+title: "Hydration"
+description: "How Radiant and JSX hydration work, including the explicit client hydrator contract for SSR pages."
+group: SSR
+order: 2
+---
+
+# Hydration
+
+Hydration is the client attach step for HTML that was already rendered on the server.
+
+The important distinction is:
+
+- SSR produces HTML.
+- hydration attaches behavior to that existing HTML.
+- a normal client render replaces that HTML with a fresh DOM tree.
+
+Radiant makes that boundary explicit for render-owning `RadiantElement` hosts.
+
+## Two Hydration Models
+
+There are two related but different hydration flows in this ecosystem.
+
+### Plain JSX hydration
+
+Use the `@ecopages/jsx` client APIs when you are hydrating a normal container element.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { createRoot } from '@ecopages/jsx';
+import { renderToString } from '@ecopages/jsx/server';
+
+function App() {
+	return <button on:click={() => console.log('clicked')}>Ship</button>;
+}
+
+const html = renderToString(<App />, { mode: 'hydrate' });
+
+const container = document.querySelector('#app');
+
+if (container instanceof HTMLElement) {
+	createRoot(container).hydrate(<App />);
+}
+```
+
+That flow only cares about JSX hydration markers inside a normal target element.
+
+### Radiant host hydration
+
+Use the explicit Radiant hydrator when the server rendered a custom-element host such as `<my-card>...</my-card>` through a render-owning `RadiantElement`.
+
+That flow has one extra rule: the component hydrates in place only when both of these are true on first connect:
+
+1. the host already contains hydration markers
+2. the explicit Radiant hydrator has been installed on the client
+
+If either condition is missing, the host falls back to a fresh client render.
+
+## The Radiant Contract
+
+For a hydratable render-owning `RadiantElement` page today, you need three pieces.
+
+### 1. Server-side Radiant SSR runtime
+
+The server render path must import the explicit server entrypoint so the shared SSR runtime is registered.
+
+For adapters and integrations, prefer:
+
+```ts
+import '@ecopages/radiant/server/render-component';
+```
+
+In application code, the higher-level server helpers under `@ecopages/radiant/server/render-component` are the preferred API.
+
+### 2. Hydrated server markup
+
+The server render must emit hydration markers.
+
+For JSX this means:
+
+```ts
+renderToString(view, { mode: 'hydrate' });
+```
+
+For render-owning `RadiantElement` hosts this usually means one of:
+
+- `renderComponent(...)`
+- `renderComponentWithPreview(...)`
+- `renderHostToString({ mode: 'hydrate' })`
+- `renderToString({ mode: 'hydrate' })` when you only need the view fragment
+
+### 3. Explicit client hydrator install
+
+Install the client hydrator before component modules load:
+
+```ts
+import '@ecopages/radiant/client/install-hydrator';
+```
+
+Or, if you want explicit bootstrap control:
+
+```ts
+import { installRadiantHydrator } from '@ecopages/radiant/client/hydrator';
+
+installRadiantHydrator();
+```
+
+This sets the global hydration gate that Radiant checks on first connect for render-owning hosts.
+
+## What Happens On First Connect
+
+When the browser upgrades a server-rendered render-owning `RadiantElement` host, the runtime does this:
+
+1. wait one microtask after `connectedCallback()`
+2. inspect the host for hydration markers
+3. check whether the explicit hydrator is installed
+4. if both are true, call `hydrate()` and reconnect listeners and bindings in place
+5. otherwise call `update()` and mount a fresh client render
+
+That last fallback is intentional. It means a page can still work without the hydrator import, but it will stop preserving the exact SSR DOM tree.
+
+## When You Need The Hydrator
+
+Install the explicit hydrator when:
+
+- the server emitted render-owning `RadiantElement` markup with `mode: 'hydrate'`
+- you want to preserve the SSR DOM in place on first connect
+- you want server-emitted event and property bindings to reconnect without replacing nodes
+
+You do not need it for:
+
+- client-only pages
+- plain `@ecopages/jsx` containers that hydrate through `createRoot(...).hydrate(...)`
+- pages where a fresh client rerender is acceptable
+
+## What If You Omit It
+
+If you omit the Radiant hydrator import:
+
+- the page can still become interactive
+- render-owning hosts fall back to a fresh client render
+- SSR nodes may be replaced instead of being hydrated in place
+
+So this is not usually a catastrophic failure. It is a hydration-semantics regression, not necessarily a visible blank-page failure.
+
+## Context And Signal Hydration
+
+Hydration scripts for providers and signals still depend on server-rendered markup being present under the host.
+
+That means the safest path for SSR pages is:
+
+- use the Radiant server helpers to emit host markup
+- install the explicit client hydrator before component modules load
+
+This keeps host HTML, hydration markers, context payloads, and signal payloads on one coherent path.
+
+## Recommended Mental Model
+
+Use this rule of thumb:
+
+- `@ecopages/jsx` owns container-level hydration.
+- `@ecopages/radiant` owns host-level hydration for render-owning `RadiantElement` custom elements.
+- Radiant host hydration is explicit on the client.
+
+## Related Guides
+
+- [RadiantElement](/docs/components/radiant-element) for the component-host lifecycle
+- [JSX Rendering](/docs/packages/jsx-rendering) for container-level client rendering and hydration
+- [JSX SSR](/docs/ssr/jsx-ssr) for server-side HTML generation and marker emission
+- [Provide Context](/docs/context/provide-context) for provider hydration payloads inside SSR hosts

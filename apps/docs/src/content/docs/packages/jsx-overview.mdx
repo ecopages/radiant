@@ -1,0 +1,162 @@
+---
+title: "Docs | JSX Overview"
+description: "What @ecopages/jsx provides and how it fits into the Radiant ecosystem."
+group: Packages
+order: 999
+---
+
+import { CodeTabs } from '@/components/code-tabs';
+
+
+
+
+# JSX Overview
+
+`@ecopages/jsx` is the JSX authoring layer for the Radiant ecosystem.
+
+Use it when you want:
+
+- TSX syntax
+- typed intrinsic HTML and SVG elements
+- direct DOM mounting
+- server rendering and hydration helpers
+- fine-grained child bindings without a hook runtime
+
+`@ecopages/jsx` also gives you:
+
+- explicit DOM event bindings with `on:*`
+- native listener escape hatches with `on-native:*`
+- property bindings with `prop:*`
+- direct child bindings from reactive sources that expose `get()` and `subscribe(...)`
+
+Keep using `@ecopages/radiant` when you need custom-element classes, decorators, lifecycle, context, and host-managed reactivity.
+
+## Package Boundary
+
+This is the key split:
+
+- `@ecopages/jsx` owns TSX syntax, template creation, DOM mounting, hydration, and SSR serialization.
+- `@ecopages/radiant` owns component behavior and decides when a host should render.
+- Both the DOM and SSR flows consume the same template result shape.
+
+## Install And Configure
+
+<CodeTabs
+  label="Package managers"
+  tabs={[
+	{ id: 'bun', label: 'bun', code: 'bun add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'pnpm', label: 'pnpm', code: 'pnpm add @ecopages/radiant @ecopages/jsx' },
+	{ id: 'npm', label: 'npm', code: 'npm install @ecopages/radiant @ecopages/jsx' },
+  ]}
+  copyLabel="Copy install command"
+  defaultSelectedKey="bun"		
+	
+/>
+
+`@ecopages/radiant` depends on `@ecopages/signals` directly, so installing it brings signals automatically. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency; install signals explicitly only when using `@ecopages/jsx` standalone with signal-backed bindings such as `mapSubscribable(...)`.
+
+```json
+{
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx"
+	}
+}
+```
+
+Or enable it per file:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+```
+
+## Mental Model
+
+The shortest accurate model is:
+
+1. JSX produces a renderer-neutral template result.
+2. That template result can go to the DOM renderer or the SSR renderer.
+3. Fine-grained updates happen at bound child ranges, not through a hook scheduler.
+
+## Empty Values And Removal
+
+Most code should use plain JavaScript values for empty output and removal semantics.
+
+- `null`, `undefined`, and `false` render no child content
+- `null` and `undefined` remove normal attributes
+- `false` removes boolean attributes such as `hidden` or `disabled`
+- `null` removes event handlers by leaving no next listener to attach
+- `undefined` clears property bindings by writing `undefined`
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+return (
+	<button
+		class={shouldResetClass ? null : 'toolbar-action'}
+		hidden={isVisible ? false : true}
+		on:click={isInteractive ? handleClick : null}
+		prop:payload={hasPayload ? payload : undefined}
+	>
+		{shouldShowLabel ? statusLabel : null}
+	</button>
+);
+```
+
+Removing a binding this way follows the normal renderer path. If the next render changes the template shape, the DOM renderer may replace the affected node rather than preserve the previous instance.
+
+## Derived Bindings
+
+`SubscribableJsxValue` bindings can be projected in two ways:
+
+**Member access** — for object keys, use inline in JSX:
+
+```tsx
+<p>{this.$.config.label}</p>
+```
+
+The runtime memoizes each key on the binding, so this is identity-stable across renders.
+
+**`map`** — for transforms, record lookups, and non-property projections:
+
+```tsx
+const themeLabel = boundPreference.map((preference) => THEME_CONFIG[preference].label);
+```
+
+On Radiant hosts: `this.$.field.map(...)`. Hoist `map` to a create-once host field. Do not call `.map(...)` inside `render()` — each call creates a new derived binding.
+
+Derived bindings reuse the source `getValue` / `subscribe` contract and mount through the same reactive engines as any other binding.
+
+## Quick Start With RadiantElement
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+
+@customElement('counter-card')
+export class CounterCard extends RadiantElement {
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) count!: number;
+
+	private readonly increment = () => {
+		this.count += 1;
+	};
+
+	override render() {
+		return (
+			<section>
+				<h2>Count: {this.count}</h2>
+				<button type="button" on:click={this.increment}>
+					Increment
+				</button>
+			</section>
+		);
+	}
+}
+```
+
+## Next Pages
+
+- See [JSX Event Handling](/docs/packages/jsx-events) for `on:*` and `on-native:*`.
+- See [JSX Rendering](/docs/packages/jsx-rendering) for `createRoot(...)`, `renderToString(...)`, and hydration.
+- See [RadiantElement](/docs/components/radiant-element) for the host render lifecycle.

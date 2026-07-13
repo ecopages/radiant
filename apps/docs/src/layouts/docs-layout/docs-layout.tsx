@@ -1,20 +1,23 @@
-import { Banner } from '@/components/banner/banner';
-import { docsConfig } from '@/data/docs-config';
-import { BaseLayout } from '@/layouts/base-layout';
-import type { EcoComponent } from '@ecopages/core';
+import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
+import { Banner } from '@/components/banner/banner';
+import { ensureContentSource } from '@/content-source.instance';
+import { getDocsNav, type DocsNavGroup } from '@/content-source';
+import { BaseLayout } from '@/layouts/base-layout';
 import { getGroupIcon } from './get-group-icon';
+
+ensureContentSource();
 
 export type DocsLayoutProps = {
 	children: JsxRenderable;
 	class?: string;
 };
 
-const DocsNavigation = () => {
+const DocsNavigation = ({ groups }: { groups: DocsNavGroup[] }) => {
 	return (
 		<nav aria-label="Main Navigation">
 			<ul class="docs-layout__nav-list">
-				{docsConfig.documents.map((group, index) => (
+				{groups.map((group, index) => (
 					<>
 						{index > 0 && <li class="docs-layout__nav-separator" />}
 						<li>
@@ -23,18 +26,13 @@ const DocsNavigation = () => {
 								<span>{group.name}</span>
 							</div>
 							<ul class="docs-layout__nav-group-list">
-								{group.pages.map((page) => {
-									const href = group.subdirectory
-										? `${docsConfig.settings.rootDir}/${group.subdirectory}/${page.slug}`
-										: `${docsConfig.settings.rootDir}/${page.slug}`;
-									return (
-										<li>
-											<a href={href} data-nav-link>
-												{page.title}
-											</a>
-										</li>
-									);
-								})}
+								{group.items.map((item) => (
+									<li>
+										<a href={item.href} data-nav-link>
+											{item.title}
+										</a>
+									</li>
+								))}
 							</ul>
 						</li>
 					</>
@@ -44,31 +42,32 @@ const DocsNavigation = () => {
 	);
 };
 
-export const DocsLayout: EcoComponent<DocsLayoutProps> = ({ children, class: className }) => {
-	return (
-		<BaseLayout class={`docs-layout ${className ?? ''}`.trim()} showBurger showDocsLink={false}>
-			<>
-				<radiant-navigation
-					class="docs-layout__aside hidden md:block"
-					data-eco-persist="docs-sidebar"
-					data-testid="docs-sidebar"
-				>
-					<DocsNavigation />
-				</radiant-navigation>
-				<div class="docs-layout__content">
-					<div class="prose">{children}</div>
-					<radiant-docs-pagination class="docs-layout__pagination"></radiant-docs-pagination>
-				</div>
-				<radiant-toc class="docs-layout__toc"></radiant-toc>
-			</>
-		</BaseLayout>
-	);
-};
-
-DocsLayout.config = {
+export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 	dependencies: {
 		stylesheets: ['./docs-layout.css'],
 		scripts: ['./docs-layout.script.tsx'],
 		components: [BaseLayout, Banner],
 	},
-};
+	render: async ({ children, class: className }) => {
+		const nav = await getDocsNav();
+
+		return (
+			<BaseLayout class={`docs-layout ${className ?? ''}`.trim()} showBurger showDocsLink={false}>
+				<>
+					<radiant-navigation
+						class="docs-layout__aside hidden md:block"
+						data-eco-persist="docs-sidebar"
+						data-testid="docs-sidebar"
+					>
+						<DocsNavigation groups={nav.groups} />
+					</radiant-navigation>
+					<div class="docs-layout__content">
+						<div class="prose">{children}</div>
+						<radiant-docs-pagination class="docs-layout__pagination"></radiant-docs-pagination>
+					</div>
+					<radiant-toc class="docs-layout__toc"></radiant-toc>
+				</>
+			</BaseLayout>
+		);
+	},
+});
