@@ -7,11 +7,7 @@ type StandardReactivePropHost<T> = {
 	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
 };
 
-type LegacyReactivePropHost<T> = StandardReactivePropHost<T> & {
-	createReactiveMember<U>(propertyName: string, initialValue: U): unknown;
-	defineReactiveBinding(property: string, bind?: boolean | string): void;
-	getReactiveMember<U = unknown>(propertyName: string): { get(): U } | undefined;
-};
+type LegacyReactivePropHost<T> = StandardReactivePropHost<T>;
 
 /**
  * Declares a reactive property on a Radiant host.

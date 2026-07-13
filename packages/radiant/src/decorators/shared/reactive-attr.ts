@@ -1,5 +1,6 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { type ReactiveBindingOption, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
+import { resolveHostAutoBind } from './auto-bind';
 import {
 	defaultValueForType,
 	readAttributeValue,
@@ -121,10 +122,7 @@ export function installReactiveAttribute<TBindings extends object, TValue>(
 	const hostRecord = host as unknown as Record<PropertyKey, unknown>;
 	const attributeName = options.source ?? toAttributeName(propertyName);
 	const observerKey = Symbol(`@ecopages/radiant/attr:${propertyName}:observer`);
-	const bind =
-		options.bind ??
-		(host as unknown as { shouldAutoBindReactiveMembers?: () => boolean }).shouldAutoBindReactiveMembers?.() ??
-		false;
+	const bind = options.bind ?? resolveHostAutoBind(host);
 
 	host.defineReactiveBinding(propertyName, bind);
 
