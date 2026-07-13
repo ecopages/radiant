@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { dirname, resolve } from 'node:path';
+import process from 'node:process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
@@ -10,6 +11,7 @@ import {
 	runCommand,
 	startServer,
 	stopServer,
+	fetchPageText,
 	waitForLocatorAttribute,
 	waitForLocatorText,
 	waitForLocatorTextMatch,
@@ -24,10 +26,12 @@ const origin = `http://${host}:${port}`;
 
 let nitroServer;
 
+const nitroServerRuntime = process.env.NITRO_E2E_SERVER ?? process.execPath;
+
 test.before(async () => {
 	await runCommand('bun', ['run', 'build'], playgroundDirectory);
 	nitroServer = await startServer({
-		command: 'node',
+		command: nitroServerRuntime,
 		args: [resolve(playgroundDirectory, '.output/server/index.mjs')],
 		cwd: playgroundDirectory,
 		env: {
@@ -37,6 +41,7 @@ test.before(async () => {
 			PORT: port,
 		},
 		origin,
+		healthCheckUrl: `${origin}/api/hello`,
 	});
 });
 
@@ -45,10 +50,7 @@ test.after(async () => {
 });
 
 test('Nitro page SSR renders nested context flow and hydrates child updates', browserTestOptions, async () => {
-	const response = await fetch(origin);
-	assert.equal(response.status, 200);
-
-	const html = await response.text();
+	const html = await fetchPageText(origin);
 	assert.match(html, /<radiant-context-flow-shell>/);
 	assert.doesNotMatch(html, /Awaiting board context/);
 	assert.match(html, /Controller-owned render/);
