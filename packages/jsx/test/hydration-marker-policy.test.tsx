@@ -134,3 +134,37 @@ describe('hydration marker policy integration with SSR output', () => {
 		expect(htmlWithoutMarkers).not.toContain('disabled');
 	});
 });
+
+describe('template attribute marker index collection', () => {
+	test('collectTemplateAttributeMarkerIndices matches collectHydrationBindings for iterable roots', async () => {
+		const [{ jsx, jsxs, Fragment }, { collectHydrationBindings, collectTemplateAttributeMarkerIndices }] =
+			await Promise.all([loadJsxRuntime(), loadHydrationBindings()]);
+
+		const renderFragment = () =>
+			jsxs(Fragment, {
+				children: [
+					jsx('button', { class: 'alpha', 'on:click': () => undefined, children: 'Alpha' }),
+					jsx('span', { id: 'metric', children: '2' }),
+				],
+			});
+
+		const fragment = renderFragment();
+		const bindings = collectHydrationBindings(fragment);
+		const firstButton = (fragment as unknown[])[0] as ReturnType<typeof jsx>;
+		const span = (fragment as unknown[])[1] as ReturnType<typeof jsx>;
+
+		const firstButtonIndices = collectTemplateAttributeMarkerIndices(firstButton, 0);
+		expect(firstButtonIndices.nextIndex).toBe(2);
+		expect(firstButtonIndices.indices.get(0)).toBe(0);
+		expect(firstButtonIndices.indices.get(1)).toBe(1);
+
+		const spanIndices = collectTemplateAttributeMarkerIndices(span, firstButtonIndices.nextIndex);
+		expect(spanIndices.nextIndex).toBe(3);
+		expect(spanIndices.indices.get(0)).toBe(2);
+
+		expect(bindings.size).toBe(3);
+		expect(bindings.get(0)?.kind).toBe('attr');
+		expect(bindings.get(1)?.kind).toBe('event');
+		expect(bindings.get(2)?.name).toBe('id');
+	});
+});

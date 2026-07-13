@@ -1,5 +1,5 @@
 import type { TemplateResultLike } from '../jsx-runtime.ts';
-import { ATTRIBUTE_BINDING_PREFIX } from '../hydration-bindings.ts';
+import { resolveHydrationMarkerAttributeName } from '../hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
 import { collectHydratedChildRanges, isolateHydratedTextRange, type HydratedChildRange } from './hydration-planning.ts';
@@ -131,10 +131,9 @@ function createHydratedLiveTemplateParts(
 				continue;
 			}
 
-			const markerName =
-				attributeBindingIndices?.get(part.index) === undefined
-					? part.markerName
-					: `${ATTRIBUTE_BINDING_PREFIX}${attributeBindingIndices.get(part.index)}`;
+			const markerName = attributeBindingIndices?.has(part.index)
+				? resolveHydrationMarkerAttributeName(attributeBindingIndices.get(part.index)!)
+				: part.markerName;
 
 			targetNode.removeAttribute(markerName);
 			liveParts.set(partIndex, {

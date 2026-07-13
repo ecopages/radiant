@@ -376,6 +376,20 @@ const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 
 Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
 
+### Hydration Root Shapes
+
+`hydrate(...)` chooses one of three recovery paths based on the JSX root shape:
+
+| Root shape | Recovery path | Notes |
+|------------|---------------|-------|
+| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place |
+| Iterable / fragment (`<>...</>`) | Iterable hydration | Hydrates each single-root template child against its DOM slice |
+| Other values with markers | Flat marker scan | Reconnects attribute bindings only |
+
+Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Nested fragments, bare reactive children at the fragment root, and DOM/script child mismatches fall back to a full client render.
+
+Global SSR marker indexes are shared across all three paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
+
 ### SSR-Capable Custom Elements
 
 Within the JSX SSR pipeline, any registered intrinsic tag containing `-` is treated as a custom-element candidate.
