@@ -284,12 +284,17 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	 * binding exposure.
 	 */
 	public createReactiveField<T>(propertyName: string, initialValue: T, options: ReactiveFieldOptions = {}): void {
-		const signal = this.createReactiveMember(propertyName, initialValue);
+		const existing = this.reactiveMembers.get(propertyName) as ReactiveState<T> | undefined;
+		const signal = existing ?? this.createReactiveMember(propertyName, initialValue);
+
+		if (existing && initialValue !== undefined) {
+			signal.set(initialValue);
+		}
 
 		this.defineReactiveAccessor(propertyName, { bind: options.bind, signal });
 
 		if (!options.suppressInitialNotify) {
-			this.notifyUpdate(propertyName, undefined, initialValue);
+			this.notifyUpdate(propertyName, undefined, signal.get());
 		}
 	}
 

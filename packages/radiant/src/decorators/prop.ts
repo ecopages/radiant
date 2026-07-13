@@ -8,7 +8,9 @@ type StandardReactivePropHost<T> = {
 };
 
 type LegacyReactivePropHost<T> = StandardReactivePropHost<T> & {
-	registerConnectedCallback(callback: () => void): void;
+	createReactiveMember<U>(propertyName: string, initialValue: U): unknown;
+	defineReactiveBinding(property: string, bind?: boolean | string): void;
+	getReactiveMember<U = unknown>(propertyName: string): { get(): U } | undefined;
 };
 
 /**

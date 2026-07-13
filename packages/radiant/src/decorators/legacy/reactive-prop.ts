@@ -1,9 +1,15 @@
 import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { registerLegacyPostConstructionInitializer } from './instance-initializers';
+import {
+	registerLegacyInstanceInitializer,
+	registerLegacyPostConstructionInitializer,
+} from './instance-initializers';
 
 type ReactivePropHost<T> = {
+	createReactiveMember<U>(propertyName: string, initialValue: U): unknown;
 	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
+	defineReactiveBinding(property: string, bind?: boolean | string): void;
+	getReactiveMember<U = unknown>(propertyName: string): { get(): U } | undefined;
 };
 
 /**
@@ -45,6 +51,21 @@ export function reactiveProp<T = unknown>({
 			},
 			configurable: true,
 			enumerable: true,
+		});
+
+		registerLegacyInstanceInitializer(target, (element) => {
+			const host = element as ReactivePropHost<T>;
+			if (host.getReactiveMember(propertyName)) {
+				return;
+			}
+
+			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+			const bootstrapValue = (initializerValue ?? defaultValue) as T;
+			host.createReactiveMember(propertyName, bootstrapValue);
+
+			if (bind !== undefined && bind !== false) {
+				host.defineReactiveBinding(propertyName, bind);
+			}
 		});
 
 		registerLegacyPostConstructionInitializer(target, (element, phase) => {
