@@ -65,23 +65,32 @@ export function collectTemplateAttributeMarkerIndices(
 ): TemplateAttributeMarkerIndices {
 	const indices = new Map<number, number>();
 	const interpolationParts = getTemplateInterpolationParts(template.strings);
-	let nextIndex = startIndex;
+	const state = { nextBindingIndex: startIndex };
 
 	for (let index = 0; index < template.values.length; index += 1) {
 		const interpolationPart = interpolationParts[index];
 
 		if (interpolationPart?.type === 'attribute') {
-			indices.set(index, nextIndex);
-			nextIndex += 1;
+			indices.set(index, takeNextHydrationMarkerIndex(state));
 		}
 	}
 
-	return { indices, nextIndex };
+	return { indices, nextIndex: state.nextBindingIndex };
 }
 
 /** Resolves the DOM attribute name for a global SSR hydration marker index. */
 export function resolveHydrationMarkerAttributeName(globalIndex: number): string {
 	return `${ATTRIBUTE_BINDING_PREFIX}${globalIndex}`;
+}
+
+/**
+ * Reserves the next global SSR marker index for one template attribute
+ * interpolation during depth-first serialization.
+ */
+export function takeNextHydrationMarkerIndex(state: { nextBindingIndex: number }): number {
+	const index = state.nextBindingIndex;
+	state.nextBindingIndex += 1;
+	return index;
 }
 
 /**

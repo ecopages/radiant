@@ -81,6 +81,13 @@ export function hydrateTemplateInstance(
 	return instance;
 }
 
+/**
+ * Maps blueprint-relative paths onto a host slice when hydrating one
+ * single-root template child inside an iterable root.
+ *
+ * Assumes each iterable child template owns one root node at blueprint path
+ * `[0]`; multi-root template children are not supported in iterable hydration.
+ */
 function mapBlueprintPathToHostPath(path: readonly number[], pathRootOffset: number): readonly number[] {
 	if (path.length === 0) {
 		return [pathRootOffset];
