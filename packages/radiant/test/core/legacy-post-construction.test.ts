@@ -141,6 +141,8 @@ describe('legacy post-construction decorator setup', () => {
 		};
 
 		class LegacySsrBindingCard extends RadiantElement<LegacySsrBindingCardBindings> {
+			count!: number;
+
 			override render() {
 				return this.bind('count');
 			}

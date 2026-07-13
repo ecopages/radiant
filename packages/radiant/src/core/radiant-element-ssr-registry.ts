@@ -7,9 +7,11 @@ export type RadiantElementRenderBridge = {
 	renderHostToString?: (options?: RenderToStringOptions) => string;
 };
 
-export type RadiantElementServerRenderSsrCapable = InternalRadiantSsrHost;
+export type RadiantElementServerRenderSsrCapable = Omit<InternalRadiantSsrHost, 'constructor'> & {
+	constructor: Function;
+};
 
-export type RadiantElementTrackedRenderSsrCapable = InternalRadiantSsrHost;
+export type RadiantElementTrackedRenderSsrCapable = RadiantElementServerRenderSsrCapable;
 
 export type RadiantElementSsrRuntime = {
 	getHostAttributes(component: InternalRadiantSsrHost): Record<string, string>;
