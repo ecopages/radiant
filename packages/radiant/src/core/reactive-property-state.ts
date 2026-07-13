@@ -5,10 +5,13 @@ import {
 	type ReactivePropertyOptions,
 	validateReactivePropertyDefault,
 } from './reactive-prop-core';
-import { type AttributeTypeConstant } from '../utils/attribute-utils';
+import type { ReactiveState } from './reactivity-contract';
+import type { AttributeTypeConstant } from '../utils/attribute-utils';
 
 export type ReactivePropertyStateHost = HTMLElement & {
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
+	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
+	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
 };
 
 export class ReactivePropertyState {
@@ -37,10 +40,8 @@ export class ReactivePropertyState {
 		}
 
 		const transformedValue = this.transformAttributeValue(newValue, config);
-		const transformedOldValue = this.transformAttributeValue(oldValue, config);
 
-		Reflect.set(this.host, config.attribute, transformedValue);
-		this.host.notifyUpdate(name, transformedOldValue, transformedValue);
+		Reflect.set(this.host, config.name, transformedValue);
 	}
 
 	public create<T>(
@@ -48,6 +49,7 @@ export class ReactivePropertyState {
 		options: ReactivePropertyOptions<T>,
 		resolveInitialValue: (type: AttributeTypeConstant, attributeKey: string, defaultValue: unknown) => T,
 		defineReactiveAccessor: (propertyName: string, config: ReactiveAccessorDefinition<T>) => void,
+		createReactiveMember: <U>(propertyName: string, initialValue: U) => ReactiveState<U>,
 	): void {
 		const { type, attribute, reflect, defaultValue } = options;
 		const attributeKey = attribute ?? propertyName;
@@ -72,18 +74,17 @@ export class ReactivePropertyState {
 
 		this.register(propertyMapping);
 
+		const signal = createReactiveMember(propertyName, initialValue as T);
+
 		defineReactiveAccessor(propertyName, {
 			bind: options.bind,
-			getValue: () => this.properties.get(propertyName)?.value as T | undefined,
-			setValue: (newValue: T) => {
-				this.properties.set(propertyName, { ...propertyMapping, value: newValue });
-				this.reflectValue(attributeKey, reflect, propertyMapping, newValue);
-			},
+			signal,
+			onSet: (value) => this.reflectValue(attributeKey, reflect, propertyMapping, value),
 		});
 
 		if (initialValue !== undefined) {
 			queueMicrotask(() => {
-				const currentValue = this.properties.get(propertyName)?.value as T | undefined;
+				const currentValue = signal.get();
 				if (currentValue === undefined) {
 					return;
 				}
