@@ -221,8 +221,6 @@ render() {
 
 This is equivalent to `this.$.config.map((config) => config.label)`, but the runtime caches each key on the binding. You do not need a field initializer for simple reads like this.
 
-Note: TypeScript may need a narrow cast on object `@prop` bindings when the inferred binding type is wider than your object shape. Runtime behavior is unchanged.
-
 #### `map` — hoist to a create-once field
 
 Use `map` for record lookups, transforms, and non-property projections:

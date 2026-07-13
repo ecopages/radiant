@@ -1,4 +1,4 @@
-import type { SubscribableJsxValue } from '@ecopages/jsx';
+import type { SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import type { RadiantElement } from './radiant-element';
 import type { ReactiveBindingValue } from './reactive-prop-core';
 
@@ -13,6 +13,6 @@ export function bindReactiveValue<
 	Bindings extends object,
 	Host extends RadiantElement<Bindings>,
 	Property extends Extract<keyof Bindings, string>,
->(host: Host, property: Property): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+>(host: Host, property: Property): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 	return host.bind(property);
 }

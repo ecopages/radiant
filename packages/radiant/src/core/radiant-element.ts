@@ -1,5 +1,5 @@
 import type { EventEmitter } from '../tools';
-import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValue } from '@ecopages/jsx';
+import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { HostSsrRegistry } from './host-ssr-registry';
 import { getReactivePropDefinitions, type ReactivePropDefinition } from './reactive-prop-metadata';
@@ -121,7 +121,7 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 */
 	bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 
 	/**
 	 * Returns a subscribable JSX child binding for a reactive property or field.
@@ -130,7 +130,7 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 */
 	getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 
 	/**
 	 * Defines a stable JSX binding companion accessor for a reactive member.
@@ -527,13 +527,13 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 
 	public bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
 	}
 

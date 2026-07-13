@@ -3,6 +3,7 @@ import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragmen
 import { isSubscribableJsxValue } from './renderable-guards.ts';
 import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types.ts';
 import type {
+	JsxBindingSourceValue,
 	JsxComponent,
 	JsxCustomIntrinsicElements,
 	JsxIntrinsicAttributes,
@@ -41,6 +42,8 @@ export type {
 	JsxKey,
 	JsxNodeLike,
 	JsxNodeType,
+	JsxBindingObjectValue,
+	JsxBindingSourceValue,
 	JsxPrimitive,
 	JsxPropsWithChildren,
 	JsxRenderable,
@@ -130,32 +133,37 @@ export function isSlotJsxValue(value: unknown): value is SlotJsxValue {
 	return typeof value === 'object' && value !== null && SLOT_JSX_VALUE_SYMBOL in value;
 }
 
-type MapSource<Value extends JsxRenderable> = SubscribableJsxValue<Value> | SignalLike<Value>;
+type MapSource<Value extends JsxBindingSourceValue> =
+	| SubscribableJsxValue<Value>
+	| (Value extends JsxRenderable ? SignalLike<Value> : never);
 
-type MappableSubscribable<Value extends JsxRenderable> = SubscribableJsxValue<Value>;
+type MappableSubscribable<Value extends JsxBindingSourceValue> = SubscribableJsxValue<Value>;
 
-function createDerivedSubscribable<Value extends JsxRenderable, Out extends JsxRenderable>(
+function createDerivedSubscribable<Value extends JsxBindingSourceValue, Out extends JsxRenderable>(
 	source: MapSource<Value>,
 	project: (value: Value) => Out,
 ): MappableSubscribable<Out> {
 	if (isSubscribableJsxValue(source)) {
+		const subscribable = source as SubscribableJsxValue<Value>;
+
 		return {
 			[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
-			getValue: () => project(source.getValue()),
-			subscribe: (notify) => source.subscribe((value) => notify(project(value))),
+			getValue: () => project(subscribable.getValue()),
+			subscribe: (notify) => subscribable.subscribe((value) => notify(project(value))),
 			map: <Out2 extends JsxRenderable>(project2: (value: Out) => Out2) =>
-				mapSubscribable(source, (value) => project2(project(value))),
+				mapSubscribable(subscribable, (value: Value) => project2(project(value))),
 		};
 	}
 
-	const derived = computed(() => project(source.get()));
+	const signal = source as SignalLike<Extract<Value, JsxRenderable>>;
+	const derived = computed(() => project(signal.get()));
 
 	return {
 		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
 		getValue: () => derived.get(),
 		subscribe: (notify) => derived.subscribe(notify),
 		map: <Out2 extends JsxRenderable>(project2: (value: Out) => Out2) =>
-			mapSubscribable(source, (value) => project2(project(value))),
+			mapSubscribable(source, (value) => project2(project(value as Value))),
 	};
 }
 
@@ -173,7 +181,7 @@ function createDerivedSubscribable<Value extends JsxRenderable, Out extends JsxR
  * @param project Projects the current source value into the derived value.
  * @returns A derived {@link SubscribableJsxValue} with the same mount semantics as any other.
  */
-export function mapSubscribable<Value extends JsxRenderable, Out extends JsxRenderable>(
+export function mapSubscribable<Value extends JsxBindingSourceValue, Out extends JsxRenderable>(
 	source: MapSource<Value>,
 	project: (value: Value) => Out,
 ): SubscribableJsxValueWithAccess<Out> {
@@ -187,7 +195,7 @@ export function mapSubscribable<Value extends JsxRenderable, Out extends JsxRend
  *
  * Bracket keys and method calls are intentionally not covered — use `map` for those.
  */
-function makeMemberAccessProxy<Value extends JsxRenderable>(
+function makeMemberAccessProxy<Value extends JsxBindingSourceValue>(
 	base: MappableSubscribable<Value>,
 ): SubscribableJsxValueWithAccess<Value> {
 	const memberCache = new Map<string, SubscribableJsxValueWithAccess<JsxRenderable>>();
@@ -216,7 +224,7 @@ function makeMemberAccessProxy<Value extends JsxRenderable>(
  * The returned value is wrapped in a Proxy so object-like bindings expose ergonomic
  * member access (`this.$.config.label`). Each member access delegates to `map`.
  */
-export function createSubscribableJsxValue<Value extends JsxRenderable>(config: {
+export function createSubscribableJsxValue<Value extends JsxBindingSourceValue>(config: {
 	getValue: () => Value;
 	subscribe: (notify: (value: Value) => void) => () => void;
 }): SubscribableJsxValueWithAccess<Value> {

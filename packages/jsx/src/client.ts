@@ -6,6 +6,8 @@ export {
 	createSubscribableJsxValue,
 	mapSubscribable,
 	type SignalLike,
+	type JsxBindingObjectValue,
+	type JsxBindingSourceValue,
 	type JsxKey,
 	type KeyedJsxValue,
 	type SlotJsxValue,

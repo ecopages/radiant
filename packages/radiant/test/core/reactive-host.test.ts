@@ -52,11 +52,14 @@ describe('ReactiveHost member state', () => {
 		const element = document.createElement('reactive-host-config') as ConfigElement;
 		document.body.appendChild(element);
 
-		const mapped = element.bindings.config.map((config) => (config as { label: string }).label);
+		const mapped = element.bindings.config.map((config) => config.label);
+
 		expect(mapped.getValue()).toBe('Hello');
+		expect(element.bindings.config.label.getValue()).toBe('Hello');
 
 		element.config = { label: 'Next' };
 		expect(mapped.getValue()).toBe('Next');
+		expect(element.bindings.config.label.getValue()).toBe('Next');
 		expect(element.getReactiveMember('config')?.get()).toEqual({ label: 'Next' });
 	});
 

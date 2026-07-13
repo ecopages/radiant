@@ -1,4 +1,4 @@
-import type { SubscribableJsxValue } from '@ecopages/jsx';
+import type { JsxBindingSourceValue, SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { adaptReactiveStateToJsxBinding } from './reactive-binding-adapter';
 import { getReactiveRuntime } from './reactivity-runtime';
 import type { ReactiveState } from './reactivity-contract';
@@ -24,10 +24,10 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	readonly $: ReactiveBindings<Bindings>;
 	bind<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 	getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
 	createReactiveField<T>(propertyName: string, initialValue: T, options?: ReactiveFieldOptions): void;
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
@@ -57,7 +57,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	public readonly $: ReactiveBindings<Bindings>;
 
 	private reactiveMembers = new Map<string, ReactiveState<unknown>>();
-	private jsxBindings = new Map<string, SubscribableJsxValue>();
+	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
 	/** `onUpdated` callbacks keyed by property; values are signal unsubscribe disposers when subscribed. */
 	private updateCallbacks = new Map<string, Map<() => void, (() => void) | undefined>>();
 	private onConnectedCallbacks: (() => void)[] = [];
@@ -189,12 +189,12 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	 */
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
-	): SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>> {
+	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		const key = property as string;
 		const cached = this.jsxBindings.get(key);
 
 		if (cached) {
-			return cached as SubscribableJsxValue<ReactiveBindingValue<Bindings, Property>>;
+			return cached as SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 		}
 
 		const signal = this.reactiveMembers.get(key);
