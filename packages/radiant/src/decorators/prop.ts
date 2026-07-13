@@ -18,8 +18,9 @@ type LegacyReactivePropHost<T> = StandardReactivePropHost<T>;
  * property so callers can pass objects, arrays, and other non-string values
  * without serializing them into attributes.
  *
- * Every write triggers `notifyUpdate` so update callbacks, bindings, and
- * render lifecycles stay in sync.
+ * Every write updates the member state, which notifies `@onUpdated` listeners and
+ * keeps JSX bindings in sync. Render invalidation happens through the reactive
+ * render path when `render()` reads reactive members.
  *
  * @param options {@link ReactivePropertyOptions} The options for the reactive property.
  */
