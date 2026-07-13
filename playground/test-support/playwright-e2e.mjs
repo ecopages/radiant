@@ -1,11 +1,8 @@
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { promisify } from 'node:util';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from 'playwright';
-
-const execFileAsync = promisify(execFile);
 
 export const browserTestOptions = { timeout: 15_000 };
 
@@ -156,13 +153,14 @@ export async function waitForServer(url, options = {}) {
 	throw new Error(`Timed out waiting for server at ${url}`);
 }
 
-export async function fetchPageText(url) {
-	const { stdout } = await execFileAsync('curl', ['-sS', url], {
-		encoding: 'utf8',
-		maxBuffer: 10 * 1024 * 1024,
-	});
+export async function fetchOkText(url) {
+	const response = await fetch(url);
 
-	return stdout;
+	if (!response.ok) {
+		throw new Error(`GET ${url} returned ${response.status}`);
+	}
+
+	return response.text();
 }
 
 export async function poll(readValue, options) {
