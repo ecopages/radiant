@@ -8,6 +8,7 @@ import {
 	warnRuntime,
 } from './dev-warnings.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
+import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
 import { applyAttributeBinding, disposeMountedRoot } from './dom-render/reconciliation.ts';
 import {
@@ -16,6 +17,7 @@ import {
 	isTemplateResultLike,
 	unwrapKeyedValue,
 } from './dom-render/runtime-helpers.ts';
+import { isIterableRenderable } from './renderable-guards.ts';
 import { getCompiledTemplate } from './dom-render/template-compiler.ts';
 import { createTemplateInstance } from './dom-render/template-instance.ts';
 import type { DeferredPropertyBinding, MountedRoot, TemplateInstance } from './dom-render/types.ts';
@@ -57,6 +59,20 @@ type FlatHydrationOutcome =
 			deferredProperties: DeferredPropertyBinding[];
 			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
 			kind: 'safe-reconnect';
+	  }
+	| {
+			kind: 'full-rerender';
+	  };
+
+type IterableHydrationOutcome =
+	| {
+			deferredProperties: DeferredPropertyBinding[];
+			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
+			instances: readonly TemplateInstance[];
+			kind: 'safe-reconnect';
+	  }
+	| {
+			kind: 'recoverable-mismatch';
 	  }
 	| {
 			kind: 'full-rerender';
@@ -136,6 +152,23 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 		}
 	}
 
+	if (isIterableRenderable(nextValue)) {
+		const outcome = attemptIterableHydration(nextValue, target);
+
+		switch (outcome.kind) {
+			case 'full-rerender':
+			case 'recoverable-mismatch':
+				render(element, target);
+				return;
+
+			case 'safe-reconnect':
+				ROOT_RENDER_STATE.set(target, { kind: 'value' });
+				flushDeferredProperties(outcome.deferredProperties);
+				restoreFocusSnapshot(target, outcome.focusSnapshot);
+				return;
+		}
+	}
+
 	const outcome = attemptFlatHydration(element, target);
 
 	if (outcome.kind === 'full-rerender') {
@@ -164,6 +197,27 @@ function attemptTemplateHydration(template: TemplateResultLike, target: HTMLElem
 		deferredProperties,
 		focusSnapshot,
 		instance,
+		kind: 'safe-reconnect',
+	};
+}
+
+function attemptIterableHydration(value: Iterable<unknown>, target: HTMLElement): IterableHydrationOutcome {
+	if (!hasHydrationMarkers(target)) {
+		return { kind: 'full-rerender' };
+	}
+
+	const focusSnapshot = captureFocusSnapshot(target);
+	const deferredProperties: DeferredPropertyBinding[] = [];
+	const instances = hydrateIterableRoot(value, target, deferredProperties, { rootTarget: target });
+
+	if (!instances || visitHydrationBindingMarkers(target, () => undefined)) {
+		return { kind: 'recoverable-mismatch' };
+	}
+
+	return {
+		deferredProperties,
+		focusSnapshot,
+		instances,
 		kind: 'safe-reconnect',
 	};
 }
