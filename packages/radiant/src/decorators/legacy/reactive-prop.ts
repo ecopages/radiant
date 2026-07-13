@@ -1,10 +1,11 @@
 import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
+import type { ReactiveHostLike } from '../../core/reactive-host';
 import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { registerLegacyInstanceInitializer } from './instance-initializers';
+import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
+import { bootstrapReactiveMemberBinding } from './member-bootstrap';
 
 type ReactivePropHost<T> = {
 	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
-	registerConnectedCallback(callback: () => void): void;
 };
 
 /**
@@ -34,6 +35,7 @@ export function reactiveProp<T = unknown>({
 		});
 
 		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
+		const ssrAssignedKey = Symbol.for(`@ecopages/radiant.ssr-prop-assigned:${propertyName}`);
 
 		Object.defineProperty(target, propertyName, {
 			get(this: ReactivePropHost<T> & Record<PropertyKey, unknown>) {
@@ -41,23 +43,40 @@ export function reactiveProp<T = unknown>({
 			},
 			set(this: ReactivePropHost<T> & Record<PropertyKey, unknown>, value: T) {
 				this[ssrStoreKey] = value;
+				this[ssrAssignedKey] = true;
 			},
 			configurable: true,
 			enumerable: true,
 		});
 
 		registerLegacyInstanceInitializer(target, (element) => {
-			element.registerConnectedCallback(() => {
-				const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
-				const resolvedDefaultValue = defaultValue === undefined ? initializerValue : defaultValue;
+			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+			const bootstrapValue = (initializerValue ?? defaultValue) as T;
+			bootstrapReactiveMemberBinding(element as unknown as ReactiveHostLike, propertyName, bootstrapValue, bind);
+		});
 
-				element.createReactiveProp(propertyName, {
-					type,
-					reflect,
-					attribute: attributeKey,
-					defaultValue: resolvedDefaultValue,
-					bind,
-				});
+		registerLegacyPostConstructionInitializer(target, (element, phase) => {
+			const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
+			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+			const wasAssigned = host[ssrAssignedKey] === true;
+			const hasOwnStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName);
+			const ownStagingValue = hasOwnStagingValue
+				? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
+				: undefined;
+			const resolvedDefaultValue = wasAssigned
+				? initializerValue
+				: phase === 'ssr' && hasOwnStagingValue && ownStagingValue !== defaultValue
+					? ownStagingValue
+					: defaultValue === undefined
+						? initializerValue
+						: defaultValue;
+
+			element.createReactiveProp(propertyName, {
+				type,
+				reflect,
+				attribute: attributeKey,
+				defaultValue: resolvedDefaultValue,
+				bind,
 			});
 		});
 	};

@@ -16,8 +16,7 @@ type SelectedContextSelectionRequest<TContext extends UnknownContext, Selected> 
 };
 
 type ContextSelectionRequest<TContext extends UnknownContext, Selected = ContextType<TContext>> =
-	| DirectContextSelectionRequest<TContext>
-	| SelectedContextSelectionRequest<TContext, Selected>;
+	DirectContextSelectionRequest<TContext> | SelectedContextSelectionRequest<TContext, Selected>;
 
 /**
  * Resolves a consumed context from the active SSR provider stack when one is available.

@@ -13,8 +13,7 @@ export function reactiveAttr<TValue = string | undefined>(options: AttrOptions<T
 
 				const initializerValue = (host as unknown as Record<PropertyKey, TValue | undefined>)[propertyName];
 				const defaultValue = (options.defaultValue === undefined ? initializerValue : options.defaultValue) as
-					| TValue
-					| undefined;
+					TValue | undefined;
 
 				installReactiveAttribute(host as ReactiveAttributeHostLike, propertyName, {
 					...options,

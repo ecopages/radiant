@@ -78,8 +78,10 @@ npm view @ecopages/signals dist-tags versions --json
 npm view @ecopages/radiant dist-tags versions --json
 ```
 
-Consumers testing the prerelease should install the alpha dist tag for all three packages together:
+Consumers testing the prerelease should install the alpha dist tag for radiant and jsx:
 
 ```sh
-bun add @ecopages/radiant@alpha @ecopages/jsx@alpha @ecopages/signals@alpha
+bun add @ecopages/radiant@alpha @ecopages/jsx@alpha
 ```
+
+`@ecopages/signals` installs transitively with `@ecopages/radiant`. Pin `@ecopages/signals@alpha` only for standalone signals use or explicit version locking.

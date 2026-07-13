@@ -1,6 +1,7 @@
 import type { WritableSignal } from '@ecopages/signals';
 import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
+import { resolveHostAutoBind } from '../shared/auto-bind';
 import { createHostSignal, isWritableSignalLike } from '../../signals/host-signal';
 import { isHydrationCapableHost } from '../../core/hydration-capable-host';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
@@ -51,12 +52,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				resolvedSource !== undefined
 					? options.initial
 					: ((initialValue === undefined ? options.initial : initialValue) as Value);
-			const bind =
-				options.bind ??
-				(
-					this as unknown as { shouldAutoBindReactiveMembers?: () => boolean }
-				).shouldAutoBindReactiveMembers?.() ??
-				false;
+			const bind = options.bind ?? resolveHostAutoBind(this);
 
 			this.defineReactiveBinding(propertyName, bind);
 

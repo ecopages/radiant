@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/jsx",
-	"version": "0.3.0-beta.0",
+	"version": "0.3.0-beta.1",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
@@ -57,6 +57,7 @@
 		"watch:lib": "bun run ./build.ts --watch"
 	},
 	"devDependencies": {
+		"@ecopages/signals": "workspace:*",
 		"@types/bun": "latest",
 		"@vitest/browser": "^3.2.4",
 		"mitata": "^1.0.34",
@@ -66,6 +67,7 @@
 		"vitest": "^3.2.4"
 	},
 	"peerDependencies": {
+		"@ecopages/signals": ">=0.3.0-beta.1 <1.0.0",
 		"typescript": "^5"
 	}
 }

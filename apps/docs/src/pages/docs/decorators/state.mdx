@@ -42,7 +42,7 @@ export class CounterDisplay extends RadiantElement {
 
 `@state` registers host-managed internal mutable state.
 
-Under the hood it sets up a tracked state member on the host and triggers `notifyUpdate(...)` when the value changes.
+Under the hood it sets up a tracked state member on the host. Writes update that member state, which notifies `@onUpdated` listeners and keeps JSX bindings in sync. Render invalidation happens through the reactive render path when `render()` reads reactive members — no `@onUpdated` decorator is required for that.
 
 The difference is naming and intent:
 

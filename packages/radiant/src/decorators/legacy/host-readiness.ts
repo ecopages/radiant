@@ -14,8 +14,10 @@ export function ensureLegacyHostReady<T extends object>(host: T, phase: LegacyHo
 			runLegacyInstanceInitializers(host);
 			break;
 		case 'connect':
+			runLegacyPostConstructionInitializers(host, 'connect');
+			break;
 		case 'ssr':
-			runLegacyPostConstructionInitializers(host);
+			runLegacyPostConstructionInitializers(host, 'ssr');
 			break;
 	}
 }
