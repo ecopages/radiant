@@ -244,12 +244,6 @@ export function registerController<
 	const existingController = controllerRegistry.get(identifier);
 
 	if (existingController) {
-		if (process.env.NODE_ENV !== 'production') {
-			console.warn(
-				`[radiant] Controller "${identifier}" is already registered. Keeping the existing constructor.`,
-			);
-		}
-
 		return existingController as TConstructor;
 	}
 
