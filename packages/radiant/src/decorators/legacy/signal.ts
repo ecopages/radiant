@@ -61,7 +61,7 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 			return hostSignal as unknown as HostSignal<unknown>;
 		};
 
-		registerLegacyPostConstructionInitializer(target, (element, _phase) => {
+		registerLegacyPostConstructionInitializer(target, (element) => {
 			const hostSignal = initializeSignal(element);
 			element.registerConnectedCallback(() => {
 				if (!((element as any)[propertyName] instanceof HostSignal)) {

@@ -28,7 +28,7 @@ export function provideContext<T extends UnknownContext>({
 			element.connectedContextCallback(context);
 		};
 
-		registerLegacyPostConstructionInitializer(proto, (element, _phase) => {
+		registerLegacyPostConstructionInitializer(proto, (element) => {
 			initializeProvider(element);
 			element.registerConnectedCallback(() => {
 				initializeProvider(element);
