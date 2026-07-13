@@ -1,5 +1,5 @@
 import type { KeyedJsxValue, TemplateResultLike } from '../jsx-runtime.ts';
-import { updateRangeContent } from './child-range-update.ts';
+import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
 import { getNodeAtPath } from './path-utils.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
 import { createHydratedRangeRecord } from './range-records.ts';
@@ -11,8 +11,6 @@ import {
 	isIterableValue,
 	isReactiveChildSource,
 	isTemplateResultLike,
-	readReactiveChildSourceValue,
-	subscribeToReactiveChildSource,
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
@@ -24,7 +22,6 @@ import type {
 	MountedIndexedList,
 	MountedKeyedList,
 	MountedRangeContent,
-	MountedSubscription,
 	TemplateInstance,
 } from './types.ts';
 
@@ -45,29 +42,14 @@ export function hydrateMountedRangeContent(
 	const nextValue = unwrapKeyedValue(value);
 
 	if (isReactiveChildSource(nextValue)) {
-		const mountedSubscription: MountedSubscription = {
-			kind: 'subscription',
-			mounted: hydrateMountedRangeContentSnapshot(
-				startMarker,
-				endMarker,
-				readReactiveChildSourceValue(nextValue),
-				existingNodes,
-				rootTarget,
-			),
-			source: nextValue,
-			subscriptionSerial: 0,
-			unsubscribe: () => undefined,
-		};
-
-		mountedSubscription.unsubscribe = subscribeReactiveHydratedValue(
-			nextValue,
+		return mountReactiveChildSource(
 			startMarker,
 			endMarker,
-			mountedSubscription,
+			nextValue,
+			createHydratedBootstrapMounted(existingNodes),
 			rootTarget,
+			[],
 		);
-
-		return mountedSubscription;
 	}
 
 	return hydrateMountedRangeContentSnapshot(startMarker, endMarker, nextValue, existingNodes, rootTarget);
@@ -162,34 +144,6 @@ function hydrateMountedRangeContentSnapshot(
 	}
 
 	return bootstrapMounted;
-}
-
-function subscribeReactiveHydratedValue(
-	source: MountedSubscription['source'],
-	startMarker: Text,
-	endMarker: Text,
-	mountedSubscription: MountedSubscription,
-	rootTarget: HTMLElement,
-): () => void {
-	const subscriptionSerial = mountedSubscription.subscriptionSerial + 1;
-	mountedSubscription.subscriptionSerial = subscriptionSerial;
-
-	return subscribeToReactiveChildSource(source, (nextChildValue) => {
-		if (mountedSubscription.subscriptionSerial !== subscriptionSerial || mountedSubscription.source !== source) {
-			return;
-		}
-
-		const nextDeferredProperties: DeferredPropertyBinding[] = [];
-		mountedSubscription.mounted = updateRangeContent(
-			startMarker,
-			endMarker,
-			nextChildValue,
-			mountedSubscription.mounted,
-			rootTarget,
-			nextDeferredProperties,
-		);
-		flushDeferredProperties(nextDeferredProperties);
-	});
 }
 
 function createHydratedBootstrapMounted(existingNodes: readonly Node[]): MountedRangeContent {

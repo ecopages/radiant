@@ -1,0 +1,85 @@
+---
+title: "Resources"
+description: "Host-owned async resources tied to the element lifecycle."
+group: Signals
+order: 5
+---
+
+# Resources
+
+`createResource` ties an async data flow to a host element's lifecycle. It starts observing when the element connects, aborts in-flight work on disconnect, and resumes from the current source on reconnect.
+
+```ts
+import { createResource } from '@ecopages/radiant/signals/host-resource';
+```
+
+## Basic Usage
+
+Fetch once on connect — no reactive source needed:
+
+```ts
+private data = createResource(this, {
+	fetcher: (ctx) => fetch('/api/data', { signal: ctx.signal }).then((r) => r.json()),
+});
+```
+
+## Sourced Usage
+
+Drive fetches from a reactive source. Source changes abort the previous request and start a new one:
+
+```tsx
+private activeCityId = signalState('venice');
+
+private weatherQuery = createResource(this, {
+	source: (ctx) => ctx.host.activeCityId.get(),
+	fetcher: (cityId, ctx) => fetchWeatherReport(cityId, ctx.signal),
+	onSuccess: (report) => console.log(report),
+});
+
+override render() {
+	const status = this.weatherQuery.status.get();
+	const data = this.weatherQuery.data.get();
+	// ...
+}
+```
+
+Returning a falsy value (`false`, `null`, `undefined`) from `source` disables fetching without clearing the current state.
+
+## Config Options
+
+| Option | Type | Description |
+| :----- | :--- | :---------- |
+| `fetcher` | `(source, ctx) => Promise<Value>` | The async function to call. Without `source`, receives only `ctx`. With `source`, the resolved source value is passed as the first argument. `ctx` provides `host` and `signal`. |
+| `source` | `(ctx) => Source \| false \| null \| undefined` | A reactive selector that drives re-fetches. Falsy returns pause fetching. |
+| `initialValue` | `Value` | Seed value exposed from `data` before the first successful resolution. |
+| `staleTime` | `number` | Milliseconds a successful response stays fresh in the per-instance cache. |
+| `pendingDelay` | `number` | Milliseconds to wait before transitioning `status` to `'pending'`. |
+| `onSuccess` | `(data, ctx) => void` | Called after each successful resolution, including cache hits. |
+| `onError` | `(error, ctx) => void` | Called after each failed resolution. Not called for aborted requests. |
+| `onSettled` | `(data, error, ctx) => void` | Called after each resolution, whether successful or failed. |
+
+## Return Value
+
+`createResource` returns a `HostResource` that implements `AsyncStateResult<Value>`:
+
+| Property / Method | Type | Description |
+| :---------------- | :--- | :---------- |
+| `data` | `ReadonlySignal<Value \| undefined>` | The latest resolved value. |
+| `status` | `ReadonlySignal<'idle' \| 'pending' \| 'success' \| 'error'>` | Current fetch state. |
+| `error` | `ReadonlySignal<unknown>` | The latest rejection reason, if any. |
+| `refetch()` | `() => void` | Re-runs the fetcher from the current source value. |
+| `abort()` | `() => void` | Aborts the in-flight request. |
+
+## Lifecycle
+
+1. **Connect** — the resource starts observing the source (or fetches immediately if no source is set).
+2. **Source change** — the previous request is aborted and a new one starts.
+3. **Disconnect** — the in-flight request is aborted. The current state is preserved.
+4. **Reconnect** — the resource resumes from the latest source value.
+
+`createResource` registers these hooks automatically via `registerConnectedCallback` and `registerCleanupCallback`.
+
+## Related
+
+- See [Weather App](/docs/examples/weather-app) for a full sourced resource example with context.
+- `createResource` builds on the package-level `asyncState` primitive and adds host lifecycle ownership on top.

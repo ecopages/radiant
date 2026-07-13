@@ -559,7 +559,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).toContain('<feDropShadow dx="0" dy="2" stdDeviation="2"></feDropShadow>');
 	});
 
-	test('hydrates iterable-root SSR bindings through the fallback marker scan', async () => {
+	test('hydrates iterable-root SSR bindings through per-child template hydration', async () => {
 		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
 			loadJsxRuntime(),
 			loadJsxModule(),
@@ -639,7 +639,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 	});
 
-	test('warns when fallback hydration markers are malformed or unmatched', async () => {
+	test('falls back to a full render when iterable-root hydration markers are malformed', async () => {
 		const [{ jsx }, { createRoot }, { renderToString }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
 			await Promise.all([loadJsxRuntime(), loadJsxModule(), loadServerRender(), loadJsxDevRuntime()]);
 		const container = document.createElement('div');
@@ -663,16 +663,10 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		try {
 			root.hydrate(renderIterableRoot());
-			expect(warnSpy).toHaveBeenCalledTimes(2);
-			const warningMessages = warnSpy.mock.calls.map((call) => String(call[0] ?? ''));
-			expect(
-				warningMessages.some((message) => message.includes('Ignored malformed hydration binding descriptor')),
-			).toBe(true);
-			expect(
-				warningMessages.some((message) =>
-					message.includes('Ignored hydration marker without a matching binding value'),
-				),
-			).toBe(true);
+
+			expect(warnSpy).not.toHaveBeenCalled();
+			expect(container.querySelector('button')?.className).toBe('alpha');
+			expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 		} finally {
 			resetRuntimeWarningsForTests();
 			setDevWarningsEnabled(undefined);
@@ -950,6 +944,88 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.filter((mutation) => mutation.type === 'childList')).toHaveLength(0);
 		expect(mutations.filter((mutation) => mutation.type === 'characterData')).toHaveLength(1);
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('15');
+	});
+
+	test('hydrated subscribable child values patch without rerendering the parent tree', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadServerRender(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let count = 15;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const renderMetric = () =>
+			jsxs('p', {
+				class: 'component-metric',
+				children: ['Count: ', boundCount],
+			});
+
+		container.innerHTML = renderToString(renderMetric(), { mode: 'hydrate' });
+		root.hydrate(renderMetric());
+
+		expect(container.querySelector('p')?.textContent).toBe('Count: 15');
+
+		count = 16;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		await Promise.resolve();
+
+		expect(container.querySelector('p')?.textContent).toBe('Count: 16');
+	});
+
+	test('hydrated fragment subscribable child values patch without rerendering the parent tree', async () => {
+		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }, { renderToString }] =
+			await Promise.all([loadJsxRuntime(), loadJsxModule(), loadServerRender()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let count = 2;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const renderCounter = () =>
+			jsxs(Fragment, {
+				children: [
+					jsx('button', { id: 'dec', children: '-' }),
+					jsx('span', { id: 'metric', children: boundCount }),
+					jsx('button', { id: 'inc', children: '+' }),
+				],
+			});
+
+		container.innerHTML = renderToString(renderCounter(), { mode: 'hydrate' });
+		root.hydrate(renderCounter());
+
+		expect(container.querySelector('#metric')?.textContent).toBe('2');
+
+		count = 3;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		await Promise.resolve();
+
+		expect(container.querySelector('#metric')?.textContent).toBe('3');
 	});
 
 	test('signal-like child values patch their own text node without rerendering the parent tree', async () => {

@@ -1,4 +1,5 @@
 import type { TemplateResultLike } from '../jsx-runtime.ts';
+import { ATTRIBUTE_BINDING_PREFIX } from '../hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
 import { collectHydratedChildRanges, isolateHydratedTextRange, type HydratedChildRange } from './hydration-planning.ts';
@@ -6,6 +7,7 @@ import { updateLiveAttributePart } from './live-attribute-update.ts';
 import { getNodeAtPath, getPathKey } from './path-utils.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
 import { createTemplateInstanceUpdate } from './template-instance.ts';
+import { countHydratedRangeNodes } from './hydration-planning.ts';
 import type {
 	ChildTemplatePart,
 	DeferredPropertyBinding,
@@ -13,6 +15,12 @@ import type {
 	TemplateInstance,
 	TemplatePart,
 } from './types.ts';
+
+export type HydrateTemplateInstanceOptions = {
+	attributeBindingIndices?: ReadonlyMap<number, number>;
+	pathRootOffset?: number;
+	rootTarget?: HTMLElement;
+};
 
 /**
  * Reconstructs a live template instance around existing SSR DOM.
@@ -25,7 +33,10 @@ export function hydrateTemplateInstance(
 	template: TemplateResultLike,
 	target: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
+	options: HydrateTemplateInstanceOptions = {},
 ): TemplateInstance | undefined {
+	const pathRootOffset = options.pathRootOffset ?? 0;
+	const rootTarget = options.rootTarget ?? target;
 	const compiledTemplate = getCompiledTemplate(template);
 	const childParts = compiledTemplate.parts.filter((part): part is ChildTemplatePart => part.type === 'child');
 	const hydratedChildRanges = collectHydratedChildRanges(
@@ -39,18 +50,24 @@ export function hydrateTemplateInstance(
 		compiledTemplate.parts,
 		template.values,
 		hydratedChildRanges,
+		{
+			attributeBindingIndices: options.attributeBindingIndices,
+			pathRootOffset,
+			rootTarget,
+		},
 	);
 
 	if (parts.length !== compiledTemplate.parts.length) {
 		return undefined;
 	}
 
+	const nodeCount = countHydratedRangeNodes(template, target);
 	const instance: TemplateInstance = {
 		compiled: compiledTemplate,
 		parts,
-		rootTarget: target,
-		rootNodes: Array.from(target.childNodes),
-		update: createTemplateInstanceUpdate(parts, target),
+		rootTarget,
+		rootNodes: Array.from(target.childNodes).slice(pathRootOffset, pathRootOffset + nodeCount),
+		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
 
 	for (const part of parts) {
@@ -59,7 +76,17 @@ export function hydrateTemplateInstance(
 		}
 	}
 
+	instance.update(template.values, deferredProperties);
+
 	return instance;
+}
+
+function mapBlueprintPathToHostPath(path: readonly number[], pathRootOffset: number): readonly number[] {
+	if (path.length === 0) {
+		return [pathRootOffset];
+	}
+
+	return [pathRootOffset, ...path.slice(1)];
 }
 
 function createHydratedLiveTemplateParts(
@@ -68,7 +95,13 @@ function createHydratedLiveTemplateParts(
 	parts: readonly TemplatePart[],
 	values: readonly unknown[],
 	hydratedChildRanges: ReadonlyMap<number, HydratedChildRange>,
+	options: {
+		attributeBindingIndices?: ReadonlyMap<number, number>;
+		pathRootOffset: number;
+		rootTarget: HTMLElement;
+	},
 ): LiveTemplatePart[] {
+	const { attributeBindingIndices, pathRootOffset, rootTarget } = options;
 	const liveParts = new Map<number, LiveTemplatePart>();
 	const childPartEntries = parts
 		.map((part, partIndex) => ({ part, partIndex }))
@@ -92,18 +125,23 @@ function createHydratedLiveTemplateParts(
 
 	for (const [partIndex, part] of parts.entries()) {
 		if (part.type === 'attribute') {
-			const targetNode = getNodeAtPath(target, part.path);
+			const targetNode = getNodeAtPath(target, mapBlueprintPathToHostPath(part.path, pathRootOffset));
 
 			if (!(targetNode instanceof Element)) {
 				continue;
 			}
 
-			targetNode.removeAttribute(part.markerName);
+			const markerName =
+				attributeBindingIndices?.get(part.index) === undefined
+					? part.markerName
+					: `${ATTRIBUTE_BINDING_PREFIX}${attributeBindingIndices.get(part.index)}`;
+
+			targetNode.removeAttribute(markerName);
 			liveParts.set(partIndex, {
 				binding: part.binding,
 				element: targetNode,
 				index: part.index,
-				rootTarget: target,
+				rootTarget,
 				subscriptionSerial: 0,
 				type: 'attribute',
 			});
@@ -117,7 +155,7 @@ function createHydratedLiveTemplateParts(
 			continue;
 		}
 
-		const parentNode = getNodeAtPath(target, hydratedRange.parentPath);
+		const parentNode = getNodeAtPath(target, mapBlueprintPathToHostPath(hydratedRange.parentPath, pathRootOffset));
 
 		if (!parentNode) {
 			continue;
@@ -148,7 +186,7 @@ function createHydratedLiveTemplateParts(
 		liveParts.set(partIndex, {
 			endMarker,
 			index: part.index,
-			mounted: hydrateMountedRangeContent(startMarker, endMarker, values[part.index], existingNodes, target),
+			mounted: hydrateMountedRangeContent(startMarker, endMarker, values[part.index], existingNodes, rootTarget),
 			startMarker,
 			type: 'child',
 		});

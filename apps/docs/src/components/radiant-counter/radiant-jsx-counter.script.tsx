@@ -7,7 +7,7 @@ export type RadiantCounterProps = {
 
 @customElement('radiant-counter')
 export class RadiantCounter extends RadiantElement<RadiantCounterProps> {
-	@prop({ type: Number, reflect: true }) value = 0;
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) declare value: number;
 
 	private readonly decrement = () => {
 		if (this.value > 0) {
