@@ -167,4 +167,84 @@ describe('template attribute marker index collection', () => {
 		expect(bindings.get(1)?.kind).toBe('event');
 		expect(bindings.get(2)?.name).toBe('id');
 	});
+
+	test('renderToString hydrate markers match collectHydrationBindings for iterable roots', async () => {
+		const [
+			{ jsx, jsxs, Fragment },
+			{ collectHydrationBindings, resolveHydrationMarkerAttributeName, serializeBindingDescriptor },
+			{ renderToString },
+		] = await Promise.all([loadJsxRuntime(), loadHydrationBindings(), loadServerRender()]);
+
+		const fragment = jsxs(Fragment, {
+			children: [
+				jsx('button', { id: 'dec', 'on:click': () => undefined, children: '-' }),
+				jsx('span', { id: 'metric', children: '2' }),
+				jsx('button', { id: 'inc', children: '+' }),
+			],
+		});
+
+		const html = renderToString(fragment, { mode: 'hydrate' });
+		const bindings = collectHydrationBindings(fragment);
+
+		expect(bindings.size).toBe(4);
+
+		for (const [index, binding] of bindings) {
+			const markerName = resolveHydrationMarkerAttributeName(index);
+			const descriptor = serializeBindingDescriptor(binding.kind, binding.name);
+			expect(html).toContain(`${markerName}="${descriptor}"`);
+		}
+	});
+
+	test('renderToString hydrate markers match counter-shaped fragments with subscribable children', async () => {
+		const [
+			{ createSubscribableJsxValue, jsx, jsxs, Fragment },
+			{
+				collectHydrationBindings,
+				collectTemplateAttributeMarkerIndices,
+				resolveHydrationMarkerAttributeName,
+				serializeBindingDescriptor,
+			},
+			{ renderToString },
+		] = await Promise.all([loadJsxRuntime(), loadHydrationBindings(), loadServerRender()]);
+
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => 2,
+			subscribe: () => () => undefined,
+		});
+		const fragment = jsxs(Fragment, {
+			children: [
+				jsx('button', { id: 'dec', children: '-' }),
+				jsx('span', { id: 'metric', children: boundCount }),
+				jsx('button', { id: 'inc', children: '+' }),
+			],
+		});
+		const [decButton, metricSpan, incButton] = fragment as unknown as [
+			ReturnType<typeof jsx>,
+			ReturnType<typeof jsx>,
+			ReturnType<typeof jsx>,
+		];
+
+		const html = renderToString(fragment, { mode: 'hydrate' });
+		const bindings = collectHydrationBindings(fragment);
+
+		expect(bindings.size).toBe(3);
+		expect(bindings.get(0)?.name).toBe('id');
+		expect(bindings.get(1)?.name).toBe('id');
+		expect(bindings.get(2)?.name).toBe('id');
+
+		for (const [index, binding] of bindings) {
+			const markerName = resolveHydrationMarkerAttributeName(index);
+			const descriptor = serializeBindingDescriptor(binding.kind, binding.name);
+			expect(html).toContain(`${markerName}="${descriptor}"`);
+		}
+
+		const decIndices = collectTemplateAttributeMarkerIndices(decButton, 0);
+		const spanIndices = collectTemplateAttributeMarkerIndices(metricSpan, decIndices.nextIndex);
+		const incIndices = collectTemplateAttributeMarkerIndices(incButton, spanIndices.nextIndex);
+
+		expect(decIndices.nextIndex).toBe(1);
+		expect(spanIndices.nextIndex).toBe(2);
+		expect(incIndices.nextIndex).toBe(3);
+		expect(incIndices.nextIndex).toBe(bindings.size);
+	});
 });

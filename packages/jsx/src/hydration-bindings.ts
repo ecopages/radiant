@@ -1,3 +1,16 @@
+/**
+ * Hydration binding contract shared by SSR serialization and client recovery.
+ *
+ * Lifecycle overview:
+ * 1. `serializeRenderable(..., { mode: 'hydrate' })` writes `data-radiant-jsx-bind-N`
+ *    attributes through {@link takeNextHydrationMarkerIndex} and
+ *    {@link resolveHydrationMarkerAttributeName}.
+ * 2. {@link collectHydrationBindings} and {@link collectTemplateAttributeMarkerIndices}
+ *    resolve the same global namespace for iterable fragment children.
+ * 3. `hydrate(...)` walks markers back to live bindings via template, iterable, or flat paths.
+ *
+ * See `packages/jsx/README.md` → "SSR Marker Lifecycle" for the full walkthrough.
+ */
 import type { JsxRenderable, TemplateResultLike } from './jsx-runtime.ts';
 import { isIterableRenderable, isTemplateResultLike } from './renderable-guards.ts';
 import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
