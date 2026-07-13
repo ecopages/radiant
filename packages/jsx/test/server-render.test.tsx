@@ -366,11 +366,8 @@ describe('Radiant JSX server render', () => {
 			loadJsxRuntime(),
 			loadServerRender(),
 		]);
-		let count = 3;
-		const countSignal = {
-			get: () => count,
-			subscribe: () => () => undefined,
-		};
+		const { state } = await import('@ecopages/signals');
+		const countSignal = state(3);
 		const doubled = mapSubscribable(countSignal, (value) => value * 2);
 		const template = jsx('p', {
 			children: ['Double: ', doubled],
@@ -378,7 +375,7 @@ describe('Radiant JSX server render', () => {
 
 		expect(renderToString(template)).toBe('<p>Double: 6</p>');
 
-		count = 5;
+		countSignal.set(5);
 		expect(renderToString(template)).toBe('<p>Double: 10</p>');
 	});
 
