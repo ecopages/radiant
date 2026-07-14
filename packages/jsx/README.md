@@ -453,11 +453,11 @@ createRoot(container).hydrate(view());
 
 For that fragment, attribute markers are allocated like this:
 
-| Global index | Template child | Binding |
-| ------------ | -------------- | ------- |
-| `0` | `<button id="dec">` | `attr:id` |
-| `1` | `<span id="metric">` | `attr:id` |
-| `2` | `<button id="inc">` | `attr:id` |
+| Global index | Template child       | Binding   |
+| ------------ | -------------------- | --------- |
+| `0`          | `<button id="dec">`  | `attr:id` |
+| `1`          | `<span id="metric">` | `attr:id` |
+| `2`          | `<button id="inc">`  | `attr:id` |
 
 Iterable hydration resolves each child with `collectTemplateAttributeMarkerIndices(child, startIndex)` so sibling templates reuse the same numbering that `renderToString(..., { mode: 'hydrate' })` wrote into the HTML.
 
