@@ -15,13 +15,14 @@
 		"generate:llms": "bun run scripts/generate-llm-docs.ts"
 	},
 	"devDependencies": {
-		"ecopages": "0.2.0-beta.22",
-		"@ecopages/browser-router": "0.2.0-beta.22",
-		"@ecopages/core": "0.2.0-beta.22",
-		"@ecopages/file-system": "0.2.0-beta.22",
-		"@ecopages/ecopages-jsx": "0.2.0-beta.22",
+		"ecopages": "0.2.0-beta.23",
+		"@ecopages/browser-router": "0.2.0-beta.23",
+		"@ecopages/core": "0.2.0-beta.23",
+		"@ecopages/file-system": "0.2.0-beta.23",
+		"@ecopages/ecopages-jsx": "0.2.0-beta.23",
 		"@ecopages/jsx": "workspace:*",
-		"@ecopages/postcss-processor": "0.2.0-beta.22",
+		"@ecopages/postcss-processor": "0.2.0-beta.23",
+		"@ecopages/content-processor": "0.2.0-beta.23",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/signals": "workspace:*",
 		"@ecopages/scripts-injector": "^0.1.5",
@@ -30,11 +31,7 @@
 		"@tailwindcss/postcss": "^4.0.0",
 		"remark-gfm": "^4.0.1",
 		"shiki": "^3.20.0",
-		"tailwindcss": "^4.1.18"
-	},
-	"dependencies": {
-		"remark-frontmatter": "^5.0.0",
-		"vfile-matter": "^5.0.1",
+		"tailwindcss": "^4.1.18",
 		"zod": "^4.4.3"
 	}
 }

@@ -9,11 +9,7 @@ const escapeHtml = (value: string) =>
 		.replaceAll('"', '&quot;')
 		.replaceAll("'", '&#39;');
 
-/**
- * Custom Shiki transformer that escapes HTML entities in code block content.
- * Escapes the final text content after all other transformers have run.
- * It runs after other transformers to escape the final content.
- */
+/** Escapes HTML entities in Shiki code block spans after other transformers run. */
 export const transformerEscapeHtml: ShikiTransformer = {
 	name: 'escape-html',
 	enforce: 'post',
@@ -22,9 +18,6 @@ export const transformerEscapeHtml: ShikiTransformer = {
 	},
 };
 
-/**
- * Recursively escapes HTML entities in text nodes
- */
 function escapeChildTextNodes(node: Element): void {
 	if (!node.children) return;
 
