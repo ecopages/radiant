@@ -4,7 +4,10 @@ import { ConfigBuilder } from '@ecopages/core/config-builder';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
 import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
-import { createMdxPlugins } from './src/plugins/mdx-plugins';
+import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
+import { compareEntriesByField } from '@ecopages/content-processor';
+import { createDocsMdxPlugins } from './src/mdx/plugins';
+import { docsFrontmatterSchema } from './src/content/docs';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dir)
@@ -13,7 +16,7 @@ const config = await new ConfigBuilder()
 		ecopagesJsxPlugin({
 			mdx: {
 				enabled: true,
-				...createMdxPlugins({
+				...createDocsMdxPlugins({
 					rehypePrettyCode: {
 						theme: {
 							light: 'light-plus',
@@ -36,6 +39,18 @@ const config = await new ConfigBuilder()
 				referencePath: path.resolve(import.meta.dir, 'src/styles/tailwind.css'),
 			}),
 		),
+		contentProcessorPlugin({
+			options: {
+				collections: {
+					docs: {
+						contentDir: 'content/docs',
+						orderBy: compareEntriesByField('order'),
+						schema: docsFrontmatterSchema,
+						entryType: './src/content/docs#DocsFrontmatter',
+					},
+				},
+			},
+		}),
 	])
 	.setAdditionalWatchPaths(['src/data', 'src/content'])
 	.build();
