@@ -1,6 +1,7 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { entries, getComponent, getEntryBySegments } from 'ecopages:content/docs';
+import { entries, getEntryBySegments } from 'ecopages:content/docs';
+import { getComponent } from 'ecopages:content/docs/server';
 import type { Entry } from 'ecopages:content/docs';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { Banner } from '@/components/banner/banner';
