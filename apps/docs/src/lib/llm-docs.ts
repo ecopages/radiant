@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { fileSystem } from '@ecopages/file-system';
-import type { ContentEntry, ContentSource } from './content-source';
+import { ContentScanner, type ContentEntry } from '@ecopages/content-processor';
 
 export type LlmDocsOptions = {
 	/** Directory where each document's raw content is written. */
@@ -31,11 +31,11 @@ function defaultFormatTitle(value: string): string {
 		.join(' ');
 }
 
-/**
- * Generates an `llms.txt` index and per-document text files from a content
- * source's manifest. Consumes the source; it does not depend on its internals.
- */
-export async function generateLlmDocs(source: ContentSource, options: LlmDocsOptions): Promise<void> {
+/** Generates an `llms.txt` index and per-document text files from scanned content. */
+export async function generateLlmDocs<T extends Record<string, unknown>>(
+	scanner: ContentScanner<T>,
+	options: LlmDocsOptions,
+): Promise<void> {
 	const {
 		outputDir,
 		indexPath,
@@ -47,7 +47,7 @@ export async function generateLlmDocs(source: ContentSource, options: LlmDocsOpt
 		formatSectionTitle = defaultFormatTitle,
 	} = options;
 
-	const posts = await source.getManifest();
+	const posts = await scanner.getManifest();
 
 	const sections = new Map<string, ContentEntry[]>();
 	for (const post of posts) {
@@ -76,7 +76,7 @@ export async function generateLlmDocs(source: ContentSource, options: LlmDocsOpt
 
 		for (const post of sectionPosts.sort((a, b) => a.slug.localeCompare(b.slug))) {
 			const destFile = join(outputDir, `${post.slug}.txt`);
-			const raw = await source.getRawContent(post.slug);
+			const raw = await scanner.getRawContent(post.slug);
 			await fileSystem.writeAsync(destFile, raw);
 
 			outputLines.push(`- [${post.title}](${baseUrl}/${publicPath}/${post.slug}.txt)`);
