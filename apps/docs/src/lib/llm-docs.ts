@@ -49,7 +49,7 @@ export async function generateLlmDocs<T extends Record<string, unknown>>(
 
 	const posts = await scanner.getManifest();
 
-	const sections = new Map<string, ContentEntry[]>();
+	const sections = new Map<string, ContentEntry<T>[]>();
 	for (const post of posts) {
 		const section = getSection(post.slug, post.segments);
 		if (!sections.has(section)) sections.set(section, []);

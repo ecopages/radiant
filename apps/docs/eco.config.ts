@@ -1,5 +1,4 @@
 import path from 'node:path';
-import '@ecopages/radiant/server/install-light-dom-shim';
 import { ConfigBuilder } from '@ecopages/core/config-builder';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
