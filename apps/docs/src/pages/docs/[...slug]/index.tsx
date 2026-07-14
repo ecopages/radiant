@@ -1,12 +1,6 @@
-import { ensureContentSource } from '@/content-source.instance';
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import {
-	getContentComponent,
-	getContentEntryBySegments,
-	getContentManifest,
-	type ContentEntry,
-} from '@/content-source';
+import { docsSource, type ContentEntry } from '@/lib/docs-source';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { Banner } from '@/components/banner/banner';
 import { CodeTabs } from '@/components/code-tabs';
@@ -15,8 +9,6 @@ import { ControllerDecoratorVisualizer } from '@/components/controller-decorator
 import { RadiantJsxCounter, RadiantElementCounter } from '@/components/radiant-counter';
 import { RadiantTodoApp } from '@/components/radiant-todo-app';
 import { WeatherApp } from '@/components/weather-app/weather-app';
-
-ensureContentSource();
 
 export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 	layout: DocsLayout,
@@ -33,10 +25,10 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 		],
 	},
 	staticPaths: async () => {
-		const manifest = await getContentManifest();
+		const manifest = await docsSource.getManifest();
 
 		return {
-			paths: manifest.posts.map((post) => ({
+			paths: manifest.map((post) => ({
 				params: {
 					slug: post.segments,
 				},
@@ -45,7 +37,7 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 	},
 	staticProps: async ({ pathname }) => {
 		const segments = Array.isArray(pathname.params.slug) ? pathname.params.slug : [pathname.params.slug];
-		const entry = await getContentEntryBySegments(segments);
+		const entry = await docsSource.getContentEntryBySegments(segments);
 
 		return {
 			props: {
@@ -58,7 +50,7 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 		description: entry.description,
 	}),
 	render: async ({ entry }) => {
-		const Content = await getContentComponent(entry.slug);
+		const Content = await docsSource.getContent(entry.slug);
 
 		return (
 			<section class="docs-page">

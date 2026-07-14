@@ -4,10 +4,7 @@ import { ConfigBuilder } from '@ecopages/core/config-builder';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
 import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
-import remarkGfm from 'remark-gfm';
-import rehypePrettyCode from 'rehype-pretty-code';
-import { rehypeSimpleTableWrapper } from './src/plugins/rehype-simple-table-wrapper';
-import { contentRemarkPlugins } from './src/plugins/content-remark';
+import { createMdxPlugins } from './src/plugins/mdx-plugins';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dir)
@@ -16,19 +13,14 @@ const config = await new ConfigBuilder()
 		ecopagesJsxPlugin({
 			mdx: {
 				enabled: true,
-				remarkPlugins: contentRemarkPlugins,
-				rehypePlugins: [
-					[
-						rehypePrettyCode,
-						{
-							theme: {
-								light: 'light-plus',
-								dark: 'dark-plus',
-							},
+				...createMdxPlugins({
+					rehypePrettyCode: {
+						theme: {
+							light: 'light-plus',
+							dark: 'dark-plus',
 						},
-					],
-					rehypeSimpleTableWrapper,
-				],
+					},
+				}),
 			},
 		}),
 	])

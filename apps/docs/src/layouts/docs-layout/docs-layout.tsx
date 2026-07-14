@@ -1,12 +1,11 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
+import type { DocsNavGroup } from './get-docs-nav';
+import { getDocsNav } from './get-docs-nav';
+
 import { Banner } from '@/components/banner/banner';
-import { ensureContentSource } from '@/content-source.instance';
-import { getDocsNav, type DocsNavGroup } from '@/content-source';
 import { BaseLayout } from '@/layouts/base-layout';
 import { getGroupIcon } from './get-group-icon';
-
-ensureContentSource();
 
 export type DocsLayoutProps = {
 	children: JsxRenderable;
@@ -50,7 +49,6 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 	},
 	render: async ({ children, class: className }) => {
 		const nav = await getDocsNav();
-
 		return (
 			<BaseLayout class={`docs-layout ${className ?? ''}`.trim()} showBurger showDocsLink={false}>
 				<>
