@@ -1,7 +1,7 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { getDocsContentSource, getInitializedDocsContentSource } from '@/config/docs';
-import type { ContentEntry } from '@/lib/content-source';
+import { entries, getComponent, getEntryBySegments } from 'ecopages:content/docs';
+import type { Entry } from 'ecopages:content/docs';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { Banner } from '@/components/banner/banner';
 import { CodeTabs } from '@/components/code-tabs';
@@ -11,7 +11,7 @@ import { RadiantJsxCounter, RadiantElementCounter } from '@/components/radiant-c
 import { RadiantTodoApp } from '@/components/radiant-todo-app';
 import { WeatherApp } from '@/components/weather-app/weather-app';
 
-export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
+export default eco.page<{ entry: Entry }, JsxRenderable>({
 	layout: DocsLayout,
 	dependencies: {
 		components: [
@@ -25,20 +25,16 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 			WeatherApp,
 		],
 	},
-	staticPaths: async ({ appConfig }) => {
-		const manifest = await getDocsContentSource(appConfig).getManifest();
-
-		return {
-			paths: manifest.map((post) => ({
-				params: {
-					slug: post.segments,
-				},
-			})),
-		};
-	},
-	staticProps: async ({ pathname, appConfig }) => {
+	staticPaths: async () => ({
+		paths: entries.map((post) => ({
+			params: {
+				slug: post.segments,
+			},
+		})),
+	}),
+	staticProps: async ({ pathname }) => {
 		const segments = Array.isArray(pathname.params.slug) ? pathname.params.slug : [pathname.params.slug];
-		const entry = await getDocsContentSource(appConfig).getContentEntryBySegments(segments);
+		const entry = getEntryBySegments(segments);
 
 		return {
 			props: {
@@ -51,7 +47,7 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 		description: entry.description,
 	}),
 	render: async ({ entry }) => {
-		const Content = await getInitializedDocsContentSource().getContent(entry.slug);
+		const Content = getComponent(entry.slug);
 
 		return (
 			<section class="docs-page">

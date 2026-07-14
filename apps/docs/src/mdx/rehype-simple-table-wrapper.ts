@@ -2,9 +2,7 @@ import type { Element, Root } from 'hast';
 import type { Plugin } from 'unified';
 import { visit } from 'unist-util-visit';
 
-/**
- * Adds a wrapper div with overflow-x-auto to tables to enable horizontal scrolling on smaller screens.
- */
+/** Wraps tables for horizontal scrolling on smaller screens. */
 export const rehypeSimpleTableWrapper: Plugin<[], Root> = () => {
 	return (tree) => {
 		visit(tree, 'element', (node, index, parent) => {
