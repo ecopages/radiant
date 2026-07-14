@@ -16,9 +16,7 @@ export const DOCS_GROUP_ORDER = [
 	'Examples',
 ] as const;
 
-export const DOCS_GROUP_ORDER_INDEX = new Map<string, number>(
-	DOCS_GROUP_ORDER.map((name, index) => [name, index]),
-);
+export const DOCS_GROUP_ORDER_INDEX = new Map<string, number>(DOCS_GROUP_ORDER.map((name, index) => [name, index]));
 
 /** Preferred section order for `llms.txt` (first slug segment). */
 export const LLM_SECTION_ORDER = [
