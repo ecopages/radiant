@@ -27,10 +27,7 @@ export type ContentEntry<T extends SortableFrontmatter = ContentFrontmatter> = T
 };
 
 export type OrderBy<T extends SortableFrontmatter = ContentFrontmatter> =
-	| 'order'
-	| 'title'
-	| 'slug'
-	| ((a: ContentEntry<T>, b: ContentEntry<T>) => number);
+	'order' | 'title' | 'slug' | ((a: ContentEntry<T>, b: ContentEntry<T>) => number);
 
 export type ContentSourceConfig<T extends SortableFrontmatter = ContentFrontmatter> = {
 	/** Directory scanned for content files. */

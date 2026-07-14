@@ -2,7 +2,7 @@
 
 A small, renderer-agnostic library that scans a directory of MDX/Markdown
 content and exposes it as structured data. It is intentionally decoupled from
-anything that *consumes* that data (navigation, LLM generation, etc.).
+anything that _consumes_ that data (navigation, LLM generation, etc.).
 
 ## Scope
 
@@ -35,12 +35,12 @@ Generic over `T`, the frontmatter shape (defaults to
 
 ### Config
 
-| Option        | Type                         | Default      | Description                                   |
-| ------------- | ---------------------------- | ------------ | --------------------------------------------- |
-| `contentRoot` | `string`                    | — (required) | Directory scanned for content files.           |
-| `orderBy`     | `'order' \| 'title' \| 'slug' \| (a, b) => number` | `'order'` | Default manifest ordering. |
-| `extensions`  | `string[]`                  | `['.mdx']`  | File extensions treated as content.            |
-| `schema`      | `ZodType<T>`                | default      | Frontmatter schema used to parse each file.    |
+| Option        | Type                                               | Default      | Description                                 |
+| ------------- | -------------------------------------------------- | ------------ | ------------------------------------------- |
+| `contentRoot` | `string`                                           | — (required) | Directory scanned for content files.        |
+| `orderBy`     | `'order' \| 'title' \| 'slug' \| (a, b) => number` | `'order'`    | Default manifest ordering.                  |
+| `extensions`  | `string[]`                                         | `['.mdx']`   | File extensions treated as content.         |
+| `schema`      | `ZodType<T>`                                       | default      | Frontmatter schema used to parse each file. |
 
 ### Methods
 
@@ -55,7 +55,7 @@ Generic over `T`, the frontmatter shape (defaults to
 
 ```ts
 type ContentEntry<T> = T & {
-	slug: string;       // joined segments, e.g. 'getting-started/intro'
+	slug: string; // joined segments, e.g. 'getting-started/intro'
 	segments: string[]; // path parts relative to the content root
 };
 ```
