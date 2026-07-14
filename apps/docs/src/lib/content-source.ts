@@ -3,7 +3,7 @@ import { VFile } from 'vfile';
 import { matter } from 'vfile-matter';
 import { z, type ZodType } from 'zod';
 import { fileSystem } from '@ecopages/file-system';
-import type { EcoComponent } from '@ecopages/core';
+import type { EcoComponent, EcoPagesAppConfig } from '@ecopages/core';
 
 const defaultFrontmatterSchema = z.object({
 	title: z.string(),
@@ -180,4 +180,9 @@ export class ContentSource<T extends SortableFrontmatter = ContentFrontmatter> {
 	clearCache(): void {
 		this.cachePromise = undefined;
 	}
+}
+
+/** Resolves a content directory from an ecopages app config. */
+export function resolveContentRoot(appConfig: EcoPagesAppConfig, relativeToSrc = 'content/docs'): string {
+	return join(appConfig.absolutePaths.srcDir, relativeToSrc);
 }
