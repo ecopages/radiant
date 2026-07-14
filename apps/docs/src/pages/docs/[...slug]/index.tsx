@@ -1,6 +1,7 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { docsSource, type ContentEntry } from '@/lib/docs-source';
+import { docsSource } from '@/lib/docs-source';
+import type { ContentEntry } from '@/lib/content-source';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { Banner } from '@/components/banner/banner';
 import { CodeTabs } from '@/components/code-tabs';

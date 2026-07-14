@@ -16,7 +16,7 @@ await generateLlmDocs(docsSource, {
 	outputDir: join(PUBLIC_DIR, 'llms-content'),
 	indexPath: join(PUBLIC_DIR, 'llms.txt'),
 	baseUrl: process.env.ECOPAGES_BASE_URL,
-	sectionOrder: [...LLM_SECTION_ORDER],
+	sectionOrder: LLM_SECTION_ORDER,
 	headerLines: LLMS_HEADER,
 });
 

@@ -12,9 +12,9 @@ export type LlmDocsOptions = {
 	/** Public sub-path used in index links. Defaults to `llms-content`. */
 	publicPath?: string;
 	/** Preferred section order; remaining sections are appended, sorted. */
-	sectionOrder?: string[];
+	sectionOrder?: readonly string[];
 	/** Header lines written at the top of the index file. */
-	headerLines?: string[];
+	headerLines?: readonly string[];
 	/** Computes the section key for a post. Defaults to the first slug segment. */
 	getSection?: (slug: string, segments: string[]) => string;
 	/** Formats a section key into a display title. */
