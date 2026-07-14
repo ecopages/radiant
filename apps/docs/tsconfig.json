@@ -18,8 +18,9 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ES2021",
-		"types": ["bun"],
+		"types": ["bun", "ecopages-content-processor"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true
-	}
+	},
+	"include": ["src", "eco.config.ts", "modules.d.ts", "node_modules/@types/ecopages-content-processor"]
 }
