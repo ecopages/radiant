@@ -1,4 +1,4 @@
-import { DOCS_GROUP_ORDER_INDEX, DOCS_ROOT, docsSource } from '@/lib/docs-source';
+import { DOCS_GROUP_ORDER_INDEX, DOCS_ROOT, getInitializedDocsContentSource } from '@/config/docs';
 import type { ContentEntry } from '@/lib/content-source';
 
 export type DocsNavItem = {
@@ -23,7 +23,7 @@ export type DocsNav = {
  * follow the manifest's configured ordering.
  */
 export async function getDocsNav(rootDir = DOCS_ROOT): Promise<DocsNav> {
-	const posts = await docsSource.getManifest();
+	const posts = await getInitializedDocsContentSource().getManifest();
 
 	const byGroup = new Map<string, ContentEntry[]>();
 	const groupInsertion = new Map<string, number>();

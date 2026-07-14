@@ -1,5 +1,7 @@
 import { join } from 'node:path';
-import { docsSource, LLM_SECTION_ORDER } from '../src/lib/docs-source';
+import appConfig from '../eco.config';
+import { LLM_SECTION_ORDER } from '../src/config/docs';
+import { ContentSource, resolveContentRoot } from '../src/lib/content-source';
 import { generateLlmDocs } from '../src/lib/llm-docs';
 
 const ROOT_DIR = join(import.meta.dir, '..');
@@ -12,7 +14,12 @@ const LLMS_HEADER = [
 	'',
 ];
 
-await generateLlmDocs(docsSource, {
+const source = new ContentSource({
+	contentRoot: resolveContentRoot(appConfig),
+	orderBy: 'order',
+});
+
+await generateLlmDocs(source, {
 	outputDir: join(PUBLIC_DIR, 'llms-content'),
 	indexPath: join(PUBLIC_DIR, 'llms.txt'),
 	baseUrl: process.env.ECOPAGES_BASE_URL,

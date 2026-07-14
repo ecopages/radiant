@@ -1,6 +1,6 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { docsSource } from '@/lib/docs-source';
+import { getDocsContentSource, getInitializedDocsContentSource } from '@/config/docs';
 import type { ContentEntry } from '@/lib/content-source';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { Banner } from '@/components/banner/banner';
@@ -25,8 +25,8 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 			WeatherApp,
 		],
 	},
-	staticPaths: async () => {
-		const manifest = await docsSource.getManifest();
+	staticPaths: async ({ appConfig }) => {
+		const manifest = await getDocsContentSource(appConfig).getManifest();
 
 		return {
 			paths: manifest.map((post) => ({
@@ -36,9 +36,9 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 			})),
 		};
 	},
-	staticProps: async ({ pathname }) => {
+	staticProps: async ({ pathname, appConfig }) => {
 		const segments = Array.isArray(pathname.params.slug) ? pathname.params.slug : [pathname.params.slug];
-		const entry = await docsSource.getContentEntryBySegments(segments);
+		const entry = await getDocsContentSource(appConfig).getContentEntryBySegments(segments);
 
 		return {
 			props: {
@@ -51,7 +51,7 @@ export default eco.page<{ entry: ContentEntry }, JsxRenderable>({
 		description: entry.description,
 	}),
 	render: async ({ entry }) => {
-		const Content = await docsSource.getContent(entry.slug);
+		const Content = await getInitializedDocsContentSource().getContent(entry.slug);
 
 		return (
 			<section class="docs-page">
