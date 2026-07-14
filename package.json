@@ -44,6 +44,10 @@
 		"packages/*",
 		"playground/*"
 	],
+	"overrides": {
+		"@ecopages/core": "0.2.0-beta.22",
+		"@ecopages/file-system": "0.2.0-beta.22"
+	},
 	"dependencies": {
 		"rehype-pretty-code": "^0.14.1"
 	}
