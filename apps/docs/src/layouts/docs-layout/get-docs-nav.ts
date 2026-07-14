@@ -1,4 +1,5 @@
-import { DOCS_GROUP_ORDER, DOCS_ROOT, docsSource, type ContentEntry } from '@/lib/docs-source';
+import { DOCS_GROUP_ORDER_INDEX, DOCS_ROOT, docsSource } from '@/lib/docs-source';
+import type { ContentEntry } from '@/lib/content-source';
 
 export type DocsNavItem = {
 	title: string;
@@ -15,8 +16,6 @@ export type DocsNav = {
 	rootDir: string;
 	groups: DocsNavGroup[];
 };
-
-const groupOrderIndex = new Map<string, number>(DOCS_GROUP_ORDER.map((name, index) => [name, index]));
 
 /**
  * Builds the grouped sidebar navigation driven entirely by the content
@@ -40,8 +39,8 @@ export async function getDocsNav(rootDir = DOCS_ROOT): Promise<DocsNav> {
 	});
 
 	const orderedGroups = Array.from(byGroup.keys()).sort((a, b) => {
-		const ai = groupOrderIndex.get(a);
-		const bi = groupOrderIndex.get(b);
+		const ai = DOCS_GROUP_ORDER_INDEX.get(a);
+		const bi = DOCS_GROUP_ORDER_INDEX.get(b);
 		if (ai === undefined && bi === undefined) return (groupInsertion.get(a) ?? 0) - (groupInsertion.get(b) ?? 0);
 		if (ai === undefined) return 1;
 		if (bi === undefined) return -1;
