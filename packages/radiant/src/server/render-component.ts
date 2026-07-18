@@ -111,10 +111,7 @@ export type RenderedComponentWithPreview = RenderedComponentPayload & {
 };
 
 /** Minimal component contract needed for framework-agnostic SSR helpers. */
-export type ServerRenderableComponent = object & {
-	renderHost?: () => JsxRenderable;
-	renderHostToString?: (options?: RenderToStringOptions) => string;
-};
+export type ServerRenderableComponent = object;
 
 /** Constructor shape for a server-renderable component. */
 export type ServerRenderableComponentConstructor<TComponent extends ServerRenderableComponent> =
@@ -190,7 +187,7 @@ type RenderComponentSharedOptions<TComponent extends ServerRenderableComponent> 
 	ssrContext?: readonly RenderComponentSsrContextEntry[];
 	/** Clock override used by tests and adapters that need deterministic timestamps. */
 	now?: () => Date;
-	/** JSX server-renderer options forwarded to `renderHostToString()`. */
+	/** JSX server-renderer options forwarded to the Radiant host serializer. */
 	renderOptions?: RenderToStringOptions;
 	/** Lazy asset resolver used when `assets` are not provided directly. */
 	resolveAssets?: ResolveRenderedComponentAssets<TComponent>;
@@ -308,12 +305,10 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 	normalizedOptions: RenderComponentOptions<TComponent>,
 ): Promise<RenderedComponent> {
 	const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
-	const Component =
-		'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
+	const Component = 'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
 	const resolvedClientModuleSrc =
 		normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
-	const resolvedAssets =
-		normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
+	const resolvedAssets = normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
 	const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
 	const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
 	const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
@@ -333,9 +328,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 				);
 				normalizedOptions.initialize?.(component);
 
-				const markup =
-					renderRegisteredRadiantElementHostToString(component, renderOptions) ??
-					requireServerRenderableMarkup(component, renderOptions);
+				const markup = requireRegisteredRadiantElementMarkup(component, renderOptions);
 				const preview = resolveRenderedComponentPreview(component, markup);
 
 				return {
@@ -365,8 +358,7 @@ function resolveRenderedComponentPreview<TComponent extends ServerRenderableComp
 ): JsxRenderable {
 	return (
 		resolveRegisteredRadiantElementPreview(component, markup) ??
-		renderRegisteredRadiantElementHost(component) ??
-		component.renderHost?.() ?? { nodeType: 1, outerHTML: markup }
+		renderRegisteredRadiantElementHost(component) ?? { nodeType: 1, outerHTML: markup }
 	);
 }
 
@@ -469,16 +461,18 @@ function canPrepareSsrHost<TComponent extends ServerRenderableComponent>(
 	return 'innerHTML' in component;
 }
 
-function requireServerRenderableMarkup<TComponent extends ServerRenderableComponent>(
+function requireRegisteredRadiantElementMarkup<TComponent extends ServerRenderableComponent>(
 	component: TComponent,
 	options: RenderToStringOptions,
 ): string {
-	if (typeof component.renderHostToString === 'function') {
-		return component.renderHostToString(options);
+	const markup = renderRegisteredRadiantElementHostToString(component, options);
+
+	if (markup !== undefined) {
+		return markup;
 	}
 
 	throw new Error(
-		`${component.constructor.name} cannot be server-rendered without a registered Radiant SSR host or renderHostToString().`,
+		`${component.constructor.name} cannot be server-rendered without a registered Radiant SSR host. Use a RadiantElement subclass and import a Radiant server SSR entrypoint.`,
 	);
 }
 
