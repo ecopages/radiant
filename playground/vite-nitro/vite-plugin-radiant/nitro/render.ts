@@ -1,4 +1,4 @@
-import { radiantLightDomShimInstalled } from '@ecopages/radiant/server/install-light-dom-shim';
+import { radiantLightDomShimInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
 import {
 	renderComponent,
 	type RenderComponentCallOptions,

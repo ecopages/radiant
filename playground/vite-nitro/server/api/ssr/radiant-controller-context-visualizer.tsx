@@ -1,4 +1,4 @@
-import '@ecopages/radiant/server/install-light-dom-shim';
+import '@ecopages/radiant/server/install-ssr-runtime';
 import { defineHandler } from 'nitro';
 import { ControllerContextVisualizer } from '@/components/radiant-controller-context-visualizer.script';
 
