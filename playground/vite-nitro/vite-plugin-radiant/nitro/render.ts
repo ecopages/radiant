@@ -1,4 +1,4 @@
-import '@ecopages/radiant/server/install-light-dom-shim';
+import { radiantLightDomShimInstalled } from '@ecopages/radiant/server/install-light-dom-shim';
 import {
 	renderComponent,
 	type RenderComponentCallOptions,
@@ -19,6 +19,7 @@ import type { RadiantController } from '@ecopages/radiant';
 import { resolveRadiantSsrAssets } from 'virtual:radiant/ssr-asset-registry';
 import { createRadiantFragmentHeaders } from './fragment-transport';
 
+void radiantLightDomShimInstalled;
 type StringKeyOf<T> = Extract<keyof T, string>;
 
 type RenderSsrComponentProps<T extends object> = Partial<{

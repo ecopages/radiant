@@ -23,8 +23,8 @@
 		"watch:lib": "bun run ./build.ts --watch",
 		"size:check": "bun run ./check-size.ts",
 		"size:report": "bun run ./check-size.ts --report-only",
-		"test:standard": "vitest run",
-		"test:legacy": "vitest run -- --legacy",
+		"test:standard": "vitest run && vitest run --config vitest.browser.config.ts && vitest run --config vitest.e2e.config.ts",
+		"test:legacy": "vitest run -- --legacy && vitest run --config vitest.browser.config.ts -- --legacy && vitest run --config vitest.e2e.config.ts -- --legacy",
 		"test:lib": "bun run test:standard && bun run test:legacy",
 		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
 	},
@@ -39,6 +39,7 @@
 		"@vitest/browser": "^3.2.4",
 		"@vitest/coverage-istanbul": "^3.2.4",
 		"bun-types": "latest",
+		"happy-dom": "^20.0.0",
 		"tsc-alias": "1.8.10",
 		"esbuild": "^0.25.0",
 		"playwright": "^1.52.0",
@@ -53,7 +54,8 @@
 	],
 	"sideEffects": [
 		"./dist/client/install-hydrator.js",
-		"./dist/server/install-light-dom-shim.js"
+		"./dist/server/install-light-dom-shim.js",
+		"./dist/server/install-ssr-scope-adapters.js"
 	],
 	"exports": {
 		"./package.json": {

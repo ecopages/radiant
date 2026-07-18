@@ -17,6 +17,8 @@
 		"./src/dom-render.ts",
 		"./src/dom-render/**/*.ts",
 		"./src/server-render.ts",
+		"./src/ssr-render-scope.ts",
+		"./src/lazy-async-local-storage.ts",
 		"./src/hydration-bindings.ts",
 		"./src/html-escape.ts"
 	]

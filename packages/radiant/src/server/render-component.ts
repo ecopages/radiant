@@ -1,7 +1,9 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
-import { withSsrContextProviders } from './context-ssr';
+import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
+import './install-light-dom-shim';
+import './install-ssr-scope-adapters';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
@@ -299,56 +301,63 @@ export async function renderComponentWithPreview<TComponent extends ServerRender
 	);
 }
 
+/**
+ * Resolves assets and options, then renders one component host.
+ * Async I/O stays outside SSR scope; the scoped callback is the sync snapshot only.
+ */
 async function renderResolvedComponent<TComponent extends ServerRenderableComponent>(
 	normalizedOptions: RenderComponentOptions<TComponent>,
 ): Promise<RenderedComponent> {
-	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), async () => {
-		const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
-		const restoreAmbientContext = withSsrContextProviders(
-			createAmbientSsrContextProviders(normalizedOptions.ssrContext),
-		);
+	const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
+	const Component =
+		'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
+	const resolvedClientModuleSrc =
+		normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
+	const resolvedAssets =
+		normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
+	const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
+	const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
+	const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
+	const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
+	const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
 
-		try {
-			const Component =
-				'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
-			const component = new Component();
-			ensureLegacyHostReady(component, 'ssr');
-			prepareRenderedComponentHost(
-				environment,
-				component,
-				normalizedOptions.authoredContent,
-				normalizedOptions.prepareHost,
+	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), () =>
+		runWithSsrProviderStack(() => {
+			const restoreAmbientContext = withSsrContextProviders(
+				createAmbientSsrContextProviders(normalizedOptions.ssrContext),
 			);
-			normalizedOptions.initialize?.(component);
 
-			const resolvedClientModuleSrc =
-				normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
-			const resolvedAssets =
-				normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
-			const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
-			const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
-			const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
-			const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
-			const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
-			const markup =
-				renderRegisteredRadiantElementHostToString(component, renderOptions) ??
-				requireServerRenderableMarkup(component, renderOptions);
-			const preview = resolveRenderedComponentPreview(component, markup);
+			try {
+				const component = new Component();
+				ensureLegacyHostReady(component, 'ssr');
+				prepareRenderedComponentHost(
+					environment,
+					component,
+					normalizedOptions.authoredContent,
+					normalizedOptions.prepareHost,
+				);
+				normalizedOptions.initialize?.(component);
 
-			return {
-				markup,
-				metadata: {
-					assets,
-					clientModuleUrl: clientModuleSrc,
-					generatedAt,
-					tagName,
-				},
-				preview,
-			};
-		} finally {
-			restoreAmbientContext();
-		}
-	});
+				const markup =
+					renderRegisteredRadiantElementHostToString(component, renderOptions) ??
+					requireServerRenderableMarkup(component, renderOptions);
+				const preview = resolveRenderedComponentPreview(component, markup);
+
+				return {
+					markup,
+					metadata: {
+						assets,
+						clientModuleUrl: clientModuleSrc,
+						generatedAt,
+						tagName,
+					},
+					preview,
+				};
+			} finally {
+				restoreAmbientContext();
+			}
+		}),
+	);
 }
 
 /**
