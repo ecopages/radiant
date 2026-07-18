@@ -64,6 +64,8 @@ const rendered = await renderComponent(CounterCard, {
 
 Prefer `install-ssr-runtime` over calling `installLightDomShim()` alone when you need Radiant host SSR (adapters + runtime lookup). Use `createServerRenderEnvironment()` when you only need host preparation helpers on top of an already-installed runtime.
 
+Lower-level host serialization is also exported as `@ecopages/radiant/server/radiant-element-ssr` (`renderRadiantElementHostToString`). Prefer `render-component` for adapters.
+
 ## Runtime Preparation
 
 If you are not using `install-ssr-runtime` and your process has no `HTMLElement` / `customElements`, install the light-DOM shim before importing Radiant element modules:
