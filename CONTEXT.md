@@ -82,6 +82,14 @@ _Avoid_: fresh client render, static HTML only
 The optional server-side rendering of HTML output before client-side behavior is attached.
 _Avoid_: hydration, client-only render
 
+**SSR Render Scope**:
+The Node-only ambient render context that carries hydrate mode, custom-element render hooks, and symbol-keyed framework state across nested server renders. Ambient values live in module-owned `AsyncLocalStorage` — SSR bundlers must resolve one `@ecopages/jsx` instance (do not inline duplicate copies).
+_Avoid_: browser fallback stack, globalThis ambient store, sync-only ambient state, duplicated inlined SSR modules
+
+**SSR Context Stack**:
+The Node-only ambient provider stack used during SSR so nested hosts resolve Context Providers without a DOM tree. Stored as symbol-keyed state on **SSR Render Scope** (same single-module-instance rule).
+_Avoid_: separate ALS for providers, browser fallback stack, enterWith restore pattern, DOM event bubbling on the server, globalThis ambient store
+
 **Binding**:
 The connection between reactive runtime values and rendered output so targeted updates can flow into the DOM without rebuilding everything.
 _Avoid_: plain property, static value, one-time markup
@@ -125,7 +133,7 @@ _Avoid_: provider, selector field, local state copy
 - The server rendering pipeline may read internal host metadata directly when needed for correct serialization; that does not justify widening the public host contract
 - Internal metadata reads for SSR should go through a small internal extractor module rather than being duplicated across server call sites
 - That extractor belongs in the server layer, not in core
-- Server extraction should use one formalized private internal host shape rather than ad hoc casts scattered across server code
+- Server extraction brands `RadiantElement` with `Symbol.for` and builds a private `InternalRadiantSsrHost` snapshot in the server extractor; it does not import the Element Host class into the extractor (shim order) and does not duck-type eight methods on arbitrary objects
 - That private host shape may include explicitly transitional seams during migration, but those seams should be treated as deletion targets rather than target architecture
 - An **Element Host** exposes both an **Attribute** channel and a **Property** channel
 - A **Property** can hold non-string runtime values that do not fit the **Attribute** channel
@@ -149,6 +157,13 @@ _Avoid_: provider, selector field, local state copy
 - **Radiant** uses **Hydration** to attach live host behavior to existing rendered DOM
 - A **Binding** connects runtime values to rendered output in **Ecopages JSX** and **Radiant**
 - **Reactive Properties** can expose **Bindings** for targeted DOM updates
+- **SSR Context Stack** is stored on **SSR Render Scope**; both require Node `AsyncLocalStorage` and have no sync fallback
+- SSR scope adapters are module-local; SSR bundlers must externalize `@ecopages/*` so Node resolves one instance
+- Concurrent **SSR** trees stay isolated because each request owns its own async-local store
+- Async I/O such as module loading or asset resolution belongs outside **SSR Render Scope**; the scoped callback wraps the synchronous render snapshot
+- Client core must not import the JSX server entry; the server layer installs scope adapters into core instead of pulling Node builtins into the browser
+- Browser and Playwright tests exercise **Hydration** and DOM behavior; they do not run **SSR** writers that need **SSR Render Scope**
+- Node tests own **SSR** correctness; when a hydrate test needs server markup, it uses a pre-rendered HTML fixture rather than importing the server entry in the browser
 
 ## Example dialogue
 
@@ -242,17 +257,34 @@ _Avoid_: provider, selector field, local state copy
 > **Dev:** "What is the difference between a context provider and a consumer?"
 > **Domain expert:** "A **Context Provider** owns the shared context state. A **Context Consumer** resolves that provider from the host tree so it can read or interact with the shared state."
 
+> **Dev:** "Do we keep a sync fallback for SSR ambient state when tests run in the browser?"
+> **Domain expert:** "No. **SSR Render Scope** (including the **SSR Context Stack** stored on it) requires Node `AsyncLocalStorage`. A fallback is a smell; change the test boundary instead of carrying a second ambient model."
+
+> **Dev:** "Can I await fetch inside `withActiveSsrScopeValue(...)`?"
+> **Domain expert:** "Await I/O outside the scope. Enter **SSR Render Scope** only for the synchronous render snapshot so abandoned async work cannot leak ambient state."
+
+> **Dev:** "Where should `renderToString` tests live?"
+> **Domain expert:** "In Node `*.test.*` files. Browser `*.browser.test.*` and Playwright `*.e2e.test.*` files hydrate from fixtures or client-only trees; they do not import the JSX server entry to perform SSR."
+
+> **Dev:** "What do the test file suffixes mean?"
+> **Domain expert:** "`*.test.*` runs on Node and owns **SSR**. `*.browser.test.*` runs in happy-dom for DOM behavior without Playwright. `*.e2e.test.*` runs in Playwright Chromium when real-browser behavior is required."
+
 ## Flagged ambiguities
 
 - "context" is overloaded in this repository: the product already uses **Context** for runtime state-sharing APIs inside Radiant, while this file uses context in the domain-modeling sense for the whole **Radiant Platform**
 - "standalone" does not mean "separate product context" here: **Ecopages JSX** and **Ecopages Signals** are standalone-capable packages inside the same **Radiant Platform**
-- docs apps, playgrounds, and test surfaces are support surfaces for the **Radiant Platform**, not glossary concepts in this context file
+- docs apps and playgrounds are support surfaces for the **Radiant Platform**, not glossary concepts in this context file
+- test file suffixes are contributor conventions, not product glossary terms, but they encode the **SSR** / **Hydration** boundary: `*.test.*` = Node (**SSR**), `*.browser.test.*` = happy-dom, `*.e2e.test.*` = Playwright
+- mixed Node files that need a DOM may use `// @vitest-environment happy-dom`; that still counts as a Node **SSR**-capable process, not a browser fallback for ambient state
+- browser and Playwright suites must not import `@ecopages/jsx/server` as an **SSR** writer; hydrate tests use fixtures or client-only trees
+- Node is the source of truth for server runtime; do not document or branch on Bun as a separate SSR ambient model
 - glossary terms use human-facing product names, not npm package identifiers
 - this glossary is meant to capture platform-defining concepts, not just package identities
 - **Reactive Host** is the umbrella concept above custom-element and controller host styles
 - **Render-owning Element Host** is a narrower concept than **Element Host** and should be used when render lifecycle behavior matters
 - **Render Lifecycle** is the architectural concept behind `update()`, `requestUpdate()`, **Hydration**, and **Slot** projection
 - **SSR** is intentionally modeled as an optional server capability rather than part of the core **Render Lifecycle**
+- **SSR Context Stack** are Node-only ambient contracts with no sync fallback; a fallback means the test or package boundary is wrong
 - **Hydration** is intentionally kept in the core **Render Lifecycle** because it changes client host behavior when existing DOM is present
 - **Hydration** should rely on server-authored markup and markers by default, not on a required generated hydration program
 - A default **Element Host** contract should stay client-oriented; explicit server-rendering surfaces should carry **SSR**

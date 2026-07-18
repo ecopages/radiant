@@ -63,17 +63,17 @@ If hydration markers are missing, the client runtime falls back to a normal rend
 
 ## SSR And Custom Elements
 
-The JSX SSR pipeline can also serialize registered custom elements when their instances implement `renderHostToString(...)`.
-
-That is how Radiant component hosts can participate in JSX SSR while still owning their host render contract.
+When JSX SSR encounters a registered Radiant custom element, the server custom-element render hook asks Radiant's **server pipeline** to serialize the host (same path as `renderRadiantElementHostToString` from `@ecopages/radiant/server/radiant-element-ssr`). Radiant Element Hosts do not expose a durable instance `renderHostToString()` API. That instance method remains only the generic third-party custom-element contract understood by `@ecopages/jsx/server`.
 
 At SSR time the runtime:
 
 1. instantiates the registered custom element constructor
 2. applies normalized attributes and serialized children
-3. calls `renderHostToString(...)`
+3. serializes the host through the Radiant server pipeline (light-DOM only)
 
 Event handlers are not serialized into HTML. They reconnect only during client hydration.
+
+See [Component SSR](./component-ssr.mdx) for Radiant adapter helpers (`renderComponent`, install runtime, light-DOM policy).
 
 ## Server Rendering Rules
 
@@ -106,6 +106,42 @@ const rendered = await renderController(ProductController, {
 
 By contrast, fetching inside `render()` is not part of the current SSR model.
 
+Orchestration **around** SSR may still be async on Node. For example, a route handler can `await` data loading, then call `renderToString(...)` inside `withActiveSsrScopeValue(...)`. Keep component `render()` synchronous; treat SSR as a snapshot of resolved state.
+
+## SSR Render Scope
+
+`renderToString(...)` runs inside an active SSR render scope. `@ecopages/jsx/server` is Node-only and stores that scope in `AsyncLocalStorage`, so concurrent requests and abandoned async work do not leak state across unrelated renders.
+
+Most app code never touches scope directly. Framework adapters use it to carry shared server state across nested `renderToString(...)` calls or split entrypoints.
+
+### When to use scope helpers
+
+| Need | API |
+| --- | --- |
+| Share hydrate binding indexes across sibling `renderToString(...)` calls | `createServerHydrationBindingState()` + `withServerHydrationBindingState(...)` |
+| Share other framework-owned SSR state (asset frames, runtime bridges, etc.) | `withActiveSsrScopeValue(...)` + `getActiveSsrScopeValue(...)` |
+
+Prefer `Symbol.for('@your-package.namespace')` keys so scope values survive entrypoint boundaries. Await I/O outside the scope when you only need scoped state during a synchronous render snapshot.
+
+### Example: sibling renders in one hydration root
+
+```ts
+/** @jsxImportSource @ecopages/jsx */
+
+import { jsx } from '@ecopages/jsx/jsx-runtime';
+import { renderToString, withActiveSsrScopeValue } from '@ecopages/jsx/server';
+
+const SHARED_SCOPE_KEY = Symbol.for('@acme/ssr.shared-root');
+
+const html = withActiveSsrScopeValue(SHARED_SCOPE_KEY, { started: true }, () => {
+	const page = renderToString(jsx('section', { class: 'page', children: 'Page' }), { mode: 'hydrate' });
+	const shell = renderToString(jsx('main', { class: 'layout', children: page }), { mode: 'hydrate' });
+	return shell;
+});
+```
+
+Hydration binding indexes continue across both `renderToString(...)` calls because they share one active SSR scope.
+
 ## Mental Model
 
 The important distinction is:
@@ -118,5 +154,6 @@ They are related, but not the same operation.
 ## Related APIs
 
 - [JSX Client Rendering](/docs/packages/jsx-rendering) for `createRoot(...)`, `hydrate(...)`, and `hasHydrationMarkers(...)`
-- [RadiantElement](/docs/components/radiant-element) for host-owned render and `renderHostToString(...)`
+- [RadiantElement](/docs/components/radiant-element) for host-owned render lifecycle
+- [Component SSR](/docs/ssr/component-ssr) for `renderComponent(...)` and the server pipeline
 - [Hydration](/docs/ssr/hydration) for the current explicit client hydrator contract used by render-owning `RadiantElement` SSR pages

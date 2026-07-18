@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { renderToString, type RenderToStringOptions } from '@ecopages/jsx/server';
-import '@ecopages/radiant/server/install-light-dom-shim';
+import { radiantSsrRuntimeInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
 import { RadiantController, resolveRegisteredController } from '@ecopages/radiant';
 import type {
 	RenderedComponent,
@@ -19,6 +19,8 @@ import {
 	type RadiantDocumentUsage,
 } from '../runtime/document-state';
 import { renderSsrComponent, type RenderSsrComponentOptions } from './render';
+
+void radiantSsrRuntimeInstalled;
 
 export type RenderRadiantNitroPageContext = {
 	rendered: RenderedComponent;

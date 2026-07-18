@@ -85,10 +85,9 @@ renderToString(view, { mode: 'hydrate' });
 
 For render-owning `RadiantElement` hosts this usually means one of:
 
-- `renderComponent(...)`
-- `renderComponentWithPreview(...)`
-- `renderHostToString({ mode: 'hydrate' })`
-- `renderToString({ mode: 'hydrate' })` when you only need the view fragment
+- `renderComponent(...)` / `renderComponentToString(...)` from `@ecopages/radiant/server/render-component`
+- `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` when you need the host string directly
+- `element.renderViewToString({ mode: 'hydrate' })` when you only need the view fragment (after a server SSR entry is imported)
 
 ### 3. Explicit client hydrator install
 

@@ -1,24 +1,32 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
+import { runSsrPreparationCallbacks } from '../core/ssr-preparation';
 import { withSsrContextProviders } from './context-ssr';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
+import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
 import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
+
+export type RadiantElementViewRenderer = (host: InternalRadiantSsrHost, options?: RenderToStringOptions) => string;
 
 export class RadiantElementSsrService {
 	private readonly component: object;
 	private readonly host: InternalRadiantSsrHost;
+	private readonly renderView: RadiantElementViewRenderer;
 
-	constructor(component: object) {
+	constructor(component: object, renderView: RadiantElementViewRenderer) {
 		this.component = component;
 		this.host = toInternalRadiantSsrHost(component);
+		this.renderView = renderView;
 	}
 
 	private ensureReady(): void {
+		assertLightDomSsrSupported(this.component);
 		ensureLegacyHostReady(this.component, 'ssr');
+		runSsrPreparationCallbacks(this.component);
 	}
 
 	public renderHost(): JsxRenderable {
@@ -33,13 +41,11 @@ export class RadiantElementSsrService {
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
 		this.ensureReady();
 		const tagName = this.getTagName();
-		const restoreSsrContexts = withSsrContextProviders(this.host.getContextProviders());
 
-		try {
-			return `<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`;
-		} finally {
-			restoreSsrContexts();
-		}
+		return withSsrContextProviders(
+			this.host.getContextProviders(),
+			() => `<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`,
+		);
 	}
 
 	public getHostAttributes(): Record<string, string> {
@@ -60,7 +66,7 @@ export class RadiantElementSsrService {
 
 		return composeHostContent(
 			{
-				hostContent: this.host.renderViewToString(options),
+				hostContent: this.renderView(this.host, options),
 				authoredHydrationMarkup: this.host.getAuthoredHydrationScriptMarkup?.() ?? '',
 				slotProjectionScript: this.host.getSlotProjectionScriptTag?.() ?? '',
 				hydrationScripts,

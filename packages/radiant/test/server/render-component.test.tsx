@@ -1,4 +1,4 @@
-import '../../src/server/install-light-dom-shim';
+import '../../src/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
 import { describe, expect, test, vi } from 'vitest';
 import {
@@ -27,7 +27,6 @@ import {
 	styleAsset,
 	toRenderedComponentPayload,
 	type RenderedComponentAsset,
-	type ServerRenderableComponent,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
@@ -49,6 +48,15 @@ class RenderComponentCard extends RadiantElement {
 				<p>{this.label}</p>
 			</section>
 		);
+	}
+}
+
+@customElement('render-component-shadow-card-test')
+class RenderComponentShadowCard extends RadiantElement {
+	protected override readonly renderRootMode = 'shadow';
+
+	override render() {
+		return <p>shadow only</p>;
 	}
 }
 
@@ -256,6 +264,27 @@ describe('render-component server helpers', () => {
 		expect(renderToString(<render-component-card-test />)).toBe(
 			'<render-component-card-test></render-component-card-test>',
 		);
+	});
+
+	test('renderComponent() rejects shadow renderRootMode hosts (light-DOM SSR only)', async () => {
+		await expect(renderComponent(RenderComponentShadowCard)).rejects.toThrow(/light-DOM only/);
+	});
+
+	test('concurrent renderComponent() calls keep SSR ambient providers isolated', async () => {
+		const [first, second] = await Promise.all([
+			renderComponent(RenderComponentContextCard, {
+				ssrContext: [{ context: renderComponentContext, value: { label: 'concurrent-a' } }],
+			}),
+			renderComponent(RenderComponentContextCard, {
+				ssrContext: [{ context: renderComponentContext, value: { label: 'concurrent-b' } }],
+			}),
+		]);
+
+		expect(first.markup).toContain('concurrent-a');
+		expect(first.markup).not.toContain('concurrent-b');
+		expect(second.markup).toContain('concurrent-b');
+		expect(second.markup).not.toContain('concurrent-a');
+		expect(getRadiantElementSsrRuntime()).toBeUndefined();
 	});
 
 	test('renderComponent() returns the canonical server render descriptor', async () => {
@@ -686,11 +715,7 @@ describe('render-component server helpers', () => {
 	});
 
 	test('renderComponentWithPreview() throws when tag metadata is missing', async () => {
-		class UntaggedRenderable implements ServerRenderableComponent {
-			renderHostToString(): string {
-				return '<untagged-renderable></untagged-renderable>';
-			}
-		}
+		class UntaggedRenderable {}
 
 		await expect(
 			renderComponentWithPreview(
@@ -700,16 +725,13 @@ describe('render-component server helpers', () => {
 	});
 
 	test('renderComponent() rejects host preparation for non-element renderables', async () => {
-		class StringOnlyRenderable implements ServerRenderableComponent {
-			renderHostToString(): string {
-				return '<string-only-renderable></string-only-renderable>';
-			}
-		}
+		class StringOnlyRenderable {}
 
 		await expect(
 			renderComponent(
 				StringOnlyRenderable as unknown as CustomElementConstructor & { new (): StringOnlyRenderable },
 				{
+					tagName: 'string-only-renderable',
 					prepareHost: () => {},
 				},
 			),

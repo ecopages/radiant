@@ -1,5 +1,4 @@
 /// <reference types="vitest" />
-/// <reference types="@vitest/browser/providers/playwright" />
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import standardConfig from './tsconfig.json';
@@ -27,12 +26,9 @@ export default defineConfig({
 		},
 	},
 	test: {
-		browser: {
-			enabled: true,
-			headless: true,
-			provider: 'playwright',
-			instances: [{ browser: 'chromium' }],
-		},
+		environment: 'node',
+		include: ['test/**/*.test.{ts,tsx}'],
+		exclude: ['test/**/*.browser.test.{ts,tsx}', 'test/**/*.e2e.test.{ts,tsx}'],
 		coverage: {
 			provider: 'istanbul',
 			include: ['src'],

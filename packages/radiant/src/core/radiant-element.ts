@@ -1,6 +1,5 @@
 import type { EventEmitter } from '../tools';
 import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
-import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { HostSsrRegistry } from './host-ssr-registry';
 import { getReactivePropDefinitions, type ReactivePropDefinition } from './reactive-prop-metadata';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
@@ -23,8 +22,8 @@ import { ReactiveHost } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import { getRadiantElementSsrRuntime } from './radiant-element-ssr-registry';
-import type { InternalRadiantSsrHost } from './radiant-element-ssr-host';
+import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
+import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 import { getInitialValue } from '../utils/attribute-utils';
 
 export type {
@@ -410,7 +409,7 @@ export class RadiantElement<Bindings extends object = {}>
 		return Reflect.get(this, name);
 	}
 
-	public renderViewToString(options: RenderToStringOptions = {}): string {
+	public renderViewToString(options: RadiantElementRenderToStringOptions = {}): string {
 		if (!this.shouldRunRenderLifecycle()) {
 			return this.innerHTML;
 		}
@@ -418,7 +417,7 @@ export class RadiantElement<Bindings extends object = {}>
 		ensureLegacyHostReady(this, 'ssr');
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this as unknown as InternalRadiantSsrHost, options);
+		return requireRadiantElementSsrRuntime().renderView(this, options);
 	}
 
 	public hydrate(): void {
@@ -666,6 +665,11 @@ export class RadiantElement<Bindings extends object = {}>
 		};
 	}
 }
+
+Object.defineProperty(RadiantElement.prototype, RADIANT_ELEMENT_BRAND, {
+	value: true,
+	configurable: true,
+});
 
 function requireRadiantElementSsrRuntime() {
 	const runtime = getRadiantElementSsrRuntime();

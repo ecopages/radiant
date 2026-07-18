@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, test } from 'vitest';
+import {
+	HYDRATE_BUTTON_ALPHA_HTML,
+	HYDRATE_GRADIENT_ICON_HTML,
+	HYDRATE_TODO_ICON_BUTTON_HTML,
+} from './fixtures/hydrate-html.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -6,7 +11,6 @@ async function loadModule<T>(path: string): Promise<T> {
 
 const loadJsxRuntime = async () => loadModule<typeof import('../dist/jsx-runtime.js')>('../dist/jsx-runtime.js');
 const loadJsxModule = async () => loadModule<typeof import('../dist/index.js')>('../dist/index.js');
-const loadServerRender = async () => loadModule<typeof import('../dist/server.js')>('../dist/server.js');
 
 describe('Radiant JSX dist DOM reconciliation parity', () => {
 	beforeEach(() => {
@@ -66,11 +70,7 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 	});
 
 	test('hydrates nested SVG defs with canonical camel-cased element names under HTML parents', async () => {
-		const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 
@@ -109,7 +109,7 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 				}),
 			});
 
-		container.innerHTML = renderToString(renderGradientIcon(), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_GRADIENT_ICON_HTML;
 		root.hydrate(renderGradientIcon());
 
 		const gradient = container.querySelector('linearGradient');
@@ -124,11 +124,7 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 	});
 
 	test('hydrates SVG attribute markers without transient value drift', async () => {
-		const [jsxRuntime, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [jsxRuntime, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const { jsx, jsxs } = jsxRuntime;
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -163,7 +159,7 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 				],
 			});
 
-		container.innerHTML = renderToString(renderIconButton(), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_TODO_ICON_BUTTON_HTML;
 
 		const invalidAssignments: Array<{ name: string; value: string | null }> = [];
 		const originalSetAttribute = Element.prototype.setAttribute;
@@ -193,11 +189,7 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 	});
 
 	test('removes SSR hydration marker attributes after template hydration', async () => {
-		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		let clickCount = 0;
@@ -213,7 +205,7 @@ describe('Radiant JSX dist DOM reconciliation parity', () => {
 				children: label,
 			});
 
-		container.innerHTML = renderToString(renderHydratedButton('Alpha'), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_BUTTON_ALPHA_HTML;
 		root.hydrate(renderHydratedButton('Alpha'));
 
 		const initialButton = container.querySelector('button');
