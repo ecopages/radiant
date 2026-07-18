@@ -1,7 +1,7 @@
-import { radiantLightDomShimInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
+import { radiantSsrRuntimeInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
 import { definePlugin } from 'nitro';
 
-void radiantLightDomShimInstalled;
+void radiantSsrRuntimeInstalled;
 
 /**
  * Install the Radiant SSR runtime (light-DOM shim + scope adapters) at server boot,
