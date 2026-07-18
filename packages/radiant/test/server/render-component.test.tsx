@@ -27,7 +27,6 @@ import {
 	styleAsset,
 	toRenderedComponentPayload,
 	type RenderedComponentAsset,
-	type ServerRenderableComponent,
 } from '../../src/server/render-component';
 import { renderController, renderControllerToPayload } from '../../src/server/render-controller';
 import { resolveSsrContextValue } from '../../src/server/context-ssr';
@@ -699,11 +698,7 @@ describe('render-component server helpers', () => {
 	});
 
 	test('renderComponentWithPreview() throws when tag metadata is missing', async () => {
-		class UntaggedRenderable implements ServerRenderableComponent {
-			renderHostToString(): string {
-				return '<untagged-renderable></untagged-renderable>';
-			}
-		}
+		class UntaggedRenderable {}
 
 		await expect(
 			renderComponentWithPreview(
@@ -713,11 +708,7 @@ describe('render-component server helpers', () => {
 	});
 
 	test('renderComponent() rejects host preparation for non-element renderables', async () => {
-		class StringOnlyRenderable implements ServerRenderableComponent {
-			renderHostToString(): string {
-				return '<string-only-renderable></string-only-renderable>';
-			}
-		}
+		class StringOnlyRenderable {}
 
 		await expect(
 			renderComponent(
