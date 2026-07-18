@@ -78,6 +78,21 @@ describe('RadiantElement SSR', () => {
 		expect(renderRadiantElementViewToString(element)).toBe('<p data-ref="message">Hello SSR</p>');
 	});
 
+	test('renderRadiantElementHostToString() rejects shadow renderRootMode hosts', () => {
+		@customElement('server-shadow-host-card-test')
+		class ServerShadowHostCard extends RadiantElement {
+			protected override readonly renderRootMode = 'shadow';
+
+			override render() {
+				return <p>shadow</p>;
+			}
+		}
+
+		const element = createCustomElement<ServerShadowHostCard>('server-shadow-host-card-test');
+
+		expect(() => renderRadiantElementHostToString(element)).toThrow(/light-DOM only/);
+	});
+
 	test('renderHostToString() serializes the host and current view', () => {
 		class ServerHostGreetingCard extends RadiantElement {
 			message = 'Hello host SSR';

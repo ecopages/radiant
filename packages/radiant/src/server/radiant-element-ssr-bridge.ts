@@ -8,6 +8,7 @@ import {
 	withServerCustomElementRenderHook,
 	withServerHydrationBindingState,
 } from '@ecopages/jsx/server';
+import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { RadiantElementSsrService } from './radiant-element-ssr-service';
 import { runWithSsrProviderStack } from './context-ssr';
 import './install-ssr-runtime';
@@ -88,6 +89,8 @@ export function renderRadiantElementViewToString(
 	component: RadiantElementTrackedRenderSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
+	assertLightDomSsrSupported(component);
+
 	return withServerRadiantElementSsrRuntime(() =>
 		withRadiantServerCustomElementRenderBridge(() =>
 			renderJsxToString(getRadiantElementTrackedRenderOutput(component).value, options),

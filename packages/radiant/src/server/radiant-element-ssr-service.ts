@@ -6,6 +6,7 @@ import { withSsrContextProviders } from './context-ssr';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
+import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
 import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
 
@@ -26,6 +27,7 @@ export class RadiantElementSsrService {
 	}
 
 	private ensureReady(): void {
+		assertLightDomSsrSupported(this.component);
 		ensureLegacyHostReady(this.component, 'ssr');
 		runSsrPreparationCallbacks(this.component);
 	}
