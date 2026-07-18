@@ -132,8 +132,7 @@ async function renderResolvedController<TController extends RadiantController>(
 	options: RenderControllerCallOptions<TController>,
 ): Promise<RenderedComponent> {
 	const tagName = normalizeRenderedControllerTagName(options.tagName);
-	const resolvedClientModuleSrc =
-		options.clientModuleSrc ?? (await options.resolveClientModuleSrc?.(Controller));
+	const resolvedClientModuleSrc = options.clientModuleSrc ?? (await options.resolveClientModuleSrc?.(Controller));
 	const resolvedAssets = options.assets ?? (await options.resolveAssets?.(Controller)) ?? [];
 	const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
 	const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;

@@ -58,13 +58,13 @@ Signal-like values that expose `get()` and `subscribe(...)` can be passed direct
 
 Choose the narrowest entrypoint that matches the environment you are writing for.
 
-| Entrypoint                      | Use it for                                                                | Includes                                                                                     |
-| ------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `@ecopages/jsx`                 | shared library code, examples, and app code that wants one import path    | JSX primitives, DOM mounting, hydration, SSR rendering, advanced SSR hooks, and shared types |
-| `@ecopages/jsx/client`          | browser entry files and DOM-only helpers                                  | JSX primitives, DOM mounting, hydration, and shared renderable types                         |
+| Entrypoint                      | Use it for                                                                | Includes                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `@ecopages/jsx`                 | shared library code, examples, and app code that wants one import path    | JSX primitives, DOM mounting, hydration, SSR rendering, advanced SSR hooks, and shared types                      |
+| `@ecopages/jsx/client`          | browser entry files and DOM-only helpers                                  | JSX primitives, DOM mounting, hydration, and shared renderable types                                              |
 | `@ecopages/jsx/server`          | SSR adapters, Node or Bun HTML rendering, and custom server-element hooks | `renderToString(...)`, custom-element render hooks, SSR render scope helpers, and hydration binding scope helpers |
-| `@ecopages/jsx/jsx-runtime`     | automatic JSX runtime wiring                                              | `jsx`, `jsxs`, `Fragment`, and runtime JSX types                                             |
-| `@ecopages/jsx/jsx-dev-runtime` | dev-mode automatic JSX runtime wiring                                     | development runtime alias for toolchains that emit `jsxDEV(...)`                             |
+| `@ecopages/jsx/jsx-runtime`     | automatic JSX runtime wiring                                              | `jsx`, `jsxs`, `Fragment`, and runtime JSX types                                                                  |
+| `@ecopages/jsx/jsx-dev-runtime` | dev-mode automatic JSX runtime wiring                                     | development runtime alias for toolchains that emit `jsxDEV(...)`                                                  |
 
 If a module is environment-specific, prefer the subpath import even when the root barrel would also work. That keeps browser-only and server-only code obvious at the import site.
 

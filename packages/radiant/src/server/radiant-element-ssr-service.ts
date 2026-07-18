@@ -10,10 +10,7 @@ import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
 import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
 
-export type RadiantElementViewRenderer = (
-	host: InternalRadiantSsrHost,
-	options?: RenderToStringOptions,
-) => string;
+export type RadiantElementViewRenderer = (host: InternalRadiantSsrHost, options?: RenderToStringOptions) => string;
 
 export class RadiantElementSsrService {
 	private readonly component: object;
@@ -45,8 +42,9 @@ export class RadiantElementSsrService {
 		this.ensureReady();
 		const tagName = this.getTagName();
 
-		return withSsrContextProviders(this.host.getContextProviders(), () =>
-			`<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`,
+		return withSsrContextProviders(
+			this.host.getContextProviders(),
+			() => `<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`,
 		);
 	}
 
