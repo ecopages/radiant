@@ -63,17 +63,17 @@ If hydration markers are missing, the client runtime falls back to a normal rend
 
 ## SSR And Custom Elements
 
-The JSX SSR pipeline can also serialize registered custom elements when their instances implement `renderHostToString(...)`.
-
-That is how Radiant component hosts can participate in JSX SSR while still owning their host render contract.
+When JSX SSR encounters a registered Radiant custom element, the server custom-element render hook asks Radiant's **server pipeline** to serialize the host (via the installed SSR runtime and `renderRadiantElementHostToString`-equivalent path). Hosts do not expose a durable instance `renderHostToString()` API.
 
 At SSR time the runtime:
 
 1. instantiates the registered custom element constructor
 2. applies normalized attributes and serialized children
-3. calls `renderHostToString(...)`
+3. serializes the host through the Radiant server pipeline (light-DOM only)
 
 Event handlers are not serialized into HTML. They reconnect only during client hydration.
+
+See [Component SSR](./component-ssr.mdx) for Radiant adapter helpers (`renderComponent`, install runtime, light-DOM policy).
 
 ## Server Rendering Rules
 

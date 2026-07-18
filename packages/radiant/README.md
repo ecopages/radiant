@@ -144,18 +144,17 @@ Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive cha
 
 ## SSR And Hydration
 
-`RadiantElement` has two SSR surfaces:
+Prefer the server pipeline for host HTML:
 
-- `renderToString()` serializes the component view only.
-- `renderHostToString()` serializes the custom-element host together with the current view.
+- `renderComponent(...)` / `renderComponentToString(...)` from `@ecopages/radiant/server/render-component` for adapters and fragments
+- `renderRadiantElementHostToString(...)` from the server bridge for lower-level host serialization
+- `renderViewToString()` on the element only serializes the JSX view through the installed server runtime
 
-In practice, `renderHostToString()` is the right default for full component SSR because it emits `<my-element>...</my-element>` instead of only the view fragment.
+Radiant SSR is light-DOM only. Shadow `renderRootMode` hosts throw during server serialization; client shadow rendering remains valid.
 
-`mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is now explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
+`mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 
-For element-owned SSR, the instance methods still work. For adapters, fragment responses, and shared server utilities, prefer the explicit helpers under `@ecopages/radiant/server/render-component`.
-
-Server runtime setup, fragment rendering helpers, and SSR-specific import guidance now live in [src/server/README.md](src/server/README.md).
+Server runtime setup, fragment rendering helpers, and SSR-specific import guidance live in [src/server/README.md](src/server/README.md).
 
 For the client lifecycle and hydration flow diagram, see [src/core/README.md](src/core/README.md).
 
