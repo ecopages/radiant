@@ -1,14 +1,14 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
-import { withSsrContextProviders } from './context-ssr';
+import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
+import './install-ssr-runtime';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
 import {
 	resolveRegisteredRadiantElementPreview,
-	renderRegisteredRadiantElementHost,
 	renderRegisteredRadiantElementHostToString,
 } from './radiant-element-ssr-bridge';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
@@ -110,10 +110,7 @@ export type RenderedComponentWithPreview = RenderedComponentPayload & {
 };
 
 /** Minimal component contract needed for framework-agnostic SSR helpers. */
-export type ServerRenderableComponent = object & {
-	renderHost?: () => JsxRenderable;
-	renderHostToString?: (options?: RenderToStringOptions) => string;
-};
+export type ServerRenderableComponent = object;
 
 /** Constructor shape for a server-renderable component. */
 export type ServerRenderableComponentConstructor<TComponent extends ServerRenderableComponent> =
@@ -189,7 +186,7 @@ type RenderComponentSharedOptions<TComponent extends ServerRenderableComponent> 
 	ssrContext?: readonly RenderComponentSsrContextEntry[];
 	/** Clock override used by tests and adapters that need deterministic timestamps. */
 	now?: () => Date;
-	/** JSX server-renderer options forwarded to `renderHostToString()`. */
+	/** JSX server-renderer options forwarded to the Radiant host serializer. */
 	renderOptions?: RenderToStringOptions;
 	/** Lazy asset resolver used when `assets` are not provided directly. */
 	resolveAssets?: ResolveRenderedComponentAssets<TComponent>;
@@ -299,56 +296,53 @@ export async function renderComponentWithPreview<TComponent extends ServerRender
 	);
 }
 
+/**
+ * Resolves assets and options, then renders one component host.
+ * Async I/O stays outside SSR scope; the scoped callback is the sync snapshot only.
+ */
 async function renderResolvedComponent<TComponent extends ServerRenderableComponent>(
 	normalizedOptions: RenderComponentOptions<TComponent>,
 ): Promise<RenderedComponent> {
-	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), async () => {
-		const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
-		const restoreAmbientContext = withSsrContextProviders(
-			createAmbientSsrContextProviders(normalizedOptions.ssrContext),
-		);
+	const environment = normalizedOptions.environment ?? createServerRenderEnvironment();
+	const Component = 'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
+	const resolvedClientModuleSrc =
+		normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
+	const resolvedAssets = normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
+	const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
+	const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
+	const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
+	const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
+	const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
 
-		try {
-			const Component =
-				'component' in normalizedOptions ? normalizedOptions.component : await normalizedOptions.load();
-			const component = new Component();
-			ensureLegacyHostReady(component, 'ssr');
-			prepareRenderedComponentHost(
-				environment,
-				component,
-				normalizedOptions.authoredContent,
-				normalizedOptions.prepareHost,
-			);
-			normalizedOptions.initialize?.(component);
+	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), () =>
+		runWithSsrProviderStack(() =>
+			withSsrContextProviders(createAmbientSsrContextProviders(normalizedOptions.ssrContext), () => {
+				const component = new Component();
+				ensureLegacyHostReady(component, 'ssr');
+				prepareRenderedComponentHost(
+					environment,
+					component,
+					normalizedOptions.authoredContent,
+					normalizedOptions.prepareHost,
+				);
+				normalizedOptions.initialize?.(component);
 
-			const resolvedClientModuleSrc =
-				normalizedOptions.clientModuleSrc ?? (await normalizedOptions.resolveClientModuleSrc?.(Component));
-			const resolvedAssets =
-				normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
-			const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
-			const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
-			const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
-			const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
-			const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
-			const markup =
-				renderRegisteredRadiantElementHostToString(component, renderOptions) ??
-				requireServerRenderableMarkup(component, renderOptions);
-			const preview = resolveRenderedComponentPreview(component, markup);
+				const markup = requireRegisteredRadiantElementMarkup(component, renderOptions);
+				const preview = resolveRenderedComponentPreview(component, markup);
 
-			return {
-				markup,
-				metadata: {
-					assets,
-					clientModuleUrl: clientModuleSrc,
-					generatedAt,
-					tagName,
-				},
-				preview,
-			};
-		} finally {
-			restoreAmbientContext();
-		}
-	});
+				return {
+					markup,
+					metadata: {
+						assets,
+						clientModuleUrl: clientModuleSrc,
+						generatedAt,
+						tagName,
+					},
+					preview,
+				};
+			}),
+		),
+	);
 }
 
 /**
@@ -361,11 +355,7 @@ function resolveRenderedComponentPreview<TComponent extends ServerRenderableComp
 	component: TComponent,
 	markup: string,
 ): JsxRenderable {
-	return (
-		resolveRegisteredRadiantElementPreview(component, markup) ??
-		renderRegisteredRadiantElementHost(component) ??
-		component.renderHost?.() ?? { nodeType: 1, outerHTML: markup }
-	);
+	return resolveRegisteredRadiantElementPreview(component) ?? { nodeType: 1, outerHTML: markup };
 }
 
 function prepareRenderedComponentHost<TComponent extends ServerRenderableComponent>(
@@ -467,16 +457,18 @@ function canPrepareSsrHost<TComponent extends ServerRenderableComponent>(
 	return 'innerHTML' in component;
 }
 
-function requireServerRenderableMarkup<TComponent extends ServerRenderableComponent>(
+function requireRegisteredRadiantElementMarkup<TComponent extends ServerRenderableComponent>(
 	component: TComponent,
 	options: RenderToStringOptions,
 ): string {
-	if (typeof component.renderHostToString === 'function') {
-		return component.renderHostToString(options);
+	const markup = renderRegisteredRadiantElementHostToString(component, options);
+
+	if (markup !== undefined) {
+		return markup;
 	}
 
 	throw new Error(
-		`${component.constructor.name} cannot be server-rendered without a registered Radiant SSR host or renderHostToString().`,
+		`${component.constructor.name} cannot be server-rendered without a registered Radiant SSR host. Use a RadiantElement subclass and import a Radiant server SSR entrypoint.`,
 	);
 }
 

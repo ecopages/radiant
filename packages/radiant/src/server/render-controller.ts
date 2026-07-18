@@ -4,7 +4,8 @@ import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-regist
 import type { RadiantController } from '../core/radiant-controller';
 import { CONTROLLER_ATTRIBUTE } from '../controller-registry';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { withSsrContextProviders } from './context-ssr';
+import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
+import './install-ssr-runtime';
 import { ensureLightDomShim } from './light-dom-shim';
 import { withRadiantServerCustomElementRenderBridge } from './radiant-element-ssr-bridge';
 import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
@@ -122,46 +123,51 @@ export async function renderControllerWithPreview<TController extends RadiantCon
 	return toRenderedComponentWithPreview(await renderResolvedController(controller, options));
 }
 
+/**
+ * Resolves assets and options, then renders one controller host.
+ * Async I/O stays outside SSR scope; the scoped callback is the sync snapshot only.
+ */
 async function renderResolvedController<TController extends RadiantController>(
 	Controller: ServerRenderableControllerConstructor<TController>,
 	options: RenderControllerCallOptions<TController>,
 ): Promise<RenderedComponent> {
-	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), async () => {
-		const tagName = normalizeRenderedControllerTagName(options.tagName);
-		const host = createRenderedControllerHost(
-			tagName,
-			normalizeRenderedControllerHostAttributes(Controller, options),
-		);
-		const controller = new Controller(host);
-		ensureLegacyHostReady(controller, 'ssr');
+	const tagName = normalizeRenderedControllerTagName(options.tagName);
+	const resolvedClientModuleSrc = options.clientModuleSrc ?? (await options.resolveClientModuleSrc?.(Controller));
+	const resolvedAssets = options.assets ?? (await options.resolveAssets?.(Controller)) ?? [];
+	const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
+	const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
+	const generatedAt = (options.now ?? createDefaultRenderTimestamp)().toISOString();
+	const renderOptions = normalizeRenderOptions(options.renderOptions);
 
-		try {
-			options.initialize?.(controller);
-			controller.runWithSsrLifecycle(() => controller.connect());
+	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), () =>
+		runWithSsrProviderStack(() => {
+			const host = createRenderedControllerHost(
+				tagName,
+				normalizeRenderedControllerHostAttributes(Controller, options),
+			);
+			const controller = new Controller(host);
+			ensureLegacyHostReady(controller, 'ssr');
 
-			const resolvedClientModuleSrc =
-				options.clientModuleSrc ?? (await options.resolveClientModuleSrc?.(Controller));
-			const resolvedAssets = options.assets ?? (await options.resolveAssets?.(Controller)) ?? [];
-			const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
-			const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
-			const generatedAt = (options.now ?? createDefaultRenderTimestamp)().toISOString();
-			const renderOptions = normalizeRenderOptions(options.renderOptions);
-			const markup = renderRenderedControllerHost(controller, tagName, renderOptions);
+			try {
+				options.initialize?.(controller);
+				controller.runWithSsrLifecycle(() => controller.connect());
+				const markup = renderRenderedControllerHost(controller, tagName, renderOptions);
 
-			return {
-				markup,
-				metadata: {
-					assets,
-					clientModuleUrl: clientModuleSrc,
-					generatedAt,
-					tagName,
-				},
-				preview: { nodeType: 1, outerHTML: markup },
-			};
-		} finally {
-			controller.disconnect();
-		}
-	});
+				return {
+					markup,
+					metadata: {
+						assets,
+						clientModuleUrl: clientModuleSrc,
+						generatedAt,
+						tagName,
+					},
+					preview: { nodeType: 1, outerHTML: markup },
+				};
+			} finally {
+				controller.disconnect();
+			}
+		}),
+	);
 }
 
 function normalizeRenderedControllerTagName(tagName: string): string {
@@ -307,9 +313,7 @@ function renderRenderedControllerHost(
 	tagName: string,
 	options: RenderToStringOptions,
 ): string {
-	const restoreSsrContexts = withSsrContextProviders(controller.getSsrContextProviders());
-
-	try {
+	return withSsrContextProviders(controller.getSsrContextProviders(), () => {
 		const hostContent = withRadiantServerCustomElementRenderBridge(() =>
 			renderJsxToString(controller.render(), options),
 		);
@@ -323,9 +327,7 @@ function renderRenderedControllerHost(
 			: '';
 
 		return `<${tagName}${serializeRenderedControllerHostAttributes(controller.host)}>${hostContent}${hydrationScripts}</${tagName}>`;
-	} finally {
-		restoreSsrContexts();
-	}
+	});
 }
 
 function serializeRenderedControllerHostAttributes(host: Element): string {

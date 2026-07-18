@@ -1,5 +1,6 @@
 import { escapeCssIdentifier } from '../../tools/escape-css-identifier';
 import { MinimalCustomElementsRegistry, MinimalDocument, type MinimalCustomElementRegistry } from './document';
+import './html';
 import {
 	MinimalCustomEvent,
 	MinimalElement,

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { waitFor } from '@testing-library/dom';
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';

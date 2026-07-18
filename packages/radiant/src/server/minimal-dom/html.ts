@@ -1,4 +1,5 @@
 import { collectTopLevelHtmlFragments, parseHtmlTagToken, type ParsedHtmlTag } from '../html-parser';
+import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import {
 	getInstalledDocumentLike,
 	MinimalElement,
@@ -6,7 +7,10 @@ import {
 	MinimalHTMLElement,
 	MinimalNode,
 	MinimalTextNode,
+	registerMinimalDomHtmlParsers,
 } from './nodes';
+
+export { toDataAttributeName, toDatasetPropertyName } from './dataset';
 
 export function createElementFromFragment(fragment: string, tag: ParsedHtmlTag, ownerDocument: Document | null): Node {
 	const element =
@@ -38,14 +42,6 @@ export function parseHtmlToNodes(html: string, ownerDocument: Document | null = 
 	});
 }
 
-export function toDataAttributeName(property: string): string {
-	return `data-${property.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-}
-
-export function toDatasetPropertyName(attributeName: string): string {
-	return attributeName.replace(/-([a-z])/g, (_match, character: string) => character.toUpperCase());
-}
-
 export function serializeNodeHtml(node: Node): string {
 	if (node.nodeType === MinimalNode.TEXT_NODE) {
 		return node.textContent ?? '';
@@ -53,3 +49,8 @@ export function serializeNodeHtml(node: Node): string {
 
 	return 'outerHTML' in node && typeof node.outerHTML === 'string' ? node.outerHTML : (node.textContent ?? '');
 }
+
+registerMinimalDomHtmlParsers({
+	parseHtmlToNodes,
+	serializeNodeHtml,
+});

@@ -8,8 +8,11 @@ import {
 	withServerCustomElementRenderHook,
 	withServerHydrationBindingState,
 } from '@ecopages/jsx/server';
+import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { RadiantElementSsrService } from './radiant-element-ssr-service';
-import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
+import { runWithSsrProviderStack } from './context-ssr';
+import './install-ssr-runtime';
+import { isRadiantElementServerRenderable } from './radiant-element-ssr-extractor';
 import type {
 	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
@@ -21,7 +24,18 @@ import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-regist
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 
 export function createRadiantElementSsrService(component: object): RadiantElementSsrService {
-	return new RadiantElementSsrService(component);
+	return new RadiantElementSsrService(component, renderRadiantElementViewToString);
+}
+
+/** One host-serialization entry used by adapters and nested JSX custom-element SSR. */
+export function renderRadiantElementHostToString(
+	component: RadiantElementServerRenderSsrCapable,
+	options: RenderToStringOptions = {},
+): string {
+	return withServerRadiantElementSsrRuntime(() => {
+		const service = createRadiantElementSsrService(component);
+		return service.renderHostToString(options, service.getHostAttributes());
+	});
 }
 
 export function renderRadiantElementHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable {
@@ -32,60 +46,38 @@ export function renderRadiantElementHost(component: RadiantElementServerRenderSs
 }
 
 export function renderRegisteredRadiantElementHost(component: unknown): JsxRenderable | undefined {
-	if (isRadiantElementServerRenderable(component)) {
-		return renderRadiantElementHost(component);
-	}
-
-	if (!isLegacyServerRenderable(component)) {
+	if (!isRadiantElementServerRenderable(component)) {
 		return undefined;
 	}
 
-	return component.renderHost?.() ?? { nodeType: 1, outerHTML: component.renderHostToString({ mode: 'hydrate' }) };
-}
-
-export function renderRadiantElementHostToString(
-	component: RadiantElementServerRenderSsrCapable,
-	options: RenderToStringOptions = {},
-): string {
-	return withServerRadiantElementSsrRuntime(() =>
-		createRadiantElementSsrService(component).renderHostToString(
-			options,
-			getRadiantElementHostSsrAttributes(component),
-		),
-	);
+	return renderRadiantElementHost(component);
 }
 
 export function renderRegisteredRadiantElementHostToString(
 	component: unknown,
 	options: RenderToStringOptions = {},
 ): string | undefined {
-	if (isRadiantElementServerRenderable(component)) {
-		return renderRadiantElementHostToString(component, options);
-	}
-
-	if (!isLegacyServerRenderable(component)) {
+	if (!isRadiantElementServerRenderable(component)) {
 		return undefined;
 	}
 
-	return component.renderHostToString(options);
+	return renderRadiantElementHostToString(component, options);
 }
 
-export function resolveRegisteredRadiantElementPreview(component: unknown, markup: string): JsxRenderable | undefined {
-	if (isRadiantElementServerRenderable(component)) {
-		return renderRadiantElementHost(component);
-	}
-
-	if (!isLegacyServerRenderable(component)) {
+export function resolveRegisteredRadiantElementPreview(component: unknown): JsxRenderable | undefined {
+	if (!isRadiantElementServerRenderable(component)) {
 		return undefined;
 	}
 
-	return component.renderHost?.() ?? { nodeType: 1, outerHTML: markup };
+	return renderRadiantElementHost(component);
 }
 
 export function renderRadiantElementViewToString(
 	component: RadiantElementTrackedRenderSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
+	assertLightDomSsrSupported(component);
+
 	return withServerRadiantElementSsrRuntime(() =>
 		withRadiantServerCustomElementRenderBridge(() =>
 			renderJsxToString(getRadiantElementTrackedRenderOutput(component).value, options),
@@ -111,51 +103,40 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
 }
 
 export function resolveRadiantElementSsrHostBridge(component: object): object | undefined {
-	return resolveInternalRadiantElementSsrHostSource(component);
+	return isRadiantElementServerRenderable(component) ? component : undefined;
 }
 
+/**
+ * Installs the JSX custom-element render hook so nested CEs serialize through
+ * {@link renderRadiantElementHostToString} (same path as `renderComponent`).
+ */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withForcedServerCustomElementRendering(() =>
 		withServerCustomElementRenderHook(({ instance }) => {
-			if (isRadiantElementServerRenderable(instance)) {
-				return {
-					nodeType: 1,
-					get outerHTML() {
-						const hydrate = isServerRenderHydrationActive();
-						const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
-
-						if (!hydrate) {
-							return renderRadiantElementHostToString(instance, options);
-						}
-
-						return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
-							renderRadiantElementHostToString(instance, options),
-						);
-					},
-				};
-			}
-
-			if (!isLegacyServerRenderable(instance)) {
+			if (!isRadiantElementServerRenderable(instance)) {
 				return undefined;
 			}
-
-			const legacyInstance: { renderHostToString(options?: RenderToStringOptions): string } = instance;
 
 			return {
 				nodeType: 1,
 				get outerHTML() {
-					const hydrate = isServerRenderHydrationActive();
-
-					if (!hydrate) {
-						return legacyInstance.renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' });
-					}
-
-					return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
-						legacyInstance.renderHostToString({ hydrate, mode: hydrate ? 'hydrate' : 'plain' }),
-					);
+					return serializeNestedCustomElementHost(instance);
 				},
 			};
 		}, render),
+	);
+}
+
+function serializeNestedCustomElementHost(instance: RadiantElementServerRenderSsrCapable): string {
+	const hydrate = isServerRenderHydrationActive();
+	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
+
+	if (!hydrate) {
+		return renderRadiantElementHostToString(instance, options);
+	}
+
+	return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
+		renderRadiantElementHostToString(instance, options),
 	);
 }
 
@@ -167,32 +148,7 @@ export function getRadiantElementTrackedRenderOutput(component: RadiantElementTr
 		return component.resolveTrackedRenderOutput();
 	}
 
-	const source = resolveInternalRadiantElementSsrHostSource(component);
-
-	if (!source) {
-		throw new Error('Radiant SSR runtime requires tracked render output support on the component.');
-	}
-
-	return source.resolveTrackedRenderOutput();
-}
-
-function isRadiantElementServerRenderable(component: unknown): component is RadiantElementServerRenderSsrCapable {
-	if (typeof component !== 'object' || component === null) {
-		return false;
-	}
-
-	return resolveInternalRadiantElementSsrHostSource(component) !== undefined;
-}
-
-function isLegacyServerRenderable(component: unknown): component is {
-	renderHost?: () => JsxRenderable;
-	renderHostToString(options?: RenderToStringOptions): string;
-} {
-	if (typeof component !== 'object' || component === null) {
-		return false;
-	}
-
-	return typeof (component as { renderHostToString?: unknown }).renderHostToString === 'function';
+	throw new Error('Radiant SSR runtime requires tracked render output support on the component.');
 }
 
 function hasTrackedRenderOutput(component: unknown): component is {
@@ -222,5 +178,5 @@ export function getOrCreateRadiantElementSsrRuntime(): RadiantElementSsrRuntime 
 }
 
 export function withServerRadiantElementSsrRuntime<T>(render: () => T): T {
-	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), render);
+	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), () => runWithSsrProviderStack(render));
 }

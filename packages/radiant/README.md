@@ -144,18 +144,20 @@ Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive cha
 
 ## SSR And Hydration
 
-`RadiantElement` has two SSR surfaces:
+Prefer the server pipeline for host HTML:
 
-- `renderToString()` serializes the component view only.
-- `renderHostToString()` serializes the custom-element host together with the current view.
+- import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim + ALS scope adapters)
+- `renderComponent(...)` / `renderComponentToString(...)` from `@ecopages/radiant/server/render-component` for adapters and fragments
+- `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` for lower-level host serialization
+- `renderViewToString()` on the element only serializes the JSX view through the installed server runtime
 
-In practice, `renderHostToString()` is the right default for full component SSR because it emits `<my-element>...</my-element>` instead of only the view fragment.
+There is no durable Element Host instance API named `renderHostToString()`.
 
-`mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is now explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
+Radiant SSR is light-DOM only. Shadow `renderRootMode` hosts throw during server serialization; client shadow rendering remains valid.
 
-For element-owned SSR, the instance methods still work. For adapters, fragment responses, and shared server utilities, prefer the explicit helpers under `@ecopages/radiant/server/render-component`.
+`mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 
-Server runtime setup, fragment rendering helpers, and SSR-specific import guidance now live in [src/server/README.md](src/server/README.md).
+Server runtime setup, fragment rendering helpers, and SSR-specific import guidance live in [src/server/README.md](src/server/README.md).
 
 For the client lifecycle and hydration flow diagram, see [src/core/README.md](src/core/README.md).
 
@@ -287,7 +289,9 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/client/hydrator`               | Explicit client hydrator installer and status helpers for SSR pages                                                                                                                 |
 | `@ecopages/radiant/client/install-hydrator`       | Side-effect entrypoint that enables first-connect hydration before component modules load                                                                                           |
 | `@ecopages/radiant/signals/host-resource`         | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                                                                                              |
+| `@ecopages/radiant/server/install-ssr-runtime`    | Side-effect server boot entry: light-DOM shim plus JSX SSR scope adapters                                                                                                           |
 | `@ecopages/radiant/server/light-dom-shim`         | Minimal SSR window and host-preparation helpers                                                                                                                                     |
+| `@ecopages/radiant/server/radiant-element-ssr`    | Lower-level Element Host SSR bridge (`renderRadiantElementHostToString`, runtime helpers)                                                                                           |
 | `@ecopages/radiant/server/render-component`       | Canonical component SSR helpers and shared fragment metadata utilities                                                                                                              |
 | `@ecopages/radiant/server/render-controller`      | Controller-host SSR helpers and controller-specific host option types                                                                                                               |
 | `@ecopages/radiant/server/project-root`           | Project-root resolution helper for server adapters                                                                                                                                  |

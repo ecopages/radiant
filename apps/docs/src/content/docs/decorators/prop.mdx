@@ -28,13 +28,16 @@ export class UserCard extends RadiantElement {
 
 ## SSR Property Staging
 
-Before the first server render, assign properties directly on a disconnected host:
+Before the first server render, assign properties through `renderComponent` (or on a disconnected host before calling `renderRadiantElementHostToString`):
 
 ```typescript
-const element = new UserCard();
-element.visits = 7;
+import { renderComponentToString } from '@ecopages/radiant/server/render-component';
 
-const html = element.renderHostToString();
+const html = await renderComponentToString(UserCard, {
+	initialize: (element) => {
+		element.visits = 7;
+	},
+});
 ```
 
 Those staged values are serialized into the SSR host tag and used for the first render. This is the supported way to pass non-default props into SSR without attributes.

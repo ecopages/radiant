@@ -1,14 +1,31 @@
 import { escapeHtmlAttribute } from '../../utils/escape-html-attribute';
+import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 
 type MinimalParentNode = Node & ParentNode;
 
-type HtmlModule = typeof import('./html');
+type HtmlParsers = {
+	parseHtmlToNodes: (html: string, ownerDocument: Document | null) => Node[];
+	serializeNodeHtml: (node: Node) => string;
+};
 
-let htmlModule: HtmlModule | undefined;
+let htmlParsers: HtmlParsers | undefined;
 
-function getHtmlModule(): HtmlModule {
-	htmlModule ??= require('./html') as HtmlModule;
-	return htmlModule;
+/**
+ * Registers HTML parse/serialize helpers from `./html` to break a circular import.
+ * Import `./html` (or the light-DOM install entry) before using `innerHTML`.
+ */
+export function registerMinimalDomHtmlParsers(parsers: HtmlParsers): void {
+	htmlParsers = parsers;
+}
+
+function ensureHtmlParsers(): HtmlParsers {
+	if (!htmlParsers) {
+		throw new Error(
+			'Minimal DOM HTML parsers are not registered. Import @ecopages/radiant/server/install-ssr-runtime (or ./html) before using innerHTML.',
+		);
+	}
+
+	return htmlParsers;
 }
 
 export class MinimalNode extends EventTarget {
@@ -213,7 +230,7 @@ export class MinimalElement extends MinimalNode {
 						return false;
 					}
 
-					this.removeAttribute(getHtmlModule().toDataAttributeName(property));
+					this.removeAttribute(toDataAttributeName(property));
 					return true;
 				},
 				get: (_target, property) => {
@@ -221,7 +238,7 @@ export class MinimalElement extends MinimalNode {
 						return undefined;
 					}
 
-					return this.getAttribute(getHtmlModule().toDataAttributeName(property)) ?? undefined;
+					return this.getAttribute(toDataAttributeName(property)) ?? undefined;
 				},
 				getOwnPropertyDescriptor: (_target, property) => {
 					if (typeof property !== 'string') {
@@ -231,26 +248,24 @@ export class MinimalElement extends MinimalNode {
 					return {
 						configurable: true,
 						enumerable: true,
-						value: this.getAttribute(getHtmlModule().toDataAttributeName(property)) ?? undefined,
+						value: this.getAttribute(toDataAttributeName(property)) ?? undefined,
 						writable: true,
 					};
 				},
 				has: (_target, property) => {
-					return (
-						typeof property === 'string' && this.hasAttribute(getHtmlModule().toDataAttributeName(property))
-					);
+					return typeof property === 'string' && this.hasAttribute(toDataAttributeName(property));
 				},
 				ownKeys: () => {
 					return this.getAttributeNames()
 						.filter((name) => name.startsWith('data-'))
-						.map((name) => getHtmlModule().toDatasetPropertyName(name.slice(5)));
+						.map((name) => toDatasetPropertyName(name.slice(5)));
 				},
 				set: (_target, property, value) => {
 					if (typeof property !== 'string') {
 						return false;
 					}
 
-					this.setAttribute(getHtmlModule().toDataAttributeName(property), String(value));
+					this.setAttribute(toDataAttributeName(property), String(value));
 					return true;
 				},
 			},
@@ -318,13 +333,13 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	get innerHTML(): string {
-		return this.childNodes.map((child) => getHtmlModule().serializeNodeHtml(child)).join('');
+		return this.childNodes.map((child) => ensureHtmlParsers().serializeNodeHtml(child)).join('');
 	}
 
 	set innerHTML(html: string) {
 		this.fragmentHtml = undefined;
 		this.fragmentText = undefined;
-		this.replaceChildren(...getHtmlModule().parseHtmlToNodes(html, this.ownerDocument));
+		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
 	}
 
 	override get textContent(): string {
@@ -376,7 +391,7 @@ export class MinimalHTMLElement extends MinimalElement {
 	}
 
 	insertAdjacentHTML(_position: InsertPosition, html: string): void {
-		this.append(...getHtmlModule().parseHtmlToNodes(html, this.ownerDocument));
+		this.append(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
 	}
 
 	connectedCallback?(): void;

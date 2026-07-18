@@ -1,5 +1,4 @@
 import { jsx, jsxs } from '@ecopages/jsx';
-import { renderToString } from '@ecopages/jsx/server';
 import type { WritableSignal } from '@ecopages/signals';
 import { waitFor } from '@testing-library/dom';
 import { describe, expect, test } from 'vitest';
@@ -242,7 +241,13 @@ describeWhenStandard('RadiantController', () => {
 
 		expect(host.getAttribute('data-ssr-ready')).toBe('yes');
 		expect(host.innerHTML).toBe('');
-		expect(renderToString(controller.render())).toBe('<p>after connect</p>');
+		const view = controller.render();
+		expect(view).toEqual(
+			expect.objectContaining({
+				strings: expect.any(Array),
+				values: expect.arrayContaining(['after connect']),
+			}),
+		);
 
 		controller.disconnect();
 		expect(controller.isConnected).toBe(false);

@@ -1,0 +1,68 @@
+---
+title: "Component SSR"
+description: "Server-render Radiant Element Hosts through the explicit server pipeline."
+group: SSR
+order: 3
+---
+
+# Component SSR
+
+Radiant component SSR is an **opt-in server pipeline**. It is light-DOM first, runs in-process on Node with `AsyncLocalStorage` for ambient render state, and does not use a Lit-style render worker.
+
+## Install once at server boot
+
+```ts
+import { radiantSsrRuntimeInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
+
+void radiantSsrRuntimeInstalled;
+```
+
+That side-effect install wires the light-DOM shim and JSX SSR scope adapters. When bundling Nitro/Vite SSR, keep `@ecopages/*` **external** so Node resolves one module instance for ALS and adapters.
+
+Then render:
+
+```ts
+import { renderComponent } from '@ecopages/radiant/server/render-component';
+
+const rendered = await renderComponent(MyCard, {
+	initialize: (card) => {
+		card.count = 3;
+	},
+	authoredContent: '<p>Projected</p>',
+	renderOptions: { mode: 'hydrate' },
+});
+
+// rendered.markup — host HTML
+// rendered.metadata — tagName, assets, generatedAt
+// rendered.preview — JSX-compatible embed value
+```
+
+## Surfaces
+
+| Need | API |
+| --- | --- |
+| Adapter / fragment HTML | `renderComponent` / `renderComponentToString` from `@ecopages/radiant/server/render-component` |
+| Lower-level host string | `renderRadiantElementHostToString` from `@ecopages/radiant/server/radiant-element-ssr` |
+| View-only string | `element.renderViewToString(...)` after a server entry is imported |
+
+There is no durable Element Host instance API named `renderHostToString()`.
+
+JSX still accepts third-party custom elements that implement `renderHostToString(...)` on the instance. Radiant Element Hosts do not use that path; they go through the installed server custom-element render hook and the APIs above.
+
+## Light DOM only
+
+Hosts with `renderRootMode = 'shadow'` throw during SSR. Client shadow rendering remains supported; skip server serialization for those hosts until declarative shadow SSR exists as an explicit product surface.
+
+## Async boundary
+
+Resolve data and assets **outside** the SSR render scope. Enter ALS-backed scope only for the synchronous render snapshot. Await I/O before `renderComponent` / `renderToString`, not inside `render()`.
+
+## Hydration follow-up
+
+Pair SSR markup with the client hydrator:
+
+```ts
+import '@ecopages/radiant/client/install-hydrator';
+```
+
+See [Hydration](./hydration.mdx) and [JSX SSR](./jsx-ssr.mdx).

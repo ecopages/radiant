@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import type { WritableSignal } from '@ecopages/signals';
 import { describe, expect, test } from 'vitest';
 import { ContextProvider, createContext, provideContext } from '../../src/context';
