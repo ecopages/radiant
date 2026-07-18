@@ -1,4 +1,4 @@
-import '../../src/server/install-light-dom-shim';
+import '../../src/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
 import { describe, expect, test, vi } from 'vitest';
 import {
