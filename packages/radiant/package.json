@@ -146,6 +146,10 @@
 			"types": "./dist/server/render-component.d.ts",
 			"import": "./dist/server/render-component.js"
 		},
+		"./server/radiant-element-ssr": {
+			"types": "./dist/server/radiant-element-ssr.d.ts",
+			"import": "./dist/server/radiant-element-ssr.js"
+		},
 		"./server/render-controller": {
 			"types": "./dist/server/render-controller.d.ts",
 			"import": "./dist/server/render-controller.js"
