@@ -12,7 +12,7 @@ import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { RadiantElementSsrService } from './radiant-element-ssr-service';
 import { runWithSsrProviderStack } from './context-ssr';
 import './install-ssr-runtime';
-import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
+import { isRadiantElementServerRenderable } from './radiant-element-ssr-extractor';
 import type {
 	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
@@ -66,7 +66,7 @@ export function renderRegisteredRadiantElementHostToString(
 	return renderRadiantElementHostToString(component, options);
 }
 
-export function resolveRegisteredRadiantElementPreview(component: unknown, markup: string): JsxRenderable | undefined {
+export function resolveRegisteredRadiantElementPreview(component: unknown, _markup: string): JsxRenderable | undefined {
 	if (!isRadiantElementServerRenderable(component)) {
 		return undefined;
 	}
@@ -105,7 +105,7 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
 }
 
 export function resolveRadiantElementSsrHostBridge(component: object): object | undefined {
-	return resolveInternalRadiantElementSsrHostSource(component);
+	return isRadiantElementServerRenderable(component) ? component : undefined;
 }
 
 /**
@@ -150,21 +150,7 @@ export function getRadiantElementTrackedRenderOutput(component: RadiantElementTr
 		return component.resolveTrackedRenderOutput();
 	}
 
-	const source = resolveInternalRadiantElementSsrHostSource(component);
-
-	if (!source) {
-		throw new Error('Radiant SSR runtime requires tracked render output support on the component.');
-	}
-
-	return source.resolveTrackedRenderOutput();
-}
-
-function isRadiantElementServerRenderable(component: unknown): component is RadiantElementServerRenderSsrCapable {
-	if (typeof component !== 'object' || component === null) {
-		return false;
-	}
-
-	return resolveInternalRadiantElementSsrHostSource(component) !== undefined;
+	throw new Error('Radiant SSR runtime requires tracked render output support on the component.');
 }
 
 function hasTrackedRenderOutput(component: unknown): component is {
