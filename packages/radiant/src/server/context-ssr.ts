@@ -1,41 +1,40 @@
-import { createLazyNodeAsyncLocalStorage } from '@ecopages/jsx/server';
+import { getActiveSsrScopeValue, withActiveSsrScopeValue } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import { installSsrContextProviderResolver } from '../context/context-ssr-bridge';
 import type { ContextType, UnknownContext } from '../context/types';
 
 type ProviderFrame = Map<UnknownContext, SsrSerializableContextProvider>;
-type ProviderStack = ProviderFrame[];
+type ProviderStack = readonly ProviderFrame[];
 
-const getAsyncLocalStorage = createLazyNodeAsyncLocalStorage<ProviderStack>();
+const SSR_PROVIDER_STACK_KEY = Symbol.for('@ecopages/radiant.ssr-provider-stack');
 
 /**
- * Runs work inside an SSR provider-stack ALS scope.
- * Nested {@link withSsrContextProviders} frames share one mutable stack; nested
- * calls reuse the active store. Call at render boundaries.
+ * Ensures an SSR provider stack exists on the active JSX SSR render scope.
+ * Nested calls reuse the active stack. Call at render boundaries.
  */
 export function runWithSsrProviderStack<T>(render: () => T): T {
-	const als = getAsyncLocalStorage();
-	const active = als.getStore();
-
-	if (active) {
+	if (getActiveSsrScopeValue<ProviderStack>(SSR_PROVIDER_STACK_KEY) !== undefined) {
 		return render();
 	}
 
-	return als.run([], render);
+	return withActiveSsrScopeValue(SSR_PROVIDER_STACK_KEY, [], render);
 }
 
 /**
- * Pushes a temporary provider frame onto the active SSR context stack.
+ * Runs work with one additional provider frame on the active SSR context stack.
  * Requires an active {@link runWithSsrProviderStack} boundary.
  */
-export function withSsrContextProviders(providers: readonly SsrSerializableContextProvider[]): () => void {
+export function withSsrContextProviders<T>(
+	providers: readonly SsrSerializableContextProvider[],
+	render: () => T,
+): T {
 	if (providers.length === 0) {
-		return () => undefined;
+		return render();
 	}
 
-	const store = getAsyncLocalStorage().getStore();
+	const parent = getActiveSsrScopeValue<ProviderStack>(SSR_PROVIDER_STACK_KEY);
 
-	if (!store) {
+	if (parent === undefined) {
 		throw new Error(
 			'SSR context providers require runWithSsrProviderStack(...). Wrap the sync render snapshot at the render boundary.',
 		);
@@ -47,21 +46,14 @@ export function withSsrContextProviders(providers: readonly SsrSerializableConte
 		frame.set(provider.getContextKey(), provider);
 	}
 
-	store.push(frame);
-
-	return () => {
-		const index = store.lastIndexOf(frame);
-		if (index >= 0) {
-			store.splice(index, 1);
-		}
-	};
+	return withActiveSsrScopeValue(SSR_PROVIDER_STACK_KEY, [...parent, frame], render);
 }
 
 /** Resolves the nearest SSR-visible provider for a context token (innermost first). */
 export function resolveSsrContextProvider<T extends UnknownContext>(
 	context: T,
 ): SsrSerializableContextProvider | undefined {
-	const store = getAsyncLocalStorage().getStore();
+	const store = getActiveSsrScopeValue<ProviderStack>(SSR_PROVIDER_STACK_KEY);
 
 	if (!store) {
 		return undefined;

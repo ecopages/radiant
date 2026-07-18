@@ -2,8 +2,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
-import './install-light-dom-shim';
-import './install-ssr-scope-adapters';
+import './install-ssr-runtime';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
@@ -322,12 +321,8 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 	const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
 
 	return withRadiantElementSsrRuntime(getOrCreateRadiantElementSsrRuntime(), () =>
-		runWithSsrProviderStack(() => {
-			const restoreAmbientContext = withSsrContextProviders(
-				createAmbientSsrContextProviders(normalizedOptions.ssrContext),
-			);
-
-			try {
+		runWithSsrProviderStack(() =>
+			withSsrContextProviders(createAmbientSsrContextProviders(normalizedOptions.ssrContext), () => {
 				const component = new Component();
 				ensureLegacyHostReady(component, 'ssr');
 				prepareRenderedComponentHost(
@@ -353,10 +348,8 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 					},
 					preview,
 				};
-			} finally {
-				restoreAmbientContext();
-			}
-		}),
+			}),
+		),
 	);
 }
 

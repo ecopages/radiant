@@ -55,5 +55,9 @@ export function withRadiantElementSsrRuntime<T>(runtime: RadiantElementSsrRuntim
 		);
 	}
 
+	if (scopeAdapters.get<RadiantElementSsrRuntime>(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL) === runtime) {
+		return render();
+	}
+
 	return scopeAdapters.withValue(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL, runtime, render);
 }

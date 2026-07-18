@@ -42,13 +42,10 @@ export class RadiantElementSsrService {
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
 		this.ensureReady();
 		const tagName = this.getTagName();
-		const restoreSsrContexts = withSsrContextProviders(this.host.getContextProviders());
 
-		try {
-			return `<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`;
-		} finally {
-			restoreSsrContexts();
-		}
+		return withSsrContextProviders(this.host.getContextProviders(), () =>
+			`<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`,
+		);
 	}
 
 	public getHostAttributes(): Record<string, string> {

@@ -5,8 +5,7 @@ import type { RadiantController } from '../core/radiant-controller';
 import { CONTROLLER_ATTRIBUTE } from '../controller-registry';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
-import './install-light-dom-shim';
-import './install-ssr-scope-adapters';
+import './install-ssr-runtime';
 import { ensureLightDomShim } from './light-dom-shim';
 import { withRadiantServerCustomElementRenderBridge } from './radiant-element-ssr-bridge';
 import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
@@ -315,9 +314,7 @@ function renderRenderedControllerHost(
 	tagName: string,
 	options: RenderToStringOptions,
 ): string {
-	const restoreSsrContexts = withSsrContextProviders(controller.getSsrContextProviders());
-
-	try {
+	return withSsrContextProviders(controller.getSsrContextProviders(), () => {
 		const hostContent = withRadiantServerCustomElementRenderBridge(() =>
 			renderJsxToString(controller.render(), options),
 		);
@@ -331,9 +328,7 @@ function renderRenderedControllerHost(
 			: '';
 
 		return `<${tagName}${serializeRenderedControllerHostAttributes(controller.host)}>${hostContent}${hydrationScripts}</${tagName}>`;
-	} finally {
-		restoreSsrContexts();
-	}
+	});
 }
 
 function serializeRenderedControllerHostAttributes(host: Element): string {
