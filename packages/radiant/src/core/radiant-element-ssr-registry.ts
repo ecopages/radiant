@@ -24,10 +24,7 @@ export type RadiantElementSsrRuntime = {
 		options?: RadiantElementRenderToStringOptions,
 	): string;
 	resolveRenderBridge(component: object): RadiantElementRenderBridge | undefined;
-	renderView(
-		component: RadiantElementTrackedRenderSsrCapable,
-		options?: RadiantElementRenderToStringOptions,
-	): string;
+	renderView(component: RadiantElementTrackedRenderSsrCapable, options?: RadiantElementRenderToStringOptions): string;
 };
 
 /** JSX SSR scope adapters installed by the server layer into client-safe core. */

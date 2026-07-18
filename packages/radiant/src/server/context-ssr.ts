@@ -24,10 +24,7 @@ export function runWithSsrProviderStack<T>(render: () => T): T {
  * Runs work with one additional provider frame on the active SSR context stack.
  * Requires an active {@link runWithSsrProviderStack} boundary.
  */
-export function withSsrContextProviders<T>(
-	providers: readonly SsrSerializableContextProvider[],
-	render: () => T,
-): T {
+export function withSsrContextProviders<T>(providers: readonly SsrSerializableContextProvider[], render: () => T): T {
 	if (providers.length === 0) {
 		return render();
 	}

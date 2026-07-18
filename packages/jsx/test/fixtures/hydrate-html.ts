@@ -24,8 +24,7 @@ export const PLAIN_BUTTON_ALPHA_HTML = '<button class="action">alpha</button>';
 export const HYDRATE_ADJACENT_FIELDS_HTML =
 	'<section><input data-radiant-jsx-bind-0="attr:aria-label" aria-label="Alpha" data-radiant-jsx-bind-1="attr:data-id" data-id="alpha" data-radiant-jsx-bind-2="bool:hidden" data-radiant-jsx-bind-3="attr:title" title="Alpha" data-radiant-jsx-bind-4="attr:type" type="text"><input data-radiant-jsx-bind-5="attr:aria-label" aria-label="Beta" data-radiant-jsx-bind-6="attr:data-id" data-id="beta" data-radiant-jsx-bind-7="bool:hidden" data-radiant-jsx-bind-8="attr:title" title="Beta" data-radiant-jsx-bind-9="attr:type" type="text"></section>';
 
-export const HYDRATE_METRIC_HTML =
-	'<p data-radiant-jsx-bind-0="attr:class" class="component-metric">Count: 15</p>';
+export const HYDRATE_METRIC_HTML = '<p data-radiant-jsx-bind-0="attr:class" class="component-metric">Count: 15</p>';
 
 export const HYDRATE_FRAGMENT_COUNTER_HTML =
 	'<button data-radiant-jsx-bind-0="attr:id" id="dec">-</button><span data-radiant-jsx-bind-1="attr:id" id="metric">2</span><button data-radiant-jsx-bind-2="attr:id" id="inc">+</button>';
