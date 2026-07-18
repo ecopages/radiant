@@ -270,6 +270,23 @@ describe('render-component server helpers', () => {
 		await expect(renderComponent(RenderComponentShadowCard)).rejects.toThrow(/light-DOM only/);
 	});
 
+	test('concurrent renderComponent() calls keep SSR ambient providers isolated', async () => {
+		const [first, second] = await Promise.all([
+			renderComponent(RenderComponentContextCard, {
+				ssrContext: [{ context: renderComponentContext, value: { label: 'concurrent-a' } }],
+			}),
+			renderComponent(RenderComponentContextCard, {
+				ssrContext: [{ context: renderComponentContext, value: { label: 'concurrent-b' } }],
+			}),
+		]);
+
+		expect(first.markup).toContain('concurrent-a');
+		expect(first.markup).not.toContain('concurrent-b');
+		expect(second.markup).toContain('concurrent-b');
+		expect(second.markup).not.toContain('concurrent-a');
+		expect(getRadiantElementSsrRuntime()).toBeUndefined();
+	});
+
 	test('renderComponent() returns the canonical server render descriptor', async () => {
 		const rendered = await renderComponent(RenderComponentCard, {
 			initialize: (component) => {
