@@ -87,8 +87,8 @@ The Node-only ambient render context that carries hydrate mode, custom-element r
 _Avoid_: browser fallback stack, globalThis ambient store, sync-only ambient state, duplicated inlined SSR modules
 
 **SSR Context Stack**:
-The Node-only ambient provider stack used during SSR so nested hosts resolve Context Providers without a DOM tree. Same single-module-instance rule as **SSR Render Scope**.
-_Avoid_: browser fallback stack, enterWith restore pattern, DOM event bubbling on the server, globalThis ambient store
+The Node-only ambient provider stack used during SSR so nested hosts resolve Context Providers without a DOM tree. Stored as symbol-keyed state on **SSR Render Scope** (same single-module-instance rule).
+_Avoid_: separate ALS for providers, browser fallback stack, enterWith restore pattern, DOM event bubbling on the server, globalThis ambient store
 
 **Binding**:
 The connection between reactive runtime values and rendered output so targeted updates can flow into the DOM without rebuilding everything.
@@ -157,8 +157,8 @@ _Avoid_: provider, selector field, local state copy
 - **Radiant** uses **Hydration** to attach live host behavior to existing rendered DOM
 - A **Binding** connects runtime values to rendered output in **Ecopages JSX** and **Radiant**
 - **Reactive Properties** can expose **Bindings** for targeted DOM updates
-- **SSR Render Scope** and **SSR Context Stack** are separate ambient systems; both require Node `AsyncLocalStorage` and have no sync fallback
-- ALS instances and SSR scope adapters are module-local; SSR bundlers must externalize `@ecopages/*` so Node resolves one instance
+- **SSR Context Stack** is stored on **SSR Render Scope**; both require Node `AsyncLocalStorage` and have no sync fallback
+- SSR scope adapters are module-local; SSR bundlers must externalize `@ecopages/*` so Node resolves one instance
 - Concurrent **SSR** trees stay isolated because each request owns its own async-local store
 - Async I/O such as module loading or asset resolution belongs outside **SSR Render Scope**; the scoped callback wraps the synchronous render snapshot
 - Client core must not import the JSX server entry; the server layer installs scope adapters into core instead of pulling Node builtins into the browser
@@ -258,7 +258,7 @@ _Avoid_: provider, selector field, local state copy
 > **Domain expert:** "A **Context Provider** owns the shared context state. A **Context Consumer** resolves that provider from the host tree so it can read or interact with the shared state."
 
 > **Dev:** "Do we keep a sync fallback for SSR ambient state when tests run in the browser?"
-> **Domain expert:** "No. **SSR Render Scope** and **SSR Context Stack** require Node `AsyncLocalStorage`. A fallback is a smell; change the test boundary instead of carrying a second ambient model."
+> **Domain expert:** "No. **SSR Render Scope** (including the **SSR Context Stack** stored on it) requires Node `AsyncLocalStorage`. A fallback is a smell; change the test boundary instead of carrying a second ambient model."
 
 > **Dev:** "Can I await fetch inside `withActiveSsrScopeValue(...)`?"
 > **Domain expert:** "Await I/O outside the scope. Enter **SSR Render Scope** only for the synchronous render snapshot so abandoned async work cannot leak ambient state."
@@ -284,7 +284,7 @@ _Avoid_: provider, selector field, local state copy
 - **Render-owning Element Host** is a narrower concept than **Element Host** and should be used when render lifecycle behavior matters
 - **Render Lifecycle** is the architectural concept behind `update()`, `requestUpdate()`, **Hydration**, and **Slot** projection
 - **SSR** is intentionally modeled as an optional server capability rather than part of the core **Render Lifecycle**
-- **SSR Render Scope** and **SSR Context Stack** are Node-only ambient contracts with no sync fallback; a fallback means the test or package boundary is wrong
+- **SSR Context Stack** are Node-only ambient contracts with no sync fallback; a fallback means the test or package boundary is wrong
 - **Hydration** is intentionally kept in the core **Render Lifecycle** because it changes client host behavior when existing DOM is present
 - **Hydration** should rely on server-authored markup and markers by default, not on a required generated hydration program
 - A default **Element Host** contract should stay client-oriented; explicit server-rendering surfaces should carry **SSR**
