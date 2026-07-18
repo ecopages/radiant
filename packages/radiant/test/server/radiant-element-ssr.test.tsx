@@ -62,7 +62,7 @@ describe('RadiantElement SSR', () => {
 		document.body.innerHTML = '';
 	});
 
-	test('renderToString() serializes the current view without connecting', () => {
+	test('renderRadiantElementViewToString() serializes the current view without connecting', () => {
 		class ServerGreetingCard extends RadiantElement {
 			message = 'Hello SSR';
 
@@ -93,7 +93,7 @@ describe('RadiantElement SSR', () => {
 		expect(() => renderRadiantElementHostToString(element)).toThrow(/light-DOM only/);
 	});
 
-	test('renderHostToString() serializes the host and current view', () => {
+	test('renderRadiantElementHostToString() serializes the host and current view', () => {
 		class ServerHostGreetingCard extends RadiantElement {
 			message = 'Hello host SSR';
 
@@ -111,7 +111,7 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
-	test('renderToString() serializes projected default-slot content when render() is omitted', () => {
+	test('renderRadiantElementViewToString() serializes projected default-slot content when render() is omitted', () => {
 		class ServerPassthroughCard extends RadiantElement {}
 
 		customElements.define('server-passthrough-card-test', ServerPassthroughCard);
@@ -124,7 +124,7 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
-	test('renderHostToString() serializes the host tag and reactive attributes', () => {
+	test('renderRadiantElementHostToString() serializes the host tag and reactive attributes', () => {
 		installLightDomShim();
 
 		@customElement('server-host-card-test')
@@ -249,7 +249,7 @@ describe('RadiantElement SSR', () => {
 		expect(runtime.HTMLElement).toBe(initialHTMLElement);
 	});
 
-	test("renderHostToString({ mode: 'hydrate' }) keeps hydration output free of internal child markers", () => {
+	test("renderRadiantElementHostToString({ mode: 'hydrate' }) keeps hydration output free of internal child markers", () => {
 		@customElement('server-host-hydrate-card-test')
 		class ServerHostHydrateCard extends RadiantElement {
 			@prop({ type: Number, reflect: true, defaultValue: 3 }) count!: number;
@@ -284,7 +284,7 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('radiant-jsx-child-end');
 	});
 
-	test("renderHostToString({ mode: 'hydrate' }) serializes bound JSX child values", () => {
+	test("renderRadiantElementHostToString({ mode: 'hydrate' }) serializes bound JSX child values", () => {
 		type ServerHostBoundHydrateCardBindings = {
 			count: number;
 			label: string;
@@ -322,7 +322,7 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('radiant-jsx-child-end');
 	});
 
-	test("renderHostToString({ mode: 'hydrate' }) serializes very nested component trees", () => {
+	test("renderRadiantElementHostToString({ mode: 'hydrate' }) serializes very nested component trees", () => {
 		type ServerHostDeepTreeBindings = {
 			count: number;
 			label: string;
@@ -376,7 +376,7 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('radiant-jsx-child-end');
 	});
 
-	test('renderHostToString() derives host attributes from ordinary host state', () => {
+	test('renderRadiantElementHostToString() derives host attributes from ordinary host state', () => {
 		@customElement('server-host-override-card-test')
 		class ServerHostOverrideCard extends RadiantElement {
 			override render() {
@@ -393,7 +393,7 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
-	test('renderHostToString() serializes projected slot content and embeds slot projection payload', () => {
+	test('renderRadiantElementHostToString() serializes projected slot content and embeds slot projection payload', () => {
 		@customElement('server-host-slot-card-test')
 		class ServerHostSlotCard extends RadiantElement {
 			override render() {
@@ -421,7 +421,7 @@ describe('RadiantElement SSR', () => {
 	});
 
 	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
-		test("renderHostToString({ mode: 'hydrate' }) emits host content before slot projection and hydration scripts", () => {
+		test("renderRadiantElementHostToString({ mode: 'hydrate' }) emits host content before slot projection and hydration scripts", () => {
 			@customElement('server-host-ordering-card-test')
 			class ServerHostOrderingCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
@@ -464,7 +464,7 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
-	test("renderHostToString({ mode: 'hydrate' }) appends provider hydration scripts automatically", () => {
+	test("renderRadiantElementHostToString({ mode: 'hydrate' }) appends provider hydration scripts automatically", () => {
 		const serverContext = createContext<{ label: string; level: number }>(Symbol('server-context-card'));
 
 		class ServerHostContextCard extends RadiantElement {
@@ -543,7 +543,7 @@ describe('RadiantElement SSR', () => {
 		expect(html).toContain('{"count":3,"label":"Authored child"}</script>');
 	});
 
-	test("renderHostToString({ mode: 'plain' }) emits authored hydration markup before slot projection payloads", () => {
+	test("renderRadiantElementHostToString({ mode: 'plain' }) emits authored hydration markup before slot projection payloads", () => {
 		@customElement('server-host-authored-hydration-order-card-test')
 		class ServerHostAuthoredHydrationOrderCard extends RadiantElement {
 			override render() {
@@ -663,9 +663,7 @@ describe('RadiantElement SSR', () => {
 			expect(element.defaultSlot?.textContent).toBe('Prepared body');
 		});
 
-		test.skip(
-			'hydrates array @prop values from SSR host attributes before the first client render (happy-dom; covered by ssr-hydrate.e2e)',
-			async () => {
+		test.skip('hydrates array @prop values from SSR host attributes before the first client render (happy-dom; covered by ssr-hydrate.e2e)', async () => {
 			const serverElement = new SsrArrayPropCard();
 			serverElement.items = [{ label: 'first' }, { label: 'second' }];
 			const serverMarkup = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
@@ -680,7 +678,7 @@ describe('RadiantElement SSR', () => {
 			});
 		});
 
-		test("renderHostToString({ mode: 'hydrate' }) appends signal hydration scripts automatically", () => {
+		test("renderRadiantElementHostToString({ mode: 'hydrate' }) appends signal hydration scripts automatically", () => {
 			class ServerHostSignalCard extends RadiantElement {
 				@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
 
