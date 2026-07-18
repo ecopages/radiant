@@ -45,7 +45,7 @@
     },
     "packages/jsx": {
       "name": "@ecopages/jsx",
-      "version": "0.3.0-beta.1",
+      "version": "0.3.0-beta.3",
       "devDependencies": {
         "@ecopages/signals": "workspace:*",
         "@types/bun": "latest",
@@ -58,15 +58,15 @@
         "vitest": "^3.2.4",
       },
       "peerDependencies": {
-        "@ecopages/signals": ">=0.3.0-beta.1 <1.0.0",
+        "@ecopages/signals": ">=0.3.0-beta.3 <1.0.0",
         "typescript": "^5",
       },
     },
     "packages/radiant": {
       "name": "@ecopages/radiant",
-      "version": "0.3.0-beta.1",
+      "version": "0.3.0-beta.3",
       "dependencies": {
-        "@ecopages/signals": ">=0.3.0-beta.1 <1.0.0",
+        "@ecopages/signals": ">=0.3.0-beta.3 <1.0.0",
       },
       "devDependencies": {
         "@ecopages/jsx": "workspace:*",
@@ -84,12 +84,12 @@
         "vitest": "^3.2.4",
       },
       "peerDependencies": {
-        "@ecopages/jsx": ">=0.3.0-beta.1 <1.0.0",
+        "@ecopages/jsx": ">=0.3.0-beta.3 <1.0.0",
       },
     },
     "packages/signals": {
       "name": "@ecopages/signals",
-      "version": "0.3.0-beta.1",
+      "version": "0.3.0-beta.3",
       "devDependencies": {
         "@vitest/coverage-v8": "3.2.4",
         "vitest": "^3.2.4",
@@ -224,7 +224,7 @@
 
     "@ecopages/core": ["@ecopages/core@0.2.0-beta.24", "", { "dependencies": { "@ecopages/file-system": "0.2.0-beta.24", "@ecopages/logger": "^0.2.3", "@ecopages/scripts-injector": "^0.1.5", "@oxc-project/runtime": "0.134.0", "@standard-schema/spec": "^1.1.0", "@standard-schema/utils": "^0.3.0", "@worker-tools/html-rewriter": "0.1.0-pre.19", "chokidar": "^5.0.0", "esbuild": "^0.28.0", "ghtml": "^4.0.2", "oxc-parser": "^0.124.0", "rolldown": "^1.1.0", "ws": "^8.20.1" } }, "sha512-9HtJi1zYMb0AHV0wxIllwNobFq6i1noRl7k0XM9X/fuzB0z4lIFax6pZ1Ee5eckY/FFhybCit2MKhhVTX5WvaQ=="],
 
-    "@ecopages/ecopages-jsx": ["@ecopages/ecopages-jsx@0.2.0-beta.24", "", { "dependencies": { "@ecopages/mdx": "0.2.0-beta.24", "@mdx-js/mdx": "^3.1.1", "vfile": "^6.0.3" }, "peerDependencies": { "@ecopages/core": "0.2.0-beta.24", "@ecopages/jsx": "0.3.0-beta.2", "@ecopages/radiant": "0.3.0-beta.2" } }, "sha512-bi1dwSjnXJcoxV/DaxtGyxRfUcw7ptOlzkiWtKm6LHjtkF+JeJYjPJufS3tHhFyG8yn9m7qmIF0X1YKIeNSfDA=="],
+    "@ecopages/ecopages-jsx": ["@ecopages/ecopages-jsx@0.2.0-beta.24", "", { "dependencies": { "@ecopages/mdx": "0.2.0-beta.24", "@mdx-js/mdx": "^3.1.1", "vfile": "^6.0.3" }, "peerDependencies": { "@ecopages/core": "0.2.0-beta.24", "@ecopages/jsx": "0.3.0-beta.3", "@ecopages/radiant": "0.3.0-beta.3" } }, "sha512-bi1dwSjnXJcoxV/DaxtGyxRfUcw7ptOlzkiWtKm6LHjtkF+JeJYjPJufS3tHhFyG8yn9m7qmIF0X1YKIeNSfDA=="],
 
     "@ecopages/file-system": ["@ecopages/file-system@0.2.0-beta.24", "", { "peerDependencies": { "bun": ">=1.0.0" }, "optionalPeers": ["bun"] }, "sha512-qVGnK2owxRr7TW3TgvitcoX0ruq1WGhy3h8xU3wyujcxoRUHzRU/+isLwcxzDU111iv9DLZWMhkUO0gNvmfi9w=="],
 

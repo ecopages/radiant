@@ -2,9 +2,9 @@
 	"mode": "pre",
 	"tag": "beta",
 	"initialVersions": {
-		"@ecopages/jsx": "0.3.0-beta.1",
-		"@ecopages/radiant": "0.3.0-beta.1",
-		"@ecopages/signals": "0.3.0-beta.1"
+		"@ecopages/jsx": "0.3.0-beta.3",
+		"@ecopages/radiant": "0.3.0-beta.3",
+		"@ecopages/signals": "0.3.0-beta.3"
 	},
 	"changesets": []
 }
