@@ -126,10 +126,11 @@ Once `render()` is overridden, `RadiantElement` exposes the full host render lif
 
 - `update()` to apply the current JSX view
 - `requestUpdate()` for coalesced rerenders
-- `renderToString()` for the rendered view only
-- `renderHost()` and `renderHostToString()` for full host SSR output
+- `renderViewToString()` for the rendered view only (requires a Radiant server SSR entry import)
 - `hydrate()` when SSR markers exist and the explicit client hydrator is installed
 - light-DOM slot projection through literal `<slot>` tags
+
+Full host HTML (`<my-element>...</my-element>`) is produced by the server pipeline — prefer `renderComponent(...)` from `@ecopages/radiant/server/render-component`. See [Component SSR](/docs/ssr/component-ssr).
 
 ## Render Lifecycle Gate
 

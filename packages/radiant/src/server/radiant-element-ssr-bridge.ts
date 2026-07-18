@@ -32,12 +32,10 @@ export function renderRadiantElementHostToString(
 	component: RadiantElementServerRenderSsrCapable,
 	options: RenderToStringOptions = {},
 ): string {
-	return withServerRadiantElementSsrRuntime(() =>
-		createRadiantElementSsrService(component).renderHostToString(
-			options,
-			getRadiantElementHostSsrAttributes(component),
-		),
-	);
+	return withServerRadiantElementSsrRuntime(() => {
+		const service = createRadiantElementSsrService(component);
+		return service.renderHostToString(options, service.getHostAttributes());
+	});
 }
 
 export function renderRadiantElementHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable {
@@ -66,7 +64,7 @@ export function renderRegisteredRadiantElementHostToString(
 	return renderRadiantElementHostToString(component, options);
 }
 
-export function resolveRegisteredRadiantElementPreview(component: unknown, _markup: string): JsxRenderable | undefined {
+export function resolveRegisteredRadiantElementPreview(component: unknown): JsxRenderable | undefined {
 	if (!isRadiantElementServerRenderable(component)) {
 		return undefined;
 	}
