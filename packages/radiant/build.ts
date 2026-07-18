@@ -80,21 +80,17 @@ function rewriteSideEffects(value: PackageJsonShape['sideEffects']): PackageJson
 	return value.map((entry) => stripDistPrefix(entry));
 }
 
-const externalPackages = [
-	'@ecopages/jsx',
-	'@ecopages/jsx/*',
-	'@ecopages/signals',
-	'@ecopages/signals/*',
-	'node:async_hooks',
-];
+const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
 
 const glob = new Bun.Glob('src/**/*.ts');
 const files = await Array.fromAsync(glob.scan({ cwd: '.' }));
+const serverFiles = files.filter((file) => file.startsWith('src/server/') || file.includes('/server/'));
+const browserFiles = files.filter((file) => !serverFiles.includes(file));
 
 const watchMode = process.argv.includes('--watch');
 
-const build = await Bun.build({
-	entrypoints: files,
+const browserBuild = await Bun.build({
+	entrypoints: browserFiles,
 	outdir: 'dist',
 	root: './src',
 	target: 'browser',
@@ -104,13 +100,30 @@ const build = await Bun.build({
 	sourcemap: 'external',
 });
 
-if (!build.success) {
+const serverBuild = await Bun.build({
+	entrypoints: serverFiles,
+	outdir: 'dist',
+	root: './src',
+	target: 'node',
+	minify: !watchMode,
+	format: 'esm',
+	external: [...externalPackages, 'node:async_hooks'],
+	sourcemap: 'external',
+});
+
+for (const build of [browserBuild, serverBuild]) {
+	if (build.success) {
+		continue;
+	}
+
 	for (const log of build.logs) {
 		console.log('[@ecopages/radiant]', log);
 	}
+
+	process.exitCode = 1;
 }
 
-if (build.success) {
+if (browserBuild.success && serverBuild.success) {
 	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
 		if (!error) {
 			return;
