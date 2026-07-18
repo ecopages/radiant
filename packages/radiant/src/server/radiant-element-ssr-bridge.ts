@@ -10,7 +10,7 @@ import {
 } from '@ecopages/jsx/server';
 import { RadiantElementSsrService } from './radiant-element-ssr-service';
 import { runWithSsrProviderStack } from './context-ssr';
-import './install-ssr-scope-adapters';
+import './install-ssr-runtime';
 import { resolveRadiantElementSsrHostSource as resolveInternalRadiantElementSsrHostSource } from '../core/radiant-element-ssr-host';
 import type {
 	RadiantElementRenderBridge,

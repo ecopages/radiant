@@ -55,7 +55,8 @@
 	"sideEffects": [
 		"./dist/client/install-hydrator.js",
 		"./dist/server/install-light-dom-shim.js",
-		"./dist/server/install-ssr-scope-adapters.js"
+		"./dist/server/install-ssr-scope-adapters.js",
+		"./dist/server/install-ssr-runtime.js"
 	],
 	"exports": {
 		"./package.json": {
@@ -136,6 +137,10 @@
 		"./server/install-light-dom-shim": {
 			"types": "./dist/server/install-light-dom-shim.d.ts",
 			"import": "./dist/server/install-light-dom-shim.js"
+		},
+		"./server/install-ssr-runtime": {
+			"types": "./dist/server/install-ssr-runtime.d.ts",
+			"import": "./dist/server/install-ssr-runtime.js"
 		},
 		"./server/render-component": {
 			"types": "./dist/server/render-component.d.ts",

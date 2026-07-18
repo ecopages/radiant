@@ -21,7 +21,7 @@ export function registerMinimalDomHtmlParsers(parsers: HtmlParsers): void {
 function ensureHtmlParsers(): HtmlParsers {
 	if (!htmlParsers) {
 		throw new Error(
-			'Minimal DOM HTML parsers are not registered. Import @ecopages/radiant/server/install-light-dom-shim (or ./html) before using innerHTML.',
+			'Minimal DOM HTML parsers are not registered. Import @ecopages/radiant/server/install-ssr-runtime (or ./html) before using innerHTML.',
 		);
 	}
 
