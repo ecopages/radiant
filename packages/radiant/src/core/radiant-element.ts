@@ -22,11 +22,8 @@ import { ReactiveHost } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
-import {
-	getRadiantElementSsrRuntime,
-	type RadiantElementRenderToStringOptions,
-} from './radiant-element-ssr-registry';
-import type { InternalRadiantSsrHost } from './radiant-element-ssr-host';
+import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
+import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 import { getInitialValue } from '../utils/attribute-utils';
 
 export type {
@@ -420,7 +417,7 @@ export class RadiantElement<Bindings extends object = {}>
 		ensureLegacyHostReady(this, 'ssr');
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this as unknown as InternalRadiantSsrHost, options);
+		return requireRadiantElementSsrRuntime().renderView(this, options);
 	}
 
 	public hydrate(): void {
@@ -668,6 +665,11 @@ export class RadiantElement<Bindings extends object = {}>
 		};
 	}
 }
+
+Object.defineProperty(RadiantElement.prototype, RADIANT_ELEMENT_BRAND, {
+	value: true,
+	configurable: true,
+});
 
 function requireRadiantElementSsrRuntime() {
 	const runtime = getRadiantElementSsrRuntime();

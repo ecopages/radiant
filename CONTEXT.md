@@ -133,7 +133,7 @@ _Avoid_: provider, selector field, local state copy
 - The server rendering pipeline may read internal host metadata directly when needed for correct serialization; that does not justify widening the public host contract
 - Internal metadata reads for SSR should go through a small internal extractor module rather than being duplicated across server call sites
 - That extractor belongs in the server layer, not in core
-- Server extraction should use one formalized private internal host shape rather than ad hoc casts scattered across server code
+- Server extraction brands `RadiantElement` with `Symbol.for` and builds a private `InternalRadiantSsrHost` snapshot in the server extractor; it does not import the Element Host class into the extractor (shim order) and does not duck-type eight methods on arbitrary objects
 - That private host shape may include explicitly transitional seams during migration, but those seams should be treated as deletion targets rather than target architecture
 - An **Element Host** exposes both an **Attribute** channel and a **Property** channel
 - A **Property** can hold non-string runtime values that do not fit the **Attribute** channel

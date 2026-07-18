@@ -1,5 +1,4 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { InternalRadiantSsrHost } from './radiant-element-ssr-host';
 
 /** Core-local render options so client code never imports `@ecopages/jsx/server`. */
 export type RadiantElementRenderToStringOptions = {
@@ -12,18 +11,23 @@ export type RadiantElementRenderBridge = {
 	renderHostToString?: (options?: RadiantElementRenderToStringOptions) => string;
 };
 
-export type RadiantElementServerRenderSsrCapable = Omit<InternalRadiantSsrHost, 'constructor'> & {
-	constructor: Function;
-};
+/** Live host accepted by the server SSR pipeline (validated by the server extractor). */
+export type RadiantElementServerRenderSsrCapable = object;
 
 export type RadiantElementTrackedRenderSsrCapable = RadiantElementServerRenderSsrCapable;
 
 export type RadiantElementSsrRuntime = {
-	getHostAttributes(component: InternalRadiantSsrHost): Record<string, string>;
-	renderHost(component: InternalRadiantSsrHost): JsxRenderable;
-	renderHostToString(component: InternalRadiantSsrHost, options?: RadiantElementRenderToStringOptions): string;
+	getHostAttributes(component: RadiantElementServerRenderSsrCapable): Record<string, string>;
+	renderHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable;
+	renderHostToString(
+		component: RadiantElementServerRenderSsrCapable,
+		options?: RadiantElementRenderToStringOptions,
+	): string;
 	resolveRenderBridge(component: object): RadiantElementRenderBridge | undefined;
-	renderView(component: InternalRadiantSsrHost, options?: RadiantElementRenderToStringOptions): string;
+	renderView(
+		component: RadiantElementTrackedRenderSsrCapable,
+		options?: RadiantElementRenderToStringOptions,
+	): string;
 };
 
 /** JSX SSR scope adapters installed by the server layer into client-safe core. */
