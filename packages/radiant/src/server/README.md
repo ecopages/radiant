@@ -41,9 +41,32 @@ before calling the render helper, then inject resolved values through
 `initialize`, `prepareHost`, or explicit host attributes. Do not perform async
 work inside `render()`.
 
+## Adapter install (copy-paste)
+
+One boot path for Node adapters:
+
+1. Import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim + ALS scope adapters).
+2. Keep `@ecopages/*` **external** in the SSR bundler so Node resolves a single module instance (ALS and adapters are module-local).
+3. Call `renderComponent` / `renderToString` — await data and assets first; keep the scoped render snapshot synchronous.
+
+```ts
+import { radiantSsrRuntimeInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
+import { renderComponent } from '@ecopages/radiant/server/render-component';
+
+void radiantSsrRuntimeInstalled;
+
+const rendered = await renderComponent(CounterCard, {
+	initialize: (card) => {
+		card.count = 4;
+	},
+});
+```
+
+Prefer `install-ssr-runtime` over calling `installLightDomShim()` alone when you need Radiant host SSR (adapters + runtime lookup). Use `createServerRenderEnvironment()` when you only need host preparation helpers on top of an already-installed runtime.
+
 ## Runtime Preparation
 
-If your SSR runtime does not provide `HTMLElement` or `customElements`, install the light-DOM shim before importing Radiant element modules:
+If you are not using `install-ssr-runtime` and your process has no `HTMLElement` / `customElements`, install the light-DOM shim before importing Radiant element modules:
 
 ```ts
 import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
