@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { renderToString, type RenderToStringOptions } from '@ecopages/jsx/server';
-import { radiantLightDomShimInstalled } from '@ecopages/radiant/server/install-light-dom-shim';
+import { radiantLightDomShimInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
 import { RadiantController, resolveRegisteredController } from '@ecopages/radiant';
 import type {
 	RenderedComponent,
