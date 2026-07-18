@@ -80,7 +80,13 @@ function rewriteSideEffects(value: PackageJsonShape['sideEffects']): PackageJson
 	return value.map((entry) => stripDistPrefix(entry));
 }
 
-const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
+const externalPackages = [
+	'@ecopages/jsx',
+	'@ecopages/jsx/*',
+	'@ecopages/signals',
+	'@ecopages/signals/*',
+	'node:async_hooks',
+];
 
 const glob = new Bun.Glob('src/**/*.ts');
 const files = await Array.fromAsync(glob.scan({ cwd: '.' }));

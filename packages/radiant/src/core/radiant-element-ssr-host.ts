@@ -1,8 +1,8 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { ReactiveProperty } from './reactive-prop-core';
 import type { ReactivePropDefinition } from './reactive-prop-metadata';
+import type { RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 
 /**
@@ -20,7 +20,7 @@ export type InternalRadiantSsrHost = {
 	getPropertyValue: (name: string) => unknown;
 	getSlotProjectionScriptTag?: () => string | undefined;
 	resolveTrackedRenderOutput: () => { containsSlots: boolean; value: JsxRenderable };
-	renderViewToString: (options?: RenderToStringOptions) => string;
+	renderViewToString: (options?: RadiantElementRenderToStringOptions) => string;
 };
 
 export type RadiantElementSsrHostSource = InternalRadiantSsrHost;

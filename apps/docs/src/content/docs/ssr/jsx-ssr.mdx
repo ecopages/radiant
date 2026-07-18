@@ -106,6 +106,42 @@ const rendered = await renderController(ProductController, {
 
 By contrast, fetching inside `render()` is not part of the current SSR model.
 
+Orchestration **around** SSR may still be async on Node. For example, a route handler can `await` data loading, then call `renderToString(...)` inside `withActiveSsrScopeValue(...)`. Keep component `render()` synchronous; treat SSR as a snapshot of resolved state.
+
+## SSR Render Scope
+
+`renderToString(...)` runs inside an active SSR render scope. `@ecopages/jsx/server` is Node-only and stores that scope in `AsyncLocalStorage`, so concurrent requests and abandoned async work do not leak state across unrelated renders.
+
+Most app code never touches scope directly. Framework adapters use it to carry shared server state across nested `renderToString(...)` calls or split entrypoints.
+
+### When to use scope helpers
+
+| Need | API |
+| --- | --- |
+| Share hydrate binding indexes across sibling `renderToString(...)` calls | `createServerHydrationBindingState()` + `withServerHydrationBindingState(...)` |
+| Share other framework-owned SSR state (asset frames, runtime bridges, etc.) | `withActiveSsrScopeValue(...)` + `getActiveSsrScopeValue(...)` |
+
+Prefer `Symbol.for('@your-package.namespace')` keys so scope values survive entrypoint boundaries. Await I/O outside the scope when you only need scoped state during a synchronous render snapshot.
+
+### Example: sibling renders in one hydration root
+
+```ts
+/** @jsxImportSource @ecopages/jsx */
+
+import { jsx } from '@ecopages/jsx/jsx-runtime';
+import { renderToString, withActiveSsrScopeValue } from '@ecopages/jsx/server';
+
+const SHARED_SCOPE_KEY = Symbol.for('@acme/ssr.shared-root');
+
+const html = withActiveSsrScopeValue(SHARED_SCOPE_KEY, { started: true }, () => {
+	const page = renderToString(jsx('section', { class: 'page', children: 'Page' }), { mode: 'hydrate' });
+	const shell = renderToString(jsx('main', { class: 'layout', children: page }), { mode: 'hydrate' });
+	return shell;
+});
+```
+
+Hydration binding indexes continue across both `renderToString(...)` calls because they share one active SSR scope.
+
 ## Mental Model
 
 The important distinction is:

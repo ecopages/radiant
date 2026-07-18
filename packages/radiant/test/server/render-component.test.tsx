@@ -710,6 +710,7 @@ describe('render-component server helpers', () => {
 			renderComponent(
 				StringOnlyRenderable as unknown as CustomElementConstructor & { new (): StringOnlyRenderable },
 				{
+					tagName: 'string-only-renderable',
 					prepareHost: () => {},
 				},
 			),

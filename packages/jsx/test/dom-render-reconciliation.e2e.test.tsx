@@ -1,4 +1,17 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import {
+	HYDRATE_ADJACENT_FIELDS_HTML,
+	HYDRATE_BUTTON_ALPHA_HTML,
+	HYDRATE_CARD_ALPHA_HTML,
+	HYDRATE_FRAGMENT_COUNTER_HTML,
+	HYDRATE_GRADIENT_ICON_HTML,
+	HYDRATE_ITERABLE_ROOT_HTML,
+	HYDRATE_ITERABLE_ROOT_SINGLE_HTML,
+	HYDRATE_METRIC_HTML,
+	HYDRATE_NESTED_SVG_ICON_HTML,
+	PLAIN_BUTTON_ALPHA_HTML,
+	TRUE_CHILDREN_HTML,
+} from './fixtures/hydrate-html.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
@@ -6,7 +19,6 @@ async function loadModule<T>(path: string): Promise<T> {
 
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
 const loadJsxModule = async () => loadModule<typeof import('../src/index.ts')>('../src/index.ts');
-const loadServerRender = async () => loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts');
 const loadJsxDevRuntime = async () =>
 	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
 
@@ -212,11 +224,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('treats true child values as empty content during DOM rendering', async () => {
-		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const template = jsx('p', {
@@ -226,7 +234,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		root.render(template);
 
 		expect(container.querySelector('p')?.textContent).toBe('BeforeAfter');
-		expect(container.innerHTML).toBe(renderToString(template));
+		expect(container.innerHTML).toBe(TRUE_CHILDREN_HTML);
 	});
 
 	test('nullish children remove existing child content', async () => {
@@ -457,11 +465,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('hydrates nested SVG content with preserved namespaces and updates', async () => {
-		const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const xlinkNamespace = 'http://www.w3.org/1999/xlink';
@@ -480,7 +484,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				}),
 			});
 
-		container.innerHTML = renderToString(renderHydratedIcon('#alpha'), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_NESTED_SVG_ICON_HTML;
 		root.hydrate(renderHydratedIcon('#alpha'));
 
 		const hydratedUse = container.querySelector('use');
@@ -502,11 +506,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('hydrates nested SVG defs with canonical camel-cased element names under HTML parents', async () => {
-		const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 
@@ -545,7 +545,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				}),
 			});
 
-		container.innerHTML = renderToString(renderGradientIcon(), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_GRADIENT_ICON_HTML;
 		root.hydrate(renderGradientIcon());
 
 		const gradient = container.querySelector('linearGradient');
@@ -560,11 +560,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('hydrates iterable-root SSR bindings through per-child template hydration', async () => {
-		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		let clickTotal = 0;
@@ -585,7 +581,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			}),
 		];
 
-		container.innerHTML = renderToString(renderIterableRoot(), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_ITERABLE_ROOT_HTML;
 		root.hydrate(renderIterableRoot());
 
 		const buttons = Array.from(container.querySelectorAll('button'));
@@ -597,11 +593,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('removes SSR hydration marker attributes after template hydration', async () => {
-		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		let clickCount = 0;
@@ -617,7 +609,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				children: label,
 			});
 
-		container.innerHTML = renderToString(renderHydratedButton('Alpha'), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_BUTTON_ALPHA_HTML;
 		root.hydrate(renderHydratedButton('Alpha'));
 
 		const initialButton = container.querySelector('button');
@@ -640,8 +632,11 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('falls back to a full render when iterable-root hydration markers are malformed', async () => {
-		const [{ jsx }, { createRoot }, { renderToString }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] =
-			await Promise.all([loadJsxRuntime(), loadJsxModule(), loadServerRender(), loadJsxDevRuntime()]);
+		const [{ jsx }, { createRoot }, { resetRuntimeWarningsForTests, setDevWarningsEnabled }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+			loadJsxDevRuntime(),
+		]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -654,9 +649,10 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			}),
 		];
 
-		container.innerHTML = renderToString(renderIterableRoot(), { mode: 'hydrate' })
-			.replace('attr:class', 'not-a-binding')
-			.replace('data-radiant-jsx-bind-1', 'data-radiant-jsx-bind-99');
+		container.innerHTML = HYDRATE_ITERABLE_ROOT_SINGLE_HTML.replace('attr:class', 'not-a-binding').replace(
+			'data-radiant-jsx-bind-1',
+			'data-radiant-jsx-bind-99',
+		);
 
 		resetRuntimeWarningsForTests();
 		setDevWarningsEnabled(true);
@@ -675,11 +671,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('template hydration falls back through a recoverable mismatch when SSR DOM shape drifts', async () => {
-		const [{ jsx, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 
@@ -690,7 +682,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				}),
 			});
 
-		container.innerHTML = renderToString(renderHydratedCard('alpha'), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_CARD_ALPHA_HTML;
 		container.querySelector('p')?.remove();
 
 		root.hydrate(renderHydratedCard('beta'));
@@ -699,16 +691,12 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('hydrate performs a full rerender when the target has no hydration markers', async () => {
-		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const renderView = (label: string) => jsx('button', { class: 'action', children: label });
 
-		container.innerHTML = renderToString(renderView('alpha'));
+		container.innerHTML = PLAIN_BUTTON_ALPHA_HTML;
 		const serverButton = container.querySelector('button');
 
 		root.hydrate(renderView('beta'));
@@ -754,11 +742,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('hydrates adjacent attribute-only child templates without crossing sibling ranges', async () => {
-		const [{ jsx }, { createRoot }, { renderToString }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-			loadServerRender(),
-		]);
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 
@@ -779,7 +763,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				],
 			});
 
-		container.innerHTML = renderToString(renderHydratedFields('Alpha', 'Beta'), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_ADJACENT_FIELDS_HTML;
 		root.hydrate(renderHydratedFields('Alpha', 'Beta'));
 
 		const initialInputs = Array.from(container.querySelectorAll('input'));
@@ -947,10 +931,9 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('hydrated subscribable child values patch without rerendering the parent tree', async () => {
-		const [{ createSubscribableJsxValue, jsxs }, { createRoot }, { renderToString }] = await Promise.all([
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
 			loadJsxRuntime(),
 			loadJsxModule(),
-			loadServerRender(),
 		]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
@@ -971,7 +954,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				children: ['Count: ', boundCount],
 			});
 
-		container.innerHTML = renderToString(renderMetric(), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_METRIC_HTML;
 		root.hydrate(renderMetric());
 
 		expect(container.querySelector('p')?.textContent).toBe('Count: 15');
@@ -988,8 +971,10 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('hydrated fragment subscribable child values patch without rerendering the parent tree', async () => {
-		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }, { renderToString }] =
-			await Promise.all([loadJsxRuntime(), loadJsxModule(), loadServerRender()]);
+		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const subscribers = new Set<(value: number) => void>();
@@ -1012,7 +997,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 				],
 			});
 
-		container.innerHTML = renderToString(renderCounter(), { mode: 'hydrate' });
+		container.innerHTML = HYDRATE_FRAGMENT_COUNTER_HTML;
 		root.hydrate(renderCounter());
 
 		expect(container.querySelector('#metric')?.textContent).toBe('2');

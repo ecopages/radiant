@@ -47,7 +47,9 @@ Because resolution relies on event bubbling, the provider must be a DOM ancestor
 
 ### SSR (Ambient Provider Stack)
 
-During server-side rendering there is no DOM tree to bubble events through. Instead, Radiant uses an ambient provider stack backed by `AsyncLocalStorage` (Node / Bun) or a synchronous global stack (browser tests).
+During server-side rendering there is no DOM tree to bubble events through. Instead, Radiant uses an ambient provider stack backed by Node `AsyncLocalStorage`.
+
+This is separate from the JSX SSR render scope used by `@ecopages/jsx/server`. Both systems use async-local storage on the server, but they store different state and use different public APIs.
 
 1. `renderComponent(...)` pushes any `ssrContext` providers and the component's own providers onto the stack.
 2. Consumer decorators call `resolveAmbientSsrContextProvider(token)` which walks the stack innermost-to-outermost — mirroring the nearest-ancestor semantics of DOM bubbling.
