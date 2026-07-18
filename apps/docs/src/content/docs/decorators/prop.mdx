@@ -28,7 +28,7 @@ export class UserCard extends RadiantElement {
 
 ## SSR Property Staging
 
-Before the first server render, assign properties through `renderComponent` (or on a disconnected host before calling the server bridge):
+Before the first server render, assign properties through `renderComponent` (or on a disconnected host before calling `renderRadiantElementHostToString`):
 
 ```typescript
 import { renderComponentToString } from '@ecopages/radiant/server/render-component';

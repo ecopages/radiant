@@ -504,6 +504,8 @@ There are three practical outcomes during SSR:
 - framework-owned custom elements, such as `RadiantElement`, are adapted through the server custom-element render hook so JSX does not need framework-specific branches in its core renderer
 - plain registered custom elements without an SSR contract fall back to their authored markup so the client can still upgrade them later
 
+Important: `RadiantElement` does **not** expose a durable instance method named `renderHostToString()`. Radiant installs a server custom-element render hook and serializes hosts through its own server pipeline (`renderComponent(...)`, `renderRadiantElementHostToString(...)`). The generic instance contract below is for third-party custom elements that opt into JSX SSR directly.
+
 The generic contract is intentionally small:
 
 ```ts

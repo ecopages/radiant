@@ -146,9 +146,12 @@ Use `@onUpdated(...)` with `update()` or `requestUpdate()` when the reactive cha
 
 Prefer the server pipeline for host HTML:
 
+- import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim + ALS scope adapters)
 - `renderComponent(...)` / `renderComponentToString(...)` from `@ecopages/radiant/server/render-component` for adapters and fragments
-- `renderRadiantElementHostToString(...)` from the server bridge for lower-level host serialization
+- `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` for lower-level host serialization
 - `renderViewToString()` on the element only serializes the JSX view through the installed server runtime
+
+There is no durable Element Host instance API named `renderHostToString()`.
 
 Radiant SSR is light-DOM only. Shadow `renderRootMode` hosts throw during server serialization; client shadow rendering remains valid.
 
@@ -286,7 +289,9 @@ These are the documented public import paths exposed by the package.
 | `@ecopages/radiant/client/hydrator`               | Explicit client hydrator installer and status helpers for SSR pages                                                                                                                 |
 | `@ecopages/radiant/client/install-hydrator`       | Side-effect entrypoint that enables first-connect hydration before component modules load                                                                                           |
 | `@ecopages/radiant/signals/host-resource`         | Low-level `HostResource`, `createHostResource(...)`, and `createResource(...)` helpers                                                                                              |
+| `@ecopages/radiant/server/install-ssr-runtime`    | Side-effect server boot entry: light-DOM shim plus JSX SSR scope adapters                                                                                                           |
 | `@ecopages/radiant/server/light-dom-shim`         | Minimal SSR window and host-preparation helpers                                                                                                                                     |
+| `@ecopages/radiant/server/radiant-element-ssr`    | Lower-level Element Host SSR bridge (`renderRadiantElementHostToString`, runtime helpers)                                                                                           |
 | `@ecopages/radiant/server/render-component`       | Canonical component SSR helpers and shared fragment metadata utilities                                                                                                              |
 | `@ecopages/radiant/server/render-controller`      | Controller-host SSR helpers and controller-specific host option types                                                                                                               |
 | `@ecopages/radiant/server/project-root`           | Project-root resolution helper for server adapters                                                                                                                                  |

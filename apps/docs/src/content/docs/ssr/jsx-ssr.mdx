@@ -63,7 +63,7 @@ If hydration markers are missing, the client runtime falls back to a normal rend
 
 ## SSR And Custom Elements
 
-When JSX SSR encounters a registered Radiant custom element, the server custom-element render hook asks Radiant's **server pipeline** to serialize the host (via the installed SSR runtime and `renderRadiantElementHostToString`-equivalent path). Hosts do not expose a durable instance `renderHostToString()` API.
+When JSX SSR encounters a registered Radiant custom element, the server custom-element render hook asks Radiant's **server pipeline** to serialize the host (same path as `renderRadiantElementHostToString` from `@ecopages/radiant/server/radiant-element-ssr`). Radiant Element Hosts do not expose a durable instance `renderHostToString()` API. That instance method remains only the generic third-party custom-element contract understood by `@ecopages/jsx/server`.
 
 At SSR time the runtime:
 
