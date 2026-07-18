@@ -47,6 +47,8 @@ const rendered = await renderComponent(MyCard, {
 
 There is no durable Element Host instance API named `renderHostToString()`.
 
+JSX still accepts third-party custom elements that implement `renderHostToString(...)` on the instance. Radiant Element Hosts do not use that path; they go through the installed server custom-element render hook and the APIs above.
+
 ## Light DOM only
 
 Hosts with `renderRootMode = 'shadow'` throw during SSR. Client shadow rendering remains supported; skip server serialization for those hosts until declarative shadow SSR exists as an explicit product surface.

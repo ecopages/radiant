@@ -73,7 +73,7 @@ SSR works like this:
 Radiant SSR is **light-DOM only**. Hosts with `renderRootMode = 'shadow'` throw during server serialization.
 
 `renderRadiantElementViewToString(...)` / `renderViewToString()` serialize only the component view.
-`renderRadiantElementHostToString(...)` / `renderComponent(...)` serialize the full custom-element host together with the view.
+`renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` / `renderComponent(...)` serialize the full custom-element host together with the view.
 When slot-aware SSR needs authored light DOM, adapters prepare the host through `prepareHost` / `authoredContent` on `renderComponent`.
 
 ## Public API

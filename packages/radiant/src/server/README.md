@@ -21,7 +21,7 @@ import '@ecopages/radiant/client/install-hydrator';
 
 Radiant SSR is **light-DOM only**. Hosts with `renderRootMode = 'shadow'` throw during server serialization — the pipeline does not emit declarative shadow roots. Client-side shadow rendering remains supported; skip SSR for those hosts.
 
-For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Lower-level host serialization lives on the server bridge (`renderRadiantElementHostToString`), not as Element Host instance methods.
+For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr` (`renderRadiantElementHostToString`), not as Element Host instance methods.
 
 When a component renders literal `<slot>` tags, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
 
