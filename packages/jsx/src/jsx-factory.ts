@@ -18,7 +18,8 @@ import type {
 } from './types.ts';
 
 /** Well-known symbol that identifies a JSX fragment in the Radiant runtime. */
-export const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment');
+declare const fragmentSymbolType: unique symbol;
+export const fragmentSymbol = Symbol.for('@ecopages/jsx.fragment') as typeof fragmentSymbolType;
 
 export type JsxFragment = typeof fragmentSymbol;
 
@@ -64,6 +65,10 @@ export function createJsxElement<Props extends object>(
 
 	if (type === 'slot') {
 		return wrapKeyedValue(createSlotJsxValue(props as JsxPropsWithChildren & { name?: unknown }), keyedValue);
+	}
+
+	if (typeof type !== 'string') {
+		throw new TypeError('Expected a JSX element type string.');
 	}
 
 	const strings = [`<${type}`];

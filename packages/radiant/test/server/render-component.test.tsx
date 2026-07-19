@@ -53,7 +53,7 @@ class RenderComponentCard extends RadiantElement {
 
 @customElement('render-component-shadow-card-test')
 class RenderComponentShadowCard extends RadiantElement {
-	protected override readonly renderRootMode = 'shadow';
+	override readonly renderRootMode = 'shadow';
 
 	override render() {
 		return <p>shadow only</p>;

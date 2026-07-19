@@ -24,7 +24,7 @@ export class RadiantElementSsrService {
 	}
 
 	private ensureReady(): void {
-		assertLightDomSsrSupported(this.component);
+		assertLightDomSsrSupported(this.host);
 		ensureLegacyHostReady(this.component, 'ssr');
 		runSsrPreparationCallbacks(this.component);
 	}

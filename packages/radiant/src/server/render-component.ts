@@ -8,7 +8,7 @@ import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
 import {
-	resolveRegisteredRadiantElementPreview,
+	renderRegisteredRadiantElementHost,
 	renderRegisteredRadiantElementHostToString,
 } from './radiant-element-ssr-bridge';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
@@ -355,7 +355,7 @@ function resolveRenderedComponentPreview<TComponent extends ServerRenderableComp
 	component: TComponent,
 	markup: string,
 ): JsxRenderable {
-	return resolveRegisteredRadiantElementPreview(component) ?? { nodeType: 1, outerHTML: markup };
+	return renderRegisteredRadiantElementHost(component) ?? { nodeType: 1, outerHTML: markup };
 }
 
 function prepareRenderedComponentHost<TComponent extends ServerRenderableComponent>(
