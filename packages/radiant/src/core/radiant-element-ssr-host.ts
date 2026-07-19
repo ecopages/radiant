@@ -12,6 +12,7 @@ import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
  */
 export type InternalRadiantSsrHost = {
 	constructor: CustomElementConstructor;
+	readonly renderRootMode: 'light' | 'shadow';
 	getAttribute(name: string): string | null;
 	getAttributeNames(): string[];
 	getAuthoredHydrationScriptMarkup?: () => string | undefined;

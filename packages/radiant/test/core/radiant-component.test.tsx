@@ -53,7 +53,7 @@ describe('RadiantElement', () => {
 
 	test('renders into an internal shadow root when renderRootMode is shadow', async () => {
 		class ShadowGreetingCard extends RadiantElement {
-			protected override readonly renderRootMode = 'shadow';
+			override readonly renderRootMode = 'shadow';
 			declare count: number;
 
 			constructor() {
