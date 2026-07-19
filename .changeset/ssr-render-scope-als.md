@@ -9,7 +9,7 @@ Move SSR ambient render state to Node `AsyncLocalStorage` and keep client bundle
 
 - `@ecopages/jsx/server` is Node-only and stores active SSR render scope in `AsyncLocalStorage` (no sync / browser fallback stack).
 - Add `getActiveSsrScopeValue` / `withActiveSsrScopeValue` for framework-scoped SSR state on the active render scope.
-- `withForcedServerCustomElementRendering` is now a no-op legacy shim.
+- `withForcedServerCustomElementRendering` has been removed; custom-element SSR is handled by the server-render pipeline directly.
 
 **@ecopages/radiant**
 

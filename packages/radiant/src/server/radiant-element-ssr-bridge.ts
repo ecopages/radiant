@@ -4,7 +4,6 @@ import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
 import {
 	createServerHydrationBindingState,
 	isServerRenderHydrationActive,
-	withForcedServerCustomElementRendering,
 	withServerCustomElementRenderHook,
 	withServerHydrationBindingState,
 } from '@ecopages/jsx/server';
@@ -12,12 +11,12 @@ import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { RadiantElementSsrService } from './radiant-element-ssr-service';
 import { runWithSsrProviderStack } from './context-ssr';
 import './install-ssr-runtime';
-import { isRadiantElementServerRenderable } from './radiant-element-ssr-extractor';
+import { isRadiantElementSsrHost } from '../core/radiant-element-ssr-host-source';
 import type {
 	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementSsrRuntime,
-	RadiantElementTrackedRenderSsrCapable,
+	RadiantElementViewRenderSource,
 } from '../core/radiant-element-ssr-registry';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
 
@@ -46,7 +45,7 @@ export function renderRadiantElementHost(component: RadiantElementServerRenderSs
 }
 
 export function renderRegisteredRadiantElementHost(component: unknown): JsxRenderable | undefined {
-	if (!isRadiantElementServerRenderable(component)) {
+	if (!isRadiantElementSsrHost(component)) {
 		return undefined;
 	}
 
@@ -57,30 +56,22 @@ export function renderRegisteredRadiantElementHostToString(
 	component: unknown,
 	options: RenderToStringOptions = {},
 ): string | undefined {
-	if (!isRadiantElementServerRenderable(component)) {
+	if (!isRadiantElementSsrHost(component)) {
 		return undefined;
 	}
 
 	return renderRadiantElementHostToString(component, options);
 }
 
-export function resolveRegisteredRadiantElementPreview(component: unknown): JsxRenderable | undefined {
-	if (!isRadiantElementServerRenderable(component)) {
-		return undefined;
-	}
-
-	return renderRadiantElementHost(component);
-}
-
 export function renderRadiantElementViewToString(
-	component: RadiantElementTrackedRenderSsrCapable,
+	component: RadiantElementViewRenderSource,
 	options: RenderToStringOptions = {},
 ): string {
 	assertLightDomSsrSupported(component);
 
 	return withServerRadiantElementSsrRuntime(() =>
 		withRadiantServerCustomElementRenderBridge(() =>
-			renderJsxToString(getRadiantElementTrackedRenderOutput(component).value, options),
+			renderJsxToString(component.resolveTrackedRenderOutput().value, options),
 		),
 	);
 }
@@ -92,7 +83,7 @@ export function getRadiantElementHostSsrAttributes(
 }
 
 export function resolveRadiantElementRenderBridge(component: object): RadiantElementRenderBridge | undefined {
-	if (!isRadiantElementServerRenderable(component)) {
+	if (!isRadiantElementSsrHost(component)) {
 		return undefined;
 	}
 
@@ -102,29 +93,23 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
 	};
 }
 
-export function resolveRadiantElementSsrHostBridge(component: object): object | undefined {
-	return isRadiantElementServerRenderable(component) ? component : undefined;
-}
-
 /**
  * Installs the JSX custom-element render hook so nested CEs serialize through
  * {@link renderRadiantElementHostToString} (same path as `renderComponent`).
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
-	return withForcedServerCustomElementRendering(() =>
-		withServerCustomElementRenderHook(({ instance }) => {
-			if (!isRadiantElementServerRenderable(instance)) {
-				return undefined;
-			}
+	return withServerCustomElementRenderHook(({ instance }) => {
+		if (!isRadiantElementSsrHost(instance)) {
+			return undefined;
+		}
 
-			return {
-				nodeType: 1,
-				get outerHTML() {
-					return serializeNestedCustomElementHost(instance);
-				},
-			};
-		}, render),
-	);
+		return {
+			nodeType: 1,
+			get outerHTML() {
+				return serializeNestedCustomElementHost(instance);
+			},
+		};
+	}, render);
 }
 
 function serializeNestedCustomElementHost(instance: RadiantElementServerRenderSsrCapable): string {
@@ -138,27 +123,6 @@ function serializeNestedCustomElementHost(instance: RadiantElementServerRenderSs
 	return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
 		renderRadiantElementHostToString(instance, options),
 	);
-}
-
-export function getRadiantElementTrackedRenderOutput(component: RadiantElementTrackedRenderSsrCapable): {
-	containsSlots: boolean;
-	value: JsxRenderable;
-} {
-	if (hasTrackedRenderOutput(component)) {
-		return component.resolveTrackedRenderOutput();
-	}
-
-	throw new Error('Radiant SSR runtime requires tracked render output support on the component.');
-}
-
-function hasTrackedRenderOutput(component: unknown): component is {
-	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
-} {
-	if (typeof component !== 'object' || component === null) {
-		return false;
-	}
-
-	return typeof (component as { resolveTrackedRenderOutput?: unknown }).resolveTrackedRenderOutput === 'function';
 }
 
 export function getOrCreateRadiantElementSsrRuntime(): RadiantElementSsrRuntime {
