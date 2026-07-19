@@ -1,7 +1,27 @@
 import { describe, expect, test } from 'vitest';
+import { isIterableRenderable, isTemplateResultLike } from '../src/renderable-guards.ts';
+import type { TemplateResultLike } from '../src/jsx-runtime.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
 	return import(/* @vite-ignore */ path) as Promise<T>;
+}
+
+function expectTemplateChild(value: unknown): TemplateResultLike {
+	expect(isTemplateResultLike(value)).toBe(true);
+	if (!isTemplateResultLike(value)) {
+		throw new Error('Expected fragment child to be a template result.');
+	}
+
+	return value;
+}
+
+function expectFragmentChildren(fragment: unknown): unknown[] {
+	expect(isIterableRenderable(fragment)).toBe(true);
+	if (!isIterableRenderable(fragment)) {
+		throw new Error('Expected fragment to be iterable.');
+	}
+
+	return [...fragment];
 }
 
 const loadMarkerPolicy = async () =>
@@ -150,8 +170,9 @@ describe('template attribute marker index collection', () => {
 
 		const fragment = renderFragment();
 		const bindings = collectHydrationBindings(fragment);
-		const firstButton = (fragment as unknown[])[0] as ReturnType<typeof jsx>;
-		const span = (fragment as unknown[])[1] as ReturnType<typeof jsx>;
+		const fragmentChildren = expectFragmentChildren(fragment);
+		const firstButton = expectTemplateChild(fragmentChildren[0]);
+		const span = expectTemplateChild(fragmentChildren[1]);
 
 		const firstButtonIndices = collectTemplateAttributeMarkerIndices(firstButton, 0);
 		expect(firstButtonIndices.nextIndex).toBe(2);
@@ -218,11 +239,10 @@ describe('template attribute marker index collection', () => {
 				jsx('button', { id: 'inc', children: '+' }),
 			],
 		});
-		const [decButton, metricSpan, incButton] = fragment as unknown as [
-			ReturnType<typeof jsx>,
-			ReturnType<typeof jsx>,
-			ReturnType<typeof jsx>,
-		];
+		const fragmentChildren = expectFragmentChildren(fragment);
+		const decButton = expectTemplateChild(fragmentChildren[0]);
+		const metricSpan = expectTemplateChild(fragmentChildren[1]);
+		const incButton = expectTemplateChild(fragmentChildren[2]);
 
 		const html = renderToString(fragment, { mode: 'hydrate' });
 		const bindings = collectHydrationBindings(fragment);

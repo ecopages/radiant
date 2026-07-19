@@ -3,7 +3,6 @@ export {
 	withServerHydrationBindingState,
 	renderToString,
 	isServerRenderHydrationActive,
-	withForcedServerCustomElementRendering,
 	withServerCustomElementRenderHook,
 	type RenderToStringOptions,
 	type ServerHydrationBindingState,

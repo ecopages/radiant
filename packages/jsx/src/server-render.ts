@@ -123,17 +123,6 @@ export function withServerHydrationBindingState<T>(state: ServerHydrationBinding
 	return withActiveSsrScopeValue(ACTIVE_HYDRATION_BINDING_STATE_KEY, state, render);
 }
 
-/**
- * Legacy compatibility wrapper for older integrations that expected an explicit
- * "force custom-element SSR" toggle.
- *
- * The server-render pipeline now owns intrinsic custom-element SSR directly, so
- * this helper only preserves the old call shape and immediately runs `render()`.
- */
-export function withForcedServerCustomElementRendering<T>(render: () => T): T {
-	return render();
-}
-
 function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render: () => T): T {
 	const parentContext = getActiveSsrRenderContext();
 	const nextContext: SsrRenderContext = {

@@ -227,6 +227,7 @@ export class RadiantElement<Bindings extends object = {}>
 	extends RadiantElementBase
 	implements IRadiantElement<Bindings>
 {
+	declare readonly [RADIANT_ELEMENT_BRAND]: true;
 	/**
 	 * Controls where the JSX render lifecycle mounts the component view.
 	 *
@@ -234,7 +235,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * shadow root for client-side rendering. Host SSR helpers remain light-DOM
 	 * only and throw when shadow render mode is enabled.
 	 */
-	protected readonly renderRootMode: 'light' | 'shadow' = 'light';
+	readonly renderRootMode: 'light' | 'shadow' = 'light';
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
