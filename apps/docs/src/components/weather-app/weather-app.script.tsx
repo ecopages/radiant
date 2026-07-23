@@ -1,8 +1,14 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantElement, customElement } from '@ecopages/radiant';
-import { createResource } from '@ecopages/radiant/signals/host-resource';
-import { type ContextProvider, contextSelector, createContext, provideContext } from '@ecopages/radiant/context';
-import { state as signalState } from '@ecopages/signals';
+import {
+	type ContextProvider,
+	RadiantElement,
+	contextSelector,
+	createContext,
+	createResource,
+	customElement,
+	provideContext,
+	state,
+} from '@/utils/radiant-browser-runtime';
 import type { WeatherCity, WeatherContext, WeatherReport } from './weather-app.types';
 import {
 	DEFAULT_CITY_ID,
@@ -58,7 +64,7 @@ export class RadiantWeatherSummary extends RadiantElement {
 
 @customElement('radiant-weather-app')
 export class RadiantWeatherAppElement extends RadiantElement {
-	private activeCityId = signalState(DEFAULT_CITY_ID);
+	@state activeCityId = DEFAULT_CITY_ID;
 
 	@provideContext<typeof weatherContext>({
 		context: weatherContext,
@@ -73,7 +79,7 @@ export class RadiantWeatherAppElement extends RadiantElement {
 	private weatherQuery = createResource(this, {
 		pendingDelay: 500,
 		staleTime: 1 * 60 * 1000,
-		source: (ctx) => ctx.host.activeCityId.get(),
+		source: (ctx) => ctx.host.activeCityId,
 		fetcher: (cityId, ctx) => fetchWeatherReport(getWeatherCity(cityId), ctx.signal),
 		onSuccess: (report, ctx) => {
 			ctx.host.provider.setContext({
@@ -99,7 +105,7 @@ export class RadiantWeatherAppElement extends RadiantElement {
 			return;
 		}
 
-		this.activeCityId.set(cityId);
+		this.activeCityId = cityId;
 		this.provider.setContext({ activeCityId: cityId });
 	};
 

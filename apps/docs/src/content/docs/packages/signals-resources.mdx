@@ -10,7 +10,7 @@ order: 5
 `createResource` ties an async data flow to a host element's lifecycle. It starts observing when the element connects, aborts in-flight work on disconnect, and resumes from the current source on reconnect.
 
 ```ts
-import { createResource } from '@ecopages/radiant/signals/host-resource';
+import { createResource } from '@ecopages/radiant';
 ```
 
 ## Basic Usage
@@ -25,13 +25,15 @@ private data = createResource(this, {
 
 ## Sourced Usage
 
-Drive fetches from a reactive source. Source changes abort the previous request and start a new one:
+Drive fetches from a reactive source. Source changes abort the previous request and start a new one.
+
+`source` only re-runs when it reads a signal (or a host member backed by one). Prefer `@state` / `@prop` so plain property access tracks automatically:
 
 ```tsx
-private activeCityId = signalState('venice');
+@state activeCityId = 'venice';
 
 private weatherQuery = createResource(this, {
-	source: (ctx) => ctx.host.activeCityId.get(),
+	source: (ctx) => ctx.host.activeCityId,
 	fetcher: (cityId, ctx) => fetchWeatherReport(cityId, ctx.signal),
 	onSuccess: (report) => console.log(report),
 });
@@ -42,6 +44,8 @@ override render() {
 	// ...
 }
 ```
+
+You can also pass a raw signal and call `.get()` inside `source`. A plain field is not reactive — changing it will not refetch.
 
 Returning a falsy value (`false`, `null`, `undefined`) from `source` disables fetching without clearing the current state.
 

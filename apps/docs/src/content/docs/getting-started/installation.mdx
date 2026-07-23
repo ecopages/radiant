@@ -26,7 +26,7 @@ You do not need to import JSX or Signals APIs directly in every Radiant componen
 
 `@ecopages/radiant` currently declares `@ecopages/jsx` as a peer dependency. It also depends on `@ecopages/signals` directly for host member state. `@ecopages/jsx` declares `@ecopages/signals` as a peer dependency for signal-backed derived bindings such as `mapSubscribable(...)`.
 
-Installing `@ecopages/radiant` brings `@ecopages/signals` transitively, which satisfies `@ecopages/jsx`'s peer dependency. The packages still ship as separate npm artifacts; your app bundler resolves and dedupes them at build time.
+Installing `@ecopages/radiant` brings `@ecopages/signals` transitively, which satisfies `@ecopages/jsx`'s peer dependency. The packages still ship as separate npm artifacts; your app bundler must resolve them to a **single** module instance within the application graph. Inlining `@ecopages/signals` into more than one app vendor chunk (or installing conflicting versions) breaks shared reactivity — for example, `@state` updates may not reach `createResource` when each chunk owns its own signals runtime.
 
 <CodeTabs
   label="Package managers"

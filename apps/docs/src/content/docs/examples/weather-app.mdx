@@ -25,11 +25,11 @@ The example covers:
 - `@contextSelector` without `select` on the host for full-context access in `render()`
 - stale-while-revalidate rendering via `staleTime` and `pendingDelay`
 
-`createResource(...)` comes from the public subpath `@ecopages/radiant/signals/host-resource`, not the root entrypoint.
+`createResource(...)` is available from `@ecopages/radiant`. Prefer importing it from the same entry as `RadiantElement` / `@state` so your bundler keeps a single `@ecopages/signals` instance. The focused subpath `@ecopages/radiant/signals/host-resource` remains available for tree-shaking, but it must resolve to the same signals copy as the rest of Radiant.
 
 ## Architecture
 
-The host owns the city signal, the provider, and the resource lifecycle. Source changes abort older requests automatically, and successful responses update the shared context via `this.provider.setContext(...)`.
+The host owns the active city id as `@state`, the provider, and the resource lifecycle. Because `source` reads `ctx.host.activeCityId`, city changes automatically abort older requests and start a new fetch — no manual `refetch()` needed. Successful responses update the shared context via `this.provider.setContext(...)`.
 
 The summary card only cares about the visible report. It subscribes to that slice with `@contextSelector({ select: ... })` and reads `this.visibleReport` directly in `render()`. It does not need `@consumeContext` because it never calls `setContext(...)`.
 
@@ -93,11 +93,11 @@ import {
 	RadiantElement,
 	contextSelector,
 	createContext,
+	createResource,
 	customElement,
 	provideContext,
+	state,
 } from '@ecopages/radiant';
-import { createResource } from '@ecopages/radiant/signals/host-resource';
-import { state as signalState } from '@ecopages/signals';
 import type { WeatherCity, WeatherContext, WeatherReport } from './weather-app.types';
 import {
 	DEFAULT_CITY_ID,
@@ -111,7 +111,7 @@ const weatherContext = createContext<WeatherContext>(Symbol('weather-context'));
 
 @customElement('radiant-weather-app')
 export class RadiantWeatherAppElement extends RadiantElement {
-	private activeCityId = signalState(DEFAULT_CITY_ID);
+	@state activeCityId = DEFAULT_CITY_ID;
 
 	@provideContext<typeof weatherContext>({
 		context: weatherContext,
@@ -126,7 +126,7 @@ export class RadiantWeatherAppElement extends RadiantElement {
 	private weatherQuery = createResource(this, {
 		pendingDelay: 500,
 		staleTime: 1 * 60 * 1000,
-		source: (ctx) => ctx.host.activeCityId.get(),
+		source: (ctx) => ctx.host.activeCityId,
 		fetcher: (cityId, ctx) => fetchWeatherReport(getWeatherCity(cityId), ctx.signal),
 		onSuccess: (report, ctx) => {
 			ctx.host.provider.setContext({
@@ -148,7 +148,7 @@ export class RadiantWeatherAppElement extends RadiantElement {
 		const button = event.currentTarget as HTMLButtonElement | null;
 		const cityId = button?.dataset.cityId;
 		if (!cityId) return;
-		this.activeCityId.set(cityId);
+		this.activeCityId = cityId;
 		this.provider.setContext({ activeCityId: cityId });
 	};
 
