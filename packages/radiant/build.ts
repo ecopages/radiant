@@ -80,6 +80,29 @@ function rewriteSideEffects(value: PackageJsonShape['sideEffects']): PackageJson
 	return value.map((entry) => stripDistPrefix(entry));
 }
 
+/**
+ * Bun's multi-entrypoint minify drops cross-entrypoint value re-exports from
+ * `index.js` (emitting `H3 as createResource` with no local `H3`). Rewrite those
+ * exports to a real `./signals/host-resource.js` re-export so the root entry stays
+ * a single import path for docs/app bundlers.
+ */
+async function fixIndexHostResourceReexports(): Promise<void> {
+	const indexPath = path.join(import.meta.dir, 'dist', 'index.js');
+	const source = readFileSync(indexPath, 'utf8');
+
+	if (source.includes('from"./signals/host-resource.js"') || source.includes("from'./signals/host-resource.js'")) {
+		return;
+	}
+
+	const withoutBrokenExports = source
+		.replace(/,?\w+ as createResource/g, '')
+		.replace(/,?\w+ as createHostResource/g, '')
+		.replace(/,?\w+ as HostResource(?=[,}])/g, '');
+
+	const patched = `${withoutBrokenExports}\nexport{createResource,createHostResource,HostResource}from"./signals/host-resource.js";\n`;
+	await Bun.write(indexPath, patched);
+}
+
 const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
 
 const glob = new Bun.Glob('src/**/*.ts');
@@ -124,6 +147,8 @@ for (const build of [browserBuild, serverBuild]) {
 }
 
 if (browserBuild.success && serverBuild.success) {
+	await fixIndexHostResourceReexports();
+
 	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
 		if (!error) {
 			return;

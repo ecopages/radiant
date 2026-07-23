@@ -14,3 +14,12 @@ export * from './decorators/query';
 export * from './decorators/query-slot';
 export * from './decorators/signal';
 export * from './decorators/state';
+export {
+	createHostResource,
+	createResource,
+	HostResource,
+	type HostResourceConfig,
+	type HostResourceSourcedConfig,
+	type ResourceContext,
+	type ResourceRequestContext,
+} from './signals/host-resource';
