@@ -1,0 +1,90 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-navigation-menu {
+	@apply block w-full;
+}
+
+@layer components {
+	.rui-navigation-menu {
+		@apply flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm;
+	}
+
+	.rui-navigation-menu__bar {
+		@apply flex flex-wrap items-center gap-1 border-b border-border bg-background px-3 py-2;
+	}
+
+	.rui-navigation-menu__bar .rui-button,
+	.rui-navigation-menu__bar a.rui-button {
+		@apply rounded-md no-underline;
+	}
+
+	.rui-navigation-menu [data-navigation-trigger] {
+		@apply relative;
+	}
+
+	.rui-navigation-menu [data-navigation-trigger][aria-expanded='true'] {
+		@apply bg-primary-container font-medium text-on-primary-container shadow-none;
+		@apply ring-2 ring-inset ring-primary/25;
+	}
+
+	.rui-navigation-menu__panels {
+		@apply bg-background;
+	}
+
+	.rui-navigation-menu__panels [data-navigation-panel] {
+		@apply block px-5 py-5 text-sm text-on-background;
+	}
+
+	.rui-navigation-menu__panels [data-navigation-panel][hidden] {
+		display: none;
+	}
+
+	.rui-navigation-menu__panels [data-navigation-panel] > p {
+		@apply m-0 leading-relaxed text-on-surface;
+	}
+
+	.rui-navigation-menu__panels [data-navigation-panel] rui-grid {
+		@apply max-w-3xl;
+	}
+
+	.rui-navigation-menu__panels [data-navigation-panel] rui-disclosure {
+		@apply mt-4 block border-t border-border pt-3;
+	}
+
+	.rui-navigation-menu__panels [data-navigation-panel] rui-disclosure + rui-disclosure {
+		@apply mt-1 border-t border-border pt-1;
+	}
+
+	.rui-navigation-menu__panels [data-navigation-panel] .rui-disclosure__panel:not([hidden]) {
+		display: block;
+	}
+
+	.rui-navigation-menu__megamenu {
+		@apply grid gap-6;
+	}
+
+	.rui-navigation-menu__link-columns {
+		@apply grid gap-6 sm:grid-cols-2;
+	}
+
+	.rui-navigation-menu__link-group-label {
+		@apply m-0 mb-2 text-xs font-semibold tracking-wide text-on-surface uppercase;
+	}
+
+	.rui-navigation-menu__link-list {
+		@apply m-0 list-none space-y-1 p-0;
+	}
+
+	.rui-navigation-menu__link-list a {
+		@apply block rounded-md px-2 py-1.5 font-medium text-link no-underline transition-colors duration-150;
+		@apply hover:bg-surface hover:underline;
+	}
+
+	.rui-navigation-menu__link-list a:focus-visible {
+		@apply bg-surface ring-2 ring-focus-ring outline-hidden;
+	}
+
+	.rui-navigation-menu__disclosure-copy {
+		@apply m-0 text-on-surface;
+	}
+}

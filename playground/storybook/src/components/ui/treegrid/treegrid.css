@@ -1,0 +1,77 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-treegrid {
+	@apply block;
+}
+
+@layer components {
+	.rui-treegrid {
+		@apply w-full overflow-hidden rounded-md border border-border text-sm shadow-sm;
+		display: table;
+		border-collapse: separate;
+		border-spacing: 0;
+	}
+
+	.rui-treegrid__row {
+		display: table-row;
+	}
+
+	.rui-treegrid__group {
+		display: table-row-group;
+	}
+
+	.rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell {
+		@apply bg-surface/60;
+	}
+
+	.rui-treegrid__cell {
+		display: table-cell;
+		@apply border-b border-r border-border bg-background px-4 py-2.5 align-middle text-on-background;
+	}
+
+	.rui-treegrid__row .rui-treegrid__cell:last-child {
+		@apply border-r-0;
+	}
+
+	.rui-treegrid__row:last-child .rui-treegrid__cell {
+		@apply border-b-0;
+	}
+
+	.rui-treegrid__cell--header {
+		@apply bg-surface font-semibold text-on-background;
+	}
+
+	.rui-treegrid__cell[aria-selected='true'] {
+		@apply bg-primary-container font-medium text-on-primary-container;
+	}
+
+	.rui-treegrid__cell:focus-visible {
+		@apply relative z-10 outline-none ring-2 ring-inset ring-focus-ring;
+	}
+
+	.rui-treegrid__group .rui-treegrid__cell:first-child {
+		@apply pl-8;
+	}
+
+	.rui-treegrid__group .rui-treegrid__group .rui-treegrid__cell:first-child {
+		@apply pl-12;
+	}
+
+	.rui-treegrid__row[aria-expanded='false'] .rui-treegrid__cell:first-child::before,
+	.rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		content: '';
+		display: inline-block;
+		width: 0;
+		height: 0;
+		margin-right: 0.5rem;
+		border-top: 4px solid transparent;
+		border-bottom: 4px solid transparent;
+		border-left: 6px solid currentColor;
+		vertical-align: middle;
+		transition: transform 150ms ease;
+	}
+
+	.rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		transform: rotate(90deg);
+	}
+}

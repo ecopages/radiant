@@ -1,0 +1,28 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-tabs {
+	@apply block;
+}
+
+@layer components {
+	.rui-tabs__list {
+		@apply flex gap-1 border-b border-border;
+	}
+
+	.rui-tabs__tab {
+		@apply cursor-pointer rounded-t-md border-0 bg-transparent px-4 py-2 text-sm;
+		@apply text-on-surface;
+	}
+
+	.rui-tabs__tab[aria-selected='true'] {
+		@apply border-b-2 border-primary font-medium text-on-background;
+	}
+
+	.rui-tabs__tab:focus-visible {
+		@apply ring-2 ring-focus-ring outline-hidden;
+	}
+
+	.rui-tabs__panel {
+		@apply px-1 py-4 text-sm text-on-background;
+	}
+}

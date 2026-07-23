@@ -1,0 +1,53 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-dialog {
+	@apply contents;
+}
+
+@layer components {
+	.rui-dialog {
+		@apply fixed inset-0 z-50 flex items-center justify-center;
+	}
+
+	.rui-dialog[hidden] {
+		@apply hidden;
+	}
+
+	.rui-dialog__backdrop {
+		@apply absolute inset-0 bg-black/40;
+	}
+
+	.rui-dialog__surface {
+		@apply relative z-10 w-full max-w-md rounded-lg bg-background p-6 text-on-background shadow-lg;
+		@apply outline-none;
+	}
+
+	.rui-dialog__close {
+		@apply absolute right-3 top-3 inline-flex size-8 items-center justify-center;
+		@apply cursor-pointer rounded-button border-0 bg-transparent text-xl text-on-surface;
+	}
+
+	.rui-dialog__close:focus-visible {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-dialog__title {
+		@apply pr-8 text-lg font-semibold;
+	}
+
+	.rui-dialog__title:empty {
+		@apply hidden;
+	}
+
+	.rui-dialog__body {
+		@apply mt-3 text-sm;
+	}
+
+	.rui-dialog__actions {
+		@apply mt-6 flex justify-end gap-2;
+	}
+
+	.rui-dialog__actions:empty {
+		@apply hidden;
+	}
+}

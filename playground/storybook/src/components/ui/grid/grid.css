@@ -1,0 +1,47 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-grid {
+	@apply block;
+}
+
+@layer components {
+	.rui-grid {
+		@apply w-full overflow-hidden rounded-md border border-border text-sm shadow-sm;
+		display: table;
+		border-collapse: separate;
+		border-spacing: 0;
+	}
+
+	.rui-grid__row {
+		display: table-row;
+	}
+
+	.rui-grid__row:not(:first-child):hover .rui-grid__cell {
+		@apply bg-surface/60;
+	}
+
+	.rui-grid__cell {
+		display: table-cell;
+		@apply border-b border-r border-border bg-background px-4 py-2.5 align-middle text-on-background;
+	}
+
+	.rui-grid__row .rui-grid__cell:last-child {
+		@apply border-r-0;
+	}
+
+	.rui-grid__row:last-child .rui-grid__cell {
+		@apply border-b-0;
+	}
+
+	.rui-grid__row:first-child .rui-grid__cell {
+		@apply bg-surface font-semibold text-on-background;
+	}
+
+	.rui-grid__cell a {
+		@apply font-medium text-link no-underline underline-offset-2 hover:underline;
+	}
+
+	.rui-grid__cell:focus-visible {
+		@apply relative z-10 outline-none ring-2 ring-inset ring-focus-ring;
+	}
+}

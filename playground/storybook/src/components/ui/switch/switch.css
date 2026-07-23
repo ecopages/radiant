@@ -1,0 +1,47 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-switch {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-switch {
+		@apply inline-flex items-center gap-3;
+		@apply cursor-pointer text-sm text-on-background;
+	}
+
+	.rui-switch:has(input:disabled) {
+		@apply cursor-not-allowed opacity-50;
+	}
+
+	.rui-switch__input {
+		@apply sr-only;
+	}
+
+	.rui-switch__input:focus-visible + .rui-switch__track {
+		@apply ring-2 ring-focus-ring ring-offset-2;
+	}
+
+	.rui-switch__track {
+		@apply relative inline-flex h-6 w-11 shrink-0 items-center rounded-full;
+		@apply bg-surface transition-colors duration-200;
+	}
+
+	.rui-switch__input:checked + .rui-switch__track {
+		@apply bg-primary;
+	}
+
+	.rui-switch__thumb {
+		@apply absolute left-0.5 top-0.5 size-5 rounded-full bg-white;
+		@apply transition-transform duration-200;
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+	}
+
+	.rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
+		transform: translateX(1.25rem);
+	}
+
+	.rui-switch__label {
+		@apply select-text;
+	}
+}

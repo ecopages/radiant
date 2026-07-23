@@ -1,0 +1,168 @@
+{
+	"name": "@ecopages/radiant-ui",
+	"version": "0.0.1-beta.0",
+	"description": "Accessible light-DOM UI components built with @ecopages/radiant, documented in Storybook",
+	"license": "MIT",
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"sideEffects": [
+		"**/*.css",
+		"**/index.js"
+	],
+	"scripts": {
+		"build:framework": "bun run --filter @ecopages/storybook-radiant-vite build",
+		"lint": "oxlint",
+		"storybook": "bun run build:framework && bunx storybook dev -p 6006",
+		"build-storybook": "bun run build:framework && bunx storybook build",
+		"test": "vitest run",
+		"clean": "rm -rf dist",
+		"generate:exports": "bun run ./scripts/generate-exports.ts",
+		"build:files": "bun run ./scripts/build.ts",
+		"build:types": "tsc -p tsconfig.build.json",
+		"build:lib": "bun run generate:exports && bun run clean && bun run build:files && bun run build:types",
+		"typecheck": "tsc --noEmit -p tsconfig.app.json"
+	},
+	"dependencies": {
+		"@floating-ui/dom": "^1.8.0"
+	},
+	"peerDependencies": {
+		"@ecopages/jsx": ">=0.3.0-beta.3 <1.0.0",
+		"@ecopages/radiant": ">=0.3.0-beta.3 <1.0.0",
+		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.28.0",
+		"@babel/plugin-proposal-decorators": "^7.28.0",
+		"@babel/preset-typescript": "^7.28.0",
+		"@chromatic-com/storybook": "^5.2.1",
+		"@ecopages/jsx": "workspace:*",
+		"@ecopages/radiant": "workspace:*",
+		"@ecopages/signals": "workspace:*",
+		"@ecopages/storybook-radiant-vite": "workspace:*",
+		"@rolldown/plugin-babel": "^0.2.1",
+		"@storybook/addon-a11y": "^10.5.2",
+		"@storybook/addon-docs": "^10.5.2",
+		"@storybook/addon-vitest": "^10.5.2",
+		"@tailwindcss/vite": "^4.1.11",
+		"@types/node": "^24.13.2",
+		"@vitest/browser": "^4.1.10",
+		"@vitest/browser-playwright": "^4.1.10",
+		"@vitest/coverage-v8": "^4.1.10",
+		"oxlint": "^1.71.0",
+		"playwright": "^1.61.1",
+		"storybook": "^10.5.2",
+		"tailwindcss": "^4.1.11",
+		"typescript": "~6.0.2",
+		"vite": "^8.1.1",
+		"vitest": "^4.1.10"
+	},
+	"exports": {
+		"./package.json": "./package.json",
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./alert": {
+			"types": "./dist/components/ui/alert/index.d.ts",
+			"import": "./dist/components/ui/alert/index.js"
+		},
+		"./breadcrumb": {
+			"types": "./dist/components/ui/breadcrumb/index.d.ts",
+			"import": "./dist/components/ui/breadcrumb/index.js"
+		},
+		"./button": {
+			"types": "./dist/components/ui/button/index.d.ts",
+			"import": "./dist/components/ui/button/index.js"
+		},
+		"./carousel": {
+			"types": "./dist/components/ui/carousel/index.d.ts",
+			"import": "./dist/components/ui/carousel/index.js"
+		},
+		"./checkbox": {
+			"types": "./dist/components/ui/checkbox/index.d.ts",
+			"import": "./dist/components/ui/checkbox/index.js"
+		},
+		"./combobox": {
+			"types": "./dist/components/ui/combobox/index.d.ts",
+			"import": "./dist/components/ui/combobox/index.js"
+		},
+		"./dialog": {
+			"types": "./dist/components/ui/dialog/index.d.ts",
+			"import": "./dist/components/ui/dialog/index.js"
+		},
+		"./disclosure": {
+			"types": "./dist/components/ui/disclosure/index.d.ts",
+			"import": "./dist/components/ui/disclosure/index.js"
+		},
+		"./feed": {
+			"types": "./dist/components/ui/feed/index.d.ts",
+			"import": "./dist/components/ui/feed/index.js"
+		},
+		"./grid": {
+			"types": "./dist/components/ui/grid/index.d.ts",
+			"import": "./dist/components/ui/grid/index.js"
+		},
+		"./listbox": {
+			"types": "./dist/components/ui/listbox/index.d.ts",
+			"import": "./dist/components/ui/listbox/index.js"
+		},
+		"./menu-button": {
+			"types": "./dist/components/ui/menu-button/index.d.ts",
+			"import": "./dist/components/ui/menu-button/index.js"
+		},
+		"./menubar": {
+			"types": "./dist/components/ui/menubar/index.d.ts",
+			"import": "./dist/components/ui/menubar/index.js"
+		},
+		"./meter": {
+			"types": "./dist/components/ui/meter/index.d.ts",
+			"import": "./dist/components/ui/meter/index.js"
+		},
+		"./navigation-menu": {
+			"types": "./dist/components/ui/navigation-menu/index.d.ts",
+			"import": "./dist/components/ui/navigation-menu/index.js"
+		},
+		"./radio-group": {
+			"types": "./dist/components/ui/radio-group/index.d.ts",
+			"import": "./dist/components/ui/radio-group/index.js"
+		},
+		"./slider": {
+			"types": "./dist/components/ui/slider/index.d.ts",
+			"import": "./dist/components/ui/slider/index.js"
+		},
+		"./spinbutton": {
+			"types": "./dist/components/ui/spinbutton/index.d.ts",
+			"import": "./dist/components/ui/spinbutton/index.js"
+		},
+		"./switch": {
+			"types": "./dist/components/ui/switch/index.d.ts",
+			"import": "./dist/components/ui/switch/index.js"
+		},
+		"./tabs": {
+			"types": "./dist/components/ui/tabs/index.d.ts",
+			"import": "./dist/components/ui/tabs/index.js"
+		},
+		"./toolbar": {
+			"types": "./dist/components/ui/toolbar/index.d.ts",
+			"import": "./dist/components/ui/toolbar/index.js"
+		},
+		"./tooltip": {
+			"types": "./dist/components/ui/tooltip/index.d.ts",
+			"import": "./dist/components/ui/tooltip/index.js"
+		},
+		"./tree": {
+			"types": "./dist/components/ui/tree/index.d.ts",
+			"import": "./dist/components/ui/tree/index.js"
+		},
+		"./treegrid": {
+			"types": "./dist/components/ui/treegrid/index.d.ts",
+			"import": "./dist/components/ui/treegrid/index.js"
+		},
+		"./window-splitter": {
+			"types": "./dist/components/ui/window-splitter/index.d.ts",
+			"import": "./dist/components/ui/window-splitter/index.js"
+		}
+	}
+}

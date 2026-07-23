@@ -1,0 +1,44 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-radio-group {
+	@apply block;
+}
+
+@layer components {
+	.rui-radio-group {
+		@apply flex flex-col gap-2;
+	}
+
+	.rui-radio {
+		@apply inline-flex items-center gap-2 cursor-pointer text-sm text-on-background;
+	}
+
+	.rui-radio:has(input:disabled) {
+		@apply cursor-not-allowed opacity-50;
+	}
+
+	.rui-radio__input {
+		@apply sr-only;
+	}
+
+	.rui-radio__control {
+		@apply relative size-4 shrink-0 rounded-full border border-border bg-background;
+	}
+
+	.rui-radio__input:focus-visible + .rui-radio__control {
+		@apply ring-2 ring-focus-ring ring-offset-2;
+	}
+
+	.rui-radio__input:checked + .rui-radio__control {
+		@apply border-primary;
+	}
+
+	.rui-radio__input:checked + .rui-radio__control::after {
+		content: '';
+		@apply absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary;
+	}
+
+	.rui-radio__label {
+		@apply select-none;
+	}
+}

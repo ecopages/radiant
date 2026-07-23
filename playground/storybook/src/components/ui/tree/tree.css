@@ -1,0 +1,54 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-tree {
+	@apply block;
+}
+
+@layer components {
+	.rui-tree {
+		@apply m-0 list-none rounded-md border border-border bg-background p-2 text-sm shadow-sm;
+	}
+
+	.rui-tree__item {
+		@apply list-none;
+	}
+
+	.rui-tree ul {
+		@apply m-0 mt-0.5 list-none border-l border-border pl-3;
+	}
+
+	.rui-tree__node {
+		@apply relative w-full cursor-pointer rounded-md border-0 bg-transparent px-2 py-1.5 text-left text-on-background;
+		@apply transition-colors duration-150;
+	}
+
+	.rui-tree__node:hover {
+		@apply bg-surface;
+	}
+
+	.rui-tree__node[aria-selected='true'] {
+		@apply bg-primary-container font-medium text-on-primary-container;
+	}
+
+	.rui-tree__node[aria-expanded='false']::before,
+	.rui-tree__node[aria-expanded='true']::before {
+		content: '';
+		display: inline-block;
+		width: 0;
+		height: 0;
+		margin-right: 0.5rem;
+		border-top: 4px solid transparent;
+		border-bottom: 4px solid transparent;
+		border-left: 6px solid currentColor;
+		vertical-align: middle;
+		transition: transform 150ms ease;
+	}
+
+	.rui-tree__node[aria-expanded='true']::before {
+		transform: rotate(90deg);
+	}
+
+	.rui-tree__node:focus-visible {
+		@apply bg-surface outline-none ring-2 ring-focus-ring;
+	}
+}

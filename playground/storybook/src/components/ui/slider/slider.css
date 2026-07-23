@@ -1,0 +1,47 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-slider {
+	@apply block;
+}
+
+@layer components {
+	.rui-slider {
+		@apply flex flex-col gap-2 text-sm text-on-background;
+	}
+
+	.rui-slider__input {
+		@apply w-full accent-primary;
+	}
+
+	.rui-slider__value {
+		@apply tabular-nums text-on-surface;
+	}
+
+	.rui-slider__range {
+		@apply py-2;
+	}
+
+	.rui-slider__range-track {
+		@apply relative h-2 rounded-full bg-surface;
+	}
+
+	.rui-slider__range-fill {
+		@apply absolute top-0 h-full rounded-full bg-primary;
+	}
+
+	.rui-slider__thumb {
+		@apply absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background shadow-sm;
+	}
+
+	.rui-slider__thumb:focus-visible {
+		@apply outline-hidden ring-2 ring-focus-ring;
+	}
+
+	.rui-slider__thumb[data-thumb='min'] {
+		left: var(--rui-slider-min, 0%);
+	}
+
+	.rui-slider__thumb[data-thumb='max'] {
+		left: var(--rui-slider-max, 100%);
+	}
+}

@@ -1,0 +1,35 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-window-splitter {
+	@apply block h-64 w-full;
+}
+
+@layer components {
+	.rui-window-splitter {
+		@apply flex h-full w-full overflow-hidden rounded-md border border-border;
+	}
+	.rui-window-splitter--vertical {
+		@apply flex-col;
+	}
+	.rui-window-splitter__pane {
+		@apply min-h-0 min-w-0 flex-1 overflow-auto bg-background p-3 text-sm;
+	}
+	.rui-window-splitter--horizontal > .rui-window-splitter__pane:first-child {
+		flex: 0 0 auto;
+	}
+	.rui-window-splitter--vertical > .rui-window-splitter__pane:first-child {
+		flex: 0 0 auto;
+	}
+	.rui-window-splitter__separator {
+		@apply shrink-0 bg-border;
+	}
+	.rui-window-splitter--horizontal > .rui-window-splitter__separator {
+		@apply w-1 cursor-col-resize;
+	}
+	.rui-window-splitter--vertical > .rui-window-splitter__separator {
+		@apply h-1 cursor-row-resize;
+	}
+	.rui-window-splitter__separator:focus-visible {
+		@apply outline-none ring-2 ring-focus-ring;
+	}
+}

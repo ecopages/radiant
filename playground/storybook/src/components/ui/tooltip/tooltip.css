@@ -1,0 +1,25 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-tooltip {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-tooltip {
+		@apply relative inline-flex;
+	}
+
+	.rui-tooltip__trigger {
+		@apply inline-flex;
+	}
+
+	.rui-tooltip__content {
+		@apply absolute z-30 max-w-xs rounded-md bg-on-background px-2 py-1 text-xs text-background shadow-md;
+		width: max-content;
+		pointer-events: none;
+	}
+
+	.rui-tooltip__content[hidden] {
+		display: none;
+	}
+}

@@ -1,0 +1,55 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-checkbox {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-checkbox {
+		@apply inline-flex items-center gap-2 cursor-pointer text-sm text-on-background;
+	}
+
+	.rui-checkbox:has(input:disabled) {
+		@apply cursor-not-allowed opacity-50;
+	}
+
+	.rui-checkbox__input {
+		@apply sr-only;
+	}
+
+	.rui-checkbox__control {
+		@apply relative size-4 shrink-0 rounded-xs border border-border bg-background;
+	}
+
+	.rui-checkbox__input:focus-visible + .rui-checkbox__control {
+		@apply ring-2 ring-focus-ring ring-offset-2;
+	}
+
+	.rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control {
+		@apply border-primary bg-primary;
+	}
+
+	.rui-checkbox__input:checked:not(:indeterminate):not([aria-checked='mixed']) + .rui-checkbox__control::after {
+		content: '';
+		@apply absolute left-1/2 top-1/2 block size-2 -translate-x-1/2 -translate-y-1/2;
+		background: currentColor;
+		color: var(--color-on-primary, white);
+		clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+	}
+
+	.rui-checkbox__input:indeterminate + .rui-checkbox__control,
+	.rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control {
+		@apply border-primary bg-background;
+	}
+
+	.rui-checkbox__input:indeterminate + .rui-checkbox__control::after,
+	.rui-checkbox__input[aria-checked='mixed'] + .rui-checkbox__control::after {
+		content: '';
+		@apply absolute left-1/2 top-1/2 block h-0.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary;
+		clip-path: none;
+	}
+
+	.rui-checkbox__label {
+		@apply select-none;
+	}
+}

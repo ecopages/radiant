@@ -1,0 +1,15 @@
+/**
+ * radiant-ui base stylesheet.
+ *
+ * Ships the design-token layer every component stylesheet is authored
+ * against. Published as `@ecopages/radiant-ui/styles.css`.
+ */
+@import 'tailwindcss';
+@import './tokens/colors.css';
+@import './tokens/misc.css';
+@import './tokens/theme.css';
+@import './components/button.css';
+
+:root {
+	color-scheme: light;
+}

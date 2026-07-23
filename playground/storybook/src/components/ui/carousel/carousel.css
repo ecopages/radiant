@@ -1,0 +1,71 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-carousel {
+	@apply block;
+}
+
+@layer components {
+	.rui-carousel {
+		@apply flex flex-col gap-3;
+	}
+
+	.rui-carousel:focus-visible {
+		@apply outline-hidden ring-2 ring-focus-ring rounded-md;
+	}
+
+	.rui-carousel__controls {
+		@apply flex gap-2;
+	}
+
+	.rui-carousel__indicators {
+		@apply flex items-center gap-2;
+	}
+
+	.rui-carousel__indicator {
+		@apply h-2.5 w-2.5 rounded-full border border-border bg-background transition-colors;
+	}
+
+	.rui-carousel__indicator[aria-selected='true'] {
+		@apply bg-primary border-primary;
+	}
+
+	.rui-carousel__indicator:focus-visible {
+		@apply outline-hidden ring-2 ring-focus-ring;
+	}
+
+	.rui-carousel__viewport {
+		@apply overflow-hidden rounded-md border border-border bg-surface p-6 text-sm;
+	}
+
+	.rui-carousel__track {
+		@apply relative;
+	}
+
+	.rui-carousel--none .rui-carousel__slide[hidden] {
+		display: none;
+	}
+
+	.rui-carousel--slide .rui-carousel__track {
+		@apply flex transition-transform duration-300 ease-in-out;
+		transform: translateX(calc(var(--rui-carousel-index, 0) * -100%));
+	}
+
+	.rui-carousel--slide .rui-carousel__slide {
+		@apply min-w-full shrink-0;
+	}
+
+	.rui-carousel--fade .rui-carousel__track {
+		@apply grid;
+	}
+
+	.rui-carousel--fade .rui-carousel__slide {
+		@apply col-start-1 row-start-1 transition-opacity duration-300 ease-in-out;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.rui-carousel--fade .rui-carousel__slide[data-active='true'] {
+		opacity: 1;
+		pointer-events: auto;
+	}
+}

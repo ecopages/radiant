@@ -1,0 +1,66 @@
+import { createRoot, type JsxRenderable } from '@ecopages/jsx';
+import { isTemplateResultLike } from '@ecopages/jsx/jsx-runtime';
+import { uninstallRadiantHydrator } from '@ecopages/radiant/client/hydrator';
+import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
+import { dedent } from 'ts-dedent';
+import { ensureRootInner, getMountedRoot, setMountedRoot, teardownCanvas } from './canvas';
+
+type ShowError = (error: { title: string; description: string }) => void;
+
+/**
+ * Mount a client-mode story result into the canvas.
+ */
+export function mountClientResult(options: {
+	canvasElement: HTMLElement;
+	element: unknown;
+	forceRemount: boolean;
+	storyName: string;
+	storyKind: string;
+	showError: ShowError;
+}): void {
+	const { canvasElement, element, forceRemount, storyName, storyKind, showError } = options;
+
+	uninstallRadiantHydrator();
+
+	if (element == null) {
+		teardownCanvas(canvasElement);
+		return;
+	}
+
+	if (typeof element === 'string') {
+		teardownCanvas(canvasElement);
+		canvasElement.innerHTML = element;
+		simulatePageLoad(canvasElement);
+		return;
+	}
+
+	if (typeof Node !== 'undefined' && element instanceof Node) {
+		if (canvasElement.firstChild === element && !forceRemount) {
+			return;
+		}
+		teardownCanvas(canvasElement);
+		canvasElement.appendChild(element);
+		simulateDOMContentLoaded();
+		return;
+	}
+
+	if (isTemplateResultLike(element) || typeof element === 'object') {
+		const renderTo = ensureRootInner(canvasElement, forceRemount);
+		let root = getMountedRoot(canvasElement);
+		if (!root) {
+			root = createRoot(renderTo);
+			setMountedRoot(canvasElement, root);
+		}
+		root.render(element as JsxRenderable);
+		simulatePageLoad(canvasElement);
+		return;
+	}
+
+	showError({
+		title: `Expecting JSX, an HTML snippet, or a DOM node from the story: "${storyName}" of "${storyKind}".`,
+		description: dedent`
+      Did you forget to return JSX or a DOM node from the story?
+      Use a Radiant JSX view, a custom element host, or a string of HTML.
+    `,
+	});
+}
