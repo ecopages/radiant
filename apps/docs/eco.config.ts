@@ -7,6 +7,7 @@ import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
 import { compareEntriesByField } from '@ecopages/content-processor';
 import { createDocsMdxPlugins } from './src/mdx/plugins';
 import { docsFrontmatterSchema } from './src/content/docs';
+import { devToolbar } from '@ecopages/dev-toolbar/config';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dir)
@@ -52,6 +53,7 @@ const config = await new ConfigBuilder()
 		}),
 	])
 	.setAdditionalWatchPaths(['src/data', 'src/content'])
+	.setDevToolbar(devToolbar())
 	.build();
 
 export default config;
