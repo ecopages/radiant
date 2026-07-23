@@ -1,0 +1,98 @@
+{
+	"name": "@ecopages/vite-plugin-radiant",
+	"version": "0.3.0-beta.3",
+	"description": "Vite plugin for Radiant — JSX, TC39 decorators, element discovery, SSR, and client boot",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/vite-plugin-radiant"
+	},
+	"license": "MIT",
+	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"dist/**/*",
+		"src/client.d.ts",
+		"README.md"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./runtime": {
+			"types": "./dist/runtime/index.d.ts",
+			"import": "./dist/runtime/index.js"
+		},
+		"./ssr": {
+			"types": "./dist/ssr/index.d.ts",
+			"import": "./dist/ssr/index.js"
+		},
+		"./ssr/headers": {
+			"types": "./dist/ssr/headers.d.ts",
+			"import": "./dist/ssr/headers.js"
+		},
+		"./nitro": {
+			"types": "./dist/nitro/index.d.ts",
+			"import": "./dist/nitro/index.js"
+		},
+		"./nitro-config": {
+			"types": "./dist/nitro-config.d.ts",
+			"import": "./dist/nitro-config.js"
+		},
+		"./nitro/ssr-shim-plugin": {
+			"import": "./dist/nitro/ssr-shim-plugin.js"
+		},
+		"./client": {
+			"types": "./src/client.d.ts"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build:lib": "tsup",
+		"clean": "rm -rf dist",
+		"dev": "tsup --watch"
+	},
+	"dependencies": {
+		"picomatch": "^4.0.2"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.28.0",
+		"@babel/plugin-proposal-decorators": "^7.28.0",
+		"@ecopages/jsx": "workspace:*",
+		"@ecopages/radiant": "workspace:*",
+		"@ecopages/signals": "workspace:*",
+		"@rolldown/plugin-babel": "^0.2.1",
+		"@types/node": "^24.13.2",
+		"@types/picomatch": "^4.0.0",
+		"tsup": "^8.5.0",
+		"typescript": "~5.9.2",
+		"vite": "^8.1.1"
+	},
+	"peerDependencies": {
+		"@babel/core": "^7.0.0",
+		"@babel/plugin-proposal-decorators": "^7.0.0",
+		"@ecopages/jsx": ">=0.3.0-beta.3 <1.0.0",
+		"@ecopages/radiant": ">=0.3.0-beta.3 <1.0.0",
+		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0",
+		"@rolldown/plugin-babel": "^0.2.0",
+		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
+		"nitro": "^3.0.0"
+	},
+	"peerDependenciesMeta": {
+		"nitro": {
+			"optional": true
+		},
+		"@babel/core": {
+			"optional": true
+		},
+		"@babel/plugin-proposal-decorators": {
+			"optional": true
+		},
+		"@rolldown/plugin-babel": {
+			"optional": true
+		}
+	}
+}
