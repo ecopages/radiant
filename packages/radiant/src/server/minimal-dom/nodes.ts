@@ -1,5 +1,6 @@
 import { escapeHtmlAttribute } from '../../utils/escape-html-attribute';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
+import * as selectors from './selectors';
 
 type MinimalParentNode = Node & ParentNode;
 
@@ -192,6 +193,7 @@ export class MinimalElement extends MinimalNode {
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
 	private fragmentHtml?: string;
+	private fragmentInnerHtml?: string;
 	private fragmentText?: string;
 
 	public readonly localName: string;
@@ -287,7 +289,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	setAttribute(name: string, value: unknown): void {
-		this.fragmentHtml = undefined;
+		this.clearFragmentCache();
 		this.attributes.set(name, String(value));
 	}
 
@@ -304,20 +306,48 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	removeAttribute(name: string): void {
-		this.fragmentHtml = undefined;
+		this.clearFragmentCache();
 		this.attributes.delete(name);
 	}
 
-	querySelector(): Element | null {
-		return null;
+	get parentElement(): MinimalElement | null {
+		const parent = this.parentNode;
+		return parent instanceof MinimalElement ? parent : null;
 	}
 
-	querySelectorAll(): Element[] {
-		return [];
+	materializeChildren(): void {
+		if (this.fragmentInnerHtml === undefined) {
+			return;
+		}
+
+		const innerHtml = this.fragmentInnerHtml;
+		this.clearFragmentCache();
+		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(innerHtml, this.ownerDocument));
 	}
 
-	matches(): boolean {
-		return false;
+	querySelector(selector: string): Element | null {
+		return selectors.querySelector(this, selector) as unknown as Element | null;
+	}
+
+	querySelectorAll(selector: string): Element[] {
+		return selectors.querySelectorAll(this, selector) as unknown as Element[];
+	}
+
+	closest(selector: string): Element | null {
+		return selectors.closest(this, selector) as unknown as Element | null;
+	}
+
+	contains(other: Node | null): boolean {
+		return selectors.contains(this, other as MinimalNode | null);
+	}
+
+	matches(selector: string): boolean {
+		return selectors.matches(this, selector);
+	}
+
+	private clearFragmentCache(): void {
+		this.fragmentHtml = undefined;
+		this.fragmentInnerHtml = undefined;
 	}
 
 	get outerHTML(): string {
@@ -337,7 +367,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	set innerHTML(html: string) {
-		this.fragmentHtml = undefined;
+		this.clearFragmentCache();
 		this.fragmentText = undefined;
 		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
 	}
@@ -347,13 +377,19 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	override set textContent(value: string | null) {
-		this.fragmentHtml = undefined;
+		this.clearFragmentCache();
 		this.fragmentText = value ?? '';
 		super.textContent = value;
 	}
 
-	setSerializedFragment(fragmentHtml: string, fragmentText: string, attributes: Record<string, string>): void {
+	setSerializedFragment(
+		fragmentHtml: string,
+		fragmentText: string,
+		attributes: Record<string, string>,
+		innerHtml = '',
+	): void {
 		this.fragmentHtml = fragmentHtml;
+		this.fragmentInnerHtml = innerHtml;
 		this.fragmentText = fragmentText;
 		this.attributes = new Map(Object.entries(attributes));
 		this.replaceChildren();

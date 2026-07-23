@@ -133,6 +133,38 @@ Controller SSR follows one extra rule: the caller still owns the outer host mark
 
 Note: the server helpers are transport-neutral. The package no longer ships the older fragment-header constants or header-builder helpers from this module. Adapter-specific response headers now belong in the integration layer that turns `RenderedComponent` metadata into HTTP responses.
 
+## Supported SSR DOM APIs
+
+Production SSR uses the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`, not happy-dom. Vitest files that opt into `happy-dom` exercise browser-like behavior; they do not represent the Node SSR runtime.
+
+The shim supports a focused query surface for component lifecycle code that runs during SSR:
+
+- `element.querySelector(selector)`
+- `element.querySelectorAll(selector)`
+- `element.closest(selector)`
+- `element.matches(selector)`
+- `element.contains(otherNode)`
+- `element.parentElement`
+- `document.querySelector(selector)` / `document.querySelectorAll(selector)`
+
+**Supported selector syntax (v1):**
+
+- Tag names, including custom elements (`rui-disclosure`, `button`)
+- `#id`, `.class`
+- `[attr]`, `[attr="value"]`
+- Descendant (` `) and child (`>`) combinators
+- Comma-separated selector lists
+
+**Unsupported (throws `SyntaxError`):**
+
+- Pseudo-classes (`:not`, `:has`, `:focus`, …)
+- `:scope`, sibling combinators (`+`, `~`)
+- Shadow-root queries (SSR is light-DOM only)
+
+Fragment-backed nodes materialize children lazily when a query traverses descendants, so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization.
+
+SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
+
 ## Related Docs
 
 - See [../core/README.md](../core/README.md) for the `RadiantElement` lifecycle and hydration flow.
