@@ -78,7 +78,7 @@ function createDistPackageJson(): PackageJsonShape {
 	};
 }
 
-const externalPackages = ['@ecopages/signals', '@ecopages/signals/*'];
+const externalPackages: string[] = [];
 
 const watchMode = process.argv.includes('--watch');
 

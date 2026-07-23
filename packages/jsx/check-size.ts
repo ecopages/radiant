@@ -37,7 +37,7 @@ for (const bundle of budgetFile.bundles) {
 	const bundleDir = path.join(outputRoot, bundle.label);
 	const build = await Bun.build({
 		entrypoints: [path.resolve(import.meta.dir, bundle.entrypoint)],
-		external: ['@ecopages/signals', '@ecopages/signals/*'],
+		external: [],
 		format: 'esm',
 		minify: true,
 		outdir: bundleDir,
