@@ -14,6 +14,7 @@
 		"@ecopages/signals": "workspace:*"
 	},
 	"devDependencies": {
+		"@ecopages/vite-plugin-radiant": "workspace:*",
 		"nitro": "^3.0.260311-beta",
 		"playwright": "^1.52.0",
 		"typescript": "^5.9.2",

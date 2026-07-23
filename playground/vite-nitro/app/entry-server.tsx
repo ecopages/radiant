@@ -1,5 +1,5 @@
 import { toRenderedComponentPayload } from '@ecopages/radiant/server/render-component';
-import { renderRadiantNitroPage } from '../vite-plugin-radiant/nitro/index';
+import { renderRadiantNitroPage } from '@ecopages/vite-plugin-radiant/nitro';
 import { App } from '../src/app';
 import { createStateScriptNode, initializeAppStore } from '../src/store/store';
 

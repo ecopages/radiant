@@ -17,13 +17,13 @@ import {
 
 @customElement('radiant-signal-release-board')
 export class RadiantSignalReleaseBoardElement extends RadiantElement {
+	private releaseBoardStore?: ReleaseBoardStore;
+
 	@provideContext({ context: radiantSignalReleaseBoardContext })
-	declare boardContext: ContextProvider<typeof radiantSignalReleaseBoardContext>;
+	boardContext!: ContextProvider<typeof radiantSignalReleaseBoardContext>;
 
 	@signal({ hydrate: Object, initial: createInitialReleaseBoardState() })
-	declare boardSeed: WritableSignal<ReleaseBoardSnapshot>;
-
-	private releaseBoardStore?: ReleaseBoardStore;
+	boardSeed!: WritableSignal<ReleaseBoardSnapshot>;
 
 	override connectedCallback(): void {
 		super.connectedCallback();

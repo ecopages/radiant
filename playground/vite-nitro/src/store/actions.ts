@@ -4,8 +4,8 @@ import {
 	RADIANT_FRAGMENT_ASSETS_HEADER,
 	RADIANT_FRAGMENT_GENERATED_AT_HEADER,
 	RADIANT_FRAGMENT_HEADER,
-} from '../../vite-plugin-radiant/nitro/fragment-transport';
-import { ensureRadiantAssets } from '../../vite-plugin-radiant/runtime/client-assets';
+} from '@ecopages/vite-plugin-radiant/ssr/headers';
+import { ensureRadiantAssets } from '@ecopages/vite-plugin-radiant/runtime';
 import type { AppState } from './store';
 
 export const DEFAULT_SSR_ENDPOINT = '/api/ssr/radiant-counter';
