@@ -7,8 +7,11 @@ order: 4
 
 import { WeatherApp } from '@/components/weather-app/weather-app';
 
-
-
+export const config = {
+	dependencies: {
+		components: [WeatherApp],
+	},
+};
 
 # Weather App
 
