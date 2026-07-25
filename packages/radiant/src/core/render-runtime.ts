@@ -160,10 +160,6 @@ export class RenderRuntime {
 			}
 
 			for (const addedNode of Array.from(record.addedNodes)) {
-				if (addedNode.parentNode !== this.#host) {
-					continue;
-				}
-
 				if (this.addProjectedSlotNode(addedNode)) {
 					hasProjectionChanges = true;
 				}
@@ -177,6 +173,10 @@ export class RenderRuntime {
 	}
 
 	private addProjectedSlotNode(node: Node): boolean {
+		if (!this.#host.contains(node)) {
+			return false;
+		}
+
 		if (
 			node instanceof HTMLScriptElement &&
 			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute(HYDRATION_ATTRIBUTE))
