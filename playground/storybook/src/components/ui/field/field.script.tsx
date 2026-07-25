@@ -90,9 +90,6 @@ export class RuiField extends RadiantElement {
 		queueMicrotask(() => {
 			this.syncRulesJsonAttribute();
 			this.connectToForm();
-			requestAnimationFrame(() => {
-				this.connectToForm();
-			});
 		});
 	}
 
