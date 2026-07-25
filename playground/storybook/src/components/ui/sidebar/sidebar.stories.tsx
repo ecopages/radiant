@@ -18,7 +18,7 @@ import {
 	RuiSidebarInset,
 } from './sidebar';
 
-const icon = (paths: string | string[]) => {
+const icon = (paths: string | readonly string[]) => {
 	const d = Array.isArray(paths) ? paths : [paths];
 	return (
 		<svg
