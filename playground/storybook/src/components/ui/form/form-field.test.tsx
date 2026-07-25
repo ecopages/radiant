@@ -1,0 +1,288 @@
+import { describe, expect, it } from 'vitest';
+import { createRoot } from '@ecopages/jsx';
+import { RuiButton } from '../button/button';
+import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
+import { RuiInput } from '../input';
+import { RuiTextarea } from '../textarea';
+import { RuiLabel } from '../label';
+import { RuiSwitch } from '../switch';
+import { RuiForm } from './form';
+import '../field/field.script';
+import './form.script';
+import '../switch/switch.script';
+import { findFieldControl, findFieldError } from './control-protocol';
+import type { RuiField as RuiFieldElement } from '../field/field.script';
+import type { RuiForm as RuiFormElement } from './form.script';
+import type { FormContextValue } from './form-context';
+
+async function flushRender(): Promise<void> {
+	await new Promise<void>((resolve) => {
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => resolve());
+		});
+	});
+}
+
+describe('RuiField view', () => {
+	it('serializes rules into the rui-field template', () => {
+		const view = RuiField({
+			name: 'email',
+			rules: { required: 'Email is required' },
+			children: null,
+		});
+		expect(JSON.stringify(view)).toContain('Email is required');
+	});
+});
+
+describe('rui-field projected content discovery', () => {
+	it('finds control and error nodes after Radiant slot projection', async () => {
+		const form = document.createElement('rui-form') as RuiFormElement;
+		const field = document.createElement('rui-field') as RuiFieldElement;
+		field.name = 'email';
+		field.rules = { required: 'Email is required' };
+		field.innerHTML = `
+			<label class="rui-label" data-rui-field-label>Email</label>
+			<input data-rui-control type="email" />
+			<p class="rui-field__error" data-rui-field-error role="alert" hidden></p>
+		`;
+
+		form.appendChild(field);
+		document.body.append(form);
+
+		await customElements.whenDefined('rui-form');
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+
+		expect(findFieldControl(field)).not.toBeNull();
+		expect(findFieldError(field)).not.toBeNull();
+
+		form.remove();
+	});
+
+	it('shows validation message after invalid submit', async () => {
+		const form = document.createElement('rui-form') as RuiFormElement;
+		const field = document.createElement('rui-field') as RuiFieldElement;
+		field.name = 'email';
+		field.rules = { required: 'Email is required' };
+		field.innerHTML = `
+			<label class="rui-label" data-rui-field-label>Email</label>
+			<input data-rui-control type="email" />
+			<p class="rui-field__error" data-rui-field-error role="alert" hidden></p>
+		`;
+
+		form.append(field);
+		document.body.append(form);
+
+		await customElements.whenDefined('rui-form');
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+
+		const nativeForm = form.getRef<HTMLFormElement>('form');
+		expect(nativeForm).not.toBeNull();
+
+		let invalid = false;
+		form.addEventListener('rui-invalid', () => {
+			invalid = true;
+		});
+
+		nativeForm!.requestSubmit();
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(invalid).toBe(true);
+
+		const ctx = (
+			form as unknown as { formProvider: { getContext(): FormContextValue } }
+		).formProvider.getContext();
+		expect(ctx.fields.email?.error).toBe('Email is required');
+		expect(ctx.fields.email?.invalid).toBe(true);
+
+		const control = findFieldControl(field);
+		expect(control?.getAttribute('aria-invalid')).toBe('true');
+
+		const errorEl = findFieldError(field);
+		expect(errorEl?.textContent).toBe('Email is required');
+		expect(errorEl?.hidden).toBe(false);
+
+		form.remove();
+	});
+
+	it('validates with rulesData on intrinsic rui-field', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<rui-form>
+				<rui-field
+					name="email"
+					attr:data-rules={JSON.stringify({ required: 'Email is required' })}
+				>
+					<label class="rui-label" data-rui-field-label>
+						Email
+					</label>
+					<input data-rui-control type="email" />
+					<p class="rui-field__error" data-rui-field-error role="alert" hidden></p>
+				</rui-field>
+				<button type="submit">Save</button>
+			</rui-form>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await flushRender();
+		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		field.setAttribute('data-rules', JSON.stringify({ required: 'Email is required' }));
+		await flushRender();
+		expect(field.getAttribute('data-rules')).toContain('required');
+
+		const save = host.querySelector('button') as HTMLButtonElement;
+		await save.click();
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(findFieldError(field)?.textContent).toBe('Email is required');
+		host.remove();
+	});
+
+	it('validates email and bio like the Validation story', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ email: '', bio: '' }} mode="onSubmit" reValidateMode="onChange">
+				<RuiField name="email" rules={{ required: 'Email is required' }}>
+					<RuiLabel>Email</RuiLabel>
+					<RuiInput type="email" />
+					<RuiFieldError />
+				</RuiField>
+				<RuiField name="bio" rules={{ minLength: { value: 10, message: 'At least 10 characters' } }}>
+					<RuiLabel>Bio</RuiLabel>
+					<RuiTextarea rows={3} />
+					<RuiFieldError />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const save = host.querySelector('button') as HTMLButtonElement;
+		await save.click();
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const emailField = host.querySelector('rui-field[name=email]') as RuiFieldElement;
+		const bioField = host.querySelector('rui-field[name=bio]') as RuiFieldElement;
+		expect(findFieldError(emailField)?.textContent).toBe('Email is required');
+		expect(findFieldError(bioField)?.textContent).toBe('At least 10 characters');
+		host.remove();
+	});
+
+	it('validates through Radiant JSX views (Storybook path)', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ email: '' }} mode="onSubmit" reValidateMode="onChange">
+				<RuiField name="email" rules={{ required: 'Email is required' }}>
+					<RuiLabel>Email</RuiLabel>
+					<RuiInput type="email" placeholder="you@example.com" />
+					<RuiFieldError />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+
+		const form = host.querySelector('rui-form') as RuiFormElement;
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		expect(form).not.toBeNull();
+		expect(field).not.toBeNull();
+		expect(field.name).toBe('email');
+		expect(field.getAttribute('data-rules') ?? field.rulesData ?? field.rules).toBeTruthy();
+
+		const save = host.querySelector('button') as HTMLButtonElement;
+		await save.click();
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(findFieldError(field)?.textContent).toBe('Email is required');
+
+		host.remove();
+	});
+
+	it('clears email error after valid input when reValidateMode is onChange', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ email: '' }} mode="onSubmit" reValidateMode="onChange">
+				<RuiField name="email" rules={{ required: 'Email is required' }}>
+					<RuiLabel>Email</RuiLabel>
+					<RuiInput type="email" />
+					<RuiFieldError />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		const save = host.querySelector('button') as HTMLButtonElement;
+		await save.click();
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(findFieldError(field)?.textContent).toBe('Email is required');
+
+		const email = findFieldControl(field) as HTMLInputElement;
+		email.focus();
+		email.value = 'hello@example.com';
+		email.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(findFieldError(field)?.textContent).toBe('');
+		expect(findFieldError(field)?.hidden).toBe(true);
+
+		host.remove();
+	});
+
+	it('renders a single switch inside rui-field (no slot projection duplicate)', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ notifications: false }}>
+				<RuiField name="notifications">
+					<RuiSwitch>Email notifications</RuiSwitch>
+					<RuiFieldDescription>Receive product updates by email.</RuiFieldDescription>
+				</RuiField>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-switch');
+		await flushRender();
+		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		expect(field.querySelectorAll('rui-switch')).toHaveLength(1);
+		expect(field.querySelectorAll('.rui-switch__track')).toHaveLength(1);
+		expect(field.querySelectorAll('input[role="switch"]')).toHaveLength(1);
+
+		host.remove();
+	});
+});
