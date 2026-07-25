@@ -1,3 +1,5 @@
+@import './scale-bridge.css';
+
 /**
  * Compact spacing pack.
  */
@@ -20,4 +22,4 @@
 	--space-inset: var(--space-3);
 }
 
-@import './scale-bridge.css';
+

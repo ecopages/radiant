@@ -1,3 +1,6 @@
+
+@import './scale-bridge.css';
+
 /**
  * Default spacing pack — comfortable density.
  */
@@ -19,5 +22,3 @@
 	--space-stack: var(--space-4);
 	--space-inset: var(--space-4);
 }
-
-@import './scale-bridge.css';
