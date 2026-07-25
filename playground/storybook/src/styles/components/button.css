@@ -1,7 +1,5 @@
 @reference 'tailwindcss';
-@reference '../tokens/colors.css';
-@reference '../tokens/misc.css';
-@reference '../tokens/theme.css';
+@reference '../themes/default.css';
 
 @layer components {
 	.rui-button {

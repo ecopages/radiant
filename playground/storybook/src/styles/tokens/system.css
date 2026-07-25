@@ -1,0 +1,36 @@
+/**
+ * Structural system tokens (Tier 3) — shared across all themes.
+ */
+:root {
+	--border-width-hairline: 1px;
+	--border-width-thin: 1px;
+	--border-width-thick: 2px;
+
+	--focus-ring-width: 2px;
+	--focus-ring-offset: 2px;
+
+	--opacity-disabled: 0.5;
+	--opacity-muted: 0.6;
+
+	--z-dropdown: 10;
+	--z-popover: 20;
+	--z-overlay: 30;
+	--z-modal: 40;
+	--z-toast: 50;
+
+	--size-control-sm: 2rem;
+	--size-control-md: 2.5rem;
+	--size-control-lg: 3rem;
+	--size-icon-sm: 1rem;
+	--size-icon-md: 1.25rem;
+}
+
+@theme {
+	--opacity-disabled: var(--opacity-disabled);
+	--opacity-muted: var(--opacity-muted);
+	--z-index-dropdown: var(--z-dropdown);
+	--z-index-popover: var(--z-popover);
+	--z-index-overlay: var(--z-overlay);
+	--z-index-modal: var(--z-modal);
+	--z-index-toast: var(--z-toast);
+}

@@ -1,0 +1,23 @@
+/**
+ * Compact spacing pack.
+ */
+:root {
+	--space-1: 0.125rem;
+	--space-2: 0.25rem;
+	--space-3: 0.375rem;
+	--space-4: 0.5rem;
+	--space-5: 0.625rem;
+	--space-6: 0.75rem;
+	--space-8: 1rem;
+	--space-10: 1.25rem;
+	--space-12: 1.5rem;
+	--space-16: 2rem;
+
+	--space-control-x: var(--space-2);
+	--space-control-y: var(--space-1);
+	--space-inline: var(--space-1);
+	--space-stack: var(--space-3);
+	--space-inset: var(--space-3);
+}
+
+@import './scale-bridge.css';

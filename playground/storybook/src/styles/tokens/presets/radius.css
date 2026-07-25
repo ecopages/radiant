@@ -1,0 +1,45 @@
+/**
+ * Storybook radius toggles — `data-rui-radius` on `<html>`.
+ */
+html[data-rui-radius='default'],
+html:not([data-rui-radius]) {
+	--border-radius-xs: 0.125rem;
+	--border-radius-sm: 0.25rem;
+	--border-radius-md: 0.375rem;
+	--border-radius-lg: 0.5rem;
+	--border-radius-xl: 0.75rem;
+	--border-radius-2xl: 1rem;
+	--border-radius-3xl: 1.5rem;
+	--border-radius-full: 9999px;
+	--radius-control: var(--border-radius-sm);
+	--radius-container: var(--border-radius-md);
+	--radius-pill: var(--border-radius-full);
+}
+
+html[data-rui-radius='soft'] {
+	--border-radius-xs: 0.25rem;
+	--border-radius-sm: 0.5rem;
+	--border-radius-md: 0.75rem;
+	--border-radius-lg: 1rem;
+	--border-radius-xl: 1.25rem;
+	--border-radius-2xl: 1.5rem;
+	--border-radius-3xl: 2rem;
+	--border-radius-full: 9999px;
+	--radius-control: var(--border-radius-md);
+	--radius-container: var(--border-radius-lg);
+	--radius-pill: var(--border-radius-full);
+}
+
+html[data-rui-radius='sharp'] {
+	--border-radius-xs: 0;
+	--border-radius-sm: 0;
+	--border-radius-md: 0;
+	--border-radius-lg: 0;
+	--border-radius-xl: 0;
+	--border-radius-2xl: 0;
+	--border-radius-3xl: 0;
+	--border-radius-full: 9999px;
+	--radius-control: 0;
+	--radius-container: 0;
+	--radius-pill: var(--border-radius-full);
+}
