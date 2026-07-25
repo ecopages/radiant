@@ -7,7 +7,6 @@ export {
 	RuiCombobox,
 	RuiComboboxControl,
 	RuiComboboxInput,
-	RuiComboboxLabel,
 	RuiComboboxListbox,
 	RuiComboboxOption,
 	RuiComboboxTrigger,

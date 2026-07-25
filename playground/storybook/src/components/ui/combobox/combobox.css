@@ -9,10 +9,6 @@ rui-combobox {
 		@apply relative w-64 text-sm;
 	}
 
-	.rui-combobox__label {
-		@apply mb-1 block font-medium text-on-background;
-	}
-
 	.rui-combobox__control {
 		@apply relative flex items-stretch rounded-button border border-border bg-background;
 	}
@@ -26,7 +22,7 @@ rui-combobox {
 	}
 
 	.rui-combobox__input:disabled {
-		@apply cursor-not-allowed opacity-60;
+		@apply cursor-not-allowed opacity-muted;
 	}
 
 	.rui-combobox__trigger {
@@ -35,7 +31,7 @@ rui-combobox {
 	}
 
 	.rui-combobox__trigger:disabled {
-		@apply cursor-not-allowed opacity-60;
+		@apply cursor-not-allowed opacity-muted;
 	}
 
 	.rui-combobox__trigger:focus-visible {
@@ -43,7 +39,7 @@ rui-combobox {
 	}
 
 	.rui-combobox__listbox {
-		@apply absolute top-full z-20 mt-1 max-h-48 w-full overflow-auto rounded-md border border-border bg-background p-1 shadow-md;
+		@apply absolute top-full z-popover mt-1 max-h-48 w-full overflow-auto rounded-container border border-border bg-background p-1 shadow-md;
 	}
 
 	.rui-combobox__listbox[hidden] {
@@ -51,15 +47,19 @@ rui-combobox {
 	}
 
 	.rui-combobox__option {
-		@apply cursor-pointer rounded-sm px-3 py-2 text-on-background;
+		@apply cursor-pointer rounded-control px-3 py-2 text-on-background;
 	}
 
 	.rui-combobox__option[aria-disabled='true'] {
-		@apply cursor-not-allowed opacity-60;
+		@apply cursor-not-allowed opacity-muted;
 	}
 
-	.rui-combobox__option:hover,
-	.rui-combobox__option[data-active] {
+	.rui-combobox__option:hover {
 		@apply bg-surface outline-none;
+	}
+
+	.rui-combobox__option[data-active],
+	.rui-combobox__option[aria-selected='true'] {
+		@apply bg-primary text-on-primary outline-none;
 	}
 }

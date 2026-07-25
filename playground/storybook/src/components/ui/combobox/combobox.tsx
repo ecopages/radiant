@@ -9,20 +9,6 @@ function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
 }
 
-export type RuiComboboxLabelProps = RadiantSlotProps & {
-	children: JsxRenderable;
-	class?: string;
-};
-
-/** Visible label slotted into `label` by default. */
-export function RuiComboboxLabel({ slot = 'label', children, class: className }: RuiComboboxLabelProps) {
-	return (
-		<label slot={slot} data-combobox-label class={cx('rui-combobox__label', className)}>
-			{children}
-		</label>
-	);
-}
-
 export type RuiComboboxControlProps = RadiantSlotProps & {
 	children: JsxRenderable;
 	class?: string;
@@ -49,6 +35,8 @@ export function RuiComboboxInput({ placeholder, disabled, class: className }: Ru
 		<input
 			type="text"
 			data-combobox-input
+			data-rui-control
+			data-rui-control-type="text"
 			class={cx('rui-combobox__input', className)}
 			placeholder={placeholder}
 			disabled={disabled}
@@ -126,6 +114,10 @@ export function RuiComboboxOption({ value, label, children, class: className, di
 
 export type RuiComboboxOptionData = { value: string; label: JsxRenderable };
 
+/**
+ * Combobox view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
+ * do not nest a combobox-specific label.
+ */
 export const RuiCombobox = defineRadiantView(
 	RuiComboboxElement,
 	({
@@ -134,6 +126,7 @@ export const RuiCombobox = defineRadiantView(
 		label,
 		placeholder,
 		disabled,
+		openOnFocus,
 		options,
 		children,
 	}: RuiComboboxProps &
@@ -143,8 +136,14 @@ export const RuiCombobox = defineRadiantView(
 		}) => {
 		if (options != null) {
 			return (
-				<rui-combobox slot={slot} value={value} label={label} placeholder={placeholder} disabled={disabled}>
-					{label ? <RuiComboboxLabel>{label}</RuiComboboxLabel> : null}
+				<rui-combobox
+					slot={slot}
+					value={value}
+					label={label}
+					placeholder={placeholder}
+					disabled={disabled}
+					openOnFocus={openOnFocus}
+				>
 					<RuiComboboxControl>
 						<RuiComboboxInput placeholder={placeholder} disabled={disabled} />
 						<RuiComboboxTrigger />
@@ -164,7 +163,14 @@ export const RuiCombobox = defineRadiantView(
 		}
 
 		return (
-			<rui-combobox slot={slot} value={value} label={label} placeholder={placeholder} disabled={disabled}>
+			<rui-combobox
+				slot={slot}
+				value={value}
+				label={label}
+				placeholder={placeholder}
+				disabled={disabled}
+				openOnFocus={openOnFocus}
+			>
 				{children}
 			</rui-combobox>
 		);
