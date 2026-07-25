@@ -127,11 +127,11 @@ function renderShellBody(currentPath: string) {
 						<RuiSidebarGroup aria-label={group.label} key={group.id}>
 							<RuiSidebarGroupHeader
 								label={group.label}
-								action={(
+								action={
 									<RuiSidebarGroupAction aria-label={`Add ${group.label.toLowerCase()}`}>
 										<NavIcon name="plus" />
 									</RuiSidebarGroupAction>
-								)}
+								}
 							/>
 							<RuiSidebarMenu aria-label={`${group.label} links`}>
 								{group.items.map((item) => (
@@ -202,11 +202,17 @@ function renderShell({
 }) {
 	return (
 		<RuiSidebarProvider
-			sidebar={(
-				<RuiSidebar id="primary-sidebar" variant={variant} side={side} collapsible={collapsible} label="Primary">
+			sidebar={
+				<RuiSidebar
+					id="primary-sidebar"
+					variant={variant}
+					side={side}
+					collapsible={collapsible}
+					label="Primary"
+				>
 					{renderShellBody(currentPath)}
 				</RuiSidebar>
-			)}
+			}
 		>
 			<RuiSidebarInset id="main-content">
 				<header class="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6 lg:px-8">
@@ -219,10 +225,9 @@ function renderShell({
 				<div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
 					<h1 class="text-2xl font-semibold">Welcome back</h1>
 					<p class="mt-2 max-w-prose text-sm text-on-surface">
-						This is a composable application shell. The sidebar exposes six labelled groups
-						with per-group actions, a footer with the user/account shortcuts, and a
-						resizable + collapsible pane that responds to keyboard navigation, pointer drag,
-						and the <kbd>Cmd/Ctrl+B</kbd> shortcut.
+						This is a composable application shell. The sidebar exposes six labelled groups with per-group
+						actions, a footer with the user/account shortcuts, and a resizable + collapsible pane that
+						responds to keyboard navigation, pointer drag, and the <kbd>Cmd/Ctrl+B</kbd> shortcut.
 					</p>
 				</div>
 			</RuiSidebarInset>
@@ -236,9 +241,7 @@ export const Default: Story = {
 
 export const Inset: Story = {
 	render: () => (
-		<div class="h-full w-full bg-surface p-4">
-			{renderShell({ currentPath: '/chat', variant: 'inset' })}
-		</div>
+		<div class="h-full w-full bg-surface p-4">{renderShell({ currentPath: '/chat', variant: 'inset' })}</div>
 	),
 };
 

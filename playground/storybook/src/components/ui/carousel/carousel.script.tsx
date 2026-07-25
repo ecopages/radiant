@@ -364,9 +364,7 @@ export class RuiCarousel extends RadiantElement {
 		}
 
 		return Boolean(
-			target.closest(
-				'button, a, input, textarea, select, [data-carousel-indicator], [data-carousel-action]',
-			),
+			target.closest('button, a, input, textarea, select, [data-carousel-indicator], [data-carousel-action]'),
 		);
 	}
 
@@ -660,12 +658,7 @@ export class RuiCarousel extends RadiantElement {
 				aria-label={this.label}
 			>
 				<div class="rui-carousel__stage">
-					<div
-						class="rui-carousel__viewport"
-						data-ref="viewport"
-						aria-live={ariaLive}
-						aria-atomic={false}
-					>
+					<div class="rui-carousel__viewport" data-ref="viewport" aria-live={ariaLive} aria-atomic={false}>
 						<div
 							class="rui-carousel__track"
 							style={

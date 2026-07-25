@@ -75,8 +75,7 @@ const getTextControl = (root: HTMLElement, index = 0) => {
 	return control;
 };
 
-const getComboboxInput = (root: HTMLElement) =>
-	root.querySelector('[data-combobox-input]') as HTMLInputElement;
+const getComboboxInput = (root: HTMLElement) => root.querySelector('[data-combobox-input]') as HTMLInputElement;
 
 const getComboboxOptions = (root: HTMLElement) =>
 	Array.from(root.querySelectorAll('[data-combobox-option]')) as HTMLElement[];

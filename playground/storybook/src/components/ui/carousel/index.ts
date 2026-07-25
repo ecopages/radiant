@@ -1,4 +1,8 @@
-export { RuiCarousel as RuiCarouselElement, type RuiCarouselProps, type RuiCarouselControlsVariant } from './carousel.script';
+export {
+	RuiCarousel as RuiCarouselElement,
+	type RuiCarouselProps,
+	type RuiCarouselControlsVariant,
+} from './carousel.script';
 export {
 	RuiCarousel,
 	RuiCarouselNext,

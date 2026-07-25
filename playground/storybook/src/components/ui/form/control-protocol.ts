@@ -93,10 +93,7 @@ function pickPrimaryFieldControl(root: HTMLElement, candidates: HTMLElement[]): 
 	}
 
 	const visible = candidates.filter(
-		(el) =>
-			el.isConnected &&
-			el.getClientRects().length > 0 &&
-			!el.closest('[hidden],[aria-hidden="true"]'),
+		(el) => el.isConnected && el.getClientRects().length > 0 && !el.closest('[hidden],[aria-hidden="true"]'),
 	);
 	const pool = visible.length > 0 ? visible : candidates.filter((el) => el.isConnected);
 	return pool[pool.length - 1] ?? candidates[candidates.length - 1];
@@ -175,11 +172,7 @@ export function readControlValue(control: HTMLElement): unknown {
 		return host.hasAttribute('checked');
 	}
 
-	if (
-		host.localName === 'rui-combobox' ||
-		host.localName === 'rui-radio-group' ||
-		host.localName === 'rui-listbox'
-	) {
+	if (host.localName === 'rui-combobox' || host.localName === 'rui-radio-group' || host.localName === 'rui-listbox') {
 		return (host as HTMLElement & { value?: string }).value ?? host.getAttribute('value') ?? '';
 	}
 
@@ -275,7 +268,11 @@ export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
 }
 
 /** Syncs the field name onto the native control and custom-element hosts. */
-export function wireFieldControlName(controlHost: HTMLElement | null, ariaTarget: HTMLElement | null, name: string): void {
+export function wireFieldControlName(
+	controlHost: HTMLElement | null,
+	ariaTarget: HTMLElement | null,
+	name: string,
+): void {
 	if (!name) {
 		return;
 	}

@@ -88,9 +88,7 @@ export class RuiCombobox extends RadiantElement {
 	}
 
 	private getVisibleOptions(): HTMLElement[] {
-		return this.getOptions().filter(
-			(option) => !option.hidden && option.getAttribute('aria-disabled') !== 'true',
-		);
+		return this.getOptions().filter((option) => !option.hidden && option.getAttribute('aria-disabled') !== 'true');
 	}
 
 	private getOptionLabel(option: HTMLElement): string {

@@ -92,9 +92,7 @@ describe('rui-field projected content discovery', () => {
 
 		expect(invalid).toBe(true);
 
-		const ctx = (
-			form as unknown as { formProvider: { getContext(): FormContextValue } }
-		).formProvider.getContext();
+		const ctx = (form as unknown as { formProvider: { getContext(): FormContextValue } }).formProvider.getContext();
 		expect(ctx.fields.email?.error).toBe('Email is required');
 		expect(ctx.fields.email?.invalid).toBe(true);
 
@@ -114,10 +112,7 @@ describe('rui-field projected content discovery', () => {
 		const root = createRoot(host);
 		root.render(
 			<rui-form>
-				<rui-field
-					name="email"
-					attr:data-rules={JSON.stringify({ required: 'Email is required' })}
-				>
+				<rui-field name="email" attr:data-rules={JSON.stringify({ required: 'Email is required' })}>
 					<label class="rui-label" data-rui-field-label>
 						Email
 					</label>

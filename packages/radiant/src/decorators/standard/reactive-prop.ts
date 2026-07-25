@@ -55,8 +55,7 @@ export function reactiveProp<P = unknown>({
 		context.addInitializer(function (this: T) {
 			const initializerValue = (this as T & Record<PropertyKey, V | undefined>)[initializerValueKey];
 			const resolvedDefaultValue = (defaultValue === undefined ? initializerValue : defaultValue) as
-				| P
-				| undefined;
+				P | undefined;
 
 			registerReactivePropDefinition(this, propertyName, options);
 			this.createReactiveProp(propertyName, {

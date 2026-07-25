@@ -48,14 +48,7 @@ const ICONS = {
 		'M5 18H3',
 	],
 	message: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
-	bot: [
-		'M12 8V4H8',
-		'M16 16h6',
-		'M19 13v6',
-		'M16 8h-5a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h5',
-		'M9 22h6',
-		'M12 17v5',
-	],
+	bot: ['M12 8V4H8', 'M16 16h6', 'M19 13v6', 'M16 8h-5a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h5', 'M9 22h6', 'M12 17v5'],
 	building: [
 		'M3 21h18',
 		'M9 8h1',
@@ -87,7 +80,9 @@ const SIDEBAR_GROUPS = [
 		id: 'skills',
 		label: 'Skills',
 		items: [{ href: '/skills', label: 'All skills', icon: 'sparkles' as IconKey }],
-		actions: [{ kind: 'link' as const, label: 'Create new skill', icon: 'plus' as IconKey, href: '/skills/create' }],
+		actions: [
+			{ kind: 'link' as const, label: 'Create new skill', icon: 'plus' as IconKey, href: '/skills/create' },
+		],
 	},
 	{
 		id: 'admin',
@@ -126,17 +121,16 @@ function renderSidebarContent({
 	return (
 		<>
 			<RuiSidebarHeader aria-label="Workspace header">
-				<a href="/" class="rui-sidebar__brand flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold">
+				<a
+					href="/"
+					class="rui-sidebar__brand flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold"
+				>
 					<span class="rui-sidebar__brand-mark grid size-6 shrink-0 place-items-center rounded-md bg-primary text-on-primary text-xs font-bold">
 						R
 					</span>
 					<span class="rui-sidebar__brand-text">Radiant</span>
 				</a>
-				<RuiSidebarTrigger
-					placement="header"
-					controls="primary-sidebar"
-					triggerLabel="Collapse sidebar"
-				/>
+				<RuiSidebarTrigger placement="header" controls="primary-sidebar" triggerLabel="Collapse sidebar" />
 			</RuiSidebarHeader>
 
 			<RuiSidebarContent aria-label="Primary navigation">
@@ -174,7 +168,11 @@ function renderSidebarContent({
 											as={action.kind === 'link' ? 'a' : 'button'}
 											href={action.kind === 'link' ? action.href : undefined}
 											tooltip={action.label}
-											onClick={action.kind === 'button' && onAction ? () => onAction(action.label) : undefined}
+											onClick={
+												action.kind === 'button' && onAction
+													? () => onAction(action.label)
+													: undefined
+											}
 										>
 											{action.icon ? <NavIcon name={action.icon} /> : null}
 											<span>{action.label}</span>
@@ -183,7 +181,9 @@ function renderSidebarContent({
 								</div>
 							) : null}
 						</RuiSidebarGroup>
-						{index < SIDEBAR_GROUPS.length - 1 ? <RuiSidebarSeparator aria-label="Section divider" /> : null}
+						{index < SIDEBAR_GROUPS.length - 1 ? (
+							<RuiSidebarSeparator aria-label="Section divider" />
+						) : null}
 					</>
 				))}
 			</RuiSidebarContent>
@@ -213,11 +213,7 @@ function renderInset({ title }: { title: string }) {
 		<RuiSidebarInset id="main-content">
 			<header class="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6 lg:px-8">
 				<div class="flex items-center gap-3">
-					<RuiSidebarTrigger
-						placement="inset"
-						controls="primary-sidebar"
-						triggerLabel="Open sidebar"
-					/>
+					<RuiSidebarTrigger placement="inset" controls="primary-sidebar" triggerLabel="Open sidebar" />
 					<span class="text-sm font-medium">Page title</span>
 				</div>
 				<span class="text-xs text-on-surface">Light DOM · Resizable · Collapsible</span>
@@ -225,9 +221,9 @@ function renderInset({ title }: { title: string }) {
 			<div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
 				<h1 class="text-2xl font-semibold">{title}</h1>
 				<p class="mt-2 max-w-prose text-sm text-on-surface">
-					This area is the main content. The sidebar on the left resizes with the keyboard
-					(<kbd>←</kbd>/<kbd>→</kbd>) or pointer drag, collapses to an icon rail, and converts
-					to a drawer below the configured mobile breakpoint.
+					This area is the main content. The sidebar on the left resizes with the keyboard (<kbd>←</kbd>/
+					<kbd>→</kbd>) or pointer drag, collapses to an icon rail, and converts to a drawer below the
+					configured mobile breakpoint.
 				</p>
 			</div>
 		</RuiSidebarInset>

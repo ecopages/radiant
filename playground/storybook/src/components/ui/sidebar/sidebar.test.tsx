@@ -49,9 +49,7 @@ async function settled(): Promise<void> {
 }
 
 function paneWidthVar(host: HTMLElement): string {
-	return (host.querySelector('[data-ref="root"]') as HTMLElement).style.getPropertyValue(
-		'--rui-sidebar-pane-width',
-	);
+	return (host.querySelector('[data-ref="root"]') as HTMLElement).style.getPropertyValue('--rui-sidebar-pane-width');
 }
 
 /** Desktop shell — disable matchMedia mobile so tests are viewport-independent. */
@@ -209,13 +207,7 @@ describe('RuiSidebar composition', () => {
 
 	it('setOpen collapses icon mode to the icon rail width', async () => {
 		const { host, cleanup } = mount(
-			<RuiSidebar
-				id="primary-sidebar"
-				collapsible="icon"
-				defaultWidth={256}
-				mobileBreakpoint={0}
-				label="Primary"
-			>
+			<RuiSidebar id="primary-sidebar" collapsible="icon" defaultWidth={256} mobileBreakpoint={0} label="Primary">
 				<span>content</span>
 			</RuiSidebar>,
 		);
@@ -262,13 +254,7 @@ describe('RuiSidebar composition', () => {
 
 	it('updates pane width var on keyboard resize', async () => {
 		const { host, cleanup } = mount(
-			<RuiSidebar
-				id="primary-sidebar"
-				collapsible="off"
-				defaultWidth={220}
-				mobileBreakpoint={0}
-				label="Primary"
-			>
+			<RuiSidebar id="primary-sidebar" collapsible="off" defaultWidth={220} mobileBreakpoint={0} label="Primary">
 				<span>content</span>
 			</RuiSidebar>,
 		);
@@ -333,13 +319,7 @@ describe('RuiSidebar composition', () => {
 
 	it('keyboard resizes the pane on the handle', async () => {
 		const { host, cleanup } = mount(
-			<RuiSidebar
-				id="primary-sidebar"
-				collapsible="off"
-				defaultWidth={220}
-				mobileBreakpoint={0}
-				label="Primary"
-			>
+			<RuiSidebar id="primary-sidebar" collapsible="off" defaultWidth={220} mobileBreakpoint={0} label="Primary">
 				<span>content</span>
 			</RuiSidebar>,
 		);
@@ -617,7 +597,9 @@ describe('RuiSidebarTrigger', () => {
 		await settled();
 
 		const sidebar = host.querySelector('rui-sidebar') as HTMLElement;
-		const headerTrigger = host.querySelector('.rui-sidebar__header rui-sidebar-trigger button') as HTMLButtonElement;
+		const headerTrigger = host.querySelector(
+			'.rui-sidebar__header rui-sidebar-trigger button',
+		) as HTMLButtonElement;
 
 		expect(headerTrigger.getAttribute('aria-controls')).toBe('primary-sidebar');
 		expect(headerTrigger.getAttribute('aria-label')).toBe('Collapse sidebar');

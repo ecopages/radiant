@@ -173,7 +173,13 @@ export const WithSwipe: Story = {
 			await expect(slideEls[0]).toHaveAttribute('data-active', 'true');
 			const swipeLeft = () => {
 				viewport.dispatchEvent(
-					new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1, clientX: 200, clientY: 80 }),
+					new PointerEvent('pointerdown', {
+						bubbles: true,
+						button: 0,
+						pointerId: 1,
+						clientX: 200,
+						clientY: 80,
+					}),
 				);
 				viewport.dispatchEvent(
 					new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 1, clientX: 60, clientY: 80 }),
@@ -186,10 +192,22 @@ export const WithSwipe: Story = {
 		await step('swipe right moves to the previous slide', async () => {
 			const swipeRight = () => {
 				viewport.dispatchEvent(
-					new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 2, clientX: 60, clientY: 80 }),
+					new PointerEvent('pointerdown', {
+						bubbles: true,
+						button: 0,
+						pointerId: 2,
+						clientX: 60,
+						clientY: 80,
+					}),
 				);
 				viewport.dispatchEvent(
-					new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 2, clientX: 200, clientY: 80 }),
+					new PointerEvent('pointerup', {
+						bubbles: true,
+						button: 0,
+						pointerId: 2,
+						clientX: 200,
+						clientY: 80,
+					}),
 				);
 			};
 			swipeRight();

@@ -1,12 +1,7 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RadiantSlotProps } from '../../../types';
 import { defineRadiantView } from '../../../lib/radiant-view';
-import type {
-	RuiSidebarProps,
-	RuiSidebarCollapsible,
-	RuiSidebarSide,
-	RuiSidebarVariant,
-} from './sidebar.script';
+import type { RuiSidebarProps, RuiSidebarCollapsible, RuiSidebarSide, RuiSidebarVariant } from './sidebar.script';
 import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
 import type { RuiSidebarTriggerProps } from './sidebar-trigger.script';
 import { RuiSidebarTrigger as RuiSidebarTriggerElement } from './sidebar-trigger.script';
@@ -154,11 +149,7 @@ export function RuiSidebarGroupAction({
 	'aria-label': ariaLabel,
 }: RuiSidebarGroupActionProps) {
 	return (
-		<button
-			type="button"
-			aria-label={ariaLabel}
-			class={cx('rui-sidebar__group-action', className)}
-		>
+		<button type="button" aria-label={ariaLabel} class={cx('rui-sidebar__group-action', className)}>
 			{children}
 		</button>
 	);
@@ -347,7 +338,16 @@ export type RuiSidebarTriggerViewProps = RuiSidebarTriggerProps &
 
 export const RuiSidebarTrigger = defineRadiantView(
 	RuiSidebarTriggerElement,
-	({ slot, controls, triggerLabel, placement, variant, size, class: className, children }: RuiSidebarTriggerViewProps) => (
+	({
+		slot,
+		controls,
+		triggerLabel,
+		placement,
+		variant,
+		size,
+		class: className,
+		children,
+	}: RuiSidebarTriggerViewProps) => (
 		<rui-sidebar-trigger
 			slot={slot}
 			class={className}

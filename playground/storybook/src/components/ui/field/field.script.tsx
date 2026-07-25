@@ -118,9 +118,8 @@ export class RuiField extends RadiantElement {
 	}
 
 	private readFieldRules(): FieldRules | undefined {
-		const fromAttr = this.parseJsonAttr(
-			this.rulesData ?? this.getAttribute(RUI_FIELD_RULES_ATTR),
-		) as FieldRules | undefined;
+		const fromAttr = this.parseJsonAttr(this.rulesData ?? this.getAttribute(RUI_FIELD_RULES_ATTR)) as
+			FieldRules | undefined;
 		if (fromAttr && typeof fromAttr === 'object' && !Array.isArray(fromAttr) && Object.keys(fromAttr).length > 0) {
 			return fromAttr;
 		}
@@ -255,7 +254,8 @@ export class RuiField extends RadiantElement {
 	}
 
 	@onEvent({
-		selector: '[data-rui-control], rui-combobox, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-spinbutton, rui-listbox',
+		selector:
+			'[data-rui-control], rui-combobox, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-spinbutton, rui-listbox',
 		type: 'rui-change',
 	})
 	onControlChange(): void {

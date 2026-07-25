@@ -20,14 +20,14 @@ Component CSS must **not** `@import` a theme file.
 
 ### Tier 1 — composable packs (`src/styles/tokens/`)
 
-| Directory | Purpose |
-|-----------|---------|
-| `colors/<name>.css` | Raw OKLCH scales only (no semantic roles) |
-| `spacing/<name>.css` | `--space-*` scale + spacing roles |
-| `radius/<name>.css` | Radius scale + `--radius-control`, `--radius-container`, `--radius-pill` |
-| `elevation/<name>.css` | `--shadow-control`, `--shadow-overlay`, `--shadow-modal` |
-| `typography/<name>.css` | Font family, text sizes, weights, leading roles |
-| `motion/<name>.css` | `--duration-*`, `--ease-*` |
+| Directory               | Purpose                                                                  |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `colors/<name>.css`     | Raw OKLCH scales only (no semantic roles)                                |
+| `spacing/<name>.css`    | `--space-*` scale + spacing roles                                        |
+| `radius/<name>.css`     | Radius scale + `--radius-control`, `--radius-container`, `--radius-pill` |
+| `elevation/<name>.css`  | `--shadow-control`, `--shadow-overlay`, `--shadow-modal`                 |
+| `typography/<name>.css` | Font family, text sizes, weights, leading roles                          |
+| `motion/<name>.css`     | `--duration-*`, `--ease-*`                                               |
 
 Components must **never** reference palette steps (e.g. `--color-havelock-blue-800`) directly.
 
@@ -69,12 +69,12 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
 
 1. `@reference` the theme entry or `radiant-ui.css` (for Storybook), not individual palette files.
 2. Use semantic utilities / variables for anything that should respond to theme packs:
-   - Geometry: spacing roles, radius roles (not `p-4`, `gap-2`, `rounded-md` for themed controls).
-   - Color: semantic colors (not palette steps).
-   - Depth: `--shadow-*` roles (not raw `shadow-md`).
-   - Type: `--text-*` / typography utilities (not ad-hoc `text-sm` where a role exists).
-   - Motion: `--duration-*` / `--ease-*` (not raw `duration-150`).
-   - State: `--opacity-disabled`, z-index roles from `system.css`.
+    - Geometry: spacing roles, radius roles (not `p-4`, `gap-2`, `rounded-md` for themed controls).
+    - Color: semantic colors (not palette steps).
+    - Depth: `--shadow-*` roles (not raw `shadow-md`).
+    - Type: `--text-*` / typography utilities (not ad-hoc `text-sm` where a role exists).
+    - Motion: `--duration-*` / `--ease-*` (not raw `duration-150`).
+    - State: `--opacity-disabled`, z-index roles from `system.css`.
 3. Structural layout (flex, grid, `min-w-0`, positioning) may use Tailwind as needed.
 4. One CSS file per component directory; register via `import './<name>.css'` from the component entry.
 
@@ -91,14 +91,14 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
 @reference '../../../styles/radiant-ui.css';
 
 @layer components {
-  .rui-example {
-    border-radius: var(--radius-control);
-    padding-inline: var(--space-control-x);
-    padding-block: var(--space-control-y);
-    gap: var(--space-inline);
-    box-shadow: var(--shadow-control);
-    transition-duration: var(--duration-normal);
-  }
+	.rui-example {
+		border-radius: var(--radius-control);
+		padding-inline: var(--space-control-x);
+		padding-block: var(--space-control-y);
+		gap: var(--space-inline);
+		box-shadow: var(--shadow-control);
+		transition-duration: var(--duration-normal);
+	}
 }
 ```
 

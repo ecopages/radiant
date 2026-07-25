@@ -233,7 +233,9 @@ rui-sidebar {
 .rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__group-action,
 .rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__group-actions,
 .rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__separator,
-.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__footer > *:not(.rui-sidebar__menu):not(button):not(a) {
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed']
+	.rui-sidebar__footer
+	> *:not(.rui-sidebar__menu):not(button):not(a) {
 	@apply hidden;
 }
 
@@ -270,24 +272,30 @@ rui-sidebar {
 /* Alternate header (collapse) vs inset (open) triggers                       */
 /* -------------------------------------------------------------------------- */
 
-.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='header'],
-.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='inset'] {
+.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true']))
+	rui-sidebar-trigger[data-placement='header'],
+.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true']))
+	rui-sidebar-trigger[data-placement='inset'] {
 	@apply hidden;
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='inset'] {
+.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true']))
+	rui-sidebar-trigger[data-placement='inset'] {
 	@apply hidden;
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='header'] {
+.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true']))
+	rui-sidebar-trigger[data-placement='header'] {
 	@apply hidden;
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded'][data-mobile='true']) rui-sidebar-trigger[data-placement='inset'] {
+.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded'][data-mobile='true'])
+	rui-sidebar-trigger[data-placement='inset'] {
 	@apply hidden;
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed'][data-mobile='true']) rui-sidebar-trigger[data-placement='header'] {
+.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed'][data-mobile='true'])
+	rui-sidebar-trigger[data-placement='header'] {
 	@apply hidden;
 }
 

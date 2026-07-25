@@ -188,7 +188,18 @@ export class RuiSidebar extends RadiantElement {
 		}
 	}
 
-	@onUpdated(['open', 'collapsible', 'variant', 'side', 'width', 'defaultWidth', 'defaultOpen', 'minWidth', 'maxWidth', 'isMobile'])
+	@onUpdated([
+		'open',
+		'collapsible',
+		'variant',
+		'side',
+		'width',
+		'defaultWidth',
+		'defaultOpen',
+		'minWidth',
+		'maxWidth',
+		'isMobile',
+	])
 	onStateUpdated(): void {
 		this.syncHostAttributes();
 		this.syncPaneWidthVar();

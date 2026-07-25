@@ -6,14 +6,7 @@ import './form.css';
 
 export const RuiForm = defineRadiantView(
 	RuiFormElement,
-	({
-		defaultValues,
-		defaultValuesData,
-		resolver,
-		mode,
-		reValidateMode,
-		children,
-	}: WithChildren<RuiFormProps>) => (
+	({ defaultValues, defaultValuesData, resolver, mode, reValidateMode, children }: WithChildren<RuiFormProps>) => (
 		<rui-form
 			mode={mode}
 			reValidateMode={reValidateMode}
@@ -21,8 +14,7 @@ export const RuiForm = defineRadiantView(
 			prop:defaultValues={defaultValues}
 			prop:resolver={resolver}
 			attr:data-default-values={
-				defaultValuesData ??
-				(defaultValues !== undefined ? JSON.stringify(defaultValues) : undefined)
+				defaultValuesData ?? (defaultValues !== undefined ? JSON.stringify(defaultValues) : undefined)
 			}
 		>
 			{children}
