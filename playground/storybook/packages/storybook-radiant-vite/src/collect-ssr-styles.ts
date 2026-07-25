@@ -2,8 +2,8 @@ import type { ModuleNode, ViteDevServer } from 'vite';
 import type { RadiantSsrAsset } from './constants';
 import { normalizeSsrModulePath, toViteSsrModulePath } from './ssr-module-path';
 
-/** Preview globals required for Tailwind tokens used by component CSS. */
-const STORYBOOK_GLOBAL_STYLE_MODULES = ['/src/styles/tailwind.css'] as const;
+/** Default global style modules when none are configured via framework options. */
+const DEFAULT_GLOBAL_STYLE_MODULES: readonly string[] = [];
 
 function isCssModuleId(id: string): boolean {
 	return (id.split('?')[0] ?? id).endsWith('.css');
@@ -138,14 +138,14 @@ async function collectStylesForModule(
 export async function collectSsrStyleAssets(
 	server: ViteDevServer,
 	entryModulePaths: readonly string[],
-	options: { includeGlobalStyles?: boolean } = {},
+	options: { includeGlobalStyles?: boolean; globalStyleModules?: readonly string[] } = {},
 ): Promise<RadiantSsrAsset[]> {
 	const assets: RadiantSsrAsset[] = [];
 	const seen = new Set<string>();
 	const entries = [...new Set(entryModulePaths.map(normalizeSsrModulePath).filter(Boolean))];
 
 	if (options.includeGlobalStyles) {
-		for (const globalStyle of STORYBOOK_GLOBAL_STYLE_MODULES) {
+		for (const globalStyle of options.globalStyleModules ?? DEFAULT_GLOBAL_STYLE_MODULES) {
 			await collectStylesForModule(server, globalStyle, seen, assets);
 		}
 	}

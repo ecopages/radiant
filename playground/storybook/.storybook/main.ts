@@ -10,7 +10,9 @@ const config: StorybookConfig = {
 	addons: ['@chromatic-com/storybook', '@storybook/addon-vitest', '@storybook/addon-a11y', '@storybook/addon-docs'],
 	framework: {
 		name: '@ecopages/storybook-radiant-vite',
-		options: {},
+		options: {
+			globalStyleModules: ['/src/styles/tailwind.css'],
+		},
 	},
 	async viteFinal(config) {
 		config.resolve ??= {};

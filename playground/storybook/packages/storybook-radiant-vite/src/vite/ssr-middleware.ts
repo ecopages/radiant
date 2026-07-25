@@ -27,7 +27,12 @@ function sendJson(res: ServerResponse, status: number, body: RadiantSsrResponseB
 	res.end(JSON.stringify(body));
 }
 
-async function handleSsrRequest(server: ViteDevServer, req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function handleSsrRequest(
+	server: ViteDevServer,
+	req: IncomingMessage,
+	res: ServerResponse,
+	options: { globalStyleModules?: readonly string[] },
+): Promise<void> {
 	try {
 		const body = await readJsonBody(req);
 		if (!body.ssrModule && !body.viewModule) {
@@ -35,7 +40,7 @@ async function handleSsrRequest(server: ViteDevServer, req: IncomingMessage, res
 			return;
 		}
 
-		const rendered = await renderStorybookSsrPayload(server, body);
+		const rendered = await renderStorybookSsrPayload(server, body, options);
 
 		sendJson(res, 200, {
 			markup: rendered.markup,
@@ -55,7 +60,7 @@ async function handleSsrRequest(server: ViteDevServer, req: IncomingMessage, res
  * Vite plugin:
  * - serves `POST /__radiant_ssr` for Storybook preview SSR mounts via `@ecopages/vite-plugin-radiant/ssr`
  */
-export function radiantStorybookSsrPlugin(): Plugin {
+export function radiantStorybookSsrPlugin(options: { globalStyleModules?: readonly string[] } = {}): Plugin {
 	return {
 		name: 'ecopages:storybook-radiant-ssr',
 		configureServer(server) {
@@ -64,7 +69,7 @@ export function radiantStorybookSsrPlugin(): Plugin {
 					next();
 					return;
 				}
-				void handleSsrRequest(server, req, res);
+				void handleSsrRequest(server, req, res, options);
 			});
 		},
 	};

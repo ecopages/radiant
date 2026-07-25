@@ -135,6 +135,7 @@ function mergeSsrAssets(...groups: readonly (readonly RadiantSsrAsset[])[]): Rad
 export async function renderStorybookSsrPayload(
 	server: ViteDevServer,
 	body: RadiantSsrRequestBody,
+	options: { globalStyleModules?: readonly string[] } = {},
 ): Promise<{
 	markup: string;
 	tagName: string;
@@ -180,7 +181,7 @@ export async function renderStorybookSsrPayload(
 			? await collectSsrStyleAssets(
 					server,
 					[ssrModule, body.viewModule].filter((entry): entry is string => Boolean(entry)),
-					{ includeGlobalStyles: true },
+					{ includeGlobalStyles: true, globalStyleModules: options.globalStyleModules },
 				)
 			: [];
 

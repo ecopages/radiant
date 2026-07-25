@@ -101,6 +101,8 @@ export type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
 	builder?: BuilderOptions;
+	/** Global style modules (e.g. Tailwind entry) always loaded for SSR static previews. */
+	globalStyleModules?: string[];
 };
 
 type StorybookConfigFramework = {
