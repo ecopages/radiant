@@ -250,10 +250,6 @@ function parseSelectorParts(selector: string): SelectorPart[] {
 		index += tagMatch[0].length;
 	}
 
-	if (parts.length === 0) {
-		throwUnsupported(selector);
-	}
-
 	return parts;
 }
 

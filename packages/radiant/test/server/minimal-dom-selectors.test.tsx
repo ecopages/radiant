@@ -29,6 +29,19 @@ describe('minimal-dom selectors', () => {
 		expect(element.matches('div')).toBe(false);
 	});
 
+	test('matches the universal selector, bare and in a combinator chain', () => {
+		const host = new MinimalHTMLElement('section');
+		host.innerHTML = '<div><span data-ref="child"></span></div>';
+
+		const div = host.querySelector('div')!;
+		const span = host.querySelector('[data-ref="child"]')!;
+
+		expect(div.matches('*')).toBe(true);
+		expect(span.matches('*')).toBe(true);
+		expect(span.matches('div > *')).toBe(true);
+		expect(div.matches('div > *')).toBe(false);
+	});
+
 	test('throws SyntaxError for unsupported selectors', () => {
 		const element = new MinimalHTMLElement('div');
 
