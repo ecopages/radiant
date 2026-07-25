@@ -14,7 +14,7 @@ rui-tooltip {
 	}
 
 	.rui-tooltip__content {
-		@apply absolute z-30 max-w-xs rounded-md bg-on-background px-2 py-1 text-xs text-background shadow-md;
+		@apply absolute z-overlay max-w-xs rounded-container bg-on-background px-2 py-1 text-xs text-background shadow-md;
 		width: max-content;
 		pointer-events: none;
 	}

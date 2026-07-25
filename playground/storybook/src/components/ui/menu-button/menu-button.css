@@ -10,7 +10,7 @@ rui-menu-button {
 	}
 
 	.rui-menu-button__trigger {
-		@apply gap-2;
+		@apply gap-inline;
 	}
 
 	.rui-menu-button__chevron {
@@ -20,7 +20,7 @@ rui-menu-button {
 	}
 
 	.rui-menu-button__menu {
-		@apply absolute z-20 min-w-40 rounded-md border border-border bg-background p-1 shadow-md;
+		@apply absolute z-popover min-w-40 rounded-container border border-border bg-background p-1 shadow-md;
 	}
 
 	.rui-menu-button__menu[hidden] {
@@ -28,7 +28,7 @@ rui-menu-button {
 	}
 
 	.rui-menu-button__item {
-		@apply flex w-full cursor-pointer items-center rounded-sm border-0 bg-transparent px-3 py-2 text-left text-sm;
+		@apply flex w-full cursor-pointer items-center rounded-control border-0 bg-transparent px-3 py-2 text-left text-sm;
 		@apply text-on-background;
 	}
 
@@ -38,6 +38,6 @@ rui-menu-button {
 	}
 
 	.rui-menu-button__item[aria-disabled='true'] {
-		@apply cursor-not-allowed opacity-50;
+		@apply cursor-not-allowed opacity-disabled;
 	}
 }

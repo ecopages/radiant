@@ -6,9 +6,9 @@ rui-feed {
 
 @layer components {
 	.rui-feed {
-		@apply flex flex-col gap-4;
+		@apply flex flex-col gap-stack;
 	}
 	.rui-feed__article {
-		@apply rounded-md border border-border bg-background p-4 text-sm;
+		@apply rounded-container border border-border bg-background p-inset text-sm;
 	}
 }

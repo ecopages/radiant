@@ -6,11 +6,11 @@ rui-breadcrumb {
 
 @layer components {
 	.rui-breadcrumb__list {
-		@apply m-0 flex list-none flex-wrap items-center gap-2 p-0 text-sm;
+		@apply m-0 flex list-none flex-wrap items-center gap-inline p-0 text-sm;
 	}
 
 	.rui-breadcrumb__item {
-		@apply inline-flex items-center gap-2;
+		@apply inline-flex items-center gap-inline;
 	}
 
 	.rui-breadcrumb a {

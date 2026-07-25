@@ -6,7 +6,7 @@ rui-navigation-menu {
 
 @layer components {
 	.rui-navigation-menu {
-		@apply flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm;
+		@apply flex flex-col overflow-hidden rounded-container border border-border bg-surface shadow-sm;
 	}
 
 	.rui-navigation-menu__bar {
@@ -15,7 +15,7 @@ rui-navigation-menu {
 
 	.rui-navigation-menu__bar .rui-button,
 	.rui-navigation-menu__bar a.rui-button {
-		@apply rounded-md no-underline;
+		@apply rounded-container no-underline;
 	}
 
 	.rui-navigation-menu [data-navigation-trigger] {
@@ -76,7 +76,7 @@ rui-navigation-menu {
 	}
 
 	.rui-navigation-menu__link-list a {
-		@apply block rounded-md px-2 py-1.5 font-medium text-link no-underline transition-colors duration-150;
+		@apply block rounded-container px-2 py-1.5 font-medium text-link no-underline transition-colors duration-fast;
 		@apply hover:bg-surface hover:underline;
 	}
 

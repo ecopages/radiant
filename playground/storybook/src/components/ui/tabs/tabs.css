@@ -10,7 +10,7 @@ rui-tabs {
 	}
 
 	.rui-tabs__tab {
-		@apply cursor-pointer rounded-t-md border-0 bg-transparent px-4 py-2 text-sm;
+		@apply cursor-pointer rounded-t-md border-0 bg-transparent px-control-x py-2 text-sm;
 		@apply text-on-surface;
 	}
 

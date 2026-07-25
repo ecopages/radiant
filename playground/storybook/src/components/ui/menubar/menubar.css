@@ -6,14 +6,14 @@ rui-menubar {
 
 @layer components {
 	.rui-menubar {
-		@apply relative inline-flex gap-1 rounded-md border border-border bg-surface p-1;
+		@apply relative inline-flex gap-1 rounded-container border border-border bg-surface p-1;
 	}
 	.rui-menubar__root {
 		@apply relative;
 	}
 	.rui-menubar__item {
-		@apply cursor-pointer rounded-sm border-0 bg-transparent px-3 py-1.5 text-sm text-on-surface;
-		@apply transition-colors duration-150;
+		@apply cursor-pointer rounded-control border-0 bg-transparent px-3 py-1.5 text-sm text-on-surface;
+		@apply transition-colors duration-fast;
 	}
 	.rui-menubar__item:hover {
 		@apply bg-background;
@@ -29,11 +29,11 @@ rui-menubar {
 		@apply bg-background outline-none ring-2 ring-focus-ring;
 	}
 	.rui-menubar__menu {
-		@apply absolute left-0 top-full z-10 mt-1 min-w-40 rounded-md border border-border bg-surface p-1 shadow-md;
+		@apply absolute left-0 top-full z-dropdown mt-1 min-w-40 rounded-container border border-border bg-surface p-1 shadow-md;
 	}
 	.rui-menubar__menu-item {
-		@apply block w-full cursor-pointer rounded-sm border-0 bg-transparent px-3 py-1.5 text-left text-sm text-on-surface;
-		@apply transition-colors duration-150;
+		@apply block w-full cursor-pointer rounded-control border-0 bg-transparent px-3 py-1.5 text-left text-sm text-on-surface;
+		@apply transition-colors duration-fast;
 	}
 	.rui-menubar__menu-item:hover,
 	.rui-menubar__menu-item:focus-visible {

@@ -6,7 +6,7 @@ rui-toolbar {
 
 @layer components {
 	.rui-toolbar {
-		@apply inline-flex items-center gap-1 rounded-md border border-border bg-surface p-1;
+		@apply inline-flex items-center gap-1 rounded-container border border-border bg-surface p-1;
 	}
 
 	.rui-toolbar .rui-button--ghost[aria-pressed='true'],
