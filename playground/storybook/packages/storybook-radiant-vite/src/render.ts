@@ -90,7 +90,7 @@ export async function renderToCanvas(
 
 	const element = await Promise.resolve(context.storyFn());
 	context.showMain();
-	mountClientResult({
+	await mountClientResult({
 		canvasElement,
 		element,
 		forceRemount: context.forceRemount,

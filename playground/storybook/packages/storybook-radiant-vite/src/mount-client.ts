@@ -1,6 +1,8 @@
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { isTemplateResultLike } from '@ecopages/jsx/jsx-runtime';
 import { uninstallRadiantHydrator } from '@ecopages/radiant/client/hydrator';
+import { loadRadiantDomModules } from 'virtual:radiant/dom-module-registry';
+import { clearSsrInjectedStyles } from './mount-ssr';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 import { ensureRootInner, getMountedRoot, setMountedRoot, teardownCanvas } from './canvas';
@@ -10,17 +12,28 @@ type ShowError = (error: { title: string; description: string }) => void;
 /**
  * Mount a client-mode story result into the canvas.
  */
-export function mountClientResult(options: {
+export async function mountClientResult(options: {
 	canvasElement: HTMLElement;
 	element: unknown;
 	forceRemount: boolean;
 	storyName: string;
 	storyKind: string;
 	showError: ShowError;
-}): void {
+}): Promise<void> {
 	const { canvasElement, element, forceRemount, storyName, storyKind, showError } = options;
 
+	const finishMount = async (scope: ParentNode) => {
+		await loadRadiantDomModules(scope);
+		await new Promise<void>((resolve) => {
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => resolve());
+			});
+		});
+		simulatePageLoad(canvasElement);
+	};
+
 	uninstallRadiantHydrator();
+	clearSsrInjectedStyles();
 
 	if (element == null) {
 		teardownCanvas(canvasElement);
@@ -30,7 +43,7 @@ export function mountClientResult(options: {
 	if (typeof element === 'string') {
 		teardownCanvas(canvasElement);
 		canvasElement.innerHTML = element;
-		simulatePageLoad(canvasElement);
+		await finishMount(canvasElement);
 		return;
 	}
 
@@ -41,6 +54,7 @@ export function mountClientResult(options: {
 		teardownCanvas(canvasElement);
 		canvasElement.appendChild(element);
 		simulateDOMContentLoaded();
+		await loadRadiantDomModules(canvasElement);
 		return;
 	}
 
@@ -52,7 +66,7 @@ export function mountClientResult(options: {
 			setMountedRoot(canvasElement, root);
 		}
 		root.render(element as JsxRenderable);
-		simulatePageLoad(canvasElement);
+		await finishMount(renderTo);
 		return;
 	}
 

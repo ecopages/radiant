@@ -44,7 +44,12 @@ function stripModuleScripts(markup: string): string {
 	return markup.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<script\b[^>]*\/>/gi, '');
 }
 
+export function clearSsrInjectedStyles(): void {
+	document.querySelectorAll('link[data-radiant-ssr-style]').forEach((node) => node.remove());
+}
+
 async function loadSsrStyles(assets: RadiantSsrResponseBody['assets']): Promise<void> {
+	clearSsrInjectedStyles();
 	for (const asset of assets) {
 		if (asset.kind === 'style' && asset.href) {
 			const href = toStylesheetLinkHref(asset.href);

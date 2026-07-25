@@ -32,6 +32,7 @@ export default defineConfig({
 		'@ecopages/signals',
 		'vite',
 		'@ecopages/vite-plugin-radiant',
+		'virtual:radiant/dom-module-registry',
 		'ts-dedent',
 	],
 	esbuildOptions(options) {
