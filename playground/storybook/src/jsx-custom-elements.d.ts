@@ -7,7 +7,9 @@ import type { RuiComboboxProps } from './components/ui/combobox/combobox.script'
 import type { RuiDialogProps } from './components/ui/dialog/dialog.script';
 import type { RuiDisclosureGroupProps } from './components/ui/disclosure/disclosure-group.script';
 import type { RuiDisclosureProps } from './components/ui/disclosure/disclosure.script';
+import type { RuiFieldProps } from './components/ui/field/field.script';
 import type { RuiFeedProps } from './components/ui/feed/feed.script';
+import type { RuiFormProps } from './components/ui/form/form.script';
 import type { RuiGridProps } from './components/ui/grid/grid.script';
 import type { RuiListboxProps } from './components/ui/listbox/listbox.script';
 import type { RuiMenuButtonProps } from './components/ui/menu-button/menu-button.script';
@@ -15,6 +17,8 @@ import type { RuiMenubarProps } from './components/ui/menubar/menubar.script';
 import type { RuiMeterProps } from './components/ui/meter/meter.script';
 import type { RuiNavigationMenuProps } from './components/ui/navigation-menu/navigation-menu.script';
 import type { RuiRadioGroupProps } from './components/ui/radio-group/radio-group.script';
+import type { RuiSidebarProps } from './components/ui/sidebar/sidebar.script';
+import type { RuiSidebarTriggerProps } from './components/ui/sidebar/sidebar-trigger.script';
 import type { RuiSliderProps } from './components/ui/slider/slider.script';
 import type { RuiSpinbuttonProps } from './components/ui/spinbutton/spinbutton.script';
 import type { RuiSwitchProps } from './components/ui/switch/switch.script';
@@ -36,6 +40,8 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-disclosure': JsxCustomElementAttributes<HTMLElement, RuiDisclosureProps>;
 		'rui-disclosure-group': JsxCustomElementAttributes<HTMLElement, RuiDisclosureGroupProps>;
 		'rui-feed': JsxCustomElementAttributes<HTMLElement, RuiFeedProps>;
+		'rui-field': JsxCustomElementAttributes<HTMLElement, RuiFieldProps>;
+		'rui-form': JsxCustomElementAttributes<HTMLElement, RuiFormProps>;
 		'rui-grid': JsxCustomElementAttributes<HTMLElement, RuiGridProps>;
 		'rui-listbox': JsxCustomElementAttributes<HTMLElement, RuiListboxProps>;
 		'rui-menu-button': JsxCustomElementAttributes<HTMLElement, RuiMenuButtonProps>;
@@ -43,6 +49,8 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-meter': JsxCustomElementAttributes<HTMLElement, RuiMeterProps>;
 		'rui-navigation-menu': JsxCustomElementAttributes<HTMLElement, RuiNavigationMenuProps>;
 		'rui-radio-group': JsxCustomElementAttributes<HTMLElement, RuiRadioGroupProps>;
+		'rui-sidebar': JsxCustomElementAttributes<HTMLElement, RuiSidebarProps>;
+		'rui-sidebar-trigger': JsxCustomElementAttributes<HTMLElement, RuiSidebarTriggerProps>;
 		'rui-slider': JsxCustomElementAttributes<HTMLElement, RuiSliderProps>;
 		'rui-spinbutton': JsxCustomElementAttributes<HTMLElement, RuiSpinbuttonProps>;
 		'rui-switch': JsxCustomElementAttributes<HTMLElement, RuiSwitchProps>;
