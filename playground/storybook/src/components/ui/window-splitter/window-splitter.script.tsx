@@ -2,9 +2,11 @@ import { onUpdated } from '@ecopages/radiant';
 import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
 import { bound } from '@ecopages/radiant/decorators/bound';
 import { customElement } from '@ecopages/radiant/decorators/custom-element';
+import { event } from '@ecopages/radiant/decorators/event';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { prop } from '@ecopages/radiant/decorators/prop';
 import { query } from '@ecopages/radiant/decorators/query';
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiWindowSplitterProps = {
 	/** Primary pane size as a percentage. Default: `50`. */
@@ -13,6 +15,8 @@ export type RuiWindowSplitterProps = {
 	orientation?: 'horizontal' | 'vertical';
 	label?: string;
 };
+
+export type RuiWindowSplitterChangeDetail = { value: number };
 
 /**
  * `<rui-window-splitter>` — a movable separator between two panes.
@@ -32,6 +36,9 @@ export class RuiWindowSplitter extends RadiantElement {
 
 	@query({ ref: 'primary' }) primaryTarget: HTMLElement;
 	@query({ ref: 'separator' }) separatorTarget: HTMLElement;
+
+	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
+	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
 
 	private dragging = false;
 
@@ -69,17 +76,23 @@ export class RuiWindowSplitter extends RadiantElement {
 		const horizontal = this.orientation !== 'vertical';
 		if ((horizontal && event.key === 'ArrowLeft') || (!horizontal && event.key === 'ArrowUp')) {
 			event.preventDefault();
-			this.value = Math.max(20, this.value - delta);
+			this.updateValue(Math.max(20, this.value - delta));
 		} else if ((horizontal && event.key === 'ArrowRight') || (!horizontal && event.key === 'ArrowDown')) {
 			event.preventDefault();
-			this.value = Math.min(80, this.value + delta);
+			this.updateValue(Math.min(80, this.value + delta));
 		} else if (event.key === 'Home') {
 			event.preventDefault();
-			this.value = 20;
+			this.updateValue(20);
 		} else if (event.key === 'End') {
 			event.preventDefault();
-			this.value = 80;
+			this.updateValue(80);
 		}
+	}
+
+	private updateValue(next: number): void {
+		if (next === this.value) return;
+		this.value = next;
+		this.changeEvent.emit({ value: next });
 	}
 
 	@onEvent({ ref: 'separator', type: 'pointerdown' })
@@ -95,9 +108,9 @@ export class RuiWindowSplitter extends RadiantElement {
 		if (!this.dragging) return;
 		const rect = this.getBoundingClientRect();
 		if (this.orientation === 'vertical') {
-			this.value = Math.min(80, Math.max(20, ((event.clientY - rect.top) / rect.height) * 100));
+			this.updateValue(Math.min(80, Math.max(20, ((event.clientY - rect.top) / rect.height) * 100)));
 		} else {
-			this.value = Math.min(80, Math.max(20, ((event.clientX - rect.left) / rect.width) * 100));
+			this.updateValue(Math.min(80, Math.max(20, ((event.clientX - rect.left) / rect.width) * 100)));
 		}
 	}
 
