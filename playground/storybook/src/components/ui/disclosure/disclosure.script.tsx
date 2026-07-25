@@ -48,17 +48,8 @@ export class RuiDisclosure extends RadiantElement {
 		});
 	}
 
-	private isAnimated(): boolean {
-		return this.animated === true;
-	}
-
 	private syncAnimated(): void {
-		if (this.isAnimated()) {
-			this.setAttribute('data-animated', '');
-			return;
-		}
-
-		this.removeAttribute('data-animated');
+		this.toggleAttribute('data-animated', this.animated);
 	}
 
 	@onEvent({ selector: '[data-disclosure-trigger]', type: 'click' })
@@ -90,19 +81,18 @@ export class RuiDisclosure extends RadiantElement {
 			return;
 		}
 
-		const isOpen = this.open === true;
-		trigger.setAttribute('aria-expanded', String(isOpen));
+		trigger.setAttribute('aria-expanded', String(this.open));
 		trigger.setAttribute('aria-controls', this.panelId);
 		panel.id = this.panelId;
-		panel.dataset.state = isOpen ? 'open' : 'closed';
+		panel.dataset.state = this.open ? 'open' : 'closed';
 
-		if (this.isAnimated()) {
+		if (this.animated) {
 			panel.hidden = false;
-			panel.setAttribute('aria-hidden', String(!isOpen));
+			panel.setAttribute('aria-hidden', String(!this.open));
 			return;
 		}
 
-		panel.hidden = !isOpen;
+		panel.hidden = !this.open;
 		panel.removeAttribute('aria-hidden');
 	}
 
