@@ -3,6 +3,14 @@ import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
 
+type ElementConstructorWithObservedAttributes = CustomElementConstructor & {
+	observedAttributes?: string[];
+};
+
+function observedAttributesOf(constructor: CustomElementConstructor): string[] {
+	return (constructor as ElementConstructorWithObservedAttributes).observedAttributes ?? [];
+}
+
 describe('@prop', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -90,6 +98,122 @@ describe('@prop', () => {
 			document.body.appendChild(customElement);
 
 			expect(customElement.bool).toEqual(false);
+		});
+
+		test('reflecting false removes the attribute and keeps the property false', () => {
+			@customElement('my-reactive-boolean-reflect')
+			class MyReactiveBooleanReflect extends RadiantElement {
+				@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
+			}
+
+			expect(observedAttributesOf(MyReactiveBooleanReflect)).toContain('open');
+
+			const el = document.createElement('my-reactive-boolean-reflect') as MyReactiveBooleanReflect;
+			document.body.appendChild(el);
+
+			el.open = true;
+			expect(el.open).toEqual(true);
+			expect(el.hasAttribute('open')).toBe(true);
+
+			el.open = false;
+			expect(el.open).toEqual(false);
+			expect(el.hasAttribute('open')).toBe(false);
+			expect(String(el.open)).toEqual('false');
+		});
+
+		test('removing a reflected boolean attribute via DOM sets the property to false', () => {
+			@customElement('my-reactive-boolean-attr-remove')
+			class MyReactiveBooleanAttrRemove extends RadiantElement {
+				@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
+			}
+
+			const el = document.createElement('my-reactive-boolean-attr-remove') as MyReactiveBooleanAttrRemove;
+			document.body.appendChild(el);
+
+			el.open = true;
+			expect(el.open).toEqual(true);
+
+			el.removeAttribute('open');
+			expect(el.open).toEqual(false);
+			expect(String(el.open)).toEqual('false');
+		});
+
+		test('setting a reflected boolean attribute via DOM sets the property to true', () => {
+			@customElement('my-reactive-boolean-attr-set')
+			class MyReactiveBooleanAttrSet extends RadiantElement {
+				@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
+			}
+
+			const el = document.createElement('my-reactive-boolean-attr-set') as MyReactiveBooleanAttrSet;
+			document.body.appendChild(el);
+
+			el.setAttribute('open', '');
+			expect(el.open).toEqual(true);
+		});
+	});
+
+	describe('observedAttributes and attribute channel', () => {
+		test('registers every @prop attribute on observedAttributes without a manual static list', () => {
+			@customElement('my-reactive-observed-props')
+			class MyReactiveObservedProps extends RadiantElement {
+				@prop({ type: Number, reflect: true, defaultValue: 0 }) count: number;
+				@prop({ type: String, defaultValue: '' }) label: string;
+			}
+
+			const observed = observedAttributesOf(MyReactiveObservedProps);
+			expect(observed).toContain('count');
+			expect(observed).toContain('label');
+		});
+
+		test('merges @prop attributes with an existing static observedAttributes list', () => {
+			@customElement('my-reactive-observed-merge')
+			class MyReactiveObservedMerge extends RadiantElement {
+				static observedAttributes = ['data-tracked'];
+
+				@prop({ type: Boolean, defaultValue: false }) enabled: boolean;
+			}
+
+			const observed = observedAttributesOf(MyReactiveObservedMerge);
+			expect(observed).toContain('data-tracked');
+			expect(observed).toContain('enabled');
+		});
+
+		test('syncs a custom attribute name to the property after upgrade via setAttribute', () => {
+			@customElement('my-reactive-custom-attr')
+			class MyReactiveCustomAttr extends RadiantElement {
+				@prop({ type: Number, attribute: 'data-count', reflect: true, defaultValue: 0 }) count: number;
+			}
+
+			expect(observedAttributesOf(MyReactiveCustomAttr)).toContain('data-count');
+
+			const el = document.createElement('my-reactive-custom-attr') as MyReactiveCustomAttr;
+			document.body.appendChild(el);
+
+			el.setAttribute('data-count', '12');
+			expect(el.count).toEqual(12);
+			expect(el.getAttribute('data-count')).toEqual('12');
+		});
+
+		test('does not leak subclass @prop metadata into the base observedAttributes list', () => {
+			@customElement('my-reactive-prop-base')
+			class MyReactivePropBase extends RadiantElement {
+				@prop({ type: Number, defaultValue: 0 }) count: number;
+			}
+
+			const baseObservedBefore = [...observedAttributesOf(MyReactivePropBase)];
+
+			@customElement('my-reactive-prop-child')
+			class MyReactivePropChild extends MyReactivePropBase {
+				@prop({ type: String, defaultValue: '' }) label: string;
+			}
+
+			expect(observedAttributesOf(MyReactivePropBase)).toEqual(baseObservedBefore);
+			expect(observedAttributesOf(MyReactivePropBase)).toContain('count');
+			expect(observedAttributesOf(MyReactivePropBase)).not.toContain('label');
+
+			const childObserved = observedAttributesOf(MyReactivePropChild);
+			expect(childObserved).toContain('count');
+			expect(childObserved).toContain('label');
 		});
 	});
 

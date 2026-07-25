@@ -200,7 +200,20 @@ export class RenderRuntime {
 		return true;
 	}
 
+	/**
+	 * Remove a projected slot node from the projected slot content.
+	 *
+	 * Light-DOM render moves projected nodes under an inner wrapper; the host still
+	 * contains them, so do not drop projection entries for that repositioning.
+	 *
+	 * @param node
+	 * @returns
+	 */
 	private removeProjectedSlotNode(node: Node): boolean {
+		if (this.#host.contains(node)) {
+			return false;
+		}
+
 		for (const [slotName, bucket] of this.#projectedSlotContent.entries()) {
 			const nodeIndex = bucket.indexOf(node);
 
