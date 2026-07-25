@@ -409,6 +409,40 @@ export class RuiCombobox extends RadiantElement {
 		this.handleInputKeydown(event);
 	}
 
+	/** Filter, open, and move the active option by one step (wrapping) toward `direction`. */
+	private moveActive(direction: 1 | -1): void {
+		this.filterOptions(this.getInput()?.value ?? '');
+		if (!this.getVisibleOptions().length) {
+			// Show all options when the current filter has no matches.
+			this.filterOptions('');
+		}
+		const visible = this.getVisibleOptions();
+		if (!visible.length) {
+			return;
+		}
+
+		if (!this.open) {
+			this.setOpen(true, { activate: direction === 1 ? 'first' : 'last' });
+			return;
+		}
+
+		if (this.listboxHasVisualFocus) {
+			const next =
+				direction === 1
+					? this.activeIndex >= visible.length - 1
+						? 0
+						: this.activeIndex + 1
+					: this.activeIndex <= 0
+						? visible.length - 1
+						: this.activeIndex - 1;
+			this.setActiveOption(next);
+			return;
+		}
+
+		// First arrow key while open: jump visual focus into the listbox.
+		this.setActiveOption(direction === 1 ? 0 : visible.length - 1);
+	}
+
 	private handleInputKeydown(event: KeyboardEvent): void {
 		if (event.ctrlKey || event.shiftKey || event.metaKey) {
 			return;
@@ -428,29 +462,7 @@ export class RuiCombobox extends RadiantElement {
 				return;
 			}
 
-			this.filterOptions(this.getInput()?.value ?? '');
-			if (!this.getVisibleOptions().length) {
-				// Show all options when the current filter has no matches.
-				this.filterOptions('');
-			}
-			const visible = this.getVisibleOptions();
-			if (!visible.length) {
-				return;
-			}
-
-			if (!this.open) {
-				this.setOpen(true, { activate: 'first' });
-				return;
-			}
-
-			if (this.listboxHasVisualFocus) {
-				const next = this.activeIndex >= visible.length - 1 ? 0 : this.activeIndex + 1;
-				this.setActiveOption(next);
-				return;
-			}
-
-			// First ArrowDown while open: jump visual focus into the listbox.
-			this.setActiveOption(0);
+			this.moveActive(1);
 			return;
 		}
 
@@ -465,28 +477,7 @@ export class RuiCombobox extends RadiantElement {
 				return;
 			}
 
-			this.filterOptions(this.getInput()?.value ?? '');
-			let visible = this.getVisibleOptions();
-			if (!visible.length) {
-				this.filterOptions('');
-				visible = this.getVisibleOptions();
-			}
-			if (!visible.length) {
-				return;
-			}
-
-			if (!this.open) {
-				this.setOpen(true, { activate: 'last' });
-				return;
-			}
-
-			if (this.listboxHasVisualFocus) {
-				const next = this.activeIndex <= 0 ? visible.length - 1 : this.activeIndex - 1;
-				this.setActiveOption(next);
-				return;
-			}
-
-			this.setActiveOption(visible.length - 1);
+			this.moveActive(-1);
 			return;
 		}
 
