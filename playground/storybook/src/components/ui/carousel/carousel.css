@@ -1,44 +1,143 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-carousel {
-	@apply block;
+	@apply block w-full max-w-full min-w-0;
 }
 
 @layer components {
 	.rui-carousel {
-		@apply flex flex-col gap-3;
+		@apply flex w-full min-w-0 max-w-full flex-col gap-stack;
 	}
 
 	.rui-carousel:focus-visible {
-		@apply outline-hidden ring-2 ring-focus-ring rounded-md;
+		@apply outline-hidden ring-2 ring-focus-ring rounded-container;
 	}
 
-	.rui-carousel__controls {
-		@apply flex gap-2;
-	}
-
-	.rui-carousel__indicators {
-		@apply flex items-center gap-2;
-	}
-
-	.rui-carousel__indicator {
-		@apply h-2.5 w-2.5 rounded-full border border-border bg-background transition-colors;
-	}
-
-	.rui-carousel__indicator[aria-selected='true'] {
-		@apply bg-primary border-primary;
-	}
-
-	.rui-carousel__indicator:focus-visible {
-		@apply outline-hidden ring-2 ring-focus-ring;
+	.rui-carousel__stage {
+		@apply relative w-full min-w-0;
 	}
 
 	.rui-carousel__viewport {
-		@apply overflow-hidden rounded-md border border-border bg-surface p-6 text-sm;
+		@apply relative w-full min-w-0 overflow-hidden rounded-container border border-border bg-surface text-sm;
+		touch-action: pan-y;
+	}
+
+	.rui-carousel--controls-toolbar .rui-carousel__viewport {
+		@apply p-inset;
+	}
+
+	.rui-carousel--controls-overlay .rui-carousel__viewport {
+		@apply p-0;
 	}
 
 	.rui-carousel__track {
-		@apply relative;
+		@apply relative w-full min-h-[clamp(8rem,40vw,16rem)];
+	}
+
+	.rui-carousel__slide {
+		@apply flex w-full min-w-0 min-h-[clamp(8rem,40vw,16rem)] items-center justify-center;
+	}
+
+	.rui-carousel__footer {
+		@apply w-full min-w-0;
+	}
+
+	.rui-carousel__toolbar {
+		@apply grid w-full items-center gap-inline;
+		grid-template-columns: 1fr auto 1fr;
+		grid-template-rows: auto auto;
+	}
+
+	.rui-carousel__toolbar-rotation {
+		@apply flex justify-center;
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.rui-carousel__toolbar-center {
+		@apply flex justify-center px-2;
+		grid-column: 2;
+		grid-row: 2;
+	}
+
+	.rui-carousel__toolbar-side--start {
+		@apply flex min-w-0 items-center justify-start;
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.rui-carousel__toolbar-side--end {
+		@apply flex min-w-0 items-center justify-end;
+		grid-column: 3;
+		grid-row: 2;
+	}
+
+	.rui-carousel__nav-label {
+		@apply inline-flex items-center gap-1;
+	}
+
+	.rui-carousel__overlay-chrome {
+		@apply pointer-events-none absolute inset-0 z-dropdown;
+	}
+
+	.rui-carousel__overlay-rotation {
+		top: var(--space-inset);
+		right: var(--space-inset);
+		@apply pointer-events-auto absolute;
+	}
+
+	.rui-carousel__controls--overlay {
+		@apply pointer-events-none absolute inset-0 flex items-center justify-between;
+		padding-inline: var(--space-inset);
+	}
+
+	.rui-carousel__controls--overlay > * {
+		@apply pointer-events-auto;
+	}
+
+	.rui-carousel__indicators--overlay {
+		top: var(--space-inset);
+		@apply pointer-events-auto absolute left-1/2 max-w-[calc(100%-5rem)] -translate-x-1/2 rounded-full border border-border/80 bg-surface/80 px-3 py-1.5 shadow-sm backdrop-blur-sm;
+	}
+
+	.rui-carousel__nav--overlay {
+		@apply min-h-11 min-w-11 shrink-0 rounded-full border-border/80 bg-surface/90 shadow-sm backdrop-blur-sm;
+	}
+
+	.rui-carousel__nav--overlay:focus-visible {
+		@apply rounded-full;
+	}
+
+	.rui-carousel__nav--overlay:active:not(:disabled) {
+		@apply rounded-full;
+	}
+
+	.rui-carousel__nav-icon {
+		@apply block text-lg leading-none;
+	}
+
+	.rui-carousel__rotation--overlay {
+		@apply rounded-full border border-border/80 bg-surface/90 px-3 shadow-sm backdrop-blur-sm;
+	}
+
+	.rui-carousel__indicators {
+		@apply flex items-center justify-center gap-inline;
+	}
+
+	.rui-carousel__indicator {
+		@apply h-2.5 w-2.5 shrink-0 rounded-full border border-border bg-background transition-[background-color,border-color] focus:rounded-full;
+	}
+
+	.rui-carousel__indicator[aria-selected='true'] {
+		@apply rounded-full bg-primary border-primary;
+	}
+
+	.rui-carousel__indicator:focus-visible {
+		@apply rounded-full outline-hidden ring-2 ring-focus-ring;
+	}
+
+	.rui-carousel__indicator:active {
+		@apply rounded-full;
 	}
 
 	.rui-carousel--none .rui-carousel__slide[hidden] {
@@ -46,20 +145,20 @@ rui-carousel {
 	}
 
 	.rui-carousel--slide .rui-carousel__track {
-		@apply flex transition-transform duration-300 ease-in-out;
+		@apply flex w-full transition-transform duration-slow ease-in-out;
 		transform: translateX(calc(var(--rui-carousel-index, 0) * -100%));
 	}
 
 	.rui-carousel--slide .rui-carousel__slide {
-		@apply min-w-full shrink-0;
+		@apply min-w-full w-full shrink-0;
 	}
 
 	.rui-carousel--fade .rui-carousel__track {
-		@apply grid;
+		@apply grid w-full;
 	}
 
 	.rui-carousel--fade .rui-carousel__slide {
-		@apply col-start-1 row-start-1 transition-opacity duration-300 ease-in-out;
+		@apply col-start-1 row-start-1 w-full transition-opacity duration-slow ease-in-out;
 		opacity: 0;
 		pointer-events: none;
 	}
