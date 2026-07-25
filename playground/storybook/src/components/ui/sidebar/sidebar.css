@@ -1,0 +1,355 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-sidebar {
+	@apply contents;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Provider                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar-provider {
+	@apply relative flex h-svh min-w-0 w-full flex-1 overflow-hidden bg-background;
+}
+
+.rui-sidebar-provider[data-layout='full'] {
+	@apply bg-transparent;
+}
+
+.rui-sidebar-provider:has(> rui-sidebar[data-mobile='true'][data-state='expanded']) {
+	@apply overflow-hidden;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Host                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar {
+	@apply relative flex h-full min-w-0 shrink-0 self-stretch bg-surface text-on-background;
+}
+
+.rui-sidebar[data-side='right'] {
+	@apply flex-row-reverse;
+}
+
+.rui-sidebar[data-variant='inset'] {
+	@apply rounded-lg border border-border bg-background;
+}
+
+.rui-sidebar[data-state='collapsed'] {
+	@apply min-w-0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pane                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar__pane {
+	@apply flex h-full min-h-0 min-w-0 flex-col overflow-hidden;
+	transition: width var(--duration-normal) var(--ease-out);
+	width: var(--rui-sidebar-pane-width, 256px);
+	flex: 0 0 auto;
+}
+
+.rui-sidebar[data-state='collapsed'][data-collapsible='full'] > .rui-sidebar__pane,
+.rui-sidebar[data-state='collapsed'][data-collapsible='off'] > .rui-sidebar__pane {
+	@apply w-0 overflow-hidden;
+	opacity: 0;
+}
+
+.rui-sidebar[data-collapsible='icon'] > .rui-sidebar__pane {
+	@apply items-center;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Resize handle                                                              */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar__handle {
+	@apply flex shrink-0 cursor-col-resize items-center justify-center bg-border p-0 outline-hidden;
+	width: 6px;
+	transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.rui-sidebar[data-side='right'] > .rui-sidebar__handle {
+	@apply cursor-col-resize;
+}
+
+.rui-sidebar__handle:hover,
+.rui-sidebar__handle:focus-visible {
+	@apply bg-primary;
+}
+
+.rui-sidebar__handle:focus-visible {
+	@apply ring-2 ring-focus-ring;
+}
+
+.rui-sidebar__handle-grip {
+	@apply block h-8 w-0.5 rounded-full bg-on-surface/30;
+}
+
+.rui-sidebar__handle:hover .rui-sidebar__handle-grip,
+.rui-sidebar__handle:focus-visible .rui-sidebar__handle-grip {
+	@apply bg-on-primary;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pane internals                                                             */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar__header,
+.rui-sidebar__content,
+.rui-sidebar__footer,
+.rui-sidebar__separator,
+.rui-sidebar__group,
+.rui-sidebar__menu,
+.rui-sidebar__menu-item,
+.rui-sidebar__menu-button,
+.rui-sidebar__menu-action,
+.rui-sidebar__group-label,
+.rui-sidebar__group-action,
+.rui-sidebar__group-header {
+	box-sizing: border-box;
+}
+
+.rui-sidebar__header {
+	@apply flex min-h-14 shrink-0 flex-row items-center gap-2 border-b border-border p-3;
+}
+
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__header {
+	@apply flex-col justify-center gap-1 px-1 py-2;
+}
+
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__brand {
+	@apply w-full flex-none justify-center gap-0;
+}
+
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__brand-text {
+	@apply hidden;
+}
+
+.rui-sidebar__content {
+	@apply flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3;
+}
+
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__content {
+	@apply gap-2 overflow-x-hidden px-1;
+}
+
+.rui-sidebar__footer {
+	@apply flex shrink-0 flex-col gap-2 border-t border-border p-3;
+}
+
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__footer {
+	@apply items-center gap-1 px-1 py-2;
+}
+
+.rui-sidebar__separator {
+	@apply mx-2 my-1 border-0 border-t border-border;
+}
+
+.rui-sidebar__group {
+	@apply flex flex-col gap-1;
+}
+
+.rui-sidebar__group-header {
+	@apply flex items-center justify-between gap-1;
+}
+
+.rui-sidebar__group-label {
+	@apply m-0 px-2 text-xs font-semibold tracking-wide text-on-surface uppercase;
+}
+
+.rui-sidebar__group-action {
+	@apply inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-on-surface;
+	transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.rui-sidebar__group-action:hover {
+	@apply bg-primary/10;
+}
+
+.rui-sidebar__group-action:focus-visible {
+	@apply bg-primary/10 outline-hidden ring-2 ring-focus-ring ring-inset;
+}
+
+.rui-sidebar__menu {
+	@apply m-0 flex list-none flex-col gap-0.5 p-0;
+}
+
+.rui-sidebar__menu-item {
+	@apply list-none;
+}
+
+.rui-sidebar__menu-button {
+	@apply flex w-full min-w-0 items-center gap-2 rounded-md border-0 bg-transparent px-2 py-1.5 text-left text-sm cursor-pointer text-on-background;
+	transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.rui-sidebar__menu-button:hover {
+	@apply bg-primary/10;
+}
+
+.rui-sidebar__menu-button:focus-visible {
+	@apply bg-primary/10 outline-hidden ring-2 ring-focus-ring ring-inset;
+}
+
+.rui-sidebar__menu-button[aria-current='page'],
+.rui-sidebar__menu-button--active {
+	@apply bg-primary/15 font-medium text-on-background;
+}
+
+.rui-sidebar__menu-button[aria-disabled='true'],
+.rui-sidebar__menu-button[disabled] {
+	@apply pointer-events-none cursor-not-allowed opacity-muted text-on-surface;
+}
+
+.rui-sidebar__menu-action {
+	@apply text-on-surface;
+}
+
+.rui-sidebar__menu-action:hover {
+	@apply bg-primary/5;
+}
+
+.rui-sidebar__menu-button > :first-child {
+	@apply shrink-0;
+}
+
+.rui-sidebar__menu-button > :last-child {
+	@apply min-w-0 flex-1 truncate;
+}
+
+/* When collapsed to icon mode, hide every menu label and decorative chrome. */
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__menu-button,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__menu-action {
+	@apply size-8 w-8 justify-center gap-0 p-0;
+}
+
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__menu-button > :last-child,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__menu-action > :last-child,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__group-label,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__group-header,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__group-action,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__group-actions,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__separator,
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__footer > *:not(.rui-sidebar__menu):not(button):not(a) {
+	@apply hidden;
+}
+
+.rui-sidebar__icon {
+	@apply size-4 shrink-0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Inset                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar__inset {
+	/* gap-0 overrides global `main { gap-4 }` from the Storybook body stylesheet. */
+	@apply flex min-h-0 min-w-0 w-full flex-1 flex-col gap-0 overflow-hidden bg-background;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Trigger                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar__trigger {
+	@apply inline-flex size-9 shrink-0 items-center justify-center p-0;
+}
+
+.rui-sidebar__trigger-icon {
+	@apply flex size-4 items-center justify-center;
+}
+
+.rui-sidebar__trigger-glyph {
+	@apply size-4 shrink-0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Alternate header (collapse) vs inset (open) triggers                       */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='header'],
+.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='inset'] {
+	@apply hidden;
+}
+
+.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='inset'] {
+	@apply hidden;
+}
+
+.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true'])) rui-sidebar-trigger[data-placement='header'] {
+	@apply hidden;
+}
+
+.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded'][data-mobile='true']) rui-sidebar-trigger[data-placement='inset'] {
+	@apply hidden;
+}
+
+.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed'][data-mobile='true']) rui-sidebar-trigger[data-placement='header'] {
+	@apply hidden;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile drawer                                                              */
+/* -------------------------------------------------------------------------- */
+
+.rui-sidebar[data-mobile='true'] {
+	@apply fixed inset-0 z-(--z-modal) flex min-w-0 bg-transparent;
+}
+
+.rui-sidebar[data-mobile='true'][data-state='collapsed'] {
+	@apply pointer-events-none;
+}
+
+.rui-sidebar[data-mobile='true'][data-state='expanded'] {
+	@apply pointer-events-auto;
+}
+
+.rui-sidebar[data-mobile='true'] > .rui-sidebar__pane {
+	@apply relative z-(--z-modal) h-full bg-surface text-on-background;
+}
+
+.rui-sidebar[data-mobile='true'][data-variant='inset'] > .rui-sidebar__pane {
+	@apply bg-background;
+}
+
+.rui-sidebar[data-mobile='true'][data-state='collapsed'] > .rui-sidebar__pane {
+	@apply w-0 overflow-hidden opacity-0;
+}
+
+.rui-sidebar[data-mobile='true'][data-state='expanded'] > .rui-sidebar__pane {
+	@apply w-72 max-w-[85vw] opacity-100;
+	box-shadow: var(--shadow-modal);
+}
+
+.rui-sidebar[data-mobile='true'][data-side='left'] > .rui-sidebar__pane {
+	@apply me-auto;
+}
+
+.rui-sidebar[data-mobile='true'][data-side='right'] > .rui-sidebar__pane {
+	@apply ms-auto;
+}
+
+.rui-sidebar__scrim {
+	@apply absolute inset-0 z-(--z-overlay) cursor-pointer border-0 p-0 bg-overlay;
+}
+
+.rui-sidebar[data-mobile='true'] > .rui-sidebar__handle {
+	@apply hidden;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion                                                             */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.rui-sidebar__pane,
+	.rui-sidebar__handle,
+	.rui-sidebar__handle-grip,
+	.rui-sidebar__group-action,
+	.rui-sidebar__menu-button {
+		transition: none;
+	}
+}
