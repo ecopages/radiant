@@ -1,6 +1,6 @@
 @import 'tailwindcss';
-@import '../../storybook/src/styles/themes/glacier.css';
-@import '../../storybook/src/styles/components/button.css';
+@import '../../../storybook/src/styles/themes/glacier.css';
+@import '../../../storybook/src/styles/components/button.css';
 
 :root {
 	color-scheme: light;
