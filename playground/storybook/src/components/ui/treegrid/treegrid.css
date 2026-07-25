@@ -6,7 +6,7 @@ rui-treegrid {
 
 @layer components {
 	.rui-treegrid {
-		@apply w-full overflow-hidden rounded-md border border-border text-sm shadow-sm;
+		@apply w-full overflow-hidden rounded-container border border-border text-sm shadow-sm;
 		display: table;
 		border-collapse: separate;
 		border-spacing: 0;
@@ -26,7 +26,7 @@ rui-treegrid {
 
 	.rui-treegrid__cell {
 		display: table-cell;
-		@apply border-b border-r border-border bg-background px-4 py-2.5 align-middle text-on-background;
+		@apply border-b border-r border-border bg-background px-control-x py-2.5 align-middle text-on-background;
 	}
 
 	.rui-treegrid__row .rui-treegrid__cell:last-child {
@@ -46,7 +46,7 @@ rui-treegrid {
 	}
 
 	.rui-treegrid__cell:focus-visible {
-		@apply relative z-10 outline-none ring-2 ring-inset ring-focus-ring;
+		@apply relative z-dropdown outline-none ring-2 ring-inset ring-focus-ring;
 	}
 
 	.rui-treegrid__group .rui-treegrid__cell:first-child {

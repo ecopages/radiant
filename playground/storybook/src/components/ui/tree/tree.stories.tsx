@@ -42,6 +42,24 @@ export const Default: Story = {
 			await expect(items[1]).toHaveAttribute('aria-selected', 'true');
 		});
 
+		await step('Enter selects the focused item', async () => {
+			items[2].focus();
+			await userEvent.keyboard('{Enter}');
+			await expect(host).toHaveAttribute('value', 'app');
+			await expect(items[2]).toHaveAttribute('aria-selected', 'true');
+		});
+
+		await step('ArrowLeft collapses an expanded parent', async () => {
+			items[0].focus();
+			await userEvent.keyboard('{ArrowLeft}');
+			await expect(items[0]).toHaveAttribute('aria-expanded', 'false');
+		});
+
+		await step('ArrowRight expands a collapsed parent', async () => {
+			await userEvent.keyboard('{ArrowRight}');
+			await expect(items[0]).toHaveAttribute('aria-expanded', 'true');
+		});
+
 		await step('Home moves focus to the first visible item', async () => {
 			items[2].focus();
 			await userEvent.keyboard('{Home}');

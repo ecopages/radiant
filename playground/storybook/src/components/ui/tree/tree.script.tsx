@@ -19,8 +19,8 @@ export type RuiTreeChangeDetail = { value: string };
  * `<rui-tree>` — a hierarchical list of tree items.
  *
  * Implements a single-select APG Tree View with Arrow key navigation,
- * Home/End, parent navigation on ArrowLeft, and Enter/Space to expand/collapse
- * or select.
+ * Home/End, parent navigation on ArrowLeft, and Enter/Space to select.
+ * Expand/collapse is handled with ArrowRight/ArrowLeft (and `*` for siblings).
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treeview/
  * @element rui-tree
@@ -36,10 +36,14 @@ export class RuiTree extends RadiantElement {
 
 	private getVisibleItems(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="treeitem"]')).filter((item) => {
-			const group = item.closest('[role="group"]');
-			if (!group) return true;
-			const parent = group.previousElementSibling as HTMLElement | null;
-			return !parent || parent.getAttribute('aria-expanded') !== 'false';
+			let node: HTMLElement | null = item.parentElement;
+			while (node && node !== this) {
+				if (node.getAttribute('role') === 'group' && node.hidden) {
+					return false;
+				}
+				node = node.parentElement;
+			}
+			return true;
 		});
 	}
 
@@ -48,6 +52,22 @@ export class RuiTree extends RadiantElement {
 		if (!group) return null;
 		const parent = group.previousElementSibling as HTMLElement | null;
 		return parent?.getAttribute('role') === 'treeitem' ? parent : null;
+	}
+
+	/** Same-level treeitems as `item` (for `*` expand-siblings). */
+	private getSiblingItems(item: HTMLElement): HTMLElement[] {
+		const parent = this.getParentItem(item);
+		const container = parent
+			? parent.nextElementSibling?.getAttribute('role') === 'group'
+				? (parent.nextElementSibling as HTMLElement)
+				: null
+			: (this.querySelector<HTMLElement>('[role="tree"]') ?? this);
+
+		if (!container) return [];
+
+		return Array.from(
+			container.querySelectorAll<HTMLElement>(':scope > li > [role="treeitem"], :scope > [role="treeitem"]'),
+		);
 	}
 
 	private syncSelection(): void {
@@ -106,6 +126,7 @@ export class RuiTree extends RadiantElement {
 		item.setAttribute('aria-expanded', String(expanded));
 		const group = item.nextElementSibling as HTMLElement | null;
 		if (group?.getAttribute('role') === 'group') group.hidden = !expanded;
+		this.syncSelection();
 	}
 
 	@onEvent({ selector: '[role="treeitem"]', type: 'click' })
@@ -117,10 +138,8 @@ export class RuiTree extends RadiantElement {
 
 	@onEvent({ selector: '[role="treeitem"]', type: 'keydown' })
 	onKeydown(event: KeyboardEvent): void {
-		const items = this.getVisibleItems();
 		const current = (event.target as HTMLElement).closest('[role="treeitem"]') as HTMLElement | null;
 		if (!current) return;
-		const index = items.indexOf(current);
 
 		switch (event.key) {
 			case 'ArrowDown':
@@ -128,7 +147,7 @@ export class RuiTree extends RadiantElement {
 			case 'Home':
 			case 'End': {
 				const result = navigateRovingTabindex({
-					items,
+					items: this.getVisibleItems(),
 					current,
 					key: event.key,
 					orientation: 'vertical',
@@ -138,37 +157,48 @@ export class RuiTree extends RadiantElement {
 				event.preventDefault();
 				break;
 			}
-			case 'ArrowRight':
+			case 'ArrowRight': {
 				event.preventDefault();
 				if (current.getAttribute('aria-expanded') === 'false') {
 					this.setExpanded(current, true);
-				} else if (items[index + 1]) {
-					focusRovingItem(items, index + 1);
+					return;
+				}
+				if (current.getAttribute('aria-expanded') === 'true') {
+					const items = this.getVisibleItems();
+					const index = items.indexOf(current);
+					if (items[index + 1]) focusRovingItem(items, index + 1);
 				}
 				break;
-			case 'ArrowLeft':
+			}
+			case 'ArrowLeft': {
 				event.preventDefault();
 				if (current.getAttribute('aria-expanded') === 'true') {
 					this.setExpanded(current, false);
-				} else {
-					const parent = this.getParentItem(current);
-					if (parent) {
-						const nextItems = this.getVisibleItems();
-						const parentIndex = nextItems.indexOf(parent);
-						if (parentIndex >= 0) focusRovingItem(nextItems, parentIndex);
+					return;
+				}
+				const parent = this.getParentItem(current);
+				if (parent) {
+					const nextItems = this.getVisibleItems();
+					const parentIndex = nextItems.indexOf(parent);
+					if (parentIndex >= 0) focusRovingItem(nextItems, parentIndex);
+				}
+				break;
+			}
+			case '*': {
+				event.preventDefault();
+				for (const sibling of this.getSiblingItems(current)) {
+					if (sibling.hasAttribute('aria-expanded')) {
+						this.setExpanded(sibling, true);
 					}
 				}
 				break;
+			}
 			case 'Enter':
-			case ' ':
+			case ' ': {
 				event.preventDefault();
-				if (current.hasAttribute('aria-expanded') && event.key === 'Enter') {
-					const expanded = current.getAttribute('aria-expanded') === 'true';
-					this.setExpanded(current, !expanded);
-				} else {
-					this.select(current);
-				}
+				this.select(current);
 				break;
+			}
 			default:
 				break;
 		}

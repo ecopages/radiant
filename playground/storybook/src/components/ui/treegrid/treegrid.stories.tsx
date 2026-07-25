@@ -56,20 +56,34 @@ export const FileBrowser: Story = {
 		const host = canvasElement.querySelector('rui-treegrid') as HTMLElement;
 		const cells = getCells(canvasElement);
 
-		await step('ArrowRight moves within a row', async () => {
+		await step('ArrowRight moves within a row even when the row is expandable', async () => {
 			cells[0].focus();
 			await userEvent.keyboard('{ArrowRight}');
 			await expect(document.activeElement).toBe(cells[1]);
 		});
 
+		await step('ArrowLeft on a non-first cell moves left instead of collapsing', async () => {
+			await userEvent.keyboard('{ArrowLeft}');
+			await expect(document.activeElement).toBe(cells[0]);
+			const srcRow = canvasElement.querySelector('[data-row-id="src"]') as HTMLElement;
+			await expect(srcRow).toHaveAttribute('aria-expanded', 'true');
+		});
+
 		await step('ArrowDown moves to the same column in the next row', async () => {
 			await userEvent.keyboard('{ArrowDown}');
-			await expect(document.activeElement).toBe(cells[3]);
+			await expect(document.activeElement).toBe(cells[2]);
 		});
 
 		await step('Enter selects the focused row', async () => {
 			fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Enter', code: 'Enter' });
 			await expect(host).toHaveAttribute('value', 'index');
+		});
+
+		await step('ArrowLeft on the first cell of an expanded row collapses it', async () => {
+			cells[0].focus();
+			fireEvent.keyDown(cells[0], { key: 'ArrowLeft', code: 'ArrowLeft' });
+			const srcRow = canvasElement.querySelector('[data-row-id="src"]') as HTMLElement;
+			await expect(srcRow).toHaveAttribute('aria-expanded', 'false');
 		});
 	},
 };

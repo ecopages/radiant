@@ -23,6 +23,9 @@ export type RuiTreegridChangeDetail = {
  * Implements a read-only APG Treegrid: rows may expand/collapse to reveal child
  * rows, and `role="gridcell"` descendants are focused with roving tabindex.
  *
+ * Expand/collapse with ArrowRight/ArrowLeft only from the first cell of a row
+ * (APG cell-only focus). Enter on that cell toggles expansion; Space selects.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/
  * @element rui-treegrid
  * @fires rui-change
@@ -174,11 +177,15 @@ export class RuiTreegrid extends RadiantElement {
 		const rowIndex = visibleRows.indexOf(row);
 		const rowCells = this.getRowCells(row);
 		const colIndex = rowCells.indexOf(cell);
+		const isFirstCell = colIndex === 0;
+		const isExpandable = row.hasAttribute('aria-expanded');
+		const isExpanded = row.getAttribute('aria-expanded') === 'true';
 
 		switch (event.key) {
 			case 'ArrowRight': {
 				event.preventDefault();
-				if (row.hasAttribute('aria-expanded') && row.getAttribute('aria-expanded') === 'false') {
+				// APG cell-only: expand only from the first cell of a collapsed parent.
+				if (isFirstCell && isExpandable && !isExpanded) {
 					this.setExpanded(row, true);
 					this.syncSelection();
 					return;
@@ -191,7 +198,8 @@ export class RuiTreegrid extends RadiantElement {
 			}
 			case 'ArrowLeft': {
 				event.preventDefault();
-				if (row.hasAttribute('aria-expanded') && row.getAttribute('aria-expanded') === 'true') {
+				// APG cell-only: collapse only from the first cell of an expanded parent.
+				if (isFirstCell && isExpandable && isExpanded) {
 					this.setExpanded(row, false);
 					this.syncSelection();
 					return;
@@ -204,8 +212,7 @@ export class RuiTreegrid extends RadiantElement {
 
 				const parent = this.getParentRow(row);
 				if (parent) {
-					const parentCol = Math.min(colIndex, this.getRowCells(parent).length - 1);
-					this.focusCell(parent, parentCol);
+					this.focusCell(parent, 0);
 				}
 				return;
 			}
@@ -245,7 +252,17 @@ export class RuiTreegrid extends RadiantElement {
 				this.syncSelection();
 				return;
 			}
-			case 'Enter':
+			case 'Enter': {
+				event.preventDefault();
+				// APG: Enter on the first cell of an expandable row toggles expansion.
+				if (isFirstCell && isExpandable) {
+					this.setExpanded(row, !isExpanded);
+					this.syncSelection();
+					return;
+				}
+				this.activateCell(cell);
+				return;
+			}
 			case ' ': {
 				event.preventDefault();
 				this.activateCell(cell);
