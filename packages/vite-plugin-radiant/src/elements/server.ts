@@ -1,12 +1,14 @@
+import { serializeGlobPattern } from './shared';
+
 export function createComponentsModule(componentGlob: string | string[]): string {
-	return `import.meta.glob(${serializeGlob(componentGlob)}, { eager: true });
+	return `import.meta.glob(${serializeGlobPattern(componentGlob)}, { eager: true });
 `;
 }
 
 export function createSsrRegistryModule(componentGlob: string | string[], metadataQuery: string): string {
 	return `const CUSTOM_ELEMENT_TAG_NAME = Symbol.for('@ecopages/radiant.customElementTagName');
 
-const radiantDomModuleMetadata = import.meta.glob(${serializeGlob(componentGlob)}, {
+const radiantDomModuleMetadata = import.meta.glob(${serializeGlobPattern(componentGlob)}, {
 	eager: true,
 	import: 'default',
 	query: ${JSON.stringify(`?${metadataQuery}`)},
@@ -63,7 +65,7 @@ export function createSsrAssetRegistryModule(styleGlob: string | string[]): stri
 	resolveRadiantSsrClientModuleKeyByTagName,
 } from 'virtual:radiant/ssr-client-module-registry';
 
-const radiantStyleAssetUrls = import.meta.glob(${serializeGlob(styleGlob)}, { eager: true, import: 'default', query: '?url' });
+const radiantStyleAssetUrls = import.meta.glob(${serializeGlobPattern(styleGlob)}, { eager: true, import: 'default', query: '?url' });
 
 export async function resolveRadiantSsrAssets(component) {
 	const moduleKey = await resolveRadiantSsrClientModuleKey(component);
@@ -168,8 +170,4 @@ function normalizeRadiantAssetSource(source) {
 	return normalizedSource.startsWith('./') ? normalizedSource.slice(1) : normalizedSource;
 }
 `;
-}
-
-function serializeGlob(pattern: string | string[]): string {
-	return JSON.stringify(pattern);
 }

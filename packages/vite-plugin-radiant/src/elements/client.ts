@@ -1,5 +1,7 @@
+import { serializeGlobPattern } from './shared';
+
 export function createClientRegistryModule(componentGlob: string | string[]): string {
-	return `const radiantClientModuleLoaders = import.meta.glob(${serializeGlob(componentGlob)});
+	return `const radiantClientModuleLoaders = import.meta.glob(${serializeGlobPattern(componentGlob)});
 
 export function hasRadiantClientModule(moduleKey) {
 	return moduleKey in radiantClientModuleLoaders;
@@ -25,12 +27,12 @@ export function createDomRegistryModule(componentGlob: string | string[], metada
 	visitControllerElements,
 } from '@ecopages/radiant/controller-registry';
 
-const radiantDomModuleMetadata = import.meta.glob(${serializeGlob(componentGlob)}, {
+const radiantDomModuleMetadata = import.meta.glob(${serializeGlobPattern(componentGlob)}, {
 	eager: true,
 	import: 'default',
 	query: ${JSON.stringify(`?${metadataQuery}`)},
 });
-const radiantClientModuleLoaders = import.meta.glob(${serializeGlob(componentGlob)});
+const radiantClientModuleLoaders = import.meta.glob(${serializeGlobPattern(componentGlob)});
 const radiantElementModuleKeys = new Map();
 const radiantControllerModuleKeys = new Map();
 
@@ -134,8 +136,4 @@ async function waitForLoadedCustomElements(moduleKey) {
 	);
 }
 `;
-}
-
-function serializeGlob(pattern: string | string[]): string {
-	return JSON.stringify(pattern);
 }
