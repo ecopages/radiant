@@ -3,7 +3,7 @@ import { isTemplateResultLike } from '@ecopages/jsx/jsx-runtime';
 import { uninstallRadiantHydrator } from '@ecopages/radiant/client/hydrator';
 import { loadRadiantDomModules } from 'virtual:radiant/dom-module-registry';
 import { clearSsrInjectedStyles } from './mount-ssr';
-import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
+import { simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 import { ensureRootInner, getMountedRoot, setMountedRoot, teardownCanvas } from './canvas';
 
@@ -24,11 +24,7 @@ export async function mountClientResult(options: {
 
 	const finishMount = async (scope: ParentNode) => {
 		await loadRadiantDomModules(scope);
-		await new Promise<void>((resolve) => {
-			requestAnimationFrame(() => {
-				requestAnimationFrame(() => resolve());
-			});
-		});
+		await Promise.resolve();
 		simulatePageLoad(canvasElement);
 	};
 
@@ -53,8 +49,7 @@ export async function mountClientResult(options: {
 		}
 		teardownCanvas(canvasElement);
 		canvasElement.appendChild(element);
-		simulateDOMContentLoaded();
-		await loadRadiantDomModules(canvasElement);
+		await finishMount(canvasElement);
 		return;
 	}
 
