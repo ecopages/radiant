@@ -97,3 +97,17 @@ export function ensureObservedAttributes(constructor: CustomElementConstructor, 
 export function attributeNameForProp(propertyName: string, options: ReactivePropertyOptions<unknown>): string {
 	return options.attribute ?? propertyName;
 }
+
+/**
+ * Apply every `@prop` attribute name from the constructor registry to `observedAttributes`.
+ * Radiant `@customElement` calls this immediately before `customElements.define`.
+ *
+ * Legacy `@prop` only registers metadata on the class; without `@customElement` you must call
+ * this (or `ensureObservedAttributes` with the same names) before `define` if attributes should be observed.
+ */
+export function applyObservedAttributesFromPropRegistry(constructor: CustomElementConstructor): void {
+	const attributeNames = getReactivePropDefinitions(constructor).map((definition) =>
+		attributeNameForProp(definition.name, definition.options),
+	);
+	ensureObservedAttributes(constructor, attributeNames);
+}

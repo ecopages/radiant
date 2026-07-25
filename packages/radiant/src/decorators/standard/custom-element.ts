@@ -1,7 +1,6 @@
 import { setCustomElementTagName } from '../../core/custom-element-metadata';
 import {
-	attributeNameForProp,
-	ensureObservedAttributes,
+	applyObservedAttributesFromPropRegistry,
 	REACTIVE_PROP_METADATA,
 	type ReactivePropDefinition,
 	registerReactivePropDefinition,
@@ -19,10 +18,7 @@ export function customElement(name: string, options?: ElementDefinitionOptions) 
 				registerReactivePropDefinition(this, definition.name, definition.options);
 			}
 
-			ensureObservedAttributes(
-				this,
-				definitions.map((definition) => attributeNameForProp(definition.name, definition.options)),
-			);
+			applyObservedAttributesFromPropRegistry(this);
 
 			if (typeof customElements !== 'undefined' && !customElements.get(name)) {
 				customElements.define(name, this, options);

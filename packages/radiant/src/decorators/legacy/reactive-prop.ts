@@ -1,10 +1,6 @@
 import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
 import type { ReactiveHostLike } from '../../core/reactive-host';
-import {
-	attributeNameForProp,
-	ensureObservedAttributes,
-	registerReactivePropDefinition,
-} from '../../core/reactive-prop-metadata';
+import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
 import { bootstrapReactiveMemberBinding } from './member-bootstrap';
 
@@ -39,9 +35,6 @@ export function reactiveProp<T = unknown>({
 		};
 
 		registerReactivePropDefinition(target, propertyName, options);
-		ensureObservedAttributes(target.constructor as CustomElementConstructor, [
-			attributeNameForProp(propertyName, options),
-		]);
 
 		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
 		const ssrAssignedKey = Symbol.for(`@ecopages/radiant.ssr-prop-assigned:${propertyName}`);
