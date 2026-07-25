@@ -178,6 +178,25 @@ describe('@prop', () => {
 			expect(observed).toContain('enabled');
 		});
 
+		test('composes with an existing static observedAttributes getter instead of freezing it', () => {
+			const dynamicAttributes = ['custom-computed'];
+
+			@customElement('my-reactive-observed-getter-merge')
+			class MyReactiveObservedGetterMerge extends RadiantElement {
+				static get observedAttributes() {
+					return dynamicAttributes;
+				}
+
+				@prop({ type: Boolean, defaultValue: false }) enabled: boolean;
+			}
+
+			expect(observedAttributesOf(MyReactiveObservedGetterMerge)).toContain('enabled');
+
+			// The original getter must still be consulted live, not snapshotted once.
+			dynamicAttributes.push('added-later');
+			expect(observedAttributesOf(MyReactiveObservedGetterMerge)).toContain('added-later');
+		});
+
 		test('syncs a custom attribute name to the property after upgrade via setAttribute', () => {
 			@customElement('my-reactive-custom-attr')
 			class MyReactiveCustomAttr extends RadiantElement {

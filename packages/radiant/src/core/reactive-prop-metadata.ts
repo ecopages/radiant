@@ -49,6 +49,11 @@ type RadiantCustomElementConstructor = CustomElementConstructor & {
 /**
  * Ensure attribute names are listed on `static observedAttributes` before
  * `customElements.define` snapshots the list.
+ *
+ * Composes with a pre-existing `static get observedAttributes()` (e.g. a
+ * subclass computing its own dynamic list) instead of freezing it into a
+ * static snapshot: the installed getter re-invokes the previous one on every
+ * read, so its live/computed behavior survives.
  */
 export function ensureObservedAttributes(constructor: CustomElementConstructor, attributes: string[]): void {
 	const ctor = constructor as RadiantCustomElementConstructor;
@@ -57,7 +62,14 @@ export function ensureObservedAttributes(constructor: CustomElementConstructor, 
 		return;
 	}
 
-	const existing = Array.isArray(ctor.observedAttributes) ? [...ctor.observedAttributes] : [];
+	const ownDescriptor = Object.getOwnPropertyDescriptor(ctor, 'observedAttributes');
+	const previousGetter = ownDescriptor?.get;
+	const baseAttributes = previousGetter
+		? previousGetter.call(ctor)
+		: Array.isArray(ctor.observedAttributes)
+			? ctor.observedAttributes
+			: [];
+	const existing = Array.isArray(baseAttributes) ? [...baseAttributes] : [];
 	let changed = false;
 
 	for (const attribute of uniqueAttributes) {
@@ -67,16 +79,18 @@ export function ensureObservedAttributes(constructor: CustomElementConstructor, 
 		}
 	}
 
-	if (!changed && ctor.observedAttributes === existing) {
+	if (!changed && !previousGetter) {
 		return;
 	}
 
+	const get = previousGetter
+		? () => Array.from(new Set([...(previousGetter.call(ctor) as string[]), ...existing]))
+		: () => existing;
+
 	Object.defineProperty(ctor, 'observedAttributes', {
-		configurable: true,
+		configurable: ownDescriptor?.configurable ?? true,
 		enumerable: true,
-		get() {
-			return existing;
-		},
+		get,
 	});
 }
 
