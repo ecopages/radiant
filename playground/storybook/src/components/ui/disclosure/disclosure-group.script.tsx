@@ -18,7 +18,8 @@ export type RuiDisclosureGroupProps = {
  * `<rui-disclosure-group>` — coordinates stacked disclosures (accordion-style).
  *
  * When `multiple` is `false` (default), opening one disclosure closes the others.
- * Supports APG accordion keyboard navigation between triggers (ArrowUp/Down, Home/End).
+ * Supports APG accordion keyboard navigation between triggers (ArrowUp/Down, Home/End)
+ * and optional ArrowLeft/Right to collapse/expand the focused section.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/accordion/
  * @element rui-disclosure-group
@@ -45,6 +46,10 @@ export class RuiDisclosureGroup extends RadiantElement {
 
 	private getTriggers(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[data-disclosure-trigger]'));
+	}
+
+	private getDisclosureForTrigger(trigger: HTMLElement): RuiDisclosure | null {
+		return trigger.closest('rui-disclosure');
 	}
 
 	private syncTriggers(): void {
@@ -98,6 +103,32 @@ export class RuiDisclosureGroup extends RadiantElement {
 		const triggers = this.getTriggers();
 		const current = (event.target as HTMLElement).closest<HTMLElement>('[data-disclosure-trigger]');
 		if (!current) {
+			return;
+		}
+
+		// Optional APG accordion: Left collapses, Right expands the focused header.
+		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+			const disclosure = this.getDisclosureForTrigger(current);
+			if (!disclosure) {
+				return;
+			}
+
+			const nextOpen = event.key === 'ArrowRight';
+			if (disclosure.open === nextOpen) {
+				event.preventDefault();
+				return;
+			}
+
+			event.preventDefault();
+			disclosure.open = nextOpen;
+
+			if (nextOpen && !this.multiple) {
+				for (const other of this.querySelectorAll<RuiDisclosure>('rui-disclosure')) {
+					if (other !== disclosure) {
+						other.open = false;
+					}
+				}
+			}
 			return;
 		}
 

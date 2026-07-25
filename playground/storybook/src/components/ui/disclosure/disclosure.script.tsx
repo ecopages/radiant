@@ -49,7 +49,7 @@ export class RuiDisclosure extends RadiantElement {
 	}
 
 	private isAnimated(): boolean {
-		return this.animated;
+		return this.animated === true;
 	}
 
 	private syncAnimated(): void {
@@ -90,18 +90,19 @@ export class RuiDisclosure extends RadiantElement {
 			return;
 		}
 
-		trigger.setAttribute('aria-expanded', String(this.open));
+		const isOpen = this.open === true;
+		trigger.setAttribute('aria-expanded', String(isOpen));
 		trigger.setAttribute('aria-controls', this.panelId);
 		panel.id = this.panelId;
-		panel.dataset.state = this.open ? 'open' : 'closed';
+		panel.dataset.state = isOpen ? 'open' : 'closed';
 
 		if (this.isAnimated()) {
 			panel.hidden = false;
-			panel.setAttribute('aria-hidden', String(!this.open));
+			panel.setAttribute('aria-hidden', String(!isOpen));
 			return;
 		}
 
-		panel.hidden = !this.open;
+		panel.hidden = !isOpen;
 		panel.removeAttribute('aria-hidden');
 	}
 

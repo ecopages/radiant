@@ -6,7 +6,7 @@ rui-disclosure-group {
 
 @layer components {
 	.rui-disclosure-group {
-		@apply overflow-hidden rounded-lg border border-border bg-background;
+		@apply overflow-hidden rounded-container border border-border bg-background;
 	}
 
 	.rui-disclosure-group > rui-disclosure {

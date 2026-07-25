@@ -6,9 +6,9 @@ rui-disclosure {
 
 @layer components {
 	.rui-disclosure__trigger {
-		@apply inline-flex w-full items-center gap-3 rounded-md border-0 bg-transparent px-4 py-3;
+		@apply inline-flex w-full items-center gap-3 rounded-container border-0 bg-transparent px-control-x py-3;
 		@apply cursor-pointer text-left text-sm font-medium text-on-background;
-		@apply transition-colors duration-150;
+		@apply transition-colors duration-fast;
 	}
 
 	.rui-disclosure__trigger--icon-end {
@@ -64,7 +64,7 @@ rui-disclosure {
 	}
 
 	.rui-disclosure__panel-inner {
-		@apply p-4;
+		@apply p-inset;
 	}
 
 	.rui-disclosure__panel[hidden] {

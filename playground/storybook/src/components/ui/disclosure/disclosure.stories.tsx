@@ -12,7 +12,6 @@ const meta = {
 	title: 'Components/Disclosure',
 	component: RuiDisclosure,
 	args: {
-		open: false,
 		trigger: 'More about shipping',
 		children: <p>Orders ship within 2 business days via tracked delivery.</p>,
 	},
@@ -72,6 +71,11 @@ export const Default: Story = {
 
 export const Open: Story = {
 	args: { open: true },
+	render: (args) => (
+		<RuiDisclosure open={args.open} trigger={args.trigger}>
+			{args.children}
+		</RuiDisclosure>
+	),
 };
 
 export const Keyboard: Story = {
@@ -251,6 +255,14 @@ export const GroupKeyboardNavigation: Story = {
 			await expect(document.activeElement).toBe(triggers[0]);
 			await userEvent.keyboard('{End}');
 			await expect(document.activeElement).toBe(triggers[2]);
+		});
+
+		await step('ArrowRight expands and ArrowLeft collapses the focused section', async () => {
+			triggers[0].focus();
+			await userEvent.keyboard('{ArrowRight}');
+			await expect(triggers[0]).toHaveAttribute('aria-expanded', 'true');
+			await userEvent.keyboard('{ArrowLeft}');
+			await expect(triggers[0]).toHaveAttribute('aria-expanded', 'false');
 		});
 	},
 };
