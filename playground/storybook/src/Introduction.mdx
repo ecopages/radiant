@@ -14,11 +14,43 @@ This is not a React Storybook. Stories use Radiant custom elements and `@ecopage
 
 Not every entry under **Components/** is a full APG widget. Read the component TSDoc before treating it as a complete pattern:
 
-| Tier | Meaning | Examples |
-|------|---------|----------|
-| **Native** | Thin styling / wiring around platform controls | `RuiButton`, Switch, Checkbox, Slider (single + range), Meter, Radio Group |
-| **Composite** | Custom element implements APG roles, states, and keyboard model | Tabs, Dialog, Disclosure (+ Disclosure Group), Menu Button, Menubar, Listbox, Combobox, Tree, Treegrid, Toolbar, Grid, Carousel (transitions, indicators, rotation control), Window Splitter, Tooltip |
-| **Shell** | Coordinator / structure — consumers compose content or own interaction beyond labeling | Feed, Navigation Menu (exclusive disclosure panels for megamenus) |
+<table>
+  <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Meaning</th>
+      <th>Examples</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Native</strong></td>
+      <td>Thin styling / wiring around platform controls</td>
+      <td>
+        <code>RuiButton</code>, <code>RuiInput</code>, <code>RuiTextarea</code>, Switch, Checkbox, Slider (single + range), Meter, Radio Group
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Composite</strong></td>
+      <td>Custom element implements APG roles, states, and keyboard model</td>
+      <td>
+        Tabs, Dialog, Disclosure (+ Disclosure Group), Menu Button, Menubar, Listbox, Combobox, Tree, Treegrid, Toolbar, Grid, Carousel (transitions, indicators, rotation control), Window Splitter, Tooltip
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Form</strong></td>
+      <td>Composition for labels, validation, and submit — controls stay control-only</td>
+      <td>
+        <code>RuiForm</code>, <code>RuiField</code>, <code>RuiLabel</code>, <code>RuiFieldDescription</code>, <code>RuiFieldError</code>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Shell</strong></td>
+      <td>Coordinator / structure — consumers compose content or own interaction beyond labeling</td>
+      <td>Feed, Navigation Menu (exclusive disclosure panels for megamenus)</td>
+    </tr>
+  </tbody>
+</table>
 
 Each composite component's TSDoc links the [WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/) pattern it targets.
 
@@ -32,30 +64,55 @@ Each composite component's TSDoc links the [WAI-ARIA APG](https://www.w3.org/WAI
 - Stateful props (`open`, `value`, `index`, `autoplay`, …) are reactive via `@onUpdated` unless a component documents them as initial-only.
 - Stories are render-mode agnostic. Use the toolbar **Radiant render** control to spot-check SSR (`ssr-hydrate` / `ssr-static`) on any story.
 
-| Mode | Behavior |
-|------|----------|
-| `client` | Mount JSX / custom elements in the browser |
-| `ssr-hydrate` | `renderComponent` on the Vite server, inject markup, load client module, hydrate |
-| `ssr-static` | Server markup only |
+<table>
+  <thead>
+    <tr>
+      <th>Mode</th>
+      <th>Behavior</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>client</code></td>
+      <td>Mount JSX / custom elements in the browser</td>
+    </tr>
+    <tr>
+      <td><code>ssr-hydrate</code></td>
+      <td><code>renderComponent</code> on the Vite server, inject markup, load client module, hydrate</td>
+    </tr>
+    <tr>
+      <td><code>ssr-static</code></td>
+      <td>Server markup only</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Using the library
 
+Load a **theme** and **component styles** before registering elements:
+
 ```ts
-import '@ecopages/radiant-ui/disclosure'; // registers <rui-disclosure> and <rui-disclosure-group>
+import '@ecopages/radiant-ui/themes/default';
+import '@ecopages/radiant-ui/styles.css';
+import '@ecopages/radiant-ui/disclosure';
 import { RuiDisclosure, RuiDisclosureGroup } from '@ecopages/radiant-ui/disclosure';
 ```
 
-The root entry registers every custom element:
+The root entry registers every custom element (still import theme + styles):
 
 ```ts
+import '@ecopages/radiant-ui/themes/default';
+import '@ecopages/radiant-ui/styles.css';
 import '@ecopages/radiant-ui';
 ```
 
-Presentational helpers that are not custom elements (today: `RuiButton`) are still imported from their subpath:
+Presentational helpers that are not custom elements (today: `RuiButton`, `RuiInput`, `RuiTextarea`, `RuiLabel`, `RuiFieldDescription`, `RuiFieldError`) are still imported from their subpath:
 
 ```ts
 import { RuiButton } from '@ecopages/radiant-ui/button';
 ```
+
+Token and theme rules: see **AGENTS.md** in this package repo folder.
 
 ## Docs-only APG guidance
 

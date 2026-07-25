@@ -40,16 +40,28 @@ bun run build:lib     # generate exports + build dist
 ## Using radiant-ui
 
 ```ts
+import '@ecopages/radiant-ui/themes/default';
+import '@ecopages/radiant-ui/styles.css';
 import '@ecopages/radiant-ui/disclosure';
 import { RuiDisclosure, RuiDisclosureGroup } from '@ecopages/radiant-ui/disclosure';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 ```
 
-Or register every custom element from the root entry:
+Or register every custom element from the root entry (still load theme + styles separately):
 
 ```ts
+import '@ecopages/radiant-ui/themes/default';
+import '@ecopages/radiant-ui/styles.css';
 import '@ecopages/radiant-ui';
 ```
+
+Convenience bundle (default theme + Tailwind + button primitive):
+
+```ts
+import '@ecopages/radiant-ui/radiant-ui.css';
+```
+
+Design tokens and themes: see [`AGENTS.md`](./AGENTS.md) and [`DESIGN-SYSTEM-PLAN.md`](./DESIGN-SYSTEM-PLAN.md).
 
 ## Story map
 
