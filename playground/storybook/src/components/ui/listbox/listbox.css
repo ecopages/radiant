@@ -6,11 +6,11 @@ rui-listbox {
 
 @layer components {
 	.rui-listbox {
-		@apply max-h-60 overflow-auto rounded-md border border-border bg-background p-1;
+		@apply max-h-60 overflow-auto rounded-container border border-border bg-background p-1;
 	}
 
 	.rui-listbox__option {
-		@apply cursor-pointer rounded-sm px-3 py-2 text-sm;
+		@apply cursor-pointer rounded-control px-3 py-2 text-sm;
 	}
 
 	.rui-listbox__option[aria-selected='true'] {

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiCheckbox } from './checkbox';
 
 const meta = {
@@ -78,4 +79,14 @@ export const Disabled: Story = {
 			await expect(input).not.toBeChecked();
 		});
 	},
+};
+
+export const AsField: Story = {
+	render: () => (
+		<RuiField name="terms" rules={{ required: 'You must accept the terms' }}>
+			<RuiCheckbox>Accept terms and conditions</RuiCheckbox>
+			<RuiFieldDescription>Required to create an account.</RuiFieldDescription>
+			<RuiFieldError />
+		</RuiField>
+	),
 };

@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
+import { RuiLabel } from '../label';
 import { RuiSpinbutton } from './spinbutton';
 
 const meta = {
@@ -104,4 +106,15 @@ export const CustomSteppers: Story = {
 			await expect(getDecreaseButton(canvasElement)).toBeDisabled();
 		});
 	},
+};
+
+export const AsField: Story = {
+	render: () => (
+		<RuiField name="quantity" rules={{ min: { value: 1, message: 'Minimum is 1' } }}>
+			<RuiLabel>Quantity</RuiLabel>
+			<RuiSpinbutton min={1} max={10} value={1} />
+			<RuiFieldDescription>Choose how many items to add.</RuiFieldDescription>
+			<RuiFieldError />
+		</RuiField>
+	),
 };

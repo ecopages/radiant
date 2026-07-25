@@ -99,6 +99,8 @@ export class RuiListbox extends RadiantElement {
 			<div
 				class="rui-listbox"
 				role="listbox"
+				data-rui-control
+				data-rui-control-type="text"
 				aria-label={this.label || undefined}
 				aria-disabled={this.disabled ? 'true' : undefined}
 			>

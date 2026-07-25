@@ -83,6 +83,8 @@ export class RuiCheckbox extends RadiantElement {
 				<input
 					type="checkbox"
 					data-ref="input"
+					data-rui-control
+					data-rui-control-type="boolean"
 					class="rui-checkbox__input"
 					checked={this.checked}
 					disabled={this.disabled}

@@ -155,6 +155,8 @@ export class RuiSpinbutton extends RadiantElement {
 						type="text"
 						inputmode="numeric"
 						data-ref="input"
+						data-rui-control
+						data-rui-control-type="number"
 						class="rui-spinbutton__input"
 						role="spinbutton"
 						value={String(this.value)}

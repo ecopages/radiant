@@ -64,6 +64,8 @@ export class RuiSwitch extends RadiantElement {
 					type="checkbox"
 					role="switch"
 					data-ref="input"
+					data-rui-control
+					data-rui-control-type="boolean"
 					class="rui-switch__input"
 					checked={this.checked}
 					disabled={this.disabled}

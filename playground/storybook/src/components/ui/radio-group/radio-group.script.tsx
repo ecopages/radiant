@@ -81,6 +81,8 @@ export class RuiRadioGroup extends RadiantElement {
 			<div
 				class="rui-radio-group"
 				role="radiogroup"
+				data-rui-control
+				data-rui-control-type="text"
 				aria-label={this.label || undefined}
 				aria-disabled={this.disabled ? 'true' : undefined}
 			>

@@ -456,6 +456,8 @@ export class RuiSlider extends RadiantElement {
 				<input
 					type="range"
 					data-ref="input"
+					data-rui-control
+					data-rui-control-type="number"
 					class="rui-slider__input"
 					disabled={this.disabled}
 					name={this.name || undefined}

@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
+import { RuiLabel } from '../label';
 import { RuiListbox } from './listbox';
 
 const meta = {
@@ -28,4 +30,20 @@ export const Default: Story = {
 			await expect(canvasElement.querySelector('rui-listbox')).toHaveAttribute('value', 'cherry');
 		});
 	},
+};
+
+export const AsField: Story = {
+	render: () => (
+		<RuiField name="framework" rules={{ required: 'Pick a framework' }}>
+			<RuiLabel>Framework</RuiLabel>
+			<RuiListbox
+				options={[
+					{ value: 'radiant', label: 'Radiant' },
+					{ value: 'react', label: 'React' },
+				]}
+			/>
+			<RuiFieldDescription>Used for your project starter.</RuiFieldDescription>
+			<RuiFieldError />
+		</RuiField>
+	),
 };

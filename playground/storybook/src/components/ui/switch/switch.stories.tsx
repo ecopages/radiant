@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiSwitch } from './switch';
 
 const meta = {
@@ -79,4 +80,14 @@ export const Keyboard: Story = {
 			await expect(input).not.toBeChecked();
 		});
 	},
+};
+
+export const AsField: Story = {
+	render: () => (
+		<RuiField name="notifications">
+			<RuiSwitch>Email notifications</RuiSwitch>
+			<RuiFieldDescription>Receive product updates by email.</RuiFieldDescription>
+			<RuiFieldError />
+		</RuiField>
+	),
 };

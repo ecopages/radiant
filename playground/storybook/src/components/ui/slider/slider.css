@@ -1,16 +1,16 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-slider {
-	@apply block;
+	@apply block w-full max-w-full min-w-0;
 }
 
 @layer components {
 	.rui-slider {
-		@apply flex flex-col gap-2 text-sm text-on-background;
+		@apply flex w-full min-w-0 max-w-full flex-col gap-inline text-sm text-on-background;
 	}
 
 	.rui-slider__input {
-		@apply w-full accent-primary;
+		@apply block w-full min-w-0 max-w-full accent-primary;
 	}
 
 	.rui-slider__value {
@@ -18,11 +18,11 @@ rui-slider {
 	}
 
 	.rui-slider__range {
-		@apply py-2;
+		@apply w-full min-w-0 py-2;
 	}
 
 	.rui-slider__range-track {
-		@apply relative h-2 rounded-full bg-surface;
+		@apply relative h-2 w-full min-w-0 rounded-full bg-surface;
 	}
 
 	.rui-slider__range-fill {
@@ -34,7 +34,11 @@ rui-slider {
 	}
 
 	.rui-slider__thumb:focus-visible {
-		@apply outline-hidden ring-2 ring-focus-ring;
+		@apply rounded-full outline-hidden ring-2 ring-focus-ring;
+	}
+
+	.rui-slider__thumb:active:not(:disabled) {
+		@apply rounded-full;
 	}
 
 	.rui-slider__thumb[data-thumb='min'] {

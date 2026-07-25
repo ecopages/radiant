@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
+import { RuiLabel } from '../label';
 import { RuiSlider } from './slider';
 
 const meta = {
@@ -170,4 +172,15 @@ export const RangeMinDistance: Story = {
 			).toBeGreaterThanOrEqual(20);
 		});
 	},
+};
+
+export const AsField: Story = {
+	render: () => (
+		<RuiField name="volume">
+			<RuiLabel>Volume</RuiLabel>
+			<RuiSlider min={0} max={100} value={50} />
+			<RuiFieldDescription>Adjust playback volume from 0 to 100.</RuiFieldDescription>
+			<RuiFieldError />
+		</RuiField>
+	),
 };

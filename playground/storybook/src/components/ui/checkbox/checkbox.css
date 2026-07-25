@@ -6,11 +6,11 @@ rui-checkbox {
 
 @layer components {
 	.rui-checkbox {
-		@apply inline-flex items-center gap-2 cursor-pointer text-sm text-on-background;
+		@apply inline-flex items-center gap-inline cursor-pointer text-sm text-on-background;
 	}
 
 	.rui-checkbox:has(input:disabled) {
-		@apply cursor-not-allowed opacity-50;
+		@apply cursor-not-allowed opacity-disabled;
 	}
 
 	.rui-checkbox__input {

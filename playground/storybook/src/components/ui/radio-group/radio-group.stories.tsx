@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
+import { RuiLabel } from '../label';
 import { RuiRadioGroup } from './radio-group';
 
 const defaultOptions = [
@@ -69,4 +71,20 @@ export const Disabled: Story = {
 			}
 		});
 	},
+};
+
+export const AsField: Story = {
+	render: () => (
+		<RuiField name="plan" rules={{ required: 'Select a plan' }}>
+			<RuiLabel>Plan</RuiLabel>
+			<RuiRadioGroup
+				options={[
+					{ value: 'free', label: 'Free' },
+					{ value: 'pro', label: 'Pro' },
+				]}
+			/>
+			<RuiFieldDescription>You can change this later.</RuiFieldDescription>
+			<RuiFieldError />
+		</RuiField>
+	),
 };
