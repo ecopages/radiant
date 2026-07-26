@@ -17,6 +17,11 @@ export type RuiDialogCloseDetail = {
 	reason: 'escape' | 'backdrop' | 'dismiss';
 };
 
+type RuiDialogBindings = {
+	open: boolean;
+	alert: boolean;
+};
+
 const FOCUSABLE =
 	'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -38,7 +43,7 @@ const FOCUSABLE =
  * @fires rui-close - Emitted when the dialog is dismissed.
  */
 @customElement('rui-dialog')
-export class RuiDialog extends RadiantElement {
+export class RuiDialog extends RadiantElement<RuiDialogBindings> {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) alert: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -50,6 +55,9 @@ export class RuiDialog extends RadiantElement {
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
 
+	private readonly dialogHidden = this.$.open.map((open) => !open);
+	private readonly resolvedRole = this.$.alert.map((alert) => (alert ? 'alertdialog' : 'dialog'));
+
 	private previouslyFocused: HTMLElement | null = null;
 	private titleId = `rui-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
 	private descriptionId = `rui-dialog-desc-${Math.random().toString(36).slice(2, 9)}`;
@@ -60,14 +68,11 @@ export class RuiDialog extends RadiantElement {
 	}
 
 	@bound
-	@onUpdated(['open', 'alert', 'label'])
+	@onUpdated(['open', 'label'])
 	syncOpenState(): void {
 		if (!this.dialogTarget) {
 			return;
 		}
-
-		this.dialogTarget.setAttribute('role', this.alert ? 'alertdialog' : 'dialog');
-		this.dialogTarget.setAttribute('aria-modal', 'true');
 
 		if (this.titleTarget?.textContent?.trim()) {
 			this.titleTarget.id = this.titleId;
@@ -162,9 +167,15 @@ export class RuiDialog extends RadiantElement {
 
 	override render() {
 		return (
-			<div class="rui-dialog" hidden={!this.open}>
+			<div class="rui-dialog" hidden={this.dialogHidden}>
 				<div data-ref="backdrop" class="rui-dialog__backdrop"></div>
-				<div data-ref="dialog" class="rui-dialog__surface" tabindex={-1}>
+				<div
+					data-ref="dialog"
+					class="rui-dialog__surface"
+					tabindex={-1}
+					role={this.resolvedRole}
+					aria-modal="true"
+				>
 					<slot name="close"></slot>
 					<slot name="title"></slot>
 					<slot></slot>

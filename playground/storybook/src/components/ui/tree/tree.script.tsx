@@ -10,6 +10,10 @@ export type RuiTreeProps = {
 
 export type RuiTreeChangeDetail = { value: string };
 
+type RuiTreeBindings = {
+	label: string;
+};
+
 /**
  * `<rui-tree>` — a hierarchical list of tree items.
  *
@@ -22,12 +26,14 @@ export type RuiTreeChangeDetail = { value: string };
  * @fires rui-change
  */
 @customElement('rui-tree')
-export class RuiTree extends RadiantElement {
+export class RuiTree extends RadiantElement<RuiTreeBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreeChangeDetail>;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getVisibleItems(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="treeitem"]')).filter((item) => {
@@ -201,7 +207,7 @@ export class RuiTree extends RadiantElement {
 
 	override render() {
 		return (
-			<ul class="rui-tree" role="tree" aria-label={this.label || undefined} aria-multiselectable="false">
+			<ul class="rui-tree" role="tree" aria-label={this.resolvedAriaLabel} aria-multiselectable="false">
 				<slot></slot>
 			</ul>
 		);

@@ -8,6 +8,10 @@ export type RuiMenubarProps = {
 
 export type RuiMenubarChangeDetail = { value: string };
 
+type RuiMenubarBindings = {
+	label: string;
+};
+
 /**
  * `<rui-menubar>` — a horizontal menubar of menus.
  *
@@ -30,11 +34,13 @@ export type RuiMenubarChangeDetail = { value: string };
  * @fires rui-change
  */
 @customElement('rui-menubar')
-export class RuiMenubar extends RadiantElement {
+export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiMenubarChangeDetail>;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private openRoot: HTMLElement | null = null;
 
@@ -202,7 +208,7 @@ export class RuiMenubar extends RadiantElement {
 
 	override render() {
 		return (
-			<div class="rui-menubar" data-ref="menubar" role="menubar" aria-label={this.label || undefined}>
+			<div class="rui-menubar" data-ref="menubar" role="menubar" aria-label={this.resolvedAriaLabel}>
 				<slot></slot>
 			</div>
 		);

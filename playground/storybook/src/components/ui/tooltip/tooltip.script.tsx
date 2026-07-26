@@ -10,6 +10,10 @@ export type RuiTooltipProps = {
 	delay?: number;
 };
 
+type RuiTooltipBindings = {
+	content: string;
+};
+
 /**
  * `<rui-tooltip>` — a popup that describes a trigger on hover or focus.
  *
@@ -28,14 +32,21 @@ export type RuiTooltipProps = {
  * @slot - The trigger element (typically a button or focusable control).
  */
 @customElement('rui-tooltip')
-export class RuiTooltip extends RadiantElement {
+export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	@prop({ type: String, defaultValue: '' }) content: string;
 	@prop({ type: String, defaultValue: 'top' }) placement: Placement;
 	@prop({ type: Number, defaultValue: 200 }) delay: number;
 
 	@query({ ref: 'tooltip' }) tooltipTarget: HTMLElement;
 
+	/**
+	 * Plain (non-reactive) field, not a JSX binding target: `hidden` is toggled
+	 * imperatively in `setOpen()` rather than bound, since it flips on every
+	 * hover/focus in/out — high-frequency enough that a plain synchronous DOM
+	 * write is preferable to routing it through the reactive binding system.
+	 */
 	private open = false;
+
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
 	private cleanup: ReturnType<typeof autoUpdate> | null = null;
@@ -83,8 +94,6 @@ export class RuiTooltip extends RadiantElement {
 	}
 
 	private wireTrigger(): void {
-		if (!this.tooltipTarget) return;
-		this.tooltipTarget.id = this.tooltipId;
 		this.describedEl?.removeAttribute('aria-describedby');
 		this.describedEl = this.getAnchor();
 		this.describedEl.setAttribute('aria-describedby', this.tooltipId);
@@ -105,10 +114,8 @@ export class RuiTooltip extends RadiantElement {
 		});
 	}
 
-	@bound
 	@onUpdated(['content', 'placement'])
-	onContentUpdated(): void {
-		if (this.tooltipTarget) this.tooltipTarget.textContent = this.content;
+	onDescribedPropsUpdated(): void {
 		this.wireTrigger();
 		if (this.open) this.updatePosition();
 	}
@@ -177,8 +184,8 @@ export class RuiTooltip extends RadiantElement {
 				<span class="rui-tooltip__trigger">
 					<slot></slot>
 				</span>
-				<span data-ref="tooltip" class="rui-tooltip__content" role="tooltip" hidden>
-					{this.content}
+				<span data-ref="tooltip" id={this.tooltipId} class="rui-tooltip__content" role="tooltip" hidden>
+					{this.$.content}
 				</span>
 			</span>
 		);

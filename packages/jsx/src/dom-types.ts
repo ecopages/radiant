@@ -197,16 +197,16 @@ export interface JsxSharedIntrinsicAttributes {
 	class?: string;
 	classes?: ClassList;
 	data?: Record<string, DataAttributeValue>;
-	dir?: string;
-	hidden?: boolean;
-	id?: string;
-	lang?: string;
-	part?: string;
-	role?: string;
-	slot?: string;
+	dir?: ReactiveAttributeValue<string>;
+	hidden?: ReactiveAttributeValue<boolean>;
+	id?: ReactiveAttributeValue<string>;
+	lang?: ReactiveAttributeValue<string>;
+	part?: ReactiveAttributeValue<string>;
+	role?: ReactiveAttributeValue<string>;
+	slot?: ReactiveAttributeValue<string>;
 	style?: StyleValue;
-	tabindex?: number | string;
-	title?: string;
+	tabindex?: ReactiveAttributeValue<number> | ReactiveAttributeValue<string>;
+	title?: ReactiveAttributeValue<string>;
 }
 
 /**
