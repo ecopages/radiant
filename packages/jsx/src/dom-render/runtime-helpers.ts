@@ -86,6 +86,15 @@ export function createNodesFromValue(
 			return;
 		}
 
+		if (resolvedValue instanceof Node) {
+			nodes.push(resolvedValue);
+			return;
+		}
+
+		// Real DOM nodes are caught above and reused as-is. This branch only ever
+		// sees the framework's synthetic markup stand-ins (e.g. `createMarkupNodeLike`),
+		// which share the `nodeType`/`outerHTML` shape but aren't real `Node` instances —
+		// those must be parsed into fresh nodes since they carry no live identity to preserve.
 		if (isJsxNodeLike(resolvedValue)) {
 			const childNodes = createNodesFromJsxNodeLike(resolvedValue);
 
@@ -97,11 +106,6 @@ export function createNodesFromValue(
 				}
 			}
 
-			return;
-		}
-
-		if (resolvedValue instanceof Node) {
-			nodes.push(resolvedValue);
 			return;
 		}
 
