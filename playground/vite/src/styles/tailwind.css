@@ -1,8 +1,7 @@
-/**
- * Playground canvas styles.
- * Theme, Tailwind base, sheen, and button primitives come from @ecopages/radiant-ui.
- */
-@import '@ecopages/radiant-ui/radiant-ui.css';
+@import 'tailwindcss';
+@import '../../../../packages/radiant-ui/src/styles/themes/glacier.css';
+@import '../../../../packages/radiant-ui/src/styles/utilities/sheen.css';
+@import '../../../../packages/radiant-ui/src/styles/components/button.css';
 
 :root {
 	color-scheme: light;

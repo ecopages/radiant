@@ -6,7 +6,7 @@ rui-listbox {
 
 @layer components {
 	.rui-listbox {
-		@apply max-h-60 overflow-auto rounded-container border border-border bg-background p-1;
+		@apply max-h-60 overflow-auto rounded-container border border-border bg-background p-1 rui-sheen;
 	}
 
 	.rui-listbox__option {
@@ -14,7 +14,7 @@ rui-listbox {
 	}
 
 	.rui-listbox__option[aria-selected='true'] {
-		@apply bg-primary text-on-primary;
+		@apply bg-primary text-on-primary rui-sheen;
 	}
 
 	.rui-listbox__option:focus-visible {

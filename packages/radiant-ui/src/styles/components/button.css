@@ -5,7 +5,7 @@
 	.rui-button {
 		@apply inline-flex items-center justify-center h-fit w-fit gap-2;
 		@apply font-medium text-sm rounded-button border border-transparent;
-		@apply transition-all duration-200 ease-in-out;
+		@apply transition-[background-color,color,box-shadow] duration-300 ease-out;
 		@apply cursor-pointer;
 		@apply whitespace-nowrap;
 	}
@@ -24,7 +24,7 @@
 
 	/* Variants */
 	.rui-button--filled {
-		@apply bg-primary text-on-primary;
+		@apply bg-primary text-on-primary rui-sheen;
 	}
 
 	.rui-button--filled:hover:not(:disabled) {
@@ -44,15 +44,15 @@
 	}
 
 	.rui-button--outline:hover:not(:disabled) {
-		@apply bg-surface;
+		@apply bg-surface rui-sheen;
 	}
 
 	.rui-button--outline:active:not(:disabled) {
-		@apply bg-surface/80;
+		@apply bg-surface/80 rui-sheen;
 	}
 
 	.rui-button--outline[aria-pressed='true'] {
-		@apply bg-background font-medium text-on-background shadow-sm ring-2 ring-focus-ring;
+		@apply bg-background font-medium text-on-background shadow-sm ring-2 ring-focus-ring rui-sheen;
 	}
 
 	.rui-button--ghost {
@@ -60,11 +60,11 @@
 	}
 
 	.rui-button--ghost:hover:not(:disabled) {
-		@apply bg-surface/90;
+		@apply bg-surface-container-low rui-sheen;
 	}
 
 	.rui-button--ghost:active:not(:disabled) {
-		@apply bg-surface/80;
+		@apply bg-surface-container;
 	}
 
 	.rui-button--ghost[aria-pressed='true'] {
@@ -72,7 +72,7 @@
 	}
 
 	.rui-button--destructive {
-		@apply bg-error text-on-error;
+		@apply bg-error text-on-error rui-sheen;
 	}
 
 	.rui-button--destructive:hover:not(:disabled) {
@@ -102,14 +102,14 @@
 
 	/* Back-compat aliases used by earlier stories */
 	.rui-button--primary {
-		@apply bg-primary text-on-primary;
+		@apply bg-primary text-on-primary rui-sheen;
 	}
 
 	.rui-button--secondary {
-		@apply bg-secondary text-on-secondary;
+		@apply bg-secondary text-on-secondary rui-sheen;
 	}
 
 	.rui-button--error {
-		@apply bg-error text-on-error;
+		@apply bg-error text-on-error rui-sheen;
 	}
 }

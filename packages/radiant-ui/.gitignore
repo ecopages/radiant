@@ -6,8 +6,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-*storybook.log
-debug-storybook.log
 
 node_modules
 package-lock.json
@@ -26,8 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Storybook / Vitest browser artifacts
+*storybook.log
 storybook-static
 .vitest-*
-.vitest-attachments/
-**/__screenshots__/
+**/__screenshots__

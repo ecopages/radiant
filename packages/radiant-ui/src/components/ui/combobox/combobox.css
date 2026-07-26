@@ -39,7 +39,7 @@ rui-combobox {
 	}
 
 	.rui-combobox__listbox {
-		@apply absolute top-full z-popover mt-1 max-h-48 w-full overflow-auto rounded-container border border-border bg-background p-1 shadow-md;
+		@apply absolute top-full z-popover mt-1 max-h-48 w-full overflow-auto rounded-container border border-border bg-background p-1 shadow-md rui-sheen;
 	}
 
 	.rui-combobox__listbox[hidden] {
@@ -60,6 +60,6 @@ rui-combobox {
 
 	.rui-combobox__option[data-active],
 	.rui-combobox__option[aria-selected='true'] {
-		@apply bg-primary text-on-primary outline-none;
+		@apply bg-primary text-on-primary outline-none rui-sheen;
 	}
 }
