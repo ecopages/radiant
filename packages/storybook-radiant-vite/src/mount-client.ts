@@ -54,7 +54,12 @@ export async function mountClientResult(options: {
 	}
 
 	if (isTemplateResultLike(element) || typeof element === 'object') {
-		const renderTo = ensureRootInner(canvasElement, forceRemount);
+		// Radiant custom elements own their light DOM. Reconciling an existing JSX
+		// root into that tree (globals / args updates) races the CE renderer and
+		// can wipe authored children — e.g. sidebar chrome after a theme toggle.
+		// Always tear down and remount a fresh root instead of updating in place.
+		const shouldRemount = forceRemount || Boolean(getMountedRoot(canvasElement));
+		const renderTo = ensureRootInner(canvasElement, shouldRemount);
 		let root = getMountedRoot(canvasElement);
 		if (!root) {
 			root = createRoot(renderTo);
