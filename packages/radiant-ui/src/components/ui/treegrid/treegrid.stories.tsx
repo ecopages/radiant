@@ -86,6 +86,13 @@ export const FileBrowser: Story = {
 			await expect(srcRow).toHaveAttribute('aria-expanded', 'false');
 		});
 
+		await step('clicking the first cell of a collapsed row expands it and selects', async () => {
+			const srcRow = canvasElement.querySelector('[data-row-id="src"]') as HTMLElement;
+			await userEvent.click(cells[0]);
+			await expect(srcRow).toHaveAttribute('aria-expanded', 'true');
+			await expect(host).toHaveAttribute('value', 'src');
+		});
+
 		await step('setting .value programmatically updates aria-selected and roving tabindex', async () => {
 			(host as HTMLElement & { value: string }).value = 'readme';
 			const readmeRowCells = Array.from(
