@@ -84,6 +84,13 @@ export function createRadiantSsrExternalsPlugin(): Plugin {
 		enforce: 'pre',
 		config(): UserConfig {
 			return {
+				resolve: {
+					// pnpm may link workspace `@ecopages/*` packages through both
+					// `packages/*/dist` and the virtual store. Signals keep module-local
+					// ambient tracking state, so two physical copies silently break
+					// Computed dependency tracking across Radiant and app code.
+					dedupe: [...optimizeDepsExclude],
+				},
 				ssr: {
 					external: [...RADIANT_SSR_EXTERNAL_PACKAGES] as UserConfig['ssr'] extends { external?: infer T }
 						? T

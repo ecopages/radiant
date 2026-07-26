@@ -1,7 +1,6 @@
 /// <reference path="../client.d.ts" />
+import '@ecopages/radiant/server/install-ssr-runtime';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { renderToString, type RenderToStringOptions } from '@ecopages/jsx/server';
-import { radiantSsrRuntimeInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
 import { RadiantController, resolveRegisteredController } from '@ecopages/radiant';
 import type {
 	RenderedComponent,
@@ -20,8 +19,7 @@ import {
 	type RadiantDocumentUsage,
 } from '../runtime/document-state';
 import { renderSsrComponent, type RenderSsrComponentOptions } from '../ssr/render';
-
-void radiantSsrRuntimeInstalled;
+import { renderToString, type RenderToStringOptions } from '@ecopages/jsx/server';
 
 export type RenderRadiantNitroPageContext = {
 	rendered: RenderedComponent;
