@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiCheckboxProps = {
@@ -55,7 +55,6 @@ export class RuiCheckbox extends RadiantElement {
 		queueMicrotask(() => this.syncIndeterminate());
 	}
 
-	@bound
 	@onUpdated(['indeterminate', 'checked'])
 	syncIndeterminate(): void {
 		const input = this.querySelector<HTMLInputElement>('input[type="checkbox"]');

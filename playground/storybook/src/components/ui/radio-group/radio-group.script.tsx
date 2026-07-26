@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiRadioGroupProps = {
@@ -50,7 +50,6 @@ export class RuiRadioGroup extends RadiantElement {
 		this.syncRadios();
 	}
 
-	@bound
 	@onUpdated(['value', 'name', 'disabled'])
 	syncRadios(): void {
 		const radios = this.querySelectorAll<HTMLInputElement>('input[type="radio"]');
