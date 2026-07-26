@@ -1,0 +1,36 @@
+{
+	"compilerOptions": {
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+		"target": "ES2022",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"module": "ESNext",
+		"types": ["vite/client"],
+		"allowArbitraryExtensions": true,
+		"skipLibCheck": true,
+		"useDefineForClassFields": true,
+		"experimentalDecorators": false,
+
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
+		"moduleDetection": "force",
+		"noEmit": true,
+
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx",
+
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+
+		"strict": true,
+		/* Radiant decorators (@prop/@state/@query) assign fields through the decorator
+       transform; `!`/`declare` modifiers are rejected by the Vite 8 Babel pipeline. */
+		"strictPropertyInitialization": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"ignoreDeprecations": "6.0"
+	},
+	"include": ["src"]
+}

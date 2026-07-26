@@ -1,0 +1,14 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-feed {
+	@apply block;
+}
+
+@layer components {
+	.rui-feed {
+		@apply flex flex-col gap-stack;
+	}
+	.rui-feed__article {
+		@apply rounded-container border border-border bg-background p-inset text-sm;
+	}
+}

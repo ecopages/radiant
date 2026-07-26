@@ -1,0 +1,10 @@
+/**
+ * radiant-ui base stylesheet (Tailwind + default theme + button).
+ * Published as `@ecopages/radiant-ui/radiant-ui.css`.
+ */
+@import './radiant-ui-core.css';
+@import './themes/default.css';
+
+:root {
+	color-scheme: light;
+}

@@ -1,0 +1,27 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-alert {
+	@apply block;
+}
+
+@layer components {
+	.rui-alert {
+		@apply rounded-container border px-control-x py-control-y text-sm;
+	}
+
+	.rui-alert--info {
+		@apply border-border bg-surface text-on-surface;
+	}
+
+	.rui-alert--success {
+		@apply border-success/40 bg-success/10 text-on-background;
+	}
+
+	.rui-alert--warning {
+		@apply border-border bg-surface text-on-surface;
+	}
+
+	.rui-alert--error {
+		@apply border-error/40 bg-error/10 text-on-background;
+	}
+}

@@ -1,0 +1,25 @@
+@import './radiant-ui.css';
+@import './tokens/presets/spacing.css';
+@import './tokens/presets/radius.css';
+
+body {
+	@apply container mx-auto p-4 bg-background text-on-background;
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+main {
+	@apply flex flex-col gap-4;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+	&:focus,
+	&:focus-visible {
+		@apply outline-2 outline-focus-ring;
+	}
+}

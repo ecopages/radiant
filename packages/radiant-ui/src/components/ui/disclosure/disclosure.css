@@ -1,0 +1,105 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-disclosure {
+	@apply block w-full;
+}
+
+@layer components {
+	.rui-disclosure__trigger {
+		@apply inline-flex w-full items-center gap-3 rounded-container border-0 bg-transparent px-control-x py-3;
+		@apply cursor-pointer text-left text-sm font-medium text-on-background;
+		@apply transition-colors duration-fast;
+	}
+
+	.rui-disclosure__trigger--icon-end {
+		@apply justify-between;
+	}
+
+	.rui-disclosure__trigger:hover {
+		@apply bg-surface;
+	}
+
+	.rui-disclosure__trigger:focus-visible {
+		@apply bg-surface ring-2 ring-focus-ring ring-inset outline-hidden;
+	}
+
+	.rui-disclosure__icon {
+		@apply inline-flex shrink-0 items-center justify-center text-on-surface;
+		pointer-events: none;
+		transition:
+			transform 150ms ease,
+			color 150ms ease;
+	}
+
+	.rui-disclosure__icon--chevron {
+		width: 0;
+		height: 0;
+		border-top: 4px solid transparent;
+		border-bottom: 4px solid transparent;
+		border-left: 6px solid currentColor;
+	}
+
+	.rui-disclosure__trigger[aria-expanded='true'] .rui-disclosure__icon--chevron {
+		transform: rotate(90deg);
+	}
+
+	.rui-disclosure__icon--plus {
+		@apply size-5 text-lg leading-none;
+	}
+
+	.rui-disclosure__icon--plus::before {
+		content: '+';
+	}
+
+	.rui-disclosure__trigger[aria-expanded='true'] .rui-disclosure__icon--plus::before {
+		content: '×';
+	}
+
+	.rui-disclosure__label {
+		@apply min-w-0 flex-1;
+	}
+
+	.rui-disclosure__panel {
+		@apply text-sm leading-relaxed text-on-surface;
+	}
+
+	.rui-disclosure__panel-inner {
+		@apply p-inset;
+	}
+
+	.rui-disclosure__panel[hidden] {
+		display: none;
+	}
+
+	.rui-disclosure__panel:not([hidden]) {
+		display: block;
+	}
+
+	rui-disclosure[data-animated] .rui-disclosure__panel {
+		display: grid;
+		grid-template-rows: 0fr;
+		overflow: hidden;
+		transition: grid-template-rows 200ms ease;
+	}
+
+	rui-disclosure[data-animated] .rui-disclosure__panel[data-state='open'] {
+		grid-template-rows: 1fr;
+	}
+
+	rui-disclosure[data-animated] .rui-disclosure__panel-inner {
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	rui-disclosure[data-animated] .rui-disclosure__panel[aria-hidden='true'] .rui-disclosure__panel-inner {
+		visibility: hidden;
+	}
+
+	.rui-disclosure__panel-inner > :first-child {
+		@apply mt-0;
+	}
+
+	.rui-disclosure__panel-inner > :last-child {
+		@apply mb-0;
+	}
+}

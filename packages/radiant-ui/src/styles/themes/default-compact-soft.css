@@ -1,0 +1,19 @@
+/**
+ * Composed theme: default colors + compact spacing + soft radius.
+ */
+@import '../tokens/colors/aurora.css';
+@import '../tokens/spacing/compact.css';
+@import '../tokens/radius/soft.css';
+@import '../tokens/elevation/default.css';
+@import '../tokens/typography/default.css';
+@import '../tokens/motion/default.css';
+@import '../tokens/system.css';
+@import '../tokens/semantic.css';
+
+:root {
+	color-scheme: light;
+}
+
+.dark {
+	color-scheme: dark;
+}

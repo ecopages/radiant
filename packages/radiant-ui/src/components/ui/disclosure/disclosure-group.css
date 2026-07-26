@@ -1,0 +1,23 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-disclosure-group {
+	@apply block w-full;
+}
+
+@layer components {
+	.rui-disclosure-group {
+		@apply overflow-hidden rounded-container border border-border bg-background;
+	}
+
+	.rui-disclosure-group > rui-disclosure {
+		@apply block border-b border-border last:border-b-0;
+	}
+
+	.rui-disclosure-group > rui-disclosure .rui-disclosure__trigger {
+		@apply rounded-none px-4;
+	}
+
+	.rui-disclosure-group > rui-disclosure .rui-disclosure__panel-inner {
+		@apply border-t border-border/60 bg-surface/40;
+	}
+}

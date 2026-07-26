@@ -1,0 +1,18 @@
+/**
+ * Default elevation pack.
+ */
+:root {
+	--shadow-control: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+	--shadow-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+	--shadow-modal: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+@theme {
+	--shadow-control: var(--shadow-control);
+	--shadow-overlay: var(--shadow-overlay);
+	--shadow-modal: var(--shadow-modal);
+	--shadow-sm: var(--shadow-control);
+	--shadow-md: var(--shadow-overlay);
+	--shadow-lg: var(--shadow-overlay);
+	--shadow-xl: var(--shadow-modal);
+}

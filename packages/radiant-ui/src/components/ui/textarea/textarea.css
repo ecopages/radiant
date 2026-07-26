@@ -1,0 +1,33 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-textarea {
+		@apply w-full resize-y border border-border bg-background text-on-background outline-none;
+		border-radius: var(--radius-control);
+		padding-inline: var(--space-control-x);
+		padding-block: var(--space-control-y);
+		font-size: var(--text-control, 0.875rem);
+		min-height: calc(var(--space-control-y) * 2 + 1.25rem * 3);
+		transition-duration: var(--duration-normal);
+	}
+
+	.rui-textarea:focus-visible {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-textarea:disabled {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-textarea[aria-invalid='true'] {
+		@apply border-error;
+	}
+
+	.rui-textarea--sm {
+		min-height: calc(var(--space-control-y) * 2 + 1rem * 2);
+	}
+
+	.rui-textarea--lg {
+		min-height: calc(var(--space-control-y) * 2 + 1.25rem * 4);
+	}
+}

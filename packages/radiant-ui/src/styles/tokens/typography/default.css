@@ -1,0 +1,37 @@
+/**
+ * Default typography pack.
+ */
+:root {
+	--font-sans:
+		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+		sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+	--text-xs: 0.75rem;
+	--text-sm: 0.875rem;
+	--text-body: 1rem;
+	--text-lg: 1.125rem;
+	--text-label: 0.875rem;
+	--text-control: 0.875rem;
+
+	--leading-body: 1.5;
+	--leading-relaxed: 1.625;
+	--leading-compact: 1.25;
+
+	--weight-regular: 400;
+	--weight-medium: 500;
+	--weight-semibold: 600;
+
+	--tracking-wide: 0.025em;
+}
+
+@theme {
+	--font-sans: var(--font-sans);
+	--font-mono: var(--font-mono);
+	--text-xs: var(--text-xs);
+	--text-sm: var(--text-sm);
+	--text-body: var(--text-body);
+	--text-lg: var(--text-lg);
+	--font-weight-medium: var(--weight-medium);
+	--font-weight-semibold: var(--weight-semibold);
+}

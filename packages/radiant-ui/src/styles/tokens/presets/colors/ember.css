@@ -1,0 +1,134 @@
+/* Ember (warm accent on glacier neutrals) — `data-rui-colors="ember"` */
+html[data-rui-colors='ember'] {
+	--gray-50: var(--color-glacier-white-50);
+	--gray-100: var(--color-glacier-white-100);
+	--gray-200: var(--color-glacier-white-200);
+	--gray-300: var(--color-glacier-white-300);
+	--gray-400: var(--color-glacier-white-400);
+	--gray-500: var(--color-glacier-white-500);
+	--gray-600: var(--color-glacier-white-600);
+	--gray-700: var(--color-glacier-white-700);
+	--gray-800: var(--color-glacier-white-800);
+	--gray-900: var(--color-glacier-white-900);
+	--gray-950: var(--color-glacier-white-950);
+
+	--primary: var(--color-scarlet-600);
+	--on-primary: var(--color-glacier-white-50);
+	--primary-container: var(--color-scarlet-100);
+	--on-primary-container: var(--color-scarlet-900);
+	--primary-light: var(--color-scarlet-400);
+	--primary-dark: var(--color-scarlet-800);
+
+	--secondary: var(--color-night-sky-600);
+	--on-secondary: var(--color-glacier-white-50);
+	--secondary-container: var(--color-night-sky-100);
+	--on-secondary-container: var(--color-night-sky-900);
+	--secondary-light: var(--color-night-sky-400);
+	--secondary-dark: var(--color-night-sky-800);
+
+	--tertiary: var(--color-laser-lemon-800);
+	--on-tertiary: var(--color-glacier-white-50);
+	--tertiary-container: var(--color-glacier-white-200);
+	--on-tertiary-container: var(--color-glacier-white-900);
+
+	--error: var(--color-scarlet-700);
+	--on-error: var(--color-glacier-white-50);
+	--error-container: var(--color-scarlet-100);
+	--on-error-container: var(--color-scarlet-900);
+	--error-light: var(--color-scarlet-500);
+	--error-dark: var(--color-scarlet-900);
+
+	--success: var(--color-night-sky-600);
+	--on-success: var(--color-glacier-white-50);
+	--success-container: var(--color-night-sky-100);
+	--on-success-container: var(--color-night-sky-900);
+	--success-light: var(--color-night-sky-400);
+	--success-dark: var(--color-night-sky-800);
+
+	--neutral: var(--color-glacier-white-500);
+
+	--surface: var(--color-glacier-white-100);
+	--on-surface: var(--color-glacier-white-900);
+	--surface-container-lowest: var(--color-glacier-white-100);
+	--on-surface-container-lowest: var(--color-glacier-white-900);
+	--surface-container-low: var(--color-glacier-white-200);
+	--on-surface-container-low: var(--color-glacier-white-900);
+	--surface-container: var(--color-glacier-white-300);
+	--on-surface-container: var(--color-glacier-white-900);
+	--surface-container-high: var(--color-glacier-white-400);
+	--on-surface-container-high: var(--color-glacier-white-900);
+	--surface-container-highest: var(--color-glacier-white-500);
+	--on-surface-container-highest: var(--color-glacier-white-950);
+
+	--background: var(--color-glacier-white-50);
+	--on-background: var(--color-glacier-white-900);
+
+	--border: color-mix(in oklab, var(--color-glacier-white-900) 12%, transparent);
+	--focus-ring: var(--color-scarlet-500);
+	--link: var(--color-scarlet-700);
+	--overlay: oklch(0% 0 0 / 0.42);
+
+	--background-code: var(--color-glacier-white-100);
+	--on-background-code: var(--color-scarlet-800);
+}
+
+html.dark[data-rui-colors='ember'] {
+	--primary: var(--color-scarlet-400);
+	--on-primary: var(--color-glacier-white-950);
+	--primary-container: var(--color-scarlet-800);
+	--on-primary-container: var(--color-scarlet-100);
+	--primary-light: var(--color-scarlet-300);
+	--primary-dark: var(--color-scarlet-800);
+
+	--secondary: var(--color-night-sky-400);
+	--on-secondary: var(--color-glacier-white-950);
+	--secondary-container: var(--color-night-sky-800);
+	--on-secondary-container: var(--color-night-sky-100);
+	--secondary-light: var(--color-night-sky-300);
+	--secondary-dark: var(--color-night-sky-700);
+
+	--tertiary: var(--color-laser-lemon-300);
+	--on-tertiary: var(--color-glacier-white-950);
+	--tertiary-container: var(--color-glacier-white-800);
+	--on-tertiary-container: var(--color-laser-lemon-300);
+
+	--error: var(--color-scarlet-500);
+	--on-error: var(--color-glacier-white-950);
+	--error-container: var(--color-scarlet-800);
+	--on-error-container: var(--color-scarlet-100);
+	--error-light: var(--color-scarlet-400);
+	--error-dark: var(--color-scarlet-900);
+
+	--success: var(--color-night-sky-400);
+	--on-success: var(--color-glacier-white-950);
+	--success-container: var(--color-night-sky-800);
+	--on-success-container: var(--color-night-sky-100);
+	--success-light: var(--color-night-sky-300);
+	--success-dark: var(--color-night-sky-700);
+
+	--neutral: var(--color-glacier-white-500);
+
+	--surface: var(--color-glacier-white-900);
+	--on-surface: var(--color-glacier-white-50);
+	--surface-container-lowest: var(--color-glacier-white-950);
+	--on-surface-container-lowest: var(--color-glacier-white-50);
+	--surface-container-low: var(--color-glacier-white-900);
+	--on-surface-container-low: var(--color-glacier-white-50);
+	--surface-container: var(--color-glacier-white-800);
+	--on-surface-container: var(--color-glacier-white-50);
+	--surface-container-high: var(--color-glacier-white-700);
+	--on-surface-container-high: var(--color-glacier-white-50);
+	--surface-container-highest: var(--color-glacier-white-600);
+	--on-surface-container-highest: var(--color-glacier-white-50);
+
+	--background: var(--color-glacier-white-950);
+	--on-background: var(--color-glacier-white-50);
+
+	--border: color-mix(in oklab, var(--color-glacier-white-50) 16%, transparent);
+	--focus-ring: var(--color-scarlet-400);
+	--link: var(--color-scarlet-400);
+	--overlay: oklch(0% 0 0 / 0.62);
+
+	--background-code: var(--color-glacier-white-900);
+	--on-background-code: var(--color-scarlet-300);
+}

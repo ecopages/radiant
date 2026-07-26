@@ -1,0 +1,35 @@
+/**
+ * Sharp radius pack ? square corners (public name; token file `edgy.css`).
+ * Controls and containers use 0 radius; pills stay fully rounded.
+ */
+:root {
+	--border-radius-none: 0;
+	--border-radius-xs: 0;
+	--border-radius-sm: 0;
+	--border-radius-md: 0;
+	--border-radius-lg: 0;
+	--border-radius-xl: 0;
+	--border-radius-2xl: 0;
+	--border-radius-3xl: 0;
+	--border-radius-full: 9999px;
+
+	--radius-control: 0;
+	--radius-container: 0;
+	--radius-pill: var(--border-radius-full);
+}
+
+@theme {
+	--radius-none: var(--border-radius-none);
+	--radius-xs: var(--border-radius-xs);
+	--radius-sm: var(--border-radius-sm);
+	--radius-md: var(--border-radius-md);
+	--radius-lg: var(--border-radius-lg);
+	--radius-xl: var(--border-radius-xl);
+	--radius-2xl: var(--border-radius-2xl);
+	--radius-3xl: var(--border-radius-3xl);
+	--radius-full: var(--border-radius-full);
+	--radius-control: var(--radius-control);
+	--radius-container: var(--radius-container);
+	--radius-pill: var(--radius-pill);
+	--radius-button: var(--radius-control);
+}
