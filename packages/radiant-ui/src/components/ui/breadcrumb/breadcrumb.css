@@ -2,6 +2,7 @@
 
 rui-breadcrumb {
 	@apply block;
+	--rui-breadcrumb-separator: '/';
 }
 
 @layer components {
@@ -13,15 +14,28 @@ rui-breadcrumb {
 		@apply inline-flex items-center gap-inline;
 	}
 
-	.rui-breadcrumb a {
-		@apply text-primary underline-offset-2 hover:underline;
+	.rui-breadcrumb__link {
+		@apply inline-flex items-center gap-inline text-primary underline-offset-2 hover:underline;
 	}
 
+	.rui-breadcrumb__page,
 	.rui-breadcrumb [aria-current='page'] {
 		@apply font-medium text-on-background;
 	}
 
 	.rui-breadcrumb__separator {
-		@apply text-on-surface/60;
+		@apply inline-flex items-center text-on-surface/60;
+	}
+
+	.rui-breadcrumb__separator:empty::before {
+		content: var(--rui-breadcrumb-separator);
+	}
+
+	.rui-breadcrumb__ellipsis {
+		@apply inline-flex items-center tracking-widest text-on-surface/60;
+	}
+
+	.rui-breadcrumb__ellipsis-label {
+		@apply sr-only;
 	}
 }

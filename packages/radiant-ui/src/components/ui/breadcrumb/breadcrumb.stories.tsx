@@ -1,17 +1,38 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
-import { RuiBreadcrumb } from './breadcrumb';
+import {
+	RuiBreadcrumb,
+	RuiBreadcrumbEllipsis,
+	RuiBreadcrumbItem,
+	RuiBreadcrumbLink,
+	RuiBreadcrumbList,
+	RuiBreadcrumbPage,
+	RuiBreadcrumbSeparator,
+} from './breadcrumb';
+
+const HomeIcon = () => (
+	<svg
+		width="16"
+		height="16"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		stroke-width="2"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+		aria-hidden="true"
+	>
+		<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+		<path d="M9 22V12h6v10" />
+	</svg>
+);
 
 const meta = {
 	title: 'Components/Breadcrumb',
 	component: RuiBreadcrumb,
 	args: {
 		label: 'Breadcrumb',
-		items: [
-			{ href: '/', label: 'Home' },
-			{ href: '/products', label: 'Products' },
-			{ label: 'Radiant UI', current: true },
-		],
+		separator: '/',
 	},
 } satisfies Meta<typeof RuiBreadcrumb>;
 
@@ -19,6 +40,23 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+	render: (args) => (
+		<RuiBreadcrumb {...args}>
+			<RuiBreadcrumbList>
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/">Home</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/products">Products</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbPage>Radiant UI</RuiBreadcrumbPage>
+				</RuiBreadcrumbItem>
+			</RuiBreadcrumbList>
+		</RuiBreadcrumb>
+	),
 	play: async ({ canvasElement, step }) => {
 		await step('exposes a navigation landmark labeled Breadcrumb', async () => {
 			const nav = canvasElement.querySelector('nav');
@@ -37,4 +75,77 @@ export const Default: Story = {
 			await expect(links[1]).toHaveAttribute('href', '/products');
 		});
 	},
+};
+
+export const WithEllipsis: Story = {
+	args: {
+		separator: '/',
+	},
+	render: (args) => (
+		<RuiBreadcrumb {...args}>
+			<RuiBreadcrumbList>
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/">Home</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbEllipsis />
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/components">Components</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbPage>Breadcrumb</RuiBreadcrumbPage>
+				</RuiBreadcrumbItem>
+			</RuiBreadcrumbList>
+		</RuiBreadcrumb>
+	),
+};
+
+export const ChevronSeparator: Story = {
+	args: {
+		separator: '>',
+	},
+	render: (args) => (
+		<RuiBreadcrumb {...args}>
+			<RuiBreadcrumbList>
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/">Home</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/docs">Docs</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbPage>Breadcrumb</RuiBreadcrumbPage>
+				</RuiBreadcrumbItem>
+			</RuiBreadcrumbList>
+		</RuiBreadcrumb>
+	),
+};
+
+/** Icon-only home link — shows free composition inside `RuiBreadcrumbLink`. */
+export const WithHomeIcon: Story = {
+	render: (args) => (
+		<RuiBreadcrumb {...args}>
+			<RuiBreadcrumbList>
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/" aria-label="Home">
+						<HomeIcon />
+					</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/products">Products</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbPage>Radiant UI</RuiBreadcrumbPage>
+				</RuiBreadcrumbItem>
+			</RuiBreadcrumbList>
+		</RuiBreadcrumb>
+	),
 };
