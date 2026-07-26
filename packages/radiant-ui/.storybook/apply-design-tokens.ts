@@ -18,20 +18,24 @@ function pick<T extends string>(value: string, allowed: readonly T[], fallback: 
 	return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
 }
 
-/** Remove injected styles from older Storybook theme experiments / SSR previews. */
-export function clearStorybookStyleLeaks(): void {
+/** Remove leftover attrs/links from older theme-injection experiments. */
+export function clearLegacyThemeArtifacts(): void {
 	document.getElementById(LEGACY_THEME_LINK_ID)?.remove();
-	document.querySelectorAll('link[data-radiant-ssr-style]').forEach((node) => node.remove());
 
 	const root = document.documentElement;
 	delete root.dataset.ruiTheme;
 	delete root.dataset.theme;
 }
 
+/**
+ * Sync Storybook toolbar globals onto `<html>`.
+ * Token packs are pure CSS (`data-rui-*` + `.dark`) — do not touch stylesheets here;
+ * SSR link lifecycle belongs to the Radiant Storybook mount path.
+ */
 export function applyDesignTokens(globals: DesignTokenGlobals): void {
 	if (typeof document === 'undefined') return;
 
-	clearStorybookStyleLeaks();
+	clearLegacyThemeArtifacts();
 
 	const root = document.documentElement;
 	const colors = pick(String(globals.ruiColors ?? 'glacier'), COLOR_PACKS, 'glacier');
