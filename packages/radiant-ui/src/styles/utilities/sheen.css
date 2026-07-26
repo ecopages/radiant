@@ -1,0 +1,7 @@
+@utility rui-sheen {
+	background-image: var(--sheen-image);
+
+	@media (forced-colors: active) {
+		background-image: none;
+	}
+}

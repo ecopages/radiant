@@ -5,6 +5,15 @@
 	--shadow-control: none;
 	--shadow-overlay: none;
 	--shadow-modal: none;
+
+	--sheen-highlight: color-mix(in oklab, white 14%, transparent);
+	--sheen-shade: color-mix(in oklab, black 7%, transparent);
+	--sheen-image: linear-gradient(
+		to bottom,
+		var(--sheen-highlight),
+		transparent 55%,
+		var(--sheen-shade)
+	);
 }
 
 @theme {

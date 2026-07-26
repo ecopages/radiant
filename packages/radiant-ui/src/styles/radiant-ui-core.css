@@ -3,4 +3,5 @@
  * Pair with a theme file, or use `radiant-ui.css` for the default bundle.
  */
 @import 'tailwindcss';
+@import './utilities/sheen.css';
 @import './components/button.css';
