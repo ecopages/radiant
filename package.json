@@ -4,48 +4,45 @@
 	"publishConfig": {
 		"access": "public"
 	},
+	"packageManager": "pnpm@10.12.1",
 	"scripts": {
-		"clean": "clear && bunx npkill -D -y && rm -rf bun.lock && bun install",
-		"format": "bunx prettier --write .",
-		"lint": "bunx oxlint . --fix",
+		"clean": "clear && pnpm dlx npkill -D -y && rm -rf node_modules pnpm-lock.yaml && pnpm install",
+		"format": "pnpm exec prettier --write .",
+		"lint": "pnpm exec oxlint . --fix",
 		"typecheck": "tsc --noEmit -p packages/jsx/tsconfig.json && tsc --noEmit -p packages/signals/tsconfig.json && tsc --noEmit -p packages/radiant/tsconfig.json && tsc --noEmit -p packages/vite-plugin-radiant/tsconfig.json && tsc --noEmit -p playground/vite/tsconfig.json && tsc --noEmit -p playground/vite-nitro/tsconfig.json && tsc --noEmit -p apps/docs/tsconfig.json",
 		"prepare:husky": "husky",
-		"build:all": "bun run --elide-lines=0 --filter @ecopages/signals build:lib && bun run --elide-lines=0 --filter @ecopages/jsx build:lib && bun run --elide-lines=0 --filter @ecopages/radiant build:lib && bun run --elide-lines=0 --filter @ecopages/vite-plugin-radiant build:lib",
-		"test:all": "bun run --elide-lines=0 --filter @ecopages/jsx test:lib && bun run --filter @ecopages/signals test:lib && bun run --filter @ecopages/radiant test:lib && bun run --filter radiant-docs test:e2e && bun run --filter kitchen-sink-vite-nitro test:e2e && bun run --filter playground-vite test:e2e && bun run size:check",
-		"size:check": "bun run --filter '*' size:check",
-		"size:report": "bun run --filter '*' size:report",
+		"build:all": "pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib",
+		"test:all": "pnpm --filter @ecopages/jsx test:lib && pnpm --filter @ecopages/signals test:lib && pnpm --filter @ecopages/radiant test:lib && pnpm --filter radiant-docs test:e2e && pnpm --filter kitchen-sink-vite-nitro test:e2e && pnpm --filter playground-vite test:e2e && pnpm run size:check",
+		"size:check": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:check",
+		"size:report": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:report",
 		"changeset": "changeset",
 		"commit": "better-commits",
-		"prerelease": "bun run typecheck && bun run build:all && bun run test:all",
+		"prerelease": "pnpm run typecheck && pnpm run build:all && pnpm run test:all",
 		"release": "changeset publish",
-		"dev:docs": "bun run --elide-lines=0 --filter radiant-docs dev",
-		"watch:lib": "bun run --elide-lines=0 --filter '*' watch:lib",
-		"dev:playground-vite": "bun run --elide-lines=0 --filter playground-vite dev & bun run watch:lib ",
-		"dev:kitchen-sink-vite-nitro": "bun run --elide-lines=0 --filter kitchen-sink-vite-nitro dev & bun run watch:lib",
-		"dev:playground-vite:legacy": "bun run --elide-lines=0 --filter playground-vite dev:legacy & bun run watch:lib",
-		"build:kitchen-sink-vite-nitro": "bun run --elide-lines=0 --filter kitchen-sink-vite-nitro build",
-		"build:docs": "bun run --filter radiant-docs build",
-		"preview:docs": "bun run --elide-lines=0 --filter radiant-docs preview"
+		"dev:docs": "pnpm --filter radiant-docs dev",
+		"watch:lib": "pnpm -r --parallel --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run watch:lib",
+		"dev:playground-vite": "pnpm --filter playground-vite dev & pnpm run watch:lib",
+		"dev:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro dev & pnpm run watch:lib",
+		"dev:playground-vite:legacy": "pnpm --filter playground-vite dev:legacy & pnpm run watch:lib",
+		"build:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro build",
+		"build:docs": "pnpm --filter radiant-docs build",
+		"preview:docs": "pnpm --filter radiant-docs preview"
 	},
 	"devDependencies": {
 		"@changesets/changelog-github": "^0.5.0",
 		"@changesets/cli": "^2.27.7",
-		"@types/bun": "latest",
 		"@types/ws": "^8.18.1",
 		"better-commits": "^1.18.1",
 		"oxlint": "^1.32.0",
-		"prettier": "^3.7.4"
+		"playwright": "^1.52.0",
+		"prettier": "^3.7.4",
+		"tsx": "^4.20.6",
+		"typescript": "catalog:"
 	},
-	"peerDependencies": {
-		"typescript": "^5.5.3"
-	},
-	"workspaces": [
-		"apps/*",
-		"packages/*",
-		"playground/*",
-		"playground/storybook/packages/*"
-	],
 	"dependencies": {
 		"rehype-pretty-code": "^0.14.1"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": ["esbuild", "@swc/core"]
 	}
 }

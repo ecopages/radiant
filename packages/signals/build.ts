@@ -1,8 +1,6 @@
 import { copyFile, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-type PackageJsonExport = string | { import?: string; types?: string };
-
 type PackageJsonShape = {
 	name: string;
 	version: string;
@@ -16,40 +14,17 @@ type PackageJsonShape = {
 	homepage?: string;
 	bugs?: { url: string };
 	author?: string;
-	main?: string;
-	module?: string;
-	types?: string;
 	type?: string;
 	publishConfig?: { access?: string; directory?: string };
 	sideEffects?: boolean | string[];
 	keywords?: string[];
-	files?: string[];
-	exports?: Record<string, PackageJsonExport>;
 	peerDependencies?: Record<string, string>;
+	main?: string;
+	module?: string;
+	types?: string;
+	files?: string[];
+	exports?: Record<string, { types?: string; import?: string } | string>;
 };
-
-function stripDistPrefix(value: string): string {
-	if (value.startsWith('./dist/')) {
-		return `./${value.slice('./dist/'.length)}`;
-	}
-
-	if (value.startsWith('dist/')) {
-		return `./${value.slice('dist/'.length)}`;
-	}
-
-	return value;
-}
-
-function rewriteExport(value: PackageJsonExport): PackageJsonExport {
-	if (typeof value === 'string') {
-		return stripDistPrefix(value);
-	}
-
-	return {
-		...(value.types ? { types: stripDistPrefix(value.types) } : {}),
-		...(value.import ? { import: stripDistPrefix(value.import) } : {}),
-	};
-}
 
 function createDistPackageJson(): PackageJsonShape {
 	const packageJson = JSON.parse(
@@ -65,18 +40,22 @@ function createDistPackageJson(): PackageJsonShape {
 		bugs: packageJson.bugs,
 		author: packageJson.author,
 		license: packageJson.license,
-		main: packageJson.main ? stripDistPrefix(packageJson.main) : undefined,
-		module: packageJson.module ? stripDistPrefix(packageJson.module) : undefined,
-		types: packageJson.types ? stripDistPrefix(packageJson.types) : undefined,
 		type: packageJson.type,
 		publishConfig: packageJson.publishConfig?.access ? { access: packageJson.publishConfig.access } : undefined,
 		sideEffects: packageJson.sideEffects,
-		files: ['**/*'],
 		keywords: packageJson.keywords,
-		exports: packageJson.exports
-			? Object.fromEntries(Object.entries(packageJson.exports).map(([key, value]) => [key, rewriteExport(value)]))
-			: undefined,
 		peerDependencies: packageJson.peerDependencies,
+		main: './index.js',
+		module: './index.js',
+		types: './index.d.ts',
+		files: ['**/*'],
+		exports: {
+			'.': {
+				types: './index.d.ts',
+				import: './index.js',
+			},
+			'./package.json': './package.json',
+		},
 	};
 }
 

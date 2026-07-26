@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'playground/*'
+  - 'playground/storybook/packages/*'
+
+catalog:
+  typescript: ~7.0.2

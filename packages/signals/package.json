@@ -41,7 +41,7 @@
 	},
 	"scripts": {
 		"build:lib": "bun run clean && bun run build:files && bun run build:types",
-		"build:files": "bun run ./build.ts",
+		"build:files": "bun run ./build.ts && bun run build:types",
 		"build:types": "tsc -p tsconfig.build.json",
 		"clean": "rm -rf ./dist",
 		"size:check": "bun run ./check-size.ts",
