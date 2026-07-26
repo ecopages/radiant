@@ -11,6 +11,12 @@ export type RuiWindowSplitterProps = {
 
 export type RuiWindowSplitterChangeDetail = { value: number };
 
+type RuiWindowSplitterBindings = {
+	value: number;
+	label: string;
+	orientation: NonNullable<RuiWindowSplitterProps['orientation']>;
+};
+
 /**
  * `<rui-window-splitter>` — a movable separator between two panes.
  *
@@ -22,7 +28,7 @@ export type RuiWindowSplitterChangeDetail = { value: number };
  * @element rui-window-splitter
  */
 @customElement('rui-window-splitter')
-export class RuiWindowSplitter extends RadiantElement {
+export class RuiWindowSplitter extends RadiantElement<RuiWindowSplitterBindings> {
 	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: NonNullable<RuiWindowSplitterProps['orientation']>;
 	@prop({ type: String, defaultValue: 'Split view' }) label: string;
@@ -32,6 +38,11 @@ export class RuiWindowSplitter extends RadiantElement {
 
 	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
+
+	/** `class` stays a plain-read composition; only the derived aria-orientation string is bound. */
+	private readonly resolvedAriaOrientation = this.$.orientation.map((orientation) =>
+		orientation !== 'vertical' ? 'vertical' : 'horizontal',
+	);
 
 	private dragging = false;
 
@@ -126,11 +137,11 @@ export class RuiWindowSplitter extends RadiantElement {
 					class="rui-window-splitter__separator"
 					role="separator"
 					tabindex={0}
-					aria-orientation={horizontal ? 'vertical' : 'horizontal'}
-					aria-valuenow={this.value}
+					aria-orientation={this.resolvedAriaOrientation}
+					aria-valuenow={this.$.value}
 					aria-valuemin={20}
 					aria-valuemax={80}
-					aria-label={this.label}
+					aria-label={this.$.label}
 				></div>
 				<div class="rui-window-splitter__pane">
 					<slot name="secondary"></slot>

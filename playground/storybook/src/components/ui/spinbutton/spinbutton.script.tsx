@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiSpinbuttonProps = {
@@ -12,6 +12,17 @@ export type RuiSpinbuttonProps = {
 };
 
 export type RuiSpinbuttonChangeDetail = { value: number };
+
+type RuiSpinbuttonBindings = {
+	value: number;
+	disabled: boolean;
+	label: string;
+	name: string;
+	min: number;
+	max: number;
+	decreaseDisabled: boolean;
+	increaseDisabled: boolean;
+};
 
 /**
  * `<rui-spinbutton>` — an input restricted to a discrete numeric range.
@@ -27,7 +38,7 @@ export type RuiSpinbuttonChangeDetail = { value: number };
  * @fires rui-change
  */
 @customElement('rui-spinbutton')
-export class RuiSpinbutton extends RadiantElement {
+export class RuiSpinbutton extends RadiantElement<RuiSpinbuttonBindings> {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
@@ -38,6 +49,20 @@ export class RuiSpinbutton extends RadiantElement {
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSpinbuttonChangeDetail>;
+
+	@state decreaseDisabled = false;
+	@state increaseDisabled = false;
+
+	private readonly nameAttr = this.$.name.map((name) => name || undefined);
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
+
+	/** Derived from disabled/value/min/max — recomputed here instead of per-render. */
+	@onUpdated(['disabled', 'value', 'min', 'max'])
+	onRangeUpdated(): void {
+		this.decreaseDisabled = this.isDecreaseDisabled();
+		this.increaseDisabled = this.isIncreaseDisabled();
+		queueMicrotask(() => this.syncSlottedStepperControls());
+	}
 
 	private syncSlottedStepperControls(): void {
 		const decreaseDisabled = this.isDecreaseDisabled();
@@ -123,16 +148,11 @@ export class RuiSpinbutton extends RadiantElement {
 	}
 
 	override render() {
-		const decreaseDisabled = this.isDecreaseDisabled();
-		const increaseDisabled = this.isIncreaseDisabled();
-
-		queueMicrotask(() => this.syncSlottedStepperControls());
-
 		return (
 			<div class="rui-spinbutton">
 				{this.label ? (
 					<span class="rui-spinbutton__label" id={`${this.id || 'spin'}-label`}>
-						{this.label}
+						{this.$.label}
 					</span>
 				) : null}
 				<div class="rui-spinbutton__control">
@@ -142,7 +162,7 @@ export class RuiSpinbutton extends RadiantElement {
 							class="rui-button rui-button--outline rui-button--sm"
 							data-spinbutton-action="decrease"
 							aria-label="Decrease"
-							disabled={decreaseDisabled}
+							disabled={this.$.decreaseDisabled}
 						>
 							−
 						</button>
@@ -155,13 +175,13 @@ export class RuiSpinbutton extends RadiantElement {
 						data-rui-control-type="number"
 						class="rui-spinbutton__input"
 						role="spinbutton"
-						value={String(this.value)}
-						disabled={this.disabled}
-						name={this.name || undefined}
-						aria-valuemin={this.min}
-						aria-valuemax={this.max}
-						aria-valuenow={this.value}
-						aria-label={this.label || undefined}
+						prop:value={this.$.value.map(String)}
+						disabled={this.$.disabled}
+						name={this.nameAttr}
+						aria-valuemin={this.$.min}
+						aria-valuemax={this.$.max}
+						aria-valuenow={this.$.value}
+						aria-label={this.resolvedAriaLabel}
 					/>
 					<slot name="increase">
 						<button
@@ -169,7 +189,7 @@ export class RuiSpinbutton extends RadiantElement {
 							class="rui-button rui-button--outline rui-button--sm"
 							data-spinbutton-action="increase"
 							aria-label="Increase"
-							disabled={increaseDisabled}
+							disabled={this.$.increaseDisabled}
 						>
 							+
 						</button>

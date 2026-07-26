@@ -10,6 +10,11 @@ export type RuiListboxProps = {
 
 export type RuiListboxChangeDetail = { value: string };
 
+type RuiListboxBindings = {
+	label: string;
+	disabled: boolean;
+};
+
 /**
  * `<rui-listbox>` — a list of options where one may be selected.
  *
@@ -20,13 +25,16 @@ export type RuiListboxChangeDetail = { value: string };
  * @fires rui-change
  */
 @customElement('rui-listbox')
-export class RuiListbox extends RadiantElement {
+export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiListboxChangeDetail>;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
+	private readonly resolvedAriaDisabled = this.$.disabled.map((disabled) => (disabled ? 'true' : undefined));
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -96,8 +104,8 @@ export class RuiListbox extends RadiantElement {
 				role="listbox"
 				data-rui-control
 				data-rui-control-type="text"
-				aria-label={this.label || undefined}
-				aria-disabled={this.disabled ? 'true' : undefined}
+				aria-label={this.resolvedAriaLabel}
+				aria-disabled={this.resolvedAriaDisabled}
 			>
 				<slot></slot>
 			</div>
