@@ -6,6 +6,10 @@ export type RuiNavigationMenuProps = {
 	label?: string;
 };
 
+type RuiNavigationMenuBindings = {
+	label: string;
+};
+
 /**
  * `<rui-navigation-menu>` — a composition-first site navigation shell.
  *
@@ -22,8 +26,10 @@ export type RuiNavigationMenuProps = {
  * @slot panels - Disclosure panels composed from other primitives.
  */
 @customElement('rui-navigation-menu')
-export class RuiNavigationMenu extends RadiantElement {
+export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private openValue: string | null = null;
 
@@ -347,7 +353,7 @@ export class RuiNavigationMenu extends RadiantElement {
 
 	override render() {
 		return (
-			<nav class="rui-navigation-menu" data-ref="root" aria-label={this.label || undefined}>
+			<nav class="rui-navigation-menu" data-ref="root" aria-label={this.resolvedAriaLabel}>
 				<div class="rui-navigation-menu__bar">
 					<slot name="triggers"></slot>
 				</div>

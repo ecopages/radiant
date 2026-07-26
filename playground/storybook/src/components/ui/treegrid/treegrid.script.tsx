@@ -13,6 +13,10 @@ export type RuiTreegridChangeDetail = {
 	columnIndex: number;
 };
 
+type RuiTreegridBindings = {
+	label: string;
+};
+
 /**
  * `<rui-treegrid>` — a hierarchical grid navigated with arrow keys.
  *
@@ -27,12 +31,14 @@ export type RuiTreegridChangeDetail = {
  * @fires rui-change
  */
 @customElement('rui-treegrid')
-export class RuiTreegrid extends RadiantElement {
+export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreegridChangeDetail>;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getDataRows(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="row"][data-row-id]'));
@@ -276,7 +282,7 @@ export class RuiTreegrid extends RadiantElement {
 
 	override render() {
 		return (
-			<div class="rui-treegrid" role="treegrid" aria-label={this.label || undefined}>
+			<div class="rui-treegrid" role="treegrid" aria-label={this.resolvedAriaLabel}>
 				<slot></slot>
 			</div>
 		);
