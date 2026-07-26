@@ -30,6 +30,7 @@ export class RenderRuntime {
 	readonly #renderWatcher: ReactiveWatcher;
 	#slotProjectionObserver?: MutationObserver;
 	#slotProjectionVersion = 0;
+	#hasMounted = false;
 
 	constructor(host: RenderRuntimeHost) {
 		this.#host = host;
@@ -71,6 +72,7 @@ export class RenderRuntime {
 		try {
 			hydrateJsx(this.resolveTrackedRenderOutput().value, renderTarget);
 		} finally {
+			this.#hasMounted = true;
 			this.observeSlotProjection();
 		}
 	}
@@ -81,6 +83,7 @@ export class RenderRuntime {
 		try {
 			renderJsx(this.resolveTrackedRenderOutput().value, renderTarget);
 		} finally {
+			this.#hasMounted = true;
 			this.observeSlotProjection();
 		}
 	}
@@ -143,7 +146,12 @@ export class RenderRuntime {
 			return;
 		}
 
-		if (this.#host.childNodes.length > 0) {
+		// Only trust "the host has children" as authored slot content before the host's
+		// own first render/hydrate pass has run. After that, any children present are the
+		// host's own previously-rendered output (light-DOM mode writes into `this.#host`),
+		// not user-authored content — capturing them here would feed a render's own output
+		// back into itself as "slot content" on the next pass.
+		if (!this.#hasMounted && this.#host.childNodes.length > 0) {
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;
 		}
