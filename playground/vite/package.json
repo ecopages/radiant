@@ -3,15 +3,17 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
-		"dev:legacy": "vite -- --legacy",
-		"build": "cd ../.. && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && cd playground/vite && tsc && vite build",
+		"ensure-styles": "pnpm --filter @ecopages/radiant-ui copy-styles",
+		"dev": "pnpm run ensure-styles && vite",
+		"dev:legacy": "pnpm run ensure-styles && vite -- --legacy",
+		"build": "cd ../.. && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/radiant-ui copy-styles && cd playground/vite && tsc && vite build",
 		"preview": "vite preview",
 		"test:e2e": "node --test ./test/vite-page.e2e.test.mjs"
 	},
 	"dependencies": {
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
+		"@ecopages/radiant-ui": "workspace:*",
 		"@ecopages/signals": "workspace:*",
 		"@floating-ui/dom": "^1.6.11"
 	},
