@@ -19,11 +19,6 @@ export default defineConfig({
 			'@': path.join(dirname, 'src'),
 		},
 	},
-	esbuild: {
-		jsx: 'automatic',
-		jsxImportSource: '@ecopages/jsx',
-		target: 'es2022',
-	},
 	test: {
 		projects: [
 			{
