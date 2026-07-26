@@ -5,6 +5,10 @@ export type RuiGridProps = {
 	label?: string;
 };
 
+type RuiGridBindings = {
+	label: string;
+};
+
 /**
  * `<rui-grid>` — an interactive grid navigated with arrow keys.
  *
@@ -16,8 +20,10 @@ export type RuiGridProps = {
  * @element rui-grid
  */
 @customElement('rui-grid')
-export class RuiGrid extends RadiantElement {
+export class RuiGrid extends RadiantElement<RuiGridBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -79,7 +85,7 @@ export class RuiGrid extends RadiantElement {
 
 	override render() {
 		return (
-			<div class="rui-grid" role="grid" aria-label={this.label || undefined}>
+			<div class="rui-grid" role="grid" aria-label={this.resolvedAriaLabel}>
 				<slot></slot>
 			</div>
 		);

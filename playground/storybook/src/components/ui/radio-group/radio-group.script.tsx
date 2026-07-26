@@ -16,6 +16,11 @@ export type RuiRadioGroupChangeDetail = {
 	value: string;
 };
 
+type RuiRadioGroupBindings = {
+	label: string;
+	disabled: boolean;
+};
+
 /**
  * `<rui-radio-group>` — a set of radio buttons where only one option may
  * be selected at a time.
@@ -36,7 +41,7 @@ export type RuiRadioGroupChangeDetail = {
  * @fires rui-change - Emitted after the selected value changes; `detail.value` holds the new value.
  */
 @customElement('rui-radio-group')
-export class RuiRadioGroup extends RadiantElement {
+export class RuiRadioGroup extends RadiantElement<RuiRadioGroupBindings> {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -44,6 +49,9 @@ export class RuiRadioGroup extends RadiantElement {
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiRadioGroupChangeDetail>;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
+	private readonly resolvedAriaDisabled = this.$.disabled.map((disabled) => (disabled ? 'true' : undefined));
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -76,8 +84,8 @@ export class RuiRadioGroup extends RadiantElement {
 				role="radiogroup"
 				data-rui-control
 				data-rui-control-type="text"
-				aria-label={this.label || undefined}
-				aria-disabled={this.disabled ? 'true' : undefined}
+				aria-label={this.resolvedAriaLabel}
+				aria-disabled={this.resolvedAriaDisabled}
 			>
 				<slot></slot>
 			</div>

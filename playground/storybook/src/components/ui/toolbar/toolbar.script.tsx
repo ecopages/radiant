@@ -7,6 +7,10 @@ export type RuiToolbarProps = {
 	exclusiveToggles?: boolean;
 };
 
+type RuiToolbarBindings = {
+	label: string;
+};
+
 /**
  * `<rui-toolbar>` — a container for grouping controls.
  *
@@ -17,9 +21,11 @@ export type RuiToolbarProps = {
  * @element rui-toolbar
  */
 @customElement('rui-toolbar')
-export class RuiToolbar extends RadiantElement {
+export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) exclusiveToggles: boolean;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getItems(): HTMLElement[] {
 		return Array.from(
@@ -78,7 +84,7 @@ export class RuiToolbar extends RadiantElement {
 
 	override render() {
 		return (
-			<div class="rui-toolbar" role="toolbar" aria-label={this.label || undefined}>
+			<div class="rui-toolbar" role="toolbar" aria-label={this.resolvedAriaLabel}>
 				<slot></slot>
 			</div>
 		);

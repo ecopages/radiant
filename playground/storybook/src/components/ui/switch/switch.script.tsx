@@ -14,6 +14,12 @@ export type RuiSwitchChangeDetail = {
 	checked: boolean;
 };
 
+type RuiSwitchBindings = {
+	checked: boolean;
+	disabled: boolean;
+	name: string;
+};
+
 /**
  * `<rui-switch>` — a binary on/off control.
  *
@@ -38,13 +44,15 @@ export type RuiSwitchChangeDetail = {
  * @fires rui-change - Emitted after the checked state changes; `detail.checked` holds the new state.
  */
 @customElement('rui-switch')
-export class RuiSwitch extends RadiantElement {
+export class RuiSwitch extends RadiantElement<RuiSwitchBindings> {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) checked: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: String, defaultValue: '' }) name: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSwitchChangeDetail>;
+
+	private readonly nameAttr = this.$.name.map((name) => name || undefined);
 
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {
@@ -63,9 +71,9 @@ export class RuiSwitch extends RadiantElement {
 					data-rui-control
 					data-rui-control-type="boolean"
 					class="rui-switch__input"
-					checked={this.checked}
-					disabled={this.disabled}
-					name={this.name || undefined}
+					prop:checked={this.$.checked}
+					disabled={this.$.disabled}
+					name={this.nameAttr}
 				/>
 				<span class="rui-switch__track" aria-hidden="true">
 					<span class="rui-switch__thumb"></span>

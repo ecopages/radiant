@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiCheckboxProps = {
@@ -23,6 +23,14 @@ export type RuiCheckboxChangeDetail = {
 	indeterminate: boolean;
 };
 
+type RuiCheckboxBindings = {
+	checked: boolean;
+	indeterminate: boolean;
+	disabled: boolean;
+	value: string;
+	name: string;
+};
+
 /**
  * `<rui-checkbox>` — a dual-state or tri-state checkbox.
  *
@@ -40,7 +48,7 @@ export type RuiCheckboxChangeDetail = {
  * @fires rui-change - Emitted after the checked/indeterminate state changes.
  */
 @customElement('rui-checkbox')
-export class RuiCheckbox extends RadiantElement {
+export class RuiCheckbox extends RadiantElement<RuiCheckboxBindings> {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) checked: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) indeterminate: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
@@ -50,17 +58,8 @@ export class RuiCheckbox extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiCheckboxChangeDetail>;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.syncIndeterminate());
-	}
-
-	@onUpdated(['indeterminate', 'checked'])
-	syncIndeterminate(): void {
-		const input = this.querySelector<HTMLInputElement>('input[type="checkbox"]');
-		if (!input) return;
-		input.indeterminate = this.indeterminate;
-	}
+	private readonly nameAttr = this.$.name.map((name) => name || undefined);
+	private readonly resolvedAriaChecked = this.$.indeterminate.map((indeterminate) => (indeterminate ? 'mixed' : undefined));
 
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {
@@ -79,11 +78,12 @@ export class RuiCheckbox extends RadiantElement {
 					data-rui-control
 					data-rui-control-type="boolean"
 					class="rui-checkbox__input"
-					checked={this.checked}
-					disabled={this.disabled}
-					value={this.value}
-					name={this.name || undefined}
-					aria-checked={this.indeterminate ? 'mixed' : undefined}
+					prop:checked={this.$.checked}
+					disabled={this.$.disabled}
+					prop:value={this.$.value}
+					name={this.nameAttr}
+					prop:indeterminate={this.$.indeterminate}
+					aria-checked={this.resolvedAriaChecked}
 				/>
 				<span class="rui-checkbox__control" aria-hidden="true"></span>
 				<span class="rui-checkbox__label">
