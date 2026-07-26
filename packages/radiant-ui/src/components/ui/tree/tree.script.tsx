@@ -19,7 +19,8 @@ type RuiTreeBindings = {
  *
  * Implements a single-select APG Tree View with Arrow key navigation,
  * Home/End, parent navigation on ArrowLeft, and Enter/Space to select.
- * Expand/collapse is handled with ArrowRight/ArrowLeft (and `*` for siblings).
+ * Expand/collapse is handled with ArrowRight/ArrowLeft (and `*` for siblings);
+ * click or Enter on a parent also toggles expansion.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treeview/
  * @element rui-tree
@@ -134,6 +135,9 @@ export class RuiTree extends RadiantElement<RuiTreeBindings> {
 	onClick(event: Event): void {
 		const item = (event.target as HTMLElement).closest('[role="treeitem"]') as HTMLElement | null;
 		if (!item || !this.contains(item)) return;
+		if (item.hasAttribute('aria-expanded')) {
+			this.setExpanded(item, item.getAttribute('aria-expanded') !== 'true');
+		}
 		this.select(item);
 	}
 
@@ -194,7 +198,14 @@ export class RuiTree extends RadiantElement<RuiTreeBindings> {
 				}
 				break;
 			}
-			case 'Enter':
+			case 'Enter': {
+				event.preventDefault();
+				if (current.hasAttribute('aria-expanded')) {
+					this.setExpanded(current, current.getAttribute('aria-expanded') !== 'true');
+				}
+				this.select(current);
+				break;
+			}
 			case ' ': {
 				event.preventDefault();
 				this.select(current);
