@@ -538,14 +538,20 @@ export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {
 	}
 
 	/**
-	 * Only `aria-label` is bound below. Everything else in this render()
-	 * (disablePrev/disableNext/playing/ariaLive/indicators/rotation) stays
-	 * plain reads deliberately: autoplay timers, swipe gestures, and
-	 * dynamically created/destroyed indicator buttons put this in the same
-	 * high-frequency interactive category as slider — deferred as a follow-up
-	 * requiring dedicated design/testing rather than converted under this
-	 * sweep's pace (see tooltip/menu-button in this same migration for the
-	 * regressions that category already produced here).
+	 * Only `aria-label` is bound below. Everything else in this render() stays
+	 * a plain read — audited, not an outstanding gap:
+	 * - disablePrev/disableNext must apply uniformly to the default button AND
+	 *   any consumer-supplied `[data-carousel-action="prev"/"next"]` element
+	 *   slotted in (see syncPrevNextDisabled()) — a binding only patches this
+	 *   host's own template position, not a slotted replacement.
+	 * - playing/ariaLive derive from `paused` and the live `timer` handle,
+	 *   plain instance fields mutated across pointer/focus/keyboard handlers
+	 *   and `setInterval`, not reactive members — promoting them would add an
+	 *   explicit notify step at every one of those call sites for no behavior
+	 *   change and real drift risk.
+	 * - the indicator buttons are a variable-length list built with
+	 *   `replaceChildren()` (see syncIndicators()) — bindings patch one value
+	 *   at one position, they don't reconcile a dynamic list.
 	 */
 	override render() {
 		const showRotation = this.shouldShowRotationControl();
