@@ -1,0 +1,80 @@
+/**
+ * Semantic color roles — Storybook brand presets + Tailwind bridge.
+ * Load `colors/palettes.css` before this file.
+ */
+@import './presets/colors/index.css';
+
+@theme {
+	--color-transparent: transparent;
+
+	--color-gray-50: var(--gray-50);
+	--color-gray-100: var(--gray-100);
+	--color-gray-200: var(--gray-200);
+	--color-gray-300: var(--gray-300);
+	--color-gray-400: var(--gray-400);
+	--color-gray-500: var(--gray-500);
+	--color-gray-600: var(--gray-600);
+	--color-gray-700: var(--gray-700);
+	--color-gray-800: var(--gray-800);
+	--color-gray-900: var(--gray-900);
+	--color-gray-950: var(--gray-950);
+
+	--color-primary: var(--primary);
+	--color-primary-light: var(--primary-light);
+	--color-primary-dark: var(--primary-dark);
+	--color-on-primary: var(--on-primary);
+	--color-primary-container: var(--primary-container);
+	--color-on-primary-container: var(--on-primary-container);
+
+	--color-secondary: var(--secondary);
+	--color-secondary-light: var(--secondary-light);
+	--color-secondary-dark: var(--secondary-dark);
+	--color-on-secondary: var(--on-secondary);
+	--color-secondary-container: var(--secondary-container);
+	--color-on-secondary-container: var(--on-secondary-container);
+
+	--color-tertiary: var(--tertiary);
+	--color-on-tertiary: var(--on-tertiary);
+	--color-tertiary-container: var(--tertiary-container);
+	--color-on-tertiary-container: var(--on-tertiary-container);
+
+	--color-error: var(--error);
+	--color-error-light: var(--error-light);
+	--color-error-dark: var(--error-dark);
+	--color-on-error: var(--on-error);
+	--color-error-container: var(--error-container);
+	--color-on-error-container: var(--on-error-container);
+
+	--color-success: var(--success);
+	--color-success-light: var(--success-light);
+	--color-success-dark: var(--success-dark);
+	--color-on-success: var(--on-success);
+	--color-success-container: var(--success-container);
+	--color-on-success-container: var(--on-success-container);
+
+	--color-neutral: var(--neutral);
+
+	--color-surface: var(--surface);
+	--color-on-surface: var(--on-surface);
+	--color-surface-container-lowest: var(--surface-container-lowest);
+	--color-on-surface-container-lowest: var(--on-surface-container-lowest);
+	--color-surface-container-low: var(--surface-container-low);
+	--color-on-surface-container-low: var(--on-surface-container-low);
+	--color-surface-container: var(--surface-container);
+	--color-on-surface-container: var(--on-surface-container);
+	--color-surface-container-high: var(--surface-container-high);
+	--color-on-surface-container-high: var(--on-surface-container-high);
+	--color-surface-container-highest: var(--surface-container-highest);
+	--color-on-surface-container-highest: var(--on-surface-container-highest);
+
+	--color-background: var(--background);
+	--color-on-background: var(--on-background);
+
+	--color-border: var(--border);
+	--color-focus-ring: var(--focus-ring);
+	--color-link: var(--link);
+	--color-overlay: var(--overlay);
+
+	--color-background-code: var(--background-code);
+	--color-on-background-code: var(--on-background-code);
+}

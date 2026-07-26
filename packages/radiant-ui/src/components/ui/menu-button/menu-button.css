@@ -1,0 +1,43 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-menu-button {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-menu-button {
+		@apply relative inline-flex;
+	}
+
+	.rui-menu-button__trigger {
+		@apply gap-inline;
+	}
+
+	.rui-menu-button__chevron {
+		@apply inline-block border-x-4 border-t-[5px] border-x-transparent border-t-current;
+		width: 0;
+		height: 0;
+	}
+
+	.rui-menu-button__menu {
+		@apply absolute z-popover min-w-40 rounded-container border border-border bg-background p-1 shadow-md;
+	}
+
+	.rui-menu-button__menu[hidden] {
+		@apply hidden;
+	}
+
+	.rui-menu-button__item {
+		@apply flex w-full cursor-pointer items-center rounded-control border-0 bg-transparent px-3 py-2 text-left text-sm;
+		@apply text-on-background;
+	}
+
+	.rui-menu-button__item:hover,
+	.rui-menu-button__item:focus-visible {
+		@apply bg-surface outline-none;
+	}
+
+	.rui-menu-button__item[aria-disabled='true'] {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+}

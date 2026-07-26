@@ -1,0 +1,126 @@
+/* Aurora (vivid) — `data-rui-colors="aurora"` */
+html[data-rui-colors='aurora'] {
+	--gray-50: var(--color-pale-sky-50);
+	--gray-100: var(--color-pale-sky-100);
+	--gray-200: var(--color-pale-sky-200);
+	--gray-300: var(--color-pale-sky-300);
+	--gray-400: var(--color-pale-sky-400);
+	--gray-500: var(--color-pale-sky-500);
+	--gray-600: var(--color-pale-sky-600);
+	--gray-700: var(--color-pale-sky-700);
+	--gray-800: var(--color-pale-sky-800);
+	--gray-900: var(--color-pale-sky-900);
+	--gray-950: var(--color-pale-sky-950);
+
+	--primary: var(--color-havelock-blue-800);
+	--on-primary: var(--color-white);
+	--primary-container: var(--color-havelock-blue-100);
+	--on-primary-container: var(--color-havelock-blue-800);
+	--primary-light: var(--color-havelock-blue-500);
+	--primary-dark: var(--color-havelock-blue-900);
+
+	--secondary: var(--color-hit-pink-600);
+	--on-secondary: var(--color-black);
+	--secondary-container: var(--color-hit-pink-100);
+	--on-secondary-container: var(--color-hit-pink-800);
+	--secondary-light: var(--color-hit-pink-400);
+	--secondary-dark: var(--color-hit-pink-800);
+
+	--tertiary: var(--color-fruit-salad-700);
+	--on-tertiary: var(--color-white);
+	--tertiary-container: var(--color-fruit-salad-100);
+	--on-tertiary-container: var(--color-fruit-salad-800);
+
+	--error: var(--color-cardinal-600);
+	--on-error: var(--color-white);
+	--error-container: var(--color-cardinal-100);
+	--on-error-container: var(--color-cardinal-800);
+	--error-light: var(--color-cardinal-400);
+	--error-dark: var(--color-cardinal-800);
+
+	--success: var(--color-fruit-salad-600);
+	--on-success: var(--color-white);
+	--success-container: var(--color-fruit-salad-100);
+	--on-success-container: var(--color-fruit-salad-800);
+	--success-light: var(--color-fruit-salad-400);
+	--success-dark: var(--color-fruit-salad-800);
+
+	--neutral: var(--color-pale-sky-500);
+
+	--surface: var(--color-pale-sky-50);
+	--on-surface: var(--color-black);
+	--surface-container-lowest: var(--color-pale-sky-100);
+	--on-surface-container-lowest: var(--color-black);
+	--surface-container-low: var(--color-pale-sky-200);
+	--on-surface-container-low: var(--color-black);
+	--surface-container: var(--color-pale-sky-300);
+	--on-surface-container: var(--color-black);
+	--surface-container-high: var(--color-pale-sky-400);
+	--on-surface-container-high: var(--color-black);
+	--surface-container-highest: var(--color-pale-sky-500);
+	--on-surface-container-highest: var(--color-black);
+
+	--background: var(--color-white);
+	--on-background: var(--color-black);
+
+	--border: var(--color-pale-sky-400);
+	--focus-ring: var(--color-havelock-blue-500);
+	--link: var(--color-havelock-blue-700);
+	--overlay: oklch(0% 0 0 / 0.4);
+
+	--background-code: var(--color-pale-sky-900);
+	--on-background-code: var(--color-fruit-salad-300);
+}
+
+html.dark[data-rui-colors='aurora'] {
+	--primary: var(--color-havelock-blue-200);
+	--on-primary: var(--color-black);
+	--primary-container: var(--color-havelock-blue-800);
+	--on-primary-container: var(--color-havelock-blue-50);
+	--primary-light: var(--color-havelock-blue-300);
+	--primary-dark: var(--color-havelock-blue-900);
+
+	--secondary: var(--color-hit-pink-200);
+	--on-secondary: var(--color-black);
+	--secondary-container: var(--color-hit-pink-800);
+	--on-secondary-container: var(--color-hit-pink-50);
+
+	--tertiary: var(--color-fruit-salad-200);
+	--on-tertiary: var(--color-black);
+	--tertiary-container: var(--color-fruit-salad-800);
+	--on-tertiary-container: var(--color-fruit-salad-50);
+
+	--error: var(--color-cardinal-200);
+	--on-error: var(--color-black);
+	--error-container: var(--color-cardinal-800);
+	--on-error-container: var(--color-cardinal-50);
+
+	--success: var(--color-fruit-salad-200);
+	--on-success: var(--color-black);
+	--success-container: var(--color-fruit-salad-800);
+	--on-success-container: var(--color-fruit-salad-50);
+
+	--surface: var(--color-pale-sky-975);
+	--on-surface: var(--color-white);
+	--surface-container-lowest: var(--color-pale-sky-950);
+	--on-surface-container-lowest: var(--color-white);
+	--surface-container-low: var(--color-pale-sky-900);
+	--on-surface-container-low: var(--color-white);
+	--surface-container: var(--color-pale-sky-800);
+	--on-surface-container: var(--color-white);
+	--surface-container-high: var(--color-pale-sky-700);
+	--on-surface-container-high: var(--color-white);
+	--surface-container-highest: var(--color-pale-sky-600);
+	--on-surface-container-highest: var(--color-white);
+
+	--background: var(--color-black);
+	--on-background: var(--color-white);
+
+	--border: var(--color-pale-sky-700);
+	--focus-ring: var(--color-havelock-blue-400);
+	--link: var(--color-havelock-blue-300);
+	--overlay: oklch(0% 0 0 / 0.6);
+
+	--background-code: var(--color-pale-sky-950);
+	--on-background-code: var(--color-fruit-salad-200);
+}

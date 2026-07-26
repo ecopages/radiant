@@ -1,0 +1,27 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-breadcrumb {
+	@apply block;
+}
+
+@layer components {
+	.rui-breadcrumb__list {
+		@apply m-0 flex list-none flex-wrap items-center gap-inline p-0 text-sm;
+	}
+
+	.rui-breadcrumb__item {
+		@apply inline-flex items-center gap-inline;
+	}
+
+	.rui-breadcrumb a {
+		@apply text-primary underline-offset-2 hover:underline;
+	}
+
+	.rui-breadcrumb [aria-current='page'] {
+		@apply font-medium text-on-background;
+	}
+
+	.rui-breadcrumb__separator {
+		@apply text-on-surface/60;
+	}
+}

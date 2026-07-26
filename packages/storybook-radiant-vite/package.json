@@ -1,0 +1,82 @@
+{
+	"name": "@ecopages/storybook-radiant-vite",
+	"version": "0.1.0-beta.0",
+	"description": "Storybook framework for @ecopages/radiant — Vite builder, Radiant JSX renderer, and SSR story modes",
+	"keywords": [
+		"storybook",
+		"storybook-framework",
+		"radiant",
+		"ecopages",
+		"web-components",
+		"vite",
+		"ssr"
+	],
+	"license": "MIT",
+	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./preset": {
+			"types": "./dist/preset.d.ts",
+			"default": "./dist/preset.js"
+		},
+		"./renderer-preset": {
+			"types": "./dist/renderer-preset.d.ts",
+			"default": "./dist/renderer-preset.js"
+		},
+		"./preview": {
+			"types": "./dist/preview.d.ts",
+			"default": "./dist/preview.js"
+		},
+		"./node": {
+			"types": "./dist/node/index.d.ts",
+			"default": "./dist/node/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist/**/*",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"clean": "rm -rf dist"
+	},
+	"dependencies": {
+		"@ecopages/vite-plugin-radiant": "workspace:*",
+		"@storybook/builder-vite": "^10.5.2",
+		"@storybook/global": "^5.0.0",
+		"esbuild": "^0.28.1",
+		"ts-dedent": "^2.2.0"
+	},
+	"devDependencies": {
+		"@types/node": "^24.13.2",
+		"tsup": "^8.5.0",
+		"typescript": "catalog:",
+		"vite": "^8.1.1"
+	},
+	"peerDependencies": {
+		"@ecopages/jsx": ">=0.3.0-beta.3 <1.0.0",
+		"@ecopages/radiant": ">=0.3.0-beta.3 <1.0.0",
+		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0",
+		"storybook": "^10.5.2",
+		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+	},
+	"peerDependenciesMeta": {
+		"vite": {
+			"optional": true
+		}
+	},
+	"sideEffects": [
+		"./dist/preview.js",
+		"./dist/index.js",
+		"./dist/entry-preview.js"
+	]
+}

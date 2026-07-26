@@ -1,0 +1,17 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-meter {
+	@apply block;
+}
+
+@layer components {
+	.rui-meter {
+		@apply flex items-center gap-3 text-sm;
+	}
+	.rui-meter__bar {
+		@apply h-3 w-48;
+	}
+	.rui-meter__value {
+		@apply tabular-nums text-on-surface;
+	}
+}
