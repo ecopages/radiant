@@ -1,10 +1,18 @@
-import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, onUpdated, prop, state } from '@ecopages/radiant';
 
 export type RuiMeterProps = {
 	value?: number;
 	min?: number;
 	max?: number;
 	label?: string;
+};
+
+type RuiMeterBindings = {
+	value: number;
+	min: number;
+	max: number;
+	label: string;
+	percent: number;
 };
 
 /**
@@ -16,28 +24,36 @@ export type RuiMeterProps = {
  * @element rui-meter
  */
 @customElement('rui-meter')
-export class RuiMeter extends RadiantElement {
+export class RuiMeter extends RadiantElement<RuiMeterBindings> {
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: String, defaultValue: '' }) label: string;
 
+	@state percent = 0;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
+
+	@onUpdated(['value', 'min', 'max'])
+	onRangeUpdated(): void {
+		this.percent = this.max === this.min ? 0 : Math.round(((this.value - this.min) / (this.max - this.min)) * 100);
+	}
+
 	override render() {
-		const percent = this.max === this.min ? 0 : Math.round(((this.value - this.min) / (this.max - this.min)) * 100);
 		return (
 			<div class="rui-meter">
-				{this.label ? <span class="rui-meter__label">{this.label}</span> : null}
+				{this.label ? <span class="rui-meter__label">{this.$.label}</span> : null}
 				<meter
 					class="rui-meter__bar"
-					min={this.min}
-					max={this.max}
-					value={this.value}
-					aria-label={this.label || undefined}
+					min={this.$.min}
+					max={this.$.max}
+					value={this.$.value}
+					aria-label={this.resolvedAriaLabel}
 				>
-					{percent}%
+					{this.$.percent}%
 				</meter>
 				<span class="rui-meter__value" aria-hidden="true">
-					{percent}%
+					{this.$.percent}%
 				</span>
 			</div>
 		);

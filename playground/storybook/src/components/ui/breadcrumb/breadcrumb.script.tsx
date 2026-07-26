@@ -13,6 +13,10 @@ export type RuiBreadcrumbItem = {
 	current?: boolean;
 };
 
+type RuiBreadcrumbBindings = {
+	label: string;
+};
+
 /**
  * `<rui-breadcrumb>` — a trail of links to ancestor pages in hierarchical order.
  *
@@ -27,12 +31,14 @@ export type RuiBreadcrumbItem = {
  * @slot - Authored breadcrumb list markup, or use the JSX view helper with `items`.
  */
 @customElement('rui-breadcrumb')
-export class RuiBreadcrumb extends RadiantElement {
+export class RuiBreadcrumb extends RadiantElement<RuiBreadcrumbBindings> {
 	@prop({ type: String, defaultValue: 'Breadcrumb' }) label: string;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || 'Breadcrumb');
 
 	override render() {
 		return (
-			<nav class="rui-breadcrumb" aria-label={this.label || 'Breadcrumb'}>
+			<nav class="rui-breadcrumb" aria-label={this.resolvedAriaLabel}>
 				<slot></slot>
 			</nav>
 		);

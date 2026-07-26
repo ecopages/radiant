@@ -4,6 +4,10 @@ export type RuiFeedProps = {
 	label?: string;
 };
 
+type RuiFeedBindings = {
+	label: string;
+};
+
 /**
  * `<rui-feed>` — a section that can load articles as the user scrolls.
  *
@@ -14,12 +18,14 @@ export type RuiFeedProps = {
  * @element rui-feed
  */
 @customElement('rui-feed')
-export class RuiFeed extends RadiantElement {
+export class RuiFeed extends RadiantElement<RuiFeedBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
+
+	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	override render() {
 		return (
-			<div class="rui-feed" role="feed" aria-label={this.label || undefined}>
+			<div class="rui-feed" role="feed" aria-label={this.resolvedAriaLabel}>
 				<slot></slot>
 			</div>
 		);
