@@ -52,11 +52,6 @@ export class RuiNavigationMenu extends RadiantElement {
 		return item.hasAttribute('data-navigation-trigger');
 	}
 
-	override disconnectedCallback(): void {
-		document.removeEventListener('click', this.onDocumentClick);
-		super.disconnectedCallback();
-	}
-
 	private getTriggers(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[data-navigation-trigger]'));
 	}
@@ -132,7 +127,6 @@ export class RuiNavigationMenu extends RadiantElement {
 
 		this.openValue = null;
 		this.syncPanels();
-		document.removeEventListener('click', this.onDocumentClick);
 
 		if (returnFocus) {
 			this.getTrigger(previous)?.focus();
@@ -148,7 +142,6 @@ export class RuiNavigationMenu extends RadiantElement {
 		this.openValue = value;
 		this.syncPanels();
 		queueMicrotask(() => {
-			document.addEventListener('click', this.onDocumentClick);
 			if (focusPanel) {
 				this.focusPanelEntry(value);
 			} else {
@@ -183,7 +176,12 @@ export class RuiNavigationMenu extends RadiantElement {
 		return event.composedPath().some((node) => node instanceof Node && openPanel.contains(node));
 	}
 
-	private onDocumentClick = (event: MouseEvent): void => {
+	@onEvent({ document: true, type: 'click' })
+	onDocumentClick(event: MouseEvent): void {
+		if (!this.openValue) {
+			return;
+		}
+
 		if (this.isWithinOpenPanel(event)) {
 			return;
 		}
@@ -194,7 +192,7 @@ export class RuiNavigationMenu extends RadiantElement {
 		}
 
 		this.closeMenu();
-	};
+	}
 
 	@onEvent({ document: true, type: 'keydown' })
 	onDocumentKeydown(event: KeyboardEvent): void {

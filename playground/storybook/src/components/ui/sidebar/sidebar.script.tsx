@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, event, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';
@@ -139,16 +139,11 @@ export class RuiSidebar extends RadiantElement {
 			this.syncPaneWidthVar();
 			this.bindMobileMediaQuery();
 		});
-
-		if (typeof document !== 'undefined') {
-			document.addEventListener('keydown', this.onHostKeydown);
-		}
 	}
 
 	override disconnectedCallback(): void {
 		this.endDrag();
 		this.unbindMobileMediaQuery();
-		document.removeEventListener('keydown', this.onHostKeydown);
 		super.disconnectedCallback();
 	}
 
@@ -353,8 +348,8 @@ export class RuiSidebar extends RadiantElement {
 		}
 	}
 
-	@bound
-	private onHostKeydown(event: Event): void {
+	@onEvent({ document: true, type: 'keydown' })
+	onHostKeydown(event: Event): void {
 		const keyboardEvent = event as KeyboardEvent;
 		if (keyboardEvent.key === 'Escape' && this.isMobile && this.isOpen()) {
 			keyboardEvent.preventDefault();

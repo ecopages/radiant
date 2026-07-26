@@ -28,16 +28,10 @@ export class RuiDisclosureGroup extends RadiantElement {
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.addEventListener('rui-disclosure-toggle', this.onDisclosureToggle);
 		queueMicrotask(() => {
 			this.syncChildrenAnimated();
 			this.syncTriggers();
 		});
-	}
-
-	override disconnectedCallback(): void {
-		this.removeEventListener('rui-disclosure-toggle', this.onDisclosureToggle);
-		super.disconnectedCallback();
 	}
 
 	private getTriggers(): HTMLElement[] {
@@ -72,7 +66,8 @@ export class RuiDisclosureGroup extends RadiantElement {
 		this.syncChildrenAnimated();
 	}
 
-	private onDisclosureToggle = (event: Event): void => {
+	@onEvent({ selector: 'rui-disclosure', type: 'rui-disclosure-toggle' })
+	onDisclosureToggle(event: Event): void {
 		if (this.multiple) {
 			return;
 		}
@@ -92,7 +87,7 @@ export class RuiDisclosureGroup extends RadiantElement {
 				disclosure.open = false;
 			}
 		}
-	};
+	}
 
 	@onEvent({ selector: '[data-disclosure-trigger]', type: 'keydown' })
 	onTriggerKeydown(event: KeyboardEvent): void {

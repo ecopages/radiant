@@ -64,7 +64,6 @@ export class RuiMenuButton extends RadiantElement {
 
 	override disconnectedCallback(): void {
 		this.teardownFloating();
-		document.removeEventListener('click', this.onDocumentClick);
 		super.disconnectedCallback();
 	}
 
@@ -109,12 +108,9 @@ export class RuiMenuButton extends RadiantElement {
 		if (this.open) {
 			this.teardownFloating();
 			this.cleanup = autoUpdate(this.triggerTarget, this.menuTarget, this.updatePosition);
-			// Defer so the opening click does not immediately close via the document listener.
-			queueMicrotask(() => document.addEventListener('click', this.onDocumentClick));
 			this.updatePosition();
 		} else {
 			this.teardownFloating();
-			document.removeEventListener('click', this.onDocumentClick);
 		}
 
 		const focus = this.pendingFocus;
@@ -137,8 +133,9 @@ export class RuiMenuButton extends RadiantElement {
 		if (wasOpen === next) this.syncOpenState();
 	}
 
-	@bound
+	@onEvent({ document: true, type: 'click' })
 	onDocumentClick(event: MouseEvent): void {
+		if (!this.open) return;
 		const target = event.target as Node;
 		if (this.triggerTarget?.contains(target) || this.menuTarget?.contains(target)) return;
 		this.setOpen(false);

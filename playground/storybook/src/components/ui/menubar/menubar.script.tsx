@@ -60,11 +60,6 @@ export class RuiMenubar extends RadiantElement {
 		queueMicrotask(() => applyRovingTabindex(this.getTopItems(), 0));
 	}
 
-	override disconnectedCallback(): void {
-		document.removeEventListener('click', this.onDocumentClick);
-		super.disconnectedCallback();
-	}
-
 	private closeOpenMenu(returnFocus = false): void {
 		if (!this.openRoot) return;
 		const top = this.openRoot.querySelector<HTMLElement>(':scope > [role="menuitem"]');
@@ -72,7 +67,6 @@ export class RuiMenubar extends RadiantElement {
 		if (top) top.setAttribute('aria-expanded', 'false');
 		if (menu) menu.hidden = true;
 		this.openRoot = null;
-		document.removeEventListener('click', this.onDocumentClick);
 		if (returnFocus && top) top.focus();
 	}
 
@@ -86,7 +80,6 @@ export class RuiMenubar extends RadiantElement {
 		topItem.setAttribute('aria-expanded', 'true');
 		menu.hidden = false;
 		this.openRoot = root;
-		queueMicrotask(() => document.addEventListener('click', this.onDocumentClick));
 
 		if (focus === 'first') {
 			const items = this.getMenuItems(menu);
@@ -95,9 +88,11 @@ export class RuiMenubar extends RadiantElement {
 		}
 	}
 
-	private onDocumentClick = (event: MouseEvent): void => {
+	@onEvent({ document: true, type: 'click' })
+	onDocumentClick(event: MouseEvent): void {
+		if (!this.openRoot) return;
 		if (!this.contains(event.target as Node)) this.closeOpenMenu();
-	};
+	}
 
 	@onEvent({ selector: '[data-ref="menubar"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'keydown' })
 	onTopKeydown(event: KeyboardEvent): void {

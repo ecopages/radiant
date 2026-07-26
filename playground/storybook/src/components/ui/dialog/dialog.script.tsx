@@ -59,11 +59,6 @@ export class RuiDialog extends RadiantElement {
 		queueMicrotask(() => this.syncOpenState());
 	}
 
-	override disconnectedCallback(): void {
-		document.removeEventListener('keydown', this.onDocumentKeydown);
-		super.disconnectedCallback();
-	}
-
 	@bound
 	@onUpdated(['open', 'alert', 'label'])
 	syncOpenState(): void {
@@ -92,10 +87,8 @@ export class RuiDialog extends RadiantElement {
 
 		if (this.open) {
 			this.previouslyFocused = document.activeElement as HTMLElement | null;
-			document.addEventListener('keydown', this.onDocumentKeydown);
 			queueMicrotask(() => this.focusInitial());
 		} else {
-			document.removeEventListener('keydown', this.onDocumentKeydown);
 			this.previouslyFocused?.focus?.();
 			this.previouslyFocused = null;
 		}
@@ -121,7 +114,7 @@ export class RuiDialog extends RadiantElement {
 		this.closeEvent.emit({ reason });
 	}
 
-	@bound
+	@onEvent({ document: true, type: 'keydown' })
 	onDocumentKeydown(event: KeyboardEvent): void {
 		if (!this.open) {
 			return;
