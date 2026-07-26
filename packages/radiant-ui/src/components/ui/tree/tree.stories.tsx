@@ -55,6 +55,19 @@ export const Default: Story = {
 			await expect(items[0]).toHaveAttribute('aria-expanded', 'false');
 		});
 
+		await step('clicking a collapsed parent expands it and selects', async () => {
+			await userEvent.click(items[0]);
+			await expect(items[0]).toHaveAttribute('aria-expanded', 'true');
+			await expect(host).toHaveAttribute('value', 'src');
+		});
+
+		await step('Enter on an expanded parent collapses it', async () => {
+			items[0].focus();
+			await userEvent.keyboard('{Enter}');
+			await expect(items[0]).toHaveAttribute('aria-expanded', 'false');
+			await expect(host).toHaveAttribute('value', 'src');
+		});
+
 		await step('ArrowRight expands a collapsed parent', async () => {
 			await userEvent.keyboard('{ArrowRight}');
 			await expect(items[0]).toHaveAttribute('aria-expanded', 'true');
