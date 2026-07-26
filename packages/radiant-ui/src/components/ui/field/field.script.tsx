@@ -1,4 +1,11 @@
-import { RadiantElement, customElement, onEvent, onUpdated, prop, registerSsrPreparationCallback } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	customElement,
+	onEvent,
+	onUpdated,
+	prop,
+	registerSsrPreparationCallback,
+} from '@ecopages/radiant';
 import { consumeContext, onContextUpdate, provideContext } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
 import {

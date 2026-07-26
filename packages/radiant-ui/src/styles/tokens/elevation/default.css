@@ -8,12 +8,7 @@
 
 	--sheen-highlight: color-mix(in oklab, white 8%, transparent);
 	--sheen-shade: color-mix(in oklab, black 7%, transparent);
-	--sheen-image: linear-gradient(
-		to bottom,
-		var(--sheen-highlight),
-		transparent 55%,
-		var(--sheen-shade)
-	);
+	--sheen-image: linear-gradient(to bottom, var(--sheen-highlight), transparent 55%, var(--sheen-shade));
 }
 
 @theme {

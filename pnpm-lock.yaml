@@ -411,9 +411,6 @@ importers:
             '@ecopages/radiant':
                 specifier: workspace:*
                 version: link:../../packages/radiant/dist
-            '@ecopages/radiant-ui':
-                specifier: workspace:*
-                version: link:../../packages/radiant-ui
             '@ecopages/signals':
                 specifier: workspace:*
                 version: link:../../packages/signals/dist

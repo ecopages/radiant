@@ -1,7 +1,7 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'playground/*'
+    - 'apps/*'
+    - 'packages/*'
+    - 'playground/*'
 
 catalog:
-  typescript: ~7.0.2
+    typescript: ~7.0.2

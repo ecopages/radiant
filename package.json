@@ -43,6 +43,9 @@
 		"rehype-pretty-code": "^0.14.1"
 	},
 	"pnpm": {
-		"onlyBuiltDependencies": ["esbuild", "@swc/core"]
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"@swc/core"
+		]
 	}
 }
