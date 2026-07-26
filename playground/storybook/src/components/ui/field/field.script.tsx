@@ -113,15 +113,21 @@ export class RuiField extends RadiantElement {
 		}
 	}
 
+	/**
+	 * Prefers the live `rules` prop — it's the only channel that can carry a `validate`
+	 * function. `data-rules`/`rulesData` are JSON, so they only ever hold the JSON-safe
+	 * subset; they're a fallback for when no prop object is set at all (pre-hydration SSR
+	 * markup, or Storybook attribute controls).
+	 */
 	private readFieldRules(): FieldRules | undefined {
+		const rules = this.rules;
+		if (rules && typeof rules === 'object' && !Array.isArray(rules) && Object.keys(rules).length > 0) {
+			return rules;
+		}
 		const fromAttr = this.parseJsonAttr(this.rulesData ?? this.getAttribute(RUI_FIELD_RULES_ATTR)) as
 			FieldRules | undefined;
 		if (fromAttr && typeof fromAttr === 'object' && !Array.isArray(fromAttr) && Object.keys(fromAttr).length > 0) {
 			return fromAttr;
-		}
-		const rules = this.rules;
-		if (rules && typeof rules === 'object' && !Array.isArray(rules) && Object.keys(rules).length > 0) {
-			return rules;
 		}
 		return undefined;
 	}

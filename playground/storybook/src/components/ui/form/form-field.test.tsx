@@ -214,6 +214,48 @@ describe('rui-field projected content discovery', () => {
 		host.remove();
 	});
 
+	/**
+	 * Regression: `field.tsx` mirrors `rules` into `attr:data-rules` via `JSON.stringify`,
+	 * which drops function values. `readFieldRules()` must prefer the live `rules` prop over
+	 * that JSON-attribute copy, or a `validate` function is silently discarded.
+	 */
+	it('runs a custom validate function passed via the rules prop through the RuiField view', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		const validate = (value: unknown) => (value === 'taken@example.com' ? 'Email already in use' : true);
+		root.render(
+			<RuiForm defaultValues={{ email: '' }} mode="onSubmit">
+				<RuiField name="email" rules={{ validate }}>
+					<RuiLabel>Email</RuiLabel>
+					<RuiInput type="email" />
+					<RuiFieldError />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		const email = findFieldControl(field) as HTMLInputElement;
+		email.focus();
+		email.value = 'taken@example.com';
+		email.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+		await flushRender();
+
+		const save = host.querySelector('button') as HTMLButtonElement;
+		await save.click();
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(findFieldError(field)?.textContent).toBe('Email already in use');
+		host.remove();
+	});
+
 	it('clears email error after valid input when reValidateMode is onChange', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
