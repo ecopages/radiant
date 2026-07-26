@@ -59,7 +59,9 @@ export class RuiCheckbox extends RadiantElement<RuiCheckboxBindings> {
 	changeEvent: EventEmitter<RuiCheckboxChangeDetail>;
 
 	private readonly nameAttr = this.$.name.map((name) => name || undefined);
-	private readonly resolvedAriaChecked = this.$.indeterminate.map((indeterminate) => (indeterminate ? 'mixed' : undefined));
+	private readonly resolvedAriaChecked = this.$.indeterminate.map((indeterminate) =>
+		indeterminate ? 'mixed' : undefined,
+	);
 
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {

@@ -57,9 +57,7 @@ type JsxEventBindings<ElementType extends EventTarget> = {
 };
 
 type ReactivePropertyValue<Value> =
-	| Value
-	| SignalLike<Extract<Value, JsxRenderable>>
-	| SubscribableJsxValue<Extract<Value, JsxBindingSourceValue>>;
+	Value | SignalLike<Extract<Value, JsxRenderable>> | SubscribableJsxValue<Extract<Value, JsxBindingSourceValue>>;
 
 type JsxPropertyBindings<ElementType extends object> = {
 	[PropertyName in JsxBindablePropertyName<ElementType> as `prop:${PropertyName}`]?: ReactivePropertyValue<

@@ -41,7 +41,10 @@ function isServerEntrypoint(srcEntry: string): boolean {
 	return srcEntry.startsWith('src/server/') || srcEntry.includes('/server/');
 }
 
-export function deriveEntrypoints(packageRoot: string, exportsField: Record<string, PackageJsonExport>): DerivedEntrypoints {
+export function deriveEntrypoints(
+	packageRoot: string,
+	exportsField: Record<string, PackageJsonExport>,
+): DerivedEntrypoints {
 	const browserSubpathEntrypoints: string[] = [];
 	const serverEntrypoints: string[] = [];
 

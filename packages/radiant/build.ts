@@ -68,9 +68,7 @@ function rewriteExport(value: PackageJsonExport): PackageJsonExport {
 }
 
 function createDistPackageJson(): PackageJsonShape {
-	const packageJson = JSON.parse(
-		readFileSync(path.join(packageRoot, 'package.json'), 'utf8'),
-	) as PackageJsonShape;
+	const packageJson = JSON.parse(readFileSync(path.join(packageRoot, 'package.json'), 'utf8')) as PackageJsonShape;
 
 	return {
 		name: packageJson.name,
