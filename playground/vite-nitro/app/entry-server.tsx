@@ -1,3 +1,4 @@
+import '@ecopages/radiant/server/install-ssr-runtime';
 import { toRenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import { renderRadiantNitroPage } from '@ecopages/vite-plugin-radiant/nitro';
 import { App } from '../src/app';
@@ -19,7 +20,7 @@ export default {
 			renderPage: ({ rendered }) => {
 				const store = initializeAppStore(toRenderedComponentPayload(rendered));
 
-				return <App bootstrapStateScript={createStateScriptNode(store)} ssrPreviewContent={rendered.preview} />;
+				return <App bootstrapStateScript={createStateScriptNode(store)} />;
 			},
 		});
 	},
