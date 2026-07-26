@@ -1,10 +1,4 @@
-import { onUpdated } from '@ecopages/radiant';
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { bound } from '@ecopages/radiant/decorators/bound';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { prop } from '@ecopages/radiant/decorators/prop';
-import { query } from '@ecopages/radiant/decorators/query';
+import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { type Placement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 export type RuiTooltipProps = {

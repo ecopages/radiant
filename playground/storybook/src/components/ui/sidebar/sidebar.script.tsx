@@ -1,11 +1,4 @@
-import { onUpdated } from '@ecopages/radiant';
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { bound } from '@ecopages/radiant/decorators/bound';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { event } from '@ecopages/radiant/decorators/event';
-import { prop } from '@ecopages/radiant/decorators/prop';
-import { query } from '@ecopages/radiant/decorators/query';
-import { state } from '@ecopages/radiant/decorators/state';
+import { RadiantElement, bound, customElement, event, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';

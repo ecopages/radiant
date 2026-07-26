@@ -1,7 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { prop } from '@ecopages/radiant/decorators/prop';
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
 export type RuiBreadcrumbProps = {
 	/** Accessible name for the navigation landmark. Default: `Breadcrumb`. */

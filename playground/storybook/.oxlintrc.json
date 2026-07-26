@@ -3,17 +3,16 @@
 	"plugins": ["typescript", "oxc"],
 	"rules": {
 		"no-restricted-imports": [
-			"warn",
+			"error",
 			{
 				"patterns": [
 					{
 						"group": [
 							"@ecopages/radiant/core/*",
 							"@ecopages/radiant/decorators/*",
-							"@ecopages/radiant/client/*",
 							"@ecopages/radiant/controller-registry"
 						],
-						"message": "Import RadiantElement/RadiantController, @customElement/@controller, and host decorators from the root '@ecopages/radiant' entrypoint instead of a deep sub-path. Context APIs stay under '@ecopages/radiant/context' and SSR helpers under '@ecopages/radiant/server/*'."
+						"message": "Import RadiantElement/RadiantController, @customElement/@controller, and host decorators from the root '@ecopages/radiant' entrypoint instead of a deep sub-path. Context APIs stay under '@ecopages/radiant/context', SSR helpers under '@ecopages/radiant/server/*', and client bootstrap entrypoints under '@ecopages/radiant/client/*' — none of those are re-exported from root."
 					}
 				]
 			}

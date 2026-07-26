@@ -1,7 +1,4 @@
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { prop } from '@ecopages/radiant/decorators/prop';
+import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
 import { applyRovingTabindex, navigateRovingTabindex } from '../../../lib/roving-tabindex';
 
 export type RuiToolbarProps = {

@@ -1,9 +1,4 @@
-import { onUpdated } from '@ecopages/radiant';
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { bound } from '@ecopages/radiant/decorators/bound';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { prop } from '@ecopages/radiant/decorators/prop';
-import { query } from '@ecopages/radiant/decorators/query';
+import { RadiantElement, bound, customElement, onUpdated, prop, query } from '@ecopages/radiant';
 import type { RuiSidebarToggleDetail } from './sidebar.script';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';

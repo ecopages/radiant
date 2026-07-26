@@ -1,10 +1,4 @@
-import { onUpdated } from '@ecopages/radiant';
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { bound } from '@ecopages/radiant/decorators/bound';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { event } from '@ecopages/radiant/decorators/event';
-import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { prop } from '@ecopages/radiant/decorators/prop';
+import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiRadioGroupProps = {

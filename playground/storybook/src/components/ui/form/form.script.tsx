@@ -1,9 +1,4 @@
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { event } from '@ecopages/radiant/decorators/event';
-import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
-import { prop } from '@ecopages/radiant/decorators/prop';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import { provideContext } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
