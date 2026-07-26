@@ -51,7 +51,7 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build:lib": "tsup",
+		"build:lib": "tsup && tsc -p tsconfig.build.json",
 		"clean": "rm -rf dist",
 		"dev": "tsup --watch"
 	},
@@ -67,9 +67,11 @@
 		"@rolldown/plugin-babel": "^0.2.1",
 		"@types/node": "^24.13.2",
 		"@types/picomatch": "^4.0.0",
+		"nitro": "^3.0.260311-beta",
+		"rollup": "^4.53.2",
 		"tsup": "^8.5.0",
-		"typescript": "~5.9.2",
-		"vite": "^8.1.1"
+		"typescript": "catalog:",
+		"vite": "^7.1.3"
 	},
 	"peerDependencies": {
 		"@babel/core": "^7.0.0",
@@ -79,7 +81,7 @@
 		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0",
 		"@rolldown/plugin-babel": "^0.2.0",
 		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
-		"nitro": "^3.0.0"
+		"nitro": "^3.0.260311-beta"
 	},
 	"peerDependenciesMeta": {
 		"nitro": {

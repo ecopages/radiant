@@ -11,7 +11,7 @@ export default defineConfig({
 		'nitro/ssr-shim-plugin': 'src/nitro/ssr-shim-plugin.ts',
 	},
 	format: ['esm'],
-	dts: true,
+	dts: false,
 	splitting: false,
 	sourcemap: true,
 	clean: true,
