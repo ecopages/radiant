@@ -1,5 +1,22 @@
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
 	"plugins": ["typescript", "oxc"],
-	"rules": {}
+	"rules": {
+		"no-restricted-imports": [
+			"warn",
+			{
+				"patterns": [
+					{
+						"group": [
+							"@ecopages/radiant/core/*",
+							"@ecopages/radiant/decorators/*",
+							"@ecopages/radiant/client/*",
+							"@ecopages/radiant/controller-registry"
+						],
+						"message": "Import RadiantElement/RadiantController, @customElement/@controller, and host decorators from the root '@ecopages/radiant' entrypoint instead of a deep sub-path. Context APIs stay under '@ecopages/radiant/context' and SSR helpers under '@ecopages/radiant/server/*'."
+					}
+				]
+			}
+		]
+	}
 }
