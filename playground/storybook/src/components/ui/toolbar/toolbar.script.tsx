@@ -57,7 +57,10 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 		);
 	}
 
-	@onEvent({ type: 'click', selector: 'button[data-toggle][aria-pressed]' })
+	// Captures ahead of the button's own inline toggle handler (see `RuiButton`'s
+	// `on:click`) so this reads pre-click state and stays the single source of truth
+	// for `aria-pressed` when a toggle button lives in a toolbar.
+	@onEvent({ type: 'click', selector: 'button[data-toggle][aria-pressed]', options: { capture: true } })
 	onToggleButtonClick(event: Event): void {
 		const button = (event.target as HTMLElement).closest(
 			'button[data-toggle][aria-pressed]',
@@ -65,6 +68,8 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 		if (!button || button.disabled) {
 			return;
 		}
+
+		event.stopImmediatePropagation();
 
 		const wasPressed = button.getAttribute('aria-pressed') === 'true';
 
