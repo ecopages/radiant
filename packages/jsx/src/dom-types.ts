@@ -1,4 +1,4 @@
-import type { JsxRenderable, SignalLike, SubscribableJsxValue } from './renderable-types.ts';
+import type { JsxBindingSourceValue, JsxRenderable, SignalLike, SubscribableJsxValue } from './renderable-types.ts';
 
 type Booleanish = boolean | 'true' | 'false';
 type StringKeyOf<Value> = Extract<keyof Value, string>;
@@ -56,8 +56,15 @@ type JsxEventBindings<ElementType extends EventTarget> = {
 	[eventName: `on-native:${string}`]: JsxEventListener<Event, ElementType> | undefined;
 };
 
+type ReactivePropertyValue<Value> =
+	| Value
+	| SignalLike<Extract<Value, JsxRenderable>>
+	| SubscribableJsxValue<Extract<Value, JsxBindingSourceValue>>;
+
 type JsxPropertyBindings<ElementType extends object> = {
-	[PropertyName in JsxBindablePropertyName<ElementType> as `prop:${PropertyName}`]?: ElementType[PropertyName];
+	[PropertyName in JsxBindablePropertyName<ElementType> as `prop:${PropertyName}`]?: ReactivePropertyValue<
+		ElementType[PropertyName]
+	>;
 };
 
 type JsxAttributeBindings = {
