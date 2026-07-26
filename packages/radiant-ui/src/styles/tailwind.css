@@ -1,16 +1,32 @@
+/**
+ * Storybook preview stylesheet.
+ * Keep canvas chrome here — do not put app layout (`container`, body padding, `main` gaps).
+ * Those fight Storybook's `layout: 'fullscreen' | 'padded'` and break `h-full` / `h-svh` stories.
+ */
 @import './radiant-ui.css';
 @import './tokens/presets/spacing.css';
 @import './tokens/presets/radius.css';
 
+html,
+body,
+#storybook-root {
+	height: 100%;
+	margin: 0;
+}
+
 body {
-	@apply container mx-auto p-4 bg-background text-on-background;
+	@apply bg-background text-on-background;
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
 
-main {
-	@apply flex flex-col gap-4;
+/* Mount wrappers from @ecopages/storybook-radiant-vite — pass height through to stories. */
+#storybook-root,
+#root-inner,
+.radiant-ssr-mount {
+	min-height: 100%;
+	height: 100%;
 }
 
 a,
