@@ -325,20 +325,20 @@ export class MinimalElement extends MinimalNode {
 		this.replaceChildren(...ensureHtmlParsers().parseHtmlToNodes(innerHtml, this.ownerDocument));
 	}
 
-	querySelector(selector: string): Element | null {
-		return selectors.querySelector(this, selector) as unknown as Element | null;
+	querySelector(selector: string): MinimalHTMLElement | null {
+		return selectors.querySelector(this, selector) as MinimalHTMLElement | null;
 	}
 
-	querySelectorAll(selector: string): Element[] {
-		return selectors.querySelectorAll(this, selector) as unknown as Element[];
+	querySelectorAll(selector: string): MinimalHTMLElement[] {
+		return selectors.querySelectorAll(this, selector) as MinimalHTMLElement[];
 	}
 
-	closest(selector: string): Element | null {
-		return selectors.closest(this, selector) as unknown as Element | null;
+	closest(selector: string): MinimalHTMLElement | null {
+		return selectors.closest(this, selector) as MinimalHTMLElement | null;
 	}
 
-	contains(other: Node | null): boolean {
-		return selectors.contains(this, other as MinimalNode | null);
+	contains(other: MinimalNode | null): boolean {
+		return selectors.contains(this, other);
 	}
 
 	matches(selector: string): boolean {

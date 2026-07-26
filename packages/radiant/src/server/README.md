@@ -45,15 +45,19 @@ work inside `render()`.
 
 One boot path for Node adapters:
 
-1. Import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim + ALS scope adapters).
+1. Import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim, HTML parsers, ALS scope adapters). Server entrypoints such as `render-component` already import it; app SSR bundles should import it **first** when import order is not guaranteed.
 2. Keep `@ecopages/*` **external** in the SSR bundler so Node resolves a single module instance (ALS and adapters are module-local).
 3. Call `renderComponent` / `renderToString` — await data and assets first; keep the scoped render snapshot synchronous.
 
-```ts
-import { radiantSsrRuntimeInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
-import { renderComponent } from '@ecopages/radiant/server/render-component';
+### Server dist (published layout)
 
-void radiantSsrRuntimeInstalled;
+The server build may inline shared element/controller **client** modules; the inverse is forbidden — browser builds never emit `dist/server/*` or server-only chunks. Shared `dist/chunk-*.js` under the package root are server-graph artifacts. Depend only on documented `package.json` exports. Invariants are documented in TSDoc on `packages/radiant/build.ts` and `install-ssr-runtime.ts`.
+
+**Allowed on `globalThis`:** light-DOM constructors, `document` / `customElements` from the shim, controller registry, hydrator flags. SSR scope adapters and HTML parser registration stay module-local.
+
+```ts
+import '@ecopages/radiant/server/install-ssr-runtime';
+import { renderComponent } from '@ecopages/radiant/server/render-component';
 
 const rendered = await renderComponent(CounterCard, {
 	initialize: (card) => {

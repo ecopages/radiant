@@ -39,8 +39,11 @@ const RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL = Symbol.for('@ecopages/radiant.element
 let scopeAdapters: RadiantElementSsrScopeAdapters | undefined;
 
 /**
- * Called once from Radiant server SSR modules; client bundles never install this.
- * Module-local: SSR bundlers must resolve one `@ecopages/radiant` instance (do not inline duplicates).
+ * Wires Radiant core SSR runtime lookups to `@ecopages/jsx/server` ALS scope.
+ *
+ * @remarks
+ * Called from {@link ../server/install-ssr-runtime.ts} only in normal apps. Client bundles
+ * never call this. Requires a single server module instance (see server esbuild splitting).
  */
 export function installRadiantElementSsrScopeAdapters(adapters: RadiantElementSsrScopeAdapters): void {
 	scopeAdapters = adapters;

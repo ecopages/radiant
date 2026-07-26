@@ -15,6 +15,7 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ESNext",
+		"types": ["node"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true,
 		"paths": {
