@@ -19,6 +19,12 @@ export type RuiSliderProps = {
 
 export type RuiSliderChangeDetail = { value: number } | { values: [number, number] };
 
+type RuiSliderBindings = {
+	disabled: boolean;
+	name: string;
+	label: string;
+};
+
 /**
  * `<rui-slider>` — select a value from a continuous or discrete range.
  *
@@ -32,7 +38,7 @@ export type RuiSliderChangeDetail = { value: number } | { values: [number, numbe
  * @fires rui-change
  */
 @customElement('rui-slider')
-export class RuiSlider extends RadiantElement {
+export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;
 	@prop({ type: Number, reflect: true, attribute: 'range-min', defaultValue: 25 }) rangeMin: number;
@@ -58,6 +64,21 @@ export class RuiSlider extends RadiantElement {
 	private activeThumb: 'min' | 'max' | null = null;
 	/** Live range while dragging — avoids reactive prop updates that re-render mid-drag. */
 	private pendingRange: [number, number] | null = null;
+
+	/**
+	 * Only disabled/tabindex/aria-label/name are bound below — none of them
+	 * change during a drag. The value text and every aria-value* attribute
+	 * stay plain reads + imperative writes (paintRangeUi/updateDisplayedValue)
+	 * deliberately: they must show the LIVE pointer position while dragging,
+	 * before pendingRange commits to the reactive value/rangeMin/rangeMax
+	 * props. A binding only reacts to committed prop changes, so it cannot
+	 * replace that live-preview write without losing drag feedback — this
+	 * isn't a caution-driven exception, it's the correct tool for the job.
+	 */
+	private readonly resolvedDisabledTabindex = this.$.disabled.map((disabled) => (disabled ? -1 : 0));
+	private readonly resolvedMinLabel = this.$.label.map((label) => (label ? `${label} minimum` : 'Minimum value'));
+	private readonly resolvedMaxLabel = this.$.label.map((label) => (label ? `${label} maximum` : 'Maximum value'));
+	private readonly resolvedName = this.$.name.map((name) => name || undefined);
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -415,12 +436,12 @@ export class RuiSlider extends RadiantElement {
 								data-ref="rangeMinThumb"
 								data-thumb="min"
 								role="slider"
-								tabindex={this.disabled ? -1 : 0}
-								aria-label={this.label ? `${this.label} minimum` : 'Minimum value'}
+								tabindex={this.resolvedDisabledTabindex}
+								aria-label={this.resolvedMinLabel}
 								aria-valuemin={this.min}
 								aria-valuemax={this.rangeMax}
 								aria-valuenow={this.rangeMin}
-								disabled={this.disabled}
+								disabled={this.$.disabled}
 							/>
 							<button
 								type="button"
@@ -428,12 +449,12 @@ export class RuiSlider extends RadiantElement {
 								data-ref="rangeMaxThumb"
 								data-thumb="max"
 								role="slider"
-								tabindex={this.disabled ? -1 : 0}
-								aria-label={this.label ? `${this.label} maximum` : 'Maximum value'}
+								tabindex={this.resolvedDisabledTabindex}
+								aria-label={this.resolvedMaxLabel}
 								aria-valuemin={this.rangeMin}
 								aria-valuemax={this.max}
 								aria-valuenow={this.rangeMax}
-								disabled={this.disabled}
+								disabled={this.$.disabled}
 							/>
 						</div>
 					</div>
@@ -453,8 +474,8 @@ export class RuiSlider extends RadiantElement {
 					data-rui-control
 					data-rui-control-type="number"
 					class="rui-slider__input"
-					disabled={this.disabled}
-					name={this.name || undefined}
+					disabled={this.$.disabled}
+					name={this.resolvedName}
 					aria-valuemin={this.min}
 					aria-valuemax={this.max}
 					aria-valuenow={this.value}
