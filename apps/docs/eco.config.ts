@@ -10,7 +10,7 @@ import { docsFrontmatterSchema } from './src/content/docs';
 import { devToolbar } from '@ecopages/dev-toolbar/config';
 
 const config = await new ConfigBuilder()
-	.setRootDir(import.meta.dir)
+	.setRootDir(import.meta.dirname)
 	.setBaseUrl(process.env.ECOPAGES_BASE_URL ?? 'http://localhost:3000')
 	.setIntegrations([
 		ecopagesJsxPlugin({
@@ -36,7 +36,7 @@ const config = await new ConfigBuilder()
 	.setProcessors([
 		postcssProcessorPlugin(
 			tailwindV4Preset({
-				referencePath: path.resolve(import.meta.dir, 'src/styles/tailwind.css'),
+				referencePath: path.resolve(import.meta.dirname, 'src/styles/tailwind.css'),
 			}),
 		),
 		contentProcessorPlugin({
