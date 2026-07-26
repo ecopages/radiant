@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, focusRovingItem } from '../../../lib/roving-tabindex';
 
@@ -111,6 +111,11 @@ export class RuiTreegrid extends RadiantElement {
 			this.syncExpanded();
 			this.syncSelection();
 		});
+	}
+
+	@onUpdated('value')
+	onValueUpdated(): void {
+		this.syncSelection();
 	}
 
 	private setExpanded(row: HTMLElement, expanded: boolean): void {

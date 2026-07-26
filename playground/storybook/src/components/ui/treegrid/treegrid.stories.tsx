@@ -85,6 +85,19 @@ export const FileBrowser: Story = {
 			const srcRow = canvasElement.querySelector('[data-row-id="src"]') as HTMLElement;
 			await expect(srcRow).toHaveAttribute('aria-expanded', 'false');
 		});
+
+		await step('setting .value programmatically updates aria-selected and roving tabindex', async () => {
+			(host as HTMLElement & { value: string }).value = 'readme';
+			const readmeRowCells = Array.from(
+				canvasElement.querySelectorAll('[data-row-id="readme"] [role="gridcell"]'),
+			) as HTMLElement[];
+			const indexCell = canvasElement.querySelector('[data-row-id="index"] [role="gridcell"]') as HTMLElement;
+			for (const cell of readmeRowCells) {
+				await expect(cell).toHaveAttribute('aria-selected', 'true');
+			}
+			await expect(indexCell).toHaveAttribute('aria-selected', 'false');
+			await expect(readmeRowCells.some((cell) => cell.getAttribute('tabindex') === '0')).toBe(true);
+		});
 	},
 };
 
