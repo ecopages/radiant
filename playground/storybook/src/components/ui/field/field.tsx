@@ -9,7 +9,6 @@ export const RuiField = defineRadiantView(
 	({
 		name,
 		rules,
-		rulesData,
 		defaultValue,
 		defaultValueData,
 		disabled,
@@ -24,8 +23,6 @@ export const RuiField = defineRadiantView(
 			disabled={disabled}
 			error={error}
 			invalid={invalid}
-			rulesData={rulesData ?? (rules !== undefined ? JSON.stringify(rules) : undefined)}
-			attr:data-rules={rulesData ?? (rules !== undefined ? JSON.stringify(rules) : undefined)}
 			attr:data-default-value={
 				defaultValueData ?? (defaultValue !== undefined ? JSON.stringify(defaultValue) : undefined)
 			}

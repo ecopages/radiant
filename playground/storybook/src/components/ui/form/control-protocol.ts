@@ -3,8 +3,6 @@ export const RUI_FIELD_MANAGED_ATTR = 'data-rui-field-managed';
 export const RUI_FIELD_LABEL_ATTR = 'data-rui-field-label';
 export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
-/** JSON {@link FieldRules} when object props are not hydrated (SSR / Storybook). */
-export const RUI_FIELD_RULES_ATTR = 'data-rules';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
 

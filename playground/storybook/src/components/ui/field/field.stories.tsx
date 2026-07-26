@@ -91,7 +91,11 @@ export const Required: Story = {
 		const input = canvasElement.querySelector('input[data-rui-control]') as HTMLInputElement;
 
 		await step('aria-required reflects the rule before any interaction', async () => {
-			await expect(input).toHaveAttribute('aria-required', 'true');
+			// A nested <rui-field>'s prop:rules isn't necessarily synced within the same
+			// tick its ancestor <rui-form> connects — waitFor gives it a moment to settle.
+			await waitFor(async () => {
+				await expect(input).toHaveAttribute('aria-required', 'true');
+			});
 			await expect(input).toHaveAttribute('aria-invalid', 'false');
 		});
 

@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, onUpdated, prop, registerSsrPreparationCallback } from '@ecopages/radiant';
 import { consumeContext, onContextUpdate, provideContext } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
 import {
@@ -11,7 +11,6 @@ import {
 	readControlValue,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
-	RUI_FIELD_RULES_ATTR,
 	writeControlValue,
 	wireFieldControlName,
 } from '../form/control-protocol';
@@ -19,11 +18,21 @@ import { formContext, type FormContextValue } from '../form/form-context';
 import { fieldContext } from './field-context';
 import type { FieldRules } from '../form/types';
 
+/**
+ * The JSON-safe subset of `FieldRules` for SSR hydration — a `validate` function can't
+ * survive serialization and is dropped, same as any function crossing that boundary.
+ */
+function stripValidate(rules: FieldRules | undefined): Omit<FieldRules, 'validate'> | undefined {
+	if (!rules) {
+		return undefined;
+	}
+	const { validate: _validate, ...serializable } = rules;
+	return serializable;
+}
+
 export type RuiFieldProps = {
 	name: string;
 	rules?: FieldRules;
-	/** JSON {@link FieldRules} for SSR / JSX attribute channel. */
-	rulesData?: string;
 	defaultValue?: unknown;
 	defaultValueData?: string;
 	disabled?: boolean;
@@ -45,7 +54,6 @@ export type RuiFieldProps = {
 export class RuiField extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
 	@prop({ type: Object }) rules?: FieldRules;
-	@prop({ type: String, attribute: RUI_FIELD_RULES_ATTR }) rulesData?: string;
 	@prop({ type: Object }) defaultValue?: unknown;
 	@prop({ type: String, attribute: RUI_FIELD_DEFAULT_VALUE_ATTR }) defaultValueData?: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
@@ -63,6 +71,8 @@ export class RuiField extends RadiantElement {
 			invalid: false,
 			required: false,
 		},
+		hydrate: Object,
+		serialize: (value) => ({ ...value, rules: stripValidate(value.rules) }),
 	})
 	fieldProvider: ContextProvider<typeof fieldContext>;
 
@@ -79,12 +89,20 @@ export class RuiField extends RadiantElement {
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
 
+	constructor() {
+		super();
+		// connectedCallback never runs during real SSR rendering — only this SSR-prep
+		// lifecycle does, and only after `prop:rules` has already been applied to the
+		// instance. Publishing rules onto fieldProvider here is what lets a hydrated field
+		// recover them after a real SSR round-trip, since `prop:rules` itself doesn't
+		// survive that boundary.
+		registerSsrPreparationCallback(this, () => this.fieldProvider.setContext({ rules: this.readFieldRules() }));
+	}
+
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.syncRulesJsonAttribute();
 		this.connectToForm();
 		queueMicrotask(() => {
-			this.syncRulesJsonAttribute();
 			this.connectToForm();
 		});
 	}
@@ -115,21 +133,16 @@ export class RuiField extends RadiantElement {
 
 	/**
 	 * Prefers the live `rules` prop — it's the only channel that can carry a `validate`
-	 * function. `data-rules`/`rulesData` are JSON, so they only ever hold the JSON-safe
-	 * subset; they're a fallback for when no prop object is set at all (pre-hydration SSR
-	 * markup, or Storybook attribute controls).
+	 * function. Falls back to `fieldProvider`'s own context, which only ever holds the
+	 * JSON-safe subset (see its `serialize` option) — this is what recovers rules after a
+	 * real SSR hydrate, since `prop:rules` itself doesn't survive that boundary.
 	 */
 	private readFieldRules(): FieldRules | undefined {
 		const rules = this.rules;
 		if (rules && typeof rules === 'object' && !Array.isArray(rules) && Object.keys(rules).length > 0) {
 			return rules;
 		}
-		const fromAttr = this.parseJsonAttr(this.rulesData ?? this.getAttribute(RUI_FIELD_RULES_ATTR)) as
-			FieldRules | undefined;
-		if (fromAttr && typeof fromAttr === 'object' && !Array.isArray(fromAttr) && Object.keys(fromAttr).length > 0) {
-			return fromAttr;
-		}
-		return undefined;
+		return this.fieldProvider.getContext()?.rules;
 	}
 
 	private readDefaultValue(): unknown {
@@ -232,22 +245,9 @@ export class RuiField extends RadiantElement {
 		this.connectToForm();
 	}
 
-	@onUpdated(['rules', 'rulesData', 'defaultValue', 'defaultValueData'])
+	@onUpdated(['rules', 'defaultValue', 'defaultValueData'])
 	onRulesUpdated(): void {
-		this.syncRulesJsonAttribute();
 		this.connectToForm();
-	}
-
-	private syncRulesJsonAttribute(): void {
-		const rules = this.rules;
-		if (rules && typeof rules === 'object' && !Array.isArray(rules) && Object.keys(rules).length > 0) {
-			this.setAttribute(RUI_FIELD_RULES_ATTR, JSON.stringify(rules));
-			return;
-		}
-
-		if (this.rulesData) {
-			this.setAttribute(RUI_FIELD_RULES_ATTR, this.rulesData);
-		}
 	}
 
 	@onUpdated(['disabled', 'error', 'invalid'])

@@ -106,41 +106,6 @@ describe('rui-field projected content discovery', () => {
 		form.remove();
 	});
 
-	it('validates with rulesData on intrinsic rui-field', async () => {
-		const host = document.createElement('div');
-		document.body.append(host);
-		const root = createRoot(host);
-		root.render(
-			<rui-form>
-				<rui-field name="email" attr:data-rules={JSON.stringify({ required: 'Email is required' })}>
-					<label class="rui-label" data-rui-field-label>
-						Email
-					</label>
-					<input data-rui-control type="email" />
-					<p class="rui-field__error" data-rui-field-error role="alert" hidden></p>
-				</rui-field>
-				<button type="submit">Save</button>
-			</rui-form>,
-		);
-
-		await customElements.whenDefined('rui-form');
-		await flushRender();
-		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
-
-		const field = host.querySelector('rui-field') as RuiFieldElement;
-		field.setAttribute('data-rules', JSON.stringify({ required: 'Email is required' }));
-		await flushRender();
-		expect(field.getAttribute('data-rules')).toContain('required');
-
-		const save = host.querySelector('button') as HTMLButtonElement;
-		await save.click();
-		await flushRender();
-		await new Promise((resolve) => setTimeout(resolve, 0));
-
-		expect(findFieldError(field)?.textContent).toBe('Email is required');
-		host.remove();
-	});
-
 	it('validates email and bio like the Validation story', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
@@ -202,7 +167,7 @@ describe('rui-field projected content discovery', () => {
 		expect(form).not.toBeNull();
 		expect(field).not.toBeNull();
 		expect(field.name).toBe('email');
-		expect(field.getAttribute('data-rules') ?? field.rulesData ?? field.rules).toBeTruthy();
+		expect(field.rules).toBeTruthy();
 
 		const save = host.querySelector('button') as HTMLButtonElement;
 		await save.click();
@@ -215,9 +180,9 @@ describe('rui-field projected content discovery', () => {
 	});
 
 	/**
-	 * Regression: `field.tsx` mirrors `rules` into `attr:data-rules` via `JSON.stringify`,
-	 * which drops function values. `readFieldRules()` must prefer the live `rules` prop over
-	 * that JSON-attribute copy, or a `validate` function is silently discarded.
+	 * Regression guard: `readFieldRules()` must use the live `rules` prop as-is — including
+	 * a `validate` function — rather than anything derived from `fieldProvider`'s hydrated
+	 * (JSON-safe-only) context, which is only ever populated by a real SSR round-trip.
 	 */
 	it('runs a custom validate function passed via the rules prop through the RuiField view', async () => {
 		const host = document.createElement('div');
