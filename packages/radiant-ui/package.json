@@ -42,6 +42,7 @@
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/signals": "workspace:*",
 		"@ecopages/storybook-radiant-vite": "workspace:*",
+		"@ecopages/vite-plugin-radiant": "workspace:*",
 		"@rolldown/plugin-babel": "^0.2.1",
 		"@storybook/addon-a11y": "^10.5.2",
 		"@storybook/addon-docs": "^10.5.2",

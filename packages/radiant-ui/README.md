@@ -8,14 +8,14 @@ This project is **not a React app**. JSX compiles through `@ecopages/jsx`.
 
 ## Packages
 
-| Path                                                                   | Role                                                                |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `src/components/ui`                                                    | **`@ecopages/radiant-ui`** component library (APG-oriented widgets) |
-| [`packages/storybook-radiant-vite`](./packages/storybook-radiant-vite) | Storybook framework for Radiant (client + SSR → hydrate)            |
-| `src/components/client`, `src/components/ssr`, `src/stories`           | Framework dogfood demos (not the published UI catalog)              |
+| Path                                                            | Role                                                                |
+| --------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `src/components/ui`                                             | **`@ecopages/radiant-ui`** component library (APG-oriented widgets) |
+| [`@ecopages/storybook-radiant-vite`](../storybook-radiant-vite) | Storybook framework for Radiant (client + SSR → hydrate)            |
+| `src/components/client`, `src/components/ssr`, `src/stories`    | Framework dogfood demos (not the published UI catalog)              |
 
 Framework documentation (API, SSR contract, Vitest, limitations):  
-**[packages/storybook-radiant-vite/README.md](./packages/storybook-radiant-vite/README.md)**
+**[../storybook-radiant-vite/README.md](../storybook-radiant-vite/README.md)**
 
 Library overview and conventions: Storybook **Introduction** (`src/Introduction.mdx`).
 
@@ -68,7 +68,3 @@ Design tokens and themes: see [`AGENTS.md`](./AGENTS.md) and [`DESIGN-SYSTEM-PLA
 - **Components/** — `radiant-ui` catalog (`src/components/ui`)
 - **Client/** — framework demos ported from Radiant `playground/vite`
 - **SSR/** — framework demos ported from Radiant `playground/vite-nitro`
-
-## Extracting the Storybook framework
-
-`packages/storybook-radiant-vite` has zero imports from this app. Copy that folder or publish it when ready.
