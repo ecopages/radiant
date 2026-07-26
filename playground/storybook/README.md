@@ -22,8 +22,8 @@ Library overview and conventions: Storybook **Introduction** (`src/Introduction.
 ## Develop
 
 ```bash
-bun install
-bun run storybook
+pnpm install
+pnpm run storybook
 ```
 
 Open the URL Storybook prints (default port `6006`).
@@ -31,10 +31,10 @@ Open the URL Storybook prints (default port `6006`).
 Useful scripts:
 
 ```bash
-bun run test          # Vitest browser story tests
-bun run typecheck
-bun run lint
-bun run build:lib     # generate exports + build dist
+pnpm run test          # Vitest browser story tests
+pnpm run typecheck
+pnpm run lint
+pnpm run build:lib     # generate exports + build dist
 ```
 
 ## Using radiant-ui

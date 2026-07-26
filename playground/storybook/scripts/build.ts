@@ -4,18 +4,13 @@
  * Bundles every `src/components/ui/<name>/index.ts` (plus the root barrel)
  * as browser-targeted ESM with `@ecopages/*` and `@floating-ui/dom` external.
  *
- * Component CSS imports stay external in the emitted JS. Compiling and
- * bundling the stylesheets is a separate effort; Storybook resolves CSS
- * through Vite during development.
- *
- * Types are emitted separately by `npm run build:types` (tsc).
- *
- * Run with: bun run build:files
+ * Run with: pnpm run build:files
  */
 import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import * as esbuild from 'esbuild';
 
-const ROOT = path.resolve(import.meta.dir, '..');
+const ROOT = path.resolve(import.meta.dirname, '..');
 const SRC = path.join(ROOT, 'src');
 const DIST = path.join(ROOT, 'dist');
 const UI_DIR = path.join(SRC, 'components', 'ui');
@@ -39,18 +34,21 @@ function listComponentEntries(): string[] {
 		.sort();
 }
 
-const result = await Bun.build({
-	entrypoints: [path.join(SRC, 'index.ts'), ...listComponentEntries()],
-	outdir: DIST,
-	root: SRC,
-	target: 'browser',
-	minify: true,
-	format: 'esm',
-	external: externalPackages,
-	sourcemap: 'external',
-});
-
-if (!result.success) {
-	for (const log of result.logs) console.error('[radiant-ui]', log);
+try {
+	await esbuild.build({
+		absWorkingDir: ROOT,
+		bundle: true,
+		entryPoints: [path.join(SRC, 'index.ts'), ...listComponentEntries()],
+		external: externalPackages,
+		format: 'esm',
+		logLevel: 'silent',
+		minify: true,
+		outbase: SRC,
+		outdir: DIST,
+		platform: 'browser',
+		sourcemap: true,
+	});
+} catch (error) {
+	console.error('[radiant-ui]', error);
 	process.exitCode = 1;
 }

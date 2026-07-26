@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-const ROOT = path.resolve(import.meta.dir, '..');
+const ROOT = path.resolve(import.meta.dirname, '..');
 const UI_DIR = path.join(ROOT, 'src', 'components', 'ui');
 const PACKAGE_JSON_PATH = path.join(ROOT, 'package.json');
 const BARREL_PATH = path.join(ROOT, 'src', 'index.ts');
