@@ -24,7 +24,7 @@ type RuiTreegridBindings = {
  * rows, and `role="gridcell"` descendants are focused with roving tabindex.
  *
  * Expand/collapse with ArrowRight/ArrowLeft only from the first cell of a row
- * (APG cell-only focus). Enter on that cell toggles expansion; Space selects.
+ * (APG cell-only focus). Enter or click on that cell toggles expansion; Space selects.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/
  * @element rui-treegrid
@@ -167,6 +167,14 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 		const cell = (event.target as HTMLElement).closest<HTMLElement>('[role="gridcell"]');
 		if (!cell || !this.contains(cell)) {
 			return;
+		}
+
+		const row = cell.closest<HTMLElement>('[role="row"][data-row-id]');
+		if (row) {
+			const isFirstCell = this.getRowCells(row).indexOf(cell) === 0;
+			if (isFirstCell && row.hasAttribute('aria-expanded')) {
+				this.setExpanded(row, row.getAttribute('aria-expanded') !== 'true');
+			}
 		}
 
 		this.activateCell(cell);
