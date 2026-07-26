@@ -34,6 +34,10 @@ export type RuiSidebarProps = {
 export type RuiSidebarToggleDetail = { open: boolean; state: RuiSidebarState };
 export type RuiSidebarResizeDetail = { width: number };
 
+type RuiSidebarBindings = {
+	label: string;
+};
+
 const DEFAULT_WIDTH = 256;
 const ICON_WIDTH = 48;
 const DEFAULT_MIN_WIDTH = 200;
@@ -83,7 +87,7 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  *        mobile drawer mode and inline mode. `detail` is `{ mobile: boolean }`.
  */
 @customElement('rui-sidebar')
-export class RuiSidebar extends RadiantElement {
+export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	@prop({ type: String, reflect: true, defaultValue: 'sidebar' }) variant: RuiSidebarVariant;
 	@prop({ type: String, reflect: true, defaultValue: 'left' }) side: RuiSidebarSide;
 	@prop({ type: String, reflect: true, defaultValue: 'off' }) collapsible: RuiSidebarCollapsible;
@@ -363,6 +367,16 @@ export class RuiSidebar extends RadiantElement {
 		}
 	}
 
+	/**
+	 * Only the pane's `aria-label` is bound below. `data-state`/`data-collapsible`/
+	 * `data-variant`/`data-side`/`data-mobile` and the handle's `aria-value*`/
+	 * `aria-orientation` stay plain reads deliberately — this component's open/
+	 * close, drag-resize, and mobile-detection paths are the same high-frequency
+	 * interactive category where two sibling components in this migration
+	 * (tooltip, menu-button) hit real regressions from binding conversion that
+	 * weren't fully root-caused. Deferred as a follow-up rather than risking the
+	 * same class of bug here under the same review budget.
+	 */
 	override render() {
 		const horizontal = isHorizontalSide(this.side);
 		const open = this.isOpen();
@@ -398,7 +412,7 @@ export class RuiSidebar extends RadiantElement {
 					class="rui-sidebar__pane"
 					data-side={this.side}
 					data-variant={this.variant}
-					aria-label={this.label}
+					aria-label={this.$.label}
 					inert={paneInert}
 				>
 					<slot></slot>
