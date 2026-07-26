@@ -57,7 +57,7 @@ rui-sidebar {
 	opacity: 0;
 }
 
-.rui-sidebar[data-collapsible='icon'] > .rui-sidebar__pane {
+.rui-sidebar[data-collapsible='icon'][data-state='collapsed'] > .rui-sidebar__pane {
 	@apply items-center;
 }
 
@@ -113,7 +113,7 @@ rui-sidebar {
 }
 
 .rui-sidebar__header {
-	@apply flex min-h-14 shrink-0 flex-row items-center gap-2 border-b border-border p-3;
+	@apply flex h-14 shrink-0 flex-row items-center gap-2 border-b border-border px-3;
 }
 
 .rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__header {
@@ -248,7 +248,6 @@ rui-sidebar {
 /* -------------------------------------------------------------------------- */
 
 .rui-sidebar__inset {
-	/* gap-0 overrides global `main { gap-4 }` from the Storybook body stylesheet. */
 	@apply flex min-h-0 min-w-0 w-full flex-1 flex-col gap-0 overflow-hidden bg-background;
 }
 

@@ -112,11 +112,14 @@ function renderShellBody(currentPath: string) {
 	return (
 		<>
 			<RuiSidebarHeader aria-label="Workspace header">
-				<a href="/" class="flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold">
+				<a
+					href="/"
+					class="rui-sidebar__brand flex min-w-0 flex-1 items-center gap-2 truncate text-base font-semibold"
+				>
 					<span class="grid size-6 place-items-center rounded-md bg-primary text-on-primary text-xs font-bold">
 						R
 					</span>
-					<span>Radiant</span>
+					<span class="rui-sidebar__brand-text">Radiant</span>
 				</a>
 				<RuiSidebarTrigger placement="header" controls="primary-sidebar" triggerLabel="Toggle sidebar" />
 			</RuiSidebarHeader>
