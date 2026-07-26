@@ -25,6 +25,10 @@ export type RuiCarouselProps = {
 
 const SWIPE_THRESHOLD_PX = 48;
 
+type RuiCarouselBindings = {
+	label: string;
+};
+
 /**
  * `<rui-carousel>` — sequentially displays one slide at a time.
  *
@@ -38,7 +42,7 @@ const SWIPE_THRESHOLD_PX = 48;
  * @slot rotation - Optional play/pause control when `show-rotation-control` is set. Use `data-carousel-action="rotation"`.
  */
 @customElement('rui-carousel')
-export class RuiCarousel extends RadiantElement {
+export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {
 	@prop({ type: String, defaultValue: 'Carousel' }) label: string;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) index: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) autoplay: boolean;
@@ -533,6 +537,16 @@ export class RuiCarousel extends RadiantElement {
 		}
 	}
 
+	/**
+	 * Only `aria-label` is bound below. Everything else in this render()
+	 * (disablePrev/disableNext/playing/ariaLive/indicators/rotation) stays
+	 * plain reads deliberately: autoplay timers, swipe gestures, and
+	 * dynamically created/destroyed indicator buttons put this in the same
+	 * high-frequency interactive category as slider — deferred as a follow-up
+	 * requiring dedicated design/testing rather than converted under this
+	 * sweep's pace (see tooltip/menu-button in this same migration for the
+	 * regressions that category already produced here).
+	 */
 	override render() {
 		const showRotation = this.shouldShowRotationControl();
 		const slideCount = Math.max(this.getSlides().length, this.slideCount);
@@ -651,7 +665,7 @@ export class RuiCarousel extends RadiantElement {
 				class={`rui-carousel rui-carousel--${this.transition} rui-carousel--controls-${this.controlsVariant}`}
 				data-ref="root"
 				aria-roledescription="carousel"
-				aria-label={this.label}
+				aria-label={this.$.label}
 			>
 				<div class="rui-carousel__stage">
 					<div class="rui-carousel__viewport" data-ref="viewport" aria-live={ariaLive} aria-atomic={false}>
