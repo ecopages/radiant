@@ -41,11 +41,13 @@
 	},
 	"files": [
 		"dist/**/*",
+		"preset.js",
+		"renderer-preset.js",
 		"README.md",
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "tsup",
+		"build": "tsup && tsc -p tsconfig.build.json --noCheck",
 		"dev": "tsup --watch",
 		"clean": "rm -rf dist"
 	},
