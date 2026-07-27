@@ -322,6 +322,13 @@
 		"./textarea/styles.css": {
 			"default": "./dist/components/ui/textarea/textarea.css"
 		},
+		"./toast": {
+			"types": "./dist/components/ui/toast/index.d.ts",
+			"import": "./dist/components/ui/toast/index.js"
+		},
+		"./toast/styles.css": {
+			"default": "./dist/components/ui/toast/toast.css"
+		},
 		"./toolbar": {
 			"types": "./dist/components/ui/toolbar/index.d.ts",
 			"import": "./dist/components/ui/toolbar/index.js"

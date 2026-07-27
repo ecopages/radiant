@@ -28,6 +28,7 @@ export * from './components/ui/spinbutton';
 export * from './components/ui/switch';
 export * from './components/ui/tabs';
 export * from './components/ui/textarea';
+export * from './components/ui/toast';
 export * from './components/ui/toolbar';
 export * from './components/ui/tooltip';
 export * from './components/ui/tree';

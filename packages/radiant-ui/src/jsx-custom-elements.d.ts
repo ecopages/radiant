@@ -24,6 +24,8 @@ import type { RuiSpinbuttonProps } from './components/ui/spinbutton/spinbutton.s
 import type { RuiSwitchProps } from './components/ui/switch/switch.script';
 import type { RuiTabsProps } from './components/ui/tabs/tabs.script';
 import type { RuiToolbarProps } from './components/ui/toolbar/toolbar.script';
+import type { RuiToastProps } from './components/ui/toast/toast.script';
+import type { RuiToasterProps } from './components/ui/toast/toaster.script';
 import type { RuiTooltipProps } from './components/ui/tooltip/tooltip.script';
 import type { RuiTreeProps } from './components/ui/tree/tree.script';
 import type { RuiTreegridProps } from './components/ui/treegrid/treegrid.script';
@@ -55,6 +57,8 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-spinbutton': JsxCustomElementAttributes<HTMLElement, RuiSpinbuttonProps>;
 		'rui-switch': JsxCustomElementAttributes<HTMLElement, RuiSwitchProps>;
 		'rui-tabs': JsxCustomElementAttributes<HTMLElement, RuiTabsProps>;
+		'rui-toast': JsxCustomElementAttributes<HTMLElement, RuiToastProps>;
+		'rui-toaster': JsxCustomElementAttributes<HTMLElement, RuiToasterProps>;
 		'rui-toolbar': JsxCustomElementAttributes<HTMLElement, RuiToolbarProps>;
 		'rui-tooltip': JsxCustomElementAttributes<HTMLElement, RuiTooltipProps>;
 		'rui-tree': JsxCustomElementAttributes<HTMLElement, RuiTreeProps>;
