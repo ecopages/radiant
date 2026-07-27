@@ -1,5 +1,4 @@
 import { collectTopLevelHtmlFragments, parseHtmlTagToken, type ParsedHtmlTag } from '../html-parser';
-import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import {
 	getInstalledDocumentLike,
 	MinimalElement,

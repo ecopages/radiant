@@ -2,7 +2,7 @@
  * Copies stylesheet sources into `dist/` for package exports.
  * Run after `build:files` (or as part of `build:lib`).
  */
-import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
