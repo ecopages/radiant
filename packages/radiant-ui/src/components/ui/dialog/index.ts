@@ -1,2 +1,40 @@
 export { RuiDialog as RuiDialogElement, type RuiDialogProps, type RuiDialogCloseDetail } from './dialog.script';
-export { RuiDialog, RuiDialogActions, RuiDialogBody, RuiDialogClose, RuiDialogTitle } from './dialog';
+export {
+	RuiDialog,
+	RuiDialogActions,
+	RuiDialogBody,
+	RuiDialogClose,
+	RuiDialogTitle,
+	type RuiDialogViewProps,
+	type RuiDialogTitleProps,
+	type RuiDialogBodyProps,
+	type RuiDialogActionsProps,
+	type RuiDialogCloseProps,
+} from './dialog';
+export {
+	installDialogs,
+	uninstallDialogs,
+	openDialog,
+	closeDialog,
+	toggleDialog,
+	createDialogHandle,
+	getOpenDialogId,
+	type InstallDialogsOptions,
+} from './dialog-registry';
+export {
+	RUI_DIALOG_HOST_ID,
+	RUI_DIALOG_OPEN_EVENT,
+	RUI_DIALOG_CLOSE_EVENT,
+	RUI_DIALOG_TOGGLE_EVENT,
+	RUI_DIALOG_ACTION_EVENT,
+	type DialogAction,
+	type DialogActionVariant,
+	type DialogActionSize,
+	type DialogOpenOptions,
+	type DialogHostContent,
+	type DialogOpenDetail,
+	type DialogCloseDetail,
+	type DialogToggleDetail,
+	type DialogActionDetail,
+	type DialogHandle,
+} from './dialog-types';

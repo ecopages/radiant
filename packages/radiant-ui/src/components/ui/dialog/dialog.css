@@ -6,7 +6,7 @@ rui-dialog {
 
 @layer components {
 	.rui-dialog {
-		@apply fixed inset-0 z-toast flex items-center justify-center;
+		@apply fixed inset-0 z-modal flex items-center justify-center;
 	}
 
 	.rui-dialog[hidden] {

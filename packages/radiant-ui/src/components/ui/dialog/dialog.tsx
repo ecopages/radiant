@@ -78,25 +78,20 @@ export function RuiDialogClose({
 	);
 }
 
+export type RuiDialogViewProps = RuiDialogProps &
+	RadiantSlotProps & {
+		id?: string;
+		title?: JsxRenderable;
+		actions?: JsxRenderable;
+		children?: JsxRenderable;
+	};
+
 export const RuiDialog = defineRadiantView(
 	RuiDialogElement,
-	({
-		slot,
-		open,
-		alert,
-		label,
-		title,
-		actions,
-		children,
-	}: RuiDialogProps &
-		RadiantSlotProps & {
-			title?: JsxRenderable;
-			actions?: JsxRenderable;
-			children?: JsxRenderable;
-		}) => {
+	({ slot, open, alert, label, id, title, actions, children }: RuiDialogViewProps) => {
 		if (title != null || actions != null) {
 			return (
-				<rui-dialog slot={slot} open={open} alert={alert} label={label}>
+				<rui-dialog slot={slot} id={id} open={open} alert={alert} label={label}>
 					<RuiDialogClose />
 					{title != null ? <RuiDialogTitle>{title}</RuiDialogTitle> : null}
 					{children != null ? <RuiDialogBody>{children}</RuiDialogBody> : null}
@@ -106,7 +101,7 @@ export const RuiDialog = defineRadiantView(
 		}
 
 		return (
-			<rui-dialog slot={slot} open={open} alert={alert} label={label}>
+			<rui-dialog slot={slot} id={id} open={open} alert={alert} label={label}>
 				{children}
 			</rui-dialog>
 		);
