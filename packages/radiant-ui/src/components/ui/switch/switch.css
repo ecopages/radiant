@@ -24,7 +24,7 @@ rui-switch {
 
 	.rui-switch__track {
 		@apply relative inline-flex h-6 w-11 shrink-0 items-center rounded-full;
-		@apply bg-surface transition-colors duration-normal;
+		@apply bg-surface-container transition-colors duration-normal;
 	}
 
 	.rui-switch__input:checked + .rui-switch__track {
