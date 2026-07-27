@@ -1,5 +1,5 @@
 import { createContext } from '@ecopages/radiant/context';
-import type { FieldRegistration, FieldValues, RegisterOptions } from './types';
+import type { FieldRegistration, RegisterOptions } from './types';
 
 /** UI slice for one field, computed by `<rui-form>` from the store. */
 export type FormFieldPresentation = {
@@ -16,7 +16,7 @@ export type FormContextActions = {
 	subscribePresentation: (listener: (value: FormContextValue) => void) => () => void;
 };
 
-export type FormContextValue<T extends FieldValues = FieldValues> = {
+export type FormContextValue = {
 	/** False until `<rui-form>` has created its store and bound real actions. */
 	ready: boolean;
 	/** Bumps when form store state changes. */

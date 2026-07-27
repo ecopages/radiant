@@ -61,7 +61,6 @@ function buildStaticStyleExports(): Record<string, { default: string }> {
 
 	const exports: Record<string, { default: string }> = {};
 	for (const file of tokenPaths) {
-		const subpath = file.replace(/\.css$/, '').replace(/\//g, '/');
 		const key =
 			file === 'styles.css'
 				? './styles.css'

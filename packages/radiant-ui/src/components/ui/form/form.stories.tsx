@@ -75,11 +75,6 @@ const getTextControl = (root: HTMLElement, index = 0) => {
 	return control;
 };
 
-const getComboboxInput = (root: HTMLElement) => root.querySelector('[data-combobox-input]') as HTMLInputElement;
-
-const getComboboxOptions = (root: HTMLElement) =>
-	Array.from(root.querySelectorAll('[data-combobox-option]')) as HTMLElement[];
-
 export const Validation: Story = {
 	render: () => (
 		<RuiForm defaultValues={{ email: '', bio: '' }} mode="onSubmit" reValidateMode="onChange">
@@ -141,7 +136,6 @@ export const ValidationOnBlur: Story = {
 	),
 	play: async ({ canvasElement, step }) => {
 		const canvas = within(canvasElement);
-		const input = getTextControl(canvasElement);
 
 		await step('blur without input shows error (onBlur mode)', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Save' }));

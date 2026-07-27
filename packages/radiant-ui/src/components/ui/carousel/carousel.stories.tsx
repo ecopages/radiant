@@ -254,7 +254,6 @@ export const CustomControls: Story = {
 	play: async ({ canvasElement, step }) => {
 		const prev = getPrevButton(canvasElement);
 		const next = getNextButton(canvasElement);
-		const slideEls = getSlides(canvasElement);
 
 		await step('custom overlay controls navigate slides', async () => {
 			await expect(prev).toHaveClass('rui-carousel__nav--overlay');

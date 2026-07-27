@@ -2,7 +2,7 @@ import type { Plugin } from 'vite';
 import { createRadiantDecoratorBabelPlugin } from './decorators';
 import { radiantElements, type RadiantElementsPluginOptions } from './elements';
 import { createRadiantJsxConfig, createRadiantSsrExternalsPlugin } from './jsx-config';
-import { radiantNitro, radiantNitroExternals } from './nitro-externals';
+import { radiantNitro } from './nitro-externals';
 
 export { createRadiantDecoratorBabelPlugin, createRadiantDecoratorBabelPreset } from './decorators';
 export { radiantElements, type RadiantElementsPluginOptions, type RadiantAppLoadMode } from './elements';
