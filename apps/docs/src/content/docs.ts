@@ -7,6 +7,7 @@ export const DOCS_ROOT = '/docs';
 export const DOCS_GROUP_ORDER = [
 	'Getting Started',
 	'Components',
+	'Tools',
 	'Decorators',
 	'JSX',
 	'Signals',
