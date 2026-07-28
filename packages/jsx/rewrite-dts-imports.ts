@@ -1,13 +1,13 @@
-const distGlob = new Bun.Glob('dist/**/*.d.ts');
+import { readFileSync, writeFileSync } from 'node:fs';
+import { glob } from 'node:fs/promises';
 
-for await (const filePath of distGlob.scan({ cwd: '.' })) {
-	const file = Bun.file(filePath);
-	const content = await file.text();
+for await (const filePath of glob('dist/**/*.d.ts')) {
+	const content = readFileSync(filePath, 'utf8');
 	const nextContent = content.replace(/(['"])(\.[^'"]*)\.tsx?\1/g, '$1$2.js$1');
 
 	if (nextContent === content) {
 		continue;
 	}
 
-	await Bun.write(file, nextContent);
+	writeFileSync(filePath, nextContent);
 }

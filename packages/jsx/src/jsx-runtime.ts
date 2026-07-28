@@ -1,4 +1,3 @@
-import { computed } from '@ecopages/signals';
 import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragment } from './jsx-factory.ts';
 import { isSubscribableJsxValue } from './renderable-guards.ts';
 import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types.ts';
@@ -155,12 +154,13 @@ function createDerivedSubscribable<Value extends JsxBindingSourceValue, Out exte
 	}
 
 	const signal = source as SignalLike<Extract<Value, JsxRenderable>>;
-	const derived = computed(() => project(signal.get()));
 
+	// Duck-type only — importing `@ecopages/signals` here would duplicate its runtime
+	// when docs vendor-prebundles both jsx-runtime and radiant.
 	return {
 		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
-		getValue: () => derived.get(),
-		subscribe: (notify) => derived.subscribe(notify),
+		getValue: () => project(signal.get()),
+		subscribe: (notify) => signal.subscribe((value) => notify(project(value))),
 		map: <Out2 extends JsxRenderable>(project2: (value: Out) => Out2) =>
 			mapSubscribable(source, (value) => project2(project(value as Value))),
 	};

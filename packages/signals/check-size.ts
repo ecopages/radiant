@@ -1,7 +1,8 @@
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { styleText } from 'node:util';
 import { gzipSync } from 'node:zlib';
-import { $ } from 'bun';
+import * as esbuild from 'esbuild';
 
 type BundleBudget = {
 	entrypoint: string;
@@ -24,41 +25,37 @@ type SizeResult = {
 	passed: boolean;
 };
 
+const packageRoot = import.meta.dirname;
 const reportOnly = process.argv.includes('--report-only');
-const budgetPath = path.resolve(import.meta.dir, 'size-budget.json');
-const budgetFile = (await Bun.file(budgetPath).json()) as SizeBudgetFile;
-const outputRoot = path.resolve(import.meta.dir, '.tmp-size-audit');
+const budgetPath = path.resolve(packageRoot, 'size-budget.json');
+const budgetFile = JSON.parse(readFileSync(budgetPath, 'utf8')) as SizeBudgetFile;
+const outputRoot = path.resolve(packageRoot, '.tmp-size-audit');
 
-await $`rm -rf ${outputRoot}`;
+rmSync(outputRoot, { force: true, recursive: true });
 
 const results: SizeResult[] = [];
 
 for (const bundle of budgetFile.bundles) {
-	const bundleDir = path.join(outputRoot, bundle.label);
-	const build = await Bun.build({
-		entrypoints: [path.resolve(import.meta.dir, bundle.entrypoint)],
-		format: 'esm',
-		minify: true,
-		outdir: bundleDir,
-		target: 'browser',
-	});
+	const outfile = path.join(outputRoot, bundle.label, 'bundle.js');
+	mkdirSync(path.dirname(outfile), { recursive: true });
 
-	if (!build.success) {
-		for (const log of build.logs) {
-			console.error('[size-audit]', log);
-		}
-
+	try {
+		await esbuild.build({
+			absWorkingDir: packageRoot,
+			bundle: true,
+			entryPoints: [path.resolve(packageRoot, bundle.entrypoint)],
+			format: 'esm',
+			logLevel: 'silent',
+			minify: true,
+			outfile,
+			platform: 'browser',
+		});
+	} catch (error) {
+		console.error('[size-audit]', error);
 		process.exit(1);
 	}
 
-	const outputFile = build.outputs.find((output) => output.path.endsWith('.js'));
-
-	if (!outputFile) {
-		console.error(`[size-audit] No JavaScript output generated for ${bundle.label}.`);
-		process.exit(1);
-	}
-
-	const bytes = Buffer.from(await Bun.file(outputFile.path).arrayBuffer());
+	const bytes = readFileSync(outfile);
 	const gzipBytes = gzipSync(bytes).length;
 
 	results.push({
@@ -72,7 +69,7 @@ for (const bundle of budgetFile.bundles) {
 	});
 }
 
-await $`rm -rf ${outputRoot}`;
+rmSync(outputRoot, { force: true, recursive: true });
 
 console.log('Bundle size audit (minified browser bundles)');
 

@@ -5,6 +5,7 @@ import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr'
 import './install-ssr-runtime';
 import type { ContextType, UnknownContext } from '../context/types';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
+import { alignMinimalDomHostTagName } from './minimal-dom/align-host-tag-name';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
 import {
@@ -318,6 +319,7 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 		runWithSsrProviderStack(() =>
 			withSsrContextProviders(createAmbientSsrContextProviders(normalizedOptions.ssrContext), () => {
 				const component = new Component();
+				alignMinimalDomHostTagName(component, tagName);
 				ensureLegacyHostReady(component, 'ssr');
 				prepareRenderedComponentHost(
 					environment,

@@ -1,3 +1,4 @@
+import './install-ssr-runtime';
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
@@ -10,7 +11,6 @@ import {
 import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { RadiantElementSsrService } from './radiant-element-ssr-service';
 import { runWithSsrProviderStack } from './context-ssr';
-import './install-ssr-runtime';
 import { isRadiantElementSsrHost } from '../core/radiant-element-ssr-host-source';
 import type {
 	RadiantElementRenderBridge,
