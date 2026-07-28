@@ -1,5 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const moduleDirectory = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Options that constrain how {@link resolveProjectRoot} searches ancestor
@@ -23,7 +26,7 @@ export type ResolveProjectRootOptions = {
  */
 export function resolveProjectRoot(options: ResolveProjectRootOptions = {}): string {
 	const candidateStarts = dedupeDirectories(
-		options.startDirectories?.length ? options.startDirectories : [process.cwd(), import.meta.dirname],
+		options.startDirectories?.length ? options.startDirectories : [process.cwd(), moduleDirectory],
 	);
 	const stopAt = resolve(options.stopAt ?? '/');
 

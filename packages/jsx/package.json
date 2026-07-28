@@ -37,38 +37,39 @@
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build:lib": "bun run clean && bun run build:files && bun run build:types",
-		"build:files": "bun run ./build.ts",
-		"build:types": "tsc -p tsconfig.build.json && bun run ./rewrite-dts-imports.ts",
-		"bench:server": "bun run benchmarks/run-all.ts",
+		"build:lib": "pnpm run clean && pnpm run build:files && pnpm run build:types",
+		"build:files": "node --import tsx ./build.ts",
+		"build:types": "tsc -p tsconfig.build.json && node --import tsx ./rewrite-dts-imports.ts",
+		"bench:server": "node --import tsx benchmarks/run-all.ts",
 		"bench:server:bun": "bun run benchmarks/ssr.ts",
-		"bench:server:compare": "bun run benchmarks/run.ts",
+		"bench:server:compare": "node --import tsx benchmarks/run.ts",
 		"bench:server:node": "node --import tsx benchmarks/ssr.ts",
 		"clean": "rm -rf ./dist",
-		"profile:hydrate": "bun run profile:hydrate:bun && bun run profile:hydrate:node",
+		"profile:hydrate": "pnpm run profile:hydrate:bun && pnpm run profile:hydrate:node",
 		"profile:hydrate:bun": "bun run benchmarks/profile-hydrate.ts",
 		"profile:hydrate:node": "node --import tsx benchmarks/profile-hydrate.ts",
-		"size:check": "bun run ./check-size.ts",
-		"size:report": "bun run ./check-size.ts --report-only",
-		"test:dist": "bun run build:files && vitest run test/dom-render-dist-parity.browser.test.tsx --config vitest.browser.config.ts",
+		"size:check": "node --import tsx ./check-size.ts",
+		"size:report": "node --import tsx ./check-size.ts --report-only",
+		"test:dist": "pnpm run build:files && vitest run test/dom-render-dist-parity.browser.test.tsx --config vitest.browser.config.ts",
 		"test:lib": "vitest run && vitest run --config vitest.browser.config.ts && vitest run --config vitest.e2e.config.ts",
 		"test:custom-elements": "vitest run --config vitest.e2e.config.ts test/custom-elements.e2e.test.tsx",
 		"test:e2e": "vitest run --config vitest.e2e.config.ts",
-		"watch:lib": "bun run ./build.ts --watch"
+		"watch:lib": "node --import tsx ./build.ts --watch"
 	},
 	"devDependencies": {
 		"@ecopages/signals": "workspace:*",
-		"@types/bun": "latest",
+		"@types/node": "^24.13.2",
+		"esbuild": "^0.25.0",
 		"@vitest/browser": "^3.2.4",
 		"happy-dom": "^20.0.0",
 		"mitata": "^1.0.34",
 		"playwright": "^1.52.0",
 		"tsx": "^4.20.6",
 		"vite": "^7.1.3",
-		"vitest": "^3.2.4"
+		"vitest": "^3.2.4",
+		"typescript": "catalog:"
 	},
 	"peerDependencies": {
-		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0",
-		"typescript": "^5"
+		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0"
 	}
 }

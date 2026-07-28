@@ -134,6 +134,25 @@ describe('createEventListener', () => {
 		expect(clicked).toBe(true);
 	});
 
+	test('subscribes to events by ref when the click lands on a descendant', () => {
+		const host = document.createElement('event-helper-element') as EventHelperElement;
+		const button = document.createElement('button');
+		button.setAttribute('data-ref', 'nested-btn');
+		const icon = document.createElement('span');
+		icon.textContent = '★';
+		button.appendChild(icon);
+		host.appendChild(button);
+		document.body.appendChild(host);
+
+		let clicked = false;
+		createEventListener(host, { ref: 'nested-btn', type: 'click' }, () => {
+			clicked = true;
+		});
+
+		icon.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clicked).toBe(true);
+	});
+
 	test('subscribes to events by ref when the ref contains selector metacharacters', () => {
 		const host = document.createElement('event-helper-element') as EventHelperElement;
 		const button = document.createElement('button');

@@ -1,4 +1,5 @@
 import { MinimalHtmlScriptElement, MinimalHTMLElement, MinimalNode, MinimalTextNode } from './nodes';
+import * as selectors from './selectors';
 
 export type MinimalCustomElementRegistry = {
 	define(name: string, constructor: CustomElementConstructor, options?: ElementDefinitionOptions): void;
@@ -20,12 +21,12 @@ export class MinimalDocument extends MinimalNode {
 		return new MinimalTextNode(value, this as unknown as Document) as unknown as Text;
 	}
 
-	querySelector(): Element | null {
-		return null;
+	querySelector(selector: string): Element | null {
+		return selectors.querySelector(this, selector) as unknown as Element | null;
 	}
 
-	querySelectorAll(): Element[] {
-		return [];
+	querySelectorAll(selector: string): Element[] {
+		return selectors.querySelectorAll(this, selector) as unknown as Element[];
 	}
 }
 

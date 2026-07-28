@@ -30,6 +30,7 @@ export class RenderRuntime {
 	readonly #renderWatcher: ReactiveWatcher;
 	#slotProjectionObserver?: MutationObserver;
 	#slotProjectionVersion = 0;
+	#hasMounted = false;
 
 	constructor(host: RenderRuntimeHost) {
 		this.#host = host;
@@ -71,6 +72,7 @@ export class RenderRuntime {
 		try {
 			hydrateJsx(this.resolveTrackedRenderOutput().value, renderTarget);
 		} finally {
+			this.#hasMounted = true;
 			this.observeSlotProjection();
 		}
 	}
@@ -81,6 +83,7 @@ export class RenderRuntime {
 		try {
 			renderJsx(this.resolveTrackedRenderOutput().value, renderTarget);
 		} finally {
+			this.#hasMounted = true;
 			this.observeSlotProjection();
 		}
 	}
@@ -143,7 +146,12 @@ export class RenderRuntime {
 			return;
 		}
 
-		if (this.#host.childNodes.length > 0) {
+		// Only trust "the host has children" as authored slot content before the host's
+		// own first render/hydrate pass has run. After that, any children present are the
+		// host's own previously-rendered output (light-DOM mode writes into `this.#host`),
+		// not user-authored content — capturing them here would feed a render's own output
+		// back into itself as "slot content" on the next pass.
+		if (!this.#hasMounted && this.#host.childNodes.length > 0) {
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;
 		}
@@ -160,10 +168,6 @@ export class RenderRuntime {
 			}
 
 			for (const addedNode of Array.from(record.addedNodes)) {
-				if (addedNode.parentNode !== this.#host) {
-					continue;
-				}
-
 				if (this.addProjectedSlotNode(addedNode)) {
 					hasProjectionChanges = true;
 				}
@@ -177,6 +181,10 @@ export class RenderRuntime {
 	}
 
 	private addProjectedSlotNode(node: Node): boolean {
+		if (!this.#host.contains(node)) {
+			return false;
+		}
+
 		if (
 			node instanceof HTMLScriptElement &&
 			(node.hasAttribute(SLOT_PROJECTION_SCRIPT_ATTRIBUTE) || node.hasAttribute(HYDRATION_ATTRIBUTE))
@@ -200,7 +208,20 @@ export class RenderRuntime {
 		return true;
 	}
 
+	/**
+	 * Remove a projected slot node from the projected slot content.
+	 *
+	 * Light-DOM render moves projected nodes under an inner wrapper; the host still
+	 * contains them, so do not drop projection entries for that repositioning.
+	 *
+	 * @param node
+	 * @returns
+	 */
 	private removeProjectedSlotNode(node: Node): boolean {
+		if (this.#host.contains(node)) {
+			return false;
+		}
+
 		for (const [slotName, bucket] of this.#projectedSlotContent.entries()) {
 			const nodeIndex = bucket.indexOf(node);
 
