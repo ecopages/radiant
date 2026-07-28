@@ -1,0 +1,7 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'playground/*'
+
+catalog:
+  typescript: ~7.0.2

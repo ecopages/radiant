@@ -1,11 +1,12 @@
 import type { RenderedComponentPayload } from '@ecopages/radiant/server/render-component';
 import { type RenderedComponentAsset } from '@ecopages/radiant/server/render-component';
+import { createMarkupNodeLike } from '@ecopages/jsx';
 import {
 	RADIANT_FRAGMENT_ASSETS_HEADER,
 	RADIANT_FRAGMENT_GENERATED_AT_HEADER,
 	RADIANT_FRAGMENT_HEADER,
-} from '../../vite-plugin-radiant/nitro/fragment-transport';
-import { ensureRadiantAssets } from '../../vite-plugin-radiant/runtime/client-assets';
+} from '@ecopages/vite-plugin-radiant/ssr/headers';
+import { ensureRadiantAssets } from '@ecopages/vite-plugin-radiant/runtime';
 import type { AppState } from './store';
 
 export const DEFAULT_SSR_ENDPOINT = '/api/ssr/radiant-counter';
@@ -89,7 +90,11 @@ export function createClientPreview(store: { ssrMarkup: string; ssrStatus: strin
 		return store.ssrMarkup || 'Unknown error';
 	}
 
-	return createMarkupPreview(store.ssrMarkup) ?? 'No SSR markup loaded yet.';
+	if (!store.ssrMarkup) {
+		return 'No SSR markup loaded yet.';
+	}
+
+	return createMarkupNodeLike(store.ssrMarkup);
 }
 
 function applyRenderedPayload(store: AppState, payload: RenderedComponentPayload) {
@@ -105,16 +110,6 @@ function extractTagNameFromMarkup(markup: string): string {
 	const template = document.createElement('template');
 	template.innerHTML = markup.trim();
 	return template.content.firstElementChild?.tagName.toLowerCase() ?? 'unknown';
-}
-
-function createMarkupPreview(markup: string) {
-	if (!markup) {
-		return undefined;
-	}
-
-	const template = document.createElement('template');
-	template.innerHTML = markup;
-	return Array.from(template.content.childNodes);
 }
 
 function readRenderedAssets(serializedAssets: string | null) {

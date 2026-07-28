@@ -4,7 +4,7 @@ import appConfig from '../eco.config';
 import { docsFrontmatterSchema, LLM_SECTION_ORDER } from '../src/content/docs';
 import { generateLlmDocs } from '../src/lib/llm-docs';
 
-const ROOT_DIR = join(import.meta.dir, '..');
+const ROOT_DIR = join(import.meta.dirname, '..');
 const PUBLIC_DIR = join(ROOT_DIR, 'src/public');
 
 const LLMS_HEADER = [

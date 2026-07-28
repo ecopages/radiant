@@ -21,7 +21,7 @@ const origin = `http://${host}:${port}`;
 let docsPreviewServer;
 
 test.before(async () => {
-	await runCommand('bun', ['run', 'build'], docsDirectory);
+	await runCommand('pnpm', ['run', 'build'], docsDirectory);
 	docsPreviewServer = await startServer({
 		command: 'python3',
 		args: ['-m', 'http.server', port, '-d', 'dist', '--bind', host],

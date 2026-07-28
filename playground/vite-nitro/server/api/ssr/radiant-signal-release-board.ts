@@ -1,7 +1,7 @@
 import { defineHandler } from 'nitro';
 
 export default defineHandler(async () => {
-	const { renderSsrComponentResponse } = await import('../../../vite-plugin-radiant/nitro/render');
+	const { renderSsrComponentResponse } = await import('@ecopages/vite-plugin-radiant/ssr');
 	const { RadiantSignalReleaseBoardElement } = await import('@/components/radiant-signal-release-board.script');
 	return renderSsrComponentResponse(RadiantSignalReleaseBoardElement, {
 		initialize: (component) => {
