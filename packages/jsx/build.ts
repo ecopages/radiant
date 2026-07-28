@@ -1,6 +1,7 @@
-import { copyFile, readFileSync, watch } from 'node:fs';
+import { copyFile, readFileSync, watch, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { $ } from 'bun';
+import { spawnSync } from 'node:child_process';
+import * as esbuild from 'esbuild';
 
 const prodBrowserEntrypoints = ['src/index.ts', 'src/client.ts', 'src/jsx-runtime.ts'];
 const devBrowserEntrypoints = ['src/jsx-dev-runtime.ts'];
@@ -57,7 +58,7 @@ function rewriteExport(value: PackageJsonExport): PackageJsonExport {
 
 function createDistPackageJson(): PackageJsonShape {
 	const packageJson = JSON.parse(
-		readFileSync(path.join(import.meta.dir, 'package.json'), 'utf8'),
+		readFileSync(path.join(packageRoot, 'package.json'), 'utf8'),
 	) as PackageJsonShape;
 
 	return {
@@ -78,44 +79,50 @@ function createDistPackageJson(): PackageJsonShape {
 	};
 }
 
-const externalPackages = ['@ecopages/signals', '@ecopages/signals/*'];
-
+const packageRoot = import.meta.dirname;
+const externalPackages: string[] = [];
 const watchMode = process.argv.includes('--watch');
+const minify = !watchMode;
 
-const browserBuild = await Bun.build({
-	entrypoints: [...prodBrowserEntrypoints, ...devBrowserEntrypoints],
-	external: externalPackages,
-	format: 'esm',
-	minify: !watchMode,
-	outdir: 'dist',
-	sourcemap: 'external',
-	target: 'browser',
-});
+async function runEsbuild(label: string, options: esbuild.BuildOptions): Promise<boolean> {
+	try {
+		await esbuild.build({
+			absWorkingDir: packageRoot,
+			bundle: true,
+			format: 'esm',
+			logLevel: 'silent',
+			minify,
+			sourcemap: true,
+			...options,
+		});
 
-const serverBuild = await Bun.build({
-	entrypoints: serverEntrypoints,
-	external: externalPackages,
-	format: 'esm',
-	minify: !watchMode,
-	outdir: 'dist',
-	sourcemap: 'external',
-	target: 'node',
-});
+		return true;
+	} catch (error) {
+		console.log('[@ecopages/jsx]', label, error);
+		process.exitCode = 1;
 
-for (const build of [browserBuild, serverBuild]) {
-	if (build.success) {
-		continue;
+		return false;
 	}
-
-	for (const log of build.logs) {
-		console.log('[@ecopages/jsx]', log);
-	}
-
-	process.exitCode = 1;
 }
 
-if (browserBuild.success && serverBuild.success) {
-	copyFile(path.join(import.meta.dir, 'LICENSE'), path.join(import.meta.dir, 'dist', 'LICENSE'), (error) => {
+const browserOk = await runEsbuild('browser build', {
+	entryPoints: [...prodBrowserEntrypoints, ...devBrowserEntrypoints].map((entry) => path.join(packageRoot, entry)),
+	external: externalPackages,
+	outbase: path.join(packageRoot, 'src'),
+	outdir: path.join(packageRoot, 'dist'),
+	platform: 'browser',
+});
+
+const serverOk = await runEsbuild('server build', {
+	entryPoints: serverEntrypoints.map((entry) => path.join(packageRoot, entry)),
+	external: externalPackages,
+	outbase: path.join(packageRoot, 'src'),
+	outdir: path.join(packageRoot, 'dist'),
+	platform: 'node',
+});
+
+if (browserOk && serverOk) {
+	copyFile(path.join(packageRoot, 'LICENSE'), path.join(packageRoot, 'dist', 'LICENSE'), (error) => {
 		if (!error) {
 			return;
 		}
@@ -124,7 +131,7 @@ if (browserBuild.success && serverBuild.success) {
 		process.exitCode = 1;
 	});
 
-	copyFile(path.join(import.meta.dir, 'README.md'), path.join(import.meta.dir, 'dist', 'README.md'), (error) => {
+	copyFile(path.join(packageRoot, 'README.md'), path.join(packageRoot, 'dist', 'README.md'), (error) => {
 		if (!error) {
 			return;
 		}
@@ -133,22 +140,22 @@ if (browserBuild.success && serverBuild.success) {
 		process.exitCode = 1;
 	});
 
-	await Bun.write(
-		path.join(import.meta.dir, 'dist', 'package.json'),
+	writeFileSync(
+		path.join(packageRoot, 'dist', 'package.json'),
 		`${JSON.stringify(createDistPackageJson(), null, '\t')}\n`,
 	);
 }
 
 if (watchMode) {
 	console.log('Watching for changes...');
-	const watcher = watch(path.resolve(import.meta.dir), async (_eventType, filename) => {
+	const watcher = watch(path.resolve(packageRoot), (_eventType, filename) => {
 		const normalizedFilename = filename?.replaceAll(path.sep, '/');
 
 		if (!normalizedFilename || !shouldRebuild(normalizedFilename)) {
 			return;
 		}
 
-		await $`bun run build:lib`;
+		spawnSync('pnpm', ['run', 'build:lib'], { cwd: packageRoot, stdio: 'inherit' });
 	});
 
 	process.on('SIGINT', () => {

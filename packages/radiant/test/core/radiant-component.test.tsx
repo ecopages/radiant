@@ -281,6 +281,70 @@ describe('RadiantElement', () => {
 			expect(element.querySelector('header > h1')?.textContent).toBe('Projected heading');
 			expect(element.querySelector('[data-ref="body"] > p')?.textContent).toBe('Projected body');
 		});
+
+		expect(element.querySelectorAll('p').length).toBe(1);
+	});
+
+	test('does not duplicate default-slot projected nodes after light-DOM render', async () => {
+		@customElement('slot-single-projection-test')
+		class SlotSingleProjection extends RadiantElement {
+			override render() {
+				return (
+					<div data-ref="body">
+						<slot />
+					</div>
+				);
+			}
+		}
+
+		const element = createCustomElement<SlotSingleProjection>('slot-single-projection-test');
+		const marker = document.createElement('span');
+		marker.className = 'projected-marker';
+		marker.textContent = 'once';
+		element.append(marker);
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.querySelectorAll('.projected-marker')).toHaveLength(1);
+		});
+	});
+
+	test('keeps a projected default-slot node tracked across a second render', async () => {
+		@customElement('slot-rerender-projection-test')
+		class SlotRerenderProjection extends RadiantElement {
+			@prop({ type: Number, defaultValue: 0 }) tick = 0;
+
+			@onUpdated('tick')
+			rerenderView() {
+				this.update();
+			}
+
+			override render() {
+				return (
+					<div data-ref="body">
+						<slot />
+					</div>
+				);
+			}
+		}
+
+		const element = createCustomElement<SlotRerenderProjection>('slot-rerender-projection-test');
+		const marker = document.createElement('span');
+		marker.className = 'projected-marker';
+		marker.textContent = 'once';
+		element.append(marker);
+		document.body.appendChild(element);
+
+		await waitFor(() => {
+			expect(element.querySelectorAll('.projected-marker')).toHaveLength(1);
+		});
+
+		element.tick = 1;
+
+		await waitFor(() => {
+			expect(element.querySelectorAll('.projected-marker')).toHaveLength(1);
+			expect(element.querySelector('.projected-marker')?.textContent).toBe('once');
+		});
 	});
 
 	test('falls back when a slot has no projected content', async () => {

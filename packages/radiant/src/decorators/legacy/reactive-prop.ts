@@ -26,13 +26,15 @@ export function reactiveProp<T = unknown>({
 
 	return (target: ReactivePropHost<T>, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;
-		registerReactivePropDefinition(target, propertyName, {
+		const options = {
 			type,
 			reflect,
 			attribute: attributeKey,
 			defaultValue,
 			bind,
-		});
+		};
+
+		registerReactivePropDefinition(target, propertyName, options);
 
 		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
 		const ssrAssignedKey = Symbol.for(`@ecopages/radiant.ssr-prop-assigned:${propertyName}`);

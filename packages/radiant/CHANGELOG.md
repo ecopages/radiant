@@ -6,6 +6,12 @@ First beta prerelease of the 0.3.0 line.
 
 ## Unreleased
 
+### Patch Changes
+
+- Fixed reflected boolean `@prop` values: removing the attribute now sets the property to `false` (not `null`), so `String(el.open)` stays `"false"` and UI state stays coherent.
+- Restored automatic `observedAttributes` registration for `@prop` (lost in the Stage 3 decorator migration) so attribute ↔ property sync works again without manually declaring `static observedAttributes`.
+- Fixed light-DOM slot projection dropping assigned nodes when they are moved under an inner render wrapper, which could duplicate slotted content on the next update.
+
 ### Breaking Changes
 
 - Removed the legacy internal-state decorator alias. Use `@state` instead (drop-in replacement).

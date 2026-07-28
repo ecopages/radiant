@@ -70,7 +70,17 @@ function addDelegatedListener(
 	listener: EventListener,
 ): () => void {
 	const delegatedListener = (event: Event) => {
-		if (event.target instanceof Element && event.target.matches(selector)) {
+		const eventTarget = event.target;
+		if (!(eventTarget instanceof Node)) return;
+
+		// Text nodes are valid event targets; resolve to the owning element.
+		const elementTarget = eventTarget instanceof Element ? eventTarget : eventTarget.parentElement;
+		if (!elementTarget) return;
+
+		// Use closest() so clicks on descendants of the matched node still fire —
+		// matches() alone breaks buttons that wrap icons, tracks, labels, etc.
+		const matched = elementTarget.closest(selector);
+		if (matched && (matched === root || root.contains(matched))) {
 			listener(event);
 		}
 	};

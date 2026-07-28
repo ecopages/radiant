@@ -45,15 +45,19 @@ work inside `render()`.
 
 One boot path for Node adapters:
 
-1. Import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim + ALS scope adapters).
+1. Import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim, HTML parsers, ALS scope adapters). Server entrypoints such as `render-component` already import it; app SSR bundles should import it **first** when import order is not guaranteed.
 2. Keep `@ecopages/*` **external** in the SSR bundler so Node resolves a single module instance (ALS and adapters are module-local).
 3. Call `renderComponent` / `renderToString` — await data and assets first; keep the scoped render snapshot synchronous.
 
-```ts
-import { radiantSsrRuntimeInstalled } from '@ecopages/radiant/server/install-ssr-runtime';
-import { renderComponent } from '@ecopages/radiant/server/render-component';
+### Server dist (published layout)
 
-void radiantSsrRuntimeInstalled;
+The server build may inline shared element/controller **client** modules; the inverse is forbidden — browser builds never emit `dist/server/*` or server-only chunks. Shared `dist/chunk-*.js` under the package root are server-graph artifacts. Depend only on documented `package.json` exports. Invariants are documented in TSDoc on `packages/radiant/build.ts` and `install-ssr-runtime.ts`.
+
+**Allowed on `globalThis`:** light-DOM constructors, `document` / `customElements` from the shim, controller registry, hydrator flags. SSR scope adapters and HTML parser registration stay module-local.
+
+```ts
+import '@ecopages/radiant/server/install-ssr-runtime';
+import { renderComponent } from '@ecopages/radiant/server/render-component';
 
 const rendered = await renderComponent(CounterCard, {
 	initialize: (card) => {
@@ -132,6 +136,38 @@ Controller-specific server helpers live on `@ecopages/radiant/server/render-cont
 Controller SSR follows one extra rule: the caller still owns the outer host markup contract. Pass the host `tagName`, use `host.data` and `host.aria` for JSX-like structured attributes, and let `renderController()` infer `data-controller` from `@controller(...)` metadata unless you need to override it through the low-level `attributes` option.
 
 Note: the server helpers are transport-neutral. The package no longer ships the older fragment-header constants or header-builder helpers from this module. Adapter-specific response headers now belong in the integration layer that turns `RenderedComponent` metadata into HTTP responses.
+
+## Supported SSR DOM APIs
+
+Production SSR uses the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`, not happy-dom. Vitest files that opt into `happy-dom` exercise browser-like behavior; they do not represent the Node SSR runtime.
+
+The shim supports a focused query surface for component lifecycle code that runs during SSR:
+
+- `element.querySelector(selector)`
+- `element.querySelectorAll(selector)`
+- `element.closest(selector)`
+- `element.matches(selector)`
+- `element.contains(otherNode)`
+- `element.parentElement`
+- `document.querySelector(selector)` / `document.querySelectorAll(selector)`
+
+**Supported selector syntax (v1):**
+
+- Tag names, including custom elements (`rui-disclosure`, `button`)
+- `#id`, `.class`
+- `[attr]`, `[attr="value"]`
+- Descendant (` `) and child (`>`) combinators
+- Comma-separated selector lists
+
+**Unsupported (throws `SyntaxError`):**
+
+- Pseudo-classes (`:not`, `:has`, `:focus`, …)
+- `:scope`, sibling combinators (`+`, `~`)
+- Shadow-root queries (SSR is light-DOM only)
+
+Fragment-backed nodes materialize children lazily when a query traverses descendants, so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization.
+
+SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
 
 ## Related Docs
 

@@ -1,6 +1,10 @@
 import type { Computed } from './computed';
 import type { DependencyNode, EffectScheduler, SignalEquals } from './types';
 
+/**
+ * Module-local ambient tracking. Do not put this on `globalThis` — duplicate
+ * package copies each get their own recorder and break shared reactive graphs.
+ */
 let activeDependencyRecorder: ((dependency: DependencyNode) => void) | undefined;
 let activeComputedSignal: Computed<any> | undefined;
 let frozenWatcherDepth = 0;

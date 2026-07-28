@@ -7,6 +7,7 @@ import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
+import { alignMinimalDomHostTagName } from './minimal-dom/align-host-tag-name';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
 import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
 
@@ -25,6 +26,7 @@ export class RadiantElementSsrService {
 
 	private ensureReady(): void {
 		assertLightDomSsrSupported(this.host);
+		alignMinimalDomHostTagName(this.component, getCustomElementTagName(this.host.constructor));
 		ensureLegacyHostReady(this.component, 'ssr');
 		runSsrPreparationCallbacks(this.component);
 	}
