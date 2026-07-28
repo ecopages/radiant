@@ -7,8 +7,11 @@ order: 1
 
 import { RadiantJsxCounter, RadiantElementCounter } from '@/components/radiant-counter';
 
-
-
+export const config = {
+	dependencies: {
+		components: [RadiantJsxCounter, RadiantElementCounter],
+	},
+};
 
 # Radiant Counter
 

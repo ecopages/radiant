@@ -7,8 +7,11 @@ order: 2
 
 import { ControllerDecoratorVisualizer } from '@/components/controller-decorator-visualizer';
 
-
-
+export const config = {
+	dependencies: {
+		components: [ControllerDecoratorVisualizer],
+	},
+};
 
 # Controller Decorator Visualizer
 

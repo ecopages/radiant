@@ -66,3 +66,13 @@ import '@ecopages/radiant/client/install-hydrator';
 ```
 
 See [Hydration](./hydration.mdx) and [JSX SSR](./jsx-ssr.mdx).
+
+## Minimal DOM queries during SSR
+
+Node SSR installs a lightweight DOM shim, not a full browser. Component code that runs while a host serializes — for example `this.querySelector('[data-ref]')`, `this.closest('rui-disclosure-group')`, or `@query` / `getRef(...)` — relies on that shim.
+
+**Supported:** tag, `#id`, `.class`, `[attr]`, `[attr="value"]`, descendant and child combinators, comma-separated lists.
+
+**Unsupported:** pseudo-classes (`:not`, `:has`, …), sibling combinators, shadow-root queries. Unsupported selectors throw `SyntaxError`.
+
+Author light DOM with `authoredContent` / `prepareHost` before the first server render when lifecycle code needs to query slotted or projected nodes. See the package server README for the full supported surface.

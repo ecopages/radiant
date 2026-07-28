@@ -26,29 +26,31 @@ That means local development still depends on the workspace package outputs bein
 
 - [app/entry-server.tsx](./app/entry-server.tsx) - Nitro page-shell SSR entry. Chooses SSR vs client-only mode and renders the initial shell.
 
-- [vite-plugin-radiant/nitro/index.ts](./vite-plugin-radiant/nitro/index.ts) - Nitro page/document adapter. Handles SSR vs client-only mode negotiation, renders the app shell, and can discover Radiant custom elements plus authored `data-controller` hosts from the final document HTML.
+- [`@ecopages/vite-plugin-radiant/nitro`](../../packages/vite-plugin-radiant) - Nitro page/document adapter (`renderRadiantNitroPage`, `renderRadiantDocument`). Handles SSR vs client-only mode negotiation, renders the app shell, and discovers Radiant custom elements plus authored `data-controller` hosts from the final document HTML.
 
-- [vite-plugin-radiant/nitro/render.ts](./vite-plugin-radiant/nitro/render.ts) - Lower-level SSR fragment adapter around `@ecopages/radiant/server/render-component` and `@ecopages/radiant/server/render-controller`. Installs the light-DOM shim and merges resolved fragment assets.
+- [`@ecopages/vite-plugin-radiant/ssr`](../../packages/vite-plugin-radiant) - Lower-level SSR fragment adapter around `@ecopages/radiant/server/render-component` and `@ecopages/radiant/server/render-controller`. Installs the light-DOM shim and merges resolved fragment assets.
 
-- [vite-plugin-radiant/runtime/start-radiant-app.tsx](./vite-plugin-radiant/runtime/start-radiant-app.tsx) - Plugin-owned client bootstrap. Installs the hydrator by default, scans the DOM for required Radiant modules, mounts the app root, rescans client-only output, then starts controllers.
+- [`@ecopages/vite-plugin-radiant/runtime`](../../packages/vite-plugin-radiant) - Plugin-owned client bootstrap (`startRadiantApp`). Installs the hydrator by default, scans the DOM for required Radiant modules, mounts the app root, rescans client-only output, then starts controllers.
 
 - [src/main.tsx](./src/main.tsx) - Thin client entrypoint.
 
-- [vite-plugin-radiant/README.md](./vite-plugin-radiant/README.md) - Detailed plugin-specific documentation.
+- [`@ecopages/vite-plugin-radiant` README](../../packages/vite-plugin-radiant/README.md) - Package documentation for `radiant()`, `radiantSsr()`, and subpath exports.
 
-The plugin is now organized directly by concern under `vite-plugin-radiant/plugin/`, `vite-plugin-radiant/runtime/`, and `vite-plugin-radiant/nitro/`.
+Vite config uses `plugins: [nitro(), ...radiantSsr(), ...]` from the shared package.
+
+Nitro config uses `defineRadiantNitroConfig()` from `@ecopages/vite-plugin-radiant/nitro-config` (Rollup externals + SSR runtime shim).
 
 ## Runtime Model
 
 ### Initial Page Request
 
 1. Nitro receives the request in [app/entry-server.tsx](./app/entry-server.tsx).
-2. The entry delegates SSR vs client-only handling to [vite-plugin-radiant/nitro/index.ts](./vite-plugin-radiant/nitro/index.ts).
-3. For SSR mode, the Nitro adapter renders the page-level Radiant fragment through `renderSsrComponent(...)` in [vite-plugin-radiant/nitro/render.ts](./vite-plugin-radiant/nitro/render.ts).
-4. The document helper in [vite-plugin-radiant/nitro/index.ts](./vite-plugin-radiant/nitro/index.ts) renders the full app shell, scans the final HTML for custom elements and authored controller hosts, and resolves their client assets through `virtual:radiant/ssr-asset-registry`.
+2. The entry delegates SSR vs client-only handling to `renderRadiantNitroPage` from `@ecopages/vite-plugin-radiant/nitro`.
+3. For SSR mode, the Nitro adapter renders the page-level Radiant fragment through `renderSsrComponent(...)` from `@ecopages/vite-plugin-radiant/ssr`.
+4. The document helper renders the full app shell, scans the final HTML for custom elements and authored controller hosts, and resolves their client assets through `virtual:radiant/ssr-asset-registry`.
 5. The Nitro adapter returns HTML that already contains the initial shell, embedded app state, and a `radiant-document-state` script describing the resolved Radiant surface.
 
-Important: the current document helper discovers usage by parsing the rendered HTML through `document.createElement('template')`. In this playground that works because the normal SSR path already imports [vite-plugin-radiant/nitro/render.ts](./vite-plugin-radiant/nitro/render.ts), which installs Radiant's server light-DOM shim. If you call the document helper standalone in another server entry, install the shim first or you will not have the required DOM globals.
+Important: the current document helper discovers usage by parsing the rendered HTML through `document.createElement('template')`. In this playground that works because the normal SSR path already imports `@ecopages/vite-plugin-radiant/ssr`, which installs Radiant's server light-DOM shim. If you call the document helper standalone in another server entry, install the shim first or you will not have the required DOM globals.
 
 ### Client Boot
 

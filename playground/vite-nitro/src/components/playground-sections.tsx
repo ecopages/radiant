@@ -1,4 +1,3 @@
-import type { JsxRenderable } from '@ecopages/jsx';
 import { computed } from '@ecopages/signals';
 import { createClientPreview, DEFAULT_SSR_ENDPOINT, loadServerMessage, loadSsrMarkup } from '../store/actions';
 import { useAppStore } from '../store/store';
@@ -71,7 +70,7 @@ export function RadiantElementLabSection() {
 	);
 }
 
-export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: JsxRenderable }) {
+export function SsrRouteSection() {
 	const store = useAppStore();
 	const assetItems = computed(() => {
 		if (store.ssrAssets.length === 0) {
@@ -97,7 +96,7 @@ export function SsrRouteSection({ ssrPreviewContent }: { ssrPreviewContent?: Jsx
 	const generatedAt = computed(() => store.ssrGeneratedAt);
 	const markup = computed(() => store.ssrMarkup || 'SSR output will appear here.');
 	const tagName = computed(() => store.ssrTagName);
-	const preview = ssrPreviewContent ?? computed(() => createClientPreview(store));
+	const preview = computed(() => createClientPreview(store));
 
 	async function loadSsrRoute(endpoint = DEFAULT_SSR_ENDPOINT) {
 		await loadSsrMarkup(store, endpoint);

@@ -29,7 +29,7 @@ let nitroServer;
 const nitroServerRuntime = process.env.NITRO_E2E_SERVER ?? process.execPath;
 
 test.before(async () => {
-	await runCommand('bun', ['run', 'build'], playgroundDirectory);
+	await runCommand('pnpm', ['run', 'build'], playgroundDirectory);
 	nitroServer = await startServer({
 		command: nitroServerRuntime,
 		args: [resolve(playgroundDirectory, '.output/server/index.mjs')],

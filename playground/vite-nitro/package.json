@@ -4,7 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "cd ../.. && bun run --filter @ecopages/jsx build:lib && bun run --filter @ecopages/signals build:lib && bun run --filter @ecopages/radiant build:lib && cd playground/vite-nitro && vite build",
+		"build": "cd ../.. && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/radiant build:lib && cd playground/vite-nitro && vite build",
 		"preview": "nitro preview",
 		"test:e2e": "node --test ./test/nitro-page.e2e.test.mjs"
 	},
@@ -14,9 +14,12 @@
 		"@ecopages/signals": "workspace:*"
 	},
 	"devDependencies": {
+		"@ecopages/vite-plugin-radiant": "workspace:*",
+		"@tailwindcss/vite": "^4.1.18",
 		"nitro": "^3.0.260311-beta",
 		"playwright": "^1.52.0",
-		"typescript": "^5.9.2",
+		"tailwindcss": "^4.1.18",
+		"typescript": "catalog:",
 		"vite": "^7.1.3"
 	}
 }
