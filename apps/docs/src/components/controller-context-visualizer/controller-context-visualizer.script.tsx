@@ -1,8 +1,8 @@
+import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
 import {
 	type ContextProvider,
 	RadiantController,
 	RadiantElement,
-	consumeContext,
 	contextSelector,
 	controller,
 	createContext,
@@ -23,8 +23,6 @@ const controllerVisualizerContext = createContext<ControllerVisualizerContext>(S
 
 @controller('controller-context-provider')
 export class ControllerContextProvider extends RadiantController {
-	private updateResetTimer: ReturnType<typeof setTimeout> | undefined;
-
 	@provideContext<typeof controllerVisualizerContext>({
 		context: controllerVisualizerContext,
 		initialValue: {
@@ -37,37 +35,24 @@ export class ControllerContextProvider extends RadiantController {
 	@query({ ref: 'provider-count' }) providerCount!: HTMLElement;
 	@query({ ref: 'provider-events' }) providerEvents!: HTMLElement;
 	@query({ ref: 'provider-last' }) providerLast!: HTMLElement;
-	@query({ ref: 'provider-node' }) providerNode!: HTMLElement;
-	@query({ ref: 'controller-node' }) controllerNode!: HTMLElement;
-	@query({ ref: 'flow-title' }) flowTitle!: HTMLElement;
-	@query({ ref: 'flow-description' }) flowDescription!: HTMLElement;
+	@query({ ref: 'status' }) status!: HTMLElement;
 
 	override connect(): void {
 		super.connect();
 		this.syncSnapshot(this.provider.getContext());
-		this.flowTitle.textContent = 'Initial hydration';
-		this.flowDescription.textContent = 'The provider seeded context and both consumers resolved their first value.';
-		this.playTransmission('hydrate');
+		this.status.textContent = 'Provider seeded context. Both consumers resolved their first value.';
 	}
 
 	@onEvent({ ref: 'increment', type: 'click' })
 	increment() {
 		this.updateCount(1, 'Incremented');
-		this.setTransmissionMessage(
-			'Increment event',
-			'A click event updated provider state and sent a fresh count through the graph.',
-		);
-		this.playTransmission('increment');
+		this.status.textContent = 'Increment updated the shared context. Both consumers reacted.';
 	}
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {
 		this.updateCount(-1, 'Decremented');
-		this.setTransmissionMessage(
-			'Decrement event',
-			'The provider published a lower count and both consumer paths reacted immediately.',
-		);
-		this.playTransmission('decrement');
+		this.status.textContent = 'Decrement updated the shared context. Both consumers reacted.';
 	}
 
 	@onEvent({ ref: 'reset', type: 'click' })
@@ -79,11 +64,7 @@ export class ControllerContextProvider extends RadiantController {
 
 		this.provider.setContext(nextContext);
 		this.syncSnapshot(nextContext);
-		this.setTransmissionMessage(
-			'Reset event',
-			'The provider restored its baseline value and replayed the update to each consumer.',
-		);
-		this.playTransmission('reset');
+		this.status.textContent = 'Reset restored the baseline count and replayed it to each consumer.';
 	}
 
 	private updateCount(delta: number, label: string) {
@@ -104,48 +85,10 @@ export class ControllerContextProvider extends RadiantController {
 		this.providerEvents.textContent = String(context.history.length);
 		this.providerLast.textContent = lastEntry;
 	}
-
-	private setTransmissionMessage(title: string, description: string) {
-		this.flowTitle.textContent = title;
-		this.flowDescription.textContent = description;
-	}
-
-	private playTransmission(flow: string) {
-		const root = this.host;
-		root.setAttribute('data-flow', flow);
-		root.setAttribute('data-updated', 'true');
-
-		if (this.updateResetTimer !== undefined) {
-			clearTimeout(this.updateResetTimer);
-		}
-
-		for (const node of [
-			this.providerNode,
-			this.controllerNode,
-			root.querySelector<HTMLElement>('.controller-context-visualizer__panel--element'),
-		]) {
-			node?.animate(
-				[
-					{ boxShadow: '0 0 0 rgba(14, 116, 144, 0)' },
-					{ boxShadow: '0 0 0 0.35rem rgba(14, 116, 144, 0.14)' },
-					{ boxShadow: '0 0 0 rgba(14, 116, 144, 0)' },
-				],
-				{ duration: 820, easing: 'ease-out' },
-			);
-		}
-
-		this.updateResetTimer = setTimeout(() => {
-			root.removeAttribute('data-flow');
-			root.removeAttribute('data-updated');
-			this.updateResetTimer = undefined;
-		}, 900);
-	}
 }
 
 @controller('controller-context-consumer')
 export class ControllerContextConsumer extends RadiantController {
-	@consumeContext(controllerVisualizerContext) context!: ContextProvider<typeof controllerVisualizerContext>;
-
 	@query({ ref: 'controller-count' }) controllerCount!: HTMLElement;
 	@query({ ref: 'controller-mode' }) controllerMode!: HTMLElement;
 	@query({ ref: 'controller-last' }) controllerLast!: HTMLElement;
@@ -169,42 +112,47 @@ export class ControllerContextViewer extends RadiantElement {
 	@contextSelector({ context: controllerVisualizerContext, select: (context) => context.history })
 	history: string[] = [];
 
-	override render() {
+	override render(): JsxRenderable {
 		const lastEntry = this.history[this.history.length - 1] ?? 'Waiting for updates';
-		const recentEntries = this.history.slice(-4).reverse();
-		const parityLabel = this.count % 2 === 0 ? 'even count' : 'odd count';
+		const recentEntries = this.history.slice(-3).reverse();
+		const parityLabel = this.count % 2 === 0 ? 'even' : 'odd';
 
 		return (
-			<article class="controller-context-visualizer__panel controller-context-visualizer__panel--element controller-context-visualizer__node controller-context-visualizer__node--element">
-				<div class="controller-context-visualizer__card-head">
-					<p class="controller-context-visualizer__card-id">N4</p>
-					<p class="controller-context-visualizer__label">Custom element descendant</p>
-					<span class="controller-context-visualizer__status" aria-hidden="true">
-						<span class="controller-context-visualizer__status-ping"></span>
-						<span class="controller-context-visualizer__status-dot"></span>
-					</span>
+			<article class="controller-context-visualizer__panel--element grid gap-3 rounded-sm border border-border bg-secondary-container/20 p-4">
+				<div class="grid gap-1">
+					<p class="m-0 text-sm font-semibold">Selector element</p>
+					<p class="m-0 text-sm text-on-background/70">
+						<code>@customElement</code> · <code>@contextSelector</code>
+					</p>
 				</div>
-				<h4>Selector-driven element</h4>
-				<p class="controller-context-visualizer__copy">
-					Receives selected context slices and re-renders directly from those values.
-				</p>
-				<ul class="controller-context-visualizer__decorators" aria-label="Element decorators">
-					<li>@customElement</li>
-					<li>@contextSelector</li>
-				</ul>
-				<p class="controller-context-visualizer__connection-note">
-					<b>Receives from N2</b> using the selected <code>context.count</code> slice.
-				</p>
-				<p class="controller-context-visualizer__value">{this.count}</p>
-				<p class="controller-context-visualizer__meta">selected slice: context.count · {parityLabel}</p>
-				<p class="controller-context-visualizer__detail">{lastEntry}</p>
-				<ul class="controller-context-visualizer__history">
-					{recentEntries.map((entry) => (
-						<li>{entry}</li>
-					))}
-				</ul>
+				<dl class="m-0 grid grid-cols-2 gap-3 text-sm text-on-background/70">
+					<div class="grid gap-1 rounded-sm border border-border/60 bg-background/60 p-3">
+						<dt class="m-0">count</dt>
+						<dd class="controller-context-visualizer__value m-0 font-medium text-on-background">
+							{this.count}
+						</dd>
+					</div>
+					<div class="grid gap-1 rounded-sm border border-border/60 bg-background/60 p-3">
+						<dt class="m-0">parity</dt>
+						<dd class="m-0 font-medium text-on-background">{parityLabel}</dd>
+					</div>
+				</dl>
+				<p class="controller-context-visualizer__detail m-0 text-sm text-on-background/80">{lastEntry}</p>
+				{recentEntries.length > 0 ? (
+					<ul class="m-0 grid list-none gap-1 p-0 text-sm text-on-background/70">
+						{recentEntries.map((entry) => (
+							<li class="m-0 border-t border-border/50 pt-1 first:border-0 first:pt-0">{entry}</li>
+						))}
+					</ul>
+				) : null}
 			</article>
 		);
+	}
+}
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'controller-context-viewer': JsxCustomElementAttributes<ControllerContextViewer>;
 	}
 }
 
