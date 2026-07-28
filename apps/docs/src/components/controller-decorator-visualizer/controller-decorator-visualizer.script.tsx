@@ -8,10 +8,6 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 	@state lastAction = 'Hydrated from host attribute';
 	@state lastEvent = 'initial hydrate';
 
-	@query({ ref: 'host-node' }) hostNode!: HTMLElement;
-	@query({ ref: 'event-node' }) eventNode!: HTMLElement;
-	@query({ ref: 'query-node' }) queryNode!: HTMLElement;
-	@query({ ref: 'state-node' }) stateNode!: HTMLElement;
 	@query({ ref: 'host-signal' }) hostSignal!: HTMLElement;
 	@query({ ref: 'host-busy' }) hostBusy!: HTMLElement;
 	@query({ ref: 'event-action' }) eventAction!: HTMLElement;
@@ -21,8 +17,6 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 	@query({ ref: 'state-last-action' }) stateLastAction!: HTMLElement;
 	@query({ ref: 'flow-title' }) flowTitle!: HTMLElement;
 	@query({ ref: 'flow-description' }) flowDescription!: HTMLElement;
-
-	private transmissionReset?: ReturnType<typeof setTimeout>;
 
 	override connect(): void {
 		super.connect();
@@ -35,16 +29,6 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 			'Initial hydrate',
 			'The host attribute seeded controller state and all queried nodes resolved on connect.',
 		);
-		this.playTransmission('hydrate');
-	}
-
-	override disconnect(): void {
-		if (this.transmissionReset) {
-			clearTimeout(this.transmissionReset);
-			this.transmissionReset = undefined;
-		}
-
-		super.disconnect();
 	}
 
 	@onEvent({ selector: 'button[data-signal-choice]', type: 'click' })
@@ -69,9 +53,8 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 		this.lastAction = `Host attribute changed to data-signal="${nextSignal}"`;
 		this.setTransmission(
 			'Signal rerouted',
-			`The ${nextSignal} action updated the host attribute, refreshed queried nodes, and incremented controller state.`,
+			`The ${nextSignal} action updated the host attribute and refreshed queried nodes.`,
 		);
-		this.playTransmission('signal');
 	}
 
 	@onEvent({ ref: 'ping', type: 'click' })
@@ -80,11 +63,7 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 		this.pulses += 1;
 		this.lastAction = `Resolved ${this.host.querySelectorAll('[data-ref]').length} refs and refreshed DOM wiring.`;
 		this.syncQueryNode();
-		this.setTransmission(
-			'Ref pulse',
-			'The controller re-read its stable ref surface and replayed the current state back into authored DOM nodes.',
-		);
-		this.playTransmission('ping');
+		this.setTransmission('Ref pulse', 'The controller re-read its stable refs and wrote current state back out.');
 	}
 
 	@onUpdated('signal')
@@ -105,6 +84,7 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 		for (const button of Array.from(this.host.querySelectorAll<HTMLButtonElement>('button[data-signal-choice]'))) {
 			const active = button.getAttribute('data-signal-choice') === this.signal;
 			button.setAttribute('aria-pressed', active ? 'true' : 'false');
+			button.className = active ? 'button button--sm button--primary' : 'button button--sm button--outline';
 		}
 	}
 
@@ -130,43 +110,6 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 	private setTransmission(title: string, description: string) {
 		this.flowTitle.textContent = title;
 		this.flowDescription.textContent = description;
-	}
-
-	private playTransmission(flow: string) {
-		const root = this.host;
-
-		root.setAttribute('data-flow', flow);
-
-		if (this.transmissionReset) {
-			clearTimeout(this.transmissionReset);
-		}
-
-		for (const beam of Array.from(root.querySelectorAll<HTMLElement>('.controller-decorator-visualizer__beam'))) {
-			beam.animate(
-				[
-					{ filter: 'brightness(1)', opacity: 0.75 },
-					{ filter: 'brightness(1.26)', opacity: 1 },
-					{ filter: 'brightness(1)', opacity: 0.75 },
-				],
-				{ duration: 880, easing: 'ease-out' },
-			);
-		}
-
-		for (const node of [this.hostNode, this.eventNode, this.queryNode, this.stateNode]) {
-			node.animate(
-				[
-					{ boxShadow: '0 0 0 rgba(20, 184, 166, 0)' },
-					{ boxShadow: '0 0 0 0.38rem rgba(20, 184, 166, 0.14)' },
-					{ boxShadow: '0 0 0 rgba(20, 184, 166, 0)' },
-				],
-				{ duration: 820, easing: 'ease-out' },
-			);
-		}
-
-		this.transmissionReset = setTimeout(() => {
-			root.removeAttribute('data-flow');
-			this.transmissionReset = undefined;
-		}, 1100);
 	}
 }
 
