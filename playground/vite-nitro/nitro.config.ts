@@ -1,9 +1,5 @@
-import { defineNitroConfig } from 'nitro/config';
-import { ECOPAGES_SSR_EXTERNAL } from './ecopages-ssr-external';
+import { defineRadiantNitroConfig } from '@ecopages/vite-plugin-radiant/nitro-config';
 
-export default defineNitroConfig({
+export default defineRadiantNitroConfig({
 	serverDir: './server',
-	rollupConfig: {
-		external: [...ECOPAGES_SSR_EXTERNAL],
-	},
 });

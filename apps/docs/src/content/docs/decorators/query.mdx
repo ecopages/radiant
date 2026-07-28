@@ -7,7 +7,7 @@ order: 7
 
 # @query
 
-The `@query` decorator provides a convenient way to query and cache references to elements within your host DOM. It creates a getter that performs the query on first access and caches the results by default.
+The `@query` decorator provides a convenient way to query (and optionally cache) references to elements within your host DOM. It creates a getter that performs the query on every access by default, or once and caches the result if you pass `cache: true`.
 
 It works on both `RadiantElement` and `RadiantController`.
 
@@ -36,18 +36,18 @@ export class UserProfile extends RadiantElement {
 | `selector` | `string` | One of `selector`/`ref` | CSS selector to match elements. |
 | `ref` | `string` | One of `selector`/`ref` | Value of `data-ref` attribute to match. |
 | `all` | `boolean` | No | Query for all matching elements (default: `false`). |
-| `cache` | `boolean` | No | Cache the query result (default: `true`). |
+| `cache` | `boolean` | No | Cache the query result (default: `false`). |
 | `scope` | `'light' \| 'shadow' \| 'both'` | No | Which DOM tree to search (default: `'light'`). |
 
 ## Feature Highlight
 
 ### Caching Behavior
 
-By default, queries are cached for performance. For dynamic content that changes frequently, you can disable caching to re-query on every access.
+By default, queries are **not** cached — each access re-runs the lookup. For a stable reference that never needs to be re-resolved, pass `cache: true` so repeated access skips the query.
 
 ```typescript
-@query({ ref: 'dynamic-item', all: true, cache: false }) 
-items!: HTMLElement[];
+@query({ ref: 'stable-el', cache: true })
+stableEl!: HTMLElement;
 ```
 
 ### Shadow DOM Scope
@@ -73,6 +73,35 @@ Use TypeScript's non-null assertion operator (`!`) for required elements, or the
 @query({ ref: 'required-el' }) element!: HTMLElement;
 @query({ ref: 'optional-el' }) optional?: HTMLElement;
 ```
+
+## `@query` vs JSX Bindings
+
+`@query` is for reading DOM you do not directly control from `render()` — content projected into a slot by a consumer, DOM enhanced by a `RadiantController`, or a live `Element` handle needed by a third-party imperative API (positioning libraries, focus management, observers).
+
+If the element is one your own `render()` JSX produces, prefer a binding instead of querying it back out to write into it:
+
+```tsx
+// Avoid — re-fetching a host-rendered node just to write into it
+@query({ ref: 'count' }) countEl!: HTMLElement;
+
+@onUpdated('count')
+syncCount() {
+  this.countEl.textContent = String(this.count);
+}
+
+override render() {
+  return <span data-ref="count"></span>;
+}
+```
+
+```tsx
+// Prefer — bind the value directly at the JSX position
+override render() {
+  return <span>{this.$.count}</span>;
+}
+```
+
+The binding patches just that text node when `count` changes; the query-and-write version does the same job with more code, an extra DOM read, and no benefit. Reach for `@query` when there's no reactive value to bind — you need the node itself, not a value at that position.
 
 ## Learn More
 

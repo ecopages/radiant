@@ -2,7 +2,7 @@ import { defineHandler } from 'nitro';
 import { resolveRadiantSsrStyleAssets } from 'virtual:radiant/ssr-asset-registry';
 
 export default defineHandler(async () => {
-	const { renderSsrComponentResponse } = await import('../../../vite-plugin-radiant/nitro/render');
+	const { renderSsrComponentResponse } = await import('@ecopages/vite-plugin-radiant/ssr');
 	const { RadiantCounter } = await import('@/components/radiant-counter.script');
 
 	return renderSsrComponentResponse(RadiantCounter, {

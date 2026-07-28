@@ -1,10 +1,10 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { loadSsrMarkup } from './store/actions';
-import type { StartRadiantAppBootstrapResult } from '../vite-plugin-radiant/runtime';
+import type { StartRadiantAppBootstrapResult } from '@ecopages/vite-plugin-radiant/runtime';
 import {
 	createRadiantDocumentStateScriptNode,
 	readRadiantDocumentStateFromDom,
-} from '../vite-plugin-radiant/runtime/document-state';
+} from '@ecopages/vite-plugin-radiant/runtime';
 import { initializeAppStore, createStateScriptNode, readStateFromDom } from './store/store';
 
 export type AppBootstrapProps = {

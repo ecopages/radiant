@@ -7,8 +7,11 @@ order: 3
 
 import { ControllerContextVisualizer } from '@/components/controller-context-visualizer';
 
-
-
+export const config = {
+	dependencies: {
+		components: [ControllerContextVisualizer],
+	},
+};
 
 # Controller Context Visualizer
 

@@ -12,15 +12,17 @@
 		"noEmit": true,
 		"noImplicitOverride": true,
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"ecopages:content/docs": ["./types/ecopages-content-docs.d.ts"],
+			"ecopages:content/docs/server": ["./types/ecopages-content-docs-server.d.ts"]
 		},
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "ES2021",
-		"types": ["bun", "ecopages-content-processor"],
+		"types": ["node"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true
 	},
-	"include": ["src", "eco.config.ts", "modules.d.ts", "node_modules/@types/ecopages-content-processor"]
+	"include": ["src", "eco.config.ts", "modules.d.ts"]
 }

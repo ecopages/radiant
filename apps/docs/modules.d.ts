@@ -1,2 +1,10 @@
 import '@ecopages/core/declarations';
-import '@ecopages/content-processor/types';
+import '@ecopages/core/env';
+
+declare global {
+	interface ImportMeta {
+		readonly env: ImportMetaEnv;
+	}
+}
+
+export {};

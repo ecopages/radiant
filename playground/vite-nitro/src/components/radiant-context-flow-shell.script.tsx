@@ -10,7 +10,7 @@ export class RadiantContextFlowShellElement extends RadiantElement {
 		initialValue: { label: 'Nitro SSR context', level: 2 },
 		hydrate: Object,
 	})
-	declare context: ContextProvider<typeof radiantContextFlowContext>;
+	context!: ContextProvider<typeof radiantContextFlowContext>;
 
 	private readonly incrementContextLevel = () => {
 		const currentContext = this.context.getContext();

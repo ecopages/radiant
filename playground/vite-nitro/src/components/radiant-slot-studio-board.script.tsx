@@ -9,9 +9,9 @@ const tempoSequence: Array<'Calm' | 'Live' | 'Review'> = ['Calm', 'Live', 'Revie
 
 @customElement('radiant-slot-studio-board')
 export class RadiantSlotStudioBoardElement extends RadiantElement {
-	@querySlot({ all: true }) declare defaultSlotElements: Element[];
-	@querySlot({ name: 'sidebar' }) declare sidebarSlotElement: Element | null;
-	@querySlot({ name: 'footer' }) declare footerSlotElement: Element | null;
+	@querySlot({ all: true }) defaultSlotElements!: Element[];
+	@querySlot({ name: 'sidebar' }) sidebarSlotElement!: Element | null;
+	@querySlot({ name: 'footer' }) footerSlotElement!: Element | null;
 
 	@provideContext({
 		context: radiantSlotStudioContext,
@@ -24,7 +24,7 @@ export class RadiantSlotStudioBoardElement extends RadiantElement {
 		},
 		hydrate: Object,
 	})
-	declare context: ContextProvider<typeof radiantSlotStudioContext>;
+	context!: ContextProvider<typeof radiantSlotStudioContext>;
 
 	private readonly advanceStage = () => {
 		const currentContext = this.context.getContext();

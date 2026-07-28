@@ -3,12 +3,13 @@ export {
 	RadiantController,
 	RadiantElement,
 	controller,
+	createResource,
 	onUpdated,
 	onEvent,
 	query,
 	state,
 	customElement,
-} from '../../../../packages/radiant/src/index.ts';
+} from '@ecopages/radiant';
 
 export {
 	type ContextProvider,
@@ -17,11 +18,11 @@ export {
 	createContext,
 	onContextUpdate,
 	provideContext,
-} from '../../../../packages/radiant/src/context/index.ts';
+} from '@ecopages/radiant/context';
 
 export {
 	type ControllerRegistryRuntime,
 	enableControllerReplacementForHmr,
 	registerController,
 	startControllers,
-} from '../../../../packages/radiant/src/controller-registry.ts';
+} from '@ecopages/radiant/controller-registry';
