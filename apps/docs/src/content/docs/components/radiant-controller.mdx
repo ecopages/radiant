@@ -55,7 +55,7 @@ startControllers(document);
 
 Important: controller identifiers are global. By default, later registrations for an existing identifier are ignored and the first registered controller stays active.
 
-If a tooling or HMR environment needs live replacement semantics, use the explicit registry runtime APIs instead of changing default registration behavior. See [Controller Tooling & HMR](/docs/components/controller-tooling-hmr).
+If a tooling or HMR environment needs live replacement semantics, use the explicit registry runtime APIs instead of changing default registration behavior. See [Controller Tooling & HMR](/docs/tools/controller-tooling-hmr).
 
 If the same module also needs other common Radiant decorators or bases, importing everything from the root entrypoint is still valid. The focused registry subpath is mainly the better default for bundle-sensitive setup code.
 
@@ -309,12 +309,12 @@ Controller registration is intentionally conservative by default:
 - `replaceController(...)` is the explicit mutating path when tooling needs to swap the active class
 - `enableControllerReplacementForHmr()` is the convenience helper for browser shells that want decorator-driven replacement during HMR
 
-For the current docs-app integration and the planned `@ecopages/ecopages-jsx` plugin port, see [Controller Tooling & HMR](/docs/components/controller-tooling-hmr).
+For the current docs-app integration and the planned `@ecopages/ecopages-jsx` plugin port, see [Controller Tooling & HMR](/docs/tools/controller-tooling-hmr).
 
 ## See Also
 
 - [@controller](/docs/decorators/controller)
-- [Controller Tooling & HMR](/docs/components/controller-tooling-hmr)
+- [Controller Tooling & HMR](/docs/tools/controller-tooling-hmr)
 - [@attr](/docs/decorators/attr)
 - [@query](/docs/decorators/query)
 - [Context](/docs/context/context)
