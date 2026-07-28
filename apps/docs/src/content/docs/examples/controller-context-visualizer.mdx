@@ -15,24 +15,17 @@ export const config = {
 
 # Controller Context Visualizer
 
-An interactive context example built around authored HTML and `RadiantController` registration.
+One context token shared across a mixed tree: a `RadiantController` provider on authored HTML, consumed by both another controller and a nested `RadiantElement`.
 
-The provider lives on plain DOM marked with `data-controller`. From there, one shared context token reaches two different consumers:
+The provider host is plain DOM with `data-controller`. From there:
 
-- a `RadiantController` that updates authored markup imperatively with `@onContextUpdate`
-- a nested `RadiantElement` that re-renders from a selected slice with `@contextSelector`
+- a `RadiantController` updates authored markup imperatively with `@onContextUpdate`
+- a nested `RadiantElement` re-renders from a selected slice with `@contextSelector`
 
 <ControllerContextVisualizer />
 
-## What It Shows
+## The Pattern
 
-- how `@controller`, `@provideContext`, `@onContextUpdate`, and `@contextSelector` each occupy different roles
-- controller-provided context is available to descendants without requiring a custom-element provider host
-- controller and element consumers can react to the same context updates while presenting those updates differently
-- `startControllers(...)` can enhance authored markup while `RadiantElement` continues to render its own view normally
+Context is not tied to custom-element hosts. A controller can `@provideContext`, descendants can consume it whether they are controllers or elements, and each consumer reacts in its own way — imperative DOM updates on one side, selected re-renders on the other.
 
-## Why This Example Matters
-
-This is the main boundary that `RadiantController` opens up. You can keep server-authored or CMS-authored HTML as the source of truth for structure, attach behavior with controllers, and still share typed context with custom elements lower in the tree.
-
-That makes mixed trees practical: controller-owned DOM for enhancement, custom elements where isolated rendering is useful, and one context graph across both.
+That is the mixed-tree model: enhance authored markup with controllers, use custom elements where isolated rendering helps, keep one context graph across both.
