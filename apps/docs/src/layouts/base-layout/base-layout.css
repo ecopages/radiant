@@ -1,6 +1,11 @@
 html {
 	scroll-behavior: smooth;
+	color-scheme: light;
 	@apply bg-background;
+}
+
+[data-theme='dark'] {
+	color-scheme: dark;
 }
 
 ::selection {
