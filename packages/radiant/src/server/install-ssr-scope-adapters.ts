@@ -1,8 +1,5 @@
-import { getActiveSsrScopeValue, withActiveSsrScopeValue } from '@ecopages/jsx/server';
-import { installRadiantElementSsrScopeAdapters } from '../core/radiant-element-ssr-registry';
-
-/** Side-effect import: wires core SSR runtime lookups to the Node JSX SSR render scope. */
-installRadiantElementSsrScopeAdapters({
-	get: getActiveSsrScopeValue,
-	withValue: withActiveSsrScopeValue,
-});
+/**
+ * Legacy side-effect module. Prefer `import '@ecopages/radiant/server/install-ssr-runtime'`.
+ * Re-imports the canonical boot so a direct import still wires scope adapters.
+ */
+import './install-ssr-runtime';

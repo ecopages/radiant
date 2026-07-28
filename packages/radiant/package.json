@@ -16,17 +16,17 @@
 		"directory": "dist"
 	},
 	"scripts": {
-		"build:lib": "bun run clean && bun run build:files && bun run build:types",
-		"build:files": "bun run ./build.ts",
-		"build:types": "tsc -p tsconfig.build.json && tsc-alias",
+		"build:lib": "pnpm run clean && pnpm run build:files && pnpm run build:types",
+		"build:files": "node --import tsx ./build.ts",
+		"build:types": "pnpm --filter @ecopages/signals build:types && pnpm --filter @ecopages/jsx build:types && tsc -p tsconfig.build.json && tsc-alias",
 		"clean": "rm -rf ./dist",
-		"watch:lib": "bun run ./build.ts --watch",
-		"size:check": "bun run ./check-size.ts",
-		"size:report": "bun run ./check-size.ts --report-only",
+		"watch:lib": "node --import tsx ./build.ts --watch",
+		"size:check": "node --import tsx ./check-size.ts",
+		"size:report": "node --import tsx ./check-size.ts --report-only",
 		"test:standard": "vitest run && vitest run --config vitest.browser.config.ts && vitest run --config vitest.e2e.config.ts",
 		"test:legacy": "vitest run -- --legacy && vitest run --config vitest.browser.config.ts -- --legacy && vitest run --config vitest.e2e.config.ts -- --legacy",
-		"test:lib": "bun run test:standard && bun run test:legacy",
-		"test:lib:coverage": "bun run test:standard -- --coverage && bun run vitest run --coverage -- --legacy"
+		"test:lib": "pnpm run test:standard && pnpm run test:legacy",
+		"test:lib:coverage": "pnpm run test:standard -- --coverage && pnpm exec vitest run --coverage -- --legacy"
 	},
 	"dependencies": {
 		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0"
@@ -36,11 +36,13 @@
 		"@ecopages/signals": "workspace:*",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/user-event": "^14.5.2",
+		"@types/node": "^24.13.2",
 		"@vitest/browser": "^3.2.4",
 		"@vitest/coverage-istanbul": "^3.2.4",
-		"bun-types": "latest",
 		"happy-dom": "^20.0.0",
 		"tsc-alias": "1.8.10",
+		"tsx": "^4.20.6",
+		"typescript": "catalog:",
 		"esbuild": "^0.25.0",
 		"playwright": "^1.52.0",
 		"vite": "^7.1.3",
@@ -55,7 +57,6 @@
 	"sideEffects": [
 		"./dist/client/install-hydrator.js",
 		"./dist/server/install-light-dom-shim.js",
-		"./dist/server/install-ssr-scope-adapters.js",
 		"./dist/server/install-ssr-runtime.js"
 	],
 	"exports": {
@@ -150,6 +151,10 @@
 			"types": "./dist/server/radiant-element-ssr.d.ts",
 			"import": "./dist/server/radiant-element-ssr.js"
 		},
+		"./server/radiant-element-ssr-bridge": {
+			"types": "./dist/server/radiant-element-ssr-bridge.d.ts",
+			"import": "./dist/server/radiant-element-ssr-bridge.js"
+		},
 		"./server/render-controller": {
 			"types": "./dist/server/render-controller.d.ts",
 			"import": "./dist/server/render-controller.js"
@@ -221,10 +226,6 @@
 		"./decorators/query-slot": {
 			"types": "./dist/decorators/query-slot.d.ts",
 			"import": "./dist/decorators/query-slot.js"
-		},
-		"./decorators/resource": {
-			"types": "./dist/decorators/resource.d.ts",
-			"import": "./dist/decorators/resource.js"
 		},
 		"./decorators/signal": {
 			"types": "./dist/decorators/signal.d.ts",

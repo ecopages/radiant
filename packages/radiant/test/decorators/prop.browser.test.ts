@@ -33,6 +33,16 @@ describe('@prop', () => {
 			document.body.appendChild(customElement);
 			expect(customElement.name).toEqual('Frank');
 		});
+
+		test('honors an attribute set before the element is first connected', async () => {
+			const customElement = document.createElement('my-reactive-string') as MyReactiveString;
+			customElement.setAttribute('name', 'Zoe');
+			document.body.appendChild(customElement);
+
+			await Promise.resolve();
+
+			expect(customElement.name).toEqual('Zoe');
+		});
 	});
 
 	describe('number', () => {

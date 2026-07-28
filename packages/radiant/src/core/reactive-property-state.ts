@@ -33,7 +33,9 @@ export class ReactivePropertyState {
 	}
 
 	public applyAttributeChange(name: string, oldValue: string | null, newValue: string | null): void {
-		const config = this.properties.get(name);
+		const config =
+			this.properties.get(name) ??
+			Array.from(this.properties.values()).find((property) => property.attribute === name);
 
 		if (!config) {
 			return;
@@ -101,7 +103,18 @@ export class ReactivePropertyState {
 	}
 
 	private transformAttributeValue(value: string | null, config: ReactiveProperty): unknown {
-		return value !== null ? config.converter.fromAttribute(value) : value;
+		// Boolean attributes are presence-based: removal must yield `false`, not `null`.
+		// Otherwise reflecting `false` → removeAttribute → attributeChangedCallback sets the
+		// property to `null`, and callers like `String(this.open)` become `"null"`.
+		if (value === null) {
+			return config.type === Boolean ? false : value;
+		}
+
+		if (config.type === Boolean && value === '') {
+			return true;
+		}
+
+		return config.converter.fromAttribute(value);
 	}
 
 	private reflectValue<T>(

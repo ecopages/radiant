@@ -18,7 +18,7 @@ export function createElementFromFragment(fragment: string, tag: ParsedHtmlTag, 
 			? (new MinimalHtmlScriptElement(ownerDocument) as MinimalElement)
 			: new MinimalHTMLElement(tag.tagName, ownerDocument);
 
-	element.setSerializedFragment(fragment, extractTextContent(tag.innerHtml), tag.attributes);
+	element.setSerializedFragment(fragment, extractTextContent(tag.innerHtml), tag.attributes, tag.innerHtml);
 	return element as unknown as Node;
 }
 
