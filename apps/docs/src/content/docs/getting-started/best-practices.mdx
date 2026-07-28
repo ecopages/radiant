@@ -204,6 +204,27 @@ Practical rule of thumb:
 
 In that example, the `class` expression still belongs to the host render pass, while the bound `data-state` and heading text can patch in place.
 
+### @query vs Bindings
+
+`@query` and `@querySlot` are for DOM you don't own from `render()` — slotted/consumer-authored content, a `RadiantController` enhancing existing markup, or a live `Element` handle needed by a third-party imperative API. They are not a substitute for binding a value your own `render()` JSX already produces.
+
+If a `@query` ref exists only to be written to from an `@onUpdated` callback with a value that could instead be expressed directly in JSX, prefer the binding:
+
+```tsx
+// Avoid
+@query({ ref: 'count' }) countEl!: HTMLElement;
+
+@onUpdated('count')
+syncCount() {
+  this.countEl.textContent = String(this.count);
+}
+
+// Prefer
+override render() {
+  return <span>{this.$.count}</span>;
+}
+```
+
 ### Derived Bindings
 
 Use derived bindings when JSX needs a **projection** of a reactive value — not the raw binding itself.

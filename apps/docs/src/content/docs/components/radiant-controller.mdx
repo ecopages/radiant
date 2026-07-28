@@ -8,8 +8,11 @@ order: 2
 import { ControllerContextVisualizer } from '@/components/controller-context-visualizer';
 import { ControllerDecoratorVisualizer } from '@/components/controller-decorator-visualizer';
 
-
-
+export const config = {
+	dependencies: {
+		components: [ControllerContextVisualizer, ControllerDecoratorVisualizer],
+	},
+};
 
 # RadiantController
 

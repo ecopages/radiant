@@ -3,6 +3,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import { docsNav, type ContentNavGroup } from '@/lib/content-nav';
 
 import { Banner } from '@/components/banner/banner';
+import { CodeTabs } from '@/components/code-tabs';
 import { BaseLayout } from '@/layouts/base-layout';
 import { getGroupIcon } from './get-group-icon';
 
@@ -44,7 +45,7 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 	dependencies: {
 		stylesheets: ['./docs-layout.css'],
 		scripts: ['./docs-layout.script.tsx'],
-		components: [BaseLayout, Banner],
+		components: [BaseLayout, Banner, CodeTabs],
 	},
 	render: async ({ children, class: className }) => {
 		return (

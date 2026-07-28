@@ -1,1 +1,1 @@
-bun run test:all && bun run format && bun lint
+pnpm run test:all && pnpm run format && pnpm lint

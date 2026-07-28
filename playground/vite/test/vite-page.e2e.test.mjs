@@ -21,10 +21,10 @@ const origin = `http://${host}:${port}`;
 let vitePreviewServer;
 
 test.before(async () => {
-	await runCommand('bun', ['run', 'build'], playgroundDirectory);
+	await runCommand('pnpm', ['run', 'build'], playgroundDirectory);
 	vitePreviewServer = await startServer({
-		command: 'bunx',
-		args: ['vite', 'preview', '--host', host, '--port', port, '--strictPort'],
+		command: 'pnpm',
+		args: ['exec', 'vite', 'preview', '--host', host, '--port', port, '--strictPort'],
 		cwd: playgroundDirectory,
 		origin,
 	});

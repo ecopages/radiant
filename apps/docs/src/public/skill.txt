@@ -256,6 +256,11 @@ Selection rule:
 
 Prefer `ref` lookups over broad selectors when practical.
 
+`@query` vs bindings:
+
+- use `@query(...)` only for DOM the host does not own in its own `render()` output — slot-projected/consumer-authored content, `RadiantController`-attached DOM, or a live `Element` handle needed by a third-party imperative API (positioning, focus management, observers)
+- if a `@query` ref exists only so an `@onUpdated` callback can write a value into it (`.textContent =`, `.setAttribute(...)`, a boolean/property write), that value should be a JSX binding (`this.$.foo`) instead — querying a node the host's own `render()` just produced in order to write into it imperatively is redundant with `render()`'s own reactivity and defeats fine-grained patching
+
 ### Events
 
 - `@onEvent(...)`: declarative event subscription

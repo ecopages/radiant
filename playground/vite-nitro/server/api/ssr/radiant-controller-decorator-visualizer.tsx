@@ -6,7 +6,7 @@ import {
 } from '@/components/radiant-controller-decorator-visualizer.script';
 
 export default defineHandler(async () => {
-	const { renderSsrControllerResponse } = await import('../../../vite-plugin-radiant/nitro/render');
+	const { renderSsrControllerResponse } = await import('@ecopages/vite-plugin-radiant/ssr');
 	return renderSsrControllerResponse(ControllerDomFlowVisualizer, {
 		host: {
 			class: 'controller-decorator-visualizer unstyled',

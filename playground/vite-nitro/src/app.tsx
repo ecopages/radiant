@@ -8,19 +8,18 @@ import {
 } from './components/playground-sections';
 
 export type AppProps = {
-	ssrPreviewContent?: JsxRenderable;
 	bootstrapStateScript?: JsxRenderable;
 	documentStateScript?: JsxRenderable;
 };
 
-export function App({ ssrPreviewContent, bootstrapStateScript, documentStateScript }: AppProps = {}) {
+export function App({ bootstrapStateScript, documentStateScript }: AppProps = {}) {
 	return (
 		<main class="shell">
 			{documentStateScript}
 			{bootstrapStateScript}
 			<HeroSection />
 			<RadiantElementLabSection />
-			<SsrRouteSection ssrPreviewContent={ssrPreviewContent} />
+			<SsrRouteSection />
 			<ClientStateSection />
 			<NitroRouteSection />
 		</main>

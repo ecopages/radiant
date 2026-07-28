@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"skipLibCheck": true,
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx",
+		"experimentalDecorators": false,
+		"useDefineForClassFields": true,
+		"types": ["node"]
+	},
+	"include": ["src/**/*", "src/client.d.ts"]
+}

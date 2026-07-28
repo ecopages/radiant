@@ -27,10 +27,10 @@ The packages are configured as a fixed release group in `.changeset/config.json`
 Use this flow when you want a public prerelease cycle before publishing the stable version.
 
 ```sh
-bunx changeset pre enter alpha
-bunx changeset version
-bun run prerelease
-bunx changeset publish --tag alpha
+pnpm exec changeset pre enter alpha
+pnpm exec changeset version
+pnpm run prerelease
+pnpm exec changeset publish --tag alpha
 ```
 
 On the first prerelease run for a given target version, Changesets will publish that target as `-alpha.0` for every package in the fixed release group. If you run `changeset version` again while prerelease mode is still active, Changesets will increment the prerelease suffix to `alpha.1`, `alpha.2`, and so on.
@@ -44,10 +44,10 @@ Do not pre-bump internal peer dependency ranges before running `changeset versio
 When the alpha cycle is complete, exit prerelease mode and publish the stable release:
 
 ```sh
-bunx changeset pre exit
-bunx changeset version
-bun run prerelease
-bunx changeset publish
+pnpm exec changeset pre exit
+pnpm exec changeset version
+pnpm run prerelease
+pnpm exec changeset publish
 ```
 
 ### Verify Planned Versions Before Publish
@@ -55,8 +55,8 @@ bunx changeset publish
 If you want to inspect the version bump before publishing, run:
 
 ```sh
-bunx changeset pre enter alpha
-bunx changeset version
+pnpm exec changeset pre enter alpha
+pnpm exec changeset version
 git diff -- packages/*/package.json .changeset
 ```
 
@@ -65,7 +65,7 @@ That diff will show the exact prerelease versions Changesets plans to publish.
 If you run `changeset version` locally, provide a GitHub token because the changelog configuration uses `@changesets/changelog-github`:
 
 ```sh
-GITHUB_TOKEN="$(gh auth token)" bunx changeset version
+GITHUB_TOKEN="$(gh auth token)" pnpm exec changeset version
 ```
 
 ### Verify Published Dist Tags
