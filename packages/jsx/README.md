@@ -679,28 +679,53 @@ Why keep both instead of one export:
 
 That object is an internal contract between the JSX runtime and the Radiant renderers. It is not positioned as a generic third-party virtual DOM format.
 
-## Trusted Markup
+## Security / Trust Model
 
-`@ecopages/jsx` escapes normal text and attribute values by default.
+`@ecopages/jsx` escapes ordinary text and attribute values by default. It is **not** an HTML sanitizer and does not filter URLs, CSS, or user-generated markup.
 
-If you already have final, trusted HTML and need to hand it to the runtime as markup, use `unsafeHtml(...)`.
+**Consumer responsibility:** sanitize or allowlist anything from users, APIs, CMS content, or wire formats **before** it reaches a trusted path (`unsafeHtml`, transported template `strings`, custom-element host HTML, `prop:*`, or `<script>` children). The package protects against accidental unescaped interpolation; it does not own application threat models.
+
+### What the package does
+
+| Path | Behavior |
+| --- | --- |
+| Text children | Escaped on SSR; mounted as text nodes on the client |
+| Ordinary attributes | Escaped for HTML attribute context (including `"`) |
+| Plain `{ nodeType, outerHTML }` objects | Treated as text (escaped / text node), not raw HTML |
+
+### Trusted paths (author / framework data only)
+
+These surfaces emit or parse raw HTML by design. Pass only content you already trust.
+
+| Surface | Contract |
+| --- | --- |
+| Compiled JSX / template `strings[]` | Static author HTML; emitted raw |
+| Transported `{ strings, values }` | `strings` are trusted author HTML; dynamic `values` are still escaped |
+| `unsafeHtml(...)` / `createMarkupNodeLike(...)` | Branded markup; `outerHTML` emitted and parsed raw |
+| Live `Node` instances | `outerHTML` emitted raw (slot projection / host passthrough) |
+| Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)` |
+| `<script>` children | Raw element text (`<` → `\u003c`); prefer safe `type` values such as `application/json` |
+| `prop:*` (including `prop:innerHTML`) | Live property assignment; no sanitization |
+| `href` / `src` / `style` | Escaped as attribute text only — no URL-scheme or CSS sanitization |
+
+### Trusted markup API
+
+Use `unsafeHtml(...)` only when you already have final, trusted HTML:
 
 ```tsx
 import { unsafeHtml } from '@ecopages/jsx';
 
 const trustedSnippet = unsafeHtml('<strong>Trusted</strong>');
-
 const view = <p>{trustedSnippet}</p>;
 ```
 
-Important:
+Notes:
 
-- this is an unsafe opt-in escape hatch
-- the input is not sanitized
-- the input is not escaped again
-- untrusted user input must not flow through this helper
+- Opt-in escape hatch: not sanitized, not escaped again
+- Do not pass untrusted input through this helper
+- Trusted markup is opaque HTML for mount/SSR; it is not a hydratable JSX template boundary
 
-The runtime treats trusted markup as opaque HTML content. It is inserted as markup for DOM mounting and emitted as-is during SSR, but it does not become a live JSX template or a hydratable binding boundary.
+For user-generated HTML, sanitize at the application boundary (or avoid `unsafeHtml` entirely) and keep using normal JSX children so values stay escaped.
 
 ## Exported Surface
 
