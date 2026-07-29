@@ -541,7 +541,7 @@ describe('RuiSidebarTrigger', () => {
 
 	it('applies button-label on the trigger host', async () => {
 		const { host, cleanup } = mount(
-			<rui-sidebar-trigger buttonLabel="Collapse sidebar" controls="x"></rui-sidebar-trigger>,
+			<rui-sidebar-trigger prop:buttonLabel="Collapse sidebar" controls="x"></rui-sidebar-trigger>,
 		);
 		await settled();
 		const triggerHost = host.querySelector('rui-sidebar-trigger') as HTMLElement & { buttonLabel: string };

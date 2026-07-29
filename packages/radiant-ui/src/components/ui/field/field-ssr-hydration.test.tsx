@@ -41,7 +41,7 @@ describe('RuiField rules hydration via fieldContext', () => {
 
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
 
 		const field = document.querySelector('rui-field') as RuiFieldElement;
 		expect(field.rules).toBeFalsy();
