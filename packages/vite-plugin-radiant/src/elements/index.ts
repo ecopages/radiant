@@ -4,8 +4,13 @@ import { normalizePath } from 'vite';
 import { createClientRegistryModule, createDomRegistryModule } from './client';
 import { createComponentsModule, createSsrAssetRegistryModule, createSsrRegistryModule } from './server';
 import {
+	extractRadiantDomModuleMetadata,
+	serializeRadiantDomModuleMetadata,
+} from './extract-dom-metadata';
+import {
 	createAppLoadModeModule,
 	createComponentFileMatcher,
+	createComponentStyleFileMatcher,
 	joinComponentGlobs,
 	joinStyleGlobs,
 	getResolvedRadiantVirtualModule,
@@ -60,16 +65,23 @@ export function radiantElements(options: RadiantElementsPluginOptions = {}): Plu
 			() => createAppLoadModeModule({ appLoadMode, appLoadModeHeader, clientOnlySearchParam }),
 		],
 	]);
+	const domMetadataCache = new Map<string, string>();
 	let rootDirectory = '';
 	let devServer: ViteDevServer | undefined;
 	let isComponentFile: (filePath: string) => boolean = () => false;
+	let isComponentStyleFile: (filePath: string) => boolean = () => false;
 
-	function invalidateVirtualModules(): void {
+	function invalidateVirtualModules(only?: 'ssrAssetRegistry'): void {
 		if (!devServer) {
 			return;
 		}
 
-		for (const virtualModuleId of listResolvedRadiantVirtualModules()) {
+		const targetIds =
+			only === 'ssrAssetRegistry'
+				? [getResolvedRadiantVirtualModule('ssrAssetRegistry')]
+				: listResolvedRadiantVirtualModules();
+
+		for (const virtualModuleId of targetIds) {
 			const moduleNode = devServer.moduleGraph.getModuleById(virtualModuleId);
 
 			if (moduleNode) {
@@ -78,32 +90,63 @@ export function radiantElements(options: RadiantElementsPluginOptions = {}): Plu
 		}
 	}
 
+	function triggerFullReload(server: ViteDevServer): void {
+		invalidateVirtualModules();
+
+		server.ws.send({
+			type: 'full-reload',
+		});
+	}
+
 	return {
 		name: 'radiant:components',
 		configResolved(config) {
 			rootDirectory = normalizePath(config.root);
 			isComponentFile = createComponentFileMatcher(rootDirectory, componentDirectory, includes);
+			isComponentStyleFile = createComponentStyleFileMatcher(rootDirectory, componentDirectory, styles);
 		},
 		configureServer(server) {
 			devServer = server;
 
-			const invalidateOnWatch = (filePath: string) => {
-				if (isComponentFile(normalizePath(filePath))) {
-					invalidateVirtualModules();
+			const onRegistryFilesystemChange = (filePath: string) => {
+				const normalizedPath = normalizePath(filePath);
+
+				if (!isComponentFile(normalizedPath) && !isComponentStyleFile(normalizedPath)) {
+					return;
 				}
+
+				domMetadataCache.delete(normalizedPath);
+				triggerFullReload(server);
 			};
 
-			server.watcher.on('add', invalidateOnWatch);
-			server.watcher.on('unlink', invalidateOnWatch);
+			server.watcher.on('add', onRegistryFilesystemChange);
+			server.watcher.on('unlink', onRegistryFilesystemChange);
 
 			return () => {
-				server.watcher.off('add', invalidateOnWatch);
-				server.watcher.off('unlink', invalidateOnWatch);
+				server.watcher.off('add', onRegistryFilesystemChange);
+				server.watcher.off('unlink', onRegistryFilesystemChange);
 			};
 		},
-		handleHotUpdate(context) {
-			if (!isComponentFile(normalizePath(context.file))) {
+		async handleHotUpdate(context) {
+			const normalizedPath = normalizePath(context.file);
+
+			if (isComponentStyleFile(normalizedPath)) {
+				invalidateVirtualModules('ssrAssetRegistry');
 				return;
+			}
+
+			if (!isComponentFile(normalizedPath)) {
+				return;
+			}
+
+			const previousMetadata = domMetadataCache.get(normalizedPath);
+			const source = await context.read();
+			const nextMetadata = serializeRadiantDomModuleMetadata(extractRadiantDomModuleMetadata(source));
+			domMetadataCache.set(normalizedPath, nextMetadata);
+
+			if (previousMetadata !== undefined && previousMetadata !== nextMetadata) {
+				triggerFullReload(context.server);
+				return [];
 			}
 
 			invalidateVirtualModules();
@@ -113,17 +156,13 @@ export function radiantElements(options: RadiantElementsPluginOptions = {}): Plu
 		},
 		load(id) {
 			if (id.endsWith(`?${RADIANT_DOM_METADATA_QUERY}`)) {
-				return readFile(id.slice(0, -`?${RADIANT_DOM_METADATA_QUERY}`.length), 'utf8').then((source) => {
-					const customElementTagNames = Array.from(
-						source.matchAll(/@customElement\s*\(\s*(['"`])([^'"`]+)\1/g),
-						(match) => match[2],
-					);
-					const controllerIdentifiers = Array.from(
-						source.matchAll(/@controller\s*\(\s*(['"`])([^'"`]+)\1/g),
-						(match) => match[2],
-					);
+				const sourcePath = normalizePath(id.slice(0, -`?${RADIANT_DOM_METADATA_QUERY}`.length));
 
-					return `export default ${JSON.stringify({ customElementTagNames, controllerIdentifiers })};\n`;
+				return readFile(sourcePath, 'utf8').then((source) => {
+					const metadata = extractRadiantDomModuleMetadata(source);
+					domMetadataCache.set(sourcePath, serializeRadiantDomModuleMetadata(metadata));
+
+					return `export default ${JSON.stringify(metadata)};\n`;
 				});
 			}
 

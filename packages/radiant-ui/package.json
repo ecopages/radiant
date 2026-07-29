@@ -39,7 +39,7 @@
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
 		"@babel/plugin-proposal-decorators": "^7.28.0",
-		"@babel/preset-typescript": "^7.28.0",
+		"@babel/plugin-syntax-typescript": "^7.28.0",
 		"@chromatic-com/storybook": "^5.2.1",
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
@@ -55,7 +55,7 @@
 		"@vitest/browser": "^4.1.10",
 		"@vitest/browser-playwright": "^4.1.10",
 		"@vitest/coverage-v8": "^4.1.10",
-		"esbuild": "^0.25.0",
+		"esbuild": "^0.28.1",
 		"oxlint": "^1.71.0",
 		"playwright": "^1.61.1",
 		"storybook": "^10.5.2",
