@@ -103,7 +103,7 @@ export type JsxBindingSourceValue = JsxRenderable | JsxBindingObjectValue;
 /**
  * Generic read/subscribe contract consumable as a JSX child binding.
  */
-export interface SignalLike<Value extends JsxRenderable = JsxRenderable> {
+export interface SignalLike<Value extends JsxBindingSourceValue = JsxRenderable> {
 	get: () => Value;
 	subscribe: (notify: (value: Value) => void) => () => void;
 }
@@ -124,7 +124,7 @@ export interface SubscribableJsxValue<Value extends JsxBindingSourceValue = JsxR
 	 * chained (`.map(a).map(b)`). Create the derived binding once (e.g. a host field) rather than
 	 * inside `render()`, because the live-subscription fast path keys on source identity.
 	 */
-	map<Out extends JsxRenderable>(project: (value: Value) => Out): SubscribableJsxValueWithAccess<Out>;
+	map<Out extends JsxBindingSourceValue>(project: (value: Value) => Out): SubscribableJsxValueWithAccess<Out>;
 }
 
 /**

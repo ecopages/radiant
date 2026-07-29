@@ -41,6 +41,12 @@ export interface JsxEventListenerObject<EventType extends Event = Event> {
 export type JsxEventListener<EventType extends Event = Event, CurrentTarget extends EventTarget = EventTarget> =
 	JsxEventHandler<EventType, CurrentTarget> | JsxEventListenerObject<EventType>;
 
+/**
+ * @remarks
+ * The open `on:*` / `on-native:*` index signatures use `any` for the event type so
+ * custom event names stay assignable without intersecting known handlers into an
+ * impossible `PointerEvent & Event` listener requirement.
+ */
 type JsxEventBindings<ElementType extends EventTarget> = {
 	[EventName in keyof GlobalEventHandlersEventMap as `on:${EventName}`]?: JsxEventListener<
 		GlobalEventHandlersEventMap[EventName],
@@ -52,8 +58,8 @@ type JsxEventBindings<ElementType extends EventTarget> = {
 		ElementType
 	>;
 } & {
-	[eventName: `on:${string}`]: JsxEventListener<Event, ElementType> | undefined;
-	[eventName: `on-native:${string}`]: JsxEventListener<Event, ElementType> | undefined;
+	[eventName: `on:${string}`]: JsxEventListener<any, ElementType> | undefined;
+	[eventName: `on-native:${string}`]: JsxEventListener<any, ElementType> | undefined;
 };
 
 type ReactivePropertyValue<Value> =
@@ -155,8 +161,14 @@ export type StylePropertyValue = string | number | null | undefined;
 
 /**
  * Accepted value for the `style` JSX prop.
+ *
+ * @remarks
+ * Plain object styles normalize to a CSS declaration string at factory time.
+ * Reactive snapshots normalize the same way when the `style` attribute is applied
+ * or serialized for SSR.
  */
-export type StyleValue = string | Record<string, StylePropertyValue>;
+type StyleSnapshot = string | Record<string, StylePropertyValue>;
+export type StyleValue = StyleSnapshot | SignalLike<StyleSnapshot> | SubscribableJsxValue<StyleSnapshot>;
 
 /** Accepted value for individual entries inside a `data` object. */
 type DataAttributePrimitive = string | number | boolean | null | undefined;
