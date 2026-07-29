@@ -19,7 +19,9 @@ export default defineConfig({
 	platform: 'neutral',
 	external: [
 		'@babel/core',
+		'@babel/parser',
 		'@babel/plugin-proposal-decorators',
+		'@babel/traverse',
 		'@ecopages/jsx',
 		'@ecopages/jsx/client',
 		'@ecopages/jsx/server',
@@ -29,6 +31,7 @@ export default defineConfig({
 		'nitro',
 		'nitro/config',
 		'nitro/types',
+		'parse5',
 		'rollup',
 		'picomatch',
 		'vite',

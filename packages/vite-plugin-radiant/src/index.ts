@@ -4,7 +4,12 @@ import { radiantElements, type RadiantElementsPluginOptions } from './elements';
 import { createRadiantJsxConfig, createRadiantSsrExternalsPlugin } from './jsx-config';
 import { radiantNitro } from './nitro-externals';
 
-export { createRadiantDecoratorBabelPlugin, createRadiantDecoratorBabelPreset } from './decorators';
+export {
+	createRadiantDecoratorBabelPlugin,
+	createRadiantDecoratorBabelPreset,
+	type RadiantDecoratorBabelOptions,
+	type RadiantDecoratorBabelVersion,
+} from './decorators';
 export { radiantElements, type RadiantElementsPluginOptions, type RadiantAppLoadMode } from './elements';
 export { createRadiantJsxConfig, createRadiantSsrExternalsPlugin } from './jsx-config';
 export { defineRadiantNitroConfig, mergeRadiantNitroConfig } from './nitro-config';
@@ -15,10 +20,12 @@ export type RadiantDecoratorOption = 'babel';
 export type RadiantPluginOptions = {
 	jsxImportSource?: string;
 	/**
-	 * Decorator lowering strategy.
+	 * Decorator lowering strategy for Vite 8+.
 	 *
-	 * - `undefined` (default): use Vite's esbuild/OXC pipeline from your tsconfig
-	 * - `'babel'`: Rolldown + Babel (`2023-11`) via `@rolldown/plugin-babel` (Vite 8+)
+	 * - `undefined` (default): rely on Vite/Oxc + your tsconfig. Prefer
+	 *   `experimentalDecorators: true` — Oxc already lowers legacy TS decorators.
+	 * - `'babel'`: temporary TC39 stage-3 lowering via `@rolldown/plugin-babel`
+	 *   until Oxc supports ECMA decorators ([oxc#9170](https://github.com/oxc-project/oxc/issues/9170)).
 	 */
 	decorators?: RadiantDecoratorOption;
 	/**
@@ -61,10 +68,8 @@ function resolveElementsOptions(options: RadiantPluginOptions): RadiantElementsP
 }
 
 function createRadiantBasePlugins(options: RadiantPluginOptions): Plugin[] {
-	const useBabelDecorators = options.decorators === 'babel';
-
 	return [
-		createRadiantJsxConfig({ jsxImportSource: options.jsxImportSource, useBabelDecorators }),
+		createRadiantJsxConfig({ jsxImportSource: options.jsxImportSource }),
 		createRadiantSsrExternalsPlugin(),
 	];
 }

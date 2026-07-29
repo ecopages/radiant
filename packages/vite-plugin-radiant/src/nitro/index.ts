@@ -18,6 +18,7 @@ import {
 	type RadiantDocumentState,
 	type RadiantDocumentUsage,
 } from '../runtime/document-state';
+import { discoverRadiantDocumentUsage } from '../lib/discover-document-usage';
 import { renderSsrComponent, type RenderSsrComponentOptions } from '../ssr/render';
 import { renderToString, type RenderToStringOptions } from '@ecopages/jsx/server';
 
@@ -134,55 +135,7 @@ export async function renderRadiantNitroPage<TComponent extends ServerRenderable
 }
 
 const RADIANT_CONTROLLER_ATTRIBUTE = 'data-controller';
-const HTML_TAG_PATTERN = /<([a-z][a-z0-9-]*)(\s[^<>]*?)?>/gi;
 const HTML_ATTRIBUTE_PATTERN = /([:^@A-Za-z0-9_.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>/]+)))?/g;
-
-function discoverRadiantDocumentUsage(html: string): RadiantDocumentUsage {
-	const customElementTagNames = new Set<string>();
-	const controllerIdentifiers = new Set<string>();
-
-	for (const element of scanRadiantDocumentElements(html)) {
-		const tagName = element.tagName;
-
-		if (tagName.includes('-')) {
-			customElementTagNames.add(tagName);
-		}
-
-		const controllerValue = element.attributes[RADIANT_CONTROLLER_ATTRIBUTE];
-
-		if (!controllerValue) {
-			continue;
-		}
-
-		for (const identifier of controllerValue
-			.split(/\s+/)
-			.map((entry) => entry.trim())
-			.filter((entry) => entry.length > 0)) {
-			controllerIdentifiers.add(identifier);
-		}
-	}
-
-	return {
-		controllerIdentifiers: Array.from(controllerIdentifiers),
-		customElementTagNames: Array.from(customElementTagNames),
-	};
-}
-
-function* scanRadiantDocumentElements(html: string): Iterable<{ attributes: Record<string, string>; tagName: string }> {
-	for (const match of html.matchAll(HTML_TAG_PATTERN)) {
-		const [, rawTagName, rawAttributes = ''] = match;
-		const tagName = rawTagName?.toLowerCase();
-
-		if (!tagName) {
-			continue;
-		}
-
-		yield {
-			attributes: parseRadiantDocumentAttributes(rawAttributes),
-			tagName,
-		};
-	}
-}
 
 function parseRadiantDocumentAttributes(rawAttributes: string): Record<string, string> {
 	const attributes: Record<string, string> = {};
