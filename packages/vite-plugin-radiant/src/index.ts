@@ -68,10 +68,7 @@ function resolveElementsOptions(options: RadiantPluginOptions): RadiantElementsP
 }
 
 function createRadiantBasePlugins(options: RadiantPluginOptions): Plugin[] {
-	return [
-		createRadiantJsxConfig({ jsxImportSource: options.jsxImportSource }),
-		createRadiantSsrExternalsPlugin(),
-	];
+	return [createRadiantJsxConfig({ jsxImportSource: options.jsxImportSource }), createRadiantSsrExternalsPlugin()];
 }
 
 function createRadiantPlugins(options: RadiantPluginOptions): Plugin[] {

@@ -58,12 +58,12 @@ export default defineRadiantNitroConfig({ serverDir: './server' });
 
 ## `radiant(options?)`
 
-| Option            | Default                             | Effect                                                    |
-| ----------------- | ----------------------------------- | --------------------------------------------------------- |
-| `elements`        | `false` (`true` when `nitro: true`) | Component scan + virtual registries                       |
-| `nitro`           | `false`                             | Nitro `nitro` / `ssr` env externals (use after `nitro()`) |
+| Option            | Default                             | Effect                                                                                                                                                |
+| ----------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `elements`        | `false` (`true` when `nitro: true`) | Component scan + virtual registries                                                                                                                   |
+| `nitro`           | `false`                             | Nitro `nitro` / `ssr` env externals (use after `nitro()`)                                                                                             |
 | `decorators`      | —                                   | `'babel'` = temporary TC39 lowering on Vite 8 ([oxc#9170](https://github.com/oxc-project/oxc/issues/9170)); prefer `experimentalDecorators` otherwise |
-| `jsxImportSource` | `@ecopages/jsx`                     | JSX import source                                         |
+| `jsxImportSource` | `@ecopages/jsx`                     | JSX import source                                                                                                                                     |
 
 ```ts
 radiant({
@@ -92,8 +92,8 @@ Radiant supports both styles. For Vite 8 apps today, prefer legacy TypeScript de
 {
 	"compilerOptions": {
 		"experimentalDecorators": true,
-		"useDefineForClassFields": true
-	}
+		"useDefineForClassFields": true,
+	},
 }
 ```
 
@@ -115,11 +115,11 @@ plugins: [radiant({ decorators: 'babel', elements: true })];
 
 Vite awaits promises in `plugins` — pass `radiant({ decorators: 'babel' })` as a single entry, do not spread the promise.
 
-| Path | When to use |
-| --- | --- |
-| `experimentalDecorators: true` (default plugin path) | Vite 8 without Babel — recommended until Oxc supports TC39 |
-| `decorators: 'babel'` (+ optional peers above) | TC39 stage-3 authoring on Vite 8 — temporary until [oxc#9170](https://github.com/oxc-project/oxc/issues/9170) |
-| Vite ≤7 + esbuild | TC39 works via esbuild without this plugin option |
+| Path                                                 | When to use                                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `experimentalDecorators: true` (default plugin path) | Vite 8 without Babel — recommended until Oxc supports TC39                                                    |
+| `decorators: 'babel'` (+ optional peers above)       | TC39 stage-3 authoring on Vite 8 — temporary until [oxc#9170](https://github.com/oxc-project/oxc/issues/9170) |
+| Vite ≤7 + esbuild                                    | TC39 works via esbuild without this plugin option                                                             |
 
 ## Dev server HMR
 

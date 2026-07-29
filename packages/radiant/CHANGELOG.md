@@ -24,12 +24,12 @@ First beta prerelease of the 0.3.0 line.
 
 ### Migration
 
-| Old | Use instead |
-| --- | --- |
-| `install-ssr-scope-adapters` | `@ecopages/radiant/server/install-ssr-runtime` |
+| Old                                                               | Use instead                                         |
+| ----------------------------------------------------------------- | --------------------------------------------------- |
+| `install-ssr-scope-adapters`                                      | `@ecopages/radiant/server/install-ssr-runtime`      |
 | `bindReactiveValue` / `@ecopages/radiant/core/reactive-jsx-value` | `this.bind(...)` / `this.$.key` on `RadiantElement` |
-| `@ecopages/radiant/tools/render-jsx-template` | `@ecopages/jsx` `render(...)` or `renderComponent` |
-| `@ecopages/radiant/server/radiant-element-ssr-bridge` (new code) | `@ecopages/radiant/server/radiant-element-ssr` |
+| `@ecopages/radiant/tools/render-jsx-template`                     | `@ecopages/jsx` `render(...)` or `renderComponent`  |
+| `@ecopages/radiant/server/radiant-element-ssr-bridge` (new code)  | `@ecopages/radiant/server/radiant-element-ssr`      |
 
 ### Features
 

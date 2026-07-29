@@ -3,10 +3,7 @@ import type { Plugin, ViteDevServer } from 'vite';
 import { normalizePath } from 'vite';
 import { createClientRegistryModule, createDomRegistryModule } from './client';
 import { createComponentsModule, createSsrAssetRegistryModule, createSsrRegistryModule } from './server';
-import {
-	extractRadiantDomModuleMetadata,
-	serializeRadiantDomModuleMetadata,
-} from './extract-dom-metadata';
+import { extractRadiantDomModuleMetadata, serializeRadiantDomModuleMetadata } from './extract-dom-metadata';
 import {
 	createAppLoadModeModule,
 	createComponentFileMatcher,
