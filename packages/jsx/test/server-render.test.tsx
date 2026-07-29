@@ -210,6 +210,26 @@ describe('Radiant JSX server render', () => {
 		);
 	});
 
+	test('serializes reactive object style snapshots to a declaration string', async () => {
+		const [{ jsx, createSubscribableJsxValue }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
+		const styleBinding = createSubscribableJsxValue({
+			getValue: () => ({ backgroundColor: 'tomato', paddingInline: '12px' }),
+			subscribe: () => () => undefined,
+		});
+		const template = jsx('button', {
+			style: styleBinding,
+			children: '+',
+		});
+
+		expect(renderToString(template)).toBe(
+			'<button style="background-color: tomato; padding-inline: 12px">+</button>',
+		);
+		expect(renderToString(template)).not.toContain('[object Object]');
+	});
+
 	test('escapes text and attribute values with a single-pass HTML encoder', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('div', {

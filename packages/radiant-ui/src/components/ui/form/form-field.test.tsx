@@ -76,7 +76,7 @@ describe('rui-field projected content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
 
 		const nativeForm = form.getRef<HTMLFormElement>('form');
 		expect(nativeForm).not.toBeNull();
@@ -160,7 +160,7 @@ describe('rui-field projected content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
 
 		const form = host.querySelector('rui-form') as RuiFormElement;
 		const field = host.querySelector('rui-field') as RuiFieldElement;
@@ -203,7 +203,7 @@ describe('rui-field projected content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
 
 		const field = host.querySelector('rui-field') as RuiFieldElement;
 		const email = findFieldControl(field) as HTMLInputElement;
@@ -239,7 +239,7 @@ describe('rui-field projected content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
 
 		const field = host.querySelector('rui-field') as RuiFieldElement;
 		const save = host.querySelector('button') as HTMLButtonElement;
@@ -278,7 +278,7 @@ describe('rui-field projected content discovery', () => {
 		await customElements.whenDefined('rui-field');
 		await customElements.whenDefined('rui-switch');
 		await flushRender();
-		await new Promise((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
 
 		const field = host.querySelector('rui-field') as RuiFieldElement;
 		expect(field.querySelectorAll('rui-switch')).toHaveLength(1);

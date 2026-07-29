@@ -4,7 +4,10 @@
 	"initialVersions": {
 		"@ecopages/jsx": "0.3.0-beta.3",
 		"@ecopages/radiant": "0.3.0-beta.3",
-		"@ecopages/signals": "0.3.0-beta.3"
+		"@ecopages/signals": "0.3.0-beta.3",
+		"@ecopages/vite-plugin-radiant": "0.3.0-beta.3",
+		"@ecopages/storybook-radiant-vite": "0.1.0-beta.0",
+		"@ecopages/radiant-ui": "0.0.1-beta.0"
 	},
 	"changesets": []
 }
