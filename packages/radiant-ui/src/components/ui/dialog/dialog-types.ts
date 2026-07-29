@@ -40,6 +40,7 @@ export type DialogActionDetail = { value?: string };
 
 export type DialogHandle = {
 	open: {
+		(): void;
 		(id: string): void;
 		(options: DialogHostContent): void;
 	};

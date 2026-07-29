@@ -73,7 +73,7 @@ function queryFieldContent(root: HTMLElement, selector: string): HTMLElement | n
 	return found;
 }
 
-function pickPrimaryFieldControl(root: HTMLElement, candidates: HTMLElement[]): HTMLElement | null {
+function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null {
 	if (candidates.length === 0) {
 		return null;
 	}
@@ -106,7 +106,7 @@ function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
 }
 
 export function findFieldControl(root: HTMLElement): HTMLElement | null {
-	const fromRenderTree = pickPrimaryFieldControl(root, listFieldControlsInRenderTree(root));
+	const fromRenderTree = pickPrimaryFieldControl(listFieldControlsInRenderTree(root));
 	if (fromRenderTree) {
 		return fromRenderTree;
 	}
