@@ -1,25 +1,61 @@
 @reference '../../styles/tailwind.css';
 
 radiant-dropdown {
-	@apply block;
-	[data-ref='content'] {
-		@apply hidden;
-		@apply w-max absolute top-0 left-0;
-		@apply bg-surface p-3 md:p-4 border border-border rounded-md;
+	@apply relative inline-block;
+}
+
+@layer components {
+	radiant-dropdown [data-ref='content'] {
+		@apply absolute left-0 top-full z-10 mt-1.5 w-max rounded-md border border-border bg-surface p-3 md:p-4;
 	}
-	[data-ref='arrow'] {
-		@apply absolute w-2 h-2 bg-surface transform rotate-45 border-t border-l border-t-border border-l-border;
-		&[data-placement^='top'] {
-			@apply -rotate-135;
-		}
-		&[data-placement^='right'] {
-			@apply -rotate-45;
-		}
-		&[data-placement^='bottom'] {
-			@apply rotate-45;
-		}
-		&[data-placement^='left'] {
-			@apply rotate-135;
-		}
+
+	radiant-dropdown [data-ref='content'][hidden] {
+		@apply hidden;
+	}
+
+	radiant-dropdown[placement^='top'] [data-ref='content'] {
+		@apply bottom-full top-auto mb-1.5 mt-0;
+	}
+
+	radiant-dropdown[placement^='bottom'] [data-ref='content'] {
+		@apply top-full;
+	}
+
+	radiant-dropdown[placement^='left'] [data-ref='content'] {
+		@apply right-full top-0 mr-1.5 mt-0;
+	}
+
+	radiant-dropdown[placement^='right'] [data-ref='content'] {
+		@apply left-full top-0 ml-1.5 mt-0;
+	}
+
+	radiant-dropdown[placement$='-end'][placement^='top'] [data-ref='content'],
+	radiant-dropdown[placement$='-end'][placement^='bottom'] [data-ref='content'] {
+		@apply right-0 left-auto;
+	}
+
+	radiant-dropdown[placement$='-start'][placement^='top'] [data-ref='content'],
+	radiant-dropdown[placement$='-start'][placement^='bottom'] [data-ref='content'] {
+		@apply left-0;
+	}
+
+	radiant-dropdown [data-ref='arrow'] {
+		@apply absolute h-2 w-2 rotate-45 border-t border-l border-t-border border-l-border bg-surface;
+	}
+
+	radiant-dropdown [data-ref='arrow'][data-placement^='top'] {
+		@apply -bottom-1 left-1/2 -translate-x-1/2 -rotate-135;
+	}
+
+	radiant-dropdown [data-ref='arrow'][data-placement^='right'] {
+		@apply -left-1 top-1/2 -translate-y-1/2 -rotate-45;
+	}
+
+	radiant-dropdown [data-ref='arrow'][data-placement^='bottom'] {
+		@apply -top-1 left-1/2 -translate-x-1/2 rotate-45;
+	}
+
+	radiant-dropdown [data-ref='arrow'][data-placement^='left'] {
+		@apply -right-1 top-1/2 -translate-y-1/2 rotate-135;
 	}
 }
