@@ -1,5 +1,5 @@
 import { serializeRenderable } from './serialize-renderable.ts';
-import type { JsxRenderable } from './types.ts';
+import type { JsxRenderable } from '../types/index.ts';
 
 /**
  * Eagerly serializes a JSX child value to an HTML string.

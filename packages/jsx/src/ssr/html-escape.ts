@@ -3,19 +3,7 @@ const DOUBLE_QUOTE_CODE = 34;
 const GREATER_THAN_CODE = 62;
 const LESS_THAN_CODE = 60;
 
-type BunHtmlEscaper = {
-	escapeHTML(value: string): string;
-};
-
-const bunGlobal = (globalThis as typeof globalThis & { Bun?: Partial<BunHtmlEscaper> }).Bun;
-
-const bunHtmlEscaper = typeof bunGlobal?.escapeHTML === 'function' ? (bunGlobal as BunHtmlEscaper) : undefined;
-
 function escapeString(value: string, escapeQuotes: boolean): string {
-	if (bunHtmlEscaper) {
-		return bunHtmlEscaper.escapeHTML(value);
-	}
-
 	let firstSpecialIndex = -1;
 
 	for (let index = 0; index < value.length; index += 1) {

@@ -1,13 +1,14 @@
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
-import { isIterableJsxChild, resolveBindingShapeValue } from './renderable-guards.ts';
+import { isIterableJsxChild, resolveBindingShapeValue } from '../types/renderable-guards.ts';
 import {
 	KEYED_VALUE_SYMBOL,
+	RADIANT_MARKUP_NODE_SYMBOL,
 	RADIANT_TEMPLATE_RESULT,
 	RADIANT_TEMPLATE_RESULT_FIELD,
 	SLOT_JSX_VALUE_SYMBOL,
-} from './types.ts';
+} from '../types/index.ts';
 import type {
 	JsxComponent,
 	JsxNodeLike,
@@ -15,7 +16,7 @@ import type {
 	JsxRenderable,
 	SlotJsxValue,
 	TemplateResultLike,
-} from './types.ts';
+} from '../types/index.ts';
 
 /** Well-known symbol that identifies a JSX fragment in the Radiant runtime. */
 declare const fragmentSymbolType: unique symbol;
@@ -108,6 +109,7 @@ export function createJsxElement<Props extends object>(
 
 export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
 	return {
+		[RADIANT_MARKUP_NODE_SYMBOL]: true,
 		nodeType: 1,
 		outerHTML,
 	};

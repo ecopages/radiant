@@ -1,6 +1,6 @@
-import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragment } from './jsx-factory.ts';
-import { isSubscribableJsxValue } from './renderable-guards.ts';
-import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types.ts';
+import { createJsxElement, createMarkupNodeLike, fragmentSymbol, type JsxFragment } from './factory/jsx-factory.ts';
+import { isSubscribableJsxValue } from './types/renderable-guards.ts';
+import { SLOT_JSX_VALUE_SYMBOL, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from './types/index.ts';
 import type {
 	JsxBindingSourceValue,
 	JsxComponent,
@@ -11,7 +11,7 @@ import type {
 	SubscribableJsxValue,
 	SubscribableJsxValueWithAccess,
 	SlotJsxValue,
-} from './types.ts';
+} from './types/index.ts';
 
 export {
 	isKeyedJsxValue,
@@ -20,10 +20,13 @@ export {
 	isTemplateResultLike,
 	resolveBindingShapeValue,
 	toTemplateResultLike,
-} from './renderable-guards.ts';
-export { renderJsxRenderableToString } from './serialize-plain.ts';
-export { forEachNormalizedAttribute } from './attribute-normalize.ts';
-export { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
+} from './types/renderable-guards.ts';
+export { renderJsxRenderableToString } from './ssr/serialize-plain.ts';
+export { forEachNormalizedAttribute } from './factory/attribute-normalize.ts';
+export {
+	shouldUseAttributeBindingByDefaultForElement,
+	shouldUseBooleanAttributeBinding,
+} from './factory/binding-defaults.ts';
 export type {
 	AriaAttributesNormalized,
 	ClassList,
@@ -56,7 +59,7 @@ export type {
 	SubscribableJsxValue,
 	SubscribableJsxValueWithAccess,
 	TemplateResultLike,
-} from './types.ts';
+} from './types/index.ts';
 
 type JsxDomIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttributes<ElementType> & {
 	[key: string]: unknown;
@@ -118,7 +121,7 @@ export namespace JSX {
 	}
 
 	export interface IntrinsicAttributes {
-		key?: import('./types.ts').JsxKey;
+		key?: import('./types/index.ts').JsxKey;
 	}
 
 	export type IntrinsicElements = JsxDomIntrinsicElements &
@@ -241,6 +244,6 @@ export { createMarkupNodeLike };
 /**
  * Marks a string as trusted HTML and hands it to the JSX runtime as opaque markup.
  */
-export function unsafeHtml(html: string): import('./types.ts').JsxNodeLike {
+export function unsafeHtml(html: string): import('./types/index.ts').JsxNodeLike {
 	return createMarkupNodeLike(html);
 }

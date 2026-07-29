@@ -1,5 +1,5 @@
-import type { TemplateResultLike } from '../jsx-runtime.ts';
-import { resolveHydrationMarkerAttributeName } from '../hydration-bindings.ts';
+import type { TemplateResultLike } from '../types/index.ts';
+import { resolveHydrationMarkerAttributeName } from '../hydration/hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
 import { collectHydratedChildRanges, isolateHydratedTextRange, type HydratedChildRange } from './hydration-planning.ts';

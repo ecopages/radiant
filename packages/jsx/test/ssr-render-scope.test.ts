@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { jsx } from '../src/jsx-runtime.ts';
-import { createLazyNodeAsyncLocalStorage } from '../src/lazy-async-local-storage.ts';
+import { createLazyNodeAsyncLocalStorage } from '../src/ssr/lazy-async-local-storage.ts';
 import { getActiveSsrScopeValue, renderToString, withActiveSsrScopeValue } from '../src/server.ts';
 
 const SCOPE_KEY = Symbol.for('@ecopages/jsx.test.ssr-render-scope');

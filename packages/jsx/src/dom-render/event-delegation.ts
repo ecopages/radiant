@@ -1,4 +1,4 @@
-import { shouldDelegateEventBinding } from '../event-binding-policy.ts';
+import { shouldDelegateEventBinding } from '../factory/event-binding-policy.ts';
 
 type DelegationRootState = {
 	handlers: Map<string, DelegatedEventDispatcher>;

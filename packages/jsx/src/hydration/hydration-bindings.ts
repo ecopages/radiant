@@ -11,13 +11,13 @@
  *
  * See `packages/jsx/README.md` → "SSR Marker Lifecycle" for the full walkthrough.
  */
-import type { JsxRenderable, TemplateResultLike } from './jsx-runtime.ts';
-import { isIterableRenderable, isTemplateResultLike } from './renderable-guards.ts';
+import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-guards.ts';
+import type { JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
-import { getTemplateInterpolationParts, type BindingKind } from './template-shape.ts';
+import { getTemplateInterpolationParts, type BindingKind } from '../factory/template-shape.ts';
 
-export type { BindingKind, TemplateInterpolationPart } from './template-shape.ts';
-export { ATTRIBUTE_BINDING_PATTERN, getBindingKind, getTemplateInterpolationParts } from './template-shape.ts';
+export type { BindingKind, TemplateInterpolationPart } from '../factory/template-shape.ts';
+export { ATTRIBUTE_BINDING_PATTERN, getBindingKind, getTemplateInterpolationParts } from '../factory/template-shape.ts';
 
 /** Attribute prefix used for emitted SSR hydration markers. */
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';

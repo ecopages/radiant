@@ -1,5 +1,10 @@
-import type { JsxNodeLike } from '../jsx-runtime.ts';
-import { DETACHED_INSERTION_POINT_WARNING, DOM_RANGE_ANCHOR_DRIFT_WARNING, warnRuntime } from '../dev-warnings.ts';
+import {
+	DETACHED_INSERTION_POINT_WARNING,
+	DOM_RANGE_ANCHOR_DRIFT_WARNING,
+	warnRuntime,
+} from '../warnings/dev-warnings.ts';
+import { mayEmitOrParseRawOuterHtml } from '../types/renderable-guards.ts';
+import type { JsxNodeLike } from '../types/index.ts';
 
 /**
  * Visits descendant elements of `target` in document order.
@@ -77,7 +82,8 @@ export function createBoundaryMarker(): Text {
  * Converts a {@link JsxNodeLike} into real DOM nodes.
  *
  * Preference order:
- * 1. `outerHTML` — parsed via a temporary `<template>` element.
+ * 1. Branded `outerHTML` — parsed via a temporary `<template>` element.
+ *    Unbranded `outerHTML` is mounted as a text node instead.
  * 2. `nodeType === Node.TEXT_NODE` — creates a text node from `textContent`.
  * 3. `childNodes` array — each child is recursively converted and flattened.
  * 4. `textContent` — single text node fallback.
@@ -87,8 +93,14 @@ export function createBoundaryMarker(): Text {
  */
 export function createNodesFromJsxNodeLike(value: JsxNodeLike): Node[] {
 	if (typeof value.outerHTML === 'string') {
+		const outerHTML = value.outerHTML;
+
+		if (!mayEmitOrParseRawOuterHtml(value)) {
+			return [document.createTextNode(outerHTML)];
+		}
+
 		const template = document.createElement('template');
-		template.innerHTML = value.outerHTML;
+		template.innerHTML = outerHTML;
 		return Array.from(template.content.childNodes);
 	}
 
@@ -214,4 +226,4 @@ function isNodeWithinRange(target: Node, start: Text, end: Text): boolean {
 	return false;
 }
 
-export { isJsxNodeLike } from '../renderable-guards.ts';
+export { isJsxNodeLike } from '../types/renderable-guards.ts';

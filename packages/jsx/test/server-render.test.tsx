@@ -5,7 +5,8 @@ async function loadModule<T>(path: string): Promise<T> {
 }
 
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
-const loadServerRender = async () => loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts');
+const loadServerRender = async () =>
+	loadModule<typeof import('../src/ssr/server-render.ts')>('../src/ssr/server-render.ts');
 
 const forceServerCustomElementRenderSymbol = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 
@@ -72,6 +73,76 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(deferredTemplate as unknown as import('../src/jsx-runtime.ts').JsxRenderable)).toBe(
 			'<div class="shell-stack" data-ready>Hello <strong>transport</strong></div>',
 		);
+	});
+
+	test('escapes dynamic values in transported templates while treating strings as trusted HTML', async () => {
+		const { renderToString } = await loadServerRender();
+		const deferredTemplate = {
+			strings: ['<div>', '</div><img src=x onerror=alert(1)//'],
+			values: ['Hello <script>'],
+		} as const;
+
+		expect(renderToString(deferredTemplate as unknown as import('../src/jsx-runtime.ts').JsxRenderable)).toBe(
+			'<div>Hello &lt;script&gt;</div><img src=x onerror=alert(1)//',
+		);
+	});
+
+	test('escapes unbranded outerHTML node-like objects as text', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('div', {
+			children: {
+				nodeType: 1,
+				outerHTML: '<img src=x onerror=alert(1)>',
+			} as unknown as import('../src/jsx-runtime.ts').JsxRenderable,
+		});
+
+		expect(renderToString(template)).toBe('<div>&lt;img src=x onerror=alert(1)&gt;</div>');
+	});
+
+	test('emits live DOM node outerHTML without requiring a markup brand', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		class FakeNode {}
+		const previousNode = (globalThis as typeof globalThis & { Node?: unknown }).Node;
+		(globalThis as typeof globalThis & { Node: unknown }).Node = FakeNode;
+
+		try {
+			const element = Object.assign(new FakeNode(), {
+				nodeType: 1,
+				outerHTML: '<span data-live="yes">Live</span>',
+			});
+
+			const template = jsx('div', {
+				children: element as unknown as import('../src/jsx-runtime.ts').JsxRenderable,
+			});
+
+			expect(renderToString(template)).toBe('<div><span data-live="yes">Live</span></div>');
+		} finally {
+			if (previousNode === undefined) {
+				Reflect.deleteProperty(globalThis, 'Node');
+			} else {
+				(globalThis as typeof globalThis & { Node: unknown }).Node = previousNode;
+			}
+		}
+	});
+
+	test('emits branded unsafeHtml markup without escaping it again', async () => {
+		const [{ jsx, unsafeHtml }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('div', {
+			children: unsafeHtml('<em>trusted</em>'),
+		});
+
+		expect(renderToString(template)).toBe('<div><em>trusted</em></div>');
+	});
+
+	test('escapes attribute values that contain quotes and angle brackets', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('div', {
+			title: 'a"b<c>',
+			children: null,
+		});
+
+		expect(renderToString(template)).toBe('<div title="a&quot;b&lt;c&gt;"></div>');
 	});
 
 	test('serializes very nested mixed trees without leaking wrapper artifacts', async () => {
@@ -533,7 +604,7 @@ describe('Radiant JSX server render', () => {
 			setAttribute(_name: string, _value: unknown) {}
 			removeAttribute(_name: string) {}
 
-			renderHostToString(options?: { mode?: import('../src/server-render.ts').RenderToStringMode }) {
+			renderHostToString(options?: { mode?: import('../src/ssr/server-render.ts').RenderToStringMode }) {
 				return options?.mode === 'hydrate'
 					? '<demo-hydration-aware data-hydrated="yes"><p>Hydrated host</p></demo-hydration-aware>'
 					: '<demo-hydration-aware><p>Plain host</p></demo-hydration-aware>';
@@ -595,7 +666,7 @@ describe('Radiant JSX server render', () => {
 			setAttribute(_name: string, _value: unknown) {}
 			removeAttribute(_name: string) {}
 
-			renderHostToString(options?: { mode?: import('../src/server-render.ts').RenderToStringMode }) {
+			renderHostToString(options?: { mode?: import('../src/ssr/server-render.ts').RenderToStringMode }) {
 				return options?.mode === 'hydrate'
 					? `<hook-aware-element data-hydrated="yes"><p>Count: ${this.count}</p></hook-aware-element>`
 					: `<hook-aware-element><p>Count: ${this.count}</p></hook-aware-element>`;
@@ -659,10 +730,8 @@ describe('Radiant JSX server render', () => {
 	});
 
 	test('lets the server custom-element render hook replace the default SSR wrapper', async () => {
-		const [{ jsx }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
-			loadJsxRuntime(),
-			loadServerRender(),
-		]);
+		const [{ jsx, createMarkupNodeLike }, { renderToString, withServerCustomElementRenderHook }] =
+			await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
 		class ReplaceableHookElement extends EventTarget {
 			label = 'Original';
@@ -695,11 +764,10 @@ describe('Radiant JSX server render', () => {
 
 		try {
 			const html = withServerCustomElementRenderHook(
-				() => ({
-					nodeType: 1,
-					outerHTML:
+				() =>
+					createMarkupNodeLike(
 						'<replaceable-hook-element data-hook="yes"><p>Hook override</p></replaceable-hook-element>',
-				}),
+					),
 				() => {
 					const template = jsx('replaceable-hook-element', { label: 'Original' });
 					return renderToString(template);

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { createSubscribableJsxValue, Fragment, jsx, jsxs } from '../src/jsx-runtime.ts';
-import { renderToString } from '../src/server-render.ts';
+import { renderToString } from '../src/ssr/server-render.ts';
 import {
 	HYDRATE_ADJACENT_FIELDS_HTML,
 	HYDRATE_BUTTON_ALPHA_HTML,
