@@ -18,6 +18,7 @@ import {
 	takeNextHydrationMarkerIndex,
 } from '../hydration/hydration-bindings.ts';
 import { isClientOnlyBinding, needsHydrationMarker } from '../hydration/hydration-marker-policy.ts';
+import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import type { JsxNodeLike, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 
@@ -140,7 +141,11 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 			continue;
 		}
 
-		html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(String(childValue))}"`;
+		const attributeValue =
+			interpolationPart.name.toLowerCase() === 'style'
+				? serializeStyleSnapshot(childValue)
+				: String(childValue);
+		html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(attributeValue)}"`;
 	}
 
 	html += template.strings[template.strings.length - 1] ?? '';
