@@ -1,17 +1,20 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { type Placement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { attachFloating } from '../shared/floating-position';
+import type { RuiPlacement } from '../shared/placement';
 
 export type RuiMenuButtonProps = {
 	/** Whether the menu starts open. Default: `false`. */
 	open?: boolean;
-	/** Floating-ui placement for the menu. Default: `bottom-start`. */
-	placement?: Placement;
+	/** Placement of the menu surface relative to its trigger. Default: `bottom-start`. */
+	placement?: RuiPlacement;
 };
 
 export type RuiMenuButtonSelectDetail = {
 	value: string;
 };
+
+const MENU_GAP = 6;
 
 /**
  * `<rui-menu-button>` — a button that opens a menu of actions.
@@ -43,7 +46,7 @@ export type RuiMenuButtonSelectDetail = {
 @customElement('rui-menu-button')
 export class RuiMenuButton extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
-	@prop({ type: String, defaultValue: 'bottom-start' }) placement: Placement;
+	@prop({ type: String, defaultValue: 'bottom-start' }) placement: RuiPlacement;
 
 	@query({ ref: 'trigger' }) triggerTarget: HTMLButtonElement;
 	@query({ ref: 'menu' }) menuTarget: HTMLElement;
@@ -54,8 +57,9 @@ export class RuiMenuButton extends RadiantElement {
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<void>;
 
-	private cleanup: ReturnType<typeof autoUpdate> | null = null;
 	private menuId = `rui-menu-${Math.random().toString(36).slice(2, 9)}`;
+	private cleanupFloating: (() => void) | null = null;
+	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -74,25 +78,20 @@ export class RuiMenuButton extends RadiantElement {
 	}
 
 	private teardownFloating(): void {
-		this.cleanup?.();
-		this.cleanup = null;
+		this.cleanupFloating?.();
+		this.cleanupFloating = null;
 	}
 
-	@bound
-	updatePosition(): void {
-		if (!this.triggerTarget || !this.menuTarget || !this.open) return;
-		computePosition(this.triggerTarget, this.menuTarget, {
-			placement: this.placement,
-			middleware: [offset(6), flip(), shift({ padding: 8 })],
-		}).then(({ x, y }) => {
-			Object.assign(this.menuTarget.style, {
-				left: `${x}px`,
-				top: `${y}px`,
-			});
+	private attachFloating(): void {
+		if (!this.triggerTarget || !this.menuTarget) return;
+		this.teardownFloating();
+		this.cleanupFloating = attachFloating({
+			anchor: this.triggerTarget,
+			floating: this.menuTarget,
+			getPlacement: () => this.placement,
+			gap: MENU_GAP,
 		});
 	}
-
-	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
 	@bound
 	@onUpdated(['open', 'placement'])
@@ -105,13 +104,8 @@ export class RuiMenuButton extends RadiantElement {
 		this.triggerTarget.setAttribute('aria-expanded', String(this.open));
 		this.menuTarget.hidden = !this.open;
 
-		if (this.open) {
-			this.teardownFloating();
-			this.cleanup = autoUpdate(this.triggerTarget, this.menuTarget, this.updatePosition);
-			this.updatePosition();
-		} else {
-			this.teardownFloating();
-		}
+		if (this.open) this.attachFloating();
+		else this.teardownFloating();
 
 		const focus = this.pendingFocus;
 		this.pendingFocus = null;
@@ -236,7 +230,7 @@ export class RuiMenuButton extends RadiantElement {
 					<slot name="trigger"></slot>
 					<span class="rui-menu-button__chevron" aria-hidden="true"></span>
 				</button>
-				<div data-ref="menu" class="rui-menu-button__menu" role="menu" hidden>
+				<div data-ref="menu" class="rui-menu-button__menu rui-floating" role="menu" hidden>
 					<slot></slot>
 				</div>
 			</div>
