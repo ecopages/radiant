@@ -5,7 +5,7 @@ import {
 	parseAttributes,
 	parseHtmlTagToken,
 	voidElementNames,
-} from '../../src/server/html-parser';
+} from '../../src/server/html/html-parser';
 
 describe('collectTopLevelHtmlFragments', () => {
 	test('keeps nested elements and adjacent text grouped as top-level fragments', () => {

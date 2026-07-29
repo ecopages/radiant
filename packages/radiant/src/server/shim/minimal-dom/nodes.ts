@@ -1,4 +1,4 @@
-import { escapeHtmlAttribute } from '../../utils/escape-html-attribute';
+import { serializeHtmlAttribute } from '../../../utils/serialize-html-attribute';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import * as selectors from './selectors';
 
@@ -356,7 +356,7 @@ export class MinimalElement extends MinimalNode {
 		}
 
 		const attributes = Array.from(this.attributes.entries())
-			.map(([name, value]) => ` ${name}="${escapeHtmlAttribute(value)}"`)
+			.map(([name, value]) => serializeHtmlAttribute(name, value))
 			.join('');
 
 		return `<${this.localName}${attributes}>${this.innerHTML}</${this.localName}>`;
