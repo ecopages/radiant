@@ -17,8 +17,8 @@ import { resolveSsrContextValue } from '../../src/server/context-ssr';
 import {
 	renderRadiantElementHostToString,
 	renderRadiantElementViewToString,
-} from '../../src/server/radiant-element-ssr-bridge';
-import { assertLightDomSsrSupported } from '../../src/server/assert-light-dom-ssr';
+} from '../../src/server/radiant-element-ssr';
+import { assertLightDomSsrSupported } from '../../src/server/element-ssr/assert-light-dom-ssr';
 import { renderComponentToString } from '../../src/server/render-component';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
 
