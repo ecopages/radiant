@@ -47,7 +47,9 @@ export function serializeNodeHtml(node: Node): string {
 		return escapeHtmlText(node.textContent ?? '');
 	}
 
-	return 'outerHTML' in node && typeof node.outerHTML === 'string' ? node.outerHTML : escapeHtmlText(node.textContent ?? '');
+	return 'outerHTML' in node && typeof node.outerHTML === 'string'
+		? node.outerHTML
+		: escapeHtmlText(node.textContent ?? '');
 }
 
 registerMinimalDomHtmlParsers({

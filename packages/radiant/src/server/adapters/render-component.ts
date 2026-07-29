@@ -349,7 +349,6 @@ function createAmbientSsrContextProviders(
 	}));
 }
 
-
 function normalizeRenderComponentOptions<TComponent extends ServerRenderableComponent>(
 	componentOrOptions: ServerRenderableComponentConstructor<TComponent> | RenderComponentOptions<TComponent>,
 	options?: RenderComponentCallOptions<TComponent>,
@@ -363,7 +362,6 @@ function normalizeRenderComponentOptions<TComponent extends ServerRenderableComp
 
 	return componentOrOptions;
 }
-
 
 function canPrepareSsrHost<TComponent extends ServerRenderableComponent>(
 	component: TComponent,

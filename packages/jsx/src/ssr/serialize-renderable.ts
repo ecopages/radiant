@@ -142,9 +142,7 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 		}
 
 		const attributeValue =
-			interpolationPart.name.toLowerCase() === 'style'
-				? serializeStyleSnapshot(childValue)
-				: String(childValue);
+			interpolationPart.name.toLowerCase() === 'style' ? serializeStyleSnapshot(childValue) : String(childValue);
 		html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(attributeValue)}"`;
 	}
 

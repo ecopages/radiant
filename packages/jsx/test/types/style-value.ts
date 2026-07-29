@@ -5,9 +5,7 @@ type IsAssignable<From, To> = [From] extends [To] ? true : false;
 
 type ObjectStyleSignal = SignalLike<Record<string, StylePropertyValue>>;
 
-type ReactiveObjectStyleAccepted = Assert<
-	IsAssignable<{ style: ObjectStyleSignal }, Pick<JsxHtmlProps, 'style'>>
->;
+type ReactiveObjectStyleAccepted = Assert<IsAssignable<{ style: ObjectStyleSignal }, Pick<JsxHtmlProps, 'style'>>>;
 
 declare const _reactiveObjectStyleAccepted: ReactiveObjectStyleAccepted;
 

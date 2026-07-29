@@ -53,35 +53,49 @@
 	"scripts": {
 		"build:lib": "tsup && tsc -p tsconfig.build.json",
 		"clean": "rm -rf dist",
-		"dev": "tsup --watch"
+		"dev": "tsup --watch",
+		"test:lib": "vitest run"
+	},
+	"engines": {
+		"node": ">=18"
 	},
 	"dependencies": {
+		"@babel/parser": "^7.28.0",
+		"@babel/traverse": "^7.28.0",
+		"parse5": "^7.3.0",
 		"picomatch": "^4.0.2"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
 		"@babel/plugin-proposal-decorators": "^7.28.0",
+		"@babel/plugin-syntax-typescript": "^7.28.0",
+		"@babel/plugin-transform-class-properties": "^7.28.0",
+		"@babel/types": "^8.0.4",
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/signals": "workspace:*",
 		"@rolldown/plugin-babel": "^0.2.1",
+		"@types/babel__traverse": "^7.28.0",
 		"@types/node": "^24.13.2",
 		"@types/picomatch": "^4.0.0",
 		"nitro": "^3.0.260311-beta",
 		"rollup": "^4.53.2",
 		"tsup": "^8.5.0",
 		"typescript": "catalog:",
-		"vite": "^7.1.3"
+		"vite": "^8.1.1",
+		"vitest": "^4.1.10"
 	},
 	"peerDependencies": {
 		"@babel/core": "^7.0.0",
 		"@babel/plugin-proposal-decorators": "^7.0.0",
+		"@babel/plugin-syntax-typescript": "^7.0.0",
+		"@babel/plugin-transform-class-properties": "^7.0.0",
 		"@ecopages/jsx": ">=0.3.0-beta.3 <1.0.0",
 		"@ecopages/radiant": ">=0.3.0-beta.3 <1.0.0",
 		"@ecopages/signals": ">=0.3.0-beta.3 <1.0.0",
 		"@rolldown/plugin-babel": "^0.2.0",
-		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
-		"nitro": "^3.0.260311-beta"
+		"nitro": "^3.0.260311-beta",
+		"vite": "^8.0.0"
 	},
 	"peerDependenciesMeta": {
 		"nitro": {
@@ -91,6 +105,12 @@
 			"optional": true
 		},
 		"@babel/plugin-proposal-decorators": {
+			"optional": true
+		},
+		"@babel/plugin-syntax-typescript": {
+			"optional": true
+		},
+		"@babel/plugin-transform-class-properties": {
 			"optional": true
 		},
 		"@rolldown/plugin-babel": {

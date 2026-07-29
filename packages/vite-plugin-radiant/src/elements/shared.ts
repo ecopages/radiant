@@ -178,3 +178,27 @@ export function createComponentFileMatcher(
 		return matchers.some((matcher) => matcher(relativePath));
 	};
 }
+
+export function createComponentStyleFileMatcher(
+	rootDirectory: string,
+	componentDirectory: string,
+	styles: string | string[],
+): (filePath: string) => boolean {
+	const componentRoot = posix.join(rootDirectory, componentDirectory);
+	const patterns = Array.isArray(styles) ? styles : [styles];
+	const matchers = patterns.map((pattern) =>
+		picomatch(pattern.replace(/^\/+/, ''), {
+			dot: true,
+			nocase: false,
+		}),
+	);
+
+	return (filePath: string) => {
+		if (!filePath.startsWith(componentRoot)) {
+			return false;
+		}
+
+		const relativePath = posix.relative(componentRoot, filePath);
+		return matchers.some((matcher) => matcher(relativePath));
+	};
+}
