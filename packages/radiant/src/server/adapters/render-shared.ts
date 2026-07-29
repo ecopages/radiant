@@ -1,4 +1,11 @@
-import type { RenderedComponent, RenderedComponentPayload, RenderedComponentWithPreview } from './render-component';
+import type { RenderToStringOptions } from '@ecopages/jsx/server';
+import {
+	scriptModuleAsset,
+	type RenderedComponent,
+	type RenderedComponentAsset,
+	type RenderedComponentPayload,
+	type RenderedComponentWithPreview,
+} from './render-types';
 
 /** Returns the current time for deterministic SSR metadata in tests. */
 export function createDefaultRenderTimestamp(): Date {
@@ -32,5 +39,35 @@ export function toRenderedComponentWithPreview(render: RenderedComponent): Rende
 		markup: render.markup,
 		preview: render.preview,
 		tagName: render.metadata.tagName,
+	};
+}
+
+export function mergeRenderedComponentAssets(
+	assets: readonly RenderedComponentAsset[],
+	clientModuleSrc: string | undefined,
+): readonly RenderedComponentAsset[] {
+	if (!clientModuleSrc) {
+		return assets;
+	}
+
+	if (assets.some((asset) => asset.kind === 'script-module' && asset.src === clientModuleSrc)) {
+		return assets;
+	}
+
+	return [scriptModuleAsset(clientModuleSrc), ...assets];
+}
+
+export function resolvePrimaryClientModuleSrc(assets: readonly RenderedComponentAsset[]): string | undefined {
+	return assets.find((asset) => asset.kind === 'script-module')?.src;
+}
+
+export function normalizeRenderOptions(options: RenderToStringOptions | undefined): RenderToStringOptions {
+	if (options?.mode !== undefined || options?.hydrate !== undefined) {
+		return options;
+	}
+
+	return {
+		...options,
+		mode: 'hydrate',
 	};
 }

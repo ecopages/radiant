@@ -8,8 +8,7 @@ import {
 	type ContextSubscription,
 	type ContextSubscriptionRequestEvent,
 } from './events';
-import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
-import { createContextHydrationScriptTag, escapeContextHydrationJson } from './hydration-script';
+import { createHydrationScriptTag, findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 import type { Context, ContextType, UnknownContext } from './types';
 import { resolveContextHydrationHost, type ContextHostLike } from './context-host';
 
@@ -153,8 +152,8 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 	/**
 	 * Serializes the current provider value for inclusion in a hydration script.
 	 *
-	 * The serialized payload is JSON-escaped so it can be embedded safely inside a
-	 * `<script type="application/json">` tag.
+	 * Returns raw `JSON.stringify` output. Escaping for safe embedding inside a
+	 * `<script type="application/json">` tag happens in `createHydrationScriptTag`.
 	 */
 	serializeHydrationValue = (): string | undefined => {
 		this.tryHydrateFromHost();
@@ -175,7 +174,7 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			return undefined;
 		}
 
-		return escapeContextHydrationJson(serializedValue);
+		return serializedValue;
 	};
 
 	/**
@@ -192,7 +191,8 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 			return undefined;
 		}
 
-		return createContextHydrationScriptTag({
+		return createHydrationScriptTag({
+			type: 'context',
 			hydrationKey: this.hydrationKey,
 			serializedValue,
 		});

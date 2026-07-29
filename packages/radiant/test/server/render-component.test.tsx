@@ -769,4 +769,31 @@ describe('render-component server helpers', () => {
 		expect(markupA).toContain('data-id="1"');
 		expect(markupB).toContain('data-id="2"');
 	});
+
+	test('renderController() rejects tagName breakout payloads', async () => {
+		await expect(
+			renderController(RenderControllerCard, {
+				tagName: 'div><img src=x onerror=alert(1)><x',
+			}),
+		).rejects.toThrow(/Invalid Controller SSR host tagName/);
+	});
+
+	test('renderController() rejects invalid host attribute names', async () => {
+		await expect(
+			renderController(RenderControllerCard, {
+				tagName: 'div',
+				attributes: {
+					'onerror="alert(1)" data-x': '1',
+				},
+			}),
+		).rejects.toThrow(/Invalid HTML attribute name/);
+	});
+
+	test('renderComponent() rejects invalid tagName overrides', async () => {
+		await expect(
+			renderComponent(RenderComponentCard, {
+				tagName: 'div><script>',
+			}),
+		).rejects.toThrow(/Invalid Component SSR host tagName/);
+	});
 });
