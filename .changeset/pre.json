@@ -10,10 +10,6 @@
     "@ecopages/radiant-ui": "0.1.0-beta.0"
   },
   "changesets": [
-    "radiant-ui-compile-css",
-    "reactive-style-serialize",
-    "ssr-render-scope-als",
-    "state-prop-signals",
-    "vite-plugin-radiant-publish"
+    "drop-floating-ui-native-positioning"
   ]
 }
