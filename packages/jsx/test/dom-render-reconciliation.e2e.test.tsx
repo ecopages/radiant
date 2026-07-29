@@ -1597,4 +1597,45 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		await Promise.resolve();
 		expect(container.innerHTML).toBe('<p>Theme: Next</p>');
 	});
+
+	test('serializes reactive object style bindings to the style attribute and updates in place', async () => {
+		const [{ createSubscribableJsxValue, jsx }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const { state } = await import('@ecopages/signals');
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: Record<string, string>) => void>();
+		let styleObject: Record<string, string> = { color: 'tomato' };
+		const boundStyle = createSubscribableJsxValue({
+			getValue: () => styleObject,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const signalStyle = state<Record<string, string>>({ backgroundColor: 'navy' });
+
+		root.render(jsx('div', { id: 'sub', style: boundStyle }));
+		const subHost = container.querySelector('#sub') as HTMLDivElement;
+		expect(subHost.getAttribute('style')).toBe('color: tomato');
+
+		styleObject = { color: 'green', paddingInline: '8px' };
+		for (const subscriber of subscribers) {
+			subscriber(styleObject);
+		}
+		await Promise.resolve();
+		expect(subHost.getAttribute('style')).toBe('color: green; padding-inline: 8px');
+
+		root.render(jsx('div', { id: 'sig', style: signalStyle }));
+		const sigHost = container.querySelector('#sig') as HTMLDivElement;
+		expect(sigHost.getAttribute('style')).toBe('background-color: navy');
+
+		signalStyle.set({ backgroundColor: 'maroon', marginTop: '4px' });
+		await Promise.resolve();
+		expect(sigHost.getAttribute('style')).toBe('background-color: maroon; margin-top: 4px');
+	});
 });
