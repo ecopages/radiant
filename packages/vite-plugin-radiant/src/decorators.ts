@@ -102,9 +102,7 @@ export function createRadiantDecoratorBabelPreset(options: RadiantDecoratorBabel
  * Peer deps: `@rolldown/plugin-babel`, `@babel/core`, `@babel/plugin-proposal-decorators`,
  * `@babel/plugin-syntax-typescript`, and `@babel/plugin-transform-class-properties` when using `'legacy'`
  */
-export async function createRadiantDecoratorBabelPlugin(
-	options: RadiantDecoratorBabelOptions = {},
-): Promise<Plugin> {
+export async function createRadiantDecoratorBabelPlugin(options: RadiantDecoratorBabelOptions = {}): Promise<Plugin> {
 	const { default: babel } = await import('@rolldown/plugin-babel');
 	const plugin = await babel({
 		presets: [createRadiantDecoratorBabelPreset(options)],

@@ -95,12 +95,18 @@ function readDecoratorName(decorator: DecoratorNode): string | undefined {
 	return readCalleeIdentifier(expression);
 }
 
-function readCalleeIdentifier(expression: NonNullable<DecoratorNode['expression']['callee']> | DecoratorNode['expression']): string | undefined {
+function readCalleeIdentifier(
+	expression: NonNullable<DecoratorNode['expression']['callee']> | DecoratorNode['expression'],
+): string | undefined {
 	if (expression.type === 'Identifier' && expression.name) {
 		return expression.name;
 	}
 
-	if (expression.type === 'MemberExpression' && expression.property?.type === 'Identifier' && expression.property.name) {
+	if (
+		expression.type === 'MemberExpression' &&
+		expression.property?.type === 'Identifier' &&
+		expression.property.name
+	) {
 		return expression.property.name;
 	}
 
