@@ -1,11 +1,13 @@
 # `@ecopages/vite-plugin-radiant`
 
-Drop-in Vite plugin for [Radiant](https://github.com/ecopages/radiant): JSX (`@ecopages/jsx`), SSR externals, element discovery, and client/SSR boot helpers.
+Vite 8 plugin for [Radiant](https://github.com/ecopages/radiant): JSX (`@ecopages/jsx`), SSR externals, element discovery, and client/SSR boot helpers.
+
+**Requirements:** Node.js 18+, Vite 8+. Do not use alongside `@vitejs/plugin-react` or `@vitejs/plugin-react-swc` — use this plugin as your framework Vite integration instead.
 
 ## Install
 
 ```bash
-npm install -D @ecopages/vite-plugin-radiant @ecopages/radiant @ecopages/jsx @ecopages/signals
+npm install -D @ecopages/vite-plugin-radiant @ecopages/radiant @ecopages/jsx @ecopages/signals vite@^8
 ```
 
 ## Quick start
@@ -17,7 +19,7 @@ import { defineConfig } from 'vite';
 import radiant from '@ecopages/vite-plugin-radiant';
 
 export default defineConfig({
-	plugins: [radiant()],
+	plugins: [...radiant()],
 });
 ```
 
@@ -26,6 +28,8 @@ export default defineConfig({
 ```ts
 plugins: [...radiant({ elements: true })];
 ```
+
+`elements: true` (or `radiantSsr()`) is **required** when you import `@ecopages/vite-plugin-radiant/ssr` or `/nitro` helpers that resolve `virtual:radiant/*` asset and component registries.
 
 ### Nitro full-stack
 
@@ -36,7 +40,7 @@ npm install -D nitro
 ```ts
 import { defineConfig } from 'vite';
 import { nitro } from 'nitro/vite';
-import { defineRadiantNitroConfig, radiantSsr } from '@ecopages/vite-plugin-radiant';
+import { radiantSsr } from '@ecopages/vite-plugin-radiant';
 
 export default defineConfig({
 	plugins: [nitro(), ...radiantSsr()],
@@ -54,12 +58,12 @@ export default defineRadiantNitroConfig({ serverDir: './server' });
 
 ## `radiant(options?)`
 
-| Option            | Default                             | Effect                                                    |
-| ----------------- | ----------------------------------- | --------------------------------------------------------- |
-| `elements`        | `false` (`true` when `nitro: true`) | Component scan + virtual registries                       |
-| `nitro`           | `false`                             | Nitro `nitro` / `ssr` env externals (use after `nitro()`) |
-| `decorators`      | —                                   | `'babel'` for Rolldown + Babel on Vite 8+                 |
-| `jsxImportSource` | `@ecopages/jsx`                     | JSX import source                                         |
+| Option            | Default                             | Effect                                                                                                                                                |
+| ----------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `elements`        | `false` (`true` when `nitro: true`) | Component scan + virtual registries                                                                                                                   |
+| `nitro`           | `false`                             | Nitro `nitro` / `ssr` env externals (use after `nitro()`)                                                                                             |
+| `decorators`      | —                                   | `'babel'` = temporary TC39 lowering on Vite 8 ([oxc#9170](https://github.com/oxc-project/oxc/issues/9170)); prefer `experimentalDecorators` otherwise |
+| `jsxImportSource` | `@ecopages/jsx`                     | JSX import source                                                                                                                                     |
 
 ```ts
 radiant({
@@ -77,10 +81,32 @@ Add types for virtual modules:
 /// <reference types="@ecopages/vite-plugin-radiant/client" />
 ```
 
-### Babel decorators (Vite 8+)
+### Decorators (Vite 8 / Oxc)
+
+Vite 8 transforms with [Oxc](https://oxc.rs/). Oxc already lowers **legacy** TypeScript decorators (`experimentalDecorators: true`). It does **not** yet lower **TC39** stage-3 decorators — tracked in [oxc#9170](https://github.com/oxc-project/oxc/issues/9170).
+
+Radiant supports both styles. For Vite 8 apps today, prefer legacy TypeScript decorators so you need no extra transform:
+
+```jsonc
+// tsconfig.json
+{
+	"compilerOptions": {
+		"experimentalDecorators": true,
+		"useDefineForClassFields": true,
+	},
+}
+```
+
+```ts
+plugins: [...radiant({ elements: true })];
+```
+
+To keep TC39 / stage-3 decorators on Vite 8 before Oxc lands them, opt into Babel (temporary workaround for [oxc#9170](https://github.com/oxc-project/oxc/issues/9170); remove once Oxc ships ECMA decorator lowering).
+
+Those packages are **optional peer dependencies** of this plugin — they are not installed with `@ecopages/vite-plugin-radiant`. Add them only when you set `decorators: 'babel'`:
 
 ```bash
-npm install -D @rolldown/plugin-babel @babel/core @babel/plugin-proposal-decorators
+npm install -D @rolldown/plugin-babel @babel/core @babel/plugin-proposal-decorators @babel/plugin-syntax-typescript
 ```
 
 ```ts
@@ -88,6 +114,18 @@ plugins: [radiant({ decorators: 'babel', elements: true })];
 ```
 
 Vite awaits promises in `plugins` — pass `radiant({ decorators: 'babel' })` as a single entry, do not spread the promise.
+
+| Path                                                 | When to use                                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `experimentalDecorators: true` (default plugin path) | Vite 8 without Babel — recommended until Oxc supports TC39                                                    |
+| `decorators: 'babel'` (+ optional peers above)       | TC39 stage-3 authoring on Vite 8 — temporary until [oxc#9170](https://github.com/oxc-project/oxc/issues/9170) |
+| Vite ≤7 + esbuild                                    | TC39 works via esbuild without this plugin option                                                             |
+
+## Dev server HMR
+
+Radiant uses Vite's normal module updates for component logic and styles. Changes that affect **element discovery** (adding/removing component scripts or co-located CSS, or changing `@customElement` / `@controller` metadata) invalidate virtual registries and trigger a **full page reload**.
+
+Custom elements are not redefined in place during dev; Radiant does not provide React Fast Refresh-style state preservation across registry changes.
 
 ## Subpath exports
 

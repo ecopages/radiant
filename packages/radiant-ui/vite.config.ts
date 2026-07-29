@@ -1,5 +1,4 @@
 /// <reference types="vitest/config" />
-/// <reference types="@vitest/browser/providers/playwright" />
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vite';
 import path from 'node:path';

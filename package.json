@@ -12,7 +12,7 @@
 		"typecheck": "tsc --noEmit -p packages/jsx/tsconfig.json && tsc --noEmit -p packages/signals/tsconfig.json && tsc --noEmit -p packages/radiant/tsconfig.json && tsc --noEmit -p packages/vite-plugin-radiant/tsconfig.json && tsc --noEmit -p playground/vite/tsconfig.json && tsc --noEmit -p playground/vite-nitro/tsconfig.json && tsc --noEmit -p apps/docs/tsconfig.json",
 		"prepare:husky": "husky",
 		"build:all": "pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib",
-		"test:all": "pnpm --filter @ecopages/jsx test:lib && pnpm --filter @ecopages/signals test:lib && pnpm --filter @ecopages/radiant test:lib && pnpm --filter radiant-docs test:e2e && pnpm --filter kitchen-sink-vite-nitro test:e2e && pnpm --filter playground-vite test:e2e && pnpm run size:check",
+		"test:all": "pnpm --filter @ecopages/jsx test:lib && pnpm --filter @ecopages/signals test:lib && pnpm --filter @ecopages/radiant test:lib && pnpm --filter @ecopages/vite-plugin-radiant test:lib && pnpm --filter radiant-docs test:e2e && pnpm --filter kitchen-sink-vite-nitro test:e2e && pnpm --filter playground-vite test:e2e && pnpm run size:check",
 		"size:check": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:check",
 		"size:report": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:report",
 		"changeset": "changeset",
@@ -23,7 +23,6 @@
 		"watch:lib": "pnpm -r --parallel --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run watch:lib",
 		"dev:playground-vite": "pnpm --filter playground-vite dev & pnpm run watch:lib",
 		"dev:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro dev & pnpm run watch:lib",
-		"dev:playground-vite:legacy": "pnpm --filter playground-vite dev:legacy & pnpm run watch:lib",
 		"build:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro build",
 		"build:docs": "pnpm --filter radiant-docs build",
 		"preview:docs": "pnpm --filter radiant-docs preview"
