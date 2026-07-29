@@ -9,7 +9,7 @@ export const RadiantDropdown = ({ defaultOpen, placement, arrow, children }: Wit
 			<button type="button" data-ref="trigger" class="rui-button rui-button--primary rui-button--md">
 				Open
 			</button>
-			<div data-ref="content">
+			<div data-ref="content" hidden>
 				{children}
 				{arrow ? <div data-ref="arrow"></div> : null}
 			</div>

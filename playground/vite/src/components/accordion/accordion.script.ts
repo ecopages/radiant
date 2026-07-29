@@ -28,9 +28,12 @@ export class RadiantAccordion extends RadiantElement {
 	private animations: DetailsAnimation[] = [];
 
 	connectedCallback(): void {
-		for (const _details of this.detailsTargets) {
-			this.animations.push({ reference: null, isClosing: false, isExpanding: false });
-		}
+		super.connectedCallback();
+		queueMicrotask(() => {
+			for (const _details of this.detailsTargets ?? []) {
+				this.animations.push({ reference: null, isClosing: false, isExpanding: false });
+			}
+		});
 	}
 
 	@onEvent({ selector: 'summary', type: 'click' })
