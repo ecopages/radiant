@@ -500,7 +500,7 @@ describe('RadiantElement', () => {
 		expect(host.innerHTML).toContain('<feDropShadow dx="0" dy="2" stdDeviation="2"></feDropShadow>');
 	});
 
-	test('bindReactiveValue updates the subscribed child without rerendering the component', async () => {
+	test('host.bind updates the subscribed child without rerendering the component', async () => {
 		type BoundReactiveCounterBindings = {
 			count: number;
 		};
