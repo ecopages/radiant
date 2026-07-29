@@ -1,5 +1,5 @@
 import './install-ssr-runtime';
-import type { JsxRenderable } from '@ecopages/jsx';
+import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
 import {
@@ -38,10 +38,7 @@ export function renderRadiantElementHostToString(
 }
 
 export function renderRadiantElementHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable {
-	return {
-		nodeType: 1,
-		outerHTML: renderRadiantElementHostToString(component, { mode: 'hydrate' }),
-	};
+	return createMarkupNodeLike(renderRadiantElementHostToString(component, { mode: 'hydrate' }));
 }
 
 export function renderRegisteredRadiantElementHost(component: unknown): JsxRenderable | undefined {
@@ -103,12 +100,7 @@ export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): 
 			return undefined;
 		}
 
-		return {
-			nodeType: 1,
-			get outerHTML() {
-				return serializeNestedCustomElementHost(instance);
-			},
-		};
+		return createMarkupNodeLike(serializeNestedCustomElementHost(instance));
 	}, render);
 }
 
