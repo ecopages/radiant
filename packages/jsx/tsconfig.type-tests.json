@@ -4,5 +4,5 @@
 		"noEmit": true,
 		"types": []
 	},
-	"include": ["./test/types/custom-element-prop-bindings.ts"]
+	"include": ["./test/types/custom-element-prop-bindings.ts", "./test/types/style-value.ts"]
 }
