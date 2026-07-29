@@ -1,5 +1,6 @@
 @reference 'tailwindcss';
 @reference '../themes/default.css';
+@reference '../utilities/sheen.css';
 
 @layer components {
 	.rui-button {

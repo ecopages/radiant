@@ -1,13 +1,19 @@
 {
-	"mode": "pre",
-	"tag": "beta",
-	"initialVersions": {
-		"@ecopages/jsx": "0.3.0-beta.3",
-		"@ecopages/radiant": "0.3.0-beta.3",
-		"@ecopages/signals": "0.3.0-beta.3",
-		"@ecopages/vite-plugin-radiant": "0.3.0-beta.3",
-		"@ecopages/storybook-radiant-vite": "0.1.0-beta.0",
-		"@ecopages/radiant-ui": "0.0.1-beta.0"
-	},
-	"changesets": []
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@ecopages/jsx": "0.3.0-beta.3",
+    "@ecopages/radiant": "0.3.0-beta.3",
+    "@ecopages/signals": "0.3.0-beta.3",
+    "@ecopages/vite-plugin-radiant": "0.0.0",
+    "@ecopages/storybook-radiant-vite": "0.1.0-beta.0",
+    "@ecopages/radiant-ui": "0.1.0-beta.0"
+  },
+  "changesets": [
+    "radiant-ui-compile-css",
+    "reactive-style-serialize",
+    "ssr-render-scope-als",
+    "state-prop-signals",
+    "vite-plugin-radiant-publish"
+  ]
 }
