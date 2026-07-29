@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { isIterableRenderable, isTemplateResultLike } from '../src/renderable-guards.ts';
+import { isIterableRenderable, isTemplateResultLike } from '../src/types/renderable-guards.ts';
 import type { TemplateResultLike } from '../src/jsx-runtime.ts';
 
 async function loadModule<T>(path: string): Promise<T> {
@@ -25,11 +25,11 @@ function expectFragmentChildren(fragment: unknown): unknown[] {
 }
 
 const loadMarkerPolicy = async () =>
-	loadModule<typeof import('../src/hydration-marker-policy.ts')>('../src/hydration-marker-policy.ts');
+	loadModule<typeof import('../src/hydration/hydration-marker-policy.ts')>('../src/hydration/hydration-marker-policy.ts');
 const loadHydrationBindings = async () =>
-	loadModule<typeof import('../src/hydration-bindings.ts')>('../src/hydration-bindings.ts');
+	loadModule<typeof import('../src/hydration/hydration-bindings.ts')>('../src/hydration/hydration-bindings.ts');
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
-const loadServerRender = async () => loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts');
+const loadServerRender = async () => loadModule<typeof import('../src/ssr/server-render.ts')>('../src/ssr/server-render.ts');
 
 describe('hydration marker policy', () => {
 	test('events, native-events, and properties are client-only bindings', async () => {

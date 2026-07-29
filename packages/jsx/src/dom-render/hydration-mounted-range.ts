@@ -1,4 +1,4 @@
-import type { KeyedJsxValue, TemplateResultLike } from '../jsx-runtime.ts';
+import type { KeyedJsxValue, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
 import { getNodeAtPath } from './path-utils.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';

@@ -1,5 +1,12 @@
-import { isKeyedJsxValue, isSubscribableJsxValue, type KeyedJsxValue } from '../jsx-runtime.ts';
-import { isIterableRenderable, isJsxNodeLike, isSignalLikeValue, isTemplateResultLike } from '../renderable-guards.ts';
+import {
+	isIterableRenderable,
+	isJsxNodeLike,
+	isKeyedJsxValue,
+	isSignalLikeValue,
+	isSubscribableJsxValue,
+	isTemplateResultLike,
+} from '../types/renderable-guards.ts';
+import type { KeyedJsxValue, TemplateResultLike } from '../types/index.ts';
 import { createNodesFromJsxNodeLike } from './dom-operations.ts';
 import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
 
@@ -9,10 +16,10 @@ export {
 	isSignalLikeValue,
 	isTemplateResultLike,
 	resolveReactiveSnapshot,
-} from '../renderable-guards.ts';
+} from '../types/renderable-guards.ts';
 
 type TemplateMount = (
-	template: import('../jsx-runtime.ts').TemplateResultLike,
+	template: TemplateResultLike,
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
 	contextParent?: Node | null,

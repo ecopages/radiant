@@ -13,7 +13,12 @@ const bunHtmlEscaper = typeof bunGlobal?.escapeHTML === 'function' ? (bunGlobal 
 
 function escapeString(value: string, escapeQuotes: boolean): string {
 	if (bunHtmlEscaper) {
-		return bunHtmlEscaper.escapeHTML(value);
+		const escaped = bunHtmlEscaper.escapeHTML(value);
+
+		// Bun.escapeHTML currently escapes quotes, but attribute escaping must not
+		// depend on that remaining true if the Bun API drifts. Re-escape any
+		// remaining `"` when building attribute values.
+		return escapeQuotes ? escaped.replaceAll('"', '&quot;') : escaped;
 	}
 
 	let firstSpecialIndex = -1;

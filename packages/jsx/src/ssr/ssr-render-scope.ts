@@ -1,4 +1,4 @@
-import type { ServerCustomElementRenderHook } from './types.ts';
+import type { ServerCustomElementRenderHook } from '../types/index.ts';
 import { createLazyNodeAsyncLocalStorage } from './lazy-async-local-storage.ts';
 
 /**

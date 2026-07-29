@@ -1,4 +1,4 @@
-import type { JsxKey, KeyedJsxValue } from '../jsx-runtime.ts';
+import type { JsxKey, KeyedJsxValue } from '../types/index.ts';
 import { clearRangeBetween, insertNodesBefore, moveRangeBefore } from './dom-operations.ts';
 import { disposeMountedRangeContent, releaseMountedSubscription } from './mounted-disposal.ts';
 import { createRangeRecord } from './range-records.ts';

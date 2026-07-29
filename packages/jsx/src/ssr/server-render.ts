@@ -1,12 +1,10 @@
-import { getJsxGlobalSymbol } from './global-symbol.ts';
-import { resolveBindingShapeValue } from './renderable-guards.ts';
+import { forEachNormalizedAttribute } from '../factory/attribute-normalize.ts';
 import {
-	forEachNormalizedAttribute,
 	shouldUseAttributeBindingByDefaultForElement,
 	shouldUseBooleanAttributeBinding,
-	type JsxRenderable,
-	type TemplateResultLike,
-} from './jsx-runtime.ts';
+} from '../factory/binding-defaults.ts';
+import { getJsxGlobalSymbol } from './global-symbol.ts';
+import { resolveBindingShapeValue } from '../types/renderable-guards.ts';
 import { renderJsxRenderableToString } from './serialize-plain.ts';
 import { serializeRenderable } from './serialize-renderable.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
@@ -16,7 +14,7 @@ import {
 	withActiveSsrRenderContext,
 	withActiveSsrScopeValue,
 } from './ssr-render-scope.ts';
-import type { ServerCustomElementRenderHook } from './types.ts';
+import type { JsxRenderable, ServerCustomElementRenderHook, TemplateResultLike } from '../types/index.ts';
 
 /** Public vocabulary for the SSR output modes supported by `renderToString(...)`. */
 export type RenderToStringMode = 'hydrate' | 'plain';

@@ -1,10 +1,10 @@
-import { ATTRIBUTE_BINDING_PREFIX } from '../hydration-bindings.ts';
-import { getTemplateCacheKey, getTemplateInterpolationParts } from '../template-shape.ts';
+import { ATTRIBUTE_BINDING_PREFIX } from '../hydration/hydration-bindings.ts';
+import { getTemplateCacheKey, getTemplateInterpolationParts } from '../factory/template-shape.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { getElementNamespace, HTML_NAMESPACE_URI, setElementAttributeValue } from './namespaces.ts';
 import { getNodeAtPath, getNodePath } from './path-utils.ts';
 import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
-import type { TemplateResultLike } from '../jsx-runtime.ts';
+import type { TemplateResultLike } from '../types/index.ts';
 import type {
 	BindingDescriptor,
 	ChildTemplatePart,

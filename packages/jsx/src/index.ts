@@ -15,7 +15,7 @@ export {
 	isSubscribableJsxValue,
 } from './jsx-runtime.ts';
 
-export type { DelegatedEventName } from './event-binding-policy.ts';
+export type { DelegatedEventName } from './factory/event-binding-policy.ts';
 export type {
 	AriaAttributesNormalized,
 	ClassList,
@@ -48,4 +48,4 @@ export type {
 	SubscribableJsxValue,
 	SubscribableJsxValueWithAccess,
 	TemplateResultLike,
-} from './types.ts';
+} from './types/index.ts';
