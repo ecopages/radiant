@@ -29,7 +29,7 @@ rui-menubar {
 		@apply bg-background outline-none ring-2 ring-focus-ring;
 	}
 	.rui-menubar__menu {
-		@apply absolute left-0 top-full z-dropdown mt-1 min-w-40 rounded-container border border-border bg-surface p-1 shadow-md;
+		@apply absolute left-0 top-full z-dropdown mt-2.5 min-w-40 rounded-container border border-border bg-surface p-1 shadow-md;
 	}
 	.rui-menubar__menu-item {
 		@apply block w-full cursor-pointer rounded-control border-0 bg-transparent px-3 py-1.5 text-left text-sm text-on-surface;

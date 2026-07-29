@@ -140,7 +140,11 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 	onTopClick(event: Event): void {
 		const current = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
 		if (!current || !this.getTopItems().includes(current)) return;
-		if (!this.getMenuFor(current)) return;
+
+		if (!this.getMenuFor(current)) {
+			this.closeOpenMenu();
+			return;
+		}
 
 		const expanded = current.getAttribute('aria-expanded') === 'true';
 		if (expanded) this.closeOpenMenu();
