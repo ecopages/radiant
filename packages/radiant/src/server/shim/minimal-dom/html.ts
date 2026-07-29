@@ -1,4 +1,5 @@
-import { collectTopLevelHtmlFragments, parseHtmlTagToken, type ParsedHtmlTag } from '../html-parser';
+import { collectTopLevelHtmlFragments, parseHtmlTagToken, type ParsedHtmlTag } from '../../html/html-parser';
+import { escapeHtmlText } from '../../../utils/escape-html-text';
 import {
 	getInstalledDocumentLike,
 	MinimalElement,
@@ -43,10 +44,10 @@ export function parseHtmlToNodes(html: string, ownerDocument: Document | null = 
 
 export function serializeNodeHtml(node: Node): string {
 	if (node.nodeType === MinimalNode.TEXT_NODE) {
-		return node.textContent ?? '';
+		return escapeHtmlText(node.textContent ?? '');
 	}
 
-	return 'outerHTML' in node && typeof node.outerHTML === 'string' ? node.outerHTML : (node.textContent ?? '');
+	return 'outerHTML' in node && typeof node.outerHTML === 'string' ? node.outerHTML : escapeHtmlText(node.textContent ?? '');
 }
 
 registerMinimalDomHtmlParsers({

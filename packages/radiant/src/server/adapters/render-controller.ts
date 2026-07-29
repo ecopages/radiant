@@ -1,28 +1,33 @@
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import { renderToString as renderJsxToString, type RenderToStringOptions } from '@ecopages/jsx/server';
-import { getControllerIdentifier } from '../core/controller-metadata';
-import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
-import type { RadiantController } from '../core/radiant-controller';
-import { CONTROLLER_ATTRIBUTE } from '../controller-registry';
-import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
-import './install-ssr-runtime';
-import { ensureLightDomShim } from './light-dom-shim';
-import { withRadiantServerCustomElementRenderBridge } from './radiant-element-ssr-bridge';
-import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
+import { getControllerIdentifier } from '../../core/controller-metadata';
+import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
+import type { RadiantController } from '../../core/radiant-controller';
+import { CONTROLLER_ATTRIBUTE } from '../../controller-registry';
+import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
+import { assertValidHtmlAttributeName, assertValidHtmlTagName } from '../../utils/html-names';
+import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
+import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
+import '../install/install-ssr-runtime';
+import { ensureLightDomShim } from '../shim/light-dom-shim';
 import {
+	getOrCreateRadiantElementSsrRuntime,
+	withRadiantServerCustomElementRenderBridge,
+} from '../radiant-element-ssr';
+import {
+	createDefaultRenderTimestamp,
 	mergeRenderedComponentAssets,
 	normalizeRenderOptions,
 	resolvePrimaryClientModuleSrc,
 	toRenderedComponentPayload,
 	toRenderedComponentWithPreview,
-	createDefaultRenderTimestamp,
-	type RenderedComponent,
-	type RenderedComponentAsset,
-	type RenderedComponentPayload,
-	type RenderedComponentWithPreview,
-} from './render-component';
-import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
+} from './render-shared';
+import type {
+	RenderedComponent,
+	RenderedComponentAsset,
+	RenderedComponentPayload,
+	RenderedComponentWithPreview,
+} from './render-types';
 
 /** Constructor shape for a server-renderable controller. */
 export type ServerRenderableControllerConstructor<TController extends RadiantController = RadiantController> = new (
@@ -172,13 +177,7 @@ async function renderResolvedController<TController extends RadiantController>(
 }
 
 function normalizeRenderedControllerTagName(tagName: string): string {
-	const normalizedTagName = tagName.trim().toLowerCase();
-
-	if (!normalizedTagName) {
-		throw new Error('Controller SSR host tagName is required.');
-	}
-
-	return normalizedTagName;
+	return assertValidHtmlTagName(tagName, 'Controller SSR host tagName');
 }
 
 function createRenderedControllerHost(tagName: string, attributes: RenderedControllerHostAttributes): Element {
@@ -190,6 +189,7 @@ function createRenderedControllerHost(tagName: string, attributes: RenderedContr
 			continue;
 		}
 
+		assertValidHtmlAttributeName(name);
 		host.setAttribute(name, value === true ? '' : String(value));
 	}
 
@@ -334,14 +334,6 @@ function renderRenderedControllerHost(
 function serializeRenderedControllerHostAttributes(host: Element): string {
 	return host
 		.getAttributeNames()
-		.map((attributeName) => serializeRenderedControllerAttribute(attributeName, host.getAttribute(attributeName)))
+		.map((attributeName) => serializeHtmlAttribute(attributeName, host.getAttribute(attributeName)))
 		.join('');
-}
-
-function serializeRenderedControllerAttribute(name: string, value: string | null): string {
-	if (value === '') {
-		return ` ${name}`;
-	}
-
-	return ` ${name}="${escapeHtmlAttribute(value ?? '')}"`;
 }
