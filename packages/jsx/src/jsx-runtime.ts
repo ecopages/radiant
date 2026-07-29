@@ -140,7 +140,7 @@ type MapSource<Value extends JsxBindingSourceValue> =
 
 type MappableSubscribable<Value extends JsxBindingSourceValue> = SubscribableJsxValue<Value>;
 
-function createDerivedSubscribable<Value extends JsxBindingSourceValue, Out extends JsxRenderable>(
+function createDerivedSubscribable<Value extends JsxBindingSourceValue, Out extends JsxBindingSourceValue>(
 	source: MapSource<Value>,
 	project: (value: Value) => Out,
 ): MappableSubscribable<Out> {
@@ -151,7 +151,7 @@ function createDerivedSubscribable<Value extends JsxBindingSourceValue, Out exte
 			[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
 			getValue: () => project(subscribable.getValue()),
 			subscribe: (notify) => subscribable.subscribe((value) => notify(project(value))),
-			map: <Out2 extends JsxRenderable>(project2: (value: Out) => Out2) =>
+			map: <Out2 extends JsxBindingSourceValue>(project2: (value: Out) => Out2) =>
 				mapSubscribable(subscribable, (value: Value) => project2(project(value))),
 		};
 	}
@@ -164,7 +164,7 @@ function createDerivedSubscribable<Value extends JsxBindingSourceValue, Out exte
 		[SUBSCRIBABLE_JSX_VALUE_SYMBOL]: true,
 		getValue: () => project(signal.get()),
 		subscribe: (notify) => signal.subscribe((value) => notify(project(value))),
-		map: <Out2 extends JsxRenderable>(project2: (value: Out) => Out2) =>
+		map: <Out2 extends JsxBindingSourceValue>(project2: (value: Out) => Out2) =>
 			mapSubscribable(source, (value) => project2(project(value as Value))),
 	};
 }
@@ -183,7 +183,7 @@ function createDerivedSubscribable<Value extends JsxBindingSourceValue, Out exte
  * @param project Projects the current source value into the derived value.
  * @returns A derived {@link SubscribableJsxValue} with the same mount semantics as any other.
  */
-export function mapSubscribable<Value extends JsxBindingSourceValue, Out extends JsxRenderable>(
+export function mapSubscribable<Value extends JsxBindingSourceValue, Out extends JsxBindingSourceValue>(
 	source: MapSource<Value>,
 	project: (value: Value) => Out,
 ): SubscribableJsxValueWithAccess<Out> {

@@ -1,3 +1,4 @@
+import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
 import { attachEventBindingListener, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import { getElementAttributeValue, removeElementAttribute, setElementAttributeValue } from './namespaces.ts';
 import { resolveReactiveSnapshot } from './runtime-helpers.ts';
@@ -35,17 +36,19 @@ export function applyBindingToElement(
 			}
 
 			{
-				const nextValue = String(resolvedValue);
+				const isStyleBinding = binding.name.toLowerCase() === 'style';
+				const nextValue = isStyleBinding ? serializeStyleSnapshot(resolvedValue) : String(resolvedValue);
+				const cachedValue = isStyleBinding ? nextValue : resolvedValue;
 
 				if (
 					!livePart ||
-					livePart.previousValue !== resolvedValue ||
+					livePart.previousValue !== cachedValue ||
 					getElementAttributeValue(element, binding.name) !== nextValue
 				) {
 					setElementAttributeValue(element, binding.name, nextValue);
 				}
 
-				if (livePart) livePart.previousValue = resolvedValue;
+				if (livePart) livePart.previousValue = cachedValue;
 			}
 			return;
 
