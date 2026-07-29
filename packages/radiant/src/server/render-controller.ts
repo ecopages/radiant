@@ -1,3 +1,4 @@
+import { createMarkupNodeLike } from '@ecopages/jsx';
 import { renderToString as renderJsxToString, type RenderToStringOptions } from '@ecopages/jsx/server';
 import { getControllerIdentifier } from '../core/controller-metadata';
 import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
@@ -161,7 +162,7 @@ async function renderResolvedController<TController extends RadiantController>(
 						generatedAt,
 						tagName,
 					},
-					preview: { nodeType: 1, outerHTML: markup },
+					preview: createMarkupNodeLike(markup),
 				};
 			} finally {
 				controller.disconnect();

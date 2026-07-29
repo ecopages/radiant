@@ -1,4 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
+import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
@@ -357,7 +358,7 @@ function resolveRenderedComponentPreview<TComponent extends ServerRenderableComp
 	component: TComponent,
 	markup: string,
 ): JsxRenderable {
-	return renderRegisteredRadiantElementHost(component) ?? { nodeType: 1, outerHTML: markup };
+	return renderRegisteredRadiantElementHost(component) ?? createMarkupNodeLike(markup);
 }
 
 function prepareRenderedComponentHost<TComponent extends ServerRenderableComponent>(
