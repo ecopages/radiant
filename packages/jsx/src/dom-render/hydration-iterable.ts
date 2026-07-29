@@ -1,4 +1,7 @@
-import { collectTemplateAttributeMarkerIndices, visitHydrationBindingMarkers } from '../hydration/hydration-bindings.ts';
+import {
+	collectTemplateAttributeMarkerIndices,
+	visitHydrationBindingMarkers,
+} from '../hydration/hydration-bindings.ts';
 import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-guards.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
 import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './hydration.ts';

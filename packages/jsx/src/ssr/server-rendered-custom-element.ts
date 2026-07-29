@@ -2,7 +2,12 @@ import { createJsxElement, createMarkupNodeLike } from '../factory/jsx-factory.t
 import { serializeRenderable } from './serialize-renderable.ts';
 import { getActiveSsrRenderContext } from './ssr-render-scope.ts';
 import { RADIANT_MARKUP_NODE_SYMBOL } from '../types/index.ts';
-import type { JsxNodeLike, JsxPropsWithChildren, JsxRenderable, ServerRenderableCustomElement } from '../types/index.ts';
+import type {
+	JsxNodeLike,
+	JsxPropsWithChildren,
+	JsxRenderable,
+	ServerRenderableCustomElement,
+} from '../types/index.ts';
 
 type ServerRenderedCustomElementRuntime = {
 	forEachNormalizedAttribute: (

@@ -23,7 +23,10 @@ export {
 } from './types/renderable-guards.ts';
 export { renderJsxRenderableToString } from './ssr/serialize-plain.ts';
 export { forEachNormalizedAttribute } from './factory/attribute-normalize.ts';
-export { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './factory/binding-defaults.ts';
+export {
+	shouldUseAttributeBindingByDefaultForElement,
+	shouldUseBooleanAttributeBinding,
+} from './factory/binding-defaults.ts';
 export type {
 	AriaAttributesNormalized,
 	ClassList,

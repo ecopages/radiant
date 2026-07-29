@@ -7,7 +7,8 @@ async function loadModule<T>(path: string): Promise<T> {
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
 const loadJsxDevRuntime = async () =>
 	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
-const loadDevWarnings = async () => loadModule<typeof import('../src/warnings/dev-warnings.ts')>('../src/warnings/dev-warnings.ts');
+const loadDevWarnings = async () =>
+	loadModule<typeof import('../src/warnings/dev-warnings.ts')>('../src/warnings/dev-warnings.ts');
 
 function expectTemplateResultLike(value: unknown): asserts value is import('../src/jsx-runtime.ts').TemplateResultLike {
 	expect(value).toEqual(
