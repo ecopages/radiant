@@ -17,6 +17,14 @@ declare const SLOT_JSX_VALUE_SYMBOL_TYPE: unique symbol;
 export const SLOT_JSX_VALUE_SYMBOL: typeof SLOT_JSX_VALUE_SYMBOL_TYPE = Symbol.for(
 	'@ecopages/jsx.slot-value',
 ) as typeof SLOT_JSX_VALUE_SYMBOL_TYPE;
+declare const RADIANT_MARKUP_NODE_SYMBOL_TYPE: unique symbol;
+/**
+ * Symbol key present on trusted markup nodes created via `createMarkupNodeLike` /
+ * `unsafeHtml`. Raw `outerHTML` is only emitted when this brand is present.
+ */
+export const RADIANT_MARKUP_NODE_SYMBOL: typeof RADIANT_MARKUP_NODE_SYMBOL_TYPE = Symbol.for(
+	'@ecopages/jsx.markup-node',
+) as typeof RADIANT_MARKUP_NODE_SYMBOL_TYPE;
 
 /**
  * Core scalar child value that the renderer can mount directly.
@@ -30,12 +38,17 @@ export type JsxNodeType = 1 | 3 | 11;
 
 /**
  * Lightweight node-like value that can be serialized without a live DOM node.
+ *
+ * Raw `outerHTML` is only treated as trusted markup when the value also carries
+ * {@link RADIANT_MARKUP_NODE_SYMBOL} (via `createMarkupNodeLike` / `unsafeHtml`).
+ * Unbranded objects with `outerHTML` are serialized and mounted as escaped text.
  */
 export interface JsxNodeLike {
 	childNodes?: JsxNodeLike[];
 	nodeType: JsxNodeType;
 	outerHTML?: string;
 	textContent?: string | null;
+	readonly [RADIANT_MARKUP_NODE_SYMBOL]?: true;
 }
 
 /**

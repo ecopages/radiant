@@ -1,4 +1,4 @@
-import type { TemplateResultLike } from '../jsx-runtime.ts';
+import type { TemplateResultLike } from '../types/index.ts';
 import {
 	createLiveTemplateParts,
 	getCompiledTemplate,

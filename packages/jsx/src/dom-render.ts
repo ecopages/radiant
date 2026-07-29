@@ -1,16 +1,9 @@
-import { type JsxRenderable, type TemplateResultLike } from './jsx-runtime.ts';
-import {
-	ATTRIBUTE_BINDING_PREFIX,
-	collectHydrationBindings,
-	parseBindingDescriptor,
-	visitHydrationBindingMarkers,
-} from './hydration-bindings.ts';
 import {
 	HYDRATION_INVALID_BINDING_INDEX_WARNING,
 	HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING,
 	HYDRATION_MISSING_BINDING_WARNING,
 	warnRuntime,
-} from './dev-warnings.ts';
+} from './warnings/dev-warnings.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
@@ -21,10 +14,17 @@ import {
 	isTemplateResultLike,
 	unwrapKeyedValue,
 } from './dom-render/runtime-helpers.ts';
-import { isIterableRenderable } from './renderable-guards.ts';
 import { getCompiledTemplate } from './dom-render/template-compiler.ts';
 import { createTemplateInstance } from './dom-render/template-instance.ts';
 import type { DeferredPropertyBinding, MountedRoot, TemplateInstance } from './dom-render/types.ts';
+import {
+	ATTRIBUTE_BINDING_PREFIX,
+	collectHydrationBindings,
+	parseBindingDescriptor,
+	visitHydrationBindingMarkers,
+} from './hydration/hydration-bindings.ts';
+import { isIterableRenderable } from './types/renderable-guards.ts';
+import type { JsxRenderable, TemplateResultLike } from './types/index.ts';
 /**
  * Per-root render state used to decide whether a subsequent render can update
  * an existing template instance in place or must dispose and remount.
