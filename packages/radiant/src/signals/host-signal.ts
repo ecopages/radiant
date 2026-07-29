@@ -3,8 +3,7 @@ import { state, type WritableSignal } from '@ecopages/signals';
 import type { ReactiveState } from '../core/reactivity-contract';
 import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
-import { findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
-import { createSignalHydrationScriptTag, escapeSignalHydrationJson } from './hydration-script';
+import { createHydrationScriptTag, findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 
 type HostSignalOwner = {
 	registerReactiveMember<Value>(property: string, signal: ReactiveState<Value>): void;
@@ -124,7 +123,8 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 			return undefined;
 		}
 
-		return createSignalHydrationScriptTag({
+		return createHydrationScriptTag({
+			type: 'signal',
 			hydrationKey: this.hydrationKey,
 			serializedValue,
 		});
@@ -176,7 +176,7 @@ export class HostSignal<Value> implements WritableSignal<Value>, SsrSerializable
 			return undefined;
 		}
 
-		return escapeSignalHydrationJson(serializedValue);
+		return serializedValue;
 	}
 
 	private handleSourceChange(nextValue: Value): void {

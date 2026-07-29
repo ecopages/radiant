@@ -1,4 +1,5 @@
 import { escapeScriptJson } from '../tools/escape-script-json';
+import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
 
 /** Attribute marker used to identify hydration payloads inside a host. */
 export const HYDRATION_ATTRIBUTE = 'data-hydration';
@@ -24,7 +25,7 @@ export function createHydrationScriptTag(options: {
 		? ` ${HYDRATION_KEY_ATTRIBUTE}="${escapeHtmlAttribute(options.hydrationKey)}"`
 		: '';
 
-	return `<script type="application/json" ${HYDRATION_ATTRIBUTE} ${HYDRATION_TYPE_ATTRIBUTE}="${options.type}"${keyAttribute}>${options.serializedValue}</script>`;
+	return `<script type="application/json" ${HYDRATION_ATTRIBUTE} ${HYDRATION_TYPE_ATTRIBUTE}="${options.type}"${keyAttribute}>${escapeHydrationJson(options.serializedValue)}</script>`;
 }
 
 /** Escapes serialized JSON so it remains safe inside an HTML script tag. */
@@ -113,8 +114,4 @@ function matchesHydrationScript(element: Element, type: HydrationPayloadType, hy
 	}
 
 	return !element.hasAttribute(HYDRATION_KEY_ATTRIBUTE);
-}
-
-function escapeHtmlAttribute(value: string): string {
-	return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

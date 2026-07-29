@@ -1,4 +1,4 @@
-import { escapeCssIdentifier } from '../../tools/escape-css-identifier';
+import { escapeCssIdentifier } from '../../../tools/escape-css-identifier';
 import { MinimalCustomElementsRegistry, MinimalDocument, type MinimalCustomElementRegistry } from './document';
 import './html';
 import {
@@ -47,7 +47,10 @@ export type LightDomShimWindow = {
 
 /** Host preparation options accepted by the server render environment. */
 export type PrepareServerRenderHostOptions = {
-	/** Serialized light-DOM content to attach to the host before SSR. */
+	/**
+	 * Serialized light-DOM content to attach to the host before SSR.
+	 * Trusted author HTML — not for untrusted user input.
+	 */
 	authoredContent?: string;
 };
 

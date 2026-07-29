@@ -1,16 +1,17 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import { getCustomElementTagName } from '../core/custom-element-metadata';
-import { runSsrPreparationCallbacks } from '../core/ssr-preparation';
-import { withSsrContextProviders } from './context-ssr';
+import { getCustomElementTagName } from '../../core/custom-element-metadata';
+import { runSsrPreparationCallbacks } from '../../core/ssr-preparation';
+import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
+import { assertValidHtmlTagName } from '../../utils/html-names';
+import { withSsrContextProviders } from '../context-ssr';
+import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
+import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
-import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
-import { alignMinimalDomHostTagName } from './minimal-dom/align-host-tag-name';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
-import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
+import type { InternalRadiantSsrHost } from '../../core/radiant-element-ssr-host';
 
 export type RadiantElementViewRenderer = (host: InternalRadiantSsrHost, options?: RenderToStringOptions) => string;
 
@@ -82,6 +83,6 @@ export class RadiantElementSsrService {
 			throw new Error(`${this.host.constructor.name} is missing @customElement metadata.`);
 		}
 
-		return tagName;
+		return assertValidHtmlTagName(tagName, `${this.host.constructor.name} custom element tagName`);
 	}
 }
