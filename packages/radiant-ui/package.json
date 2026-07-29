@@ -4,6 +4,9 @@
 	"description": "Accessible light-DOM UI components built with @ecopages/radiant, documented in Storybook",
 	"license": "MIT",
 	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
 	"files": [
 		"dist"
 	],
