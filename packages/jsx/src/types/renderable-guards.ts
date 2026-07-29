@@ -1,9 +1,10 @@
 import {
 	KEYED_VALUE_SYMBOL,
+	RADIANT_MARKUP_NODE_SYMBOL,
 	RADIANT_TEMPLATE_RESULT,
 	RADIANT_TEMPLATE_RESULT_FIELD,
 	SUBSCRIBABLE_JSX_VALUE_SYMBOL,
-} from './types.ts';
+} from './renderable-types.ts';
 import type {
 	JsxNodeLike,
 	JsxRenderable,
@@ -12,7 +13,7 @@ import type {
 	SignalLike,
 	SubscribableJsxValue,
 	TemplateResultLike,
-} from './types.ts';
+} from './renderable-types.ts';
 
 /**
  * Type guard that narrows `value` to {@link TemplateResultLike}.
@@ -34,11 +35,63 @@ export function isTemplateResultLike(value: unknown): value is TemplateResultLik
 /**
  * Type guard that narrows `value` to {@link JsxNodeLike}.
  *
+ * @remarks Shape check only. This does **not** mean `outerHTML` is trusted markup.
+ * Use {@link mayEmitOrParseRawOuterHtml} (or {@link isTrustedMarkupNode} /
+ * a live `Node`) before treating `outerHTML` as raw HTML.
+ *
  * @param value Value to inspect.
  * @returns `true` when `value` is an object with a `nodeType` property.
  */
 export function isJsxNodeLike(value: unknown): value is JsxNodeLike {
 	return typeof value === 'object' && value !== null && 'nodeType' in value;
+}
+
+/**
+ * Branded markup node whose `outerHTML` may be emitted or parsed as raw HTML.
+ */
+export type TrustedMarkupNode = JsxNodeLike & {
+	readonly [RADIANT_MARKUP_NODE_SYMBOL]: true;
+};
+
+/**
+ * Returns whether `value` is a branded trusted-markup node whose `outerHTML`
+ * may be emitted or parsed as raw HTML.
+ *
+ * @remarks Does not read `outerHTML` — branded nodes may expose it via a getter
+ * that performs SSR work, so callers must not force a double evaluation.
+ *
+ * @param value Value to inspect.
+ * @returns `true` when `value` carries {@link RADIANT_MARKUP_NODE_SYMBOL}.
+ */
+export function isTrustedMarkupNode(value: unknown): value is TrustedMarkupNode {
+	return (
+		typeof value === 'object' &&
+		value !== null &&
+		RADIANT_MARKUP_NODE_SYMBOL in value &&
+		(value as JsxNodeLike)[RADIANT_MARKUP_NODE_SYMBOL] === true
+	);
+}
+
+/**
+ * Shared SSR/client policy for when `outerHTML` may be emitted or parsed as raw HTML.
+ *
+ * Allowed sources:
+ * - branded nodes from `createMarkupNodeLike` / `unsafeHtml`
+ * - live `Node` instances (slot projection and host passthrough)
+ *
+ * Plain `{ nodeType, outerHTML }` objects are rejected so accidental shapes
+ * cannot bypass escaping. This is not an HTML sanitizer: callers still own
+ * untrusted input before it reaches a trusted path.
+ *
+ * @param value Candidate node-like value.
+ * @returns `true` when raw `outerHTML` is allowed.
+ */
+export function mayEmitOrParseRawOuterHtml(value: unknown): boolean {
+	if (isTrustedMarkupNode(value)) {
+		return true;
+	}
+
+	return typeof Node !== 'undefined' && value instanceof Node;
 }
 
 /**

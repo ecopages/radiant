@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { jsx } from '../src/jsx-runtime.ts';
-import { renderToString } from '../src/server-render.ts';
+import { renderToString } from '../src/ssr/server-render.ts';
 import { printComparisonReport, type MitataResult } from './report.ts';
 import { createBenchmarkProps, RealWorldPage } from './realworld-page.tsx';
 

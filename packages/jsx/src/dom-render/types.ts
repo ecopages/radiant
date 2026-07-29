@@ -1,5 +1,5 @@
-import type { BindingKind } from '../hydration-bindings.ts';
-import type { JsxKey, SignalLike, SubscribableJsxValue } from '../jsx-runtime.ts';
+import type { BindingKind } from '../hydration/hydration-bindings.ts';
+import type { JsxKey, SignalLike, SubscribableJsxValue } from '../types/index.ts';
 
 /**
  * Discriminated union that describes the kind and name of a single dynamic binding

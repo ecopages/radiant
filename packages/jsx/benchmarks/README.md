@@ -72,7 +72,7 @@ The comparison runner validates that both runtimes serialize the same number of 
 The benchmark now exercises two server-render hot-path optimizations that also benefit normal JSX SSR usage:
 
 - template interpolation metadata is cached per static template shape instead of reparsing binding syntax on every render
-- HTML escaping uses `Bun.escapeHTML(...)` on Bun and a portable fast-path fallback on other runtimes
+- HTML escaping uses a single portable fast-path implementation on all runtimes
 
 These changes target algorithmic overhead in the renderer rather than only changing benchmark data.
 

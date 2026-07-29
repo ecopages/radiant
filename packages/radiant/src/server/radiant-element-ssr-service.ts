@@ -1,4 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
+import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getCustomElementTagName } from '../core/custom-element-metadata';
 import { runSsrPreparationCallbacks } from '../core/ssr-preparation';
@@ -34,10 +35,7 @@ export class RadiantElementSsrService {
 	public renderHost(): JsxRenderable {
 		this.ensureReady();
 
-		return {
-			nodeType: 1,
-			outerHTML: this.renderHostToString({ mode: 'hydrate' }),
-		};
+		return createMarkupNodeLike(this.renderHostToString({ mode: 'hydrate' }));
 	}
 
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {

@@ -1,6 +1,6 @@
 import { jsx } from '../src/jsx-runtime.ts';
-import { renderToString } from '../src/server-render.ts';
-import { collectHydrationBindings } from '../src/hydration-bindings.ts';
+import { renderToString } from '../src/ssr/server-render.ts';
+import { collectHydrationBindings } from '../src/hydration/hydration-bindings.ts';
 import { createBenchmarkProps, RealWorldPage } from './realworld-page.tsx';
 
 type ProfileCase = {

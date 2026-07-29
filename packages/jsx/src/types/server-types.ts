@@ -1,5 +1,5 @@
 import type { JsxNodeLike } from './renderable-types.ts';
-import type { RenderToStringOptions } from './server-render.ts';
+import type { RenderToStringOptions } from '../ssr/server-render.ts';
 
 /**
  * Minimal custom-element contract used by the JSX SSR pipeline.
@@ -34,5 +34,9 @@ export type ServerCustomElementRenderHookContext = {
  * This hook is the seam where framework-owned custom elements can intercept
  * plain registered custom-element instances and replace the default generic SSR
  * behavior with framework-aware host rendering.
+ *
+ * When returning markup via `outerHTML`, use `createMarkupNodeLike(...)` /
+ * `unsafeHtml(...)` so the HTML is branded as trusted. Unbranded
+ * `{ nodeType, outerHTML }` objects are escaped as text.
  */
 export type ServerCustomElementRenderHook = (context: ServerCustomElementRenderHookContext) => JsxNodeLike | undefined;

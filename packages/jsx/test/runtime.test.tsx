@@ -7,7 +7,8 @@ async function loadModule<T>(path: string): Promise<T> {
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
 const loadJsxDevRuntime = async () =>
 	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
-const loadDevWarnings = async () => loadModule<typeof import('../src/dev-warnings.ts')>('../src/dev-warnings.ts');
+const loadDevWarnings = async () =>
+	loadModule<typeof import('../src/warnings/dev-warnings.ts')>('../src/warnings/dev-warnings.ts');
 
 function expectTemplateResultLike(value: unknown): asserts value is import('../src/jsx-runtime.ts').TemplateResultLike {
 	expect(value).toEqual(
@@ -23,7 +24,7 @@ describe('Radiant JSX runtime', () => {
 	test('SSR treats nullish child content as empty', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([
 			loadJsxRuntime(),
-			loadModule<typeof import('../src/server-render.ts')>('../src/server-render.ts'),
+			loadModule<typeof import('../src/ssr/server-render.ts')>('../src/ssr/server-render.ts'),
 		]);
 
 		expect(renderToString(jsx('p', { children: undefined }))).toBe('<p></p>');

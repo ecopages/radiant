@@ -6,12 +6,12 @@ export {
 	withServerCustomElementRenderHook,
 	type RenderToStringOptions,
 	type ServerHydrationBindingState,
-} from './server-render.ts';
+} from './ssr/server-render.ts';
 
-export { getActiveSsrScopeValue, withActiveSsrScopeValue } from './ssr-render-scope.ts';
+export { getActiveSsrScopeValue, withActiveSsrScopeValue } from './ssr/ssr-render-scope.ts';
 
 export {
 	type ServerCustomElementRenderHook,
 	type ServerCustomElementRenderHookContext,
 	type ServerRenderableCustomElement,
-} from './types.ts';
+} from './types/index.ts';

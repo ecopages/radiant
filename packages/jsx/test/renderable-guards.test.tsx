@@ -4,11 +4,18 @@ import {
 	isJsxNodeLike,
 	isSignalLikeValue,
 	isTemplateResultLike,
+	isTrustedMarkupNode,
+	mayEmitOrParseRawOuterHtml,
 	resolveReactiveSnapshot,
-} from '../src/renderable-guards.ts';
-import { RADIANT_TEMPLATE_RESULT, RADIANT_TEMPLATE_RESULT_FIELD, SUBSCRIBABLE_JSX_VALUE_SYMBOL } from '../src/types.ts';
+} from '../src/types/renderable-guards.ts';
+import {
+	RADIANT_MARKUP_NODE_SYMBOL,
+	RADIANT_TEMPLATE_RESULT,
+	RADIANT_TEMPLATE_RESULT_FIELD,
+	SUBSCRIBABLE_JSX_VALUE_SYMBOL,
+} from '../src/types/index.ts';
 
-function createTemplateResult(): import('../src/types.ts').TemplateResultLike {
+function createTemplateResult(): import('../src/types/index.ts').TemplateResultLike {
 	return {
 		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
 		strings: ['<p>', '</p>'] as unknown as TemplateStringsArray,
@@ -42,6 +49,44 @@ describe('renderable-guards', () => {
 	test('isJsxNodeLike accepts node-like objects', () => {
 		expect(isJsxNodeLike({ nodeType: 1, outerHTML: '<p></p>' })).toBe(true);
 		expect(isJsxNodeLike({})).toBe(false);
+	});
+
+	test('isTrustedMarkupNode requires the markup brand', () => {
+		expect(isTrustedMarkupNode({ nodeType: 1, outerHTML: '<p></p>' })).toBe(false);
+		expect(
+			isTrustedMarkupNode({
+				[RADIANT_MARKUP_NODE_SYMBOL]: true,
+				nodeType: 1,
+				outerHTML: '<p></p>',
+			}),
+		).toBe(true);
+	});
+
+	test('mayEmitOrParseRawOuterHtml allows branded markup and live Nodes only', () => {
+		expect(mayEmitOrParseRawOuterHtml({ nodeType: 1, outerHTML: '<p></p>' })).toBe(false);
+		expect(
+			mayEmitOrParseRawOuterHtml({
+				[RADIANT_MARKUP_NODE_SYMBOL]: true,
+				nodeType: 1,
+				outerHTML: '<p></p>',
+			}),
+		).toBe(true);
+
+		class FakeNode {}
+		const previousNode = (globalThis as typeof globalThis & { Node?: unknown }).Node;
+		(globalThis as typeof globalThis & { Node: unknown }).Node = FakeNode;
+
+		try {
+			expect(
+				mayEmitOrParseRawOuterHtml(Object.assign(new FakeNode(), { nodeType: 1, outerHTML: '<i></i>' })),
+			).toBe(true);
+		} finally {
+			if (previousNode === undefined) {
+				Reflect.deleteProperty(globalThis, 'Node');
+			} else {
+				(globalThis as typeof globalThis & { Node: unknown }).Node = previousNode;
+			}
+		}
 	});
 
 	test('isIterableRenderable excludes strings', () => {

@@ -7,18 +7,19 @@ import {
 	isSignalLikeValue,
 	isSubscribableJsxValue,
 	isTemplateResultLike,
+	mayEmitOrParseRawOuterHtml,
 	resolveReactiveSnapshot,
 	toTemplateResultLike,
-} from './renderable-guards.ts';
+} from '../types/renderable-guards.ts';
 import {
 	getTemplateInterpolationParts,
 	resolveHydrationMarkerAttributeName,
 	serializeBindingDescriptor,
 	takeNextHydrationMarkerIndex,
-} from './hydration-bindings.ts';
-import { isClientOnlyBinding, needsHydrationMarker } from './hydration-marker-policy.ts';
+} from '../hydration/hydration-bindings.ts';
+import { isClientOnlyBinding, needsHydrationMarker } from '../hydration/hydration-marker-policy.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
-import type { JsxNodeLike, JsxRenderable, TemplateResultLike } from './types.ts';
+import type { JsxNodeLike, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 
 export type SerializeRenderableMode = 'plain' | 'hydrate';
 
@@ -150,7 +151,7 @@ function serializeNodeLike(node: JsxNodeLike): string {
 	const outerHTML = node.outerHTML;
 
 	if (typeof outerHTML === 'string') {
-		return outerHTML;
+		return mayEmitOrParseRawOuterHtml(node) ? outerHTML : escapeHtml(outerHTML);
 	}
 
 	if (node.nodeType === 3) {

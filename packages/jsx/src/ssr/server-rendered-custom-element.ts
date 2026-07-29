@@ -1,7 +1,13 @@
-import { jsxs } from './jsx-runtime.ts';
+import { createJsxElement, createMarkupNodeLike } from '../factory/jsx-factory.ts';
 import { serializeRenderable } from './serialize-renderable.ts';
 import { getActiveSsrRenderContext } from './ssr-render-scope.ts';
-import type { JsxNodeLike, JsxPropsWithChildren, JsxRenderable, ServerRenderableCustomElement } from './types.ts';
+import { RADIANT_MARKUP_NODE_SYMBOL } from '../types/index.ts';
+import type {
+	JsxNodeLike,
+	JsxPropsWithChildren,
+	JsxRenderable,
+	ServerRenderableCustomElement,
+} from '../types/index.ts';
 
 type ServerRenderedCustomElementRuntime = {
 	forEachNormalizedAttribute: (
@@ -39,6 +45,7 @@ export function createServerRenderedCustomElement<Props extends object>(
 	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
 
 	return {
+		[RADIANT_MARKUP_NODE_SYMBOL]: true,
 		nodeType: 1,
 		get outerHTML() {
 			const resolvedRender = resolveServerRenderedCustomElementRender(
@@ -63,7 +70,11 @@ function renderFallbackCustomElementMarkup(
 	_runtime: ServerRenderedCustomElementRuntime,
 ): string {
 	return serializeRenderable(
-		jsxs(tagName, { ...attributes, children } as JsxPropsWithChildren & Record<string, unknown>),
+		createJsxElement(
+			tagName,
+			{ ...attributes, children } as JsxPropsWithChildren & Record<string, unknown>,
+			'multiple',
+		),
 		{ mode: 'plain' },
 	);
 }
@@ -98,10 +109,9 @@ function resolveServerRenderedCustomElementRender(
 	}
 
 	const hydrateActive = ssr?.hydrate === true;
-	return {
-		nodeType: 1,
-		outerHTML: instance.renderHostToString({ hydrate: hydrateActive, mode: hydrateActive ? 'hydrate' : 'plain' }),
-	};
+	return createMarkupNodeLike(
+		instance.renderHostToString({ hydrate: hydrateActive, mode: hydrateActive ? 'hydrate' : 'plain' }),
+	);
 }
 
 function shouldServerRenderCustomElement(type: string): boolean {
