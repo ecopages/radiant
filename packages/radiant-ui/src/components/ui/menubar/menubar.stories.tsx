@@ -55,5 +55,11 @@ export const Default: Story = {
 		await step('open menu top item shows aria-expanded styling', async () => {
 			await expect(tops[0]).toHaveAttribute('aria-expanded', 'true');
 		});
+
+		await step('clicking a top item without a menu closes the open menu', async () => {
+			await userEvent.click(tops[2]);
+			await expect(tops[0]).toHaveAttribute('aria-expanded', 'false');
+			await expect(canvasElement.querySelector('[role="menu"]:not([hidden])')).toBeNull();
+		});
 	},
 };
