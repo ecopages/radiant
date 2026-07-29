@@ -1,3 +1,5 @@
+import { isSignalLikeValue, isSubscribableJsxValue } from '../types/renderable-guards.ts';
+
 /**
  * Iterates normalized JSX attributes and invokes `append` for each resolved name/value
  * pair. No intermediate record is created.
@@ -92,9 +94,12 @@ function appendClassTokens(tokens: string[], value: unknown): void {
 	}
 }
 
-function normalizeStyleValue(value: unknown): unknown {
+/**
+ * Converts a resolved `style` snapshot to a CSS declaration string for the `style` attribute.
+ */
+export function serializeStyleSnapshot(value: unknown): string {
 	if (!isPlainObject(value)) {
-		return value;
+		return String(value);
 	}
 
 	const declarations: string[] = [];
@@ -108,6 +113,18 @@ function normalizeStyleValue(value: unknown): unknown {
 	}
 
 	return declarations.join('; ');
+}
+
+/**
+ * @remarks
+ * Keep reactive sources intact — object-style normalization runs only on plain snapshots.
+ */
+function normalizeStyleValue(value: unknown): unknown {
+	if (isSubscribableJsxValue(value) || isSignalLikeValue(value) || !isPlainObject(value)) {
+		return value;
+	}
+
+	return serializeStyleSnapshot(value);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
