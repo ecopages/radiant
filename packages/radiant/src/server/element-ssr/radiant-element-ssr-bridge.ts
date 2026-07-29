@@ -1,4 +1,4 @@
-import './install-ssr-runtime';
+import '../install/install-ssr-runtime';
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
@@ -10,15 +10,15 @@ import {
 } from '@ecopages/jsx/server';
 import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { RadiantElementSsrService } from './radiant-element-ssr-service';
-import { runWithSsrProviderStack } from './context-ssr';
-import { isRadiantElementSsrHost } from '../core/radiant-element-ssr-host-source';
+import { runWithSsrProviderStack } from '../context-ssr';
+import { isRadiantElementSsrHost } from '../../core/radiant-element-ssr-host-source';
 import type {
 	RadiantElementRenderBridge,
 	RadiantElementServerRenderSsrCapable,
 	RadiantElementSsrRuntime,
 	RadiantElementViewRenderSource,
-} from '../core/radiant-element-ssr-registry';
-import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
+} from '../../core/radiant-element-ssr-registry';
+import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
 
 let radiantElementSsrRuntime: RadiantElementSsrRuntime | undefined;
 

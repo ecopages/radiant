@@ -10,4 +10,4 @@ export {
 	resolveRadiantElementRenderBridge,
 	withRadiantServerCustomElementRenderBridge,
 	withServerRadiantElementSsrRuntime,
-} from './radiant-element-ssr-bridge';
+} from './element-ssr/radiant-element-ssr-bridge';

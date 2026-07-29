@@ -15,9 +15,9 @@
  * @packageDocumentation
  */
 import { getActiveSsrScopeValue, withActiveSsrScopeValue } from '@ecopages/jsx/server';
-import { installRadiantElementSsrScopeAdapters } from '../core/radiant-element-ssr-registry';
-import { installLightDomShim } from './light-dom-shim';
-import './minimal-dom/html';
+import { installRadiantElementSsrScopeAdapters } from '../../core/radiant-element-ssr-registry';
+import { installLightDomShim } from '../shim/light-dom-shim';
+import '../shim/minimal-dom/html';
 
 installRadiantElementSsrScopeAdapters({
 	get: getActiveSsrScopeValue,
@@ -33,4 +33,4 @@ installLightDomShim();
 export const radiantSsrRuntimeInstalled = true;
 
 /** Kept as exports so the dist build retains HTML parser registration side effects. */
-export { parseHtmlToNodes, serializeNodeHtml } from './minimal-dom/html';
+export { parseHtmlToNodes, serializeNodeHtml } from '../shim/minimal-dom/html';

@@ -1,115 +1,54 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import type { SsrSerializableContextProvider } from '../context/context-provider';
-import { runWithSsrProviderStack, withSsrContextProviders } from './context-ssr';
-import './install-ssr-runtime';
-import type { ContextType, UnknownContext } from '../context/types';
-import { getCustomElementTagName } from '../core/custom-element-metadata';
-import { alignMinimalDomHostTagName } from './minimal-dom/align-host-tag-name';
-import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { createServerRenderEnvironment, type ServerRenderEnvironment } from './light-dom-shim';
+import type { SsrSerializableContextProvider } from '../../context/context-provider';
+import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
+import '../install/install-ssr-runtime';
+import type { ContextType, UnknownContext } from '../../context/types';
+import { getCustomElementTagName } from '../../core/custom-element-metadata';
+import { assertValidHtmlTagName } from '../../utils/html-names';
+import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
+import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
+import { createServerRenderEnvironment, type ServerRenderEnvironment } from '../shim/light-dom-shim';
 import {
+	getOrCreateRadiantElementSsrRuntime,
 	renderRegisteredRadiantElementHost,
 	renderRegisteredRadiantElementHostToString,
-} from './radiant-element-ssr-bridge';
-import { withRadiantElementSsrRuntime } from '../core/radiant-element-ssr-registry';
-import { getOrCreateRadiantElementSsrRuntime } from './radiant-element-ssr';
+} from '../radiant-element-ssr';
+import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
 import {
 	createDefaultRenderTimestamp,
+	mergeRenderedComponentAssets,
+	normalizeRenderOptions,
+	resolvePrimaryClientModuleSrc,
 	toRenderedComponentPayload,
 	toRenderedComponentWithPreview,
-} from './render-fragment';
+} from './render-shared';
+import type {
+	RenderedComponent,
+	RenderedComponentAsset,
+	RenderedComponentPayload,
+	RenderedComponentWithPreview,
+} from './render-types';
 
 export {
 	createDefaultRenderTimestamp,
+	mergeRenderedComponentAssets,
+	normalizeRenderOptions,
+	resolvePrimaryClientModuleSrc,
 	toRenderedComponentPayload,
 	toRenderedComponentWithPreview,
-} from './render-fragment';
-
-export type RenderedComponentAsset =
-	| {
-			/** Browser module specifier that must be loaded to activate the fragment. */
-			kind: 'script-module';
-			/** Runtime loading policy for the module. */
-			stage?: 'hydrate' | 'idle' | 'immediate';
-			/** Module specifier or browser-importable URL. */
-			src: string;
-	  }
-	| {
-			/** Module graph preload hint for adapters that control the document head. */
-			kind: 'modulepreload';
-			/** Module specifier or browser-importable URL. */
-			href: string;
-	  }
-	| {
-			/** Stylesheet dependency required by the rendered fragment. */
-			kind: 'style';
-			/** Browser-importable stylesheet URL. */
-			href: string;
-			/** Optional media query applied to the stylesheet link. */
-			media?: string;
-	  };
-
-/** Creates a module asset entry for a rendered fragment. */
-export function scriptModuleAsset(
-	src: string,
-	stage: 'hydrate' | 'idle' | 'immediate' = 'hydrate',
-): RenderedComponentAsset {
-	return { kind: 'script-module', src, stage };
-}
-
-/** Creates a modulepreload hint for a rendered fragment. */
-export function modulePreloadAsset(href: string): RenderedComponentAsset {
-	return { kind: 'modulepreload', href };
-}
-
-/** Creates a stylesheet asset entry for a rendered fragment. */
-export function styleAsset(href: string, media?: string): RenderedComponentAsset {
-	return media ? { kind: 'style', href, media } : { kind: 'style', href };
-}
-
-/** Portable metadata for a server-rendered custom-element fragment. */
-export type RenderedComponentMetadata = {
-	/** Asset dependencies required by the rendered fragment. */
-	assets: readonly RenderedComponentAsset[];
-	/** Browser-importable client module URL used to register the component before hydration. */
-	clientModuleUrl?: string;
-	/** ISO timestamp describing when the fragment was rendered. */
-	generatedAt: string;
-	/** Custom-element tag name emitted at the fragment root. */
-	tagName: string;
-};
-
-/** Canonical server render result returned by `renderComponent()`. */
-export type RenderedComponent = {
-	/** Serialized custom-element host markup. */
-	markup: string;
-	/** Transport-agnostic metadata that adapters can map onto headers or JSON. */
-	metadata: RenderedComponentMetadata;
-	/** JSX-compatible preview value that can be embedded into a larger SSR shell. */
-	preview: JsxRenderable;
-};
-
-/** Serializable metadata for a server-rendered custom-element fragment. */
-export type RenderedComponentPayload = {
-	/** Asset dependencies required by the rendered fragment. */
-	assets?: readonly RenderedComponentAsset[];
-	/** Browser-importable client module URL used to register the component before hydration. */
-	clientModuleSrc?: string;
-	/** ISO timestamp describing when the fragment was rendered. */
-	generatedAt: string;
-	/** Serialized custom-element host markup. */
-	markup: string;
-	/** Custom-element tag name emitted at the fragment root. */
-	tagName: string;
-};
-
-/** Full SSR result including a JSX-compatible preview value for shell composition. */
-export type RenderedComponentWithPreview = RenderedComponentPayload & {
-	/** JSX-compatible preview value that can be embedded into a larger SSR shell. */
-	preview: JsxRenderable;
-};
+} from './render-shared';
+export {
+	modulePreloadAsset,
+	scriptModuleAsset,
+	styleAsset,
+	type RenderedComponent,
+	type RenderedComponentAsset,
+	type RenderedComponentMetadata,
+	type RenderedComponentPayload,
+	type RenderedComponentWithPreview,
+} from './render-types';
 
 /** Minimal component contract needed for framework-agnostic SSR helpers. */
 export type ServerRenderableComponent = object;
@@ -163,7 +102,11 @@ export type RenderComponentSsrContextEntry<TContext extends UnknownContext = Unk
 type RenderComponentSharedOptions<TComponent extends ServerRenderableComponent> = {
 	/** Asset dependencies required by the rendered fragment. */
 	assets?: readonly RenderedComponentAsset[];
-	/** Serialized authored light-DOM content to attach to the host before rendering. */
+	/** Serialized authored light-DOM content to attach to the host before rendering.
+	 *
+	 * Treated as trusted author HTML (same trust model as `innerHTML` /
+	 * `insertAdjacentHTML`). Do not pass untrusted user input.
+	 */
 	authoredContent?: string;
 	/** Browser-importable client module URL used to register the component before hydration. */
 	clientModuleSrc?: string;
@@ -176,6 +119,9 @@ type RenderComponentSharedOptions<TComponent extends ServerRenderableComponent> 
 	 *
 	 * Use this when the server needs to append or mutate authored light-DOM
 	 * nodes directly instead of passing `authoredContent` as a string.
+	 *
+	 * Authored mutations are trusted author-controlled HTML/DOM — not for
+	 * untrusted user input.
 	 */
 	prepareHost?: PrepareRenderedComponentHost<TComponent>;
 	/**
@@ -312,7 +258,10 @@ async function renderResolvedComponent<TComponent extends ServerRenderableCompon
 	const resolvedAssets = normalizedOptions.assets ?? (await normalizedOptions.resolveAssets?.(Component)) ?? [];
 	const assets = mergeRenderedComponentAssets(resolvedAssets, resolvedClientModuleSrc);
 	const clientModuleSrc = resolvePrimaryClientModuleSrc(assets) ?? resolvedClientModuleSrc;
-	const tagName = normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component);
+	const tagName = assertValidHtmlTagName(
+		normalizedOptions.tagName ?? resolveRenderedComponentTagName(Component),
+		'Component SSR host tagName',
+	);
 	const generatedAt = (normalizedOptions.now ?? createDefaultRenderTimestamp)().toISOString();
 	const renderOptions = normalizeRenderOptions(normalizedOptions.renderOptions);
 
@@ -400,34 +349,6 @@ function createAmbientSsrContextProviders(
 	}));
 }
 
-function createRenderedComponentClientModuleAssets(
-	clientModuleSrc: string | undefined,
-): readonly RenderedComponentAsset[] {
-	if (!clientModuleSrc) {
-		return [];
-	}
-
-	return [scriptModuleAsset(clientModuleSrc)];
-}
-
-export function mergeRenderedComponentAssets(
-	assets: readonly RenderedComponentAsset[],
-	clientModuleSrc: string | undefined,
-): readonly RenderedComponentAsset[] {
-	if (!clientModuleSrc) {
-		return assets;
-	}
-
-	if (assets.some((asset) => asset.kind === 'script-module' && asset.src === clientModuleSrc)) {
-		return assets;
-	}
-
-	return [...createRenderedComponentClientModuleAssets(clientModuleSrc), ...assets];
-}
-
-export function resolvePrimaryClientModuleSrc(assets: readonly RenderedComponentAsset[]): string | undefined {
-	return assets.find((asset) => asset.kind === 'script-module')?.src;
-}
 
 function normalizeRenderComponentOptions<TComponent extends ServerRenderableComponent>(
 	componentOrOptions: ServerRenderableComponentConstructor<TComponent> | RenderComponentOptions<TComponent>,
@@ -443,16 +364,6 @@ function normalizeRenderComponentOptions<TComponent extends ServerRenderableComp
 	return componentOrOptions;
 }
 
-export function normalizeRenderOptions(options: RenderToStringOptions | undefined): RenderToStringOptions {
-	if (options?.mode !== undefined || options?.hydrate !== undefined) {
-		return options;
-	}
-
-	return {
-		...options,
-		mode: 'hydrate',
-	};
-}
 
 function canPrepareSsrHost<TComponent extends ServerRenderableComponent>(
 	component: TComponent,

@@ -1,4 +1,4 @@
-import { installLightDomShim } from './light-dom-shim';
+import { installLightDomShim } from '../shim/light-dom-shim';
 
 /** Side-effect install for SSR. Import this module before any `@ecopages/radiant` value import. */
 installLightDomShim();

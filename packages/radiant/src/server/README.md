@@ -2,7 +2,7 @@
 
 Radiant's server-facing APIs live on explicit `@ecopages/radiant/server/*` entrypoints.
 
-Use the root `@ecopages/radiant` entrypoint for `RadiantElement`, `RadiantController`, `bindReactiveValue(...)`, and the common decorators that are primarily consumed on the client. Import context APIs, controller-registry helpers, and the low-level helper factories from their explicit public subpaths. Use the server subpaths when you are building SSR adapters, pre-rendering custom-element hosts, or preparing a server runtime.
+Use the root `@ecopages/radiant` entrypoint for `RadiantElement`, `RadiantController`, reactive JSX bindings (`this.bind(...)`, `this.$.key`, `this.bindings.key`), and the common decorators that are primarily consumed on the client. Import context APIs, controller-registry helpers, and the low-level helper factories from their explicit public subpaths. Use the server subpaths when you are building SSR adapters, pre-rendering custom-element hosts, or preparing a server runtime.
 
 When SSR markup should hydrate in the browser, pair these server entrypoints with the explicit client hydrator import:
 
@@ -10,18 +10,57 @@ When SSR markup should hydrate in the browser, pair these server entrypoints wit
 import '@ecopages/radiant/client/install-hydrator';
 ```
 
+## Trust model
+
+SSR host preparation APIs accept **author-controlled** HTML and DOM:
+
+- `authoredContent` / `renderComponent({ prepareHost })` / `ServerRenderEnvironment.prepareHost(...)` / `insertAdjacentHTML` on the host
+- plain-mode authored hydration markup concatenated into the host
+- client `RadiantElement.renderTemplate({ template })` via `innerHTML`
+
+These surfaces are not a sanitizer. Do not pass untrusted user input. Escape or sanitize at the adapter boundary before calling Radiant when content is not fully trusted. Attribute **values**, hydration JSON script bodies, and minimal-DOM text-node serialization are escaped by Radiant; attribute **names** and host **tag names** are validated and rejected when invalid.
+
 ## Import Paths
 
-- `@ecopages/radiant/server/light-dom-shim` prepares a minimal SSR runtime and host environment.
-- `@ecopages/radiant/server/render-component` exposes portable component rendering helpers and shared transport-neutral metadata.
-- `@ecopages/radiant/server/render-controller` exposes controller-host rendering helpers and controller-specific host option types.
-- `@ecopages/radiant/server/project-root` resolves a project root for adapters that need to discover client modules or config files.
+- `@ecopages/radiant/server/install-ssr-runtime` — canonical Node SSR boot (shim, HTML parsers, JSX scope adapters). Prefer this over narrower install paths.
+- `@ecopages/radiant/server/install-light-dom-shim` — side-effect shim install only (narrower than `install-ssr-runtime`).
+- `@ecopages/radiant/server/light-dom-shim` — minimal SSR window and host-preparation helpers.
+- `@ecopages/radiant/server/render-component` — portable component rendering helpers and shared transport-neutral metadata.
+- `@ecopages/radiant/server/render-controller` — controller-host rendering helpers and controller-specific host option types.
+- `@ecopages/radiant/server/radiant-element-ssr` — lower-level host serialization (see SSR Surfaces).
+- `@ecopages/radiant/server/project-root` — project-root resolution for adapters that discover client modules or config files.
+
+Apps must import only documented `package.json` export paths. Nested folders under `src/server/` (`adapters/`, `element-ssr/`, `shim/`, …) are internal implementation.
+
+## Source layout
+
+Internal modules are grouped under `src/server/` while public `package.json` export paths stay stable via thin re-export stubs:
+
+```
+server/
+  install/       # install-ssr-runtime, install-light-dom-shim
+  shim/          # light-dom-shim facade + minimal-dom/*
+  html/          # html-parser
+  element-ssr/   # host serialization bridge, service, attributes, scripts
+  adapters/      # render-component, render-controller, render-types, render-shared
+  context-ssr.ts
+  project-root.ts
+  radiant-element-ssr.ts   # public barrel over element-ssr/
+  *.ts                   # thin public entry re-exports for package.json
+```
 
 ## SSR Surfaces
 
 Radiant SSR is **light-DOM only**. Hosts with `renderRootMode = 'shadow'` throw during server serialization — the pipeline does not emit declarative shadow roots. Client-side shadow rendering remains supported; skip SSR for those hosts.
 
-For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr` (`renderRadiantElementHostToString`), not as Element Host instance methods.
+For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Prefer `render-component` unless you are writing a renderer integration.
+
+Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr`, not as Element Host instance methods:
+
+- **Adapter default:** `renderRadiantElementHostToString`
+- **View-only:** `renderRadiantElementViewToString`
+- **JSX / custom-element SSR integration:** `withRadiantServerCustomElementRenderBridge`, `renderRegisteredRadiantElementHost`, `renderRegisteredRadiantElementHostToString`
+- **Advanced / runtime:** `getOrCreateRadiantElementSsrRuntime`, `withServerRadiantElementSsrRuntime`, `createRadiantElementSsrService`, `getRadiantElementHostSsrAttributes`, `resolveRadiantElementRenderBridge`
 
 When a component renders literal `<slot>` tags, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
 
@@ -47,7 +86,7 @@ One boot path for Node adapters:
 
 1. Import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (shim, HTML parsers, ALS scope adapters). Server entrypoints such as `render-component` already import it; app SSR bundles should import it **first** when import order is not guaranteed.
 2. Keep `@ecopages/*` **external** in the SSR bundler so Node resolves a single module instance (ALS and adapters are module-local).
-3. Call `renderComponent` / `renderToString` — await data and assets first; keep the scoped render snapshot synchronous.
+3. Call `renderComponent(...)` or `renderComponentToString(...)` — await data and assets first; keep the scoped render snapshot synchronous.
 
 ### Server dist (published layout)
 
