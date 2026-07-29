@@ -6,7 +6,7 @@ Guidance for humans and agents working on the design system in `packages/radiant
 
 - **npm:** `@ecopages/radiant-ui`
 - **Elements:** `rui-*` custom elements (light DOM)
-- **Styling:** Tailwind CSS v4, co-located `*.css` per component with `@reference` + `@layer components`
+- **Styling:** Tailwind CSS v4 authoring (`@reference` + `@apply`); `build:lib` / `copy-styles` compiles to plain CSS in `dist/` (CSS variables preserved, not minified)
 - **Authoring:** Not React; see `src/Introduction.mdx` for component tiers and file layout
 
 ## CSS architecture (two layers)

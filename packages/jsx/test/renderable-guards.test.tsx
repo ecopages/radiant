@@ -73,8 +73,9 @@ describe('renderable-guards', () => {
 		).toBe(true);
 
 		class FakeNode {}
-		const previousNode = (globalThis as typeof globalThis & { Node?: unknown }).Node;
-		(globalThis as typeof globalThis & { Node: unknown }).Node = FakeNode;
+		const globalWithOptionalNode = globalThis as unknown as { Node?: unknown };
+		const previousNode = globalWithOptionalNode.Node;
+		globalWithOptionalNode.Node = FakeNode;
 
 		try {
 			expect(
@@ -84,7 +85,7 @@ describe('renderable-guards', () => {
 			if (previousNode === undefined) {
 				Reflect.deleteProperty(globalThis, 'Node');
 			} else {
-				(globalThis as typeof globalThis & { Node: unknown }).Node = previousNode;
+				globalWithOptionalNode.Node = previousNode;
 			}
 		}
 	});

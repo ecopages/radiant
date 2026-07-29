@@ -34,8 +34,10 @@ Useful scripts:
 pnpm run test          # Vitest browser story tests
 pnpm run typecheck
 pnpm run lint
-pnpm run build:lib     # generate exports + build dist
+pnpm run build:lib     # generate exports + build JS/types + compile CSS
 ```
+
+Published CSS under `dist/` is **already compiled** (Tailwind `@apply` resolved). Theme and token values remain CSS custom properties so apps can swap themes at runtime. The package does not minify CSS.
 
 ## Using radiant-ui
 
@@ -55,7 +57,7 @@ import '@ecopages/radiant-ui/styles.css';
 import '@ecopages/radiant-ui';
 ```
 
-Convenience bundle (default theme + Tailwind + button primitive):
+Convenience bundle (default theme + core primitives):
 
 ```ts
 import '@ecopages/radiant-ui/radiant-ui.css';

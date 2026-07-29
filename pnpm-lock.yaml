@@ -163,8 +163,8 @@ importers:
     packages/radiant:
         dependencies:
             '@ecopages/signals':
-                specifier: '>=0.3.0-beta.3 <1.0.0'
-                version: 0.3.0-beta.3(typescript@7.0.2)
+                specifier: '>=0.3.0-beta.4'
+                version: 0.3.0-beta.4
         devDependencies:
             '@ecopages/jsx':
                 specifier: workspace:*
@@ -211,10 +211,6 @@ importers:
         publishDirectory: dist
 
     packages/radiant-ui:
-        dependencies:
-            '@floating-ui/dom':
-                specifier: ^1.8.0
-                version: 1.8.0
         devDependencies:
             '@babel/core':
                 specifier: ^7.28.0
@@ -255,6 +251,9 @@ importers:
             '@storybook/addon-vitest':
                 specifier: ^10.5.2
                 version: 10.5.4(@vitest/browser-playwright@4.1.10)(@vitest/browser@4.1.10)(@vitest/runner@4.1.10)(react@19.2.8)(storybook@10.5.4(@types/react@19.2.17)(prettier@3.9.6)(react@19.2.8))(vitest@4.1.10)
+            '@tailwindcss/postcss':
+                specifier: ^4.3.3
+                version: 4.3.3
             '@tailwindcss/vite':
                 specifier: ^4.1.11
                 version: 4.3.3(vite@8.1.5(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -279,6 +278,9 @@ importers:
             playwright:
                 specifier: ^1.61.1
                 version: 1.62.0
+            postcss:
+                specifier: ^8.5.24
+                version: 8.5.24
             storybook:
                 specifier: ^10.5.2
                 version: 10.5.4(@types/react@19.2.17)(prettier@3.9.6)(react@19.2.8)
@@ -300,6 +302,9 @@ importers:
 
     packages/signals:
         devDependencies:
+            '@types/node':
+                specifier: ^24.13.3
+                version: 24.13.3
             '@vitest/coverage-v8':
                 specifier: ^4.1.10
                 version: 4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)
@@ -320,14 +325,14 @@ importers:
     packages/storybook-radiant-vite:
         dependencies:
             '@ecopages/jsx':
-                specifier: '>=0.3.0-beta.3 <1.0.0'
-                version: 0.3.0-beta.3(@ecopages/signals@0.3.0-beta.3(typescript@7.0.2))(typescript@7.0.2)
+                specifier: '>=0.3.0-beta.4'
+                version: 0.3.0-beta.4(@ecopages/signals@0.3.0-beta.4)
             '@ecopages/radiant':
-                specifier: '>=0.3.0-beta.3 <1.0.0'
-                version: 0.3.0-beta.3(@ecopages/jsx@0.3.0-beta.3(@ecopages/signals@0.3.0-beta.3(typescript@7.0.2))(typescript@7.0.2))
+                specifier: '>=0.3.0-beta.4'
+                version: 0.3.0-beta.4(@ecopages/jsx@0.3.0-beta.4(@ecopages/signals@0.3.0-beta.4))
             '@ecopages/signals':
-                specifier: '>=0.3.0-beta.3 <1.0.0'
-                version: 0.3.0-beta.3(typescript@7.0.2)
+                specifier: '>=0.3.0-beta.4'
+                version: 0.3.0-beta.4
             '@ecopages/vite-plugin-radiant':
                 specifier: workspace:*
                 version: link:../vite-plugin-radiant
@@ -444,9 +449,6 @@ importers:
             '@ecopages/signals':
                 specifier: workspace:*
                 version: link:../../packages/signals/dist
-            '@floating-ui/dom':
-                specifier: ^1.6.11
-                version: 1.8.0
         devDependencies:
             '@ecopages/vite-plugin-radiant':
                 specifier: workspace:*
@@ -988,6 +990,14 @@ packages:
             '@ecopages/signals': '>=0.3.0-beta.3 <1.0.0'
             typescript: ^5
 
+    '@ecopages/jsx@0.3.0-beta.4':
+        resolution:
+            {
+                integrity: sha512-YH0h1flbKSsPup1qOyYLCPULfxxTJHiQJTF1R7N6LdScBlqn1XFxXtB3CSSmxzQ5+feChYFH3xUYq1gZQswouQ==,
+            }
+        peerDependencies:
+            '@ecopages/signals': '>=0.3.0-beta.4'
+
     '@ecopages/logger@0.2.3':
         resolution:
             {
@@ -1028,6 +1038,14 @@ packages:
         peerDependencies:
             '@ecopages/jsx': '>=0.3.0-beta.3 <1.0.0'
 
+    '@ecopages/radiant@0.3.0-beta.4':
+        resolution:
+            {
+                integrity: sha512-u90chDBdCIbXuAR8qMykLuDnZsIPCrAdNZgAoFhRlKK9jnFq/o5sKsCIx/n/spRzJOla9mggGGIl+/L6sAjQdQ==,
+            }
+        peerDependencies:
+            '@ecopages/jsx': '>=0.3.0-beta.4'
+
     '@ecopages/scripts-injector@0.1.5':
         resolution:
             {
@@ -1043,6 +1061,12 @@ packages:
             }
         peerDependencies:
             typescript: ^5
+
+    '@ecopages/signals@0.3.0-beta.4':
+        resolution:
+            {
+                integrity: sha512-Q76we+WIBCv2m8ZDUO3TQpzcMQtDqpcgRaYzVnK5LVZGuS5ldOa2ljsGu9Ff5soj6MOr2YPo9Gb6YZATkNZ1fQ==,
+            }
 
     '@emnapi/core@1.11.1':
         resolution:
@@ -1559,24 +1583,6 @@ packages:
         engines: { node: '>=18' }
         cpu: [x64]
         os: [win32]
-
-    '@floating-ui/core@1.8.0':
-        resolution:
-            {
-                integrity: sha512-0CIZ5itps/8x7BG8dEIhs53BvCUH2PCoogtakwRTut+Arm58sJooJ0AuZhLw2HJYIR5cMLNPBSS728sPho2khQ==,
-            }
-
-    '@floating-ui/dom@1.8.0':
-        resolution:
-            {
-                integrity: sha512-yXSrzeHZBTZadLOlfyhCkJHNeLJnHRnRInwdZ40L7ZiaAtrBwoYlsDrX3v5zB1Utk7CLfzcOVnVVWoXEky7Ceg==,
-            }
-
-    '@floating-ui/utils@0.2.12':
-        resolution:
-            {
-                integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==,
-            }
 
     '@inquirer/external-editor@1.0.3':
         resolution:
@@ -6910,6 +6916,13 @@ packages:
             }
         engines: { node: ^10 || ^12 || >=14 }
 
+    postcss@8.5.24:
+        resolution:
+            {
+                integrity: sha512-8RyVklq0owXUTa4xlpzu4l9AaVKIdQvAcOHZWaMh98HgySsUtxRVf/chRe3dsSLqb6i40BzGRzEUddRaI+9TSw==,
+            }
+        engines: { node: ^10 || ^12 || >=14 }
+
     prettier@2.8.8:
         resolution:
             {
@@ -8702,6 +8715,10 @@ snapshots:
             '@ecopages/signals': 0.3.0-beta.3(typescript@7.0.2)
             typescript: 7.0.2
 
+    '@ecopages/jsx@0.3.0-beta.4(@ecopages/signals@0.3.0-beta.4)':
+        dependencies:
+            '@ecopages/signals': 0.3.0-beta.4
+
     '@ecopages/logger@0.2.3(typescript@7.0.2)':
         dependencies:
             typescript: 7.0.2
@@ -8738,6 +8755,10 @@ snapshots:
         dependencies:
             '@ecopages/jsx': 0.3.0-beta.3(@ecopages/signals@0.3.0-beta.3(typescript@7.0.2))(typescript@7.0.2)
 
+    '@ecopages/radiant@0.3.0-beta.4(@ecopages/jsx@0.3.0-beta.4(@ecopages/signals@0.3.0-beta.4))':
+        dependencies:
+            '@ecopages/jsx': 0.3.0-beta.4(@ecopages/signals@0.3.0-beta.4)
+
     '@ecopages/scripts-injector@0.1.5(typescript@7.0.2)':
         dependencies:
             typescript: 7.0.2
@@ -8745,6 +8766,8 @@ snapshots:
     '@ecopages/signals@0.3.0-beta.3(typescript@7.0.2)':
         dependencies:
             typescript: 7.0.2
+
+    '@ecopages/signals@0.3.0-beta.4': {}
 
     '@emnapi/core@1.11.1':
         dependencies:
@@ -8944,17 +8967,6 @@ snapshots:
 
     '@esbuild/win32-x64@0.28.1':
         optional: true
-
-    '@floating-ui/core@1.8.0':
-        dependencies:
-            '@floating-ui/utils': 0.2.12
-
-    '@floating-ui/dom@1.8.0':
-        dependencies:
-            '@floating-ui/core': 1.8.0
-            '@floating-ui/utils': 0.2.12
-
-    '@floating-ui/utils@0.2.12': {}
 
     '@inquirer/external-editor@1.0.3(@types/node@24.13.3)':
         dependencies:
@@ -12189,6 +12201,12 @@ snapshots:
             picocolors: 1.1.1
             source-map-js: 1.2.1
 
+    postcss@8.5.24:
+        dependencies:
+            nanoid: 3.3.16
+            picocolors: 1.1.1
+            source-map-js: 1.2.1
+
     prettier@2.8.8: {}
 
     prettier@3.9.6: {}
@@ -12902,7 +12920,7 @@ snapshots:
         dependencies:
             lightningcss: 1.33.0
             picomatch: 4.0.5
-            postcss: 8.5.23
+            postcss: 8.5.24
             rolldown: 1.1.5
             tinyglobby: 0.2.17
         optionalDependencies:

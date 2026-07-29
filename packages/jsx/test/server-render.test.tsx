@@ -103,8 +103,9 @@ describe('Radiant JSX server render', () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
 		class FakeNode {}
-		const previousNode = (globalThis as typeof globalThis & { Node?: unknown }).Node;
-		(globalThis as typeof globalThis & { Node: unknown }).Node = FakeNode;
+		const globalWithOptionalNode = globalThis as unknown as { Node?: unknown };
+		const previousNode = globalWithOptionalNode.Node;
+		globalWithOptionalNode.Node = FakeNode;
 
 		try {
 			const element = Object.assign(new FakeNode(), {
@@ -121,7 +122,7 @@ describe('Radiant JSX server render', () => {
 			if (previousNode === undefined) {
 				Reflect.deleteProperty(globalThis, 'Node');
 			} else {
-				(globalThis as typeof globalThis & { Node: unknown }).Node = previousNode;
+				globalWithOptionalNode.Node = previousNode;
 			}
 		}
 	});

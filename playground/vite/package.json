@@ -13,8 +13,7 @@
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/radiant-ui": "workspace:*",
-		"@ecopages/signals": "workspace:*",
-		"@floating-ui/dom": "^1.6.11"
+		"@ecopages/signals": "workspace:*"
 	},
 	"devDependencies": {
 		"@ecopages/vite-plugin-radiant": "workspace:*",
