@@ -4,10 +4,10 @@ import { RadiantElement } from '../../src/core/radiant-element';
 import { registerSsrPreparationCallback } from '../../src/core/ssr-preparation';
 import { customElement } from '../../src/decorators/custom-element';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
-import { alignMinimalDomHostTagName } from '../../src/server/minimal-dom/align-host-tag-name';
-import { MinimalHTMLElement } from '../../src/server/minimal-dom/nodes';
-import { renderRadiantElementHostToString } from '../../src/server/radiant-element-ssr-bridge';
-import * as selectors from '../../src/server/minimal-dom/selectors';
+import { alignMinimalDomHostTagName } from '../../src/server/shim/minimal-dom/align-host-tag-name';
+import { MinimalHTMLElement, MinimalTextNode } from '../../src/server/shim/minimal-dom/nodes';
+import { renderRadiantElementHostToString } from '../../src/server/radiant-element-ssr';
+import * as selectors from '../../src/server/shim/minimal-dom/selectors';
 
 describe('minimal-dom selectors', () => {
 	beforeEach(() => {
@@ -174,5 +174,12 @@ describe('minimal-dom selectors SSR integration', () => {
 		const html = renderRadiantElementHostToString(element);
 
 		expect(html).toContain('from-light-dom');
+	});
+
+	test('serializeNodeHtml escapes text-node content', () => {
+		const host = new MinimalHTMLElement('section');
+		host.appendChild(new MinimalTextNode('a < b & c > d') as unknown as Node);
+
+		expect(host.innerHTML).toBe('a &lt; b &amp; c &gt; d');
 	});
 });

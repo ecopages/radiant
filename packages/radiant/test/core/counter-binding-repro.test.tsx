@@ -6,7 +6,7 @@ import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/clie
 import { prop } from '../../src/decorators/prop';
 import { customElement } from '../../src/decorators/custom-element';
 import { RadiantElement } from '../../src/core/radiant-element';
-import { renderRadiantElementViewToString } from '../../src/server/radiant-element-ssr-bridge';
+import { renderRadiantElementViewToString } from '../../src/server/radiant-element-ssr';
 import '../../src/server/render-component';
 
 declare module '@ecopages/jsx/jsx-runtime' {

@@ -1,6 +1,6 @@
-import { getReactivePropDefinitions } from '../core/reactive-prop-metadata';
-import { isRadiantElementSsrHost } from '../core/radiant-element-ssr-host-source';
-import type { InternalRadiantSsrHost } from '../core/radiant-element-ssr-host';
+import { getReactivePropDefinitions } from '../../core/reactive-prop-metadata';
+import { isRadiantElementSsrHost } from '../../core/radiant-element-ssr-host-source';
+import type { InternalRadiantSsrHost } from '../../core/radiant-element-ssr-host';
 /**
  * Builds the private SSR host snapshot from a Radiant Element Host.
  * Extraction stays in the server layer; detection uses {@link RADIANT_ELEMENT_BRAND}.

@@ -63,12 +63,12 @@ For a hydratable render-owning `RadiantElement` page today, you need three piece
 
 ### 1. Server-side Radiant SSR runtime
 
-The server render path must import the explicit server entrypoint so the shared SSR runtime is registered.
+The server render path must import an explicit server entrypoint so the shared SSR runtime is registered.
 
-For adapters and integrations, prefer:
+For adapters, import `@ecopages/radiant/server/install-ssr-runtime` once at server boot (or import `@ecopages/radiant/server/render-component`, which installs it as a side effect). When bundler order is uncertain, prefer the explicit `install-ssr-runtime` import first:
 
 ```ts
-import '@ecopages/radiant/server/render-component';
+import '@ecopages/radiant/server/install-ssr-runtime';
 ```
 
 In application code, the higher-level server helpers under `@ecopages/radiant/server/render-component` are the preferred API.
