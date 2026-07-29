@@ -28,13 +28,7 @@ function primaryAxis(side: Side): 'x' | 'y' {
 	return side === 'top' || side === 'bottom' ? 'y' : 'x';
 }
 
-function coordsFor(
-	anchor: DOMRect,
-	size: FloatingSize,
-	side: Side,
-	align: Align,
-	gap: number,
-): FloatingCoords {
+function coordsFor(anchor: DOMRect, size: FloatingSize, side: Side, align: Align, gap: number): FloatingCoords {
 	const { width, height } = size;
 	let x = 0;
 	let y = 0;
@@ -67,12 +61,7 @@ function coordsFor(
 	return { x, y };
 }
 
-function overflowOnPrimary(
-	coords: FloatingCoords,
-	size: FloatingSize,
-	side: Side,
-	viewport: FloatingViewport,
-): number {
+function overflowOnPrimary(coords: FloatingCoords, size: FloatingSize, side: Side, viewport: FloatingViewport): number {
 	const { padding, width: vw, height: vh } = viewport;
 	if (side === 'top') return Math.max(0, padding - coords.y);
 	if (side === 'bottom') return Math.max(0, coords.y + size.height - (vh - padding));
