@@ -46,7 +46,13 @@ describe('computeFloatingCoords', () => {
 	});
 
 	it('flips bottom-start above near the bottom edge', () => {
-		const coords = computeFloatingCoords(rect(100, 560, 80, 32), size, 'bottom-start' satisfies RuiPlacement, gap, viewport);
+		const coords = computeFloatingCoords(
+			rect(100, 560, 80, 32),
+			size,
+			'bottom-start' satisfies RuiPlacement,
+			gap,
+			viewport,
+		);
 		expect(coords.y).toBe(560 - size.height - gap);
 		expect(coords.x).toBe(100);
 	});
