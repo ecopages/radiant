@@ -1,11 +1,12 @@
 import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
-import { type Placement, autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { applyFloatingPosition, attachFloating } from '../shared/floating-position';
+import type { RuiPlacement } from '../shared/placement';
 
 export type RuiTooltipProps = {
 	/** Accessible description shown in the tooltip. */
 	content?: string;
-	/** Floating-ui placement. Default: `top`. */
-	placement?: Placement;
+	/** Placement of the tooltip surface relative to its anchor. Default: `top`. */
+	placement?: RuiPlacement;
 	/** Delay in ms before showing on hover/focus. Default: `200`. */
 	delay?: number;
 };
@@ -13,6 +14,8 @@ export type RuiTooltipProps = {
 type RuiTooltipBindings = {
 	content: string;
 };
+
+const TOOLTIP_GAP = 8;
 
 /**
  * `<rui-tooltip>` — a popup that describes a trigger on hover or focus.
@@ -34,7 +37,7 @@ type RuiTooltipBindings = {
 @customElement('rui-tooltip')
 export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	@prop({ type: String, defaultValue: '' }) content: string;
-	@prop({ type: String, defaultValue: 'top' }) placement: Placement;
+	@prop({ type: String, defaultValue: 'top' }) placement: RuiPlacement;
 	@prop({ type: Number, defaultValue: 200 }) delay: number;
 
 	@query({ ref: 'tooltip' }) tooltipTarget: HTMLElement;
@@ -49,9 +52,9 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
-	private cleanup: ReturnType<typeof autoUpdate> | null = null;
 	private tooltipId = `rui-tooltip-${Math.random().toString(36).slice(2, 9)}`;
 	private describedEl: HTMLElement | null = null;
+	private cleanupFloating: (() => void) | null = null;
 
 	/**
 	 * Pointer enter/leave must be host listeners: those events do not bubble, and
@@ -81,8 +84,8 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	}
 
 	private teardownFloating(): void {
-		this.cleanup?.();
-		this.cleanup = null;
+		this.cleanupFloating?.();
+		this.cleanupFloating = null;
 	}
 
 	private getAnchor(): HTMLElement {
@@ -99,25 +102,23 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 		this.describedEl.setAttribute('aria-describedby', this.tooltipId);
 	}
 
-	@bound
-	updatePosition(): void {
-		if (!this.tooltipTarget || !this.open) return;
-		const anchor = this.getAnchor();
-		computePosition(anchor, this.tooltipTarget, {
-			placement: this.placement,
-			middleware: [offset(8), flip(), shift({ padding: 8 })],
-		}).then(({ x, y }) => {
-			Object.assign(this.tooltipTarget.style, {
-				left: `${x}px`,
-				top: `${y}px`,
-			});
+	private attachFloating(): void {
+		if (!this.tooltipTarget) return;
+		this.teardownFloating();
+		this.cleanupFloating = attachFloating({
+			anchor: this.getAnchor(),
+			floating: this.tooltipTarget,
+			getPlacement: () => this.placement,
+			gap: TOOLTIP_GAP,
 		});
 	}
 
 	@onUpdated(['content', 'placement'])
 	onDescribedPropsUpdated(): void {
 		this.wireTrigger();
-		if (this.open) this.updatePosition();
+		if (this.open && this.tooltipTarget) {
+			applyFloatingPosition(this.getAnchor(), this.tooltipTarget, this.placement, TOOLTIP_GAP);
+		}
 	}
 
 	private setOpen(next: boolean): void {
@@ -126,14 +127,8 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 		if (!this.tooltipTarget) return;
 		this.tooltipTarget.hidden = !next;
 
-		if (next) {
-			this.teardownFloating();
-			const anchor = this.getAnchor();
-			this.cleanup = autoUpdate(anchor, this.tooltipTarget, this.updatePosition);
-			this.updatePosition();
-		} else {
-			this.teardownFloating();
-		}
+		if (next) this.attachFloating();
+		else this.teardownFloating();
 	}
 
 	private scheduleShow(): void {
@@ -184,7 +179,13 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 				<span class="rui-tooltip__trigger">
 					<slot></slot>
 				</span>
-				<span data-ref="tooltip" id={this.tooltipId} class="rui-tooltip__content" role="tooltip" hidden>
+				<span
+					data-ref="tooltip"
+					id={this.tooltipId}
+					class="rui-tooltip__content rui-floating"
+					role="tooltip"
+					hidden
+				>
 					{this.$.content}
 				</span>
 			</span>

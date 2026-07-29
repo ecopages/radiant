@@ -6,26 +6,31 @@ import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { query } from '@ecopages/radiant/decorators/query';
 import { prop } from '@ecopages/radiant/decorators/prop';
-import { type Coords, type Placement, arrow, autoUpdate, computePosition, flip, offset } from '@floating-ui/dom';
+
+export type RadiantDropdownPlacement =
+	| 'top'
+	| 'top-start'
+	| 'top-end'
+	| 'right'
+	| 'right-start'
+	| 'right-end'
+	| 'bottom'
+	| 'bottom-start'
+	| 'bottom-end'
+	| 'left'
+	| 'left-start'
+	| 'left-end';
 
 export type RadiantDropdownProps = {
 	defaultOpen?: boolean;
-	placement?: Placement;
+	placement?: RadiantDropdownPlacement;
 	offset?: number;
 	arrow?: boolean;
 };
 
 /**
  * @element radiant-dropdown
- * @description A dropdown component that can be toggled by a trigger element
- *
- * @ref trigger - The trigger element
- * @ref content - The content container
- * @ref arrow - The arrow element
- * @prop {boolean} defaultOpen - Whether the dropdown should be open by default
- * @prop {Placement} placement - The placement of the dropdown
- * @prop {number} offset - The offset of the dropdown
- * @prop {ShiftOptions} shiftOptions - The shift options of the dropdown {@link ShiftOptions}
+ * @description A CSS-positioned dropdown demo for the Vite playground
  */
 @customElement('radiant-dropdown')
 export class RadiantDropdown extends RadiantElement {
@@ -34,52 +39,25 @@ export class RadiantDropdown extends RadiantElement {
 	@query({ ref: 'arrow' }) arrowTarget!: HTMLElement;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) defaultOpen!: boolean;
-	@prop({ type: String, defaultValue: 'left' }) placement!: Placement;
-	@prop({ type: Number, defaultValue: 6 }) offset!: number;
+	@prop({ type: String, defaultValue: 'bottom-start', reflect: true }) placement!: RadiantDropdownPlacement;
 	@prop({ type: Boolean, defaultValue: true }) focusOnOpen!: boolean;
-
-	cleanup: ReturnType<typeof autoUpdate> | null = null;
 
 	connectedCallback(): void {
 		super.connectedCallback();
-		this.updateFloatingUI();
-		if (this.defaultOpen) this.toggleContent();
+		queueMicrotask(() => {
+			if (this.defaultOpen) this.toggleContent();
+		});
+	}
+
+	disconnectedCallback(): void {
+		document.removeEventListener('click', this.closeContent);
+		super.disconnectedCallback();
 	}
 
 	@bound
-	@onUpdated(['offset', 'placement'])
-	updateFloatingUI(): void {
-		if (!this.triggerTarget || !this.contentTarget) return;
-		computePosition(this.triggerTarget, this.contentTarget, {
-			placement: this.placement,
-			middleware: [offset(this.offset), flip(), arrow({ element: this.arrowTarget })],
-		}).then(({ x, y, placement, middlewareData }) => {
-			Object.assign(this.contentTarget.style, {
-				left: `${x}px`,
-				top: `${y}px`,
-			});
-
-			if (!this.arrowTarget) return;
-
-			const { x: arrowX, y: arrowY } = middlewareData.arrow as Coords;
-
-			const staticSide = {
-				top: 'bottom',
-				right: 'left',
-				bottom: 'top',
-				left: 'right',
-			}[placement.split('-')[0]] as string;
-
-			Object.assign(this.arrowTarget.style, {
-				left: arrowX != null ? `${arrowX}px` : '',
-				top: arrowY != null ? `${arrowY}px` : '',
-				right: '',
-				bottom: '',
-				[staticSide]: '-4px',
-			});
-
-			this.arrowTarget.dataset.placement = placement;
-		});
+	@onUpdated(['placement'])
+	syncPlacement(): void {
+		if (this.arrowTarget) this.arrowTarget.dataset.placement = this.placement;
 	}
 
 	@onEvent({ ref: 'trigger', type: 'click' })
@@ -87,14 +65,14 @@ export class RadiantDropdown extends RadiantElement {
 		if (typeof this.triggerTarget.ariaExpanded === 'undefined') this.triggerTarget.ariaExpanded = 'false';
 		this.triggerTarget.setAttribute('aria-expanded', String(this.triggerTarget.ariaExpanded !== 'true'));
 		const isOpen = this.triggerTarget.ariaExpanded === 'true';
-		this.contentTarget.style.display = isOpen ? 'block' : 'none';
+		this.contentTarget.hidden = !isOpen;
+		this.syncPlacement();
 
 		if (isOpen) {
-			this.cleanup = autoUpdate(this.triggerTarget, this.contentTarget, this.updateFloatingUI);
 			document.addEventListener('click', this.closeContent);
 			this.focusOnOpenChanged();
 		} else {
-			this.cleanup?.();
+			document.removeEventListener('click', this.closeContent);
 		}
 	}
 
@@ -114,14 +92,8 @@ export class RadiantDropdown extends RadiantElement {
 	closeContent(event: MouseEvent) {
 		if (!this.triggerTarget.contains(event.target as Node) && !this.contentTarget.contains(event.target as Node)) {
 			this.triggerTarget.setAttribute('aria-expanded', 'false');
-			this.contentTarget.style.display = 'none';
+			this.contentTarget.hidden = true;
 			document.removeEventListener('click', this.closeContent);
-			this.cleanup?.();
 		}
-	}
-
-	disconnectedCallback(): void {
-		super.disconnectedCallback();
-		this.cleanup?.();
 	}
 }

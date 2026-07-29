@@ -1,4 +1,5 @@
 @reference '../../../styles/radiant-ui.css';
+@import '../shared/floating.css';
 
 rui-menu-button {
 	@apply inline-flex;
@@ -20,7 +21,7 @@ rui-menu-button {
 	}
 
 	.rui-menu-button__menu {
-		@apply absolute z-popover min-w-40 rounded-container border border-border bg-background p-1 shadow-md;
+		@apply z-popover min-w-40 rounded-container border border-border bg-background p-1 shadow-md;
 	}
 
 	.rui-menu-button__menu[hidden] {
