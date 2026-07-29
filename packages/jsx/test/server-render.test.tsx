@@ -5,7 +5,8 @@ async function loadModule<T>(path: string): Promise<T> {
 }
 
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
-const loadServerRender = async () => loadModule<typeof import('../src/ssr/server-render.ts')>('../src/ssr/server-render.ts');
+const loadServerRender = async () =>
+	loadModule<typeof import('../src/ssr/server-render.ts')>('../src/ssr/server-render.ts');
 
 const forceServerCustomElementRenderSymbol = Symbol.for('@ecopages/jsx.force-server-custom-element-render');
 
@@ -729,10 +730,8 @@ describe('Radiant JSX server render', () => {
 	});
 
 	test('lets the server custom-element render hook replace the default SSR wrapper', async () => {
-		const [{ jsx, createMarkupNodeLike }, { renderToString, withServerCustomElementRenderHook }] = await Promise.all([
-			loadJsxRuntime(),
-			loadServerRender(),
-		]);
+		const [{ jsx, createMarkupNodeLike }, { renderToString, withServerCustomElementRenderHook }] =
+			await Promise.all([loadJsxRuntime(), loadServerRender()]);
 
 		class ReplaceableHookElement extends EventTarget {
 			label = 'Original';

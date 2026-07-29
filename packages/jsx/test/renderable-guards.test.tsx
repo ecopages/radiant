@@ -77,9 +77,9 @@ describe('renderable-guards', () => {
 		(globalThis as typeof globalThis & { Node: unknown }).Node = FakeNode;
 
 		try {
-			expect(mayEmitOrParseRawOuterHtml(Object.assign(new FakeNode(), { nodeType: 1, outerHTML: '<i></i>' }))).toBe(
-				true,
-			);
+			expect(
+				mayEmitOrParseRawOuterHtml(Object.assign(new FakeNode(), { nodeType: 1, outerHTML: '<i></i>' })),
+			).toBe(true);
 		} finally {
 			if (previousNode === undefined) {
 				Reflect.deleteProperty(globalThis, 'Node');

@@ -1,4 +1,8 @@
-import { DETACHED_INSERTION_POINT_WARNING, DOM_RANGE_ANCHOR_DRIFT_WARNING, warnRuntime } from '../warnings/dev-warnings.ts';
+import {
+	DETACHED_INSERTION_POINT_WARNING,
+	DOM_RANGE_ANCHOR_DRIFT_WARNING,
+	warnRuntime,
+} from '../warnings/dev-warnings.ts';
 import { mayEmitOrParseRawOuterHtml } from '../types/renderable-guards.ts';
 import type { JsxNodeLike } from '../types/index.ts';
 
