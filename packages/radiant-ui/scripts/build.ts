@@ -2,7 +2,7 @@
  * Builds the radiant-ui library into `dist/`.
  *
  * Bundles every `src/components/ui/<name>/index.ts` (plus the root barrel)
- * as browser-targeted ESM with `@ecopages/*` and `@floating-ui/dom` external.
+ * as browser-targeted ESM with `@ecopages/*` external.
  *
  * Run with: pnpm run build:files
  */
@@ -22,7 +22,6 @@ const externalPackages = [
 	'@ecopages/radiant/*',
 	'@ecopages/signals',
 	'@ecopages/signals/*',
-	'@floating-ui/dom',
 	'*.css',
 ];
 

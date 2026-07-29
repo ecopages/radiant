@@ -1,8 +1,8 @@
-import type { Placement } from '@floating-ui/dom';
 import { createRoot } from '@ecopages/jsx';
 import { PlaygroundSection } from './components/playground-section/playground-section';
 import { RadiantAccordion } from './components/accordion/accordion';
 import { RadiantDropdown } from './components/dropdown/dropdown';
+import type { RadiantDropdownPlacement } from './components/dropdown/dropdown.script';
 import { RadiantCounter } from './components/radiant-counter/radiant-counter';
 import { RadiantEvent } from './components/radiant-event/radiant-event';
 import { RadiantRefs } from './components/radiant-refs/radiant-refs.view';
@@ -14,14 +14,14 @@ import './styles/tailwind.css';
 const appRoot = document.querySelector<HTMLDivElement>('#app');
 const root = appRoot ? createRoot(appRoot) : null;
 
-const changePlacement = (newPlacement: Placement) => {
+const changePlacement = (newPlacement: RadiantDropdownPlacement) => {
 	document.querySelector('radiant-dropdown')?.setAttribute('placement', newPlacement);
 };
 
 const attachPlacementListener = () => {
 	document.querySelector('#placement')?.addEventListener('change', (e: Event) => {
 		const target = e.target as HTMLSelectElement;
-		changePlacement(target.value as Placement);
+		changePlacement(target.value as RadiantDropdownPlacement);
 	});
 };
 
@@ -48,7 +48,7 @@ const App = () => {
 						]}
 					/>
 					<div class="flex flex-wrap items-center gap-4">
-						<RadiantDropdown placement="left-end" arrow>
+						<RadiantDropdown placement="bottom-start" arrow>
 							<ul class="flex flex-col gap-2 m-0 p-0" style="list-style: none;">
 								<li>
 									<a href="/" class="text-[#2563eb] hover:underline">
