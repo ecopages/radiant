@@ -1,0 +1,6 @@
+@layer components {
+	.rui-floating {
+		position: fixed;
+		visibility: hidden;
+	}
+}
