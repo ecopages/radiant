@@ -17,6 +17,7 @@ if (sharedChunks.length === 0) {
 
 const serverEntriesThatMustShareChunks = [
 	'render-component.js',
+	'radiant-element-ssr.js',
 	'radiant-element-ssr-bridge.js',
 	'install-ssr-runtime.js',
 ];

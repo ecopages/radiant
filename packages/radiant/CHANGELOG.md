@@ -17,11 +17,24 @@ First beta prerelease of the 0.3.0 line.
 - Removed the legacy internal-state decorator alias. Use `@state` instead (drop-in replacement).
 - Removed the legacy property decorator alias. Use `@prop(...)` instead (drop-in replacement).
 - Removed the legacy decorator alias subpath exports.
+- SSR boot is centralized on `@ecopages/radiant/server/install-ssr-runtime`. Deep imports of `install-ssr-scope-adapters` are removed.
+- Removed public exports `@ecopages/radiant/core/reactive-jsx-value` and `@ecopages/radiant/tools/render-jsx-template`.
+- `@ecopages/radiant/server/radiant-element-ssr-bridge` remains as a deprecated alias of `radiant-element-ssr` for existing integrators.
+- `render-component` no longer ships fragment HTTP header constants or header-builder helpers; map `RenderedComponent` metadata in your adapter.
+
+### Migration
+
+| Old | Use instead |
+| --- | --- |
+| `install-ssr-scope-adapters` | `@ecopages/radiant/server/install-ssr-runtime` |
+| `bindReactiveValue` / `@ecopages/radiant/core/reactive-jsx-value` | `this.bind(...)` / `this.$.key` on `RadiantElement` |
+| `@ecopages/radiant/tools/render-jsx-template` | `@ecopages/jsx` `render(...)` or `renderComponent` |
+| `@ecopages/radiant/server/radiant-element-ssr-bridge` (new code) | `@ecopages/radiant/server/radiant-element-ssr` |
 
 ### Features
 
 - Added `scope` option to `@query(...)` and `createQuery(...)`: query light DOM (`'light'`, default), shadow DOM (`'shadow'`), or both (`'both'`).
-- Added normalized SSR fragment asset metadata in `@ecopages/radiant/server/render-component`, including transport-friendly asset headers and helpers for script, preload, and stylesheet dependencies.
+- Added normalized SSR fragment asset metadata in `@ecopages/radiant/server/render-component`, including transport-friendly asset descriptors for script, preload, and stylesheet dependencies.
 
 ## 0.2.0
 

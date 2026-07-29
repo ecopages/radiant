@@ -1,7 +1,7 @@
-import type { ReactiveProperty } from '../core/reactive-prop-core';
-import type { ReactivePropDefinition } from '../core/reactive-prop-metadata';
-import { writeAttributeValue } from '../utils/attribute-utils';
-import { escapeHtmlAttribute } from '../utils/escape-html-attribute';
+import type { ReactiveProperty } from '../../core/reactive-prop-core';
+import type { ReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { writeAttributeValue } from '../../utils/attribute-utils';
+import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 
 /**
  * Minimal host shape needed by the attribute serialization policy.
@@ -51,15 +51,16 @@ export function resolveHostAttributes(host: HostAttributeSource): Record<string,
 /**
  * Serializes a flat attribute record into an HTML attribute string.
  *
- * Each entry becomes ` name="escaped-value"` with the leading space included.
- * The combined string is safe for direct interpolation into an opening tag.
+ * Each entry is formatted by {@link serializeHtmlAttribute} (boolean presence
+ * form for empty values, quoted escaped values otherwise). The combined string
+ * is safe for direct interpolation into an opening tag.
  *
  * @param attributes Flat attribute record to serialize.
  * @returns HTML attribute string.
  */
 export function stringifyHostAttributes(attributes: Record<string, string>): string {
 	return Object.entries(attributes)
-		.map(([name, value]) => ` ${name}="${escapeHtmlAttribute(value)}"`)
+		.map(([name, value]) => serializeHtmlAttribute(name, value))
 		.join('');
 }
 
