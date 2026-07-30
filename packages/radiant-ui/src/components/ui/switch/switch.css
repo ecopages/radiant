@@ -6,7 +6,7 @@ rui-switch {
 
 @layer components {
 	.rui-switch {
-		@apply inline-flex items-center gap-3;
+		@apply inline-flex items-center gap-2;
 		@apply cursor-pointer text-sm text-on-background;
 	}
 
@@ -23,22 +23,33 @@ rui-switch {
 	}
 
 	.rui-switch__track {
-		@apply relative inline-flex h-6 w-11 shrink-0 items-center rounded-full;
-		@apply bg-surface-container transition-colors duration-normal;
+		--rui-switch-width: 2.5rem;
+		--rui-switch-height: 1.5rem;
+		--rui-switch-thumb-size: 1rem;
+
+		@apply relative inline-flex h-(--rui-switch-height) w-(--rui-switch-width) shrink-0 items-center rounded-lg p-1;
+		@apply bg-on-background/20 transition-colors duration-normal;
+	}
+
+	.rui-switch__track:hover {
+		@apply bg-on-background/30;
 	}
 
 	.rui-switch__input:checked + .rui-switch__track {
 		@apply bg-primary;
 	}
 
+	.rui-switch__input:checked + .rui-switch__track:hover {
+		@apply bg-primary/80;
+	}
+
 	.rui-switch__thumb {
-		@apply absolute left-0.5 top-0.5 size-5 rounded-full bg-white;
-		@apply transition-transform duration-normal;
-		box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+		@apply pointer-events-none absolute top-1/2 left-1 size-(--rui-switch-thumb-size) -translate-y-1/2 rounded-md bg-on-background;
+		@apply transition-[left,right,transform] duration-normal ease-in-out;
 	}
 
 	.rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
-		transform: translateX(1.25rem);
+		@apply right-1 left-auto bg-on-primary;
 	}
 
 	.rui-switch__label {
