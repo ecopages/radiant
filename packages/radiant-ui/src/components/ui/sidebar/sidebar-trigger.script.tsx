@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { RuiSidebarToggleDetail } from './sidebar.script';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
@@ -42,6 +42,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 	@prop({ type: String, defaultValue: 'md' }) size: NonNullable<RuiSidebarTriggerProps['size']>;
 
 	@query({ ref: 'button' }) buttonTarget: HTMLButtonElement;
+
+	@state private sidebarState: 'expanded' | 'collapsed' = 'expanded';
 
 	private sidebarListener: ((event: Event) => void) | null = null;
 	private attachedSidebar: HTMLElement | null = null;
@@ -109,7 +111,10 @@ export class RuiSidebarTrigger extends RadiantElement {
 		return (sidebar.getAttribute('data-state') as 'expanded' | 'collapsed' | null) ?? 'expanded';
 	}
 
-	private resolvedButtonLabel(): string {
+	private resolvedButtonLabel(state = this.sidebarState): string {
+		if (this.placement === 'inset') {
+			return state === 'expanded' ? 'Close navigation' : 'Open navigation';
+		}
 		const fromData = this.getAttribute('data-button-label')?.trim();
 		if (fromData) return fromData;
 		const fromAttribute = this.getAttribute('button-label')?.trim();
@@ -118,10 +123,11 @@ export class RuiSidebarTrigger extends RadiantElement {
 	}
 
 	private applyState(state: 'expanded' | 'collapsed'): void {
+		this.sidebarState = state;
 		const button = this.buttonTarget;
 		if (!button) return;
 		const sidebar = this.resolveSidebar();
-		const buttonLabel = this.resolvedButtonLabel();
+		const buttonLabel = this.resolvedButtonLabel(state);
 		button.setAttribute('aria-expanded', String(state === 'expanded'));
 		button.setAttribute('data-sidebar-state', state);
 		button.setAttribute('aria-label', buttonLabel);
@@ -147,9 +153,52 @@ export class RuiSidebarTrigger extends RadiantElement {
 		return '';
 	}
 
+	private renderMenuIcon(state: 'expanded' | 'collapsed') {
+		if (state === 'expanded') {
+			return (
+				<svg
+					class="rui-sidebar__trigger-glyph rui-sidebar__trigger-glyph--close"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M18 6 6 18" />
+					<path d="m6 6 12 12" />
+				</svg>
+			);
+		}
+
+		return (
+			<svg
+				class="rui-sidebar__trigger-glyph rui-sidebar__trigger-glyph--menu"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d="M4 6h16" />
+				<path d="M4 12h16" />
+				<path d="M4 18h16" />
+			</svg>
+		);
+	}
+
 	private renderDefaultIcon() {
-		const sidebar = this.resolveSidebar();
-		const state = sidebar ? this.readState(sidebar) : 'expanded';
+		const state = this.sidebarState;
+
+		if (this.placement === 'inset') {
+			return (
+				<span class="rui-sidebar__trigger-icon" aria-hidden="true">
+					{this.renderMenuIcon(state)}
+				</span>
+			);
+		}
+
 		const showCollapse = this.placement === 'header' || (this.placement !== 'inset' && state === 'expanded');
 		const showExpand = this.placement === 'inset' || (this.placement !== 'header' && state === 'collapsed');
 
@@ -192,8 +241,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 	override render() {
 		const sidebar = this.resolveSidebar();
 		const controlsId = sidebar?.id || this.controls || null;
-		const buttonLabel = this.resolvedButtonLabel();
-		const state = sidebar ? this.readState(sidebar) : 'expanded';
+		const state = this.sidebarState;
+		const buttonLabel = this.resolvedButtonLabel(state);
 		return (
 			<button
 				data-ref="button"

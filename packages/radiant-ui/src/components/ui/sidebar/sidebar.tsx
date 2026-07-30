@@ -12,8 +12,13 @@ function cx(...parts: Array<string | false | null | undefined>): string {
 }
 
 export type RuiSidebarProviderProps = {
-	/** Layout context. `default` is the standard shell; `full` removes chrome. */
-	layout?: 'default' | 'full';
+	/**
+	 * Layout context. `default` is the standard shell; `full` removes chrome;
+	 * `docs` stacks a full-width `siteHeader` above the sidebar + inset row.
+	 */
+	layout?: 'default' | 'full' | 'docs';
+	/** Full-width chrome rendered above the sidebar row when `layout="docs"`. */
+	siteHeader?: JsxRenderable;
 	/** Slot for the sidebar element. */
 	sidebar?: JsxRenderable;
 	/** Slot for the inset (main content). */
@@ -31,10 +36,23 @@ export type RuiSidebarProviderProps = {
  */
 export function RuiSidebarProvider({
 	layout = 'default',
+	siteHeader,
 	sidebar,
 	children,
 	class: className,
 }: RuiSidebarProviderProps) {
+	if (layout === 'docs') {
+		return (
+			<div class={cx('rui-sidebar-provider', className)} data-layout={layout}>
+				{siteHeader ? <div class="rui-sidebar-provider__site-header">{siteHeader}</div> : null}
+				<div class="rui-sidebar-provider__body">
+					{sidebar}
+					{children}
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div class={cx('rui-sidebar-provider', className)} data-layout={layout}>
 			{sidebar}
@@ -306,6 +324,7 @@ export const RuiSidebar = defineRadiantView(
 		open,
 		defaultWidth,
 		width,
+		resizable,
 		mobileBreakpoint,
 		label,
 		class: className,
@@ -322,6 +341,7 @@ export const RuiSidebar = defineRadiantView(
 			prop:open={open}
 			prop:defaultWidth={defaultWidth}
 			prop:width={width}
+			prop:resizable={resizable}
 			prop:mobileBreakpoint={mobileBreakpoint}
 			label={label}
 		>

@@ -7,8 +7,14 @@
  *
  * Run after `build:files` (or as part of `build:lib`).
  */
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import {
+	componentCssDistPath,
+	componentCssExportKey,
+	isOptionalComponentSkin,
+	listComponentCssFiles,
+} from './component-style-files.ts';
 import postcss from 'postcss';
 import tailwindcss from '@tailwindcss/postcss';
 
@@ -43,13 +49,17 @@ function listCssFiles(dir: string): string[] {
 function listComponentStyleFiles(): string[] {
 	return readdirSync(UI_DIR, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
-		.map((entry) => path.join(UI_DIR, entry.name, `${entry.name}.css`))
-		.filter((cssPath) => {
-			try {
-				return statSync(cssPath).isFile();
-			} catch {
-				return false;
-			}
+		.flatMap((entry) => {
+			const dir = path.join(UI_DIR, entry.name);
+			return listComponentCssFiles(dir)
+				.map((filename) => path.join(dir, filename))
+				.filter((cssPath) => {
+					try {
+						return statSync(cssPath).isFile();
+					} catch {
+						return false;
+					}
+				});
 		});
 }
 

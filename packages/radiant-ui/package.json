@@ -198,6 +198,9 @@
 		"./disclosure/styles.css": {
 			"default": "./dist/components/ui/disclosure/disclosure.css"
 		},
+		"./disclosure/disclosure-group.css": {
+			"default": "./dist/components/ui/disclosure/disclosure-group.css"
+		},
 		"./feed": {
 			"types": "./dist/components/ui/feed/index.d.ts",
 			"import": "./dist/components/ui/feed/index.js"
@@ -288,6 +291,9 @@
 		},
 		"./sidebar/styles.css": {
 			"default": "./dist/components/ui/sidebar/sidebar.css"
+		},
+		"./sidebar/docs.css": {
+			"default": "./dist/components/ui/sidebar/sidebar.docs.css"
 		},
 		"./slider": {
 			"types": "./dist/components/ui/slider/index.d.ts",
