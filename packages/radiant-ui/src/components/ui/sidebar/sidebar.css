@@ -16,7 +16,91 @@ rui-sidebar {
 	@apply bg-transparent;
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-mobile='true'][data-state='expanded']) {
+.rui-sidebar-provider[data-layout='docs'] {
+	@apply flex h-svh min-h-0 flex-col overflow-hidden;
+
+	.rui-sidebar-provider__site-header {
+		@apply sticky top-0 z-50 w-full shrink-0 border-b border-border bg-surface-container-low;
+	}
+
+	.rui-sidebar-provider__site-header-inner {
+		@apply mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-6 md:px-8;
+	}
+
+	.rui-sidebar-provider__site-header-start {
+		@apply flex min-w-0 items-center gap-4;
+	}
+
+	.rui-sidebar-provider__site-header-brand {
+		@apply text-on-background no-underline;
+	}
+
+	.rui-sidebar-provider__site-header-version {
+		@apply rounded border border-border bg-background px-2 py-0.5 text-[10px] font-medium tracking-tight text-on-background/90;
+		font-family: var(--font-heading, var(--font-sans));
+	}
+
+	.rui-sidebar-provider__site-header-nav {
+		@apply flex items-center gap-4;
+	}
+
+	.rui-sidebar-provider__site-header-link {
+		@apply text-sm text-on-background no-underline;
+	}
+
+	.rui-sidebar-provider__body {
+		@apply flex min-h-0 flex-1 overflow-hidden;
+	}
+
+	.rui-sidebar-docs-page {
+		@apply mx-auto w-full max-w-[800px] flex-1 overflow-y-auto px-6 py-8 md:max-w-none md:px-10 lg:px-12 md:py-10;
+	}
+
+	@media (min-width: 768px) {
+		rui-sidebar .rui-sidebar {
+			@apply sticky top-16 shrink-0 self-start;
+			height: calc(100svh - 4rem);
+		}
+
+		rui-sidebar .rui-sidebar > .rui-sidebar__pane {
+			@apply h-full;
+		}
+
+		rui-sidebar-trigger {
+			@apply hidden;
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.rui-sidebar-provider__body {
+			@apply mx-auto w-full max-w-7xl;
+		}
+	}
+
+	@media (max-width: 767px) {
+		rui-sidebar-trigger {
+			@apply inline-flex;
+		}
+
+		rui-sidebar-trigger .rui-sidebar__trigger {
+			@apply size-9 rounded-lg border border-border/50 bg-background/40 backdrop-blur-sm;
+		}
+
+		.rui-sidebar-provider__body {
+			@apply relative min-h-0 flex-1;
+		}
+
+		.rui-sidebar__inset {
+			@apply min-h-0 w-full flex-1 overflow-y-auto;
+		}
+
+		.rui-sidebar-docs-page {
+			@apply py-6;
+		}
+	}
+}
+
+.rui-sidebar-provider:has(rui-sidebar[data-mobile='true'][data-state='expanded']) {
 	@apply overflow-hidden;
 }
 
