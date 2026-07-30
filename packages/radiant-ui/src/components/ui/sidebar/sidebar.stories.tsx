@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, within } from 'storybook/test';
+import { withStylesheets } from '../../../../.storybook/with-stylesheets';
+import docsNavCss from './sidebar.docs.css?url';
+import radiantPkg from '../../../../../radiant/package.json';
 import {
 	RuiSidebar,
 	RuiSidebarTrigger,
@@ -69,6 +72,163 @@ const ICONS = {
 
 type IconKey = keyof typeof ICONS;
 const NavIcon = ({ name }: { name: IconKey }) => icon(ICONS[name]);
+
+type DocsNavGroup = {
+	name: string;
+	items: Array<{ title: string; href: string }>;
+};
+
+const DOCS_NAV_GROUPS: DocsNavGroup[] = [
+	{
+		name: 'Getting Started',
+		items: [
+			{ title: 'Introduction', href: '/docs/getting-started/introduction' },
+			{ title: 'Installation', href: '/docs/getting-started/installation' },
+		],
+	},
+	{
+		name: 'Components',
+		items: [
+			{ title: 'Alert', href: '/docs/components/alert' },
+			{ title: 'Sidebar', href: '/docs/components/sidebar' },
+		],
+	},
+	{
+		name: 'Tools',
+		items: [{ title: 'CLI', href: '/docs/tools/cli' }],
+	},
+	{
+		name: 'JSX',
+		items: [{ title: 'Overview', href: '/docs/jsx/overview' }],
+	},
+	{
+		name: 'Signals',
+		items: [{ title: 'Introduction', href: '/docs/signals/introduction' }],
+	},
+];
+
+const docsGroupIcon = (name: string) => {
+	const paths: Record<string, string | readonly string[]> = {
+		'Getting Started': ['M7 8l-4 4l4 4', 'M17 8l4 4l-4 4', 'M14 4l-4 16'],
+		Components: [
+			'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z',
+			'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
+		],
+		Tools: 'M7 10h3v-3l-3.5-3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1-3 3l-6-6a6 6 0 0 1-8-8l3.5 3.5',
+		JSX: ['M12 3l8 4.5v9l-8 4.5l-8-4.5v-9z', 'M12 12l8-4.5', 'M12 12v9', 'M12 12l-8-4.5'],
+		Signals: 'M3 12h4l3 8l4-16l3 8h4',
+	};
+	const d = paths[name];
+	if (!d) return null;
+	return <span class="rui-sidebar__group-icon">{icon(d)}</span>;
+};
+
+function renderDocsNavigationContent({
+	currentPath = '/docs/getting-started/introduction',
+	showBrand = true,
+}: {
+	currentPath?: string;
+	showBrand?: boolean;
+} = {}) {
+	return (
+		<>
+			{showBrand ? (
+				<RuiSidebarHeader aria-label="Docs navigation header">
+					<a href="/docs" class="rui-sidebar__brand">
+						<span class="rui-sidebar__brand-text">Radiant</span>
+					</a>
+				</RuiSidebarHeader>
+			) : null}
+
+			<RuiSidebarContent aria-label="Docs navigation">
+				{DOCS_NAV_GROUPS.map((group, index) => (
+					<>
+						<RuiSidebarGroup aria-label={group.name} key={group.name}>
+							<RuiSidebarGroupHeader
+								label={
+									<>
+										{docsGroupIcon(group.name)}
+										<span>{group.name}</span>
+									</>
+								}
+							/>
+							<RuiSidebarMenu aria-label={`${group.name} links`}>
+								{group.items.map((item) => (
+									<RuiSidebarMenuItem key={item.href}>
+										<RuiSidebarMenuButton
+											as="a"
+											href={item.href}
+											isActive={currentPath === item.href}
+										>
+											<span>{item.title}</span>
+										</RuiSidebarMenuButton>
+									</RuiSidebarMenuItem>
+								))}
+							</RuiSidebarMenu>
+						</RuiSidebarGroup>
+						{index < DOCS_NAV_GROUPS.length - 1 ? (
+							<RuiSidebarSeparator aria-label="Section divider" />
+						) : null}
+					</>
+				))}
+			</RuiSidebarContent>
+		</>
+	);
+}
+
+function renderRadiantLogo({ href = '/', title = 'Radiant' }: { href?: string; title?: string } = {}) {
+	return (
+		<a
+			href={href}
+			title={title}
+			class="rui-sidebar-provider__site-header-brand flex items-center gap-1 text-2xl font-semibold font-heading"
+		>
+			<svg
+				class="shrink-0"
+				height="32"
+				viewBox="0 0 35 42"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				aria-hidden="true"
+			>
+				<path
+					d="M8.95038 19.0355C8.73635 19.7972 10.4934 24.8245 18.2298 23.3884C25.3299 22.0704 24.7298 10.8884 18.2298 13.8884C14.2596 15.7208 12.2883 33.409 22.2298 31.8884C29.9216 30.7119 28.75 6.88572 31.434 1.38842C28.4393 4.49823 5.89504 5.06009 2.22981 17.8884C1.27183 21.2414 3.22979 26.8884 8.95036 28.3884L2.22981 38.3884"
+					stroke="currentColor"
+					stroke-width="4"
+					stroke-linecap="round"
+				/>
+			</svg>
+			radiant
+		</a>
+	);
+}
+
+function renderDocsSiteHeader({ controlsId }: { controlsId: string }) {
+	return (
+		<div class="rui-sidebar-provider__site-header-inner">
+			<div class="rui-sidebar-provider__site-header-start">
+				<RuiSidebarTrigger
+					class="md:hidden"
+					placement="inset"
+					controls={controlsId}
+					triggerLabel="Toggle docs navigation"
+				/>
+				{renderRadiantLogo()}
+				<span class="rui-sidebar-provider__site-header-version">v {radiantPkg.version}</span>
+			</div>
+			<nav class="rui-sidebar-provider__site-header-nav" aria-label="Site">
+				<a href="/docs" class="rui-sidebar-provider__site-header-link">
+					Docs
+				</a>
+				<a href="https://github.com/ecopages/radiant" class="text-on-background" aria-label="GitHub repository">
+					<svg viewBox="0 0 98 96" width="20" height="20" fill="currentColor" aria-hidden="true">
+						<path d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z" />
+					</svg>
+				</a>
+			</nav>
+		</div>
+	);
+}
 
 const SIDEBAR_GROUPS = [
 	{
@@ -462,5 +622,58 @@ export const Responsive: Story = {
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 		expect(scrim().hidden).toBe(true);
+	},
+};
+
+export const DocsNavigation: Story = {
+	args: {
+		collapsible: 'off',
+		defaultWidth: 250,
+		mobileBreakpoint: 768,
+		label: 'Docs navigation',
+		resizable: false,
+	},
+	parameters: {
+		...withStylesheets([docsNavCss]),
+		layout: 'fullscreen',
+		controls: { exclude: ['defaultWidth', 'width', 'resizable'] },
+	},
+	render: (args) => (
+		<RuiSidebarProvider
+			layout="docs"
+			siteHeader={renderDocsSiteHeader({ controlsId: 'docs-sidebar' })}
+			sidebar={
+				<RuiSidebar {...args} id="docs-sidebar">
+					{renderDocsNavigationContent({
+						currentPath: '/docs/getting-started/introduction',
+						showBrand: false,
+					})}
+				</RuiSidebar>
+			}
+		>
+			<RuiSidebarInset id="docs-main-content">
+				<div class="rui-sidebar-docs-page">
+					<h1 class="text-2xl font-semibold">Introduction</h1>
+					<p class="mt-2 max-w-prose text-sm text-on-surface">
+						This story uses the docs navigation skin loaded via{' '}
+						<code class="text-xs">parameters.stylesheets</code> — not a side-effect CSS import in the story
+						module.
+					</p>
+				</div>
+			</RuiSidebarInset>
+		</RuiSidebarProvider>
+	),
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const sidebar = canvasElement.querySelector('rui-sidebar') as HTMLElement;
+		const provider = canvasElement.querySelector('.rui-sidebar-provider') as HTMLElement;
+
+		expect(sidebar).toHaveAttribute('role', 'complementary');
+		expect(provider).toHaveAttribute('data-layout', 'docs');
+		expect(canvasElement.querySelector('.rui-sidebar-provider__site-header')).toBeInTheDocument();
+		expect(canvas.getByTitle('Radiant')).toBeInTheDocument();
+		expect(canvas.getByText('Getting Started')).toBeInTheDocument();
+		expect(canvas.getByText('Components')).toBeInTheDocument();
+		expect(canvas.getByRole('link', { name: 'Introduction' })).toHaveAttribute('aria-current', 'page');
 	},
 };

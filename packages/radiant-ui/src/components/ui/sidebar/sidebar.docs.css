@@ -1,0 +1,112 @@
+@reference '../../../styles/radiant-ui.css';
+
+/**
+ * Docs-app skin for `<rui-sidebar>` — swap via Storybook `parameters.stylesheets`.
+ * Not bundled with the component; inject only when this look is needed.
+ */
+rui-sidebar {
+	.rui-sidebar {
+		@apply border-r border-border/60 bg-transparent;
+	}
+
+	.rui-sidebar__header {
+		@apply h-auto border-b-0 px-6 pb-0 pt-8 md:px-8 md:pr-2;
+	}
+
+	.rui-sidebar__brand {
+		@apply text-base font-semibold text-on-background no-underline;
+	}
+
+	.rui-sidebar__brand-mark {
+		@apply hidden;
+	}
+
+	.rui-sidebar__content {
+		@apply gap-0 overflow-y-auto p-6 pt-8 pb-6 md:px-8 md:pr-2;
+	}
+
+	.rui-sidebar__group {
+		@apply gap-0;
+	}
+
+	.rui-sidebar__group-header {
+		@apply mb-1.5 mt-8 gap-1.5 first:mt-0;
+	}
+
+	.rui-sidebar__group-label {
+		@apply flex items-center gap-1.5 px-0 font-mono text-[10px] font-semibold uppercase tracking-widest text-on-background/75;
+	}
+
+	.rui-sidebar__group-icon {
+		@apply flex size-3 shrink-0 items-center justify-center text-on-background/65;
+	}
+
+	.rui-sidebar__group-icon svg {
+		@apply size-3;
+	}
+
+	.rui-sidebar__separator {
+		@apply mx-2 my-4 h-px border-0 bg-border/40;
+	}
+
+	.rui-sidebar__menu {
+		@apply mb-4 ml-1.5 gap-px border-l border-border/30 pl-3;
+	}
+
+	.rui-sidebar__menu-button {
+		@apply relative rounded-sm border-0 bg-transparent px-2 py-1.5 text-[13px] font-normal text-on-background/70 no-underline;
+		transition:
+			color var(--duration-normal) var(--ease-standard),
+			background-color var(--duration-normal) var(--ease-standard);
+	}
+
+	.rui-sidebar__menu-button:hover {
+		@apply bg-surface-container-low text-on-background;
+	}
+
+	.rui-sidebar__menu-button:focus-visible {
+		@apply bg-surface-container-low outline-hidden ring-2 ring-focus-ring ring-inset;
+	}
+
+	.rui-sidebar__menu-button[aria-current='page'],
+	.rui-sidebar__menu-button--active {
+		@apply bg-transparent font-medium text-primary;
+	}
+
+	.rui-sidebar__menu-button[aria-current='page']::before,
+	.rui-sidebar__menu-button--active::before {
+		content: '';
+		@apply absolute left-[-13px] top-1/2 h-3 w-0.5 -translate-y-1/2 rounded-r-sm bg-primary;
+	}
+
+	.rui-sidebar__menu-button > :last-child {
+		@apply truncate;
+	}
+
+	@media (max-width: 767px) {
+		.rui-sidebar[data-mobile='true'] {
+			@apply fixed inset-0 z-(--z-modal) flex min-w-0 bg-transparent;
+		}
+
+		.rui-sidebar[data-mobile='true'] > .rui-sidebar__scrim {
+			@apply bg-overlay/40 backdrop-blur-sm;
+		}
+
+		.rui-sidebar[data-mobile='true'][data-state='expanded'] > .rui-sidebar__pane {
+			@apply ms-0 h-full w-full max-w-none border-0 bg-background/90 backdrop-blur-md;
+			box-shadow: none;
+		}
+
+		.rui-sidebar__content {
+			@apply p-6 pt-26;
+		}
+
+		.rui-sidebar__group {
+			@apply mt-4 first:mt-0;
+		}
+
+		.rui-sidebar__group-header {
+			@apply mt-0;
+		}
+	}
+}

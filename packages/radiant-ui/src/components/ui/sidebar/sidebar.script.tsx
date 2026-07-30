@@ -25,6 +25,8 @@ export type RuiSidebarProps = {
 	minWidth?: number;
 	/** Maximum width in pixels when resizing. Default: `480`. */
 	maxWidth?: number;
+	/** Show a drag/keyboard resize handle on desktop. Default: `true`. */
+	resizable?: boolean;
 	/** Hide on viewports below this width. Default: `768`. */
 	mobileBreakpoint?: number;
 	/** Accessible name announced by the pane landmark and triggers. Default: `Sidebar`. */
@@ -95,6 +97,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	@prop({ type: Number, reflect: true, attribute: 'width' }) width: number | undefined;
 	@prop({ type: Number, defaultValue: DEFAULT_MIN_WIDTH }) minWidth: number;
 	@prop({ type: Number, defaultValue: DEFAULT_MAX_WIDTH }) maxWidth: number;
+	@prop({ type: Boolean, defaultValue: true }) resizable: boolean;
 	@prop({ type: Boolean, defaultValue: true }) defaultOpen: boolean;
 	@prop({ type: Boolean, attribute: 'open' }) open: boolean | undefined;
 	@prop({ type: Number, defaultValue: DEFAULT_MOBILE_BREAKPOINT }) mobileBreakpoint: number;
@@ -381,7 +384,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		const horizontal = isHorizontalSide(this.side);
 		const open = this.isOpen();
 		const paneState: RuiSidebarState = open ? 'expanded' : 'collapsed';
-		const showHandle = this.collapsible === 'off' && open && !this.isMobile;
+		const showHandle = this.resizable && this.collapsible === 'off' && open && !this.isMobile;
 		const widthVar = `${this.paneWidth()}px`;
 		// Icon rail stays interactive when collapsed on desktop; mobile drawer does not.
 		const paneInert = open || (!this.isMobile && this.collapsible === 'icon') ? undefined : '';

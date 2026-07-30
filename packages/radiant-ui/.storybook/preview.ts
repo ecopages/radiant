@@ -1,6 +1,8 @@
 import type { Preview } from '@ecopages/storybook-radiant-vite';
 import '../src/styles/tailwind.css';
+import './fonts.css';
 import { applyDesignTokens, registerDesignTokenGlobalsSync } from './apply-design-tokens';
+import { withStylesheetsDecorator } from './with-stylesheets';
 
 registerDesignTokenGlobalsSync();
 
@@ -65,6 +67,7 @@ const preview: Preview = {
 			applyDesignTokens(context.globals as Record<string, string>);
 			return Story();
 		},
+		withStylesheetsDecorator,
 	],
 	parameters: {
 		controls: {
