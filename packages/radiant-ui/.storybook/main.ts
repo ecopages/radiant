@@ -14,12 +14,7 @@ function getAbsolutePath(value: string): string {
 
 const config: StorybookConfig = {
 	stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-	staticDirs: [
-		{
-			from: path.join(dirname, '../../../apps/docs/src/public'),
-			to: '/',
-		},
-	],
+	staticDirs: [path.join(dirname, 'public')],
 	addons: ['@storybook/addon-vitest', '@storybook/addon-a11y', '@storybook/addon-docs'],
 	framework: {
 		name: getAbsolutePath('@ecopages/storybook-radiant-vite'),
