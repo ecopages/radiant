@@ -42,5 +42,5 @@ export function resolveContextHydrationHost(host: ContextHostLike): ContextHydra
 		return element;
 	}
 
-	return host;
+	return host as ContextHydrationHost;
 }
