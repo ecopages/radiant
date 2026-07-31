@@ -1,5 +1,6 @@
 import type { ReactiveHostLike } from '../../core/reactive-host';
 import { type ReactiveBindingOption, validateReactivePropertyDefault } from '../../core/reactive-prop-core';
+import { resolveHostElement } from '../../helpers/resolve-host-element';
 import { resolveHostAutoBind } from './auto-bind';
 import {
 	defaultValueForType,
@@ -32,15 +33,7 @@ export type ReactiveAttributeHostLike<Bindings extends object = {}> =
 	| (ReactiveAttributeHostApi<Bindings> & { element: Element });
 
 function resolveAttributeTarget(host: ReactiveAttributeHostLike): Element {
-	if (host instanceof Element) {
-		return host;
-	}
-
-	if ('host' in host) {
-		return host.host;
-	}
-
-	return host.element;
+	return resolveHostElement(host);
 }
 
 function toAttributeName(propertyName: string): string {

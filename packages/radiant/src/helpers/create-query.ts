@@ -1,3 +1,5 @@
+import { isControllerHost, resolveHostElement } from './resolve-host-element';
+
 type BaseQueryConfig = {
 	all?: boolean;
 	cache?: boolean;
@@ -24,7 +26,7 @@ type QueryResult<T extends Element | Element[]> = {
 };
 
 function isControllerQueryTarget(target: QueryHostTarget): target is { host: Element } {
-	return 'host' in target;
+	return isControllerHost(target);
 }
 
 function resolveShadowRoot(host: Element): ShadowRoot | null {
@@ -39,7 +41,7 @@ function resolveShadowRoot(host: Element): ShadowRoot | null {
  * owns the DOM subtree.
  */
 export function resolveQueryHost(target: QueryHostTarget): Element {
-	return isControllerQueryTarget(target) ? target.host : target;
+	return resolveHostElement(target);
 }
 
 function getQueryRoots(host: Element, scope: QueryScope = 'light'): QueryRoot[] {
