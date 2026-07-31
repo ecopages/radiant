@@ -189,6 +189,14 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `element.contains(otherNode)`
 - `element.parentElement`
 - `document.querySelector(selector)` / `document.querySelectorAll(selector)`
+- `document.getElementById(id)`
+- `element.style` (`setProperty`, property assignment, serializes to the `style` attribute)
+- `element.children` (non-live snapshot array of element children; unlike browser `HTMLCollection`)
+- `requestAnimationFrame` / `cancelAnimationFrame` (no-op during SSR; callbacks are not invoked)
+
+**`children` semantics:** `element.children` returns a fresh array snapshot of current element children. It is not a live `HTMLCollection`. Holding a reference after DOM mutations does not update the cached array; re-read `element.children` after changes.
+
+**Animation frames:** SSR installs no-op `requestAnimationFrame` / `cancelAnimationFrame` so layout-aware `connectedCallback` code does not throw. Deferred work scheduled through rAF does not run during serialization; hydration must own client-side layout effects.
 
 **Supported selector syntax (v1):**
 
@@ -207,6 +215,17 @@ The shim supports a focused query surface for component lifecycle code that runs
 Fragment-backed nodes materialize children lazily when a query traverses descendants, so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization.
 
 SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
+
+### SSR gap registry
+
+Track minimal-DOM workarounds here before considering a heavier DOM backend. A backend spike is warranted only when multiple categories keep forcing shared workarounds.
+
+| API / limitation | Category | Components | Workaround |
+| ---------------- | -------- | ---------- | ---------- |
+| `:not`, `:scope`, sibling combinators | selector | dialog, toolbar, tooltip, treegrid | Simple selectors + JS post-filter via shared query helpers |
+| `instanceof HTMLLabelElement` | prototype-identity | combobox | `tagName.toLowerCase() === 'label'` |
+| `requestAnimationFrame` callbacks | timing | toast, toaster | No-op shim during SSR; hydrate owns layout |
+| Live `HTMLCollection` for `children` | dom-api | treegrid | Read `children` snapshot or filter `childNodes` directly |
 
 ## Related Docs
 
