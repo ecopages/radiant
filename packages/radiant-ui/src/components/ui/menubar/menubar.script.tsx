@@ -1,6 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { applyRovingTabindex, navigateRovingTabindex } from '../../../lib/roving-tabindex';
+import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 
 export type RuiMenubarProps = {
 	label?: string;

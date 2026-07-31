@@ -1,6 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { applyRovingTabindex, focusRovingItem } from '../../../lib/roving-tabindex';
+import { applyRovingTabindex, focusRovingItem } from '@/lib/roving-tabindex';
 
 export type RuiTreegridProps = {
 	label?: string;
@@ -58,7 +58,9 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 	}
 
 	private getRowCells(row: HTMLElement): HTMLElement[] {
-		return Array.from(row.querySelectorAll<HTMLElement>(':scope > [role="gridcell"]'));
+		return Array.from(row.children).filter(
+			(child): child is HTMLElement => child instanceof HTMLElement && child.getAttribute('role') === 'gridcell',
+		);
 	}
 
 	private getVisibleCells(): HTMLElement[] {

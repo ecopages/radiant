@@ -4,6 +4,7 @@ import radiant from '@ecopages/vite-plugin-radiant';
 import type { FrameworkOptions } from '../types';
 import { radiantFrameworkHmrPlugin } from './framework-hmr';
 import { radiantScriptModuleStampPlugin } from './script-module-stamp';
+import { radiantSsrRuntimePlugin } from './ssr-runtime';
 import { radiantStorybookSsrShimPlugin } from './storybook-ssr-shim';
 import { radiantStorybookSsrPlugin } from './ssr-middleware';
 
@@ -16,6 +17,7 @@ export async function viteFinal(config: UserConfig, options: Options): Promise<U
 	const plugins: PluginOption[] = [
 		...(config.plugins ?? []),
 		...radiantPlugins,
+		radiantSsrRuntimePlugin(),
 		radiantStorybookSsrShimPlugin(),
 		radiantScriptModuleStampPlugin(),
 		radiantStorybookSsrPlugin({ globalStyleModules: frameworkOptions?.globalStyleModules }),

@@ -1,5 +1,5 @@
-import type { WithChildren, RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { WithChildren, RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiToastProps } from './toast.script';
 import { RuiToast as RuiToastElement } from './toast.script';
 import type { RuiToasterProps } from './toaster.script';

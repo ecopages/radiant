@@ -28,6 +28,10 @@ export class MinimalDocument extends MinimalNode {
 	querySelectorAll(selector: string): Element[] {
 		return selectors.querySelectorAll(this, selector) as unknown as Element[];
 	}
+
+	getElementById(id: string): HTMLElement | null {
+		return this.querySelector(`[id="${id.replace(/"/g, '\\"')}"]`) as HTMLElement | null;
+	}
 }
 
 export class MinimalCustomElementsRegistry implements MinimalCustomElementRegistry {

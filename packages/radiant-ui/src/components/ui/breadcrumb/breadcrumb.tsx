@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiBreadcrumbProps } from './breadcrumb.script';
 import { RuiBreadcrumb as RuiBreadcrumbElement } from './breadcrumb.script';
 import './breadcrumb.css';

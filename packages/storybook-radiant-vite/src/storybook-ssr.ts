@@ -1,7 +1,9 @@
 import '@ecopages/radiant/server/install-ssr-runtime';
 import type { ViteDevServer } from 'vite';
+import type { JsxRenderable } from '@ecopages/jsx';
 import { renderToString } from '@ecopages/jsx/server';
 import type { RenderedComponent } from '@ecopages/radiant/server/render-component';
+import { composeStoryRender } from './compose-story-render';
 import { applyStoryArgs, getCustomElementTagName, pickComponentExport } from './host';
 import { extractHostInnerHtml } from './ssr-markup';
 import { normalizeSsrModulePath } from './ssr-module-path';
@@ -62,8 +64,8 @@ function applyControlOverrides(
 			continue;
 		}
 
-		if (key === 'items' && Array.isArray(value) && Array.isArray(merged.items)) {
-			merged.items = (merged.items as unknown[]).map((baseItem, index) => {
+		if (Array.isArray(value) && Array.isArray(merged[key])) {
+			merged[key] = (merged[key] as unknown[]).map((baseItem, index) => {
 				const overrideItem = value[index];
 				if (!overrideItem || typeof overrideItem !== 'object' || typeof baseItem !== 'object') {
 					return baseItem;
@@ -86,6 +88,8 @@ export async function renderViewAuthoredContent(
 	viewExport: string | undefined,
 	args: Record<string, unknown>,
 	mode: 'hydrate' | 'plain',
+	storyModule?: string,
+	storyExport?: string,
 ): Promise<string | undefined> {
 	const mod = (await server.ssrLoadModule(normalizeSsrModulePath(viewModule))) as Record<string, unknown>;
 	const view = viewExport ? mod[viewExport] : mod.default;
@@ -94,8 +98,9 @@ export async function renderViewAuthoredContent(
 		throw new Error(`View export "${viewExport ?? 'default'}" was not found in ${viewModule}`);
 	}
 
-	const rendered = await renderToString(view(args), { mode });
-	const linkedElement = (view as { [key: symbol]: CustomElementConstructor | undefined })[
+	const storyRender = await resolveStoryRender(server, storyModule, storyExport);
+	const rendered = await renderToString((storyRender ?? view)(args), { mode });
+	const linkedElement = (view as unknown as { [key: symbol]: CustomElementConstructor | undefined })[
 		Symbol.for('@ecopages/storybook-radiant.viewElement')
 	];
 	const tagName = linkedElement ? getCustomElementTagName(linkedElement) : undefined;
@@ -105,6 +110,23 @@ export async function renderViewAuthoredContent(
 	}
 
 	return extractHostInnerHtml(rendered, tagName);
+}
+
+async function resolveStoryRender(
+	server: ViteDevServer,
+	storyModule: string | undefined,
+	storyExport: string | undefined,
+): Promise<((args: Record<string, unknown>) => JsxRenderable) | undefined> {
+	if (!storyModule) {
+		return undefined;
+	}
+
+	const mod = (await server.ssrLoadModule(normalizeSsrModulePath(storyModule))) as Record<string, unknown>;
+	const meta = mod.default as { render?: unknown } | undefined;
+	const story = storyExport ? (mod[storyExport] as { render?: unknown } | undefined) : undefined;
+	const render = story?.render ?? meta?.render;
+
+	return typeof render === 'function' ? (render as (args: Record<string, unknown>) => JsxRenderable) : undefined;
 }
 
 function mergeSsrAssets(...groups: readonly (readonly RadiantSsrAsset[])[]): RadiantSsrAsset[] {
@@ -139,10 +161,32 @@ export async function renderStorybookSsrPayload(
 ): Promise<{
 	markup: string;
 	tagName: string;
-	assets: RenderedComponent['metadata']['assets'];
+	assets: RadiantSsrAsset[];
 	clientModuleSrc?: string;
 	generatedAt: string;
 }> {
+	const args = await resolveStoryArgs(server, body.storyModule, body.storyExport, body.args ?? {});
+	const mode = body.mode ?? 'hydrate';
+
+	if (body.kind === 'jsx') {
+		const markup = await renderStoryMarkup(server, body.storyModule, body.storyExport, args, mode);
+		const assets =
+			mode === 'plain' && body.storyModule
+				? await collectSsrStyleAssets(server, [body.storyModule], {
+						includeGlobalStyles: true,
+						globalStyleModules: options.globalStyleModules,
+					})
+				: [];
+
+		return {
+			markup,
+			tagName: '',
+			assets,
+			clientModuleSrc: body.storyModule,
+			generatedAt: new Date().toISOString(),
+		};
+	}
+
 	const { ssrModule, ssrExport } = await resolveScriptSsrModule(server, {
 		ssrModule: body.ssrModule,
 		ssrExport: body.ssrExport,
@@ -153,12 +197,18 @@ export async function renderStorybookSsrPayload(
 	const mod = (await server.ssrLoadModule(ssrModule)) as Record<string, unknown>;
 	const Component = pickComponentExport(mod, ssrExport);
 	const tagName = getCustomElementTagName(Component) ?? Component.name.toLowerCase();
-	const args = await resolveStoryArgs(server, body.storyModule, body.storyExport, body.args ?? {});
-	const mode = body.mode ?? 'hydrate';
 
 	let authoredContent: string | undefined;
 	if (body.viewModule) {
-		authoredContent = await renderViewAuthoredContent(server, body.viewModule, body.viewExport, args, mode);
+		authoredContent = await renderViewAuthoredContent(
+			server,
+			body.viewModule,
+			body.viewExport,
+			args,
+			mode,
+			body.storyModule,
+			body.storyExport,
+		);
 		if (!authoredContent?.trim()) {
 			const itemCount = Array.isArray(args.items) ? args.items.length : 0;
 			throw new Error(
@@ -192,4 +242,19 @@ export async function renderStorybookSsrPayload(
 		clientModuleSrc: body.viewModule ?? rendered.metadata.clientModuleUrl ?? ssrModule,
 		generatedAt: rendered.metadata.generatedAt,
 	};
+}
+
+async function renderStoryMarkup(
+	server: ViteDevServer,
+	storyModule: string | undefined,
+	storyExport: string | undefined,
+	args: Record<string, unknown>,
+	mode: 'hydrate' | 'plain',
+): Promise<string> {
+	if (!storyModule) {
+		throw new Error('JSX-only SSR requires a stamped CSF story module.');
+	}
+
+	const mod = (await server.ssrLoadModule(normalizeSsrModulePath(storyModule))) as Record<string, unknown>;
+	return renderToString(composeStoryRender(mod, storyExport, args)(), { mode });
 }

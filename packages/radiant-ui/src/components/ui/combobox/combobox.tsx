@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiComboboxProps } from './combobox.script';
 import { RuiCombobox as RuiComboboxElement } from './combobox.script';
 import './combobox.css';

@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTreeProps } from './tree.script';
 import { RuiTree as RuiTreeElement } from './tree.script';
 import './tree.css';

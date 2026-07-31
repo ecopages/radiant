@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { JsxRenderable } from '@ecopages/jsx';
 import { expect, userEvent, fn } from 'storybook/test';
+import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import {
 	RuiDialog,
 	RuiDialogActions,
@@ -13,10 +15,31 @@ import {
 
 const STORY_DIALOG_ID = 'story-dialog';
 
+function DialogStage({ children, trigger = true }: { children: JsxRenderable; trigger?: boolean }) {
+	installDialogs();
+	if (!trigger) {
+		return children;
+	}
+
+	return (
+		<>
+			<button
+				type="button"
+				class="rui-button rui-button--filled rui-button--md"
+				data-dialog-open={STORY_DIALOG_ID}
+			>
+				Open dialog
+			</button>
+			<div style="margin-top: 1rem">{children}</div>
+		</>
+	);
+}
+
 const meta = {
 	title: 'Components/Dialog',
 	component: RuiDialog,
 	args: {
+		id: STORY_DIALOG_ID,
 		open: false,
 		alert: false,
 		title: 'Edit profile',
@@ -27,32 +50,12 @@ const meta = {
 			</button>
 		),
 	},
-	decorators: [
-		(Story, context) => {
-			installDialogs();
-			if (context.parameters.dialogTrigger === false) {
-				return <Story />;
-			}
-			return (
-				<>
-					<button
-						type="button"
-						class="rui-button rui-button--filled rui-button--md"
-						data-dialog-open={STORY_DIALOG_ID}
-					>
-						Open dialog
-					</button>
-					<div style="margin-top: 1rem">
-						<Story />
-					</div>
-				</>
-			);
-		},
-	],
 	render: (args) => (
-		<RuiDialog id={STORY_DIALOG_ID} open={args.open} alert={args.alert} title={args.title} actions={args.actions}>
-			{args.children}
-		</RuiDialog>
+		<DialogStage>
+			<RuiDialog id={args.id} open={args.open} alert={args.alert} title={args.title} actions={args.actions}>
+				{args.children}
+			</RuiDialog>
+		</DialogStage>
 	),
 } satisfies Meta<typeof RuiDialog>;
 
@@ -63,15 +66,21 @@ const getDialog = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector(`#${STORY_DIALOG_ID} [data-ref="dialog"]`) as HTMLElement;
 const getHost = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector(`rui-dialog#${STORY_DIALOG_ID}`) as HTMLElement;
-const getOpenButton = (canvasElement: HTMLElement) =>
-	canvasElement.querySelector(`[data-dialog-open="${STORY_DIALOG_ID}"]`) as HTMLButtonElement;
 
 async function openStoryDialog(canvasElement: HTMLElement): Promise<void> {
-	await userEvent.click(getOpenButton(canvasElement));
+	const trigger = canvasElement.querySelector(`[data-dialog-open="${STORY_DIALOG_ID}"]`) as HTMLButtonElement | null;
+	if (trigger) {
+		await userEvent.click(trigger);
+		return;
+	}
+
+	getHost(canvasElement).setAttribute('open', '');
 }
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
+
 		await step('opens from decorator trigger', async () => {
 			await openStoryDialog(canvasElement);
 			await expect(getHost(canvasElement)).toHaveAttribute('open');
@@ -110,6 +119,8 @@ export const AlertDialog: Story = {
 		),
 	},
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
+
 		await openStoryDialog(canvasElement);
 		const dialog = getDialog(canvasElement);
 
@@ -123,6 +134,8 @@ export const AlertDialog: Story = {
 export const Closed: Story = {
 	args: { open: false },
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
+
 		await step('starts closed until the decorator trigger is used', async () => {
 			await expect(getHost(canvasElement)).not.toHaveAttribute('open');
 		});
@@ -131,20 +144,24 @@ export const Closed: Story = {
 
 export const Composed: Story = {
 	render: () => (
-		<RuiDialog id={STORY_DIALOG_ID} open={false} alert={false}>
-			<RuiDialogClose />
-			<RuiDialogTitle>Invite teammate</RuiDialogTitle>
-			<RuiDialogBody>
-				<p>Send an invitation link to add someone to your workspace.</p>
-			</RuiDialogBody>
-			<RuiDialogActions>
-				<button type="button" class="rui-button rui-button--primary rui-button--md">
-					Send invite
-				</button>
-			</RuiDialogActions>
-		</RuiDialog>
+		<DialogStage>
+			<RuiDialog id={STORY_DIALOG_ID} open={false} alert={false}>
+				<RuiDialogClose />
+				<RuiDialogTitle>Invite teammate</RuiDialogTitle>
+				<RuiDialogBody>
+					<p>Send an invitation link to add someone to your workspace.</p>
+				</RuiDialogBody>
+				<RuiDialogActions>
+					<button type="button" class="rui-button rui-button--primary rui-button--md">
+						Send invite
+					</button>
+				</RuiDialogActions>
+			</RuiDialog>
+		</DialogStage>
 	),
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
+
 		await openStoryDialog(canvasElement);
 		const dialog = getDialog(canvasElement);
 		const host = getHost(canvasElement);
@@ -164,11 +181,8 @@ export const Composed: Story = {
 };
 
 export const Registry: Story = {
-	parameters: {
-		dialogTrigger: false,
-	},
 	render: () => (
-		<>
+		<DialogStage trigger={false}>
 			<button type="button" class="rui-button rui-button--outline rui-button--md" data-dialog-open="named-invite">
 				Open named dialog
 			</button>
@@ -194,10 +208,12 @@ export const Registry: Story = {
 			<RuiDialog id="named-invite" open={false} title="Invite teammate">
 				<p>Send an invitation link to add someone to your workspace.</p>
 			</RuiDialog>
-		</>
+		</DialogStage>
 	),
 	play: async ({ canvasElement, step }) => {
-		const named = canvasElement.querySelector('rui-dialog#named-invite') as HTMLElement;
+		const named = canvasElement.querySelector('rui-dialog#named-invite') as HTMLElement | null;
+		if (isStaticSsrPreview(canvasElement) || !named) return;
+
 		const imperativeButton = canvasElement.querySelector('[data-ref="imperative-open"]') as HTMLButtonElement;
 		const actionSpy = fn<(detail: DialogActionDetail) => void>();
 

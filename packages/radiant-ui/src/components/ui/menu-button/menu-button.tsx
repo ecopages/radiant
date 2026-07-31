@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiMenuButtonProps } from './menu-button.script';
 import { RuiMenuButton as RuiMenuButtonElement } from './menu-button.script';
 import './menu-button.css';

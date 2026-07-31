@@ -456,7 +456,7 @@ export const CollapsibleIcon: Story = {
 		await userEvent.click(collapseTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 
-		const openTrigger = canvas.getByRole('button', { name: 'Open sidebar' });
+		const openTrigger = canvas.getByRole('button', { name: 'Open navigation' });
 		await userEvent.click(openTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'expanded');
 	},
@@ -519,7 +519,7 @@ export const TriggerToggle: Story = {
 		await userEvent.click(collapseTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 
-		const openTrigger = canvas.getByRole('button', { name: 'Open sidebar' });
+		const openTrigger = canvas.getByRole('button', { name: 'Open navigation' });
 		await userEvent.click(openTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'expanded');
 	},
@@ -612,7 +612,7 @@ export const Responsive: Story = {
 		expect(scrim().hidden).toBe(true);
 		expect(root().style.getPropertyValue('--rui-sidebar-pane-width')).toBe('0px');
 
-		const openTrigger = canvas.getByRole('button', { name: 'Open sidebar' });
+		const openTrigger = canvas.getByRole('button', { name: 'Open navigation' });
 		await userEvent.click(openTrigger);
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(sidebar).toHaveAttribute('data-state', 'expanded');
@@ -674,6 +674,8 @@ export const DocsNavigation: Story = {
 		expect(canvas.getByTitle('Radiant')).toBeInTheDocument();
 		expect(canvas.getByText('Getting Started')).toBeInTheDocument();
 		expect(canvas.getByText('Components')).toBeInTheDocument();
-		expect(canvas.getByRole('link', { name: 'Introduction' })).toHaveAttribute('aria-current', 'page');
+		expect(
+			canvas.getByRole('link', { name: 'Introduction', current: 'page' }),
+		).toHaveAttribute('href', '/docs/getting-started/introduction');
 	},
 };
