@@ -32,10 +32,14 @@ Useful scripts:
 
 ```bash
 pnpm run test          # Vitest browser story tests
+pnpm run test:ssr:smoke # PR SSR smoke (6 stories × client/ssr-static/ssr-hydrate)
+pnpm run test:ssr       # Full Components/* SSR matrix (nightly)
 pnpm run typecheck
 pnpm run lint
 pnpm run build:lib     # generate exports + build JS/types + compile CSS
 ```
+
+`test:ssr:smoke` and `test:ssr` spawn Storybook, visit stories in Playwright, and fail on `.radiant-ssr-error` banners or disallowed page errors. Empty mounts fail only for stories listed in `scripts/storybook-ssr-harness.ts` (`expectsMount` / `allowEmptyMount`).
 
 Published CSS under `dist/` is **already compiled** (Tailwind `@apply` resolved). Theme and token values remain CSS custom properties so apps can swap themes at runtime. The package does not minify CSS.
 
