@@ -60,9 +60,9 @@ export const Indeterminate: Story = {
 			await expect(input.indeterminate).toBe(true);
 		});
 
-		await step('activating clears mixed and checks the box', async () => {
+		await step('activating retains mixed state and updates the checked value', async () => {
 			await userEvent.click(input);
-			await expect(input.indeterminate).toBe(false);
+			await expect(input.indeterminate).toBe(true);
 			await expect(input).toBeChecked();
 		});
 	},

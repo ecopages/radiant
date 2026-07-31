@@ -66,9 +66,9 @@ export class RuiCheckbox extends RadiantElement<RuiCheckboxBindings> {
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {
 		const input = event.target as HTMLInputElement;
-		this.indeterminate = false;
 		this.checked = input.checked;
-		this.changeEvent.emit({ checked: this.checked, indeterminate: false });
+		input.indeterminate = this.indeterminate;
+		this.changeEvent.emit({ checked: this.checked, indeterminate: this.indeterminate });
 	}
 
 	override render() {
