@@ -77,7 +77,6 @@ type GlobalDomScope = typeof globalThis & {
 	Node?: typeof Node;
 	document?: Document | null;
 	customElements?: MinimalCustomElementRegistry;
-	window?: unknown;
 	requestAnimationFrame?: typeof requestAnimationFrame;
 	cancelAnimationFrame?: typeof cancelAnimationFrame;
 };
@@ -131,63 +130,7 @@ function hasUsableElementSurface(value: unknown, verifyStyleOperation = false): 
 	}
 }
 
-function createWindowSurface(
-	globalScope: GlobalDomScope,
-	customElements: MinimalCustomElementRegistry,
-): LightDomShimWindow {
-	const surface: LightDomShimWindow = {
-		CSS: getCssNamespace(globalScope),
-		CustomEvent: (typeof globalScope.CustomEvent === 'function'
-			? globalScope.CustomEvent
-			: MinimalCustomEvent) as typeof CustomEvent,
-		Document: globalScope.Document as typeof Document,
-		Element: globalScope.Element as typeof Element,
-		Event: (typeof globalScope.Event === 'function' ? globalScope.Event : MinimalEvent) as typeof Event,
-		EventTarget: (typeof globalScope.EventTarget === 'function'
-			? globalScope.EventTarget
-			: MinimalEventTarget) as typeof EventTarget,
-		HTMLScriptElement: (typeof globalScope.HTMLScriptElement === 'function'
-			? globalScope.HTMLScriptElement
-			: globalScope.HTMLElement) as typeof HTMLScriptElement,
-		HTMLElement: globalScope.HTMLElement as typeof HTMLElement,
-		Node: globalScope.Node as typeof Node,
-		document: globalScope.document as Document,
-		customElements,
-		requestAnimationFrame: globalScope.requestAnimationFrame as typeof requestAnimationFrame,
-		cancelAnimationFrame: globalScope.cancelAnimationFrame as typeof cancelAnimationFrame,
-	};
-
-	const candidate = globalScope.window;
-	if (!isObjectLike(candidate)) {
-		return surface;
-	}
-
-	try {
-		if (
-			candidate.CSS === surface.CSS &&
-			candidate.CustomEvent === surface.CustomEvent &&
-			candidate.Document === surface.Document &&
-			candidate.Element === surface.Element &&
-			candidate.Event === surface.Event &&
-			candidate.EventTarget === surface.EventTarget &&
-			candidate.HTMLScriptElement === surface.HTMLScriptElement &&
-			candidate.HTMLElement === surface.HTMLElement &&
-			candidate.Node === surface.Node &&
-			candidate.document === surface.document &&
-			candidate.customElements === surface.customElements &&
-			candidate.requestAnimationFrame === surface.requestAnimationFrame &&
-			candidate.cancelAnimationFrame === surface.cancelAnimationFrame
-		) {
-			return candidate as unknown as LightDomShimWindow;
-		}
-	} catch {
-		return surface;
-	}
-
-	return surface;
-}
-
-function getCompleteDomWindow(): LightDomShimWindow | undefined {
+function getCompleteDomSurface(): LightDomShimWindow | undefined {
 	const globalScope = globalThis as GlobalDomScope;
 	let NodeConstructor: GlobalDomScope['Node'];
 	let DocumentConstructor: GlobalDomScope['Document'];
@@ -261,7 +204,23 @@ function getCompleteDomWindow(): LightDomShimWindow | undefined {
 	}
 
 	try {
-		return createWindowSurface(globalScope, customElements);
+		return {
+			CSS: getCssNamespace(globalScope),
+			CustomEvent: CustomEventConstructor,
+			Document: DocumentConstructor,
+			Element: ElementConstructor,
+			Event: EventConstructor,
+			EventTarget: EventTargetConstructor,
+			HTMLScriptElement: (typeof globalScope.HTMLScriptElement === 'function'
+				? globalScope.HTMLScriptElement
+				: HTMLElementConstructor) as typeof HTMLScriptElement,
+			HTMLElement: HTMLElementConstructor,
+			Node: NodeConstructor,
+			document,
+			customElements,
+			requestAnimationFrame,
+			cancelAnimationFrame,
+		};
 	} catch {
 		return undefined;
 	}
@@ -299,9 +258,9 @@ function assignGlobalSurface(surface: Record<string, unknown>): void {
 
 /** Ensures that a minimal window-like SSR runtime is available and returns it. */
 export function ensureLightDomShim(): LightDomShimWindow {
-	const existingWindow = getCompleteDomWindow();
-	if (existingWindow) {
-		return existingWindow;
+	const existingSurface = getCompleteDomSurface();
+	if (existingSurface) {
+		return existingSurface;
 	}
 
 	return installLightDomShim();
@@ -336,9 +295,9 @@ export function createServerRenderEnvironment(): ServerRenderEnvironment {
  * SSR bundles because `RadiantElement` captures its base class at module evaluation.
  */
 export function installLightDomShim(): LightDomShimWindow {
-	const existingWindow = getCompleteDomWindow();
-	if (existingWindow) {
-		return existingWindow;
+	const existingSurface = getCompleteDomSurface();
+	if (existingSurface) {
+		return existingSurface;
 	}
 
 	const globalScope = globalThis as GlobalDomScope;
@@ -360,7 +319,7 @@ export function installLightDomShim(): LightDomShimWindow {
 		typeof globalScope.cancelAnimationFrame === 'function'
 			? globalScope.cancelAnimationFrame
 			: (_handle: number): void => {};
-	const installedWindow: LightDomShimWindow = {
+	const installedSurface: LightDomShimWindow = {
 		CSS: getCssNamespace(globalScope),
 		CustomEvent: CustomEventConstructor,
 		Document: DocumentConstructor,
@@ -377,7 +336,7 @@ export function installLightDomShim(): LightDomShimWindow {
 	};
 
 	assignGlobalSurface({
-		CSS: installedWindow.CSS,
+		CSS: installedSurface.CSS,
 		CustomEvent: CustomEventConstructor,
 		Document: DocumentConstructor,
 		Element: MinimalElement,
@@ -388,10 +347,10 @@ export function installLightDomShim(): LightDomShimWindow {
 		Node: MinimalNode,
 		document,
 		customElements,
-		window: installedWindow,
+		window: installedSurface,
 		requestAnimationFrame,
 		cancelAnimationFrame,
 	});
 
-	return installedWindow;
+	return installedSurface;
 }

@@ -112,11 +112,14 @@ describe('minimal DOM installation boundary', () => {
 
 		const { installLightDomShim } = await import('../../src/server/shim/minimal-dom/install');
 		const first = installLightDomShim();
+		const installedGlobalWindow = globalThis.window;
 		const second = installLightDomShim();
 
 		expect(globalThis.document).toBe(first.document);
 		expect(globalThis.window).toBe(first);
-		expect(second).toBe(first);
+		expect(globalThis.window).toBe(installedGlobalWindow);
+		expect(second.document).toBe(first.document);
+		expect(second.HTMLElement).toBe(first.HTMLElement);
 		expect(globalThis.requestAnimationFrame).toBeTypeOf('function');
 		expect(globalThis.cancelAnimationFrame).toBeTypeOf('function');
 	});
