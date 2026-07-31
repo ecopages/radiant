@@ -76,6 +76,7 @@ export function resolveSsrTarget(options: {
 	storyModule?: string;
 	storyExport?: string;
 }): {
+	kind: 'host' | 'jsx';
 	ssrModule?: string;
 	ssrExport?: string;
 	viewModule?: string;
@@ -84,9 +85,9 @@ export function resolveSsrTarget(options: {
 	storyExport?: string;
 } | null {
 	const { component, radiant, storyModule, storyExport } = options;
-
 	if (radiant?.ssrModule) {
 		return {
+			kind: 'host',
 			ssrModule: normalizeSsrModulePath(radiant.ssrModule),
 			ssrExport: radiant.ssrExport,
 			viewModule: radiant.viewModule ? normalizeSsrModulePath(radiant.viewModule) : undefined,
@@ -111,7 +112,12 @@ export function resolveSsrTarget(options: {
 		const viewExport = radiant?.viewExport ?? scriptExport;
 
 		if (scriptModule || viewModulePath) {
+			if (storyModule) {
+				return { kind: 'jsx', storyModule, storyExport };
+			}
+
 			return {
+				kind: 'host',
 				ssrModule: scriptModule
 					? normalizeSsrModulePath(scriptModule)
 					: viewModulePath
@@ -128,7 +134,7 @@ export function resolveSsrTarget(options: {
 
 	const element = resolveRadiantElement(component);
 	if (!element) {
-		return null;
+		return typeof component === 'function' && storyModule ? { kind: 'jsx', storyModule, storyExport } : null;
 	}
 
 	const ssrModule = getRadiantScriptModule(element);
@@ -137,6 +143,7 @@ export function resolveSsrTarget(options: {
 	}
 
 	return {
+		kind: 'host',
 		ssrModule: normalizeSsrModulePath(ssrModule),
 		ssrExport: radiant?.ssrExport ?? getRadiantScriptExport(element) ?? element.name,
 		storyModule,

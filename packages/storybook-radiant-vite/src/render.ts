@@ -1,10 +1,9 @@
 import type { Args, ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { uninstallRadiantHydrator } from '@ecopages/radiant/client/hydrator';
 import { teardownCanvas } from './canvas';
 import { applyStoryArgs, getCustomElementTagName, isCustomElementConstructor } from './host';
 import { mountClientResult } from './mount-client';
-import { mountSsrResult } from './mount-ssr';
+import { mountSsrErrorBanner, mountSsrResult } from './mount-ssr';
 import type { RadiantRenderMode, RadiantRenderer, RadiantStoryParameters } from './types';
 
 type RenderContextWithCallbacks = RenderContext<RadiantRenderer> & {
@@ -75,16 +74,14 @@ export async function renderToCanvas(
 		try {
 			await mountSsrResult(context, canvasElement, mode);
 		} catch (error) {
-			context.showError({
-				title: `Radiant SSR failed for "${context.name}"`,
-				description: error instanceof Error ? error.message : String(error),
-			});
+			mountSsrErrorBanner(
+				canvasElement,
+				`Radiant SSR failed for "${context.name}"`,
+				error instanceof Error ? error.message : String(error),
+			);
 		}
 		return () => {
 			teardownCanvas(canvasElement);
-			if (mode === 'ssr-hydrate') {
-				uninstallRadiantHydrator();
-			}
 		};
 	}
 
