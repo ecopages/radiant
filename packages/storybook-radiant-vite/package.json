@@ -60,6 +60,7 @@
 		"ts-dedent": "^2.2.0"
 	},
 	"devDependencies": {
+		"@ecopages/jsx": "workspace:*",
 		"@types/node": "^24.13.2",
 		"tsup": "^8.5.0",
 		"typescript": "catalog:",
