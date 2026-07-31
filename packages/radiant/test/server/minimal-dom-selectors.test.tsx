@@ -115,6 +115,17 @@ describe('minimal-dom selectors', () => {
 		document.removeChild(host);
 	});
 
+	test('children is a non-live snapshot array', () => {
+		const host = document.createElement('minimal-dom-children-snapshot');
+		host.innerHTML = '<span id="first"></span>';
+		const snapshot = host.children;
+		expect(snapshot).toHaveLength(1);
+
+		host.innerHTML = '<span id="first"></span><button id="second"></button>';
+		expect(snapshot).toHaveLength(1);
+		expect(Array.from(host.children).map((child) => child.id)).toEqual(['first', 'second']);
+	});
+
 	test('style properties serialize through the style attribute', () => {
 		const element = new MinimalHTMLElement('div');
 		element.style.setProperty('--offset', '12px');
