@@ -68,6 +68,48 @@ const minimalCssNamespace: MinimalCssNamespace = {
 	},
 };
 
+/**
+ * @remarks Minimal DOM has no layout engine, so animation-frame layout work is intentionally skipped during SSR.
+ */
+function installSsrAnimationFrameShim(): void {
+	if (typeof globalThis.requestAnimationFrame === 'function') {
+		return;
+	}
+
+	Object.assign(globalThis, {
+		cancelAnimationFrame: (_handle: number): void => {},
+		requestAnimationFrame: (_callback: FrameRequestCallback): number => 0,
+	});
+}
+
+function patchIncompleteDomPrototypes(): void {
+	const globalScope = globalThis as typeof globalThis & {
+		Document?: typeof Document;
+		HTMLElement?: typeof HTMLElement;
+	};
+	const elementPrototype = globalScope.HTMLElement?.prototype;
+	const documentPrototype = globalScope.Document?.prototype;
+
+	for (const property of ['children', 'style'] as const) {
+		const descriptor = Object.getOwnPropertyDescriptor(MinimalElement.prototype, property);
+		const existing = elementPrototype && Object.getOwnPropertyDescriptor(elementPrototype, property);
+		if (descriptor && elementPrototype && (!existing || existing.configurable)) {
+			Object.defineProperty(elementPrototype, property, descriptor);
+		}
+	}
+
+	const getElementById = MinimalDocument.prototype.getElementById;
+	const existingGetElementById =
+		documentPrototype && Object.getOwnPropertyDescriptor(documentPrototype, 'getElementById');
+	if (documentPrototype && (!existingGetElementById || existingGetElementById.configurable)) {
+		Object.defineProperty(documentPrototype, 'getElementById', {
+			configurable: true,
+			value: getElementById,
+			writable: true,
+		});
+	}
+}
+
 function getExistingWindowLike(): LightDomShimWindow | undefined {
 	const globalScope = globalThis as typeof globalThis & {
 		CSS?: MinimalCssNamespace;
@@ -84,6 +126,7 @@ function getExistingWindowLike(): LightDomShimWindow | undefined {
 		window?: LightDomShimWindow;
 	};
 	const existingCustomElements = globalScope.customElements;
+	const probe = globalScope.document?.createElement?.('div');
 
 	if (
 		typeof globalScope.Node === 'undefined' ||
@@ -92,6 +135,12 @@ function getExistingWindowLike(): LightDomShimWindow | undefined {
 		typeof globalScope.HTMLElement === 'undefined' ||
 		typeof globalScope.document === 'undefined' ||
 		!existingCustomElements ||
+		typeof globalScope.document.getElementById !== 'function' ||
+		!('children' in globalScope.HTMLElement.prototype) ||
+		!('style' in globalScope.HTMLElement.prototype) ||
+		!probe ||
+		typeof probe.style?.setProperty !== 'function' ||
+		typeof probe.children?.[Symbol.iterator] !== 'function' ||
 		typeof existingCustomElements.define !== 'function' ||
 		typeof existingCustomElements.get !== 'function'
 	) {
@@ -149,6 +198,7 @@ export function createServerRenderEnvironment(): ServerRenderEnvironment {
  * Installs the smallest global surface needed to instantiate Radiant custom elements during SSR.
  */
 export function installLightDomShim(): LightDomShimWindow {
+	installSsrAnimationFrameShim();
 	const existingWindow = getExistingWindowLike();
 
 	if (existingWindow) {
@@ -158,6 +208,8 @@ export function installLightDomShim(): LightDomShimWindow {
 	if (installedWindow) {
 		return installedWindow;
 	}
+
+	patchIncompleteDomPrototypes();
 
 	const customElements = new MinimalCustomElementsRegistry();
 	const document = new MinimalDocument() as unknown as Document;

@@ -24,7 +24,7 @@ type QueryResult<T extends Element | Element[]> = {
 };
 
 function isControllerQueryTarget(target: QueryHostTarget): target is { host: Element } {
-	return !(target instanceof Element);
+	return 'host' in target;
 }
 
 function resolveShadowRoot(host: Element): ShadowRoot | null {
@@ -39,7 +39,7 @@ function resolveShadowRoot(host: Element): ShadowRoot | null {
  * owns the DOM subtree.
  */
 export function resolveQueryHost(target: QueryHostTarget): Element {
-	return target instanceof Element ? target : target.host;
+	return isControllerQueryTarget(target) ? target.host : target;
 }
 
 function getQueryRoots(host: Element, scope: QueryScope = 'light'): QueryRoot[] {

@@ -1,9 +1,9 @@
+import '../install/install-ssr-runtime';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import type { SsrSerializableContextProvider } from '../../context/context-provider';
 import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
-import '../install/install-ssr-runtime';
 import type { ContextType, UnknownContext } from '../../context/types';
 import { getCustomElementTagName } from '../../core/custom-element-metadata';
 import { assertValidHtmlTagName } from '../../utils/html-names';

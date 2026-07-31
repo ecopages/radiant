@@ -48,19 +48,19 @@ type ShadowRootHookHost = Element & {
 };
 
 function resolveEventListenerHostElement(host: EventListenerHost): Element {
-	if (host instanceof Element) {
-		return host;
-	}
-
 	if ('host' in host) {
 		return host.host;
 	}
 
-	return host.element;
+	if ('element' in host) {
+		return host.element;
+	}
+
+	return host as EventListenerLifecycleHost & Element;
 }
 
 function isControllerEventHost(host: EventListenerHost): host is EventListenerLifecycleHost & { host: Element } {
-	return !(host instanceof Element);
+	return 'host' in host || 'element' in host;
 }
 
 function addDelegatedListener(
