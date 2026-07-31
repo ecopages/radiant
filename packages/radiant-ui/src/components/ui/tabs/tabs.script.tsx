@@ -2,10 +2,17 @@ import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { navigateRovingTabindex } from '../../../lib/roving-tabindex';
 
+export type RuiTabsVariant = 'ghost' | 'boxed';
+
 export type RuiTabsProps = {
-	/** ID of the initially selected tab. Defaults to the first tab. */
+	/** Visual treatment. `boxed` wraps tabs in a bordered card; `ghost` is underline-only. Default: `boxed`. */
+	variant?: RuiTabsVariant;
+	/** Selected tab id (matches `RuiTab` / `RuiTabPanel` `id`). Defaults to the first tab. */
 	value?: string;
-	/** Accessible name for the tab list. */
+	/**
+	 * Accessible name for the tab list when `RuiTabList` has no `aria-label`.
+	 * Prefer `aria-label` on `RuiTabList`.
+	 */
 	label?: string;
 	/**
 	 * When `true` (default), focusing a tab activates it (automatic activation).
@@ -21,28 +28,18 @@ export type RuiTabsChangeDetail = {
 /**
  * `<rui-tabs>` — layered sections of content with one visible panel at a time.
  *
- * Implements the WAI-ARIA APG Tabs pattern with a `tablist`, `tab` controls, and
- * associated `tabpanel` regions. Automatic activation is the default.
- *
- * Author a `[role="tablist"]` of `[role="tab"]` buttons and matching
- * `[role="tabpanel"]` regions as children. Each tab must have an `id` and
- * `aria-controls` pointing at its panel; each panel must have `aria-labelledby`
- * pointing at its tab.
+ * Compose with `RuiTabList`, `RuiTab`, `RuiTabPanels`, and `RuiTabPanel`, or author
+ * matching `[role="tablist"]`, `[role="tab"]`, and `[role="tabpanel"]` markup directly.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
  *
- * Keyboard interaction:
- * - `Tab`: move focus into the active tab, then to the panel / next page control
- * - `ArrowLeft` / `ArrowRight`: move focus (and activate when automatic)
- * - `Home` / `End`: jump to first / last tab
- * - `Space` / `Enter`: activate the focused tab (manual mode)
- *
  * @element rui-tabs
- * @slot - A tablist and one or more tabpanels.
+ * @slot - `RuiTabList` and `RuiTabPanels` (or matching tablist / tabpanel markup).
  * @fires rui-change - Emitted when the selected tab changes.
  */
 @customElement('rui-tabs')
 export class RuiTabs extends RadiantElement {
+	@prop({ type: String, reflect: true, defaultValue: 'boxed' }) variant: RuiTabsVariant;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, defaultValue: true }) automatic: boolean;
@@ -54,7 +51,7 @@ export class RuiTabs extends RadiantElement {
 		super.connectedCallback();
 		queueMicrotask(() => {
 			this.syncTablistLabel();
-			this.syncSelection(this.value || this.getTabs()[0]?.id || '');
+			this.syncSelection(this.value || this.getTabValue(this.getTabs()[0]) || '');
 		});
 	}
 
@@ -72,9 +69,14 @@ export class RuiTabs extends RadiantElement {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
 	}
 
+	private getTabValue(tab: HTMLElement | undefined): string {
+		if (!tab) return '';
+		return tab.dataset.tabValue ?? tab.id.replace(/^tab-/, '');
+	}
+
 	private syncTablistLabel(): void {
 		const tablist = this.querySelector<HTMLElement>('[role="tablist"]');
-		if (!tablist || !this.label) return;
+		if (!tablist || tablist.hasAttribute('aria-label') || !this.label) return;
 		tablist.setAttribute('aria-label', this.label);
 	}
 
@@ -83,8 +85,12 @@ export class RuiTabs extends RadiantElement {
 		const panels = this.getPanels();
 		if (!tabs.length) return;
 
-		const selected = tabs.find((tab) => tab.id === nextValue) ?? tabs[0];
-		this.value = selected.id;
+		const selected =
+			tabs.find((tab) => this.getTabValue(tab) === nextValue) ??
+			tabs.find((tab) => tab.id === nextValue) ??
+			tabs[0];
+		const selectedValue = this.getTabValue(selected);
+		this.value = selectedValue;
 
 		for (const tab of tabs) {
 			const isSelected = tab === selected;
@@ -93,8 +99,8 @@ export class RuiTabs extends RadiantElement {
 		}
 
 		for (const panel of panels) {
-			const controls = tabs.find((tab) => tab.getAttribute('aria-controls') === panel.id);
-			const isSelected = controls === selected;
+			const panelValue = panel.dataset.tabValue ?? panel.id.replace(/^panel-/, '');
+			const isSelected = panelValue === selectedValue;
 			panel.hidden = !isSelected;
 			if (!panel.hasAttribute('tabindex')) {
 				panel.tabIndex = 0;
@@ -104,8 +110,8 @@ export class RuiTabs extends RadiantElement {
 
 	private activateTab(tab: HTMLElement): void {
 		if (!tab || tab.getAttribute('aria-disabled') === 'true') return;
-		this.syncSelection(tab.id);
-		this.changeEvent.emit({ value: tab.id });
+		this.syncSelection(this.getTabValue(tab));
+		this.changeEvent.emit({ value: this.value });
 	}
 
 	@onEvent({ selector: '[role="tab"]', type: 'click' })

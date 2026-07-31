@@ -1,28 +1,72 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-tabs {
-	@apply block;
+	@apply flex w-full min-w-0 max-w-full flex-col;
 }
 
 @layer components {
 	.rui-tabs__list {
-		@apply flex gap-1 border-b border-border;
+		@apply flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto;
+	}
+
+	.rui-tabs__panels {
+		@apply contents;
 	}
 
 	.rui-tabs__tab {
-		@apply cursor-pointer rounded-t-md border-0 bg-transparent px-control-x py-2 text-sm;
-		@apply text-on-surface;
+		@apply inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-0 border-b-2 border-transparent bg-transparent text-on-background transition-colors;
 	}
 
 	.rui-tabs__tab[aria-selected='true'] {
-		@apply border-b-2 border-primary font-medium text-on-background;
+		@apply border-primary font-medium text-on-background;
 	}
 
 	.rui-tabs__tab:focus-visible {
-		@apply ring-2 ring-focus-ring outline-hidden;
+		@apply outline-hidden ring-2 ring-primary/40 ring-offset-2 ring-offset-background;
 	}
 
 	.rui-tabs__panel {
-		@apply px-1 py-4 text-sm text-on-background;
+		@apply w-full min-w-0 text-sm text-on-background;
+	}
+
+	rui-tabs[variant='boxed'] {
+		@apply overflow-hidden rounded-sm border border-border bg-background shadow-xs;
+	}
+
+	rui-tabs[variant='boxed'] .rui-tabs__list {
+		@apply border-b border-border/50 bg-surface-container-low px-2 pt-2;
+	}
+
+	rui-tabs[variant='boxed'] .rui-tabs__tab {
+		@apply px-3 py-1.5 text-center text-xs text-on-surface-container-low;
+		@apply hover:opacity-100;
+	}
+
+	rui-tabs[variant='boxed'] .rui-tabs__tab:not([aria-selected='true']) {
+		@apply opacity-70;
+	}
+
+	rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
+		@apply border-primary font-medium text-on-surface-container-low opacity-100;
+	}
+
+	rui-tabs[variant='boxed'] .rui-tabs__panel {
+		@apply bg-background px-4 py-3;
+	}
+
+	rui-tabs[variant='ghost'] {
+		@apply gap-0;
+	}
+
+	rui-tabs[variant='ghost'] .rui-tabs__list {
+		@apply gap-1 border-b border-border;
+	}
+
+	rui-tabs[variant='ghost'] .rui-tabs__tab {
+		@apply rounded-t-md px-control-x py-2 text-sm;
+	}
+
+	rui-tabs[variant='ghost'] .rui-tabs__panel {
+		@apply px-1 py-4;
 	}
 }
