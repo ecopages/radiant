@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
-import { RuiAlert as RuiAlertElement, type RuiAlertProps } from './alert.script';
+import type { RuiAlertProps } from './alert.script';
 import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from './alert';
 
 const meta = {
 	title: 'Components/Alert',
-	component: RuiAlertElement,
+	component: RuiAlert,
 	args: {
 		variant: 'info',
 		layout: 'inline',
