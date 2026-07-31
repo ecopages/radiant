@@ -1,5 +1,5 @@
 import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
-import { findFirstFocusableCandidate } from '../../../lib/focusable-elements';
+import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
 import { applyFloatingPosition, attachFloating } from '../shared/floating-position';
 import type { RuiPlacement } from '../shared/placement';
 

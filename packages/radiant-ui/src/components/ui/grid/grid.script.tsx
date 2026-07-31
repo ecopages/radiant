@@ -1,5 +1,5 @@
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { applyRovingTabindex } from '../../../lib/roving-tabindex';
+import { applyRovingTabindex } from '@/lib/roving-tabindex';
 
 export type RuiGridProps = {
 	label?: string;

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { expect, userEvent, fn } from 'storybook/test';
-import { isStaticSsrPreview } from '../../lib/storybook-ssr';
+import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import {
 	RuiDialog,
 	RuiDialogActions,

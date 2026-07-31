@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
-import { isStaticSsrPreview } from '../../lib/storybook-ssr';
+import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import {

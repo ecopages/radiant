@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
-import { isStaticSsrPreview } from '../../lib/storybook-ssr';
+import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiAlertProps } from './alert.script';
 import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from './alert';
 
