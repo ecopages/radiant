@@ -215,9 +215,9 @@ export const Registry: Story = {
 		</DialogStage>
 	),
 	play: async ({ canvasElement, step }) => {
-		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
+		const named = canvasElement.querySelector('rui-dialog#named-invite') as HTMLElement | null;
+		if (isStaticSsrPreview(canvasElement) || !named) return;
 
-		const named = canvasElement.querySelector('rui-dialog#named-invite') as HTMLElement;
 		const imperativeButton = canvasElement.querySelector('[data-ref="imperative-open"]') as HTMLButtonElement;
 		const actionSpy = fn<(detail: DialogActionDetail) => void>();
 
