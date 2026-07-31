@@ -3,6 +3,7 @@ import type { ViteDevServer } from 'vite';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { renderToString } from '@ecopages/jsx/server';
 import type { RenderedComponent } from '@ecopages/radiant/server/render-component';
+import { composeStoryRender } from './compose-story-render';
 import { applyStoryArgs, getCustomElementTagName, pickComponentExport } from './host';
 import { extractHostInnerHtml } from './ssr-markup';
 import { normalizeSsrModulePath } from './ssr-module-path';
@@ -208,7 +209,12 @@ export async function renderStorybookSsrPayload(
 			body.storyModule,
 			body.storyExport,
 		);
-		authoredContent ||= undefined;
+		if (!authoredContent?.trim()) {
+			const itemCount = Array.isArray(args.items) ? args.items.length : 0;
+			throw new Error(
+				`View SSR produced empty authored content for ${body.viewModule} (items=${itemCount}, args=${Object.keys(args).join(',')})`,
+			);
+		}
 	}
 
 	const rendered = await renderSsrComponent(Component, {
@@ -250,44 +256,5 @@ async function renderStoryMarkup(
 	}
 
 	const mod = (await server.ssrLoadModule(normalizeSsrModulePath(storyModule))) as Record<string, unknown>;
-	const meta = mod.default as SsrStoryDefinition | undefined;
-	const story = storyExport ? (mod[storyExport] as SsrStoryDefinition | undefined) : undefined;
-	const render = story?.render ?? meta?.render ?? meta?.component;
-	if (typeof render !== 'function') {
-		throw new Error(`Story "${storyExport ?? 'default'}" does not provide a JSX render function.`);
-	}
-
-	let storyRender = () => (render as (nextArgs: Record<string, unknown>) => JsxRenderable)(args);
-	const decorators = [...(meta?.decorators ?? []), ...(story?.decorators ?? [])];
-	const context: SsrDecoratorContext = {
-		args,
-		id: storyExport ?? 'default',
-		parameters: { ...(meta?.parameters ?? {}), ...(story?.parameters ?? {}) },
-	};
-
-	for (const decorator of decorators.toReversed()) {
-		if (typeof decorator !== 'function') {
-			continue;
-		}
-
-		const previousRender = storyRender;
-		storyRender = () => (decorator as SsrStoryDecorator)(previousRender, context);
-	}
-
-	return renderToString(storyRender(), { mode });
+	return renderToString(composeStoryRender(mod, storyExport, args)(), { mode });
 }
-
-type SsrStoryDefinition = {
-	component?: unknown;
-	decorators?: unknown[];
-	parameters?: Record<string, unknown>;
-	render?: unknown;
-};
-
-type SsrDecoratorContext = {
-	args: Record<string, unknown>;
-	id: string;
-	parameters: Record<string, unknown>;
-};
-
-type SsrStoryDecorator = (story: () => JsxRenderable, context: SsrDecoratorContext) => JsxRenderable;

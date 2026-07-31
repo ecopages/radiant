@@ -1,10 +1,10 @@
 import { installRadiantHydrator, uninstallRadiantHydrator } from '@ecopages/radiant/client/hydrator';
 import { hydrate } from '@ecopages/jsx';
-import type { JsxRenderable } from '@ecopages/jsx';
 import type { RenderContext } from 'storybook/internal/types';
 import { simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 import { ensureSsrMountRoot, teardownCanvas } from './canvas';
+import { composeStoryRender } from './compose-story-render';
 import { RADIANT_SSR_ENDPOINT, type RadiantSsrRequestBody, type RadiantSsrResponseBody } from './constants';
 import { isEmptyHostShell, storyIdToExportName } from './ssr-markup';
 import { toStylesheetLinkHref } from './collect-ssr-styles';
@@ -17,21 +17,6 @@ type RenderContextWithCallbacks = RenderContext<RadiantRenderer> & {
 	showStoryDuringRender?: () => void;
 };
 
-type SsrStoryDefinition = {
-	component?: unknown;
-	decorators?: unknown[];
-	parameters?: Record<string, unknown>;
-	render?: unknown;
-};
-
-type SsrDecoratorContext = {
-	args: Record<string, unknown>;
-	id: string;
-	parameters: Record<string, unknown>;
-};
-
-type SsrStoryDecorator = (story: () => JsxRenderable, context: SsrDecoratorContext) => JsxRenderable;
-
 function showStoryDuringRender(context: RenderContext<RadiantRenderer>): void {
 	(context as RenderContextWithCallbacks).showStoryDuringRender?.();
 }
@@ -42,31 +27,7 @@ function hydrateStoryJsx(
 	args: Record<string, unknown>,
 	mountRoot: HTMLElement,
 ): void {
-	const meta = storyModule.default as SsrStoryDefinition | undefined;
-	const story = storyExport ? (storyModule[storyExport] as SsrStoryDefinition | undefined) : undefined;
-	const render = story?.render ?? meta?.render ?? meta?.component;
-	if (typeof render !== 'function') {
-		throw new Error(`Story "${storyExport ?? 'default'}" does not provide a JSX render function.`);
-	}
-
-	let storyRender = () => (render as (nextArgs: Record<string, unknown>) => JsxRenderable)(args);
-	const decorators = [...(meta?.decorators ?? []), ...(story?.decorators ?? [])];
-	const decoratorContext: SsrDecoratorContext = {
-		args,
-		id: storyExport ?? 'default',
-		parameters: { ...(meta?.parameters ?? {}), ...(story?.parameters ?? {}) },
-	};
-
-	for (const decorator of decorators.toReversed()) {
-		if (typeof decorator !== 'function') {
-			continue;
-		}
-
-		const previousRender = storyRender;
-		storyRender = () => (decorator as SsrStoryDecorator)(previousRender, decoratorContext);
-	}
-
-	hydrate(storyRender(), mountRoot);
+	hydrate(composeStoryRender(storyModule, storyExport, args)(), mountRoot);
 }
 
 export function mountSsrErrorBanner(canvasElement: HTMLElement, title: string, description: string): void {
