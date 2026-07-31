@@ -5,6 +5,8 @@
  * (Sonner-style). CSS only handles enter/exit/swipe and chrome.
  */
 rui-toaster {
+	--toast-offset-x: 16px;
+	--toast-offset-bottom: 16px;
 	position: fixed;
 	z-index: var(--z-toast, 50);
 	pointer-events: none;
@@ -290,9 +292,25 @@ rui-toast[data-expanded='true']::after {
 
 @media (max-width: 600px) {
 	rui-toaster {
-		left: var(--viewport-offset, 16px);
-		right: var(--viewport-offset, 16px);
+		left: var(--toast-offset-x);
+		right: var(--toast-offset-x);
 		width: auto;
+		transform: none;
+	}
+
+	rui-toaster[data-y-position='bottom'] {
+		bottom: var(--toast-offset-bottom);
+	}
+
+	rui-toaster[data-y-position='top'] {
+		top: var(--toast-offset-x);
+	}
+
+	rui-toaster[data-x-position='end'],
+	rui-toaster[data-x-position='start'],
+	rui-toaster[data-x-position='center'] {
+		left: var(--toast-offset-x);
+		right: var(--toast-offset-x);
 		transform: none;
 	}
 }
