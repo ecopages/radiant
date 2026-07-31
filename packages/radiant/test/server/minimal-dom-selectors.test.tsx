@@ -141,6 +141,61 @@ describe('minimal-dom selectors', () => {
 		expect(typeof cancelAnimationFrame).toBe('function');
 	});
 
+	test('custom element hosts expose style for SSR layout code', () => {
+		class ProbeHost extends HTMLElement {
+			connectedCallback(): void {
+				this.style.setProperty('--width', '320px');
+			}
+		}
+
+		const host = new ProbeHost();
+		host.style.setProperty('--gap', '14px');
+		expect(host.style.getPropertyValue('--gap')).toBe('14px');
+		host.connectedCallback();
+		expect(host.style.getPropertyValue('--width')).toBe('320px');
+	});
+
+	test('replaces foreign DOM globals instead of patching partial implementations', () => {
+		class ForeignElement extends EventTarget {
+			localName = 'div';
+			tagName = 'DIV';
+		}
+
+		class ForeignHTMLElement extends ForeignElement {}
+		const foreignDocument = {
+			createElement() {
+				return new ForeignHTMLElement();
+			},
+			getElementById() {
+				return null;
+			},
+		};
+
+		globalThis.Node = class ForeignNode extends EventTarget {} as typeof Node;
+		globalThis.Element = ForeignElement as typeof Element;
+		globalThis.HTMLElement = ForeignHTMLElement as typeof HTMLElement;
+		globalThis.Document = class ForeignDocument {} as typeof Document;
+		globalThis.document = foreignDocument as unknown as Document;
+		globalThis.customElements = {
+			define() {},
+			get() {
+				return undefined;
+			},
+		} as unknown as CustomElementRegistry;
+
+		installLightDomShim();
+
+		class ProbeHost extends HTMLElement {
+			probe(): void {
+				this.style.setProperty('--width', '320px');
+			}
+		}
+
+		const host = new ProbeHost();
+		host.probe();
+		expect(host.style.getPropertyValue('--width')).toBe('320px');
+	});
+
 	test('selector module matches custom element tags', () => {
 		const group = new MinimalHTMLElement('rui-disclosure-group');
 		const disclosure = new MinimalHTMLElement('rui-disclosure');
