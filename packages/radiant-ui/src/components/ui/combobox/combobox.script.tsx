@@ -110,8 +110,8 @@ export class RuiCombobox extends RadiantElement {
 	/** Prefer `RuiLabel` as a previous sibling or Field-managed label. */
 	private findAssociatedLabel(): HTMLLabelElement | null {
 		const previous = this.previousElementSibling;
-		if (previous instanceof HTMLLabelElement) {
-			return previous;
+		if (previous?.tagName.toLowerCase() === 'label') {
+			return previous as HTMLLabelElement;
 		}
 
 		const parent = this.parentElement;
