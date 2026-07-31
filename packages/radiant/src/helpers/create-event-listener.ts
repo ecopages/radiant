@@ -1,5 +1,6 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
 import { escapeCssIdentifier } from '../tools/escape-css-identifier';
+import { isControllerHost, resolveHostElement } from './resolve-host-element';
 
 /**
  * Selects which DOM tree delegated event listeners should observe.
@@ -48,19 +49,11 @@ type ShadowRootHookHost = Element & {
 };
 
 function resolveEventListenerHostElement(host: EventListenerHost): Element {
-	if (host instanceof Element) {
-		return host;
-	}
-
-	if ('host' in host) {
-		return host.host;
-	}
-
-	return host.element;
+	return resolveHostElement(host);
 }
 
 function isControllerEventHost(host: EventListenerHost): host is EventListenerLifecycleHost & { host: Element } {
-	return !(host instanceof Element);
+	return isControllerHost(host);
 }
 
 function addDelegatedListener(

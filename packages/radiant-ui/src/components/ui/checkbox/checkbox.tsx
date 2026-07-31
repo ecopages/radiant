@@ -1,5 +1,5 @@
-import type { WithChildren, RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { WithChildren, RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiCheckboxProps } from './checkbox.script';
 import { RuiCheckbox as RuiCheckboxElement } from './checkbox.script';
 import './checkbox.css';

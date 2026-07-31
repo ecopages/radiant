@@ -1,5 +1,5 @@
-import type { WithChildren, RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { WithChildren, RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiToolbarProps } from './toolbar.script';
 import { RuiToolbar as RuiToolbarElement } from './toolbar.script';
 import './toolbar.css';

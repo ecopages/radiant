@@ -1,4 +1,5 @@
 import type { UnknownContext } from './types';
+import { resolveHostElementOrNull } from '../helpers/resolve-host-element';
 
 type ContextHostApi = {
 	addEventListener(
@@ -32,33 +33,14 @@ export type ContextHostLike =
 	| (ContextHostApi & SsrHydrationContainer);
 
 export function resolveContextHostElement(host: ContextHostLike): Element | null {
-	if (host instanceof Element) {
-		return host;
-	}
-
-	if ('host' in host) {
-		return host.host;
-	}
-
-	if ('element' in host) {
-		return host.element;
-	}
-
-	return null;
+	return resolveHostElementOrNull(host);
 }
 
 export function resolveContextHydrationHost(host: ContextHostLike): ContextHydrationHost {
-	if (host instanceof Element) {
-		return host;
+	const element = resolveHostElementOrNull(host);
+	if (element) {
+		return element;
 	}
 
-	if ('host' in host) {
-		return host.host;
-	}
-
-	if ('element' in host) {
-		return host.element;
-	}
-
-	return host;
+	return host as ContextHydrationHost;
 }

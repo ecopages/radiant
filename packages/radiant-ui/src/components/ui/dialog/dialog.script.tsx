@@ -1,5 +1,6 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { queryFocusableCandidates } from '@/lib/focusable-elements';
 
 export type RuiDialogProps = {
 	/** Whether the dialog is open. Default: `false`. */
@@ -21,9 +22,6 @@ type RuiDialogBindings = {
 	open: boolean;
 	alert: boolean;
 };
-
-const FOCUSABLE =
-	'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * `<rui-dialog>` — a composition-first modal dialog shell.
@@ -105,9 +103,7 @@ export class RuiDialog extends RadiantElement<RuiDialogBindings> {
 	}
 
 	private getFocusable(): HTMLElement[] {
-		return Array.from(this.dialogTarget?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).filter(
-			(el) => !el.hasAttribute('disabled') && el.tabIndex !== -1,
-		);
+		return this.dialogTarget ? queryFocusableCandidates(this.dialogTarget) : [];
 	}
 
 	private dismiss(reason: RuiDialogCloseDetail['reason']): void {

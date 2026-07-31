@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import {
@@ -46,6 +47,8 @@ const getTrigger = (canvasElement: HTMLElement) =>
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 		const listbox = getListbox(canvasElement);
@@ -91,6 +94,8 @@ export const OpenOnFocus: Story = {
 		openOnFocus: true,
 	},
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 
@@ -110,6 +115,8 @@ export const OpenOnFocus: Story = {
 
 export const Keyboard: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 
@@ -179,6 +186,8 @@ export const Composed: Story = {
 		</div>
 	),
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 

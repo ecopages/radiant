@@ -8,6 +8,7 @@ import {
 	MinimalHtmlScriptElement,
 	MinimalHTMLElement,
 	MinimalNode,
+	MinimalEventTarget,
 } from './nodes';
 
 type MinimalCssNamespace = {
@@ -43,6 +44,10 @@ export type LightDomShimWindow = {
 	CSS: MinimalCssNamespace;
 	/** Custom element registry used while rendering in SSR. */
 	customElements: MinimalCustomElementRegistry;
+	/** Animation-frame callback used by SSR layout-aware components. */
+	requestAnimationFrame: typeof requestAnimationFrame;
+	/** Animation-frame cancellation function used by SSR layout-aware components. */
+	cancelAnimationFrame: typeof cancelAnimationFrame;
 };
 
 /** Host preparation options accepted by the server render environment. */
@@ -60,7 +65,21 @@ export type ServerRenderEnvironment = {
 	prepareHost(host: HTMLElement, options?: PrepareServerRenderHostOptions): void;
 };
 
-let installedWindow: LightDomShimWindow | undefined;
+type GlobalDomScope = typeof globalThis & {
+	CSS?: MinimalCssNamespace;
+	CustomEvent?: typeof CustomEvent;
+	Document?: typeof Document;
+	Element?: typeof Element;
+	Event?: typeof Event;
+	EventTarget?: typeof EventTarget;
+	HTMLScriptElement?: typeof HTMLScriptElement;
+	HTMLElement?: typeof HTMLElement;
+	Node?: typeof Node;
+	document?: Document | null;
+	customElements?: MinimalCustomElementRegistry;
+	requestAnimationFrame?: typeof requestAnimationFrame;
+	cancelAnimationFrame?: typeof cancelAnimationFrame;
+};
 
 const minimalCssNamespace: MinimalCssNamespace = {
 	escape(value: string): string {
@@ -68,59 +87,180 @@ const minimalCssNamespace: MinimalCssNamespace = {
 	},
 };
 
-function getExistingWindowLike(): LightDomShimWindow | undefined {
-	const globalScope = globalThis as typeof globalThis & {
-		CSS?: MinimalCssNamespace;
-		CustomEvent?: typeof CustomEvent;
-		Document?: typeof Document;
-		Element?: typeof Element;
-		Event?: typeof Event;
-		EventTarget?: typeof EventTarget;
-		HTMLScriptElement?: typeof HTMLScriptElement;
-		HTMLElement?: typeof HTMLElement;
-		Node?: typeof Node;
-		document?: Document;
-		customElements?: MinimalCustomElementRegistry;
-		window?: LightDomShimWindow;
-	};
-	const existingCustomElements = globalScope.customElements;
+function isObjectLike(value: unknown): value is Record<PropertyKey, unknown> {
+	return (typeof value === 'object' && value !== null) || typeof value === 'function';
+}
+
+function getCssNamespace(globalScope: GlobalDomScope): MinimalCssNamespace {
+	try {
+		return isObjectLike(globalScope.CSS) && typeof globalScope.CSS.escape === 'function'
+			? globalScope.CSS
+			: minimalCssNamespace;
+	} catch {
+		return minimalCssNamespace;
+	}
+}
+
+function hasUsableElementSurface(value: unknown, verifyStyleOperation = false): boolean {
+	if (!isObjectLike(value)) {
+		return false;
+	}
+
+	try {
+		const style = value.style;
+		const children = value.children;
+		if (!isObjectLike(style) || !isObjectLike(children)) {
+			return false;
+		}
+		const setProperty = style.setProperty;
+		const removeProperty = style.removeProperty;
+		if (typeof setProperty !== 'function' || typeof children[Symbol.iterator] !== 'function') {
+			return false;
+		}
+
+		if (verifyStyleOperation) {
+			setProperty.call(style, '--radiant-dom-probe', '');
+			if (typeof removeProperty === 'function') {
+				removeProperty.call(style, '--radiant-dom-probe');
+			}
+		}
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function getCompleteDomSurface(): LightDomShimWindow | undefined {
+	const globalScope = globalThis as GlobalDomScope;
+	let NodeConstructor: GlobalDomScope['Node'];
+	let DocumentConstructor: GlobalDomScope['Document'];
+	let ElementConstructor: GlobalDomScope['Element'];
+	let HTMLElementConstructor: GlobalDomScope['HTMLElement'];
+	let document: GlobalDomScope['document'];
+	let customElements: GlobalDomScope['customElements'];
+	let EventConstructor: GlobalDomScope['Event'];
+	let CustomEventConstructor: GlobalDomScope['CustomEvent'];
+	let EventTargetConstructor: GlobalDomScope['EventTarget'];
+	let requestAnimationFrame: GlobalDomScope['requestAnimationFrame'];
+	let cancelAnimationFrame: GlobalDomScope['cancelAnimationFrame'];
+
+	try {
+		NodeConstructor = globalScope.Node;
+		DocumentConstructor = globalScope.Document;
+		ElementConstructor = globalScope.Element;
+		HTMLElementConstructor = globalScope.HTMLElement;
+		document = globalScope.document;
+		customElements = globalScope.customElements;
+		EventConstructor = globalScope.Event;
+		CustomEventConstructor = globalScope.CustomEvent;
+		EventTargetConstructor = globalScope.EventTarget;
+		requestAnimationFrame = globalScope.requestAnimationFrame;
+		cancelAnimationFrame = globalScope.cancelAnimationFrame;
+	} catch {
+		return undefined;
+	}
 
 	if (
-		typeof globalScope.Node === 'undefined' ||
-		typeof globalScope.Document === 'undefined' ||
-		typeof globalScope.Element === 'undefined' ||
-		typeof globalScope.HTMLElement === 'undefined' ||
-		typeof globalScope.document === 'undefined' ||
-		!existingCustomElements ||
-		typeof existingCustomElements.define !== 'function' ||
-		typeof existingCustomElements.get !== 'function'
+		typeof NodeConstructor !== 'function' ||
+		typeof DocumentConstructor !== 'function' ||
+		typeof ElementConstructor !== 'function' ||
+		typeof HTMLElementConstructor !== 'function' ||
+		!isObjectLike(document) ||
+		!isObjectLike(customElements) ||
+		typeof EventConstructor !== 'function' ||
+		typeof CustomEventConstructor !== 'function' ||
+		typeof EventTargetConstructor !== 'function'
 	) {
 		return undefined;
 	}
 
-	return (
-		globalScope.window ?? {
-			CSS: globalScope.CSS ?? minimalCssNamespace,
-			CustomEvent: (globalScope.CustomEvent ?? MinimalCustomEvent) as typeof CustomEvent,
-			Document: globalScope.Document,
-			Element: globalScope.Element,
-			Event: (globalScope.Event ?? MinimalEvent) as typeof Event,
-			EventTarget: (globalScope.EventTarget ?? EventTarget) as typeof EventTarget,
-			HTMLScriptElement: (globalScope.HTMLScriptElement ?? globalScope.HTMLElement) as typeof HTMLScriptElement,
-			HTMLElement: globalScope.HTMLElement,
-			Node: globalScope.Node,
-			document: globalScope.document,
-			customElements: existingCustomElements,
+	let elementProbe: unknown;
+	let customElementProbe: unknown;
+
+	try {
+		if (
+			typeof document.createElement !== 'function' ||
+			typeof document.getElementById !== 'function' ||
+			typeof customElements.define !== 'function' ||
+			typeof customElements.get !== 'function' ||
+			typeof requestAnimationFrame !== 'function' ||
+			typeof cancelAnimationFrame !== 'function'
+		) {
+			return undefined;
 		}
-	);
+		elementProbe = document.createElement('div');
+		/**
+		 * @remarks Browser-like runtimes can reject direct construction of an unregistered
+		 * custom element, so the probe uses the subclass prototype without mutating the registry.
+		 */
+		class ProbeHost extends HTMLElementConstructor {}
+		customElementProbe = Object.create(ProbeHost.prototype);
+	} catch {
+		return undefined;
+	}
+
+	if (!hasUsableElementSurface(elementProbe, true) || !hasUsableElementSurface(customElementProbe)) {
+		return undefined;
+	}
+
+	try {
+		return {
+			CSS: getCssNamespace(globalScope),
+			CustomEvent: CustomEventConstructor,
+			Document: DocumentConstructor,
+			Element: ElementConstructor,
+			Event: EventConstructor,
+			EventTarget: EventTargetConstructor,
+			HTMLScriptElement: (typeof globalScope.HTMLScriptElement === 'function'
+				? globalScope.HTMLScriptElement
+				: HTMLElementConstructor) as typeof HTMLScriptElement,
+			HTMLElement: HTMLElementConstructor,
+			Node: NodeConstructor,
+			document,
+			customElements,
+			requestAnimationFrame,
+			cancelAnimationFrame,
+		};
+	} catch {
+		return undefined;
+	}
+}
+
+function canWriteGlobalProperty(property: string): boolean {
+	const descriptor = Object.getOwnPropertyDescriptor(globalThis, property);
+	if (!descriptor) {
+		return Object.isExtensible(globalThis);
+	}
+
+	return 'writable' in descriptor ? descriptor.writable === true : typeof descriptor.set === 'function';
+}
+
+function assignGlobalSurface(surface: Record<string, unknown>): void {
+	const updates = Object.entries(surface).filter(([property, value]) => {
+		try {
+			return (globalThis as Record<string, unknown>)[property] !== value;
+		} catch {
+			return true;
+		}
+	});
+	const lockedProperties = updates
+		.filter(([property]) => !canWriteGlobalProperty(property))
+		.map(([property]) => property);
+
+	if (lockedProperties.length > 0) {
+		throw new Error(
+			`Radiant SSR cannot install its minimal DOM because these global properties are not writable: ${lockedProperties.join(', ')}`,
+		);
+	}
+
+	Object.assign(globalThis, Object.fromEntries(updates));
 }
 
 /** Ensures that a minimal window-like SSR runtime is available and returns it. */
 export function ensureLightDomShim(): LightDomShimWindow {
-	const existingWindow = getExistingWindowLike();
-
-	if (existingWindow) {
-		return existingWindow;
+	const existingSurface = getCompleteDomSurface();
+	if (existingSurface) {
+		return existingSurface;
 	}
 
 	return installLightDomShim();
@@ -146,27 +286,41 @@ export function createServerRenderEnvironment(): ServerRenderEnvironment {
 }
 
 /**
- * Installs the smallest global surface needed to instantiate Radiant custom elements during SSR.
+ * Ensures that Radiant custom elements can be instantiated during SSR.
+ *
+ * @remarks
+ * A complete existing DOM is reused without mutation. Missing or partial DOM globals are
+ * replaced with Radiant's coherent minimal DOM surface. Import
+ * `@ecopages/radiant/server/install-ssr-runtime` before any Radiant element module in
+ * SSR bundles because `RadiantElement` captures its base class at module evaluation.
  */
 export function installLightDomShim(): LightDomShimWindow {
-	const existingWindow = getExistingWindowLike();
-
-	if (existingWindow) {
-		return existingWindow;
+	const existingSurface = getCompleteDomSurface();
+	if (existingSurface) {
+		return existingSurface;
 	}
 
-	if (installedWindow) {
-		return installedWindow;
-	}
-
+	const globalScope = globalThis as GlobalDomScope;
 	const customElements = new MinimalCustomElementsRegistry();
 	const document = new MinimalDocument() as unknown as Document;
-	const EventConstructor = (globalThis.Event ?? MinimalEvent) as typeof Event;
-	const CustomEventConstructor = (globalThis.CustomEvent ?? MinimalCustomEvent) as typeof CustomEvent;
+	const EventConstructor = (
+		typeof globalScope.Event === 'function' ? globalScope.Event : MinimalEvent
+	) as typeof Event;
+	const CustomEventConstructor = (
+		typeof globalScope.CustomEvent === 'function' ? globalScope.CustomEvent : MinimalCustomEvent
+	) as typeof CustomEvent;
 	const DocumentConstructor = MinimalDocument as unknown as typeof Document;
-	const EventTargetConstructor = (globalThis.EventTarget ?? EventTarget) as typeof EventTarget;
-	installedWindow = {
-		CSS: (globalThis.CSS as MinimalCssNamespace | undefined) ?? minimalCssNamespace,
+	const EventTargetConstructor = MinimalEventTarget as typeof EventTarget;
+	const requestAnimationFrame =
+		typeof globalScope.requestAnimationFrame === 'function'
+			? globalScope.requestAnimationFrame
+			: (_callback: FrameRequestCallback): number => 0;
+	const cancelAnimationFrame =
+		typeof globalScope.cancelAnimationFrame === 'function'
+			? globalScope.cancelAnimationFrame
+			: (_handle: number): void => {};
+	const installedSurface: LightDomShimWindow = {
+		CSS: getCssNamespace(globalScope),
 		CustomEvent: CustomEventConstructor,
 		Document: DocumentConstructor,
 		Element: MinimalElement as unknown as typeof Element,
@@ -177,10 +331,12 @@ export function installLightDomShim(): LightDomShimWindow {
 		Node: MinimalNode as unknown as typeof Node,
 		document,
 		customElements,
+		requestAnimationFrame,
+		cancelAnimationFrame,
 	};
 
-	Object.assign(globalThis, {
-		CSS: (globalThis.CSS as MinimalCssNamespace | undefined) ?? minimalCssNamespace,
+	assignGlobalSurface({
+		CSS: installedSurface.CSS,
 		CustomEvent: CustomEventConstructor,
 		Document: DocumentConstructor,
 		Element: MinimalElement,
@@ -191,8 +347,10 @@ export function installLightDomShim(): LightDomShimWindow {
 		Node: MinimalNode,
 		document,
 		customElements,
-		window: installedWindow,
+		window: installedSurface,
+		requestAnimationFrame,
+		cancelAnimationFrame,
 	});
 
-	return installedWindow;
+	return installedSurface;
 }

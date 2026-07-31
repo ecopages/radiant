@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiSidebarProps, RuiSidebarCollapsible, RuiSidebarSide, RuiSidebarVariant } from './sidebar.script';
 import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
 import type { RuiSidebarTriggerProps } from './sidebar-trigger.script';

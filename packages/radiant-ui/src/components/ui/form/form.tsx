@@ -1,5 +1,5 @@
-import type { WithChildren } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { WithChildren } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFormProps } from './form.script';
 import { RuiForm as RuiFormElement } from './form.script';
 import './form.css';

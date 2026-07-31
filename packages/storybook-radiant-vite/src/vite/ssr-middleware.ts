@@ -35,7 +35,7 @@ async function handleSsrRequest(
 ): Promise<void> {
 	try {
 		const body = await readJsonBody(req);
-		if (!body.ssrModule && !body.viewModule) {
+		if (body.kind !== 'jsx' && !body.ssrModule && !body.viewModule) {
 			sendJson(res, 400, { error: 'Missing ssrModule or viewModule in request body' });
 			return;
 		}

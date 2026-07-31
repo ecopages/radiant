@@ -1,5 +1,5 @@
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiMeterProps } from './meter.script';
 import { RuiMeter as RuiMeterElement } from './meter.script';
 import './meter.css';

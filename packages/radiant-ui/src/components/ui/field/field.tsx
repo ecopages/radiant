@@ -1,5 +1,5 @@
-import type { WithChildren } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { WithChildren } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFieldProps } from './field.script';
 import { RuiField as RuiFieldElement } from './field.script';
 import './field.css';

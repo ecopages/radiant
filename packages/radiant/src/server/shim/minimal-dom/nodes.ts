@@ -12,6 +12,15 @@ type HtmlParsers = {
 let htmlParsers: HtmlParsers | undefined;
 
 /**
+ * EventTarget captured when the minimal-DOM module is evaluated.
+ *
+ * @remarks The installer restores this exact constructor after global replacement so
+ * MinimalNode instances remain compatible with `instanceof EventTarget` checks even
+ * when a foreign runtime changes globals after module evaluation.
+ */
+export const MinimalEventTarget = EventTarget;
+
+/**
  * Registers HTML parse/serialize helpers from `./html` to break a circular import.
  * Import `./html` (or the light-DOM install entry) before using `innerHTML`.
  */
@@ -29,7 +38,44 @@ function ensureHtmlParsers(): HtmlParsers {
 	return htmlParsers;
 }
 
-export class MinimalNode extends EventTarget {
+function createMinimalStyle(onChange: (value: string) => void): CSSStyleDeclaration {
+	const values = new Map<string, string>();
+	const commit = () => onChange([...values].map(([name, value]) => `${name}: ${value}`).join('; '));
+	const style = {
+		getPropertyValue(name: string): string {
+			return values.get(name) ?? '';
+		},
+		removeProperty(name: string): string {
+			const previous = values.get(name) ?? '';
+			values.delete(name);
+			commit();
+			return previous;
+		},
+		setProperty(name: string, value: string): void {
+			values.set(name, value);
+			commit();
+		},
+	};
+
+	return new Proxy(style, {
+		get(target, property) {
+			if (typeof property === 'string' && property in target) {
+				return target[property as keyof typeof target];
+			}
+			return typeof property === 'string' ? (values.get(property) ?? '') : undefined;
+		},
+		set(_target, property, value) {
+			if (typeof property !== 'string') {
+				return false;
+			}
+			values.set(property, String(value));
+			commit();
+			return true;
+		},
+	}) as CSSStyleDeclaration;
+}
+
+export class MinimalNode extends MinimalEventTarget {
 	static readonly DOCUMENT_NODE = 9;
 	static readonly ELEMENT_NODE = 1;
 	static readonly TEXT_NODE = 3;
@@ -192,6 +238,7 @@ export class MinimalElement extends MinimalNode {
 	private attributes = new Map<string, string>();
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
+	private styleValue?: CSSStyleDeclaration;
 	private fragmentHtml?: string;
 	private fragmentInnerHtml?: string;
 	private fragmentText?: string;
@@ -221,6 +268,17 @@ export class MinimalElement extends MinimalNode {
 	get classList(): DOMTokenList {
 		this.classListValue ??= new MinimalClassList(this);
 		return this.classListValue as unknown as DOMTokenList;
+	}
+
+	get style(): CSSStyleDeclaration {
+		this.styleValue ??= createMinimalStyle((value) => {
+			if (value === '') {
+				this.removeAttribute('style');
+				return;
+			}
+			this.setAttribute('style', value);
+		});
+		return this.styleValue;
 	}
 
 	get dataset(): DOMStringMap {
@@ -313,6 +371,12 @@ export class MinimalElement extends MinimalNode {
 	get parentElement(): MinimalElement | null {
 		const parent = this.parentNode;
 		return parent instanceof MinimalElement ? parent : null;
+	}
+
+	get children(): MinimalHTMLElement[] {
+		return Array.from(this.childNodes ?? []).filter(
+			(node) => node.nodeType === MinimalNode.ELEMENT_NODE,
+		) as unknown as MinimalHTMLElement[];
 	}
 
 	materializeChildren(): void {
