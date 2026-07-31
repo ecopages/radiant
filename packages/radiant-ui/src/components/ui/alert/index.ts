@@ -1,2 +1,8 @@
-export { RuiAlert as RuiAlertElement, type RuiAlertProps } from './alert.script';
-export { RuiAlert } from './alert';
+export {
+	RuiAlert as RuiAlertElement,
+	type RuiAlertProps,
+	type RuiAlertVariant,
+	type RuiAlertLayout,
+} from './alert.script';
+export { RuiAlert, RuiAlertIcon, RuiAlertTitle, RuiAlertDescription } from './alert';
+export type { RuiAlertIconProps, RuiAlertTitleProps, RuiAlertDescriptionProps } from './alert';

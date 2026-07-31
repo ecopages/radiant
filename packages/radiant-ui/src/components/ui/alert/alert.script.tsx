@@ -1,35 +1,34 @@
 import { RadiantElement, customElement, prop } from '@ecopages/radiant';
 
+export type RuiAlertVariant = 'info' | 'success' | 'warning' | 'error';
+
+export type RuiAlertLayout = 'inline' | 'banner';
+
 export type RuiAlertProps = {
 	/** Visual tone of the alert. Default: `info`. */
-	variant?: 'info' | 'success' | 'warning' | 'error';
+	variant?: RuiAlertVariant;
+	/**
+	 * `inline` — compact icon + text for short urgent messages (no accent rail).
+	 * `banner` — multi-line advisories with a left accent rail and no icon slot.
+	 * Default: `inline`.
+	 */
+	layout?: RuiAlertLayout;
 };
 
 /**
  * `<rui-alert>` — a brief, important message that attracts attention
  * without interrupting the user's task.
  *
- * Implements the WAI-ARIA APG Alert pattern via `role="alert"`. Dynamically
- * rendered alerts are announced by most screen readers. Do not move focus
- * into the alert; use an Alert Dialog when interrupting workflow is required.
+ * Compose with `RuiAlertIcon` + text for `layout="inline"`, or `RuiAlertTitle` and
+ * `RuiAlertDescription` for `layout="banner"`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/alert/
- * @see https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
- *
- * Keyboard interaction: not applicable — alerts must not steal focus.
  *
  * @element rui-alert
- * @slot - The alert message content.
+ * @slot - Alert content inside the `role="alert"` region.
  */
 @customElement('rui-alert')
 export class RuiAlert extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: 'info' }) variant: RuiAlertProps['variant'];
-
-	override render() {
-		return (
-			<div class={`rui-alert rui-alert--${this.variant ?? 'info'}`} role="alert">
-				<slot></slot>
-			</div>
-		);
-	}
+	@prop({ type: String, reflect: true, defaultValue: 'info' }) variant: RuiAlertVariant;
+	@prop({ type: String, reflect: true, defaultValue: 'inline' }) layout: RuiAlertLayout;
 }
