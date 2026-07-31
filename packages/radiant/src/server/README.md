@@ -92,7 +92,7 @@ One boot path for Node adapters:
 
 The server build may inline shared element/controller **client** modules; the inverse is forbidden — browser builds never emit `dist/server/*` or server-only chunks. Shared `dist/chunk-*.js` under the package root are server-graph artifacts. Depend only on documented `package.json` exports. Invariants are documented in TSDoc on `packages/radiant/build.ts` and `install-ssr-runtime.ts`.
 
-**Allowed on `globalThis`:** light-DOM constructors, `document` / `customElements` from the shim, controller registry, hydrator flags. SSR scope adapters and HTML parser registration stay module-local.
+**Allowed on `globalThis`:** Radiant-owned minimal-DOM constructors, `document` / `customElements` from the shim, controller registry, hydrator flags. Installation first checks for a complete usable DOM and leaves it unchanged; missing, malformed, or partial DOM globals are replaced with Radiant's coherent minimal surface rather than patched in place. SSR scope adapters and HTML parser registration stay module-local.
 
 ```ts
 import '@ecopages/radiant/server/install-ssr-runtime';
@@ -111,7 +111,7 @@ Lower-level host serialization is also exported as `@ecopages/radiant/server/rad
 
 ## Runtime Preparation
 
-If you are not using `install-ssr-runtime` and your process has no `HTMLElement` / `customElements`, install the light-DOM shim before importing Radiant element modules:
+If you are not using `install-ssr-runtime` and your process has no DOM or only a partial DOM-like global surface, install the light-DOM shim before importing Radiant element modules:
 
 ```ts
 import { installLightDomShim } from '@ecopages/radiant/server/light-dom-shim';
