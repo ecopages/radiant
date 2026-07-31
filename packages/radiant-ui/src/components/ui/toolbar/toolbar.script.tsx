@@ -28,9 +28,9 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getItems(): HTMLElement[] {
-		return Array.from(
-			this.querySelectorAll<HTMLElement>('button, a[href], input, select, [tabindex]:not([tabindex="-1"])'),
-		).filter((el) => !el.hasAttribute('disabled'));
+		return Array.from(this.querySelectorAll<HTMLElement>('button, a[href], input, select, [tabindex]')).filter(
+			(el) => !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1',
+		);
 	}
 
 	override connectedCallback(): void {

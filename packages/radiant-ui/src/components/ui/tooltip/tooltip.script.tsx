@@ -89,11 +89,8 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	}
 
 	private getAnchor(): HTMLElement {
-		return (
-			(this.querySelector(
-				'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-			) as HTMLElement | null) ?? this
-		);
+		const candidates = this.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]');
+		return Array.from(candidates).find((candidate) => candidate.getAttribute('tabindex') !== '-1') ?? this;
 	}
 
 	private wireTrigger(): void {

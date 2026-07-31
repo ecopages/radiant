@@ -22,8 +22,7 @@ type RuiDialogBindings = {
 	alert: boolean;
 };
 
-const FOCUSABLE =
-	'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE = 'a[href], button, textarea, input, select, [tabindex]';
 
 /**
  * `<rui-dialog>` — a composition-first modal dialog shell.
@@ -106,7 +105,7 @@ export class RuiDialog extends RadiantElement<RuiDialogBindings> {
 
 	private getFocusable(): HTMLElement[] {
 		return Array.from(this.dialogTarget?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []).filter(
-			(el) => !el.hasAttribute('disabled') && el.tabIndex !== -1,
+			(el) => !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1',
 		);
 	}
 

@@ -58,7 +58,9 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 	}
 
 	private getRowCells(row: HTMLElement): HTMLElement[] {
-		return Array.from(row.querySelectorAll<HTMLElement>(':scope > [role="gridcell"]'));
+		return Array.from(row.children).filter(
+			(child): child is HTMLElement => child instanceof HTMLElement && child.getAttribute('role') === 'gridcell',
+		);
 	}
 
 	private getVisibleCells(): HTMLElement[] {
