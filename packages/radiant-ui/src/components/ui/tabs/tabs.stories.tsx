@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
-import { RuiTabs as RuiTabsElement, type RuiTabsProps } from './tabs.script';
+import type { RuiTabsProps } from './tabs.script';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from './tabs';
 
 const tabIcon = (paths: string | readonly string[]) => {
@@ -68,7 +68,7 @@ function renderProductTabs(args: RuiTabsProps) {
 
 const meta = {
 	title: 'Components/Tabs',
-	component: RuiTabsElement,
+	component: RuiTabs,
 	args: {
 		variant: 'boxed',
 		automatic: true,

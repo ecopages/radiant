@@ -43,9 +43,16 @@ const getOptions = (canvasElement: HTMLElement) =>
 	Array.from(canvasElement.querySelectorAll('[data-combobox-option]')) as HTMLElement[];
 const getTrigger = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector('[data-combobox-trigger]') as HTMLButtonElement;
+const isStaticSsrPreview = (canvasElement: HTMLElement) =>
+	Boolean(
+		canvasElement.querySelector('iframe.radiant-ssr-static-frame') ||
+		canvasElement.ownerDocument.defaultView?.frameElement?.classList.contains('radiant-ssr-static-frame'),
+	);
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 		const listbox = getListbox(canvasElement);
@@ -91,6 +98,8 @@ export const OpenOnFocus: Story = {
 		openOnFocus: true,
 	},
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 
@@ -110,6 +119,8 @@ export const OpenOnFocus: Story = {
 
 export const Keyboard: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 
@@ -179,6 +190,8 @@ export const Composed: Story = {
 		</div>
 	),
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 
