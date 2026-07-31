@@ -1,18 +1,25 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
-import { RuiAlert } from './alert';
+import { RuiAlert as RuiAlertElement, type RuiAlertProps } from './alert.script';
+import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from './alert';
 
 const meta = {
 	title: 'Components/Alert',
-	component: RuiAlert,
+	component: RuiAlertElement,
 	args: {
 		variant: 'info',
-		children: 'Your session will expire in 5 minutes.',
+		layout: 'inline',
 	},
-} satisfies Meta<typeof RuiAlert>;
+	render: (args: RuiAlertProps) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant={args.variant ?? 'info'} />
+			<span>Your session will expire in 5 minutes.</span>
+		</RuiAlert>
+	),
+} satisfies Meta<RuiAlertProps>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<RuiAlertProps>;
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
@@ -24,82 +31,60 @@ export const Default: Story = {
 	},
 };
 
-export const Success: Story = {
-	args: {
-		variant: 'success',
-		children: (
-			<div class="flex items-center gap-2">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="lucide lucide-circle-check"
-				>
-					<circle cx="12" cy="12" r="10"></circle>
-					<path d="m9 12 2 2 4-4"></path>
-				</svg>
-				<span>Profile saved.</span>
-			</div>
-		),
-	},
+export const InlineWarning: Story = {
+	args: { variant: 'warning', layout: 'inline' },
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant="warning" />
+			<span>Disk space is running low.</span>
+		</RuiAlert>
+	),
 };
 
-export const Warning: Story = {
-	args: {
-		variant: 'warning',
-		children: (
-			<div class="flex items-center gap-2">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="lucide lucide-triangle-alert"
-				>
-					<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
-					<path d="M12 9v4"></path>
-					<path d="M12 17h.01"></path>
-				</svg>
-				<span>Disk space is running low.</span>
-			</div>
-		),
-	},
+export const InlineError: Story = {
+	args: { variant: 'error', layout: 'inline' },
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant="error" />
+			<span>Unable to reach the server.</span>
+		</RuiAlert>
+	),
 };
 
-export const Error: Story = {
-	args: {
-		variant: 'error',
-		children: (
-			<div class="flex items-center gap-2">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="lucide lucide-circle-x"
-				>
-					<circle cx="12" cy="12" r="10"></circle>
-					<path d="m15 9-6 6"></path>
-					<path d="m9 9 6 6"></path>
-				</svg>
-				<span>Unable to reach the server.</span>
-			</div>
-		),
-	},
+export const InlineSuccess: Story = {
+	args: { variant: 'success', layout: 'inline' },
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant="success" />
+			<span>Profile saved.</span>
+		</RuiAlert>
+	),
+};
+
+export const Banner: Story = {
+	args: { variant: 'info', layout: 'banner' },
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertTitle>Documentation preview</RuiAlertTitle>
+			<RuiAlertDescription>
+				<p>
+					This release includes breaking changes to the routing API. Review the migration guide before
+					upgrading production apps.
+				</p>
+			</RuiAlertDescription>
+		</RuiAlert>
+	),
+};
+
+export const BannerWarning: Story = {
+	args: { variant: 'warning', layout: 'banner' },
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertTitle>Scheduled maintenance</RuiAlertTitle>
+			<RuiAlertDescription>
+				<p>The dashboard will be unavailable on Sunday from 02:00–04:00 UTC.</p>
+				<p>Save work in progress before the window starts.</p>
+			</RuiAlertDescription>
+		</RuiAlert>
+	),
 };

@@ -6,22 +6,101 @@ rui-alert {
 
 @layer components {
 	.rui-alert {
-		@apply rounded-container border px-control-x py-control-y text-sm;
+		@apply rounded-md text-sm shadow-xs;
+	}
+
+	.rui-alert--inline {
+		@apply flex items-start gap-2 px-4 py-3;
+	}
+
+	.rui-alert__icon {
+		@apply inline-flex shrink-0;
+	}
+
+	.rui-alert--banner {
+		@apply relative flex flex-col py-4 pr-4 pl-6;
+
+		&::before {
+			content: '';
+			@apply absolute top-3 bottom-3 left-2 w-1 rounded-full bg-current opacity-50;
+		}
+	}
+
+	.rui-alert__title {
+		@apply mb-0 font-bold;
+	}
+
+	.rui-alert__description {
+		p {
+			@apply my-1;
+		}
 	}
 
 	.rui-alert--info {
-		@apply border-border bg-surface text-on-surface;
+		@apply border border-blue-300 bg-blue-100 text-blue-700;
+	}
+
+	.rui-alert--info.rui-alert--banner {
+		&::before {
+			@apply bg-blue-500 opacity-100;
+		}
+
+		.rui-alert__title,
+		.rui-alert__description p,
+		.rui-alert__description span,
+		.rui-alert__description a {
+			@apply text-blue-700;
+		}
 	}
 
 	.rui-alert--success {
-		@apply border-success/40 bg-success/10 text-success;
+		@apply border border-emerald-300 bg-emerald-100 text-emerald-700;
+	}
+
+	.rui-alert--success.rui-alert--banner {
+		&::before {
+			@apply bg-emerald-500 opacity-100;
+		}
+
+		.rui-alert__title,
+		.rui-alert__description p,
+		.rui-alert__description span,
+		.rui-alert__description a {
+			@apply text-emerald-700;
+		}
 	}
 
 	.rui-alert--warning {
-		@apply border-border bg-surface text-on-surface;
+		@apply border border-yellow-300 bg-yellow-100 text-yellow-700;
+	}
+
+	.rui-alert--warning.rui-alert--banner {
+		&::before {
+			@apply bg-yellow-500 opacity-100;
+		}
+
+		.rui-alert__title,
+		.rui-alert__description p,
+		.rui-alert__description span,
+		.rui-alert__description a {
+			@apply text-yellow-700;
+		}
 	}
 
 	.rui-alert--error {
-		@apply border-error/40 bg-error/10 text-error;
+		@apply border border-red-300 bg-red-100 text-red-700;
+	}
+
+	.rui-alert--error.rui-alert--banner {
+		&::before {
+			@apply bg-red-500 opacity-100;
+		}
+
+		.rui-alert__title,
+		.rui-alert__description p,
+		.rui-alert__description span,
+		.rui-alert__description a {
+			@apply text-red-700;
+		}
 	}
 }
