@@ -20,6 +20,8 @@ type ToastStageProps = {
 };
 
 function ToastStage({ args, children, multiToaster = false }: ToastStageProps) {
+	toast.clear();
+
 	return (
 		<div style={{ position: 'relative', minHeight: '70vh' }}>
 			<div
