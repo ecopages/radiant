@@ -174,6 +174,15 @@ async function buildServerEntrypoints(): Promise<boolean> {
 }
 
 function runVerifyExports(): void {
+	const signalsBuild = spawnSync('pnpm', ['--filter', '@ecopages/signals', 'run', 'build:files'], {
+		cwd: packageRoot,
+		stdio: 'inherit',
+	});
+
+	if (signalsBuild.status !== 0) {
+		process.exit(signalsBuild.status ?? 1);
+	}
+
 	const verifyIndexScript = path.join(packageRoot, 'scripts', 'verify-dist-exports.ts');
 	const verifyServerScript = path.join(packageRoot, 'scripts', 'verify-server-shared-chunks.ts');
 

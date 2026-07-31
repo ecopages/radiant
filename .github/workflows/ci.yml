@@ -34,6 +34,9 @@ jobs:
             - name: Build libraries
               run: pnpm run build:all
 
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install chromium --with-deps
+
             - name: Run radiant server tests
               run: pnpm --filter @ecopages/radiant test:lib
 
