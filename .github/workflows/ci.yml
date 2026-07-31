@@ -40,8 +40,8 @@ jobs:
             - name: Run radiant server tests
               run: pnpm --filter @ecopages/radiant test:lib
 
-    radiant-ui-ssr-smoke:
-        name: radiant-ui SSR smoke
+    radiant-ui-storybook:
+        name: radiant-ui Storybook tests
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
@@ -62,5 +62,5 @@ jobs:
             - name: Install Playwright browsers
               run: pnpm exec playwright install chromium --with-deps
 
-            - name: Run Storybook SSR smoke
-              run: pnpm --filter @ecopages/radiant-ui test:ssr:smoke
+            - name: Run Storybook tests
+              run: pnpm --filter @ecopages/radiant-ui test:storybook
