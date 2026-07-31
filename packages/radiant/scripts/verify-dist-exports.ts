@@ -3,11 +3,14 @@ import * as esbuild from 'esbuild';
 
 const indexPath = path.join(import.meta.dirname, '..', 'dist', 'index.js');
 
+const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*'];
+
 try {
 	await esbuild.build({
 		absWorkingDir: path.join(import.meta.dirname, '..'),
 		bundle: true,
 		entryPoints: [indexPath],
+		external: externalPackages,
 		format: 'esm',
 		logLevel: 'silent',
 		platform: 'browser',
