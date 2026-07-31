@@ -1,13 +1,17 @@
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
+import {
+	evaluateStoryResult,
+	formatFailure,
+	parseHarnessOptions,
+	resolveStoryIds,
+	SSR_RENDER_MODES,
+	SSR_TEST_PORT,
+	type StoryIndex,
+} from './storybook-ssr-harness';
 
-const port = 6012;
-const origin = `http://localhost:${port}`;
-const modes = ['client', 'ssr-static', 'ssr-hydrate'] as const;
-
-type StoryIndex = {
-	entries: Record<string, { title: string; type: string }>;
-};
+const origin = `http://localhost:${SSR_TEST_PORT}`;
+const { smoke } = parseHarnessOptions();
 
 async function waitForStorybook(): Promise<void> {
 	for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -49,7 +53,7 @@ const server = spawn(
 		'storybook',
 		'dev',
 		'-p',
-		String(port),
+		String(SSR_TEST_PORT),
 		'-c',
 		'../radiant-ui/.storybook',
 		'--ci',
@@ -63,13 +67,11 @@ const server = spawn(
 try {
 	await waitForStorybook();
 	const index = (await fetch(`${origin}/index.json`).then((response) => response.json())) as StoryIndex;
-	const storyIds = Object.entries(index.entries)
-		.filter(([, entry]) => entry.type === 'story' && entry.title.startsWith('Components/'))
-		.map(([id]) => id);
+	const storyIds = resolveStoryIds(index, smoke);
 	const browser = await chromium.launch({ headless: true });
 	const failures: string[] = [];
 
-	for (const mode of modes) {
+	for (const mode of SSR_RENDER_MODES) {
 		for (const id of storyIds) {
 			const page = await browser.newPage();
 			const pageErrors: string[] = [];
@@ -81,9 +83,15 @@ try {
 			const banner =
 				(await errorBanner.count()) > 0 ? ((await errorBanner.textContent()) ?? 'ssr error banner') : null;
 			const mount = await page.locator('#storybook-root').innerHTML();
-			if (banner || !mount.trim() || pageErrors.length > 0) {
-				const reason = banner || pageErrors.join('; ') || 'empty mount';
-				failures.push(`${mode} ${id}: ${reason}`);
+			const failure = evaluateStoryResult({
+				banner,
+				mount,
+				pageErrors,
+				storyId: id,
+				smoke,
+			});
+			if (failure) {
+				failures.push(formatFailure(mode, id, failure));
 			}
 			await page.close();
 		}
@@ -91,7 +99,8 @@ try {
 
 	await browser.close();
 	if (failures.length > 0) {
-		throw new Error(`Storybook SSR failures:\n${failures.join('\n')}`);
+		const scope = smoke ? 'Storybook SSR smoke failures' : 'Storybook SSR failures';
+		throw new Error(`${scope}:\n${failures.join('\n')}`);
 	}
 } finally {
 	stopServer(server.pid);
