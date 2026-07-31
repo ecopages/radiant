@@ -12,6 +12,15 @@ type HtmlParsers = {
 let htmlParsers: HtmlParsers | undefined;
 
 /**
+ * EventTarget captured when the minimal-DOM module is evaluated.
+ *
+ * @remarks The installer restores this exact constructor after global replacement so
+ * MinimalNode instances remain compatible with `instanceof EventTarget` checks even
+ * when a foreign runtime changes globals after module evaluation.
+ */
+export const MinimalEventTarget = EventTarget;
+
+/**
  * Registers HTML parse/serialize helpers from `./html` to break a circular import.
  * Import `./html` (or the light-DOM install entry) before using `innerHTML`.
  */
@@ -66,7 +75,7 @@ function createMinimalStyle(onChange: (value: string) => void): CSSStyleDeclarat
 	}) as CSSStyleDeclaration;
 }
 
-export class MinimalNode extends EventTarget {
+export class MinimalNode extends MinimalEventTarget {
 	static readonly DOCUMENT_NODE = 9;
 	static readonly ELEMENT_NODE = 1;
 	static readonly TEXT_NODE = 3;
@@ -365,7 +374,7 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	get children(): MinimalHTMLElement[] {
-		return Array.from(this.childNodes).filter(
+		return Array.from(this.childNodes ?? []).filter(
 			(node) => node.nodeType === MinimalNode.ELEMENT_NODE,
 		) as unknown as MinimalHTMLElement[];
 	}
