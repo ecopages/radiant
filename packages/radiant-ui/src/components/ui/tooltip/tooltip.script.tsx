@@ -1,4 +1,5 @@
 import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { findFirstFocusableCandidate } from '../../../lib/focusable-elements';
 import { applyFloatingPosition, attachFloating } from '../shared/floating-position';
 import type { RuiPlacement } from '../shared/placement';
 
@@ -89,8 +90,7 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	}
 
 	private getAnchor(): HTMLElement {
-		const candidates = this.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]');
-		return Array.from(candidates).find((candidate) => candidate.getAttribute('tabindex') !== '-1') ?? this;
+		return findFirstFocusableCandidate(this) ?? this;
 	}
 
 	private wireTrigger(): void {

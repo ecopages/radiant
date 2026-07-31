@@ -1,4 +1,5 @@
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
+import { queryFocusableCandidates } from '../../../lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '../../../lib/roving-tabindex';
 
 export type RuiToolbarProps = {
@@ -28,9 +29,7 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getItems(): HTMLElement[] {
-		return Array.from(this.querySelectorAll<HTMLElement>('button, a[href], input, select, [tabindex]')).filter(
-			(el) => !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1',
-		);
+		return queryFocusableCandidates(this);
 	}
 
 	override connectedCallback(): void {
