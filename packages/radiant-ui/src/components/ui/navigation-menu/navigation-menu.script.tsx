@@ -1,5 +1,5 @@
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { getFocusableElements } from '@/lib/focusable-elements';
+import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 
 export type RuiNavigationMenuProps = {
@@ -74,6 +74,10 @@ export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings>
 		return Array.from(this.querySelectorAll<HTMLElement>('[data-navigation-panel]'));
 	}
 
+	private getPanelFocusables(panel: HTMLElement): HTMLElement[] {
+		return queryRovingTabindexItems(panel);
+	}
+
 	private focusPanelEntry(value: string): void {
 		const panel = this.getPanel(value);
 		if (!panel) {
@@ -81,7 +85,7 @@ export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings>
 			return;
 		}
 
-		const focusables = getFocusableElements(panel);
+		const focusables = this.getPanelFocusables(panel);
 		if (focusables.length > 0) {
 			focusables[0].focus();
 			return;
@@ -325,13 +329,13 @@ export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings>
 			return;
 		}
 
-		if (event.key === 'ArrowUp' && active === getFocusableElements(panel)[0]) {
+		const focusables = this.getPanelFocusables(panel);
+
+		if (event.key === 'ArrowUp' && active === focusables[0]) {
 			event.preventDefault();
 			this.getTrigger(value)?.focus();
 			return;
 		}
-
-		const focusables = getFocusableElements(panel);
 		if (!focusables.length) {
 			return;
 		}

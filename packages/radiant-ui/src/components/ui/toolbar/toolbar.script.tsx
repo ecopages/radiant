@@ -1,5 +1,5 @@
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { queryFocusableCandidates } from '@/lib/focusable-elements';
+import { queryRovingTabindexItems } from '@/lib/focusable-elements';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 
 export type RuiToolbarProps = {
@@ -29,7 +29,7 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getItems(): HTMLElement[] {
-		return queryFocusableCandidates(this);
+		return queryRovingTabindexItems(this);
 	}
 
 	override connectedCallback(): void {
@@ -40,9 +40,12 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 	@onEvent({ type: 'keydown', selector: 'button, a[href], input, select, [tabindex]' })
 	onKeydown(event: KeyboardEvent): void {
 		const items = this.getItems();
+		const current = (event.target as HTMLElement).closest(
+			'button, a[href], input, select, [tabindex]',
+		) as HTMLElement | null;
 		const result = navigateRovingTabindex({
 			items,
-			current: event.target as HTMLElement,
+			current,
 			key: event.key,
 			orientation: 'horizontal',
 		});
