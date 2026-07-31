@@ -16,10 +16,28 @@ async function waitForStorybook(): Promise<void> {
 			if (response.ok) {
 				return;
 			}
-		} catch {}
+		} catch {
+			/* retry */
+		}
 		await new Promise((resolve) => setTimeout(resolve, 500));
 	}
 	throw new Error('Timed out waiting for Storybook.');
+}
+
+function stopServer(pid: number | undefined): void {
+	if (!pid) {
+		return;
+	}
+
+	try {
+		process.kill(-pid, 'SIGTERM');
+	} catch {
+		try {
+			process.kill(pid, 'SIGTERM');
+		} catch {
+			/* already exited */
+		}
+	}
 }
 
 const server = spawn(
@@ -37,6 +55,7 @@ const server = spawn(
 		'--ci',
 	],
 	{
+		detached: true,
 		stdio: 'inherit',
 	},
 );
@@ -58,7 +77,9 @@ try {
 			await page.goto(`${origin}/iframe.html?id=${id}&globals=radiantRenderMode:${mode}`, {
 				waitUntil: 'networkidle',
 			});
-			const banner = await page.locator('.radiant-ssr-error').textContent();
+			const errorBanner = page.locator('.radiant-ssr-error');
+			const banner =
+				(await errorBanner.count()) > 0 ? ((await errorBanner.textContent()) ?? 'ssr error banner') : null;
 			const mount = await page.locator('#storybook-root').innerHTML();
 			if (banner || !mount.trim() || pageErrors.length > 0) {
 				const reason = banner || pageErrors.join('; ') || 'empty mount';
@@ -73,5 +94,5 @@ try {
 		throw new Error(`Storybook SSR failures:\n${failures.join('\n')}`);
 	}
 } finally {
-	server.kill();
+	stopServer(server.pid);
 }
