@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiDisclosureGroupProps } from './disclosure-group.script';
 import { RuiDisclosureGroup as RuiDisclosureGroupElement } from './disclosure-group.script';
 import type { RuiDisclosureProps } from './disclosure.script';

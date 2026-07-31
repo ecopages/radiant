@@ -1,6 +1,6 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { queryFocusableCandidates } from '../../../lib/focusable-elements';
+import { queryFocusableCandidates } from '@/lib/focusable-elements';
 
 export type RuiDialogProps = {
 	/** Whether the dialog is open. Default: `false`. */

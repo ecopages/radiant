@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
-import { isStaticSsrPreview } from '../../lib/storybook-ssr';
+import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiTabsProps } from './tabs.script';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from './tabs';
 

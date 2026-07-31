@@ -1,5 +1,5 @@
 import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
-import { applyRovingTabindex, navigateRovingTabindex } from '../../../lib/roving-tabindex';
+import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import type { RuiDisclosureToggleDetail } from './disclosure.script';
 import { RuiDisclosure } from './disclosure.script';
 

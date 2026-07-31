@@ -9,6 +9,12 @@ Guidance for humans and agents working on the design system in `packages/radiant
 - **Styling:** Tailwind CSS v4 authoring (`@reference` + `@apply`); `build:lib` / `copy-styles` compiles to plain CSS in `dist/` (CSS variables preserved, not minified)
 - **Authoring:** Not React; see `src/Introduction.mdx` for component tiers and file layout
 
+## Imports
+
+- Cross-cutting helpers under `src/lib/` → `@/lib/...` (configured in `tsconfig.app.json`, Vite, Storybook, and `scripts/build.ts`).
+- Shared types from `src/types.ts` → `@/types`.
+- Same-component and sibling UI imports → `./` and `../` only.
+
 ## CSS architecture (two layers)
 
 1. **Theme** — CSS variables (packs + semantic roles). Loaded by the app or Storybook, not by individual component stylesheets.

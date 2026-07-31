@@ -1,6 +1,6 @@
 import { RadiantElement, customElement, onEvent, prop } from '@ecopages/radiant';
-import { getFocusableElements } from '../../../lib/focusable-elements';
-import { applyRovingTabindex, navigateRovingTabindex } from '../../../lib/roving-tabindex';
+import { getFocusableElements } from '@/lib/focusable-elements';
+import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 
 export type RuiNavigationMenuProps = {
 	label?: string;

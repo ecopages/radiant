@@ -1,5 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
+import type { RadiantSlotProps } from '@/types';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost';
 export type RuiButtonSize = 'sm' | 'md' | 'lg';

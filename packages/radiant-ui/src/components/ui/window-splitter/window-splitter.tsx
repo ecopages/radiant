@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiWindowSplitterProps } from './window-splitter.script';
 import { RuiWindowSplitter as RuiWindowSplitterElement } from './window-splitter.script';
 import './window-splitter.css';

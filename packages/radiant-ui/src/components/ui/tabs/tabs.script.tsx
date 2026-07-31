@@ -1,6 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { navigateRovingTabindex } from '../../../lib/roving-tabindex';
+import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 
 export type RuiTabsVariant = 'ghost' | 'boxed';
 

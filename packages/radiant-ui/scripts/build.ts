@@ -36,6 +36,9 @@ function listComponentEntries(): string[] {
 try {
 	await esbuild.build({
 		absWorkingDir: ROOT,
+		alias: {
+			'@': SRC,
+		},
 		bundle: true,
 		entryPoints: [path.join(SRC, 'index.ts'), ...listComponentEntries()],
 		external: externalPackages,

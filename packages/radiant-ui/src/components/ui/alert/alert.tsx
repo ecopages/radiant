@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps, WithChildren } from '../../../types';
-import { defineRadiantView } from '../../../lib/radiant-view';
+import type { RadiantSlotProps, WithChildren } from '@/types';
+import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiAlertProps, RuiAlertVariant } from './alert.script';
 import { RuiAlert as RuiAlertElement } from './alert.script';
 import './alert.css';
