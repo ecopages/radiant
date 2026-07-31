@@ -1,3 +1,4 @@
+import '../install/install-ssr-runtime';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import { renderToString as renderJsxToString, type RenderToStringOptions } from '@ecopages/jsx/server';
 import { getControllerIdentifier } from '../../core/controller-metadata';
@@ -8,7 +9,6 @@ import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlAttributeName, assertValidHtmlTagName } from '../../utils/html-names';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 import { runWithSsrProviderStack, withSsrContextProviders } from '../context-ssr';
-import '../install/install-ssr-runtime';
 import { ensureLightDomShim } from '../shim/light-dom-shim';
 import {
 	getOrCreateRadiantElementSsrRuntime,

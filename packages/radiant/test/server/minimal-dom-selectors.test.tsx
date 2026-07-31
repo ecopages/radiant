@@ -104,6 +104,32 @@ describe('minimal-dom selectors', () => {
 		document.removeChild(host);
 	});
 
+	test('document.getElementById finds a descendant and elements expose children', () => {
+		const host = document.createElement('minimal-dom-children-test');
+		host.innerHTML = '<span id="first"></span>text<button id="second"></button>';
+		document.appendChild(host);
+
+		expect(document.getElementById('second')).toBe(host.querySelector('#second'));
+		expect(Array.from(host.children).map((child) => child.id)).toEqual(['first', 'second']);
+
+		document.removeChild(host);
+	});
+
+	test('style properties serialize through the style attribute', () => {
+		const element = new MinimalHTMLElement('div');
+		element.style.setProperty('--offset', '12px');
+		element.style.height = '24px';
+
+		expect(element.style.getPropertyValue('--offset')).toBe('12px');
+		expect(element.getAttribute('style')).toContain('--offset: 12px');
+		expect(element.getAttribute('style')).toContain('height: 24px');
+	});
+
+	test('provides animation-frame functions for layout-aware components', () => {
+		expect(typeof requestAnimationFrame).toBe('function');
+		expect(typeof cancelAnimationFrame).toBe('function');
+	});
+
 	test('selector module matches custom element tags', () => {
 		const group = new MinimalHTMLElement('rui-disclosure-group');
 		const disclosure = new MinimalHTMLElement('rui-disclosure');
