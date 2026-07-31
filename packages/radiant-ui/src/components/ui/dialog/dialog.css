@@ -1,6 +1,7 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-dialog {
+	--dialog-offset-x: 16px;
 	@apply contents;
 }
 
@@ -49,5 +50,11 @@ rui-dialog {
 
 	.rui-dialog__actions:empty {
 		@apply hidden;
+	}
+}
+
+@media (max-width: 600px) {
+	.rui-dialog {
+		padding-inline: var(--dialog-offset-x);
 	}
 }
