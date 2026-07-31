@@ -13,6 +13,18 @@ export function queryFocusableCandidates(root: ParentNode): HTMLElement[] {
 	return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_CANDIDATE_SELECTOR)).filter(isFocusableCandidate);
 }
 
+/**
+ * Returns the full roving-tabindex collection for a container.
+ *
+ * @remarks Unlike {@link queryFocusableCandidates}, inactive roving items with `tabindex="-1"`
+ * stay in the list so arrow-key navigation can move across the whole set.
+ */
+export function queryRovingTabindexItems(root: ParentNode): HTMLElement[] {
+	return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_CANDIDATE_SELECTOR)).filter(
+		(element) => !element.hasAttribute('disabled'),
+	);
+}
+
 /** Returns the first focusable descendant, or `undefined` when none match. */
 export function findFirstFocusableCandidate(root: ParentNode): HTMLElement | undefined {
 	return queryFocusableCandidates(root)[0];
