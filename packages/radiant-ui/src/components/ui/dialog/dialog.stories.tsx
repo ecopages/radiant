@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { expect, userEvent, fn } from 'storybook/test';
+import { isStaticSsrPreview } from '../../lib/storybook-ssr';
 import {
 	RuiDialog,
 	RuiDialogActions,
@@ -65,11 +66,6 @@ const getDialog = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector(`#${STORY_DIALOG_ID} [data-ref="dialog"]`) as HTMLElement;
 const getHost = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector(`rui-dialog#${STORY_DIALOG_ID}`) as HTMLElement;
-const isStaticSsrPreview = (canvasElement: HTMLElement) =>
-	Boolean(
-		canvasElement.querySelector('iframe.radiant-ssr-static-frame') ||
-		canvasElement.ownerDocument.defaultView?.frameElement?.classList.contains('radiant-ssr-static-frame'),
-	);
 
 async function openStoryDialog(canvasElement: HTMLElement): Promise<void> {
 	const trigger = canvasElement.querySelector(`[data-dialog-open="${STORY_DIALOG_ID}"]`) as HTMLButtonElement | null;

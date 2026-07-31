@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { isStaticSsrPreview } from '../../lib/storybook-ssr';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import {
@@ -43,11 +44,6 @@ const getOptions = (canvasElement: HTMLElement) =>
 	Array.from(canvasElement.querySelectorAll('[data-combobox-option]')) as HTMLElement[];
 const getTrigger = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector('[data-combobox-trigger]') as HTMLButtonElement;
-const isStaticSsrPreview = (canvasElement: HTMLElement) =>
-	Boolean(
-		canvasElement.querySelector('iframe.radiant-ssr-static-frame') ||
-		canvasElement.ownerDocument.defaultView?.frameElement?.classList.contains('radiant-ssr-static-frame'),
-	);
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {

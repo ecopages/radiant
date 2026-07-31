@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
+import { isStaticSsrPreview } from '../../lib/storybook-ssr';
 import type { RuiAlertProps } from './alert.script';
 import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from './alert';
 
@@ -23,6 +24,8 @@ type Story = StoryObj<RuiAlertProps>;
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement)) return;
+
 		await step('alert exposes role=alert', async () => {
 			const alert = canvasElement.querySelector('[role="alert"]');
 			await expect(alert).toBeInTheDocument();

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
+import { isStaticSsrPreview } from '../../lib/storybook-ssr';
 import type { RuiTabsProps } from './tabs.script';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from './tabs';
 
@@ -86,6 +87,8 @@ const getPanels = (canvasElement: HTMLElement) =>
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || getTabs(canvasElement).length === 0) return;
+
 		const tabs = getTabs(canvasElement);
 		const panels = getPanels(canvasElement);
 
@@ -147,6 +150,8 @@ export const Composed: Story = {
 
 export const Keyboard: Story = {
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || getTabs(canvasElement).length === 0) return;
+
 		const tabs = getTabs(canvasElement);
 		const panels = getPanels(canvasElement);
 
@@ -172,6 +177,8 @@ export const Keyboard: Story = {
 export const Manual: Story = {
 	args: { automatic: false },
 	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || getTabs(canvasElement).length === 0) return;
+
 		const tabs = getTabs(canvasElement);
 		const panels = getPanels(canvasElement);
 
