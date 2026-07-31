@@ -352,6 +352,9 @@ importers:
                 specifier: ^2.2.0
                 version: 2.3.0
         devDependencies:
+            '@ecopages/jsx':
+                specifier: workspace:*
+                version: link:../jsx/dist
             '@types/node':
                 specifier: ^24.13.2
                 version: 24.13.3
