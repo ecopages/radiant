@@ -253,6 +253,67 @@ describe('RuiSidebar composition', () => {
 		cleanup();
 	});
 
+	it('does not render a resize handle by default', async () => {
+		const { host, cleanup } = mount(
+			<RuiSidebar id="primary-sidebar" collapsible="off" mobileBreakpoint={0} label="Primary">
+				<span>content</span>
+			</RuiSidebar>,
+		);
+
+		await settled();
+
+		expect(host.querySelector('[data-ref="handle"]')).toBeNull();
+
+		cleanup();
+	});
+
+	it('starts collapsed when defaultOpen is explicitly false', async () => {
+		const { host, cleanup } = mount(
+			<RuiSidebar
+				id="primary-sidebar"
+				collapsible="full"
+				defaultOpen={false}
+				mobileBreakpoint={0}
+				label="Primary"
+			>
+				<span>content</span>
+			</RuiSidebar>,
+		);
+
+		await settled();
+
+		const sidebar = host.querySelector('rui-sidebar') as SidebarEl;
+		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
+		expect((host.querySelector('[data-ref="pane"]') as HTMLElement).hasAttribute('inert')).toBe(true);
+
+		cleanup();
+	});
+
+	it('does not change uncontrolled state when defaultOpen changes after initialization', async () => {
+		const { host, cleanup } = mount(
+			<RuiSidebar
+				id="primary-sidebar"
+				collapsible="full"
+				defaultOpen={false}
+				mobileBreakpoint={0}
+				label="Primary"
+			>
+				<span>content</span>
+			</RuiSidebar>,
+		);
+
+		await settled();
+
+		const sidebar = host.querySelector('rui-sidebar') as SidebarEl & { defaultOpen: boolean };
+		sidebar.defaultOpen = true;
+		await settled();
+
+		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
+		expect((host.querySelector('[data-ref="pane"]') as HTMLElement).hasAttribute('inert')).toBe(true);
+
+		cleanup();
+	});
+
 	it('updates pane width var on keyboard resize', async () => {
 		const { host, cleanup } = mount(
 			<RuiSidebar

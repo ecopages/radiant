@@ -405,6 +405,8 @@ const hydratedHtml = renderToString(view, { mode: 'hydrate' });
 
 Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dynamic parts without rebuilding the existing DOM tree.
 
+Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an object, function, DOM node, or framework instance, so JSX emits a hydration marker but does not stringify the value into HTML. If a custom element's pre-hydration state matters, represent that state through a reflected/serializable attribute or the owning framework's SSR bridge, and keep the custom element's default aligned with the server output.
+
 ### Hydration Root Shapes
 
 `hydrate(...)` chooses one of three recovery paths based on the JSX root shape:

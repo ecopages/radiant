@@ -66,6 +66,14 @@ When a component renders literal `<slot>` tags, host serialization also emits th
 
 `RadiantElement.renderViewToString()` remains the narrow host hook that asks the installed server runtime to serialize the JSX view only.
 
+### Typed Boolean host attributes
+
+Radiant `@prop({ type: Boolean })` values serialize as **value booleans** (`enabled="true"` / `enabled="false"`), including explicit `false`. That is intentional pre-hydration transport so a client upgrade cannot restore a true default before hydration.
+
+This is not HTML presence-boolean semantics. A selector like `[enabled]` matches any serialized value, including `"false"`. Prefer `[enabled="true"]` / `[enabled="false"]`, or drive styles from component state attributes/classes (`data-state`, etc.).
+
+Generic JSX `prop:*` bindings remain client-only and do not stringify property values into HTML; use the Radiant SSR host bridge (or a reflected attribute) when pre-hydration state must appear in markup.
+
 `RadiantController` does not expose host-owned SSR instance methods. For controller-owned SSR, use the explicit `renderController*()` helpers from `@ecopages/radiant/server/render-controller` and provide the authored host tag and attributes declaratively.
 
 Important: `renderController()` owns only the inner view plus the serialized host attributes. The caller still owns the outer host contract through `tagName`, `host`, and `attributes`, and `data-controller` is inferred only when the controller constructor carries `@controller(...)` metadata.
