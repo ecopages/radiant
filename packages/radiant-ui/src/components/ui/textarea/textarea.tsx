@@ -1,6 +1,6 @@
+import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 import type { RuiInputSize } from '../input';
-import './textarea.css';
 
 export type RuiTextareaProps = {
 	value?: string;
@@ -61,3 +61,5 @@ export function RuiTextarea({
 		/>
 	);
 }
+
+attachRadiantStylesheets(RuiTextarea, ['./textarea.css'], import.meta.url);

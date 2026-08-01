@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFeedProps } from './feed.script';
 import { RuiFeed as RuiFeedElement } from './feed.script';
-import './feed.css';
 
 export type RuiFeedArticle = { id: string; title: string; children: JsxRenderable };
 
@@ -24,4 +23,6 @@ export const RuiFeed = defineRadiantView(
 			))}
 		</rui-feed>
 	),
+
+	{ stylesheets: ['./feed.css'] },
 );

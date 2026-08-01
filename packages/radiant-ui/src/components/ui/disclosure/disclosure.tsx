@@ -5,8 +5,6 @@ import type { RuiDisclosureGroupProps } from './disclosure-group.script';
 import { RuiDisclosureGroup as RuiDisclosureGroupElement } from './disclosure-group.script';
 import type { RuiDisclosureProps } from './disclosure.script';
 import { RuiDisclosure as RuiDisclosureElement } from './disclosure.script';
-import './disclosure-group.css';
-import './disclosure.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -111,6 +109,8 @@ export const RuiDisclosure = defineRadiantView(
 			</rui-disclosure>
 		);
 	},
+
+	{ stylesheets: ['./disclosure.css'] },
 );
 
 export const RuiDisclosureGroup = defineRadiantView(
@@ -125,4 +125,6 @@ export const RuiDisclosureGroup = defineRadiantView(
 			{children}
 		</rui-disclosure-group>
 	),
+
+	{ stylesheets: ['./disclosure-group.css'] },
 );

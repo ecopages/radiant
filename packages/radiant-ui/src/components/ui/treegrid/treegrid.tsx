@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTreegridProps } from './treegrid.script';
 import { RuiTreegrid as RuiTreegridElement } from './treegrid.script';
-import './treegrid.css';
 
 export type RuiTreegridRow = {
 	id: string;
@@ -64,4 +63,6 @@ export const RuiTreegrid = defineRadiantView(
 			<TreegridRows rows={rows} />
 		</rui-treegrid>
 	),
+
+	{ stylesheets: ['./treegrid.css'] },
 );

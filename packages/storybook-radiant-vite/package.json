@@ -50,7 +50,8 @@
 	"scripts": {
 		"build": "tsup && tsc -p tsconfig.build.json --noCheck",
 		"dev": "tsup --watch",
-		"clean": "rm -rf dist"
+		"clean": "rm -rf dist",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@ecopages/vite-plugin-radiant": "workspace:*",
@@ -64,7 +65,8 @@
 		"@types/node": "^24.13.2",
 		"tsup": "^8.5.0",
 		"typescript": "catalog:",
-		"vite": "^8.1.1"
+		"vite": "^8.1.1",
+		"vitest": "^4.1.10"
 	},
 	"peerDependencies": {
 		"@ecopages/jsx": ">=0.3.0-beta.4",

@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiGridProps } from './grid.script';
 import { RuiGrid as RuiGridElement } from './grid.script';
-import './grid.css';
 
 export const RuiGrid = defineRadiantView(
 	RuiGridElement,
@@ -20,4 +19,6 @@ export const RuiGrid = defineRadiantView(
 			))}
 		</rui-grid>
 	),
+
+	{ stylesheets: ['./grid.css'] },
 );

@@ -31,6 +31,10 @@ export type RuiTabsChangeDetail = {
  * Compose with `RuiTabList`, `RuiTab`, `RuiTabPanels`, and `RuiTabPanel`, or author
  * matching `[role="tablist"]`, `[role="tab"]`, and `[role="tabpanel"]` markup directly.
  *
+ * @remarks
+ * Re-syncs when light-DOM children are replaced (e.g. a parent host re-renders the
+ * tab list). Observes `childList` only so attribute updates from sync itself do not loop.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
  *
  * @element rui-tabs
@@ -47,18 +51,30 @@ export class RuiTabs extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTabsChangeDetail>;
 
+	private childObserver: MutationObserver | null = null;
+
 	override connectedCallback(): void {
 		super.connectedCallback();
-		queueMicrotask(() => {
-			this.syncTablistLabel();
-			this.syncSelection(this.value || this.getTabValue(this.getTabs()[0]) || '');
-		});
+		this.childObserver = new MutationObserver(() => this.resync());
+		this.childObserver.observe(this, { childList: true, subtree: true });
+		queueMicrotask(() => this.resync());
+	}
+
+	override disconnectedCallback(): void {
+		this.childObserver?.disconnect();
+		this.childObserver = null;
+		super.disconnectedCallback();
 	}
 
 	@onUpdated(['value', 'label'])
 	onPropsUpdated(): void {
+		this.resync();
+	}
+
+	/** Re-applies tablist labeling and selected/hidden state from the current `value`. */
+	resync(): void {
 		this.syncTablistLabel();
-		if (this.value) this.syncSelection(this.value);
+		this.syncSelection(this.value || this.getTabValue(this.getTabs()[0]) || '');
 	}
 
 	private getTabs(): HTMLElement[] {

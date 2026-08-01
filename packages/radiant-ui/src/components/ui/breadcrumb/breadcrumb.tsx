@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiBreadcrumbProps } from './breadcrumb.script';
 import { RuiBreadcrumb as RuiBreadcrumbElement } from './breadcrumb.script';
-import './breadcrumb.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -27,6 +26,8 @@ export const RuiBreadcrumb = defineRadiantView(
 			{children}
 		</rui-breadcrumb>
 	),
+
+	{ stylesheets: ['./breadcrumb.css'] },
 );
 
 export type RuiBreadcrumbListProps = {
