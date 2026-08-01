@@ -1,22 +1,19 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost';
 export type RuiButtonSize = 'sm' | 'md' | 'lg';
 
-type RuiButtonCommonProps = RadiantSlotProps & {
+type RuiButtonCommonProps = JsxHtmlPropsWithChildren<{
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
 	/** Control size. Default: `md`. */
 	size?: RuiButtonSize;
-	/** Extra class names appended after the variant/size classes. */
-	class?: string;
 	/** Accessible name when the button has no visible text. */
 	'aria-label'?: string;
-	/** Data attributes forwarded to the native control. */
-	data?: Record<string, boolean | number | string | undefined>;
-	children?: JsxRenderable;
-};
+	/** Optional light-DOM slot when composing into a parent custom element. */
+	slot?: string;
+}>;
 
 export type RuiButtonControlProps = RuiButtonCommonProps & {
 	/** Native button type. Default: `button`. */
@@ -44,14 +41,6 @@ export type RuiButtonLinkProps = RuiButtonCommonProps & {
 };
 
 export type RuiButtonProps = RuiButtonControlProps | RuiButtonLinkProps;
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
-
-function getClassNames({ variant = 'filled', size = 'md', class: className }: RuiButtonProps): string {
-	return cx('rui-button', `rui-button--${variant}`, `rui-button--${size}`, className);
-}
 
 function resolveAriaPressed(
 	pressed: boolean | undefined,
@@ -81,20 +70,34 @@ function resolveAriaPressed(
  */
 export function RuiButton(props: RuiButtonProps) {
 	if (props.href !== undefined) {
+		const {
+			href,
+			target,
+			rel,
+			download,
+			'aria-label': ariaLabel,
+			'aria-current': ariaCurrent,
+			'on:click': onClick,
+			children,
+			class: className,
+			variant,
+			size,
+			...host
+		} = props;
+
 		return (
 			<a
-				href={props.href}
-				target={props.target}
-				rel={props.rel}
-				download={props.download}
-				slot={props.slot}
-				class={getClassNames(props)}
-				aria-label={props['aria-label']}
-				aria-current={props['aria-current']}
-				data={props.data}
-				on:click={props['on:click']}
+				{...host}
+				href={href}
+				target={target}
+				rel={rel}
+				download={download}
+				class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, className)}
+				aria-label={ariaLabel}
+				aria-current={ariaCurrent}
+				on:click={onClick}
 			>
-				{props.children}
+				{children}
 			</a>
 		);
 	}
@@ -103,7 +106,6 @@ export function RuiButton(props: RuiButtonProps) {
 		variant,
 		size,
 		class: className,
-		slot,
 		children,
 		'aria-label': ariaLabel,
 		type = 'button',
@@ -112,7 +114,7 @@ export function RuiButton(props: RuiButtonProps) {
 		defaultPressed = false,
 		toggle = false,
 		'on:click': onClick,
-		...rest
+		...host
 	} = props;
 	const handleClick = (event: Event) => {
 		if (toggle && pressed === undefined) {
@@ -126,15 +128,14 @@ export function RuiButton(props: RuiButtonProps) {
 
 	return (
 		<button
+			{...host}
 			type={type}
-			slot={slot}
 			class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, className)}
 			disabled={disabled}
 			aria-label={ariaLabel}
 			aria-pressed={resolveAriaPressed(pressed, toggle, defaultPressed)}
 			data-toggle={toggle && pressed === undefined ? '' : undefined}
 			on:click={toggle || onClick ? handleClick : undefined}
-			{...rest}
 		>
 			{children}
 		</button>

@@ -1,5 +1,4 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTreeProps } from './tree.script';
 import { RuiTree as RuiTreeElement } from './tree.script';
@@ -51,11 +50,10 @@ const TreeNodes = ({ nodes }: { nodes: RuiTreeNode[] }) => (
 
 export const RuiTree = defineRadiantView(
 	RuiTreeElement,
-	({ slot, label, value, nodes }: RuiTreeProps & RadiantSlotProps & { nodes: RuiTreeNode[] }) => (
-		<rui-tree slot={slot} label={label} value={value}>
+	({ nodes, ...props }: JsxHtmlProps<RuiTreeProps & { slot?: string; nodes: RuiTreeNode[] }>) => (
+		<rui-tree {...props}>
 			<TreeNodes nodes={nodes} />
 		</rui-tree>
 	),
-
 	{ stylesheets: ['./tree.css'] },
 );

@@ -1,26 +1,23 @@
+import type { JsxHtmlProps } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
 export type RuiInputSize = 'sm' | 'md' | 'lg';
 
-export type RuiInputProps = {
+export type RuiInputProps = JsxHtmlProps<{
 	value?: string;
 	type?: string;
 	placeholder?: string;
 	disabled?: boolean;
 	name?: string;
 	size?: RuiInputSize;
-	class?: string;
 	id?: string;
 	'aria-label'?: string;
 	'on:input'?: (event: Event) => void;
 	'on:change'?: (event: Event) => void;
 	'on:blur'?: (event: Event) => void;
-};
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
+}>;
 
 /**
  * Presentational wrapper around a native `<input>`.
@@ -28,37 +25,16 @@ function cx(...parts: Array<string | false | null | undefined>): string {
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
  * Marked with `data-rui-control` so `<rui-field>` can discover it.
  */
-export function RuiInput({
-	value,
-	type = 'text',
-	placeholder,
-	disabled,
-	name,
-	size = 'md',
-	class: className,
-	id,
-	'aria-label': ariaLabel,
-	'on:input': onInput,
-	'on:change': onChange,
-	'on:blur': onBlur,
-	...rest
-}: RuiInputProps) {
+export function RuiInput(props: RuiInputProps) {
+	const { size = 'md', class: className, type = 'text', ...host } = props;
+
 	return (
 		<input
-			id={id}
+			{...host}
 			type={type}
 			{...{ [RUI_CONTROL_ATTR]: '' }}
 			data-rui-control-type="text"
 			class={cx('rui-input', `rui-input--${size}`, className)}
-			value={value}
-			placeholder={placeholder}
-			disabled={disabled}
-			name={name}
-			aria-label={ariaLabel}
-			on:input={onInput}
-			on:change={onChange}
-			on:blur={onBlur}
-			{...rest}
 		/>
 	);
 }

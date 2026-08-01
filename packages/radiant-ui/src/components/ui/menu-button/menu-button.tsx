@@ -1,5 +1,4 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiMenuButtonProps } from './menu-button.script';
 import { RuiMenuButton as RuiMenuButtonElement } from './menu-button.script';
@@ -13,17 +12,11 @@ export type RuiMenuItem = {
 export const RuiMenuButton = defineRadiantView(
 	RuiMenuButtonElement,
 	({
-		slot,
-		open,
-		placement,
 		trigger,
 		items,
-	}: RuiMenuButtonProps &
-		RadiantSlotProps & {
-			trigger: JsxRenderable;
-			items: RuiMenuItem[];
-		}) => (
-		<rui-menu-button slot={slot} open={open} placement={placement}>
+		...props
+	}: JsxHtmlProps<RuiMenuButtonProps & { slot?: string; trigger: JsxRenderable; items: RuiMenuItem[] }>) => (
+		<rui-menu-button {...props}>
 			<span slot="trigger">{trigger}</span>
 			{items.map((item) => (
 				<button
@@ -39,6 +32,5 @@ export const RuiMenuButton = defineRadiantView(
 			))}
 		</rui-menu-button>
 	),
-
 	{ stylesheets: ['./menu-button.css'] },
 );
