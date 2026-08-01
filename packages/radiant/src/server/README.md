@@ -220,12 +220,12 @@ SSR hosts created with `new Component()` also align `localName` / `tagName` to t
 
 Track minimal-DOM workarounds here before considering a heavier DOM backend. A backend spike is warranted only when multiple categories keep forcing shared workarounds.
 
-| API / limitation | Category | Components | Workaround |
-| ---------------- | -------- | ---------- | ---------- |
-| `:not`, `:scope`, sibling combinators | selector | dialog, toolbar, tooltip, treegrid | Simple selectors + JS post-filter via shared query helpers |
-| `instanceof HTMLLabelElement` | prototype-identity | combobox | `tagName.toLowerCase() === 'label'` |
-| `requestAnimationFrame` callbacks | timing | toast, toaster | No-op shim during SSR; hydrate owns layout |
-| Live `HTMLCollection` for `children` | dom-api | treegrid | Read `children` snapshot or filter `childNodes` directly |
+| API / limitation                      | Category           | Components                         | Workaround                                                 |
+| ------------------------------------- | ------------------ | ---------------------------------- | ---------------------------------------------------------- |
+| `:not`, `:scope`, sibling combinators | selector           | dialog, toolbar, tooltip, treegrid | Simple selectors + JS post-filter via shared query helpers |
+| `instanceof HTMLLabelElement`         | prototype-identity | combobox                           | `tagName.toLowerCase() === 'label'`                        |
+| `requestAnimationFrame` callbacks     | timing             | toast, toaster                     | No-op shim during SSR; hydrate owns layout                 |
+| Live `HTMLCollection` for `children`  | dom-api            | treegrid                           | Read `children` snapshot or filter `childNodes` directly   |
 
 ## Related Docs
 

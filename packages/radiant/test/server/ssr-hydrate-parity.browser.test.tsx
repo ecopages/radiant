@@ -19,8 +19,7 @@ class SsrParityRafHost extends RadiantElement {
 	}
 }
 
-const SSR_PARITY_MARKUP =
-	'<ssr-parity-raf-host data-sync="ready"><p data-ref="label">parity</p></ssr-parity-raf-host>';
+const SSR_PARITY_MARKUP = '<ssr-parity-raf-host data-sync="ready"><p data-ref="label">parity</p></ssr-parity-raf-host>';
 
 describe('SSR hydrate parity in browser', () => {
 	beforeEach(() => {
