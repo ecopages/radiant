@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiComboboxProps } from './combobox.script';
 import { RuiCombobox as RuiComboboxElement } from './combobox.script';
-import './combobox.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -175,4 +174,6 @@ export const RuiCombobox = defineRadiantView(
 			</rui-combobox>
 		);
 	},
+
+	{ stylesheets: ['./combobox.css'] },
 );

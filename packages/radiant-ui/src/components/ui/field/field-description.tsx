@@ -1,6 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RUI_FIELD_DESCRIPTION_ATTR } from '../form/control-protocol';
-import './field.css';
 
 export type RuiFieldDescriptionProps = {
 	class?: string;

@@ -6,7 +6,7 @@ Guidance for humans and agents working on the design system in `packages/radiant
 
 - **npm:** `@ecopages/radiant-ui`
 - **Elements:** `rui-*` custom elements (light DOM)
-- **Styling:** Tailwind CSS v4 authoring (`@reference` + `@apply`); `build:lib` / `copy-styles` compiles to plain CSS in `dist/` (CSS variables preserved, not minified)
+- **Styling:** Tailwind CSS v4 authoring (`@reference` + `@apply`); `build:lib` compiles component CSS to plain CSS while preserving theme and token sources in `dist/` for consuming Tailwind builds.
 - **Authoring:** Not React; see `src/Introduction.mdx` for component tiers and file layout
 
 ## Imports
@@ -82,7 +82,7 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
     - Motion: `--duration-*` / `--ease-*` (not raw `duration-150`).
     - State: `--opacity-disabled`, z-index roles from `system.css`.
 3. Structural layout (flex, grid, `min-w-0`, positioning) may use Tailwind as needed.
-4. One CSS file per component directory; register via `import './<name>.css'` from the component entry.
+4. One CSS file per component directory. Register it on the view via `defineRadiantView(..., { stylesheets: ['./<name>.css'] })` (or `attachRadiantStylesheets` for presentational exports). Do **not** `import './<name>.css'` in view `.tsx` files — that breaks Ecopages vendor prebundles. Apps still load the aggregate `@ecopages/radiant-ui/styles.css` (or a theme + styles); Storybook injects the declared sheets when transforming view modules. Use the `withStylesheets` decorator only for skins / extras.
 
 ### Forbidden
 

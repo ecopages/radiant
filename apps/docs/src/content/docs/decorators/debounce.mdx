@@ -5,7 +5,7 @@ group: Decorators
 order: 13
 ---
 
-import { Banner } from '@/components/banner/banner';
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 
 
 
@@ -84,10 +84,12 @@ handleInput(event: InputEvent) {
 | Window resize | `200-300ms` | Let layout settle before recomputing expensive work. |
 | Auto-save | `1000-3000ms` | Batch edits and reduce server chatter. |
 
-<Banner type="info" class="unstyled">
-  <Banner.Title>NOTE</Banner.Title>
-  <p>Debounced methods should be treated as side-effect entry points. Do not depend on an immediate synchronous return value.</p>
-</Banner>
+<RuiAlert variant="info" layout="banner" class="unstyled">
+  <RuiAlertTitle>NOTE</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>Debounced methods should be treated as side-effect entry points. Do not depend on an immediate synchronous return value.</p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ## Learn More
 

@@ -1,5 +1,7 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiRadioGroup } from '@ecopages/radiant-ui/radio-group';
 import './controller-decorator-visualizer.script';
 
 export const ControllerDecoratorVisualizer = eco.component<{}, JsxRenderable>({
@@ -31,18 +33,20 @@ export const ControllerDecoratorVisualizer = eco.component<{}, JsxRenderable>({
 				</div>
 
 				<div class="flex flex-wrap gap-2">
-					<button type="button" class="button button--sm button--outline" data={{ signalChoice: 'ready' }}>
-						Ready
-					</button>
-					<button type="button" class="button button--sm button--outline" data={{ signalChoice: 'focus' }}>
-						Focus
-					</button>
-					<button type="button" class="button button--sm button--outline" data={{ signalChoice: 'alert' }}>
-						Alert
-					</button>
-					<button type="button" class="button button--sm button--outline" data={{ ref: 'ping' }}>
+					<RuiRadioGroup
+						class="flex flex-row flex-wrap gap-2"
+						label="Controller signal"
+						name="controller-signal"
+						value="ready"
+						options={[
+							{ value: 'ready', label: 'Ready' },
+							{ value: 'focus', label: 'Focus' },
+							{ value: 'alert', label: 'Alert' },
+						]}
+					/>
+					<RuiButton size="sm" variant="outline" data={{ ref: 'ping' }}>
 						Ping refs
-					</button>
+					</RuiButton>
 				</div>
 
 				<div class="grid gap-3 sm:grid-cols-2">

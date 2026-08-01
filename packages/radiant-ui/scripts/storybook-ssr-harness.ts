@@ -71,9 +71,7 @@ export function isAllowedPageError(message: string): boolean {
 }
 
 export type SsrStoryFailureReason =
-	| { kind: 'banner'; message: string }
-	| { kind: 'pageerror'; message: string }
-	| { kind: 'empty-mount' };
+	{ kind: 'banner'; message: string } | { kind: 'pageerror'; message: string } | { kind: 'empty-mount' };
 
 export function evaluateStoryResult(options: {
 	banner: string | null;
@@ -102,10 +100,6 @@ export function evaluateStoryResult(options: {
 
 export function formatFailure(mode: SsrRenderMode, storyId: string, reason: SsrStoryFailureReason): string {
 	const detail =
-		reason.kind === 'empty-mount'
-			? 'empty mount'
-			: reason.kind === 'banner'
-				? reason.message
-				: reason.message;
+		reason.kind === 'empty-mount' ? 'empty mount' : reason.kind === 'banner' ? reason.message : reason.message;
 	return `${mode} ${storyId}: ${detail}`;
 }

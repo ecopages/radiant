@@ -5,7 +5,7 @@ group: Decorators
 order: 1
 ---
 
-import { Banner } from '@/components/banner/banner';
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 
 
 
@@ -56,10 +56,12 @@ Usage in HTML:
 <button is="fancy-button">Click me</button>
 ```
 
-<Banner type="alert" class="unstyled">
-  <Banner.Title>WARNING</Banner.Title>
-  <p>Customized built-in elements have limited browser support and are not supported in Safari. See <a href="/docs/getting-started/best-practices">Best Practices</a> for more information.</p>
-</Banner>
+<RuiAlert variant="warning" layout="banner" class="unstyled">
+  <RuiAlertTitle>WARNING</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>Customized built-in elements have limited browser support and are not supported in Safari. See <a href="/docs/getting-started/best-practices">Best Practices</a> for more information.</p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ## Learn More
 

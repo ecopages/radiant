@@ -6,8 +6,10 @@
  *
  * Run with: pnpm run build:files
  */
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { transformAsync } from '@babel/core';
+import decorators from '@babel/plugin-proposal-decorators';
 import * as esbuild from 'esbuild';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -33,6 +35,50 @@ function listComponentEntries(): string[] {
 		.sort();
 }
 
+/**
+ * Lowers standard decorators because esbuild preserves them in ESM output.
+ *
+ * @remarks The package uses standard decorator semantics, while consumers such
+ * as the docs SSR loader must receive executable JavaScript rather than source
+ * decorator syntax.
+ */
+function standardDecoratorTransform(): esbuild.Plugin {
+	return {
+		name: 'radiant-ui:standard-decorators',
+		setup(build) {
+			build.onLoad({ filter: /\.tsx?$/ }, async (args) => {
+				if (!args.path.startsWith(`${SRC}${path.sep}`)) {
+					return null;
+				}
+
+				const loader = path.extname(args.path) === '.tsx' ? 'tsx' : 'ts';
+				const transpiled = await esbuild.transform(readFileSync(args.path, 'utf8'), {
+					loader,
+					jsx: 'automatic',
+					jsxImportSource: '@ecopages/jsx',
+					target: 'esnext',
+					tsconfigRaw: {
+						compilerOptions: {
+							experimentalDecorators: false,
+						},
+					},
+				});
+				const transformed = await transformAsync(transpiled.code, {
+					babelrc: false,
+					configFile: false,
+					filename: args.path,
+					plugins: [[decorators, { version: '2023-11' }]],
+				});
+
+				return {
+					contents: transformed?.code ?? transpiled.code,
+					loader: 'js',
+				};
+			});
+		},
+	};
+}
+
 try {
 	await esbuild.build({
 		absWorkingDir: ROOT,
@@ -43,11 +89,14 @@ try {
 		entryPoints: [path.join(SRC, 'index.ts'), ...listComponentEntries()],
 		external: externalPackages,
 		format: 'esm',
+		jsx: 'automatic',
+		jsxImportSource: '@ecopages/jsx',
 		logLevel: 'silent',
 		minify: true,
 		outbase: SRC,
 		outdir: DIST,
 		platform: 'browser',
+		plugins: [standardDecoratorTransform()],
 		sourcemap: true,
 	});
 } catch (error) {

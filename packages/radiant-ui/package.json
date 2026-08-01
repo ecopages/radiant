@@ -340,6 +340,13 @@
 		"./toast/styles.css": {
 			"default": "./dist/components/ui/toast/toast.css"
 		},
+		"./toc": {
+			"types": "./dist/components/ui/toc/index.d.ts",
+			"import": "./dist/components/ui/toc/index.js"
+		},
+		"./toc/styles.css": {
+			"default": "./dist/components/ui/toc/toc.css"
+		},
 		"./toolbar": {
 			"types": "./dist/components/ui/toolbar/index.d.ts",
 			"import": "./dist/components/ui/toolbar/index.js"

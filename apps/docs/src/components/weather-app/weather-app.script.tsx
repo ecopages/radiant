@@ -1,4 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import { RuiButton } from '@ecopages/radiant-ui/button';
 import {
 	type ContextProvider,
 	RadiantElement,
@@ -195,19 +196,15 @@ export class RadiantWeatherAppElement extends RadiantElement {
 				</p>
 				<div class="flex flex-wrap gap-2">
 					{WEATHER_CITIES.map((city) => (
-						<button
-							type="button"
+						<RuiButton
+							size="sm"
+							variant={city.id === activeCityId ? 'filled' : 'outline'}
 							data={{ cityId: city.id }}
 							on:click={this.handleCityClick}
-							aria={{ pressed: city.id === activeCityId }}
-							class={
-								city.id === activeCityId
-									? 'button button--sm button--primary'
-									: 'button button--sm button--outline'
-							}
+							pressed={city.id === activeCityId}
 						>
 							{city.label}
-						</button>
+						</RuiButton>
 					))}
 				</div>
 				<div class="relative">

@@ -1,5 +1,6 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
+import { RuiButton } from '@ecopages/radiant-ui/button';
 import './controller-context-visualizer.script';
 
 export const ControllerContextVisualizer = eco.component<{}, JsxRenderable>({
@@ -26,15 +27,15 @@ export const ControllerContextVisualizer = eco.component<{}, JsxRenderable>({
 				</p>
 
 				<div class="flex flex-wrap gap-2">
-					<button type="button" class="button button--sm button--outline" data={{ ref: 'decrement' }}>
+					<RuiButton size="sm" variant="outline" data={{ ref: 'decrement' }}>
 						-1
-					</button>
-					<button type="button" class="button button--sm button--primary" data={{ ref: 'increment' }}>
+					</RuiButton>
+					<RuiButton size="sm" data={{ ref: 'increment' }}>
 						+1
-					</button>
-					<button type="button" class="button button--sm button--outline" data={{ ref: 'reset' }}>
+					</RuiButton>
+					<RuiButton size="sm" variant="outline" data={{ ref: 'reset' }}>
 						Reset
-					</button>
+					</RuiButton>
 				</div>
 
 				<div class="grid gap-3 md:grid-cols-3">

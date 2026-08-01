@@ -2,7 +2,6 @@ import type { WithChildren } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFieldProps } from './field.script';
 import { RuiField as RuiFieldElement } from './field.script';
-import './field.css';
 
 export const RuiField = defineRadiantView(
 	RuiFieldElement,
@@ -30,4 +29,6 @@ export const RuiField = defineRadiantView(
 			{children}
 		</rui-field>
 	),
+
+	{ stylesheets: ['./field.css'] },
 );

@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiMenuButtonProps } from './menu-button.script';
 import { RuiMenuButton as RuiMenuButtonElement } from './menu-button.script';
-import './menu-button.css';
 
 export type RuiMenuItem = {
 	value: string;
@@ -40,4 +39,6 @@ export const RuiMenuButton = defineRadiantView(
 			))}
 		</rui-menu-button>
 	),
+
+	{ stylesheets: ['./menu-button.css'] },
 );

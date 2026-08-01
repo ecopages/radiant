@@ -5,6 +5,8 @@ group: Getting Started
 order: 1
 ---
 
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
+
 # Introduction
 
 Radiant is a reactive host toolkit with three package layers that work together:
@@ -22,7 +24,15 @@ The primary workflow is:
 3. Override `render()` when that host should own a JSX view
 4. Reuse the same decorators, bindings, context, and reactive patterns across both host types
 
-> **Note:** `@ecopages/signals` installs automatically with `@ecopages/radiant`. Add it explicitly only for standalone reactive use outside Radiant.
+<RuiAlert variant="info" layout="banner" class="unstyled">
+  <RuiAlertTitle>NOTE</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>
+      <code>@ecopages/signals</code> installs automatically with <code>@ecopages/radiant</code>. Add it
+      explicitly only for standalone reactive use outside Radiant.
+    </p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ## Shared Reactive Host
 

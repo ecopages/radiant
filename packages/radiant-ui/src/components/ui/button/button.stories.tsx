@@ -58,3 +58,7 @@ export const Toggle: Story = {
 		});
 	},
 };
+
+export const Link: Story = {
+	render: () => <RuiButton href="/docs">Button link</RuiButton>,
+};

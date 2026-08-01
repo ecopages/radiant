@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiMenubarProps } from './menubar.script';
 import { RuiMenubar as RuiMenubarElement } from './menubar.script';
-import './menubar.css';
 
 export type RuiMenubarItem = {
 	id: string;
@@ -47,4 +46,6 @@ export const RuiMenubar = defineRadiantView(
 			))}
 		</rui-menubar>
 	),
+
+	{ stylesheets: ['./menubar.css'] },
 );

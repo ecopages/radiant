@@ -5,7 +5,7 @@ group: Getting Started
 order: 3
 ---
 
-import { Banner } from '@/components/banner/banner';
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 
 # Best Practices
 
@@ -288,10 +288,12 @@ Custom elements are registered immediately when the file is evaluated. If you im
 
 Radiant uses reference equality to detect changes in reactive props and state fields.
 
-<Banner type="alert" class="mb-4 unstyled">
-  <Banner.Title>IMPORTANT</Banner.Title>
-  <p>For complex types like Object or Array, <strong>in-place mutations (like push or splice) will not trigger a re-render</strong>. You must always reassign the property to a new reference.</p>
-</Banner>
+<RuiAlert variant="warning" layout="banner" class="mb-4 unstyled">
+  <RuiAlertTitle>IMPORTANT</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>For complex types like Object or Array, <strong>in-place mutations (like push or splice) will not trigger a re-render</strong>. You must always reassign the property to a new reference.</p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ```typescript
 // Won't trigger update (same reference)
@@ -301,10 +303,12 @@ this.items.push('new item');
 this.items = [...this.items, 'new item'];
 ```
 
-<Banner type="info" class="unstyled">
-  <Banner.Title>NOTE</Banner.Title>
-  <p>This behavior is intentional for performance and is verified by our core test suite.</p>
-</Banner>
+<RuiAlert variant="info" layout="banner" class="unstyled">
+  <RuiAlertTitle>NOTE</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>This behavior is intentional for performance and is verified by our core test suite.</p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ### Keep Public Props Narrow
 
@@ -314,7 +318,9 @@ For `RadiantElement<Bindings>`, treat the generic binding shape as an internal r
 
 While Radiant supports extending built-in elements (e.g., `extends: 'button'`), browser support for customized built-in elements is limited.
 
-<Banner type="alert" class="unstyled">
-  <Banner.Title >WARNING</Banner.Title>
-  <p >Customized built-in elements have limited browser support and are not supported in Safari. For maximum compatibility, we recommend creating autonomous custom elements.</p>
-</Banner>
+<RuiAlert variant="warning" layout="banner" class="unstyled">
+  <RuiAlertTitle>WARNING</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>Customized built-in elements have limited browser support and are not supported in Safari. For maximum compatibility, we recommend creating autonomous custom elements.</p>
+  </RuiAlertDescription>
+</RuiAlert>

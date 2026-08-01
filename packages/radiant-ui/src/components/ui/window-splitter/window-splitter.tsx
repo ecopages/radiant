@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiWindowSplitterProps } from './window-splitter.script';
 import { RuiWindowSplitter as RuiWindowSplitterElement } from './window-splitter.script';
-import './window-splitter.css';
 
 export const RuiWindowSplitter = defineRadiantView(
 	RuiWindowSplitterElement,
@@ -20,4 +19,6 @@ export const RuiWindowSplitter = defineRadiantView(
 			<div slot="secondary">{secondary}</div>
 		</rui-window-splitter>
 	),
+
+	{ stylesheets: ['./window-splitter.css'] },
 );

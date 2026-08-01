@@ -1,9 +1,14 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { JsxNodeLike, JsxRenderable } from '@ecopages/jsx/jsx-runtime';
-import { RadiantElement, customElement, onUpdated, prop, state } from '@ecopages/radiant';
+import { unsafeHtml } from '@ecopages/jsx/jsx-runtime';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
+import { RadiantElement, customElement, onEvent, prop, state } from '@ecopages/radiant';
+import { renderTabLabel } from './code-tab-icons';
 
 /**
- * A single tab definition for the docs code-tabs custom element.
+ * Plain-text tabs escape `code`. Rich tabs pass highlighted HTML in `html` and
+ * clipboard text in `content` — strings survive host-attribute JSON round-trips;
+ * JSX/`unsafeHtml` brands do not.
  */
 export type RadiantCodeTabItem =
 	| {
@@ -14,13 +19,10 @@ export type RadiantCodeTabItem =
 	| {
 			id: string;
 			label: string;
-			code: JsxNodeLike | JsxRenderable;
+			html: string;
 			content: string;
 	  };
 
-/**
- * Public props for the docs code-tabs custom element.
- */
 export type RadiantCodeTabsProps = {
 	label?: string;
 	tabs?: RadiantCodeTabItem[];
@@ -29,314 +31,107 @@ export type RadiantCodeTabsProps = {
 	selectedKey?: string;
 };
 
+function isRichTab(tab: RadiantCodeTabItem): tab is Extract<RadiantCodeTabItem, { html: string; content: string }> {
+	return 'html' in tab;
+}
+
+function tabClipboardText(tab: RadiantCodeTabItem): string {
+	return isRichTab(tab) ? tab.content : tab.code;
+}
+
+/**
+ * Docs-specific code presentation that delegates tab selection and keyboard
+ * interaction to `RuiTabs` while retaining code-copying behavior.
+ */
 @customElement('radiant-code-tabs')
 export class RadiantCodeTabs extends RadiantElement {
-	@prop({ type: String }) label = '';
 	@prop({ type: Array }) tabs: RadiantCodeTabItem[] = [];
+	@prop({ type: String }) label = '';
 	@prop({ type: String }) copyLabel = 'Copy code';
 	@prop({ type: String }) defaultSelectedKey = '';
 	@prop({ type: String, reflect: true }) selectedKey = '';
-	@state copiedTabId = '';
 	@state copyStatus = '';
 
-	private static nextInstanceId = 0;
-	private readonly instanceId = `radiant-code-tabs-${++RadiantCodeTabs.nextInstanceId}`;
-	private timeoutId: ReturnType<typeof setTimeout> | null = null;
-	private tabMetricsFrameId: number | null = null;
-	private resizeObserver: ResizeObserver | null = null;
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.scheduleTabMetricsSync();
-
-		if (typeof ResizeObserver === 'undefined') {
-			return;
-		}
-
-		this.resizeObserver ??= new ResizeObserver(() => {
-			this.scheduleTabMetricsSync();
-		});
-		this.resizeObserver.observe(this);
-	}
-
-	override disconnectedCallback(): void {
-		if (this.tabMetricsFrameId !== null) {
-			cancelAnimationFrame(this.tabMetricsFrameId);
-			this.tabMetricsFrameId = null;
-		}
-
-		this.resizeObserver?.disconnect();
-
-		if (this.timeoutId) {
-			clearTimeout(this.timeoutId);
-			this.timeoutId = null;
-		}
-
-		super.disconnectedCallback();
-	}
-
-	private readonly resolveTabs = (): RadiantCodeTabItem[] => {
+	private resolveTabs(): RadiantCodeTabItem[] {
 		if (Array.isArray(this.tabs) && this.tabs.length > 0) {
 			return this.tabs;
 		}
 
 		const tabsAttribute = this.getAttribute('tabs');
 		if (!tabsAttribute) {
-			return Array.isArray(this.tabs) ? this.tabs : [];
+			return [];
 		}
 
 		try {
-			const parsedTabs = JSON.parse(tabsAttribute) as unknown;
-			return Array.isArray(parsedTabs) ? (parsedTabs as RadiantCodeTabItem[]) : [];
+			const parsed = JSON.parse(tabsAttribute) as unknown;
+			return Array.isArray(parsed) ? (parsed as RadiantCodeTabItem[]) : [];
 		} catch {
-			return Array.isArray(this.tabs) ? this.tabs : [];
+			return [];
 		}
-	};
-
-	private readonly scheduleTabMetricsSync = () => {
-		if (this.tabMetricsFrameId !== null) {
-			cancelAnimationFrame(this.tabMetricsFrameId);
-		}
-
-		this.tabMetricsFrameId = requestAnimationFrame(() => {
-			this.tabMetricsFrameId = null;
-			this.syncTabMetrics();
-		});
-	};
-
-	private readonly syncTabMetrics = () => {
-		const tabButtons = Array.from(this.querySelectorAll<HTMLButtonElement>('.code-tabs__tab'));
-		if (tabButtons.length === 0) {
-			this.style.removeProperty('--code-tabs-tab-width');
-			this.style.removeProperty('--code-tabs-tab-height');
-			this.style.removeProperty('--code-tabs-panel-width');
-			this.style.removeProperty('--code-tabs-panel-height');
-			return;
-		}
-
-		const measurementRoot = document.createElement('div');
-		measurementRoot.className = 'code-tabs__measure';
-		measurementRoot.style.setProperty('--code-tabs-tab-width', 'auto');
-		measurementRoot.style.setProperty('--code-tabs-tab-height', 'auto');
-
-		for (const tabButton of tabButtons) {
-			const clonedTabButton = tabButton.cloneNode(true) as HTMLButtonElement;
-			clonedTabButton.removeAttribute('id');
-			clonedTabButton.removeAttribute('aria-controls');
-			clonedTabButton.setAttribute('aria-selected', 'true');
-			clonedTabButton.tabIndex = -1;
-			measurementRoot.append(clonedTabButton);
-		}
-
-		this.append(measurementRoot);
-
-		let maxWidth = 0;
-		let maxHeight = 0;
-		for (const tabButton of measurementRoot.querySelectorAll<HTMLButtonElement>('.code-tabs__tab')) {
-			const { width, height } = tabButton.getBoundingClientRect();
-			maxWidth = Math.max(maxWidth, Math.ceil(width));
-			maxHeight = Math.max(maxHeight, Math.ceil(height));
-		}
-
-		measurementRoot.remove();
-
-		this.style.setProperty('--code-tabs-tab-width', `${String(maxWidth)}px`);
-		this.style.setProperty('--code-tabs-tab-height', `${String(maxHeight)}px`);
-
-		const measuredPanels = Array.from(this.querySelectorAll<HTMLElement>('.code-tabs__measure-panel'));
-		let maxPanelWidth = 0;
-		let maxPanelHeight = 0;
-		for (const measuredPanel of measuredPanels) {
-			const { width, height } = measuredPanel.getBoundingClientRect();
-			maxPanelWidth = Math.max(maxPanelWidth, Math.ceil(width));
-			maxPanelHeight = Math.max(maxPanelHeight, Math.ceil(height));
-		}
-
-		if (maxPanelWidth > 0) {
-			this.style.setProperty('--code-tabs-panel-width', `${String(maxPanelWidth)}px`);
-		}
-
-		if (maxPanelHeight > 0) {
-			this.style.setProperty('--code-tabs-panel-height', `${String(maxPanelHeight)}px`);
-		}
-	};
-
-	@onUpdated(['tabs', 'selectedKey'])
-	private handleTabMetricsDependenciesChanged(): void {
-		this.scheduleTabMetricsSync();
 	}
 
-	private readonly getActiveTab = (tabs: RadiantCodeTabItem[]): RadiantCodeTabItem | null => {
-		if (tabs.length === 0) {
-			return null;
-		}
-
-		if (this.selectedKey) {
-			const selectedTab = tabs.find((tab) => tab.id === this.selectedKey);
-			if (selectedTab) {
-				return selectedTab;
-			}
-		}
-
-		if (this.defaultSelectedKey) {
-			const defaultTab = tabs.find((tab) => tab.id === this.defaultSelectedKey);
-			if (defaultTab) {
-				return defaultTab;
-			}
-		}
-
-		return tabs[0] ?? null;
-	};
-
-	private readonly setSelectedTab = (tabId: string) => {
-		if (this.selectedKey === tabId) {
-			return;
-		}
-
-		this.selectedKey = tabId;
-		this.dispatchEvent(new CustomEvent('change', { detail: { selectedKey: tabId }, bubbles: true }));
-	};
-
-	private readonly focusTabAtIndex = (index: number) => {
-		queueMicrotask(() => {
-			this.querySelector<HTMLButtonElement>(`[data-tab-index="${String(index)}"]`)?.focus();
-		});
-	};
-
-	private readonly handleTabKeyDown = (
-		keyboardEvent: KeyboardEvent & { readonly currentTarget: HTMLButtonElement },
-	) => {
-		const tabs = this.resolveTabs();
-		const activeTab = this.getActiveTab(tabs);
-		if (!activeTab) {
-			return;
-		}
-
-		const activeIndex = tabs.findIndex((tab) => tab.id === activeTab.id);
-		if (activeIndex === -1) {
-			return;
-		}
-
-		let nextIndex = activeIndex;
-		switch (keyboardEvent.key) {
-			case 'ArrowLeft':
-			case 'ArrowUp':
-				nextIndex = (activeIndex - 1 + tabs.length) % tabs.length;
-				break;
-			case 'ArrowRight':
-			case 'ArrowDown':
-				nextIndex = (activeIndex + 1) % tabs.length;
-				break;
-			case 'Home':
-				nextIndex = 0;
-				break;
-			case 'End':
-				nextIndex = tabs.length - 1;
-				break;
-			default:
-				return;
-		}
-
-		keyboardEvent.preventDefault();
-		const nextTab = tabs[nextIndex];
-		if (!nextTab) {
-			return;
-		}
-
-		this.setSelectedTab(nextTab.id);
-		this.focusTabAtIndex(nextIndex);
-	};
-
-	private readonly handleCopy = async () => {
-		const activeTab = this.getActiveTab(this.resolveTabs());
-		if (!activeTab) {
-			return;
-		}
-
+	private handleCopy = async (tab: RadiantCodeTabItem): Promise<void> => {
 		try {
-			const content = 'content' in activeTab ? activeTab.content : activeTab.code;
-			await navigator.clipboard.writeText(content);
-			this.copiedTabId = activeTab.id;
-			this.copyStatus = `${activeTab.label} copied to clipboard`;
-			if (this.timeoutId) {
-				clearTimeout(this.timeoutId);
-			}
-			this.timeoutId = setTimeout(() => {
-				this.copiedTabId = '';
-				this.copyStatus = '';
-			}, 2000);
+			await navigator.clipboard.writeText(tabClipboardText(tab));
+			this.copyStatus = `${tab.label} copied to clipboard`;
 		} catch (error) {
 			console.error('Failed to copy code', error);
 		}
 	};
 
+	@onEvent({ selector: 'rui-tabs', type: 'rui-change' })
+	onTabChange(event: Event): void {
+		const detail = (event as CustomEvent<{ value?: string }>).detail;
+		if (detail?.value) {
+			this.selectedKey = detail.value;
+		}
+	}
+
 	override render() {
 		const tabs = this.resolveTabs();
-		const activeTab = this.getActiveTab(tabs);
-		if (!activeTab) {
+		if (tabs.length === 0) {
 			return null;
 		}
 
-		const activeIndex = tabs.findIndex((tab) => tab.id === activeTab.id);
+		const requestedSelectedKey = this.selectedKey || this.defaultSelectedKey;
+		const selectedKey = tabs.some((tab) => tab.id === requestedSelectedKey) ? requestedSelectedKey : tabs[0]?.id;
 		const tabListLabel = this.label || 'Code examples';
-		const tabId = `${this.instanceId}-tab-${String(activeIndex)}`;
-		const panelId = `${this.instanceId}-panel-${String(activeIndex)}`;
 
 		return (
-			<div class="code-tabs">
-				<div class="code-tabs__list" role="tablist" aria-label={tabListLabel} aria-orientation="horizontal">
-					{tabs.map((tab, index) => {
-						const isSelected = tab.id === activeTab.id;
-						return (
-							<button
-								key={tab.id}
-								type="button"
-								class="code-tabs__tab"
-								role="tab"
-								id={`${this.instanceId}-tab-${String(index)}`}
-								aria-selected={isSelected}
-								aria-controls={`${this.instanceId}-panel-${String(index)}`}
-								tabIndex={isSelected ? 0 : -1}
-								data-tab-index={String(index)}
-								on:click={() => {
-									this.setSelectedTab(tab.id);
-								}}
-								on:keydown={this.handleTabKeyDown}
-							>
-								{tab.label}
-							</button>
-						);
-					})}
-				</div>
-				<div class="code-tabs__panel" role="tabpanel" id={panelId} aria-labelledby={tabId}>
-					<div class="code-tabs__body">
-						<span class="code-tabs__code">{activeTab.code}</span>
-						<button
-							type="button"
-							class="code-tabs__copy"
-							data={{ copied: this.copiedTabId === activeTab.id }}
-							aria-label={`${this.copyLabel}: ${activeTab.label}`}
-							on:click={this.handleCopy}
-						>
-							<span class="code-tabs__icon" aria-hidden="true"></span>
-						</button>
-					</div>
-					<span class="code-tabs__status" aria-live="polite">
-						{this.copyStatus}
-					</span>
-				</div>
-				<div class="code-tabs__measure" aria-hidden="true">
-					{tabs.map((tab) => {
-						return (
-							<div class="code-tabs__measure-panel" key={`measure-${tab.id}`}>
-								<div class="code-tabs__body">
-									<span class="code-tabs__code">{tab.code}</span>
-								</div>
+			<RuiTabs variant="boxed" value={selectedKey} label={tabListLabel}>
+				<RuiTabList aria-label={tabListLabel} class="code-tabs__list">
+					{tabs.map((tab) => (
+						<RuiTab id={tab.id} class="code-tabs__tab">
+							{renderTabLabel({
+								id: tab.id,
+								label: tab.label,
+								code: tabClipboardText(tab),
+							})}
+						</RuiTab>
+					))}
+				</RuiTabList>
+				<RuiTabPanels>
+					{tabs.map((tab) => (
+						<RuiTabPanel id={tab.id} class="code-tabs__panel">
+							<div class="code-tabs__body">
+								<span class="code-tabs__code">{isRichTab(tab) ? unsafeHtml(tab.html) : tab.code}</span>
+								<RuiButton
+									size="sm"
+									variant="ghost"
+									class="code-tabs__copy"
+									aria-label={`${this.copyLabel}: ${tab.label}`}
+									on:click={() => void this.handleCopy(tab)}
+								>
+									<span aria-hidden="true">Copy</span>
+								</RuiButton>
 							</div>
-						);
-					})}
-				</div>
-			</div>
+						</RuiTabPanel>
+					))}
+				</RuiTabPanels>
+				<span class="code-tabs__status" aria-live="polite">
+					{this.copyStatus}
+				</span>
+			</RuiTabs>
 		);
 	}
 }

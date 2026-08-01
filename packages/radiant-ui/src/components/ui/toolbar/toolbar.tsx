@@ -2,7 +2,6 @@ import type { WithChildren, RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiToolbarProps } from './toolbar.script';
 import { RuiToolbar as RuiToolbarElement } from './toolbar.script';
-import './toolbar.css';
 
 export const RuiToolbar = defineRadiantView(
 	RuiToolbarElement,
@@ -11,4 +10,6 @@ export const RuiToolbar = defineRadiantView(
 			{children}
 		</rui-toolbar>
 	),
+
+	{ stylesheets: ['./toolbar.css'] },
 );

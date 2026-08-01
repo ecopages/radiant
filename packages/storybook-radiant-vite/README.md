@@ -163,31 +163,31 @@ export const SsrStatic: StoryObj<typeof meta> = {
 
 ### `parameters.radiant` contract
 
-| Field          | Required      | Notes                                                                                |
-| -------------- | ------------- | ------------------------------------------------------------------------------------ |
-| `renderMode`   | no            | `'client'` \| `'ssr-hydrate'` \| `'ssr-static'` (default `client`)                   |
-| `ssrModule`    | for host SSR  | Absolute Vite URL, e.g. `/src/components/foo.script.tsx`                             |
-| `ssrExport`    | no            | Named class export; otherwise first export with `@customElement` metadata            |
-| `clientModule` | no            | Module to `import()` after markup inject; defaults to SSR response `clientModuleSrc` |
-| `viewModule`   | no            | View module for authored light-DOM SSR on host stories                               |
-| `viewExport`   | no            | Named view export in `viewModule`                                                    |
-| `storyModule`  | auto-stamped  | CSF module path; enables JSX story SSR when present                                  |
-| `storyExport`  | no            | Story export name (e.g. `Default`)                                                   |
+| Field          | Required     | Notes                                                                                |
+| -------------- | ------------ | ------------------------------------------------------------------------------------ |
+| `renderMode`   | no           | `'client'` \| `'ssr-hydrate'` \| `'ssr-static'` (default `client`)                   |
+| `ssrModule`    | for host SSR | Absolute Vite URL, e.g. `/src/components/foo.script.tsx`                             |
+| `ssrExport`    | no           | Named class export; otherwise first export with `@customElement` metadata            |
+| `clientModule` | no           | Module to `import()` after markup inject; defaults to SSR response `clientModuleSrc` |
+| `viewModule`   | no           | View module for authored light-DOM SSR on host stories                               |
+| `viewExport`   | no           | Named view export in `viewModule`                                                    |
+| `storyModule`  | auto-stamped | CSF module path; enables JSX story SSR when present                                  |
+| `storyExport`  | no           | Story export name (e.g. `Default`)                                                   |
 
 There is **no** `initialize` callback. SSR goes over HTTP; only serializable `args` cross the boundary. Put host state in `args`.
 
 ### CSF features replayed during SSR
 
-| Feature | SSR support |
-| ------- | ----------- |
-| `meta.render` / story `render` / `component` as JSX function | Yes (`composeStoryRender`) |
-| CSF `decorators` that wrap `() => JsxRenderable` | Yes (reversed apply) |
-| Stage helpers inside `render` | Preferred for composition stories |
-| `args` via stamped story module | Yes |
-| `parameters.radiant.*` | Yes |
-| Storybook loaders | No |
-| Storybook `<Story />` decorators | No |
-| `play` interactions on `ssr-static` | No (static preview is markup-only) |
+| Feature                                                      | SSR support                        |
+| ------------------------------------------------------------ | ---------------------------------- |
+| `meta.render` / story `render` / `component` as JSX function | Yes (`composeStoryRender`)         |
+| CSF `decorators` that wrap `() => JsxRenderable`             | Yes (reversed apply)               |
+| Stage helpers inside `render`                                | Preferred for composition stories  |
+| `args` via stamped story module                              | Yes                                |
+| `parameters.radiant.*`                                       | Yes                                |
+| Storybook loaders                                            | No                                 |
+| Storybook `<Story />` decorators                             | No                                 |
+| `play` interactions on `ssr-static`                          | No (static preview is markup-only) |
 
 For composed stories (dialog chrome, toast stage, etc.), put layout in `render` helpers rather than Storybook decorators that SSR cannot replay.
 

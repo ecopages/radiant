@@ -44,7 +44,10 @@ export function radiantScriptModuleStampPlugin(): Plugin {
 				next = appendRadiantScriptModuleStamps(code, id, root);
 			} else if (isStoryModule(id)) {
 				next = appendRadiantStoryModuleStamp(code, id, root);
-			} else if (isViewModule(id) && code.includes('defineRadiantView(')) {
+			} else if (
+				isViewModule(id) &&
+				(code.includes('defineRadiantView(') || code.includes('attachRadiantStylesheets('))
+			) {
 				next = appendRadiantViewModuleStamps(code, id, root);
 			}
 
