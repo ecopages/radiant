@@ -315,6 +315,11 @@ export type RuiSidebarViewProps = RuiSidebarProps &
 		id: string;
 		children: JsxRenderable;
 		class?: string;
+		/**
+		 * Stable key for `@ecopages/browser-router` DOM persistence.
+		 * When set, morphdom keeps this host (and its scroll position) across SPA navigations.
+		 */
+		'data-eco-persist'?: string;
 	};
 
 export const RuiSidebar = defineRadiantView(
@@ -337,12 +342,14 @@ export const RuiSidebar = defineRadiantView(
 		scrollActiveOnMount,
 		navigationEvents,
 		class: className,
+		'data-eco-persist': ecoPersist,
 		children,
 	}: RuiSidebarViewProps) => (
 		<rui-sidebar
 			slot={slot}
 			id={id}
 			class={className}
+			data-eco-persist={ecoPersist}
 			variant={variant as RuiSidebarVariant | undefined}
 			side={side as RuiSidebarSide | undefined}
 			collapsible={collapsible as RuiSidebarCollapsible | undefined}
