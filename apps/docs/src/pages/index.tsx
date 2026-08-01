@@ -1,5 +1,6 @@
 import { eco } from '@ecopages/core';
 import { codeToHtml } from 'shiki';
+import { RuiButton } from '@ecopages/radiant-ui/button';
 import { BaseLayout } from '@/layouts/base-layout';
 import { CodeTabs } from '@/components/code-tabs';
 import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-jsx-counter';
@@ -86,12 +87,10 @@ const HomePage = () => {
 						/>
 
 						<div class="home-header__actions">
-							<a href="/docs/getting-started/introduction" class="button button--default">
-								Read the overview
-							</a>
-							<a href="/docs/components/radiant-element" class="button button--outline">
+							<RuiButton href="/docs/getting-started/introduction">Read the overview</RuiButton>
+							<RuiButton href="/docs/components/radiant-element" variant="outline">
 								Start with RadiantElement
-							</a>
+							</RuiButton>
 						</div>
 					</div>
 
