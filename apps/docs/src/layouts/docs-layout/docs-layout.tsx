@@ -22,7 +22,7 @@ import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import { BaseLayout } from '@/layouts/base-layout';
 import rootJson from '../../../../../packages/radiant/package.json';
 import { getGroupIcon } from './get-group-icon';
-import { cx } from '@/lib/utils';
+import { cx } from '@ecopages/radiant-ui/cx';
 
 export type DocsLayoutProps = {
 	children: JsxRenderable;
@@ -116,6 +116,7 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 					sidebar={
 						<RuiSidebar
 							id={DOCS_SIDEBAR_ID}
+							data={{ ecoPersist: DOCS_SIDEBAR_ID }}
 							collapsible="off"
 							defaultWidth={250}
 							mobileBreakpoint={768}
