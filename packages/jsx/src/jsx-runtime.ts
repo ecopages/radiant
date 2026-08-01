@@ -40,6 +40,7 @@ export type {
 	JsxEventListener,
 	JsxEventListenerObject,
 	JsxHtmlProps,
+	JsxHtmlPropsWithChildren,
 	JsxIntrinsicAttributes,
 	JsxKey,
 	JsxNodeLike,
