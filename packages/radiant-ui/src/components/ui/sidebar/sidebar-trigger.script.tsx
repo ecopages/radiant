@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { RuiSidebarToggleDetail } from './sidebar.script';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
@@ -28,8 +28,12 @@ export type RuiSidebarTriggerProps = {
  * trigger also subscribes to `rui-sidebar-toggle` events to mirror the
  * sidebar's `data-state` in its own `aria-expanded` attribute.
  *
+ * @remarks
+ * Avoids a light-DOM `<slot>` inside the button. SSR hydrates the rendered
+ * button as host children; projecting those back into an inner slot causes
+ * `insertBefore` hierarchy errors and leaves a dead control.
+ *
  * @element rui-sidebar-trigger
- * @slot - Visible label. Defaults to a hamburger glyph when empty.
  */
 @customElement('rui-sidebar-trigger')
 export class RuiSidebarTrigger extends RadiantElement {
@@ -138,9 +142,10 @@ export class RuiSidebarTrigger extends RadiantElement {
 		}
 	}
 
-	@bound
-	private onClick(event: Event): void {
+	@onEvent({ selector: 'button[data-ref="button"]', type: 'click' })
+	onButtonClick(event: Event): void {
 		event.preventDefault();
+		event.stopPropagation();
 		const sidebar = this.resolveSidebar();
 		if (sidebar && typeof sidebar.toggle === 'function') {
 			sidebar.toggle();
@@ -190,8 +195,9 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	private renderDefaultIcon() {
 		const state = this.sidebarState;
+		const placement: RuiSidebarTriggerPlacement | '' = this.placement;
 
-		if (this.placement === 'inset') {
+		if (placement === 'inset') {
 			return (
 				<span class="rui-sidebar__trigger-icon" aria-hidden="true">
 					{this.renderMenuIcon(state)}
@@ -199,8 +205,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 			);
 		}
 
-		const showCollapse = this.placement === 'header' || (this.placement !== 'inset' && state === 'expanded');
-		const showExpand = this.placement === 'inset' || (this.placement !== 'header' && state === 'collapsed');
+		const showCollapse = placement === 'header' || state === 'expanded';
+		const showExpand = placement !== 'header' && state === 'collapsed';
 
 		return (
 			<span class="rui-sidebar__trigger-icon" aria-hidden="true">
@@ -252,9 +258,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 				aria-expanded={String(state === 'expanded')}
 				aria-controls={controlsId || null}
 				aria-label={buttonLabel}
-				on-native:click={this.onClick}
 			>
-				<slot>{this.renderDefaultIcon()}</slot>
+				{this.renderDefaultIcon()}
 			</button>
 		);
 	}

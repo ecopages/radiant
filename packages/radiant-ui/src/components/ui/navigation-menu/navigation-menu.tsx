@@ -1,10 +1,9 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RadiantSlotProps } from '@/types';
-import { RuiButton, type RuiButtonProps } from '../button/button';
+import { RuiButton, type RuiButtonControlProps } from '../button/button';
 import type { RuiNavigationMenuProps } from './navigation-menu.script';
 import { RuiNavigationMenu as RuiNavigationMenuElement } from './navigation-menu.script';
-import './navigation-menu.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -17,10 +16,12 @@ export const RuiNavigationMenu = defineRadiantView(
 			{children}
 		</rui-navigation-menu>
 	),
+
+	{ stylesheets: ['./navigation-menu.css'] },
 );
 
 export type RuiNavigationMenuTriggerProps = RadiantSlotProps &
-	Pick<RuiButtonProps, 'variant' | 'disabled' | 'class' | 'type'> & {
+	Pick<RuiButtonControlProps, 'variant' | 'disabled' | 'class' | 'type'> & {
 		value: string;
 		children: JsxRenderable;
 	};

@@ -1,10 +1,12 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { parseCommaSeparated } from '@/lib/comma-separated';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';
 export type RuiSidebarSide = 'left' | 'right';
 export type RuiSidebarCollapsible = 'off' | 'icon' | 'full';
 export type RuiSidebarState = 'expanded' | 'collapsed';
+export type RuiSidebarMatchMode = 'pathname' | 'prefix';
 
 export type RuiSidebarProps = {
 	/** Visual treatment. `sidebar` is the default bordered pane; `inset` floats inside a card. Default: `sidebar`. */
@@ -25,12 +27,26 @@ export type RuiSidebarProps = {
 	minWidth?: number;
 	/** Maximum width in pixels when resizing. Default: `480`. */
 	maxWidth?: number;
-	/** Show a drag/keyboard resize handle on desktop. Default: `true`. */
+	/** Show a drag/keyboard resize handle on desktop. Default: `false`. */
 	resizable?: boolean;
 	/** Hide on viewports below this width. Default: `768`. */
 	mobileBreakpoint?: number;
 	/** Accessible name announced by the pane landmark and triggers. Default: `Sidebar`. */
 	label?: string;
+	/**
+	 * When `true`, syncs `rui-sidebar__menu-button--active` and `aria-current="page"`
+	 * on descendant menu links whose URL matches the current location.
+	 */
+	matchActive?: boolean;
+	/** How link URLs are compared to `location.pathname`. Default: `pathname`. */
+	matchMode?: RuiSidebarMatchMode;
+	/** Scroll the active link into view on first connect. */
+	scrollActiveOnMount?: boolean;
+	/**
+	 * Comma-separated document event names that re-sync after SPA navigation,
+	 * e.g. `eco:page-load,eco:after-swap`.
+	 */
+	navigationEvents?: string;
 };
 
 export type RuiSidebarToggleDetail = { open: boolean; state: RuiSidebarState };
@@ -48,6 +64,7 @@ const DEFAULT_MOBILE_BREAKPOINT = 768;
 const KEYBOARD_SHORTCUT = 'b';
 const KEYBOARD_STEP = 8;
 const KEYBOARD_STEP_LARGE = 32;
+const MENU_LINK_SELECTOR = 'a.rui-sidebar__menu-button';
 
 function isModifierPressed(event: KeyboardEvent): boolean {
 	return event.metaKey || event.ctrlKey;
@@ -97,11 +114,15 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	@prop({ type: Number, reflect: true, attribute: 'width' }) width: number | undefined;
 	@prop({ type: Number, defaultValue: DEFAULT_MIN_WIDTH }) minWidth: number;
 	@prop({ type: Number, defaultValue: DEFAULT_MAX_WIDTH }) maxWidth: number;
-	@prop({ type: Boolean, defaultValue: true }) resizable: boolean;
+	@prop({ type: Boolean, defaultValue: false }) resizable: boolean;
 	@prop({ type: Boolean, defaultValue: true }) defaultOpen: boolean;
 	@prop({ type: Boolean, attribute: 'open' }) open: boolean | undefined;
 	@prop({ type: Number, defaultValue: DEFAULT_MOBILE_BREAKPOINT }) mobileBreakpoint: number;
 	@prop({ type: String, defaultValue: 'Sidebar' }) label: string;
+	@prop({ type: Boolean, reflect: true, attribute: 'match-active' }) matchActive = false;
+	@prop({ type: String, defaultValue: 'pathname' }) matchMode: RuiSidebarMatchMode;
+	@prop({ type: Boolean, attribute: 'scroll-active-on-mount' }) scrollActiveOnMount = false;
+	@prop({ type: String, attribute: 'navigation-events', defaultValue: '' }) navigationEvents = '';
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'pane' }) paneTarget: HTMLElement;
@@ -124,6 +145,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	private dragging = false;
 	private dragStartCoord = 0;
 	private dragStartSize = 0;
+	private navigationCleanups: Array<() => void> = [];
 
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -136,6 +158,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.setAttribute('role', 'complementary');
 		this.setAttribute('aria-label', this.label);
 		this.syncHostAttributes();
+		this.attachNavigationListeners();
 		// Deferred JSX `.prop` bindings flush after connectedCallback — settle width
 		// and re-bind the mobile media query after props are applied.
 		queueMicrotask(() => {
@@ -145,12 +168,14 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 			this.ensureWidthInitialized();
 			this.syncPaneWidthVar();
 			this.bindMobileMediaQuery();
+			this.syncActiveLinks(this.scrollActiveOnMount);
 		});
 	}
 
 	override disconnectedCallback(): void {
 		this.endDrag();
 		this.unbindMobileMediaQuery();
+		this.detachNavigationListeners();
 		super.disconnectedCallback();
 	}
 
@@ -194,6 +219,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		'minWidth',
 		'maxWidth',
 		'isMobile',
+		'resizable',
 	])
 	onStateUpdated(): void {
 		this.syncHostAttributes();
@@ -203,6 +229,66 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	@onUpdated(['mobileBreakpoint'])
 	onMobileBreakpointUpdated(): void {
 		this.bindMobileMediaQuery();
+	}
+
+	@onUpdated(['matchActive', 'matchMode', 'navigationEvents'])
+	onMatchSettingsUpdated(): void {
+		this.detachNavigationListeners();
+		this.attachNavigationListeners();
+		this.syncActiveLinks(false);
+	}
+
+	/** Re-applies active classes on descendant menu links from the current URL. */
+	syncActiveLinks(scrollActiveIntoView = false): void {
+		if (!this.matchActive || typeof window === 'undefined' || typeof window.location === 'undefined') {
+			return;
+		}
+
+		const currentPath = window.location.pathname;
+		for (const link of this.querySelectorAll<HTMLAnchorElement>(MENU_LINK_SELECTOR)) {
+			const active = this.isLinkActive(link, currentPath);
+			link.classList.toggle('rui-sidebar__menu-button--active', active);
+			if (active) {
+				link.setAttribute('aria-current', 'page');
+				if (scrollActiveIntoView) {
+					link.scrollIntoView({ block: 'nearest' });
+				}
+			} else {
+				link.removeAttribute('aria-current');
+			}
+		}
+	}
+
+	private isLinkActive(link: HTMLAnchorElement, currentPath: string): boolean {
+		const linkPath = link.pathname;
+		if (this.matchMode === 'prefix') {
+			return currentPath === linkPath || currentPath.startsWith(`${linkPath}/`);
+		}
+		return linkPath === currentPath;
+	}
+
+	private attachNavigationListeners(): void {
+		if (!this.matchActive || typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+			return;
+		}
+
+		const handler = () => this.syncActiveLinks(false);
+		window.addEventListener('popstate', handler);
+		this.navigationCleanups.push(() => window.removeEventListener('popstate', handler));
+
+		if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+			for (const eventName of parseCommaSeparated(this.navigationEvents)) {
+				document.addEventListener(eventName, handler);
+				this.navigationCleanups.push(() => document.removeEventListener(eventName, handler));
+			}
+		}
+	}
+
+	private detachNavigationListeners(): void {
+		for (const cleanup of this.navigationCleanups) {
+			cleanup();
+		}
+		this.navigationCleanups = [];
 	}
 
 	private unbindMobileMediaQuery(): void {
@@ -223,9 +309,23 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.setMobile(this.mediaQuery.matches);
 	}
 
+	/**
+	 * Flip between mobile drawer and inline layout.
+	 *
+	 * @remarks
+	 * Leaving mobile while closed with `collapsible="off"` reopens — desktop hides
+	 * reopen triggers for that mode, so a closed drawer would otherwise stick at
+	 * width 0. Other collapsible modes keep the consumer's open state.
+	 */
 	private setMobile(next: boolean): void {
 		if (next === this.isMobile) return;
+		const leavingMobile = this.isMobile && !next;
 		this.isMobile = next;
+		if (leavingMobile && this.collapsible === 'off' && !this.isOpen()) {
+			this.setOpen(true);
+		} else {
+			this.syncPaneWidthVar();
+		}
 		this.mobileChangeEvent.emit({ mobile: next });
 	}
 

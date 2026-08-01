@@ -4,7 +4,6 @@ import type { RuiToastProps } from './toast.script';
 import { RuiToast as RuiToastElement } from './toast.script';
 import type { RuiToasterProps } from './toaster.script';
 import { RuiToaster as RuiToasterElement } from './toaster.script';
-import './toast.css';
 
 export type RuiToastViewProps = RuiToastProps & RadiantSlotProps;
 
@@ -37,6 +36,8 @@ export const RuiToast = defineRadiantView(
 			prop:markedDelete={markedDelete}
 		/>
 	),
+
+	{ stylesheets: ['./toast.css'] },
 );
 
 export type RuiToasterViewProps = WithChildren<RuiToasterProps & RadiantSlotProps>;
@@ -57,4 +58,6 @@ export const RuiToaster = defineRadiantView(
 			{children}
 		</rui-toaster>
 	),
+
+	{ stylesheets: ['./toast.css'] },
 );

@@ -2,7 +2,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiSliderProps } from './slider.script';
 import { RuiSlider as RuiSliderElement } from './slider.script';
-import './slider.css';
 
 export type RuiSliderViewProps = RuiSliderProps &
 	RadiantSlotProps & {
@@ -27,4 +26,6 @@ export const RuiSlider = defineRadiantView(
 			name={name}
 		/>
 	),
+
+	{ stylesheets: ['./slider.css'] },
 );

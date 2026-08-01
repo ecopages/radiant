@@ -1,20 +1,15 @@
 /**
- * Compiles stylesheet sources into `dist/` with Tailwind v4 PostCSS.
+ * Compiles component-facing stylesheet sources into `dist/` with Tailwind v4 PostCSS.
  *
- * Emits plain CSS (no `@apply` / `@reference`) while keeping theme/token
- * custom properties as `var(--…)` so consumers can swap themes at runtime.
- * Does not minify — leave that to the app bundler.
+ * Theme and token sources are copied unchanged so consuming Tailwind builds can
+ * register their `@theme` utilities. Component CSS is emitted as plain CSS
+ * (without `@apply` / `@reference`). Neither path is minified.
  *
  * Run after `build:files` (or as part of `build:lib`).
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import {
-	componentCssDistPath,
-	componentCssExportKey,
-	isOptionalComponentSkin,
-	listComponentCssFiles,
-} from './component-style-files.ts';
+import { listComponentCssFiles } from './component-style-files.ts';
 import postcss from 'postcss';
 import tailwindcss from '@tailwindcss/postcss';
 
@@ -63,6 +58,10 @@ function listComponentStyleFiles(): string[] {
 		});
 }
 
+function isTailwindReferenceSource(relativePath: string): boolean {
+	return relativePath.startsWith(`themes${path.sep}`) || relativePath.startsWith(`tokens${path.sep}`);
+}
+
 async function compileCss(from: string, to: string): Promise<void> {
 	const css = readFileSync(from, 'utf8');
 	const result = await processor.process(css, { from, to });
@@ -78,7 +77,14 @@ async function main(): Promise<void> {
 
 	for (const from of styleFiles) {
 		const relative = path.relative(STYLES_SRC, from);
-		jobs.push(compileCss(from, path.join(STYLES_DIST, relative)));
+		const to = path.join(STYLES_DIST, relative);
+
+		if (isTailwindReferenceSource(relative)) {
+			mkdirSync(path.dirname(to), { recursive: true });
+			writeFileSync(to, readFileSync(from, 'utf8'));
+		} else {
+			jobs.push(compileCss(from, to));
+		}
 	}
 
 	for (const from of componentFiles) {

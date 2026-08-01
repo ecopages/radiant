@@ -3,7 +3,6 @@ import type { RadiantSlotProps, WithChildren } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiAlertProps, RuiAlertVariant } from './alert.script';
 import { RuiAlert as RuiAlertElement } from './alert.script';
-import './alert.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -74,11 +73,19 @@ export function RuiAlertDescription({ children, class: className }: RuiAlertDesc
 
 export const RuiAlert = defineRadiantView(
 	RuiAlertElement,
-	({ slot, variant = 'info', layout = 'inline', children }: WithChildren<RuiAlertProps & RadiantSlotProps>) => (
-		<rui-alert slot={slot} variant={variant} layout={layout}>
+	({
+		slot,
+		variant = 'info',
+		layout = 'inline',
+		class: className,
+		children,
+	}: WithChildren<RuiAlertProps & RadiantSlotProps & { class?: string }>) => (
+		<rui-alert slot={slot} variant={variant} layout={layout} class={className}>
 			<div class={cx('rui-alert', `rui-alert--${variant}`, `rui-alert--${layout}`)} role="alert">
 				{children}
 			</div>
 		</rui-alert>
 	),
+
+	{ stylesheets: ['./alert.css'] },
 );

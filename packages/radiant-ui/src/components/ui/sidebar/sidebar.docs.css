@@ -1,8 +1,8 @@
 @reference '../../../styles/radiant-ui.css';
 
 /**
- * Docs-app skin for `<rui-sidebar>` — swap via Storybook `parameters.stylesheets`.
- * Not bundled with the component; inject only when this look is needed.
+ * Docs-app skin for `<rui-sidebar>` — optional; not bundled into `styles.css`.
+ * Load via `@ecopages/radiant-ui/sidebar/docs.css` (docs app) or Storybook `parameters.stylesheets`.
  */
 rui-sidebar {
 	.rui-sidebar {

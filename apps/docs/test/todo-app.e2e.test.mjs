@@ -154,11 +154,14 @@ test('Docs controller decorator visualizer example keeps authored DOM wiring in 
 		assert.equal(Number.isNaN(initialQueryCount), false);
 		assert.ok(initialQueryCount > 0);
 
-		await visualizer.getByRole('button', { name: 'Alert' }).click();
+		await page.waitForFunction(() => customElements.get('rui-radio-group') !== undefined);
+		await visualizer.locator('input[value="alert"]').evaluate((input) => {
+			input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		});
 
 		await waitForLocatorText(hostSignal, 'alert');
 		await waitForLocatorText(hostBusy, 'true');
-		await waitForLocatorText(eventAction, 'click:alert');
+		await waitForLocatorText(eventAction, 'rui-change:alert');
 		await waitForLocatorText(stateSignal, 'alert');
 		await waitForLocatorText(statePulses, '1');
 		await waitForLocatorText(stateLastAction, 'Host attribute changed to data-signal="alert"');

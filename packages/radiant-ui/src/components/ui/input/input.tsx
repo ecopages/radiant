@@ -1,5 +1,5 @@
+import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
-import './input.css';
 
 export type RuiInputSize = 'sm' | 'md' | 'lg';
 
@@ -62,3 +62,5 @@ export function RuiInput({
 		/>
 	);
 }
+
+attachRadiantStylesheets(RuiInput, ['./input.css'], import.meta.url);

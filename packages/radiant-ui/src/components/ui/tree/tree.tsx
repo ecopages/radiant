@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTreeProps } from './tree.script';
 import { RuiTree as RuiTreeElement } from './tree.script';
-import './tree.css';
 
 export type RuiTreeNode = {
 	id: string;
@@ -57,4 +56,6 @@ export const RuiTree = defineRadiantView(
 			<TreeNodes nodes={nodes} />
 		</rui-tree>
 	),
+
+	{ stylesheets: ['./tree.css'] },
 );
