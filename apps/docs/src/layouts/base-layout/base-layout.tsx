@@ -5,8 +5,8 @@ import { Header } from '@/components/header';
 export type BaseLayoutProps = {
 	children: JsxRenderable;
 	class?: string;
-	showBurger?: boolean;
 	showDocsLink?: boolean;
+	sidebarId?: string;
 };
 
 export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
@@ -15,11 +15,11 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 		scripts: ['./base-layout.script.ts'],
 		components: [Header],
 	},
-	render: ({ children, class: className, showBurger = false, showDocsLink = true }) => {
+	render: ({ children, class: className, showDocsLink = true, sidebarId }) => {
 		return (
 			<body>
 				<Header
-					showBurger={showBurger}
+					sidebarId={sidebarId}
 					navigation={{
 						items: [
 							...(showDocsLink
