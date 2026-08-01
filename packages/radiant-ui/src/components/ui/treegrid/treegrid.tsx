@@ -1,5 +1,4 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTreegridProps } from './treegrid.script';
 import { RuiTreegrid as RuiTreegridElement } from './treegrid.script';
@@ -46,13 +45,11 @@ const TreegridRows = ({ rows }: { rows: RuiTreegridRow[] }) => (
 export const RuiTreegrid = defineRadiantView(
 	RuiTreegridElement,
 	({
-		slot,
-		label,
-		value,
 		columns,
 		rows,
-	}: RuiTreegridProps & RadiantSlotProps & { columns: JsxRenderable[]; rows: RuiTreegridRow[] }) => (
-		<rui-treegrid slot={slot} label={label} value={value}>
+		...props
+	}: JsxHtmlProps<RuiTreegridProps & { slot?: string; columns: JsxRenderable[]; rows: RuiTreegridRow[] }>) => (
+		<rui-treegrid {...props}>
 			<div class="rui-treegrid__row rui-treegrid__row--header" role="row">
 				{columns.map((column) => (
 					<div class="rui-treegrid__cell rui-treegrid__cell--header" role="columnheader">
@@ -63,6 +60,5 @@ export const RuiTreegrid = defineRadiantView(
 			<TreegridRows rows={rows} />
 		</rui-treegrid>
 	),
-
 	{ stylesheets: ['./treegrid.css'] },
 );

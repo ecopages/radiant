@@ -1,25 +1,22 @@
+import type { JsxHtmlProps } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 import type { RuiInputSize } from '../input';
 
-export type RuiTextareaProps = {
+export type RuiTextareaProps = JsxHtmlProps<{
 	value?: string;
 	placeholder?: string;
 	disabled?: boolean;
 	name?: string;
 	rows?: number;
 	size?: RuiInputSize;
-	class?: string;
 	id?: string;
 	'aria-label'?: string;
 	'on:input'?: (event: Event) => void;
 	'on:change'?: (event: Event) => void;
 	'on:blur'?: (event: Event) => void;
-};
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
+}>;
 
 /**
  * Presentational wrapper around a native `<textarea>`.
@@ -27,37 +24,16 @@ function cx(...parts: Array<string | false | null | undefined>): string {
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
  * Marked with `data-rui-control` so `<rui-field>` can discover it.
  */
-export function RuiTextarea({
-	value,
-	placeholder,
-	disabled,
-	name,
-	rows = 3,
-	size = 'md',
-	class: className,
-	id,
-	'aria-label': ariaLabel,
-	'on:input': onInput,
-	'on:change': onChange,
-	'on:blur': onBlur,
-	...rest
-}: RuiTextareaProps) {
+export function RuiTextarea(props: RuiTextareaProps) {
+	const { size = 'md', class: className, rows = 3, ...host } = props;
+
 	return (
 		<textarea
-			id={id}
+			{...host}
+			rows={rows}
 			{...{ [RUI_CONTROL_ATTR]: '' }}
 			data-rui-control-type="text"
 			class={cx('rui-textarea', `rui-textarea--${size}`, className)}
-			value={value}
-			placeholder={placeholder}
-			disabled={disabled}
-			rows={rows}
-			name={name}
-			aria-label={ariaLabel}
-			on:input={onInput}
-			on:change={onChange}
-			on:blur={onBlur}
-			{...rest}
 		/>
 	);
 }

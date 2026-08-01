@@ -1,70 +1,62 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiDialogProps } from './dialog.script';
 import { RuiDialog as RuiDialogElement } from './dialog.script';
 
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
-
-export type RuiDialogTitleProps = RadiantSlotProps & {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiDialogTitleProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
 
 /** Dialog title slotted into `title` by default. */
-export function RuiDialogTitle({ slot = 'title', children, class: className }: RuiDialogTitleProps) {
+export function RuiDialogTitle({ children, slot = 'title', class: className, ...props }: RuiDialogTitleProps) {
 	return (
-		<div slot={slot} data-dialog-title data-ref="title" class={cx('rui-dialog__title', className)}>
+		<div {...props} slot={slot} data-dialog-title data-ref="title" class={cx('rui-dialog__title', className)}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiDialogBodyProps = {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiDialogBodyProps = JsxHtmlPropsWithChildren;
 
 /** Dialog body in the default slot. */
-export function RuiDialogBody({ children, class: className }: RuiDialogBodyProps) {
+export function RuiDialogBody({ children, class: className, ...props }: RuiDialogBodyProps) {
 	return (
-		<div data-dialog-body data-ref="description" class={cx('rui-dialog__body', className)}>
+		<div {...props} data-dialog-body data-ref="description" class={cx('rui-dialog__body', className)}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiDialogActionsProps = RadiantSlotProps & {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiDialogActionsProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
 
 /** Action row slotted into `actions` by default. */
-export function RuiDialogActions({ slot = 'actions', children, class: className }: RuiDialogActionsProps) {
+export function RuiDialogActions({ children, slot = 'actions', class: className, ...props }: RuiDialogActionsProps) {
 	return (
-		<div slot={slot} class={cx('rui-dialog__actions', className)}>
+		<div {...props} slot={slot} class={cx('rui-dialog__actions', className)}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiDialogCloseProps = RadiantSlotProps & {
-	children?: JsxRenderable;
-	class?: string;
+export type RuiDialogCloseProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
 	'aria-label'?: string;
-};
+}>;
 
 /** Close control slotted into `close` by default. */
 export function RuiDialogClose({
-	slot = 'close',
 	children,
+	slot = 'close',
 	class: className,
 	'aria-label': ariaLabel = 'Close',
+	...props
 }: RuiDialogCloseProps) {
 	return (
 		<button
+			{...props}
 			slot={slot}
 			type="button"
 			data-dialog-close
@@ -77,20 +69,21 @@ export function RuiDialogClose({
 	);
 }
 
-export type RuiDialogViewProps = RuiDialogProps &
-	RadiantSlotProps & {
+export type RuiDialogViewProps = JsxHtmlPropsWithChildren<
+	RuiDialogProps & {
+		slot?: string;
 		id?: string;
 		title?: JsxRenderable;
 		actions?: JsxRenderable;
-		children?: JsxRenderable;
-	};
+	}
+>;
 
 export const RuiDialog = defineRadiantView(
 	RuiDialogElement,
-	({ slot, open, alert, label, id, title, actions, children }: RuiDialogViewProps) => {
+	({ title, actions, children, ...props }: RuiDialogViewProps) => {
 		if (title != null || actions != null) {
 			return (
-				<rui-dialog slot={slot} id={id} open={open} alert={alert} label={label}>
+				<rui-dialog {...props}>
 					<RuiDialogClose />
 					{title != null ? <RuiDialogTitle>{title}</RuiDialogTitle> : null}
 					{children != null ? <RuiDialogBody>{children}</RuiDialogBody> : null}
@@ -99,12 +92,7 @@ export const RuiDialog = defineRadiantView(
 			);
 		}
 
-		return (
-			<rui-dialog slot={slot} id={id} open={open} alert={alert} label={label}>
-				{children}
-			</rui-dialog>
-		);
+		return <rui-dialog {...props}>{children}</rui-dialog>;
 	},
-
 	{ stylesheets: ['./dialog.css'] },
 );

@@ -1,68 +1,63 @@
-import type { JsxRenderable } from '@ecopages/jsx';
+import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { defineRadiantView } from '@/lib/radiant-view';
-import type { RadiantSlotProps } from '@/types';
-import { RuiButton, type RuiButtonControlProps } from '../button/button';
 import type { RuiNavigationMenuProps } from './navigation-menu.script';
 import { RuiNavigationMenu as RuiNavigationMenuElement } from './navigation-menu.script';
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
+import { RuiButton, type RuiButtonControlProps } from '../button/button';
 
 export const RuiNavigationMenu = defineRadiantView(
 	RuiNavigationMenuElement,
-	({ label, children, slot }: RuiNavigationMenuProps & RadiantSlotProps & { children: JsxRenderable }) => (
-		<rui-navigation-menu slot={slot} label={label}>
-			{children}
-		</rui-navigation-menu>
+	({ children, ...props }: JsxHtmlPropsWithChildren<RuiNavigationMenuProps & { slot?: string }>) => (
+		<rui-navigation-menu {...props}>{children}</rui-navigation-menu>
 	),
-
 	{ stylesheets: ['./navigation-menu.css'] },
 );
 
-export type RuiNavigationMenuTriggerProps = RadiantSlotProps &
+export type RuiNavigationMenuTriggerProps = JsxHtmlPropsWithChildren<
 	Pick<RuiButtonControlProps, 'variant' | 'disabled' | 'class' | 'type'> & {
+		slot?: string;
 		value: string;
-		children: JsxRenderable;
-	};
+	}
+>;
 
 /** Top-level megamenu trigger slotted into `triggers` by default. */
 export function RuiNavigationMenuTrigger({
+	children,
 	slot = 'triggers',
 	value,
-	children,
 	variant = 'ghost',
-	...rest
+	...props
 }: RuiNavigationMenuTriggerProps) {
 	return (
 		<RuiButton
+			{...props}
 			slot={slot}
 			variant={variant}
 			data-navigation-item
 			data-navigation-trigger
 			data-value={value}
-			{...rest}
 		>
 			{children}
 		</RuiButton>
 	);
 }
 
-export type RuiNavigationMenuLinkProps = RadiantSlotProps & {
+export type RuiNavigationMenuLinkProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
 	href: string;
-	children: JsxRenderable;
-	class?: string;
-};
+}>;
 
 /** Plain navigation link slotted into `triggers` by default. */
 export function RuiNavigationMenuLink({
+	children,
 	slot = 'triggers',
 	href,
-	children,
 	class: className,
+	...props
 }: RuiNavigationMenuLinkProps) {
 	return (
 		<a
+			{...props}
 			slot={slot}
 			href={href}
 			data-navigation-item
@@ -73,21 +68,21 @@ export function RuiNavigationMenuLink({
 	);
 }
 
-export type RuiNavigationMenuPanelProps = RadiantSlotProps & {
+export type RuiNavigationMenuPanelProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
 	value: string;
-	children: JsxRenderable;
-	class?: string;
-};
+}>;
 
 /** Megamenu panel slotted into `panels` by default. */
 export function RuiNavigationMenuPanel({
+	children,
 	slot = 'panels',
 	value,
-	children,
 	class: className,
+	...props
 }: RuiNavigationMenuPanelProps) {
 	return (
-		<div slot={slot} class={className} data-navigation-panel data-value={value}>
+		<div {...props} slot={slot} class={className} data-navigation-panel data-value={value}>
 			{children}
 		</div>
 	);

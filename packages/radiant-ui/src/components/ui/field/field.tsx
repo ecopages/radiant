@@ -1,27 +1,15 @@
-import type { WithChildren } from '@/types';
+import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFieldProps } from './field.script';
 import { RuiField as RuiFieldElement } from './field.script';
 
 export const RuiField = defineRadiantView(
 	RuiFieldElement,
-	({
-		name,
-		rules,
-		defaultValue,
-		defaultValueData,
-		disabled,
-		error,
-		invalid,
-		children,
-	}: WithChildren<RuiFieldProps>) => (
+	({ children, rules, defaultValue, defaultValueData, ...props }: JsxHtmlPropsWithChildren<RuiFieldProps>) => (
 		<rui-field
-			name={name}
+			{...props}
 			prop:rules={rules}
 			prop:defaultValue={defaultValue}
-			disabled={disabled}
-			error={error}
-			invalid={invalid}
 			attr:data-default-value={
 				defaultValueData ?? (defaultValue !== undefined ? JSON.stringify(defaultValue) : undefined)
 			}
@@ -29,6 +17,5 @@ export const RuiField = defineRadiantView(
 			{children}
 		</rui-field>
 	),
-
 	{ stylesheets: ['./field.css'] },
 );

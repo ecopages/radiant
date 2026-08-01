@@ -1,5 +1,4 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiListboxProps } from './listbox.script';
 import { RuiListbox as RuiListboxElement } from './listbox.script';
@@ -8,14 +7,8 @@ export type RuiListboxOption = { value: string; label: JsxRenderable; disabled?:
 
 export const RuiListbox = defineRadiantView(
 	RuiListboxElement,
-	({
-		slot,
-		value,
-		label,
-		disabled,
-		options,
-	}: RuiListboxProps & RadiantSlotProps & { options: RuiListboxOption[] }) => (
-		<rui-listbox slot={slot} value={value} label={label} disabled={disabled}>
+	({ options, ...props }: JsxHtmlProps<RuiListboxProps & { slot?: string; options: RuiListboxOption[] }>) => (
+		<rui-listbox {...props}>
 			{options.map((option) => (
 				<div
 					class="rui-listbox__option"
@@ -29,6 +22,5 @@ export const RuiListbox = defineRadiantView(
 			))}
 		</rui-listbox>
 	),
-
 	{ stylesheets: ['./listbox.css'] },
 );

@@ -86,7 +86,7 @@ try {
 			'@': SRC,
 		},
 		bundle: true,
-		entryPoints: [path.join(SRC, 'index.ts'), ...listComponentEntries()],
+		entryPoints: [path.join(SRC, 'index.ts'), path.join(SRC, 'cx.ts'), ...listComponentEntries()],
 		external: externalPackages,
 		format: 'esm',
 		jsx: 'automatic',

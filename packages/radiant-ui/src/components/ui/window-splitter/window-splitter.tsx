@@ -1,5 +1,4 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiWindowSplitterProps } from './window-splitter.script';
 import { RuiWindowSplitter as RuiWindowSplitterElement } from './window-splitter.script';
@@ -7,18 +6,14 @@ import { RuiWindowSplitter as RuiWindowSplitterElement } from './window-splitter
 export const RuiWindowSplitter = defineRadiantView(
 	RuiWindowSplitterElement,
 	({
-		slot,
-		value,
-		orientation,
-		label,
 		primary,
 		secondary,
-	}: RuiWindowSplitterProps & RadiantSlotProps & { primary: JsxRenderable; secondary: JsxRenderable }) => (
-		<rui-window-splitter slot={slot} value={value} orientation={orientation} label={label}>
+		...props
+	}: JsxHtmlProps<RuiWindowSplitterProps & { slot?: string; primary: JsxRenderable; secondary: JsxRenderable }>) => (
+		<rui-window-splitter {...props}>
 			<div slot="primary">{primary}</div>
 			<div slot="secondary">{secondary}</div>
 		</rui-window-splitter>
 	),
-
 	{ stylesheets: ['./window-splitter.css'] },
 );

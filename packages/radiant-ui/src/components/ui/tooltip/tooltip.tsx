@@ -1,15 +1,12 @@
-import type { WithChildren, RadiantSlotProps } from '@/types';
+import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTooltipProps } from './tooltip.script';
 import { RuiTooltip as RuiTooltipElement } from './tooltip.script';
 
 export const RuiTooltip = defineRadiantView(
 	RuiTooltipElement,
-	({ slot, content, placement, delay, children }: WithChildren<RuiTooltipProps & RadiantSlotProps>) => (
-		<rui-tooltip slot={slot} content={content} placement={placement} delay={delay}>
-			{children}
-		</rui-tooltip>
+	({ children, ...props }: JsxHtmlPropsWithChildren<RuiTooltipProps & { slot?: string }>) => (
+		<rui-tooltip {...props}>{children}</rui-tooltip>
 	),
-
 	{ stylesheets: ['./tooltip.css'] },
 );

@@ -15,6 +15,27 @@ Guidance for humans and agents working on the design system in `packages/radiant
 - Shared types from `src/types.ts` → `@/types`.
 - Same-component and sibling UI imports → `./` and `../` only.
 
+## View host props
+
+Views that render a DOM host should type props as `JsxHtmlProps<ComponentProps>` or `JsxHtmlPropsWithChildren<ComponentProps>` when children are accepted. Add `slot` on `ComponentProps` only when needed.
+
+Default pattern — spread host props, keep `children` explicit:
+
+```tsx
+({ children, ...props }: JsxHtmlPropsWithChildren<RuiFooProps & { slot?: string }>) => (
+	<rui-foo {...props}>{children}</rui-foo>
+);
+```
+
+Self-closing hosts can spread the full props object (`<rui-meter {...props} />`); the JSX runtime peels `children` before binding attributes.
+
+Peel props only when the view must transform or filter them:
+
+- View-only data (`options`, `articles`, …) that must not reach the host
+- `prop:` / `attr:` bindings or renamed props (`triggerLabel` → `prop:buttonLabel`, `values` → `rangeMin` / `rangeMax`). Peel every CE prop that needs an explicit `prop:` / `attr:` prefix; spread the rest.
+- `class` composition with `cx()` on the same node — spread first, then `class={cx('rui-foo', className)}`. Import `cx` from `@ecopages/radiant-ui/cx` in apps; use `@/lib/cx` inside this package.
+- Host vs inner-node split (e.g. `RuiAlert` puts `class` on an inner div)
+
 ## CSS architecture (two layers)
 
 1. **Theme** — CSS variables (packs + semantic roles). Loaded by the app or Storybook, not by individual component stylesheets.
