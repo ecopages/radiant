@@ -1,5 +1,4 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { JsxRenderable } from '@ecopages/jsx/jsx-runtime';
 import { unsafeHtml } from '@ecopages/jsx/jsx-runtime';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
