@@ -1,5 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { RadiantHostProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type {
 	RuiSidebarProps,
@@ -311,12 +311,9 @@ export function RuiSidebarInset({ children, class: className, id }: RuiSidebarIn
 }
 
 export type RuiSidebarViewProps = RuiSidebarProps &
-	RadiantSlotProps & {
+	RadiantHostProps & {
 		id: string;
 		children: JsxRenderable;
-		class?: string;
-		/** Data attributes forwarded to the host (`data-eco-persist`, etc.). */
-		data?: Record<string, boolean | number | string | undefined>;
 	};
 
 export const RuiSidebar = defineRadiantView(
@@ -339,14 +336,20 @@ export const RuiSidebar = defineRadiantView(
 		scrollActiveOnMount,
 		navigationEvents,
 		class: className,
+		classes,
 		data,
+		aria,
+		style,
 		children,
 	}: RuiSidebarViewProps) => (
 		<rui-sidebar
 			slot={slot}
 			id={id}
 			class={className}
+			classes={classes}
 			data={data}
+			aria={aria}
+			style={style}
 			variant={variant as RuiSidebarVariant | undefined}
 			side={side as RuiSidebarSide | undefined}
 			collapsible={collapsible as RuiSidebarCollapsible | undefined}
@@ -370,9 +373,8 @@ export const RuiSidebar = defineRadiantView(
 );
 
 export type RuiSidebarTriggerViewProps = RuiSidebarTriggerProps &
-	RadiantSlotProps & {
+	RadiantHostProps & {
 		children?: JsxRenderable;
-		class?: string;
 	};
 
 export const RuiSidebarTrigger = defineRadiantView(
@@ -385,11 +387,19 @@ export const RuiSidebarTrigger = defineRadiantView(
 		variant,
 		size,
 		class: className,
+		classes,
+		data,
+		aria,
+		style,
 		children,
 	}: RuiSidebarTriggerViewProps) => (
 		<rui-sidebar-trigger
 			slot={slot}
 			class={className}
+			classes={classes}
+			data={data}
+			aria={aria}
+			style={style}
 			prop:controls={controls}
 			prop:buttonLabel={triggerLabel ?? 'Toggle sidebar'}
 			attr:data-button-label={triggerLabel ?? 'Toggle sidebar'}

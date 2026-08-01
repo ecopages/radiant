@@ -1,20 +1,16 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { RadiantHostProps } from '@/types';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost';
 export type RuiButtonSize = 'sm' | 'md' | 'lg';
 
-type RuiButtonCommonProps = RadiantSlotProps & {
+type RuiButtonCommonProps = RadiantHostProps & {
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
 	/** Control size. Default: `md`. */
 	size?: RuiButtonSize;
-	/** Extra class names appended after the variant/size classes. */
-	class?: string;
 	/** Accessible name when the button has no visible text. */
 	'aria-label'?: string;
-	/** Data attributes forwarded to the native control. */
-	data?: Record<string, boolean | number | string | undefined>;
 	children?: JsxRenderable;
 };
 
@@ -89,9 +85,12 @@ export function RuiButton(props: RuiButtonProps) {
 				download={props.download}
 				slot={props.slot}
 				class={getClassNames(props)}
+				classes={props.classes}
 				aria-label={props['aria-label']}
 				aria-current={props['aria-current']}
+				aria={props.aria}
 				data={props.data}
+				style={props.style}
 				on:click={props['on:click']}
 			>
 				{props.children}
