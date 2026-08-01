@@ -107,8 +107,10 @@ function profile(label: string, value: unknown, hydrate: boolean): ProfileResult
 }
 
 function getRuntimeLabel(): string {
-	if (typeof Bun !== 'undefined') {
-		return `Bun ${Bun.version}`;
+	const bunRuntime = (globalThis as typeof globalThis & { Bun?: { version?: string } }).Bun;
+
+	if (bunRuntime) {
+		return `Bun ${bunRuntime.version ?? 'unknown'}`;
 	}
 
 	if (typeof process !== 'undefined' && process.versions?.node) {

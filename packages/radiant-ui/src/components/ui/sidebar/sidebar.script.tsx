@@ -147,25 +147,27 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	private dragStartSize = 0;
 	private navigationCleanups: Array<() => void> = [];
 
+	/**
+	 * @remarks Uncontrolled open state is initialized after JSX flushes deferred
+	 * property bindings, so `defaultOpen` is sampled once rather than becoming
+	 * live state.
+	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
 
-		if (this.open === undefined) {
-			this.open = this.defaultOpen;
-		}
 		this.ensureWidthInitialized();
 
 		this.setAttribute('role', 'complementary');
 		this.setAttribute('aria-label', this.label);
 		this.syncHostAttributes();
 		this.attachNavigationListeners();
-		// Deferred JSX `.prop` bindings flush after connectedCallback — settle width
-		// and re-bind the mobile media query after props are applied.
 		queueMicrotask(() => {
 			if (this.open === undefined) {
 				this.open = this.defaultOpen;
 			}
+
 			this.ensureWidthInitialized();
+			this.syncHostAttributes();
 			this.syncPaneWidthVar();
 			this.bindMobileMediaQuery();
 			this.syncActiveLinks(this.scrollActiveOnMount);
@@ -194,7 +196,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	}
 
 	private isOpen(): boolean {
-		return this.open !== false;
+		return this.open !== undefined ? this.open : this.defaultOpen;
 	}
 
 	/**
