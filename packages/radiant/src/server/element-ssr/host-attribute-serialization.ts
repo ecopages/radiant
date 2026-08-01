@@ -1,6 +1,6 @@
 import type { ReactiveProperty } from '../../core/reactive-prop-core';
 import type { ReactivePropDefinition } from '../../core/reactive-prop-metadata';
-import { writeAttributeValue } from '../../utils/attribute-utils';
+import { writeAttributeValue, type AttributeTypeConstant } from '../../utils/attribute-utils';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
 
 /**
@@ -24,7 +24,10 @@ export type HostAttributeSource = {
  *
  * 1. **Reactive properties** — legacy attribute reflection via `property.converter`.
  *    These are already-registered reactive properties with established converters.
- *    Falsy values (`undefined`, `null`, `false`) are omitted.
+ *    `undefined` and `null` are omitted. Typed Boolean `false` is emitted as
+ *    `"false"` so client upgrade can restore explicit false before hydration.
+ *    Emitted Boolean attributes use value semantics (`name="true"` / `name="false"`),
+ *    not HTML presence-boolean semantics — do not style with bare `[name]` selectors.
  *
  * 2. **Reactive prop definitions** — decorator-based definitions. Skipped when the
  *    target attribute name was already emitted by source 1 (dedup via `seenAttributes`).
@@ -67,8 +70,7 @@ export function stringifyHostAttributes(attributes: Record<string, string>): str
 /**
  * Source 1: Reactive properties with established converters.
  *
- * Falsy runtime values are omitted — they should not appear as attributes
- * in SSR output.
+ * Nullish runtime values are omitted. Typed Boolean `false` is preserved.
  */
 function appendReactivePropertyAttributes(
 	host: HostAttributeSource,
@@ -77,7 +79,7 @@ function appendReactivePropertyAttributes(
 ): void {
 	for (const property of host.getReactiveProperties()) {
 		const currentValue = host.getPropertyValue(property.name);
-		if (currentValue === undefined || currentValue === null || currentValue === false) {
+		if (shouldOmitReactivePropValue(currentValue, property.type)) {
 			continue;
 		}
 
@@ -106,7 +108,7 @@ function appendReactivePropDefinitionAttributes(
 
 		const currentValue = host.getPropertyValue(definition.name);
 
-		if (currentValue === undefined || currentValue === null || currentValue === false) {
+		if (shouldOmitReactivePropValue(currentValue, definition.options.type)) {
 			continue;
 		}
 
@@ -128,4 +130,24 @@ function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<
 			attributes[attributeName] = attributeValue;
 		}
 	}
+}
+
+/**
+ * Omits values that have no useful host-attribute representation.
+ *
+ * @remarks HTML presence-booleans collapse `false` to "absent". Typed Radiant
+ * Boolean props instead need an explicit `"false"` transport so a client
+ * upgrade cannot restore a true default before hydration applies state.
+ *
+ * That transport is a **value boolean** (`enabled="false"` / `enabled="true"`),
+ * not HTML presence-boolean semantics. Selectors such as `[enabled]` mean
+ * “the value was serialized”, not “enabled is true”. Prefer
+ * `[enabled="true"]` / `[enabled="false"]` or component state attributes/classes.
+ */
+function shouldOmitReactivePropValue(value: unknown, type: AttributeTypeConstant): boolean {
+	if (value === undefined || value === null) {
+		return true;
+	}
+
+	return value === false && type !== Boolean;
 }
