@@ -36,7 +36,7 @@ rui-toc {
 
 	.rui-toc__link--active::before {
 		content: '';
-		@apply absolute top-1/2 -left-[13px] h-3 w-0.5 -translate-y-1/2 rounded-r-sm bg-primary;
+		@apply absolute top-1/2 left-[-13px] h-3 w-0.5 -translate-y-1/2 rounded-r-sm bg-primary;
 	}
 
 	.rui-toc__item--depth-3 .rui-toc__link {

@@ -66,9 +66,9 @@ const HomePage = () => {
 							label="Package managers"
 							tabs={[
 								{
-									id: 'bun',
-									label: 'bun',
-									code: 'bun add @ecopages/radiant @ecopages/jsx',
+									id: 'npm',
+									label: 'npm',
+									code: 'npm install @ecopages/radiant @ecopages/jsx',
 								},
 								{
 									id: 'pnpm',
@@ -76,13 +76,13 @@ const HomePage = () => {
 									code: 'pnpm add @ecopages/radiant @ecopages/jsx',
 								},
 								{
-									id: 'npm',
-									label: 'npm',
-									code: 'npm install @ecopages/radiant @ecopages/jsx',
+									id: 'bun',
+									label: 'bun',
+									code: 'bun add @ecopages/radiant @ecopages/jsx',
 								},
 							]}
 							copyLabel="Copy install command"
-							defaultSelectedKey="bun"
+							defaultSelectedKey="npm"
 						/>
 
 						<div class="home-header__actions">
