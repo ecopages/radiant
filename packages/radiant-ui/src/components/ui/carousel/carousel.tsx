@@ -8,7 +8,6 @@ export type RuiCarouselSlideData = { id: string; children: JsxRenderable };
 
 export type RuiCarouselSlideProps = JsxHtmlPropsWithChildren<{
 	id: string;
-	index?: number;
 }>;
 
 /** Slide in the default carousel slot (APG `group` / `tabpanel` roles are applied by the host). */
