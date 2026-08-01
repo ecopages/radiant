@@ -355,31 +355,50 @@ rui-sidebar {
 /* Alternate header (collapse) vs inset (open) triggers                       */
 /* -------------------------------------------------------------------------- */
 
-.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true']))
+/*
+ * Primary sidebar is either a direct provider child (`default`/`full`) or the
+ * first `rui-sidebar` under `__body` (`docs`). Do not match nested sidebars.
+ */
+.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true'])),
+.rui-sidebar-provider:has(
+	> .rui-sidebar-provider__body > rui-sidebar[data-collapsible='off']:not([data-mobile='true'])
+) {
 	rui-sidebar-trigger[data-placement='header'],
-.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true']))
 	rui-sidebar-trigger[data-placement='inset'] {
-	@apply hidden;
+		@apply hidden;
+	}
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true']))
+.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true'])),
+.rui-sidebar-provider:has(
+	> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded']:not([data-mobile='true'])
+) {
 	rui-sidebar-trigger[data-placement='inset'] {
-	@apply hidden;
+		@apply hidden;
+	}
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true']))
+.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true'])),
+.rui-sidebar-provider:has(
+	> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed']:not([data-mobile='true'])
+) {
 	rui-sidebar-trigger[data-placement='header'] {
-	@apply hidden;
+		@apply hidden;
+	}
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded'][data-mobile='true'])
+.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded'][data-mobile='true']),
+.rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded'][data-mobile='true']) {
 	rui-sidebar-trigger[data-placement='inset'] {
-	@apply hidden;
+		@apply hidden;
+	}
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed'][data-mobile='true'])
+.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed'][data-mobile='true']),
+.rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed'][data-mobile='true']) {
 	rui-sidebar-trigger[data-placement='header'] {
-	@apply hidden;
+		@apply hidden;
+	}
 }
 
 /* -------------------------------------------------------------------------- */
@@ -391,11 +410,12 @@ rui-sidebar {
 }
 
 .rui-sidebar[data-mobile='true'][data-state='collapsed'] {
-	@apply pointer-events-none;
+	/* Drop below site chrome so the inset trigger stays clickable. */
+	@apply pointer-events-none invisible z-auto;
 }
 
 .rui-sidebar[data-mobile='true'][data-state='expanded'] {
-	@apply pointer-events-auto;
+	@apply pointer-events-auto visible;
 }
 
 .rui-sidebar[data-mobile='true'] > .rui-sidebar__pane {

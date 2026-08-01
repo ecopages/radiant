@@ -549,7 +549,7 @@ export const KeyboardShortcut: Story = {
 };
 
 export const ResizeHandle: Story = {
-	args: { collapsible: 'off', defaultWidth: 220 },
+	args: { collapsible: 'off', defaultWidth: 220, resizable: true },
 	render: (args) => (
 		<RuiSidebarProvider
 			sidebar={
@@ -631,7 +631,6 @@ export const DocsNavigation: Story = {
 		defaultWidth: 250,
 		mobileBreakpoint: 768,
 		label: 'Docs navigation',
-		resizable: false,
 	},
 	parameters: {
 		...withStylesheets([docsNavCss]),
@@ -674,8 +673,9 @@ export const DocsNavigation: Story = {
 		expect(canvas.getByTitle('Radiant')).toBeInTheDocument();
 		expect(canvas.getByText('Getting Started')).toBeInTheDocument();
 		expect(canvas.getByText('Components')).toBeInTheDocument();
-		expect(
-			canvas.getByRole('link', { name: 'Introduction', current: 'page' }),
-		).toHaveAttribute('href', '/docs/getting-started/introduction');
+		expect(canvas.getByRole('link', { name: 'Introduction', current: 'page' })).toHaveAttribute(
+			'href',
+			'/docs/getting-started/introduction',
+		);
 	},
 };

@@ -5,6 +5,7 @@ export {
 	type RuiSidebarSide,
 	type RuiSidebarCollapsible,
 	type RuiSidebarState,
+	type RuiSidebarMatchMode,
 	type RuiSidebarToggleDetail,
 	type RuiSidebarResizeDetail,
 } from './sidebar.script';
