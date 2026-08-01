@@ -22,6 +22,14 @@ const loadJsxModule = async () => loadModule<typeof import('../src/index.ts')>('
 const loadJsxDevRuntime = async () =>
 	loadModule<typeof import('../src/jsx-dev-runtime.ts')>('../src/jsx-dev-runtime.ts');
 
+const booleanPropertyTagName = 'radiant-jsx-boolean-property-element';
+
+class BooleanPropertyElement extends HTMLElement {
+	enabled = true;
+}
+
+customElements.define(booleanPropertyTagName, BooleanPropertyElement);
+
 function toTemplateStrings(strings: string[]): TemplateStringsArray {
 	const templateStrings = [...strings] as unknown as TemplateStringsArray;
 	Object.defineProperty(templateStrings, 'raw', {
@@ -306,6 +314,23 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		updatedElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 		expect(clicks).toBe(1);
+	});
+
+	test('hydrates an explicit false property over a custom-element true default', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderBooleanProperty = (enabled: boolean) => jsx(booleanPropertyTagName, { 'prop:enabled': enabled });
+
+		container.innerHTML = `<${booleanPropertyTagName} data-radiant-jsx-bind-0="prop:enabled"></${booleanPropertyTagName}>`;
+		const element = container.querySelector(booleanPropertyTagName) as BooleanPropertyElement;
+
+		expect(element.enabled).toBe(true);
+
+		root.hydrate(renderBooleanProperty(false));
+
+		expect(element.enabled).toBe(false);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 	});
 
 	test('mounts SVG child templates with SVG namespaces under SVG parents', async () => {

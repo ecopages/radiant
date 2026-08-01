@@ -43,6 +43,7 @@ export default defineConfig({
 				test: {
 					name: 'unit',
 					include: ['src/**/*.test.{ts,tsx}'],
+					exclude: ['src/**/*.ssr.test.{ts,tsx}'],
 					setupFiles: ['.storybook/vitest.unit.setup.ts'],
 					browser: {
 						enabled: true,
@@ -50,6 +51,14 @@ export default defineConfig({
 						provider: playwright({}),
 						instances: [{ browser: 'chromium' }],
 					},
+				},
+			},
+			{
+				extends: true,
+				test: {
+					name: 'ssr',
+					include: ['src/**/*.ssr.test.{ts,tsx}'],
+					environment: 'happy-dom',
 				},
 			},
 		],

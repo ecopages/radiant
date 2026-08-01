@@ -16,6 +16,15 @@ class SsrArrayPropHydrateCard extends RadiantElement {
 	}
 }
 
+@customElement('ssr-boolean-prop-hydrate-e2e')
+class SsrBooleanPropHydrateCard extends RadiantElement {
+	@prop({ type: Boolean, defaultValue: true }) enabled!: boolean;
+
+	override render() {
+		return <p>{String(this.enabled)}</p>;
+	}
+}
+
 @customElement('signal-hydrate-e2e')
 class SignalHydrateCard extends RadiantElement {
 	@signal({ hydrate: String, initial: 'idle' }) status!: WritableSignal<string>;
@@ -27,6 +36,9 @@ class SignalHydrateCard extends RadiantElement {
 
 const SSR_ARRAY_PROP_HOST_HTML =
 	'<ssr-array-prop-hydrate-e2e items="[{&quot;label&quot;:&quot;first&quot;},{&quot;label&quot;:&quot;second&quot;}]"><p>first, second</p></ssr-array-prop-hydrate-e2e>';
+
+const SSR_BOOLEAN_PROP_HOST_HTML =
+	'<ssr-boolean-prop-hydrate-e2e enabled="false"><p>false</p></ssr-boolean-prop-hydrate-e2e>';
 
 const SSR_SIGNAL_STATUS_HTML =
 	'<signal-hydrate-e2e><script type="application/json" data-hydration data-hydration-type="signal" data-hydration-key="status">"ready"</script></signal-hydrate-e2e>';
@@ -45,6 +57,17 @@ describe('SSR hydrate in Chromium', () => {
 		await waitFor(() => {
 			expect(element.items).toEqual([{ label: 'first' }, { label: 'second' }]);
 			expect(element.querySelector('p')?.textContent).toBe('first, second');
+		});
+	});
+
+	test('hydrates an explicit false boolean @prop over a true default before the first client render', async () => {
+		document.body.innerHTML = SSR_BOOLEAN_PROP_HOST_HTML;
+
+		const element = document.querySelector('ssr-boolean-prop-hydrate-e2e') as SsrBooleanPropHydrateCard;
+
+		await waitFor(() => {
+			expect(element.enabled).toBe(false);
+			expect(element.querySelector('p')?.textContent).toBe('false');
 		});
 	});
 
