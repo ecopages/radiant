@@ -22,6 +22,7 @@ type SidebarEl = HTMLElement & {
 	toggle: () => void;
 	setOpen: (next: boolean) => void;
 	isMobile: boolean;
+	mobileBreakpoint: number;
 };
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
@@ -254,7 +255,14 @@ describe('RuiSidebar composition', () => {
 
 	it('updates pane width var on keyboard resize', async () => {
 		const { host, cleanup } = mount(
-			<RuiSidebar id="primary-sidebar" collapsible="off" defaultWidth={220} mobileBreakpoint={0} label="Primary">
+			<RuiSidebar
+				id="primary-sidebar"
+				collapsible="off"
+				defaultWidth={220}
+				resizable
+				mobileBreakpoint={0}
+				label="Primary"
+			>
 				<span>content</span>
 			</RuiSidebar>,
 		);
@@ -319,7 +327,14 @@ describe('RuiSidebar composition', () => {
 
 	it('keyboard resizes the pane on the handle', async () => {
 		const { host, cleanup } = mount(
-			<RuiSidebar id="primary-sidebar" collapsible="off" defaultWidth={220} mobileBreakpoint={0} label="Primary">
+			<RuiSidebar
+				id="primary-sidebar"
+				collapsible="off"
+				defaultWidth={220}
+				resizable
+				mobileBreakpoint={0}
+				label="Primary"
+			>
 				<span>content</span>
 			</RuiSidebar>,
 		);
@@ -495,6 +510,43 @@ describe('RuiSidebar mobile drawer', () => {
 
 		cleanup();
 	});
+
+	it('reopens automatically when leaving mobile mode while closed', async () => {
+		const { sidebar, cleanup } = mountMobileSidebar({ collapsible: 'off', open: true });
+		await settled();
+
+		expect(sidebar.getAttribute('data-mobile')).toBe('true');
+		sidebar.setOpen(false);
+		await settled();
+		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
+
+		// `mobileBreakpoint <= 0` disables the media query and forces desktop mode.
+		sidebar.mobileBreakpoint = 0;
+		await settled();
+
+		expect(sidebar.getAttribute('data-mobile')).toBe('false');
+		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+		expect(sidebar.isMobile).toBe(false);
+
+		cleanup();
+	});
+
+	it('preserves closed state when leaving mobile in icon mode', async () => {
+		const { sidebar, cleanup } = mountMobileSidebar({ collapsible: 'icon', open: true });
+		await settled();
+
+		sidebar.setOpen(false);
+		await settled();
+		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
+
+		sidebar.mobileBreakpoint = 0;
+		await settled();
+
+		expect(sidebar.getAttribute('data-mobile')).toBe('false');
+		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
+
+		cleanup();
+	});
 });
 
 describe('RuiSidebarTrigger', () => {
@@ -637,6 +689,42 @@ describe('RuiSidebarTrigger', () => {
 		await settled();
 		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
 
+		cleanup();
+	});
+});
+
+describe('RuiSidebar matchActive', () => {
+	it('marks the link matching the current pathname as active', async () => {
+		const originalPath = window.location.pathname;
+		history.replaceState(null, '', '/docs/overview');
+
+		const { host, cleanup } = mount(
+			<RuiSidebar id="nav" matchActive label="Docs">
+				<RuiSidebarContent>
+					<RuiSidebarMenu aria-label="Docs links">
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/overview">
+								Overview
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/installation">
+								Installation
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+					</RuiSidebarMenu>
+				</RuiSidebarContent>
+			</RuiSidebar>,
+		);
+
+		await settled();
+		await tick();
+
+		const active = host.querySelector('a.rui-sidebar__menu-button--active');
+		expect(active?.getAttribute('href')).toBe('/docs/overview');
+		expect(active?.getAttribute('aria-current')).toBe('page');
+
+		history.replaceState(null, '', originalPath);
 		cleanup();
 	});
 });
