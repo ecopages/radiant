@@ -1,5 +1,17 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
+import {
+	RuiSidebar,
+	RuiSidebarContent,
+	RuiSidebarGroup,
+	RuiSidebarGroupHeader,
+	RuiSidebarMenu,
+	RuiSidebarMenuButton,
+	RuiSidebarMenuItem,
+	RuiSidebarProvider,
+	RuiSidebarSeparator,
+} from '@ecopages/radiant-ui/sidebar';
+import { RuiToc } from '@ecopages/radiant-ui/toc';
 import { docsNav, type ContentNavGroup } from '@/lib/content-nav';
 
 import { Banner } from '@/components/banner/banner';
@@ -12,32 +24,41 @@ export type DocsLayoutProps = {
 	class?: string;
 };
 
+const ECO_NAVIGATION_EVENTS = 'eco:page-load,eco:after-swap';
+
 const DocsNavigation = ({ groups }: { groups: ContentNavGroup[] }) => {
 	return (
-		<nav aria-label="Main Navigation">
-			<ul class="docs-layout__nav-list">
-				{groups.map((group, index) => (
-					<>
-						{index > 0 && <li class="docs-layout__nav-separator" />}
-						<li>
-							<div class="docs-layout__nav-group">
-								<span class="docs-layout__nav-group-icon">{getGroupIcon(group.name)}</span>
-								<span>{group.name}</span>
-							</div>
-							<ul class="docs-layout__nav-group-list">
-								{group.items.map((item) => (
-									<li>
-										<a href={item.href} data-nav-link>
-											{item.title}
-										</a>
-									</li>
-								))}
-							</ul>
-						</li>
-					</>
-				))}
-			</ul>
-		</nav>
+		<>
+			{groups.map((group, index) => (
+				<>
+					{index > 0 && <RuiSidebarSeparator aria-label="Section divider" />}
+					<RuiSidebarGroup aria-label={group.name}>
+						<RuiSidebarGroupHeader
+							label={
+								<>
+									{getGroupIcon(group.name)}
+									<span>{group.name}</span>
+								</>
+							}
+						/>
+						<RuiSidebarMenu
+							aria-label={`${group.name} links`}
+							matchActive
+							scrollActiveOnMount={index === 0}
+							navigationEvents={ECO_NAVIGATION_EVENTS}
+						>
+							{group.items.map((item) => (
+								<RuiSidebarMenuItem>
+									<RuiSidebarMenuButton as="a" href={item.href}>
+										{item.title}
+									</RuiSidebarMenuButton>
+								</RuiSidebarMenuItem>
+							))}
+						</RuiSidebarMenu>
+					</RuiSidebarGroup>
+				</>
+			))}
+		</>
 	);
 };
 
@@ -49,21 +70,37 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 	},
 	render: async ({ children, class: className }) => {
 		return (
-			<BaseLayout class={`docs-layout ${className ?? ''}`.trim()} showBurger showDocsLink={false}>
-				<>
-					<radiant-navigation
-						class="docs-layout__aside hidden md:block"
-						data-eco-persist="docs-sidebar"
-						data-testid="docs-sidebar"
-					>
-						<DocsNavigation groups={docsNav.groups} />
-					</radiant-navigation>
+			<BaseLayout class={className} showDocsLink={false} sidebarId="docs-sidebar">
+				<RuiSidebarProvider
+					class="docs-layout"
+					sidebar={
+						<RuiSidebar
+							id="docs-sidebar"
+							collapsible="full"
+							defaultOpen
+							resizable={false}
+							label="Documentation navigation"
+							class="docs-layout__sidebar"
+						>
+							<RuiSidebarContent aria-label="Documentation navigation">
+								<DocsNavigation groups={docsNav.groups} />
+							</RuiSidebarContent>
+						</RuiSidebar>
+					}
+				>
 					<div class="docs-layout__content">
 						<div class="prose">{children}</div>
 						<radiant-docs-pagination class="docs-layout__pagination"></radiant-docs-pagination>
 					</div>
-					<radiant-toc class="docs-layout__toc"></radiant-toc>
-				</>
+					<RuiToc
+						class="docs-layout__toc"
+						target=".docs-layout__content"
+						headingSelector="h2,h3"
+						label="On this page"
+						scrollOffset={120}
+						navigationEvents={ECO_NAVIGATION_EVENTS}
+					/>
+				</RuiSidebarProvider>
 			</BaseLayout>
 		);
 	},
