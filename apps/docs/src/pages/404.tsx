@@ -1,4 +1,5 @@
 import { eco } from '@ecopages/core';
+import { RuiButton } from '@ecopages/radiant-ui/button';
 import { BaseLayout } from '@/layouts/base-layout';
 import type { JsxRenderable } from '@ecopages/jsx';
 import type { Error404TemplateProps } from '@ecopages/core';
@@ -20,9 +21,7 @@ const Error404 = eco.page<Error404TemplateProps, JsxRenderable>({
 						We couldn't find the page you're looking for. It might have been moved or deleted.
 					</p>
 					<div class="error404__actions">
-						<a href="/" class="button button--primary">
-							Return Home
-						</a>
+						<RuiButton href="/">Return Home</RuiButton>
 					</div>
 				</div>
 			</div>
