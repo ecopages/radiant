@@ -190,8 +190,9 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	private renderDefaultIcon() {
 		const state = this.sidebarState;
+		const placement: RuiSidebarTriggerPlacement | '' = this.placement;
 
-		if (this.placement === 'inset') {
+		if (placement === 'inset') {
 			return (
 				<span class="rui-sidebar__trigger-icon" aria-hidden="true">
 					{this.renderMenuIcon(state)}
@@ -199,8 +200,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 			);
 		}
 
-		const showCollapse = this.placement === 'header' || (this.placement !== 'inset' && state === 'expanded');
-		const showExpand = this.placement === 'inset' || (this.placement !== 'header' && state === 'collapsed');
+		const showCollapse = placement === 'header' || state === 'expanded';
+		const showExpand = placement !== 'header' && state === 'collapsed';
 
 		return (
 			<span class="rui-sidebar__trigger-icon" aria-hidden="true">
