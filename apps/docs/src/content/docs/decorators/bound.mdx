@@ -5,7 +5,7 @@ group: Decorators
 order: 12
 ---
 
-import { Banner } from '@/components/banner/banner';
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 
 
 
@@ -92,10 +92,12 @@ export class MyComponent extends RadiantElement {
 }
 ```
 
-<Banner type="info" class="unstyled">
-  <Banner.Title>TIP</Banner.Title>
-  <p>Use <code>@bound</code> for methods that may be passed around, removed later with the same identity, or overridden in a subclass.</p>
-</Banner>
+<RuiAlert variant="success" layout="banner" class="unstyled">
+  <RuiAlertTitle>TIP</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>Use <code>@bound</code> for methods that may be passed around, removed later with the same identity, or overridden in a subclass.</p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ## Learn More
 

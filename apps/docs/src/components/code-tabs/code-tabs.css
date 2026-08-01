@@ -39,7 +39,11 @@ radiant-code-tabs .rui-tabs__panel {
 }
 
 .code-tabs__body {
-	@apply relative w-full min-w-0 px-4 py-3;
+	@apply relative w-full min-w-0 px-4 py-3 font-mono;
+
+	&:has([data-rehype-pretty-code-figure]) {
+		@apply p-0;
+	}
 }
 
 .code-tabs__code {

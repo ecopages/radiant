@@ -17,6 +17,27 @@ export type ContentNav = {
 	groups: ContentNavGroup[];
 };
 
+/** Flatten grouped nav into document order for prev/next pagination. */
+export function flattenContentNav(nav: ContentNav): ContentNavItem[] {
+	return nav.groups.flatMap((group) => group.items);
+}
+
+/** Adjacent items for `pathname`, or `null` when the path is not in the list. */
+export function getAdjacentContentNavItems(
+	items: readonly ContentNavItem[],
+	pathname: string,
+): { prev: ContentNavItem | null; next: ContentNavItem | null } | null {
+	const currentIndex = items.findIndex((item) => item.href === pathname);
+	if (currentIndex === -1) {
+		return null;
+	}
+
+	return {
+		prev: currentIndex > 0 ? items[currentIndex - 1]! : null,
+		next: currentIndex < items.length - 1 ? items[currentIndex + 1]! : null,
+	};
+}
+
 export type NavigableContentEntry = {
 	title: string;
 	slug: string;

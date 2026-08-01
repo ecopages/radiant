@@ -5,7 +5,6 @@ import { BaseLayout } from '@/layouts/base-layout';
 import { CodeTabs } from '@/components/code-tabs';
 import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-jsx-counter';
 import { counterControllerExampleCode, counterElementExampleCode } from '@/data/home-code-examples';
-import { unsafeHtml } from '@ecopages/jsx/jsx-runtime';
 
 const counterElementExample = await codeToHtml(counterElementExampleCode, {
 	lang: 'tsx',
@@ -96,31 +95,23 @@ const HomePage = () => {
 
 					<div class="home-hero__code">
 						<CodeTabs
-							label="Package managers"
+							label="Host models"
 							tabs={[
 								{
 									id: 'radiant-element',
 									label: 'radiant-element.tsx',
-									code: (
-										<figure data-rehype-pretty-code-figure class="home-code-block">
-											{unsafeHtml(counterElementExample)}
-										</figure>
-									),
+									html: `<figure data-rehype-pretty-code-figure class="home-code-block">${counterElementExample}</figure>`,
 									content: counterElementExampleCode,
 								},
 								{
 									id: 'radiant-controller',
 									label: 'radiant-controller.tsx',
-									code: (
-										<figure data-rehype-pretty-code-figure class="home-code-block">
-											{unsafeHtml(counterControllerExample)}
-										</figure>
-									),
+									html: `<figure data-rehype-pretty-code-figure class="home-code-block">${counterControllerExample}</figure>`,
 									content: counterControllerExampleCode,
 								},
 							]}
-							copyLabel="Copy install command"
-							defaultSelectedKey="bun"
+							copyLabel="Copy code"
+							defaultSelectedKey="radiant-element"
 						/>
 
 						<div class="home-hero__demo">

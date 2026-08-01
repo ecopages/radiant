@@ -1,14 +1,20 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSwitchProps } from '../switch/switch.script';
+import type { ThemeToggleProps } from './theme-toggle.script';
 import './theme-toggle.script';
 
-export const ThemeToggle = eco.component<RadiantSwitchProps, JsxRenderable>({
+export type ThemeToggleViewProps = ThemeToggleProps & {
+	/** Visible or screen-reader label for the switch. Default: `Theme`. */
+	label?: string;
+	/** When true, the label is only exposed to assistive tech. Default: `true`. */
+	hiddenLabel?: boolean;
+};
+
+export const ThemeToggle = eco.component<ThemeToggleViewProps, JsxRenderable>({
 	dependencies: {
-		stylesheets: ['../switch/switch.css'],
 		scripts: ['./theme-toggle.script.ts'],
 	},
-	render: (props) => {
-		return <theme-toggle class="radiant-switch" {...props} />;
+	render: ({ label = 'Theme', hiddenLabel = true, ...props }) => {
+		return <theme-toggle {...props}>{hiddenLabel ? <span class="sr-only">{label}</span> : label}</theme-toggle>;
 	},
 });
