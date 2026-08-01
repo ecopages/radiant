@@ -5,6 +5,7 @@ group: Examples
 order: 4
 ---
 
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 import { WeatherApp } from '@/components/weather-app/weather-app';
 
 export const config = {
@@ -192,7 +193,15 @@ export class RadiantWeatherAppElement extends RadiantElement {
 
 The host uses `@contextSelector` without `select` so it receives the full `WeatherContext`. This is necessary here because `render()` reads `activeCityId`, `reports`, and `visibleReport` together, and some of that logic depends on instance state (`weatherQuery.status.get()`).
 
-> **Note:** The live example includes additional styling, status messages, and a pending overlay omitted here for clarity. See the full source in the repository.
+<RuiAlert variant="info" layout="banner" class="unstyled">
+  <RuiAlertTitle>NOTE</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>
+      The live example includes additional styling, status messages, and a pending overlay omitted here for
+      clarity. See the full source in the repository.
+    </p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ## Key Patterns
 

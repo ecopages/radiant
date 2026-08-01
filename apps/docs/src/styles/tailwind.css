@@ -35,5 +35,5 @@ html {
 }
 
 body {
-	@apply bg-background text-on-background min-h-svh w-screen overflow-x-hidden font-sans relative z-0;
+	@apply text-on-background min-h-svh w-screen overflow-x-hidden font-sans relative z-0;
 }

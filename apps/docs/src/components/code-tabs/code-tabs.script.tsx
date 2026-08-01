@@ -1,10 +1,16 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import type { JsxNodeLike, JsxRenderable } from '@ecopages/jsx/jsx-runtime';
+import type { JsxRenderable } from '@ecopages/jsx/jsx-runtime';
+import { unsafeHtml } from '@ecopages/jsx/jsx-runtime';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
-import { RadiantElement, customElement, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, prop, state } from '@ecopages/radiant';
 import { renderTabLabel } from './code-tab-icons';
 
+/**
+ * Plain-text tabs escape `code`. Rich tabs pass highlighted HTML in `html` and
+ * clipboard text in `content` — strings survive host-attribute JSON round-trips;
+ * JSX/`unsafeHtml` brands do not.
+ */
 export type RadiantCodeTabItem =
 	| {
 			id: string;
@@ -14,7 +20,7 @@ export type RadiantCodeTabItem =
 	| {
 			id: string;
 			label: string;
-			code: JsxNodeLike | JsxRenderable;
+			html: string;
 			content: string;
 	  };
 
@@ -26,43 +32,48 @@ export type RadiantCodeTabsProps = {
 	selectedKey?: string;
 };
 
+function isRichTab(tab: RadiantCodeTabItem): tab is Extract<RadiantCodeTabItem, { html: string; content: string }> {
+	return 'html' in tab;
+}
+
+function tabClipboardText(tab: RadiantCodeTabItem): string {
+	return isRichTab(tab) ? tab.content : tab.code;
+}
+
 /**
  * Docs-specific code presentation that delegates tab selection and keyboard
  * interaction to `RuiTabs` while retaining code-copying behavior.
  */
 @customElement('radiant-code-tabs')
 export class RadiantCodeTabs extends RadiantElement {
-	@prop({ type: String }) label = '';
 	@prop({ type: Array }) tabs: RadiantCodeTabItem[] = [];
+	@prop({ type: String }) label = '';
 	@prop({ type: String }) copyLabel = 'Copy code';
 	@prop({ type: String }) defaultSelectedKey = '';
 	@prop({ type: String, reflect: true }) selectedKey = '';
-	@state copiedTabId = '';
 	@state copyStatus = '';
 
-	private readonly resolveTabs = (): RadiantCodeTabItem[] => {
+	private resolveTabs(): RadiantCodeTabItem[] {
 		if (Array.isArray(this.tabs) && this.tabs.length > 0) {
 			return this.tabs;
 		}
 
 		const tabsAttribute = this.getAttribute('tabs');
 		if (!tabsAttribute) {
-			return Array.isArray(this.tabs) ? this.tabs : [];
+			return [];
 		}
 
 		try {
 			const parsed = JSON.parse(tabsAttribute) as unknown;
 			return Array.isArray(parsed) ? (parsed as RadiantCodeTabItem[]) : [];
 		} catch {
-			return Array.isArray(this.tabs) ? this.tabs : [];
+			return [];
 		}
-	};
+	}
 
-	private readonly handleCopy = async (tab: RadiantCodeTabItem): Promise<void> => {
+	private handleCopy = async (tab: RadiantCodeTabItem): Promise<void> => {
 		try {
-			const content = 'content' in tab ? tab.content : tab.code;
-			await navigator.clipboard.writeText(content);
-			this.copiedTabId = tab.id;
+			await navigator.clipboard.writeText(tabClipboardText(tab));
 			this.copyStatus = `${tab.label} copied to clipboard`;
 		} catch (error) {
 			console.error('Failed to copy code', error);
@@ -75,14 +86,6 @@ export class RadiantCodeTabs extends RadiantElement {
 		if (detail?.value) {
 			this.selectedKey = detail.value;
 		}
-	}
-
-	@onUpdated(['selectedKey', 'tabs'])
-	onSelectedKeyChange(): void {
-		requestAnimationFrame(() => {
-			const ruiTabs = this.querySelector('rui-tabs') as { resync?: () => void } | null;
-			ruiTabs?.resync?.();
-		});
 	}
 
 	override render() {
@@ -103,7 +106,7 @@ export class RadiantCodeTabs extends RadiantElement {
 							{renderTabLabel({
 								id: tab.id,
 								label: tab.label,
-								code: 'content' in tab ? tab.content : tab.code,
+								code: tabClipboardText(tab),
 							})}
 						</RuiTab>
 					))}
@@ -112,7 +115,7 @@ export class RadiantCodeTabs extends RadiantElement {
 					{tabs.map((tab) => (
 						<RuiTabPanel id={tab.id} class="code-tabs__panel">
 							<div class="code-tabs__body">
-								<span class="code-tabs__code">{tab.code}</span>
+								<span class="code-tabs__code">{isRichTab(tab) ? unsafeHtml(tab.html) : tab.code}</span>
 								<RuiButton
 									size="sm"
 									variant="ghost"

@@ -5,7 +5,7 @@ group: Decorators
 order: 11
 ---
 
-import { Banner } from '@/components/banner/banner';
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 
 
 
@@ -93,10 +93,12 @@ export class ThemeController extends RadiantController {
 }
 ```
 
-<Banner type="caution" class="unstyled">
-  <Banner.Title>CAUTION</Banner.Title>
-  <p>Avoid updating the same property you're watching, as this will trigger an infinite loop.</p>
-</Banner>
+<RuiAlert variant="error" layout="banner" class="unstyled">
+  <RuiAlertTitle>CAUTION</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>Avoid updating the same property you're watching, as this will trigger an infinite loop.</p>
+  </RuiAlertDescription>
+</RuiAlert>
 
 ## Learn More
 

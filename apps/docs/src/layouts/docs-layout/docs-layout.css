@@ -1,8 +1,23 @@
 .docs-layout {
-	@apply min-h-[calc(100svh-4rem)] h-[calc(100svh-4rem)] min-w-0 overflow-hidden;
+	@apply min-h-svh h-svh min-w-0;
+
+	.docs-layout__sidebar .rui-sidebar {
+		@apply bg-background;
+	}
+
+	.docs-layout__sidebar[data-mobile='true'] > .rui-sidebar__pane {
+		@apply bg-background;
+	}
 
 	.docs-layout__sidebar .rui-sidebar__content {
-		@apply gap-0 p-6 pt-20 md:pt-8 md:pl-8 md:pr-2;
+		@apply gap-0 p-6 pt-8 md:pl-8 md:pr-2;
+	}
+
+	@media (max-width: 767px) {
+		/* Clear sticky site header (h-16) when the mobile drawer is full-viewport. */
+		.docs-layout__sidebar[data-mobile='true'] .rui-sidebar__content {
+			@apply pt-26;
+		}
 	}
 
 	.docs-layout__sidebar .rui-sidebar__group {
