@@ -1,5 +1,16 @@
 # @ecopages/vite-plugin-radiant
 
+## 0.1.0-beta.2
+
+### Patch Changes
+
+- Prepare the next beta release.
+
+- Updated dependencies []:
+    - @ecopages/radiant@0.3.0-beta.5
+    - @ecopages/signals@0.3.0-beta.5
+    - @ecopages/jsx@0.3.0-beta.5
+
 ## 0.1.0-beta.1
 
 ### Patch Changes
