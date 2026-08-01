@@ -19,12 +19,14 @@ export const RuiRadioGroup = defineRadiantView(
 		name,
 		label,
 		disabled,
+		class: className,
 		options,
 	}: RuiRadioGroupProps &
 		RadiantSlotProps & {
+			class?: string;
 			options: RuiRadioOption[];
 		}) => (
-		<rui-radio-group slot={slot} value={value} name={name} label={label} disabled={disabled}>
+		<rui-radio-group slot={slot} value={value} name={name} label={label} disabled={disabled} class={className}>
 			{options.map((option) => (
 				<label class="rui-radio">
 					<input

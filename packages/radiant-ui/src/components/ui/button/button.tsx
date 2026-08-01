@@ -4,11 +4,21 @@ import type { RadiantSlotProps } from '@/types';
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost';
 export type RuiButtonSize = 'sm' | 'md' | 'lg';
 
-export type RuiButtonProps = RadiantSlotProps & {
+type RuiButtonCommonProps = RadiantSlotProps & {
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
 	/** Control size. Default: `md`. */
 	size?: RuiButtonSize;
+	/** Extra class names appended after the variant/size classes. */
+	class?: string;
+	/** Accessible name when the button has no visible text. */
+	'aria-label'?: string;
+	/** Data attributes forwarded to the native control. */
+	data?: Record<string, boolean | number | string | undefined>;
+	children?: JsxRenderable;
+};
+
+export type RuiButtonControlProps = RuiButtonCommonProps & {
 	/** Native button type. Default: `button`. */
 	type?: 'button' | 'submit' | 'reset';
 	/** Disabled state. */
@@ -19,16 +29,28 @@ export type RuiButtonProps = RadiantSlotProps & {
 	defaultPressed?: boolean;
 	/** Toggle `aria-pressed` on click when `pressed` is not controlled. */
 	toggle?: boolean;
-	/** Extra class names appended after the variant/size classes. */
-	class?: string;
-	/** Accessible name when the button has no visible text. */
-	'aria-label'?: string;
+	href?: never;
 	'on:click'?: (event: Event) => void;
-	children?: JsxRenderable;
 };
+
+export type RuiButtonLinkProps = RuiButtonCommonProps & {
+	/** Destination for the button-styled link. */
+	href: string;
+	target?: '_self' | '_blank' | '_parent' | '_top';
+	rel?: string;
+	download?: boolean | string;
+	'aria-current'?: string;
+	'on:click'?: (event: Event) => void;
+};
+
+export type RuiButtonProps = RuiButtonControlProps | RuiButtonLinkProps;
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
+}
+
+function getClassNames({ variant = 'filled', size = 'md', class: className }: RuiButtonProps): string {
+	return cx('rui-button', `rui-button--${variant}`, `rui-button--${size}`, className);
 }
 
 function resolveAriaPressed(
@@ -48,29 +70,50 @@ function resolveAriaPressed(
 }
 
 /**
- * Presentational wrapper around a native `<button>`.
+ * Presentational wrapper around a native `<button>` or button-styled `<a>`.
  *
- * No custom element and no controller — only CSS variants/sizes. Follows the
- * APG Button pattern by staying on the native control for activation and focus.
+ * No custom element and no controller — only CSS variants/sizes. The `href`
+ * union branch preserves native link semantics for navigation.
  *
  * Styles ship via the radiant-ui base stylesheet (`rui-button` classes).
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
  */
-export function RuiButton({
-	variant = 'filled',
-	size = 'md',
-	type = 'button',
-	disabled,
-	pressed,
-	defaultPressed = false,
-	toggle = false,
-	class: className,
-	slot,
-	children,
-	'on:click': onClick,
-	...rest
-}: RuiButtonProps) {
+export function RuiButton(props: RuiButtonProps) {
+	if (props.href !== undefined) {
+		return (
+			<a
+				href={props.href}
+				target={props.target}
+				rel={props.rel}
+				download={props.download}
+				slot={props.slot}
+				class={getClassNames(props)}
+				aria-label={props['aria-label']}
+				aria-current={props['aria-current']}
+				data={props.data}
+				on:click={props['on:click']}
+			>
+				{props.children}
+			</a>
+		);
+	}
+
+	const {
+		variant,
+		size,
+		class: className,
+		slot,
+		children,
+		'aria-label': ariaLabel,
+		type = 'button',
+		disabled,
+		pressed,
+		defaultPressed = false,
+		toggle = false,
+		'on:click': onClick,
+		...rest
+	} = props;
 	const handleClick = (event: Event) => {
 		if (toggle && pressed === undefined) {
 			const button = event.currentTarget as HTMLButtonElement;
@@ -85,8 +128,9 @@ export function RuiButton({
 		<button
 			type={type}
 			slot={slot}
-			class={cx('rui-button', `rui-button--${variant}`, `rui-button--${size}`, className)}
+			class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, className)}
 			disabled={disabled}
+			aria-label={ariaLabel}
 			aria-pressed={resolveAriaPressed(pressed, toggle, defaultPressed)}
 			data-toggle={toggle && pressed === undefined ? '' : undefined}
 			on:click={toggle || onClick ? handleClick : undefined}
