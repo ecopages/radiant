@@ -23,30 +23,36 @@
 		"watch:lib": "node --import tsx ./build.ts --watch",
 		"size:check": "node --import tsx ./check-size.ts",
 		"size:report": "node --import tsx ./check-size.ts --report-only",
-		"test:standard": "vitest run && vitest run --config vitest.browser.config.ts && vitest run --config vitest.e2e.config.ts",
-		"test:legacy": "vitest run -- --legacy && vitest run --config vitest.browser.config.ts -- --legacy && vitest run --config vitest.e2e.config.ts -- --legacy",
+		"test:standard": "vitest run",
+		"test:legacy": "vitest run -- --legacy",
 		"test:lib": "pnpm run test:standard && pnpm run test:legacy",
-		"test:lib:coverage": "pnpm run test:standard -- --coverage && pnpm exec vitest run --coverage -- --legacy"
+		"test:lib:coverage": "vitest run --coverage --project node && vitest run --coverage --project node -- --legacy"
 	},
 	"dependencies": {
 		"@ecopages/signals": ">=0.3.0-beta.5"
 	},
 	"devDependencies": {
+		"@babel/core": "^7.28.0",
+		"@babel/plugin-proposal-decorators": "^7.28.0",
+		"@babel/plugin-syntax-typescript": "^7.28.0",
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/signals": "workspace:*",
+		"@rolldown/plugin-babel": "^0.2.1",
+		"@oxc-project/runtime": "^0.141.0",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/user-event": "^14.5.2",
 		"@types/node": "^24.13.2",
-		"@vitest/browser": "^3.2.4",
-		"@vitest/coverage-istanbul": "^3.2.4",
+		"@vitest/browser": "^4.1.10",
+		"@vitest/browser-playwright": "^4.1.10",
+		"@vitest/coverage-istanbul": "^4.1.10",
 		"happy-dom": "^20.0.0",
 		"tsc-alias": "1.8.10",
 		"tsx": "^4.20.6",
 		"typescript": "catalog:",
 		"esbuild": "^0.28.1",
 		"playwright": "^1.52.0",
-		"vite": "^7.1.3",
-		"vitest": "^3.2.4"
+		"vite": "^8.1.1",
+		"vitest": "^4.1.10"
 	},
 	"peerDependencies": {
 		"@ecopages/jsx": ">=0.3.0-beta.5"
