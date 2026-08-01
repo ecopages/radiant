@@ -15,6 +15,10 @@ Guidance for humans and agents working on the design system in `packages/radiant
 - Shared types from `src/types.ts` → `@/types`.
 - Same-component and sibling UI imports → `./` and `../` only.
 
+## View host props
+
+Views that render a DOM host should extend `RadiantHostProps` and rest-spread those attrs onto the host (`const { …componentProps, ...host } = props` → `<rui-x {...host} />`). Compose `class` after the spread when needed.
+
 ## CSS architecture (two layers)
 
 1. **Theme** — CSS variables (packs + semantic roles). Loaded by the app or Storybook, not by individual component stylesheets.

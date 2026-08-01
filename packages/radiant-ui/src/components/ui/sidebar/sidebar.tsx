@@ -316,10 +316,8 @@ export type RuiSidebarViewProps = RuiSidebarProps &
 		children: JsxRenderable;
 	};
 
-export const RuiSidebar = defineRadiantView(
-	RuiSidebarElement,
-	({
-		slot,
+export const RuiSidebar = defineRadiantView(RuiSidebarElement, (props: RuiSidebarViewProps) => {
+	const {
 		id,
 		variant,
 		side,
@@ -335,21 +333,14 @@ export const RuiSidebar = defineRadiantView(
 		matchMode,
 		scrollActiveOnMount,
 		navigationEvents,
-		class: className,
-		classes,
-		data,
-		aria,
-		style,
 		children,
-	}: RuiSidebarViewProps) => (
+		...host
+	} = props;
+
+	return (
 		<rui-sidebar
-			slot={slot}
+			{...host}
 			id={id}
-			class={className}
-			classes={classes}
-			data={data}
-			aria={aria}
-			style={style}
 			variant={variant as RuiSidebarVariant | undefined}
 			side={side as RuiSidebarSide | undefined}
 			collapsible={collapsible as RuiSidebarCollapsible | undefined}
@@ -367,10 +358,8 @@ export const RuiSidebar = defineRadiantView(
 		>
 			{children}
 		</rui-sidebar>
-	),
-
-	{ stylesheets: ['./sidebar.css'] },
-);
+	);
+}, { stylesheets: ['./sidebar.css'] });
 
 export type RuiSidebarTriggerViewProps = RuiSidebarTriggerProps &
 	RadiantHostProps & {
@@ -379,38 +368,23 @@ export type RuiSidebarTriggerViewProps = RuiSidebarTriggerProps &
 
 export const RuiSidebarTrigger = defineRadiantView(
 	RuiSidebarTriggerElement,
-	({
-		slot,
-		controls,
-		triggerLabel,
-		placement,
-		variant,
-		size,
-		class: className,
-		classes,
-		data,
-		aria,
-		style,
-		children,
-	}: RuiSidebarTriggerViewProps) => (
-		<rui-sidebar-trigger
-			slot={slot}
-			class={className}
-			classes={classes}
-			data={data}
-			aria={aria}
-			style={style}
-			prop:controls={controls}
-			prop:buttonLabel={triggerLabel ?? 'Toggle sidebar'}
-			attr:data-button-label={triggerLabel ?? 'Toggle sidebar'}
-			prop:placement={placement}
-			attr:data-placement={placement}
-			variant={variant}
-			size={size}
-		>
-			{children}
-		</rui-sidebar-trigger>
-	),
+	(props: RuiSidebarTriggerViewProps) => {
+		const { controls, triggerLabel, placement, variant, size, children, ...host } = props;
 
+		return (
+			<rui-sidebar-trigger
+				{...host}
+				prop:controls={controls}
+				prop:buttonLabel={triggerLabel ?? 'Toggle sidebar'}
+				attr:data-button-label={triggerLabel ?? 'Toggle sidebar'}
+				prop:placement={placement}
+				attr:data-placement={placement}
+				variant={variant}
+				size={size}
+			>
+				{children}
+			</rui-sidebar-trigger>
+		);
+	},
 	{ stylesheets: ['./sidebar.css'] },
 );
