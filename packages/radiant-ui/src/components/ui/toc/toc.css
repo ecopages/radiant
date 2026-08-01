@@ -1,0 +1,45 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-toc {
+	@apply block;
+}
+
+@layer components {
+	.rui-toc {
+		@apply block;
+	}
+
+	.rui-toc__label {
+		@apply m-0 mb-2 font-mono text-[0.625rem] font-semibold uppercase tracking-widest text-on-background/75;
+	}
+
+	.rui-toc__list {
+		@apply ml-1 list-none border-l border-border/30 p-0 pl-3 m-0;
+	}
+
+	.rui-toc__item + .rui-toc__item {
+		@apply mt-2;
+	}
+
+	.rui-toc__link {
+		@apply relative block text-[0.8125rem] leading-snug text-on-background/60 no-underline transition-colors;
+	}
+
+	.rui-toc__link:hover {
+		@apply text-on-background;
+	}
+
+	.rui-toc__link--active {
+		@apply text-primary;
+		text-shadow: 0 0 0.5px currentColor;
+	}
+
+	.rui-toc__link--active::before {
+		content: '';
+		@apply absolute top-1/2 -left-[13px] h-3 w-0.5 -translate-y-1/2 rounded-r-sm bg-primary;
+	}
+
+	.rui-toc__item--depth-3 .rui-toc__link {
+		@apply ml-3 text-xs;
+	}
+}
