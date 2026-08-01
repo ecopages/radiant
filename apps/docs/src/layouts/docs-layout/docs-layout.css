@@ -1,61 +1,13 @@
+@import '@ecopages/radiant-ui/sidebar/docs.css';
+
+/**
+ * Keep `@reference` after the skin `@import` so postcss-import inlines the package
+ * CSS before Tailwind sees a leading `@reference` (which would drop the import).
+ */
+@reference '../../styles/tailwind.css';
+
 .docs-layout {
 	@apply min-h-svh h-svh min-w-0;
-
-	.docs-layout__sidebar .rui-sidebar {
-		@apply bg-background;
-	}
-
-	.docs-layout__sidebar[data-mobile='true'] > .rui-sidebar__pane {
-		@apply bg-background;
-	}
-
-	.docs-layout__sidebar .rui-sidebar__content {
-		@apply gap-0 p-6 pt-8 md:pl-8 md:pr-2;
-	}
-
-	@media (max-width: 767px) {
-		/* Clear sticky site header (h-16) when the mobile drawer is full-viewport. */
-		.docs-layout__sidebar[data-mobile='true'] .rui-sidebar__content {
-			@apply pt-26;
-		}
-	}
-
-	.docs-layout__sidebar .rui-sidebar__group {
-		@apply mt-8 first:mt-0 gap-0;
-	}
-
-	.docs-layout__sidebar .rui-sidebar__group-header {
-		@apply mb-1.5;
-	}
-
-	.docs-layout__sidebar .rui-sidebar__group-label {
-		@apply flex items-center gap-1.5 p-0 font-mono text-[10px] font-semibold uppercase tracking-widest text-on-background/75;
-
-		svg {
-			@apply size-3 text-on-background/65;
-		}
-	}
-
-	.docs-layout__sidebar .rui-sidebar__menu {
-		@apply mb-6 ml-1.5 space-y-px border-l border-border/30 pl-3;
-	}
-
-	.docs-layout__sidebar .rui-sidebar__menu-button {
-		@apply relative rounded-sm px-2 py-1.5 text-[13px] font-normal text-on-background/70 hover:bg-background-accent/80 hover:text-on-background;
-	}
-
-	.docs-layout__sidebar .rui-sidebar__menu-button--active {
-		@apply bg-transparent font-medium text-primary;
-	}
-
-	.docs-layout__sidebar .rui-sidebar__menu-button--active::before {
-		content: '';
-		@apply absolute -left-[13px] top-1/2 h-3 w-0.5 -translate-y-1/2 rounded-r-sm bg-primary;
-	}
-
-	.docs-layout__sidebar .rui-sidebar__separator {
-		@apply mx-2 my-4 border-border/40;
-	}
 
 	.docs-layout__content {
 		@apply min-w-0 flex-1 overflow-y-auto px-6 py-8 md:px-10 lg:px-12 md:py-10;

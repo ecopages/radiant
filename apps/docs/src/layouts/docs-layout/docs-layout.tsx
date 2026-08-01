@@ -22,6 +22,7 @@ import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import { BaseLayout } from '@/layouts/base-layout';
 import rootJson from '../../../../../packages/radiant/package.json';
 import { getGroupIcon } from './get-group-icon';
+import { cx } from '@/lib/utils';
 
 export type DocsLayoutProps = {
 	children: JsxRenderable;
@@ -30,6 +31,12 @@ export type DocsLayoutProps = {
 
 const ECO_NAVIGATION_EVENTS = 'eco:page-load,eco:after-swap';
 const DOCS_SIDEBAR_ID = 'docs-sidebar';
+
+const DocsGroupIcon = ({ name }: { name: string }) => {
+	const icon = getGroupIcon(name);
+	if (!icon) return null;
+	return <span class="rui-sidebar__group-icon">{icon}</span>;
+};
 
 const DocsNavigation = ({ groups }: { groups: ContentNavGroup[] }) => {
 	return (
@@ -41,7 +48,7 @@ const DocsNavigation = ({ groups }: { groups: ContentNavGroup[] }) => {
 						<RuiSidebarGroupHeader
 							label={
 								<>
-									{getGroupIcon(group.name)}
+									<DocsGroupIcon name={group.name} />
 									<span>{group.name}</span>
 								</>
 							}
@@ -104,7 +111,7 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 			<BaseLayout showHeader={false}>
 				<RuiSidebarProvider
 					layout="docs"
-					class={className ? `docs-layout ${className}` : 'docs-layout'}
+					class={cx('docs-layout', className)}
 					siteHeader={<DocsSiteHeader />}
 					sidebar={
 						<RuiSidebar
@@ -113,7 +120,6 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 							defaultWidth={250}
 							mobileBreakpoint={768}
 							label="Documentation navigation"
-							class="docs-layout__sidebar"
 							matchActive
 							scrollActiveOnMount
 							navigationEvents={ECO_NAVIGATION_EVENTS}
