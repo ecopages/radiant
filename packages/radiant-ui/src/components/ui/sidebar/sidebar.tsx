@@ -1,20 +1,10 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { defineRadiantView } from '@/lib/radiant-view';
-import type {
-	RuiSidebarProps,
-	RuiSidebarCollapsible,
-	RuiSidebarMatchMode,
-	RuiSidebarSide,
-	RuiSidebarVariant,
-} from './sidebar.script';
+import type { RuiSidebarProps } from './sidebar.script';
 import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
 import type { RuiSidebarTriggerProps } from './sidebar-trigger.script';
 import { RuiSidebarTrigger as RuiSidebarTriggerElement } from './sidebar-trigger.script';
-
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
 
 export type RuiSidebarProviderProps = {
 	/**
@@ -310,82 +300,61 @@ export function RuiSidebarInset({ children, class: className, id }: RuiSidebarIn
 	);
 }
 
-export type RuiSidebarViewProps = RuiSidebarProps &
-	RadiantSlotProps & {
+export type RuiSidebarViewProps = JsxHtmlPropsWithChildren<
+	RuiSidebarProps & {
 		id: string;
-		children: JsxRenderable;
-		class?: string;
-	};
+		slot?: string;
+	}
+>;
 
 export const RuiSidebar = defineRadiantView(
 	RuiSidebarElement,
 	({
-		slot,
+		children,
 		id,
-		variant,
-		side,
-		collapsible,
 		defaultOpen,
 		open,
 		defaultWidth,
 		width,
 		resizable,
 		mobileBreakpoint,
-		label,
 		matchActive,
 		matchMode,
 		scrollActiveOnMount,
 		navigationEvents,
-		class: className,
-		children,
+		...props
 	}: RuiSidebarViewProps) => (
 		<rui-sidebar
-			slot={slot}
+			{...props}
 			id={id}
-			class={className}
-			variant={variant as RuiSidebarVariant | undefined}
-			side={side as RuiSidebarSide | undefined}
-			collapsible={collapsible as RuiSidebarCollapsible | undefined}
 			prop:defaultOpen={defaultOpen}
 			prop:open={open}
 			prop:defaultWidth={defaultWidth}
 			prop:width={width}
 			prop:resizable={resizable}
 			prop:mobileBreakpoint={mobileBreakpoint}
-			label={label}
 			prop:matchActive={matchActive}
-			prop:matchMode={matchMode as RuiSidebarMatchMode | undefined}
+			prop:matchMode={matchMode}
 			prop:scrollActiveOnMount={scrollActiveOnMount}
 			prop:navigationEvents={navigationEvents}
 		>
 			{children}
 		</rui-sidebar>
 	),
-
 	{ stylesheets: ['./sidebar.css'] },
 );
 
-export type RuiSidebarTriggerViewProps = RuiSidebarTriggerProps &
-	RadiantSlotProps & {
-		children?: JsxRenderable;
-		class?: string;
-	};
+export type RuiSidebarTriggerViewProps = JsxHtmlPropsWithChildren<
+	RuiSidebarTriggerProps & {
+		slot?: string;
+	}
+>;
 
 export const RuiSidebarTrigger = defineRadiantView(
 	RuiSidebarTriggerElement,
-	({
-		slot,
-		controls,
-		triggerLabel,
-		placement,
-		variant,
-		size,
-		class: className,
-		children,
-	}: RuiSidebarTriggerViewProps) => (
+	({ children, controls, triggerLabel, placement, variant, size, ...props }: RuiSidebarTriggerViewProps) => (
 		<rui-sidebar-trigger
-			slot={slot}
-			class={className}
+			{...props}
 			prop:controls={controls}
 			prop:buttonLabel={triggerLabel ?? 'Toggle sidebar'}
 			attr:data-button-label={triggerLabel ?? 'Toggle sidebar'}
@@ -397,6 +366,5 @@ export const RuiSidebarTrigger = defineRadiantView(
 			{children}
 		</rui-sidebar-trigger>
 	),
-
 	{ stylesheets: ['./sidebar.css'] },
 );

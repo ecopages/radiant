@@ -1,37 +1,37 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiComboboxProps } from './combobox.script';
 import { RuiCombobox as RuiComboboxElement } from './combobox.script';
 
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
-
-export type RuiComboboxControlProps = RadiantSlotProps & {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiComboboxControlProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
 
 /** Input row wrapper for the combobox input and optional trigger icon. */
-export function RuiComboboxControl({ slot = 'control', children, class: className }: RuiComboboxControlProps) {
+export function RuiComboboxControl({
+	children,
+	slot = 'control',
+	class: className,
+	...props
+}: RuiComboboxControlProps) {
 	return (
-		<div slot={slot} class={cx('rui-combobox__control', className)}>
+		<div {...props} slot={slot} class={cx('rui-combobox__control', className)}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiComboboxInputProps = {
+export type RuiComboboxInputProps = JsxHtmlProps<{
 	placeholder?: string;
 	disabled?: boolean;
-	class?: string;
-};
+}>;
 
 /** Text input with `role="combobox"`. Place inside `RuiComboboxControl`. */
-export function RuiComboboxInput({ placeholder, disabled, class: className }: RuiComboboxInputProps) {
+export function RuiComboboxInput({ placeholder, disabled, class: className, ...props }: RuiComboboxInputProps) {
 	return (
 		<input
+			{...props}
 			type="text"
 			data-combobox-input
 			data-rui-control
@@ -44,12 +44,10 @@ export function RuiComboboxInput({ placeholder, disabled, class: className }: Ru
 	);
 }
 
-export type RuiComboboxTriggerProps = {
-	children?: JsxRenderable;
-	class?: string;
+export type RuiComboboxTriggerProps = JsxHtmlPropsWithChildren<{
 	'aria-label'?: string;
 	disabled?: boolean;
-};
+}>;
 
 /** Optional open button placed inside `RuiComboboxControl`. */
 export function RuiComboboxTrigger({
@@ -57,9 +55,11 @@ export function RuiComboboxTrigger({
 	class: className,
 	'aria-label': ariaLabel = 'Show suggestions',
 	disabled,
+	...props
 }: RuiComboboxTriggerProps) {
 	return (
 		<button
+			{...props}
 			type="button"
 			data-combobox-trigger
 			class={cx('rui-combobox__trigger', className)}
@@ -72,33 +72,43 @@ export function RuiComboboxTrigger({
 	);
 }
 
-export type RuiComboboxListboxProps = RadiantSlotProps & {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiComboboxListboxProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
 
 /** Popup listbox slotted into `listbox` by default. */
-export function RuiComboboxListbox({ slot = 'listbox', children, class: className }: RuiComboboxListboxProps) {
+export function RuiComboboxListbox({
+	children,
+	slot = 'listbox',
+	class: className,
+	...props
+}: RuiComboboxListboxProps) {
 	return (
-		<div slot={slot} data-combobox-listbox class={cx('rui-combobox__listbox', className)} hidden>
+		<div {...props} slot={slot} data-combobox-listbox class={cx('rui-combobox__listbox', className)} hidden>
 			{children}
 		</div>
 	);
 }
 
-export type RuiComboboxOptionProps = {
+export type RuiComboboxOptionProps = JsxHtmlPropsWithChildren<{
 	value: string;
 	/** Display text committed to the input when selected. Defaults to `children` text. */
 	label?: string;
-	children: JsxRenderable;
-	class?: string;
 	disabled?: boolean;
-};
+}>;
 
 /** Listbox option placed inside `RuiComboboxListbox`. */
-export function RuiComboboxOption({ value, label, children, class: className, disabled }: RuiComboboxOptionProps) {
+export function RuiComboboxOption({
+	value,
+	label,
+	children,
+	class: className,
+	disabled,
+	...props
+}: RuiComboboxOptionProps) {
 	return (
 		<div
+			{...props}
 			role="option"
 			data-combobox-option
 			data-value={value}
@@ -120,31 +130,20 @@ export type RuiComboboxOptionData = { value: string; label: JsxRenderable };
 export const RuiCombobox = defineRadiantView(
 	RuiComboboxElement,
 	({
-		slot,
-		value,
-		label,
-		placeholder,
-		disabled,
-		openOnFocus,
 		options,
 		children,
-	}: RuiComboboxProps &
-		RadiantSlotProps & {
+		...props
+	}: JsxHtmlPropsWithChildren<
+		RuiComboboxProps & {
+			slot?: string;
 			options?: RuiComboboxOptionData[];
-			children?: JsxRenderable;
-		}) => {
+		}
+	>) => {
 		if (options != null) {
 			return (
-				<rui-combobox
-					slot={slot}
-					value={value}
-					label={label}
-					placeholder={placeholder}
-					disabled={disabled}
-					openOnFocus={openOnFocus}
-				>
+				<rui-combobox {...props}>
 					<RuiComboboxControl>
-						<RuiComboboxInput placeholder={placeholder} disabled={disabled} />
+						<RuiComboboxInput placeholder={props.placeholder} disabled={props.disabled} />
 						<RuiComboboxTrigger />
 					</RuiComboboxControl>
 					<RuiComboboxListbox>
@@ -161,19 +160,7 @@ export const RuiCombobox = defineRadiantView(
 			);
 		}
 
-		return (
-			<rui-combobox
-				slot={slot}
-				value={value}
-				label={label}
-				placeholder={placeholder}
-				disabled={disabled}
-				openOnFocus={openOnFocus}
-			>
-				{children}
-			</rui-combobox>
-		);
+		return <rui-combobox {...props}>{children}</rui-combobox>;
 	},
-
 	{ stylesheets: ['./combobox.css'] },
 );

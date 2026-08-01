@@ -1,38 +1,31 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps, WithChildren } from '@/types';
+import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiCarouselProps } from './carousel.script';
 import { RuiCarousel as RuiCarouselElement } from './carousel.script';
 
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
-
 export type RuiCarouselSlideData = { id: string; children: JsxRenderable };
 
-export type RuiCarouselSlideProps = {
+export type RuiCarouselSlideProps = JsxHtmlPropsWithChildren<{
 	id: string;
 	index?: number;
-	children: JsxRenderable;
-	class?: string;
-};
+}>;
 
 /** Slide in the default carousel slot (APG `group` / `tabpanel` roles are applied by the host). */
-export function RuiCarouselSlide({ id, children, class: className }: RuiCarouselSlideProps) {
+export function RuiCarouselSlide({ id, children, class: className, ...props }: RuiCarouselSlideProps) {
 	return (
-		<div class={cx('rui-carousel__slide', className)} data-slide={id}>
+		<div {...props} class={cx('rui-carousel__slide', className)} data-slide={id}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiCarouselControlProps = RadiantSlotProps & {
-	children?: JsxRenderable;
-	class?: string;
+export type RuiCarouselControlProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
 	disabled?: boolean;
 	/** Match `controls-variant="overlay"` on the carousel for circular on-slide chrome. */
 	overlay?: boolean;
-};
+}>;
 
 function toolbarPrevLabel() {
 	return (
@@ -58,14 +51,16 @@ function toolbarNextLabel() {
 
 /** Previous control slotted into `prev` by default. */
 export function RuiCarouselPrev({
-	slot = 'prev',
 	children,
+	slot = 'prev',
 	class: className,
 	disabled,
 	overlay,
+	...props
 }: RuiCarouselControlProps) {
 	return (
 		<button
+			{...props}
 			slot={slot}
 			type="button"
 			data-carousel-action="prev"
@@ -92,14 +87,16 @@ export function RuiCarouselPrev({
 
 /** Next control slotted into `next` by default. */
 export function RuiCarouselNext({
-	slot = 'next',
 	children,
+	slot = 'next',
 	class: className,
 	disabled,
 	overlay,
+	...props
 }: RuiCarouselControlProps) {
 	return (
 		<button
+			{...props}
 			slot={slot}
 			type="button"
 			data-carousel-action="next"
@@ -124,21 +121,22 @@ export function RuiCarouselNext({
 	);
 }
 
-export type RuiCarouselRotationProps = RadiantSlotProps & {
-	children?: JsxRenderable;
-	class?: string;
+export type RuiCarouselRotationProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
 	overlay?: boolean;
-};
+}>;
 
 /** Play/pause rotation control slotted into `rotation` by default. */
 export function RuiCarouselRotation({
-	slot = 'rotation',
 	children,
+	slot = 'rotation',
 	class: className,
 	overlay,
+	...props
 }: RuiCarouselRotationProps) {
 	return (
 		<button
+			{...props}
 			slot={slot}
 			type="button"
 			data-carousel-action="rotation"
@@ -159,67 +157,28 @@ export function RuiCarouselRotation({
 export const RuiCarousel = defineRadiantView(
 	RuiCarouselElement,
 	({
-		slot,
-		label,
-		index,
-		autoplay,
-		interval,
-		transition,
-		controlsVariant,
-		showIndicators,
-		showRotationControl,
-		loop,
-		wrap,
 		slides,
 		children,
-	}: RuiCarouselProps &
-		RadiantSlotProps &
-		WithChildren<{
+		...props
+	}: JsxHtmlPropsWithChildren<
+		RuiCarouselProps & {
+			slot?: string;
 			slides?: RuiCarouselSlideData[];
-		}>) => {
+		}
+	>) => {
 		if (children != null) {
-			return (
-				<rui-carousel
-					slot={slot}
-					label={label}
-					index={index}
-					autoplay={autoplay}
-					interval={interval}
-					transition={transition}
-					controlsVariant={controlsVariant}
-					showIndicators={showIndicators}
-					showRotationControl={showRotationControl}
-					loop={loop}
-					wrap={wrap}
-				>
-					{children}
-				</rui-carousel>
-			);
+			return <rui-carousel {...props}>{children}</rui-carousel>;
 		}
 
 		const slideList = slides ?? [];
 
 		return (
-			<rui-carousel
-				slot={slot}
-				label={label}
-				index={index}
-				autoplay={autoplay}
-				interval={interval}
-				transition={transition}
-				controlsVariant={controlsVariant}
-				showIndicators={showIndicators}
-				showRotationControl={showRotationControl}
-				loop={loop}
-				wrap={wrap}
-				slideCount={slideList.length}
-			>
+			<rui-carousel {...props} slideCount={slideList.length}>
 				{slideList.map((slide) => (
 					<RuiCarouselSlide id={slide.id}>{slide.children}</RuiCarouselSlide>
 				))}
 			</rui-carousel>
 		);
 	},
-
 	{ stylesheets: ['./carousel.css'] },
 );

@@ -8,6 +8,13 @@
 		"outDir": "./dist",
 		"rootDir": "./src"
 	},
-	"include": ["src/index.ts", "src/jsx-custom-elements.d.ts", "src/components/ui", "src/lib", "src/types.ts"],
+	"include": [
+		"src/index.ts",
+		"src/cx.ts",
+		"src/jsx-custom-elements.d.ts",
+		"src/components/ui",
+		"src/lib",
+		"src/types.ts"
+	],
 	"exclude": ["**/*.stories.tsx"]
 }

@@ -1,24 +1,20 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiDisclosureGroupProps } from './disclosure-group.script';
 import { RuiDisclosureGroup as RuiDisclosureGroupElement } from './disclosure-group.script';
 import type { RuiDisclosureProps } from './disclosure.script';
 import { RuiDisclosure as RuiDisclosureElement } from './disclosure.script';
 
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
-
-export type RuiDisclosureIconProps = {
+export type RuiDisclosureIconProps = JsxHtmlProps<{
 	variant?: 'chevron' | 'plus';
-	class?: string;
-};
+}>;
 
 /** Default disclosure indicator. Override via `RuiDisclosureTrigger` `icon` prop. */
-export function RuiDisclosureIcon({ variant = 'chevron', class: className }: RuiDisclosureIconProps) {
+export function RuiDisclosureIcon({ variant = 'chevron', class: className, ...props }: RuiDisclosureIconProps) {
 	return (
 		<span
+			{...props}
 			class={cx('rui-disclosure__icon', `rui-disclosure__icon--${variant}`, className)}
 			data-disclosure-icon
 			aria-hidden="true"
@@ -26,29 +22,30 @@ export function RuiDisclosureIcon({ variant = 'chevron', class: className }: Rui
 	);
 }
 
-export type RuiDisclosureTriggerProps = RadiantSlotProps & {
-	children: JsxRenderable;
-	class?: string;
+export type RuiDisclosureTriggerProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
 	disabled?: boolean;
 	/** Custom indicator. Pass `null` to hide. Defaults to chevron. */
 	icon?: JsxRenderable | null;
 	iconPosition?: 'start' | 'end';
-};
+}>;
 
 /** Disclosure button slotted into `trigger` by default. */
 export function RuiDisclosureTrigger({
-	slot = 'trigger',
 	children,
+	slot = 'trigger',
 	class: className,
 	disabled,
 	icon,
 	iconPosition = 'start',
+	...props
 }: RuiDisclosureTriggerProps) {
 	const showIcon = icon !== null;
 	const iconNode = showIcon ? (icon ?? <RuiDisclosureIcon />) : null;
 
 	return (
 		<button
+			{...props}
 			slot={slot}
 			type="button"
 			data-disclosure-trigger
@@ -66,15 +63,12 @@ export function RuiDisclosureTrigger({
 	);
 }
 
-export type RuiDisclosurePanelProps = {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiDisclosurePanelProps = JsxHtmlPropsWithChildren;
 
 /** Disclosure panel in the default slot. */
-export function RuiDisclosurePanel({ children, class: className }: RuiDisclosurePanelProps) {
+export function RuiDisclosurePanel({ children, class: className, ...props }: RuiDisclosurePanelProps) {
 	return (
-		<div data-disclosure-panel data-ref="panel" class={cx('rui-disclosure__panel', className)}>
+		<div {...props} data-disclosure-panel data-ref="panel" class={cx('rui-disclosure__panel', className)}>
 			<div class="rui-disclosure__panel-inner">{children}</div>
 		</div>
 	);
@@ -83,48 +77,33 @@ export function RuiDisclosurePanel({ children, class: className }: RuiDisclosure
 export const RuiDisclosure = defineRadiantView(
 	RuiDisclosureElement,
 	({
-		slot,
-		open,
-		value,
-		animated,
 		trigger,
 		children,
-	}: RuiDisclosureProps &
-		RadiantSlotProps & {
+		...props
+	}: JsxHtmlPropsWithChildren<
+		RuiDisclosureProps & {
+			slot?: string;
 			trigger?: JsxRenderable;
-			children?: JsxRenderable;
-		}) => {
+		}
+	>) => {
 		if (trigger != null) {
 			return (
-				<rui-disclosure slot={slot} open={open} value={value} animated={animated}>
+				<rui-disclosure {...props}>
 					<RuiDisclosureTrigger>{trigger}</RuiDisclosureTrigger>
 					{children != null ? <RuiDisclosurePanel>{children}</RuiDisclosurePanel> : null}
 				</rui-disclosure>
 			);
 		}
 
-		return (
-			<rui-disclosure slot={slot} open={open} value={value} animated={animated}>
-				{children}
-			</rui-disclosure>
-		);
+		return <rui-disclosure {...props}>{children}</rui-disclosure>;
 	},
-
 	{ stylesheets: ['./disclosure.css'] },
 );
 
 export const RuiDisclosureGroup = defineRadiantView(
 	RuiDisclosureGroupElement,
-	({
-		slot,
-		multiple,
-		animated,
-		children,
-	}: RuiDisclosureGroupProps & RadiantSlotProps & { children: JsxRenderable }) => (
-		<rui-disclosure-group slot={slot} multiple={multiple} animated={animated}>
-			{children}
-		</rui-disclosure-group>
+	({ children, ...props }: JsxHtmlPropsWithChildren<RuiDisclosureGroupProps & { slot?: string }>) => (
+		<rui-disclosure-group {...props}>{children}</rui-disclosure-group>
 	),
-
 	{ stylesheets: ['./disclosure-group.css'] },
 );

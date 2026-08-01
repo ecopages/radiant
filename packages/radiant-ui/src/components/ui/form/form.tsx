@@ -1,13 +1,20 @@
-import type { WithChildren } from '@/types';
+import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFormProps } from './form.script';
 import { RuiForm as RuiFormElement } from './form.script';
 
 export const RuiForm = defineRadiantView(
 	RuiFormElement,
-	({ defaultValues, defaultValuesData, resolver, mode, reValidateMode, children }: WithChildren<RuiFormProps>) => (
+	({
+		children,
+		defaultValues,
+		defaultValuesData,
+		resolver,
+		reValidateMode,
+		...props
+	}: JsxHtmlPropsWithChildren<RuiFormProps>) => (
 		<rui-form
-			mode={mode}
+			{...props}
 			reValidateMode={reValidateMode}
 			attr:revalidate-mode={reValidateMode}
 			prop:defaultValues={defaultValues}
@@ -19,7 +26,6 @@ export const RuiForm = defineRadiantView(
 			{children}
 		</rui-form>
 	),
-
 	{ stylesheets: ['./form.css'] },
 );
 

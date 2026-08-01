@@ -1,18 +1,12 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTabsProps } from './tabs.script';
 import { RuiTabs as RuiTabsElement } from './tabs.script';
 
-function cx(...parts: Array<string | false | null | undefined>): string {
-	return parts.filter(Boolean).join(' ');
-}
-
-export type RuiTabListProps = RadiantSlotProps & {
-	children: JsxRenderable;
-	class?: string;
+export type RuiTabListProps = JsxHtmlPropsWithChildren<{
 	'aria-label'?: string;
-};
+}>;
 
 export type RuiTabProps = {
 	id: string;
@@ -21,10 +15,7 @@ export type RuiTabProps = {
 	disabled?: boolean;
 };
 
-export type RuiTabPanelsProps = {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiTabPanelsProps = JsxHtmlPropsWithChildren;
 
 export type RuiTabPanelProps = {
 	id: string;
@@ -35,9 +26,9 @@ export type RuiTabPanelProps = {
 };
 
 /** Tab strip container. Set `aria-label` (or `label` on `RuiTabs`) for the tab list name. */
-export function RuiTabList({ children, class: className, 'aria-label': ariaLabel }: RuiTabListProps) {
+export function RuiTabList({ children, class: className, ...props }: RuiTabListProps) {
 	return (
-		<div class={cx('rui-tabs__list', className)} role="tablist" aria-label={ariaLabel}>
+		<div {...props} class={cx('rui-tabs__list', className)} role="tablist">
 			{children}
 		</div>
 	);
@@ -63,8 +54,12 @@ export function RuiTab({ id, children, class: className, disabled }: RuiTabProps
 }
 
 /** Groups tab panels below the tab list. */
-export function RuiTabPanels({ children, class: className }: RuiTabPanelsProps) {
-	return <div class={cx('rui-tabs__panels', className)}>{children}</div>;
+export function RuiTabPanels({ children, class: className, ...props }: RuiTabPanelsProps) {
+	return (
+		<div {...props} class={cx('rui-tabs__panels', className)}>
+			{children}
+		</div>
+	);
 }
 
 /** Tab panel paired with a `RuiTab` by `id`. */
@@ -86,18 +81,8 @@ export function RuiTabPanel({ id, children, class: className, hidden }: RuiTabPa
 
 export const RuiTabs = defineRadiantView(
 	RuiTabsElement,
-	({
-		slot,
-		variant,
-		value,
-		label,
-		automatic,
-		children,
-	}: RuiTabsProps & RadiantSlotProps & { children: JsxRenderable }) => (
-		<rui-tabs slot={slot} variant={variant} value={value} label={label} automatic={automatic}>
-			{children}
-		</rui-tabs>
+	({ children, ...props }: JsxHtmlPropsWithChildren<RuiTabsProps & { slot?: string }>) => (
+		<rui-tabs {...props}>{children}</rui-tabs>
 	),
-
 	{ stylesheets: ['./tabs.css'] },
 );

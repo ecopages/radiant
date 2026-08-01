@@ -1,5 +1,4 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFeedProps } from './feed.script';
 import { RuiFeed as RuiFeedElement } from './feed.script';
@@ -8,8 +7,8 @@ export type RuiFeedArticle = { id: string; title: string; children: JsxRenderabl
 
 export const RuiFeed = defineRadiantView(
 	RuiFeedElement,
-	({ slot, label, articles }: RuiFeedProps & RadiantSlotProps & { articles: RuiFeedArticle[] }) => (
-		<rui-feed slot={slot} label={label}>
+	({ articles, ...props }: JsxHtmlProps<RuiFeedProps & { slot?: string; articles: RuiFeedArticle[] }>) => (
+		<rui-feed {...props}>
 			{articles.map((article, index) => (
 				<article
 					class="rui-feed__article"
@@ -23,6 +22,5 @@ export const RuiFeed = defineRadiantView(
 			))}
 		</rui-feed>
 	),
-
 	{ stylesheets: ['./feed.css'] },
 );

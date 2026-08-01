@@ -1,13 +1,10 @@
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiMeterProps } from './meter.script';
 import { RuiMeter as RuiMeterElement } from './meter.script';
 
 export const RuiMeter = defineRadiantView(
 	RuiMeterElement,
-	({ slot, value, min, max, label }: RuiMeterProps & RadiantSlotProps) => (
-		<rui-meter slot={slot} value={value} min={min} max={max} label={label} />
-	),
-
+	(props: JsxHtmlProps<RuiMeterProps & { slot?: string }>) => <rui-meter {...props} />,
 	{ stylesheets: ['./meter.css'] },
 );

@@ -1,30 +1,12 @@
-import type { WithChildren, RadiantSlotProps } from '@/types';
+import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiCheckboxProps } from './checkbox.script';
 import { RuiCheckbox as RuiCheckboxElement } from './checkbox.script';
 
 export const RuiCheckbox = defineRadiantView(
 	RuiCheckboxElement,
-	({
-		slot,
-		checked,
-		indeterminate,
-		disabled,
-		value,
-		name,
-		children,
-	}: WithChildren<RuiCheckboxProps & RadiantSlotProps>) => (
-		<rui-checkbox
-			slot={slot}
-			checked={checked}
-			indeterminate={indeterminate}
-			disabled={disabled}
-			value={value}
-			name={name}
-		>
-			{children}
-		</rui-checkbox>
+	({ children, ...props }: JsxHtmlPropsWithChildren<RuiCheckboxProps & { slot?: string }>) => (
+		<rui-checkbox {...props}>{children}</rui-checkbox>
 	),
-
 	{ stylesheets: ['./checkbox.css'] },
 );
