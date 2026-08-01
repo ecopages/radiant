@@ -1,5 +1,4 @@
-import type { JsxRenderable } from '@ecopages/jsx';
-import type { RadiantSlotProps } from '@/types';
+import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiRadioGroupProps } from './radio-group.script';
 import { RuiRadioGroup as RuiRadioGroupElement } from './radio-group.script';
@@ -12,20 +11,8 @@ export type RuiRadioOption = {
 
 export const RuiRadioGroup = defineRadiantView(
 	RuiRadioGroupElement,
-	({
-		slot,
-		value,
-		name,
-		label,
-		disabled,
-		class: className,
-		options,
-	}: RuiRadioGroupProps &
-		RadiantSlotProps & {
-			class?: string;
-			options: RuiRadioOption[];
-		}) => (
-		<rui-radio-group slot={slot} value={value} name={name} label={label} disabled={disabled} class={className}>
+	({ options, ...props }: JsxHtmlProps<RuiRadioGroupProps & { slot?: string; options: RuiRadioOption[] }>) => (
+		<rui-radio-group {...props}>
 			{options.map((option) => (
 				<label class="rui-radio">
 					<input
@@ -41,6 +28,5 @@ export const RuiRadioGroup = defineRadiantView(
 			))}
 		</rui-radio-group>
 	),
-
 	{ stylesheets: ['./radio-group.css'] },
 );

@@ -12,6 +12,7 @@ export {
 	type KeyedJsxValue,
 	type SlotJsxValue,
 	type JsxHtmlProps,
+	type JsxHtmlPropsWithChildren,
 	type JsxComponent,
 	type JsxCustomElementAttributes,
 	type JsxCustomIntrinsicElements,

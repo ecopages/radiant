@@ -73,6 +73,10 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		},
+		"./cx": {
+			"types": "./dist/cx.d.ts",
+			"import": "./dist/cx.js"
+		},
 		"./tokens/colors/aurora": {
 			"default": "./dist/styles/tokens/colors/aurora.css"
 		},
