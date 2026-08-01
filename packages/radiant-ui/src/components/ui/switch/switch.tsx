@@ -2,7 +2,6 @@ import type { WithChildren, RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiSwitchProps } from './switch.script';
 import { RuiSwitch as RuiSwitchElement } from './switch.script';
-import './switch.css';
 
 export const RuiSwitch = defineRadiantView(
 	RuiSwitchElement,
@@ -11,4 +10,6 @@ export const RuiSwitch = defineRadiantView(
 			{children}
 		</rui-switch>
 	),
+
+	{ stylesheets: ['./switch.css'] },
 );

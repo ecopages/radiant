@@ -59,23 +59,58 @@ export function appendRadiantScriptModuleStamps(code: string, moduleId: string, 
 	return `${withoutLegacyStamp.trimEnd()}\n${stamps}\n`;
 }
 
+/** Collect relative `*.css` paths from `stylesheets: [...]` / `attachRadiantStylesheets(..., [...])`. */
+export function collectDeclaredStylesheetImports(code: string): string[] {
+	const paths = [
+		...code.matchAll(/stylesheets:\s*\[([^\]]*)\]/g),
+		...code.matchAll(/attachRadiantStylesheets\s*\(\s*[^,]+,\s*\[([^\]]*)\]/g),
+	].flatMap((match) =>
+		[...match[1]!.matchAll(/['"]((?:\.\.?\/)+[^'"]+\.css)['"]/g)].map((pathMatch) => pathMatch[1]!),
+	);
+
+	return [...new Set(paths)];
+}
+
 /**
- * Append view module metadata to `defineRadiantView` exports.
+ * Prepend side-effect CSS imports declared on the view (Storybook-only).
+ *
+ * @remarks
+ * Published radiant-ui builds keep stylesheets as path metadata so Ecopages
+ * vendor prebundles stay CSS-free. Storybook reintroduces the original
+ * `import './x.css'` loading behavior here when the view module is transformed.
+ */
+export function injectDeclaredStylesheetImports(code: string): string {
+	const missing = collectDeclaredStylesheetImports(code).filter(
+		(stylesheet) => !code.includes(`import '${stylesheet}'`) && !code.includes(`import "${stylesheet}"`),
+	);
+
+	if (!missing.length) {
+		return code;
+	}
+
+	return `${missing.map((stylesheet) => `import '${stylesheet}';`).join('\n')}\n${code}`;
+}
+
+/**
+ * Append view module metadata to `defineRadiantView` exports and inject declared CSS imports.
  */
 export function appendRadiantViewModuleStamps(code: string, moduleId: string, root: string): string | null {
-	if (hasStableViewModuleStamp(code)) {
+	const withImports = injectDeclaredStylesheetImports(code);
+	const exports = findRadiantViewExports(withImports);
+	const needsStamp = exports.length > 0 && !hasStableViewModuleStamp(withImports);
+
+	if (withImports === code && !needsStamp) {
 		return null;
 	}
 
-	const exports = findRadiantViewExports(code);
-	if (!exports.length) {
-		return null;
+	if (!needsStamp) {
+		return withImports === code ? null : withImports;
 	}
 
 	const modulePath = toViteSsrModulePath(moduleId, root);
 	const stamps = exports.map((name) => `${name}[Symbol.for('${VIEW_MODULE}')] = '${modulePath}';`).join('\n');
 
-	return `${code.trimEnd()}\n${stamps}\n`;
+	return `${withImports.trimEnd()}\n${stamps}\n`;
 }
 
 /**

@@ -2,7 +2,6 @@ import type { WithChildren, RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiSpinbuttonProps } from './spinbutton.script';
 import { RuiSpinbutton as RuiSpinbuttonElement } from './spinbutton.script';
-import './spinbutton.css';
 
 export const RuiSpinbutton = defineRadiantView(
 	RuiSpinbuttonElement,
@@ -30,4 +29,6 @@ export const RuiSpinbutton = defineRadiantView(
 			{children}
 		</rui-spinbutton>
 	),
+
+	{ stylesheets: ['./spinbutton.css'] },
 );

@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiDialogProps } from './dialog.script';
 import { RuiDialog as RuiDialogElement } from './dialog.script';
-import './dialog.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -106,4 +105,6 @@ export const RuiDialog = defineRadiantView(
 			</rui-dialog>
 		);
 	},
+
+	{ stylesheets: ['./dialog.css'] },
 );

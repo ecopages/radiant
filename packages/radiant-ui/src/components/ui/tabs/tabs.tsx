@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTabsProps } from './tabs.script';
 import { RuiTabs as RuiTabsElement } from './tabs.script';
-import './tabs.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -99,4 +98,6 @@ export const RuiTabs = defineRadiantView(
 			{children}
 		</rui-tabs>
 	),
+
+	{ stylesheets: ['./tabs.css'] },
 );

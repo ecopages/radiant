@@ -1,5 +1,4 @@
 import { RUI_FIELD_ERROR_ATTR } from '../form/control-protocol';
-import './field.css';
 
 export type RuiFieldErrorProps = {
 	class?: string;

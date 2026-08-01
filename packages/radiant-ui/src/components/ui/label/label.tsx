@@ -1,6 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
+import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_FIELD_LABEL_ATTR } from '../form/control-protocol';
-import './label.css';
 
 export type RuiLabelProps = {
 	htmlFor?: string;
@@ -20,3 +20,5 @@ export function RuiLabel({ htmlFor, class: className, children }: RuiLabelProps)
 		</label>
 	);
 }
+
+attachRadiantStylesheets(RuiLabel, ['./label.css'], import.meta.url);

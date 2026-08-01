@@ -3,7 +3,6 @@ import type { RadiantSlotProps, WithChildren } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiCarouselProps } from './carousel.script';
 import { RuiCarousel as RuiCarouselElement } from './carousel.script';
-import './carousel.css';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
 	return parts.filter(Boolean).join(' ');
@@ -221,4 +220,6 @@ export const RuiCarousel = defineRadiantView(
 			</rui-carousel>
 		);
 	},
+
+	{ stylesheets: ['./carousel.css'] },
 );

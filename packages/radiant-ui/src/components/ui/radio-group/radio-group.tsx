@@ -3,7 +3,6 @@ import type { RadiantSlotProps } from '@/types';
 import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiRadioGroupProps } from './radio-group.script';
 import { RuiRadioGroup as RuiRadioGroupElement } from './radio-group.script';
-import './radio-group.css';
 
 export type RuiRadioOption = {
 	value: string;
@@ -42,4 +41,6 @@ export const RuiRadioGroup = defineRadiantView(
 			))}
 		</rui-radio-group>
 	),
+
+	{ stylesheets: ['./radio-group.css'] },
 );
