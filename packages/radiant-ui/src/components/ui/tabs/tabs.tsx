@@ -31,6 +31,8 @@ export type RuiTabPanelProps = {
 	id: string;
 	children: JsxRenderable;
 	class?: string;
+	/** Whether the panel is initially hidden before the tabs element initializes. */
+	hidden?: boolean;
 };
 
 /** Tab strip container. Set `aria-label` (or `label` on `RuiTabs`) for the tab list name. */
@@ -67,7 +69,7 @@ export function RuiTabPanels({ children, class: className }: RuiTabPanelsProps) 
 }
 
 /** Tab panel paired with a `RuiTab` by `id`. */
-export function RuiTabPanel({ id, children, class: className }: RuiTabPanelProps) {
+export function RuiTabPanel({ id, children, class: className, hidden }: RuiTabPanelProps) {
 	return (
 		<div
 			class={cx('rui-tabs__panel', className)}
@@ -76,7 +78,7 @@ export function RuiTabPanel({ id, children, class: className }: RuiTabPanelProps
 			data-tab-value={id}
 			aria-labelledby={`tab-${id}`}
 			tabindex={0}
-			hidden
+			hidden={hidden}
 		>
 			{children}
 		</div>
