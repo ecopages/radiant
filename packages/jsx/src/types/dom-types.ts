@@ -187,18 +187,6 @@ export type DataAttributeValue =
 	| SubscribableJsxValue<undefined>;
 
 /**
- * Standard HTML-level props available to any JSX element.
- */
-export interface JsxHtmlProps {
-	children?: JsxRenderable;
-	class?: string;
-	classes?: ClassList;
-	style?: StyleValue;
-	aria?: Partial<AriaAttributesNormalized> | undefined;
-	data?: Record<string, DataAttributeValue>;
-}
-
-/**
  * Shared attribute shape for intrinsic elements.
  */
 export interface JsxSharedIntrinsicAttributes {
@@ -218,6 +206,23 @@ export interface JsxSharedIntrinsicAttributes {
 	tabindex?: ReactiveAttributeValue<number> | ReactiveAttributeValue<string>;
 	title?: ReactiveAttributeValue<string>;
 }
+
+/**
+ * Standard HTML-level props available to any JSX element.
+ *
+ * @remarks
+ * Pass component props as the type argument: `JsxHtmlProps<MyComponentProps>`.
+ * Only the common host attrs are mixed in (`class`, `classes`, `aria`, `data`, `style`).
+ * Use `JsxHtmlPropsWithChildren` when the host accepts children.
+ */
+export type JsxHtmlProps<Props extends object = {}> = Props &
+	Pick<JsxSharedIntrinsicAttributes, 'class' | 'classes' | 'aria' | 'data' | 'style'>;
+
+/**
+ * `JsxHtmlProps` plus optional `children`, analogous to React's `PropsWithChildren`.
+ */
+export type JsxHtmlPropsWithChildren<Props extends object = {}> = JsxHtmlProps<Props> &
+	Pick<JsxSharedIntrinsicAttributes, 'children'>;
 
 /**
  * Shared attribute shape for intrinsic elements.
