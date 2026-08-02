@@ -20,6 +20,7 @@
 		"prerelease": "pnpm run typecheck && pnpm run build:all && pnpm run test:all",
 		"release": "changeset publish",
 		"dev:docs": "pnpm --filter radiant-docs dev",
+		"dev:ui": "pnpm --filter @ecopages/radiant-ui storybook",
 		"watch:lib": "pnpm -r --parallel --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run watch:lib",
 		"dev:playground-vite": "pnpm --filter playground-vite dev & pnpm run watch:lib",
 		"dev:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro dev & pnpm run watch:lib",
