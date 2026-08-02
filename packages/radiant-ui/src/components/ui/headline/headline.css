@@ -1,0 +1,33 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-headline {
+		@apply m-0 font-semibold text-on-background;
+		line-height: var(--leading-compact);
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+	}
+
+	.rui-headline--size-sm {
+		font-size: var(--text-xl);
+		letter-spacing: -0.015em;
+	}
+
+	.rui-headline--size-md {
+		font-size: var(--text-3xl);
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+	}
+
+	.rui-headline--size-lg {
+		font-size: var(--text-4xl);
+		line-height: 1.15;
+		letter-spacing: -0.025em;
+	}
+
+	.rui-headline--size-xl {
+		font-size: var(--text-4xl);
+		line-height: 1.1;
+		letter-spacing: -0.03em;
+	}
+}

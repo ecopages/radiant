@@ -264,6 +264,13 @@
     "./grid/styles.css": {
       "default": "./dist/components/ui/grid/grid.css"
     },
+    "./headline": {
+      "types": "./dist/components/ui/headline/index.d.ts",
+      "import": "./dist/components/ui/headline/index.js"
+    },
+    "./headline/styles.css": {
+      "default": "./dist/components/ui/headline/headline.css"
+    },
     "./input": {
       "types": "./dist/components/ui/input/index.d.ts",
       "import": "./dist/components/ui/input/index.js"
