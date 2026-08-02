@@ -6,6 +6,7 @@ type Align = 'start' | 'center' | 'end';
 export type FloatingSize = { width: number; height: number };
 export type FloatingCoords = { x: number; y: number };
 export type FloatingViewport = { width: number; height: number; padding: number };
+export type FloatingPositionResult = { coords: FloatingCoords; placement: RuiPlacement };
 
 const OPPOSITE: Record<Side, Side> = {
 	top: 'bottom',
@@ -77,6 +78,13 @@ function freeSpaceOnSide(anchor: DOMRect, size: FloatingSize, side: Side, viewpo
 	return vw - padding - size.width - anchor.right;
 }
 
+function toPlacement(side: Side, align: Align): RuiPlacement {
+	if (align === 'center') {
+		return side;
+	}
+	return `${side}-${align}` as RuiPlacement;
+}
+
 function clampCrossAxis(
 	coords: FloatingCoords,
 	size: FloatingSize,
@@ -111,6 +119,23 @@ export function computeFloatingCoords(
 		padding: DEFAULT_VIEWPORT_PADDING,
 	},
 ): FloatingCoords {
+	return computeFloatingPosition(anchor, size, placement, gap, viewport).coords;
+}
+
+/**
+ * Computes fixed-position coords and the resolved placement (after flip).
+ */
+export function computeFloatingPosition(
+	anchor: DOMRect,
+	size: FloatingSize,
+	placement: RuiPlacement,
+	gap: number,
+	viewport: FloatingViewport = {
+		width: typeof window === 'undefined' ? 0 : window.innerWidth,
+		height: typeof window === 'undefined' ? 0 : window.innerHeight,
+		padding: DEFAULT_VIEWPORT_PADDING,
+	},
+): FloatingPositionResult {
 	const { side: preferred, align } = parsePlacement(placement);
 	const preferredCoords = coordsFor(anchor, size, preferred, align, gap);
 	const preferredOverflow = overflowOnPrimary(preferredCoords, size, preferred, viewport);
@@ -129,7 +154,10 @@ export function computeFloatingCoords(
 		}
 	}
 
-	return clampCrossAxis(coords, size, side, viewport);
+	return {
+		coords: clampCrossAxis(coords, size, side, viewport),
+		placement: toPlacement(side, align),
+	};
 }
 
 /** Applies fixed coords to a floating element. */
@@ -138,8 +166,9 @@ export function applyFloatingPosition(
 	floating: HTMLElement,
 	placement: RuiPlacement,
 	gap: number,
-): void {
-	const coords = computeFloatingCoords(
+	options: { matchAnchorWidth?: boolean } = {},
+): RuiPlacement {
+	const { coords, placement: resolved } = computeFloatingPosition(
 		anchor.getBoundingClientRect(),
 		{ width: floating.offsetWidth, height: floating.offsetHeight },
 		placement,
@@ -153,6 +182,11 @@ export function applyFloatingPosition(
 		bottom: 'auto',
 		visibility: 'visible',
 	});
+	if (options.matchAnchorWidth) {
+		floating.style.width = `${anchor.offsetWidth}px`;
+	}
+	floating.setAttribute('data-placement', resolved);
+	return resolved;
 }
 
 export type AttachFloatingOptions = {
@@ -160,6 +194,7 @@ export type AttachFloatingOptions = {
 	floating: HTMLElement;
 	getPlacement: () => RuiPlacement;
 	gap: number;
+	matchAnchorWidth?: boolean;
 };
 
 /**
@@ -167,10 +202,16 @@ export type AttachFloatingOptions = {
  *
  * @returns Cleanup that removes listeners and observers.
  */
-export function attachFloating({ anchor, floating, getPlacement, gap }: AttachFloatingOptions): () => void {
+export function attachFloating({
+	anchor,
+	floating,
+	getPlacement,
+	gap,
+	matchAnchorWidth,
+}: AttachFloatingOptions): () => void {
 	const update = (): void => {
 		if (floating.hidden) return;
-		applyFloatingPosition(anchor, floating, getPlacement(), gap);
+		applyFloatingPosition(anchor, floating, getPlacement(), gap, { matchAnchorWidth });
 	};
 
 	update();
