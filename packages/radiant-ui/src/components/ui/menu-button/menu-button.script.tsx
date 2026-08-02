@@ -1,6 +1,6 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { attachFloating } from '../shared/floating-position';
+import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
 import type { RuiPlacement } from '../shared/placement';
 
 export type RuiMenuButtonProps = {
@@ -58,7 +58,7 @@ export class RuiMenuButton extends RadiantElement {
 	closeEvent: EventEmitter<void>;
 
 	private menuId = `rui-menu-${Math.random().toString(36).slice(2, 9)}`;
-	private cleanupFloating: (() => void) | null = null;
+	private popoverController: PopoverController | null = null;
 	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
 	override connectedCallback(): void {
@@ -67,30 +67,29 @@ export class RuiMenuButton extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.teardownFloating();
+		this.popoverController?.destroy();
+		this.popoverController = null;
 		super.disconnectedCallback();
 	}
 
 	private getItems(): HTMLElement[] {
 		return Array.from(this.menuTarget?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []).filter(
-			(item) => item.getAttribute('aria-disabled') !== 'true',
+			(item) => !item.hidden && item.getAttribute('aria-disabled') !== 'true',
 		);
 	}
 
-	private teardownFloating(): void {
-		this.cleanupFloating?.();
-		this.cleanupFloating = null;
-	}
-
-	private attachFloating(): void {
-		if (!this.triggerTarget || !this.menuTarget) return;
-		this.teardownFloating();
-		this.cleanupFloating = attachFloating({
-			anchor: this.triggerTarget,
-			floating: this.menuTarget,
-			getPlacement: () => this.placement,
-			gap: MENU_GAP,
-		});
+	private ensurePopoverController(): PopoverController {
+		if (!this.popoverController) {
+			this.popoverController = new PopoverController({
+				getAnchor: () => this.triggerTarget,
+				getFloating: () => this.menuTarget,
+				getOpen: () => this.open,
+				getPlacement: () => this.placement,
+				gap: MENU_GAP,
+				portal: false,
+			});
+		}
+		return this.popoverController;
 	}
 
 	@bound
@@ -104,8 +103,12 @@ export class RuiMenuButton extends RadiantElement {
 		this.triggerTarget.setAttribute('aria-expanded', String(this.open));
 		this.menuTarget.hidden = !this.open;
 
-		if (this.open) this.attachFloating();
-		else this.teardownFloating();
+		const controller = this.ensurePopoverController();
+		controller.updateConfig({
+			getPlacement: () => this.placement,
+			getOpen: () => this.open,
+		});
+		controller.sync();
 
 		const focus = this.pendingFocus;
 		this.pendingFocus = null;
@@ -127,11 +130,11 @@ export class RuiMenuButton extends RadiantElement {
 		if (wasOpen === next) this.syncOpenState();
 	}
 
-	@onEvent({ document: true, type: 'click' })
-	onDocumentClick(event: MouseEvent): void {
+	@onEvent({ document: true, type: 'pointerdown' })
+	onDocumentPointerDown(event: PointerEvent): void {
 		if (!this.open) return;
-		const target = event.target as Node;
-		if (this.triggerTarget?.contains(target) || this.menuTarget?.contains(target)) return;
+		const target = event.target as Node | null;
+		if (!shouldDismissPopoverPointer(this.triggerTarget, this.menuTarget, target)) return;
 		this.setOpen(false);
 	}
 
@@ -230,7 +233,7 @@ export class RuiMenuButton extends RadiantElement {
 					<slot name="trigger"></slot>
 					<span class="rui-menu-button__chevron" aria-hidden="true"></span>
 				</button>
-				<div data-ref="menu" class="rui-menu-button__menu rui-floating" role="menu" hidden>
+				<div data-ref="menu" class="rui-menu-button__menu rui-popover rui-floating" role="menu" hidden>
 					<slot></slot>
 				</div>
 			</div>
