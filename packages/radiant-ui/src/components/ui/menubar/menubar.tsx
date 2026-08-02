@@ -27,7 +27,7 @@ export const RuiMenubar = defineRadiantView(
 						{item.label}
 					</button>
 					{item.items?.length ? (
-						<div class="rui-menubar__menu" role="menu" hidden>
+						<div class="rui-menubar__menu rui-popover rui-floating" role="menu" hidden>
 							{item.items.map((child) => (
 								<button
 									type="button"
