@@ -205,6 +205,13 @@
     "./combobox/styles.css": {
       "default": "./dist/components/ui/combobox/combobox.css"
     },
+    "./date-field": {
+      "types": "./dist/components/ui/date-field/index.d.ts",
+      "import": "./dist/components/ui/date-field/index.js"
+    },
+    "./date-field/styles.css": {
+      "default": "./dist/components/ui/date-field/date-field.css"
+    },
     "./dialog": {
       "types": "./dist/components/ui/dialog/index.d.ts",
       "import": "./dist/components/ui/dialog/index.js"
