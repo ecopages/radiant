@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { createEvent } from '../../src/helpers/create-event';
 import { createEventListener } from '../../src/helpers/create-event-listener';
@@ -84,6 +84,38 @@ class LateShadowListenerHelperElement extends RadiantElement {
 }
 
 customElements.define('late-shadow-listener-helper-element', LateShadowListenerHelperElement);
+
+function createMatchMediaMock() {
+	const instances: Array<
+		MediaQueryList & {
+			dispatchChange: (matches: boolean) => void;
+		}
+	> = [];
+
+	const matchMedia = vi.fn((query: string) => {
+		const listeners = new Set<(event: MediaQueryListEvent) => void>();
+		const mediaQueryList = {
+			matches: false,
+			media: query,
+			addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+				listeners.add(listener);
+			},
+			removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+				listeners.delete(listener);
+			},
+			dispatchChange(matches: boolean) {
+				for (const listener of listeners) {
+					listener({ matches } as MediaQueryListEvent);
+				}
+			},
+		} as MediaQueryList & { dispatchChange: (matches: boolean) => void };
+
+		instances.push(mediaQueryList);
+		return mediaQueryList;
+	});
+
+	return { instances, matchMedia };
+}
 
 describe('createEvent', () => {
 	beforeEach(() => {
@@ -244,5 +276,54 @@ describe('createEventListener', () => {
 		button.click();
 
 		expect(clickCount).toBe(1);
+	});
+
+	test('subscribes to media query changes', () => {
+		const { instances, matchMedia } = createMatchMediaMock();
+		vi.stubGlobal('matchMedia', matchMedia);
+
+		const host = document.createElement('event-helper-element') as EventHelperElement;
+		document.body.appendChild(host);
+
+		let matches: boolean | null = null;
+		createEventListener(host, { mediaQuery: '(prefers-color-scheme: dark)', type: 'change' }, (event) => {
+			matches = (event as MediaQueryListEvent).matches;
+		});
+
+		const mediaQueryList = instances[0];
+		mediaQueryList?.dispatchChange(true);
+		expect(matches).toBe(true);
+
+		host.remove();
+		vi.unstubAllGlobals();
+	});
+
+	test('cleanup permanently unsubscribes media query listeners', () => {
+		const { instances, matchMedia } = createMatchMediaMock();
+		vi.stubGlobal('matchMedia', matchMedia);
+
+		const host = document.createElement('event-helper-element') as EventHelperElement;
+		document.body.appendChild(host);
+
+		let matches: boolean | null = null;
+		const cleanup = createEventListener(
+			host,
+			{ mediaQuery: '(prefers-color-scheme: dark)', type: 'change' },
+			(event) => {
+				matches = (event as MediaQueryListEvent).matches;
+			},
+		);
+
+		const mediaQueryList = instances[0];
+		mediaQueryList?.dispatchChange(true);
+		expect(matches).toBe(true);
+
+		matches = null;
+		cleanup();
+		mediaQueryList?.dispatchChange(false);
+		expect(matches).toBeNull();
+
+		host.remove();
+		vi.unstubAllGlobals();
 	});
 });
