@@ -10,10 +10,12 @@ export type { OnEventConfig, OnEventScope };
  * A decorator to subscribe to an event on the target element.
  * The event listener will be automatically unsubscribed when the element is disconnected.
  *
- * Note: This decorator uses event delegation, which means it relies on event bubbling.
- * Therefore, it will not work with events that do not bubble, such as `focus`, `blur`, `load`, `unload`, `scroll`, etc.
- * For focus and blur events, consider using `focusin` and `focusout` which are similar but do bubble.
- * Delegated listeners observe the host light DOM by default, and can optionally observe the shadow root or both trees.
+ * Note: Selector- and ref-based listeners use event delegation, which means they rely on
+ * event bubbling. Therefore, they will not work with events that do not bubble, such as
+ * `focus`, `blur`, `load`, `unload`, `scroll`, etc. For focus and blur events, consider
+ * using `focusin` and `focusout` which are similar but do bubble. Delegated listeners
+ * observe the host light DOM by default, and can optionally observe the shadow root or both
+ * trees. `window`, `document`, and `mediaQuery` targets attach directly instead of delegating.
  *
  * @param options {@link OnEventConfig} The event configuration.
  */
