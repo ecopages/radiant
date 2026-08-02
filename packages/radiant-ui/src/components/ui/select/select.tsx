@@ -1,0 +1,187 @@
+import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
+import { RuiIconChevronDown } from '@/lib/icons';
+import { defineRadiantView } from '@/lib/radiant-view';
+import { RuiListbox, RuiListboxOption, type RuiListboxOptionData } from '../listbox';
+import type { RuiSelectProps } from './select.script';
+import { RuiSelect as RuiSelectElement } from './select.script';
+
+export type RuiSelectControlProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
+
+/** Trigger row wrapper for the value button and toggle icon. */
+export function RuiSelectControl({
+	children,
+	slot = 'trigger',
+	class: className,
+	...props
+}: RuiSelectControlProps) {
+	return (
+		<div {...props} slot={slot} class={cx('rui-select__control', className)}>
+			{children}
+		</div>
+	);
+}
+
+export type RuiSelectTriggerProps = JsxHtmlPropsWithChildren<{
+	disabled?: boolean;
+	'aria-label'?: string;
+}>;
+
+/** Value button with `role="combobox"`. Place `RuiSelectValue` inside. */
+export function RuiSelectTrigger({
+	children,
+	class: className,
+	disabled,
+	...props
+}: RuiSelectTriggerProps) {
+	return (
+		<button
+			{...props}
+			type="button"
+			data-select-trigger
+			data-rui-control
+			data-rui-control-type="text"
+			class={cx('rui-select__trigger', className)}
+			disabled={disabled}
+		>
+			{children}
+		</button>
+	);
+}
+
+export type RuiSelectToggleProps = JsxHtmlPropsWithChildren<{
+	'aria-label'?: string;
+	disabled?: boolean;
+}>;
+
+/** Toggle button for opening the listbox popup. */
+export function RuiSelectToggle({
+	children,
+	class: className,
+	'aria-label': ariaLabel = 'Show options',
+	disabled,
+	...props
+}: RuiSelectToggleProps) {
+	return (
+		<button
+			{...props}
+			type="button"
+			data-select-toggle
+			class={cx('rui-control-toggle', className)}
+			aria-label={ariaLabel}
+			disabled={disabled}
+			tabIndex={-1}
+		>
+			{children ?? <RuiIconChevronDown />}
+		</button>
+	);
+}
+
+export type RuiSelectValueProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
+
+/**
+ * Selected value display inside `RuiSelectTrigger`.
+ *
+ * @remarks When empty, shows the select `placeholder`. For multi-select chip UI,
+ * provide `RuiTagGroup` as children instead of relying on the default text.
+ */
+export function RuiSelectValue({ children, slot, class: className, ...props }: RuiSelectValueProps) {
+	return (
+		<span {...props} slot={slot} data-select-value class={cx('rui-select__value', className)}>
+			{children}
+		</span>
+	);
+}
+
+export type RuiSelectListboxProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
+
+/** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside. */
+export function RuiSelectListbox({
+	children,
+	slot = 'listbox',
+	class: className,
+	...props
+}: RuiSelectListboxProps) {
+	return (
+		<div {...props} slot={slot} data-select-listbox class={cx('rui-select__listbox rui-popover rui-popover--listbox rui-floating', className)} hidden>
+			{children}
+		</div>
+	);
+}
+
+export type RuiSelectSearchProps = JsxHtmlProps<{
+	slot?: string;
+	placeholder?: string;
+	'aria-label'?: string;
+	disabled?: boolean;
+}>;
+
+/** Search input for filtering inside `RuiAutocomplete` within a select listbox. */
+export function RuiSelectSearch({
+	placeholder,
+	slot = 'input',
+	class: className,
+	disabled,
+	...props
+}: RuiSelectSearchProps) {
+	return (
+		<input
+			{...props}
+			type="search"
+			slot={slot}
+			data-autocomplete-input
+			class={cx('rui-select__search', className)}
+			placeholder={placeholder}
+			disabled={disabled}
+			autocomplete="off"
+		/>
+	);
+}
+
+export type RuiSelectOptionData = RuiListboxOptionData;
+
+/** @deprecated Use `RuiListboxOption` */
+export const RuiSelectOption = RuiListboxOption;
+
+/**
+ * Select view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
+ * do not nest a select-specific label.
+ */
+export const RuiSelect = defineRadiantView(
+	RuiSelectElement,
+	({
+		options,
+		children,
+		...props
+	}: JsxHtmlPropsWithChildren<
+		RuiSelectProps & {
+			slot?: string;
+			options?: RuiSelectOptionData[];
+		}
+	>) => {
+		if (options != null) {
+			return (
+				<rui-select {...props}>
+					<RuiSelectControl>
+						<RuiSelectTrigger>
+							<RuiSelectValue />
+						</RuiSelectTrigger>
+						<RuiSelectToggle />
+					</RuiSelectControl>
+					<RuiSelectListbox>
+						<RuiListbox embedded options={options} />
+					</RuiSelectListbox>
+				</rui-select>
+			);
+		}
+
+		return <rui-select {...props}>{children}</rui-select>;
+	},
+	{ stylesheets: ['./select.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'] },
+);

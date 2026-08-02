@@ -320,6 +320,13 @@
     "./radio-group/styles.css": {
       "default": "./dist/components/ui/radio-group/radio-group.css"
     },
+    "./select": {
+      "types": "./dist/components/ui/select/index.d.ts",
+      "import": "./dist/components/ui/select/index.js"
+    },
+    "./select/styles.css": {
+      "default": "./dist/components/ui/select/select.css"
+    },
     "./sidebar": {
       "types": "./dist/components/ui/sidebar/index.d.ts",
       "import": "./dist/components/ui/sidebar/index.js"
