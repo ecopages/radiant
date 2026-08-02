@@ -292,6 +292,13 @@
     "./navigation-menu/styles.css": {
       "default": "./dist/components/ui/navigation-menu/navigation-menu.css"
     },
+    "./popover": {
+      "types": "./dist/components/ui/popover/index.d.ts",
+      "import": "./dist/components/ui/popover/index.js"
+    },
+    "./popover/styles.css": {
+      "default": "./dist/components/ui/popover/popover.css"
+    },
     "./radio-group": {
       "types": "./dist/components/ui/radio-group/index.d.ts",
       "import": "./dist/components/ui/radio-group/index.js"
