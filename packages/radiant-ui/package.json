@@ -212,6 +212,13 @@
     "./date-field/styles.css": {
       "default": "./dist/components/ui/date-field/date-field.css"
     },
+    "./date-range-picker": {
+      "types": "./dist/components/ui/date-range-picker/index.d.ts",
+      "import": "./dist/components/ui/date-range-picker/index.js"
+    },
+    "./date-range-picker/styles.css": {
+      "default": "./dist/components/ui/date-range-picker/date-range-picker.css"
+    },
     "./dialog": {
       "types": "./dist/components/ui/dialog/index.d.ts",
       "import": "./dist/components/ui/dialog/index.js"
