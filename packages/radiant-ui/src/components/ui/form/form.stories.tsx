@@ -1,8 +1,11 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiButton } from '../button/button';
 import { RuiCheckbox } from '../checkbox';
 import { RuiCombobox } from '../combobox';
+import { RuiDateField } from '../date-field';
+import { RuiDateRangePicker } from '../date-range-picker';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
 import { RuiInput } from '../input';
@@ -10,8 +13,18 @@ import { RuiLabel } from '../label';
 import { RuiListbox } from '../listbox';
 import { RuiRadioGroup } from '../radio-group';
 import { RuiSlider } from '../slider';
-import { RuiSpinbutton } from '../spinbutton';
+import { RuiNumberField } from '../number-field';
+import {
+	RuiSelect,
+	RuiSelectControl,
+	RuiSelectListbox,
+	RuiSelectSearch,
+	RuiSelectToggle,
+	RuiSelectTrigger,
+	RuiSelectValue,
+} from '../select';
 import { RuiSwitch } from '../switch';
+import { RuiTagGroup, RuiTagList } from '../tag-group';
 import { RuiTextarea } from '../textarea';
 import { findFieldControl, findFieldError } from './control-protocol';
 import '../field/field.script';
@@ -24,6 +37,25 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+const ANIMAL_OPTIONS = [
+	{ value: 'aardvark', label: 'Aardvark' },
+	{ value: 'cat', label: 'Cat' },
+	{ value: 'dog', label: 'Dog' },
+];
+
+const STATE_OPTIONS = [
+	{ value: 'ca', label: 'California' },
+	{ value: 'ny', label: 'New York' },
+	{ value: 'tx', label: 'Texas' },
+	{ value: 'wa', label: 'Washington' },
+];
+
+const CATEGORY_TAGS = [
+	{ value: 'news', label: 'News' },
+	{ value: 'travel', label: 'Travel' },
+	{ value: 'gaming', label: 'Gaming' },
+];
 
 const setNativeInputValue = (element: HTMLInputElement | HTMLTextAreaElement, value: string): void => {
 	const descriptor = Object.getOwnPropertyDescriptor(element.constructor.prototype, 'value');
@@ -307,12 +339,12 @@ export const WithSlider: Story = {
 	},
 };
 
-export const WithSpinbutton: Story = {
+export const WithNumberField: Story = {
 	render: () => (
 		<RuiForm defaultValues={{ quantity: 1 }}>
 			<RuiField name="quantity" rules={{ min: { value: 1, message: 'Minimum is 1' } }}>
 				<RuiLabel>Quantity</RuiLabel>
-				<RuiSpinbutton min={1} max={10} value={1} />
+				<RuiNumberField minValue={1} maxValue={10} value={1} />
 				<RuiFieldError />
 			</RuiField>
 			<RuiButton type="submit">Add to cart</RuiButton>
@@ -353,6 +385,180 @@ export const WithListbox: Story = {
 		await step('submit without selection shows error', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
 			await expectFieldError(canvasElement, 'framework', 'Pick a framework');
+		});
+	},
+};
+
+export const WithSelect: Story = {
+	render: () => (
+		<RuiForm defaultValues={{ animal: '' }}>
+			<RuiField name="animal" rules={{ required: 'Choose an animal' }}>
+				<RuiLabel>Animal</RuiLabel>
+				<RuiSelect placeholder="Select an animal" options={ANIMAL_OPTIONS} />
+				<RuiFieldDescription>Used for your profile.</RuiFieldDescription>
+				<RuiFieldError />
+			</RuiField>
+			<RuiButton type="submit">Continue</RuiButton>
+		</RuiForm>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+
+		await step('submit without selection shows error', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+			await expectFieldError(canvasElement, 'animal', 'Choose an animal');
+		});
+
+		await step('selecting a value clears the error', async () => {
+			const trigger = canvasElement.querySelector('[data-select-trigger]') as HTMLButtonElement;
+			await userEvent.click(trigger);
+			const options = Array.from(canvasElement.querySelectorAll('[role="option"]')) as HTMLElement[];
+			await userEvent.click(options[1]);
+			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+			await waitFor(() => {
+				expect(getFieldErrorMessage(canvasElement, 'animal')).toBeNull();
+			});
+			await expect(canvasElement.querySelector('rui-select')).toHaveAttribute('value', 'cat');
+		});
+	},
+};
+
+export const WithSelectTagGroup: Story = {
+	render: () => (
+		<RuiForm defaultValues={{ states: '' }}>
+			<RuiField name="states" rules={{ required: 'Select at least one state' }}>
+				<RuiLabel>States</RuiLabel>
+				<RuiSelect selectionMode="multiple" placeholder="Select states">
+					<RuiSelectControl>
+						<RuiSelectTrigger>
+							<RuiSelectValue>
+								<RuiTagGroup label="Selected states">
+									<RuiTagList />
+								</RuiTagGroup>
+							</RuiSelectValue>
+						</RuiSelectTrigger>
+						<RuiSelectToggle />
+					</RuiSelectControl>
+					<RuiSelectListbox>
+						<RuiAutocomplete>
+							<RuiSelectSearch aria-label="Search states" placeholder="Search states" />
+							<RuiAutocompleteCollection>
+								<RuiListbox embedded options={STATE_OPTIONS} />
+								<RuiAutocompleteEmpty>No results.</RuiAutocompleteEmpty>
+							</RuiAutocompleteCollection>
+						</RuiAutocomplete>
+					</RuiSelectListbox>
+				</RuiSelect>
+				<RuiFieldError />
+			</RuiField>
+			<RuiButton type="submit">Continue</RuiButton>
+		</RuiForm>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+		const select = canvasElement.querySelector('rui-select') as HTMLElement;
+
+		await step('submit without selection shows error', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+			await expectFieldError(canvasElement, 'states', 'Select at least one state');
+		});
+
+		await step('selecting options adds tags and clears the error', async () => {
+			const trigger = canvasElement.querySelector('[data-select-trigger]') as HTMLButtonElement;
+			await userEvent.click(trigger);
+			const options = Array.from(canvasElement.querySelectorAll('[role="option"]')) as HTMLElement[];
+			await userEvent.click(options[0]);
+			await userEvent.click(options[2]);
+			await expect(select).toHaveAttribute('value', 'ca,tx');
+			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+			await waitFor(() => {
+				expect(getFieldErrorMessage(canvasElement, 'states')).toBeNull();
+			});
+		});
+	},
+};
+
+export const WithTagGroup: Story = {
+	render: () => (
+		<RuiForm defaultValues={{ categories: '' }}>
+			<RuiField name="categories" rules={{ required: 'Select at least one category' }}>
+				<RuiLabel>Categories</RuiLabel>
+				<RuiTagGroup label="Categories" selectionMode="multiple" tags={CATEGORY_TAGS} />
+				<RuiFieldDescription>Click tags to toggle your interests.</RuiFieldDescription>
+				<RuiFieldError />
+			</RuiField>
+			<RuiButton type="submit">Save</RuiButton>
+		</RuiForm>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+		const tagGroup = canvasElement.querySelector('rui-tag-group') as HTMLElement;
+		const tags = Array.from(canvasElement.querySelectorAll('[data-tag]')) as HTMLElement[];
+
+		await step('submit without selection shows error', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
+			await expectFieldError(canvasElement, 'categories', 'Select at least one category');
+		});
+
+		await step('selecting a tag clears the error', async () => {
+			await userEvent.click(tags[0]);
+			await expect(tagGroup).toHaveAttribute('value', 'news');
+			await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
+			await waitFor(() => {
+				expect(getFieldErrorMessage(canvasElement, 'categories')).toBeNull();
+			});
+		});
+	},
+};
+
+export const WithDateField: Story = {
+	render: () => (
+		<RuiForm defaultValues={{ appointment: '' }} mode="onSubmit">
+			<RuiField name="appointment" rules={{ required: 'Pick a date' }}>
+				<RuiLabel>Appointment</RuiLabel>
+				<RuiDateField placeholder="mm/dd/yyyy" />
+				<RuiFieldDescription>Masked while typing; formatted with Intl on blur.</RuiFieldDescription>
+				<RuiFieldError />
+			</RuiField>
+			<RuiButton type="submit">Book</RuiButton>
+		</RuiForm>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+		const field = getFieldHost(canvasElement, 'appointment');
+		const input = field ? (findFieldControl(field) as HTMLInputElement) : null;
+
+		await step('submit without a date shows error', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Book' }));
+			await expectFieldError(canvasElement, 'appointment', 'Pick a date');
+		});
+
+		await step('invalid state is reflected on the input', async () => {
+			if (!input) {
+				return;
+			}
+			await expect(input).toHaveAttribute('aria-invalid', 'true');
+		});
+	},
+};
+
+export const WithDateRangePicker: Story = {
+	render: () => (
+		<RuiForm defaultValues={{ trip: '' }} mode="onSubmit">
+			<RuiField name="trip" rules={{ required: 'Pick trip dates' }}>
+				<RuiLabel>Trip dates</RuiLabel>
+				<RuiDateRangePicker placeholderStart="Start" placeholderEnd="End" />
+				<RuiFieldError />
+			</RuiField>
+			<RuiButton type="submit">Book</RuiButton>
+		</RuiForm>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+
+		await step('submit without dates shows error', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Book' }));
+			await expectFieldError(canvasElement, 'trip', 'Pick trip dates');
 		});
 	},
 };
