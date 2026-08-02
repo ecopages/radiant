@@ -219,6 +219,13 @@
     "./chip/styles.css": {
       "default": "./dist/components/ui/chip/chip.css"
     },
+    "./chip-list": {
+      "types": "./dist/components/ui/chip-list/index.d.ts",
+      "import": "./dist/components/ui/chip-list/index.js"
+    },
+    "./chip-list/styles.css": {
+      "default": "./dist/components/ui/chip-list/chip-list.css"
+    },
     "./combobox": {
       "types": "./dist/components/ui/combobox/index.d.ts",
       "import": "./dist/components/ui/combobox/index.js"
