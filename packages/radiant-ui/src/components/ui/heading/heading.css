@@ -1,0 +1,105 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-heading {
+		@apply flex flex-col text-on-background;
+	}
+
+	.rui-heading--align-start {
+		@apply items-start text-left;
+	}
+
+	.rui-heading--align-center {
+		@apply items-center text-center;
+	}
+
+	.rui-heading--align-center .rui-heading__description {
+		@apply mx-auto;
+	}
+
+	/**
+	 * Size packs: eyebrow stays close to the title (8–12px);
+	 * description sits farther below so the title+eyebrow read as one unit.
+	 */
+	.rui-heading--size-sm {
+		--heading-eyebrow-font-size: var(--text-xs);
+		--heading-title-font-size: var(--text-xl);
+		--heading-description-font-size: var(--text-sm);
+		--heading-title-leading: var(--leading-compact);
+		--heading-title-tracking: -0.015em;
+		--heading-eyebrow-gap: var(--space-2);
+		--heading-description-gap: var(--space-3);
+		--heading-description-measure: 36rem;
+	}
+
+	.rui-heading--size-md {
+		--heading-eyebrow-font-size: var(--text-xs);
+		--heading-title-font-size: var(--text-3xl);
+		--heading-description-font-size: var(--text-body);
+		--heading-title-leading: 1.2;
+		--heading-title-tracking: -0.02em;
+		--heading-eyebrow-gap: var(--space-2);
+		--heading-description-gap: var(--space-4);
+		--heading-description-measure: 40rem;
+	}
+
+	.rui-heading--size-lg {
+		--heading-eyebrow-font-size: var(--text-sm);
+		--heading-title-font-size: var(--text-4xl);
+		--heading-description-font-size: var(--text-lg);
+		--heading-title-leading: 1.15;
+		--heading-title-tracking: -0.025em;
+		--heading-eyebrow-gap: var(--space-3);
+		--heading-description-gap: var(--space-5);
+		--heading-description-measure: 42rem;
+	}
+
+	.rui-heading--size-xl {
+		--heading-eyebrow-font-size: var(--text-sm);
+		--heading-title-font-size: var(--text-4xl);
+		--heading-description-font-size: var(--text-lg);
+		--heading-title-leading: 1.1;
+		--heading-title-tracking: -0.03em;
+		--heading-eyebrow-gap: var(--space-3);
+		--heading-description-gap: var(--space-6);
+		--heading-description-measure: 36rem;
+	}
+
+	.rui-heading__eyebrow {
+		@apply m-0 font-semibold uppercase text-primary;
+		font-size: var(--heading-eyebrow-font-size);
+		letter-spacing: 0.08em;
+		line-height: var(--leading-compact);
+	}
+
+	.rui-heading__eyebrow:not(:last-child) {
+		margin-bottom: var(--heading-eyebrow-gap);
+	}
+
+	.rui-heading__eyebrow:empty {
+		@apply hidden;
+	}
+
+	.rui-heading__title {
+		font-size: var(--heading-title-font-size);
+		line-height: var(--heading-title-leading, var(--leading-compact));
+		letter-spacing: var(--heading-title-tracking, -0.02em);
+		text-wrap: balance;
+	}
+
+	.rui-heading__description {
+		@apply m-0 text-on-surface;
+		font-size: var(--heading-description-font-size);
+		line-height: var(--leading-relaxed);
+		max-width: var(--heading-description-measure, 40rem);
+		text-wrap: pretty;
+	}
+
+	.rui-heading__title + .rui-heading__description {
+		margin-top: var(--heading-description-gap);
+	}
+
+	.rui-heading__description:empty {
+		@apply hidden;
+	}
+}
