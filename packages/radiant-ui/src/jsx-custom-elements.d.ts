@@ -8,7 +8,6 @@ import type { RuiDialog, RuiDialogProps } from './components/ui/dialog/dialog.sc
 import type { RuiDisclosureGroup, RuiDisclosureGroupProps } from './components/ui/disclosure/disclosure-group.script';
 import type { RuiDisclosure, RuiDisclosureProps } from './components/ui/disclosure/disclosure.script';
 import type { RuiField, RuiFieldProps } from './components/ui/field/field.script';
-import type { RuiFeed, RuiFeedProps } from './components/ui/feed/feed.script';
 import type { RuiForm, RuiFormProps } from './components/ui/form/form.script';
 import type { RuiGrid, RuiGridProps } from './components/ui/grid/grid.script';
 import type { RuiListbox, RuiListboxProps } from './components/ui/listbox/listbox.script';
@@ -44,7 +43,6 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-dialog': JsxCustomElementAttributes<RuiDialog, RuiDialogProps>;
 		'rui-disclosure': JsxCustomElementAttributes<RuiDisclosure, RuiDisclosureProps>;
 		'rui-disclosure-group': JsxCustomElementAttributes<RuiDisclosureGroup, RuiDisclosureGroupProps>;
-		'rui-feed': JsxCustomElementAttributes<RuiFeed, RuiFeedProps>;
 		'rui-field': JsxCustomElementAttributes<RuiField, RuiFieldProps>;
 		'rui-form': JsxCustomElementAttributes<RuiForm, RuiFormProps>;
 		'rui-grid': JsxCustomElementAttributes<RuiGrid, RuiGridProps>;
