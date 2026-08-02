@@ -1,0 +1,19 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-chip {
+		@apply inline-flex items-center rounded-pill px-2 py-0.5 font-medium text-xs;
+	}
+
+	.rui-chip--default {
+		@apply border border-border bg-surface-container-low text-on-surface;
+	}
+
+	.rui-chip--muted {
+		@apply bg-surface-container text-on-surface;
+	}
+
+	.rui-chip--primary {
+		@apply bg-primary-container text-on-primary-container;
+	}
+}
