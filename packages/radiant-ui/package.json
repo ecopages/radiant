@@ -184,6 +184,13 @@
       "types": "./dist/components/ui/button/index.d.ts",
       "import": "./dist/components/ui/button/index.js"
     },
+    "./button-group": {
+      "types": "./dist/components/ui/button-group/index.d.ts",
+      "import": "./dist/components/ui/button-group/index.js"
+    },
+    "./button-group/styles.css": {
+      "default": "./dist/components/ui/button-group/button-group.css"
+    },
     "./calendar": {
       "types": "./dist/components/ui/calendar/index.d.ts",
       "import": "./dist/components/ui/calendar/index.js"
