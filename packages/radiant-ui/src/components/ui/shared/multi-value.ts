@@ -1,6 +1,9 @@
 /** Parses the comma-separated value protocol used by multi-select controls. */
 export function parseMultiValue(value: string): string[] {
-	return value.split(',').map((item) => item.trim()).filter(Boolean);
+	return value
+		.split(',')
+		.map((item) => item.trim())
+		.filter(Boolean);
 }
 
 /** Serializes multi-select values into the public custom-element value protocol. */

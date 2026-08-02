@@ -103,10 +103,7 @@ function normalizeYear(value: number): number {
 }
 
 /** Maps masked digits back to year/month/day using the locale field order. */
-export function maskedDigitsToParts(
-	digits: string,
-	locale: IntlLocale,
-): Partial<Record<DatePartType, number>> | null {
+export function maskedDigitsToParts(digits: string, locale: IntlLocale): Partial<Record<DatePartType, number>> | null {
 	const order = getNumericPartOrder(locale);
 	let cursor = 0;
 	const values: Partial<Record<DatePartType, number>> = {};
@@ -134,11 +131,7 @@ export function partsToDate(parts: Partial<Record<DatePartType, number>>): Date 
 	}
 
 	const date = new Date(parts.year, parts.month - 1, parts.day);
-	if (
-		date.getFullYear() !== parts.year ||
-		date.getMonth() !== parts.month - 1 ||
-		date.getDate() !== parts.day
-	) {
+	if (date.getFullYear() !== parts.year || date.getMonth() !== parts.month - 1 || date.getDate() !== parts.day) {
 		return null;
 	}
 

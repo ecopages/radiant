@@ -60,11 +60,7 @@ function matchesInput(char: string, kind: MaskInputKind, pattern?: RegExp): bool
 	return char.length > 0;
 }
 
-function parseMaskPatternInternal(
-	pattern: string,
-	definitions?: MaskDefinitions,
-	optional = false,
-): MaskToken[] {
+function parseMaskPatternInternal(pattern: string, definitions?: MaskDefinitions, optional = false): MaskToken[] {
 	const tokens: MaskToken[] = [];
 	let index = 0;
 
@@ -151,9 +147,7 @@ export function parseMaskPattern(pattern: string, definitions?: MaskDefinitions)
 }
 
 export function maskInputSlotCount(tokens: MaskToken[], options: { requiredOnly?: boolean } = {}): number {
-	return tokens.filter(
-		(token) => token.type === 'input' && (!options.requiredOnly || !token.optional),
-	).length;
+	return tokens.filter((token) => token.type === 'input' && (!options.requiredOnly || !token.optional)).length;
 }
 
 /** @deprecated Use `maskInputSlotCount`. */

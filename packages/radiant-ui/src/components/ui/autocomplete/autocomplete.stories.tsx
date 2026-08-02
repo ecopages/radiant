@@ -14,12 +14,7 @@ import {
 	RuiSelectValue,
 } from '../select';
 import { RuiTagGroup } from '../tag-group';
-import {
-	RuiAutocomplete,
-	RuiAutocompleteCollection,
-	RuiAutocompleteEmpty,
-	RuiAutocompleteInput,
-} from './autocomplete';
+import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty, RuiAutocompleteInput } from './autocomplete';
 
 const TAG_OPTIONS = [
 	{ value: 'news', label: 'News' },
@@ -66,8 +61,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const getInput = (root: HTMLElement) => root.querySelector('[data-autocomplete-input]') as HTMLInputElement;
-const getOptions = (root: HTMLElement) =>
-	Array.from(root.querySelectorAll('[role="option"]')) as HTMLElement[];
+const getOptions = (root: HTMLElement) => Array.from(root.querySelectorAll('[role="option"]')) as HTMLElement[];
 const getVisibleOptions = (root: HTMLElement) => getOptions(root).filter((option) => !option.hidden);
 const getTags = (root: HTMLElement) => Array.from(root.querySelectorAll('[data-tag]')) as HTMLElement[];
 const getVisibleTags = (root: HTMLElement) => getTags(root).filter((tag) => !tag.hidden);

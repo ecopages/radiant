@@ -164,7 +164,10 @@ export class RuiCalendar extends RadiantElement {
 		const currentIndex = cells.findIndex((cell) => cell.iso === this.focusedIso);
 		const nextIndex =
 			currentIndex < 0
-				? Math.max(0, cells.findIndex((cell) => cell.inMonth))
+				? Math.max(
+						0,
+						cells.findIndex((cell) => cell.inMonth),
+					)
 				: (currentIndex + delta + cells.length) % cells.length;
 		const next = cells[nextIndex];
 		if (!next) {
@@ -221,7 +224,11 @@ export class RuiCalendar extends RadiantElement {
 			return;
 		}
 
-		const result = advanceRangeSelection(parseIsoRange(this.value), { anchor: this.rangeAnchor, hover: this.rangeHover }, iso);
+		const result = advanceRangeSelection(
+			parseIsoRange(this.value),
+			{ anchor: this.rangeAnchor, hover: this.rangeHover },
+			iso,
+		);
 		this.rangeAnchor = result.draft.anchor;
 		this.rangeHover = result.draft.hover;
 

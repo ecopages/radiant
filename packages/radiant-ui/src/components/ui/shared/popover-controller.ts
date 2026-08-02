@@ -3,11 +3,7 @@ import type { RuiPlacement } from './placement';
 import { mountPortal, type PortalHandle } from './portal';
 
 /** Whether `node` is inside the anchor or floating surface. */
-export function popoverContains(
-	anchor: HTMLElement | null,
-	floating: HTMLElement | null,
-	node: Node | null,
-): boolean {
+export function popoverContains(anchor: HTMLElement | null, floating: HTMLElement | null, node: Node | null): boolean {
 	if (!node) {
 		return false;
 	}

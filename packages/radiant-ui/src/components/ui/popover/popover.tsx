@@ -9,12 +9,7 @@ export type RuiPopoverContentProps = JsxHtmlPropsWithChildren<{
 }>;
 
 /** Popover body slotted into the floating surface. */
-export function RuiPopoverContent({
-	children,
-	slot = 'content',
-	class: className,
-	...props
-}: RuiPopoverContentProps) {
+export function RuiPopoverContent({ children, slot = 'content', class: className, ...props }: RuiPopoverContentProps) {
 	return (
 		<div {...props} slot={slot} class={cx(className)}>
 			{children}

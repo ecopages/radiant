@@ -81,10 +81,7 @@ export function isIsoInSpan(iso: string, range: IsoRange): boolean {
 	return compareIso(iso, normalized.start) >= 0 && compareIso(iso, normalized.end) <= 0;
 }
 
-export function getActiveRangeBounds(
-	committed: IsoRange | null,
-	draft: RangeSelectionDraft,
-): IsoRange | null {
+export function getActiveRangeBounds(committed: IsoRange | null, draft: RangeSelectionDraft): IsoRange | null {
 	if (draft.anchor) {
 		const hover = draft.hover ?? draft.anchor;
 		return normalizeRange(draft.anchor, hover);

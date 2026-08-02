@@ -11,12 +11,7 @@ export type RuiSelectControlProps = JsxHtmlPropsWithChildren<{
 }>;
 
 /** Trigger row wrapper for the value button and toggle icon. */
-export function RuiSelectControl({
-	children,
-	slot = 'trigger',
-	class: className,
-	...props
-}: RuiSelectControlProps) {
+export function RuiSelectControl({ children, slot = 'trigger', class: className, ...props }: RuiSelectControlProps) {
 	return (
 		<div {...props} slot={slot} class={cx('rui-select__control', className)}>
 			{children}
@@ -30,12 +25,7 @@ export type RuiSelectTriggerProps = JsxHtmlPropsWithChildren<{
 }>;
 
 /** Value button with `role="combobox"`. Place `RuiSelectValue` inside. */
-export function RuiSelectTrigger({
-	children,
-	class: className,
-	disabled,
-	...props
-}: RuiSelectTriggerProps) {
+export function RuiSelectTrigger({ children, class: className, disabled, ...props }: RuiSelectTriggerProps) {
 	return (
 		<button
 			{...props}
@@ -102,14 +92,15 @@ export type RuiSelectListboxProps = JsxHtmlPropsWithChildren<{
 }>;
 
 /** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside. */
-export function RuiSelectListbox({
-	children,
-	slot = 'listbox',
-	class: className,
-	...props
-}: RuiSelectListboxProps) {
+export function RuiSelectListbox({ children, slot = 'listbox', class: className, ...props }: RuiSelectListboxProps) {
 	return (
-		<div {...props} slot={slot} data-select-listbox class={cx('rui-select__listbox rui-popover rui-popover--listbox rui-floating', className)} hidden>
+		<div
+			{...props}
+			slot={slot}
+			data-select-listbox
+			class={cx('rui-select__listbox rui-popover rui-popover--listbox rui-floating', className)}
+			hidden
+		>
 			{children}
 		</div>
 	);

@@ -13,5 +13,12 @@ export const RuiDateRangePicker = defineRadiantView(
 	({ children, ...props }: JsxHtmlPropsWithChildren<RuiDateRangePickerProps & { slot?: string }>) => (
 		<rui-date-range-picker {...props}>{children}</rui-date-range-picker>
 	),
-	{ stylesheets: ['./date-range-picker.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css', '../calendar/calendar.css'] },
+	{
+		stylesheets: [
+			'./date-range-picker.css',
+			'../shared/control-toggle.css',
+			'../../../lib/icons/icons.css',
+			'../calendar/calendar.css',
+		],
+	},
 );

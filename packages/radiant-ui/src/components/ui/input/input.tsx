@@ -34,15 +34,7 @@ export type RuiInputProps = JsxHtmlProps<{
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
  */
 export function RuiInput(props: RuiInputProps) {
-	const {
-		size = 'md',
-		class: className,
-		type = 'text',
-		mask,
-		placeholder,
-		'on:input': onInput,
-		...host
-	} = props;
+	const { size = 'md', class: className, type = 'text', mask, placeholder, 'on:input': onInput, ...host } = props;
 
 	const resolvedPlaceholder = mask ? maskToPlaceholder(mask) : placeholder;
 

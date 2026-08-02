@@ -34,7 +34,12 @@ export function RuiAvatar({
 	const label = fallback ?? (alt ? initialsFrom(alt) : undefined);
 
 	return (
-		<span {...props} class={cx('rui-avatar', `rui-avatar--${size}`, className)} role={src ? undefined : 'img'} aria-label={src ? undefined : alt || fallback}>
+		<span
+			{...props}
+			class={cx('rui-avatar', `rui-avatar--${size}`, className)}
+			role={src ? undefined : 'img'}
+			aria-label={src ? undefined : alt || fallback}
+		>
 			{src ? (
 				<img class="rui-avatar__image" src={src} alt={alt} />
 			) : (

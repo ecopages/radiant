@@ -16,7 +16,14 @@ export {
 	toggleMultipleIso,
 } from './selection';
 export type { DaySelectionAppearance, RangeSelectionDraft } from './selection';
-export { formatDisplayDate, formatDateRange, formatMonthYear, formatTodayLabel, getDateTimeFormat, getWeekdayLabels } from './formatters';
+export {
+	formatDisplayDate,
+	formatDateRange,
+	formatMonthYear,
+	formatTodayLabel,
+	getDateTimeFormat,
+	getWeekdayLabels,
+} from './formatters';
 export { dateToIso, isoToDate, isIsoInRange } from './iso';
 export { getDatePartOrder, getDateSeparators, parseLocaleDateString } from './parts';
 export {
@@ -27,5 +34,12 @@ export {
 	maxSegmentLength,
 	segmentsToDate,
 } from './segments';
-export type { CalendarDayCell, CalendarWeek, DateDisplayStyle, DateGranularity, DatePartType, IntlLocale } from './types';
+export type {
+	CalendarDayCell,
+	CalendarWeek,
+	DateDisplayStyle,
+	DateGranularity,
+	DatePartType,
+	IntlLocale,
+} from './types';
 export type { DateSegmentModel, DateSegmentType } from './segments';

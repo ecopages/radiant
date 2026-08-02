@@ -35,7 +35,9 @@ export const Default: Story = {
 		await step('remove button emits removal', async () => {
 			const remove = tags[0].querySelector('[data-tag-remove]') as HTMLButtonElement;
 			await userEvent.click(remove);
-			await expect((canvasElement.querySelector('rui-tag-group') as HTMLElement & { value?: string }).value ?? '').toBe('');
+			await expect(
+				(canvasElement.querySelector('rui-tag-group') as HTMLElement & { value?: string }).value ?? '',
+			).toBe('');
 		});
 	},
 };

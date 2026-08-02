@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { applyDateMask, buildDateMaskPattern, getDefaultDatePlaceholder, maskedDigitsToParts, partsToDate } from './date-mask';
+import {
+	applyDateMask,
+	buildDateMaskPattern,
+	getDefaultDatePlaceholder,
+	maskedDigitsToParts,
+	partsToDate,
+} from './date-mask';
 
 describe('applyDateMask', () => {
 	it('inserts literals for en-US', () => {
