@@ -7,6 +7,7 @@ export * from './components/ui/alert';
 export * from './components/ui/autocomplete';
 export * from './components/ui/breadcrumb';
 export * from './components/ui/button';
+export * from './components/ui/calendar';
 export * from './components/ui/carousel';
 export * from './components/ui/checkbox';
 export * from './components/ui/combobox';

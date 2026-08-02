@@ -1,0 +1,141 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-calendar {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-calendar {
+		@apply rounded-container border border-border bg-background p-3 text-sm shadow-md;
+	}
+
+	.rui-calendar--multi {
+		@apply w-auto max-w-full;
+	}
+
+	.rui-calendar__months {
+		@apply flex flex-col gap-4 sm:flex-row sm:gap-3;
+	}
+
+	.rui-calendar__month-panel {
+		@apply w-64 shrink-0;
+	}
+
+	.rui-calendar__header {
+		@apply mb-2 flex items-center justify-between gap-2;
+	}
+
+	.rui-calendar__nav-spacer {
+		@apply inline-flex h-8 w-8 shrink-0;
+	}
+
+	.rui-calendar__month {
+		@apply flex-1 text-center font-medium text-on-background;
+	}
+
+	.rui-calendar__nav {
+		@apply inline-flex h-8 w-8 items-center justify-center rounded-control border-0 bg-transparent text-on-surface;
+		@apply cursor-pointer;
+	}
+
+	.rui-calendar__nav:hover:not(:disabled) {
+		@apply bg-surface;
+	}
+
+	.rui-calendar__nav:focus-visible {
+		@apply ring-2 ring-focus-ring outline-none;
+	}
+
+	.rui-calendar__nav:disabled {
+		@apply cursor-not-allowed opacity-muted;
+	}
+
+	.rui-calendar__weekdays {
+		@apply mb-1 grid grid-cols-7 gap-0 text-center;
+	}
+
+	.rui-calendar__weekday {
+		@apply py-1 text-xs font-medium text-on-surface;
+	}
+
+	.rui-calendar__grid {
+		@apply flex flex-col gap-0;
+	}
+
+	.rui-calendar__week {
+		@apply grid grid-cols-7 gap-0;
+	}
+
+	.rui-calendar__day {
+		@apply relative inline-flex h-9 w-full items-center justify-center border-0 bg-transparent text-on-background;
+		@apply cursor-pointer rounded-control;
+	}
+
+	.rui-calendar__day:hover:not(:disabled):not([aria-selected='true']) {
+		@apply bg-surface-container-low;
+	}
+
+	.rui-calendar__day[data-outside='true']:hover:not(:disabled):not([aria-selected='true']) {
+		@apply text-on-background opacity-100;
+	}
+
+	.rui-calendar__day:focus-visible {
+		@apply z-10 ring-2 ring-focus-ring outline-none;
+	}
+
+	.rui-calendar__day[aria-selected='true']:not([data-range-middle='true']) {
+		@apply rounded-control bg-primary text-on-primary;
+	}
+
+	.rui-calendar__day[aria-selected='true']:not([data-range-middle='true']):hover:not(:disabled) {
+		@apply bg-primary-container text-on-primary-container;
+	}
+
+	.rui-calendar__day[data-range-middle='true'] {
+		@apply rounded-none bg-primary/15 text-on-background;
+	}
+
+	.rui-calendar__day[data-range-middle='true']:hover:not(:disabled) {
+		@apply bg-primary/25;
+	}
+
+	.rui-calendar__day[data-range-start='true']:not([data-range-end='true']) {
+		@apply rounded-l-control rounded-r-none;
+	}
+
+	.rui-calendar__day[data-range-end='true']:not([data-range-start='true']) {
+		@apply rounded-l-none rounded-r-control;
+	}
+
+	.rui-calendar__day[aria-current='date']:not([aria-selected='true']) {
+		@apply font-semibold underline;
+	}
+
+	.rui-calendar__day[data-outside='true'] {
+		@apply text-on-surface opacity-muted;
+	}
+
+	.rui-calendar__day:disabled {
+		@apply cursor-not-allowed opacity-muted;
+	}
+
+	.rui-calendar__footer {
+		@apply mt-2 flex justify-center border-t border-border pt-2;
+	}
+
+	.rui-calendar__today {
+		@apply cursor-pointer rounded-control border-0 bg-transparent px-3 py-1 text-sm text-primary;
+	}
+
+	.rui-calendar__today:hover:not(:disabled) {
+		@apply bg-surface;
+	}
+
+	.rui-calendar__today:focus-visible {
+		@apply ring-2 ring-focus-ring outline-none;
+	}
+
+	.rui-calendar__today:disabled {
+		@apply cursor-not-allowed opacity-muted;
+	}
+}
