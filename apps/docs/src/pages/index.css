@@ -18,7 +18,7 @@
 }
 
 .home-hero__code {
-	@apply hidden lg:col-span-5 lg:flex lg:flex-col;
+	@apply flex flex-col lg:col-span-5;
 	rui-tabs {
 		@apply rounded-none;
 	}
