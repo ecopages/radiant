@@ -177,6 +177,13 @@
       "types": "./dist/components/ui/button/index.d.ts",
       "import": "./dist/components/ui/button/index.js"
     },
+    "./calendar": {
+      "types": "./dist/components/ui/calendar/index.d.ts",
+      "import": "./dist/components/ui/calendar/index.js"
+    },
+    "./calendar/styles.css": {
+      "default": "./dist/components/ui/calendar/calendar.css"
+    },
     "./carousel": {
       "types": "./dist/components/ui/carousel/index.d.ts",
       "import": "./dist/components/ui/carousel/index.js"
