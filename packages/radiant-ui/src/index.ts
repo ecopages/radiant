@@ -30,6 +30,7 @@ export * from './components/ui/slider';
 export * from './components/ui/spinbutton';
 export * from './components/ui/switch';
 export * from './components/ui/tabs';
+export * from './components/ui/tag-group';
 export * from './components/ui/textarea';
 export * from './components/ui/toast';
 export * from './components/ui/toc';
