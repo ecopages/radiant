@@ -6,6 +6,14 @@ export type RuiListboxProps = {
 	value?: string;
 	label?: string;
 	disabled?: boolean;
+	/**
+	 * When true, the listbox is owned by a parent (e.g. `rui-select`). Selection and
+	 * keyboard interaction are handled by the parent; border chrome is omitted so the
+	 * parent popup can provide it.
+	 */
+	embedded?: boolean;
+	/** When set, overrides the default border (`true` when standalone, `false` when embedded). */
+	bordered?: boolean;
 };
 
 export type RuiListboxChangeDetail = { value: string };
@@ -29,6 +37,8 @@ export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) embedded: boolean;
+	@prop({ type: Boolean, reflect: true }) bordered: boolean | undefined;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiListboxChangeDetail>;
@@ -38,12 +48,16 @@ export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		queueMicrotask(() => this.sync());
+		queueMicrotask(() => {
+			this.sync();
+			this.syncPresentation();
+		});
 	}
 
-	@onUpdated(['value', 'disabled'])
+	@onUpdated(['value', 'disabled', 'embedded', 'bordered'])
 	onPropsUpdated(): void {
 		this.sync();
+		this.syncPresentation();
 	}
 
 	private getOptions(): HTMLElement[] {
@@ -55,7 +69,7 @@ export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 		for (const option of options) {
 			const selected = option.getAttribute('data-value') === this.value;
 			option.setAttribute('aria-selected', String(selected));
-			option.tabIndex = selected || (!this.value && option === options[0]) ? 0 : -1;
+			option.tabIndex = this.embedded ? -1 : selected || (!this.value && option === options[0]) ? 0 : -1;
 		}
 	}
 
@@ -69,12 +83,19 @@ export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 
 	@onEvent({ selector: '[role="option"]', type: 'click' })
 	onOptionClick(event: Event): void {
+		if (this.embedded) {
+			return;
+		}
+
 		const option = (event.target as HTMLElement).closest('[role="option"]') as HTMLElement | null;
 		if (option && this.contains(option)) this.select(option);
 	}
 
 	@onEvent({ selector: '[role="option"]', type: 'keydown' })
 	onOptionKeydown(event: KeyboardEvent): void {
+		if (this.embedded) {
+			return;
+		}
 		const options = this.getOptions();
 		const current = (event.target as HTMLElement).closest('[role="option"]') as HTMLElement | null;
 		if (!current) return;
@@ -97,10 +118,29 @@ export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 		this.select(result.item);
 	}
 
+	private isBordered(): boolean {
+		if (this.bordered != null) {
+			return this.bordered;
+		}
+
+		return !this.embedded;
+	}
+
+	private syncPresentation(): void {
+		const root = this.querySelector<HTMLElement>('.rui-listbox');
+		if (!root) {
+			return;
+		}
+
+		root.classList.toggle('rui-listbox--bordered', this.isBordered());
+	}
+
 	override render() {
+		const bordered = this.isBordered();
+
 		return (
 			<div
-				class="rui-listbox"
+				class={`rui-listbox${bordered ? ' rui-listbox--bordered' : ''}`}
 				role="listbox"
 				data-rui-control
 				data-rui-control-type="text"

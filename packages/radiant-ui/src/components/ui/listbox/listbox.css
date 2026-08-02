@@ -6,18 +6,42 @@ rui-listbox {
 
 @layer components {
 	.rui-listbox {
-		@apply max-h-60 overflow-auto rounded-container border border-border bg-background p-1 rui-sheen;
+		@apply grid max-h-60 gap-0.5 overflow-auto bg-background p-1;
+	}
+
+	.rui-listbox--bordered {
+		@apply rounded-container border border-border;
 	}
 
 	.rui-listbox__option {
-		@apply cursor-pointer rounded-control px-3 py-2 text-sm;
+		@apply cursor-pointer rounded-control px-3 py-2 text-sm text-on-background;
 	}
 
-	.rui-listbox__option[aria-selected='true'] {
+	.rui-listbox__option[aria-disabled='true'] {
+		@apply cursor-not-allowed opacity-muted;
+	}
+
+	.rui-listbox__option:hover:not([aria-disabled='true']):not([data-active]):not([aria-selected='true']) {
+		@apply bg-surface-container-low;
+	}
+
+	.rui-listbox__option[data-active]:not([aria-selected='true']):not([aria-disabled='true']) {
+		@apply bg-surface-container text-on-background;
+	}
+
+	.rui-listbox__option[aria-selected='true']:not([aria-disabled='true']) {
 		@apply bg-primary text-on-primary rui-sheen;
 	}
 
+	.rui-listbox__option[aria-selected='true'][data-active]:not([aria-disabled='true']) {
+		@apply ring-2 ring-inset ring-on-primary/40;
+	}
+
 	.rui-listbox__option:focus-visible {
-		@apply outline-none ring-2 ring-focus-ring;
+		@apply bg-surface-container outline-none ring-2 ring-focus-ring;
+	}
+
+	.rui-listbox__option[aria-selected='true']:focus-visible {
+		@apply bg-primary text-on-primary ring-focus-ring;
 	}
 }
