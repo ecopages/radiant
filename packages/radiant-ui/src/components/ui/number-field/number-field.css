@@ -1,0 +1,66 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-number-field {
+	@apply inline-flex w-full;
+}
+
+@layer components {
+	.rui-number-field {
+		@apply w-full text-sm;
+	}
+
+	.rui-number-field__group {
+		@apply inline-flex w-full min-w-0 items-stretch overflow-hidden border border-border bg-background;
+		border-radius: var(--radius-control);
+		transition-duration: var(--duration-normal);
+	}
+
+	.rui-number-field__group:focus-within {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-number-field__group[data-disabled],
+	.rui-number-field__group:has(.rui-number-field__input:disabled) {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-number-field__group[aria-invalid='true'] {
+		@apply border-error;
+	}
+
+	.rui-number-field__input {
+		@apply min-w-0 flex-1 border-0 bg-transparent text-on-background outline-none;
+		padding-inline: var(--space-control-x);
+		padding-block: var(--space-control-y);
+		font-size: var(--text-control, 0.875rem);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.rui-number-field__input[data-readonly],
+	.rui-number-field__input:read-only {
+		@apply cursor-default;
+	}
+
+	.rui-number-field__stepper {
+		@apply inline-flex shrink-0 cursor-default items-center justify-center border-0 border-l border-border bg-transparent text-on-surface;
+		padding-inline: var(--space-control-y);
+		min-inline-size: var(--size-control-sm);
+		transition-duration: var(--duration-normal);
+	}
+
+	.rui-number-field__stepper:hover:not(:disabled) {
+		@apply bg-surface;
+	}
+
+	.rui-number-field__stepper:active:not(:disabled) {
+		@apply bg-surface-container-low;
+	}
+
+	.rui-number-field__stepper:disabled {
+		@apply cursor-not-allowed opacity-muted;
+	}
+
+	.rui-number-field__stepper:focus-visible {
+		@apply relative z-dropdown outline-none ring-2 ring-inset ring-focus-ring;
+	}
+}
