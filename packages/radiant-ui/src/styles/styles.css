@@ -4,6 +4,7 @@
  */
 @import './components/button.css';
 @import '../components/ui/alert/alert.css';
+@import '../components/ui/autocomplete/autocomplete.css';
 @import '../components/ui/breadcrumb/breadcrumb.css';
 @import '../components/ui/carousel/carousel.css';
 @import '../components/ui/checkbox/checkbox.css';

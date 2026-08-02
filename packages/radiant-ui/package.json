@@ -159,6 +159,13 @@
     "./alert/styles.css": {
       "default": "./dist/components/ui/alert/alert.css"
     },
+    "./autocomplete": {
+      "types": "./dist/components/ui/autocomplete/index.d.ts",
+      "import": "./dist/components/ui/autocomplete/index.js"
+    },
+    "./autocomplete/styles.css": {
+      "default": "./dist/components/ui/autocomplete/autocomplete.css"
+    },
     "./breadcrumb": {
       "types": "./dist/components/ui/breadcrumb/index.d.ts",
       "import": "./dist/components/ui/breadcrumb/index.js"
