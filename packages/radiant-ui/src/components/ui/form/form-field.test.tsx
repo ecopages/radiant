@@ -6,10 +6,12 @@ import { RuiInput } from '../input';
 import { RuiTextarea } from '../textarea';
 import { RuiLabel } from '../label';
 import { RuiSwitch } from '../switch';
+import { RuiDateField } from '../date-field';
 import { RuiForm } from './form';
 import '../field/field.script';
 import './form.script';
 import '../switch/switch.script';
+import '../date-field/date-field.script';
 import { findFieldControl, findFieldError } from './control-protocol';
 import type { RuiField as RuiFieldElement } from '../field/field.script';
 import type { RuiForm as RuiFormElement } from './form.script';
@@ -257,6 +259,38 @@ describe('rui-field projected content discovery', () => {
 
 		expect(findFieldError(field)?.textContent).toBe('');
 		expect(findFieldError(field)?.hidden).toBe(true);
+
+		host.remove();
+	});
+
+	it('validates an empty date field inside a form', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ appointment: '' }} mode="onSubmit">
+				<RuiField name="appointment" rules={{ required: 'Pick a date' }}>
+					<RuiLabel>Appointment</RuiLabel>
+					<RuiDateField placeholder="mm/dd/yyyy" />
+					<RuiFieldError />
+				</RuiField>
+				<RuiButton type="submit">Book</RuiButton>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-date-field');
+		await flushRender();
+		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		const save = host.querySelector('button[type="submit"]') as HTMLButtonElement;
+		await save.click();
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(findFieldError(field)?.textContent).toBe('Pick a date');
 
 		host.remove();
 	});
