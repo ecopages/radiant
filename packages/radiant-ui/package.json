@@ -271,6 +271,13 @@
     "./headline/styles.css": {
       "default": "./dist/components/ui/headline/headline.css"
     },
+    "./heading": {
+      "types": "./dist/components/ui/heading/index.d.ts",
+      "import": "./dist/components/ui/heading/index.js"
+    },
+    "./heading/styles.css": {
+      "default": "./dist/components/ui/heading/heading.css"
+    },
     "./input": {
       "types": "./dist/components/ui/input/index.d.ts",
       "import": "./dist/components/ui/input/index.js"

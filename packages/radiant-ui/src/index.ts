@@ -20,6 +20,7 @@ export * from './components/ui/field';
 export * from './components/ui/form';
 export * from './components/ui/grid';
 export * from './components/ui/headline';
+export * from './components/ui/heading';
 export * from './components/ui/input';
 export * from './components/ui/label';
 export * from './components/ui/listbox';
