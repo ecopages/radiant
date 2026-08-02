@@ -52,7 +52,13 @@ export function RuiTagRemove({
 	...props
 }: RuiTagRemoveProps) {
 	return (
-		<button {...props} type="button" data-tag-remove class={cx('rui-tag__remove', className)} aria-label={ariaLabel}>
+		<button
+			{...props}
+			type="button"
+			data-tag-remove
+			class={cx('rui-tag__remove', className)}
+			aria-label={ariaLabel}
+		>
 			{children ?? <span aria-hidden="true">×</span>}
 		</button>
 	);

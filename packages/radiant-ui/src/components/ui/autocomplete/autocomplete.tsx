@@ -38,11 +38,7 @@ export type RuiAutocompleteCollectionProps = JsxHtmlPropsWithChildren<{
 }>;
 
 /** Wrapper around the filterable collection inside `RuiAutocomplete`. */
-export function RuiAutocompleteCollection({
-	children,
-	class: className,
-	...props
-}: RuiAutocompleteCollectionProps) {
+export function RuiAutocompleteCollection({ children, class: className, ...props }: RuiAutocompleteCollectionProps) {
 	return (
 		<div {...props} data-autocomplete-collection class={cx('rui-autocomplete__collection', className)}>
 			{children}

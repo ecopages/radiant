@@ -541,7 +541,11 @@ export class RuiSelect extends RadiantElement {
 		this.handleTriggerKeydown(event);
 	}
 
-	@onEvent({ selector: '[data-select-listbox] [data-autocomplete-input]', type: 'keydown', options: { capture: true } })
+	@onEvent({
+		selector: '[data-select-listbox] [data-autocomplete-input]',
+		type: 'keydown',
+		options: { capture: true },
+	})
 	onSearchKeydown(event: KeyboardEvent): void {
 		this.handleListboxKeydown(event);
 	}

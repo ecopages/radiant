@@ -1,18 +1,11 @@
 export type NumberFormatOptions = Intl.NumberFormatOptions;
 export { resolveLocale } from '../intl/locale';
 
-export function getNumberFormatter(
-	locale?: string | string[],
-	options?: NumberFormatOptions,
-): Intl.NumberFormat {
+export function getNumberFormatter(locale?: string | string[], options?: NumberFormatOptions): Intl.NumberFormat {
 	return new Intl.NumberFormat(locale, options);
 }
 
-export function formatNumber(
-	value: number,
-	locale?: string | string[],
-	options?: NumberFormatOptions,
-): string {
+export function formatNumber(value: number, locale?: string | string[], options?: NumberFormatOptions): string {
 	if (!Number.isFinite(value)) {
 		return '';
 	}
@@ -22,11 +15,7 @@ export function formatNumber(
 /**
  * Parses a locale-aware number string. Returns `null` when the input is empty or invalid.
  */
-export function parseNumber(
-	input: string,
-	locale?: string | string[],
-	options?: NumberFormatOptions,
-): number | null {
+export function parseNumber(input: string, locale?: string | string[], options?: NumberFormatOptions): number | null {
 	const trimmed = input.trim();
 	if (!trimmed) {
 		return null;

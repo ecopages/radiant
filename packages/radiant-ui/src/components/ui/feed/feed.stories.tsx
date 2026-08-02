@@ -5,7 +5,6 @@ import { RuiButton } from '../button/button';
 import { RuiButtonGroup } from '../button-group/button-group';
 import { RuiChip } from '../chip/chip';
 import { RuiChipList, RuiChipListItem } from '../chip-list/chip-list';
-import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from '../heading/heading';
 import { RuiHeadline } from '../headline/headline';
 import {
 	RuiFeed,

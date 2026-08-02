@@ -15,11 +15,7 @@ export function findAssociatedLabel(owner: HTMLElement): HTMLLabelElement | null
 }
 
 /** Applies the shared label-to-control ARIA contract for an unmanaged control. */
-export function syncFieldLabel(
-	owner: HTMLElement,
-	control: HTMLElement | null,
-	options: FieldLabelSyncOptions,
-): void {
+export function syncFieldLabel(owner: HTMLElement, control: HTMLElement | null, options: FieldLabelSyncOptions): void {
 	if (!control || control.hasAttribute('data-rui-field-managed')) {
 		return;
 	}

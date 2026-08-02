@@ -5,13 +5,7 @@ import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiListbox, RuiListboxOption } from '../listbox';
-import {
-	RuiCombobox,
-	RuiComboboxControl,
-	RuiComboboxInput,
-	RuiComboboxListbox,
-	RuiComboboxTrigger,
-} from './combobox';
+import { RuiCombobox, RuiComboboxControl, RuiComboboxInput, RuiComboboxListbox, RuiComboboxTrigger } from './combobox';
 
 const COUNTRY_OPTIONS = [
 	{ value: 'at', label: 'Austria' },

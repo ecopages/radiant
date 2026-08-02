@@ -1,5 +1,10 @@
 import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from './popover-controller';
-import { clearCollectionActive, getVisibleCollectionOptions, setCollectionActive, wrapCollectionIndex } from './collection-navigation';
+import {
+	clearCollectionActive,
+	getVisibleCollectionOptions,
+	setCollectionActive,
+	wrapCollectionIndex,
+} from './collection-navigation';
 
 export type ListboxActivation = 'first' | 'last' | 'none';
 

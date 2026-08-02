@@ -13,5 +13,12 @@ export const RuiDateField = defineRadiantView(
 	({ children, ...props }: JsxHtmlPropsWithChildren<RuiDateFieldProps & { slot?: string }>) => (
 		<rui-date-field {...props}>{children}</rui-date-field>
 	),
-	{ stylesheets: ['./date-field.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css', '../calendar/calendar.css'] },
+	{
+		stylesheets: [
+			'./date-field.css',
+			'../shared/control-toggle.css',
+			'../../../lib/icons/icons.css',
+			'../calendar/calendar.css',
+		],
+	},
 );

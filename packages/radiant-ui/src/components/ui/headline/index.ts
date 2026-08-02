@@ -1,6 +1,1 @@
-export {
-	RuiHeadline,
-	type RuiHeadlineAs,
-	type RuiHeadlineProps,
-	type RuiHeadlineSize,
-} from './headline';
+export { RuiHeadline, type RuiHeadlineAs, type RuiHeadlineProps, type RuiHeadlineSize } from './headline';

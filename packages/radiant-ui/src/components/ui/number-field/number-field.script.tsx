@@ -78,7 +78,8 @@ export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {
 	@prop({ type: String, defaultValue: '' }) name: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
 	@prop({ type: String, attribute: 'format-options', defaultValue: '' }) formatOptions: string;
-	@prop({ type: String, attribute: 'commit-behavior', defaultValue: 'snap' }) commitBehavior: RuiNumberFieldCommitBehavior;
+	@prop({ type: String, attribute: 'commit-behavior', defaultValue: 'snap' })
+	commitBehavior: RuiNumberFieldCommitBehavior;
 	@prop({ type: String, attribute: 'increment-aria-label', defaultValue: '' }) incrementAriaLabel: string;
 	@prop({ type: String, attribute: 'decrement-aria-label', defaultValue: '' }) decrementAriaLabel: string;
 	@prop({ type: Boolean, attribute: 'wheel-disabled', defaultValue: false }) wheelDisabled: boolean;

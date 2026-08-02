@@ -18,8 +18,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const getInput = (root: HTMLElement) =>
-	root.querySelector('[data-date-field-input]') as HTMLInputElement;
+const getInput = (root: HTMLElement) => root.querySelector('[data-date-field-input]') as HTMLInputElement;
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {

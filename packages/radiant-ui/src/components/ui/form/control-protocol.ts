@@ -32,7 +32,7 @@ type ControlValueAdapter = {
 const stringValueAdapter: ControlValueAdapter = {
 	read: (host) => {
 		const value = Reflect.get(host, 'value');
-		return typeof value === 'string' ? value : host.getAttribute('value') ?? '';
+		return typeof value === 'string' ? value : (host.getAttribute('value') ?? '');
 	},
 	write: (host, value) => {
 		const next = value == null ? '' : String(value);

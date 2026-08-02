@@ -45,16 +45,13 @@ type Story = StoryObj<typeof meta>;
 
 const getTrigger = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector('[data-select-trigger]') as HTMLButtonElement;
-const getListbox = (canvasElement: HTMLElement) =>
-	canvasElement.querySelector('[data-select-listbox]') as HTMLElement;
+const getListbox = (canvasElement: HTMLElement) => canvasElement.querySelector('[data-select-listbox]') as HTMLElement;
 const getSearchInput = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector('[data-autocomplete-input]') as HTMLInputElement;
 const getOptions = (canvasElement: HTMLElement) =>
 	Array.from(canvasElement.querySelectorAll('[data-select-listbox] [role="option"]')) as HTMLElement[];
-const getVisibleOptions = (canvasElement: HTMLElement) =>
-	getOptions(canvasElement).filter((option) => !option.hidden);
-const getValue = (canvasElement: HTMLElement) =>
-	canvasElement.querySelector('[data-select-value]') as HTMLElement;
+const getVisibleOptions = (canvasElement: HTMLElement) => getOptions(canvasElement).filter((option) => !option.hidden);
+const getValue = (canvasElement: HTMLElement) => canvasElement.querySelector('[data-select-value]') as HTMLElement;
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
@@ -285,9 +282,7 @@ export const WithTagGroup: Story = {
 			await userEvent.keyboard('{Enter}');
 			await expect(select).toHaveAttribute('value', 'tx,wa');
 			await expect(getVisibleTags()).toHaveLength(2);
-			await expect(
-				getVisibleTags().some((tag) => tag.getAttribute('data-value') === 'wa'),
-			).toBe(true);
+			await expect(getVisibleTags().some((tag) => tag.getAttribute('data-value') === 'wa')).toBe(true);
 		});
 	},
 };

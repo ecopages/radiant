@@ -1,10 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import {
-	RuiHeading,
-	RuiHeadingDescription,
-	RuiHeadingEyebrow,
-	RuiHeadingTitle,
-} from './heading';
+import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from './heading';
 
 const meta = {
 	title: 'Components/Heading',
@@ -21,8 +16,8 @@ export const Hero: Story = {
 				<RuiHeadingEyebrow>Design system</RuiHeadingEyebrow>
 				<RuiHeadingTitle as="h1">Build interfaces that feel inevitable</RuiHeadingTitle>
 				<RuiHeadingDescription>
-					Composable typography with a clear rhythm — eyebrow tight to the title, supporting line with room
-					to breathe.
+					Composable typography with a clear rhythm — eyebrow tight to the title, supporting line with room to
+					breathe.
 				</RuiHeadingDescription>
 			</RuiHeading>
 		</div>

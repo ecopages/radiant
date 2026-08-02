@@ -8,5 +8,5 @@ export function isWithinRange(value: number, min: number, max: number): boolean 
 }
 
 export function isOnStep(value: number, min: number, step: number): boolean {
-	return Math.abs((value - min) % step) < Number.EPSILON || Math.abs((value - min) % step - step) < Number.EPSILON;
+	return Math.abs((value - min) % step) < Number.EPSILON || Math.abs(((value - min) % step) - step) < Number.EPSILON;
 }

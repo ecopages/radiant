@@ -1,6 +1,10 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { PopoverController, shouldDismissPopoverFocus, shouldDismissPopoverPointer } from '../shared/popover-controller';
+import {
+	PopoverController,
+	shouldDismissPopoverFocus,
+	shouldDismissPopoverPointer,
+} from '../shared/popover-controller';
 import type { RuiPlacement } from '../shared/placement';
 
 export type RuiPopoverOpenChangeDetail = {
@@ -154,7 +158,13 @@ export class RuiPopover extends RadiantElement {
 			return;
 		}
 		const target = event.target as Node | null;
-		if (!shouldDismissPopoverPointer(this.getAnchorElement(), this.controller?.getFloatingElement() ?? this.surfaceTarget, target)) {
+		if (
+			!shouldDismissPopoverPointer(
+				this.getAnchorElement(),
+				this.controller?.getFloatingElement() ?? this.surfaceTarget,
+				target,
+			)
+		) {
 			return;
 		}
 		this.setOpen(false);
@@ -165,7 +175,13 @@ export class RuiPopover extends RadiantElement {
 		if (!this.open) {
 			return;
 		}
-		if (!shouldDismissPopoverFocus(this.getAnchorElement(), this.controller?.getFloatingElement() ?? this.surfaceTarget, event.relatedTarget)) {
+		if (
+			!shouldDismissPopoverFocus(
+				this.getAnchorElement(),
+				this.controller?.getFloatingElement() ?? this.surfaceTarget,
+				event.relatedTarget,
+			)
+		) {
 			return;
 		}
 		this.setOpen(false);
@@ -225,12 +241,7 @@ export class RuiPopover extends RadiantElement {
 		return (
 			<div class="rui-popover-host" data-ref="host">
 				<slot name="trigger"></slot>
-				<div
-					data-ref="surface"
-					class={`rui-popover rui-floating ${variantClass}`.trim()}
-					role="dialog"
-					hidden
-				>
+				<div data-ref="surface" class={`rui-popover rui-floating ${variantClass}`.trim()} role="dialog" hidden>
 					<slot name="content"></slot>
 				</div>
 			</div>
@@ -307,8 +318,6 @@ export class RuiPopoverTrigger extends RadiantElement {
 }
 
 function resolvePopoverAnchor(trigger: HTMLElement): HTMLElement {
-	const focusable = trigger.querySelector<HTMLElement>(
-		'button, a[href], input, select, textarea, [role="button"]',
-	);
+	const focusable = trigger.querySelector<HTMLElement>('button, a[href], input, select, textarea, [role="button"]');
 	return focusable ?? trigger;
 }

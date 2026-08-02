@@ -39,6 +39,12 @@ export type RuiDateRangePickerChangeDetail = {
 
 type EditingField = 'start' | 'end' | null;
 
+type RuiDateRangePickerBindings = {
+	disabled: boolean;
+	readOnly: boolean;
+	open: boolean;
+};
+
 /**
  * `<rui-date-range-picker>` — start/end date fields with a range calendar popover.
  *
@@ -53,7 +59,7 @@ type EditingField = 'start' | 'end' | null;
  * @fires rui-change
  */
 @customElement('rui-date-range-picker')
-export class RuiDateRangePicker extends RadiantElement {
+export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBindings> {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
@@ -240,7 +246,18 @@ export class RuiDateRangePicker extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['value', 'min', 'max', 'disabled', 'readOnly', 'locale', 'dateStyle', 'startName', 'endName', 'visibleMonths'])
+	@onUpdated([
+		'value',
+		'min',
+		'max',
+		'disabled',
+		'readOnly',
+		'locale',
+		'dateStyle',
+		'startName',
+		'endName',
+		'visibleMonths',
+	])
 	onPropsUpdated(): void {
 		this.wireInputNames();
 		this.syncDisplayValues();
@@ -342,8 +359,7 @@ export class RuiDateRangePicker extends RadiantElement {
 				return;
 			}
 
-			const next =
-				relatedTarget instanceof Node ? relatedTarget : document.activeElement;
+			const next = relatedTarget instanceof Node ? relatedTarget : document.activeElement;
 			if (!shouldDismissPopoverFocus(this.rootTarget, this.popoverTarget, next)) {
 				return;
 			}
@@ -414,9 +430,7 @@ export class RuiDateRangePicker extends RadiantElement {
 					hidden={!this.$.open}
 					role="dialog"
 				>
-					{this.$.open ? (
-							<rui-calendar {...calendarProps} />
-					) : null}
+					{this.$.open ? <rui-calendar {...calendarProps} /> : null}
 				</div>
 			</div>
 		);

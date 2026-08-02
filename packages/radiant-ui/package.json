@@ -292,19 +292,19 @@
     "./grid/styles.css": {
       "default": "./dist/components/ui/grid/grid.css"
     },
-    "./headline": {
-      "types": "./dist/components/ui/headline/index.d.ts",
-      "import": "./dist/components/ui/headline/index.js"
-    },
-    "./headline/styles.css": {
-      "default": "./dist/components/ui/headline/headline.css"
-    },
     "./heading": {
       "types": "./dist/components/ui/heading/index.d.ts",
       "import": "./dist/components/ui/heading/index.js"
     },
     "./heading/styles.css": {
       "default": "./dist/components/ui/heading/heading.css"
+    },
+    "./headline": {
+      "types": "./dist/components/ui/headline/index.d.ts",
+      "import": "./dist/components/ui/headline/index.js"
+    },
+    "./headline/styles.css": {
+      "default": "./dist/components/ui/headline/headline.css"
     },
     "./input": {
       "types": "./dist/components/ui/input/index.d.ts",

@@ -37,9 +37,12 @@ function placeholderForPart(type: DatePartType, locale: IntlLocale): string {
 }
 
 function formatPartValue(type: DatePartType, date: Date, locale: IntlLocale): string {
-	const options: Intl.DateTimeFormatOptions =
-		type === 'year' ? { year: 'numeric' } : { [type]: '2-digit' };
-	return getDateTimeFormat(locale, options).formatToParts(date).find((part) => part.type === type)?.value ?? '';
+	const options: Intl.DateTimeFormatOptions = type === 'year' ? { year: 'numeric' } : { [type]: '2-digit' };
+	return (
+		getDateTimeFormat(locale, options)
+			.formatToParts(date)
+			.find((part) => part.type === type)?.value ?? ''
+	);
 }
 
 /**
@@ -122,8 +125,7 @@ export function segmentsToDate(segments: DateSegmentModel[]): Date | null {
 		if (numeric == null) {
 			return null;
 		}
-		values[segment.type as DatePartType] =
-			segment.type === 'year' ? normalizeYear(numeric) : numeric;
+		values[segment.type as DatePartType] = segment.type === 'year' ? normalizeYear(numeric) : numeric;
 	}
 
 	if (values.year == null || values.month == null || values.day == null) {
@@ -131,11 +133,7 @@ export function segmentsToDate(segments: DateSegmentModel[]): Date | null {
 	}
 
 	const date = new Date(values.year, values.month - 1, values.day);
-	if (
-		date.getFullYear() !== values.year ||
-		date.getMonth() !== values.month - 1 ||
-		date.getDate() !== values.day
-	) {
+	if (date.getFullYear() !== values.year || date.getMonth() !== values.month - 1 || date.getDate() !== values.day) {
 		return null;
 	}
 

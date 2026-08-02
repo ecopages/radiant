@@ -34,7 +34,8 @@ export class RuiTagGroup extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'multiple' }) selectionMode: RuiTagGroupSelectionMode;
+	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'multiple' })
+	selectionMode: RuiTagGroupSelectionMode;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) embedded: boolean;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
@@ -71,9 +72,11 @@ export class RuiTagGroup extends RadiantElement {
 			return rendered;
 		}
 
-		return this.getSlotElements<HTMLElement>().find(
-			(element) => element.matches('[data-tag-list]') || element.querySelector('[data-tag-list]'),
-		) ?? null;
+		return (
+			this.getSlotElements<HTMLElement>().find(
+				(element) => element.matches('[data-tag-list]') || element.querySelector('[data-tag-list]'),
+			) ?? null
+		);
 	}
 
 	private getTags(): HTMLElement[] {

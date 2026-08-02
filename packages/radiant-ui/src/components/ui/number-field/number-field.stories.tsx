@@ -25,8 +25,7 @@ const getDecreaseButton = (canvas: HTMLElement) =>
 	canvas.querySelector('[data-number-field-action="decrement"]') as HTMLButtonElement;
 const getIncreaseButton = (canvas: HTMLElement) =>
 	canvas.querySelector('[data-number-field-action="increment"]') as HTMLButtonElement;
-const getInput = (canvas: HTMLElement) =>
-	canvas.querySelector('[data-number-field-input]') as HTMLInputElement;
+const getInput = (canvas: HTMLElement) => canvas.querySelector('[data-number-field-input]') as HTMLInputElement;
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {

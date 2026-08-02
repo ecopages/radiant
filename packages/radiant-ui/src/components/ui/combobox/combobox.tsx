@@ -88,7 +88,13 @@ export function RuiComboboxListbox({
 	...props
 }: RuiComboboxListboxProps) {
 	return (
-		<div {...props} slot={slot} data-combobox-listbox class={cx('rui-combobox__listbox rui-popover rui-popover--listbox rui-floating', className)} hidden>
+		<div
+			{...props}
+			slot={slot}
+			data-combobox-listbox
+			class={cx('rui-combobox__listbox rui-popover rui-popover--listbox rui-floating', className)}
+			hidden
+		>
 			{children}
 		</div>
 	);

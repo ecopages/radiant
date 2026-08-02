@@ -49,6 +49,7 @@ type RuiDateFieldBindings = {
 	name: string;
 	placeholder: string;
 	displayValue: string;
+	open: boolean;
 };
 
 /**
@@ -365,8 +366,7 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 				return;
 			}
 
-			const next =
-				relatedTarget instanceof Node ? relatedTarget : document.activeElement;
+			const next = relatedTarget instanceof Node ? relatedTarget : document.activeElement;
 			if (!shouldDismissPopoverFocus(this.rootTarget, this.popoverTarget, next)) {
 				return;
 			}
@@ -462,9 +462,7 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 					hidden={!this.$.open}
 					role="dialog"
 				>
-					{this.$.open ? (
-						<rui-calendar {...calendarProps} />
-					) : null}
+					{this.$.open ? <rui-calendar {...calendarProps} /> : null}
 				</div>
 			</div>
 		);
