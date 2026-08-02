@@ -166,6 +166,13 @@
     "./autocomplete/styles.css": {
       "default": "./dist/components/ui/autocomplete/autocomplete.css"
     },
+    "./avatar": {
+      "types": "./dist/components/ui/avatar/index.d.ts",
+      "import": "./dist/components/ui/avatar/index.js"
+    },
+    "./avatar/styles.css": {
+      "default": "./dist/components/ui/avatar/avatar.css"
+    },
     "./breadcrumb": {
       "types": "./dist/components/ui/breadcrumb/index.d.ts",
       "import": "./dist/components/ui/breadcrumb/index.js"

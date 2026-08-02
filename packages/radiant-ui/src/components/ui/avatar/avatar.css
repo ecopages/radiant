@@ -1,0 +1,27 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-avatar {
+		@apply relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-pill bg-surface-container font-medium text-on-surface;
+	}
+
+	.rui-avatar--sm {
+		@apply size-8 text-xs;
+	}
+
+	.rui-avatar--md {
+		@apply size-10 text-sm;
+	}
+
+	.rui-avatar--lg {
+		@apply size-12 text-body;
+	}
+
+	.rui-avatar__image {
+		@apply size-full object-cover;
+	}
+
+	.rui-avatar__fallback {
+		@apply flex size-full items-center justify-center uppercase;
+	}
+}
