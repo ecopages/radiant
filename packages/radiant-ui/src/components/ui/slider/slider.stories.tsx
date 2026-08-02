@@ -19,6 +19,11 @@ const getInput = (canvasElement: HTMLElement) =>
 const getValueLabel = (canvasElement: HTMLElement) =>
 	canvasElement.querySelector('rui-slider .rui-slider__value') as HTMLElement;
 
+const setNativeValue = (input: HTMLInputElement, value: string): void => {
+	const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+	descriptor?.set?.call(input, value);
+};
+
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
 		const host = canvasElement.querySelector('rui-slider') as HTMLElement;
@@ -34,7 +39,7 @@ export const Default: Story = {
 			host.addEventListener('rui-change', (event) =>
 				emissions.push((event as CustomEvent<{ value: number }>).detail.value),
 			);
-			input.value = '70';
+			setNativeValue(input, '70');
 			input.dispatchEvent(new Event('input', { bubbles: true }));
 			input.dispatchEvent(new Event('change', { bubbles: true }));
 			await expect(emissions).toEqual([70]);
@@ -43,7 +48,7 @@ export const Default: Story = {
 		});
 
 		await step('pointer drag moves from a low value to a high value', async () => {
-			input.value = '10';
+			setNativeValue(input, '10');
 			input.dispatchEvent(new Event('input', { bubbles: true }));
 			input.dispatchEvent(new Event('change', { bubbles: true }));
 			await expect(host).toHaveAttribute('value', '10');
@@ -63,7 +68,7 @@ export const Default: Story = {
 			);
 
 			for (const value of [25, 45, 65, 85]) {
-				input.value = String(value);
+				setNativeValue(input, String(value));
 				input.dispatchEvent(new Event('input', { bubbles: true }));
 			}
 
