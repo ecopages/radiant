@@ -5,6 +5,7 @@
 export { cx } from './lib/cx';
 export * from './components/ui/alert';
 export * from './components/ui/autocomplete';
+export * from './components/ui/avatar';
 export * from './components/ui/breadcrumb';
 export * from './components/ui/button';
 export * from './components/ui/calendar';
