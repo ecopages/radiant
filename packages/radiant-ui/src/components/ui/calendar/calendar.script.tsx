@@ -1,0 +1,476 @@
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { resolveLocale } from '@/lib/intl/locale';
+import {
+	addMonths,
+	advanceRangeSelection,
+	buildCalendarMonth,
+	dateToIso,
+	formatMonthYear,
+	formatTodayLabel,
+	getVisibleMonthViews,
+	getWeekStartsOn,
+	getWeekdayLabels,
+	isoToDate,
+	parseIsoRange,
+	parseMultipleIsos,
+	serializeIsoRange,
+	serializeMultipleIsos,
+	toggleMultipleIso,
+	type CalendarSelectionMode,
+	type CalendarWeek,
+} from '@/lib/intl-date';
+
+export type RuiCalendarPageBehavior = 'visible' | 'single';
+
+export type RuiCalendarProps = {
+	value?: string;
+	min?: string;
+	max?: string;
+	disabled?: boolean;
+	/** BCP 47 locale tag, or comma-separated fallback list. */
+	locale?: string;
+	/** @default 'single' */
+	selectionMode?: CalendarSelectionMode;
+	/** Number of month grids shown side by side. @default 1 */
+	visibleMonths?: number;
+	/** Whether paging moves by all visible months or one month. @default 'visible' */
+	pageBehavior?: RuiCalendarPageBehavior;
+};
+
+export type RuiCalendarChangeDetail = {
+	value: string;
+	start?: string;
+	end?: string;
+};
+
+type MonthPanel = {
+	year: number;
+	month: number;
+	label: string;
+	weeks: CalendarWeek[];
+};
+
+/**
+ * `<rui-calendar>` — locale-aware month grid(s) for picking dates.
+ *
+ * Supports single, multiple, and range selection. Value format:
+ * - single: `YYYY-MM-DD`
+ * - multiple: comma-separated ISO dates
+ * - range: `YYYY-MM-DD/YYYY-MM-DD`
+ *
+ * @see https://react-aria.adobe.com/Calendar
+ * @element rui-calendar
+ * @fires rui-change
+ */
+@customElement('rui-calendar')
+export class RuiCalendar extends RadiantElement {
+	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+	@prop({ type: String, defaultValue: '' }) min: string;
+	@prop({ type: String, defaultValue: '' }) max: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+	@prop({ type: String, defaultValue: '' }) locale: string;
+	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'single' }) selectionMode: CalendarSelectionMode;
+	@prop({ type: Number, attribute: 'visible-months', defaultValue: 1 }) visibleMonths: number;
+	@prop({ type: String, attribute: 'page-behavior', defaultValue: 'visible' }) pageBehavior: RuiCalendarPageBehavior;
+
+	@event({ name: 'rui-change', bubbles: true, composed: true })
+	changeEvent: EventEmitter<RuiCalendarChangeDetail>;
+
+	@state viewYear = new Date().getFullYear();
+	@state viewMonth = new Date().getMonth();
+	@state focusedIso = '';
+	@state weekdayLabels: string[] = [];
+	@state monthPanels: MonthPanel[] = [];
+	@state todayLabel = '';
+	@state rangeAnchor: string | null = null;
+	@state rangeHover: string | null = null;
+
+	private get resolvedLocale(): string | string[] | undefined {
+		return resolveLocale(this.locale);
+	}
+
+	private get pageDelta(): number {
+		if (this.pageBehavior === 'single') {
+			return 1;
+		}
+		return Math.max(1, Math.min(this.visibleMonths, 12));
+	}
+
+	private get monthOptions() {
+		return {
+			locale: this.resolvedLocale,
+			selectionMode: this.selectionMode,
+			value: this.value ?? '',
+			rangeDraft: { anchor: this.rangeAnchor, hover: this.rangeHover },
+			min: this.min || undefined,
+			max: this.max || undefined,
+		};
+	}
+
+	private syncViewFromValue(): void {
+		const iso =
+			this.selectionMode === 'range'
+				? (parseIsoRange(this.value)?.start ?? '')
+				: this.selectionMode === 'multiple'
+					? (parseMultipleIsos(this.value)[0] ?? '')
+					: this.value;
+
+		const date = isoToDate(iso);
+		if (date) {
+			this.viewYear = date.getFullYear();
+			this.viewMonth = date.getMonth();
+			this.focusedIso = iso;
+			return;
+		}
+
+		const today = new Date();
+		this.viewYear = today.getFullYear();
+		this.viewMonth = today.getMonth();
+		this.focusedIso = dateToIso(today);
+	}
+
+	private refreshGrid(): void {
+		this.weekdayLabels = getWeekdayLabels(this.resolvedLocale, getWeekStartsOn(this.resolvedLocale));
+		this.monthPanels = getVisibleMonthViews(this.viewYear, this.viewMonth, this.visibleMonths).map((view) => {
+			const viewDate = new Date(view.year, view.month, 1);
+			return {
+				year: view.year,
+				month: view.month,
+				label: formatMonthYear(viewDate, this.resolvedLocale),
+				weeks: buildCalendarMonth(view.year, view.month, this.monthOptions),
+			};
+		});
+		this.todayLabel = formatTodayLabel(this.resolvedLocale);
+	}
+
+	private moveMonth(delta: number): void {
+		const next = addMonths(this.viewYear, this.viewMonth, delta);
+		this.viewYear = next.year;
+		this.viewMonth = next.month;
+		this.refreshGrid();
+	}
+
+	private getFlatDays(): ReturnType<typeof buildCalendarMonth>[number][number][] {
+		return this.monthPanels.flatMap((panel) => panel.weeks.flat());
+	}
+
+	private moveFocusedDay(delta: number): void {
+		const cells = this.getFlatDays().filter((cell) => !cell.isDisabled);
+		if (!cells.length) {
+			return;
+		}
+
+		const currentIndex = cells.findIndex((cell) => cell.iso === this.focusedIso);
+		const nextIndex =
+			currentIndex < 0
+				? Math.max(0, cells.findIndex((cell) => cell.inMonth))
+				: (currentIndex + delta + cells.length) % cells.length;
+		const next = cells[nextIndex];
+		if (!next) {
+			return;
+		}
+
+		if (next.date.getMonth() !== this.viewMonth || next.date.getFullYear() !== this.viewYear) {
+			this.viewYear = next.date.getFullYear();
+			this.viewMonth = next.date.getMonth();
+		}
+
+		this.focusedIso = next.iso;
+		this.refreshGrid();
+	}
+
+	private isIsoAllowed(iso: string): boolean {
+		if (this.min && iso < this.min) {
+			return false;
+		}
+		if (this.max && iso > this.max) {
+			return false;
+		}
+		return true;
+	}
+
+	private emitChange(value: string, extra: Partial<RuiCalendarChangeDetail> = {}): void {
+		this.changeEvent.emit({ value, ...extra });
+	}
+
+	private selectSingle(iso: string): void {
+		if (!this.isIsoAllowed(iso) || iso === this.value) {
+			return;
+		}
+		this.value = iso;
+		this.emitChange(iso);
+		this.refreshGrid();
+	}
+
+	private selectMultiple(iso: string): void {
+		if (!this.isIsoAllowed(iso)) {
+			return;
+		}
+		const next = serializeMultipleIsos(toggleMultipleIso(parseMultipleIsos(this.value), iso));
+		if (next === this.value) {
+			return;
+		}
+		this.value = next;
+		this.emitChange(next);
+		this.refreshGrid();
+	}
+
+	private selectRange(iso: string): void {
+		if (!this.isIsoAllowed(iso)) {
+			return;
+		}
+
+		const result = advanceRangeSelection(parseIsoRange(this.value), { anchor: this.rangeAnchor, hover: this.rangeHover }, iso);
+		this.rangeAnchor = result.draft.anchor;
+		this.rangeHover = result.draft.hover;
+
+		if (result.committed) {
+			const serialized = serializeIsoRange(result.committed);
+			if (serialized !== this.value) {
+				this.value = serialized;
+				this.emitChange(serialized, { start: result.committed.start, end: result.committed.end });
+			}
+		}
+
+		this.refreshGrid();
+	}
+
+	private selectIso(iso: string): void {
+		if (this.selectionMode === 'multiple') {
+			this.selectMultiple(iso);
+			return;
+		}
+		if (this.selectionMode === 'range') {
+			this.selectRange(iso);
+			return;
+		}
+		this.selectSingle(iso);
+	}
+
+	private previewRange(iso: string): void {
+		if (this.selectionMode !== 'range' || !this.rangeAnchor || this.disabled) {
+			return;
+		}
+		if (this.rangeHover === iso) {
+			return;
+		}
+		this.rangeHover = iso;
+		this.refreshGrid();
+	}
+
+	private clearRangePreview(): void {
+		if (!this.rangeHover) {
+			return;
+		}
+		this.rangeHover = this.rangeAnchor;
+		this.refreshGrid();
+	}
+
+	private initialize(): void {
+		this.syncViewFromValue();
+		this.refreshGrid();
+	}
+
+	override connectedCallback(): void {
+		super.connectedCallback();
+		queueMicrotask(() => this.initialize());
+	}
+
+	@onUpdated(['value', 'min', 'max', 'disabled', 'locale', 'selectionMode', 'visibleMonths', 'pageBehavior'])
+	onPropsUpdated(): void {
+		if (this.selectionMode !== 'range') {
+			this.rangeAnchor = null;
+			this.rangeHover = null;
+		}
+		this.syncViewFromValue();
+		this.refreshGrid();
+	}
+
+	@onEvent({ selector: '[data-calendar-prev-month]', type: 'click' })
+	onPrevMonth(event: Event): void {
+		event.preventDefault();
+		this.moveMonth(-this.pageDelta);
+	}
+
+	@onEvent({ selector: '[data-calendar-next-month]', type: 'click' })
+	onNextMonth(event: Event): void {
+		event.preventDefault();
+		this.moveMonth(this.pageDelta);
+	}
+
+	@onEvent({ selector: '[data-calendar-today]', type: 'click' })
+	onTodayClick(event: Event): void {
+		event.preventDefault();
+		this.selectIso(dateToIso(new Date()));
+	}
+
+	@onEvent({ selector: '[data-calendar-day]', type: 'click' })
+	onDayClick(event: Event): void {
+		const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-calendar-day]');
+		const iso = button?.getAttribute('data-iso');
+		if (!iso || button?.disabled || this.disabled) {
+			return;
+		}
+		this.selectIso(iso);
+	}
+
+	@onEvent({ selector: '[data-calendar-day]', type: 'pointerenter' })
+	onDayPointerEnter(event: Event): void {
+		const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-calendar-day]');
+		const iso = button?.getAttribute('data-iso');
+		if (!iso || button?.disabled) {
+			return;
+		}
+		this.previewRange(iso);
+	}
+
+	@onEvent({ selector: '[data-calendar-grid]', type: 'pointerleave' })
+	onGridPointerLeave(): void {
+		this.clearRangePreview();
+	}
+
+	@onEvent({ selector: '[data-calendar-day]', type: 'keydown' })
+	onDayKeydown(event: KeyboardEvent): void {
+		if (this.disabled) {
+			return;
+		}
+
+		if (event.key === 'ArrowLeft') {
+			event.preventDefault();
+			this.moveFocusedDay(-1);
+			return;
+		}
+		if (event.key === 'ArrowRight') {
+			event.preventDefault();
+			this.moveFocusedDay(1);
+			return;
+		}
+		if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			this.moveFocusedDay(-7);
+			return;
+		}
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			this.moveFocusedDay(7);
+			return;
+		}
+		if (event.key === 'PageUp') {
+			event.preventDefault();
+			this.moveMonth(event.shiftKey ? -12 : -this.pageDelta);
+			return;
+		}
+		if (event.key === 'PageDown') {
+			event.preventDefault();
+			this.moveMonth(event.shiftKey ? 12 : this.pageDelta);
+			return;
+		}
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			const button = event.target as HTMLButtonElement;
+			const iso = button.getAttribute('data-iso');
+			if (iso && !button.disabled) {
+				this.selectIso(iso);
+			}
+		}
+	}
+
+	private dayDataAttributes(dayCell: MonthPanel['weeks'][number][number]): Record<string, string | undefined> {
+		return {
+			'data-range-start': dayCell.isRangeStart ? 'true' : undefined,
+			'data-range-end': dayCell.isRangeEnd ? 'true' : undefined,
+			'data-range-middle': dayCell.isRangeMiddle ? 'true' : undefined,
+		};
+	}
+
+	override render() {
+		const panelCount = this.monthPanels.length;
+		const multiMonth = panelCount > 1;
+
+		return (
+			<div
+				class={`rui-calendar${multiMonth ? ' rui-calendar--multi' : ''}`}
+				data-ref="root"
+				role="application"
+				aria-label="Calendar"
+				aria-multiselectable={this.selectionMode === 'multiple' ? 'true' : undefined}
+			>
+				<div class="rui-calendar__months">
+					{this.monthPanels.map((panel, index) => (
+						<div class="rui-calendar__month-panel" data-calendar-month-panel>
+							<div class="rui-calendar__header">
+								{index === 0 ? (
+									<button
+										type="button"
+										class="rui-calendar__nav"
+										data-calendar-prev-month
+										aria-label="Previous month"
+										disabled={this.disabled}
+									>
+										‹
+									</button>
+								) : (
+									<span class="rui-calendar__nav-spacer" aria-hidden="true" />
+								)}
+								<div class="rui-calendar__month" aria-live="polite">
+									{panel.label}
+								</div>
+								{index === panelCount - 1 ? (
+									<button
+										type="button"
+										class="rui-calendar__nav"
+										data-calendar-next-month
+										aria-label="Next month"
+										disabled={this.disabled}
+									>
+										›
+									</button>
+								) : (
+									<span class="rui-calendar__nav-spacer" aria-hidden="true" />
+								)}
+							</div>
+							{index === 0 ? (
+								<div class="rui-calendar__weekdays" role="row">
+									{this.weekdayLabels.map((label) => (
+										<div class="rui-calendar__weekday" role="columnheader" aria-hidden="true">
+											{label}
+										</div>
+									))}
+								</div>
+							) : null}
+							<div class="rui-calendar__grid" role="grid" data-calendar-grid>
+								{panel.weeks.map((weekRow) => (
+									<div class="rui-calendar__week" role="row">
+										{weekRow.map((dayCell) => (
+											<button
+												type="button"
+												class="rui-calendar__day"
+												data-calendar-day
+												data-iso={dayCell.iso}
+												role="gridcell"
+												disabled={this.disabled || dayCell.isDisabled}
+												tabIndex={dayCell.iso === this.focusedIso ? 0 : -1}
+												aria-selected={dayCell.isSelected ? 'true' : 'false'}
+												aria-current={dayCell.isToday ? 'date' : undefined}
+												data-outside={dayCell.inMonth ? undefined : 'true'}
+												{...this.dayDataAttributes(dayCell)}
+											>
+												{dayCell.date.getDate()}
+											</button>
+										))}
+									</div>
+								))}
+							</div>
+						</div>
+					))}
+				</div>
+				<div class="rui-calendar__footer">
+					<button type="button" class="rui-calendar__today" data-calendar-today disabled={this.disabled}>
+						{this.todayLabel}
+					</button>
+				</div>
+			</div>
+		);
+	}
+}
