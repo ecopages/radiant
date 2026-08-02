@@ -1,6 +1,7 @@
 import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
 
 export type RuiMenubarProps = {
 	label?: string;
@@ -43,6 +44,7 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private openRoot: HTMLElement | null = null;
+	private popoverController: PopoverController | null = null;
 
 	private getTopItems(): HTMLElement[] {
 		return Array.from(
@@ -66,6 +68,52 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		queueMicrotask(() => applyRovingTabindex(this.getTopItems(), 0));
 	}
 
+	override disconnectedCallback(): void {
+		this.popoverController?.destroy();
+		this.popoverController = null;
+		super.disconnectedCallback();
+	}
+
+	private getOpenMenuAnchor(): HTMLElement | null {
+		if (!this.openRoot) {
+			return null;
+		}
+		return this.openRoot.querySelector<HTMLElement>(':scope > [role="menuitem"]');
+	}
+
+	private getOpenMenuSurface(): HTMLElement | null {
+		if (!this.openRoot) {
+			return null;
+		}
+		return this.openRoot.querySelector<HTMLElement>(':scope > [role="menu"]');
+	}
+
+	private syncOpenMenuPosition(): void {
+		const anchor = this.getOpenMenuAnchor();
+		const menu = this.getOpenMenuSurface();
+		if (!anchor || !menu) {
+			return;
+		}
+
+		if (!this.popoverController) {
+			this.popoverController = new PopoverController({
+				getAnchor: () => this.getOpenMenuAnchor(),
+				getFloating: () => this.getOpenMenuSurface(),
+				getOpen: () => Boolean(this.openRoot),
+				getPlacement: () => 'bottom-start',
+				gap: 6,
+				portal: false,
+			});
+		}
+
+		this.popoverController.updateConfig({
+			getAnchor: () => this.getOpenMenuAnchor(),
+			getFloating: () => this.getOpenMenuSurface(),
+			getOpen: () => Boolean(this.openRoot),
+		});
+		this.popoverController.sync();
+	}
+
 	private closeOpenMenu(returnFocus = false): void {
 		if (!this.openRoot) return;
 		const top = this.openRoot.querySelector<HTMLElement>(':scope > [role="menuitem"]');
@@ -73,6 +121,7 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		if (top) top.setAttribute('aria-expanded', 'false');
 		if (menu) menu.hidden = true;
 		this.openRoot = null;
+		this.popoverController?.teardown();
 		if (returnFocus && top) top.focus();
 	}
 
@@ -86,6 +135,7 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		topItem.setAttribute('aria-expanded', 'true');
 		menu.hidden = false;
 		this.openRoot = root;
+		this.syncOpenMenuPosition();
 
 		if (focus === 'first') {
 			const items = this.getMenuItems(menu);
@@ -94,10 +144,13 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		}
 	}
 
-	@onEvent({ document: true, type: 'click' })
-	onDocumentClick(event: MouseEvent): void {
+	@onEvent({ document: true, type: 'pointerdown' })
+	onDocumentPointerDown(event: PointerEvent): void {
 		if (!this.openRoot) return;
-		if (!this.contains(event.target as Node)) this.closeOpenMenu();
+		if (!shouldDismissPopoverPointer(this.getOpenMenuAnchor(), this.getOpenMenuSurface(), event.target as Node)) {
+			return;
+		}
+		this.closeOpenMenu();
 	}
 
 	@onEvent({ selector: '[data-ref="menubar"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'keydown' })
