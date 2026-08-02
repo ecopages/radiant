@@ -28,7 +28,7 @@ Not every entry under **Components/** is a full APG widget. Read the component T
       <td>Thin styling / wiring around platform controls</td>
       <td>
         <code>RuiButton</code>, <code>RuiInput</code>, <code>RuiTextarea</code>, Switch, Checkbox, Slider (single + range), Meter, Radio Group,
-        <code>RuiHeading</code>, <code>RuiHeadline</code>, <code>RuiAvatar</code>, <code>RuiChip</code>, <code>RuiButtonGroup</code>
+        <code>RuiHeading</code>, <code>RuiHeadline</code>, <code>RuiFeed</code>, <code>RuiAvatar</code>, <code>RuiChip</code>, <code>RuiButtonGroup</code>
       </td>
     </tr>
     <tr>
@@ -48,7 +48,7 @@ Not every entry under **Components/** is a full APG widget. Read the component T
     <tr>
       <td><strong>Shell</strong></td>
       <td>Coordinator / structure — consumers compose content or own interaction beyond labeling</td>
-      <td>Feed, Navigation Menu (exclusive disclosure panels for megamenus)</td>
+      <td>Navigation Menu (exclusive disclosure panels for megamenus)</td>
     </tr>
   </tbody>
 </table>
@@ -107,7 +107,7 @@ import '@ecopages/radiant-ui/styles.css';
 import '@ecopages/radiant-ui';
 ```
 
-Presentational helpers that are not custom elements (today: `RuiButton`, `RuiInput`, `RuiTextarea`, `RuiLabel`, `RuiFieldDescription`, `RuiFieldError`, `RuiHeading`, `RuiHeadline`, `RuiAvatar`, `RuiChip`, `RuiChipList`, `RuiButtonGroup`) are still imported from their subpath:
+Presentational helpers that are not custom elements (today: `RuiButton`, `RuiInput`, `RuiTextarea`, `RuiLabel`, `RuiFieldDescription`, `RuiFieldError`, `RuiHeading`, `RuiHeadline`, `RuiFeed`, `RuiAvatar`, `RuiChip`, `RuiChipList`, `RuiButtonGroup`) are still imported from their subpath:
 
 ```ts
 import { RuiButton } from '@ecopages/radiant-ui/button';
