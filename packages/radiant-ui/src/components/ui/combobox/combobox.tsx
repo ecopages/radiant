@@ -1,6 +1,9 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import { RuiIconChevronDown } from '@/lib/icons';
 import { defineRadiantView } from '@/lib/radiant-view';
+import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
+import { RuiListbox, RuiListboxOption, type RuiListboxOptionData } from '../listbox';
 import type { RuiComboboxProps } from './combobox.script';
 import { RuiCombobox as RuiComboboxElement } from './combobox.script';
 
@@ -8,7 +11,7 @@ export type RuiComboboxControlProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Input row wrapper for the combobox input and optional trigger icon. */
+/** Input row wrapper for the combobox input and toggle button. */
 export function RuiComboboxControl({
 	children,
 	slot = 'control',
@@ -34,6 +37,7 @@ export function RuiComboboxInput({ placeholder, disabled, class: className, ...p
 			{...props}
 			type="text"
 			data-combobox-input
+			data-autocomplete-input
 			data-rui-control
 			data-rui-control-type="text"
 			class={cx('rui-combobox__input', className)}
@@ -49,7 +53,7 @@ export type RuiComboboxTriggerProps = JsxHtmlPropsWithChildren<{
 	disabled?: boolean;
 }>;
 
-/** Optional open button placed inside `RuiComboboxControl`. */
+/** Toggle button for opening the listbox popup. */
 export function RuiComboboxTrigger({
 	children,
 	class: className,
@@ -62,12 +66,12 @@ export function RuiComboboxTrigger({
 			{...props}
 			type="button"
 			data-combobox-trigger
-			class={cx('rui-combobox__trigger', className)}
+			class={cx('rui-control-toggle', className)}
 			aria-label={ariaLabel}
 			disabled={disabled}
 			tabIndex={-1}
 		>
-			{children ?? <span aria-hidden="true">▾</span>}
+			{children ?? <RuiIconChevronDown />}
 		</button>
 	);
 }
@@ -76,7 +80,7 @@ export type RuiComboboxListboxProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Popup listbox slotted into `listbox` by default. */
+/** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside. */
 export function RuiComboboxListbox({
 	children,
 	slot = 'listbox',
@@ -84,44 +88,16 @@ export function RuiComboboxListbox({
 	...props
 }: RuiComboboxListboxProps) {
 	return (
-		<div {...props} slot={slot} data-combobox-listbox class={cx('rui-combobox__listbox', className)} hidden>
+		<div {...props} slot={slot} data-combobox-listbox class={cx('rui-combobox__listbox rui-popover rui-popover--listbox rui-floating', className)} hidden>
 			{children}
 		</div>
 	);
 }
 
-export type RuiComboboxOptionProps = JsxHtmlPropsWithChildren<{
-	value: string;
-	/** Display text committed to the input when selected. Defaults to `children` text. */
-	label?: string;
-	disabled?: boolean;
-}>;
+export type RuiComboboxOptionData = RuiListboxOptionData;
 
-/** Listbox option placed inside `RuiComboboxListbox`. */
-export function RuiComboboxOption({
-	value,
-	label,
-	children,
-	class: className,
-	disabled,
-	...props
-}: RuiComboboxOptionProps) {
-	return (
-		<div
-			{...props}
-			role="option"
-			data-combobox-option
-			data-value={value}
-			data-label={label}
-			class={cx('rui-combobox__option', className)}
-			aria-disabled={disabled ? 'true' : undefined}
-		>
-			{children}
-		</div>
-	);
-}
-
-export type RuiComboboxOptionData = { value: string; label: JsxRenderable };
+/** @deprecated Use `RuiListboxOption` */
+export const RuiComboboxOption = RuiListboxOption;
 
 /**
  * Combobox view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
@@ -147,14 +123,12 @@ export const RuiCombobox = defineRadiantView(
 						<RuiComboboxTrigger />
 					</RuiComboboxControl>
 					<RuiComboboxListbox>
-						{options.map((option) => (
-							<RuiComboboxOption
-								value={option.value}
-								label={typeof option.label === 'string' ? option.label : undefined}
-							>
-								{option.label}
-							</RuiComboboxOption>
-						))}
+						<RuiAutocomplete>
+							<RuiAutocompleteCollection>
+								<RuiListbox embedded options={options} />
+								<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
+							</RuiAutocompleteCollection>
+						</RuiAutocomplete>
 					</RuiComboboxListbox>
 				</rui-combobox>
 			);
@@ -162,5 +136,5 @@ export const RuiCombobox = defineRadiantView(
 
 		return <rui-combobox {...props}>{children}</rui-combobox>;
 	},
-	{ stylesheets: ['./combobox.css'] },
+	{ stylesheets: ['./combobox.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'] },
 );
