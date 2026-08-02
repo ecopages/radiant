@@ -212,6 +212,13 @@
     "./checkbox/styles.css": {
       "default": "./dist/components/ui/checkbox/checkbox.css"
     },
+    "./chip": {
+      "types": "./dist/components/ui/chip/index.d.ts",
+      "import": "./dist/components/ui/chip/index.js"
+    },
+    "./chip/styles.css": {
+      "default": "./dist/components/ui/chip/chip.css"
+    },
     "./combobox": {
       "types": "./dist/components/ui/combobox/index.d.ts",
       "import": "./dist/components/ui/combobox/index.js"
