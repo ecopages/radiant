@@ -1,5 +1,14 @@
 # @ecopages/jsx
 
+## 0.3.0-beta.6
+
+### Patch Changes
+
+- Prepare the next beta release.
+
+- Updated dependencies []:
+    - @ecopages/signals@0.3.0-beta.6
+
 ## 0.3.0-beta.5
 
 ### Patch Changes
