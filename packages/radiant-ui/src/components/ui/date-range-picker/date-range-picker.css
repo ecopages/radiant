@@ -1,0 +1,52 @@
+@reference '../../../styles/radiant-ui.css';
+@import '../shared/popover.css';
+
+rui-date-range-picker {
+	@apply relative inline-flex w-full;
+}
+
+@layer components {
+	.rui-date-range-picker {
+		@apply w-full text-sm;
+	}
+
+	.rui-date-range-picker__group {
+		@apply flex w-full min-w-52 items-center gap-1 rounded-control border border-border bg-background px-1;
+	}
+
+	.rui-date-range-picker__group:focus-within {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-date-range-picker__values {
+		@apply flex min-w-0 flex-1 items-center gap-inline;
+	}
+
+	.rui-date-range-picker__input {
+		@apply w-auto min-w-24 max-w-36 shrink border-0 bg-transparent text-on-background outline-none;
+		padding-inline: var(--space-control-x);
+		padding-block: var(--space-control-y);
+		font-size: var(--text-control, 0.875rem);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.rui-date-range-picker__input::placeholder {
+		@apply text-on-surface opacity-muted;
+	}
+
+	.rui-date-range-picker__input:disabled {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-date-range-picker__separator {
+		@apply shrink-0 text-on-surface;
+	}
+
+	.rui-date-range-picker__popover {
+		@apply p-0;
+	}
+
+	.rui-date-range-picker__popover[hidden] {
+		@apply hidden;
+	}
+}
