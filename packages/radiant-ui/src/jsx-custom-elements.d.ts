@@ -20,7 +20,9 @@ import type { RuiRadioGroup, RuiRadioGroupProps } from './components/ui/radio-gr
 import type { RuiSidebar, RuiSidebarProps } from './components/ui/sidebar/sidebar.script';
 import type { RuiSidebarTrigger, RuiSidebarTriggerProps } from './components/ui/sidebar/sidebar-trigger.script';
 import type { RuiSlider, RuiSliderProps } from './components/ui/slider/slider.script';
-import type { RuiSpinbutton, RuiSpinbuttonProps } from './components/ui/spinbutton/spinbutton.script';
+import type { RuiNumberField, RuiNumberFieldProps } from './components/ui/number-field/number-field.script';
+import type { RuiPopover, RuiPopoverProps } from './components/ui/popover/popover.script';
+import type { RuiPopoverTrigger, RuiPopoverTriggerProps } from './components/ui/popover/popover.script';
 import type { RuiSwitch, RuiSwitchProps } from './components/ui/switch/switch.script';
 import type { RuiTabs, RuiTabsProps } from './components/ui/tabs/tabs.script';
 import type { RuiToc, RuiTocProps } from './components/ui/toc/toc.script';
@@ -55,7 +57,9 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-sidebar': JsxCustomElementAttributes<RuiSidebar, RuiSidebarProps>;
 		'rui-sidebar-trigger': JsxCustomElementAttributes<RuiSidebarTrigger, RuiSidebarTriggerProps>;
 		'rui-slider': JsxCustomElementAttributes<RuiSlider, RuiSliderProps>;
-		'rui-spinbutton': JsxCustomElementAttributes<RuiSpinbutton, RuiSpinbuttonProps>;
+		'rui-number-field': JsxCustomElementAttributes<RuiNumberField, RuiNumberFieldProps>;
+		'rui-popover': JsxCustomElementAttributes<RuiPopover, RuiPopoverProps>;
+		'rui-popover-trigger': JsxCustomElementAttributes<RuiPopoverTrigger, RuiPopoverTriggerProps>;
 		'rui-switch': JsxCustomElementAttributes<RuiSwitch, RuiSwitchProps>;
 		'rui-tabs': JsxCustomElementAttributes<RuiTabs, RuiTabsProps>;
 		'rui-toc': JsxCustomElementAttributes<RuiToc, RuiTocProps>;

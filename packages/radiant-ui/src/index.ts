@@ -23,6 +23,7 @@ export * from './components/ui/menu-button';
 export * from './components/ui/menubar';
 export * from './components/ui/meter';
 export * from './components/ui/navigation-menu';
+export * from './components/ui/popover';
 export * from './components/ui/radio-group';
 export * from './components/ui/sidebar';
 export * from './components/ui/slider';

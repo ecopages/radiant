@@ -1,0 +1,13 @@
+@reference '../../../styles/radiant-ui.css';
+@import '../shared/popover.css';
+
+rui-popover,
+rui-popover-trigger {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-popover-host {
+		@apply inline-flex;
+	}
+}
