@@ -11,6 +11,7 @@ export * from './components/ui/calendar';
 export * from './components/ui/carousel';
 export * from './components/ui/checkbox';
 export * from './components/ui/combobox';
+export * from './components/ui/date-field';
 export * from './components/ui/dialog';
 export * from './components/ui/disclosure';
 export * from './components/ui/feed';
