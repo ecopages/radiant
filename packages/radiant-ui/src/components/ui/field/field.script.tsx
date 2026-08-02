@@ -264,7 +264,7 @@ export class RuiField extends RadiantElement {
 
 	@onEvent({
 		selector:
-			'[data-rui-control], rui-combobox, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-spinbutton, rui-listbox',
+			'[data-rui-control], rui-combobox, rui-date-field, rui-date-range-picker, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-number-field, rui-listbox',
 		type: 'rui-change',
 	})
 	onControlChange(): void {
