@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiSliderVariant = 'single' | 'range';
@@ -55,25 +55,18 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 	changeEvent: EventEmitter<RuiSliderChangeDetail>;
 
 	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
-	@query({ ref: 'value' }) valueTarget: HTMLElement;
-	@query({ ref: 'rangeMinThumb' }) rangeMinThumb: HTMLElement;
-	@query({ ref: 'rangeMaxThumb' }) rangeMaxThumb: HTMLElement;
 	@query({ ref: 'rangeFill' }) rangeFill: HTMLElement;
 
 	private interacting = false;
 	private activeThumb: 'min' | 'max' | null = null;
-	/** Live range while dragging — avoids reactive prop updates that re-render mid-drag. */
-	private pendingRange: [number, number] | null = null;
+	/** Live range while dragging, rendered without committing the public props. */
+	@state private pendingRange: [number, number] | null = null;
+	@state private displayedValue: number | null = null;
 
 	/**
-	 * Only disabled/tabindex/aria-label/name are bound below — none of them
-	 * change during a drag. The value text and every aria-value* attribute
-	 * stay plain reads + imperative writes (paintRangeUi/updateDisplayedValue)
-	 * deliberately: they must show the LIVE pointer position while dragging,
-	 * before pendingRange commits to the reactive value/rangeMin/rangeMax
-	 * props. A binding only reacts to committed prop changes, so it cannot
-	 * replace that live-preview write without losing drag feedback — this
-	 * isn't a caution-driven exception, it's the correct tool for the job.
+	 * Live drag state is kept separate from committed public props so the
+	 * component can update the preview without changing the form value until
+	 * the interaction commits.
 	 */
 	private readonly resolvedDisabledTabindex = this.$.disabled.map((disabled) => (disabled ? -1 : 0));
 	private readonly resolvedMinLabel = this.$.label.map((label) => (label ? `${label} minimum` : 'Minimum value'));
@@ -169,25 +162,31 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 	}
 
 	private updateDisplayedValue(next: number): void {
-		if (this.valueTarget) {
-			this.valueTarget.textContent = String(next);
-		}
-
-		if (this.inputTarget) {
-			this.inputTarget.setAttribute('aria-valuenow', String(next));
-		}
+		this.displayedValue = next;
 	}
 
 	private syncRangeUi(): void {
 		const [low, high] = this.getActiveRange();
+		let propsChanged = false;
 
 		if (!this.activeThumb) {
 			if (low !== this.rangeMin) {
 				this.rangeMin = low;
+				propsChanged = true;
 			}
 			if (high !== this.rangeMax) {
 				this.rangeMax = high;
+				propsChanged = true;
 			}
+		}
+
+		if (propsChanged) {
+			queueMicrotask(() => {
+				if (!this.activeThumb) {
+					this.paintRangeUi(...this.getActiveRange());
+				}
+			});
+			return;
 		}
 
 		this.paintRangeUi(low, high);
@@ -203,25 +202,9 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 			track.style.setProperty('--rui-slider-max', `${highPercent}%`);
 		}
 
-		if (this.rangeMinThumb) {
-			this.rangeMinThumb.setAttribute('aria-valuemin', String(this.min));
-			this.rangeMinThumb.setAttribute('aria-valuemax', String(high));
-			this.rangeMinThumb.setAttribute('aria-valuenow', String(low));
-		}
-
-		if (this.rangeMaxThumb) {
-			this.rangeMaxThumb.setAttribute('aria-valuemin', String(low));
-			this.rangeMaxThumb.setAttribute('aria-valuemax', String(this.max));
-			this.rangeMaxThumb.setAttribute('aria-valuenow', String(high));
-		}
-
 		if (this.rangeFill) {
 			this.rangeFill.style.left = `${lowPercent}%`;
 			this.rangeFill.style.width = `${highPercent - lowPercent}%`;
-		}
-
-		if (this.valueTarget) {
-			this.valueTarget.textContent = `${low} – ${high}`;
 		}
 	}
 
@@ -231,7 +214,6 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 		this.pendingRange = null;
 		this.rangeMin = low;
 		this.rangeMax = high;
-		this.paintRangeUi(low, high);
 
 		if (emit && changed) {
 			this.changeEvent.emit({ values: [low, high] });
@@ -423,6 +405,9 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 	}
 
 	override render() {
+		const [displayedRangeMin, displayedRangeMax] = this.getActiveRange();
+		const displayedSingleValue = this.displayedValue ?? this.value;
+
 		if (this.variant === 'range') {
 			return (
 				<div class="rui-slider rui-slider--range">
@@ -439,8 +424,8 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 								tabindex={this.resolvedDisabledTabindex}
 								aria-label={this.resolvedMinLabel}
 								aria-valuemin={this.min}
-								aria-valuemax={this.rangeMax}
-								aria-valuenow={this.rangeMin}
+								aria-valuemax={displayedRangeMax}
+								aria-valuenow={displayedRangeMin}
 								disabled={this.$.disabled}
 							/>
 							<button
@@ -451,15 +436,15 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 								role="slider"
 								tabindex={this.resolvedDisabledTabindex}
 								aria-label={this.resolvedMaxLabel}
-								aria-valuemin={this.rangeMin}
+								aria-valuemin={displayedRangeMin}
 								aria-valuemax={this.max}
-								aria-valuenow={this.rangeMax}
+								aria-valuenow={displayedRangeMax}
 								disabled={this.$.disabled}
 							/>
 						</div>
 					</div>
 					<span class="rui-slider__value" data-ref="value" aria-hidden="true">
-						{this.rangeMin} – {this.rangeMax}
+						{displayedRangeMin} – {displayedRangeMax}
 					</span>
 				</div>
 			);
@@ -481,7 +466,7 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 					aria-valuenow={this.value}
 				/>
 				<span class="rui-slider__value" data-ref="value" aria-hidden="true">
-					{this.value}
+					{displayedSingleValue}
 				</span>
 			</label>
 		);
