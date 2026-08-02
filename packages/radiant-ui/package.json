@@ -344,6 +344,13 @@
     "./tabs/styles.css": {
       "default": "./dist/components/ui/tabs/tabs.css"
     },
+    "./tag-group": {
+      "types": "./dist/components/ui/tag-group/index.d.ts",
+      "import": "./dist/components/ui/tag-group/index.js"
+    },
+    "./tag-group/styles.css": {
+      "default": "./dist/components/ui/tag-group/tag-group.css"
+    },
     "./textarea": {
       "types": "./dist/components/ui/textarea/index.d.ts",
       "import": "./dist/components/ui/textarea/index.js"
