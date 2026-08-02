@@ -1,2 +1,18 @@
-export { RuiFeed as RuiFeedElement, type RuiFeedProps } from './feed.script';
-export { RuiFeed, type RuiFeedArticle } from './feed';
+export {
+	RuiFeed,
+	RuiFeedArticle,
+	RuiFeedArticleActions,
+	RuiFeedArticleContent,
+	RuiFeedArticleHeader,
+	RuiFeedByline,
+	RuiFeedBylineBody,
+	RuiFeedMeta,
+	type RuiFeedArticleActionsProps,
+	type RuiFeedArticleContentProps,
+	type RuiFeedArticleHeaderProps,
+	type RuiFeedArticleProps,
+	type RuiFeedBylineBodyProps,
+	type RuiFeedBylineProps,
+	type RuiFeedMetaProps,
+	type RuiFeedProps,
+} from './feed';
