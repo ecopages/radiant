@@ -299,6 +299,13 @@
     "./navigation-menu/styles.css": {
       "default": "./dist/components/ui/navigation-menu/navigation-menu.css"
     },
+    "./number-field": {
+      "types": "./dist/components/ui/number-field/index.d.ts",
+      "import": "./dist/components/ui/number-field/index.js"
+    },
+    "./number-field/styles.css": {
+      "default": "./dist/components/ui/number-field/number-field.css"
+    },
     "./popover": {
       "types": "./dist/components/ui/popover/index.d.ts",
       "import": "./dist/components/ui/popover/index.js"
@@ -329,13 +336,6 @@
     },
     "./slider/styles.css": {
       "default": "./dist/components/ui/slider/slider.css"
-    },
-    "./spinbutton": {
-      "types": "./dist/components/ui/spinbutton/index.d.ts",
-      "import": "./dist/components/ui/spinbutton/index.js"
-    },
-    "./spinbutton/styles.css": {
-      "default": "./dist/components/ui/spinbutton/spinbutton.css"
     },
     "./switch": {
       "types": "./dist/components/ui/switch/index.d.ts",
