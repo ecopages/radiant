@@ -1,5 +1,9 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { textContains } from '@/lib/text-filter';
+import type { RuiAutocomplete } from '../autocomplete/autocomplete.script';
+import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
+import { ListboxPopoverBehavior } from '../shared/listbox-popover-behavior';
 
 export type RuiComboboxProps = {
 	value?: string;
@@ -26,13 +30,13 @@ export type RuiComboboxChangeDetail = { value: string };
  *
  * Pair with `RuiLabel` (sibling, or via `RuiField`) for the visible name.
  * Compose with `data-combobox-input`, optional `data-combobox-trigger`,
- * `data-combobox-listbox`, and `data-combobox-option` (see view helpers).
+ * `data-combobox-listbox` (popup shell), and an embedded `RuiListbox`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/
  * @element rui-combobox
  * @slot control - Input row (`RuiComboboxControl` with input and trigger).
- * @slot listbox - Popup listbox (`RuiComboboxListbox`).
+ * @slot listbox - Popup shell (`RuiComboboxListbox`) containing an embedded `RuiListbox`.
  * @fires rui-change
  */
 @customElement('rui-combobox')
@@ -47,11 +51,18 @@ export class RuiCombobox extends RadiantElement {
 	changeEvent: EventEmitter<RuiComboboxChangeDetail>;
 
 	private open = false;
-	/** True when visual focus is in the listbox (aria-activedescendant is set). */
-	private listboxHasVisualFocus = false;
-	private activeIndex = -1;
 	private skipNextFocusOpen = false;
 	private readonly uid = Math.random().toString(36).slice(2, 9);
+	private readonly listboxBehavior = new ListboxPopoverBehavior({
+		getAnchor: () => this.rootTarget,
+		getFloating: () => this.getListboxPopup(),
+		getOpen: () => this.open,
+		getOptions: () => this.getOptions(),
+		getActiveDescendantHost: () => this.getInput(),
+		getOptionIdPrefix: () => `rui-combobox-option-${this.uid}`,
+	});
+
+	@query({ ref: 'root' }) rootTarget: HTMLElement;
 
 	private get listboxId(): string {
 		return `rui-combobox-list-${this.uid}`;
@@ -69,8 +80,21 @@ export class RuiCombobox extends RadiantElement {
 		return this.querySelector<HTMLButtonElement>('[data-combobox-trigger]');
 	}
 
-	private getListbox(): HTMLElement | null {
+	private getListboxPopup(): HTMLElement | null {
 		return this.querySelector<HTMLElement>('[data-combobox-listbox]');
+	}
+
+	private getListbox(): HTMLElement | null {
+		const host = this.querySelector('rui-listbox');
+		if (host instanceof HTMLElement) {
+			return host.querySelector<HTMLElement>('[role="listbox"]') ?? host;
+		}
+
+		return this.getListboxPopup();
+	}
+
+	private getListboxHost(): (HTMLElement & { value?: string; embedded?: boolean }) | null {
+		return this.querySelector('rui-listbox');
 	}
 
 	private getOptions(): HTMLElement[] {
@@ -79,11 +103,7 @@ export class RuiCombobox extends RadiantElement {
 			return [];
 		}
 
-		return Array.from(listbox.querySelectorAll<HTMLElement>('[data-combobox-option]'));
-	}
-
-	private getVisibleOptions(): HTMLElement[] {
-		return this.getOptions().filter((option) => !option.hidden && option.getAttribute('aria-disabled') !== 'true');
+		return Array.from(listbox.querySelectorAll<HTMLElement>('[role="option"]'));
 	}
 
 	private getOptionLabel(option: HTMLElement): string {
@@ -91,15 +111,11 @@ export class RuiCombobox extends RadiantElement {
 	}
 
 	private ensureOptionIds(): void {
-		this.getOptions().forEach((option, index) => {
-			if (!option.id) {
-				option.id = `rui-combobox-option-${this.uid}-${index}`;
-			}
-		});
+		this.listboxBehavior.ensureOptionIds();
 	}
 
 	private getAccessibleName(): string {
-		const labelElement = this.findAssociatedLabel();
+		const labelElement = findAssociatedLabel(this);
 		return labelElement?.textContent?.trim() || this.label || 'Suggestions';
 	}
 
@@ -107,57 +123,13 @@ export class RuiCombobox extends RadiantElement {
 		return target instanceof HTMLInputElement && target.hasAttribute('data-combobox-input');
 	}
 
-	/** Prefer `RuiLabel` as a previous sibling or Field-managed label. */
-	private findAssociatedLabel(): HTMLLabelElement | null {
-		const previous = this.previousElementSibling;
-		if (previous?.tagName.toLowerCase() === 'label') {
-			return previous as HTMLLabelElement;
-		}
-
-		const parent = this.parentElement;
-		if (parent) {
-			const fieldLabel = parent.querySelector<HTMLLabelElement>('[data-rui-field-label], label.rui-label');
-			if (fieldLabel) {
-				return fieldLabel;
-			}
-		}
-
-		return null;
-	}
-
 	private syncLabel(): void {
 		const input = this.getInput();
-		if (!input) {
-			return;
-		}
-
-		if (input.hasAttribute('data-rui-field-managed')) {
-			return;
-		}
-
-		const labelElement = this.findAssociatedLabel();
-		if (labelElement) {
-			if (!labelElement.id) {
-				labelElement.id = `rui-combobox-label-${this.uid}`;
-			}
-
-			if (!labelElement.htmlFor) {
-				labelElement.htmlFor = this.inputId;
-			}
-
-			input.setAttribute('aria-labelledby', labelElement.id);
-			input.removeAttribute('aria-label');
-			return;
-		}
-
-		if (this.label) {
-			input.setAttribute('aria-label', this.label);
-			input.removeAttribute('aria-labelledby');
-			return;
-		}
-
-		input.removeAttribute('aria-label');
-		input.removeAttribute('aria-labelledby');
+		syncFieldLabel(this, input, {
+			controlId: this.inputId,
+			label: this.label,
+			labelId: `rui-combobox-label-${this.uid}`,
+		});
 	}
 
 	private syncTrigger(): void {
@@ -179,6 +151,7 @@ export class RuiCombobox extends RadiantElement {
 	private syncInput(): void {
 		const input = this.getInput();
 		const listbox = this.getListbox();
+		const popup = this.getListboxPopup();
 		if (!input || !listbox) {
 			return;
 		}
@@ -196,8 +169,12 @@ export class RuiCombobox extends RadiantElement {
 		input.setAttribute('aria-autocomplete', 'list');
 		input.setAttribute('aria-expanded', String(this.open));
 		input.setAttribute('aria-controls', this.listboxId);
-		listbox.setAttribute('role', 'listbox');
 		listbox.setAttribute('aria-label', this.getAccessibleName());
+
+		if (popup) {
+			popup.removeAttribute('role');
+			popup.removeAttribute('aria-label');
+		}
 
 		if (this.placeholder && !input.placeholder) {
 			input.placeholder = this.placeholder;
@@ -210,96 +187,93 @@ export class RuiCombobox extends RadiantElement {
 		this.syncTrigger();
 	}
 
-	private clearActiveOption(): void {
-		this.activeIndex = -1;
-		this.listboxHasVisualFocus = false;
-
-		const input = this.getInput();
-		input?.removeAttribute('aria-activedescendant');
-
-		for (const option of this.getOptions()) {
-			option.removeAttribute('data-active');
-			option.removeAttribute('aria-selected');
+	private syncListboxHost(): void {
+		const host = this.getListboxHost();
+		if (!host) {
+			return;
 		}
+
+		host.embedded = true;
+		host.value = this.value;
 	}
 
-	private setActiveOption(index: number): void {
-		const visible = this.getVisibleOptions();
-		if (index < 0 || index >= visible.length) {
-			this.clearActiveOption();
-			return;
-		}
-
-		this.activeIndex = index;
-		this.listboxHasVisualFocus = true;
-
+	private syncOptionSelection(): void {
 		for (const option of this.getOptions()) {
-			option.removeAttribute('data-active');
-			option.removeAttribute('aria-selected');
+			const optionValue = option.getAttribute('data-value') || this.getOptionLabel(option);
+			const isSelected = optionValue === this.value && this.value !== '';
+			option.setAttribute('aria-selected', String(isSelected));
 		}
-
-		const active = visible[index];
-		const input = this.getInput();
-		if (!active || !input) {
-			return;
-		}
-
-		if (!active.id) {
-			active.id = `rui-combobox-option-${this.uid}-${index}`;
-		}
-
-		active.setAttribute('data-active', 'true');
-		active.setAttribute('aria-selected', 'true');
-		input.setAttribute('aria-activedescendant', active.id);
-		active.scrollIntoView({ block: 'nearest' });
 	}
 
 	private setVisualFocusCombobox(): void {
-		this.clearActiveOption();
+		this.listboxBehavior.clearActiveOption();
+		this.syncOptionSelection();
 	}
 
 	private setOpen(next: boolean, options: { activate?: 'first' | 'last' | 'none' } = {}): void {
 		const activate = options.activate ?? 'none';
 		this.open = next;
 		const input = this.getInput();
-		const listbox = this.getListbox();
-		if (!input || !listbox) {
+		const popup = this.getListboxPopup();
+		if (!input || !popup) {
 			return;
 		}
 
 		input.setAttribute('aria-expanded', String(next));
-		listbox.hidden = !next;
+		popup.hidden = !next;
 		this.syncTrigger();
 
 		if (!next) {
-			this.clearActiveOption();
+			this.listboxBehavior.clearActiveOption();
+			this.listboxBehavior.syncPopoverPosition();
 			return;
 		}
 
 		this.ensureOptionIds();
+		this.listboxBehavior.syncPopoverPosition();
 
 		if (activate === 'first') {
-			const visible = this.getVisibleOptions();
-			this.setActiveOption(visible.length ? 0 : -1);
+			const visible = this.listboxBehavior.getVisibleOptions();
+			this.listboxBehavior.setActiveOption(visible.length ? 0 : -1);
 			return;
 		}
 
 		if (activate === 'last') {
-			const visible = this.getVisibleOptions();
-			this.setActiveOption(visible.length ? visible.length - 1 : -1);
+			const visible = this.listboxBehavior.getVisibleOptions();
+			this.listboxBehavior.setActiveOption(visible.length ? visible.length - 1 : -1);
 			return;
 		}
 
-		// Manual selection: popup can open without moving visual focus into it.
-		this.clearActiveOption();
+		this.listboxBehavior.clearActiveOption();
 	}
 
-	private filterOptions(query: string): void {
-		const q = query.trim().toLowerCase();
-		for (const option of this.getOptions()) {
-			const text = this.getOptionLabel(option).toLowerCase();
-			option.hidden = q !== '' && !text.startsWith(q);
+	private getAutocomplete(): RuiAutocomplete | null {
+		return this.querySelector('rui-autocomplete');
+	}
+
+	private syncAutocompleteFilter(): void {
+		const autocomplete = this.getAutocomplete();
+		if (autocomplete) {
+			autocomplete.syncFilter();
+			return;
 		}
+
+		const query = this.getInput()?.value ?? '';
+		for (const option of this.getOptions()) {
+			const matches = textContains(this.getOptionLabel(option), query, 'base');
+			option.hidden = query.trim() !== '' && !matches;
+		}
+	}
+
+	/** Restores the unfiltered collection when arrow navigation has no match to enter. */
+	private showAllOptions(): void {
+		for (const option of this.getOptions()) {
+			option.hidden = false;
+		}
+	}
+
+	private syncFilter(): void {
+		this.syncAutocompleteFilter();
 	}
 
 	private select(option: HTMLElement): void {
@@ -317,6 +291,7 @@ export class RuiCombobox extends RadiantElement {
 		}
 
 		this.changeEvent.emit({ value });
+		this.syncOptionSelection();
 		this.skipNextFocusOpen = true;
 		this.setOpen(false);
 		input?.focus();
@@ -337,7 +312,9 @@ export class RuiCombobox extends RadiantElement {
 		this.ensureOptionIds();
 		this.syncLabel();
 		this.syncInput();
+		this.syncListboxHost();
 		this.syncFromValue();
+		this.syncOptionSelection();
 		this.setOpen(false);
 	}
 
@@ -346,11 +323,18 @@ export class RuiCombobox extends RadiantElement {
 		queueMicrotask(() => this.initialize());
 	}
 
+	override disconnectedCallback(): void {
+		this.listboxBehavior.destroy();
+		super.disconnectedCallback();
+	}
+
 	@onUpdated(['value', 'label', 'placeholder', 'disabled', 'openOnFocus'])
 	onPropsUpdated(): void {
 		this.syncLabel();
 		this.syncInput();
+		this.syncListboxHost();
 		this.syncFromValue();
+		this.syncOptionSelection();
 	}
 
 	@onEvent({ ref: 'root', type: 'focusin' })
@@ -368,7 +352,7 @@ export class RuiCombobox extends RadiantElement {
 			return;
 		}
 
-		this.filterOptions(this.getInput()?.value ?? '');
+		this.syncFilter();
 		this.setOpen(true);
 		this.setVisualFocusCombobox();
 	}
@@ -380,12 +364,12 @@ export class RuiCombobox extends RadiantElement {
 		}
 
 		const input = event.target;
-		this.filterOptions(input.value);
-		if (input.value.trim() !== '' && this.getVisibleOptions().length) {
+		this.syncFilter();
+		if (input.value.trim() !== '' && this.listboxBehavior.getVisibleOptions().length) {
 			this.setOpen(true);
 		} else if (input.value.trim() === '' && this.openOnFocus) {
 			this.setOpen(true);
-		} else if (input.value.trim() === '' || !this.getVisibleOptions().length) {
+		} else if (input.value.trim() === '' || !this.listboxBehavior.getVisibleOptions().length) {
 			this.setOpen(false);
 		}
 
@@ -402,78 +386,7 @@ export class RuiCombobox extends RadiantElement {
 		this.handleInputKeydown(event);
 	}
 
-	/** Filter, open, and move the active option by one step (wrapping) toward `direction`. */
-	private moveActive(direction: 1 | -1): void {
-		this.filterOptions(this.getInput()?.value ?? '');
-		if (!this.getVisibleOptions().length) {
-			// Show all options when the current filter has no matches.
-			this.filterOptions('');
-		}
-		const visible = this.getVisibleOptions();
-		if (!visible.length) {
-			return;
-		}
-
-		if (!this.open) {
-			this.setOpen(true, { activate: direction === 1 ? 'first' : 'last' });
-			return;
-		}
-
-		if (this.listboxHasVisualFocus) {
-			const next =
-				direction === 1
-					? this.activeIndex >= visible.length - 1
-						? 0
-						: this.activeIndex + 1
-					: this.activeIndex <= 0
-						? visible.length - 1
-						: this.activeIndex - 1;
-			this.setActiveOption(next);
-			return;
-		}
-
-		// First arrow key while open: jump visual focus into the listbox.
-		this.setActiveOption(direction === 1 ? 0 : visible.length - 1);
-	}
-
 	private handleInputKeydown(event: KeyboardEvent): void {
-		if (event.ctrlKey || event.shiftKey || event.metaKey) {
-			return;
-		}
-
-		const altKey = event.altKey;
-
-		if (event.key === 'ArrowDown') {
-			event.preventDefault();
-			event.stopPropagation();
-
-			if (altKey) {
-				if (!this.open) {
-					this.filterOptions(this.getInput()?.value ?? '');
-					this.setOpen(true);
-				}
-				return;
-			}
-
-			this.moveActive(1);
-			return;
-		}
-
-		if (event.key === 'ArrowUp') {
-			event.preventDefault();
-			event.stopPropagation();
-
-			if (altKey) {
-				if (this.open) {
-					this.setOpen(false);
-				}
-				return;
-			}
-
-			this.moveActive(-1);
-			return;
-		}
-
 		if (event.key === 'Home') {
 			const input = this.getInput();
 			if (!input) {
@@ -497,46 +410,40 @@ export class RuiCombobox extends RadiantElement {
 			return;
 		}
 
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			if (this.open) {
-				this.setOpen(false);
-				return;
+		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			this.syncFilter();
+			if (!this.listboxBehavior.getVisibleOptions().length) {
+				this.showAllOptions();
 			}
-
-			const input = this.getInput();
-			if (input && input.value) {
-				input.value = '';
-				this.value = '';
-				this.changeEvent.emit({ value: '' });
-				this.filterOptions('');
-			}
-			return;
 		}
 
-		if (event.key === 'Enter') {
-			const visible = this.getVisibleOptions();
-			if (this.open && this.listboxHasVisualFocus && visible[this.activeIndex]) {
-				event.preventDefault();
-				this.select(visible[this.activeIndex]);
-				return;
-			}
-
-			if (this.open) {
-				event.preventDefault();
-				this.setOpen(false);
-			}
-			return;
-		}
-
-		if (event.key === 'Tab' && this.open) {
-			const visible = this.getVisibleOptions();
-			if (this.listboxHasVisualFocus && visible[this.activeIndex]) {
-				this.select(visible[this.activeIndex]);
-				return;
-			}
-			this.setOpen(false);
-		}
+		this.listboxBehavior.handleKeydown(event, {
+			isOpen: this.open,
+			canUseSpace: false,
+			closesOnTab: true,
+			enterWhenClosed: 'ignore',
+			enterWithoutActive: 'close',
+			onOpen: (activation = 'none') => {
+				this.syncFilter();
+				this.setOpen(true, { activate: activation });
+			},
+			onClose: () => this.setOpen(false),
+			onSelectActive: () => {
+				const option = this.listboxBehavior.getVisibleOptions()[this.listboxBehavior.activeOptionIndex];
+				if (option) {
+					this.select(option);
+				}
+			},
+			onEscapeWhenClosed: () => {
+				const input = this.getInput();
+				if (input && input.value) {
+					input.value = '';
+					this.value = '';
+					this.changeEvent.emit({ value: '' });
+					this.syncFilter();
+				}
+			},
+		});
 	}
 
 	@onEvent({ selector: '[data-combobox-trigger]', type: 'click' })
@@ -551,7 +458,7 @@ export class RuiCombobox extends RadiantElement {
 			this.skipNextFocusOpen = true;
 			this.setOpen(false);
 		} else {
-			this.filterOptions(input.value);
+			this.syncFilter();
 			this.setOpen(true);
 			this.setVisualFocusCombobox();
 		}
@@ -559,32 +466,32 @@ export class RuiCombobox extends RadiantElement {
 		input.focus();
 	}
 
-	@onEvent({ selector: '[data-combobox-option]', type: 'pointerover' })
+	@onEvent({ selector: '[data-combobox-listbox] [role="option"]', type: 'pointerover' })
 	onOptionPointerOver(event: Event): void {
 		if (!this.open) {
 			return;
 		}
 
-		const option = (event.target as HTMLElement).closest<HTMLElement>('[data-combobox-option]');
+		const option = (event.target as HTMLElement).closest<HTMLElement>('[role="option"]');
 		if (!option || option.getAttribute('aria-disabled') === 'true' || option.hidden) {
 			return;
 		}
 
-		const visible = this.getVisibleOptions();
+		const visible = this.listboxBehavior.getVisibleOptions();
 		const index = visible.indexOf(option);
 		if (index >= 0) {
-			this.setActiveOption(index);
+			this.listboxBehavior.setActiveOption(index);
 		}
 	}
 
-	@onEvent({ selector: '[data-combobox-option]', type: 'mousedown' })
+	@onEvent({ selector: '[data-combobox-listbox] [role="option"]', type: 'mousedown' })
 	onOptionMouseDown(event: Event): void {
 		event.preventDefault();
 	}
 
-	@onEvent({ selector: '[data-combobox-option]', type: 'click' })
+	@onEvent({ selector: '[data-combobox-listbox] [role="option"]', type: 'click' })
 	onOptionClick(event: Event): void {
-		const option = (event.target as HTMLElement).closest<HTMLElement>('[data-combobox-option]');
+		const option = (event.target as HTMLElement).closest<HTMLElement>('[role="option"]');
 		if (option) {
 			this.select(option);
 		}
@@ -592,19 +499,22 @@ export class RuiCombobox extends RadiantElement {
 
 	@onEvent({ ref: 'root', type: 'focusout' })
 	onFocusOut(event: FocusEvent): void {
-		const next = event.relatedTarget;
-		if (next instanceof Node && this.contains(next)) {
+		if (!this.listboxBehavior.shouldDismissFocus(event.relatedTarget)) {
 			return;
 		}
 
 		this.setOpen(false);
 	}
 
-	@onEvent({ document: true, type: 'click' })
-	onDocumentClick(event: Event): void {
-		if (!this.contains(event.target as Node)) {
-			this.setOpen(false);
+	@onEvent({ document: true, type: 'pointerdown' })
+	onDocumentPointerDown(event: PointerEvent): void {
+		if (!this.open) {
+			return;
 		}
+		if (!this.listboxBehavior.shouldDismissPointer(event.target as Node)) {
+			return;
+		}
+		this.setOpen(false);
 	}
 
 	override render() {
