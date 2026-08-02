@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
@@ -48,6 +48,54 @@ describe('onEvent', () => {
 		document.body.appendChild(element);
 		document.dispatchEvent(new Event('click'));
 		expect(element.received).toBeTruthy();
+	});
+
+	it('should add event listener to a media query list when mediaQuery is set', () => {
+		const matchMedia = vi.fn((query: string) => {
+			const listeners = new Set<(event: MediaQueryListEvent) => void>();
+			return {
+				matches: false,
+				media: query,
+				addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+					listeners.add(listener);
+				},
+				removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+					listeners.delete(listener);
+				},
+				dispatchChange(matches: boolean) {
+					for (const listener of listeners) {
+						listener({ matches } as MediaQueryListEvent);
+					}
+				},
+			} as MediaQueryList & { dispatchChange: (matches: boolean) => void };
+		});
+		vi.stubGlobal('matchMedia', matchMedia);
+
+		@customElement('media-query-on-event-listener')
+		class MediaQueryEventListener extends RadiantElement {
+			matches: boolean | null = null;
+
+			@onEvent({ mediaQuery: '(prefers-color-scheme: dark)', type: 'change' })
+			onMediaQueryChange(event: MediaQueryListEvent) {
+				this.matches = event.matches;
+			}
+		}
+
+		const element = document.createElement('media-query-on-event-listener') as MediaQueryEventListener;
+		document.body.appendChild(element);
+
+		const mediaQueryList = matchMedia.mock.results[0]?.value as MediaQueryList & {
+			dispatchChange: (matches: boolean) => void;
+		};
+		mediaQueryList.dispatchChange(true);
+		expect(element.matches).toBe(true);
+
+		element.remove();
+		element.matches = null;
+		mediaQueryList.dispatchChange(false);
+		expect(element.matches).toBeNull();
+
+		vi.unstubAllGlobals();
 	});
 
 	it('should listen to delegated events in shadow DOM when scope is shadow', () => {

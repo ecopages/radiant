@@ -25,6 +25,9 @@ export type OnEventConfig = BaseOnEventConfig &
 		| {
 				document: true;
 		  }
+		| {
+				mediaQuery: string;
+		  }
 	);
 
 type DelegatedEventRoot = Element | ShadowRoot;
@@ -132,6 +135,7 @@ export function createEventListener(
 	const boundCallback = callback.bind(host);
 	let windowCleanup: (() => void) | null = null;
 	let documentCleanup: (() => void) | null = null;
+	let mediaQueryCleanup: (() => void) | null = null;
 	let lightCleanup: (() => void) | null = null;
 	let shadowCleanup: (() => void) | null = null;
 	let disposed = false;
@@ -139,11 +143,13 @@ export function createEventListener(
 	const detachListeners = () => {
 		windowCleanup?.();
 		documentCleanup?.();
+		mediaQueryCleanup?.();
 		lightCleanup?.();
 		shadowCleanup?.();
 
 		windowCleanup = null;
 		documentCleanup = null;
+		mediaQueryCleanup = null;
 		lightCleanup = null;
 		shadowCleanup = null;
 	};
@@ -164,6 +170,18 @@ export function createEventListener(
 			document.addEventListener(config.type, boundCallback, config.options);
 			documentCleanup = () => {
 				document.removeEventListener(config.type, boundCallback, config.options);
+			};
+		}
+
+		if ('mediaQuery' in config && !mediaQueryCleanup) {
+			if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+				return;
+			}
+
+			const mediaQueryList = window.matchMedia(config.mediaQuery);
+			mediaQueryList.addEventListener(config.type, boundCallback, config.options);
+			mediaQueryCleanup = () => {
+				mediaQueryList.removeEventListener(config.type, boundCallback, config.options);
 			};
 		}
 
