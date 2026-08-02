@@ -1,0 +1,21 @@
+@reference '../../../styles/radiant-ui.css';
+@import '../../../lib/icons/icons.css';
+
+@layer components {
+	.rui-control-toggle {
+		@apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-control border-0 bg-transparent text-on-surface;
+		@apply cursor-pointer;
+	}
+
+	.rui-control-toggle:hover:not(:disabled) {
+		@apply bg-surface-container-low;
+	}
+
+	.rui-control-toggle:focus-visible {
+		@apply ring-2 ring-focus-ring outline-none;
+	}
+
+	.rui-control-toggle:disabled {
+		@apply cursor-not-allowed opacity-muted;
+	}
+}

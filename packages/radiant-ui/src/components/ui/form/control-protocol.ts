@@ -8,17 +8,86 @@ export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
 
 const HOST_CONTROL_TAGS = new Set([
 	'rui-combobox',
+	'rui-date-field',
+	'rui-date-range-picker',
+	'rui-select',
+	'rui-tag-group',
 	'rui-checkbox',
 	'rui-switch',
 	'rui-radio-group',
 	'rui-slider',
-	'rui-spinbutton',
+	'rui-number-field',
 	'rui-listbox',
 ]);
 
 const CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}, input, textarea`;
 
 type FieldSlotHost = HTMLElement & { getSlotElements?: (name?: string) => Element[] };
+
+type ControlValueAdapter = {
+	read: (host: HTMLElement) => unknown;
+	write: (host: HTMLElement, value: unknown) => void;
+};
+
+const stringValueAdapter: ControlValueAdapter = {
+	read: (host) => {
+		const value = Reflect.get(host, 'value');
+		return typeof value === 'string' ? value : host.getAttribute('value') ?? '';
+	},
+	write: (host, value) => {
+		const next = value == null ? '' : String(value);
+		host.setAttribute('value', next);
+		if ('value' in host) {
+			Reflect.set(host, 'value', next);
+		}
+	},
+};
+
+const numberValueAdapter: ControlValueAdapter = {
+	read: (host) => {
+		const value = Reflect.get(host, 'value');
+		if (typeof value === 'number') {
+			return value;
+		}
+		const raw = host.getAttribute('value');
+		return raw == null || raw === '' ? '' : Number(raw);
+	},
+	write: (host, value) => {
+		const next = value == null ? '' : String(value);
+		host.setAttribute('value', next);
+		if ('value' in host) {
+			Reflect.set(host, 'value', value);
+		}
+	},
+};
+
+const booleanValueAdapter: ControlValueAdapter = {
+	read: (host) => {
+		const input = host.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		return input?.checked ?? host.hasAttribute('checked');
+	},
+	write: (host, value) => {
+		if (value) {
+			host.setAttribute('checked', '');
+		} else {
+			host.removeAttribute('checked');
+		}
+	},
+};
+
+const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
+	['rui-checkbox', booleanValueAdapter],
+	['rui-switch', booleanValueAdapter],
+	['rui-combobox', stringValueAdapter],
+	['rui-date-field', stringValueAdapter],
+	['rui-date-range-picker', stringValueAdapter],
+	['rui-select', stringValueAdapter],
+	['rui-radio-group', stringValueAdapter],
+	['rui-listbox', stringValueAdapter],
+	['rui-tag-group', stringValueAdapter],
+	['rui-slider', numberValueAdapter],
+	['rui-number-field', numberValueAdapter],
+]);
 
 /** Radiant slot projection moves authored children into the render tree; search projected nodes first. */
 function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => void): void {
@@ -79,6 +148,15 @@ function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null 
 	}
 	if (candidates.length === 1) {
 		return candidates[0];
+	}
+
+	const hostControl = candidates.find((candidate) => HOST_CONTROL_TAGS.has(candidate.localName));
+	const markedControl = candidates.find((candidate) => candidate.hasAttribute(RUI_CONTROL_ATTR));
+	if (markedControl) {
+		return markedControl;
+	}
+	if (hostControl) {
+		return hostControl;
 	}
 
 	const active = document.activeElement;
@@ -147,6 +225,11 @@ function findControlInSubtree(node: Element): HTMLElement | null {
 
 export function readControlValue(control: HTMLElement): unknown {
 	if (control instanceof HTMLInputElement) {
+		const host = resolveControlHost(control);
+		const adapter = host === control ? undefined : CONTROL_VALUE_ADAPTERS.get(host.localName);
+		if (adapter) {
+			return adapter.read(host);
+		}
 		if (control.type === 'checkbox') {
 			return control.checked;
 		}
@@ -161,33 +244,17 @@ export function readControlValue(control: HTMLElement): unknown {
 	}
 
 	const host = resolveControlHost(control);
-
-	if (host.localName === 'rui-checkbox' || host.localName === 'rui-switch') {
-		const input = host.querySelector<HTMLInputElement>('input[type="checkbox"]');
-		if (input) {
-			return input.checked;
-		}
-		return host.hasAttribute('checked');
-	}
-
-	if (host.localName === 'rui-combobox' || host.localName === 'rui-radio-group' || host.localName === 'rui-listbox') {
-		return (host as HTMLElement & { value?: string }).value ?? host.getAttribute('value') ?? '';
-	}
-
-	if (host.localName === 'rui-slider' || host.localName === 'rui-spinbutton') {
-		const propValue = (host as HTMLElement & { value?: number }).value;
-		if (typeof propValue === 'number') {
-			return propValue;
-		}
-		const raw = host.getAttribute('value');
-		return raw == null || raw === '' ? '' : Number(raw);
-	}
-
-	return host.getAttribute('value') ?? '';
+	return CONTROL_VALUE_ADAPTERS.get(host.localName)?.read(host) ?? host.getAttribute('value') ?? '';
 }
 
 export function writeControlValue(control: HTMLElement, value: unknown): void {
 	if (control instanceof HTMLInputElement) {
+		const host = resolveControlHost(control);
+		const adapter = host === control ? undefined : CONTROL_VALUE_ADAPTERS.get(host.localName);
+		if (adapter) {
+			adapter.write(host, value);
+			return;
+		}
 		if (control.type === 'checkbox') {
 			control.checked = Boolean(value);
 			const ce = control.closest('rui-checkbox, rui-switch');
@@ -210,17 +277,7 @@ export function writeControlValue(control: HTMLElement, value: unknown): void {
 	}
 
 	const host = resolveControlHost(control);
-
-	if (host.localName === 'rui-checkbox' || host.localName === 'rui-switch') {
-		if (value) {
-			host.setAttribute('checked', '');
-		} else {
-			host.removeAttribute('checked');
-		}
-		return;
-	}
-
-	host.setAttribute('value', value == null ? '' : String(value));
+	CONTROL_VALUE_ADAPTERS.get(host.localName)?.write(host, value);
 }
 
 function resolveControlHost(control: HTMLElement): HTMLElement {
@@ -311,8 +368,24 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 		return control.querySelector<HTMLElement>('[data-combobox-input]') ?? control;
 	}
 
-	if (control.localName === 'rui-spinbutton') {
-		return control.querySelector<HTMLElement>('[data-spinbutton-input], input') ?? control;
+	if (control.localName === 'rui-date-field') {
+		return control.querySelector<HTMLInputElement>('[data-date-field-input]') ?? control;
+	}
+
+	if (control.localName === 'rui-date-range-picker') {
+		return control.querySelector<HTMLInputElement>('[data-range-start]') ?? control;
+	}
+
+	if (control.localName === 'rui-select') {
+		return control.querySelector<HTMLElement>('[data-select-trigger]') ?? control;
+	}
+
+	if (control.localName === 'rui-tag-group') {
+		return control.querySelector<HTMLElement>('[data-tag-list]') ?? control;
+	}
+
+	if (control.localName === 'rui-number-field') {
+		return control.querySelector<HTMLElement>('[data-number-field-input], input') ?? control;
 	}
 
 	if (control.localName === 'rui-slider') {
