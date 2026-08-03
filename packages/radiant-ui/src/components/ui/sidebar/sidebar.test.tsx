@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
 import { userEvent } from 'storybook/test';
 import {
@@ -52,6 +52,10 @@ async function settled(): Promise<void> {
 function paneWidthVar(host: HTMLElement): string {
 	return (host.querySelector('[data-ref="root"]') as HTMLElement).style.getPropertyValue('--rui-sidebar-pane-width');
 }
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 /** Desktop shell — disable matchMedia mobile so tests are viewport-independent. */
 function mountDesktopSidebar(
@@ -784,6 +788,48 @@ describe('RuiSidebar matchActive', () => {
 		const active = host.querySelector('a.rui-sidebar__menu-button--active');
 		expect(active?.getAttribute('href')).toBe('/docs/overview');
 		expect(active?.getAttribute('aria-current')).toBe('page');
+
+		history.replaceState(null, '', originalPath);
+		cleanup();
+	});
+
+	it('keeps the active link after a post-connect re-render', async () => {
+		const originalPath = window.location.pathname;
+		history.replaceState(null, '', '/docs/overview');
+		const scrollIntoView = vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(() => undefined);
+
+		const { host, cleanup } = mount(
+			<RuiSidebar id="nav" matchActive scrollActiveOnMount label="Docs">
+				<RuiSidebarContent>
+					<RuiSidebarMenu aria-label="Docs links">
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/overview">
+								Overview
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/installation">
+								Installation
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+					</RuiSidebarMenu>
+				</RuiSidebarContent>
+			</RuiSidebar>,
+		);
+
+		await settled();
+		await tick();
+
+		const sidebar = host.querySelector('rui-sidebar') as HTMLElement & { requestUpdate: () => void };
+		sidebar.requestUpdate();
+		await settled();
+		await tick();
+		await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+		const active = host.querySelector('a.rui-sidebar__menu-button--active');
+		expect(active?.getAttribute('href')).toBe('/docs/overview');
+		expect(active?.getAttribute('aria-current')).toBe('page');
+		expect(scrollIntoView).toHaveBeenCalledTimes(1);
 
 		history.replaceState(null, '', originalPath);
 		cleanup();
