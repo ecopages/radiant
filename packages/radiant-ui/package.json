@@ -1,481 +1,481 @@
 {
-	"name": "@ecopages/radiant-ui",
-	"version": "0.1.0-beta.6",
-	"description": "Accessible light-DOM UI components built with @ecopages/radiant, documented in Storybook",
-	"license": "MIT",
-	"type": "module",
-	"publishConfig": {
-		"access": "public"
-	},
-	"files": [
-		"dist"
-	],
-	"sideEffects": [
-		"**/*.css",
-		"**/index.js"
-	],
-	"scripts": {
-		"build:framework": "pnpm --filter @ecopages/storybook-radiant-vite build",
-		"lint": "oxlint",
-		"storybook": "pnpm run build:framework && pnpm --filter @ecopages/storybook-radiant-vite exec storybook dev -p 6006 -c ../radiant-ui/.storybook",
-		"build-storybook": "pnpm run build:framework && pnpm --filter @ecopages/storybook-radiant-vite exec storybook build -c ../radiant-ui/.storybook",
-		"test": "vitest run",
-		"test:storybook": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm run build:framework && vitest run --project=storybook",
-		"test:ssr": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && vitest run --project=ssr && node --import tsx ./scripts/test-storybook-ssr.ts",
-		"test:ssr:smoke": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && node --import tsx ./scripts/test-storybook-ssr.ts --smoke",
-		"clean": "rm -rf dist",
-		"generate:exports": "node --import tsx ./scripts/generate-exports.ts",
-		"build:files": "node --import tsx ./scripts/build.ts",
-		"build:types": "tsc -p tsconfig.build.json",
-		"build:lib": "pnpm run generate:exports && pnpm run clean && pnpm run build:files && pnpm run build:types && pnpm run copy-styles",
-		"copy-styles": "node --import tsx ./scripts/copy-styles.ts",
-		"typecheck": "tsc --noEmit -p tsconfig.app.json"
-	},
-	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-beta.6",
-		"@ecopages/radiant": ">=0.3.0-beta.6",
-		"@ecopages/signals": ">=0.3.0-beta.6"
-	},
-	"devDependencies": {
-		"@babel/core": "^7.28.0",
-		"@babel/plugin-proposal-decorators": "^7.28.0",
-		"@babel/plugin-syntax-typescript": "^7.28.0",
-		"@chromatic-com/storybook": "^5.2.1",
-		"@ecopages/jsx": "workspace:*",
-		"@ecopages/radiant": "workspace:*",
-		"@ecopages/signals": "workspace:*",
-		"@ecopages/storybook-radiant-vite": "workspace:*",
-		"@ecopages/vite-plugin-radiant": "workspace:*",
-		"@rolldown/plugin-babel": "^0.2.1",
-		"@storybook/addon-a11y": "^10.5.2",
-		"@storybook/addon-docs": "^10.5.2",
-		"@storybook/addon-vitest": "^10.5.2",
-		"@tailwindcss/postcss": "^4.3.3",
-		"@tailwindcss/vite": "^4.1.11",
-		"@types/node": "^24.13.2",
-		"@vitest/browser": "^4.1.10",
-		"@vitest/browser-playwright": "^4.1.10",
-		"@vitest/coverage-v8": "^4.1.10",
-		"esbuild": "^0.28.1",
-		"oxlint": "^1.71.0",
-		"playwright": "^1.61.1",
-		"postcss": "^8.5.24",
-		"storybook": "^10.5.2",
-		"tailwindcss": "^4.1.11",
-		"tsx": "^4.20.6",
-		"typescript": "catalog:",
-		"vite": "^8.1.1",
-		"vitest": "^4.1.10"
-	},
-	"exports": {
-		"./package.json": "./package.json",
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		},
-		"./cx": {
-			"types": "./dist/cx.d.ts",
-			"import": "./dist/cx.js"
-		},
-		"./tokens/colors/aurora": {
-			"default": "./dist/styles/tokens/colors/aurora.css"
-		},
-		"./tokens/colors/glacier": {
-			"default": "./dist/styles/tokens/colors/glacier.css"
-		},
-		"./tokens/colors/basalt": {
-			"default": "./dist/styles/tokens/colors/basalt.css"
-		},
-		"./tokens/colors/palettes": {
-			"default": "./dist/styles/tokens/colors/palettes.css"
-		},
-		"./tokens/spacing/compact": {
-			"default": "./dist/styles/tokens/spacing/compact.css"
-		},
-		"./tokens/spacing/default": {
-			"default": "./dist/styles/tokens/spacing/default.css"
-		},
-		"./tokens/spacing/wide": {
-			"default": "./dist/styles/tokens/spacing/wide.css"
-		},
-		"./tokens/radius/edgy": {
-			"default": "./dist/styles/tokens/radius/edgy.css"
-		},
-		"./tokens/radius/sharp": {
-			"default": "./dist/styles/tokens/radius/sharp.css"
-		},
-		"./tokens/radius/default": {
-			"default": "./dist/styles/tokens/radius/default.css"
-		},
-		"./tokens/radius/soft": {
-			"default": "./dist/styles/tokens/radius/soft.css"
-		},
-		"./tokens/elevation/default": {
-			"default": "./dist/styles/tokens/elevation/default.css"
-		},
-		"./tokens/elevation/flat": {
-			"default": "./dist/styles/tokens/elevation/flat.css"
-		},
-		"./tokens/typography/default": {
-			"default": "./dist/styles/tokens/typography/default.css"
-		},
-		"./tokens/motion/default": {
-			"default": "./dist/styles/tokens/motion/default.css"
-		},
-		"./tokens/motion/snappy": {
-			"default": "./dist/styles/tokens/motion/snappy.css"
-		},
-		"./tokens/system": {
-			"default": "./dist/styles/tokens/system.css"
-		},
-		"./tokens/semantic": {
-			"default": "./dist/styles/tokens/semantic.css"
-		},
-		"./themes/default": {
-			"default": "./dist/styles/themes/default.css"
-		},
-		"./themes/glacier": {
-			"default": "./dist/styles/themes/glacier.css"
-		},
-		"./themes/aurora": {
-			"default": "./dist/styles/themes/aurora.css"
-		},
-		"./themes/default-compact-soft": {
-			"default": "./dist/styles/themes/default-compact-soft.css"
-		},
-		"./styles.css": {
-			"default": "./dist/styles/styles.css"
-		},
-		"./radiant-ui.css": {
-			"default": "./dist/styles/radiant-ui.css"
-		},
-		"./radiant-ui-core.css": {
-			"default": "./dist/styles/radiant-ui-core.css"
-		},
-		"./alert": {
-			"types": "./dist/components/ui/alert/index.d.ts",
-			"import": "./dist/components/ui/alert/index.js"
-		},
-		"./alert/styles.css": {
-			"default": "./dist/components/ui/alert/alert.css"
-		},
-		"./autocomplete": {
-			"types": "./dist/components/ui/autocomplete/index.d.ts",
-			"import": "./dist/components/ui/autocomplete/index.js"
-		},
-		"./autocomplete/styles.css": {
-			"default": "./dist/components/ui/autocomplete/autocomplete.css"
-		},
-		"./avatar": {
-			"types": "./dist/components/ui/avatar/index.d.ts",
-			"import": "./dist/components/ui/avatar/index.js"
-		},
-		"./avatar/styles.css": {
-			"default": "./dist/components/ui/avatar/avatar.css"
-		},
-		"./breadcrumb": {
-			"types": "./dist/components/ui/breadcrumb/index.d.ts",
-			"import": "./dist/components/ui/breadcrumb/index.js"
-		},
-		"./breadcrumb/styles.css": {
-			"default": "./dist/components/ui/breadcrumb/breadcrumb.css"
-		},
-		"./button": {
-			"types": "./dist/components/ui/button/index.d.ts",
-			"import": "./dist/components/ui/button/index.js"
-		},
-		"./button-group": {
-			"types": "./dist/components/ui/button-group/index.d.ts",
-			"import": "./dist/components/ui/button-group/index.js"
-		},
-		"./button-group/styles.css": {
-			"default": "./dist/components/ui/button-group/button-group.css"
-		},
-		"./calendar": {
-			"types": "./dist/components/ui/calendar/index.d.ts",
-			"import": "./dist/components/ui/calendar/index.js"
-		},
-		"./calendar/styles.css": {
-			"default": "./dist/components/ui/calendar/calendar.css"
-		},
-		"./carousel": {
-			"types": "./dist/components/ui/carousel/index.d.ts",
-			"import": "./dist/components/ui/carousel/index.js"
-		},
-		"./carousel/styles.css": {
-			"default": "./dist/components/ui/carousel/carousel.css"
-		},
-		"./checkbox": {
-			"types": "./dist/components/ui/checkbox/index.d.ts",
-			"import": "./dist/components/ui/checkbox/index.js"
-		},
-		"./checkbox/styles.css": {
-			"default": "./dist/components/ui/checkbox/checkbox.css"
-		},
-		"./chip": {
-			"types": "./dist/components/ui/chip/index.d.ts",
-			"import": "./dist/components/ui/chip/index.js"
-		},
-		"./chip/styles.css": {
-			"default": "./dist/components/ui/chip/chip.css"
-		},
-		"./chip-list": {
-			"types": "./dist/components/ui/chip-list/index.d.ts",
-			"import": "./dist/components/ui/chip-list/index.js"
-		},
-		"./chip-list/styles.css": {
-			"default": "./dist/components/ui/chip-list/chip-list.css"
-		},
-		"./combobox": {
-			"types": "./dist/components/ui/combobox/index.d.ts",
-			"import": "./dist/components/ui/combobox/index.js"
-		},
-		"./combobox/styles.css": {
-			"default": "./dist/components/ui/combobox/combobox.css"
-		},
-		"./date-field": {
-			"types": "./dist/components/ui/date-field/index.d.ts",
-			"import": "./dist/components/ui/date-field/index.js"
-		},
-		"./date-field/styles.css": {
-			"default": "./dist/components/ui/date-field/date-field.css"
-		},
-		"./date-range-picker": {
-			"types": "./dist/components/ui/date-range-picker/index.d.ts",
-			"import": "./dist/components/ui/date-range-picker/index.js"
-		},
-		"./date-range-picker/styles.css": {
-			"default": "./dist/components/ui/date-range-picker/date-range-picker.css"
-		},
-		"./dialog": {
-			"types": "./dist/components/ui/dialog/index.d.ts",
-			"import": "./dist/components/ui/dialog/index.js"
-		},
-		"./dialog/styles.css": {
-			"default": "./dist/components/ui/dialog/dialog.css"
-		},
-		"./disclosure": {
-			"types": "./dist/components/ui/disclosure/index.d.ts",
-			"import": "./dist/components/ui/disclosure/index.js"
-		},
-		"./disclosure/styles.css": {
-			"default": "./dist/components/ui/disclosure/disclosure.css"
-		},
-		"./disclosure/disclosure-group.css": {
-			"default": "./dist/components/ui/disclosure/disclosure-group.css"
-		},
-		"./feed": {
-			"types": "./dist/components/ui/feed/index.d.ts",
-			"import": "./dist/components/ui/feed/index.js"
-		},
-		"./feed/styles.css": {
-			"default": "./dist/components/ui/feed/feed.css"
-		},
-		"./field": {
-			"types": "./dist/components/ui/field/index.d.ts",
-			"import": "./dist/components/ui/field/index.js"
-		},
-		"./field/styles.css": {
-			"default": "./dist/components/ui/field/field.css"
-		},
-		"./form": {
-			"types": "./dist/components/ui/form/index.d.ts",
-			"import": "./dist/components/ui/form/index.js"
-		},
-		"./form/styles.css": {
-			"default": "./dist/components/ui/form/form.css"
-		},
-		"./grid": {
-			"types": "./dist/components/ui/grid/index.d.ts",
-			"import": "./dist/components/ui/grid/index.js"
-		},
-		"./grid/styles.css": {
-			"default": "./dist/components/ui/grid/grid.css"
-		},
-		"./heading": {
-			"types": "./dist/components/ui/heading/index.d.ts",
-			"import": "./dist/components/ui/heading/index.js"
-		},
-		"./heading/styles.css": {
-			"default": "./dist/components/ui/heading/heading.css"
-		},
-		"./headline": {
-			"types": "./dist/components/ui/headline/index.d.ts",
-			"import": "./dist/components/ui/headline/index.js"
-		},
-		"./headline/styles.css": {
-			"default": "./dist/components/ui/headline/headline.css"
-		},
-		"./input": {
-			"types": "./dist/components/ui/input/index.d.ts",
-			"import": "./dist/components/ui/input/index.js"
-		},
-		"./input/styles.css": {
-			"default": "./dist/components/ui/input/input.css"
-		},
-		"./label": {
-			"types": "./dist/components/ui/label/index.d.ts",
-			"import": "./dist/components/ui/label/index.js"
-		},
-		"./label/styles.css": {
-			"default": "./dist/components/ui/label/label.css"
-		},
-		"./listbox": {
-			"types": "./dist/components/ui/listbox/index.d.ts",
-			"import": "./dist/components/ui/listbox/index.js"
-		},
-		"./listbox/styles.css": {
-			"default": "./dist/components/ui/listbox/listbox.css"
-		},
-		"./menu-button": {
-			"types": "./dist/components/ui/menu-button/index.d.ts",
-			"import": "./dist/components/ui/menu-button/index.js"
-		},
-		"./menu-button/styles.css": {
-			"default": "./dist/components/ui/menu-button/menu-button.css"
-		},
-		"./menubar": {
-			"types": "./dist/components/ui/menubar/index.d.ts",
-			"import": "./dist/components/ui/menubar/index.js"
-		},
-		"./menubar/styles.css": {
-			"default": "./dist/components/ui/menubar/menubar.css"
-		},
-		"./meter": {
-			"types": "./dist/components/ui/meter/index.d.ts",
-			"import": "./dist/components/ui/meter/index.js"
-		},
-		"./meter/styles.css": {
-			"default": "./dist/components/ui/meter/meter.css"
-		},
-		"./navigation-menu": {
-			"types": "./dist/components/ui/navigation-menu/index.d.ts",
-			"import": "./dist/components/ui/navigation-menu/index.js"
-		},
-		"./navigation-menu/styles.css": {
-			"default": "./dist/components/ui/navigation-menu/navigation-menu.css"
-		},
-		"./number-field": {
-			"types": "./dist/components/ui/number-field/index.d.ts",
-			"import": "./dist/components/ui/number-field/index.js"
-		},
-		"./number-field/styles.css": {
-			"default": "./dist/components/ui/number-field/number-field.css"
-		},
-		"./popover": {
-			"types": "./dist/components/ui/popover/index.d.ts",
-			"import": "./dist/components/ui/popover/index.js"
-		},
-		"./popover/styles.css": {
-			"default": "./dist/components/ui/popover/popover.css"
-		},
-		"./radio-group": {
-			"types": "./dist/components/ui/radio-group/index.d.ts",
-			"import": "./dist/components/ui/radio-group/index.js"
-		},
-		"./radio-group/styles.css": {
-			"default": "./dist/components/ui/radio-group/radio-group.css"
-		},
-		"./select": {
-			"types": "./dist/components/ui/select/index.d.ts",
-			"import": "./dist/components/ui/select/index.js"
-		},
-		"./select/styles.css": {
-			"default": "./dist/components/ui/select/select.css"
-		},
-		"./sidebar": {
-			"types": "./dist/components/ui/sidebar/index.d.ts",
-			"import": "./dist/components/ui/sidebar/index.js"
-		},
-		"./sidebar/styles.css": {
-			"default": "./dist/components/ui/sidebar/sidebar.css"
-		},
-		"./sidebar/docs.css": {
-			"default": "./dist/components/ui/sidebar/sidebar.docs.css"
-		},
-		"./slider": {
-			"types": "./dist/components/ui/slider/index.d.ts",
-			"import": "./dist/components/ui/slider/index.js"
-		},
-		"./slider/styles.css": {
-			"default": "./dist/components/ui/slider/slider.css"
-		},
-		"./switch": {
-			"types": "./dist/components/ui/switch/index.d.ts",
-			"import": "./dist/components/ui/switch/index.js"
-		},
-		"./switch/styles.css": {
-			"default": "./dist/components/ui/switch/switch.css"
-		},
-		"./tabs": {
-			"types": "./dist/components/ui/tabs/index.d.ts",
-			"import": "./dist/components/ui/tabs/index.js"
-		},
-		"./tabs/styles.css": {
-			"default": "./dist/components/ui/tabs/tabs.css"
-		},
-		"./tag-group": {
-			"types": "./dist/components/ui/tag-group/index.d.ts",
-			"import": "./dist/components/ui/tag-group/index.js"
-		},
-		"./tag-group/styles.css": {
-			"default": "./dist/components/ui/tag-group/tag-group.css"
-		},
-		"./textarea": {
-			"types": "./dist/components/ui/textarea/index.d.ts",
-			"import": "./dist/components/ui/textarea/index.js"
-		},
-		"./textarea/styles.css": {
-			"default": "./dist/components/ui/textarea/textarea.css"
-		},
-		"./toast": {
-			"types": "./dist/components/ui/toast/index.d.ts",
-			"import": "./dist/components/ui/toast/index.js"
-		},
-		"./toast/styles.css": {
-			"default": "./dist/components/ui/toast/toast.css"
-		},
-		"./toc": {
-			"types": "./dist/components/ui/toc/index.d.ts",
-			"import": "./dist/components/ui/toc/index.js"
-		},
-		"./toc/styles.css": {
-			"default": "./dist/components/ui/toc/toc.css"
-		},
-		"./toolbar": {
-			"types": "./dist/components/ui/toolbar/index.d.ts",
-			"import": "./dist/components/ui/toolbar/index.js"
-		},
-		"./toolbar/styles.css": {
-			"default": "./dist/components/ui/toolbar/toolbar.css"
-		},
-		"./tooltip": {
-			"types": "./dist/components/ui/tooltip/index.d.ts",
-			"import": "./dist/components/ui/tooltip/index.js"
-		},
-		"./tooltip/styles.css": {
-			"default": "./dist/components/ui/tooltip/tooltip.css"
-		},
-		"./tree": {
-			"types": "./dist/components/ui/tree/index.d.ts",
-			"import": "./dist/components/ui/tree/index.js"
-		},
-		"./tree/styles.css": {
-			"default": "./dist/components/ui/tree/tree.css"
-		},
-		"./treegrid": {
-			"types": "./dist/components/ui/treegrid/index.d.ts",
-			"import": "./dist/components/ui/treegrid/index.js"
-		},
-		"./treegrid/styles.css": {
-			"default": "./dist/components/ui/treegrid/treegrid.css"
-		},
-		"./window-splitter": {
-			"types": "./dist/components/ui/window-splitter/index.d.ts",
-			"import": "./dist/components/ui/window-splitter/index.js"
-		},
-		"./window-splitter/styles.css": {
-			"default": "./dist/components/ui/window-splitter/window-splitter.css"
-		}
-	}
+  "name": "@ecopages/radiant-ui",
+  "version": "0.1.0-beta.7",
+  "description": "Accessible light-DOM UI components built with @ecopages/radiant, documented in Storybook",
+  "license": "MIT",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css",
+    "**/index.js"
+  ],
+  "scripts": {
+    "build:framework": "pnpm --filter @ecopages/storybook-radiant-vite build",
+    "lint": "oxlint",
+    "storybook": "pnpm run build:framework && pnpm --filter @ecopages/storybook-radiant-vite exec storybook dev -p 6006 -c ../radiant-ui/.storybook",
+    "build-storybook": "pnpm run build:framework && pnpm --filter @ecopages/storybook-radiant-vite exec storybook build -c ../radiant-ui/.storybook",
+    "test": "vitest run",
+    "test:storybook": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm run build:framework && vitest run --project=storybook",
+    "test:ssr": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && vitest run --project=ssr && node --import tsx ./scripts/test-storybook-ssr.ts",
+    "test:ssr:smoke": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && node --import tsx ./scripts/test-storybook-ssr.ts --smoke",
+    "clean": "rm -rf dist",
+    "generate:exports": "node --import tsx ./scripts/generate-exports.ts",
+    "build:files": "node --import tsx ./scripts/build.ts",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:lib": "pnpm run generate:exports && pnpm run clean && pnpm run build:files && pnpm run build:types && pnpm run copy-styles",
+    "copy-styles": "node --import tsx ./scripts/copy-styles.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+  },
+  "peerDependencies": {
+    "@ecopages/jsx": ">=0.3.0-beta.6",
+    "@ecopages/radiant": ">=0.3.0-beta.6",
+    "@ecopages/signals": ">=0.3.0-beta.6"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/plugin-proposal-decorators": "^7.28.0",
+    "@babel/plugin-syntax-typescript": "^7.28.0",
+    "@chromatic-com/storybook": "^5.2.1",
+    "@ecopages/jsx": "workspace:*",
+    "@ecopages/radiant": "workspace:*",
+    "@ecopages/signals": "workspace:*",
+    "@ecopages/storybook-radiant-vite": "workspace:*",
+    "@ecopages/vite-plugin-radiant": "workspace:*",
+    "@rolldown/plugin-babel": "^0.2.1",
+    "@storybook/addon-a11y": "^10.5.2",
+    "@storybook/addon-docs": "^10.5.2",
+    "@storybook/addon-vitest": "^10.5.2",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/vite": "^4.1.11",
+    "@types/node": "^24.13.2",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.10",
+    "esbuild": "^0.28.1",
+    "oxlint": "^1.71.0",
+    "playwright": "^1.61.1",
+    "postcss": "^8.5.24",
+    "storybook": "^10.5.2",
+    "tailwindcss": "^4.1.11",
+    "tsx": "^4.20.6",
+    "typescript": "catalog:",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cx": {
+      "types": "./dist/cx.d.ts",
+      "import": "./dist/cx.js"
+    },
+    "./tokens/colors/aurora": {
+      "default": "./dist/styles/tokens/colors/aurora.css"
+    },
+    "./tokens/colors/glacier": {
+      "default": "./dist/styles/tokens/colors/glacier.css"
+    },
+    "./tokens/colors/basalt": {
+      "default": "./dist/styles/tokens/colors/basalt.css"
+    },
+    "./tokens/colors/palettes": {
+      "default": "./dist/styles/tokens/colors/palettes.css"
+    },
+    "./tokens/spacing/compact": {
+      "default": "./dist/styles/tokens/spacing/compact.css"
+    },
+    "./tokens/spacing/default": {
+      "default": "./dist/styles/tokens/spacing/default.css"
+    },
+    "./tokens/spacing/wide": {
+      "default": "./dist/styles/tokens/spacing/wide.css"
+    },
+    "./tokens/radius/edgy": {
+      "default": "./dist/styles/tokens/radius/edgy.css"
+    },
+    "./tokens/radius/sharp": {
+      "default": "./dist/styles/tokens/radius/sharp.css"
+    },
+    "./tokens/radius/default": {
+      "default": "./dist/styles/tokens/radius/default.css"
+    },
+    "./tokens/radius/soft": {
+      "default": "./dist/styles/tokens/radius/soft.css"
+    },
+    "./tokens/elevation/default": {
+      "default": "./dist/styles/tokens/elevation/default.css"
+    },
+    "./tokens/elevation/flat": {
+      "default": "./dist/styles/tokens/elevation/flat.css"
+    },
+    "./tokens/typography/default": {
+      "default": "./dist/styles/tokens/typography/default.css"
+    },
+    "./tokens/motion/default": {
+      "default": "./dist/styles/tokens/motion/default.css"
+    },
+    "./tokens/motion/snappy": {
+      "default": "./dist/styles/tokens/motion/snappy.css"
+    },
+    "./tokens/system": {
+      "default": "./dist/styles/tokens/system.css"
+    },
+    "./tokens/semantic": {
+      "default": "./dist/styles/tokens/semantic.css"
+    },
+    "./themes/default": {
+      "default": "./dist/styles/themes/default.css"
+    },
+    "./themes/glacier": {
+      "default": "./dist/styles/themes/glacier.css"
+    },
+    "./themes/aurora": {
+      "default": "./dist/styles/themes/aurora.css"
+    },
+    "./themes/default-compact-soft": {
+      "default": "./dist/styles/themes/default-compact-soft.css"
+    },
+    "./styles.css": {
+      "default": "./dist/styles/styles.css"
+    },
+    "./radiant-ui.css": {
+      "default": "./dist/styles/radiant-ui.css"
+    },
+    "./radiant-ui-core.css": {
+      "default": "./dist/styles/radiant-ui-core.css"
+    },
+    "./alert": {
+      "types": "./dist/components/ui/alert/index.d.ts",
+      "import": "./dist/components/ui/alert/index.js"
+    },
+    "./alert/styles.css": {
+      "default": "./dist/components/ui/alert/alert.css"
+    },
+    "./autocomplete": {
+      "types": "./dist/components/ui/autocomplete/index.d.ts",
+      "import": "./dist/components/ui/autocomplete/index.js"
+    },
+    "./autocomplete/styles.css": {
+      "default": "./dist/components/ui/autocomplete/autocomplete.css"
+    },
+    "./avatar": {
+      "types": "./dist/components/ui/avatar/index.d.ts",
+      "import": "./dist/components/ui/avatar/index.js"
+    },
+    "./avatar/styles.css": {
+      "default": "./dist/components/ui/avatar/avatar.css"
+    },
+    "./breadcrumb": {
+      "types": "./dist/components/ui/breadcrumb/index.d.ts",
+      "import": "./dist/components/ui/breadcrumb/index.js"
+    },
+    "./breadcrumb/styles.css": {
+      "default": "./dist/components/ui/breadcrumb/breadcrumb.css"
+    },
+    "./button": {
+      "types": "./dist/components/ui/button/index.d.ts",
+      "import": "./dist/components/ui/button/index.js"
+    },
+    "./button-group": {
+      "types": "./dist/components/ui/button-group/index.d.ts",
+      "import": "./dist/components/ui/button-group/index.js"
+    },
+    "./button-group/styles.css": {
+      "default": "./dist/components/ui/button-group/button-group.css"
+    },
+    "./calendar": {
+      "types": "./dist/components/ui/calendar/index.d.ts",
+      "import": "./dist/components/ui/calendar/index.js"
+    },
+    "./calendar/styles.css": {
+      "default": "./dist/components/ui/calendar/calendar.css"
+    },
+    "./carousel": {
+      "types": "./dist/components/ui/carousel/index.d.ts",
+      "import": "./dist/components/ui/carousel/index.js"
+    },
+    "./carousel/styles.css": {
+      "default": "./dist/components/ui/carousel/carousel.css"
+    },
+    "./checkbox": {
+      "types": "./dist/components/ui/checkbox/index.d.ts",
+      "import": "./dist/components/ui/checkbox/index.js"
+    },
+    "./checkbox/styles.css": {
+      "default": "./dist/components/ui/checkbox/checkbox.css"
+    },
+    "./chip": {
+      "types": "./dist/components/ui/chip/index.d.ts",
+      "import": "./dist/components/ui/chip/index.js"
+    },
+    "./chip/styles.css": {
+      "default": "./dist/components/ui/chip/chip.css"
+    },
+    "./chip-list": {
+      "types": "./dist/components/ui/chip-list/index.d.ts",
+      "import": "./dist/components/ui/chip-list/index.js"
+    },
+    "./chip-list/styles.css": {
+      "default": "./dist/components/ui/chip-list/chip-list.css"
+    },
+    "./combobox": {
+      "types": "./dist/components/ui/combobox/index.d.ts",
+      "import": "./dist/components/ui/combobox/index.js"
+    },
+    "./combobox/styles.css": {
+      "default": "./dist/components/ui/combobox/combobox.css"
+    },
+    "./date-field": {
+      "types": "./dist/components/ui/date-field/index.d.ts",
+      "import": "./dist/components/ui/date-field/index.js"
+    },
+    "./date-field/styles.css": {
+      "default": "./dist/components/ui/date-field/date-field.css"
+    },
+    "./date-range-picker": {
+      "types": "./dist/components/ui/date-range-picker/index.d.ts",
+      "import": "./dist/components/ui/date-range-picker/index.js"
+    },
+    "./date-range-picker/styles.css": {
+      "default": "./dist/components/ui/date-range-picker/date-range-picker.css"
+    },
+    "./dialog": {
+      "types": "./dist/components/ui/dialog/index.d.ts",
+      "import": "./dist/components/ui/dialog/index.js"
+    },
+    "./dialog/styles.css": {
+      "default": "./dist/components/ui/dialog/dialog.css"
+    },
+    "./disclosure": {
+      "types": "./dist/components/ui/disclosure/index.d.ts",
+      "import": "./dist/components/ui/disclosure/index.js"
+    },
+    "./disclosure/styles.css": {
+      "default": "./dist/components/ui/disclosure/disclosure.css"
+    },
+    "./disclosure/disclosure-group.css": {
+      "default": "./dist/components/ui/disclosure/disclosure-group.css"
+    },
+    "./feed": {
+      "types": "./dist/components/ui/feed/index.d.ts",
+      "import": "./dist/components/ui/feed/index.js"
+    },
+    "./feed/styles.css": {
+      "default": "./dist/components/ui/feed/feed.css"
+    },
+    "./field": {
+      "types": "./dist/components/ui/field/index.d.ts",
+      "import": "./dist/components/ui/field/index.js"
+    },
+    "./field/styles.css": {
+      "default": "./dist/components/ui/field/field.css"
+    },
+    "./form": {
+      "types": "./dist/components/ui/form/index.d.ts",
+      "import": "./dist/components/ui/form/index.js"
+    },
+    "./form/styles.css": {
+      "default": "./dist/components/ui/form/form.css"
+    },
+    "./grid": {
+      "types": "./dist/components/ui/grid/index.d.ts",
+      "import": "./dist/components/ui/grid/index.js"
+    },
+    "./grid/styles.css": {
+      "default": "./dist/components/ui/grid/grid.css"
+    },
+    "./heading": {
+      "types": "./dist/components/ui/heading/index.d.ts",
+      "import": "./dist/components/ui/heading/index.js"
+    },
+    "./heading/styles.css": {
+      "default": "./dist/components/ui/heading/heading.css"
+    },
+    "./headline": {
+      "types": "./dist/components/ui/headline/index.d.ts",
+      "import": "./dist/components/ui/headline/index.js"
+    },
+    "./headline/styles.css": {
+      "default": "./dist/components/ui/headline/headline.css"
+    },
+    "./input": {
+      "types": "./dist/components/ui/input/index.d.ts",
+      "import": "./dist/components/ui/input/index.js"
+    },
+    "./input/styles.css": {
+      "default": "./dist/components/ui/input/input.css"
+    },
+    "./label": {
+      "types": "./dist/components/ui/label/index.d.ts",
+      "import": "./dist/components/ui/label/index.js"
+    },
+    "./label/styles.css": {
+      "default": "./dist/components/ui/label/label.css"
+    },
+    "./listbox": {
+      "types": "./dist/components/ui/listbox/index.d.ts",
+      "import": "./dist/components/ui/listbox/index.js"
+    },
+    "./listbox/styles.css": {
+      "default": "./dist/components/ui/listbox/listbox.css"
+    },
+    "./menu-button": {
+      "types": "./dist/components/ui/menu-button/index.d.ts",
+      "import": "./dist/components/ui/menu-button/index.js"
+    },
+    "./menu-button/styles.css": {
+      "default": "./dist/components/ui/menu-button/menu-button.css"
+    },
+    "./menubar": {
+      "types": "./dist/components/ui/menubar/index.d.ts",
+      "import": "./dist/components/ui/menubar/index.js"
+    },
+    "./menubar/styles.css": {
+      "default": "./dist/components/ui/menubar/menubar.css"
+    },
+    "./meter": {
+      "types": "./dist/components/ui/meter/index.d.ts",
+      "import": "./dist/components/ui/meter/index.js"
+    },
+    "./meter/styles.css": {
+      "default": "./dist/components/ui/meter/meter.css"
+    },
+    "./navigation-menu": {
+      "types": "./dist/components/ui/navigation-menu/index.d.ts",
+      "import": "./dist/components/ui/navigation-menu/index.js"
+    },
+    "./navigation-menu/styles.css": {
+      "default": "./dist/components/ui/navigation-menu/navigation-menu.css"
+    },
+    "./number-field": {
+      "types": "./dist/components/ui/number-field/index.d.ts",
+      "import": "./dist/components/ui/number-field/index.js"
+    },
+    "./number-field/styles.css": {
+      "default": "./dist/components/ui/number-field/number-field.css"
+    },
+    "./popover": {
+      "types": "./dist/components/ui/popover/index.d.ts",
+      "import": "./dist/components/ui/popover/index.js"
+    },
+    "./popover/styles.css": {
+      "default": "./dist/components/ui/popover/popover.css"
+    },
+    "./radio-group": {
+      "types": "./dist/components/ui/radio-group/index.d.ts",
+      "import": "./dist/components/ui/radio-group/index.js"
+    },
+    "./radio-group/styles.css": {
+      "default": "./dist/components/ui/radio-group/radio-group.css"
+    },
+    "./select": {
+      "types": "./dist/components/ui/select/index.d.ts",
+      "import": "./dist/components/ui/select/index.js"
+    },
+    "./select/styles.css": {
+      "default": "./dist/components/ui/select/select.css"
+    },
+    "./sidebar": {
+      "types": "./dist/components/ui/sidebar/index.d.ts",
+      "import": "./dist/components/ui/sidebar/index.js"
+    },
+    "./sidebar/styles.css": {
+      "default": "./dist/components/ui/sidebar/sidebar.css"
+    },
+    "./sidebar/docs.css": {
+      "default": "./dist/components/ui/sidebar/sidebar.docs.css"
+    },
+    "./slider": {
+      "types": "./dist/components/ui/slider/index.d.ts",
+      "import": "./dist/components/ui/slider/index.js"
+    },
+    "./slider/styles.css": {
+      "default": "./dist/components/ui/slider/slider.css"
+    },
+    "./switch": {
+      "types": "./dist/components/ui/switch/index.d.ts",
+      "import": "./dist/components/ui/switch/index.js"
+    },
+    "./switch/styles.css": {
+      "default": "./dist/components/ui/switch/switch.css"
+    },
+    "./tabs": {
+      "types": "./dist/components/ui/tabs/index.d.ts",
+      "import": "./dist/components/ui/tabs/index.js"
+    },
+    "./tabs/styles.css": {
+      "default": "./dist/components/ui/tabs/tabs.css"
+    },
+    "./tag-group": {
+      "types": "./dist/components/ui/tag-group/index.d.ts",
+      "import": "./dist/components/ui/tag-group/index.js"
+    },
+    "./tag-group/styles.css": {
+      "default": "./dist/components/ui/tag-group/tag-group.css"
+    },
+    "./textarea": {
+      "types": "./dist/components/ui/textarea/index.d.ts",
+      "import": "./dist/components/ui/textarea/index.js"
+    },
+    "./textarea/styles.css": {
+      "default": "./dist/components/ui/textarea/textarea.css"
+    },
+    "./toast": {
+      "types": "./dist/components/ui/toast/index.d.ts",
+      "import": "./dist/components/ui/toast/index.js"
+    },
+    "./toast/styles.css": {
+      "default": "./dist/components/ui/toast/toast.css"
+    },
+    "./toc": {
+      "types": "./dist/components/ui/toc/index.d.ts",
+      "import": "./dist/components/ui/toc/index.js"
+    },
+    "./toc/styles.css": {
+      "default": "./dist/components/ui/toc/toc.css"
+    },
+    "./toolbar": {
+      "types": "./dist/components/ui/toolbar/index.d.ts",
+      "import": "./dist/components/ui/toolbar/index.js"
+    },
+    "./toolbar/styles.css": {
+      "default": "./dist/components/ui/toolbar/toolbar.css"
+    },
+    "./tooltip": {
+      "types": "./dist/components/ui/tooltip/index.d.ts",
+      "import": "./dist/components/ui/tooltip/index.js"
+    },
+    "./tooltip/styles.css": {
+      "default": "./dist/components/ui/tooltip/tooltip.css"
+    },
+    "./tree": {
+      "types": "./dist/components/ui/tree/index.d.ts",
+      "import": "./dist/components/ui/tree/index.js"
+    },
+    "./tree/styles.css": {
+      "default": "./dist/components/ui/tree/tree.css"
+    },
+    "./treegrid": {
+      "types": "./dist/components/ui/treegrid/index.d.ts",
+      "import": "./dist/components/ui/treegrid/index.js"
+    },
+    "./treegrid/styles.css": {
+      "default": "./dist/components/ui/treegrid/treegrid.css"
+    },
+    "./window-splitter": {
+      "types": "./dist/components/ui/window-splitter/index.d.ts",
+      "import": "./dist/components/ui/window-splitter/index.js"
+    },
+    "./window-splitter/styles.css": {
+      "default": "./dist/components/ui/window-splitter/window-splitter.css"
+    }
+  }
 }

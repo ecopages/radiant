@@ -148,11 +148,9 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	private dragStartSize = 0;
 	private navigationCleanups: Array<() => void> = [];
 
-	/**
-	 * @remarks Uncontrolled open state is initialized after JSX flushes deferred
-	 * property bindings, so `defaultOpen` is sampled once rather than becoming
-	 * live state.
-	 */
+	/** @remarks Remains `false` until a projected active link has been scrolled. */
+	private didScrollActiveOnMount = false;
+
 	override connectedCallback(): void {
 		super.connectedCallback();
 
@@ -171,8 +169,23 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 			this.syncHostAttributes();
 			this.syncPaneWidthVar();
 			this.bindMobileMediaQuery();
-			this.syncActiveLinks(this.scrollActiveOnMount);
+			this.syncActiveLinksAfterRender(true);
 		});
+	}
+
+	/**
+	 * @remarks Light-DOM hydrate/update can recreate projected menu links after the
+	 * connect microtask sync. Re-apply active classes once the render commits so
+	 * imperative highlights survive slot projection.
+	 */
+	override hydrate(): void {
+		super.hydrate();
+		this.syncActiveLinksAfterRender(true);
+	}
+
+	override update(): void {
+		super.update();
+		this.syncActiveLinksAfterRender(false);
 	}
 
 	override disconnectedCallback(): void {
@@ -180,6 +193,13 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.unbindMobileMediaQuery();
 		this.detachNavigationListeners();
 		super.disconnectedCallback();
+	}
+
+	private syncActiveLinksAfterRender(allowScrollOnMount: boolean): void {
+		const shouldScroll = allowScrollOnMount && this.scrollActiveOnMount && !this.didScrollActiveOnMount;
+		if (this.syncActiveLinks(shouldScroll)) {
+			this.didScrollActiveOnMount = true;
+		}
 	}
 
 	/**
@@ -242,24 +262,28 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	}
 
 	/** Re-applies active classes on descendant menu links from the current URL. */
-	syncActiveLinks(scrollActiveIntoView = false): void {
+	syncActiveLinks(scrollActiveIntoView = false): boolean {
 		if (!this.matchActive || typeof window === 'undefined' || typeof window.location === 'undefined') {
-			return;
+			return false;
 		}
 
 		const currentPath = window.location.pathname;
+		let didScrollActiveLink = false;
 		for (const link of this.querySelectorAll<HTMLAnchorElement>(MENU_LINK_SELECTOR)) {
 			const active = this.isLinkActive(link, currentPath);
 			link.classList.toggle('rui-sidebar__menu-button--active', active);
 			if (active) {
 				link.setAttribute('aria-current', 'page');
-				if (scrollActiveIntoView) {
+				if (scrollActiveIntoView && !didScrollActiveLink) {
 					link.scrollIntoView({ block: 'nearest' });
+					didScrollActiveLink = true;
 				}
 			} else {
 				link.removeAttribute('aria-current');
 			}
 		}
+
+		return didScrollActiveLink;
 	}
 
 	private isLinkActive(link: HTMLAnchorElement, currentPath: string): boolean {
