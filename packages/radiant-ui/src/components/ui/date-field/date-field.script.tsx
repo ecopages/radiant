@@ -449,7 +449,7 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 						data-date-field-trigger
 						aria-label="Open calendar"
 						aria-haspopup="dialog"
-						aria-expanded={this.$.open ? 'true' : 'false'}
+						aria-expanded={this.open ? 'true' : 'false'}
 						disabled={this.$.disabled || this.$.readOnly}
 					>
 						<RuiIconCalendar />
@@ -459,10 +459,10 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 					class="rui-date-field__popover rui-popover rui-floating"
 					data-ref="popover"
 					data-date-field-popover
-					hidden={!this.$.open}
+					hidden={!this.open}
 					role="dialog"
 				>
-					{this.$.open ? <rui-calendar {...calendarProps} /> : null}
+					{this.open ? <rui-calendar {...calendarProps} /> : null}
 				</div>
 			</div>
 		);

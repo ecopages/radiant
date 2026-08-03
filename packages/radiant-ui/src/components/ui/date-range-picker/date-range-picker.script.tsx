@@ -417,7 +417,7 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 						data-range-trigger
 						aria-label="Open calendar"
 						aria-haspopup="dialog"
-						aria-expanded={this.$.open ? 'true' : 'false'}
+						aria-expanded={this.open ? 'true' : 'false'}
 						disabled={this.$.disabled || this.$.readOnly}
 					>
 						<RuiIconCalendar />
@@ -427,10 +427,10 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 					class="rui-date-range-picker__popover rui-popover rui-floating"
 					data-ref="popover"
 					data-range-popover
-					hidden={!this.$.open}
+					hidden={!this.open}
 					role="dialog"
 				>
-					{this.$.open ? <rui-calendar {...calendarProps} /> : null}
+					{this.open ? <rui-calendar {...calendarProps} /> : null}
 				</div>
 			</div>
 		);
