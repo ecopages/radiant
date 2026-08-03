@@ -1,7 +1,7 @@
 import '@ecopages/radiant/server/install-ssr-runtime';
 import '@ecopages/radiant/client/install-hydrator';
 import { renderRadiantElementHostToString } from '@ecopages/radiant/server/radiant-element-ssr';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
 
 async function settled(): Promise<void> {
@@ -33,5 +33,33 @@ describe('RuiSidebar SSR boolean host attributes', () => {
 		expect(sidebar.querySelector('[data-ref="handle"]')).toBeNull();
 
 		document.body.innerHTML = '';
+	});
+});
+
+describe('RuiSidebar SSR navigation listeners', () => {
+	let documentAddSpy: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		documentAddSpy = vi.spyOn(document, 'addEventListener');
+	});
+
+	afterEach(() => {
+		documentAddSpy.mockRestore();
+	});
+
+	it('does not register navigationEvents listeners during SSR prop assignment', () => {
+		for (let i = 0; i < 24; i++) {
+			const sidebar = new RuiSidebarElement();
+			sidebar.matchActive = true;
+			sidebar.navigationEvents = 'eco:page-load,eco:after-swap';
+			renderRadiantElementHostToString(sidebar, { mode: 'hydrate' });
+		}
+
+		expect(
+			documentAddSpy.mock.calls.filter((call: Parameters<Document['addEventListener']>) => call[0] === 'eco:page-load'),
+		).toHaveLength(0);
+		expect(
+			documentAddSpy.mock.calls.filter((call: Parameters<Document['addEventListener']>) => call[0] === 'eco:after-swap'),
+		).toHaveLength(0);
 	});
 });

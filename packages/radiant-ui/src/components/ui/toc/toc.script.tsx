@@ -1,4 +1,5 @@
 import { RadiantElement, bound, customElement, onUpdated, prop, state } from '@ecopages/radiant';
+import { isServer } from '@ecopages/radiant/is-server';
 import { parseCommaSeparated } from '@/lib/comma-separated';
 import {
 	ensureUniqueHeadingId,
@@ -151,6 +152,10 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 	}
 
 	private attachNavigationListeners(): void {
+		if (isServer || !this.isConnected) {
+			return;
+		}
+
 		const handler = () => this.rebuild();
 		for (const eventName of parseCommaSeparated(this.navigationEvents)) {
 			document.addEventListener(eventName, handler);
@@ -166,6 +171,10 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 	}
 
 	private attachScrollListener(): void {
+		if (isServer || !this.isConnected) {
+			return;
+		}
+
 		const onScroll = () => {
 			if (this.scrollRafPending) {
 				return;
