@@ -176,7 +176,8 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	/**
 	 * @remarks Light-DOM hydrate/update can recreate projected menu links after the
 	 * connect microtask sync. Re-apply active classes once the render commits so
-	 * imperative highlights survive slot projection.
+	 * imperative highlights survive slot projection. `requestUpdate()` commits through
+	 * the scheduler (not `update()`), so that path must re-sync too.
 	 */
 	override hydrate(): void {
 		super.hydrate();
@@ -188,6 +189,13 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.syncActiveLinksAfterRender(false);
 	}
 
+	override requestUpdate(): void {
+		super.requestUpdate();
+		queueMicrotask(() => {
+			this.syncActiveLinksAfterRender(false);
+		});
+	}
+
 	override disconnectedCallback(): void {
 		this.endDrag();
 		this.unbindMobileMediaQuery();
@@ -197,7 +205,8 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 
 	private syncActiveLinksAfterRender(allowScrollOnMount: boolean): void {
 		const shouldScroll = allowScrollOnMount && this.scrollActiveOnMount && !this.didScrollActiveOnMount;
-		if (this.syncActiveLinks(shouldScroll)) {
+		this.syncActiveLinks(shouldScroll);
+		if (shouldScroll) {
 			this.didScrollActiveOnMount = true;
 		}
 	}
