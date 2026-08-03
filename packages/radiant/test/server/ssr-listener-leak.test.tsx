@@ -104,10 +104,14 @@ describe('SSR navigation listener leak', () => {
 		}
 
 		expect(
-			documentAddSpy.mock.calls.filter((call: Parameters<Document['addEventListener']>) => call[0] === 'eco:page-load'),
+			documentAddSpy.mock.calls.filter(
+				(call: Parameters<Document['addEventListener']>) => call[0] === 'eco:page-load',
+			),
 		).toHaveLength(0);
 		expect(
-			documentAddSpy.mock.calls.filter((call: Parameters<Document['addEventListener']>) => call[0] === 'eco:after-swap'),
+			documentAddSpy.mock.calls.filter(
+				(call: Parameters<Document['addEventListener']>) => call[0] === 'eco:after-swap',
+			),
 		).toHaveLength(0);
 	});
 
@@ -118,7 +122,9 @@ describe('SSR navigation listener leak', () => {
 		}
 
 		expect(
-			documentAddSpy.mock.calls.filter((call: Parameters<Document['addEventListener']>) => call[0] === 'eco:page-load'),
+			documentAddSpy.mock.calls.filter(
+				(call: Parameters<Document['addEventListener']>) => call[0] === 'eco:page-load',
+			),
 		).toHaveLength(0);
 	});
 

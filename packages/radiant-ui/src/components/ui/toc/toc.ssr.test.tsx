@@ -28,13 +28,17 @@ describe('RuiToc SSR navigation listeners', () => {
 		}
 
 		expect(
-			documentAddSpy.mock.calls.filter((call: Parameters<Document['addEventListener']>) => call[0] === 'eco:page-load'),
+			documentAddSpy.mock.calls.filter(
+				(call: Parameters<Document['addEventListener']>) => call[0] === 'eco:page-load',
+			),
 		).toHaveLength(0);
 		expect(
-			documentAddSpy.mock.calls.filter((call: Parameters<Document['addEventListener']>) => call[0] === 'eco:after-swap'),
+			documentAddSpy.mock.calls.filter(
+				(call: Parameters<Document['addEventListener']>) => call[0] === 'eco:after-swap',
+			),
 		).toHaveLength(0);
-		expect(windowAddSpy.mock.calls.filter((call: Parameters<Window['addEventListener']>) => call[0] === 'scroll')).toHaveLength(
-			0,
-		);
+		expect(
+			windowAddSpy.mock.calls.filter((call: Parameters<Window['addEventListener']>) => call[0] === 'scroll'),
+		).toHaveLength(0);
 	});
 });
