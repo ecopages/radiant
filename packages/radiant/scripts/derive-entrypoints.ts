@@ -7,12 +7,27 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-type PackageJsonExport = string | { import?: string; types?: string };
+type PackageJsonExport =
+	| string
+	| {
+			import?: string;
+			types?: string;
+			node?: string;
+			default?: string;
+	  };
 
 export type DerivedEntrypoints = {
 	browserSubpathEntrypoints: string[];
 	serverEntrypoints: string[];
 };
+
+function collectBrowserImportPath(exportValue: Exclude<PackageJsonExport, string>): string | undefined {
+	return exportValue.import ?? exportValue.default;
+}
+
+function collectNodeImportPath(exportValue: Exclude<PackageJsonExport, string>): string | undefined {
+	return exportValue.node;
+}
 
 function stripDistPrefix(value: string): string {
 	if (value.startsWith('./dist/')) {
@@ -57,35 +72,40 @@ export function deriveEntrypoints(
 			continue;
 		}
 
-		const importPath = exportValue.import;
+		const browserImportPath = collectBrowserImportPath(exportValue);
+		const nodeImportPath = collectNodeImportPath(exportValue);
+		const importPaths = [
+			...new Set([browserImportPath, nodeImportPath].filter((value): value is string => !!value)),
+		];
 
-		if (!importPath) {
-			continue;
+		for (const importPath of importPaths) {
+			const srcEntry = distImportToSrcEntry(importPath);
+			const absoluteSrc = path.join(packageRoot, srcEntry);
+
+			if (!existsSync(absoluteSrc)) {
+				throw new Error(
+					`[@ecopages/radiant] Export ${exportKey} maps to missing source file ${srcEntry} (from ${importPath}).`,
+				);
+			}
+
+			if (srcEntry === 'src/index.ts') {
+				continue;
+			}
+
+			if (isServerEntrypoint(srcEntry)) {
+				serverEntrypoints.push(srcEntry);
+				continue;
+			}
+
+			browserSubpathEntrypoints.push(srcEntry);
 		}
-
-		const srcEntry = distImportToSrcEntry(importPath);
-		const absoluteSrc = path.join(packageRoot, srcEntry);
-
-		if (!existsSync(absoluteSrc)) {
-			throw new Error(
-				`[@ecopages/radiant] Export ${exportKey} maps to missing source file ${srcEntry} (from ${importPath}).`,
-			);
-		}
-
-		if (srcEntry === 'src/index.ts') {
-			continue;
-		}
-
-		if (isServerEntrypoint(srcEntry)) {
-			serverEntrypoints.push(srcEntry);
-			continue;
-		}
-
-		browserSubpathEntrypoints.push(srcEntry);
 	}
 
 	browserSubpathEntrypoints.sort();
 	serverEntrypoints.sort();
 
-	return { browserSubpathEntrypoints, serverEntrypoints };
+	return {
+		browserSubpathEntrypoints: [...new Set(browserSubpathEntrypoints)],
+		serverEntrypoints: [...new Set(serverEntrypoints)],
+	};
 }

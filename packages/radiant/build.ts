@@ -22,7 +22,14 @@ import { spawnSync } from 'node:child_process';
 import * as esbuild from 'esbuild';
 import { deriveEntrypoints } from './scripts/derive-entrypoints.js';
 
-type PackageJsonExport = string | { import?: string; types?: string };
+type PackageJsonExport =
+	| string
+	| {
+			import?: string;
+			types?: string;
+			node?: string;
+			default?: string;
+	  };
 
 type PackageJsonShape = {
 	name: string;
@@ -64,6 +71,8 @@ function rewriteExport(value: PackageJsonExport): PackageJsonExport {
 	return {
 		...(value.types ? { types: stripDistPrefix(value.types) } : {}),
 		...(value.import ? { import: stripDistPrefix(value.import) } : {}),
+		...(value.node ? { node: stripDistPrefix(value.node) } : {}),
+		...(value.default ? { default: stripDistPrefix(value.default) } : {}),
 	};
 }
 
@@ -118,7 +127,13 @@ if (!packageJson.exports) {
 
 const { browserSubpathEntrypoints, serverEntrypoints } = deriveEntrypoints(packageRoot, packageJson.exports);
 
-const externalPackages = ['@ecopages/jsx', '@ecopages/jsx/*', '@ecopages/signals', '@ecopages/signals/*'];
+const externalPackages = [
+	'@ecopages/jsx',
+	'@ecopages/jsx/*',
+	'@ecopages/signals',
+	'@ecopages/signals/*',
+	'@ecopages/radiant/is-server',
+];
 const watchMode = process.argv.includes('--watch');
 const minify = !watchMode;
 
