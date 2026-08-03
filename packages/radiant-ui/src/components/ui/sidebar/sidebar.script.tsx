@@ -1,4 +1,5 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { parseCommaSeparated } from '@/lib/comma-separated';
 
@@ -270,6 +271,10 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	}
 
 	private attachNavigationListeners(): void {
+		if (isServer || !this.isConnected) {
+			return;
+		}
+
 		if (!this.matchActive || typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
 			return;
 		}

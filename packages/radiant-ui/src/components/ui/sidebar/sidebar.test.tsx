@@ -788,4 +788,42 @@ describe('RuiSidebar matchActive', () => {
 		history.replaceState(null, '', originalPath);
 		cleanup();
 	});
+
+	it('re-syncs active links after eco:page-load', async () => {
+		const originalPath = window.location.pathname;
+		history.replaceState(null, '', '/docs/overview');
+
+		const { host, cleanup } = mount(
+			<RuiSidebar id="nav" matchActive navigationEvents="eco:page-load" label="Docs">
+				<RuiSidebarContent>
+					<RuiSidebarMenu aria-label="Docs links">
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/overview">
+								Overview
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/installation">
+								Installation
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+					</RuiSidebarMenu>
+				</RuiSidebarContent>
+			</RuiSidebar>,
+		);
+
+		await settled();
+		await tick();
+
+		history.replaceState(null, '', '/docs/installation');
+		document.dispatchEvent(new Event('eco:page-load'));
+		await settled();
+		await tick();
+
+		const active = host.querySelector('a.rui-sidebar__menu-button--active');
+		expect(active?.getAttribute('href')).toBe('/docs/installation');
+
+		history.replaceState(null, '', originalPath);
+		cleanup();
+	});
 });
