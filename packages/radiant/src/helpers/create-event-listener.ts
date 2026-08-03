@@ -1,4 +1,5 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
+import { isServer } from '@ecopages/radiant/is-server';
 import { escapeCssIdentifier } from '../tools/escape-css-identifier';
 import { isControllerHost, resolveHostElement } from './resolve-host-element';
 
@@ -129,6 +130,10 @@ export function createEventListener(
 ): () => void {
 	if (isControllerEventHost(host) && 'scope' in config && config.scope && config.scope !== 'light') {
 		throw new Error('RadiantController event listeners only support light DOM scope.');
+	}
+
+	if (isServer) {
+		return () => {};
 	}
 
 	const hostElement = resolveEventListenerHostElement(host);

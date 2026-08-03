@@ -73,6 +73,12 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		},
+		"./is-server": {
+			"types": "./dist/is-server.d.ts",
+			"node": "./dist/is-server-node.js",
+			"import": "./dist/is-server.js",
+			"default": "./dist/is-server.js"
+		},
 		"./context": {
 			"types": "./dist/context/index.d.ts",
 			"import": "./dist/context/index.js"
