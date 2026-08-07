@@ -1,0 +1,53 @@
+---
+title: Toolbar
+description: Toolbars group formatting or view controls that affect a shared context — rich text editors, chart controls, or data tables.
+category: Actions
+---
+
+import { meta as ToolbarMeta, Default } from '@/content/stories/toolbar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Toolbar
+
+<p class="docs-lede">Toolbars group formatting or view controls that affect a shared context — rich text editors, chart controls, or data tables.</p>
+
+## Try it
+
+<Demo of={Default} meta={ToolbarMeta} />
+
+## Usage
+
+Place toggle `RuiButton` children inside `RuiToolbar`. Enable `exclusiveToggles` when only one toggle can be active.
+
+```tsx
+import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiToolbar label="Text formatting" exclusiveToggles>
+  <RuiButton toggle pressed variant="ghost">Bold</RuiButton>
+  <RuiButton toggle variant="ghost">Italic</RuiButton>
+</RuiToolbar>
+```
+
+## Exclusive toggles
+
+<p>Use `exclusiveToggles` for view modes where only one option — list vs grid — can be active at a time.</p>
+
+## Accessibility
+
+- Toolbar renders with `role="toolbar"` and an accessible name from `label`.
+- Toggle buttons expose `aria-pressed` for their on/off state.
+- Arrow keys move between toolbar items when focus is inside the toolbar.

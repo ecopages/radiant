@@ -1,0 +1,53 @@
+---
+title: Treegrid
+description: Treegrids combine tree hierarchy with tabular columns — file explorers with size and date columns, or nested budgets.
+category: Data display
+---
+
+import { meta as TreegridMeta, Default } from '@/content/stories/treegrid';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Treegrid
+
+<p class="docs-lede">Treegrids combine tree hierarchy with tabular columns — file explorers with size and date columns, or nested budgets.</p>
+
+## Try it
+
+<Demo of={Default} meta={TreegridMeta} />
+
+## Usage
+
+Define rows with `RuiTreegridRow` data including `id`, `label`, and nested `children`. Bind `value` for selection.
+
+```tsx
+import { RuiTreegrid, type RuiTreegridRow } from '@ecopages/radiant-ui/treegrid';
+
+const rows: RuiTreegridRow[] = [
+  { id: 'docs', label: 'docs', children: [{ id: 'intro', label: 'introduction.md' }] },
+];
+
+<RuiTreegrid rows={rows} value="intro" label="Repository" />
+```
+
+## Tree vs treegrid
+
+<p>Use Treegrid when rows have multiple columns of data. Use Tree for single-column hierarchies.</p>
+
+## Accessibility
+
+- Treegrid exposes `role="treegrid"` with grid navigation semantics.
+- Column headers provide context for cell values.
+- Expandable rows communicate `aria-expanded` on parent rows.

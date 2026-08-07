@@ -1,0 +1,52 @@
+---
+title: Listbox
+description: Listboxes present a scrollable set of options with single or multiple selection. They are the foundation for select, combobox, and autocomplete popups.
+category: Forms
+---
+
+import { meta as ListboxMeta, Default } from '@/content/stories/listbox';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Listbox
+
+<p class="docs-lede">Listboxes present a scrollable set of options with single or multiple selection. They are the foundation for select, combobox, and autocomplete popups.</p>
+
+## Try it
+
+<Demo of={Default} meta={ListboxMeta} />
+
+## Usage
+
+Add `RuiListboxOption` children with unique `value` props. Bind `value` on the listbox for controlled selection.
+
+```tsx
+import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
+
+<RuiListbox value="cat" label="Animal">
+  <RuiListboxOption value="cat">Cat</RuiListboxOption>
+  <RuiListboxOption value="dog">Dog</RuiListboxOption>
+</RuiListbox>
+```
+
+## Embedded listboxes
+
+<p>Set `embedded` when the listbox lives inside a combobox or select popup rather than inline on the page.</p>
+
+## Accessibility
+
+- Options expose `role="option"` with `aria-selected` for the current choice.
+- Arrow keys move focus between options; type-ahead jumps to matching entries.
+- Provide a `label` or external heading so users know what the list represents.

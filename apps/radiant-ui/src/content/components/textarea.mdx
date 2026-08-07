@@ -1,0 +1,54 @@
+---
+title: Textarea
+description: Textareas capture multi-line text — descriptions, comments, and messages — with configurable row height.
+category: Forms
+---
+
+import { meta as TextareaMeta, Default } from '@/content/stories/textarea';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Textarea
+
+<p class="docs-lede">Textareas capture multi-line text — descriptions, comments, and messages — with configurable row height.</p>
+
+## Try it
+
+<Demo of={Default} meta={TextareaMeta} />
+
+## Usage
+
+Wrap in `RuiField` with a label. Set `rows` for initial height and `size` for typography scale.
+
+```tsx
+import { RuiTextarea } from '@ecopages/radiant-ui/textarea';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="bio">
+  <RuiLabel>Bio</RuiLabel>
+  <RuiTextarea rows={4} size="md" placeholder="Tell us about yourself" />
+</RuiField>
+```
+
+## Set initial rows
+
+<p>Match `rows` to the expected content length. Short notes need fewer rows than essay-length fields.</p>
+
+## Accessibility
+
+- Every textarea needs a visible label via `RuiLabel`.
+- Character limits should be announced and visible, not hidden until exceeded.
+- Disabled textareas should explain why editing is unavailable.

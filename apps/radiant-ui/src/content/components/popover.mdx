@@ -1,0 +1,61 @@
+---
+title: Popover
+description: Popovers anchor rich content to a trigger element — filters, mini forms, or contextual details — without modal focus trapping.
+category: Overlays
+---
+
+import { meta as PopoverMeta, Default } from '@/content/stories/popover';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Popover
+
+<p class="docs-lede">Popovers anchor rich content to a trigger element — filters, mini forms, or contextual details — without modal focus trapping.</p>
+
+## Try it
+
+<Demo of={Default} meta={PopoverMeta} />
+
+## Usage
+
+Wrap content in `RuiPopoverTrigger` and `RuiPopoverContent`. Control `open`, `placement`, and `portal` for positioning.
+
+```tsx
+import { RuiPopover, RuiPopoverTrigger, RuiPopoverContent } from '@ecopages/radiant-ui/popover';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiPopover placement="bottom-start">
+  <RuiPopoverTrigger>
+    <RuiButton variant="outline">Filter</RuiButton>
+  </RuiPopoverTrigger>
+  <RuiPopoverContent>
+    <p>Show items from the last 7 days.</p>
+  </RuiPopoverContent>
+</RuiPopover>
+```
+
+## Listbox variant
+
+<p>Set `variant="listbox"` when the popover hosts a `RuiListbox` — width and focus behavior adapt automatically.</p>
+
+## Match anchor width
+
+<p>Enable `matchAnchorWidth` for select-style popovers so the panel aligns with the trigger.</p>
+
+## Accessibility
+
+- Triggers expose `aria-expanded` when the popover is open.
+- Content is focusable and dismissible with Escape.
+- Do not trap focus — users should reach surrounding content without closing first.

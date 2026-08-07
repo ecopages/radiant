@@ -1,4 +1,4 @@
-import { componentNavEntries } from '@/lib/component-docs/nav-registry';
+import { componentNavEntries } from '@/lib/component-nav';
 
 export type ComponentCatalogEntry = {
 	slug: string;

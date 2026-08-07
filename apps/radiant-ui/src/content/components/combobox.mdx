@@ -1,0 +1,65 @@
+---
+title: Combobox
+description: A combobox combines a text field with a filterable popup list. Use it when users may type a value or pick from suggestions.
+category: Forms
+---
+
+import { meta as ComboboxMeta, Default } from '@/content/stories/combobox';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Combobox
+
+<p class="docs-lede">A combobox combines a text field with a filterable popup list. Use it when users may type a value or pick from suggestions.</p>
+
+## Try it
+
+<Demo of={Default} meta={ComboboxMeta} />
+
+## Usage
+
+Compose `RuiComboboxControl`, `RuiComboboxInput`, `RuiComboboxTrigger`, and `RuiComboboxListbox` with `RuiListboxOption` children.
+
+```tsx
+import { RuiCombobox, RuiComboboxControl, RuiComboboxInput, RuiComboboxTrigger, RuiComboboxListbox } from '@ecopages/radiant-ui/combobox';
+import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
+
+<RuiCombobox value="cat" placeholder="Choose an animal">
+  <RuiComboboxControl>
+    <RuiComboboxInput />
+    <RuiComboboxTrigger />
+  </RuiComboboxControl>
+  <RuiComboboxListbox>
+    <RuiListbox>
+      <RuiListboxOption value="cat">Cat</RuiListboxOption>
+      <RuiListboxOption value="dog">Dog</RuiListboxOption>
+    </RuiListbox>
+  </RuiComboboxListbox>
+</RuiCombobox>
+```
+
+## Open on focus
+
+<p>Enable `openOnFocus` when the option set is small and users benefit from seeing choices immediately. Disable it for large datasets.</p>
+
+## Allow custom values
+
+<p>Comboboxes accept typed input that may not match an option. Validate on submit if only predefined values are permitted.</p>
+
+## Accessibility
+
+- The input exposes `role="combobox"` with `aria-expanded` reflecting popup state.
+- Associate a visible label via `label` or `RuiLabel`.
+- Announce the number of filtered results when the list changes substantially.

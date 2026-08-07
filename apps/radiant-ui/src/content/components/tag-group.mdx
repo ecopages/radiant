@@ -1,0 +1,54 @@
+---
+title: Tag Group
+description: Tag groups display selected values as removable chips — common in multi-select fields and filter bars.
+category: Data display
+---
+
+import { meta as TagGroupMeta, Default } from '@/content/stories/tag-group';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Tag Group
+
+<p class="docs-lede">Tag groups display selected values as removable chips — common in multi-select fields and filter bars.</p>
+
+## Try it
+
+<Demo of={Default} meta={TagGroupMeta} />
+
+## Usage
+
+Bind `value` as a comma-separated list. Compose `RuiTagList`, `RuiTag`, and `RuiTagRemove` for custom tag rendering.
+
+```tsx
+import { RuiTagGroup, RuiTagList, RuiTag, RuiTagRemove } from '@ecopages/radiant-ui/tag-group';
+
+<RuiTagGroup value="react,typescript" selectionMode="multiple" label="Skills">
+  <RuiTagList>
+    <RuiTag id="react">React<RuiTagRemove /></RuiTag>
+    <RuiTag id="typescript">TypeScript<RuiTagRemove /></RuiTag>
+  </RuiTagList>
+</RuiTagGroup>
+```
+
+## Embedded in selects
+
+<p>Set `embedded` when tags render inside a select or combobox trigger rather than standalone.</p>
+
+## Accessibility
+
+- Each tag exposes its label text to screen readers.
+- Remove buttons have accessible names indicating which tag will be removed.
+- The group has an accessible name via `label` when not described by surrounding text.

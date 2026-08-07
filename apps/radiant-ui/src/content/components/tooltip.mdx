@@ -1,0 +1,52 @@
+---
+title: Tooltip
+description: Tooltips show supplementary text on hover or focus — icon button labels, truncated text, or field hints.
+category: Overlays
+---
+
+import { meta as TooltipMeta, Default } from '@/content/stories/tooltip';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Tooltip
+
+<p class="docs-lede">Tooltips show supplementary text on hover or focus — icon button labels, truncated text, or field hints.</p>
+
+## Try it
+
+<Demo of={Default} meta={TooltipMeta} />
+
+## Usage
+
+Wrap the trigger element and pass `content` with the tooltip text. Adjust `placement` and `delay` for positioning.
+
+```tsx
+import { RuiTooltip } from '@ecopages/radiant-ui/tooltip';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiTooltip content="Download report" placement="top" delay={200}>
+  <RuiButton variant="ghost" aria-label="Download">↓</RuiButton>
+</RuiTooltip>
+```
+
+## Supplementary information only
+
+<p>Tooltips should repeat or clarify visible labels, not introduce essential information available nowhere else.</p>
+
+## Accessibility
+
+- Tooltips appear on keyboard focus as well as hover.
+- Do not put interactive content inside tooltips — use a popover instead.
+- Icon-only buttons should have `aria-label`; the tooltip provides redundant confirmation.

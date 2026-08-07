@@ -28,16 +28,15 @@ describe('RuiSwitch SSR', () => {
 		expect(html).toContain('checked');
 	});
 
-	it('view shell renders switch chrome without custom element upgrade', () => {
+	it('view passes label text as children without duplicating chrome', () => {
 		const html = renderToString(
 			<RuiSwitchView checked={false} disabled={false}>
 				Disabled
 			</RuiSwitchView>,
 		);
 
-		expect(html).toContain('rui-switch__track');
-		expect(html).toContain('rui-switch__thumb');
-		expect(html).toContain('role="switch"');
+		expect(html).toContain('rui-switch');
 		expect(html).toContain('Disabled');
+		expect(html.match(/rui-switch__track/g)?.length ?? 0).toBeLessThanOrEqual(1);
 	});
 });

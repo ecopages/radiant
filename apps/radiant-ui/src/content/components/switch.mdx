@@ -1,0 +1,51 @@
+---
+title: Switch
+description: Switches toggle a single setting on or off with immediate effect.
+category: Forms
+---
+
+import { meta as SwitchMeta, Default, On } from '@/content/stories/switch';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Switch
+
+<p class="docs-lede">Switches toggle a single setting on or off with immediate effect — notifications, dark mode, or feature flags.</p>
+
+## Try it
+
+<Demo of={Default} meta={SwitchMeta} />
+
+## Usage
+
+Bind `checked` for controlled state. Place inside `RuiField` with a `RuiLabel` that describes what the switch controls when composing forms.
+
+```tsx
+import { RuiSwitch } from '@ecopages/radiant-ui/switch';
+
+<RuiSwitch checked={enabled}>Email notifications</RuiSwitch>
+```
+
+## Switch vs checkbox
+
+Use switches for settings that take effect immediately. Use checkboxes for options collected on form submit.
+
+<Canvas of={On} meta={SwitchMeta} />
+
+## Accessibility
+
+- Switches expose `role="switch"` with `aria-checked`.
+- Labels must describe the setting, not the control — "Email notifications", not "Toggle".
+- Space toggles the switch when focused.

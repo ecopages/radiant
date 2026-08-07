@@ -1,0 +1,56 @@
+---
+title: Window Splitter
+description: Window splitters divide a container into two resizable panes — code editor layouts, preview panels, or master-detail views.
+category: Layout
+---
+
+import { meta as WindowSplitterMeta, Default } from '@/content/stories/window-splitter';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Window Splitter
+
+<p class="docs-lede">Window splitters divide a container into two resizable panes — code editor layouts, preview panels, or master-detail views.</p>
+
+## Try it
+
+<Demo of={Default} meta={WindowSplitterMeta} />
+
+## Usage
+
+Set `value` to the primary pane percentage and `orientation` for horizontal or vertical splits. Provide two child panes.
+
+```tsx
+import { RuiWindowSplitter } from '@ecopages/radiant-ui/window-splitter';
+
+<RuiWindowSplitter value={50} orientation="horizontal" label="Split view">
+  <div>Editor</div>
+  <div>Preview</div>
+</RuiWindowSplitter>
+```
+
+## Initial pane ratio
+
+<p>`value` sets the primary pane percentage, clamped between 20 and 80. Users can drag the splitter to adjust.</p>
+
+## Orientation
+
+<p>Use `horizontal` for side-by-side panes and `vertical` for stacked editor/console layouts.</p>
+
+## Accessibility
+
+- The splitter handle is keyboard focusable and adjustable with arrow keys.
+- Provide `label` so screen readers identify the split region.
+- Ensure both panes remain usable at minimum sizes — avoid content that breaks at narrow widths.

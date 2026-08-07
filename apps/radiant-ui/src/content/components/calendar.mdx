@@ -1,0 +1,58 @@
+---
+title: Calendar
+description: Calendars let users pick one or more dates from a month grid. They support single, multiple, and range selection without leaving the surrounding form.
+category: Data display
+---
+
+import { meta as CalendarMeta, Default } from '@/content/stories/calendar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Calendar
+
+<p class="docs-lede">Calendars let users pick one or more dates from a month grid. They support single, multiple, and range selection without leaving the surrounding form.</p>
+
+## Try it
+
+<Demo of={Default} meta={CalendarMeta} />
+
+## Usage
+
+Bind `value` as an ISO date string. Use `selectionMode` to switch between a single day, multiple days, or a start/end range.
+
+```tsx
+import { RuiCalendar } from '@ecopages/radiant-ui/calendar';
+
+<RuiCalendar
+  selectionMode="single"
+  value="2026-08-07"
+  min="2026-01-01"
+  max="2026-12-31"
+/>
+```
+
+## Selection modes
+
+<p>`single` selects one date. `multiple` accepts comma-separated values. `range` expects `start/end` in `value`.</p>
+
+## Constrain selectable dates
+
+<p>Set `min` and `max` to block out-of-range bookings or past dates. Pair with `visibleMonths` for multi-month range pickers.</p>
+
+## Accessibility
+
+- Day cells expose grid semantics with arrow-key navigation between dates.
+- Selected and today states are communicated with `aria-selected` and visible styling.
+- Provide a visible label or `aria-label` when the calendar is not described by surrounding text.

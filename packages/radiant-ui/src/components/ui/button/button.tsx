@@ -1,5 +1,6 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost';
 export type RuiButtonSize = 'sm' | 'md' | 'lg';
@@ -64,7 +65,9 @@ function resolveAriaPressed(
  * No custom element and no controller — only CSS variants/sizes. The `href`
  * union branch preserves native link semantics for navigation.
  *
- * Styles ship via the radiant-ui base stylesheet (`rui-button` classes).
+ * @remarks
+ * Default/`md` height matches `--size-control-md` (same as `RuiInput`) so
+ * form rows align. Styles live in `./button.css`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
  */
@@ -141,3 +144,5 @@ export function RuiButton(props: RuiButtonProps) {
 		</button>
 	);
 }
+
+attachRadiantStylesheets(RuiButton, ['./button.css'], import.meta.url);

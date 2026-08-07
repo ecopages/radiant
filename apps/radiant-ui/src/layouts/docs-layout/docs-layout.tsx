@@ -14,6 +14,7 @@ import {
 	RuiSidebarTrigger,
 } from '@ecopages/radiant-ui/sidebar';
 import { RuiToc } from '@ecopages/radiant-ui/toc';
+import { BaseLayout } from '@/layouts/base-layout';
 import { buildComponentNav } from '@/lib/component-nav';
 import radiantUiJson from '../../../../../packages/radiant-ui/package.json';
 
@@ -67,21 +68,18 @@ const DocsSiteHeader = () => (
 
 export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 	dependencies: {
-		stylesheets: [
-			'./docs-layout.css',
-			'../../components/logo/logo.css',
-			'../../layouts/base-layout/base-layout.css',
-		],
-		scripts: ['./docs-layout.script.ts', '../../components/theme-toggle/theme-toggle.script.ts'],
+		stylesheets: ['./docs-layout.css', '../../components/logo/logo.css'],
+		scripts: ['./docs-layout.script.tsx', '../../components/theme-toggle/theme-toggle.script.ts'],
+		components: [BaseLayout],
 	},
 	render: ({ children }) => {
 		const componentNav = buildComponentNav();
 
 		return (
-			<body>
+			<BaseLayout showHeader={false}>
 				<RuiSidebarProvider
 					layout="docs"
-					class="ui-docs-layout"
+					class="docs-layout"
 					siteHeader={<DocsSiteHeader />}
 					sidebar={
 						<RuiSidebar
@@ -133,20 +131,21 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 					}
 				>
 					<RuiSidebarInset>
-						<main class="ui-docs-layout__content">
-							<article class="ui-docs-layout__article">{children}</article>
-						</main>
+						<div class="docs-layout__content">
+							<div class="prose">{children}</div>
+							<radiant-docs-pagination class="docs-layout__pagination"></radiant-docs-pagination>
+						</div>
 					</RuiSidebarInset>
 					<RuiToc
-						class="ui-docs-layout__toc"
-						target=".ui-docs-layout__article"
+						class="docs-layout__toc"
+						target=".docs-layout__content"
 						headingSelector="h2,h3"
 						label="On this page"
-						scrollOffset={96}
+						scrollOffset={120}
 						navigationEvents={ECO_NAVIGATION_EVENTS}
 					/>
 				</RuiSidebarProvider>
-			</body>
+			</BaseLayout>
 		);
 	},
 });

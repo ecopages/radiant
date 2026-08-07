@@ -1,5 +1,5 @@
+import { entries as contentComponentEntries } from 'ecopages:content/components';
 import type { ComponentCategory } from '@/lib/playground';
-import { componentNavEntries } from '@/lib/component-docs/nav-registry';
 
 export const COMPONENT_CATEGORY_ORDER: ComponentCategory[] = [
 	'Actions',
@@ -16,6 +16,12 @@ export type ComponentNavGroup = {
 	items: { slug: string; title: string; href: string }[];
 };
 
+export const componentNavEntries = contentComponentEntries.map((entry) => ({
+	slug: entry.slug,
+	title: entry.title,
+	category: entry.category,
+}));
+
 export function buildComponentNav(): ComponentNavGroup[] {
 	const byCategory = new Map<ComponentCategory, ComponentNavGroup['items']>();
 
@@ -31,17 +37,33 @@ export function buildComponentNav(): ComponentNavGroup[] {
 	}));
 }
 
-export function getAdjacentComponents(slug: string): {
-	prev?: { title: string; href: string };
-	next?: { title: string; href: string };
-} {
-	const flat = componentNavEntries
-		.map((entry) => ({ title: entry.title, href: `/components/${entry.slug}` }))
-		.sort((a, b) => a.title.localeCompare(b.title));
-	const index = flat.findIndex((item) => item.href === `/components/${slug}`);
-	if (index < 0) return {};
+export type DocsNavItem = {
+	title: string;
+	href: string;
+};
+
+/** Flatten sidebar nav into document order for prev/next pagination. */
+export function flattenDocsNav(): DocsNavItem[] {
+	const groups = buildComponentNav();
+	return [
+		{ title: 'Home', href: '/' },
+		{ title: 'Introduction', href: '/docs/introduction' },
+		...groups.flatMap((group) => group.items),
+	];
+}
+
+/** Adjacent items for `pathname`, or `null` when the path is not in the list. */
+export function getAdjacentDocsNavItems(
+	pathname: string,
+	items: readonly DocsNavItem[] = flattenDocsNav(),
+): { prev: DocsNavItem | null; next: DocsNavItem | null } | null {
+	const currentIndex = items.findIndex((item) => item.href === pathname);
+	if (currentIndex === -1) {
+		return null;
+	}
+
 	return {
-		prev: index > 0 ? flat[index - 1] : undefined,
-		next: index < flat.length - 1 ? flat[index + 1] : undefined,
+		prev: currentIndex > 0 ? items[currentIndex - 1]! : null,
+		next: currentIndex < items.length - 1 ? items[currentIndex + 1]! : null,
 	};
 }

@@ -1,0 +1,58 @@
+---
+title: Date Field
+description: Date fields capture a single calendar date with locale-aware formatting and an optional calendar popup for pointer input.
+category: Forms
+---
+
+import { meta as DateFieldMeta, Default } from '@/content/stories/date-field';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Date Field
+
+<p class="docs-lede">Date fields capture a single calendar date with locale-aware formatting and an optional calendar popup for pointer input.</p>
+
+## Try it
+
+<Demo of={Default} meta={DateFieldMeta} />
+
+## Usage
+
+Bind `value` as an ISO `YYYY-MM-DD` string. Use `dateStyle` to control how the formatted date appears in the input.
+
+```tsx
+import { RuiDateField } from '@ecopages/radiant-ui/date-field';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="startDate">
+  <RuiLabel>Start date</RuiLabel>
+  <RuiDateField value="2026-08-07" dateStyle="medium" />
+</RuiField>
+```
+
+## Masked entry
+
+<p>`masked` guides segment-by-segment typing. Disable it when users paste full ISO strings from external tools.</p>
+
+## Bound the range
+
+<p>Set `min` and `max` to prevent invalid bookings. The embedded calendar inherits the same constraints.</p>
+
+## Accessibility
+
+- Pair every date field with a visible `RuiLabel` or `aria-label`.
+- Invalid dates should surface through `RuiField` error text, not color alone.
+- Calendar popup content is reachable by keyboard from the trigger button.

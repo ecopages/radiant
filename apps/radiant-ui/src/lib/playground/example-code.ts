@@ -33,6 +33,26 @@ function buildAlertExampleCode(props: Record<string, unknown>, children?: string
 	].join('\n');
 }
 
+function buildAutocompleteExampleCode(props: Record<string, unknown>): string {
+	const sensitivity = str(props, 'sensitivity', 'base');
+	return [
+		"import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty, RuiAutocompleteInput } from '@ecopages/radiant-ui/autocomplete';",
+		"import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';",
+		'',
+		`<RuiAutocomplete sensitivity="${sensitivity}">`,
+		'  <RuiAutocompleteInput aria-label="Search tags" placeholder="Search tags" />',
+		'  <RuiAutocompleteCollection>',
+		'    <RuiListbox label="Tags">',
+		'      <RuiListboxOption value="news">News</RuiListboxOption>',
+		'      <RuiListboxOption value="travel">Travel</RuiListboxOption>',
+		'      <RuiListboxOption value="food">Food</RuiListboxOption>',
+		'    </RuiListbox>',
+		'    <RuiAutocompleteEmpty>No matches found.</RuiAutocompleteEmpty>',
+		'  </RuiAutocompleteCollection>',
+		'</RuiAutocomplete>',
+	].join('\n');
+}
+
 /**
  * Tailored example source for composable components whose markup cannot be inferred from props alone.
  */
@@ -44,6 +64,8 @@ export function buildPlaygroundExampleCode(
 	switch (slug) {
 		case 'alert':
 			return buildAlertExampleCode(props);
+		case 'autocomplete':
+			return buildAutocompleteExampleCode(props);
 		default:
 			return null;
 	}

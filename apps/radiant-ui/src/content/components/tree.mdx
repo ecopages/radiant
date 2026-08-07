@@ -1,0 +1,53 @@
+---
+title: Tree
+description: Trees display hierarchical data — file systems, org charts, or nested categories — with expand/collapse per branch.
+category: Data display
+---
+
+import { meta as TreeMeta, Default } from '@/content/stories/tree';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Tree
+
+<p class="docs-lede">Trees display hierarchical data — file systems, org charts, or nested categories — with expand/collapse per branch.</p>
+
+## Try it
+
+<Demo of={Default} meta={TreeMeta} />
+
+## Usage
+
+Pass a `nodes` tree structure or compose tree items as children. Bind `value` to the selected node id.
+
+```tsx
+import { RuiTree, type RuiTreeNode } from '@ecopages/radiant-ui/tree';
+
+const nodes: RuiTreeNode[] = [
+  { id: 'src', label: 'src', children: [{ id: 'app', label: 'app.ts' }] },
+];
+
+<RuiTree nodes={nodes} value="app" label="Project files" />
+```
+
+## Node selection
+
+<p>Bind `value` to highlight the active node. Use keyboard arrows to navigate and expand branches.</p>
+
+## Accessibility
+
+- Tree exposes `role="tree"` with `role="treeitem"` children.
+- Expand/collapse state is communicated with `aria-expanded`.
+- Provide `label` so users know what hierarchy the tree represents.

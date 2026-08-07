@@ -1,0 +1,68 @@
+---
+title: Number Field
+description: Number fields collect numeric input with increment/decrement steppers, locale formatting, and min/max constraints.
+category: Forms
+---
+
+import { meta as NumberFieldMeta, Default } from '@/content/stories/number-field';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Number Field
+
+<p class="docs-lede">Number fields collect numeric input with increment/decrement steppers, locale formatting, and min/max constraints.</p>
+
+## Try it
+
+<Demo of={Default} meta={NumberFieldMeta} />
+
+## Usage
+
+Set `minValue`, `maxValue`, and `step` to constrain input. Compose with `RuiNumberFieldGroup` and stepper buttons for the full pattern.
+
+```tsx
+import {
+  RuiNumberField,
+  RuiNumberFieldGroup,
+  RuiNumberFieldInput,
+  RuiNumberFieldDecrementButton,
+  RuiNumberFieldIncrementButton,
+  RuiNumberFieldSteppers,
+} from '@ecopages/radiant-ui/number-field';
+
+<RuiNumberField value={3} minValue={0} maxValue={10} step={1}>
+  <RuiNumberFieldGroup>
+    <RuiNumberFieldInput />
+    <RuiNumberFieldSteppers>
+      <RuiNumberFieldDecrementButton />
+      <RuiNumberFieldIncrementButton />
+    </RuiNumberFieldSteppers>
+  </RuiNumberFieldGroup>
+</RuiNumberField>
+```
+
+## Step and commit behavior
+
+<p>`commitBehavior` controls whether out-of-range typed values snap to bounds or reject on blur.</p>
+
+## Disable scroll wheel
+
+<p>Set `wheelDisabled` to prevent accidental value changes when users scroll over a focused number field.</p>
+
+## Accessibility
+
+- Stepper buttons need accessible names — "Increment" and "Decrement" are provided by default.
+- Announce min and max constraints in helper text when the valid range is not obvious.
+- Disabled fields should explain why editing is unavailable.

@@ -80,6 +80,18 @@ const ANIMAL_OPTIONS = [
 	{ value: 'dog', label: 'Dog' },
 ];
 
+const AUTOCOMPLETE_DEMO_OPTIONS = [
+	{ value: 'news', label: 'News' },
+	{ value: 'travel', label: 'Travel' },
+	{ value: 'shopping', label: 'Shopping' },
+	{ value: 'business', label: 'Business' },
+	{ value: 'entertainment', label: 'Entertainment' },
+	{ value: 'food', label: 'Food' },
+	{ value: 'technology', label: 'Technology' },
+	{ value: 'health', label: 'Health' },
+	{ value: 'science', label: 'Science' },
+];
+
 function str(props: Record<string, unknown>, key: string, fallback = ''): string {
 	const value = props[key];
 	return value == null ? fallback : String(value);
@@ -149,14 +161,17 @@ function renderAlertPreview(props: Record<string, unknown>, children?: string): 
 }
 
 function renderAutocompletePreview(props: Record<string, unknown>): JsxRenderable {
+	const sensitivity = str(props, 'sensitivity', 'base');
 	return (
-		<RuiAutocomplete sensitivity={str(props, 'sensitivity', 'base')} inputValue={str(props, 'inputValue')}>
-			<RuiAutocompleteInput placeholder="Search animals" />
-			<RuiAutocompleteCollection>
-				<RuiListbox embedded options={ANIMAL_OPTIONS} />
-			</RuiAutocompleteCollection>
-			<RuiAutocompleteEmpty>No matches found.</RuiAutocompleteEmpty>
-		</RuiAutocomplete>
+		<div class="flex w-64 max-w-full flex-col gap-2">
+			<RuiAutocomplete sensitivity={sensitivity}>
+				<RuiAutocompleteInput aria-label="Search tags" placeholder="Search tags" />
+				<RuiAutocompleteCollection>
+					<RuiListbox label="Tags" options={AUTOCOMPLETE_DEMO_OPTIONS} />
+					<RuiAutocompleteEmpty>No matches found.</RuiAutocompleteEmpty>
+				</RuiAutocompleteCollection>
+			</RuiAutocomplete>
+		</div>
 	);
 }
 
@@ -175,11 +190,15 @@ function renderBreadcrumbPreview(props: Record<string, unknown>): JsxRenderable 
 		<RuiBreadcrumb label={str(props, 'label', 'Breadcrumb')} separator={str(props, 'separator', '/')}>
 			<RuiBreadcrumbList>
 				<RuiBreadcrumbItem>
-					<RuiBreadcrumbLink href="/docs">Docs</RuiBreadcrumbLink>
+					<RuiBreadcrumbLink href="/">Home</RuiBreadcrumbLink>
 				</RuiBreadcrumbItem>
 				<RuiBreadcrumbSeparator />
 				<RuiBreadcrumbItem>
-					<RuiBreadcrumbPage>Components</RuiBreadcrumbPage>
+					<RuiBreadcrumbLink href="/components/button">Components</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbPage>Breadcrumb</RuiBreadcrumbPage>
 				</RuiBreadcrumbItem>
 			</RuiBreadcrumbList>
 		</RuiBreadcrumb>

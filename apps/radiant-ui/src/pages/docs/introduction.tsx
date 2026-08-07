@@ -1,19 +1,24 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
+import DocsBreadcrumb from '@/components/docs-breadcrumb/docs-breadcrumb';
 import { DocsLayout } from '@/layouts/docs-layout';
-import { componentNavEntries } from '@/lib/component-docs/nav-registry';
+import { componentNavEntries } from '@/lib/component-nav';
+import { buildIntroductionBreadcrumb } from '@/lib/docs-breadcrumb';
 
 export default eco.page<{}, JsxRenderable>({
 	layout: DocsLayout,
-	dependencies: { stylesheets: ['../index.css'] },
+	dependencies: {
+		components: [DocsBreadcrumb],
+		stylesheets: ['../index.css'],
+	},
 	metadata: () => ({
 		title: 'Introduction | Radiant UI',
 		description: 'An introduction to Radiant UI and its component documentation.',
 	}),
 	render: () => (
 		<>
-			<p class="docs-kicker">Getting started</p>
+			<DocsBreadcrumb items={buildIntroductionBreadcrumb()} />
 			<h1>Introduction</h1>
 			<p class="docs-lede">
 				Radiant UI is a component library for building accessible application interfaces with the Radiant
@@ -25,7 +30,7 @@ export default eco.page<{}, JsxRenderable>({
 			<p>
 				Each component exposes a focused module under <code>@ecopages/radiant-ui/&lt;slug&gt;</code>,
 				predictable props, and accessible defaults. Documentation pairs implementation guidance with an
-				interactive playground that uses the real public API — not a generic placeholder.
+				interactive playground that uses the real public API, not a generic placeholder.
 			</p>
 			<ul>
 				<li>

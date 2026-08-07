@@ -1,0 +1,58 @@
+---
+title: Date Range Picker
+description: Date range pickers collect a start and end date in one control — ideal for bookings, reporting periods, and availability filters.
+category: Forms
+---
+
+import { meta as DateRangePickerMeta, Default } from '@/content/stories/date-range-picker';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Date Range Picker
+
+<p class="docs-lede">Date range pickers collect a start and end date in one control — ideal for bookings, reporting periods, and availability filters.</p>
+
+## Try it
+
+<Demo of={Default} meta={DateRangePickerMeta} />
+
+## Usage
+
+Pass `value` as `start/end` ISO dates. Increase `visibleMonths` to show two months side by side for range selection.
+
+```tsx
+import { RuiDateRangePicker } from '@ecopages/radiant-ui/date-range-picker';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="tripDates">
+  <RuiLabel>Trip dates</RuiLabel>
+  <RuiDateRangePicker value="2026-08-01/2026-08-14" visibleMonths={2} />
+</RuiField>
+```
+
+## Two-month view
+
+<p>Set `visibleMonths` to `2` so users can span month boundaries without extra navigation clicks.</p>
+
+## Separate form names
+
+<p>Use `startName` and `endName` when the backend expects discrete fields instead of a combined range value.</p>
+
+## Accessibility
+
+- Label both start and end inputs — placeholders alone are not sufficient.
+- Selected range endpoints are announced when focus moves between segments.
+- Surface validation errors for incomplete ranges before form submission.

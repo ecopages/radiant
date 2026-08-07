@@ -1,0 +1,67 @@
+---
+title: Form
+description: Forms coordinate validation, default values, and submission across `RuiField` children without external form libraries.
+category: Forms
+---
+
+import { meta as FormMeta, Default } from '@/content/stories/form';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Form
+
+<p class="docs-lede">Forms coordinate validation, default values, and submission across `RuiField` children without external form libraries.</p>
+
+## Try it
+
+<Demo of={Default} meta={FormMeta} />
+
+## Usage
+
+Wrap fields in `RuiForm` and handle `on:submit` with validated values. Choose `mode` to control when validation runs.
+
+```tsx
+import { RuiForm } from '@ecopages/radiant-ui/form';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiForm mode="onSubmit" on:submit={handleSubmit}>
+  <RuiField name="name" rules={{ required: 'Name is required' }}>
+    <RuiLabel>Full name</RuiLabel>
+    <RuiInput />
+  </RuiField>
+  <RuiButton type="submit">Create account</RuiButton>
+</RuiForm>
+```
+
+## Validation timing
+
+<p>`onSubmit` validates once on submit — best for short forms. Use `onBlur` or `onChange` when immediate feedback helps data entry.</p>
+
+## Compose with Radiant controls
+
+<p>Every `RuiField` child should be a Radiant control (`RuiInput`, `RuiSelect`, `RuiDateField`, …). The form store discovers values through the Field control protocol — unmarked native inputs are not registered.</p>
+
+## Default values
+
+<p>Pass `defaultValues` to pre-populate edit forms. Fields read their initial state from the form store.</p>
+
+## Accessibility
+
+- Submit buttons should use `type="submit"` inside the form for keyboard submission.
+- Announce form-level errors at the top when multiple fields fail validation.
+- Focus the first invalid field after a failed submit attempt.

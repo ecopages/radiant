@@ -1,0 +1,68 @@
+---
+title: Breadcrumb
+description: Breadcrumbs show where the current page sits in a hierarchy. They help users backtrack without relying on the browser history alone.
+category: Navigation
+---
+
+import { meta as BreadcrumbMeta, Default } from '@/content/stories/breadcrumb';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Breadcrumb
+
+<p class="docs-lede">Breadcrumbs show where the current page sits in a hierarchy. They help users backtrack without relying on the browser history alone.</p>
+
+## Try it
+
+<Demo of={Default} meta={BreadcrumbMeta} />
+
+## Usage
+
+Compose the trail with `RuiBreadcrumbList`, `RuiBreadcrumbItem`, `RuiBreadcrumbLink`, and `RuiBreadcrumbPage` for the current location.
+
+```tsx
+import {
+  RuiBreadcrumb,
+  RuiBreadcrumbList,
+  RuiBreadcrumbItem,
+  RuiBreadcrumbLink,
+  RuiBreadcrumbPage,
+  RuiBreadcrumbSeparator,
+} from '@ecopages/radiant-ui/breadcrumb';
+
+<RuiBreadcrumb label="Breadcrumb">
+  <RuiBreadcrumbList>
+    <RuiBreadcrumbItem><RuiBreadcrumbLink href="/">Home</RuiBreadcrumbLink></RuiBreadcrumbItem>
+    <RuiBreadcrumbSeparator />
+    <RuiBreadcrumbItem><RuiBreadcrumbLink href="/components/button">Components</RuiBreadcrumbLink></RuiBreadcrumbItem>
+    <RuiBreadcrumbSeparator />
+    <RuiBreadcrumbItem><RuiBreadcrumbPage>Breadcrumb</RuiBreadcrumbPage></RuiBreadcrumbItem>
+  </RuiBreadcrumbList>
+</RuiBreadcrumb>
+```
+
+## Mark the current page
+
+<p>The last item should use `RuiBreadcrumbPage`, not a link. Earlier segments link to ancestor routes.</p>
+
+## Truncate long trails
+
+<p>When the hierarchy is deep, collapse middle segments with `RuiBreadcrumbEllipsis` and expose the full path on demand.</p>
+
+## Accessibility
+
+- The root element renders as a `nav` landmark with an accessible name from the `label` prop.
+- The current page is indicated with `aria-current="page"`.
+- Separators are hidden from assistive technologies with `aria-hidden`.

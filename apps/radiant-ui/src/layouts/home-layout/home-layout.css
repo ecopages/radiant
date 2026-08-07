@@ -1,144 +1,69 @@
-.ui-home-layout__inner {
-	margin: 0 auto;
-	max-width: 76rem;
-	padding: 3rem 2rem 5rem;
-	width: 100%;
+.home-layout {
+	@apply flex flex-col gap-8 px-6 py-8 md:py-12;
 }
 
-.ui-home-layout .home-layout {
-	display: flex;
-	flex-direction: column;
-	gap: 2rem;
+.home-header {
+	@apply col-span-full border-b border-border pb-8 mb-4;
 }
 
-.ui-home-layout .home-header {
-	border-bottom: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
-	padding-bottom: 2rem;
+.home-header__subtitle {
+	@apply text-sm font-bold uppercase tracking-[0.15em] text-on-background/60;
 }
 
-.ui-home-layout .home-header__subtitle {
-	color: color-mix(in srgb, var(--color-on-background) 60%, transparent);
-	font-size: 0.875rem;
-	font-weight: 700;
-	letter-spacing: 0.15em;
-	margin: 0;
-	text-transform: uppercase;
+.home-header__title {
+	@apply mt-3 font-heading text-4xl leading-tight font-semibold text-on-background md:text-5xl text-balance;
 }
 
-.ui-home-layout .home-header__title {
-	font-family: var(--font-heading);
-	font-size: clamp(2.25rem, 5vw, 3.25rem);
-	font-weight: 600;
-	letter-spacing: -0.04em;
-	line-height: 1.1;
-	margin: 0.75rem 0 0;
+.home-header__description {
+	@apply mt-4 max-w-3xl text-base leading-relaxed text-on-background/80 md:text-lg;
 }
 
-.ui-home-layout .home-header__description {
-	color: color-mix(in srgb, var(--color-on-background) 78%, transparent);
-	font-size: 1.125rem;
-	line-height: 1.6;
-	margin: 1rem 0 0;
-	max-width: 42rem;
+.home-header__actions {
+	@apply mt-8 flex flex-wrap items-center gap-3;
 }
 
-.ui-home-layout .home-header__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.75rem;
-	margin-top: 2rem;
+.home-section__title {
+	@apply mb-4 pb-2 font-heading text-2xl font-semibold text-on-background border-b border-border/50;
 }
 
-.ui-home-layout .home-section__title {
-	border-bottom: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
-	font-family: var(--font-heading);
-	font-size: 1.5rem;
-	font-weight: 600;
-	margin: 0 0 1rem;
-	padding-bottom: 0.5rem;
+.home-cards {
+	@apply grid gap-4 sm:grid-cols-2;
 }
 
-.ui-home-layout .home-cards {
-	display: grid;
-	gap: 1rem;
-	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+.home-card {
+	@apply flex flex-col rounded-sm border border-border bg-background-accent p-6 text-on-background no-underline transition-all hover:border-on-background/30 hover:bg-secondary-container/10;
 }
 
-.ui-home-layout .home-card {
-	background: color-mix(in srgb, var(--color-background-accent) 50%, var(--color-background));
-	border: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
-	border-radius: 0.5rem;
-	color: inherit;
-	display: flex;
-	flex-direction: column;
-	padding: 1.25rem;
-	text-decoration: none;
-	transition:
-		border-color 150ms ease-out,
-		background 150ms ease-out;
+.home-card__label {
+	@apply text-xs font-bold uppercase tracking-widest text-on-background/55;
 }
 
-.ui-home-layout .home-card:hover {
-	background: color-mix(in srgb, var(--color-secondary-container) 30%, var(--color-background));
-	border-color: color-mix(in srgb, var(--color-on-background) 24%, transparent);
+.home-card__title {
+	@apply mt-3 font-heading text-xl font-semibold;
 }
 
-.ui-home-layout .home-card__label {
-	color: color-mix(in srgb, var(--color-on-background) 55%, transparent);
-	font-size: 0.6875rem;
-	font-weight: 700;
-	letter-spacing: 0.12em;
-	margin: 0;
-	text-transform: uppercase;
+.home-card__text {
+	@apply mt-2 text-sm leading-relaxed text-on-background/70;
 }
 
-.ui-home-layout .home-card__title {
-	font-family: var(--font-heading);
-	font-size: 1.125rem;
-	font-weight: 600;
-	margin: 0.75rem 0 0;
-}
+.home-path {
+	@apply grid gap-3;
 
-.ui-home-layout .home-card__text {
-	color: color-mix(in srgb, var(--color-on-background) 70%, transparent);
-	font-size: 0.875rem;
-	line-height: 1.55;
-	margin: 0.5rem 0 0;
-}
+	a {
+		@apply flex flex-col gap-1 rounded-sm border border-border bg-background-accent p-4 text-on-background no-underline transition-colors hover:bg-secondary-container/30;
 
-.ui-home-layout .home-path {
-	display: grid;
-	gap: 0.75rem;
-}
+		strong {
+			@apply text-sm font-semibold;
+		}
 
-.ui-home-layout .home-path a {
-	background: color-mix(in srgb, var(--color-background-accent) 40%, var(--color-background));
-	border: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
-	border-radius: 0.5rem;
-	color: inherit;
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-	padding: 1rem;
-	text-decoration: none;
-	transition: border-color 150ms ease-out;
-}
-
-.ui-home-layout .home-path a:hover {
-	border-color: color-mix(in srgb, var(--color-on-background) 24%, transparent);
-}
-
-.ui-home-layout .home-path strong {
-	font-size: 0.875rem;
-}
-
-.ui-home-layout .home-path span {
-	color: color-mix(in srgb, var(--color-on-background) 68%, transparent);
-	font-size: 0.8125rem;
+		span {
+			@apply text-sm text-on-background/70;
+		}
+	}
 }
 
 @media (max-width: 48rem) {
-	.ui-home-layout__inner {
-		padding: 2rem 1.25rem 4rem;
+	.home-layout {
+		@apply px-5 py-8;
 	}
 }

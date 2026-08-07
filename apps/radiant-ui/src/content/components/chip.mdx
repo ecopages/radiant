@@ -1,0 +1,51 @@
+---
+title: Chip
+description: Chips represent compact entities — tags, filters, or status markers — in a pill-shaped container.
+category: Data display
+---
+
+import { meta as ChipMeta, Default, Primary } from '@/content/stories/chip';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Chip
+
+<p class="docs-lede">Chips represent compact entities — tags, filters, or status markers — in a pill-shaped container that reads at a glance.</p>
+
+## Try it
+
+<Demo of={Default} meta={ChipMeta} />
+
+## Usage
+
+Choose a `variant` to match emphasis. Chips are presentational; pair them with `RuiChipList` when displaying a collection.
+
+```tsx
+import { RuiChip } from '@ecopages/radiant-ui/chip';
+
+<RuiChip variant="primary">Design system</RuiChip>
+```
+
+## Variant emphasis
+
+`default` suits neutral metadata. `muted` recedes in dense lists. `primary` highlights an active filter or category.
+
+<Canvas of={Primary} meta={ChipMeta} />
+
+## Accessibility
+
+- Keep chip text short and self-explanatory — avoid abbreviations that need a legend.
+- When chips are interactive, use a button or link with an accessible name instead of a static chip.
+- Do not rely on chip color alone to convey status; include descriptive text.

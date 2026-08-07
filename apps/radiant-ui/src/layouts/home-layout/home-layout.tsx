@@ -63,9 +63,7 @@ export const HomeLayout = eco.component<HomeLayoutProps, JsxRenderable>({
 					</nav>
 				</div>
 			</header>
-			<main class="ui-home-layout">
-				<div class="ui-home-layout__inner">{children}</div>
-			</main>
+			<main>{children}</main>
 		</body>
 	),
 });

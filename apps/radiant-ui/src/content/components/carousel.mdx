@@ -1,0 +1,58 @@
+---
+title: Carousel
+description: Carousels cycle through a set of panels — hero images, feature highlights, or onboarding steps — while keeping one slide in focus.
+category: Data display
+---
+
+import { meta as CarouselMeta, Default } from '@/content/stories/carousel';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Carousel
+
+<p class="docs-lede">Carousels cycle through a set of panels — hero images, feature highlights, or onboarding steps — while keeping one slide in focus.</p>
+
+## Try it
+
+<Demo of={Default} meta={CarouselMeta} />
+
+## Usage
+
+Place `RuiCarouselSlide` children inside `RuiCarousel`. Enable `autoplay` only when motion is not distracting and can be paused.
+
+```tsx
+import { RuiCarousel, RuiCarouselSlide, RuiCarouselPrev, RuiCarouselNext } from '@ecopages/radiant-ui/carousel';
+
+<RuiCarousel index={0} transition="slide" showIndicators>
+  <RuiCarouselSlide>First panel</RuiCarouselSlide>
+  <RuiCarouselSlide>Second panel</RuiCarouselSlide>
+  <RuiCarouselPrev />
+  <RuiCarouselNext />
+</RuiCarousel>
+```
+
+## Use autoplay sparingly
+
+<p>Autoplaying carousels can disorient users and violate reduced-motion preferences. Prefer manual controls and expose `showRotationControl` when autoplay is on.</p>
+
+## Pick a transition
+
+<p>`slide` moves content horizontally. `fade` cross-fades panels. `none` swaps instantly — best when motion would be gratuitous.</p>
+
+## Accessibility
+
+- Provide a descriptive `label` so screen readers identify the carousel region.
+- Prev/next controls must be keyboard reachable and expose their purpose in the accessible name.
+- Respect `prefers-reduced-motion` — avoid autoplay when users request reduced motion.

@@ -1,0 +1,49 @@
+---
+title: Meter
+description: Meters display a scalar value within a known range — storage used, quiz score, or battery level — without implying user input.
+category: Feedback
+---
+
+import { meta as MeterMeta, Default } from '@/content/stories/meter';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Meter
+
+<p class="docs-lede">Meters display a scalar value within a known range — storage used, quiz score, or battery level — without implying user input.</p>
+
+## Try it
+
+<Demo of={Default} meta={MeterMeta} />
+
+## Usage
+
+Set `value`, `min`, and `max` to define the range. Add `label` text so the measurement is self-explanatory.
+
+```tsx
+import { RuiMeter } from '@ecopages/radiant-ui/meter';
+
+<RuiMeter value={72} min={0} max={100} label="Storage used" />
+```
+
+## Meter vs progress bar
+
+<p>Use Meter for static measurements. Use a progress element when showing completion of an in-flight task.</p>
+
+## Accessibility
+
+- Meters expose `role="meter"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`.
+- Include a text label describing what is being measured.
+- Supplement the bar with a numeric value when precision matters.

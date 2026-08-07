@@ -5,7 +5,7 @@ const themeScript = `(function(){const t=localStorage.getItem('theme')||(window.
 
 const Html = eco.component<HtmlTemplateProps, JsxRenderable>({
 	dependencies: {
-		stylesheets: ['../styles/global.css'],
+		stylesheets: ['../styles/tailwind.css'],
 		scripts: [{ content: themeScript, attributes: { defer: '' } }],
 	},
 	render: ({ children, metadata, headContent, language = 'en' }) => (

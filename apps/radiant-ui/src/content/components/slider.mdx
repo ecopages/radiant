@@ -1,0 +1,58 @@
+---
+title: Slider
+description: Sliders let users pick a numeric value or range along a track. They work well when the approximate value matters more than precise typing.
+category: Forms
+---
+
+import { meta as SliderMeta, Default } from '@/content/stories/slider';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Slider
+
+<p class="docs-lede">Sliders let users pick a numeric value or range along a track. They work well when the approximate value matters more than precise typing.</p>
+
+## Try it
+
+<Demo of={Default} meta={SliderMeta} />
+
+## Usage
+
+Set `min`, `max`, and `step` to define the range. Use `variant="range"` with `rangeMin` and `rangeMax` for dual-thumb selection.
+
+```tsx
+import { RuiSlider } from '@ecopages/radiant-ui/slider';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="volume">
+  <RuiLabel>Volume</RuiLabel>
+  <RuiSlider variant="single" value={50} min={0} max={100} step={1} />
+</RuiField>
+```
+
+## Range selection
+
+<p>Use `variant="range"` for minimum/maximum filters. Set `minDistance` to prevent the thumbs from overlapping.</p>
+
+## Step size
+
+<p>Match `step` to meaningful increments — whole percentages, not arbitrary fractions.</p>
+
+## Accessibility
+
+- Sliders expose `role="slider"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`.
+- Pair with a visible label and optionally a live value readout.
+- Arrow keys adjust the value; Page Up/Down jump by larger increments.
