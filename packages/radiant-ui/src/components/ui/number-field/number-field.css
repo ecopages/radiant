@@ -41,11 +41,23 @@ rui-number-field {
 		@apply cursor-default;
 	}
 
+	.rui-number-field__steppers {
+		@apply inline-flex shrink-0 items-stretch border-l border-border;
+	}
+
 	.rui-number-field__stepper {
-		@apply inline-flex shrink-0 cursor-default items-center justify-center border-0 border-l border-border bg-transparent text-on-surface;
+		@apply inline-flex shrink-0 cursor-default items-center justify-center border-0 bg-transparent text-on-surface;
 		padding-inline: var(--space-control-y);
 		min-inline-size: var(--size-control-sm);
 		transition-duration: var(--duration-normal);
+	}
+
+	.rui-number-field__stepper + .rui-number-field__stepper {
+		@apply border-l border-border;
+	}
+
+	.rui-number-field__input + .rui-number-field__stepper {
+		@apply border-l border-border;
 	}
 
 	.rui-number-field__stepper:hover:not(:disabled) {

@@ -9,13 +9,9 @@ function buildAlertExampleCode(props: Record<string, unknown>, children?: string
 
 	if (layout === 'banner') {
 		const title = str(props, 'title', 'Documentation preview');
-		const description = str(
-			props,
-			'description',
-			'This release includes breaking changes to the routing API.',
-		);
+		const description = str(props, 'description', 'This release includes breaking changes to the routing API.');
 		return [
-			'import { RuiAlert, RuiAlertTitle, RuiAlertDescription } from \'@ecopages/radiant-ui/alert\';',
+			"import { RuiAlert, RuiAlertTitle, RuiAlertDescription } from '@ecopages/radiant-ui/alert';",
 			'',
 			`<RuiAlert variant="${variant}" layout="banner">`,
 			`  <RuiAlertTitle>${title}</RuiAlertTitle>`,
@@ -28,7 +24,7 @@ function buildAlertExampleCode(props: Record<string, unknown>, children?: string
 
 	const message = str(props, 'message', children ?? 'Your session will expire in 5 minutes.');
 	return [
-		'import { RuiAlert, RuiAlertIcon } from \'@ecopages/radiant-ui/alert\';',
+		"import { RuiAlert, RuiAlertIcon } from '@ecopages/radiant-ui/alert';",
 		'',
 		`<RuiAlert variant="${variant}" layout="inline">`,
 		`  <RuiAlertIcon variant="${variant}" />`,

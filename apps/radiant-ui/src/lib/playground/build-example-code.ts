@@ -21,9 +21,11 @@ export function buildExampleCode(
 		});
 	const tag = exportName.split(' ')[0];
 	const open = propParts.length > 0 ? `<${exportName} ${propParts.join(' ')}>` : `<${exportName}>`;
-	return [`import { ${exportName} } from '@ecopages/radiant-ui/${slug}';`, '', `${open}${children ?? ''}</${tag}>`].join(
-		'\n',
-	);
+	return [
+		`import { ${exportName} } from '@ecopages/radiant-ui/${slug}';`,
+		'',
+		`${open}${children ?? ''}</${tag}>`,
+	].join('\n');
 }
 
 export function playgroundControlCount(scenarios: { controls?: PlaygroundControl[] }[]): number {

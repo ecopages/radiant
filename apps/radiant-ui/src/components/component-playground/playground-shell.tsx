@@ -73,7 +73,13 @@ export type PlaygroundWorkbenchSlots = {
 	controlCount: number;
 };
 
-export function renderPlaygroundWorkbench({ doc, stage, code, controls, controlCount }: PlaygroundWorkbenchSlots): JsxRenderable {
+export function renderPlaygroundWorkbench({
+	doc,
+	stage,
+	code,
+	controls,
+	controlCount,
+}: PlaygroundWorkbenchSlots): JsxRenderable {
 	return (
 		<section class="workbench" aria-label={`${doc.title} component playground`}>
 			<div class="workbench__canvas">

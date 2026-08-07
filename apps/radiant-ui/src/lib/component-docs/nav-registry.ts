@@ -8,233 +8,233 @@ export type ComponentNavEntry = {
 
 export const componentNavEntries: ComponentNavEntry[] = [
 	{
-		"slug": "alert",
-		"title": "Alert",
-		"category": "Feedback"
+		slug: 'alert',
+		title: 'Alert',
+		category: 'Feedback',
 	},
 	{
-		"slug": "autocomplete",
-		"title": "Autocomplete",
-		"category": "Forms"
+		slug: 'autocomplete',
+		title: 'Autocomplete',
+		category: 'Forms',
 	},
 	{
-		"slug": "avatar",
-		"title": "Avatar",
-		"category": "Data display"
+		slug: 'avatar',
+		title: 'Avatar',
+		category: 'Data display',
 	},
 	{
-		"slug": "breadcrumb",
-		"title": "Breadcrumb",
-		"category": "Navigation"
+		slug: 'breadcrumb',
+		title: 'Breadcrumb',
+		category: 'Navigation',
 	},
 	{
-		"slug": "button-group",
-		"title": "Button Group",
-		"category": "Actions"
+		slug: 'button-group',
+		title: 'Button Group',
+		category: 'Actions',
 	},
 	{
-		"slug": "button",
-		"title": "Button",
-		"category": "Actions"
+		slug: 'button',
+		title: 'Button',
+		category: 'Actions',
 	},
 	{
-		"slug": "calendar",
-		"title": "Calendar",
-		"category": "Data display"
+		slug: 'calendar',
+		title: 'Calendar',
+		category: 'Data display',
 	},
 	{
-		"slug": "carousel",
-		"title": "Carousel",
-		"category": "Data display"
+		slug: 'carousel',
+		title: 'Carousel',
+		category: 'Data display',
 	},
 	{
-		"slug": "checkbox",
-		"title": "Checkbox",
-		"category": "Forms"
+		slug: 'checkbox',
+		title: 'Checkbox',
+		category: 'Forms',
 	},
 	{
-		"slug": "chip-list",
-		"title": "Chip List",
-		"category": "Data display"
+		slug: 'chip-list',
+		title: 'Chip List',
+		category: 'Data display',
 	},
 	{
-		"slug": "chip",
-		"title": "Chip",
-		"category": "Data display"
+		slug: 'chip',
+		title: 'Chip',
+		category: 'Data display',
 	},
 	{
-		"slug": "combobox",
-		"title": "Combobox",
-		"category": "Forms"
+		slug: 'combobox',
+		title: 'Combobox',
+		category: 'Forms',
 	},
 	{
-		"slug": "date-field",
-		"title": "Date Field",
-		"category": "Forms"
+		slug: 'date-field',
+		title: 'Date Field',
+		category: 'Forms',
 	},
 	{
-		"slug": "date-range-picker",
-		"title": "Date Range Picker",
-		"category": "Forms"
+		slug: 'date-range-picker',
+		title: 'Date Range Picker',
+		category: 'Forms',
 	},
 	{
-		"slug": "dialog",
-		"title": "Dialog",
-		"category": "Overlays"
+		slug: 'dialog',
+		title: 'Dialog',
+		category: 'Overlays',
 	},
 	{
-		"slug": "disclosure",
-		"title": "Disclosure",
-		"category": "Layout"
+		slug: 'disclosure',
+		title: 'Disclosure',
+		category: 'Layout',
 	},
 	{
-		"slug": "feed",
-		"title": "Feed",
-		"category": "Data display"
+		slug: 'feed',
+		title: 'Feed',
+		category: 'Data display',
 	},
 	{
-		"slug": "field",
-		"title": "Field",
-		"category": "Forms"
+		slug: 'field',
+		title: 'Field',
+		category: 'Forms',
 	},
 	{
-		"slug": "form",
-		"title": "Form",
-		"category": "Forms"
+		slug: 'form',
+		title: 'Form',
+		category: 'Forms',
 	},
 	{
-		"slug": "grid",
-		"title": "Grid",
-		"category": "Layout"
+		slug: 'grid',
+		title: 'Grid',
+		category: 'Layout',
 	},
 	{
-		"slug": "heading",
-		"title": "Heading",
-		"category": "Layout"
+		slug: 'heading',
+		title: 'Heading',
+		category: 'Layout',
 	},
 	{
-		"slug": "headline",
-		"title": "Headline",
-		"category": "Layout"
+		slug: 'headline',
+		title: 'Headline',
+		category: 'Layout',
 	},
 	{
-		"slug": "input",
-		"title": "Input",
-		"category": "Forms"
+		slug: 'input',
+		title: 'Input',
+		category: 'Forms',
 	},
 	{
-		"slug": "label",
-		"title": "Label",
-		"category": "Forms"
+		slug: 'label',
+		title: 'Label',
+		category: 'Forms',
 	},
 	{
-		"slug": "listbox",
-		"title": "Listbox",
-		"category": "Forms"
+		slug: 'listbox',
+		title: 'Listbox',
+		category: 'Forms',
 	},
 	{
-		"slug": "menu-button",
-		"title": "Menu Button",
-		"category": "Navigation"
+		slug: 'menu-button',
+		title: 'Menu Button',
+		category: 'Navigation',
 	},
 	{
-		"slug": "menubar",
-		"title": "Menubar",
-		"category": "Navigation"
+		slug: 'menubar',
+		title: 'Menubar',
+		category: 'Navigation',
 	},
 	{
-		"slug": "meter",
-		"title": "Meter",
-		"category": "Feedback"
+		slug: 'meter',
+		title: 'Meter',
+		category: 'Feedback',
 	},
 	{
-		"slug": "navigation-menu",
-		"title": "Navigation Menu",
-		"category": "Navigation"
+		slug: 'navigation-menu',
+		title: 'Navigation Menu',
+		category: 'Navigation',
 	},
 	{
-		"slug": "number-field",
-		"title": "Number Field",
-		"category": "Forms"
+		slug: 'number-field',
+		title: 'Number Field',
+		category: 'Forms',
 	},
 	{
-		"slug": "popover",
-		"title": "Popover",
-		"category": "Overlays"
+		slug: 'popover',
+		title: 'Popover',
+		category: 'Overlays',
 	},
 	{
-		"slug": "radio-group",
-		"title": "Radio Group",
-		"category": "Forms"
+		slug: 'radio-group',
+		title: 'Radio Group',
+		category: 'Forms',
 	},
 	{
-		"slug": "select",
-		"title": "Select",
-		"category": "Forms"
+		slug: 'select',
+		title: 'Select',
+		category: 'Forms',
 	},
 	{
-		"slug": "sidebar",
-		"title": "Sidebar",
-		"category": "Navigation"
+		slug: 'sidebar',
+		title: 'Sidebar',
+		category: 'Navigation',
 	},
 	{
-		"slug": "slider",
-		"title": "Slider",
-		"category": "Forms"
+		slug: 'slider',
+		title: 'Slider',
+		category: 'Forms',
 	},
 	{
-		"slug": "switch",
-		"title": "Switch",
-		"category": "Forms"
+		slug: 'switch',
+		title: 'Switch',
+		category: 'Forms',
 	},
 	{
-		"slug": "tabs",
-		"title": "Tabs",
-		"category": "Navigation"
+		slug: 'tabs',
+		title: 'Tabs',
+		category: 'Navigation',
 	},
 	{
-		"slug": "tag-group",
-		"title": "Tag Group",
-		"category": "Data display"
+		slug: 'tag-group',
+		title: 'Tag Group',
+		category: 'Data display',
 	},
 	{
-		"slug": "textarea",
-		"title": "Textarea",
-		"category": "Forms"
+		slug: 'textarea',
+		title: 'Textarea',
+		category: 'Forms',
 	},
 	{
-		"slug": "toast",
-		"title": "Toast",
-		"category": "Feedback"
+		slug: 'toast',
+		title: 'Toast',
+		category: 'Feedback',
 	},
 	{
-		"slug": "toc",
-		"title": "Toc",
-		"category": "Navigation"
+		slug: 'toc',
+		title: 'Toc',
+		category: 'Navigation',
 	},
 	{
-		"slug": "toolbar",
-		"title": "Toolbar",
-		"category": "Actions"
+		slug: 'toolbar',
+		title: 'Toolbar',
+		category: 'Actions',
 	},
 	{
-		"slug": "tooltip",
-		"title": "Tooltip",
-		"category": "Overlays"
+		slug: 'tooltip',
+		title: 'Tooltip',
+		category: 'Overlays',
 	},
 	{
-		"slug": "tree",
-		"title": "Tree",
-		"category": "Data display"
+		slug: 'tree',
+		title: 'Tree',
+		category: 'Data display',
 	},
 	{
-		"slug": "treegrid",
-		"title": "Treegrid",
-		"category": "Data display"
+		slug: 'treegrid',
+		title: 'Treegrid',
+		category: 'Data display',
 	},
 	{
-		"slug": "window-splitter",
-		"title": "Window Splitter",
-		"category": "Layout"
-	}
+		slug: 'window-splitter',
+		title: 'Window Splitter',
+		category: 'Layout',
+	},
 ];

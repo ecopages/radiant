@@ -31,7 +31,10 @@ export function buildComponentNav(): ComponentNavGroup[] {
 	}));
 }
 
-export function getAdjacentComponents(slug: string): { prev?: { title: string; href: string }; next?: { title: string; href: string } } {
+export function getAdjacentComponents(slug: string): {
+	prev?: { title: string; href: string };
+	next?: { title: string; href: string };
+} {
 	const flat = componentNavEntries
 		.map((entry) => ({ title: entry.title, href: `/components/${entry.slug}` }))
 		.sort((a, b) => a.title.localeCompare(b.title));

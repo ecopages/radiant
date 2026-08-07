@@ -17,9 +17,7 @@ export function createComponentPage(doc: ComponentDoc) {
 		}),
 		render: () => (
 			<>
-				<p class="docs-kicker">
-					Components / {doc.category}
-				</p>
+				<p class="docs-kicker">Components / {doc.category}</p>
 				<h1>{doc.title}</h1>
 				<p class="docs-lede">{doc.lede}</p>
 

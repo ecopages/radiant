@@ -67,79 +67,86 @@ const DocsSiteHeader = () => (
 
 export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 	dependencies: {
-		stylesheets: ['./docs-layout.css', '../../components/logo/logo.css', '../../layouts/base-layout/base-layout.css'],
+		stylesheets: [
+			'./docs-layout.css',
+			'../../components/logo/logo.css',
+			'../../layouts/base-layout/base-layout.css',
+		],
 		scripts: ['./docs-layout.script.ts', '../../components/theme-toggle/theme-toggle.script.ts'],
 	},
 	render: ({ children }) => {
 		const componentNav = buildComponentNav();
 
 		return (
-		<body>
-			<RuiSidebarProvider layout="docs" class="ui-docs-layout" siteHeader={<DocsSiteHeader />}
-				sidebar={
-					<RuiSidebar
-						id={SIDEBAR_ID}
-						data={{ ecoPersist: SIDEBAR_ID }}
-						collapsible="off"
-						defaultWidth={250}
-						mobileBreakpoint={768}
-						label="Component navigation"
-						matchActive
-						scrollActiveOnMount
+			<body>
+				<RuiSidebarProvider
+					layout="docs"
+					class="ui-docs-layout"
+					siteHeader={<DocsSiteHeader />}
+					sidebar={
+						<RuiSidebar
+							id={SIDEBAR_ID}
+							data={{ ecoPersist: SIDEBAR_ID }}
+							collapsible="off"
+							defaultWidth={250}
+							mobileBreakpoint={768}
+							label="Component navigation"
+							matchActive
+							scrollActiveOnMount
+							navigationEvents={ECO_NAVIGATION_EVENTS}
+						>
+							<RuiSidebarContent aria-label="Component navigation">
+								<RuiSidebarGroup aria-label="Getting started">
+									<RuiSidebarGroupHeader label="Getting started" />
+									<RuiSidebarMenu>
+										<RuiSidebarMenuItem>
+											<RuiSidebarMenuButton as="a" href="/">
+												Home
+											</RuiSidebarMenuButton>
+										</RuiSidebarMenuItem>
+										<RuiSidebarMenuItem>
+											<RuiSidebarMenuButton as="a" href="/docs/introduction">
+												Introduction
+											</RuiSidebarMenuButton>
+										</RuiSidebarMenuItem>
+									</RuiSidebarMenu>
+								</RuiSidebarGroup>
+								{componentNav.map((group, index) => (
+									<>
+										{index === 0 ? null : <RuiSidebarSeparator aria-label="Section divider" />}
+										<RuiSidebarGroup aria-label={group.name}>
+											<RuiSidebarGroupHeader label={group.name} />
+											<RuiSidebarMenu aria-label={`${group.name} links`}>
+												{group.items.map((item) => (
+													<RuiSidebarMenuItem>
+														<RuiSidebarMenuButton as="a" href={item.href}>
+															{item.title}
+														</RuiSidebarMenuButton>
+													</RuiSidebarMenuItem>
+												))}
+											</RuiSidebarMenu>
+										</RuiSidebarGroup>
+									</>
+								))}
+							</RuiSidebarContent>
+						</RuiSidebar>
+					}
+				>
+					<RuiSidebarInset>
+						<main class="ui-docs-layout__content">
+							<article class="ui-docs-layout__article">{children}</article>
+						</main>
+					</RuiSidebarInset>
+					<RuiToc
+						class="ui-docs-layout__toc"
+						target=".ui-docs-layout__article"
+						headingSelector="h2,h3"
+						label="On this page"
+						scrollOffset={96}
 						navigationEvents={ECO_NAVIGATION_EVENTS}
-					>
-						<RuiSidebarContent aria-label="Component navigation">
-							<RuiSidebarGroup aria-label="Getting started">
-								<RuiSidebarGroupHeader label="Getting started" />
-								<RuiSidebarMenu>
-									<RuiSidebarMenuItem>
-										<RuiSidebarMenuButton as="a" href="/">
-											Home
-										</RuiSidebarMenuButton>
-									</RuiSidebarMenuItem>
-									<RuiSidebarMenuItem>
-										<RuiSidebarMenuButton as="a" href="/docs/introduction">
-											Introduction
-										</RuiSidebarMenuButton>
-									</RuiSidebarMenuItem>
-								</RuiSidebarMenu>
-							</RuiSidebarGroup>
-							{componentNav.map((group, index) => (
-								<>
-									{index === 0 ? null : <RuiSidebarSeparator aria-label="Section divider" />}
-									<RuiSidebarGroup aria-label={group.name}>
-										<RuiSidebarGroupHeader label={group.name} />
-										<RuiSidebarMenu aria-label={`${group.name} links`}>
-											{group.items.map((item) => (
-												<RuiSidebarMenuItem>
-													<RuiSidebarMenuButton as="a" href={item.href}>
-														{item.title}
-													</RuiSidebarMenuButton>
-												</RuiSidebarMenuItem>
-											))}
-										</RuiSidebarMenu>
-									</RuiSidebarGroup>
-								</>
-							))}
-						</RuiSidebarContent>
-					</RuiSidebar>
-				}
-			>
-				<RuiSidebarInset>
-					<main class="ui-docs-layout__content">
-						<article class="ui-docs-layout__article">{children}</article>
-					</main>
-				</RuiSidebarInset>
-				<RuiToc
-					class="ui-docs-layout__toc"
-					target=".ui-docs-layout__article"
-					headingSelector="h2,h3"
-					label="On this page"
-					scrollOffset={96}
-					navigationEvents={ECO_NAVIGATION_EVENTS}
-				/>
-			</RuiSidebarProvider>
-		</body>
+					/>
+				</RuiSidebarProvider>
+			</body>
 		);
 	},
 });

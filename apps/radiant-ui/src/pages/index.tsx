@@ -48,7 +48,8 @@ export default eco.page<{}, JsxRenderable>({
 	},
 	metadata: () => ({
 		title: 'Radiant UI',
-		description: 'Accessible components for Radiant applications, with interactive documentation and real prop playgrounds.',
+		description:
+			'Accessible components for Radiant applications, with interactive documentation and real prop playgrounds.',
 	}),
 	render: () => (
 		<div class="home-layout">

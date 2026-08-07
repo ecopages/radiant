@@ -132,8 +132,7 @@ export class ComponentPlaygroundElement extends RadiantElement {
 		}
 
 		const state = resolvePlaygroundState(doc);
-		const controlCount =
-			doc.playground.scenarios.length > 1 ? state.controls.length + 1 : state.controls.length;
+		const controlCount = doc.playground.scenarios.length > 1 ? state.controls.length + 1 : state.controls.length;
 
 		return renderPlaygroundWorkbench({
 			doc,

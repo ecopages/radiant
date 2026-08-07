@@ -38,8 +38,7 @@ const ComponentPlayground = eco.component<ComponentPlaygroundProps, JsxRenderabl
 
 		const state = resolvePlaygroundState(doc);
 		const example = buildExampleCode(doc.exportName, doc.slug, state.props, state.children);
-		const controlCount =
-			doc.playground.scenarios.length > 1 ? state.controls.length + 1 : state.controls.length;
+		const controlCount = doc.playground.scenarios.length > 1 ? state.controls.length + 1 : state.controls.length;
 
 		return (
 			<radiant-component-playground prop:slug={slug}>

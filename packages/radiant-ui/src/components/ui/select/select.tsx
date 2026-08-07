@@ -76,8 +76,10 @@ export type RuiSelectValueProps = JsxHtmlPropsWithChildren<{
 /**
  * Selected value display inside `RuiSelectTrigger`.
  *
- * @remarks When empty, shows the select `placeholder`. For multi-select chip UI,
- * provide `RuiTagGroup` as children instead of relying on the default text.
+ * @remarks When empty, shows the select `placeholder`. For the `options` API,
+ * the view SSRs the resolved label (or placeholder) so the control height does
+ * not collapse before client sync. For multi-select chip UI, provide
+ * `RuiTagGroup` as children instead of relying on the default text.
  */
 export function RuiSelectValue({ children, slot, class: className, ...props }: RuiSelectValueProps) {
 	return (
@@ -140,6 +142,24 @@ export type RuiSelectOptionData = RuiListboxOptionData;
 /** @deprecated Use `RuiListboxOption` */
 export const RuiSelectOption = RuiListboxOption;
 
+function resolveSelectDisplayText(
+	options: RuiSelectOptionData[] | undefined,
+	value: unknown,
+	placeholder: unknown,
+): string {
+	const selected = typeof value === 'string' ? value.trim() : '';
+	const fallback = typeof placeholder === 'string' ? placeholder : '';
+	if (!selected) {
+		return fallback;
+	}
+
+	const match = options?.find((option) => option.value === selected);
+	if (!match) {
+		return selected;
+	}
+	return typeof match.label === 'string' ? match.label : selected;
+}
+
 /**
  * Select view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
  * do not nest a select-specific label.
@@ -157,11 +177,17 @@ export const RuiSelect = defineRadiantView(
 		}
 	>) => {
 		if (options != null) {
+			const displayText = resolveSelectDisplayText(options, props.value, props.placeholder);
+			const isPlaceholder =
+				!(typeof props.value === 'string' && props.value.trim()) && Boolean(props.placeholder);
+
 			return (
 				<rui-select {...props}>
 					<RuiSelectControl>
 						<RuiSelectTrigger>
-							<RuiSelectValue />
+							<RuiSelectValue {...(isPlaceholder ? { 'data-placeholder': true } : {})}>
+								{displayText}
+							</RuiSelectValue>
 						</RuiSelectTrigger>
 						<RuiSelectToggle />
 					</RuiSelectControl>

@@ -5,7 +5,10 @@ import { HomeLayout } from '@/layouts/home-layout';
 
 export default eco.page<Error404TemplateProps, JsxRenderable>({
 	layout: HomeLayout,
-	metadata: () => ({ title: 'Page not found | Radiant UI', description: 'The requested Radiant UI documentation page could not be found.' }),
+	metadata: () => ({
+		title: 'Page not found | Radiant UI',
+		description: 'The requested Radiant UI documentation page could not be found.',
+	}),
 	render: () => (
 		<section class="ui-error-page">
 			<p class="docs-kicker">404</p>

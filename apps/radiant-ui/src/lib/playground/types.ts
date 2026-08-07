@@ -1,11 +1,5 @@
 export type ComponentCategory =
-	| 'Actions'
-	| 'Forms'
-	| 'Layout'
-	| 'Navigation'
-	| 'Overlays'
-	| 'Feedback'
-	| 'Data display';
+	'Actions' | 'Forms' | 'Layout' | 'Navigation' | 'Overlays' | 'Feedback' | 'Data display';
 
 export type PlaygroundControl =
 	| {

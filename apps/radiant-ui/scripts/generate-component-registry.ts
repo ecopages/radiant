@@ -53,10 +53,7 @@ export type ComponentNavEntry = {
 \tcategory: ComponentCategory;
 };
 
-export const componentNavEntries: ComponentNavEntry[] = ${JSON.stringify(navEntries, null, '\t').replace(
-	/\n/g,
-	'\n',
-)};
+export const componentNavEntries: ComponentNavEntry[] = ${JSON.stringify(navEntries, null, '\t').replace(/\n/g, '\n')};
 `;
 
 writeFileSync(navRegistryPath, navSource);

@@ -5,7 +5,7 @@
 @layer components {
 	.rui-button {
 		@apply inline-flex items-center justify-center h-fit w-fit gap-2;
-		@apply font-medium text-sm rounded-button border border-transparent;
+		@apply font-medium rounded-button border border-transparent;
 		@apply transition-[background-color,color,box-shadow] duration-300 ease-out;
 		@apply cursor-pointer;
 		@apply whitespace-nowrap;
@@ -84,7 +84,7 @@
 		@apply bg-error-dark;
 	}
 
-	/* Sizes */
+	/* Sizes — each size owns type scale; do not set font-size on the base class. */
 	.rui-button--sm {
 		@apply text-xs py-1 px-2;
 	}

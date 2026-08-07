@@ -23,14 +23,14 @@ export default eco.page<{}, JsxRenderable>({
 
 			<h2 id="what-you-get">What you get</h2>
 			<p>
-				Each component exposes a focused module under <code>@ecopages/radiant-ui/&lt;slug&gt;</code>, predictable
-				props, and accessible defaults. Documentation pairs implementation guidance with an interactive playground
-				that uses the real public API — not a generic placeholder.
+				Each component exposes a focused module under <code>@ecopages/radiant-ui/&lt;slug&gt;</code>,
+				predictable props, and accessible defaults. Documentation pairs implementation guidance with an
+				interactive playground that uses the real public API — not a generic placeholder.
 			</p>
 			<ul>
 				<li>
-					<strong>{componentNavEntries.length} components</strong> documented with usage examples, guidance, and
-					accessibility notes.
+					<strong>{componentNavEntries.length} components</strong> documented with usage examples, guidance,
+					and accessibility notes.
 				</li>
 				<li>
 					<strong>Playgrounds</strong> let you adjust real props and copy the resulting code.

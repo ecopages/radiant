@@ -1,10 +1,5 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import {
-	RuiAlert,
-	RuiAlertDescription,
-	RuiAlertIcon,
-	RuiAlertTitle,
-} from '@ecopages/radiant-ui/alert';
+import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 import {
 	RuiAutocomplete,
 	RuiAutocompleteCollection,
@@ -23,23 +18,14 @@ import {
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiButtonGroup } from '@ecopages/radiant-ui/button-group';
 import { RuiCalendar } from '@ecopages/radiant-ui/calendar';
-import {
-	RuiCarousel,
-	RuiCarouselNext,
-	RuiCarouselPrev,
-	RuiCarouselSlide,
-} from '@ecopages/radiant-ui/carousel';
+import { RuiCarousel, RuiCarouselNext, RuiCarouselPrev, RuiCarouselSlide } from '@ecopages/radiant-ui/carousel';
 import { RuiCheckbox } from '@ecopages/radiant-ui/checkbox';
 import { RuiChip } from '@ecopages/radiant-ui/chip';
 import { RuiChipList, RuiChipListItem } from '@ecopages/radiant-ui/chip-list';
 import { RuiCombobox } from '@ecopages/radiant-ui/combobox';
 import { RuiDateField } from '@ecopages/radiant-ui/date-field';
 import { RuiDateRangePicker } from '@ecopages/radiant-ui/date-range-picker';
-import {
-	RuiDialog,
-	RuiDialogActions,
-	RuiDialogClose,
-} from '@ecopages/radiant-ui/dialog';
+import { RuiDialog, RuiDialogActions, RuiDialogClose } from '@ecopages/radiant-ui/dialog';
 import { RuiDisclosure } from '@ecopages/radiant-ui/disclosure';
 import {
 	RuiFeed,
@@ -51,12 +37,7 @@ import {
 import { RuiField, RuiFieldDescription, RuiFieldError } from '@ecopages/radiant-ui/field';
 import { RuiForm } from '@ecopages/radiant-ui/form';
 import { RuiGrid } from '@ecopages/radiant-ui/grid';
-import {
-	RuiHeading,
-	RuiHeadingDescription,
-	RuiHeadingEyebrow,
-	RuiHeadingTitle,
-} from '@ecopages/radiant-ui/heading';
+import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from '@ecopages/radiant-ui/heading';
 import { RuiHeadline } from '@ecopages/radiant-ui/headline';
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
@@ -83,13 +64,7 @@ import { RuiRadioGroup } from '@ecopages/radiant-ui/radio-group';
 import { RuiSelect } from '@ecopages/radiant-ui/select';
 import { RuiSlider } from '@ecopages/radiant-ui/slider';
 import { RuiSwitch } from '@ecopages/radiant-ui/switch';
-import {
-	RuiTab,
-	RuiTabList,
-	RuiTabPanel,
-	RuiTabPanels,
-	RuiTabs,
-} from '@ecopages/radiant-ui/tabs';
+import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
 import { RuiTagGroup } from '@ecopages/radiant-ui/tag-group';
 import { RuiTextarea } from '@ecopages/radiant-ui/textarea';
 import { RuiToaster, toast } from '@ecopages/radiant-ui/toast';
@@ -817,10 +792,7 @@ function renderWindowSplitterPreview(props: Record<string, unknown>): JsxRendera
 	);
 }
 
-const PREVIEW_RENDERERS: Record<
-	string,
-	(props: Record<string, unknown>, children?: string) => JsxRenderable
-> = {
+const PREVIEW_RENDERERS: Record<string, (props: Record<string, unknown>, children?: string) => JsxRenderable> = {
 	alert: renderAlertPreview,
 	autocomplete: renderAutocompletePreview,
 	avatar: renderAvatarPreview,

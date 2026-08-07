@@ -120,7 +120,9 @@ export class RuiCombobox extends RadiantElement {
 	}
 
 	private isComboboxInput(target: EventTarget | null): target is HTMLInputElement {
-		return target instanceof HTMLInputElement && target.hasAttribute('data-combobox-input');
+		return (
+			target instanceof HTMLElement && target.localName === 'input' && target.hasAttribute('data-combobox-input')
+		);
 	}
 
 	private syncLabel(): void {

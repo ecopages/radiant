@@ -7,7 +7,7 @@ export type RuiButtonSize = 'sm' | 'md' | 'lg';
 type RuiButtonCommonProps = JsxHtmlPropsWithChildren<{
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
-	/** Control size. Default: `md`. */
+	/** Control size. Default: `md` (Default in docs). */
 	size?: RuiButtonSize;
 	/** Accessible name when the button has no visible text. */
 	'aria-label'?: string;
