@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+@import '@ecopages/radiant-ui/themes/default';
+@import '@ecopages/radiant-ui/styles.css';
+@import '../../../docs/src/styles/fonts.css';
+
+@theme {
+	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'Karla', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+	/* Override radiant-ui typography pack system stacks with docs brand fonts. */
+	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'Karla', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: var(--color-background);
+	color: var(--color-on-background);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	min-width: 20rem;
+	margin: 0;
+	font-family: var(--font-sans);
+	color: var(--color-on-background);
+	-webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+	font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+	outline: 0.1875rem solid color-mix(in srgb, var(--color-primary) 62%, transparent);
+	outline-offset: 0.125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+	}
+}

@@ -1,0 +1,15 @@
+.ui-logo {
+	align-items: center;
+	color: var(--color-on-background);
+	display: inline-flex;
+	font-family: var(--font-heading);
+	font-size: 1.5rem;
+	font-weight: 600;
+	gap: 0.25rem;
+	letter-spacing: -0.03em;
+	text-decoration: none;
+}
+
+.ui-logo:hover {
+	color: color-mix(in srgb, var(--color-on-background) 82%, transparent);
+}

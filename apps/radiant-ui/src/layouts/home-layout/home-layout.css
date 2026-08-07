@@ -1,0 +1,142 @@
+.ui-home-layout__inner {
+	margin: 0 auto;
+	max-width: 76rem;
+	padding: 3rem 2rem 5rem;
+	width: 100%;
+}
+
+.ui-home-layout .home-layout {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+.ui-home-layout .home-header {
+	border-bottom: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
+	padding-bottom: 2rem;
+}
+
+.ui-home-layout .home-header__subtitle {
+	color: color-mix(in srgb, var(--color-on-background) 60%, transparent);
+	font-size: 0.875rem;
+	font-weight: 700;
+	letter-spacing: 0.15em;
+	margin: 0;
+	text-transform: uppercase;
+}
+
+.ui-home-layout .home-header__title {
+	font-family: var(--font-heading);
+	font-size: clamp(2.25rem, 5vw, 3.25rem);
+	font-weight: 600;
+	letter-spacing: -0.04em;
+	line-height: 1.1;
+	margin: 0.75rem 0 0;
+}
+
+.ui-home-layout .home-header__description {
+	color: color-mix(in srgb, var(--color-on-background) 78%, transparent);
+	font-size: 1.125rem;
+	line-height: 1.6;
+	margin: 1rem 0 0;
+	max-width: 42rem;
+}
+
+.ui-home-layout .home-header__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-top: 2rem;
+}
+
+.ui-home-layout .home-section__title {
+	border-bottom: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
+	font-family: var(--font-heading);
+	font-size: 1.5rem;
+	font-weight: 600;
+	margin: 0 0 1rem;
+	padding-bottom: 0.5rem;
+}
+
+.ui-home-layout .home-cards {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.ui-home-layout .home-card {
+	background: color-mix(in srgb, var(--color-background-accent) 50%, var(--color-background));
+	border: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
+	border-radius: 0.5rem;
+	color: inherit;
+	display: flex;
+	flex-direction: column;
+	padding: 1.25rem;
+	text-decoration: none;
+	transition: border-color 150ms ease-out, background 150ms ease-out;
+}
+
+.ui-home-layout .home-card:hover {
+	background: color-mix(in srgb, var(--color-secondary-container) 30%, var(--color-background));
+	border-color: color-mix(in srgb, var(--color-on-background) 24%, transparent);
+}
+
+.ui-home-layout .home-card__label {
+	color: color-mix(in srgb, var(--color-on-background) 55%, transparent);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	margin: 0;
+	text-transform: uppercase;
+}
+
+.ui-home-layout .home-card__title {
+	font-family: var(--font-heading);
+	font-size: 1.125rem;
+	font-weight: 600;
+	margin: 0.75rem 0 0;
+}
+
+.ui-home-layout .home-card__text {
+	color: color-mix(in srgb, var(--color-on-background) 70%, transparent);
+	font-size: 0.875rem;
+	line-height: 1.55;
+	margin: 0.5rem 0 0;
+}
+
+.ui-home-layout .home-path {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.ui-home-layout .home-path a {
+	background: color-mix(in srgb, var(--color-background-accent) 40%, var(--color-background));
+	border: 0.0625rem solid color-mix(in srgb, var(--color-on-background) 12%, transparent);
+	border-radius: 0.5rem;
+	color: inherit;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 1rem;
+	text-decoration: none;
+	transition: border-color 150ms ease-out;
+}
+
+.ui-home-layout .home-path a:hover {
+	border-color: color-mix(in srgb, var(--color-on-background) 24%, transparent);
+}
+
+.ui-home-layout .home-path strong {
+	font-size: 0.875rem;
+}
+
+.ui-home-layout .home-path span {
+	color: color-mix(in srgb, var(--color-on-background) 68%, transparent);
+	font-size: 0.8125rem;
+}
+
+@media (max-width: 48rem) {
+	.ui-home-layout__inner {
+		padding: 2rem 1.25rem 4rem;
+	}
+}
