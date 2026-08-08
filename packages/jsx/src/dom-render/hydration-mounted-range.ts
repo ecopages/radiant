@@ -216,7 +216,7 @@ function hydrateIndexedRangeContent(
 	let nextNodeIndex = 0;
 
 	for (const child of children) {
-		const childNodeCount = countHydratedRangeNodes(child, endMarker.parentNode);
+		const childNodeCount = countHydratedRangeNodes(child);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
 
 		if (childNodes.length !== childNodeCount) {
@@ -249,7 +249,7 @@ function hydrateKeyedRangeContent(
 	let nextNodeIndex = 0;
 
 	for (const child of children) {
-		const childNodeCount = countHydratedRangeNodes(child.value, endMarker.parentNode);
+		const childNodeCount = countHydratedRangeNodes(child.value);
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
 
 		if (childNodes.length !== childNodeCount) {

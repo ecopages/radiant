@@ -61,7 +61,7 @@ export function hydrateTemplateInstance(
 		return undefined;
 	}
 
-	const nodeCount = countHydratedRangeNodes(template, target);
+	const nodeCount = countHydratedRangeNodes(template);
 	const instance: TemplateInstance = {
 		compiled: compiledTemplate,
 		parts,

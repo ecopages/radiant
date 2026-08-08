@@ -1,11 +1,12 @@
-import { clearDelegationRoot } from './event-delegation.ts';
+import { createNodesFromJsxNodeLike } from './dom-operations.ts';
 import { getNodeAtPath, getPathKey } from './path-utils.ts';
-import { createTemplateInstance } from './template-instance.ts';
+import { getCompiledTemplate } from './template-compiler.ts';
 import {
 	canRenderAsTextNode,
-	createNodesFromValue,
-	isReactiveChildSource,
-	readReactiveChildSourceValue,
+	isIterableRenderable,
+	isJsxNodeLike,
+	isTemplateResultLike,
+	resolveReactiveSnapshot,
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
 import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
@@ -63,7 +64,7 @@ export function collectHydratedChildRanges(
 				continue;
 			}
 
-			const nodeCount = countHydratedRangeNodes(values[part.index], parentNode);
+			const nodeCount = countHydratedRangeNodes(values[part.index]);
 			ranges.set(part.index, {
 				actualStartIndex: actualIndex,
 				blueprintStartIndex: part.startPath[part.startPath.length - 1] ?? 0,
@@ -129,12 +130,48 @@ export function isolateHydratedTextRange(
 	}
 }
 
-/** Counts DOM nodes `value` would produce when mounted, for hydration slice planning. */
-export function countHydratedRangeNodes(value: unknown, contextParent: Node | null): number {
-	const rootTarget = document.createElement('div');
-	const nodes = createNodesFromValue(value, rootTarget, [], createTemplateInstance, contextParent);
-	clearDelegationRoot(rootTarget);
-	return nodes.length;
+/**
+ * Counts the DOM nodes `value` produces when mounted, for hydration slice planning.
+ *
+ * This is a pure structural measurement: it never builds the subtree it measures.
+ * Node count is a static property of the value's shape, so each variant is counted
+ * from metadata that is already cached (template blueprints) or trivially derived.
+ *
+ * Reactive sources are resolved to their current snapshot because the SSR serializer
+ * resolves them too, so the counted shape matches the emitted HTML.
+ */
+export function countHydratedRangeNodes(value: unknown): number {
+	const resolvedValue = resolveReactiveSnapshot(unwrapKeyedValue(value));
+
+	if (resolvedValue == null || typeof resolvedValue === 'boolean') {
+		return 0;
+	}
+
+	if (isTemplateResultLike(resolvedValue)) {
+		return getCompiledTemplate(resolvedValue).blueprint.content.childNodes.length;
+	}
+
+	if (resolvedValue instanceof Node) {
+		return 1;
+	}
+
+	// Markup stand-ins carry arbitrary HTML, so their node count is only knowable by
+	// parsing. This stays cheap: no template instances, listeners, or subscriptions.
+	if (isJsxNodeLike(resolvedValue)) {
+		return createNodesFromJsxNodeLike(resolvedValue).length;
+	}
+
+	if (isIterableRenderable(resolvedValue)) {
+		let total = 0;
+
+		for (const child of resolvedValue) {
+			total += countHydratedRangeNodes(child);
+		}
+
+		return total;
+	}
+
+	return 1;
 }
 
 function getHydratedNodeContribution(node: Node | undefined): number {
@@ -149,6 +186,5 @@ function getHydratedNodeContribution(node: Node | undefined): number {
 }
 
 function resolveHydratedRangeValue(value: unknown): unknown {
-	const nextValue = unwrapKeyedValue(value);
-	return isReactiveChildSource(nextValue) ? unwrapKeyedValue(readReactiveChildSourceValue(nextValue)) : nextValue;
+	return unwrapKeyedValue(resolveReactiveSnapshot(unwrapKeyedValue(value)));
 }
