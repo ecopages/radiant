@@ -4,7 +4,8 @@ import { RuiButton } from './button';
 
 /**
  * Presentational native `<button>` wrapper. No custom element — `variant` and
- * `size` only map to CSS classes.
+ * `size` only map to CSS classes. Sizes are Small (`sm`), Default (`md`), and Large (`lg`);
+ * each size sets its own type scale.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
  */
@@ -33,7 +34,7 @@ export const Variants: Story = {
 			</div>
 			<div class="flex items-center gap-3">
 				<RuiButton size="sm">Small</RuiButton>
-				<RuiButton size="md">Medium</RuiButton>
+				<RuiButton size="md">Default</RuiButton>
 				<RuiButton size="lg">Large</RuiButton>
 				<RuiButton disabled>Disabled</RuiButton>
 			</div>

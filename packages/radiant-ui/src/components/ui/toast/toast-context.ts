@@ -55,6 +55,14 @@ export const TOAST_WIDTH = 356;
 export const TOAST_GAP = 14;
 export const TOAST_VIEWPORT_OFFSET = 24;
 export const TOAST_VISIBLE_AMOUNT = 3;
+/**
+ * Max toasts that peek in the collapsed stack.
+ *
+ * @remarks
+ * `visibleToasts` still caps how many are mounted. Collapsed UI only reveals
+ * this many behind the front toast; the rest stay hidden until hover expands.
+ */
+export const TOAST_COLLAPSED_PEEK = 3;
 export const TOAST_SWIPE_THRESHOLD = 45;
 export const TOAST_EXIT_MS = 200;
 

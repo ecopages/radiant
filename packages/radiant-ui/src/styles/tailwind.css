@@ -4,6 +4,7 @@
  * Those fight Storybook's `layout: 'fullscreen' | 'padded'` and break `h-full` / `h-svh` stories.
  */
 @import './radiant-ui.css';
+@import '../components/ui/button/button.css';
 @import './tokens/presets/spacing.css';
 @import './tokens/presets/radius.css';
 

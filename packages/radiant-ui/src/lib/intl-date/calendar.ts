@@ -24,9 +24,7 @@ export function getWeekStartsOn(locale: IntlLocale): number {
 		if (weekInfo?.firstDay != null) {
 			return weekInfo.firstDay === 7 ? 0 : weekInfo.firstDay;
 		}
-	} catch {
-		// Intl.Locale unsupported or invalid tag — use fallback below.
-	}
+	} catch {}
 
 	return tag.startsWith('en-US') ? 0 : 1;
 }

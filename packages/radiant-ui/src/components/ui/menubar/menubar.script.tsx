@@ -153,6 +153,9 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		this.closeOpenMenu();
 	}
 
+	/**
+	 * @remarks When a menu is open, roving focus across the bar opens the newly focused menu (APG).
+	 */
 	@onEvent({ selector: '[data-ref="menubar"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'keydown' })
 	onTopKeydown(event: KeyboardEvent): void {
 		const items = this.getTopItems();
@@ -182,7 +185,6 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		if (!result.handled) return;
 		event.preventDefault();
 
-		// APG: when a menu is open, moving across the bar opens the newly focused menu.
 		if (this.openRoot) {
 			if (this.getMenuFor(result.item)) this.openMenu(result.item, 'first');
 			else this.closeOpenMenu();
@@ -248,11 +250,13 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		if (result.handled) event.preventDefault();
 	}
 
+	/**
+	 * @remarks Ignores top-level items — they are not direct children of `role="menu"` in this markup.
+	 */
 	@onEvent({ selector: '[role="menu"] > [role="menuitem"]', type: 'click' })
 	onMenuItemClick(event: Event): void {
 		const item = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
 		if (!item || !this.contains(item)) return;
-		// Ignore top-level items (they are not direct children of role=menu in our markup).
 		if (item.parentElement?.getAttribute('role') !== 'menu') return;
 		this.activateItem(item);
 	}

@@ -52,10 +52,12 @@ export class RuiSidebarTrigger extends RadiantElement {
 	private sidebarListener: ((event: Event) => void) | null = null;
 	private attachedSidebar: HTMLElement | null = null;
 
+	/**
+	 * @remarks JSX `.prop` bindings flush after connect when the trigger lives in a sidebar slot.
+	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.syncWithSidebar();
-		// JSX `.prop` bindings flush after connect when the trigger lives in a sidebar slot.
 		queueMicrotask(() => this.syncWithSidebar());
 	}
 

@@ -15,6 +15,7 @@ import {
 	findFieldErrorElements,
 	findFieldLabel,
 	getAriaControlTarget,
+	isNativeTextControl,
 	readControlValue,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
@@ -96,13 +97,13 @@ export class RuiField extends RadiantElement {
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
 
+	/**
+	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
+	 * real SSR round-trip (`prop:rules` does not survive that boundary; `connectedCallback` never
+	 * runs during SSR).
+	 */
 	constructor() {
 		super();
-		// connectedCallback never runs during real SSR rendering — only this SSR-prep
-		// lifecycle does, and only after `prop:rules` has already been applied to the
-		// instance. Publishing rules onto fieldProvider here is what lets a hydrated field
-		// recover them after a real SSR round-trip, since `prop:rules` itself doesn't
-		// survive that boundary.
 		registerSsrPreparationCallback(this, () => this.fieldProvider.setContext({ rules: this.readFieldRules() }));
 	}
 
@@ -264,7 +265,7 @@ export class RuiField extends RadiantElement {
 
 	@onEvent({
 		selector:
-			'[data-rui-control], rui-combobox, rui-date-field, rui-date-range-picker, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-number-field, rui-listbox',
+			'[data-rui-control], rui-combobox, rui-date-field, rui-date-range-picker, rui-select, rui-tag-group, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-number-field, rui-listbox',
 		type: 'rui-change',
 	})
 	onControlChange(): void {
@@ -275,7 +276,7 @@ export class RuiField extends RadiantElement {
 	}
 
 	@onEvent({
-		selector: '[data-rui-control], input, textarea',
+		selector: '[data-rui-control]',
 		type: 'input',
 		options: { capture: true },
 	})
@@ -287,7 +288,7 @@ export class RuiField extends RadiantElement {
 	}
 
 	@onEvent({
-		selector: '[data-rui-control], input, textarea',
+		selector: '[data-rui-control]',
 		type: 'change',
 		options: { capture: true },
 	})
@@ -298,7 +299,7 @@ export class RuiField extends RadiantElement {
 		}
 	}
 
-	@onEvent({ selector: '[data-rui-control], input, textarea', type: 'focusout' })
+	@onEvent({ selector: '[data-rui-control]', type: 'focusout' })
 	onControlFocusOut(): void {
 		const fieldName = this.resolveFieldName();
 		if (fieldName) {
@@ -353,7 +354,7 @@ export class RuiField extends RadiantElement {
 
 			if (this.disabled) {
 				ariaTarget.setAttribute('aria-disabled', 'true');
-				if (ariaTarget instanceof HTMLInputElement || ariaTarget instanceof HTMLTextAreaElement) {
+				if (isNativeTextControl(ariaTarget)) {
 					ariaTarget.disabled = true;
 				}
 			}
