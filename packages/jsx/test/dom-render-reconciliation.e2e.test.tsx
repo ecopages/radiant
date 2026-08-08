@@ -3,6 +3,7 @@ import {
 	HYDRATE_ADJACENT_FIELDS_HTML,
 	HYDRATE_BUTTON_ALPHA_HTML,
 	HYDRATE_CARD_ALPHA_HTML,
+	HYDRATE_DYNAMIC_LIST_HTML,
 	HYDRATE_FRAGMENT_COUNTER_HTML,
 	HYDRATE_GRADIENT_ICON_HTML,
 	HYDRATE_ITERABLE_ROOT_HTML,
@@ -661,6 +662,66 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(clickTotal).toBe(1);
 
 		container.remove();
+	});
+
+	test('reconnects list children that carry dynamic content instead of rebuilding them', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const items = [
+			{ id: 'a', name: 'Alpha' },
+			{ id: 'b', name: 'Beta' },
+		];
+		const renderList = (entries: typeof items) =>
+			jsx('ul', {
+				class: 'list',
+				children: entries.map((item) => jsx('li', { class: 'item', 'data-id': item.id, children: item.name })),
+			});
+
+		container.innerHTML = HYDRATE_DYNAMIC_LIST_HTML;
+		const serverItems = Array.from(container.querySelectorAll('li'));
+
+		root.hydrate(renderList(items));
+
+		// Element identity is the signal that matters: rebuilding would produce
+		// identical markup while dropping listeners, focus, and scroll state. Text
+		// nodes inside a dynamic child range are re-created either way.
+		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
+		expect(container.textContent).toBe('AlphaBeta');
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.render(
+			renderList([
+				{ id: 'a', name: 'Alpha updated' },
+				{ id: 'b', name: 'Beta' },
+			]),
+		);
+
+		expect(container.querySelector('li')?.textContent).toBe('Alpha updated');
+		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
+	});
+
+	test('removes every SSR marker when hydrating attribute-only list children', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		container.innerHTML =
+			'<div data-radiant-jsx-bind-0="attr:class" class="list">' +
+			'<span data-radiant-jsx-bind-1="attr:class" class="chip" data-radiant-jsx-bind-2="attr:title" title="a"></span>' +
+			'<span data-radiant-jsx-bind-3="attr:class" class="chip" data-radiant-jsx-bind-4="attr:title" title="b"></span>' +
+			'</div>';
+
+		root.hydrate(
+			jsx('div', {
+				class: 'list',
+				children: ['a', 'b'].map((title) => jsx('span', { class: 'chip', title })),
+			}),
+		);
+
+		// Marker names are global, so a nested child cannot strip them using its own
+		// local value indexes — that left later children's markers in the document.
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 	});
 
 	test('removes SSR hydration marker attributes after template hydration', async () => {

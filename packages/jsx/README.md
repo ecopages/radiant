@@ -421,7 +421,7 @@ Iterable fragment hydration supports flat lists of intrinsic template children (
 
 Global SSR marker indexes are shared across all three paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
-Within a hydrated child range, a list child is reconnected in place only when its template consists purely of attribute bindings. A child that also carries dynamic content — `<li>{item.name}</li>` — cannot currently be reconnected, so its SSR subtree is discarded and rebuilt. Hydration still succeeds and the surrounding tree is reused, but that range pays full client-render cost. `pnpm run bench:hydrate` measures both shapes side by side.
+List children inside a hydrated range reconnect through the same path as a root template, so a child carrying dynamic content — `<li>{item.name}</li>` — keeps its SSR elements rather than being rebuilt. A child spanning multiple root nodes still falls back to a client render, because blueprint paths are resolved against a single root. Element identity is preserved; text nodes inside a dynamic child range are re-created either way. `pnpm run bench:hydrate` measures these shapes.
 
 ### Benchmarks
 
