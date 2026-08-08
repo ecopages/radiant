@@ -20,7 +20,7 @@ export const meta = {
 	},
 	argTypes: {
 		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg'] as const },
-		rows: { control: { type: 'text' } },
+		rows: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		placeholder: { control: { type: 'text' } },
 	},

@@ -19,7 +19,7 @@ export const meta = {
 	argTypes: {
 		content: { control: { type: 'text' } },
 		placement: { control: { type: 'select' }, options: ['top', 'bottom', 'left', 'right'] as const },
-		delay: { control: { type: 'text' } },
+		delay: { control: { type: 'number' } },
 	},
 	exampleCode: (args) => buildExampleCode('RuiTooltip', 'tooltip', args),
 	render: (args) => renderPlaygroundPreview('tooltip', args),

@@ -25,7 +25,7 @@ export const meta = {
 		placement: { control: { type: 'select' }, options: ['bottom', 'bottom-start', 'top', 'right'] as const },
 		portal: { control: { type: 'boolean' } },
 		matchAnchorWidth: { control: { type: 'boolean' } },
-		offset: { control: { type: 'text' } },
+		offset: { control: { type: 'number' } },
 	},
 	exampleCode: (args) => buildExampleCode('RuiPopover', 'popover', args),
 	render: (args) => renderPlaygroundPreview('popover', args),

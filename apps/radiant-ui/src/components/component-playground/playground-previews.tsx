@@ -25,7 +25,7 @@ import { RuiChipList, RuiChipListItem } from '@ecopages/radiant-ui/chip-list';
 import { RuiCombobox } from '@ecopages/radiant-ui/combobox';
 import { RuiDateField } from '@ecopages/radiant-ui/date-field';
 import { RuiDateRangePicker } from '@ecopages/radiant-ui/date-range-picker';
-import { RuiDialog, RuiDialogActions, RuiDialogClose } from '@ecopages/radiant-ui/dialog';
+import { RuiDialog } from '@ecopages/radiant-ui/dialog';
 import { RuiDisclosure } from '@ecopages/radiant-ui/disclosure';
 import {
 	RuiFeed,
@@ -79,7 +79,7 @@ import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
 import { RuiTagGroup } from '@ecopages/radiant-ui/tag-group';
 import { RuiTextarea } from '@ecopages/radiant-ui/textarea';
-import { RuiToaster, toast } from '@ecopages/radiant-ui/toast';
+import { RuiToaster } from '@ecopages/radiant-ui/toast';
 import { RuiToc } from '@ecopages/radiant-ui/toc';
 import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
 import { RuiTooltip } from '@ecopages/radiant-ui/tooltip';
@@ -338,7 +338,7 @@ function renderCalendarPreview(props: Record<string, unknown>): JsxRenderable {
 			disabled={bool(props, 'disabled')}
 			visibleMonths={num(props, 'visibleMonths', 1)}
 			pageBehavior={str(props, 'pageBehavior', 'visible')}
-			value="2026-08-07"
+			value={str(props, 'value', '2026-08-07')}
 		/>
 	);
 }
@@ -406,22 +406,20 @@ function renderComboboxPreview(props: Record<string, unknown>): JsxRenderable {
 
 function renderDateFieldPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
-		<RuiField name="startDate">
-			<RuiLabel>Start date</RuiLabel>
-			<RuiDateField
-				value={str(props, 'value', '2026-08-07')}
-				dateStyle={str(props, 'dateStyle', 'medium')}
-				disabled={bool(props, 'disabled')}
-				readOnly={bool(props, 'readOnly')}
-				masked={bool(props, 'masked', true)}
-			/>
-		</RuiField>
+		<RuiDateField
+			label="Start date"
+			value={str(props, 'value', '2026-08-07')}
+			dateStyle={str(props, 'dateStyle', 'medium')}
+			disabled={bool(props, 'disabled')}
+			readOnly={bool(props, 'readOnly')}
+			masked={bool(props, 'masked', true)}
+		/>
 	);
 }
 
 function renderDateRangePickerPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
-		<RuiField name="tripDates">
+		<>
 			<RuiLabel>Trip dates</RuiLabel>
 			<RuiDateRangePicker
 				value={str(props, 'value', '2026-08-01/2026-08-14')}
@@ -430,7 +428,7 @@ function renderDateRangePickerPreview(props: Record<string, unknown>): JsxRender
 				disabled={bool(props, 'disabled')}
 				readOnly={bool(props, 'readOnly')}
 			/>
-		</RuiField>
+		</>
 	);
 }
 
@@ -439,14 +437,16 @@ function renderDialogPreview(props: Record<string, unknown>): JsxRenderable {
 
 	return (
 		<RuiDialog
-			id="playground-dialog"
+			id={str(props, 'id', 'playground-dialog')}
 			open={bool(props, 'open')}
 			alert={bool(props, 'alert')}
 			label={label}
 			title={label}
 			actions={
 				<>
-					<RuiDialogClose>Cancel</RuiDialogClose>
+					<RuiButton variant="ghost" type="button" data-dialog-close>
+						Cancel
+					</RuiButton>
 					<RuiButton type="button">Save</RuiButton>
 				</>
 			}
@@ -907,41 +907,14 @@ function renderTextareaPreview(props: Record<string, unknown>): JsxRenderable {
 }
 
 function renderToastPreview(props: Record<string, unknown>): JsxRenderable {
-	toast.clear();
-
 	return (
-		<div class="playground-toast-stage">
-			<div class="playground-toast-stage__actions">
-				<RuiButton variant="filled" type="button" on:click={() => toast('Event has been created')}>
-					Default
-				</RuiButton>
-				<RuiButton variant="filled" type="button" on:click={() => toast.success('Changes saved')}>
-					Success
-				</RuiButton>
-				<RuiButton
-					variant="filled"
-					type="button"
-					on:click={() =>
-						toast.error('Unable to reach the server', { description: 'Try again in a moment.' })
-					}
-				>
-					Error
-				</RuiButton>
-				<RuiButton variant="outline" type="button" on:click={() => toast.warning('Disk space is running low')}>
-					Warning
-				</RuiButton>
-				<RuiButton variant="outline" type="button" on:click={() => toast.info('Your session will expire soon')}>
-					Info
-				</RuiButton>
-			</div>
-			<RuiToaster
-				position={selectProp(props, 'position', 'bottom-end')}
-				duration={num(props, 'duration', 4000)}
-				visibleToasts={num(props, 'visibleToasts', 3)}
-				closeButton={bool(props, 'closeButton', true)}
-				expand={bool(props, 'expand')}
-			/>
-		</div>
+		<RuiToaster
+			position={selectProp(props, 'position', 'bottom-end')}
+			duration={num(props, 'duration', 4000)}
+			visibleToasts={num(props, 'visibleToasts', 3)}
+			closeButton={bool(props, 'closeButton', true)}
+			expand={bool(props, 'expand')}
+		/>
 	);
 }
 

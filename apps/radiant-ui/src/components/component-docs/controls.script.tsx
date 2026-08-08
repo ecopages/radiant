@@ -1,21 +1,20 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
-import { type ContextProvider, consumeContext, contextSelector } from '@ecopages/radiant/context';
+import { type ContextProvider, consumeContext } from '@ecopages/radiant/context';
 import '@ecopages/radiant-ui/button';
 import '@ecopages/radiant-ui/button-group';
 import '@ecopages/radiant-ui/input';
+import '@ecopages/radiant-ui/number-field';
 import '@ecopages/radiant-ui/select';
 import '@ecopages/radiant-ui/switch';
 import '@/content/stories';
 import { docsStoryContext } from '@/lib/docs-stories/story-context';
-import type { DocsArgs } from '@/lib/docs-stories';
+import type { DocsCanvasElement } from './canvas.script';
+import type { DocsDemoElement } from './demo.script';
 
 @customElement('radiant-docs-controls')
 export class DocsControlsElement extends RadiantElement {
 	@consumeContext(docsStoryContext) story?: ContextProvider<typeof docsStoryContext>;
-
-	@contextSelector({ context: docsStoryContext, select: (ctx) => ctx.args })
-	args: DocsArgs = {};
 
 	@onEvent({ selector: 'button[data-docs-arg]', type: 'click' })
 	onSegmentClick(event: Event): void {
@@ -31,9 +30,9 @@ export class DocsControlsElement extends RadiantElement {
 
 	@onEvent({ selector: 'rui-select[data-docs-arg]', type: 'rui-change' })
 	onSelectChange(event: Event): void {
-		const target = event.target;
+		const target = this.resolveControl(event, 'rui-select[data-docs-arg]');
 		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
-		if (!(target instanceof HTMLElement) || typeof detail?.value !== 'string') return;
+		if (!target || typeof detail?.value !== 'string') return;
 		const propName = target.dataset.docsArg;
 		if (!propName) return;
 		this.setArg(propName, detail.value);
@@ -41,12 +40,22 @@ export class DocsControlsElement extends RadiantElement {
 
 	@onEvent({ selector: 'rui-switch[data-docs-arg]', type: 'rui-change' })
 	onSwitchChange(event: Event): void {
-		const target = event.target;
+		const target = this.resolveControl(event, 'rui-switch[data-docs-arg]');
 		const detail = (event as CustomEvent<{ checked?: unknown }>).detail;
-		if (!(target instanceof HTMLElement) || typeof detail?.checked !== 'boolean') return;
+		if (!target || typeof detail?.checked !== 'boolean') return;
 		const propName = target.dataset.docsArg;
 		if (!propName) return;
 		this.setArg(propName, detail.checked);
+	}
+
+	@onEvent({ selector: 'rui-number-field[data-docs-arg]', type: 'rui-change' })
+	onNumberChange(event: Event): void {
+		const target = this.resolveControl(event, 'rui-number-field[data-docs-arg]');
+		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
+		if (!target || typeof detail?.value !== 'number' || !Number.isFinite(detail.value)) return;
+		const propName = target.dataset.docsArg;
+		if (!propName) return;
+		this.setArg(propName, detail.value);
 	}
 
 	@onEvent({ selector: 'input[data-docs-arg]', type: 'input' })
@@ -58,18 +67,27 @@ export class DocsControlsElement extends RadiantElement {
 		this.setArg(propName, target.value);
 	}
 
-	private setArg(propName: string, value: string | boolean): void {
-		if (!this.story) {
+	private resolveControl(event: Event, selector: string): HTMLElement | null {
+		const target = event.target;
+		if (!(target instanceof Element)) {
+			return null;
+		}
+		return target.closest<HTMLElement>(selector);
+	}
+
+	private setArg(propName: string, value: string | boolean | number): void {
+		const provider = this.story ?? this.findStoryProvider();
+		if (!provider) {
 			return;
 		}
 
-		const current = this.story.getContext();
+		const current = provider.getContext();
 		const nextArgs = { ...current.args, [propName]: value };
 		if (JSON.stringify(nextArgs) === JSON.stringify(current.args)) {
 			return;
 		}
 
-		this.story.setContext({
+		provider.setContext({
 			args: nextArgs,
 			renderRevision: current.renderRevision + 1,
 		});
@@ -77,6 +95,23 @@ export class DocsControlsElement extends RadiantElement {
 		if (typeof value === 'string') {
 			this.syncSegmentPressed(propName, value);
 		}
+
+		this.repaintCanvas();
+	}
+
+	private findStoryProvider(): ContextProvider<typeof docsStoryContext> | undefined {
+		if (this.story) {
+			return this.story;
+		}
+
+		const demo = this.closest('radiant-docs-demo') as DocsDemoElement | null;
+		return demo?.story;
+	}
+
+	private repaintCanvas(): void {
+		this.closest('radiant-docs-demo')
+			?.querySelector<DocsCanvasElement>('radiant-docs-canvas')
+			?.repaintFromContext();
 	}
 
 	private syncSegmentPressed(propName: string, value: string): void {

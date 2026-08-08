@@ -47,7 +47,7 @@ function argTypeForControl(control: PlaygroundControl): string {
 		return `${key}: { control: { type: 'select' }, options: [${options}] as const }`;
 	}
 	if (control.kind === 'number') {
-		return `${key}: { control: { type: 'text' } }`;
+		return `${key}: { control: { type: 'number' } }`;
 	}
 	return `${key}: { control: { type: 'text' } }`;
 }

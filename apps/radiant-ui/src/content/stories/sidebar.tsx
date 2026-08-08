@@ -25,7 +25,7 @@ export const meta = {
 		side: { control: { type: 'select' }, options: ['left', 'right'] as const },
 		defaultOpen: { control: { type: 'boolean' } },
 		resizable: { control: { type: 'boolean' } },
-		defaultWidth: { control: { type: 'text' } },
+		defaultWidth: { control: { type: 'number' } },
 	},
 	exampleCode: (args) => buildExampleCode('RuiSidebar', 'sidebar', args),
 	render: (args) => renderPlaygroundPreview('sidebar', args),

@@ -19,7 +19,7 @@ export const meta = {
 	argTypes: {
 		headingSelector: { control: { type: 'text' } },
 		label: { control: { type: 'text' } },
-		scrollOffset: { control: { type: 'text' } },
+		scrollOffset: { control: { type: 'number' } },
 	},
 	exampleCode: (args) => buildExampleCode('RuiToc', 'toc', args),
 	render: (args) => renderPlaygroundPreview('toc', args),

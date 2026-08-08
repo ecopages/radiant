@@ -3,12 +3,40 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiButtonGroup } from '@ecopages/radiant-ui/button-group';
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiNumberField } from '@ecopages/radiant-ui/number-field';
 import { RuiSelect } from '@ecopages/radiant-ui/select';
 import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 import type { DocsArgs, ResolvedDocsControl } from './types';
 
 function controlShell(kind: ResolvedDocsControl['kind'], control: JsxRenderable): JsxRenderable {
 	return <div class={`docs-story-controls__field docs-story-controls__field--${kind}`}>{control}</div>;
+}
+
+function toDocsNumberValue(raw: unknown): number {
+	const value = typeof raw === 'number' ? raw : Number(raw);
+	return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * Number controls for static SSR docs markup.
+ *
+ * @remarks
+ * Plain `value={n}` on custom elements is a server property binding and is omitted
+ * from HTML. Docs controls are not JSX-hydrated, so the client would upgrade with
+ * `value === undefined` and steppers would snap to 0. `attr:value` keeps the number
+ * in the serialized host attribute.
+ */
+function renderNumberControl(name: string, raw: unknown): JsxRenderable {
+	return (
+		<>
+			<RuiLabel class="docs-story-controls__label">{name}</RuiLabel>
+			<RuiNumberField
+				class="docs-story-controls__number"
+				data-docs-arg={name}
+				attr:value={toDocsNumberValue(raw)}
+			/>
+		</>
+	);
 }
 
 export function renderSegmentedControl(name: string, options: string[], value: string): JsxRenderable {
@@ -68,6 +96,10 @@ export function renderDocsControl(control: ResolvedDocsControl, args: DocsArgs):
 				/>
 			</>,
 		);
+	}
+
+	if (control.kind === 'number') {
+		return controlShell('number', renderNumberControl(control.name, raw));
 	}
 
 	return controlShell(

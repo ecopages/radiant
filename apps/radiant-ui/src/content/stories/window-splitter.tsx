@@ -17,7 +17,7 @@ export const meta = {
 		label: 'Split view',
 	},
 	argTypes: {
-		value: { control: { type: 'text' } },
+		value: { control: { type: 'number' } },
 		orientation: { control: { type: 'select' }, options: ['horizontal', 'vertical'] as const },
 		label: { control: { type: 'text' } },
 	},

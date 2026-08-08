@@ -21,7 +21,7 @@ export const meta = {
 	argTypes: {
 		selectionMode: { control: { type: 'select' }, options: ['single', 'multiple', 'range'] as const },
 		disabled: { control: { type: 'boolean' } },
-		visibleMonths: { control: { type: 'text' } },
+		visibleMonths: { control: { type: 'number' } },
 		pageBehavior: { control: { type: 'select' }, options: ['visible', 'single'] as const },
 	},
 	exampleCode: (args) => buildExampleCode('RuiCalendar', 'calendar', args),

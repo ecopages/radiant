@@ -19,6 +19,7 @@ export type DocsControlPresentation = ResolvedDocsControl['kind'];
  * Rules:
  * - `boolean` → switch
  * - `text` → text input
+ * - `number` → number field
  * - `select` with 2…{@link DOCS_SEGMENT_OPTION_LIMIT} options → segments
  * - `select` with 1 option or more than the limit → select
  * - `select` with no options → text (fallback)
@@ -30,6 +31,7 @@ export function resolveControlPresentation(
 	const type = definition?.control?.type ?? (options.length > 0 ? 'select' : undefined);
 
 	if (type === 'boolean') return 'boolean';
+	if (type === 'number') return 'number';
 	if (type === 'text') return 'text';
 
 	if (type === 'select' || options.length > 0) {

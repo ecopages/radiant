@@ -99,7 +99,8 @@ radiant-docs-canvas {
 	align-content: start;
 }
 
-.docs-story-controls__text {
+.docs-story-controls__text,
+.docs-story-controls__number {
 	@apply box-border w-full min-w-0;
 }
 

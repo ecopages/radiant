@@ -65,6 +65,39 @@ describe('renderPlaygroundPreview', () => {
 		expect(preview).toContain('Why these solutions?');
 		expect(preview).toContain('Analytics');
 	});
+
+	test('renders date field props on the host element', () => {
+		const preview = JSON.stringify(
+			renderPlaygroundPreview('date-field', {
+				value: '2026-12-25',
+				dateStyle: 'long',
+				disabled: true,
+				readOnly: false,
+				masked: false,
+			}),
+		);
+
+		expect(preview).toContain('rui-date-field');
+		expect(preview).toContain('2026-12-25');
+		expect(preview).toContain('long');
+		expect(preview).not.toContain('rui-field');
+	});
+
+	test('renders date range picker props on the host element', () => {
+		const preview = JSON.stringify(
+			renderPlaygroundPreview('date-range-picker', {
+				value: '2026-08-01/2026-08-14',
+				dateStyle: 'medium',
+				visibleMonths: 2,
+				disabled: false,
+				readOnly: true,
+			}),
+		);
+
+		expect(preview).toContain('rui-date-range-picker');
+		expect(preview).toContain('2026-08-01/2026-08-14');
+		expect(preview).not.toContain('rui-field');
+	});
 });
 
 describe('DocsLayout persist markup', () => {

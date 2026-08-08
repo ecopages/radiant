@@ -3,7 +3,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 export type DocsArgs = Record<string, unknown>;
 
 /** Author-declared control kinds in `argTypes`. Presentation is chosen by heuristics. */
-export type DocsControlType = 'select' | 'boolean' | 'text';
+export type DocsControlType = 'select' | 'boolean' | 'text' | 'number';
 
 export type DocsArgType<TValue = unknown> = {
 	control?: { type?: DocsControlType };
@@ -15,12 +15,23 @@ export type DocsArgTypes<TArgs extends DocsArgs> = {
 	[K in keyof TArgs]?: DocsArgType<TArgs[K]>;
 };
 
+export type DocsDecoratorContext<TArgs extends DocsArgs = DocsArgs> = {
+	args: TArgs;
+	parameters: { docs: { id: string } };
+};
+
+export type DocsDecorator<TArgs extends DocsArgs = DocsArgs> = (
+	story: () => JsxRenderable,
+	context: DocsDecoratorContext<TArgs>,
+) => JsxRenderable;
+
 export type DocsMeta<TArgs extends DocsArgs = DocsArgs> = {
 	/** Package slug for live example imports (`@ecopages/radiant-ui/<component>`). */
 	component?: string;
 	exportName?: string;
 	args?: Partial<TArgs>;
 	argTypes?: DocsArgTypes<TArgs>;
+	decorators?: DocsDecorator<TArgs>[];
 	render?: (args: TArgs) => JsxRenderable;
 	/** Optional live example builder; otherwise a generic prop dump is used. */
 	exampleCode?: (args: TArgs) => string;
@@ -28,6 +39,7 @@ export type DocsMeta<TArgs extends DocsArgs = DocsArgs> = {
 
 export type DocsStory<TArgs extends DocsArgs = DocsArgs> = {
 	args?: Partial<TArgs>;
+	decorators?: DocsDecorator<TArgs>[];
 	render?: (args: TArgs) => JsxRenderable;
 	parameters: { docs: { id: string } };
 };
@@ -47,4 +59,5 @@ export type ResolvedDocsControl =
 	| { name: string; kind: 'segmented'; options: string[] }
 	| { name: string; kind: 'select'; options: string[] }
 	| { name: string; kind: 'boolean' }
-	| { name: string; kind: 'text' };
+	| { name: string; kind: 'text' }
+	| { name: string; kind: 'number' };

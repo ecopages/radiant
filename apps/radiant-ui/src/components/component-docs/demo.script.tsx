@@ -3,7 +3,6 @@ import { RadiantElement, customElement, registerSsrPreparationCallback } from '@
 import { type ContextProvider, provideContext } from '@ecopages/radiant/context';
 import '@/content/stories';
 import { docsStoryContext } from '@/lib/docs-stories/story-context';
-import type { DocsStoryContextValue } from '@/lib/docs-stories/story-context';
 import { getRegisteredStory, getStoryArgs } from '@/lib/docs-stories';
 
 @customElement('radiant-docs-demo')

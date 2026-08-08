@@ -1,10 +1,11 @@
+import { RuiDateRangePicker } from '@ecopages/radiant-ui/date-range-picker';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { buildExampleCode } from '@/lib/playground';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type DateRangePickerArgs = {
 	value: string;
-	dateStyle: string;
+	dateStyle: 'short' | 'medium' | 'long' | 'full';
 	visibleMonths: number;
 	disabled: boolean;
 	readOnly: boolean;
@@ -23,12 +24,23 @@ export const meta = {
 	argTypes: {
 		value: { control: { type: 'text' } },
 		dateStyle: { control: { type: 'select' }, options: ['short', 'medium', 'long', 'full'] as const },
-		visibleMonths: { control: { type: 'text' } },
+		visibleMonths: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		readOnly: { control: { type: 'boolean' } },
 	},
 	exampleCode: (args) => buildExampleCode('RuiDateRangePicker', 'date-range-picker', args),
-	render: (args) => renderPlaygroundPreview('date-range-picker', args),
+	render: (args) => (
+		<>
+			<RuiLabel>Trip dates</RuiLabel>
+			<RuiDateRangePicker
+				value={args.value}
+				dateStyle={args.dateStyle}
+				visibleMonths={args.visibleMonths}
+				disabled={args.disabled}
+				prop:readOnly={args.readOnly}
+			/>
+		</>
+	),
 } satisfies DocsMeta<DateRangePickerArgs>;
 
 type Story = DocsStory<DateRangePickerArgs>;

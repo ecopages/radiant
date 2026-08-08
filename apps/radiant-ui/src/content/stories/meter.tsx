@@ -19,9 +19,9 @@ export const meta = {
 		label: 'Storage used',
 	},
 	argTypes: {
-		value: { control: { type: 'text' } },
-		min: { control: { type: 'text' } },
-		max: { control: { type: 'text' } },
+		value: { control: { type: 'number' } },
+		min: { control: { type: 'number' } },
+		max: { control: { type: 'number' } },
 		label: { control: { type: 'text' } },
 	},
 	exampleCode: (args) => buildExampleCode('RuiMeter', 'meter', args),

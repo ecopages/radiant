@@ -1,5 +1,5 @@
 /**
- * Portable docs-stories toolkit (CSF-shaped meta/stories + control heuristics).
+ * Portable docs-stories toolkit (CSF-shaped meta/stories/decorators + control heuristics).
  *
  * Copy this directory into another app, then wire a thin host shell
  * (`Demo` / `Canvas` / `Controls` custom elements) that:
@@ -8,7 +8,7 @@
  * 3. Hydrates radiant-ui CE scripts used by those controls
  *
  * Control presentation is automated — do not branch on option counts in the shell.
- * Heuristics: boolean→switch, text→input, 2–3 options→segments, else→select.
+ * Heuristics: boolean→switch, text→input, number→number field, 2–3 options→segments, else→select.
  */
 
 export type {
@@ -16,6 +16,8 @@ export type {
 	DocsArgType,
 	DocsArgTypes,
 	DocsControlType,
+	DocsDecorator,
+	DocsDecoratorContext,
 	DocsMeta,
 	DocsMetaAny,
 	DocsStory,

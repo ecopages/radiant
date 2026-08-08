@@ -23,10 +23,10 @@ export const meta = {
 		loop: true,
 	},
 	argTypes: {
-		index: { control: { type: 'text' } },
+		index: { control: { type: 'number' } },
 		transition: { control: { type: 'select' }, options: ['none', 'slide', 'fade'] as const },
 		autoplay: { control: { type: 'boolean' } },
-		interval: { control: { type: 'text' } },
+		interval: { control: { type: 'number' } },
 		showIndicators: { control: { type: 'boolean' } },
 		loop: { control: { type: 'boolean' } },
 	},
