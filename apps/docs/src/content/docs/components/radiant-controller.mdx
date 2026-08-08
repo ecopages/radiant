@@ -267,7 +267,7 @@ render() {
 }
 ```
 
-Hoist `map` to a create-once host field. Do not call `.map(...)` inside `render()`, each call produces a new derived binding.
+Hoist `map` to a create-once host field. Do not call `.map(...)` inside `render()` — each call produces a new derived binding.
 
 Object props are shallow: projections update on whole-object replacement, not in-place nested mutation.
 
