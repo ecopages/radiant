@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { collapsedStackHeight, collapsedToastOpacity, expandedStackHeight, expandedToastOffset } from './stack-layout';
+import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from './stack-layout';
 
 describe('expandedToastOffset', () => {
 	test('front toast stays at 0', () => {
@@ -39,18 +39,5 @@ describe('collapsedStackHeight', () => {
 	test('uses front height plus gap peeks for visible count only', () => {
 		expect(collapsedStackHeight(80, 3, 14)).toBe(80 + 28);
 		expect(collapsedStackHeight(80, 1, 14)).toBe(80);
-	});
-});
-
-describe('collapsedToastOpacity', () => {
-	test('front is fully opaque and behind toasts fade', () => {
-		expect(collapsedToastOpacity(0)).toBe(1);
-		expect(collapsedToastOpacity(1)).toBe(0.8);
-		expect(collapsedToastOpacity(2)).toBe(0.6);
-		expect(collapsedToastOpacity(3)).toBe(0.4);
-	});
-
-	test('does not fall below the floor', () => {
-		expect(collapsedToastOpacity(10)).toBe(0.4);
 	});
 });

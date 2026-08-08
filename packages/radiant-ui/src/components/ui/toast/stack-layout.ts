@@ -31,9 +31,3 @@ export function collapsedStackHeight(frontHeight: number, peekCount: number, gap
 	if (peekCount <= 0) return 0;
 	return frontHeight + Math.max(0, peekCount - 1) * gap;
 }
-
-/** Opacity for a collapsed toast at `index` (front = 1, fades toward the back). */
-export function collapsedToastOpacity(index: number): number {
-	if (index <= 0) return 1;
-	return Math.max(0.4, 1 - index * 0.2);
-}

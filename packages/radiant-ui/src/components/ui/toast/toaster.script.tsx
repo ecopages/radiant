@@ -15,7 +15,7 @@ import {
 	type ToastShowDetail,
 	splitToastPosition,
 } from './toast-context';
-import { collapsedStackHeight, collapsedToastOpacity, expandedStackHeight, expandedToastOffset } from './stack-layout';
+import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from './stack-layout';
 import { toastState } from './toast-state';
 import type { RuiToast } from './toast.script';
 import './toast.script';
@@ -333,7 +333,7 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 	 * @remarks
 	 * Expanded offsets use each toast's natural height (Sonner formula):
 	 * `sum(heights before) + index * gap`. Collapsed mode peeks at most
-	 * {@link TOAST_COLLAPSED_PEEK} toasts with scale + opacity; overflow stays
+	 * {@link TOAST_COLLAPSED_PEEK} toasts with scale; overflow stays
 	 * mounted but hidden until hover expands the stack.
 	 * Heights are always remeasured — clipped collapsed hosts make caches stale.
 	 */
@@ -388,23 +388,19 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 
 			if (expanded) {
 				el.style.setProperty('--y', `translateY(${lift * offset}px)`);
-				el.style.setProperty('--stack-opacity', '1');
 				el.style.height = `${height}px`;
 				el.style.overflow = 'visible';
 			} else if (!inCollapsedPeek) {
 				el.style.setProperty('--y', `translateY(${lift * (peekLimit - 1) * this.gap}px) scale(0.7)`);
-				el.style.setProperty('--stack-opacity', '0');
 				el.style.height = `${frontHeight}px`;
 				el.style.overflow = 'hidden';
 			} else if (isFront) {
 				el.style.setProperty('--y', 'translateY(0px)');
-				el.style.setProperty('--stack-opacity', '1');
 				el.style.height = `${height}px`;
 				el.style.overflow = 'visible';
 			} else {
 				const scale = Math.max(0.7, 1 - index * 0.05);
 				el.style.setProperty('--y', `translateY(${lift * index * this.gap}px) scale(${scale})`);
-				el.style.setProperty('--stack-opacity', String(collapsedToastOpacity(index)));
 				el.style.height = `${frontHeight}px`;
 				el.style.overflow = 'hidden';
 			}
@@ -447,7 +443,8 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 	private onPointerUp(): void {
 		if (!this.interacting) return;
 		this.interacting = false;
-		const hovered = this.matches(':hover') || this.querySelector('rui-toast:hover');
+		const list = this.querySelector('.rui-toaster');
+		const hovered = Boolean(list?.matches(':hover') || this.querySelector('rui-toast:hover'));
 		if (!hovered) this.expanded = false;
 		this.syncPauseState();
 	}
