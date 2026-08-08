@@ -79,22 +79,14 @@ export function createJsxElement<Props extends object>(
 		appendBinding(strings, values, type, name, value);
 	});
 
-	if (voidElementNames.has(type)) {
-		strings[strings.length - 1] += '>';
-		return wrapKeyedValue(
-			createTemplateResult(
-				strings,
-				values,
-				type,
-				type.includes('-') ? (props as Record<string, unknown>) : undefined,
-			),
-			keyedValue,
-		);
-	}
-
 	strings[strings.length - 1] += '>';
-	appendElementChildren(strings, values, type, children, childSlotMode);
-	strings[strings.length - 1] += `</${type}>`;
+
+	// Void elements take neither children nor a closing tag; everything else is
+	// otherwise assembled identically.
+	if (!voidElementNames.has(type)) {
+		appendElementChildren(strings, values, type, children, childSlotMode);
+		strings[strings.length - 1] += `</${type}>`;
+	}
 
 	return wrapKeyedValue(
 		createTemplateResult(
@@ -179,124 +171,137 @@ function appendBinding(strings: string[], values: unknown[], elementName: string
 		return;
 	}
 
-	const bindingShapeValue = resolveReactiveSnapshot(value);
-	const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
+	const { sigil, attributeName } = resolveBindingSigil(elementName, name, value);
 
-	if (name.startsWith('on-native:')) {
-		strings[strings.length - 1] += ` @${name.slice('on-native:'.length)}=`;
-		values.push(value);
-		strings.push('');
-		return;
-	}
-
-	if (name.startsWith('on:')) {
-		const eventName = name.slice(3);
-		strings[strings.length - 1] += shouldDelegateEventBinding(eventName) ? ` !${eventName}=` : ` @${eventName}=`;
-		values.push(value);
-		strings.push('');
-		return;
-	}
-
-	if (name.startsWith('prop:')) {
-		strings[strings.length - 1] += ` .${name.slice(5)}=`;
-		values.push(value);
-		strings.push('');
-		return;
-	}
-
-	if (name.startsWith('attr:')) {
-		strings[strings.length - 1] += ` ${normalizedName}=`;
-		values.push(value);
-		strings.push('');
-		return;
-	}
-
-	if (typeof bindingShapeValue === 'boolean' && shouldUseBooleanAttributeBinding(normalizedName)) {
-		strings[strings.length - 1] += ` ?${normalizedName}=`;
-		values.push(value);
-		strings.push('');
-		return;
-	}
-
-	if (!shouldUseAttributeBindingByDefaultForElement(elementName, normalizedName)) {
-		strings[strings.length - 1] += ` .${normalizedName}=`;
-		values.push(value);
-		strings.push('');
-		return;
-	}
-
-	strings[strings.length - 1] += ` ${normalizedName}=`;
+	strings[strings.length - 1] += ` ${sigil}${attributeName}=`;
 	values.push(value);
 	strings.push('');
 }
 
+/**
+ * Resolves the authored prop name to the template sigil and attribute name that
+ * encode its binding kind.
+ *
+ * Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`) select a kind directly.
+ * Unprefixed names fall back to per-element defaults: boolean attributes bind by
+ * presence, custom elements bind by property unless the name is a known attribute.
+ *
+ * @param elementName Lowercase tag name, including custom-element names with `-`.
+ * @param name Authored prop name, possibly carrying an explicit prefix.
+ * @param value Bound value, resolved through reactive wrappers to pick the shape.
+ */
+function resolveBindingSigil(
+	elementName: string,
+	name: string,
+	value: unknown,
+): { sigil: string; attributeName: string } {
+	if (name.startsWith('on-native:')) {
+		return { sigil: '@', attributeName: name.slice('on-native:'.length) };
+	}
+
+	if (name.startsWith('on:')) {
+		const eventName = name.slice(3);
+		return { sigil: shouldDelegateEventBinding(eventName) ? '!' : '@', attributeName: eventName };
+	}
+
+	if (name.startsWith('prop:')) {
+		return { sigil: '.', attributeName: name.slice(5) };
+	}
+
+	if (name.startsWith('attr:')) {
+		return { sigil: '', attributeName: name.slice(5) };
+	}
+
+	if (typeof resolveReactiveSnapshot(value) === 'boolean' && shouldUseBooleanAttributeBinding(name)) {
+		return { sigil: '?', attributeName: name };
+	}
+
+	if (!shouldUseAttributeBindingByDefaultForElement(elementName, name)) {
+		return { sigil: '.', attributeName: name };
+	}
+
+	return { sigil: '', attributeName: name };
+}
+
+/**
+ * Emits `children` into the template's value slots.
+ *
+ * `multiple` mode (from `jsxs`) gives each sibling its own slot so the renderer can
+ * reconcile them positionally; `single` mode collapses the whole subtree into one
+ * slot. Empty slots are dropped entirely rather than emitted as blanks.
+ */
 function appendChildren(
 	strings: string[],
 	values: unknown[],
 	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
 ): void {
-	if (children === undefined || children === null || children === false) {
-		return;
-	}
-
-	if (!isIterableJsxChild(children)) {
-		values.push(normalizeChildren(children));
+	for (const slot of toChildSlots(children, childSlotMode)) {
+		values.push(slot);
 		strings.push('');
-		return;
 	}
-
-	if (childSlotMode === 'multiple') {
-		for (const child of children) {
-			const normalizedChild = normalizeChildSlot(child as JsxRenderable);
-
-			if (normalizedChild === undefined) {
-				continue;
-			}
-
-			values.push(normalizedChild);
-			strings.push('');
-		}
-		return;
-	}
-
-	const flattenedChildren = flattenChildren(children);
-
-	if (flattenedChildren.length === 0) {
-		return;
-	}
-
-	values.push(flattenedChildren as JsxRenderable);
-	strings.push('');
 }
 
+/**
+ * Resolves `children` to the value a fragment should render as.
+ *
+ * Unlike {@link appendChildren}, a fragment has no element to hang slots on, so a
+ * lone surviving child renders as itself. That collapse deliberately does not apply
+ * to element children: an element keeps a one-entry list as a list so the renderer
+ * reconciles it positionally instead of treating it as a single child.
+ */
 function normalizeChildrenWithMode(children: JsxRenderable | undefined, childSlotMode: ChildSlotMode): JsxRenderable {
 	if (childSlotMode === 'multiple' && isIterableJsxChild(children)) {
-		const slots: JsxRenderable[] = [];
-
-		for (const child of children) {
-			const normalizedChild = normalizeChildSlot(child as JsxRenderable);
-
-			if (normalizedChild !== undefined) {
-				slots.push(normalizedChild);
-			}
-		}
+		const slots = toChildSlots(children, childSlotMode);
 
 		if (slots.length === 0) {
 			return '';
 		}
 
-		if (slots.length === 1) {
-			return slots[0];
+		return (slots.length === 1 ? slots[0] : slots) as JsxRenderable;
+	}
+
+	const slot = toChildSlot(children);
+
+	if (slot === undefined) {
+		return '';
+	}
+
+	return (Array.isArray(slot) && slot.length === 1 ? slot[0] : slot) as JsxRenderable;
+}
+
+/**
+ * Splits `children` into the discrete slot values for the given slot mode.
+ *
+ * `multiple` keeps siblings in separate slots; `single` folds the whole subtree into
+ * one. Both drop `undefined`, `null`, and `false`.
+ */
+function toChildSlots(children: JsxRenderable | undefined, childSlotMode: ChildSlotMode): unknown[] {
+	if (childSlotMode === 'multiple' && isIterableJsxChild(children)) {
+		const slots: unknown[] = [];
+
+		for (const child of children) {
+			const slot = toChildSlot(child as JsxRenderable);
+
+			if (slot !== undefined) {
+				slots.push(slot);
+			}
 		}
 
 		return slots;
 	}
 
-	return normalizeChildren(children);
+	const slot = toChildSlot(children);
+	return slot === undefined ? [] : [slot];
 }
 
-function normalizeChildSlot(child: JsxRenderable | undefined): JsxRenderable | undefined {
+/**
+ * Flattens one child into its slot value, or `undefined` when it renders nothing.
+ *
+ * Iterables stay arrays even when they hold a single entry, so the renderer keeps
+ * treating them as lists.
+ */
+function toChildSlot(child: JsxRenderable | undefined): unknown {
 	if (child === undefined || child === null || child === false) {
 		return undefined;
 	}
@@ -306,7 +311,7 @@ function normalizeChildSlot(child: JsxRenderable | undefined): JsxRenderable | u
 	}
 
 	const flattenedChildren = flattenChildren(child);
-	return flattenedChildren.length === 0 ? undefined : (flattenedChildren as JsxRenderable);
+	return flattenedChildren.length === 0 ? undefined : flattenedChildren;
 }
 
 function flattenChildren(children: JsxRenderable | undefined): unknown[] {
@@ -328,28 +333,6 @@ function appendFlattenedChildren(flattenedChildren: unknown[], children: JsxRend
 	}
 
 	flattenedChildren.push(children);
-}
-
-function normalizeChildren(children: JsxRenderable | undefined): JsxRenderable {
-	if (children === undefined || children === null || children === false) {
-		return '';
-	}
-
-	if (!isIterableJsxChild(children)) {
-		return children;
-	}
-
-	const flattenedChildren = flattenChildren(children);
-
-	if (flattenedChildren.length === 0) {
-		return '';
-	}
-
-	if (flattenedChildren.length === 1) {
-		return flattenedChildren[0] as JsxRenderable;
-	}
-
-	return flattenedChildren as JsxRenderable;
 }
 
 function createTemplateResult(
