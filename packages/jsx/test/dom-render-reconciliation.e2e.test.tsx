@@ -1018,6 +1018,45 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector('p')?.textContent).toBe('Count: 16');
 	});
 
+	test('hydration subscribes exactly once per reactive child and leaves nothing behind on unmount', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let subscribeCalls = 0;
+		let count = 15;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribeCalls += 1;
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		container.innerHTML = HYDRATE_METRIC_HTML;
+		root.hydrate(
+			jsxs('p', {
+				class: 'component-metric',
+				children: ['Count: ', boundCount],
+			}),
+		);
+
+		// Hydration planning must never mount the subtree it is measuring: one live
+		// binding means exactly one subscription, with no detached extras retained.
+		expect(subscribeCalls).toBe(1);
+		expect(subscribers.size).toBe(1);
+
+		root.unmount();
+
+		expect(subscribers.size).toBe(0);
+	});
+
 	test('hydrated fragment subscribable child values patch without rerendering the parent tree', async () => {
 		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([
 			loadJsxRuntime(),
