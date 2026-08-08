@@ -307,4 +307,16 @@ describe('Radiant JSX runtime', () => {
 		expect(Array.from(devResult.strings)).toEqual(Array.from(runtimeResult.strings));
 		expect(devResult.values).toEqual(runtimeResult.values);
 	});
+
+	test('jsx third-arg key matches props key for automatic runtime emit', async () => {
+		const [{ jsx, isKeyedJsxValue }] = await Promise.all([loadJsxRuntime()]);
+		const fromProps = jsx('li', { children: 'alpha', key: 'a' });
+		const fromArg = jsx('li', { children: 'alpha' }, 'a');
+
+		expect(isKeyedJsxValue(fromProps)).toBe(true);
+		expect(isKeyedJsxValue(fromArg)).toBe(true);
+		if (isKeyedJsxValue(fromProps) && isKeyedJsxValue(fromArg)) {
+			expect(fromArg.key).toBe(fromProps.key);
+		}
+	});
 });

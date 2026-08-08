@@ -1,5 +1,7 @@
 import { waitFor } from '@testing-library/dom';
+import { jsx } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
+import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { RadiantElement } from '../../src/core/radiant-element';
 
 class MyRadiantElement extends RadiantElement {
@@ -13,6 +15,7 @@ customElements.define('my-radiant-element', MyRadiantElement);
 describe('RadiantElement', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
+		uninstallRadiantHydrator();
 	});
 
 	test('renderTemplate replace replaces inner content', () => {
@@ -203,6 +206,75 @@ describe('RadiantElement', () => {
 		}
 		const refs = customElement.getRef('my-ref', true);
 		expect(refs.length).toEqual(3);
+	});
+
+	test('does not hydrate again when an SSR host reconnects', async () => {
+		class ReconnectingSsrElement extends RadiantElement {
+			hydrateCount = 0;
+
+			override hydrate(): void {
+				this.hydrateCount += 1;
+				super.hydrate();
+			}
+
+			override render() {
+				return jsx('div', {});
+			}
+		}
+
+		customElements.define('reconnecting-ssr-element', ReconnectingSsrElement);
+		installRadiantHydrator();
+
+		const element = document.createElement('reconnecting-ssr-element') as ReconnectingSsrElement;
+		element.innerHTML = '<div data-radiant-jsx-bind-0="attr:class"></div>';
+		document.body.appendChild(element);
+
+		await waitFor(() => expect(element.hydrateCount).toBe(1));
+
+		element.remove();
+		document.body.appendChild(element);
+
+		await Promise.resolve();
+		expect(element.hydrateCount).toBe(1);
+	});
+
+	test('does not update again when a mounted host reconnects', async () => {
+		class MountedReconnectElement extends RadiantElement {
+			updateCount = 0;
+
+			override update(): void {
+				this.updateCount += 1;
+				super.update();
+			}
+
+			override render() {
+				return jsx(
+					'div',
+					{ 'data-ref': 'content', class: 'slot-content', style: { height: '200px', overflow: 'auto' } },
+					jsx('slot', {}),
+				);
+			}
+		}
+
+		customElements.define('mounted-reconnect-element', MountedReconnectElement);
+
+		const element = document.createElement('mounted-reconnect-element') as MountedReconnectElement;
+		element.innerHTML = '<div style="height: 1200px">Nav</div>';
+		document.body.appendChild(element);
+
+		await waitFor(() => expect(element.updateCount).toBe(1));
+
+		const content = element.querySelector('[data-ref="content"]') as HTMLElement;
+		content.scrollTop = 180;
+
+		element.remove();
+		document.body.appendChild(element);
+
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(element.updateCount).toBe(1);
+		expect(content.scrollTop).toBe(180);
 	});
 
 	test('reactive updates are triggered by reference change, not in-place mutation', () => {

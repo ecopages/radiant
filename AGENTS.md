@@ -1,6 +1,6 @@
 ## Comments
 
-- No inline `//` for non-obvious behavior — document on the declaration with TSDoc.
+- No inline `//` for non-obvious behavior, document on the declaration with TSDoc.
 - TSDoc only when it adds info beyond the name; never restate the method/class/function.
 - Use `@remarks` for rationale, edge cases, and workarounds (`@remarks`-only blocks are fine).
 - Skip TSDoc on trivial or self-explanatory code.

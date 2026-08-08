@@ -72,7 +72,7 @@ export default eco.page<{ entry: Entry }, JsxRenderable>({
 		description: entry.description,
 	}),
 	render: async ({ entry }) => {
-		const Content = getComponent(entry.slug);
+		const Content = await getComponent(entry.slug);
 
 		return (
 			<section class="docs-page">

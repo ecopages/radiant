@@ -31,7 +31,7 @@
 		@apply mt-2 mb-7;
 	}
 
-	a:not(.unstyled, .unstyled *) {
+	a:not(.unstyled, .unstyled *, .rui-button) {
 		@apply text-link font-medium underline underline-offset-4 decoration-link/30 hover:decoration-link transition-colors duration-200;
 	}
 
