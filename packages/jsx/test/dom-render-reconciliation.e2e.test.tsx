@@ -1465,6 +1465,97 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect((container.querySelector('input') as HTMLInputElement | null)?.checked).toBe(true);
 	});
 
+	test('a reactive value rendered at the root stays subscribed and patches in place', async () => {
+		const [{ createSubscribableJsxValue }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: string) => void>();
+		let label = 'first';
+		const boundLabel = createSubscribableJsxValue({
+			getValue: () => label,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		root.render(boundLabel);
+
+		expect(container.textContent).toBe('first');
+		expect(subscribers.size).toBe(1);
+
+		label = 'second';
+
+		for (const subscriber of subscribers) {
+			subscriber(label);
+		}
+
+		expect(container.textContent).toBe('second');
+
+		root.unmount();
+
+		expect(subscribers.size).toBe(0);
+	});
+
+	test('a reactive template rendered at the root drives updates without a wrapping element', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let count = 1;
+		const boundView = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		}).map((value) => jsxs('p', { class: 'count', children: ['Count: ', value] }));
+
+		root.render(boundView);
+
+		expect(container.innerHTML).toBe('<p class="count">Count: 1</p>');
+
+		const mountedParagraph = container.querySelector('p');
+		count = 2;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		expect(container.innerHTML).toBe('<p class="count">Count: 2</p>');
+		// The template shape is stable, so the root patches the existing element
+		// rather than replacing the subtree.
+		expect(container.querySelector('p')).toBe(mountedParagraph);
+	});
+
+	test('root renders reconcile keyed lists in place instead of rebuilding them', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderList = (keys: readonly string[]) => keys.map((key) => jsx('li', { children: key }, key));
+
+		root.render(renderList(['a', 'b', 'c']));
+
+		const initialItems = new Map(
+			Array.from(container.querySelectorAll('li'), (item) => [item.textContent, item] as const),
+		);
+
+		root.render(renderList(['c', 'a', 'b']));
+
+		expect(Array.from(container.querySelectorAll('li'), (item) => item.textContent)).toEqual(['c', 'a', 'b']);
+
+		for (const [key, item] of initialItems) {
+			expect(container.querySelector('li:nth-child(' + (['c', 'a', 'b'].indexOf(key!) + 1) + ')')).toBe(item);
+		}
+	});
+
 	test('map derives a record lookup and patches only the text node without rerendering', async () => {
 		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
 			loadJsxRuntime(),

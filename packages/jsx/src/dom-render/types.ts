@@ -254,16 +254,11 @@ export type MountedRangeContent =
 /**
  * Mounted representation for the current render root.
  *
- * Both variants carry the host element so disposal can release root-scoped
- * delegated listeners, which are registered on the host regardless of whether the
- * root mounted as a template instance or as loose nodes.
+ * A root is a {@link MountedRangeRecord} that spans its whole host, plus the host
+ * itself so disposal can release root-scoped delegated listeners. Modelling it as a
+ * range is what lets every value shape — templates, keyed lists, text, and reactive
+ * sources — behave the same at the root as inside a template.
  */
-export type MountedRoot =
-	| {
-			instance: TemplateInstance;
-			kind: 'template';
-	  }
-	| {
-			kind: 'value';
-			rootTarget: HTMLElement;
-	  };
+export type MountedRoot = MountedRangeRecord & {
+	rootTarget: HTMLElement;
+};
