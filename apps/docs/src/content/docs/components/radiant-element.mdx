@@ -130,7 +130,7 @@ Once `render()` is overridden, `RadiantElement` exposes the full host render lif
 - `hydrate()` when SSR markers exist and the explicit client hydrator is installed
 - light-DOM slot projection through literal `<slot>` tags
 
-Full host HTML (`<my-element>...</my-element>`) is produced by the server pipeline, prefer `renderComponent(...)` from `@ecopages/radiant/server/render-component`. See [Component SSR](/docs/ssr/component-ssr).
+Full host HTML (`<my-element>...</my-element>`) is produced by the server pipeline — prefer `renderComponent(...)` from `@ecopages/radiant/server/render-component`. See [Component SSR](/docs/ssr/component-ssr).
 
 ## Render Lifecycle Gate
 
@@ -154,7 +154,7 @@ Use the raw value in imperative code and render logic. Use bindings in stable JS
 
 ## Derived Bindings
 
-Bindings expose the current reactive value, but sometimes JSX needs a **projection** of that value, a record lookup, an object key, or a transform.
+Bindings expose the current reactive value, but sometimes JSX needs a **projection** of that value — a record lookup, an object key, or a transform.
 
 ### Member access in JSX
 
@@ -172,7 +172,7 @@ Use this for simple object-key reads. You do not need a field initializer for `{
 
 ### `map` for transforms and lookups
 
-Use `map` when the projection is not a plain property read, record lookups, computed strings, or method calls:
+Use `map` when the projection is not a plain property read — record lookups, computed strings, or method calls:
 
 ```tsx
 private readonly themeLabel = this.$.preference.map((preference) => THEME_CONFIG[preference].label);
@@ -185,7 +185,7 @@ render() {
 **Create `map` results once** (field initializer or cached host field). Calling `.map(...)` inside `render()` creates a new binding on every pass, which breaks the live-subscription fast path.
 
 ```tsx
-// Avoid new derived binding every render
+// Avoid — new derived binding every render
 render() {
   return <p>{this.$.preference.map((p) => THEME_CONFIG[p].label)}</p>;
 }
@@ -193,18 +193,18 @@ render() {
 
 ### Rules
 
-- **Member access** (`this.$.config.label`) - fine inline in JSX for simple keys.
-- **`map`** - hoist transforms and lookups to a create-once host field.
-- **Object props are shallow** - projections update when the whole object is replaced (`this.config = { ... }`), not when nested keys are mutated in place.
-- **Bracket lookups need `map`** - use `this.$.preference.map((p) => THEME_CONFIG[p].label)`, not `THEME_CONFIG[this.$.preference]`.
+- **Member access** (`this.$.config.label`) — fine inline in JSX for simple keys.
+- **`map`** — hoist transforms and lookups to a create-once host field.
+- **Object props are shallow** — projections update when the whole object is replaced (`this.config = { ... }`), not when nested keys are mutated in place.
+- **Bracket lookups need `map`** — use `this.$.preference.map((p) => THEME_CONFIG[p].label)`, not `THEME_CONFIG[this.$.preference]`.
 
 ## Advanced Host Integration
 
 Every reactive host member (`@state`, `@prop`, `@attr`, and `signal()`) is backed by a signals `State` inside the host. Decorator APIs are unchanged, but advanced integrations can work with that member registry directly:
 
-- `createReactiveMember(name, initialValue)`- create and register host-owned member state
-- `registerReactiveMember(name, signal)`- register externally owned state, such as a user `signal()`
-- `getReactiveMember(name)`- read the member state registered for a property name
+- `createReactiveMember(name, initialValue)` — create and register host-owned member state
+- `registerReactiveMember(name, signal)` — register externally owned state, such as a user `signal()`
+- `getReactiveMember(name)` — read the member state registered for a property name
 
 Use these when you build host adapters, tests, or custom decorators. Prefer `@state`, `@prop`, `@attr`, and `signal()` in application code.
 

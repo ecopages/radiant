@@ -83,7 +83,7 @@ The optional server-side rendering of HTML output before client-side behavior is
 _Avoid_: hydration, client-only render
 
 **SSR Render Scope**:
-The Node-only ambient render context that carries hydrate mode, custom-element render hooks, and symbol-keyed framework state across nested server renders. Ambient values live in module-owned `AsyncLocalStorage`, SSR bundlers must resolve one `@ecopages/jsx` instance (do not inline duplicate copies).
+The Node-only ambient render context that carries hydrate mode, custom-element render hooks, and symbol-keyed framework state across nested server renders. Ambient values live in module-owned `AsyncLocalStorage` — SSR bundlers must resolve one `@ecopages/jsx` instance (do not inline duplicate copies).
 _Avoid_: browser fallback stack, globalThis ambient store, sync-only ambient state, duplicated inlined SSR modules
 
 **SSR Context Stack**:
