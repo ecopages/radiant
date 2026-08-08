@@ -26,13 +26,13 @@ export type HydrateTemplateInstanceOptions = {
 	 */
 	bindingBaseIndex?: number;
 	/**
-	 * Root node this template already owns in the host DOM.
+	 * Root nodes this template already owns in the host DOM, in blueprint order.
 	 *
-	 * Supplying it resolves blueprint paths directly against that node. The
+	 * Supplying them resolves blueprint paths directly against those nodes. The
 	 * `pathRootOffset` form has to index into `target.childNodes`, which is O(host
 	 * children) per call and therefore quadratic when hydrating a long list.
 	 */
-	hostRoot?: Node;
+	hostRoots?: readonly Node[];
 	pathRootOffset?: number;
 	rootTarget?: HTMLElement;
 };
@@ -56,7 +56,7 @@ export function hydrateTemplateInstance(
 	const pathRootOffset = options.pathRootOffset ?? 0;
 	const rootTarget = options.rootTarget ?? target;
 	const indexPlan = planTemplateHydrationIndices(template, options.bindingBaseIndex ?? 0);
-	const resolveHostNode = createHostPathResolver(target, options.hostRoot, pathRootOffset);
+	const resolveHostNode = createHostPathResolver(target, options.hostRoots, pathRootOffset);
 	const compiledTemplate = getCompiledTemplate(template);
 	const childParts = compiledTemplate.parts.filter((part): part is ChildTemplatePart => part.type === 'child');
 	const hydratedChildRanges = collectHydratedChildRanges(
@@ -85,7 +85,7 @@ export function hydrateTemplateInstance(
 		compiled: compiledTemplate,
 		parts,
 		rootTarget,
-		rootNodes: collectRootNodes(target, options.hostRoot, pathRootOffset, nodeCount),
+		rootNodes: collectRootNodes(target, options.hostRoots, pathRootOffset, nodeCount),
 		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
 
@@ -103,20 +103,23 @@ export function hydrateTemplateInstance(
 /**
  * Builds the path resolver for one hydration pass.
  *
- * Both forms assume the template owns a single root node — blueprint path `[0]` —
- * which is what the JSX factory always produces. `hostRoot` addresses that node
- * directly; the offset form locates it positionally for callers that only know
- * where the slice begins.
+ * `hostRoots` addresses the template's root nodes directly, which supports
+ * templates owning more than one. The offset form locates a single root
+ * positionally, for callers that only know where the slice begins.
  */
 function createHostPathResolver(
 	target: HTMLElement,
-	hostRoot: Node | undefined,
+	hostRoots: readonly Node[] | undefined,
 	pathRootOffset: number,
 ): HostPathResolver {
-	if (hostRoot) {
-		// Blueprint paths are rooted at `[0]`, so both `[]` and `[0]` address the root
-		// node itself; anything deeper is resolved relative to it.
-		return (path) => (path.length <= 1 ? hostRoot : getNodeAtPath(hostRoot, path.slice(1)));
+	if (hostRoots) {
+		// A blueprint path's first segment selects which root it belongs to; the rest
+		// is resolved inside that root.
+		return (path) => {
+			const root = hostRoots[path[0] ?? 0];
+
+			return !root || path.length <= 1 ? root : getNodeAtPath(root, path.slice(1));
+		};
 	}
 
 	return (path) => getNodeAtPath(target, path.length === 0 ? [pathRootOffset] : [pathRootOffset, ...path.slice(1)]);
@@ -125,12 +128,12 @@ function createHostPathResolver(
 /** Collects a template's root nodes without materializing the host's whole child list. */
 function collectRootNodes(
 	target: HTMLElement,
-	hostRoot: Node | undefined,
+	hostRoots: readonly Node[] | undefined,
 	pathRootOffset: number,
 	nodeCount: number,
 ): Node[] {
-	if (hostRoot) {
-		return [hostRoot];
+	if (hostRoots) {
+		return [...hostRoots];
 	}
 
 	const rootNodes: Node[] = [];

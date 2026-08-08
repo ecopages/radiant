@@ -680,14 +680,16 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		container.innerHTML = HYDRATE_DYNAMIC_LIST_HTML;
 		const serverItems = Array.from(container.querySelectorAll('li'));
+		const serverText = Array.from(serverItems[0]!.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
 
 		root.hydrate(renderList(items));
 
-		// Element identity is the signal that matters: rebuilding would produce
-		// identical markup while dropping listeners, focus, and scroll state. Text
-		// nodes inside a dynamic child range are re-created either way.
+		// Identity is the only signal: rebuilding produces identical markup while
+		// dropping listeners, focus, and selection. Both the elements and the text
+		// nodes inside each child range are reused, not re-created.
 		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
-		expect(container.textContent).toBe('AlphaBeta');
+		expect(Array.from(serverItems[0]!.childNodes)).toContain(serverText);
+		expect(serverText?.textContent).toBe('Alpha');
 		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 
 		root.render(
@@ -699,6 +701,24 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 
 		expect(container.querySelector('li')?.textContent).toBe('Alpha updated');
 		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
+	});
+
+	test('reconnects list children whose template owns more than one root node', async () => {
+		const [{ jsx, toTemplateResultLike }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		// Only transported payloads produce multi-root templates; createJsxElement
+		// always emits exactly one root element.
+		const multiRoot = () => toTemplateResultLike({ strings: ['<b>', '</b><i>tail</i>'], values: ['head'] });
+
+		container.innerHTML =
+			'<div data-radiant-jsx-bind-0="attr:class" class="host"><b>head</b><i>tail</i><b>head</b><i>tail</i></div>';
+		const serverNodes = Array.from(container.querySelectorAll('b, i'));
+
+		root.hydrate(jsx('div', { class: 'host', children: [multiRoot(), multiRoot()] }));
+
+		expect(Array.from(container.querySelectorAll('b, i'))).toEqual(serverNodes);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 	});
 
 	test('removes every SSR marker when hydrating attribute-only list children', async () => {
