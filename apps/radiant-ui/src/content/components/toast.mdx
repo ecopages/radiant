@@ -1,0 +1,58 @@
+---
+title: Toast
+description: Toasts surface brief, non-blocking feedback after an action — save confirmations, errors, or background sync status.
+category: Feedback
+---
+
+import { meta as ToastMeta, Default } from '@/content/stories/toast';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Toast
+
+<p class="docs-lede">Toasts surface brief, non-blocking feedback after an action — save confirmations, errors, or background sync status.</p>
+
+## Try it
+
+<Demo of={Default} meta={ToastMeta} />
+
+## Usage
+
+Mount `RuiToaster` once at the app root, then call `toast()` imperatively to show messages.
+
+```tsx
+import { RuiToaster, toast } from '@ecopages/radiant-ui/toast';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiToaster position="bottom-end" duration={4000} />
+<RuiButton on:click={() => toast.success('Changes saved')}>
+  Save
+</RuiButton>
+```
+
+## Match variant to message
+
+<p>Use `success` for confirmations, `error` for failures, `warning` for caution, and `info` for neutral updates.</p>
+
+## Duration and dismissal
+
+<p>Set `duration` per toast for urgent vs routine messages. Enable `closeButton` when users need time to read.</p>
+
+## Accessibility
+
+- Toasts use `role="status"` for polite announcements that do not interrupt current tasks.
+- Error toasts use `role="alert"` for immediate attention.
+- Do not rely on toasts alone for critical errors — pair with inline field errors when appropriate.

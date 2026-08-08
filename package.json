@@ -24,6 +24,8 @@
 		"watch:lib": "pnpm -r --parallel --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run watch:lib",
 		"dev:playground-vite": "pnpm --filter playground-vite dev & pnpm run watch:lib",
 		"dev:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro dev & pnpm run watch:lib",
+		"dev:radiant-ui": "pnpm --filter @ecopages/radiant-ui-docs dev",
+		"build:radiant-ui": "pnpm --filter @ecopages/radiant-ui-docs build",
 		"build:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro build",
 		"build:docs": "pnpm --filter @ecopages/radiant-ui build:lib && pnpm --filter radiant-docs build",
 		"preview:docs": "pnpm --filter radiant-docs preview"

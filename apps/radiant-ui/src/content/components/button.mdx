@@ -1,0 +1,56 @@
+---
+title: Button
+description: Buttons trigger actions in the interface. Choose a variant that reflects importance.
+category: Actions
+---
+
+import { meta as ButtonMeta, Default, Destructive, Ghost } from '@/content/stories/button';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Button
+
+<p class="docs-lede">Buttons trigger actions in the interface. Choose a variant that reflects importance, and write labels that describe the outcome — not the control type.</p>
+
+## Try it
+
+<Demo of={Default} meta={ButtonMeta} />
+
+## Usage
+
+Import `RuiButton` from the focused module. The default `filled` variant suits the primary action in a small context.
+
+```tsx
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiButton variant="filled" size="md">
+	Save changes
+</RuiButton>
+```
+
+## Choose a tone
+
+Use `filled` for the main action, `outline` for a supporting action, and `ghost` when the action should recede until needed. `destructive` is for irreversible operations.
+
+<Canvas of={Destructive} meta={ButtonMeta} />
+<br />
+<Canvas of={Ghost} meta={ButtonMeta} />
+
+## Accessibility
+
+- Write labels that describe the resulting action, such as "Save changes".
+- Keep disabled buttons explainable with nearby supporting text when needed.
+- Do not use color as the only way to communicate action priority or status.

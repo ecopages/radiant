@@ -1,0 +1,58 @@
+---
+title: Menu Button
+description: Menu buttons reveal a popup menu of actions when activated — ideal for overflow menus and contextual commands.
+category: Navigation
+---
+
+import { meta as MenuButtonMeta, Default } from '@/content/stories/menu-button';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Menu Button
+
+<p class="docs-lede">Menu buttons reveal a popup menu of actions when activated — ideal for overflow menus and contextual commands.</p>
+
+## Try it
+
+<Demo of={Default} meta={MenuButtonMeta} />
+
+## Usage
+
+Pass `items` with labels and handlers, or compose menu content as children. Control `placement` to avoid viewport clipping.
+
+```tsx
+import { RuiMenuButton } from '@ecopages/radiant-ui/menu-button';
+
+<RuiMenuButton
+  items={[
+    { label: 'Edit', onSelect: editItem },
+    { label: 'Delete', onSelect: deleteItem },
+  ]}
+  placement="bottom-start"
+>
+  Actions
+</RuiMenuButton>
+```
+
+## Placement
+
+<p>Use `bottom-start` for left-aligned triggers. Flip to `top-*` when the button sits near the viewport bottom.</p>
+
+## Accessibility
+
+- The trigger exposes `aria-haspopup="menu"` and `aria-expanded` when open.
+- Menu items are reachable by arrow keys and activate with Enter.
+- Return focus to the trigger when the menu closes.

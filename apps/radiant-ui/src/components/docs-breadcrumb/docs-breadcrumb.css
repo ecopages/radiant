@@ -1,0 +1,7 @@
+.docs-breadcrumb {
+	@apply mb-4;
+}
+
+.docs-breadcrumb .rui-breadcrumb__segment {
+	@apply text-on-background/70;
+}
