@@ -114,6 +114,19 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values[0] as unknown[]).toHaveLength(1);
 	});
 
+	test('jsx collapses a singleton iterable inside a fragment to its only child', async () => {
+		const [{ Fragment, jsx }] = await Promise.all([loadJsxRuntime()]);
+		const single = jsx(Fragment, { children: ['alpha'] });
+
+		// A fragment has no element to hang slots on, so a lone child renders as
+		// itself — the opposite of the element case above, which keeps the list.
+		expect(single).toBe('alpha');
+
+		const many = jsx(Fragment, { children: ['alpha', 'beta'] });
+
+		expect(many).toEqual(['alpha', 'beta']);
+	});
+
 	test('jsx drops true children the same way SSR does', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('div', {
