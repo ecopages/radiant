@@ -421,6 +421,22 @@ Iterable fragment hydration supports flat lists of intrinsic template children (
 
 Global SSR marker indexes are shared across all three paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
+Within a hydrated child range, a list child is reconnected in place only when its template consists purely of attribute bindings. A child that also carries dynamic content — `<li>{item.name}</li>` — cannot currently be reconnected, so its SSR subtree is discarded and rebuilt. Hydration still succeeds and the surrounding tree is reused, but that range pays full client-render cost. `pnpm run bench:hydrate` measures both shapes side by side.
+
+### Benchmarks
+
+| Command                    | Measures                                                                |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `pnpm run bench:server`    | `renderToString` throughput in Node and Bun                             |
+| `pnpm run bench:hydrate`   | Client `hydrate(...)` in Chromium, per root shape                       |
+| `pnpm run profile:hydrate` | Per-binding SSR emission cost (this is an SSR profile despite the name) |
+
+`bench:hydrate` renders fixtures in Node, bundles the measurement code for the browser, and runs each scenario in its own browser context so a leaking shape cannot inflate the next one. It reports:
+
+- `medianMs` / `minMs` — time inside `hydrate(...)` only; parsing and teardown are outside the timer.
+- `drift` — median of the later rounds over the earlier ones. Rounds are identical and each is unmounted, so a value meaningfully above `1` means hydration left state behind.
+- `reconnected` — whether SSR nodes survived. Each scenario declares what it expects and the run **fails** on a mismatch, because a shape that silently falls back to a full client render still produces plausible-looking numbers.
+
 ### SSR Marker Lifecycle
 
 Hydration markers are not ad hoc attributes. They are one shared index namespace that connects server serialization to client recovery.
