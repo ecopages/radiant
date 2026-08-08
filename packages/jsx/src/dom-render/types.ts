@@ -251,7 +251,13 @@ export type MountedRangeContent =
 	| MountedTemplate
 	| MountedText;
 
-/** Mounted representation for the current render root. */
+/**
+ * Mounted representation for the current render root.
+ *
+ * Both variants carry the host element so disposal can release root-scoped
+ * delegated listeners, which are registered on the host regardless of whether the
+ * root mounted as a template instance or as loose nodes.
+ */
 export type MountedRoot =
 	| {
 			instance: TemplateInstance;
@@ -259,4 +265,5 @@ export type MountedRoot =
 	  }
 	| {
 			kind: 'value';
+			rootTarget: HTMLElement;
 	  };

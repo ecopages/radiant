@@ -1,13 +1,7 @@
-import {
-	HYDRATION_INVALID_BINDING_INDEX_WARNING,
-	HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING,
-	HYDRATION_MISSING_BINDING_WARNING,
-	warnRuntime,
-} from './warnings/dev-warnings.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
+import { hydrateFlatBindings } from './dom-render/hydration-flat.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
-import { applyBindingToElement } from './dom-render/bindings.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
 import {
 	createNodesFromValue,
@@ -17,15 +11,11 @@ import {
 } from './dom-render/runtime-helpers.ts';
 import { getCompiledTemplate } from './dom-render/template-compiler.ts';
 import { createTemplateInstance } from './dom-render/template-instance.ts';
-import type { DeferredPropertyBinding, MountedRoot, TemplateInstance } from './dom-render/types.ts';
-import {
-	ATTRIBUTE_BINDING_PREFIX,
-	collectHydrationBindings,
-	parseBindingDescriptor,
-	visitHydrationBindingMarkers,
-} from './hydration/hydration-bindings.ts';
+import type { DeferredPropertyBinding, MountedRoot } from './dom-render/types.ts';
+import { visitHydrationBindingMarkers } from './hydration/hydration-bindings.ts';
 import { isIterableRenderable } from './types/renderable-guards.ts';
-import type { JsxRenderable, TemplateResultLike } from './types/index.ts';
+import type { JsxRenderable } from './types/index.ts';
+
 /**
  * Per-root render state used to decide whether a subsequent render can update
  * an existing template instance in place or must dispose and remount.
@@ -45,47 +35,10 @@ export interface JsxRoot {
 	unmount: () => void;
 }
 
-type TemplateHydrationOutcome =
-	| {
-			deferredProperties: DeferredPropertyBinding[];
-			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
-			instance: TemplateInstance;
-			kind: 'safe-reconnect';
-	  }
-	| {
-			kind: 'recoverable-mismatch';
-	  }
-	| {
-			kind: 'full-rerender';
-	  };
-
-type FlatHydrationOutcome =
-	| {
-			deferredProperties: DeferredPropertyBinding[];
-			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
-			kind: 'safe-reconnect';
-	  }
-	| {
-			kind: 'full-rerender';
-	  };
-
-type IterableHydrationOutcome =
-	| {
-			deferredProperties: DeferredPropertyBinding[];
-			focusSnapshot: ReturnType<typeof captureFocusSnapshot>;
-			kind: 'safe-reconnect';
-	  }
-	| {
-			kind: 'recoverable-mismatch';
-	  }
-	| {
-			kind: 'full-rerender';
-	  };
-
 /**
  * Renders a JSX value into a target element.
  *
- * Template results now keep a live instance when the template shape is stable,
+ * Template results keep a live instance when the template shape is stable,
  * allowing repeated renders to patch existing parts instead of replacing the
  * whole subtree.
  */
@@ -117,7 +70,7 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
 		target.replaceChildren(
 			...createNodesFromValue(nextValue, target, deferredProperties, createTemplateInstance, target),
 		);
-		ROOT_RENDER_STATE.set(target, { kind: 'value' });
+		ROOT_RENDER_STATE.set(target, { kind: 'value', rootTarget: target });
 	}
 
 	flushDeferredProperties(deferredProperties);
@@ -127,6 +80,8 @@ export function render(element: JsxRenderable, target: HTMLElement): void {
 
 /**
  * Hydrates an SSR-rendered JSX subtree by attaching event and property bindings in place.
+ *
+ * Falls back to a full client render whenever the SSR DOM cannot be reconnected.
  */
 export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 	const currentRenderState = ROOT_RENDER_STATE.get(target);
@@ -137,141 +92,57 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 
 	ROOT_RENDER_STATE.delete(target);
 
-	const nextValue = unwrapKeyedValue(element);
+	const focusSnapshot = captureFocusSnapshot(target);
+	const deferredProperties: DeferredPropertyBinding[] = [];
+	const reconnectedRoot = reconnectSsrRoot(element, target, deferredProperties);
 
-	if (isTemplateResultLike(nextValue)) {
-		const outcome = attemptTemplateHydration(nextValue, target);
-
-		switch (outcome.kind) {
-			case 'full-rerender':
-			case 'recoverable-mismatch':
-				render(element, target);
-				return;
-
-			case 'safe-reconnect':
-				ROOT_RENDER_STATE.set(target, { instance: outcome.instance, kind: 'template' });
-				flushDeferredProperties(outcome.deferredProperties);
-				restoreFocusSnapshot(target, outcome.focusSnapshot);
-				return;
-		}
-	}
-
-	if (isIterableRenderable(nextValue)) {
-		const outcome = attemptIterableHydration(nextValue, target);
-
-		switch (outcome.kind) {
-			case 'full-rerender':
-			case 'recoverable-mismatch':
-				render(element, target);
-				return;
-
-			case 'safe-reconnect':
-				ROOT_RENDER_STATE.set(target, { kind: 'value' });
-				flushDeferredProperties(outcome.deferredProperties);
-				restoreFocusSnapshot(target, outcome.focusSnapshot);
-				return;
-		}
-	}
-
-	const outcome = attemptFlatHydration(element, target);
-
-	if (outcome.kind === 'full-rerender') {
+	if (!reconnectedRoot) {
 		render(element, target);
 		return;
 	}
 
-	flushDeferredProperties(outcome.deferredProperties);
-	restoreFocusSnapshot(target, outcome.focusSnapshot);
+	ROOT_RENDER_STATE.set(target, reconnectedRoot);
+	flushDeferredProperties(deferredProperties);
+	restoreFocusSnapshot(target, focusSnapshot);
 }
 
-function attemptTemplateHydration(template: TemplateResultLike, target: HTMLElement): TemplateHydrationOutcome {
-	if (!hasHydrationMarkers(target)) {
-		return { kind: 'full-rerender' };
+/**
+ * Reconnects SSR DOM for whichever root shape `element` describes.
+ *
+ * The three shapes — a single template result, an iterable of children, and the
+ * flat marker-walk fallback — differ only in how they locate bindings, so each
+ * reports the same way: a mounted root on success, `undefined` to fall back to a
+ * full client render.
+ *
+ * @returns The mounted root state, or `undefined` when the DOM cannot be recovered.
+ */
+function reconnectSsrRoot(
+	element: JsxRenderable,
+	target: HTMLElement,
+	deferredProperties: DeferredPropertyBinding[],
+): MountedRoot | undefined {
+	const nextValue = unwrapKeyedValue(element);
+
+	if (isTemplateResultLike(nextValue)) {
+		if (!hasHydrationMarkers(target)) {
+			return undefined;
+		}
+
+		const instance = hydrateTemplateInstance(nextValue, target, deferredProperties);
+		return instance ? { instance, kind: 'template' } : undefined;
 	}
 
-	const focusSnapshot = captureFocusSnapshot(target);
-	const deferredProperties: DeferredPropertyBinding[] = [];
-	const instance = hydrateTemplateInstance(template, target, deferredProperties);
+	if (isIterableRenderable(nextValue)) {
+		if (!hasHydrationMarkers(target)) {
+			return undefined;
+		}
 
-	if (!instance) {
-		return { kind: 'recoverable-mismatch' };
+		return hydrateIterableRoot(nextValue, target, deferredProperties, { rootTarget: target })
+			? { kind: 'value', rootTarget: target }
+			: undefined;
 	}
 
-	return {
-		deferredProperties,
-		focusSnapshot,
-		instance,
-		kind: 'safe-reconnect',
-	};
-}
-
-function attemptIterableHydration(value: Iterable<unknown>, target: HTMLElement): IterableHydrationOutcome {
-	if (!hasHydrationMarkers(target)) {
-		return { kind: 'full-rerender' };
-	}
-
-	const focusSnapshot = captureFocusSnapshot(target);
-	const deferredProperties: DeferredPropertyBinding[] = [];
-
-	if (!hydrateIterableRoot(value, target, deferredProperties, { rootTarget: target })) {
-		return { kind: 'recoverable-mismatch' };
-	}
-
-	return {
-		deferredProperties,
-		focusSnapshot,
-		kind: 'safe-reconnect',
-	};
-}
-
-function attemptFlatHydration(element: JsxRenderable, target: HTMLElement): FlatHydrationOutcome {
-	const focusSnapshot = captureFocusSnapshot(target);
-	const deferredProperties: DeferredPropertyBinding[] = [];
-	const bindings = collectHydrationBindings(element, { skipNestedCustomElementRoots: true });
-
-	if (
-		!visitHydrationBindingMarkers(target, (element, attribute) => {
-			const bindingIndex = Number(attribute.name.slice(ATTRIBUTE_BINDING_PREFIX.length));
-			const parsedBinding = parseBindingDescriptor(attribute.value);
-			element.removeAttribute(attribute.name);
-
-			if (Number.isNaN(bindingIndex)) {
-				warnRuntime(HYDRATION_INVALID_BINDING_INDEX_WARNING, attribute.name, {
-					code: `hydrate-invalid-binding-index:${attribute.name}`,
-				});
-				return;
-			}
-
-			if (!parsedBinding) {
-				warnRuntime(HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING, attribute.value, {
-					code: `hydrate-invalid-binding-descriptor:${attribute.value}`,
-				});
-				return;
-			}
-
-			const binding = bindings.get(bindingIndex);
-
-			if (!binding) {
-				warnRuntime(HYDRATION_MISSING_BINDING_WARNING, attribute.name, {
-					code: `hydrate-missing-binding:${bindingIndex}`,
-				});
-				return;
-			}
-
-			applyBindingToElement(element, parsedBinding, binding.value, {
-				rootTarget: target,
-				deferredProperties,
-			});
-		})
-	) {
-		return { kind: 'full-rerender' };
-	}
-
-	return {
-		deferredProperties,
-		focusSnapshot,
-		kind: 'safe-reconnect',
-	};
+	return hydrateFlatBindings(element, target, deferredProperties) ? { kind: 'value', rootTarget: target } : undefined;
 }
 
 /**

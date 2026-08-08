@@ -640,6 +640,37 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 	});
 
+	test('unmount releases delegated listeners attached during iterable-root hydration', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		let clickTotal = 0;
+		const increment = () => {
+			clickTotal += 1;
+		};
+
+		container.innerHTML = HYDRATE_ITERABLE_ROOT_HTML;
+		root.hydrate([
+			jsx('button', { 'on:click': increment, children: 'Alpha' }),
+			jsx('button', { 'on:click': increment, children: 'Beta' }),
+		]);
+
+		const hydratedButton = container.querySelector('button');
+		hydratedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clickTotal).toBe(1);
+
+		// Iterable roots register delegated listeners on the host, so unmount must
+		// release them even though no template instance owns the root.
+		root.unmount();
+		container.append(hydratedButton!);
+		hydratedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+		expect(clickTotal).toBe(1);
+
+		container.remove();
+	});
+
 	test('removes SSR hydration marker attributes after template hydration', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
