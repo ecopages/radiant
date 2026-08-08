@@ -1,24 +1,21 @@
+import { updateRangeContent } from './dom-render/child-range-update.ts';
+import { createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateFlatBindings } from './dom-render/hydration-flat.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
-import {
-	createNodesFromValue,
-	flushDeferredProperties,
-	isTemplateResultLike,
-	unwrapKeyedValue,
-} from './dom-render/runtime-helpers.ts';
-import { getCompiledTemplate } from './dom-render/template-compiler.ts';
-import { createTemplateInstance } from './dom-render/template-instance.ts';
-import type { DeferredPropertyBinding, MountedRoot } from './dom-render/types.ts';
+import { flushDeferredProperties, isTemplateResultLike, unwrapKeyedValue } from './dom-render/runtime-helpers.ts';
+import type { DeferredPropertyBinding, MountedRangeContent, MountedRoot } from './dom-render/types.ts';
 import { visitHydrationBindingMarkers } from './hydration/hydration-bindings.ts';
 import { isIterableRenderable } from './types/renderable-guards.ts';
 import type { JsxRenderable } from './types/index.ts';
 
 /**
- * Per-root render state used to decide whether a subsequent render can update
- * an existing template instance in place or must dispose and remount.
+ * Per-root render state.
+ *
+ * A mounted root is just a child range that happens to span the whole host, so
+ * every root reuses the same reconciliation engine as any nested dynamic slot.
  */
 const ROOT_RENDER_STATE = new WeakMap<HTMLElement, MountedRoot>();
 
@@ -38,43 +35,19 @@ export interface JsxRoot {
 /**
  * Renders a JSX value into a target element.
  *
- * Template results keep a live instance when the template shape is stable,
- * allowing repeated renders to patch existing parts instead of replacing the
- * whole subtree.
+ * The root is reconciled through the same range engine used for nested child
+ * slots, so every value shape behaves identically at the root as it does inside a
+ * template: stable templates patch in place, keyed lists preserve identity, text
+ * updates mutate node data, and reactive sources stay subscribed.
  */
 export function render(element: JsxRenderable, target: HTMLElement): void {
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
-	const nextValue = unwrapKeyedValue(element);
-	const currentRenderState = ROOT_RENDER_STATE.get(target);
+	const root = getOrCreateMountedRoot(target);
 
-	if (isTemplateResultLike(nextValue)) {
-		const compiledTemplate = getCompiledTemplate(nextValue);
-
-		if (currentRenderState?.kind === 'template' && currentRenderState.instance.compiled === compiledTemplate) {
-			currentRenderState.instance.update(nextValue.values, deferredProperties);
-		} else {
-			if (currentRenderState) {
-				disposeMountedRoot(currentRenderState);
-			}
-
-			const instance = createTemplateInstance(nextValue, target, deferredProperties, target);
-			target.replaceChildren(...instance.rootNodes);
-			ROOT_RENDER_STATE.set(target, { instance, kind: 'template' });
-		}
-	} else {
-		if (currentRenderState) {
-			disposeMountedRoot(currentRenderState);
-		}
-
-		target.replaceChildren(
-			...createNodesFromValue(nextValue, target, deferredProperties, createTemplateInstance, target),
-		);
-		ROOT_RENDER_STATE.set(target, { kind: 'value', rootTarget: target });
-	}
+	root.mounted = updateRangeContent(root.start, root.end, element, root.mounted, target, deferredProperties);
 
 	flushDeferredProperties(deferredProperties);
-
 	restoreFocusSnapshot(target, focusSnapshot);
 }
 
@@ -94,14 +67,14 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
-	const reconnectedRoot = reconnectSsrRoot(element, target, deferredProperties);
+	const reconnectedContent = reconnectSsrRoot(element, target, deferredProperties);
 
-	if (!reconnectedRoot) {
+	if (!reconnectedContent) {
 		render(element, target);
 		return;
 	}
 
-	ROOT_RENDER_STATE.set(target, reconnectedRoot);
+	ROOT_RENDER_STATE.set(target, adoptHydratedRootRange(target, reconnectedContent));
 	flushDeferredProperties(deferredProperties);
 	restoreFocusSnapshot(target, focusSnapshot);
 }
@@ -111,16 +84,16 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
  *
  * The three shapes — a single template result, an iterable of children, and the
  * flat marker-walk fallback — differ only in how they locate bindings, so each
- * reports the same way: a mounted root on success, `undefined` to fall back to a
+ * reports the same way: mounted content on success, `undefined` to fall back to a
  * full client render.
  *
- * @returns The mounted root state, or `undefined` when the DOM cannot be recovered.
+ * @returns The reconnected range content, or `undefined` when the DOM cannot be recovered.
  */
 function reconnectSsrRoot(
 	element: JsxRenderable,
 	target: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
-): MountedRoot | undefined {
+): MountedRangeContent | undefined {
 	const nextValue = unwrapKeyedValue(element);
 
 	if (isTemplateResultLike(nextValue)) {
@@ -138,11 +111,48 @@ function reconnectSsrRoot(
 		}
 
 		return hydrateIterableRoot(nextValue, target, deferredProperties, { rootTarget: target })
-			? { kind: 'value', rootTarget: target }
+			? { kind: 'nodes', nodes: Array.from(target.childNodes) }
 			: undefined;
 	}
 
-	return hydrateFlatBindings(element, target, deferredProperties) ? { kind: 'value', rootTarget: target } : undefined;
+	return hydrateFlatBindings(element, target, deferredProperties)
+		? { kind: 'nodes', nodes: Array.from(target.childNodes) }
+		: undefined;
+}
+
+function getOrCreateMountedRoot(target: HTMLElement): MountedRoot {
+	const existingRoot = ROOT_RENDER_STATE.get(target);
+
+	if (existingRoot) {
+		return existingRoot;
+	}
+
+	target.replaceChildren();
+
+	const startMarker = createBoundaryMarker();
+	const endMarker = createBoundaryMarker();
+	target.append(startMarker, endMarker);
+
+	const root: MountedRoot = { end: endMarker, mounted: { kind: 'empty' }, rootTarget: target, start: startMarker };
+	ROOT_RENDER_STATE.set(target, root);
+	return root;
+}
+
+/**
+ * Brackets already-hydrated SSR content with boundary markers so later renders
+ * reconcile it through the same range engine as a client-mounted root.
+ *
+ * Markers are added only after reconnection completes, because hydration resolves
+ * blueprint paths against the host's original child indexes.
+ */
+function adoptHydratedRootRange(target: HTMLElement, mounted: MountedRangeContent): MountedRoot {
+	const startMarker = createBoundaryMarker();
+	const endMarker = createBoundaryMarker();
+
+	target.prepend(startMarker);
+	target.append(endMarker);
+
+	return { end: endMarker, mounted, rootTarget: target, start: startMarker };
 }
 
 /**
