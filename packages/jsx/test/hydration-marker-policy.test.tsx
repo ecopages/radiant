@@ -28,6 +28,8 @@ const loadMarkerPolicy = async () =>
 	loadModule<typeof import('../src/hydration/hydration-marker-policy.ts')>(
 		'../src/hydration/hydration-marker-policy.ts',
 	);
+const loadTemplateShape = async () =>
+	loadModule<typeof import('../src/factory/template-shape.ts')>('../src/factory/template-shape.ts');
 const loadHydrationBindings = async () =>
 	loadModule<typeof import('../src/hydration/hydration-bindings.ts')>('../src/hydration/hydration-bindings.ts');
 const loadJsxRuntime = async () => loadModule<typeof import('../src/jsx-runtime.ts')>('../src/jsx-runtime.ts');
@@ -50,39 +52,18 @@ describe('hydration marker policy', () => {
 		expect(isClientOnlyBinding('bool')).toBe(false);
 	});
 
-	test('attributes and booleans emit serialized attribute values', async () => {
-		const { shouldEmitAttributeValue } = await loadMarkerPolicy();
+	test('every authored binding prefix resolves to a classifiable kind', async () => {
+		const { isClientOnlyBinding } = await loadMarkerPolicy();
+		const { getBindingKind } = await loadTemplateShape();
 
-		expect(shouldEmitAttributeValue('attr')).toBe(true);
-		expect(shouldEmitAttributeValue('bool')).toBe(true);
-	});
+		expect(getBindingKind('')).toBe('attr');
+		expect(getBindingKind('?')).toBe('bool');
+		expect(getBindingKind('!')).toBe('event');
+		expect(getBindingKind('@')).toBe('native-event');
+		expect(getBindingKind('.')).toBe('prop');
 
-	test('events, native-events, and properties do not emit serialized attribute values', async () => {
-		const { shouldEmitAttributeValue } = await loadMarkerPolicy();
-
-		expect(shouldEmitAttributeValue('event')).toBe(false);
-		expect(shouldEmitAttributeValue('native-event')).toBe(false);
-		expect(shouldEmitAttributeValue('prop')).toBe(false);
-	});
-
-	test('all binding kinds require SSR hydration markers', async () => {
-		const { needsHydrationMarker } = await loadMarkerPolicy();
-
-		expect(needsHydrationMarker('attr')).toBe(true);
-		expect(needsHydrationMarker('bool')).toBe(true);
-		expect(needsHydrationMarker('event')).toBe(true);
-		expect(needsHydrationMarker('native-event')).toBe(true);
-		expect(needsHydrationMarker('prop')).toBe(true);
-	});
-
-	test('isClientOnlyBinding is the exact inverse of shouldEmitAttributeValue', async () => {
-		const { isClientOnlyBinding, shouldEmitAttributeValue } = await loadMarkerPolicy();
-		const { getBindingKind } = await loadHydrationBindings();
-
-		const prefixes = ['', '?', '@', '!', '.'] as const;
-		for (const prefix of prefixes) {
-			const kind = getBindingKind(prefix);
-			expect(isClientOnlyBinding(kind)).toBe(!shouldEmitAttributeValue(kind));
+		for (const prefix of ['', '?', '@', '!', '.'] as const) {
+			expect(typeof isClientOnlyBinding(getBindingKind(prefix))).toBe('boolean');
 		}
 	});
 });

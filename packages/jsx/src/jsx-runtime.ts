@@ -19,7 +19,7 @@ export {
 	isSerializableTemplateResultLike,
 	isSubscribableJsxValue,
 	isTemplateResultLike,
-	resolveBindingShapeValue,
+	resolveReactiveSnapshot,
 	toTemplateResultLike,
 } from './types/renderable-guards.ts';
 export { renderJsxRenderableToString } from './ssr/serialize-plain.ts';

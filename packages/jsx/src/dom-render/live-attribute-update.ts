@@ -1,13 +1,20 @@
-import { applyResolvedAttributeBinding } from './bindings.ts';
+import { applyBindingToElement } from './bindings.ts';
 import { releaseLiveAttributeSubscription } from './mounted-disposal.ts';
 import {
 	flushDeferredProperties,
 	isReactiveAttributeSource,
 	readReactiveChildSourceValue,
-	resolveReactiveSnapshot,
 	subscribeToReactiveChildSource,
 } from './runtime-helpers.ts';
 import type { DeferredPropertyBinding, LiveAttributePart } from './types.ts';
+
+function applyToPart(part: LiveAttributePart, value: unknown, deferredProperties: DeferredPropertyBinding[]): void {
+	applyBindingToElement(part.element, part.binding, value, {
+		rootTarget: part.rootTarget,
+		deferredProperties,
+		livePart: part,
+	});
+}
 
 /**
  * Applies a single dynamic attribute binding to an already-located live DOM
@@ -26,26 +33,22 @@ export function updateLiveAttributePart(
 		releaseLiveAttributeSubscription(part);
 	}
 
-	if (isReactiveAttributeSource(value)) {
-		const subscriptionSerial = part.subscriptionSerial + 1;
-		part.subscriptionSerial = subscriptionSerial;
-		part.source = value;
-		part.unsubscribe = subscribeToReactiveChildSource(value, (nextValue) => {
-			if (part.subscriptionSerial !== subscriptionSerial || part.source !== value) {
-				return;
-			}
-
-			const nextDeferredProperties: DeferredPropertyBinding[] = [];
-			applyResolvedAttributeBinding(part, resolveReactiveSnapshot(nextValue), nextDeferredProperties);
-			flushDeferredProperties(nextDeferredProperties);
-		});
-		applyResolvedAttributeBinding(
-			part,
-			resolveReactiveSnapshot(readReactiveChildSourceValue(value)),
-			deferredProperties,
-		);
+	if (!isReactiveAttributeSource(value)) {
+		applyToPart(part, value, deferredProperties);
 		return;
 	}
 
-	applyResolvedAttributeBinding(part, resolveReactiveSnapshot(value), deferredProperties);
+	const subscriptionSerial = part.subscriptionSerial + 1;
+	part.subscriptionSerial = subscriptionSerial;
+	part.source = value;
+	part.unsubscribe = subscribeToReactiveChildSource(value, (nextValue) => {
+		if (part.subscriptionSerial !== subscriptionSerial || part.source !== value) {
+			return;
+		}
+
+		const nextDeferredProperties: DeferredPropertyBinding[] = [];
+		applyToPart(part, nextValue, nextDeferredProperties);
+		flushDeferredProperties(nextDeferredProperties);
+	});
+	applyToPart(part, readReactiveChildSourceValue(value), deferredProperties);
 }

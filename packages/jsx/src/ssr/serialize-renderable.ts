@@ -1,5 +1,4 @@
 import {
-	isIterableJsxChild,
 	isIterableRenderable,
 	isJsxNodeLike,
 	isKeyedJsxValue,
@@ -12,12 +11,12 @@ import {
 	toTemplateResultLike,
 } from '../types/renderable-guards.ts';
 import {
-	getTemplateInterpolationParts,
 	resolveHydrationMarkerAttributeName,
 	serializeBindingDescriptor,
 	takeNextHydrationMarkerIndex,
 } from '../hydration/hydration-bindings.ts';
-import { isClientOnlyBinding, needsHydrationMarker } from '../hydration/hydration-marker-policy.ts';
+import { getTemplateInterpolationParts } from '../factory/template-shape.ts';
+import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
 import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
 import type { JsxNodeLike, JsxRenderable, TemplateResultLike } from '../types/index.ts';
@@ -76,13 +75,10 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
 		return serializeNodeLike(value);
 	}
 
-	const iterable =
-		options.mode === 'plain' && isIterableJsxChild(value) ? value : isIterableRenderable(value) ? value : null;
-
-	if (iterable) {
+	if (isIterableRenderable(value)) {
 		let html = '';
 
-		for (const child of iterable) {
+		for (const child of value) {
 			html += serializeRenderable(child as JsxRenderable, options);
 		}
 
@@ -122,7 +118,7 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 		const bindingIndex = hydrationState ? takeNextHydrationMarkerIndex(hydrationState) : 0;
 		html += interpolationPart.leading;
 
-		if (options.mode === 'hydrate' && hydrationState && needsHydrationMarker(bindingKind)) {
+		if (options.mode === 'hydrate' && hydrationState) {
 			html += `${interpolationPart.whitespace}${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
 		}
 
