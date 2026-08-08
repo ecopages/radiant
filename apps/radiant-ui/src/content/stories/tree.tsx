@@ -11,7 +11,7 @@ export const meta = {
 	component: 'tree',
 	exportName: 'RuiTree',
 	args: {
-		value: 'app',
+		value: 'button',
 		label: 'Project files',
 	},
 	argTypes: {

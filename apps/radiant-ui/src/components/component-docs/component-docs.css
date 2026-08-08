@@ -156,3 +156,75 @@ radiant-docs-canvas {
 	color: var(--shiki-dark);
 	background-color: var(--shiki-dark-bg);
 }
+
+.playground-sidebar-demo {
+	@apply h-80 w-full min-w-0 overflow-hidden rounded-md border border-border bg-background;
+}
+
+.playground-sidebar-demo .rui-sidebar-provider {
+	@apply h-full min-h-0;
+}
+
+.playground-sidebar-demo__main {
+	@apply flex h-full flex-col gap-3 p-4;
+}
+
+.playground-sidebar-demo__copy {
+	@apply text-sm text-on-background/70;
+}
+
+.playground-menu-button-demo {
+	@apply flex min-h-48 w-full items-start justify-center p-8;
+}
+
+.playground-navigation-menu {
+	@apply w-full max-w-5xl;
+}
+
+.playground-toc-demo {
+	display: grid;
+	width: 100%;
+	gap: 1.5rem;
+	grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+	align-items: start;
+}
+
+.playground-toc-demo__article {
+	@apply min-w-0 text-sm text-on-background/80;
+}
+
+.playground-toc-demo__article h2 {
+	@apply mt-0 text-base font-semibold text-on-background;
+}
+
+.playground-toc-demo__article h2:not(:first-child) {
+	@apply mt-8;
+}
+
+.playground-toc-demo__article h3 {
+	@apply mt-4 text-sm font-semibold text-on-background;
+}
+
+.playground-toc-demo__article p {
+	@apply mt-2 leading-relaxed;
+}
+
+.playground-toast-stage {
+	position: relative;
+	width: 100%;
+	min-height: 18rem;
+}
+
+.playground-toast-stage__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	justify-content: center;
+}
+
+.docs-story__stage radiant-docs-canvas:has(.playground-toc-demo),
+.docs-story__stage radiant-docs-canvas:has(.playground-navigation-menu),
+.docs-story__stage radiant-docs-canvas:has(.playground-toast-stage) {
+	align-items: flex-start;
+	justify-content: stretch;
+}

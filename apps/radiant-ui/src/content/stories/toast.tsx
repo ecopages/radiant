@@ -17,7 +17,7 @@ export const meta = {
 		position: 'bottom-end',
 		duration: 4000,
 		visibleToasts: 3,
-		closeButton: false,
+		closeButton: true,
 		expand: false,
 	},
 	argTypes: {

@@ -18,7 +18,10 @@ export const meta = {
 	},
 	argTypes: {
 		open: { control: { type: 'boolean' } },
-		placement: { control: { type: 'select' }, options: ['bottom-start', 'bottom-end', 'top-start'] as const },
+		placement: {
+			control: { type: 'select' },
+			options: ['bottom-start', 'bottom-end', 'top-start', 'top-end'] as const,
+		},
 		children: { control: { type: 'text' } },
 	},
 	exampleCode: (args) => buildExampleCode('RuiMenuButton', 'menu-button', args, args.children),

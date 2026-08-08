@@ -59,9 +59,21 @@ import {
 	RuiNumberFieldInput,
 	RuiNumberFieldSteppers,
 } from '@ecopages/radiant-ui/number-field';
-import { RuiPopover, RuiPopoverContent } from '@ecopages/radiant-ui/popover';
+import { RuiPopover, RuiPopoverContent, RuiPopoverTrigger } from '@ecopages/radiant-ui/popover';
 import { RuiRadioGroup } from '@ecopages/radiant-ui/radio-group';
 import { RuiSelect } from '@ecopages/radiant-ui/select';
+import {
+	RuiSidebar,
+	RuiSidebarContent,
+	RuiSidebarGroup,
+	RuiSidebarGroupHeader,
+	RuiSidebarInset,
+	RuiSidebarMenu,
+	RuiSidebarMenuButton,
+	RuiSidebarMenuItem,
+	RuiSidebarProvider,
+	RuiSidebarTrigger,
+} from '@ecopages/radiant-ui/sidebar';
 import { RuiSlider } from '@ecopages/radiant-ui/slider';
 import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
@@ -74,6 +86,97 @@ import { RuiTooltip } from '@ecopages/radiant-ui/tooltip';
 import { RuiTree } from '@ecopages/radiant-ui/tree';
 import { RuiTreegrid } from '@ecopages/radiant-ui/treegrid';
 import { RuiWindowSplitter } from '@ecopages/radiant-ui/window-splitter';
+
+const TREE_DEMO_NODES = [
+	{
+		id: 'src',
+		label: 'src',
+		expanded: true,
+		children: [
+			{
+				id: 'components',
+				label: 'components',
+				expanded: true,
+				children: [
+					{ id: 'button', label: 'button.tsx' },
+					{ id: 'dialog', label: 'dialog.tsx' },
+					{ id: 'sidebar', label: 'sidebar.tsx' },
+				],
+			},
+			{
+				id: 'lib',
+				label: 'lib',
+				expanded: true,
+				children: [
+					{ id: 'utils', label: 'utils.ts' },
+					{ id: 'hooks', label: 'hooks.ts' },
+				],
+			},
+			{ id: 'index', label: 'index.ts' },
+		],
+	},
+	{ id: 'public', label: 'public', children: [{ id: 'favicon', label: 'favicon.ico' }] },
+	{ id: 'package', label: 'package.json' },
+	{ id: 'readme', label: 'README.md' },
+];
+
+const NAVIGATION_MENU_PRODUCT_LINKS = [
+	{ href: '/analytics', label: 'Analytics' },
+	{ href: '/automation', label: 'Automation' },
+	{ href: '/integrations', label: 'Integrations' },
+	{ href: '/support', label: 'Support plans' },
+	{ href: '/training', label: 'Training' },
+	{ href: '/security', label: 'Security center' },
+];
+
+const NAVIGATION_MENU_INDUSTRY_LINKS = [
+	{ href: '/healthcare', label: 'Healthcare' },
+	{ href: '/finance', label: 'Finance' },
+	{ href: '/retail', label: 'Retail' },
+];
+
+const NAVIGATION_MENU_TEAM_LINKS = [
+	{ href: '/design', label: 'Design' },
+	{ href: '/engineering', label: 'Engineering' },
+	{ href: '/operations', label: 'Operations' },
+];
+
+const TREEGRID_DEMO_ROWS = [
+	{
+		id: 'src',
+		cells: ['src', 'folder'],
+		expanded: true,
+		children: [
+			{
+				id: 'components',
+				cells: ['components', 'folder'],
+				expanded: true,
+				children: [
+					{ id: 'button', cells: ['button.tsx', '4.2 KB'] },
+					{ id: 'dialog', cells: ['dialog.tsx', '6.8 KB'] },
+					{ id: 'sidebar', cells: ['sidebar.tsx', '12.1 KB'] },
+				],
+			},
+			{
+				id: 'lib',
+				cells: ['lib', 'folder'],
+				expanded: true,
+				children: [
+					{ id: 'utils', cells: ['utils.ts', '2.4 KB'] },
+					{ id: 'hooks', cells: ['hooks.ts', '3.1 KB'] },
+				],
+			},
+			{ id: 'index', cells: ['index.ts', '1.1 KB'] },
+		],
+	},
+	{
+		id: 'public',
+		cells: ['public', 'folder'],
+		children: [{ id: 'favicon', cells: ['favicon.ico', '15 KB'] }],
+	},
+	{ id: 'package', cells: ['package.json', '1.8 KB'] },
+	{ id: 'readme', cells: ['README.md', '3.4 KB'] },
+];
 
 const ANIMAL_OPTIONS = [
 	{ value: 'cat', label: 'Cat' },
@@ -399,9 +502,15 @@ function renderFieldPreview(props: Record<string, unknown>): JsxRenderable {
 function renderFormPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiForm mode={str(props, 'mode', 'onSubmit')}>
-			<RuiField name="name">
-				<RuiLabel>Full name</RuiLabel>
-				<RuiInput />
+			<RuiField name="email" rules={{ required: 'Email is required' }}>
+				<RuiLabel>Email</RuiLabel>
+				<RuiInput type="email" placeholder="you@example.com" />
+				<RuiFieldError />
+			</RuiField>
+			<RuiField name="bio" rules={{ minLength: { value: 10, message: 'At least 10 characters' } }}>
+				<RuiLabel>Bio</RuiLabel>
+				<RuiTextarea placeholder="Tell us about yourself" />
+				<RuiFieldError />
 			</RuiField>
 			<RuiButton type="submit">Create account</RuiButton>
 		</RuiForm>
@@ -472,16 +581,21 @@ function renderListboxPreview(props: Record<string, unknown>): JsxRenderable {
 }
 
 function renderMenuButtonPreview(props: Record<string, unknown>, children?: string): JsxRenderable {
+	const forceOpen = bool(props, 'open');
+
 	return (
-		<RuiMenuButton
-			open={bool(props, 'open')}
-			placement={str(props, 'placement', 'bottom-start')}
-			trigger={children ?? 'Actions'}
-			items={[
-				{ value: 'edit', label: 'Edit' },
-				{ value: 'delete', label: 'Delete' },
-			]}
-		/>
+		<div class="playground-menu-button-demo">
+			<RuiMenuButton
+				{...(forceOpen ? { open: true } : {})}
+				placement={selectProp(props, 'placement', 'bottom-start')}
+				trigger={children ?? 'Actions'}
+				items={[
+					{ value: 'edit', label: 'Edit' },
+					{ value: 'duplicate', label: 'Duplicate' },
+					{ value: 'delete', label: 'Delete' },
+				]}
+			/>
+		</div>
 	);
 }
 
@@ -521,13 +635,55 @@ function renderMeterPreview(props: Record<string, unknown>): JsxRenderable {
 
 function renderNavigationMenuPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
-		<RuiNavigationMenu label={str(props, 'label', 'Main')}>
-			<RuiNavigationMenuTrigger value="products">Products</RuiNavigationMenuTrigger>
-			<RuiNavigationMenuPanel value="products">
-				<RuiNavigationMenuLink href="/widgets">Widgets</RuiNavigationMenuLink>
-			</RuiNavigationMenuPanel>
-			<RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
-		</RuiNavigationMenu>
+		<div class="playground-navigation-menu">
+			<RuiNavigationMenu label={str(props, 'label', 'Main')}>
+				<RuiNavigationMenuTrigger value="products">Products</RuiNavigationMenuTrigger>
+				<RuiNavigationMenuTrigger value="solutions">Solutions</RuiNavigationMenuTrigger>
+				<RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
+
+				<RuiNavigationMenuPanel value="products">
+					<nav aria-label="Products">
+						<ul class="rui-navigation-menu__link-list">
+							{NAVIGATION_MENU_PRODUCT_LINKS.map((link) => (
+								<li>
+									<a href={link.href}>{link.label}</a>
+								</li>
+							))}
+						</ul>
+					</nav>
+				</RuiNavigationMenuPanel>
+
+				<RuiNavigationMenuPanel value="solutions" class="rui-navigation-menu__megamenu">
+					<div class="rui-navigation-menu__link-columns">
+						<nav aria-label="By industry">
+							<p class="rui-navigation-menu__link-group-label">By industry</p>
+							<ul class="rui-navigation-menu__link-list">
+								{NAVIGATION_MENU_INDUSTRY_LINKS.map((link) => (
+									<li>
+										<a href={link.href}>{link.label}</a>
+									</li>
+								))}
+							</ul>
+						</nav>
+						<nav aria-label="By team">
+							<p class="rui-navigation-menu__link-group-label">By team</p>
+							<ul class="rui-navigation-menu__link-list">
+								{NAVIGATION_MENU_TEAM_LINKS.map((link) => (
+									<li>
+										<a href={link.href}>{link.label}</a>
+									</li>
+								))}
+							</ul>
+						</nav>
+					</div>
+					<RuiDisclosure trigger="Why these solutions?">
+						<p class="rui-navigation-menu__disclosure-copy">
+							Decorative supporting copy — starter kits, migration guides, and customer stories.
+						</p>
+					</RuiDisclosure>
+				</RuiNavigationMenuPanel>
+			</RuiNavigationMenu>
+		</div>
 	);
 }
 
@@ -553,19 +709,24 @@ function renderNumberFieldPreview(props: Record<string, unknown>): JsxRenderable
 }
 
 function renderPopoverPreview(props: Record<string, unknown>): JsxRenderable {
+	const forceOpen = bool(props, 'open');
+
 	return (
-		<RuiPopover
-			open={bool(props, 'open')}
-			placement={str(props, 'placement', 'bottom-start')}
-			portal={bool(props, 'portal', true)}
-			matchAnchorWidth={bool(props, 'matchAnchorWidth')}
-			offset={num(props, 'offset', 8)}
+		<RuiPopoverTrigger
+			{...(forceOpen ? { open: true } : {})}
 			trigger={<RuiButton variant="outline">Filter</RuiButton>}
 		>
-			<RuiPopoverContent>
-				<p>Show items from the last 7 days.</p>
-			</RuiPopoverContent>
-		</RuiPopover>
+			<RuiPopover
+				placement={str(props, 'placement', 'bottom-start')}
+				portal={bool(props, 'portal', true)}
+				matchAnchorWidth={bool(props, 'matchAnchorWidth')}
+				offset={num(props, 'offset', 8)}
+			>
+				<RuiPopoverContent>
+					<p>Show items from the last 7 days.</p>
+				</RuiPopoverContent>
+			</RuiPopover>
+		</RuiPopoverTrigger>
 	);
 }
 
@@ -599,12 +760,55 @@ function renderSelectPreview(props: Record<string, unknown>): JsxRenderable {
 }
 
 function renderSidebarPreview(props: Record<string, unknown>): JsxRenderable {
+	const sidebarId = 'playground-sidebar';
+
 	return (
-		<p class="playground-fallback">
-			Sidebar requires layout context (<code>RuiSidebarProvider</code>). Collapsible:{' '}
-			{str(props, 'collapsible', 'off')}, side: {str(props, 'side', 'left')}, default open:{' '}
-			{String(bool(props, 'defaultOpen', true))}.
-		</p>
+		<div class="playground-sidebar-demo">
+			<RuiSidebarProvider
+				sidebar={
+					<RuiSidebar
+						id={sidebarId}
+						collapsible={selectProp(props, 'collapsible', 'off')}
+						side={selectProp(props, 'side', 'left')}
+						defaultOpen={bool(props, 'defaultOpen', true)}
+						resizable={bool(props, 'resizable')}
+						defaultWidth={num(props, 'defaultWidth', 256)}
+						mobileBreakpoint={0}
+						label="Workspace"
+					>
+						<RuiSidebarContent aria-label="Primary navigation">
+							<RuiSidebarGroup aria-label="Workspace">
+								<RuiSidebarGroupHeader label="Workspace" />
+								<RuiSidebarMenu aria-label="Workspace links">
+									<RuiSidebarMenuItem>
+										<RuiSidebarMenuButton as="a" href="#" isActive>
+											Dashboard
+										</RuiSidebarMenuButton>
+									</RuiSidebarMenuItem>
+									<RuiSidebarMenuItem>
+										<RuiSidebarMenuButton as="a" href="#">
+											Projects
+										</RuiSidebarMenuButton>
+									</RuiSidebarMenuItem>
+									<RuiSidebarMenuItem>
+										<RuiSidebarMenuButton as="a" href="#">
+											Team
+										</RuiSidebarMenuButton>
+									</RuiSidebarMenuItem>
+								</RuiSidebarMenu>
+							</RuiSidebarGroup>
+						</RuiSidebarContent>
+					</RuiSidebar>
+				}
+			>
+				<RuiSidebarInset>
+					<div class="playground-sidebar-demo__main">
+						<RuiSidebarTrigger controls={sidebarId} triggerLabel="Toggle sidebar" />
+						<p class="playground-sidebar-demo__copy">Main content area beside the sidebar.</p>
+					</div>
+				</RuiSidebarInset>
+			</RuiSidebarProvider>
+		</div>
 	);
 }
 
@@ -703,37 +907,66 @@ function renderTextareaPreview(props: Record<string, unknown>): JsxRenderable {
 }
 
 function renderToastPreview(props: Record<string, unknown>): JsxRenderable {
+	toast.clear();
+
 	return (
-		<>
-			<RuiButton variant="outline" on:click={() => toast.success('Changes saved')}>
-				Show toast
-			</RuiButton>
+		<div class="playground-toast-stage">
+			<div class="playground-toast-stage__actions">
+				<RuiButton variant="filled" type="button" on:click={() => toast('Event has been created')}>
+					Default
+				</RuiButton>
+				<RuiButton variant="filled" type="button" on:click={() => toast.success('Changes saved')}>
+					Success
+				</RuiButton>
+				<RuiButton
+					variant="filled"
+					type="button"
+					on:click={() =>
+						toast.error('Unable to reach the server', { description: 'Try again in a moment.' })
+					}
+				>
+					Error
+				</RuiButton>
+				<RuiButton variant="outline" type="button" on:click={() => toast.warning('Disk space is running low')}>
+					Warning
+				</RuiButton>
+				<RuiButton variant="outline" type="button" on:click={() => toast.info('Your session will expire soon')}>
+					Info
+				</RuiButton>
+			</div>
 			<RuiToaster
-				position={str(props, 'position', 'bottom-end')}
+				position={selectProp(props, 'position', 'bottom-end')}
 				duration={num(props, 'duration', 4000)}
 				visibleToasts={num(props, 'visibleToasts', 3)}
-				closeButton={bool(props, 'closeButton')}
+				closeButton={bool(props, 'closeButton', true)}
 				expand={bool(props, 'expand')}
 			/>
-		</>
+		</div>
 	);
 }
 
 function renderTocPreview(props: Record<string, unknown>): JsxRenderable {
-	const target = str(props, 'target', '.docs-content');
+	const target = '.playground-toc-demo__article';
 
 	return (
-		<>
+		<div class="playground-toc-demo">
 			<RuiToc
 				target={target}
 				headingSelector={str(props, 'headingSelector', 'h2,h3')}
 				label={str(props, 'label', 'On this page')}
-				scrollOffset={num(props, 'scrollOffset', 120)}
+				scrollOffset={num(props, 'scrollOffset', 80)}
 			/>
-			<p class="playground-fallback">
-				TOC scans <code>{target}</code> for headings on the page.
-			</p>
-		</>
+			<article class="playground-toc-demo__article">
+				<h2 id="overview">Overview</h2>
+				<p>First section content with enough copy to show how the table of contents tracks headings.</p>
+				<h2 id="configuration">Configuration</h2>
+				<p>Second section content describing how to wire the component into your layout.</p>
+				<h3 id="tokens">Design tokens</h3>
+				<p>Nested section content for third-level headings in the outline.</p>
+				<h2 id="next-steps">Next steps</h2>
+				<p>Final section content with links and follow-up guidance.</p>
+			</article>
+		</div>
 	);
 }
 
@@ -767,16 +1000,9 @@ function renderTooltipPreview(props: Record<string, unknown>): JsxRenderable {
 function renderTreePreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiTree
-			value={str(props, 'value', 'app')}
+			value={str(props, 'value', 'button')}
 			label={str(props, 'label', 'Project files')}
-			nodes={[
-				{
-					id: 'src',
-					label: 'src',
-					expanded: true,
-					children: [{ id: 'app', label: 'app.ts' }],
-				},
-			]}
+			nodes={TREE_DEMO_NODES}
 		/>
 	);
 }
@@ -784,17 +1010,10 @@ function renderTreePreview(props: Record<string, unknown>): JsxRenderable {
 function renderTreegridPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiTreegrid
-			value={str(props, 'value', 'intro')}
+			value={str(props, 'value', 'button')}
 			label={str(props, 'label', 'Repository')}
-			columns={['Name', 'Type']}
-			rows={[
-				{
-					id: 'docs',
-					cells: ['docs', 'folder'],
-					expanded: true,
-					children: [{ id: 'intro', cells: ['introduction.md', 'file'] }],
-				},
-			]}
+			columns={['Name', 'Size']}
+			rows={TREEGRID_DEMO_ROWS}
 		/>
 	);
 }

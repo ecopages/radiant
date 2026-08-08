@@ -11,7 +11,7 @@ export const meta = {
 	component: 'treegrid',
 	exportName: 'RuiTreegrid',
 	args: {
-		value: 'intro',
+		value: 'button',
 		label: 'Repository',
 	},
 	argTypes: {
