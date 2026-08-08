@@ -1,0 +1,7 @@
+.ui-logo {
+	@apply inline-flex items-center gap-1 font-heading text-2xl font-semibold tracking-tight text-on-background no-underline;
+
+	&:hover {
+		@apply text-on-background/80;
+	}
+}

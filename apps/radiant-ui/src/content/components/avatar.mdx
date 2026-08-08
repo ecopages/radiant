@@ -1,0 +1,54 @@
+---
+title: Avatar
+description: Avatars identify people or entities with a photo, initials, or generic fallback. Size variants keep them proportional in lists, bylines, and toolbars.
+category: Data display
+---
+
+import { meta as AvatarMeta, Default } from '@/content/stories/avatar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Avatar
+
+<p class="docs-lede">Avatars identify people or entities with a photo, initials, or generic fallback. Size variants keep them proportional in lists, bylines, and toolbars.</p>
+
+## Try it
+
+<Demo of={Default} meta={AvatarMeta} />
+
+## Usage
+
+Set `src` and `alt` when a photo is available. Use `fallback` for initials when the image fails to load or is not provided.
+
+```tsx
+import { RuiAvatar } from '@ecopages/radiant-ui/avatar';
+
+<RuiAvatar src="/avatars/jane.jpg" alt="Jane Cooper" fallback="JC" size="md" />
+```
+
+## Meaningful fallback text
+
+<p>Limit fallback to one or two characters derived from the person's name. Avoid arbitrary symbols that do not identify the subject.</p>
+
+## Pick size for context
+
+<p>Use `sm` in dense tables and comment threads, `md` in bylines and menus, and `lg` in profile headers.</p>
+
+## Accessibility
+
+- Always provide `alt` text when `src` is set so the image is described to screen readers.
+- When showing only initials, ensure surrounding text names the person — the avatar itself may be decorative.
+- Do not use avatar color as the sole indicator of user role or status.

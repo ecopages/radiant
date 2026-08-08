@@ -1,0 +1,58 @@
+---
+title: Button Group
+description: Button groups visually unite related actions so users perceive them as a single control cluster. Use them for segmented choices or paired operations.
+category: Actions
+---
+
+import { meta as ButtonGroupMeta, Default } from '@/content/stories/button-group';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Button Group
+
+<p class="docs-lede">Button groups visually unite related actions so users perceive them as a single control cluster. Use them for segmented choices or paired operations.</p>
+
+## Try it
+
+<Demo of={Default} meta={ButtonGroupMeta} />
+
+## Usage
+
+Place `RuiButton` children inside `RuiButtonGroup`. Set `orientation` when stacking vertically in narrow layouts.
+
+```tsx
+import { RuiButtonGroup } from '@ecopages/radiant-ui/button-group';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiButtonGroup orientation="horizontal">
+  <RuiButton variant="outline">Cancel</RuiButton>
+  <RuiButton variant="filled">Save</RuiButton>
+</RuiButtonGroup>
+```
+
+## Group related actions only
+
+<p>Keep actions logically connected — confirm/cancel pairs, view toggles, or formatting tools. Unrelated buttons should stand apart.</p>
+
+## Orientation
+
+<p>Use `horizontal` for toolbars and dialog footers. Switch to `vertical` in side panels or mobile layouts where width is constrained.</p>
+
+## Accessibility
+
+- Each button inside the group retains its own accessible name and keyboard focus.
+- When buttons represent a single choice, consider `toggle` buttons with `aria-pressed` instead of separate submit actions.
+- Maintain visible focus indicators on every button in the group.

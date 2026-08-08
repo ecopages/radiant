@@ -1,0 +1,63 @@
+---
+title: Select
+description: Selects let users choose one or more values from a predefined list inside a compact trigger and popup listbox.
+category: Forms
+---
+
+import { meta as SelectMeta, Default } from '@/content/stories/select';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Select
+
+<p class="docs-lede">Selects let users choose one or more values from a predefined list inside a compact trigger and popup listbox.</p>
+
+## Try it
+
+<Demo of={Default} meta={SelectMeta} />
+
+## Usage
+
+Pass `options` for a simple API, or compose `RuiSelectControl`, `RuiSelectTrigger`, `RuiSelectValue`, and `RuiSelectListbox` for full control.
+
+```tsx
+import { RuiSelect } from '@ecopages/radiant-ui/select';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiLabel>Animal</RuiLabel>
+<RuiSelect
+  value="cat"
+  placeholder="Select an animal"
+  options={[
+    { value: 'cat', label: 'Cat' },
+    { value: 'dog', label: 'Dog' },
+  ]}
+/>
+```
+
+## Multiple selection
+
+<p>Set `selectionMode="multiple"` for multi-select. Selected values appear as tags via `RuiTagGroup`.</p>
+
+## Searchable lists
+
+<p>Add `RuiSelectSearch` inside the listbox for long option sets that benefit from filtering.</p>
+
+## Accessibility
+
+- The trigger exposes `aria-expanded` and `aria-haspopup="listbox"`.
+- Selected values are reflected in `RuiSelectValue` for screen readers.
+- Provide a visible label — the placeholder is not a substitute.

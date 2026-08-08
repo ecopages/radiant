@@ -1,0 +1,61 @@
+---
+title: Navigation Menu
+description: Navigation menus organize site sections with optional dropdown panels for nested links.
+category: Navigation
+---
+
+import { meta as NavigationMenuMeta, Default } from '@/content/stories/navigation-menu';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Navigation Menu
+
+<p class="docs-lede">Navigation menus organize site sections with optional dropdown panels for nested links.</p>
+
+## Try it
+
+<Demo of={Default} meta={NavigationMenuMeta} />
+
+## Usage
+
+Compose triggers, links, and panels with the sub-components. Use `RuiNavigationMenuTrigger` for sections with flyout content.
+
+```tsx
+import {
+  RuiNavigationMenu,
+  RuiNavigationMenuTrigger,
+  RuiNavigationMenuLink,
+  RuiNavigationMenuPanel,
+} from '@ecopages/radiant-ui/navigation-menu';
+
+<RuiNavigationMenu label="Main">
+  <RuiNavigationMenuTrigger>Products</RuiNavigationMenuTrigger>
+  <RuiNavigationMenuPanel>
+    <RuiNavigationMenuLink href="/widgets">Widgets</RuiNavigationMenuLink>
+  </RuiNavigationMenuPanel>
+  <RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
+</RuiNavigationMenu>
+```
+
+## Site-wide navigation
+
+<p>Keep top-level items to five or fewer. Move secondary links into panels or the footer.</p>
+
+## Accessibility
+
+- The menu renders as a `nav` landmark with an accessible name from `label`.
+- Expanded panels are associated with their triggers via `aria-controls`.
+- Current page links should use `aria-current="page"`.

@@ -1,0 +1,59 @@
+---
+title: Checkbox
+description: Checkboxes toggle independent options on or off. Use them when each choice is unrelated and more than one can be selected.
+category: Forms
+---
+
+import { meta as CheckboxMeta, Default } from '@/content/stories/checkbox';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Checkbox
+
+<p class="docs-lede">Checkboxes toggle independent options on or off. Use them when each choice is unrelated and more than one can be selected.</p>
+
+## Try it
+
+<Demo of={Default} meta={CheckboxMeta} />
+
+## Usage
+
+Wrap a checkbox in `RuiField` with `RuiLabel` for consistent spacing and error display. Bind `checked` for controlled state.
+
+```tsx
+import { RuiCheckbox } from '@ecopages/radiant-ui/checkbox';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="newsletter">
+  <RuiLabel>Email me product updates</RuiLabel>
+  <RuiCheckbox checked={subscribed} value="yes" />
+</RuiField>
+```
+
+## Indeterminate selections
+
+<p>Set `indeterminate` when a parent checkbox represents a partially selected group. Clear indeterminate once the user makes an explicit choice.</p>
+
+## Wire through RuiField
+
+<p>Pass `name` on `RuiField` so the checkbox participates in `RuiForm` validation and submission.</p>
+
+## Accessibility
+
+- Every checkbox needs a visible label — use `RuiLabel` or `aria-label`.
+- Indeterminate state is exposed with `aria-checked="mixed"`.
+- Disabled checkboxes should include context explaining why the option is unavailable.

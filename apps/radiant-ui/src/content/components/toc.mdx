@@ -1,0 +1,59 @@
+---
+title: Toc
+description: Table of contents components scan a page for headings and render jump links that track the reader's scroll position.
+category: Navigation
+---
+
+import { meta as TocMeta, Default } from '@/content/stories/toc';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Toc
+
+<p class="docs-lede">Table of contents components scan a page for headings and render jump links that track the reader's scroll position.</p>
+
+## Try it
+
+<Demo of={Default} meta={TocMeta} />
+
+## Usage
+
+Point `target` at the content root selector. Adjust `headingSelector` to match the heading levels you want to include.
+
+```tsx
+import { RuiToc } from '@ecopages/radiant-ui/toc';
+
+<RuiToc
+  target=".docs-content"
+  headingSelector="h2,h3"
+  label="On this page"
+  scrollOffset={120}
+/>
+```
+
+## Heading levels
+
+<p>Default `h2,h3` suits most docs pages. Include `h4` only when the page has deep nesting worth navigating.</p>
+
+## Scroll offset
+
+<p>Set `scrollOffset` to account for a fixed header so jumped headings are not hidden beneath it.</p>
+
+## Accessibility
+
+- The TOC renders as a `nav` landmark with `label` as its accessible name.
+- Current section is indicated visually and for assistive technologies during scroll.
+- Nested headings use indentation to convey hierarchy.

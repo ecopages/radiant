@@ -1,0 +1,71 @@
+---
+title: Dialog
+description: Dialogs interrupt the page to capture a decision or short form. They trap focus and return it when dismissed.
+category: Overlays
+---
+
+import { meta as DialogMeta, Default } from '@/content/stories/dialog';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Dialog
+
+<p class="docs-lede">Dialogs interrupt the page to capture a decision or short form. They trap focus and return it when dismissed.</p>
+
+## Try it
+
+<Demo of={Default} meta={DialogMeta} />
+
+## Usage
+
+Register dialogs with `installDialogs`, then open them imperatively via `openDialog` or a trigger with `data-dialog-open`. Compose title, body, and actions with the sub-components.
+
+```tsx
+import {
+  RuiDialog,
+  RuiDialogTitle,
+  RuiDialogBody,
+  RuiDialogActions,
+  RuiDialogClose,
+  installDialogs,
+  openDialog,
+} from '@ecopages/radiant-ui/dialog';
+
+installDialogs();
+
+<RuiDialog id="edit-profile" label="Edit profile">
+  <RuiDialogTitle>Edit profile</RuiDialogTitle>
+  <RuiDialogBody>Update your display name and email.</RuiDialogBody>
+  <RuiDialogActions>
+    <RuiDialogClose>Cancel</RuiDialogClose>
+    <button type="button">Save</button>
+  </RuiDialogActions>
+</RuiDialog>
+```
+
+## Alert dialogs
+
+<p>Set `alert` to `true` for destructive confirmations. Alert dialogs limit tab order to the dialog actions.</p>
+
+## Return focus on close
+
+<p>Focus returns to the element that opened the dialog. Avoid stacking multiple modal layers.</p>
+
+## Accessibility
+
+- Every dialog needs an accessible name via `label` or `RuiDialogTitle`.
+- Use `alert` for confirmations that require an explicit decision before continuing.
+- Do not open a dialog without a clear way to dismiss it — provide a close action.

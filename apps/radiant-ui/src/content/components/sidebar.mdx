@@ -1,0 +1,79 @@
+---
+title: Sidebar
+description: Sidebars provide persistent app navigation with collapsible, resizable, and mobile-responsive layouts.
+category: Navigation
+---
+
+import { meta as SidebarMeta, Default } from '@/content/stories/sidebar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Sidebar
+
+<p class="docs-lede">Sidebars provide persistent app navigation with collapsible, resizable, and mobile-responsive layouts.</p>
+
+## Try it
+
+<Demo of={Default} meta={SidebarMeta} />
+
+## Usage
+
+Wrap the layout in `RuiSidebarProvider`. Compose header, content, groups, and menu items with the sidebar sub-components.
+
+```tsx
+import {
+  RuiSidebarProvider,
+  RuiSidebar,
+  RuiSidebarHeader,
+  RuiSidebarContent,
+  RuiSidebarMenu,
+  RuiSidebarMenuItem,
+  RuiSidebarMenuButton,
+  RuiSidebarInset,
+  RuiSidebarTrigger,
+} from '@ecopages/radiant-ui/sidebar';
+
+<RuiSidebarProvider>
+  <RuiSidebar collapsible="icon" defaultOpen>
+    <RuiSidebarHeader>Acme</RuiSidebarHeader>
+    <RuiSidebarContent>
+      <RuiSidebarMenu>
+        <RuiSidebarMenuItem>
+          <RuiSidebarMenuButton href="/dashboard">Dashboard</RuiSidebarMenuButton>
+        </RuiSidebarMenuItem>
+      </RuiSidebarMenu>
+    </RuiSidebarContent>
+  </RuiSidebar>
+  <RuiSidebarInset>
+    <RuiSidebarTrigger />
+    <main>Page content</main>
+  </RuiSidebarInset>
+</RuiSidebarProvider>
+```
+
+## Collapsible modes
+
+<p>`icon` collapses to icons only. `full` hides the sidebar entirely. `off` keeps it always visible.</p>
+
+## Active route matching
+
+<p>Enable `matchActive` with `matchMode` to highlight the current page in the menu automatically.</p>
+
+## Accessibility
+
+- The sidebar renders as a `nav` landmark with `label` as its accessible name.
+- Collapsed icon-only mode preserves accessible names on menu buttons.
+- The trigger button exposes whether the sidebar is expanded or collapsed.

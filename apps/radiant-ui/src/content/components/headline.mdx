@@ -1,0 +1,50 @@
+---
+title: Headline
+description: Headline renders a single typographic heading with size presets that map to the design system scale.
+category: Layout
+---
+
+import { meta as HeadlineMeta, Default } from '@/content/stories/headline';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Headline
+
+<p class="docs-lede">Headline renders a single typographic heading with size presets that map to the design system scale.</p>
+
+## Try it
+
+<Demo of={Default} meta={HeadlineMeta} />
+
+## Usage
+
+Set `as` to the semantic heading level and `size` for visual weight. Use inside `RuiHeadingTitle` or standalone.
+
+```tsx
+import { RuiHeadline } from '@ecopages/radiant-ui/headline';
+
+<RuiHeadline as="h1" size="xl">Radiant UI</RuiHeadline>
+```
+
+## Pick the right level
+
+<p>Match `as` to the document outline — one `h1` per page, then nest `h2`–`h4` without skipping levels.</p>
+
+## Accessibility
+
+- Use semantic heading elements (`h1`–`h6`) via `as` for proper document structure.
+- Visual size can differ from semantic level when the outline requires it, but document the intent.
+- Do not use headlines purely for styling body text — use paragraph styles instead.

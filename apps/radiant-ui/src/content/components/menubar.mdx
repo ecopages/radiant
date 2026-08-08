@@ -1,0 +1,54 @@
+---
+title: Menubar
+description: Menubars provide persistent top-level menus — File, Edit, View — with keyboard traversal across items.
+category: Navigation
+---
+
+import { meta as MenubarMeta, Default } from '@/content/stories/menubar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Menubar
+
+<p class="docs-lede">Menubars provide persistent top-level menus — File, Edit, View — with keyboard traversal across items.</p>
+
+## Try it
+
+<Demo of={Default} meta={MenubarMeta} />
+
+## Usage
+
+Place menu triggers as children of `RuiMenubar`. Set `label` to name the menubar landmark.
+
+```tsx
+import { RuiMenubar } from '@ecopages/radiant-ui/menubar';
+import { RuiMenuButton } from '@ecopages/radiant-ui/menu-button';
+
+<RuiMenubar label="Application menu">
+  <RuiMenuButton items={fileItems}>File</RuiMenuButton>
+  <RuiMenuButton items={editItems}>Edit</RuiMenuButton>
+</RuiMenubar>
+```
+
+## Desktop application patterns
+
+<p>Menubars suit desktop-style apps. For site navigation, prefer `RuiNavigationMenu` or `RuiSidebar`.</p>
+
+## Accessibility
+
+- Menubar renders with `role="menubar"` and supports arrow-key traversal between top-level items.
+- Each menu item opens a submenu with standard menu keyboard patterns.
+- Provide `label` so the region is announced to screen reader users.

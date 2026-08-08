@@ -1,0 +1,64 @@
+---
+title: Autocomplete
+description: Autocomplete filters a large option set as the user types. It is the right choice when the full list is too long to scan in a static select.
+category: Forms
+---
+
+import { meta as AutocompleteMeta, Default } from '@/content/stories/autocomplete';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Autocomplete
+
+<p class="docs-lede">Autocomplete filters a large option set as the user types. It is the right choice when the full list is too long to scan in a static select.</p>
+
+## Try it
+
+<Demo of={Default} meta={AutocompleteMeta} />
+
+## Usage
+
+Wrap a text input, option collection, and empty state inside `RuiAutocomplete`. Pair it with `RuiListbox` and `RuiListboxOption` for the filtered results.
+
+```tsx
+import { RuiAutocomplete, RuiAutocompleteInput, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '@ecopages/radiant-ui/autocomplete';
+import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
+
+<RuiAutocomplete sensitivity="base">
+  <RuiAutocompleteInput placeholder="Search animals" />
+  <RuiAutocompleteCollection>
+    <RuiListbox>
+      <RuiListboxOption value="cat">Cat</RuiListboxOption>
+      <RuiListboxOption value="dog">Dog</RuiListboxOption>
+    </RuiListbox>
+  </RuiAutocompleteCollection>
+  <RuiAutocompleteEmpty>No matches found.</RuiAutocompleteEmpty>
+</RuiAutocomplete>
+```
+
+## Tune filter sensitivity
+
+<p>Use `base` for standard substring matching. Choose `accent` or `case` when your locale or dataset requires looser or stricter comparison.</p>
+
+## Control the input value
+
+<p>Bind `inputValue` when you need to reset the field after selection or sync with external search state.</p>
+
+## Accessibility
+
+- The input exposes combobox semantics with `aria-expanded` tied to the listbox visibility.
+- Keyboard users can move through options with arrow keys; Enter selects the focused option.
+- Provide an accessible label via `RuiLabel` or `aria-label` on the input.

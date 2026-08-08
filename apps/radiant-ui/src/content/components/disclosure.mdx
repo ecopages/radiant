@@ -1,0 +1,65 @@
+---
+title: Disclosure
+description: Disclosures progressively reveal content behind a trigger — FAQs, filter panels, or advanced settings that most users can skip.
+category: Layout
+---
+
+import { meta as DisclosureMeta, Default } from '@/content/stories/disclosure';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Disclosure
+
+<p class="docs-lede">Disclosures progressively reveal content behind a trigger — FAQs, filter panels, or advanced settings that most users can skip.</p>
+
+## Try it
+
+<Demo of={Default} meta={DisclosureMeta} />
+
+## Usage
+
+Use `RuiDisclosureTrigger` and `RuiDisclosurePanel` inside `RuiDisclosure`. Group related disclosures with `RuiDisclosureGroup` when only one should be open.
+
+```tsx
+import {
+  RuiDisclosure,
+  RuiDisclosureTrigger,
+  RuiDisclosurePanel,
+  RuiDisclosureIcon,
+} from '@ecopages/radiant-ui/disclosure';
+
+<RuiDisclosure>
+  <RuiDisclosureTrigger>
+  Shipping details
+  <RuiDisclosureIcon />
+  </RuiDisclosureTrigger>
+  <RuiDisclosurePanel>Delivered in 3–5 business days.</RuiDisclosurePanel>
+</RuiDisclosure>
+```
+
+## Accordion groups
+
+<p>Wrap multiple disclosures in `RuiDisclosureGroup` with `multiple=\{false}` for accordion behavior.</p>
+
+## Animated panels
+
+<p>Enable `animated` for height transitions. Verify content remains readable during the animation.</p>
+
+## Accessibility
+
+- Triggers expose `aria-expanded` reflecting panel visibility.
+- Panel content is associated with its trigger via `aria-controls`.
+- Keyboard users activate disclosures with Enter or Space on the trigger.

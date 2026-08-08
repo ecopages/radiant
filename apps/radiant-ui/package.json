@@ -1,0 +1,27 @@
+{
+	"name": "@ecopages/radiant-ui-docs",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "ecopages dev",
+		"build": "ecopages build",
+		"preview": "ecopages preview",
+		"generate:content": "node --import tsx scripts/generate-content-stories.ts"
+	},
+	"devDependencies": {
+		"@ecopages/browser-router": "0.2.0-beta.43",
+		"@ecopages/core": "0.2.0-beta.43",
+		"@ecopages/content-processor": "0.2.0-beta.43",
+		"@ecopages/ecopages-jsx": "0.2.0-beta.43",
+		"@ecopages/jsx": "workspace:*",
+		"@ecopages/postcss-processor": "0.2.0-beta.43",
+		"@ecopages/radiant": "workspace:*",
+		"@ecopages/radiant-ui": "workspace:*",
+		"@types/node": "^24.13.2",
+		"ecopages": "0.2.0-beta.43",
+		"rehype-pretty-code": "^0.14.1",
+		"shiki": "^3.20.0",
+		"tailwindcss": "^4.3.0",
+		"zod": "^4.4.3"
+	}
+}

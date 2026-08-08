@@ -1,0 +1,65 @@
+---
+title: Field
+description: Fields wrap a single form control with label, description, and error messaging in a consistent layout.
+category: Forms
+---
+
+import { meta as FieldMeta, Default } from '@/content/stories/field';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Field
+
+<p class="docs-lede">Fields wrap a single form control with label, description, and error messaging in a consistent layout.</p>
+
+## Try it
+
+<Demo of={Default} meta={FieldMeta} />
+
+## Usage
+
+Set `name` on `RuiField` to wire validation through `RuiForm`. Place a Radiant control (`RuiInput`, `RuiSelect`, `RuiSwitch`, …) as the child — Field discovers controls via `data-rui-control` and known host tags, not bare `<input>` elements. Use `RuiFieldDescription` and `RuiFieldError` for helper and error text.
+
+```tsx
+import { RuiField, RuiFieldDescription, RuiFieldError } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+
+<RuiField name="email" invalid={!!errors.email} error={errors.email?.message}>
+  <RuiLabel>Email</RuiLabel>
+  <RuiInput type="email" placeholder="you@example.com" />
+  <RuiFieldDescription>We will never share your email.</RuiFieldDescription>
+  <RuiFieldError />
+</RuiField>
+```
+
+## Use Radiant controls
+
+<p>`RuiField` only wires library controls: presentational ones marked with `data-rui-control` (`RuiInput`, `RuiTextarea`, select triggers) and host elements such as `rui-select`, `rui-switch`, and `rui-date-field`. Bare `<input>` / `<textarea>` without the marker are ignored.</p>
+
+## Surface errors inline
+
+<p>Set `invalid` and pass the error message so `RuiFieldError` renders below the control with `aria-live` semantics.</p>
+
+## Disabled fields
+
+<p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
+
+## Accessibility
+
+- Associate labels with controls using `RuiLabel` — do not rely on placeholder text alone.
+- Error messages are linked to the input via `aria-describedby`.
+- Descriptions provide supplementary context without replacing the label.
