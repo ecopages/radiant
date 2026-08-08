@@ -338,7 +338,10 @@ export class RadiantElement<Bindings extends object = {}>
 			const renderRuntime = this.getOrCreateRenderRuntime();
 			renderRuntime.observeSlotProjection();
 
-			if (shouldHydrateOnConnect(this)) {
+			// Persist/SPA morph can disconnect+reconnect the same host while SSR bind
+			// markers still exist under projected slot content. Re-hydrating then leaves
+			// prior boundary markers in place and appends a second light-DOM shell.
+			if (shouldHydrateOnConnect(this) && !renderRuntime.hasMounted) {
 				this.renderScheduler.clearPending();
 				this.hydrate();
 

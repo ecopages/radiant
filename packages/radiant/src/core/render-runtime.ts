@@ -43,6 +43,15 @@ export class RenderRuntime {
 		return this.#slotProjectionVersion;
 	}
 
+	/**
+	 * @remarks True after the first client `hydrate`/`render` into this host. Used to
+	 * avoid re-hydrating across persist reconnects when SSR markers may still remain
+	 * under projected light-DOM content.
+	 */
+	get hasMounted(): boolean {
+		return this.#hasMounted;
+	}
+
 	getSlotElements<T extends Element = Element>(name?: string): T[] {
 		this.ensureSlotProjectionState();
 
