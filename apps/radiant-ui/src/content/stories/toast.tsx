@@ -21,7 +21,10 @@ export const meta = {
 		expand: false,
 	},
 	argTypes: {
-		position: { control: { type: 'select' }, options: ['bottom-end', 'bottom-center', 'top-end', 'top-center'] as const },
+		position: {
+			control: { type: 'select' },
+			options: ['bottom-end', 'bottom-center', 'top-end', 'top-center'] as const,
+		},
 		duration: { control: { type: 'text' } },
 		visibleToasts: { control: { type: 'text' } },
 		closeButton: { control: { type: 'boolean' } },

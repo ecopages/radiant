@@ -3,7 +3,7 @@ radiant-code-tabs {
 }
 
 .home-code-tabs {
-	@apply mt-8 block max-w-100;
+	@apply mt-8 block max-w-120;
 }
 
 radiant-code-tabs .rui-tabs__list {

@@ -1,0 +1,41 @@
+---
+title: Introduction
+description: An introduction to Radiant UI and its component documentation.
+group: Getting started
+---
+
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { componentNavEntries } from '@/lib/component-nav';
+
+# Introduction
+
+<p class="docs-lede">
+	Radiant UI is a component library for building accessible application interfaces with the Radiant reactive
+	model. Import focused modules, compose light-DOM views, and ship interfaces that stay consistent across products.
+</p>
+
+## What you get
+
+Each component exposes a focused module under <code>@ecopages/radiant-ui/&lt;slug&gt;</code>, predictable props,
+and accessible defaults. Documentation pairs implementation guidance with an interactive playground that uses the real
+public API, not a generic placeholder.
+
+- **{componentNavEntries.length} components** documented with usage examples, guidance, and accessibility notes.
+- **Playgrounds** let you adjust real props and copy the resulting code.
+- **Focused imports** keep bundles small — applications only ship the UI they use.
+
+## Install
+
+```bash
+pnpm add @ecopages/radiant-ui @ecopages/radiant
+```
+
+Load a theme and the aggregate stylesheet in your app shell. See the main Radiant docs for framework integration
+details.
+
+## Start exploring
+
+Open a component page to review its API, try the playground, and read accessibility guidance. Start with actions and
+forms, then move to navigation and overlays as your interface grows.
+
+<RuiButton href="/docs/button">Explore Button</RuiButton>

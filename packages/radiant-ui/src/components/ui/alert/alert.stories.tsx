@@ -6,10 +6,25 @@ import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from './al
 
 const renderAlert = (args: RuiAlertProps) => {
 	if (args.layout === 'banner') {
-		return <RuiAlert {...args}><RuiAlertTitle>Documentation preview</RuiAlertTitle><RuiAlertDescription><p>This release includes breaking changes to the routing API. Review the migration guide before upgrading production apps.</p></RuiAlertDescription></RuiAlert>;
+		return (
+			<RuiAlert {...args}>
+				<RuiAlertTitle>Documentation preview</RuiAlertTitle>
+				<RuiAlertDescription>
+					<p>
+						This release includes breaking changes to the routing API. Review the migration guide before
+						upgrading production apps.
+					</p>
+				</RuiAlertDescription>
+			</RuiAlert>
+		);
 	}
 
-	return <RuiAlert {...args}><RuiAlertIcon variant={args.variant ?? 'info'} /><span>Your session will expire in 5 minutes.</span></RuiAlert>;
+	return (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant={args.variant ?? 'info'} />
+			<span>Your session will expire in 5 minutes.</span>
+		</RuiAlert>
+	);
 };
 
 const meta = {
@@ -40,18 +55,41 @@ export const Default: Story = {
 
 export const InlineWarning: Story = {
 	args: { variant: 'warning', layout: 'inline' },
-	render: (args) => <RuiAlert {...args}><RuiAlertIcon variant="warning" /><span>Disk space is running low.</span></RuiAlert>,
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant="warning" />
+			<span>Disk space is running low.</span>
+		</RuiAlert>
+	),
 };
 export const InlineError: Story = {
 	args: { variant: 'error', layout: 'inline' },
-	render: (args) => <RuiAlert {...args}><RuiAlertIcon variant="error" /><span>Unable to reach the server.</span></RuiAlert>,
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant="error" />
+			<span>Unable to reach the server.</span>
+		</RuiAlert>
+	),
 };
 export const InlineSuccess: Story = {
 	args: { variant: 'success', layout: 'inline' },
-	render: (args) => <RuiAlert {...args}><RuiAlertIcon variant="success" /><span>Profile saved.</span></RuiAlert>,
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant="success" />
+			<span>Profile saved.</span>
+		</RuiAlert>
+	),
 };
 export const Banner: Story = { args: { variant: 'info', layout: 'banner' }, render: renderAlert };
 export const BannerWarning: Story = {
 	args: { variant: 'warning', layout: 'banner' },
-	render: (args) => <RuiAlert {...args}><RuiAlertTitle>Scheduled maintenance</RuiAlertTitle><RuiAlertDescription><p>The dashboard will be unavailable on Sunday from 02:00–04:00 UTC.</p><p>Save work in progress before the window starts.</p></RuiAlertDescription></RuiAlert>,
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertTitle>Scheduled maintenance</RuiAlertTitle>
+			<RuiAlertDescription>
+				<p>The dashboard will be unavailable on Sunday from 02:00–04:00 UTC.</p>
+				<p>Save work in progress before the window starts.</p>
+			</RuiAlertDescription>
+		</RuiAlert>
+	),
 };

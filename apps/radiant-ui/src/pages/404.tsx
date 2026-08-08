@@ -1,10 +1,10 @@
 import { eco, type Error404TemplateProps } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
-import { HomeLayout } from '@/layouts/home-layout';
+import { BaseLayout } from '@/layouts/base-layout';
 
 export default eco.page<Error404TemplateProps, JsxRenderable>({
-	layout: HomeLayout,
+	layout: BaseLayout,
 	metadata: () => ({
 		title: 'Page not found | Radiant UI',
 		description: 'The requested Radiant UI documentation page could not be found.',

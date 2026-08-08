@@ -41,7 +41,7 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 						<nav class="site-header__nav" aria-label="Site">
 							<ul>
 								<li>
-									<a href="/docs/introduction">Docs</a>
+									<a href="/docs/getting-started/introduction">Docs</a>
 								</li>
 								<li>
 									<a href="https://github.com/ecopages/radiant" aria-label="GitHub repository">

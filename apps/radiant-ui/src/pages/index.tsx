@@ -4,48 +4,48 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 import { CodeTabs } from '@/components/code-tabs';
 import Demo from '@/components/component-docs/demo';
 import { meta as ButtonMeta, Default as ButtonDefault } from '@/content/stories/button';
-import { COMPONENT_CATEGORY_ORDER, componentNavEntries } from '@/lib/component-nav';
-import { HomeLayout } from '@/layouts/home-layout';
+import { COMPONENT_CATEGORY_ORDER, componentNavEntries, firstComponentHref } from '@/lib/component-nav';
+import { BaseLayout } from '@/layouts/base-layout';
 
 const categoryCards = COMPONENT_CATEGORY_ORDER.map((category) => {
 	const items = componentNavEntries.filter((entry) => entry.category === category);
-	const first = items[0];
 	return {
 		category,
 		count: items.length,
-		href: first ? `/components/${first.slug}` : '/components/button',
+		href: firstComponentHref(category),
 		description: `Browse ${items.length} ${category.toLowerCase()} components with interactive playgrounds.`,
 	};
 });
 
 const suggestedPath = [
 	{
-		href: '/docs/introduction',
+		href: '/docs/getting-started/introduction',
 		title: 'Read the introduction',
 		description: 'Learn how Radiant UI components fit into Radiant applications.',
 	},
 	{
-		href: '/components/button',
+		href: '/docs/button',
 		title: 'Start with Button',
 		description: 'Explore variants, sizes, and toggle behavior in the playground.',
 	},
 	{
-		href: '/components/form',
+		href: '/docs/form',
 		title: 'Build a form',
 		description: 'Compose fields, validation, and submission with RuiForm.',
 	},
 	{
-		href: '/components/dialog',
+		href: '/docs/dialog',
 		title: 'Add overlays',
 		description: 'Use Dialog and Popover for focused tasks without leaving context.',
 	},
 ];
 
 export default eco.page<{}, JsxRenderable>({
-	layout: HomeLayout,
+	layout: BaseLayout,
 	dependencies: {
 		components: [CodeTabs, Demo],
 		scripts: [
+			'../components/component-docs/demo.script.tsx',
 			'../components/component-docs/canvas.script.tsx',
 			'../components/component-docs/controls.script.tsx',
 			'../components/component-docs/code.script.tsx',
@@ -90,8 +90,8 @@ export default eco.page<{}, JsxRenderable>({
 					defaultSelectedKey="pnpm"
 				/>
 				<div class="home-header__actions">
-					<RuiButton href="/docs/introduction">Read the introduction</RuiButton>
-					<RuiButton href="/components/button" variant="outline">
+					<RuiButton href="/docs/getting-started/introduction">Read the introduction</RuiButton>
+					<RuiButton href="/docs/button" variant="outline">
 						Explore components
 					</RuiButton>
 				</div>

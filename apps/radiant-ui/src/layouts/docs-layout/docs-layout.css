@@ -1,4 +1,5 @@
 @import '@ecopages/radiant-ui/sidebar/docs.css';
+@import '@ecopages/radiant-ui/toc/styles.css';
 
 /**
  * Keep `@reference` after the skin `@import` so postcss-import inlines the package

@@ -194,7 +194,7 @@ function renderBreadcrumbPreview(props: Record<string, unknown>): JsxRenderable 
 				</RuiBreadcrumbItem>
 				<RuiBreadcrumbSeparator />
 				<RuiBreadcrumbItem>
-					<RuiBreadcrumbLink href="/components/button">Components</RuiBreadcrumbLink>
+					<RuiBreadcrumbLink href="/docs/button">Components</RuiBreadcrumbLink>
 				</RuiBreadcrumbItem>
 				<RuiBreadcrumbSeparator />
 				<RuiBreadcrumbItem>

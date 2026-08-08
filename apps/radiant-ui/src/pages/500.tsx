@@ -1,10 +1,10 @@
 import { eco, type Error500TemplateProps } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
-import { HomeLayout } from '@/layouts/home-layout';
+import { DocsLayout } from '@/layouts/docs-layout';
 
 export default eco.page<Error500TemplateProps, JsxRenderable>({
-	layout: HomeLayout,
+	layout: DocsLayout,
 	metadata: () => ({
 		title: 'Something went wrong | Radiant UI',
 		description: 'Radiant UI could not render the requested page.',
