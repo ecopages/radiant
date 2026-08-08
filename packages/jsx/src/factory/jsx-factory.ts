@@ -1,7 +1,7 @@
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
-import { isIterableJsxChild, resolveBindingShapeValue } from '../types/renderable-guards.ts';
+import { isIterableJsxChild, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
 import {
 	KEYED_VALUE_SYMBOL,
 	RADIANT_MARKUP_NODE_SYMBOL,
@@ -163,8 +163,15 @@ function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string 
 	return escapeRawTextElementText(String(value));
 }
 
+/**
+ * Escapes the only sequence that can terminate `<script>` text early.
+ *
+ * Inside a raw-text element the parser looks for `</script`, so that is the sole
+ * sequence rewritten. Escaping every `<` would corrupt executable content —
+ * `if (a < b)` is not a tag — which is why this is deliberately narrow.
+ */
 function escapeRawTextElementText(value: string): string {
-	return value.replace(/</g, '\\u003c');
+	return value.replace(/<\/(?=script[\s/>])/gi, '<\\/');
 }
 
 function appendBinding(strings: string[], values: unknown[], elementName: string, name: string, value: unknown): void {
@@ -172,7 +179,7 @@ function appendBinding(strings: string[], values: unknown[], elementName: string
 		return;
 	}
 
-	const bindingShapeValue = resolveBindingShapeValue(value);
+	const bindingShapeValue = resolveReactiveSnapshot(value);
 	const normalizedName = name.startsWith('attr:') ? name.slice(5) : name;
 
 	if (name.startsWith('on-native:')) {

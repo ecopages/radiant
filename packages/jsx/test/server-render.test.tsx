@@ -31,6 +31,27 @@ describe('Radiant JSX server render', () => {
 		expect(renderToString(template)).toBe('<script type="application/json">{"count":5}</script>');
 	});
 
+	test('leaves comparison operators in script text intact', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('script', {
+			children: 'if (a < b && c > d) { go(); }',
+		});
+
+		expect(renderToString(template)).toBe('<script>if (a < b && c > d) { go(); }</script>');
+	});
+
+	test('escapes closing tag sequences that would terminate script text early', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const template = jsx('script', {
+			children: 'const marker = "</script>";',
+		});
+
+		const html = renderToString(template);
+
+		expect(html).toBe('<script>const marker = "<\\/script>";</script>');
+		expect(html.indexOf('</script>')).toBe(html.length - '</script>'.length);
+	});
+
 	test('serializes unsafeHtml content without escaping it again', async () => {
 		const [{ jsx, unsafeHtml }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 		const template = jsx('div', {

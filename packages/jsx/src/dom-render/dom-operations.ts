@@ -7,35 +7,6 @@ import { mayEmitOrParseRawOuterHtml } from '../types/renderable-guards.ts';
 import type { JsxNodeLike } from '../types/index.ts';
 
 /**
- * Visits descendant elements of `target` in document order.
- *
- * @param target Root element to walk.
- * @param visit Callback invoked for every element including `target`. Returning `true`
- * stops the traversal early.
- */
-export function visitElements(target: HTMLElement, visit: (element: Element) => boolean): boolean {
-	const walk = (element: Element): boolean => {
-		if (visit(element)) {
-			return true;
-		}
-
-		const children = element.children;
-
-		for (let index = 0; index < children.length; index += 1) {
-			const child = children.item(index);
-
-			if (child && walk(child)) {
-				return true;
-			}
-		}
-
-		return false;
-	};
-
-	return walk(target);
-}
-
-/**
  * Removes all DOM nodes that sit between `startMarker` and `endMarker` (exclusive).
  *
  * The boundary markers themselves are left in place so the range remains bookmarked
@@ -225,5 +196,3 @@ function isNodeWithinRange(target: Node, start: Text, end: Text): boolean {
 
 	return false;
 }
-
-export { isJsxNodeLike } from '../types/renderable-guards.ts';

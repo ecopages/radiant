@@ -308,15 +308,14 @@ export function mountReactiveChildSource(
 	rootTarget: HTMLElement,
 	deferredProperties: DeferredPropertyBinding[],
 ): MountedSubscription {
+	const subscriptionSerial = 1;
 	const mountedSubscription: MountedSubscription = {
 		kind: 'subscription',
 		mounted: current,
 		source,
-		subscriptionSerial: 0,
+		subscriptionSerial,
 		unsubscribe: () => undefined,
 	};
-	const subscriptionSerial = mountedSubscription.subscriptionSerial + 1;
-	mountedSubscription.subscriptionSerial = subscriptionSerial;
 
 	const applyValue = (nextValue: unknown) => {
 		const nextDeferredProperties: DeferredPropertyBinding[] = [];

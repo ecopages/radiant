@@ -11,7 +11,7 @@ import { createNodesFromJsxNodeLike } from './dom-operations.ts';
 import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
 
 export {
-	isIterableRenderable as isIterableValue,
+	isIterableRenderable,
 	isJsxNodeLike,
 	isSignalLikeValue,
 	isTemplateResultLike,
