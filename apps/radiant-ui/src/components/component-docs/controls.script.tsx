@@ -1,28 +1,21 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+import { type ContextProvider, consumeContext, contextSelector } from '@ecopages/radiant/context';
 import '@ecopages/radiant-ui/button';
 import '@ecopages/radiant-ui/button-group';
 import '@ecopages/radiant-ui/input';
 import '@ecopages/radiant-ui/select';
 import '@ecopages/radiant-ui/switch';
 import '@/content/stories';
-import type { DocsCanvasElement } from './canvas.script';
+import { docsStoryContext } from '@/lib/docs-stories/story-context';
 import type { DocsArgs } from '@/lib/docs-stories';
-import { getRegisteredStory, getStoryArgs } from '@/lib/docs-stories';
 
 @customElement('radiant-docs-controls')
 export class DocsControlsElement extends RadiantElement {
-	@state private args: DocsArgs = {};
+	@consumeContext(docsStoryContext) story?: ContextProvider<typeof docsStoryContext>;
 
-	private get storyId(): string {
-		return this.dataset.storyId ?? '';
-	}
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		const entry = getRegisteredStory(this.storyId);
-		this.args = entry ? getStoryArgs(entry.meta, entry.story) : {};
-	}
+	@contextSelector({ context: docsStoryContext, select: (ctx) => ctx.args })
+	args: DocsArgs = {};
 
 	@onEvent({ selector: 'button[data-docs-arg]', type: 'click' })
 	onSegmentClick(event: Event): void {
@@ -66,16 +59,24 @@ export class DocsControlsElement extends RadiantElement {
 	}
 
 	private setArg(propName: string, value: string | boolean): void {
-		const entry = getRegisteredStory(this.storyId);
-		if (!entry) return;
-		this.args = { ...this.args, [propName]: value };
-		if (typeof value === 'string') this.syncSegmentPressed(propName, value);
-		document.querySelectorAll<DocsCanvasElement>('radiant-docs-canvas[data-story-id]').forEach((canvas) => {
-			if (canvas.dataset.storyId === this.storyId) canvas.updateArgs(this.args);
+		if (!this.story) {
+			return;
+		}
+
+		const current = this.story.getContext();
+		const nextArgs = { ...current.args, [propName]: value };
+		if (JSON.stringify(nextArgs) === JSON.stringify(current.args)) {
+			return;
+		}
+
+		this.story.setContext({
+			args: nextArgs,
+			renderRevision: current.renderRevision + 1,
 		});
-		window.dispatchEvent(
-			new CustomEvent('radiant-docs-args', { detail: { storyId: this.storyId, args: this.args } }),
-		);
+
+		if (typeof value === 'string') {
+			this.syncSegmentPressed(propName, value);
+		}
 	}
 
 	private syncSegmentPressed(propName: string, value: string): void {

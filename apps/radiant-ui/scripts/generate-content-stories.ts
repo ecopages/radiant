@@ -77,9 +77,7 @@ function generateStoryFile(doc: ComponentDoc): string {
 			: '\t[key: string]: unknown;';
 
 	const argsDefaults =
-		controls.length > 0
-			? controls.map((control) => `\t\t${defaultArgValue(control)},`).join('\n')
-			: '';
+		controls.length > 0 ? controls.map((control) => `\t\t${defaultArgValue(control)},`).join('\n') : '';
 
 	const argTypes =
 		controls.length > 0 ? controls.map((control) => `\t\t${argTypeForControl(control)},`).join('\n') : '';
@@ -91,7 +89,8 @@ function generateStoryFile(doc: ComponentDoc): string {
 
 	const childrenType = doc.playground.scenarios[0]?.children != null ? '\n\tchildren: string;' : '';
 
-	const childrenArgType = doc.playground.scenarios[0]?.children != null ? "\n\t\tchildren: { control: { type: 'text' } }," : '';
+	const childrenArgType =
+		doc.playground.scenarios[0]?.children != null ? "\n\t\tchildren: { control: { type: 'text' } }," : '';
 
 	const renderChildren = doc.playground.scenarios[0]?.children != null ? ', args.children' : '';
 
@@ -152,6 +151,7 @@ export const config = {
 \tdependencies: {
 \t\tcomponents: [Canvas, Demo],
 \t\tscripts: [
+\t\t\t'../../components/component-docs/demo.script.tsx',
 \t\t\t'../../components/component-docs/canvas.script.tsx',
 \t\t\t'../../components/component-docs/controls.script.tsx',
 \t\t\t'../../components/component-docs/code.script.tsx',
@@ -193,7 +193,12 @@ async function main(): Promise<void> {
 		.filter((slug) => !SKIP_SLUGS.has(slug))
 		.sort();
 
-	const indexImports: string[] = ["import './alert';", "import './button';", "import './chip';", "import './switch';"];
+	const indexImports: string[] = [
+		"import './alert';",
+		"import './button';",
+		"import './chip';",
+		"import './switch';",
+	];
 
 	for (const slug of slugs) {
 		const docUrl = pathToFileURL(path.join(pagesDir, `${slug}.doc.ts`)).href;

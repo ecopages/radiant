@@ -30,15 +30,10 @@ export {
 	shouldUseSegmentedControl,
 } from './heuristics';
 
-export {
-	clearDocsStories,
-	docsStory,
-	getRegisteredStory,
-	getStoryArgs,
-	getStoryId,
-	renderStory,
-} from './registry';
+export { clearDocsStories, docsStory, getRegisteredStory, getStoryArgs, getStoryId, renderStory } from './registry';
 
 export { buildGenericExampleCode, resolveExampleCode } from './example-code';
 
 export { renderDocsControl, renderDocsControls, renderSegmentedControl } from './render-control';
+
+export { docsStoryContext, type DocsStoryContextValue } from './story-context';

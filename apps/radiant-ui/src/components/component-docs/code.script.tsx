@@ -1,46 +1,34 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
+import { type ContextProvider, consumeContext, onContextUpdate } from '@ecopages/radiant/context';
 import '@/content/stories';
-import {
-	getRegisteredStory,
-	getStoryArgs,
-	resolveExampleCode,
-	type DocsArgs,
-} from '@/lib/docs-stories';
+import { docsStoryContext } from '@/lib/docs-stories/story-context';
+import { getRegisteredStory, resolveExampleCode, type DocsArgs } from '@/lib/docs-stories';
 import { highlightExampleCode } from '@/lib/docs-stories/highlight-code';
 
 @customElement('radiant-docs-code')
 export class DocsCodeElement extends RadiantElement {
-	private args: DocsArgs = {};
+	@consumeContext(docsStoryContext) story?: ContextProvider<typeof docsStoryContext>;
 
 	private get storyId(): string {
-		return this.dataset.storyId ?? '';
+		return this.story?.getContext().storyId || this.dataset.storyId || '';
 	}
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		const entry = getRegisteredStory(this.storyId);
-		this.args = entry ? getStoryArgs(entry.meta, entry.story) : {};
-		window.addEventListener('radiant-docs-args', this.onArgsChange);
 		this.refreshHighlight();
 	}
 
-	override disconnectedCallback(): void {
-		window.removeEventListener('radiant-docs-args', this.onArgsChange);
-		super.disconnectedCallback();
-	}
-
-	private readonly onArgsChange = (event: Event) => {
-		const detail = (event as CustomEvent<{ storyId: string; args: DocsArgs }>).detail;
-		if (detail?.storyId !== this.storyId) return;
-		this.args = detail.args;
+	@onContextUpdate({ context: docsStoryContext, select: (ctx) => ctx.args })
+	onArgsChange(_args: DocsArgs): void {
 		this.refreshHighlight();
-	};
+	}
 
 	private getCode(): string {
 		const entry = getRegisteredStory(this.storyId);
 		if (!entry) return '';
-		return resolveExampleCode(entry.meta, this.args);
+		const args = this.story?.getContext().args ?? {};
+		return resolveExampleCode(entry.meta, args);
 	}
 
 	private refreshHighlight(): void {

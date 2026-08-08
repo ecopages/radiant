@@ -86,7 +86,5 @@ export function renderDocsControl(control: ResolvedDocsControl, args: DocsArgs):
 }
 
 export function renderDocsControls(controls: ResolvedDocsControl[], args: DocsArgs): JsxRenderable {
-	return (
-		<div class="docs-story-controls__grid">{controls.map((control) => renderDocsControl(control, args))}</div>
-	);
+	return <div class="docs-story-controls__grid">{controls.map((control) => renderDocsControl(control, args))}</div>;
 }
