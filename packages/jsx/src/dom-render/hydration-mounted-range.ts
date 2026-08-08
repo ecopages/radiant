@@ -169,18 +169,14 @@ function hydrateTemplateRange(
 	rootTarget: HTMLElement,
 	bindingBaseIndex: number,
 ): TemplateInstance | undefined {
-	const hostRoot = existingNodes[0];
-
-	// Blueprint paths resolve against a single root node, so a child spanning
-	// several roots cannot be placed this way.
-	if (existingNodes.length !== 1 || !(hostRoot instanceof Element)) {
+	if (existingNodes.length === 0) {
 		return undefined;
 	}
 
 	return flushWithDeferredProperties((deferredProperties) =>
 		hydrateTemplateInstance(template, rootTarget, deferredProperties, {
 			bindingBaseIndex,
-			hostRoot,
+			hostRoots: existingNodes,
 			rootTarget,
 		}),
 	);
