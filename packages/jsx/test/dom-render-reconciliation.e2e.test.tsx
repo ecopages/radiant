@@ -72,6 +72,29 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(rerenderedButton).toBe(initialButton);
 	});
 
+	test('reorders keyed iterable children from the automatic-runtime key argument', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderList = (values: string[]) =>
+			jsx('ul', {
+				children: values.map((value) => jsx('li', { children: value }, value)),
+			});
+
+		root.render(renderList(['alpha', 'beta']));
+
+		const initialItems = Array.from(container.querySelectorAll('li'));
+		expect(initialItems.map((item) => item.textContent)).toEqual(['alpha', 'beta']);
+
+		root.render(renderList(['beta', 'alpha']));
+
+		const rerenderedItems = Array.from(container.querySelectorAll('li'));
+		expect(rerenderedItems.map((item) => item.textContent)).toEqual(['beta', 'alpha']);
+		expect(rerenderedItems[0]).toBe(initialItems[1]);
+		expect(rerenderedItems[1]).toBe(initialItems[0]);
+	});
+
 	test('reorders keyed iterable children without recreating their DOM nodes', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
