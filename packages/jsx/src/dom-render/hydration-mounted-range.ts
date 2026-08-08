@@ -8,7 +8,7 @@ import {
 	flushDeferredProperties,
 	getIterableChildren,
 	getKeyedChildren,
-	isIterableValue,
+	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,
 	unwrapKeyedValue,
@@ -101,7 +101,7 @@ function hydrateMountedRangeContentSnapshot(
 		}
 	}
 
-	if (isTemplateResultLike(nextValue) || isIterableValue(nextValue)) {
+	if (isTemplateResultLike(nextValue) || isIterableRenderable(nextValue)) {
 		const nextDeferredProperties: DeferredPropertyBinding[] = [];
 		const mounted = updateRangeContent(
 			startMarker,

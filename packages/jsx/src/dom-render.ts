@@ -7,7 +7,8 @@ import {
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
-import { applyAttributeBinding, disposeMountedRoot } from './dom-render/reconciliation.ts';
+import { applyBindingToElement } from './dom-render/bindings.ts';
+import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
 import {
 	createNodesFromValue,
 	flushDeferredProperties,
@@ -257,7 +258,10 @@ function attemptFlatHydration(element: JsxRenderable, target: HTMLElement): Flat
 				return;
 			}
 
-			applyAttributeBinding(element, parsedBinding, binding.value, target, deferredProperties);
+			applyBindingToElement(element, parsedBinding, binding.value, {
+				rootTarget: target,
+				deferredProperties,
+			});
 		})
 	) {
 		return { kind: 'full-rerender' };

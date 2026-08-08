@@ -1,4 +1,4 @@
-import type { BindingKind } from '../hydration/hydration-bindings.ts';
+import type { BindingKind } from '../factory/template-shape.ts';
 import type { JsxKey, SignalLike, SubscribableJsxValue } from '../types/index.ts';
 
 /**

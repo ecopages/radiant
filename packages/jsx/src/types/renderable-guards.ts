@@ -190,7 +190,10 @@ export function isIterableJsxChild(value: JsxRenderable): value is Iterable<JsxR
 }
 
 /**
- * Resolves keyed, subscribable, and signal wrappers to a concrete snapshot value.
+ * Resolves subscribable and signal wrappers to a concrete snapshot value.
+ *
+ * Used both to read a reactive binding's current value and to decide attribute
+ * vs property binding shape during JSX compilation, which need the same unwrap.
  *
  * @param value Renderable or reactive wrapper to unwrap.
  * @returns The innermost non-reactive value.
@@ -202,24 +205,6 @@ export function resolveReactiveSnapshot(value: unknown): unknown {
 
 	if (isSignalLikeValue(value)) {
 		return resolveReactiveSnapshot(value.get());
-	}
-
-	return value;
-}
-
-/**
- * Resolves reactive wrappers for attribute binding-shape decisions during JSX compilation.
- *
- * @param value Attribute value that may be wrapped in a reactive source.
- * @returns The innermost value used to choose attribute vs property binding.
- */
-export function resolveBindingShapeValue(value: unknown): unknown {
-	if (isSubscribableJsxValue(value)) {
-		return resolveBindingShapeValue(value.getValue());
-	}
-
-	if (isSignalLikeValue(value)) {
-		return resolveBindingShapeValue(value.get());
 	}
 
 	return value;

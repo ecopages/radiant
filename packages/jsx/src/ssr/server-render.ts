@@ -1,11 +1,4 @@
-import { forEachNormalizedAttribute } from '../factory/attribute-normalize.ts';
-import {
-	shouldUseAttributeBindingByDefaultForElement,
-	shouldUseBooleanAttributeBinding,
-} from '../factory/binding-defaults.ts';
 import { getJsxGlobalSymbol } from './global-symbol.ts';
-import { resolveBindingShapeValue } from '../types/renderable-guards.ts';
-import { renderJsxRenderableToString } from './serialize-plain.ts';
 import { serializeRenderable } from './serialize-renderable.ts';
 import { createServerRenderedCustomElement as createServerRenderedIntrinsicCustomElement } from './server-rendered-custom-element.ts';
 import {
@@ -184,13 +177,6 @@ function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): str
 	const serverRenderedCustomElement = createServerRenderedIntrinsicCustomElement(
 		template.rootLocalName,
 		template.ssrIntrinsicProps,
-		{
-			forEachNormalizedAttribute,
-			renderValueToString: renderJsxRenderableToString,
-			resolveBindingShapeValue,
-			shouldUseAttributeBindingByDefaultForElement,
-			shouldUseBooleanAttributeBinding,
-		},
 	);
 
 	if (!serverRenderedCustomElement) {

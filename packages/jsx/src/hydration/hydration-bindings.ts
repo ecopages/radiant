@@ -16,9 +16,6 @@ import type { JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
 import { getTemplateInterpolationParts, type BindingKind } from '../factory/template-shape.ts';
 
-export type { BindingKind, TemplateInterpolationPart } from '../factory/template-shape.ts';
-export { ATTRIBUTE_BINDING_PATTERN, getBindingKind, getTemplateInterpolationParts } from '../factory/template-shape.ts';
-
 /** Attribute prefix used for emitted SSR hydration markers. */
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';
 
@@ -169,7 +166,7 @@ export function visitHydrationBindingMarkers(
 			visit(element, attribute);
 		}
 
-		if (element !== target && shouldSkipHydrationSubtree(element)) {
+		if (element !== target && shouldSkipHydrationSubtree(element.localName)) {
 			return;
 		}
 
@@ -217,7 +214,7 @@ function collectTemplateBindings(
 	state: { nextIndex: number },
 	options: CollectHydrationBindingsOptions,
 ): void {
-	if (options.skipNestedCustomElementRoots && isCustomElementTemplateRoot(template)) {
+	if (options.skipNestedCustomElementRoots && shouldSkipHydrationSubtree(template.rootLocalName ?? '')) {
 		return;
 	}
 
@@ -242,12 +239,4 @@ function collectTemplateBindings(
 			collectValueBindings(template.values[index] as JsxRenderable, bindings, state, options);
 		}
 	}
-}
-
-function isCustomElementTemplateRoot(template: TemplateResultLike): boolean {
-	const openingSegment = template.strings[0]?.trimStart() ?? '';
-	const tagMatch = /^<([a-z][\w.-]*)\b/i.exec(openingSegment);
-	const tagName = tagMatch?.[1];
-
-	return tagName !== undefined && shouldSkipHydrationSubtree({ localName: tagName } as Element);
 }

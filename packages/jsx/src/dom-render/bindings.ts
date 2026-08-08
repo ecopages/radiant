@@ -7,6 +7,13 @@ import type { BindingDescriptor, DeferredPropertyBinding, LiveAttributePart } fr
 type ApplyBindingOptions = {
 	rootTarget: HTMLElement;
 	deferredProperties: DeferredPropertyBinding[];
+	/**
+	 * Live template part backing this binding, when one exists.
+	 *
+	 * Present for mounted template parts, which cache `previousValue` to skip redundant
+	 * DOM writes. Absent for one-shot hydration marker application, where no live part
+	 * has been created yet.
+	 */
 	livePart?: LiveAttributePart;
 };
 
@@ -112,30 +119,6 @@ export function applyBindingToElement(
 			if (livePart) livePart.previousValue = resolvedValue;
 			return;
 	}
-}
-
-/** Applies a hydration binding marker to an existing SSR element. */
-export function applyAttributeBinding(
-	element: Element,
-	binding: Exclude<BindingDescriptor, { kind: 'child' }>,
-	value: unknown,
-	rootTarget: HTMLElement,
-	deferredProperties: DeferredPropertyBinding[],
-): void {
-	applyBindingToElement(element, binding, value, { rootTarget, deferredProperties });
-}
-
-/** Applies a binding to a live template attribute part. */
-export function applyResolvedAttributeBinding(
-	part: LiveAttributePart,
-	value: unknown,
-	deferredProperties: DeferredPropertyBinding[],
-): void {
-	applyBindingToElement(part.element, part.binding, value, {
-		rootTarget: part.rootTarget,
-		deferredProperties,
-		livePart: part,
-	});
 }
 
 function asEventBindingListener(value: unknown): EventListenerOrEventListenerObject | null {
