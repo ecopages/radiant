@@ -1,4 +1,5 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import {
 	PopoverController,
@@ -272,14 +273,21 @@ export class RuiPopoverTrigger extends RadiantElement {
 
 	override connectedCallback(): void {
 		super.connectedCallback();
+		if (isServer) {
+			return;
+		}
 		queueMicrotask(() => this.syncToPopover());
 	}
 
 	@bound
 	@onUpdated(['open'])
 	syncToPopover(): void {
+		if (isServer) {
+			return;
+		}
+
 		const popover = this.getPopover();
-		if (!popover) {
+		if (!popover || typeof popover.setOpen !== 'function') {
 			return;
 		}
 		if (popover.open !== this.open) {
@@ -295,7 +303,9 @@ export class RuiPopoverTrigger extends RadiantElement {
 		}
 		this.open = !this.open;
 		const popover = this.getPopover();
-		popover?.setOpen(this.open);
+		if (popover && typeof popover.setOpen === 'function') {
+			popover.setOpen(this.open);
+		}
 	}
 
 	@onEvent({ selector: 'rui-popover', type: 'rui-open-change' })
