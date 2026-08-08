@@ -51,10 +51,10 @@ export const HYDRATE_SCENARIOS: HydrateScenario[] = [
 		),
 	},
 	{
-		name: 'list-rebuild',
+		name: 'list-dynamic-children',
 		description:
-			'List children carrying dynamic text. Hydration cannot reconnect these today, so the SSR subtree is discarded and rebuilt — the gap against list-reconnect is the cost of that fallback.',
-		reconnects: false,
+			'List children carrying dynamic text as well as attributes. These reconnect through the same path as a root template; the gap against list-reconnect is the cost of the extra child ranges.',
+		reconnects: true,
 		build: () => (
 			<div class="list">
 				{items.map((item) => (

@@ -1,5 +1,5 @@
 import type { TemplateResultLike } from '../types/index.ts';
-import { resolveHydrationMarkerAttributeName } from '../hydration/hydration-bindings.ts';
+import { planTemplateHydrationIndices, resolveHydrationMarkerAttributeName } from '../hydration/hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
 import { collectHydratedChildRanges, isolateHydratedTextRange, type HydratedChildRange } from './hydration-planning.ts';
@@ -8,6 +8,7 @@ import { getNodeAtPath, getPathKey } from './path-utils.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
 import { createTemplateInstanceUpdate } from './template-instance.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
+import type { TemplateHydrationIndexPlan } from '../hydration/hydration-bindings.ts';
 import type {
 	ChildTemplatePart,
 	DeferredPropertyBinding,
@@ -17,10 +18,27 @@ import type {
 } from './types.ts';
 
 export type HydrateTemplateInstanceOptions = {
-	attributeBindingIndices?: ReadonlyMap<number, number>;
+	/**
+	 * First global SSR marker index owned by this template.
+	 *
+	 * Marker attributes are numbered across the whole document, so a nested template
+	 * cannot derive its own names from local value indexes.
+	 */
+	bindingBaseIndex?: number;
+	/**
+	 * Root node this template already owns in the host DOM.
+	 *
+	 * Supplying it resolves blueprint paths directly against that node. The
+	 * `pathRootOffset` form has to index into `target.childNodes`, which is O(host
+	 * children) per call and therefore quadratic when hydrating a long list.
+	 */
+	hostRoot?: Node;
 	pathRootOffset?: number;
 	rootTarget?: HTMLElement;
 };
+
+/** Resolves a blueprint-relative path to the corresponding host node. */
+type HostPathResolver = (path: readonly number[]) => Node | undefined;
 
 /**
  * Reconstructs a live template instance around existing SSR DOM.
@@ -37,6 +55,8 @@ export function hydrateTemplateInstance(
 ): TemplateInstance | undefined {
 	const pathRootOffset = options.pathRootOffset ?? 0;
 	const rootTarget = options.rootTarget ?? target;
+	const indexPlan = planTemplateHydrationIndices(template, options.bindingBaseIndex ?? 0);
+	const resolveHostNode = createHostPathResolver(target, options.hostRoot, pathRootOffset);
 	const compiledTemplate = getCompiledTemplate(template);
 	const childParts = compiledTemplate.parts.filter((part): part is ChildTemplatePart => part.type === 'child');
 	const hydratedChildRanges = collectHydratedChildRanges(
@@ -45,14 +65,13 @@ export function hydrateTemplateInstance(
 		template.values,
 	);
 	const parts = createHydratedLiveTemplateParts(
-		target,
 		compiledTemplate.blueprint.content,
 		compiledTemplate.parts,
 		template.values,
 		hydratedChildRanges,
 		{
-			attributeBindingIndices: options.attributeBindingIndices,
-			pathRootOffset,
+			indexPlan,
+			resolveHostNode,
 			rootTarget,
 		},
 	);
@@ -66,7 +85,7 @@ export function hydrateTemplateInstance(
 		compiled: compiledTemplate,
 		parts,
 		rootTarget,
-		rootNodes: Array.from(target.childNodes).slice(pathRootOffset, pathRootOffset + nodeCount),
+		rootNodes: collectRootNodes(target, options.hostRoot, pathRootOffset, nodeCount),
 		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
 
@@ -82,33 +101,63 @@ export function hydrateTemplateInstance(
 }
 
 /**
- * Maps blueprint-relative paths onto a host slice when hydrating one
- * single-root template child inside an iterable root.
+ * Builds the path resolver for one hydration pass.
  *
- * Assumes each iterable child template owns one root node at blueprint path
- * `[0]`; multi-root template children are not supported in iterable hydration.
+ * Both forms assume the template owns a single root node — blueprint path `[0]` —
+ * which is what the JSX factory always produces. `hostRoot` addresses that node
+ * directly; the offset form locates it positionally for callers that only know
+ * where the slice begins.
  */
-function mapBlueprintPathToHostPath(path: readonly number[], pathRootOffset: number): readonly number[] {
-	if (path.length === 0) {
-		return [pathRootOffset];
+function createHostPathResolver(
+	target: HTMLElement,
+	hostRoot: Node | undefined,
+	pathRootOffset: number,
+): HostPathResolver {
+	if (hostRoot) {
+		// Blueprint paths are rooted at `[0]`, so both `[]` and `[0]` address the root
+		// node itself; anything deeper is resolved relative to it.
+		return (path) => (path.length <= 1 ? hostRoot : getNodeAtPath(hostRoot, path.slice(1)));
 	}
 
-	return [pathRootOffset, ...path.slice(1)];
+	return (path) => getNodeAtPath(target, path.length === 0 ? [pathRootOffset] : [pathRootOffset, ...path.slice(1)]);
+}
+
+/** Collects a template's root nodes without materializing the host's whole child list. */
+function collectRootNodes(
+	target: HTMLElement,
+	hostRoot: Node | undefined,
+	pathRootOffset: number,
+	nodeCount: number,
+): Node[] {
+	if (hostRoot) {
+		return [hostRoot];
+	}
+
+	const rootNodes: Node[] = [];
+
+	for (let index = 0; index < nodeCount; index += 1) {
+		const node = target.childNodes[pathRootOffset + index];
+
+		if (node) {
+			rootNodes.push(node);
+		}
+	}
+
+	return rootNodes;
 }
 
 function createHydratedLiveTemplateParts(
-	target: HTMLElement,
 	blueprint: DocumentFragment,
 	parts: readonly TemplatePart[],
 	values: readonly unknown[],
 	hydratedChildRanges: ReadonlyMap<number, HydratedChildRange>,
 	options: {
-		attributeBindingIndices?: ReadonlyMap<number, number>;
-		pathRootOffset: number;
+		indexPlan: TemplateHydrationIndexPlan;
+		resolveHostNode: HostPathResolver;
 		rootTarget: HTMLElement;
 	},
 ): LiveTemplatePart[] {
-	const { attributeBindingIndices, pathRootOffset, rootTarget } = options;
+	const { indexPlan, resolveHostNode, rootTarget } = options;
 	const liveParts = new Map<number, LiveTemplatePart>();
 	const childPartEntries = parts
 		.map((part, partIndex) => ({ part, partIndex }))
@@ -132,17 +181,19 @@ function createHydratedLiveTemplateParts(
 
 	for (const [partIndex, part] of parts.entries()) {
 		if (part.type === 'attribute') {
-			const targetNode = getNodeAtPath(target, mapBlueprintPathToHostPath(part.path, pathRootOffset));
+			const targetNode = resolveHostNode(part.path);
 
 			if (!(targetNode instanceof Element)) {
 				continue;
 			}
 
-			const markerName = attributeBindingIndices?.has(part.index)
-				? resolveHydrationMarkerAttributeName(attributeBindingIndices.get(part.index)!)
-				: part.markerName;
+			// Marker names are global, so they come from the index plan rather than the
+			// blueprint's local numbering.
+			const globalIndex = indexPlan.attributeIndices.get(part.index);
 
-			targetNode.removeAttribute(markerName);
+			targetNode.removeAttribute(
+				globalIndex === undefined ? part.markerName : resolveHydrationMarkerAttributeName(globalIndex),
+			);
 			liveParts.set(partIndex, {
 				binding: part.binding,
 				element: targetNode,
@@ -161,7 +212,7 @@ function createHydratedLiveTemplateParts(
 			continue;
 		}
 
-		const parentNode = getNodeAtPath(target, mapBlueprintPathToHostPath(hydratedRange.parentPath, pathRootOffset));
+		const parentNode = resolveHostNode(hydratedRange.parentPath);
 
 		if (!parentNode) {
 			continue;
@@ -192,7 +243,14 @@ function createHydratedLiveTemplateParts(
 		liveParts.set(partIndex, {
 			endMarker,
 			index: part.index,
-			mounted: hydrateMountedRangeContent(startMarker, endMarker, values[part.index], existingNodes, rootTarget),
+			mounted: hydrateMountedRangeContent(
+				startMarker,
+				endMarker,
+				values[part.index],
+				existingNodes,
+				rootTarget,
+				indexPlan.childBaseIndices.get(part.index) ?? 0,
+			),
 			startMarker,
 			type: 'child',
 		});

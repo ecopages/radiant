@@ -1,4 +1,6 @@
-import type { JsxKey, TemplateResultLike } from '../types/index.ts';
+import { countHydrationMarkers } from '../hydration/hydration-bindings.ts';
+import { hydrateTemplateInstance } from './hydration.ts';
+import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
 import { getNodeAtPath } from './path-utils.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
@@ -39,6 +41,7 @@ export function hydrateMountedRangeContent(
 	value: unknown,
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
+	bindingBaseIndex: number,
 ): MountedRangeContent {
 	const nextValue = unwrapKeyedValue(value);
 
@@ -53,7 +56,14 @@ export function hydrateMountedRangeContent(
 		);
 	}
 
-	return hydrateMountedRangeContentSnapshot(startMarker, endMarker, nextValue, existingNodes, rootTarget);
+	return hydrateMountedRangeContentSnapshot(
+		startMarker,
+		endMarker,
+		nextValue,
+		existingNodes,
+		rootTarget,
+		bindingBaseIndex,
+	);
 }
 
 function hydrateMountedRangeContentSnapshot(
@@ -62,22 +72,14 @@ function hydrateMountedRangeContentSnapshot(
 	nextValue: unknown,
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
+	bindingBaseIndex: number,
 ): MountedRangeContent {
 	const bootstrapMounted = createHydratedBootstrapMounted(existingNodes);
 
 	if (isTemplateResultLike(nextValue)) {
-		const hydratedTemplateInstance = hydrateStaticTemplateRange(
-			nextValue,
-			existingNodes,
-			startMarker,
-			endMarker,
-			rootTarget,
-		);
+		const hydratedTemplateInstance = hydrateTemplateRange(nextValue, existingNodes, rootTarget, bindingBaseIndex);
 
 		if (hydratedTemplateInstance) {
-			flushWithDeferredProperties((deferredProperties) =>
-				hydratedTemplateInstance.update(nextValue.values, deferredProperties),
-			);
 			return { instance: hydratedTemplateInstance, kind: 'template' };
 		}
 	}
@@ -85,7 +87,13 @@ function hydrateMountedRangeContentSnapshot(
 	const iterableChildren = getIterableChildren(nextValue);
 
 	if (iterableChildren) {
-		const hydratedListState = hydrateListRangeContent(endMarker, iterableChildren, existingNodes, rootTarget);
+		const hydratedListState = hydrateListRangeContent(
+			endMarker,
+			iterableChildren,
+			existingNodes,
+			rootTarget,
+			bindingBaseIndex,
+		);
 
 		if (hydratedListState) {
 			return hydratedListState;
@@ -145,52 +153,37 @@ function createHydratedBootstrapMounted(existingNodes: readonly Node[]): Mounted
 	return { kind: 'nodes', nodes: existingNodes };
 }
 
-function hydrateStaticTemplateRange(
+/**
+ * Reconnects one template child of a range against the SSR nodes it already owns.
+ *
+ * Delegates to the full template hydrator instead of reimplementing a reduced
+ * version of it, so a child carrying dynamic content reconnects exactly like a
+ * root template does rather than being discarded and rebuilt.
+ *
+ * @param bindingBaseIndex First global SSR marker index owned by this child.
+ * @returns The mounted instance, or `undefined` when the child cannot be recovered.
+ */
+function hydrateTemplateRange(
 	template: TemplateResultLike,
 	existingNodes: readonly Node[],
-	startMarker: Text,
-	endMarker: Text,
 	rootTarget: HTMLElement,
+	bindingBaseIndex: number,
 ): TemplateInstance | undefined {
-	const compiledTemplate = getCompiledTemplate(template);
-	const attributeParts = compiledTemplate.parts.filter(
-		(part): part is AttributeTemplatePart => part.type === 'attribute',
-	);
+	const hostRoot = existingNodes[0];
 
-	if (attributeParts.length !== compiledTemplate.parts.length) {
+	// Blueprint paths resolve against a single root node, so a child spanning
+	// several roots cannot be placed this way.
+	if (existingNodes.length !== 1 || !(hostRoot instanceof Element)) {
 		return undefined;
 	}
 
-	const templateRoot = createHydratedRangeRoot(startMarker, endMarker);
-	const parts: LiveAttributePart[] = [];
-
-	for (const part of attributeParts) {
-		const targetNode = getNodeAtPath(templateRoot, part.path);
-
-		if (!(targetNode instanceof Element)) {
-			return undefined;
-		}
-
-		targetNode.removeAttribute(part.markerName);
-		parts.push({
-			binding: part.binding,
-			element: targetNode,
-			index: part.index,
+	return flushWithDeferredProperties((deferredProperties) =>
+		hydrateTemplateInstance(template, rootTarget, deferredProperties, {
+			bindingBaseIndex,
+			hostRoot,
 			rootTarget,
-			subscriptionSerial: 0,
-			type: 'attribute',
-		});
-	}
-
-	const instance: TemplateInstance = {
-		compiled: compiledTemplate,
-		parts,
-		rootTarget,
-		rootNodes: existingNodes,
-		update: createTemplateInstanceUpdate(parts, rootTarget),
-	};
-
-	return instance;
+		}),
+	);
 }
 
 /**
@@ -208,11 +201,13 @@ function hydrateListRangeContent(
 	children: readonly unknown[],
 	existingNodes: readonly Node[],
 	rootTarget: HTMLElement,
+	bindingBaseIndex: number,
 ): MountedIndexedList | MountedKeyedList | undefined {
 	const keyedChildren = getKeyedChildren(children);
 	const indexedRecords: MountedRangeRecord[] = [];
 	const keyedRecords = new Map<JsxKey, MountedRangeRecord>();
 	let nextNodeIndex = 0;
+	let nextBindingIndex = bindingBaseIndex;
 
 	for (const [index, child] of children.entries()) {
 		const keyedChild = keyedChildren?.[index];
@@ -228,8 +223,18 @@ function hydrateListRangeContent(
 			childNodes,
 			existingNodes[nextNodeIndex + childNodeCount] ?? endMarker,
 		);
-		record.mounted = hydrateMountedRangeContent(record.start, record.end, childValue, childNodes, rootTarget);
+		record.mounted = hydrateMountedRangeContent(
+			record.start,
+			record.end,
+			childValue,
+			childNodes,
+			rootTarget,
+			nextBindingIndex,
+		);
 		nextNodeIndex += childNodeCount;
+		// Children are laid out in SSR order, so each consumes the slice of the global
+		// marker namespace that its own subtree emitted.
+		nextBindingIndex += countHydrationMarkers(childValue as JsxRenderable);
 
 		if (keyedChild) {
 			keyedRecords.set(keyedChild.key, record);
