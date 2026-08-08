@@ -6,6 +6,7 @@ import type {
 	JsxComponent,
 	JsxCustomIntrinsicElements,
 	JsxIntrinsicAttributes,
+	JsxKey,
 	JsxRenderable,
 	SignalLike,
 	SubscribableJsxValue,
@@ -79,14 +80,27 @@ export type { JsxFragment };
 export const Fragment: JsxFragment = fragmentSymbol;
 
 /**
+ * Merge the automatic-runtime `key` argument into props.
+ *
+ * @remarks
+ * esbuild / TypeScript emit `jsx(type, props, key)` — key is not inside props.
+ * Without this, keyed list reconciliation silently falls back to index mode.
+ */
+function propsWithKey<Props extends object>(props: Props, key?: JsxKey): Props {
+	if (key === undefined) return props;
+	return { ...props, key };
+}
+
+/**
  * Creates a JSX element where the `children` slot is treated as a single
  * logical value.
  */
 export function jsx<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
+	key?: JsxKey,
 ): JsxRenderable {
-	return createJsxElement(type, props, 'single');
+	return createJsxElement(type, propsWithKey(props, key), 'single');
 }
 
 /**
@@ -96,18 +110,23 @@ export function jsx<Props extends object>(
 export function jsxs<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
+	key?: JsxKey,
 ): JsxRenderable {
-	return createJsxElement(type, props, 'multiple');
+	return createJsxElement(type, propsWithKey(props, key), 'multiple');
 }
 
 /**
  * Development JSX entrypoint used by toolchains that emit `jsxDEV(...)` calls.
+ *
+ * @remarks
+ * Matches the automatic JSX signature: `(type, props, key, ...)`.
  */
 export function jsxDEV<Props extends object>(
 	type: string | JsxFragment | JsxComponent<Props>,
 	props: Props,
+	key?: JsxKey,
 ): JsxRenderable {
-	return jsx(type, props);
+	return jsx(type, props, key);
 }
 
 /**
