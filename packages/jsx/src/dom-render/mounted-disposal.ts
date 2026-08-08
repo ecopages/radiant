@@ -10,8 +10,8 @@ import type {
 /**
  * Releases runtime state associated with a root-level mounted tree.
  *
- * Currently only template-mounted roots carry disposable state (event listeners and
- * subscriptions held in live parts).
+ * Template roots additionally tear down their live parts; every root releases the
+ * host's delegated listeners, since flat and iterable hydration attach those too.
  *
  * @param root Mounted root descriptor stored in the root render state.
  */
@@ -19,7 +19,10 @@ export function disposeMountedRoot(root: MountedRoot): void {
 	if (root.kind === 'template') {
 		disposeTemplateInstance(root.instance);
 		clearDelegationRoot(root.instance.rootTarget);
+		return;
 	}
+
+	clearDelegationRoot(root.rootTarget);
 }
 
 /**
