@@ -1,16 +1,11 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
+import { type AdjacentNavLink, findAdjacentNavItems } from '@/lib/adjacent-nav-item';
 
-type PaginationLink = {
-	href: string;
-	title: string;
-};
+type PaginationLink = AdjacentNavLink;
 
 type PaginationData = {
-	pages: Array<{
-		href: string;
-		title: string;
-	}>;
+	pages: PaginationLink[];
 };
 
 function readPaginationPages(): PaginationData['pages'] {
@@ -49,18 +44,9 @@ export class RadiantDocsPagination extends RadiantElement {
 
 	renderPagination(): void {
 		const pages = readPaginationPages();
-		const currentPath = window.location.pathname;
-		const currentIndex = pages.findIndex((page) => page.href === currentPath);
-		if (currentIndex === -1) {
-			this.prevLink = null;
-			this.nextLink = null;
-			return;
-		}
-
-		const prevPage = currentIndex > 0 ? pages[currentIndex - 1] : null;
-		const nextPage = currentIndex < pages.length - 1 ? pages[currentIndex + 1] : null;
-		this.prevLink = prevPage ? { href: prevPage.href, title: prevPage.title } : null;
-		this.nextLink = nextPage ? { href: nextPage.href, title: nextPage.title } : null;
+		const adjacent = findAdjacentNavItems(pages, window.location.pathname);
+		this.prevLink = adjacent?.prev ?? null;
+		this.nextLink = adjacent?.next ?? null;
 	}
 
 	override render() {
