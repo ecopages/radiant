@@ -20,13 +20,39 @@ import { toastState } from './toast-state';
  */
 const toastDeadlines = new Map<string, number>();
 
+/**
+ * Frozen leftover ms while a toast is paused (hover / interaction / hidden tab).
+ *
+ * @remarks
+ * Absolute deadlines keep ticking during pause; this map holds remaining time so
+ * resume continues from where the countdown left off.
+ */
+const toastRemainingMs = new Map<string, number>();
+
 function deadlineKey(id: ToastId): string {
 	return String(id);
 }
 
 function clearToastDeadline(id: ToastId): void {
 	if (id === '') return;
-	toastDeadlines.delete(deadlineKey(id));
+	const key = deadlineKey(id);
+	toastDeadlines.delete(key);
+	toastRemainingMs.delete(key);
+}
+
+/** Clears shared dismiss timers (test / Storybook resets). */
+export function resetToastDeadlines(): void {
+	toastDeadlines.clear();
+	toastRemainingMs.clear();
+}
+
+function freezeToastDeadline(id: ToastId): void {
+	if (id === '') return;
+	const key = deadlineKey(id);
+	const deadline = toastDeadlines.get(key);
+	if (deadline == null) return;
+	toastRemainingMs.set(key, Math.max(0, deadline - Date.now()));
+	toastDeadlines.delete(key);
 }
 
 export type RuiToastProps = {
@@ -93,9 +119,9 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	 * Wire pointer listeners, then announce mount after paint so enter CSS can run.
 	 *
 	 * @remarks
-	 * Starts the lifetime timer after paint as well — toaster pause sync can run
-	 * before `timerReady`, which would otherwise leave the toast without a timer.
-	 * On reconnect, re-announce and resume the deadline without replaying enter CSS.
+	 * `mounted` stays true across disconnect so list remounts skip the enter
+	 * animation (avoids an opacity flicker when siblings update). Timer state is
+	 * still reset on disconnect and restarted on reconnect / first paint.
 	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -148,7 +174,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		}
 		this.held = false;
 		this.timerReady = false;
-		this.mounted = false;
 		this.removeEventListener('pointerdown', this.onPointerDown);
 		this.removeEventListener('pointermove', this.onPointerMove);
 		this.removeEventListener('pointerup', this.onPointerUp);
@@ -168,7 +193,10 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 
 	/**
 	 * Hold or release auto-dismiss (toaster-controlled on stack hover).
-	 * Pause clears the timeout but keeps the deadline so resume uses leftover time.
+	 *
+	 * @remarks
+	 * Pause freezes leftover ms so wall-clock time during hover does not consume
+	 * the lifetime. Resume rebuilds the deadline from that remainder.
 	 */
 	setPaused(paused: boolean): void {
 		if (this.held === paused) {
@@ -180,6 +208,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		this.held = paused;
 		if (!this.timerReady || !this.mounted || this.removed) return;
 		if (paused || document.hidden) {
+			freezeToastDeadline(this.resolvedId);
 			this.clearTimer();
 		} else {
 			this.startTimer();
@@ -218,6 +247,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	 * @remarks
 	 * Deadlines live in a module map keyed by toast id so list remounts (sibling
 	 * dismiss / re-render) resume leftover time instead of restarting `duration`.
+	 * Hover pause stores remaining ms separately and rebuilds the deadline on resume.
 	 */
 	private startTimer(): void {
 		if (this.held || this.removed || document.hidden) return;
@@ -230,19 +260,22 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		const id = this.resolvedId;
 		const key = deadlineKey(id);
 		const now = Date.now();
-		let deadline = toastDeadlines.get(key);
-		if (deadline == null) {
-			deadline = now + this.duration;
-			toastDeadlines.set(key, deadline);
+
+		let remaining = toastRemainingMs.get(key);
+		toastRemainingMs.delete(key);
+
+		if (remaining == null) {
+			const deadline = toastDeadlines.get(key);
+			remaining = deadline != null ? deadline - now : this.duration;
 		}
 
-		const remaining = deadline - now;
 		if (remaining <= 0) {
 			clearToastDeadline(id);
 			this.beginRemove();
 			return;
 		}
 
+		toastDeadlines.set(key, now + remaining);
 		this.clearTimer();
 		this.timeoutId = setTimeout(() => {
 			clearToastDeadline(id);

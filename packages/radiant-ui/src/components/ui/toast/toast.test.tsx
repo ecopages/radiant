@@ -1,9 +1,9 @@
 import { describe, expect, it, afterEach } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
 import { RuiToaster, toast, TOAST_COLLAPSED_PEEK, TOAST_GAP } from './index';
-import { collapsedStackHeight, collapsedToastOpacity } from './stack-layout';
+import { collapsedStackHeight } from './stack-layout';
 import type { RuiToast } from './toast.script';
-import type { RuiToaster as RuiToasterElement } from './toaster.script';
+import { resetToastDeadlines } from './toast.script';
 import './toast.script';
 import './toaster.script';
 
@@ -37,6 +37,7 @@ describe('rui-toaster', () => {
 	afterEach(() => {
 		toast.dismiss();
 		toast.clear();
+		resetToastDeadlines();
 	});
 
 	it('renders a toast from the imperative API', async () => {
@@ -151,6 +152,31 @@ describe('rui-toaster', () => {
 		cleanup();
 	});
 
+	it('preserves toast element identity when a newer toast is prepended', async () => {
+		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={60_000} />);
+		await settled();
+
+		toast('First');
+		await settled();
+		const first = host.querySelector('rui-toast') as RuiToast | null;
+		expect(first).not.toBeNull();
+		const firstId = first!.toastId;
+
+		toast('Second');
+		await settled();
+		await settled();
+
+		const els = toastElements(host) as RuiToast[];
+		expect(els).toHaveLength(2);
+		expect(els.find((el) => el.toastId === firstId)).toBe(first);
+		expect(first!.dataset.mounted).toBe('true');
+		expect(els[0]?.toastId).not.toBe(firstId);
+		expect(els[0]?.dataset.front).toBe('true');
+		expect(first!.dataset.front).toBe('false');
+
+		cleanup();
+	});
+
 	it('resumes leftover lifetime after a remount instead of restarting duration', async () => {
 		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={800} />);
 		await settled();
@@ -173,7 +199,7 @@ describe('rui-toaster', () => {
 		cleanup();
 	});
 
-	it('keeps collapsed peeks to three with fading opacity', async () => {
+	it('keeps collapsed peeks to three', async () => {
 		const { host, cleanup } = mount(
 			<RuiToaster expand={false} visibleToasts={6} gap={TOAST_GAP} position="bottom-end" duration={60_000} />,
 		);
@@ -192,11 +218,6 @@ describe('rui-toaster', () => {
 
 		const visible = els.filter((el) => el.dataset.visible !== 'false');
 		expect(visible.length).toBe(TOAST_COLLAPSED_PEEK);
-
-		expect(els[0]?.style.getPropertyValue('--stack-opacity')).toBe(String(collapsedToastOpacity(0)));
-		expect(els[1]?.style.getPropertyValue('--stack-opacity')).toBe(String(collapsedToastOpacity(1)));
-		expect(els[2]?.style.getPropertyValue('--stack-opacity')).toBe(String(collapsedToastOpacity(2)));
-		expect(els[3]?.style.getPropertyValue('--stack-opacity')).toBe('0');
 		expect(els[3]?.dataset.visible).toBe('false');
 
 		const frontHeight = Number.parseFloat(els[0]?.style.height || '0');
@@ -221,7 +242,6 @@ describe('rui-toaster', () => {
 		const els = toastElements(toaster);
 		expect(els.length).toBe(5);
 		expect(els.every((el) => el.dataset.visible === 'true')).toBe(true);
-		expect(els.every((el) => el.style.getPropertyValue('--stack-opacity') === '1')).toBe(true);
 		expect(toaster.dataset.expanded).toBe('true');
 
 		cleanup();
@@ -264,30 +284,34 @@ describe('rui-toaster', () => {
 		cleanup();
 	});
 
-	it('pauses lifetime while the toaster is interacting and resumes leftover time', async () => {
-		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={500} />);
+	it('pauses lifetime on hover and resumes leftover time after leave', async () => {
+		const { host, cleanup } = mount(<RuiToaster position="bottom-end" duration={600} />);
 		await settled();
 
-		toast('Held then resumed');
+		toast('Held on hover');
 		await settled();
 
-		const toaster = host.querySelector('rui-toaster') as RuiToasterElement & {
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		const toaster = host.querySelector('rui-toaster') as unknown as {
 			interacting: boolean;
 			expanded: boolean;
 			syncPauseState: () => void;
 		};
 
-		toaster.interacting = true;
 		toaster.expanded = true;
 		toaster.syncPauseState();
 
-		await new Promise((resolve) => setTimeout(resolve, 700));
+		await new Promise((resolve) => setTimeout(resolve, 900));
 		await settled();
 		expect(host.querySelectorAll('rui-toast').length).toBe(1);
 
-		toaster.interacting = false;
 		toaster.expanded = false;
 		toaster.syncPauseState();
+
+		await new Promise((resolve) => setTimeout(resolve, 250));
+		await settled();
+		expect(host.querySelectorAll('rui-toast').length).toBe(1);
 
 		await new Promise((resolve) => setTimeout(resolve, 700));
 		await settled();

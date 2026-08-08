@@ -52,7 +52,6 @@ rui-toaster[data-x-position='center'] {
 rui-toast {
 	--y: translateY(0);
 	--z-index: 1;
-	--stack-opacity: 1;
 	position: absolute;
 	left: 0;
 	width: 100%;
@@ -97,7 +96,7 @@ rui-toaster[data-y-position='top'] rui-toast:not([data-mounted='true']) {
 }
 
 rui-toast[data-mounted='true'] {
-	opacity: var(--stack-opacity, 1);
+	opacity: 1;
 }
 
 rui-toast[data-mounted='true'][data-visible='false'] {
@@ -116,6 +115,10 @@ rui-toast[data-swiping='true'] {
 
 rui-toast[data-removed='true'][data-swipe-out='false'] {
 	opacity: 0;
+	transition:
+		transform 400ms ease,
+		opacity 200ms ease,
+		height 400ms ease;
 }
 
 rui-toaster[data-y-position='bottom'] rui-toast[data-removed='true'][data-swipe-out='false'] {
