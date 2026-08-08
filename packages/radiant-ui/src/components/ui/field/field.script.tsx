@@ -97,13 +97,13 @@ export class RuiField extends RadiantElement {
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
 
+	/**
+	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
+	 * real SSR round-trip (`prop:rules` does not survive that boundary; `connectedCallback` never
+	 * runs during SSR).
+	 */
 	constructor() {
 		super();
-		// connectedCallback never runs during real SSR rendering — only this SSR-prep
-		// lifecycle does, and only after `prop:rules` has already been applied to the
-		// instance. Publishing rules onto fieldProvider here is what lets a hydrated field
-		// recover them after a real SSR round-trip, since `prop:rules` itself doesn't
-		// survive that boundary.
 		registerSsrPreparationCallback(this, () => this.fieldProvider.setContext({ rules: this.readFieldRules() }));
 	}
 

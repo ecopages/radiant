@@ -390,6 +390,9 @@ function renderInset({ title }: { title: string }) {
 	);
 }
 
+/**
+ * @remarks Vitest browser viewports are often &lt;768px; `mobileBreakpoint: 0` pins desktop unless a story opts in.
+ */
 const meta = {
 	title: 'Components/Sidebar',
 	component: RuiSidebar,
@@ -402,7 +405,6 @@ const meta = {
 		collapsible: 'off',
 		label: 'Primary',
 		defaultWidth: 256,
-		// Vitest browser viewports are often <768px; pin desktop unless the story opts in.
 		mobileBreakpoint: 0,
 	},
 } satisfies Meta<typeof RuiSidebar>;

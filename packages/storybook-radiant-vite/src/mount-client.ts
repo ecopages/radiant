@@ -11,6 +11,11 @@ type ShowError = (error: { title: string; description: string }) => void;
 
 /**
  * Mount a client-mode story result into the canvas.
+ *
+ * @remarks Radiant custom elements own their light DOM. Reconciling an existing JSX root
+ * into that tree (globals / args updates) races the CE renderer and can wipe authored
+ * children — e.g. sidebar chrome after a theme toggle. Always tear down and remount a
+ * fresh root instead of updating in place.
  */
 export async function mountClientResult(options: {
 	canvasElement: HTMLElement;
@@ -54,10 +59,6 @@ export async function mountClientResult(options: {
 	}
 
 	if (isTemplateResultLike(element) || typeof element === 'object') {
-		// Radiant custom elements own their light DOM. Reconciling an existing JSX
-		// root into that tree (globals / args updates) races the CE renderer and
-		// can wipe authored children — e.g. sidebar chrome after a theme toggle.
-		// Always tear down and remount a fresh root instead of updating in place.
 		const shouldRemount = forceRemount || Boolean(getMountedRoot(canvasElement));
 		const renderTo = ensureRootInner(canvasElement, shouldRemount);
 		let root = getMountedRoot(canvasElement);

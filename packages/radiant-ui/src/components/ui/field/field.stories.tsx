@@ -93,14 +93,15 @@ export const Required: Story = {
 		const canvas = within(canvasElement);
 		const input = canvasElement.querySelector('input[data-rui-control]') as HTMLInputElement;
 
-		await step('aria-required reflects the rule before any interaction', async () => {
-			// A nested <rui-field>'s prop:rules isn't necessarily synced within the same
-			// tick its ancestor <rui-form> connects — waitFor gives it a moment to settle.
-			await waitFor(async () => {
-				await expect(input).toHaveAttribute('aria-required', 'true');
-			});
-			await expect(input).toHaveAttribute('aria-invalid', 'false');
-		});
+		await step(
+			'aria-required reflects the rule before any interaction (nested field rules may settle after form connect)',
+			async () => {
+				await waitFor(async () => {
+					await expect(input).toHaveAttribute('aria-required', 'true');
+				});
+				await expect(input).toHaveAttribute('aria-invalid', 'false');
+			},
+		);
 
 		await step('submitting empty enforces it', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Save' }));

@@ -256,6 +256,10 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 		}
 	}
 
+	/**
+	 * @remarks Keeps per-depth scaling for stacked toasts; clamping (e.g. at 0.92) makes toasts
+	 * past the default `visibleToasts=3` look identical and stack poorly.
+	 */
 	private patchStackLayout(): void {
 		const list = this.querySelector<HTMLOListElement>('.rui-toaster');
 		if (!list) return;
@@ -305,8 +309,6 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 				el.style.height = `${height}px`;
 				el.style.overflow = 'visible';
 			} else {
-				// Keep scaling for every depth — clamping (e.g. at 0.92) makes toasts
-				// past the default visibleToasts=3 look identical and stack poorly.
 				const scale = Math.max(0.7, 1 - index * 0.05);
 				el.style.setProperty('--y', `translateY(${lift * index * this.gap}px) scale(${scale})`);
 				el.style.height = `${frontHeight}px`;

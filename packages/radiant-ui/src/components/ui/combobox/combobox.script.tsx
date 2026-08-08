@@ -359,6 +359,7 @@ export class RuiCombobox extends RadiantElement {
 		this.setVisualFocusCombobox();
 	}
 
+	/** @remarks Typing returns visual focus to the textbox. */
 	@onEvent({ ref: 'root', type: 'input' })
 	onRootInput(event: Event): void {
 		if (!this.isComboboxInput(event.target)) {
@@ -375,7 +376,6 @@ export class RuiCombobox extends RadiantElement {
 			this.setOpen(false);
 		}
 
-		// Typing returns visual focus to the textbox.
 		this.setVisualFocusCombobox();
 	}
 
