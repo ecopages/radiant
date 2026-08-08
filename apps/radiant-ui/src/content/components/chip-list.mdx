@@ -1,0 +1,54 @@
+---
+title: Chip List
+description: Chip lists lay out related chips in a semantic list so screen readers announce the collection and each item in order.
+category: Data display
+---
+
+import { meta as ChipListMeta, Default } from '@/content/stories/chip-list';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Chip List
+
+<p class="docs-lede">Chip lists lay out related chips in a semantic list so screen readers announce the collection and each item in order.</p>
+
+## Try it
+
+<Demo of={Default} meta={ChipListMeta} />
+
+## Usage
+
+Wrap `RuiChipListItem` children inside `RuiChipList`. Place `RuiChip` inside each item for consistent styling.
+
+```tsx
+import { RuiChipList, RuiChipListItem } from '@ecopages/radiant-ui/chip-list';
+import { RuiChip } from '@ecopages/radiant-ui/chip';
+
+<RuiChipList aria-label="Topics">
+  <RuiChipListItem><RuiChip>React</RuiChip></RuiChipListItem>
+  <RuiChipListItem><RuiChip>TypeScript</RuiChip></RuiChipListItem>
+</RuiChipList>
+```
+
+## Label the collection
+
+<p>Provide `aria-label` when the chip list is not described by a visible heading — for example, "Applied filters".</p>
+
+## Accessibility
+
+- The list renders with list semantics so assistive technologies enumerate each chip.
+- Give the list an accessible name via `aria-label` or a visible heading referenced with `aria-labelledby`.
+- Keep the number of chips manageable; truncate with a summary chip when the set grows large.

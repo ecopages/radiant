@@ -1,0 +1,63 @@
+---
+title: Tabs
+description: Tabs organize related content into panels where only one is visible at a time — settings sections, product details, or dashboards.
+category: Navigation
+---
+
+import { meta as TabsMeta, Default } from '@/content/stories/tabs';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Tabs
+
+<p class="docs-lede">Tabs organize related content into panels where only one is visible at a time — settings sections, product details, or dashboards.</p>
+
+## Try it
+
+<Demo of={Default} meta={TabsMeta} />
+
+## Usage
+
+Compose `RuiTabList`, `RuiTab`, `RuiTabPanels`, and `RuiTabPanel`. Set `value` to control the active tab.
+
+```tsx
+import { RuiTabs, RuiTabList, RuiTab, RuiTabPanels, RuiTabPanel } from '@ecopages/radiant-ui/tabs';
+
+<RuiTabs value="account" variant="boxed">
+  <RuiTabList>
+    <RuiTab id="account">Account</RuiTab>
+    <RuiTab id="security">Security</RuiTab>
+  </RuiTabList>
+  <RuiTabPanels>
+    <RuiTabPanel id="account">Account settings</RuiTabPanel>
+    <RuiTabPanel id="security">Security settings</RuiTabPanel>
+  </RuiTabPanels>
+</RuiTabs>
+```
+
+## Boxed or ghost
+
+<p>`boxed` tabs have a contained background — good for settings panels. `ghost` tabs sit flush with the page header.</p>
+
+## Manual activation
+
+<p>Set `automatic=\{false}` when switching tabs should require an explicit Enter/Space press.</p>
+
+## Accessibility
+
+- Tab list exposes `role="tablist"` with `aria-selected` on the active tab.
+- Arrow keys move between tabs; activation follows the `automatic` setting.
+- Each panel is labelled by its corresponding tab via `aria-labelledby`.

@@ -1,0 +1,59 @@
+---
+title: Heading
+description: Heading groups an eyebrow, title, and description into a page or section header with consistent typographic rhythm.
+category: Layout
+---
+
+import { meta as HeadingMeta, Default } from '@/content/stories/heading';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Heading
+
+<p class="docs-lede">Heading groups an eyebrow, title, and description into a page or section header with consistent typographic rhythm.</p>
+
+## Try it
+
+<Demo of={Default} meta={HeadingMeta} />
+
+## Usage
+
+Compose with `RuiHeadingEyebrow`, `RuiHeadingTitle`, and `RuiHeadingDescription`. Adjust `size` and `align` for the layout context.
+
+```tsx
+import {
+  RuiHeading,
+  RuiHeadingEyebrow,
+  RuiHeadingTitle,
+  RuiHeadingDescription,
+} from '@ecopages/radiant-ui/heading';
+
+<RuiHeading size="lg" align="start">
+  <RuiHeadingEyebrow>Components</RuiHeadingEyebrow>
+  <RuiHeadingTitle>Button</RuiHeadingTitle>
+  <RuiHeadingDescription>Trigger actions with clear, accessible labels.</RuiHeadingDescription>
+</RuiHeading>
+```
+
+## Semantic wrapper
+
+<p>Set `as` to `header` or `section` when the heading block defines a landmark region on the page.</p>
+
+## Accessibility
+
+- `RuiHeadingTitle` renders the appropriate heading level for the page outline.
+- Do not skip heading levels between the title and surrounding content.
+- Eyebrow text is supplementary — the title carries the primary meaning.

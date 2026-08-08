@@ -1,0 +1,55 @@
+---
+title: Label
+description: Labels name form controls so users and assistive technologies know what data to enter.
+category: Forms
+---
+
+import { meta as LabelMeta, Default } from '@/content/stories/label';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Label
+
+<p class="docs-lede">Labels name form controls so users and assistive technologies know what data to enter.</p>
+
+## Try it
+
+<Demo of={Default} meta={LabelMeta} />
+
+## Usage
+
+Place `RuiLabel` as the first child of `RuiField`. It automatically associates with the nested control.
+
+```tsx
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+
+<RuiField name="username">
+  <RuiLabel>Username</RuiLabel>
+  <RuiInput />
+</RuiField>
+```
+
+## Always visible
+
+<p>Labels should remain visible when the field is focused. Do not rely on placeholder text as a label replacement.</p>
+
+## Accessibility
+
+- Labels are linked to controls via `for` / `id` wiring inside `RuiField`.
+- Write labels as nouns or short phrases — "Email address", not "Enter your email".
+- Required fields should indicate requirement in the label or with adjacent text, not color alone.

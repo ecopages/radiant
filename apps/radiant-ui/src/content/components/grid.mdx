@@ -1,0 +1,52 @@
+---
+title: Grid
+description: Grid provides a semantic table-like structure for tabular data with keyboard navigation and selection built in.
+category: Layout
+---
+
+import { meta as GridMeta, Default } from '@/content/stories/grid';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Grid
+
+<p class="docs-lede">Grid provides a semantic table-like structure for tabular data with keyboard navigation and selection built in.</p>
+
+## Try it
+
+<Demo of={Default} meta={GridMeta} />
+
+## Usage
+
+Populate rows and cells as light-DOM children. Set `label` to name the grid for assistive technologies.
+
+```tsx
+import { RuiGrid } from '@ecopages/radiant-ui/grid';
+
+<RuiGrid label="Team members">
+  {/* row and cell content */}
+</RuiGrid>
+```
+
+## Use for tabular data
+
+<p>Prefer Grid when data has rows and columns with comparable values. Use Treegrid when rows can expand into hierarchies.</p>
+
+## Accessibility
+
+- Provide a descriptive `label` — screen readers announce it when focus enters the grid.
+- Column headers should be marked so users understand cell context.
+- Support arrow-key navigation between focusable cells.

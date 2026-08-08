@@ -1,0 +1,139 @@
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import { unsafeHtml } from '@ecopages/jsx';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs } from '@ecopages/radiant-ui/tabs';
+import { RadiantElement, customElement, onEvent, prop, state } from '@ecopages/radiant';
+import { renderTabLabel } from './code-tab-icons';
+
+/**
+ * Plain-text tabs escape `code`. Rich tabs pass highlighted HTML in `html` and
+ * clipboard text in `content` — strings survive host-attribute JSON round-trips;
+ * JSX/`unsafeHtml` brands do not.
+ */
+export type RadiantCodeTabItem =
+	| {
+			id: string;
+			label: string;
+			code: string;
+	  }
+	| {
+			id: string;
+			label: string;
+			html: string;
+			content: string;
+	  };
+
+export type RadiantCodeTabsProps = {
+	label?: string;
+	tabs?: RadiantCodeTabItem[];
+	copyLabel?: string;
+	defaultSelectedKey?: string;
+	selectedKey?: string;
+};
+
+function isRichTab(tab: RadiantCodeTabItem): tab is Extract<RadiantCodeTabItem, { html: string; content: string }> {
+	return 'html' in tab;
+}
+
+function tabClipboardText(tab: RadiantCodeTabItem): string {
+	return isRichTab(tab) ? tab.content : tab.code;
+}
+
+@customElement('radiant-code-tabs')
+export class RadiantCodeTabs extends RadiantElement {
+	@prop({ type: Array }) tabs: RadiantCodeTabItem[] = [];
+	@prop({ type: String }) label = '';
+	@prop({ type: String }) copyLabel = 'Copy code';
+	@prop({ type: String }) defaultSelectedKey = '';
+	@prop({ type: String, reflect: true }) selectedKey = '';
+	@state copyStatus = '';
+
+	private resolveTabs(): RadiantCodeTabItem[] {
+		if (Array.isArray(this.tabs) && this.tabs.length > 0) {
+			return this.tabs;
+		}
+
+		const tabsAttribute = this.getAttribute('tabs');
+		if (!tabsAttribute) {
+			return [];
+		}
+
+		try {
+			const parsed = JSON.parse(tabsAttribute) as unknown;
+			return Array.isArray(parsed) ? (parsed as RadiantCodeTabItem[]) : [];
+		} catch {
+			return [];
+		}
+	}
+
+	private handleCopy = async (tab: RadiantCodeTabItem): Promise<void> => {
+		try {
+			await navigator.clipboard.writeText(tabClipboardText(tab));
+			this.copyStatus = `${tab.label} copied to clipboard`;
+		} catch (error) {
+			console.error('Failed to copy code', error);
+		}
+	};
+
+	@onEvent({ selector: 'rui-tabs', type: 'rui-change' })
+	onTabChange(event: Event): void {
+		const detail = (event as CustomEvent<{ value?: string }>).detail;
+		if (detail?.value) {
+			this.selectedKey = detail.value;
+		}
+	}
+
+	override render() {
+		const tabs = this.resolveTabs();
+		if (tabs.length === 0) {
+			return null;
+		}
+
+		const requestedSelectedKey = this.selectedKey || this.defaultSelectedKey;
+		const selectedKey = tabs.some((tab) => tab.id === requestedSelectedKey) ? requestedSelectedKey : tabs[0]?.id;
+		const tabListLabel = this.label || 'Code examples';
+
+		return (
+			<RuiTabs variant="boxed" value={selectedKey} label={tabListLabel}>
+				<RuiTabList aria-label={tabListLabel} class="code-tabs__list">
+					{tabs.map((tab) => (
+						<RuiTab id={tab.id} class="code-tabs__tab">
+							{renderTabLabel({
+								id: tab.id,
+								label: tab.label,
+								code: tabClipboardText(tab),
+							})}
+						</RuiTab>
+					))}
+				</RuiTabList>
+				<RuiTabPanels>
+					{tabs.map((tab) => (
+						<RuiTabPanel id={tab.id} class="code-tabs__panel">
+							<div class="code-tabs__body">
+								<span class="code-tabs__code">{isRichTab(tab) ? unsafeHtml(tab.html) : tab.code}</span>
+								<RuiButton
+									size="sm"
+									variant="ghost"
+									class="code-tabs__copy"
+									aria-label={`${this.copyLabel}: ${tab.label}`}
+									on:click={() => void this.handleCopy(tab)}
+								>
+									<span aria-hidden="true">Copy</span>
+								</RuiButton>
+							</div>
+						</RuiTabPanel>
+					))}
+				</RuiTabPanels>
+				<span class="code-tabs__status" aria-live="polite">
+					{this.copyStatus}
+				</span>
+			</RuiTabs>
+		);
+	}
+}
+
+declare module '@ecopages/jsx' {
+	interface JsxCustomIntrinsicElements {
+		'radiant-code-tabs': JsxCustomElementAttributes<RadiantCodeTabs, RadiantCodeTabsProps>;
+	}
+}
