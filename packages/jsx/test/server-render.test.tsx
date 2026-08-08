@@ -85,27 +85,43 @@ describe('Radiant JSX server render', () => {
 	});
 
 	test('serializes transported template payloads without leaking object coercions', async () => {
-		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+		const [{ jsx, toTemplateResultLike }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
 		const deferredTemplate = {
 			strings: ['<div class=', ' ?data-ready=', '>', '</div>'],
 			values: ['shell-stack', true, ['Hello ', jsx('strong', { children: 'transport' })]],
 		} as const;
 
-		expect(renderToString(deferredTemplate as unknown as import('../src/jsx-runtime.ts').JsxRenderable)).toBe(
+		expect(renderToString(toTemplateResultLike(deferredTemplate))).toBe(
 			'<div class="shell-stack" data-ready>Hello <strong>transport</strong></div>',
 		);
 	});
 
 	test('escapes dynamic values in transported templates while treating strings as trusted HTML', async () => {
-		const { renderToString } = await loadServerRender();
+		const [{ toTemplateResultLike }, { renderToString }] = await Promise.all([
+			loadJsxRuntime(),
+			loadServerRender(),
+		]);
 		const deferredTemplate = {
 			strings: ['<div>', '</div><img src=x onerror=alert(1)//'],
 			values: ['Hello <script>'],
 		} as const;
 
-		expect(renderToString(deferredTemplate as unknown as import('../src/jsx-runtime.ts').JsxRenderable)).toBe(
+		expect(renderToString(toTemplateResultLike(deferredTemplate))).toBe(
 			'<div>Hello &lt;script&gt;</div><img src=x onerror=alert(1)//',
 		);
+	});
+
+	test('does not treat an unbranded object with a strings array as a template', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		// An application object that merely happens to carry `strings` must never
+		// reach the raw-HTML path; branding via toTemplateResultLike is required.
+		const lookalike = { strings: ['<img src=x onerror=alert(1)//'], values: [] };
+
+		expect(renderToString(jsx('div', { children: lookalike }))).not.toContain('<img');
 	});
 
 	test('escapes unbranded outerHTML node-like objects as text', async () => {

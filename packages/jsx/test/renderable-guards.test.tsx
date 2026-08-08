@@ -18,7 +18,9 @@ import {
 function createTemplateResult(): import('../src/types/index.ts').TemplateResultLike {
 	return {
 		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
-		strings: ['<p>', '</p>'] as unknown as TemplateStringsArray,
+		parts: [{ type: 'child' }],
+		shapeKey: '3:<p>|4:</p>c',
+		strings: ['<p>', '</p>'],
 		values: ['hello'],
 	};
 }

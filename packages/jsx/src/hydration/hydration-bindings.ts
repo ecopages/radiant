@@ -14,7 +14,7 @@
 import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-guards.ts';
 import type { JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
-import { getTemplateInterpolationParts, type BindingKind } from '../factory/template-shape.ts';
+import type { BindingKind } from '../types/renderable-types.ts';
 
 /** Attribute prefix used for emitted SSR hydration markers. */
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';
@@ -74,13 +74,10 @@ export function collectTemplateAttributeMarkerIndices(
 	startIndex: number,
 ): TemplateAttributeMarkerIndices {
 	const indices = new Map<number, number>();
-	const interpolationParts = getTemplateInterpolationParts(template.strings);
 	const state = { nextBindingIndex: startIndex };
 
 	for (let index = 0; index < template.values.length; index += 1) {
-		const interpolationPart = interpolationParts[index];
-
-		if (interpolationPart?.type === 'attribute') {
+		if (template.parts[index]?.type === 'attribute') {
 			indices.set(index, takeNextHydrationMarkerIndex(state));
 		}
 	}
@@ -218,24 +215,23 @@ function collectTemplateBindings(
 		return;
 	}
 
-	const interpolationParts = getTemplateInterpolationParts(template.strings);
 	const markerIndices = collectTemplateAttributeMarkerIndices(template, state.nextIndex);
 	state.nextIndex = markerIndices.nextIndex;
 
 	for (const [valueIndex, globalIndex] of markerIndices.indices) {
-		const interpolationPart = interpolationParts[valueIndex];
+		const part = template.parts[valueIndex];
 
-		if (interpolationPart?.type === 'attribute') {
+		if (part?.type === 'attribute') {
 			bindings.set(globalIndex, {
-				kind: interpolationPart.kind,
-				name: interpolationPart.name,
+				kind: part.kind,
+				name: part.name,
 				value: template.values[valueIndex],
 			});
 		}
 	}
 
 	for (let index = 0; index < template.values.length; index += 1) {
-		if (interpolationParts[index]?.type !== 'attribute') {
+		if (template.parts[index]?.type !== 'attribute') {
 			collectValueBindings(template.values[index] as JsxRenderable, bindings, state, options);
 		}
 	}

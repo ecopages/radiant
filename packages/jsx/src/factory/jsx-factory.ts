@@ -1,4 +1,5 @@
 import { shouldDelegateEventBinding } from './event-binding-policy.ts';
+import { getTemplateShapeKey } from './template-shape.ts';
 import { forEachNormalizedAttribute } from './attribute-normalize.ts';
 import { shouldUseAttributeBindingByDefaultForElement, shouldUseBooleanAttributeBinding } from './binding-defaults.ts';
 import { isIterableJsxChild, resolveReactiveSnapshot } from '../types/renderable-guards.ts';
@@ -15,6 +16,7 @@ import type {
 	JsxPropsWithChildren,
 	JsxRenderable,
 	SlotJsxValue,
+	TemplatePartDescriptor,
 	TemplateResultLike,
 } from '../types/index.ts';
 
@@ -74,9 +76,10 @@ export function createJsxElement<Props extends object>(
 
 	const strings = [`<${type}`];
 	const values: unknown[] = [];
+	const parts: TemplatePartDescriptor[] = [];
 	const { children, key: _key, ...rawAttributes } = props as JsxPropsWithChildren & Record<string, unknown>;
 	forEachNormalizedAttribute(rawAttributes, (name, value) => {
-		appendBinding(strings, values, type, name, value);
+		appendBinding(strings, values, parts, type, name, value);
 	});
 
 	strings[strings.length - 1] += '>';
@@ -84,7 +87,7 @@ export function createJsxElement<Props extends object>(
 	// Void elements take neither children nor a closing tag; everything else is
 	// otherwise assembled identically.
 	if (!voidElementNames.has(type)) {
-		appendElementChildren(strings, values, type, children, childSlotMode);
+		appendElementChildren(strings, values, parts, type, children, childSlotMode);
 		strings[strings.length - 1] += `</${type}>`;
 	}
 
@@ -92,6 +95,7 @@ export function createJsxElement<Props extends object>(
 		createTemplateResult(
 			strings,
 			values,
+			parts,
 			type,
 			type.includes('-') ? (props as Record<string, unknown>) : undefined,
 		),
@@ -110,6 +114,7 @@ export function createMarkupNodeLike(outerHTML: string): JsxNodeLike {
 function appendElementChildren(
 	strings: string[],
 	values: unknown[],
+	parts: TemplatePartDescriptor[],
 	type: string,
 	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
@@ -122,11 +127,12 @@ function appendElementChildren(
 		}
 
 		values.push(createMarkupNodeLike(rawTextContent));
+		parts.push({ type: 'child' });
 		strings.push('');
 		return;
 	}
 
-	appendChildren(strings, values, children, childSlotMode);
+	appendChildren(strings, values, parts, children, childSlotMode);
 }
 
 function renderJsxRenderableToRawText(value: JsxRenderable | undefined): string {
@@ -166,21 +172,25 @@ function escapeRawTextElementText(value: string): string {
 	return value.replace(/<\/(?=script[\s/>])/gi, '<\\/');
 }
 
-function appendBinding(strings: string[], values: unknown[], elementName: string, name: string, value: unknown): void {
+function appendBinding(
+	strings: string[],
+	values: unknown[],
+	parts: TemplatePartDescriptor[],
+	elementName: string,
+	name: string,
+	value: unknown,
+): void {
 	if (value === undefined) {
 		return;
 	}
 
-	const { sigil, attributeName } = resolveBindingSigil(elementName, name, value);
-
-	strings[strings.length - 1] += ` ${sigil}${attributeName}=`;
+	parts.push(resolveBindingPart(elementName, name, value));
 	values.push(value);
 	strings.push('');
 }
 
 /**
- * Resolves the authored prop name to the template sigil and attribute name that
- * encode its binding kind.
+ * Resolves an authored prop name to the binding kind and attribute name it denotes.
  *
  * Explicit prefixes (`on-native:`, `on:`, `prop:`, `attr:`) select a kind directly.
  * Unprefixed names fall back to per-element defaults: boolean attributes bind by
@@ -190,37 +200,41 @@ function appendBinding(strings: string[], values: unknown[], elementName: string
  * @param name Authored prop name, possibly carrying an explicit prefix.
  * @param value Bound value, resolved through reactive wrappers to pick the shape.
  */
-function resolveBindingSigil(
+function resolveBindingPart(
 	elementName: string,
 	name: string,
 	value: unknown,
-): { sigil: string; attributeName: string } {
+): Extract<TemplatePartDescriptor, { type: 'attribute' }> {
 	if (name.startsWith('on-native:')) {
-		return { sigil: '@', attributeName: name.slice('on-native:'.length) };
+		return { kind: 'native-event', name: name.slice('on-native:'.length), type: 'attribute' };
 	}
 
 	if (name.startsWith('on:')) {
 		const eventName = name.slice(3);
-		return { sigil: shouldDelegateEventBinding(eventName) ? '!' : '@', attributeName: eventName };
+		return {
+			kind: shouldDelegateEventBinding(eventName) ? 'event' : 'native-event',
+			name: eventName,
+			type: 'attribute',
+		};
 	}
 
 	if (name.startsWith('prop:')) {
-		return { sigil: '.', attributeName: name.slice(5) };
+		return { kind: 'prop', name: name.slice(5), type: 'attribute' };
 	}
 
 	if (name.startsWith('attr:')) {
-		return { sigil: '', attributeName: name.slice(5) };
+		return { kind: 'attr', name: name.slice(5), type: 'attribute' };
 	}
 
 	if (typeof resolveReactiveSnapshot(value) === 'boolean' && shouldUseBooleanAttributeBinding(name)) {
-		return { sigil: '?', attributeName: name };
+		return { kind: 'bool', name, type: 'attribute' };
 	}
 
 	if (!shouldUseAttributeBindingByDefaultForElement(elementName, name)) {
-		return { sigil: '.', attributeName: name };
+		return { kind: 'prop', name, type: 'attribute' };
 	}
 
-	return { sigil: '', attributeName: name };
+	return { kind: 'attr', name, type: 'attribute' };
 }
 
 /**
@@ -233,11 +247,13 @@ function resolveBindingSigil(
 function appendChildren(
 	strings: string[],
 	values: unknown[],
+	parts: TemplatePartDescriptor[],
 	children: JsxRenderable | undefined,
 	childSlotMode: ChildSlotMode,
 ): void {
 	for (const slot of toChildSlots(children, childSlotMode)) {
 		values.push(slot);
+		parts.push({ type: 'child' });
 		strings.push('');
 	}
 }
@@ -338,14 +354,17 @@ function appendFlattenedChildren(flattenedChildren: unknown[], children: JsxRend
 function createTemplateResult(
 	strings: string[],
 	values: unknown[],
+	parts: TemplatePartDescriptor[],
 	rootLocalName: string,
 	ssrIntrinsicProps?: Readonly<Record<string, unknown>>,
 ): TemplateResultLike {
 	return {
 		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
+		parts,
 		rootLocalName,
+		shapeKey: getTemplateShapeKey(strings, parts),
 		ssrIntrinsicProps,
-		strings: toTemplateStrings(strings),
+		strings,
 		values,
 	};
 }
@@ -368,13 +387,4 @@ function createSlotJsxValue(props: JsxPropsWithChildren & { name?: unknown }): S
 		name: typeof props.name === 'string' && props.name !== '' ? props.name : undefined,
 		[SLOT_JSX_VALUE_SYMBOL]: true,
 	};
-}
-
-function toTemplateStrings(strings: string[]): TemplateStringsArray {
-	const templateStrings = [...strings] as unknown as TemplateStringsArray;
-	Object.defineProperty(templateStrings, 'raw', {
-		value: [...strings],
-		writable: false,
-	});
-	return templateStrings;
 }

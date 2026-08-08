@@ -699,16 +699,16 @@ That object is an internal contract between the JSX runtime and the Radiant rend
 
 These surfaces emit or parse raw HTML by design. Pass only content you already trust.
 
-| Surface                                                   | Contract                                                                                             |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Compiled JSX / template `strings[]`                       | Static author HTML; emitted raw                                                                      |
-| Transported `{ strings, values }`                         | `strings` are trusted author HTML; dynamic `values` are still escaped                                |
-| `unsafeHtml(...)` / `createMarkupNodeLike(...)`           | Branded markup; `outerHTML` emitted and parsed raw                                                   |
-| Live `Node` instances                                     | `outerHTML` emitted raw (slot projection / host passthrough)                                         |
-| Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                          |
-| `<script>` children                                       | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid |
-| `prop:*` (including `prop:innerHTML`)                     | Live property assignment; no sanitization                                                            |
-| `href` / `src` / `style`                                  | Escaped as attribute text only — no URL-scheme or CSS sanitization                                   |
+| Surface                                                   | Contract                                                                                                    |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Compiled JSX / template `strings[]`                       | Static author HTML; emitted raw                                                                             |
+| Transported `{ strings, values }`                         | Only via `toTemplateResultLike(...)`; `strings` are trusted author HTML, dynamic `values` are still escaped |
+| `unsafeHtml(...)` / `createMarkupNodeLike(...)`           | Branded markup; `outerHTML` emitted and parsed raw                                                          |
+| Live `Node` instances                                     | `outerHTML` emitted raw (slot projection / host passthrough)                                                |
+| Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                                 |
+| `<script>` children                                       | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid        |
+| `prop:*` (including `prop:innerHTML`)                     | Live property assignment; no sanitization                                                                   |
+| `href` / `src` / `style`                                  | Escaped as attribute text only — no URL-scheme or CSS sanitization                                          |
 
 ### Trusted markup API
 

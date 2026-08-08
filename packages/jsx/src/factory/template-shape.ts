@@ -1,39 +1,26 @@
-/** Kinds of dynamic bindings that the JSX runtime can encode into templates. */
-export type BindingKind = 'attr' | 'bool' | 'event' | 'native-event' | 'prop';
+import type { BindingKind, TemplatePartDescriptor } from '../types/renderable-types.ts';
 
-/**
- * Cached metadata describing how one interpolation slot should be interpreted
- * during SSR, hydration binding collection, or DOM template compilation.
- */
-export type TemplateInterpolationPart =
-	| {
-			string: string;
-			type: 'child';
-	  }
-	| {
-			kind: BindingKind;
-			leading: string;
-			name: string;
-			prefix: string;
-			whitespace: string;
-			type: 'attribute';
-	  };
+export type { BindingKind, TemplatePartDescriptor };
 
 /**
  * Matches a static template segment that ends with an attribute-like binding
  * placeholder such as ` class=`, ` ?hidden=`, ` @focus=`, ` !click=`, or ` .value=`.
+ *
+ * @remarks Only the transported wire format still embeds binding syntax in its
+ * strings. Templates built by the JSX factory carry their parts explicitly, so this
+ * pattern is not on any render path — it runs once per payload in
+ * {@link deriveLegacyTemplateShape}.
  */
 export const ATTRIBUTE_BINDING_PATTERN = /^(.*?)(\s+)([@.?!]?)([^\s"'<>/=`]+)=$/s;
 
-export type TemplateShape = {
-	/** Parsed interpolation slots for one tagged-template literal shape. */
-	interpolationParts: readonly TemplateInterpolationPart[];
+/** Static template shape recovered from a transported payload. */
+export type LegacyTemplateShape = {
+	parts: TemplatePartDescriptor[];
+	strings: string[];
 };
 
-const TEMPLATE_SHAPE_CACHE = new WeakMap<readonly string[], TemplateShape>();
-const TEMPLATE_SHAPE_CACHE_BY_KEY = new Map<string, TemplateShape>();
-
-/** Resolves the logical binding kind from the runtime prefix used in JSX template strings.
+/**
+ * Resolves the logical binding kind from the sigil used in transported template strings.
  *
  * @param prefix One of `''`, `'?'`, `'!'`, `'@'`, or `'.'`.
  * @returns The binding kind used by serializers, hydration, and DOM compilation.
@@ -53,65 +40,45 @@ export function getBindingKind(prefix: string): BindingKind {
 	}
 }
 
-/** Derives a stable string cache key from a `TemplateStringsArray`. */
-export function getTemplateCacheKey(strings: readonly string[]): string {
-	return strings.map((part) => `${part.length}:${part}`).join('|');
+/** Derives a stable identity for a template shape from its strings and parts. */
+export function getTemplateShapeKey(strings: readonly string[], parts: readonly TemplatePartDescriptor[]): string {
+	// Length-prefixing keeps the key unambiguous for strings containing the separator.
+	const stringKey = strings.map((part) => `${part.length}:${part}`).join('|');
+	const partKey = parts.map((part) => (part.type === 'child' ? 'c' : `${part.kind}:${part.name}`)).join(',');
+
+	return `${stringKey}${partKey}`;
 }
 
-/** Returns cached interpolation metadata for a template shape, parsing on first use. */
-export function getTemplateShape(strings: readonly string[]): TemplateShape {
-	const cachedShape = TEMPLATE_SHAPE_CACHE.get(strings);
-
-	if (cachedShape) {
-		return cachedShape;
-	}
-
-	const cacheKey = getTemplateCacheKey(strings);
-	const cachedShapeByKey = TEMPLATE_SHAPE_CACHE_BY_KEY.get(cacheKey);
-
-	if (cachedShapeByKey) {
-		TEMPLATE_SHAPE_CACHE.set(strings, cachedShapeByKey);
-		return cachedShapeByKey;
-	}
-
-	const interpolationParts = parseTemplateInterpolationParts(strings);
-	const shape: TemplateShape = { interpolationParts };
-
-	TEMPLATE_SHAPE_CACHE.set(strings, shape);
-	TEMPLATE_SHAPE_CACHE_BY_KEY.set(cacheKey, shape);
-	return shape;
-}
-
-/** Convenience accessor for interpolation parts on a template shape. */
-export function getTemplateInterpolationParts(strings: readonly string[]): readonly TemplateInterpolationPart[] {
-	return getTemplateShape(strings).interpolationParts;
-}
-
-function parseTemplateInterpolationParts(strings: readonly string[]): readonly TemplateInterpolationPart[] {
-	const parts: TemplateInterpolationPart[] = [];
+/**
+ * Splits a transported template's sigil-bearing strings into plain static chunks
+ * plus explicit part descriptors.
+ *
+ * This is the compatibility bridge for the wire format: it produces exactly what
+ * the JSX factory would have emitted directly, so everything downstream sees one
+ * representation.
+ *
+ * @param strings Wire-format strings, where an attribute slot's chunk ends in `name=`.
+ */
+export function deriveLegacyTemplateShape(strings: readonly string[]): LegacyTemplateShape {
+	const staticStrings: string[] = [];
+	const parts: TemplatePartDescriptor[] = [];
 
 	for (let index = 0; index < strings.length - 1; index += 1) {
 		const stringPart = strings[index] ?? '';
 		const attributeBinding = ATTRIBUTE_BINDING_PATTERN.exec(stringPart);
 
 		if (!attributeBinding) {
-			parts.push({
-				string: stringPart,
-				type: 'child',
-			});
+			staticStrings.push(stringPart);
+			parts.push({ type: 'child' });
 			continue;
 		}
 
-		const [, leading = '', whitespace = ' ', prefix = '', name = ''] = attributeBinding;
-		parts.push({
-			kind: getBindingKind(prefix),
-			leading,
-			name,
-			prefix,
-			whitespace,
-			type: 'attribute',
-		});
+		const [, leading = '', , prefix = '', name = ''] = attributeBinding;
+		staticStrings.push(leading);
+		parts.push({ kind: getBindingKind(prefix), name, type: 'attribute' });
 	}
 
-	return parts;
+	staticStrings.push(strings[strings.length - 1] ?? '');
+
+	return { parts, strings: staticStrings };
 }
