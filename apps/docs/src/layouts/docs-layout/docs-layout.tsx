@@ -109,13 +109,12 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 					sidebar={
 						<RuiSidebar
 							id={DOCS_SIDEBAR_ID}
-							data={{ ecoPersist: DOCS_SIDEBAR_ID }}
+							data-eco-persist={DOCS_SIDEBAR_ID}
 							collapsible="off"
 							defaultWidth={250}
 							mobileBreakpoint={768}
 							label="Documentation navigation"
 							matchActive
-							scrollActiveOnMount
 							navigationEvents={ECO_NAVIGATION_EVENTS}
 						>
 							<RuiSidebarContent aria-label="Documentation navigation">
