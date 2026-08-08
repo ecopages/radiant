@@ -30,15 +30,6 @@ class BooleanPropertyElement extends HTMLElement {
 
 customElements.define(booleanPropertyTagName, BooleanPropertyElement);
 
-function toTemplateStrings(strings: string[]): TemplateStringsArray {
-	const templateStrings = [...strings] as unknown as TemplateStringsArray;
-	Object.defineProperty(templateStrings, 'raw', {
-		value: [...strings],
-		writable: false,
-	});
-	return templateStrings;
-}
-
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -432,16 +423,17 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('manual template results without root metadata do not poison later intrinsic SVG mounts', async () => {
-		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const [{ jsx, toTemplateResultLike }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const primeContainer = document.createElement('div');
 		const primeRoot = createRoot(primeContainer);
 		const verifyContainer = document.createElement('div');
 		const verifyRoot = createRoot(verifyContainer);
-		const manualTemplate = {
-			['_$rType$']: 1 as const,
-			strings: toTemplateStrings(['<linearGradient id=', '></linearGradient>']),
+		// Built through the wire-format adapter: no rootLocalName, so the renderer
+		// has to infer the namespace from context rather than from root metadata.
+		const manualTemplate = toTemplateResultLike({
+			strings: ['<linearGradient id=', '></linearGradient>'],
 			values: ['gradient'],
-		};
+		});
 
 		primeRoot.render(
 			jsx('svg', {

@@ -51,20 +51,50 @@ export interface JsxNodeLike {
 	readonly [RADIANT_MARKUP_NODE_SYMBOL]?: true;
 }
 
+/** Kinds of dynamic bindings that the JSX runtime can encode into templates. */
+export type BindingKind = 'attr' | 'bool' | 'event' | 'native-event' | 'prop';
+
+/**
+ * Describes what one interpolation slot binds to.
+ *
+ * The factory knows each slot's kind at construction time and records it here, so
+ * the DOM compiler, the SSR serializer, and hydration all read the same structured
+ * metadata instead of re-deriving it from the surrounding markup.
+ */
+export type TemplatePartDescriptor =
+	| { readonly type: 'child' }
+	| {
+			readonly type: 'attribute';
+			readonly kind: BindingKind;
+			readonly name: string;
+	  };
+
 /**
  * Radiant template result produced by the JSX runtime.
+ *
+ * `strings` holds plain static HTML chunks and carries no binding syntax: every
+ * slot's kind and name lives in the parallel `parts` array, where `parts[i]`
+ * describes `values[i]` and `strings[i]` is the markup preceding it.
  */
 export interface TemplateResultLike {
 	readonly ['_$rType$']: typeof RADIANT_TEMPLATE_RESULT;
 	readonly rootLocalName?: string;
 	readonly ssrIntrinsicProps?: Readonly<Record<string, unknown>>;
-	readonly strings: TemplateStringsArray;
+	readonly parts: readonly TemplatePartDescriptor[];
+	/** Identity of the static template shape, used to reuse compiled blueprints. */
+	readonly shapeKey: string;
+	readonly strings: readonly string[];
 	readonly values: readonly unknown[];
 }
 
 /**
  * Template payload shape that can be transported across process or integration
  * boundaries and later rehydrated into a standard template result.
+ *
+ * This is the wire format, and it is deliberately the *only* place that still
+ * accepts binding syntax inside `strings` (` class=`, ` ?hidden=`, ` .value=`,
+ * ` @focus=`, ` !click=`). Pass it through `toTemplateResultLike(...)` to convert
+ * it into a branded {@link TemplateResultLike}; nothing renders it implicitly.
  */
 export interface SerializableTemplateResultLike {
 	readonly rootLocalName?: string;
@@ -166,7 +196,6 @@ export type JsxRenderable =
 	| SignalLike
 	| SlotJsxValue
 	| SubscribableJsxValue
-	| SerializableTemplateResultLike
 	| TemplateResultLike
 	| Iterable<JsxRenderable>;
 

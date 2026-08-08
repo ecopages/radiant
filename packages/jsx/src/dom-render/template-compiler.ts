@@ -1,5 +1,4 @@
 import { ATTRIBUTE_BINDING_PREFIX } from '../hydration/hydration-bindings.ts';
-import { getTemplateCacheKey, getTemplateInterpolationParts } from '../factory/template-shape.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { getElementNamespace, HTML_NAMESPACE_URI, setElementAttributeValue } from './namespaces.ts';
 import { getNodeAtPath, getNodePath } from './path-utils.ts';
@@ -13,50 +12,38 @@ import type {
 	TemplatePart,
 } from './types.ts';
 
-const TEMPLATE_CACHE = new WeakMap<readonly string[], CompiledTemplate>();
-const TEMPLATE_CACHE_BY_KEY = new Map<string, CompiledTemplate>();
+/**
+ * Compiled blueprints keyed by template shape.
+ *
+ * Every `jsx(...)` call allocates a fresh `strings` array, so identity-based caching
+ * would never hit across calls — the shape key is what makes reuse possible. The key
+ * is computed once by the factory and carried on the result.
+ */
+const TEMPLATE_CACHE_BY_SHAPE = new Map<string, CompiledTemplate>();
 
 /** Returns compiled metadata for a template shape, compiling and caching on first use. */
 export function getCompiledTemplate(template: TemplateResultLike): CompiledTemplate {
-	const templateStrings = template.strings as unknown as readonly string[];
-	const cachedTemplate = TEMPLATE_CACHE.get(templateStrings);
+	const cachedTemplate = TEMPLATE_CACHE_BY_SHAPE.get(template.shapeKey);
 
 	if (cachedTemplate) {
 		return cachedTemplate;
 	}
 
-	const cacheKey = getTemplateCacheKey(template.strings);
-	const cachedTemplateByKey = TEMPLATE_CACHE_BY_KEY.get(cacheKey);
-
-	if (cachedTemplateByKey) {
-		TEMPLATE_CACHE.set(templateStrings, cachedTemplateByKey);
-		return cachedTemplateByKey;
-	}
-
 	const htmlParts: string[] = [];
 	const bindings = new Map<number, BindingDescriptor>();
-	const interpolationParts = getTemplateInterpolationParts(template.strings);
 
 	for (let index = 0; index < template.values.length; index += 1) {
-		const interpolationPart = interpolationParts[index];
+		const part = template.parts[index];
 
-		if (interpolationPart?.type === 'attribute') {
-			htmlParts.push(
-				interpolationPart.leading,
-				interpolationPart.whitespace,
-				`${ATTRIBUTE_BINDING_PREFIX}${index}="${interpolationPart.kind}:${interpolationPart.name}"`,
-			);
-			bindings.set(index, { kind: interpolationPart.kind, name: interpolationPart.name });
+		htmlParts.push(template.strings[index] ?? '');
+
+		if (part?.type === 'attribute') {
+			htmlParts.push(` ${ATTRIBUTE_BINDING_PREFIX}${index}="${part.kind}:${part.name}"`);
+			bindings.set(index, { kind: part.kind, name: part.name });
 			continue;
 		}
 
-		htmlParts.push(
-			interpolationPart && interpolationPart.type === 'child'
-				? interpolationPart.string
-				: (template.strings[index] ?? ''),
-			`<!--${CHILD_BINDING_START_PREFIX}${index}-->`,
-			`<!--${CHILD_BINDING_END_PREFIX}${index}-->`,
-		);
+		htmlParts.push(`<!--${CHILD_BINDING_START_PREFIX}${index}-->`, `<!--${CHILD_BINDING_END_PREFIX}${index}-->`);
 		bindings.set(index, { kind: 'child' });
 	}
 
@@ -70,8 +57,7 @@ export function getCompiledTemplate(template: TemplateResultLike): CompiledTempl
 		parts: collectTemplateParts(blueprint.content, bindings),
 	};
 
-	TEMPLATE_CACHE.set(templateStrings, compiledTemplate);
-	TEMPLATE_CACHE_BY_KEY.set(cacheKey, compiledTemplate);
+	TEMPLATE_CACHE_BY_SHAPE.set(template.shapeKey, compiledTemplate);
 	return compiledTemplate;
 }
 
