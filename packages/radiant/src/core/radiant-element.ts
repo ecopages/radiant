@@ -338,10 +338,7 @@ export class RadiantElement<Bindings extends object = {}>
 			const renderRuntime = this.getOrCreateRenderRuntime();
 			renderRuntime.observeSlotProjection();
 
-			// A host can disconnect and reconnect while keeping the same instance
-			// (e.g. SPA body swaps that move a live subtree). Re-hydrating then leaves
-			// prior boundary markers in place and appends a second light-DOM shell.
-			if (shouldHydrateOnConnect(this) && !renderRuntime.hasMounted) {
+			if (this.needsInitialHydration(renderRuntime)) {
 				this.renderScheduler.clearPending();
 				this.hydrate();
 
@@ -352,15 +349,29 @@ export class RadiantElement<Bindings extends object = {}>
 				return;
 			}
 
-			// Already-mounted reconnects with projected slot content must keep the
-			// existing light DOM — a fresh `update()` would re-project slots and reset
-			// scroll/input state.
-			if (renderRuntime.hasMounted && renderRuntime.hasProjectedSlotContent) {
+			if (this.isReconnectWithLiveProjection(renderRuntime)) {
 				return;
 			}
 
 			this.update();
 		});
+	}
+
+	/**
+	 * @remarks A host can disconnect and reconnect while keeping the same instance (e.g. SPA
+	 * body swaps that move a live subtree). Re-hydrating then would leave prior SSR boundary
+	 * markers in place and append a second light-DOM shell.
+	 */
+	private needsInitialHydration(renderRuntime: RenderRuntime): boolean {
+		return shouldHydrateOnConnect(this) && !renderRuntime.hasMounted;
+	}
+
+	/**
+	 * @remarks Already-mounted reconnects with projected slot content must keep the existing
+	 * light DOM — a fresh `update()` would re-project slots and reset scroll/input state.
+	 */
+	private isReconnectWithLiveProjection(renderRuntime: RenderRuntime): boolean {
+		return renderRuntime.hasMounted && renderRuntime.hasProjectedSlotContent;
 	}
 
 	/**

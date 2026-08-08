@@ -248,11 +248,12 @@ describe('RadiantElement', () => {
 			}
 
 			override render() {
-				return jsx(
-					'div',
-					{ 'data-ref': 'content', class: 'slot-content', style: { height: '200px', overflow: 'auto' } },
-					jsx('slot', {}),
-				);
+				return jsx('div', {
+					'data-ref': 'content',
+					class: 'slot-content',
+					style: { height: '200px', overflow: 'auto' },
+					children: jsx('slot', {}),
+				});
 			}
 		}
 
