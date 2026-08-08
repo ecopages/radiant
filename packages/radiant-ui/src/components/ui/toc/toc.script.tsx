@@ -52,7 +52,7 @@ type RuiTocBindings = {
  */
 @customElement('rui-toc')
 export class RuiToc extends RadiantElement<RuiTocBindings> {
-	@prop({ type: String, defaultValue: '' }) target = '';
+	@prop({ type: String, attribute: 'target', defaultValue: '' }) target = '';
 	@prop({ type: String, attribute: 'heading-selector', defaultValue: 'h2,h3' }) headingSelector = 'h2,h3';
 	@prop({ type: String, defaultValue: 'On this page' }) label = 'On this page';
 	@prop({ type: Number, attribute: 'scroll-offset', defaultValue: 120 }) scrollOffset = 120;
@@ -69,10 +69,29 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 	private scrollRafPending = false;
 	private readonly scrollOffsetTolerance = 4;
 
+	private readConfiguredProp(propValue: string, attributeName: string): string {
+		return propValue.trim() || this.getAttribute(attributeName)?.trim() || '';
+	}
+
+	private readConfiguredNumber(propValue: number, attributeName: string, fallback: number): number {
+		if (Number.isFinite(propValue) && propValue !== 0) {
+			return propValue;
+		}
+
+		const fromAttribute = Number(this.getAttribute(attributeName));
+		return Number.isFinite(fromAttribute) ? fromAttribute : fallback;
+	}
+
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.rebuild();
 		this.attachNavigationListeners();
+		queueMicrotask(() => {
+			if (!this.isConnected) {
+				return;
+			}
+
+			this.rebuild();
+		});
 	}
 
 	override disconnectedCallback(): void {
@@ -101,7 +120,10 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 			return;
 		}
 
-		const headings = querySelectorAllSafe(root, this.headingSelector);
+		const headings = querySelectorAllSafe(
+			root,
+			this.readConfiguredProp(this.headingSelector, 'heading-selector') || 'h2,h3',
+		);
 		if (headings.length === 0) {
 			return;
 		}
@@ -124,11 +146,15 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 	}
 
 	private resolveTarget(): HTMLElement | null {
-		const selector = this.target.trim();
+		const selector = this.readConfiguredProp(this.target, 'target');
 		if (selector) {
 			return querySelectorSafe(document, selector);
 		}
 		return this.parentElement;
+	}
+
+	private resolvedScrollOffset(): number {
+		return this.readConfiguredNumber(this.scrollOffset, 'scroll-offset', 120);
 	}
 
 	/**
@@ -157,7 +183,9 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 		}
 
 		const handler = () => this.rebuild();
-		for (const eventName of parseCommaSeparated(this.navigationEvents)) {
+		for (const eventName of parseCommaSeparated(
+			this.readConfiguredProp(this.navigationEvents, 'navigation-events'),
+		)) {
 			document.addEventListener(eventName, handler);
 			this.navigationCleanups.push(() => document.removeEventListener(eventName, handler));
 		}
@@ -220,7 +248,7 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 	}
 
 	private activeLineY(): number {
-		return trackingLineY(this.scrollRoot ?? window, this.scrollOffset + this.scrollOffsetTolerance);
+		return trackingLineY(this.scrollRoot ?? window, this.resolvedScrollOffset() + this.scrollOffsetTolerance);
 	}
 
 	private updateActiveHeading(): void {
@@ -309,7 +337,7 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 			'',
 			`${window.location.pathname}${window.location.search}#${id}`,
 		);
-		scrollHeadingIntoView(heading, this.scrollRoot ?? window, this.scrollOffset, behavior);
+		scrollHeadingIntoView(heading, this.scrollRoot ?? window, this.resolvedScrollOffset(), behavior);
 	}
 
 	override render() {

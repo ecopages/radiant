@@ -61,6 +61,24 @@ describe('rui-field projected content discovery', () => {
 		form.remove();
 	});
 
+	it('ignores unmarked native inputs and discovers library hosts', async () => {
+		const field = document.createElement('rui-field') as RuiFieldElement;
+		field.name = 'plan';
+		field.innerHTML = `
+			<label class="rui-label" data-rui-field-label>Plan</label>
+			<input type="text" value="ignored" />
+			<rui-select value="pro"></rui-select>
+		`;
+		document.body.append(field);
+
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+
+		expect(findFieldControl(field)?.localName).toBe('rui-select');
+
+		field.remove();
+	});
+
 	it('shows validation message after invalid submit', async () => {
 		const form = document.createElement('rui-form') as RuiFormElement;
 		const field = document.createElement('rui-field') as RuiFieldElement;

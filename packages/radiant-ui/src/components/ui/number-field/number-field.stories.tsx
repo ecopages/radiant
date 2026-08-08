@@ -10,6 +10,7 @@ import {
 	RuiNumberFieldGroup,
 	RuiNumberFieldIncrementButton,
 	RuiNumberFieldInput,
+	RuiNumberFieldSteppers,
 } from './number-field';
 
 const meta = {
@@ -67,8 +68,10 @@ export const Composed: Story = {
 		<RuiNumberField {...args}>
 			<RuiNumberFieldGroup>
 				<RuiNumberFieldInput />
-				<RuiNumberFieldDecrementButton />
-				<RuiNumberFieldIncrementButton />
+				<RuiNumberFieldSteppers>
+					<RuiNumberFieldDecrementButton />
+					<RuiNumberFieldIncrementButton />
+				</RuiNumberFieldSteppers>
 			</RuiNumberFieldGroup>
 		</RuiNumberField>
 	),
@@ -86,8 +89,10 @@ export const CustomSteppers: Story = {
 		<RuiNumberField {...args}>
 			<RuiNumberFieldGroup>
 				<RuiNumberFieldInput />
-				<RuiNumberFieldDecrementButton aria-label="Remove guest">Remove</RuiNumberFieldDecrementButton>
-				<RuiNumberFieldIncrementButton aria-label="Add guest">Add</RuiNumberFieldIncrementButton>
+				<RuiNumberFieldSteppers>
+					<RuiNumberFieldDecrementButton aria-label="Remove guest">Remove</RuiNumberFieldDecrementButton>
+					<RuiNumberFieldIncrementButton aria-label="Add guest">Add</RuiNumberFieldIncrementButton>
+				</RuiNumberFieldSteppers>
 			</RuiNumberFieldGroup>
 		</RuiNumberField>
 	),

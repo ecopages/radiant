@@ -52,6 +52,7 @@ export const RuiToaster = defineRadiantView(
 		expand,
 		gap,
 		offset,
+		container,
 		...props
 	}: RuiToasterViewProps) => (
 		<rui-toaster
@@ -63,6 +64,7 @@ export const RuiToaster = defineRadiantView(
 			prop:expand={expand}
 			prop:gap={gap}
 			prop:offset={offset}
+			prop:container={container}
 		>
 			{children}
 		</rui-toaster>

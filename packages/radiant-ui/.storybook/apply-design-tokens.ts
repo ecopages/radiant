@@ -49,10 +49,12 @@ export function applyDesignTokens(globals: DesignTokenGlobals): void {
 	root.classList.toggle('dark', colorMode === 'dark');
 }
 
+/**
+ * @remarks Toolbar globals can update without re-running decorators; keeps `<html>` in sync.
+ */
 export function registerDesignTokenGlobalsSync(): void {
 	if (typeof window === 'undefined') return;
 
-	// Toolbar globals can update without re-running decorators; keep <html> in sync.
 	void addons.ready().then(() => {
 		const channel = addons.getChannel();
 		const sync = ({ globals }: { globals?: DesignTokenGlobals }) => {

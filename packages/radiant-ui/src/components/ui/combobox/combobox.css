@@ -2,12 +2,12 @@
 @import '../shared/popover.css';
 
 rui-combobox {
-	@apply relative inline-flex flex-col;
+	@apply relative inline-flex w-full flex-col;
 }
 
 @layer components {
 	.rui-combobox {
-		@apply relative w-64 text-sm;
+		@apply relative w-full text-sm;
 	}
 
 	.rui-combobox__control {

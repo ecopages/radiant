@@ -3,6 +3,7 @@ import {
 	DEFAULT_TOAST_POSITION,
 	RUI_TOAST_DISMISS_EVENT,
 	RUI_TOAST_SHOW_EVENT,
+	TOAST_COLLAPSED_PEEK,
 	TOAST_GAP,
 	TOAST_LIFETIME,
 	TOAST_VIEWPORT_OFFSET,
@@ -14,6 +15,7 @@ import {
 	type ToastShowDetail,
 	splitToastPosition,
 } from './toast-context';
+import { collapsedStackHeight, expandedStackHeight, expandedToastOffset } from './stack-layout';
 import { toastState } from './toast-state';
 import type { RuiToast } from './toast.script';
 import './toast.script';
@@ -24,8 +26,9 @@ export type RuiToasterProps = {
 	/** Default lifetime in ms. Default: `4000`. */
 	duration?: number;
 	/**
-	 * Max toasts shown in the stack at once (older ones wait in queue).
-	 * Default: `3`.
+	 * Max toasts mounted in the stack at once (older ones wait in queue).
+	 * Default: `3`. Collapsed UI peeks at most {@link TOAST_COLLAPSED_PEEK}
+	 * of these; hover expands to show all mounted toasts.
 	 */
 	visibleToasts?: number;
 	/** Show a close button on every toast. */
@@ -40,6 +43,16 @@ export type RuiToasterProps = {
 	gap?: number;
 	/** Viewport inset in px. Default: `24`. */
 	offset?: number;
+	/**
+	 * CSS selector for a positioning root.
+	 *
+	 * @remarks
+	 * Empty (default): `position: fixed` against the viewport.
+	 * When set, the toaster prefers an ancestor matching the selector (via
+	 * `closest`), otherwise `document.querySelector`, switches to
+	 * `position: absolute`, and ensures the root is a positioning context.
+	 */
+	container?: string;
 };
 
 type RuiToasterBindings = {
@@ -65,6 +78,7 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 	@prop({ type: Boolean, defaultValue: false }) expand: boolean;
 	@prop({ type: Number, defaultValue: TOAST_GAP }) gap: number;
 	@prop({ type: Number, defaultValue: TOAST_VIEWPORT_OFFSET }) offset: number;
+	@prop({ type: String, reflect: true, defaultValue: '' }) container: string;
 
 	@state toasts: ToastRecord[] = [];
 
@@ -75,10 +89,13 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 	private readonly heights = new Map<string, number>();
 	private readonly observers = new Map<string, ResizeObserver>();
 	private layoutFrame: number | null = null;
+	/** Prevents ResizeObserver re-entry while temporarily unclipping hosts to measure. */
+	private measuring = false;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.syncHostPosition();
+		this.syncContainer();
 		this.unsubscribe = toastState.subscribe((toasts) => {
 			this.toasts = toasts;
 			if (toasts.length === 0) {
@@ -104,9 +121,10 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['position', 'duration', 'visibleToasts', 'closeButton', 'expand', 'gap', 'offset'])
+	@onUpdated(['position', 'duration', 'visibleToasts', 'closeButton', 'expand', 'gap', 'offset', 'container'])
 	onConfigUpdated(): void {
 		this.syncHostPosition();
+		this.syncContainer();
 		this.scheduleLayoutSync();
 	}
 
@@ -134,8 +152,7 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 
 	@onEvent({ selector: 'rui-toast', type: 'rui-toast-mounted' })
 	onToastMounted(): void {
-		this.observeToasts();
-		this.syncPauseState();
+		this.scheduleLayoutSync();
 	}
 
 	private filteredToasts(): ToastRecord[] {
@@ -160,12 +177,53 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 		this.style.setProperty('--viewport-offset', `${this.offset}px`);
 	}
 
+	/**
+	 * Bind the toaster to a positioning root when `container` is set.
+	 *
+	 * @remarks
+	 * Prefers an ancestor match so nested demos do not reparent. Only appends
+	 * into a query-selected root when the toaster is not already inside it.
+	 * Contained mode uses absolute positioning; default mode restores viewport fixed.
+	 */
+	private syncContainer(): void {
+		const selector = this.container.trim();
+		if (!selector) {
+			this.removeAttribute('data-contained');
+			this.style.position = '';
+			return;
+		}
+
+		const target = (this.closest(selector) as HTMLElement | null) ?? document.querySelector<HTMLElement>(selector);
+
+		if (!target) {
+			this.removeAttribute('data-contained');
+			this.style.position = '';
+			return;
+		}
+
+		if (getComputedStyle(target).position === 'static') {
+			target.style.position = 'relative';
+		}
+
+		if (!target.contains(this)) {
+			target.appendChild(this);
+		}
+
+		this.dataset.contained = 'true';
+		this.style.position = 'absolute';
+	}
+
 	private isStackExpanded(): boolean {
 		return this.expanded || this.expand;
 	}
 
+	/**
+	 * @remarks
+	 * Pause only while the pointer is interacting / hovering, or the tab is
+	 * hidden. The `expand` prop is visual-only — it must not freeze lifetimes.
+	 */
 	private isPaused(): boolean {
-		return this.isStackExpanded() || this.interacting || document.hidden;
+		return this.expanded || this.interacting || document.hidden;
 	}
 
 	private resetLayoutState(): void {
@@ -208,15 +266,29 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 		});
 	}
 
+	/**
+	 * Natural content height for stack math.
+	 *
+	 * @remarks
+	 * Uses the inner `.rui-toast` `offsetHeight` (layout size, transform-independent).
+	 * Host height/overflow are temporarily cleared because collapsed behind toasts are
+	 * clipped to the front height — leaving that in place can under-measure in some engines.
+	 */
 	private measureToast(el: RuiToast): number {
+		this.measuring = true;
 		const prevHeight = el.style.height;
 		const prevOverflow = el.style.overflow;
+
 		el.style.height = 'auto';
 		el.style.overflow = 'visible';
+
 		const inner = el.querySelector('.rui-toast');
 		const height = Math.round(inner instanceof HTMLElement ? inner.offsetHeight : el.offsetHeight) || 64;
+
 		el.style.height = prevHeight;
 		el.style.overflow = prevOverflow;
+		this.measuring = false;
+
 		return height;
 	}
 
@@ -236,6 +308,7 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 
 			if (!this.observers.has(id)) {
 				const observer = new ResizeObserver(() => {
+					if (this.measuring) return;
 					const height = this.measureToast(el);
 					if (this.heights.get(id) === height) return;
 					this.heights.set(id, height);
@@ -256,6 +329,14 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 		}
 	}
 
+	/**
+	 * @remarks
+	 * Expanded offsets use each toast's natural height (Sonner formula):
+	 * `sum(heights before) + index * gap`. Collapsed mode peeks at most
+	 * {@link TOAST_COLLAPSED_PEEK} toasts with scale; overflow stays
+	 * mounted but hidden until hover expands the stack.
+	 * Heights are always remeasured — clipped collapsed hosts make caches stale.
+	 */
 	private patchStackLayout(): void {
 		const list = this.querySelector<HTMLOListElement>('.rui-toaster');
 		if (!list) return;
@@ -263,9 +344,12 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 		const expanded = this.isStackExpanded();
 		const { y } = splitToastPosition(this.position);
 		const lift = y === 'bottom' ? -1 : 1;
+		const peekLimit = Math.min(TOAST_COLLAPSED_PEEK, Math.max(1, this.visibleToasts));
 
 		this.dataset.expanded = String(expanded);
 		list.dataset.expanded = String(expanded);
+		this.style.setProperty('--lift', String(lift));
+		list.style.setProperty('--gap', `${this.gap}px`);
 
 		const els = ([...list.querySelectorAll('rui-toast')] as RuiToast[]).filter(
 			(el) => el.dataset.mounted === 'true' && el.dataset.removed !== 'true',
@@ -277,36 +361,44 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 		}
 
 		const heights = els.map((el) => {
-			const measured = this.heights.get(el.toastId) ?? this.measureToast(el);
+			const measured = this.measureToast(el);
 			this.heights.set(el.toastId, measured);
 			return measured;
 		});
 		const frontHeight = heights[0] ?? 64;
+		this.style.setProperty('--front-toast-height', `${frontHeight}px`);
 
-		let accumulated = 0;
 		for (let index = 0; index < els.length; index += 1) {
 			const el = els[index];
 			if (!el) continue;
 			const height = heights[index] ?? 64;
 			const isFront = index === 0;
+			const offset = expandedToastOffset(index, heights, this.gap);
+			const inCollapsedPeek = index < peekLimit;
 
 			el.dataset.index = String(index);
 			el.dataset.front = String(isFront);
 			el.dataset.expanded = String(expanded);
+			el.dataset.visible = String(expanded || inCollapsedPeek);
 			el.style.setProperty('--z-index', String(els.length - index));
+			el.style.setProperty('--index', String(index));
+			el.style.setProperty('--offset', `${offset}px`);
+			el.style.setProperty('--initial-height', `${height}px`);
+			el.style.setProperty('--gap', `${this.gap}px`);
 
 			if (expanded) {
-				el.style.setProperty('--y', `translateY(${lift * accumulated}px)`);
+				el.style.setProperty('--y', `translateY(${lift * offset}px)`);
 				el.style.height = `${height}px`;
 				el.style.overflow = 'visible';
-				accumulated += height + this.gap;
+			} else if (!inCollapsedPeek) {
+				el.style.setProperty('--y', `translateY(${lift * (peekLimit - 1) * this.gap}px) scale(0.7)`);
+				el.style.height = `${frontHeight}px`;
+				el.style.overflow = 'hidden';
 			} else if (isFront) {
 				el.style.setProperty('--y', 'translateY(0px)');
 				el.style.height = `${height}px`;
 				el.style.overflow = 'visible';
 			} else {
-				// Keep scaling for every depth — clamping (e.g. at 0.92) makes toasts
-				// past the default visibleToasts=3 look identical and stack poorly.
 				const scale = Math.max(0.7, 1 - index * 0.05);
 				el.style.setProperty('--y', `translateY(${lift * index * this.gap}px) scale(${scale})`);
 				el.style.height = `${frontHeight}px`;
@@ -314,11 +406,12 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 			}
 		}
 
-		const stackHeight = expanded
-			? Math.max(0, accumulated > 0 ? accumulated - this.gap : frontHeight)
-			: frontHeight + Math.max(0, els.length - 1) * this.gap;
-
-		list.style.height = `${stackHeight}px`;
+		const collapsedPeekCount = Math.min(peekLimit, els.length);
+		list.style.height = `${
+			expanded
+				? expandedStackHeight(heights, this.gap)
+				: collapsedStackHeight(frontHeight, collapsedPeekCount, this.gap)
+		}px`;
 	}
 
 	@bound
@@ -350,7 +443,8 @@ export class RuiToaster extends RadiantElement<RuiToasterBindings> {
 	private onPointerUp(): void {
 		if (!this.interacting) return;
 		this.interacting = false;
-		const hovered = this.matches(':hover') || this.querySelector('rui-toast:hover');
+		const list = this.querySelector('.rui-toaster');
+		const hovered = Boolean(list?.matches(':hover') || this.querySelector('rui-toast:hover'));
 		if (!hovered) this.expanded = false;
 		this.syncPauseState();
 	}

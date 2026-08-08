@@ -2,16 +2,16 @@
 @import '../shared/popover.css';
 
 rui-select {
-	@apply relative inline-flex flex-col;
+	@apply relative inline-flex w-full flex-col;
 }
 
 @layer components {
 	.rui-select {
-		@apply relative w-64 text-sm;
+		@apply relative w-full text-sm;
 	}
 
 	.rui-select__control {
-		@apply flex w-full min-w-0 items-center gap-1 rounded-control border border-border bg-background px-1;
+		@apply flex w-full min-h-10 min-w-0 items-center gap-1 rounded-control border border-border bg-background px-1;
 	}
 
 	.rui-select__control:focus-within {
@@ -19,7 +19,8 @@ rui-select {
 	}
 
 	.rui-select__trigger {
-		@apply inline-flex min-w-0 flex-1 cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 text-start text-on-background outline-none;
+		@apply inline-flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 text-start text-on-background outline-none;
+		font-size: var(--text-control, 0.875rem);
 	}
 
 	.rui-select__trigger:disabled {
@@ -28,6 +29,8 @@ rui-select {
 
 	.rui-select__value {
 		@apply min-w-0 flex-1 truncate;
+		/* Keep the value row painted before client sync fills the label. */
+		min-height: 1.25em;
 	}
 
 	.rui-select__value[data-placeholder] {
