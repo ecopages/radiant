@@ -238,6 +238,45 @@ describe('RadiantElement', () => {
 		expect(element.hydrateCount).toBe(1);
 	});
 
+	test('does not update again when a mounted host reconnects', async () => {
+		class MountedReconnectElement extends RadiantElement {
+			updateCount = 0;
+
+			override update(): void {
+				this.updateCount += 1;
+				super.update();
+			}
+
+			override render() {
+				return jsx(
+					'div',
+					{ 'data-ref': 'content', class: 'slot-content', style: { height: '200px', overflow: 'auto' } },
+					jsx('slot', {}),
+				);
+			}
+		}
+
+		customElements.define('mounted-reconnect-element', MountedReconnectElement);
+
+		const element = document.createElement('mounted-reconnect-element') as MountedReconnectElement;
+		element.innerHTML = '<div style="height: 1200px">Nav</div>';
+		document.body.appendChild(element);
+
+		await waitFor(() => expect(element.updateCount).toBe(1));
+
+		const content = element.querySelector('[data-ref="content"]') as HTMLElement;
+		content.scrollTop = 180;
+
+		element.remove();
+		document.body.appendChild(element);
+
+		await Promise.resolve();
+		await Promise.resolve();
+
+		expect(element.updateCount).toBe(1);
+		expect(content.scrollTop).toBe(180);
+	});
+
 	test('reactive updates are triggered by reference change, not in-place mutation', () => {
 		let updateCount = 0;
 		class ArrayElement extends RadiantElement {
