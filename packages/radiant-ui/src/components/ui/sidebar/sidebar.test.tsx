@@ -576,7 +576,7 @@ describe('RuiSidebar mobile drawer', () => {
 		cleanup();
 	});
 
-	it('reopens automatically when leaving mobile mode while closed', async () => {
+	it('reopens automatically when leaving mobile mode while closed (mobileBreakpoint <= 0 forces desktop)', async () => {
 		const { sidebar, cleanup } = mountMobileSidebar({ collapsible: 'off', open: true });
 		await settled();
 
@@ -585,7 +585,6 @@ describe('RuiSidebar mobile drawer', () => {
 		await settled();
 		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
 
-		// `mobileBreakpoint <= 0` disables the media query and forces desktop mode.
 		sidebar.mobileBreakpoint = 0;
 		await settled();
 

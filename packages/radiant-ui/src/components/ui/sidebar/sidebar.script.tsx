@@ -373,9 +373,11 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		return Math.min(this.maxWidth, Math.max(this.minWidth, next));
 	}
 
+	/**
+	 * @remarks Mobile is always a full drawer — never leave an icon rail when closed.
+	 */
 	private paneWidth(): number {
 		if (!this.isOpen()) {
-			// Mobile is always a full drawer — never leave an icon rail when closed.
 			if (this.isMobile) return 0;
 			return this.collapsible === 'icon' ? ICON_WIDTH : 0;
 		}
@@ -519,6 +521,8 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	 * (tooltip, menu-button) hit real regressions from binding conversion that
 	 * weren't fully root-caused. Deferred as a follow-up rather than risking the
 	 * same class of bug here under the same review budget.
+	 *
+	 * @remarks The icon rail stays interactive when collapsed on desktop; the mobile drawer does not.
 	 */
 	override render() {
 		const horizontal = isHorizontalSide(this.side);
@@ -526,7 +530,6 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		const paneState: RuiSidebarState = open ? 'expanded' : 'collapsed';
 		const showHandle = this.resizable && this.collapsible === 'off' && open && !this.isMobile;
 		const widthVar = `${this.paneWidth()}px`;
-		// Icon rail stays interactive when collapsed on desktop; mobile drawer does not.
 		const paneInert = open || (!this.isMobile && this.collapsible === 'icon') ? undefined : '';
 
 		return (

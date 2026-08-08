@@ -5,7 +5,7 @@
 		@apply w-full border border-border bg-background text-on-background outline-none;
 		border-radius: var(--radius-control);
 		padding-inline: var(--space-control-x);
-		padding-block: var(--space-control-y);
+		padding-block: 0;
 		font-size: var(--text-control, 0.875rem);
 		transition-duration: var(--duration-normal);
 	}
@@ -23,10 +23,14 @@
 	}
 
 	.rui-input--sm {
-		padding-block: calc(var(--space-control-y) * 0.75);
+		height: var(--size-control-sm);
+	}
+
+	.rui-input--md {
+		height: var(--size-control-md);
 	}
 
 	.rui-input--lg {
-		padding-block: calc(var(--space-control-y) * 1.25);
+		height: var(--size-control-lg);
 	}
 }

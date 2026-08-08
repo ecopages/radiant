@@ -26,7 +26,7 @@ import {
 import { RuiSwitch } from '../switch';
 import { RuiTagGroup, RuiTagList } from '../tag-group';
 import { RuiTextarea } from '../textarea';
-import { findFieldControl, findFieldError } from './control-protocol';
+import { findFieldControl, findFieldError, isNativeTextControl } from './control-protocol';
 import '../field/field.script';
 import './form.script';
 
@@ -101,7 +101,7 @@ const getTextControl = (root: HTMLElement, index = 0) => {
 		throw new Error(`Missing rui-field at index ${index}`);
 	}
 	const control = findFieldControl(field);
-	if (!(control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement)) {
+	if (!control || !isNativeTextControl(control)) {
 		throw new Error(`Missing text control in field index ${index}`);
 	}
 	return control;

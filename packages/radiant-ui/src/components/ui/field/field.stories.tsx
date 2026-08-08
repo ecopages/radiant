@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { RuiField, RuiFieldDescription, RuiFieldError } from './index';
 import { RuiButton } from '../button';
 import { RuiForm } from '../form';
+import { findFieldControl } from '../form/control-protocol';
 import { RuiInput } from '../input';
 import { RuiLabel } from '../label';
+import { RuiSelect } from '../select';
+import { RuiSwitch } from '../switch';
+import { RuiField, RuiFieldDescription, RuiFieldError } from './index';
 
 const meta = {
 	title: 'Components/Field',
@@ -90,14 +93,15 @@ export const Required: Story = {
 		const canvas = within(canvasElement);
 		const input = canvasElement.querySelector('input[data-rui-control]') as HTMLInputElement;
 
-		await step('aria-required reflects the rule before any interaction', async () => {
-			// A nested <rui-field>'s prop:rules isn't necessarily synced within the same
-			// tick its ancestor <rui-form> connects — waitFor gives it a moment to settle.
-			await waitFor(async () => {
-				await expect(input).toHaveAttribute('aria-required', 'true');
-			});
-			await expect(input).toHaveAttribute('aria-invalid', 'false');
-		});
+		await step(
+			'aria-required reflects the rule before any interaction (nested field rules may settle after form connect)',
+			async () => {
+				await waitFor(async () => {
+					await expect(input).toHaveAttribute('aria-required', 'true');
+				});
+				await expect(input).toHaveAttribute('aria-invalid', 'false');
+			},
+		);
 
 		await step('submitting empty enforces it', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
@@ -146,6 +150,40 @@ export const WithDescription: Story = {
 			await expect(description).toHaveAttribute('id');
 			const describedBy = (input.getAttribute('aria-describedby') ?? '').split(' ');
 			await expect(describedBy).toContain(description.id);
+		});
+	},
+};
+
+/**
+ * Field discovers Radiant hosts (`rui-select`, `rui-switch`, …) and presentational controls
+ * marked with `data-rui-control`. Prefer those over unmarked native inputs.
+ */
+export const LibraryControls: Story = {
+	render: () => (
+		<div style={{ display: 'grid', gap: '1rem', maxWidth: '20rem' }}>
+			<RuiField name="plan">
+				<RuiLabel>Plan</RuiLabel>
+				<RuiSelect
+					value="pro"
+					options={[
+						{ value: 'free', label: 'Free' },
+						{ value: 'pro', label: 'Pro' },
+					]}
+				/>
+			</RuiField>
+			<RuiField name="notifications">
+				<RuiSwitch>Email notifications</RuiSwitch>
+			</RuiField>
+		</div>
+	),
+	play: async ({ canvasElement, step }) => {
+		await step('select and switch are wired through the library control protocol', async () => {
+			const fields = Array.from(canvasElement.querySelectorAll('rui-field')) as HTMLElement[];
+			await expect(fields).toHaveLength(2);
+			await expect(findFieldControl(fields[0])).not.toBeNull();
+			await expect(fields[0].querySelector('rui-select')).not.toBeNull();
+			await expect(findFieldControl(fields[1])).not.toBeNull();
+			await expect(fields[1].querySelector('rui-switch')).not.toBeNull();
 		});
 	},
 };

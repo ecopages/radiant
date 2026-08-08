@@ -101,6 +101,9 @@ async function findModuleNode(server: ViteDevServer, modulePath: string): Promis
 	return server.moduleGraph.getModuleById(id);
 }
 
+/**
+ * @remarks When the entry module cannot be evaluated, continues with co-located style fallbacks.
+ */
 async function collectStylesForModule(
 	server: ViteDevServer,
 	modulePath: string,
@@ -114,9 +117,7 @@ async function collectStylesForModule(
 
 	try {
 		await server.ssrLoadModule(normalized);
-	} catch {
-		// Continue with co-located fallbacks when the entry cannot be evaluated.
-	}
+	} catch {}
 
 	visitImportedStyles(server, await findModuleNode(server, normalized), seen, assets);
 

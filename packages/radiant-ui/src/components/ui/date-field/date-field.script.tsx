@@ -346,13 +346,14 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		const target = event.target as HTMLElement;
 		const relatedTarget = event.relatedTarget;
 
-		if (target.matches('[data-date-field-input]') && target instanceof HTMLInputElement) {
+		if (target.matches('[data-date-field-input]') && target.localName === 'input') {
+			const input = target as HTMLInputElement;
 			queueMicrotask(() => {
 				if (!this.editing) {
 					return;
 				}
 				this.editing = false;
-				this.parseAndCommit(target.value);
+				this.parseAndCommit(input.value);
 			});
 		}
 

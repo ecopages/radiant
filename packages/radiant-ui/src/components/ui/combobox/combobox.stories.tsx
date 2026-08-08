@@ -124,13 +124,15 @@ export const Keyboard: Story = {
 		const input = getInput(canvasElement);
 		const options = getOptions(canvasElement);
 
-		await step('ArrowDown then Enter selects the active option and closes', async () => {
-			input.focus();
-			// First ArrowDown opens + activates Austria; second moves to Germany.
-			await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}');
-			await expect(input).toHaveValue('Germany');
-			await expect(input).toHaveAttribute('aria-expanded', 'false');
-		});
+		await step(
+			'ArrowDown then Enter selects the active option and closes (first ArrowDown opens Austria, second moves to Germany)',
+			async () => {
+				input.focus();
+				await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+				await expect(input).toHaveValue('Germany');
+				await expect(input).toHaveAttribute('aria-expanded', 'false');
+			},
+		);
 
 		await step('Escape closes the popup without changing the value', async () => {
 			input.focus();
@@ -141,15 +143,17 @@ export const Keyboard: Story = {
 			await expect(input).not.toHaveAttribute('aria-activedescendant');
 		});
 
-		await step('Home and End move the text caret, not list focus', async () => {
-			input.focus();
-			await userEvent.keyboard('{ArrowDown}');
-			// Value is still Germany from the prior step — active option follows selection.
-			await expect(input).toHaveAttribute('aria-activedescendant', options[1].id);
-			await userEvent.keyboard('{Home}');
-			await expect(input).not.toHaveAttribute('aria-activedescendant');
-			await expect(input.selectionStart).toBe(0);
-		});
+		await step(
+			'Home and End move the text caret, not list focus (value still Germany from prior step)',
+			async () => {
+				input.focus();
+				await userEvent.keyboard('{ArrowDown}');
+				await expect(input).toHaveAttribute('aria-activedescendant', options[1].id);
+				await userEvent.keyboard('{Home}');
+				await expect(input).not.toHaveAttribute('aria-activedescendant');
+				await expect(input.selectionStart).toBe(0);
+			},
+		);
 	},
 };
 

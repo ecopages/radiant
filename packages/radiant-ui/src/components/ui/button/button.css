@@ -1,0 +1,124 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-button {
+		@apply inline-flex items-center justify-center w-fit;
+		@apply font-medium rounded-button border border-transparent;
+		@apply transition-[background-color,color,box-shadow] duration-300 ease-out;
+		@apply cursor-pointer;
+		@apply whitespace-nowrap;
+		gap: var(--space-inline);
+	}
+
+	.rui-button > svg {
+		@apply pointer-events-none;
+	}
+
+	.rui-button:focus-visible {
+		@apply ring-2 ring-focus-ring outline-hidden;
+	}
+
+	.rui-button:disabled {
+		@apply opacity-50 cursor-not-allowed;
+	}
+
+	/* Variants */
+	.rui-button--filled {
+		@apply bg-primary text-on-primary rui-sheen;
+	}
+
+	.rui-button--filled:hover:not(:disabled) {
+		@apply bg-primary/90;
+	}
+
+	.rui-button--filled:active:not(:disabled) {
+		@apply bg-primary-dark;
+	}
+
+	.rui-button--filled[aria-pressed='true'] {
+		@apply bg-primary-dark ring-2 ring-focus-ring;
+	}
+
+	.rui-button--outline {
+		@apply bg-transparent text-on-background border-border;
+	}
+
+	.rui-button--outline:hover:not(:disabled) {
+		@apply bg-surface;
+	}
+
+	.rui-button--outline:active:not(:disabled) {
+		@apply bg-surface/80;
+	}
+
+	.rui-button--outline[aria-pressed='true'] {
+		@apply bg-background font-medium text-on-background shadow-sm ring-2 ring-focus-ring rui-sheen;
+	}
+
+	.rui-button--ghost {
+		@apply bg-transparent text-on-surface;
+	}
+
+	.rui-button--ghost:hover:not(:disabled) {
+		@apply bg-surface-container-low;
+	}
+
+	.rui-button--ghost:active:not(:disabled) {
+		@apply bg-surface-container;
+	}
+
+	.rui-button--ghost[aria-pressed='true'] {
+		@apply bg-background font-medium text-on-background shadow-sm ring-2 ring-inset ring-border;
+	}
+
+	.rui-button--destructive {
+		@apply bg-error text-on-error rui-sheen;
+	}
+
+	.rui-button--destructive:hover:not(:disabled) {
+		@apply bg-error/90;
+	}
+
+	.rui-button--destructive:active:not(:disabled) {
+		@apply bg-error-dark;
+	}
+
+	/* Sizes share `--size-control-*` with input so form rows align. */
+	.rui-button--sm {
+		height: var(--size-control-sm);
+		padding-inline: calc(var(--space-control-x) * 0.75);
+		font-size: var(--text-xs);
+	}
+
+	.rui-button--md {
+		height: var(--size-control-md);
+		padding-inline: var(--space-control-x);
+		font-size: var(--text-control, 0.875rem);
+	}
+
+	.rui-button--lg {
+		height: var(--size-control-lg);
+		padding-inline: calc(var(--space-control-x) * 1.5);
+		font-size: var(--text-body);
+	}
+
+	.rui-button--icon {
+		height: var(--size-control-md);
+		width: var(--size-control-md);
+		padding-inline: 0;
+		font-size: var(--text-control, 0.875rem);
+	}
+
+	/* Back-compat aliases used by earlier stories */
+	.rui-button--primary {
+		@apply bg-primary text-on-primary rui-sheen;
+	}
+
+	.rui-button--secondary {
+		@apply bg-secondary text-on-secondary rui-sheen;
+	}
+
+	.rui-button--error {
+		@apply bg-error text-on-error rui-sheen;
+	}
+}

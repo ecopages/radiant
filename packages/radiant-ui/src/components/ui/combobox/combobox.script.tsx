@@ -120,7 +120,9 @@ export class RuiCombobox extends RadiantElement {
 	}
 
 	private isComboboxInput(target: EventTarget | null): target is HTMLInputElement {
-		return target instanceof HTMLInputElement && target.hasAttribute('data-combobox-input');
+		return (
+			target instanceof HTMLElement && target.localName === 'input' && target.hasAttribute('data-combobox-input')
+		);
 	}
 
 	private syncLabel(): void {
@@ -357,6 +359,7 @@ export class RuiCombobox extends RadiantElement {
 		this.setVisualFocusCombobox();
 	}
 
+	/** @remarks Typing returns visual focus to the textbox. */
 	@onEvent({ ref: 'root', type: 'input' })
 	onRootInput(event: Event): void {
 		if (!this.isComboboxInput(event.target)) {
@@ -373,7 +376,6 @@ export class RuiCombobox extends RadiantElement {
 			this.setOpen(false);
 		}
 
-		// Typing returns visual focus to the textbox.
 		this.setVisualFocusCombobox();
 	}
 

@@ -397,30 +397,32 @@ export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {
 							/>
 							<input type="hidden" data-number-field-value />
 						</slot>
-						<slot name="decrement">
-							<button
-								type="button"
-								class="rui-number-field__stepper"
-								data-number-field-action="decrement"
-								aria-label={decrementLabel}
-								disabled={this.$.decreaseDisabled}
-								tabIndex={-1}
-							>
-								−
-							</button>
-						</slot>
-						<slot name="increment">
-							<button
-								type="button"
-								class="rui-number-field__stepper"
-								data-number-field-action="increment"
-								aria-label={incrementLabel}
-								disabled={this.$.increaseDisabled}
-								tabIndex={-1}
-							>
-								+
-							</button>
-						</slot>
+						<div class="rui-number-field__steppers">
+							<slot name="decrement">
+								<button
+									type="button"
+									class="rui-number-field__stepper"
+									data-number-field-action="decrement"
+									aria-label={decrementLabel}
+									disabled={this.$.decreaseDisabled}
+									tabIndex={-1}
+								>
+									−
+								</button>
+							</slot>
+							<slot name="increment">
+								<button
+									type="button"
+									class="rui-number-field__stepper"
+									data-number-field-action="increment"
+									aria-label={incrementLabel}
+									disabled={this.$.increaseDisabled}
+									tabIndex={-1}
+								>
+									+
+								</button>
+							</slot>
+						</div>
 					</div>
 				</slot>
 			</div>

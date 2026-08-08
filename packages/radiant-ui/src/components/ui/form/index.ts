@@ -11,6 +11,7 @@ export { createRulesResolver, runRulesResolver } from './resolvers';
 export type { FieldRules, FieldValues, Resolver, ValidationMode, FormState, FieldError } from './types';
 export {
 	findFieldControl,
+	isNativeTextControl,
 	readControlValue,
 	writeControlValue,
 	RUI_CONTROL_ATTR,

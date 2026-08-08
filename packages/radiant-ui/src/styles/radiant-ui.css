@@ -1,6 +1,7 @@
 /**
- * radiant-ui base stylesheet (Tailwind + default theme + button).
+ * radiant-ui base stylesheet (Tailwind + default theme).
  * Published as `@ecopages/radiant-ui/radiant-ui.css`.
+ * Component styles: import `styles.css` or rely on view stylesheet registration.
  */
 @import './radiant-ui-core.css';
 @import './themes/default.css';

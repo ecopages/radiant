@@ -11,6 +11,50 @@ import {
 } from './toast-context';
 import { toastState } from './toast-state';
 
+/**
+ * Absolute dismiss timestamps keyed by toast id.
+ *
+ * @remarks
+ * Survives remounts when the toaster re-renders the list (e.g. a sibling
+ * dismisses), so lifetime is not restarted from a full `duration`.
+ */
+const toastDeadlines = new Map<string, number>();
+
+/**
+ * Frozen leftover ms while a toast is paused (hover / interaction / hidden tab).
+ *
+ * @remarks
+ * Absolute deadlines keep ticking during pause; this map holds remaining time so
+ * resume continues from where the countdown left off.
+ */
+const toastRemainingMs = new Map<string, number>();
+
+function deadlineKey(id: ToastId): string {
+	return String(id);
+}
+
+function clearToastDeadline(id: ToastId): void {
+	if (id === '') return;
+	const key = deadlineKey(id);
+	toastDeadlines.delete(key);
+	toastRemainingMs.delete(key);
+}
+
+/** Clears shared dismiss timers (test / Storybook resets). */
+export function resetToastDeadlines(): void {
+	toastDeadlines.clear();
+	toastRemainingMs.clear();
+}
+
+function freezeToastDeadline(id: ToastId): void {
+	if (id === '') return;
+	const key = deadlineKey(id);
+	const deadline = toastDeadlines.get(key);
+	if (deadline == null) return;
+	toastRemainingMs.set(key, Math.max(0, deadline - Date.now()));
+	toastDeadlines.delete(key);
+}
+
 export type RuiToastProps = {
 	/** JSX list reconciliation key (not reflected to the DOM). */
 	key?: string | number;
@@ -73,7 +117,11 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 
 	/**
 	 * Wire pointer listeners, then announce mount after paint so enter CSS can run.
-	 * On reconnect, re-announce without restarting the enter sequence.
+	 *
+	 * @remarks
+	 * `mounted` stays true across disconnect so list remounts skip the enter
+	 * animation (avoids an opacity flicker when siblings update). Timer state is
+	 * still reset on disconnect and restarted on reconnect / first paint.
 	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
@@ -85,8 +133,12 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		this.addEventListener('pointercancel', this.onPointerUp);
 
 		if (isReconnect) {
+			this.timerReady = true;
 			this.syncDomState();
 			this.dispatchEvent(new CustomEvent('rui-toast-mounted', { bubbles: true }));
+			if (!this.held && !this.removed) {
+				this.startTimer();
+			}
 			return;
 		}
 
@@ -98,6 +150,9 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 				this.timerReady = true;
 				this.syncDomState();
 				this.dispatchEvent(new CustomEvent('rui-toast-mounted', { bubbles: true }));
+				if (!this.held && !this.removed) {
+					this.startTimer();
+				}
 			});
 		});
 		this.syncDomState();
@@ -138,8 +193,10 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 
 	/**
 	 * Hold or release auto-dismiss (toaster-controlled on stack hover).
-	 * Leaving hover resets lifetime to a full `duration` (does not resume leftover time).
-	 * A no-op `setPaused(false)` still starts the timer on first paint if it never ran.
+	 *
+	 * @remarks
+	 * Pause freezes leftover ms so wall-clock time during hover does not consume
+	 * the lifetime. Resume rebuilds the deadline from that remainder.
 	 */
 	setPaused(paused: boolean): void {
 		if (this.held === paused) {
@@ -151,6 +208,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		this.held = paused;
 		if (!this.timerReady || !this.mounted || this.removed) return;
 		if (paused || document.hidden) {
+			freezeToastDeadline(this.resolvedId);
 			this.clearTimer();
 		} else {
 			this.startTimer();
@@ -160,6 +218,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	@onUpdated('duration')
 	onDurationUpdated(): void {
 		if (!this.timerReady || !this.mounted || this.removed || this.held) return;
+		clearToastDeadline(this.resolvedId);
 		this.startTimer();
 	}
 
@@ -182,7 +241,14 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		this.timeoutId = null;
 	}
 
-	/** Start a fresh full-duration countdown (never resumes leftover time). */
+	/**
+	 * Countdown to the toast's dismiss deadline.
+	 *
+	 * @remarks
+	 * Deadlines live in a module map keyed by toast id so list remounts (sibling
+	 * dismiss / re-render) resume leftover time instead of restarting `duration`.
+	 * Hover pause stores remaining ms separately and rebuilds the deadline on resume.
+	 */
 	private startTimer(): void {
 		if (this.held || this.removed || document.hidden) return;
 		if (this.duration === Number.POSITIVE_INFINITY || this.variant === 'loading') return;
@@ -190,14 +256,38 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 			this.beginRemove();
 			return;
 		}
+
+		const id = this.resolvedId;
+		const key = deadlineKey(id);
+		const now = Date.now();
+
+		let remaining = toastRemainingMs.get(key);
+		toastRemainingMs.delete(key);
+
+		if (remaining == null) {
+			const deadline = toastDeadlines.get(key);
+			remaining = deadline != null ? deadline - now : this.duration;
+		}
+
+		if (remaining <= 0) {
+			clearToastDeadline(id);
+			this.beginRemove();
+			return;
+		}
+
+		toastDeadlines.set(key, now + remaining);
 		this.clearTimer();
-		this.timeoutId = setTimeout(() => this.beginRemove(), this.duration);
+		this.timeoutId = setTimeout(() => {
+			clearToastDeadline(id);
+			this.beginRemove();
+		}, remaining);
 	}
 
 	private beginRemove(): void {
 		if (this.removed) return;
 		this.removed = true;
 		this.clearTimer();
+		clearToastDeadline(this.resolvedId);
 		this.syncDomState();
 		if (!this.markedDelete) {
 			toastState.dismiss(this.resolvedId);

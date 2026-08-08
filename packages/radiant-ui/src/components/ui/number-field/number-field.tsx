@@ -52,6 +52,19 @@ export function RuiNumberFieldInput({
 	);
 }
 
+export type RuiNumberFieldSteppersProps = JsxHtmlPropsWithChildren<{
+	slot?: string;
+}>;
+
+/** Groups increment and decrement steppers on the trailing edge of the field. */
+export function RuiNumberFieldSteppers({ children, slot, class: className, ...props }: RuiNumberFieldSteppersProps) {
+	return (
+		<div {...props} slot={slot} class={cx('rui-number-field__steppers', className)}>
+			{children}
+		</div>
+	);
+}
+
 export type RuiNumberFieldStepperButtonProps = JsxHtmlPropsWithChildren<{
 	slot?: 'increment' | 'decrement';
 	'aria-label'?: string;
@@ -115,8 +128,10 @@ export function RuiNumberFieldDecrementButton({
  * <RuiNumberField value={25} minValue={0} maxValue={100}>
  *   <RuiNumberFieldGroup>
  *     <RuiNumberFieldInput />
- *     <RuiNumberFieldDecrementButton />
- *     <RuiNumberFieldIncrementButton />
+ *     <RuiNumberFieldSteppers>
+ *       <RuiNumberFieldDecrementButton />
+ *       <RuiNumberFieldIncrementButton />
+ *     </RuiNumberFieldSteppers>
  *   </RuiNumberFieldGroup>
  * </RuiNumberField>
  * ```

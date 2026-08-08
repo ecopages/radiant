@@ -20,7 +20,25 @@ const HOST_CONTROL_TAGS = new Set([
 	'rui-listbox',
 ]);
 
-const CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}, input, textarea`;
+/** Library controls only — `data-rui-control` (e.g. RuiInput) or known host tags. */
+const CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
+
+/**
+ * Presentational text controls (`RuiInput` / `RuiTextarea`) are real `<input>` / `<textarea>`
+ * nodes marked with `data-rui-control`. Detect by tag name — never `instanceof HTMLInputElement`,
+ * which is undefined under Radiant's Node light-DOM SSR shim.
+ */
+export function isNativeTextControl(node: Element): node is HTMLInputElement | HTMLTextAreaElement {
+	return node.localName === 'input' || node.localName === 'textarea';
+}
+
+function isNativeInput(node: Element): node is HTMLInputElement {
+	return node.localName === 'input';
+}
+
+function isNativeTextarea(node: Element): node is HTMLTextAreaElement {
+	return node.localName === 'textarea';
+}
 
 type FieldSlotHost = HTMLElement & { getSlotElements?: (name?: string) => Element[] };
 
@@ -210,21 +228,14 @@ function findControlInSubtree(node: Element): HTMLElement | null {
 	if (!(node instanceof HTMLElement)) {
 		return null;
 	}
-	if (node.matches(`[${RUI_CONTROL_ATTR}]`)) {
+	if (node.matches(`[${RUI_CONTROL_ATTR}]`) || HOST_CONTROL_TAGS.has(node.localName)) {
 		return node;
 	}
-	if (HOST_CONTROL_TAGS.has(node.localName)) {
-		return node;
-	}
-	if (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement) {
-		return node;
-	}
-	const nested = node.querySelector<HTMLElement>(CONTROL_SELECTOR);
-	return nested;
+	return node.querySelector<HTMLElement>(CONTROL_SELECTOR);
 }
 
 export function readControlValue(control: HTMLElement): unknown {
-	if (control instanceof HTMLInputElement) {
+	if (isNativeInput(control)) {
 		const host = resolveControlHost(control);
 		const adapter = host === control ? undefined : CONTROL_VALUE_ADAPTERS.get(host.localName);
 		if (adapter) {
@@ -239,7 +250,7 @@ export function readControlValue(control: HTMLElement): unknown {
 		return control.value;
 	}
 
-	if (control instanceof HTMLTextAreaElement) {
+	if (isNativeTextarea(control)) {
 		return control.value;
 	}
 
@@ -248,7 +259,7 @@ export function readControlValue(control: HTMLElement): unknown {
 }
 
 export function writeControlValue(control: HTMLElement, value: unknown): void {
-	if (control instanceof HTMLInputElement) {
+	if (isNativeInput(control)) {
 		const host = resolveControlHost(control);
 		const adapter = host === control ? undefined : CONTROL_VALUE_ADAPTERS.get(host.localName);
 		if (adapter) {
@@ -271,7 +282,7 @@ export function writeControlValue(control: HTMLElement, value: unknown): void {
 		return;
 	}
 
-	if (control instanceof HTMLTextAreaElement) {
+	if (isNativeTextarea(control)) {
 		control.value = value == null ? '' : String(value);
 		return;
 	}
@@ -332,7 +343,7 @@ export function wireFieldControlName(
 		return;
 	}
 
-	if (ariaTarget instanceof HTMLInputElement || ariaTarget instanceof HTMLTextAreaElement) {
+	if (ariaTarget && isNativeTextControl(ariaTarget)) {
 		ariaTarget.name = name;
 	}
 
@@ -351,7 +362,7 @@ export function wireFieldControlName(
 
 /** Element that receives `id`, `aria-invalid`, and `aria-describedby` from Field. */
 export function getAriaControlTarget(control: HTMLElement): HTMLElement {
-	if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) {
+	if (isNativeTextControl(control)) {
 		return control;
 	}
 

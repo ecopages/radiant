@@ -13,13 +13,11 @@ async function flushRender(): Promise<void> {
 }
 
 describe('RuiField rules hydration via fieldContext', () => {
-	it('publishes rules onto fieldProvider during SSR prep, stripping the validate function', () => {
+	it('publishes rules onto fieldProvider during SSR prep, stripping the validate function (simulates ensureReady; connectedCallback never runs during SSR)', () => {
 		const field = document.createElement('rui-field') as RuiFieldElement;
 		field.name = 'email';
 		field.rules = { required: 'Email is required', validate: () => true };
 
-		// Simulates what a real SSR render triggers via ensureReady() — connectedCallback
-		// never runs during real SSR, so this is the only place this logic can execute.
 		runSsrPreparationCallbacks(field);
 
 		const scriptMarkup = field.fieldProvider.renderHydrationScriptTag();

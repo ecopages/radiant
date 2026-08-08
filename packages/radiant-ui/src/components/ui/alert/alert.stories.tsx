@@ -4,19 +4,38 @@ import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiAlertProps } from './alert.script';
 import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from './alert';
 
-const meta = {
-	title: 'Components/Alert',
-	component: RuiAlert,
-	args: {
-		variant: 'info',
-		layout: 'inline',
-	},
-	render: (args: RuiAlertProps) => (
+const renderAlert = (args: RuiAlertProps) => {
+	if (args.layout === 'banner') {
+		return (
+			<RuiAlert {...args}>
+				<RuiAlertTitle>Documentation preview</RuiAlertTitle>
+				<RuiAlertDescription>
+					<p>
+						This release includes breaking changes to the routing API. Review the migration guide before
+						upgrading production apps.
+					</p>
+				</RuiAlertDescription>
+			</RuiAlert>
+		);
+	}
+
+	return (
 		<RuiAlert {...args}>
 			<RuiAlertIcon variant={args.variant ?? 'info'} />
 			<span>Your session will expire in 5 minutes.</span>
 		</RuiAlert>
-	),
+	);
+};
+
+const meta = {
+	title: 'Components/Alert',
+	component: RuiAlert,
+	args: { variant: 'info', layout: 'inline' },
+	argTypes: {
+		variant: { control: { type: 'select' }, options: ['info', 'success', 'warning', 'error'] },
+		layout: { control: { type: 'select' }, options: ['inline', 'banner'] },
+	},
+	render: renderAlert,
 } satisfies Meta<RuiAlertProps>;
 
 export default meta;
@@ -43,7 +62,6 @@ export const InlineWarning: Story = {
 		</RuiAlert>
 	),
 };
-
 export const InlineError: Story = {
 	args: { variant: 'error', layout: 'inline' },
 	render: (args) => (
@@ -53,7 +71,6 @@ export const InlineError: Story = {
 		</RuiAlert>
 	),
 };
-
 export const InlineSuccess: Story = {
 	args: { variant: 'success', layout: 'inline' },
 	render: (args) => (
@@ -63,22 +80,7 @@ export const InlineSuccess: Story = {
 		</RuiAlert>
 	),
 };
-
-export const Banner: Story = {
-	args: { variant: 'info', layout: 'banner' },
-	render: (args) => (
-		<RuiAlert {...args}>
-			<RuiAlertTitle>Documentation preview</RuiAlertTitle>
-			<RuiAlertDescription>
-				<p>
-					This release includes breaking changes to the routing API. Review the migration guide before
-					upgrading production apps.
-				</p>
-			</RuiAlertDescription>
-		</RuiAlert>
-	),
-};
-
+export const Banner: Story = { args: { variant: 'info', layout: 'banner' }, render: renderAlert };
 export const BannerWarning: Story = {
 	args: { variant: 'warning', layout: 'banner' },
 	render: (args) => (

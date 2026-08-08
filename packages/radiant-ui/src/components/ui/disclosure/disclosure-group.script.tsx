@@ -89,6 +89,9 @@ export class RuiDisclosureGroup extends RadiantElement {
 		}
 	}
 
+	/**
+	 * @remarks Optional APG accordion: ArrowLeft collapses, ArrowRight expands the focused header.
+	 */
 	@onEvent({ selector: '[data-disclosure-trigger]', type: 'keydown' })
 	onTriggerKeydown(event: KeyboardEvent): void {
 		const triggers = this.getTriggers();
@@ -97,7 +100,6 @@ export class RuiDisclosureGroup extends RadiantElement {
 			return;
 		}
 
-		// Optional APG accordion: Left collapses, Right expands the focused header.
 		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
 			const disclosure = this.getDisclosureForTrigger(current);
 			if (!disclosure) {

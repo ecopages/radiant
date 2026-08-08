@@ -182,6 +182,10 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 		this.activateCell(cell);
 	}
 
+	/**
+	 * @remarks APG cell-only expansion: ArrowRight/Left and Enter on the first cell of an
+	 * expandable row toggle expansion; other cells navigate or activate only.
+	 */
 	@onEvent({ selector: '[role="gridcell"]', type: 'keydown' })
 	onCellKeydown(event: KeyboardEvent): void {
 		const cell = (event.target as HTMLElement).closest<HTMLElement>('[role="gridcell"]');
@@ -201,7 +205,6 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 		switch (event.key) {
 			case 'ArrowRight': {
 				event.preventDefault();
-				// APG cell-only: expand only from the first cell of a collapsed parent.
 				if (isFirstCell && isExpandable && !isExpanded) {
 					this.setExpanded(row, true);
 					this.syncSelection();
@@ -215,7 +218,6 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 			}
 			case 'ArrowLeft': {
 				event.preventDefault();
-				// APG cell-only: collapse only from the first cell of an expanded parent.
 				if (isFirstCell && isExpandable && isExpanded) {
 					this.setExpanded(row, false);
 					this.syncSelection();
@@ -271,7 +273,6 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 			}
 			case 'Enter': {
 				event.preventDefault();
-				// APG: Enter on the first cell of an expandable row toggles expansion.
 				if (isFirstCell && isExpandable) {
 					this.setExpanded(row, !isExpanded);
 					this.syncSelection();

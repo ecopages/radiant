@@ -72,6 +72,8 @@ async function readStampedScriptModuleFromView(
 /**
  * Resolve the Radiant `.script` module on the Vite server.
  * Prefers stamped metadata from the loaded view, then explicit hints, then co-located candidates.
+ *
+ * @remarks Stamped-metadata lookup failures fall through to hinted and co-located resolution.
  */
 export async function resolveScriptSsrModule(
 	server: ViteDevServer,
@@ -96,9 +98,7 @@ export async function resolveScriptSsrModule(
 					};
 				}
 			}
-		} catch {
-			// Fall through to hinted/candidate resolution.
-		}
+		} catch {}
 	}
 
 	if (options.ssrModule) {

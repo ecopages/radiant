@@ -1,7 +1,7 @@
 /**
- * Tailwind + shared component primitives (no theme).
+ * Tailwind + shared utilities (no theme, no component styles).
  * Pair with a theme file, or use `radiant-ui.css` for the default bundle.
+ * Component styles come from `styles.css` or per-view stylesheet registration.
  */
 @import 'tailwindcss';
 @import './utilities/sheen.css';
-@import './components/button.css';

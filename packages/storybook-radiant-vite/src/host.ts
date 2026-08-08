@@ -65,6 +65,8 @@ export function pickComponentExport(
  * Apply CSF args onto a host.
  * - Always assigns properties (Radiant `@prop` / `@state` surface).
  * - When `target` is an `HTMLElement`, also reflects primitives as attributes.
+ *
+ * @remarks Read-only accessor assignments are ignored.
  */
 export function applyStoryArgs(target: object, args: Args): void {
 	const element = target instanceof HTMLElement ? target : null;
@@ -91,8 +93,6 @@ export function applyStoryArgs(target: object, args: Args): void {
 
 		try {
 			(target as Record<string, unknown>)[key] = value;
-		} catch {
-			// ignore read-only accessors
-		}
+		} catch {}
 	}
 }

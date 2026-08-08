@@ -10,4 +10,5 @@ export {
 	RuiNumberFieldInput,
 	RuiNumberFieldIncrementButton,
 	RuiNumberFieldDecrementButton,
+	RuiNumberFieldSteppers,
 } from './number-field';
