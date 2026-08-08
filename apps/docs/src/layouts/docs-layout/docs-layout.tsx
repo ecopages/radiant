@@ -14,7 +14,7 @@ import {
 	RuiSidebarTrigger,
 } from '@ecopages/radiant-ui/sidebar';
 import { RuiToc } from '@ecopages/radiant-ui/toc';
-import { docsNav } from '@/lib/content-nav';
+import { docsNav, flattenContentNav } from '@/lib/content-nav';
 
 import { CodeTabs } from '@/components/code-tabs';
 import { Logo } from '@/components/logo/logo';
@@ -25,7 +25,7 @@ import { DocsPagination } from './components/docs-pagination';
 import { getGroupIcon } from './get-group-icon';
 
 const paginationData = JSON.stringify({
-	pages: docsNav.groups.flatMap((group) => group.items).map(({ href, title }) => ({ href, title })),
+	pages: flattenContentNav(docsNav).map(({ href, title }) => ({ href, title })),
 });
 const ECO_NAVIGATION_EVENTS = 'eco:page-load,eco:after-swap';
 const DOCS_SIDEBAR_ID = 'docs-sidebar';
