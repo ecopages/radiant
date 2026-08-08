@@ -39,7 +39,7 @@ export function hydrateIterableRoot(
 	let nextBindingIndex = 0;
 
 	for (const child of jsxChildren) {
-		const nodeCount = countHydratedRangeNodes(child, target);
+		const nodeCount = countHydratedRangeNodes(child);
 		const slice = domChildren.slice(domOffset, domOffset + nodeCount);
 
 		if (slice.length !== nodeCount) {
