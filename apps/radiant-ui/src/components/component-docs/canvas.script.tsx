@@ -5,7 +5,7 @@ import { type ContextProvider, consumeContext } from '@ecopages/radiant/context'
 import '@ecopages/radiant-ui';
 import '@/content/stories';
 import { docsStoryContext } from '@/lib/docs-stories/story-context';
-import { getRegisteredStory, renderStory } from '@/lib/docs-stories';
+import { getRegisteredStory, getStoryArgs, renderStory } from '@/lib/docs-stories';
 import type { DocsDemoElement } from './demo.script';
 
 @customElement('radiant-docs-canvas')
@@ -13,14 +13,22 @@ export class DocsCanvasElement extends RadiantElement {
 	@consumeContext(docsStoryContext) story?: ContextProvider<typeof docsStoryContext>;
 
 	private unsubscribeStory?: () => void;
+	private bindAttempts = 0;
 
 	private get storyId(): string {
 		return this.getStoryProvider()?.getContext().storyId || this.dataset.storyId || '';
 	}
 
+	/**
+	 * @remarks
+	 * Paint immediately from `data-story-id` so SSR markup is replaced even if
+	 * the parent demo context is not ready yet. Then attach to the context
+	 * provider when it appears (for control-driven re-paints).
+	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
-		queueMicrotask(() => this.bindStoryContext());
+		this.repaintFromContext();
+		this.bindStoryContext();
 	}
 
 	override disconnectedCallback(): void {
@@ -31,10 +39,12 @@ export class DocsCanvasElement extends RadiantElement {
 
 	/** Re-renders the story preview from the current shared args. */
 	repaintFromContext(): void {
-		const args = this.getStoryProvider()?.getContext().args;
-		if (!args) {
-			return;
-		}
+		const entry = getRegisteredStory(this.storyId);
+		if (!entry) return;
+
+		const contextArgs = this.getStoryProvider()?.getContext().args;
+		const args =
+			contextArgs && Object.keys(contextArgs).length > 0 ? contextArgs : getStoryArgs(entry.meta, entry.story);
 
 		this.paintStory(args);
 	}
@@ -48,11 +58,12 @@ export class DocsCanvasElement extends RadiantElement {
 		return demo?.story;
 	}
 
-	private bindStoryContext(attempt = 0): void {
+	private bindStoryContext(): void {
 		const provider = this.getStoryProvider();
 		if (!provider) {
-			if (attempt < 5) {
-				queueMicrotask(() => this.bindStoryContext(attempt + 1));
+			if (this.bindAttempts < 30) {
+				this.bindAttempts += 1;
+				requestAnimationFrame(() => this.bindStoryContext());
 			}
 			return;
 		}

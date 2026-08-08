@@ -1,19 +1,21 @@
 import { buildExampleCode } from '@/lib/playground';
 import { docsStory, type DocsDecorator, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
-import { dismissToast, showToast } from '@ecopages/radiant-ui/toast';
+/**
+ * @remarks
+ * Import from the package root — not `@ecopages/radiant-ui/toast`.
+ * Docs canvas prebundles those as separate vendor chunks with separate toast
+ * stores; the barrel is what registers `<rui-toaster>`, so triggers must use it too.
+ */
+import { RuiToaster, toast } from '@ecopages/radiant-ui';
+
+const TOAST_STAGE_SELECTOR = '.playground-toast-stage';
 
 const DEMO_TRIGGERS: Record<string, () => void> = {
-	default: () => showToast({ title: 'Event has been created', variant: 'default' }),
-	success: () => showToast({ title: 'Changes saved', variant: 'success' }),
-	error: () =>
-		showToast({
-			title: 'Unable to reach the server',
-			description: 'Try again in a moment.',
-			variant: 'error',
-		}),
-	warning: () => showToast({ title: 'Disk space is running low', variant: 'warning' }),
-	info: () => showToast({ title: 'Your session will expire soon', variant: 'info' }),
+	default: () => toast('Event has been created'),
+	success: () => toast.success('Changes saved'),
+	error: () => toast.error('Unable to reach the server', { description: 'Try again in a moment.' }),
+	warning: () => toast.warning('Disk space is running low'),
+	info: () => toast.info('Your session will expire soon'),
 };
 
 let toastDemoInstalled = false;
@@ -34,8 +36,7 @@ function onToastDemoClick(event: Event): void {
 /**
  * @remarks
  * Document delegation for `data-toast-trigger` — SSR-safe, same pattern as `installDialogs`.
- * Uses `showToast` (DOM events) so the mounted `<rui-toaster>` receives updates even when
- * the story module and the canvas bundle resolve separate toast store copies.
+ * Installed at module load so SSR buttons work even before the canvas re-paints.
  */
 function installToastDemo(): void {
 	if (typeof document === 'undefined' || toastDemoInstalled) return;
@@ -43,11 +44,11 @@ function installToastDemo(): void {
 	document.addEventListener('click', onToastDemoClick);
 }
 
-const withToastStage: DocsDecorator<ToastArgs> = (story) => {
+installToastDemo();
+
+const withToastStage: DocsDecorator<ToastArgs> = (_story, context) => {
 	installToastDemo();
-	if (typeof document !== 'undefined') {
-		dismissToast();
-	}
+	const args = context.args;
 
 	return (
 		<div class="playground-toast-stage">
@@ -72,7 +73,14 @@ const withToastStage: DocsDecorator<ToastArgs> = (story) => {
 					Info
 				</button>
 			</div>
-			{story()}
+			<RuiToaster
+				container={TOAST_STAGE_SELECTOR}
+				position={(args.position as ToastArgs['position']) ?? 'bottom-end'}
+				duration={Number(args.duration ?? 4000)}
+				visibleToasts={Number(args.visibleToasts ?? 3)}
+				closeButton={Boolean(args.closeButton)}
+				expand={Boolean(args.expand)}
+			/>
 		</div>
 	);
 };
@@ -107,7 +115,7 @@ export const meta = {
 	},
 	decorators: [withToastStage],
 	exampleCode: (args) => buildExampleCode('RuiToaster', 'toast', args),
-	render: (args) => renderPlaygroundPreview('toast', args),
+	render: () => null,
 } satisfies DocsMeta<ToastArgs>;
 
 type Story = DocsStory<ToastArgs>;
