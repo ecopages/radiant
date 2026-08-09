@@ -52,8 +52,52 @@ import {
 
 <p>Set `as` to `header` or `section` when the heading block defines a landmark region on the page.</p>
 
+## Theming
+
+Heading text maps to the **`on-background`** role, never a palette step:
+
+| Part | CSS roles |
+| --- | --- |
+| Root | `on-background` text |
+| Eyebrow / title / description | `on-background`; sizes come from `--text-*` + `--heading-*` scale variables |
+| Alignment | `--heading-*` spacing tokens per `size` |
+
+Type scales are set via CSS custom properties (`--heading-title-font-size`, `--heading-description-gap`, …) so the block can be re-themed at the theme layer. Override colors at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - `RuiHeadingTitle` renders the appropriate heading level for the page outline.
 - Do not skip heading levels between the title and surrounding content.
-- Eyebrow text is supplementary — the title carries the primary meaning.
+- Eyebrow text is supplementary, the title carries the primary meaning.
+
+## API
+
+`RuiHeading` and its parts are presentational JSX views, no custom element. `RuiHeadingTitle` renders `RuiHeadline` sized by the parent block's CSS variables.
+
+### Props
+
+| Component | Prop | Type | Default | Description |
+| --- | --- | --- | --- | --- |
+| `RuiHeading` | `as` | `div` · `header` · `section` · `article` · `aside` | `div` | Root element. |
+| | `align` | `start` · `center` | `start` | Text and flex alignment. |
+| | `size` | `sm` · `md` · `lg` · `xl` | `md` | Type scale and vertical rhythm. |
+| `RuiHeadingTitle` | `as` | `h1`–`h6` · `p` · `span` | `h2` | Heading level. |
+| | `id` | `string` | | Element id. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-heading` · `--align-start` · `--align-center` · `--size-sm` · `--size-md` · `--size-lg` · `--size-xl` | Root + layout/scale variants. |
+| `.rui-heading__eyebrow` | Kicker line above the title. |
+| `.rui-heading__title` | Main title. |
+| `.rui-heading__description` | Supporting copy. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Text | `--on-background` |
+| Type scale | `--text-xs` … `--text-4xl`, `--leading-compact`, `--heading-*` |

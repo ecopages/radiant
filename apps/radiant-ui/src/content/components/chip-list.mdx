@@ -45,7 +45,42 @@ import { RuiChip } from '@ecopages/radiant-ui/chip';
 
 ## Label the collection
 
-<p>Provide `aria-label` when the chip list is not described by a visible heading — for example, "Applied filters".</p>
+<p>Provide `aria-label` when the chip list is not described by a visible heading, for example, "Applied filters".</p>
+
+## Theming
+
+Chip List maps to **semantic spacing roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| List (`rui-chip-list`) | `--space-inline` (chip gap) |
+
+Item wrappers reset margin/padding only; chips style themselves via `RuiChip`. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiChipList` and `RuiChipListItem` are presentational JSX views over `<ul>` / `<li>`, no custom element.
+
+### Props
+
+| Component | Prop | Type | Default | Description |
+| --- | --- | --- | --- | --- |
+| `RuiChipList` | `aria-label` | `string` | | Accessible name when the list has no visible heading. |
+
+### CSS classes
+
+Public BEM classes on the rendered elements (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-chip-list` | List container (`<ul>`). |
+| `.rui-chip-list__item` | List item (`<li>`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Chip gap | `--space-inline` |
 
 ## Accessibility
 

@@ -50,7 +50,74 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 ## Step size
 
-<p>Match `step` to meaningful increments — whole percentages, not arbitrary fractions.</p>
+<p>Match `step` to meaningful increments, such as whole percentages, not arbitrary fractions.</p>
+
+## Theming
+
+Slider surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Track (`.rui-slider__range-track`) | `surface` |
+| Fill (`.rui-slider__range-fill`) | `primary` |
+| Thumb (`.rui-slider__thumb`) | `background` surface, `primary` border, `shadow-sm` |
+| Native input (`.rui-slider__input`) | `primary` accent |
+| Value readout (`.rui-slider__value`) | `on-surface` |
+| Focus ring | `focus-ring` |
+
+Range thumb positions come from `--rui-slider-min` / `--rui-slider-max`, set inline by the element from the live range, not theme tokens. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiSlider` is a custom element (`<rui-slider>`); the view is a thin passthrough that maps `values` to `rangeMin` / `rangeMax`.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `variant` | `single` · `range` | `single` | Single-thumb or dual-thumb range. |
+| `value` | `number` | `50` | Selected value (single mode). |
+| `range-min` | `number` | `25` | Lower thumb value (range mode). |
+| `range-max` | `number` | `75` | Upper thumb value (range mode). |
+| `min` | `number` | `0` | Range minimum. |
+| `max` | `number` | `100` | Range maximum. |
+| `step` | `number` | `1` | Arrow-key and pointer snap interval. |
+| `min-distance` | `number` | `0` | Minimum gap enforced between range thumbs. |
+| `disabled` | `boolean` | `false` | Disables interaction. |
+| `label` | `string` | `''` | Accessible name for the slider. |
+| `name` | `string` | `''` | Form field name (single mode native input). |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: number }` or `{ values: [number, number] }` | Emitted as the value moves; `value` in single mode, `values` in range mode. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass` on the element):
+
+| Class | Description |
+| --- | --- |
+| `.rui-slider` | Root; wraps the label, track, and value readout. |
+| `.rui-slider--range` | Range-mode surface. |
+| `.rui-slider__label` | Optional visible label. |
+| `.rui-slider__input` | Native range input (single mode). |
+| `.rui-slider__value` | Live numeric readout. |
+| `.rui-slider__range` | Range-mode track wrapper. |
+| `.rui-slider__range-track` | Track surface behind both thumbs. |
+| `.rui-slider__range-fill` | Filled span between the thumbs. |
+| `.rui-slider__thumb` | Range thumb (`role="slider"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Track | `--surface` |
+| Fill / thumb | `--primary` |
+| Thumb surface | `--background` |
+| Value readout | `--on-surface` |
+| Focus | `--focus-ring` |
 
 ## Accessibility
 

@@ -56,8 +56,56 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Pass a `mask` pattern for structured entry like phone numbers or credit card segments.</p>
 
+## Theming
+
+`RuiInput` consumes **semantic surface + status roles**, never Tailwind palette steps:
+
+| State / part | CSS roles |
+| --- | --- |
+| Base | `border`, `background`, `on-background` |
+| Focus | `focus-ring` |
+| Invalid (`aria-invalid`) | `error` border |
+| Disabled | `opacity-disabled` |
+
+Geometry comes from control tokens: `--size-control-md` height, `--radius-control` corner, `--space-control-x` inline padding, the same tokens `RuiButton` uses, so form rows align. Override colors at the theme layer, not in component CSS.
+
 ## Accessibility
 
-- Every input needs a visible label — placeholders are not substitutes.
+- Every input needs a visible label; placeholders are not substitutes.
 - Disabled inputs should explain why editing is unavailable.
 - Use `type` attributes that match the expected data format.
+
+## API
+
+`RuiInput` is a presentational JSX view over a native `<input>`, no custom element. It sets `data-rui-control` so `RuiField` can wire labels, validation, and ARIA.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | | Controlled value. |
+| `type` | `string` | `text` | Native input type (`email`, `password`, `tel`, …). |
+| `placeholder` | `string` | | Placeholder text. |
+| `disabled` | `boolean` | `false` | Disabled state. |
+| `name` | `string` | | Form field name. |
+| `id` | `string` | | Input id (auto-wired by `RuiField`). |
+| `aria-label` | `string` | | Accessible name when there is no visible label. |
+| `mask` | `string` | | [IMask](https://imask.js.org/guide.html#masked-pattern) pattern; `0` digit, `a` letter, `*` any char, `{text}` fixed. |
+| `on:input` / `on:change` / `on:blur` | `(e: Event) => void` | | Event handlers. |
+
+### CSS classes
+
+Public classes on the rendered element (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-input` | Input root; control-height, rounded, bordered surface. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Base | `--border`, `--background`, `--on-background` |
+| Focus ring | `--focus-ring` |
+| Invalid | `--error` |
+| Geometry | `--size-control-md`, `--radius-control`, `--space-control-x` |

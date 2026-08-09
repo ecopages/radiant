@@ -1,6 +1,6 @@
 ---
 title: Window Splitter
-description: Window splitters divide a container into two resizable panes — code editor layouts, preview panels, or master-detail views.
+description: Window splitters divide a container into two resizable panes for code editor layouts, preview panels, or master-detail views.
 category: Layout
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Window Splitter
 
-<p class="docs-lede">Window splitters divide a container into two resizable panes — code editor layouts, preview panels, or master-detail views.</p>
+<p class="docs-lede">Window splitters divide a container into two resizable panes for code editor layouts, preview panels, or master-detail views.</p>
 
 ## Try it
 
@@ -50,8 +50,74 @@ import { RuiWindowSplitter } from '@ecopages/radiant-ui/window-splitter';
 
 <p>Use `horizontal` for side-by-side panes and `vertical` for stacked editor/console layouts.</p>
 
+## Theming
+
+Window Splitter maps to **semantic border, surface, and focus roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Frame (`rui-window-splitter`) | `border`, `radius-container` |
+| Panes | `background`, `on-background`, `--space-inset` |
+| Separator | `border` |
+| Separator focus | `focus-ring` |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiWindowSplitter` is a custom element (`<rui-window-splitter>`) that owns the separator and pane sizing; the `RuiWindowSplitter` JSX view projects the two panes.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `number` | `50` | Primary pane size as a percentage (clamped 20–80). |
+| `orientation` | `horizontal` · `vertical` | `horizontal` | Split axis. |
+| `label` | `string` | `Split view` | Accessible name for the separator. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `primary` | First pane content. |
+| `secondary` | Second pane content. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-splitter-change` | `{ value: number }` | Emitted when the separator moves. |
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `primary` | `JsxRenderable` | | First pane content for the `RuiWindowSplitter` view. |
+| `secondary` | `JsxRenderable` | | Second pane content. |
+
+### CSS classes
+
+Public BEM classes on the composed surface (documented via `@cssclass` on `RuiWindowSplitterElement`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-window-splitter` | Root surface. |
+| `.rui-window-splitter--horizontal` | Side-by-side panes. |
+| `.rui-window-splitter--vertical` | Stacked panes. |
+| `.rui-window-splitter__pane` | A pane region. |
+| `.rui-window-splitter__separator` | Focusable separator (`role="separator"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Frame | `--border`, `--radius-container` |
+| Panes | `--background`, `--on-background`, `--space-inset` |
+| Separator | `--border` |
+| Separator focus | `--focus-ring` |
+
 ## Accessibility
 
 - The splitter handle is keyboard focusable and adjustable with arrow keys.
 - Provide `label` so screen readers identify the split region.
-- Ensure both panes remain usable at minimum sizes — avoid content that breaks at narrow widths.
+- Ensure both panes remain usable at minimum sizes; avoid content that breaks at narrow widths.

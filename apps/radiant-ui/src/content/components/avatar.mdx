@@ -47,8 +47,49 @@ import { RuiAvatar } from '@ecopages/radiant-ui/avatar';
 
 <p>Use `sm` in dense tables and comment threads, `md` in bylines and menus, and `lg` in profile headers.</p>
 
+## Theming
+
+Avatar chrome maps to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Root | `surface-container` fill, `on-surface` fallback text, `rounded-pill` |
+| Image | `object-cover` fill |
+| Sizes | `size-8` (sm) · `size-10` (md) · `size-12` (lg) |
+
+Override at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - Always provide `alt` text when `src` is set so the image is described to screen readers.
-- When showing only initials, ensure surrounding text names the person — the avatar itself may be decorative.
+- When showing only initials, ensure surrounding text names the person; the avatar itself may be decorative.
 - Do not use avatar color as the sole indicator of user role or status.
+
+## API
+
+`RuiAvatar` is a presentational JSX view, no custom element. Pass `src` for an image, or `fallback` / `alt` for initials.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `src` | `string` | | Image URL. When omitted, initials from `alt` / `fallback` are shown. |
+| `alt` | `string` | `''` | Accessible name for the image; also derives initials. |
+| `fallback` | `string` | | Explicit fallback initials / text when there is no image. |
+| `size` | `sm` · `md` · `lg` | `md` | Avatar size. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-avatar` · `--sm` · `--md` · `--lg` | Root + size variants. |
+| `.rui-avatar__image` | `<img>` fill. |
+| `.rui-avatar__fallback` | Initials / text fallback. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Fallback | `--surface-container`, `--on-surface`, `--radius-pill` |

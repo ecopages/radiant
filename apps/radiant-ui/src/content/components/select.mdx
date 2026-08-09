@@ -56,8 +56,75 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Add `RuiSelectSearch` inside the listbox for long option sets that benefit from filtering.</p>
 
+## Theming
+
+Select surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Trigger (`rui-select__trigger`) | `on-background`, `border` on the control row |
+| Control row (`rui-select__control`) | `border`, `background`, `rounded-control` |
+| Popup (`rui-select__listbox`) | `popover` surface + `shadow-overlay` |
+| Selected value / toggle | `on-surface` |
+
+Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space-control-*`) with `RuiInput` and `RuiButton` so form rows align. Override roles at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - The trigger exposes `aria-expanded` and `aria-haspopup="listbox"`.
 - Selected values are reflected in `RuiSelectValue` for screen readers.
-- Provide a visible label — the placeholder is not a substitute.
+- Provide a visible label; the placeholder is not a substitute.
+
+## API
+
+`RuiSelect` is a custom element (`<rui-select>`) wrapping a button trigger and an embedded `RuiListbox`. Pass `options` for the simple API, or compose the view helpers for full control.
+
+### Attributes (`<rui-select>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Selected value (comma-joined for multiple). |
+| `label` | `string` | `''` | Accessible name when there is no associated `RuiLabel`. |
+| `placeholder` | `string` | `''` | Placeholder shown when nothing is selected. |
+| `disabled` | `boolean` | `false` | Disabled state. |
+| `selection-mode` | `single` · `multiple` | `single` | Single or multi-select. |
+| `should-close-on-select` | `boolean` | | Whether selecting closes the popup (defaults to `true` for single, `false` for multiple). |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted after a selection changes. |
+
+### View helpers
+
+| Component | Renders | Slot |
+| --- | --- | --- |
+| `RuiSelectControl` | Trigger row wrapper | `trigger` |
+| `RuiSelectTrigger` | Value button (`role="combobox"`) | |
+| `RuiSelectValue` | Selected value / placeholder text | |
+| `RuiSelectToggle` | Popup toggle icon button | |
+| `RuiSelectListbox` | Popup shell (`rui-popover`) | `listbox` |
+| `RuiSelectSearch` | Filtering input inside the popup | |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-select__control` | Trigger row: bordered control-height surface. |
+| `.rui-select__trigger` | Value button with `role="combobox"`. |
+| `.rui-select__value` | Selected value / placeholder text. |
+| `.rui-select__listbox` | Popup shell (adds `rui-popover rui-popover--listbox rui-floating`). |
+| `.rui-select__search` | Filtering input inside the popup. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Control row | `--border`, `--background`, `--radius-control` |
+| Trigger text | `--on-background` |
+| Value / toggle | `--on-surface` |
+| Popup | `--shadow-overlay` (via `rui-popover`) |
+| Geometry | `--size-control-*`, `--space-control-*` |

@@ -52,6 +52,70 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Set `min` and `max` to prevent invalid bookings. The embedded calendar inherits the same constraints.</p>
 
+## Theming
+
+Date Field surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Control group (`rui-date-field__group`) | `border`, `background`, `radius-control`; `focus-ring` ring on focus-within |
+| Input text | `on-background`, `--text-control`, `--space-control-*` |
+| Placeholder | `on-surface` + `opacity-muted` |
+| Disabled | `opacity-disabled` |
+| Invalid (`aria-invalid`) | `error` border |
+| Popup (`rui-date-field__popover`) | `popover` surface + `shadow-overlay` (via `rui-popover`) |
+
+Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space-control-*`) with `RuiInput` and `RuiButton` so form rows align. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiDateField` is a custom element (`<rui-date-field>`) that renders its own light-DOM input, toggle button, and calendar popover.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Canonical ISO `YYYY-MM-DD` value. |
+| `min` | `string` | `''` | Earliest selectable ISO date. |
+| `max` | `string` | `''` | Latest selectable ISO date. |
+| `disabled` | `boolean` | `false` | Disable the field and calendar. |
+| `read-only` | `boolean` | `false` | Disable editing while keeping the value visible. |
+| `label` | `string` | `''` | Accessible name when there is no associated `RuiLabel`. |
+| `name` | `string` | `''` | Native `name` for the underlying input. |
+| `placeholder` | `string` | locale default | Overrides the locale-derived placeholder. |
+| `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
+| `date-style` | `short` · `medium` · `long` · `full` | `medium` | How the committed value is displayed when not editing. |
+| `masked` | `boolean` | `true` | Guide digits with a locale mask while typing. |
+| `visible-months` | `number` | `1` | Month grids shown in the calendar popover. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value }` | Fired when a valid date is committed (typing or calendar pick). |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on `RuiDateField`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-date-field` | Root surface. |
+| `.rui-date-field__group` | Bordered control-height row wrapping input and toggle. |
+| `.rui-date-field__input` | The masked / formatted text input. |
+| `.rui-date-field__popover` | Calendar popup shell (`rui-popover` / `rui-floating`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Control group | `--border`, `--background`, `--radius-control`, `--focus-ring` |
+| Input text | `--on-background`, `--text-control`, `--space-control-x`, `--space-control-y` |
+| Placeholder | `--on-surface`, `--opacity-muted` |
+| Disabled | `--opacity-disabled` |
+| Invalid | `--error` |
+| Popup | `--shadow-overlay` (via `rui-popover`) |
+
 ## Accessibility
 
 - Pair every date field with a visible `RuiLabel` or `aria-label`.

@@ -57,6 +57,62 @@ import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
 
 <p>Bind `inputValue` when you need to reset the field after selection or sync with external search state.</p>
 
+## Theming
+
+Autocomplete surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Input (`rui-autocomplete__input`) | `border`, `background`, `radius-control`, `on-background`, `space-control-*`; `focus-ring` ring |
+| Collection region | structural only (scroll + flex) |
+| Empty state (`rui-autocomplete__empty`) | `on-surface` |
+
+The filtered results themselves are `RuiListbox` / `RuiListboxOption` and follow the listbox surface roles. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiAutocomplete` is a custom element (`<rui-autocomplete>`) that filters its slotted collection; the view helpers own the composed input and empty-state markup.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `sensitivity` | `base` · `case` · `accent` | `base` | Filter sensitivity for substring matching. |
+| `input-value` | `string` | `''` | Controlled filter query; when unset, reads from the slotted input. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `input` | Search field (`RuiAutocompleteInput`). |
+| *(default)* | Filterable collection of `[role="option"]`, `[role="menuitem"]`, or `[data-tag]` items. |
+
+### View helpers
+
+| Component | Renders |
+| --- | --- |
+| `RuiAutocompleteInput` | Bordered search input (slotted into `input`). |
+| `RuiAutocompleteCollection` | Scrollable wrapper for the filterable options. |
+| `RuiAutocompleteEmpty` | No-results state, hidden while matches exist. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-autocomplete` | Filter host. |
+| `.rui-autocomplete__input` | Bordered search input. |
+| `.rui-autocomplete__collection` | Scrollable filterable region. |
+| `.rui-autocomplete__empty` | No-results state. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Input | `--border`, `--background`, `--radius-control`, `--on-background`, `--space-control-x`, `--space-control-y`, `--focus-ring` |
+| Empty state | `--on-surface` |
+
 ## Accessibility
 
 - The input exposes combobox semantics with `aria-expanded` tied to the listbox visibility.
