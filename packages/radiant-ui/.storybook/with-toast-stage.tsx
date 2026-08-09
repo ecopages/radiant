@@ -1,17 +1,7 @@
 import type { Decorator } from '@ecopages/storybook-radiant-vite';
 import type { JsxRenderable } from '@ecopages/jsx';
-import { RuiToaster, toast } from '../src/components/ui/toast';
-import type { ToastPosition } from '../src/components/ui/toast/toast-context';
+import { RuiToaster, toast, TOAST_POSITIONS, type ToastPosition } from '../src/components/ui/toast';
 import { ToastTrigger } from './toast-trigger';
-
-const TOAST_POSITIONS: readonly ToastPosition[] = [
-	'top-start',
-	'top-center',
-	'top-end',
-	'bottom-start',
-	'bottom-center',
-	'bottom-end',
-];
 
 export type ToastStageArgs = {
 	closeButton?: boolean;
