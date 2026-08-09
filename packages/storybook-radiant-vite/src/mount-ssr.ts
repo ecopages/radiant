@@ -161,8 +161,8 @@ export async function mountSsrResult(
 			canvasElement,
 			`Cannot SSR story "${context.name}"`,
 			dedent`
-        Set \`meta.component\` to a RadiantElement constructor, a view created with
-        \`defineRadiantView(element, render)\`, or a registered custom-element tag string
+        Set \`meta.component\` to a RadiantElement constructor, a view linked via
+        \`radiantMeta(meta, { element })\`, or a registered custom-element tag string
         (with the \`.script\` module imported in the story file).
 
         For multi-export script modules, set \`parameters.radiant.ssrExport\`.
@@ -209,7 +209,7 @@ export async function mountSsrResult(
 			`Radiant SSR produced an empty host shell for "${context.name}"`,
 			dedent`
         The SSR bridge could not render authored light-DOM content for this story.
-        Use a component with a \`render()\` implementation, a \`defineRadiantView\` export
+        Use a component with a \`render()\` implementation, a \`radiantMeta\` view export
         stamped with a view module path, or set \`parameters.radiant.authoredContent\`.
 			`,
 		);
