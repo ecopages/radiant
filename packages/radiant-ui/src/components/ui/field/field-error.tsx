@@ -7,6 +7,11 @@ export type RuiFieldErrorProps = JsxHtmlProps;
 /**
  * Error message region for a field. Text is populated by `<rui-field>` from form validation
  * or the field's `error` prop.
+ *
+ * @cssclass rui-field__error - Error text; hidden until a message is set.
+ *
+ * @remarks Renders `role="alert"` and is wired into the control's
+ * `aria-describedby` by `<rui-field>`.
  */
 export function RuiFieldError({ class: className, ...props }: RuiFieldErrorProps) {
 	return (
