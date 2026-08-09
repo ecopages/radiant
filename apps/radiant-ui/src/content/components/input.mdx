@@ -1,6 +1,6 @@
 ---
 title: Input
-description: Inputs capture single-line text, numbers, emails, and other native input types with Radiant sizing and focus styles.
+description: Inputs capture single-line text, numbers, emails, and other native input types with Radiant focus styles.
 category: Forms
 ---
 
@@ -31,7 +31,7 @@ export const config = {
 
 ## Usage
 
-Wrap inputs in `RuiField` for labels and validation. Set `type`, `size`, and `placeholder` as needed.
+Wrap inputs in `RuiField` for labels and validation. Set `type` and `placeholder` as needed.
 
 ```tsx
 import { RuiInput } from '@ecopages/radiant-ui/input';
@@ -40,7 +40,7 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <RuiField name="email">
   <RuiLabel>Email</RuiLabel>
-  <RuiInput type="email" size="md" placeholder="you@example.com" />
+  <RuiInput type="email" placeholder="you@example.com" />
 </RuiField>
 ```
 

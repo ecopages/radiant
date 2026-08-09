@@ -2,7 +2,7 @@ import type { JsxHtmlProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
-import type { RuiInputSize } from '../input';
+export type RuiTextareaSize = 'sm' | 'md' | 'lg';
 
 export type RuiTextareaProps = JsxHtmlProps<{
 	value?: string;
@@ -10,7 +10,7 @@ export type RuiTextareaProps = JsxHtmlProps<{
 	disabled?: boolean;
 	name?: string;
 	rows?: number;
-	size?: RuiInputSize;
+	size?: RuiTextareaSize;
 	id?: string;
 	'aria-label'?: string;
 	'on:input'?: (event: Event) => void;

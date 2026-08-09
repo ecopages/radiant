@@ -4,15 +4,12 @@ import { applyInputMask, maskToPlaceholder } from '@/lib/mask';
 import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
-export type RuiInputSize = 'sm' | 'md' | 'lg';
-
 export type RuiInputProps = JsxHtmlProps<{
 	value?: string;
 	type?: string;
 	placeholder?: string;
 	disabled?: boolean;
 	name?: string;
-	size?: RuiInputSize;
 	id?: string;
 	'aria-label'?: string;
 	/**
@@ -34,7 +31,7 @@ export type RuiInputProps = JsxHtmlProps<{
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
  */
 export function RuiInput(props: RuiInputProps) {
-	const { size = 'md', class: className, type = 'text', mask, placeholder, 'on:input': onInput, ...host } = props;
+	const { class: className, type = 'text', mask, placeholder, 'on:input': onInput, ...host } = props;
 
 	const resolvedPlaceholder = mask ? maskToPlaceholder(mask) : placeholder;
 
@@ -55,7 +52,7 @@ export function RuiInput(props: RuiInputProps) {
 			inputmode={mask ? 'numeric' : undefined}
 			{...{ [RUI_CONTROL_ATTR]: '' }}
 			data-rui-control-type="text"
-			class={cx('rui-input', `rui-input--${size}`, className)}
+			class={cx('rui-input', className)}
 		/>
 	);
 }

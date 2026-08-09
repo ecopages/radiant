@@ -66,7 +66,7 @@ function resolveAriaPressed(
  * union branch preserves native link semantics for navigation.
  *
  * @remarks
- * Default/`md` height matches `--size-control-md` (same as `RuiInput`) so
+ * Default/`md` height uses `--size-control-md`, the same token as `RuiInput`, so
  * form rows align. Styles live in `./button.css`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/

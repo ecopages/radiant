@@ -108,7 +108,6 @@ export function renderDocsControl(control: ResolvedDocsControl, args: DocsArgs):
 			<RuiLabel class="docs-story-controls__label">{control.name}</RuiLabel>
 			<RuiInput
 				class="docs-story-controls__text"
-				size="sm"
 				type="text"
 				data-docs-arg={control.name}
 				value={String(raw ?? '')}
