@@ -12,6 +12,9 @@ const radiantPlugins = await radiant({ elements: true, decorators: 'babel' });
 
 export default defineConfig({
 	plugins: [tailwindcss(), ...radiantPlugins],
+	optimizeDeps: {
+		include: ['storybook/test', 'storybook/internal/core-events', 'ts-dedent'],
+	},
 	resolve: {
 		alias: {
 			'@': path.join(dirname, 'src'),
