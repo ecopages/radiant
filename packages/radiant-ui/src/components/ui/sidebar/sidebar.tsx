@@ -313,6 +313,7 @@ export const RuiSidebar = defineRadiantView(
 		children,
 		id,
 		defaultOpen,
+		mobileDefaultOpen,
 		open,
 		defaultWidth,
 		width,
@@ -328,6 +329,7 @@ export const RuiSidebar = defineRadiantView(
 			{...props}
 			id={id}
 			prop:defaultOpen={defaultOpen}
+			prop:mobileDefaultOpen={mobileDefaultOpen}
 			prop:open={open}
 			prop:defaultWidth={defaultWidth}
 			prop:width={width}
@@ -352,14 +354,14 @@ export type RuiSidebarTriggerViewProps = JsxHtmlPropsWithChildren<
 
 export const RuiSidebarTrigger = defineRadiantView(
 	RuiSidebarTriggerElement,
-	({ children, controls, triggerLabel, placement, variant, size, ...props }: RuiSidebarTriggerViewProps) => (
+	({ children, class: className, controls, triggerLabel, placement, variant, size, ...props }: RuiSidebarTriggerViewProps) => (
 		<rui-sidebar-trigger
 			{...props}
+			class={cx(className, placement && `rui-sidebar-trigger-placement--${placement}`)}
 			prop:controls={controls}
 			prop:buttonLabel={triggerLabel ?? 'Toggle sidebar'}
 			attr:data-button-label={triggerLabel ?? 'Toggle sidebar'}
 			prop:placement={placement}
-			attr:data-placement={placement}
 			variant={variant}
 			size={size}
 		>

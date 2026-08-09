@@ -67,10 +67,16 @@ const DocsSiteHeader = () => (
 	<div class="rui-sidebar-provider__site-header-inner">
 		<div class="rui-sidebar-provider__site-header-start">
 			<RuiSidebarTrigger
-				class="md:hidden"
+				class="md:hidden rui-sidebar-trigger-placement--header"
+				placement="header"
+				controls={DOCS_SIDEBAR_ID}
+				triggerLabel="Close documentation navigation"
+			/>
+			<RuiSidebarTrigger
+				class="md:hidden rui-sidebar-trigger-placement--inset"
 				placement="inset"
 				controls={DOCS_SIDEBAR_ID}
-				triggerLabel="Toggle documentation navigation"
+				triggerLabel="Open documentation navigation"
 			/>
 			<Logo href="/" target="_self" title="Radiant" />
 			<span class="rui-sidebar-provider__site-header-version">v {rootJson.version}</span>
