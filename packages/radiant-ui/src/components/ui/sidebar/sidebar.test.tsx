@@ -446,6 +446,32 @@ describe('RuiSidebar composition', () => {
 });
 
 describe('RuiSidebar mobile drawer', () => {
+	it('starts closed on mobile by default', async () => {
+		const { host, cleanup } = mount(
+			<RuiSidebarProvider
+				sidebar={
+					<RuiSidebar
+						id="primary-sidebar"
+						collapsible="full"
+						mobileBreakpoint={10_000}
+						label="Primary"
+					>
+						<span>Navigation</span>
+					</RuiSidebar>
+				}
+			>
+				<RuiSidebarInset id="main">
+					<p>Content</p>
+				</RuiSidebarInset>
+			</RuiSidebarProvider>,
+		);
+		await settled();
+
+		expect(host.querySelector('rui-sidebar')?.getAttribute('data-state')).toBe('collapsed');
+
+		cleanup();
+	});
+
 	it('enters mobile mode when the viewport is below the breakpoint', async () => {
 		const { host, sidebar, cleanup } = mountMobileSidebar({ collapsible: 'icon' });
 		await settled();
@@ -530,6 +556,34 @@ describe('RuiSidebar mobile drawer', () => {
 
 		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
 		expect((host.querySelector('[data-ref="scrim"]') as HTMLButtonElement).hidden).toBe(true);
+
+		cleanup();
+	});
+
+	it('closes the mobile drawer when a navigation link is clicked', async () => {
+		const { host, sidebar, cleanup } = mountMobileSidebar({
+			collapsible: 'full',
+			open: true,
+			children: (
+				<RuiSidebarContent aria-label="Navigation">
+					<RuiSidebarMenu>
+						<RuiSidebarMenuItem>
+							<RuiSidebarMenuButton as="a" href="/docs/installation">
+								Installation
+							</RuiSidebarMenuButton>
+						</RuiSidebarMenuItem>
+					</RuiSidebarMenu>
+				</RuiSidebarContent>
+			),
+		});
+		await settled();
+
+		const link = host.querySelector('a.rui-sidebar__menu-button') as HTMLAnchorElement;
+		link.addEventListener('click', (event) => event.preventDefault());
+		link.click();
+		await settled();
+
+		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
 
 		cleanup();
 	});

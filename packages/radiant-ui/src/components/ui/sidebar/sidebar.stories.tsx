@@ -209,9 +209,15 @@ function renderDocsSiteHeader({ controlsId }: { controlsId: string }) {
 			<div class="rui-sidebar-provider__site-header-start">
 				<RuiSidebarTrigger
 					class="md:hidden"
+					placement="header"
+					controls={controlsId}
+					triggerLabel="Close documentation navigation"
+				/>
+				<RuiSidebarTrigger
+					class="md:hidden"
 					placement="inset"
 					controls={controlsId}
-					triggerLabel="Toggle docs navigation"
+					triggerLabel="Open documentation navigation"
 				/>
 				{renderRadiantLogo()}
 				<span class="rui-sidebar-provider__site-header-version">v {radiantPkg.version}</span>
@@ -668,9 +674,12 @@ export const DocsNavigation: Story = {
 		const canvas = within(canvasElement);
 		const sidebar = canvasElement.querySelector('rui-sidebar') as HTMLElement;
 		const provider = canvasElement.querySelector('.rui-sidebar-provider') as HTMLElement;
+		const triggers = Array.from(canvasElement.querySelectorAll('rui-sidebar-trigger'));
 
 		expect(sidebar).toHaveAttribute('role', 'complementary');
 		expect(provider).toHaveAttribute('data-layout', 'docs');
+		expect(triggers[0]).toHaveClass('rui-sidebar-trigger-placement--header');
+		expect(triggers[1]).toHaveClass('rui-sidebar-trigger-placement--inset');
 		expect(canvasElement.querySelector('.rui-sidebar-provider__site-header')).toBeInTheDocument();
 		expect(canvas.getByTitle('Radiant')).toBeInTheDocument();
 		expect(canvas.getByText('Getting Started')).toBeInTheDocument();

@@ -40,7 +40,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) controls: string;
 	/** `label` is not a safe reactive attribute name in the DOM; bind via `button-label`. */
 	@prop({ type: String, attribute: 'button-label', defaultValue: 'Toggle sidebar' }) buttonLabel: string;
-	@prop({ type: String, reflect: true, attribute: 'data-placement', defaultValue: '' }) placement:
+	@prop({ type: String, reflect: true, defaultValue: '' }) placement:
 		RuiSidebarTriggerPlacement | '';
 	@prop({ type: String, defaultValue: 'ghost' }) variant: NonNullable<RuiSidebarTriggerProps['variant']>;
 	@prop({ type: String, defaultValue: 'md' }) size: NonNullable<RuiSidebarTriggerProps['size']>;
@@ -117,8 +117,16 @@ export class RuiSidebarTrigger extends RadiantElement {
 		return (sidebar.getAttribute('data-state') as 'expanded' | 'collapsed' | null) ?? 'expanded';
 	}
 
+	private resolvedPlacement(): RuiSidebarTriggerPlacement | '' {
+		if (this.classList.contains('rui-sidebar-trigger-placement--header')) return 'header';
+		if (this.classList.contains('rui-sidebar-trigger-placement--inset')) return 'inset';
+		const placement = this.getAttribute('data-placement');
+		if (placement === 'header' || placement === 'inset') return placement;
+		return this.placement;
+	}
+
 	private resolvedButtonLabel(state = this.sidebarState): string {
-		if (this.placement === 'inset') {
+		if (this.resolvedPlacement() === 'inset') {
 			return state === 'expanded' ? 'Close navigation' : 'Open navigation';
 		}
 		const fromData = this.getAttribute('data-button-label')?.trim();
@@ -155,8 +163,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 	}
 
 	private placementClass(): string {
-		if (this.placement === 'header') return 'rui-sidebar__trigger--header';
-		if (this.placement === 'inset') return 'rui-sidebar__trigger--inset';
+		if (this.resolvedPlacement() === 'header') return 'rui-sidebar__trigger--header';
+		if (this.resolvedPlacement() === 'inset') return 'rui-sidebar__trigger--inset';
 		return '';
 	}
 
@@ -197,7 +205,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	private renderDefaultIcon() {
 		const state = this.sidebarState;
-		const placement: RuiSidebarTriggerPlacement | '' = this.placement;
+		const placement = this.resolvedPlacement();
 
 		if (placement === 'inset') {
 			return (

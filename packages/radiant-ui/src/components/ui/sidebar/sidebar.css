@@ -78,10 +78,10 @@ rui-sidebar {
 	}
 
 	@media (max-width: 767px) {
-		rui-sidebar-trigger {
-			@apply inline-flex;
-		}
-
+		/*
+		 * Do not force `display` on the host — placement rules (`header` vs `inset`)
+		 * own visibility. Only style the inner button chrome here.
+		 */
 		rui-sidebar-trigger .rui-sidebar__trigger {
 			@apply size-9 rounded-lg border border-border/50 bg-background/40 backdrop-blur-sm;
 		}
@@ -363,7 +363,9 @@ rui-sidebar {
 .rui-sidebar-provider:has(
 	> .rui-sidebar-provider__body > rui-sidebar[data-collapsible='off']:not([data-mobile='true'])
 ) {
+	rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
 	rui-sidebar-trigger[data-placement='header'],
+	rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
 	rui-sidebar-trigger[data-placement='inset'] {
 		@apply hidden;
 	}
@@ -373,6 +375,7 @@ rui-sidebar {
 .rui-sidebar-provider:has(
 	> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded']:not([data-mobile='true'])
 ) {
+	rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
 	rui-sidebar-trigger[data-placement='inset'] {
 		@apply hidden;
 	}
@@ -382,6 +385,7 @@ rui-sidebar {
 .rui-sidebar-provider:has(
 	> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed']:not([data-mobile='true'])
 ) {
+	rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
 	rui-sidebar-trigger[data-placement='header'] {
 		@apply hidden;
 	}
@@ -389,6 +393,7 @@ rui-sidebar {
 
 .rui-sidebar-provider:has(> rui-sidebar[data-state='expanded'][data-mobile='true']),
 .rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded'][data-mobile='true']) {
+	rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
 	rui-sidebar-trigger[data-placement='inset'] {
 		@apply hidden;
 	}
@@ -396,6 +401,7 @@ rui-sidebar {
 
 .rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed'][data-mobile='true']),
 .rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed'][data-mobile='true']) {
+	rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
 	rui-sidebar-trigger[data-placement='header'] {
 		@apply hidden;
 	}

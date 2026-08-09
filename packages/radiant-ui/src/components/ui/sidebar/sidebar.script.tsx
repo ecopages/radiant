@@ -18,6 +18,8 @@ export type RuiSidebarProps = {
 	collapsible?: RuiSidebarCollapsible;
 	/** Initial open state when uncontrolled. Default: `true`. */
 	defaultOpen?: boolean;
+	/** Initial open state below `mobileBreakpoint` when uncontrolled. Default: `false`. */
+	mobileDefaultOpen?: boolean;
 	/** Controlled open state. */
 	open?: boolean;
 	/** Initial width in pixels when uncontrolled. Default: `256`. */
@@ -117,6 +119,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	@prop({ type: Number, defaultValue: DEFAULT_MAX_WIDTH }) maxWidth: number;
 	@prop({ type: Boolean, defaultValue: false }) resizable: boolean;
 	@prop({ type: Boolean, defaultValue: true }) defaultOpen: boolean;
+	@prop({ type: Boolean, defaultValue: false }) mobileDefaultOpen: boolean;
 	@prop({ type: Boolean, attribute: 'open' }) open: boolean | undefined;
 	@prop({ type: Number, defaultValue: DEFAULT_MOBILE_BREAKPOINT }) mobileBreakpoint: number;
 	@prop({ type: String, defaultValue: 'Sidebar' }) label: string;
@@ -161,14 +164,14 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.syncHostAttributes();
 		this.attachNavigationListeners();
 		queueMicrotask(() => {
+			this.ensureWidthInitialized();
+			this.bindMobileMediaQuery();
 			if (this.open === undefined) {
-				this.open = this.defaultOpen;
+				this.open = this.isMobile ? this.mobileDefaultOpen : this.defaultOpen;
 			}
 
-			this.ensureWidthInitialized();
 			this.syncHostAttributes();
 			this.syncPaneWidthVar();
-			this.bindMobileMediaQuery();
 			this.syncActiveLinksAfterRender(true);
 		});
 	}
@@ -492,6 +495,13 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 
 	@bound
 	private onScrimClick(): void {
+		if (this.isMobile) {
+			this.setOpen(false);
+		}
+	}
+
+	@onEvent({ selector: MENU_LINK_SELECTOR, type: 'click' })
+	onMenuLinkClick(): void {
 		if (this.isMobile) {
 			this.setOpen(false);
 		}
