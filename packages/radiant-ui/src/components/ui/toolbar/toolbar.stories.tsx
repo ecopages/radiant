@@ -1,7 +1,8 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiButton } from '../button/button';
 import { RuiToolbar } from './toolbar';
+import { RuiToolbar as RuiToolbarElement } from './toolbar.script';
 
 const formattingButtons = (
 	<>
@@ -24,7 +25,8 @@ const meta = {
 		label: 'Text formatting',
 		children: formattingButtons,
 	},
-} satisfies Meta<typeof RuiToolbar>;
+};
+radiantMeta(meta, { element: RuiToolbarElement, stylesheets: ['./toolbar.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

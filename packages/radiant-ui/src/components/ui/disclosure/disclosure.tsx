@@ -1,10 +1,10 @@
 import type { JsxHtmlProps, JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiDisclosureGroupProps } from './disclosure-group.script';
-import { RuiDisclosureGroup as RuiDisclosureGroupElement } from './disclosure-group.script';
+import './disclosure-group.script';
+
 import type { RuiDisclosureProps } from './disclosure.script';
-import { RuiDisclosure as RuiDisclosureElement } from './disclosure.script';
+import './disclosure.script';
 
 export type RuiDisclosureIconProps = JsxHtmlProps<{
 	variant?: 'chevron' | 'plus';
@@ -74,36 +74,31 @@ export function RuiDisclosurePanel({ children, class: className, ...props }: Rui
 	);
 }
 
-export const RuiDisclosure = defineRadiantView(
-	RuiDisclosureElement,
-	({
-		trigger,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<
-		RuiDisclosureProps & {
-			slot?: string;
-			trigger?: JsxRenderable;
-		}
-	>) => {
-		if (trigger != null) {
-			return (
-				<rui-disclosure {...props}>
-					<RuiDisclosureTrigger>{trigger}</RuiDisclosureTrigger>
-					{children != null ? <RuiDisclosurePanel>{children}</RuiDisclosurePanel> : null}
-				</rui-disclosure>
-			);
-		}
+export function RuiDisclosure({
+	trigger,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<
+	RuiDisclosureProps & {
+		slot?: string;
+		trigger?: JsxRenderable;
+	}
+>) {
+	if (trigger != null) {
+		return (
+			<rui-disclosure {...props}>
+				<RuiDisclosureTrigger>{trigger}</RuiDisclosureTrigger>
+				{children != null ? <RuiDisclosurePanel>{children}</RuiDisclosurePanel> : null}
+			</rui-disclosure>
+		);
+	}
 
-		return <rui-disclosure {...props}>{children}</rui-disclosure>;
-	},
-	{ stylesheets: ['./disclosure.css'] },
-);
+	return <rui-disclosure {...props}>{children}</rui-disclosure>;
+}
 
-export const RuiDisclosureGroup = defineRadiantView(
-	RuiDisclosureGroupElement,
-	({ children, ...props }: JsxHtmlPropsWithChildren<RuiDisclosureGroupProps & { slot?: string }>) => (
-		<rui-disclosure-group {...props}>{children}</rui-disclosure-group>
-	),
-	{ stylesheets: ['./disclosure-group.css'] },
-);
+export function RuiDisclosureGroup({
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<RuiDisclosureGroupProps & { slot?: string }>) {
+	return <rui-disclosure-group {...props}>{children}</rui-disclosure-group>;
+}

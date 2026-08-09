@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { RuiButton } from '../button';
 import { RuiForm } from '../form';
@@ -8,11 +8,13 @@ import { RuiLabel } from '../label';
 import { RuiSelect } from '../select';
 import { RuiSwitch } from '../switch';
 import { RuiField, RuiFieldDescription, RuiFieldError } from './index';
+import { RuiField as RuiFieldElement } from './field.script';
 
 const meta = {
 	title: 'Components/Field',
 	component: RuiField,
-} satisfies Meta<typeof RuiField>;
+};
+radiantMeta(meta, { element: RuiFieldElement, stylesheets: ['./field.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
@@ -12,12 +12,14 @@ import {
 	RuiNumberFieldInput,
 	RuiNumberFieldSteppers,
 } from './number-field';
+import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
 
 const meta = {
 	title: 'Components/NumberField',
 	component: RuiNumberField,
 	args: { value: 3, minValue: 0, maxValue: 10, step: 1, label: 'Quantity' },
-} satisfies Meta<typeof RuiNumberField>;
+};
+radiantMeta(meta, { element: RuiNumberFieldElement, stylesheets: ['./number-field.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

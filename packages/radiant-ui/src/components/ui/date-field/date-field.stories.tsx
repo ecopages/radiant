@@ -1,10 +1,11 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
 import { RuiLabel } from '../label';
 import { RuiButton } from '../button';
 import { RuiDateField } from './date-field';
+import { RuiDateField as RuiDateFieldElement } from './date-field.script';
 
 const meta = {
 	title: 'Components/DateField',
@@ -13,7 +14,16 @@ const meta = {
 		value: '2026-08-02',
 		label: 'Appointment date',
 	},
-} satisfies Meta<typeof RuiDateField>;
+};
+radiantMeta(meta, {
+	element: RuiDateFieldElement,
+	stylesheets: [
+		'./date-field.css',
+		'../shared/control-toggle.css',
+		'../../../lib/icons/icons.css',
+		'../calendar/calendar.css',
+	],
+});
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,8 +1,9 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiListbox } from './listbox';
+import { RuiListbox as RuiListboxElement } from './listbox.script';
 
 const meta = {
 	title: 'Components/Listbox',
@@ -16,7 +17,8 @@ const meta = {
 			{ value: 'cherry', label: 'Cherry' },
 		],
 	},
-} satisfies Meta<typeof RuiListbox>;
+};
+radiantMeta(meta, { element: RuiListboxElement, stylesheets: ['./listbox.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

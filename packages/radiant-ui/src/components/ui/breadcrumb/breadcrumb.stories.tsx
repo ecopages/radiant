@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
 import {
 	RuiBreadcrumb,
@@ -9,6 +9,7 @@ import {
 	RuiBreadcrumbPage,
 	RuiBreadcrumbSeparator,
 } from './breadcrumb';
+import { RuiBreadcrumb as RuiBreadcrumbElement } from './breadcrumb.script';
 
 const HomeIcon = () => (
 	<svg
@@ -34,7 +35,8 @@ const meta = {
 		label: 'Breadcrumb',
 		separator: '/',
 	},
-} satisfies Meta<typeof RuiBreadcrumb>;
+};
+radiantMeta(meta, { element: RuiBreadcrumbElement, stylesheets: ['./breadcrumb.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

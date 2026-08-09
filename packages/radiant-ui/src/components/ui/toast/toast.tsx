@@ -1,27 +1,26 @@
 import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiToastProps } from './toast.script';
-import { RuiToast as RuiToastElement } from './toast.script';
+import './toast.script';
+
 import type { RuiToasterProps } from './toaster.script';
-import { RuiToaster as RuiToasterElement } from './toaster.script';
+import './toaster.script';
 
 export type RuiToastViewProps = JsxHtmlProps<RuiToastProps & { slot?: string }>;
 
-export const RuiToast = defineRadiantView(
-	RuiToastElement,
-	({
-		toastId,
-		title,
-		description,
-		variant,
-		duration,
-		dismissible,
-		closeButton,
-		actionLabel,
-		position,
-		markedDelete,
-		...props
-	}: RuiToastViewProps) => (
+export function RuiToast({
+	toastId,
+	title,
+	description,
+	variant,
+	duration,
+	dismissible,
+	closeButton,
+	actionLabel,
+	position,
+	markedDelete,
+	...props
+}: RuiToastViewProps) {
+	return (
 		<rui-toast
 			{...props}
 			prop:toastId={toastId != null ? String(toastId) : undefined}
@@ -35,26 +34,24 @@ export const RuiToast = defineRadiantView(
 			prop:position={position}
 			prop:markedDelete={markedDelete}
 		/>
-	),
-	{ stylesheets: ['./toast.css'] },
-);
+	);
+}
 
 export type RuiToasterViewProps = JsxHtmlPropsWithChildren<RuiToasterProps & { slot?: string }>;
 
-export const RuiToaster = defineRadiantView(
-	RuiToasterElement,
-	({
-		children,
-		position,
-		duration,
-		visibleToasts,
-		closeButton,
-		expand,
-		gap,
-		offset,
-		container,
-		...props
-	}: RuiToasterViewProps) => (
+export function RuiToaster({
+	children,
+	position,
+	duration,
+	visibleToasts,
+	closeButton,
+	expand,
+	gap,
+	offset,
+	container,
+	...props
+}: RuiToasterViewProps) {
+	return (
 		<rui-toaster
 			{...props}
 			prop:position={position}
@@ -68,6 +65,5 @@ export const RuiToaster = defineRadiantView(
 		>
 			{children}
 		</rui-toaster>
-	),
-	{ stylesheets: ['./toast.css'] },
-);
+	);
+}

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { RuiChip } from './chip';
 
 const meta = {
@@ -7,7 +7,8 @@ const meta = {
 	args: {
 		children: 'Mexican',
 	},
-} satisfies Meta<typeof RuiChip>;
+};
+radiantMeta(meta, { stylesheets: ['./chip.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

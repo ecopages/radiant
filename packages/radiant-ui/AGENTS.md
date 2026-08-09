@@ -34,7 +34,7 @@ Peel props only when the view must transform or filter them:
 - View-only data (`options`, `articles`, …) that must not reach the host
 - `prop:` / `attr:` bindings or renamed props (`triggerLabel` → `prop:buttonLabel`, `values` → `rangeMin` / `rangeMax`). Peel every CE prop that needs an explicit `prop:` / `attr:` prefix; spread the rest.
 - `class` composition with `cx()` on the same node — spread first, then `class={cx('rui-foo', className)}`. Import `cx` from `@ecopages/radiant-ui/cx` in apps; use `@/lib/cx` inside this package.
-- Host vs inner-node split (e.g. `RuiAlert` puts `class` on an inner div)
+- Host vs inner-node split when the view owns the composed surface (e.g. `RuiAlert` puts `role="alert"` and BEM classes on an inner div; the CE handles dismiss)
 
 ## CSS architecture (two layers)
 
@@ -106,7 +106,7 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
     - Motion: `--duration-*` / `--ease-*` (not raw `duration-150`).
     - State: `--opacity-disabled`, z-index roles from `system.css`.
 3. Structural layout (flex, grid, `min-w-0`, positioning) may use Tailwind as needed.
-4. One CSS file per component directory. Register it on the view via `defineRadiantView(..., { stylesheets: ['./<name>.css'] })` (or `attachRadiantStylesheets` for presentational exports). Do **not** `import './<name>.css'` in view `.tsx` files — that breaks Ecopages vendor prebundles. Apps still load the aggregate `@ecopages/radiant-ui/styles.css` (or a theme + styles); Storybook injects the declared sheets when transforming view modules. Use the `withStylesheets` decorator only for skins / extras.
+4. One CSS file per component directory. Do **not** `import './<name>.css'` in view `.tsx` files — that breaks Ecopages vendor prebundles. Apps load the aggregate `@ecopages/radiant-ui/styles.css` (or a theme + styles). In Storybook, declare component CSS via `radiantMeta(meta, { stylesheets: ['./<name>.css'] })` in `*.stories.tsx` (with `const meta = { ... }; export default meta`); the stamp transform injects side-effect imports. Use the `withStylesheets` decorator only for skins / extras.
 
 ### Forbidden
 
@@ -150,6 +150,16 @@ Use `@apply` with theme-mapped utilities when they exist (`rounded-control`, `bg
 ## Adding a component
 
 Follow `src/Introduction.mdx` (script, view, css, stories, index). Styles consume theme roles; JS API unchanged unless APG requires it.
+
+## Documenting the public API (TSDoc)
+
+Mirror [Custom Elements Manifest](https://custom-elements-manifest.open-wc.org/analyzer/getting-started/) tags so hover tips and docs stay in sync:
+
+- **Script (CE):** `@element`, `@attr` / `@attribute`, `@slot`, `@fires` / `@event`, `@cssprop`, `@csspart`, `@see` (APG)
+- **View (JSX):** `@cssclass` for light-DOM BEM classes — document on the export that authors the class (composable helpers and the view surface). Prefer this over listing composition classes on the CE.
+- `@cssclass` is an extension for light-DOM surfaces (not a standard CEM tag like `@csspart` / `@cssprop`)
+
+Docs pages should surface the same contract (attributes, slots, events, CSS classes) and mark APG links with `data-wai-aria` so prose styles show the APG badge. See `alert` as the POC.
 
 ## Storybook
 

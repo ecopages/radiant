@@ -1,8 +1,7 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiPopoverProps, RuiPopoverTriggerProps } from './popover.script';
-import { RuiPopover as RuiPopoverElement, RuiPopoverTrigger as RuiPopoverTriggerElement } from './popover.script';
+import './popover.script';
 
 export type RuiPopoverContentProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
@@ -17,42 +16,38 @@ export function RuiPopoverContent({ children, slot = 'content', class: className
 	);
 }
 
-export const RuiPopover = defineRadiantView(
-	RuiPopoverElement,
-	({
-		trigger,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<
-		RuiPopoverProps & {
-			slot?: string;
-			trigger?: JsxRenderable;
-		}
-	>) => (
+export function RuiPopover({
+	trigger,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<
+	RuiPopoverProps & {
+		slot?: string;
+		trigger?: JsxRenderable;
+	}
+>) {
+	return (
 		<rui-popover {...props}>
 			{trigger != null ? <span slot="trigger">{trigger}</span> : null}
 			{children}
 		</rui-popover>
-	),
-	{ stylesheets: ['./popover.css'] },
-);
+	);
+}
 
-export const RuiPopoverTrigger = defineRadiantView(
-	RuiPopoverTriggerElement,
-	({
-		trigger,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<
-		RuiPopoverTriggerProps & {
-			slot?: string;
-			trigger: JsxRenderable;
-		}
-	>) => (
+export function RuiPopoverTrigger({
+	trigger,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<
+	RuiPopoverTriggerProps & {
+		slot?: string;
+		trigger: JsxRenderable;
+	}
+>) {
+	return (
 		<rui-popover-trigger {...props}>
 			<span slot="trigger">{trigger}</span>
 			{children}
 		</rui-popover-trigger>
-	),
-	{ stylesheets: ['./popover.css'] },
-);
+	);
+}

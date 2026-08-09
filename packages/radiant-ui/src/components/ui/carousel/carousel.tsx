@@ -1,8 +1,7 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiCarouselProps } from './carousel.script';
-import { RuiCarousel as RuiCarouselElement } from './carousel.script';
+import './carousel.script';
 
 export type RuiCarouselSlideData = { id: string; children: JsxRenderable };
 
@@ -153,31 +152,27 @@ export function RuiCarouselRotation({
 	);
 }
 
-export const RuiCarousel = defineRadiantView(
-	RuiCarouselElement,
-	({
-		slides,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<
-		RuiCarouselProps & {
-			slot?: string;
-			slides?: RuiCarouselSlideData[];
-		}
-	>) => {
-		if (children != null) {
-			return <rui-carousel {...props}>{children}</rui-carousel>;
-		}
+export function RuiCarousel({
+	slides,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<
+	RuiCarouselProps & {
+		slot?: string;
+		slides?: RuiCarouselSlideData[];
+	}
+>) {
+	if (children != null) {
+		return <rui-carousel {...props}>{children}</rui-carousel>;
+	}
 
-		const slideList = slides ?? [];
+	const slideList = slides ?? [];
 
-		return (
-			<rui-carousel {...props} slideCount={slideList.length}>
-				{slideList.map((slide) => (
-					<RuiCarouselSlide id={slide.id}>{slide.children}</RuiCarouselSlide>
-				))}
-			</rui-carousel>
-		);
-	},
-	{ stylesheets: ['./carousel.css'] },
-);
+	return (
+		<rui-carousel {...props} slideCount={slideList.length}>
+			{slideList.map((slide) => (
+				<RuiCarouselSlide id={slide.id}>{slide.children}</RuiCarouselSlide>
+			))}
+		</rui-carousel>
+	);
+}

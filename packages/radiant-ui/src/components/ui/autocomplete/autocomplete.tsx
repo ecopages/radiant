@@ -1,8 +1,7 @@
 import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiAutocompleteProps } from './autocomplete.script';
-import { RuiAutocomplete as RuiAutocompleteElement } from './autocomplete.script';
+import './autocomplete.script';
 
 export type RuiAutocompleteInputProps = JsxHtmlProps<{
 	slot?: string;
@@ -57,10 +56,9 @@ export function RuiAutocompleteEmpty({ children, class: className, ...props }: R
 	);
 }
 
-export const RuiAutocomplete = defineRadiantView(
-	RuiAutocompleteElement,
-	({ children, ...props }: JsxHtmlPropsWithChildren<RuiAutocompleteProps & { slot?: string }>) => (
-		<rui-autocomplete {...props}>{children}</rui-autocomplete>
-	),
-	{ stylesheets: ['./autocomplete.css'] },
-);
+export function RuiAutocomplete({
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<RuiAutocompleteProps & { slot?: string }>) {
+	return <rui-autocomplete {...props}>{children}</rui-autocomplete>;
+}

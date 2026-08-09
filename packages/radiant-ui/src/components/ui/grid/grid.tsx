@@ -1,11 +1,9 @@
 import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiGridProps } from './grid.script';
-import { RuiGrid as RuiGridElement } from './grid.script';
+import './grid.script';
 
-export const RuiGrid = defineRadiantView(
-	RuiGridElement,
-	({ rows, ...props }: JsxHtmlProps<RuiGridProps & { slot?: string; rows: JsxRenderable[][] }>) => (
+export function RuiGrid({ rows, ...props }: JsxHtmlProps<RuiGridProps & { slot?: string; rows: JsxRenderable[][] }>) {
+	return (
 		<rui-grid {...props}>
 			{rows.map((row) => (
 				<div class="rui-grid__row" role="row">
@@ -17,6 +15,5 @@ export const RuiGrid = defineRadiantView(
 				</div>
 			))}
 		</rui-grid>
-	),
-	{ stylesheets: ['./grid.css'] },
-);
+	);
+}

@@ -1,6 +1,5 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiChipVariant = 'default' | 'muted' | 'primary';
 
@@ -20,5 +19,3 @@ export function RuiChip({ children, variant = 'default', class: className, ...pr
 		</span>
 	);
 }
-
-attachRadiantStylesheets(RuiChip, ['./chip.css'], import.meta.url);

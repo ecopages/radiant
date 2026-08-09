@@ -1,14 +1,16 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiSlider } from './slider';
+import { RuiSlider as RuiSliderElement } from './slider.script';
 
 const meta = {
 	title: 'Components/Slider',
 	component: RuiSlider,
 	args: { value: 40, min: 0, max: 100, step: 1, label: 'Volume' },
-} satisfies Meta<typeof RuiSlider>;
+};
+radiantMeta(meta, { element: RuiSliderElement, stylesheets: ['./slider.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

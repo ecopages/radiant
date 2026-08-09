@@ -1,7 +1,6 @@
 import type { JsxHtmlProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { applyInputMask, maskToPlaceholder } from '@/lib/mask';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
 export type RuiInputProps = JsxHtmlProps<{
@@ -56,5 +55,3 @@ export function RuiInput(props: RuiInputProps) {
 		/>
 	);
 }
-
-attachRadiantStylesheets(RuiInput, ['./input.css'], import.meta.url);

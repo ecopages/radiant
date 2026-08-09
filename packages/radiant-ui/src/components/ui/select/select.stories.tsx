@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
@@ -15,6 +15,7 @@ import {
 	RuiSelectTrigger,
 	RuiSelectValue,
 } from './select';
+import { RuiSelect as RuiSelectElement } from './select.script';
 
 const ANIMAL_OPTIONS = [
 	{ value: 'aardvark', label: 'Aardvark' },
@@ -38,7 +39,11 @@ const meta = {
 			<RuiSelect {...args} />
 		</div>
 	),
-} satisfies Meta<typeof RuiSelect>;
+};
+radiantMeta(meta, {
+	element: RuiSelectElement,
+	stylesheets: ['./select.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'],
+});
 
 export default meta;
 type Story = StoryObj<typeof meta>;

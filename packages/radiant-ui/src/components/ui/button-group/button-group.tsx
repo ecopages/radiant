@@ -1,6 +1,5 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiButtonGroupOrientation = 'horizontal' | 'vertical';
 
@@ -31,5 +30,3 @@ export function RuiButtonGroup({
 		</div>
 	);
 }
-
-attachRadiantStylesheets(RuiButtonGroup, ['./button-group.css'], import.meta.url);

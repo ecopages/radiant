@@ -6,24 +6,44 @@ rui-alert {
 
 @layer components {
 	.rui-alert {
-		@apply rounded-md text-sm shadow-xs;
+		@apply relative rounded-md text-sm shadow-xs;
 	}
 
 	.rui-alert--inline {
-		@apply flex items-start gap-2 px-4 py-3;
+		@apply flex items-center gap-2 px-4 py-3;
+	}
+
+	.rui-alert--inline.rui-alert--dismissible {
+		@apply pr-2.5;
 	}
 
 	.rui-alert__icon {
-		@apply inline-flex shrink-0;
+		@apply inline-flex shrink-0 items-center justify-center;
 	}
 
 	.rui-alert--banner {
-		@apply relative mt-4 flex flex-col py-4 pr-4 pl-6;
+		@apply mt-4 flex flex-col py-4 pr-4 pl-6;
 
 		&::before {
 			content: '';
 			@apply absolute top-2 bottom-2 left-2 w-1 rounded-full bg-current opacity-50;
 		}
+	}
+
+	.rui-alert--banner.rui-alert--dismissible {
+		@apply pr-11;
+	}
+
+	.rui-alert__close {
+		@apply inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-control text-current opacity-65 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/35;
+	}
+
+	.rui-alert--inline .rui-alert__close {
+		@apply ml-auto;
+	}
+
+	.rui-alert--banner .rui-alert__close {
+		@apply absolute top-2.5 right-2.5;
 	}
 
 	.rui-alert__title {

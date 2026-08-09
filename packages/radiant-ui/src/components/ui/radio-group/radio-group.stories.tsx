@@ -1,8 +1,9 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiRadioGroup } from './radio-group';
+import { RuiRadioGroup as RuiRadioGroupElement } from './radio-group.script';
 
 const defaultOptions = [
 	{ value: 'email', label: 'Email' },
@@ -20,7 +21,8 @@ const meta = {
 		disabled: false,
 		options: defaultOptions,
 	},
-} satisfies Meta<typeof RuiRadioGroup>;
+};
+radiantMeta(meta, { element: RuiRadioGroupElement, stylesheets: ['./radio-group.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

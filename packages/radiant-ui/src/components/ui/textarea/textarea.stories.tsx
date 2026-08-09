@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiTextarea } from './textarea';
@@ -10,7 +10,8 @@ const meta = {
 		placeholder: 'Write something…',
 		rows: 4,
 	},
-} satisfies Meta<typeof RuiTextarea>;
+};
+radiantMeta(meta, { stylesheets: ['./textarea.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

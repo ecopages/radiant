@@ -1,7 +1,8 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { RuiTagGroup } from './tag-group';
+import { RuiTagGroup as RuiTagGroupElement } from './tag-group.script';
 
 const meta = {
 	title: 'Components/TagGroup',
@@ -15,7 +16,8 @@ const meta = {
 			{ value: 'shopping', label: 'Shopping' },
 		],
 	},
-} satisfies Meta<typeof RuiTagGroup>;
+};
+radiantMeta(meta, { element: RuiTagGroupElement, stylesheets: ['./tag-group.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

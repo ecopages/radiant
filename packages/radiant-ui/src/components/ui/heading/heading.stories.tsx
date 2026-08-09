@@ -1,10 +1,11 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from './heading';
 
 const meta = {
 	title: 'Components/Heading',
 	component: RuiHeading,
-} satisfies Meta<typeof RuiHeading>;
+};
+radiantMeta(meta, { stylesheets: ['./heading.css', '../headline/headline.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

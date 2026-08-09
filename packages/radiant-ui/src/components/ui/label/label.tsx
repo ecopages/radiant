@@ -1,6 +1,5 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_FIELD_LABEL_ATTR } from '../form/control-protocol';
 
 export type RuiLabelProps = JsxHtmlPropsWithChildren<{
@@ -15,5 +14,3 @@ export function RuiLabel({ children, htmlFor, class: className, ...props }: RuiL
 		</label>
 	);
 }
-
-attachRadiantStylesheets(RuiLabel, ['./label.css'], import.meta.url);

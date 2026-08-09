@@ -1,8 +1,9 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import { expect } from 'storybook/test';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import { expect, fn, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiAlertProps } from './alert.script';
 import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from './alert';
+import { RuiAlert as RuiAlertElement } from './alert.script';
 
 const renderAlert = (args: RuiAlertProps) => {
 	if (args.layout === 'banner') {
@@ -30,13 +31,15 @@ const renderAlert = (args: RuiAlertProps) => {
 const meta = {
 	title: 'Components/Alert',
 	component: RuiAlert,
-	args: { variant: 'info', layout: 'inline' },
+	args: { variant: 'info', layout: 'inline', dismissible: false },
 	argTypes: {
 		variant: { control: { type: 'select' }, options: ['info', 'success', 'warning', 'error'] },
 		layout: { control: { type: 'select' }, options: ['inline', 'banner'] },
+		dismissible: { control: { type: 'boolean' } },
 	},
 	render: renderAlert,
-} satisfies Meta<RuiAlertProps>;
+};
+radiantMeta(meta, { element: RuiAlertElement, stylesheets: ['./alert.css'] });
 
 export default meta;
 type Story = StoryObj<RuiAlertProps>;
@@ -92,4 +95,31 @@ export const BannerWarning: Story = {
 			</RuiAlertDescription>
 		</RuiAlert>
 	),
+};
+
+export const Dismissible: Story = {
+	args: { variant: 'warning', layout: 'inline', dismissible: true },
+	render: (args) => (
+		<RuiAlert {...args}>
+			<RuiAlertIcon variant="warning" />
+			<span>Your session will expire in 5 minutes.</span>
+		</RuiAlert>
+	),
+	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement)) return;
+
+		const host = canvasElement.querySelector('rui-alert');
+		await expect(host).toBeInTheDocument();
+
+		const onClose = fn();
+		host?.addEventListener('rui-close', onClose);
+
+		await step('dismiss control removes the alert and emits rui-close', async () => {
+			const close = canvasElement.querySelector('[data-alert-close]') as HTMLButtonElement;
+			await expect(close).toBeInTheDocument();
+			await userEvent.click(close);
+			await expect(onClose).toHaveBeenCalledTimes(1);
+			await expect(canvasElement.querySelector('rui-alert')).not.toBeInTheDocument();
+		});
+	},
 };

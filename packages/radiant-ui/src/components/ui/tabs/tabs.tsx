@@ -1,8 +1,7 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTabsProps } from './tabs.script';
-import { RuiTabs as RuiTabsElement } from './tabs.script';
+import './tabs.script';
 
 export type RuiTabListProps = JsxHtmlPropsWithChildren<{
 	'aria-label'?: string;
@@ -83,10 +82,6 @@ export function RuiTabPanel({ id, children, class: className, selected, hidden }
 	);
 }
 
-export const RuiTabs = defineRadiantView(
-	RuiTabsElement,
-	({ children, ...props }: JsxHtmlPropsWithChildren<RuiTabsProps & { slot?: string }>) => (
-		<rui-tabs {...props}>{children}</rui-tabs>
-	),
-	{ stylesheets: ['./tabs.css'] },
-);
+export function RuiTabs({ children, ...props }: JsxHtmlPropsWithChildren<RuiTabsProps & { slot?: string }>) {
+	return <rui-tabs {...props}>{children}</rui-tabs>;
+}

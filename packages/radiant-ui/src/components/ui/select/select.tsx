@@ -1,10 +1,9 @@
 import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
-import { defineRadiantView } from '@/lib/radiant-view';
 import { RuiListbox, RuiListboxOption, type RuiListboxOptionData } from '../listbox';
 import type { RuiSelectProps } from './select.script';
-import { RuiSelect as RuiSelectElement } from './select.script';
+import './select.script';
 
 export type RuiSelectControlProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
@@ -164,41 +163,36 @@ function resolveSelectDisplayText(
  * Select view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
  * do not nest a select-specific label.
  */
-export const RuiSelect = defineRadiantView(
-	RuiSelectElement,
-	({
-		options,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<
-		RuiSelectProps & {
-			slot?: string;
-			options?: RuiSelectOptionData[];
-		}
-	>) => {
-		if (options != null) {
-			const displayText = resolveSelectDisplayText(options, props.value, props.placeholder);
-			const isPlaceholder =
-				!(typeof props.value === 'string' && props.value.trim()) && Boolean(props.placeholder);
+export function RuiSelect({
+	options,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<
+	RuiSelectProps & {
+		slot?: string;
+		options?: RuiSelectOptionData[];
+	}
+>) {
+	if (options != null) {
+		const displayText = resolveSelectDisplayText(options, props.value, props.placeholder);
+		const isPlaceholder = !(typeof props.value === 'string' && props.value.trim()) && Boolean(props.placeholder);
 
-			return (
-				<rui-select {...props}>
-					<RuiSelectControl>
-						<RuiSelectTrigger>
-							<RuiSelectValue {...(isPlaceholder ? { 'data-placeholder': true } : {})}>
-								{displayText}
-							</RuiSelectValue>
-						</RuiSelectTrigger>
-						<RuiSelectToggle />
-					</RuiSelectControl>
-					<RuiSelectListbox>
-						<RuiListbox embedded options={options} />
-					</RuiSelectListbox>
-				</rui-select>
-			);
-		}
+		return (
+			<rui-select {...props}>
+				<RuiSelectControl>
+					<RuiSelectTrigger>
+						<RuiSelectValue {...(isPlaceholder ? { 'data-placeholder': true } : {})}>
+							{displayText}
+						</RuiSelectValue>
+					</RuiSelectTrigger>
+					<RuiSelectToggle />
+				</RuiSelectControl>
+				<RuiSelectListbox>
+					<RuiListbox embedded options={options} />
+				</RuiSelectListbox>
+			</rui-select>
+		);
+	}
 
-		return <rui-select {...props}>{children}</rui-select>;
-	},
-	{ stylesheets: ['./select.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'] },
-);
+	return <rui-select {...props}>{children}</rui-select>;
+}

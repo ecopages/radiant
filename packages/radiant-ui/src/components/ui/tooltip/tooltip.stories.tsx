@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiTooltip } from './tooltip';
+import { RuiTooltip as RuiTooltipElement } from './tooltip.script';
 
 const meta = {
 	title: 'Components/Tooltip',
@@ -14,7 +15,8 @@ const meta = {
 			</button>
 		),
 	},
-} satisfies Meta<typeof RuiTooltip>;
+};
+radiantMeta(meta, { element: RuiTooltipElement, stylesheets: ['./tooltip.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

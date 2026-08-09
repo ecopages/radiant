@@ -1,11 +1,12 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { RuiChip } from '../chip/chip';
 import { RuiChipList, RuiChipListItem } from './chip-list';
 
 const meta = {
 	title: 'Components/Chip list',
 	component: RuiChipList,
-} satisfies Meta<typeof RuiChipList>;
+};
+radiantMeta(meta, { stylesheets: ['./chip-list.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

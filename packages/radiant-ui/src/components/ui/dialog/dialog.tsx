@@ -1,8 +1,7 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiDialogProps } from './dialog.script';
-import { RuiDialog as RuiDialogElement } from './dialog.script';
+import './dialog.script';
 
 export type RuiDialogTitleProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
@@ -78,21 +77,17 @@ export type RuiDialogViewProps = JsxHtmlPropsWithChildren<
 	}
 >;
 
-export const RuiDialog = defineRadiantView(
-	RuiDialogElement,
-	({ title, actions, children, ...props }: RuiDialogViewProps) => {
-		if (title != null || actions != null) {
-			return (
-				<rui-dialog {...props}>
-					<RuiDialogClose />
-					{title != null ? <RuiDialogTitle>{title}</RuiDialogTitle> : null}
-					{children != null ? <RuiDialogBody>{children}</RuiDialogBody> : null}
-					{actions != null ? <RuiDialogActions>{actions}</RuiDialogActions> : null}
-				</rui-dialog>
-			);
-		}
+export function RuiDialog({ title, actions, children, ...props }: RuiDialogViewProps) {
+	if (title != null || actions != null) {
+		return (
+			<rui-dialog {...props}>
+				<RuiDialogClose />
+				{title != null ? <RuiDialogTitle>{title}</RuiDialogTitle> : null}
+				{children != null ? <RuiDialogBody>{children}</RuiDialogBody> : null}
+				{actions != null ? <RuiDialogActions>{actions}</RuiDialogActions> : null}
+			</rui-dialog>
+		);
+	}
 
-		return <rui-dialog {...props}>{children}</rui-dialog>;
-	},
-	{ stylesheets: ['./dialog.css'] },
-);
+	return <rui-dialog {...props}>{children}</rui-dialog>;
+}

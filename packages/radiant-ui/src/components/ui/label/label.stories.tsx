@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { RuiLabel } from './label';
 
 const meta = {
@@ -7,7 +7,8 @@ const meta = {
 	args: {
 		children: 'Email address',
 	},
-} satisfies Meta<typeof RuiLabel>;
+};
+radiantMeta(meta, { stylesheets: ['./label.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;
