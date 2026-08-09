@@ -6,6 +6,7 @@
 		"dev": "ecopages dev",
 		"build": "ecopages build",
 		"preview": "ecopages preview",
+		"test": "vitest run",
 		"generate:content": "node --import tsx scripts/generate-content-stories.ts"
 	},
 	"devDependencies": {
@@ -19,9 +20,11 @@
 		"@ecopages/radiant-ui": "workspace:*",
 		"@types/node": "^24.13.2",
 		"ecopages": "0.2.0-beta.43",
+		"happy-dom": "^20.0.0",
 		"rehype-pretty-code": "^0.14.1",
 		"shiki": "^3.20.0",
 		"tailwindcss": "^4.3.0",
+		"vitest": "^4.1.10",
 		"zod": "^4.4.3"
 	}
 }
