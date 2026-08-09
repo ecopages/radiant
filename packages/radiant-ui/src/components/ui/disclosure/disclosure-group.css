@@ -14,7 +14,7 @@ rui-disclosure-group {
 	}
 
 	.rui-disclosure-group > rui-disclosure .rui-disclosure__trigger {
-		@apply rounded-none px-4;
+		@apply rounded-none px-inset;
 	}
 
 	.rui-disclosure-group > rui-disclosure .rui-disclosure__panel-inner {

@@ -55,7 +55,7 @@ rui-sidebar {
 	}
 
 	.rui-sidebar__menu-button {
-		@apply relative rounded-sm border-0 bg-transparent px-2 py-1.5 text-[13px] font-normal text-on-background/70 no-underline;
+		@apply relative rounded-control border-0 bg-transparent px-2 py-1.5 text-[13px] font-normal text-on-background/70 no-underline;
 		transition:
 			color var(--duration-normal) var(--ease-standard),
 			background-color var(--duration-normal) var(--ease-standard);

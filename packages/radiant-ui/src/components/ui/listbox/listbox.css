@@ -14,7 +14,7 @@ rui-listbox {
 	}
 
 	.rui-listbox__option {
-		@apply cursor-pointer rounded-control px-3 py-2 text-sm text-on-background;
+		@apply cursor-pointer rounded-control px-control-x py-control-y text-sm text-on-background;
 	}
 
 	.rui-listbox__option[aria-disabled='true'] {
