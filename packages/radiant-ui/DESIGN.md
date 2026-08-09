@@ -38,13 +38,13 @@ Dark remaps **colors only** (including `--color-overlay`). Spacing, radius, elev
 
 **Status / notification roles** (alerts, toasts, inline validation):
 
-| Role | Tailwind utilities | Use |
-| --- | --- | --- |
-| `info` | `bg-info-container`, `text-on-info-container`, `border-info/30`, `text-info` | Neutral guidance, informational alerts |
-| `success` | `bg-success-container`, `text-on-success-container`, `text-success` | Completed operations |
-| `warning` | `bg-warning-container`, `text-on-warning-container`, `text-warning` | Recoverable risk |
-| `error` | `bg-error-container`, `text-on-error-container`, `text-error` | Blocking problems |
-| `destructive` | `bg-destructive`, `text-on-destructive` (aliases `error`) | Destructive actions (buttons) |
+| Role          | Tailwind utilities                                                           | Use                                    |
+| ------------- | ---------------------------------------------------------------------------- | -------------------------------------- |
+| `info`        | `bg-info-container`, `text-on-info-container`, `border-info/30`, `text-info` | Neutral guidance, informational alerts |
+| `success`     | `bg-success-container`, `text-on-success-container`, `text-success`          | Completed operations                   |
+| `warning`     | `bg-warning-container`, `text-on-warning-container`, `text-warning`          | Recoverable risk                       |
+| `error`       | `bg-error-container`, `text-on-error-container`, `text-error`                | Blocking problems                      |
+| `destructive` | `bg-destructive`, `text-on-destructive` (aliases `error`)                    | Destructive actions (buttons)          |
 
 Each family follows the same shape as `primary` / `error`: `--<role>`, `--on-<role>`, `--<role>-container`, `--on-<role>-container`, `--<role>-light`, `--<role>-dark`. Component CSS must use these roles — never palette steps (`blue-500`, `emerald-100`, …) or raw Tailwind color scales.
 
