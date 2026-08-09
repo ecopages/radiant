@@ -137,6 +137,9 @@ importers:
             '@ecopages/ecopages-jsx':
                 specifier: 0.2.0-beta.43
                 version: 0.2.0-beta.43(@ecopages/core@0.2.0-beta.43(@ecopages/dev-toolbar@0.2.0-beta.43)(typescript@7.0.2))(@ecopages/jsx@packages+jsx+dist)(@ecopages/radiant@packages+radiant+dist)(supports-color@7.2.0)(typescript@7.0.2)
+            '@ecopages/file-system':
+                specifier: 0.2.0-beta.43
+                version: 0.2.0-beta.43
             '@ecopages/jsx':
                 specifier: workspace:*
                 version: link:../../packages/jsx/dist
@@ -173,6 +176,9 @@ importers:
             tailwindcss:
                 specifier: ^4.3.0
                 version: 4.3.3
+            tsx:
+                specifier: ^4.20.6
+                version: 4.23.1
             unist-util-visit:
                 specifier: ^5.1.0
                 version: 5.1.0
