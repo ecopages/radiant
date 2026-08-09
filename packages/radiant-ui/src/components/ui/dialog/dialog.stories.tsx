@@ -1,44 +1,23 @@
 import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
-import type { JsxRenderable } from '@ecopages/jsx';
 import { expect, userEvent, fn } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
+import { dialogStage, STORY_DIALOG_ID, withDialogStage } from '../../../../.storybook/with-dialog-stage';
+import { RuiButton } from '../button';
 import {
 	RuiDialog,
 	RuiDialogActions,
 	RuiDialogBody,
 	RuiDialogClose,
 	RuiDialogTitle,
-	installDialogs,
 	openDialog,
 	type DialogActionDetail,
 } from './index';
 import { RuiDialog as RuiDialogElement } from './dialog.script';
 
-const STORY_DIALOG_ID = 'story-dialog';
-
-function DialogStage({ children, trigger = true }: { children: JsxRenderable; trigger?: boolean }) {
-	installDialogs();
-	if (!trigger) {
-		return children;
-	}
-
-	return (
-		<>
-			<button
-				type="button"
-				class="rui-button rui-button--filled rui-button--md"
-				data-dialog-open={STORY_DIALOG_ID}
-			>
-				Open dialog
-			</button>
-			<div style="margin-top: 1rem">{children}</div>
-		</>
-	);
-}
-
 const meta = {
 	title: 'Components/Dialog',
 	component: RuiDialog,
+	decorators: [withDialogStage],
 	args: {
 		id: STORY_DIALOG_ID,
 		open: false,
@@ -46,17 +25,15 @@ const meta = {
 		title: 'Edit profile',
 		children: <p>Update your display name and email address.</p>,
 		actions: (
-			<button type="button" class="rui-button rui-button--primary rui-button--md">
+			<RuiButton type="button">
 				Save
-			</button>
+			</RuiButton>
 		),
 	},
 	render: (args) => (
-		<DialogStage>
-			<RuiDialog id={args.id} open={args.open} alert={args.alert} title={args.title} actions={args.actions}>
-				{args.children}
-			</RuiDialog>
-		</DialogStage>
+		<RuiDialog id={args.id} open={args.open} alert={args.alert} title={args.title} actions={args.actions}>
+			{args.children}
+		</RuiDialog>
 	),
 };
 radiantMeta(meta, { element: RuiDialogElement, stylesheets: ['./dialog.css'] });
@@ -111,12 +88,12 @@ export const AlertDialog: Story = {
 		children: <p>This action cannot be undone. All data will be permanently removed.</p>,
 		actions: (
 			<>
-				<button type="button" class="rui-button rui-button--ghost rui-button--md">
+				<RuiButton type="button" variant="ghost">
 					Cancel
-				</button>
-				<button type="button" class="rui-button rui-button--error rui-button--md">
+				</RuiButton>
+				<RuiButton type="button" variant="destructive">
 					Delete
-				</button>
+				</RuiButton>
 			</>
 		),
 	},
@@ -146,20 +123,18 @@ export const Closed: Story = {
 
 export const Composed: Story = {
 	render: () => (
-		<DialogStage>
-			<RuiDialog id={STORY_DIALOG_ID} open={false} alert={false}>
-				<RuiDialogClose />
-				<RuiDialogTitle>Invite teammate</RuiDialogTitle>
-				<RuiDialogBody>
-					<p>Send an invitation link to add someone to your workspace.</p>
-				</RuiDialogBody>
-				<RuiDialogActions>
-					<button type="button" class="rui-button rui-button--primary rui-button--md">
-						Send invite
-					</button>
-				</RuiDialogActions>
-			</RuiDialog>
-		</DialogStage>
+		<RuiDialog id={STORY_DIALOG_ID} open={false} alert={false}>
+			<RuiDialogClose />
+			<RuiDialogTitle>Invite teammate</RuiDialogTitle>
+			<RuiDialogBody>
+				<p>Send an invitation link to add someone to your workspace.</p>
+			</RuiDialogBody>
+			<RuiDialogActions>
+				<RuiButton type="button">
+					Send invite
+				</RuiButton>
+			</RuiDialogActions>
+		</RuiDialog>
 	),
 	play: async ({ canvasElement, step }) => {
 		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
@@ -183,17 +158,18 @@ export const Composed: Story = {
 };
 
 export const Registry: Story = {
+	parameters: dialogStage({ trigger: false }),
 	render: () => (
-		<DialogStage trigger={false}>
-			<button type="button" class="rui-button rui-button--outline rui-button--md" data-dialog-open="named-invite">
+		<>
+			<RuiButton type="button" variant="outline" data-dialog-open="named-invite">
 				Open named dialog
-			</button>
-			<button
+			</RuiButton>
+			<RuiButton
 				type="button"
-				class="rui-button rui-button--destructive rui-button--md"
+				variant="destructive"
 				data-ref="imperative-open"
 				style="margin-left: 0.5rem"
-				on-native:click={() => {
+				on:click={() => {
 					openDialog({
 						title: 'Delete account?',
 						body: 'This action cannot be undone.',
@@ -206,11 +182,11 @@ export const Registry: Story = {
 				}}
 			>
 				Open imperative confirm
-			</button>
+			</RuiButton>
 			<RuiDialog id="named-invite" open={false} title="Invite teammate">
 				<p>Send an invitation link to add someone to your workspace.</p>
 			</RuiDialog>
-		</DialogStage>
+		</>
 	),
 	play: async ({ canvasElement, step }) => {
 		const named = canvasElement.querySelector('rui-dialog#named-invite') as HTMLElement | null;
