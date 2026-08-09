@@ -97,7 +97,7 @@ export class RadiantCodeTabs extends RadiantElement {
 			<RuiTabs variant="boxed" value={selectedKey} label={tabListLabel}>
 				<RuiTabList aria-label={tabListLabel} class="code-tabs__list">
 					{tabs.map((tab) => (
-						<RuiTab id={tab.id} class="code-tabs__tab">
+						<RuiTab id={tab.id} class="code-tabs__tab" selected={tab.id === selectedKey}>
 							{renderTabLabel({
 								id: tab.id,
 								label: tab.label,
@@ -108,7 +108,7 @@ export class RadiantCodeTabs extends RadiantElement {
 				</RuiTabList>
 				<RuiTabPanels>
 					{tabs.map((tab) => (
-						<RuiTabPanel id={tab.id} class="code-tabs__panel">
+						<RuiTabPanel id={tab.id} class="code-tabs__panel" selected={tab.id === selectedKey}>
 							<div class="code-tabs__body">
 								<span class="code-tabs__code">{isRichTab(tab) ? unsafeHtml(tab.html) : tab.code}</span>
 								<RuiButton
