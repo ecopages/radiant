@@ -1,6 +1,6 @@
 /**
- * Semantic color roles — Storybook brand presets + Tailwind bridge.
- * Load `colors/palettes.css` before this file.
+ * Semantic color roles — brand presets + tree-shakable Tailwind utility bridge.
+ * Load `colors/palettes.css` before this file (palette scales are `:root`, not `@theme`).
  */
 @import './presets/colors/index.css';
 

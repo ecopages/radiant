@@ -1,8 +1,8 @@
 /**
  * Default color pack — raw OKLCH scales only (mode-agnostic).
- * Semantic roles live in semantic.css.
+ * `:root` (not `@theme`) so scales always emit; semantic roles live in semantic.css.
  */
-@theme {
+:root {
 	--color-black: oklch(0% 0 0);
 	--color-white: oklch(100% 0 0);
 
