@@ -68,7 +68,7 @@ Convenience bundle (default theme + core primitives):
 import '@ecopages/radiant-ui/radiant-ui.css';
 ```
 
-Design tokens and themes: see [`AGENTS.md`](./AGENTS.md) and [`DESIGN-SYSTEM-PLAN.md`](./DESIGN-SYSTEM-PLAN.md).
+Design tokens and themes: see [`DESIGN.md`](./DESIGN.md). Component authoring: [`AGENTS.md`](./AGENTS.md).
 
 ## Story map
 
