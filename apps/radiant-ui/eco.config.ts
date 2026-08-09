@@ -2,10 +2,9 @@ import path from 'node:path';
 import { ConfigBuilder } from '@ecopages/core/config-builder';
 import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
 import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
-import { withContentMdxPlugins } from '@ecopages/content-processor/mdx';
 import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
-import rehypePrettyCode from 'rehype-pretty-code';
+import { createDocsMdxPlugins } from './src/mdx/plugins';
 import { componentDocsFrontmatterSchema } from './src/content/components';
 
 const config = await new ConfigBuilder()
@@ -16,8 +15,13 @@ const config = await new ConfigBuilder()
 			extensions: ['.tsx'],
 			mdx: {
 				enabled: true,
-				...withContentMdxPlugins({
-					rehypePlugins: [[rehypePrettyCode, { theme: { light: 'light-plus', dark: 'dark-plus' } }]],
+				...createDocsMdxPlugins({
+					rehypePrettyCode: {
+						theme: {
+							light: 'light-plus',
+							dark: 'dark-plus',
+						},
+					},
 				}),
 			},
 		}),

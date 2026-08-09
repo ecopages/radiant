@@ -34,18 +34,46 @@ describe('DocsCanvasElement', () => {
 
 		const canvas = document.createElement('radiant-docs-canvas') as DocsCanvasElement;
 		canvas.dataset.storyId = storyId;
+		const mount = document.createElement('div');
+		mount.dataset.docsPreview = '';
 		const ssrContent = document.createElement('p');
 		ssrContent.textContent = 'Server render';
-		canvas.append(ssrContent);
+		mount.append(ssrContent);
+		canvas.append(mount);
 		demo.append(canvas);
 		document.body.append(demo);
 
-		expect(canvas.firstElementChild).toBe(ssrContent);
+		expect(mount.firstElementChild).toBe(ssrContent);
 
 		demo.story.setContext({ args: { label: 'Updated render' }, renderRevision: 1 });
 		canvas.repaintFromContext();
 		canvas.repaintFromContext();
 
 		expect(canvas.querySelector('[data-canvas-story]')?.textContent).toBe('Updated render');
+	});
+
+	test('remounts preview after the story removes itself from the canvas', () => {
+		const demo = document.createElement('radiant-docs-demo') as DocsDemoElement;
+		demo.dataset.storyId = storyId;
+
+		const canvas = document.createElement('radiant-docs-canvas') as DocsCanvasElement;
+		canvas.dataset.storyId = storyId;
+		const mount = document.createElement('div');
+		mount.dataset.docsPreview = '';
+		canvas.append(mount);
+		demo.append(canvas);
+		document.body.append(demo);
+
+		demo.story.setContext({ storyId, args: { label: 'Live preview' }, renderRevision: 1 });
+		canvas.repaintFromContext();
+		expect(canvas.querySelector('[data-canvas-story]')?.textContent).toBe('Live preview');
+
+		canvas.querySelector('[data-canvas-story]')?.remove();
+		expect(canvas.querySelector('[data-canvas-story]')).toBeNull();
+
+		demo.story.setContext({ storyId, args: { label: 'Live preview' }, renderRevision: 2 });
+		canvas.repaintFromContext();
+
+		expect(canvas.querySelector('[data-canvas-story]')?.textContent).toBe('Live preview');
 	});
 });

@@ -149,6 +149,9 @@ importers:
             '@ecopages/radiant-ui':
                 specifier: workspace:*
                 version: link:../../packages/radiant-ui
+            '@types/hast':
+                specifier: ^3.0.4
+                version: 3.0.5
             '@types/node':
                 specifier: ^24.13.2
                 version: 24.13.3
@@ -161,12 +164,18 @@ importers:
             rehype-pretty-code:
                 specifier: ^0.14.1
                 version: 0.14.5(shiki@3.23.0)
+            remark-gfm:
+                specifier: ^4.0.1
+                version: 4.0.1(supports-color@7.2.0)
             shiki:
                 specifier: ^3.20.0
                 version: 3.23.0
             tailwindcss:
                 specifier: ^4.3.0
                 version: 4.3.3
+            unist-util-visit:
+                specifier: ^5.1.0
+                version: 5.1.0
             vitest:
                 specifier: ^4.1.10
                 version: 4.1.10(@types/node@24.13.3)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(happy-dom@20.11.1)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -7613,27 +7622,6 @@ snapshots:
 
     '@babel/compat-data@7.29.7': {}
 
-    '@babel/core@7.29.7':
-        dependencies:
-            '@babel/code-frame': 7.29.7
-            '@babel/generator': 7.29.8
-            '@babel/helper-compilation-targets': 7.29.7
-            '@babel/helper-module-transforms': 7.29.7(@babel/core@7.29.7)
-            '@babel/helpers': 7.29.7
-            '@babel/parser': 7.29.8
-            '@babel/template': 7.29.7
-            '@babel/traverse': 7.29.8(supports-color@7.2.0)
-            '@babel/types': 7.29.8
-            '@jridgewell/remapping': 2.3.5
-            convert-source-map: 2.0.0
-            debug: 4.4.3(supports-color@7.2.0)
-            gensync: 1.0.0-beta.2
-            json5: 2.2.3
-            semver: 6.3.1
-        transitivePeerDependencies:
-            - supports-color
-        optional: true
-
     '@babel/core@7.29.7(supports-color@7.2.0)':
         dependencies:
             '@babel/code-frame': 7.29.7
@@ -7711,16 +7699,6 @@ snapshots:
             '@babel/traverse': 7.29.8(supports-color@7.2.0)
         transitivePeerDependencies:
             - supports-color
-
-    '@babel/helper-module-transforms@7.29.7(@babel/core@7.29.7)':
-        dependencies:
-            '@babel/core': 7.29.7
-            '@babel/helper-module-imports': 7.29.7(supports-color@7.2.0)
-            '@babel/helper-validator-identifier': 7.29.7
-            '@babel/traverse': 7.29.8(supports-color@7.2.0)
-        transitivePeerDependencies:
-            - supports-color
-        optional: true
 
     '@babel/helper-optimise-call-expression@7.29.7':
         dependencies:
@@ -8061,7 +8039,7 @@ snapshots:
         dependencies:
             '@ecopages/core': 0.2.0-beta.43(@ecopages/dev-toolbar@0.2.0-beta.43)(typescript@7.0.2)
             '@ecopages/jsx': link:packages/jsx/dist
-            '@ecopages/mdx': 0.2.0-beta.43(@ecopages/core@0.2.0-beta.43(@ecopages/dev-toolbar@0.2.0-beta.43)(typescript@7.0.2))(@mdx-js/mdx@3.1.1)(typescript@7.0.2)
+            '@ecopages/mdx': 0.2.0-beta.43(@ecopages/core@0.2.0-beta.43(@ecopages/dev-toolbar@0.2.0-beta.43)(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)
             '@ecopages/radiant': link:packages/radiant/dist
             '@mdx-js/mdx': 3.1.1(supports-color@7.2.0)
             vfile: 6.0.3
@@ -8079,7 +8057,7 @@ snapshots:
         dependencies:
             typescript: 7.0.2
 
-    '@ecopages/mdx@0.2.0-beta.43(@ecopages/core@0.2.0-beta.43(@ecopages/dev-toolbar@0.2.0-beta.43)(typescript@7.0.2))(@mdx-js/mdx@3.1.1)(typescript@7.0.2)':
+    '@ecopages/mdx@0.2.0-beta.43(@ecopages/core@0.2.0-beta.43(@ecopages/dev-toolbar@0.2.0-beta.43)(typescript@7.0.2))(@mdx-js/mdx@3.1.1(supports-color@7.2.0))(typescript@7.0.2)':
         dependencies:
             '@ecopages/core': 0.2.0-beta.43(@ecopages/dev-toolbar@0.2.0-beta.43)(typescript@7.0.2)
             '@ecopages/logger': 0.2.3(typescript@7.0.2)
@@ -9228,23 +9206,6 @@ snapshots:
             vitest: 4.1.10(@types/node@24.13.3)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(happy-dom@20.11.1)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
         transitivePeerDependencies:
             - supports-color
-
-    '@vitest/coverage-istanbul@4.1.10(vitest@4.1.10)':
-        dependencies:
-            '@babel/core': 7.29.7
-            '@istanbuljs/schema': 0.1.6
-            '@jridgewell/gen-mapping': 0.3.13
-            '@jridgewell/trace-mapping': 0.3.31
-            istanbul-lib-coverage: 3.2.2
-            istanbul-lib-report: 3.0.1
-            istanbul-reports: 3.2.0
-            magicast: 0.5.4
-            obug: 2.1.4
-            tinyrainbow: 3.1.1
-            vitest: 4.1.10(@types/node@24.13.3)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(happy-dom@20.11.1)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))
-        transitivePeerDependencies:
-            - supports-color
-        optional: true
 
     '@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)':
         dependencies:
@@ -11938,7 +11899,7 @@ snapshots:
         optionalDependencies:
             '@types/node': 24.13.3
             '@vitest/browser-playwright': 4.1.10(playwright@1.62.1)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.0))(vitest@4.1.10)
-            '@vitest/coverage-istanbul': 4.1.10(vitest@4.1.10)
+            '@vitest/coverage-istanbul': 4.1.10(supports-color@7.2.0)(vitest@4.1.10)
             '@vitest/coverage-v8': 4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)
             happy-dom: 20.11.1
         transitivePeerDependencies:

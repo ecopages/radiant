@@ -3,12 +3,12 @@ import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from '@eco
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { buildPlaygroundExampleCode } from '@/lib/playground';
 
-export type AlertArgs = Required<Pick<RuiAlertProps, 'variant' | 'layout'>>;
+export type AlertArgs = Required<Pick<RuiAlertProps, 'variant' | 'layout' | 'dismissible'>>;
 
 export const meta = {
 	component: 'alert',
 	exportName: 'RuiAlert',
-	args: { variant: 'info', layout: 'inline' },
+	args: { variant: 'info', layout: 'inline', dismissible: false },
 	argTypes: {
 		variant: {
 			control: { type: 'select' },
@@ -18,12 +18,15 @@ export const meta = {
 			control: { type: 'select' },
 			options: ['inline', 'banner'] as const satisfies readonly RuiAlertLayout[],
 		},
+		dismissible: {
+			control: { type: 'boolean' },
+		},
 	},
 	exampleCode: (args) => buildPlaygroundExampleCode('alert', args) ?? '',
 	render: (args) => {
 		if (args.layout === 'banner') {
 			return (
-				<RuiAlert variant={args.variant} layout="banner">
+				<RuiAlert variant={args.variant} layout="banner" dismissible={args.dismissible}>
 					<RuiAlertTitle>Documentation preview</RuiAlertTitle>
 					<RuiAlertDescription>
 						<p>
@@ -35,7 +38,7 @@ export const meta = {
 			);
 		}
 		return (
-			<RuiAlert variant={args.variant} layout="inline">
+			<RuiAlert variant={args.variant} layout="inline" dismissible={args.dismissible}>
 				<RuiAlertIcon variant={args.variant} />
 				<span>Your session will expire in 5 minutes.</span>
 			</RuiAlert>
@@ -51,7 +54,7 @@ export const InlineWarning: Story = docsStory(meta, {
 	args: { variant: 'warning', layout: 'inline' },
 	parameters: { docs: { id: 'alert/inline-warning' } },
 	render: (args) => (
-		<RuiAlert variant={args.variant} layout="inline">
+		<RuiAlert variant={args.variant} layout="inline" dismissible={args.dismissible}>
 			<RuiAlertIcon variant="warning" />
 			<span>Disk space is running low.</span>
 		</RuiAlert>
@@ -61,4 +64,9 @@ export const InlineWarning: Story = docsStory(meta, {
 export const Banner: Story = docsStory(meta, {
 	args: { variant: 'info', layout: 'banner' },
 	parameters: { docs: { id: 'alert/banner' } },
+});
+
+export const Dismissible: Story = docsStory(meta, {
+	args: { variant: 'warning', layout: 'inline', dismissible: true },
+	parameters: { docs: { id: 'alert/dismissible' } },
 });
