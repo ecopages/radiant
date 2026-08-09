@@ -45,6 +45,20 @@ html[data-rui-colors='ember'] {
 	--success-light: var(--color-night-sky-400);
 	--success-dark: var(--color-night-sky-800);
 
+	--info: var(--color-night-sky-600);
+	--on-info: var(--color-glacier-white-50);
+	--info-container: var(--color-night-sky-100);
+	--on-info-container: var(--color-night-sky-900);
+	--info-light: var(--color-night-sky-400);
+	--info-dark: var(--color-night-sky-800);
+
+	--warning: var(--color-laser-lemon-800);
+	--on-warning: var(--color-glacier-white-50);
+	--warning-container: var(--color-glacier-white-200);
+	--on-warning-container: var(--color-laser-lemon-800);
+	--warning-light: var(--color-laser-lemon-300);
+	--warning-dark: var(--color-laser-lemon-800);
+
 	--neutral: var(--color-glacier-white-500);
 
 	--surface: var(--color-glacier-white-100);
@@ -105,6 +119,20 @@ html.dark[data-rui-colors='ember'] {
 	--on-success-container: var(--color-night-sky-100);
 	--success-light: var(--color-night-sky-300);
 	--success-dark: var(--color-night-sky-700);
+
+	--info: var(--color-night-sky-400);
+	--on-info: var(--color-glacier-white-950);
+	--info-container: var(--color-night-sky-800);
+	--on-info-container: var(--color-night-sky-100);
+	--info-light: var(--color-night-sky-300);
+	--info-dark: var(--color-night-sky-700);
+
+	--warning: var(--color-laser-lemon-300);
+	--on-warning: var(--color-glacier-white-950);
+	--warning-container: var(--color-glacier-white-800);
+	--on-warning-container: var(--color-laser-lemon-300);
+	--warning-light: var(--color-laser-lemon-300);
+	--warning-dark: var(--color-laser-lemon-800);
 
 	--neutral: var(--color-glacier-white-500);
 

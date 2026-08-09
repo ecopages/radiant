@@ -45,6 +45,20 @@ html[data-rui-colors='aurora'] {
 	--success-light: var(--color-fruit-salad-400);
 	--success-dark: var(--color-fruit-salad-800);
 
+	--info: var(--color-havelock-blue-700);
+	--on-info: var(--color-white);
+	--info-container: var(--color-havelock-blue-100);
+	--on-info-container: var(--color-havelock-blue-800);
+	--info-light: var(--color-havelock-blue-500);
+	--info-dark: var(--color-havelock-blue-900);
+
+	--warning: var(--color-hit-pink-700);
+	--on-warning: var(--color-black);
+	--warning-container: var(--color-hit-pink-100);
+	--on-warning-container: var(--color-hit-pink-800);
+	--warning-light: var(--color-hit-pink-400);
+	--warning-dark: var(--color-hit-pink-800);
+
 	--neutral: var(--color-pale-sky-500);
 
 	--surface: var(--color-pale-sky-50);
@@ -99,6 +113,20 @@ html.dark[data-rui-colors='aurora'] {
 	--on-success: var(--color-black);
 	--success-container: var(--color-fruit-salad-800);
 	--on-success-container: var(--color-fruit-salad-50);
+
+	--info: var(--color-havelock-blue-300);
+	--on-info: var(--color-black);
+	--info-container: var(--color-havelock-blue-800);
+	--on-info-container: var(--color-havelock-blue-50);
+	--info-light: var(--color-havelock-blue-300);
+	--info-dark: var(--color-havelock-blue-900);
+
+	--warning: var(--color-hit-pink-200);
+	--on-warning: var(--color-black);
+	--warning-container: var(--color-hit-pink-800);
+	--on-warning-container: var(--color-hit-pink-50);
+	--warning-light: var(--color-hit-pink-300);
+	--warning-dark: var(--color-hit-pink-800);
 
 	--surface: var(--color-pale-sky-975);
 	--on-surface: var(--color-white);
