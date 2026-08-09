@@ -1,5 +1,6 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
+import { RuiButton } from '@ecopages/radiant-ui/button';
 import { Logo } from '@/components/logo/logo';
 import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import radiantUiJson from '../../../../../packages/radiant-ui/package.json';
@@ -12,8 +13,8 @@ export type BaseLayoutProps = {
 
 const GitHubIcon = () => (
 	<svg
-		width="24"
-		height="24"
+		width="20"
+		height="20"
 		viewBox="0 0 98 96"
 		xmlns="http://www.w3.org/2000/svg"
 		fill="currentColor"
@@ -41,15 +42,24 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 						<nav class="site-header__nav" aria-label="Site">
 							<ul>
 								<li>
-									<a href="/docs/getting-started/introduction">Docs</a>
+									<RuiButton href="/docs/getting-started/introduction" variant="ghost" size="sm">
+										Docs
+									</RuiButton>
 								</li>
 								<li>
-									<a href="https://github.com/ecopages/radiant" aria-label="GitHub repository">
+									<RuiButton
+										href="https://github.com/ecopages/radiant"
+										target="_blank"
+										rel="noopener noreferrer"
+										variant="ghost"
+										size="sm"
+										aria-label="GitHub repository"
+									>
 										<GitHubIcon />
-									</a>
+									</RuiButton>
 								</li>
 								<li>
-									<ThemeToggle id="toggle-dark-mode" label="Theme" hiddenLabel />
+									<ThemeToggle id="toggle-dark-mode" label="Theme" />
 								</li>
 							</ul>
 						</nav>

@@ -33,22 +33,10 @@ main {
 
 	&__nav {
 		ul {
-			@apply flex items-center gap-5;
+			@apply flex items-center gap-1;
 
 			li {
 				@apply flex items-center;
-
-				a {
-					@apply font-heading text-[13px] font-medium text-on-background/80 transition-colors duration-150;
-
-					&:hover {
-						@apply text-on-background;
-					}
-
-					svg {
-						@apply h-4 w-4;
-					}
-				}
 			}
 		}
 	}

@@ -41,7 +41,7 @@ rui-sidebar {
 	}
 
 	.rui-sidebar-provider__site-header-nav {
-		@apply flex items-center gap-4;
+		@apply flex items-center gap-1;
 	}
 
 	.rui-sidebar-provider__site-header-link {
