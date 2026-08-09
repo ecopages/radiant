@@ -1,26 +1,7 @@
 import { buildExampleCode } from '@/lib/playground';
-import { docsStory, type DocsDecorator, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
+import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
-import { installDialogs } from '@ecopages/radiant-ui/dialog';
-
-const DOCS_DIALOG_ID = 'docs-dialog';
-
-const withDialogTrigger: DocsDecorator<DialogArgs> = (story) => {
-	installDialogs();
-
-	return (
-		<>
-			<button
-				type="button"
-				class="rui-button rui-button--filled rui-button--md"
-				data-dialog-open={DOCS_DIALOG_ID}
-			>
-				Open dialog
-			</button>
-			<div style="margin-top: 1rem">{story()}</div>
-		</>
-	);
-};
+import { DOCS_DIALOG_ID, withDialogStage } from '@/lib/story-decorators/with-dialog-stage';
 
 export type DialogArgs = {
 	id: string;
@@ -43,7 +24,7 @@ export const meta = {
 		alert: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },
 	},
-	decorators: [withDialogTrigger],
+	decorators: [withDialogStage()],
 	exampleCode: (args) => buildExampleCode('RuiDialog', 'dialog', args),
 	render: (args) => renderPlaygroundPreview('dialog', args),
 } satisfies DocsMeta<DialogArgs>;

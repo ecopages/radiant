@@ -29,12 +29,17 @@ export class DocsCanvasElement extends RadiantElement {
 	 * Server-rendered previews are already the initial story output. Repainting
 	 * them during upgrade disconnects their nested custom elements and loses
 	 * their hydrated state, so only empty client-created canvases paint here.
+	 *
+	 * Toast playgrounds use `RuiButton` `on:click` and a mounted `<rui-toaster>`;
+	 * SSR markup does not wire those up, so they always repaint on the client.
 	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
 		const mount = this.getPreviewTarget();
 		if (!mount.hasChildNodes()) {
 			this.repaintFromContext();
+		} else if (this.previewNeedsClientRepaint(mount)) {
+			requestAnimationFrame(() => this.repaintFromContext());
 		}
 		this.bindStoryContext();
 	}
@@ -89,6 +94,10 @@ export class DocsCanvasElement extends RadiantElement {
 
 	private getPreviewTarget(): HTMLElement {
 		return this.querySelector<HTMLElement>('[data-docs-preview]') ?? this;
+	}
+
+	private previewNeedsClientRepaint(mount: HTMLElement): boolean {
+		return mount.querySelector('.playground-toast-stage') != null;
 	}
 
 	/**
