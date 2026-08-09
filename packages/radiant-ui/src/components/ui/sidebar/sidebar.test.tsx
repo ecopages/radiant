@@ -450,12 +450,7 @@ describe('RuiSidebar mobile drawer', () => {
 		const { host, cleanup } = mount(
 			<RuiSidebarProvider
 				sidebar={
-					<RuiSidebar
-						id="primary-sidebar"
-						collapsible="full"
-						mobileBreakpoint={10_000}
-						label="Primary"
-					>
+					<RuiSidebar id="primary-sidebar" collapsible="full" mobileBreakpoint={10_000} label="Primary">
 						<span>Navigation</span>
 					</RuiSidebar>
 				}
