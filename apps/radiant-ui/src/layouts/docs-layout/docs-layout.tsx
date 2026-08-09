@@ -14,7 +14,7 @@ import {
 	RuiSidebarTrigger,
 } from '@ecopages/radiant-ui/sidebar';
 import { RuiToc } from '@ecopages/radiant-ui/toc';
-import { docsNav } from '@/lib/content-nav';
+import { docsNav, flattenContentNav } from '@/lib/content-nav';
 
 import { CodeTabs } from '@/components/code-tabs';
 import { Logo } from '@/components/logo/logo';
@@ -22,9 +22,10 @@ import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import { BaseLayout } from '@/layouts/base-layout';
 import radiantUiJson from '../../../../../packages/radiant-ui/package.json';
 import { DocsPagination } from './components/docs-pagination';
+import { getGroupIcon } from './get-group-icon';
 
 const paginationData = JSON.stringify({
-	pages: docsNav.groups.flatMap((group) => group.items).map(({ href, title }) => ({ href, title })),
+	pages: flattenContentNav(docsNav).map(({ href, title }) => ({ href, title })),
 });
 const ECO_NAVIGATION_EVENTS = 'eco:page-load,eco:after-swap';
 const DOCS_SIDEBAR_ID = 'docs-sidebar';
@@ -39,7 +40,14 @@ const DocsNavigation = () => (
 			<>
 				{index > 0 ? <RuiSidebarSeparator aria-label="Section divider" /> : null}
 				<RuiSidebarGroup aria-label={group.name}>
-					<RuiSidebarGroupHeader label={group.name} />
+					<RuiSidebarGroupHeader
+						label={
+							<>
+								<span class="rui-sidebar__group-icon">{getGroupIcon(group.name)}</span>
+								<span>{group.name}</span>
+							</>
+						}
+					/>
 					<RuiSidebarMenu aria-label={`${group.name} links`}>
 						{group.items.map((item) => (
 							<RuiSidebarMenuItem>
