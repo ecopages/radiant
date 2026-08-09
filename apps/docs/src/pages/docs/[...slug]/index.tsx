@@ -11,6 +11,7 @@ import {
 import { entries, getEntryBySegments } from 'ecopages:content/docs';
 import { getComponent, getEntryDependencies } from 'ecopages:content/docs/server';
 import type { Entry } from 'ecopages:content/docs';
+import { CopyForLlm } from '@/components/copy-for-llm';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { docsNav } from '@/lib/content-nav';
 
@@ -49,7 +50,13 @@ const DocsBreadcrumb = ({ entry }: { entry: Entry }) => {
 
 export default eco.page<{ entry: Entry }, JsxRenderable>({
 	layout: DocsLayout,
-	dependencies: ({ props }) => getEntryDependencies(props.entry.slug),
+	dependencies: async ({ props }) => {
+		const entryDependencies = await getEntryDependencies(props.entry.slug);
+		return {
+			...entryDependencies,
+			components: [...(entryDependencies?.components ?? []), CopyForLlm],
+		};
+	},
 	staticPaths: async () => ({
 		paths: entries.map((post) => ({
 			params: {
@@ -76,7 +83,10 @@ export default eco.page<{ entry: Entry }, JsxRenderable>({
 
 		return (
 			<section class="docs-page">
-				<DocsBreadcrumb entry={entry} />
+				<div class="docs-bar unstyled">
+					<DocsBreadcrumb entry={entry} />
+					<CopyForLlm llmUrl={`/llms-content/${entry.slug}.txt`} />
+				</div>
 				<Content />
 			</section>
 		);

@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { fileSystem } from '@ecopages/file-system';
 import { ContentScanner, type ContentEntry } from '@ecopages/content-processor';
 
-export type LlmDocsOptions = {
+export type LlmDocsOptions<T extends Record<string, unknown> = Record<string, unknown>> = {
 	/** Directory where each document's raw content is written. */
 	outputDir: string;
 	/** Path of the generated `llms.txt` index file. */
@@ -16,7 +16,7 @@ export type LlmDocsOptions = {
 	/** Header lines written at the top of the index file. */
 	headerLines?: readonly string[];
 	/** Computes the section key for a post. Defaults to the first slug segment. */
-	getSection?: (slug: string, segments: string[]) => string;
+	getSection?: (post: ContentEntry<T>) => string;
 	/** Formats a section key into a display title. */
 	formatSectionTitle?: (section: string) => string;
 };
@@ -34,7 +34,7 @@ function defaultFormatTitle(value: string): string {
 /** Generates an `llms.txt` index and per-document text files from scanned content. */
 export async function generateLlmDocs<T extends Record<string, unknown>>(
 	scanner: ContentScanner<T>,
-	options: LlmDocsOptions,
+	options: LlmDocsOptions<T>,
 ): Promise<void> {
 	const {
 		outputDir,
@@ -43,7 +43,7 @@ export async function generateLlmDocs<T extends Record<string, unknown>>(
 		publicPath = 'llms-content',
 		sectionOrder = [],
 		headerLines = [],
-		getSection = (_slug, segments) => segments[0] ?? 'other',
+		getSection = (post) => post.segments[0] ?? 'other',
 		formatSectionTitle = defaultFormatTitle,
 	} = options;
 
@@ -51,7 +51,7 @@ export async function generateLlmDocs<T extends Record<string, unknown>>(
 
 	const sections = new Map<string, ContentEntry<T>[]>();
 	for (const post of posts) {
-		const section = getSection(post.slug, post.segments);
+		const section = getSection(post);
 		if (!sections.has(section)) sections.set(section, []);
 		sections.get(section)!.push(post);
 	}

@@ -1,0 +1,143 @@
+.prose {
+	@apply text-on-background/90 text-base leading-[1.65];
+
+	h1:not(.unstyled, .unstyled *) {
+		@apply text-4xl leading-tight font-extrabold text-on-background-accent mt-12 mb-6 font-heading tracking-tight;
+	}
+
+	h2:not(.unstyled, .unstyled *) {
+		@apply text-3xl leading-tight font-bold text-on-background-accent mt-10 mb-5 font-heading tracking-tight;
+		scroll-margin-top: 7.5rem;
+	}
+
+	h3:not(.unstyled, .unstyled *) {
+		@apply text-2xl leading-snug font-bold text-on-background-accent mt-8 mb-4 font-heading tracking-tight;
+		scroll-margin-top: 7.5rem;
+	}
+
+	h4:not(.unstyled, .unstyled *) {
+		@apply text-xl leading-snug font-bold text-on-background-accent mt-6 mb-4 font-heading tracking-tight;
+	}
+
+	h5:not(.unstyled, .unstyled *) {
+		@apply text-lg leading-snug font-bold text-on-background-accent mt-6 mb-4 font-heading;
+	}
+
+	h6:not(.unstyled, .unstyled *) {
+		@apply text-base leading-snug font-bold text-on-background-accent mt-6 mb-4 font-heading;
+	}
+
+	p:not(.unstyled, .unstyled *) {
+		@apply mt-2 mb-7;
+	}
+
+	a:not(.unstyled, .unstyled *, .rui-button) {
+		@apply text-link font-medium underline underline-offset-4 decoration-link/30 hover:decoration-link transition-colors duration-200;
+	}
+
+	/**
+	 * WAI-ARIA APG reference links. Use `data-wai-aria` on external pattern URLs
+	 * so docs can show a consistent APG badge without per-page markup.
+	 */
+	a[data-wai-aria]:not(.unstyled, .unstyled *, .rui-button) {
+		@apply inline-flex items-baseline gap-1.5 rounded-sm border border-link/30 bg-link/5 px-1.5 py-0.5 align-baseline font-medium text-link no-underline transition-colors duration-200;
+		text-decoration-line: none;
+	}
+
+	a[data-wai-aria]:not(.unstyled, .unstyled *, .rui-button)::before {
+		content: '';
+		@apply relative top-px inline-block size-3.5 shrink-0 bg-link;
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='10' stroke='black' stroke-width='2'/%3E%3Cpath stroke='black' stroke-width='2' stroke-linecap='round' d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E");
+		mask-size: contain;
+		mask-repeat: no-repeat;
+		mask-position: center;
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='10' stroke='black' stroke-width='2'/%3E%3Cpath stroke='black' stroke-width='2' stroke-linecap='round' d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E");
+		-webkit-mask-size: contain;
+		-webkit-mask-repeat: no-repeat;
+		-webkit-mask-position: center;
+	}
+
+	a[data-wai-aria]:not(.unstyled, .unstyled *, .rui-button)::after {
+		content: 'APG';
+		@apply rounded-sm bg-link/15 px-1 py-px font-mono text-[0.65em] font-semibold tracking-wider text-link uppercase;
+	}
+
+	a[data-wai-aria]:not(.unstyled, .unstyled *, .rui-button):hover {
+		@apply border-link/55 bg-link/10;
+	}
+
+	strong:not(.unstyled, .unstyled *) {
+		@apply font-semibold;
+	}
+
+	ul:not(.unstyled, .unstyled *),
+	ol:not(.unstyled, .unstyled *) {
+		@apply pl-6 my-6 text-on-background;
+
+		li {
+			@apply my-2 pl-2;
+		}
+	}
+
+	ul:not(.unstyled, .unstyled *) {
+		@apply list-disc;
+
+		li::marker {
+			@apply text-on-background/40;
+		}
+	}
+
+	ol:not(.unstyled, .unstyled *) {
+		@apply list-decimal;
+
+		li::marker {
+			@apply text-on-background/60 font-medium;
+		}
+	}
+
+	code:not(.unstyled, .unstyled *) {
+		@apply font-mono text-[0.875em] bg-background-accent text-on-background-accent rounded-md border border-border/30;
+	}
+
+	pre:not(.unstyled, .unstyled *) {
+		@apply my-8 rounded-md  border border-border overflow-x-auto shadow-sm;
+
+		code {
+			@apply text-inherit  rounded-none border-none text-[0.875em] leading-relaxed;
+		}
+	}
+
+	hr:not(.unstyled, .unstyled *) {
+		@apply border-t border-border/40 my-10;
+	}
+
+	table:not(.unstyled, .unstyled *) {
+		@apply w-full text-left border-collapse my-8 text-sm overflow-hidden rounded-xl border border-border/30 block md:table ring-1 ring-border/20;
+
+		thead {
+			@apply border-b border-border/50 bg-background-accent/20;
+
+			th {
+				@apply py-3 px-4 font-semibold text-on-background-accent whitespace-nowrap;
+			}
+		}
+
+		tbody {
+			tr {
+				@apply border-b border-border/30 transition-colors hover:bg-background-accent/10;
+
+				td {
+					@apply py-3 px-4 text-on-background align-top;
+
+					code {
+						@apply whitespace-nowrap;
+					}
+				}
+
+				&:last-child {
+					@apply border-0;
+				}
+			}
+		}
+	}
+}

@@ -50,7 +50,7 @@ export default eco.page<{}, JsxRenderable>({
 			'../components/component-docs/controls.script.tsx',
 			'../components/component-docs/code.script.tsx',
 		],
-		stylesheets: ['./index.css', '../components/component-docs/component-docs.css'],
+		stylesheets: ['./index.css'],
 	},
 	metadata: () => ({
 		title: 'Radiant UI',
