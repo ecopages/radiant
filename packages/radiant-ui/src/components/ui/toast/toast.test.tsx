@@ -1,6 +1,6 @@
 import { describe, expect, it, afterEach } from 'vitest';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
-import { RuiToaster, toast, TOAST_COLLAPSED_PEEK, TOAST_GAP } from './index';
+import { RuiToaster, toast, TOAST_COLLAPSED_PEEK, TOAST_GAP, TOAST_POSITIONS } from './index';
 import { collapsedStackHeight } from './stack-layout';
 import type { RuiToast } from './toast.script';
 import { resetToastDeadlines } from './toast.script';
@@ -38,6 +38,17 @@ describe('rui-toaster', () => {
 		toast.dismiss();
 		toast.clear();
 		resetToastDeadlines();
+	});
+
+	it('exports every supported toast position in display order', () => {
+		expect(TOAST_POSITIONS).toEqual([
+			'top-start',
+			'top-center',
+			'top-end',
+			'bottom-start',
+			'bottom-center',
+			'bottom-end',
+		]);
 	});
 
 	it('renders a toast from the imperative API', async () => {

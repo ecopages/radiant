@@ -67,6 +67,7 @@ function ToastDemoTriggers() {
  */
 export function withToastStage<TArgs extends ToastStageArgs>(): DocsDecorator<TArgs> {
 	return (_story, context) => {
+		toast.clear();
 		const args = context.args;
 
 		return (

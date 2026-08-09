@@ -1,7 +1,7 @@
 import { buildExampleCode } from '@/lib/playground';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { withToastStage } from '@/lib/story-decorators/with-toast-stage';
-import type { ToastPosition } from '@ecopages/radiant-ui';
+import { TOAST_POSITIONS, type ToastPosition } from '@ecopages/radiant-ui';
 
 export type ToastArgs = {
 	position: ToastPosition;
@@ -24,12 +24,7 @@ export const meta = {
 	argTypes: {
 		position: {
 			control: { type: 'select' },
-			options: [
-				'bottom-end',
-				'bottom-center',
-				'top-end',
-				'top-center',
-			] as const satisfies readonly ToastPosition[],
+			options: TOAST_POSITIONS,
 		},
 		duration: { control: { type: 'number' } },
 		visibleToasts: { control: { type: 'number' } },

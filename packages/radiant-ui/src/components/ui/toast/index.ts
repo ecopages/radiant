@@ -14,6 +14,7 @@ export {
 	TOAST_SWIPE_THRESHOLD,
 	TOAST_EXIT_MS,
 	DEFAULT_TOAST_POSITION,
+	TOAST_POSITIONS,
 	type ToastVariant,
 	type ToastPosition,
 	type ToastAction,

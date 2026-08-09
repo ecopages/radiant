@@ -5,6 +5,16 @@ export type ToastVariant = 'default' | 'info' | 'success' | 'warning' | 'error' 
 
 export type ToastPosition = 'top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end';
 
+/** Supported viewport positions in display order. */
+export const TOAST_POSITIONS: readonly ToastPosition[] = [
+	'top-start',
+	'top-center',
+	'top-end',
+	'bottom-start',
+	'bottom-center',
+	'bottom-end',
+];
+
 export type ToastAction = {
 	label: string;
 	onClick: (event: MouseEvent) => void;
