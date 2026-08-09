@@ -1,7 +1,8 @@
 /**
  * Basalt color pack — cool neutrals + Carbon-like blue accent (IBM Carbon inspired).
+ * `:root` (not `@theme`) so scales always emit.
  */
-@theme {
+:root {
 	--color-basalt-50: oklch(98.2% 0.004 265);
 	--color-basalt-100: oklch(96% 0.006 265);
 	--color-basalt-200: oklch(91.5% 0.008 265);

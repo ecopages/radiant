@@ -49,7 +49,7 @@ Component CSS must **not** `@import` a theme file.
 
 | Directory               | Purpose                                                                  |
 | ----------------------- | ------------------------------------------------------------------------ |
-| `colors/<name>.css`     | Raw OKLCH scales only (no semantic roles)                                |
+| `colors/<name>.css`     | Raw scales on `:root` only (always emitted; no `@theme` utilities)       |
 | `spacing/<name>.css`    | `--space-*` scale + spacing roles                                        |
 | `radius/<name>.css`     | Radius scale + `--radius-control`, `--radius-container`, `--radius-pill` |
 | `elevation/<name>.css`  | `--shadow-control`, `--shadow-overlay`, `--shadow-modal`                 |
@@ -58,11 +58,14 @@ Component CSS must **not** `@import` a theme file.
 
 Components must **never** reference palette steps (e.g. `--color-havelock-blue-800`) directly.
 
+**Color packs vs `@theme`:** Put palette scales on `:root`, not `@theme`. Tailwind v4 tree-shakes unused `@theme` vars; brand presets only reference palettes via nested `var(--color-*)`, which does not keep them alive. Spacing already follows this split (`:root` values + `@theme` bridge).
+
+**Exports:** Token/theme sources in `dist/` stay authoring CSS for Tailwind apps (semantic `@theme` remains tree-shakable). Compiled entries (`radiant-ui.css`, `styles.css`) bake in `:root` palettes for drop-in consumers.
+
 ### Tier 2 — semantic (`tokens/semantic.css`)
 
-- Light role defaults on `:root`.
-- **Dark mode in the same file:** `.dark { … }` remaps the **same** role names (colors + overlay).
-- `@theme` block maps roles to Tailwind color utilities (`bg-primary`, `text-on-surface`, …).
+- Brand presets assign plain roles (`--primary`, …) on `html[data-rui-colors]` / `.dark`.
+- `@theme` block maps those roles to tree-shakable Tailwind color utilities (`bg-primary`, `text-on-surface`, …).
 - There is no separate `semantic.dark.css`.
 
 Dark remaps **colors only** (including `--color-overlay`). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme explicitly documents otherwise.
@@ -134,8 +137,8 @@ Use `@apply` with theme-mapped utilities when they exist (`rounded-control`, `bg
 ## Adding a token
 
 1. Decide tier: pack (Tier 1), semantic role (Tier 2), or system (Tier 3).
-2. Add or extend the pack file; expose via `@theme` if Tailwind utilities are required.
-3. For new **color** roles: add `:root` + `.dark` entries in `semantic.css` and the `@theme` bridge.
+2. Add or extend the pack file. Color scales → `:root`. Expose via `@theme` only when Tailwind utilities are required (spacing/radius bridges, semantic roles).
+3. For new **color** roles: add preset remaps + the `@theme` bridge in `semantic.css`.
 4. Document the role in this file or `DESIGN-SYSTEM-PLAN.md` if it is part of the public contract.
 
 ## Adding a theme

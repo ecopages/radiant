@@ -1,7 +1,8 @@
 /**
  * Glacier color pack — matches apps/docs `theme.css` scales.
+ * `:root` (not `@theme`) so scales always emit; semantic utilities stay tree-shakable in semantic.css.
  */
-@theme {
+:root {
 	--color-night-sky-50: hsl(225 100% 98%);
 	--color-night-sky-100: hsl(225 100% 95%);
 	--color-night-sky-200: hsl(225 100% 90%);
