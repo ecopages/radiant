@@ -81,6 +81,13 @@ export function countHydrationMarkers(value: JsxRenderable): number {
 	}
 
 	if (isTemplateResultLike(value)) {
+		// A custom-element root is serialized by the SSR render hook, which returns
+		// before taking any index. Its whole subtree contributes nothing to the
+		// parent's namespace, and counting it would shift every later marker.
+		if (shouldSkipHydrationSubtree(value.rootLocalName ?? '')) {
+			return 0;
+		}
+
 		let total = 0;
 
 		for (let index = 0; index < value.values.length; index += 1) {
