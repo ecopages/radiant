@@ -84,6 +84,9 @@ export class DocsCanvasElement extends RadiantElement {
 			return;
 		}
 
+		const revision = this.getStoryProvider()?.getContext().renderRevision ?? 0;
+		this.dataset.playgroundRevision = String(revision);
+		this.replaceChildren();
 		renderJsx(renderStory(entry.meta, entry.story, args), this);
 	}
 }
