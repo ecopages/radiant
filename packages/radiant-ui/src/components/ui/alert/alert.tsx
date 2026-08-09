@@ -97,7 +97,7 @@ export type RuiAlertComponentProps = JsxHtmlPropsWithChildren<RuiAlertProps & { 
  * BEM classes; the host owns dismiss (`rui-close` / `dismiss()`).
  *
  * Variant tones map to semantic theme roles (`info`, `success`, `warning`, `error`)
- * via `.rui-alert--*` — not palette steps. See `alert.css` and AGENTS.md status roles.
+ * via `.rui-alert--*` — not palette steps. See `alert.css` and DESIGN.md status roles.
  *
  * @cssclass rui-alert - Root surface (`role="alert"`).
  * @cssclass rui-alert--info - Info tone (default).
