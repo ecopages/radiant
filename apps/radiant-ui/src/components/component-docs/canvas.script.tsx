@@ -21,13 +21,15 @@ export class DocsCanvasElement extends RadiantElement {
 
 	/**
 	 * @remarks
-	 * Paint immediately from `data-story-id` so SSR markup is replaced even if
-	 * the parent demo context is not ready yet. Then attach to the context
-	 * provider when it appears (for control-driven re-paints).
+	 * Server-rendered previews are already the initial story output. Repainting
+	 * them during upgrade disconnects their nested custom elements and loses
+	 * their hydrated state, so only empty client-created canvases paint here.
 	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.repaintFromContext();
+		if (!this.hasChildNodes()) {
+			this.repaintFromContext();
+		}
 		this.bindStoryContext();
 	}
 
@@ -69,7 +71,6 @@ export class DocsCanvasElement extends RadiantElement {
 		}
 
 		this.unsubscribeStory?.();
-		this.repaintFromContext();
 		this.unsubscribeStory = provider.subscribe({
 			select: (ctx) => ctx.renderRevision,
 			callback: () => {
@@ -86,7 +87,6 @@ export class DocsCanvasElement extends RadiantElement {
 
 		const revision = this.getStoryProvider()?.getContext().renderRevision ?? 0;
 		this.dataset.playgroundRevision = String(revision);
-		this.replaceChildren();
 		renderJsx(renderStory(entry.meta, entry.story, args), this);
 	}
 }

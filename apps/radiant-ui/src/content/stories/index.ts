@@ -1,6 +1,7 @@
 import './alert';
 import './button';
 import './chip';
+import './cycle-toggle';
 import './switch';
 import './autocomplete';
 import './avatar';

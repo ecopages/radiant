@@ -15,6 +15,7 @@ export * from './components/ui/checkbox';
 export * from './components/ui/chip';
 export * from './components/ui/chip-list';
 export * from './components/ui/combobox';
+export * from './components/ui/cycle-toggle';
 export * from './components/ui/date-field';
 export * from './components/ui/date-range-picker';
 export * from './components/ui/dialog';

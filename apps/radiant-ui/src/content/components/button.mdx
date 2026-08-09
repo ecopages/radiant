@@ -4,7 +4,7 @@ description: Buttons trigger actions in the interface. Choose a variant that ref
 category: Actions
 ---
 
-import { meta as ButtonMeta, Default, Destructive, Ghost } from '@/content/stories/button';
+import { meta as ButtonMeta, Default, Destructive, Ghost, Link } from '@/content/stories/button';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -43,11 +43,15 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 
 ## Choose a tone
 
-Use `filled` for the main action, `outline` for a supporting action, and `ghost` when the action should recede until needed. `destructive` is for irreversible operations.
+Use `filled` for the main action, `outline` for a supporting action, and `ghost` when the action should recede until needed. `link` looks like inline navigation copy and underlines on hover and focus — pair it with `size="none"` in running text. `destructive` is for irreversible operations.
+
+Pass `href` when the control should navigate; `variant` only changes appearance.
 
 <Canvas of={Destructive} meta={ButtonMeta} />
 <br />
 <Canvas of={Ghost} meta={ButtonMeta} />
+<br />
+<Canvas of={Link} meta={ButtonMeta} />
 
 ## Accessibility
 

@@ -11,7 +11,7 @@ export type CodeProps = { of: DocsStoryAny; meta: DocsMetaAny };
 const Code = eco.component<CodeProps, JsxRenderable>({
 	dependencies: { scripts: ['./code.script.tsx'], stylesheets: ['./component-docs.css'] },
 	render: ({ of, meta }: CodeProps & JsxCustomElementAttributes<DocsCodeElement>) => {
-		const code = resolveExampleCode(meta, getStoryArgs(meta, of));
+		const code = resolveExampleCode(meta, getStoryArgs(meta, of), of);
 		if (!code) return null;
 		const id = getStoryId(of);
 		const highlighted = highlightExampleCode(code);

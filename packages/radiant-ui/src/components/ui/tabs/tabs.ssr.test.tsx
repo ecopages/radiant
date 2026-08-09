@@ -7,14 +7,26 @@ describe('RuiTabs SSR', () => {
 		const html = renderToString(
 			<RuiTabs value="pnpm">
 				<RuiTabList aria-label="Package managers">
-					<RuiTab id="npm" selected={false}>npm</RuiTab>
-					<RuiTab id="pnpm" selected>pnpm</RuiTab>
-					<RuiTab id="bun" selected={false}>bun</RuiTab>
+					<RuiTab id="npm" selected={false}>
+						npm
+					</RuiTab>
+					<RuiTab id="pnpm" selected>
+						pnpm
+					</RuiTab>
+					<RuiTab id="bun" selected={false}>
+						bun
+					</RuiTab>
 				</RuiTabList>
 				<RuiTabPanels>
-					<RuiTabPanel id="npm" selected={false}>npm command</RuiTabPanel>
-					<RuiTabPanel id="pnpm" selected>pnpm command</RuiTabPanel>
-					<RuiTabPanel id="bun" selected={false}>bun command</RuiTabPanel>
+					<RuiTabPanel id="npm" selected={false}>
+						npm command
+					</RuiTabPanel>
+					<RuiTabPanel id="pnpm" selected>
+						pnpm command
+					</RuiTabPanel>
+					<RuiTabPanel id="bun" selected={false}>
+						bun command
+					</RuiTabPanel>
 				</RuiTabPanels>
 			</RuiTabs>,
 		);
