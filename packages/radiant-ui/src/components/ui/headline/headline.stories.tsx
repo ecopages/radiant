@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { RuiHeadline } from './headline';
 
 const meta = {
@@ -7,7 +7,8 @@ const meta = {
 	args: {
 		children: 'Display title',
 	},
-} satisfies Meta<typeof RuiHeadline>;
+};
+radiantMeta(meta, { stylesheets: ['./headline.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

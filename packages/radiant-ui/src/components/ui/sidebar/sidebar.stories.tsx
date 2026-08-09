@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { withStylesheets } from '../../../../.storybook/with-stylesheets';
 import docsNavCss from './sidebar.docs.css?url';
@@ -20,6 +20,7 @@ import {
 	RuiSidebarMenuAction,
 	RuiSidebarInset,
 } from './sidebar';
+import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
 
 const icon = (paths: string | readonly string[]) => {
 	const d = Array.isArray(paths) ? paths : [paths];
@@ -413,7 +414,8 @@ const meta = {
 		defaultWidth: 256,
 		mobileBreakpoint: 0,
 	},
-} satisfies Meta<typeof RuiSidebar>;
+};
+radiantMeta(meta, { element: RuiSidebarElement, stylesheets: ['./sidebar.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

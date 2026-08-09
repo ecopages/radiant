@@ -1,11 +1,15 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiFieldProps } from './field.script';
-import { RuiField as RuiFieldElement } from './field.script';
+import './field.script';
 
-export const RuiField = defineRadiantView(
-	RuiFieldElement,
-	({ children, rules, defaultValue, defaultValueData, ...props }: JsxHtmlPropsWithChildren<RuiFieldProps>) => (
+export function RuiField({
+	children,
+	rules,
+	defaultValue,
+	defaultValueData,
+	...props
+}: JsxHtmlPropsWithChildren<RuiFieldProps>) {
+	return (
 		<rui-field
 			{...props}
 			prop:rules={rules}
@@ -16,6 +20,5 @@ export const RuiField = defineRadiantView(
 		>
 			{children}
 		</rui-field>
-	),
-	{ stylesheets: ['./field.css'] },
-);
+	);
+}

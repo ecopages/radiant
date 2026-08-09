@@ -1,6 +1,5 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiAvatarSize = 'sm' | 'md' | 'lg';
 
@@ -50,5 +49,3 @@ export function RuiAvatar({
 		</span>
 	);
 }
-
-attachRadiantStylesheets(RuiAvatar, ['./avatar.css'], import.meta.url);

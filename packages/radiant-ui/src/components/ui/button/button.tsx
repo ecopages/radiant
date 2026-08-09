@@ -1,6 +1,5 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost' | 'link';
 export type RuiButtonSize = 'none' | 'sm' | 'md' | 'lg';
@@ -145,5 +144,3 @@ export function RuiButton(props: RuiButtonProps) {
 		</button>
 	);
 }
-
-attachRadiantStylesheets(RuiButton, ['./button.css'], import.meta.url);

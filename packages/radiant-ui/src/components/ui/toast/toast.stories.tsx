@@ -1,7 +1,8 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '../button';
 import { RuiToaster, toast } from './index';
+import { RuiToaster as RuiToasterElement } from './toaster.script';
 
 const TOAST_POSITIONS = ['top-start', 'top-center', 'top-end', 'bottom-start', 'bottom-center', 'bottom-end'] as const;
 
@@ -80,7 +81,8 @@ const meta = {
 			description: 'Max toasts shown in the stack at once',
 		},
 	},
-} satisfies Meta<typeof RuiToaster>;
+};
+radiantMeta(meta, { element: RuiToasterElement, stylesheets: ['./toast.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

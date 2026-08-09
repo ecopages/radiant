@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, fireEvent, userEvent } from 'storybook/test';
 import { RuiDisclosure } from '../disclosure/disclosure';
 import {
@@ -7,6 +7,7 @@ import {
 	RuiNavigationMenuPanel,
 	RuiNavigationMenuTrigger,
 } from './navigation-menu';
+import { RuiNavigationMenu as RuiNavigationMenuElement } from './navigation-menu.script';
 
 const meta = {
 	title: 'Components/Navigation Menu',
@@ -14,7 +15,8 @@ const meta = {
 	args: {
 		label: 'Main',
 	},
-} satisfies Meta<typeof RuiNavigationMenu>;
+};
+radiantMeta(meta, { element: RuiNavigationMenuElement, stylesheets: ['./navigation-menu.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

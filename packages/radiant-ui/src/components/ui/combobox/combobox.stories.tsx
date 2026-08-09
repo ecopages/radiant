@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
@@ -6,6 +6,7 @@ import { RuiLabel } from '../label';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiListbox, RuiListboxOption } from '../listbox';
 import { RuiCombobox, RuiComboboxControl, RuiComboboxInput, RuiComboboxListbox, RuiComboboxTrigger } from './combobox';
+import { RuiCombobox as RuiComboboxElement } from './combobox.script';
 
 const COUNTRY_OPTIONS = [
 	{ value: 'at', label: 'Austria' },
@@ -26,7 +27,11 @@ const meta = {
 			<RuiCombobox {...args} />
 		</div>
 	),
-} satisfies Meta<typeof RuiCombobox>;
+};
+radiantMeta(meta, {
+	element: RuiComboboxElement,
+	stylesheets: ['./combobox.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'],
+});
 
 export default meta;
 type Story = StoryObj<typeof meta>;

@@ -1,17 +1,16 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiNavigationMenuProps } from './navigation-menu.script';
-import { RuiNavigationMenu as RuiNavigationMenuElement } from './navigation-menu.script';
+import './navigation-menu.script';
+
 import { RuiButton, type RuiButtonControlProps } from '../button/button';
 
-export const RuiNavigationMenu = defineRadiantView(
-	RuiNavigationMenuElement,
-	({ children, ...props }: JsxHtmlPropsWithChildren<RuiNavigationMenuProps & { slot?: string }>) => (
-		<rui-navigation-menu {...props}>{children}</rui-navigation-menu>
-	),
-	{ stylesheets: ['./navigation-menu.css'] },
-);
+export function RuiNavigationMenu({
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<RuiNavigationMenuProps & { slot?: string }>) {
+	return <rui-navigation-menu {...props}>{children}</rui-navigation-menu>;
+}
 
 export type RuiNavigationMenuTriggerProps = JsxHtmlPropsWithChildren<
 	Pick<RuiButtonControlProps, 'variant' | 'disabled' | 'class' | 'type'> & {

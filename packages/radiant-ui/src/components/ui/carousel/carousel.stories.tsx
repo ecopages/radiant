@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { RuiCarousel, RuiCarouselNext, RuiCarouselPrev } from './carousel';
+import { RuiCarousel as RuiCarouselElement } from './carousel.script';
 
 const slides = [
 	{ id: '1', children: <p>Slide one</p> },
@@ -16,7 +17,8 @@ const meta = {
 		index: 0,
 		slides,
 	},
-} satisfies Meta<typeof RuiCarousel>;
+};
+radiantMeta(meta, { element: RuiCarouselElement, stylesheets: ['./carousel.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

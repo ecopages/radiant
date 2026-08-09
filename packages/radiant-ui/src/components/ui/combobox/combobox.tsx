@@ -1,11 +1,10 @@
 import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
-import { defineRadiantView } from '@/lib/radiant-view';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiListbox, RuiListboxOption, type RuiListboxOptionData } from '../listbox';
 import type { RuiComboboxProps } from './combobox.script';
-import { RuiCombobox as RuiComboboxElement } from './combobox.script';
+import './combobox.script';
 
 export type RuiComboboxControlProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
@@ -109,38 +108,34 @@ export const RuiComboboxOption = RuiListboxOption;
  * Combobox view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
  * do not nest a combobox-specific label.
  */
-export const RuiCombobox = defineRadiantView(
-	RuiComboboxElement,
-	({
-		options,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<
-		RuiComboboxProps & {
-			slot?: string;
-			options?: RuiComboboxOptionData[];
-		}
-	>) => {
-		if (options != null) {
-			return (
-				<rui-combobox {...props}>
-					<RuiComboboxControl>
-						<RuiComboboxInput placeholder={props.placeholder} disabled={props.disabled} />
-						<RuiComboboxTrigger />
-					</RuiComboboxControl>
-					<RuiComboboxListbox>
-						<RuiAutocomplete>
-							<RuiAutocompleteCollection>
-								<RuiListbox embedded options={options} />
-								<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
-							</RuiAutocompleteCollection>
-						</RuiAutocomplete>
-					</RuiComboboxListbox>
-				</rui-combobox>
-			);
-		}
+export function RuiCombobox({
+	options,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<
+	RuiComboboxProps & {
+		slot?: string;
+		options?: RuiComboboxOptionData[];
+	}
+>) {
+	if (options != null) {
+		return (
+			<rui-combobox {...props}>
+				<RuiComboboxControl>
+					<RuiComboboxInput placeholder={props.placeholder} disabled={props.disabled} />
+					<RuiComboboxTrigger />
+				</RuiComboboxControl>
+				<RuiComboboxListbox>
+					<RuiAutocomplete>
+						<RuiAutocompleteCollection>
+							<RuiListbox embedded options={options} />
+							<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
+						</RuiAutocompleteCollection>
+					</RuiAutocomplete>
+				</RuiComboboxListbox>
+			</rui-combobox>
+		);
+	}
 
-		return <rui-combobox {...props}>{children}</rui-combobox>;
-	},
-	{ stylesheets: ['./combobox.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'] },
-);
+	return <rui-combobox {...props}>{children}</rui-combobox>;
+}

@@ -1,8 +1,7 @@
 import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiNumberFieldProps } from './number-field.script';
-import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
+import './number-field.script';
 
 export type RuiNumberFieldGroupProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
@@ -139,10 +138,9 @@ export function RuiNumberFieldDecrementButton({
  * Or use standalone; default slots render input and stepper buttons.
  * Pair with `RuiLabel` / `RuiField` for labeling and validation.
  */
-export const RuiNumberField = defineRadiantView(
-	RuiNumberFieldElement,
-	({ children, ...props }: JsxHtmlPropsWithChildren<RuiNumberFieldProps & { slot?: string }>) => (
-		<rui-number-field {...props}>{children}</rui-number-field>
-	),
-	{ stylesheets: ['./number-field.css'] },
-);
+export function RuiNumberField({
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<RuiNumberFieldProps & { slot?: string }>) {
+	return <rui-number-field {...props}>{children}</rui-number-field>;
+}

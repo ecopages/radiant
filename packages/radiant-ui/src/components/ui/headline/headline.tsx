@@ -1,7 +1,6 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { Intrinsic, type IntrinsicTag } from '@/lib/intrinsic';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiHeadlineSize = 'sm' | 'md' | 'lg' | 'xl';
 export type RuiHeadlineAs = Extract<IntrinsicTag, 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span'>;
@@ -29,5 +28,3 @@ export function RuiHeadline({ children, as = 'h2', size = 'md', class: className
 		</Intrinsic>
 	);
 }
-
-attachRadiantStylesheets(RuiHeadline, ['./headline.css'], import.meta.url);

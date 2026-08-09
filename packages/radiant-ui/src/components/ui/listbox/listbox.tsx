@@ -1,8 +1,7 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiListboxProps } from './listbox.script';
-import { RuiListbox as RuiListboxElement } from './listbox.script';
+import './listbox.script';
 
 export type RuiListboxOptionProps = JsxHtmlPropsWithChildren<{
 	value: string;
@@ -37,30 +36,26 @@ export function RuiListboxOption({
 
 export type RuiListboxOptionData = { value: string; label: JsxRenderable; disabled?: boolean };
 
-export const RuiListbox = defineRadiantView(
-	RuiListboxElement,
-	({
-		options,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<RuiListboxProps & { slot?: string; options?: RuiListboxOptionData[] }>) => {
-		if (options != null) {
-			return (
-				<rui-listbox {...props}>
-					{options.map((option) => (
-						<RuiListboxOption
-							value={option.value}
-							label={typeof option.label === 'string' ? option.label : undefined}
-							disabled={option.disabled}
-						>
-							{option.label}
-						</RuiListboxOption>
-					))}
-				</rui-listbox>
-			);
-		}
+export function RuiListbox({
+	options,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<RuiListboxProps & { slot?: string; options?: RuiListboxOptionData[] }>) {
+	if (options != null) {
+		return (
+			<rui-listbox {...props}>
+				{options.map((option) => (
+					<RuiListboxOption
+						value={option.value}
+						label={typeof option.label === 'string' ? option.label : undefined}
+						disabled={option.disabled}
+					>
+						{option.label}
+					</RuiListboxOption>
+				))}
+			</rui-listbox>
+		);
+	}
 
-		return <rui-listbox {...props}>{children}</rui-listbox>;
-	},
-	{ stylesheets: ['./listbox.css'] },
-);
+	return <rui-listbox {...props}>{children}</rui-listbox>;
+}
