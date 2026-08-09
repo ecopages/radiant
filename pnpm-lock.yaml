@@ -368,9 +368,18 @@ importers:
             postcss:
                 specifier: ^8.5.24
                 version: 8.5.25
+            react:
+                specifier: ^19.2.0
+                version: 19.2.8
+            react-dom:
+                specifier: ^19.2.0
+                version: 19.2.8(react@19.2.8)
             storybook:
                 specifier: ^10.5.2
                 version: 10.5.5(@types/react@19.2.18)(prettier@3.9.6)(react@19.2.8)
+            ts-dedent:
+                specifier: ^2.2.0
+                version: 2.3.0
             tailwindcss:
                 specifier: ^4.1.11
                 version: 4.3.3
