@@ -1,6 +1,6 @@
 ---
 title: Tooltip
-description: Tooltips show supplementary text on hover or focus — icon button labels, truncated text, or field hints.
+description: Tooltips show supplementary text on hover or focus, such as icon button labels, truncated text, or field hints.
 category: Overlays
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Tooltip
 
-<p class="docs-lede">Tooltips show supplementary text on hover or focus — icon button labels, truncated text, or field hints.</p>
+<p class="docs-lede">Tooltips show supplementary text on hover or focus, such as icon button labels, truncated text, or field hints.</p>
 
 ## Try it
 
@@ -46,8 +46,54 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 
 <p>Tooltips should repeat or clarify visible labels, not introduce essential information available nowhere else.</p>
 
+## Theming
+
+The tooltip surface maps to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Content (`rui-tooltip__content`) | `on-background` fill, `background` text (inverted surface), `rounded-container`, `shadow-overlay` |
+| Z-order | `overlay` (above dialogs/menus) |
+
+Text uses the `text-xs` token. Override roles at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - Tooltips appear on keyboard focus as well as hover.
-- Do not put interactive content inside tooltips — use a popover instead.
+- Do not put interactive content inside tooltips, use a popover instead.
 - Icon-only buttons should have `aria-label`; the tooltip provides redundant confirmation.
+
+## API
+
+`RuiTooltip` is a custom element (`<rui-tooltip>`) that shows a `role="tooltip"` surface on hover or focus of its slotted trigger, referenced via `aria-describedby`.
+
+### Attributes (`<rui-tooltip>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `content` | `string` | `''` | Accessible description shown in the tooltip. |
+| `placement` | `RuiPlacement` | `top` | Placement relative to the anchor. |
+| `delay` | `number` | `200` | Show delay in ms (0 shows immediately). |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| (default) | The trigger element (typically a button or focusable control). |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-tooltip` | Root wrapper. |
+| `.rui-tooltip__trigger` | Host wrapper for the slotted trigger. |
+| `.rui-tooltip__content` | Tooltip surface (`role="tooltip"`); `on-background` fill. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Content | `--on-background`, `--background`, `--shadow-overlay`, `--radius-container` |
+| Z-order | `--z-overlay` |

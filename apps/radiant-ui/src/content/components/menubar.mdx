@@ -1,6 +1,6 @@
 ---
 title: Menubar
-description: Menubars provide persistent top-level menus — File, Edit, View — with keyboard traversal across items.
+description: Menubars provide persistent top-level menus (File, Edit, View) with keyboard traversal across items.
 category: Navigation
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Menubar
 
-<p class="docs-lede">Menubars provide persistent top-level menus — File, Edit, View — with keyboard traversal across items.</p>
+<p class="docs-lede">Menubars provide persistent top-level menus (File, Edit, View) with keyboard traversal across items.</p>
 
 ## Try it
 
@@ -46,6 +46,69 @@ import { RuiMenuButton } from '@ecopages/radiant-ui/menu-button';
 ## Desktop application patterns
 
 <p>Menubars suit desktop-style apps. For site navigation, prefer `RuiNavigationMenu` or `RuiSidebar`.</p>
+
+## Theming
+
+Menubar surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Bar (`rui-menubar`) | `surface`, `border`, `rounded-container` |
+| Top-level item (`rui-menubar__item`) | `on-surface`; hover / expanded `background`, `on-background`, `shadow-sm` |
+| Popup (`rui-menubar__menu`) | `background`, `border`, `shadow-overlay`, `rounded-container` (via `rui-popover`) |
+| Menu item (`rui-menubar__menu-item`) | `on-surface`; hover `background` |
+
+Geometry shares control tokens (`--size-control-*`, `--space-control-*`, `--radius-control`) with `RuiButton`. Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiMenubar` is a custom element (`<rui-menubar>`) rendering a `role="menubar"` landmark. The JSX helper renders `items` as top-level triggers with optional popups; compose `rui-menubar__root` blocks directly for custom markup.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the menubar landmark. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Top-level menu roots (`[data-ref="menubar-root"]`). |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted when a menu item is activated; `value` is the item's `data-value` or text. |
+
+### View helpers
+
+| Component | Renders | Notes |
+| --- | --- | --- |
+| `RuiMenubar` | `<rui-menubar>` | Accepts `items` (`RuiMenubarItem[]`); authors the `rui-menubar__*` tree. |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-menubar` | Menubar bar (`role="menubar"`). |
+| `.rui-menubar__root` | Top-level menu root (trigger + optional popup). |
+| `.rui-menubar__item` | Top-level item (`role="menuitem"`). |
+| `.rui-menubar__menu` | Popup menu surface (`role="menu"`, `rui-popover rui-floating`). |
+| `.rui-menubar__menu-item` | Item inside a popup (`role="menuitem"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Bar | `--surface`, `--border` |
+| Top-level item | `--on-surface`, `--background`, `--on-background` (hover / expanded), `--shadow-sm` |
+| Popup | `--background`, `--border`, `--shadow-overlay` |
+| Menu item | `--on-surface`, `--background` (hover) |
+| Focus ring | `--focus-ring` |
 
 ## Accessibility
 

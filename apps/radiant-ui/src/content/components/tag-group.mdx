@@ -1,6 +1,6 @@
 ---
 title: Tag Group
-description: Tag groups display selected values as removable chips — common in multi-select fields and filter bars.
+description: Tag groups display selected values as removable chips, commonly used in multi-select fields and filter bars.
 category: Data display
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Tag Group
 
-<p class="docs-lede">Tag groups display selected values as removable chips — common in multi-select fields and filter bars.</p>
+<p class="docs-lede">Tag groups display selected values as removable chips, commonly used in multi-select fields and filter bars.</p>
 
 ## Try it
 
@@ -47,6 +47,76 @@ import { RuiTagGroup, RuiTagList, RuiTag, RuiTagRemove } from '@ecopages/radiant
 ## Embedded in selects
 
 <p>Set `embedded` when tags render inside a select or combobox trigger rather than standalone.</p>
+
+## Theming
+
+Tag Group surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Tag (`rui-tag`) | `surface`, `border`, `on-background`, `rounded-pill` |
+| Selected tag (`rui-tag[aria-selected='true']`) | `primary`, `on-primary` |
+| Remove control (`rui-tag__remove`) | `currentColor`; hover `on-background` |
+| Disabled tag | `--opacity-muted` |
+
+Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiTagGroup` is a custom element (`<rui-tag-group>`) wrapping a focusable list of tags. Compose `RuiTagList`, `RuiTag`, and `RuiTagRemove`, or pass `tags` to the helper for the simple API.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Comma-separated selected values. |
+| `label` | `string` | `''` | Accessible name for the tag list. |
+| `disabled` | `boolean` | `false` | Disable selection and removal. |
+| `selection-mode` | `single` · `multiple` | `multiple` | Allow one or many selected tags. |
+| `embedded` | `boolean` | `false` | Disable selection when a parent component owns the selected values. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Tag content, `RuiTagList` / `RuiTag` / `RuiTagRemove`, or `data-tag` markup. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted when selection changes; `value` is comma-separated. |
+| `rui-remove` | `{ value: string }` | Emitted when a tag is removed; `value` is the removed tag's value. |
+
+### View helpers
+
+| Component | Renders | Notes |
+| --- | --- | --- |
+| `RuiTagGroup` | `<rui-tag-group>` | Accepts `tags` (`RuiTagData[]`) or children. |
+| `RuiTagList` | Tag list `div` | Flex-wrap container. |
+| `RuiTag` | Tag `span` | `data-tag`; includes `RuiTagRemove`. |
+| `RuiTagRemove` | Remove `button` | `data-tag-remove`. |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-tag-group` | Root wrapper around the tag list. |
+| `.rui-tag-group__list` | Tag row (flex-wrap container). |
+| `.rui-tag` | Tag chip; selected state via `[aria-selected='true']`. |
+| `.rui-tag__remove` | Tag remove control. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Tag | `--surface`, `--border`, `--on-background`, `--radius-pill` |
+| Selected tag | `--primary`, `--on-primary` |
+| Remove hover | `--on-background` |
+| Disabled | `--opacity-muted` |
+| Focus ring | `--focus-ring` |
 
 ## Accessibility
 

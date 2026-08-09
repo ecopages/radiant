@@ -1,6 +1,6 @@
 ---
 title: Disclosure
-description: Disclosures progressively reveal content behind a trigger — FAQs, filter panels, or advanced settings that most users can skip.
+description: Disclosures progressively reveal content behind a trigger, such as FAQs, filter panels, or advanced settings that most users can skip.
 category: Layout
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Disclosure
 
-<p class="docs-lede">Disclosures progressively reveal content behind a trigger — FAQs, filter panels, or advanced settings that most users can skip.</p>
+<p class="docs-lede">Disclosures progressively reveal content behind a trigger, such as FAQs, filter panels, or advanced settings that most users can skip.</p>
 
 ## Try it
 
@@ -57,6 +57,85 @@ import {
 ## Animated panels
 
 <p>Enable `animated` for height transitions. Verify content remains readable during the animation.</p>
+
+## Theming
+
+Disclosure surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Trigger (`rui-disclosure__trigger`) | `on-background`; hover / focus `surface`, `--focus-ring` |
+| Panel (`rui-disclosure__panel`) | `on-surface` |
+| Group (`rui-disclosure-group`) | `background`, `border`, `rounded-container`; panel header `surface` |
+
+Override roles at the theme layer, not in component CSS.
+
+## API
+
+Disclosure provides two custom elements: `<rui-disclosure>` (show/hide) and `<rui-disclosure-group>` (accordion). Compose the view helpers to render triggers and panels, or mark up `data-disclosure-trigger` / `data-disclosure-panel` elements directly.
+
+### Attributes (`<rui-disclosure>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the disclosure content starts expanded. |
+| `value` | `string` | `''` | Optional value used when coordinating disclosures inside a group. |
+| `animated` | `boolean` | `false` | Animate panel height; also enabled inside an animated group. |
+
+### Attributes (`<rui-disclosure-group>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `multiple` | `boolean` | `false` | Allow more than one disclosure open (exclusive by default). |
+| `animated` | `boolean` | `false` | Animate panel height for child disclosures. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `trigger` | Disclosure button (`RuiDisclosureTrigger`). |
+| *(default)* | Panel content (`RuiDisclosurePanel`). For `<rui-disclosure-group>`, `rui-disclosure` children. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-disclosure-toggle` | `{ value, open }` | Emitted on every trigger activation; groups listen for exclusive behavior. |
+
+### View helpers
+
+| Component | Renders |
+| --- | --- |
+| `RuiDisclosure` | `<rui-disclosure>` (adds trigger + panel when composed) |
+| `RuiDisclosureGroup` | `<rui-disclosure-group>` |
+| `RuiDisclosureTrigger` | Trigger button |
+| `RuiDisclosureIcon` | Indicator (`chevron` / `plus`) |
+| `RuiDisclosurePanel` | Panel region |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-disclosure` | Root wrapper around trigger and panel slots. |
+| `.rui-disclosure__trigger` | Trigger button; reflects `aria-expanded`. |
+| `.rui-disclosure__trigger--icon-end` | Layout when `iconPosition="end"`. |
+| `.rui-disclosure__icon` | Indicator wrapper (decorative, `aria-hidden`). |
+| `.rui-disclosure__icon--chevron` | Rotates 90° when open. |
+| `.rui-disclosure__icon--plus` | Toggles between `+` and `×`. |
+| `.rui-disclosure__label` | Trigger text. |
+| `.rui-disclosure__panel` | Panel content region. |
+| `.rui-disclosure__panel-inner` | Panel padding wrapper (drives the height animation). |
+| `.rui-disclosure-group` | Group surface (bordered card around stacked disclosures). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Trigger | `--on-background`, `--surface` (hover), `--focus-ring`, `--space-control-*` |
+| Panel | `--on-surface` |
+| Group | `--background`, `--border`, `--surface` |
 
 ## Accessibility
 

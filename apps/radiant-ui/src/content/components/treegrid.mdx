@@ -1,6 +1,6 @@
 ---
 title: Treegrid
-description: Treegrids combine tree hierarchy with tabular columns — file explorers with size and date columns, or nested budgets.
+description: Treegrids combine tree hierarchy with tabular columns, such as file explorers with size and date columns, or nested budgets.
 category: Data display
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Treegrid
 
-<p class="docs-lede">Treegrids combine tree hierarchy with tabular columns — file explorers with size and date columns, or nested budgets.</p>
+<p class="docs-lede">Treegrids combine tree hierarchy with tabular columns, such as file explorers with size and date columns, or nested budgets.</p>
 
 ## Try it
 
@@ -46,6 +46,77 @@ const rows: RuiTreegridRow[] = [
 ## Tree vs treegrid
 
 <p>Use Treegrid when rows have multiple columns of data. Use Tree for single-column hierarchies.</p>
+
+## Theming
+
+Treegrid maps to **semantic surface and status roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Surface (`rui-treegrid`) | `border`, `background`, `on-background`, `radius-container`, `shadow-sm` |
+| Header cells | `surface`, `on-background` |
+| Row hover | `surface` |
+| Selected row | `primary-container`, `on-primary-container` |
+| Cell focus | `focus-ring`, `z-dropdown` |
+| Geometry | `--space-control-x` (cell padding) |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiTreegrid` is a custom element (`<rui-treegrid>`) that owns expand/collapse and cell-only roving-tabindex navigation; the `RuiTreegrid` JSX view authors rows, groups, and header cells.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the treegrid. |
+| `value` | `string` | `''` | Selected row's `data-row-id`. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Rows and groups authored as `role="row"` / `role="rowgroup"` markup. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ rowId: string, columnIndex: number }` | Emitted when a cell activates. |
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `columns` | `JsxRenderable[]` | | Header cell content for the `RuiTreegrid` view. |
+| `rows` | `RuiTreegridRow[]` | | Nested row structure. |
+
+`RuiTreegridRow` is `{ id, cells, children?, expanded? }`.
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-treegrid` | Root surface inside the host (`role="treegrid"`). |
+| `.rui-treegrid__row` | Data row (`role="row"`). |
+| `.rui-treegrid__row--header` | Header row. |
+| `.rui-treegrid__group` | Collapsible row group (`role="rowgroup"`). |
+| `.rui-treegrid__cell` | Data cell (`role="gridcell"`). |
+| `.rui-treegrid__cell--header` | Column header cell (`role="columnheader"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Surface | `--border`, `--background`, `--on-background`, `--radius-container`, `--shadow-control` |
+| Header cells | `--surface`, `--on-background` |
+| Row hover | `--surface` |
+| Selected row | `--primary-container`, `--on-primary-container` |
+| Cell focus | `--focus-ring`, `--z-dropdown` |
+| Cell padding | `--space-control-x` |
 
 ## Accessibility
 

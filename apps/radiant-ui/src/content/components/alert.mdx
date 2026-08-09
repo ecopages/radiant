@@ -46,7 +46,7 @@ Inject or reveal an alert when the status becomes relevant. Copy that is always 
 
 ## Theming
 
-Alert tones use **semantic status roles** from the active theme — not Tailwind palette steps (`blue-500`, `emerald-100`, …). Each `variant` maps to a role family:
+Alert tones use **semantic status roles** from the active theme, not Tailwind palette steps (`blue-500`, `emerald-100`, …). Each `variant` maps to a role family:
 
 | `variant` | Semantic role | Typical utilities on `.rui-alert--*` |
 | --- | --- | --- |
@@ -57,13 +57,13 @@ Alert tones use **semantic status roles** from the active theme — not Tailwind
 
 Banner layouts paint the left accent rail with the role accent (`bg-info`, `bg-warning`, …). Brand color packs remap all roles for light and dark mode.
 
-Override at the theme layer (`tokens/presets/colors/*.css`) — not in component CSS. Toasts and other notification UI should reuse the same `info` / `warning` / `success` / `error` families.
+Override at the theme layer (`tokens/presets/colors/*.css`), not in component CSS. Toasts and other notification UI should reuse the same `info` / `warning` / `success` / `error` families.
 
 ## Why a custom element?
 
 `<rui-alert>` is justified when the alert can **dismiss itself**: it emits `rui-close` and removes the host from the DOM without re-building the composed light-DOM surface. The `RuiAlert` view owns `role="alert"`, BEM classes, and the dismiss button markup; the CE owns dismiss behavior and event delegation.
 
-For static, non-dismissible copy that is always visible, prefer plain markup without `role="alert"` — see Usage above.
+For static, non-dismissible copy that is always visible, prefer plain markup without `role="alert"`; see Usage above.
 
 ## Match severity to variant
 

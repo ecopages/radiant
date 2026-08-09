@@ -64,8 +64,79 @@ installDialogs();
 
 <p>Focus returns to the element that opened the dialog. Avoid stacking multiple modal layers.</p>
 
+## Theming
+
+Dialog surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Backdrop | `overlay` scrim |
+| Surface | `background`, `on-background`, `rounded-container`, `shadow-modal` |
+| Title | `on-background` |
+| Close button | `on-surface` |
+
+Body uses the `p-inset` spacing token. Override roles at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - Every dialog needs an accessible name via `label` or `RuiDialogTitle`.
 - Use `alert` for confirmations that require an explicit decision before continuing.
-- Do not open a dialog without a clear way to dismiss it — provide a close action.
+- Do not open a dialog without a clear way to dismiss it; provide a close action.
+
+## API
+
+`RuiDialog` is a custom element (`<rui-dialog>`) with a composition-first surface. Pass `title` / `actions` for the composite API, or compose the view helpers as children.
+
+### Attributes (`<rui-dialog>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the dialog is open. |
+| `alert` | `boolean` | `false` | Uses `role="alertdialog"` for workflow-interrupting confirmations. |
+| `label` | `string` | `''` | Accessible name when there is no visible title. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `close` | Optional close control (`RuiDialogClose`). |
+| `title` | Optional visible dialog title (`RuiDialogTitle`). |
+| (default) | Dialog body (`RuiDialogBody`). |
+| `actions` | Optional action buttons (`RuiDialogActions`). |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-close` | `{ reason: 'escape' \| 'backdrop' \| 'dismiss' }` | Emitted when the dialog is dismissed. |
+
+### View helpers
+
+| Component | Slots into |
+| --- | --- |
+| `RuiDialogTitle` | `title` |
+| `RuiDialogBody` | (default) |
+| `RuiDialogActions` | `actions` |
+| `RuiDialogClose` | `close` |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-dialog` | Root; hidden until `open`. |
+| `.rui-dialog__backdrop` | Scrim using the `overlay` role. |
+| `.rui-dialog__surface` | Modal panel: `background` + `rounded-container` + `shadow-modal`. |
+| `.rui-dialog__title` | Dialog title; `aria-labelledby` target. |
+| `.rui-dialog__body` | Dialog body; `aria-describedby` target. |
+| `.rui-dialog__actions` | Right-aligned action row. |
+| `.rui-dialog__close` | Dismiss button. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Backdrop | `--overlay` |
+| Surface | `--background`, `--on-background`, `--shadow-modal`, `--radius-container`, `--p-inset` |
+| Close button | `--on-surface` |

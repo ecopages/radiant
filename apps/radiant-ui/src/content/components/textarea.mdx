@@ -1,6 +1,6 @@
 ---
 title: Textarea
-description: Textareas capture multi-line text — descriptions, comments, and messages — with configurable row height.
+description: Textareas capture multi-line text (descriptions, comments, and messages) with configurable row height.
 category: Forms
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Textarea
 
-<p class="docs-lede">Textareas capture multi-line text — descriptions, comments, and messages — with configurable row height.</p>
+<p class="docs-lede">Textareas capture multi-line text (descriptions, comments, and messages) with configurable row height.</p>
 
 ## Try it
 
@@ -47,6 +47,55 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 ## Set initial rows
 
 <p>Match `rows` to the expected content length. Short notes need fewer rows than essay-length fields.</p>
+
+## Theming
+
+Textarea surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Surface (`.rui-textarea`) | `border`, `background`, `rounded-control`, `text-control` |
+| Focus / invalid | `focus-ring` / `error` |
+| Disabled | `opacity-disabled` |
+
+Geometry shares control tokens (`--space-control-x`, `--space-control-y`, `--radius-control`, `--text-control`) with `RuiInput` and `RuiButton` so form rows align. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiTextarea` is a **presentational view**, no custom element. It renders a native `<textarea>` marked with `data-rui-control` so `<rui-field>` can wire labeling, `aria-*`, and validation.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | | Initial text. |
+| `placeholder` | `string` | | Placeholder shown before input. |
+| `disabled` | `boolean` | `false` | Disabled state. |
+| `name` | `string` | | Form field name. |
+| `rows` | `number` | `3` | Initial row height. |
+| `size` | `sm` · `md` · `lg` | `md` | Typography / min-height scale. |
+| `id` | `string` | | Control id (used by `<rui-field>` for label/described-by). |
+| `aria-label` | `string` | | Accessible name when there is no visible `RuiLabel`. |
+| `on:input` / `on:change` / `on:blur` | `(event) => void` | | Native event handlers. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-textarea` | Bordered, resizable multi-line input. |
+| `.rui-textarea--sm` | Compact min-height. |
+| `.rui-textarea--md` | Default min-height. |
+| `.rui-textarea--lg` | Taller min-height. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Surface | `--border`, `--background`, `--on-background`, `--radius-control`, `--space-control-x`, `--space-control-y`, `--text-control`, `--duration-normal` |
+| Focus / invalid | `--focus-ring` / `--error` |
+| Disabled | `--opacity-disabled` |
 
 ## Accessibility
 
