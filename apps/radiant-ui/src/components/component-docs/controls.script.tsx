@@ -6,6 +6,7 @@ import '@ecopages/radiant-ui/button-group';
 import '@ecopages/radiant-ui/input';
 import '@ecopages/radiant-ui/number-field';
 import '@ecopages/radiant-ui/select';
+import '@ecopages/radiant-ui/sidebar';
 import '@ecopages/radiant-ui/switch';
 import '@/content/stories';
 import { docsStoryContext } from '@/lib/docs-stories/story-context';
