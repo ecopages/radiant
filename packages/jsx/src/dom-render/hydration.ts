@@ -113,12 +113,17 @@ function createHostPathResolver(
 	pathRootOffset: number,
 ): HostPathResolver {
 	if (hostRoots) {
-		// A blueprint path's first segment selects which root it belongs to; the rest
-		// is resolved inside that root.
 		return (path) => {
+			// The empty path is the blueprint fragment itself, which corresponds to the
+			// element containing the roots — not to the first root.
+			if (path.length === 0) {
+				return hostRoots[0]?.parentNode ?? undefined;
+			}
+
+			// Otherwise the first segment selects a root and the rest resolves inside it.
 			const root = hostRoots[path[0] ?? 0];
 
-			return !root || path.length <= 1 ? root : getNodeAtPath(root, path.slice(1));
+			return !root || path.length === 1 ? root : getNodeAtPath(root, path.slice(1));
 		};
 	}
 
@@ -217,7 +222,11 @@ function createHydratedLiveTemplateParts(
 
 		const parentNode = resolveHostNode(hydratedRange.parentPath);
 
-		if (!parentNode) {
+		// A child range needs a parent that can actually hold nodes. Resolving to
+		// anything else means the DOM no longer matches the blueprint, so leave the
+		// part unrecovered and let the caller fall back to a client render rather
+		// than attempting an insert the node type cannot support.
+		if (!(parentNode instanceof Element)) {
 			continue;
 		}
 

@@ -1,4 +1,5 @@
 import { countHydrationMarkers } from '../hydration/hydration-bindings.ts';
+import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
 import { hydrateTemplateInstance } from './hydration.ts';
 import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
@@ -76,7 +77,10 @@ function hydrateMountedRangeContentSnapshot(
 ): MountedRangeContent {
 	const bootstrapMounted = createHydratedBootstrapMounted(existingNodes);
 
-	if (isTemplateResultLike(nextValue)) {
+	// A custom-element child owns its own hydration: SSR produced its markup through
+	// the render hook, and the element reconnects its host itself. Reconnecting it
+	// from here would consume markers that were never emitted in this namespace.
+	if (isTemplateResultLike(nextValue) && !shouldSkipHydrationSubtree(nextValue.rootLocalName ?? '')) {
 		const hydratedTemplateInstance = hydrateTemplateRange(nextValue, existingNodes, rootTarget, bindingBaseIndex);
 
 		if (hydratedTemplateInstance) {
