@@ -28,6 +28,13 @@ export type RuiInputProps = JsxHtmlProps<{
  *
  * Pass `mask` to guide entry with an [IMask](https://imask.js.org/guide.html#masked-pattern) pattern.
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
+ *
+ * @remarks
+ * Sets `data-rui-control` for `RuiField` discovery. Height uses `--size-control-md`
+ * (shared with `RuiButton`) and `--radius-control` corners so form rows align.
+ * Invalid state styles key off `aria-invalid` via the `error` role.
+ *
+ * @cssclass rui-input - Input root; control-height, rounded, bordered surface.
  */
 export function RuiInput(props: RuiInputProps) {
 	const { class: className, type = 'text', mask, placeholder, 'on:input': onInput, ...host } = props;

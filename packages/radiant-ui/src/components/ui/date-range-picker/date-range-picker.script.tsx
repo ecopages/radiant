@@ -55,8 +55,30 @@ type RuiDateRangePickerBindings = {
  * not maintain separate partial-mask state.
  *
  * @see https://react-aria.adobe.com/DateRangePicker
+ *
  * @element rui-date-range-picker
- * @fires rui-change
+ *
+ * @attr {string} value - Canonical `YYYY-MM-DD/YYYY-MM-DD` range. Default: `''`.
+ * @attr {string} min - Earliest selectable ISO date. Default: `''`.
+ * @attr {string} max - Latest selectable ISO date. Default: `''`.
+ * @attr {boolean} disabled - Disable both inputs and the calendar. Default: `false`.
+ * @attr {boolean} read-only - Disable editing while keeping values visible. Default: `false`.
+ * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
+ * @attr {string} placeholder-start - Placeholder for the start input. Default: `Start date`.
+ * @attr {string} placeholder-end - Placeholder for the end input. Default: `End date`.
+ * @attr {string} start-name - Native `name` for the start input. Default: `''`.
+ * @attr {string} end-name - Native `name` for the end input. Default: `''`.
+ * @attr {string} date-style - How committed values are displayed in the inputs. Default: `medium`.
+ * @attr {number} visible-months - Month grids shown in the range calendar popover. Default: `2`.
+ *
+ * @fires rui-change - Emitted when a valid range is committed; detail carries `value`, `start`, and `end`.
+ *
+ * @cssclass rui-date-range-picker - Root surface.
+ * @cssclass rui-date-range-picker__group - Bordered control-height row wrapping inputs and toggle.
+ * @cssclass rui-date-range-picker__values - Start / end input row.
+ * @cssclass rui-date-range-picker__input - A range text input.
+ * @cssclass rui-date-range-picker__separator - Em dash between the inputs.
+ * @cssclass rui-date-range-picker__popover - Range calendar popup shell (`rui-popover` / `rui-floating`).
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBindings> {

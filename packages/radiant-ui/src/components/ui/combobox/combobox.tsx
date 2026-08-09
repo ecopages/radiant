@@ -10,7 +10,10 @@ export type RuiComboboxControlProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Input row wrapper for the combobox input and toggle button. */
+/** Input row wrapper for the combobox input and toggle button.
+ *
+ * @cssclass rui-combobox__control - Bordered control-height row.
+ */
 export function RuiComboboxControl({
 	children,
 	slot = 'control',
@@ -29,7 +32,10 @@ export type RuiComboboxInputProps = JsxHtmlProps<{
 	disabled?: boolean;
 }>;
 
-/** Text input with `role="combobox"`. Place inside `RuiComboboxControl`. */
+/** Text input with `role="combobox"`. Place inside `RuiComboboxControl`.
+ *
+ * @cssclass rui-combobox__input - Combobox text input.
+ */
 export function RuiComboboxInput({ placeholder, disabled, class: className, ...props }: RuiComboboxInputProps) {
 	return (
 		<input
@@ -79,7 +85,10 @@ export type RuiComboboxListboxProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside. */
+/** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside.
+ *
+ * @cssclass rui-combobox__listbox - Popup shell (adds `rui-popover rui-popover--listbox rui-floating`).
+ */
 export function RuiComboboxListbox({
 	children,
 	slot = 'listbox',

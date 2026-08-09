@@ -6,7 +6,11 @@ export type RuiChipListProps = JsxHtmlPropsWithChildren<{
 	id?: string;
 }>;
 
-/** Horizontal wrap list for presentational chips. */
+/**
+ * Horizontal wrap list for presentational chips.
+ *
+ * @cssclass rui-chip-list - List container (`<ul>`).
+ */
 export function RuiChipList({ children, class: className, 'aria-label': ariaLabel, ...props }: RuiChipListProps) {
 	return (
 		<ul {...props} class={cx('rui-chip-list', className)} aria-label={ariaLabel}>
@@ -17,7 +21,11 @@ export function RuiChipList({ children, class: className, 'aria-label': ariaLabe
 
 export type RuiChipListItemProps = JsxHtmlPropsWithChildren;
 
-/** List item wrapper for a chip. */
+/**
+ * List item wrapper for a chip.
+ *
+ * @cssclass rui-chip-list__item - List item (`<li>`).
+ */
 export function RuiChipListItem({ children, class: className, ...props }: RuiChipListItemProps) {
 	return (
 		<li {...props} class={cx('rui-chip-list__item', className)}>

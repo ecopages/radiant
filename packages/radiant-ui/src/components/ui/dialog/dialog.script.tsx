@@ -39,6 +39,9 @@ type RuiDialogBindings = {
  * @slot - Dialog body (`RuiDialogBody`).
  * @slot actions - Optional action buttons (`RuiDialogActions`).
  * @fires rui-close - Emitted when the dialog is dismissed.
+ * @cssclass rui-dialog - Root; hidden until `open`.
+ * @cssclass rui-dialog__backdrop - Scrim using the `overlay` role.
+ * @cssclass rui-dialog__surface - Modal panel: `background` + `rounded-container` + `shadow-modal`.
  */
 @customElement('rui-dialog')
 export class RuiDialog extends RadiantElement<RuiDialogBindings> {

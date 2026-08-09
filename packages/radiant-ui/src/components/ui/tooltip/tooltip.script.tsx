@@ -34,6 +34,9 @@ const TOOLTIP_GAP = 8;
  *
  * @element rui-tooltip
  * @slot - The trigger element (typically a button or focusable control).
+ * @cssclass rui-tooltip - Root wrapper.
+ * @cssclass rui-tooltip__trigger - Host wrapper for the slotted trigger.
+ * @cssclass rui-tooltip__content - Tooltip surface (`role="tooltip"`); `on-background` fill.
  */
 @customElement('rui-tooltip')
 export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {

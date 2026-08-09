@@ -22,9 +22,26 @@ type RuiTreeBindings = {
  * Expand/collapse is handled with ArrowRight/ArrowLeft (and `*` for siblings);
  * click or Enter on a parent also toggles expansion.
  *
+ * @summary Single-select tree with roving-tabindex keyboard navigation.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treeview/
+ *
  * @element rui-tree
- * @fires rui-change
+ *
+ * @attr {string} label - Accessible name for the tree.
+ * @attr {string} value - Selected item's `data-value` / id. Default: `''`.
+ *
+ * @slot - Tree items authored as `role="treeitem"` markup. Use the `RuiTree`
+ *   view (`nodes`) or author light-DOM items directly.
+ *
+ * @fires rui-change - Emitted with `{ value }` when a tree item is selected.
+ *
+ * @cssclass rui-tree - Root list (`role="tree"`).
+ *
+ * @remarks
+ * Item-level classes (`rui-tree__item`, `rui-tree__node`) are authored by the
+ * `RuiTree` view. Expand/collapse mutates `aria-expanded` and `hidden` on the
+ * authored `role="group"` containers.
  */
 @customElement('rui-tree')
 export class RuiTree extends RadiantElement<RuiTreeBindings> {

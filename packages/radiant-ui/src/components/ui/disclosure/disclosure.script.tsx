@@ -24,8 +24,13 @@ export type RuiDisclosureToggleDetail = {
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
  *
  * @element rui-disclosure
+ * @attr {boolean} open - Whether the disclosure content starts expanded. Default: `false`.
+ * @attr {string} value - Optional value used when coordinating disclosures inside a group.
+ * @attr {boolean} animated - Animate panel height. Also enabled when inside an animated disclosure group. Default: `false`.
  * @slot trigger - Disclosure button (use `RuiDisclosureTrigger`).
  * @slot - Panel content (use `RuiDisclosurePanel`).
+ * @fires rui-disclosure-toggle - Emitted on every trigger activation; `detail` is `{ value, open }`.
+ * @cssclass rui-disclosure - Root wrapper around trigger and panel slots.
  */
 @customElement('rui-disclosure')
 export class RuiDisclosure extends RadiantElement {

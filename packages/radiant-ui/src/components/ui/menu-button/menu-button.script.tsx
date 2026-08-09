@@ -38,10 +38,16 @@ const MENU_GAP = 6;
  * - `Escape`: close and return focus to the trigger
  *
  * @element rui-menu-button
+ * @attr {boolean} open - Whether the menu starts open. Default: `false`.
+ * @attr {('top'|'top-start'|'top-end'|'right'|'right-start'|'right-end'|'bottom'|'bottom-start'|'bottom-end'|'left'|'left-start'|'left-end')} placement - Placement of the menu surface relative to its trigger. Default: `bottom-start`.
  * @slot trigger - Label for the menu button.
  * @slot - Menu items (`role="menuitem"`), typically buttons or anchors.
  * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
  * @fires rui-close - Emitted when the menu closes.
+ * @cssclass rui-menu-button - Root wrapper around trigger and menu.
+ * @cssclass rui-menu-button__trigger - Menu button trigger (`rui-button--primary`).
+ * @cssclass rui-menu-button__chevron - Chevron indicator.
+ * @cssclass rui-menu-button__menu - Popup menu surface (`role="menu"`).
  */
 @customElement('rui-menu-button')
 export class RuiMenuButton extends RadiantElement {

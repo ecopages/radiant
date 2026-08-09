@@ -62,8 +62,28 @@ type RuiDateFieldBindings = {
  * A calendar button toggles a popover grid for picking dates.
  *
  * @see https://react-aria.adobe.com/DatePicker
+ *
  * @element rui-date-field
- * @fires rui-change
+ *
+ * @attr {string} value - Canonical ISO `YYYY-MM-DD` value. Default: `''`.
+ * @attr {string} min - Earliest selectable ISO date. Default: `''`.
+ * @attr {string} max - Latest selectable ISO date. Default: `''`.
+ * @attr {boolean} disabled - Disable the field and calendar. Default: `false`.
+ * @attr {boolean} read-only - Disable editing while keeping the value visible. Default: `false`.
+ * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
+ * @attr {string} name - Native `name` for the underlying input. Default: `''`.
+ * @attr {string} placeholder - Overrides the locale-derived placeholder. Default: `''`.
+ * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
+ * @attr {string} date-style - How the committed value is displayed when not editing. Default: `medium`.
+ * @attr {boolean} masked - Guide digits with a locale mask while typing. Default: `true`.
+ * @attr {number} visible-months - Month grids shown in the calendar popover. Default: `1`.
+ *
+ * @fires rui-change - Emitted when a valid date is committed (typing or calendar pick).
+ *
+ * @cssclass rui-date-field - Root surface.
+ * @cssclass rui-date-field__group - Bordered control-height row wrapping input and toggle.
+ * @cssclass rui-date-field__input - The masked / formatted text input.
+ * @cssclass rui-date-field__popover - Calendar popup shell (`rui-popover` / `rui-floating`).
  */
 @customElement('rui-date-field')
 export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {

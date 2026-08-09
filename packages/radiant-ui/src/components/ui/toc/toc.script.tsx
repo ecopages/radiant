@@ -49,6 +49,18 @@ type RuiTocBindings = {
  * active-section tracking correctly.
  *
  * @element rui-toc
+ * @attr {string} target - CSS selector for the content root that contains headings. Default: the parent element.
+ * @attr {string} heading-selector - Selector for headings to include. Default: `h2,h3`.
+ * @attr {string} label - Visible label above the link list. Default: `On this page`.
+ * @attr {number} scroll-offset - Pixel offset from the viewport top when tracking the active section. Default: `120`.
+ * @attr {string} navigation-events - Extra document event names (comma-separated) that trigger a rebuild, e.g. `eco:page-load,eco:after-swap`.
+ * @cssclass rui-toc - Root `nav` landmark.
+ * @cssclass rui-toc__label - Section label above the list.
+ * @cssclass rui-toc__list - Link list.
+ * @cssclass rui-toc__item - List item.
+ * @cssclass rui-toc__item--depth-3 - Indented item for `h3` headings.
+ * @cssclass rui-toc__link - Heading jump link.
+ * @cssclass rui-toc__link--active - Link for the section currently in view.
  */
 @customElement('rui-toc')
 export class RuiToc extends RadiantElement<RuiTocBindings> {

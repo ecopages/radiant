@@ -5,8 +5,8 @@ import './field.script';
 /**
  * JSX helper around `<rui-field>`.
  *
- * @cssclass rui-field - Root column; wires slotted control, label, description,
- *   and error into the form-published presentation.
+ * Passes `rules`, `defaultValue`, and `defaultValueData` through `prop:` / `attr:`
+ * bindings. The element authors the `.rui-field` surface (see `@cssclass` there).
  */
 export function RuiField({
 	children,

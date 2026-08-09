@@ -20,6 +20,10 @@ type RuiToolbarBindings = {
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/
  * @element rui-toolbar
+ * @attr {string} label - Accessible name for the `role="toolbar"` region.
+ * @attr {boolean} exclusive-toggles - Only one toggle button stays pressed at a time. Default: `false`.
+ * @slot - Toolbar controls (`button`, `a[href]`, `input`, …).
+ * @cssclass rui-toolbar - Toolbar surface (`role="toolbar"`).
  */
 @customElement('rui-toolbar')
 export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {

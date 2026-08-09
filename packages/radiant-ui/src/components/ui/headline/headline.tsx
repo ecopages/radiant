@@ -16,7 +16,15 @@ export type RuiHeadlineProps = JsxHtmlPropsWithChildren<{
 	id?: string;
 }>;
 
-/** Standalone display title outside a heading block. */
+/**
+ * Standalone display title outside a heading block.
+ *
+ * @cssclass rui-headline - Display title root.
+ * @cssclass rui-headline--size-sm - Small type scale.
+ * @cssclass rui-headline--size-md - Default type scale.
+ * @cssclass rui-headline--size-lg - Large type scale.
+ * @cssclass rui-headline--size-xl - XLarge type scale.
+ */
 export function RuiHeadline({ children, as = 'h2', size = 'md', class: className, ...props }: RuiHeadlineProps) {
 	return (
 		<Intrinsic

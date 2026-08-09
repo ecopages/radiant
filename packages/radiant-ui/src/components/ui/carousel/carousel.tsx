@@ -9,7 +9,11 @@ export type RuiCarouselSlideProps = JsxHtmlPropsWithChildren<{
 	id: string;
 }>;
 
-/** Slide in the default carousel slot (APG `group` / `tabpanel` roles are applied by the host). */
+/**
+ * Slide in the default carousel slot (APG `group` / `tabpanel` roles are applied by the host).
+ *
+ * @cssclass rui-carousel__slide - Slide surface.
+ */
 export function RuiCarouselSlide({ id, children, class: className, ...props }: RuiCarouselSlideProps) {
 	return (
 		<div {...props} class={cx('rui-carousel__slide', className)} data-slide={id}>
@@ -47,7 +51,15 @@ function toolbarNextLabel() {
 	);
 }
 
-/** Previous control slotted into `prev` by default. */
+/**
+ * Previous control slotted into `prev` by default.
+ *
+ * @cssclass rui-carousel__nav - Prev nav button (composed with `rui-button`).
+ * @cssclass rui-carousel__nav--overlay - Circular on-slide chrome for `controls-variant="overlay"`.
+ * @cssclass rui-carousel__nav--toolbar - Toolbar chrome (default).
+ * @cssclass rui-carousel__nav-label - Icon + label row (toolbar variant).
+ * @cssclass rui-carousel__nav-icon - Decorative chevron glyph.
+ */
 export function RuiCarouselPrev({
 	children,
 	slot = 'prev',
@@ -83,7 +95,15 @@ export function RuiCarouselPrev({
 	);
 }
 
-/** Next control slotted into `next` by default. */
+/**
+ * Next control slotted into `next` by default.
+ *
+ * @cssclass rui-carousel__nav - Next nav button (composed with `rui-button`).
+ * @cssclass rui-carousel__nav--overlay - Circular on-slide chrome for `controls-variant="overlay"`.
+ * @cssclass rui-carousel__nav--toolbar - Toolbar chrome (default).
+ * @cssclass rui-carousel__nav-label - Icon + label row (toolbar variant).
+ * @cssclass rui-carousel__nav-icon - Decorative chevron glyph.
+ */
 export function RuiCarouselNext({
 	children,
 	slot = 'next',
@@ -124,7 +144,12 @@ export type RuiCarouselRotationProps = JsxHtmlPropsWithChildren<{
 	overlay?: boolean;
 }>;
 
-/** Play/pause rotation control slotted into `rotation` by default. */
+/**
+ * Play/pause rotation control slotted into `rotation` by default.
+ *
+ * @cssclass rui-carousel__rotation - Rotation toggle button (composed with `rui-button`).
+ * @cssclass rui-carousel__rotation--overlay - Overlay pill chrome.
+ */
 export function RuiCarouselRotation({
 	children,
 	slot = 'rotation',

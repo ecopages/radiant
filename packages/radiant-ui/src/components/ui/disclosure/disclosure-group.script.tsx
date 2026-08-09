@@ -19,7 +19,10 @@ export type RuiDisclosureGroupProps = {
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/accordion/
  * @element rui-disclosure-group
+ * @attr {boolean} multiple - Allow more than one disclosure to stay open. Default: `false` (exclusive).
+ * @attr {boolean} animated - Animate panel height for child disclosures. Default: `false`.
  * @slot - `rui-disclosure` children.
+ * @cssclass rui-disclosure-group - Group surface (bordered card around stacked disclosures).
  */
 @customElement('rui-disclosure-group')
 export class RuiDisclosureGroup extends RadiantElement {

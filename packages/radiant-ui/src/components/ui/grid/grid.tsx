@@ -2,6 +2,15 @@ import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
 import type { RuiGridProps } from './grid.script';
 import './grid.script';
 
+/**
+ * Data grid composed from a 2-D `rows` array.
+ *
+ * @cssclass rui-grid__row - Table row (`role="row"`).
+ * @cssclass rui-grid__cell - Table cell (`role="gridcell"`).
+ *
+ * @remarks The host (`<rui-grid>`) owns roving-tabindex keyboard navigation;
+ * row and cell roles/classes are authored here in the view.
+ */
 export function RuiGrid({ rows, ...props }: JsxHtmlProps<RuiGridProps & { slot?: string; rows: JsxRenderable[][] }>) {
 	return (
 		<rui-grid {...props}>

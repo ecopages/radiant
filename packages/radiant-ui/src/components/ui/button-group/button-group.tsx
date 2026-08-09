@@ -10,7 +10,13 @@ export type RuiButtonGroupProps = JsxHtmlPropsWithChildren<{
 	'aria-label'?: string;
 }>;
 
-/** Related buttons / links in a horizontal or vertical group. */
+/**
+ * Related buttons / links in a horizontal or vertical group.
+ *
+ * @cssclass rui-button-group - Root group (`role="group"`).
+ * @cssclass rui-button-group--horizontal - Side-by-side layout (default).
+ * @cssclass rui-button-group--vertical - Stacked layout.
+ */
 export function RuiButtonGroup({
 	children,
 	orientation = 'horizontal',

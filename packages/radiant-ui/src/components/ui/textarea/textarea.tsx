@@ -22,6 +22,11 @@ export type RuiTextareaProps = JsxHtmlProps<{
  *
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
  * Marked with `data-rui-control` so `<rui-field>` can discover it.
+ *
+ * @cssclass rui-textarea - Bordered, resizable multi-line input.
+ * @cssclass rui-textarea--sm - Compact min-height.
+ * @cssclass rui-textarea--md - Default min-height.
+ * @cssclass rui-textarea--lg - Taller min-height.
  */
 export function RuiTextarea(props: RuiTextareaProps) {
 	const { size = 'md', class: className, rows = 3, ...host } = props;

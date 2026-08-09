@@ -10,7 +10,10 @@ export type RuiListboxOptionProps = JsxHtmlPropsWithChildren<{
 	disabled?: boolean;
 }>;
 
-/** Option placed inside `RuiListbox`. */
+/** Option placed inside `RuiListbox`.
+ *
+ * @cssclass rui-listbox__option - Selectable list option.
+ */
 export function RuiListboxOption({
 	value,
 	label,

@@ -16,8 +16,22 @@ type RuiGridBindings = {
  * `role="grid"`, `role="row"`, and `role="gridcell"`. Row length is taken from
  * the authored markup — do not pass a separate column count.
  *
+ * @summary Keyboard-navigable grid; cells are authored light-DOM markup.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/grid/
+ *
  * @element rui-grid
+ *
+ * @attr {string} label - Accessible name announced when focus enters the grid.
+ *
+ * @slot - Grid cells authored as `role="row"` / `role="gridcell"` children. Use
+ *   the `RuiGrid` view to author rows and cells with BEM classes.
+ *
+ * @cssclass rui-grid - Root surface (`role="grid"`).
+ *
+ * @remarks
+ * Cells are focused with a roving `tabindex` (arrow keys, Home/End). Selection
+ * is not modeled — row and cell classes live on the `RuiGrid` view.
  */
 @customElement('rui-grid')
 export class RuiGrid extends RadiantElement<RuiGridBindings> {

@@ -19,7 +19,16 @@ export type RuiAutocompleteProps = {
  * field. `rui-select` uses a dedicated search input inside the popup instead.
  *
  * @see https://react-aria.adobe.com/Autocomplete
+ *
  * @element rui-autocomplete
+ *
+ * @attr {string} sensitivity - Filter sensitivity: `base` (case-insensitive contains), `case`, or `accent`. Default: `base`.
+ * @attr {string} input-value - Controlled filter query; when unset, reads from the slotted input. Default: `''`.
+ *
+ * @slot input - Search field (`RuiAutocompleteInput`).
+ * @slot - Filterable collection of `[role="option"]`, `[role="menuitem"]`, or `[data-tag]` items.
+ *
+ * @cssclass rui-autocomplete - Filter host.
  */
 @customElement('rui-autocomplete')
 export class RuiAutocomplete extends RadiantElement {

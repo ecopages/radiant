@@ -47,6 +47,15 @@ const TreeNodes = ({ nodes }: { nodes: RuiTreeNode[] }) => (
 	</>
 );
 
+/**
+ * Tree composed from a `nodes` structure.
+ *
+ * @cssclass rui-tree__item - List item wrapping a node.
+ * @cssclass rui-tree__node - Node button (`role="treeitem"`).
+ *
+ * @remarks The host (`<rui-tree>`) owns selection, expansion, and roving-tabindex
+ * navigation over the authored `role="treeitem"` markup.
+ */
 export function RuiTree({ nodes, ...props }: JsxHtmlProps<RuiTreeProps & { slot?: string; nodes: RuiTreeNode[] }>) {
 	return (
 		<rui-tree {...props}>

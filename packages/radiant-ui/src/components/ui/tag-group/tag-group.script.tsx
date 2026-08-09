@@ -26,8 +26,15 @@ export type RuiTagGroupRemoveDetail = { value: string };
  *
  * @see https://react-aria.adobe.com/TagGroup
  * @element rui-tag-group
- * @fires rui-change
- * @fires rui-remove
+ * @attr {string} value - Comma-separated selected values.
+ * @attr {string} label - Accessible name for the tag list.
+ * @attr {boolean} disabled - Disable selection and removal. Default: `false`.
+ * @attr {('single'|'multiple')} selection-mode - Allow one or many selected tags. Default: `multiple`.
+ * @attr {boolean} embedded - Disables selection when the parent component owns the selected values. Default: `false`.
+ * @slot - Tag content. Compose `RuiTagList` / `RuiTag` / `RuiTagRemove`, or set items via `setItems()`.
+ * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is the comma-separated value.
+ * @fires rui-remove - Emitted when a tag is removed; `detail.value` is the removed tag's value.
+ * @cssclass rui-tag-group - Root wrapper around the tag list.
  */
 @customElement('rui-tag-group')
 export class RuiTagGroup extends RadiantElement {

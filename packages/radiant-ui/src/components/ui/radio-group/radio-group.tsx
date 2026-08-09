@@ -8,6 +8,15 @@ export type RuiRadioOption = {
 	disabled?: boolean;
 };
 
+/**
+ * Radio group with an `options` convenience API; renders one label-wrapped radio
+ * per option inside `<rui-radio-group>`.
+ *
+ * @cssclass rui-radio - Option label row wrapping the input and control dot.
+ * @cssclass rui-radio__input - Visually hidden native radio input.
+ * @cssclass rui-radio__control - Custom control dot that mirrors check state.
+ * @cssclass rui-radio__label - Option text.
+ */
 export function RuiRadioGroup({
 	options,
 	...props
