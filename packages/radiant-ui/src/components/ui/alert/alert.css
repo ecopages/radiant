@@ -6,11 +6,11 @@ rui-alert {
 
 @layer components {
 	.rui-alert {
-		@apply relative rounded-md text-sm shadow-xs;
+		@apply relative rounded-container text-sm shadow-sm;
 	}
 
 	.rui-alert--inline {
-		@apply flex items-center gap-2 px-4 py-3;
+		@apply flex items-center gap-inline px-control-x py-control-y;
 	}
 
 	.rui-alert--inline.rui-alert--dismissible {
@@ -22,7 +22,7 @@ rui-alert {
 	}
 
 	.rui-alert--banner {
-		@apply mt-4 flex flex-col py-4 pr-4 pl-6;
+		@apply mt-stack flex flex-col py-control-y pr-control-x pl-6;
 
 		&::before {
 			content: '';
@@ -57,70 +57,34 @@ rui-alert {
 	}
 
 	.rui-alert--info {
-		@apply border border-blue-300 bg-blue-100 text-blue-700;
+		@apply border border-info/30 bg-info-container text-on-info-container;
 	}
 
-	.rui-alert--info.rui-alert--banner {
-		&::before {
-			@apply bg-blue-500 opacity-100;
-		}
-
-		.rui-alert__title,
-		.rui-alert__description p,
-		.rui-alert__description span,
-		.rui-alert__description a {
-			@apply text-blue-700;
-		}
+	.rui-alert--info.rui-alert--banner::before {
+		@apply bg-info opacity-100;
 	}
 
 	.rui-alert--success {
-		@apply border border-emerald-300 bg-emerald-100 text-emerald-700;
+		@apply border border-success/30 bg-success-container text-on-success-container;
 	}
 
-	.rui-alert--success.rui-alert--banner {
-		&::before {
-			@apply bg-emerald-500 opacity-100;
-		}
-
-		.rui-alert__title,
-		.rui-alert__description p,
-		.rui-alert__description span,
-		.rui-alert__description a {
-			@apply text-emerald-700;
-		}
+	.rui-alert--success.rui-alert--banner::before {
+		@apply bg-success opacity-100;
 	}
 
 	.rui-alert--warning {
-		@apply border border-yellow-300 bg-yellow-100 text-yellow-700;
+		@apply border border-warning/30 bg-warning-container text-on-warning-container;
 	}
 
-	.rui-alert--warning.rui-alert--banner {
-		&::before {
-			@apply bg-yellow-500 opacity-100;
-		}
-
-		.rui-alert__title,
-		.rui-alert__description p,
-		.rui-alert__description span,
-		.rui-alert__description a {
-			@apply text-yellow-700;
-		}
+	.rui-alert--warning.rui-alert--banner::before {
+		@apply bg-warning opacity-100;
 	}
 
 	.rui-alert--error {
-		@apply border border-red-300 bg-red-100 text-red-700;
+		@apply border border-error/30 bg-error-container text-on-error-container;
 	}
 
-	.rui-alert--error.rui-alert--banner {
-		&::before {
-			@apply bg-red-500 opacity-100;
-		}
-
-		.rui-alert__title,
-		.rui-alert__description p,
-		.rui-alert__description span,
-		.rui-alert__description a {
-			@apply text-red-700;
-		}
+	.rui-alert--error.rui-alert--banner::before {
+		@apply bg-error opacity-100;
 	}
 }

@@ -52,6 +52,26 @@
 	--color-success-container: var(--success-container);
 	--color-on-success-container: var(--on-success-container);
 
+	--color-info: var(--info);
+	--color-on-info: var(--on-info);
+	--color-info-container: var(--info-container);
+	--color-on-info-container: var(--on-info-container);
+	--color-info-light: var(--info-light);
+	--color-info-dark: var(--info-dark);
+
+	--color-warning: var(--warning);
+	--color-on-warning: var(--on-warning);
+	--color-warning-container: var(--warning-container);
+	--color-on-warning-container: var(--on-warning-container);
+	--color-warning-light: var(--warning-light);
+	--color-warning-dark: var(--warning-dark);
+
+	/** UI alias — maps to `error` (e.g. destructive buttons, error alerts). */
+	--color-destructive: var(--error);
+	--color-on-destructive: var(--on-error);
+	--color-destructive-container: var(--error-container);
+	--color-on-destructive-container: var(--on-error-container);
+
 	--color-neutral: var(--neutral);
 
 	--color-surface: var(--surface);

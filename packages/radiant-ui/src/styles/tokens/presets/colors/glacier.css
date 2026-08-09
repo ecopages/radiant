@@ -46,6 +46,20 @@ html:not([data-rui-colors]) {
 	--success-light: var(--color-night-sky-400);
 	--success-dark: var(--color-night-sky-800);
 
+	--info: var(--color-night-sky-600);
+	--on-info: var(--color-glacier-white-50);
+	--info-container: var(--color-night-sky-100);
+	--on-info-container: var(--color-night-sky-900);
+	--info-light: var(--color-night-sky-400);
+	--info-dark: var(--color-night-sky-800);
+
+	--warning: var(--color-laser-lemon-800);
+	--on-warning: var(--color-glacier-white-50);
+	--warning-container: color-mix(in oklab, var(--color-laser-lemon-300) 42%, var(--color-glacier-white-50));
+	--on-warning-container: var(--color-laser-lemon-800);
+	--warning-light: var(--color-laser-lemon-300);
+	--warning-dark: var(--color-laser-lemon-800);
+
 	--neutral: var(--color-glacier-white-500);
 
 	--surface: var(--color-glacier-white-100);
@@ -103,6 +117,20 @@ html.dark:not([data-rui-colors]) {
 	--on-success: var(--color-glacier-white-950);
 	--success-container: var(--color-night-sky-800);
 	--on-success-container: var(--color-night-sky-100);
+
+	--info: var(--color-night-sky-400);
+	--on-info: var(--color-glacier-white-950);
+	--info-container: var(--color-night-sky-800);
+	--on-info-container: var(--color-night-sky-100);
+	--info-light: var(--color-night-sky-300);
+	--info-dark: var(--color-night-sky-600);
+
+	--warning: var(--color-laser-lemon-300);
+	--on-warning: var(--color-glacier-white-950);
+	--warning-container: color-mix(in oklab, var(--color-laser-lemon-800) 55%, var(--color-glacier-white-950));
+	--on-warning-container: var(--color-laser-lemon-300);
+	--warning-light: var(--color-laser-lemon-300);
+	--warning-dark: var(--color-laser-lemon-800);
 
 	--surface: var(--color-glacier-white-900);
 	--on-surface: var(--color-glacier-white-50);
