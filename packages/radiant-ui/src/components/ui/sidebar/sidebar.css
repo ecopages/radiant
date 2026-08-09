@@ -109,7 +109,8 @@ rui-sidebar {
 /* -------------------------------------------------------------------------- */
 
 .rui-sidebar {
-	@apply relative flex h-full min-w-0 shrink-0 self-stretch bg-surface text-on-background;
+	@apply relative flex h-full min-w-0 shrink-0 self-stretch text-on-background;
+	background-color: var(--rui-sidebar-background, var(--color-surface));
 }
 
 .rui-sidebar[data-side='right'] {
