@@ -197,7 +197,7 @@ rui-toaster[data-y-position='top'] rui-toast[data-expanded='true']::after {
 	}
 
 	.rui-toast--info {
-		@apply border-border bg-surface text-on-surface;
+		@apply border-info/40 bg-surface text-info;
 	}
 
 	.rui-toast--success {
@@ -205,7 +205,7 @@ rui-toaster[data-y-position='top'] rui-toast[data-expanded='true']::after {
 	}
 
 	.rui-toast--warning {
-		@apply border-border bg-surface text-on-surface;
+		@apply border-warning/40 bg-surface text-warning;
 	}
 
 	.rui-toast--error {

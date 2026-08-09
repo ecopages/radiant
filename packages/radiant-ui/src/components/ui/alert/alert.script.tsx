@@ -64,6 +64,10 @@ type RuiAlertBindings = {
  * Styling classes live on the JSX view helpers (`@cssclass`). This element owns
  * dismiss behavior — default `render()` is a passthrough slot so prop updates do
  * not rebuild the composed light-DOM surface.
+ *
+ * **Why a custom element?** Dismiss emits `rui-close` and removes the host from
+ * the DOM without re-projecting slot content. A presentational-only wrapper would
+ * need equivalent lifecycle wiring; the CE keeps that behavior self-contained.
  */
 @customElement('rui-alert')
 export class RuiAlert extends RadiantElement<RuiAlertBindings> {
