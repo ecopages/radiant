@@ -6,7 +6,8 @@
  */
 rui-sidebar {
 	.rui-sidebar {
-		@apply border-r border-border/60 bg-transparent;
+		@apply border-r border-border/60;
+		background-color: var(--rui-sidebar-background, transparent);
 	}
 
 	.rui-sidebar__header {
