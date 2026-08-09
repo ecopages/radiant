@@ -14,7 +14,7 @@ export const meta = {
 	args: {
 		size: 'xl',
 		as: 'h1',
-		children: 'Radiant UI',
+		children: 'radiant UI',
 	},
 	argTypes: {
 		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg', 'xl'] as const },
