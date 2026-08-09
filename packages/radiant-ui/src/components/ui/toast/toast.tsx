@@ -7,6 +7,10 @@ import './toaster.script';
 
 export type RuiToastViewProps = JsxHtmlProps<RuiToastProps & { slot?: string }>;
 
+/**
+ * JSX helper around `<rui-toast>`. Normally rendered by `<rui-toaster>`; author
+ * directly only for static/embedded toast chrome.
+ */
 export function RuiToast({
 	toastId,
 	title,
@@ -39,6 +43,10 @@ export function RuiToast({
 
 export type RuiToasterViewProps = JsxHtmlPropsWithChildren<RuiToasterProps & { slot?: string }>;
 
+/**
+ * JSX helper around `<rui-toaster>`. Mount once at the app root and drive with
+ * `toast()`. See `RuiToasterElement` for the full contract.
+ */
 export function RuiToaster({
 	children,
 	position,

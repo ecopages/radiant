@@ -56,7 +56,29 @@ export type RuiFieldProps = {
  * Registers with the form via {@link formContext} actions, forwards control events,
  * and applies presentation (errors, ARIA) from the form-published `fields` map.
  *
+ * The field owns error presentation: it finds `RuiFieldError` / `RuiFieldDescription`
+ * in its light DOM, wires them into the control's `aria-describedby`, and drives
+ * `aria-invalid` / `aria-required`.
+ *
  * @element rui-field
+ *
+ * @attr {string} name - Field name; registers with the ancestor form. Default: `''`.
+ * @attr {string} error - Standalone error message when not using a form provider.
+ *   Default: `''`.
+ * @attr {boolean} invalid - Standalone invalid flag when not using a form provider.
+ *   Default: `false`.
+ * @attr {boolean} disabled - Dims the field and disables nested controls.
+ *   Default: `false`.
+ *
+ * @slot - Field content: label, control, description, error.
+ *
+ * @remarks
+ * The composed surface is `.rui-field` (column). Error / description presentation
+ * lives on `RuiFieldError` / `RuiFieldDescription` helpers (`@cssclass` there).
+ *
+ * **Why a custom element?** The field must observe an ancestor form context and
+ * apply ARIA + error text to light-DOM nodes after mount — a JSX wrapper has no
+ * lifecycle hook for that.
  */
 @customElement('rui-field')
 export class RuiField extends RadiantElement {

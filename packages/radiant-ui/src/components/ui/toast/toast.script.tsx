@@ -85,7 +85,48 @@ type RuiToastBindings = {
  * Prefer the imperative {@link toast} API with `<rui-toaster>`; this element is
  * rendered by the toaster and is not typically authored by hand.
  *
+ * The composed surface is `role="status"` (live region) with a per-variant
+ * border accent. `loading` toasts never auto-dismiss.
+ *
  * @element rui-toast
+ *
+ * @attr {string} toast-id - Toast id; used for deadline bookkeeping. Default: `''`.
+ * @attr {string} title - Heading text. Default: `''`.
+ * @attr {string} description - Supporting detail under the title. Default: `''`.
+ * @attr {('default'|'info'|'success'|'warning'|'error'|'loading')} variant -
+ *   Status tone; drives the icon and border accent. Default: `default`.
+ * @attr {number} duration - Lifetime in ms before auto-dismiss. Default: `4000`.
+ * @attr {boolean} dismissible - Allow close button / swipe-to-dismiss. Default: `true`.
+ * @attr {boolean} close-button - Render the corner close control. Default: `false`.
+ * @attr {string} action-label - Text for the optional action button. Default: `''`.
+ * @attr {string} position - Placement; mirrors the toaster's position. Default: `bottom-end`.
+ * @attr {boolean} marked-delete - Marks the toast for animated exit. Default: `false`.
+ *
+ * @fires rui-toast-mounted - Bubbles after the toast mounts and paints (enter
+ *   animation / timer start); the toaster uses it to resync stack layout.
+ *
+ * @remarks
+ * Styling lives on the composed surface — BEM classes authored here, not on a
+ * JSX view. Variants map to semantic status roles (`info`, `success`, `warning`,
+ * `error`) in `toast.css`.
+ *
+ * **Why a custom element?** The toast owns dismiss lifetime bookkeeping (pause
+ * on hover / hidden tab, swipe-to-dismiss), which needs DOM state — not a
+ * presentational view.
+ *
+ * @cssclass rui-toast - Toast surface (`role="status"`).
+ * @cssclass rui-toast--info - Info tone (blue accent).
+ * @cssclass rui-toast--success - Success tone (green accent).
+ * @cssclass rui-toast--warning - Warning tone (amber accent).
+ * @cssclass rui-toast--error - Error tone (red accent).
+ * @cssclass rui-toast--loading - Loading tone (neutral accent).
+ * @cssclass rui-toast__icon - Status icon wrapper.
+ * @cssclass rui-toast__loader - Spinner for `loading` toasts.
+ * @cssclass rui-toast__content - Title + description column.
+ * @cssclass rui-toast__title - Heading.
+ * @cssclass rui-toast__description - Supporting detail.
+ * @cssclass rui-toast__action - Optional action button.
+ * @cssclass rui-toast__close - Corner close control.
  */
 @customElement('rui-toast')
 export class RuiToast extends RadiantElement<RuiToastBindings> {

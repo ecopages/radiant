@@ -4,7 +4,7 @@ description: Toasts surface brief, non-blocking feedback after an action — sav
 category: Feedback
 ---
 
-import { meta as ToastMeta, Default } from '@/content/stories/toast';
+import { meta as ToastMeta, Default, AlwaysExpanded, Positions } from '@/content/stories/toast';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -31,7 +31,7 @@ export const config = {
 
 ## Usage
 
-Mount `RuiToaster` once at the app root, then call `toast()` imperatively to show messages.
+Mount `RuiToaster` once at the app root, then call `toast()` imperatively to show messages. Each call returns a toast id you can pass to `toast.dismiss()`.
 
 ```tsx
 import { RuiToaster, toast } from '@ecopages/radiant-ui/toast';
@@ -43,16 +43,171 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 </RuiButton>
 ```
 
+The imperative `toast()` helper is Sonner-shaped: `toast()`, `toast.message()`, `toast.success()`, `toast.error()`, `toast.info()`, `toast.warning()`, `toast.loading()`, `toast.promise()`, `toast.dismiss(id?)`, and `toast.clear()`.
+
 ## Match variant to message
 
-<p>Use `success` for confirmations, `error` for failures, `warning` for caution, and `info` for neutral updates.</p>
+Use `success` for confirmations, `error` for failures, `warning` for caution, and `info` for neutral updates. `loading` shows a spinner and never auto-dismisses.
+
+```tsx
+toast.success('Changes saved');
+toast.error('Unable to reach the server', { description: 'Try again in a moment.' });
+toast.warning('Disk space is running low');
+toast.info('Your session will expire soon');
+```
+
+## Theming
+
+Toast variants reuse the **semantic status roles** from the active theme — the same `info` / `success` / `warning` / `error` families as alerts — via `.rui-toast--*` on the composed surface:
+
+| `variant` | Semantic role | Typical utilities on `.rui-toast--*` |
+| --- | --- | --- |
+| `info` | `info` | `border-info/40`, `text-info` |
+| `success` | `success` | `border-success/40`, `text-success` |
+| `warning` | `warning` | `border-warning/40`, `text-warning` |
+| `error` | `error` (destructive) | `border-error/40`, `text-error` |
+| `loading` | neutral surface | `border-border`, `text-on-surface` |
+
+The surface stays `bg-surface text-on-surface` with a per-variant border and text accent, so toasts read as floating chrome rather than filled status blocks. Override roles at the theme layer (`tokens/presets/colors/*.css`) — not in component CSS.
 
 ## Duration and dismissal
 
-<p>Set `duration` per toast for urgent vs routine messages. Enable `closeButton` when users need time to read.</p>
+Set `duration` per toast for urgent vs routine messages. Toasts pause their countdown while hovered, while a pointer is interacting, or while the tab is hidden, and resume from the remaining time.
+
+```tsx
+toast('Autosaved', { duration: 2000 });
+toast.error('Sync failed', { duration: 10_000, closeButton: true });
+```
+
+Enable `closeButton` when users need time to read, or `dismissible` to allow swipe-to-dismiss. `toast.promise()` drives a single toast through loading → success/error:
+
+```tsx
+toast.promise(save(), {
+  loading: 'Saving…',
+  success: 'Saved',
+  error: 'Save failed',
+});
+```
+
+## Stacking
+
+Toasts stack at the configured corner. By default the stack collapses behind the front toast (peek) and expands on hover; set `expand` to always show full gaps.
+
+<Canvas of={AlwaysExpanded} meta={ToastMeta} />
+
+```tsx
+<RuiToaster expand position="bottom-end" />
+```
+
+`visibleToasts` caps how many stay mounted at once — older toasts wait in the queue.
+
+## Position
+
+Place the stack at any corner or edge center.
+
+<Canvas of={Positions} meta={ToastMeta} />
+
+```tsx
+<RuiToaster position="top-center" />
+```
 
 ## Accessibility
 
-- Toasts use `role="status"` for polite announcements that do not interrupt current tasks.
-- Error toasts use `role="alert"` for immediate attention.
+- Toasts use `role="status"` for polite announcements that do not interrupt current tasks; the toaster wraps the stack in an `aria-live="polite"` region.
+- Error toasts use `role="alert"` semantics for immediate attention.
 - Do not rely on toasts alone for critical errors — pair with inline field errors when appropriate.
+- The stack region is focusable (`tabindex="-1"`) so keyboard users can inspect messages; close controls are labeled buttons.
+
+## Why a custom element?
+
+`<rui-toast>` owns dismiss lifetime bookkeeping — pause on hover / hidden tab, swipe-to-dismiss, and exit animation — which requires DOM state. `<rui-toaster>` owns the stack layout (peek/expand math, per-position filtering). The `RuiToast` / `RuiToaster` JSX helpers are thin passthroughs; the elements render their own composed light-DOM surface.
+
+## API
+
+### Imperative API
+
+The `toast()` callable and its variants accept `(title, options?)` where `options` is `ToastOptions`:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `id` | `string \| number` | auto | Dismiss a specific toast by id. |
+| `description` | `string` | — | Supporting detail under the title. |
+| `duration` | `number` | `4000` | Lifetime in ms; `Infinity` keeps it until dismissed. |
+| `action` | `{ label, onClick }` | — | Render an action button. |
+| `dismissible` | `boolean` | `true` | Allow close button / swipe-to-dismiss. |
+| `closeButton` | `boolean` | toaster default | Show the corner close control. |
+| `position` | `ToastPosition` | toaster default | Per-toast placement override. |
+
+### `<rui-toaster>` attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `position` | `top/bottom-start/center/end` | `bottom-end` | Corner / edge placement. |
+| `duration` | `number` | `4000` | Default lifetime in ms. |
+| `visible-toasts` | `number` | `3` | Max toasts mounted at once; older wait in queue. |
+| `close-button` | `boolean` | `false` | Show a close button on every toast. |
+| `expand` | `boolean` | `false` | Always render the stack expanded. |
+| `gap` | `number` | `14` | Gap between expanded toasts in px. |
+| `offset` | `number` | `24` | Viewport inset in px. |
+| `container` | `string` | `''` | CSS selector for a positioning root (docs canvas). |
+
+### `<rui-toast>` attributes
+
+Rendered by the toaster; listed for completeness. Documented via `@attr` on `RuiToastElement`.
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `toast-id` | `string` | `''` | Toast id for deadline bookkeeping. |
+| `title` | `string` | `''` | Heading text. |
+| `description` | `string` | `''` | Supporting detail. |
+| `variant` | `default` · `info` · `success` · `warning` · `error` · `loading` | `default` | Status tone. |
+| `duration` | `number` | `4000` | Lifetime before auto-dismiss. |
+| `dismissible` | `boolean` | `true` | Allow close / swipe. |
+| `close-button` | `boolean` | `false` | Corner close control. |
+| `action-label` | `string` | `''` | Action button text. |
+| `position` | `ToastPosition` | `bottom-end` | Placement; mirrors the toaster. |
+| `marked-delete` | `boolean` | `false` | Marks for animated exit. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-toast-show` | `ToastShowDetail` | Document-level; the toaster listens and creates a toast. |
+| `rui-toast-dismiss` | `{ id? }` | Document-level; the toaster dismisses the matching toast. |
+| `rui-toast-mounted` | — | Bubbles after a toast mounts and paints; the toaster resyncs stack layout. |
+
+Use `showToast()` / `dismissToast()` to dispatch the document events, or the simpler `toast()` API.
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on the elements):
+
+| Class | Description |
+| --- | --- |
+| `.rui-toaster-region` | Announcement region wrapper (`display: contents`). |
+| `.rui-toaster` | The `<ol>` stack list. |
+| `.rui-toast` | Toast surface (`role="status"`). |
+| `.rui-toast--info` | Info tone. |
+| `.rui-toast--success` | Success tone. |
+| `.rui-toast--warning` | Warning tone. |
+| `.rui-toast--error` | Error tone. |
+| `.rui-toast--loading` | Loading tone. |
+| `.rui-toast__icon` | Status icon wrapper. |
+| `.rui-toast__loader` | Spinner for `loading` toasts. |
+| `.rui-toast__content` | Title + description column. |
+| `.rui-toast__title` | Heading. |
+| `.rui-toast__description` | Supporting detail. |
+| `.rui-toast__action` | Optional action button. |
+| `.rui-toast__close` | Corner close control. |
+
+### Theme roles (per `variant`)
+
+| Variant | CSS variables consumed |
+| --- | --- |
+| `info` | `--info` |
+| `success` | `--success` |
+| `warning` | `--warning` |
+| `error` | `--error` |
+| `loading` | `--border`, `--on-surface` |
+
+`error` is the destructive status role (same family as destructive buttons). Surface and text roles are `--surface` / `--on-surface` for all variants.

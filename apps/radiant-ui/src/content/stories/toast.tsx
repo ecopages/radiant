@@ -6,7 +6,7 @@ import { docsStory, type DocsDecorator, type DocsMeta, type DocsStory } from '@/
  * Docs canvas prebundles those as separate vendor chunks with separate toast
  * stores; the barrel is what registers `<rui-toaster>`, so triggers must use it too.
  */
-import { RuiToaster, toast } from '@ecopages/radiant-ui';
+import { RuiToaster, toast, type ToastPosition } from '@ecopages/radiant-ui';
 
 const TOAST_STAGE_SELECTOR = '.playground-toast-stage';
 
@@ -75,7 +75,7 @@ const withToastStage: DocsDecorator<ToastArgs> = (_story, context) => {
 			</div>
 			<RuiToaster
 				container={TOAST_STAGE_SELECTOR}
-				position={(args.position as ToastArgs['position']) ?? 'bottom-end'}
+				position={args.position ?? 'bottom-end'}
 				duration={Number(args.duration ?? 4000)}
 				visibleToasts={Number(args.visibleToasts ?? 3)}
 				closeButton={Boolean(args.closeButton)}
@@ -86,7 +86,7 @@ const withToastStage: DocsDecorator<ToastArgs> = (_story, context) => {
 };
 
 export type ToastArgs = {
-	position: string;
+	position: ToastPosition;
 	duration: number;
 	visibleToasts: number;
 	closeButton: boolean;
@@ -106,7 +106,7 @@ export const meta = {
 	argTypes: {
 		position: {
 			control: { type: 'select' },
-			options: ['bottom-end', 'bottom-center', 'top-end', 'top-center'] as const,
+			options: ['bottom-end', 'bottom-center', 'top-end', 'top-center'] as const satisfies readonly ToastPosition[],
 		},
 		duration: { control: { type: 'number' } },
 		visibleToasts: { control: { type: 'number' } },
@@ -121,3 +121,13 @@ export const meta = {
 type Story = DocsStory<ToastArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'toast/default' } } });
+
+export const AlwaysExpanded: Story = docsStory(meta, {
+	args: { expand: true },
+	parameters: { docs: { id: 'toast/always-expanded' } },
+});
+
+export const Positions: Story = docsStory(meta, {
+	args: { position: 'top-center' },
+	parameters: { docs: { id: 'toast/positions' } },
+});
