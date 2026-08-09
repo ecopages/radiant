@@ -1,4 +1,4 @@
-import type { DocsArgs, DocsMetaAny } from './types';
+import type { DocsArgs, DocsMetaAny, DocsStoryAny } from './types';
 
 function formatPropValue(value: unknown): string | null {
 	if (value === false || value === undefined || value === null || value === '') return null;
@@ -40,7 +40,8 @@ export function buildGenericExampleCode(
 	);
 }
 
-export function resolveExampleCode(meta: DocsMetaAny, args: DocsArgs): string {
+export function resolveExampleCode(meta: DocsMetaAny, args: DocsArgs, story?: DocsStoryAny): string {
+	if (story?.exampleCode) return story.exampleCode(args);
 	if (meta.exampleCode) return meta.exampleCode(args);
 	if (!meta.component || !meta.exportName) return '';
 	return buildGenericExampleCode(meta.exportName, meta.component, args);

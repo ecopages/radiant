@@ -41,6 +41,8 @@ export type DocsStory<TArgs extends DocsArgs = DocsArgs> = {
 	args?: Partial<TArgs>;
 	decorators?: DocsDecorator<TArgs>[];
 	render?: (args: TArgs) => JsxRenderable;
+	/** Optional source builder for a story whose child structure differs from its meta default. */
+	exampleCode?: (args: TArgs) => string;
 	parameters: { docs: { id: string } };
 };
 
