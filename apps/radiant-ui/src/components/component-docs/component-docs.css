@@ -109,6 +109,10 @@ radiant-docs-canvas {
 	@apply box-border w-full min-w-0;
 }
 
+.docs-story-controls__text {
+	height: var(--size-control-sm);
+}
+
 .docs-story-code {
 	@apply block min-w-0;
 	box-shadow: inset 0 1px 0 var(--docs-story-line);

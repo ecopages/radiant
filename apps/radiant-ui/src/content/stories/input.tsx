@@ -3,7 +3,6 @@ import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type InputArgs = {
-	size: string;
 	type: string;
 	disabled: boolean;
 	placeholder: string;
@@ -13,13 +12,11 @@ export const meta = {
 	component: 'input',
 	exportName: 'RuiInput',
 	args: {
-		size: 'md',
 		type: 'text',
 		disabled: false,
 		placeholder: 'you@example.com',
 	},
 	argTypes: {
-		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg'] as const },
 		type: { control: { type: 'select' }, options: ['text', 'email', 'password', 'number'] as const },
 		disabled: { control: { type: 'boolean' } },
 		placeholder: { control: { type: 'text' } },

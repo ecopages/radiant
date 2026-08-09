@@ -9,7 +9,6 @@ const meta = {
 	component: RuiInput,
 	args: {
 		placeholder: 'Enter text',
-		size: 'md',
 	},
 } satisfies Meta<typeof RuiInput>;
 

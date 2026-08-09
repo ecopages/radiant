@@ -4,6 +4,7 @@
 	.rui-input {
 		@apply w-full border border-border bg-background text-on-background outline-none;
 		border-radius: var(--radius-control);
+		height: var(--size-control-md);
 		padding-inline: var(--space-control-x);
 		padding-block: 0;
 		font-size: var(--text-control, 0.875rem);
@@ -20,17 +21,5 @@
 
 	.rui-input[aria-invalid='true'] {
 		@apply border-error;
-	}
-
-	.rui-input--sm {
-		height: var(--size-control-sm);
-	}
-
-	.rui-input--md {
-		height: var(--size-control-md);
-	}
-
-	.rui-input--lg {
-		height: var(--size-control-lg);
 	}
 }

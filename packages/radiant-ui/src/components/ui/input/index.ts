@@ -1,1 +1,1 @@
-export { RuiInput, type RuiInputProps, type RuiInputSize } from './input';
+export { RuiInput, type RuiInputProps } from './input';
