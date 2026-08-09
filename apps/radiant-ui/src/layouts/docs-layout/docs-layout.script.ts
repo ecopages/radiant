@@ -3,6 +3,3 @@ import '@ecopages/radiant-ui/alert';
 import '@ecopages/radiant-ui/breadcrumb';
 import '@ecopages/radiant-ui/sidebar';
 import '@ecopages/radiant-ui/toc';
-import { createRouter } from '@ecopages/browser-router';
-
-createRouter();
