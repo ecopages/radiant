@@ -42,6 +42,11 @@ type RuiSwitchBindings = {
  * @element rui-switch
  * @slot - Visible label for the switch. Must not change with state.
  * @fires rui-change - Emitted after the checked state changes; `detail.checked` holds the new state.
+ * @cssclass rui-switch - Label row: track + thumb + visible label.
+ * @cssclass rui-switch__input - Native `role="switch"` input (visually hidden).
+ * @cssclass rui-switch__track - Pill track; `primary` fill when checked.
+ * @cssclass rui-switch__thumb - Sliding thumb.
+ * @cssclass rui-switch__label - Light-DOM label text.
  */
 @customElement('rui-switch')
 export class RuiSwitch extends RadiantElement<RuiSwitchBindings> {

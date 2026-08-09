@@ -46,8 +46,23 @@ const initialFormActions: FormContextActions = {
  * and exposes registration / validation entry points for `<rui-field>` connectors.
  *
  * @element rui-form
+ *
+ * @attr {('onSubmit'|'onBlur'|'onChange'|'onTouched'|'all')} mode - When validation
+ *   runs. Reflects to markup. Default: `onSubmit`.
+ * @attr {('onSubmit'|'onBlur'|'onChange'|'onTouched'|'all')} revalidate-mode - When
+ *   fields re-validate after a failed submit. Reflects to markup. Default: `onChange`.
+ * @attr {string} data-default-values - JSON-serialized default values for SSR / JSX
+ *   attribute channel. Default: `undefined`.
+ *
  * @fires rui-submit - Emitted when validation passes; `detail.values` holds field values.
- * @fires rui-invalid - Emitted when validation fails on submit.
+ * @fires rui-invalid - Emitted when validation fails on submit; `detail.errors` maps
+ *   field names to error messages.
+ *
+ * @remarks
+ * `defaultValues` and `resolver` are object props — they only reach the element via
+ * `prop:` bindings from the `RuiForm` view, not plain attributes.
+ *
+ * @cssclass rui-form - Root form surface (`<form noValidate>`).
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {

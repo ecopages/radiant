@@ -10,7 +10,13 @@ export type RuiDisclosureIconProps = JsxHtmlProps<{
 	variant?: 'chevron' | 'plus';
 }>;
 
-/** Default disclosure indicator. Override via `RuiDisclosureTrigger` `icon` prop. */
+/**
+ * Default disclosure indicator. Override via `RuiDisclosureTrigger` `icon` prop.
+ *
+ * @cssclass rui-disclosure__icon - Indicator wrapper (decorative, `aria-hidden`).
+ * @cssclass rui-disclosure__icon--chevron - Rotates 90° when the disclosure is open.
+ * @cssclass rui-disclosure__icon--plus - Toggles between `+` and `×`.
+ */
 export function RuiDisclosureIcon({ variant = 'chevron', class: className, ...props }: RuiDisclosureIconProps) {
 	return (
 		<span
@@ -30,7 +36,13 @@ export type RuiDisclosureTriggerProps = JsxHtmlPropsWithChildren<{
 	iconPosition?: 'start' | 'end';
 }>;
 
-/** Disclosure button slotted into `trigger` by default. */
+/**
+ * Disclosure button slotted into `trigger` by default.
+ *
+ * @cssclass rui-disclosure__trigger - Trigger button; reflects `aria-expanded`.
+ * @cssclass rui-disclosure__trigger--icon-end - Layout when `iconPosition="end"`.
+ * @cssclass rui-disclosure__label - Trigger text.
+ */
 export function RuiDisclosureTrigger({
 	children,
 	slot = 'trigger',
@@ -65,7 +77,12 @@ export function RuiDisclosureTrigger({
 
 export type RuiDisclosurePanelProps = JsxHtmlPropsWithChildren;
 
-/** Disclosure panel in the default slot. */
+/**
+ * Disclosure panel in the default slot.
+ *
+ * @cssclass rui-disclosure__panel - Panel content region.
+ * @cssclass rui-disclosure__panel-inner - Panel padding wrapper (drives the height animation).
+ */
 export function RuiDisclosurePanel({ children, class: className, ...props }: RuiDisclosurePanelProps) {
 	return (
 		<div {...props} data-disclosure-panel data-ref="panel" class={cx('rui-disclosure__panel', className)}>

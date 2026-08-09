@@ -37,8 +37,21 @@ type RuiRadioGroupBindings = {
  * - `Space`: check the focused radio
  *
  * @element rui-radio-group
+ *
+ * @attr {string} value - Selected radio value. Reflects to markup. Default: `''`.
+ * @attr {string} name - Form field name shared by all radios in the group. Default: `''`.
+ * @attr {string} label - Accessible name when no visible legend is slotted. Default: `''`.
+ * @attr {boolean} disabled - Disables every radio in the group. Default: `false`.
+ *
  * @slot - One or more `<label>` children each wrapping a radio input with a unique `value`.
+ *
  * @fires rui-change - Emitted after the selected value changes; `detail.value` holds the new value.
+ *
+ * @remarks
+ * The `RuiRadioGroup` view authors the option BEM classes (`.rui-radio*`, see
+ * `@cssclass` there). This element owns the `role="radiogroup"` surface and value sync.
+ *
+ * @cssclass rui-radio-group - Group surface (`role="radiogroup"`).
  */
 @customElement('rui-radio-group')
 export class RuiRadioGroup extends RadiantElement<RuiRadioGroupBindings> {

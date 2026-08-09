@@ -10,7 +10,10 @@ export type RuiAutocompleteInputProps = JsxHtmlProps<{
 	disabled?: boolean;
 }>;
 
-/** Search field slotted into `RuiAutocomplete`. Also pairs with combobox inputs via `data-autocomplete-input`. */
+/** Search field slotted into `RuiAutocomplete`. Also pairs with combobox inputs via `data-autocomplete-input`.
+ *
+ * @cssclass rui-autocomplete__input - Bordered search input.
+ */
 export function RuiAutocompleteInput({
 	placeholder,
 	slot = 'input',
@@ -36,7 +39,10 @@ export type RuiAutocompleteCollectionProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Wrapper around the filterable collection inside `RuiAutocomplete`. */
+/** Wrapper around the filterable collection inside `RuiAutocomplete`.
+ *
+ * @cssclass rui-autocomplete__collection - Scrollable filterable region.
+ */
 export function RuiAutocompleteCollection({ children, class: className, ...props }: RuiAutocompleteCollectionProps) {
 	return (
 		<div {...props} data-autocomplete-collection class={cx('rui-autocomplete__collection', className)}>
@@ -47,7 +53,10 @@ export function RuiAutocompleteCollection({ children, class: className, ...props
 
 export type RuiAutocompleteEmptyProps = JsxHtmlPropsWithChildren;
 
-/** Shown when filtering yields no visible items. */
+/** Shown when filtering yields no visible items.
+ *
+ * @cssclass rui-autocomplete__empty - No-results state.
+ */
 export function RuiAutocompleteEmpty({ children, class: className, ...props }: RuiAutocompleteEmptyProps) {
 	return (
 		<div {...props} data-autocomplete-empty class={cx('rui-autocomplete__empty', className)} hidden>

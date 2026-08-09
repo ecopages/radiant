@@ -9,6 +9,17 @@ export type RuiMenubarItem = {
 	items?: Array<{ id: string; label: JsxRenderable }>;
 };
 
+/**
+ * Importable JSX helper around `<rui-menubar>`.
+ *
+ * Renders `items` as a top-level `role="menuitem"` bar with optional
+ * `role="menu"` popups.
+ *
+ * @cssclass rui-menubar__root - Top-level menu root (trigger + optional popup).
+ * @cssclass rui-menubar__item - Top-level item (`role="menuitem"`).
+ * @cssclass rui-menubar__menu - Popup menu surface (`role="menu"`, `rui-popover`).
+ * @cssclass rui-menubar__menu-item - Item inside a popup (`role="menuitem"`).
+ */
 export function RuiMenubar({
 	items,
 	...props

@@ -41,6 +41,18 @@ const TreegridRows = ({ rows }: { rows: RuiTreegridRow[] }) => (
 	</>
 );
 
+/**
+ * Treegrid composed from `columns` and a nested `rows` structure.
+ *
+ * @cssclass rui-treegrid__row - Data row (`role="row"`).
+ * @cssclass rui-treegrid__row--header - Header row.
+ * @cssclass rui-treegrid__group - Collapsible row group (`role="rowgroup"`).
+ * @cssclass rui-treegrid__cell - Data cell (`role="gridcell"`).
+ * @cssclass rui-treegrid__cell--header - Column header cell (`role="columnheader"`).
+ *
+ * @remarks The host (`<rui-treegrid>`) owns expand/collapse and cell-only
+ * roving-tabindex navigation over the authored row markup.
+ */
 export function RuiTreegrid({
 	columns,
 	rows,

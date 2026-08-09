@@ -7,7 +7,11 @@ export type RuiTagListProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Flex-wrapped container for `RuiTag` children. */
+/**
+ * Flex-wrapped container for `RuiTag` children.
+ *
+ * @cssclass rui-tag-group__list - Tag row (flex-wrap container).
+ */
 export function RuiTagList({ children, class: className, ...props }: RuiTagListProps) {
 	return (
 		<div {...props} data-tag-list class={cx('rui-tag-group__list', className)}>
@@ -22,7 +26,11 @@ export type RuiTagProps = JsxHtmlPropsWithChildren<{
 	disabled?: boolean;
 }>;
 
-/** A single tag with optional remove button. */
+/**
+ * A single tag with optional remove button.
+ *
+ * @cssclass rui-tag - Tag chip; selected state via `[aria-selected='true']`.
+ */
 export function RuiTag({ value, label, children, class: className, disabled, ...props }: RuiTagProps) {
 	return (
 		<span
@@ -43,7 +51,11 @@ export type RuiTagRemoveProps = JsxHtmlPropsWithChildren<{
 	'aria-label'?: string;
 }>;
 
-/** Remove button rendered inside `RuiTag`. */
+/**
+ * Remove button rendered inside `RuiTag`.
+ *
+ * @cssclass rui-tag__remove - Tag remove control.
+ */
 export function RuiTagRemove({
 	children,
 	class: className,

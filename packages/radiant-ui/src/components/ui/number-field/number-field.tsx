@@ -7,7 +7,11 @@ export type RuiNumberFieldGroupProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Input + stepper row. Place `RuiNumberFieldInput` and stepper buttons inside. */
+/**
+ * Input + stepper row. Place `RuiNumberFieldInput` and stepper buttons inside.
+ *
+ * @cssclass rui-number-field__group - Control-height bordered row wrapping input and steppers.
+ */
 export function RuiNumberFieldGroup({
 	children,
 	slot = 'group',
@@ -28,7 +32,11 @@ export type RuiNumberFieldInputProps = JsxHtmlProps<{
 	readOnly?: boolean;
 }>;
 
-/** Text input in the `input` slot. Formatting is handled by `<rui-number-field>`. */
+/**
+ * Text input in the `input` slot. Formatting is handled by `<rui-number-field>`.
+ *
+ * @cssclass rui-number-field__input - Borderless text input inside the group.
+ */
 export function RuiNumberFieldInput({
 	slot = 'input',
 	class: className,
@@ -55,7 +63,11 @@ export type RuiNumberFieldSteppersProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Groups increment and decrement steppers on the trailing edge of the field. */
+/**
+ * Groups increment and decrement steppers on the trailing edge of the field.
+ *
+ * @cssclass rui-number-field__steppers - Trailing stepper column with a border divider.
+ */
 export function RuiNumberFieldSteppers({ children, slot, class: className, ...props }: RuiNumberFieldSteppersProps) {
 	return (
 		<div {...props} slot={slot} class={cx('rui-number-field__steppers', className)}>
@@ -70,7 +82,11 @@ export type RuiNumberFieldStepperButtonProps = JsxHtmlPropsWithChildren<{
 	disabled?: boolean;
 }>;
 
-/** Increment stepper in the `increment` slot. */
+/**
+ * Increment stepper in the `increment` slot.
+ *
+ * @cssclass rui-number-field__stepper - Icon button cell in the steppers column.
+ */
 export function RuiNumberFieldIncrementButton({
 	children,
 	slot = 'increment',
@@ -95,7 +111,11 @@ export function RuiNumberFieldIncrementButton({
 	);
 }
 
-/** Decrement stepper in the `decrement` slot. */
+/**
+ * Decrement stepper in the `decrement` slot.
+ *
+ * @cssclass rui-number-field__stepper - Icon button cell in the steppers column.
+ */
 export function RuiNumberFieldDecrementButton({
 	children,
 	slot = 'decrement',

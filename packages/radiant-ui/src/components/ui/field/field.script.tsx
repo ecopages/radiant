@@ -69,6 +69,8 @@ export type RuiFieldProps = {
  *   Default: `false`.
  * @attr {boolean} disabled - Dims the field and disables nested controls.
  *   Default: `false`.
+ * @attr {string} data-default-value - JSON-serialized default value for SSR hydration.
+ *   Default: `undefined`.
  *
  * @slot - Field content: label, control, description, error.
  *
@@ -76,9 +78,15 @@ export type RuiFieldProps = {
  * The composed surface is `.rui-field` (column). Error / description presentation
  * lives on `RuiFieldError` / `RuiFieldDescription` helpers (`@cssclass` there).
  *
+ * `rules` and `defaultValue` are object props — they only reach the element via
+ * `prop:` bindings from the `RuiField` view, not plain attributes.
+ *
  * **Why a custom element?** The field must observe an ancestor form context and
  * apply ARIA + error text to light-DOM nodes after mount — a JSX wrapper has no
  * lifecycle hook for that.
+ *
+ * @cssclass rui-field - Root column; wires the slotted control, label, description,
+ *   and error into the form-published presentation.
  */
 @customElement('rui-field')
 export class RuiField extends RadiantElement {

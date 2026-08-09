@@ -26,9 +26,26 @@ type RuiTreegridBindings = {
  * Expand/collapse with ArrowRight/ArrowLeft only from the first cell of a row
  * (APG cell-only focus). Enter or click on that cell toggles expansion; Space selects.
  *
+ * @summary Read-only treegrid with cell-only roving-tabindex navigation.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/
+ *
  * @element rui-treegrid
- * @fires rui-change
+ *
+ * @attr {string} label - Accessible name for the treegrid.
+ * @attr {string} value - Selected row's `data-row-id`. Default: `''`.
+ *
+ * @slot - Rows and groups authored as `role="row"` / `role="rowgroup"` markup.
+ *   Use the `RuiTreegrid` view (`columns`, `rows`) or author light-DOM rows directly.
+ *
+ * @fires rui-change - Emitted with `{ rowId, columnIndex }` when a cell activates.
+ *
+ * @cssclass rui-treegrid - Root surface (`role="treegrid"`).
+ *
+ * @remarks
+ * Row/cell/group classes are authored by the `RuiTreegrid` view. The host owns
+ * expand/collapse (`aria-expanded` + `hidden` on `role="rowgroup"`) and
+ * cell-only roving-tabindex focus.
  */
 @customElement('rui-treegrid')
 export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {

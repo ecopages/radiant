@@ -8,6 +8,14 @@ export type RuiMenuItem = {
 	disabled?: boolean;
 };
 
+/**
+ * Importable JSX helper around `<rui-menu-button>`.
+ *
+ * Accepts a `trigger` label and `items`; renders the popup items as
+ * `role="menuitem"` buttons.
+ *
+ * @cssclass rui-menu-button__item - Menu item (`role="menuitem"`).
+ */
 export function RuiMenuButton({
 	trigger,
 	items,

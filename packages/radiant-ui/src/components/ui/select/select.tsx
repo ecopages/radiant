@@ -9,7 +9,11 @@ export type RuiSelectControlProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Trigger row wrapper for the value button and toggle icon. */
+/**
+ * Trigger row wrapper for the value button and toggle icon.
+ *
+ * @cssclass rui-select__control - Trigger row; bordered, control-height surface.
+ */
 export function RuiSelectControl({ children, slot = 'trigger', class: className, ...props }: RuiSelectControlProps) {
 	return (
 		<div {...props} slot={slot} class={cx('rui-select__control', className)}>
@@ -23,7 +27,11 @@ export type RuiSelectTriggerProps = JsxHtmlPropsWithChildren<{
 	'aria-label'?: string;
 }>;
 
-/** Value button with `role="combobox"`. Place `RuiSelectValue` inside. */
+/**
+ * Value button with `role="combobox"`. Place `RuiSelectValue` inside.
+ *
+ * @cssclass rui-select__trigger - Value button; `role="combobox"` set by the controller.
+ */
 export function RuiSelectTrigger({ children, class: className, disabled, ...props }: RuiSelectTriggerProps) {
 	return (
 		<button
@@ -79,6 +87,8 @@ export type RuiSelectValueProps = JsxHtmlPropsWithChildren<{
  * the view SSRs the resolved label (or placeholder) so the control height does
  * not collapse before client sync. For multi-select chip UI, provide
  * `RuiTagGroup` as children instead of relying on the default text.
+ *
+ * @cssclass rui-select__value - Selected value / placeholder text.
  */
 export function RuiSelectValue({ children, slot, class: className, ...props }: RuiSelectValueProps) {
 	return (
@@ -92,7 +102,11 @@ export type RuiSelectListboxProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
 }>;
 
-/** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside. */
+/**
+ * Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside.
+ *
+ * @cssclass rui-select__listbox - Popup shell; composes `rui-popover` surface roles.
+ */
 export function RuiSelectListbox({ children, slot = 'listbox', class: className, ...props }: RuiSelectListboxProps) {
 	return (
 		<div
@@ -114,7 +128,11 @@ export type RuiSelectSearchProps = JsxHtmlProps<{
 	disabled?: boolean;
 }>;
 
-/** Search input for filtering inside `RuiAutocomplete` within a select listbox. */
+/**
+ * Search input for filtering inside `RuiAutocomplete` within a select listbox.
+ *
+ * @cssclass rui-select__search - Filtering input inside the popup.
+ */
 export function RuiSelectSearch({
 	placeholder,
 	slot = 'input',
