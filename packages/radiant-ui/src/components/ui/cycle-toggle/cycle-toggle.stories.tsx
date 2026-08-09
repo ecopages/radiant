@@ -1,11 +1,8 @@
 import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
-import type {
-	RuiCycleToggle as RuiCycleToggleElement,
-	RuiCycleToggleChangeDetail,
-	RuiCycleToggleProps,
-} from './cycle-toggle.script';
+import type { RuiCycleToggleChangeDetail, RuiCycleToggleProps } from './cycle-toggle.script';
+import { RuiCycleToggle as RuiCycleToggleElement } from './cycle-toggle.script';
 import { RuiCycleToggle, RuiCycleToggleItem } from './cycle-toggle';
 import { ThemePreferenceItemContent } from './theme-preference-icons';
 
