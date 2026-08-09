@@ -6,7 +6,7 @@ rui-calendar {
 
 @layer components {
 	.rui-calendar {
-		@apply rounded-container border border-border bg-background p-3 text-sm shadow-md;
+		@apply rounded-container border border-border bg-background p-inset text-sm shadow-sm;
 	}
 
 	.rui-calendar--multi {
@@ -14,7 +14,7 @@ rui-calendar {
 	}
 
 	.rui-calendar__months {
-		@apply flex flex-col gap-4 sm:flex-row sm:gap-3;
+		@apply flex flex-col gap-stack sm:flex-row sm:gap-stack;
 	}
 
 	.rui-calendar__month-panel {
@@ -22,7 +22,7 @@ rui-calendar {
 	}
 
 	.rui-calendar__header {
-		@apply mb-2 flex items-center justify-between gap-2;
+		@apply mb-2 flex items-center justify-between gap-inline;
 	}
 
 	.rui-calendar__nav-spacer {
@@ -124,7 +124,7 @@ rui-calendar {
 	}
 
 	.rui-calendar__today {
-		@apply cursor-pointer rounded-control border-0 bg-transparent px-3 py-1 text-sm text-primary;
+		@apply cursor-pointer rounded-control border-0 bg-transparent px-control-x py-control-y text-sm text-primary;
 	}
 
 	.rui-calendar__today:hover:not(:disabled) {

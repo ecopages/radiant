@@ -18,7 +18,7 @@ rui-checkbox {
 	}
 
 	.rui-checkbox__control {
-		@apply relative size-4 shrink-0 rounded-xs border border-border bg-background;
+		@apply relative size-4 shrink-0 rounded-control border border-border bg-background;
 	}
 
 	.rui-checkbox__input:focus-visible + .rui-checkbox__control {

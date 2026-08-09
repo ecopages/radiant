@@ -6,7 +6,7 @@
 	}
 
 	.rui-autocomplete__input {
-		@apply min-w-0 rounded-control border border-border bg-background px-3 py-2 text-sm text-on-background outline-none;
+		@apply min-w-0 rounded-control border border-border bg-background px-control-x py-control-y text-sm text-on-background outline-none;
 	}
 
 	.rui-autocomplete__input:focus-visible {
@@ -18,7 +18,7 @@
 	}
 
 	.rui-autocomplete__empty {
-		@apply px-3 py-2 text-sm text-on-surface;
+		@apply px-control-x py-control-y text-sm text-on-surface;
 	}
 
 	.rui-autocomplete__empty[hidden] {

@@ -192,7 +192,7 @@ rui-toaster[data-y-position='top'] rui-toast[data-expanded='true']::after {
 	}
 
 	.rui-toast {
-		@apply relative flex w-full items-center gap-2 rounded-container border px-control-x py-control-y text-sm shadow-md rui-sheen;
+		@apply relative flex w-full items-center gap-inline rounded-container border px-control-x py-control-y text-sm shadow-overlay rui-sheen;
 		@apply border-border bg-surface text-on-surface;
 	}
 

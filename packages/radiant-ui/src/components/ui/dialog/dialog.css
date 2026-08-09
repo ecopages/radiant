@@ -19,7 +19,7 @@ rui-dialog {
 	}
 
 	.rui-dialog__surface {
-		@apply relative z-modal w-full max-w-md rounded-container bg-background p-inset text-on-background shadow-lg;
+		@apply relative z-modal w-full max-w-md rounded-container bg-background p-inset text-on-background shadow-modal;
 		@apply outline-none;
 	}
 

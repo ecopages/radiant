@@ -6,7 +6,7 @@ rui-meter {
 
 @layer components {
 	.rui-meter {
-		@apply flex items-center gap-3 text-sm;
+		@apply flex items-center gap-inline text-sm;
 	}
 	.rui-meter__bar {
 		@apply h-3 w-48;

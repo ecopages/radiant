@@ -3,7 +3,7 @@
 
 @layer components {
 	.rui-popover {
-		@apply z-popover overflow-auto rounded-container border border-border bg-background shadow-md;
+		@apply z-popover overflow-auto rounded-container border border-border bg-background shadow-overlay;
 	}
 
 	.rui-popover--listbox {
