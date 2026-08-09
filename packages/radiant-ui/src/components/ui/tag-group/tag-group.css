@@ -31,7 +31,7 @@ rui-tag-group {
 	}
 
 	.rui-tag__remove:hover {
-		@apply bg-black/10 dark:bg-white/10;
+		@apply bg-on-background/10;
 	}
 
 	.rui-tag__remove:focus-visible {

@@ -30,7 +30,7 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='boxed'] {
-		@apply overflow-hidden rounded-sm border border-border bg-background shadow-xs;
+		@apply overflow-hidden rounded-container border border-border bg-background shadow-sm;
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__list {
@@ -38,7 +38,7 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__tab {
-		@apply px-3 py-1.5 text-center text-xs text-on-surface-container-low;
+		@apply px-control-x py-control-y text-center text-xs text-on-surface-container-low;
 		@apply hover:opacity-100;
 	}
 
@@ -51,7 +51,7 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__panel {
-		@apply bg-background px-4 py-3;
+		@apply bg-background p-inset;
 	}
 
 	rui-tabs[variant='ghost'] {
@@ -63,10 +63,10 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='ghost'] .rui-tabs__tab {
-		@apply rounded-t-md px-control-x py-2 text-sm;
+		@apply rounded-t-control px-control-x py-control-y text-sm;
 	}
 
 	rui-tabs[variant='ghost'] .rui-tabs__panel {
-		@apply px-1 py-4;
+		@apply px-1 py-inset;
 	}
 }

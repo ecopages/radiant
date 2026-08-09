@@ -6,7 +6,7 @@ rui-switch {
 
 @layer components {
 	.rui-switch {
-		@apply inline-flex items-center gap-2;
+		@apply inline-flex items-center gap-inline;
 		@apply cursor-pointer text-sm text-on-background;
 	}
 
@@ -27,7 +27,7 @@ rui-switch {
 		--rui-switch-height: 1.5rem;
 		--rui-switch-thumb-size: 1rem;
 
-		@apply relative inline-flex h-(--rui-switch-height) w-(--rui-switch-width) shrink-0 items-center rounded-lg p-1;
+		@apply relative inline-flex h-(--rui-switch-height) w-(--rui-switch-width) shrink-0 items-center rounded-pill p-1;
 		@apply bg-on-background/20 transition-colors duration-normal;
 	}
 
@@ -44,7 +44,7 @@ rui-switch {
 	}
 
 	.rui-switch__thumb {
-		@apply pointer-events-none absolute top-1/2 left-1 size-(--rui-switch-thumb-size) -translate-y-1/2 rounded-md bg-on-background;
+		@apply pointer-events-none absolute top-1/2 left-1 size-(--rui-switch-thumb-size) -translate-y-1/2 rounded-full bg-on-background;
 		@apply transition-[left,right,transform] duration-normal ease-in-out;
 	}
 

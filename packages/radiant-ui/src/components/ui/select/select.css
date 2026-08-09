@@ -19,7 +19,7 @@ rui-select {
 	}
 
 	.rui-select__trigger {
-		@apply inline-flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 text-start text-on-background outline-none;
+		@apply inline-flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-inline border-0 bg-transparent px-control-x py-control-y text-start text-on-background outline-none;
 		font-size: var(--text-control, 0.875rem);
 	}
 
@@ -54,7 +54,7 @@ rui-select {
 	}
 
 	.rui-select__search {
-		@apply m-1 min-w-0 rounded-control border border-border bg-background px-3 py-2 text-on-background outline-none;
+		@apply m-1 min-w-0 rounded-control border border-border bg-background px-control-x py-control-y text-on-background outline-none;
 	}
 
 	.rui-select__search:focus-visible {

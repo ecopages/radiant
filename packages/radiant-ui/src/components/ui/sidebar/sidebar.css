@@ -83,7 +83,7 @@ rui-sidebar {
 		 * own visibility. Only style the inner button chrome here.
 		 */
 		rui-sidebar-trigger .rui-sidebar__trigger {
-			@apply size-9 rounded-lg border border-border/50 bg-background/40 backdrop-blur-sm;
+			@apply size-9 rounded-control border border-border/50 bg-background/40 backdrop-blur-sm;
 		}
 
 		.rui-sidebar-provider__body {
@@ -118,7 +118,7 @@ rui-sidebar {
 }
 
 .rui-sidebar[data-variant='inset'] {
-	@apply rounded-lg border border-border bg-background;
+	@apply rounded-container border border-border bg-background;
 }
 
 .rui-sidebar[data-state='collapsed'] {
@@ -198,7 +198,7 @@ rui-sidebar {
 }
 
 .rui-sidebar__header {
-	@apply flex h-14 shrink-0 flex-row items-center gap-2 border-b border-border px-3;
+	@apply flex h-14 shrink-0 flex-row items-center gap-inline border-b border-border px-control-x;
 }
 
 .rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__header {
@@ -218,11 +218,11 @@ rui-sidebar {
 }
 
 .rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__content {
-	@apply gap-2 overflow-x-hidden px-1;
+	@apply gap-inline overflow-x-hidden px-1;
 }
 
 .rui-sidebar__footer {
-	@apply flex shrink-0 flex-col gap-2 border-t border-border p-3;
+	@apply flex shrink-0 flex-col gap-inline border-t border-border p-3;
 }
 
 .rui-sidebar[data-collapsible='icon'][data-state='collapsed'] .rui-sidebar__footer {
@@ -246,7 +246,7 @@ rui-sidebar {
 }
 
 .rui-sidebar__group-action {
-	@apply inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-on-surface;
+	@apply inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-control border-0 bg-transparent p-0 text-on-surface;
 	transition: background-color var(--duration-fast) var(--ease-standard);
 }
 
@@ -267,7 +267,7 @@ rui-sidebar {
 }
 
 .rui-sidebar__menu-button {
-	@apply flex w-full min-w-0 items-center gap-2 rounded-md border-0 bg-transparent px-2 py-1.5 text-left text-sm cursor-pointer text-on-background;
+	@apply flex w-full min-w-0 items-center gap-inline rounded-control border-0 bg-transparent px-2 py-1.5 text-left text-sm cursor-pointer text-on-background;
 	transition: background-color var(--duration-fast) var(--ease-standard);
 }
 
