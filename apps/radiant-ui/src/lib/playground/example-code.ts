@@ -6,6 +6,8 @@ function str(props: Record<string, unknown>, key: string, fallback = ''): string
 function buildAlertExampleCode(props: Record<string, unknown>, children?: string): string {
 	const variant = str(props, 'variant', 'info');
 	const layout = str(props, 'layout', 'inline');
+	const dismissible = props.dismissible === true;
+	const dismissAttr = dismissible ? ' dismissible' : '';
 
 	if (layout === 'banner') {
 		const title = str(props, 'title', 'Documentation preview');
@@ -13,7 +15,7 @@ function buildAlertExampleCode(props: Record<string, unknown>, children?: string
 		return [
 			"import { RuiAlert, RuiAlertTitle, RuiAlertDescription } from '@ecopages/radiant-ui/alert';",
 			'',
-			`<RuiAlert variant="${variant}" layout="banner">`,
+			`<RuiAlert variant="${variant}" layout="banner"${dismissAttr}>`,
 			`  <RuiAlertTitle>${title}</RuiAlertTitle>`,
 			'  <RuiAlertDescription>',
 			`    <p>${description}</p>`,
@@ -26,7 +28,7 @@ function buildAlertExampleCode(props: Record<string, unknown>, children?: string
 	return [
 		"import { RuiAlert, RuiAlertIcon } from '@ecopages/radiant-ui/alert';",
 		'',
-		`<RuiAlert variant="${variant}" layout="inline">`,
+		`<RuiAlert variant="${variant}" layout="inline"${dismissAttr}>`,
 		`  <RuiAlertIcon variant="${variant}" />`,
 		`  <span>${message}</span>`,
 		'</RuiAlert>',

@@ -11,7 +11,11 @@ const Canvas = eco.component<CanvasProps, JsxRenderable>({
 		const id = getStoryId(of);
 		return (
 			<radiant-docs-canvas class="unstyled" data={{ storyId: id }} aria-live="polite">
-				{renderStory(meta, of, getStoryArgs(meta, of))}
+				<div class="docs-story__preview">
+					<div class="docs-story__preview-mount" data-docs-preview="">
+						{renderStory(meta, of, getStoryArgs(meta, of))}
+					</div>
+				</div>
 			</radiant-docs-canvas>
 		);
 	},
