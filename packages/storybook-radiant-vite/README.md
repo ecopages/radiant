@@ -88,6 +88,32 @@ Story CSF
 
 ## Writing stories
 
+### `radiantMeta` (radiant-ui and other design systems)
+
+Published component packages should stay free of Storybook symbols. Declare SSR linking and component CSS in stories:
+
+```ts
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import { RuiAlert as RuiAlertElement } from './alert.script';
+import { RuiAlert } from './alert';
+
+const meta = {
+	title: 'Components/Alert',
+	component: RuiAlert,
+	args: { variant: 'info' },
+};
+
+radiantMeta(meta, { element: RuiAlertElement, stylesheets: ['./alert.css'] });
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+```
+
+- `element` — host `RadiantElement` for SSR / hydration (pass in the second argument; omit for presentational views).
+- `stylesheets` — paths relative to the story file (second argument); the Vite stamp transform injects side-effect CSS imports.
+- `export default` must be the plain `meta` object — Storybook's CSF indexer does not accept `export default radiantMeta({ ... })`.
+- Use `withStylesheets` / `parameters.stylesheets` only for story-scoped extras (docs skins, etc.).
+
 ### Client JSX view
 
 ```ts
@@ -204,7 +230,7 @@ The framework registers a toolbar global `radiantRenderMode`:
 
 1. Preview calls `POST /__radiant_ssr` with `{ ssrModule, ssrExport?, viewModule?, viewExport?, storyModule?, storyExport?, args, mode }`.
 2. Vite middleware loads `@ecopages/vite-plugin-radiant/ssr` (`renderSsrComponent`) and your script/view/story modules.
-3. For `defineRadiantView` stories, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
+3. For `radiantMeta` stories with `element`, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
 4. `@ecopages/*` stay **external** in SSR (via `radiant()`) so ALS / runtime shims are singletons.
 5. `renderSsrComponent` produces markup + assets (CSS via `radiant({ elements: true })`).
 6. Preview sets `canvas.innerHTML = markup`. For `ssr-hydrate`, it imports the view/client module and relies on `install-hydrator`.

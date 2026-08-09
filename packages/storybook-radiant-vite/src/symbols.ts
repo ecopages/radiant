@@ -4,7 +4,7 @@ export const RADIANT_SCRIPT_MODULE = Symbol.for('@ecopages/storybook-radiant.scr
 /** Export name stamped alongside {@link RADIANT_SCRIPT_MODULE}. */
 export const RADIANT_SCRIPT_EXPORT = Symbol.for('@ecopages/storybook-radiant.scriptExport');
 
-/** Vite-resolved module URL stamped on JSX view exports (`defineRadiantView`). */
+/** Vite-resolved module URL stamped on JSX view exports used as `meta.component`. */
 export const RADIANT_VIEW_MODULE = Symbol.for('@ecopages/storybook-radiant.viewModule');
 
 /** Vite-resolved module URL stamped on CSF story files (`*.stories.*`). */
