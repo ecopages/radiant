@@ -21,8 +21,12 @@ export type ToastStageArgs = {
 function ToastDemoTriggers() {
 	return (
 		<>
-			<RuiButton type="button" on:click={() => toast('Event has been created')}>Show default toast</RuiButton>
-			<RuiButton type="button" on:click={() => toast.success('Profile saved')}>Show success toast</RuiButton>
+			<RuiButton type="button" on:click={() => toast('Event has been created')}>
+				Show default toast
+			</RuiButton>
+			<RuiButton type="button" on:click={() => toast.success('Profile saved')}>
+				Show success toast
+			</RuiButton>
 			<RuiButton
 				type="button"
 				on:click={() => toast.error('Unable to reach the server', { description: 'Try again in a moment.' })}
@@ -51,7 +55,9 @@ function ToastDemoTriggers() {
 			>
 				Show promise toast
 			</RuiButton>
-			<RuiButton type="button" variant="ghost" on:click={() => toast.dismiss()}>Dismiss all toasts</RuiButton>
+			<RuiButton type="button" variant="ghost" on:click={() => toast.dismiss()}>
+				Dismiss all toasts
+			</RuiButton>
 		</>
 	);
 }

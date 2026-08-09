@@ -24,11 +24,7 @@ const meta = {
 		alert: false,
 		title: 'Edit profile',
 		children: <p>Update your display name and email address.</p>,
-		actions: (
-			<RuiButton type="button">
-				Save
-			</RuiButton>
-		),
+		actions: <RuiButton type="button">Save</RuiButton>,
 	},
 	render: (args) => (
 		<RuiDialog id={args.id} open={args.open} alert={args.alert} title={args.title} actions={args.actions}>
@@ -130,9 +126,7 @@ export const Composed: Story = {
 				<p>Send an invitation link to add someone to your workspace.</p>
 			</RuiDialogBody>
 			<RuiDialogActions>
-				<RuiButton type="button">
-					Send invite
-				</RuiButton>
+				<RuiButton type="button">Send invite</RuiButton>
 			</RuiDialogActions>
 		</RuiDialog>
 	),
