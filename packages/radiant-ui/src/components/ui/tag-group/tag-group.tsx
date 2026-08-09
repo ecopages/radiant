@@ -1,8 +1,7 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTagGroupProps } from './tag-group.script';
-import { RuiTagGroup as RuiTagGroupElement } from './tag-group.script';
+import './tag-group.script';
 
 export type RuiTagListProps = JsxHtmlPropsWithChildren<{
 	slot?: string;
@@ -66,37 +65,33 @@ export function RuiTagRemove({
 
 export type RuiTagData = { value: string; label: JsxRenderable; disabled?: boolean };
 
-export const RuiTagGroup = defineRadiantView(
-	RuiTagGroupElement,
-	({
-		tags,
-		children,
-		...props
-	}: JsxHtmlPropsWithChildren<
-		RuiTagGroupProps & {
-			slot?: string;
-			tags?: RuiTagData[];
-		}
-	>) => {
-		if (tags != null) {
-			return (
-				<rui-tag-group {...props}>
-					<RuiTagList>
-						{tags.map((tag) => (
-							<RuiTag
-								value={tag.value}
-								label={typeof tag.label === 'string' ? tag.label : undefined}
-								disabled={tag.disabled}
-							>
-								{tag.label}
-							</RuiTag>
-						))}
-					</RuiTagList>
-				</rui-tag-group>
-			);
-		}
+export function RuiTagGroup({
+	tags,
+	children,
+	...props
+}: JsxHtmlPropsWithChildren<
+	RuiTagGroupProps & {
+		slot?: string;
+		tags?: RuiTagData[];
+	}
+>) {
+	if (tags != null) {
+		return (
+			<rui-tag-group {...props}>
+				<RuiTagList>
+					{tags.map((tag) => (
+						<RuiTag
+							value={tag.value}
+							label={typeof tag.label === 'string' ? tag.label : undefined}
+							disabled={tag.disabled}
+						>
+							{tag.label}
+						</RuiTag>
+					))}
+				</RuiTagList>
+			</rui-tag-group>
+		);
+	}
 
-		return <rui-tag-group {...props}>{children}</rui-tag-group>;
-	},
-	{ stylesheets: ['./tag-group.css'] },
-);
+	return <rui-tag-group {...props}>{children}</rui-tag-group>;
+}

@@ -1,7 +1,8 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiSwitch } from './switch';
+import { RuiSwitch as RuiSwitchElement } from './switch.script';
 
 const meta = {
 	title: 'Components/Switch',
@@ -11,7 +12,8 @@ const meta = {
 		disabled: false,
 		children: 'Notifications',
 	},
-} satisfies Meta<typeof RuiSwitch>;
+};
+radiantMeta(meta, { element: RuiSwitchElement, stylesheets: ['./switch.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

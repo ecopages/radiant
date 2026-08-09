@@ -1,10 +1,10 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiSidebarProps } from './sidebar.script';
-import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
+import './sidebar.script';
+
 import type { RuiSidebarTriggerProps } from './sidebar-trigger.script';
-import { RuiSidebarTrigger as RuiSidebarTriggerElement } from './sidebar-trigger.script';
+import './sidebar-trigger.script';
 
 export type RuiSidebarProviderProps = {
 	/**
@@ -307,24 +307,23 @@ export type RuiSidebarViewProps = JsxHtmlPropsWithChildren<
 	}
 >;
 
-export const RuiSidebar = defineRadiantView(
-	RuiSidebarElement,
-	({
-		children,
-		id,
-		defaultOpen,
-		mobileDefaultOpen,
-		open,
-		defaultWidth,
-		width,
-		resizable,
-		mobileBreakpoint,
-		matchActive,
-		matchMode,
-		scrollActiveOnMount,
-		navigationEvents,
-		...props
-	}: RuiSidebarViewProps) => (
+export function RuiSidebar({
+	children,
+	id,
+	defaultOpen,
+	mobileDefaultOpen,
+	open,
+	defaultWidth,
+	width,
+	resizable,
+	mobileBreakpoint,
+	matchActive,
+	matchMode,
+	scrollActiveOnMount,
+	navigationEvents,
+	...props
+}: RuiSidebarViewProps) {
+	return (
 		<rui-sidebar
 			{...props}
 			id={id}
@@ -342,9 +341,8 @@ export const RuiSidebar = defineRadiantView(
 		>
 			{children}
 		</rui-sidebar>
-	),
-	{ stylesheets: ['./sidebar.css'] },
-);
+	);
+}
 
 export type RuiSidebarTriggerViewProps = JsxHtmlPropsWithChildren<
 	RuiSidebarTriggerProps & {
@@ -352,18 +350,17 @@ export type RuiSidebarTriggerViewProps = JsxHtmlPropsWithChildren<
 	}
 >;
 
-export const RuiSidebarTrigger = defineRadiantView(
-	RuiSidebarTriggerElement,
-	({
-		children,
-		class: className,
-		controls,
-		triggerLabel,
-		placement,
-		variant,
-		size,
-		...props
-	}: RuiSidebarTriggerViewProps) => (
+export function RuiSidebarTrigger({
+	children,
+	class: className,
+	controls,
+	triggerLabel,
+	placement,
+	variant,
+	size,
+	...props
+}: RuiSidebarTriggerViewProps) {
+	return (
 		<rui-sidebar-trigger
 			{...props}
 			class={cx(className, placement && `rui-sidebar-trigger-placement--${placement}`)}
@@ -376,6 +373,5 @@ export const RuiSidebarTrigger = defineRadiantView(
 		>
 			{children}
 		</rui-sidebar-trigger>
-	),
-	{ stylesheets: ['./sidebar.css'] },
-);
+	);
+}

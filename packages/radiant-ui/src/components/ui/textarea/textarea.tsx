@@ -1,6 +1,5 @@
 import type { JsxHtmlProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 export type RuiTextareaSize = 'sm' | 'md' | 'lg';
 
@@ -37,5 +36,3 @@ export function RuiTextarea(props: RuiTextareaProps) {
 		/>
 	);
 }
-
-attachRadiantStylesheets(RuiTextarea, ['./textarea.css'], import.meta.url);

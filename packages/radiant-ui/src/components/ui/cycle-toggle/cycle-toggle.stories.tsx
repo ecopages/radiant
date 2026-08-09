@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type {
@@ -46,7 +46,8 @@ const meta = {
 		label: 'Theme',
 	},
 	render: (args: RuiCycleToggleProps) => renderThemePreference(args),
-} satisfies Meta<RuiCycleToggleProps>;
+};
+radiantMeta(meta, { element: RuiCycleToggleElement, stylesheets: ['./cycle-toggle.css', '../button/button.css'] });
 
 export default meta;
 

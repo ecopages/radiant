@@ -1,7 +1,6 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { Intrinsic, type IntrinsicTag } from '@/lib/intrinsic';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 import { RuiHeadline, type RuiHeadlineAs } from '../headline/headline';
 
 export type RuiHeadingAlign = 'start' | 'center';
@@ -74,5 +73,3 @@ export function RuiHeadingDescription({ children, class: className, ...props }: 
 		</p>
 	);
 }
-
-attachRadiantStylesheets(RuiHeading, ['./heading.css', '../headline/headline.css'], import.meta.url);

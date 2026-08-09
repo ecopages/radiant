@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiWindowSplitter } from './window-splitter';
+import { RuiWindowSplitter as RuiWindowSplitterElement } from './window-splitter.script';
 
 const meta = {
 	title: 'Components/Window Splitter',
@@ -12,7 +13,8 @@ const meta = {
 		primary: <p>Primary pane</p>,
 		secondary: <p>Secondary pane</p>,
 	},
-} satisfies Meta<typeof RuiWindowSplitter>;
+};
+radiantMeta(meta, { element: RuiWindowSplitterElement, stylesheets: ['./window-splitter.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

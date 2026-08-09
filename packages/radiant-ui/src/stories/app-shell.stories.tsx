@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import {
 	RuiSidebar,
 	RuiSidebarTrigger,
@@ -103,7 +103,8 @@ const meta = {
 	title: 'Examples/App Shell',
 	parameters: { layout: 'fullscreen' },
 	tags: ['test'],
-} satisfies Meta;
+};
+radiantMeta(meta, { stylesheets: ['../components/ui/sidebar/sidebar.css'] });
 
 export default meta;
 type Story = StoryObj<typeof meta>;

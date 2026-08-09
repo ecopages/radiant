@@ -52,10 +52,9 @@ export function withStylesheets(stylesheets: StylesheetEntry[]): { stylesheets: 
  * Clears any stylesheets injected for the previous story before applying the next set.
  *
  * @remarks
- * Base component CSS is declared as path strings on `defineRadiantView` /
- * `attachRadiantStylesheets` and reintroduced as side-effect imports by the
- * Storybook view-module stamp transform. Use this decorator only for skins and
- * other story-scoped extras.
+ * Base component CSS is declared via `radiantMeta(meta, { stylesheets })` in story files
+ * and reintroduced as side-effect imports by the Storybook stamp transform. Use this
+ * decorator only for skins and other story-scoped extras.
  */
 export const withStylesheetsDecorator: Decorator = (Story, context) => {
 	clearActiveStylesheets();

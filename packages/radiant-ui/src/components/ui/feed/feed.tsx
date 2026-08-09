@@ -1,6 +1,5 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiFeedProps = JsxHtmlPropsWithChildren<{
 	/** Accessible name for the feed landmark. */
@@ -149,5 +148,3 @@ export function RuiFeedMeta({ children, class: className, ...props }: RuiFeedMet
 		</div>
 	);
 }
-
-attachRadiantStylesheets(RuiFeed, ['./feed.css'], import.meta.url);

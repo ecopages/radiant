@@ -1,8 +1,7 @@
 import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiCycleToggleProps } from './cycle-toggle.script';
-import { RuiCycleToggle as RuiCycleToggleElement } from './cycle-toggle.script';
+import './cycle-toggle.script';
 
 export type RuiCycleToggleItemProps = {
 	id: string;
@@ -50,22 +49,20 @@ export function RuiCycleToggleButton({
 	);
 }
 
-export const RuiCycleToggle = defineRadiantView(
-	RuiCycleToggleElement,
-	({
-		children,
-		value,
-		variant,
-		size,
-		label,
-		disabled,
-		...props
-	}: JsxHtmlPropsWithChildren<RuiCycleToggleProps & { slot?: string }>) => (
+export function RuiCycleToggle({
+	children,
+	value,
+	variant,
+	size,
+	label,
+	disabled,
+	...props
+}: JsxHtmlPropsWithChildren<RuiCycleToggleProps & { slot?: string }>) {
+	return (
 		<rui-cycle-toggle {...props} value={value} variant={variant} size={size} label={label} disabled={disabled}>
 			<RuiCycleToggleButton variant={variant} size={size} disabled={disabled}>
 				{children}
 			</RuiCycleToggleButton>
 		</rui-cycle-toggle>
-	),
-	{ stylesheets: ['./cycle-toggle.css', '../button/button.css'] },
-);
+	);
+}

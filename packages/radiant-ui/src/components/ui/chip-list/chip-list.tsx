@@ -1,6 +1,5 @@
 import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
 export type RuiChipListProps = JsxHtmlPropsWithChildren<{
 	'aria-label'?: string;
@@ -26,5 +25,3 @@ export function RuiChipListItem({ children, class: className, ...props }: RuiChi
 		</li>
 	);
 }
-
-attachRadiantStylesheets(RuiChipList, ['./chip-list.css'], import.meta.url);

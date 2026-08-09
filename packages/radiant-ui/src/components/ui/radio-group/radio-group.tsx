@@ -1,7 +1,6 @@
 import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiRadioGroupProps } from './radio-group.script';
-import { RuiRadioGroup as RuiRadioGroupElement } from './radio-group.script';
+import './radio-group.script';
 
 export type RuiRadioOption = {
 	value: string;
@@ -9,9 +8,11 @@ export type RuiRadioOption = {
 	disabled?: boolean;
 };
 
-export const RuiRadioGroup = defineRadiantView(
-	RuiRadioGroupElement,
-	({ options, ...props }: JsxHtmlProps<RuiRadioGroupProps & { slot?: string; options: RuiRadioOption[] }>) => (
+export function RuiRadioGroup({
+	options,
+	...props
+}: JsxHtmlProps<RuiRadioGroupProps & { slot?: string; options: RuiRadioOption[] }>) {
+	return (
 		<rui-radio-group {...props}>
 			{options.map((option) => (
 				<label class="rui-radio">
@@ -27,6 +28,5 @@ export const RuiRadioGroup = defineRadiantView(
 				</label>
 			))}
 		</rui-radio-group>
-	),
-	{ stylesheets: ['./radio-group.css'] },
-);
+	);
+}

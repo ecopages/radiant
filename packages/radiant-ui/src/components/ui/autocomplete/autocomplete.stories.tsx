@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import '../menu-button/menu-button.script';
@@ -15,6 +15,7 @@ import {
 } from '../select';
 import { RuiTagGroup } from '../tag-group';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty, RuiAutocompleteInput } from './autocomplete';
+import { RuiAutocomplete as RuiAutocompleteElement } from './autocomplete.script';
 
 const TAG_OPTIONS = [
 	{ value: 'news', label: 'News' },
@@ -55,7 +56,17 @@ const meta = {
 			},
 		},
 	},
-} satisfies Meta<typeof RuiAutocomplete>;
+};
+radiantMeta(meta, {
+	element: RuiAutocompleteElement,
+	stylesheets: [
+		'./autocomplete.css',
+		'../listbox/listbox.css',
+		'../tag-group/tag-group.css',
+		'../select/select.css',
+		'../menu-button/menu-button.css',
+	],
+});
 
 export default meta;
 type Story = StoryObj<typeof meta>;

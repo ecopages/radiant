@@ -1,13 +1,11 @@
 import type { JsxHtmlProps } from '@ecopages/jsx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiTocProps } from './toc.script';
-import { RuiToc as RuiTocElement } from './toc.script';
+import './toc.script';
 
 export type RuiTocViewProps = JsxHtmlProps<RuiTocProps>;
 
-export const RuiToc = defineRadiantView(
-	RuiTocElement,
-	({ target, headingSelector, label, scrollOffset, navigationEvents, ...props }: RuiTocViewProps) => (
+export function RuiToc({ target, headingSelector, label, scrollOffset, navigationEvents, ...props }: RuiTocViewProps) {
+	return (
 		<rui-toc
 			{...props}
 			prop:target={target}
@@ -16,6 +14,5 @@ export const RuiToc = defineRadiantView(
 			prop:scrollOffset={scrollOffset}
 			prop:navigationEvents={navigationEvents}
 		/>
-	),
-	{ stylesheets: ['./toc.css'] },
-);
+	);
+}

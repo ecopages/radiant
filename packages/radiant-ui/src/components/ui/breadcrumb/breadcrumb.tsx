@@ -1,8 +1,7 @@
 import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiBreadcrumbProps } from './breadcrumb.script';
-import { RuiBreadcrumb as RuiBreadcrumbElement } from './breadcrumb.script';
+import './breadcrumb.script';
 
 export type RuiBreadcrumbViewProps = JsxHtmlPropsWithChildren<RuiBreadcrumbProps & { slot?: string }>;
 
@@ -11,11 +10,9 @@ export type RuiBreadcrumbViewProps = JsxHtmlPropsWithChildren<RuiBreadcrumbProps
  * or `>`); empty `RuiBreadcrumbSeparator` nodes pick it up via CSS — no context.
  * Pass children into a separator to override for that instance.
  */
-export const RuiBreadcrumb = defineRadiantView(
-	RuiBreadcrumbElement,
-	({ children, ...props }: RuiBreadcrumbViewProps) => <rui-breadcrumb {...props}>{children}</rui-breadcrumb>,
-	{ stylesheets: ['./breadcrumb.css'] },
-);
+export function RuiBreadcrumb({ children, ...props }: RuiBreadcrumbViewProps) {
+	return <rui-breadcrumb {...props}>{children}</rui-breadcrumb>;
+}
 
 export type RuiBreadcrumbListProps = JsxHtmlPropsWithChildren;
 

@@ -1,7 +1,6 @@
 import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
-import { defineRadiantView } from '@/lib/radiant-view';
 import type { RuiMenubarProps } from './menubar.script';
-import { RuiMenubar as RuiMenubarElement } from './menubar.script';
+import './menubar.script';
 
 export type RuiMenubarItem = {
 	id: string;
@@ -10,9 +9,11 @@ export type RuiMenubarItem = {
 	items?: Array<{ id: string; label: JsxRenderable }>;
 };
 
-export const RuiMenubar = defineRadiantView(
-	RuiMenubarElement,
-	({ items, ...props }: JsxHtmlProps<RuiMenubarProps & { slot?: string; items: RuiMenubarItem[] }>) => (
+export function RuiMenubar({
+	items,
+	...props
+}: JsxHtmlProps<RuiMenubarProps & { slot?: string; items: RuiMenubarItem[] }>) {
+	return (
 		<rui-menubar {...props}>
 			{items.map((item) => (
 				<div class="rui-menubar__root" data-ref="menubar-root">
@@ -44,6 +45,5 @@ export const RuiMenubar = defineRadiantView(
 				</div>
 			))}
 		</rui-menubar>
-	),
-	{ stylesheets: ['./menubar.css'] },
-);
+	);
+}
