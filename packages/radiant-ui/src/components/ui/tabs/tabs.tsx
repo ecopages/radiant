@@ -13,6 +13,8 @@ export type RuiTabProps = {
 	children: JsxRenderable;
 	class?: string;
 	disabled?: boolean;
+	/** Whether this tab is selected in the initial document. */
+	selected?: boolean;
 };
 
 export type RuiTabPanelsProps = JsxHtmlPropsWithChildren;
@@ -21,7 +23,9 @@ export type RuiTabPanelProps = {
 	id: string;
 	children: JsxRenderable;
 	class?: string;
-	/** Whether the panel is initially hidden before the tabs element initializes. */
+	/** Whether this panel is selected in the initial document. */
+	selected?: boolean;
+	/** Whether the panel is initially hidden when no selection is provided. */
 	hidden?: boolean;
 };
 
@@ -35,7 +39,7 @@ export function RuiTabList({ children, class: className, ...props }: RuiTabListP
 }
 
 /** Tab control. `id` pairs with the matching `RuiTabPanel` id. */
-export function RuiTab({ id, children, class: className, disabled }: RuiTabProps) {
+export function RuiTab({ id, children, class: className, disabled, selected }: RuiTabProps) {
 	return (
 		<button
 			type="button"
@@ -44,8 +48,8 @@ export function RuiTab({ id, children, class: className, disabled }: RuiTabProps
 			id={`tab-${id}`}
 			data-tab-value={id}
 			aria-controls={`panel-${id}`}
-			aria-selected="false"
-			tabindex={-1}
+			aria-selected={String(selected ?? false)}
+			tabindex={selected ? 0 : -1}
 			disabled={disabled}
 		>
 			{children}
@@ -63,7 +67,7 @@ export function RuiTabPanels({ children, class: className, ...props }: RuiTabPan
 }
 
 /** Tab panel paired with a `RuiTab` by `id`. */
-export function RuiTabPanel({ id, children, class: className, hidden }: RuiTabPanelProps) {
+export function RuiTabPanel({ id, children, class: className, selected, hidden }: RuiTabPanelProps) {
 	return (
 		<div
 			class={cx('rui-tabs__panel', className)}
@@ -72,7 +76,7 @@ export function RuiTabPanel({ id, children, class: className, hidden }: RuiTabPa
 			data-tab-value={id}
 			aria-labelledby={`tab-${id}`}
 			tabindex={0}
-			hidden={hidden}
+			hidden={selected === undefined ? hidden : !selected}
 		>
 			{children}
 		</div>
