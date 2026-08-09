@@ -1,6 +1,6 @@
 ---
 title: Toolbar
-description: Toolbars group formatting or view controls that affect a shared context — rich text editors, chart controls, or data tables.
+description: Toolbars group formatting or view controls that affect a shared context, such as rich text editors, chart controls, or data tables.
 category: Actions
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Toolbar
 
-<p class="docs-lede">Toolbars group formatting or view controls that affect a shared context — rich text editors, chart controls, or data tables.</p>
+<p class="docs-lede">Toolbars group formatting or view controls that affect a shared context, such as rich text editors, chart controls, or data tables.</p>
 
 ## Try it
 
@@ -45,7 +45,53 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 
 ## Exclusive toggles
 
-<p>Use `exclusiveToggles` for view modes where only one option — list vs grid — can be active at a time.</p>
+<p>Use `exclusiveToggles` for view modes where only one option (list vs grid) can be active at a time.</p>
+
+## Theming
+
+Toolbar surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Bar (`rui-toolbar`) | `surface`, `border`, `rounded-container` |
+| Pressed toggle (`rui-button--ghost` / `--outline[aria-pressed='true']`) | `background`, `on-background`, `shadow-sm` |
+
+Geometry shares control tokens (`--size-control-*`, `--space-control-*`) with `RuiButton`. Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiToolbar` is a custom element (`<rui-toolbar>`) rendering a `role="toolbar"` container. Place `RuiButton` toggles or other focusable controls as children.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the toolbar region. |
+| `exclusive-toggles` | `boolean` | `false` | Only one toggle button stays pressed at a time. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Toolbar controls, buttons, links, inputs, selects. |
+
+### CSS classes
+
+Public BEM classes on the composed surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-toolbar` | Toolbar surface (`role="toolbar"`). |
+
+Pressed-toggle styling applies to `rui-button--ghost` / `rui-button--outline` inside the toolbar (see Button). Toggles expose their state via `aria-pressed`.
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Bar | `--surface`, `--border` |
+| Pressed toggle | `--background`, `--on-background`, `--shadow-sm` |
+| Focus ring | `--focus-ring` |
 
 ## Accessibility
 

@@ -41,10 +41,48 @@ import { RuiHeadline } from '@ecopages/radiant-ui/headline';
 
 ## Pick the right level
 
-<p>Match `as` to the document outline — one `h1` per page, then nest `h2`–`h4` without skipping levels.</p>
+<p>Match `as` to the document outline: one `h1` per page, then nest `h2`–`h4` without skipping levels.</p>
+
+## Theming
+
+Headline text maps to the **`on-background`** role, never a palette step:
+
+| Part | CSS roles |
+| --- | --- |
+| Root | `on-background`, `font-semibold`, `leading-compact` |
+| Sizes | `--text-xl` (sm) · `--text-3xl` (md) · `--text-4xl` (lg/xl) |
+
+Sizes come from `--text-*` tokens. Override at the theme layer, not in component CSS.
 
 ## Accessibility
 
 - Use semantic heading elements (`h1`–`h6`) via `as` for proper document structure.
 - Visual size can differ from semantic level when the outline requires it, but document the intent.
-- Do not use headlines purely for styling body text — use paragraph styles instead.
+- Do not use headlines purely for styling body text; use paragraph styles instead.
+
+## API
+
+`RuiHeadline` is a presentational JSX view, no custom element.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `as` | `h1`–`h6` · `p` · `span` | `h2` | Semantic element. |
+| `size` | `sm` · `md` · `lg` · `xl` · `false` | `md` | Type scale; `false` when a parent owns size. |
+| `id` | `string` | | Element id. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-headline` · `--size-sm` · `--size-md` · `--size-lg` · `--size-xl` | Root + size variants. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Text | `--on-background` |
+| Type scale | `--text-xl`, `--text-3xl`, `--text-4xl`, `--leading-compact` |

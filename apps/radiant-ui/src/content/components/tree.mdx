@@ -1,6 +1,6 @@
 ---
 title: Tree
-description: Trees display hierarchical data — file systems, org charts, or nested categories — with expand/collapse per branch.
+description: Trees display hierarchical data (file systems, org charts, or nested categories) with expand/collapse per branch.
 category: Data display
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Tree
 
-<p class="docs-lede">Trees display hierarchical data — file systems, org charts, or nested categories — with expand/collapse per branch.</p>
+<p class="docs-lede">Trees display hierarchical data (file systems, org charts, or nested categories) with expand/collapse per branch.</p>
 
 ## Try it
 
@@ -46,6 +46,71 @@ const nodes: RuiTreeNode[] = [
 ## Node selection
 
 <p>Bind `value` to highlight the active node. Use keyboard arrows to navigate and expand branches.</p>
+
+## Theming
+
+Tree maps to **semantic surface and status roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Surface (`rui-tree`) | `background`, `on-background`, `border`, `radius-container`, `shadow-sm` |
+| Branch guides | `border` |
+| Node hover | `surface` |
+| Selected node | `primary-container`, `on-primary-container` |
+| Node focus | `surface`, `focus-ring` |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiTree` is a custom element (`<rui-tree>`) that owns selection, expansion, and roving-tabindex navigation; the `RuiTree` JSX view authors tree items from a `nodes` structure.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the tree. |
+| `value` | `string` | `''` | Selected item's `data-value` / id. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Tree items authored as `role="treeitem"` markup. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted when a tree item is selected. |
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `nodes` | `RuiTreeNode[]` | | Tree structure for the `RuiTree` view. |
+
+`RuiTreeNode` is `{ id, label, children?, expanded? }`.
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-tree` | Root list (`role="tree"`). |
+| `.rui-tree__item` | List item wrapping a node. |
+| `.rui-tree__node` | Node button (`role="treeitem"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Surface | `--background`, `--on-background`, `--border`, `--radius-container`, `--shadow-control` |
+| Branch guides | `--border` |
+| Node hover | `--surface` |
+| Selected node | `--primary-container`, `--on-primary-container` |
+| Node focus | `--surface`, `--focus-ring` |
 
 ## Accessibility
 

@@ -23,7 +23,7 @@ export const config = {
 
 # Switch
 
-<p class="docs-lede">Switches toggle a single setting on or off with immediate effect — notifications, dark mode, or feature flags.</p>
+<p class="docs-lede">Switches toggle a single setting on or off with immediate effect, such as notifications, dark mode, or feature flags.</p>
 
 ## Try it
 
@@ -45,8 +45,65 @@ Use switches for settings that take effect immediately. Use checkboxes for optio
 
 <Canvas of={On} meta={SwitchMeta} />
 
+## Theming
+
+Switch chrome maps to **semantic surface roles**, never Tailwind palette steps:
+
+| Part / state | CSS roles |
+| --- | --- |
+| Track (`rui-switch__track`) | `on-background` at reduced alpha (off), `primary` (on) |
+| Thumb (`rui-switch__thumb`) | `on-background` (off), `on-primary` (on) |
+| Focus | `focus-ring` |
+| Disabled | `opacity-disabled` |
+
+Label text uses `on-background`; track uses the `rounded-pill` radius token. Override roles at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - Switches expose `role="switch"` with `aria-checked`.
-- Labels must describe the setting, not the control — "Email notifications", not "Toggle".
+- Labels must describe the setting, not the control (for example, "Email notifications", not "Toggle").
 - Space toggles the switch when focused.
+
+## API
+
+`RuiSwitch` is a custom element (`<rui-switch>`) rendering a native `<input type="checkbox" role="switch">` inside a `<label>`, the browser owns activation and Space-to-toggle.
+
+### Attributes (`<rui-switch>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `checked` | `boolean` | `false` | On state; reflects to markup. |
+| `disabled` | `boolean` | `false` | Disabled state. |
+| `name` | `string` | `''` | Form field name. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| (default) | Visible label for the switch. Must not change with state. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ checked: boolean }` | Emitted after the checked state changes. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-switch` | Label row: track + thumb + visible label. |
+| `.rui-switch__input` | Native input (visually hidden, receives focus). |
+| `.rui-switch__track` | Pill track; `primary` fill when checked. |
+| `.rui-switch__thumb` | Sliding thumb. |
+| `.rui-switch__label` | Light-DOM label text. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Track | `--on-background` (off, alpha), `--primary` (on) |
+| Thumb | `--on-background` (off), `--on-primary` (on) |
+| Focus ring | `--focus-ring` |

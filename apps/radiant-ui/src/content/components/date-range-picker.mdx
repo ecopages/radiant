@@ -1,6 +1,6 @@
 ---
 title: Date Range Picker
-description: Date range pickers collect a start and end date in one control — ideal for bookings, reporting periods, and availability filters.
+description: Date range pickers collect a start and end date in one control, such as bookings, reporting periods, and availability filters.
 category: Forms
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Date Range Picker
 
-<p class="docs-lede">Date range pickers collect a start and end date in one control — ideal for bookings, reporting periods, and availability filters.</p>
+<p class="docs-lede">Date range pickers collect a start and end date in one control, such as bookings, reporting periods, and availability filters.</p>
 
 ## Try it
 
@@ -52,8 +52,75 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Use `startName` and `endName` when the backend expects discrete fields instead of a combined range value.</p>
 
+## Theming
+
+Date Range Picker surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Control group (`rui-date-range-picker__group`) | `border`, `background`, `radius-control`; `focus-ring` ring on focus-within |
+| Input text | `on-background`, `--text-control`, `--space-control-*` |
+| Placeholder | `on-surface` + `opacity-muted` |
+| Separator | `on-surface` |
+| Disabled | `opacity-disabled` |
+| Popup (`rui-date-range-picker__popover`) | `popover` surface + `shadow-overlay` (via `rui-popover`) |
+
+Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space-control-*`) with `RuiInput` and `RuiButton` so form rows align. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiDateRangePicker` is a custom element (`<rui-date-range-picker>`) that renders its own light-DOM inputs, toggle button, and range calendar popover.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Canonical `YYYY-MM-DD/YYYY-MM-DD` range. |
+| `min` | `string` | `''` | Earliest selectable ISO date. |
+| `max` | `string` | `''` | Latest selectable ISO date. |
+| `disabled` | `boolean` | `false` | Disable both inputs and the calendar. |
+| `read-only` | `boolean` | `false` | Disable editing while keeping values visible. |
+| `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
+| `placeholder-start` | `string` | `Start date` | Placeholder for the start input. |
+| `placeholder-end` | `string` | `End date` | Placeholder for the end input. |
+| `start-name` | `string` | `''` | Native `name` for the start input. |
+| `end-name` | `string` | `''` | Native `name` for the end input. |
+| `name` | `string` | `''` | Reserved; use `start-name` / `end-name` for discrete fields. |
+| `date-style` | `short` · `medium` · `long` · `full` | `medium` | How committed values are displayed in the inputs. |
+| `visible-months` | `number` | `2` | Month grids shown in the range calendar popover. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value, start, end }` | Fired when a valid range is committed (typing or calendar pick). |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on `RuiDateRangePicker`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-date-range-picker` | Root surface. |
+| `.rui-date-range-picker__group` | Bordered control-height row wrapping inputs and toggle. |
+| `.rui-date-range-picker__values` | Start / end input row. |
+| `.rui-date-range-picker__input` | A range text input. |
+| `.rui-date-range-picker__separator` | Em dash between the inputs. |
+| `.rui-date-range-picker__popover` | Range calendar popup shell (`rui-popover` / `rui-floating`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Control group | `--border`, `--background`, `--radius-control`, `--focus-ring` |
+| Input text | `--on-background`, `--text-control`, `--space-control-x`, `--space-control-y` |
+| Placeholder | `--on-surface`, `--opacity-muted` |
+| Separator | `--on-surface` |
+| Disabled | `--opacity-disabled` |
+| Popup | `--shadow-overlay` (via `rui-popover`) |
+
 ## Accessibility
 
-- Label both start and end inputs — placeholders alone are not sufficient.
+- Label both start and end inputs, placeholders alone are not sufficient.
 - Selected range endpoints are announced when focus moves between segments.
 - Surface validation errors for incomplete ranges before form submission.

@@ -46,6 +46,75 @@ import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
 
 <p>Set `embedded` when the listbox lives inside a combobox or select popup rather than inline on the page.</p>
 
+## Theming
+
+Listbox surfaces map to **semantic surface and selection roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| List surface (`rui-listbox`) | `background` |
+| Bordered variant | `border`, `radius-container` |
+| Option | `on-background`, `radius-control`, `space-control-*` |
+| Option hover | `surface-container-low` |
+| Active option (visual focus) | `surface-container`, `on-background` |
+| Selected option | `primary`, `on-primary` |
+| Focus ring | `focus-ring` |
+
+Override at the theme layer (`tokens/presets/colors/*.css`), not in component CSS. Embedded listboxes inside combobox / select popups inherit the popup surface and shadow from the parent shell.
+
+## API
+
+`RuiListbox` is a custom element (`<rui-listbox>`) that renders a `role="listbox"` surface around slotted options.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Selected option value. |
+| `label` | `string` | `''` | Accessible name for the list. |
+| `disabled` | `boolean` | `false` | Disable all selection. |
+| `embedded` | `boolean` | `false` | Parent-owned listbox: border chrome omitted, selection handled by the parent. |
+| `bordered` | `boolean` | follows `embedded` | Override the border (`true` standalone, `false` embedded). |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Option elements (`RuiListboxOption`), each with `role="option"`. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value }` | Fired when an option is selected. |
+
+### View helpers
+
+| Component | Renders |
+| --- | --- |
+| `RuiListboxOption` | An option with `role="option"`, `data-value`, and optional `label` / `disabled`. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-listbox` | Scrollable option list surface (`role="listbox"`). |
+| `.rui-listbox--bordered` | Bordered standalone listbox. |
+| `.rui-listbox__option` | Selectable list option (`RuiListboxOption`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| List surface | `--background` |
+| Bordered variant | `--border`, `--radius-container` |
+| Option | `--on-background`, `--radius-control`, `--space-control-x`, `--space-control-y` |
+| Option hover / active | `--surface-container-low`, `--surface-container` |
+| Selected option | `--primary`, `--on-primary` |
+| Focus ring | `--focus-ring` |
+
 ## Accessibility
 
 - Options expose `role="option"` with `aria-selected` for the current choice.

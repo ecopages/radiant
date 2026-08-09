@@ -51,8 +51,74 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Use radio groups when options are mutually exclusive. For independent toggles, use checkboxes instead.</p>
 
+## Theming
+
+Radio group surfaces map to **semantic roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Option row (`.rui-radio`) | `on-background` text, `space-inline` gap |
+| Control dot (`.rui-radio__control`) | `border`, `background`; `primary` when checked |
+| Checked dot (`::after`) | `primary` fill |
+| Focus ring | `focus-ring` |
+| Disabled | `opacity-disabled` |
+
+The custom control dot is decorative (`aria-hidden`), the visually hidden native radio input carries the accessible state. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiRadioGroup` is a custom element (`<rui-radio-group>`); the `RuiRadioGroup` view renders one labeled radio per `options` entry.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Selected radio value. |
+| `name` | `string` | `''` | Form field name shared by all radios in the group. |
+| `label` | `string` | `''` | Accessible name when no visible legend is slotted. |
+| `disabled` | `boolean` | `false` | Disables every radio in the group. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | One or more `<label>` children, each wrapping a radio input with a unique `value`. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted after the selected value changes. |
+
+### Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `options` | `RuiRadioOption[]` | `{ value, label, disabled? }` entries rendered by the view. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-radio-group` | Group surface (`role="radiogroup"`). |
+| `.rui-radio` | Option label row (authored by the `RuiRadioGroup` view). |
+| `.rui-radio__input` | Visually hidden native radio input. |
+| `.rui-radio__control` | Custom control dot (mirrors check state). |
+| `.rui-radio__label` | Option text. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Option row | `--on-background`, `--space-inline` |
+| Control dot | `--border`, `--background`, `--primary` |
+| Focus | `--focus-ring` |
+| Disabled | `--opacity-disabled` |
+
 ## Accessibility
 
 - The group exposes `role="radiogroup"` with an accessible name from `label`.
 - Arrow keys move selection between radio options.
-- Visually indicate the selected option — do not rely on position alone.
+- Visually indicate the selected option; do not rely on position alone.

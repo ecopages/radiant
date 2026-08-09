@@ -51,15 +51,65 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 
 ## Validation timing
 
-<p>`onSubmit` validates once on submit — best for short forms. Use `onBlur` or `onChange` when immediate feedback helps data entry.</p>
+<p>`onSubmit` validates once on submit and is best for short forms. Use `onBlur` or `onChange` when immediate feedback helps data entry.</p>
 
 ## Compose with Radiant controls
 
-<p>Every `RuiField` child should be a Radiant control (`RuiInput`, `RuiSelect`, `RuiDateField`, …). The form store discovers values through the Field control protocol — unmarked native inputs are not registered.</p>
+<p>Every `RuiField` child should be a Radiant control (`RuiInput`, `RuiSelect`, `RuiDateField`, …). The form store discovers values through the Field control protocol, unmarked native inputs are not registered.</p>
 
 ## Default values
 
 <p>Pass `defaultValues` to pre-populate edit forms. Fields read their initial state from the form store.</p>
+
+## Theming
+
+Form surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Root (`.rui-form`) | `space-stack` gap |
+
+The form itself carries no color roles; fields, labels, and controls inside keep their own surface / control tokens. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiForm` is a custom element (`<rui-form>`). The `RuiForm` view is a passthrough that maps `defaultValues` / `resolver` to `prop:` bindings.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `mode` | `onSubmit` · `onBlur` · `onChange` · `onTouched` · `all` | `onSubmit` | When validation runs. |
+| `revalidate-mode` | `onSubmit` · `onBlur` · `onChange` · `onTouched` · `all` | `onChange` | When fields re-validate after a failed submit. |
+| `data-default-values` | `string` | | JSON-serialized default values for SSR / JSX attribute channel. |
+
+### Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `defaultValues` | `Partial<FieldValues>` | Initial values; fields read their state from the form store. |
+| `resolver` | `Resolver<T>` | Custom validation resolver (e.g. from `createRulesResolver`). |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-submit` | `{ values: T }` | Emitted when validation passes. |
+| `rui-invalid` | `{ errors: Record<string, { message?: string }> }` | Emitted when validation fails on submit. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-form` | Root form surface (`<form noValidate>`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Root | `--space-stack` |
 
 ## Accessibility
 

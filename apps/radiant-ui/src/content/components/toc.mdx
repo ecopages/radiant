@@ -52,6 +52,55 @@ import { RuiToc } from '@ecopages/radiant-ui/toc';
 
 <p>Set `scrollOffset` to account for a fixed header so jumped headings are not hidden beneath it.</p>
 
+## Theming
+
+Toc maps to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Label (`rui-toc__label`) | `on-background` |
+| List (`rui-toc__list`) | `border` (left rule) |
+| Link (`rui-toc__link`) | `on-background`; hover `on-background` |
+| Active link (`rui-toc__link--active`) | `primary` (text + left rail) |
+
+Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiToc` is a custom element (`<rui-toc>`) that renders its own link list from the headings it scans. Pass props to the JSX helper; attributes mirror the props.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `target` | `string` | `''` | CSS selector for the content root that contains headings. Defaults to the parent element. |
+| `heading-selector` | `string` | `h2,h3` | Selector for headings to include. |
+| `label` | `string` | `On this page` | Visible label above the link list. |
+| `scroll-offset` | `number` | `120` | Pixel offset from the viewport top when tracking the active section. |
+| `navigation-events` | `string` | `''` | Comma-separated document events that trigger a rebuild (e.g. `eco:page-load`). |
+
+### CSS classes
+
+Public BEM classes on the rendered link list (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-toc` | Root `nav` landmark. |
+| `.rui-toc__label` | Section label above the list. |
+| `.rui-toc__list` | Link list. |
+| `.rui-toc__item` | List item. |
+| `.rui-toc__item--depth-3` | Indented item for `h3` headings. |
+| `.rui-toc__link` | Heading jump link. |
+| `.rui-toc__link--active` | Link for the section currently in view. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Label | `--on-background` |
+| List rule | `--border` |
+| Link | `--on-background`; active `--primary` |
+
 ## Accessibility
 
 - The TOC renders as a `nav` landmark with `label` as its accessible name.

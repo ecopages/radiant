@@ -1,6 +1,6 @@
 ---
 title: Carousel
-description: Carousels cycle through a set of panels — hero images, feature highlights, or onboarding steps — while keeping one slide in focus.
+description: Carousels cycle through a set of panels (hero images, feature highlights, or onboarding steps) while keeping one slide in focus.
 category: Data display
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Carousel
 
-<p class="docs-lede">Carousels cycle through a set of panels — hero images, feature highlights, or onboarding steps — while keeping one slide in focus.</p>
+<p class="docs-lede">Carousels cycle through a set of panels (hero images, feature highlights, or onboarding steps) while keeping one slide in focus.</p>
 
 ## Try it
 
@@ -50,10 +50,110 @@ import { RuiCarousel, RuiCarouselSlide, RuiCarouselPrev, RuiCarouselNext } from 
 
 ## Pick a transition
 
-<p>`slide` moves content horizontally. `fade` cross-fades panels. `none` swaps instantly — best when motion would be gratuitous.</p>
+<p>`slide` moves content horizontally. `fade` cross-fades panels. `none` swaps instantly and is best when motion would be gratuitous.</p>
+
+## Theming
+
+Carousel maps to **semantic surface and border roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Viewport (`rui-carousel__viewport`) | `surface`, `border`, `radius-container` |
+| Indicators | `background`, `border` |
+| Active indicator | `primary` |
+| Overlay chrome | `surface`, `border`, `shadow-sm` (blurred pills) |
+| Focus | `focus-ring` |
+| Geometry | `--space-inline`, `--space-stack`, `--space-inset` |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiCarousel` is a custom element (`<rui-carousel>`) that owns slide state, autoplay, transitions, and control chrome. The `RuiCarouselSlide` and control helpers compose the surface.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `Carousel` | Accessible name for the carousel region. |
+| `index` | `number` | `0` | Active slide index. |
+| `autoplay` | `boolean` | `false` | Advance automatically. |
+| `interval` | `number` | `4000` | Autoplay interval in ms. |
+| `transition` | `none` · `slide` · `fade` | `none` | Slide swap animation. |
+| `controls-variant` | `toolbar` · `overlay` | `toolbar` | Chrome layout. |
+| `show-indicators` | `boolean` | `false` | Render tabbed indicator pickers. |
+| `show-rotation-control` | `boolean` | `false` | Render play/pause control. |
+| `loop` | `boolean` | `true` | Allow looping past the last slide. |
+| `wrap` | `boolean` | `true` | Keep controls enabled at the ends. |
+| `slide-count` | `number` | `0` | Authored slide count for render-time control state. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Slides, each marked `data-slide` (see `RuiCarouselSlide`). |
+| `prev` | Custom previous control (`data-carousel-action="prev"`). |
+| `next` | Custom next control (`data-carousel-action="next"`). |
+| `rotation` | Custom play/pause control (`data-carousel-action="rotation"`). |
+
+### View helpers
+
+| Component | Renders | Notes |
+| --- | --- | --- |
+| `RuiCarouselSlide` | Slide panel | Add `id`; host applies `group` / `tabpanel` roles. |
+| `RuiCarouselPrev` | Prev button | Slotted into `prev`. |
+| `RuiCarouselNext` | Next button | Slotted into `next`. |
+| `RuiCarouselRotation` | Play/pause button | Slotted into `rotation`. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass` on the element and view helpers):
+
+| Class | Description |
+| --- | --- |
+| `.rui-carousel` | Root region (`aria-roledescription="carousel"`). |
+| `.rui-carousel--none` | No animation between slides. |
+| `.rui-carousel--slide` | Horizontal slide transition. |
+| `.rui-carousel--fade` | Cross-fade transition. |
+| `.rui-carousel--controls-toolbar` | Controls below the viewport. |
+| `.rui-carousel--controls-overlay` | Controls overlaid on the viewport. |
+| `.rui-carousel__stage` | Viewport wrapper. |
+| `.rui-carousel__viewport` | Overflow-hidden slide window. |
+| `.rui-carousel__track` | Slide track. |
+| `.rui-carousel__slide` | Slide surface (`RuiCarouselSlide`). |
+| `.rui-carousel__footer` | Controls row below the viewport. |
+| `.rui-carousel__toolbar` | Toolbar grid. |
+| `.rui-carousel__toolbar-rotation` | Rotation control cell. |
+| `.rui-carousel__toolbar-center` | Indicators cell. |
+| `.rui-carousel__toolbar-side--start` | Prev control cell. |
+| `.rui-carousel__toolbar-side--end` | Next control cell. |
+| `.rui-carousel__nav` | Prev/next button (`RuiCarouselPrev` / `RuiCarouselNext`). |
+| `.rui-carousel__nav--overlay` | Circular on-slide chrome. |
+| `.rui-carousel__nav--toolbar` | Toolbar chrome (default). |
+| `.rui-carousel__nav-label` | Icon + label row (toolbar variant). |
+| `.rui-carousel__nav-icon` | Decorative chevron glyph. |
+| `.rui-carousel__rotation` | Rotation toggle button (`RuiCarouselRotation`). |
+| `.rui-carousel__rotation--overlay` | Overlay pill chrome. |
+| `.rui-carousel__overlay-chrome` | Absolute overlay layer over the viewport. |
+| `.rui-carousel__overlay-rotation` | Rotation control overlay position. |
+| `.rui-carousel__controls--overlay` | Prev/next overlay row. |
+| `.rui-carousel__indicators` | Indicator tablist. |
+| `.rui-carousel__indicators--overlay` | Overlay pill indicator tablist. |
+| `.rui-carousel__indicator` | Indicator button (`role="tab"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Viewport | `--surface`, `--border`, `--radius-container` |
+| Indicators | `--background`, `--border` |
+| Active indicator | `--primary` |
+| Overlay chrome | `--surface`, `--border`, `--shadow-control` |
+| Focus | `--focus-ring` |
+| Geometry | `--space-inline`, `--space-stack`, `--space-inset` |
 
 ## Accessibility
 
 - Provide a descriptive `label` so screen readers identify the carousel region.
 - Prev/next controls must be keyboard reachable and expose their purpose in the accessible name.
-- Respect `prefers-reduced-motion` — avoid autoplay when users request reduced motion.
+- Respect `prefers-reduced-motion` and avoid autoplay when users request reduced motion.

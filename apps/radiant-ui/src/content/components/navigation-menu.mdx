@@ -54,6 +54,74 @@ import {
 
 <p>Keep top-level items to five or fewer. Move secondary links into panels or the footer.</p>
 
+## Theming
+
+Navigation Menu surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Root (`rui-navigation-menu`) | `surface`, `border`, `shadow-sm`, `rounded-container` |
+| Bar (`rui-navigation-menu__bar`) | `background`, `border` |
+| Open trigger (`[data-navigation-trigger][aria-expanded='true']`) | `primary-container`, `on-primary-container`, `primary` ring |
+| Panel region (`rui-navigation-menu__panels`) | `background`, `on-background`; `on-surface` / `link` (text) |
+
+Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiNavigationMenu` is a custom element (`<rui-navigation-menu>`) rendering a `nav` landmark. Compose the view helpers for triggers, links, and panels, or use the slots directly.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the `nav` landmark. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `triggers` | Top-level navigation triggers and plain links. |
+| `panels` | Disclosure panels composed from other primitives. |
+
+### View helpers
+
+| Component | Renders | Slot |
+| --- | --- | --- |
+| `RuiNavigationMenu` | `<rui-navigation-menu>` | |
+| `RuiNavigationMenuTrigger` | `RuiButton` trigger | `triggers` |
+| `RuiNavigationMenuLink` | Anchor styled as a button | `triggers` |
+| `RuiNavigationMenuPanel` | Panel `div` | `panels` |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-navigation-menu` | Root `nav` surface. |
+| `.rui-navigation-menu__bar` | Top-level trigger / link bar. |
+| `.rui-navigation-menu__panels` | Panel region. |
+
+Content helper classes authored in consumer markup (see stories):
+
+| Class | Description |
+| --- | --- |
+| `.rui-navigation-menu__megamenu` | Panel content grid. |
+| `.rui-navigation-menu__link-columns` | Two-column link group layout. |
+| `.rui-navigation-menu__link-group-label` | Link group heading. |
+| `.rui-navigation-menu__link-list` | Link list. |
+| `.rui-navigation-menu__disclosure-copy` | Paragraph copy inside disclosure panels. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Root | `--surface`, `--border`, `--shadow-sm` |
+| Bar | `--background`, `--border` |
+| Open trigger | `--primary-container`, `--on-primary-container`, `--primary`, `--focus-ring` |
+| Panel text | `--on-background`, `--on-surface`, `--link` |
+
 ## Accessibility
 
 - The menu renders as a `nav` landmark with an accessible name from `label`.

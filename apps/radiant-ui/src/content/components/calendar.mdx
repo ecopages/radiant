@@ -52,6 +52,79 @@ import { RuiCalendar } from '@ecopages/radiant-ui/calendar';
 
 <p>Set `min` and `max` to block out-of-range bookings or past dates. Pair with `visibleMonths` for multi-month range pickers.</p>
 
+## Theming
+
+Calendar surfaces map to **semantic surface and selection roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Month surface (`rui-calendar`) | `border`, `background`, `radius-container`, `space-inset`, `shadow-sm` |
+| Month title / weekday labels | `on-background`, `on-surface` |
+| Nav + today buttons | `rounded-control`, `surface` hover, `on-surface`, `primary` text |
+| Selected day | `primary`, `on-primary` (hover: `primary-container`, `on-primary-container`) |
+| Range preview / middle days | `primary` at reduced opacity |
+| Outside-month / disabled days | `on-surface` + `opacity-muted` |
+| Focus ring | `focus-ring` |
+
+Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space-control-*`) with `RuiInput` and `RuiButton` so adjacent form rows align. Override at the theme layer (`tokens/presets/colors/*.css`, `tokens/radius/*.css`), not in component CSS.
+
+## API
+
+`RuiCalendar` is a custom element (`<rui-calendar>`) that renders its own light-DOM month grid(s).
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Selected date(s) in the mode-specific ISO format. |
+| `min` | `string` | `''` | Earliest selectable ISO date. |
+| `max` | `string` | `''` | Latest selectable ISO date. |
+| `disabled` | `boolean` | `false` | Disable all date selection. |
+| `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
+| `selection-mode` | `single` · `multiple` · `range` | `single` | Single, multiple, or range selection. |
+| `visible-months` | `number` | `1` | Month grids shown side by side. |
+| `page-behavior` | `visible` · `single` | `visible` | Whether paging moves by all visible months or one month. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value, start?, end? }` | Fired when the selection changes; `start` / `end` are set for `range` mode. |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on `RuiCalendar`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-calendar` | Root surface (`role="application"`). |
+| `.rui-calendar--multi` | Multi-month root modifier. |
+| `.rui-calendar__months` | Row of month panels. |
+| `.rui-calendar__month-panel` | Single month grid column. |
+| `.rui-calendar__header` | Month title row with paging controls. |
+| `.rui-calendar__nav` | Prev / next month button. |
+| `.rui-calendar__nav-spacer` | Placeholder where a nav button is absent. |
+| `.rui-calendar__month` | Month title. |
+| `.rui-calendar__weekdays` | Weekday header row. |
+| `.rui-calendar__weekday` | Weekday label. |
+| `.rui-calendar__grid` | Month grid (`role="grid"`). |
+| `.rui-calendar__week` | Grid row. |
+| `.rui-calendar__day` | Day cell button (`role="gridcell"`). |
+| `.rui-calendar__footer` | Footer row with the today button. |
+| `.rui-calendar__today` | "Today" jump button. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Month surface | `--border`, `--background`, `--radius-container`, `--space-inset`, `--shadow-sm` |
+| Month title / weekday labels | `--on-background`, `--on-surface` |
+| Nav + today buttons | `--radius-control`, `--surface`, `--on-surface`, `--primary` |
+| Selected day | `--primary`, `--on-primary`, `--primary-container`, `--on-primary-container` |
+| Range preview / middle days | `--primary` |
+| Outside / disabled | `--on-surface`, `--opacity-muted` |
+| Focus ring | `--focus-ring` |
+
 ## Accessibility
 
 - Day cells expose grid semantics with arrow-key navigation between dates.

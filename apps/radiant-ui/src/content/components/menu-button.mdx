@@ -1,6 +1,6 @@
 ---
 title: Menu Button
-description: Menu buttons reveal a popup menu of actions when activated — ideal for overflow menus and contextual commands.
+description: Menu buttons reveal a popup menu of actions when activated, such as overflow menus and contextual commands.
 category: Navigation
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Menu Button
 
-<p class="docs-lede">Menu buttons reveal a popup menu of actions when activated — ideal for overflow menus and contextual commands.</p>
+<p class="docs-lede">Menu buttons reveal a popup menu of actions when activated, such as overflow menus and contextual commands.</p>
 
 ## Try it
 
@@ -50,6 +50,70 @@ import { RuiMenuButton } from '@ecopages/radiant-ui/menu-button';
 ## Placement
 
 <p>Use `bottom-start` for left-aligned triggers. Flip to `top-*` when the button sits near the viewport bottom.</p>
+
+## Theming
+
+Menu Button surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Trigger (`rui-menu-button__trigger`) | `primary`, `on-primary` (via `rui-button--primary`), `--focus-ring` |
+| Menu surface (`rui-menu-button__menu`) | `background`, `border`, `shadow-overlay`, `rounded-container` (via `rui-popover`) |
+| Menu item (`rui-menu-button__item`) | `on-background`; hover `surface`; `--space-control-*` |
+
+The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `--radius-button`) with `RuiButton`. Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiMenuButton` is a custom element (`<rui-menu-button>`) with a composed light-DOM surface. The JSX helper renders the trigger and popup items; compose the slots directly for custom items.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the menu starts open. |
+| `placement` | `top` · `top-start` · `top-end` · `right` · `right-start` · `right-end` · `bottom` · `bottom-start` · `bottom-end` · `left` · `left-start` · `left-end` | `bottom-start` | Placement of the menu surface relative to its trigger. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `trigger` | Label for the menu button. |
+| *(default)* | Menu items (`role="menuitem"`), typically buttons or anchors. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted when a menu item is activated; `value` is the item's `data-value` or text. |
+| `rui-close` | | Emitted when the menu closes. |
+
+### View helpers
+
+| Component | Renders | Notes |
+| --- | --- | --- |
+| `RuiMenuButton` | `<rui-menu-button>` | Accepts `trigger` + `items` (`RuiMenuItem[]`); authors the `rui-menu-button__item` buttons. |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-menu-button` | Root wrapper around trigger and menu. |
+| `.rui-menu-button__trigger` | Trigger button (composes `rui-button--primary`). |
+| `.rui-menu-button__chevron` | Chevron indicator. |
+| `.rui-menu-button__menu` | Popup menu surface (`role="menu"`, `rui-popover rui-floating`). |
+| `.rui-menu-button__item` | Menu item (`role="menuitem"`, authored by the view helper). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Trigger | `--primary`, `--on-primary`, `--focus-ring` |
+| Menu surface | `--background`, `--border`, `--shadow-overlay` |
+| Menu item | `--on-background`, `--surface` (hover) |
+| Geometry | `--size-control-*`, `--space-control-*`, `--radius-button` |
 
 ## Accessibility
 

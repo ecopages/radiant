@@ -62,8 +62,70 @@ import {
 
 <p>When the hierarchy is deep, collapse middle segments with `RuiBreadcrumbEllipsis` and expose the full path on demand.</p>
 
+## Theming
+
+Breadcrumb roles map to **semantic surface + link roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| List / items | `on-background` text |
+| Links | `primary` color, hover underline |
+| Current page | `on-background`, `font-medium` |
+| Separator / ellipsis | `on-surface` (receded) |
+
+Check the compiled `breadcrumb.css` for the exact roles. Override at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - The root element renders as a `nav` landmark with an accessible name from the `label` prop.
 - The current page is indicated with `aria-current="page"`.
 - Separators are hidden from assistive technologies with `aria-hidden`.
+
+## API
+
+`RuiBreadcrumb` is a custom element (`<rui-breadcrumb>`) rendering a `<nav>` landmark; the trail is authored light-DOM children via the view helpers.
+
+### Attributes (`<rui-breadcrumb>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `Breadcrumb` | Accessible name for the navigation landmark. |
+| `separator` | `string` | `/` | Glyph used by empty `RuiBreadcrumbSeparator` nodes. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| (default) | Authored breadcrumb list markup. |
+
+### View helpers
+
+| Component | Renders |
+| --- | --- |
+| `RuiBreadcrumbList` | Ordered list (`<ol>`) of crumbs. |
+| `RuiBreadcrumbItem` | Single crumb (`<li>`). |
+| `RuiBreadcrumbLink` | Linked ancestor page (`<a href>`). |
+| `RuiBreadcrumbPage` | Current page (`<span aria-current="page">`). |
+| `RuiBreadcrumbSeparator` | Presentational separator (`aria-hidden`). |
+| `RuiBreadcrumbEllipsis` | Collapsed middle segment indicator. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-breadcrumb` | `<nav>` landmark root. |
+| `.rui-breadcrumb__list` | Ordered list row. |
+| `.rui-breadcrumb__item` | List item wrapping a crumb link/page. |
+| `.rui-breadcrumb__link` | Crumb link. |
+| `.rui-breadcrumb__page` | Current page span. |
+| `.rui-breadcrumb__separator` | Presentational separator. |
+| `.rui-breadcrumb__ellipsis` · `.rui-breadcrumb__ellipsis-label` | Collapsed segment indicator + label. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Links | `--primary` |
+| Separator / ellipsis | `--on-surface` |

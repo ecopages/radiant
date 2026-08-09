@@ -62,8 +62,93 @@ import {
 
 <p>Set `wheelDisabled` to prevent accidental value changes when users scroll over a focused number field.</p>
 
+## Theming
+
+Number field surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Group (`.rui-number-field__group`) | `border`, `background`, `rounded-control` |
+| Input (`.rui-number-field__input`) | `on-background` text |
+| Steppers (`.rui-number-field__steppers`) | `border` divider |
+| Stepper (`.rui-number-field__stepper`) | `on-surface`, `surface` hover, `surface-container-low` active |
+| Focus / invalid | `focus-ring` / `error` |
+
+Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--radius-control`, `--text-control`) with `RuiInput` and `RuiButton` so form rows align. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiNumberField` is a custom element (`<rui-number-field>`). Standalone it renders the default input + stepper row; compose the view helpers for full control.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `number` | | Current value. |
+| `default-value` | `number` | | Initial value when uncontrolled. |
+| `min-value` | `number` | `-Infinity` | Lower bound; steppers and arrow keys snap to it. |
+| `max-value` | `number` | `Infinity` | Upper bound; steppers and arrow keys snap to it. |
+| `step` | `number` | `1` | Increment/decrement and snap interval. |
+| `disabled` | `boolean` | `false` | Disables input and steppers. |
+| `read-only` | `boolean` | `false` | Blocks editing; the value still displays formatted. |
+| `label` | `string` | `''` | Accessible name when there is no visible `RuiLabel`. |
+| `name` | `string` | `''` | Form field name on the hidden value input. |
+| `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
+| `format-options` | `string` | `''` | JSON-serialized `Intl.NumberFormatOptions`. |
+| `commit-behavior` | `snap` · `validate` | `snap` | Blur behavior after editing. |
+| `increment-aria-label` | `string` | `Increment` | Accessible name for the increment stepper. |
+| `decrement-aria-label` | `string` | `Decrement` | Accessible name for the decrement stepper. |
+| `wheel-disabled` | `boolean` | `false` | Disables scroll-wheel value changes. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `group` | Input + stepper row (`RuiNumberFieldGroup`). |
+| `input` | Text input (`RuiNumberFieldInput`). |
+| `decrement` | Decrement button (`RuiNumberFieldDecrementButton`). |
+| `increment` | Increment button (`RuiNumberFieldIncrementButton`). |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: number }` | Emitted when a value is committed (blur, stepper, or keyboard). |
+
+### View helpers
+
+| Component | Renders | Slot |
+| --- | --- | --- |
+| `RuiNumberFieldGroup` | Input + stepper row | `group` |
+| `RuiNumberFieldInput` | Text input (`role="spinbutton"`) | `input` |
+| `RuiNumberFieldIncrementButton` | `+` stepper | `increment` |
+| `RuiNumberFieldDecrementButton` | `−` stepper | `decrement` |
+| `RuiNumberFieldSteppers` | Trailing stepper column | |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-number-field` | Root field wrapper. |
+| `.rui-number-field__group` | Control-height bordered row. |
+| `.rui-number-field__input` | Borderless text input. |
+| `.rui-number-field__steppers` | Trailing stepper column. |
+| `.rui-number-field__stepper` | Icon button cell (`+` / `−`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Group | `--border`, `--background`, `--radius-control`, `--duration-normal` |
+| Input | `--on-background`, `--space-control-x`, `--space-control-y`, `--text-control` |
+| Steppers | `--size-control-sm` |
+| Stepper states | `--on-surface`, `--surface`, `--surface-container-low` |
+| Focus / invalid | `--focus-ring` / `--error` |
+
 ## Accessibility
 
-- Stepper buttons need accessible names — "Increment" and "Decrement" are provided by default.
+- Stepper buttons need accessible names; "Increment" and "Decrement" are provided by default.
 - Announce min and max constraints in helper text when the valid range is not obvious.
 - Disabled fields should explain why editing is unavailable.

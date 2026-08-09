@@ -72,8 +72,102 @@ import {
 
 <p>Enable `matchActive` with `matchMode` to highlight the current page in the menu automatically.</p>
 
+## Theming
+
+Sidebar surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Pane (`rui-sidebar`) | `background` |
+| Header / content / footer | `border` between sections |
+| Menu buttons | `on-background` text |
+| Active menu button | `primary` indicator |
+| Resize handle | `border` + `on-surface` grip, `primary` on hover |
+| Inset | `background` |
+
+Rounded corners use `rounded-container`; the collapsible pane in `docs` layout sits on `surface-container-low`. Overrides go at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - The sidebar renders as a `nav` landmark with `label` as its accessible name.
 - Collapsed icon-only mode preserves accessible names on menu buttons.
 - The trigger button exposes whether the sidebar is expanded or collapsed.
+
+## API
+
+`RuiSidebar` (`<rui-sidebar>`) coordinates the pane, resize, collapse, and active-route matching. Compose sections with the view helpers; `RuiSidebarProvider` wires the shell.
+
+### Attributes (`<rui-sidebar>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `variant` | `sidebar` · `inset` · `floating` | `sidebar` | Pane treatment. |
+| `side` | `left` · `right` | `left` | Which side the pane sits on. |
+| `collapsible` | `off` · `icon` · `full` | `off` | Collapse behavior. |
+| `defaultWidth` | `number` | | Initial width in px. |
+| `width` | `number` | | Controlled width. |
+| `minWidth` / `maxWidth` | `number` | | Width bounds. |
+| `resizable` | `boolean` | `false` | Draggable resize handle. |
+| `defaultOpen` | `boolean` | `true` | Initial open state (desktop). |
+| `mobileDefaultOpen` | `boolean` | `false` | Initial open state (mobile). |
+| `open` | `boolean` | | Controlled open state. |
+| `mobileBreakpoint` | `number` | | Width below which the mobile rail applies. |
+| `label` | `string` | `Sidebar` | Accessible name for the `nav` landmark. |
+| `matchActive` | `boolean` | `false` | Highlight the current route in the menu. |
+| `matchMode` | `pathname` · … | `pathname` | Route matching mode. |
+| `scrollActiveOnMount` | `boolean` | `false` | Scroll the active item into view on mount. |
+| `navigationEvents` | `string` | `''` | Custom navigation events to listen for. |
+
+### Attributes (`<rui-sidebar-trigger>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `controls` | `string` | `''` | `aria-controls` target (sidebar id). |
+| `button-label` | `string` | `Toggle sidebar` | Accessible trigger name. |
+| `placement` | `''` · `side` · … | `''` | Trigger placement. |
+| `variant` | `ghost` · … | `ghost` | Button tone (reuses `RuiButton` variants). |
+| `size` | `sm` · `md` · `lg` | `md` | Button size. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-sidebar-toggle` | | Emitted on every open/closed transition. |
+| `rui-sidebar-resize` | `{ width }` | Emitted on every width change. |
+| `rui-sidebar-mobile-change` | | Emitted when the host flips mobile rail state. |
+
+### View helpers
+
+| Component | Renders |
+| --- | --- |
+| `RuiSidebarProvider` | Shell (`data-layout`) wrapping sidebar + inset. |
+| `RuiSidebarHeader` / `RuiSidebarContent` / `RuiSidebarFooter` | Pane sections. |
+| `RuiSidebarSeparator` | Horizontal rule. |
+| `RuiSidebarGroup` / `RuiSidebarGroupLabel` / `RuiSidebarGroupAction` / `RuiSidebarGroupHeader` | Grouped items. |
+| `RuiSidebarMenu` / `RuiSidebarMenuItem` / `RuiSidebarMenuButton` / `RuiSidebarMenuAction` | Menu list + items. |
+| `RuiSidebarInset` | Main content area. |
+| `RuiSidebarTrigger` | Collapse/expand trigger. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-sidebar` · `.rui-sidebar__header` · `.rui-sidebar__content` · `.rui-sidebar__footer` | Pane structure. |
+| `.rui-sidebar__separator` | Horizontal rule. |
+| `.rui-sidebar__group` · `.rui-sidebar__group-label` · `.rui-sidebar__group-action` · `.rui-sidebar__group-header` | Group structure. |
+| `.rui-sidebar__menu` · `.rui-sidebar__menu-item` · `.rui-sidebar__menu-button` · `.rui-sidebar__menu-action` | Menu structure. |
+| `.rui-sidebar__menu-button--active` | Current-page marker. |
+| `.rui-sidebar__inset` | Main content area. |
+| `.rui-sidebar-provider` · `.rui-sidebar-provider__site-header` · `.rui-sidebar-provider__body` | Shell structure. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Pane / inset | `--background` |
+| Active marker | `--primary` |
+| Resize handle | `--border`, `--on-surface`, `--primary` |
+| Surface container (docs) | `--surface-container-low` |
+| Rounded corners | `--radius-container` |

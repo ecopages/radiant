@@ -31,7 +31,7 @@ export const config = {
 
 ## Usage
 
-Set `name` on `RuiField` to wire validation through `RuiForm`. Place a Radiant control (`RuiInput`, `RuiSelect`, `RuiSwitch`, …) as the child — Field discovers controls via `data-rui-control` and known host tags, not bare `<input>` elements. Use `RuiFieldDescription` and `RuiFieldError` for helper and error text.
+Set `name` on `RuiField` to wire validation through `RuiForm`. Place a Radiant control (`RuiInput`, `RuiSelect`, `RuiSwitch`, …) as the child; Field discovers controls via `data-rui-control` and known host tags, not bare `<input>` elements. Use `RuiFieldDescription` and `RuiFieldError` for helper and error text.
 
 ```tsx
 import { RuiField, RuiFieldDescription, RuiFieldError } from '@ecopages/radiant-ui/field';
@@ -58,8 +58,73 @@ import { RuiInput } from '@ecopages/radiant-ui/input';
 
 <p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
 
+## Theming
+
+Field surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Root (`.rui-field`) | `space-inline` gap |
+| Description (`.rui-field__description`) | `on-surface`, `text-body-sm` |
+| Error (`.rui-field__error`) | `error`, `text-body-sm` |
+
+The nested control keeps its own control tokens (`--size-control-*`, `--radius-control`) so fields stack consistently. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiField` is a custom element (`<rui-field>`) connecting a slotted control to an ancestor `<rui-form>`.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | `''` | Field name; registers with the ancestor form. |
+| `error` | `string` | `''` | Standalone error message when not using a form provider. |
+| `invalid` | `boolean` | `false` | Standalone invalid flag when not using a form provider. |
+| `disabled` | `boolean` | `false` | Dims the field and disables nested controls. |
+| `data-default-value` | `string` | | JSON-serialized default value for SSR hydration. |
+
+### Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `rules` | `FieldRules` | Validation rules (required, min/max, pattern, validate…). |
+| `defaultValue` | `unknown` | Default value when uncontrolled. |
+| `defaultValueData` | `string` | JSON default value; falls back to `data-default-value`. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Field content: label (`RuiLabel`), control, `RuiFieldDescription`, `RuiFieldError`. |
+
+### View helpers
+
+| Component | Renders | Notes |
+| --- | --- | --- |
+| `RuiFieldDescription` | Helper text (`data-rui-field-description`) | Wired into the control's `aria-describedby`. |
+| `RuiFieldError` | Error region (`role="alert"`) | Text populated by `<rui-field>`; hidden until set. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-field` | Root column (authored by the element). |
+| `.rui-field__description` | Helper text below the control. |
+| `.rui-field__error` | Error text; hidden until a message is set. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Root | `--space-inline` |
+| Description | `--on-surface`, `--text-body-sm` |
+| Error | `--error`, `--text-body-sm` |
+
 ## Accessibility
 
-- Associate labels with controls using `RuiLabel` — do not rely on placeholder text alone.
+- Associate labels with controls using `RuiLabel`; do not rely on placeholder text alone.
 - Error messages are linked to the input via `aria-describedby`.
 - Descriptions provide supplementary context without replacing the label.

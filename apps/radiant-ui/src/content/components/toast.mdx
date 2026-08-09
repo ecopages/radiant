@@ -1,6 +1,6 @@
 ---
 title: Toast
-description: Toasts surface brief, non-blocking feedback after an action — save confirmations, errors, or background sync status.
+description: Toasts surface brief, non-blocking feedback after an action, such as save confirmations, errors, or background sync status.
 category: Feedback
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Toast
 
-<p class="docs-lede">Toasts surface brief, non-blocking feedback after an action — save confirmations, errors, or background sync status.</p>
+<p class="docs-lede">Toasts surface brief, non-blocking feedback after an action, such as save confirmations, errors, or background sync status.</p>
 
 ## Try it
 
@@ -58,7 +58,7 @@ toast.info('Your session will expire soon');
 
 ## Theming
 
-Toast variants reuse the **semantic status roles** from the active theme — the same `info` / `success` / `warning` / `error` families as alerts — via `.rui-toast--*` on the composed surface:
+Toast variants reuse the **semantic status roles** from the active theme (the same `info` / `success` / `warning` / `error` families as alerts) via `.rui-toast--*` on the composed surface:
 
 | `variant` | Semantic role | Typical utilities on `.rui-toast--*` |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ Toast variants reuse the **semantic status roles** from the active theme — the
 | `error` | `error` (destructive) | `border-error/40`, `text-error` |
 | `loading` | neutral surface | `border-border`, `text-on-surface` |
 
-The surface stays `bg-surface text-on-surface` with a per-variant border and text accent, so toasts read as floating chrome rather than filled status blocks. Override roles at the theme layer (`tokens/presets/colors/*.css`) — not in component CSS.
+The surface stays `bg-surface text-on-surface` with a per-variant border and text accent, so toasts read as floating chrome rather than filled status blocks. Override roles at the theme layer (`tokens/presets/colors/*.css`), not in component CSS.
 
 ## Duration and dismissal
 
@@ -99,7 +99,7 @@ Toasts stack at the configured corner. By default the stack collapses behind the
 <RuiToaster expand position="bottom-end" />
 ```
 
-`visibleToasts` caps how many stay mounted at once — older toasts wait in the queue.
+`visibleToasts` caps how many stay mounted at once; older toasts wait in the queue.
 
 ## Position
 
@@ -115,12 +115,12 @@ Place the stack at any corner or edge center.
 
 - Toasts use `role="status"` for polite announcements that do not interrupt current tasks; the toaster wraps the stack in an `aria-live="polite"` region.
 - Error toasts use `role="alert"` semantics for immediate attention.
-- Do not rely on toasts alone for critical errors — pair with inline field errors when appropriate.
+- Do not rely on toasts alone for critical errors; pair with inline field errors when appropriate.
 - The stack region is focusable (`tabindex="-1"`) so keyboard users can inspect messages; close controls are labeled buttons.
 
 ## Why a custom element?
 
-`<rui-toast>` owns dismiss lifetime bookkeeping — pause on hover / hidden tab, swipe-to-dismiss, and exit animation — which requires DOM state. `<rui-toaster>` owns the stack layout (peek/expand math, per-position filtering). The `RuiToast` / `RuiToaster` JSX helpers are thin passthroughs; the elements render their own composed light-DOM surface.
+`<rui-toast>` owns dismiss lifetime bookkeeping (pause on hover / hidden tab, swipe-to-dismiss, and exit animation) which requires DOM state. `<rui-toaster>` owns the stack layout (peek/expand math, per-position filtering). The `RuiToast` / `RuiToaster` JSX helpers are thin passthroughs; the elements render their own composed light-DOM surface.
 
 ## API
 
@@ -131,9 +131,9 @@ The `toast()` callable and its variants accept `(title, options?)` where `option
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `id` | `string \| number` | auto | Dismiss a specific toast by id. |
-| `description` | `string` | — | Supporting detail under the title. |
+| `description` | `string` | | Supporting detail under the title. |
 | `duration` | `number` | `4000` | Lifetime in ms; `Infinity` keeps it until dismissed. |
-| `action` | `{ label, onClick }` | — | Render an action button. |
+| `action` | `{ label, onClick }` | | Render an action button. |
 | `dismissible` | `boolean` | `true` | Allow close button / swipe-to-dismiss. |
 | `closeButton` | `boolean` | toaster default | Show the corner close control. |
 | `position` | `ToastPosition` | toaster default | Per-toast placement override. |
@@ -174,7 +174,7 @@ Rendered by the toaster; listed for completeness. Documented via `@attr` on `Rui
 | --- | --- | --- |
 | `rui-toast-show` | `ToastShowDetail` | Document-level; the toaster listens and creates a toast. |
 | `rui-toast-dismiss` | `{ id? }` | Document-level; the toaster dismisses the matching toast. |
-| `rui-toast-mounted` | — | Bubbles after a toast mounts and paints; the toaster resyncs stack layout. |
+| `rui-toast-mounted` | | Bubbles after a toast mounts and paints; the toaster resyncs stack layout. |
 
 Use `showToast()` / `dismissToast()` to dispatch the document events, or the simpler `toast()` API.
 

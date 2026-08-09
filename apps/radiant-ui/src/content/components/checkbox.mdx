@@ -52,8 +52,68 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Pass `name` on `RuiField` so the checkbox participates in `RuiForm` validation and submission.</p>
 
+## Theming
+
+Checkbox chrome maps to **semantic surface roles**, never Tailwind palette steps:
+
+| Part / state | CSS roles |
+| --- | --- |
+| Box (`rui-checkbox__control`) | `border`, `background`, `rounded-control` |
+| Checked box | `primary` fill, `on-primary` check glyph |
+| Indeterminate bar | `primary` on `background` |
+| Focus | `focus-ring` |
+| Disabled | `opacity-disabled` |
+
+Label text uses `on-background`. Override roles at the theme layer, not in component CSS.
+
 ## Accessibility
 
-- Every checkbox needs a visible label — use `RuiLabel` or `aria-label`.
+- Every checkbox needs a visible label; use `RuiLabel` or `aria-label`.
 - Indeterminate state is exposed with `aria-checked="mixed"`.
 - Disabled checkboxes should include context explaining why the option is unavailable.
+
+## API
+
+`RuiCheckbox` is a custom element (`<rui-checkbox>`) rendering a native `<input type="checkbox">` inside a `<label>`, the browser owns activation and Space-to-toggle.
+
+### Attributes (`<rui-checkbox>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `checked` | `boolean` | `false` | Checked state. |
+| `indeterminate` | `boolean` | `false` | Partially checked (mixed) state; sets `indeterminate` IDL + `aria-checked="mixed"`. |
+| `disabled` | `boolean` | `false` | Disabled state. |
+| `value` | `string` | `on` | Value submitted with forms when checked. |
+| `name` | `string` | `''` | Form field name. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| (default) | Visible label for the checkbox. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ checked: boolean, indeterminate: boolean }` | Emitted after the state changes. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-checkbox` | Label row: box + visible label. |
+| `.rui-checkbox__input` | Native input (visually hidden, receives focus). |
+| `.rui-checkbox__control` | Visible box with check / indeterminate glyph. |
+| `.rui-checkbox__label` | Light-DOM label text. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Box | `--border`, `--background` |
+| Checked | `--primary`, `--on-primary` |
+| Indeterminate | `--primary` |
+| Focus ring | `--focus-ring` |

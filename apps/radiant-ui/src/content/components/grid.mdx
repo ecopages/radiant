@@ -45,8 +45,66 @@ import { RuiGrid } from '@ecopages/radiant-ui/grid';
 
 <p>Prefer Grid when data has rows and columns with comparable values. Use Treegrid when rows can expand into hierarchies.</p>
 
+## Theming
+
+Grid maps to **semantic surface and border roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Surface (`rui-grid`) | `border`, `background`, `on-background`, `radius-container`, `shadow-sm` |
+| Header row | `surface`, `on-background` |
+| Cell hover | `surface` |
+| Cell focus | `focus-ring`, `z-dropdown` |
+| Cell links | `link` |
+| Geometry | `--space-control-x` (cell padding) |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiGrid` is a custom element (`<rui-grid>`) with roving-tabindex keyboard navigation; the `RuiGrid` JSX view authors rows and cells.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name announced when focus enters the grid. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Grid cells authored as `role="row"` / `role="gridcell"` children. Use the `RuiGrid` view for BEM classes. |
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `rows` | `JsxRenderable[][]` | | 2-D array of row/cell content for the `RuiGrid` view. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-grid` | Root surface inside the host (`role="grid"`). |
+| `.rui-grid__row` | Table row (`role="row"`). |
+| `.rui-grid__cell` | Table cell (`role="gridcell"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Surface | `--border`, `--background`, `--on-background`, `--radius-container`, `--shadow-control` |
+| Header row | `--surface`, `--on-background` |
+| Cell hover | `--surface` |
+| Cell focus | `--focus-ring`, `--z-dropdown` |
+| Cell links | `--link` |
+| Cell padding | `--space-control-x` |
+
 ## Accessibility
 
-- Provide a descriptive `label` — screen readers announce it when focus enters the grid.
+- Provide a descriptive `label` so screen readers announce it when focus enters the grid.
 - Column headers should be marked so users understand cell context.
 - Support arrow-key navigation between focusable cells.

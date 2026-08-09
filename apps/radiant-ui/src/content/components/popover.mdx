@@ -1,6 +1,6 @@
 ---
 title: Popover
-description: Popovers anchor rich content to a trigger element — filters, mini forms, or contextual details — without modal focus trapping.
+description: Popovers anchor rich content to a trigger element (filters, mini forms, or contextual details) without modal focus trapping.
 category: Overlays
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Popover
 
-<p class="docs-lede">Popovers anchor rich content to a trigger element — filters, mini forms, or contextual details — without modal focus trapping.</p>
+<p class="docs-lede">Popovers anchor rich content to a trigger element (filters, mini forms, or contextual details) without modal focus trapping.</p>
 
 ## Try it
 
@@ -49,14 +49,81 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 
 ## Listbox variant
 
-<p>Set `variant="listbox"` when the popover hosts a `RuiListbox` — width and focus behavior adapt automatically.</p>
+<p>Set `variant="listbox"` when the popover hosts a `RuiListbox`; width and focus behavior adapt automatically.</p>
 
 ## Match anchor width
 
 <p>Enable `matchAnchorWidth` for select-style popovers so the panel aligns with the trigger.</p>
 
+## Theming
+
+The popover surface maps to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Surface (`rui-popover`) | `background`, `on-background`, `border`, `rounded-container`, `shadow-overlay` |
+| Listbox variant | Stripped padding for embedded listboxes |
+| Z-order | `popover` (below dialogs, above page content) |
+
+Overrides go at the theme layer, not in component CSS.
+
 ## Accessibility
 
 - Triggers expose `aria-expanded` when the popover is open.
 - Content is focusable and dismissible with Escape.
-- Do not trap focus — users should reach surrounding content without closing first.
+- Do not trap focus; users should reach surrounding content without closing first.
+
+## API
+
+`RuiPopover` is a custom element (`<rui-popover>`) positioning a floating `role="dialog"` surface. `RuiPopoverTrigger` (`<rui-popover-trigger>`) coordinates open state with the trigger click.
+
+### Attributes (`<rui-popover>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the popover is open (controlled). |
+| `placement` | `RuiPlacement` | `bottom` | Placement relative to the anchor. |
+| `portal` | `boolean` | `true` | Teleport the surface to `document.body`. |
+| `match-anchor-width` | `boolean` | `false` | Match the anchor width (dropdown menus). |
+| `offset` | `number` | `8` | Gap between anchor and surface in px. |
+| `anchor` | `string` | `''` | CSS selector for an external anchor. |
+| `variant` | `default` · `listbox` | `default` | Surface variant; `listbox` strips padding. |
+
+### Attributes (`<rui-popover-trigger>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the popover starts open. |
+
+### Slots
+
+| Component | Slot | Description |
+| --- | --- | --- |
+| `RuiPopover` | `trigger` | Pressable anchor (when not using an external `anchor`). |
+| `RuiPopover` | `content` | Popover body rendered inside the floating surface. |
+| `RuiPopoverTrigger` | `trigger` | Pressable element that toggles the child popover. |
+| `RuiPopoverTrigger` | (default) | The child `<rui-popover>`. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-open-change` | `{ open: boolean }` | Emitted when open state changes. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-popover-host` | Anchor + surface wrapper. |
+| `.rui-popover` | Floating surface (`role="dialog"`); `background` + `rounded-container` + `shadow-overlay`. |
+| `.rui-popover--listbox` | Stripped padding for embedded listboxes. |
+| `.rui-popover-trigger` | Trigger + popover wrapper. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Surface | `--background`, `--on-background`, `--border`, `--radius-container`, `--shadow-overlay` |
+| Z-order | `--z-popover` |

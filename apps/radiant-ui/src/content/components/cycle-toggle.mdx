@@ -23,7 +23,7 @@ export const config = {
 
 # Cycle Toggle
 
-<p class="docs-lede">Cycle toggles advance through a fixed set of values on each click — theme preference, sort order, or any small exclusive choice.</p>
+<p class="docs-lede">Cycle toggles advance through a fixed set of values on each click, such as theme preference, sort order, or any small exclusive choice.</p>
 
 ## Try it
 
@@ -46,6 +46,67 @@ import { RuiCycleToggle, RuiCycleToggleItem } from '@ecopages/radiant-ui/cycle-t
 ## Sort order
 
 <Canvas of={SortOrder} meta={CycleToggleMeta} />
+
+## Theming
+
+The cycle button reuses the **`rui-button` action roles**, never Tailwind palette steps. `variant` / `size` map straight to the button system:
+
+| Part | CSS roles |
+| --- | --- |
+| Button (`.rui-cycle-toggle__button`) | `rui-button` chrome, `primary` filled, `on-surface` ghost, `error` destructive |
+| Item (`.rui-cycle-toggle__item`) | `space-inline` gap |
+
+Button geometry (`--size-control-*`, `--radius-control`) is inherited from `rui-button` so the cycle control aligns with form rows. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiCycleToggle` is a custom element (`<rui-cycle-toggle>`); the view composes the inner `rui-button`.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Active item id. |
+| `variant` | `filled` · `outline` · `destructive` · `ghost` · `link` | `filled` | Button variant passed to the inner button. |
+| `size` | `none` · `sm` · `md` · `lg` | `md` | Button size passed to the inner button. |
+| `label` | `string` | `''` | Accessible name prefix for the cycle button. |
+| `disabled` | `boolean` | `false` | Disables the cycle button. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | `RuiCycleToggleItem` nodes projected into the inner button by the view. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted after `value` advances; `detail.value` is the new id. |
+
+### View helpers
+
+| Component | Renders | Notes |
+| --- | --- | --- |
+| `RuiCycleToggleItem` | One cycle option (`data-cycle-value`) | Pass `id`; only the active item is visible. |
+| `RuiCycleToggleButton` | Button chrome (`data-cycle-toggle-button`) | Composes `rui-button` variant/size classes. |
+| `ThemePreferenceIcon` / `ThemeItemLabel` | Theme preference icons / labels | Icon + screen-reader text for theme cycles. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-cycle-toggle__button` | Cycle toggle button root (adds `rui-button rui-button--*`). |
+| `.rui-cycle-toggle__item` | Cycle option row (icon + label). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Button chrome | `--primary`, `--on-primary`, `--size-control-*`, `--radius-control` (via `rui-button`) |
+| Item | `--space-inline` |
 
 ## Accessibility
 

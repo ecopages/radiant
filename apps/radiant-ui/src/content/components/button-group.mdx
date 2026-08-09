@@ -45,11 +45,48 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 
 ## Group related actions only
 
-<p>Keep actions logically connected — confirm/cancel pairs, view toggles, or formatting tools. Unrelated buttons should stand apart.</p>
+<p>Keep actions logically connected, such as confirm/cancel pairs, view toggles, or formatting tools. Unrelated buttons should stand apart.</p>
 
 ## Orientation
 
 <p>Use `horizontal` for toolbars and dialog footers. Switch to `vertical` in side panels or mobile layouts where width is constrained.</p>
+
+## Theming
+
+Button Group maps to **semantic spacing roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Group (`rui-button-group`) | `--space-inline` (item gap) |
+
+The `horizontal` / `vertical` modifiers change flow layout only and add no color. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiButtonGroup` is a presentational JSX view over a `<div role="group">`, no custom element.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `orientation` | `horizontal` · `vertical` | `horizontal` | Layout direction. |
+| `aria-label` | `string` | | Accessible name when the group has no visible label. |
+
+### CSS classes
+
+Public BEM classes on the rendered element (documented via `@cssclass` on `RuiButtonGroup`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-button-group` | Root group (`role="group"`). |
+| `.rui-button-group--horizontal` | Side-by-side layout (default). |
+| `.rui-button-group--vertical` | Stacked layout. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Item gap | `--space-inline` |
 
 ## Accessibility
 

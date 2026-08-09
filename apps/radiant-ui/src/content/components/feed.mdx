@@ -60,6 +60,66 @@ import {
 
 <p>Set `aria-busy` on the feed while fetching new items so assistive technologies announce the update.</p>
 
+## Theming
+
+Feed maps to **semantic surface and border roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Article surface (`rui-feed__article`) | `surface-container-lowest`, `border`, `radius-container` |
+| Article hover | `background`, `border`, `shadow-control` |
+| Meta / content / location | `on-surface` |
+| Rating | `on-background`, `primary` |
+| Meta separators | `border` |
+| Focus | `focus-ring` |
+| Geometry | `--space-*` scale (inline gap, inset padding, stack gaps) |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiFeed` and its article helpers are presentational JSX views, no custom element.
+
+### Props
+
+| Component | Prop | Type | Default | Description |
+| --- | --- | --- | --- | --- |
+| `RuiFeed` | `label` | `string` | | Accessible name for the `feed` landmark. |
+| `RuiFeed` | `aria-labelledby` | `string` | | Id of a visible heading that labels the feed. |
+| `RuiFeed` | `aria-busy` | `boolean` | | Announce that more items are loading (APG). |
+| `RuiFeedArticle` | `posinset` | `number` | | 1-based position in the feed. |
+| `RuiFeedArticle` | `setsize` | `number` | | Total articles currently in the feed. |
+| `RuiFeedArticle` | `labelledBy` | `string` | | Id(s) of the distinguishing label element(s). |
+| `RuiFeedArticle` | `describedBy` | `string` | | Id(s) that summarize the article for skimming. |
+| `RuiFeedArticle` | `tabindex` | `number` | `0` | Make the article focusable (APG feed navigation). |
+
+### CSS classes
+
+Public BEM classes on the rendered elements (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-feed` | Feed region (`role="feed"`). |
+| `.rui-feed__article` | Article card surface. |
+| `.rui-feed__header` | Article header stack. |
+| `.rui-feed__byline` | Avatar + identity row. |
+| `.rui-feed__byline-body` | Identity text stack. |
+| `.rui-feed__meta` | Metadata row. |
+| `.rui-feed__content` | Article body column. |
+| `.rui-feed__actions` | Action row under a top border. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Article surface | `--surface-container-lowest`, `--border`, `--radius-container` |
+| Article hover | `--background`, `--border`, `--shadow-control` |
+| Meta / content / location | `--on-surface` |
+| Rating | `--on-background`, `--primary` |
+| Meta separators | `--border` |
+| Focus | `--focus-ring` |
+| Geometry | `--space-inline`, `--space-inset`, `--space-2` … `--space-6` |
+
 ## Accessibility
 
 - Label the feed region with the `label` prop or an external heading.

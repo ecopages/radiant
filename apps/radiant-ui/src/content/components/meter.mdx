@@ -1,6 +1,6 @@
 ---
 title: Meter
-description: Meters display a scalar value within a known range — storage used, quiz score, or battery level — without implying user input.
+description: Meters display a scalar value within a known range (storage used, quiz score, or battery level) without implying user input.
 category: Feedback
 ---
 
@@ -23,7 +23,7 @@ export const config = {
 
 # Meter
 
-<p class="docs-lede">Meters display a scalar value within a known range — storage used, quiz score, or battery level — without implying user input.</p>
+<p class="docs-lede">Meters display a scalar value within a known range (storage used, quiz score, or battery level) without implying user input.</p>
 
 ## Try it
 
@@ -31,7 +31,7 @@ export const config = {
 
 ## Usage
 
-Set `value`, `min`, and `max` to define the range. Add `label` text so the measurement is self-explanatory — it is also the accessible name.
+Set `value`, `min`, and `max` to define the range. Add `label` text so the measurement is self-explanatory, it is also the accessible name.
 
 ```tsx
 import { RuiMeter } from '@ecopages/radiant-ui/meter';
@@ -47,7 +47,7 @@ The percent readout is derived from `value` / `min` / `max` and shown next to th
 
 ## Theming
 
-Meters use the **surface / text roles** from the active theme (`--on-surface` for the value readout) and the native `<meter>`'s own appearance for the bar. No status role is applied — the meter is a neutral scalar display, not a status indicator.
+Meters use the **surface / text roles** from the active theme (`--on-surface` for the value readout) and the native `<meter>`'s own appearance for the bar. No status role is applied; the meter is a neutral scalar display, not a status indicator.
 
 ```tsx
 <RuiMeter value={72} min={0} max={100} label="Storage used" />
@@ -72,7 +72,7 @@ Meters use the **surface / text roles** from the active theme (`--on-surface` fo
 
 ### Slots
 
-The meter is self-contained — `label`, bar, and value are composed by the element. Pass content via props, not slotted children.
+The meter is self-contained; `label`, bar, and value are composed by the element. Pass content via props, not slotted children.
 
 ### CSS classes
 

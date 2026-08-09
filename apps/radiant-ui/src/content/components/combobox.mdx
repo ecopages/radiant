@@ -59,6 +59,76 @@ import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
 
 <p>Comboboxes accept typed input that may not match an option. Validate on submit if only predefined values are permitted.</p>
 
+## Theming
+
+Combobox surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Control row (`rui-combobox__control`) | `border`, `background`, `radius-control`; `focus-ring` ring on focus-within |
+| Input text | `on-background`, `--text-control`, `--space-control-*` |
+| Disabled | `opacity-muted` |
+| Popup (`rui-combobox__listbox`) | `popover` surface + `shadow-overlay` (via `rui-popover`) |
+
+Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space-control-*`) with `RuiInput` and `RuiButton` so form rows align. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiCombobox` is a custom element (`<rui-combobox>`) that coordinates a slotted input row and listbox popup; the view helpers own the composed surface.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Selected option value. |
+| `label` | `string` | `''` | Accessible name when there is no visible `RuiLabel`. |
+| `placeholder` | `string` | `''` | Placeholder text for the input. |
+| `disabled` | `boolean` | `false` | Disable the input and trigger. |
+| `open-on-focus` | `boolean` | `false` | Open the listbox when the input gains focus. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| `control` | Input row: `RuiComboboxControl` with `RuiComboboxInput` (+ optional `RuiComboboxTrigger`). |
+| `listbox` | Popup shell: `RuiComboboxListbox` containing an embedded `RuiListbox`. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value }` | Fired when an option is selected (or Esc clears the value). |
+
+### View helpers
+
+| Component | Renders | Slot |
+| --- | --- | --- |
+| `RuiComboboxControl` | Input row wrapper | `control` |
+| `RuiComboboxInput` | Text input (`role="combobox"`) | |
+| `RuiComboboxTrigger` | Popup toggle button | |
+| `RuiComboboxListbox` | Popup shell (`rui-popover`) | `listbox` |
+| `RuiComboboxOption` | Alias of `RuiListboxOption` (deprecated) | |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-combobox` | Root surface. |
+| `.rui-combobox__control` | Bordered control-height row. |
+| `.rui-combobox__input` | Combobox text input. |
+| `.rui-combobox__listbox` | Popup shell (adds `rui-popover rui-popover--listbox rui-floating`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Control row | `--border`, `--background`, `--radius-control`, `--focus-ring` |
+| Input text | `--on-background`, `--text-control`, `--space-control-x`, `--space-control-y` |
+| Disabled | `--opacity-muted` |
+| Popup | `--shadow-overlay` (via `rui-popover`) |
+
 ## Accessibility
 
 - The input exposes `role="combobox"` with `aria-expanded` reflecting popup state.
