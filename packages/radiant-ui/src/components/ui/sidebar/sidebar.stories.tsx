@@ -588,7 +588,7 @@ export const Responsive: Story = {
 	render: () => (
 		<RuiSidebarProvider
 			sidebar={
-				<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={10_000} label="Primary">
+				<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={10_000} label="Primary" open>
 					{renderSidebarContent({ currentPath: '/' })}
 				</RuiSidebar>
 			}
