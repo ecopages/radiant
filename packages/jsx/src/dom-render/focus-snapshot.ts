@@ -5,6 +5,7 @@ import { getNodeAtPath, getNodePath } from './path-utils.ts';
  * replace DOM nodes.
  */
 export type FocusSnapshot = {
+	element: HTMLElement;
 	path: number[];
 	selectionStart?: number | null;
 	selectionEnd?: number | null;
@@ -14,6 +15,11 @@ export type FocusSnapshot = {
 /**
  * Captures the currently focused descendant and selection state so rerenders can
  * preserve editing continuity when possible.
+ *
+ * Both the element itself and its child-index path are recorded. Identity is the
+ * accurate signal when reconciliation patches nodes in place; the path is the
+ * fallback for the case where the element was replaced outright and only its
+ * position survives.
  */
 export function captureFocusSnapshot(target: HTMLElement): FocusSnapshot | undefined {
 	const activeElement = document.activeElement;
@@ -23,6 +29,7 @@ export function captureFocusSnapshot(target: HTMLElement): FocusSnapshot | undef
 	}
 
 	return {
+		element: activeElement,
 		path: getNodePath(target, activeElement),
 		selectionDirection: isSelectableInput(activeElement) ? activeElement.selectionDirection : undefined,
 		selectionEnd: isSelectableInput(activeElement) ? activeElement.selectionEnd : undefined,
@@ -36,7 +43,13 @@ export function restoreFocusSnapshot(target: HTMLElement, snapshot: FocusSnapsho
 		return;
 	}
 
-	const nextFocusedNode = getNodeAtPath(target, snapshot.path);
+	// The element survived and never lost focus, so there is nothing to restore.
+	// Re-applying the selection here would clobber a caret the user has since moved.
+	if (document.activeElement === snapshot.element) {
+		return;
+	}
+
+	const nextFocusedNode = target.contains(snapshot.element) ? snapshot.element : getNodeAtPath(target, snapshot.path);
 
 	if (!(nextFocusedNode instanceof HTMLElement)) {
 		return;

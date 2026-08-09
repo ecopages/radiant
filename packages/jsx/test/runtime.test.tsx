@@ -68,7 +68,8 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<div class=', '>', '</div>']);
+		expect(Array.from(result.strings)).toEqual(['<div', '>', '</div>']);
+		expect(result.parts).toEqual([{ kind: 'attr', name: 'class', type: 'attribute' }, { type: 'child' }]);
 		expect(result.values).toEqual(['counter', 'Hello JSX']);
 	});
 
@@ -114,6 +115,19 @@ describe('Radiant JSX runtime', () => {
 		expect(result.values[0] as unknown[]).toHaveLength(1);
 	});
 
+	test('jsx collapses a singleton iterable inside a fragment to its only child', async () => {
+		const [{ Fragment, jsx }] = await Promise.all([loadJsxRuntime()]);
+		const single = jsx(Fragment, { children: ['alpha'] });
+
+		// A fragment has no element to hang slots on, so a lone child renders as
+		// itself — the opposite of the element case above, which keeps the list.
+		expect(single).toBe('alpha');
+
+		const many = jsx(Fragment, { children: ['alpha', 'beta'] });
+
+		expect(many).toEqual(['alpha', 'beta']);
+	});
+
 	test('jsx drops true children the same way SSR does', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('div', {
@@ -142,7 +156,12 @@ describe('Radiant JSX runtime', () => {
 		const result = jsx(Card, { title: 'Overview', children: jsx('p', { children: 'Body copy' }) });
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<article class=', '>', '', '</article>']);
+		expect(Array.from(result.strings)).toEqual(['<article', '>', '', '</article>']);
+		expect(result.parts).toEqual([
+			{ kind: 'attr', name: 'class', type: 'attribute' },
+			{ type: 'child' },
+			{ type: 'child' },
+		]);
 		expect(result.values[0]).toBe('card');
 		expectTemplateResultLike(result.values[1]);
 		expectTemplateResultLike(result.values[2]);
@@ -170,7 +189,7 @@ describe('Radiant JSX runtime', () => {
 		expectTemplateResultLike(result);
 		expect(Array.from(result.strings)).toEqual(['<section>', '</section>']);
 		expectTemplateResultLike(result.values[0]);
-		expect(Array.from(result.values[0].strings)).toEqual(['<label class=', '>', '', '</label>']);
+		expect(Array.from(result.values[0].strings)).toEqual(['<label', '>', '', '</label>']);
 		expect(result.values[0].values[0]).toBe('field');
 		expectTemplateResultLike(result.values[0].values[1]);
 		expectTemplateResultLike(result.values[0].values[2]);
@@ -185,7 +204,8 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<div class=', '>', '</div>']);
+		expect(Array.from(result.strings)).toEqual(['<div', '>', '</div>']);
+		expect(result.parts).toEqual([{ kind: 'attr', name: 'class', type: 'attribute' }, { type: 'child' }]);
 		expect(result.values).toEqual(['panel stack wide surface active nested 2 0', 'Ready']);
 	});
 
@@ -198,7 +218,8 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<button !click=', '>', '</button>']);
+		expect(Array.from(result.strings)).toEqual(['<button', '>', '</button>']);
+		expect(result.parts[0]).toEqual({ kind: 'event', name: 'click', type: 'attribute' });
 		expect(result.values).toEqual([handleClick, 'Increment']);
 	});
 
@@ -211,7 +232,8 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<button @change=', '>', '</button>']);
+		expect(Array.from(result.strings)).toEqual(['<button', '>', '</button>']);
+		expect(result.parts[0]).toEqual({ kind: 'native-event', name: 'change', type: 'attribute' });
 		expect(result.values).toEqual([handleChange, 'Save']);
 	});
 
@@ -224,7 +246,8 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<button @click=', '>', '</button>']);
+		expect(Array.from(result.strings)).toEqual(['<button', '>', '</button>']);
+		expect(result.parts[0]).toEqual({ kind: 'native-event', name: 'click', type: 'attribute' });
 		expect(result.values).toEqual([handleClick, 'Increment']);
 	});
 
@@ -236,7 +259,8 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<property-receiver .payload=', '></property-receiver>']);
+		expect(Array.from(result.strings)).toEqual(['<property-receiver', '></property-receiver>']);
+		expect(result.parts).toEqual([{ kind: 'prop', name: 'payload', type: 'attribute' }]);
 		expect(result.values).toEqual([payload]);
 	});
 
@@ -249,7 +273,11 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<property-receiver .items=', ' id=', '></property-receiver>']);
+		expect(Array.from(result.strings)).toEqual(['<property-receiver', '', '></property-receiver>']);
+		expect(result.parts).toEqual([
+			{ kind: 'prop', name: 'items', type: 'attribute' },
+			{ kind: 'attr', name: 'id', type: 'attribute' },
+		]);
 		expect(result.values).toEqual([items, 'receiver']);
 	});
 
@@ -260,7 +288,8 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<property-receiver value=', '></property-receiver>']);
+		expect(Array.from(result.strings)).toEqual(['<property-receiver', '></property-receiver>']);
+		expect(result.parts).toEqual([{ kind: 'attr', name: 'value', type: 'attribute' }]);
 		expect(result.values).toEqual(['draft']);
 	});
 
@@ -272,11 +301,12 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual(['<button type=', '>', '</button>']);
+		expect(Array.from(result.strings)).toEqual(['<button', '>', '</button>']);
+		expect(result.parts).toEqual([{ kind: 'attr', name: 'type', type: 'attribute' }, { type: 'child' }]);
 		expect(result.values).toEqual(['button', 'Save']);
 	});
 
-	test('boolean, data, and aria bindings encode the expected template syntax', async () => {
+	test('boolean, data, and aria bindings resolve to the expected binding kinds', async () => {
 		const [{ jsx }] = await Promise.all([loadJsxRuntime()]);
 		const result = jsx('button', {
 			hidden: true,
@@ -286,12 +316,12 @@ describe('Radiant JSX runtime', () => {
 		});
 
 		expectTemplateResultLike(result);
-		expect(Array.from(result.strings)).toEqual([
-			'<button ?hidden=',
-			' data-tid=',
-			' aria-label=',
-			'>',
-			'</button>',
+		expect(Array.from(result.strings)).toEqual(['<button', '', '', '>', '</button>']);
+		expect(result.parts).toEqual([
+			{ kind: 'bool', name: 'hidden', type: 'attribute' },
+			{ kind: 'attr', name: 'data-tid', type: 'attribute' },
+			{ kind: 'attr', name: 'aria-label', type: 'attribute' },
+			{ type: 'child' },
 		]);
 		expect(result.values).toEqual([true, 'counter', 'Decrement', '-']);
 	});

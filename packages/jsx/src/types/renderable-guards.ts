@@ -1,3 +1,4 @@
+import { deriveLegacyTemplateShape, getTemplateShapeKey } from '../factory/template-shape.ts';
 import {
 	KEYED_VALUE_SYMBOL,
 	RADIANT_MARKUP_NODE_SYMBOL,
@@ -18,9 +19,13 @@ import type {
 /**
  * Type guard that narrows `value` to {@link TemplateResultLike}.
  *
+ * @remarks Checks `parts` as well as `strings` and `values`, so a partially-formed
+ * object is rejected here and rendered as text rather than reaching the template
+ * compiler, which would fault on the missing metadata. Build transported payloads
+ * with {@link toTemplateResultLike} to satisfy the full contract.
+ *
  * @param value Value to inspect.
- * @returns `true` when `value` is a branded Radiant template result with array
- *   `strings` and `values` fields.
+ * @returns `true` when `value` is a branded Radiant template result.
  */
 export function isTemplateResultLike(value: unknown): value is TemplateResultLike {
 	return (
@@ -28,7 +33,8 @@ export function isTemplateResultLike(value: unknown): value is TemplateResultLik
 		value !== null &&
 		(value as { ['_$rType$']?: unknown })['_$rType$'] === RADIANT_TEMPLATE_RESULT &&
 		Array.isArray((value as Partial<TemplateResultLike>).strings) &&
-		Array.isArray((value as Partial<TemplateResultLike>).values)
+		Array.isArray((value as Partial<TemplateResultLike>).values) &&
+		Array.isArray((value as Partial<TemplateResultLike>).parts)
 	);
 }
 
@@ -146,21 +152,30 @@ export function isSerializableTemplateResultLike(value: unknown): value is Seria
 }
 
 /**
- * Normalizes transported template payloads into the canonical runtime template result shape.
+ * Normalizes a transported template payload into the canonical runtime shape.
+ *
+ * This is the only place that accepts binding syntax inside `strings`. Nothing
+ * renders a bare `{ strings, values }` object implicitly — call this at the wire
+ * boundary to brand it first. Requiring the explicit step is what keeps an ordinary
+ * application object that happens to have a `strings` array off the raw-HTML path.
  *
  * @param value Template payload to normalize.
- * @returns A branded {@link TemplateResultLike} with a concrete `values` array.
+ * @returns A branded {@link TemplateResultLike} with explicit parts and a shape key.
  */
 export function toTemplateResultLike(value: SerializableTemplateResultLike | TemplateResultLike): TemplateResultLike {
 	if (isTemplateResultLike(value)) {
 		return value;
 	}
 
+	const { parts, strings } = deriveLegacyTemplateShape(value.strings);
+
 	return {
 		[RADIANT_TEMPLATE_RESULT_FIELD]: RADIANT_TEMPLATE_RESULT,
+		parts,
 		rootLocalName: value.rootLocalName,
+		shapeKey: getTemplateShapeKey(strings, parts),
 		ssrIntrinsicProps: value.ssrIntrinsicProps,
-		strings: value.strings as TemplateStringsArray,
+		strings,
 		values: value.values ?? [],
 	};
 }

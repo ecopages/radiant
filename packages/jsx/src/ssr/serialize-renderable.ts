@@ -2,20 +2,17 @@ import {
 	isIterableRenderable,
 	isJsxNodeLike,
 	isKeyedJsxValue,
-	isSerializableTemplateResultLike,
 	isSignalLikeValue,
 	isSubscribableJsxValue,
 	isTemplateResultLike,
 	mayEmitOrParseRawOuterHtml,
 	resolveReactiveSnapshot,
-	toTemplateResultLike,
 } from '../types/renderable-guards.ts';
 import {
 	resolveHydrationMarkerAttributeName,
 	serializeBindingDescriptor,
 	takeNextHydrationMarkerIndex,
 } from '../hydration/hydration-bindings.ts';
-import { getTemplateInterpolationParts } from '../factory/template-shape.ts';
 import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
 import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
 import { escapeAttribute, escapeHtml } from './html-escape.ts';
@@ -67,8 +64,8 @@ export function serializeRenderable(value: JsxRenderable | undefined, options: S
 		return '';
 	}
 
-	if (isTemplateResultLike(value) || isSerializableTemplateResultLike(value)) {
-		return serializeTemplateResult(toTemplateResultLike(value), options);
+	if (isTemplateResultLike(value)) {
+		return serializeTemplateResult(value, options);
 	}
 
 	if (isJsxNodeLike(value)) {
@@ -97,38 +94,33 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 		}
 	}
 
-	const interpolationParts = getTemplateInterpolationParts(template.strings);
 	const hydrationState = options.hydrationBindingState;
 	let html = '';
 
 	for (let index = 0; index < template.values.length; index += 1) {
-		const interpolationPart = interpolationParts[index];
+		const part = template.parts[index];
 		const childValue = resolveReactiveSnapshot(template.values[index]);
 
-		if (!interpolationPart || interpolationPart.type === 'child') {
-			html +=
-				interpolationPart && interpolationPart.type === 'child'
-					? interpolationPart.string
-					: (template.strings[index] ?? '');
+		html += template.strings[index] ?? '';
+
+		if (!part || part.type === 'child') {
 			html += serializeRenderable(childValue as JsxRenderable, options);
 			continue;
 		}
 
-		const bindingKind = interpolationPart.kind;
 		const bindingIndex = hydrationState ? takeNextHydrationMarkerIndex(hydrationState) : 0;
-		html += interpolationPart.leading;
 
 		if (options.mode === 'hydrate' && hydrationState) {
-			html += `${interpolationPart.whitespace}${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(bindingKind, interpolationPart.name)}"`;
+			html += ` ${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(part.kind, part.name)}"`;
 		}
 
-		if (isClientOnlyBinding(bindingKind)) {
+		if (isClientOnlyBinding(part.kind)) {
 			continue;
 		}
 
-		if (interpolationPart.prefix === '?') {
+		if (part.kind === 'bool') {
 			if (childValue) {
-				html += `${interpolationPart.whitespace}${interpolationPart.name}`;
+				html += ` ${part.name}`;
 			}
 			continue;
 		}
@@ -138,8 +130,8 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 		}
 
 		const attributeValue =
-			interpolationPart.name.toLowerCase() === 'style' ? serializeStyleSnapshot(childValue) : String(childValue);
-		html += `${interpolationPart.whitespace}${interpolationPart.name}="${escapeAttribute(attributeValue)}"`;
+			part.name.toLowerCase() === 'style' ? serializeStyleSnapshot(childValue) : String(childValue);
+		html += ` ${part.name}="${escapeAttribute(attributeValue)}"`;
 	}
 
 	html += template.strings[template.strings.length - 1] ?? '';

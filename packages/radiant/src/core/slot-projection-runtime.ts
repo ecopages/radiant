@@ -104,11 +104,10 @@ export function resolveSlotProjection(
 		}
 
 		if (isTemplateResultLike(currentValue)) {
+			// Spread rather than enumerate: only `values` is rewritten here, and the
+			// template result carries compile metadata that must survive untouched.
 			return {
-				_$rType$: 1,
-				rootLocalName: currentValue.rootLocalName,
-				ssrIntrinsicProps: currentValue.ssrIntrinsicProps,
-				strings: currentValue.strings,
+				...currentValue,
 				values: currentValue.values.map((entry) => resolveValue(entry as JsxRenderable)),
 			} satisfies TemplateResultLike;
 		}
