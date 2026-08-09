@@ -40,8 +40,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) controls: string;
 	/** `label` is not a safe reactive attribute name in the DOM; bind via `button-label`. */
 	@prop({ type: String, attribute: 'button-label', defaultValue: 'Toggle sidebar' }) buttonLabel: string;
-	@prop({ type: String, reflect: true, defaultValue: '' }) placement:
-		RuiSidebarTriggerPlacement | '';
+	@prop({ type: String, reflect: true, defaultValue: '' }) placement: RuiSidebarTriggerPlacement | '';
 	@prop({ type: String, defaultValue: 'ghost' }) variant: NonNullable<RuiSidebarTriggerProps['variant']>;
 	@prop({ type: String, defaultValue: 'md' }) size: NonNullable<RuiSidebarTriggerProps['size']>;
 

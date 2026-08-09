@@ -354,7 +354,16 @@ export type RuiSidebarTriggerViewProps = JsxHtmlPropsWithChildren<
 
 export const RuiSidebarTrigger = defineRadiantView(
 	RuiSidebarTriggerElement,
-	({ children, class: className, controls, triggerLabel, placement, variant, size, ...props }: RuiSidebarTriggerViewProps) => (
+	({
+		children,
+		class: className,
+		controls,
+		triggerLabel,
+		placement,
+		variant,
+		size,
+		...props
+	}: RuiSidebarTriggerViewProps) => (
 		<rui-sidebar-trigger
 			{...props}
 			class={cx(className, placement && `rui-sidebar-trigger-placement--${placement}`)}
