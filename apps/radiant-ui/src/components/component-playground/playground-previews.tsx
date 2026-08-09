@@ -543,7 +543,7 @@ function renderHeadingPreview(props: Record<string, unknown>): JsxRenderable {
 function renderHeadlinePreview(props: Record<string, unknown>, children?: string): JsxRenderable {
 	return (
 		<RuiHeadline as={selectProp(props, 'as', 'h1')} size={selectProp(props, 'size', 'xl')}>
-			{children ?? 'Radiant UI'}
+			{children ?? 'radiant UI'}
 		</RuiHeadline>
 	);
 }
@@ -773,7 +773,7 @@ function renderSidebarPreview(props: Record<string, unknown>): JsxRenderable {
 						defaultOpen={bool(props, 'defaultOpen', true)}
 						resizable={bool(props, 'resizable')}
 						defaultWidth={num(props, 'defaultWidth', 256)}
-						mobileBreakpoint={0}
+						mobileBreakpoint={768}
 						label="Workspace"
 					>
 						<RuiSidebarContent aria-label="Primary navigation">
