@@ -1,38 +1,24 @@
 import { describe, expect, test } from 'vitest';
 import {
-	appendRadiantViewModuleStamps,
+	appendRadiantMetaViewStamps,
+	appendRadiantScriptModuleStamps,
 	collectDeclaredStylesheetImports,
 	injectDeclaredStylesheetImports,
+	transformRadiantStoryModule,
 } from './script-module-stamp-shared';
 
 describe('collectDeclaredStylesheetImports', () => {
-	test('collects defineRadiantView stylesheets option', () => {
+	test('collects radiantMeta stylesheets option', () => {
 		const code = `
-export const RuiAlert = defineRadiantView(
-	RuiAlertElement,
-	(props) => <rui-alert>{props.children}</rui-alert>,
-	{ stylesheets: ['./alert.css'] },
-);
+const meta = { component: RuiChip };
+radiantMeta(meta, { stylesheets: ['./chip.css'] });
 `;
-		expect(collectDeclaredStylesheetImports(code)).toEqual(['./alert.css']);
-	});
-
-	test('collects attachRadiantStylesheets paths', () => {
-		const code = `
-export function RuiInput() { return null; }
-attachRadiantStylesheets(RuiInput, ['./input.css'], import.meta.url);
-`;
-		expect(collectDeclaredStylesheetImports(code)).toEqual(['./input.css']);
+		expect(collectDeclaredStylesheetImports(code)).toEqual(['./chip.css']);
 	});
 
 	test('collects multiple sheets and dedupes', () => {
 		const code = `
-export const RuiDisclosure = defineRadiantView(El, render, {
-	stylesheets: ['./disclosure.css', './extra.css'],
-});
-export const RuiDisclosureGroup = defineRadiantView(GroupEl, renderGroup, {
-	stylesheets: ['./disclosure.css'],
-});
+radiantMeta(meta, { stylesheets: ['./disclosure.css', './extra.css', './disclosure.css'] });
 `;
 		expect(collectDeclaredStylesheetImports(code)).toEqual(['./disclosure.css', './extra.css']);
 	});
@@ -41,23 +27,18 @@ export const RuiDisclosureGroup = defineRadiantView(GroupEl, renderGroup, {
 		const code = `{ stylesheets: ['alert.css', '../shared.css', './ok.css'] }`;
 		expect(collectDeclaredStylesheetImports(code)).toEqual(['../shared.css', './ok.css']);
 	});
-
-	test('collects attachRadiantStylesheets with non-identifier first args', () => {
-		const code = `attachRadiantStylesheets(exports.RuiInput, ['./input.css'], import.meta.url);`;
-		expect(collectDeclaredStylesheetImports(code)).toEqual(['./input.css']);
-	});
 });
 
 describe('injectDeclaredStylesheetImports', () => {
-	test('prepends missing imports', () => {
-		const code = `export const RuiAlert = defineRadiantView(El, render, { stylesheets: ['./alert.css'] });\n`;
+	test('prepends missing imports from radiantMeta', () => {
+		const code = `const meta = { title: 'Alert' };\nradiantMeta(meta, { stylesheets: ['./alert.css'] });\nexport default meta;\n`;
 		expect(injectDeclaredStylesheetImports(code)).toBe(
-			`import './alert.css';\nexport const RuiAlert = defineRadiantView(El, render, { stylesheets: ['./alert.css'] });\n`,
+			`import './alert.css';\nconst meta = { title: 'Alert' };\nradiantMeta(meta, { stylesheets: ['./alert.css'] });\nexport default meta;\n`,
 		);
 	});
 
 	test('skips sheets that are already imported', () => {
-		const code = `import './alert.css';\nexport const RuiAlert = defineRadiantView(El, render, { stylesheets: ['./alert.css'] });\n`;
+		const code = `import './alert.css';\nconst meta = {};\nradiantMeta(meta, { stylesheets: ['./alert.css'] });\n`;
 		expect(injectDeclaredStylesheetImports(code)).toBe(code);
 	});
 
@@ -67,20 +48,109 @@ describe('injectDeclaredStylesheetImports', () => {
 	});
 });
 
-describe('appendRadiantViewModuleStamps', () => {
-	test('injects imports and stamps defineRadiantView exports', () => {
-		const code = `export const RuiAlert = defineRadiantView(El, render, { stylesheets: ['./alert.css'] });\n`;
-		const result = appendRadiantViewModuleStamps(code, '/abs/src/components/ui/alert/alert.tsx', '/abs');
-		expect(result).toContain(`import './alert.css';`);
-		expect(result).toContain(`RuiAlert[Symbol.for('@ecopages/storybook-radiant.viewModule')]`);
-		expect(result).toContain(`/src/components/ui/alert/alert.tsx`);
+describe('appendRadiantMetaViewStamps', () => {
+	test('stamps radiantMeta component with view module path', () => {
+		const code = `import { radiantMeta } from '@ecopages/storybook-radiant-vite';
+import { RuiChip } from './chip';
+const meta = { title: 'Chip', component: RuiChip };
+radiantMeta(meta, { stylesheets: ['./chip.css'] });
+export default meta;
+`;
+		const result = appendRadiantMetaViewStamps(
+			code,
+			'/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx',
+			'/abs',
+		);
+		expect(result).toContain(`RuiChip[Symbol.for('@ecopages/storybook-radiant.viewModule')]`);
+		expect(result).toContain(`/packages/radiant-ui/src/components/ui/chip/chip.tsx`);
 	});
 
-	test('returns null when already stamped and imports present', () => {
-		const code = `import './alert.css';
-export const RuiAlert = defineRadiantView(El, render, { stylesheets: ['./alert.css'] });
-RuiAlert[Symbol.for('@ecopages/storybook-radiant.viewModule')] = '/src/components/ui/alert/alert.tsx';
+	test('returns null when already stamped', () => {
+		const code = `import { RuiChip } from './chip';
+const meta = { component: RuiChip };
+radiantMeta(meta);
+export default meta;
+RuiChip[Symbol.for('@ecopages/storybook-radiant.viewModule')] = '/packages/radiant-ui/src/components/ui/chip/chip.tsx';
 `;
-		expect(appendRadiantViewModuleStamps(code, '/abs/src/components/ui/alert/alert.tsx', '/abs')).toBeNull();
+		expect(
+			appendRadiantMetaViewStamps(
+				code,
+				'/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx',
+				'/abs',
+			),
+		).toBeNull();
+	});
+});
+
+describe('transformRadiantStoryModule', () => {
+	test('injects css imports, view stamp, and story module stamp for radiantMeta', () => {
+		const code = `import { radiantMeta } from '@ecopages/storybook-radiant-vite';
+import { RuiChip } from './chip';
+const meta = { title: 'Chip', component: RuiChip };
+radiantMeta(meta, { stylesheets: ['./chip.css'] });
+export default meta;
+`;
+		const result = transformRadiantStoryModule(
+			code,
+			'/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx',
+			'/abs',
+		);
+		expect(result).toContain(`import './chip.css';`);
+		expect(result).toContain(`RuiChip[Symbol.for('@ecopages/storybook-radiant.viewModule')]`);
+		expect(result).toContain(`storyModule: '/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx'`);
+	});
+
+	test('is idempotent when storyModule stamp already present', () => {
+		const code = `import './chip.css';
+import { RuiChip } from './chip';
+const meta = { component: RuiChip };
+radiantMeta(meta, { stylesheets: ['./chip.css'] });
+export default meta;
+RuiChip[Symbol.for('@ecopages/storybook-radiant.viewModule')] = '/packages/radiant-ui/src/components/ui/chip/chip.tsx';
+if (!meta.parameters) meta.parameters = {};
+meta.parameters.radiant = { ...(meta.parameters.radiant ?? {}), storyModule: '/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx' };
+`;
+		expect(
+			transformRadiantStoryModule(
+				code,
+				'/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx',
+				'/abs',
+			),
+		).toBeNull();
+	});
+
+	test('stamps legacy meta without radiantMeta', () => {
+		const code = `const meta = { title: 'X', component: Foo };
+export default meta;
+`;
+		const result = transformRadiantStoryModule(code, '/abs/src/foo.stories.tsx', '/abs');
+		expect(result).toContain(`storyModule: '/src/foo.stories.tsx'`);
+	});
+});
+
+describe('appendRadiantScriptModuleStamps', () => {
+	test('stamps custom element exports', () => {
+		const code = `export class RuiAlert extends HTMLElement {}\n`;
+		const result = appendRadiantScriptModuleStamps(
+			code,
+			'/abs/packages/radiant-ui/src/components/ui/alert/alert.script.tsx',
+			'/abs',
+		);
+		expect(result).toContain(`RuiAlert[Symbol.for('@ecopages/storybook-radiant.scriptModule')]`);
+		expect(result).toContain(`/packages/radiant-ui/src/components/ui/alert/alert.script.tsx`);
+	});
+
+	test('is idempotent when already stamped outside /src/', () => {
+		const code = `export class RuiAlert extends HTMLElement {}
+RuiAlert[Symbol.for('@ecopages/storybook-radiant.scriptModule')] = '/packages/radiant-ui/src/components/ui/alert/alert.script.tsx';
+RuiAlert[Symbol.for('@ecopages/storybook-radiant.scriptExport')] = 'RuiAlert';
+`;
+		expect(
+			appendRadiantScriptModuleStamps(
+				code,
+				'/abs/packages/radiant-ui/src/components/ui/alert/alert.script.tsx',
+				'/abs',
+			),
+		).toBeNull();
 	});
 });
