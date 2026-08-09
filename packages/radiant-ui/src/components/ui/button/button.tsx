@@ -2,13 +2,13 @@ import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { attachRadiantStylesheets } from '@/lib/radiant-view';
 
-export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost';
-export type RuiButtonSize = 'sm' | 'md' | 'lg';
+export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost' | 'link';
+export type RuiButtonSize = 'none' | 'sm' | 'md' | 'lg';
 
 type RuiButtonCommonProps = JsxHtmlPropsWithChildren<{
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
-	/** Control size. Default: `md` (Default in docs). */
+	/** Control size. Default: `md` (Default in docs). Use `none` for inline `link` chrome. */
 	size?: RuiButtonSize;
 	/** Accessible name when the button has no visible text. */
 	'aria-label'?: string;
@@ -67,7 +67,8 @@ function resolveAriaPressed(
  *
  * @remarks
  * Default/`md` height uses `--size-control-md`, the same token as `RuiInput`, so
- * form rows align. Styles live in `./button.css`.
+ * form rows align. `none` omits fixed height and padding for inline `link`
+ * actions. Styles live in `./button.css`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
  */
