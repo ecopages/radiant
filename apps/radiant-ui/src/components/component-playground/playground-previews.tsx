@@ -797,7 +797,7 @@ function renderRadioGroupPreview(props: Record<string, unknown>): JsxRenderable 
 
 function renderSelectPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
-		<>
+		<RuiField name="preview">
 			<RuiLabel>Animal</RuiLabel>
 			<RuiSelect
 				value={str(props, 'value', 'cat')}
@@ -806,7 +806,7 @@ function renderSelectPreview(props: Record<string, unknown>): JsxRenderable {
 				selectionMode={str(props, 'selectionMode', 'single')}
 				options={ANIMAL_OPTIONS}
 			/>
-		</>
+		</RuiField>
 	);
 }
 
