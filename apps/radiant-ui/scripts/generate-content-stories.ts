@@ -17,11 +17,6 @@ function slugToPascal(slug: string): string {
 		.join('');
 }
 
-function slugToCamel(slug: string): string {
-	const pascal = slugToPascal(slug);
-	return pascal.charAt(0).toLowerCase() + pascal.slice(1);
-}
-
 function propKey(prop: string): string {
 	return prop.includes('-') ? `'${prop}'` : prop;
 }
