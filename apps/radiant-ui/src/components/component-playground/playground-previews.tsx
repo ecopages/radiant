@@ -237,6 +237,7 @@ function playgroundFallback(message: string): JsxRenderable {
 function renderAlertPreview(props: Record<string, unknown>, children?: string): JsxRenderable {
 	const variant = selectProp(props, 'variant', 'info');
 	const layout = str(props, 'layout', 'inline');
+	const dismissible = bool(props, 'dismissible', false);
 
 	if (layout === 'banner') {
 		const title = str(props, 'title', 'Documentation preview');
@@ -246,7 +247,7 @@ function renderAlertPreview(props: Record<string, unknown>, children?: string): 
 			children ?? 'This release includes breaking changes to the routing API.',
 		);
 		return (
-			<RuiAlert variant={variant} layout={layout}>
+			<RuiAlert variant={variant} layout={layout} dismissible={dismissible}>
 				<RuiAlertTitle>{title}</RuiAlertTitle>
 				<RuiAlertDescription>
 					<p>{description}</p>
@@ -257,7 +258,7 @@ function renderAlertPreview(props: Record<string, unknown>, children?: string): 
 
 	const message = str(props, 'message', children ?? 'Your session will expire in 5 minutes.');
 	return (
-		<RuiAlert variant={variant} layout={layout}>
+		<RuiAlert variant={variant} layout={layout} dismissible={dismissible}>
 			<RuiAlertIcon variant={variant} />
 			<span>{message}</span>
 		</RuiAlert>
@@ -996,7 +997,7 @@ function renderTocPreview(props: Record<string, unknown>): JsxRenderable {
 function renderToolbarPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiToolbar label={str(props, 'label', 'Text formatting')} exclusiveToggles={bool(props, 'exclusiveToggles')}>
-			<RuiButton toggle pressed variant="ghost">
+			<RuiButton toggle variant="ghost">
 				Bold
 			</RuiButton>
 			<RuiButton toggle variant="ghost">

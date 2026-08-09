@@ -1,3 +1,5 @@
+@reference '../../styles/tailwind.css';
+
 .docs-story {
 	--docs-story-line: color-mix(in srgb, var(--color-on-background) 12%, transparent);
 	@apply my-6 overflow-hidden rounded-md;
@@ -18,13 +20,16 @@
 	@apply min-w-0;
 }
 
-.docs-story__stage radiant-docs-canvas {
-	@apply flex min-h-52 w-full items-center justify-center border-0 bg-transparent px-6 py-10 md:px-10;
-	border-radius: 0;
+.docs-story__preview {
+	@apply relative flex min-h-48 w-full flex-col items-center justify-center px-4 py-6 sm:min-h-52 sm:px-6 sm:py-8 md:px-10 md:py-10;
+}
+
+.docs-story__preview-mount {
+	@apply flex w-full items-center justify-center;
 }
 
 radiant-docs-canvas {
-	@apply flex min-h-48 items-center justify-center rounded-md border border-border bg-background-accent/80 p-8;
+	@apply block w-full min-w-0;
 }
 
 .docs-story-controls {
@@ -61,15 +66,10 @@ radiant-docs-canvas {
 	user-select: none;
 }
 
-.docs-story-controls__segmented {
-	@apply min-w-0 w-full items-stretch gap-0.5 rounded-control p-0.5;
+.docs-story-controls__segmented.rui-toolbar,
+.docs-story-controls__segmented .rui-toolbar {
+	@apply min-w-0 w-full flex-nowrap gap-0.5 rounded-control p-0.5;
 	background: color-mix(in srgb, var(--color-on-background) 6%, transparent);
-}
-
-.docs-story-controls__segmented.rui-button-group,
-.docs-story-controls__segmented.rui-button-group--horizontal {
-	@apply flex-nowrap;
-	flex-wrap: nowrap;
 }
 
 .docs-story-controls__option.rui-button {
@@ -139,8 +139,15 @@ radiant-docs-canvas {
 }
 
 .docs-story-code__figure[data-rehype-pretty-code-figure] pre {
-	@apply m-0 overflow-x-auto px-4 py-4 md:px-5 md:py-5;
+	@apply m-0 overflow-x-auto rounded-none border-0 px-4 py-4 shadow-none md:px-5 md:py-5;
 	background-color: var(--shiki-light-bg);
+}
+
+/** Beat `.prose pre` border/radius when the block sits inside the docs demo code panel. */
+radiant-docs-code [data-rehype-pretty-code-figure],
+radiant-docs-code [data-rehype-pretty-code-figure] pre {
+	border: 0;
+	border-radius: 0;
 }
 
 .docs-story-code__figure[data-rehype-pretty-code-figure] pre > code {
@@ -232,9 +239,9 @@ radiant-docs-canvas {
 	justify-content: center;
 }
 
-.docs-story__stage radiant-docs-canvas:has(.playground-toc-demo),
-.docs-story__stage radiant-docs-canvas:has(.playground-navigation-menu),
-.docs-story__stage radiant-docs-canvas:has(.playground-toast-stage) {
+.docs-story__preview-mount:has(.playground-toc-demo),
+.docs-story__preview-mount:has(.playground-navigation-menu),
+.docs-story__preview-mount:has(.playground-toast-stage) {
 	align-items: flex-start;
 	justify-content: stretch;
 }

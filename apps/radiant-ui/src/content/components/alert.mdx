@@ -4,7 +4,7 @@ description: Alerts surface time-sensitive status without blocking the interface
 category: Feedback
 ---
 
-import { meta as AlertMeta, Default, InlineWarning, Banner } from '@/content/stories/alert';
+import { meta as AlertMeta, Default, InlineWarning, Banner, Dismissible } from '@/content/stories/alert';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -31,7 +31,7 @@ export const config = {
 
 ## Usage
 
-Compose `RuiAlert` with `RuiAlertIcon` and short text for `layout="inline"`, or `RuiAlertTitle` and `RuiAlertDescription` for `layout="banner"`. Banner layouts omit the icon.
+Compose `RuiAlert` with `RuiAlertIcon` and short text for `layout="inline"`, or `RuiAlertTitle` and `RuiAlertDescription` for `layout="banner"`. Banner layouts omit the icon. `RuiAlert` owns the `role="alert"` surface; the host handles dismiss.
 
 ```tsx
 import { RuiAlert, RuiAlertIcon } from '@ecopages/radiant-ui/alert';
@@ -41,6 +41,8 @@ import { RuiAlert, RuiAlertIcon } from '@ecopages/radiant-ui/alert';
 	<span>Your session will expire in 5 minutes.</span>
 </RuiAlert>
 ```
+
+Inject or reveal an alert when the status becomes relevant. Copy that is always on the page should not use `role="alert"`.
 
 ## Match severity to variant
 
@@ -72,8 +74,67 @@ import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-
 </RuiAlert>
 ```
 
+## Dismissible alerts
+
+Set `dismissible` when the user can clear the message. The host emits `rui-close` and then removes itself from the DOM.
+
+<Canvas of={Dismissible} meta={AlertMeta} />
+
+```tsx
+<RuiAlert variant="warning" layout="inline" dismissible>
+	<RuiAlertIcon variant="warning" />
+	<span>Your session will expire in 5 minutes.</span>
+</RuiAlert>
+```
+
 ## Accessibility
 
-- Alerts render with `role="alert"` so screen readers announce them when they appear.
-- For inline alerts, pair `RuiAlertIcon` with text; do not rely on color alone to convey severity.
+Follows the <a href="https://www.w3.org/WAI/ARIA/apg/patterns/alert/" data-wai-aria target="_blank" rel="noopener noreferrer">Alert</a> pattern.
+
+- The view renders an inner surface with `role="alert"` so screen readers announce the message when it appears.
+- For inline alerts, pair `RuiAlertIcon` with text; do not rely on color or the icon alone to convey severity. The default icon is decorative (`aria-hidden="true"`).
 - For banner alerts, use `RuiAlertTitle` for the headline and `RuiAlertDescription` for supporting detail.
+- Prefer alerts for interruptions that do not require an immediate response. Use a dialog when the user must decide before continuing.
+- When `dismissible`, the close control is a labeled button (`close-label`, default `Dismiss`).
+
+## API
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `variant` | `info` · `success` · `warning` · `error` | `info` | Visual tone. |
+| `layout` | `inline` · `banner` | `inline` | Compact row vs full-width advisory. |
+| `dismissible` | `boolean` | `false` | Show dismiss control; enables `dismiss()`. |
+| `close-label` | `string` | `Dismiss` | Accessible name for the dismiss control. |
+
+### Slots
+
+| Slot | Description |
+| --- | --- |
+| *(default)* | Content inside the `role="alert"` region. `inline`: `RuiAlertIcon` + text. `banner`: `RuiAlertTitle` + `RuiAlertDescription`. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-close` | `{ reason: 'dismiss' }` | Fired when the alert is dismissed; the host is then removed. |
+
+### CSS classes
+
+Public BEM classes on the light-DOM surface (documented via `@cssclass` on the JSX view helpers):
+
+| Class | Description |
+| --- | --- |
+| `.rui-alert` | Root surface inside the host (`role="alert"`). |
+| `.rui-alert--info` | Info tone (default). |
+| `.rui-alert--success` | Success tone. |
+| `.rui-alert--warning` | Warning tone. |
+| `.rui-alert--error` | Error tone. |
+| `.rui-alert--inline` | Compact row layout (icon + text). |
+| `.rui-alert--banner` | Full-width advisory with left accent rail. |
+| `.rui-alert--dismissible` | Layout adjustments for the dismiss control. |
+| `.rui-alert__icon` | Icon wrapper (`RuiAlertIcon`, `inline` only). |
+| `.rui-alert__title` | Banner headline (`RuiAlertTitle`). |
+| `.rui-alert__description` | Banner body (`RuiAlertDescription`). |
+| `.rui-alert__close` | Dismiss button when `dismissible` is set. |

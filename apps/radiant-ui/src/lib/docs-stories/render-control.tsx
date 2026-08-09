@@ -1,11 +1,11 @@
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
-import { RuiButtonGroup } from '@ecopages/radiant-ui/button-group';
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { RuiNumberField } from '@ecopages/radiant-ui/number-field';
 import { RuiSelect } from '@ecopages/radiant-ui/select';
 import { RuiSwitch } from '@ecopages/radiant-ui/switch';
+import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
 import type { DocsArgs, ResolvedDocsControl } from './types';
 
 function controlShell(kind: ResolvedDocsControl['kind'], control: JsxRenderable): JsxRenderable {
@@ -41,7 +41,7 @@ function renderNumberControl(name: string, raw: unknown): JsxRenderable {
 
 export function renderSegmentedControl(name: string, options: string[], value: string): JsxRenderable {
 	return (
-		<RuiButtonGroup class="docs-story-controls__segmented" aria-label={name}>
+		<RuiToolbar class="docs-story-controls__segmented" label={name}>
 			{options.map((option) => (
 				<RuiButton
 					size="sm"
@@ -54,7 +54,7 @@ export function renderSegmentedControl(name: string, options: string[], value: s
 					{option}
 				</RuiButton>
 			))}
-		</RuiButtonGroup>
+		</RuiToolbar>
 	);
 }
 

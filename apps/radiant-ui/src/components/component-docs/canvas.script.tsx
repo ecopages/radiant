@@ -16,7 +16,12 @@ export class DocsCanvasElement extends RadiantElement {
 	private bindAttempts = 0;
 
 	private get storyId(): string {
-		return this.getStoryProvider()?.getContext().storyId || this.dataset.storyId || '';
+		return (
+			this.getStoryProvider()?.getContext().storyId ||
+			this.dataset.storyId ||
+			this.closest<HTMLElement>('radiant-docs-demo')?.dataset.storyId ||
+			''
+		);
 	}
 
 	/**
@@ -27,7 +32,8 @@ export class DocsCanvasElement extends RadiantElement {
 	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
-		if (!this.hasChildNodes()) {
+		const mount = this.getPreviewTarget();
+		if (!mount.hasChildNodes()) {
 			this.repaintFromContext();
 		}
 		this.bindStoryContext();
@@ -42,7 +48,9 @@ export class DocsCanvasElement extends RadiantElement {
 	/** Re-renders the story preview from the current shared args. */
 	repaintFromContext(): void {
 		const entry = getRegisteredStory(this.storyId);
-		if (!entry) return;
+		if (!entry) {
+			return;
+		}
 
 		const contextArgs = this.getStoryProvider()?.getContext().args;
 		const args =
@@ -79,15 +87,31 @@ export class DocsCanvasElement extends RadiantElement {
 		});
 	}
 
+	private getPreviewTarget(): HTMLElement {
+		return this.querySelector<HTMLElement>('[data-docs-preview]') ?? this;
+	}
+
+	/**
+	 * Paints the story into a fresh preview mount.
+	 *
+	 * @remarks
+	 * After a dismissible demo removes itself, soft JSX reconciliation keeps a
+	 * stale root keyed to the old mount element. Replacing the mount drops that
+	 * WeakMap entry so arg changes remount a fresh preview.
+	 */
 	private paintStory(args: Record<string, unknown>): void {
 		const entry = getRegisteredStory(this.storyId);
 		if (!entry) {
 			return;
 		}
 
+		const mount = this.getPreviewTarget();
 		const revision = this.getStoryProvider()?.getContext().renderRevision ?? 0;
 		this.dataset.playgroundRevision = String(revision);
-		renderJsx(renderStory(entry.meta, entry.story, args), this);
+
+		const nextMount = mount.cloneNode(false) as HTMLElement;
+		mount.replaceWith(nextMount);
+		renderJsx(renderStory(entry.meta, entry.story, args), nextMount);
 	}
 }
 

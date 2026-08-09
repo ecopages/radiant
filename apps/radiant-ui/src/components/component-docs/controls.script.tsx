@@ -2,13 +2,13 @@ import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { type ContextProvider, consumeContext } from '@ecopages/radiant/context';
 import '@ecopages/radiant-ui/button';
-import '@ecopages/radiant-ui/button-group';
 import '@ecopages/radiant-ui/cycle-toggle';
 import '@ecopages/radiant-ui/input';
 import '@ecopages/radiant-ui/number-field';
 import '@ecopages/radiant-ui/select';
 import '@ecopages/radiant-ui/sidebar';
 import '@ecopages/radiant-ui/switch';
+import '@ecopages/radiant-ui/toolbar';
 import '@/content/stories';
 import { docsStoryContext } from '@/lib/docs-stories/story-context';
 import type { DocsCanvasElement } from './canvas.script';
@@ -18,7 +18,7 @@ import type { DocsDemoElement } from './demo.script';
 export class DocsControlsElement extends RadiantElement {
 	@consumeContext(docsStoryContext) story?: ContextProvider<typeof docsStoryContext>;
 
-	@onEvent({ selector: 'button[data-docs-arg]', type: 'click' })
+	@onEvent({ selector: 'button[data-docs-arg]', type: 'click', options: { capture: true } })
 	onSegmentClick(event: Event): void {
 		const target = event.target;
 		if (!(target instanceof Node)) return;
@@ -27,6 +27,8 @@ export class DocsControlsElement extends RadiantElement {
 		const propName = button?.dataset.docsArg;
 		const value = button?.dataset.docsArgValue;
 		if (!propName || value == null) return;
+		event.preventDefault();
+		event.stopImmediatePropagation();
 		this.setArg(propName, value);
 	}
 
@@ -90,6 +92,7 @@ export class DocsControlsElement extends RadiantElement {
 		}
 
 		provider.setContext({
+			storyId: current.storyId,
 			args: nextArgs,
 			renderRevision: current.renderRevision + 1,
 		});
