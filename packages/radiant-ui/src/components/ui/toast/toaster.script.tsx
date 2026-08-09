@@ -67,7 +67,32 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
 /**
  * `<rui-toaster>` — fixed viewport that renders the toast stack.
  *
+ * Mount once at the app root, then drive it imperatively with {@link toast}.
+ * Owns the stacking layout (collapsed peek + hover expand), visibility pause,
+ * and per-position filtering of queued toasts.
+ *
  * @element rui-toaster
+ *
+ * @attr {string} position - Corner / edge placement. Default: `bottom-end`.
+ * @attr {number} duration - Default lifetime in ms. Default: `4000`.
+ * @attr {number} visible-toasts - Max toasts mounted at once; older wait in queue. Default: `3`.
+ * @attr {boolean} close-button - Show a close button on every toast. Default: `false`.
+ * @attr {boolean} expand - Always render the stack expanded. Default: `false`.
+ * @attr {number} gap - Gap between expanded toasts in px. Default: `14`.
+ * @attr {number} offset - Viewport inset in px. Default: `24`.
+ * @attr {string} container - CSS selector for a positioning root. Default: `''`.
+ *
+ * @fires rui-toast-show - Document-level event; the toaster listens and creates
+ *   a toast from `{ title, description, variant, ... }`.
+ * @fires rui-toast-dismiss - Document-level event; the toaster dismisses the
+ *   matching toast (`{ id? }`).
+ *
+ * @remarks
+ * `container` switches the host from `position: fixed` to absolute inside a
+ * matched root — used by docs canvas demos so toasts render inside the preview.
+ *
+ * @cssclass rui-toaster-region - Announcement region wrapper (`display: contents`).
+ * @cssclass rui-toaster - The `<ol>` stack list.
  */
 @customElement('rui-toaster')
 export class RuiToaster extends RadiantElement<RuiToasterBindings> {
