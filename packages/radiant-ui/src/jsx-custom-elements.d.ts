@@ -4,6 +4,7 @@ import type { RuiBreadcrumb, RuiBreadcrumbProps } from './components/ui/breadcru
 import type { RuiCarousel, RuiCarouselProps } from './components/ui/carousel/carousel.script';
 import type { RuiCheckbox, RuiCheckboxProps } from './components/ui/checkbox/checkbox.script';
 import type { RuiCombobox, RuiComboboxProps } from './components/ui/combobox/combobox.script';
+import type { RuiCycleToggle, RuiCycleToggleProps } from './components/ui/cycle-toggle/cycle-toggle.script';
 import type { RuiDialog, RuiDialogProps } from './components/ui/dialog/dialog.script';
 import type { RuiDisclosureGroup, RuiDisclosureGroupProps } from './components/ui/disclosure/disclosure-group.script';
 import type { RuiDisclosure, RuiDisclosureProps } from './components/ui/disclosure/disclosure.script';
@@ -40,6 +41,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-carousel': JsxCustomElementAttributes<RuiCarousel, RuiCarouselProps>;
 		'rui-checkbox': JsxCustomElementAttributes<RuiCheckbox, RuiCheckboxProps>;
 		'rui-combobox': JsxCustomElementAttributes<RuiCombobox, RuiComboboxProps>;
+		'rui-cycle-toggle': JsxCustomElementAttributes<RuiCycleToggle, RuiCycleToggleProps>;
 		'rui-dialog': JsxCustomElementAttributes<RuiDialog, RuiDialogProps>;
 		'rui-disclosure': JsxCustomElementAttributes<RuiDisclosure, RuiDisclosureProps>;
 		'rui-disclosure-group': JsxCustomElementAttributes<RuiDisclosureGroup, RuiDisclosureGroupProps>;

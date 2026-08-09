@@ -17,6 +17,7 @@ import {
 } from '@ecopages/radiant-ui/breadcrumb';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiButtonGroup } from '@ecopages/radiant-ui/button-group';
+import { RuiCycleToggle, RuiCycleToggleItem } from '@ecopages/radiant-ui/cycle-toggle';
 import { RuiCalendar } from '@ecopages/radiant-ui/calendar';
 import { RuiCarousel, RuiCarouselNext, RuiCarouselPrev, RuiCarouselSlide } from '@ecopages/radiant-ui/carousel';
 import { RuiCheckbox } from '@ecopages/radiant-ui/checkbox';
@@ -328,6 +329,55 @@ function renderButtonGroupPreview(props: Record<string, unknown>): JsxRenderable
 			<RuiButton variant="outline">Cancel</RuiButton>
 			<RuiButton variant="filled">Save</RuiButton>
 		</RuiButtonGroup>
+	);
+}
+
+function renderThemeCycleTogglePreview(props: Record<string, unknown>): JsxRenderable {
+	const value = str(props, 'value', 'system') || 'system';
+	const label = str(props, 'label', 'Theme');
+
+	return (
+		<RuiCycleToggle
+			value={value}
+			variant={selectProp(props, 'variant', 'ghost')}
+			size={selectProp(props, 'size', 'sm')}
+			disabled={bool(props, 'disabled')}
+			label={label}
+		>
+			<RuiCycleToggleItem id="system" selected={value === 'system'}>
+				System
+			</RuiCycleToggleItem>
+			<RuiCycleToggleItem id="light" selected={value === 'light'}>
+				Light
+			</RuiCycleToggleItem>
+			<RuiCycleToggleItem id="dark" selected={value === 'dark'}>
+				Dark
+			</RuiCycleToggleItem>
+		</RuiCycleToggle>
+	);
+}
+
+function renderSortOrderCycleTogglePreview(props: Record<string, unknown>): JsxRenderable {
+	const value = str(props, 'value', 'newest') || 'newest';
+
+	return (
+		<RuiCycleToggle
+			value={value}
+			variant={selectProp(props, 'variant', 'outline')}
+			size={selectProp(props, 'size', 'md')}
+			disabled={bool(props, 'disabled')}
+			label={str(props, 'label', 'Sort order')}
+		>
+			<RuiCycleToggleItem id="newest" selected={value === 'newest'}>
+				Newest
+			</RuiCycleToggleItem>
+			<RuiCycleToggleItem id="oldest" selected={value === 'oldest'}>
+				Oldest
+			</RuiCycleToggleItem>
+			<RuiCycleToggleItem id="popular" selected={value === 'popular'}>
+				Popular
+			</RuiCycleToggleItem>
+		</RuiCycleToggle>
 	);
 }
 
@@ -1010,6 +1060,8 @@ const PREVIEW_RENDERERS: Record<string, (props: Record<string, unknown>, childre
 	breadcrumb: renderBreadcrumbPreview,
 	button: renderButtonPreview,
 	'button-group': renderButtonGroupPreview,
+	'cycle-toggle-theme': renderThemeCycleTogglePreview,
+	'cycle-toggle-sort-order': renderSortOrderCycleTogglePreview,
 	calendar: renderCalendarPreview,
 	carousel: renderCarouselPreview,
 	checkbox: renderCheckboxPreview,

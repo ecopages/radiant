@@ -3,6 +3,7 @@ import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 import { type ContextProvider, consumeContext } from '@ecopages/radiant/context';
 import '@ecopages/radiant-ui/button';
 import '@ecopages/radiant-ui/button-group';
+import '@ecopages/radiant-ui/cycle-toggle';
 import '@ecopages/radiant-ui/input';
 import '@ecopages/radiant-ui/number-field';
 import '@ecopages/radiant-ui/select';

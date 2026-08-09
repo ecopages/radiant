@@ -83,7 +83,30 @@
 		@apply bg-error-dark;
 	}
 
+	.rui-button--link {
+		@apply bg-transparent font-normal text-link no-underline underline-offset-2;
+	}
+
+	.rui-button--link:hover:not(:disabled),
+	.rui-button--link:focus-visible:not(:disabled) {
+		@apply underline;
+	}
+
+	.rui-button--link:active:not(:disabled) {
+		@apply underline;
+	}
+
+	.rui-button--link[aria-pressed='true'] {
+		@apply underline;
+	}
+
 	/* Sizes share `--size-control-*` with input so form rows align. */
+	.rui-button--none {
+		@apply h-auto min-h-0;
+		padding-inline: 0;
+		padding-block: 0;
+	}
+
 	.rui-button--sm {
 		height: var(--size-control-sm);
 		padding-inline: calc(var(--space-control-x) * 0.75);
@@ -107,6 +130,14 @@
 		width: var(--size-control-md);
 		padding-inline: 0;
 		font-size: var(--text-control, 0.875rem);
+	}
+
+	.rui-button--link.rui-button--sm,
+	.rui-button--link.rui-button--md,
+	.rui-button--link.rui-button--lg {
+		height: auto;
+		padding-inline: 0;
+		padding-block: 0;
 	}
 
 	/* Back-compat aliases used by earlier stories */

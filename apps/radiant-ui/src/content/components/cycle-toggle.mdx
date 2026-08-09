@@ -1,0 +1,54 @@
+---
+title: Cycle Toggle
+description: Cycle through exclusive values with a single button press.
+category: Actions
+---
+
+import { meta as CycleToggleMeta, Default, SortOrder } from '@/content/stories/cycle-toggle';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+			'../../components/component-docs/code.script.tsx',
+		],
+	},
+};
+
+
+# Cycle Toggle
+
+<p class="docs-lede">Cycle toggles advance through a fixed set of values on each click — theme preference, sort order, or any small exclusive choice.</p>
+
+## Try it
+
+<Demo of={Default} meta={CycleToggleMeta} />
+
+## Usage
+
+Compose `RuiCycleToggleItem` children inside `RuiCycleToggle`. Only the active item is visible in the button. Listen for `rui-change` to react to the new `detail.value`.
+
+```tsx
+import { RuiCycleToggle, RuiCycleToggleItem } from '@ecopages/radiant-ui/cycle-toggle';
+
+<RuiCycleToggle value="system" label="Theme" variant="ghost" size="sm">
+  <RuiCycleToggleItem id="system" selected>System</RuiCycleToggleItem>
+  <RuiCycleToggleItem id="light">Light</RuiCycleToggleItem>
+  <RuiCycleToggleItem id="dark">Dark</RuiCycleToggleItem>
+</RuiCycleToggle>
+```
+
+## Sort order
+
+<Canvas of={SortOrder} meta={CycleToggleMeta} />
+
+## Accessibility
+
+- The host `label` sets `aria-label` on the cycle button.
+- Item children can include visible text, icons, or screen-reader-only labels.
+- Space and Enter activate the native button.
