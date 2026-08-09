@@ -36,10 +36,54 @@ type RuiCarouselBindings = {
  * labeled `carousel` region, slide groups or tab panels, optional tabbed pickers,
  * rotation control when autoplay is enabled, and `aria-live` on the slide container.
  *
+ * @summary Region that cycles slides; optional autoplay, transitions, and chrome.
+ *
  * @element rui-carousel
+ *
+ * @attr {string} label - Accessible name for the carousel. Default: `Carousel`.
+ * @attr {number} index - Active slide index. Default: `0`.
+ * @attr {boolean} autoplay - Advance automatically. Default: `false`.
+ * @attr {number} interval - Autoplay interval in ms. Default: `4000`.
+ * @attr {('none'|'slide'|'fade')} transition - Slide swap animation. Default: `none`.
+ * @attr {('toolbar'|'overlay')} controls-variant - Chrome layout. Default: `toolbar`.
+ * @attr {boolean} show-indicators - Render tabbed indicator pickers. Default: `false`.
+ * @attr {boolean} show-rotation-control - Render play/pause control. Default: `false`.
+ * @attr {boolean} loop - Allow looping past the last slide. Default: `true`.
+ * @attr {boolean} wrap - Keep controls enabled at the ends. Default: `true`.
+ * @attr {number} slide-count - Authored slide count for render-time control state. Default: `0`.
+ *
+ * @slot - Slides, each marked with `data-slide` (see `RuiCarouselSlide`).
  * @slot prev - Optional custom previous control. Use `data-carousel-action="prev"`.
  * @slot next - Optional custom next control. Use `data-carousel-action="next"`.
  * @slot rotation - Optional play/pause control when `show-rotation-control` is set. Use `data-carousel-action="rotation"`.
+ *
+ * @cssclass rui-carousel - Root region (`aria-roledescription="carousel"`).
+ * @cssclass rui-carousel--none - No animation between slides.
+ * @cssclass rui-carousel--slide - Horizontal slide transition.
+ * @cssclass rui-carousel--fade - Cross-fade transition.
+ * @cssclass rui-carousel--controls-toolbar - Controls below the viewport.
+ * @cssclass rui-carousel--controls-overlay - Controls overlaid on the viewport.
+ * @cssclass rui-carousel__stage - Viewport wrapper.
+ * @cssclass rui-carousel__viewport - Overflow-hidden slide window (`aria-live`).
+ * @cssclass rui-carousel__track - Slide track.
+ * @cssclass rui-carousel__footer - Controls row below the viewport (`toolbar`).
+ * @cssclass rui-carousel__toolbar - Toolbar grid.
+ * @cssclass rui-carousel__toolbar-rotation - Rotation control cell.
+ * @cssclass rui-carousel__toolbar-center - Indicators cell.
+ * @cssclass rui-carousel__toolbar-side--start - Prev control cell.
+ * @cssclass rui-carousel__toolbar-side--end - Next control cell.
+ * @cssclass rui-carousel__overlay-chrome - Absolute overlay layer over the viewport.
+ * @cssclass rui-carousel__overlay-rotation - Rotation control overlay position.
+ * @cssclass rui-carousel__controls--overlay - Prev/next overlay row.
+ * @cssclass rui-carousel__indicators - Indicator tablist.
+ * @cssclass rui-carousel__indicators--overlay - Overlay pill indicator tablist.
+ * @cssclass rui-carousel__indicator - Indicator button (`role="tab"`).
+ *
+ * @remarks
+ * Autoplay pauses on hover, pointer interaction, focus, and hidden tabs, and
+ * respects `prefers-reduced-motion`. `aria-live` flips to `off` while rotating.
+ * Prev/next and rotation chrome classes are authored by the `RuiCarouselPrev` /
+ * `RuiCarouselNext` / `RuiCarouselRotation` view helpers for custom placement.
  */
 @customElement('rui-carousel')
 export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {

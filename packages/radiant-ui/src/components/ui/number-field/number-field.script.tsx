@@ -58,12 +58,39 @@ type RuiNumberFieldBindings = {
  * `data-number-field-action` (see view helpers), or use the default markup from `RuiNumberField`.
  *
  * @see https://react-aria.adobe.com/NumberField
+ *
  * @element rui-number-field
+ *
+ * @attr {number} value - Current value. Reflects to markup. Default: `undefined`.
+ * @attr {number} default-value - Initial value when uncontrolled. Default: `undefined`.
+ * @attr {number} min-value - Lower bound; steppers and arrow keys snap to it. Default: `-Infinity`.
+ * @attr {number} max-value - Upper bound; steppers and arrow keys snap to it. Default: `Infinity`.
+ * @attr {number} step - Increment/decrement and snap interval. Default: `1`.
+ * @attr {boolean} disabled - Disables input and steppers. Default: `false`.
+ * @attr {boolean} read-only - Blocks editing; the value still displays formatted. Default: `false`.
+ * @attr {string} label - Accessible name when there is no visible `RuiLabel`. Default: `''`.
+ * @attr {string} name - Form field name on the hidden value input. Default: `''`.
+ * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
+ * @attr {string} format-options - JSON-serialized `Intl.NumberFormatOptions`. Default: `''`.
+ * @attr {('snap'|'validate')} commit-behavior - Blur behavior after editing. Default: `snap`.
+ * @attr {string} increment-aria-label - Accessible name for the increment stepper. Default: `Increment`.
+ * @attr {string} decrement-aria-label - Accessible name for the decrement stepper. Default: `Decrement`.
+ * @attr {boolean} wheel-disabled - Disables scroll-wheel value changes. Default: `false`.
+ *
  * @slot group - Input + stepper row (`RuiNumberFieldGroup`).
  * @slot input - Text input (`RuiNumberFieldInput`).
  * @slot decrement - Decrement button (`RuiNumberFieldDecrementButton`).
  * @slot increment - Increment button (`RuiNumberFieldIncrementButton`).
- * @fires rui-change
+ *
+ * @fires rui-change - Emitted when a value is committed (blur, stepper, or keyboard);
+ *   `detail.value` holds the new number.
+ *
+ * @remarks
+ * Slot content authored by the view helpers carries the BEM classes (`@cssclass` on
+ * the exports). The default `render()` provides matching fallback markup so the
+ * element renders identically when used standalone.
+ *
+ * @cssclass rui-number-field - Root field wrapper.
  */
 @customElement('rui-number-field')
 export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {

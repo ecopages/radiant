@@ -24,8 +24,30 @@ type RuiWindowSplitterBindings = {
  * adjusts pane size via arrow keys and pointer drag. `value` and `orientation`
  * are reactive props.
  *
+ * @summary Resizable two-pane split with keyboard and pointer control.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/
+ *
  * @element rui-window-splitter
+ *
+ * @attr {number} value - Primary pane size as a percentage (clamped 20–80). Default: `50`.
+ * @attr {('horizontal'|'vertical')} orientation - Split axis. Default: `horizontal`.
+ * @attr {string} label - Accessible name for the separator. Default: `Split view`.
+ *
+ * @slot primary - First (primary) pane content.
+ * @slot secondary - Second pane content.
+ *
+ * @fires rui-splitter-change - Emitted with `{ value }` when the separator moves.
+ *
+ * @cssclass rui-window-splitter - Root surface.
+ * @cssclass rui-window-splitter--horizontal - Side-by-side panes.
+ * @cssclass rui-window-splitter--vertical - Stacked panes.
+ * @cssclass rui-window-splitter__pane - A pane region.
+ * @cssclass rui-window-splitter__separator - Focusable separator (`role="separator"`).
+ *
+ * @remarks
+ * The element authors the full composed surface in `render()`; the
+ * `RuiWindowSplitter` view only projects the two pane slots.
  */
 @customElement('rui-window-splitter')
 export class RuiWindowSplitter extends RadiantElement<RuiWindowSplitterBindings> {

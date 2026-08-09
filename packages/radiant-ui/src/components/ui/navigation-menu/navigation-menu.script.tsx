@@ -22,8 +22,12 @@ type RuiNavigationMenuBindings = {
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/
  * @element rui-navigation-menu
+ * @attr {string} label - Accessible name for the `nav` landmark.
  * @slot triggers - Top-level navigation triggers and plain links.
  * @slot panels - Disclosure panels composed from other primitives.
+ * @cssclass rui-navigation-menu - Root `nav` surface.
+ * @cssclass rui-navigation-menu__bar - Top-level trigger / link bar.
+ * @cssclass rui-navigation-menu__panels - Panel region (`aria-hidden` toggling).
  */
 @customElement('rui-navigation-menu')
 export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings> {

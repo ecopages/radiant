@@ -20,7 +20,21 @@ function initialsFrom(label: string): string {
 	return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
 }
 
-/** Image avatar with initials fallback. */
+/**
+ * Image avatar with initials fallback.
+ *
+ * @remarks When `src` is omitted or fails to load, initials derived from `alt`
+ * (or the explicit `fallback`) are shown in a `role="img"` span. There is no
+ * runtime image-error listener — pass `fallback` for reliable SSR of the
+ * fallback state.
+ *
+ * @cssclass rui-avatar - Avatar root; `role="img"` when image-less.
+ * @cssclass rui-avatar--sm - Small size.
+ * @cssclass rui-avatar--md - Default size.
+ * @cssclass rui-avatar--lg - Large size.
+ * @cssclass rui-avatar__image - `<img>` fill.
+ * @cssclass rui-avatar__fallback - Initials / text fallback.
+ */
 export function RuiAvatar({
 	src,
 	alt = '',

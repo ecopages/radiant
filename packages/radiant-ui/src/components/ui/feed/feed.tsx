@@ -13,6 +13,8 @@ export type RuiFeedProps = JsxHtmlPropsWithChildren<{
 /**
  * Presentational feed shell (`role="feed"`).
  *
+ * @cssclass rui-feed - Feed region (`role="feed"`).
+ *
  * @remarks No custom element — compose articles like a Card family. Consumers own
  * infinite scroll, keyboard navigation, and `aria-posinset` / `aria-setsize`.
  *
@@ -53,7 +55,11 @@ export type RuiFeedArticleProps = JsxHtmlPropsWithChildren<{
 	tabindex?: number | string;
 }>;
 
-/** Single feed article. */
+/**
+ * Single feed article.
+ *
+ * @cssclass rui-feed__article - Article card surface.
+ */
 export function RuiFeedArticle({
 	children,
 	posinset,
@@ -81,7 +87,11 @@ export function RuiFeedArticle({
 
 export type RuiFeedArticleHeaderProps = JsxHtmlPropsWithChildren;
 
-/** Article masthead — avatar, title, tags. */
+/**
+ * Article masthead — avatar, title, tags.
+ *
+ * @cssclass rui-feed__header - Article header stack.
+ */
 export function RuiFeedArticleHeader({ children, class: className, ...props }: RuiFeedArticleHeaderProps) {
 	return (
 		<header {...props} class={cx('rui-feed__header', className)}>
@@ -94,7 +104,11 @@ export type RuiFeedArticleContentProps = JsxHtmlPropsWithChildren<{
 	id?: string;
 }>;
 
-/** Main article body. */
+/**
+ * Main article body.
+ *
+ * @cssclass rui-feed__content - Article body column.
+ */
 export function RuiFeedArticleContent({ children, class: className, ...props }: RuiFeedArticleContentProps) {
 	return (
 		<div {...props} class={cx('rui-feed__content', className)}>
@@ -105,7 +119,11 @@ export function RuiFeedArticleContent({ children, class: className, ...props }: 
 
 export type RuiFeedArticleActionsProps = JsxHtmlPropsWithChildren;
 
-/** Action row (bookmark, share, etc.). */
+/**
+ * Action row (bookmark, share, etc.).
+ *
+ * @cssclass rui-feed__actions - Action row under a top border.
+ */
 export function RuiFeedArticleActions({ children, class: className, ...props }: RuiFeedArticleActionsProps) {
 	return (
 		<div {...props} class={cx('rui-feed__actions', className)}>
@@ -116,7 +134,11 @@ export function RuiFeedArticleActions({ children, class: className, ...props }: 
 
 export type RuiFeedBylineProps = JsxHtmlPropsWithChildren;
 
-/** Avatar + stacked identity row inside an article header. */
+/**
+ * Avatar + stacked identity row inside an article header.
+ *
+ * @cssclass rui-feed__byline - Avatar and identity row.
+ */
 export function RuiFeedByline({ children, class: className, ...props }: RuiFeedBylineProps) {
 	return (
 		<div {...props} class={cx('rui-feed__byline', className)}>
@@ -127,7 +149,11 @@ export function RuiFeedByline({ children, class: className, ...props }: RuiFeedB
 
 export type RuiFeedBylineBodyProps = JsxHtmlPropsWithChildren;
 
-/** Text stack beside an avatar in a byline. */
+/**
+ * Text stack beside an avatar in a byline.
+ *
+ * @cssclass rui-feed__byline-body - Identity text stack.
+ */
 export function RuiFeedBylineBody({ children, class: className, ...props }: RuiFeedBylineBodyProps) {
 	return (
 		<div {...props} class={cx('rui-feed__byline-body', className)}>
@@ -140,7 +166,11 @@ export type RuiFeedMetaProps = JsxHtmlPropsWithChildren<{
 	id?: string;
 }>;
 
-/** Compact meta row (rating · neighborhood · price). */
+/**
+ * Compact meta row (rating · neighborhood · price).
+ *
+ * @cssclass rui-feed__meta - Metadata row.
+ */
 export function RuiFeedMeta({ children, class: className, ...props }: RuiFeedMetaProps) {
 	return (
 		<div {...props} class={cx('rui-feed__meta', className)}>

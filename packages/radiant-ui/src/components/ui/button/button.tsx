@@ -69,7 +69,21 @@ function resolveAriaPressed(
  * form rows align. `none` omits fixed height and padding for inline `link`
  * actions. Styles live in `./button.css`.
  *
+ * Variant tones map to semantic action roles — `primary` for filled, `error`
+ * (destructive) for destructive — never palette steps.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
+ *
+ * @cssclass rui-button - Button / button-styled link root.
+ * @cssclass rui-button--filled - Primary filled action (`bg-primary`).
+ * @cssclass rui-button--outline - Bordered secondary action.
+ * @cssclass rui-button--destructive - Destructive action (`bg-error`).
+ * @cssclass rui-button--ghost - Subtle, borderless action.
+ * @cssclass rui-button--link - Inline link-styled action.
+ * @cssclass rui-button--none - No fixed size (inline `link` chrome).
+ * @cssclass rui-button--sm - Small control height.
+ * @cssclass rui-button--md - Default control height.
+ * @cssclass rui-button--lg - Large control height.
  */
 export function RuiButton(props: RuiButtonProps) {
 	if (props.href !== undefined) {

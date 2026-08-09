@@ -34,10 +34,21 @@ export type RuiComboboxChangeDetail = { value: string };
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/
+ *
  * @element rui-combobox
+ *
+ * @attr {string} value - Selected option value. Default: `''`.
+ * @attr {string} label - Accessible name when there is no visible `RuiLabel`. Default: `''`.
+ * @attr {string} placeholder - Placeholder text for the input. Default: `''`.
+ * @attr {boolean} disabled - Disable the input and trigger. Default: `false`.
+ * @attr {boolean} open-on-focus - Open the listbox when the input gains focus. Default: `false`.
+ *
  * @slot control - Input row (`RuiComboboxControl` with input and trigger).
  * @slot listbox - Popup shell (`RuiComboboxListbox`) containing an embedded `RuiListbox`.
- * @fires rui-change
+ *
+ * @fires rui-change - Emitted when an option is selected; detail carries `value`.
+ *
+ * @cssclass rui-combobox - Root surface.
  */
 @customElement('rui-combobox')
 export class RuiCombobox extends RadiantElement {

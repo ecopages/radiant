@@ -35,7 +35,35 @@ type RuiSliderBindings = {
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/slider-multithumb/
  *
  * @element rui-slider
- * @fires rui-change
+ *
+ * @attr {('single'|'range')} variant - Single-thumb or dual-thumb range. Default: `single`.
+ * @attr {number} value - Selected value (single mode). Reflects to markup. Default: `50`.
+ * @attr {number} range-min - Lower thumb value (range mode). Reflects to markup. Default: `25`.
+ * @attr {number} range-max - Upper thumb value (range mode). Reflects to markup. Default: `75`.
+ * @attr {number} min - Range minimum. Default: `0`.
+ * @attr {number} max - Range maximum. Default: `100`.
+ * @attr {number} step - Arrow-key and pointer snap interval. Default: `1`.
+ * @attr {number} min-distance - Minimum gap enforced between range thumbs. Default: `0`.
+ * @attr {boolean} disabled - Disables interaction. Default: `false`.
+ * @attr {string} label - Accessible name for the slider. Default: `''`.
+ * @attr {string} name - Form field name (single mode native input). Default: `''`.
+ *
+ * @fires rui-change - Emitted as the value moves; `detail.value` (single) or
+ *   `detail.values` `[min, max]` (range).
+ *
+ * @remarks
+ * The composed surface is authored here — the BEM classes below live on the element,
+ * not on the `RuiSlider` view (which only maps `values` to `rangeMin` / `rangeMax`).
+ *
+ * @cssclass rui-slider - Root; wraps the label, track, and value readout.
+ * @cssclass rui-slider--range - Range-mode surface (dual-thumb track).
+ * @cssclass rui-slider__label - Optional visible label.
+ * @cssclass rui-slider__input - Native range input (single mode).
+ * @cssclass rui-slider__value - Live numeric readout (`aria-hidden="true"`).
+ * @cssclass rui-slider__range - Range-mode track wrapper.
+ * @cssclass rui-slider__range-track - Track surface behind both thumbs.
+ * @cssclass rui-slider__range-fill - Filled span between the thumbs.
+ * @cssclass rui-slider__thumb - Range thumb (`role="slider"`).
  */
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement<RuiSliderBindings> {

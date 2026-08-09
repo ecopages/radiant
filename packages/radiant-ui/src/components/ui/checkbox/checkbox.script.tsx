@@ -46,6 +46,10 @@ type RuiCheckboxBindings = {
  * @element rui-checkbox
  * @slot - Visible label for the checkbox.
  * @fires rui-change - Emitted after the checked/indeterminate state changes.
+ * @cssclass rui-checkbox - Label row: box + visible label.
+ * @cssclass rui-checkbox__input - Native input (visually hidden, receives focus).
+ * @cssclass rui-checkbox__control - Visible box with check / indeterminate glyph.
+ * @cssclass rui-checkbox__label - Light-DOM label text.
  */
 @customElement('rui-checkbox')
 export class RuiCheckbox extends RadiantElement<RuiCheckboxBindings> {

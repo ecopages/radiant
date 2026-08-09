@@ -60,8 +60,40 @@ type MonthPanel = {
  * - range: `YYYY-MM-DD/YYYY-MM-DD`
  *
  * @see https://react-aria.adobe.com/Calendar
+ *
  * @element rui-calendar
- * @fires rui-change
+ *
+ * @attr {string} value - Selected date(s) in the mode-specific ISO format. Default: `''`.
+ * @attr {string} min - Earliest selectable ISO date. Default: `''`.
+ * @attr {string} max - Latest selectable ISO date. Default: `''`.
+ * @attr {boolean} disabled - Disable all date selection. Default: `false`.
+ * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
+ * @attr {('single'|'multiple'|'range')} selection-mode - Selection mode. Default: `single`.
+ * @attr {number} visible-months - Month grids shown side by side. Default: `1`.
+ * @attr {('visible'|'single')} page-behavior - Whether paging moves by all visible months or one month. Default: `visible`.
+ *
+ * @fires rui-change - Emitted when the selection changes; detail carries `value`, plus `start` / `end` for ranges.
+ *
+ * @cssclass rui-calendar - Root surface (`role="application"`).
+ * @cssclass rui-calendar--multi - Multi-month root modifier.
+ * @cssclass rui-calendar__months - Row of month panels.
+ * @cssclass rui-calendar__month-panel - Single month grid column.
+ * @cssclass rui-calendar__header - Month title row with paging controls.
+ * @cssclass rui-calendar__nav - Prev / next month button.
+ * @cssclass rui-calendar__nav-spacer - Placeholder where a nav button is absent.
+ * @cssclass rui-calendar__month - Month title.
+ * @cssclass rui-calendar__weekdays - Weekday header row.
+ * @cssclass rui-calendar__weekday - Weekday label.
+ * @cssclass rui-calendar__grid - Month grid (`role="grid"`).
+ * @cssclass rui-calendar__week - Grid row.
+ * @cssclass rui-calendar__day - Day cell button (`role="gridcell"`).
+ * @cssclass rui-calendar__footer - Footer row with the today button.
+ * @cssclass rui-calendar__today - "Today" jump button.
+ *
+ * @remarks
+ * Arrow keys move the focused day, PageUp / PageDown page the months (Shift
+ * adds ±12), and Enter / Space select the focused day. Disabled or out-of-range
+ * days are skipped while navigating.
  */
 @customElement('rui-calendar')
 export class RuiCalendar extends RadiantElement {

@@ -28,6 +28,10 @@ export type RuiSidebarProviderProps = {
  * `SidebarProvider` from common sidebar kits, but without a runtime context —
  * coordination between trigger, sidebar, and inset is achieved through
  * `id`/`aria-controls` and shared `data-*` attributes.
+ *
+ * @cssclass rui-sidebar-provider - Shell wrapping sidebar + inset.
+ * @cssclass rui-sidebar-provider__site-header - Full-width chrome (`layout="docs"`).
+ * @cssclass rui-sidebar-provider__body - Sidebar + inset row.
  */
 export function RuiSidebarProvider({
 	layout = 'default',
@@ -63,7 +67,11 @@ export type RuiSidebarHeaderProps = {
 	'aria-label'?: string;
 };
 
-/** Top section of the sidebar pane (logo, search, primary trigger). */
+/**
+ * Top section of the sidebar pane (logo, search, primary trigger).
+ *
+ * @cssclass rui-sidebar__header - Top, pinned section.
+ */
 export function RuiSidebarHeader({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarHeaderProps) {
 	return (
 		<div class={cx('rui-sidebar__header', className)} aria-label={ariaLabel}>
@@ -79,7 +87,11 @@ export type RuiSidebarContentProps = {
 	'aria-label'?: string;
 };
 
-/** Scrollable middle section. Multiple allowed; each becomes its own region. */
+/**
+ * Scrollable middle section. Multiple allowed; each becomes its own region.
+ *
+ * @cssclass rui-sidebar__content - Scrollable middle section.
+ */
 export function RuiSidebarContent({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarContentProps) {
 	return (
 		<div class={cx('rui-sidebar__content', className)} aria-label={ariaLabel}>
@@ -93,7 +105,11 @@ export type RuiSidebarFooterProps = {
 	class?: string;
 };
 
-/** Pinned bottom section (user, theme toggle, settings). */
+/**
+ * Pinned bottom section (user, theme toggle, settings).
+ *
+ * @cssclass rui-sidebar__footer - Pinned bottom section.
+ */
 export function RuiSidebarFooter({ children, class: className }: RuiSidebarFooterProps) {
 	return <div class={cx('rui-sidebar__footer', className)}>{children}</div>;
 }
@@ -104,7 +120,11 @@ export type RuiSidebarSeparatorProps = {
 	'aria-label'?: string;
 };
 
-/** Horizontal rule between sidebar sections. */
+/**
+ * Horizontal rule between sidebar sections.
+ *
+ * @cssclass rui-sidebar__separator - Horizontal rule (`role="separator"`).
+ */
 export function RuiSidebarSeparator({ class: className, 'aria-label': ariaLabel }: RuiSidebarSeparatorProps) {
 	return (
 		<hr
@@ -123,7 +143,11 @@ export type RuiSidebarGroupProps = {
 	'aria-label'?: string;
 };
 
-/** Landmark group of related sidebar items. */
+/**
+ * Landmark group of related sidebar items.
+ *
+ * @cssclass rui-sidebar__group - Landmark group region.
+ */
 export function RuiSidebarGroup({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarGroupProps) {
 	return (
 		<section class={cx('rui-sidebar__group', className)} aria-label={ariaLabel}>
@@ -139,7 +163,11 @@ export type RuiSidebarGroupLabelProps = {
 	id?: string;
 };
 
-/** Heading for a sidebar group. */
+/**
+ * Heading for a sidebar group.
+ *
+ * @cssclass rui-sidebar__group-label - Group heading (`<h2>`).
+ */
 export function RuiSidebarGroupLabel({ children, class: className, id }: RuiSidebarGroupLabelProps) {
 	return (
 		<h2 id={id} class={cx('rui-sidebar__group-label', className)}>
@@ -155,7 +183,11 @@ export type RuiSidebarGroupActionProps = {
 	'aria-label'?: string;
 };
 
-/** Top-right action button inside a group header. */
+/**
+ * Top-right action button inside a group header.
+ *
+ * @cssclass rui-sidebar__group-action - Group header action button.
+ */
 export function RuiSidebarGroupAction({
 	children,
 	class: className,
@@ -174,7 +206,11 @@ export type RuiSidebarGroupHeaderProps = {
 	class?: string;
 };
 
-/** Convenience: a label + optional action in one row. */
+/**
+ * Convenience: a label + optional action in one row.
+ *
+ * @cssclass rui-sidebar__group-header - Group label + action row.
+ */
 export function RuiSidebarGroupHeader({ label, action, class: className }: RuiSidebarGroupHeaderProps) {
 	return (
 		<div class={cx('rui-sidebar__group-header', className)}>
@@ -191,7 +227,11 @@ export type RuiSidebarMenuProps = {
 	'aria-label'?: string;
 };
 
-/** `<ul>` of sidebar items. */
+/**
+ * `<ul>` of sidebar items.
+ *
+ * @cssclass rui-sidebar__menu - Menu list.
+ */
 export function RuiSidebarMenu({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarMenuProps) {
 	return (
 		<ul role="list" class={cx('rui-sidebar__menu', className)} aria-label={ariaLabel}>
@@ -205,7 +245,11 @@ export type RuiSidebarMenuItemProps = {
 	class?: string;
 };
 
-/** `<li>` of a sidebar menu. */
+/**
+ * `<li>` of a sidebar menu.
+ *
+ * @cssclass rui-sidebar__menu-item - Menu item (`<li>`).
+ */
 export function RuiSidebarMenuItem({ children, class: className }: RuiSidebarMenuItemProps) {
 	return <li class={cx('rui-sidebar__menu-item', className)}>{children}</li>;
 }
@@ -231,6 +275,9 @@ export type RuiSidebarMenuButtonProps = {
  * The clickable surface inside a `RuiSidebarMenuItem`. When the sidebar
  * collapses to icon mode, only this element remains visible; it must keep an
  * accessible name via `tooltip` or visible children.
+ *
+ * @cssclass rui-sidebar__menu-button - Clickable menu surface (`<a>`/`<button>`).
+ * @cssclass rui-sidebar__menu-button--active - Current-page marker (`aria-current="page"`).
  */
 export function RuiSidebarMenuButton({
 	children,
@@ -278,7 +325,8 @@ export function RuiSidebarMenuButton({
 
 export type RuiSidebarMenuActionProps = RuiSidebarMenuButtonProps;
 
-/** Smaller, secondary button (e.g. `+ New`) below a menu or group. */
+/** Smaller, secondary button (e.g. `+ New`) below a menu or group.
+ * @cssclass rui-sidebar__menu-action - Secondary menu action button. */
 export function RuiSidebarMenuAction(props: RuiSidebarMenuActionProps) {
 	const { class: className, ...rest } = props;
 	return <RuiSidebarMenuButton class={cx('rui-sidebar__menu-action', className)} {...rest} />;
@@ -291,7 +339,11 @@ export type RuiSidebarInsetProps = {
 	id?: string;
 };
 
-/** The main content area that sits next to the sidebar. */
+/**
+ * The main content area that sits next to the sidebar.
+ *
+ * @cssclass rui-sidebar__inset - Main content area (`<main>`).
+ */
 export function RuiSidebarInset({ children, class: className, id }: RuiSidebarInsetProps) {
 	return (
 		<main id={id} class={cx('rui-sidebar__inset', className)}>

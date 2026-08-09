@@ -42,6 +42,9 @@ export type RuiPopoverProps = {
  * @slot trigger - Pressable anchor (when not using an external `anchor` selector).
  * @slot content - Popover body rendered inside the floating surface.
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
+ * @cssclass rui-popover-host - Anchor + surface wrapper.
+ * @cssclass rui-popover - Floating surface (`role="dialog"`); `background` + `rounded-container` + `shadow-overlay`.
+ * @cssclass rui-popover--listbox - Stripped padding for embedded listboxes.
  */
 @customElement('rui-popover')
 export class RuiPopover extends RadiantElement {
@@ -260,6 +263,7 @@ export type RuiPopoverTriggerProps = {
  *
  * @element rui-popover-trigger
  * @slot trigger - Pressable element that toggles the child popover.
+ * @cssclass rui-popover-trigger - Trigger + popover wrapper.
  */
 @customElement('rui-popover-trigger')
 export class RuiPopoverTrigger extends RadiantElement {

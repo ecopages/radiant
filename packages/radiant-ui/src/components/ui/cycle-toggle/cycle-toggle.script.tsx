@@ -32,7 +32,16 @@ const BUTTON_SELECTOR = 'button[data-cycle-toggle-button]';
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
  *
  * @element rui-cycle-toggle
+ *
+ * @attr {string} value - Active item id. Reflects to markup. Default: `''`.
+ * @attr {('filled'|'outline'|'destructive'|'ghost'|'link')} variant - Button variant
+ *   passed to the inner button. Default: `filled`.
+ * @attr {('none'|'sm'|'md'|'lg')} size - Button size passed to the inner button. Default: `md`.
+ * @attr {string} label - Accessible name prefix for the cycle button. Default: `''`.
+ * @attr {boolean} disabled - Disables the cycle button. Default: `false`.
+ *
  * @slot - `RuiCycleToggleItem` nodes projected into the inner button by the view.
+ *
  * @fires rui-change - Emitted after `value` advances; `detail.value` is the new id.
  */
 @customElement('rui-cycle-toggle')

@@ -32,7 +32,10 @@ type RuiMenubarBindings = {
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  * @element rui-menubar
- * @fires rui-change
+ * @attr {string} label - Accessible name for the `role="menubar"` landmark.
+ * @slot - Top-level menu roots (`[data-ref="menubar-root"]`), produced by the JSX view helper.
+ * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
+ * @cssclass rui-menubar - Menubar bar (`role="menubar"`).
  */
 @customElement('rui-menubar')
 export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {

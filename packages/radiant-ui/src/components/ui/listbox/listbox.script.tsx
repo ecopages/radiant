@@ -29,8 +29,21 @@ type RuiListboxBindings = {
  * Implements the APG Listbox pattern with roving tabindex on `[role="option"]`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
+ *
  * @element rui-listbox
- * @fires rui-change
+ *
+ * @attr {string} value - Selected option value. Default: `''`.
+ * @attr {string} label - Accessible name for the list. Default: `''`.
+ * @attr {boolean} disabled - Disable all selection. Default: `false`.
+ * @attr {boolean} embedded - Parent-owned listbox: border chrome omitted, selection handled by the parent. Default: `false`.
+ * @attr {boolean} bordered - Override the border (`true` standalone, `false` embedded). Default: follows `embedded`.
+ *
+ * @slot - Option elements (`RuiListboxOption`), each with `role="option"`.
+ *
+ * @fires rui-change - Emitted when an option is selected; detail carries `value`.
+ *
+ * @cssclass rui-listbox - Scrollable option list surface (`role="listbox"`).
+ * @cssclass rui-listbox--bordered - Bordered standalone listbox.
  */
 @customElement('rui-listbox')
 export class RuiListbox extends RadiantElement<RuiListboxBindings> {
