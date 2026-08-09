@@ -1,6 +1,5 @@
 @import '@ecopages/radiant-ui/sidebar/docs.css';
 @import '@ecopages/radiant-ui/toc/styles.css';
-@import '../../components/component-docs/component-docs.css';
 
 /**
  * Keep `@reference` after the skin `@import` so postcss-import inlines the package
@@ -14,6 +13,14 @@
 
 	.docs-layout__content {
 		@apply min-w-0 flex-1 overflow-y-auto px-6 py-8 md:px-10 lg:px-12 md:py-10;
+	}
+
+	.docs-bar {
+		@apply mb-4 flex min-h-8 items-center justify-between gap-4;
+	}
+
+	.docs-bar .unstyled {
+		@apply min-w-0 flex-1;
 	}
 
 	.docs-layout__toc {

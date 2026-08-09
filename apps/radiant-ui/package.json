@@ -4,16 +4,18 @@
 	"private": true,
 	"scripts": {
 		"dev": "ecopages dev",
-		"build": "ecopages build",
-		"preview": "ecopages preview",
+		"build": "pnpm run generate:llms && ecopages build",
+		"preview": "pnpm run generate:llms && ecopages preview",
 		"test": "vitest run",
-		"generate:content": "node --import tsx scripts/generate-content-stories.ts"
+		"generate:content": "node --import tsx scripts/generate-content-stories.ts",
+		"generate:llms": "tsx scripts/generate-llm-docs.ts"
 	},
 	"devDependencies": {
 		"@ecopages/browser-router": "0.2.0-beta.43",
 		"@ecopages/core": "0.2.0-beta.43",
 		"@ecopages/content-processor": "0.2.0-beta.43",
 		"@ecopages/ecopages-jsx": "0.2.0-beta.43",
+		"@ecopages/file-system": "0.2.0-beta.43",
 		"@ecopages/jsx": "workspace:*",
 		"@ecopages/postcss-processor": "0.2.0-beta.43",
 		"@ecopages/radiant": "workspace:*",
@@ -26,6 +28,7 @@
 		"remark-gfm": "^4.0.1",
 		"shiki": "^3.20.0",
 		"tailwindcss": "^4.3.0",
+		"tsx": "^4.20.6",
 		"unist-util-visit": "^5.1.0",
 		"vitest": "^4.1.10",
 		"zod": "^4.4.3"

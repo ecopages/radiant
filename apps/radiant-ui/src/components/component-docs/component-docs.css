@@ -1,5 +1,3 @@
-@reference '../../styles/tailwind.css';
-
 .docs-story {
 	--docs-story-line: color-mix(in srgb, var(--color-on-background) 12%, transparent);
 	@apply my-6 overflow-hidden rounded-md;
