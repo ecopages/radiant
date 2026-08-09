@@ -26,11 +26,17 @@ export const meta = {
 		children: { control: { type: 'text' } },
 		variant: {
 			control: { type: 'select' },
-			options: ['filled', 'outline', 'destructive', 'ghost'] as const satisfies readonly RuiButtonVariant[],
+			options: [
+				'filled',
+				'outline',
+				'destructive',
+				'ghost',
+				'link',
+			] as const satisfies readonly RuiButtonVariant[],
 		},
 		size: {
 			control: { type: 'select' },
-			options: ['sm', 'md', 'lg'] as const satisfies readonly RuiButtonSize[],
+			options: ['none', 'sm', 'md', 'lg'] as const satisfies readonly RuiButtonSize[],
 		},
 		disabled: { control: { type: 'boolean' } },
 		toggle: { control: { type: 'boolean' } },
@@ -60,4 +66,9 @@ export const Destructive: Story = docsStory(meta, {
 export const Ghost: Story = docsStory(meta, {
 	args: { variant: 'ghost', children: 'Cancel' },
 	parameters: { docs: { id: 'button/ghost' } },
+});
+
+export const Link: Story = docsStory(meta, {
+	args: { variant: 'link', size: 'none', children: 'View documentation' },
+	parameters: { docs: { id: 'button/link' } },
 });

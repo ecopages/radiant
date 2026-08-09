@@ -28,7 +28,7 @@ export class DocsCodeElement extends RadiantElement {
 		const entry = getRegisteredStory(this.storyId);
 		if (!entry) return '';
 		const args = this.story?.getContext().args ?? {};
-		return resolveExampleCode(entry.meta, args);
+		return resolveExampleCode(entry.meta, args, entry.story);
 	}
 
 	private refreshHighlight(): void {
