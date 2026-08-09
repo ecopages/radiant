@@ -40,6 +40,7 @@
 		"build:lib": "pnpm run clean && pnpm run build:files && pnpm run build:types",
 		"build:files": "node --import tsx ./build.ts",
 		"build:types": "tsc -p tsconfig.build.json && node --import tsx ./rewrite-dts-imports.ts",
+		"bench:hydrate": "node --import tsx benchmarks/hydrate-client.ts",
 		"bench:server": "node --import tsx benchmarks/run-all.ts",
 		"bench:server:bun": "bun run benchmarks/ssr.ts",
 		"bench:server:compare": "node --import tsx benchmarks/run.ts",

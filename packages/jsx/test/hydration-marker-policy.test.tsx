@@ -140,9 +140,10 @@ describe('hydration marker policy integration with SSR output', () => {
 });
 
 describe('template attribute marker index collection', () => {
-	test('collectTemplateAttributeMarkerIndices matches collectHydrationBindings for iterable roots', async () => {
-		const [{ jsx, jsxs, Fragment }, { collectHydrationBindings, collectTemplateAttributeMarkerIndices }] =
-			await Promise.all([loadJsxRuntime(), loadHydrationBindings()]);
+	test('planTemplateHydrationIndices matches collectHydrationBindings for iterable roots', async () => {
+		const [{ jsx, jsxs, Fragment }, { collectHydrationBindings, planTemplateHydrationIndices }] = await Promise.all(
+			[loadJsxRuntime(), loadHydrationBindings()],
+		);
 
 		const renderFragment = () =>
 			jsxs(Fragment, {
@@ -158,14 +159,14 @@ describe('template attribute marker index collection', () => {
 		const firstButton = expectTemplateChild(fragmentChildren[0]);
 		const span = expectTemplateChild(fragmentChildren[1]);
 
-		const firstButtonIndices = collectTemplateAttributeMarkerIndices(firstButton, 0);
+		const firstButtonIndices = planTemplateHydrationIndices(firstButton, 0);
 		expect(firstButtonIndices.nextIndex).toBe(2);
-		expect(firstButtonIndices.indices.get(0)).toBe(0);
-		expect(firstButtonIndices.indices.get(1)).toBe(1);
+		expect(firstButtonIndices.attributeIndices.get(0)).toBe(0);
+		expect(firstButtonIndices.attributeIndices.get(1)).toBe(1);
 
-		const spanIndices = collectTemplateAttributeMarkerIndices(span, firstButtonIndices.nextIndex);
+		const spanIndices = planTemplateHydrationIndices(span, firstButtonIndices.nextIndex);
 		expect(spanIndices.nextIndex).toBe(3);
-		expect(spanIndices.indices.get(0)).toBe(2);
+		expect(spanIndices.attributeIndices.get(0)).toBe(2);
 
 		expect(bindings.size).toBe(3);
 		expect(bindings.get(0)?.kind).toBe('attr');
@@ -205,7 +206,7 @@ describe('template attribute marker index collection', () => {
 			{ createSubscribableJsxValue, jsx, jsxs, Fragment },
 			{
 				collectHydrationBindings,
-				collectTemplateAttributeMarkerIndices,
+				planTemplateHydrationIndices,
 				resolveHydrationMarkerAttributeName,
 				serializeBindingDescriptor,
 			},
@@ -242,9 +243,9 @@ describe('template attribute marker index collection', () => {
 			expect(html).toContain(`${markerName}="${descriptor}"`);
 		}
 
-		const decIndices = collectTemplateAttributeMarkerIndices(decButton, 0);
-		const spanIndices = collectTemplateAttributeMarkerIndices(metricSpan, decIndices.nextIndex);
-		const incIndices = collectTemplateAttributeMarkerIndices(incButton, spanIndices.nextIndex);
+		const decIndices = planTemplateHydrationIndices(decButton, 0);
+		const spanIndices = planTemplateHydrationIndices(metricSpan, decIndices.nextIndex);
+		const incIndices = planTemplateHydrationIndices(incButton, spanIndices.nextIndex);
 
 		expect(decIndices.nextIndex).toBe(1);
 		expect(spanIndices.nextIndex).toBe(2);

@@ -3,6 +3,7 @@ import {
 	HYDRATE_ADJACENT_FIELDS_HTML,
 	HYDRATE_BUTTON_ALPHA_HTML,
 	HYDRATE_CARD_ALPHA_HTML,
+	HYDRATE_DYNAMIC_LIST_HTML,
 	HYDRATE_FRAGMENT_COUNTER_HTML,
 	HYDRATE_GRADIENT_ICON_HTML,
 	HYDRATE_ITERABLE_ROOT_HTML,
@@ -29,15 +30,6 @@ class BooleanPropertyElement extends HTMLElement {
 }
 
 customElements.define(booleanPropertyTagName, BooleanPropertyElement);
-
-function toTemplateStrings(strings: string[]): TemplateStringsArray {
-	const templateStrings = [...strings] as unknown as TemplateStringsArray;
-	Object.defineProperty(templateStrings, 'raw', {
-		value: [...strings],
-		writable: false,
-	});
-	return templateStrings;
-}
 
 describe('Radiant JSX DOM reconciliation behavior', () => {
 	beforeEach(() => {
@@ -432,16 +424,17 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('manual template results without root metadata do not poison later intrinsic SVG mounts', async () => {
-		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const [{ jsx, toTemplateResultLike }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const primeContainer = document.createElement('div');
 		const primeRoot = createRoot(primeContainer);
 		const verifyContainer = document.createElement('div');
 		const verifyRoot = createRoot(verifyContainer);
-		const manualTemplate = {
-			['_$rType$']: 1 as const,
-			strings: toTemplateStrings(['<linearGradient id=', '></linearGradient>']),
+		// Built through the wire-format adapter: no rootLocalName, so the renderer
+		// has to infer the namespace from context rather than from root metadata.
+		const manualTemplate = toTemplateResultLike({
+			strings: ['<linearGradient id=', '></linearGradient>'],
 			values: ['gradient'],
-		};
+		});
 
 		primeRoot.render(
 			jsx('svg', {
@@ -637,6 +630,117 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		buttons[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
 		expect(clickTotal).toBe(11);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+	});
+
+	test('unmount releases delegated listeners attached during iterable-root hydration', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		let clickTotal = 0;
+		const increment = () => {
+			clickTotal += 1;
+		};
+
+		container.innerHTML = HYDRATE_ITERABLE_ROOT_HTML;
+		root.hydrate([
+			jsx('button', { 'on:click': increment, children: 'Alpha' }),
+			jsx('button', { 'on:click': increment, children: 'Beta' }),
+		]);
+
+		const hydratedButton = container.querySelector('button');
+		hydratedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clickTotal).toBe(1);
+
+		// Iterable roots register delegated listeners on the host, so unmount must
+		// release them even though no template instance owns the root.
+		root.unmount();
+		container.append(hydratedButton!);
+		hydratedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+		expect(clickTotal).toBe(1);
+
+		container.remove();
+	});
+
+	test('reconnects list children that carry dynamic content instead of rebuilding them', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const items = [
+			{ id: 'a', name: 'Alpha' },
+			{ id: 'b', name: 'Beta' },
+		];
+		const renderList = (entries: typeof items) =>
+			jsx('ul', {
+				class: 'list',
+				children: entries.map((item) => jsx('li', { class: 'item', 'data-id': item.id, children: item.name })),
+			});
+
+		container.innerHTML = HYDRATE_DYNAMIC_LIST_HTML;
+		const serverItems = Array.from(container.querySelectorAll('li'));
+		const serverText = Array.from(serverItems[0]!.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
+
+		root.hydrate(renderList(items));
+
+		// Identity is the only signal: rebuilding produces identical markup while
+		// dropping listeners, focus, and selection. Both the elements and the text
+		// nodes inside each child range are reused, not re-created.
+		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
+		expect(Array.from(serverItems[0]!.childNodes)).toContain(serverText);
+		expect(serverText?.textContent).toBe('Alpha');
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.render(
+			renderList([
+				{ id: 'a', name: 'Alpha updated' },
+				{ id: 'b', name: 'Beta' },
+			]),
+		);
+
+		expect(container.querySelector('li')?.textContent).toBe('Alpha updated');
+		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
+	});
+
+	test('reconnects list children whose template owns more than one root node', async () => {
+		const [{ jsx, toTemplateResultLike }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		// Only transported payloads produce multi-root templates; createJsxElement
+		// always emits exactly one root element.
+		const multiRoot = () => toTemplateResultLike({ strings: ['<b>', '</b><i>tail</i>'], values: ['head'] });
+
+		container.innerHTML =
+			'<div data-radiant-jsx-bind-0="attr:class" class="host"><b>head</b><i>tail</i><b>head</b><i>tail</i></div>';
+		const serverNodes = Array.from(container.querySelectorAll('b, i'));
+
+		root.hydrate(jsx('div', { class: 'host', children: [multiRoot(), multiRoot()] }));
+
+		expect(Array.from(container.querySelectorAll('b, i'))).toEqual(serverNodes);
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+	});
+
+	test('removes every SSR marker when hydrating attribute-only list children', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		container.innerHTML =
+			'<div data-radiant-jsx-bind-0="attr:class" class="list">' +
+			'<span data-radiant-jsx-bind-1="attr:class" class="chip" data-radiant-jsx-bind-2="attr:title" title="a"></span>' +
+			'<span data-radiant-jsx-bind-3="attr:class" class="chip" data-radiant-jsx-bind-4="attr:title" title="b"></span>' +
+			'</div>';
+
+		root.hydrate(
+			jsx('div', {
+				class: 'list',
+				children: ['a', 'b'].map((title) => jsx('span', { class: 'chip', title })),
+			}),
+		);
+
+		// Marker names are global, so a nested child cannot strip them using its own
+		// local value indexes — that left later children's markers in the document.
 		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
 	});
 
@@ -1432,6 +1536,97 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 			root.render(renderForm(true));
 		}).not.toThrow();
 		expect((container.querySelector('input') as HTMLInputElement | null)?.checked).toBe(true);
+	});
+
+	test('a reactive value rendered at the root stays subscribed and patches in place', async () => {
+		const [{ createSubscribableJsxValue }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: string) => void>();
+		let label = 'first';
+		const boundLabel = createSubscribableJsxValue({
+			getValue: () => label,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		root.render(boundLabel);
+
+		expect(container.textContent).toBe('first');
+		expect(subscribers.size).toBe(1);
+
+		label = 'second';
+
+		for (const subscriber of subscribers) {
+			subscriber(label);
+		}
+
+		expect(container.textContent).toBe('second');
+
+		root.unmount();
+
+		expect(subscribers.size).toBe(0);
+	});
+
+	test('a reactive template rendered at the root drives updates without a wrapping element', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let count = 1;
+		const boundView = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		}).map((value) => jsxs('p', { class: 'count', children: ['Count: ', value] }));
+
+		root.render(boundView);
+
+		expect(container.innerHTML).toBe('<p class="count">Count: 1</p>');
+
+		const mountedParagraph = container.querySelector('p');
+		count = 2;
+
+		for (const subscriber of subscribers) {
+			subscriber(count);
+		}
+
+		expect(container.innerHTML).toBe('<p class="count">Count: 2</p>');
+		// The template shape is stable, so the root patches the existing element
+		// rather than replacing the subtree.
+		expect(container.querySelector('p')).toBe(mountedParagraph);
+	});
+
+	test('root renders reconcile keyed lists in place instead of rebuilding them', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderList = (keys: readonly string[]) => keys.map((key) => jsx('li', { children: key }, key));
+
+		root.render(renderList(['a', 'b', 'c']));
+
+		const initialItems = new Map(
+			Array.from(container.querySelectorAll('li'), (item) => [item.textContent, item] as const),
+		);
+
+		root.render(renderList(['c', 'a', 'b']));
+
+		expect(Array.from(container.querySelectorAll('li'), (item) => item.textContent)).toEqual(['c', 'a', 'b']);
+
+		for (const [key, item] of initialItems) {
+			expect(container.querySelector('li:nth-child(' + (['c', 'a', 'b'].indexOf(key!) + 1) + ')')).toBe(item);
+		}
 	});
 
 	test('map derives a record lookup and patches only the text node without rerendering', async () => {

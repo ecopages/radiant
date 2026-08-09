@@ -31,3 +31,9 @@ export const HYDRATE_FRAGMENT_COUNTER_HTML =
 
 export const HYDRATE_TODO_ICON_BUTTON_HTML =
 	'<label data-radiant-jsx-bind-0="attr:for" for="todo-1"><input data-radiant-jsx-bind-1="attr:id" id="todo-1" data-radiant-jsx-bind-2="attr:name" name="1" data-radiant-jsx-bind-3="attr:type" type="checkbox" data-radiant-jsx-bind-4="bool:checked">Task</label><button data-radiant-jsx-bind-5="attr:class" class="todo__item-remove" data-radiant-jsx-bind-6="attr:type" type="button" data-radiant-jsx-bind-7="attr:data-ref" data-ref="remove-todo" data-radiant-jsx-bind-8="attr:aria-label" aria-label="Remove todo: 1"><svg data-radiant-jsx-bind-9="attr:class" class="pointer-events-none" data-radiant-jsx-bind-10="attr:width" width="20" data-radiant-jsx-bind-11="attr:height" height="20" data-radiant-jsx-bind-12="attr:aria-hidden" aria-hidden="true" data-radiant-jsx-bind-13="attr:focusable" focusable="false" data-radiant-jsx-bind-14="attr:viewBox" viewBox="0 0 24 24" data-radiant-jsx-bind-15="attr:fill" fill="none" data-radiant-jsx-bind-16="attr:stroke" stroke="currentColor" data-radiant-jsx-bind-17="attr:stroke-width" stroke-width="2" data-radiant-jsx-bind-18="attr:stroke-linecap" stroke-linecap="round" data-radiant-jsx-bind-19="attr:stroke-linejoin" stroke-linejoin="round"><path data-radiant-jsx-bind-20="attr:d" d="M18 6 6 18"></path><path data-radiant-jsx-bind-21="attr:d" d="m6 6 12 12"></path></svg></button>';
+
+export const HYDRATE_DYNAMIC_LIST_HTML =
+	'<ul data-radiant-jsx-bind-0="attr:class" class="list">' +
+	'<li data-radiant-jsx-bind-1="attr:class" class="item" data-radiant-jsx-bind-2="attr:data-id" data-id="a">Alpha</li>' +
+	'<li data-radiant-jsx-bind-3="attr:class" class="item" data-radiant-jsx-bind-4="attr:data-id" data-id="b">Beta</li>' +
+	'</ul>';

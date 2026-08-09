@@ -421,6 +421,22 @@ Iterable fragment hydration supports flat lists of intrinsic template children (
 
 Global SSR marker indexes are shared across all three paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
+List children inside a hydrated range reconnect through the same path as a root template, so a child carrying dynamic content — `<li>{item.name}</li>` — keeps its SSR elements rather than being rebuilt. A child whose template owns several root nodes reconnects too. Both element and text-node identity are preserved, so listeners, focus, and selection survive hydration. `pnpm run bench:hydrate` measures these shapes.
+
+### Benchmarks
+
+| Command                    | Measures                                                                |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `pnpm run bench:server`    | `renderToString` throughput in Node and Bun                             |
+| `pnpm run bench:hydrate`   | Client `hydrate(...)` in Chromium, per root shape                       |
+| `pnpm run profile:hydrate` | Per-binding SSR emission cost (this is an SSR profile despite the name) |
+
+`bench:hydrate` renders fixtures in Node, bundles the measurement code for the browser, and runs each scenario in its own browser context so a leaking shape cannot inflate the next one. It reports:
+
+- `medianMs` / `minMs` — time inside `hydrate(...)` only; parsing and teardown are outside the timer.
+- `drift` — median of the later rounds over the earlier ones. Rounds are identical and each is unmounted, so a value meaningfully above `1` means hydration left state behind.
+- `reconnected` — whether SSR nodes survived. Each scenario declares what it expects and the run **fails** on a mismatch, because a shape that silently falls back to a full client render still produces plausible-looking numbers.
+
 ### SSR Marker Lifecycle
 
 Hydration markers are not ad hoc attributes. They are one shared index namespace that connects server serialization to client recovery.
@@ -699,16 +715,16 @@ That object is an internal contract between the JSX runtime and the Radiant rend
 
 These surfaces emit or parse raw HTML by design. Pass only content you already trust.
 
-| Surface                                                   | Contract                                                                                             |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Compiled JSX / template `strings[]`                       | Static author HTML; emitted raw                                                                      |
-| Transported `{ strings, values }`                         | `strings` are trusted author HTML; dynamic `values` are still escaped                                |
-| `unsafeHtml(...)` / `createMarkupNodeLike(...)`           | Branded markup; `outerHTML` emitted and parsed raw                                                   |
-| Live `Node` instances                                     | `outerHTML` emitted raw (slot projection / host passthrough)                                         |
-| Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                          |
-| `<script>` children                                       | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid |
-| `prop:*` (including `prop:innerHTML`)                     | Live property assignment; no sanitization                                                            |
-| `href` / `src` / `style`                                  | Escaped as attribute text only — no URL-scheme or CSS sanitization                                   |
+| Surface                                                   | Contract                                                                                                    |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Compiled JSX / template `strings[]`                       | Static author HTML; emitted raw                                                                             |
+| Transported `{ strings, values }`                         | Only via `toTemplateResultLike(...)`; `strings` are trusted author HTML, dynamic `values` are still escaped |
+| `unsafeHtml(...)` / `createMarkupNodeLike(...)`           | Branded markup; `outerHTML` emitted and parsed raw                                                          |
+| Live `Node` instances                                     | `outerHTML` emitted raw (slot projection / host passthrough)                                                |
+| Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)`                                 |
+| `<script>` children                                       | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid        |
+| `prop:*` (including `prop:innerHTML`)                     | Live property assignment; no sanitization                                                                   |
+| `href` / `src` / `style`                                  | Escaped as attribute text only — no URL-scheme or CSS sanitization                                          |
 
 ### Trusted markup API
 

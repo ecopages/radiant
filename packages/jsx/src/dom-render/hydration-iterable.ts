@@ -1,12 +1,10 @@
-import {
-	collectTemplateAttributeMarkerIndices,
-	visitHydrationBindingMarkers,
-} from '../hydration/hydration-bindings.ts';
+import { countHydrationMarkers, visitHydrationBindingMarkers } from '../hydration/hydration-bindings.ts';
 import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-guards.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
 import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './hydration.ts';
 import { unwrapKeyedValue } from './runtime-helpers.ts';
 import type { DeferredPropertyBinding } from './types.ts';
+import type { JsxRenderable } from '../types/index.ts';
 
 function getHydratableChildNodes(target: HTMLElement): readonly ChildNode[] {
 	return Array.from(target.childNodes).filter((node) => !(node instanceof HTMLScriptElement));
@@ -47,11 +45,9 @@ export function hydrateIterableRoot(
 		}
 
 		if (isTemplateResultLike(child)) {
-			const attributeBindingIndices = collectTemplateAttributeMarkerIndices(child, nextBindingIndex);
-			nextBindingIndex = attributeBindingIndices.nextIndex;
 			const instance = hydrateTemplateInstance(child, target, deferredProperties, {
 				...options,
-				attributeBindingIndices: attributeBindingIndices.indices,
+				bindingBaseIndex: nextBindingIndex,
 				pathRootOffset: domOffset,
 				rootTarget: options.rootTarget ?? target,
 			});
@@ -63,6 +59,7 @@ export function hydrateIterableRoot(
 			return false;
 		}
 
+		nextBindingIndex += countHydrationMarkers(child as JsxRenderable);
 		domOffset += nodeCount;
 	}
 

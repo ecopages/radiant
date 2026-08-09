@@ -10,16 +10,15 @@ import type {
 /**
  * Releases runtime state associated with a root-level mounted tree.
  *
- * Currently only template-mounted roots carry disposable state (event listeners and
- * subscriptions held in live parts).
+ * Range disposal already detaches each binding's listeners individually; clearing
+ * the delegation root additionally drops any handler the range no longer tracks,
+ * such as those attached in place by flat or iterable hydration.
  *
  * @param root Mounted root descriptor stored in the root render state.
  */
 export function disposeMountedRoot(root: MountedRoot): void {
-	if (root.kind === 'template') {
-		disposeTemplateInstance(root.instance);
-		clearDelegationRoot(root.instance.rootTarget);
-	}
+	disposeMountedRangeContent(root.mounted);
+	clearDelegationRoot(root.rootTarget);
 }
 
 /**
