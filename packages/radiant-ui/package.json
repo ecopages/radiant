@@ -236,6 +236,13 @@
     "./combobox/styles.css": {
       "default": "./dist/components/ui/combobox/combobox.css"
     },
+    "./cycle-toggle": {
+      "types": "./dist/components/ui/cycle-toggle/index.d.ts",
+      "import": "./dist/components/ui/cycle-toggle/index.js"
+    },
+    "./cycle-toggle/styles.css": {
+      "default": "./dist/components/ui/cycle-toggle/cycle-toggle.css"
+    },
     "./date-field": {
       "types": "./dist/components/ui/date-field/index.d.ts",
       "import": "./dist/components/ui/date-field/index.js"
