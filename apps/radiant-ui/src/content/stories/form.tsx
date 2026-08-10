@@ -17,7 +17,13 @@ export const meta = {
 	argTypes: {
 		mode: {
 			control: { type: 'select' },
-			options: ['onSubmit', 'onBlur', 'onChange', 'onTouched', 'all'] as const satisfies readonly FormArgs['mode'][],
+			options: [
+				'onSubmit',
+				'onBlur',
+				'onChange',
+				'onTouched',
+				'all',
+			] as const satisfies readonly FormArgs['mode'][],
 		},
 	},
 	render: (args) => (

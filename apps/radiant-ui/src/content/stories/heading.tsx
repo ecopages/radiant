@@ -23,7 +23,10 @@ export const meta = {
 			control: { type: 'select' },
 			options: ['sm', 'md', 'lg', 'xl'] as const satisfies readonly RuiHeadingSize[],
 		},
-		align: { control: { type: 'select' }, options: ['start', 'center'] as const satisfies readonly RuiHeadingAlign[] },
+		align: {
+			control: { type: 'select' },
+			options: ['start', 'center'] as const satisfies readonly RuiHeadingAlign[],
+		},
 	},
 	render: (args) => (
 		<RuiHeading size={args.size} align={args.align}>
