@@ -73,8 +73,6 @@ export function definePreview(input: ProjectAnnotations<RadiantRenderer>): Previ
 
 export { render, renderToCanvas };
 export { defineRadiantComponent } from './define-component';
-export { radiantMeta } from './radiant-meta';
-export type { RadiantMetaOptions, RadiantMetaStylesheet } from './radiant-meta';
 export { radiantSsr } from './radiant-ssr';
 export type { RadiantViewComponent } from './resolve-ssr';
 export type { Meta, Preview, StoryFn, StoryObj, Decorator, RadiantRenderer };
