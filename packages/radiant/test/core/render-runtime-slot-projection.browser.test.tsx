@@ -23,7 +23,7 @@ const SSR_OUTPUT = '<div data-radiant-jsx-bind-0="attr:class" class="card"><div 
 const AUTHORED_LIGHT_DOM = '<span data-authored>authored</span>';
 
 describe('RenderRuntime slot projection', () => {
-	test('ignores the host’s own SSR output when hydration markers are present', () => {
+	test("ignores the host's own SSR output when hydration markers are present", () => {
 		const host = createHost(SSR_OUTPUT);
 		const runtime = new RenderRuntime(host);
 
@@ -43,5 +43,4 @@ describe('RenderRuntime slot projection', () => {
 		expect(runtime.slotProjectionVersion).toBe(1);
 		host.remove();
 	});
-
 });
