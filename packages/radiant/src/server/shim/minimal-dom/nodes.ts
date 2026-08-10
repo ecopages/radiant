@@ -235,7 +235,14 @@ class MinimalClassList {
 }
 
 export class MinimalElement extends MinimalNode {
-	private attributes = new Map<string, string>();
+	/**
+	 * @remarks
+	 * Must not be named `attributes`: TypeScript `private` is erased at runtime, and
+	 * a field of that name would collide with the DOM `attributes` NamedNodeMap that
+	 * hydration marker walks expect. A `Map` there makes `Array.from(el.attributes)`
+	 * yield `[name, value]` tuples and crash on `.name.startsWith(...)`.
+	 */
+	#attributeStore = new Map<string, string>();
 	private classListValue?: MinimalClassList;
 	private datasetValue?: DOMStringMap;
 	private styleValue?: CSSStyleDeclaration;
@@ -335,20 +342,20 @@ export class MinimalElement extends MinimalNode {
 	}
 
 	hasAttribute(name: string): boolean {
-		return this.attributes.has(name);
+		return this.#attributeStore.has(name);
 	}
 
 	getAttribute(name: string): string | null {
-		return this.attributes.get(name) ?? null;
+		return this.#attributeStore.get(name) ?? null;
 	}
 
 	getAttributeNames(): string[] {
-		return Array.from(this.attributes.keys());
+		return Array.from(this.#attributeStore.keys());
 	}
 
 	setAttribute(name: string, value: unknown): void {
 		this.clearFragmentCache();
-		this.attributes.set(name, String(value));
+		this.#attributeStore.set(name, String(value));
 	}
 
 	toggleAttribute(name: string, force?: boolean): boolean {
@@ -365,7 +372,7 @@ export class MinimalElement extends MinimalNode {
 
 	removeAttribute(name: string): void {
 		this.clearFragmentCache();
-		this.attributes.delete(name);
+		this.#attributeStore.delete(name);
 	}
 
 	get parentElement(): MinimalElement | null {
@@ -419,7 +426,7 @@ export class MinimalElement extends MinimalNode {
 			return this.fragmentHtml;
 		}
 
-		const attributes = Array.from(this.attributes.entries())
+		const attributes = Array.from(this.#attributeStore.entries())
 			.map(([name, value]) => serializeHtmlAttribute(name, value))
 			.join('');
 
@@ -455,7 +462,7 @@ export class MinimalElement extends MinimalNode {
 		this.fragmentHtml = fragmentHtml;
 		this.fragmentInnerHtml = innerHtml;
 		this.fragmentText = fragmentText;
-		this.attributes = new Map(Object.entries(attributes));
+		this.#attributeStore = new Map(Object.entries(attributes));
 		this.replaceChildren();
 	}
 }
