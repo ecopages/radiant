@@ -7,7 +7,6 @@
 		"build": "pnpm run generate:llms && ecopages build",
 		"preview": "pnpm run generate:llms && ecopages preview",
 		"test": "vitest run",
-		"generate:content": "node --import tsx scripts/generate-content-stories.ts",
 		"generate:llms": "tsx scripts/generate-llm-docs.ts"
 	},
 	"devDependencies": {

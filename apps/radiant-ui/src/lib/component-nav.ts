@@ -1,5 +1,5 @@
 import { entries as contentComponentEntries } from 'ecopages:content/components';
-import type { ComponentCategory } from '@/lib/playground';
+import type { ComponentCategory } from '@/content/components';
 
 export const COMPONENT_CATEGORY_ORDER: ComponentCategory[] = [
 	'Actions',
