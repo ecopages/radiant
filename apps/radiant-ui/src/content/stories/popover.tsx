@@ -1,18 +1,16 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiPopover, RuiPopoverContent, RuiPopoverTrigger } from '@ecopages/radiant-ui/popover';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type PopoverArgs = {
 	open: boolean;
-	placement: string;
+	placement: 'bottom' | 'bottom-start' | 'top' | 'right';
 	portal: boolean;
 	matchAnchorWidth: boolean;
 	offset: number;
 };
 
 export const meta = {
-	component: 'popover',
-	exportName: 'RuiPopover',
 	args: {
 		open: false,
 		placement: 'bottom-start',
@@ -22,13 +20,31 @@ export const meta = {
 	},
 	argTypes: {
 		open: { control: { type: 'boolean' } },
-		placement: { control: { type: 'select' }, options: ['bottom', 'bottom-start', 'top', 'right'] as const },
+		placement: {
+			control: { type: 'select' },
+			options: ['bottom', 'bottom-start', 'top', 'right'] as const satisfies readonly PopoverArgs['placement'][],
+		},
 		portal: { control: { type: 'boolean' } },
 		matchAnchorWidth: { control: { type: 'boolean' } },
 		offset: { control: { type: 'number' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiPopover', 'popover', args),
-	render: (args) => renderPlaygroundPreview('popover', args),
+	render: (args) => (
+		<RuiPopoverTrigger
+			{...(args.open ? { open: true } : {})}
+			trigger={<RuiButton variant="outline">Filter</RuiButton>}
+		>
+			<RuiPopover
+				placement={args.placement}
+				portal={args.portal}
+				matchAnchorWidth={args.matchAnchorWidth}
+				offset={args.offset}
+			>
+				<RuiPopoverContent>
+					<p>Show items from the last 7 days.</p>
+				</RuiPopoverContent>
+			</RuiPopover>
+		</RuiPopoverTrigger>
+	),
 } satisfies DocsMeta<PopoverArgs>;
 
 type Story = DocsStory<PopoverArgs>;

@@ -1,17 +1,14 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiTab, RuiTabList, RuiTabPanel, RuiTabPanels, RuiTabs, type RuiTabsVariant } from '@ecopages/radiant-ui/tabs';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type TabsArgs = {
-	variant: string;
+	variant: RuiTabsVariant;
 	value: string;
 	automatic: boolean;
 	label: string;
 };
 
 export const meta = {
-	component: 'tabs',
-	exportName: 'RuiTabs',
 	args: {
 		variant: 'boxed',
 		value: 'account',
@@ -19,13 +16,23 @@ export const meta = {
 		label: 'Settings',
 	},
 	argTypes: {
-		variant: { control: { type: 'select' }, options: ['boxed', 'ghost'] as const },
+		variant: { control: { type: 'select' }, options: ['boxed', 'ghost'] as const satisfies readonly RuiTabsVariant[] },
 		value: { control: { type: 'text' } },
 		automatic: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiTabs', 'tabs', args),
-	render: (args) => renderPlaygroundPreview('tabs', args),
+	render: (args) => (
+		<RuiTabs variant={args.variant} value={args.value} automatic={args.automatic} label={args.label}>
+			<RuiTabList>
+				<RuiTab id="account">Account</RuiTab>
+				<RuiTab id="security">Security</RuiTab>
+			</RuiTabList>
+			<RuiTabPanels>
+				<RuiTabPanel id="account">Account settings</RuiTabPanel>
+				<RuiTabPanel id="security">Security settings</RuiTabPanel>
+			</RuiTabPanels>
+		</RuiTabs>
+	),
 } satisfies DocsMeta<TabsArgs>;
 
 type Story = DocsStory<TabsArgs>;

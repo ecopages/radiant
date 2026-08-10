@@ -1,7 +1,6 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiToaster, type ToastPosition, TOAST_POSITIONS } from '@ecopages/radiant-ui/toast';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { withToastStage } from '@/lib/story-decorators/with-toast-stage';
-import { TOAST_POSITIONS, type ToastPosition } from '@ecopages/radiant-ui';
 
 export type ToastArgs = {
 	position: ToastPosition;
@@ -12,8 +11,6 @@ export type ToastArgs = {
 };
 
 export const meta = {
-	component: 'toast',
-	exportName: 'RuiToaster',
 	args: {
 		position: 'bottom-end',
 		duration: 4000,
@@ -32,8 +29,15 @@ export const meta = {
 		expand: { control: { type: 'boolean' } },
 	},
 	decorators: [withToastStage()],
-	exampleCode: (args) => buildExampleCode('RuiToaster', 'toast', args),
-	render: () => null,
+	render: (args) => (
+		<RuiToaster
+			position={args.position}
+			duration={args.duration}
+			visibleToasts={args.visibleToasts}
+			closeButton={args.closeButton}
+			expand={args.expand}
+		/>
+	),
 } satisfies DocsMeta<ToastArgs>;
 
 type Story = DocsStory<ToastArgs>;

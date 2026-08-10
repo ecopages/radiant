@@ -1,6 +1,38 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiTree } from '@ecopages/radiant-ui/tree';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
+
+const TREE_DEMO_NODES = [
+	{
+		id: 'src',
+		label: 'src',
+		expanded: true,
+		children: [
+			{
+				id: 'components',
+				label: 'components',
+				expanded: true,
+				children: [
+					{ id: 'button', label: 'button.tsx' },
+					{ id: 'dialog', label: 'dialog.tsx' },
+					{ id: 'sidebar', label: 'sidebar.tsx' },
+				],
+			},
+			{
+				id: 'lib',
+				label: 'lib',
+				expanded: true,
+				children: [
+					{ id: 'utils', label: 'utils.ts' },
+					{ id: 'hooks', label: 'hooks.ts' },
+				],
+			},
+			{ id: 'index', label: 'index.ts' },
+		],
+	},
+	{ id: 'public', label: 'public', children: [{ id: 'favicon', label: 'favicon.ico' }] },
+	{ id: 'package', label: 'package.json' },
+	{ id: 'readme', label: 'README.md' },
+];
 
 export type TreeArgs = {
 	value: string;
@@ -8,8 +40,6 @@ export type TreeArgs = {
 };
 
 export const meta = {
-	component: 'tree',
-	exportName: 'RuiTree',
 	args: {
 		value: 'button',
 		label: 'Project files',
@@ -18,8 +48,13 @@ export const meta = {
 		value: { control: { type: 'text' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiTree', 'tree', args),
-	render: (args) => renderPlaygroundPreview('tree', args),
+	render: (args) => (
+		<RuiTree
+			value={args.value}
+			label={args.label}
+			nodes={TREE_DEMO_NODES}
+		/>
+	),
 } satisfies DocsMeta<TreeArgs>;
 
 type Story = DocsStory<TreeArgs>;

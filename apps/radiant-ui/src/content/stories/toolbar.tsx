@@ -1,6 +1,6 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type ToolbarArgs = {
 	exclusiveToggles: boolean;
@@ -8,8 +8,6 @@ export type ToolbarArgs = {
 };
 
 export const meta = {
-	component: 'toolbar',
-	exportName: 'RuiToolbar',
 	args: {
 		exclusiveToggles: false,
 		label: 'Text formatting',
@@ -18,8 +16,16 @@ export const meta = {
 		exclusiveToggles: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiToolbar', 'toolbar', args),
-	render: (args) => renderPlaygroundPreview('toolbar', args),
+	render: (args) => (
+		<RuiToolbar label={args.label} exclusiveToggles={args.exclusiveToggles}>
+			<RuiButton toggle variant="ghost">
+				Bold
+			</RuiButton>
+			<RuiButton toggle variant="ghost">
+				Italic
+			</RuiButton>
+		</RuiToolbar>
+	),
 } satisfies DocsMeta<ToolbarArgs>;
 
 type Story = DocsStory<ToolbarArgs>;

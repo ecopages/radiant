@@ -1,25 +1,37 @@
-import { buildExampleCode } from '@/lib/playground';
+import {
+	RuiHeading,
+	type RuiHeadingAlign,
+	RuiHeadingDescription,
+	RuiHeadingEyebrow,
+	type RuiHeadingSize,
+	RuiHeadingTitle,
+} from '@ecopages/radiant-ui/heading';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type HeadingArgs = {
-	size: string;
-	align: string;
+	size: RuiHeadingSize;
+	align: RuiHeadingAlign;
 };
 
 export const meta = {
-	component: 'heading',
-	exportName: 'RuiHeading',
 	args: {
 		size: 'lg',
 		align: 'start',
 	},
 	argTypes: {
-		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg', 'xl'] as const },
-		align: { control: { type: 'select' }, options: ['start', 'center'] as const },
+		size: {
+			control: { type: 'select' },
+			options: ['sm', 'md', 'lg', 'xl'] as const satisfies readonly RuiHeadingSize[],
+		},
+		align: { control: { type: 'select' }, options: ['start', 'center'] as const satisfies readonly RuiHeadingAlign[] },
 	},
-	exampleCode: (args) => buildExampleCode('RuiHeading', 'heading', args),
-	render: (args) => renderPlaygroundPreview('heading', args),
+	render: (args) => (
+		<RuiHeading size={args.size} align={args.align}>
+			<RuiHeadingEyebrow>Components</RuiHeadingEyebrow>
+			<RuiHeadingTitle>Button</RuiHeadingTitle>
+			<RuiHeadingDescription>Trigger actions with clear, accessible labels.</RuiHeadingDescription>
+		</RuiHeading>
+	),
 } satisfies DocsMeta<HeadingArgs>;
 
 type Story = DocsStory<HeadingArgs>;

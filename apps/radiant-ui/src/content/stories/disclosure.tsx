@@ -1,6 +1,5 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiDisclosure } from '@ecopages/radiant-ui/disclosure';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type DisclosureArgs = {
 	open: boolean;
@@ -9,8 +8,6 @@ export type DisclosureArgs = {
 };
 
 export const meta = {
-	component: 'disclosure',
-	exportName: 'RuiDisclosure',
 	args: {
 		open: false,
 		animated: false,
@@ -21,8 +18,11 @@ export const meta = {
 		animated: { control: { type: 'boolean' } },
 		children: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiDisclosure', 'disclosure', args, args.children),
-	render: (args) => renderPlaygroundPreview('disclosure', args, args.children),
+	render: (args) => (
+		<RuiDisclosure open={args.open} animated={args.animated} trigger={args.children}>
+			Delivered in 3–5 business days.
+		</RuiDisclosure>
+	),
 } satisfies DocsMeta<DisclosureArgs>;
 
 type Story = DocsStory<DisclosureArgs>;

@@ -1,17 +1,16 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiTextarea, type RuiTextareaSize } from '@ecopages/radiant-ui/textarea';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type TextareaArgs = {
-	size: string;
+	size: RuiTextareaSize;
 	rows: number;
 	disabled: boolean;
 	placeholder: string;
 };
 
 export const meta = {
-	component: 'textarea',
-	exportName: 'RuiTextarea',
 	args: {
 		size: 'md',
 		rows: 3,
@@ -19,13 +18,22 @@ export const meta = {
 		placeholder: 'Tell us about yourself',
 	},
 	argTypes: {
-		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg'] as const },
+		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg'] as const satisfies readonly RuiTextareaSize[] },
 		rows: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		placeholder: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiTextarea', 'textarea', args),
-	render: (args) => renderPlaygroundPreview('textarea', args),
+	render: (args) => (
+		<RuiField name="preview">
+			<RuiLabel>Bio</RuiLabel>
+			<RuiTextarea
+				size={args.size}
+				rows={args.rows}
+				disabled={args.disabled}
+				placeholder={args.placeholder}
+			/>
+		</RuiField>
+	),
 } satisfies DocsMeta<TextareaArgs>;
 
 type Story = DocsStory<TextareaArgs>;

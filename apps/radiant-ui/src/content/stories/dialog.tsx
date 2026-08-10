@@ -1,6 +1,6 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiDialog } from '@ecopages/radiant-ui/dialog';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 import { DOCS_DIALOG_ID, withDialogStage } from '@/lib/story-decorators/with-dialog-stage';
 
 export type DialogArgs = {
@@ -11,8 +11,6 @@ export type DialogArgs = {
 };
 
 export const meta = {
-	component: 'dialog',
-	exportName: 'RuiDialog',
 	args: {
 		id: DOCS_DIALOG_ID,
 		open: false,
@@ -25,8 +23,25 @@ export const meta = {
 		label: { control: { type: 'text' } },
 	},
 	decorators: [withDialogStage()],
-	exampleCode: (args) => buildExampleCode('RuiDialog', 'dialog', args),
-	render: (args) => renderPlaygroundPreview('dialog', args),
+	render: (args) => (
+		<RuiDialog
+			id={args.id}
+			open={args.open}
+			alert={args.alert}
+			label={args.label}
+			title={args.label}
+			actions={
+				<>
+					<RuiButton variant="ghost" type="button" data-dialog-close>
+						Cancel
+					</RuiButton>
+					<RuiButton type="button">Save</RuiButton>
+				</>
+			}
+		>
+			Update your display name and email.
+		</RuiDialog>
+	),
 } satisfies DocsMeta<DialogArgs>;
 
 type Story = DocsStory<DialogArgs>;

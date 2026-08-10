@@ -1,7 +1,6 @@
 import type { RuiButtonSize, RuiButtonVariant } from '@ecopages/radiant-ui/button';
-import { buildExampleCode } from '@/lib/playground';
+import { RuiCycleToggle, RuiCycleToggleItem } from '@ecopages/radiant-ui/cycle-toggle';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 const THEME_DEFAULT_VALUE = 'system';
 
@@ -17,30 +16,7 @@ function resolveThemeValue(value: string | undefined): string {
 	return value || THEME_DEFAULT_VALUE;
 }
 
-function buildCycleToggleExampleCode(args: CycleToggleArgs): string {
-	const value = resolveThemeValue(args.value);
-
-	const item = (id: string, label: string) =>
-		`  <RuiCycleToggleItem id="${id}"${value === id ? ' selected' : ''}>${label}</RuiCycleToggleItem>`;
-
-	return [
-		"import { RuiCycleToggle, RuiCycleToggleItem } from '@ecopages/radiant-ui/cycle-toggle';",
-		'',
-		`<RuiCycleToggle value="${value}" label="${args.label}" variant="${args.variant}" size="${args.size}"${args.disabled ? ' disabled' : ''}>`,
-		item('system', 'System'),
-		item('light', 'Light'),
-		item('dark', 'Dark'),
-		'</RuiCycleToggle>',
-	].join('\n');
-}
-
-function buildSortOrderExampleCode(args: CycleToggleArgs): string {
-	return buildExampleCode('RuiCycleToggle', 'cycle-toggle', { ...args, value: args.value || 'newest' });
-}
-
 export const meta = {
-	component: 'cycle-toggle',
-	exportName: 'RuiCycleToggle',
 	args: {
 		value: THEME_DEFAULT_VALUE,
 		variant: 'ghost',
@@ -64,12 +40,28 @@ export const meta = {
 		disabled: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildCycleToggleExampleCode(args),
-	render: (args) =>
-		renderPlaygroundPreview('cycle-toggle-theme', {
-			...args,
-			value: resolveThemeValue(args.value),
-		}),
+	render: (args) => {
+		const value = resolveThemeValue(args.value);
+		return (
+			<RuiCycleToggle
+				value={value}
+				variant={args.variant}
+				size={args.size}
+				disabled={args.disabled}
+				label={args.label}
+			>
+				<RuiCycleToggleItem id="system" selected={value === 'system'}>
+					System
+				</RuiCycleToggleItem>
+				<RuiCycleToggleItem id="light" selected={value === 'light'}>
+					Light
+				</RuiCycleToggleItem>
+				<RuiCycleToggleItem id="dark" selected={value === 'dark'}>
+					Dark
+				</RuiCycleToggleItem>
+			</RuiCycleToggle>
+		);
+	},
 } satisfies DocsMeta<CycleToggleArgs>;
 
 type Story = DocsStory<CycleToggleArgs>;
@@ -83,7 +75,27 @@ export const SortOrder: Story = docsStory(meta, {
 		size: 'md',
 		label: 'Sort order',
 	},
-	exampleCode: (args) => buildSortOrderExampleCode(args),
-	render: (args) => renderPlaygroundPreview('cycle-toggle-sort-order', args),
+	render: (args) => {
+		const value = args.value || 'newest';
+		return (
+			<RuiCycleToggle
+				value={value}
+				variant={args.variant}
+				size={args.size}
+				disabled={args.disabled}
+				label={args.label}
+			>
+				<RuiCycleToggleItem id="newest" selected={value === 'newest'}>
+					Newest
+				</RuiCycleToggleItem>
+				<RuiCycleToggleItem id="oldest" selected={value === 'oldest'}>
+					Oldest
+				</RuiCycleToggleItem>
+				<RuiCycleToggleItem id="popular" selected={value === 'popular'}>
+					Popular
+				</RuiCycleToggleItem>
+			</RuiCycleToggle>
+		);
+	},
 	parameters: { docs: { id: 'cycle-toggle/sort-order' } },
 });
