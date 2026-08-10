@@ -2,9 +2,9 @@
 	"compilerOptions": {
 		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
 		"target": "ES2022",
-		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"lib": ["ES2023", "DOM", "DOM.Iterable"],
 		"module": "ESNext",
-		"types": ["vite/client"],
+		"types": ["vite/client", "@ecopages/vite-plugin-radiant/client"],
 		"allowArbitraryExtensions": true,
 		"skipLibCheck": true,
 		"useDefineForClassFields": true,
@@ -19,8 +19,12 @@
 		"jsx": "react-jsx",
 		"jsxImportSource": "@ecopages/jsx",
 
+		/* Resolve the Storybook framework from source, not its built `dist/*.d.ts`. A stale
+       dist previously red-lined every `*.stories.tsx` with phantom TS2305 errors. */
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@ecopages/storybook-radiant-vite": ["../storybook-radiant-vite/src/index.ts"],
+			"@ecopages/storybook-radiant-vite/node": ["../storybook-radiant-vite/src/node/index.ts"]
 		},
 
 		"strict": true,
