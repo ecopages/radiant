@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiMenubar } from './menubar';
 import { RuiMenubar as RuiMenubarElement } from './menubar.script';
@@ -6,6 +6,7 @@ import { RuiMenubar as RuiMenubarElement } from './menubar.script';
 const meta = {
 	title: 'Components/Menubar',
 	component: RuiMenubar,
+	parameters: { radiant: { element: RuiMenubarElement, cssImports: ['./menubar.css'] } },
 	args: {
 		label: 'Application',
 		items: [
@@ -28,8 +29,7 @@ const meta = {
 			{ id: 'view', label: 'View' },
 		],
 	},
-};
-radiantMeta(meta, { element: RuiMenubarElement, stylesheets: ['./menubar.css'] });
+} satisfies Meta<typeof RuiMenubar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

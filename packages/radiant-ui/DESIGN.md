@@ -86,7 +86,7 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
     - Motion: `--duration-*` / `--ease-*` (not raw `duration-150`).
     - State: `--opacity-disabled`, z-index roles from `system.css`.
 3. Structural layout (flex, grid, `min-w-0`, positioning) may use Tailwind as needed.
-4. One CSS file per component directory. Do **not** `import './<name>.css'` in view `.tsx` files — that breaks Ecopages vendor prebundles. Apps load the aggregate `@ecopages/radiant-ui/styles.css` (or a theme + styles). In Storybook, declare component CSS via `radiantMeta(meta, { stylesheets: ['./<name>.css'] })` in `*.stories.tsx` (with `const meta = { ... }; export default meta`); the stamp transform injects side-effect imports. Use the `withStylesheets` decorator only for skins / extras.
+4. One CSS file per component directory. Do **not** `import './<name>.css'` in view `.tsx` files — that breaks Ecopages vendor prebundles. Apps load the aggregate `@ecopages/radiant-ui/styles.css` (or a theme + styles). In Storybook, declare component CSS via `parameters: { radiant: { cssImports: ['./<name>.css'] } }` in `*.stories.tsx` (with `const meta = { ... } satisfies Meta<typeof RuiX>; export default meta`); the stamp transform injects side-effect imports. Use the `withStylesheets` decorator only for skins / extras.
 
 ### Forbidden
 

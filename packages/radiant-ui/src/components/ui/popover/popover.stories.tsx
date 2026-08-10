@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiButton } from '../button';
 import { RuiCheckbox } from '../checkbox';
@@ -8,8 +8,8 @@ import { RuiPopover as RuiPopoverElement } from './popover.script';
 const meta = {
 	title: 'Components/Popover',
 	component: RuiPopover,
-};
-radiantMeta(meta, { element: RuiPopoverElement, stylesheets: ['./popover.css'] });
+	parameters: { radiant: { element: RuiPopoverElement, cssImports: ['./popover.css'] } },
+} satisfies Meta<typeof RuiPopover>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

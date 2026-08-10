@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { withStylesheets } from '../../../../.storybook/with-stylesheets';
 import docsNavCss from './sidebar.docs.css?url';
@@ -403,7 +403,7 @@ function renderInset({ title }: { title: string }) {
 const meta = {
 	title: 'Components/Sidebar',
 	component: RuiSidebar,
-	parameters: { layout: 'fullscreen' },
+	parameters: { layout: 'fullscreen', radiant: { element: RuiSidebarElement, cssImports: ['./sidebar.css'] } },
 	tags: ['test'],
 	args: {
 		id: 'primary-sidebar',
@@ -414,8 +414,7 @@ const meta = {
 		defaultWidth: 256,
 		mobileBreakpoint: 0,
 	},
-};
-radiantMeta(meta, { element: RuiSidebarElement, stylesheets: ['./sidebar.css'] });
+} satisfies Meta<typeof RuiSidebar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

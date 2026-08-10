@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
 import { RuiAvatar } from '../avatar/avatar';
 import { RuiButton } from '../button/button';
@@ -20,8 +20,8 @@ import {
 const meta = {
 	title: 'Components/Feed',
 	component: RuiFeed,
-};
-radiantMeta(meta, { stylesheets: ['./feed.css'] });
+	parameters: { radiant: { cssImports: ['./feed.css'] } },
+} satisfies Meta<typeof RuiFeed>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

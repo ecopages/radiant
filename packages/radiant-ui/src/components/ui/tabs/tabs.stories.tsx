@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiTabsProps } from './tabs.script';
@@ -71,16 +71,16 @@ function renderProductTabs(args: RuiTabsProps) {
 const meta = {
 	title: 'Components/Tabs',
 	component: RuiTabs,
+	parameters: { radiant: { element: RuiTabsElement, cssImports: ['./tabs.css'] } },
 	args: {
 		variant: 'boxed',
 		automatic: true,
 	},
 	render: (args: RuiTabsProps) => renderProductTabs(args),
-};
-radiantMeta(meta, { element: RuiTabsElement, stylesheets: ['./tabs.css'] });
+} satisfies Meta<typeof RuiTabs>;
 
 export default meta;
-type Story = StoryObj<RuiTabsProps>;
+type Story = StoryObj<typeof meta>;
 
 const getTabs = (canvasElement: HTMLElement) =>
 	Array.from(canvasElement.querySelectorAll('[role="tab"]')) as HTMLElement[];

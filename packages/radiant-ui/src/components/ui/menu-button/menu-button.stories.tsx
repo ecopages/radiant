@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiMenuButton } from './menu-button';
 import { RuiMenuButton as RuiMenuButtonElement } from './menu-button.script';
@@ -6,6 +6,7 @@ import { RuiMenuButton as RuiMenuButtonElement } from './menu-button.script';
 const meta = {
 	title: 'Components/Menu Button',
 	component: RuiMenuButton,
+	parameters: { radiant: { element: RuiMenuButtonElement, cssImports: ['./menu-button.css'] } },
 	args: {
 		open: false,
 		trigger: 'Actions',
@@ -15,8 +16,7 @@ const meta = {
 			{ value: 'delete', label: 'Delete' },
 		],
 	},
-};
-radiantMeta(meta, { element: RuiMenuButtonElement, stylesheets: ['./menu-button.css'] });
+} satisfies Meta<typeof RuiMenuButton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

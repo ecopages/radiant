@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiCalendar } from './calendar';
 import { RuiCalendar as RuiCalendarElement } from './calendar.script';
@@ -6,11 +6,11 @@ import { RuiCalendar as RuiCalendarElement } from './calendar.script';
 const meta = {
 	title: 'Components/Calendar',
 	component: RuiCalendar,
+	parameters: { radiant: { element: RuiCalendarElement, cssImports: ['./calendar.css'] } },
 	args: {
 		value: '2026-08-02',
 	},
-};
-radiantMeta(meta, { element: RuiCalendarElement, stylesheets: ['./calendar.css'] });
+} satisfies Meta<typeof RuiCalendar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

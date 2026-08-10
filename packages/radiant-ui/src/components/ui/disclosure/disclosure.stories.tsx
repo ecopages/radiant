@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import {
 	RuiDisclosure,
@@ -12,12 +12,12 @@ import { RuiDisclosure as RuiDisclosureElement } from './disclosure.script';
 const meta = {
 	title: 'Components/Disclosure',
 	component: RuiDisclosure,
+	parameters: { radiant: { element: RuiDisclosureElement, cssImports: ['./disclosure.css', './disclosure-group.css'] } },
 	args: {
 		trigger: 'More about shipping',
 		children: <p>Orders ship within 2 business days via tracked delivery.</p>,
 	},
-};
-radiantMeta(meta, { element: RuiDisclosureElement, stylesheets: ['./disclosure.css', './disclosure-group.css'] });
+} satisfies Meta<typeof RuiDisclosure>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

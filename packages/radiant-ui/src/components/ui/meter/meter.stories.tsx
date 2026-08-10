@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
 import { RuiMeter } from './meter';
 import { RuiMeter as RuiMeterElement } from './meter.script';
@@ -6,9 +6,9 @@ import { RuiMeter as RuiMeterElement } from './meter.script';
 const meta = {
 	title: 'Components/Meter',
 	component: RuiMeter,
+	parameters: { radiant: { element: RuiMeterElement, cssImports: ['./meter.css'] } },
 	args: { value: 72, min: 0, max: 100, label: 'Storage used' },
-};
-radiantMeta(meta, { element: RuiMeterElement, stylesheets: ['./meter.css'] });
+} satisfies Meta<typeof RuiMeter>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
