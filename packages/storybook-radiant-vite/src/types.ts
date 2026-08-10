@@ -1,5 +1,6 @@
 import type {
 	Args,
+	ArgsFromMeta,
 	ArgsStoryFn,
 	Canvas,
 	CompatibleString,
@@ -26,6 +27,25 @@ export type RadiantStoryParameters = {
 	radiant?: {
 		/** How the story is mounted in the canvas. Default: `client`. */
 		renderMode?: RadiantRenderMode;
+		/**
+		 * Host custom element backing a JSX `component` view. Omit for presentational views.
+		 *
+		 * @remarks
+		 * Preview-only: the renderer links it onto the view before resolving SSR module
+		 * paths, and it never crosses the SSR HTTP boundary (only the resolved string
+		 * paths and {@link sanitizeSsrArgs}-filtered args are sent).
+		 */
+		element?: CustomElementConstructor;
+		/**
+		 * Component CSS paths relative to the story file (e.g. `['./alert.css']`).
+		 *
+		 * @remarks
+		 * Source-only metadata: the Storybook stamp transform reads these out of the story
+		 * source and prepends side-effect `import './x.css'` statements. Never read at
+		 * runtime — apps load CSS via `@ecopages/radiant-ui/styles.css`. For story-scoped
+		 * extras injected at render time use `withStylesheets` / `parameters.stylesheets`.
+		 */
+		cssImports?: readonly string[];
 		/**
 		 * Vite-resolvable module path for SSR (e.g. `/src/components/ssr/counter.script.tsx`).
 		 * Inferred automatically from `meta.component` when it links to a `.script` module.
@@ -72,23 +92,76 @@ export interface RadiantRenderer extends WebRenderer {
 	mount: () => Promise<Canvas>;
 }
 
-export type Meta<TCmpOrArgs = Args> = [TCmpOrArgs] extends [RadiantRenderer]
-	? ComponentAnnotations<TCmpOrArgs> & {
-			parameters?: ComponentAnnotations<TCmpOrArgs>['parameters'] & RadiantStoryParameters;
-		}
-	: TCmpOrArgs extends (args: infer TArgs) => unknown
-		? ComponentAnnotations<RadiantRenderer, TArgs> & {
-				parameters?: ComponentAnnotations<RadiantRenderer, TArgs>['parameters'] & RadiantStoryParameters;
-			}
-		: ComponentAnnotations<RadiantRenderer, TCmpOrArgs> & {
-				parameters?: ComponentAnnotations<RadiantRenderer, TCmpOrArgs>['parameters'] & RadiantStoryParameters;
-			};
+/** Flatten an intersection into a single object type so editor hovers stay readable. */
+type Simplify<T> = { [K in keyof T]: T[K] } & {};
 
-export type StoryObj<TMetaOrArgs = Args> = TMetaOrArgs extends { component?: infer TComponent }
-	? TComponent extends (args: infer TArgs) => unknown
-		? StoryAnnotations<RadiantRenderer, TArgs>
-		: StoryAnnotations<RadiantRenderer, TMetaOrArgs>
-	: StoryAnnotations<RadiantRenderer, TMetaOrArgs>;
+/** Make the keys in `K` optional, leaving the rest of `T` untouched. */
+type SetOptional<T, K extends keyof T> = Simplify<Omit<T, K> & Partial<Pick<T, K>>>;
+
+/**
+ * Args a `component` annotation contributes.
+ *
+ * @remarks
+ * Non-distributive so a `CustomElementConstructor` (a construct signature, not a call
+ * signature) and a bare tag string both fall through to `unknown` instead of leaking the
+ * constructor type in as the args type.
+ */
+type ArgsFromComponent<TComponent> = [TComponent] extends [(args: infer TArgs) => unknown] ? TArgs : unknown;
+
+/**
+ * Storybook's `Parameters` is `{ [name: string]: any }`. Intersecting it with
+ * {@link RadiantStoryParameters} collapses `radiant` back to `any` — the index signature
+ * wins — so `parameters.radiant` goes unchecked. Widen with an `unknown` index instead:
+ * arbitrary addon parameters still pass, but `radiant` keeps its real type.
+ */
+type RadiantParameters = RadiantStoryParameters & { [name: string]: unknown };
+
+type RadiantComponentAnnotations<TArgs> = Omit<ComponentAnnotations<RadiantRenderer, TArgs>, 'parameters'> & {
+	parameters?: RadiantParameters;
+};
+
+type RadiantStoryAnnotations<TArgs, TRequiredArgs> = Omit<
+	StoryAnnotations<RadiantRenderer, TArgs, TRequiredArgs>,
+	'parameters'
+> & {
+	parameters?: RadiantParameters;
+};
+
+/**
+ * CSF `meta` annotations. Use with `satisfies` so the literal is contextually typed:
+ * `const meta = { ... } satisfies Meta<typeof MyView>`.
+ *
+ * @remarks
+ * Do not wrap this in a helper function — `Meta<T>` is a conditional type, so TypeScript
+ * cannot infer `T` from a parameter typed by it and would silently fall back to `Args`.
+ */
+export type Meta<TCmpOrArgs = Args> = [TCmpOrArgs] extends [RadiantRenderer]
+	? RadiantComponentAnnotations<Args>
+	: [TCmpOrArgs] extends [CustomElementConstructor]
+		? RadiantComponentAnnotations<Args>
+		: [TCmpOrArgs] extends [(args: infer TArgs) => unknown]
+			? RadiantComponentAnnotations<TArgs>
+			: RadiantComponentAnnotations<TCmpOrArgs>;
+
+/**
+ * CSF story annotations. Pass `typeof meta` so args are derived from `meta.component`,
+ * `meta.render` and `meta.decorators`, and args already supplied by `meta.args` become
+ * optional on the story.
+ */
+export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
+	{
+		// oxlint-disable-next-line no-explicit-any -- structural probe; mirrors Storybook's own `StoryObj`
+		render?: ArgsStoryFn<RadiantRenderer, any>;
+		component?: infer TComponent;
+		args?: infer TDefaultArgs;
+	},
+]
+	? Simplify<
+			ArgsFromComponent<TComponent> & ArgsFromMeta<RadiantRenderer, TMetaOrCmpOrArgs>
+		> extends infer TArgs
+		? RadiantStoryAnnotations<TArgs, SetOptional<TArgs, keyof TArgs & keyof TDefaultArgs>>
+		: never
+	: RadiantStoryAnnotations<TMetaOrCmpOrArgs, Partial<TMetaOrCmpOrArgs>>;
 
 export type StoryFn<TArgs = Args> = ArgsStoryFn<RadiantRenderer, TArgs>;
 
