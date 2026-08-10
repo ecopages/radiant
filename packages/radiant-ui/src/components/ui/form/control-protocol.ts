@@ -360,6 +360,24 @@ export function wireFieldControlName(
 	}
 }
 
+/**
+ * Whether a radio is selected, in the browser and under the minimal SSR DOM.
+ *
+ * @remarks
+ * The minimal SSR DOM rejects pseudo-classes, so `input:checked` throws a `SyntaxError`
+ * server-side, and it has no `checked` property — state lives only on the attribute.
+ * In the browser the property is authoritative: after a user selects a different radio the
+ * `checked` attribute still marks the originally-rendered one, so the property must win.
+ * Read via `Reflect.get` so the missing SSR property is an explicit `undefined`, not a
+ * typed-as-boolean that happens to be nullish.
+ *
+ * @see `packages/radiant/src/server/README.md` — SSR gap registry (selector post-filters).
+ */
+function isChecked(input: HTMLInputElement): boolean {
+	const checked = Reflect.get(input, 'checked');
+	return typeof checked === 'boolean' ? checked : input.hasAttribute('checked');
+}
+
 /** Element that receives `id`, `aria-invalid`, and `aria-describedby` from Field. */
 export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 	if (isNativeTextControl(control)) {
@@ -408,9 +426,13 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 	}
 
 	if (control.localName === 'rui-radio-group') {
-		const checked = control.querySelector<HTMLInputElement>('input[type="radio"]:checked');
-		const first = control.querySelector<HTMLInputElement>('input[type="radio"]');
-		return checked ?? first ?? control;
+		const radios = control.querySelectorAll<HTMLInputElement>('input[type="radio"]');
+		for (const radio of radios) {
+			if (isChecked(radio)) {
+				return radio;
+			}
+		}
+		return radios[0] ?? control;
 	}
 
 	return control;

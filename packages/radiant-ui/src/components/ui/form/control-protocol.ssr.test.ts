@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findFieldControl, isNativeTextControl } from '../form/control-protocol';
+import { findFieldControl, getAriaControlTarget, isNativeTextControl } from '../form/control-protocol';
 
 describe('field control protocol (SSR-safe)', () => {
 	it('discovers marked inputs and host tags, not bare natives', () => {
@@ -30,5 +30,27 @@ describe('field control protocol (SSR-safe)', () => {
 		const div = document.createElement('div');
 		expect(isNativeTextControl(input)).toBe(true);
 		expect(isNativeTextControl(div)).toBe(false);
+	});
+
+	/**
+	 * In a real DOM the `checked` property tracks user selection while the attribute keeps
+	 * marking whatever was server-rendered, so the property has to win. This is why the
+	 * radio-group branch cannot simply swap `:checked` for `[checked]`.
+	 */
+	it('targets the user-selected radio, not the server-rendered one', () => {
+		const host = document.createElement('rui-radio-group');
+		host.innerHTML = `
+			<input type="radio" value="free" />
+			<input type="radio" value="pro" checked />
+		`;
+		const [free, pro] = Array.from(host.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
+
+		expect(getAriaControlTarget(host).getAttribute('value')).toBe('pro');
+
+		pro!.checked = false;
+		free!.checked = true;
+
+		expect(getAriaControlTarget(host).getAttribute('value')).toBe('free');
+		expect(pro!.hasAttribute('checked')).toBe(true);
 	});
 });
