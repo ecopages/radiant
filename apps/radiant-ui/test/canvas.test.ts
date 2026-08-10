@@ -75,6 +75,31 @@ describe('DocsCanvasElement', () => {
 		expect(canvas.querySelector('rui-toaster')).not.toBeNull();
 	});
 
+	test('repaints when story context revision changes without manual repaint', async () => {
+		const demo = document.createElement('radiant-docs-demo') as DocsDemoElement;
+		demo.dataset.storyId = storyId;
+
+		const canvas = document.createElement('radiant-docs-canvas') as DocsCanvasElement;
+		canvas.dataset.storyId = storyId;
+		const mount = document.createElement('div');
+		mount.dataset.docsPreview = '';
+		canvas.append(mount);
+		demo.append(canvas);
+		document.body.append(demo);
+
+		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+		demo.story.setContext({
+			storyId,
+			args: { label: 'Context-driven render' },
+			renderRevision: 1,
+		});
+
+		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+		expect(canvas.querySelector('[data-canvas-story]')?.textContent).toBe('Context-driven render');
+	});
+
 	test('remounts preview after the story removes itself from the canvas', () => {
 		const demo = document.createElement('radiant-docs-demo') as DocsDemoElement;
 		demo.dataset.storyId = storyId;
