@@ -17,6 +17,19 @@ import type { JsxRenderable } from '@ecopages/jsx';
 export type RadiantRenderMode = 'client' | 'ssr-hydrate' | 'ssr-static';
 
 /**
+ * Value accepted on `parameters.radiant.element`.
+ *
+ * @remarks
+ * Constructors are linked for SSR module resolution. View functions may appear for
+ * typing convenience but are ignored by link-time sync — omit the field for
+ * presentational stories instead of passing the view twice.
+ */
+export type RadiantSsrHost =
+	| CustomElementConstructor
+	// oxlint-disable-next-line no-explicit-any -- mirrors {@link RadiantComponent} view callables
+	| ((args: any) => JsxRenderable | Node | string | null | undefined);
+
+/**
  * Storybook parameters under `parameters.radiant`.
  *
  * Important: SSR modes talk to the Vite middleware over HTTP.
@@ -28,14 +41,16 @@ export type RadiantStoryParameters = {
 		/** How the story is mounted in the canvas. Default: `client`. */
 		renderMode?: RadiantRenderMode;
 		/**
-		 * Host custom element backing a JSX `component` view. Omit for presentational views.
+		 * Optional SSR host for a JSX `component` view.
 		 *
 		 * @remarks
-		 * Preview-only: the renderer links it onto the view before resolving SSR module
-		 * paths, and it never crosses the SSR HTTP boundary (only the resolved string
-		 * paths and {@link sanitizeSsrArgs}-filtered args are sent).
+		 * Prefer a {@link CustomElementConstructor} for CE-backed views. Omit for
+		 * presentational JSX (cssImports-only stories). A view function is accepted so
+		 * typing is not CE-only; only constructors are linked onto `meta.component` at
+		 * render time. Preview-only — never crosses the SSR HTTP boundary (only resolved
+		 * string paths and {@link sanitizeSsrArgs}-filtered args are sent).
 		 */
-		element?: CustomElementConstructor;
+		element?: RadiantSsrHost;
 		/**
 		 * Component CSS paths relative to the story file (e.g. `['./alert.css']`).
 		 *

@@ -10,7 +10,7 @@ export function isCustomElementConstructor(value: unknown): value is CustomEleme
 		return false;
 	}
 	const ctor = value as CustomElementConstructor;
-	if (ctor.prototype instanceof HTMLElement) {
+	if (typeof HTMLElement !== 'undefined' && ctor.prototype instanceof HTMLElement) {
 		return true;
 	}
 	return Boolean(getCustomElementTagName(ctor));

@@ -47,13 +47,16 @@ export function linkRadiantViewElement(view: RadiantViewComponent, element: Cust
  * @remarks
  * Call before {@link resolveSsrTarget} so HMR-replaced element classes re-stamp the view.
  * Falls back to an already-linked element for views wired via `defineRadiantComponent`.
+ * Non-constructor `element` values (e.g. a JSX view function) are ignored — omit the
+ * field for presentational stories.
  */
-export function syncViewMetadata(component: unknown, element?: CustomElementConstructor): void {
+export function syncViewMetadata(component: unknown, element?: unknown): void {
 	if (typeof component !== 'function') {
 		return;
 	}
 	const view = component as RadiantViewComponent;
-	const linked = element ?? view[RADIANT_VIEW_ELEMENT];
+	const fromParameters = isCustomElementConstructor(element) ? element : undefined;
+	const linked = fromParameters ?? view[RADIANT_VIEW_ELEMENT];
 	if (linked) {
 		linkRadiantViewElement(view, linked);
 	}

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { CUSTOM_ELEMENT_TAG_NAME } from './constants';
 import { resolveSsrTarget, syncViewMetadata } from './resolve-ssr';
 import { RADIANT_SCRIPT_EXPORT, RADIANT_SCRIPT_MODULE, RADIANT_VIEW_ELEMENT } from './symbols';
 import type { Meta, RadiantStoryParameters } from './types';
@@ -13,12 +14,15 @@ function makeView() {
 /** Node-env stand-in for a RadiantElement constructor (no `HTMLElement` global here). */
 function makeElement(scriptModule?: string) {
 	const Host = class RuiHost {} as unknown as CustomElementConstructor;
-	if (scriptModule) {
-		Object.assign(Host, {
-			[RADIANT_SCRIPT_MODULE]: scriptModule,
-			[RADIANT_SCRIPT_EXPORT]: 'RuiHost',
-		});
-	}
+	Object.assign(Host, {
+		[CUSTOM_ELEMENT_TAG_NAME]: 'rui-host',
+		...(scriptModule
+			? {
+					[RADIANT_SCRIPT_MODULE]: scriptModule,
+					[RADIANT_SCRIPT_EXPORT]: 'RuiHost',
+				}
+			: {}),
+	});
 	return Host;
 }
 
@@ -88,6 +92,15 @@ describe('parameters.radiant.element', () => {
 		// Also asserts the literal is assignable to the declared parameters type.
 		const radiant: RadiantStoryParameters['radiant'] = meta.parameters.radiant;
 		syncViewMetadata(meta.component, radiant?.element);
+
+		expect((component as unknown as Stamped)[RADIANT_VIEW_ELEMENT]).toBeUndefined();
+	});
+
+	test('ignores a view function passed as element instead of a constructor', () => {
+		const component = makeView();
+		const otherView = makeView();
+
+		syncViewMetadata(component, otherView);
 
 		expect((component as unknown as Stamped)[RADIANT_VIEW_ELEMENT]).toBeUndefined();
 	});
