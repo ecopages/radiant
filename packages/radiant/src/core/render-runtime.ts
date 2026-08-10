@@ -1,9 +1,4 @@
-import {
-	hasHydrationMarkers,
-	hydrate as hydrateJsx,
-	render as renderJsx,
-	type JsxRenderable,
-} from '@ecopages/jsx';
+import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
 import { isServer } from '@ecopages/radiant/is-server';
 import {
 	createReactiveComputed,
@@ -182,11 +177,7 @@ export class RenderRuntime {
 			return;
 		}
 
-		if (
-			!this.#hasMounted &&
-			this.#host.childNodes.length > 0 &&
-			(isServer || !hasHydrationMarkers(this.#host))
-		) {
+		if (!this.#hasMounted && this.#host.childNodes.length > 0 && (isServer || !hasHydrationMarkers(this.#host))) {
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;
 		}
