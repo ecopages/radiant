@@ -1,16 +1,13 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiMenuButton } from '@ecopages/radiant-ui/menu-button';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type MenuButtonArgs = {
 	open: boolean;
-	placement: string;
+	placement: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 	children: string;
 };
 
 export const meta = {
-	component: 'menu-button',
-	exportName: 'RuiMenuButton',
 	args: {
 		open: false,
 		placement: 'bottom-start',
@@ -20,12 +17,24 @@ export const meta = {
 		open: { control: { type: 'boolean' } },
 		placement: {
 			control: { type: 'select' },
-			options: ['bottom-start', 'bottom-end', 'top-start', 'top-end'] as const,
+			options: ['bottom-start', 'bottom-end', 'top-start', 'top-end'] as const satisfies readonly MenuButtonArgs['placement'][],
 		},
 		children: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiMenuButton', 'menu-button', args, args.children),
-	render: (args) => renderPlaygroundPreview('menu-button', args, args.children),
+	render: (args) => (
+		<div class="playground-menu-button-demo">
+			<RuiMenuButton
+				{...(args.open ? { open: true } : {})}
+				placement={args.placement}
+				trigger={args.children}
+				items={[
+					{ value: 'edit', label: 'Edit' },
+					{ value: 'duplicate', label: 'Duplicate' },
+					{ value: 'delete', label: 'Delete' },
+				]}
+			/>
+		</div>
+	),
 } satisfies DocsMeta<MenuButtonArgs>;
 
 type Story = DocsStory<MenuButtonArgs>;

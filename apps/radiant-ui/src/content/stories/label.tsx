@@ -1,6 +1,5 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type LabelArgs = {
 	htmlFor: string;
@@ -8,8 +7,6 @@ export type LabelArgs = {
 };
 
 export const meta = {
-	component: 'label',
-	exportName: 'RuiLabel',
 	args: {
 		htmlFor: '',
 		children: 'Username',
@@ -18,8 +15,7 @@ export const meta = {
 		htmlFor: { control: { type: 'text' } },
 		children: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiLabel', 'label', args, args.children),
-	render: (args) => renderPlaygroundPreview('label', args, args.children),
+	render: (args) => <RuiLabel htmlFor={args.htmlFor || undefined}>{args.children}</RuiLabel>,
 } satisfies DocsMeta<LabelArgs>;
 
 type Story = DocsStory<LabelArgs>;

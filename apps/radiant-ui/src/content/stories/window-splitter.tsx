@@ -1,16 +1,13 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiWindowSplitter } from '@ecopages/radiant-ui/window-splitter';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type WindowSplitterArgs = {
 	value: number;
-	orientation: string;
+	orientation: 'horizontal' | 'vertical';
 	label: string;
 };
 
 export const meta = {
-	component: 'window-splitter',
-	exportName: 'RuiWindowSplitter',
 	args: {
 		value: 50,
 		orientation: 'horizontal',
@@ -18,11 +15,21 @@ export const meta = {
 	},
 	argTypes: {
 		value: { control: { type: 'number' } },
-		orientation: { control: { type: 'select' }, options: ['horizontal', 'vertical'] as const },
+		orientation: {
+			control: { type: 'select' },
+			options: ['horizontal', 'vertical'] as const satisfies readonly WindowSplitterArgs['orientation'][],
+		},
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiWindowSplitter', 'window-splitter', args),
-	render: (args) => renderPlaygroundPreview('window-splitter', args),
+	render: (args) => (
+		<RuiWindowSplitter
+			value={args.value}
+			orientation={args.orientation}
+			label={args.label}
+			primary={<div>Editor</div>}
+			secondary={<div>Preview</div>}
+		/>
+	),
 } satisfies DocsMeta<WindowSplitterArgs>;
 
 type Story = DocsStory<WindowSplitterArgs>;

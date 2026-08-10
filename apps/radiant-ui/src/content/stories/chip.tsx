@@ -8,8 +8,6 @@ export type ChipArgs = {
 };
 
 export const meta = {
-	component: 'chip',
-	exportName: 'RuiChip',
 	args: { variant: 'default', children: 'Design system' },
 	argTypes: {
 		variant: {

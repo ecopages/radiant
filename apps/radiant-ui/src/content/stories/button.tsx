@@ -12,8 +12,6 @@ export type ButtonArgs = {
 };
 
 export const meta = {
-	component: 'button',
-	exportName: 'RuiButton',
 	args: {
 		variant: 'filled',
 		size: 'md',

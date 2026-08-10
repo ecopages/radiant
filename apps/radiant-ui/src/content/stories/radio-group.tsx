@@ -1,6 +1,5 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiRadioGroup } from '@ecopages/radiant-ui/radio-group';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type RadioGroupArgs = {
 	value: string;
@@ -9,8 +8,6 @@ export type RadioGroupArgs = {
 };
 
 export const meta = {
-	component: 'radio-group',
-	exportName: 'RuiRadioGroup',
 	args: {
 		value: 'pro',
 		disabled: false,
@@ -21,8 +18,17 @@ export const meta = {
 		disabled: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiRadioGroup', 'radio-group', args),
-	render: (args) => renderPlaygroundPreview('radio-group', args),
+	render: (args) => (
+		<RuiRadioGroup
+			value={args.value}
+			disabled={args.disabled}
+			label={args.label}
+			options={[
+				{ value: 'free', label: 'Free' },
+				{ value: 'pro', label: 'Pro' },
+			]}
+		/>
+	),
 } satisfies DocsMeta<RadioGroupArgs>;
 
 type Story = DocsStory<RadioGroupArgs>;

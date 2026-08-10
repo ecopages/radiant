@@ -1,6 +1,11 @@
-import { buildExampleCode } from '@/lib/playground';
+import {
+	RuiFeed,
+	RuiFeedArticle,
+	RuiFeedArticleContent,
+	RuiFeedArticleHeader,
+	RuiFeedByline,
+} from '@ecopages/radiant-ui/feed';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type FeedArgs = {
 	label: string;
@@ -8,8 +13,6 @@ export type FeedArgs = {
 };
 
 export const meta = {
-	component: 'feed',
-	exportName: 'RuiFeed',
 	args: {
 		label: 'Activity',
 		'aria-busy': false,
@@ -18,8 +21,16 @@ export const meta = {
 		label: { control: { type: 'text' } },
 		'aria-busy': { control: { type: 'boolean' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiFeed', 'feed', args),
-	render: (args) => renderPlaygroundPreview('feed', args),
+	render: (args) => (
+		<RuiFeed label={args.label} aria-busy={args['aria-busy'] ? 'true' : undefined}>
+			<RuiFeedArticle>
+				<RuiFeedArticleHeader>
+					<RuiFeedByline>Jane Cooper · 2 hours ago</RuiFeedByline>
+				</RuiFeedArticleHeader>
+				<RuiFeedArticleContent>Shipped order #4821.</RuiFeedArticleContent>
+			</RuiFeedArticle>
+		</RuiFeed>
+	),
 } satisfies DocsMeta<FeedArgs>;
 
 type Story = DocsStory<FeedArgs>;

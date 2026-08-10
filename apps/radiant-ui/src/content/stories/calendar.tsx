@@ -1,17 +1,14 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiCalendar, type RuiCalendarPageBehavior } from '@ecopages/radiant-ui/calendar';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type CalendarArgs = {
-	selectionMode: string;
+	selectionMode: 'single' | 'multiple' | 'range';
 	disabled: boolean;
 	visibleMonths: number;
-	pageBehavior: string;
+	pageBehavior: RuiCalendarPageBehavior;
 };
 
 export const meta = {
-	component: 'calendar',
-	exportName: 'RuiCalendar',
 	args: {
 		selectionMode: 'single',
 		disabled: false,
@@ -19,13 +16,26 @@ export const meta = {
 		pageBehavior: 'visible',
 	},
 	argTypes: {
-		selectionMode: { control: { type: 'select' }, options: ['single', 'multiple', 'range'] as const },
+		selectionMode: {
+			control: { type: 'select' },
+			options: ['single', 'multiple', 'range'] as const satisfies readonly CalendarArgs['selectionMode'][],
+		},
 		disabled: { control: { type: 'boolean' } },
 		visibleMonths: { control: { type: 'number' } },
-		pageBehavior: { control: { type: 'select' }, options: ['visible', 'single'] as const },
+		pageBehavior: {
+			control: { type: 'select' },
+			options: ['visible', 'single'] as const satisfies readonly RuiCalendarPageBehavior[],
+		},
 	},
-	exampleCode: (args) => buildExampleCode('RuiCalendar', 'calendar', args),
-	render: (args) => renderPlaygroundPreview('calendar', args),
+	render: (args) => (
+		<RuiCalendar
+			selectionMode={args.selectionMode}
+			disabled={args.disabled}
+			visibleMonths={args.visibleMonths}
+			pageBehavior={args.pageBehavior}
+			value="2026-08-07"
+		/>
+	),
 } satisfies DocsMeta<CalendarArgs>;
 
 type Story = DocsStory<CalendarArgs>;

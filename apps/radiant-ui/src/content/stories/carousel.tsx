@@ -1,10 +1,9 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiCarousel, RuiCarouselNext, RuiCarouselPrev, RuiCarouselSlide } from '@ecopages/radiant-ui/carousel';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type CarouselArgs = {
 	index: number;
-	transition: string;
+	transition: 'none' | 'slide' | 'fade';
 	autoplay: boolean;
 	interval: number;
 	showIndicators: boolean;
@@ -12,8 +11,6 @@ export type CarouselArgs = {
 };
 
 export const meta = {
-	component: 'carousel',
-	exportName: 'RuiCarousel',
 	args: {
 		index: 0,
 		transition: 'slide',
@@ -24,14 +21,31 @@ export const meta = {
 	},
 	argTypes: {
 		index: { control: { type: 'number' } },
-		transition: { control: { type: 'select' }, options: ['none', 'slide', 'fade'] as const },
+		transition: {
+			control: { type: 'select' },
+			options: ['none', 'slide', 'fade'] as const satisfies readonly CarouselArgs['transition'][],
+		},
 		autoplay: { control: { type: 'boolean' } },
 		interval: { control: { type: 'number' } },
 		showIndicators: { control: { type: 'boolean' } },
 		loop: { control: { type: 'boolean' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiCarousel', 'carousel', args),
-	render: (args) => renderPlaygroundPreview('carousel', args),
+	render: (args) => (
+		<RuiCarousel
+			index={args.index}
+			transition={args.transition}
+			autoplay={args.autoplay}
+			interval={args.interval}
+			showIndicators={args.showIndicators}
+			loop={args.loop}
+		>
+			<RuiCarouselSlide id="slide-1">First panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-2">Second panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-3">Third panel</RuiCarouselSlide>
+			<RuiCarouselPrev />
+			<RuiCarouselNext />
+		</RuiCarousel>
+	),
 } satisfies DocsMeta<CarouselArgs>;
 
 type Story = DocsStory<CarouselArgs>;

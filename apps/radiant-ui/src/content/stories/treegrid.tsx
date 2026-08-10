@@ -1,6 +1,42 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiTreegrid } from '@ecopages/radiant-ui/treegrid';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
+
+const TREEGRID_DEMO_ROWS = [
+	{
+		id: 'src',
+		cells: ['src', 'folder'],
+		expanded: true,
+		children: [
+			{
+				id: 'components',
+				cells: ['components', 'folder'],
+				expanded: true,
+				children: [
+					{ id: 'button', cells: ['button.tsx', '4.2 KB'] },
+					{ id: 'dialog', cells: ['dialog.tsx', '6.8 KB'] },
+					{ id: 'sidebar', cells: ['sidebar.tsx', '12.1 KB'] },
+				],
+			},
+			{
+				id: 'lib',
+				cells: ['lib', 'folder'],
+				expanded: true,
+				children: [
+					{ id: 'utils', cells: ['utils.ts', '2.4 KB'] },
+					{ id: 'hooks', cells: ['hooks.ts', '3.1 KB'] },
+				],
+			},
+			{ id: 'index', cells: ['index.ts', '1.1 KB'] },
+		],
+	},
+	{
+		id: 'public',
+		cells: ['public', 'folder'],
+		children: [{ id: 'favicon', cells: ['favicon.ico', '15 KB'] }],
+	},
+	{ id: 'package', cells: ['package.json', '1.8 KB'] },
+	{ id: 'readme', cells: ['README.md', '3.4 KB'] },
+];
 
 export type TreegridArgs = {
 	value: string;
@@ -8,8 +44,6 @@ export type TreegridArgs = {
 };
 
 export const meta = {
-	component: 'treegrid',
-	exportName: 'RuiTreegrid',
 	args: {
 		value: 'button',
 		label: 'Repository',
@@ -18,8 +52,14 @@ export const meta = {
 		value: { control: { type: 'text' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiTreegrid', 'treegrid', args),
-	render: (args) => renderPlaygroundPreview('treegrid', args),
+	render: (args) => (
+		<RuiTreegrid
+			value={args.value}
+			label={args.label}
+			columns={['Name', 'Size']}
+			rows={TREEGRID_DEMO_ROWS}
+		/>
+	),
 } satisfies DocsMeta<TreegridArgs>;
 
 type Story = DocsStory<TreegridArgs>;

@@ -1,13 +1,10 @@
 import type { RuiAlertLayout, RuiAlertProps, RuiAlertVariant } from '@ecopages/radiant-ui/alert';
 import { RuiAlert, RuiAlertDescription, RuiAlertIcon, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { buildPlaygroundExampleCode } from '@/lib/playground';
 
 export type AlertArgs = Required<Pick<RuiAlertProps, 'variant' | 'layout' | 'dismissible'>>;
 
 export const meta = {
-	component: 'alert',
-	exportName: 'RuiAlert',
 	args: { variant: 'info', layout: 'inline', dismissible: false },
 	argTypes: {
 		variant: {
@@ -22,7 +19,6 @@ export const meta = {
 			control: { type: 'boolean' },
 		},
 	},
-	exampleCode: (args) => buildPlaygroundExampleCode('alert', args) ?? '',
 	render: (args) => {
 		if (args.layout === 'banner') {
 			return (
