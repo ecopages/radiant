@@ -266,11 +266,7 @@ function listHydrationBindingAttributes(element: Element): Attr[] {
 	for (let index = 0; index < namedAttributes.length; index += 1) {
 		const attribute = namedAttributes.item(index) ?? namedAttributes[index];
 
-		if (
-			attribute &&
-			typeof attribute.name === 'string' &&
-			attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)
-		) {
+		if (attribute && typeof attribute.name === 'string' && attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)) {
 			markers.push(attribute);
 		}
 	}
