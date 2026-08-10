@@ -17,7 +17,12 @@ const COUNTRY_OPTIONS = [
 const meta = {
 	title: 'Components/Combobox',
 	component: RuiCombobox,
-	parameters: { radiant: { element: RuiComboboxElement, cssImports: ['./combobox.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'] } },
+	parameters: {
+		radiant: {
+			element: RuiComboboxElement,
+			cssImports: ['./combobox.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'],
+		},
+	},
 	args: {
 		placeholder: 'Choose a country',
 		options: COUNTRY_OPTIONS,
