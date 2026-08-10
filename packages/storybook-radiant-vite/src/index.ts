@@ -76,4 +76,10 @@ export { defineRadiantComponent } from './define-component';
 export { radiantSsr } from './radiant-ssr';
 export type { RadiantViewComponent } from './resolve-ssr';
 export type { Meta, Preview, StoryFn, StoryObj, Decorator, RadiantRenderer };
-export type { RadiantRenderMode, RadiantStoryParameters, FrameworkOptions, StorybookConfig } from './types';
+export type {
+	RadiantRenderMode,
+	RadiantSsrHost,
+	RadiantStoryParameters,
+	FrameworkOptions,
+	StorybookConfig,
+} from './types';

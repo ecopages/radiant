@@ -47,6 +47,19 @@ expectTypeOf(meta.args).toEqualTypeOf<{ variant: 'solid'; label: string }>();
 // `satisfies` preserves the literal, so `StoryObj<typeof meta>` can read `component`.
 expectTypeOf(meta.component).toEqualTypeOf<typeof Button>();
 
+/* Presentational and view-typed hosts are valid — element is not CE-only. */
+const presentational = {
+	component: Button,
+	parameters: { radiant: { cssImports: ['./button.css'] } },
+} satisfies Meta<typeof Button>;
+void presentational;
+
+const viewAsHost = {
+	component: Button,
+	parameters: { radiant: { element: Button } },
+} satisfies Meta<typeof Button>;
+void viewAsHost;
+
 /* -------------------------------------------------------------------------- */
 /* Meta rejects what it used to wave through                                   */
 /* -------------------------------------------------------------------------- */
