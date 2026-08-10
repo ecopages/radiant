@@ -15,8 +15,8 @@ function isStoryModule(id: string): boolean {
  * Stamps Radiant script modules and CSF story files with stable Vite SSR paths.
  *
  * @remarks
- * Component CSS and view-module linking are declared on `radiantMeta` in story
- * files — view modules stay free of Storybook stamps.
+ * Component CSS and view-module linking are declared on `parameters.radiant` in
+ * story files — view modules stay free of Storybook stamps.
  */
 export function radiantScriptModuleStampPlugin(): Plugin {
 	let root = process.cwd();
