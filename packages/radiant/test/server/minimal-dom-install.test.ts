@@ -124,6 +124,20 @@ describe('minimal DOM installation boundary', () => {
 		expect(globalThis.cancelAnimationFrame).toBeTypeOf('function');
 	});
 
+	test('does not expose the attribute store as element.attributes', async () => {
+		clearDomGlobals();
+
+		const { installLightDomShim } = await import('../../src/server/shim/minimal-dom/install');
+		installLightDomShim();
+
+		const host = document.createElement('demo-host');
+		host.setAttribute('title', 'ok');
+
+		expect(host.getAttribute('title')).toBe('ok');
+		expect(host.attributes).toBeUndefined();
+		expect(host.attributes instanceof Map).toBe(false);
+	});
+
 	test('replaces a foreign DOM when a custom-element host fails the style probe', async () => {
 		const { ForeignHTMLElement, foreignDocument } = installForeignPartialDom();
 		const { installLightDomShim } = await import('../../src/server/shim/minimal-dom/install');

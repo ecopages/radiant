@@ -253,3 +253,52 @@ describe('template attribute marker index collection', () => {
 		expect(incIndices.nextIndex).toBe(bindings.size);
 	});
 });
+
+describe('visitHydrationBindingMarkers DOM compatibility', () => {
+	test('skips hosts whose attributes bag is a Map instead of a NamedNodeMap', async () => {
+		const { visitHydrationBindingMarkers } = await loadHydrationBindings();
+		const host = {
+			attributes: new Map([['data-radiant-jsx-bind-0', 'attr:title']]),
+			children: { length: 0, item: () => null },
+			localName: 'demo-host',
+		} as unknown as HTMLElement;
+
+		expect(visitHydrationBindingMarkers(host, () => undefined)).toBe(false);
+	});
+
+	test('skips hosts with a missing attributes bag', async () => {
+		const { visitHydrationBindingMarkers } = await loadHydrationBindings();
+		const host = {
+			children: { length: 0, item: () => null },
+			localName: 'demo-host',
+		} as unknown as HTMLElement;
+
+		expect(visitHydrationBindingMarkers(host, () => undefined)).toBe(false);
+	});
+
+	test('still finds Attr markers on a NamedNodeMap-shaped attributes list', async () => {
+		const { ATTRIBUTE_BINDING_PREFIX, visitHydrationBindingMarkers } = await loadHydrationBindings();
+		const marker = {
+			name: `${ATTRIBUTE_BINDING_PREFIX}0`,
+			value: 'attr:title',
+		};
+		const attributes = {
+			0: marker,
+			length: 1,
+			item: (index: number) => (index === 0 ? marker : null),
+		};
+		const host = {
+			attributes,
+			children: { length: 0, item: () => null },
+			localName: 'demo-host',
+		} as unknown as HTMLElement;
+
+		const visited: string[] = [];
+		expect(
+			visitHydrationBindingMarkers(host, (_element, attribute) => {
+				visited.push(attribute.name);
+			}),
+		).toBe(true);
+		expect(visited).toEqual([`${ATTRIBUTE_BINDING_PREFIX}0`]);
+	});
+});

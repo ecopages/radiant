@@ -202,6 +202,10 @@ export function serializeBindingDescriptor(kind: BindingKind, name: string): str
  *
  * Attributes are iterated in reverse index order so that callers may safely call
  * `removeAttribute` inside `visit` without corrupting the live `NamedNodeMap`.
+ *
+ * @remarks
+ * Incomplete SSR DOM shims may omit `attributes` or expose a non-`NamedNodeMap`
+ * store. Those hosts have no Attr markers to recover, so the walk is a no-op.
  */
 export function visitHydrationBindingMarkers(
 	target: HTMLElement,
@@ -209,9 +213,7 @@ export function visitHydrationBindingMarkers(
 ): boolean {
 	let foundHydrationMarker = false;
 	const walk = (element: Element): void => {
-		const attributes = Array.from(element.attributes).filter((attribute) =>
-			attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX),
-		);
+		const attributes = listHydrationBindingAttributes(element);
 
 		for (let index = attributes.length - 1; index >= 0; index -= 1) {
 			const attribute = attributes[index];
@@ -242,6 +244,38 @@ export function visitHydrationBindingMarkers(
 	walk(target);
 
 	return foundHydrationMarker;
+}
+
+/**
+ * Collects Attr nodes that carry hydration markers on `element`.
+ *
+ * @remarks
+ * Requires a real `NamedNodeMap`-shaped `attributes` list. Map-backed SSR shims
+ * and missing attribute bags are treated as empty — calling `Array.from` on a
+ * `Map` would otherwise yield `[name, value]` tuples and crash on `.name`.
+ */
+function listHydrationBindingAttributes(element: Element): Attr[] {
+	const namedAttributes = element.attributes;
+
+	if (!namedAttributes || typeof namedAttributes.length !== 'number') {
+		return [];
+	}
+
+	const markers: Attr[] = [];
+
+	for (let index = 0; index < namedAttributes.length; index += 1) {
+		const attribute = namedAttributes.item(index) ?? namedAttributes[index];
+
+		if (
+			attribute &&
+			typeof attribute.name === 'string' &&
+			attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)
+		) {
+			markers.push(attribute);
+		}
+	}
+
+	return markers;
 }
 
 function collectValueBindings(
