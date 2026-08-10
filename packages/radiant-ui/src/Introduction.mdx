@@ -60,7 +60,7 @@ Each composite component's TSDoc links the [WAI-ARIA APG](https://www.w3.org/WAI
 - One directory per component in `src/components/ui/<name>/`:
   - `<name>.script.ts` or `<name>.script.tsx` — custom element
   - `<name>.tsx` — plain JSX view (`export function Rui…`) or presentational helper
-  - `<name>.css`, `<name>.stories.tsx` (`radiantMeta` for SSR + Storybook CSS), `index.ts`
+  - `<name>.css`, `<name>.stories.tsx` (`parameters.radiant` for SSR + Storybook CSS), `index.ts`
 - Events use the `rui-*` namespace (`rui-change`, `rui-close`).
 - Stateful props (`open`, `value`, `index`, `autoplay`, …) are reactive via `@onUpdated` unless a component documents them as initial-only.
 - Stories are render-mode agnostic. Use the toolbar **Radiant render** control to spot-check SSR (`ssr-hydrate` / `ssr-static`) on any story.

@@ -8,9 +8,8 @@ import { composeStoryRender } from './compose-story-render';
 import { RADIANT_SSR_ENDPOINT, type RadiantSsrRequestBody, type RadiantSsrResponseBody } from './constants';
 import { isEmptyHostShell, storyIdToExportName } from './ssr-markup';
 import { toStylesheetLinkHref } from './collect-ssr-styles';
-import { linkRadiantViewElement, resolveSsrTarget, type RadiantViewComponent } from './resolve-ssr';
+import { resolveSsrTarget, syncViewMetadata } from './resolve-ssr';
 import { sanitizeSsrArgs } from './sanitize-ssr-args';
-import { RADIANT_VIEW_ELEMENT } from './symbols';
 import type { RadiantRenderer, RadiantStoryParameters } from './types';
 
 type RenderContextWithCallbacks = RenderContext<RadiantRenderer> & {
@@ -119,25 +118,6 @@ function mountStaticMarkup(canvasElement: HTMLElement, markup: string, assets: R
 	frame.srcdoc = buildStaticSrcdoc(markup, assets);
 	frame.style.cssText = 'display:block;width:100%;min-height:320px;border:0;background:transparent';
 	canvasElement.replaceChildren(frame);
-}
-
-/**
- * Link `parameters.radiant.element` onto the JSX view and refresh its module stamps.
- *
- * @remarks
- * Runs on every render rather than at story-module import time, so HMR-replaced element
- * classes re-stamp the view. Falls back to an already-linked element for views wired via
- * {@link defineRadiantComponent}.
- */
-function syncViewMetadata(component: unknown, element?: CustomElementConstructor): void {
-	if (typeof component !== 'function') {
-		return;
-	}
-	const view = component as RadiantViewComponent;
-	const linked = element ?? view[RADIANT_VIEW_ELEMENT];
-	if (linked) {
-		linkRadiantViewElement(view, linked);
-	}
 }
 
 /**
