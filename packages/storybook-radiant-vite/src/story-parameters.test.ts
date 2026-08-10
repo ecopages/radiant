@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { resolveSsrTarget } from './resolve-ssr';
+import { resolveSsrTarget, syncViewMetadata } from './resolve-ssr';
 import { RADIANT_SCRIPT_EXPORT, RADIANT_SCRIPT_MODULE, RADIANT_VIEW_ELEMENT } from './symbols';
 import type { Meta, RadiantStoryParameters } from './types';
 
@@ -20,19 +20,6 @@ function makeElement(scriptModule?: string) {
 		});
 	}
 	return Host;
-}
-
-/**
- * Mirrors `syncViewMetadata` in `mount-ssr.ts`, which links the element declared on
- * `parameters.radiant.element` onto the view immediately before SSR target resolution.
- */
-function syncViewMetadata(component: unknown, element?: CustomElementConstructor): void {
-	if (typeof component !== 'function') return;
-	const view = component as unknown as Stamped;
-	const linked = (element ?? view[RADIANT_VIEW_ELEMENT]) as CustomElementConstructor | undefined;
-	if (linked) {
-		view[RADIANT_VIEW_ELEMENT] = linked;
-	}
 }
 
 describe('parameters.radiant.element', () => {
