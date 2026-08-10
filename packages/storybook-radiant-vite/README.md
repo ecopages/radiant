@@ -88,31 +88,40 @@ Story CSF
 
 ## Writing stories
 
-### `radiantMeta` (radiant-ui and other design systems)
+### `parameters.radiant` (radiant-ui and other design systems)
 
 Published component packages should stay free of Storybook symbols. Declare SSR linking and component CSS in stories:
 
 ```ts
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { RuiAlert as RuiAlertElement } from './alert.script';
 import { RuiAlert } from './alert';
 
 const meta = {
 	title: 'Components/Alert',
 	component: RuiAlert,
+	parameters: {
+		radiant: { element: RuiAlertElement, cssImports: ['./alert.css'] },
+	},
 	args: { variant: 'info' },
-};
-
-radiantMeta(meta, { element: RuiAlertElement, stylesheets: ['./alert.css'] });
+} satisfies Meta<typeof RuiAlert>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 ```
 
-- `element` — host `RadiantElement` for SSR / hydration (pass in the second argument; omit for presentational views).
-- `stylesheets` — paths relative to the story file (second argument); the Vite stamp transform injects side-effect CSS imports.
-- `export default` must be the plain `meta` object — Storybook's CSF indexer does not accept `export default radiantMeta({ ... })`.
+- `parameters.radiant.element` — host `RadiantElement` for SSR / hydration (omit for presentational views).
+- `parameters.radiant.cssImports` — paths relative to the story file; the Vite stamp transform injects side-effect CSS imports. Source-only, never read at runtime.
 - Use `withStylesheets` / `parameters.stylesheets` only for story-scoped extras (docs skins, etc.).
+
+**Always annotate with `satisfies`, never a wrapper function.** `Meta<T>` is a conditional
+type, so TypeScript cannot infer `T` from a parameter typed by it — a `defineMeta(meta)`
+helper would silently degrade every arg to `any`. `satisfies` contextually types the
+literal, so `args`, `argTypes` and `render(args)` are all checked against the component's
+real props while `typeof meta` keeps the literal types `StoryObj` needs.
+
+`export default` must also be the plain `meta` identifier: Storybook's CSF indexer
+statically analyses the default export and does not accept a call expression.
 
 ### Client JSX view
 
@@ -230,7 +239,7 @@ The framework registers a toolbar global `radiantRenderMode`:
 
 1. Preview calls `POST /__radiant_ssr` with `{ ssrModule, ssrExport?, viewModule?, viewExport?, storyModule?, storyExport?, args, mode }`.
 2. Vite middleware loads `@ecopages/vite-plugin-radiant/ssr` (`renderSsrComponent`) and your script/view/story modules.
-3. For `radiantMeta` stories with `element`, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
+3. For stories declaring `parameters.radiant.element`, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
 4. `@ecopages/*` stay **external** in SSR (via `radiant()`) so ALS / runtime shims are singletons.
 5. `renderSsrComponent` produces markup + assets (CSS via `radiant({ elements: true })`).
 6. Preview sets `canvas.innerHTML = markup`. For `ssr-hydrate`, it imports the view/client module and relies on `install-hydrator`.
