@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiSwitch } from './switch';
@@ -7,13 +7,13 @@ import { RuiSwitch as RuiSwitchElement } from './switch.script';
 const meta = {
 	title: 'Components/Switch',
 	component: RuiSwitch,
+	parameters: { radiant: { element: RuiSwitchElement, cssImports: ['./switch.css'] } },
 	args: {
 		checked: false,
 		disabled: false,
 		children: 'Notifications',
 	},
-};
-radiantMeta(meta, { element: RuiSwitchElement, stylesheets: ['./switch.css'] });
+} satisfies Meta<typeof RuiSwitch>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

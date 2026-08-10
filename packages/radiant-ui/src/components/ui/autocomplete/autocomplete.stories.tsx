@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import '../menu-button/menu-button.script';
@@ -55,18 +55,18 @@ const meta = {
 					'Filters a collection from a search field. Compose with Listbox, Select, TagGroup, Menu, or Combobox — see [React Aria Autocomplete](https://react-aria.adobe.com/Autocomplete).',
 			},
 		},
+		radiant: {
+			element: RuiAutocompleteElement,
+			cssImports: [
+				'./autocomplete.css',
+				'../listbox/listbox.css',
+				'../tag-group/tag-group.css',
+				'../select/select.css',
+				'../menu-button/menu-button.css',
+			],
+		},
 	},
-};
-radiantMeta(meta, {
-	element: RuiAutocompleteElement,
-	stylesheets: [
-		'./autocomplete.css',
-		'../listbox/listbox.css',
-		'../tag-group/tag-group.css',
-		'../select/select.css',
-		'../menu-button/menu-button.css',
-	],
-});
+} satisfies Meta<typeof RuiAutocomplete>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

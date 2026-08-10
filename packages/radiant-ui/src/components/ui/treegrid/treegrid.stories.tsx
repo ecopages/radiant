@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, fireEvent, userEvent } from 'storybook/test';
 import { RuiTreegrid } from './treegrid';
 import { RuiTreegrid as RuiTreegridElement } from './treegrid.script';
@@ -39,13 +39,13 @@ const orgRows = [
 const meta = {
 	title: 'Components/Treegrid',
 	component: RuiTreegrid,
+	parameters: { radiant: { element: RuiTreegridElement, cssImports: ['./treegrid.css'] } },
 	args: {
 		label: 'Files',
 		columns: ['Name', 'Size'],
 		rows: fileRows,
 	},
-};
-radiantMeta(meta, { element: RuiTreegridElement, stylesheets: ['./treegrid.css'] });
+} satisfies Meta<typeof RuiTreegrid>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
