@@ -12,6 +12,31 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
+    typecheck:
+        name: Typecheck
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build libraries
+              run: pnpm run build:all
+
+            - name: Typecheck
+              run: pnpm run typecheck:packages
+
     radiant-server:
         name: Radiant server tests
         runs-on: ubuntu-latest
