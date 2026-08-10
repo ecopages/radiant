@@ -60,7 +60,7 @@ export class DocsCodeElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx' {
+declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
 		'radiant-docs-code': JsxCustomElementAttributes<DocsCodeElement> & { storyId?: string };
 	}
