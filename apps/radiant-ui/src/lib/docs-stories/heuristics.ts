@@ -60,8 +60,3 @@ export function listResolvedControls(meta: DocsMetaAny): ResolvedDocsControl[] {
 	}
 	return controls;
 }
-
-/** @deprecated Prefer {@link listResolvedControls}. */
-export function shouldUseSegmentedControl(options: string[] | undefined): boolean {
-	return Boolean(options && options.length >= 2 && options.length <= DOCS_SEGMENT_OPTION_LIMIT);
-}

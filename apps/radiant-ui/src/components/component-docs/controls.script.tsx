@@ -11,7 +11,6 @@ import '@ecopages/radiant-ui/switch';
 import '@ecopages/radiant-ui/toolbar';
 import '@/content/stories';
 import { docsStoryContext } from '@/lib/docs-stories/story-context';
-import type { DocsCanvasElement } from './canvas.script';
 import type { DocsDemoElement } from './demo.script';
 
 @customElement('radiant-docs-controls')
@@ -100,8 +99,6 @@ export class DocsControlsElement extends RadiantElement {
 		if (typeof value === 'string') {
 			this.syncSegmentPressed(propName, value);
 		}
-
-		this.repaintCanvas();
 	}
 
 	private findStoryProvider(): ContextProvider<typeof docsStoryContext> | undefined {
@@ -111,12 +108,6 @@ export class DocsControlsElement extends RadiantElement {
 
 		const demo = this.closest('radiant-docs-demo') as DocsDemoElement | null;
 		return demo?.story;
-	}
-
-	private repaintCanvas(): void {
-		this.closest('radiant-docs-demo')
-			?.querySelector<DocsCanvasElement>('radiant-docs-canvas')
-			?.repaintFromContext();
 	}
 
 	private syncSegmentPressed(propName: string, value: string): void {

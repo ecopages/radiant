@@ -111,67 +111,6 @@ radiant-docs-canvas {
 	height: var(--size-control-sm);
 }
 
-.docs-story-code {
-	@apply block min-w-0;
-	box-shadow: inset 0 1px 0 var(--docs-story-line);
-}
-
-.docs-story-code__panel {
-	@apply min-w-0 bg-background;
-}
-
-.docs-story-code__toolbar {
-	@apply flex items-center justify-between gap-3 border-b border-border/40 px-4 py-2 md:px-5;
-}
-
-.docs-story-code__tab {
-	@apply inline-flex min-h-8 items-center px-1 text-[0.8125rem] font-medium text-on-background;
-}
-
-.docs-story-code__body {
-	@apply relative min-w-0;
-}
-
-.docs-story-code__figure[data-rehype-pretty-code-figure] {
-	@apply my-0 rounded-none border-0 shadow-none;
-}
-
-.docs-story-code__figure[data-rehype-pretty-code-figure] pre {
-	@apply m-0 overflow-x-auto rounded-none border-0 px-4 py-4 shadow-none md:px-5 md:py-5;
-	background-color: var(--shiki-light-bg);
-}
-
-/** Beat `.prose pre` border/radius when the block sits inside the docs demo code panel. */
-radiant-docs-code [data-rehype-pretty-code-figure],
-radiant-docs-code [data-rehype-pretty-code-figure] pre {
-	border: 0;
-	border-radius: 0;
-}
-
-.docs-story-code__figure[data-rehype-pretty-code-figure] pre > code {
-	display: grid;
-}
-
-.docs-story-code__figure[data-rehype-pretty-code-figure] pre > code .line {
-	min-height: 1lh;
-}
-
-.docs-story-code__figure[data-rehype-pretty-code-figure] pre > code,
-.docs-story-code__figure[data-rehype-pretty-code-figure] pre > code span {
-	color: var(--shiki-light);
-	background-color: var(--shiki-light-bg);
-}
-
-[data-theme='dark'] .docs-story-code__figure[data-rehype-pretty-code-figure] pre {
-	background-color: var(--shiki-dark-bg);
-}
-
-[data-theme='dark'] .docs-story-code__figure[data-rehype-pretty-code-figure] pre > code,
-[data-theme='dark'] .docs-story-code__figure[data-rehype-pretty-code-figure] pre > code span {
-	color: var(--shiki-dark);
-	background-color: var(--shiki-dark-bg);
-}
-
 .playground-sidebar-demo {
 	@apply h-80 w-full min-w-0 overflow-hidden rounded-md border border-border bg-background;
 }
