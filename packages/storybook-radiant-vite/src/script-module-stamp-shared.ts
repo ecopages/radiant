@@ -50,10 +50,14 @@ export function appendRadiantScriptModuleStamps(code: string, moduleId: string, 
 }
 
 /**
- * Collect relative `*.css` paths from `stylesheets: [...]` literals (e.g. `radiantMeta`).
+ * Collect relative `*.css` paths from `cssImports: [...]` literals in `parameters.radiant`.
+ *
+ * @remarks
+ * Deliberately distinct from `parameters.stylesheets`, which `withStylesheetsDecorator`
+ * injects at render time — only `cssImports` becomes a build-time side-effect import.
  */
-export function collectDeclaredStylesheetImports(code: string): string[] {
-	const paths = [...code.matchAll(/stylesheets:\s*\[([^\]]*)\]/g)].flatMap((match) =>
+export function collectDeclaredCssImports(code: string): string[] {
+	const paths = [...code.matchAll(/cssImports:\s*\[([^\]]*)\]/g)].flatMap((match) =>
 		[...match[1]!.matchAll(/['"]((?:\.\.?\/)+[^'"]+\.css)['"]/g)].map((pathMatch) => pathMatch[1]!),
 	);
 
@@ -63,8 +67,8 @@ export function collectDeclaredStylesheetImports(code: string): string[] {
 /**
  * Prepend side-effect CSS imports declared on CSF Meta (Storybook-only).
  */
-export function injectDeclaredStylesheetImports(code: string): string {
-	const missing = collectDeclaredStylesheetImports(code).filter(
+export function injectDeclaredCssImports(code: string): string {
+	const missing = collectDeclaredCssImports(code).filter(
 		(stylesheet) => !code.includes(`import '${stylesheet}'`) && !code.includes(`import "${stylesheet}"`),
 	);
 
@@ -75,17 +79,14 @@ export function injectDeclaredStylesheetImports(code: string): string {
 	return `${missing.map((stylesheet) => `import '${stylesheet}';`).join('\n')}\n${code}`;
 }
 
-function findRadiantMetaComponentExport(code: string): string | null {
-	const metaLiteral = code.match(/const\s+meta\s*=\s*\{[\s\S]*?\};/);
-	if (metaLiteral) {
-		const fromMeta = metaLiteral[0].match(/\bcomponent:\s*(\w+)/);
-		if (fromMeta?.[1]) {
-			return fromMeta[1];
-		}
+function findMetaComponentExport(code: string): string | null {
+	const metaLiteral =
+		code.match(/const\s+meta\s*=\s*\{[\s\S]*?\}\s*satisfies\s+Meta\b/) ?? code.match(/const\s+meta\s*=\s*\{[\s\S]*?\};/);
+	if (!metaLiteral) {
+		return null;
 	}
 
-	const legacy = code.match(/radiantMeta\s*\(\s*\{[\s\S]*?\bcomponent:\s*(\w+)/);
-	return legacy?.[1] ?? null;
+	return metaLiteral[0].match(/\bcomponent:\s*(\w+)/)?.[1] ?? null;
 }
 
 function resolveImportedViewModule(
@@ -112,14 +113,10 @@ function hasViewModuleStampForExport(code: string, exportName: string): boolean 
 }
 
 /**
- * Stamp `meta.component` with a view module path for SSR when stories use `radiantMeta`.
+ * Stamp `meta.component` with a view module path for SSR.
  */
-export function appendRadiantMetaViewStamps(code: string, moduleId: string, root: string): string | null {
-	if (!code.includes('radiantMeta(')) {
-		return null;
-	}
-
-	const component = findRadiantMetaComponentExport(code);
+export function appendMetaViewStamps(code: string, moduleId: string, root: string): string | null {
+	const component = findMetaComponentExport(code);
 	if (!component || hasViewModuleStampForExport(code, component)) {
 		return null;
 	}
@@ -136,12 +133,12 @@ export function appendRadiantMetaViewStamps(code: string, moduleId: string, root
  * Inject declared CSS imports and stamp CSF story files.
  */
 export function transformRadiantStoryModule(code: string, moduleId: string, root: string): string | null {
-	if (!/export\s+default\s+meta\b/.test(code) && !/export\s+default\s+radiantMeta/.test(code)) {
+	if (!/export\s+default\s+meta\b/.test(code)) {
 		return null;
 	}
 
-	let next = injectDeclaredStylesheetImports(code);
-	const metaViewStamp = appendRadiantMetaViewStamps(next, moduleId, root);
+	let next = injectDeclaredCssImports(code);
+	const metaViewStamp = appendMetaViewStamps(next, moduleId, root);
 	if (metaViewStamp) {
 		next = metaViewStamp;
 	}
