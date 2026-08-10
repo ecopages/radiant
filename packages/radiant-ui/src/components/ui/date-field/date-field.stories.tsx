@@ -10,7 +10,17 @@ import { RuiDateField as RuiDateFieldElement } from './date-field.script';
 const meta = {
 	title: 'Components/DateField',
 	component: RuiDateField,
-	parameters: { radiant: { element: RuiDateFieldElement, cssImports: ['./date-field.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css', '../calendar/calendar.css'] } },
+	parameters: {
+		radiant: {
+			element: RuiDateFieldElement,
+			cssImports: [
+				'./date-field.css',
+				'../shared/control-toggle.css',
+				'../../../lib/icons/icons.css',
+				'../calendar/calendar.css',
+			],
+		},
+	},
 	args: {
 		value: '2026-08-02',
 		label: 'Appointment date',

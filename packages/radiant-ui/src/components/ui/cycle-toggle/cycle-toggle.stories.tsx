@@ -35,7 +35,9 @@ function renderThemePreference(args: RuiCycleToggleProps) {
 const meta = {
 	title: 'Components/Cycle Toggle',
 	component: RuiCycleToggle,
-	parameters: { radiant: { element: RuiCycleToggleElement, cssImports: ['./cycle-toggle.css', '../button/button.css'] } },
+	parameters: {
+		radiant: { element: RuiCycleToggleElement, cssImports: ['./cycle-toggle.css', '../button/button.css'] },
+	},
 	args: {
 		value: 'system',
 		variant: 'ghost',

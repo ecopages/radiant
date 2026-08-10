@@ -10,7 +10,17 @@ import { RuiDateRangePicker as RuiDateRangePickerElement } from './date-range-pi
 const meta = {
 	title: 'Components/DateRangePicker',
 	component: RuiDateRangePicker,
-	parameters: { radiant: { element: RuiDateRangePickerElement, cssImports: ['./date-range-picker.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css', '../calendar/calendar.css'] } },
+	parameters: {
+		radiant: {
+			element: RuiDateRangePickerElement,
+			cssImports: [
+				'./date-range-picker.css',
+				'../shared/control-toggle.css',
+				'../../../lib/icons/icons.css',
+				'../calendar/calendar.css',
+			],
+		},
+	},
 	args: {
 		value: '2026-08-05/2026-08-20',
 		locale: 'en-US',
