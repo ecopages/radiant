@@ -41,6 +41,24 @@ export function linkRadiantViewElement(view: RadiantViewComponent, element: Cust
 	}
 }
 
+/**
+ * Link `parameters.radiant.element` onto the JSX view and refresh its module stamps.
+ *
+ * @remarks
+ * Call before {@link resolveSsrTarget} so HMR-replaced element classes re-stamp the view.
+ * Falls back to an already-linked element for views wired via `defineRadiantComponent`.
+ */
+export function syncViewMetadata(component: unknown, element?: CustomElementConstructor): void {
+	if (typeof component !== 'function') {
+		return;
+	}
+	const view = component as RadiantViewComponent;
+	const linked = element ?? view[RADIANT_VIEW_ELEMENT];
+	if (linked) {
+		linkRadiantViewElement(view, linked);
+	}
+}
+
 export function resolveRadiantElement(component: RadiantComponent | undefined): CustomElementConstructor | undefined {
 	if (!component) {
 		return undefined;
