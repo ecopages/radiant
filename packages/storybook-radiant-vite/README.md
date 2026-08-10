@@ -110,7 +110,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 ```
 
-- `parameters.radiant.element` — host `RadiantElement` for SSR / hydration (omit for presentational views).
+- `parameters.radiant.element` — optional SSR host. Prefer a custom-element constructor; omit for presentational views. A JSX view function is accepted by the type but only constructors are linked at runtime.
 - `parameters.radiant.cssImports` — paths relative to the story file; the Vite stamp transform injects side-effect CSS imports. Source-only, never read at runtime.
 - Use `withStylesheets` / `parameters.stylesheets` only for story-scoped extras (docs skins, etc.).
 
