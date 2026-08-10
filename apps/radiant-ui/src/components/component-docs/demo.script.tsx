@@ -44,7 +44,7 @@ export class DocsDemoElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx' {
+declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
 		'radiant-docs-demo': JsxCustomElementAttributes<DocsDemoElement> & { storyId?: string };
 	}

@@ -115,8 +115,17 @@ export class RadiantCopyForLlm extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx' {
+/**
+ * JSX host attributes for {@link RadiantCopyForLlm}.
+ *
+ * @remarks
+ * Props are optional: the element defaults both, and `llmUrl` is driven via `prop:` because
+ * the attribute name is `llm-url` — requiring an unprefixed `llmUrl` would be wrong.
+ */
+type RadiantCopyForLlmJsxAttributes = JsxCustomElementAttributes<RadiantCopyForLlm, Partial<CopyForLlmProps>>;
+
+declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
-		'radiant-copy-for-llm': JsxCustomElementAttributes<RadiantCopyForLlm, CopyForLlmProps>;
+		'radiant-copy-for-llm': RadiantCopyForLlmJsxAttributes;
 	}
 }

@@ -132,7 +132,7 @@ export class RadiantCodeTabs extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx' {
+declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
 		'radiant-code-tabs': JsxCustomElementAttributes<RadiantCodeTabs, RadiantCodeTabsProps>;
 	}

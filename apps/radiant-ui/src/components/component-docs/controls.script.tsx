@@ -126,7 +126,7 @@ export class DocsControlsElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx' {
+declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
 		'radiant-docs-controls': JsxCustomElementAttributes<DocsControlsElement> & { storyId?: string };
 	}
