@@ -48,13 +48,7 @@ export const meta = {
 		value: { control: { type: 'text' } },
 		label: { control: { type: 'text' } },
 	},
-	render: (args) => (
-		<RuiTree
-			value={args.value}
-			label={args.label}
-			nodes={TREE_DEMO_NODES}
-		/>
-	),
+	render: (args) => <RuiTree value={args.value} label={args.label} nodes={TREE_DEMO_NODES} />,
 } satisfies DocsMeta<TreeArgs>;
 
 type Story = DocsStory<TreeArgs>;

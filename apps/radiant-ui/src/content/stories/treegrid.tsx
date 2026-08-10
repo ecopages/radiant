@@ -53,12 +53,7 @@ export const meta = {
 		label: { control: { type: 'text' } },
 	},
 	render: (args) => (
-		<RuiTreegrid
-			value={args.value}
-			label={args.label}
-			columns={['Name', 'Size']}
-			rows={TREEGRID_DEMO_ROWS}
-		/>
+		<RuiTreegrid value={args.value} label={args.label} columns={['Name', 'Size']} rows={TREEGRID_DEMO_ROWS} />
 	),
 } satisfies DocsMeta<TreegridArgs>;
 

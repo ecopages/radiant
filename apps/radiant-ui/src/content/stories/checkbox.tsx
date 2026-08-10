@@ -22,7 +22,12 @@ export const meta = {
 		value: { control: { type: 'text' } },
 	},
 	render: (args) => (
-		<RuiCheckbox checked={args.checked} indeterminate={args.indeterminate} disabled={args.disabled} value={args.value}>
+		<RuiCheckbox
+			checked={args.checked}
+			indeterminate={args.indeterminate}
+			disabled={args.disabled}
+			value={args.value}
+		>
 			Email me product updates
 		</RuiCheckbox>
 	),

@@ -1,13 +1,7 @@
 import { z } from 'zod';
 
 export type ComponentCategory =
-	| 'Actions'
-	| 'Forms'
-	| 'Layout'
-	| 'Navigation'
-	| 'Overlays'
-	| 'Feedback'
-	| 'Data display';
+	'Actions' | 'Forms' | 'Layout' | 'Navigation' | 'Overlays' | 'Feedback' | 'Data display';
 
 /** Public URL prefix for docs pages. */
 export const DOCS_ROOT = '/docs';

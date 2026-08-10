@@ -14,8 +14,14 @@ export const meta = {
 		children: 'radiant UI',
 	},
 	argTypes: {
-		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg', 'xl'] as const satisfies readonly RuiHeadlineSize[] },
-		as: { control: { type: 'select' }, options: ['h1', 'h2', 'h3', 'h4'] as const satisfies readonly RuiHeadlineAs[] },
+		size: {
+			control: { type: 'select' },
+			options: ['sm', 'md', 'lg', 'xl'] as const satisfies readonly RuiHeadlineSize[],
+		},
+		as: {
+			control: { type: 'select' },
+			options: ['h1', 'h2', 'h3', 'h4'] as const satisfies readonly RuiHeadlineAs[],
+		},
 		children: { control: { type: 'text' } },
 	},
 	render: (args) => (
