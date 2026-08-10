@@ -32,7 +32,7 @@ const HYDRATION_MALFORMED_BINDING_DESCRIPTOR_WARNING_PREFIX = 'Ignored malformed
 const HYDRATION_MISSING_BINDING_WARNING_PREFIX = 'Ignored hydration marker without a matching binding value';
 const DOM_RANGE_ANCHOR_DRIFT_WARNING_PREFIX = 'A renderer-managed DOM range was mutated outside Radiant JSX control';
 const DETACHED_INSERTION_POINT_WARNING_MESSAGE =
-	'A renderer-managed insertion point was detached before insertNodesBefore ran.';
+	'insertNodesBefore skipped: the reference node is detached or would form a hierarchy cycle.';
 
 export function installDefaultDevWarningFormatter(): void {
 	installDevWarningFormatter((kind, detail) => {
