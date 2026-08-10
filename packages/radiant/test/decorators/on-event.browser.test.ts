@@ -73,11 +73,12 @@ describe('onEvent', () => {
 
 		@customElement('media-query-on-event-listener')
 		class MediaQueryEventListener extends RadiantElement {
-			matches: boolean | null = null;
+			/** Named to avoid shadowing `Element.prototype.matches`. */
+			matchedDark: boolean | null = null;
 
 			@onEvent({ mediaQuery: '(prefers-color-scheme: dark)', type: 'change' })
 			onMediaQueryChange(event: MediaQueryListEvent) {
-				this.matches = event.matches;
+				this.matchedDark = event.matches;
 			}
 		}
 
@@ -88,12 +89,12 @@ describe('onEvent', () => {
 			dispatchChange: (matches: boolean) => void;
 		};
 		mediaQueryList.dispatchChange(true);
-		expect(element.matches).toBe(true);
+		expect(element.matchedDark).toBe(true);
 
 		element.remove();
-		element.matches = null;
+		element.matchedDark = null;
 		mediaQueryList.dispatchChange(false);
-		expect(element.matches).toBeNull();
+		expect(element.matchedDark).toBeNull();
 
 		vi.unstubAllGlobals();
 	});
