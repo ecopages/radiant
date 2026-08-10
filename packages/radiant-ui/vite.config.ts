@@ -15,11 +15,7 @@ const radiantPlugins = await radiant({ elements: true, decorators: 'babel' });
 export default defineConfig({
 	plugins: [tailwindcss(), ...radiantPlugins],
 	optimizeDeps: {
-		include: [
-			'storybook/test',
-			'storybook/internal/core-events',
-			requireFromFramework.resolve('ts-dedent'),
-		],
+		include: ['storybook/test', 'storybook/internal/core-events', requireFromFramework.resolve('ts-dedent')],
 		exclude: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react-dom/test-utils'],
 	},
 	resolve: {

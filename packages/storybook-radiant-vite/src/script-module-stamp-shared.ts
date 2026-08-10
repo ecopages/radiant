@@ -81,7 +81,8 @@ export function injectDeclaredCssImports(code: string): string {
 
 function findMetaComponentExport(code: string): string | null {
 	const metaLiteral =
-		code.match(/const\s+meta\s*=\s*\{[\s\S]*?\}\s*satisfies\s+Meta\b/) ?? code.match(/const\s+meta\s*=\s*\{[\s\S]*?\};/);
+		code.match(/const\s+meta\s*=\s*\{[\s\S]*?\}\s*satisfies\s+Meta\b/) ??
+		code.match(/const\s+meta\s*=\s*\{[\s\S]*?\};/);
 	if (!metaLiteral) {
 		return null;
 	}

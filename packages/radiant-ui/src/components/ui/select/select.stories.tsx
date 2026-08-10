@@ -29,7 +29,12 @@ const ANIMAL_OPTIONS = [
 const meta = {
 	title: 'Components/Select',
 	component: RuiSelect,
-	parameters: { radiant: { element: RuiSelectElement, cssImports: ['./select.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'] } },
+	parameters: {
+		radiant: {
+			element: RuiSelectElement,
+			cssImports: ['./select.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'],
+		},
+	},
 	args: {
 		placeholder: 'Select an animal',
 		options: ANIMAL_OPTIONS,

@@ -12,7 +12,9 @@ import { RuiDisclosure as RuiDisclosureElement } from './disclosure.script';
 const meta = {
 	title: 'Components/Disclosure',
 	component: RuiDisclosure,
-	parameters: { radiant: { element: RuiDisclosureElement, cssImports: ['./disclosure.css', './disclosure-group.css'] } },
+	parameters: {
+		radiant: { element: RuiDisclosureElement, cssImports: ['./disclosure.css', './disclosure-group.css'] },
+	},
 	args: {
 		trigger: 'More about shipping',
 		children: <p>Orders ship within 2 business days via tracked delivery.</p>,

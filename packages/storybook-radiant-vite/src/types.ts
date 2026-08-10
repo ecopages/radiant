@@ -156,9 +156,7 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = [TMetaOrCmpOrArgs] extends [
 		args?: infer TDefaultArgs;
 	},
 ]
-	? Simplify<
-			ArgsFromComponent<TComponent> & ArgsFromMeta<RadiantRenderer, TMetaOrCmpOrArgs>
-		> extends infer TArgs
+	? Simplify<ArgsFromComponent<TComponent> & ArgsFromMeta<RadiantRenderer, TMetaOrCmpOrArgs>> extends infer TArgs
 		? RadiantStoryAnnotations<TArgs, SetOptional<TArgs, keyof TArgs & keyof TDefaultArgs>>
 		: never
 	: RadiantStoryAnnotations<TMetaOrCmpOrArgs, Partial<TMetaOrCmpOrArgs>>;
