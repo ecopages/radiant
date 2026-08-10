@@ -121,12 +121,20 @@ function mountStaticMarkup(canvasElement: HTMLElement, markup: string, assets: R
 	canvasElement.replaceChildren(frame);
 }
 
-function syncViewMetadata(component: unknown): void {
+/**
+ * Link `parameters.radiant.element` onto the JSX view and refresh its module stamps.
+ *
+ * @remarks
+ * Runs on every render rather than at story-module import time, so HMR-replaced element
+ * classes re-stamp the view. Falls back to an already-linked element for views wired via
+ * {@link defineRadiantComponent}.
+ */
+function syncViewMetadata(component: unknown, element?: CustomElementConstructor): void {
 	if (typeof component !== 'function') {
 		return;
 	}
 	const view = component as RadiantViewComponent;
-	const linked = view[RADIANT_VIEW_ELEMENT];
+	const linked = element ?? view[RADIANT_VIEW_ELEMENT];
 	if (linked) {
 		linkRadiantViewElement(view, linked);
 	}
@@ -144,7 +152,7 @@ export async function mountSsrResult(
 
 	const radiant = (context.storyContext.parameters as RadiantStoryParameters).radiant;
 	const component = context.storyContext.component;
-	syncViewMetadata(component);
+	syncViewMetadata(component, radiant?.element);
 
 	const storyModule = radiant?.storyModule;
 	const storyExport = radiant?.storyExport ?? storyIdToExportName(context.storyContext.id);
@@ -162,7 +170,7 @@ export async function mountSsrResult(
 			`Cannot SSR story "${context.name}"`,
 			dedent`
         Set \`meta.component\` to a RadiantElement constructor, a view linked via
-        \`radiantMeta(meta, { element })\`, or a registered custom-element tag string
+        \`parameters.radiant.element\`, or a registered custom-element tag string
         (with the \`.script\` module imported in the story file).
 
         For multi-export script modules, set \`parameters.radiant.ssrExport\`.
@@ -209,8 +217,8 @@ export async function mountSsrResult(
 			`Radiant SSR produced an empty host shell for "${context.name}"`,
 			dedent`
         The SSR bridge could not render authored light-DOM content for this story.
-        Use a component with a \`render()\` implementation, a \`radiantMeta\` view export
-        stamped with a view module path, or set \`parameters.radiant.authoredContent\`.
+        Use a component with a \`render()\` implementation, a view export stamped with a
+        view module path, or set \`parameters.radiant.authoredContent\`.
 			`,
 		);
 		return;
