@@ -1,4 +1,4 @@
-import type { ComponentCategory } from '@/lib/playground';
+import type { ComponentCategory } from '@/content/components';
 import type { DocsBreadcrumbItem } from '@/components/docs-breadcrumb/docs-breadcrumb';
 
 export function buildComponentDocsBreadcrumb(category: ComponentCategory, title: string): DocsBreadcrumbItem[] {
