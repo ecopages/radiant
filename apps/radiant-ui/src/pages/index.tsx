@@ -48,7 +48,6 @@ export default eco.page<{}, JsxRenderable>({
 			'../components/component-docs/demo.script.tsx',
 			'../components/component-docs/canvas.script.tsx',
 			'../components/component-docs/controls.script.tsx',
-			'../components/component-docs/code.script.tsx',
 		],
 		stylesheets: ['./index.css'],
 	},
@@ -102,7 +101,8 @@ export default eco.page<{}, JsxRenderable>({
 					Try Button
 				</h2>
 				<p class="docs-lede">
-					Adjust real props and copy the resulting example. Every component page follows this pattern.
+					Adjust real props and see the preview update. Copy-paste examples live in each component's Usage
+					section.
 				</p>
 				<Demo of={ButtonDefault} meta={ButtonMeta} />
 			</section>
