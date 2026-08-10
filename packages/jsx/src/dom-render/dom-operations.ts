@@ -107,6 +107,19 @@ export function insertNodesBefore(referenceNode: Node, nodes: readonly Node[]): 
 		return;
 	}
 
+	// A node that already contains the reference node cannot be inserted before it. The DOM
+	// answers that with a HierarchyRequestError, which escapes hydration as an uncaught
+	// exception; degrade to the same drift warning the detached case uses so the caller can
+	// fall back instead of tearing down the page.
+	for (const node of nodes) {
+		if (node.contains(referenceNode)) {
+			warnRuntime(DETACHED_INSERTION_POINT_WARNING, undefined, {
+				code: 'dom-range-anchor-drift:insert',
+			});
+			return;
+		}
+	}
+
 	const fragment = document.createDocumentFragment();
 
 	for (const node of nodes) {

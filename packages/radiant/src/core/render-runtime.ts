@@ -1,4 +1,10 @@
-import { hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
+import {
+	hasHydrationMarkers,
+	hydrate as hydrateJsx,
+	render as renderJsx,
+	type JsxRenderable,
+} from '@ecopages/jsx';
+import { isServer } from '@ecopages/radiant/is-server';
 import {
 	createReactiveComputed,
 	createReactiveWatcher,
@@ -166,7 +172,19 @@ export class RenderRuntime {
 		// host's own previously-rendered output (light-DOM mode writes into `this.#host`),
 		// not user-authored content — capturing them here would feed a render's own output
 		// back into itself as "slot content" on the next pass.
-		if (!this.#hasMounted && this.#host.childNodes.length > 0) {
+		//
+		// `#hasMounted` alone cannot see the SSR case: on first hydrate the host already
+		// holds its own server-rendered output while `#hasMounted` is still false. Hydration
+		// markers are the positive signal for that. Authored content that existed at SSR time
+		// arrives through the projection script above, so nothing is lost by skipping here.
+		//
+		// Server-side the children *are* the authored content and there are no markers yet,
+		// so the check is client-only — the minimal SSR DOM also cannot back the marker walk.
+		if (
+			!this.#hasMounted &&
+			this.#host.childNodes.length > 0 &&
+			(isServer || !hasHydrationMarkers(this.#host))
+		) {
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;
 		}
