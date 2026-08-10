@@ -1,62 +1,68 @@
 import { describe, expect, test } from 'vitest';
 import {
-	appendRadiantMetaViewStamps,
+	appendMetaViewStamps,
 	appendRadiantScriptModuleStamps,
-	collectDeclaredStylesheetImports,
-	injectDeclaredStylesheetImports,
+	collectDeclaredCssImports,
+	injectDeclaredCssImports,
 	transformRadiantStoryModule,
 } from './script-module-stamp-shared';
 
-describe('collectDeclaredStylesheetImports', () => {
-	test('collects radiantMeta stylesheets option', () => {
+describe('collectDeclaredCssImports', () => {
+	test('collects parameters.radiant.cssImports', () => {
 		const code = `
-const meta = { component: RuiChip };
-radiantMeta(meta, { stylesheets: ['./chip.css'] });
+const meta = {
+	component: RuiChip,
+	parameters: { radiant: { element: RuiChipElement, cssImports: ['./chip.css'] } },
+} satisfies Meta<typeof RuiChip>;
 `;
-		expect(collectDeclaredStylesheetImports(code)).toEqual(['./chip.css']);
+		expect(collectDeclaredCssImports(code)).toEqual(['./chip.css']);
 	});
 
 	test('collects multiple sheets and dedupes', () => {
-		const code = `
-radiantMeta(meta, { stylesheets: ['./disclosure.css', './extra.css', './disclosure.css'] });
-`;
-		expect(collectDeclaredStylesheetImports(code)).toEqual(['./disclosure.css', './extra.css']);
+		const code = `cssImports: ['./disclosure.css', './extra.css', './disclosure.css'],`;
+		expect(collectDeclaredCssImports(code)).toEqual(['./disclosure.css', './extra.css']);
 	});
 
 	test('collects parent-relative css paths and ignores bare names', () => {
-		const code = `{ stylesheets: ['alert.css', '../shared.css', './ok.css'] }`;
-		expect(collectDeclaredStylesheetImports(code)).toEqual(['../shared.css', './ok.css']);
+		const code = `{ cssImports: ['alert.css', '../shared.css', './ok.css'] }`;
+		expect(collectDeclaredCssImports(code)).toEqual(['../shared.css', './ok.css']);
+	});
+
+	test('ignores parameters.stylesheets, which is injected at render time', () => {
+		const code = `parameters: { ...withStylesheets(['./skin.css']), stylesheets: ['./other.css'] }`;
+		expect(collectDeclaredCssImports(code)).toEqual([]);
 	});
 });
 
-describe('injectDeclaredStylesheetImports', () => {
-	test('prepends missing imports from radiantMeta', () => {
-		const code = `const meta = { title: 'Alert' };\nradiantMeta(meta, { stylesheets: ['./alert.css'] });\nexport default meta;\n`;
-		expect(injectDeclaredStylesheetImports(code)).toBe(
-			`import './alert.css';\nconst meta = { title: 'Alert' };\nradiantMeta(meta, { stylesheets: ['./alert.css'] });\nexport default meta;\n`,
-		);
+describe('injectDeclaredCssImports', () => {
+	test('prepends missing imports declared on the meta', () => {
+		const code = `const meta = { parameters: { radiant: { cssImports: ['./alert.css'] } } } satisfies Meta<typeof RuiAlert>;\nexport default meta;\n`;
+		expect(injectDeclaredCssImports(code)).toBe(`import './alert.css';\n${code}`);
 	});
 
 	test('skips sheets that are already imported', () => {
-		const code = `import './alert.css';\nconst meta = {};\nradiantMeta(meta, { stylesheets: ['./alert.css'] });\n`;
-		expect(injectDeclaredStylesheetImports(code)).toBe(code);
+		const code = `import './alert.css';\nconst meta = { parameters: { radiant: { cssImports: ['./alert.css'] } } };\n`;
+		expect(injectDeclaredCssImports(code)).toBe(code);
 	});
 
 	test('returns unchanged code when nothing is declared', () => {
 		const code = `export const plain = 1;\n`;
-		expect(injectDeclaredStylesheetImports(code)).toBe(code);
+		expect(injectDeclaredCssImports(code)).toBe(code);
 	});
 });
 
-describe('appendRadiantMetaViewStamps', () => {
-	test('stamps radiantMeta component with view module path', () => {
-		const code = `import { radiantMeta } from '@ecopages/storybook-radiant-vite';
+describe('appendMetaViewStamps', () => {
+	test('stamps the meta component with a view module path', () => {
+		const code = `import type { Meta } from '@ecopages/storybook-radiant-vite';
 import { RuiChip } from './chip';
-const meta = { title: 'Chip', component: RuiChip };
-radiantMeta(meta, { stylesheets: ['./chip.css'] });
+const meta = {
+	title: 'Chip',
+	component: RuiChip,
+	parameters: { radiant: { cssImports: ['./chip.css'] } },
+} satisfies Meta<typeof RuiChip>;
 export default meta;
 `;
-		const result = appendRadiantMetaViewStamps(
+		const result = appendMetaViewStamps(
 			code,
 			'/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx',
 			'/abs',
@@ -65,29 +71,40 @@ export default meta;
 		expect(result).toContain(`/packages/radiant-ui/src/components/ui/chip/chip.tsx`);
 	});
 
+	test('finds the component through a nested parameters object', () => {
+		const code = `import { RuiChip } from './chip';
+const meta = {
+	parameters: { layout: 'centered', radiant: { element: RuiChipElement } },
+	component: RuiChip,
+} satisfies Meta<typeof RuiChip>;
+export default meta;
+`;
+		expect(
+			appendMetaViewStamps(code, '/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx', '/abs'),
+		).toContain(`RuiChip[Symbol.for('@ecopages/storybook-radiant.viewModule')]`);
+	});
+
 	test('returns null when already stamped', () => {
 		const code = `import { RuiChip } from './chip';
-const meta = { component: RuiChip };
-radiantMeta(meta);
+const meta = { component: RuiChip } satisfies Meta<typeof RuiChip>;
 export default meta;
 RuiChip[Symbol.for('@ecopages/storybook-radiant.viewModule')] = '/packages/radiant-ui/src/components/ui/chip/chip.tsx';
 `;
 		expect(
-			appendRadiantMetaViewStamps(
-				code,
-				'/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx',
-				'/abs',
-			),
+			appendMetaViewStamps(code, '/abs/packages/radiant-ui/src/components/ui/chip/chip.stories.tsx', '/abs'),
 		).toBeNull();
 	});
 });
 
 describe('transformRadiantStoryModule', () => {
-	test('injects css imports, view stamp, and story module stamp for radiantMeta', () => {
-		const code = `import { radiantMeta } from '@ecopages/storybook-radiant-vite';
+	test('injects css imports, view stamp, and story module stamp', () => {
+		const code = `import type { Meta } from '@ecopages/storybook-radiant-vite';
 import { RuiChip } from './chip';
-const meta = { title: 'Chip', component: RuiChip };
-radiantMeta(meta, { stylesheets: ['./chip.css'] });
+const meta = {
+	title: 'Chip',
+	component: RuiChip,
+	parameters: { radiant: { cssImports: ['./chip.css'] } },
+} satisfies Meta<typeof RuiChip>;
 export default meta;
 `;
 		const result = transformRadiantStoryModule(
@@ -103,8 +120,10 @@ export default meta;
 	test('is idempotent when storyModule stamp already present', () => {
 		const code = `import './chip.css';
 import { RuiChip } from './chip';
-const meta = { component: RuiChip };
-radiantMeta(meta, { stylesheets: ['./chip.css'] });
+const meta = {
+	component: RuiChip,
+	parameters: { radiant: { cssImports: ['./chip.css'] } },
+} satisfies Meta<typeof RuiChip>;
 export default meta;
 RuiChip[Symbol.for('@ecopages/storybook-radiant.viewModule')] = '/packages/radiant-ui/src/components/ui/chip/chip.tsx';
 if (!meta.parameters) meta.parameters = {};
@@ -119,12 +138,17 @@ meta.parameters.radiant = { ...(meta.parameters.radiant ?? {}), storyModule: '/p
 		).toBeNull();
 	});
 
-	test('stamps legacy meta without radiantMeta', () => {
+	test('stamps a plain meta with no satisfies clause', () => {
 		const code = `const meta = { title: 'X', component: Foo };
 export default meta;
 `;
 		const result = transformRadiantStoryModule(code, '/abs/src/foo.stories.tsx', '/abs');
 		expect(result).toContain(`storyModule: '/src/foo.stories.tsx'`);
+	});
+
+	test('ignores modules that do not default-export meta', () => {
+		const code = `const meta = { component: Foo } satisfies Meta<typeof Foo>;\nexport { meta };\n`;
+		expect(transformRadiantStoryModule(code, '/abs/src/foo.stories.tsx', '/abs')).toBeNull();
 	});
 });
 
