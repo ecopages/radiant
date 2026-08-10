@@ -1,6 +1,6 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiCombobox } from '@ecopages/radiant-ui/combobox';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
+import { ANIMAL_OPTIONS } from './demo-data';
 
 export type ComboboxArgs = {
 	value: string;
@@ -10,8 +10,6 @@ export type ComboboxArgs = {
 };
 
 export const meta = {
-	component: 'combobox',
-	exportName: 'RuiCombobox',
 	args: {
 		value: '',
 		placeholder: 'Choose an animal',
@@ -24,8 +22,15 @@ export const meta = {
 		disabled: { control: { type: 'boolean' } },
 		openOnFocus: { control: { type: 'boolean' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiCombobox', 'combobox', args),
-	render: (args) => renderPlaygroundPreview('combobox', args),
+	render: (args) => (
+		<RuiCombobox
+			value={args.value}
+			placeholder={args.placeholder}
+			disabled={args.disabled}
+			openOnFocus={args.openOnFocus}
+			options={ANIMAL_OPTIONS}
+		/>
+	),
 } satisfies DocsMeta<ComboboxArgs>;
 
 type Story = DocsStory<ComboboxArgs>;

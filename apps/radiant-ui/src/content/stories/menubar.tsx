@@ -1,22 +1,37 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiMenubar } from '@ecopages/radiant-ui/menubar';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type MenubarArgs = {
 	label: string;
 };
 
 export const meta = {
-	component: 'menubar',
-	exportName: 'RuiMenubar',
 	args: {
 		label: 'Application menu',
 	},
 	argTypes: {
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiMenubar', 'menubar', args),
-	render: (args) => renderPlaygroundPreview('menubar', args),
+	render: (args) => (
+		<RuiMenubar
+			label={args.label}
+			items={[
+				{
+					id: 'file',
+					label: 'File',
+					items: [
+						{ id: 'new', label: 'New' },
+						{ id: 'open', label: 'Open' },
+					],
+				},
+				{
+					id: 'edit',
+					label: 'Edit',
+					items: [{ id: 'undo', label: 'Undo' }],
+				},
+			]}
+		/>
+	),
 } satisfies DocsMeta<MenubarArgs>;
 
 type Story = DocsStory<MenubarArgs>;

@@ -1,28 +1,34 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type InputArgs = {
-	type: string;
+	type: 'text' | 'email' | 'password' | 'number';
 	disabled: boolean;
 	placeholder: string;
 };
 
 export const meta = {
-	component: 'input',
-	exportName: 'RuiInput',
 	args: {
 		type: 'text',
 		disabled: false,
 		placeholder: 'you@example.com',
 	},
 	argTypes: {
-		type: { control: { type: 'select' }, options: ['text', 'email', 'password', 'number'] as const },
+		type: {
+			control: { type: 'select' },
+			options: ['text', 'email', 'password', 'number'] as const satisfies readonly InputArgs['type'][],
+		},
 		disabled: { control: { type: 'boolean' } },
 		placeholder: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiInput', 'input', args),
-	render: (args) => renderPlaygroundPreview('input', args),
+	render: (args) => (
+		<RuiField name="preview">
+			<RuiLabel>Email</RuiLabel>
+			<RuiInput type={args.type} disabled={args.disabled} placeholder={args.placeholder} />
+		</RuiField>
+	),
 } satisfies DocsMeta<InputArgs>;
 
 type Story = DocsStory<InputArgs>;

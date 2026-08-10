@@ -1,22 +1,28 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiChip } from '@ecopages/radiant-ui/chip';
+import { RuiChipList, RuiChipListItem } from '@ecopages/radiant-ui/chip-list';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type ChipListArgs = {
 	'aria-label': string;
 };
 
 export const meta = {
-	component: 'chip-list',
-	exportName: 'RuiChipList',
 	args: {
 		'aria-label': 'Topics',
 	},
 	argTypes: {
 		'aria-label': { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiChipList', 'chip-list', args),
-	render: (args) => renderPlaygroundPreview('chip-list', args),
+	render: (args) => (
+		<RuiChipList aria-label={args['aria-label']}>
+			<RuiChipListItem>
+				<RuiChip>React</RuiChip>
+			</RuiChipListItem>
+			<RuiChipListItem>
+				<RuiChip>TypeScript</RuiChip>
+			</RuiChipListItem>
+		</RuiChipList>
+	),
 } satisfies DocsMeta<ChipListArgs>;
 
 type Story = DocsStory<ChipListArgs>;

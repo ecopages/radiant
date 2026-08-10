@@ -1,6 +1,12 @@
-import { buildExampleCode } from '@/lib/playground';
+import {
+	RuiBreadcrumb,
+	RuiBreadcrumbItem,
+	RuiBreadcrumbLink,
+	RuiBreadcrumbList,
+	RuiBreadcrumbPage,
+	RuiBreadcrumbSeparator,
+} from '@ecopages/radiant-ui/breadcrumb';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type BreadcrumbArgs = {
 	label: string;
@@ -8,8 +14,6 @@ export type BreadcrumbArgs = {
 };
 
 export const meta = {
-	component: 'breadcrumb',
-	exportName: 'RuiBreadcrumb',
 	args: {
 		label: 'Breadcrumb',
 		separator: '/',
@@ -18,8 +22,23 @@ export const meta = {
 		label: { control: { type: 'text' } },
 		separator: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiBreadcrumb', 'breadcrumb', args),
-	render: (args) => renderPlaygroundPreview('breadcrumb', args),
+	render: (args) => (
+		<RuiBreadcrumb label={args.label} separator={args.separator}>
+			<RuiBreadcrumbList>
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/">Home</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbLink href="/docs/button">Components</RuiBreadcrumbLink>
+				</RuiBreadcrumbItem>
+				<RuiBreadcrumbSeparator />
+				<RuiBreadcrumbItem>
+					<RuiBreadcrumbPage>Breadcrumb</RuiBreadcrumbPage>
+				</RuiBreadcrumbItem>
+			</RuiBreadcrumbList>
+		</RuiBreadcrumb>
+	),
 } satisfies DocsMeta<BreadcrumbArgs>;
 
 type Story = DocsStory<BreadcrumbArgs>;

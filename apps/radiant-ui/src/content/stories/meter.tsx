@@ -1,6 +1,5 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiMeter } from '@ecopages/radiant-ui/meter';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type MeterArgs = {
 	value: number;
@@ -10,8 +9,6 @@ export type MeterArgs = {
 };
 
 export const meta = {
-	component: 'meter',
-	exportName: 'RuiMeter',
 	args: {
 		value: 72,
 		min: 0,
@@ -24,8 +21,7 @@ export const meta = {
 		max: { control: { type: 'number' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiMeter', 'meter', args),
-	render: (args) => renderPlaygroundPreview('meter', args),
+	render: (args) => <RuiMeter value={args.value} min={args.min} max={args.max} label={args.label} />,
 } satisfies DocsMeta<MeterArgs>;
 
 type Story = DocsStory<MeterArgs>;

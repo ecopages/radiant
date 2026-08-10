@@ -1,28 +1,28 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiHeadline, type RuiHeadlineAs, type RuiHeadlineSize } from '@ecopages/radiant-ui/headline';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type HeadlineArgs = {
-	size: string;
-	as: string;
+	size: RuiHeadlineSize;
+	as: RuiHeadlineAs;
 	children: string;
 };
 
 export const meta = {
-	component: 'headline',
-	exportName: 'RuiHeadline',
 	args: {
 		size: 'xl',
 		as: 'h1',
 		children: 'radiant UI',
 	},
 	argTypes: {
-		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg', 'xl'] as const },
-		as: { control: { type: 'select' }, options: ['h1', 'h2', 'h3', 'h4'] as const },
+		size: { control: { type: 'select' }, options: ['sm', 'md', 'lg', 'xl'] as const satisfies readonly RuiHeadlineSize[] },
+		as: { control: { type: 'select' }, options: ['h1', 'h2', 'h3', 'h4'] as const satisfies readonly RuiHeadlineAs[] },
 		children: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiHeadline', 'headline', args, args.children),
-	render: (args) => renderPlaygroundPreview('headline', args, args.children),
+	render: (args) => (
+		<RuiHeadline as={args.as} size={args.size}>
+			{args.children}
+		</RuiHeadline>
+	),
 } satisfies DocsMeta<HeadlineArgs>;
 
 type Story = DocsStory<HeadlineArgs>;

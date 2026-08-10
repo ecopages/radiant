@@ -1,6 +1,6 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiListbox } from '@ecopages/radiant-ui/listbox';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
+import { ANIMAL_OPTIONS } from './demo-data';
 
 export type ListboxArgs = {
 	value: string;
@@ -10,8 +10,6 @@ export type ListboxArgs = {
 };
 
 export const meta = {
-	component: 'listbox',
-	exportName: 'RuiListbox',
 	args: {
 		value: 'cat',
 		disabled: false,
@@ -24,8 +22,15 @@ export const meta = {
 		embedded: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiListbox', 'listbox', args),
-	render: (args) => renderPlaygroundPreview('listbox', args),
+	render: (args) => (
+		<RuiListbox
+			value={args.value}
+			disabled={args.disabled}
+			embedded={args.embedded}
+			label={args.label}
+			options={ANIMAL_OPTIONS}
+		/>
+	),
 } satisfies DocsMeta<ListboxArgs>;
 
 type Story = DocsStory<ListboxArgs>;

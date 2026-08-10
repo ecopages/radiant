@@ -5,8 +5,6 @@ import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 export type SwitchArgs = Required<Pick<RuiSwitchProps, 'checked' | 'disabled'>> & { children: string };
 
 export const meta = {
-	component: 'switch',
-	exportName: 'RuiSwitch',
 	args: { checked: false, disabled: false, children: 'Email notifications' },
 	argTypes: {
 		checked: { control: { type: 'boolean' } },

@@ -1,17 +1,21 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiTagGroup, type RuiTagGroupSelectionMode } from '@ecopages/radiant-ui/tag-group';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type TagGroupArgs = {
 	value: string;
-	selectionMode: string;
+	selectionMode: RuiTagGroupSelectionMode;
 	disabled: boolean;
 	embedded: boolean;
 };
 
+function parseCsv(value: string): string[] {
+	return value
+		.split(',')
+		.map((part) => part.trim())
+		.filter(Boolean);
+}
+
 export const meta = {
-	component: 'tag-group',
-	exportName: 'RuiTagGroup',
 	args: {
 		value: 'react,typescript',
 		selectionMode: 'multiple',
@@ -20,12 +24,26 @@ export const meta = {
 	},
 	argTypes: {
 		value: { control: { type: 'text' } },
-		selectionMode: { control: { type: 'select' }, options: ['single', 'multiple'] as const },
+		selectionMode: {
+			control: { type: 'select' },
+			options: ['single', 'multiple'] as const satisfies readonly RuiTagGroupSelectionMode[],
+		},
 		disabled: { control: { type: 'boolean' } },
 		embedded: { control: { type: 'boolean' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiTagGroup', 'tag-group', args),
-	render: (args) => renderPlaygroundPreview('tag-group', args),
+	render: (args) => {
+		const tagValues = parseCsv(args.value);
+		return (
+			<RuiTagGroup
+				value={args.value}
+				selectionMode={args.selectionMode}
+				disabled={args.disabled}
+				embedded={args.embedded}
+				label="Skills"
+				tags={tagValues.map((tag) => ({ value: tag, label: tag }))}
+			/>
+		);
+	},
 } satisfies DocsMeta<TagGroupArgs>;
 
 type Story = DocsStory<TagGroupArgs>;

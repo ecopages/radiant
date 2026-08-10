@@ -1,16 +1,14 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiTooltip } from '@ecopages/radiant-ui/tooltip';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type TooltipArgs = {
 	content: string;
-	placement: string;
+	placement: 'top' | 'bottom' | 'left' | 'right';
 	delay: number;
 };
 
 export const meta = {
-	component: 'tooltip',
-	exportName: 'RuiTooltip',
 	args: {
 		content: 'Download report',
 		placement: 'top',
@@ -18,11 +16,19 @@ export const meta = {
 	},
 	argTypes: {
 		content: { control: { type: 'text' } },
-		placement: { control: { type: 'select' }, options: ['top', 'bottom', 'left', 'right'] as const },
+		placement: {
+			control: { type: 'select' },
+			options: ['top', 'bottom', 'left', 'right'] as const satisfies readonly TooltipArgs['placement'][],
+		},
 		delay: { control: { type: 'number' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiTooltip', 'tooltip', args),
-	render: (args) => renderPlaygroundPreview('tooltip', args),
+	render: (args) => (
+		<RuiTooltip content={args.content} placement={args.placement} delay={args.delay}>
+			<RuiButton variant="ghost" aria-label="Download">
+				↓
+			</RuiButton>
+		</RuiTooltip>
+	),
 } satisfies DocsMeta<TooltipArgs>;
 
 type Story = DocsStory<TooltipArgs>;

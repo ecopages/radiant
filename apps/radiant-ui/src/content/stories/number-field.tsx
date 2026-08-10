@@ -1,6 +1,12 @@
-import { buildExampleCode } from '@/lib/playground';
+import {
+	RuiNumberField,
+	RuiNumberFieldDecrementButton,
+	RuiNumberFieldGroup,
+	RuiNumberFieldIncrementButton,
+	RuiNumberFieldInput,
+	RuiNumberFieldSteppers,
+} from '@ecopages/radiant-ui/number-field';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type NumberFieldArgs = {
 	value: number;
@@ -12,8 +18,6 @@ export type NumberFieldArgs = {
 };
 
 export const meta = {
-	component: 'number-field',
-	exportName: 'RuiNumberField',
 	args: {
 		value: 3,
 		minValue: 0,
@@ -30,8 +34,24 @@ export const meta = {
 		disabled: { control: { type: 'boolean' } },
 		wheelDisabled: { control: { type: 'boolean' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiNumberField', 'number-field', args),
-	render: (args) => renderPlaygroundPreview('number-field', args),
+	render: (args) => (
+		<RuiNumberField
+			value={args.value}
+			minValue={args.minValue}
+			maxValue={args.maxValue}
+			step={args.step}
+			disabled={args.disabled}
+			wheelDisabled={args.wheelDisabled}
+		>
+			<RuiNumberFieldGroup>
+				<RuiNumberFieldInput />
+				<RuiNumberFieldSteppers>
+					<RuiNumberFieldDecrementButton />
+					<RuiNumberFieldIncrementButton />
+				</RuiNumberFieldSteppers>
+			</RuiNumberFieldGroup>
+		</RuiNumberField>
+	),
 } satisfies DocsMeta<NumberFieldArgs>;
 
 type Story = DocsStory<NumberFieldArgs>;

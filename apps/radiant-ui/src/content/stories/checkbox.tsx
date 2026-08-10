@@ -1,6 +1,5 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiCheckbox } from '@ecopages/radiant-ui/checkbox';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type CheckboxArgs = {
 	checked: boolean;
@@ -10,8 +9,6 @@ export type CheckboxArgs = {
 };
 
 export const meta = {
-	component: 'checkbox',
-	exportName: 'RuiCheckbox',
 	args: {
 		checked: false,
 		indeterminate: false,
@@ -24,8 +21,11 @@ export const meta = {
 		disabled: { control: { type: 'boolean' } },
 		value: { control: { type: 'text' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiCheckbox', 'checkbox', args),
-	render: (args) => renderPlaygroundPreview('checkbox', args),
+	render: (args) => (
+		<RuiCheckbox checked={args.checked} indeterminate={args.indeterminate} disabled={args.disabled} value={args.value}>
+			Email me product updates
+		</RuiCheckbox>
+	),
 } satisfies DocsMeta<CheckboxArgs>;
 
 type Story = DocsStory<CheckboxArgs>;

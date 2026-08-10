@@ -1,9 +1,10 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiSlider } from '@ecopages/radiant-ui/slider';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type SliderArgs = {
-	variant: string;
+	variant: 'single' | 'range';
 	value: number;
 	min: number;
 	max: number;
@@ -11,9 +12,11 @@ export type SliderArgs = {
 	disabled: boolean;
 };
 
+function rangeValues(args: SliderArgs): [number, number] {
+	return [Math.max(args.value - 15, args.min), Math.min(args.value + 15, args.max)];
+}
+
 export const meta = {
-	component: 'slider',
-	exportName: 'RuiSlider',
 	args: {
 		variant: 'single',
 		value: 50,
@@ -23,15 +26,47 @@ export const meta = {
 		disabled: false,
 	},
 	argTypes: {
-		variant: { control: { type: 'select' }, options: ['single', 'range'] as const },
+		variant: {
+			control: { type: 'select' },
+			options: ['single', 'range'] as const satisfies readonly SliderArgs['variant'][],
+		},
 		value: { control: { type: 'number' } },
 		min: { control: { type: 'number' } },
 		max: { control: { type: 'number' } },
 		step: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 	},
-	exampleCode: (args) => buildExampleCode('RuiSlider', 'slider', args),
-	render: (args) => renderPlaygroundPreview('slider', args),
+	render: (args) => {
+		if (args.variant === 'range') {
+			return (
+				<RuiField name="preview">
+					<RuiLabel>Volume range</RuiLabel>
+					<RuiSlider
+						variant="range"
+						min={args.min}
+						max={args.max}
+						step={args.step}
+						disabled={args.disabled}
+						values={rangeValues(args)}
+					/>
+				</RuiField>
+			);
+		}
+
+		return (
+			<RuiField name="preview">
+				<RuiLabel>Volume</RuiLabel>
+				<RuiSlider
+					variant="single"
+					value={args.value}
+					min={args.min}
+					max={args.max}
+					step={args.step}
+					disabled={args.disabled}
+				/>
+			</RuiField>
+		);
+	},
 } satisfies DocsMeta<SliderArgs>;
 
 type Story = DocsStory<SliderArgs>;

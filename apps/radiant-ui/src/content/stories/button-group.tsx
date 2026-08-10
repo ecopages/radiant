@@ -1,22 +1,27 @@
-import { buildExampleCode } from '@/lib/playground';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiButtonGroup, type RuiButtonGroupOrientation } from '@ecopages/radiant-ui/button-group';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
-import { renderPlaygroundPreview } from '@/components/component-playground/playground-previews';
 
 export type ButtonGroupArgs = {
-	orientation: string;
+	orientation: RuiButtonGroupOrientation;
 };
 
 export const meta = {
-	component: 'button-group',
-	exportName: 'RuiButtonGroup',
 	args: {
 		orientation: 'horizontal',
 	},
 	argTypes: {
-		orientation: { control: { type: 'select' }, options: ['horizontal', 'vertical'] as const },
+		orientation: {
+			control: { type: 'select' },
+			options: ['horizontal', 'vertical'] as const satisfies readonly RuiButtonGroupOrientation[],
+		},
 	},
-	exampleCode: (args) => buildExampleCode('RuiButtonGroup', 'button-group', args),
-	render: (args) => renderPlaygroundPreview('button-group', args),
+	render: (args) => (
+		<RuiButtonGroup orientation={args.orientation}>
+			<RuiButton variant="outline">Cancel</RuiButton>
+			<RuiButton variant="filled">Save</RuiButton>
+		</RuiButtonGroup>
+	),
 } satisfies DocsMeta<ButtonGroupArgs>;
 
 type Story = DocsStory<ButtonGroupArgs>;
