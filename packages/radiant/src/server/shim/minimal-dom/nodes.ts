@@ -38,6 +38,18 @@ function ensureHtmlParsers(): HtmlParsers {
 	return htmlParsers;
 }
 
+/**
+ * Builds an `HTMLCollection`-shaped view over element children.
+ *
+ * @remarks
+ * Plain arrays lack `.item()`, which hydration marker walks and other DOM code call.
+ */
+function createMinimalHtmlCollection(elements: MinimalHTMLElement[]): HTMLCollection {
+	const collection = elements as unknown as MinimalHTMLElement[] & HTMLCollection;
+	collection.item = (index: number): Element | null => (elements[index] as unknown as Element | undefined) ?? null;
+	return collection;
+}
+
 function createMinimalStyle(onChange: (value: string) => void): CSSStyleDeclaration {
 	const values = new Map<string, string>();
 	const commit = () => onChange([...values].map(([name, value]) => `${name}: ${value}`).join('; '));
@@ -380,10 +392,12 @@ export class MinimalElement extends MinimalNode {
 		return parent instanceof MinimalElement ? parent : null;
 	}
 
-	get children(): MinimalHTMLElement[] {
-		return Array.from(this.childNodes ?? []).filter(
+	get children(): HTMLCollection {
+		const elements = Array.from(this.childNodes ?? []).filter(
 			(node) => node.nodeType === MinimalNode.ELEMENT_NODE,
 		) as unknown as MinimalHTMLElement[];
+
+		return createMinimalHtmlCollection(elements);
 	}
 
 	materializeChildren(): void {

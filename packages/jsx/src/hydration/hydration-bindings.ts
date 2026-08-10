@@ -204,13 +204,17 @@ export function serializeBindingDescriptor(kind: BindingKind, name: string): str
  * `removeAttribute` inside `visit` without corrupting the live `NamedNodeMap`.
  *
  * @remarks
- * Incomplete SSR DOM shims may omit `attributes` or expose a non-`NamedNodeMap`
- * store. Those hosts have no Attr markers to recover, so the walk is a no-op.
+ * Incomplete SSR DOM shims may omit a real `NamedNodeMap`/`HTMLCollection`. Those
+ * hosts have no Attr markers to recover, so the walk is a no-op.
  */
 export function visitHydrationBindingMarkers(
 	target: HTMLElement,
 	visit: (element: Element, attribute: Attr) => void,
 ): boolean {
+	if (!isNamedNodeMapLike(target.attributes)) {
+		return false;
+	}
+
 	let foundHydrationMarker = false;
 	const walk = (element: Element): void => {
 		const attributes = listHydrationBindingAttributes(element);
@@ -233,7 +237,7 @@ export function visitHydrationBindingMarkers(
 		const children = element.children;
 
 		for (let index = 0; index < children.length; index += 1) {
-			const child = children.item(index);
+			const child = getChildElementAt(children, index);
 
 			if (child) {
 				walk(child);
@@ -257,7 +261,7 @@ export function visitHydrationBindingMarkers(
 function listHydrationBindingAttributes(element: Element): Attr[] {
 	const namedAttributes = element.attributes;
 
-	if (!namedAttributes || typeof namedAttributes.length !== 'number') {
+	if (!isNamedNodeMapLike(namedAttributes)) {
 		return [];
 	}
 
@@ -272,6 +276,18 @@ function listHydrationBindingAttributes(element: Element): Attr[] {
 	}
 
 	return markers;
+}
+
+function isNamedNodeMapLike(value: NamedNodeMap | undefined | null): value is NamedNodeMap {
+	return Boolean(value && typeof value.length === 'number' && typeof value.item === 'function');
+}
+
+function getChildElementAt(children: HTMLCollection, index: number): Element | null {
+	if (typeof children.item === 'function') {
+		return children.item(index);
+	}
+
+	return (children as unknown as ArrayLike<Element | null | undefined>)[index] ?? null;
 }
 
 function collectValueBindings(

@@ -138,6 +138,21 @@ describe('minimal DOM installation boundary', () => {
 		expect(host.attributes instanceof Map).toBe(false);
 	});
 
+	test('exposes HTMLCollection-shaped children with item()', async () => {
+		clearDomGlobals();
+
+		const { installLightDomShim } = await import('../../src/server/shim/minimal-dom/install');
+		installLightDomShim();
+
+		const host = document.createElement('demo-host');
+		const child = document.createElement('span');
+		host.append(child);
+
+		expect(typeof host.children.item).toBe('function');
+		expect(host.children.item(0)).toBe(child);
+		expect(host.children.item(1)).toBeNull();
+	});
+
 	test('replaces a foreign DOM when a custom-element host fails the style probe', async () => {
 		const { ForeignHTMLElement, foreignDocument } = installForeignPartialDom();
 		const { installLightDomShim } = await import('../../src/server/shim/minimal-dom/install');

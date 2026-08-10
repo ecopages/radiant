@@ -266,10 +266,17 @@ describe('visitHydrationBindingMarkers DOM compatibility', () => {
 		expect(visitHydrationBindingMarkers(host, () => undefined)).toBe(false);
 	});
 
-	test('skips hosts with a missing attributes bag', async () => {
+	test('skips hosts with a missing attributes bag without walking children', async () => {
 		const { visitHydrationBindingMarkers } = await loadHydrationBindings();
 		const host = {
-			children: { length: 0, item: () => null },
+			children: {
+				get length() {
+					throw new Error('children should not be walked without a NamedNodeMap');
+				},
+				item: () => {
+					throw new Error('children should not be walked without a NamedNodeMap');
+				},
+			},
 			localName: 'demo-host',
 		} as unknown as HTMLElement;
 
@@ -290,6 +297,36 @@ describe('visitHydrationBindingMarkers DOM compatibility', () => {
 		const host = {
 			attributes,
 			children: { length: 0, item: () => null },
+			localName: 'demo-host',
+		} as unknown as HTMLElement;
+
+		const visited: string[] = [];
+		expect(
+			visitHydrationBindingMarkers(host, (_element, attribute) => {
+				visited.push(attribute.name);
+			}),
+		).toBe(true);
+		expect(visited).toEqual([`${ATTRIBUTE_BINDING_PREFIX}0`]);
+	});
+
+	test('walks array-like children that omit item()', async () => {
+		const { ATTRIBUTE_BINDING_PREFIX, visitHydrationBindingMarkers } = await loadHydrationBindings();
+		const marker = {
+			name: `${ATTRIBUTE_BINDING_PREFIX}0`,
+			value: 'attr:title',
+		};
+		const child = {
+			attributes: {
+				0: marker,
+				length: 1,
+				item: (index: number) => (index === 0 ? marker : null),
+			},
+			children: [],
+			localName: 'span',
+		};
+		const host = {
+			attributes: { length: 0, item: () => null },
+			children: [child],
 			localName: 'demo-host',
 		} as unknown as HTMLElement;
 
