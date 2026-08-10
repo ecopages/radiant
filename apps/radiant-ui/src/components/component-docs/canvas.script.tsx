@@ -118,7 +118,7 @@ export class DocsCanvasElement extends RadiantElement {
 	}
 }
 
-declare module '@ecopages/jsx' {
+declare module '@ecopages/jsx/jsx-runtime' {
 	interface JsxCustomIntrinsicElements {
 		'radiant-docs-canvas': JsxCustomElementAttributes<DocsCanvasElement> & { storyId?: string };
 	}
