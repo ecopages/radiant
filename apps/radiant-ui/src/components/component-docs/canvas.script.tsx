@@ -109,8 +109,6 @@ export class DocsCanvasElement extends RadiantElement {
 		}
 
 		const mount = this.getPreviewTarget();
-		const revision = this.getStoryProvider()?.getContext().renderRevision ?? 0;
-		this.dataset.playgroundRevision = String(revision);
 
 		const nextMount = mount.cloneNode(false) as HTMLElement;
 		mount.replaceWith(nextMount);

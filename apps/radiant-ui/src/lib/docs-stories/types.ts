@@ -26,23 +26,16 @@ export type DocsDecorator<TArgs extends DocsArgs = DocsArgs> = (
 ) => JsxRenderable;
 
 export type DocsMeta<TArgs extends DocsArgs = DocsArgs> = {
-	/** Package slug for live example imports (`@ecopages/radiant-ui/<component>`). */
-	component?: string;
-	exportName?: string;
 	args?: Partial<TArgs>;
 	argTypes?: DocsArgTypes<TArgs>;
 	decorators?: DocsDecorator<TArgs>[];
 	render?: (args: TArgs) => JsxRenderable;
-	/** Optional live example builder; otherwise a generic prop dump is used. */
-	exampleCode?: (args: TArgs) => string;
 };
 
 export type DocsStory<TArgs extends DocsArgs = DocsArgs> = {
 	args?: Partial<TArgs>;
 	decorators?: DocsDecorator<TArgs>[];
 	render?: (args: TArgs) => JsxRenderable;
-	/** Optional source builder for a story whose child structure differs from its meta default. */
-	exampleCode?: (args: TArgs) => string;
 	parameters: { docs: { id: string } };
 };
 
@@ -50,18 +43,15 @@ export type DocsStory<TArgs extends DocsArgs = DocsArgs> = {
  * Docs shell / registry meta after args have been erased to {@link DocsArgs}.
  *
  * @remarks
- * `render` / `exampleCode` use method syntax so authored `DocsMeta<T>` values stay
- * assignable under `strictFunctionTypes`. Decorators are opaque here — the shell
- * only invokes them after {@link docsStory} registration.
+ * `render` uses method syntax so authored `DocsMeta<T>` values stay assignable under
+ * `strictFunctionTypes`. Decorators are opaque here — the shell only invokes them
+ * after {@link docsStory} registration.
  */
 export interface DocsMetaAny {
-	component?: string;
-	exportName?: string;
 	args?: DocsArgs;
 	argTypes?: DocsArgTypes<DocsArgs>;
 	decorators?: readonly unknown[];
 	render?(args: DocsArgs): JsxRenderable;
-	exampleCode?(args: DocsArgs): string;
 }
 
 /**
@@ -74,7 +64,6 @@ export interface DocsStoryAny {
 	args?: DocsArgs;
 	decorators?: readonly unknown[];
 	render?(args: DocsArgs): JsxRenderable;
-	exampleCode?(args: DocsArgs): string;
 	parameters: { docs: { id: string } };
 }
 
