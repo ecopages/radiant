@@ -18,11 +18,11 @@ pnpm --filter @ecopages/radiant-ui-docs test
 
 Component pages combine three layers. Keep them separate — do not generate usage snippets from playground state.
 
-| Layer | Where | Purpose |
-| --- | --- | --- |
-| **Try it** | `<Demo>` in MDX | Live preview + prop controls |
-| **Usage** | Fenced `tsx` blocks in MDX | Copy-paste examples authors maintain by hand |
-| **Variants** | `<Canvas>` in MDX | Static previews for additional stories (no controls) |
+| Layer        | Where                      | Purpose                                              |
+| ------------ | -------------------------- | ---------------------------------------------------- |
+| **Try it**   | `<Demo>` in MDX            | Live preview + prop controls                         |
+| **Usage**    | Fenced `tsx` blocks in MDX | Copy-paste examples authors maintain by hand         |
+| **Variants** | `<Canvas>` in MDX          | Static previews for additional stories (no controls) |
 
 **Mental model:** Storybook-style docs pages, not a devtools panel. The playground explores props; prose owns the canonical example.
 

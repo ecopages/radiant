@@ -16,7 +16,10 @@ export const meta = {
 		label: 'Settings',
 	},
 	argTypes: {
-		variant: { control: { type: 'select' }, options: ['boxed', 'ghost'] as const satisfies readonly RuiTabsVariant[] },
+		variant: {
+			control: { type: 'select' },
+			options: ['boxed', 'ghost'] as const satisfies readonly RuiTabsVariant[],
+		},
 		value: { control: { type: 'text' } },
 		automatic: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },

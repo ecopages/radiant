@@ -17,7 +17,12 @@ export const meta = {
 		open: { control: { type: 'boolean' } },
 		placement: {
 			control: { type: 'select' },
-			options: ['bottom-start', 'bottom-end', 'top-start', 'top-end'] as const satisfies readonly MenuButtonArgs['placement'][],
+			options: [
+				'bottom-start',
+				'bottom-end',
+				'top-start',
+				'top-end',
+			] as const satisfies readonly MenuButtonArgs['placement'][],
 		},
 		children: { control: { type: 'text' } },
 	},
