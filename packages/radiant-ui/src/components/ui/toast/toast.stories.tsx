@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { toastStage, withToastStage } from '../../../../.storybook/with-toast-stage';
 import { ToastTrigger } from '../../../../.storybook/toast-trigger';
 import type { ToastPosition } from './toast-context';
@@ -17,6 +17,7 @@ const TOAST_POSITIONS: readonly ToastPosition[] = [
 const meta = {
 	title: 'Components/Toast',
 	component: RuiToaster,
+	parameters: { radiant: { element: RuiToasterElement, cssImports: ['./toast.css'] } },
 	decorators: [withToastStage],
 	args: {
 		position: 'bottom-end',
@@ -30,8 +31,7 @@ const meta = {
 			description: 'Max toasts shown in the stack at once',
 		},
 	},
-};
-radiantMeta(meta, { element: RuiToasterElement, stylesheets: ['./toast.css'] });
+} satisfies Meta<typeof RuiToaster>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

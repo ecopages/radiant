@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiTree } from './tree';
 import { RuiTree as RuiTreeElement } from './tree.script';
@@ -6,6 +6,7 @@ import { RuiTree as RuiTreeElement } from './tree.script';
 const meta = {
 	title: 'Components/Tree',
 	component: RuiTree,
+	parameters: { radiant: { element: RuiTreeElement, cssImports: ['./tree.css'] } },
 	args: {
 		label: 'File explorer',
 		nodes: [
@@ -21,8 +22,7 @@ const meta = {
 			{ id: 'readme', label: 'README.md' },
 		],
 	},
-};
-radiantMeta(meta, { element: RuiTreeElement, stylesheets: ['./tree.css'] });
+} satisfies Meta<typeof RuiTree>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

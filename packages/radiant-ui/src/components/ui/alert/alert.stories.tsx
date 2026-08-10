@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, fn, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiAlertProps } from './alert.script';
@@ -31,6 +31,7 @@ const renderAlert = (args: RuiAlertProps) => {
 const meta = {
 	title: 'Components/Alert',
 	component: RuiAlert,
+	parameters: { radiant: { element: RuiAlertElement, cssImports: ['./alert.css'] } },
 	args: { variant: 'info', layout: 'inline', dismissible: false },
 	argTypes: {
 		variant: { control: { type: 'select' }, options: ['info', 'success', 'warning', 'error'] },
@@ -38,11 +39,10 @@ const meta = {
 		dismissible: { control: { type: 'boolean' } },
 	},
 	render: renderAlert,
-};
-radiantMeta(meta, { element: RuiAlertElement, stylesheets: ['./alert.css'] });
+} satisfies Meta<typeof RuiAlert>;
 
 export default meta;
-type Story = StoryObj<RuiAlertProps>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {

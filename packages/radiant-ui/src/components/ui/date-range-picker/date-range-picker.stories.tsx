@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { RuiField, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
@@ -10,20 +10,12 @@ import { RuiDateRangePicker as RuiDateRangePickerElement } from './date-range-pi
 const meta = {
 	title: 'Components/DateRangePicker',
 	component: RuiDateRangePicker,
+	parameters: { radiant: { element: RuiDateRangePickerElement, cssImports: ['./date-range-picker.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css', '../calendar/calendar.css'] } },
 	args: {
 		value: '2026-08-05/2026-08-20',
 		locale: 'en-US',
 	},
-};
-radiantMeta(meta, {
-	element: RuiDateRangePickerElement,
-	stylesheets: [
-		'./date-range-picker.css',
-		'../shared/control-toggle.css',
-		'../../../lib/icons/icons.css',
-		'../calendar/calendar.css',
-	],
-});
+} satisfies Meta<typeof RuiDateRangePicker>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

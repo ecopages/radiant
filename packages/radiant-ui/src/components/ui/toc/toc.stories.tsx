@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
 import { RuiToc } from './toc';
 import { RuiToc as RuiTocElement } from './toc.script';
@@ -19,6 +19,7 @@ const Article = () => (
 const meta = {
 	title: 'Components/Table of contents',
 	component: RuiToc,
+	parameters: { radiant: { element: RuiTocElement, cssImports: ['./toc.css'] } },
 	args: {
 		target: '.toc-story-article',
 		label: 'On this page',
@@ -31,8 +32,7 @@ const meta = {
 			<Article />
 		</div>
 	),
-};
-radiantMeta(meta, { element: RuiTocElement, stylesheets: ['./toc.css'] });
+} satisfies Meta<typeof RuiToc>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

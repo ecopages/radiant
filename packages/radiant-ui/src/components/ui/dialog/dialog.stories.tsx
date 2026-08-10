@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, fn } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { dialogStage, STORY_DIALOG_ID, withDialogStage } from '../../../../.storybook/with-dialog-stage';
@@ -17,6 +17,7 @@ import { RuiDialog as RuiDialogElement } from './dialog.script';
 const meta = {
 	title: 'Components/Dialog',
 	component: RuiDialog,
+	parameters: { radiant: { element: RuiDialogElement, cssImports: ['./dialog.css'] } },
 	decorators: [withDialogStage],
 	args: {
 		id: STORY_DIALOG_ID,
@@ -31,8 +32,7 @@ const meta = {
 			{args.children}
 		</RuiDialog>
 	),
-};
-radiantMeta(meta, { element: RuiDialogElement, stylesheets: ['./dialog.css'] });
+} satisfies Meta<typeof RuiDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

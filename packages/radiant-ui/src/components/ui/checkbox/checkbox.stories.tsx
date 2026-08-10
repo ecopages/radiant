@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiCheckbox } from './checkbox';
@@ -7,14 +7,14 @@ import { RuiCheckbox as RuiCheckboxElement } from './checkbox.script';
 const meta = {
 	title: 'Components/Checkbox',
 	component: RuiCheckbox,
+	parameters: { radiant: { element: RuiCheckboxElement, cssImports: ['./checkbox.css'] } },
 	args: {
 		checked: false,
 		indeterminate: false,
 		disabled: false,
 		children: 'Accept terms',
 	},
-};
-radiantMeta(meta, { element: RuiCheckboxElement, stylesheets: ['./checkbox.css'] });
+} satisfies Meta<typeof RuiCheckbox>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

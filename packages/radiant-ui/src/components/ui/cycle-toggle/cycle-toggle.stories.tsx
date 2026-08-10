@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import type { RuiCycleToggleChangeDetail, RuiCycleToggleProps } from './cycle-toggle.script';
@@ -35,6 +35,7 @@ function renderThemePreference(args: RuiCycleToggleProps) {
 const meta = {
 	title: 'Components/Cycle Toggle',
 	component: RuiCycleToggle,
+	parameters: { radiant: { element: RuiCycleToggleElement, cssImports: ['./cycle-toggle.css', '../button/button.css'] } },
 	args: {
 		value: 'system',
 		variant: 'ghost',
@@ -43,8 +44,7 @@ const meta = {
 		label: 'Theme',
 	},
 	render: (args: RuiCycleToggleProps) => renderThemePreference(args),
-};
-radiantMeta(meta, { element: RuiCycleToggleElement, stylesheets: ['./cycle-toggle.css', '../button/button.css'] });
+} satisfies Meta<typeof RuiCycleToggle>;
 
 export default meta;
 

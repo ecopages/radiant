@@ -1,4 +1,4 @@
-import { radiantMeta, type StoryObj } from '@ecopages/storybook-radiant-vite';
+import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect } from 'storybook/test';
 import {
 	RuiBreadcrumb,
@@ -31,12 +31,12 @@ const HomeIcon = () => (
 const meta = {
 	title: 'Components/Breadcrumb',
 	component: RuiBreadcrumb,
+	parameters: { radiant: { element: RuiBreadcrumbElement, cssImports: ['./breadcrumb.css'] } },
 	args: {
 		label: 'Breadcrumb',
 		separator: '/',
 	},
-};
-radiantMeta(meta, { element: RuiBreadcrumbElement, stylesheets: ['./breadcrumb.css'] });
+} satisfies Meta<typeof RuiBreadcrumb>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
