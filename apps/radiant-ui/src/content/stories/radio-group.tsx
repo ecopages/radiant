@@ -1,4 +1,4 @@
-import { RuiRadioGroup } from '@ecopages/radiant-ui/radio-group';
+import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '@ecopages/radiant-ui/radio-group';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 
 export type RadioGroupArgs = {
@@ -19,15 +19,12 @@ export const meta = {
 		label: { control: { type: 'text' } },
 	},
 	render: (args) => (
-		<RuiRadioGroup
-			value={args.value}
-			disabled={args.disabled}
-			label={args.label}
-			options={[
-				{ value: 'free', label: 'Free' },
-				{ value: 'pro', label: 'Pro' },
-			]}
-		/>
+		<RuiRadioGroup value={args.value} disabled={args.disabled} label={args.label} name="plan">
+			<RuiRadioGroupControl>
+				<RuiRadio value="free">Free</RuiRadio>
+				<RuiRadio value="pro">Pro</RuiRadio>
+			</RuiRadioGroupControl>
+		</RuiRadioGroup>
 	),
 } satisfies DocsMeta<RadioGroupArgs>;
 
