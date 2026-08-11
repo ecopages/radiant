@@ -51,7 +51,9 @@ export const KeyboardNavigation: Story = {
 		value: '2026-08-31',
 	},
 	play: async ({ canvasElement, step }) => {
-		const selectedDay = canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-31"]') as HTMLButtonElement;
+		const selectedDay = canvasElement.querySelector(
+			'[data-calendar-day][data-iso="2026-08-31"]',
+		) as HTMLButtonElement;
 
 		await step('arrow navigation moves focus across a month boundary', async () => {
 			selectedDay.focus();
