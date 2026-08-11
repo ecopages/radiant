@@ -60,9 +60,9 @@ export const WithCalendar: Story = {
 		<RuiDateRangePicker>
 			<RuiDateRangePickerControl>
 				<RuiDateRangePickerInputs>
-					<RuiDateRangePickerStartInput />
+					<RuiDateRangePickerStartInput aria-label="Start date" />
 					<RuiDateRangePickerSeparator />
-					<RuiDateRangePickerEndInput />
+					<RuiDateRangePickerEndInput aria-label="End date" />
 				</RuiDateRangePickerInputs>
 				<RuiDateRangePickerToggle />
 			</RuiDateRangePickerControl>
