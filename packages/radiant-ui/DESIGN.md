@@ -86,7 +86,10 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
     - Motion: `--duration-*` / `--ease-*` (not raw `duration-150`).
     - State: `--opacity-disabled`, z-index roles from `system.css`.
 3. Structural layout (flex, grid, `min-w-0`, positioning) may use Tailwind as needed.
-4. One CSS file per component directory. Do **not** `import './<name>.css'` in view `.tsx` files — that breaks Ecopages vendor prebundles. Apps load the aggregate `@ecopages/radiant-ui/styles.css` (or a theme + styles). In Storybook, declare component CSS via `parameters: { radiant: { cssImports: ['./<name>.css'] } }` in `*.stories.tsx` (with `const meta = { ... } satisfies Meta<typeof RuiX>; export default meta`); the stamp transform injects side-effect imports. Use the `withStylesheets` decorator only for skins / extras.
+4. One CSS file per component directory. Do **not** `import './<name>.css'` in view `.tsx` files — that breaks Ecopages vendor prebundles. Apps load the aggregate `@ecopages/radiant-ui/styles.css` (or a theme + styles). In Storybook, declare component CSS via `parameters: { radiant: { cssImports: ['./<name>.css'] } }` in `*.stories.tsx` (with `const meta = { ... } satisfies Meta<typeof RuiX>; export default meta`); the stamp transform injects side-effect imports. For skins and other story-scoped extras, apply the `withStylesheets([...])` decorator to the story that needs them.
+
+5. Story-support helpers (decorators, story-only components) live in `.storybook/`, never in `src/`. `src/lib` is on the published build's include list, and these files import Storybook types from a private devDependency — shipping them would emit `dist` declarations consumers cannot resolve. Import them via the `@sb/*` alias (`@sb/with-dialog`), not a relative climb out of `src`.
+6. Story-support decorators take their options as arguments — write a decorator factory (`withStylesheets([css])`) or split behaviours into separate decorators. Do not add a `parameters` key for a decorator to read back: `parameters` is closed, and a boolean flag there is a sign two decorators are fused into one.
 
 ### Forbidden
 
