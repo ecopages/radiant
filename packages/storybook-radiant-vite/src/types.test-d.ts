@@ -134,92 +134,37 @@ const badStoryParameters: Story = {
 void badStoryParameters;
 
 /* -------------------------------------------------------------------------- */
-/* parameters is closed — no index signature to swallow near-miss keys         */
-/* -------------------------------------------------------------------------- */
-
-const typoedRadiantKey = {
-	component: Button,
-	// @ts-expect-error -- 'radidddant' is not 'radiant'; an index signature would wave this through
-	parameters: { radidddant: { element: ButtonHost } },
-} satisfies Meta<typeof Button>;
-void typoedRadiantKey;
-
-const typoedRadiantKeyOnStory: Story = {
-	// @ts-expect-error -- stories are closed too, not just meta
-	parameters: { radidddant: { renderMode: 'ssr-hydrate' } },
-};
-void typoedRadiantKeyOnStory;
-
-/* A typo alongside valid keys is still caught — this is excess-property checking, not the
-   weak-type check, so it does not depend on the object sharing zero keys with the target. */
-const typoedRadiantKeyBesideKnownKeys = {
-	component: Button,
-	// @ts-expect-error -- 'radidddant' is not 'radiant'
-	parameters: { layout: 'centered', radidddant: { element: ButtonHost } },
-} satisfies Meta<typeof Button>;
-void typoedRadiantKeyBesideKnownKeys;
-
-const unknownAddonKey = {
-	component: Button,
-	// @ts-expect-error -- no augmentation hook: addon keys are added to `RadiantParameters` itself
-	parameters: { chromatic: { viewports: [320] } },
-} satisfies Meta<typeof Button>;
-void unknownAddonKey;
-
-/* Keys a default Storybook install reads are built in. */
-const knownParameters = {
-	component: Button,
-	parameters: {
-		layout: 'centered',
-		docs: { description: { component: 'A button.' } },
-		controls: { exclude: ['label'] },
-		radiant: { element: ButtonHost },
-	},
-} satisfies Meta<typeof Button>;
-void knownParameters;
-
-/* -------------------------------------------------------------------------- */
-/* Decorator options belong on the decorator, not in `parameters`             */
+/* `radiant` is closed; the rest of `parameters` stays open for addons         */
 /* -------------------------------------------------------------------------- */
 
 /* `radiant` is the framework's SSR contract, not a scratch namespace for project config. */
 const projectKeyUnderRadiant = {
 	component: Button,
-	// @ts-expect-error -- not a framework field
+	// @ts-expect-error -- not a framework field; decorator options go to a decorator factory
 	parameters: { radiant: { dialogStage: { trigger: false } } },
 } satisfies Meta<typeof Button>;
 void projectKeyUnderRadiant;
 
-/* Nor does it belong at the top level. A decorator factory takes its options directly. */
-const projectKeyAtTopLevel = {
+const typoedFieldUnderRadiant: Story = {
+	// @ts-expect-error -- stories are closed under `radiant` too, not just meta
+	parameters: { radiant: { renderMoed: 'ssr-hydrate' } },
+};
+void typoedFieldUnderRadiant;
+
+/* Addon and project parameters pass — the framework has no opinion about them, and an
+   `unknown` index keeps `parameters.radiant` typed where Storybook's `any` index would not. */
+const addonParameters = {
 	component: Button,
-	// @ts-expect-error -- pass options to the decorator instead: `decorators: [withThing(opts)]`
-	parameters: { dialogStage: { trigger: false } },
+	parameters: {
+		layout: 'centered',
+		docs: { description: { component: 'A button.' } },
+		controls: { exclude: ['label'] },
+		a11y: { test: 'off' },
+		chromatic: { viewports: [320] },
+		radiant: { element: ButtonHost },
+	},
 } satisfies Meta<typeof Button>;
-void projectKeyAtTopLevel;
-
-/**
- * `parameters` is a weak type — every member is optional — so the check reaches values
- * excess-property checking cannot see, such as a helper's return value or a spread.
- * This is what makes a smuggled-in parameter fail even when it is not written as a literal.
- */
-declare function stageParameters(): { someStage: { demo: boolean } };
-
-const unknownKeyFromHelper = {
-	component: Button,
-	// @ts-expect-error -- TS2559: shares no key with RadiantParameters
-	parameters: stageParameters(),
-} satisfies Meta<typeof Button>;
-void unknownKeyFromHelper;
-
-/* A helper returning only known keys is still fine. */
-declare function layoutParameters(): { layout: 'fullscreen' };
-
-const knownKeyFromHelper = {
-	component: Button,
-	parameters: layoutParameters(),
-} satisfies Meta<typeof Button>;
-void knownKeyFromHelper;
+void addonParameters;
 
 /* -------------------------------------------------------------------------- */
 /* Derived fields stay overridable, and both halves land on one flat object    */

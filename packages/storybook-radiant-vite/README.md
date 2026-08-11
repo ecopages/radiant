@@ -126,23 +126,25 @@ inference. The SSR error banner names the specific field when resolution fails.
 
 ### Project and addon parameters
 
-`parameters` is enumerated, not open. Storybook types its own `Parameters` as
-`{ [name: string]: any }`; intersecting that would collapse `radiant` back to `any`, and even
-an `unknown` index signature silently swallows near-miss keys. Since a misspelled `radiant`
-skips SSR host linking and only shows up later as a canvas error banner, the framework drops
-the index signature so `satisfies` catches it immediately:
+`parameters` stays open at the top level — `a11y`, `test`, `chromatic`, `viewport` and any
+other addon key type-check as usual. Only `radiant` is closed.
+
+Storybook types its own `Parameters` as `{ [name: string]: any }`, and intersecting that would
+collapse `radiant` back to `any` — the index signature wins. The framework widens to an
+`unknown` index instead: arbitrary keys still pass, while `parameters.radiant` keeps its real
+type. Inside `radiant` there is no index signature, so a key belonging to neither the authoring
+nor the derived set is an error under `satisfies`:
 
 ```text
-error TS2561: Object literal may only specify known properties, but 'radidddant' does not
-exist in type 'RadiantParameters'. Did you mean to write 'radiant'?
+error TS2353: Object literal may only specify known properties, and 'dialogStage' does not
+exist in type 'RadiantAuthoredParameters & RadiantDerivedParameters'.
 ```
 
-Built in are the keys a default Storybook install already reads: `layout`, `docs`, `controls`,
-and `radiant`. There is **no augmentation hook** for adding more, and that is deliberate — a
-decorator that needs per-story configuration should take it as an argument, not read it back
-out of `parameters`.
+That is the boundary worth enforcing: the framework reads those fields, and a stray key there
+means a story is using `radiant` as a config scratchpad.
 
-Write the decorator as a factory and configure it where it is applied:
+**Decorator options do not belong in `parameters` at all.** Write the decorator as a factory
+and configure it where it is applied:
 
 ```ts
 // .storybook/with-stylesheets.ts
@@ -186,16 +188,6 @@ export const Registry: Story = {
 
 Likewise, if a story wants entirely different content, that belongs in its `render` — not in a
 flag that makes a decorator substitute content for a `render: () => null`.
-
-> **Note**
-> `parameters` is a weak type (every member optional), so TypeScript also rejects a value that
-> shares no key with it (`TS2559`). That covers helper returns and spreads, which
-> excess-property checking cannot see — so a smuggled-in parameter fails even when it is not
-> written as a literal. Keep `RadiantParameters` free of zero-property members: one empty
-> intersection member silently disables that check everywhere.
-
-Add a key to `RadiantParameters` itself only for an addon that reads `parameters` on its own
-behalf and therefore cannot be a decorator argument.
 
 **Always annotate with `satisfies`, never a wrapper function.** `Meta<T>` is a conditional
 type, so TypeScript cannot infer `T` from a parameter typed by it — a `defineMeta(meta)`
