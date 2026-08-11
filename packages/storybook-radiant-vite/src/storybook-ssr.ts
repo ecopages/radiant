@@ -53,7 +53,15 @@ export async function resolveStoryArgs(
 	return applyControlOverrides(base, overrides);
 }
 
-function applyControlOverrides(
+/**
+ * Merges Storybook control overrides onto CSF module args for SSR.
+ *
+ * @remarks
+ * Arrays of plain objects are deep-merged by index (option lists). Nested arrays
+ * and primitives replace wholesale — spreading an array into an object turns
+ * `['Mon','Tue']` into `{0:'Mon',1:'Tue'}`, which then breaks `.map`.
+ */
+export function applyControlOverrides(
 	base: Record<string, unknown>,
 	overrides: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -65,10 +73,17 @@ function applyControlOverrides(
 		}
 
 		if (Array.isArray(value) && Array.isArray(merged[key])) {
-			merged[key] = (merged[key] as unknown[]).map((baseItem, index) => {
+			const baseItems = merged[key] as unknown[];
+
+			if (!canDeepMergeArrayItems(baseItems, value)) {
+				merged[key] = value;
+				continue;
+			}
+
+			merged[key] = baseItems.map((baseItem, index) => {
 				const overrideItem = value[index];
-				if (!overrideItem || typeof overrideItem !== 'object' || typeof baseItem !== 'object') {
-					return baseItem;
+				if (!overrideItem || typeof overrideItem !== 'object' || !baseItem || typeof baseItem !== 'object') {
+					return overrideItem === undefined ? baseItem : overrideItem;
 				}
 
 				return { ...(baseItem as Record<string, unknown>), ...(overrideItem as Record<string, unknown>) };
@@ -80,6 +95,16 @@ function applyControlOverrides(
 	}
 
 	return merged;
+}
+
+function canDeepMergeArrayItems(baseItems: readonly unknown[], overrideItems: readonly unknown[]): boolean {
+	return (
+		baseItems.every(isPlainObject) && overrideItems.every((item) => item === undefined || isPlainObject(item))
+	);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 export async function renderViewAuthoredContent(
