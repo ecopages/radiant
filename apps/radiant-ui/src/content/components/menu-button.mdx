@@ -30,19 +30,22 @@ export const config = {
 
 ## Usage
 
-Pass `items` with labels and handlers, or compose menu content as children. Control `placement` to avoid viewport clipping.
+Compose the trigger, menu content, and action items explicitly. Control `placement` to avoid viewport clipping.
 
 ```tsx
-import { RuiMenuButton } from '@ecopages/radiant-ui/menu-button';
+import {
+  RuiMenuButton,
+  RuiMenuButtonContent,
+  RuiMenuButtonItem,
+  RuiMenuButtonTrigger,
+} from '@ecopages/radiant-ui/menu-button';
 
-<RuiMenuButton
-  items={[
-    { label: 'Edit', onSelect: editItem },
-    { label: 'Delete', onSelect: deleteItem },
-  ]}
-  placement="bottom-start"
->
-  Actions
+<RuiMenuButton placement="bottom-start">
+  <RuiMenuButtonTrigger>Actions</RuiMenuButtonTrigger>
+  <RuiMenuButtonContent>
+    <RuiMenuButtonItem value="edit">Edit</RuiMenuButtonItem>
+    <RuiMenuButtonItem value="delete">Delete</RuiMenuButtonItem>
+  </RuiMenuButtonContent>
 </RuiMenuButton>
 ```
 
@@ -64,7 +67,7 @@ The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `
 
 ## API
 
-`RuiMenuButton` is a custom element (`<rui-menu-button>`) with a composed light-DOM surface. The JSX helper renders the trigger and popup items; compose the slots directly for custom items.
+`RuiMenuButton` is a custom element (`<rui-menu-button>`) with a composed light-DOM surface. Use the view helpers to compose the trigger and popup items, or use the convenience `trigger` / `items` props for generated content.
 
 ### Attributes
 
@@ -91,7 +94,10 @@ The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `
 
 | Component | Renders | Notes |
 | --- | --- | --- |
-| `RuiMenuButton` | `<rui-menu-button>` | Accepts `trigger` + `items` (`RuiMenuItem[]`); authors the `rui-menu-button__item` buttons. |
+| `RuiMenuButton` | `<rui-menu-button>` | Hosts the composed trigger and menu content. The convenience `trigger` + `items` props generate the same helpers. |
+| `RuiMenuButtonTrigger` | Button | Trigger control that opens the menu. |
+| `RuiMenuButtonContent` | `<div role="menu">` | Popup surface containing menu items. |
+| `RuiMenuButtonItem` | `<button role="menuitem">` | Selectable action inside the menu. |
 
 ### CSS classes
 

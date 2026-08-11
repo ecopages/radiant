@@ -1,4 +1,9 @@
-import { RuiMenuButton } from '@ecopages/radiant-ui/menu-button';
+import {
+	RuiMenuButton,
+	RuiMenuButtonContent,
+	RuiMenuButtonItem,
+	RuiMenuButtonTrigger,
+} from '@ecopages/radiant-ui/menu-button';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 
 export type MenuButtonArgs = {
@@ -28,16 +33,14 @@ export const meta = {
 	},
 	render: (args) => (
 		<div class="playground-menu-button-demo">
-			<RuiMenuButton
-				{...(args.open ? { open: true } : {})}
-				placement={args.placement}
-				trigger={args.children}
-				items={[
-					{ value: 'edit', label: 'Edit' },
-					{ value: 'duplicate', label: 'Duplicate' },
-					{ value: 'delete', label: 'Delete' },
-				]}
-			/>
+			<RuiMenuButton open={args.open} placement={args.placement}>
+				<RuiMenuButtonTrigger>{args.children}</RuiMenuButtonTrigger>
+				<RuiMenuButtonContent>
+					<RuiMenuButtonItem value="edit">Edit</RuiMenuButtonItem>
+					<RuiMenuButtonItem value="duplicate">Duplicate</RuiMenuButtonItem>
+					<RuiMenuButtonItem value="delete">Delete</RuiMenuButtonItem>
+				</RuiMenuButtonContent>
+			</RuiMenuButton>
 		</div>
 	),
 } satisfies DocsMeta<MenuButtonArgs>;
