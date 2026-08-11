@@ -29,7 +29,7 @@ const meta = {
 	});
 
 	test('ignores parameters.stylesheets, which is injected at render time', () => {
-		const code = `parameters: { ...withStylesheets(['./skin.css']), stylesheets: ['./other.css'] }`;
+		const code = `parameters: { stylesheets: ['./skin.css'], radiant: { renderMode: 'client' } }`;
 		expect(collectDeclaredCssImports(code)).toEqual([]);
 	});
 });
