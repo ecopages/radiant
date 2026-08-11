@@ -1,4 +1,14 @@
-import { RuiDateRangePicker } from '@ecopages/radiant-ui/date-range-picker';
+import {
+	RuiDateRangePicker,
+	RuiDateRangePickerCalendar,
+	RuiDateRangePickerControl,
+	RuiDateRangePickerEndInput,
+	RuiDateRangePickerInputs,
+	RuiDateRangePickerPopover,
+	RuiDateRangePickerSeparator,
+	RuiDateRangePickerStartInput,
+	RuiDateRangePickerToggle,
+} from '@ecopages/radiant-ui/date-range-picker';
 import { RuiField } from '@ecopages/radiant-ui/field';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
@@ -38,7 +48,19 @@ export const meta = {
 				visibleMonths={args.visibleMonths}
 				disabled={args.disabled}
 				readOnly={args.readOnly}
-			/>
+			>
+				<RuiDateRangePickerControl>
+					<RuiDateRangePickerInputs>
+						<RuiDateRangePickerStartInput />
+						<RuiDateRangePickerSeparator />
+						<RuiDateRangePickerEndInput />
+					</RuiDateRangePickerInputs>
+					<RuiDateRangePickerToggle />
+				</RuiDateRangePickerControl>
+				<RuiDateRangePickerPopover>
+					<RuiDateRangePickerCalendar />
+				</RuiDateRangePickerPopover>
+			</RuiDateRangePicker>
 		</RuiField>
 	),
 } satisfies DocsMeta<DateRangePickerArgs>;
@@ -46,3 +68,11 @@ export const meta = {
 type Story = DocsStory<DateRangePickerArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'date-range-picker/default' } } });
+
+export const WithCalendar: Story = docsStory(meta, {
+	args: {
+		value: '',
+		visibleMonths: 2,
+	},
+	parameters: { docs: { id: 'date-range-picker/with-calendar' } },
+});
