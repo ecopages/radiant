@@ -47,41 +47,36 @@ export type DocsStory<TArgs extends DocsArgs = DocsArgs> = {
 };
 
 /**
- * Extracts a method type so callback parameters stay bivariant under `strictFunctionTypes`.
+ * Docs shell / registry meta after args have been erased to {@link DocsArgs}.
  *
  * @remarks
- * Uses method syntax (not a property) so parameters are bivariant. Needed so authored
- * `DocsMeta<T>` / `DocsStory<T>` values remain assignable to the erased registry types
- * without `any` on callback parameters.
+ * `render` / `exampleCode` use method syntax so authored `DocsMeta<T>` values stay
+ * assignable under `strictFunctionTypes`. Decorators are opaque here — the shell
+ * only invokes them after {@link docsStory} registration.
  */
-type Bivariant<T extends (...args: never[]) => unknown> = {
-	bivarianceHack(...args: Parameters<T>): ReturnType<T>;
-}['bivarianceHack'];
+export interface DocsMetaAny {
+	component?: string;
+	exportName?: string;
+	args?: DocsArgs;
+	argTypes?: DocsArgTypes<DocsArgs>;
+	decorators?: readonly unknown[];
+	render?(args: DocsArgs): JsxRenderable;
+	exampleCode?(args: DocsArgs): string;
+}
 
 /**
- * Type-erased docs meta for registry storage and canvas/controls props.
+ * Docs shell / registry story after args have been erased to {@link DocsArgs}.
  *
  * @remarks
- * Callback fields are bivariant against {@link DocsArgs} so specific `DocsMeta<T>`
- * values assign without an `any` erasure. Prefer {@link docsStory} for registration.
+ * Same interface boundary as {@link DocsMetaAny}.
  */
-export type DocsMetaAny = Omit<DocsMeta<DocsArgs>, 'render' | 'decorators' | 'exampleCode'> & {
-	decorators?: Bivariant<DocsDecorator<DocsArgs>>[];
-	render?: Bivariant<(args: DocsArgs) => JsxRenderable>;
-	exampleCode?: Bivariant<(args: DocsArgs) => string>;
-};
-
-/**
- * Type-erased docs story for registry storage and canvas/controls props.
- *
- * @remarks
- * Same bivariant callback boundary as {@link DocsMetaAny}.
- */
-export type DocsStoryAny = Omit<DocsStory<DocsArgs>, 'render' | 'decorators' | 'exampleCode'> & {
-	decorators?: Bivariant<DocsDecorator<DocsArgs>>[];
-	render?: Bivariant<(args: DocsArgs) => JsxRenderable>;
-	exampleCode?: Bivariant<(args: DocsArgs) => string>;
-};
+export interface DocsStoryAny {
+	args?: DocsArgs;
+	decorators?: readonly unknown[];
+	render?(args: DocsArgs): JsxRenderable;
+	exampleCode?(args: DocsArgs): string;
+	parameters: { docs: { id: string } };
+}
 
 /**
  * Resolved presentation for one control after heuristics run.
