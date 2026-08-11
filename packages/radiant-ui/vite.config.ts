@@ -21,6 +21,10 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@': path.join(dirname, 'src'),
+			/* Also set in `.storybook/main.ts`: `storybook dev` runs from the framework package,
+			   so it never loads this file. Both mirror `paths` in `tsconfig.app.json`.
+			   Must not be `@storybook` — that prefix shadows the real scope. */
+			'@sb': path.join(dirname, '.storybook'),
 		},
 	},
 	test: {

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, fn } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
-import { STORY_DIALOG_ID, withDialogRegistry, withDialogTrigger } from '../../../../.storybook/with-dialog';
+import { STORY_DIALOG_ID, withDialogRegistry, withDialogTrigger } from '@sb/with-dialog';
 import { RuiButton } from '../button';
 import {
 	RuiDialog,
