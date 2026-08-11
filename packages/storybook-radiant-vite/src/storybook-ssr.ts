@@ -98,9 +98,7 @@ export function applyControlOverrides(
 }
 
 function canDeepMergeArrayItems(baseItems: readonly unknown[], overrideItems: readonly unknown[]): boolean {
-	return (
-		baseItems.every(isPlainObject) && overrideItems.every((item) => item === undefined || isPlainObject(item))
-	);
+	return baseItems.every(isPlainObject) && overrideItems.every((item) => item === undefined || isPlainObject(item));
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
