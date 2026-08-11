@@ -6,6 +6,7 @@ import path from 'node:path';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import radiant from '@ecopages/vite-plugin-radiant';
 import tailwindcss from '@tailwindcss/vite';
+import { radiantUiAliases } from './.storybook/aliases.ts';
 
 const dirname = import.meta.dirname;
 const requireFromFramework = createRequire(path.join(dirname, '../storybook-radiant-vite/package.json'));
@@ -19,13 +20,7 @@ export default defineConfig({
 		exclude: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react-dom/test-utils'],
 	},
 	resolve: {
-		alias: {
-			'@': path.join(dirname, 'src'),
-			/* Also set in `.storybook/main.ts`: `storybook dev` runs from the framework package,
-			   so it never loads this file. Both mirror `paths` in `tsconfig.app.json`.
-			   Must not be `@storybook` — that prefix shadows the real scope. */
-			'@sb': path.join(dirname, '.storybook'),
-		},
+		alias: radiantUiAliases,
 	},
 	test: {
 		projects: [
