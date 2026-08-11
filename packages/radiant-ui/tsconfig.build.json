@@ -16,5 +16,7 @@
 		"src/lib",
 		"src/types.ts"
 	],
-	"exclude": ["**/*.stories.tsx"]
+	/* Stories and tests are development-only: emitting their declarations shipped
+     `dist/lib/*.test.d.ts` as part of the package's public type surface. */
+	"exclude": ["**/*.stories.tsx", "**/*.test.ts", "**/*.test.tsx", "**/*.test-d.ts"]
 }
