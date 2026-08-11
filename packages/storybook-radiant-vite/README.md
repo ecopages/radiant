@@ -110,9 +110,92 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 ```
 
+- `parameters.radiant.renderMode` — `client` (default), `ssr-hydrate`, or `ssr-static`.
 - `parameters.radiant.element` — optional SSR host. Prefer a custom-element constructor; omit for presentational views. A JSX view function is accepted by the type but only constructors are linked at runtime.
 - `parameters.radiant.cssImports` — paths relative to the story file; the Vite stamp transform injects side-effect CSS imports. Source-only, never read at runtime.
-- Use `withStylesheets` / `parameters.stylesheets` only for story-scoped extras (docs skins, etc.).
+
+Those three are the whole authoring surface. The remaining `radiant` fields (`ssrModule`,
+`ssrExport`, `clientModule`, `viewModule`, `viewExport`, `storyModule`, `storyExport`) are
+resolved from `meta.component` and its module stamps — declare one only to override that
+inference. The SSR error banner names the specific field when resolution fails.
+
+> **Important**
+> `radiant` is the framework's contract, and SSR modes cross an HTTP boundary to the Vite
+> middleware. Only JSON-serializable data travels — `args`, module paths, export names. There
+> is no server-side callback hook, so put host state in `args`.
+
+### Project and addon parameters
+
+`parameters` is enumerated, not open. Storybook types its own `Parameters` as
+`{ [name: string]: any }`; intersecting that would collapse `radiant` back to `any`, and even
+an `unknown` index signature silently swallows near-miss keys. Since a misspelled `radiant`
+skips SSR host linking and only shows up later as a canvas error banner, the framework drops
+the index signature so `satisfies` catches it immediately:
+
+```text
+error TS2561: Object literal may only specify known properties, but 'radidddant' does not
+exist in type 'RadiantParameters'. Did you mean to write 'radiant'?
+```
+
+Built in are the keys a default Storybook install already reads: `layout`, `docs`, `controls`,
+and `radiant`. There is **no augmentation hook** for adding more, and that is deliberate — a
+decorator that needs per-story configuration should take it as an argument, not read it back
+out of `parameters`.
+
+Write the decorator as a factory and configure it where it is applied:
+
+```ts
+// .storybook/with-stylesheets.ts
+import type { Decorator } from '@ecopages/storybook-radiant-vite';
+
+export function withStylesheets(entries: StylesheetEntry[]): Decorator {
+	return (Story) => {
+		/* ...use `entries` directly... */
+		return Story();
+	};
+}
+```
+
+```ts
+export const DocsNavigation: Story = {
+	decorators: [withStylesheets([docsNavCss])],
+};
+```
+
+The options are typed at the call site, the decorator needs no cast on `context.parameters`,
+and there is nothing to keep in sync between a parameter key and the code that reads it.
+
+**Prefer two decorators over one boolean.** Storybook composes `meta` and story decorators
+rather than letting a story replace one, so a `meta`-level decorator plus a per-story override
+is not expressible. That pressure is what produces flags like `trigger: false`. Split the
+behaviours instead and apply each where it belongs:
+
+```ts
+const meta = {
+	decorators: [withDialogRegistry], // every story needs the registry
+} satisfies Meta<typeof RuiDialog>;
+
+export const Default: Story = {
+	decorators: [withDialogTrigger], // only stories that want a trigger
+};
+
+export const Registry: Story = {
+	render: () => /* renders its own triggers, so no trigger decorator */ null,
+};
+```
+
+Likewise, if a story wants entirely different content, that belongs in its `render` — not in a
+flag that makes a decorator substitute content for a `render: () => null`.
+
+> **Note**
+> `parameters` is a weak type (every member optional), so TypeScript also rejects a value that
+> shares no key with it (`TS2559`). That covers helper returns and spreads, which
+> excess-property checking cannot see — so a smuggled-in parameter fails even when it is not
+> written as a literal. Keep `RadiantParameters` free of zero-property members: one empty
+> intersection member silently disables that check everywhere.
+
+Add a key to `RadiantParameters` itself only for an addon that reads `parameters` on its own
+behalf and therefore cannot be a decorator argument.
 
 **Always annotate with `satisfies`, never a wrapper function.** `Meta<T>` is a conditional
 type, so TypeScript cannot infer `T` from a parameter typed by it — a `defineMeta(meta)`
