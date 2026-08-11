@@ -154,8 +154,21 @@ export class RuiSelect extends RadiantElement {
 		});
 	}
 
+	/**
+	 * Resolves the multi-select chip host inside the value slot.
+	 *
+	 * @remarks
+	 * During Storybook/SSR upgrade, `querySelector` can return the host before
+	 * `rui-tag-group` is defined — treat that as absent until `setItems` exists.
+	 */
 	private getTagGroup(): RuiTagGroup | null {
-		return this.querySelector<RuiTagGroup>('[data-select-value] rui-tag-group');
+		const tagGroup = this.querySelector<RuiTagGroup>('[data-select-value] rui-tag-group');
+
+		if (!tagGroup || typeof tagGroup.setItems !== 'function') {
+			return null;
+		}
+
+		return tagGroup;
 	}
 
 	private hasTagGroup(): boolean {
