@@ -53,8 +53,9 @@ export function appendRadiantScriptModuleStamps(code: string, moduleId: string, 
  * Collect relative `*.css` paths from `cssImports: [...]` literals in `parameters.radiant`.
  *
  * @remarks
- * Deliberately distinct from `parameters.stylesheets`, which `withStylesheetsDecorator`
- * injects at render time — only `cssImports` becomes a build-time side-effect import.
+ * `cssImports` is the only CSS channel that becomes a build-time side-effect import. Skins and
+ * other story-scoped extras are loaded at render time by a decorator (see `withStylesheets` in
+ * radiant-ui) and are deliberately not scanned here.
  */
 export function collectDeclaredCssImports(code: string): string[] {
 	const paths = [...code.matchAll(/cssImports:\s*\[([^\]]*)\]/g)].flatMap((match) =>
