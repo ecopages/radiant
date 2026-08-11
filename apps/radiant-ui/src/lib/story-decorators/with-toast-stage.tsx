@@ -11,9 +11,9 @@ export const TOAST_STAGE_CLASS = 'playground-toast-stage';
 export const TOAST_STAGE_SELECTOR = `.${TOAST_STAGE_CLASS}`;
 
 /**
- * Args the stage reads. Required, not optional: `meta.args` supplies every one, and the docs
- * controls preserve their types — `rui-number-field` only emits `number`, `rui-switch` only
- * `boolean` — so the stage can use them directly instead of re-coercing and re-defaulting.
+ * Args the stage reads. Required, not optional: `DocsMeta.args` is complete by construction,
+ * and the docs controls preserve their types — `rui-number-field` only emits `number`,
+ * `rui-switch` only `boolean` — so the stage uses them directly, with no defaults of its own.
  */
 export type ToastStageArgs = {
 	position: ToastPosition;
@@ -30,23 +30,20 @@ export type ToastStageArgs = {
  * The stage owns the toaster because `container` has to point at the stage element. The trigger
  * content is the story's own `render` — this decorator provides the frame, not the content.
  */
-export function withToastStage<TArgs extends ToastStageArgs>(): DocsDecorator<TArgs> {
-	return (story, context) => {
-		toast.clear();
-		const args = context.args;
+export const withToastStage: DocsDecorator<ToastStageArgs> = (story, { args }) => {
+	toast.clear();
 
-		return (
-			<div class={TOAST_STAGE_CLASS}>
-				<div class="playground-toast-stage__actions">{story()}</div>
-				<RuiToaster
-					container={TOAST_STAGE_SELECTOR}
-					position={args.position}
-					duration={args.duration}
-					visibleToasts={args.visibleToasts}
-					closeButton={args.closeButton}
-					expand={args.expand}
-				/>
-			</div>
-		);
-	};
-}
+	return (
+		<div class={TOAST_STAGE_CLASS}>
+			<div class="playground-toast-stage__actions">{story()}</div>
+			<RuiToaster
+				container={TOAST_STAGE_SELECTOR}
+				position={args.position}
+				duration={args.duration}
+				visibleToasts={args.visibleToasts}
+				closeButton={args.closeButton}
+				expand={args.expand}
+			/>
+		</div>
+	);
+};
