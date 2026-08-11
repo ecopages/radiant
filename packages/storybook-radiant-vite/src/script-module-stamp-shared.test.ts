@@ -28,8 +28,8 @@ const meta = {
 		expect(collectDeclaredCssImports(code)).toEqual(['../shared.css', './ok.css']);
 	});
 
-	test('ignores parameters.stylesheets, which is injected at render time', () => {
-		const code = `parameters: { stylesheets: ['./skin.css'], radiant: { renderMode: 'client' } }`;
+	test('ignores css passed to a render-time decorator', () => {
+		const code = `decorators: [withStylesheets(['./skin.css'])], parameters: { radiant: { renderMode: 'client' } }`;
 		expect(collectDeclaredCssImports(code)).toEqual([]);
 	});
 });
