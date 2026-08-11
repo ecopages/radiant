@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
-import { RuiRadioGroup } from './radio-group';
+import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from './radio-group';
 import { RuiRadioGroup as RuiRadioGroupElement } from './radio-group.script';
 
 const defaultOptions = [
@@ -71,6 +71,27 @@ export const Disabled: Story = {
 			for (const radio of radios) {
 				await expect(radio).toBeDisabled();
 			}
+		});
+	},
+};
+
+export const Composed: Story = {
+	render: () => (
+		<RuiRadioGroup name="contact" label="Preferred contact method">
+			<RuiRadioGroupControl>
+				<RuiRadio value="email">Email</RuiRadio>
+				<RuiRadio value="sms">SMS</RuiRadio>
+				<RuiRadio value="push">Push</RuiRadio>
+			</RuiRadioGroupControl>
+		</RuiRadioGroup>
+	),
+	play: async ({ canvasElement, step }) => {
+		const host = canvasElement.querySelector('rui-radio-group') as HTMLElement;
+		const radios = getRadios(canvasElement);
+
+		await step('composed options update the group value', async () => {
+			await userEvent.click(radios[1]);
+			await expect(host).toHaveAttribute('value', 'sms');
 		});
 	},
 };
