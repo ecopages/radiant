@@ -1,24 +1,14 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import { toastStage, withToastStage } from '../../../../.storybook/with-toast-stage';
+import { expect, within } from 'storybook/test';
+import { ToastDemoTriggers, withToastPositions, withToastStage } from '../../../../.storybook/with-toast';
 import { ToastTrigger } from '../../../../.storybook/toast-trigger';
-import type { ToastPosition } from './toast-context';
-import { RuiToaster, toast } from './index';
+import { RuiToaster, TOAST_POSITIONS, toast } from './index';
 import { RuiToaster as RuiToasterElement } from './toaster.script';
-
-const TOAST_POSITIONS: readonly ToastPosition[] = [
-	'top-start',
-	'top-center',
-	'top-end',
-	'bottom-start',
-	'bottom-center',
-	'bottom-end',
-];
 
 const meta = {
 	title: 'Components/Toast',
 	component: RuiToaster,
 	parameters: { radiant: { element: RuiToasterElement, cssImports: ['./toast.css'] } },
-	decorators: [withToastStage],
 	args: {
 		position: 'bottom-end',
 		duration: 4000,
@@ -37,11 +27,19 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-	parameters: toastStage({ demo: true }),
-	render: () => null,
+	decorators: [withToastStage],
+	render: () => <ToastDemoTriggers />,
+	play: async ({ canvasElement }) => {
+		// The trigger set is the story's own render, not something the stage injects.
+		const canvas = within(canvasElement);
+		expect(canvas.getByRole('button', { name: 'Show default toast' })).toBeInTheDocument();
+		expect(canvas.getByRole('button', { name: 'Dismiss all toasts' })).toBeInTheDocument();
+		expect(canvasElement.querySelector('rui-toaster')).toBeInTheDocument();
+	},
 };
 
 export const Stack: Story = {
+	decorators: [withToastStage],
 	render: () => (
 		<ToastTrigger
 			label="Stack three toasts"
@@ -55,6 +53,7 @@ export const Stack: Story = {
 };
 
 export const VisibleToasts: Story = {
+	decorators: [withToastStage],
 	args: {
 		visibleToasts: 5,
 	},
@@ -71,6 +70,7 @@ export const VisibleToasts: Story = {
 };
 
 export const AlwaysExpanded: Story = {
+	decorators: [withToastStage],
 	args: {
 		expand: true,
 	},
@@ -87,7 +87,7 @@ export const AlwaysExpanded: Story = {
 };
 
 export const Positions: Story = {
-	parameters: toastStage({ multiToaster: true }),
+	decorators: [withToastPositions],
 	render: () => (
 		<>
 			{TOAST_POSITIONS.map((position) => (
@@ -103,6 +103,7 @@ export const Positions: Story = {
 };
 
 export const WithAction: Story = {
+	decorators: [withToastStage],
 	args: {
 		duration: 8000,
 	},
