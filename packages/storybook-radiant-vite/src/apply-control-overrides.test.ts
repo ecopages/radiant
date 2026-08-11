@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { applyControlOverrides } from './storybook-ssr.ts';
+import { applyControlOverrides } from './storybook-ssr';
 
 describe('applyControlOverrides', () => {
 	test('replaces nested array args instead of spreading them into objects', () => {
