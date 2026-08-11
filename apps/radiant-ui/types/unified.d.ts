@@ -8,21 +8,13 @@
  * `Plugin<[], Root>` values remain assignable under `strictFunctionTypes`.
  */
 declare module 'unified' {
-	export type Plugin<
-		PluginParameters extends unknown[] = [],
-		Input = unknown,
-		Output = Input,
-	> = (
+	export type Plugin<PluginParameters extends unknown[] = [], Input = unknown, Output = Input> = (
 		this: unknown,
 		...settings: PluginParameters
 	) => ((tree: Input, file?: unknown) => Output | undefined | void) | undefined | void;
 
 	export type Pluggable =
-		| ((...args: never[]) => unknown)
-		| [(...args: never[]) => unknown, ...unknown[]]
-		| false
-		| null
-		| undefined;
+		((...args: never[]) => unknown) | [(...args: never[]) => unknown, ...unknown[]] | false | null | undefined;
 
 	export type PluggableList = Pluggable[];
 }
