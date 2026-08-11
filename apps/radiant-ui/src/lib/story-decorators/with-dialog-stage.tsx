@@ -7,21 +7,20 @@ export const DOCS_DIALOG_ID = 'docs-dialog';
  * Installs the dialog registry and renders a `data-dialog-open` trigger above the story.
  *
  * @remarks
- * A factory rather than a plain constant so `TArgs` is inferred at the call site, which is what
- * types `context.args.id`. Options, if ever needed, belong as arguments here — `DocsDecorator`
- * contexts expose only `parameters.docs`, so there is no parameter channel to read them from.
+ * `DocsDecorator` is contravariant in its args, so this plain constant applies to any story
+ * whose args include `id`. Options, if ever needed, become parameters of a factory here —
+ * `DocsDecoratorContext` exposes only `parameters.docs`, so there is no channel to read them
+ * from at render time.
  */
-export function withDialogStage<TArgs extends { id?: string }>(): DocsDecorator<TArgs> {
-	return (story, context) => {
-		installDialogs();
+export const withDialogStage: DocsDecorator<{ id?: string }> = (story, { args }) => {
+	installDialogs();
 
-		return (
-			<>
-				<RuiButton type="button" data-dialog-open={context.args.id ?? DOCS_DIALOG_ID}>
-					Open dialog
-				</RuiButton>
-				<div style="margin-top: 1rem">{story()}</div>
-			</>
-		);
-	};
-}
+	return (
+		<>
+			<RuiButton type="button" data-dialog-open={args.id ?? DOCS_DIALOG_ID}>
+				Open dialog
+			</RuiButton>
+			<div style="margin-top: 1rem">{story()}</div>
+		</>
+	);
+};
