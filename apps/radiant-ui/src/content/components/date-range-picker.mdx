@@ -30,22 +30,7 @@ export const config = {
 
 ## Usage
 
-Pass `value` as `start/end` ISO dates. Increase `visibleMonths` to show two months side by side for range selection.
-
-```tsx
-import { RuiDateRangePicker } from '@ecopages/radiant-ui/date-range-picker';
-import { RuiField } from '@ecopages/radiant-ui/field';
-import { RuiLabel } from '@ecopages/radiant-ui/label';
-
-<RuiField name="tripDates">
-  <RuiLabel>Trip dates</RuiLabel>
-  <RuiDateRangePicker value="2026-08-01/2026-08-14" visibleMonths={2} />
-</RuiField>
-```
-
-## Composition
-
-`RuiDateRangePicker` provides this structure by default. Pass children when you need to compose the inputs, toggle, popup, or calendar yourself.
+Compose the two inputs, separator, calendar trigger, popup, and calendar as children of `RuiDateRangePicker`. When no children are supplied, `RuiDateRangePicker` renders this same composition for you. Pass `value` as `start/end` ISO dates and give each input its own accessible name.
 
 ```tsx
 import {
@@ -59,25 +44,30 @@ import {
   RuiDateRangePickerStartInput,
   RuiDateRangePickerToggle,
 } from '@ecopages/radiant-ui/date-range-picker';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
 
-<RuiDateRangePicker>
-  <RuiDateRangePickerControl>
-    <RuiDateRangePickerInputs>
-      <RuiDateRangePickerStartInput />
-      <RuiDateRangePickerSeparator />
-      <RuiDateRangePickerEndInput />
-    </RuiDateRangePickerInputs>
-    <RuiDateRangePickerToggle />
-  </RuiDateRangePickerControl>
-  <RuiDateRangePickerPopover>
-    <RuiDateRangePickerCalendar />
-  </RuiDateRangePickerPopover>
-</RuiDateRangePicker>
+<RuiField name="tripDates">
+  <RuiLabel>Trip dates</RuiLabel>
+  <RuiDateRangePicker value="2026-08-01/2026-08-14" visibleMonths={2}>
+    <RuiDateRangePickerControl>
+      <RuiDateRangePickerInputs>
+        <RuiDateRangePickerStartInput aria-label="Start date" />
+        <RuiDateRangePickerSeparator />
+        <RuiDateRangePickerEndInput aria-label="End date" />
+      </RuiDateRangePickerInputs>
+      <RuiDateRangePickerToggle />
+    </RuiDateRangePickerControl>
+    <RuiDateRangePickerPopover>
+      <RuiDateRangePickerCalendar />
+    </RuiDateRangePickerPopover>
+  </RuiDateRangePicker>
+</RuiField>
 ```
 
 ## Calendar input
 
-Use the calendar button to select the start and end dates. The picker stays open until both dates are selected.
+Use the calendar button to select the start and end dates. After the first date is selected, the popup stays open for the second date and closes when the range is complete. Focus moves to the selected start date or the first available date when the popup opens.
 
 <Canvas of={WithCalendar} meta={DateRangePickerMeta} />
 
@@ -132,6 +122,21 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | --- | --- | --- |
 | `rui-change` | `{ value, start, end }` | Fired when a valid range is committed (typing or calendar pick). |
 
+### Composition helpers
+
+Pass these helpers as `RuiDateRangePicker` children when the default structure is not enough:
+
+| Helper | Renders |
+| --- | --- |
+| `RuiDateRangePickerControl` | Bordered control row containing the inputs and trigger. |
+| `RuiDateRangePickerInputs` | Row containing the start input, separator, and end input. |
+| `RuiDateRangePickerStartInput` | Native text input for the range start. Give it an accessible name. |
+| `RuiDateRangePickerSeparator` | Visual separator between the two inputs. |
+| `RuiDateRangePickerEndInput` | Native text input for the range end. Give it an accessible name. |
+| `RuiDateRangePickerToggle` | Button that opens and closes the range calendar popup. |
+| `RuiDateRangePickerPopover` | Popup shell for the range calendar. |
+| `RuiDateRangePickerCalendar` | `RuiCalendar` in range-selection mode, synchronized with the picker value and constraints. |
+
 ### CSS classes
 
 Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on `RuiDateRangePicker`):
@@ -158,6 +163,6 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 
 ## Accessibility
 
-- Label both start and end inputs, placeholders alone are not sufficient.
-- Selected range endpoints are announced when focus moves between segments.
+- Give both native inputs distinct accessible names; placeholders alone are not sufficient. The example uses `aria-label` on each input.
+- The calendar trigger opens the popup and moves focus to the selected start date or first available date; arrow keys move between days, Page Up / Page Down change months, and Escape closes the popup.
 - Surface validation errors for incomplete ranges before form submission.
