@@ -225,5 +225,4 @@ export class RuiMenuButton extends RadiantElement {
 		this.changeEvent.emit({ value });
 		this.setOpen(false, 'trigger');
 	}
-
 }

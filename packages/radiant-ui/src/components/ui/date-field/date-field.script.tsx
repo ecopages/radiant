@@ -314,12 +314,16 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 
 			const calendar = this.getCalendar();
 			const selectedDay = this.isoValue
-				? calendar?.querySelector<HTMLButtonElement>(`[data-calendar-day][data-iso="${this.isoValue}"]:not(:disabled)`)
+				? calendar?.querySelector<HTMLButtonElement>(
+						`[data-calendar-day][data-iso="${this.isoValue}"]:not(:disabled)`,
+					)
 				: null;
-			(selectedDay ??
+			(
+				selectedDay ??
 				calendar?.querySelector<HTMLButtonElement>(
 					'[data-calendar-day][tabindex="0"]:not(:disabled), [data-calendar-day]:not(:disabled)',
-				))?.focus();
+				)
+			)?.focus();
 		});
 	}
 
@@ -361,7 +365,19 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['value', 'min', 'max', 'label', 'placeholder', 'disabled', 'readOnly', 'locale', 'dateStyle', 'masked', 'visibleMonths'])
+	@onUpdated([
+		'value',
+		'min',
+		'max',
+		'label',
+		'placeholder',
+		'disabled',
+		'readOnly',
+		'locale',
+		'dateStyle',
+		'masked',
+		'visibleMonths',
+	])
 	onPropsUpdated(): void {
 		this.syncLabel();
 		this.syncInput();
@@ -490,14 +506,16 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		this.setOpen(false);
 	}
 
-	@onEvent({ selector: '[data-date-field-input], [data-date-field-trigger], [data-date-field-calendar]', type: 'keydown' })
+	@onEvent({
+		selector: '[data-date-field-input], [data-date-field-trigger], [data-date-field-calendar]',
+		type: 'keydown',
+	})
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
 			this.setOpen(false);
 		}
 	}
-
 }
 
 function dateToMaskDigits(date: Date, locale: string | string[] | undefined): string {

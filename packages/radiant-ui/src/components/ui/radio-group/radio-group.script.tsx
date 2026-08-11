@@ -95,5 +95,4 @@ export class RuiRadioGroup extends RadiantElement {
 		this.value = input.value;
 		this.changeEvent.emit({ value: this.value });
 	}
-
 }

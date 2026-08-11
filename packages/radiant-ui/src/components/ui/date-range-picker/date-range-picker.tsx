@@ -64,7 +64,11 @@ export function RuiDateRangePickerEndInput({ class: className, ...props }: RuiDa
 export type RuiDateRangePickerSeparatorProps = JsxHtmlPropsWithChildren;
 
 /** Visual separator between the start and end inputs. */
-export function RuiDateRangePickerSeparator({ children = '–', class: className, ...props }: RuiDateRangePickerSeparatorProps) {
+export function RuiDateRangePickerSeparator({
+	children = '–',
+	class: className,
+	...props
+}: RuiDateRangePickerSeparatorProps) {
 	return (
 		<span {...props} class={cx('rui-date-range-picker__separator', className)} aria-hidden="true">
 			{children}

@@ -237,10 +237,12 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 			const selectedDay = start
 				? calendar?.querySelector<HTMLButtonElement>(`[data-calendar-day][data-iso="${start}"]:not(:disabled)`)
 				: null;
-			(selectedDay ??
+			(
+				selectedDay ??
 				calendar?.querySelector<HTMLButtonElement>(
 					'[data-calendar-day][tabindex="0"]:not(:disabled), [data-calendar-day]:not(:disabled)',
-				))?.focus();
+				)
+			)?.focus();
 		});
 	}
 
@@ -426,7 +428,10 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 		this.setOpen(false);
 	}
 
-	@onEvent({ selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-calendar]', type: 'keydown' })
+	@onEvent({
+		selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-calendar]',
+		type: 'keydown',
+	})
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
@@ -458,5 +463,4 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 			this.setOpen(false);
 		});
 	}
-
 }

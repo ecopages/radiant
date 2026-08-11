@@ -229,7 +229,9 @@ export class RuiCalendar extends RadiantElement {
 	/** Moves roving focus without rebuilding a grid that already contains the target day. */
 	private focusDayInCurrentGrid(iso: string): void {
 		const current = this.querySelector<HTMLButtonElement>('[data-calendar-day][tabindex="0"]');
-		const candidates = Array.from(this.querySelectorAll<HTMLButtonElement>(`[data-calendar-day][data-iso="${iso}"]:not(:disabled)`));
+		const candidates = Array.from(
+			this.querySelectorAll<HTMLButtonElement>(`[data-calendar-day][data-iso="${iso}"]:not(:disabled)`),
+		);
 		const next = candidates.find((day) => !day.hasAttribute('data-outside')) ?? candidates[0];
 		if (!next) {
 			return;
