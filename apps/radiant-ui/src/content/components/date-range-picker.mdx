@@ -32,6 +32,8 @@ export const config = {
 
 Compose the two inputs, separator, calendar trigger, popup, and calendar as children of `RuiDateRangePicker`. When no children are supplied, `RuiDateRangePicker` renders this same composition for you. Pass `value` as `start/end` ISO dates and give each input its own accessible name.
 
+The default composition accepts `startLabel` and `endLabel` view props for the two native inputs. Use those props when the default structure is sufficient; set `aria-label` directly on `RuiDateRangePickerStartInput` and `RuiDateRangePickerEndInput` when composing the children yourself.
+
 ```tsx
 import {
   RuiDateRangePicker,
@@ -121,6 +123,15 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ value, start, end }` | Fired when a valid range is committed (typing or calendar pick). |
+
+### JSX view props
+
+These props configure the default child composition rendered by the `RuiDateRangePicker` JSX view. They are not custom-element attributes.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `startLabel` | `string` | `Start date` | Accessible name for the default start-date input. |
+| `endLabel` | `string` | `End date` | Accessible name for the default end-date input. |
 
 ### Composition helpers
 

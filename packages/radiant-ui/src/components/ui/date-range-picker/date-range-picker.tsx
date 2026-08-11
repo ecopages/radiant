@@ -125,6 +125,14 @@ export function RuiDateRangePickerCalendar(props: RuiDateRangePickerCalendarProp
 	return <RuiCalendar {...props} data-range-calendar />;
 }
 
+export type RuiDateRangePickerViewProps = RuiDateRangePickerProps & {
+	slot?: string;
+	/** Accessible name for the default start-date input. */
+	startLabel?: string;
+	/** Accessible name for the default end-date input. */
+	endLabel?: string;
+};
+
 /**
  * Locale-aware date range picker with text inputs and a range calendar popover.
  *
@@ -132,17 +140,19 @@ export function RuiDateRangePickerCalendar(props: RuiDateRangePickerCalendarProp
  */
 export function RuiDateRangePicker({
 	children,
+	startLabel = 'Start date',
+	endLabel = 'End date',
 	...props
-}: JsxHtmlPropsWithChildren<RuiDateRangePickerProps & { slot?: string }>) {
+}: JsxHtmlPropsWithChildren<RuiDateRangePickerViewProps>) {
 	return (
 		<rui-date-range-picker {...props}>
 			{children ?? (
 				<>
 					<RuiDateRangePickerControl>
 						<RuiDateRangePickerInputs>
-							<RuiDateRangePickerStartInput />
+							<RuiDateRangePickerStartInput aria-label={startLabel} />
 							<RuiDateRangePickerSeparator />
-							<RuiDateRangePickerEndInput />
+							<RuiDateRangePickerEndInput aria-label={endLabel} />
 						</RuiDateRangePickerInputs>
 						<RuiDateRangePickerToggle />
 					</RuiDateRangePickerControl>
