@@ -74,6 +74,12 @@ export function collectHydrationBindings(
  *
  * Used to skip a nested subtree's slice of the global namespace when a caller
  * needs the index a later sibling starts at.
+ *
+ * @remarks
+ * A custom-element root is serialized by the SSR render hook, which returns
+ * before taking any index. Its whole subtree contributes nothing to the parent's
+ * namespace, and counting it would shift every later marker — hence the
+ * {@link shouldSkipHydrationSubtree} early return.
  */
 export function countHydrationMarkers(value: JsxRenderable): number {
 	if (value === undefined || value === null || value === false || value === true) {
@@ -81,9 +87,6 @@ export function countHydrationMarkers(value: JsxRenderable): number {
 	}
 
 	if (isTemplateResultLike(value)) {
-		// A custom-element root is serialized by the SSR render hook, which returns
-		// before taking any index. Its whole subtree contributes nothing to the
-		// parent's namespace, and counting it would shift every later marker.
 		if (shouldSkipHydrationSubtree(value.rootLocalName ?? '')) {
 			return 0;
 		}
