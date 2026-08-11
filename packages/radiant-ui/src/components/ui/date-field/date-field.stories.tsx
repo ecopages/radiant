@@ -4,7 +4,14 @@ import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
 import { RuiLabel } from '../label';
 import { RuiButton } from '../button';
-import { RuiDateField } from './date-field';
+import {
+	RuiDateField,
+	RuiDateFieldCalendar,
+	RuiDateFieldControl,
+	RuiDateFieldInput,
+	RuiDateFieldPopover,
+	RuiDateFieldToggle,
+} from './date-field';
 import { RuiDateField as RuiDateFieldElement } from './date-field.script';
 
 const meta = {
@@ -83,6 +90,17 @@ export const WithCalendar: Story = {
 	args: {
 		value: '',
 	},
+	render: () => (
+		<RuiDateField label="Appointment date">
+			<RuiDateFieldControl>
+				<RuiDateFieldInput />
+				<RuiDateFieldToggle />
+			</RuiDateFieldControl>
+			<RuiDateFieldPopover>
+				<RuiDateFieldCalendar />
+			</RuiDateFieldPopover>
+		</RuiDateField>
+	),
 	play: async ({ canvasElement, step }) => {
 		const host = canvasElement.querySelector('rui-date-field') as HTMLElement;
 		const trigger = canvasElement.querySelector('[data-date-field-trigger]') as HTMLButtonElement;
@@ -90,11 +108,34 @@ export const WithCalendar: Story = {
 		await step('opens the calendar from the trigger and selects a date', async () => {
 			await userEvent.click(trigger);
 			await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+			await waitFor(() => {
+				expect(document.activeElement?.matches('[data-calendar-day]')).toBe(true);
+			});
 			await userEvent.click(canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-21"]')!);
 			await waitFor(() => {
 				expect(host.getAttribute('value')).toBe('2026-08-21');
 			});
 			await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+		});
+	},
+};
+
+export const KeyboardCalendar: Story = {
+	args: {
+		value: '2026-08-31',
+	},
+	play: async ({ canvasElement, step }) => {
+		const trigger = canvasElement.querySelector('[data-date-field-trigger]') as HTMLButtonElement;
+
+		await step('the opened calendar accepts day-arrow navigation', async () => {
+			await userEvent.click(trigger);
+			await waitFor(() => {
+				expect(document.activeElement).toHaveAttribute('data-iso', '2026-08-31');
+			});
+			await userEvent.keyboard('{ArrowRight}');
+			await waitFor(() => {
+				expect(document.activeElement).toHaveAttribute('data-iso', '2026-09-01');
+			});
 		});
 	},
 };
