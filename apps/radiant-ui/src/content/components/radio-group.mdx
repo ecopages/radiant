@@ -33,15 +33,17 @@ export const config = {
 Set `value` for the selected option and provide radio inputs as children. Wrap in `RuiField` for form integration.
 
 ```tsx
-import { RuiRadioGroup } from '@ecopages/radiant-ui/radio-group';
+import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '@ecopages/radiant-ui/radio-group';
 import { RuiField } from '@ecopages/radiant-ui/field';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <RuiField name="plan">
   <RuiLabel>Plan</RuiLabel>
   <RuiRadioGroup value="pro" name="plan" label="Plan">
-    <label><input type="radio" value="free" /> Free</label>
-    <label><input type="radio" value="pro" /> Pro</label>
+    <RuiRadioGroupControl>
+      <RuiRadio value="free">Free</RuiRadio>
+      <RuiRadio value="pro">Pro</RuiRadio>
+    </RuiRadioGroupControl>
   </RuiRadioGroup>
 </RuiField>
 ```
@@ -66,7 +68,7 @@ The custom control dot is decorative (`aria-hidden`), the visually hidden native
 
 ## API
 
-`RuiRadioGroup` is a custom element (`<rui-radio-group>`); the `RuiRadioGroup` view renders one labeled radio per `options` entry.
+`RuiRadioGroup` is a custom element (`<rui-radio-group>`). Compose its options with `RuiRadioGroupControl` and `RuiRadio`, or use the convenience `options` prop to generate the same structure.
 
 ### Attributes
 
