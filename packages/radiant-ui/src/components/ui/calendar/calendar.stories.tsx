@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import { expect, userEvent } from 'storybook/test';
+import { expect, userEvent, waitFor } from 'storybook/test';
 import { RuiCalendar } from './calendar';
 import { RuiCalendar as RuiCalendarElement } from './calendar.script';
 
@@ -42,6 +42,36 @@ export const WithMinMax: Story = {
 		await step('disables days outside range', async () => {
 			const disabled = canvasElement.querySelectorAll('[data-calendar-day]:disabled');
 			await expect(disabled.length).toBeGreaterThan(0);
+		});
+	},
+};
+
+export const KeyboardNavigation: Story = {
+	args: {
+		value: '2026-08-31',
+	},
+	play: async ({ canvasElement, step }) => {
+		const selectedDay = canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-31"]') as HTMLButtonElement;
+
+		await step('arrow navigation moves focus across a month boundary', async () => {
+			selectedDay.focus();
+			await userEvent.keyboard('{ArrowLeft}');
+			await expect(selectedDay.isConnected).toBe(true);
+			await expect(selectedDay).toHaveAttribute('tabindex', '-1');
+			await expect(document.activeElement).toHaveAttribute('data-iso', '2026-08-30');
+			await userEvent.keyboard('{ArrowRight}');
+			await expect(document.activeElement).toBe(selectedDay);
+			await userEvent.keyboard('{ArrowRight}');
+			await waitFor(() => {
+				expect(document.activeElement).toHaveAttribute('data-iso', '2026-09-01');
+			});
+		});
+
+		await step('PageDown preserves the focused day in the next month', async () => {
+			await userEvent.keyboard('{PageDown}');
+			await waitFor(() => {
+				expect(document.activeElement).toHaveAttribute('data-iso', '2026-10-01');
+			});
 		});
 	},
 };

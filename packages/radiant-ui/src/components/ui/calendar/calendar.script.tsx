@@ -206,13 +206,60 @@ export class RuiCalendar extends RadiantElement {
 			return;
 		}
 
-		if (next.date.getMonth() !== this.viewMonth || next.date.getFullYear() !== this.viewYear) {
+		if (!this.isMonthVisible(next.date)) {
 			this.viewYear = next.date.getFullYear();
 			this.viewMonth = next.date.getMonth();
+			this.focusedIso = next.iso;
+			this.refreshGrid();
+			this.focusFocusedDay();
+			return;
 		}
 
 		this.focusedIso = next.iso;
+		this.focusDayInCurrentGrid(next.iso);
+	}
+
+	private isMonthVisible(date: Date): boolean {
+		const visibleStart = this.viewYear * 12 + this.viewMonth;
+		const visibleEnd = visibleStart + this.visibleMonths - 1;
+		const target = date.getFullYear() * 12 + date.getMonth();
+		return target >= visibleStart && target <= visibleEnd;
+	}
+
+	/** Moves roving focus without rebuilding a grid that already contains the target day. */
+	private focusDayInCurrentGrid(iso: string): void {
+		const current = this.querySelector<HTMLButtonElement>('[data-calendar-day][tabindex="0"]');
+		const candidates = Array.from(this.querySelectorAll<HTMLButtonElement>(`[data-calendar-day][data-iso="${iso}"]:not(:disabled)`));
+		const next = candidates.find((day) => !day.hasAttribute('data-outside')) ?? candidates[0];
+		if (!next) {
+			return;
+		}
+
+		if (current && current !== next) {
+			current.tabIndex = -1;
+		}
+		next.tabIndex = 0;
+		next.focus();
+	}
+
+	/** Restores DOM focus after rebuilding the grid around a newly visible day. */
+	private focusFocusedDay(): void {
+		requestAnimationFrame(() => {
+			this.focusDayInCurrentGrid(this.focusedIso);
+		});
+	}
+
+	private moveFocusedMonth(delta: number): void {
+		const current = isoToDate(this.focusedIso) ?? new Date(this.viewYear, this.viewMonth, 1);
+		const target = new Date(current.getFullYear(), current.getMonth() + delta, 1);
+		const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+		const next = new Date(target.getFullYear(), target.getMonth(), Math.min(current.getDate(), lastDay));
+
+		this.viewYear = next.getFullYear();
+		this.viewMonth = next.getMonth();
+		this.focusedIso = dateToIso(next);
 		this.refreshGrid();
+		this.focusFocusedDay();
 	}
 
 	private isIsoAllowed(iso: string): boolean {
@@ -374,6 +421,10 @@ export class RuiCalendar extends RadiantElement {
 		if (this.disabled) {
 			return;
 		}
+		const currentIso = (event.target as HTMLButtonElement).getAttribute('data-iso');
+		if (currentIso) {
+			this.focusedIso = currentIso;
+		}
 
 		if (event.key === 'ArrowLeft') {
 			event.preventDefault();
@@ -397,12 +448,12 @@ export class RuiCalendar extends RadiantElement {
 		}
 		if (event.key === 'PageUp') {
 			event.preventDefault();
-			this.moveMonth(event.shiftKey ? -12 : -this.pageDelta);
+			this.moveFocusedMonth(event.shiftKey ? -12 : -this.pageDelta);
 			return;
 		}
 		if (event.key === 'PageDown') {
 			event.preventDefault();
-			this.moveMonth(event.shiftKey ? 12 : this.pageDelta);
+			this.moveFocusedMonth(event.shiftKey ? 12 : this.pageDelta);
 			return;
 		}
 		if (event.key === 'Enter' || event.key === ' ') {
