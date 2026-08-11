@@ -46,8 +46,42 @@ export type DocsStory<TArgs extends DocsArgs = DocsArgs> = {
 	parameters: { docs: { id: string } };
 };
 
-export type DocsMetaAny = DocsMeta<DocsArgs>;
-export type DocsStoryAny = DocsStory<DocsArgs>;
+/**
+ * Extracts a method type so callback parameters stay bivariant under `strictFunctionTypes`.
+ *
+ * @remarks
+ * Uses method syntax (not a property) so parameters are bivariant. Needed so authored
+ * `DocsMeta<T>` / `DocsStory<T>` values remain assignable to the erased registry types
+ * without `any` on callback parameters.
+ */
+type Bivariant<T extends (...args: never[]) => unknown> = {
+	bivarianceHack(...args: Parameters<T>): ReturnType<T>;
+}['bivarianceHack'];
+
+/**
+ * Type-erased docs meta for registry storage and canvas/controls props.
+ *
+ * @remarks
+ * Callback fields are bivariant against {@link DocsArgs} so specific `DocsMeta<T>`
+ * values assign without an `any` erasure. Prefer {@link docsStory} for registration.
+ */
+export type DocsMetaAny = Omit<DocsMeta<DocsArgs>, 'render' | 'decorators' | 'exampleCode'> & {
+	decorators?: Bivariant<DocsDecorator<DocsArgs>>[];
+	render?: Bivariant<(args: DocsArgs) => JsxRenderable>;
+	exampleCode?: Bivariant<(args: DocsArgs) => string>;
+};
+
+/**
+ * Type-erased docs story for registry storage and canvas/controls props.
+ *
+ * @remarks
+ * Same bivariant callback boundary as {@link DocsMetaAny}.
+ */
+export type DocsStoryAny = Omit<DocsStory<DocsArgs>, 'render' | 'decorators' | 'exampleCode'> & {
+	decorators?: Bivariant<DocsDecorator<DocsArgs>>[];
+	render?: Bivariant<(args: DocsArgs) => JsxRenderable>;
+	exampleCode?: Bivariant<(args: DocsArgs) => string>;
+};
 
 /**
  * Resolved presentation for one control after heuristics run.

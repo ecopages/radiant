@@ -236,7 +236,7 @@ function playgroundFallback(message: string): JsxRenderable {
 
 function renderAlertPreview(props: Record<string, unknown>, children?: string): JsxRenderable {
 	const variant = selectProp(props, 'variant', 'info');
-	const layout = str(props, 'layout', 'inline');
+	const layout = selectProp<'inline' | 'banner'>(props, 'layout', 'inline');
 	const dismissible = bool(props, 'dismissible', false);
 
 	if (layout === 'banner') {
@@ -388,7 +388,7 @@ function renderCalendarPreview(props: Record<string, unknown>): JsxRenderable {
 			selectionMode={str(props, 'selectionMode', 'single')}
 			disabled={bool(props, 'disabled')}
 			visibleMonths={num(props, 'visibleMonths', 1)}
-			pageBehavior={str(props, 'pageBehavior', 'visible')}
+			pageBehavior={selectProp(props, 'pageBehavior', 'visible')}
 			value={str(props, 'value', '2026-08-07')}
 		/>
 	);
@@ -398,7 +398,7 @@ function renderCarouselPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiCarousel
 			index={num(props, 'index', 0)}
-			transition={str(props, 'transition', 'slide')}
+			transition={selectProp(props, 'transition', 'slide')}
 			autoplay={bool(props, 'autoplay')}
 			interval={num(props, 'interval', 4000)}
 			showIndicators={bool(props, 'showIndicators')}
@@ -552,7 +552,7 @@ function renderFieldPreview(props: Record<string, unknown>): JsxRenderable {
 
 function renderFormPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
-		<RuiForm mode={str(props, 'mode', 'onSubmit')}>
+		<RuiForm mode={selectProp(props, 'mode', 'onSubmit')}>
 			<RuiField name="email" rules={{ required: 'Email is required' }}>
 				<RuiLabel>Email</RuiLabel>
 				<RuiInput type="email" placeholder="you@example.com" />
@@ -605,7 +605,6 @@ function renderInputPreview(props: Record<string, unknown>): JsxRenderable {
 			<RuiLabel>Email</RuiLabel>
 			<RuiInput
 				type={str(props, 'type', 'text')}
-				size={selectProp(props, 'size', 'md')}
 				disabled={bool(props, 'disabled')}
 				placeholder={str(props, 'placeholder', 'you@example.com')}
 			/>
@@ -768,7 +767,7 @@ function renderPopoverPreview(props: Record<string, unknown>): JsxRenderable {
 			trigger={<RuiButton variant="outline">Filter</RuiButton>}
 		>
 			<RuiPopover
-				placement={str(props, 'placement', 'bottom-start')}
+				placement={selectProp(props, 'placement', 'bottom-start')}
 				portal={bool(props, 'portal', true)}
 				matchAnchorWidth={bool(props, 'matchAnchorWidth')}
 				offset={num(props, 'offset', 8)}
@@ -803,7 +802,7 @@ function renderSelectPreview(props: Record<string, unknown>): JsxRenderable {
 				value={str(props, 'value', 'cat')}
 				placeholder={str(props, 'placeholder', 'Select an animal')}
 				disabled={bool(props, 'disabled')}
-				selectionMode={str(props, 'selectionMode', 'single')}
+				selectionMode={selectProp(props, 'selectionMode', 'single')}
 				options={ANIMAL_OPTIONS}
 			/>
 		</RuiField>
@@ -911,7 +910,7 @@ function renderSwitchPreview(props: Record<string, unknown>): JsxRenderable {
 function renderTabsPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiTabs
-			variant={str(props, 'variant', 'boxed')}
+			variant={selectProp(props, 'variant', 'boxed')}
 			value={str(props, 'value', 'account')}
 			automatic={bool(props, 'automatic', true)}
 			label={str(props, 'label', 'Settings')}
@@ -934,7 +933,7 @@ function renderTagGroupPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiTagGroup
 			value={str(props, 'value', 'react,typescript')}
-			selectionMode={str(props, 'selectionMode', 'multiple')}
+			selectionMode={selectProp(props, 'selectionMode', 'multiple')}
 			disabled={bool(props, 'disabled')}
 			embedded={bool(props, 'embedded')}
 			label="Skills"
@@ -1011,7 +1010,7 @@ function renderTooltipPreview(props: Record<string, unknown>): JsxRenderable {
 	return (
 		<RuiTooltip
 			content={str(props, 'content', 'Download report')}
-			placement={str(props, 'placement', 'top')}
+			placement={selectProp(props, 'placement', 'top')}
 			delay={num(props, 'delay', 200)}
 		>
 			<RuiButton variant="ghost" aria-label="Download">
@@ -1046,7 +1045,7 @@ function renderWindowSplitterPreview(props: Record<string, unknown>): JsxRendera
 	return (
 		<RuiWindowSplitter
 			value={num(props, 'value', 50)}
-			orientation={str(props, 'orientation', 'horizontal')}
+			orientation={selectProp(props, 'orientation', 'horizontal')}
 			label={str(props, 'label', 'Split view')}
 			primary={<div>Editor</div>}
 			secondary={<div>Preview</div>}

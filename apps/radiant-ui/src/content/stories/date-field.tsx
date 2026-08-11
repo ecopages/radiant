@@ -34,7 +34,7 @@ export const meta = {
 			value={args.value}
 			dateStyle={args.dateStyle}
 			disabled={args.disabled}
-			prop:readOnly={args.readOnly}
+			readOnly={args.readOnly}
 			masked={args.masked}
 		/>
 	),
