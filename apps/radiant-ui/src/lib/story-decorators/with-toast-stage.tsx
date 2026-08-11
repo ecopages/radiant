@@ -10,12 +10,17 @@ import { RuiToaster, toast, type ToastPosition } from '@ecopages/radiant-ui';
 export const TOAST_STAGE_CLASS = 'playground-toast-stage';
 export const TOAST_STAGE_SELECTOR = `.${TOAST_STAGE_CLASS}`;
 
+/**
+ * Args the stage reads. Required, not optional: `meta.args` supplies every one, and the docs
+ * controls preserve their types — `rui-number-field` only emits `number`, `rui-switch` only
+ * `boolean` — so the stage can use them directly instead of re-coercing and re-defaulting.
+ */
 export type ToastStageArgs = {
-	position?: ToastPosition;
-	duration?: number;
-	visibleToasts?: number;
-	closeButton?: boolean;
-	expand?: boolean;
+	position: ToastPosition;
+	duration: number;
+	visibleToasts: number;
+	closeButton: boolean;
+	expand: boolean;
 };
 
 /**
@@ -24,8 +29,6 @@ export type ToastStageArgs = {
  * @remarks
  * The stage owns the toaster because `container` has to point at the stage element. The trigger
  * content is the story's own `render` — this decorator provides the frame, not the content.
- *
- * Control values arrive as strings from the docs playground inputs, hence the coercions.
  */
 export function withToastStage<TArgs extends ToastStageArgs>(): DocsDecorator<TArgs> {
 	return (story, context) => {
@@ -37,11 +40,11 @@ export function withToastStage<TArgs extends ToastStageArgs>(): DocsDecorator<TA
 				<div class="playground-toast-stage__actions">{story()}</div>
 				<RuiToaster
 					container={TOAST_STAGE_SELECTOR}
-					position={args.position ?? 'bottom-end'}
-					duration={Number(args.duration ?? 4000)}
-					visibleToasts={Number(args.visibleToasts ?? 3)}
-					closeButton={Boolean(args.closeButton)}
-					expand={Boolean(args.expand)}
+					position={args.position}
+					duration={args.duration}
+					visibleToasts={args.visibleToasts}
+					closeButton={args.closeButton}
+					expand={args.expand}
 				/>
 			</div>
 		);
