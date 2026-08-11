@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, within } from 'storybook/test';
-import { ToastDemoTriggers, withToastPositions, withToastStage } from '../../../../.storybook/with-toast';
-import { ToastTrigger } from '../../../../.storybook/toast-trigger';
+import { ToastDemoTriggers, withToastPositions, withToastStage } from '@sb/with-toast';
+import { ToastTrigger } from '@sb/toast-trigger';
 import { RuiToaster, TOAST_POSITIONS, toast } from './index';
 import { RuiToaster as RuiToasterElement } from './toaster.script';
 

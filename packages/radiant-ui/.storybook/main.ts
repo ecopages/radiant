@@ -20,6 +20,9 @@ const config: StorybookConfig = {
 		config.resolve.alias = {
 			...((config.resolve.alias as Record<string, string>) ?? {}),
 			'@': path.join(dirname, '../src'),
+			// Story-support helpers in this directory. Keep in sync with `paths` in
+			// `tsconfig.app.json`. Must not be `@storybook` — that prefix shadows the real scope.
+			'@sb': dirname,
 		};
 		config.plugins = [...(config.plugins ?? []), tailwindcss()];
 		return config;

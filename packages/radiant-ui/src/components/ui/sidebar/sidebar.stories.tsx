@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, within } from 'storybook/test';
-import { withStylesheets } from '../../../../.storybook/with-stylesheets';
+import { withStylesheets } from '@sb/with-stylesheets';
 import docsNavCss from './sidebar.docs.css?url';
 import radiantPkg from '../../../../../radiant/package.json';
 import {
