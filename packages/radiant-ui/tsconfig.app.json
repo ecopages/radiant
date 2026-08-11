@@ -25,12 +25,8 @@
 			"@/*": ["./src/*"],
 			/* Story-only helpers live outside `src` so they never reach `dist` — they import
          Storybook types from a private devDependency. Aliased so stories don't climb out
-         with `../../../../`. Mirrored as a Vite alias in `.storybook/main.ts` and
-         `vite.config.ts`.
-
-         Not `@storybook/*`: a Vite string alias rewrites any matching prefix with no
-         fallback, so it swallows the real `@storybook/*` scope — including Storybook's own
-         internal `@storybook/global` import, which fails the whole build. */
+         with `../../../../`. The Vite side of this mapping lives in `.storybook/aliases.ts`,
+         which both `vite.config.ts` and `.storybook/main.ts` import. */
 			"@sb/*": ["./.storybook/*"],
 			"@ecopages/storybook-radiant-vite": ["../storybook-radiant-vite/src/index.ts"],
 			"@ecopages/storybook-radiant-vite/node": ["../storybook-radiant-vite/src/node/index.ts"]

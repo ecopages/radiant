@@ -2,6 +2,7 @@ import type { StorybookConfig } from '@ecopages/storybook-radiant-vite/node';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
+import { radiantUiAliases } from './aliases.ts';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,10 +20,7 @@ const config: StorybookConfig = {
 		config.resolve ??= {};
 		config.resolve.alias = {
 			...((config.resolve.alias as Record<string, string>) ?? {}),
-			'@': path.join(dirname, '../src'),
-			// Story-support helpers in this directory. Keep in sync with `paths` in
-			// `tsconfig.app.json`. Must not be `@storybook` — that prefix shadows the real scope.
-			'@sb': dirname,
+			...radiantUiAliases,
 		};
 		config.plugins = [...(config.plugins ?? []), tailwindcss()];
 		return config;
