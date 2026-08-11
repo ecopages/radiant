@@ -9,6 +9,8 @@ import { meta as navigationMenuMeta } from '../src/content/stories/navigation-me
 import { meta as dateFieldMeta } from '../src/content/stories/date-field';
 import { meta as dateRangePickerMeta } from '../src/content/stories/date-range-picker';
 import { meta as autocompleteMeta } from '../src/content/stories/autocomplete';
+import { meta as menuButtonMeta } from '../src/content/stories/menu-button';
+import { meta as radioGroupMeta } from '../src/content/stories/radio-group';
 
 function serialize(element: unknown): string {
 	return JSON.stringify(element);
@@ -100,6 +102,18 @@ describe('story preview renders', () => {
 
 		expect(preview).toContain('case');
 		expect(preview).toContain('rui-listbox');
+	});
+
+	test('menu button and radio group render composed controls', () => {
+		const menuButton = serialize(
+			menuButtonMeta.render!({ open: false, placement: 'bottom-start', children: 'Actions' }),
+		);
+		const radioGroup = serialize(radioGroupMeta.render!({ value: 'pro', disabled: false, label: 'Plan' }));
+
+		expect(menuButton).toContain('rui-menu-button__trigger');
+		expect(menuButton).toContain('rui-menu-button__item');
+		expect(radioGroup).toContain('rui-radio-group');
+		expect(radioGroup).toContain('rui-radio');
 	});
 
 	test('date range picker renders props on the host element', () => {
