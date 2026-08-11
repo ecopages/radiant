@@ -1,6 +1,4 @@
 import { attr, controller, onEvent, onUpdated, query, RadiantController, state } from '@/utils/radiant-browser-runtime';
-import '@ecopages/radiant-ui/radio-group';
-import type { RuiRadioGroupChangeDetail, RuiRadioGroupElement } from '@ecopages/radiant-ui/radio-group';
 import { ensureDocsControllersStarted } from '@/utils/start-docs-controllers';
 
 @controller('controller-dom-flow-visualizer')
@@ -19,8 +17,6 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 	@query({ ref: 'state-last-action' }) stateLastAction!: HTMLElement;
 	@query({ ref: 'flow-title' }) flowTitle!: HTMLElement;
 	@query({ ref: 'flow-description' }) flowDescription!: HTMLElement;
-	@query({ selector: 'rui-radio-group', cache: true }) signalPicker!: RuiRadioGroupElement;
-
 	override connect(): void {
 		super.connect();
 		this.syncSignalNode();
@@ -34,12 +30,12 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 		);
 	}
 
-	@onEvent({ selector: 'rui-radio-group', type: 'rui-change' })
+	@onEvent({ selector: 'input[type="radio"]', type: 'change' })
 	handleSignalChoice(event: Event) {
-		const { value: nextSignal } = (event as CustomEvent<RuiRadioGroupChangeDetail>).detail;
+		const nextSignal = (event.target as HTMLInputElement).value;
 		if (!nextSignal) return;
 
-		this.lastEvent = `rui-change:${nextSignal}`;
+		this.lastEvent = `change:${nextSignal}`;
 		this.signal = nextSignal;
 		this.pulses += 1;
 		this.lastAction = `Host attribute changed to data-signal="${nextSignal}"`;
@@ -66,8 +62,6 @@ export class ControllerDomFlowVisualizer extends RadiantController {
 		this.hostBusy.textContent = busy;
 		this.stateSignal.textContent = this.signal;
 		this.host.setAttribute('data-signal', this.signal);
-		this.signalPicker.value = this.signal;
-
 		if (busy === 'true') {
 			this.host.setAttribute('aria-busy', 'true');
 		} else {
