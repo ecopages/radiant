@@ -71,7 +71,7 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
 
 **Naming:** Short names highlight swapped axes (`aurora-compact-soft`). Omitted axes use the **`default`** pack.
 
-**Storybook:** orthogonal toolbar globals — `data-rui-colors`, `data-rui-spacing`, `data-rui-radius`, plus `.dark` for mode. Presets live under `tokens/presets/` (colors via `semantic.css`, spacing/radius via `tailwind.css`).
+**Storybook:** themes are composed from the same colour, spacing, and radius pack stylesheets available to applications. The docs app owns its interactive preview attributes; they are not part of the library API.
 
 **Brands (`data-rui-colors`):** `glacier` (docs), `aurora`, `basalt`, `ember`. **Spacing:** `default` · `compact` · `wide`. **Radius:** `default` · `soft` · **sharp** (square; `radius/sharp.css`).
 
