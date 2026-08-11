@@ -34,8 +34,7 @@ jobs:
             - name: Build libraries
               run: pnpm run build:all
 
-            # Full monorepo typecheck (packages + apps/docs).
-            # apps/radiant-ui stays out: pre-existing custom-element JSX typing errors.
+            # Full monorepo typecheck (packages + apps/docs + apps/radiant-ui).
             - name: Typecheck
               run: pnpm run typecheck
 

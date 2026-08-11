@@ -7,19 +7,23 @@
 		"forceConsistentCasingInFileNames": true,
 		"jsx": "react-jsx",
 		"jsxImportSource": "@ecopages/jsx",
-		"lib": ["ES2021", "DOM", "DOM.Iterable"],
+		"lib": ["ES2023", "DOM", "DOM.Iterable"],
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"noEmit": true,
 		"noImplicitOverride": true,
-		"paths": { "@/*": ["./src/*"] },
+		"paths": {
+			"@/*": ["./src/*"],
+			"ecopages:content/components": ["./types/ecopages-content-components.d.ts"],
+			"ecopages:content/components/server": ["./types/ecopages-content-components-server.d.ts"]
+		},
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"target": "ES2021",
+		"target": "ES2022",
 		"types": ["node"],
 		"useDefineForClassFields": true,
 		"verbatimModuleSyntax": true
 	},
-	"include": ["src", "eco.config.ts", "modules.d.ts"]
+	"include": ["src", "eco.config.ts", "modules.d.ts", "types"]
 }
