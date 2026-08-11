@@ -2,10 +2,8 @@ import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query, 
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { dateToIso, formatDisplayDate, isoToDate, parseLocaleDateString } from '@/lib/intl-date';
 import type { DateDisplayStyle } from '@/lib/intl-date';
-import { RuiIconCalendar } from '@/lib/icons';
 import { resolveLocale } from '@/lib/intl/locale';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
-import '../calendar/calendar.script';
 import { PopoverController, shouldDismissPopoverFocus } from '../shared/popover-controller';
 import { syncFieldLabel } from '../shared/field-label';
 import {
@@ -59,7 +57,8 @@ type RuiDateFieldBindings = {
  * On blur, values are parsed flexibly (numeric, masked, or month names like "Aug 21, 2002")
  * and displayed with `dateStyle`. Canonical `value` is ISO `YYYY-MM-DD`.
  *
- * A calendar button toggles a popover grid for picking dates.
+ * Compose the input, toggle, popover, and calendar with the `RuiDateField*`
+ * view helpers. `RuiDateField` supplies that composition when it has no children.
  *
  * @see https://react-aria.adobe.com/DatePicker
  *
@@ -111,7 +110,6 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 	private popoverController: PopoverController | null = null;
 	private suppressPopoverDismiss = false;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'popover' }) popoverTarget: HTMLElement;
 
 	private get isoValue(): string {
@@ -134,6 +132,14 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		return this.querySelector<HTMLInputElement>('[data-date-field-input]');
 	}
 
+	private getToggle(): HTMLButtonElement | null {
+		return this.querySelector<HTMLButtonElement>('[data-date-field-trigger]');
+	}
+
+	private getCalendar(): HTMLElement | null {
+		return this.querySelector<HTMLElement>('[data-date-field-calendar]');
+	}
+
 	private syncLabel(): void {
 		const input = this.getInput();
 		syncFieldLabel(this, input, {
@@ -153,17 +159,40 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 			input.id = this.inputId;
 		}
 
-		if (this.name) {
-			input.name = this.name;
-		}
-		if (this.disabled) {
-			input.disabled = true;
-		}
+		input.name = this.name;
+		input.disabled = this.disabled;
+		input.readOnly = this.readOnly;
+		input.inputMode = this.masked ? 'numeric' : 'text';
 
 		const placeholder = this.resolvedPlaceholder;
 		if (placeholder) {
 			input.placeholder = placeholder;
 		}
+	}
+
+	private syncToggle(): void {
+		const toggle = this.getToggle();
+		if (!toggle) {
+			return;
+		}
+
+		toggle.disabled = this.disabled || this.readOnly;
+		toggle.setAttribute('aria-expanded', String(this.open));
+	}
+
+	private syncCalendar(): void {
+		const calendar = this.getCalendar();
+		if (!calendar) {
+			return;
+		}
+
+		calendar.setAttribute('selection-mode', 'single');
+		calendar.setAttribute('visible-months', String(this.visibleMonths));
+		calendar.setAttribute('value', this.isoValue);
+		calendar.setAttribute('min', this.min);
+		calendar.setAttribute('max', this.max);
+		calendar.setAttribute('locale', this.locale);
+		calendar.toggleAttribute('disabled', this.disabled);
 	}
 
 	private formatForDisplay(iso: string): string {
@@ -260,17 +289,44 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		this.syncLabel();
 		this.syncInput();
 		this.syncDisplayValue();
+		this.syncToggle();
+		this.syncCalendar();
+		this.setOpen(false);
 	}
 
 	private setOpen(next: boolean): void {
 		this.open = next;
-		queueMicrotask(() => this.syncPopoverPosition());
+		queueMicrotask(() => {
+			this.syncCalendar();
+			this.syncPopoverPosition();
+			if (next) {
+				this.focusCalendarDay();
+			}
+		});
+	}
+
+	/** Focus the calendar's roving day, falling back to its first available day. */
+	private focusCalendarDay(): void {
+		requestAnimationFrame(() => {
+			if (!this.open) {
+				return;
+			}
+
+			const calendar = this.getCalendar();
+			const selectedDay = this.isoValue
+				? calendar?.querySelector<HTMLButtonElement>(`[data-calendar-day][data-iso="${this.isoValue}"]:not(:disabled)`)
+				: null;
+			(selectedDay ??
+				calendar?.querySelector<HTMLButtonElement>(
+					'[data-calendar-day][tabindex="0"]:not(:disabled), [data-calendar-day]:not(:disabled)',
+				))?.focus();
+		});
 	}
 
 	private ensurePopoverController(): PopoverController {
 		if (!this.popoverController) {
 			this.popoverController = new PopoverController({
-				getAnchor: () => this.rootTarget,
+				getAnchor: () => this.getToggle()?.parentElement ?? this,
 				getFloating: () => this.popoverTarget,
 				getOpen: () => this.open,
 				getPlacement: () => 'bottom-start',
@@ -283,7 +339,7 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 
 	private syncPopoverPosition(): void {
 		const popover = this.popoverTarget;
-		if (!popover || !this.rootTarget) {
+		if (!popover) {
 			return;
 		}
 		popover.hidden = !this.open;
@@ -305,15 +361,18 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['value', 'min', 'max', 'label', 'placeholder', 'disabled', 'readOnly', 'locale', 'dateStyle', 'masked'])
+	@onUpdated(['value', 'min', 'max', 'label', 'placeholder', 'disabled', 'readOnly', 'locale', 'dateStyle', 'masked', 'visibleMonths'])
 	onPropsUpdated(): void {
 		this.syncLabel();
 		this.syncInput();
 		this.syncDisplayValue();
+		this.syncToggle();
+		this.syncCalendar();
 	}
 
 	@onUpdated(['open'])
 	onOpenUpdated(): void {
+		this.syncToggle();
 		this.syncPopoverPosition();
 	}
 
@@ -361,7 +420,10 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		}
 	}
 
-	@onEvent({ ref: 'root', type: 'focusout' })
+	@onEvent({
+		selector: '[data-date-field-input], [data-date-field-trigger], [data-date-field-popover]',
+		type: 'focusout',
+	})
 	onRootFocusOut(event: FocusEvent): void {
 		const target = event.target as HTMLElement;
 		const relatedTarget = event.relatedTarget;
@@ -388,7 +450,7 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 			}
 
 			const next = relatedTarget instanceof Node ? relatedTarget : document.activeElement;
-			if (!shouldDismissPopoverFocus(this.rootTarget, this.popoverTarget, next)) {
+			if (!shouldDismissPopoverFocus(this, this.popoverTarget, next)) {
 				return;
 			}
 			this.setOpen(false);
@@ -413,10 +475,10 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		event.preventDefault();
 	}
 
-	@onEvent({ ref: 'root', type: 'rui-change' })
+	@onEvent({ selector: '[data-date-field-calendar]', type: 'rui-change' })
 	onCalendarChange(event: Event): void {
 		const target = event.target;
-		if (!(target instanceof HTMLElement) || target.tagName.toLowerCase() !== 'rui-calendar') {
+		if (!(target instanceof HTMLElement) || !target.matches('[data-date-field-calendar]')) {
 			return;
 		}
 
@@ -428,7 +490,7 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		this.setOpen(false);
 	}
 
-	@onEvent({ ref: 'root', type: 'keydown' })
+	@onEvent({ selector: '[data-date-field-input], [data-date-field-trigger], [data-date-field-calendar]', type: 'keydown' })
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
@@ -436,58 +498,6 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		}
 	}
 
-	override render() {
-		const calendarProps = {
-			'prop:selectionMode': 'single',
-			'prop:visibleMonths': this.visibleMonths,
-			'prop:value': this.isoValue,
-			'prop:min': this.min,
-			'prop:max': this.max,
-			'prop:locale': this.locale,
-			'prop:disabled': this.disabled,
-		};
-
-		return (
-			<div class="rui-date-field" data-ref="root">
-				<div class="rui-date-field__group">
-					<input
-						type="text"
-						data-date-field-input
-						data-rui-control
-						data-rui-control-type="text"
-						class="rui-date-field__input"
-						id={this.inputId}
-						autocomplete="off"
-						inputmode={this.masked ? 'numeric' : 'text'}
-						disabled={this.$.disabled}
-						readOnly={this.$.readOnly}
-						placeholder={this.$.placeholder || this.resolvedPlaceholder}
-					/>
-					<button
-						type="button"
-						class="rui-control-toggle"
-						data-ref="trigger"
-						data-date-field-trigger
-						aria-label="Open calendar"
-						aria-haspopup="dialog"
-						aria-expanded={this.open ? 'true' : 'false'}
-						disabled={this.$.disabled || this.$.readOnly}
-					>
-						<RuiIconCalendar />
-					</button>
-				</div>
-				<div
-					class="rui-date-field__popover rui-popover rui-floating"
-					data-ref="popover"
-					data-date-field-popover
-					hidden={!this.open}
-					role="dialog"
-				>
-					{this.open ? <rui-calendar {...calendarProps} /> : null}
-				</div>
-			</div>
-		);
-	}
 }
 
 function dateToMaskDigits(date: Date, locale: string | string[] | undefined): string {

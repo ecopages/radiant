@@ -3,4 +3,11 @@ export {
 	type RuiDateFieldProps,
 	type RuiDateFieldChangeDetail,
 } from './date-field.script';
-export { RuiDateField } from './date-field';
+export {
+	RuiDateField,
+	RuiDateFieldCalendar,
+	RuiDateFieldControl,
+	RuiDateFieldInput,
+	RuiDateFieldPopover,
+	RuiDateFieldToggle,
+} from './date-field';
