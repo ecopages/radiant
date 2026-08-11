@@ -82,6 +82,7 @@ describe('story preview renders', () => {
 			dateFieldMeta.render!({
 				value: '2026-12-25',
 				dateStyle: 'long',
+				visibleMonths: 1,
 				disabled: true,
 				readOnly: false,
 				masked: false,

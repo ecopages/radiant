@@ -4,7 +4,7 @@ description: Date range pickers collect a start and end date in one control, suc
 category: Forms
 ---
 
-import { meta as DateRangePickerMeta, Default } from '@/content/stories/date-range-picker';
+import { meta as DateRangePickerMeta, Default, WithCalendar } from '@/content/stories/date-range-picker';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -43,6 +43,44 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Composition
+
+`RuiDateRangePicker` provides this structure by default. Pass children when you need to compose the inputs, toggle, popup, or calendar yourself.
+
+```tsx
+import {
+  RuiDateRangePicker,
+  RuiDateRangePickerCalendar,
+  RuiDateRangePickerControl,
+  RuiDateRangePickerEndInput,
+  RuiDateRangePickerInputs,
+  RuiDateRangePickerPopover,
+  RuiDateRangePickerSeparator,
+  RuiDateRangePickerStartInput,
+  RuiDateRangePickerToggle,
+} from '@ecopages/radiant-ui/date-range-picker';
+
+<RuiDateRangePicker>
+  <RuiDateRangePickerControl>
+    <RuiDateRangePickerInputs>
+      <RuiDateRangePickerStartInput />
+      <RuiDateRangePickerSeparator />
+      <RuiDateRangePickerEndInput />
+    </RuiDateRangePickerInputs>
+    <RuiDateRangePickerToggle />
+  </RuiDateRangePickerControl>
+  <RuiDateRangePickerPopover>
+    <RuiDateRangePickerCalendar />
+  </RuiDateRangePickerPopover>
+</RuiDateRangePicker>
+```
+
+## Calendar input
+
+Use the calendar button to select the start and end dates. The picker stays open until both dates are selected.
+
+<Canvas of={WithCalendar} meta={DateRangePickerMeta} />
+
 ## Two-month view
 
 <p>Set `visibleMonths` to `2` so users can span month boundaries without extra navigation clicks.</p>
@@ -68,7 +106,7 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 
 ## API
 
-`RuiDateRangePicker` is a custom element (`<rui-date-range-picker>`) that renders its own light-DOM inputs, toggle button, and range calendar popover.
+`RuiDateRangePicker` is a custom element (`<rui-date-range-picker>`) that coordinates its light-DOM inputs, toggle button, and range calendar popover.
 
 ### Attributes
 

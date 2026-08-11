@@ -10,6 +10,18 @@ Guidance for humans and agents working in `packages/radiant-ui`.
 - **Authoring:** Not React; see `src/Introduction.mdx` for component tiers and file layout
 - **Tokens, themes, component CSS:** see [`DESIGN.md`](./DESIGN.md)
 
+## Start here
+
+- Read `src/Introduction.mdx` only when adding, moving, or re-tiering a component.
+- Read [`DESIGN.md`](./DESIGN.md) only when changing tokens, themes, or component CSS.
+- Read the sections below that match the files being edited: views, public API docs, or package conventions.
+
+## Component composition
+
+- Non-atomic components should separate behavior from markup: the custom element owns state, accessibility, and coordination; JSX helpers expose the meaningful structural parts.
+- Keep a convenient prop-based default composition on the primary view, but accept children for the equivalent explicit composition. Do not force consumers to subclass a custom element just to arrange its UI.
+- For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes.
+
 ## Imports
 
 - Cross-cutting helpers under `src/lib/` → `@/lib/...` (configured in `tsconfig.app.json`, Vite, Storybook, and `scripts/build.ts`).
