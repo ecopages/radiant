@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
-import { RuiMenuButton } from './menu-button';
+import { RuiMenuButton, RuiMenuButtonContent, RuiMenuButtonItem, RuiMenuButtonTrigger } from './menu-button';
 import { RuiMenuButton as RuiMenuButtonElement } from './menu-button.script';
 
 const meta = {
@@ -81,6 +81,28 @@ export const Keyboard: Story = {
 			await userEvent.keyboard('{Escape}');
 			await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 			await expect(document.activeElement).toBe(trigger);
+		});
+	},
+};
+
+export const Composed: Story = {
+	render: () => (
+		<RuiMenuButton>
+			<RuiMenuButtonTrigger>Actions</RuiMenuButtonTrigger>
+			<RuiMenuButtonContent>
+				<RuiMenuButtonItem value="edit">Edit</RuiMenuButtonItem>
+				<RuiMenuButtonItem value="duplicate">Duplicate</RuiMenuButtonItem>
+				<RuiMenuButtonItem value="delete">Delete</RuiMenuButtonItem>
+			</RuiMenuButtonContent>
+		</RuiMenuButton>
+	),
+	play: async ({ canvasElement, step }) => {
+		const trigger = getTrigger(canvasElement);
+		const menu = getMenu(canvasElement);
+
+		await step('composed trigger opens the composed menu', async () => {
+			await userEvent.click(trigger);
+			await expect(menu).not.toHaveAttribute('hidden');
 		});
 	},
 };

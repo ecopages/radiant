@@ -40,8 +40,8 @@ const MENU_GAP = 6;
  * @element rui-menu-button
  * @attr {boolean} open - Whether the menu starts open. Default: `false`.
  * @attr {('top'|'top-start'|'top-end'|'right'|'right-start'|'right-end'|'bottom'|'bottom-start'|'bottom-end'|'left'|'left-start'|'left-end')} placement - Placement of the menu surface relative to its trigger. Default: `bottom-start`.
- * @slot trigger - Label for the menu button.
- * @slot - Menu items (`role="menuitem"`), typically buttons or anchors.
+ * Compose with `RuiMenuButtonTrigger`, `RuiMenuButtonContent`, and
+ * `RuiMenuButtonItem`. The `trigger` / `items` API supplies that composition.
  * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
  * @fires rui-close - Emitted when the menu closes.
  * @cssclass rui-menu-button - Root wrapper around trigger and menu.
@@ -226,23 +226,4 @@ export class RuiMenuButton extends RadiantElement {
 		this.setOpen(false, 'trigger');
 	}
 
-	override render() {
-		return (
-			<div class="rui-menu-button">
-				<button
-					type="button"
-					data-ref="trigger"
-					class="rui-button rui-button--primary rui-button--md rui-menu-button__trigger"
-					aria-haspopup="menu"
-					aria-expanded="false"
-				>
-					<slot name="trigger"></slot>
-					<span class="rui-menu-button__chevron" aria-hidden="true"></span>
-				</button>
-				<div data-ref="menu" class="rui-menu-button__menu rui-popover rui-floating" role="menu" hidden>
-					<slot></slot>
-				</div>
-			</div>
-		);
-	}
 }
