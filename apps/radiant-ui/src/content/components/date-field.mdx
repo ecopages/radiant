@@ -4,7 +4,7 @@ description: Date fields capture a single calendar date with locale-aware format
 category: Forms
 ---
 
-import { meta as DateFieldMeta, Default } from '@/content/stories/date-field';
+import { meta as DateFieldMeta, Default, WithCalendar } from '@/content/stories/date-field';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -43,6 +43,37 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Composition
+
+`RuiDateField` provides this structure by default. Pass children when you need to place or customize the input, toggle, popup, or calendar yourself.
+
+```tsx
+import {
+  RuiDateField,
+  RuiDateFieldCalendar,
+  RuiDateFieldControl,
+  RuiDateFieldInput,
+  RuiDateFieldPopover,
+  RuiDateFieldToggle,
+} from '@ecopages/radiant-ui/date-field';
+
+<RuiDateField>
+  <RuiDateFieldControl>
+    <RuiDateFieldInput />
+    <RuiDateFieldToggle />
+  </RuiDateFieldControl>
+  <RuiDateFieldPopover>
+    <RuiDateFieldCalendar />
+  </RuiDateFieldPopover>
+</RuiDateField>
+```
+
+## Calendar input
+
+Use the calendar button to choose a date instead of typing. This example uses a two-month popup for dates near a month boundary.
+
+<Canvas of={WithCalendar} meta={DateFieldMeta} />
+
 ## Masked entry
 
 <p>`masked` guides segment-by-segment typing. Disable it when users paste full ISO strings from external tools.</p>
@@ -68,7 +99,7 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 
 ## API
 
-`RuiDateField` is a custom element (`<rui-date-field>`) that renders its own light-DOM input, toggle button, and calendar popover.
+`RuiDateField` is a custom element (`<rui-date-field>`) that coordinates its light-DOM input, toggle button, and calendar popover.
 
 ### Attributes
 
