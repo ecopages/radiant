@@ -3,4 +3,10 @@ export {
 	type RuiMenuButtonProps,
 	type RuiMenuButtonSelectDetail,
 } from './menu-button.script';
-export { RuiMenuButton, type RuiMenuItem } from './menu-button';
+export {
+	RuiMenuButton,
+	RuiMenuButtonContent,
+	RuiMenuButtonItem,
+	RuiMenuButtonTrigger,
+	type RuiMenuItem,
+} from './menu-button';
