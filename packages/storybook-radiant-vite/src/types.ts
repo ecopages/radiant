@@ -150,42 +150,23 @@ type SetOptional<T, K extends keyof T> = Simplify<Omit<T, K> & Partial<Pick<T, K
 type ArgsFromComponent<TComponent> = [TComponent] extends [(args: infer TArgs) => unknown] ? TArgs : unknown;
 
 /**
- * Story `parameters`, enumerated rather than left open.
+ * Story `parameters`: open at the top level, closed inside `radiant`.
  *
  * @remarks
  * Storybook's own `Parameters` is `{ [name: string]: any }`. Intersecting that with
  * {@link RadiantStoryParameters} collapses `radiant` back to `any` — the index signature
- * wins — so `parameters.radiant` goes unchecked. Widening to an `unknown` index has the
- * same flaw in a milder form: any index signature swallows near-miss keys.
+ * wins — so `parameters.radiant` goes unchecked. An `unknown` index keeps the top level
+ * open for addon parameters (`a11y`, `test`, `chromatic`, …) and anything else the
+ * framework has no opinion about, while `radiant` keeps its declared type.
  *
- * That matters because `radiant` is load-bearing. A misspelled `radiant` silently skips SSR
- * host linking, and the mistake only surfaces as a canvas error banner once the story
- * switches to an SSR `renderMode`. With no index signature, excess-property checking under
- * `satisfies` reports it at the keystroke, with a suggestion:
- *
- * ```text
- * error TS2561: Object literal may only specify known properties, but 'radidddant' does
- * not exist in type 'RadiantParameters'. Did you mean to write 'radiant'?
- * ```
- *
- * There is deliberately no augmentation hook for extra keys. A decorator that needs
- * per-story configuration should be a decorator factory — `decorators: [withThing(opts)]` —
- * which is configured at the call site and needs no parameter at all. Add a key here only
- * for an addon that reads `parameters` itself.
- *
- * Every member is optional, which makes this a weak type: TypeScript also rejects a
- * `parameters` value that shares no key with it (`TS2559`), covering helper returns and
- * spreads that excess-property checking cannot see. Keep it free of zero-property
- * constituents — one empty member silently disables that check everywhere.
+ * `radiant` itself has no index signature, so it stays closed: a key that is in neither
+ * {@link RadiantAuthoredParameters} nor {@link RadiantDerivedParameters} is an error under
+ * `satisfies`. That is the boundary worth enforcing — the framework reads those fields, and
+ * a stray key there means a story is using `radiant` as a config scratchpad. Decorator
+ * options do not belong in `parameters` at all: write a decorator factory
+ * (`decorators: [withThing(opts)]`) and configure it at the call site.
  */
-type RadiantParameters = RadiantStoryParameters & {
-	/** Storybook layout preset. Free-form so project-specific presets still type-check. */
-	layout?: CompatibleString<'centered' | 'fullscreen' | 'padded'>;
-	/** Storybook docs parameters (`docs.description`, autodocs configuration). */
-	docs?: unknown;
-	/** Storybook controls parameters (`controls.exclude`, `controls.matchers`). */
-	controls?: unknown;
-};
+type RadiantParameters = RadiantStoryParameters & { [name: string]: unknown };
 
 type RadiantComponentAnnotations<TArgs> = Omit<ComponentAnnotations<RadiantRenderer, TArgs>, 'parameters'> & {
 	parameters?: RadiantParameters;
