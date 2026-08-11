@@ -92,6 +92,8 @@ describe('story preview renders', () => {
 		);
 
 		expect(preview).toContain('rui-date-field');
+		expect(preview).toContain('data-date-field-calendar');
+		expect(preview).toContain('data-date-field-trigger');
 		expect(preview).toContain('2026-12-25');
 		expect(preview).toContain('long');
 		expect(preview).not.toContain('rui-field');
@@ -128,6 +130,9 @@ describe('story preview renders', () => {
 		);
 
 		expect(preview).toContain('rui-date-range-picker');
+		expect(preview).toContain('data-range-calendar');
+		expect(preview).toContain('Start date');
+		expect(preview).toContain('End date');
 		expect(preview).toContain('2026-08-01/2026-08-14');
 		expect(preview).toContain('Trip dates');
 	});
