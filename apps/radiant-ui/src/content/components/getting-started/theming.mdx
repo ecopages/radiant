@@ -1,0 +1,100 @@
+---
+title: Themes and tokens
+description: Choose colour, density, and shape token packs, then apply them as a complete Radiant UI theme.
+group: Getting started
+---
+
+import { DesignTokenPanel } from '@/components/design-token-panel/design-token-panel';
+
+export const config = {
+	dependencies: {
+		components: [DesignTokenPanel],
+		scripts: ['./theming.script.ts'],
+	},
+};
+
+# Themes and tokens
+
+<p class="docs-lede">
+	Radiant UI separates colour, spacing, and radius into token packs. Combine them to give an entire product a
+	consistent visual character without changing component code.
+</p>
+
+<DesignTokenPanel />
+
+## Start with the default theme
+
+The `default` theme is an alias for Glacier, the balanced blue profile used by this documentation. It includes the
+default spacing and radius packs.
+
+```css
+@import '@ecopages/radiant-ui/themes/default';
+@import '@ecopages/radiant-ui/styles.css';
+```
+
+## Colour themes
+
+All colour profiles provide the same semantic roles (`primary`, `surface`, `background`, `error`, and more), so a
+component stays unchanged as the visual language changes.
+
+| Profile | Character | Activate after loading a theme |
+| --- | --- | --- |
+| Default | Glacier alias; cool and balanced | `data-rui-colors="glacier"` |
+| Glacier | Cool, editorial blue | `data-rui-colors="glacier"` |
+| Basalt | Carbon-inspired neutral with blue accent | `data-rui-colors="basalt"` |
+| Ember | Glacier neutrals with a warm red accent | `data-rui-colors="ember"` |
+
+```html
+<html data-rui-colors="basalt">
+```
+
+## Spacing and shape
+
+Use `compact` where information density matters and `wide` where composition needs more air. Compact preserves
+control heights for touch and keyboard usability; it tightens rhythm and padding rather than shrinking hit areas.
+Choose `soft` for generous rounding or `sharp` for square containers. `edgy` is available as a stylesheet alias for
+the sharp radius pack.
+
+```css
+@import '@ecopages/radiant-ui/tokens/spacing/compact';
+@import '@ecopages/radiant-ui/tokens/radius/soft';
+```
+
+## Compose intentionally
+
+Load one complete theme first, then layer a spacing or radius pack when a product needs a distinct density or shape.
+All component styles consume semantic roles and shared geometry tokens, so no component-specific overrides are needed.
+
+The `data-rui-*` attributes used by the picker above are a docs-only preview mechanism. Applications should select
+their token packs with CSS imports, as shown above.
+
+## Build a custom theme
+
+Define the semantic roles below in a stylesheet loaded after the base token packs. Components consume these roles,
+not a named palette, so this is the contract for a custom colour theme.
+
+| Role family | CSS variables |
+| --- | --- |
+| Brand | `--primary`, `--on-primary`, `--primary-container`, `--on-primary-container`, `--primary-light`, `--primary-dark` |
+| Secondary | `--secondary`, `--on-secondary`, `--secondary-container`, `--on-secondary-container`, `--secondary-light`, `--secondary-dark` |
+| Status | `--error`, `--on-error`, `--error-container`, `--on-error-container`, `--success`, `--on-success`, `--success-container`, `--on-success-container`, `--info`, `--on-info`, `--info-container`, `--on-info-container`, `--warning`, `--on-warning`, `--warning-container`, `--on-warning-container` |
+| Surfaces | `--background`, `--on-background`, `--surface`, `--on-surface`, `--surface-container-lowest`, `--surface-container-low`, `--surface-container`, `--surface-container-high`, `--surface-container-highest` |
+| Supporting roles | `--border`, `--focus-ring`, `--link`, `--overlay`, `--background-code`, `--on-background-code`, `--neutral` |
+| Spacing | `--space-1`, `--space-2`, `--space-3`, `--space-4`, `--space-5`, `--space-6`, `--space-8`, `--space-10`, `--space-12`, `--space-16`, `--space-control-x`, `--space-control-y`, `--space-inline`, `--space-stack`, `--space-inset` |
+| Shape | `--border-radius-xs` through `--border-radius-3xl`, `--border-radius-full`, `--radius-control`, `--radius-container`, `--radius-pill` |
+
+```css
+:root {
+  --primary: oklch(52% 0.19 264);
+  --on-primary: oklch(100% 0 0);
+  --primary-container: oklch(93% 0.04 264);
+  --on-primary-container: oklch(30% 0.11 264);
+
+  --background: oklch(98.2% 0.004 265);
+  --on-background: oklch(22% 0.008 265);
+  --surface: oklch(96% 0.006 265);
+  --on-surface: var(--on-background);
+  --border: oklch(74% 0.012 265);
+  --focus-ring: var(--primary);
+}
+```
