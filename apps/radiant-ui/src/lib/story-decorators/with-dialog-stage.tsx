@@ -3,43 +3,22 @@ import { RuiButton, installDialogs } from '@ecopages/radiant-ui';
 
 export const DOCS_DIALOG_ID = 'docs-dialog';
 
-export type DialogStageOptions = {
-	trigger?: boolean;
-	triggerId?: string;
-	triggerLabel?: string;
-};
-
-export type DialogStageParameters = {
-	dialogStage?: DialogStageOptions;
-};
-
-/** Spread into story `parameters` to configure the dialog stage decorator. */
-export function dialogStage(options: DialogStageOptions): { dialogStage: DialogStageOptions } {
-	return { dialogStage: options };
-}
-
 /**
- * Installs the dialog registry and optionally renders a standard `data-dialog-open` trigger
- * above the story content.
+ * Installs the dialog registry and renders a `data-dialog-open` trigger above the story.
+ *
+ * @remarks
+ * A factory rather than a plain constant so `TArgs` is inferred at the call site, which is what
+ * types `context.args.id`. Options, if ever needed, belong as arguments here — `DocsDecorator`
+ * contexts expose only `parameters.docs`, so there is no parameter channel to read them from.
  */
 export function withDialogStage<TArgs extends { id?: string }>(): DocsDecorator<TArgs> {
 	return (story, context) => {
 		installDialogs();
 
-		const {
-			trigger = true,
-			triggerId = context.args.id ?? DOCS_DIALOG_ID,
-			triggerLabel = 'Open dialog',
-		} = (context.parameters as DialogStageParameters).dialogStage ?? {};
-
-		if (!trigger) {
-			return story();
-		}
-
 		return (
 			<>
-				<RuiButton type="button" data-dialog-open={triggerId}>
-					{triggerLabel}
+				<RuiButton type="button" data-dialog-open={context.args.id ?? DOCS_DIALOG_ID}>
+					Open dialog
 				</RuiButton>
 				<div style="margin-top: 1rem">{story()}</div>
 			</>
