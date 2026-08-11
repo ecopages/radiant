@@ -3,4 +3,4 @@ export {
 	type RuiRadioGroupProps,
 	type RuiRadioGroupChangeDetail,
 } from './radio-group.script';
-export { RuiRadioGroup, type RuiRadioOption } from './radio-group';
+export { RuiRadio, RuiRadioGroup, RuiRadioGroupControl, type RuiRadioOption } from './radio-group';

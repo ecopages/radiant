@@ -16,11 +16,6 @@ export type RuiRadioGroupChangeDetail = {
 	value: string;
 };
 
-type RuiRadioGroupBindings = {
-	label: string;
-	disabled: boolean;
-};
-
 /**
  * `<rui-radio-group>` — a set of radio buttons where only one option may
  * be selected at a time.
@@ -48,13 +43,13 @@ type RuiRadioGroupBindings = {
  * @fires rui-change - Emitted after the selected value changes; `detail.value` holds the new value.
  *
  * @remarks
- * The `RuiRadioGroup` view authors the option BEM classes (`.rui-radio*`, see
- * `@cssclass` there). This element owns the `role="radiogroup"` surface and value sync.
+ * Compose with `RuiRadioGroupControl` and `RuiRadio`, or author matching native
+ * radio markup directly. This element owns radio value synchronization.
  *
  * @cssclass rui-radio-group - Group surface (`role="radiogroup"`).
  */
 @customElement('rui-radio-group')
-export class RuiRadioGroup extends RadiantElement<RuiRadioGroupBindings> {
+export class RuiRadioGroup extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -63,16 +58,27 @@ export class RuiRadioGroup extends RadiantElement<RuiRadioGroupBindings> {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiRadioGroupChangeDetail>;
 
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
-	private readonly resolvedAriaDisabled = this.$.disabled.map((disabled) => (disabled ? 'true' : undefined));
-
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.syncRadios();
 	}
 
-	@onUpdated(['value', 'name', 'disabled'])
+	@onUpdated(['value', 'name', 'label', 'disabled'])
 	syncRadios(): void {
+		const group = this.querySelector<HTMLElement>('[data-radio-group-root]');
+		if (group) {
+			if (this.label) {
+				group.setAttribute('aria-label', this.label);
+			} else {
+				group.removeAttribute('aria-label');
+			}
+			if (this.disabled) {
+				group.setAttribute('aria-disabled', 'true');
+			} else {
+				group.removeAttribute('aria-disabled');
+			}
+		}
+
 		const radios = this.querySelectorAll<HTMLInputElement>('input[type="radio"]');
 		const groupName = this.name || this.getAttribute('name') || 'rui-radio-group';
 		for (const radio of radios) {
@@ -90,18 +96,4 @@ export class RuiRadioGroup extends RadiantElement<RuiRadioGroupBindings> {
 		this.changeEvent.emit({ value: this.value });
 	}
 
-	override render() {
-		return (
-			<div
-				class="rui-radio-group"
-				role="radiogroup"
-				data-rui-control
-				data-rui-control-type="text"
-				aria-label={this.resolvedAriaLabel}
-				aria-disabled={this.resolvedAriaDisabled}
-			>
-				<slot></slot>
-			</div>
-		);
-	}
 }

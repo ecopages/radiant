@@ -1,4 +1,5 @@
-import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
+import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
 import type { RuiRadioGroupProps } from './radio-group.script';
 import './radio-group.script';
 
@@ -7,6 +8,46 @@ export type RuiRadioOption = {
 	label: JsxRenderable;
 	disabled?: boolean;
 };
+
+export type RuiRadioGroupControlProps = JsxHtmlPropsWithChildren;
+
+/** Accessible surface that contains radio options. */
+export function RuiRadioGroupControl({ children, class: className, ...props }: RuiRadioGroupControlProps) {
+	return (
+		<div
+			{...props}
+			data-radio-group-root
+			class={cx('rui-radio-group', className)}
+			role="radiogroup"
+			data-rui-control
+			data-rui-control-type="text"
+		>
+			{children}
+		</div>
+	);
+}
+
+export type RuiRadioProps = JsxHtmlPropsWithChildren<{
+	value: string;
+	disabled?: boolean;
+}>;
+
+/** A label-wrapped native radio option controlled by `RuiRadioGroup`. */
+export function RuiRadio({ children, value, disabled, class: className, ...props }: RuiRadioProps) {
+	return (
+		<label {...props} class={cx('rui-radio', className)}>
+			<input
+				type="radio"
+				class="rui-radio__input"
+				value={value}
+				disabled={disabled}
+				data-disabled={disabled ? '' : undefined}
+			/>
+			<span class="rui-radio__control" aria-hidden="true" />
+			<span class="rui-radio__label">{children}</span>
+		</label>
+	);
+}
 
 /**
  * Radio group with an `options` convenience API; renders one label-wrapped radio
@@ -19,23 +60,22 @@ export type RuiRadioOption = {
  */
 export function RuiRadioGroup({
 	options,
+	children,
 	...props
-}: JsxHtmlProps<RuiRadioGroupProps & { slot?: string; options: RuiRadioOption[] }>) {
+}: JsxHtmlPropsWithChildren<RuiRadioGroupProps & { slot?: string; options?: RuiRadioOption[] }>) {
+	if (options == null) {
+		return <rui-radio-group {...props}>{children}</rui-radio-group>;
+	}
+
 	return (
 		<rui-radio-group {...props}>
-			{options.map((option) => (
-				<label class="rui-radio">
-					<input
-						type="radio"
-						class="rui-radio__input"
-						value={option.value}
-						disabled={option.disabled}
-						data-disabled={option.disabled ? '' : undefined}
-					/>
-					<span class="rui-radio__control" aria-hidden="true"></span>
-					<span class="rui-radio__label">{option.label}</span>
-				</label>
-			))}
+			<RuiRadioGroupControl>
+				{options.map((option) => (
+					<RuiRadio value={option.value} disabled={option.disabled}>
+						{option.label}
+					</RuiRadio>
+				))}
+			</RuiRadioGroupControl>
 		</rui-radio-group>
 	);
 }
