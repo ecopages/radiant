@@ -30,22 +30,7 @@ export const config = {
 
 ## Usage
 
-Bind `value` as an ISO `YYYY-MM-DD` string. Use `dateStyle` to control how the formatted date appears in the input.
-
-```tsx
-import { RuiDateField } from '@ecopages/radiant-ui/date-field';
-import { RuiField } from '@ecopages/radiant-ui/field';
-import { RuiLabel } from '@ecopages/radiant-ui/label';
-
-<RuiField name="startDate">
-  <RuiLabel>Start date</RuiLabel>
-  <RuiDateField value="2026-08-07" dateStyle="medium" />
-</RuiField>
-```
-
-## Composition
-
-`RuiDateField` provides this structure by default. Pass children when you need to place or customize the input, toggle, popup, or calendar yourself.
+Compose the input, calendar trigger, popup, and calendar as children of `RuiDateField`. When no children are supplied, `RuiDateField` renders this same composition for you. Bind `value` as an ISO `YYYY-MM-DD` string and use `dateStyle` to control the formatted value.
 
 ```tsx
 import {
@@ -56,21 +41,26 @@ import {
   RuiDateFieldPopover,
   RuiDateFieldToggle,
 } from '@ecopages/radiant-ui/date-field';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
 
-<RuiDateField>
-  <RuiDateFieldControl>
-    <RuiDateFieldInput />
-    <RuiDateFieldToggle />
-  </RuiDateFieldControl>
-  <RuiDateFieldPopover>
-    <RuiDateFieldCalendar />
-  </RuiDateFieldPopover>
-</RuiDateField>
+<RuiField name="startDate">
+  <RuiLabel>Start date</RuiLabel>
+  <RuiDateField value="2026-08-07" dateStyle="medium">
+    <RuiDateFieldControl>
+      <RuiDateFieldInput />
+      <RuiDateFieldToggle />
+    </RuiDateFieldControl>
+    <RuiDateFieldPopover>
+      <RuiDateFieldCalendar />
+    </RuiDateFieldPopover>
+  </RuiDateField>
+</RuiField>
 ```
 
 ## Calendar input
 
-Use the calendar button to choose a date instead of typing. This example uses a two-month popup for dates near a month boundary.
+Use the calendar button to choose a date instead of typing. When the popup opens, focus moves to the selected date or the first available date. This example uses a two-month popup for dates near a month boundary.
 
 <Canvas of={WithCalendar} meta={DateFieldMeta} />
 
@@ -124,6 +114,18 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | --- | --- | --- |
 | `rui-change` | `{ value }` | Fired when a valid date is committed (typing or calendar pick). |
 
+### Composition helpers
+
+Pass these helpers as `RuiDateField` children when the default structure is not enough:
+
+| Helper | Renders |
+| --- | --- |
+| `RuiDateFieldControl` | Bordered control row containing the input and trigger. |
+| `RuiDateFieldInput` | Locale-aware text input managed by the date-field host. |
+| `RuiDateFieldToggle` | Button that opens and closes the calendar popup. |
+| `RuiDateFieldPopover` | Popup shell for the calendar. |
+| `RuiDateFieldCalendar` | `RuiCalendar` synchronized with the field value and constraints. |
+
 ### CSS classes
 
 Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on `RuiDateField`):
@@ -150,4 +152,4 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 
 - Pair every date field with a visible `RuiLabel` or `aria-label`.
 - Invalid dates should surface through `RuiField` error text, not color alone.
-- Calendar popup content is reachable by keyboard from the trigger button.
+- The trigger opens the popup and moves focus to the selected date or first available date; arrow keys move between days, Page Up / Page Down change months, and Escape closes the popup.
