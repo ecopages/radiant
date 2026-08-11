@@ -688,7 +688,9 @@ export const DocsNavigation: Story = {
 			'href',
 			'/docs/getting-started/introduction',
 		);
-		// `withStylesheets` loaded the docs skin; no other story should inherit it.
-		expect(document.head.querySelector('[data-storybook-stylesheet]')).toBeInTheDocument();
+		// The docs skin arrives via `withStylesheets`, not a side-effect import in this module.
+		expect(
+			document.head.querySelector(`link[data-storybook-stylesheet][href="${docsNavCss}"]`),
+		).toBeInTheDocument();
 	},
 };
