@@ -5,8 +5,6 @@ const STYLESHEET_ATTR = 'data-storybook-stylesheet';
 /** Resolved Vite `?url` href or `{ inline: string }` from `?inline`. */
 export type StylesheetEntry = string | { inline: string };
 
-const injected: HTMLElement[] = [];
-
 function isInlineEntry(entry: StylesheetEntry): entry is { inline: string } {
 	return typeof entry === 'object' && entry !== null && 'inline' in entry;
 }
@@ -41,7 +39,7 @@ function createNode(entry: StylesheetEntry): HTMLElement {
 export function withStylesheets(entries: StylesheetEntry[]): Decorator {
 	return (Story) => {
 		for (const entry of entries) {
-			injected.push(document.head.appendChild(createNode(entry)));
+			document.head.appendChild(createNode(entry));
 		}
 		return Story();
 	};
@@ -54,11 +52,13 @@ export function withStylesheets(entries: StylesheetEntry[]): Decorator {
  * Registered globally in `preview.ts`, and it has to stay global: project decorators wrap
  * story decorators, so this clears before any `withStylesheets` injects, and it still runs for
  * stories that declare no stylesheets at all.
+ *
+ * The `data-storybook-stylesheet` attribute is the only handle needed — tracking the nodes in a
+ * module-level array would be a second source of truth for the same set.
  */
 export const clearStylesheetsDecorator: Decorator = (Story) => {
-	for (const node of injected) {
+	for (const node of document.head.querySelectorAll(`[${STYLESHEET_ATTR}]`)) {
 		node.remove();
 	}
-	injected.length = 0;
 	return Story();
 };
