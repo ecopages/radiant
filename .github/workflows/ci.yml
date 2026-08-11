@@ -66,6 +66,36 @@ jobs:
             - name: Run radiant server tests
               run: pnpm --filter @ecopages/radiant test:lib
 
+    docs-e2e:
+        name: Docs e2e
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '24'
+                  cache: 'pnpm'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build libraries
+              run: pnpm run build:all
+
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install chromium --with-deps
+
+            # The suite's `before` hook builds the docs app itself, which also runs the
+            # rendered-HTML assertion. Serving is `python3 -m http.server`, preinstalled here.
+            - name: Run docs e2e tests
+              run: pnpm --filter radiant-docs test:e2e
+
     radiant-ui-storybook:
         name: radiant-ui Storybook tests
         runs-on: ubuntu-latest
