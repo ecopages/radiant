@@ -9,9 +9,7 @@ import {
 	serializeIsoRange,
 } from '@/lib/intl-date';
 import type { DateDisplayStyle } from '@/lib/intl-date';
-import { RuiIconCalendar } from '@/lib/icons';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
-import '../calendar/calendar.script';
 import { PopoverController, shouldDismissPopoverFocus } from '../shared/popover-controller';
 import { resolveLocale } from '@/lib/intl/locale';
 
@@ -49,6 +47,8 @@ type RuiDateRangePickerBindings = {
  * `<rui-date-range-picker>` — start/end date fields with a range calendar popover.
  *
  * Canonical `value` is `YYYY-MM-DD/YYYY-MM-DD`. Pair with `RuiField` for validation.
+ * Compose inputs, a toggle, popover, and calendar with the `RuiDateRangePicker*`
+ * view helpers. `RuiDateRangePicker` supplies that composition when it has no children.
  *
  * @remarks Range entry is intentionally free-text plus calendar based. Masked
  * segment editing is currently limited to `RuiDateField` so two range inputs do
@@ -104,11 +104,9 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 	@state endDisplay = '';
 	@state editing: EditingField = null;
 
-	private readonly uid = Math.random().toString(36).slice(2, 9);
 	private popoverController: PopoverController | null = null;
 	private suppressPopoverDismiss = false;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'popover' }) popoverTarget: HTMLElement;
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -125,6 +123,14 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 
 	private getEndInput(): HTMLInputElement | null {
 		return this.querySelector<HTMLInputElement>('[data-range-end]');
+	}
+
+	private getToggle(): HTMLButtonElement | null {
+		return this.querySelector<HTMLButtonElement>('[data-range-trigger]');
+	}
+
+	private getCalendar(): HTMLElement | null {
+		return this.querySelector<HTMLElement>('[data-range-calendar]');
 	}
 
 	private formatIso(iso: string): string {
@@ -210,13 +216,38 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 
 	private setOpen(next: boolean): void {
 		this.open = next;
-		queueMicrotask(() => this.syncPopoverPosition());
+		queueMicrotask(() => {
+			this.syncCalendar();
+			this.syncPopoverPosition();
+			if (next) {
+				this.focusCalendarDay();
+			}
+		});
+	}
+
+	/** Focus the calendar's roving day, falling back to its first available day. */
+	private focusCalendarDay(): void {
+		requestAnimationFrame(() => {
+			if (!this.open) {
+				return;
+			}
+
+			const calendar = this.getCalendar();
+			const start = parseIsoRange(this.isoValue)?.start;
+			const selectedDay = start
+				? calendar?.querySelector<HTMLButtonElement>(`[data-calendar-day][data-iso="${start}"]:not(:disabled)`)
+				: null;
+			(selectedDay ??
+				calendar?.querySelector<HTMLButtonElement>(
+					'[data-calendar-day][tabindex="0"]:not(:disabled), [data-calendar-day]:not(:disabled)',
+				))?.focus();
+		});
 	}
 
 	private ensurePopoverController(): PopoverController {
 		if (!this.popoverController) {
 			this.popoverController = new PopoverController({
-				getAnchor: () => this.rootTarget,
+				getAnchor: () => this.getToggle()?.parentElement ?? this,
 				getFloating: () => this.popoverTarget,
 				getOpen: () => this.open,
 				getPlacement: () => 'bottom-start',
@@ -229,7 +260,7 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 
 	private syncPopoverPosition(): void {
 		const popover = this.popoverTarget;
-		if (!popover || !this.rootTarget) {
+		if (!popover) {
 			return;
 		}
 		popover.hidden = !this.open;
@@ -240,20 +271,53 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 		controller.sync();
 	}
 
+	private syncToggle(): void {
+		const toggle = this.getToggle();
+		if (!toggle) {
+			return;
+		}
+
+		toggle.disabled = this.disabled || this.readOnly;
+		toggle.setAttribute('aria-expanded', String(this.open));
+	}
+
+	private syncCalendar(): void {
+		const calendar = this.getCalendar();
+		if (!calendar) {
+			return;
+		}
+
+		calendar.setAttribute('selection-mode', 'range');
+		calendar.setAttribute('visible-months', String(this.visibleMonths));
+		calendar.setAttribute('value', this.isoValue);
+		calendar.setAttribute('min', this.min);
+		calendar.setAttribute('max', this.max);
+		calendar.setAttribute('locale', this.locale);
+		calendar.toggleAttribute('disabled', this.disabled);
+	}
+
 	private wireInputNames(): void {
 		const startInput = this.getStartInput();
 		const endInput = this.getEndInput();
-		if (startInput && this.startName) {
+		if (startInput) {
 			startInput.name = this.startName;
+			startInput.disabled = this.disabled;
+			startInput.readOnly = this.readOnly;
+			startInput.placeholder = this.placeholderStart || 'Start date';
 		}
-		if (endInput && this.endName) {
+		if (endInput) {
 			endInput.name = this.endName;
+			endInput.disabled = this.disabled;
+			endInput.readOnly = this.readOnly;
+			endInput.placeholder = this.placeholderEnd || 'End date';
 		}
 	}
 
 	private initialize(): void {
 		this.wireInputNames();
 		this.syncDisplayValues();
+		this.syncToggle();
+		this.syncCalendar();
 		this.setOpen(false);
 	}
 
@@ -283,10 +347,13 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 	onPropsUpdated(): void {
 		this.wireInputNames();
 		this.syncDisplayValues();
+		this.syncToggle();
+		this.syncCalendar();
 	}
 
 	@onUpdated(['open'])
 	onOpenUpdated(): void {
+		this.syncToggle();
 		this.syncPopoverPosition();
 	}
 
@@ -344,10 +411,10 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 		event.preventDefault();
 	}
 
-	@onEvent({ ref: 'root', type: 'rui-change' })
+	@onEvent({ selector: '[data-range-calendar]', type: 'rui-change' })
 	onCalendarChange(event: Event): void {
 		const target = event.target;
-		if (!(target instanceof HTMLElement) || target.tagName.toLowerCase() !== 'rui-calendar') {
+		if (!(target instanceof HTMLElement) || !target.matches('[data-range-calendar]')) {
 			return;
 		}
 
@@ -359,7 +426,7 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 		this.setOpen(false);
 	}
 
-	@onEvent({ ref: 'root', type: 'keydown' })
+	@onEvent({ selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-calendar]', type: 'keydown' })
 	onRootKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Escape' && this.open) {
 			event.preventDefault();
@@ -367,7 +434,10 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 		}
 	}
 
-	@onEvent({ ref: 'root', type: 'focusout' })
+	@onEvent({
+		selector: '[data-range-start], [data-range-end], [data-range-trigger], [data-range-popover]',
+		type: 'focusout',
+	})
 	onRootFocusOut(event: FocusEvent): void {
 		const relatedTarget = event.relatedTarget;
 
@@ -382,79 +452,11 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 			}
 
 			const next = relatedTarget instanceof Node ? relatedTarget : document.activeElement;
-			if (!shouldDismissPopoverFocus(this.rootTarget, this.popoverTarget, next)) {
+			if (!shouldDismissPopoverFocus(this, this.popoverTarget, next)) {
 				return;
 			}
 			this.setOpen(false);
 		});
 	}
 
-	override render() {
-		const calendarProps = {
-			'prop:selectionMode': 'range',
-			'prop:visibleMonths': this.visibleMonths,
-			'prop:value': this.isoValue,
-			'prop:min': this.min,
-			'prop:max': this.max,
-			'prop:locale': this.locale,
-			'prop:disabled': this.disabled,
-		};
-
-		return (
-			<div class="rui-date-range-picker" data-ref="root">
-				<div class="rui-date-range-picker__group">
-					<div class="rui-date-range-picker__values">
-						<input
-							type="text"
-							class="rui-date-range-picker__input"
-							data-range-start
-							data-rui-control
-							data-rui-control-type="text"
-							id={`${this.uid}-start`}
-							autocomplete="off"
-							disabled={this.$.disabled}
-							readOnly={this.$.readOnly}
-							placeholder={this.placeholderStart || 'Start date'}
-						/>
-						<span class="rui-date-range-picker__separator" aria-hidden="true">
-							–
-						</span>
-						<input
-							type="text"
-							class="rui-date-range-picker__input"
-							data-range-end
-							data-rui-control
-							data-rui-control-type="text"
-							id={`${this.uid}-end`}
-							autocomplete="off"
-							disabled={this.$.disabled}
-							readOnly={this.$.readOnly}
-							placeholder={this.placeholderEnd || 'End date'}
-						/>
-					</div>
-					<button
-						type="button"
-						class="rui-control-toggle"
-						data-ref="trigger"
-						data-range-trigger
-						aria-label="Open calendar"
-						aria-haspopup="dialog"
-						aria-expanded={this.open ? 'true' : 'false'}
-						disabled={this.$.disabled || this.$.readOnly}
-					>
-						<RuiIconCalendar />
-					</button>
-				</div>
-				<div
-					class="rui-date-range-picker__popover rui-popover rui-floating"
-					data-ref="popover"
-					data-range-popover
-					hidden={!this.open}
-					role="dialog"
-				>
-					{this.open ? <rui-calendar {...calendarProps} /> : null}
-				</div>
-			</div>
-		);
-	}
 }

@@ -4,7 +4,17 @@ import { RuiField, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
 import { RuiLabel } from '../label';
 import { RuiButton } from '../button';
-import { RuiDateRangePicker } from './date-range-picker';
+import {
+	RuiDateRangePicker,
+	RuiDateRangePickerCalendar,
+	RuiDateRangePickerControl,
+	RuiDateRangePickerEndInput,
+	RuiDateRangePickerInputs,
+	RuiDateRangePickerPopover,
+	RuiDateRangePickerSeparator,
+	RuiDateRangePickerStartInput,
+	RuiDateRangePickerToggle,
+} from './date-range-picker';
 import { RuiDateRangePicker as RuiDateRangePickerElement } from './date-range-picker.script';
 
 const meta = {
@@ -46,6 +56,21 @@ export const WithCalendar: Story = {
 	args: {
 		value: '',
 	},
+	render: () => (
+		<RuiDateRangePicker>
+			<RuiDateRangePickerControl>
+				<RuiDateRangePickerInputs>
+					<RuiDateRangePickerStartInput />
+					<RuiDateRangePickerSeparator />
+					<RuiDateRangePickerEndInput />
+				</RuiDateRangePickerInputs>
+				<RuiDateRangePickerToggle />
+			</RuiDateRangePickerControl>
+			<RuiDateRangePickerPopover>
+				<RuiDateRangePickerCalendar />
+			</RuiDateRangePickerPopover>
+		</RuiDateRangePicker>
+	),
 	play: async ({ canvasElement, step }) => {
 		const host = canvasElement.querySelector('rui-date-range-picker') as HTMLElement;
 		const trigger = canvasElement.querySelector('[data-range-trigger]') as HTMLButtonElement;
@@ -53,6 +78,9 @@ export const WithCalendar: Story = {
 		await step('opens the range calendar and selects dates', async () => {
 			await userEvent.click(trigger);
 			await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+			await waitFor(() => {
+				expect(document.activeElement?.matches('[data-calendar-day]')).toBe(true);
+			});
 			await userEvent.click(canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-03"]')!);
 			await userEvent.click(canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-14"]')!);
 			await waitFor(() => {
