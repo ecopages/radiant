@@ -147,7 +147,9 @@ if (components.length === 0) {
 
 const packageJson = JSON.parse(readFileSync(PACKAGE_JSON_PATH, 'utf8')) as PackageJson;
 packageJson.exports = buildExportsMap(components);
-writeFileSync(PACKAGE_JSON_PATH, `${JSON.stringify(packageJson, null, 2)}\n`);
+/* Tabs, matching the repo's Prettier config — two spaces reformatted all ~490 lines on
+   every build, so each release commit carried a whole-file whitespace diff. */
+writeFileSync(PACKAGE_JSON_PATH, `${JSON.stringify(packageJson, null, '\t')}\n`);
 
 writeFileSync(BARREL_PATH, buildBarrel(components));
 writeFileSync(STYLES_CSS_PATH, buildStylesEntry(components));
