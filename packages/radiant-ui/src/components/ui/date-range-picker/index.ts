@@ -13,4 +13,5 @@ export {
 	RuiDateRangePickerSeparator,
 	RuiDateRangePickerStartInput,
 	RuiDateRangePickerToggle,
+	type RuiDateRangePickerViewProps,
 } from './date-range-picker';
