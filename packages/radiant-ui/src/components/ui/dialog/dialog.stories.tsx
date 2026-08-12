@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, fn } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
-import { dialogStage, STORY_DIALOG_ID, withDialogStage } from '../../../../.storybook/with-dialog-stage';
+import { STORY_DIALOG_ID, withDialogRegistry, withDialogTrigger } from '@sb/with-dialog';
 import { RuiButton } from '../button';
 import {
 	RuiDialog,
@@ -18,7 +18,7 @@ const meta = {
 	title: 'Components/Dialog',
 	component: RuiDialog,
 	parameters: { radiant: { element: RuiDialogElement, cssImports: ['./dialog.css'] } },
-	decorators: [withDialogStage],
+	decorators: [withDialogRegistry],
 	args: {
 		id: STORY_DIALOG_ID,
 		open: false,
@@ -53,6 +53,7 @@ async function openStoryDialog(canvasElement: HTMLElement): Promise<void> {
 }
 
 export const Default: Story = {
+	decorators: [withDialogTrigger],
 	play: async ({ canvasElement, step }) => {
 		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
 
@@ -78,6 +79,7 @@ export const Default: Story = {
 };
 
 export const AlertDialog: Story = {
+	decorators: [withDialogTrigger],
 	args: {
 		alert: true,
 		title: 'Delete account?',
@@ -107,6 +109,7 @@ export const AlertDialog: Story = {
 };
 
 export const Closed: Story = {
+	decorators: [withDialogTrigger],
 	args: { open: false },
 	play: async ({ canvasElement, step }) => {
 		if (isStaticSsrPreview(canvasElement) || !getHost(canvasElement)) return;
@@ -118,6 +121,7 @@ export const Closed: Story = {
 };
 
 export const Composed: Story = {
+	decorators: [withDialogTrigger],
 	render: () => (
 		<RuiDialog id={STORY_DIALOG_ID} open={false} alert={false}>
 			<RuiDialogClose />
@@ -152,7 +156,6 @@ export const Composed: Story = {
 };
 
 export const Registry: Story = {
-	parameters: dialogStage({ trigger: false }),
 	render: () => (
 		<>
 			<RuiButton type="button" variant="outline" data-dialog-open="named-invite">

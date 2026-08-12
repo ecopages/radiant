@@ -110,9 +110,84 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 ```
 
+- `parameters.radiant.renderMode` — `client` (default), `ssr-hydrate`, or `ssr-static`.
 - `parameters.radiant.element` — optional SSR host. Prefer a custom-element constructor; omit for presentational views. A JSX view function is accepted by the type but only constructors are linked at runtime.
 - `parameters.radiant.cssImports` — paths relative to the story file; the Vite stamp transform injects side-effect CSS imports. Source-only, never read at runtime.
-- Use `withStylesheets` / `parameters.stylesheets` only for story-scoped extras (docs skins, etc.).
+
+Those three are the whole authoring surface. The remaining `radiant` fields (`ssrModule`,
+`ssrExport`, `clientModule`, `viewModule`, `viewExport`, `storyModule`, `storyExport`) are
+resolved from `meta.component` and its module stamps — declare one only to override that
+inference. The SSR error banner names the specific field when resolution fails.
+
+> **Important**
+> `radiant` is the framework's contract, and SSR modes cross an HTTP boundary to the Vite
+> middleware. Only JSON-serializable data travels — `args`, module paths, export names. There
+> is no server-side callback hook, so put host state in `args`.
+
+### Project and addon parameters
+
+`parameters` stays open at the top level — `a11y`, `test`, `chromatic`, `viewport` and any
+other addon key type-check as usual. Only `radiant` is closed.
+
+Storybook types its own `Parameters` as `{ [name: string]: any }`, and intersecting that would
+collapse `radiant` back to `any` — the index signature wins. The framework widens to an
+`unknown` index instead: arbitrary keys still pass, while `parameters.radiant` keeps its real
+type. Inside `radiant` there is no index signature, so a key belonging to neither the authoring
+nor the derived set is an error under `satisfies`:
+
+```text
+error TS2353: Object literal may only specify known properties, and 'dialogStage' does not
+exist in type 'RadiantAuthoredParameters & RadiantDerivedParameters'.
+```
+
+That is the boundary worth enforcing: the framework reads those fields, and a stray key there
+means a story is using `radiant` as a config scratchpad.
+
+**Decorator options do not belong in `parameters` at all.** Write the decorator as a factory
+and configure it where it is applied:
+
+```ts
+// .storybook/with-stylesheets.ts
+import type { Decorator } from '@ecopages/storybook-radiant-vite';
+
+export function withStylesheets(entries: StylesheetEntry[]): Decorator {
+	return (Story) => {
+		/* ...use `entries` directly... */
+		return Story();
+	};
+}
+```
+
+```ts
+export const DocsNavigation: Story = {
+	decorators: [withStylesheets([docsNavCss])],
+};
+```
+
+The options are typed at the call site, the decorator needs no cast on `context.parameters`,
+and there is nothing to keep in sync between a parameter key and the code that reads it.
+
+**Prefer two decorators over one boolean.** Storybook composes `meta` and story decorators
+rather than letting a story replace one, so a `meta`-level decorator plus a per-story override
+is not expressible. That pressure is what produces flags like `trigger: false`. Split the
+behaviours instead and apply each where it belongs:
+
+```ts
+const meta = {
+	decorators: [withDialogRegistry], // every story needs the registry
+} satisfies Meta<typeof RuiDialog>;
+
+export const Default: Story = {
+	decorators: [withDialogTrigger], // only stories that want a trigger
+};
+
+export const Registry: Story = {
+	render: () => /* renders its own triggers, so no trigger decorator */ null,
+};
+```
+
+Likewise, if a story wants entirely different content, that belongs in its `render` — not in a
+flag that makes a decorator substitute content for a `render: () => null`.
 
 **Always annotate with `satisfies`, never a wrapper function.** `Meta<T>` is a conditional
 type, so TypeScript cannot infer `T` from a parameter typed by it — a `defineMeta(meta)`

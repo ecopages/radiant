@@ -1,5 +1,6 @@
-import { RuiToaster, type ToastPosition, TOAST_POSITIONS } from '@ecopages/radiant-ui/toast';
+import { type ToastPosition, TOAST_POSITIONS } from '@ecopages/radiant-ui/toast';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
+import { ToastDemoTriggers } from '@/lib/story-decorators/toast-demo-triggers';
 import { withToastStage } from '@/lib/story-decorators/with-toast-stage';
 
 export type ToastArgs = {
@@ -28,16 +29,8 @@ export const meta = {
 		closeButton: { control: { type: 'boolean' } },
 		expand: { control: { type: 'boolean' } },
 	},
-	decorators: [withToastStage()],
-	render: (args) => (
-		<RuiToaster
-			position={args.position}
-			duration={args.duration}
-			visibleToasts={args.visibleToasts}
-			closeButton={args.closeButton}
-			expand={args.expand}
-		/>
-	),
+	decorators: [withToastStage],
+	render: () => <ToastDemoTriggers />,
 } satisfies DocsMeta<ToastArgs>;
 
 type Story = DocsStory<ToastArgs>;

@@ -22,7 +22,7 @@ export const meta = {
 		alert: { control: { type: 'boolean' } },
 		label: { control: { type: 'text' } },
 	},
-	decorators: [withDialogStage()],
+	decorators: [withDialogStage],
 	render: (args) => (
 		<RuiDialog
 			id={args.id}
