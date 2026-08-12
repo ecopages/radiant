@@ -61,20 +61,20 @@ html[data-rui-colors='aurora'] {
 
 	--neutral: var(--color-pale-sky-500);
 
-	--surface: var(--color-pale-sky-50);
+	--surface: color-mix(in oklab, var(--color-havelock-blue-50) 70%, var(--color-hit-pink-50));
 	--on-surface: var(--color-black);
-	--surface-container-lowest: var(--color-pale-sky-100);
+	--surface-container-lowest: color-mix(in oklab, var(--color-havelock-blue-50) 60%, var(--color-hit-pink-50));
 	--on-surface-container-lowest: var(--color-black);
-	--surface-container-low: var(--color-pale-sky-200);
+	--surface-container-low: color-mix(in oklab, var(--color-havelock-blue-100) 75%, var(--color-hit-pink-50));
 	--on-surface-container-low: var(--color-black);
-	--surface-container: var(--color-pale-sky-300);
+	--surface-container: color-mix(in oklab, var(--color-havelock-blue-100) 65%, var(--color-hit-pink-100));
 	--on-surface-container: var(--color-black);
-	--surface-container-high: var(--color-pale-sky-400);
+	--surface-container-high: color-mix(in oklab, var(--color-havelock-blue-200) 60%, var(--color-hit-pink-100));
 	--on-surface-container-high: var(--color-black);
-	--surface-container-highest: var(--color-pale-sky-500);
+	--surface-container-highest: color-mix(in oklab, var(--color-havelock-blue-200) 50%, var(--color-hit-pink-200));
 	--on-surface-container-highest: var(--color-black);
 
-	--background: var(--color-white);
+	--background: color-mix(in oklab, var(--color-havelock-blue-50) 75%, var(--color-hit-pink-50));
 	--on-background: var(--color-black);
 
 	--border: var(--color-pale-sky-400);
@@ -128,20 +128,20 @@ html.dark[data-rui-colors='aurora'] {
 	--warning-light: var(--color-hit-pink-300);
 	--warning-dark: var(--color-hit-pink-800);
 
-	--surface: var(--color-pale-sky-975);
+	--surface: color-mix(in oklab, var(--color-pale-sky-975) 65%, var(--color-havelock-blue-950));
 	--on-surface: var(--color-white);
-	--surface-container-lowest: var(--color-pale-sky-950);
+	--surface-container-lowest: color-mix(in oklab, var(--color-pale-sky-950) 75%, var(--color-havelock-blue-950));
 	--on-surface-container-lowest: var(--color-white);
-	--surface-container-low: var(--color-pale-sky-900);
+	--surface-container-low: color-mix(in oklab, var(--color-pale-sky-900) 70%, var(--color-havelock-blue-900));
 	--on-surface-container-low: var(--color-white);
-	--surface-container: var(--color-pale-sky-800);
+	--surface-container: color-mix(in oklab, var(--color-pale-sky-800) 65%, var(--color-havelock-blue-900));
 	--on-surface-container: var(--color-white);
-	--surface-container-high: var(--color-pale-sky-700);
+	--surface-container-high: color-mix(in oklab, var(--color-pale-sky-800) 60%, var(--color-hit-pink-900));
 	--on-surface-container-high: var(--color-white);
-	--surface-container-highest: var(--color-pale-sky-600);
+	--surface-container-highest: color-mix(in oklab, var(--color-pale-sky-700) 55%, var(--color-hit-pink-800));
 	--on-surface-container-highest: var(--color-white);
 
-	--background: var(--color-black);
+	--background: color-mix(in oklab, var(--color-pale-sky-975) 70%, var(--color-havelock-blue-950));
 	--on-background: var(--color-white);
 
 	--border: var(--color-pale-sky-700);
