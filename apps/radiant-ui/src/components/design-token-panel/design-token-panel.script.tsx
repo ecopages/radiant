@@ -9,13 +9,13 @@ type TokenName = 'colors' | 'spacing' | 'radius';
 type TokenSelection = Record<TokenName, string>;
 
 const STORAGE_KEY = 'radiant-ui-docs:theme';
-const defaultSelection: TokenSelection = { colors: 'default', spacing: 'default', radius: 'default' };
+const defaultSelection: TokenSelection = { colors: 'glacier', spacing: 'default', radius: 'default' };
 
 const colorOptions = [
-	{ value: 'default', label: 'Default', description: 'Glacier alias' },
 	{ value: 'glacier', label: 'Glacier', description: 'Cool, editorial' },
 	{ value: 'basalt', label: 'Basalt', description: 'Carbon-inspired' },
 	{ value: 'ember', label: 'Ember', description: 'Warm accent' },
+	{ value: 'aurora', label: 'Aurora', description: 'Vivid and expressive' },
 ] as const;
 
 const spacingOptions = [
@@ -100,7 +100,7 @@ export class DesignTokenPanelElement extends RadiantElement {
 				<div class="design-token-panel__intro">
 					<RuiHeading size="sm">
 						<RuiHeadingEyebrow>Live token preview</RuiHeadingEyebrow>
-						<RuiHeadingTitle id="design-token-panel-title">Try a theme combination</RuiHeadingTitle>
+						<RuiHeadingTitle id="design-token-panel-title">Try a token combination</RuiHeadingTitle>
 						<RuiHeadingDescription>
 							Selections apply to the complete docs page immediately and persist between visits.
 						</RuiHeadingDescription>
@@ -109,11 +109,11 @@ export class DesignTokenPanelElement extends RadiantElement {
 				<RuiFeed class="design-token-panel__groups" label="Theme options">
 					<RuiFeedArticle class="design-token-panel__group" posinset={1} setsize={3} tabindex={-1}>
 						<RuiFeedArticleContent>
-							<RuiLabel>Colour theme</RuiLabel>
+							<RuiLabel>Colour profile</RuiLabel>
 							<RuiRadioGroup
 								value={colors}
 								name="docs-color-theme"
-								label="Colour theme"
+								label="Colour profile"
 								data-token="colors"
 							>
 								<TokenOptions name="docs-color-theme" options={colorOptions} />
@@ -158,14 +158,17 @@ function isTokenName(value: string | undefined): value is TokenName {
 function selectionFromDocument(): TokenSelection {
 	const { ruiColors, ruiSpacing, ruiRadius } = document.documentElement.dataset;
 	return {
-		colors: ruiColors === 'glacier' || ruiColors == null || ruiColors === '' ? 'default' : ruiColors,
+		colors:
+			ruiColors === 'basalt' || ruiColors === 'ember' || ruiColors === 'aurora'
+				? ruiColors
+				: defaultSelection.colors,
 		spacing: ruiSpacing != null && ruiSpacing !== '' ? ruiSpacing : defaultSelection.spacing,
 		radius: ruiRadius != null && ruiRadius !== '' ? ruiRadius : defaultSelection.radius,
 	};
 }
 
 function setTokenAttribute(root: HTMLElement, name: 'ruiColors' | 'ruiSpacing' | 'ruiRadius', value: string): void {
-	root.dataset[name] = name === 'ruiColors' && value === 'default' ? 'glacier' : value;
+	root.dataset[name] = value;
 }
 
 declare module '@ecopages/jsx/jsx-runtime' {
