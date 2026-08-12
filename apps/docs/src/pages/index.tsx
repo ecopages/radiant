@@ -274,6 +274,7 @@ const HomePage = () => {
 					<a href="https://github.com/ecopages/ecopages" target="_blank" rel="noopener noreferrer">
 						Ecopages
 					</a>
+					© {new Date().getFullYear()}
 				</p>
 			</footer>
 		</div>
