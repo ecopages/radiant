@@ -1,5 +1,16 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-beta.8
+
+### Patch Changes
+
+- Prepare the next beta release.
+
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-beta.8
+    - @ecopages/radiant@0.3.0-beta.8
+    - @ecopages/signals@0.3.0-beta.8
+
 ## 0.1.0-beta.5
 
 ### Minor Changes
