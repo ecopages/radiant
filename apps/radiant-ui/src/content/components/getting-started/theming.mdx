@@ -1,6 +1,6 @@
 ---
 title: Themes and tokens
-description: Choose colour, density, and shape token packs, then apply them as a complete Radiant UI theme.
+description: Compose colour, spacing, and radius tokens into a Radiant UI foundation.
 group: Getting started
 ---
 
@@ -16,29 +16,29 @@ export const config = {
 # Themes and tokens
 
 <p class="docs-lede">
-	Radiant UI separates colour, spacing, and radius into token packs. Combine them to give an entire product a
-	consistent visual character without changing component code.
+	Radiant UI separates colour, spacing, and radius into token packs. Choose the combination once in your application
+	stylesheet; components consume the resulting semantic tokens without component-specific overrides.
 </p>
 
 <DesignTokenPanel />
 
-## Choose a theme with CSS imports
+## Start with the foundation
 
-Themes are build-time CSS composition. Import one complete theme and the component stylesheet in your application's
-entry stylesheet. The `default` theme is an alias for Glacier, the balanced blue profile used by this documentation;
-it includes the default spacing and radius packs.
+Import the default foundation and component stylesheet in your application's entry stylesheet. It provides Glacier with
+the default spacing and radius packs.
 
 ```css
 @import '@ecopages/radiant-ui/themes/default';
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-Use Aurora when you want its more vivid colour profile:
+## Explore colour profiles
 
-```css
-@import '@ecopages/radiant-ui/themes/aurora';
-@import '@ecopages/radiant-ui/styles.css';
-```
+The live preview above includes Glacier, Basalt, Ember, and Aurora. Aurora is the vivid, expressive option; the other
+profiles are deliberately more restrained.
+
+Important: this preview is documentation-only. It uses `data-rui-colors` to switch profiles at runtime so you can
+compare combinations. Those attributes are not a supported application API.
 
 ## Spacing and shape
 
@@ -52,10 +52,10 @@ the sharp radius pack.
 @import '@ecopages/radiant-ui/tokens/radius/soft';
 ```
 
-## Compose intentionally
+## Compose the geometry you need
 
-Load one complete theme first, then layer a spacing or radius pack when a product needs a distinct density or shape.
-All component styles consume semantic roles and shared geometry tokens, so no component-specific overrides are needed.
+Layer a spacing or radius pack after the foundation when a product needs a distinct density or shape. Do not start from
+a named full preset: select only the packs your product needs.
 
 ```css
 @import '@ecopages/radiant-ui/themes/default';
@@ -64,9 +64,8 @@ All component styles consume semantic roles and shared geometry tokens, so no co
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-`data-rui-colors`, `data-rui-spacing`, and `data-rui-radius` are only used by this documentation's live preview. They
-are not an application theming API. Do not add them to production markup; select the complete theme and optional token
-packs with CSS imports instead.
+`data-rui-colors`, `data-rui-spacing`, and `data-rui-radius` are only used by this documentation's live preview. Do
+not add them to production markup.
 
 ## Build a custom theme
 
