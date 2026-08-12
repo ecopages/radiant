@@ -1,5 +1,11 @@
 # @ecopages/vite-plugin-radiant
 
+## 0.1.0-beta.3
+
+### Patch Changes
+
+- Bump `@ecopages/vite-plugin-radiant` to the next beta.
+
 ## 0.1.0-beta.2
 
 ### Patch Changes
