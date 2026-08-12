@@ -119,8 +119,9 @@ export const ThemeIconOnly: Story = {
 		const host = getHost(canvasElement);
 		const button = getButton(canvasElement);
 
-		await step('icon-only items keep sr-only labels', async () => {
-			await expect(getVisibleItem(button)?.querySelector('.sr-only')?.textContent).toBe('System');
+		await step('icon-only items retain accessible labels', async () => {
+			await expect(getVisibleItem(button)?.querySelector<HTMLElement>('[aria-label]')?.ariaLabel).toBe('System');
+			await expect(button).toHaveAccessibleName('Theme: System');
 		});
 
 		await step('clicking emits rui-change with the next theme value', async () => {
@@ -132,7 +133,8 @@ export const ThemeIconOnly: Story = {
 			await userEvent.click(button);
 			await expect(emissions).toEqual(['light']);
 			await expect(host).toHaveAttribute('value', 'light');
-			await expect(getVisibleItem(button)?.querySelector('.sr-only')?.textContent).toBe('Light');
+			await expect(getVisibleItem(button)?.querySelector<HTMLElement>('[aria-label]')?.ariaLabel).toBe('Light');
+			await expect(button).toHaveAccessibleName('Theme: Light');
 		});
 	},
 };

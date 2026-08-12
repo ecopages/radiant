@@ -99,7 +99,7 @@ export class RuiCycleToggle extends RadiantElement {
 		const button = this.querySelector<HTMLButtonElement>(BUTTON_SELECTOR);
 		if (!button) return;
 
-		const selectedLabel = selected?.textContent?.trim();
+		const selectedLabel = selected?.querySelector<HTMLElement>('[aria-label]')?.ariaLabel ?? selected?.textContent?.trim();
 		if (!this.label || !selectedLabel) {
 			button.removeAttribute('aria-label');
 			return;

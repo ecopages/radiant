@@ -1,6 +1,7 @@
 import { eco } from '@ecopages/core';
 import { codeToHtml } from 'shiki';
 import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiChip } from '@ecopages/radiant-ui/chip';
 import {
 	RuiFeed,
 	RuiFeedArticle,
@@ -260,9 +261,9 @@ const HomePage = () => {
 				<div class="home-sidebar__section">
 					<p class="home-sidebar__label">Ecosystem</p>
 					<div class="home-sidebar__tags">
-						<span class="home-sidebar__tag">@ecopages/radiant</span>
-						<span class="home-sidebar__tag">@ecopages/jsx</span>
-						<span class="home-sidebar__tag">@ecopages/signals</span>
+						<RuiChip class="font-mono">@ecopages/radiant</RuiChip>
+						<RuiChip class="font-mono">@ecopages/jsx</RuiChip>
+						<RuiChip class="font-mono">@ecopages/signals</RuiChip>
 					</div>
 				</div>
 			</aside>
