@@ -133,12 +133,7 @@ export class DesignTokenPanelElement extends RadiantElement {
 				<div class="design-token-panel__groups">
 					<div class="design-token-panel__group">
 						<RuiLabel>Colour theme</RuiLabel>
-						<RuiRadioGroup
-							value={colors}
-							name="docs-color-theme"
-							label="Colour theme"
-							data-token="colors"
-						>
+						<RuiRadioGroup value={colors} name="docs-color-theme" label="Colour theme" data-token="colors">
 							<TokenOptions name="docs-color-theme" options={colorOptions} />
 						</RuiRadioGroup>
 					</div>

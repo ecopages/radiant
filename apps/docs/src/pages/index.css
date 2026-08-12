@@ -33,16 +33,8 @@
 	}
 }
 
-.home-header__subtitle {
-	@apply text-sm font-bold uppercase tracking-[0.15em] text-on-background/60;
-}
-
-.home-header__title {
-	@apply mt-3 font-heading text-4xl leading-tight text-on-background font-semibold md:text-5xl text-balance;
-}
-
-.home-header__description {
-	@apply mt-4 max-w-3xl text-base leading-relaxed text-on-background/80 md:text-lg;
+.home-header__heading {
+	@apply max-w-3xl;
 }
 
 .home-header__actions {
@@ -61,20 +53,8 @@
 	@apply grid gap-4 sm:grid-cols-2;
 }
 
-.home-card {
-	@apply flex flex-col rounded-sm border border-border bg-background-accent p-6 text-on-background no-underline transition-all hover:border-on-background/30 hover:bg-secondary-container/10;
-}
-
-.home-card__label {
-	@apply text-xs font-bold uppercase tracking-widest text-on-background/55;
-}
-
-.home-card__title {
-	@apply mt-3 font-heading text-xl font-semibold;
-}
-
-.home-card__text {
-	@apply mt-2 text-sm leading-relaxed text-on-background/70;
+.home-cards .rui-feed__article {
+	@apply h-full;
 }
 
 .home-path {

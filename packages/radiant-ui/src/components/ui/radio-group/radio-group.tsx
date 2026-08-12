@@ -75,13 +75,7 @@ export function RuiRadioGroup({
 	...props
 }: JsxHtmlPropsWithChildren<RuiRadioGroupProps & { slot?: string; options?: RuiRadioOption[] }>) {
 	return (
-		<rui-radio-group
-			{...props}
-			attr:value={value}
-			attr:name={name}
-			attr:label={label}
-			attr:disabled={disabled}
-		>
+		<rui-radio-group {...props} attr:value={value} attr:name={name} attr:label={label} attr:disabled={disabled}>
 			{options == null ? (
 				children
 			) : (
