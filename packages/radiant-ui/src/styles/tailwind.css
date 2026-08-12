@@ -5,8 +5,6 @@
  */
 @import './radiant-ui.css';
 @import '../components/ui/button/button.css';
-@import './tokens/presets/spacing.css';
-@import './tokens/presets/radius.css';
 
 html,
 body,
