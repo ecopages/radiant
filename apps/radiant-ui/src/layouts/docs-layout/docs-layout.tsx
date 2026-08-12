@@ -80,7 +80,7 @@ const DocsSiteHeader = () => (
 				controls={DOCS_SIDEBAR_ID}
 				triggerLabel="Open component navigation"
 			/>
-			<Logo href="/" target="_self" title="Radiant UI" />
+			<Logo href="/docs/getting-started/introduction" target="_self" title="Radiant UI" />
 			<RuiChip variant="default">v {radiantUiJson.version}</RuiChip>
 		</div>
 		<nav class="rui-sidebar-provider__site-header-nav" aria-label="Site">
