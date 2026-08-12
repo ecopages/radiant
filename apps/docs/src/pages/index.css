@@ -89,6 +89,26 @@
 	@apply flex flex-wrap gap-2 mt-1;
 }
 
+.home-footer {
+	@apply col-span-full border-t border-border pt-6 text-sm text-on-background/70;
+
+	p {
+		@apply flex flex-wrap justify-center gap-x-1;
+	}
+
+	a {
+		@apply font-medium text-on-background underline decoration-border underline-offset-4 transition-colors;
+
+		@media (hover: hover) {
+			@apply hover:decoration-on-background;
+		}
+
+		&:focus-visible {
+			@apply rounded-sm outline-2 outline-offset-2 outline-primary;
+		}
+	}
+}
+
 .home-code-block[data-rehype-pretty-code-figure] {
 	@apply my-0 border-0 rounded-sm rounded-b-none border border-border bg-background-accent overflow-x-auto;
 
