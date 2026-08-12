@@ -101,3 +101,23 @@
 	--color-background-code: var(--color-glacier-white-900);
 	--color-on-background-code: var(--color-laser-lemon-300);
 }
+
+html {
+	--color-primary: var(--primary);
+	--color-on-primary: var(--on-primary);
+	--color-primary-container: var(--primary-container);
+	--color-on-primary-container: var(--on-primary-container);
+	--color-secondary: var(--secondary);
+	--color-on-secondary: var(--on-secondary);
+	--color-secondary-container: var(--secondary-container);
+	--color-on-secondary-container: var(--on-secondary-container);
+	--color-background: var(--background);
+	--color-on-background: var(--on-background);
+	--color-background-accent: var(--surface);
+	--color-on-background-accent: var(--on-surface);
+	--color-muted: var(--surface-container-low);
+	--color-border: var(--border);
+	--color-link: var(--link);
+	--color-background-code: var(--background-code);
+	--color-on-background-code: var(--on-background-code);
+}
