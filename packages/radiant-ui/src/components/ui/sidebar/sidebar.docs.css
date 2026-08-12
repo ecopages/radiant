@@ -52,6 +52,8 @@ rui-sidebar {
 
 	.rui-sidebar__menu {
 		@apply mb-4 ml-1.5 gap-px border-l border-border/30 pl-3;
+		--rui-docs-navigation-inset: var(--space-3);
+		padding-left: var(--rui-docs-navigation-inset);
 	}
 
 	.rui-sidebar__menu-button {
@@ -78,6 +80,7 @@ rui-sidebar {
 	.rui-sidebar__menu-button--active::before {
 		content: '';
 		@apply absolute left-[-13px] top-1/2 h-3 w-0.5 -translate-y-1/2 rounded-r-sm bg-primary;
+		left: calc(-1 * (var(--rui-docs-navigation-inset) + 1px));
 	}
 
 	.rui-sidebar__menu-button > :last-child {

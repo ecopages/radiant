@@ -15,6 +15,8 @@ rui-toc {
 
 	.rui-toc__list {
 		@apply ml-1 list-none border-l border-border/30 p-0 pl-3 m-0;
+		--rui-docs-navigation-inset: var(--space-3);
+		padding-left: var(--rui-docs-navigation-inset);
 	}
 
 	.rui-toc__item + .rui-toc__item {
@@ -37,6 +39,7 @@ rui-toc {
 	.rui-toc__link--active::before {
 		content: '';
 		@apply absolute top-1/2 left-[-13px] h-3 w-0.5 -translate-y-1/2 rounded-r-sm bg-primary;
+		left: calc(-1 * (var(--rui-docs-navigation-inset) + 1px));
 	}
 
 	.rui-toc__item--depth-3 .rui-toc__link {
