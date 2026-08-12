@@ -50,7 +50,7 @@ const HomeFeedArticle = ({
 		<RuiFeedArticleContent>
 			<p>{description}</p>
 		</RuiFeedArticleContent>
-		<RuiFeedArticleActions>
+		<RuiFeedArticleActions class="mt-auto">
 			<RuiButton href={href} variant="link" size="none">
 				Explore {label}
 			</RuiButton>
@@ -267,6 +267,15 @@ const HomePage = () => {
 					</div>
 				</div>
 			</aside>
+
+			<footer class="home-footer">
+				<p>
+					Made with{' '}
+					<a href="https://github.com/ecopages/ecopages" target="_blank" rel="noopener noreferrer">
+						Ecopages
+					</a>
+				</p>
+			</footer>
 		</div>
 	);
 };
