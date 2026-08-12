@@ -1,6 +1,7 @@
 import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiChip } from '@ecopages/radiant-ui/chip';
 import {
 	RuiSidebar,
 	RuiSidebarContent,
@@ -80,7 +81,7 @@ const DocsSiteHeader = () => (
 				triggerLabel="Open component navigation"
 			/>
 			<Logo href="/" target="_self" title="Radiant UI" />
-			<span class="rui-sidebar-provider__site-header-version">v {radiantUiJson.version}</span>
+			<RuiChip variant="default">v {radiantUiJson.version}</RuiChip>
 		</div>
 		<nav class="rui-sidebar-provider__site-header-nav" aria-label="Site">
 			<RuiButton
@@ -123,6 +124,7 @@ export const DocsLayout = eco.component<DocsLayoutProps, JsxRenderable>({
 							collapsible="off"
 							defaultWidth={250}
 							mobileBreakpoint={768}
+							mobileDefaultOpen={false}
 							label="Component navigation"
 							matchActive
 							navigationEvents={ECO_NAVIGATION_EVENTS}
