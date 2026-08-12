@@ -1,6 +1,14 @@
 import { eco } from '@ecopages/core';
 import { codeToHtml } from 'shiki';
 import { RuiButton } from '@ecopages/radiant-ui/button';
+import {
+	RuiFeed,
+	RuiFeedArticle,
+	RuiFeedArticleActions,
+	RuiFeedArticleContent,
+	RuiFeedArticleHeader,
+} from '@ecopages/radiant-ui/feed';
+import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from '@ecopages/radiant-ui/heading';
 import { BaseLayout } from '@/layouts/base-layout';
 import { CodeTabs } from '@/components/code-tabs';
 import { RadiantJsxCounter as RadiantCounterDemo } from '@/components/radiant-counter/radiant-jsx-counter';
@@ -18,24 +26,35 @@ const counterControllerExample = await codeToHtml(counterControllerExampleCode, 
 	defaultColor: false,
 });
 
-const HomeCard = ({
+const HomeFeedArticle = ({
 	href,
 	label,
 	title,
 	description,
+	position,
 }: {
 	href: string;
 	label: string;
 	title: string;
 	description: string;
+	position: number;
 }) => (
-	<a href={href} class="home-card group">
-		<article>
-			<p class="home-card__label">{label}</p>
-			<h1 class="home-card__title">{title}</h1>
-			<p class="home-card__text">{description}</p>
-		</article>
-	</a>
+	<RuiFeedArticle posinset={position} setsize={4} tabindex={-1}>
+		<RuiFeedArticleHeader>
+			<RuiHeading size="sm">
+				<RuiHeadingEyebrow>{label}</RuiHeadingEyebrow>
+				<RuiHeadingTitle as="h2">{title}</RuiHeadingTitle>
+			</RuiHeading>
+		</RuiFeedArticleHeader>
+		<RuiFeedArticleContent>
+			<p>{description}</p>
+		</RuiFeedArticleContent>
+		<RuiFeedArticleActions>
+			<RuiButton href={href} variant="link" size="none">
+				Explore {label}
+			</RuiButton>
+		</RuiFeedArticleActions>
+	</RuiFeedArticle>
 );
 
 const HomePathCard = ({ href, title, description }: { href: string; title: string; description: string }) => (
@@ -54,13 +73,16 @@ const HomePage = () => {
 			<header class="home-header">
 				<div class="home-hero">
 					<div class="home-hero__text">
-						<p class="home-header__subtitle">Radiant</p>
-						<h1 class="home-header__title">Build reactive hosts with JSX and Signals.</h1>
-						<p class="home-header__description">
-							Radiant gives you one reactive host model for both custom elements and DOM-attached
-							controllers. Use RadiantElement when the host owns its contract, or RadiantController when
-							the HTML should stay authored outside the class. JSX and Signals stay optional companions.
-						</p>
+						<RuiHeading size="xl" class="home-header__heading">
+							<RuiHeadingEyebrow>Radiant</RuiHeadingEyebrow>
+							<RuiHeadingTitle as="h1">Build reactive hosts with JSX and Signals.</RuiHeadingTitle>
+							<RuiHeadingDescription>
+								Radiant gives you one reactive host model for both custom elements and DOM-attached
+								controllers. Use RadiantElement when the host owns its contract, or RadiantController
+								when the HTML should stay authored outside the class. JSX and Signals stay optional
+								companions.
+							</RuiHeadingDescription>
+						</RuiHeading>
 
 						<CodeTabs
 							label="Package managers"
@@ -123,36 +145,43 @@ const HomePage = () => {
 
 			<main class="home-main">
 				<section>
-					<div class="home-cards">
-						<HomeCard
+					<RuiFeed label="Explore Radiant" class="home-cards">
+						<HomeFeedArticle
 							href="/docs/getting-started/introduction"
 							label="Get Started"
 							title="Learn the model"
 							description="See how RadiantElement and RadiantController share one reactive host surface, and where JSX and Signals fit."
+							position={1}
 						/>
-						<HomeCard
+						<HomeFeedArticle
 							href="/docs/components/radiant-element"
 							label="Components"
 							title="Choose the right host"
 							description="Use RadiantElement for custom-element hosts. Reach for RadiantController when existing markup should stay authored outside the host class."
+							position={2}
 						/>
-						<HomeCard
+						<HomeFeedArticle
 							href="/docs/decorators/prop"
 							label="Decorators"
 							title="Add intent without boilerplate"
 							description="Typed decorators for public inputs, local state, DOM queries, events, and lifecycle across both host types."
+							position={3}
 						/>
-						<HomeCard
+						<HomeFeedArticle
 							href="/docs/packages/signals-overview"
 							label="Packages"
 							title="Understand the package layers"
 							description="Signals ships with radiant; jsx installs alongside radiant for TSX. Both sit on the shared reactive host model."
+							position={4}
 						/>
-					</div>
+					</RuiFeed>
 				</section>
 
 				<section class="home-path">
-					<p class="home-card__label">Suggested Path</p>
+					<RuiHeading as="header" size="sm">
+						<RuiHeadingEyebrow>Suggested path</RuiHeadingEyebrow>
+						<RuiHeadingTitle as="h2">Build confidence step by step</RuiHeadingTitle>
+					</RuiHeading>
 					<ol class="home-path__list">
 						<li>
 							Read the overview, then install `@ecopages/radiant` and `@ecopages/jsx` for the standard
