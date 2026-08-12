@@ -22,30 +22,22 @@ export const config = {
 
 <DesignTokenPanel />
 
-## Start with the default theme
+## Choose a theme with CSS imports
 
-The `default` theme is an alias for Glacier, the balanced blue profile used by this documentation. It includes the
-default spacing and radius packs.
+Themes are build-time CSS composition. Import one complete theme and the component stylesheet in your application's
+entry stylesheet. The `default` theme is an alias for Glacier, the balanced blue profile used by this documentation;
+it includes the default spacing and radius packs.
 
 ```css
 @import '@ecopages/radiant-ui/themes/default';
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-## Colour themes
+Use Aurora when you want its more vivid colour profile:
 
-All colour profiles provide the same semantic roles (`primary`, `surface`, `background`, `error`, and more), so a
-component stays unchanged as the visual language changes.
-
-| Profile | Character | Activate after loading a theme |
-| --- | --- | --- |
-| Default | Glacier alias; cool and balanced | `data-rui-colors="glacier"` |
-| Glacier | Cool, editorial blue | `data-rui-colors="glacier"` |
-| Basalt | Carbon-inspired neutral with blue accent | `data-rui-colors="basalt"` |
-| Ember | Glacier neutrals with a warm red accent | `data-rui-colors="ember"` |
-
-```html
-<html data-rui-colors="basalt">
+```css
+@import '@ecopages/radiant-ui/themes/aurora';
+@import '@ecopages/radiant-ui/styles.css';
 ```
 
 ## Spacing and shape
@@ -65,8 +57,16 @@ the sharp radius pack.
 Load one complete theme first, then layer a spacing or radius pack when a product needs a distinct density or shape.
 All component styles consume semantic roles and shared geometry tokens, so no component-specific overrides are needed.
 
-The `data-rui-*` attributes used by the picker above are a docs-only preview mechanism. Applications should select
-their token packs with CSS imports, as shown above.
+```css
+@import '@ecopages/radiant-ui/themes/default';
+@import '@ecopages/radiant-ui/tokens/spacing/compact';
+@import '@ecopages/radiant-ui/tokens/radius/soft';
+@import '@ecopages/radiant-ui/styles.css';
+```
+
+`data-rui-colors`, `data-rui-spacing`, and `data-rui-radius` are only used by this documentation's live preview. They
+are not an application theming API. Do not add them to production markup; select the complete theme and optional token
+packs with CSS imports instead.
 
 ## Build a custom theme
 
