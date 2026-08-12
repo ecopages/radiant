@@ -3,9 +3,11 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "ecopages dev",
-		"build": "pnpm run generate:llms && ecopages build",
-		"preview": "pnpm run generate:llms && ecopages preview",
+		"dev": "pnpm run guard:cache && ecopages dev",
+		"guard:cache": "tsx ../../scripts/ecopages-invalidate-stale-cache.mts",
+		"verify:html": "tsx ../../scripts/ecopages-assert-rendered-html.mts dist",
+		"build": "pnpm run guard:cache && pnpm run generate:llms && ecopages build && pnpm run verify:html",
+		"preview": "pnpm run guard:cache && pnpm run generate:llms && ecopages preview",
 		"test": "vitest run",
 		"generate:llms": "tsx scripts/generate-llm-docs.ts"
 	},

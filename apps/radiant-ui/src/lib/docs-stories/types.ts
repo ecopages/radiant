@@ -25,8 +25,17 @@ export type DocsDecorator<TArgs extends DocsArgs = DocsArgs> = (
 	context: DocsDecoratorContext<TArgs>,
 ) => JsxRenderable;
 
+/**
+ * @remarks
+ * `args` is complete, not `Partial`: meta is the defaults source, so this is what makes
+ * {@link DocsDecoratorContext.args} typed as `TArgs` honest. Stories override with a subset.
+ *
+ * `NoInfer` because a bare `TArgs` position would otherwise win inference in
+ * {@link docsStory} and pin `TArgs` to the literal types of the defaults (`variant: 'info'`
+ * rather than the full union). `TArgs` comes from the `satisfies DocsMeta<T>` annotation.
+ */
 export type DocsMeta<TArgs extends DocsArgs = DocsArgs> = {
-	args?: Partial<TArgs>;
+	args: NoInfer<TArgs>;
 	argTypes?: DocsArgTypes<TArgs>;
 	decorators?: DocsDecorator<TArgs>[];
 	render?: (args: TArgs) => JsxRenderable;

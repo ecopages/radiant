@@ -30,61 +30,87 @@ export type RadiantSsrHost =
 	| ((args: any) => JsxRenderable | Node | string | null | undefined);
 
 /**
- * Storybook parameters under `parameters.radiant`.
+ * The `parameters.radiant` fields stories declare by hand.
  *
- * Important: SSR modes talk to the Vite middleware over HTTP.
- * Only JSON-serializable data (`args`, module paths, export names) crosses that boundary.
- * There is no server-side callback hook — put host state in `args`.
+ * @remarks
+ * These three are the whole authoring surface — everything in
+ * {@link RadiantDerivedParameters} is filled in by the build.
+ *
+ * Scope: this namespace is the *framework's* contract. Configuration for a project's own
+ * decorators does not belong here — a decorator that needs options should be a decorator
+ * factory, configured where it is applied.
+ */
+export type RadiantAuthoredParameters = {
+	/** How the story is mounted in the canvas. Default: `client`. */
+	renderMode?: RadiantRenderMode;
+	/**
+	 * Optional SSR host for a JSX `component` view.
+	 *
+	 * @remarks
+	 * Prefer a {@link CustomElementConstructor} for CE-backed views. Omit for
+	 * presentational JSX (cssImports-only stories). A view function is accepted so
+	 * typing is not CE-only; only constructors are linked onto `meta.component` at
+	 * render time. Preview-only — never crosses the SSR HTTP boundary (only resolved
+	 * string paths and {@link sanitizeSsrArgs}-filtered args are sent).
+	 */
+	element?: RadiantSsrHost;
+	/**
+	 * Component CSS paths relative to the story file (e.g. `['./alert.css']`).
+	 *
+	 * @remarks
+	 * Source-only metadata: the Storybook stamp transform reads these out of the story
+	 * source and prepends side-effect `import './x.css'` statements. Never read at
+	 * runtime — apps load CSS via `@ecopages/radiant-ui/styles.css`. For story-scoped
+	 * extras injected at render time, use a decorator factory instead.
+	 */
+	cssImports?: readonly string[];
+};
+
+/**
+ * `parameters.radiant` fields the framework resolves on its own.
+ *
+ * @remarks
+ * No story in this repo sets any of these. `storyModule` is written by
+ * `transformRadiantStoryModule`; the rest are inferred by `resolveSsrTarget` from
+ * `meta.component` and its module stamps. Declare one only to override that inference —
+ * the SSR error banner names the specific field when it cannot resolve a target.
+ */
+export type RadiantDerivedParameters = {
+	/**
+	 * Vite-resolvable module path for SSR (e.g. `/src/components/ssr/counter.script.tsx`).
+	 * Inferred automatically from `meta.component` when it links to a `.script` module.
+	 */
+	ssrModule?: string;
+	/**
+	 * Named export of the RadiantElement constructor.
+	 * Inferred from the linked element class when omitted.
+	 */
+	ssrExport?: string;
+	/**
+	 * Browser module URL to import after injecting SSR markup.
+	 * Defaults to the view module (when present) or SSR response `clientModuleSrc`.
+	 */
+	clientModule?: string;
+	/** Vite-resolvable view module path for authored light-DOM SSR. */
+	viewModule?: string;
+	/** Named export of the view function in `viewModule`. */
+	viewExport?: string;
+	/** Vite-resolvable CSF story module path for server-side args resolution. */
+	storyModule?: string;
+	/** Named story export in `storyModule` (e.g. `Default`). */
+	storyExport?: string;
+};
+
+/**
+ * The `radiant` namespace within a story's `parameters`.
+ *
+ * @remarks
+ * Important: SSR modes talk to the Vite middleware over HTTP. Only JSON-serializable data
+ * (`args`, module paths, export names) crosses that boundary. There is no server-side
+ * callback hook — put host state in `args`.
  */
 export type RadiantStoryParameters = {
-	radiant?: {
-		/** How the story is mounted in the canvas. Default: `client`. */
-		renderMode?: RadiantRenderMode;
-		/**
-		 * Optional SSR host for a JSX `component` view.
-		 *
-		 * @remarks
-		 * Prefer a {@link CustomElementConstructor} for CE-backed views. Omit for
-		 * presentational JSX (cssImports-only stories). A view function is accepted so
-		 * typing is not CE-only; only constructors are linked onto `meta.component` at
-		 * render time. Preview-only — never crosses the SSR HTTP boundary (only resolved
-		 * string paths and {@link sanitizeSsrArgs}-filtered args are sent).
-		 */
-		element?: RadiantSsrHost;
-		/**
-		 * Component CSS paths relative to the story file (e.g. `['./alert.css']`).
-		 *
-		 * @remarks
-		 * Source-only metadata: the Storybook stamp transform reads these out of the story
-		 * source and prepends side-effect `import './x.css'` statements. Never read at
-		 * runtime — apps load CSS via `@ecopages/radiant-ui/styles.css`. For story-scoped
-		 * extras injected at render time use `withStylesheets` / `parameters.stylesheets`.
-		 */
-		cssImports?: readonly string[];
-		/**
-		 * Vite-resolvable module path for SSR (e.g. `/src/components/ssr/counter.script.tsx`).
-		 * Inferred automatically from `meta.component` when it links to a `.script` module.
-		 */
-		ssrModule?: string;
-		/**
-		 * Named export of the RadiantElement constructor.
-		 * Inferred from the linked element class when omitted.
-		 */
-		ssrExport?: string;
-		/**
-		 * Browser module URL to import after injecting SSR markup.
-		 * Defaults to the view module (when present) or SSR response `clientModuleSrc`.
-		 */
-		clientModule?: string;
-		/** Vite-resolvable view module path for authored light-DOM SSR. */
-		viewModule?: string;
-		/** Named export of the view function in `viewModule`. */
-		viewExport?: string;
-		/** Vite-resolvable CSF story module path for server-side args resolution. */
-		storyModule?: string;
-		/** Named story export in `storyModule` (e.g. `Default`). */
-		storyExport?: string;
-	};
+	radiant?: RadiantAuthoredParameters & RadiantDerivedParameters;
 };
 
 export type RadiantComponent =
@@ -124,10 +150,21 @@ type SetOptional<T, K extends keyof T> = Simplify<Omit<T, K> & Partial<Pick<T, K
 type ArgsFromComponent<TComponent> = [TComponent] extends [(args: infer TArgs) => unknown] ? TArgs : unknown;
 
 /**
- * Storybook's `Parameters` is `{ [name: string]: any }`. Intersecting it with
+ * Story `parameters`: open at the top level, closed inside `radiant`.
+ *
+ * @remarks
+ * Storybook's own `Parameters` is `{ [name: string]: any }`. Intersecting that with
  * {@link RadiantStoryParameters} collapses `radiant` back to `any` — the index signature
- * wins — so `parameters.radiant` goes unchecked. Widen with an `unknown` index instead:
- * arbitrary addon parameters still pass, but `radiant` keeps its real type.
+ * wins — so `parameters.radiant` goes unchecked. An `unknown` index keeps the top level
+ * open for addon parameters (`a11y`, `test`, `chromatic`, …) and anything else the
+ * framework has no opinion about, while `radiant` keeps its declared type.
+ *
+ * `radiant` itself has no index signature, so it stays closed: a key that is in neither
+ * {@link RadiantAuthoredParameters} nor {@link RadiantDerivedParameters} is an error under
+ * `satisfies`. That is the boundary worth enforcing — the framework reads those fields, and
+ * a stray key there means a story is using `radiant` as a config scratchpad. Decorator
+ * options do not belong in `parameters` at all: write a decorator factory
+ * (`decorators: [withThing(opts)]`) and configure it at the call site.
  */
 type RadiantParameters = RadiantStoryParameters & { [name: string]: unknown };
 

@@ -8,7 +8,7 @@
  * a parameter typed by it. Authors must use `satisfies` instead.
  */
 import { expectTypeOf } from 'vitest';
-import type { Meta, StoryObj } from './types';
+import type { Meta, RadiantAuthoredParameters, RadiantDerivedParameters, StoryObj } from './types';
 
 type ButtonProps = {
 	variant?: 'solid' | 'outline';
@@ -132,6 +132,64 @@ const badStoryParameters: Story = {
 	parameters: { radiant: { renderMode: 'nope' } },
 };
 void badStoryParameters;
+
+/* -------------------------------------------------------------------------- */
+/* `radiant` is closed; the rest of `parameters` stays open for addons         */
+/* -------------------------------------------------------------------------- */
+
+/* `radiant` is the framework's SSR contract, not a scratch namespace for project config. */
+const projectKeyUnderRadiant = {
+	component: Button,
+	// @ts-expect-error -- not a framework field; decorator options go to a decorator factory
+	parameters: { radiant: { dialogStage: { trigger: false } } },
+} satisfies Meta<typeof Button>;
+void projectKeyUnderRadiant;
+
+const typoedFieldUnderRadiant: Story = {
+	// @ts-expect-error -- stories are closed under `radiant` too, not just meta
+	parameters: { radiant: { renderMoed: 'ssr-hydrate' } },
+};
+void typoedFieldUnderRadiant;
+
+/* Addon and project parameters pass — the framework has no opinion about them, and an
+   `unknown` index keeps `parameters.radiant` typed where Storybook's `any` index would not. */
+const addonParameters = {
+	component: Button,
+	parameters: {
+		layout: 'centered',
+		docs: { description: { component: 'A button.' } },
+		controls: { exclude: ['label'] },
+		a11y: { test: 'off' },
+		chromatic: { viewports: [320] },
+		radiant: { element: ButtonHost },
+	},
+} satisfies Meta<typeof Button>;
+void addonParameters;
+
+/* -------------------------------------------------------------------------- */
+/* Derived fields stay overridable, and both halves land on one flat object    */
+/* -------------------------------------------------------------------------- */
+
+const derivedOverrides = {
+	component: Button,
+	parameters: {
+		radiant: {
+			renderMode: 'ssr-hydrate',
+			element: ButtonHost,
+			cssImports: ['./button.css'],
+			ssrModule: '/src/components/button.script.tsx',
+			ssrExport: 'RuiButton',
+			storyExport: 'Default',
+		},
+	},
+} satisfies Meta<typeof Button>;
+void derivedOverrides;
+
+/* Authoring and derived fields are reachable through one flat `radiant` object. */
+expectTypeOf<NonNullable<NonNullable<Meta<typeof Button>['parameters']>['radiant']>>().toExtend<{
+	renderMode?: RadiantAuthoredParameters['renderMode'];
+	ssrModule?: RadiantDerivedParameters['ssrModule'];
+}>();
 
 /* -------------------------------------------------------------------------- */
 /* StoryObj<Props> still works for the bare-args form                          */

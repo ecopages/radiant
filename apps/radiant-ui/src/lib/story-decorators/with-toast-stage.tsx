@@ -5,85 +5,45 @@ import type { DocsDecorator } from '@/lib/docs-stories';
  * Docs canvas prebundles those as separate vendor chunks with separate toast
  * stores; the barrel is what registers `<rui-toaster>`, so triggers must use it too.
  */
-import { RuiButton, RuiToaster, toast, type ToastPosition } from '@ecopages/radiant-ui';
+import { RuiToaster, toast, type ToastPosition } from '@ecopages/radiant-ui';
 
 export const TOAST_STAGE_CLASS = 'playground-toast-stage';
 export const TOAST_STAGE_SELECTOR = `.${TOAST_STAGE_CLASS}`;
 
+/**
+ * Args the stage reads. Required, not optional: `DocsMeta.args` is complete by construction,
+ * and the docs controls preserve their types — `rui-number-field` only emits `number`,
+ * `rui-switch` only `boolean` — so the stage uses them directly, with no defaults of its own.
+ */
 export type ToastStageArgs = {
-	position?: ToastPosition;
-	duration?: number;
-	visibleToasts?: number;
-	closeButton?: boolean;
-	expand?: boolean;
+	position: ToastPosition;
+	duration: number;
+	visibleToasts: number;
+	closeButton: boolean;
+	expand: boolean;
 };
 
-function ToastDemoTriggers() {
-	return (
-		<>
-			<RuiButton type="button" on:click={() => toast('Event has been created')}>
-				Show default toast
-			</RuiButton>
-			<RuiButton type="button" on:click={() => toast.success('Profile saved')}>
-				Show success toast
-			</RuiButton>
-			<RuiButton
-				type="button"
-				on:click={() => toast.error('Unable to reach the server', { description: 'Try again in a moment.' })}
-			>
-				Show error toast
-			</RuiButton>
-			<RuiButton type="button" variant="outline" on:click={() => toast.warning('Disk space is running low')}>
-				Show warning toast
-			</RuiButton>
-			<RuiButton type="button" variant="outline" on:click={() => toast.info('Your session will expire soon')}>
-				Show info toast
-			</RuiButton>
-			<RuiButton type="button" variant="ghost" on:click={() => toast.loading('Uploading…')}>
-				Show loading toast
-			</RuiButton>
-			<RuiButton
-				type="button"
-				variant="outline"
-				on:click={() =>
-					toast.promise(new Promise((resolve) => setTimeout(resolve, 1500)), {
-						loading: 'Saving…',
-						success: 'Saved',
-						error: 'Save failed',
-					})
-				}
-			>
-				Show promise toast
-			</RuiButton>
-			<RuiButton type="button" variant="ghost" on:click={() => toast.dismiss()}>
-				Dismiss all toasts
-			</RuiButton>
-		</>
-	);
-}
-
 /**
- * Clears toast state, mounts `<rui-toaster>` scoped to the playground stage, and renders demo triggers.
+ * Wraps the story's triggers in the playground stage and mounts a `<rui-toaster>` scoped to it.
+ *
+ * @remarks
+ * The stage owns the toaster because `container` has to point at the stage element. The trigger
+ * content is the story's own `render` — this decorator provides the frame, not the content.
  */
-export function withToastStage<TArgs extends ToastStageArgs>(): DocsDecorator<TArgs> {
-	return (_story, context) => {
-		toast.clear();
-		const args = context.args;
+export const withToastStage: DocsDecorator<ToastStageArgs> = (story, { args }) => {
+	toast.clear();
 
-		return (
-			<div class={TOAST_STAGE_CLASS}>
-				<div class="playground-toast-stage__actions">
-					<ToastDemoTriggers />
-				</div>
-				<RuiToaster
-					container={TOAST_STAGE_SELECTOR}
-					position={args.position ?? 'bottom-end'}
-					duration={Number(args.duration ?? 4000)}
-					visibleToasts={Number(args.visibleToasts ?? 3)}
-					closeButton={Boolean(args.closeButton)}
-					expand={Boolean(args.expand)}
-				/>
-			</div>
-		);
-	};
-}
+	return (
+		<div class={TOAST_STAGE_CLASS}>
+			<div class="playground-toast-stage__actions">{story()}</div>
+			<RuiToaster
+				container={TOAST_STAGE_SELECTOR}
+				position={args.position}
+				duration={args.duration}
+				visibleToasts={args.visibleToasts}
+				closeButton={args.closeButton}
+				expand={args.expand}
+			/>
+		</div>
+	);
+};

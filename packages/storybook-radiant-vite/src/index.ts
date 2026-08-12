@@ -80,6 +80,8 @@ export type {
 	RadiantRenderMode,
 	RadiantSsrHost,
 	RadiantStoryParameters,
+	RadiantAuthoredParameters,
+	RadiantDerivedParameters,
 	FrameworkOptions,
 	StorybookConfig,
 } from './types';

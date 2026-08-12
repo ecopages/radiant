@@ -23,6 +23,11 @@
        dist previously red-lined every `*.stories.tsx` with phantom TS2305 errors. */
 		"paths": {
 			"@/*": ["./src/*"],
+			/* Story-only helpers live outside `src` so they never reach `dist` — they import
+         Storybook types from a private devDependency. Aliased so stories don't climb out
+         with `../../../../`. The Vite side of this mapping lives in `.storybook/aliases.ts`,
+         which both `vite.config.ts` and `.storybook/main.ts` import. */
+			"@sb/*": ["./.storybook/*"],
 			"@ecopages/storybook-radiant-vite": ["../storybook-radiant-vite/src/index.ts"],
 			"@ecopages/storybook-radiant-vite/node": ["../storybook-radiant-vite/src/node/index.ts"]
 		},
@@ -36,5 +41,9 @@
 		"noFallthroughCasesInSwitch": true,
 		"ignoreDeprecations": "6.0"
 	},
-	"include": ["src"]
+	/* `.storybook` is included, not just pulled in transitively by story imports, so that
+     `preview.ts` and `main.ts` are typechecked too — no story imports them, so they were
+     previously excluded from every `tsc` run. Note the glob: a bare `".storybook"` entry does
+     not match, because TypeScript skips dot-prefixed directories. */
+	"include": ["src", ".storybook/**/*"]
 }

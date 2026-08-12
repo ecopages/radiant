@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, within } from 'storybook/test';
-import { withStylesheets } from '../../../../.storybook/with-stylesheets';
+import { withStylesheets } from '@sb/with-stylesheets';
 import docsNavCss from './sidebar.docs.css?url';
 import radiantPkg from '../../../../../radiant/package.json';
 import {
@@ -641,8 +641,8 @@ export const DocsNavigation: Story = {
 		mobileBreakpoint: 768,
 		label: 'Docs navigation',
 	},
+	decorators: [withStylesheets([docsNavCss])],
 	parameters: {
-		...withStylesheets([docsNavCss]),
 		layout: 'fullscreen',
 		controls: { exclude: ['defaultWidth', 'width', 'resizable'] },
 	},
@@ -663,9 +663,8 @@ export const DocsNavigation: Story = {
 				<div class="rui-sidebar-docs-page">
 					<h1 class="text-2xl font-semibold">Introduction</h1>
 					<p class="mt-2 max-w-prose text-sm text-on-surface">
-						This story uses the docs navigation skin loaded via{' '}
-						<code class="text-xs">parameters.stylesheets</code> — not a side-effect CSS import in the story
-						module.
+						This story uses the docs navigation skin loaded via <code class="text-xs">withStylesheets</code>{' '}
+						— not a side-effect CSS import in the story module.
 					</p>
 				</div>
 			</RuiSidebarInset>
@@ -689,5 +688,9 @@ export const DocsNavigation: Story = {
 			'href',
 			'/docs/getting-started/introduction',
 		);
+		// The docs skin arrives via `withStylesheets`, not a side-effect import in this module.
+		expect(
+			document.head.querySelector(`link[data-storybook-stylesheet][href="${docsNavCss}"]`),
+		).toBeInTheDocument();
 	},
 };

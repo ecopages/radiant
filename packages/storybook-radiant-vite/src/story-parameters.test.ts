@@ -66,20 +66,20 @@ describe('parameters.radiant.element', () => {
 		syncViewMetadata(meta.component, undefined);
 
 		expect(meta.parameters.layout).toBe('centered');
-		expect(meta.parameters).not.toHaveProperty('stylesheets');
+		expect(Object.keys(meta.parameters.radiant)).toEqual(['cssImports']);
 	});
 
-	test('leaves parameters.stylesheets alone for withStylesheets extras', () => {
+	test('linking an element writes nothing back into parameters', () => {
 		const component = makeView();
-		const stylesheets = ['/skins/dark.css'];
 		const meta = {
 			component,
-			parameters: { stylesheets, radiant: { element: makeElement(), cssImports: ['./test.css'] } },
+			parameters: { radiant: { element: makeElement(), cssImports: ['./test.css'] } },
 		} satisfies Meta<typeof component>;
 
 		syncViewMetadata(meta.component, meta.parameters.radiant.element);
 
-		expect(meta.parameters.stylesheets).toBe(stylesheets);
+		// Derived fields are resolved on demand, never persisted onto the story's parameters.
+		expect(Object.keys(meta.parameters.radiant)).toEqual(['element', 'cssImports']);
 	});
 
 	test('presentational meta without an element links nothing', () => {

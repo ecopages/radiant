@@ -6,6 +6,7 @@ import path from 'node:path';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import radiant from '@ecopages/vite-plugin-radiant';
 import tailwindcss from '@tailwindcss/vite';
+import { radiantUiAliases } from './.storybook/aliases.ts';
 
 const dirname = import.meta.dirname;
 const requireFromFramework = createRequire(path.join(dirname, '../storybook-radiant-vite/package.json'));
@@ -19,9 +20,7 @@ export default defineConfig({
 		exclude: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react-dom/test-utils'],
 	},
 	resolve: {
-		alias: {
-			'@': path.join(dirname, 'src'),
-		},
+		alias: radiantUiAliases,
 	},
 	test: {
 		projects: [
