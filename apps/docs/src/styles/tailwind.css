@@ -6,6 +6,8 @@
 @import './fonts.css';
 @import './components/prose.css';
 
+@source inline("sr-only");
+
 html {
 	scrollbar-gutter: stable;
 }

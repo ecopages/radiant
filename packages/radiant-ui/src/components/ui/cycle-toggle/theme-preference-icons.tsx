@@ -66,13 +66,9 @@ export function ThemePreferenceItemContent({
 	showLabel?: boolean;
 }): JsxRenderable {
 	return (
-		<span class="inline-flex items-center gap-inline">
+		<span class="inline-flex items-center gap-inline" aria-label={showLabel ? undefined : themeLabels[preference]}>
 			<ThemePreferenceIcon preference={preference} />
-			{showLabel ? (
-				<ThemeItemLabel preference={preference} />
-			) : (
-				<span class="sr-only">{themeLabels[preference]}</span>
-			)}
+			{showLabel ? <ThemeItemLabel preference={preference} /> : undefined}
 		</span>
 	);
 }

@@ -20,7 +20,7 @@
 .home-hero__code {
 	@apply flex flex-col lg:col-span-5;
 	rui-tabs {
-		@apply rounded-none;
+		@apply rounded-b-none;
 	}
 	radiant-code-tabs {
 		@apply my-0;
@@ -83,10 +83,6 @@
 
 .home-sidebar__link {
 	@apply font-medium hover:underline text-on-background transition-colors;
-}
-
-.home-sidebar__tag {
-	@apply inline-flex items-center rounded-sm border border-border bg-background-accent px-2 py-0.5 text-xs font-mono text-on-background/80 transition-colors hover:bg-border/50;
 }
 
 .home-sidebar__tags {
