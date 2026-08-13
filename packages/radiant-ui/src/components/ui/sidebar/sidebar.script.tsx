@@ -18,9 +18,16 @@ export type RuiSidebarProps = {
 	collapsible?: RuiSidebarCollapsible;
 	/** Initial open state when uncontrolled. Default: `true`. */
 	defaultOpen?: boolean;
-	/** Initial open state below `mobileBreakpoint` when uncontrolled. Default: `false`. */
+	/**
+	 * Open state below `mobileBreakpoint` when uncontrolled. Applied on connect
+	 * and when the viewport crosses into mobile. Ignored when `open` is set.
+	 * Default: `false`.
+	 */
 	mobileDefaultOpen?: boolean;
-	/** Controlled open state. */
+	/**
+	 * Controlled open state. Viewport crossings do not override this; listen to
+	 * `rui-sidebar-mobile-change` if the parent needs to react.
+	 */
 	open?: boolean;
 	/** Initial width in pixels when uncontrolled. Default: `256`. */
 	defaultWidth?: number;
@@ -154,6 +161,19 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	/** @remarks Remains `false` until a projected active link has been scrolled. */
 	private didScrollActiveOnMount = false;
 
+	/**
+	 * @remarks Captured once before defaults are applied. `setOpen` later assigns
+	 * `open`, which must not be mistaken for a controlled binding.
+	 */
+	private openControlled = false;
+
+	/**
+	 * @remarks Viewport policy must not run until connect has snapshotted
+	 * `open` and applied defaults. Deferred JSX props can update
+	 * `mobileBreakpoint` before that microtask.
+	 */
+	private mobileReady = false;
+
 	override connectedCallback(): void {
 		super.connectedCallback();
 
@@ -165,14 +185,16 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.attachNavigationListeners();
 		queueMicrotask(() => {
 			this.ensureWidthInitialized();
+			this.openControlled = this.open !== undefined;
 			this.bindMobileMediaQuery();
-			if (this.open === undefined) {
+			if (!this.openControlled) {
 				this.open = this.isMobile ? this.mobileDefaultOpen : this.defaultOpen;
 			}
 
 			this.syncHostAttributes();
 			this.syncPaneWidthVar();
 			this.syncActiveLinksAfterRender(true);
+			this.mobileReady = true;
 		});
 	}
 
@@ -203,6 +225,7 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.endDrag();
 		this.unbindMobileMediaQuery();
 		this.detachNavigationListeners();
+		this.mobileReady = false;
 		super.disconnectedCallback();
 	}
 
@@ -356,16 +379,23 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	 * Flip between mobile drawer and inline layout.
 	 *
 	 * @remarks
-	 * Leaving mobile while closed with `collapsible="off"` reopens — desktop hides
-	 * reopen triggers for that mode, so a closed drawer would otherwise stick at
-	 * width 0. Other collapsible modes keep the consumer's open state.
+	 * After connect, entering mobile applies `mobileDefaultOpen` so a
+	 * desktop-open pane does not become an overlay drawer. Leaving mobile while
+	 * closed with `collapsible="off"` reopens — desktop hides reopen triggers for
+	 * that mode, so a closed drawer would otherwise stick at width 0. Controlled
+	 * `open` is left alone; other collapsible modes keep the consumer's open
+	 * state when leaving mobile.
 	 */
 	private setMobile(next: boolean): void {
 		if (next === this.isMobile) return;
 		const leavingMobile = this.isMobile && !next;
+		const enteringMobile = !this.isMobile && next;
 		this.isMobile = next;
-		if (leavingMobile && this.collapsible === 'off' && !this.isOpen()) {
+		const applyPolicy = this.mobileReady && !this.openControlled;
+		if (applyPolicy && leavingMobile && this.collapsible === 'off' && !this.isOpen()) {
 			this.setOpen(true);
+		} else if (applyPolicy && enteringMobile) {
+			this.setOpen(this.mobileDefaultOpen);
 		} else {
 			this.syncPaneWidthVar();
 		}
