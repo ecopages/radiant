@@ -22,12 +22,4 @@
 	.rui-textarea[aria-invalid='true'] {
 		@apply border-error;
 	}
-
-	.rui-textarea--sm {
-		min-height: calc(var(--space-control-y) * 2 + 1rem * 2);
-	}
-
-	.rui-textarea--lg {
-		min-height: calc(var(--space-control-y) * 2 + 1.25rem * 4);
-	}
 }

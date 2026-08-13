@@ -1,1 +1,1 @@
-export { RuiTextarea, type RuiTextareaProps, type RuiTextareaSize } from './textarea';
+export { RuiTextarea, type RuiTextareaProps } from './textarea';

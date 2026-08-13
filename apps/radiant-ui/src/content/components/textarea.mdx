@@ -30,7 +30,7 @@ export const config = {
 
 ## Usage
 
-Wrap in `RuiField` with a label. Set `rows` for initial height and `size` for typography scale.
+Wrap in `RuiField` with a label. Set `rows` for initial height.
 
 ```tsx
 import { RuiTextarea } from '@ecopages/radiant-ui/textarea';
@@ -39,7 +39,7 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <RuiField name="bio">
   <RuiLabel>Bio</RuiLabel>
-  <RuiTextarea rows={4} size="md" placeholder="Tell us about yourself" />
+  <RuiTextarea rows={4} placeholder="Tell us about yourself" />
 </RuiField>
 ```
 
@@ -72,7 +72,6 @@ Geometry shares control tokens (`--space-control-x`, `--space-control-y`, `--rad
 | `disabled` | `boolean` | `false` | Disabled state. |
 | `name` | `string` | | Form field name. |
 | `rows` | `number` | `3` | Initial row height. |
-| `size` | `sm` · `md` · `lg` | `md` | Typography / min-height scale. |
 | `id` | `string` | | Control id (used by `<rui-field>` for label/described-by). |
 | `aria-label` | `string` | | Accessible name when there is no visible `RuiLabel`. |
 | `on:input` / `on:change` / `on:blur` | `(event) => void` | | Native event handlers. |
@@ -84,9 +83,6 @@ Public BEM classes (documented via `@cssclass`):
 | Class | Description |
 | --- | --- |
 | `.rui-textarea` | Bordered, resizable multi-line input. |
-| `.rui-textarea--sm` | Compact min-height. |
-| `.rui-textarea--md` | Default min-height. |
-| `.rui-textarea--lg` | Taller min-height. |
 
 ### Theme roles
 
