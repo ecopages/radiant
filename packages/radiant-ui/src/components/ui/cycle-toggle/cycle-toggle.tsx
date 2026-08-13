@@ -59,6 +59,12 @@ export function RuiCycleToggleButton({
 	);
 }
 
+/**
+ * @remarks
+ * Reflected host fields use `attr:` so they survive plain nested SSR (for example
+ * when this toggle is authored light DOM inside another custom element). Unprefixed
+ * names bind as properties and are omitted from that serialization path.
+ */
 export function RuiCycleToggle({
 	children,
 	value,
@@ -69,7 +75,14 @@ export function RuiCycleToggle({
 	...props
 }: JsxHtmlPropsWithChildren<RuiCycleToggleProps & { slot?: string }>) {
 	return (
-		<rui-cycle-toggle {...props} value={value} variant={variant} size={size} label={label} disabled={disabled}>
+		<rui-cycle-toggle
+			{...props}
+			attr:value={value}
+			attr:variant={variant}
+			attr:size={size}
+			attr:label={label}
+			attr:disabled={disabled}
+		>
 			<RuiCycleToggleButton variant={variant} size={size} disabled={disabled}>
 				{children}
 			</RuiCycleToggleButton>
