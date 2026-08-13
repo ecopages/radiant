@@ -108,8 +108,8 @@ Rounded corners use `rounded-container`; the collapsible pane in `docs` layout s
 | `minWidth` / `maxWidth` | `number` | | Width bounds. |
 | `resizable` | `boolean` | `false` | Draggable resize handle. |
 | `defaultOpen` | `boolean` | `true` | Initial open state (desktop). |
-| `mobileDefaultOpen` | `boolean` | `false` | Initial open state (mobile). |
-| `open` | `boolean` | | Controlled open state. |
+| `mobileDefaultOpen` | `boolean` | `false` | Open state on mobile when uncontrolled (mount and when the viewport crosses into mobile). |
+| `open` | `boolean` | | Controlled open state. Viewport crossings do not override this. |
 | `mobileBreakpoint` | `number` | | Width below which the mobile rail applies. |
 | `label` | `string` | `Sidebar` | Accessible name for the `nav` landmark. |
 | `matchActive` | `boolean` | `false` | Highlight the current route in the menu. |
