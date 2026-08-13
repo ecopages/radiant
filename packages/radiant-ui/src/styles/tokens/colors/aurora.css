@@ -1,11 +1,8 @@
 /**
- * Default color pack — raw OKLCH scales only (mode-agnostic).
+ * Aurora color pack — named hues ship 50–975.
  * `:root` (not `@theme`) so scales always emit; semantic roles live in semantic.css.
  */
 :root {
-	--color-black: oklch(0% 0 0);
-	--color-white: oklch(100% 0 0);
-
 	--color-havelock-blue-50: oklch(97.6% 0.013 233.68);
 	--color-havelock-blue-100: oklch(94.6% 0.031 234.4);
 	--color-havelock-blue-200: oklch(88.9% 0.061 238.79);
