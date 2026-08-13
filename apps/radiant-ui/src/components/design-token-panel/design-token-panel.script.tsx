@@ -4,31 +4,17 @@ import { RuiFeed, RuiFeedArticle, RuiFeedArticleContent } from '@ecopages/radian
 import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle } from '@ecopages/radiant-ui/heading';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { RuiRadio, RuiRadioGroup, RuiRadioGroupControl } from '@ecopages/radiant-ui/radio-group';
-
-type TokenName = 'colors' | 'spacing' | 'radius';
-type TokenSelection = Record<TokenName, string>;
-
-const STORAGE_KEY = 'radiant-ui-docs:theme';
-const defaultSelection: TokenSelection = { colors: 'glacier', spacing: 'default', radius: 'default' };
-
-const colorOptions = [
-	{ value: 'glacier', label: 'Glacier', description: 'Cool, editorial' },
-	{ value: 'basalt', label: 'Basalt', description: 'Carbon-inspired' },
-	{ value: 'ember', label: 'Ember', description: 'Warm accent' },
-	{ value: 'aurora', label: 'Aurora', description: 'Vivid and expressive' },
-] as const;
-
-const spacingOptions = [
-	{ value: 'default', label: 'Default', description: 'Comfortable rhythm' },
-	{ value: 'compact', label: 'Compact', description: 'Dense controls' },
-	{ value: 'wide', label: 'Wide', description: 'Generous rhythm' },
-] as const;
-
-const radiusOptions = [
-	{ value: 'default', label: 'Default', description: 'Subtle rounding' },
-	{ value: 'soft', label: 'Soft', description: 'Generous rounding' },
-	{ value: 'sharp', label: 'Sharp', description: 'Square surfaces' },
-] as const;
+import {
+	applyDocumentTokens,
+	defaultDocsThemeSelection,
+	docsThemeColorOptions,
+	docsThemeRadiusOptions,
+	docsThemeSpacingOptions,
+	isDocsThemeTokenName,
+	readDocsThemeSelection,
+	updateDocsThemeSelection,
+	type DocsThemeSelection,
+} from '@/lib/docs-theme-preview';
 
 function TokenOptions({
 	name,
@@ -57,12 +43,12 @@ function TokenOptions({
  */
 @customElement('radiant-design-token-panel')
 export class DesignTokenPanelElement extends RadiantElement {
-	private selection: TokenSelection = defaultSelection;
+	private selection: DocsThemeSelection = defaultDocsThemeSelection;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.selection = selectionFromDocument();
-		this.applyDocumentTokens(this.selection);
+		this.selection = readDocsThemeSelection();
+		applyDocumentTokens(this.selection);
 		this.requestUpdate();
 	}
 
@@ -71,10 +57,10 @@ export class DesignTokenPanelElement extends RadiantElement {
 		const group = event.target;
 		const token = group instanceof HTMLElement ? group.dataset.token : undefined;
 		const value = (event as CustomEvent<{ value?: unknown }>).detail?.value;
-		if (!isTokenName(token) || typeof value !== 'string') return;
+		if (!isDocsThemeTokenName(token) || typeof value !== 'string') return;
 
-		this.selection = { ...this.selection, [token]: value };
-		this.applyDocumentTokens(this.selection);
+		this.selection = updateDocsThemeSelection(this.selection, token, value);
+		applyDocumentTokens(this.selection);
 		this.resetShellScroll();
 	}
 
@@ -116,7 +102,7 @@ export class DesignTokenPanelElement extends RadiantElement {
 								label="Colour profile"
 								data-token="colors"
 							>
-								<TokenOptions name="docs-color-theme" options={colorOptions} />
+								<TokenOptions name="docs-color-theme" options={docsThemeColorOptions} />
 							</RuiRadioGroup>
 						</RuiFeedArticleContent>
 					</RuiFeedArticle>
@@ -124,7 +110,7 @@ export class DesignTokenPanelElement extends RadiantElement {
 						<RuiFeedArticleContent>
 							<RuiLabel>Spacing</RuiLabel>
 							<RuiRadioGroup value={spacing} name="docs-spacing" label="Spacing" data-token="spacing">
-								<TokenOptions name="docs-spacing" options={spacingOptions} />
+								<TokenOptions name="docs-spacing" options={docsThemeSpacingOptions} />
 							</RuiRadioGroup>
 						</RuiFeedArticleContent>
 					</RuiFeedArticle>
@@ -132,7 +118,7 @@ export class DesignTokenPanelElement extends RadiantElement {
 						<RuiFeedArticleContent>
 							<RuiLabel>Shape</RuiLabel>
 							<RuiRadioGroup value={radius} name="docs-radius" label="Shape" data-token="radius">
-								<TokenOptions name="docs-radius" options={radiusOptions} />
+								<TokenOptions name="docs-radius" options={docsThemeRadiusOptions} />
 							</RuiRadioGroup>
 						</RuiFeedArticleContent>
 					</RuiFeedArticle>
@@ -140,35 +126,6 @@ export class DesignTokenPanelElement extends RadiantElement {
 			</section>
 		);
 	}
-
-	private applyDocumentTokens(selection: TokenSelection): void {
-		const root = document.documentElement;
-		setTokenAttribute(root, 'ruiColors', selection.colors);
-		setTokenAttribute(root, 'ruiSpacing', selection.spacing);
-		setTokenAttribute(root, 'ruiRadius', selection.radius);
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(selection));
-	}
-}
-
-function isTokenName(value: string | undefined): value is TokenName {
-	return value === 'colors' || value === 'spacing' || value === 'radius';
-}
-
-/** Reads the live docs preview attrs, or defaults when the document has none (fresh load). */
-function selectionFromDocument(): TokenSelection {
-	const { ruiColors, ruiSpacing, ruiRadius } = document.documentElement.dataset;
-	return {
-		colors:
-			ruiColors === 'basalt' || ruiColors === 'ember' || ruiColors === 'aurora'
-				? ruiColors
-				: defaultSelection.colors,
-		spacing: ruiSpacing != null && ruiSpacing !== '' ? ruiSpacing : defaultSelection.spacing,
-		radius: ruiRadius != null && ruiRadius !== '' ? ruiRadius : defaultSelection.radius,
-	};
-}
-
-function setTokenAttribute(root: HTMLElement, name: 'ruiColors' | 'ruiSpacing' | 'ruiRadius', value: string): void {
-	root.dataset[name] = value;
 }
 
 declare module '@ecopages/jsx/jsx-runtime' {
