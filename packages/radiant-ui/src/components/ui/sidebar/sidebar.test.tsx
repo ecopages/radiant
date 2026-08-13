@@ -625,10 +625,96 @@ describe('RuiSidebar mobile drawer', () => {
 		cleanup();
 	});
 
-	it('reopens automatically when leaving mobile mode while closed (mobileBreakpoint <= 0 forces desktop)', async () => {
-		const { sidebar, cleanup } = mountMobileSidebar({ collapsible: 'off', open: true });
+	it('closes when entering mobile mode', async () => {
+		const { host, cleanup } = mountDesktopSidebar(
+			<RuiSidebar id="primary-sidebar" collapsible="off" mobileBreakpoint={0} label="Primary">
+				<span>Navigation</span>
+			</RuiSidebar>,
+		);
 		await settled();
 
+		const sidebar = host.querySelector('rui-sidebar') as SidebarEl;
+		expect(sidebar.getAttribute('data-mobile')).toBe('false');
+		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+
+		sidebar.mobileBreakpoint = 10_000;
+		await settled();
+
+		expect(sidebar.getAttribute('data-mobile')).toBe('true');
+		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
+
+		cleanup();
+	});
+
+	it('stays open when entering mobile if mobileDefaultOpen is true', async () => {
+		const { host, cleanup } = mountDesktopSidebar(
+			<RuiSidebar
+				id="primary-sidebar"
+				collapsible="off"
+				mobileBreakpoint={0}
+				mobileDefaultOpen={true}
+				label="Primary"
+			>
+				<span>Navigation</span>
+			</RuiSidebar>,
+		);
+		await settled();
+
+		const sidebar = host.querySelector('rui-sidebar') as SidebarEl;
+		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+
+		sidebar.mobileBreakpoint = 10_000;
+		await settled();
+
+		expect(sidebar.getAttribute('data-mobile')).toBe('true');
+		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+
+		cleanup();
+	});
+
+	it('does not override a controlled open when entering mobile', async () => {
+		const { host, cleanup } = mountDesktopSidebar(
+			<RuiSidebar id="primary-sidebar" collapsible="off" mobileBreakpoint={0} open={true} label="Primary">
+				<span>Navigation</span>
+			</RuiSidebar>,
+		);
+		await settled();
+
+		const sidebar = host.querySelector('rui-sidebar') as SidebarEl;
+		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+
+		sidebar.mobileBreakpoint = 10_000;
+		await settled();
+
+		expect(sidebar.getAttribute('data-mobile')).toBe('true');
+		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+
+		cleanup();
+	});
+
+	it('reopens automatically when leaving mobile mode while closed (mobileBreakpoint <= 0 forces desktop)', async () => {
+		const { host, cleanup } = mount(
+			<RuiSidebarProvider
+				sidebar={
+					<RuiSidebar
+						id="primary-sidebar"
+						collapsible="off"
+						mobileBreakpoint={10_000}
+						mobileDefaultOpen={true}
+						label="Primary"
+					>
+						<span>Navigation</span>
+					</RuiSidebar>
+				}
+			>
+				<RuiSidebarInset id="main">
+					<p>Content</p>
+				</RuiSidebarInset>
+			</RuiSidebarProvider>,
+		);
+		await settled();
+
+		const sidebar = host.querySelector('rui-sidebar') as SidebarEl;
 		expect(sidebar.getAttribute('data-mobile')).toBe('true');
 		sidebar.setOpen(false);
 		await settled();
