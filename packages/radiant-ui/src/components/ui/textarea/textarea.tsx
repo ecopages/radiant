@@ -1,7 +1,6 @@
 import type { JsxHtmlProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
-export type RuiTextareaSize = 'sm' | 'md' | 'lg';
 
 export type RuiTextareaProps = JsxHtmlProps<{
 	value?: string;
@@ -9,7 +8,6 @@ export type RuiTextareaProps = JsxHtmlProps<{
 	disabled?: boolean;
 	name?: string;
 	rows?: number;
-	size?: RuiTextareaSize;
 	id?: string;
 	'aria-label'?: string;
 	'on:input'?: (event: Event) => void;
@@ -23,13 +21,14 @@ export type RuiTextareaProps = JsxHtmlProps<{
  * No custom element — Field owns labeling, `aria-*`, and validation wiring.
  * Marked with `data-rui-control` so `<rui-field>` can discover it.
  *
+ * @remarks
+ * Padding and type use the same `--space-control-*` / `--text-control` tokens as
+ * `RuiInput`. Initial height comes from `rows`; invalid state keys off `aria-invalid`.
+ *
  * @cssclass rui-textarea - Bordered, resizable multi-line input.
- * @cssclass rui-textarea--sm - Compact min-height.
- * @cssclass rui-textarea--md - Default min-height.
- * @cssclass rui-textarea--lg - Taller min-height.
  */
 export function RuiTextarea(props: RuiTextareaProps) {
-	const { size = 'md', class: className, rows = 3, ...host } = props;
+	const { class: className, rows = 3, ...host } = props;
 
 	return (
 		<textarea
@@ -37,7 +36,7 @@ export function RuiTextarea(props: RuiTextareaProps) {
 			rows={rows}
 			{...{ [RUI_CONTROL_ATTR]: '' }}
 			data-rui-control-type="text"
-			class={cx('rui-textarea', `rui-textarea--${size}`, className)}
+			class={cx('rui-textarea', className)}
 		/>
 	);
 }
