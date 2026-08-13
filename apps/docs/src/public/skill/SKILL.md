@@ -129,10 +129,7 @@ Use this rule to choose the update strategy:
 **Good split:**
 
 ```tsx
-<article
-	class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'}
-	data={{ state: this.$.isExpanded }}
->
+<article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'} data={{ state: this.$.isExpanded }}>
 	<h2>{this.$.name}</h2>
 </article>
 ```
