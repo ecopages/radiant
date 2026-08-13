@@ -1,9 +1,9 @@
 ---
 name: building-with-radiant-ui
 description: >-
-  Guides agents building interfaces with @ecopages/radiant-ui — focused
-  imports, light-DOM views, themes, and semantic tokens. Use when scaffolding
-  or composing Radiant UI components, wiring themes, or choosing token packs.
+    Guides agents building interfaces with @ecopages/radiant-ui — focused
+    imports, light-DOM views, themes, and semantic tokens. Use when scaffolding
+    or composing Radiant UI components, wiring themes, or choosing token packs.
 ---
 
 # Building with Radiant UI
