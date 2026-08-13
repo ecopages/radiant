@@ -1,0 +1,184 @@
+.home-layout {
+	@apply flex flex-col gap-8 px-6 py-8 md:py-12 lg:grid lg:grid-cols-12 lg:items-start;
+}
+
+.home-header {
+	@apply col-span-full border-b border-border pb-8 mb-4 lg:col-span-12 lg:grid lg:grid-cols-subgrid;
+}
+
+.home-hero {
+	@apply flex flex-col gap-8 lg:col-span-12 lg:grid lg:grid-cols-subgrid lg:items-start lg:gap-12;
+}
+
+.home-hero__text {
+	@apply flex flex-col lg:col-span-6;
+
+	radiant-code-tabs {
+		@apply mt-8;
+	}
+}
+
+.home-hero__code {
+	@apply flex min-w-0 flex-col lg:col-span-6;
+
+	radiant-code-tabs {
+		@apply my-0;
+	}
+
+	radiant-code-tabs rui-tabs {
+		@apply rounded-b-none;
+	}
+}
+
+.home-hero__demo {
+	@apply min-w-0;
+}
+
+.home-header__heading {
+	@apply max-w-3xl;
+}
+
+.home-header__heading .rui-heading__title {
+	text-wrap: balance;
+}
+
+.home-header__actions {
+	@apply mt-8 flex flex-wrap items-center gap-3;
+}
+
+.home-cluster {
+	@apply flex flex-wrap items-center rounded-sm rounded-t-none border border-t-0 border-border bg-background-accent p-4;
+	gap: var(--space-3);
+}
+
+.home-cluster .rui-input {
+	flex: 1 1 10rem;
+	min-width: 10rem;
+}
+
+.home-hero__code radiant-code-tabs .code-tabs__code:has([data-rehype-pretty-code-figure]) {
+	max-height: 24;
+	overflow-y: auto;
+
+	[data-rehype-pretty-code-figure] {
+		max-height: 24;
+		overflow: auto;
+
+		& > pre {
+			max-height: 24;
+			overflow: auto;
+		}
+	}
+}
+
+.home-main {
+	@apply flex flex-col gap-10 lg:col-span-8;
+}
+
+.home-cards {
+	@apply grid gap-4 sm:grid-cols-2;
+}
+
+.home-theme {
+	@apply flex flex-col;
+	gap: var(--space-6);
+}
+
+.home-cards .rui-feed__article {
+	@apply h-full;
+}
+
+.home-specimen {
+	@apply flex flex-col;
+	gap: var(--space-6);
+}
+
+.home-specimen__group {
+	@apply flex flex-col;
+	gap: var(--space-2);
+}
+
+.home-specimen__category {
+	@apply m-0 font-mono text-xs font-semibold uppercase tracking-wide text-on-background/70;
+}
+
+.home-specimen__list {
+	@apply m-0 flex list-none flex-wrap p-0;
+	gap: 0.25rem 1rem;
+}
+
+.home-specimen__list a {
+	@apply text-sm font-medium text-on-background no-underline underline-offset-4;
+	text-decoration-color: var(--border);
+}
+
+@media (hover: hover) {
+	.home-specimen__list a:hover {
+		@apply underline;
+		text-decoration-color: var(--on-background);
+	}
+}
+
+.home-specimen__list a:focus-visible {
+	@apply rounded-sm outline-2 outline-offset-2 outline-primary;
+}
+
+.home-path {
+	@apply mt-6 rounded-sm border border-border bg-background-accent p-6 md:p-8;
+}
+
+.home-path__list {
+	@apply mt-4 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-on-background/80;
+}
+
+.home-sidebar {
+	@apply flex flex-col gap-6 pt-4 lg:col-span-4 lg:border-l lg:border-border lg:pl-8 lg:pt-0;
+}
+
+.home-sidebar__section {
+	@apply flex flex-col gap-1.5;
+}
+
+.home-sidebar__label {
+	@apply text-sm font-semibold text-on-background;
+}
+
+.home-sidebar__value {
+	@apply flex items-center gap-2 text-sm text-on-background/80;
+}
+
+.home-sidebar__link {
+	@apply font-medium text-on-background transition-colors hover:underline;
+}
+
+.home-sidebar__tags {
+	@apply mt-1 flex flex-wrap gap-2;
+}
+
+.home-footer {
+	@apply col-span-full border-t border-border pt-6 text-sm text-on-background/70;
+
+	p {
+		@apply flex flex-wrap justify-center gap-x-1;
+	}
+
+	a {
+		@apply font-medium text-on-background underline decoration-border underline-offset-4 transition-colors;
+
+		@media (hover: hover) {
+			@apply hover:decoration-on-background;
+		}
+
+		&:focus-visible {
+			@apply rounded-sm outline-2 outline-offset-2 outline-primary;
+		}
+	}
+}
+
+.home-code-block[data-rehype-pretty-code-figure] {
+	@apply my-0 overflow-auto rounded-none border-0 bg-background-accent;
+
+	pre code {
+		@apply font-mono text-sm leading-relaxed;
+	}
+}

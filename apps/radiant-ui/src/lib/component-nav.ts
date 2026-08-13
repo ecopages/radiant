@@ -24,3 +24,8 @@ export function firstComponentHref(category: ComponentCategory): string {
 	const entry = componentNavEntries.find((item) => item.category === category);
 	return entry?.href ?? '/docs/button';
 }
+
+export const groupedComponentNavEntries = COMPONENT_CATEGORY_ORDER.map((category) => ({
+	category,
+	items: componentNavEntries.filter((entry) => entry.category === category),
+})).filter((group) => group.items.length > 0);
