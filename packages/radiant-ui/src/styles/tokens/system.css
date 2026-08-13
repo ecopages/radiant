@@ -2,6 +2,9 @@
  * Structural system tokens (Tier 3) — shared across all themes.
  */
 :root {
+	--color-black: oklch(0% 0 0);
+	--color-white: oklch(100% 0 0);
+
 	--border-width-hairline: 1px;
 	--border-width-thin: 1px;
 	--border-width-thick: 2px;
