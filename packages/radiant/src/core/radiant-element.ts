@@ -329,6 +329,7 @@ export class RadiantElement<Bindings extends object = {}>
 			// before any `@onUpdated`/reactive side effect from the catch-up can fire.
 			if (isFirstConnect) {
 				this.syncAttributesOnFirstConnect();
+				this.reactivePropertyState.completeInitialSync();
 			}
 
 			if (!this.shouldRunRenderLifecycle()) {
@@ -376,10 +377,12 @@ export class RadiantElement<Bindings extends object = {}>
 
 	/**
 	 * Replays `attributeChangedCallback` for every currently-set, registered attribute
-	 * as if it had just changed from unset. Standard-decorator `@prop` fields read
-	 * their initial value from the attribute at construction time, so this is a
-	 * no-op in the common case — it only matters when an attribute was set (or
-	 * changed) on this element after construction but before this first connect.
+	 * as if it had just changed from unset.
+	 *
+	 * @remarks
+	 * Parser/JSX attributes often land after `constructor`, and
+	 * `attributeChangedCallback` is a no-op until `elementReady`. This is how
+	 * authored attributes reach `@prop` on first connect.
 	 */
 	private syncAttributesOnFirstConnect(): void {
 		for (const property of this.reactivePropertyState.getAll()) {

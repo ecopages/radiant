@@ -72,7 +72,7 @@ export class ReactivePropertyState {
 			Reflect.deleteProperty(this.host, propertyName);
 		}
 
-		const propertyMapping = createReactivePropertyMapping(propertyName, attributeKey, type, initialValue);
+		const propertyMapping = createReactivePropertyMapping(propertyName, attributeKey, type, initialValue, reflect);
 
 		this.register(propertyMapping);
 
@@ -86,19 +86,34 @@ export class ReactivePropertyState {
 		defineReactiveAccessor(propertyName, {
 			bind: options.bind,
 			signal,
-			onSet: (value) => this.reflectValue(attributeKey, reflect, propertyMapping, value),
+			onSet: (value) => this.reflectValue(attributeKey, propertyMapping.reflect, propertyMapping, value),
 		});
+	}
 
-		if (initialValue !== undefined) {
-			queueMicrotask(() => {
-				const currentValue = signal.get();
-				if (currentValue === undefined) {
-					return;
-				}
+	/**
+	 * Reflects current values and emits the initial `@onUpdated` after first-connect
+	 * attribute catch-up.
+	 *
+	 * @remarks
+	 * Construction can run before parser/JSX attributes land. Reflecting
+	 * `defaultValue` from the constructor would overwrite e.g. `variant="ghost"`.
+	 * First-connect catch-up adopts authored attributes first; this then reflects
+	 * whatever the host actually holds.
+	 */
+	public completeInitialSync(): void {
+		for (const property of this.properties.values()) {
+			const signal = this.host.getReactiveMember(property.name);
+			if (!signal) {
+				continue;
+			}
 
-				this.reflectValue(attributeKey, reflect, propertyMapping, currentValue);
-				this.host.notifyUpdate(propertyName, undefined, currentValue);
-			});
+			const currentValue = signal.get();
+			if (currentValue === undefined) {
+				continue;
+			}
+
+			this.reflectValue(property.attribute, property.reflect, property, currentValue);
+			this.host.notifyUpdate(property.name, undefined, currentValue);
 		}
 	}
 
@@ -117,12 +132,7 @@ export class ReactivePropertyState {
 		return config.converter.fromAttribute(value);
 	}
 
-	private reflectValue<T>(
-		attributeKey: string,
-		reflect: boolean | undefined,
-		property: ReactiveProperty<T>,
-		value: T,
-	): void {
+	private reflectValue<T>(attributeKey: string, reflect: boolean, property: ReactiveProperty<T>, value: T): void {
 		if (!reflect) {
 			return;
 		}

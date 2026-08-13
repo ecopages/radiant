@@ -181,6 +181,21 @@ describe('@prop', () => {
 			document.body.appendChild(customElement);
 			expect(customElement.value).toEqual(5);
 		});
+
+		test('does not overwrite an authored reflected attribute with defaultValue after innerHTML', async () => {
+			@customElement('my-prop-reflect-ghost-html')
+			class MyPropReflectGhostHtml extends RadiantElement {
+				@prop({ type: String, reflect: true, defaultValue: 'filled' }) variant: string;
+			}
+
+			document.body.innerHTML = '<my-prop-reflect-ghost-html variant="ghost"></my-prop-reflect-ghost-html>';
+			await Promise.resolve();
+			await Promise.resolve();
+
+			const host = document.querySelector('my-prop-reflect-ghost-html') as MyPropReflectGhostHtml;
+			expect(host.variant).toEqual('ghost');
+			expect(host.getAttribute('variant')).toEqual('ghost');
+		});
 	});
 
 	describe('not reflect', () => {
