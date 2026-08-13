@@ -1,4 +1,5 @@
 import { renderToString } from '@ecopages/jsx/server';
+import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { describe, expect, it } from 'vitest';
 import { RuiAlert } from '../alert/alert';
 import { RuiCycleToggle, RuiCycleToggleItem } from './cycle-toggle';
@@ -32,13 +33,27 @@ describe('RuiCycleToggle SSR', () => {
 		expect(html).toMatch(/data-cycle-value="dark"[^>]* hidden/);
 	});
 
-	it('serializes variant on the host so nested SSR hydrates ghost instead of filled', () => {
-		const html = renderToString(
-			<RuiAlert>
+	it('serializes host props through the Radiant SSR bridge', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
 				<RuiCycleToggle value="system" label="Theme" variant="ghost" size="sm">
 					{themeItems('system')}
-				</RuiCycleToggle>
-			</RuiAlert>,
+				</RuiCycleToggle>,
+			),
+		);
+
+		expect(html).toMatch(/<rui-cycle-toggle[^>]*variant="ghost"/);
+	});
+
+	it('serializes variant on the host so nested SSR hydrates ghost instead of filled', () => {
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<RuiAlert>
+					<RuiCycleToggle value="system" label="Theme" variant="ghost" size="sm">
+						{themeItems('system')}
+					</RuiCycleToggle>
+				</RuiAlert>,
+			),
 		);
 
 		expect(html).toMatch(/<rui-cycle-toggle[^>]*variant="ghost"/);

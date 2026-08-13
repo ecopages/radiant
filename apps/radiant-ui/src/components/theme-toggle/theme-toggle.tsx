@@ -20,14 +20,7 @@ export const ThemeToggle = eco.component<ThemeToggleViewProps, JsxRenderable>({
 		const preference = value ?? 'system';
 
 		return (
-			<theme-toggle
-				{...props}
-				attr:value={value}
-				attr:label={label}
-				attr:variant={variant}
-				attr:size={size}
-				attr:disabled={disabled}
-			>
+			<theme-toggle {...props} value={value} label={label} variant={variant} size={size} disabled={disabled}>
 				<RuiCycleToggleButton variant={variant} size={size} disabled={disabled}>
 					<RuiCycleToggleItem id="system" selected={preference === 'system'}>
 						<ThemePreferenceItemContent preference="system" showLabel={false} />

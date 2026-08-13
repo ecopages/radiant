@@ -71,15 +71,15 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	const ssr: SsrRenderContext = {
 		hydrate,
 		customElementRenderHook: activeSsrContext?.customElementRenderHook,
+		renderChild: (child) => renderChild(child, context),
 		scopeValues: hydrationBindingScope.scopeValues,
 	};
+	const context: RenderContext = {
+		ssr,
+		hydrationBindingState: hydrationBindingScope.hydrationBindingState,
+	};
 
-	return withActiveSsrRenderContext(ssr, () =>
-		renderChild(value, {
-			ssr,
-			hydrationBindingState: hydrationBindingScope.hydrationBindingState,
-		}),
-	);
+	return withActiveSsrRenderContext(ssr, () => renderChild(value, context));
 }
 
 /** Returns whether the active SSR render scope is currently emitting hydration markers. */
@@ -119,6 +119,7 @@ function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render:
 	const nextContext: SsrRenderContext = {
 		hydrate: overrides.hydrate ?? parentContext?.hydrate ?? false,
 		customElementRenderHook: overrides.customElementRenderHook ?? parentContext?.customElementRenderHook,
+		renderChild: parentContext?.renderChild,
 		scopeValues: parentContext?.scopeValues,
 	};
 

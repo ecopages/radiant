@@ -180,11 +180,6 @@ function resolveSelectDisplayText(
 /**
  * Select view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
  * do not nest a select-specific label.
- *
- * @remarks
- * Reflected host fields use `attr:` so they survive plain nested SSR (for example
- * when this select is authored light DOM inside another custom element). Unprefixed
- * names bind as properties and are omitted from that serialization path.
  */
 export function RuiSelect({
 	options,
@@ -207,11 +202,11 @@ export function RuiSelect({
 	return (
 		<rui-select
 			{...props}
-			attr:value={value}
-			attr:label={label}
-			attr:placeholder={placeholder}
-			attr:disabled={disabled}
-			attr:selection-mode={selectionMode}
+			value={value}
+			label={label}
+			placeholder={placeholder}
+			disabled={disabled}
+			selectionMode={selectionMode}
 		>
 			{options == null ? (
 				children

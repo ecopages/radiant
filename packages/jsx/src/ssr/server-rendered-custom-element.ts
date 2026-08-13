@@ -154,7 +154,8 @@ function applyServerCustomElementChildren(element: HTMLElement, children: JsxRen
 		return;
 	}
 
-	const serializedChildren = renderJsxRenderableToString(children);
+	const serializedChildren =
+		getActiveSsrRenderContext()?.renderChild?.(children) ?? renderJsxRenderableToString(children);
 
 	if (canAssignServerCustomElementProperty(element, 'children')) {
 		Reflect.set(element, 'children', serializedChildren);
