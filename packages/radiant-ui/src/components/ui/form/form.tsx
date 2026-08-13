@@ -17,9 +17,10 @@ export function RuiForm({
 			attr:revalidate-mode={reValidateMode}
 			prop:defaultValues={defaultValues}
 			prop:resolver={resolver}
-			attr:data-default-values={
-				defaultValuesData ?? (defaultValues !== undefined ? JSON.stringify(defaultValues) : undefined)
-			}
+			data={{
+				defaultValues:
+					defaultValuesData ?? (defaultValues !== undefined ? JSON.stringify(defaultValues) : undefined),
+			}}
 		>
 			{children}
 		</rui-form>
