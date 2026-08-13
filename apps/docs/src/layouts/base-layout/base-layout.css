@@ -20,11 +20,11 @@ main {
 	@apply sticky top-0 z-50 w-full border-b border-border bg-background-accent;
 
 	&__inner {
-		@apply mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-6 py-3 md:px-8;
+		@apply mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 py-3 md:px-8;
 	}
 
 	&__start {
-		@apply flex items-center gap-4;
+		@apply flex min-w-0 items-center gap-2 md:gap-4;
 	}
 
 	&__version {

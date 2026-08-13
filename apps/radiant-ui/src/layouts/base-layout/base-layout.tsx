@@ -4,6 +4,7 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 import { Logo } from '@/components/logo/logo';
 import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import radiantUiJson from '../../../../../packages/radiant-ui/package.json';
+import { RuiChip } from '@ecopages/radiant-ui/chip';
 
 export type BaseLayoutProps = {
 	children: JsxRenderable;
@@ -37,11 +38,13 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 					<div class="site-header__inner">
 						<div class="site-header__start">
 							<Logo href="/" target="_self" title="Radiant UI" />
-							<p class="site-header__version">v {radiantUiJson.version}</p>
+							<RuiChip variant="default" class="max-md:hidden">
+								{radiantUiJson.version}
+							</RuiChip>
 						</div>
 						<nav class="site-header__nav" aria-label="Site">
 							<ul>
-								<li>
+								<li class="max-md:hidden">
 									<RuiButton href="/docs/getting-started/introduction" variant="ghost" size="sm">
 										Docs
 									</RuiButton>
