@@ -16,6 +16,7 @@ export interface ReactiveProperty<T = unknown> {
 	initialValue?: T;
 	name: string;
 	attribute: string;
+	reflect: boolean;
 	converter: {
 		fromAttribute: (value: string) => ReadAttributeValueReturnType;
 		toAttribute: (value: any) => WriteAttributeValueReturnType;
@@ -66,12 +67,14 @@ export function createReactivePropertyMapping<T>(
 	attributeKey: string,
 	type: AttributeTypeConstant,
 	initialValue: T | undefined,
+	reflect = false,
 ): ReactiveProperty<T> {
 	return {
 		type,
 		name: propertyName,
 		initialValue,
 		attribute: attributeKey,
+		reflect,
 		converter: {
 			fromAttribute: (value) => readAttributeValue(value, type),
 			toAttribute: (value) => writeAttributeValue(value, type),
