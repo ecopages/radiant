@@ -184,6 +184,11 @@ function resolveSelectDisplayText(
 export function RuiSelect({
 	options,
 	children,
+	value,
+	label,
+	placeholder,
+	disabled,
+	selectionMode,
 	...props
 }: JsxHtmlPropsWithChildren<
 	RuiSelectProps & {
@@ -191,26 +196,35 @@ export function RuiSelect({
 		options?: RuiSelectOptionData[];
 	}
 >) {
-	if (options != null) {
-		const displayText = resolveSelectDisplayText(options, props.value, props.placeholder);
-		const isPlaceholder = !(typeof props.value === 'string' && props.value.trim()) && Boolean(props.placeholder);
+	const displayText = options != null ? resolveSelectDisplayText(options, value, placeholder) : '';
+	const isPlaceholder = options != null && !(typeof value === 'string' && value.trim()) && Boolean(placeholder);
 
-		return (
-			<rui-select {...props}>
-				<RuiSelectControl>
-					<RuiSelectTrigger>
-						<RuiSelectValue {...(isPlaceholder ? { 'data-placeholder': true } : {})}>
-							{displayText}
-						</RuiSelectValue>
-					</RuiSelectTrigger>
-					<RuiSelectToggle />
-				</RuiSelectControl>
-				<RuiSelectListbox>
-					<RuiListbox embedded options={options} />
-				</RuiSelectListbox>
-			</rui-select>
-		);
-	}
-
-	return <rui-select {...props}>{children}</rui-select>;
+	return (
+		<rui-select
+			{...props}
+			value={value}
+			label={label}
+			placeholder={placeholder}
+			disabled={disabled}
+			selectionMode={selectionMode}
+		>
+			{options == null ? (
+				children
+			) : (
+				<>
+					<RuiSelectControl>
+						<RuiSelectTrigger>
+							<RuiSelectValue {...(isPlaceholder ? { 'data-placeholder': true } : {})}>
+								{displayText}
+							</RuiSelectValue>
+						</RuiSelectTrigger>
+						<RuiSelectToggle />
+					</RuiSelectControl>
+					<RuiSelectListbox>
+						<RuiListbox embedded options={options} />
+					</RuiSelectListbox>
+				</>
+			)}
+		</rui-select>
+	);
 }
