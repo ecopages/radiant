@@ -17,6 +17,7 @@ import type { RuiMenubar, RuiMenubarProps } from './components/ui/menubar/menuba
 import type { RuiMeter, RuiMeterProps } from './components/ui/meter/meter.script';
 import type { RuiNavigationMenu, RuiNavigationMenuProps } from './components/ui/navigation-menu/navigation-menu.script';
 import type { RuiRadioGroup, RuiRadioGroupProps } from './components/ui/radio-group/radio-group.script';
+import type { RuiSelect, RuiSelectProps } from './components/ui/select/select.script';
 import type { RuiSidebar, RuiSidebarProps } from './components/ui/sidebar/sidebar.script';
 import type { RuiSidebarTrigger, RuiSidebarTriggerProps } from './components/ui/sidebar/sidebar-trigger.script';
 import type { RuiSlider, RuiSliderProps } from './components/ui/slider/slider.script';
@@ -54,6 +55,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-meter': JsxCustomElementAttributes<RuiMeter, RuiMeterProps>;
 		'rui-navigation-menu': JsxCustomElementAttributes<RuiNavigationMenu, RuiNavigationMenuProps>;
 		'rui-radio-group': JsxCustomElementAttributes<RuiRadioGroup, RuiRadioGroupProps>;
+		'rui-select': JsxCustomElementAttributes<RuiSelect, RuiSelectProps>;
 		'rui-sidebar': JsxCustomElementAttributes<RuiSidebar, RuiSidebarProps>;
 		'rui-sidebar-trigger': JsxCustomElementAttributes<RuiSidebarTrigger, RuiSidebarTriggerProps>;
 		'rui-slider': JsxCustomElementAttributes<RuiSlider, RuiSliderProps>;
