@@ -22,6 +22,8 @@ Component CSS must **not** `@import` a theme file.
 | `typography/<name>.css` | Font family, text sizes, weights, leading roles                          |
 | `motion/<name>.css`     | `--duration-*`, `--ease-*`                                               |
 
+Named hue scales ship steps **50–975** (12 stops). `--color-black` and `--color-white` live in `system.css` (absolute anchors, not a hue pack). The semantic gray utility scale stays **50–950** (Tailwind-shaped); presets remap it onto a pack neutral.
+
 Components must **never** reference palette steps (e.g. `--color-havelock-blue-800`) directly.
 
 **Color packs vs `@theme`:** Put palette scales on `:root`, not `@theme`. Tailwind v4 tree-shakes unused `@theme` vars; brand presets only reference palettes via nested `var(--color-*)`, which does not keep them alive. Spacing already follows this split (`:root` values + `@theme` bridge).
@@ -52,7 +54,7 @@ Filled status surfaces (alerts) use `*-container` backgrounds. Lightweight notif
 
 ### Tier 3 — system (`tokens/system.css`)
 
-Shared structural tokens: border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes. Imported by every theme; not swappable mood packs in v1.
+Shared structural tokens: absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes. Imported by every theme; not swappable mood packs in v1.
 
 ## Themes
 
