@@ -16,7 +16,9 @@
 	--color-night-sky-800: hsl(225 90% 25%);
 	--color-night-sky-900: hsl(225 80% 15%);
 	--color-night-sky-950: hsl(225 80% 10%);
+	--color-night-sky-975: hsl(225 80% 6%);
 
+	--color-scarlet-50: hsl(353 100% 96%);
 	--color-scarlet-100: hsl(353 100% 89%);
 	--color-scarlet-200: hsl(351 100% 81%);
 	--color-scarlet-300: hsl(350 100% 72%);
@@ -27,6 +29,7 @@
 	--color-scarlet-800: hsl(351 81% 25%);
 	--color-scarlet-900: hsl(353 76% 15%);
 	--color-scarlet-950: hsl(8 60% 5%);
+	--color-scarlet-975: hsl(8 55% 3%);
 
 	--color-glacier-white-50: hsl(220 20% 99%);
 	--color-glacier-white-100: hsl(220 20% 97%);
@@ -39,6 +42,7 @@
 	--color-glacier-white-800: hsl(220 12% 25%);
 	--color-glacier-white-900: hsl(225 15% 5%);
 	--color-glacier-white-950: hsl(225 20% 2%);
+	--color-glacier-white-975: hsl(225 22% 1%);
 
 	--color-laser-lemon-50: hsl(60 100% 98%);
 	--color-laser-lemon-100: hsl(60 100% 88%);
@@ -51,6 +55,7 @@
 	--color-laser-lemon-800: hsl(59 93% 23%);
 	--color-laser-lemon-900: hsl(58 86% 14%);
 	--color-laser-lemon-950: hsl(55 50% 5%);
+	--color-laser-lemon-975: hsl(55 45% 3%);
 
 	--color-navy-blue-50: hsl(223 64% 98%);
 	--color-navy-blue-100: hsl(214 65% 88%);
@@ -63,6 +68,7 @@
 	--color-navy-blue-800: hsl(212 69% 22%);
 	--color-navy-blue-900: hsl(214 64% 13%);
 	--color-navy-blue-950: hsl(225 36% 4%);
+	--color-navy-blue-975: hsl(225 36% 2%);
 
 	--color-background: var(--color-glacier-white-50);
 	--color-on-background: var(--color-glacier-white-900);

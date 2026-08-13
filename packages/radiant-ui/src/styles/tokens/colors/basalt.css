@@ -1,5 +1,6 @@
 /**
  * Basalt color pack — cool neutrals + Carbon-like blue accent (IBM Carbon inspired).
+ * Named hues ship 50–975. Existing stops are the preset contract.
  * `:root` (not `@theme`) so scales always emit.
  */
 :root {
@@ -26,12 +27,32 @@
 	--color-carbon-blue-700: oklch(38% 0.14 264);
 	--color-carbon-blue-800: oklch(30% 0.11 264);
 	--color-carbon-blue-900: oklch(22% 0.08 264);
+	--color-carbon-blue-950: oklch(16.5% 0.062 264);
+	--color-carbon-blue-975: oklch(13.5% 0.05 264);
 
+	--color-carbon-teal-50: oklch(97.6% 0.015 195);
+	--color-carbon-teal-100: oklch(94.5% 0.03 195);
+	--color-carbon-teal-200: oklch(88% 0.055 195);
+	--color-carbon-teal-300: oklch(80% 0.08 195);
 	--color-carbon-teal-400: oklch(72% 0.1 195);
+	--color-carbon-teal-500: oklch(63.5% 0.095 195);
 	--color-carbon-teal-600: oklch(55% 0.09 195);
+	--color-carbon-teal-700: oklch(45% 0.075 195);
+	--color-carbon-teal-800: oklch(34% 0.06 195);
+	--color-carbon-teal-900: oklch(24% 0.045 195);
+	--color-carbon-teal-950: oklch(17.5% 0.035 195);
+	--color-carbon-teal-975: oklch(14.5% 0.03 195);
 
+	--color-carbon-red-50: oklch(97.2% 0.015 25);
+	--color-carbon-red-100: oklch(92% 0.04 25);
+	--color-carbon-red-200: oklch(82% 0.08 25);
+	--color-carbon-red-300: oklch(72% 0.13 25);
+	--color-carbon-red-400: oklch(62% 0.17 25);
 	--color-carbon-red-500: oklch(52% 0.2 25);
 	--color-carbon-red-600: oklch(45% 0.18 25);
-	--color-carbon-red-100: oklch(92% 0.04 25);
+	--color-carbon-red-700: oklch(38% 0.15 25);
 	--color-carbon-red-800: oklch(32% 0.12 25);
+	--color-carbon-red-900: oklch(24% 0.09 25);
+	--color-carbon-red-950: oklch(18% 0.07 25);
+	--color-carbon-red-975: oklch(14.5% 0.055 25);
 }
