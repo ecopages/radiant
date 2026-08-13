@@ -17,7 +17,6 @@ import {
 } from '@ecopages/radiant-ui/sidebar';
 import { RuiToc } from '@ecopages/radiant-ui/toc';
 import { docsNav, flattenContentNav } from '@/lib/content-nav';
-
 import { CodeTabs } from '@/components/code-tabs';
 import { Logo } from '@/components/logo/logo';
 import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
@@ -80,8 +79,10 @@ const DocsSiteHeader = () => (
 				controls={DOCS_SIDEBAR_ID}
 				triggerLabel="Open component navigation"
 			/>
-			<Logo href="/docs/getting-started/introduction" target="_self" title="Radiant UI" />
-			<RuiChip variant="default">v {radiantUiJson.version}</RuiChip>
+			<Logo href="/" target="_self" title="Radiant UI" />
+			<RuiChip variant="default" class="max-md:hidden">
+				{radiantUiJson.version}
+			</RuiChip>
 		</div>
 		<nav class="rui-sidebar-provider__site-header-nav" aria-label="Site">
 			<RuiButton
