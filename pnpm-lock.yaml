@@ -232,8 +232,8 @@ importers:
     packages/radiant:
         dependencies:
             '@ecopages/signals':
-                specifier: '>=0.3.0-beta.6'
-                version: 0.3.0-beta.6
+                specifier: '>=0.3.0-beta.8'
+                version: link:../signals/dist
         devDependencies:
             '@babel/core':
                 specifier: ^7.28.0
@@ -421,11 +421,11 @@ importers:
     packages/storybook-radiant-vite:
         dependencies:
             '@ecopages/radiant':
-                specifier: '>=0.3.0-beta.6'
-                version: 0.3.0-beta.6(@ecopages/jsx@packages+jsx+dist)
+                specifier: '>=0.3.0-beta.8'
+                version: link:../radiant/dist
             '@ecopages/signals':
-                specifier: '>=0.3.0-beta.6'
-                version: 0.3.0-beta.6
+                specifier: '>=0.3.0-beta.8'
+                version: link:../signals/dist
             '@ecopages/vite-plugin-radiant':
                 specifier: workspace:*
                 version: link:../vite-plugin-radiant
