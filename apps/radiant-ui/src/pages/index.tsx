@@ -80,7 +80,7 @@ const HomePathCard = ({ href, title, description }: { href: string; title: strin
 const HomePreviewCluster = () => (
 	<div class="home-cluster">
 		<RuiButton>Save</RuiButton>
-		<RuiButton variant="outline">Cancel</RuiButton>
+		<RuiButton variant="ghost">Cancel</RuiButton>
 		<RuiChip variant="primary">light DOM</RuiChip>
 		<RuiSwitch checked={true}>Notifications</RuiSwitch>
 		<RuiInput id="home-preview-name" placeholder="Andrea" aria-label="Name" />

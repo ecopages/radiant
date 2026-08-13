@@ -7,7 +7,7 @@ import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 export const Preview = () => (
   <>
     <RuiButton>Save</RuiButton>
-    <RuiButton variant="outline">Cancel</RuiButton>
+    <RuiButton variant="ghost">Cancel</RuiButton>
     <RuiChip variant="primary">light DOM</RuiChip>
     <RuiSwitch checked>Notifications</RuiSwitch>
     <RuiLabel htmlFor="name">Name</RuiLabel>
