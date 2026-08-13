@@ -10,7 +10,7 @@ const PUBLIC_DIR = join(ROOT_DIR, 'src/public');
 const LLMS_HEADER = [
 	'# Radiant Documentation',
 	'> Build typed custom elements, controller hosts, JSX views, and Signals with Radiant.',
-	'> Find your skill here: https://radiant.ecopages.app/skill.txt',
+	'> Start at https://radiant.ecopages.app/skill.txt or https://radiant.ecopages.app/skill/SKILL.md',
 	'',
 ];
 

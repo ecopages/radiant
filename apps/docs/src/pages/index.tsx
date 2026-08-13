@@ -259,6 +259,21 @@ const HomePage = () => {
 				</div>
 
 				<div class="home-sidebar__section">
+					<p class="home-sidebar__label">For agents</p>
+					<div class="home-sidebar__tags">
+						<RuiButton href="/skill.txt" variant="outline" size="sm" class="font-mono">
+							skill.txt
+						</RuiButton>
+						<RuiButton href="/skill/SKILL.md" variant="outline" size="sm" class="font-mono">
+							SKILL.md
+						</RuiButton>
+						<RuiButton href="/llms.txt" variant="outline" size="sm" class="font-mono">
+							llms.txt
+						</RuiButton>
+					</div>
+				</div>
+
+				<div class="home-sidebar__section">
 					<p class="home-sidebar__label">Ecosystem</p>
 					<div class="home-sidebar__tags">
 						<RuiChip class="font-mono">@ecopages/radiant</RuiChip>

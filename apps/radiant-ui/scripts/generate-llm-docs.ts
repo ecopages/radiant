@@ -11,6 +11,7 @@ const LLMS_HEADER = [
 	'# Radiant UI',
 	'> Accessible, framework-agnostic UI components built on the Radiant reactive model.',
 	'> Component modules live under @ecopages/radiant-ui/<slug>.',
+	'> Start at /skill.txt or /skill/SKILL.md',
 	'',
 ];
 
