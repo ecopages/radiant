@@ -1,6 +1,6 @@
 ---
-title: Themes and tokens
-description: Compose colour, spacing, and radius tokens into a Radiant UI foundation.
+title: Theming
+description: Compose colour, spacing, and radius packs into a Radiant UI foundation.
 group: Getting started
 ---
 
@@ -13,19 +13,20 @@ export const config = {
 	},
 };
 
-# Themes and tokens
+# Theming
 
 <p class="docs-lede">
-	Radiant UI separates colour, spacing, and radius into token packs. Choose the combination once in your application
-	stylesheet; components consume the resulting semantic tokens without component-specific overrides.
+	A Radiant UI theme is an import graph: colour, spacing, radius, elevation, typography, and motion packs plus
+	semantic roles. Choose the combination once in the application stylesheet. Components consume the resulting roles,
+	not a named palette.
 </p>
 
 <DesignTokenPanel />
 
 ## Start with the foundation
 
-Import the default foundation and component stylesheet in your application's entry stylesheet. It provides Glacier with
-the default spacing and radius packs.
+Import the default foundation and the component stylesheet in the application entry stylesheet. The default theme is
+Glacier with the default spacing and radius packs.
 
 ```css
 @import '@ecopages/radiant-ui/themes/default';
@@ -34,28 +35,28 @@ the default spacing and radius packs.
 
 ## Explore colour profiles
 
-The live preview above includes Glacier, Basalt, Ember, and Aurora. Aurora is the vivid, expressive option; the other
-profiles are deliberately more restrained.
+The live preview includes Glacier, Basalt, Ember, and Aurora. Aurora is the vivid, expressive option; the other
+profiles are more restrained. Ember remaps Glacier neutrals to a warm accent; it is a preset, not a separate palette
+file.
 
 Important: this preview is documentation-only. It uses `data-rui-colors` to switch profiles at runtime so you can
 compare combinations. Those attributes are not a supported application API.
 
-## Spacing and shape
+## Layer spacing and shape
 
-Use `compact` where information density matters and `wide` where composition needs more air. Compact preserves
-control heights for touch and keyboard usability; it tightens rhythm and padding rather than shrinking hit areas.
-Choose `soft` for generous rounding or `sharp` for square containers. `edgy` is available as a stylesheet alias for
-the sharp radius pack.
+Use `compact` where information density matters and `wide` where composition needs more air. Compact preserves control
+heights for touch and keyboard usability; it tightens rhythm and padding rather than shrinking hit areas. Choose
+`soft` for generous rounding or `sharp` for square containers. `edgy` is a stylesheet alias for the sharp radius pack.
 
 ```css
 @import '@ecopages/radiant-ui/tokens/spacing/compact';
 @import '@ecopages/radiant-ui/tokens/radius/soft';
 ```
 
-## Compose the geometry you need
+## Compose the packs you need
 
-Layer a spacing or radius pack after the foundation when a product needs a distinct density or shape. Do not start from
-a named full preset: select only the packs your product needs.
+Layer a spacing or radius pack after the foundation when a product needs a distinct density or shape. Select only the
+packs the product needs rather than starting from a named full preset.
 
 ```css
 @import '@ecopages/radiant-ui/themes/default';
@@ -64,23 +65,13 @@ a named full preset: select only the packs your product needs.
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-`data-rui-colors`, `data-rui-spacing`, and `data-rui-radius` are only used by this documentation's live preview. Do
-not add them to production markup.
+## Build a custom colour theme
 
-## Build a custom theme
+Define semantic colour roles in a stylesheet loaded after the base token packs. Components consume these roles (`bg-primary`,
+`text-on-surface`, …), not palette steps such as `night-sky-500`.
 
-Define the semantic roles below in a stylesheet loaded after the base token packs. Components consume these roles,
-not a named palette, so this is the contract for a custom colour theme.
-
-| Role family | CSS variables |
-| --- | --- |
-| Brand | `--primary`, `--on-primary`, `--primary-container`, `--on-primary-container`, `--primary-light`, `--primary-dark` |
-| Secondary | `--secondary`, `--on-secondary`, `--secondary-container`, `--on-secondary-container`, `--secondary-light`, `--secondary-dark` |
-| Status | `--error`, `--on-error`, `--error-container`, `--on-error-container`, `--success`, `--on-success`, `--success-container`, `--on-success-container`, `--info`, `--on-info`, `--info-container`, `--on-info-container`, `--warning`, `--on-warning`, `--warning-container`, `--on-warning-container` |
-| Surfaces | `--background`, `--on-background`, `--surface`, `--on-surface`, `--surface-container-lowest`, `--surface-container-low`, `--surface-container`, `--surface-container-high`, `--surface-container-highest` |
-| Supporting roles | `--border`, `--focus-ring`, `--link`, `--overlay`, `--background-code`, `--on-background-code`, `--neutral` |
-| Spacing | `--space-1`, `--space-2`, `--space-3`, `--space-4`, `--space-5`, `--space-6`, `--space-8`, `--space-10`, `--space-12`, `--space-16`, `--space-control-x`, `--space-control-y`, `--space-inline`, `--space-stack`, `--space-inset` |
-| Shape | `--border-radius-xs` through `--border-radius-3xl`, `--border-radius-full`, `--radius-control`, `--radius-container`, `--radius-pill` |
+Override the roles your product needs. A complete list, with live swatches, is on the [Tokens](/docs/getting-started/tokens)
+page.
 
 ```css
 :root {
@@ -97,3 +88,8 @@ not a named palette, so this is the contract for a custom colour theme.
   --focus-ring: var(--primary);
 }
 ```
+
+Dark mode remaps colour roles only. Spacing, radius, elevation, typography, and motion stay mode-independent unless a
+theme documents otherwise. Toggle dark mode in the docs header to preview the current profile's dark remaps.
+
+See [Tokens](/docs/getting-started/tokens) for the spacing scale, radius scale, and every semantic colour role.
