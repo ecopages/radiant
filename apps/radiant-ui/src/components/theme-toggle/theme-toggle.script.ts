@@ -45,9 +45,15 @@ function resolveIsDark(preference: ThemePreference): boolean {
  */
 @customElement(THEME_TOGGLE_TAG)
 export class ThemeToggle extends RuiCycleToggleElement {
+	/**
+	 * @remarks
+	 * First-connect attribute catch-up is deferred to a microtask. Applying the
+	 * stored preference synchronously would run first, then catch-up would
+	 * overwrite `value` with the SSR attribute.
+	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
-		this.syncWithStoredPreference();
+		queueMicrotask(() => this.syncWithStoredPreference());
 	}
 
 	@onEvent({ mediaQuery: DARK_THEME_QUERY, type: 'change' })
