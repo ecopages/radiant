@@ -60,10 +60,6 @@ export function RuiRadio({ children, value, name, disabled, class: className, ..
  * @cssclass rui-radio__control - Custom control dot that mirrors check state.
  * @cssclass rui-radio__label - Option text.
  *
- * @remarks
- * Reflected host fields use `attr:` so they survive plain nested SSR (for example
- * when this group is authored light DOM inside another custom element). Unprefixed
- * names bind as properties and are omitted from that serialization path.
  */
 export function RuiRadioGroup({
 	options,
@@ -75,7 +71,7 @@ export function RuiRadioGroup({
 	...props
 }: JsxHtmlPropsWithChildren<RuiRadioGroupProps & { slot?: string; options?: RuiRadioOption[] }>) {
 	return (
-		<rui-radio-group {...props} attr:value={value} attr:name={name} attr:label={label} attr:disabled={disabled}>
+		<rui-radio-group {...props} value={value} name={name} label={label} disabled={disabled}>
 			{options == null ? (
 				children
 			) : (

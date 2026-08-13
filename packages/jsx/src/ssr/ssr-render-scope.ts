@@ -1,4 +1,4 @@
-import type { ServerCustomElementRenderHook } from '../types/index.ts';
+import type { JsxRenderable, ServerCustomElementRenderHook } from '../types/index.ts';
 import { createLazyNodeAsyncLocalStorage } from './lazy-async-local-storage.ts';
 
 /**
@@ -8,6 +8,8 @@ import { createLazyNodeAsyncLocalStorage } from './lazy-async-local-storage.ts';
 export type SsrRenderContext = {
 	hydrate: boolean;
 	customElementRenderHook?: ServerCustomElementRenderHook;
+	/** Serializes nested custom-element light DOM with this render's active SSR policy. */
+	renderChild?: (value: JsxRenderable) => string;
 	scopeValues?: Map<symbol, unknown>;
 };
 
@@ -46,6 +48,7 @@ export function withActiveSsrScopeValue<TValue, T>(key: symbol, value: TValue, r
 		{
 			hydrate: parentContext?.hydrate ?? false,
 			customElementRenderHook: parentContext?.customElementRenderHook,
+			renderChild: parentContext?.renderChild,
 			scopeValues,
 		},
 		render,

@@ -418,7 +418,7 @@ export function RuiSidebarTrigger({
 			class={cx(className, placement && `rui-sidebar-trigger-placement--${placement}`)}
 			prop:controls={controls}
 			prop:buttonLabel={triggerLabel ?? 'Toggle sidebar'}
-			attr:data-button-label={triggerLabel ?? 'Toggle sidebar'}
+			data={{ buttonLabel: triggerLabel ?? 'Toggle sidebar' }}
 			prop:placement={placement}
 			variant={variant}
 			size={size}
