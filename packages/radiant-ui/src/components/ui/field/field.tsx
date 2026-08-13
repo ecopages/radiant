@@ -5,8 +5,9 @@ import './field.script';
 /**
  * JSX helper around `<rui-field>`.
  *
- * Passes `rules`, `defaultValue`, and `defaultValueData` through `prop:` / `attr:`
- * bindings. The element authors the `.rui-field` surface (see `@cssclass` there).
+ * Passes `rules` and `defaultValue` through property bindings, and serializes
+ * `defaultValueData` through a data attribute. The element authors the
+ * `.rui-field` surface (see `@cssclass` there).
  */
 export function RuiField({
 	children,
@@ -20,9 +21,10 @@ export function RuiField({
 			{...props}
 			prop:rules={rules}
 			prop:defaultValue={defaultValue}
-			attr:data-default-value={
-				defaultValueData ?? (defaultValue !== undefined ? JSON.stringify(defaultValue) : undefined)
-			}
+			data={{
+				defaultValue:
+					defaultValueData ?? (defaultValue !== undefined ? JSON.stringify(defaultValue) : undefined),
+			}}
 		>
 			{children}
 		</rui-field>
