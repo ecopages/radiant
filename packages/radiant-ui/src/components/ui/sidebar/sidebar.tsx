@@ -1,12 +1,15 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderable } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
+import { coalesceDefined } from '@/lib/coalesce-defined';
 import { cx } from '@/lib/cx';
-import type { RuiSidebarProps } from './sidebar.script';
+import { omitProps } from '@/lib/omit-props';
+import type { RuiSidebar as RuiSidebarElement, RuiSidebarProps } from './sidebar.script';
 import './sidebar.script';
 
-import type { RuiSidebarTriggerProps } from './sidebar-trigger.script';
+import type { RuiSidebarTrigger as RuiSidebarTriggerElement, RuiSidebarTriggerProps } from './sidebar-trigger.script';
 import './sidebar-trigger.script';
 
-export type RuiSidebarProviderProps = {
+export type RuiSidebarProviderProps = JsxElementProps<HTMLDivElement> & {
 	/**
 	 * Layout context. `default` is the standard shell; `full` removes chrome;
 	 * `docs` stacks a full-width `siteHeader` above the sidebar + inset row.
@@ -18,8 +21,6 @@ export type RuiSidebarProviderProps = {
 	sidebar?: JsxRenderable;
 	/** Slot for the inset (main content). */
 	children?: JsxRenderable;
-	/** Extra class names. */
-	class?: string;
 };
 
 /**
@@ -39,10 +40,11 @@ export function RuiSidebarProvider({
 	sidebar,
 	children,
 	class: className,
+	...props
 }: RuiSidebarProviderProps) {
 	if (layout === 'docs') {
 		return (
-			<div class={cx('rui-sidebar-provider', className)} data-layout={layout}>
+			<div {...props} class={cx('rui-sidebar-provider', className)} data-layout={layout}>
 				{siteHeader ? <div class="rui-sidebar-provider__site-header">{siteHeader}</div> : null}
 				<div class="rui-sidebar-provider__body">
 					{sidebar}
@@ -53,157 +55,119 @@ export function RuiSidebarProvider({
 	}
 
 	return (
-		<div class={cx('rui-sidebar-provider', className)} data-layout={layout}>
+		<div {...props} class={cx('rui-sidebar-provider', className)} data-layout={layout}>
 			{sidebar}
 			{children}
 		</div>
 	);
 }
 
-export type RuiSidebarHeaderProps = {
-	children: JsxRenderable;
-	class?: string;
-	/** Accessible name for the header region. */
-	'aria-label'?: string;
-};
+export type RuiSidebarHeaderProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Top section of the sidebar pane (logo, search, primary trigger).
  *
  * @cssclass rui-sidebar__header - Top, pinned section.
  */
-export function RuiSidebarHeader({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarHeaderProps) {
+export function RuiSidebarHeader({ children, class: className, ...props }: RuiSidebarHeaderProps) {
 	return (
-		<div class={cx('rui-sidebar__header', className)} aria-label={ariaLabel}>
+		<div {...props} class={cx('rui-sidebar__header', className)}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiSidebarContentProps = {
-	children: JsxRenderable;
-	class?: string;
-	/** Optional label for the scrolling content region. */
-	'aria-label'?: string;
-};
+export type RuiSidebarContentProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Scrollable middle section. Multiple allowed; each becomes its own region.
  *
  * @cssclass rui-sidebar__content - Scrollable middle section.
  */
-export function RuiSidebarContent({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarContentProps) {
+export function RuiSidebarContent({ children, class: className, ...props }: RuiSidebarContentProps) {
 	return (
-		<div class={cx('rui-sidebar__content', className)} aria-label={ariaLabel}>
+		<div {...props} class={cx('rui-sidebar__content', className)}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiSidebarFooterProps = {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiSidebarFooterProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Pinned bottom section (user, theme toggle, settings).
  *
  * @cssclass rui-sidebar__footer - Pinned bottom section.
  */
-export function RuiSidebarFooter({ children, class: className }: RuiSidebarFooterProps) {
-	return <div class={cx('rui-sidebar__footer', className)}>{children}</div>;
+export function RuiSidebarFooter({ children, class: className, ...props }: RuiSidebarFooterProps) {
+	return (
+		<div {...props} class={cx('rui-sidebar__footer', className)}>
+			{children}
+		</div>
+	);
 }
 
-export type RuiSidebarSeparatorProps = {
-	class?: string;
-	/** Accessible label for the separator. */
-	'aria-label'?: string;
-};
+export type RuiSidebarSeparatorProps = JsxElementProps<HTMLHRElement>;
 
 /**
  * Horizontal rule between sidebar sections.
  *
  * @cssclass rui-sidebar__separator - Horizontal rule (`role="separator"`).
  */
-export function RuiSidebarSeparator({ class: className, 'aria-label': ariaLabel }: RuiSidebarSeparatorProps) {
+export function RuiSidebarSeparator({ class: className, ...props }: RuiSidebarSeparatorProps) {
 	return (
-		<hr
-			role="separator"
-			aria-orientation="horizontal"
-			aria-label={ariaLabel}
-			class={cx('rui-sidebar__separator', className)}
-		/>
+		<hr {...props} role="separator" aria-orientation="horizontal" class={cx('rui-sidebar__separator', className)} />
 	);
 }
 
-export type RuiSidebarGroupProps = {
-	children: JsxRenderable;
-	class?: string;
-	/** Accessible label for the group region. */
-	'aria-label'?: string;
-};
+export type RuiSidebarGroupProps = JsxElementProps<HTMLElement>;
 
 /**
  * Landmark group of related sidebar items.
  *
  * @cssclass rui-sidebar__group - Landmark group region.
  */
-export function RuiSidebarGroup({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarGroupProps) {
+export function RuiSidebarGroup({ children, class: className, ...props }: RuiSidebarGroupProps) {
 	return (
-		<section class={cx('rui-sidebar__group', className)} aria-label={ariaLabel}>
+		<section {...props} class={cx('rui-sidebar__group', className)}>
 			{children}
 		</section>
 	);
 }
 
-export type RuiSidebarGroupLabelProps = {
-	children: JsxRenderable;
-	class?: string;
-	/** Optional `id` so the group can be referenced by `aria-labelledby`. */
-	id?: string;
-};
+export type RuiSidebarGroupLabelProps = JsxElementProps<HTMLHeadingElement>;
 
 /**
  * Heading for a sidebar group.
  *
  * @cssclass rui-sidebar__group-label - Group heading (`<h2>`).
  */
-export function RuiSidebarGroupLabel({ children, class: className, id }: RuiSidebarGroupLabelProps) {
+export function RuiSidebarGroupLabel({ children, class: className, ...props }: RuiSidebarGroupLabelProps) {
 	return (
-		<h2 id={id} class={cx('rui-sidebar__group-label', className)}>
+		<h2 {...props} class={cx('rui-sidebar__group-label', className)}>
 			{children}
 		</h2>
 	);
 }
 
-export type RuiSidebarGroupActionProps = {
-	children: JsxRenderable;
-	class?: string;
-	/** Accessible label for the action button. */
-	'aria-label'?: string;
-};
+export type RuiSidebarGroupActionProps = JsxElementProps<HTMLButtonElement>;
 
 /**
  * Top-right action button inside a group header.
  *
  * @cssclass rui-sidebar__group-action - Group header action button.
  */
-export function RuiSidebarGroupAction({
-	children,
-	class: className,
-	'aria-label': ariaLabel,
-}: RuiSidebarGroupActionProps) {
+export function RuiSidebarGroupAction({ children, class: className, ...props }: RuiSidebarGroupActionProps) {
 	return (
-		<button type="button" aria-label={ariaLabel} class={cx('rui-sidebar__group-action', className)}>
+		<button {...props} type="button" class={cx('rui-sidebar__group-action', className)}>
 			{children}
 		</button>
 	);
 }
 
-export type RuiSidebarGroupHeaderProps = {
+export type RuiSidebarGroupHeaderProps = JsxElementProps<HTMLDivElement> & {
 	label: JsxRenderable;
 	action?: JsxRenderable;
-	class?: string;
 };
 
 /**
@@ -211,65 +175,69 @@ export type RuiSidebarGroupHeaderProps = {
  *
  * @cssclass rui-sidebar__group-header - Group label + action row.
  */
-export function RuiSidebarGroupHeader({ label, action, class: className }: RuiSidebarGroupHeaderProps) {
+export function RuiSidebarGroupHeader({ label, action, class: className, ...props }: RuiSidebarGroupHeaderProps) {
 	return (
-		<div class={cx('rui-sidebar__group-header', className)}>
+		<div {...props} class={cx('rui-sidebar__group-header', className)}>
 			<RuiSidebarGroupLabel>{label}</RuiSidebarGroupLabel>
 			{action}
 		</div>
 	);
 }
 
-export type RuiSidebarMenuProps = {
-	children: JsxRenderable;
-	class?: string;
-	/** Accessible label for the menu list. */
-	'aria-label'?: string;
-};
+export type RuiSidebarMenuProps = JsxElementProps<HTMLUListElement>;
 
 /**
  * `<ul>` of sidebar items.
  *
  * @cssclass rui-sidebar__menu - Menu list.
  */
-export function RuiSidebarMenu({ children, class: className, 'aria-label': ariaLabel }: RuiSidebarMenuProps) {
+export function RuiSidebarMenu({ children, class: className, ...props }: RuiSidebarMenuProps) {
 	return (
-		<ul role="list" class={cx('rui-sidebar__menu', className)} aria-label={ariaLabel}>
+		<ul {...props} role="list" class={cx('rui-sidebar__menu', className)}>
 			{children}
 		</ul>
 	);
 }
 
-export type RuiSidebarMenuItemProps = {
-	children: JsxRenderable;
-	class?: string;
-};
+export type RuiSidebarMenuItemProps = JsxElementProps<HTMLLIElement>;
 
 /**
  * `<li>` of a sidebar menu.
  *
  * @cssclass rui-sidebar__menu-item - Menu item (`<li>`).
  */
-export function RuiSidebarMenuItem({ children, class: className }: RuiSidebarMenuItemProps) {
-	return <li class={cx('rui-sidebar__menu-item', className)}>{children}</li>;
+export function RuiSidebarMenuItem({ children, class: className, ...props }: RuiSidebarMenuItemProps) {
+	return (
+		<li {...props} class={cx('rui-sidebar__menu-item', className)}>
+			{children}
+		</li>
+	);
 }
 
-export type RuiSidebarMenuButtonProps = {
-	children: JsxRenderable;
-	class?: string;
+type RuiSidebarMenuButtonChrome = {
 	/** Mark this button as the current page. */
 	isActive?: boolean;
-	/** Render as a different element via the `as` prop. Default: `a` when `href` is set, else `button`. */
-	as?: 'a' | 'button';
-	/** Forwarded to anchor or button. */
-	href?: string;
-	type?: 'button' | 'submit' | 'reset';
 	/** Optional tooltip label for collapsed-icon mode. */
 	tooltip?: string;
-	disabled?: boolean;
-	/** Click handler for `button` mode. */
-	onClick?: (event: Event) => void;
 };
+
+export type RuiSidebarMenuButtonControlProps = JsxElementProps<HTMLButtonElement> &
+	RuiSidebarMenuButtonChrome & {
+		as?: 'button';
+		href?: never;
+		type?: 'button' | 'submit' | 'reset';
+		disabled?: boolean;
+		/** Click handler for `button` mode. Prefer `on:click` on the host. */
+		onClick?: (event: Event) => void;
+	};
+
+export type RuiSidebarMenuButtonLinkProps = JsxElementProps<HTMLAnchorElement> &
+	RuiSidebarMenuButtonChrome & {
+		as?: 'a';
+		href: string;
+	};
+
+export type RuiSidebarMenuButtonProps = RuiSidebarMenuButtonControlProps | RuiSidebarMenuButtonLinkProps;
 
 /**
  * The clickable surface inside a `RuiSidebarMenuItem`. When the sidebar
@@ -279,47 +247,62 @@ export type RuiSidebarMenuButtonProps = {
  * @cssclass rui-sidebar__menu-button - Clickable menu surface (`<a>`/`<button>`).
  * @cssclass rui-sidebar__menu-button--active - Current-page marker (`aria-current="page"`).
  */
-export function RuiSidebarMenuButton({
-	children,
-	class: className,
-	isActive,
-	as,
-	href,
-	type = 'button',
-	tooltip,
-	disabled,
-	onClick,
-}: RuiSidebarMenuButtonProps) {
-	const classNames = cx('rui-sidebar__menu-button', isActive && 'rui-sidebar__menu-button--active', className);
-	const title = tooltip;
-	const ariaLabel = typeof children === 'string' ? undefined : tooltip;
+export function RuiSidebarMenuButton(props: RuiSidebarMenuButtonProps) {
+	if (props.href !== undefined) {
+		const {
+			children,
+			class: className,
+			isActive,
+			href,
+			tooltip,
+			aria,
+			title,
+			'aria-current': ariaCurrent,
+			...host
+		} = props;
 
-	if (as === 'button' || (!as && !href)) {
 		return (
-			<button
-				type={type}
-				class={classNames}
-				aria-current={isActive ? 'page' : undefined}
-				disabled={disabled}
-				title={title}
-				aria-label={ariaLabel}
-				on:click={onClick}
+			<a
+				{...omitProps(host, 'as')}
+				aria={withDefaultAriaLabel(aria, typeof children === 'string' ? undefined : tooltip)}
+				href={href}
+				class={cx('rui-sidebar__menu-button', isActive && 'rui-sidebar__menu-button--active', className)}
+				aria-current={isActive ? 'page' : ariaCurrent}
+				title={coalesceDefined(title, tooltip)}
 			>
 				{children}
-			</button>
+			</a>
 		);
 	}
 
+	const {
+		children,
+		class: className,
+		isActive,
+		type = 'button',
+		tooltip,
+		disabled,
+		onClick,
+		aria,
+		title,
+		'aria-current': ariaCurrent,
+		'on:click': onHostClick,
+		...host
+	} = props;
+
 	return (
-		<a
-			href={href}
-			class={classNames}
-			aria-current={isActive ? 'page' : undefined}
-			title={title}
-			aria-label={ariaLabel}
+		<button
+			{...omitProps(host, 'as', 'href')}
+			aria={withDefaultAriaLabel(aria, typeof children === 'string' ? undefined : tooltip)}
+			type={type}
+			class={cx('rui-sidebar__menu-button', isActive && 'rui-sidebar__menu-button--active', className)}
+			aria-current={isActive ? 'page' : ariaCurrent}
+			disabled={disabled}
+			title={coalesceDefined(title, tooltip)}
+			on:click={coalesceDefined(onHostClick, onClick)}
 		>
 			{children}
-		</a>
+		</button>
 	);
 }
 
@@ -332,96 +315,49 @@ export function RuiSidebarMenuAction(props: RuiSidebarMenuActionProps) {
 	return <RuiSidebarMenuButton class={cx('rui-sidebar__menu-action', className)} {...rest} />;
 }
 
-export type RuiSidebarInsetProps = {
-	children: JsxRenderable;
-	class?: string;
-	/** Optional `id` so the sidebar trigger can target the main landmark. */
-	id?: string;
-};
+export type RuiSidebarInsetProps = JsxElementProps<HTMLElement>;
 
 /**
  * The main content area that sits next to the sidebar.
  *
  * @cssclass rui-sidebar__inset - Main content area (`<main>`).
  */
-export function RuiSidebarInset({ children, class: className, id }: RuiSidebarInsetProps) {
+export function RuiSidebarInset({ children, class: className, ...props }: RuiSidebarInsetProps) {
 	return (
-		<main id={id} class={cx('rui-sidebar__inset', className)}>
+		<main {...props} class={cx('rui-sidebar__inset', className)}>
 			{children}
 		</main>
 	);
 }
 
-export type RuiSidebarViewProps = JsxHtmlPropsWithChildren<
-	RuiSidebarProps & {
-		id: string;
-		slot?: string;
-	}
->;
+export type RuiSidebarViewProps = JsxCustomElementAttributes<RuiSidebarElement, RuiSidebarProps & { id: string }>;
 
-export function RuiSidebar({
-	children,
-	id,
-	defaultOpen,
-	mobileDefaultOpen,
-	open,
-	defaultWidth,
-	width,
-	resizable,
-	mobileBreakpoint,
-	matchActive,
-	matchMode,
-	scrollActiveOnMount,
-	navigationEvents,
-	...props
-}: RuiSidebarViewProps) {
+export function RuiSidebar({ children, open, ...props }: RuiSidebarViewProps) {
 	return (
-		<rui-sidebar
-			{...props}
-			id={id}
-			prop:defaultOpen={defaultOpen}
-			prop:mobileDefaultOpen={mobileDefaultOpen}
-			prop:open={open}
-			prop:defaultWidth={defaultWidth}
-			prop:width={width}
-			prop:resizable={resizable}
-			prop:mobileBreakpoint={mobileBreakpoint}
-			prop:matchActive={matchActive}
-			prop:matchMode={matchMode}
-			prop:scrollActiveOnMount={scrollActiveOnMount}
-			prop:navigationEvents={navigationEvents}
-		>
+		<rui-sidebar {...props} prop:open={open}>
 			{children}
 		</rui-sidebar>
 	);
 }
 
-export type RuiSidebarTriggerViewProps = JsxHtmlPropsWithChildren<
-	RuiSidebarTriggerProps & {
-		slot?: string;
-	}
->;
+export type RuiSidebarTriggerViewProps = JsxCustomElementAttributes<RuiSidebarTriggerElement, RuiSidebarTriggerProps>;
 
 export function RuiSidebarTrigger({
 	children,
 	class: className,
-	controls,
 	triggerLabel,
 	placement,
-	variant,
-	size,
 	...props
 }: RuiSidebarTriggerViewProps) {
+	const buttonLabel = triggerLabel ?? 'Toggle sidebar';
+
 	return (
 		<rui-sidebar-trigger
 			{...props}
 			class={cx(className, placement && `rui-sidebar-trigger-placement--${placement}`)}
-			prop:controls={controls}
-			prop:buttonLabel={triggerLabel ?? 'Toggle sidebar'}
-			data={{ buttonLabel: triggerLabel ?? 'Toggle sidebar' }}
-			prop:placement={placement}
-			variant={variant}
-			size={size}
+			prop:buttonLabel={buttonLabel}
+			data={{ buttonLabel }}
+			placement={placement}
 		>
 			{children}
 		</rui-sidebar-trigger>

@@ -1,9 +1,11 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
+import { coalesceDefined } from '@/lib/coalesce-defined';
 import { cx } from '@/lib/cx';
 
 export type RuiAvatarSize = 'sm' | 'md' | 'lg';
 
-export type RuiAvatarProps = JsxHtmlPropsWithChildren<{
+export type RuiAvatarProps = JsxElementProps<HTMLSpanElement> & {
 	/** Image URL. When omitted or broken, initials from `alt` / `fallback` are shown. */
 	src?: string;
 	/** Accessible name for the image. Also used to derive initials when `fallback` is omitted. */
@@ -11,7 +13,7 @@ export type RuiAvatarProps = JsxHtmlPropsWithChildren<{
 	/** Explicit fallback initials / text when there is no image. */
 	fallback?: string;
 	size?: RuiAvatarSize;
-}>;
+};
 
 function initialsFrom(label: string): string {
 	const parts = label.trim().split(/\s+/).filter(Boolean);
@@ -42,6 +44,8 @@ export function RuiAvatar({
 	size = 'md',
 	class: className,
 	children,
+	role,
+	aria,
 	...props
 }: RuiAvatarProps) {
 	const label = fallback ?? (alt ? initialsFrom(alt) : undefined);
@@ -49,9 +53,9 @@ export function RuiAvatar({
 	return (
 		<span
 			{...props}
+			aria={withDefaultAriaLabel(aria, src ? undefined : alt || fallback)}
 			class={cx('rui-avatar', `rui-avatar--${size}`, className)}
-			role={src ? undefined : 'img'}
-			aria-label={src ? undefined : alt || fallback}
+			role={coalesceDefined(role, src ? undefined : 'img')}
 		>
 			{src ? (
 				<img class="rui-avatar__image" src={src} alt={alt} />

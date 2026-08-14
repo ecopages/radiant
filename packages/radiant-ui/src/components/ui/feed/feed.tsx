@@ -1,14 +1,12 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
+import { coalesceDefined } from '@/lib/coalesce-defined';
 import { cx } from '@/lib/cx';
 
-export type RuiFeedProps = JsxHtmlPropsWithChildren<{
+export type RuiFeedProps = JsxElementProps<HTMLDivElement> & {
 	/** Accessible name for the feed landmark. */
 	label?: string;
-	/** Prefer `label` when no visible heading labels the feed. */
-	'aria-labelledby'?: string;
-	/** Set while loading more articles (APG). */
-	'aria-busy'?: boolean | 'true' | 'false';
-}>;
+};
 
 /**
  * Presentational feed shell (`role="feed"`).
@@ -20,29 +18,15 @@ export type RuiFeedProps = JsxHtmlPropsWithChildren<{
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/feed/
  */
-export function RuiFeed({
-	children,
-	label,
-	class: className,
-	'aria-labelledby': ariaLabelledby,
-	'aria-busy': ariaBusy,
-	...props
-}: RuiFeedProps) {
+export function RuiFeed({ children, label, class: className, aria, ...props }: RuiFeedProps) {
 	return (
-		<div
-			{...props}
-			role="feed"
-			class={cx('rui-feed', className)}
-			aria-label={label}
-			aria-labelledby={ariaLabelledby}
-			aria-busy={ariaBusy}
-		>
+		<div {...props} aria={withDefaultAriaLabel(aria, label)} role="feed" class={cx('rui-feed', className)}>
 			{children}
 		</div>
 	);
 }
 
-export type RuiFeedArticleProps = JsxHtmlPropsWithChildren<{
+export type RuiFeedArticleProps = JsxElementProps<HTMLElement> & {
 	/** Position in the feed (1-based). */
 	posinset?: number;
 	/** Total articles currently in the feed. */
@@ -51,9 +35,7 @@ export type RuiFeedArticleProps = JsxHtmlPropsWithChildren<{
 	labelledBy?: string;
 	/** Id(s) of elements that summarize article content for skimming. */
 	describedBy?: string;
-	/** Make the article focusable (APG feed navigation). Default: `0`. */
-	tabindex?: number | string;
-}>;
+};
 
 /**
  * Single feed article.
@@ -68,6 +50,10 @@ export function RuiFeedArticle({
 	describedBy,
 	tabindex = 0,
 	class: className,
+	'aria-posinset': ariaPosinset,
+	'aria-setsize': ariaSetsize,
+	'aria-labelledby': ariaLabelledby,
+	'aria-describedby': ariaDescribedby,
 	...props
 }: RuiFeedArticleProps) {
 	return (
@@ -75,17 +61,17 @@ export function RuiFeedArticle({
 			{...props}
 			class={cx('rui-feed__article', className)}
 			tabindex={tabindex}
-			aria-posinset={posinset}
-			aria-setsize={setsize}
-			aria-labelledby={labelledBy}
-			aria-describedby={describedBy}
+			aria-posinset={coalesceDefined(ariaPosinset, posinset)}
+			aria-setsize={coalesceDefined(ariaSetsize, setsize)}
+			aria-labelledby={coalesceDefined(ariaLabelledby, labelledBy)}
+			aria-describedby={coalesceDefined(ariaDescribedby, describedBy)}
 		>
 			{children}
 		</article>
 	);
 }
 
-export type RuiFeedArticleHeaderProps = JsxHtmlPropsWithChildren;
+export type RuiFeedArticleHeaderProps = JsxElementProps<HTMLElement>;
 
 /**
  * Article masthead — avatar, title, tags.
@@ -100,9 +86,7 @@ export function RuiFeedArticleHeader({ children, class: className, ...props }: R
 	);
 }
 
-export type RuiFeedArticleContentProps = JsxHtmlPropsWithChildren<{
-	id?: string;
-}>;
+export type RuiFeedArticleContentProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Main article body.
@@ -117,7 +101,7 @@ export function RuiFeedArticleContent({ children, class: className, ...props }: 
 	);
 }
 
-export type RuiFeedArticleActionsProps = JsxHtmlPropsWithChildren;
+export type RuiFeedArticleActionsProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Action row (bookmark, share, etc.).
@@ -132,7 +116,7 @@ export function RuiFeedArticleActions({ children, class: className, ...props }: 
 	);
 }
 
-export type RuiFeedBylineProps = JsxHtmlPropsWithChildren;
+export type RuiFeedBylineProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Avatar + stacked identity row inside an article header.
@@ -147,7 +131,7 @@ export function RuiFeedByline({ children, class: className, ...props }: RuiFeedB
 	);
 }
 
-export type RuiFeedBylineBodyProps = JsxHtmlPropsWithChildren;
+export type RuiFeedBylineBodyProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Text stack beside an avatar in a byline.
@@ -162,9 +146,7 @@ export function RuiFeedBylineBody({ children, class: className, ...props }: RuiF
 	);
 }
 
-export type RuiFeedMetaProps = JsxHtmlPropsWithChildren<{
-	id?: string;
-}>;
+export type RuiFeedMetaProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Compact meta row (rating · neighborhood · price).

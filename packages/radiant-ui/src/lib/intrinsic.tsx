@@ -1,10 +1,8 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 
 export type IntrinsicTag = keyof HTMLElementTagNameMap;
 
-export type IntrinsicProps<Tag extends IntrinsicTag> = JsxHtmlPropsWithChildren<{
-	as?: Tag;
-}>;
+export type IntrinsicProps<Tag extends IntrinsicTag> = JsxElementProps<HTMLElementTagNameMap[Tag]> & { as?: Tag };
 
 /**
  * Renders a dynamic intrinsic element via JSX (`<Tag>`), avoiding per-tag switch blocks.
@@ -17,6 +15,7 @@ export function Intrinsic<Tag extends IntrinsicTag = 'div'>({
 	...props
 }: IntrinsicProps<Tag> & { as?: Tag }) {
 	const Tag = (as ?? 'div') as Tag;
+	const DynamicTag = Tag as unknown as 'div';
 
-	return <Tag {...props}>{children}</Tag>;
+	return <DynamicTag {...(props as JsxElementProps<HTMLDivElement>)}>{children}</DynamicTag>;
 }

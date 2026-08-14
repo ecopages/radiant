@@ -1,9 +1,9 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiBreadcrumbProps } from './breadcrumb.script';
+import type { RuiBreadcrumb as RuiBreadcrumbElement, RuiBreadcrumbProps } from './breadcrumb.script';
 import './breadcrumb.script';
 
-export type RuiBreadcrumbViewProps = JsxHtmlPropsWithChildren<RuiBreadcrumbProps & { slot?: string }>;
+export type RuiBreadcrumbViewProps = JsxCustomElementAttributes<RuiBreadcrumbElement, RuiBreadcrumbProps>;
 
 /**
  * Landmark wrapper for a breadcrumb trail. Set `separator` once here (e.g. `/`
@@ -16,7 +16,7 @@ export function RuiBreadcrumb({ children, ...props }: RuiBreadcrumbViewProps) {
 	return <rui-breadcrumb {...props}>{children}</rui-breadcrumb>;
 }
 
-export type RuiBreadcrumbListProps = JsxHtmlPropsWithChildren;
+export type RuiBreadcrumbListProps = JsxElementProps<HTMLOListElement>;
 
 /**
  * Ordered list of breadcrumb items and separators.
@@ -31,7 +31,7 @@ export function RuiBreadcrumbList({ children, class: className, ...props }: RuiB
 	);
 }
 
-export type RuiBreadcrumbItemProps = JsxHtmlPropsWithChildren;
+export type RuiBreadcrumbItemProps = JsxElementProps<HTMLLIElement>;
 
 /**
  * Single crumb (`<li>`).
@@ -46,32 +46,24 @@ export function RuiBreadcrumbItem({ children, class: className, ...props }: RuiB
 	);
 }
 
-export type RuiBreadcrumbLinkProps = JsxHtmlPropsWithChildren<{
+export type RuiBreadcrumbLinkProps = JsxElementProps<HTMLAnchorElement> & {
 	href: string;
-	/** Accessible name when the link content is non-text (e.g. an icon). */
-	'aria-label'?: string;
-}>;
+};
 
 /**
  * Linked ancestor page.
  *
  * @cssclass rui-breadcrumb__link - Crumb link.
  */
-export function RuiBreadcrumbLink({
-	children,
-	href,
-	class: className,
-	'aria-label': ariaLabel,
-	...props
-}: RuiBreadcrumbLinkProps) {
+export function RuiBreadcrumbLink({ children, href, class: className, ...props }: RuiBreadcrumbLinkProps) {
 	return (
-		<a {...props} class={cx('rui-breadcrumb__link', className)} href={href} aria-label={ariaLabel}>
+		<a {...props} class={cx('rui-breadcrumb__link', className)} href={href}>
 			{children}
 		</a>
 	);
 }
 
-export type RuiBreadcrumbPageProps = JsxHtmlPropsWithChildren;
+export type RuiBreadcrumbPageProps = JsxElementProps<HTMLSpanElement>;
 
 /**
  * Current page (non-link).
@@ -86,7 +78,7 @@ export function RuiBreadcrumbPage({ children, class: className, ...props }: RuiB
 	);
 }
 
-export type RuiBreadcrumbSeparatorProps = JsxHtmlPropsWithChildren;
+export type RuiBreadcrumbSeparatorProps = JsxElementProps<HTMLLIElement>;
 
 /**
  * Visual separator between crumbs. Renders as a presentational list item.
@@ -103,10 +95,10 @@ export function RuiBreadcrumbSeparator({ children, class: className, ...props }:
 	);
 }
 
-export type RuiBreadcrumbEllipsisProps = JsxHtmlProps<{
+export type RuiBreadcrumbEllipsisProps = JsxElementProps<HTMLSpanElement> & {
 	/** Accessible label announced for the collapsed segment. Default: `More`. */
 	label?: string;
-}>;
+};
 
 /**
  * Collapsed middle segment indicator.

@@ -1,5 +1,5 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
-import type { RuiSwitchProps } from './switch.script';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { RuiSwitch as RuiSwitchElement, RuiSwitchProps } from './switch.script';
 import './switch.script';
 
 /**
@@ -10,6 +10,6 @@ import './switch.script';
  * children into `.rui-switch__label` via `<slot>`; a pre-rendered shell would
  * paint a second track after hydration.
  */
-export function RuiSwitch({ children, ...props }: JsxHtmlPropsWithChildren<RuiSwitchProps & { slot?: string }>) {
+export function RuiSwitch({ children, ...props }: JsxCustomElementAttributes<RuiSwitchElement, RuiSwitchProps>) {
 	return <rui-switch {...props}>{children}</rui-switch>;
 }

@@ -153,17 +153,33 @@ function renderShellBody(currentPath: string) {
 							</RuiSidebarMenu>
 							{'actions' in group && group.actions?.length ? (
 								<div class="mt-1 flex flex-col gap-0.5 border-t border-border pt-1.5">
-									{group.actions.map((action) => (
-										<RuiSidebarMenuAction
-											key={action.label}
-											as={'kind' in action && action.kind === 'button' ? 'button' : 'a'}
-											href={'href' in action ? action.href : undefined}
-											tooltip={action.label}
-										>
-											<NavIcon name={action.icon} />
-											<span>{action.label}</span>
-										</RuiSidebarMenuAction>
-									))}
+									{group.actions.map((action) => {
+										const content = (
+											<>
+												<NavIcon name={action.icon} />
+												<span>{action.label}</span>
+											</>
+										);
+
+										if ('href' in action && action.href) {
+											return (
+												<RuiSidebarMenuAction
+													key={action.label}
+													as="a"
+													href={action.href}
+													tooltip={action.label}
+												>
+													{content}
+												</RuiSidebarMenuAction>
+											);
+										}
+
+										return (
+											<RuiSidebarMenuAction key={action.label} as="button" tooltip={action.label}>
+												{content}
+											</RuiSidebarMenuAction>
+										);
+									})}
 								</div>
 							) : null}
 						</RuiSidebarGroup>

@@ -80,6 +80,10 @@
 			"types": "./dist/cx.d.ts",
 			"import": "./dist/cx.js"
 		},
+		"./aria": {
+			"types": "./dist/aria.d.ts",
+			"import": "./dist/aria.js"
+		},
 		"./tokens/colors/aurora": {
 			"default": "./dist/styles/tokens/colors/aurora.css"
 		},

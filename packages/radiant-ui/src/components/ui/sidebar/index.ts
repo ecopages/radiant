@@ -42,6 +42,8 @@ export {
 	type RuiSidebarGroupHeaderProps,
 	type RuiSidebarMenuProps,
 	type RuiSidebarMenuItemProps,
+	type RuiSidebarMenuButtonControlProps,
+	type RuiSidebarMenuButtonLinkProps,
 	type RuiSidebarMenuButtonProps,
 	type RuiSidebarMenuActionProps,
 	type RuiSidebarInsetProps,

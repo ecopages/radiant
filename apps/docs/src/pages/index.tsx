@@ -164,7 +164,11 @@ const HOME_FOOTER_COLUMNS: HomeFooterColumnData[] = [
 			{ label: '@ecopages/radiant', href: 'https://www.npmjs.com/package/@ecopages/radiant', external: true },
 			{ label: '@ecopages/signals', href: 'https://www.npmjs.com/package/@ecopages/signals', external: true },
 			{ label: '@ecopages/jsx', href: 'https://www.npmjs.com/package/@ecopages/jsx', external: true },
-			{ label: '@ecopages/radiant-ui', href: 'https://www.npmjs.com/package/@ecopages/radiant-ui', external: true },
+			{
+				label: '@ecopages/radiant-ui',
+				href: 'https://www.npmjs.com/package/@ecopages/radiant-ui',
+				external: true,
+			},
 			{
 				label: '@ecopages/vite-plugin-radiant',
 				href: 'https://www.npmjs.com/package/@ecopages/vite-plugin-radiant',

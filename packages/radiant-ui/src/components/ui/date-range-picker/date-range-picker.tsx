@@ -1,11 +1,15 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconCalendar } from '@/lib/icons';
-import { RuiCalendar, type RuiCalendarProps } from '../calendar';
-import type { RuiDateRangePickerProps } from './date-range-picker.script';
+import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
+import type {
+	RuiDateRangePicker as RuiDateRangePickerElement,
+	RuiDateRangePickerProps,
+} from './date-range-picker.script';
 import './date-range-picker.script';
 
-export type RuiDateRangePickerControlProps = JsxHtmlPropsWithChildren;
+export type RuiDateRangePickerControlProps = JsxElementProps<HTMLDivElement>;
 
 /** Bordered control row containing the date inputs and calendar toggle. */
 export function RuiDateRangePickerControl({ children, class: className, ...props }: RuiDateRangePickerControlProps) {
@@ -16,7 +20,7 @@ export function RuiDateRangePickerControl({ children, class: className, ...props
 	);
 }
 
-export type RuiDateRangePickerInputsProps = JsxHtmlPropsWithChildren;
+export type RuiDateRangePickerInputsProps = JsxElementProps<HTMLDivElement>;
 
 /** Input row for `RuiDateRangePickerStartInput` and `RuiDateRangePickerEndInput`. */
 export function RuiDateRangePickerInputs({ children, class: className, ...props }: RuiDateRangePickerInputsProps) {
@@ -27,7 +31,7 @@ export function RuiDateRangePickerInputs({ children, class: className, ...props 
 	);
 }
 
-export type RuiDateRangePickerStartInputProps = JsxHtmlProps;
+export type RuiDateRangePickerStartInputProps = JsxElementProps<HTMLInputElement>;
 
 /** Start-date text input controlled by the range-picker host. */
 export function RuiDateRangePickerStartInput({ class: className, ...props }: RuiDateRangePickerStartInputProps) {
@@ -44,7 +48,7 @@ export function RuiDateRangePickerStartInput({ class: className, ...props }: Rui
 	);
 }
 
-export type RuiDateRangePickerEndInputProps = JsxHtmlProps;
+export type RuiDateRangePickerEndInputProps = JsxElementProps<HTMLInputElement>;
 
 /** End-date text input controlled by the range-picker host. */
 export function RuiDateRangePickerEndInput({ class: className, ...props }: RuiDateRangePickerEndInputProps) {
@@ -61,7 +65,7 @@ export function RuiDateRangePickerEndInput({ class: className, ...props }: RuiDa
 	);
 }
 
-export type RuiDateRangePickerSeparatorProps = JsxHtmlPropsWithChildren;
+export type RuiDateRangePickerSeparatorProps = JsxElementProps<HTMLSpanElement>;
 
 /** Visual separator between the start and end inputs. */
 export function RuiDateRangePickerSeparator({
@@ -76,23 +80,23 @@ export function RuiDateRangePickerSeparator({
 	);
 }
 
-export type RuiDateRangePickerToggleProps = JsxHtmlPropsWithChildren<{ 'aria-label'?: string }>;
+export type RuiDateRangePickerToggleProps = JsxElementProps<HTMLButtonElement>;
 
 /** Toggle button for the range calendar. */
 export function RuiDateRangePickerToggle({
 	children,
 	class: className,
-	'aria-label': ariaLabel = 'Open calendar',
+	aria,
 	...props
 }: RuiDateRangePickerToggleProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Open calendar')}
 			type="button"
 			data-ref="trigger"
 			data-range-trigger
 			class={cx('rui-control-toggle', className)}
-			aria-label={ariaLabel}
 			aria-haspopup="dialog"
 		>
 			{children ?? <RuiIconCalendar />}
@@ -100,7 +104,7 @@ export function RuiDateRangePickerToggle({
 	);
 }
 
-export type RuiDateRangePickerPopoverProps = JsxHtmlPropsWithChildren;
+export type RuiDateRangePickerPopoverProps = JsxElementProps<HTMLDivElement>;
 
 /** Floating shell for a `RuiDateRangePickerCalendar`. */
 export function RuiDateRangePickerPopover({ children, class: className, ...props }: RuiDateRangePickerPopoverProps) {
@@ -118,15 +122,17 @@ export function RuiDateRangePickerPopover({ children, class: className, ...props
 	);
 }
 
-export type RuiDateRangePickerCalendarProps = JsxHtmlProps<RuiCalendarProps>;
+export type RuiDateRangePickerCalendarProps = JsxCustomElementAttributes<RuiCalendarElement, RuiCalendarProps>;
 
 /** Calendar whose range value and constraints are synchronized by the range-picker host. */
 export function RuiDateRangePickerCalendar(props: RuiDateRangePickerCalendarProps) {
 	return <RuiCalendar {...props} data-range-calendar />;
 }
 
-export type RuiDateRangePickerViewProps = RuiDateRangePickerProps & {
-	slot?: string;
+export type RuiDateRangePickerViewProps = JsxCustomElementAttributes<
+	RuiDateRangePickerElement,
+	RuiDateRangePickerProps
+> & {
 	/** Accessible name for the default start-date input. */
 	startLabel?: string;
 	/** Accessible name for the default end-date input. */
@@ -143,7 +149,7 @@ export function RuiDateRangePicker({
 	startLabel = 'Start date',
 	endLabel = 'End date',
 	...props
-}: JsxHtmlPropsWithChildren<RuiDateRangePickerViewProps>) {
+}: RuiDateRangePickerViewProps) {
 	return (
 		<rui-date-range-picker {...props}>
 			{children ?? (

@@ -10,6 +10,7 @@
 	},
 	"include": [
 		"src/index.ts",
+		"src/aria.ts",
 		"src/cx.ts",
 		"src/jsx-custom-elements.d.ts",
 		"src/components/ui",

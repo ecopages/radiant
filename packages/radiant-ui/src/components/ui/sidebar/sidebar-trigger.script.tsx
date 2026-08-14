@@ -264,7 +264,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 				type="button"
 				class={`rui-button rui-button--${this.variant} rui-button--${this.size} rui-sidebar__trigger ${this.placementClass()}`.trim()}
 				data-sidebar-state={state}
-				aria-expanded={String(state === 'expanded')}
+				aria-expanded={state === 'expanded' ? 'true' : 'false'}
 				aria-controls={controlsId || null}
 				aria-label={buttonLabel}
 			>

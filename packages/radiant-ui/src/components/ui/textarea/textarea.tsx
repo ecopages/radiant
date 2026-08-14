@@ -1,19 +1,14 @@
-import type { JsxHtmlProps } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
-export type RuiTextareaProps = JsxHtmlProps<{
+export type RuiTextareaProps = JsxElementProps<HTMLTextAreaElement> & {
 	value?: string;
 	placeholder?: string;
 	disabled?: boolean;
 	name?: string;
 	rows?: number;
-	id?: string;
-	'aria-label'?: string;
-	'on:input'?: (event: Event) => void;
-	'on:change'?: (event: Event) => void;
-	'on:blur'?: (event: Event) => void;
-}>;
+};
 
 /**
  * Presentational wrapper around a native `<textarea>`.

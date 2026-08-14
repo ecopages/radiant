@@ -1,5 +1,5 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
-import type { RuiFormProps } from './form.script';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { RuiForm as RuiFormElement, RuiFormProps } from './form.script';
 import './form.script';
 
 export function RuiForm({
@@ -9,7 +9,7 @@ export function RuiForm({
 	resolver,
 	reValidateMode,
 	...props
-}: JsxHtmlPropsWithChildren<RuiFormProps>) {
+}: JsxCustomElementAttributes<RuiFormElement, RuiFormProps>) {
 	return (
 		<rui-form
 			{...props}

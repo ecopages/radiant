@@ -113,6 +113,34 @@ Presentational helpers that are not custom elements (today: `RuiButton`, `RuiInp
 import { RuiButton } from '@ecopages/radiant-ui/button';
 ```
 
+## JSX view props
+
+Each `Rui*` view forwards global DOM attributes, events, bindings, and direct or
+structured ARIA/data props to its documented public surface. For example,
+`RuiSelect` forwards `id` to `<rui-select>`, while `RuiAlert` forwards global
+surface props to its inner `role="alert"` element.
+
+```tsx
+<RuiButton id="save" aria-label="Save changes" data-state="ready">
+	Save
+</RuiButton>
+
+<RuiButton aria={{ label: 'Save changes' }} data={{ state: 'ready' }}>
+	Save
+</RuiButton>
+```
+
+When direct and structured forms name the same attribute, the direct kebab-case
+form wins. Collection component IDs are the exception: `RuiTab`,
+`RuiTabPanel`, `RuiCarouselSlide`, and `RuiCycleToggleItem` use `id` as a
+semantic item key and generate or manage their DOM linkage internally.
+
+Component authors can import `withDefaultAriaLabel` from
+`@ecopages/radiant-ui/aria` when a view needs an overridable accessible-name
+default, such as an icon-only control. It preserves structured ARIA, while
+direct `aria-label` remains canonical during JSX normalization. Managed ARIA
+state remains an explicit component invariant rather than a default.
+
 Token and theme rules: see **DESIGN.md** in this package repo folder.
 
 ## Docs-only APG guidance

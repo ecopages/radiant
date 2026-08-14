@@ -1,6 +1,6 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiNavigationMenuProps } from './navigation-menu.script';
+import type { RuiNavigationMenu as RuiNavigationMenuElement, RuiNavigationMenuProps } from './navigation-menu.script';
 import './navigation-menu.script';
 
 import { RuiButton, type RuiButtonControlProps } from '../button/button';
@@ -8,16 +8,13 @@ import { RuiButton, type RuiButtonControlProps } from '../button/button';
 export function RuiNavigationMenu({
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<RuiNavigationMenuProps & { slot?: string }>) {
+}: JsxCustomElementAttributes<RuiNavigationMenuElement, RuiNavigationMenuProps>) {
 	return <rui-navigation-menu {...props}>{children}</rui-navigation-menu>;
 }
 
-export type RuiNavigationMenuTriggerProps = JsxHtmlPropsWithChildren<
-	Pick<RuiButtonControlProps, 'variant' | 'disabled' | 'class' | 'type'> & {
-		slot?: string;
-		value: string;
-	}
->;
+export type RuiNavigationMenuTriggerProps = RuiButtonControlProps & {
+	value: string;
+};
 
 /** Top-level megamenu trigger slotted into `triggers` by default. */
 export function RuiNavigationMenuTrigger({
@@ -41,10 +38,9 @@ export function RuiNavigationMenuTrigger({
 	);
 }
 
-export type RuiNavigationMenuLinkProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
+export type RuiNavigationMenuLinkProps = JsxElementProps<HTMLAnchorElement> & {
 	href: string;
-}>;
+};
 
 /** Plain navigation link slotted into `triggers` by default. */
 export function RuiNavigationMenuLink({
@@ -67,10 +63,9 @@ export function RuiNavigationMenuLink({
 	);
 }
 
-export type RuiNavigationMenuPanelProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
+export type RuiNavigationMenuPanelProps = JsxElementProps<HTMLDivElement> & {
 	value: string;
-}>;
+};
 
 /** Megamenu panel slotted into `panels` by default. */
 export function RuiNavigationMenuPanel({

@@ -9,7 +9,6 @@ export {
 	RuiComboboxInput,
 	RuiComboboxListbox,
 	RuiComboboxTrigger,
-	RuiComboboxOption,
 	type RuiComboboxOptionData,
 } from './combobox';
 export { RuiListbox, RuiListboxOption } from '../listbox';
