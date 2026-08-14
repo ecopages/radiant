@@ -87,6 +87,15 @@ const DocsSiteHeader = () => (
 		</div>
 		<nav class="rui-sidebar-provider__site-header-nav" aria-label="Site">
 			<RuiButton
+				href="https://radiant-ui.ecopages.app"
+				target="_blank"
+				rel="noopener noreferrer"
+				variant="ghost"
+				size="sm"
+			>
+				UI
+			</RuiButton>
+			<RuiButton
 				href="https://github.com/ecopages/radiant"
 				target="_blank"
 				rel="noopener noreferrer"

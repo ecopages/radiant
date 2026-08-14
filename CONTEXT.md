@@ -1,6 +1,6 @@
 # Radiant Platform
 
-Radiant is a unified platform for building light-DOM custom elements with visible browser primitives, with companion packages for JSX authoring and signal-based reactivity.
+Radiant is a unified platform for building light-DOM custom elements with visible browser primitives. Signals is the default reactivity layer; JSX is the companion package for authoring.
 
 This repository documents one shared product context at the monorepo root rather than separate package-level contexts because the published packages are designed, released, and explained as one ecosystem.
 
@@ -112,7 +112,7 @@ _Avoid_: provider, selector field, local state copy
 - **Ecopages JSX** can be used independently of **Radiant**
 - **Ecopages Signals** can be used independently of **Radiant**
 - **Radiant** is the core package of the **Radiant Platform**
-- **Radiant** composes **Ecopages JSX** and **Ecopages Signals** into the core custom-element experience
+- **Radiant** depends on **Ecopages Signals** by default and composes **Ecopages JSX** as the TSX companion
 - **Reactive Host** is the shared host model inside **Radiant**
 - **Element Host** and **Controller Host** are the two host styles of a **Reactive Host**
 - A **Render-owning Element Host** is an **Element Host** that owns rendered output and the related lifecycle
