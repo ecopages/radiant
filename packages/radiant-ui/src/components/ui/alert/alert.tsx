@@ -1,4 +1,4 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import type { RuiAlertProps, RuiAlertVariant } from './alert.script';
 
@@ -12,9 +12,9 @@ const ALERT_ICON_PATHS: Record<RuiAlertVariant, string | readonly string[]> = {
 	error: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'm15 9-6 6', 'm9 9 6 6'],
 };
 
-export type RuiAlertIconProps = JsxHtmlPropsWithChildren<{
+export type RuiAlertIconProps = JsxElementProps<HTMLSpanElement> & {
 	variant?: RuiAlertVariant;
-}>;
+};
 
 /**
  * Default variant icon for `layout="inline"`. Pass `children` to override.
@@ -57,7 +57,7 @@ export function RuiAlertIcon({ variant = 'info', class: className, children, ...
 	);
 }
 
-export type RuiAlertTitleProps = JsxHtmlPropsWithChildren;
+export type RuiAlertTitleProps = JsxElementProps<HTMLParagraphElement>;
 
 /**
  * Heading for `layout="banner"` alerts.
@@ -72,7 +72,7 @@ export function RuiAlertTitle({ children, class: className, ...props }: RuiAlert
 	);
 }
 
-export type RuiAlertDescriptionProps = JsxHtmlPropsWithChildren;
+export type RuiAlertDescriptionProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Body copy for `layout="banner"` alerts.
@@ -87,7 +87,7 @@ export function RuiAlertDescription({ children, class: className, ...props }: Ru
 	);
 }
 
-export type RuiAlertComponentProps = JsxHtmlPropsWithChildren<RuiAlertProps & { slot?: string }>;
+export type RuiAlertComponentProps = JsxElementProps<HTMLDivElement> & RuiAlertProps;
 
 /**
  * Status alert with optional dismiss control.
@@ -116,11 +116,13 @@ export function RuiAlert({
 	dismissible = false,
 	closeLabel = 'Dismiss',
 	class: className,
+	slot,
 	...props
 }: RuiAlertComponentProps) {
 	return (
-		<rui-alert {...props} variant={variant} layout={layout} dismissible={dismissible} close-label={closeLabel}>
+		<rui-alert slot={slot} variant={variant} layout={layout} dismissible={dismissible} close-label={closeLabel}>
 			<div
+				{...props}
 				class={cx(
 					'rui-alert',
 					`rui-alert--${variant}`,

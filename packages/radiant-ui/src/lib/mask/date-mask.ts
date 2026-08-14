@@ -70,11 +70,6 @@ export function getDefaultDatePlaceholder(locale: IntlLocale): string {
 		.join('');
 }
 
-/** @deprecated Use `getDefaultDatePlaceholder`. */
-export function maskPatternToPlaceholder(pattern: DateMaskPattern): string {
-	return pattern.replace(/0/g, '·');
-}
-
 /** Strips non-digits from user input. */
 export function extractMaskDigits(value: string): string {
 	return value.replace(/\D/g, '');

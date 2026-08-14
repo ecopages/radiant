@@ -329,22 +329,38 @@ function renderSidebarContent({
 							</RuiSidebarMenu>
 							{'actions' in group && group.actions?.length ? (
 								<div class="rui-sidebar__group-actions mt-1 flex flex-col gap-0.5 border-t border-border pt-1.5">
-									{group.actions.map((action) => (
-										<RuiSidebarMenuAction
-											key={action.label}
-											as={action.kind === 'link' ? 'a' : 'button'}
-											href={action.kind === 'link' ? action.href : undefined}
-											tooltip={action.label}
-											onClick={
-												action.kind === 'button' && onAction
-													? () => onAction(action.label)
-													: undefined
-											}
-										>
-											{action.icon ? <NavIcon name={action.icon} /> : null}
-											<span>{action.label}</span>
-										</RuiSidebarMenuAction>
-									))}
+									{group.actions.map((action) => {
+										const content = (
+											<>
+												{action.icon ? <NavIcon name={action.icon} /> : null}
+												<span>{action.label}</span>
+											</>
+										);
+
+										if (action.kind === 'link') {
+											return (
+												<RuiSidebarMenuAction
+													key={action.label}
+													as="a"
+													href={action.href}
+													tooltip={action.label}
+												>
+													{content}
+												</RuiSidebarMenuAction>
+											);
+										}
+
+										return (
+											<RuiSidebarMenuAction
+												key={action.label}
+												as="button"
+												tooltip={action.label}
+												onClick={onAction ? () => onAction(action.label) : undefined}
+											>
+												{content}
+											</RuiSidebarMenuAction>
+										);
+									})}
 								</div>
 							) : null}
 						</RuiSidebarGroup>

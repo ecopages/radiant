@@ -30,12 +30,15 @@ Guidance for humans and agents working in `packages/radiant-ui`.
 
 ## View host props
 
-Views that render a DOM host should type props as `JsxHtmlProps<ComponentProps>` or `JsxHtmlPropsWithChildren<ComponentProps>` when children are accepted. Add `slot` on `ComponentProps` only when needed.
+Views should declare the public DOM surface they render. Custom-element views use
+`JsxCustomElementAttributes<ElementClass, ComponentProps>`; native helpers use
+`JsxElementProps<ExactElement>` plus the unprefixed native fields they render.
 
-Default pattern — spread host props, keep `children` explicit:
+Default pattern — peel view-only fields, spread the rest, lock invariants after
+the spread:
 
 ```tsx
-({ children, ...props }: JsxHtmlPropsWithChildren<RuiFooProps & { slot?: string }>) => (
+({ children, ...props }: JsxCustomElementAttributes<RuiFooElement, RuiFooProps>) => (
 	<rui-foo {...props}>{children}</rui-foo>
 );
 ```
@@ -48,6 +51,34 @@ Peel props only when the view must transform or filter them:
 - `prop:` / `attr:` bindings or renamed props (`triggerLabel` → `prop:buttonLabel`, `values` → `rangeMin` / `rangeMax`). Peel every CE prop that needs an explicit `prop:` / `attr:` prefix; spread the rest.
 - `class` composition with `cx()` on the same node — spread first, then `class={cx('rui-foo', className)}`. Import `cx` from `@ecopages/radiant-ui/cx` in apps; use `@/lib/cx` inside this package.
 - Host vs inner-node split when the view owns the composed surface (e.g. `RuiAlert` puts `role="alert"` and BEM classes on an inner div; the CE handles dismiss)
+
+`aria={{ ... }}` and direct canonical `aria-*` attributes can both be used; a
+direct attribute wins. The same precedence applies to `data={{ ... }}` and
+`data-*`. Direct `null` is a supplied value and wins over structured values and
+defaults. After the spread, only write a host attribute when the value is
+defined, or when the attribute is a locked invariant (`type="button"`,
+`role="tablist"`, `hidden` on a popup).
+
+For a default accessible name, keep direct `aria-label` in the forwarded props
+and pass the peeled structured object through the public JSX helper:
+
+```tsx
+import { withDefaultAriaLabel } from '@ecopages/radiant-ui/aria';
+
+function RuiFoo({ aria, ...props }: RuiFooProps) {
+	return <button {...props} aria={withDefaultAriaLabel(aria, 'Open')} type="button" />;
+}
+```
+
+Do not resolve the direct and structured channels in the component. JSX
+normalization makes direct `aria-label` canonical. The helper fills only a
+missing structured `aria.label` and preserves fields such as `aria.labelledby`.
+Keep managed ARIA state explicit; do not pass it through a generic defaults
+merger.
+
+Collection item `id` is a semantic key: type it as
+`Omit<JsxElementProps<ExactElement>, 'id'> & { id: string }` and map it to
+`data-*` / generated linkage — never as a literal DOM `id`.
 
 ## Adding a component
 

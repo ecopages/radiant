@@ -8,7 +8,9 @@
   addition to structured `aria`/`data` utilities. Direct values take precedence
   independent of source order. `JsxElementProps<ElementType>` is the native
   helper contract, including typed `prop:*` bindings. HTML tag names win when
-  HTML and SVG share a name (`a`, `title`).
+  HTML and SVG share a name (`a`, `title`). The partial `JsxHtmlProps` and
+  `JsxHtmlPropsWithChildren` aliases have been removed; views must declare a
+  native or custom-element host contract.
 
 ### Patch Changes
 

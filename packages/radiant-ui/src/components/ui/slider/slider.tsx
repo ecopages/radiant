@@ -1,10 +1,10 @@
-import type { JsxHtmlProps } from '@ecopages/jsx';
-import type { RuiSliderProps } from './slider.script';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { RuiSlider as RuiSliderElement, RuiSliderProps } from './slider.script';
 import './slider.script';
 
-export type RuiSliderViewProps = JsxHtmlProps<
+export type RuiSliderViewProps = JsxCustomElementAttributes<
+	RuiSliderElement,
 	RuiSliderProps & {
-		slot?: string;
 		values?: [number, number];
 	}
 >;

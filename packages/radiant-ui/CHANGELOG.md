@@ -2,6 +2,22 @@
 
 ## 0.1.0-rc.0
 
+### Breaking Changes
+
+- Rui JSX views now type the declared root host. Custom-element views use
+  `JsxCustomElementAttributes`; native helpers use `JsxElementProps` plus the
+  unprefixed native fields they render. Global attributes, events, direct and
+  structured ARIA/data props, and `attr:`/`prop:` bindings are forwarded to that
+  surface. View-only collections are peeled before rendering. Direct kebab-case
+  ARIA/data attributes take precedence over structured values, including `null`.
+  Collection item `id` values remain semantic keys (`Omit` from the host `id`)
+  and are not emitted as literal DOM ids. Native helpers keep typed `prop:*`
+  bindings; polymorphic hosts (`as` / `href`) derive the element type in the
+  component, not by weakening `JsxElementProps`. Deprecated select/combobox
+  option aliases and mask helper aliases have been removed. Component authors
+  can import `withDefaultAriaLabel` from `@ecopages/radiant-ui/aria` when a
+  Radiant view needs an overridable accessible-name fallback.
+
 ### Minor Changes
 
 - [#150](https://github.com/ecopages/radiant/pull/150) [`4e2ca6e`](https://github.com/ecopages/radiant/commit/4e2ca6eccda03138df1bcfcfcfc7410165e42bbc) Thanks [@andeeplus](https://github.com/andeeplus)! - Complete every named hue scale to steps 50–975.

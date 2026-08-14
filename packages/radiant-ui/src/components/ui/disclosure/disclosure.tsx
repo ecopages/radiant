@@ -1,14 +1,17 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiDisclosureGroupProps } from './disclosure-group.script';
+import type {
+	RuiDisclosureGroup as RuiDisclosureGroupElement,
+	RuiDisclosureGroupProps,
+} from './disclosure-group.script';
 import './disclosure-group.script';
 
-import type { RuiDisclosureProps } from './disclosure.script';
+import type { RuiDisclosure as RuiDisclosureElement, RuiDisclosureProps } from './disclosure.script';
 import './disclosure.script';
 
-export type RuiDisclosureIconProps = JsxHtmlProps<{
+export type RuiDisclosureIconProps = JsxElementProps<HTMLSpanElement> & {
 	variant?: 'chevron' | 'plus';
-}>;
+};
 
 /**
  * Default disclosure indicator. Override via `RuiDisclosureTrigger` `icon` prop.
@@ -28,13 +31,12 @@ export function RuiDisclosureIcon({ variant = 'chevron', class: className, ...pr
 	);
 }
 
-export type RuiDisclosureTriggerProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
+export type RuiDisclosureTriggerProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 	/** Custom indicator. Pass `null` to hide. Defaults to chevron. */
 	icon?: JsxRenderable | null;
 	iconPosition?: 'start' | 'end';
-}>;
+};
 
 /**
  * Disclosure button slotted into `trigger` by default.
@@ -75,7 +77,7 @@ export function RuiDisclosureTrigger({
 	);
 }
 
-export type RuiDisclosurePanelProps = JsxHtmlPropsWithChildren;
+export type RuiDisclosurePanelProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Disclosure panel in the default slot.
@@ -95,9 +97,9 @@ export function RuiDisclosure({
 	trigger,
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<
+}: JsxCustomElementAttributes<
+	RuiDisclosureElement,
 	RuiDisclosureProps & {
-		slot?: string;
 		trigger?: JsxRenderable;
 	}
 >) {
@@ -116,6 +118,6 @@ export function RuiDisclosure({
 export function RuiDisclosureGroup({
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<RuiDisclosureGroupProps & { slot?: string }>) {
+}: JsxCustomElementAttributes<RuiDisclosureGroupElement, RuiDisclosureGroupProps>) {
 	return <rui-disclosure-group {...props}>{children}</rui-disclosure-group>;
 }

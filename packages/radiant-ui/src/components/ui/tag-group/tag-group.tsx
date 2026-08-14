@@ -1,11 +1,10 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderable } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
-import type { RuiTagGroupProps } from './tag-group.script';
+import type { RuiTagGroup as RuiTagGroupElement, RuiTagGroupProps } from './tag-group.script';
 import './tag-group.script';
 
-export type RuiTagListProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
-}>;
+export type RuiTagListProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Flex-wrapped container for `RuiTag` children.
@@ -20,11 +19,11 @@ export function RuiTagList({ children, class: className, ...props }: RuiTagListP
 	);
 }
 
-export type RuiTagProps = JsxHtmlPropsWithChildren<{
+export type RuiTagProps = JsxElementProps<HTMLSpanElement> & {
 	value?: string;
 	label?: string;
 	disabled?: boolean;
-}>;
+};
 
 /**
  * A single tag with optional remove button.
@@ -47,28 +46,21 @@ export function RuiTag({ value, label, children, class: className, disabled, ...
 	);
 }
 
-export type RuiTagRemoveProps = JsxHtmlPropsWithChildren<{
-	'aria-label'?: string;
-}>;
+export type RuiTagRemoveProps = JsxElementProps<HTMLButtonElement>;
 
 /**
  * Remove button rendered inside `RuiTag`.
  *
  * @cssclass rui-tag__remove - Tag remove control.
  */
-export function RuiTagRemove({
-	children,
-	class: className,
-	'aria-label': ariaLabel = 'Remove',
-	...props
-}: RuiTagRemoveProps) {
+export function RuiTagRemove({ children, class: className, aria, ...props }: RuiTagRemoveProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Remove')}
 			type="button"
 			data-tag-remove
 			class={cx('rui-tag__remove', className)}
-			aria-label={ariaLabel}
 		>
 			{children ?? <span aria-hidden="true">×</span>}
 		</button>
@@ -81,9 +73,9 @@ export function RuiTagGroup({
 	tags,
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<
+}: JsxCustomElementAttributes<
+	RuiTagGroupElement,
 	RuiTagGroupProps & {
-		slot?: string;
 		tags?: RuiTagData[];
 	}
 >) {
