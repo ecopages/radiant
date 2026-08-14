@@ -51,6 +51,17 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 											Docs
 										</RuiButton>
 									</li>
+									<li class="max-md:hidden">
+										<RuiButton
+											href="https://radiant-ui.ecopages.app"
+											target="_blank"
+											rel="noopener noreferrer"
+											variant="ghost"
+											size="sm"
+										>
+											UI
+										</RuiButton>
+									</li>
 									<li>
 										<RuiButton
 											href="https://github.com/ecopages/radiant"
