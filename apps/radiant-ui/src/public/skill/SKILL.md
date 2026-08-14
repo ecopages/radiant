@@ -24,8 +24,10 @@ For exhaustive generated docs, use [/llms.txt](/llms.txt). For `RadiantElement` 
 ## Install and load styles
 
 ```bash
-pnpm add @ecopages/radiant-ui @ecopages/radiant
+pnpm add @ecopages/radiant-ui
 ```
+
+Radiant, JSX, and Signals install as peers.
 
 Load a theme and the aggregate stylesheet before registering elements. Import focused modules; do not pull the root entry unless the app needs every custom element.
 
