@@ -69,9 +69,9 @@
 		"vitest": "^4.1.10"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-beta.8",
-		"@ecopages/radiant": ">=0.3.0-beta.8",
-		"@ecopages/signals": ">=0.3.0-beta.8",
+		"@ecopages/jsx": ">=0.3.0-rc.0",
+		"@ecopages/radiant": ">=0.3.0-rc.0",
+		"@ecopages/signals": ">=0.3.0-rc.0",
 		"storybook": "^10.5.2",
 		"vite": "^8.0.0"
 	},
