@@ -1,11 +1,14 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiPopoverProps, RuiPopoverTriggerProps } from './popover.script';
+import type {
+	RuiPopover as RuiPopoverElement,
+	RuiPopoverProps,
+	RuiPopoverTrigger as RuiPopoverTriggerElement,
+	RuiPopoverTriggerProps,
+} from './popover.script';
 import './popover.script';
 
-export type RuiPopoverContentProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
-}>;
+export type RuiPopoverContentProps = JsxElementProps<HTMLDivElement>;
 
 /** Popover body slotted into the floating surface. */
 export function RuiPopoverContent({ children, slot = 'content', class: className, ...props }: RuiPopoverContentProps) {
@@ -20,9 +23,9 @@ export function RuiPopover({
 	trigger,
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<
+}: JsxCustomElementAttributes<
+	RuiPopoverElement,
 	RuiPopoverProps & {
-		slot?: string;
 		trigger?: JsxRenderable;
 	}
 >) {
@@ -38,9 +41,9 @@ export function RuiPopoverTrigger({
 	trigger,
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<
+}: JsxCustomElementAttributes<
+	RuiPopoverTriggerElement,
 	RuiPopoverTriggerProps & {
-		slot?: string;
 		trigger: JsxRenderable;
 	}
 >) {

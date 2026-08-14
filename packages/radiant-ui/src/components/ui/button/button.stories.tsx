@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
-import { RuiButton } from './button';
+import { RuiButton, type RuiButtonSize, type RuiButtonVariant } from './button';
+
+type ButtonStoryArgs = {
+	variant?: RuiButtonVariant;
+	size?: RuiButtonSize;
+	disabled?: boolean;
+	children?: string;
+	toggle?: boolean;
+};
 
 /**
  * Presentational native `<button>` wrapper. No custom element — `variant` and
@@ -19,10 +27,10 @@ const meta = {
 		disabled: false,
 		children: 'Button',
 	},
-} satisfies Meta<typeof RuiButton>;
+} satisfies Meta<ButtonStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<ButtonStoryArgs>;
 
 export const Variants: Story = {
 	render: () => (

@@ -1,27 +1,21 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiTabsProps } from './tabs.script';
+import type { RuiTabs as RuiTabsElement, RuiTabsProps } from './tabs.script';
 import './tabs.script';
 
-export type RuiTabListProps = JsxHtmlPropsWithChildren<{
-	'aria-label'?: string;
-}>;
+export type RuiTabListProps = JsxElementProps<HTMLDivElement>;
 
-export type RuiTabProps = {
+export type RuiTabProps = Omit<JsxElementProps<HTMLButtonElement>, 'id'> & {
 	id: string;
-	children: JsxRenderable;
-	class?: string;
 	disabled?: boolean;
 	/** Whether this tab is selected in the initial document. */
 	selected?: boolean;
 };
 
-export type RuiTabPanelsProps = JsxHtmlPropsWithChildren;
+export type RuiTabPanelsProps = JsxElementProps<HTMLDivElement>;
 
-export type RuiTabPanelProps = {
+export type RuiTabPanelProps = Omit<JsxElementProps<HTMLDivElement>, 'id' | 'hidden'> & {
 	id: string;
-	children: JsxRenderable;
-	class?: string;
 	/** Whether this panel is selected in the initial document. */
 	selected?: boolean;
 	/** Whether the panel is initially hidden when no selection is provided. */
@@ -46,16 +40,17 @@ export function RuiTabList({ children, class: className, ...props }: RuiTabListP
  *
  * @cssclass rui-tabs__tab - `role="tab"` button; underline/border per `variant`.
  */
-export function RuiTab({ id, children, class: className, disabled, selected }: RuiTabProps) {
+export function RuiTab({ id, children, class: className, disabled, selected, ...props }: RuiTabProps) {
 	return (
 		<button
+			{...props}
 			type="button"
 			class={cx('rui-tabs__tab', className)}
 			role="tab"
 			id={`tab-${id}`}
 			data-tab-value={id}
 			aria-controls={`panel-${id}`}
-			aria-selected={String(selected ?? false)}
+			aria-selected={selected ? 'true' : 'false'}
 			tabindex={selected ? 0 : -1}
 			disabled={disabled}
 		>
@@ -82,9 +77,10 @@ export function RuiTabPanels({ children, class: className, ...props }: RuiTabPan
  *
  * @cssclass rui-tabs__panel - `role="tabpanel"`; hidden when not selected.
  */
-export function RuiTabPanel({ id, children, class: className, selected, hidden }: RuiTabPanelProps) {
+export function RuiTabPanel({ id, children, class: className, selected, hidden, ...props }: RuiTabPanelProps) {
 	return (
 		<div
+			{...props}
 			class={cx('rui-tabs__panel', className)}
 			role="tabpanel"
 			id={`panel-${id}`}
@@ -98,6 +94,6 @@ export function RuiTabPanel({ id, children, class: className, selected, hidden }
 	);
 }
 
-export function RuiTabs({ children, ...props }: JsxHtmlPropsWithChildren<RuiTabsProps & { slot?: string }>) {
+export function RuiTabs({ children, ...props }: JsxCustomElementAttributes<RuiTabsElement, RuiTabsProps>) {
 	return <rui-tabs {...props}>{children}</rui-tabs>;
 }

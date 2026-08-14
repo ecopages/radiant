@@ -1,11 +1,11 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 
 export type RuiChipVariant = 'default' | 'muted' | 'primary';
 
-export type RuiChipProps = JsxHtmlPropsWithChildren<{
+export type RuiChipProps = JsxElementProps<HTMLSpanElement> & {
 	variant?: RuiChipVariant;
-}>;
+};
 
 /**
  * Presentational category chip.

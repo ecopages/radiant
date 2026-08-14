@@ -1,11 +1,12 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconCalendar } from '@/lib/icons';
-import { RuiCalendar, type RuiCalendarProps } from '../calendar';
-import type { RuiDateFieldProps } from './date-field.script';
+import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
+import type { RuiDateField as RuiDateFieldElement, RuiDateFieldProps } from './date-field.script';
 import './date-field.script';
 
-export type RuiDateFieldControlProps = JsxHtmlPropsWithChildren;
+export type RuiDateFieldControlProps = JsxElementProps<HTMLDivElement>;
 
 /** Bordered control row containing the date input and calendar toggle. */
 export function RuiDateFieldControl({ children, class: className, ...props }: RuiDateFieldControlProps) {
@@ -16,7 +17,7 @@ export function RuiDateFieldControl({ children, class: className, ...props }: Ru
 	);
 }
 
-export type RuiDateFieldInputProps = JsxHtmlProps;
+export type RuiDateFieldInputProps = JsxElementProps<HTMLInputElement>;
 
 /** Text input controlled by the date-field host. */
 export function RuiDateFieldInput({ class: className, ...props }: RuiDateFieldInputProps) {
@@ -33,23 +34,18 @@ export function RuiDateFieldInput({ class: className, ...props }: RuiDateFieldIn
 	);
 }
 
-export type RuiDateFieldToggleProps = JsxHtmlPropsWithChildren<{ 'aria-label'?: string }>;
+export type RuiDateFieldToggleProps = JsxElementProps<HTMLButtonElement>;
 
 /** Toggle button for the date calendar. */
-export function RuiDateFieldToggle({
-	children,
-	class: className,
-	'aria-label': ariaLabel = 'Open calendar',
-	...props
-}: RuiDateFieldToggleProps) {
+export function RuiDateFieldToggle({ children, class: className, aria, ...props }: RuiDateFieldToggleProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Open calendar')}
 			type="button"
 			data-ref="trigger"
 			data-date-field-trigger
 			class={cx('rui-control-toggle', className)}
-			aria-label={ariaLabel}
 			aria-haspopup="dialog"
 		>
 			{children ?? <RuiIconCalendar />}
@@ -57,7 +53,7 @@ export function RuiDateFieldToggle({
 	);
 }
 
-export type RuiDateFieldPopoverProps = JsxHtmlPropsWithChildren;
+export type RuiDateFieldPopoverProps = JsxElementProps<HTMLDivElement>;
 
 /** Floating shell for a `RuiDateFieldCalendar`. */
 export function RuiDateFieldPopover({ children, class: className, ...props }: RuiDateFieldPopoverProps) {
@@ -75,7 +71,7 @@ export function RuiDateFieldPopover({ children, class: className, ...props }: Ru
 	);
 }
 
-export type RuiDateFieldCalendarProps = JsxHtmlProps<RuiCalendarProps>;
+export type RuiDateFieldCalendarProps = JsxCustomElementAttributes<RuiCalendarElement, RuiCalendarProps>;
 
 /** Calendar whose value and constraints are synchronized by the date-field host. */
 export function RuiDateFieldCalendar(props: RuiDateFieldCalendarProps) {
@@ -87,7 +83,10 @@ export function RuiDateFieldCalendar(props: RuiDateFieldCalendarProps) {
  *
  * Pair with `RuiLabel` / `RuiField` for labeling and validation.
  */
-export function RuiDateField({ children, ...props }: JsxHtmlPropsWithChildren<RuiDateFieldProps & { slot?: string }>) {
+export function RuiDateField({
+	children,
+	...props
+}: JsxCustomElementAttributes<RuiDateFieldElement, RuiDateFieldProps>) {
 	return (
 		<rui-date-field {...props}>
 			{children ?? (

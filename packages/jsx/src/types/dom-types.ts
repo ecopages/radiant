@@ -1,4 +1,10 @@
-import type { JsxBindingSourceValue, JsxRenderable, SignalLike, SubscribableJsxValue } from './renderable-types.ts';
+import type {
+	JsxBindingSourceValue,
+	JsxRenderable,
+	SignalLike,
+	SubscribableJsxValue,
+	SubscribableJsxValueWithAccess,
+} from './renderable-types.ts';
 
 type Booleanish = boolean | 'true' | 'false';
 type StringKeyOf<Value> = Extract<keyof Value, string>;
@@ -19,7 +25,8 @@ type ReactiveAttributeValue<Value extends StructuredAttributePrimitive> =
 	| SubscribableJsxValue<Extract<Value, number>>
 	| SubscribableJsxValue<Extract<Value, string>>
 	| SubscribableJsxValue<Extract<Value, null>>
-	| SubscribableJsxValue<Extract<Value, undefined>>;
+	| SubscribableJsxValue<Extract<Value, undefined>>
+	| SubscribableJsxValueWithAccess<Extract<Value, JsxBindingSourceValue>>;
 
 /**
  * Bivariant event handler type for native DOM events.
@@ -152,6 +159,18 @@ export type AriaAttributesNormalized = {
 };
 
 /**
+ * Direct kebab-case ARIA attributes accepted by JSX components.
+ *
+ * @remarks
+ * The structured `aria` prop remains available as a convenience. When both
+ * forms are supplied, the direct attribute is canonical and wins at runtime.
+ */
+export type JsxAriaAttributes = {
+	[AttributeName in keyof AriaAttributesNormalized as `aria-${AttributeName & string}`]?:
+		AriaAttributesNormalized[AttributeName] | SubscribableJsxValueWithAccess<JsxBindingSourceValue> | null;
+};
+
+/**
  * Accepted value for the `classes` JSX prop.
  */
 export type ClassList = string | number | bigint | boolean | null | undefined | Record<string, unknown> | ClassList[];
@@ -186,6 +205,11 @@ export type DataAttributeValue =
 	| SubscribableJsxValue<null>
 	| SubscribableJsxValue<undefined>;
 
+/** Direct `data-*` attributes accepted by JSX components. */
+export type JsxDataAttributes = {
+	[AttributeName in `data-${string}`]?: DataAttributeValue;
+};
+
 /**
  * Shared attribute shape for intrinsic elements.
  */
@@ -208,32 +232,18 @@ export interface JsxSharedIntrinsicAttributes {
 }
 
 /**
- * Standard HTML-level props available to any JSX element.
- *
- * @remarks
- * Pass component props as the type argument: `JsxHtmlProps<MyComponentProps>`.
- * Only the common host attrs are mixed in (`class`, `classes`, `aria`, `data`, `style`).
- * Use `JsxHtmlPropsWithChildren` when the host accepts children.
- */
-export type JsxHtmlProps<Props extends object = {}> = Props &
-	Pick<JsxSharedIntrinsicAttributes, 'class' | 'classes' | 'aria' | 'data' | 'style'>;
-
-/**
- * `JsxHtmlProps` plus optional `children`, analogous to React's `PropsWithChildren`.
- */
-export type JsxHtmlPropsWithChildren<Props extends object = {}> = JsxHtmlProps<Props> &
-	Pick<JsxSharedIntrinsicAttributes, 'children'>;
-
-/**
  * Shared attribute shape for intrinsic elements.
  */
 export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes &
+	JsxAriaAttributes &
+	JsxDataAttributes &
 	JsxEventBindings<ElementType> &
 	JsxAttributeBindings &
 	JsxPropertyBindings<ElementType>;
 
 /**
- * All base props accepted by any JSX element.
+ * Host props for a native JSX helper: the same contract as the intrinsic tag,
+ * including typed `prop:*` bindings from `ElementType`.
  */
 export type JsxElementProps<ElementType extends Element = HTMLElement> = JsxIntrinsicAttributes<ElementType>;
 

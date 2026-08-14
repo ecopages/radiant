@@ -1,14 +1,13 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
-import { RuiListbox, RuiListboxOption, type RuiListboxOptionData } from '../listbox';
-import type { RuiComboboxProps } from './combobox.script';
+import { RuiListbox, type RuiListboxOptionData } from '../listbox';
+import type { RuiCombobox as RuiComboboxElement, RuiComboboxProps } from './combobox.script';
 import './combobox.script';
 
-export type RuiComboboxControlProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
-}>;
+export type RuiComboboxControlProps = JsxElementProps<HTMLDivElement>;
 
 /** Input row wrapper for the combobox input and toggle button.
  *
@@ -27,10 +26,10 @@ export function RuiComboboxControl({
 	);
 }
 
-export type RuiComboboxInputProps = JsxHtmlProps<{
+export type RuiComboboxInputProps = JsxElementProps<HTMLInputElement> & {
 	placeholder?: string;
 	disabled?: boolean;
-}>;
+};
 
 /** Text input with `role="combobox"`. Place inside `RuiComboboxControl`.
  *
@@ -53,26 +52,19 @@ export function RuiComboboxInput({ placeholder, disabled, class: className, ...p
 	);
 }
 
-export type RuiComboboxTriggerProps = JsxHtmlPropsWithChildren<{
-	'aria-label'?: string;
+export type RuiComboboxTriggerProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
-}>;
+};
 
 /** Toggle button for opening the listbox popup. */
-export function RuiComboboxTrigger({
-	children,
-	class: className,
-	'aria-label': ariaLabel = 'Show suggestions',
-	disabled,
-	...props
-}: RuiComboboxTriggerProps) {
+export function RuiComboboxTrigger({ children, class: className, aria, disabled, ...props }: RuiComboboxTriggerProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Show suggestions')}
 			type="button"
 			data-combobox-trigger
 			class={cx('rui-control-toggle', className)}
-			aria-label={ariaLabel}
 			disabled={disabled}
 			tabIndex={-1}
 		>
@@ -81,9 +73,7 @@ export function RuiComboboxTrigger({
 	);
 }
 
-export type RuiComboboxListboxProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
-}>;
+export type RuiComboboxListboxProps = JsxElementProps<HTMLDivElement>;
 
 /** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside.
  *
@@ -110,9 +100,6 @@ export function RuiComboboxListbox({
 
 export type RuiComboboxOptionData = RuiListboxOptionData;
 
-/** @deprecated Use `RuiListboxOption` */
-export const RuiComboboxOption = RuiListboxOption;
-
 /**
  * Combobox view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
  * do not nest a combobox-specific label.
@@ -121,9 +108,9 @@ export function RuiCombobox({
 	options,
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<
+}: JsxCustomElementAttributes<
+	RuiComboboxElement,
 	RuiComboboxProps & {
-		slot?: string;
 		options?: RuiComboboxOptionData[];
 	}
 >) {

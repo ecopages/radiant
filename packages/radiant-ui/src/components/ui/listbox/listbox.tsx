@@ -1,14 +1,14 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiListboxProps } from './listbox.script';
+import type { RuiListbox as RuiListboxElement, RuiListboxProps } from './listbox.script';
 import './listbox.script';
 
-export type RuiListboxOptionProps = JsxHtmlPropsWithChildren<{
+export type RuiListboxOptionProps = JsxElementProps<HTMLDivElement> & {
 	value: string;
 	/** Text used for accessibility and parent display when selected. Defaults to `children` text. */
 	label?: string;
 	disabled?: boolean;
-}>;
+};
 
 /** Option placed inside `RuiListbox`.
  *
@@ -43,7 +43,7 @@ export function RuiListbox({
 	options,
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<RuiListboxProps & { slot?: string; options?: RuiListboxOptionData[] }>) {
+}: JsxCustomElementAttributes<RuiListboxElement, RuiListboxProps & { options?: RuiListboxOptionData[] }>) {
 	if (options != null) {
 		return (
 			<rui-listbox {...props}>

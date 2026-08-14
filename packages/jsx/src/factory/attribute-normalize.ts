@@ -12,6 +12,13 @@ export function forEachNormalizedAttribute(
 	append: (name: string, value: unknown) => void,
 ): void {
 	const classValue = normalizeMergedClassValue(attributes.class, attributes.classes);
+	const directAttributeNames = new Set<string>();
+
+	for (const name in attributes) {
+		if ((name.startsWith('aria-') || name.startsWith('data-')) && attributes[name] !== undefined) {
+			directAttributeNames.add(name);
+		}
+	}
 
 	if (classValue !== undefined) {
 		append('class', classValue);
@@ -19,13 +26,16 @@ export function forEachNormalizedAttribute(
 
 	for (const name in attributes) {
 		const value = attributes[name];
-
 		if (value === undefined || name === 'key' || name === 'class' || name === 'classes') {
 			continue;
 		}
 
 		if (name === 'data' || name === 'aria') {
-			appendStructuredAttributes(name, value, append);
+			appendStructuredAttributes(name, value, (attributeName, attributeValue) => {
+				if (!directAttributeNames.has(attributeName)) {
+					append(attributeName, attributeValue);
+				}
+			});
 			continue;
 		}
 

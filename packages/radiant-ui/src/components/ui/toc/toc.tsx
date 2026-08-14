@@ -1,18 +1,9 @@
-import type { JsxHtmlProps } from '@ecopages/jsx';
-import type { RuiTocProps } from './toc.script';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { RuiToc as RuiTocElement, RuiTocProps } from './toc.script';
 import './toc.script';
 
-export type RuiTocViewProps = JsxHtmlProps<RuiTocProps>;
+export type RuiTocViewProps = JsxCustomElementAttributes<RuiTocElement, RuiTocProps>;
 
-export function RuiToc({ target, headingSelector, label, scrollOffset, navigationEvents, ...props }: RuiTocViewProps) {
-	return (
-		<rui-toc
-			{...props}
-			prop:target={target}
-			prop:headingSelector={headingSelector}
-			prop:label={label}
-			prop:scrollOffset={scrollOffset}
-			prop:navigationEvents={navigationEvents}
-		/>
-	);
+export function RuiToc(props: RuiTocViewProps) {
+	return <rui-toc {...props} />;
 }

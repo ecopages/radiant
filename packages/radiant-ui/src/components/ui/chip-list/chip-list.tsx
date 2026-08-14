@@ -1,25 +1,22 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 
-export type RuiChipListProps = JsxHtmlPropsWithChildren<{
-	'aria-label'?: string;
-	id?: string;
-}>;
+export type RuiChipListProps = JsxElementProps<HTMLUListElement>;
 
 /**
  * Horizontal wrap list for presentational chips.
  *
  * @cssclass rui-chip-list - List container (`<ul>`).
  */
-export function RuiChipList({ children, class: className, 'aria-label': ariaLabel, ...props }: RuiChipListProps) {
+export function RuiChipList({ children, class: className, ...props }: RuiChipListProps) {
 	return (
-		<ul {...props} class={cx('rui-chip-list', className)} aria-label={ariaLabel}>
+		<ul {...props} class={cx('rui-chip-list', className)}>
 			{children}
 		</ul>
 	);
 }
 
-export type RuiChipListItemProps = JsxHtmlPropsWithChildren;
+export type RuiChipListItemProps = JsxElementProps<HTMLLIElement>;
 
 /**
  * List item wrapper for a chip.

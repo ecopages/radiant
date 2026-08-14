@@ -2,6 +2,16 @@
 
 ## 0.3.0-rc.0
 
+### Breaking Changes
+
+- JSX host contracts now expose typed direct `aria-*` and `data-*` channels in
+  addition to structured `aria`/`data` utilities. Direct values take precedence
+  independent of source order. `JsxElementProps<ElementType>` is the native
+  helper contract, including typed `prop:*` bindings. HTML tag names win when
+  HTML and SVG share a name (`a`, `title`). The partial `JsxHtmlProps` and
+  `JsxHtmlPropsWithChildren` aliases have been removed; views must declare a
+  native or custom-element host contract.
+
 ### Patch Changes
 
 - [#147](https://github.com/ecopages/radiant/pull/147) [`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize nested custom-element light DOM with the active SSR renderer.

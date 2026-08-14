@@ -3,7 +3,6 @@ import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-polic
 import { hydrateTemplateInstance } from './hydration.ts';
 import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
-import { getNodeAtPath } from './path-utils.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
 import { createHydratedRangeRecord } from './range-records.ts';
 import {
@@ -16,12 +15,8 @@ import {
 	isTemplateResultLike,
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
-import { getCompiledTemplate } from './template-compiler.ts';
-import { createTemplateInstanceUpdate } from './template-instance.ts';
 import type {
-	AttributeTemplatePart,
 	DeferredPropertyBinding,
-	LiveAttributePart,
 	MountedIndexedList,
 	MountedKeyedList,
 	MountedRangeContent,
@@ -251,26 +246,4 @@ function hydrateListRangeContent(
 	return keyedChildren
 		? { kind: 'keyed-list', records: keyedRecords }
 		: { kind: 'indexed-list', records: indexedRecords };
-}
-
-function createHydratedRangeRoot(startMarker: Text, endMarker: Text): { childNodes: readonly ChildNode[] } {
-	const parentNode = startMarker.parentNode;
-
-	if (!parentNode || parentNode !== endMarker.parentNode) {
-		return { childNodes: [] };
-	}
-
-	return { childNodes: collectNodesBetweenMarkers(startMarker, endMarker) };
-}
-
-function collectNodesBetweenMarkers(startMarker: Text, endMarker: Text): readonly ChildNode[] {
-	const nodes: ChildNode[] = [];
-	let currentNode = startMarker.nextSibling;
-
-	while (currentNode && currentNode !== endMarker) {
-		nodes.push(currentNode);
-		currentNode = currentNode.nextSibling;
-	}
-
-	return nodes;
 }

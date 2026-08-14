@@ -1,13 +1,14 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderable } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
-import type { RuiCarouselProps } from './carousel.script';
+import type { RuiCarousel as RuiCarouselElement, RuiCarouselProps } from './carousel.script';
 import './carousel.script';
 
 export type RuiCarouselSlideData = { id: string; children: JsxRenderable };
 
-export type RuiCarouselSlideProps = JsxHtmlPropsWithChildren<{
+export type RuiCarouselSlideProps = Omit<JsxElementProps<HTMLDivElement>, 'id'> & {
 	id: string;
-}>;
+};
 
 /**
  * Slide in the default carousel slot (APG `group` / `tabpanel` roles are applied by the host).
@@ -22,12 +23,11 @@ export function RuiCarouselSlide({ id, children, class: className, ...props }: R
 	);
 }
 
-export type RuiCarouselControlProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
+export type RuiCarouselControlProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 	/** Match `controls-variant="overlay"` on the carousel for circular on-slide chrome. */
 	overlay?: boolean;
-}>;
+};
 
 function toolbarPrevLabel() {
 	return (
@@ -66,11 +66,13 @@ export function RuiCarouselPrev({
 	class: className,
 	disabled,
 	overlay,
+	aria,
 	...props
 }: RuiCarouselControlProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Previous slide')}
 			slot={slot}
 			type="button"
 			data-carousel-action="prev"
@@ -80,7 +82,6 @@ export function RuiCarouselPrev({
 				overlay ? 'rui-carousel__nav--overlay' : 'rui-carousel__nav--toolbar',
 				className,
 			)}
-			aria-label="Previous slide"
 			disabled={disabled}
 		>
 			{children ??
@@ -110,11 +111,13 @@ export function RuiCarouselNext({
 	class: className,
 	disabled,
 	overlay,
+	aria,
 	...props
 }: RuiCarouselControlProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Next slide')}
 			slot={slot}
 			type="button"
 			data-carousel-action="next"
@@ -124,7 +127,6 @@ export function RuiCarouselNext({
 				overlay ? 'rui-carousel__nav--overlay' : 'rui-carousel__nav--toolbar',
 				className,
 			)}
-			aria-label="Next slide"
 			disabled={disabled}
 		>
 			{children ??
@@ -139,10 +141,9 @@ export function RuiCarouselNext({
 	);
 }
 
-export type RuiCarouselRotationProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
+export type RuiCarouselRotationProps = JsxElementProps<HTMLButtonElement> & {
 	overlay?: boolean;
-}>;
+};
 
 /**
  * Play/pause rotation control slotted into `rotation` by default.
@@ -155,11 +156,13 @@ export function RuiCarouselRotation({
 	slot = 'rotation',
 	class: className,
 	overlay,
+	aria,
 	...props
 }: RuiCarouselRotationProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Start rotation')}
 			slot={slot}
 			type="button"
 			data-carousel-action="rotation"
@@ -170,7 +173,6 @@ export function RuiCarouselRotation({
 				className,
 			)}
 			aria-pressed={false}
-			aria-label="Start rotation"
 		>
 			{children ?? 'Play'}
 		</button>
@@ -181,12 +183,9 @@ export function RuiCarousel({
 	slides,
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<
-	RuiCarouselProps & {
-		slot?: string;
-		slides?: RuiCarouselSlideData[];
-	}
->) {
+}: JsxCustomElementAttributes<RuiCarouselElement, RuiCarouselProps> & {
+	slides?: RuiCarouselSlideData[];
+}) {
 	if (children != null) {
 		return <rui-carousel {...props}>{children}</rui-carousel>;
 	}

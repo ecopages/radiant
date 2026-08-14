@@ -1,5 +1,5 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
-import type { RuiFieldProps } from './field.script';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { RuiField as RuiFieldElement, RuiFieldProps } from './field.script';
 import './field.script';
 
 /**
@@ -15,7 +15,7 @@ export function RuiField({
 	defaultValue,
 	defaultValueData,
 	...props
-}: JsxHtmlPropsWithChildren<RuiFieldProps>) {
+}: JsxCustomElementAttributes<RuiFieldElement, RuiFieldProps>) {
 	return (
 		<rui-field
 			{...props}

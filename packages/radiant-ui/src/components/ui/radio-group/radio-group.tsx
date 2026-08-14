@@ -1,6 +1,6 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiRadioGroupProps } from './radio-group.script';
+import type { RuiRadioGroup as RuiRadioGroupElement, RuiRadioGroupProps } from './radio-group.script';
 import './radio-group.script';
 
 export type RuiRadioOption = {
@@ -9,7 +9,7 @@ export type RuiRadioOption = {
 	disabled?: boolean;
 };
 
-export type RuiRadioGroupControlProps = JsxHtmlPropsWithChildren;
+export type RuiRadioGroupControlProps = JsxElementProps<HTMLDivElement>;
 
 /** Accessible surface that contains radio options. */
 export function RuiRadioGroupControl({ children, class: className, ...props }: RuiRadioGroupControlProps) {
@@ -27,11 +27,11 @@ export function RuiRadioGroupControl({ children, class: className, ...props }: R
 	);
 }
 
-export type RuiRadioProps = JsxHtmlPropsWithChildren<{
+export type RuiRadioProps = JsxElementProps<HTMLLabelElement> & {
 	value: string;
 	name?: string;
 	disabled?: boolean;
-}>;
+};
 
 /** A label-wrapped native radio option controlled by `RuiRadioGroup`. */
 export function RuiRadio({ children, value, name, disabled, class: className, ...props }: RuiRadioProps) {
@@ -64,14 +64,10 @@ export function RuiRadio({ children, value, name, disabled, class: className, ..
 export function RuiRadioGroup({
 	options,
 	children,
-	value,
-	name,
-	label,
-	disabled,
 	...props
-}: JsxHtmlPropsWithChildren<RuiRadioGroupProps & { slot?: string; options?: RuiRadioOption[] }>) {
+}: JsxCustomElementAttributes<RuiRadioGroupElement, RuiRadioGroupProps & { options?: RuiRadioOption[] }>) {
 	return (
-		<rui-radio-group {...props} value={value} name={name} label={label} disabled={disabled}>
+		<rui-radio-group {...props}>
 			{options == null ? (
 				children
 			) : (

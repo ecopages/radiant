@@ -12,7 +12,7 @@ export {
 	RuiSelectValue,
 	RuiSelectListbox,
 	RuiSelectSearch,
-	RuiSelectOption,
 	type RuiSelectOptionData,
+	type RuiSelectViewProps,
 } from './select';
 export { RuiListbox, RuiListboxOption } from '../listbox';

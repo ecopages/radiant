@@ -1,5 +1,5 @@
-import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
-import type { RuiMenubarProps } from './menubar.script';
+import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
+import type { RuiMenubar as RuiMenubarElement, RuiMenubarProps } from './menubar.script';
 import './menubar.script';
 
 export type RuiMenubarItem = {
@@ -23,7 +23,7 @@ export type RuiMenubarItem = {
 export function RuiMenubar({
 	items,
 	...props
-}: JsxHtmlProps<RuiMenubarProps & { slot?: string; items: RuiMenubarItem[] }>) {
+}: JsxCustomElementAttributes<RuiMenubarElement, RuiMenubarProps & { items: RuiMenubarItem[] }>) {
 	return (
 		<rui-menubar {...props}>
 			{items.map((item) => (
