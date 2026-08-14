@@ -80,8 +80,8 @@ const HomePage = () => {
 							<RuiHeadingDescription>
 								Radiant gives you one reactive host model for both custom elements and DOM-attached
 								controllers. Use RadiantElement when the host owns its contract, or RadiantController
-								when the HTML should stay authored outside the class. JSX and Signals stay optional
-								companions.
+								when the HTML should stay authored outside the class. Signals ships with Radiant. JSX
+								stays the optional companion for TSX.
 							</RuiHeadingDescription>
 						</RuiHeading>
 
@@ -151,7 +151,7 @@ const HomePage = () => {
 							href="/docs/getting-started/introduction"
 							label="Get Started"
 							title="Learn the model"
-							description="See how RadiantElement and RadiantController share one reactive host surface, and where JSX and Signals fit."
+							description="See how RadiantElement and RadiantController share one reactive host surface. Signals comes with Radiant; JSX is the TSX layer."
 							position={1}
 						/>
 						<HomeFeedArticle

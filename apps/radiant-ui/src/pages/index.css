@@ -124,7 +124,7 @@
 }
 
 .home-path {
-	@apply mt-6 rounded-sm border border-border bg-background-accent p-6 md:p-8;
+	@apply mt-6;
 }
 
 .home-path__list {
