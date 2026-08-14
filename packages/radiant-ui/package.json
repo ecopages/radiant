@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant-ui",
-	"version": "0.1.0-beta.8",
+	"version": "0.1.0-rc.0",
 	"description": "Accessible light-DOM UI components built with @ecopages/radiant, documented in Storybook",
 	"license": "MIT",
 	"type": "module",
@@ -32,9 +32,9 @@
 		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-beta.8",
-		"@ecopages/radiant": ">=0.3.0-beta.8",
-		"@ecopages/signals": ">=0.3.0-beta.8"
+		"@ecopages/jsx": ">=0.3.0-rc.0",
+		"@ecopages/radiant": ">=0.3.0-rc.0",
+		"@ecopages/signals": ">=0.3.0-rc.0"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",

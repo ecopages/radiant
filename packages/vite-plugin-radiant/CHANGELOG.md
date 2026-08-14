@@ -1,5 +1,16 @@
 # @ecopages/vite-plugin-radiant
 
+## 0.1.0-rc.0
+
+### Patch Changes
+
+- Start the rc channel from the current beta line.
+
+- Updated dependencies [[`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f), [`61c6bfb`](https://github.com/ecopages/radiant/commit/61c6bfbd381f0890e13d19605e292b147602e407)]:
+    - @ecopages/jsx@0.3.0-rc.0
+    - @ecopages/radiant@0.3.0-rc.0
+    - @ecopages/signals@0.3.0-rc.0
+
 ## 0.1.0-beta.3
 
 ### Patch Changes

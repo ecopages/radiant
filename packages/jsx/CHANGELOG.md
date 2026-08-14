@@ -1,5 +1,22 @@
 # @ecopages/jsx
 
+## 0.3.0-rc.0
+
+### Patch Changes
+
+- [#147](https://github.com/ecopages/radiant/pull/147) [`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize nested custom-element light DOM with the active SSR renderer.
+
+    **@ecopages/jsx**
+
+    - Registered custom elements inside another server-rendered custom element now preserve the active SSR custom-element renderer and hydration state.
+
+    **@ecopages/radiant-ui**
+
+    - `RuiCycleToggle`, `RuiRadioGroup`, and `RuiSelect` no longer need `attr:` prefixes for ordinary host props during nested SSR.
+
+- Updated dependencies []:
+    - @ecopages/signals@0.3.0-rc.0
+
 ## 0.3.0-beta.8
 
 ### Patch Changes

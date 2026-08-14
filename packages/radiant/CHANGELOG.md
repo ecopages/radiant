@@ -1,5 +1,21 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.0
+
+### Patch Changes
+
+- Start the rc channel from the current beta line.
+
+- [#146](https://github.com/ecopages/radiant/pull/146) [`61c6bfb`](https://github.com/ecopages/radiant/commit/61c6bfbd381f0890e13d19605e292b147602e407) Thanks [@andeeplus](https://github.com/andeeplus)! - Adopt authored reflected attributes before applying `defaultValue` on first connect.
+
+    **@ecopages/radiant**
+
+    - First-connect catch-up now runs before initial reflect/`@onUpdated`, so an authored attribute such as `variant="ghost"` is not overwritten by `defaultValue`.
+
+- Updated dependencies [[`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f)]:
+    - @ecopages/jsx@0.3.0-rc.0
+    - @ecopages/signals@0.3.0-rc.0
+
 ## 0.3.0-beta.8
 
 ### Patch Changes

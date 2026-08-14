@@ -1,5 +1,54 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.0
+
+### Minor Changes
+
+- [#150](https://github.com/ecopages/radiant/pull/150) [`4e2ca6e`](https://github.com/ecopages/radiant/commit/4e2ca6eccda03138df1bcfcfcfc7410165e42bbc) Thanks [@andeeplus](https://github.com/andeeplus)! - Complete every named hue scale to steps 50–975.
+
+    **@ecopages/radiant-ui**
+
+    - Glacier and Basalt palette hues now ship the same 12-step ramp as Aurora (50–975). Existing stops used by colour presets are unchanged.
+    - The semantic gray utilities remain 50–950.
+
+- [#148](https://github.com/ecopages/radiant/pull/148) [`bd90818`](https://github.com/ecopages/radiant/commit/bd908183584fe1e41b892a038fd4b0901ebf4f79) Thanks [@andeeplus](https://github.com/andeeplus)! - Apply `mobileDefaultOpen` when the viewport crosses into mobile, not only on first connect.
+
+    **@ecopages/radiant-ui**
+
+    - Uncontrolled `rui-sidebar` now closes (or opens) to `mobileDefaultOpen` when resizing below `mobileBreakpoint`, so a desktop-open pane does not become an overlay drawer.
+    - Controlled `open` is left unchanged on viewport crossings; listen to `rui-sidebar-mobile-change` if the parent needs to react.
+
+- [#149](https://github.com/ecopages/radiant/pull/149) [`5882151`](https://github.com/ecopages/radiant/commit/5882151cd5a83854e4c14235a80d4b21a89fecfd) Thanks [@andeeplus](https://github.com/andeeplus)! - Drop the textarea `size` variants.
+
+    **@ecopages/radiant-ui**
+
+    - `RuiTextarea` no longer accepts `size`. Height comes from `rows` and the shared control tokens.
+
+### Patch Changes
+
+- [#147](https://github.com/ecopages/radiant/pull/147) [`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize nested custom-element light DOM with the active SSR renderer.
+
+    **@ecopages/jsx**
+
+    - Registered custom elements inside another server-rendered custom element now preserve the active SSR custom-element renderer and hydration state.
+
+    **@ecopages/radiant-ui**
+
+    - `RuiCycleToggle`, `RuiRadioGroup`, and `RuiSelect` no longer need `attr:` prefixes for ordinary host props during nested SSR.
+
+- Start the rc channel from the current beta line.
+
+- [#150](https://github.com/ecopages/radiant/pull/150) [`5497b29`](https://github.com/ecopages/radiant/commit/5497b296ec919db969f92bd462fcb5f472a2d7a4) Thanks [@andeeplus](https://github.com/andeeplus)! - Move black and white to system tokens.
+
+    **@ecopages/radiant-ui**
+
+    - `--color-black` and `--color-white` now live in `tokens/system.css`, so every theme gets them without loading the Aurora pack.
+
+- Updated dependencies [[`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f), [`61c6bfb`](https://github.com/ecopages/radiant/commit/61c6bfbd381f0890e13d19605e292b147602e407)]:
+    - @ecopages/jsx@0.3.0-rc.0
+    - @ecopages/radiant@0.3.0-rc.0
+    - @ecopages/signals@0.3.0-rc.0
+
 ## 0.1.0-beta.8
 
 ### Patch Changes
