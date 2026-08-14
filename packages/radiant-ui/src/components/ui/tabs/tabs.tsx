@@ -55,7 +55,7 @@ export function RuiTab({ id, children, class: className, disabled, selected }: R
 			id={`tab-${id}`}
 			data-tab-value={id}
 			aria-controls={`panel-${id}`}
-			aria-selected={String(selected ?? false)}
+			aria-selected={selected ? 'true' : 'false'}
 			tabindex={selected ? 0 : -1}
 			disabled={disabled}
 		>
