@@ -1,8 +1,8 @@
-import type { JsxHtmlProps } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RUI_FIELD_ERROR_ATTR } from '../form/control-protocol';
 
-export type RuiFieldErrorProps = JsxHtmlProps;
+export type RuiFieldErrorProps = JsxElementProps<HTMLParagraphElement>;
 
 /**
  * Error message region for a field. Text is populated by `<rui-field>` from form validation

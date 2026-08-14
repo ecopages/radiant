@@ -1,16 +1,14 @@
-import type { JsxHtmlProps } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { applyInputMask, maskToPlaceholder } from '@/lib/mask';
 import { RUI_CONTROL_ATTR } from '../form/control-protocol';
 
-export type RuiInputProps = JsxHtmlProps<{
+export type RuiInputProps = JsxElementProps<HTMLInputElement> & {
 	value?: string;
 	type?: string;
 	placeholder?: string;
 	disabled?: boolean;
 	name?: string;
-	id?: string;
-	'aria-label'?: string;
 	/**
 	 * IMask pattern syntax. `0` = digit, `a` = letter, `*` = any char, `{text}` = fixed.
 	 *
@@ -18,10 +16,7 @@ export type RuiInputProps = JsxHtmlProps<{
 	 * @example `+{7}(000)000-00-00`
 	 */
 	mask?: string;
-	'on:input'?: (event: Event) => void;
-	'on:change'?: (event: Event) => void;
-	'on:blur'?: (event: Event) => void;
-}>;
+};
 
 /**
  * Presentational wrapper around a native `<input>`.
@@ -46,7 +41,11 @@ export function RuiInput(props: RuiInputProps) {
 			const input = event.target as HTMLInputElement;
 			input.value = applyInputMask(input.value, mask);
 		}
-		onInput?.(event);
+		if (typeof onInput === 'function') {
+			(onInput as (event: Event) => void)(event);
+		} else if (onInput != null && typeof onInput === 'object' && 'handleEvent' in onInput) {
+			(onInput as { handleEvent(event: Event): void }).handleEvent(event);
+		}
 	};
 
 	return (
@@ -54,7 +53,7 @@ export function RuiInput(props: RuiInputProps) {
 			{...host}
 			type={type}
 			placeholder={resolvedPlaceholder}
-			{...(mask ? { 'on:input': handleInput } : onInput ? { 'on:input': onInput } : {})}
+			on:input={mask ? handleInput : onInput}
 			inputmode={mask ? 'numeric' : undefined}
 			{...{ [RUI_CONTROL_ATTR]: '' }}
 			data-rui-control-type="text"

@@ -46,6 +46,17 @@ Presentational helpers that are not custom elements (`RuiButton`, `RuiInput`, `R
 - Compose published `Rui*` views. Do not subclass a custom element just to arrange its UI.
 - Keep a convenient prop-based default on the primary view, and accept children for the equivalent explicit composition.
 - Light DOM is the default: style with theme roles and BEM `.rui-*` classes, not shadow parts.
+- Rui views expose a declared DOM surface. Global attributes, `on:*`/`on-native:*`
+  events, direct `aria-*`/`data-*`, structured `aria={{ ... }}`/`data={{ ... }}`,
+  and `attr:`/`prop:` bindings are forwarded to that surface. Direct kebab-case
+  attributes win when both forms name the same value. Collection item `id`
+  values (tabs, carousel slides, and cycle-toggle items) are semantic keys, not
+  literal DOM ids; non-collection `id` props are DOM ids.
+- For an overridable accessible-name default, keep direct `aria-label` in the
+  forwarded props and use `withDefaultAriaLabel(aria, fallback)` from
+  `@ecopages/radiant-ui/aria`. The helper fills only a missing structured
+  `aria.label`; direct `aria-label` remains canonical. Keep managed ARIA state
+  explicit rather than passing it through a defaults helper.
 
 ## Tokens and themes
 

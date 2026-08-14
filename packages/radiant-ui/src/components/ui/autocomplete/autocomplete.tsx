@@ -1,14 +1,12 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiAutocompleteProps } from './autocomplete.script';
+import type { RuiAutocomplete as RuiAutocompleteElement, RuiAutocompleteProps } from './autocomplete.script';
 import './autocomplete.script';
 
-export type RuiAutocompleteInputProps = JsxHtmlProps<{
-	slot?: string;
+export type RuiAutocompleteInputProps = JsxElementProps<HTMLInputElement> & {
 	placeholder?: string;
-	'aria-label'?: string;
 	disabled?: boolean;
-}>;
+};
 
 /** Search field slotted into `RuiAutocomplete`. Also pairs with combobox inputs via `data-autocomplete-input`.
  *
@@ -35,9 +33,7 @@ export function RuiAutocompleteInput({
 	);
 }
 
-export type RuiAutocompleteCollectionProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
-}>;
+export type RuiAutocompleteCollectionProps = JsxElementProps<HTMLDivElement>;
 
 /** Wrapper around the filterable collection inside `RuiAutocomplete`.
  *
@@ -51,7 +47,7 @@ export function RuiAutocompleteCollection({ children, class: className, ...props
 	);
 }
 
-export type RuiAutocompleteEmptyProps = JsxHtmlPropsWithChildren;
+export type RuiAutocompleteEmptyProps = JsxElementProps<HTMLDivElement>;
 
 /** Shown when filtering yields no visible items.
  *
@@ -68,6 +64,6 @@ export function RuiAutocompleteEmpty({ children, class: className, ...props }: R
 export function RuiAutocomplete({
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<RuiAutocompleteProps & { slot?: string }>) {
+}: JsxCustomElementAttributes<RuiAutocompleteElement, RuiAutocompleteProps>) {
 	return <rui-autocomplete {...props}>{children}</rui-autocomplete>;
 }

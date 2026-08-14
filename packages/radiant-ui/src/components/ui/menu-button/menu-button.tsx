@@ -1,7 +1,7 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiButton, type RuiButtonControlProps } from '../button';
-import type { RuiMenuButtonProps } from './menu-button.script';
+import type { RuiMenuButton as RuiMenuButtonElement, RuiMenuButtonProps } from './menu-button.script';
 import './menu-button.script';
 
 export type RuiMenuItem = {
@@ -10,9 +10,7 @@ export type RuiMenuItem = {
 	disabled?: boolean;
 };
 
-export type RuiMenuButtonTriggerProps = JsxHtmlPropsWithChildren<
-	Pick<RuiButtonControlProps, 'variant' | 'size' | 'type' | 'disabled' | 'aria-label'>
->;
+export type RuiMenuButtonTriggerProps = RuiButtonControlProps;
 
 /** Trigger button for opening a menu-button popup. */
 export function RuiMenuButtonTrigger({
@@ -37,7 +35,7 @@ export function RuiMenuButtonTrigger({
 	);
 }
 
-export type RuiMenuButtonContentProps = JsxHtmlPropsWithChildren;
+export type RuiMenuButtonContentProps = JsxElementProps<HTMLDivElement>;
 
 /** Floating menu surface containing `RuiMenuButtonItem` elements. */
 export function RuiMenuButtonContent({ children, class: className, ...props }: RuiMenuButtonContentProps) {
@@ -54,10 +52,10 @@ export function RuiMenuButtonContent({ children, class: className, ...props }: R
 	);
 }
 
-export type RuiMenuButtonItemProps = JsxHtmlPropsWithChildren<{
+export type RuiMenuButtonItemProps = JsxElementProps<HTMLButtonElement> & {
 	value: string;
 	disabled?: boolean;
-}>;
+};
 
 /** Action item inside `RuiMenuButtonContent`. */
 export function RuiMenuButtonItem({ children, value, disabled, class: className, ...props }: RuiMenuButtonItemProps) {
@@ -91,7 +89,10 @@ export function RuiMenuButton({
 	children,
 	class: className,
 	...props
-}: JsxHtmlPropsWithChildren<RuiMenuButtonProps & { slot?: string; trigger?: JsxRenderable; items?: RuiMenuItem[] }>) {
+}: JsxCustomElementAttributes<
+	RuiMenuButtonElement,
+	RuiMenuButtonProps & { trigger?: JsxRenderable; items?: RuiMenuItem[] }
+>) {
 	if (trigger == null && items == null) {
 		return (
 			<rui-menu-button {...props} class={cx('rui-menu-button', className)}>

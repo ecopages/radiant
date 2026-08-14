@@ -6,16 +6,13 @@ export {
 	getNumericPartOrder,
 	maskDigitCapacity,
 	maskedDigitsToParts,
-	maskPatternToPlaceholder,
 	partsToDate,
 } from './date-mask';
 export type { DateMaskPattern } from './date-mask';
 export {
 	applyInputMask,
-	extractMaskDigits,
 	extractMaskInput,
 	formatWithMask,
-	maskDigitSlotCount,
 	maskInputSlotCount,
 	maskToPlaceholder,
 	parseMaskPattern,

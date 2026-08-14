@@ -35,7 +35,59 @@ Radiant, JSX, and Signals install as peers. You do not add them separately unles
 Load a theme and the aggregate stylesheet in your app shell. See [Theming](/docs/getting-started/theming) to compose
 colour, spacing, and radius packs, and [Tokens](/docs/getting-started/tokens) for the scales those packs define.
 
+## JSX view props
+
+Every `Rui*` view declares the DOM surface that receives global attributes,
+events, bindings, and ARIA/data props. Native helpers forward them to their
+native root. Custom-element views forward them to the `rui-*` host. Coordinator
+views document exceptions; for example, `RuiAlert` forwards surface props to
+its inner `role="alert"` element.
+
+Both direct and structured ARIA/data forms are supported:
+
+```tsx
+<RuiButton id="save" aria-label="Save changes" data-state="ready">
+	Save
+</RuiButton>
+
+<RuiButton aria={{ label: 'Save changes' }} data={{ state: 'ready' }}>
+	Save
+</RuiButton>
+```
+
+When both forms set the same attribute, the direct kebab-case form wins.
+Direct `null` suppresses the structured value. Collection views are the `id`
+exception: tabs, tab panels, carousel slides, and cycle-toggle items use `id`
+as a semantic item key rather than a literal DOM ID.
+
+### Default labels for component authors
+
+Import `withDefaultAriaLabel` from `@ecopages/radiant-ui/aria` when a view needs
+an overridable accessible-name default, such as an icon-only control:
+
+```tsx
+import type { JsxElementProps } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@ecopages/radiant-ui/aria';
+
+type MenuButtonProps = JsxElementProps<HTMLButtonElement>;
+
+function MenuButton({ aria, ...props }: MenuButtonProps) {
+	return (
+		<button {...props} aria={withDefaultAriaLabel(aria, 'Open menu')} type="button">
+			<span aria-hidden="true">⋮</span>
+		</button>
+	);
+}
+```
+
+The helper fills only a missing structured `aria.label` and preserves the rest
+of the structured ARIA object. Keep direct `aria-label` in the forwarded props;
+JSX normalization gives it precedence. If `aria-labelledby` is also present,
+the browser uses it before `aria-label` when computing the accessible name.
+Use this helper only for accessible-name defaults. Managed ARIA such as
+`aria-expanded`, `aria-selected`, and `aria-controls` remains explicit component
+state or a locked invariant.
+
 ## For agents
 
 This site publishes [`skill.txt`](/skill.txt), [`SKILL.md`](/skill/SKILL.md), and [`llms.txt`](/llms.txt). Start with the skill pack, then use `llms.txt` as the generated docs index. Host authoring (`RadiantElement`, bindings, SSR) lives in the [Radiant skill](https://radiant.ecopages.app/skill/SKILL.md).
-

@@ -15,8 +15,6 @@ export {
 	type JsxCustomElementAttributes,
 	type JsxCustomIntrinsicElements,
 	type JsxElementProps,
-	type JsxHtmlProps,
-	type JsxHtmlPropsWithChildren,
 	type JsxFragment,
 	type JsxAriaAttributes,
 	type JsxDataAttributes,

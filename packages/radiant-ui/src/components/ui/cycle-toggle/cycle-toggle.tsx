@@ -1,29 +1,34 @@
-import type { JsxHtmlPropsWithChildren, JsxRenderable } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiCycleToggleProps } from './cycle-toggle.script';
+import type { RuiCycleToggle as RuiCycleToggleElement, RuiCycleToggleProps } from './cycle-toggle.script';
 import './cycle-toggle.script';
 
-export type RuiCycleToggleItemProps = {
+export type RuiCycleToggleItemProps = Omit<JsxElementProps<HTMLSpanElement>, 'id'> & {
 	id: string;
-	children: JsxRenderable;
-	class?: string;
 	disabled?: boolean;
 	/** Whether this item is selected in the initial document. */
 	selected?: boolean;
 };
 
-export type RuiCycleToggleButtonProps = JsxHtmlPropsWithChildren<
-	Pick<RuiCycleToggleProps, 'disabled' | 'label' | 'size' | 'variant'>
->;
+export type RuiCycleToggleButtonProps = JsxElementProps<HTMLButtonElement> &
+	Pick<RuiCycleToggleProps, 'disabled' | 'label' | 'size' | 'variant'>;
 
 /**
  * One cycle option. Only the active item is visible inside the button.
  *
  * @cssclass rui-cycle-toggle__item - Cycle option row (icon + label).
  */
-export function RuiCycleToggleItem({ id, children, class: className, disabled, selected }: RuiCycleToggleItemProps) {
+export function RuiCycleToggleItem({
+	id,
+	children,
+	class: className,
+	disabled,
+	selected,
+	...props
+}: RuiCycleToggleItemProps) {
 	return (
 		<span
+			{...props}
 			class={cx('rui-cycle-toggle__item', className)}
 			data-cycle-value={id}
 			hidden={selected === undefined ? undefined : !selected}
@@ -46,11 +51,20 @@ export function RuiCycleToggleButton({
 	variant = 'filled',
 	size = 'md',
 	disabled,
+	class: className,
+	...props
 }: RuiCycleToggleButtonProps) {
 	return (
 		<button
+			{...props}
 			type="button"
-			class={cx('rui-button', 'rui-cycle-toggle__button', `rui-button--${variant}`, `rui-button--${size}`)}
+			class={cx(
+				'rui-button',
+				'rui-cycle-toggle__button',
+				`rui-button--${variant}`,
+				`rui-button--${size}`,
+				className,
+			)}
 			disabled={disabled}
 			data-cycle-toggle-button
 		>
@@ -61,15 +75,13 @@ export function RuiCycleToggleButton({
 
 export function RuiCycleToggle({
 	children,
-	value,
 	variant,
 	size,
-	label,
 	disabled,
 	...props
-}: JsxHtmlPropsWithChildren<RuiCycleToggleProps & { slot?: string }>) {
+}: JsxCustomElementAttributes<RuiCycleToggleElement, RuiCycleToggleProps>) {
 	return (
-		<rui-cycle-toggle {...props} value={value} variant={variant} size={size} label={label} disabled={disabled}>
+		<rui-cycle-toggle {...props} variant={variant} size={size} disabled={disabled}>
 			<RuiCycleToggleButton variant={variant} size={size} disabled={disabled}>
 				{children}
 			</RuiCycleToggleButton>

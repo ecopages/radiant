@@ -1,44 +1,39 @@
-import type { JsxAriaAttributes, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost' | 'link';
 export type RuiButtonSize = 'none' | 'sm' | 'md' | 'lg';
 
-type RuiButtonCommonProps = JsxHtmlPropsWithChildren<{
+type RuiButtonChrome = {
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
 	/** Control size. Default: `md` (Default in docs). Use `none` for inline `link` chrome. */
 	size?: RuiButtonSize;
-	/** Accessible name when the button has no visible text. */
-	'aria-label'?: string;
-	/** Optional light-DOM slot when composing into a parent custom element. */
-	slot?: string;
-}>;
-
-export type RuiButtonControlProps = RuiButtonCommonProps & {
-	/** Native button type. Default: `button`. */
-	type?: 'button' | 'submit' | 'reset';
-	/** Disabled state. */
-	disabled?: boolean;
-	/** Controlled pressed state for toggle buttons (`aria-pressed`). */
-	pressed?: boolean;
-	/** Initial pressed state when `toggle` is used without a controlled `pressed` value. */
-	defaultPressed?: boolean;
-	/** Toggle `aria-pressed` on click when `pressed` is not controlled. */
-	toggle?: boolean;
-	href?: never;
-	'on:click'?: (event: Event) => void;
 };
 
-export type RuiButtonLinkProps = RuiButtonCommonProps & {
-	/** Destination for the button-styled link. */
-	href: string;
-	target?: '_self' | '_blank' | '_parent' | '_top';
-	rel?: string;
-	download?: boolean | string;
-	'aria-current'?: JsxAriaAttributes['aria-current'];
-	'on:click'?: (event: Event) => void;
-};
+export type RuiButtonControlProps = JsxElementProps<HTMLButtonElement> &
+	RuiButtonChrome & {
+		/** Native button type. Default: `button`. */
+		type?: 'button' | 'submit' | 'reset';
+		/** Disabled state. */
+		disabled?: boolean;
+		/** Controlled pressed state for toggle buttons (`aria-pressed`). */
+		pressed?: boolean;
+		/** Initial pressed state when `toggle` is used without a controlled `pressed` value. */
+		defaultPressed?: boolean;
+		/** Toggle `aria-pressed` on click when `pressed` is not controlled. */
+		toggle?: boolean;
+		href?: never;
+	};
+
+export type RuiButtonLinkProps = JsxElementProps<HTMLAnchorElement> &
+	RuiButtonChrome & {
+		/** Destination for the button-styled link. */
+		href: string;
+		target?: '_self' | '_blank' | '_parent' | '_top';
+		rel?: string;
+		download?: boolean | string;
+	};
 
 export type RuiButtonProps = RuiButtonControlProps | RuiButtonLinkProps;
 
@@ -56,6 +51,17 @@ function resolveAriaPressed(
 	}
 
 	return undefined;
+}
+
+function invokeClickListener(listener: unknown, event: Event) {
+	if (typeof listener === 'function') {
+		(listener as (event: Event) => void)(event);
+		return;
+	}
+
+	if (listener != null && typeof listener === 'object' && 'handleEvent' in listener) {
+		(listener as { handleEvent(event: Event): void }).handleEvent(event);
+	}
 }
 
 /**
@@ -87,20 +93,7 @@ function resolveAriaPressed(
  */
 export function RuiButton(props: RuiButtonProps) {
 	if (props.href !== undefined) {
-		const {
-			href,
-			target,
-			rel,
-			download,
-			'aria-label': ariaLabel,
-			'aria-current': ariaCurrent,
-			'on:click': onClick,
-			children,
-			class: className,
-			variant,
-			size,
-			...host
-		} = props;
+		const { href, target, rel, download, children, class: className, variant, size, ...host } = props;
 
 		return (
 			<a
@@ -110,9 +103,6 @@ export function RuiButton(props: RuiButtonProps) {
 				rel={rel}
 				download={download}
 				class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, className)}
-				aria-label={ariaLabel}
-				aria-current={ariaCurrent}
-				on:click={onClick}
 			>
 				{children}
 			</a>
@@ -124,7 +114,6 @@ export function RuiButton(props: RuiButtonProps) {
 		size,
 		class: className,
 		children,
-		'aria-label': ariaLabel,
 		type = 'button',
 		disabled,
 		pressed,
@@ -140,7 +129,7 @@ export function RuiButton(props: RuiButtonProps) {
 			button.setAttribute('aria-pressed', String(next));
 		}
 
-		onClick?.(event);
+		invokeClickListener(onClick, event);
 	};
 
 	return (
@@ -149,7 +138,6 @@ export function RuiButton(props: RuiButtonProps) {
 			type={type}
 			class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, className)}
 			disabled={disabled}
-			aria-label={ariaLabel}
 			aria-pressed={resolveAriaPressed(pressed, toggle, defaultPressed)}
 			data-toggle={toggle && pressed === undefined ? '' : undefined}
 			on:click={toggle || onClick ? handleClick : undefined}

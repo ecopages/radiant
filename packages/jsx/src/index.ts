@@ -29,8 +29,6 @@ export type {
 	JsxCustomElementAttributes,
 	JsxCustomIntrinsicElements,
 	JsxElementProps,
-	JsxHtmlProps,
-	JsxHtmlPropsWithChildren,
 	JsxEventHandler,
 	JsxEventListener,
 	JsxEventListenerObject,

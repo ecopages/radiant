@@ -1,7 +1,7 @@
 /**
  * Builds the radiant-ui library into `dist/`.
  *
- * Bundles every `src/components/ui/<name>/index.ts` (plus the root barrel)
+ * Bundles the public TypeScript entries and every `src/components/ui/<name>/index.ts`
  * as browser-targeted ESM with `@ecopages/*` external.
  *
  * Run with: pnpm run build:files
@@ -86,7 +86,12 @@ try {
 			'@': SRC,
 		},
 		bundle: true,
-		entryPoints: [path.join(SRC, 'index.ts'), path.join(SRC, 'cx.ts'), ...listComponentEntries()],
+		entryPoints: [
+			path.join(SRC, 'index.ts'),
+			path.join(SRC, 'aria.ts'),
+			path.join(SRC, 'cx.ts'),
+			...listComponentEntries(),
+		],
 		external: externalPackages,
 		format: 'esm',
 		jsx: 'automatic',

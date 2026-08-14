@@ -232,23 +232,6 @@ export interface JsxSharedIntrinsicAttributes {
 }
 
 /**
- * Standard HTML-level props available to any JSX element.
- *
- * @remarks
- * Pass component props as the type argument: `JsxHtmlProps<MyComponentProps>`.
- * Only the common host attrs are mixed in (`class`, `classes`, `aria`, `data`, `style`).
- * Use `JsxHtmlPropsWithChildren` when the host accepts children.
- */
-export type JsxHtmlProps<Props extends object = {}> = Props &
-	Pick<JsxSharedIntrinsicAttributes, 'class' | 'classes' | 'aria' | 'data' | 'style'>;
-
-/**
- * `JsxHtmlProps` plus optional `children`, analogous to React's `PropsWithChildren`.
- */
-export type JsxHtmlPropsWithChildren<Props extends object = {}> = JsxHtmlProps<Props> &
-	Pick<JsxSharedIntrinsicAttributes, 'children'>;
-
-/**
  * Shared attribute shape for intrinsic elements.
  */
 export type JsxIntrinsicAttributes<ElementType extends Element = Element> = JsxSharedIntrinsicAttributes &

@@ -150,11 +150,6 @@ export function maskInputSlotCount(tokens: MaskToken[], options: { requiredOnly?
 	return tokens.filter((token) => token.type === 'input' && (!options.requiredOnly || !token.optional)).length;
 }
 
-/** @deprecated Use `maskInputSlotCount`. */
-export function maskDigitSlotCount(tokens: MaskToken[]): number {
-	return maskInputSlotCount(tokens, { requiredOnly: true });
-}
-
 /** Placeholder using IMask's default `_` for input slots. */
 export function maskToPlaceholder(pattern: string, definitions?: MaskDefinitions): string {
 	const tokens = parseMaskPattern(pattern, definitions);
@@ -196,11 +191,6 @@ export function extractMaskInput(masked: string, tokens: MaskToken[]): string {
 	}
 
 	return input;
-}
-
-/** @deprecated Use `extractMaskInput`. */
-export function extractMaskDigits(masked: string, tokens: MaskToken[]): string {
-	return extractMaskInput(masked, tokens).replace(/\D/g, '');
 }
 
 /**

@@ -1,5 +1,5 @@
-import type { JsxHtmlProps } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 
-export type RuiIconProps = JsxHtmlProps<{
+export type RuiIconProps = JsxElementProps<SVGSVGElement> & {
 	size?: 'sm' | 'md';
-}>;
+};

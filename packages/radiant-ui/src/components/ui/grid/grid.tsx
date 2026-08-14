@@ -1,5 +1,5 @@
-import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
-import type { RuiGridProps } from './grid.script';
+import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
+import type { RuiGrid as RuiGridElement, RuiGridProps } from './grid.script';
 import './grid.script';
 
 /**
@@ -11,7 +11,10 @@ import './grid.script';
  * @remarks The host (`<rui-grid>`) owns roving-tabindex keyboard navigation;
  * row and cell roles/classes are authored here in the view.
  */
-export function RuiGrid({ rows, ...props }: JsxHtmlProps<RuiGridProps & { slot?: string; rows: JsxRenderable[][] }>) {
+export function RuiGrid({
+	rows,
+	...props
+}: JsxCustomElementAttributes<RuiGridElement, RuiGridProps & { rows: JsxRenderable[][] }>) {
 	return (
 		<rui-grid {...props}>
 			{rows.map((row) => (

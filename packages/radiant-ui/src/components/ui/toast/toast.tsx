@@ -1,77 +1,26 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
-import type { RuiToastProps } from './toast.script';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import type { RuiToast as RuiToastElement, RuiToastProps } from './toast.script';
 import './toast.script';
 
-import type { RuiToasterProps } from './toaster.script';
+import type { RuiToaster as RuiToasterElement, RuiToasterProps } from './toaster.script';
 import './toaster.script';
 
-export type RuiToastViewProps = JsxHtmlProps<RuiToastProps & { slot?: string }>;
+export type RuiToastViewProps = JsxCustomElementAttributes<RuiToastElement, RuiToastProps>;
 
 /**
  * JSX helper around `<rui-toast>`. Normally rendered by `<rui-toaster>`; author
  * directly only for static/embedded toast chrome.
  */
-export function RuiToast({
-	toastId,
-	title,
-	description,
-	variant,
-	duration,
-	dismissible,
-	closeButton,
-	actionLabel,
-	position,
-	markedDelete,
-	...props
-}: RuiToastViewProps) {
-	return (
-		<rui-toast
-			{...props}
-			prop:toastId={toastId != null ? String(toastId) : undefined}
-			prop:title={title}
-			prop:description={description}
-			prop:variant={variant}
-			prop:duration={duration}
-			prop:dismissible={dismissible}
-			prop:closeButton={closeButton}
-			prop:actionLabel={actionLabel}
-			prop:position={position}
-			prop:markedDelete={markedDelete}
-		/>
-	);
+export function RuiToast({ toastId, ...props }: RuiToastViewProps) {
+	return <rui-toast {...props} toastId={toastId != null ? String(toastId) : undefined} />;
 }
 
-export type RuiToasterViewProps = JsxHtmlPropsWithChildren<RuiToasterProps & { slot?: string }>;
+export type RuiToasterViewProps = JsxCustomElementAttributes<RuiToasterElement, RuiToasterProps>;
 
 /**
  * JSX helper around `<rui-toaster>`. Mount once at the app root and drive with
  * `toast()`. See `RuiToasterElement` for the full contract.
  */
-export function RuiToaster({
-	children,
-	position,
-	duration,
-	visibleToasts,
-	closeButton,
-	expand,
-	gap,
-	offset,
-	container,
-	...props
-}: RuiToasterViewProps) {
-	return (
-		<rui-toaster
-			{...props}
-			prop:position={position}
-			prop:duration={duration}
-			prop:visibleToasts={visibleToasts}
-			prop:closeButton={closeButton}
-			prop:expand={expand}
-			prop:gap={gap}
-			prop:offset={offset}
-			prop:container={container}
-		>
-			{children}
-		</rui-toaster>
-	);
+export function RuiToaster({ children, ...props }: RuiToasterViewProps) {
+	return <rui-toaster {...props}>{children}</rui-toaster>;
 }

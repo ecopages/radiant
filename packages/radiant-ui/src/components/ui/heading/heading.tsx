@@ -1,21 +1,21 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { Intrinsic, type IntrinsicTag } from '@/lib/intrinsic';
-import { RuiHeadline, type RuiHeadlineAs } from '../headline/headline';
+import { RuiHeadline, type RuiHeadlineAs, type RuiHeadlineProps } from '../headline/headline';
 
 export type RuiHeadingAlign = 'start' | 'center';
 export type RuiHeadingSize = 'sm' | 'md' | 'lg' | 'xl';
 export type RuiHeadingRootAs = Extract<IntrinsicTag, 'div' | 'header' | 'section' | 'article' | 'aside'>;
 export type RuiHeadingTitleAs = RuiHeadlineAs;
 
-export type RuiHeadingProps = JsxHtmlPropsWithChildren<{
+export type RuiHeadingProps<Tag extends RuiHeadingRootAs = 'div'> = JsxElementProps<HTMLElementTagNameMap[Tag]> & {
 	/** Root element. Default: `div`. */
-	as?: RuiHeadingRootAs;
+	as?: Tag;
 	/** Text and flex alignment. Default: `start`. */
 	align?: RuiHeadingAlign;
 	/** Type scale and vertical rhythm between slots. Default: `md`. */
 	size?: RuiHeadingSize;
-}>;
+};
 
 function headingRootClassName(align: RuiHeadingAlign, size: RuiHeadingSize, className?: string) {
 	return cx('rui-heading', `rui-heading--align-${align}`, `rui-heading--size-${size}`, className);
@@ -32,22 +32,24 @@ function headingRootClassName(align: RuiHeadingAlign, size: RuiHeadingSize, clas
  * @cssclass rui-heading--size-lg - Large type scale.
  * @cssclass rui-heading--size-xl - XLarge type scale.
  */
-export function RuiHeading({
-	children,
-	as = 'div',
-	align = 'start',
-	size = 'md',
-	class: className,
-	...props
-}: RuiHeadingProps) {
+export function RuiHeading<Tag extends RuiHeadingRootAs = 'div'>(props: RuiHeadingProps<Tag>) {
+	const {
+		children,
+		as = 'div',
+		align = 'start',
+		size = 'md',
+		class: className,
+		...host
+	} = props as RuiHeadingProps<RuiHeadingRootAs>;
+
 	return (
-		<Intrinsic as={as} {...props} class={headingRootClassName(align, size, className)}>
+		<Intrinsic as={as} {...host} class={headingRootClassName(align, size, className)}>
 			{children}
 		</Intrinsic>
 	);
 }
 
-export type RuiHeadingEyebrowProps = JsxHtmlPropsWithChildren;
+export type RuiHeadingEyebrowProps = JsxElementProps<HTMLParagraphElement>;
 
 /**
  * Kicker line above the title.
@@ -62,26 +64,24 @@ export function RuiHeadingEyebrow({ children, class: className, ...props }: RuiH
 	);
 }
 
-export type RuiHeadingTitleProps = JsxHtmlPropsWithChildren<{
-	/** Heading level. Default: `h2`. */
-	as?: RuiHeadingTitleAs;
-	id?: string;
-}>;
+export type RuiHeadingTitleProps<Tag extends RuiHeadlineAs = 'h2'> = Omit<RuiHeadlineProps<Tag>, 'size'>;
 
 /**
  * Main title within a heading block — `RuiHeadline` sized by the parent `RuiHeading`.
  *
  * @cssclass rui-heading__title - Main title in a heading block.
  */
-export function RuiHeadingTitle({ children, as = 'h2', class: className, ...props }: RuiHeadingTitleProps) {
+export function RuiHeadingTitle<Tag extends RuiHeadlineAs = 'h2'>(props: RuiHeadingTitleProps<Tag>) {
+	const { children, as = 'h2', class: className, ...host } = props as RuiHeadingTitleProps<RuiHeadlineAs>;
+
 	return (
-		<RuiHeadline as={as} size={false} class={cx('rui-heading__title', className)} {...props}>
+		<RuiHeadline as={as} size={false} class={cx('rui-heading__title', className)} {...host}>
 			{children}
 		</RuiHeadline>
 	);
 }
 
-export type RuiHeadingDescriptionProps = JsxHtmlPropsWithChildren;
+export type RuiHeadingDescriptionProps = JsxElementProps<HTMLParagraphElement>;
 
 /**
  * Supporting copy below the title.

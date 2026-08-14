@@ -39,8 +39,6 @@ export type {
 	JsxCustomElementAttributes,
 	JsxCustomIntrinsicElements,
 	JsxElementProps,
-	JsxHtmlProps,
-	JsxHtmlPropsWithChildren,
 	JsxEventHandler,
 	JsxEventListener,
 	JsxEventListenerObject,
@@ -76,10 +74,9 @@ type JsxDomIntrinsicAttributes<ElementType extends Element> = JsxIntrinsicAttrib
 type JsxDomIntrinsicElements = {
 	[ElementName in keyof HTMLElementTagNameMap]: JsxDomIntrinsicAttributes<HTMLElementTagNameMap[ElementName]>;
 } & {
-	[ElementName in Exclude<
-		keyof SVGElementTagNameMap,
-		keyof HTMLElementTagNameMap
-	>]: JsxDomIntrinsicAttributes<SVGElementTagNameMap[ElementName]>;
+	[ElementName in Exclude<keyof SVGElementTagNameMap, keyof HTMLElementTagNameMap>]: JsxDomIntrinsicAttributes<
+		SVGElementTagNameMap[ElementName]
+	>;
 };
 
 /** Internal fragment marker type used by the automatic JSX runtime. */

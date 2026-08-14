@@ -1,11 +1,10 @@
-import type { JsxHtmlProps, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
-import type { RuiNumberFieldProps } from './number-field.script';
+import type { RuiNumberField as RuiNumberFieldElement, RuiNumberFieldProps } from './number-field.script';
 import './number-field.script';
 
-export type RuiNumberFieldGroupProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
-}>;
+export type RuiNumberFieldGroupProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Input + stepper row. Place `RuiNumberFieldInput` and stepper buttons inside.
@@ -25,12 +24,11 @@ export function RuiNumberFieldGroup({
 	);
 }
 
-export type RuiNumberFieldInputProps = JsxHtmlProps<{
-	slot?: string;
+export type RuiNumberFieldInputProps = JsxElementProps<HTMLInputElement> & {
 	placeholder?: string;
 	disabled?: boolean;
 	readOnly?: boolean;
-}>;
+};
 
 /**
  * Text input in the `input` slot. Formatting is handled by `<rui-number-field>`.
@@ -59,9 +57,7 @@ export function RuiNumberFieldInput({
 	);
 }
 
-export type RuiNumberFieldSteppersProps = JsxHtmlPropsWithChildren<{
-	slot?: string;
-}>;
+export type RuiNumberFieldSteppersProps = JsxElementProps<HTMLDivElement>;
 
 /**
  * Groups increment and decrement steppers on the trailing edge of the field.
@@ -76,11 +72,10 @@ export function RuiNumberFieldSteppers({ children, slot, class: className, ...pr
 	);
 }
 
-export type RuiNumberFieldStepperButtonProps = JsxHtmlPropsWithChildren<{
+export type RuiNumberFieldStepperButtonProps = JsxElementProps<HTMLButtonElement> & {
 	slot?: 'increment' | 'decrement';
-	'aria-label'?: string;
 	disabled?: boolean;
-}>;
+};
 
 /**
  * Increment stepper in the `increment` slot.
@@ -91,18 +86,18 @@ export function RuiNumberFieldIncrementButton({
 	children,
 	slot = 'increment',
 	class: className,
-	'aria-label': ariaLabel = 'Increment',
+	aria,
 	disabled,
 	...props
 }: RuiNumberFieldStepperButtonProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Increment')}
 			type="button"
 			slot={slot}
 			data-number-field-action="increment"
 			class={cx('rui-number-field__stepper', className)}
-			aria-label={ariaLabel}
 			disabled={disabled}
 			tabIndex={-1}
 		>
@@ -120,18 +115,18 @@ export function RuiNumberFieldDecrementButton({
 	children,
 	slot = 'decrement',
 	class: className,
-	'aria-label': ariaLabel = 'Decrement',
+	aria,
 	disabled,
 	...props
 }: RuiNumberFieldStepperButtonProps) {
 	return (
 		<button
 			{...props}
+			aria={withDefaultAriaLabel(aria, 'Decrement')}
 			type="button"
 			slot={slot}
 			data-number-field-action="decrement"
 			class={cx('rui-number-field__stepper', className)}
-			aria-label={ariaLabel}
 			disabled={disabled}
 			tabIndex={-1}
 		>
@@ -161,6 +156,6 @@ export function RuiNumberFieldDecrementButton({
 export function RuiNumberField({
 	children,
 	...props
-}: JsxHtmlPropsWithChildren<RuiNumberFieldProps & { slot?: string }>) {
+}: JsxCustomElementAttributes<RuiNumberFieldElement, RuiNumberFieldProps>) {
 	return <rui-number-field {...props}>{children}</rui-number-field>;
 }

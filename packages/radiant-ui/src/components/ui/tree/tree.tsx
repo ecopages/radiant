@@ -1,5 +1,5 @@
-import type { JsxHtmlProps, JsxRenderable } from '@ecopages/jsx';
-import type { RuiTreeProps } from './tree.script';
+import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
+import type { RuiTree as RuiTreeElement, RuiTreeProps } from './tree.script';
 import './tree.script';
 
 export type RuiTreeNode = {
@@ -56,7 +56,10 @@ const TreeNodes = ({ nodes }: { nodes: RuiTreeNode[] }) => (
  * @remarks The host (`<rui-tree>`) owns selection, expansion, and roving-tabindex
  * navigation over the authored `role="treeitem"` markup.
  */
-export function RuiTree({ nodes, ...props }: JsxHtmlProps<RuiTreeProps & { slot?: string; nodes: RuiTreeNode[] }>) {
+export function RuiTree({
+	nodes,
+	...props
+}: JsxCustomElementAttributes<RuiTreeElement, RuiTreeProps & { nodes: RuiTreeNode[] }>) {
 	return (
 		<rui-tree {...props}>
 			<TreeNodes nodes={nodes} />
