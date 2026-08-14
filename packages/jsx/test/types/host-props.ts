@@ -25,6 +25,16 @@ type TypedPropHiddenRejectsString = Assert<IsNotAssignable<{ 'prop:hidden': 'nop
 type CustomElementPublicPropsAccepted = Assert<IsAssignable<{ label: 'Name'; id: 'host' }, HostAttributes>>;
 type CollectionIdIsRequiredString = Assert<IsAssignable<{ id: 'account' }, Pick<CollectionItem, 'id'>>>;
 type CollectionIdRejectsMissing = Assert<IsNotAssignable<{}, Pick<CollectionItem, 'id'>>>;
+type AriaSelectedLiteralsAccepted = Assert<
+	IsAssignable<{ 'aria-selected': 'true' | 'false' }, Pick<ButtonHost, 'aria-selected'>>
+>;
+type AriaSelectedStringRejected = Assert<
+	IsNotAssignable<{ 'aria-selected': string }, Pick<ButtonHost, 'aria-selected'>>
+>;
+type AriaCurrentPageAccepted = Assert<IsAssignable<{ 'aria-current': 'page' }, Pick<ButtonHost, 'aria-current'>>>;
+type AriaCurrentStringRejected = Assert<
+	IsNotAssignable<{ 'aria-current': string }, Pick<ButtonHost, 'aria-current'>>
+>;
 
 declare const _directAriaAndDataAccepted: DirectAriaAndDataAccepted;
 declare const _eventsAndBindingsAccepted: EventsAndBindingsAccepted;
@@ -32,6 +42,10 @@ declare const _typedPropHiddenRejectsString: TypedPropHiddenRejectsString;
 declare const _customElementPublicPropsAccepted: CustomElementPublicPropsAccepted;
 declare const _collectionIdIsRequiredString: CollectionIdIsRequiredString;
 declare const _collectionIdRejectsMissing: CollectionIdRejectsMissing;
+declare const _ariaSelectedLiteralsAccepted: AriaSelectedLiteralsAccepted;
+declare const _ariaSelectedStringRejected: AriaSelectedStringRejected;
+declare const _ariaCurrentPageAccepted: AriaCurrentPageAccepted;
+declare const _ariaCurrentStringRejected: AriaCurrentStringRejected;
 
 void [
 	_directAriaAndDataAccepted,
@@ -40,4 +54,8 @@ void [
 	_customElementPublicPropsAccepted,
 	_collectionIdIsRequiredString,
 	_collectionIdRejectsMissing,
+	_ariaSelectedLiteralsAccepted,
+	_ariaSelectedStringRejected,
+	_ariaCurrentPageAccepted,
+	_ariaCurrentStringRejected,
 ];

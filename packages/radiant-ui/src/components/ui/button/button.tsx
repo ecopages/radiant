@@ -1,4 +1,4 @@
-import type { JsxHtmlPropsWithChildren } from '@ecopages/jsx';
+import type { JsxAriaAttributes, JsxHtmlPropsWithChildren } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 
 export type RuiButtonVariant = 'filled' | 'outline' | 'destructive' | 'ghost' | 'link';
@@ -36,7 +36,7 @@ export type RuiButtonLinkProps = RuiButtonCommonProps & {
 	target?: '_self' | '_blank' | '_parent' | '_top';
 	rel?: string;
 	download?: boolean | string;
-	'aria-current'?: string;
+	'aria-current'?: JsxAriaAttributes['aria-current'];
 	'on:click'?: (event: Event) => void;
 };
 
