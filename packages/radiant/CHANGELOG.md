@@ -1,5 +1,13 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.2
+
+### Patch Changes
+
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-rc.2
+    - @ecopages/signals@0.3.0-rc.2
+
 ## 0.3.0-rc.1
 
 ### Patch Changes
