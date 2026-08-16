@@ -6,7 +6,7 @@ rui-alert {
 
 @layer components {
 	.rui-alert {
-		@apply relative rounded-container text-sm shadow-sm;
+		@apply relative block rounded-container text-sm shadow-sm;
 	}
 
 	.rui-alert--inline {
