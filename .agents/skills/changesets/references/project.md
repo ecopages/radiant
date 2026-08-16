@@ -1,6 +1,6 @@
 # Radiant changeset and release conventions
 
-Repo-specific companion to the global `changesets` skill. Portable mechanics live in that skill and its `references/releasing.md`; this file covers only what is particular to this repo.
+Repo-specific companion to [SKILL.md](../SKILL.md). Portable mechanics are in [releasing.md](releasing.md); this file covers only what is particular to this repo.
 
 Source of truth: `.changeset/config.json`. Prerelease channel: `.changeset/pre.json` (`mode`, `tag`). Versioned prerelease changesets: `.changeset/pre/`.
 
@@ -32,18 +32,11 @@ pnpm run prerelease   # typecheck + build:all + test:all
 GITHUB_TOKEN="$(gh auth token)" pnpm changeset version
 ```
 
-## CI uses changesets/action@v2
+## CI
 
-`.github/workflows/release.yml` runs on `main`: install, `pnpm run build:all`, then `changesets/action@v2` with:
+`.github/workflows/release.yml` runs on `main` and `release/v0.3.0`: install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm changeset version` and `pnpm changeset publish`. The token is `github-token: ${{ secrets.CI_GITHUB_TOKEN }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
 
-```sh
-pnpm changeset version
-npm publish --provenance --access public --workspace packages/radiant
-```
-
-The token is passed via `github-token: ${{ secrets.CI_GITHUB_TOKEN }}`, not `GITHUB_TOKEN` env.
-
-CI publishes `@ecopages/radiant` and nothing else. `jsx`, `signals`, `radiant-ui`, and `vite-plugin-radiant` are versioned by the action but never published, and need a manual publish until the workflow moves to `pnpm changeset publish`.
+`baseBranch` is `release/v0.3.0` — that is the active prerelease line. `changeset add` and `status` compare against it.
 
 ## `latest` is pinned
 
@@ -51,7 +44,7 @@ CI publishes `@ecopages/radiant` and nothing else. `jsx`, `signals`, `radiant-ui
 
 ## Publish layout
 
-`@ecopages/jsx`, `@ecopages/radiant`, and `@ecopages/signals` set `publishConfig.directory: "dist"`, so a manual publish runs from that built directory. `@ecopages/radiant-ui` and `@ecopages/vite-plugin-radiant` publish from the package root.
+`@ecopages/jsx`, `@ecopages/radiant`, and `@ecopages/signals` set `publishConfig.directory: "dist"`. `@ecopages/radiant-ui` and `@ecopages/vite-plugin-radiant` publish from the package root.
 
 ## Verify a release
 

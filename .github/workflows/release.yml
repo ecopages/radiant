@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - main
+            - release/v0.3.0
     workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
@@ -20,6 +21,8 @@ jobs:
         steps:
             - name: Checkout Repo
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Setup pnpm
               uses: pnpm/action-setup@v4
@@ -43,4 +46,6 @@ jobs:
               with:
                   github-token: ${{ secrets.CI_GITHUB_TOKEN }}
                   version-script: pnpm changeset version
-                  publish-script: npm publish --provenance --access public --workspace packages/radiant
+                  publish-script: pnpm changeset publish
+              env:
+                  NPM_CONFIG_PROVENANCE: true
