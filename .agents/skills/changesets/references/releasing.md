@@ -77,12 +77,12 @@ This publish moves the `latest` dist-tag, which is what an untagged `npm install
 
 ## Dist tags
 
-| Tag | Install | Meaning |
-| --- | --- | --- |
-| `latest` | `npm install <pkg>` | Stable default for untagged installs |
-| `alpha` | `npm install <pkg>@alpha` | Early public prerelease |
-| `beta` | `npm install <pkg>@beta` | Feature-complete prerelease |
-| `rc` | `npm install <pkg>@rc` | Release candidate |
+| Tag      | Install                   | Meaning                              |
+| -------- | ------------------------- | ------------------------------------ |
+| `latest` | `npm install <pkg>`       | Stable default for untagged installs |
+| `alpha`  | `npm install <pkg>@alpha` | Early public prerelease              |
+| `beta`   | `npm install <pkg>@beta`  | Feature-complete prerelease          |
+| `rc`     | `npm install <pkg>@rc`    | Release candidate                    |
 
 ## Peer dependency bumps
 

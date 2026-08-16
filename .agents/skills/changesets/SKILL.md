@@ -1,10 +1,10 @@
 ---
 name: changesets
 description: >-
-  Create changesets, choose bump types, and write user-facing changelog entries
-  in repos managed by changesets. Use when a change affects a published package,
-  when adding a changeset, or when writing changelog copy. For versioning,
-  prerelease channels, dist-tags, or publishing, read references/releasing.md.
+    Create changesets, choose bump types, and write user-facing changelog entries
+    in repos managed by changesets. Use when a change affects a published package,
+    when adding a changeset, or when writing changelog copy. For versioning,
+    prerelease channels, dist-tags, or publishing, read references/releasing.md.
 ---
 
 # Changesets
@@ -70,11 +70,11 @@ Per-package headings earn their place only when more than one package needs its 
 
 While a package is pre-1.0, including `alpha`, `beta`, and `rc` prereleases:
 
-| Bump | Use for |
-| --- | --- |
-| `patch` | Fixes and small safe improvements |
+| Bump    | Use for                                                |
+| ------- | ------------------------------------------------------ |
+| `patch` | Fixes and small safe improvements                      |
 | `minor` | New capabilities, and breaking changes while still 0.x |
-| `major` | Avoid until 1.0 planning |
+| `major` | Avoid until 1.0 planning                               |
 
 After a stable 1.0, use normal semver and reserve `major` for breaking changes.
 
