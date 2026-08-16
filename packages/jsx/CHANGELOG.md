@@ -1,5 +1,16 @@
 # @ecopages/jsx
 
+## 0.3.0-rc.1
+
+### Minor Changes
+
+- [#165](https://github.com/ecopages/radiant/pull/165) [`9d74aac`](https://github.com/ecopages/radiant/commit/9d74aacc9b9325840a6548ae7c2d7b36e605ae78) Thanks [@andeeplus](https://github.com/andeeplus)! - Type direct `aria-*` and `data-*` host channels on custom elements, and keep ARIA attribute tokens from widening to plain `string` in host prop types.
+
+### Patch Changes
+
+- Updated dependencies []:
+    - @ecopages/signals@0.3.0-rc.1
+
 ## 0.3.0-rc.0
 
 ### Breaking Changes
