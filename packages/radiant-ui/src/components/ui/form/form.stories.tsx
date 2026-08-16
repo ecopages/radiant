@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+import { consumeContext, onContextUpdate } from '@ecopages/radiant/context';
+import type { ContextProvider } from '@ecopages/radiant/context';
+import { customElement } from '@ecopages/radiant';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
+import { RuiAlertDescription, RuiAlertTitle } from '../alert';
+import { RuiAlert as RuiAlertElement, type RuiAlertProps } from '../alert/alert.script';
 import { RuiButton } from '../button/button';
 import { RuiCheckbox } from '../checkbox';
 import { RuiCombobox } from '../combobox';
@@ -28,13 +34,41 @@ import { RuiTagGroup, RuiTagList } from '../tag-group';
 import { RuiTextarea } from '../textarea';
 import { findFieldControl, findFieldError, isNativeTextControl } from './control-protocol';
 import { RuiForm as RuiFormElement } from './form.script';
+import { formContext, type FormContextValue } from './form-context';
 import '../field/field.script';
 import './form.script';
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'rui-form-validation-alert': JsxCustomElementAttributes<RuiFormValidationAlert, RuiAlertProps>;
+	}
+}
+
+/** Story-only alert that demonstrates consuming a parent form's aggregate validation errors. */
+@customElement('rui-form-validation-alert')
+class RuiFormValidationAlert extends RuiAlertElement {
+	@consumeContext(formContext)
+	private formContextProvider?: ContextProvider<typeof formContext>;
+
+	override connectedCallback(): void {
+		super.connectedCallback();
+		this.syncVisibility(this.formContextProvider?.getContext());
+	}
+
+	@onContextUpdate({ context: formContext, requestUpdate: false })
+	onFormContextChanged(context: FormContextValue): void {
+		this.syncVisibility(context);
+	}
+
+	private syncVisibility(context: FormContextValue | undefined): void {
+		this.hidden = Object.keys(context?.errors ?? {}).length === 0;
+	}
+}
 
 const meta = {
 	title: 'Components/Form',
 	component: RuiForm,
-	parameters: { radiant: { element: RuiFormElement, cssImports: ['./form.css'] } },
+	parameters: { radiant: { element: RuiFormElement, cssImports: ['../../../styles/styles.css'] } },
 } satisfies Meta<typeof RuiForm>;
 
 export default meta;
@@ -152,6 +186,50 @@ export const Validation: Story = {
 			await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
 			await waitFor(() => {
 				expect(getFieldErrorMessage(canvasElement, 'bio')).toBeNull();
+			});
+		});
+	},
+};
+
+export const FormErrorSummary: Story = {
+	render: () => (
+		<RuiForm defaultValues={{ email: '', bio: '' }} mode="onSubmit" reValidateMode="onChange">
+			<rui-form-validation-alert variant="error" layout="banner" hidden>
+				<div class="rui-alert rui-alert--error rui-alert--banner" role="alert">
+					<RuiAlertTitle>There are issues with this form</RuiAlertTitle>
+					<RuiAlertDescription>
+						The form cannot be submitted. Review the highlighted fields before trying again.
+					</RuiAlertDescription>
+				</div>
+			</rui-form-validation-alert>
+
+			<RuiField name="email" rules={{ required: 'Email is required' }}>
+				<RuiLabel>Email</RuiLabel>
+				<RuiInput type="email" placeholder="you@example.com" />
+				<RuiFieldError />
+			</RuiField>
+
+			<RuiField name="bio" rules={{ minLength: { value: 10, message: 'Enter at least 10 characters' } }}>
+				<RuiLabel>Bio</RuiLabel>
+				<RuiTextarea rows={3} placeholder="Tell us about yourself" />
+				<RuiFieldError />
+			</RuiField>
+
+			<RuiButton type="submit">Save</RuiButton>
+		</RuiForm>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+		await step('invalid submission reveals the form error summary', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Save' }));
+			await expect(canvas.findByText('There are issues with this form')).resolves.toBeVisible();
+		});
+
+		await step('resolving every error hides the summary', async () => {
+			setNativeInputValue(getTextControl(canvasElement, 0), 'hello@example.com');
+			setNativeInputValue(getTextControl(canvasElement, 1), 'A complete biography');
+			await waitFor(() => {
+				expect(canvas.getByText('There are issues with this form')).not.toBeVisible();
 			});
 		});
 	},

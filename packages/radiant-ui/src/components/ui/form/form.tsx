@@ -8,15 +8,21 @@ export function RuiForm({
 	defaultValuesData,
 	resolver,
 	reValidateMode,
+	onSubmit,
+	action,
+	method,
 	...props
 }: JsxCustomElementAttributes<RuiFormElement, RuiFormProps>) {
 	return (
 		<rui-form
 			{...props}
+			action={action}
+			method={method}
 			reValidateMode={reValidateMode}
 			attr:revalidate-mode={reValidateMode}
 			prop:defaultValues={defaultValues}
 			prop:resolver={resolver}
+			prop:onSubmit={onSubmit}
 			data={{
 				defaultValues:
 					defaultValuesData ?? (defaultValues !== undefined ? JSON.stringify(defaultValues) : undefined),

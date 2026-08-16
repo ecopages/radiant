@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
 import { RuiButton } from '../button/button';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
@@ -37,6 +37,71 @@ describe('RuiField view', () => {
 });
 
 describe('rui-field projected content discovery', () => {
+	it('calls RuiForm onSubmit with validated values', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		const submitted: Array<Record<string, unknown>> = [];
+		root.render(
+			<RuiForm
+				defaultValues={{ email: 'hello@example.com' }}
+				onSubmit={(values) => {
+					submitted.push(values);
+				}}
+			>
+				<RuiField name="email">
+					<RuiLabel>Email</RuiLabel>
+					<RuiInput type="email" />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const save = host.querySelector('button') as HTMLButtonElement;
+		save.click();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(submitted).toEqual([{ email: 'hello@example.com' }]);
+		host.remove();
+	});
+
+	it('submits the native form after validation when action or method is provided', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ email: 'hello@example.com' }} action="/accounts" method="post">
+				<RuiField name="email">
+					<RuiLabel>Email</RuiLabel>
+					<RuiInput type="email" />
+				</RuiField>
+				<RuiButton type="submit">Save</RuiButton>
+			</RuiForm>,
+		);
+
+		await customElements.whenDefined('rui-form');
+		await flushRender();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const form = host.querySelector('rui-form') as RuiFormElement;
+		const nativeForm = form.getRef<HTMLFormElement>('form')!;
+		const submit = vi.fn();
+		nativeForm.submit = submit;
+
+		const save = host.querySelector('button') as HTMLButtonElement;
+		save.click();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(nativeForm.action).toContain('/accounts');
+		expect(nativeForm.method).toBe('post');
+		expect(submit).toHaveBeenCalledOnce();
+		host.remove();
+	});
+
 	it('finds control and error nodes after Radiant slot projection', async () => {
 		const form = document.createElement('rui-form') as RuiFormElement;
 		const field = document.createElement('rui-field') as RuiFieldElement;
@@ -115,6 +180,7 @@ describe('rui-field projected content discovery', () => {
 		const ctx = (form as unknown as { formProvider: { getContext(): FormContextValue } }).formProvider.getContext();
 		expect(ctx.fields.email?.error).toBe('Email is required');
 		expect(ctx.fields.email?.invalid).toBe(true);
+		expect(ctx.errors.email?.message).toBe('Email is required');
 
 		const control = findFieldControl(field);
 		expect(control?.getAttribute('aria-invalid')).toBe('true');
