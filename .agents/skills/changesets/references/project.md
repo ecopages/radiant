@@ -6,13 +6,13 @@ Source of truth: `.changeset/config.json`. Prerelease channel: `.changeset/pre.j
 
 ## Package tiers
 
-| Tier | Packages | Rule |
-| --- | --- | --- |
-| Platform (`fixed`) | `@ecopages/jsx`, `@ecopages/signals`, `@ecopages/radiant` | List only those with a user-visible change. `fixed` bumps all three to the same version regardless. |
-| Design system | `@ecopages/radiant-ui` | List when components, tokens, themes, or public exports change. Versions independently — never add it to `fixed`. |
-| Vite integration | `@ecopages/vite-plugin-radiant` | List for its own public API, Vite, or Nitro contract changes. Not in `fixed`. |
-| Ignored tooling | `@ecopages/storybook-radiant-vite` | Never list. Private and in `ignore`. |
-| Private | `apps/*`, `playground/*` | Never list, never publish. |
+| Tier               | Packages                                                  | Rule                                                                                                              |
+| ------------------ | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Platform (`fixed`) | `@ecopages/jsx`, `@ecopages/signals`, `@ecopages/radiant` | List only those with a user-visible change. `fixed` bumps all three to the same version regardless.               |
+| Design system      | `@ecopages/radiant-ui`                                    | List when components, tokens, themes, or public exports change. Versions independently — never add it to `fixed`. |
+| Vite integration   | `@ecopages/vite-plugin-radiant`                           | List for its own public API, Vite, or Nitro contract changes. Not in `fixed`.                                     |
+| Ignored tooling    | `@ecopages/storybook-radiant-vite`                        | Never list. Private and in `ignore`.                                                                              |
+| Private            | `apps/*`, `playground/*`                                  | Never list, never publish.                                                                                        |
 
 Do not invent a `packages/core/` layout to co-version the platform trio — `fixed` already does that.
 
