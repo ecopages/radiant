@@ -46,7 +46,7 @@ jobs:
               id: changesets
               uses: changesets/action@v2
               with:
-                  github-token: ${{ secrets.CI_GITHUB_TOKEN }}
+                  github-token: ${{ github.token }}
                   version-script: pnpm changeset version
                   publish-script: pnpm changeset publish
               env:

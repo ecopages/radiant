@@ -9,6 +9,9 @@ concurrency:
     group: nightly-ssr-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
+permissions:
+    contents: read
+
 jobs:
     radiant-ui-ssr-full:
         name: radiant-ui SSR full matrix
