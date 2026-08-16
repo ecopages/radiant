@@ -1,25 +1,25 @@
 packages:
-    - 'apps/*'
-    - 'packages/*'
-    - 'playground/*'
+  - 'apps/*'
+  - 'packages/*'
+  - 'playground/*'
 
 catalog:
-    typescript: ~7.0.2
+  typescript: ~7.0.2
 
 allowBuilds:
-    esbuild: true
-    '@swc/core': true
+  esbuild: true
+  '@swc/core': true
 
 minimumReleaseAgeExclude:
-    - '@ecopages/jsx@0.3.0-rc.0'
-    - '@ecopages/radiant@0.3.0-rc.0'
-    - '@ecopages/signals@0.3.0-rc.0'
-    - '@ecopages/browser-router@0.2.0-rc.0'
-    - '@ecopages/content-processor@0.2.0-rc.0'
-    - '@ecopages/core@0.2.0-rc.0'
-    - '@ecopages/dev-toolbar@0.2.0-rc.0'
-    - '@ecopages/ecopages-jsx@0.2.0-rc.0'
-    - '@ecopages/file-system@0.2.0-rc.0'
-    - '@ecopages/mdx@0.2.0-rc.0'
-    - '@ecopages/postcss-processor@0.2.0-rc.0'
-    - ecopages@0.2.0-rc.0
+  - '@ecopages/jsx@0.3.0-rc.0 || 0.3.0-rc.2'
+  - '@ecopages/radiant@0.3.0-rc.0 || 0.3.0-rc.2'
+  - '@ecopages/signals@0.3.0-rc.0 || 0.3.0-rc.2'
+  - '@ecopages/browser-router@0.2.0-rc.1'
+  - '@ecopages/content-processor@0.2.0-rc.1'
+  - '@ecopages/core@0.2.0-rc.1'
+  - '@ecopages/dev-toolbar@0.2.0-rc.1'
+  - '@ecopages/ecopages-jsx@0.2.0-rc.1'
+  - '@ecopages/file-system@0.2.0-rc.1'
+  - '@ecopages/mdx@0.2.0-rc.1'
+  - '@ecopages/postcss-processor@0.2.0-rc.1'
+  - ecopages@0.2.0-rc.1
