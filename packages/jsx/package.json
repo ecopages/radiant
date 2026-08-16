@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/jsx",
-	"version": "0.3.0-rc.0",
+	"version": "0.3.0-rc.1",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
@@ -72,6 +72,6 @@
 		"typescript": "catalog:"
 	},
 	"peerDependencies": {
-		"@ecopages/signals": ">=0.3.0-rc.0"
+		"@ecopages/signals": ">=0.3.0-rc.1"
 	}
 }
