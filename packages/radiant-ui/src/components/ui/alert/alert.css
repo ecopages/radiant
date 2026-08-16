@@ -22,7 +22,7 @@ rui-alert {
 	}
 
 	.rui-alert--banner {
-		@apply mt-stack flex flex-col py-control-y pr-control-x pl-6;
+		@apply flex flex-col py-control-y pr-control-x pl-6;
 
 		&::before {
 			content: '';
