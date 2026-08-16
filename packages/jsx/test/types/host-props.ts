@@ -32,9 +32,7 @@ type AriaSelectedStringRejected = Assert<
 	IsNotAssignable<{ 'aria-selected': string }, Pick<ButtonHost, 'aria-selected'>>
 >;
 type AriaCurrentPageAccepted = Assert<IsAssignable<{ 'aria-current': 'page' }, Pick<ButtonHost, 'aria-current'>>>;
-type AriaCurrentStringRejected = Assert<
-	IsNotAssignable<{ 'aria-current': string }, Pick<ButtonHost, 'aria-current'>>
->;
+type AriaCurrentStringRejected = Assert<IsNotAssignable<{ 'aria-current': string }, Pick<ButtonHost, 'aria-current'>>>;
 
 declare const _directAriaAndDataAccepted: DirectAriaAndDataAccepted;
 declare const _eventsAndBindingsAccepted: EventsAndBindingsAccepted;
