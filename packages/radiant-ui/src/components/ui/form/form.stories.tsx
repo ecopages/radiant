@@ -194,13 +194,17 @@ export const Validation: Story = {
 export const FormErrorSummary: Story = {
 	render: () => (
 		<RuiForm defaultValues={{ email: '', bio: '' }} mode="onSubmit" reValidateMode="onChange">
-			<rui-form-validation-alert variant="error" layout="banner" hidden>
-				<div class="rui-alert rui-alert--error rui-alert--banner" role="alert">
-					<RuiAlertTitle>There are issues with this form</RuiAlertTitle>
-					<RuiAlertDescription>
-						The form cannot be submitted. Review the highlighted fields before trying again.
-					</RuiAlertDescription>
-				</div>
+			<rui-form-validation-alert
+				class="rui-alert rui-alert--error rui-alert--banner"
+				variant="error"
+				layout="banner"
+				role="alert"
+				hidden
+			>
+				<RuiAlertTitle>There are issues with this form</RuiAlertTitle>
+				<RuiAlertDescription>
+					The form cannot be submitted. Review the highlighted fields before trying again.
+				</RuiAlertDescription>
 			</rui-form-validation-alert>
 
 			<RuiField name="email" rules={{ required: 'Email is required' }}>
