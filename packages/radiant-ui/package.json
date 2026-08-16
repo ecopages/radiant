@@ -32,9 +32,9 @@
 		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-rc.0",
-		"@ecopages/radiant": ">=0.3.0-rc.0",
-		"@ecopages/signals": ">=0.3.0-rc.0"
+		"@ecopages/jsx": ">=0.3.0-rc.1",
+		"@ecopages/radiant": ">=0.3.0-rc.1",
+		"@ecopages/signals": ">=0.3.0-rc.1"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
