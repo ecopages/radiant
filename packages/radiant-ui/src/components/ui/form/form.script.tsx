@@ -19,6 +19,12 @@ export type RuiFormProps<T extends FieldValues = FieldValues> = {
 	resolver?: Resolver<T>;
 	mode?: ValidationMode;
 	reValidateMode?: ValidationMode;
+	/** Receives validated values instead of performing a native form navigation. */
+	onSubmit?: (values: T) => void | Promise<void>;
+	/** Native form destination, used when `onSubmit` is not provided. */
+	action?: string;
+	/** Native form HTTP method, used when `onSubmit` is not provided. */
+	method?: HTMLFormElement['method'];
 };
 
 export type RuiFormSubmitDetail<T extends FieldValues = FieldValues> = {
@@ -53,6 +59,8 @@ const initialFormActions: FormContextActions = {
  *   fields re-validate after a failed submit. Reflects to markup. Default: `onChange`.
  * @attr {string} data-default-values - JSON-serialized default values for SSR / JSX
  *   attribute channel. Default: `undefined`.
+ * @attr {string} action - Native form destination when `onSubmit` is not provided.
+ * @attr {string} method - Native form HTTP method when `onSubmit` is not provided.
  *
  * @fires rui-submit - Emitted when validation passes; `detail.values` holds field values.
  * @fires rui-invalid - Emitted when validation fails on submit; `detail.errors` maps
@@ -72,6 +80,7 @@ export class RuiForm extends RadiantElement {
 			ready: false,
 			revision: 0,
 			fields: {},
+			errors: {},
 			actions: initialFormActions,
 		},
 	})
@@ -89,6 +98,9 @@ export class RuiForm extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: 'onSubmit' }) mode: ValidationMode;
 	@prop({ type: String, reflect: true, attribute: 'revalidate-mode', defaultValue: 'onChange' })
 	reValidateMode: ValidationMode;
+	@prop({ type: String, reflect: true }) action?: string;
+	@prop({ type: String, reflect: true }) method?: HTMLFormElement['method'];
+	onSubmit?: (values: FieldValues) => void | Promise<void>;
 
 	private store: FormStore | undefined;
 	private unsubscribeStore?: () => void;
@@ -159,12 +171,26 @@ export class RuiForm extends RadiantElement {
 	private runFormSubmit(): void {
 		const store = this.ensureStore();
 		void store.handleSubmit(
-			(values) => {
+			async (values) => {
 				this.submitEvent.emit({ values });
+				if (typeof this.onSubmit === 'function') {
+					await this.onSubmit(values);
+					return;
+				}
+				if (this.hasNativeSubmission()) {
+					this.queryNativeForm()?.submit();
+				}
 			},
 			(errors) => {
 				this.invalidEvent.emit({ errors });
 			},
+		);
+	}
+
+	private hasNativeSubmission(): boolean {
+		return (
+			typeof this.onSubmit !== 'function' &&
+			(this.getAttribute('action') !== null || this.getAttribute('method') !== null)
 		);
 	}
 
@@ -248,6 +274,7 @@ export class RuiForm extends RadiantElement {
 			ready: true,
 			revision,
 			fields: this.buildFieldPresentations(store),
+			errors: { ...store.errors },
 			actions: this.formActions,
 		} satisfies FormContextValue;
 		this.lastPublishedContext = nextContext;
@@ -294,7 +321,7 @@ export class RuiForm extends RadiantElement {
 
 	override render() {
 		return (
-			<form class="rui-form" data-ref="form" noValidate>
+			<form class="rui-form" data-ref="form" noValidate action={this.action} method={this.method}>
 				<slot></slot>
 			</form>
 		);

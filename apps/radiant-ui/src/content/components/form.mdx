@@ -30,7 +30,7 @@ export const config = {
 
 ## Usage
 
-Wrap fields in `RuiForm` and handle `on:submit` with validated values. Choose `mode` to control when validation runs.
+Wrap fields in `RuiForm` and handle validated values with `onSubmit`. Choose `mode` to control when validation runs.
 
 ```tsx
 import { RuiForm } from '@ecopages/radiant-ui/form';
@@ -39,7 +39,7 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 
-<RuiForm mode="onSubmit" on:submit={handleSubmit}>
+<RuiForm mode="onSubmit" onSubmit={handleSubmit}>
   <RuiField name="name" rules={{ required: 'Name is required' }}>
     <RuiLabel>Full name</RuiLabel>
     <RuiInput />
@@ -47,6 +47,8 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
   <RuiButton type="submit">Create account</RuiButton>
 </RuiForm>
 ```
+
+Load `@ecopages/radiant-ui/styles.css` once in your app to style the form and every composed control. When bundling styles per component, import `@ecopages/radiant-ui/form/styles.css` plus the stylesheet for every component used inside the form, such as `field/styles.css`, `textarea/styles.css`, or `number-field/styles.css`.
 
 ## Validation timing
 
@@ -81,6 +83,8 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | `mode` | `onSubmit` · `onBlur` · `onChange` · `onTouched` · `all` | `onSubmit` | When validation runs. |
 | `revalidate-mode` | `onSubmit` · `onBlur` · `onChange` · `onTouched` · `all` | `onChange` | When fields re-validate after a failed submit. |
 | `data-default-values` | `string` | | JSON-serialized default values for SSR / JSX attribute channel. |
+| `action` | `string` | | Native form destination when `onSubmit` is not provided. |
+| `method` | `string` | | Native form HTTP method when `onSubmit` is not provided. |
 
 ### Props
 
@@ -88,6 +92,11 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | --- | --- | --- |
 | `defaultValues` | `Partial<FieldValues>` | Initial values; fields read their state from the form store. |
 | `resolver` | `Resolver<T>` | Custom validation resolver (e.g. from `createRulesResolver`). |
+| `onSubmit` | `(values: T) => void \| Promise<void>` | Receives validated values. When omitted, an `action` or `method` submits the native form after validation passes. |
+
+### Context
+
+`formContext` exposes the current `errors` map to custom consumers. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
 
 ### Events
 

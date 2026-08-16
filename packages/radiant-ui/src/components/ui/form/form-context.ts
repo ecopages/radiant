@@ -1,5 +1,5 @@
 import { createContext } from '@ecopages/radiant/context';
-import type { FieldRegistration, RegisterOptions } from './types';
+import type { FieldError, FieldRegistration, RegisterOptions } from './types';
 
 /** UI slice for one field, computed by `<rui-form>` from the store. */
 export type FormFieldPresentation = {
@@ -23,6 +23,8 @@ export type FormContextValue = {
 	revision: number;
 	/** Per-field messages and invalid flags; only the form writes this map. */
 	fields: Record<string, FormFieldPresentation>;
+	/** Current validation errors keyed by field name, including errors not yet displayed by the validation mode. */
+	errors: Partial<Record<string, FieldError>>;
 	/** Registration and validation triggers; fields call these instead of touching the store. */
 	actions: FormContextActions;
 };
