@@ -54,6 +54,7 @@
 		"build:lib": "tsup && tsc -p tsconfig.build.json",
 		"clean": "rm -rf dist",
 		"dev": "tsup --watch",
+		"test:all": "pnpm run test:lib",
 		"test:lib": "vitest run"
 	},
 	"engines": {
