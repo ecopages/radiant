@@ -4,7 +4,7 @@ import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle }
 const meta = {
 	title: 'Components/Heading',
 	component: RuiHeading,
-	parameters: { radiant: { cssImports: ['./heading.css', '../headline/headline.css'] } },
+	parameters: { radiant: { cssImports: ['../headline/headline.css', './heading.css'] } },
 } satisfies Meta<typeof RuiHeading>;
 
 export default meta;
@@ -90,14 +90,14 @@ export const SizeLadder: Story = {
 		<div class="flex max-w-3xl flex-col divide-y divide-border">
 			{(
 				[
-					['sm', 'Settings group', 'Compact rhythm for nested panels and dense app UI.'],
-					['md', 'Documentation page', 'Default scale for docs sections and product pages.'],
-					['lg', 'Feature overview', 'More presence for landing sections without extra wrappers.'],
-					['xl', 'Product hero', 'Maximum display weight for first-viewport messaging.'],
+					['SM', 'Settings group', 'Compact rhythm for nested panels and dense app UI.'],
+					['MD', 'Documentation page', 'Default scale for docs sections and product pages.'],
+					['LG', 'Feature overview', 'More presence for landing sections without extra wrappers.'],
+					['XL', 'Product hero', 'Maximum display weight for first-viewport messaging.'],
 				] as const
 			).map(([size, title, description]) => (
 				<div class="py-8 first:pt-0 last:pb-0">
-					<RuiHeading size={size}>
+					<RuiHeading size={size.toLowerCase() as 'sm' | 'md' | 'lg' | 'xl'}>
 						<RuiHeadingEyebrow>{size}</RuiHeadingEyebrow>
 						<RuiHeadingTitle as="h2">{title}</RuiHeadingTitle>
 						<RuiHeadingDescription>{description}</RuiHeadingDescription>

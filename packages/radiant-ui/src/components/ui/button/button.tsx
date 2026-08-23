@@ -7,7 +7,7 @@ export type RuiButtonSize = 'none' | 'sm' | 'md' | 'lg';
 type RuiButtonChrome = {
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
-	/** Control size. Default: `md` (Default in docs). Use `none` for inline `link` chrome. */
+	/** Control size. Default: `md`. Use `none` for inline `link` chrome. */
 	size?: RuiButtonSize;
 	/** Makes a control-sized button square, for example for an icon-only action. */
 	square?: boolean;
@@ -74,7 +74,8 @@ function invokeClickListener(listener: unknown, event: Event) {
  *
  * @remarks
  * Default/`md` height uses `--size-control-md`, the same token as `RuiInput`, so
- * form rows align. `none` omits fixed height and padding for inline `link`
+ * form rows align. Inline padding is a step above `--space-control-x` so
+ * labels are not as tight as field chrome. `none` omits fixed height and padding for inline `link`
  * actions. `square` makes the selected control size equal on both axes, making
  * it suitable for icon-only actions. Styles live in `./button.css`.
  *

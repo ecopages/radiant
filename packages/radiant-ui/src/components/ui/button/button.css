@@ -100,7 +100,9 @@
 		@apply underline;
 	}
 
-	/* Sizes share `--size-control-*` with input so form rows align. */
+	/* Heights share `--size-control-*` with input so form rows align.
+	   Inline padding is a step above `--space-control-x` so short labels
+	   are not as tight as field chrome. */
 	.rui-button--none {
 		@apply h-auto min-h-0;
 		padding-inline: 0;
@@ -109,13 +111,13 @@
 
 	.rui-button--sm {
 		height: var(--size-control-sm);
-		padding-inline: calc(var(--space-control-x) * 0.75);
+		padding-inline: var(--space-control-x);
 		font-size: var(--text-xs);
 	}
 
 	.rui-button--md {
 		height: var(--size-control-md);
-		padding-inline: var(--space-control-x);
+		padding-inline: calc(var(--space-control-x) * 1.25);
 		font-size: var(--text-control, 0.875rem);
 	}
 
