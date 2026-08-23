@@ -1,4 +1,3 @@
-import rehypeMermaid, { type RehypeMermaidOptions } from 'rehype-mermaid';
 import rehypePrettyCode, { type Options as RehypePrettyCodeOptions } from 'rehype-pretty-code';
 import remarkGfm from 'remark-gfm';
 import type { PluggableList } from 'unified';
@@ -17,10 +16,9 @@ export function createDocsMdxPlugins(options: DocsMdxPluginsOptions) {
 		rehypePrettyCode,
 		options.rehypePrettyCode,
 	];
-	const mermaidPlugin: [typeof rehypeMermaid, RehypeMermaidOptions] = [rehypeMermaid, { strategy: 'img-svg' }];
 
 	return withContentMdxPlugins({
 		remarkPlugins: [remarkGfm, ...(options.remarkPlugins ?? [])],
-		rehypePlugins: [mermaidPlugin, prettyCodePlugin, rehypeSimpleTableWrapper, ...(options.rehypePlugins ?? [])],
+		rehypePlugins: [prettyCodePlugin, rehypeSimpleTableWrapper, ...(options.rehypePlugins ?? [])],
 	});
 }
