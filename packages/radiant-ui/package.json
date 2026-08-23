@@ -472,6 +472,13 @@
 		"./switch/styles.css": {
 			"default": "./dist/components/ui/switch/switch.css"
 		},
+		"./table": {
+			"types": "./dist/components/ui/table/index.d.ts",
+			"import": "./dist/components/ui/table/index.js"
+		},
+		"./table/styles.css": {
+			"default": "./dist/components/ui/table/table.css"
+		},
 		"./tabs": {
 			"types": "./dist/components/ui/tabs/index.d.ts",
 			"import": "./dist/components/ui/tabs/index.js"
