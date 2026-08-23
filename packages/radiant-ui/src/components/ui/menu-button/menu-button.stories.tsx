@@ -6,7 +6,12 @@ import { RuiMenuButton as RuiMenuButtonElement } from './menu-button.script';
 const meta = {
 	title: 'Components/Menu Button',
 	component: RuiMenuButton,
-	parameters: { radiant: { element: RuiMenuButtonElement, cssImports: ['./menu-button.css'] } },
+	parameters: {
+		radiant: {
+			element: RuiMenuButtonElement,
+			cssImports: ['../../../styles/primitives.css', '../button/button.css', './menu-button.css'],
+		},
+	},
 	args: {
 		open: false,
 		trigger: 'Actions',

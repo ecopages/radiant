@@ -1,5 +1,7 @@
 export {
 	RuiNavigationMenu,
+	RuiNavigationMenuBar,
+	RuiNavigationMenuPanels,
 	RuiNavigationMenuTrigger,
 	RuiNavigationMenuLink,
 	RuiNavigationMenuPanel,

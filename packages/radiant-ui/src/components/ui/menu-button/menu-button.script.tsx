@@ -37,6 +37,9 @@ const MENU_GAP = 6;
  * - `Enter` / `Space`: activate the focused item and close
  * - `Escape`: close and return focus to the trigger
  *
+ * @remarks When the menu contains `[data-autocomplete-input]`, opening focuses
+ * that field so the user can filter items immediately.
+ *
  * @element rui-menu-button
  * @attr {boolean} open - Whether the menu starts open. Default: `false`.
  * @attr {('top'|'top-start'|'top-end'|'right'|'right-start'|'right-end'|'bottom'|'bottom-start'|'bottom-end'|'left'|'left-start'|'left-end')} placement - Placement of the menu surface relative to its trigger. Default: `bottom-start`.
@@ -67,9 +70,8 @@ export class RuiMenuButton extends RadiantElement {
 	private popoverController: PopoverController | null = null;
 	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.syncOpenState());
+	protected override onConnected(): void {
+		this.syncOpenState();
 	}
 
 	override disconnectedCallback(): void {
@@ -82,6 +84,10 @@ export class RuiMenuButton extends RadiantElement {
 		return Array.from(this.menuTarget?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []).filter(
 			(item) => !item.hidden && item.getAttribute('aria-disabled') !== 'true',
 		);
+	}
+
+	private getSearchInput(): HTMLInputElement | null {
+		return this.menuTarget?.querySelector<HTMLInputElement>('[data-autocomplete-input]') ?? null;
 	}
 
 	private ensurePopoverController(): PopoverController {
@@ -107,7 +113,7 @@ export class RuiMenuButton extends RadiantElement {
 		this.triggerTarget.setAttribute('aria-controls', this.menuId);
 		this.triggerTarget.setAttribute('aria-haspopup', 'menu');
 		this.triggerTarget.setAttribute('aria-expanded', String(this.open));
-		this.menuTarget.hidden = !this.open;
+		this.menuTarget.toggleAttribute('hidden', !this.open);
 
 		const controller = this.ensurePopoverController();
 		controller.updateConfig({
@@ -120,12 +126,22 @@ export class RuiMenuButton extends RadiantElement {
 		this.pendingFocus = null;
 		if (!focus) return;
 
+		if (focus === 'trigger') {
+			this.triggerTarget?.focus();
+			return;
+		}
+
+		const search = this.getSearchInput();
+		if (search) {
+			search.focus();
+			return;
+		}
+
 		if (focus === 'first') this.getItems()[0]?.focus();
 		if (focus === 'last') {
 			const items = this.getItems();
 			items[items.length - 1]?.focus();
 		}
-		if (focus === 'trigger') this.triggerTarget?.focus();
 	}
 
 	private setOpen(next: boolean, focus: 'first' | 'last' | 'trigger' | null = null): void {

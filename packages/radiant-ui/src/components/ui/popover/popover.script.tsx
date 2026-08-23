@@ -35,12 +35,10 @@ export type RuiPopoverProps = {
 /**
  * `<rui-popover>` — a floating overlay positioned relative to an anchor.
  *
- * Pair with a trigger via the `trigger` slot, wrap in `rui-popover-trigger`,
- * or pass an `anchor` selector for a custom anchor element.
+ * Pair with `RuiPopoverTrigger`, a `[data-popover-trigger]` element in the
+ * view-owned shell, or pass an `anchor` selector for a custom anchor element.
  *
  * @element rui-popover
- * @slot trigger - Pressable anchor (when not using an external `anchor` selector).
- * @slot content - Popover body rendered inside the floating surface.
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
  * @cssclass rui-popover-host - Anchor + surface wrapper.
  * @cssclass rui-popover - Floating surface (`role="dialog"`); `background` + `rounded-container` + `shadow-overlay`.
@@ -66,9 +64,8 @@ export class RuiPopover extends RadiantElement {
 	private controller: PopoverController | null = null;
 	private anchorClickTarget: HTMLElement | null = null;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.syncPopover());
+	protected override onConnected(): void {
+		this.syncPopover();
 	}
 
 	override disconnectedCallback(): void {
@@ -80,12 +77,12 @@ export class RuiPopover extends RadiantElement {
 
 	private getAnchorElement(): HTMLElement | null {
 		const triggerHost = this.closest('rui-popover-trigger');
-		const triggerFromHost = triggerHost?.querySelector<HTMLElement>('[slot="trigger"]');
+		const triggerFromHost = triggerHost?.querySelector<HTMLElement>('[data-popover-trigger]');
 		if (triggerFromHost instanceof HTMLElement) {
 			return resolvePopoverAnchor(triggerFromHost);
 		}
 
-		const slottedTrigger = this.querySelector<HTMLElement>('[slot="trigger"]');
+		const slottedTrigger = this.querySelector<HTMLElement>('[data-popover-trigger]');
 		if (slottedTrigger instanceof HTMLElement) {
 			return resolvePopoverAnchor(slottedTrigger);
 		}
@@ -198,7 +195,7 @@ export class RuiPopover extends RadiantElement {
 		if (this.closest('rui-popover-trigger')) {
 			return false;
 		}
-		return !this.querySelector('[slot="trigger"]');
+		return !this.querySelector('[data-popover-trigger]');
 	}
 
 	private syncExternalAnchorClick(anchor: HTMLElement | null): void {
@@ -239,18 +236,6 @@ export class RuiPopover extends RadiantElement {
 		const anchor = this.getAnchorElement();
 		anchor?.focus();
 	}
-
-	override render() {
-		const variantClass = this.variant === 'listbox' ? 'rui-popover--listbox' : '';
-		return (
-			<div class="rui-popover-host" data-ref="host">
-				<slot name="trigger"></slot>
-				<div data-ref="surface" class={`rui-popover rui-floating ${variantClass}`.trim()} role="dialog" hidden>
-					<slot name="content"></slot>
-				</div>
-			</div>
-		);
-	}
 }
 
 export type RuiPopoverTriggerProps = {
@@ -262,7 +247,6 @@ export type RuiPopoverTriggerProps = {
  * `<rui-popover-trigger>` — coordinates open state between a trigger and `rui-popover`.
  *
  * @element rui-popover-trigger
- * @slot trigger - Pressable element that toggles the child popover.
  * @cssclass rui-popover-trigger - Trigger + popover wrapper.
  */
 @customElement('rui-popover-trigger')
@@ -275,12 +259,8 @@ export class RuiPopoverTrigger extends RadiantElement {
 		return this.querySelector('rui-popover');
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		if (isServer) {
-			return;
-		}
-		queueMicrotask(() => this.syncToPopover());
+	protected override onConnected(): void {
+		this.syncToPopover();
 	}
 
 	@bound
@@ -302,7 +282,7 @@ export class RuiPopoverTrigger extends RadiantElement {
 	@onEvent({ ref: 'root', type: 'click' })
 	onHostClick(event: Event): void {
 		const target = event.target as HTMLElement | null;
-		if (!target?.closest('[slot="trigger"]')) {
+		if (!target?.closest('[data-popover-trigger]')) {
 			return;
 		}
 		this.open = !this.open;
@@ -319,15 +299,6 @@ export class RuiPopoverTrigger extends RadiantElement {
 			return;
 		}
 		this.open = event.detail.open;
-	}
-
-	override render() {
-		return (
-			<div class="rui-popover-trigger" data-ref="root">
-				<slot name="trigger"></slot>
-				<slot></slot>
-			</div>
-		);
 	}
 }
 

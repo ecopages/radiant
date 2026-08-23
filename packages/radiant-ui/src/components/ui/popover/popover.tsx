@@ -10,10 +10,10 @@ import './popover.script';
 
 export type RuiPopoverContentProps = JsxElementProps<HTMLDivElement>;
 
-/** Popover body slotted into the floating surface. */
-export function RuiPopoverContent({ children, slot = 'content', class: className, ...props }: RuiPopoverContentProps) {
+/** Popover body in the floating surface. */
+export function RuiPopoverContent({ children, class: className, ...props }: RuiPopoverContentProps) {
 	return (
-		<div {...props} slot={slot} class={cx(className)}>
+		<div {...props} class={cx(className)}>
 			{children}
 		</div>
 	);
@@ -22,6 +22,7 @@ export function RuiPopoverContent({ children, slot = 'content', class: className
 export function RuiPopover({
 	trigger,
 	children,
+	variant = 'default',
 	...props
 }: JsxCustomElementAttributes<
 	RuiPopoverElement,
@@ -29,10 +30,19 @@ export function RuiPopover({
 		trigger?: JsxRenderable;
 	}
 >) {
+	const variantClass = variant === 'listbox' ? 'rui-popover--listbox' : '';
 	return (
-		<rui-popover {...props}>
-			{trigger != null ? <span slot="trigger">{trigger}</span> : null}
-			{children}
+		<rui-popover {...props} variant={variant}>
+			<div class="rui-popover-host" data-ref="host">
+				{trigger != null ? <span data-popover-trigger>{trigger}</span> : null}
+				<div
+					data-ref="surface"
+					class={`rui-popover rui-floating ${variantClass}`.trim()}
+					role="dialog"
+				>
+					{children}
+				</div>
+			</div>
 		</rui-popover>
 	);
 }
@@ -49,8 +59,10 @@ export function RuiPopoverTrigger({
 >) {
 	return (
 		<rui-popover-trigger {...props}>
-			<span slot="trigger">{trigger}</span>
-			{children}
+			<div class="rui-popover-trigger" data-ref="root">
+				<span data-popover-trigger>{trigger}</span>
+				{children}
+			</div>
 		</rui-popover-trigger>
 	);
 }

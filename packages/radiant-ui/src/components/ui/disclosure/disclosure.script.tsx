@@ -27,10 +27,8 @@ export type RuiDisclosureToggleDetail = {
  * @attr {boolean} open - Whether the disclosure content starts expanded. Default: `false`.
  * @attr {string} value - Optional value used when coordinating disclosures inside a group.
  * @attr {boolean} animated - Animate panel height. Also enabled when inside an animated disclosure group. Default: `false`.
- * @slot trigger - Disclosure button (use `RuiDisclosureTrigger`).
- * @slot - Panel content (use `RuiDisclosurePanel`).
  * @fires rui-disclosure-toggle - Emitted on every trigger activation; `detail` is `{ value, open }`.
- * @cssclass rui-disclosure - Root wrapper around trigger and panel slots.
+ * @cssclass rui-disclosure - Root wrapper around trigger and panel.
  */
 @customElement('rui-disclosure')
 export class RuiDisclosure extends RadiantElement {
@@ -40,12 +38,9 @@ export class RuiDisclosure extends RadiantElement {
 
 	private panelId = `rui-disclosure-${Math.random().toString(36).slice(2, 9)}`;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			this.syncAnimated();
-			this.syncExpanded();
-		});
+	protected override onConnected(): void {
+		this.syncAnimated();
+		this.syncExpanded();
 	}
 
 	private syncAnimated(): void {
@@ -87,21 +82,12 @@ export class RuiDisclosure extends RadiantElement {
 		panel.dataset.state = this.open ? 'open' : 'closed';
 
 		if (this.animated) {
-			panel.hidden = false;
+			panel.toggleAttribute('hidden', false);
 			panel.setAttribute('aria-hidden', String(!this.open));
 			return;
 		}
 
-		panel.hidden = !this.open;
+		panel.toggleAttribute('hidden', !this.open);
 		panel.removeAttribute('aria-hidden');
-	}
-
-	override render() {
-		return (
-			<div class="rui-disclosure">
-				<slot name="trigger"></slot>
-				<slot></slot>
-			</div>
-		);
 	}
 }

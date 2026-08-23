@@ -22,39 +22,48 @@ export type RuiMenubarItem = {
  */
 export function RuiMenubar({
 	items,
+	label,
+	children,
 	...props
-}: JsxCustomElementAttributes<RuiMenubarElement, RuiMenubarProps & { items: RuiMenubarItem[] }>) {
+}: JsxCustomElementAttributes<RuiMenubarElement, RuiMenubarProps & { items?: RuiMenubarItem[] }>) {
+	const content =
+		items != null
+			? items.map((item) => (
+					<div class="rui-menubar__root" data-ref="menubar-root">
+						<button
+							type="button"
+							class="rui-menubar__item"
+							role="menuitem"
+							tabindex={-1}
+							aria-haspopup={item.items?.length ? 'true' : undefined}
+							aria-expanded={item.items?.length ? 'false' : undefined}
+						>
+							{item.label}
+						</button>
+						{item.items?.length ? (
+							<div class="rui-menubar__menu rui-popover rui-floating" role="menu" hidden>
+								{item.items.map((child) => (
+									<button
+										type="button"
+										class="rui-menubar__menu-item"
+										role="menuitem"
+										data-value={child.id}
+										tabindex={-1}
+									>
+										{child.label}
+									</button>
+								))}
+							</div>
+						) : null}
+					</div>
+				))
+			: children;
+
 	return (
-		<rui-menubar {...props}>
-			{items.map((item) => (
-				<div class="rui-menubar__root" data-ref="menubar-root">
-					<button
-						type="button"
-						class="rui-menubar__item"
-						role="menuitem"
-						tabindex={-1}
-						aria-haspopup={item.items?.length ? 'true' : undefined}
-						aria-expanded={item.items?.length ? 'false' : undefined}
-					>
-						{item.label}
-					</button>
-					{item.items?.length ? (
-						<div class="rui-menubar__menu rui-popover rui-floating" role="menu" hidden>
-							{item.items.map((child) => (
-								<button
-									type="button"
-									class="rui-menubar__menu-item"
-									role="menuitem"
-									data-value={child.id}
-									tabindex={-1}
-								>
-									{child.label}
-								</button>
-							))}
-						</div>
-					) : null}
-				</div>
-			))}
+		<rui-menubar {...props} label={label}>
+			<div class="rui-menubar" data-ref="root" role="menubar" aria-label={label || undefined}>
+				{content}
+			</div>
 		</rui-menubar>
 	);
 }

@@ -1,5 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import { RuiIconChevronDown } from '@/lib/icons';
 import { RuiButton, type RuiButtonControlProps } from '../button';
 import type { RuiMenuButton as RuiMenuButtonElement, RuiMenuButtonProps } from './menu-button.script';
 import './menu-button.script';
@@ -30,7 +31,7 @@ export function RuiMenuButtonTrigger({
 			aria-haspopup="menu"
 		>
 			{children}
-			<span class="rui-menu-button__chevron" aria-hidden="true" />
+			<RuiIconChevronDown class="rui-menu-button__chevron" />
 		</RuiButton>
 	);
 }
@@ -45,7 +46,6 @@ export function RuiMenuButtonContent({ children, class: className, ...props }: R
 			data-ref="menu"
 			class={cx('rui-menu-button__menu', 'rui-popover', 'rui-floating', className)}
 			role="menu"
-			hidden
 		>
 			{children}
 		</div>
