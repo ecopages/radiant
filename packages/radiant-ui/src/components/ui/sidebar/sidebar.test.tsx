@@ -257,7 +257,7 @@ describe('RuiSidebar composition', () => {
 		cleanup();
 	});
 
-	it('does not render a resize handle by default', async () => {
+	it('keeps the inactive resize handle hidden by default', async () => {
 		const { host, cleanup } = mount(
 			<RuiSidebar id="primary-sidebar" collapsible="off" mobileBreakpoint={0} label="Primary">
 				<span>content</span>
@@ -266,7 +266,7 @@ describe('RuiSidebar composition', () => {
 
 		await settled();
 
-		expect(host.querySelector('[data-ref="handle"]')).toBeNull();
+		expect(host.querySelector('[data-ref="handle"]')?.hasAttribute('hidden')).toBe(true);
 
 		cleanup();
 	});
@@ -595,11 +595,11 @@ describe('RuiSidebar mobile drawer', () => {
 		cleanup();
 	});
 
-	it('does not render a resize handle in mobile mode', async () => {
+	it('keeps the resize handle hidden in mobile mode', async () => {
 		const { host, cleanup } = mountMobileSidebar({ collapsible: 'off', open: true });
 		await settled();
 
-		expect(host.querySelector('[data-ref="handle"]')).toBeNull();
+		expect(host.querySelector('[data-ref="handle"]')?.hasAttribute('hidden')).toBe(true);
 
 		cleanup();
 	});

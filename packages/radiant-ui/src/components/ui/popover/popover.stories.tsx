@@ -8,7 +8,7 @@ import { RuiPopover as RuiPopoverElement } from './popover.script';
 const meta = {
 	title: 'Components/Popover',
 	component: RuiPopover,
-	parameters: { radiant: { element: RuiPopoverElement, cssImports: ['./popover.css'] } },
+	parameters: { radiant: { element: RuiPopoverElement, cssImports: ['../../../styles/primitives.css', './popover.css'] } },
 } satisfies Meta<typeof RuiPopover>;
 
 export default meta;
@@ -28,7 +28,7 @@ export const WithTriggerWrapper: Story = {
 	),
 	play: async ({ canvasElement, step }) => {
 		const host = canvasElement.querySelector('rui-popover-trigger') as HTMLElement;
-		const trigger = canvasElement.querySelector('[slot="trigger"] button') as HTMLButtonElement;
+		const trigger = canvasElement.querySelector('[data-popover-trigger] button') as HTMLButtonElement;
 		const surface = document.querySelector('.rui-popover') as HTMLElement;
 
 		await step('starts closed', async () => {

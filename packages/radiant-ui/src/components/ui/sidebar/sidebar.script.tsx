@@ -91,8 +91,8 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
 /**
  * `<rui-sidebar>` — a resizable, collapsible side panel.
  *
- * The sidebar hosts the pane content in the default slot. When the parent
- * supplies a `RuiSidebarRail` element (or the `collapsible` mode is not
+ * The sidebar hosts pane content in the view-owned light-DOM shell. When the
+ * parent supplies a `RuiSidebarRail` element (or the `collapsible` mode is not
  * `off`), the sidebar manages open/closed state, a focusable resize handle,
  * and keyboard navigation that follows the APG Window Splitter pattern.
  *
@@ -108,7 +108,6 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/
  *
  * @element rui-sidebar
- * @slot - Pane content. Stack header, content, and footer inside.
  * @fires rui-sidebar-toggle - Emitted on every open/closed transition.
  *        `detail` is `{ open, state }`.
  * @fires rui-sidebar-resize - Emitted on every width change. `detail` is `{ width }`.
@@ -181,28 +180,27 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 
 		this.setAttribute('role', 'complementary');
 		this.setAttribute('aria-label', this.label);
-		this.syncHostAttributes();
+		this.syncPresentation();
 		this.attachNavigationListeners();
-		queueMicrotask(() => {
-			this.ensureWidthInitialized();
-			this.openControlled = this.open !== undefined;
-			this.bindMobileMediaQuery();
-			if (!this.openControlled) {
-				this.open = this.isMobile ? this.mobileDefaultOpen : this.defaultOpen;
-			}
+	}
 
-			this.syncHostAttributes();
-			this.syncPaneWidthVar();
-			this.syncActiveLinksAfterRender(true);
-			this.mobileReady = true;
-		});
+	protected override onConnected(): void {
+		this.ensureWidthInitialized();
+		this.openControlled = this.open !== undefined;
+		this.bindMobileMediaQuery();
+		if (!this.openControlled) {
+			this.open = this.isMobile ? this.mobileDefaultOpen : this.defaultOpen;
+		}
+
+		this.syncPresentation();
+		this.syncPaneWidthVar();
+		this.syncActiveLinksAfterRender(true);
+		this.mobileReady = true;
 	}
 
 	/**
-	 * @remarks Light-DOM hydrate/update can recreate projected menu links after the
-	 * connect microtask sync. Re-apply active classes once the render commits so
-	 * imperative highlights survive slot projection. `requestUpdate()` commits through
-	 * the scheduler (not `update()`), so that path must re-sync too.
+	 * @remarks Light-DOM hydrate/update can recreate menu links after the connect
+	 * microtask sync. Re-apply active classes once the render commits.
 	 */
 	override hydrate(): void {
 		super.hydrate();
@@ -238,17 +236,61 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	}
 
 	/**
-	 * Keep host `data-*` in sync for `:has(> rui-sidebar[...])` and public API.
-	 * Visual styles target the inner `.rui-sidebar` root (host is `display: contents`).
+	 * Keep host and inner shell `data-*` in sync. Host attrs drive
+	 * `:has(> rui-sidebar[...])`; inner `.rui-sidebar` drives visual styles.
 	 */
-	private syncHostAttributes(): void {
-		const paneState: RuiSidebarState = this.isOpen() ? 'expanded' : 'collapsed';
+	private syncPresentation(): void {
+		const horizontal = isHorizontalSide(this.side);
+		const open = this.isOpen();
+		const paneState: RuiSidebarState = open ? 'expanded' : 'collapsed';
+		const showHandle = this.resizable && this.collapsible === 'off' && open && !this.isMobile;
+		const paneInert = !(open || (!this.isMobile && this.collapsible === 'icon'));
+		const paneWidth = this.paneWidth();
+
 		this.setAttribute('data-state', paneState);
 		this.setAttribute('data-collapsible', this.collapsible);
 		this.setAttribute('data-variant', this.variant);
 		this.setAttribute('data-side', this.side);
 		this.setAttribute('data-mobile', String(this.isMobile));
-		this.setAttribute('data-pane-width', String(this.paneWidth()));
+		this.setAttribute('data-pane-width', String(paneWidth));
+
+		const root = this.rootTarget;
+		if (root) {
+			root.dataset.state = paneState;
+			root.dataset.collapsible = this.collapsible;
+			root.dataset.variant = this.variant;
+			root.dataset.side = this.side;
+			root.dataset.mobile = String(this.isMobile);
+		}
+
+		const scrim = this.scrimTarget;
+		if (scrim) {
+			scrim.toggleAttribute('hidden', !(this.isMobile && open));
+		}
+
+		const pane = this.paneTarget;
+		if (pane) {
+			pane.dataset.side = this.side;
+			pane.dataset.variant = this.variant;
+			pane.setAttribute('aria-label', this.label);
+			if (paneInert) {
+				pane.setAttribute('inert', '');
+			} else {
+				pane.removeAttribute('inert');
+			}
+		}
+
+		const handle = this.handleTarget;
+		if (handle) {
+			handle.toggleAttribute('hidden', !showHandle);
+			if (showHandle) {
+				handle.setAttribute('aria-orientation', horizontal ? 'vertical' : 'horizontal');
+				handle.setAttribute('aria-valuenow', String(paneWidth));
+				handle.setAttribute('aria-valuemin', String(this.minWidth));
+				handle.setAttribute('aria-valuemax', String(this.maxWidth));
+				handle.setAttribute('aria-label', `${this.label} resize handle`);
+			}
+		}
 	}
 
 	private isOpen(): boolean {
@@ -278,9 +320,10 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		'maxWidth',
 		'isMobile',
 		'resizable',
+		'label',
 	])
 	onStateUpdated(): void {
-		this.syncHostAttributes();
+		this.syncPresentation();
 		this.syncPaneWidthVar();
 	}
 
@@ -447,12 +490,13 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 	setOpen(next: boolean): void {
 		const wasOpen = this.isOpen();
 		if (next === wasOpen) {
+			this.syncPresentation();
 			this.syncPaneWidthVar();
 			return;
 		}
 		this.open = next;
 		const paneState: RuiSidebarState = next ? 'expanded' : 'collapsed';
-		this.setAttribute('data-state', paneState);
+		this.syncPresentation();
 		this.syncPaneWidthVar();
 		this.toggleEvent.emit({ open: next, state: paneState });
 	}
@@ -492,14 +536,14 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.endDrag();
 	}
 
-	@bound
-	private onHandlePointerDown(event: Event): void {
+	@onEvent({ ref: 'handle', type: 'pointerdown' })
+	onHandlePointerDown(event: Event): void {
 		event.preventDefault();
 		this.beginDrag(event as PointerEvent);
 	}
 
-	@bound
-	private onHandleKeydown(event: Event): void {
+	@onEvent({ ref: 'handle', type: 'keydown' })
+	onHandleKeydown(event: Event): void {
 		const keyboardEvent = event as KeyboardEvent;
 		const current = this.paneWidth();
 		const horizontal = isHorizontalSide(this.side);
@@ -523,8 +567,8 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 		this.applyWidth(next, true);
 	}
 
-	@bound
-	private onScrimClick(): void {
+	@onEvent({ ref: 'scrim', type: 'click' })
+	onScrimClick(): void {
 		if (this.isMobile) {
 			this.setOpen(false);
 		}
@@ -550,77 +594,5 @@ export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
 			keyboardEvent.preventDefault();
 			this.toggle();
 		}
-	}
-
-	/**
-	 * Only the pane's `aria-label` is bound below. `data-state`/`data-collapsible`/
-	 * `data-variant`/`data-side`/`data-mobile` and the handle's `aria-value*`/
-	 * `aria-orientation` stay plain reads deliberately — this component's open/
-	 * close, drag-resize, and mobile-detection paths are the same high-frequency
-	 * interactive category where two sibling components in this migration
-	 * (tooltip, menu-button) hit real regressions from binding conversion that
-	 * weren't fully root-caused. Deferred as a follow-up rather than risking the
-	 * same class of bug here under the same review budget.
-	 *
-	 * @remarks The icon rail stays interactive when collapsed on desktop; the mobile drawer does not.
-	 */
-	override render() {
-		const horizontal = isHorizontalSide(this.side);
-		const open = this.isOpen();
-		const paneState: RuiSidebarState = open ? 'expanded' : 'collapsed';
-		const showHandle = this.resizable && this.collapsible === 'off' && open && !this.isMobile;
-		const widthVar = `${this.paneWidth()}px`;
-		const paneInert = open || (!this.isMobile && this.collapsible === 'icon') ? undefined : '';
-
-		return (
-			<div
-				class="rui-sidebar"
-				style={{ '--rui-sidebar-pane-width': widthVar } as Record<string, string>}
-				data-ref="root"
-				data-state={paneState}
-				data-collapsible={this.collapsible}
-				data-variant={this.variant}
-				data-side={this.side}
-				data-mobile={String(this.isMobile)}
-			>
-				{/* Scrim first so it stacks under the pane (dialog pattern). */}
-				<button
-					data-ref="scrim"
-					type="button"
-					class="rui-sidebar__scrim"
-					tabindex={-1}
-					aria-label="Close sidebar"
-					hidden={!this.isMobile || !open}
-					on:click={this.onScrimClick}
-				></button>
-				<div
-					data-ref="pane"
-					class="rui-sidebar__pane"
-					data-side={this.side}
-					data-variant={this.variant}
-					aria-label={this.$.label}
-					inert={paneInert}
-				>
-					<slot></slot>
-				</div>
-				{showHandle ? (
-					<div
-						data-ref="handle"
-						class="rui-sidebar__handle"
-						role="separator"
-						tabindex={0}
-						aria-orientation={horizontal ? 'vertical' : 'horizontal'}
-						aria-valuenow={this.paneWidth()}
-						aria-valuemin={this.minWidth}
-						aria-valuemax={this.maxWidth}
-						aria-label={`${this.label} resize handle`}
-						on:pointerdown={this.onHandlePointerDown}
-						on:keydown={this.onHandleKeydown}
-					>
-						<span class="rui-sidebar__handle-grip" aria-hidden="true"></span>
-					</div>
-				) : null}
-			</div>
-		);
 	}
 }

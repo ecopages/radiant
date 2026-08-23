@@ -34,10 +34,6 @@ type RuiDialogBindings = {
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
  *
  * @element rui-dialog
- * @slot close - Optional close control (`RuiDialogClose`).
- * @slot title - Optional visible dialog title (`RuiDialogTitle`).
- * @slot - Dialog body (`RuiDialogBody`).
- * @slot actions - Optional action buttons (`RuiDialogActions`).
  * @fires rui-close - Emitted when the dialog is dismissed.
  * @cssclass rui-dialog - Root; hidden until `open`.
  * @cssclass rui-dialog__backdrop - Scrim using the `overlay` role.
@@ -49,6 +45,7 @@ export class RuiDialog extends RadiantElement<RuiDialogBindings> {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) alert: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
 
+	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'dialog' }) dialogTarget: HTMLElement;
 	@query({ selector: '[data-dialog-title]' }) titleTarget: HTMLElement;
 	@query({ selector: '[data-dialog-body]' }) descriptionTarget: HTMLElement;
@@ -56,21 +53,19 @@ export class RuiDialog extends RadiantElement<RuiDialogBindings> {
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
 
-	private readonly dialogHidden = this.$.open.map((open) => !open);
-	private readonly resolvedRole = this.$.alert.map((alert) => (alert ? 'alertdialog' : 'dialog'));
-
 	private previouslyFocused: HTMLElement | null = null;
 	private titleId = `rui-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
 	private descriptionId = `rui-dialog-desc-${Math.random().toString(36).slice(2, 9)}`;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.syncOpenState());
+	protected override onConnected(): void {
+		this.syncOpenState();
 	}
 
 	@bound
 	@onUpdated(['open', 'label'])
 	syncOpenState(): void {
+		this.rootTarget?.toggleAttribute('hidden', !this.open);
+
 		if (!this.dialogTarget) {
 			return;
 		}
@@ -162,25 +157,5 @@ export class RuiDialog extends RadiantElement<RuiDialogBindings> {
 	@onEvent({ selector: '[data-dialog-close]', type: 'click' })
 	onCloseClick(): void {
 		this.dismiss('dismiss');
-	}
-
-	override render() {
-		return (
-			<div class="rui-dialog" hidden={this.dialogHidden}>
-				<div data-ref="backdrop" class="rui-dialog__backdrop"></div>
-				<div
-					data-ref="dialog"
-					class="rui-dialog__surface"
-					tabindex={-1}
-					role={this.resolvedRole}
-					aria-modal="true"
-				>
-					<slot name="close"></slot>
-					<slot name="title"></slot>
-					<slot></slot>
-					<slot name="actions"></slot>
-				</div>
-			</div>
-		);
 	}
 }

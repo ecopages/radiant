@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import type { RuiAutocomplete as RuiAutocompleteElement, RuiAutocompleteProps } from './autocomplete.script';
 import './autocomplete.script';
@@ -8,13 +8,12 @@ export type RuiAutocompleteInputProps = JsxElementProps<HTMLInputElement> & {
 	disabled?: boolean;
 };
 
-/** Search field slotted into `RuiAutocomplete`. Also pairs with combobox inputs via `data-autocomplete-input`.
+/** Search field paired with `RuiAutocomplete` via `data-autocomplete-input`.
  *
  * @cssclass rui-autocomplete__input - Bordered search input.
  */
 export function RuiAutocompleteInput({
 	placeholder,
-	slot = 'input',
 	class: className,
 	disabled,
 	...props
@@ -23,7 +22,6 @@ export function RuiAutocompleteInput({
 		<input
 			{...props}
 			type="search"
-			slot={slot}
 			data-autocomplete-input
 			class={cx('rui-autocomplete__input', className)}
 			placeholder={placeholder}
@@ -55,7 +53,15 @@ export type RuiAutocompleteEmptyProps = JsxElementProps<HTMLDivElement>;
  */
 export function RuiAutocompleteEmpty({ children, class: className, ...props }: RuiAutocompleteEmptyProps) {
 	return (
-		<div {...props} data-autocomplete-empty class={cx('rui-autocomplete__empty', className)} hidden>
+		<div {...props} data-autocomplete-empty class={cx('rui-autocomplete__empty', className)}>
+			{children}
+		</div>
+	);
+}
+
+function AutocompleteShell({ children }: { children: JsxRenderable }) {
+	return (
+		<div class="rui-autocomplete" data-ref="root">
 			{children}
 		</div>
 	);
@@ -65,5 +71,9 @@ export function RuiAutocomplete({
 	children,
 	...props
 }: JsxCustomElementAttributes<RuiAutocompleteElement, RuiAutocompleteProps>) {
-	return <rui-autocomplete {...props}>{children}</rui-autocomplete>;
+	return (
+		<rui-autocomplete {...props}>
+			<AutocompleteShell>{children}</AutocompleteShell>
+		</rui-autocomplete>
+	);
 }

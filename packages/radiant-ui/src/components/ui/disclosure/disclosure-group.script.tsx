@@ -21,7 +21,6 @@ export type RuiDisclosureGroupProps = {
  * @element rui-disclosure-group
  * @attr {boolean} multiple - Allow more than one disclosure to stay open. Default: `false` (exclusive).
  * @attr {boolean} animated - Animate panel height for child disclosures. Default: `false`.
- * @slot - `rui-disclosure` children.
  * @cssclass rui-disclosure-group - Group surface (bordered card around stacked disclosures).
  */
 @customElement('rui-disclosure-group')
@@ -29,12 +28,9 @@ export class RuiDisclosureGroup extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) multiple: boolean;
 	@prop({ type: Boolean, reflect: true, attribute: 'animated', defaultValue: false }) animated: boolean;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			this.syncChildrenAnimated();
-			this.syncTriggers();
-		});
+	protected override onConnected(): void {
+		this.syncChildrenAnimated();
+		this.syncTriggers();
 	}
 
 	private getTriggers(): HTMLElement[] {
@@ -141,13 +137,5 @@ export class RuiDisclosureGroup extends RadiantElement {
 		}
 
 		event.preventDefault();
-	}
-
-	override render() {
-		return (
-			<div class="rui-disclosure-group" data-ref="root">
-				<slot></slot>
-			</div>
-		);
 	}
 }

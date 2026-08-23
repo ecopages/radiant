@@ -6,7 +6,7 @@ import { RuiMenubar as RuiMenubarElement } from './menubar.script';
 const meta = {
 	title: 'Components/Menubar',
 	component: RuiMenubar,
-	parameters: { radiant: { element: RuiMenubarElement, cssImports: ['./menubar.css'] } },
+	parameters: { radiant: { element: RuiMenubarElement, cssImports: ['../../../styles/primitives.css', './menubar.css'] } },
 	args: {
 		label: 'Application',
 		items: [

@@ -3,8 +3,10 @@ import { expect, fireEvent, userEvent } from 'storybook/test';
 import { RuiDisclosure } from '../disclosure/disclosure';
 import {
 	RuiNavigationMenu,
+	RuiNavigationMenuBar,
 	RuiNavigationMenuLink,
 	RuiNavigationMenuPanel,
+	RuiNavigationMenuPanels,
 	RuiNavigationMenuTrigger,
 } from './navigation-menu';
 import { RuiNavigationMenu as RuiNavigationMenuElement } from './navigation-menu.script';
@@ -12,7 +14,9 @@ import { RuiNavigationMenu as RuiNavigationMenuElement } from './navigation-menu
 const meta = {
 	title: 'Components/Navigation Menu',
 	component: RuiNavigationMenu,
-	parameters: { radiant: { element: RuiNavigationMenuElement, cssImports: ['./navigation-menu.css'] } },
+	parameters: {
+		radiant: { element: RuiNavigationMenuElement, cssImports: ['../button/button.css', './navigation-menu.css'] },
+	},
 	args: {
 		label: 'Main',
 	},
@@ -49,11 +53,14 @@ export const MegamenuNavigation: Story = {
 	render: (args) => (
 		<div class="max-w-5xl">
 			<RuiNavigationMenu label={args.label}>
-				<RuiNavigationMenuTrigger value="products">Products</RuiNavigationMenuTrigger>
-				<RuiNavigationMenuTrigger value="solutions">Solutions</RuiNavigationMenuTrigger>
-				<RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
+				<RuiNavigationMenuBar>
+					<RuiNavigationMenuTrigger value="products">Products</RuiNavigationMenuTrigger>
+					<RuiNavigationMenuTrigger value="solutions">Solutions</RuiNavigationMenuTrigger>
+					<RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
+				</RuiNavigationMenuBar>
 
-				<RuiNavigationMenuPanel value="products">
+				<RuiNavigationMenuPanels>
+					<RuiNavigationMenuPanel value="products">
 					<nav aria-label="Products">
 						<ul class="rui-navigation-menu__link-list">
 							{productLinks.map((link) => (
@@ -94,6 +101,7 @@ export const MegamenuNavigation: Story = {
 						</p>
 					</RuiDisclosure>
 				</RuiNavigationMenuPanel>
+				</RuiNavigationMenuPanels>
 			</RuiNavigationMenu>
 		</div>
 	),
@@ -184,9 +192,12 @@ export const MixedLinksAndPanels: Story = {
 	render: (args) => (
 		<div class="max-w-3xl">
 			<RuiNavigationMenu label={args.label}>
-				<RuiNavigationMenuTrigger value="learn">Learn</RuiNavigationMenuTrigger>
-				<RuiNavigationMenuLink href="/docs">Docs</RuiNavigationMenuLink>
-				<RuiNavigationMenuPanel value="learn">
+				<RuiNavigationMenuBar>
+					<RuiNavigationMenuTrigger value="learn">Learn</RuiNavigationMenuTrigger>
+					<RuiNavigationMenuLink href="/docs">Docs</RuiNavigationMenuLink>
+				</RuiNavigationMenuBar>
+				<RuiNavigationMenuPanels>
+					<RuiNavigationMenuPanel value="learn">
 					<nav aria-label="Learn">
 						<ul class="rui-navigation-menu__link-list">
 							<li>
@@ -201,6 +212,7 @@ export const MixedLinksAndPanels: Story = {
 						</ul>
 					</nav>
 				</RuiNavigationMenuPanel>
+				</RuiNavigationMenuPanels>
 			</RuiNavigationMenu>
 		</div>
 	),
@@ -210,8 +222,11 @@ export const DecorativePanelAccent: Story = {
 	render: (args) => (
 		<div class="max-w-3xl">
 			<RuiNavigationMenu label={args.label}>
-				<RuiNavigationMenuTrigger value="resources">Resources</RuiNavigationMenuTrigger>
-				<RuiNavigationMenuPanel value="resources">
+				<RuiNavigationMenuBar>
+					<RuiNavigationMenuTrigger value="resources">Resources</RuiNavigationMenuTrigger>
+				</RuiNavigationMenuBar>
+				<RuiNavigationMenuPanels>
+					<RuiNavigationMenuPanel value="resources">
 					<nav aria-label="Resources">
 						<ul class="rui-navigation-menu__link-list">
 							<li>
@@ -231,6 +246,7 @@ export const DecorativePanelAccent: Story = {
 						</p>
 					</RuiDisclosure>
 				</RuiNavigationMenuPanel>
+				</RuiNavigationMenuPanels>
 			</RuiNavigationMenu>
 		</div>
 	),

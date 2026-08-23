@@ -1,6 +1,4 @@
 @reference '../../../styles/radiant-ui.css';
-@import '../shared/control-toggle.css';
-@import '../shared/popover.css';
 
 rui-combobox {
 	@apply relative inline-flex w-full flex-col;
@@ -13,6 +11,7 @@ rui-combobox {
 
 	.rui-combobox__control {
 		@apply flex w-full min-w-0 items-center gap-1 rounded-control border border-border bg-background px-1;
+		min-height: var(--size-control-md);
 	}
 
 	.rui-combobox__control:focus-within {

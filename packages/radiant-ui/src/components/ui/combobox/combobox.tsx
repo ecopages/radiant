@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
@@ -13,14 +13,9 @@ export type RuiComboboxControlProps = JsxElementProps<HTMLDivElement>;
  *
  * @cssclass rui-combobox__control - Bordered control-height row.
  */
-export function RuiComboboxControl({
-	children,
-	slot = 'control',
-	class: className,
-	...props
-}: RuiComboboxControlProps) {
+export function RuiComboboxControl({ children, class: className, ...props }: RuiComboboxControlProps) {
 	return (
-		<div {...props} slot={slot} class={cx('rui-combobox__control', className)}>
+		<div {...props} class={cx('rui-combobox__control', className)}>
 			{children}
 		</div>
 	);
@@ -75,23 +70,16 @@ export function RuiComboboxTrigger({ children, class: className, aria, disabled,
 
 export type RuiComboboxListboxProps = JsxElementProps<HTMLDivElement>;
 
-/** Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside.
+/** Popup shell for the combobox listbox. Place an embedded `RuiListbox` inside.
  *
  * @cssclass rui-combobox__listbox - Popup shell (adds `rui-popover rui-popover--listbox rui-floating`).
  */
-export function RuiComboboxListbox({
-	children,
-	slot = 'listbox',
-	class: className,
-	...props
-}: RuiComboboxListboxProps) {
+export function RuiComboboxListbox({ children, class: className, ...props }: RuiComboboxListboxProps) {
 	return (
 		<div
 			{...props}
-			slot={slot}
 			data-combobox-listbox
 			class={cx('rui-combobox__listbox rui-popover rui-popover--listbox rui-floating', className)}
-			hidden
 		>
 			{children}
 		</div>
@@ -99,6 +87,14 @@ export function RuiComboboxListbox({
 }
 
 export type RuiComboboxOptionData = RuiListboxOptionData;
+
+function ComboboxShell({ children }: { children: JsxRenderable }) {
+	return (
+		<div class="rui-combobox" data-ref="root">
+			{children}
+		</div>
+	);
+}
 
 /**
  * Combobox view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
@@ -117,21 +113,27 @@ export function RuiCombobox({
 	if (options != null) {
 		return (
 			<rui-combobox {...props}>
-				<RuiComboboxControl>
-					<RuiComboboxInput placeholder={props.placeholder} disabled={props.disabled} />
-					<RuiComboboxTrigger />
-				</RuiComboboxControl>
-				<RuiComboboxListbox>
-					<RuiAutocomplete>
-						<RuiAutocompleteCollection>
-							<RuiListbox embedded options={options} />
-							<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
-						</RuiAutocompleteCollection>
-					</RuiAutocomplete>
-				</RuiComboboxListbox>
+				<ComboboxShell>
+					<RuiComboboxControl>
+						<RuiComboboxInput placeholder={props.placeholder} disabled={props.disabled} />
+						<RuiComboboxTrigger />
+					</RuiComboboxControl>
+					<RuiComboboxListbox>
+						<RuiAutocomplete>
+							<RuiAutocompleteCollection>
+								<RuiListbox embedded options={options} />
+								<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
+							</RuiAutocompleteCollection>
+						</RuiAutocomplete>
+					</RuiComboboxListbox>
+				</ComboboxShell>
 			</rui-combobox>
 		);
 	}
 
-	return <rui-combobox {...props}>{children}</rui-combobox>;
+	return (
+		<rui-combobox {...props}>
+			<ComboboxShell>{children}</ComboboxShell>
+		</rui-combobox>
+	);
 }
