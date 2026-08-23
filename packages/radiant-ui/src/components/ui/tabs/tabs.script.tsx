@@ -57,7 +57,10 @@ export class RuiTabs extends RadiantElement {
 		super.connectedCallback();
 		this.childObserver = new MutationObserver(() => this.resync());
 		this.childObserver.observe(this, { childList: true, subtree: true });
-		queueMicrotask(() => this.resync());
+	}
+
+	protected override onConnected(): void {
+		this.resync();
 	}
 
 	override disconnectedCallback(): void {

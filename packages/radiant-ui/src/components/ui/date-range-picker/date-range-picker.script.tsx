@@ -323,9 +323,8 @@ export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBinding
 		this.setOpen(false);
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.initialize());
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	override disconnectedCallback(): void {

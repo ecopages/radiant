@@ -58,8 +58,7 @@ export class RuiRadioGroup extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiRadioGroupChangeDetail>;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
+	protected override onConnected(): void {
 		this.syncRadios();
 	}
 

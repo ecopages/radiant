@@ -360,9 +360,8 @@ export class RuiCalendar extends RadiantElement {
 		this.refreshGrid();
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.initialize());
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	@onUpdated(['value', 'min', 'max', 'disabled', 'locale', 'selectionMode', 'visibleMonths', 'pageBehavior'])
