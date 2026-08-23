@@ -28,6 +28,7 @@ export * from './components/ui/form';
 export * from './components/ui/grid';
 export * from './components/ui/heading';
 export * from './components/ui/headline';
+export * from './components/ui/hover-card';
 export * from './components/ui/input';
 export * from './components/ui/input-group';
 export * from './components/ui/knob';

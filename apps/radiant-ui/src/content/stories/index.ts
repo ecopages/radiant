@@ -48,3 +48,4 @@ import './tooltip';
 import './tree';
 import './treegrid';
 import './window-splitter';
+import './hover-card'
