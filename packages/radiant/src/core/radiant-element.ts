@@ -332,31 +332,48 @@ export class RadiantElement<Bindings extends object = {}>
 				this.reactivePropertyState.completeInitialSync();
 			}
 
-			if (!this.shouldRunRenderLifecycle()) {
-				return;
-			}
+			if (this.shouldRunRenderLifecycle()) {
+				const renderRuntime = this.getOrCreateRenderRuntime();
+				renderRuntime.observeSlotProjection();
 
-			const renderRuntime = this.getOrCreateRenderRuntime();
-			renderRuntime.observeSlotProjection();
+				if (this.needsInitialHydration(renderRuntime)) {
+					this.renderScheduler.clearPending();
+					this.hydrate();
 
-			if (this.needsInitialHydration(renderRuntime)) {
-				this.renderScheduler.clearPending();
-				this.hydrate();
-
-				if (this.renderScheduler.pending) {
+					if (this.renderScheduler.pending) {
+						this.update();
+					}
+				} else if (this.isReconnectWithLiveProjection(renderRuntime)) {
+					// Already-mounted reconnects keep their live light DOM (see
+					// `isReconnectWithLiveProjection`); no update is scheduled.
+				} else {
 					this.update();
 				}
-
-				return;
 			}
 
-			if (this.isReconnectWithLiveProjection(renderRuntime)) {
-				return;
-			}
-
-			this.update();
+			this.onConnected();
 		});
 	}
+
+	/**
+	 * Lifecycle hook invoked after every host connection, once attribute catch-up,
+	 * initial property sync, and (when applicable) the initial hydrate/update have
+	 * completed.
+	 *
+	 * @remarks
+	 * This replaces the former `connectedCallback` + `queueMicrotask(sync)`
+	 * boilerplate: it runs at exactly the point that boilerplate targeted, so
+	 * authored attributes are visible and view-owned light-DOM children are
+	 * queryable via `data-ref`. It fires on every connection, not once per
+	 * instance — hosts that tear down in `disconnectedCallback` (controllers,
+	 * observers, listeners, timers) must rebuild here to survive reconnects.
+	 * Once-only bootstrapping should guard itself explicitly.
+	 *
+	 * This is not `ReactiveHost.registerConnectedCallback()`. Those callbacks
+	 * run synchronously from `connectHost()` at the start of `connectedCallback`,
+	 * before attribute catch-up. Override this hook for post-sync work.
+	 */
+	protected onConnected(): void {}
 
 	/**
 	 * @remarks A host can disconnect and reconnect while keeping the same instance (e.g. SPA

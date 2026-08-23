@@ -142,6 +142,32 @@ Full host HTML (`<my-element>...</my-element>`) is produced by the server pipeli
 
 This means the correct question is not "element or component?" anymore. The question is whether the host should keep authored DOM or own a JSX view.
 
+## Connect-time sync
+
+Override `protected onConnected()` for work that must wait until authored attributes are visible and (when the host owns `render()`) the initial hydrate/update has committed.
+
+Do not queue a `queueMicrotask` from `connectedCallback` for that. `onConnected` is invoked at that same point, on every connection — not once per instance. Rebuild controllers, observers, and listeners here if `disconnectedCallback` tears them down. Guard once-only bootstrapping with an explicit flag.
+
+Keep synchronous setup (event listeners, `MutationObserver`) in `connectedCallback`. Keep behavioral deferrals such as focus moves as explicit microtasks at their trigger sites.
+
+`onConnected` is not `registerConnectedCallback()`. Those reactive-host callbacks run synchronously at the start of `connectedCallback`, before attribute catch-up.
+
+```typescript
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+
+@customElement('status-chip')
+class StatusChip extends RadiantElement {
+  @prop({ type: String, defaultValue: '' }) label!: string;
+
+  protected override onConnected(): void {
+    const labelText = this.querySelector('[data-ref="label"]');
+    if (labelText) {
+      labelText.textContent = this.label;
+    }
+  }
+}
+```
+
 ## Bindings And Reactive Reads
 
 `RadiantElement` exposes three ways to wire reactive values into JSX:
@@ -215,6 +241,8 @@ Use these when you build host adapters, tests, or custom decorators. Prefer `@st
 - Use `RadiantElement` when you want a custom element host, whether the host is imperative or JSX-owned.
 - Override `render()` when the host itself should own a JSX view.
 - Skip `render()` when the host should enhance authored light DOM instead.
+- Override `onConnected()` for post-catch-up connect work; keep listeners in `connectedCallback`.
+- In JSX-authored composite libraries, keep parent-owned children in the view shell; do not re-project them through `<slot>` (see [Slots — JSX-authored composites](/docs/components/slots#jsx-authored-composites)).
 - Use [RadiantController](/docs/components/radiant-controller) when the DOM is authored elsewhere and a custom element wrapper would be unnecessary.
 
 ## See Also
