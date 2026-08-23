@@ -68,7 +68,7 @@ export class PopoverController {
 		const open = this.config.getOpen();
 		if (!open) {
 			this.teardown();
-			floating.hidden = true;
+			floating.toggleAttribute('hidden', true);
 			return;
 		}
 
@@ -77,7 +77,7 @@ export class PopoverController {
 			return;
 		}
 
-		floating.hidden = false;
+		floating.toggleAttribute('hidden', false);
 
 		const usePortal = this.config.portal !== false;
 		if (usePortal) {
