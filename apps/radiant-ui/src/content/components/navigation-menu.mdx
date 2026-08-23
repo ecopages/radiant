@@ -68,7 +68,7 @@ Override roles at the theme layer, not in component CSS.
 
 ## API
 
-`RuiNavigationMenu` is a custom element (`<rui-navigation-menu>`) rendering a `nav` landmark. Compose the view helpers for triggers, links, and panels, or use the slots directly.
+`RuiNavigationMenu` is a custom element (`<rui-navigation-menu>`) rendering a `nav` landmark. Compose the view helpers for triggers, links, and panels, using `RuiNavigationMenuBar` and `RuiNavigationMenuPanels`.
 
 ### Attributes
 
@@ -76,21 +76,23 @@ Override roles at the theme layer, not in component CSS.
 | --- | --- | --- | --- |
 | `label` | `string` | `''` | Accessible name for the `nav` landmark. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| `triggers` | Top-level navigation triggers and plain links. |
-| `panels` | Disclosure panels composed from other primitives. |
+| `RuiNavigationMenuBar` | Top-level triggers and plain links. |
+| `RuiNavigationMenuPanels` | Megamenu panels paired with triggers by `value`. |
 
 ### View helpers
 
-| Component | Renders | Slot |
+| Component | Renders | Placement |
 | --- | --- | --- |
-| `RuiNavigationMenu` | `<rui-navigation-menu>` | |
-| `RuiNavigationMenuTrigger` | `RuiButton` trigger | `triggers` |
-| `RuiNavigationMenuLink` | Anchor styled as a button | `triggers` |
-| `RuiNavigationMenuPanel` | Panel `div` | `panels` |
+| `RuiNavigationMenu` | `<rui-navigation-menu>` with view-owned `nav` shell | Root |
+| `RuiNavigationMenuBar` | Trigger / link row | Inside menu root |
+| `RuiNavigationMenuPanels` | Panel region | Inside menu root |
+| `RuiNavigationMenuTrigger` | `RuiButton` trigger | Inside `RuiNavigationMenuBar` |
+| `RuiNavigationMenuLink` | Anchor styled as a button | Inside `RuiNavigationMenuBar` |
+| `RuiNavigationMenuPanel` | Panel `div` | Inside `RuiNavigationMenuPanels` |
 
 ### CSS classes
 

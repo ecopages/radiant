@@ -253,8 +253,11 @@
 			]
 		},
 		"sidebar": {
-			"direct": [],
+			"direct": [
+				"button"
+			],
 			"styles": [
+				"@ecopages/radiant-ui/button/styles.css",
 				"@ecopages/radiant-ui/sidebar/styles.css"
 			]
 		},

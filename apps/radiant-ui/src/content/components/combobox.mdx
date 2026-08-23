@@ -73,7 +73,7 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 
 ## API
 
-`RuiCombobox` is a custom element (`<rui-combobox>`) that coordinates a slotted input row and listbox popup; the view helpers own the composed surface.
+`RuiCombobox` is a custom element (`<rui-combobox>`) that coordinates a composed input row and listbox popup; the view helpers own the composed surface.
 
 ### Attributes
 
@@ -85,9 +85,9 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | `disabled` | `boolean` | `false` | Disable the input and trigger. |
 | `open-on-focus` | `boolean` | `false` | Open the listbox when the input gains focus. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
 | `control` | Input row: `RuiComboboxControl` with `RuiComboboxInput` (+ optional `RuiComboboxTrigger`). |
 | `listbox` | Popup shell: `RuiComboboxListbox` containing an embedded `RuiListbox`. |
@@ -100,7 +100,7 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 
 ### View helpers
 
-| Component | Renders | Slot |
+| Component | Renders | Placement |
 | --- | --- | --- |
 | `RuiComboboxControl` | Input row wrapper | `control` |
 | `RuiComboboxInput` | Text input (`role="combobox"`) | |

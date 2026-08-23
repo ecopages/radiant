@@ -88,12 +88,13 @@ Disclosure provides two custom elements: `<rui-disclosure>` (show/hide) and `<ru
 | `multiple` | `boolean` | `false` | Allow more than one disclosure open (exclusive by default). |
 | `animated` | `boolean` | `false` | Animate panel height for child disclosures. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| `trigger` | Disclosure button (`RuiDisclosureTrigger`). |
-| *(default)* | Panel content (`RuiDisclosurePanel`). For `<rui-disclosure-group>`, `rui-disclosure` children. |
+| `RuiDisclosureTrigger` | Disclosure button. |
+| `RuiDisclosurePanel` | Panel content region. |
+| `rui-disclosure` children | Stacked disclosures inside `RuiDisclosureGroup`. |
 
 ### Events
 
@@ -117,7 +118,7 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 
 | Class | Description |
 | --- | --- |
-| `.rui-disclosure` | Root wrapper around trigger and panel slots. |
+| `.rui-disclosure` | Root wrapper around trigger and panel regions. |
 | `.rui-disclosure__trigger` | Trigger button; reflects `aria-expanded`. |
 | `.rui-disclosure__trigger--icon-end` | Layout when `iconPosition="end"`. |
 | `.rui-disclosure__icon` | Indicator wrapper (decorative, `aria-hidden`). |

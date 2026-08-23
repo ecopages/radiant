@@ -46,6 +46,16 @@ export class ShellCard extends RadiantElement {
 </shell-card>
 ```
 
+## JSX-authored composites
+
+When a framework view (for example a `Rui*` helper in Radiant UI) owns the
+light-DOM shell, **do not** route parent JSX children through CE `<slot>` tags.
+Place chrome and author content in the view, query with `data-ref` / `data-*`,
+and toggle volatile visibility with `toggleAttribute`. Reserve CE slots for
+HTML-first hosts where consumers author unordered direct children.
+
+See [RadiantElement](/docs/components/radiant-element#authored-light-dom-host) and the Radiant UI composition guide.
+
 ## Semantics
 
 - Slots are resolved from direct host children.

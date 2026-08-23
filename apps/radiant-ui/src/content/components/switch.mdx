@@ -65,7 +65,7 @@ Label text uses `on-background`; track uses the `rounded-pill` radius token. Ove
 
 ## API
 
-`RuiSwitch` is a custom element (`<rui-switch>`) rendering a native `<input type="checkbox" role="switch">` inside a `<label>`, the browser owns activation and Space-to-toggle.
+`RuiSwitch` renders a view-owned `<label>` and native `<input type="checkbox" role="switch">` inside the coordinating `<rui-switch>` custom element. Use the JSX view or compose equivalent marked-up light DOM; the browser owns activation and Space-to-toggle.
 
 ### Attributes (`<rui-switch>`)
 
@@ -75,11 +75,11 @@ Label text uses `on-background`; track uses the `rounded-pill` radius token. Ove
 | `disabled` | `boolean` | `false` | Disabled state. |
 | `name` | `string` | `''` | Form field name. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| (default) | Visible label for the switch. Must not change with state. |
+| `RuiSwitch` children | Visible label for the switch. Must not change with state. |
 
 ### Events
 

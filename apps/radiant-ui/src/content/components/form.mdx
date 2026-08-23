@@ -74,7 +74,7 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 
 ## API
 
-`RuiForm` is a custom element (`<rui-form>`). The `RuiForm` view is a passthrough that maps `defaultValues` / `resolver` to `prop:` bindings.
+`RuiForm` renders a view-owned native `<form>` inside the coordinating `<rui-form>` custom element. The view maps `defaultValues` / `resolver` to `prop:` bindings and keeps authored children inside that native form.
 
 ### Attributes
 

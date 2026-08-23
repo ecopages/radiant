@@ -1,6 +1,4 @@
 @reference '../../../styles/radiant-ui.css';
-@import '../shared/control-toggle.css';
-@import '../shared/popover.css';
 
 rui-date-range-picker {
 	@apply relative inline-flex w-full;

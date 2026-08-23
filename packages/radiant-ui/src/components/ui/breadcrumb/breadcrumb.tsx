@@ -12,8 +12,20 @@ export type RuiBreadcrumbViewProps = JsxCustomElementAttributes<RuiBreadcrumbEle
  *
  * @cssclass rui-breadcrumb - `<nav>` landmark root.
  */
-export function RuiBreadcrumb({ children, ...props }: RuiBreadcrumbViewProps) {
-	return <rui-breadcrumb {...props}>{children}</rui-breadcrumb>;
+export function RuiBreadcrumb({ children, label, separator, ...props }: RuiBreadcrumbViewProps) {
+	const resolvedLabel = label || 'Breadcrumb';
+	const resolvedSeparator = separator || '/';
+	return (
+		<rui-breadcrumb {...props} label={label} separator={separator}>
+			<nav
+				class="rui-breadcrumb"
+				aria-label={resolvedLabel}
+				style={{ '--rui-breadcrumb-separator': JSON.stringify(resolvedSeparator) }}
+			>
+				{children}
+			</nav>
+		</rui-breadcrumb>
+	);
 }
 
 export type RuiBreadcrumbListProps = JsxElementProps<HTMLOListElement>;
