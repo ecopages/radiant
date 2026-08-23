@@ -1,4 +1,6 @@
+import { execFile } from 'node:child_process';
 import { spawn } from 'node:child_process';
+import { promisify } from 'node:util';
 import { chromium } from 'playwright';
 import {
 	evaluateStoryResult,
@@ -10,6 +12,7 @@ import {
 	type StoryIndex,
 } from './storybook-ssr-harness';
 
+const execFileAsync = promisify(execFile);
 const origin = `http://localhost:${SSR_TEST_PORT}`;
 const { smoke } = parseHarnessOptions();
 
@@ -28,20 +31,72 @@ async function waitForStorybook(): Promise<void> {
 	throw new Error('Timed out waiting for Storybook.');
 }
 
-function stopServer(pid: number | undefined): void {
-	if (!pid) {
-		return;
-	}
-
+async function isStorybookListening(): Promise<boolean> {
 	try {
-		process.kill(-pid, 'SIGTERM');
+		const response = await fetch(`${origin}/index.json`, { signal: AbortSignal.timeout(300) });
+		return response.ok;
+	} catch {
+		return false;
+	}
+}
+
+async function waitUntilStopped(timeoutMs: number): Promise<boolean> {
+	const startedAt = Date.now();
+	while (Date.now() - startedAt < timeoutMs) {
+		if (!(await isStorybookListening())) {
+			return true;
+		}
+		await new Promise((resolve) => setTimeout(resolve, 150));
+	}
+	return !(await isStorybookListening());
+}
+
+async function killListenersOnPort(port: number): Promise<void> {
+	try {
+		const { stdout } = await execFileAsync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-t']);
+		for (const pid of stdout.trim().split('\n').filter(Boolean)) {
+			try {
+				process.kill(Number(pid), 'SIGKILL');
+			} catch {
+				/* already gone */
+			}
+		}
+	} catch {
+		/* nothing listening */
+	}
+}
+
+function killProcessGroup(pid: number, signal: NodeJS.Signals): void {
+	try {
+		process.kill(-pid, signal);
 	} catch {
 		try {
-			process.kill(pid, 'SIGTERM');
+			process.kill(pid, signal);
 		} catch {
-			/* already exited */
+			/* already gone */
 		}
 	}
+}
+
+/**
+ * Stops the detached `pnpm exec storybook` tree and anything still bound to the harness port.
+ *
+ * @remarks
+ * SIGTERM on the wrapper pid is not enough: Storybook is a grandchild and keeps listening
+ * after the Node script exits. Wait for the port to drop, then SIGKILL the group and port.
+ */
+async function stopServer(pid: number | undefined): Promise<void> {
+	if (pid) {
+		killProcessGroup(pid, 'SIGTERM');
+	}
+	if (await waitUntilStopped(4000)) {
+		return;
+	}
+	if (pid) {
+		killProcessGroup(pid, 'SIGKILL');
+	}
+	await killListenersOnPort(SSR_TEST_PORT);
+	await waitUntilStopped(2000);
 }
 
 const server = spawn(
@@ -63,6 +118,13 @@ const server = spawn(
 		stdio: 'inherit',
 	},
 );
+
+process.once('SIGINT', () => {
+	void stopServer(server.pid).finally(() => process.exit(130));
+});
+process.once('SIGTERM', () => {
+	void stopServer(server.pid).finally(() => process.exit(143));
+});
 
 try {
 	await waitForStorybook();
@@ -103,5 +165,5 @@ try {
 		throw new Error(`${scope}:\n${failures.join('\n')}`);
 	}
 } finally {
-	stopServer(server.pid);
+	await stopServer(server.pid);
 }
