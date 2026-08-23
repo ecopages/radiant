@@ -56,21 +56,34 @@ const TreegridRows = ({ rows }: { rows: RuiTreegridRow[] }) => (
 export function RuiTreegrid({
 	columns,
 	rows,
+	label,
+	children,
 	...props
 }: JsxCustomElementAttributes<
 	RuiTreegridElement,
-	RuiTreegridProps & { columns: JsxRenderable[]; rows: RuiTreegridRow[] }
+	RuiTreegridProps & { columns?: JsxRenderable[]; rows?: RuiTreegridRow[] }
 >) {
+	const content =
+		columns != null && rows != null ? (
+			<>
+				<div class="rui-treegrid__row rui-treegrid__row--header" role="row">
+					{columns.map((column) => (
+						<div class="rui-treegrid__cell rui-treegrid__cell--header" role="columnheader">
+							{column}
+						</div>
+					))}
+				</div>
+				<TreegridRows rows={rows} />
+			</>
+		) : (
+			children
+		);
+
 	return (
-		<rui-treegrid {...props}>
-			<div class="rui-treegrid__row rui-treegrid__row--header" role="row">
-				{columns.map((column) => (
-					<div class="rui-treegrid__cell rui-treegrid__cell--header" role="columnheader">
-						{column}
-					</div>
-				))}
+		<rui-treegrid {...props} label={label}>
+			<div class="rui-treegrid" data-ref="root" role="treegrid" aria-label={label || undefined}>
+				{content}
 			</div>
-			<TreegridRows rows={rows} />
 		</rui-treegrid>
 	);
 }

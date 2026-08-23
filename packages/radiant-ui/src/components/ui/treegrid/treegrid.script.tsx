@@ -35,9 +35,6 @@ type RuiTreegridBindings = {
  * @attr {string} label - Accessible name for the treegrid.
  * @attr {string} value - Selected row's `data-row-id`. Default: `''`.
  *
- * @slot - Rows and groups authored as `role="row"` / `role="rowgroup"` markup.
- *   Use the `RuiTreegrid` view (`columns`, `rows`) or author light-DOM rows directly.
- *
  * @fires rui-change - Emitted with `{ rowId, columnIndex }` when a cell activates.
  *
  * @cssclass rui-treegrid - Root surface (`role="treegrid"`).
@@ -54,8 +51,6 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreegridChangeDetail>;
-
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getDataRows(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="row"][data-row-id]'));
@@ -130,12 +125,9 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 		}
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			this.syncExpanded();
-			this.syncSelection();
-		});
+	protected override onConnected(): void {
+		this.syncExpanded();
+		this.syncSelection();
 	}
 
 	@onUpdated('value')
@@ -306,13 +298,5 @@ export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
 			default:
 				return;
 		}
-	}
-
-	override render() {
-		return (
-			<div class="rui-treegrid" role="treegrid" aria-label={this.resolvedAriaLabel}>
-				<slot></slot>
-			</div>
-		);
 	}
 }

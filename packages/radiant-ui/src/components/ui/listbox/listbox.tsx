@@ -39,26 +39,70 @@ export function RuiListboxOption({
 
 export type RuiListboxOptionData = { value: string; label: JsxRenderable; disabled?: boolean };
 
+function listboxIsBordered(embedded?: boolean, bordered?: boolean): boolean {
+	if (bordered != null) {
+		return bordered;
+	}
+
+	return !embedded;
+}
+
+type ListboxShellProps = {
+	bordered: boolean;
+	children: JsxRenderable;
+	disabled?: boolean;
+	label?: string;
+};
+
+function ListboxShell({ bordered, children, disabled, label }: ListboxShellProps) {
+	return (
+		<div
+			class={cx('rui-listbox', bordered && 'rui-listbox--bordered')}
+			role="listbox"
+			data-rui-control
+			data-rui-control-type="text"
+			aria-label={label || undefined}
+			aria-disabled={disabled ? 'true' : undefined}
+		>
+			{children}
+		</div>
+	);
+}
+
 export function RuiListbox({
 	options,
 	children,
+	embedded,
+	bordered,
+	label,
+	disabled,
 	...props
 }: JsxCustomElementAttributes<RuiListboxElement, RuiListboxProps & { options?: RuiListboxOptionData[] }>) {
+	const isBordered = listboxIsBordered(embedded, bordered);
+
 	if (options != null) {
 		return (
-			<rui-listbox {...props}>
-				{options.map((option) => (
-					<RuiListboxOption
-						value={option.value}
-						label={typeof option.label === 'string' ? option.label : undefined}
-						disabled={option.disabled}
-					>
-						{option.label}
-					</RuiListboxOption>
-				))}
+			<rui-listbox {...props} embedded={embedded} bordered={bordered} label={label} disabled={disabled}>
+				<ListboxShell bordered={isBordered} disabled={disabled} label={label}>
+					{options.map((option) => (
+						<RuiListboxOption
+							value={option.value}
+							label={typeof option.label === 'string' ? option.label : undefined}
+							disabled={option.disabled}
+						>
+							{option.label}
+						</RuiListboxOption>
+					))}
+				</ListboxShell>
 			</rui-listbox>
 		);
 	}
 
-	return <rui-listbox {...props}>{children}</rui-listbox>;
+	return (
+		<rui-listbox {...props} embedded={embedded} bordered={bordered} label={label} disabled={disabled}>
+			<ListboxShell bordered={isBordered} disabled={disabled} label={label}>
+				{children}
+			</ListboxShell>
+		</rui-listbox>
+	);
 }
