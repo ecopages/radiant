@@ -413,6 +413,13 @@
 		"./number-field/styles.css": {
 			"default": "./dist/components/ui/number-field/number-field.css"
 		},
+		"./pagination": {
+			"types": "./dist/components/ui/pagination/index.d.ts",
+			"import": "./dist/components/ui/pagination/index.js"
+		},
+		"./pagination/styles.css": {
+			"default": "./dist/components/ui/pagination/pagination.css"
+		},
 		"./popover": {
 			"types": "./dist/components/ui/popover/index.d.ts",
 			"import": "./dist/components/ui/popover/index.js"
