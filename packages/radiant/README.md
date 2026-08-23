@@ -34,6 +34,7 @@ Application code does not need to import JSX helpers or Signals primitives direc
 - `@onUpdated(...)` is the bridge from reactive member changes to `update()` or `requestUpdate()` when the rendered structure needs to be recomputed.
 - `this.bindings.key`, `this.$.key`, and `this.bind('key')` expose stable JSX bindings for reactive members.
 - If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged.
+- `onConnected()` runs after every connection, once attribute catch-up and (when `render()` is overridden) the initial hydrate/update have finished. Use it instead of `connectedCallback` + `queueMicrotask(sync)`. It is not `registerConnectedCallback()`, which runs synchronously before catch-up.
 - Literal `<slot>` tags project authored light-DOM content, and `getSlotElement(...)`, `getSlotElements(...)`, or `@querySlot(...)` let component logic read the assigned elements.
 
 The key distinction is this:

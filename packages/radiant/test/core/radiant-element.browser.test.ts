@@ -3,6 +3,8 @@ import { jsx } from '@ecopages/jsx';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { installRadiantHydrator, uninstallRadiantHydrator } from '../../src/client/hydrator';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { customElement } from '../../src/decorators/custom-element';
+import { prop } from '../../src/decorators/prop';
 
 class MyRadiantElement extends RadiantElement {
 	static observedAttributes = ['number', 'string'];
@@ -301,5 +303,87 @@ describe('RadiantElement', () => {
 
 		el.items = [...el.items, 'another item'];
 		expect(updateCount).toBe(1);
+	});
+});
+
+describe('onConnected', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	@customElement('on-connected-attr-host')
+	class OnConnectedAttrHost extends RadiantElement {
+		@prop({ type: String, defaultValue: '' }) label: string;
+		connectedCount = 0;
+		seenLabel = '';
+
+		protected override onConnected(): void {
+			this.connectedCount += 1;
+			this.seenLabel = this.label;
+		}
+	}
+
+	@customElement('on-connected-render-host')
+	class OnConnectedRenderHost extends RadiantElement {
+		connectedCount = 0;
+		hasRef = false;
+
+		override render() {
+			return jsx('div', { 'data-ref': 'root' });
+		}
+
+		protected override onConnected(): void {
+			this.connectedCount += 1;
+			this.hasRef = this.querySelector('[data-ref="root"]') != null;
+		}
+	}
+
+	test('runs after first-connect attribute catch-up on a host with no render override', async () => {
+		const element = document.createElement('on-connected-attr-host') as OnConnectedAttrHost;
+		element.setAttribute('label', 'authored');
+		document.body.appendChild(element);
+
+		expect(element.connectedCount).toBe(0);
+		expect(element.seenLabel).toBe('');
+
+		await Promise.resolve();
+
+		expect(element.connectedCount).toBe(1);
+		expect(element.seenLabel).toBe('authored');
+	});
+
+	test('runs after the initial render commit so refs exist', async () => {
+		const element = document.createElement('on-connected-render-host') as OnConnectedRenderHost;
+		document.body.appendChild(element);
+
+		await Promise.resolve();
+
+		expect(element.connectedCount).toBe(1);
+		expect(element.hasRef).toBe(true);
+	});
+
+	test('runs again when the same instance reconnects', async () => {
+		const element = document.createElement('on-connected-attr-host') as OnConnectedAttrHost;
+		element.setAttribute('label', 'authored');
+		document.body.appendChild(element);
+		await Promise.resolve();
+		expect(element.connectedCount).toBe(1);
+
+		element.remove();
+		document.body.appendChild(element);
+		await Promise.resolve();
+
+		expect(element.connectedCount).toBe(2);
+		expect(element.seenLabel).toBe('authored');
+	});
+
+	test('does not run if the host disconnects before the connect microtask', async () => {
+		const element = document.createElement('on-connected-attr-host') as OnConnectedAttrHost;
+		document.body.appendChild(element);
+		element.remove();
+
+		await Promise.resolve();
+
+		expect(element.connectedCount).toBe(0);
 	});
 });
