@@ -6,6 +6,7 @@
 		"dev": "vite",
 		"build": "cd ../.. && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/radiant build:lib && cd playground/vite-nitro && vite build",
 		"preview": "nitro preview",
+		"test:all": "pnpm run test:e2e",
 		"test:e2e": "node --test ./test/nitro-page.e2e.test.mjs"
 	},
 	"dependencies": {
