@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCustomElementStoryModule } from './framework-hmr.ts';
+import { isCustomElementStoryModule } from './framework-hmr';
 
 describe('isCustomElementStoryModule', () => {
 	it('matches story modules that declare a custom element', () => {
