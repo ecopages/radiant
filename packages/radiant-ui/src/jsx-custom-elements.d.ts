@@ -15,6 +15,7 @@ import type { RuiListbox, RuiListboxProps } from './components/ui/listbox/listbo
 import type { RuiMenuButton, RuiMenuButtonProps } from './components/ui/menu-button/menu-button.script';
 import type { RuiMenubar, RuiMenubarProps } from './components/ui/menubar/menubar.script';
 import type { RuiMeter, RuiMeterProps } from './components/ui/meter/meter.script';
+import type { RuiKnob, RuiKnobProps } from './components/ui/knob/knob.script';
 import type { RuiNavigationMenu, RuiNavigationMenuProps } from './components/ui/navigation-menu/navigation-menu.script';
 import type { RuiRadioGroup, RuiRadioGroupProps } from './components/ui/radio-group/radio-group.script';
 import type { RuiSelect, RuiSelectProps } from './components/ui/select/select.script';
@@ -53,6 +54,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-menu-button': JsxCustomElementAttributes<RuiMenuButton, RuiMenuButtonProps>;
 		'rui-menubar': JsxCustomElementAttributes<RuiMenubar, RuiMenubarProps>;
 		'rui-meter': JsxCustomElementAttributes<RuiMeter, RuiMeterProps>;
+		'rui-knob': JsxCustomElementAttributes<RuiKnob, RuiKnobProps>;
 		'rui-navigation-menu': JsxCustomElementAttributes<RuiNavigationMenu, RuiNavigationMenuProps>;
 		'rui-radio-group': JsxCustomElementAttributes<RuiRadioGroup, RuiRadioGroupProps>;
 		'rui-select': JsxCustomElementAttributes<RuiSelect, RuiSelectProps>;

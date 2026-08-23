@@ -30,6 +30,7 @@ export * from './components/ui/heading';
 export * from './components/ui/headline';
 export * from './components/ui/input';
 export * from './components/ui/input-group';
+export * from './components/ui/knob';
 export * from './components/ui/label';
 export * from './components/ui/listbox';
 export * from './components/ui/menu-button';
