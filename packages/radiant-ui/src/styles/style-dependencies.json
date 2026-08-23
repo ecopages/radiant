@@ -317,6 +317,15 @@
 				"@ecopages/radiant-ui/switch/styles.css"
 			]
 		},
+		"table": {
+			"direct": [
+				"checkbox"
+			],
+			"styles": [
+				"@ecopages/radiant-ui/checkbox/styles.css",
+				"@ecopages/radiant-ui/table/styles.css"
+			]
+		},
 		"tabs": {
 			"direct": [],
 			"styles": [
