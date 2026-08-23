@@ -49,4 +49,5 @@ import './tree';
 import './treegrid';
 import './window-splitter';
 import './hover-card';
-import './pagination'
+import './pagination';
+import './table'

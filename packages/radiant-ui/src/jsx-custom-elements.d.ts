@@ -28,6 +28,7 @@ import type { RuiPagination, RuiPaginationProps } from './components/ui/paginati
 import type { RuiPopover, RuiPopoverProps } from './components/ui/popover/popover.script';
 import type { RuiPopoverTrigger, RuiPopoverTriggerProps } from './components/ui/popover/popover.script';
 import type { RuiSwitch, RuiSwitchProps } from './components/ui/switch/switch.script';
+import type { RuiTable, RuiTableProps } from './components/ui/table/table.script';
 import type { RuiTabs, RuiTabsProps } from './components/ui/tabs/tabs.script';
 import type { RuiToc, RuiTocProps } from './components/ui/toc/toc.script';
 import type { RuiToolbar, RuiToolbarProps } from './components/ui/toolbar/toolbar.script';
@@ -69,6 +70,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-popover': JsxCustomElementAttributes<RuiPopover, RuiPopoverProps>;
 		'rui-popover-trigger': JsxCustomElementAttributes<RuiPopoverTrigger, RuiPopoverTriggerProps>;
 		'rui-switch': JsxCustomElementAttributes<RuiSwitch, RuiSwitchProps>;
+		'rui-table': JsxCustomElementAttributes<RuiTable, RuiTableProps>;
 		'rui-tabs': JsxCustomElementAttributes<RuiTabs, RuiTabsProps>;
 		'rui-toc': JsxCustomElementAttributes<RuiToc, RuiTocProps>;
 		'rui-toast': JsxCustomElementAttributes<RuiToast, RuiToastProps>;

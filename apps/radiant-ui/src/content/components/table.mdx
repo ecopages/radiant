@@ -1,0 +1,106 @@
+---
+title: Table
+description: Table provides a composable data grid with keyboard navigation, row selection, and sortable columns.
+category: Data display
+---
+
+import { meta as TableMeta, Default } from '@/content/stories/table';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Table
+
+<p class="docs-lede">Table provides a composable data grid with keyboard navigation, row selection, and sortable columns.</p>
+
+## Try it
+
+<Demo of={Default} meta={TableMeta} />
+
+## Usage
+
+Compose header, body, columns, and rows as light-DOM children. The table owns keyboard focus, selection, and sort state; your app owns the collection and updates it after `rui-sort-change`.
+
+```tsx
+import {
+  RuiTable,
+  RuiTableBody,
+  RuiTableCell,
+  RuiTableColumn,
+  RuiTableHeader,
+  RuiTableRow,
+} from '@ecopages/radiant-ui/table';
+
+<RuiTable label="Plants" sortColumn="name" sortDirection="ascending">
+  <RuiTableHeader>
+    <RuiTableColumn id="name" allowsSorting isRowHeader>
+      Plant
+    </RuiTableColumn>
+    <RuiTableColumn id="cycle" allowsSorting>
+      Cycle
+    </RuiTableColumn>
+  </RuiTableHeader>
+  <RuiTableBody>
+    <RuiTableRow id="aloe">
+      <RuiTableCell isRowHeader>Aloe</RuiTableCell>
+      <RuiTableCell>Perennial</RuiTableCell>
+    </RuiTableRow>
+  </RuiTableBody>
+</RuiTable>
+```
+
+## Table vs grid vs treegrid
+
+<p>Use `RuiGrid` for simple read-only grids with a `rows` prop. Use `RuiTreegrid` when rows expand into hierarchies. Use `RuiTable` when you need sortable columns, row selection, and actionable row activation.</p>
+
+## Theming
+
+| Part | CSS roles |
+| --- | --- |
+| Surface (`rui-table`) | `border`, `background`, `on-background`, `rounded-container`, `shadow-sm` |
+| Header columns | `surface`, `on-background` |
+| Selected row | `primary-container`, `on-primary-container` |
+| Sort / focus | `focus-ring` |
+
+## API
+
+`RuiTable` is a custom element (`<rui-table>`) with composable JSX helpers for header, body, columns, cells, and selection.
+
+### Attributes (`<rui-table>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the grid. |
+| `aria-busy` | `'true'` · `'false'` | `'false'` | Whether the collection is updating. |
+| `selection-mode` | `none` · `single` · `multiple` | `none` | Row selection mode. |
+| `value` | `string` | `''` | Selected row ids (comma-separated for multiple). |
+| `sort-column` | `string` | `''` | Active sortable column id. |
+| `sort-direction` | `ascending` · `descending` | `ascending` | Active sort direction. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Selected row ids changed. |
+| `rui-sort-change` | `{ column, direction }` | Sort column or direction changed. |
+| `rui-row-action` | `{ rowId: string }` | Actionable row activated (Enter / double-click). |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-table` | Table surface (`role="grid"`). |
+| `.rui-table__column` | Column header cell. |
+| `.rui-table__cell` | Data cell. |
+| `.rui-table__row` | Data row. |
