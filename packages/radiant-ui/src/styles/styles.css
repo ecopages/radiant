@@ -6,6 +6,7 @@
 @import '../components/ui/alert/alert.css';
 @import '../components/ui/autocomplete/autocomplete.css';
 @import '../components/ui/avatar/avatar.css';
+@import '../components/ui/badge/badge.css';
 @import '../components/ui/breadcrumb/breadcrumb.css';
 @import '../components/ui/button/button.css';
 @import '../components/ui/button-group/button-group.css';
@@ -28,6 +29,7 @@
 @import '../components/ui/heading/heading.css';
 @import '../components/ui/headline/headline.css';
 @import '../components/ui/input/input.css';
+@import '../components/ui/input-group/input-group.css';
 @import '../components/ui/label/label.css';
 @import '../components/ui/listbox/listbox.css';
 @import '../components/ui/menu-button/menu-button.css';
@@ -40,6 +42,7 @@
 @import '../components/ui/select/select.css';
 @import '../components/ui/sidebar/sidebar.css';
 @import '../components/ui/slider/slider.css';
+@import '../components/ui/spinner/spinner.css';
 @import '../components/ui/switch/switch.css';
 @import '../components/ui/tabs/tabs.css';
 @import '../components/ui/tag-group/tag-group.css';
