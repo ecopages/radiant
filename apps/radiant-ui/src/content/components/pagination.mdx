@@ -1,0 +1,85 @@
+---
+title: Pagination
+description: Pagination provides accessible page navigation for controlled collections.
+category: Navigation
+---
+
+import { meta as PaginationMeta, Default } from '@/content/stories/pagination';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Pagination
+
+<p class="docs-lede">Pagination provides accessible page navigation for controlled collections.</p>
+
+## Try it
+
+<Demo of={Default} meta={PaginationMeta} />
+
+## Usage
+
+`RuiPagination` renders previous, numbered, and next controls by default. Listen for `rui-page-change` and update the controlled `page` prop from your data layer.
+
+```tsx
+import { RuiPagination } from '@ecopages/radiant-ui/pagination';
+
+<RuiPagination
+  label="Search result pages"
+  page={page}
+  pageCount={pageCount}
+  on:rui-page-change={(event) => setPage(event.detail.page)}
+/>
+```
+
+Pass `children` to replace the default navigation chrome while keeping the `rui-pagination` event contract.
+
+## Theming
+
+| Part | CSS roles |
+| --- | --- |
+| Links | Reuses `RuiButton` ghost and filled variants |
+| Ellipsis | `on-surface` |
+
+## API
+
+`RuiPagination` wraps `<rui-pagination>` and supplies default navigation controls.
+
+### Attributes (`<rui-pagination>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `Pagination` | Accessible name for the navigation landmark. |
+| `page` | `number` | `1` | Current one-based page. |
+| `page-count` | `number` | `1` | Total number of pages. |
+| `disabled` | `boolean` | `false` | Disable page navigation. |
+| `sibling-count` | `number` | `1` | Pages shown on each side of the current page. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-page-change` | `{ page: number }` | Emitted when a page control is activated. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-pagination` | Navigation root. |
+| `.rui-pagination__list` | Page controls list. |
+| `.rui-pagination__link` | Previous, next, and page control. |
+| `.rui-pagination__page` | Page-number item; `__page--current` marks the active page. |
+| `.rui-pagination--compact` | Force previous / `{page} / {count}` / next chrome (also used below `40rem`). |
+| `.rui-pagination__status` | Non-interactive `{page} / {count}` label in compact chrome. |
+| `.rui-pagination__ellipsis` | Hidden range marker between page numbers. |
