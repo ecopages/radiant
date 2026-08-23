@@ -354,9 +354,8 @@ export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
 		controller.sync();
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.initialize());
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	override disconnectedCallback(): void {

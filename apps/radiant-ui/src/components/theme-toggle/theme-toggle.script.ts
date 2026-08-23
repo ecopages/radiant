@@ -51,9 +51,8 @@ export class ThemeToggle extends RuiCycleToggleElement {
 	 * stored preference synchronously would run first, then catch-up would
 	 * overwrite `value` with the SSR attribute.
 	 */
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.syncWithStoredPreference());
+	protected override onConnected(): void {
+		this.syncWithStoredPreference();
 	}
 
 	@onEvent({ mediaQuery: DARK_THEME_QUERY, type: 'change' })

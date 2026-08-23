@@ -27,13 +27,11 @@ export class RadiantAccordion extends RadiantElement {
 
 	private animations: DetailsAnimation[] = [];
 
-	connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			for (const _details of this.detailsTargets ?? []) {
-				this.animations.push({ reference: null, isClosing: false, isExpanding: false });
-			}
-		});
+	protected override onConnected(): void {
+		this.animations = [];
+		for (const _details of this.detailsTargets ?? []) {
+			this.animations.push({ reference: null, isClosing: false, isExpanding: false });
+		}
 	}
 
 	@onEvent({ selector: 'summary', type: 'click' })
