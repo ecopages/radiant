@@ -173,3 +173,18 @@ test('Docs controller decorator visualizer example keeps authored DOM wiring in 
 		await waitForLocatorText(flowTitle, 'Ref pulse');
 	});
 });
+
+test('Docs lifecycle diagrams are rendered in the generated HTML', browserTestOptions, async () => {
+	await withBrowserPage(async (page) => {
+		await page.goto(`${origin}/docs/components/lifecycle`, { waitUntil: 'load' });
+		await page.waitForSelector('img[src^="data:image/svg+xml"]');
+		assert.equal(await page.locator('img[src^="data:image/svg+xml"]').count(), 3);
+
+		await page.locator('a[href="/docs/components/radiant-element"]').first().click();
+		await page.waitForURL('**/docs/components/radiant-element');
+		await page.locator('a[href="/docs/components/lifecycle"]').first().click();
+		await page.waitForURL('**/docs/components/lifecycle');
+		await page.waitForSelector('img[src^="data:image/svg+xml"]');
+		assert.equal(await page.locator('img[src^="data:image/svg+xml"]').count(), 3);
+	});
+});
