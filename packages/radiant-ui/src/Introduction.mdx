@@ -55,6 +55,22 @@ Not every entry under **Components/** is a full APG widget. Read the component T
 
 Each composite component's TSDoc links the [WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/) pattern it targets.
 
+## Light-DOM ownership
+
+Parent JSX owns author content. Composite components use a **view-owned shell**:
+JSX helpers place chrome and children; the custom element coordinates behavior
+and queries `data-ref` / `data-*` hooks. Do not project parent-owned children
+through CE `<slot>` — that causes range drift when the parent re-renders.
+
+Named composition regions are still supported. Use helpers (`RuiSelectControl`,
+`RuiNumberFieldInput`) or named props (`primary`, `trigger`) placed in the
+correct DOM position by the view — not HTML `slot="…"` attributes.
+
+Keep CE `render()` only for **derived trees** the CE generates from its own
+state (toast list, TOC links, calendar cells). Popup visibility and other
+volatile attrs toggled by the CE use `toggleAttribute` so parent re-renders do
+not fight imperative updates. See `AGENTS.md` for the full rule.
+
 ## Conventions
 
 - One directory per component in `src/components/ui/<name>/`:

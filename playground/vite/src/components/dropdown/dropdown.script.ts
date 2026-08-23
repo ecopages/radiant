@@ -42,11 +42,14 @@ export class RadiantDropdown extends RadiantElement {
 	@prop({ type: String, defaultValue: 'bottom-start', reflect: true }) placement!: RadiantDropdownPlacement;
 	@prop({ type: Boolean, defaultValue: true }) focusOnOpen!: boolean;
 
-	connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			if (this.defaultOpen) this.toggleContent();
-		});
+	private didApplyDefaultOpen = false;
+
+	protected override onConnected(): void {
+		if (this.didApplyDefaultOpen) {
+			return;
+		}
+		this.didApplyDefaultOpen = true;
+		if (this.defaultOpen) this.toggleContent();
 	}
 
 	disconnectedCallback(): void {
