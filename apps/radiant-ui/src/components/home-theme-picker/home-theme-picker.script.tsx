@@ -29,7 +29,15 @@ export class HomeThemePickerElement extends RadiantElement {
 		super.connectedCallback();
 		this.selection = readDocsThemeSelection();
 		applyDocumentTokens(this.selection);
-		queueMicrotask(() => this.syncSelectValues());
+	}
+
+	/**
+	 * @remarks Nested `rui-select` hosts upgrade after this callback, so value
+	 * sync waits for the connect microtask. Before upgrade the host has no
+	 * `value` field.
+	 */
+	protected override onConnected(): void {
+		this.syncSelectValues();
 	}
 
 	@onEvent({ selector: 'rui-select[data-token]', type: 'rui-change' })
