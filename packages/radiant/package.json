@@ -23,6 +23,7 @@
 		"watch:lib": "node --import tsx ./build.ts --watch",
 		"size:check": "node --import tsx ./check-size.ts",
 		"size:report": "node --import tsx ./check-size.ts --report-only",
+		"test:all": "pnpm run test:lib && pnpm run size:check",
 		"test:standard": "vitest run",
 		"test:legacy": "vitest run -- --legacy",
 		"test:lib": "pnpm run test:standard && pnpm run test:legacy",

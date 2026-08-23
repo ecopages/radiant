@@ -9,7 +9,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const config: StorybookConfig = {
 	stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
 	staticDirs: [path.join(dirname, 'public')],
-	addons: ['@storybook/addon-vitest', '@storybook/addon-a11y', '@storybook/addon-docs'],
+	managerHead: (head) => `${head}<link rel="icon" type="image/svg+xml" href="./logo.svg" />`,
+	addons: ['@storybook/addon-vitest', '@storybook/addon-a11y', '@storybook/addon-docs', 'msw-storybook-addon'],
 	framework: {
 		name: '@ecopages/storybook-radiant-vite',
 		options: {
