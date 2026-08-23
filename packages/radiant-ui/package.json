@@ -63,8 +63,8 @@
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
 		"storybook": "^10.5.2",
-		"ts-dedent": "^2.2.0",
 		"tailwindcss": "^4.1.11",
+		"ts-dedent": "^2.2.0",
 		"tsx": "^4.20.6",
 		"typescript": "catalog:",
 		"vite": "^8.1.1",
@@ -153,11 +153,17 @@
 		"./styles.css": {
 			"default": "./dist/styles/styles.css"
 		},
+		"./primitives.css": {
+			"default": "./dist/styles/primitives.css"
+		},
 		"./radiant-ui.css": {
 			"default": "./dist/styles/radiant-ui.css"
 		},
 		"./radiant-ui-core.css": {
 			"default": "./dist/styles/radiant-ui-core.css"
+		},
+		"./style-dependencies": {
+			"default": "./dist/styles/style-dependencies.json"
 		},
 		"./alert": {
 			"types": "./dist/components/ui/alert/index.d.ts",
