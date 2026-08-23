@@ -336,6 +336,13 @@
 		"./headline/styles.css": {
 			"default": "./dist/components/ui/headline/headline.css"
 		},
+		"./hover-card": {
+			"types": "./dist/components/ui/hover-card/index.d.ts",
+			"import": "./dist/components/ui/hover-card/index.js"
+		},
+		"./hover-card/styles.css": {
+			"default": "./dist/components/ui/hover-card/hover-card.css"
+		},
 		"./input": {
 			"types": "./dist/components/ui/input/index.d.ts",
 			"import": "./dist/components/ui/input/index.js"
