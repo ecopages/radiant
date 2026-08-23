@@ -10,8 +10,7 @@ Source of truth: `.changeset/config.json`. Prerelease channel: `.changeset/pre.j
 | ------------------ | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Platform (`fixed`) | `@ecopages/jsx`, `@ecopages/signals`, `@ecopages/radiant` | List only those with a user-visible change. `fixed` bumps all three to the same version regardless.               |
 | Design system      | `@ecopages/radiant-ui`                                    | List when components, tokens, themes, or public exports change. Versions independently — never add it to `fixed`. |
-| Vite integration   | `@ecopages/vite-plugin-radiant`                           | List for its own public API, Vite, or Nitro contract changes. Not in `fixed`.                                     |
-| Ignored tooling    | `@ecopages/storybook-radiant-vite`                        | Never list. Private and in `ignore`.                                                                              |
+| Vite integration (`fixed`) | `@ecopages/vite-plugin-radiant`, `@ecopages/storybook-radiant-vite` | List when either public API changes. `fixed` bumps both to the same version. Not in the platform group. |
 | Private            | `apps/*`, `playground/*`                                  | Never list, never publish.                                                                                        |
 
 Do not invent a `packages/core/` layout to co-version the platform trio — `fixed` already does that.
@@ -22,7 +21,7 @@ Do not invent a `packages/core/` layout to co-version the platform trio — `fix
 pnpm run prerelease   # typecheck + build:all + test:all
 ```
 
-`build:all` covers all five publishable packages, including `@ecopages/radiant-ui`.
+`build:all` covers all six publishable packages, including `@ecopages/radiant-ui` and `@ecopages/storybook-radiant-vite`.
 
 ## Versioning needs a token
 
@@ -44,7 +43,7 @@ GITHUB_TOKEN="$(gh auth token)" pnpm changeset version
 
 ## Publish layout
 
-`@ecopages/jsx`, `@ecopages/radiant`, and `@ecopages/signals` set `publishConfig.directory: "dist"`. `@ecopages/radiant-ui` and `@ecopages/vite-plugin-radiant` publish from the package root.
+`@ecopages/jsx`, `@ecopages/radiant`, and `@ecopages/signals` set `publishConfig.directory: "dist"`. `@ecopages/radiant-ui`, `@ecopages/vite-plugin-radiant`, and `@ecopages/storybook-radiant-vite` publish from the package root.
 
 ## Verify a release
 
@@ -54,4 +53,5 @@ npm view @ecopages/jsx dist-tags --json
 npm view @ecopages/signals dist-tags --json
 npm view @ecopages/radiant-ui dist-tags --json
 npm view @ecopages/vite-plugin-radiant dist-tags --json
+npm view @ecopages/storybook-radiant-vite dist-tags --json
 ```

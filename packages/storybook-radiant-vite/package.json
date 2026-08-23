@@ -1,7 +1,6 @@
 {
 	"name": "@ecopages/storybook-radiant-vite",
-	"version": "0.1.0-beta.0",
-	"private": true,
+	"version": "0.1.0-rc.0",
 	"description": "Storybook framework for @ecopages/radiant — Vite builder, Radiant JSX renderer, and SSR story modes",
 	"keywords": [
 		"storybook",
@@ -12,6 +11,11 @@
 		"vite",
 		"ssr"
 	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/storybook-radiant-vite"
+	},
 	"license": "MIT",
 	"type": "module",
 	"publishConfig": {
