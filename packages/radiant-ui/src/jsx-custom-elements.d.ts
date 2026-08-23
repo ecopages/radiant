@@ -10,6 +10,7 @@ import type { RuiDisclosureGroup, RuiDisclosureGroupProps } from './components/u
 import type { RuiDisclosure, RuiDisclosureProps } from './components/ui/disclosure/disclosure.script';
 import type { RuiField, RuiFieldProps } from './components/ui/field/field.script';
 import type { RuiForm, RuiFormProps } from './components/ui/form/form.script';
+import type { RuiHoverCard, RuiHoverCardProps } from './components/ui/hover-card/hover-card.script';
 import type { RuiGrid, RuiGridProps } from './components/ui/grid/grid.script';
 import type { RuiListbox, RuiListboxProps } from './components/ui/listbox/listbox.script';
 import type { RuiMenuButton, RuiMenuButtonProps } from './components/ui/menu-button/menu-button.script';
@@ -49,6 +50,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-disclosure-group': JsxCustomElementAttributes<RuiDisclosureGroup, RuiDisclosureGroupProps>;
 		'rui-field': JsxCustomElementAttributes<RuiField, RuiFieldProps>;
 		'rui-form': JsxCustomElementAttributes<RuiForm, RuiFormProps>;
+		'rui-hover-card': JsxCustomElementAttributes<RuiHoverCard, RuiHoverCardProps>;
 		'rui-grid': JsxCustomElementAttributes<RuiGrid, RuiGridProps>;
 		'rui-listbox': JsxCustomElementAttributes<RuiListbox, RuiListboxProps>;
 		'rui-menu-button': JsxCustomElementAttributes<RuiMenuButton, RuiMenuButtonProps>;

@@ -173,6 +173,15 @@
 				"@ecopages/radiant-ui/headline/styles.css"
 			]
 		},
+		"hover-card": {
+			"direct": [
+				"primitives"
+			],
+			"styles": [
+				"@ecopages/radiant-ui/primitives.css",
+				"@ecopages/radiant-ui/hover-card/styles.css"
+			]
+		},
 		"input": {
 			"direct": [],
 			"styles": [
