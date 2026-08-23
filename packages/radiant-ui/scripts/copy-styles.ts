@@ -7,7 +7,7 @@
  *
  * Run after `build:files` (or as part of `build:lib`).
  */
-import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { listComponentCssFiles } from './component-style-files.ts';
 import postcss from 'postcss';
@@ -18,6 +18,7 @@ const SRC = path.join(ROOT, 'src');
 const DIST = path.join(ROOT, 'dist');
 const STYLES_SRC = path.join(SRC, 'styles');
 const STYLES_DIST = path.join(DIST, 'styles');
+const STYLE_DEPENDENCIES = 'style-dependencies.json';
 const UI_DIR = path.join(SRC, 'components', 'ui');
 
 const processor = postcss([
@@ -91,6 +92,9 @@ async function main(): Promise<void> {
 		const relative = path.relative(path.join(SRC, 'components', 'ui'), from);
 		jobs.push(compileCss(from, path.join(DIST, 'components', 'ui', relative)));
 	}
+
+	mkdirSync(STYLES_DIST, { recursive: true });
+	copyFileSync(path.join(STYLES_SRC, STYLE_DEPENDENCIES), path.join(STYLES_DIST, STYLE_DEPENDENCIES));
 
 	await Promise.all(jobs);
 
