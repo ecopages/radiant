@@ -7,7 +7,7 @@ import { RuiSwitch as RuiSwitchElement } from './switch.script';
 const meta = {
 	title: 'Components/Switch',
 	component: RuiSwitch,
-	parameters: { radiant: { element: RuiSwitchElement, cssImports: ['./switch.css'] } },
+	parameters: { radiant: { element: RuiSwitchElement, cssImports: ['./switch.css', '../field/field.css'] } },
 	args: {
 		checked: false,
 		disabled: false,

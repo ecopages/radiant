@@ -11,14 +11,9 @@ export type RuiNumberFieldGroupProps = JsxElementProps<HTMLDivElement>;
  *
  * @cssclass rui-number-field__group - Control-height bordered row wrapping input and steppers.
  */
-export function RuiNumberFieldGroup({
-	children,
-	slot = 'group',
-	class: className,
-	...props
-}: RuiNumberFieldGroupProps) {
+export function RuiNumberFieldGroup({ children, class: className, ...props }: RuiNumberFieldGroupProps) {
 	return (
-		<div {...props} slot={slot} data-number-field-group class={cx('rui-number-field__group', className)}>
+		<div {...props} data-number-field-group class={cx('rui-number-field__group', className)}>
 			{children}
 		</div>
 	);
@@ -31,12 +26,11 @@ export type RuiNumberFieldInputProps = JsxElementProps<HTMLInputElement> & {
 };
 
 /**
- * Text input in the `input` slot. Formatting is handled by `<rui-number-field>`.
+ * Text input for the number field. Formatting is handled by `<rui-number-field>`.
  *
  * @cssclass rui-number-field__input - Borderless text input inside the group.
  */
 export function RuiNumberFieldInput({
-	slot = 'input',
 	class: className,
 	disabled,
 	readOnly,
@@ -46,7 +40,6 @@ export function RuiNumberFieldInput({
 		<input
 			{...props}
 			type="text"
-			slot={slot}
 			data-number-field-input
 			data-rui-control
 			data-rui-control-type="number"
@@ -64,27 +57,25 @@ export type RuiNumberFieldSteppersProps = JsxElementProps<HTMLDivElement>;
  *
  * @cssclass rui-number-field__steppers - Trailing stepper column with a border divider.
  */
-export function RuiNumberFieldSteppers({ children, slot, class: className, ...props }: RuiNumberFieldSteppersProps) {
+export function RuiNumberFieldSteppers({ children, class: className, ...props }: RuiNumberFieldSteppersProps) {
 	return (
-		<div {...props} slot={slot} class={cx('rui-number-field__steppers', className)}>
+		<div {...props} class={cx('rui-number-field__steppers', className)}>
 			{children}
 		</div>
 	);
 }
 
 export type RuiNumberFieldStepperButtonProps = JsxElementProps<HTMLButtonElement> & {
-	slot?: 'increment' | 'decrement';
 	disabled?: boolean;
 };
 
 /**
- * Increment stepper in the `increment` slot.
+ * Increment stepper button.
  *
  * @cssclass rui-number-field__stepper - Icon button cell in the steppers column.
  */
 export function RuiNumberFieldIncrementButton({
 	children,
-	slot = 'increment',
 	class: className,
 	aria,
 	disabled,
@@ -95,7 +86,6 @@ export function RuiNumberFieldIncrementButton({
 			{...props}
 			aria={withDefaultAriaLabel(aria, 'Increment')}
 			type="button"
-			slot={slot}
 			data-number-field-action="increment"
 			class={cx('rui-number-field__stepper', className)}
 			disabled={disabled}
@@ -107,13 +97,12 @@ export function RuiNumberFieldIncrementButton({
 }
 
 /**
- * Decrement stepper in the `decrement` slot.
+ * Decrement stepper button.
  *
  * @cssclass rui-number-field__stepper - Icon button cell in the steppers column.
  */
 export function RuiNumberFieldDecrementButton({
 	children,
-	slot = 'decrement',
 	class: className,
 	aria,
 	disabled,
@@ -124,7 +113,6 @@ export function RuiNumberFieldDecrementButton({
 			{...props}
 			aria={withDefaultAriaLabel(aria, 'Decrement')}
 			type="button"
-			slot={slot}
 			data-number-field-action="decrement"
 			class={cx('rui-number-field__stepper', className)}
 			disabled={disabled}
@@ -132,6 +120,19 @@ export function RuiNumberFieldDecrementButton({
 		>
 			{children ?? '−'}
 		</button>
+	);
+}
+
+function NumberFieldDefaultGroup() {
+	return (
+		<RuiNumberFieldGroup>
+			<RuiNumberFieldInput />
+			<input type="hidden" data-number-field-value />
+			<RuiNumberFieldSteppers>
+				<RuiNumberFieldDecrementButton />
+				<RuiNumberFieldIncrementButton />
+			</RuiNumberFieldSteppers>
+		</RuiNumberFieldGroup>
 	);
 }
 
@@ -150,12 +151,18 @@ export function RuiNumberFieldDecrementButton({
  * </RuiNumberField>
  * ```
  *
- * Or use standalone; default slots render input and stepper buttons.
+ * When `children` is omitted, the view renders the default input and stepper row.
  * Pair with `RuiLabel` / `RuiField` for labeling and validation.
  */
 export function RuiNumberField({
 	children,
 	...props
 }: JsxCustomElementAttributes<RuiNumberFieldElement, RuiNumberFieldProps>) {
-	return <rui-number-field {...props}>{children}</rui-number-field>;
+	return (
+		<rui-number-field {...props}>
+			<div class="rui-number-field" data-ref="root">
+				{children ?? <NumberFieldDefaultGroup />}
+			</div>
+		</rui-number-field>
+	);
 }

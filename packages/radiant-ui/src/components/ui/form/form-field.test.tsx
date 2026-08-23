@@ -36,7 +36,7 @@ describe('RuiField view', () => {
 	});
 });
 
-describe('rui-field projected content discovery', () => {
+	describe('rui-field composed content discovery', () => {
 	it('calls RuiForm onSubmit with validated values', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
@@ -146,6 +146,10 @@ describe('rui-field projected content discovery', () => {
 
 	it('shows validation message after invalid submit', async () => {
 		const form = document.createElement('rui-form') as RuiFormElement;
+		const nativeForm = document.createElement('form');
+		nativeForm.className = 'rui-form';
+		nativeForm.setAttribute('data-ref', 'form');
+		nativeForm.noValidate = true;
 		const field = document.createElement('rui-field') as RuiFieldElement;
 		field.name = 'email';
 		field.rules = { required: 'Email is required' };
@@ -155,7 +159,8 @@ describe('rui-field projected content discovery', () => {
 			<p class="rui-field__error" data-rui-field-error role="alert" hidden></p>
 		`;
 
-		form.append(field);
+		nativeForm.append(field);
+		form.append(nativeForm);
 		document.body.append(form);
 
 		await customElements.whenDefined('rui-form');
@@ -163,15 +168,14 @@ describe('rui-field projected content discovery', () => {
 		await flushRender();
 		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
 
-		const nativeForm = form.getRef<HTMLFormElement>('form');
-		expect(nativeForm).not.toBeNull();
+		expect(form.getRef<HTMLFormElement>('form')).toBe(nativeForm);
 
 		let invalid = false;
 		form.addEventListener('rui-invalid', () => {
 			invalid = true;
 		});
 
-		nativeForm!.requestSubmit();
+		nativeForm.requestSubmit();
 		await flushRender();
 		await new Promise((resolve) => setTimeout(resolve, 0));
 

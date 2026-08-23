@@ -26,7 +26,7 @@ export function RuiField({
 					defaultValueData ?? (defaultValue !== undefined ? JSON.stringify(defaultValue) : undefined),
 			}}
 		>
-			{children}
+			<div class="rui-field">{children}</div>
 		</rui-field>
 	);
 }

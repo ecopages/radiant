@@ -16,6 +16,7 @@ const HOST_CONTROL_TAGS = new Set([
 	'rui-switch',
 	'rui-radio-group',
 	'rui-slider',
+	'rui-knob',
 	'rui-number-field',
 	'rui-listbox',
 ]);
@@ -93,6 +94,47 @@ const booleanValueAdapter: ControlValueAdapter = {
 	},
 };
 
+function readNumberProperty(host: HTMLElement, property: string, attribute: string): number | '' {
+	const value = Reflect.get(host, property);
+	if (typeof value === 'number' && Number.isFinite(value)) {
+		return value;
+	}
+	const raw = host.getAttribute(attribute);
+	return raw == null || raw === '' ? '' : Number(raw);
+}
+
+function isRangeSlider(host: HTMLElement): boolean {
+	const variant = Reflect.get(host, 'variant');
+	return variant === 'range' || host.getAttribute('variant') === 'range';
+}
+
+const sliderValueAdapter: ControlValueAdapter = {
+	read: (host) => {
+		if (isRangeSlider(host)) {
+			return [readNumberProperty(host, 'rangeMin', 'range-min'), readNumberProperty(host, 'rangeMax', 'range-max')];
+		}
+		return numberValueAdapter.read(host);
+	},
+	write: (host, value) => {
+		if (Array.isArray(value) && value.length >= 2) {
+			host.setAttribute('variant', 'range');
+			if ('variant' in host) {
+				Reflect.set(host, 'variant', 'range');
+			}
+			host.setAttribute('range-min', String(value[0]));
+			host.setAttribute('range-max', String(value[1]));
+			if ('rangeMin' in host) {
+				Reflect.set(host, 'rangeMin', value[0]);
+			}
+			if ('rangeMax' in host) {
+				Reflect.set(host, 'rangeMax', value[1]);
+			}
+			return;
+		}
+		numberValueAdapter.write(host, value);
+	},
+};
+
 const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
 	['rui-checkbox', booleanValueAdapter],
 	['rui-switch', booleanValueAdapter],
@@ -103,7 +145,8 @@ const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
 	['rui-radio-group', stringValueAdapter],
 	['rui-listbox', stringValueAdapter],
 	['rui-tag-group', stringValueAdapter],
-	['rui-slider', numberValueAdapter],
+	['rui-slider', sliderValueAdapter],
+	['rui-knob', numberValueAdapter],
 	['rui-number-field', numberValueAdapter],
 ]);
 
@@ -388,6 +431,10 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 		return control;
 	}
 
+	if (control.localName === 'rui-slider') {
+		return control.querySelector<HTMLElement>('[data-thumb]:not([hidden])') ?? control;
+	}
+
 	const marked = control.querySelector<HTMLElement>(`[${RUI_CONTROL_ATTR}]`);
 	if (marked) {
 		return marked;
@@ -417,8 +464,8 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 		return control.querySelector<HTMLElement>('[data-number-field-input], input') ?? control;
 	}
 
-	if (control.localName === 'rui-slider') {
-		return control.querySelector<HTMLElement>('input[type="range"]') ?? control;
+	if (control.localName === 'rui-knob') {
+		return control.querySelector<HTMLElement>('[data-knob-control]') ?? control;
 	}
 
 	if (control.localName === 'rui-checkbox' || control.localName === 'rui-switch') {
@@ -437,3 +484,13 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 
 	return control;
 }
+
+/** Focusable surfaces that Field should wire `aria-invalid` / `aria-describedby` onto. */
+export function getAriaControlTargets(control: HTMLElement): HTMLElement[] {
+	if (control.localName === 'rui-slider') {
+		const thumbs = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]:not([hidden])'));
+		return thumbs.length > 0 ? thumbs : [control];
+	}
+	return [getAriaControlTarget(control)];
+}
+
