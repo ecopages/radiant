@@ -1,5 +1,4 @@
 @reference '../../../styles/radiant-ui.css';
-@import '../shared/popover.css';
 
 rui-menu-button {
 	@apply inline-flex;
@@ -15,9 +14,7 @@ rui-menu-button {
 	}
 
 	.rui-menu-button__chevron {
-		@apply inline-block border-x-4 border-t-[5px] border-x-transparent border-t-current;
-		width: 0;
-		height: 0;
+		@apply shrink-0;
 	}
 
 	.rui-menu-button__menu {

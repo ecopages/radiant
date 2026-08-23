@@ -43,9 +43,6 @@ export type RuiComboboxChangeDetail = { value: string };
  * @attr {boolean} disabled - Disable the input and trigger. Default: `false`.
  * @attr {boolean} open-on-focus - Open the listbox when the input gains focus. Default: `false`.
  *
- * @slot control - Input row (`RuiComboboxControl` with input and trigger).
- * @slot listbox - Popup shell (`RuiComboboxListbox`) containing an embedded `RuiListbox`.
- *
  * @fires rui-change - Emitted when an option is selected; detail carries `value`.
  *
  * @cssclass rui-combobox - Root surface.
@@ -233,7 +230,7 @@ export class RuiCombobox extends RadiantElement {
 		}
 
 		input.setAttribute('aria-expanded', String(next));
-		popup.hidden = !next;
+		popup.toggleAttribute('hidden', !next);
 		this.syncTrigger();
 
 		if (!next) {
@@ -331,9 +328,8 @@ export class RuiCombobox extends RadiantElement {
 		this.setOpen(false);
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.initialize());
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	override disconnectedCallback(): void {
@@ -528,14 +524,5 @@ export class RuiCombobox extends RadiantElement {
 			return;
 		}
 		this.setOpen(false);
-	}
-
-	override render() {
-		return (
-			<div class="rui-combobox" data-ref="root">
-				<slot name="control"></slot>
-				<slot name="listbox"></slot>
-			</div>
-		);
 	}
 }

@@ -13,7 +13,16 @@ rui-sidebar {
 	 * @remarks Use `clip` (not `hidden`) so focus `scrollIntoView` cannot scroll this
 	 * shell — `hidden` still creates a scroll container and jumps the inset off-screen.
 	 */
-	@apply relative flex h-svh min-w-0 w-full flex-1 overflow-clip bg-background;
+	@apply relative flex h-svh min-h-0 min-w-0 w-full flex-1 overflow-clip bg-background;
+}
+
+.rui-sidebar-provider:has(> rui-sidebar[data-variant='inset']) {
+	@apply box-border gap-4 bg-surface p-4;
+}
+
+.rui-sidebar-provider:has(> rui-sidebar[data-variant='inset']) > .rui-sidebar,
+.rui-sidebar-provider:has(> rui-sidebar[data-variant='inset']) > .rui-sidebar__inset {
+	@apply h-full max-h-full min-h-0;
 }
 
 .rui-sidebar-provider[data-layout='full'] {
@@ -122,7 +131,8 @@ rui-sidebar {
 }
 
 .rui-sidebar[data-variant='inset'] {
-	@apply rounded-container border border-border bg-background;
+	@apply max-h-full min-h-0 rounded-container border border-border bg-background;
+	--rui-sidebar-background: var(--color-background);
 }
 
 .rui-sidebar[data-state='collapsed'] {
@@ -344,6 +354,10 @@ rui-sidebar {
 	@apply flex min-h-0 min-w-0 w-full flex-1 flex-col gap-0 overflow-clip bg-background;
 }
 
+.rui-sidebar-provider:has(> rui-sidebar[data-variant='inset']) > .rui-sidebar__inset {
+	@apply rounded-container border border-border;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Trigger                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -357,7 +371,23 @@ rui-sidebar {
 }
 
 .rui-sidebar__trigger-glyph {
-	@apply size-4 shrink-0;
+	@apply hidden size-4 shrink-0;
+}
+
+.rui-sidebar__trigger[data-sidebar-state='expanded']:not(.rui-sidebar__trigger--inset)
+	.rui-sidebar__trigger-glyph--collapse,
+.rui-sidebar__trigger--header .rui-sidebar__trigger-glyph--collapse {
+	@apply block;
+}
+
+.rui-sidebar__trigger[data-sidebar-state='collapsed']:not(.rui-sidebar__trigger--header):not(.rui-sidebar__trigger--inset)
+	.rui-sidebar__trigger-glyph--expand {
+	@apply block;
+}
+
+.rui-sidebar__trigger--inset[data-sidebar-state='expanded'] .rui-sidebar__trigger-glyph--close,
+.rui-sidebar__trigger--inset[data-sidebar-state='collapsed'] .rui-sidebar__trigger-glyph--menu {
+	@apply block;
 }
 
 /* -------------------------------------------------------------------------- */

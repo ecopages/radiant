@@ -1,4 +1,4 @@
-import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { omitProps } from '@/lib/omit-props';
@@ -14,9 +14,9 @@ export type RuiSelectControlProps = JsxElementProps<HTMLDivElement>;
  *
  * @cssclass rui-select__control - Trigger row; bordered, control-height surface.
  */
-export function RuiSelectControl({ children, slot = 'trigger', class: className, ...props }: RuiSelectControlProps) {
+export function RuiSelectControl({ children, class: className, ...props }: RuiSelectControlProps) {
 	return (
-		<div {...props} slot={slot} class={cx('rui-select__control', className)}>
+		<div {...props} class={cx('rui-select__control', className)}>
 			{children}
 		</div>
 	);
@@ -80,9 +80,9 @@ export type RuiSelectValueProps = JsxElementProps<HTMLSpanElement>;
  *
  * @cssclass rui-select__value - Selected value / placeholder text.
  */
-export function RuiSelectValue({ children, slot, class: className, ...props }: RuiSelectValueProps) {
+export function RuiSelectValue({ children, class: className, ...props }: RuiSelectValueProps) {
 	return (
-		<span {...props} slot={slot} data-select-value class={cx('rui-select__value', className)}>
+		<span {...props} data-select-value class={cx('rui-select__value', className)}>
 			{children}
 		</span>
 	);
@@ -91,18 +91,16 @@ export function RuiSelectValue({ children, slot, class: className, ...props }: R
 export type RuiSelectListboxProps = JsxElementProps<HTMLDivElement>;
 
 /**
- * Popup shell slotted into `listbox`. Place an embedded `RuiListbox` inside.
+ * Popup shell composed inside `listbox`. Place an embedded `RuiListbox` inside.
  *
  * @cssclass rui-select__listbox - Popup shell; composes `rui-popover` surface roles.
  */
-export function RuiSelectListbox({ children, slot = 'listbox', class: className, ...props }: RuiSelectListboxProps) {
+export function RuiSelectListbox({ children, class: className, ...props }: RuiSelectListboxProps) {
 	return (
 		<div
 			{...props}
-			slot={slot}
 			data-select-listbox
 			class={cx('rui-select__listbox rui-popover rui-popover--listbox rui-floating', className)}
-			hidden
 		>
 			{children}
 		</div>
@@ -121,7 +119,6 @@ export type RuiSelectSearchProps = JsxElementProps<HTMLInputElement> & {
  */
 export function RuiSelectSearch({
 	placeholder,
-	slot = 'input',
 	class: className,
 	disabled,
 	...props
@@ -130,7 +127,6 @@ export function RuiSelectSearch({
 		<input
 			{...props}
 			type="search"
-			slot={slot}
 			data-autocomplete-input
 			class={cx('rui-select__search', className)}
 			placeholder={placeholder}
@@ -171,30 +167,36 @@ export type RuiSelectViewProps = JsxCustomElementAttributes<
 	}
 >;
 
+function SelectShell({ children }: { children: JsxRenderable }) {
+	return (
+		<div class="rui-select" data-ref="root">
+			{children}
+		</div>
+	);
+}
+
 export function RuiSelect({ options, children, ...props }: RuiSelectViewProps) {
 	const displayText = options != null ? resolveSelectDisplayText(options, props.value, props.placeholder) : '';
-	const isPlaceholder =
-		options != null && !(typeof props.value === 'string' && props.value.trim()) && Boolean(props.placeholder);
 
 	return (
 		<rui-select {...props}>
-			{options == null ? (
-				children
-			) : (
-				<>
-					<RuiSelectControl>
-						<RuiSelectTrigger>
-							<RuiSelectValue {...(isPlaceholder ? { 'data-placeholder': true } : {})}>
-								{displayText}
-							</RuiSelectValue>
-						</RuiSelectTrigger>
-						<RuiSelectToggle />
-					</RuiSelectControl>
-					<RuiSelectListbox>
-						<RuiListbox embedded options={options} />
-					</RuiSelectListbox>
-				</>
-			)}
+			<SelectShell>
+				{options == null ? (
+					children
+				) : (
+					<>
+						<RuiSelectControl>
+							<RuiSelectTrigger>
+								<RuiSelectValue>{displayText}</RuiSelectValue>
+							</RuiSelectTrigger>
+							<RuiSelectToggle />
+						</RuiSelectControl>
+						<RuiSelectListbox>
+							<RuiListbox embedded options={options} />
+						</RuiSelectListbox>
+					</>
+				)}
+			</SelectShell>
 		</rui-select>
 	);
 }

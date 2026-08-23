@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
+import { withStylesheets } from '@sb/with-stylesheets';
+import autocompleteCss from '../autocomplete/autocomplete.css?url';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiTagGroup, RuiTagList } from '../tag-group';
+import tagGroupCss from '../tag-group/tag-group.css?url';
 import { RuiListbox, RuiListboxOption } from '../listbox';
 import {
 	RuiSelect,
@@ -32,7 +35,12 @@ const meta = {
 	parameters: {
 		radiant: {
 			element: RuiSelectElement,
-			cssImports: ['./select.css', '../shared/control-toggle.css', '../../../lib/icons/icons.css'],
+			cssImports: [
+				'../../../styles/primitives.css',
+				'../listbox/listbox.css',
+				'./select.css',
+				'../field/field.css',
+			],
 		},
 	},
 	args: {
@@ -129,6 +137,7 @@ export const Multiple: Story = {
 };
 
 export const WithAutocomplete: Story = {
+	decorators: [withStylesheets([autocompleteCss])],
 	render: () => (
 		<div class="flex flex-col gap-2">
 			<RuiLabel>Category</RuiLabel>
@@ -212,6 +221,7 @@ export const WithAutocomplete: Story = {
 };
 
 export const WithTagGroup: Story = {
+	decorators: [withStylesheets([autocompleteCss, tagGroupCss])],
 	render: () => (
 		<div class="flex flex-col gap-2">
 			<RuiLabel>States</RuiLabel>

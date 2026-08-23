@@ -33,7 +33,6 @@ type RuiMenubarBindings = {
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  * @element rui-menubar
  * @attr {string} label - Accessible name for the `role="menubar"` landmark.
- * @slot - Top-level menu roots (`[data-ref="menubar-root"]`), produced by the JSX view helper.
  * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
  * @cssclass rui-menubar - Menubar bar (`role="menubar"`).
  */
@@ -44,14 +43,12 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiMenubarChangeDetail>;
 
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
-
 	private openRoot: HTMLElement | null = null;
 	private popoverController: PopoverController | null = null;
 
 	private getTopItems(): HTMLElement[] {
 		return Array.from(
-			this.querySelectorAll<HTMLElement>('[data-ref="menubar"] > [data-ref="menubar-root"] > [role="menuitem"]'),
+			this.querySelectorAll<HTMLElement>('[data-ref="root"] > [data-ref="menubar-root"] > [role="menuitem"]'),
 		);
 	}
 
@@ -66,9 +63,8 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		);
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => applyRovingTabindex(this.getTopItems(), 0));
+	protected override onConnected(): void {
+		applyRovingTabindex(this.getTopItems(), 0);
 	}
 
 	override disconnectedCallback(): void {
@@ -159,7 +155,7 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 	/**
 	 * @remarks When a menu is open, roving focus across the bar opens the newly focused menu (APG).
 	 */
-	@onEvent({ selector: '[data-ref="menubar"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'keydown' })
+	@onEvent({ selector: '[data-ref="root"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'keydown' })
 	onTopKeydown(event: KeyboardEvent): void {
 		const items = this.getTopItems();
 		const current = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
@@ -194,7 +190,7 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		}
 	}
 
-	@onEvent({ selector: '[data-ref="menubar"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'click' })
+	@onEvent({ selector: '[data-ref="root"] > [data-ref="menubar-root"] > [role="menuitem"]', type: 'click' })
 	onTopClick(event: Event): void {
 		const current = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
 		if (!current || !this.getTopItems().includes(current)) return;
@@ -268,13 +264,5 @@ export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
 		const value = item.getAttribute('data-value') || item.textContent?.trim() || '';
 		this.changeEvent.emit({ value });
 		this.closeOpenMenu(true);
-	}
-
-	override render() {
-		return (
-			<div class="rui-menubar" data-ref="menubar" role="menubar" aria-label={this.resolvedAriaLabel}>
-				<slot></slot>
-			</div>
-		);
 	}
 }

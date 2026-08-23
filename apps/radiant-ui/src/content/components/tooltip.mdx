@@ -64,7 +64,7 @@ Text uses the `text-xs` token. Override roles at the theme layer, not in compone
 
 ## API
 
-`RuiTooltip` is a custom element (`<rui-tooltip>`) that shows a `role="tooltip"` surface on hover or focus of its slotted trigger, referenced via `aria-describedby`.
+`RuiTooltip` is a custom element (`<rui-tooltip>`) that shows a `role="tooltip"` surface on hover or focus of its composed trigger, referenced via `aria-describedby`.
 
 ### Attributes (`<rui-tooltip>`)
 
@@ -74,9 +74,9 @@ Text uses the `text-xs` token. Override roles at the theme layer, not in compone
 | `placement` | `RuiPlacement` | `top` | Placement relative to the anchor. |
 | `delay` | `number` | `200` | Show delay in ms (0 shows immediately). |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
 | (default) | The trigger element (typically a button or focusable control). |
 
@@ -87,7 +87,7 @@ Public BEM classes (documented via `@cssclass`):
 | Class | Description |
 | --- | --- |
 | `.rui-tooltip` | Root wrapper. |
-| `.rui-tooltip__trigger` | Host wrapper for the slotted trigger. |
+| `.rui-tooltip__trigger` | Host wrapper for the composed trigger. |
 | `.rui-tooltip__content` | Tooltip surface (`role="tooltip"`); `on-background` fill. |
 
 ### Theme roles

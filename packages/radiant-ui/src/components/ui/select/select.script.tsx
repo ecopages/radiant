@@ -38,8 +38,6 @@ export type RuiSelectChangeDetail = { value: string };
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/
  * @element rui-select
- * @slot trigger - Control row (`RuiSelectControl` with value button and toggle).
- * @slot listbox - Popup shell (`RuiSelectListbox`) containing an embedded `RuiListbox`.
  * @fires rui-change
  */
 @customElement('rui-select')
@@ -368,14 +366,14 @@ export class RuiSelect extends RadiantElement {
 		const selected = this.getSelectedValues();
 		if (selected.length === 0) {
 			valueElement.textContent = '';
-			valueElement.setAttribute('data-placeholder', 'true');
+			valueElement.toggleAttribute('data-placeholder', true);
 			if (this.placeholder) {
 				valueElement.textContent = this.placeholder;
 			}
 			return;
 		}
 
-		valueElement.removeAttribute('data-placeholder');
+		valueElement.toggleAttribute('data-placeholder', false);
 		if (this.isMultiple()) {
 			const labels = selected.map((value) => {
 				const match = this.getOptions().find((option) => this.getOptionValue(option) === value);
@@ -408,7 +406,7 @@ export class RuiSelect extends RadiantElement {
 		}
 
 		trigger.setAttribute('aria-expanded', String(next));
-		popup.hidden = !next;
+		popup.toggleAttribute('hidden', !next);
 
 		if (!next) {
 			this.listboxBehavior.clearActiveOption();
@@ -508,9 +506,8 @@ export class RuiSelect extends RadiantElement {
 		this.setOpen(false);
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.initialize());
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	override disconnectedCallback(): void {
@@ -641,14 +638,5 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 		this.setOpen(false);
-	}
-
-	override render() {
-		return (
-			<div class="rui-select" data-ref="root">
-				<slot name="trigger"></slot>
-				<slot name="listbox"></slot>
-			</div>
-		);
 	}
 }

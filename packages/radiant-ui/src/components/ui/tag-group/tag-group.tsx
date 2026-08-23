@@ -29,6 +29,9 @@ export type RuiTagProps = JsxElementProps<HTMLSpanElement> & {
  * A single tag with optional remove button.
  *
  * @cssclass rui-tag - Tag chip; selected state via `[aria-selected='true']`.
+ *
+ * @remarks Tags built imperatively for CE-managed items mirror this markup in
+ * `RuiTagGroup.createManagedTag` (`tag-group.script.tsx`) — edit both together.
  */
 export function RuiTag({ value, label, children, class: className, disabled, ...props }: RuiTagProps) {
 	return (
@@ -69,6 +72,14 @@ export function RuiTagRemove({ children, class: className, aria, ...props }: Rui
 
 export type RuiTagData = { value: string; label: JsxRenderable; disabled?: boolean };
 
+function TagGroupShell({ children }: { children: JsxRenderable }) {
+	return (
+		<div class="rui-tag-group" data-ref="root">
+			{children}
+		</div>
+	);
+}
+
 export function RuiTagGroup({
 	tags,
 	children,
@@ -82,20 +93,26 @@ export function RuiTagGroup({
 	if (tags != null) {
 		return (
 			<rui-tag-group {...props}>
-				<RuiTagList>
-					{tags.map((tag) => (
-						<RuiTag
-							value={tag.value}
-							label={typeof tag.label === 'string' ? tag.label : undefined}
-							disabled={tag.disabled}
-						>
-							{tag.label}
-						</RuiTag>
-					))}
-				</RuiTagList>
+				<TagGroupShell>
+					<RuiTagList>
+						{tags.map((tag) => (
+							<RuiTag
+								value={tag.value}
+								label={typeof tag.label === 'string' ? tag.label : undefined}
+								disabled={tag.disabled}
+							>
+								{tag.label}
+							</RuiTag>
+						))}
+					</RuiTagList>
+				</TagGroupShell>
 			</rui-tag-group>
 		);
 	}
 
-	return <rui-tag-group {...props}>{children}</rui-tag-group>;
+	return (
+		<rui-tag-group {...props}>
+			<TagGroupShell>{children}</TagGroupShell>
+		</rui-tag-group>
+	);
 }

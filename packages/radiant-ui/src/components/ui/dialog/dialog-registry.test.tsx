@@ -37,6 +37,14 @@ async function settled(): Promise<void> {
 	await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
 }
 
+function getDialogRoot(dialog: HTMLElement): HTMLElement {
+	const root = dialog.querySelector<HTMLElement>('[data-ref="root"]');
+	if (!root) {
+		throw new Error('Expected dialog root');
+	}
+	return root;
+}
+
 describe('dialog registry', () => {
 	afterEach(() => {
 		uninstallDialogs();
@@ -65,6 +73,7 @@ describe('dialog registry', () => {
 
 		expect(dialog.open).toBe(true);
 		expect(dialog.hasAttribute('open')).toBe(true);
+		expect(getDialogRoot(dialog).hasAttribute('hidden')).toBe(false);
 		expect(getOpenDialogId()).toBe('edit-profile');
 
 		cleanup();
@@ -89,6 +98,7 @@ describe('dialog registry', () => {
 		expect(dialogHost).toBeTruthy();
 		expect(dialogHost.open).toBe(true);
 		expect(dialogHost.hasAttribute('open')).toBe(true);
+		expect(getDialogRoot(dialogHost).hasAttribute('hidden')).toBe(false);
 		expect(dialogHost.querySelector('[data-dialog-title]')?.textContent).toContain('Delete account?');
 		expect(dialogHost.querySelector('[data-dialog-body]')?.textContent).toContain('cannot be undone');
 		expect(dialogHost.querySelector('[data-ref="dialog"]')?.getAttribute('role')).toBe('alertdialog');
@@ -199,7 +209,9 @@ describe('dialog registry', () => {
 		await userEvent.click(trigger);
 		await settled();
 
-		expect((host.querySelector('#settings') as DialogEl).open).toBe(true);
+		const dialog = host.querySelector('#settings') as DialogEl;
+		expect(dialog.open).toBe(true);
+		expect(getDialogRoot(dialog).hasAttribute('hidden')).toBe(false);
 		expect(getOpenDialogId()).toBe('settings');
 
 		closeDialog();

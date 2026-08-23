@@ -63,7 +63,7 @@ Override at the theme layer (`tokens/presets/colors/*.css`), not in component CS
 
 ## API
 
-`RuiListbox` is a custom element (`<rui-listbox>`) that renders a `role="listbox"` surface around slotted options.
+`RuiListbox` is a custom element (`<rui-listbox>`) that renders a `role="listbox"` surface around composed options.
 
 ### Attributes
 
@@ -75,11 +75,11 @@ Override at the theme layer (`tokens/presets/colors/*.css`), not in component CS
 | `embedded` | `boolean` | `false` | Parent-owned listbox: border chrome omitted, selection handled by the parent. |
 | `bordered` | `boolean` | follows `embedded` | Override the border (`true` standalone, `false` embedded). |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| *(default)* | Option elements (`RuiListboxOption`), each with `role="option"`. |
+| `children` | Option elements (`RuiListboxOption`), each with `role="option"`. |
 
 ### Events
 

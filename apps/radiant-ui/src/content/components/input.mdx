@@ -5,15 +5,13 @@ category: Forms
 ---
 
 import { meta as InputMeta, Default } from '@/content/stories/input';
-import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
 export const config = {
 	dependencies: {
-		components: [Canvas, Demo],
+		components: [Demo],
 		scripts: [
 			'../../components/component-docs/demo.script.tsx',
-			'../../components/component-docs/canvas.script.tsx',
 			'../../components/component-docs/controls.script.tsx',
 		],
 	},
@@ -54,6 +52,31 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 ## Input masks
 
 <p>Pass a `mask` pattern for structured entry like phone numbers or credit card segments.</p>
+
+## Input groups
+
+<p>Use `RuiInputGroup` to add leading prefixes, trailing icons, or inline buttons around `RuiInput`. See the [Input Group](/docs/components/input-group) page for the full API.</p>
+
+```tsx
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+import {
+  RuiInputGroup,
+  RuiInputGroupAddon,
+  RuiInputGroupText,
+} from '@ecopages/radiant-ui/input-group';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="url">
+  <RuiLabel>Website URL</RuiLabel>
+  <RuiInputGroup>
+    <RuiInputGroupAddon>
+      <RuiInputGroupText>https://</RuiInputGroupText>
+    </RuiInputGroupAddon>
+    <RuiInput placeholder="example.com" />
+  </RuiInputGroup>
+</RuiField>
+```
 
 ## Theming
 

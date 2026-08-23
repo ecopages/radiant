@@ -31,7 +31,6 @@ export type RuiTagGroupRemoveDetail = { value: string };
  * @attr {boolean} disabled - Disable selection and removal. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Allow one or many selected tags. Default: `multiple`.
  * @attr {boolean} embedded - Disables selection when the parent component owns the selected values. Default: `false`.
- * @slot - Tag content. Compose `RuiTagList` / `RuiTag` / `RuiTagRemove`, or set items via `setItems()`.
  * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is the comma-separated value.
  * @fires rui-remove - Emitted when a tag is removed; `detail.value` is the removed tag's value.
  * @cssclass rui-tag-group - Root wrapper around the tag list.
@@ -74,16 +73,8 @@ export class RuiTagGroup extends RadiantElement {
 		if (managed) {
 			return managed;
 		}
-		const rendered = this.querySelector<HTMLElement>('[data-tag-list]');
-		if (rendered) {
-			return rendered;
-		}
 
-		return (
-			this.getSlotElements<HTMLElement>().find(
-				(element) => element.matches('[data-tag-list]') || element.querySelector('[data-tag-list]'),
-			) ?? null
-		);
+		return this.querySelector<HTMLElement>('[data-tag-list]');
 	}
 
 	private getTags(): HTMLElement[] {
@@ -194,13 +185,13 @@ export class RuiTagGroup extends RadiantElement {
 		this.syncTags();
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.initialize());
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	@onUpdated(['value', 'label', 'disabled', 'selectionMode', 'embedded', 'managedItems'])
 	onPropsUpdated(): void {
+		this.syncManagedList();
 		this.syncList();
 		this.syncTags();
 	}
@@ -214,6 +205,60 @@ export class RuiTagGroup extends RadiantElement {
 	setItems(items: RuiTagGroupItem[]): void {
 		this.managedItems = items;
 		this.value = serializeMultiValue(items.map((item) => item.value));
+	}
+
+	/**
+	 * Imperative twin of the view's `RuiTag` / `RuiTagRemove` markup for
+	 * CE-managed items (same `data-*` hooks, classes, and remove glyph).
+	 */
+	private createManagedTag(item: RuiTagGroupItem): HTMLElement {
+		const tag = document.createElement('span');
+		tag.setAttribute('data-tag', '');
+		tag.setAttribute('data-value', item.value);
+		tag.setAttribute('data-label', item.label);
+		tag.className = 'rui-tag';
+		tag.textContent = item.label;
+
+		const remove = document.createElement('button');
+		remove.type = 'button';
+		remove.setAttribute('data-tag-remove', '');
+		remove.className = 'rui-tag__remove';
+		remove.setAttribute('aria-label', `Remove ${item.label}`);
+
+		const icon = document.createElement('span');
+		icon.setAttribute('aria-hidden', 'true');
+		icon.textContent = '×';
+		remove.append(icon);
+		tag.append(remove);
+
+		return tag;
+	}
+
+	private syncManagedList(): void {
+		const root = this.querySelector<HTMLElement>('[data-ref="root"]');
+		if (!root) {
+			return;
+		}
+
+		let managed = root.querySelector<HTMLElement>('[data-rui-managed-list]');
+		if (this.managedItems.length === 0) {
+			managed?.remove();
+			return;
+		}
+
+		if (!managed) {
+			managed = document.createElement('div');
+			managed.setAttribute('data-tag-list', '');
+			managed.setAttribute('data-rui-managed-list', '');
+			managed.className = 'rui-tag-group__list';
+			root.appendChild(managed);
+		}
+
+		managed.replaceChildren(...this.managedItems.map((item) => this.createManagedTag(item)));
+
+		this.ensureTagIds();
+		this.syncList();
+		this.syncTags();
 	}
 
 	@onEvent({ selector: '[data-tag]', type: 'click' })
@@ -273,30 +318,5 @@ export class RuiTagGroup extends RadiantElement {
 		if (result.handled) {
 			event.preventDefault();
 		}
-	}
-
-	override render() {
-		return (
-			<div class="rui-tag-group" data-ref="root">
-				<slot></slot>
-				{this.managedItems.length > 0 ? (
-					<div data-tag-list data-rui-managed-list class="rui-tag-group__list">
-						{this.managedItems.map((item) => (
-							<span data-tag data-value={item.value} data-label={item.label} class="rui-tag">
-								{item.label}
-								<button
-									type="button"
-									data-tag-remove
-									class="rui-tag__remove"
-									aria-label={`Remove ${item.label}`}
-								>
-									<span aria-hidden="true">×</span>
-								</button>
-							</span>
-						))}
-					</div>
-				) : null}
-			</div>
-		);
 	}
 }

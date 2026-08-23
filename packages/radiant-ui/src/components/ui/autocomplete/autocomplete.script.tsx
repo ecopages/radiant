@@ -4,12 +4,12 @@ import { textContains, type TextFilterSensitivity } from '@/lib/text-filter';
 export type RuiAutocompleteProps = {
 	/** Filter sensitivity. Default: `base` (case-insensitive contains). */
 	sensitivity?: TextFilterSensitivity;
-	/** Controlled filter query. When unset, reads from the slotted input. */
+	/** Controlled filter query. When unset, reads from the composed input. */
 	inputValue?: string;
 };
 
 /**
- * `<rui-autocomplete>` — filters a slotted collection from a text input.
+ * `<rui-autocomplete>` — filters a composed collection from a text input.
  *
  * Wrap a search field (`data-autocomplete-input`) and a collection
  * (`data-autocomplete-collection` or default slot) containing `[role="option"]`,
@@ -23,10 +23,7 @@ export type RuiAutocompleteProps = {
  * @element rui-autocomplete
  *
  * @attr {string} sensitivity - Filter sensitivity: `base` (case-insensitive contains), `case`, or `accent`. Default: `base`.
- * @attr {string} input-value - Controlled filter query; when unset, reads from the slotted input. Default: `''`.
- *
- * @slot input - Search field (`RuiAutocompleteInput`).
- * @slot - Filterable collection of `[role="option"]`, `[role="menuitem"]`, or `[data-tag]` items.
+ * @attr {string} input-value - Controlled filter query; when unset, reads from the composed input. Default: `''`.
  *
  * @cssclass rui-autocomplete - Filter host.
  */
@@ -113,7 +110,7 @@ export class RuiAutocomplete extends RadiantElement {
 
 		const emptyState = this.querySelector<HTMLElement>('[data-autocomplete-empty]');
 		if (emptyState) {
-			emptyState.hidden = visibleCount > 0;
+			emptyState.toggleAttribute('hidden', visibleCount > 0);
 		}
 	}
 
@@ -121,12 +118,9 @@ export class RuiAutocomplete extends RadiantElement {
 		this.applyFilter();
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			this.bindExternalInput();
-			this.initialize();
-		});
+	protected override onConnected(): void {
+		this.bindExternalInput();
+		this.initialize();
 	}
 
 	override disconnectedCallback(): void {
@@ -142,14 +136,5 @@ export class RuiAutocomplete extends RadiantElement {
 	@onEvent({ selector: '[data-autocomplete-input]', type: 'input' })
 	onInput(): void {
 		this.applyFilter();
-	}
-
-	override render() {
-		return (
-			<div class="rui-autocomplete" data-ref="root">
-				<slot name="input"></slot>
-				<slot></slot>
-			</div>
-		);
 	}
 }
