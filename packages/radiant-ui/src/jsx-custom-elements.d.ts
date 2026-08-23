@@ -24,6 +24,7 @@ import type { RuiSidebar, RuiSidebarProps } from './components/ui/sidebar/sideba
 import type { RuiSidebarTrigger, RuiSidebarTriggerProps } from './components/ui/sidebar/sidebar-trigger.script';
 import type { RuiSlider, RuiSliderProps } from './components/ui/slider/slider.script';
 import type { RuiNumberField, RuiNumberFieldProps } from './components/ui/number-field/number-field.script';
+import type { RuiPagination, RuiPaginationProps } from './components/ui/pagination/pagination.script';
 import type { RuiPopover, RuiPopoverProps } from './components/ui/popover/popover.script';
 import type { RuiPopoverTrigger, RuiPopoverTriggerProps } from './components/ui/popover/popover.script';
 import type { RuiSwitch, RuiSwitchProps } from './components/ui/switch/switch.script';
@@ -64,6 +65,7 @@ declare module '@ecopages/jsx/jsx-runtime' {
 		'rui-sidebar-trigger': JsxCustomElementAttributes<RuiSidebarTrigger, RuiSidebarTriggerProps>;
 		'rui-slider': JsxCustomElementAttributes<RuiSlider, RuiSliderProps>;
 		'rui-number-field': JsxCustomElementAttributes<RuiNumberField, RuiNumberFieldProps>;
+		'rui-pagination': JsxCustomElementAttributes<RuiPagination, RuiPaginationProps>;
 		'rui-popover': JsxCustomElementAttributes<RuiPopover, RuiPopoverProps>;
 		'rui-popover-trigger': JsxCustomElementAttributes<RuiPopoverTrigger, RuiPopoverTriggerProps>;
 		'rui-switch': JsxCustomElementAttributes<RuiSwitch, RuiSwitchProps>;
