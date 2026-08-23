@@ -39,6 +39,7 @@ export * from './components/ui/menubar';
 export * from './components/ui/meter';
 export * from './components/ui/navigation-menu';
 export * from './components/ui/number-field';
+export * from './components/ui/pagination';
 export * from './components/ui/popover';
 export * from './components/ui/radio-group';
 export * from './components/ui/select';

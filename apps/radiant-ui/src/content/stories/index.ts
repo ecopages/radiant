@@ -48,4 +48,5 @@ import './tooltip';
 import './tree';
 import './treegrid';
 import './window-splitter';
-import './hover-card'
+import './hover-card';
+import './pagination'

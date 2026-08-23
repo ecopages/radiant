@@ -253,6 +253,17 @@
 				"@ecopages/radiant-ui/number-field/styles.css"
 			]
 		},
+		"pagination": {
+			"direct": [
+				"button",
+				"primitives"
+			],
+			"styles": [
+				"@ecopages/radiant-ui/button/styles.css",
+				"@ecopages/radiant-ui/primitives.css",
+				"@ecopages/radiant-ui/pagination/styles.css"
+			]
+		},
 		"popover": {
 			"direct": [
 				"primitives"
