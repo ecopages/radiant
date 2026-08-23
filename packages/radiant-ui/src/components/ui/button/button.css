@@ -125,10 +125,9 @@
 		font-size: var(--text-body);
 	}
 
-	.rui-button--icon {
-		height: var(--size-control-md);
-		width: var(--size-control-md);
+	.rui-button--square {
 		padding-inline: 0;
+		aspect-ratio: 1;
 		font-size: var(--text-control, 0.875rem);
 	}
 
