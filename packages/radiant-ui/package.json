@@ -186,6 +186,13 @@
 		"./avatar/styles.css": {
 			"default": "./dist/components/ui/avatar/avatar.css"
 		},
+		"./badge": {
+			"types": "./dist/components/ui/badge/index.d.ts",
+			"import": "./dist/components/ui/badge/index.js"
+		},
+		"./badge/styles.css": {
+			"default": "./dist/components/ui/badge/badge.css"
+		},
 		"./breadcrumb": {
 			"types": "./dist/components/ui/breadcrumb/index.d.ts",
 			"import": "./dist/components/ui/breadcrumb/index.js"
@@ -336,6 +343,13 @@
 		"./input/styles.css": {
 			"default": "./dist/components/ui/input/input.css"
 		},
+		"./input-group": {
+			"types": "./dist/components/ui/input-group/index.d.ts",
+			"import": "./dist/components/ui/input-group/index.js"
+		},
+		"./input-group/styles.css": {
+			"default": "./dist/components/ui/input-group/input-group.css"
+		},
 		"./label": {
 			"types": "./dist/components/ui/label/index.d.ts",
 			"import": "./dist/components/ui/label/index.js"
@@ -422,6 +436,13 @@
 		},
 		"./slider/styles.css": {
 			"default": "./dist/components/ui/slider/slider.css"
+		},
+		"./spinner": {
+			"types": "./dist/components/ui/spinner/index.d.ts",
+			"import": "./dist/components/ui/spinner/index.js"
+		},
+		"./spinner/styles.css": {
+			"default": "./dist/components/ui/spinner/spinner.css"
 		},
 		"./switch": {
 			"types": "./dist/components/ui/switch/index.d.ts",

@@ -28,6 +28,7 @@ import './listbox';
 import './menu-button';
 import './menubar';
 import './meter';
+import './knob';
 import './navigation-menu';
 import './number-field';
 import './popover';

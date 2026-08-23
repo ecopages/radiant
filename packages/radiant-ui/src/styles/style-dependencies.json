@@ -18,6 +18,12 @@
 				"@ecopages/radiant-ui/avatar/styles.css"
 			]
 		},
+		"badge": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/badge/styles.css"
+			]
+		},
 		"breadcrumb": {
 			"direct": [],
 			"styles": [
@@ -173,6 +179,12 @@
 				"@ecopages/radiant-ui/input/styles.css"
 			]
 		},
+		"input-group": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/input-group/styles.css"
+			]
+		},
 		"label": {
 			"direct": [],
 			"styles": [
@@ -265,6 +277,12 @@
 			"direct": [],
 			"styles": [
 				"@ecopages/radiant-ui/slider/styles.css"
+			]
+		},
+		"spinner": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/spinner/styles.css"
 			]
 		},
 		"switch": {
