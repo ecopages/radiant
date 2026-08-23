@@ -185,6 +185,12 @@
 				"@ecopages/radiant-ui/input-group/styles.css"
 			]
 		},
+		"knob": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/knob/styles.css"
+			]
+		},
 		"label": {
 			"direct": [],
 			"styles": [

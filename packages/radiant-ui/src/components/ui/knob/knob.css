@@ -1,0 +1,70 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-knob {
+	@apply inline-block;
+	--rui-knob-size: 3rem;
+}
+
+@layer components {
+	.rui-knob {
+		@apply flex flex-col items-center gap-inline text-sm text-on-background;
+	}
+
+	.rui-knob__control {
+		@apply relative grid shrink-0 cursor-grab place-items-center rounded-full touch-none;
+		inline-size: max(44px, var(--rui-knob-size));
+		block-size: max(44px, var(--rui-knob-size));
+	}
+
+	.rui-knob__control:active:not(:disabled) {
+		@apply cursor-grabbing;
+	}
+
+	.rui-knob__control:focus-visible {
+		@apply outline-hidden;
+	}
+
+	.rui-knob__control:focus-visible .rui-knob__svg {
+		border-radius: 50%;
+		outline: var(--rui-knob-focus-ring-width, 2px) solid var(--rui-knob-focus-ring, var(--focus-ring));
+		outline-offset: 1px;
+	}
+
+	.rui-knob__control:disabled {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-knob__control[aria-readonly='true'] {
+		@apply cursor-default;
+	}
+
+	.rui-knob__svg {
+		@apply block overflow-visible;
+		inline-size: var(--rui-knob-size);
+		block-size: var(--rui-knob-size);
+	}
+
+	.rui-knob__track {
+		stroke: var(--rui-knob-track-color, var(--surface));
+	}
+
+	.rui-knob__progress {
+		stroke: var(--rui-knob-value-color, var(--primary));
+	}
+
+	.rui-knob__track,
+	.rui-knob__progress {
+		stroke-linecap: round;
+	}
+
+	.rui-knob__value {
+		@apply pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none tabular-nums text-on-surface;
+		color: var(--rui-knob-text-color, var(--on-surface));
+		font-size: var(--text-body-sm, 0.875rem);
+		line-height: var(--leading-compact);
+	}
+
+	.rui-knob__value--below {
+		@apply static translate-x-0 translate-y-0;
+	}
+}

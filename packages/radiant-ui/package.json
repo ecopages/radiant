@@ -350,6 +350,13 @@
 		"./input-group/styles.css": {
 			"default": "./dist/components/ui/input-group/input-group.css"
 		},
+		"./knob": {
+			"types": "./dist/components/ui/knob/index.d.ts",
+			"import": "./dist/components/ui/knob/index.js"
+		},
+		"./knob/styles.css": {
+			"default": "./dist/components/ui/knob/knob.css"
+		},
 		"./label": {
 			"types": "./dist/components/ui/label/index.d.ts",
 			"import": "./dist/components/ui/label/index.js"
