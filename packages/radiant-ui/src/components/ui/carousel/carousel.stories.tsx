@@ -240,18 +240,9 @@ export const WithOverlayControls: Story = {
 export const CustomControls: Story = {
 	args: {
 		controlsVariant: 'overlay',
-		children: (
-			<>
-				<RuiCarouselPrev overlay />
-				<RuiCarouselNext overlay />
-				{slides.map((slide) => (
-					<div class="rui-carousel__slide" data-slide={slide.id}>
-						{slide.children}
-					</div>
-				))}
-			</>
-		),
-		slides: undefined,
+		prev: <RuiCarouselPrev overlay />,
+		next: <RuiCarouselNext overlay />,
+		slides,
 	},
 	play: async ({ canvasElement, step }) => {
 		const prev = getPrevButton(canvasElement);

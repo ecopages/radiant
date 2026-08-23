@@ -34,9 +34,6 @@ type RuiWindowSplitterBindings = {
  * @attr {('horizontal'|'vertical')} orientation - Split axis. Default: `horizontal`.
  * @attr {string} label - Accessible name for the separator. Default: `Split view`.
  *
- * @slot primary - First (primary) pane content.
- * @slot secondary - Second pane content.
- *
  * @fires rui-splitter-change - Emitted with `{ value }` when the separator moves.
  *
  * @cssclass rui-window-splitter - Root surface.
@@ -44,10 +41,6 @@ type RuiWindowSplitterBindings = {
  * @cssclass rui-window-splitter--vertical - Stacked panes.
  * @cssclass rui-window-splitter__pane - A pane region.
  * @cssclass rui-window-splitter__separator - Focusable separator (`role="separator"`).
- *
- * @remarks
- * The element authors the full composed surface in `render()`; the
- * `RuiWindowSplitter` view only projects the two pane slots.
  */
 @customElement('rui-window-splitter')
 export class RuiWindowSplitter extends RadiantElement<RuiWindowSplitterBindings> {
@@ -61,16 +54,11 @@ export class RuiWindowSplitter extends RadiantElement<RuiWindowSplitterBindings>
 	@event({ name: 'rui-splitter-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiWindowSplitterChangeDetail>;
 
-	/** `class` stays a plain-read composition; only the derived aria-orientation string is bound. */
-	private readonly resolvedAriaOrientation = this.$.orientation.map((orientation) =>
-		orientation !== 'vertical' ? 'vertical' : 'horizontal',
-	);
-
 	private dragging = false;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.applySize());
+	protected override onConnected(): void {
+		this.syncSeparatorPresentation();
+		this.applySize();
 	}
 
 	override disconnectedCallback(): void {
@@ -79,9 +67,27 @@ export class RuiWindowSplitter extends RadiantElement<RuiWindowSplitterBindings>
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['value', 'orientation'])
+	@onUpdated(['value', 'orientation', 'label'])
 	onPropsUpdated(): void {
+		this.syncSeparatorPresentation();
 		this.applySize();
+	}
+
+	private syncSeparatorPresentation(): void {
+		const separator = this.separatorTarget;
+		const root = this.querySelector<HTMLElement>('[data-ref="root"]');
+		if (!separator || !root) {
+			return;
+		}
+
+		const horizontal = this.orientation !== 'vertical';
+		root.classList.toggle('rui-window-splitter--horizontal', horizontal);
+		root.classList.toggle('rui-window-splitter--vertical', !horizontal);
+		separator.setAttribute('aria-orientation', horizontal ? 'vertical' : 'horizontal');
+		separator.setAttribute('aria-valuenow', String(this.value));
+		separator.setAttribute('aria-valuemin', '20');
+		separator.setAttribute('aria-valuemax', '80');
+		separator.setAttribute('aria-label', this.label);
 	}
 
 	private applySize(): void {
@@ -145,30 +151,5 @@ export class RuiWindowSplitter extends RadiantElement<RuiWindowSplitterBindings>
 		this.dragging = false;
 		document.removeEventListener('pointermove', this.onPointerMove);
 		document.removeEventListener('pointerup', this.onPointerUp);
-	}
-
-	override render() {
-		const horizontal = this.orientation !== 'vertical';
-		return (
-			<div class={`rui-window-splitter rui-window-splitter--${horizontal ? 'horizontal' : 'vertical'}`}>
-				<div data-ref="primary" class="rui-window-splitter__pane">
-					<slot name="primary"></slot>
-				</div>
-				<div
-					data-ref="separator"
-					class="rui-window-splitter__separator"
-					role="separator"
-					tabindex={0}
-					aria-orientation={this.resolvedAriaOrientation}
-					aria-valuenow={this.$.value}
-					aria-valuemin={20}
-					aria-valuemax={80}
-					aria-label={this.$.label}
-				></div>
-				<div class="rui-window-splitter__pane">
-					<slot name="secondary"></slot>
-				</div>
-			</div>
-		);
 	}
 }

@@ -121,13 +121,13 @@ describe('class composition and locked invariants', () => {
 		expect(html).toMatch(/<div[^>]*role="alert"/);
 	});
 
-	it('locks the select trigger type and listbox hidden state', () => {
+	it('locks the select trigger type without binding popup visibility in the view', () => {
 		const trigger = renderToString(<RuiSelectTrigger attr:type="submit">Value</RuiSelectTrigger>);
 		const listbox = renderToString(<RuiSelectListbox hidden={false}>Options</RuiSelectListbox>);
 
 		expect(trigger).toContain('type="button"');
 		expect(trigger).not.toContain('type="submit"');
-		expect(listbox).toContain(' hidden');
+		expect(listbox).not.toContain(' hidden');
 	});
 
 	it('does not serialize view-only options, slides, or rows', () => {

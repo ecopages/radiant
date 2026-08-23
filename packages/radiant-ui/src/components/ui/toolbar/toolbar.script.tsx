@@ -22,7 +22,6 @@ type RuiToolbarBindings = {
  * @element rui-toolbar
  * @attr {string} label - Accessible name for the `role="toolbar"` region.
  * @attr {boolean} exclusive-toggles - Only one toggle button stays pressed at a time. Default: `false`.
- * @slot - Toolbar controls (`button`, `a[href]`, `input`, …).
  * @cssclass rui-toolbar - Toolbar surface (`role="toolbar"`).
  */
 @customElement('rui-toolbar')
@@ -30,15 +29,12 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) exclusiveToggles: boolean;
 
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
-
 	private getItems(): HTMLElement[] {
 		return queryRovingTabindexItems(this);
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => applyRovingTabindex(this.getItems(), 0));
+	protected override onConnected(): void {
+		applyRovingTabindex(this.getItems(), 0);
 	}
 
 	@onEvent({ type: 'keydown', selector: 'button, a[href], input, select, [tabindex]' })
@@ -92,13 +88,5 @@ export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
 		}
 
 		button.setAttribute('aria-pressed', String(!wasPressed));
-	}
-
-	override render() {
-		return (
-			<div class="rui-toolbar" role="toolbar" aria-label={this.resolvedAriaLabel}>
-				<slot></slot>
-			</div>
-		);
 	}
 }
