@@ -18,15 +18,12 @@ export type RuiListboxProps = {
 
 export type RuiListboxChangeDetail = { value: string };
 
-type RuiListboxBindings = {
-	label: string;
-	disabled: boolean;
-};
-
 /**
  * `<rui-listbox>` — a list of options where one may be selected.
  *
  * Implements the APG Listbox pattern with roving tabindex on `[role="option"]`.
+ * The view-owned `.rui-listbox` shell carries presentation; this host coordinates
+ * selection and keyboard interaction only.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
  *
@@ -38,15 +35,13 @@ type RuiListboxBindings = {
  * @attr {boolean} embedded - Parent-owned listbox: border chrome omitted, selection handled by the parent. Default: `false`.
  * @attr {boolean} bordered - Override the border (`true` standalone, `false` embedded). Default: follows `embedded`.
  *
- * @slot - Option elements (`RuiListboxOption`), each with `role="option"`.
- *
  * @fires rui-change - Emitted when an option is selected; detail carries `value`.
  *
  * @cssclass rui-listbox - Scrollable option list surface (`role="listbox"`).
  * @cssclass rui-listbox--bordered - Bordered standalone listbox.
  */
 @customElement('rui-listbox')
-export class RuiListbox extends RadiantElement<RuiListboxBindings> {
+export class RuiListbox extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
@@ -56,21 +51,13 @@ export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiListboxChangeDetail>;
 
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
-	private readonly resolvedAriaDisabled = this.$.disabled.map((disabled) => (disabled ? 'true' : undefined));
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			this.sync();
-			this.syncPresentation();
-		});
+	protected override onConnected(): void {
+		this.sync();
 	}
 
-	@onUpdated(['value', 'disabled', 'embedded', 'bordered'])
+	@onUpdated(['value', 'disabled', 'embedded'])
 	onPropsUpdated(): void {
 		this.sync();
-		this.syncPresentation();
 	}
 
 	private getOptions(): HTMLElement[] {
@@ -129,39 +116,5 @@ export class RuiListbox extends RadiantElement<RuiListboxBindings> {
 
 		event.preventDefault();
 		this.select(result.item);
-	}
-
-	private isBordered(): boolean {
-		if (this.bordered != null) {
-			return this.bordered;
-		}
-
-		return !this.embedded;
-	}
-
-	private syncPresentation(): void {
-		const root = this.querySelector<HTMLElement>('.rui-listbox');
-		if (!root) {
-			return;
-		}
-
-		root.classList.toggle('rui-listbox--bordered', this.isBordered());
-	}
-
-	override render() {
-		const bordered = this.isBordered();
-
-		return (
-			<div
-				class={`rui-listbox${bordered ? ' rui-listbox--bordered' : ''}`}
-				role="listbox"
-				data-rui-control
-				data-rui-control-type="text"
-				aria-label={this.resolvedAriaLabel}
-				aria-disabled={this.resolvedAriaDisabled}
-			>
-				<slot></slot>
-			</div>
-		);
 	}
 }

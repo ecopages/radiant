@@ -13,19 +13,28 @@ import './grid.script';
  */
 export function RuiGrid({
 	rows,
+	label,
+	children,
 	...props
-}: JsxCustomElementAttributes<RuiGridElement, RuiGridProps & { rows: JsxRenderable[][] }>) {
+}: JsxCustomElementAttributes<RuiGridElement, RuiGridProps & { rows?: JsxRenderable[][] }>) {
+	const content =
+		rows != null
+			? rows.map((row) => (
+					<div class="rui-grid__row" role="row">
+						{row.map((cell) => (
+							<div class="rui-grid__cell" role="gridcell" tabindex={-1}>
+								{cell}
+							</div>
+						))}
+					</div>
+				))
+			: children;
+
 	return (
-		<rui-grid {...props}>
-			{rows.map((row) => (
-				<div class="rui-grid__row" role="row">
-					{row.map((cell) => (
-						<div class="rui-grid__cell" role="gridcell" tabindex={-1}>
-							{cell}
-						</div>
-					))}
-				</div>
-			))}
+		<rui-grid {...props} label={label}>
+			<div class="rui-grid" data-ref="root" role="grid" aria-label={label || undefined}>
+				{content}
+			</div>
 		</rui-grid>
 	);
 }
