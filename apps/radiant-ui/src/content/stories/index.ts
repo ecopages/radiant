@@ -36,6 +36,7 @@ import './popover';
 import './radio-group';
 import './select';
 import './sidebar';
+import './slider';
 import './spinner';
 import './tabs';
 import './tag-group';
