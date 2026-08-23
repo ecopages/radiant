@@ -13,7 +13,8 @@ type ButtonStoryArgs = {
 /**
  * Presentational native `<button>` wrapper. No custom element — `variant` and
  * `size` only map to CSS classes. Sizes are `none` (inline `link`), Small (`sm`),
- * Default (`md`), and Large (`lg`); control sizes set their own type scale.
+ * Default (`md`) and Large (`lg`). The `square` modifier makes any control
+ * size square; control sizes set their own type scale.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
  */
@@ -60,6 +61,11 @@ export const Variants: Story = {
 				<RuiButton size="sm">Small</RuiButton>
 				<RuiButton size="md">Default</RuiButton>
 				<RuiButton size="lg">Large</RuiButton>
+				<RuiButton size="sm" square aria-label="Add item">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+						<path d="M12 5v14M5 12h14" />
+					</svg>
+				</RuiButton>
 				<RuiButton disabled>Disabled</RuiButton>
 			</div>
 		</div>
