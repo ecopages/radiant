@@ -51,7 +51,8 @@
 		"build": "tsup && tsc -p tsconfig.build.json --noCheck",
 		"dev": "tsup --watch",
 		"clean": "rm -rf dist",
-		"test": "vitest run"
+		"test": "vitest run",
+		"test:all": "pnpm run test"
 	},
 	"dependencies": {
 		"@ecopages/vite-plugin-radiant": "workspace:*",
