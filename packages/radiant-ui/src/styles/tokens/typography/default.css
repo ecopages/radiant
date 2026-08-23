@@ -15,6 +15,7 @@
 	--text-2xl: 1.5rem;
 	--text-3xl: 1.875rem;
 	--text-4xl: 2.25rem;
+	--text-5xl: 3rem;
 	--text-label: 0.875rem;
 	--text-control: 0.875rem;
 
@@ -40,6 +41,7 @@
 	--text-2xl: var(--text-2xl);
 	--text-3xl: var(--text-3xl);
 	--text-4xl: var(--text-4xl);
+	--text-5xl: var(--text-5xl);
 	--font-weight-medium: var(--weight-medium);
 	--font-weight-semibold: var(--weight-semibold);
 }

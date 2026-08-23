@@ -18,6 +18,12 @@
 				"@ecopages/radiant-ui/avatar/styles.css"
 			]
 		},
+		"badge": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/badge/styles.css"
+			]
+		},
 		"breadcrumb": {
 			"direct": [],
 			"styles": [
@@ -167,10 +173,31 @@
 				"@ecopages/radiant-ui/headline/styles.css"
 			]
 		},
+		"hover-card": {
+			"direct": [
+				"primitives"
+			],
+			"styles": [
+				"@ecopages/radiant-ui/primitives.css",
+				"@ecopages/radiant-ui/hover-card/styles.css"
+			]
+		},
 		"input": {
 			"direct": [],
 			"styles": [
 				"@ecopages/radiant-ui/input/styles.css"
+			]
+		},
+		"input-group": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/input-group/styles.css"
+			]
+		},
+		"knob": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/knob/styles.css"
 			]
 		},
 		"label": {
@@ -226,6 +253,17 @@
 				"@ecopages/radiant-ui/number-field/styles.css"
 			]
 		},
+		"pagination": {
+			"direct": [
+				"button",
+				"primitives"
+			],
+			"styles": [
+				"@ecopages/radiant-ui/button/styles.css",
+				"@ecopages/radiant-ui/primitives.css",
+				"@ecopages/radiant-ui/pagination/styles.css"
+			]
+		},
 		"popover": {
 			"direct": [
 				"primitives"
@@ -267,10 +305,25 @@
 				"@ecopages/radiant-ui/slider/styles.css"
 			]
 		},
+		"spinner": {
+			"direct": [],
+			"styles": [
+				"@ecopages/radiant-ui/spinner/styles.css"
+			]
+		},
 		"switch": {
 			"direct": [],
 			"styles": [
 				"@ecopages/radiant-ui/switch/styles.css"
+			]
+		},
+		"table": {
+			"direct": [
+				"checkbox"
+			],
+			"styles": [
+				"@ecopages/radiant-ui/checkbox/styles.css",
+				"@ecopages/radiant-ui/table/styles.css"
 			]
 		},
 		"tabs": {

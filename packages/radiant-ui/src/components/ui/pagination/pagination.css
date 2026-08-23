@@ -1,0 +1,61 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-pagination {
+	@apply flex max-w-full min-w-0;
+}
+
+@layer components {
+	.rui-pagination__list {
+		@apply m-0 flex list-none flex-nowrap items-center gap-1 p-0;
+	}
+
+	.rui-pagination__list > li {
+		@apply flex shrink-0 items-center;
+	}
+
+	.rui-pagination__link {
+		@apply gap-1;
+	}
+
+	.rui-pagination__ellipsis {
+		@apply inline-flex min-h-8 min-w-6 items-center justify-center text-sm text-on-surface;
+	}
+
+	.rui-pagination__status {
+		@apply hidden;
+	}
+
+	.rui-pagination__link .rui-icon {
+		@apply shrink-0;
+	}
+
+
+	@media (max-width: 40rem) {
+		.rui-pagination__link--previous span,
+		.rui-pagination__link--next span {
+			@apply sr-only;
+		}
+
+		.rui-pagination__link--previous,
+		.rui-pagination__link--next {
+			width: var(--size-control-sm);
+			padding-inline: 0;
+			aspect-ratio: 1;
+		}
+
+		.rui-pagination__page,
+		.rui-pagination__ellipsis {
+			display: none;
+		}
+
+		.rui-pagination__status {
+			display: flex;
+			align-items: center;
+			min-height: var(--size-control-sm);
+			padding-inline: var(--space-control-x);
+			white-space: nowrap;
+			font-variant-numeric: tabular-nums;
+			@apply text-sm text-on-surface;
+		}
+	}
+}

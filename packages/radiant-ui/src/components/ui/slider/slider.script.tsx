@@ -1,10 +1,14 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { createNumericRange, valueFromSliderKey } from '../shared/numeric-range';
 
 export type RuiSliderVariant = 'single' | 'range';
+export type RuiSliderOrientation = 'horizontal' | 'vertical';
+export type RuiSliderThumb = 'value' | 'min' | 'max';
 
 export type RuiSliderProps = {
 	variant?: RuiSliderVariant;
+	orientation?: RuiSliderOrientation;
 	value?: number;
 	rangeMin?: number;
 	rangeMax?: number;
@@ -13,23 +17,24 @@ export type RuiSliderProps = {
 	step?: number;
 	minDistance?: number;
 	disabled?: boolean;
+	readOnly?: boolean;
 	label?: string;
 	name?: string;
+	/** Shows the default value readout below the track when no `RuiSliderValue` child is provided. */
+	showValue?: boolean;
+	/** Mirrors the live value in the control `title` for hover tooltips. */
+	valueTitle?: boolean;
 };
 
 export type RuiSliderChangeDetail = { value: number } | { values: [number, number] };
 
-type RuiSliderBindings = {
-	disabled: boolean;
-	name: string;
-	label: string;
-};
+type RuiSliderBindings = Record<string, never>;
 
 /**
  * `<rui-slider>` — select a value from a continuous or discrete range.
  *
- * Single mode uses native `<input type="range">`. Range mode implements the APG
- * multi-thumb slider pattern with two `role="slider"` thumbs on one track.
+ * Single and range modes use a DOM track and `role="slider"` thumbs styled via CSS
+ * variables — no `<canvas>` rendering.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/slider/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/slider-multithumb/
@@ -37,6 +42,7 @@ type RuiSliderBindings = {
  * @element rui-slider
  *
  * @attr {('single'|'range')} variant - Single-thumb or dual-thumb range. Default: `single`.
+ * @attr {('horizontal'|'vertical')} orientation - Track axis. Default: `horizontal`.
  * @attr {number} value - Selected value (single mode). Reflects to markup. Default: `50`.
  * @attr {number} range-min - Lower thumb value (range mode). Reflects to markup. Default: `25`.
  * @attr {number} range-max - Upper thumb value (range mode). Reflects to markup. Default: `75`.
@@ -45,29 +51,41 @@ type RuiSliderBindings = {
  * @attr {number} step - Arrow-key and pointer snap interval. Default: `1`.
  * @attr {number} min-distance - Minimum gap enforced between range thumbs. Default: `0`.
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
+ * @attr {boolean} read-only - Blocks value changes while leaving thumbs focusable. Default: `false`.
  * @attr {string} label - Accessible name for the slider. Default: `''`.
- * @attr {string} name - Form field name (single mode native input). Default: `''`.
+ * @attr {string} name - Form field name. Range mode also writes `{name}-max`. Default: `''`.
+ * @attr {boolean} show-value - Shows the default value readout below the track. Default: `false`.
+ * @attr {boolean} value-title - Mirrors the live value in control `title` tooltips on hover. Default: `false`.
  *
- * @fires rui-change - Emitted as the value moves; `detail.value` (single) or
- *   `detail.values` `[min, max]` (range).
+ * @cssprop --rui-slider-track-size - Track thickness. Default: `0.375rem`.
+ * @cssprop --rui-slider-track-length - Track length for vertical sliders and horizontal max length. Default: `12rem`.
+ * @cssprop --rui-slider-width - Root control width. Default: `100%` (`auto` when vertical).
+ * @cssprop --rui-slider-height - Root control height. Default: `auto`.
+ * @cssprop --rui-slider-gap - Spacing between label, track, and value. Default: `--space-inline`.
+ * @cssprop --rui-slider-track-color - Range track background. Default: `--surface`.
+ * @cssprop --rui-slider-fill-color - Range selected fill. Default: `--primary`.
+ * @cssprop --rui-slider-track-radius - Track and fill corner radius. Default: `--radius-control`.
+ * @cssprop --rui-slider-thumb-size - Range thumb diameter. Default: `1.25rem`.
+ * @cssprop --rui-slider-thumb-border-width - Range thumb border width. Default: `2px`.
+ * @cssprop --rui-slider-thumb-border-color - Range thumb border color. Default: `--primary`.
+ * @cssprop --rui-slider-thumb-background - Range thumb fill. Default: `--background`.
+ * @cssprop --rui-slider-thumb-shadow - Range thumb shadow. Default: `0 2px 8px rgb(0 0 0 / 0.12)`.
+ * @cssprop --rui-slider-thumb-radius - Thumb corner radius. Default: `--radius-control`.
+ * @cssprop --rui-slider-value-color - Value readout color. Default: `--on-surface`.
+ * @cssprop --rui-slider-focus-ring - Focus ring color. Default: `--focus-ring`.
+ * @cssprop --rui-slider-focus-ring-width - Focus ring width. Default: `2px`.
+ *
+ * @fires rui-change - Emitted when the committed value changes; `detail.value` (single) or
+ *   `detail.values` `[min, max]` (range). Pointer drags emit on each distinct snap.
  *
  * @remarks
- * The composed surface is authored here — the BEM classes below live on the element,
- * not on the `RuiSlider` view (which only maps `values` to `rangeMin` / `rangeMax`).
- *
- * @cssclass rui-slider - Root; wraps the label, track, and value readout.
- * @cssclass rui-slider--range - Range-mode surface (dual-thumb track).
- * @cssclass rui-slider__label - Optional visible label.
- * @cssclass rui-slider__input - Native range input (single mode).
- * @cssclass rui-slider__value - Live numeric readout (`aria-hidden="true"`).
- * @cssclass rui-slider__range - Range-mode track wrapper.
- * @cssclass rui-slider__range-track - Track surface behind both thumbs.
- * @cssclass rui-slider__range-fill - Filled span between the thumbs.
- * @cssclass rui-slider__thumb - Range thumb (`role="slider"`).
+ * The composed surface is authored in `RuiSlider` / `RuiSliderValue`. The element
+ * queries `data-ref` targets and updates live values imperatively.
  */
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
+	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
 	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;
 	@prop({ type: Number, reflect: true, attribute: 'range-min', defaultValue: 25 }) rangeMin: number;
 	@prop({ type: Number, reflect: true, attribute: 'range-max', defaultValue: 75 }) rangeMax: number;
@@ -76,427 +94,438 @@ export class RuiSlider extends RadiantElement<RuiSliderBindings> {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 	@prop({ type: Number, defaultValue: 0 }) minDistance: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
+	@prop({ type: Boolean, attribute: 'show-value', defaultValue: false }) showValue: boolean;
+	@prop({ type: Boolean, attribute: 'value-title', defaultValue: false }) valueTitle: boolean;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSliderChangeDetail>;
 
 	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
-	@query({ ref: 'rangeFill' }) rangeFill: HTMLElement;
+	@query({ ref: 'maxInput' }) maxInputTarget: HTMLInputElement;
+	@query({ ref: 'root' }) rootTarget: HTMLElement;
+	@query({ ref: 'header' }) headerTarget: HTMLElement;
+	@query({ ref: 'label' }) labelTarget: HTMLElement;
+	@query({ ref: 'rangeTrack' }) rangeTrack: HTMLElement;
+	@query({ ref: 'value' }) valueTarget: HTMLElement;
+	@query({ ref: 'singleThumb' }) singleThumb: HTMLButtonElement;
+	@query({ ref: 'rangeMinThumb' }) rangeMinThumb: HTMLButtonElement;
+	@query({ ref: 'rangeMaxThumb' }) rangeMaxThumb: HTMLButtonElement;
 
-	private interacting = false;
-	private activeThumb: 'min' | 'max' | null = null;
-	/** Live range while dragging, rendered without committing the public props. */
-	@state private pendingRange: [number, number] | null = null;
-	@state private displayedValue: number | null = null;
+	private activeThumb: RuiSliderThumb | null = null;
+	private activePointerId: number | null = null;
+	private pending: number[] | null = null;
+	private lastEmitted = '';
 
-	/**
-	 * Live drag state is kept separate from committed public props so the
-	 * component can update the preview without changing the form value until
-	 * the interaction commits.
-	 */
-	private readonly resolvedDisabledTabindex = this.$.disabled.map((disabled) => (disabled ? -1 : 0));
-	private readonly resolvedMinLabel = this.$.label.map((label) => (label ? `${label} minimum` : 'Minimum value'));
-	private readonly resolvedMaxLabel = this.$.label.map((label) => (label ? `${label} maximum` : 'Maximum value'));
-	private readonly resolvedName = this.$.name.map((name) => name || undefined);
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			if (this.variant === 'single') {
-				this.syncInputFromValue();
-			} else {
-				this.syncRangeUi();
-			}
-		});
+	protected override onConnected(): void {
+		this.syncChrome();
+		this.syncValues(this.committedValues());
 	}
 
-	@onUpdated(['value', 'min', 'max', 'step', 'variant'])
-	onSinglePropsUpdated(): void {
-		if (this.variant !== 'single' || this.interacting) {
+	@onUpdated([
+		'value',
+		'rangeMin',
+		'rangeMax',
+		'min',
+		'max',
+		'step',
+		'minDistance',
+		'variant',
+		'orientation',
+		'disabled',
+		'readOnly',
+		'label',
+		'name',
+		'showValue',
+		'valueTitle',
+	])
+	onPropsUpdated(): void {
+		if (this.activeThumb) {
 			return;
 		}
 
-		this.syncInputFromValue();
+		this.syncChrome();
+		this.syncValues(this.committedValues());
 	}
 
-	@onUpdated(['rangeMin', 'rangeMax', 'min', 'max', 'step', 'minDistance', 'variant'])
-	onRangePropsUpdated(): void {
-		if (this.variant !== 'range' || this.activeThumb) {
-			return;
+	private get isRange(): boolean {
+		return this.variant === 'range';
+	}
+
+	private get isVertical(): boolean {
+		return this.orientation === 'vertical';
+	}
+
+	private get numericRange() {
+		return createNumericRange(this.min, this.max, this.step);
+	}
+
+	private get defaultValueTarget(): HTMLElement | null {
+		return this.querySelector<HTMLElement>('[data-default-value]');
+	}
+
+	private thumbFor(id: RuiSliderThumb): HTMLButtonElement | undefined {
+		if (id === 'value') {
+			return this.singleThumb;
 		}
-
-		this.syncRangeUi();
+		return id === 'min' ? this.rangeMinThumb : this.rangeMaxThumb;
 	}
 
-	private clamp(next: number): number {
-		const stepped = Math.round(next / this.step) * this.step;
-		return Math.min(this.max, Math.max(this.min, stepped));
+	private parseThumb(value: string | null): RuiSliderThumb | null {
+		if (this.isRange) {
+			return value === 'min' || value === 'max' ? value : null;
+		}
+		return value === 'value' ? value : null;
 	}
 
-	private normalizeRange(low = this.rangeMin, high = this.rangeMax): [number, number] {
-		let nextLow = this.clamp(low);
-		let nextHigh = this.clamp(high);
-
+	private constrainPair(low: number, high: number, active?: RuiSliderThumb): [number, number] {
+		const range = this.numericRange;
+		let nextLow = range.clamp(low);
+		let nextHigh = range.clamp(high);
 		if (nextLow > nextHigh) {
 			[nextLow, nextHigh] = [nextHigh, nextLow];
 		}
 
-		if (nextHigh - nextLow < this.minDistance) {
-			if (this.activeThumb === 'min') {
-				nextLow = this.clamp(nextHigh - this.minDistance);
+		const minDistance = Math.max(0, this.minDistance);
+		if (nextHigh - nextLow < minDistance) {
+			if (active === 'min') {
+				nextLow = range.clamp(nextHigh - minDistance);
 			} else {
-				nextHigh = this.clamp(nextLow + this.minDistance);
+				nextHigh = range.clamp(nextLow + minDistance);
 			}
 		}
 
 		return [nextLow, nextHigh];
 	}
 
-	private getActiveRange(): [number, number] {
-		return this.normalizeRange(...(this.pendingRange ?? [this.rangeMin, this.rangeMax]));
+	private committedValues(): number[] {
+		if (this.isRange) {
+			return this.constrainPair(this.rangeMin, this.rangeMax);
+		}
+		return [this.numericRange.clamp(this.value)];
 	}
 
-	private percentFor(value: number): number {
-		if (this.max === this.min) {
-			return 0;
+	private liveValues(): number[] {
+		return this.pending ?? this.committedValues();
+	}
+
+	private changeDetail(values: number[]): RuiSliderChangeDetail {
+		return values.length === 2 ? { values: [values[0], values[1]] } : { value: values[0] };
+	}
+
+	private emitIfChanged(values: number[]): void {
+		const key = values.join(',');
+		if (key === this.lastEmitted) {
+			return;
+		}
+		this.lastEmitted = key;
+		this.changeEvent.emit(this.changeDetail(values));
+	}
+
+	private reflectValues(values: number[]): void {
+		if (values.length === 2) {
+			if (this.rangeMin !== values[0]) {
+				this.rangeMin = values[0];
+			}
+			if (this.rangeMax !== values[1]) {
+				this.rangeMax = values[1];
+			}
+			return;
 		}
 
-		return ((value - this.min) / (this.max - this.min)) * 100;
+		if (this.value !== values[0]) {
+			this.value = values[0];
+		}
 	}
 
-	private valueFromPointer(clientX: number, track: HTMLElement): number {
+	private syncValues(values: number[]): void {
+		this.paint(values);
+		this.reflectValues(values);
+	}
+
+	private syncChrome(): void {
+		const disabled = this.disabled;
+		const range = this.isRange;
+		const tabindex = disabled ? -1 : 0;
+		const orientation = this.isVertical ? 'vertical' : 'horizontal';
+		const hasDefaultValue = Boolean(this.defaultValueTarget);
+		const hasVisibleReadout = Boolean(this.valueTarget) && (!hasDefaultValue || this.showValue);
+		const rangeBounds = this.numericRange;
+
+		this.rootTarget?.classList.toggle('rui-slider--single', !range);
+		this.rootTarget?.classList.toggle('rui-slider--range', range);
+		this.rootTarget?.classList.toggle('rui-slider--vertical', this.isVertical);
+		this.labelTarget?.toggleAttribute('hidden', !this.label);
+		if (this.labelTarget) {
+			this.labelTarget.textContent = this.label;
+		}
+		this.defaultValueTarget?.toggleAttribute('hidden', !this.showValue);
+		this.headerTarget?.toggleAttribute('hidden', !this.label && !hasVisibleReadout);
+
+		const thumbs: Array<[RuiSliderThumb, string, boolean]> = [
+			['value', this.label || 'Value', !range],
+			['min', this.label ? `${this.label} minimum` : 'Minimum value', range],
+			['max', this.label ? `${this.label} maximum` : 'Maximum value', range],
+		];
+
+		for (const [id, ariaLabel, visible] of thumbs) {
+			const thumb = this.thumbFor(id);
+			if (!thumb) {
+				continue;
+			}
+			thumb.toggleAttribute('hidden', !visible);
+			thumb.toggleAttribute('disabled', disabled || !visible);
+			thumb.setAttribute('tabindex', String(visible ? tabindex : -1));
+			thumb.setAttribute('aria-label', ariaLabel);
+			thumb.setAttribute('aria-orientation', orientation);
+			thumb.setAttribute('aria-valuemin', String(rangeBounds.lowerBound));
+			thumb.setAttribute('aria-valuemax', String(rangeBounds.upperBound));
+			thumb.setAttribute('aria-readonly', String(this.readOnly));
+		}
+	}
+
+	private paint(values: number[]): void {
+		const range = this.numericRange;
+		const start = values[0];
+		const end = values.length === 2 ? values[1] : values[0];
+		const startPercent = `${range.ratioFor(start) * 100}%`;
+		const endPercent = `${range.ratioFor(end) * 100}%`;
+		const fillSize = `${(range.ratioFor(end) - range.ratioFor(start)) * 100}%`;
+		const track = this.rangeTrack;
+
+		track?.style.setProperty('--rui-slider-fill-start', values.length === 2 ? startPercent : '0%');
+		track?.style.setProperty('--rui-slider-fill-size', values.length === 2 ? fillSize : endPercent);
+		track?.style.setProperty('--rui-slider-value', startPercent);
+		track?.style.setProperty('--rui-slider-min', startPercent);
+		track?.style.setProperty('--rui-slider-max', endPercent);
+
+		if (this.singleThumb) {
+			this.singleThumb.setAttribute('aria-valuenow', String(start));
+		}
+		if (this.rangeMinThumb) {
+			this.rangeMinThumb.setAttribute('aria-valuenow', String(start));
+			this.rangeMinThumb.setAttribute('aria-valuemax', String(end));
+		}
+		if (this.rangeMaxThumb) {
+			this.rangeMaxThumb.setAttribute('aria-valuemin', String(start));
+			this.rangeMaxThumb.setAttribute('aria-valuenow', String(end));
+		}
+
+		if (this.valueTarget) {
+			this.valueTarget.textContent = values.length === 2 ? `${start} – ${end}` : String(start);
+		}
+
+		this.syncInputs(values);
+		this.syncValueTitle(values);
+	}
+
+	private syncInputs(values: number[]): void {
+		if (this.inputTarget) {
+			this.inputTarget.disabled = this.disabled;
+			this.inputTarget.readOnly = this.readOnly;
+			this.inputTarget.value = String(values[0]);
+			if (this.name) {
+				this.inputTarget.name = this.name;
+			} else {
+				this.inputTarget.removeAttribute('name');
+			}
+		}
+
+		if (!this.maxInputTarget) {
+			return;
+		}
+
+		this.maxInputTarget.disabled = this.disabled;
+		this.maxInputTarget.readOnly = this.readOnly;
+
+		if (values.length === 2) {
+			this.maxInputTarget.value = String(values[1]);
+			if (this.name) {
+				this.maxInputTarget.name = `${this.name}-max`;
+			} else {
+				this.maxInputTarget.removeAttribute('name');
+			}
+			return;
+		}
+
+		this.maxInputTarget.value = '';
+		this.maxInputTarget.removeAttribute('name');
+	}
+
+	private syncValueTitle(values: number[]): void {
+		const thumbs = [this.singleThumb, this.rangeMinThumb, this.rangeMaxThumb];
+		if (!this.valueTitle) {
+			this.inputTarget?.removeAttribute('title');
+			this.maxInputTarget?.removeAttribute('title');
+			this.rangeTrack?.removeAttribute('title');
+			for (const thumb of thumbs) {
+				thumb?.removeAttribute('title');
+			}
+			return;
+		}
+
+		if (values.length === 1) {
+			const title = String(values[0]);
+			this.inputTarget?.setAttribute('title', title);
+			this.maxInputTarget?.removeAttribute('title');
+			this.rangeTrack?.removeAttribute('title');
+			this.singleThumb?.setAttribute('title', title);
+			this.rangeMinThumb?.removeAttribute('title');
+			this.rangeMaxThumb?.removeAttribute('title');
+			return;
+		}
+
+		const [low, high] = values;
+		this.inputTarget?.setAttribute('title', String(low));
+		this.maxInputTarget?.setAttribute('title', String(high));
+		this.rangeTrack?.setAttribute('title', `${low} – ${high}`);
+		this.singleThumb?.removeAttribute('title');
+		this.rangeMinThumb?.setAttribute('title', String(low));
+		this.rangeMaxThumb?.setAttribute('title', String(high));
+	}
+
+	private valueFromPointer(event: PointerEvent): number {
+		const track = this.rangeTrack;
+		if (!track) {
+			return this.numericRange.lowerBound;
+		}
+
 		const rect = track.getBoundingClientRect();
-		const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-		return this.clamp(this.min + ratio * (this.max - this.min));
+		if (rect.width === 0 || rect.height === 0) {
+			return this.numericRange.lowerBound;
+		}
+
+		const ratio = this.isVertical
+			? 1 - (event.clientY - rect.top) / rect.height
+			: (event.clientX - rect.left) / rect.width;
+		return this.numericRange.valueFromRatio(ratio);
 	}
 
-	private syncInputFromValue(): void {
-		const input = this.inputTarget;
-		if (!input) {
-			return;
+	private nearestThumb(next: number): RuiSliderThumb {
+		if (!this.isRange) {
+			return 'value';
 		}
-
-		const nextValue = String(this.value);
-		if (input.value !== nextValue) {
-			input.value = nextValue;
-		}
-
-		input.min = String(this.min);
-		input.max = String(this.max);
-		input.step = String(this.step);
-		this.updateDisplayedValue(this.value);
+		const [low, high] = this.liveValues();
+		return Math.abs(next - low) <= Math.abs(next - high) ? 'min' : 'max';
 	}
 
-	private updateDisplayedValue(next: number): void {
-		this.displayedValue = next;
-	}
-
-	private syncRangeUi(): void {
-		const [low, high] = this.getActiveRange();
-		let propsChanged = false;
-
-		if (!this.activeThumb) {
-			if (low !== this.rangeMin) {
-				this.rangeMin = low;
-				propsChanged = true;
-			}
-			if (high !== this.rangeMax) {
-				this.rangeMax = high;
-				propsChanged = true;
-			}
-		}
-
-		if (propsChanged) {
-			queueMicrotask(() => {
-				if (!this.activeThumb) {
-					this.paintRangeUi(...this.getActiveRange());
-				}
-			});
-			return;
-		}
-
-		this.paintRangeUi(low, high);
-	}
-
-	private paintRangeUi(low: number, high: number): void {
-		const lowPercent = this.percentFor(low);
-		const highPercent = this.percentFor(high);
-		const track = this.querySelector<HTMLElement>('.rui-slider__range-track');
-
-		if (track) {
-			track.style.setProperty('--rui-slider-min', `${lowPercent}%`);
-			track.style.setProperty('--rui-slider-max', `${highPercent}%`);
-		}
-
-		if (this.rangeFill) {
-			this.rangeFill.style.left = `${lowPercent}%`;
-			this.rangeFill.style.width = `${highPercent - lowPercent}%`;
-		}
-	}
-
-	private commitRange(emit = true): void {
-		const [low, high] = this.getActiveRange();
-		const changed = low !== this.rangeMin || high !== this.rangeMax;
-		this.pendingRange = null;
-		this.rangeMin = low;
-		this.rangeMax = high;
-
-		if (emit && changed) {
-			this.changeEvent.emit({ values: [low, high] });
-		}
-	}
-
-	private setRangeValue(thumb: 'min' | 'max', next: number): void {
+	private moveThumb(thumb: RuiSliderThumb, next: number): number[] {
 		this.activeThumb = thumb;
-		const [currentLow, currentHigh] = this.pendingRange ?? [this.rangeMin, this.rangeMax];
-		const [low, high] = this.normalizeRange(
-			thumb === 'min' ? next : currentLow,
-			thumb === 'max' ? next : currentHigh,
-		);
-		this.pendingRange = [low, high];
-		this.paintRangeUi(low, high);
-	}
-
-	private commitSingleValue(input: HTMLInputElement): void {
-		const next = Number(input.value);
-		this.updateDisplayedValue(next);
-
-		if (next === this.value) {
-			return;
+		if (this.isRange) {
+			const current = this.pending ?? this.committedValues();
+			this.pending = this.constrainPair(thumb === 'min' ? next : current[0], thumb === 'max' ? next : current[1], thumb);
+		} else {
+			this.pending = [this.numericRange.clamp(next)];
 		}
 
-		this.value = next;
-		this.changeEvent.emit({ value: next });
+		const values = this.pending;
+		this.paint(values);
+		this.emitIfChanged(values);
+		return values;
 	}
 
-	@onEvent({ ref: 'input', type: 'pointerdown' })
+	private commit(): void {
+		const values = this.liveValues();
+		this.pending = null;
+		this.activeThumb = null;
+		this.activePointerId = null;
+		this.syncValues(values);
+	}
+
+	private revert(): void {
+		this.pending = null;
+		this.activeThumb = null;
+		this.activePointerId = null;
+		this.lastEmitted = this.committedValues().join(',');
+		this.paint(this.committedValues());
+	}
+
+	private releasePointer(event: PointerEvent): void {
+		const track = this.rangeTrack;
+		if (track?.hasPointerCapture(event.pointerId)) {
+			track.releasePointerCapture(event.pointerId);
+		}
+	}
+
+	@onEvent({ ref: 'rangeTrack', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.variant !== 'single') {
-			return;
-		}
-
-		this.interacting = true;
-	}
-
-	@onEvent({ ref: 'input', type: 'pointerup' })
-	onPointerUp(event: Event): void {
-		if (!this.interacting || this.variant !== 'single') {
-			return;
-		}
-
-		this.interacting = false;
-		this.commitSingleValue(event.target as HTMLInputElement);
-	}
-
-	@onEvent({ ref: 'input', type: 'pointercancel' })
-	onPointerCancel(event: Event): void {
-		if (!this.interacting || this.variant !== 'single') {
-			return;
-		}
-
-		this.interacting = false;
-		this.commitSingleValue(event.target as HTMLInputElement);
-	}
-
-	@onEvent({ ref: 'input', type: 'input' })
-	onInput(event: Event): void {
-		if (this.variant !== 'single') {
-			return;
-		}
-
-		const input = event.target as HTMLInputElement;
-		const next = Number(input.value);
-		this.updateDisplayedValue(next);
-
-		if (this.interacting) {
-			this.changeEvent.emit({ value: next });
-			return;
-		}
-
-		this.commitSingleValue(input);
-	}
-
-	@onEvent({ ref: 'input', type: 'change' })
-	onChange(event: Event): void {
-		if (this.variant !== 'single') {
-			return;
-		}
-
-		this.interacting = false;
-		this.commitSingleValue(event.target as HTMLInputElement);
-	}
-
-	@onEvent({ selector: '[data-thumb]', type: 'pointerdown' })
-	onThumbPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.variant !== 'range' || this.disabled) {
+		if (event.button !== 0 || this.disabled || this.readOnly) {
 			return;
 		}
 
 		const thumbElement = (event.target as HTMLElement).closest<HTMLElement>('[data-thumb]');
-		if (!thumbElement) {
-			return;
-		}
-
-		const thumb = thumbElement.getAttribute('data-thumb') as 'min' | 'max';
+		const fromThumb = this.parseThumb(thumbElement?.getAttribute('data-thumb') ?? null);
+		const next = this.valueFromPointer(event);
+		const thumb = fromThumb ?? this.nearestThumb(next);
+		this.pending = this.committedValues();
+		this.lastEmitted = this.pending.join(',');
 		this.activeThumb = thumb;
-		this.pendingRange = [this.rangeMin, this.rangeMax];
-		thumbElement.setPointerCapture(event.pointerId);
+		this.activePointerId = event.pointerId;
+		this.rangeTrack?.setPointerCapture(event.pointerId);
+		this.thumbFor(thumb)?.focus();
+		if (!fromThumb) {
+			this.moveThumb(thumb, next);
+		}
 		event.preventDefault();
 	}
 
-	@onEvent({ selector: '[data-thumb]', type: 'pointermove' })
-	onThumbPointerMove(event: PointerEvent): void {
-		if (!this.activeThumb || this.variant !== 'range') {
+	/**
+	 * @remarks Pointermove is observed on `document` so drag still tracks when
+	 * testing-library dispatches move events off the thumb/track (no capture retarget).
+	 */
+	@onEvent({ document: true, type: 'pointermove' })
+	onPointerMove(event: PointerEvent): void {
+		if (!this.activeThumb || event.pointerId !== this.activePointerId) {
 			return;
 		}
 
-		const track = this.querySelector<HTMLElement>('.rui-slider__range-track');
-		if (!track) {
-			return;
-		}
-
-		this.setRangeValue(this.activeThumb, this.valueFromPointer(event.clientX, track));
-
-		if (this.pendingRange) {
-			this.changeEvent.emit({ values: this.pendingRange });
-		}
+		this.moveThumb(this.activeThumb, this.valueFromPointer(event));
 	}
 
-	@onEvent({ selector: '[data-thumb]', type: 'pointerup' })
-	onThumbPointerUp(): void {
-		if (!this.activeThumb || this.variant !== 'range') {
+	@onEvent({ document: true, type: 'pointerup' })
+	onPointerUp(event: PointerEvent): void {
+		if (!this.activeThumb || event.pointerId !== this.activePointerId) {
 			return;
 		}
 
-		this.commitRange();
-		this.activeThumb = null;
+		this.releasePointer(event);
+		this.commit();
 	}
 
-	@onEvent({ selector: '[data-thumb]', type: 'pointercancel' })
-	onThumbPointerCancel(): void {
-		if (!this.activeThumb || this.variant !== 'range') {
+	@onEvent({ document: true, type: 'pointercancel' })
+	onPointerCancel(event: PointerEvent): void {
+		if (!this.activeThumb || event.pointerId !== this.activePointerId) {
 			return;
 		}
 
-		this.pendingRange = null;
-		this.syncRangeUi();
-		this.activeThumb = null;
+		this.releasePointer(event);
+		this.revert();
 	}
 
 	@onEvent({ selector: '[data-thumb]', type: 'keydown' })
 	onThumbKeydown(event: KeyboardEvent): void {
-		if (this.variant !== 'range' || this.disabled) {
+		if (this.disabled || this.readOnly) {
 			return;
 		}
 
 		const thumbElement = (event.target as HTMLElement).closest<HTMLElement>('[data-thumb]');
-		if (!thumbElement) {
+		const thumb = this.parseThumb(thumbElement?.getAttribute('data-thumb') ?? null);
+		if (!thumb) {
 			return;
 		}
 
-		const thumb = thumbElement.getAttribute('data-thumb') as 'min' | 'max';
-		const current = thumb === 'min' ? this.rangeMin : this.rangeMax;
-		let next = current;
-
-		switch (event.key) {
-			case 'ArrowRight':
-			case 'ArrowUp':
-				next = this.clamp(current + this.step);
-				break;
-			case 'ArrowLeft':
-			case 'ArrowDown':
-				next = this.clamp(current - this.step);
-				break;
-			case 'Home':
-				next = this.min;
-				break;
-			case 'End':
-				next = this.max;
-				break;
-			case 'PageUp':
-				next = this.clamp(current + this.step * 10);
-				break;
-			case 'PageDown':
-				next = this.clamp(current - this.step * 10);
-				break;
-			default:
-				return;
+		const values = this.committedValues();
+		const current = thumb === 'max' ? values[values.length - 1] : values[0];
+		const next = valueFromSliderKey(this.numericRange, current, event.key);
+		if (next == null) {
+			return;
 		}
 
 		event.preventDefault();
-		this.setRangeValue(thumb, next);
-		this.commitRange(false);
-		this.changeEvent.emit({ values: [this.rangeMin, this.rangeMax] });
-		this.activeThumb = null;
-	}
-
-	override render() {
-		const [displayedRangeMin, displayedRangeMax] = this.getActiveRange();
-		const displayedSingleValue = this.displayedValue ?? this.value;
-
-		if (this.variant === 'range') {
-			return (
-				<div class="rui-slider rui-slider--range">
-					{this.label ? <span class="rui-slider__label">{this.label}</span> : null}
-					<div class="rui-slider__range">
-						<div class="rui-slider__range-track">
-							<div class="rui-slider__range-fill" data-ref="rangeFill" />
-							<button
-								type="button"
-								class="rui-slider__thumb"
-								data-ref="rangeMinThumb"
-								data-thumb="min"
-								role="slider"
-								tabindex={this.resolvedDisabledTabindex}
-								aria-label={this.resolvedMinLabel}
-								aria-valuemin={this.min}
-								aria-valuemax={displayedRangeMax}
-								aria-valuenow={displayedRangeMin}
-								disabled={this.$.disabled}
-							/>
-							<button
-								type="button"
-								class="rui-slider__thumb"
-								data-ref="rangeMaxThumb"
-								data-thumb="max"
-								role="slider"
-								tabindex={this.resolvedDisabledTabindex}
-								aria-label={this.resolvedMaxLabel}
-								aria-valuemin={displayedRangeMin}
-								aria-valuemax={this.max}
-								aria-valuenow={displayedRangeMax}
-								disabled={this.$.disabled}
-							/>
-						</div>
-					</div>
-					<span class="rui-slider__value" data-ref="value" aria-hidden="true">
-						{displayedRangeMin} – {displayedRangeMax}
-					</span>
-				</div>
-			);
-		}
-
-		return (
-			<label class="rui-slider">
-				{this.label ? <span class="rui-slider__label">{this.label}</span> : null}
-				<input
-					type="range"
-					data-ref="input"
-					data-rui-control
-					data-rui-control-type="number"
-					class="rui-slider__input"
-					disabled={this.$.disabled}
-					name={this.resolvedName}
-					aria-valuemin={this.min}
-					aria-valuemax={this.max}
-					aria-valuenow={this.value}
-				/>
-				<span class="rui-slider__value" data-ref="value" aria-hidden="true">
-					{displayedSingleValue}
-				</span>
-			</label>
-		);
+		this.lastEmitted = values.join(',');
+		this.moveThumb(thumb, next);
+		this.commit();
 	}
 }
