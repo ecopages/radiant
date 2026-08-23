@@ -15,6 +15,7 @@ For more details, [see the docs page](https://radiant.ecopages.app/).
 - [@ecopages/signals](./packages/signals/README.md)
 - [@ecopages/radiant-ui](./packages/radiant-ui/README.md)
 - [@ecopages/vite-plugin-radiant](./packages/vite-plugin-radiant/README.md)
+- [@ecopages/storybook-radiant-vite](./packages/storybook-radiant-vite/README.md)
 
 The JSX package README is the source of truth for entrypoint boundaries. In particular, [packages/jsx/README.md](./packages/jsx/README.md) documents when to use `@ecopages/jsx/server` directly, including the SSR hydration binding scope helpers intended for framework integrations that compose one page from multiple server renders.
 

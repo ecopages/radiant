@@ -2,10 +2,12 @@
 	"$schema": "https://unpkg.com/@changesets/config@4.0.0/schema.json",
 	"changelog": ["@changesets/changelog-github", { "repo": "ecopages/radiant" }],
 	"commit": false,
-	"fixed": [["@ecopages/jsx", "@ecopages/signals", "@ecopages/radiant"]],
+	"fixed": [
+		["@ecopages/jsx", "@ecopages/signals", "@ecopages/radiant"],
+		["@ecopages/storybook-radiant-vite", "@ecopages/vite-plugin-radiant"]
+	],
 	"linked": [],
 	"access": "public",
 	"baseBranch": "release/v0.3.0",
-	"updateInternalDependencies": "patch",
-	"ignore": ["@ecopages/storybook-radiant-vite"]
+	"updateInternalDependencies": "patch"
 }

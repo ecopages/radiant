@@ -372,15 +372,11 @@ Controller SSR (`renderController`) is not wired in v1 — use client mode for c
 - **Storybook UI still depends on React transitively** (`storybook` → `use-sync-external-store` → `react`, and `@storybook/addon-docs` → `react` / `@mdx-js/react`). That is Storybook’s manager/docs stack. Your stories do **not** import or render through React.
 - **Tag collisions** — two modules registering the same custom element tag will conflict if both load in one session.
 
-## Extracting / publishing
+## Publishing
 
 This package depends on `@ecopages/vite-plugin-radiant` for shared Vite primitives (JSX, decorators, SSR externals). Storybook-only code stays here: CSF types, SSR middleware, script-module stamps, and framework HMR.
 
-To ship:
-
-1. Copy or publish `packages/storybook-radiant-vite/`
-2. Resolve peers from npm (`@ecopages/vite-plugin-radiant`, `@ecopages/radiant`, …)
-3. `npm publish` (or Changesets)
+It is published from this repo through Changesets. It shares a `fixed` version group with `@ecopages/vite-plugin-radiant`, so a bump to either package bumps both.
 
 ## License
 

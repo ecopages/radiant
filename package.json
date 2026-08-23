@@ -12,7 +12,7 @@
 		"typecheck": "pnpm run typecheck:packages && tsc --noEmit -p apps/docs/tsconfig.json && tsc --noEmit -p apps/radiant-ui/tsconfig.json",
 		"typecheck:packages": "tsc --noEmit -p packages/jsx/tsconfig.json && tsc --noEmit -p packages/signals/tsconfig.json && tsc --noEmit -p packages/radiant/tsconfig.json && tsc --noEmit -p packages/vite-plugin-radiant/tsconfig.json && tsc --noEmit -p packages/storybook-radiant-vite/tsconfig.json && tsc --noEmit -p packages/radiant-ui/tsconfig.app.json && tsc --noEmit -p playground/vite/tsconfig.json && tsc --noEmit -p playground/vite-nitro/tsconfig.json",
 		"prepare:husky": "husky",
-		"build:all": "pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm --filter @ecopages/radiant-ui build:lib",
+		"build:all": "pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm --filter @ecopages/storybook-radiant-vite build && pnpm --filter @ecopages/radiant-ui build:lib",
 		"test:all": "pnpm -r --sequential test:all",
 		"size:check": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:check",
 		"size:report": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:report",
