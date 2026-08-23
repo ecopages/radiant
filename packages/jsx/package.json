@@ -51,6 +51,7 @@
 		"profile:hydrate:node": "node --import tsx benchmarks/profile-hydrate.ts",
 		"size:check": "node --import tsx ./check-size.ts",
 		"size:report": "node --import tsx ./check-size.ts --report-only",
+		"test:all": "pnpm run test:lib && pnpm run test:dist && pnpm run size:check",
 		"test:dist": "pnpm run build:files && vitest run test/dom-render-dist-parity.browser.test.tsx --config vitest.browser.config.ts",
 		"test:lib": "vitest run && vitest run --config vitest.browser.config.ts && vitest run --config vitest.e2e.config.ts",
 		"test:custom-elements": "vitest run --config vitest.e2e.config.ts test/custom-elements.e2e.test.tsx",

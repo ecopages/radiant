@@ -9,6 +9,7 @@ catalog:
 allowBuilds:
   esbuild: true
   '@swc/core': true
+  msw: false
 
 minimumReleaseAgeExclude:
   - '@ecopages/jsx@0.3.0-rc.0 || 0.3.0-rc.2'
