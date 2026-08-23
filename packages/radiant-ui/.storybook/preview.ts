@@ -1,4 +1,7 @@
 import type { Preview } from '@ecopages/storybook-radiant-vite';
+import { isCommonAssetRequest } from 'msw';
+import { setupWorker } from 'msw/browser';
+import { mswLoader } from 'msw-storybook-addon/csf3';
 import '../src/styles/tailwind.css';
 import './fonts.css';
 import { applyDesignTokens, registerDesignTokenGlobalsSync } from './apply-design-tokens';
@@ -6,7 +9,33 @@ import { clearStylesheetsDecorator } from './with-stylesheets';
 
 registerDesignTokenGlobalsSync();
 
+const setupMswWorker = async () => {
+	const worker = setupWorker();
+
+	await worker.start({
+		quiet: true,
+		onUnhandledRequest(request, print) {
+			const url = new URL(request.url);
+			if (
+				isCommonAssetRequest(request) ||
+				url.hostname === 'avatars.githubusercontent.com' ||
+				/\.eot$|\.mdx$|sb-common-assets|__webpack_hmr|iframe.html|sb-vite|@vite|@react-refresh|\/virtual:|\.stories\./.test(
+					request.url,
+				) ||
+				url.pathname === '/__radiant_ssr'
+			) {
+				return;
+			}
+
+			print.warning();
+		},
+	});
+
+	return worker;
+};
+
 const preview: Preview = {
+	loaders: [mswLoader(setupMswWorker)],
 	globalTypes: {
 		ruiColors: {
 			name: 'Colors',
