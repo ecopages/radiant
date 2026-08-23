@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiCheckboxProps = {
@@ -23,13 +23,13 @@ export type RuiCheckboxChangeDetail = {
 	indeterminate: boolean;
 };
 
-type RuiCheckboxBindings = {
-	checked: boolean;
-	indeterminate: boolean;
-	disabled: boolean;
-	value: string;
-	name: string;
-};
+/**
+ * Default submitted value for a checkbox.
+ *
+ * @remarks Must match the host `@prop` default: the SSR view seeds the inner
+ * `<input>` with it so form submission works before hydration.
+ */
+export const CHECKBOX_DEFAULT_VALUE = 'on';
 
 /**
  * `<rui-checkbox>` — a dual-state or tri-state checkbox.
@@ -44,7 +44,6 @@ type RuiCheckboxBindings = {
  * - `Space`: toggle checked state
  *
  * @element rui-checkbox
- * @slot - Visible label for the checkbox.
  * @fires rui-change - Emitted after the checked/indeterminate state changes.
  * @cssclass rui-checkbox - Label row: box + visible label.
  * @cssclass rui-checkbox__input - Native input (visually hidden, receives focus).
@@ -52,20 +51,46 @@ type RuiCheckboxBindings = {
  * @cssclass rui-checkbox__label - Light-DOM label text.
  */
 @customElement('rui-checkbox')
-export class RuiCheckbox extends RadiantElement<RuiCheckboxBindings> {
+export class RuiCheckbox extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) checked: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) indeterminate: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: String, defaultValue: 'on' }) value: string;
+	@prop({ type: String, defaultValue: CHECKBOX_DEFAULT_VALUE }) value: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
+
+	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiCheckboxChangeDetail>;
 
-	private readonly nameAttr = this.$.name.map((name) => name || undefined);
-	private readonly resolvedAriaChecked = this.$.indeterminate.map((indeterminate) =>
-		indeterminate ? 'mixed' : undefined,
-	);
+	protected override onConnected(): void {
+		this.syncInputState();
+	}
+
+	@bound
+	@onUpdated(['checked', 'indeterminate', 'disabled', 'value', 'name'])
+	syncInputState(): void {
+		const input = this.inputTarget;
+		if (!input) {
+			return;
+		}
+
+		input.checked = this.checked;
+		input.indeterminate = this.indeterminate;
+		input.disabled = this.disabled;
+		input.value = this.value;
+		if (this.name) {
+			input.name = this.name;
+		} else {
+			input.removeAttribute('name');
+		}
+
+		if (this.indeterminate) {
+			input.setAttribute('aria-checked', 'mixed');
+		} else {
+			input.removeAttribute('aria-checked');
+		}
+	}
 
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {
@@ -73,29 +98,5 @@ export class RuiCheckbox extends RadiantElement<RuiCheckboxBindings> {
 		this.checked = input.checked;
 		input.indeterminate = this.indeterminate;
 		this.changeEvent.emit({ checked: this.checked, indeterminate: this.indeterminate });
-	}
-
-	override render() {
-		return (
-			<label class="rui-checkbox">
-				<input
-					type="checkbox"
-					data-ref="input"
-					data-rui-control
-					data-rui-control-type="boolean"
-					class="rui-checkbox__input"
-					prop:checked={this.$.checked}
-					disabled={this.$.disabled}
-					prop:value={this.$.value}
-					name={this.nameAttr}
-					prop:indeterminate={this.$.indeterminate}
-					aria-checked={this.resolvedAriaChecked}
-				/>
-				<span class="rui-checkbox__control" aria-hidden="true"></span>
-				<span class="rui-checkbox__label">
-					<slot></slot>
-				</span>
-			</label>
-		);
 	}
 }

@@ -1,17 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { renderToString } from '@ecopages/jsx/server';
-import '@ecopages/radiant/server/install-ssr-runtime';
-import { renderRadiantElementHostToString } from '@ecopages/radiant/server/radiant-element-ssr';
-import { RuiSwitch as RuiSwitchView } from './switch';
-import { RuiSwitch } from './switch.script';
+import { RuiSwitch } from './switch';
 
 describe('RuiSwitch SSR', () => {
 	it('renders track, thumb, and label markup before hydration', () => {
-		const element = document.createElement('rui-switch') as RuiSwitch;
-		element.checked = false;
-		element.innerHTML = 'Email notifications';
-
-		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
+		const html = renderToString(
+			<RuiSwitch checked={false} disabled={false}>
+				Email notifications
+			</RuiSwitch>,
+		);
 
 		expect(html).toContain('rui-switch__track');
 		expect(html).toContain('rui-switch__thumb');
@@ -19,24 +16,28 @@ describe('RuiSwitch SSR', () => {
 		expect(html).toContain('Email notifications');
 	});
 
-	it('reflects checked state in SSR markup', () => {
-		const element = document.createElement('rui-switch') as RuiSwitch;
-		element.checked = true;
+	it('renders checked state on the host and native control', () => {
+		const html = renderToString(
+			<RuiSwitch checked disabled name="notifications">
+				Notifications
+			</RuiSwitch>,
+		);
 
-		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
-
-		expect(html).toContain('checked');
+		expect(html).toMatch(/<rui-switch[^>]*checked/);
+		expect(html).toMatch(/<input[^>]*checked/);
+		expect(html).toMatch(/<input[^>]*disabled/);
+		expect(html).toMatch(/<input[^>]*name="notifications"/);
 	});
 
-	it('view passes label text as children without duplicating chrome', () => {
+	it('renders a single chrome shell for the view composition', () => {
 		const html = renderToString(
-			<RuiSwitchView checked={false} disabled={false}>
+			<RuiSwitch checked={false} disabled={false}>
 				Disabled
-			</RuiSwitchView>,
+			</RuiSwitch>,
 		);
 
 		expect(html).toContain('rui-switch');
 		expect(html).toContain('Disabled');
-		expect(html.match(/rui-switch__track/g)?.length ?? 0).toBeLessThanOrEqual(1);
+		expect(html.match(/rui-switch__track/g)?.length ?? 0).toBe(1);
 	});
 });
