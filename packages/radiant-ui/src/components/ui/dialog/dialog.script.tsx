@@ -18,11 +18,6 @@ export type RuiDialogCloseDetail = {
 	reason: 'escape' | 'backdrop' | 'dismiss';
 };
 
-type RuiDialogBindings = {
-	open: boolean;
-	alert: boolean;
-};
-
 /**
  * `<rui-dialog>` — a composition-first modal dialog shell.
  *
@@ -40,7 +35,7 @@ type RuiDialogBindings = {
  * @cssclass rui-dialog__surface - Modal panel: `background` + `rounded-container` + `shadow-modal`.
  */
 @customElement('rui-dialog')
-export class RuiDialog extends RadiantElement<RuiDialogBindings> {
+export class RuiDialog extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) alert: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;

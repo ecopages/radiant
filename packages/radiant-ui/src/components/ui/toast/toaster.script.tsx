@@ -55,11 +55,6 @@ export type RuiToasterProps = {
 	container?: string;
 };
 
-type RuiToasterBindings = {
-	position: ToastPosition;
-	toasts: ToastRecord[];
-};
-
 function isInsideToaster(node: EventTarget | null, root: Element): boolean {
 	return node instanceof Node && root.contains(node);
 }
@@ -95,7 +90,7 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  * @cssclass rui-toaster - The `<ol>` stack list.
  */
 @customElement('rui-toaster')
-export class RuiToaster extends RadiantElement<RuiToasterBindings> {
+export class RuiToaster extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: DEFAULT_TOAST_POSITION }) position: ToastPosition;
 	@prop({ type: Number, defaultValue: TOAST_LIFETIME }) duration: number;
 	@prop({ type: Number, defaultValue: TOAST_VISIBLE_AMOUNT }) visibleToasts: number;

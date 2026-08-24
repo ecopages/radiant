@@ -10,10 +10,6 @@ export type RuiTreeProps = {
 
 export type RuiTreeChangeDetail = { value: string };
 
-type RuiTreeBindings = {
-	label: string;
-};
-
 /**
  * `<rui-tree>` — a hierarchical list of tree items.
  *
@@ -41,7 +37,7 @@ type RuiTreeBindings = {
  * authored `role="group"` containers.
  */
 @customElement('rui-tree')
-export class RuiTree extends RadiantElement<RuiTreeBindings> {
+export class RuiTree extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 

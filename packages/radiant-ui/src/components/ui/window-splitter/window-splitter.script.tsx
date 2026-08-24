@@ -11,12 +11,6 @@ export type RuiWindowSplitterProps = {
 
 export type RuiWindowSplitterChangeDetail = { value: number };
 
-type RuiWindowSplitterBindings = {
-	value: number;
-	label: string;
-	orientation: NonNullable<RuiWindowSplitterProps['orientation']>;
-};
-
 /**
  * `<rui-window-splitter>` — a movable separator between two panes.
  *
@@ -43,7 +37,7 @@ type RuiWindowSplitterBindings = {
  * @cssclass rui-window-splitter__separator - Focusable separator (`role="separator"`).
  */
 @customElement('rui-window-splitter')
-export class RuiWindowSplitter extends RadiantElement<RuiWindowSplitterBindings> {
+export class RuiWindowSplitter extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: NonNullable<RuiWindowSplitterProps['orientation']>;
 	@prop({ type: String, defaultValue: 'Split view' }) label: string;

@@ -28,8 +28,6 @@ export type RuiSliderProps = {
 
 export type RuiSliderChangeDetail = { value: number } | { values: [number, number] };
 
-type RuiSliderBindings = Record<string, never>;
-
 /**
  * `<rui-slider>` — select a value from a continuous or discrete range.
  *
@@ -83,7 +81,7 @@ type RuiSliderBindings = Record<string, never>;
  * queries `data-ref` targets and updates live values imperatively.
  */
 @customElement('rui-slider')
-export class RuiSlider extends RadiantElement<RuiSliderBindings> {
+export class RuiSlider extends RadiantElement {
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
 	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;

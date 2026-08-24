@@ -32,11 +32,7 @@ type RuiTocEntry = {
 };
 
 type RuiTocBindings = {
-	target: string;
-	headingSelector: string;
 	label: string;
-	scrollOffset: number;
-	navigationEvents: string;
 };
 
 /**
@@ -355,8 +351,8 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 		}
 
 		return (
-			<nav class="rui-toc" aria-label={this.label}>
-				{this.label ? <p class="rui-toc__label">{this.label}</p> : null}
+			<nav class="rui-toc" aria-label={this.$.label}>
+				{this.label ? <p class="rui-toc__label">{this.$.label}</p> : null}
 				<ul class="rui-toc__list">
 					{this.entries.map((entry) => (
 						<li class={entry.depth >= 3 ? 'rui-toc__item rui-toc__item--depth-3' : 'rui-toc__item'}>

@@ -9,10 +9,6 @@ export type RuiMenubarProps = {
 
 export type RuiMenubarChangeDetail = { value: string };
 
-type RuiMenubarBindings = {
-	label: string;
-};
-
 /**
  * `<rui-menubar>` — a horizontal menubar of menus.
  *
@@ -37,7 +33,7 @@ type RuiMenubarBindings = {
  * @cssclass rui-menubar - Menubar bar (`role="menubar"`).
  */
 @customElement('rui-menubar')
-export class RuiMenubar extends RadiantElement<RuiMenubarBindings> {
+export class RuiMenubar extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })

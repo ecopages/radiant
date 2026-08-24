@@ -5,10 +5,6 @@ export type RuiGridProps = {
 	label?: string;
 };
 
-type RuiGridBindings = {
-	label: string;
-};
-
 /**
  * `<rui-grid>` — an interactive grid navigated with arrow keys.
  *
@@ -31,7 +27,7 @@ type RuiGridBindings = {
  * is not modeled — row and cell classes live on the `RuiGrid` view.
  */
 @customElement('rui-grid')
-export class RuiGrid extends RadiantElement<RuiGridBindings> {
+export class RuiGrid extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	protected override onConnected(): void {

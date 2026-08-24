@@ -37,10 +37,6 @@ export type RuiCarouselProps = {
 
 const SWIPE_THRESHOLD_PX = 48;
 
-type RuiCarouselBindings = {
-	label: string;
-};
-
 /**
  * `<rui-carousel>` — sequentially displays one slide at a time.
  *
@@ -93,7 +89,7 @@ type RuiCarouselBindings = {
  * `RuiCarouselNext` / `RuiCarouselRotation` view helpers for custom placement.
  */
 @customElement('rui-carousel')
-export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {
+export class RuiCarousel extends RadiantElement {
 	@prop({ type: String, defaultValue: CAROUSEL_DEFAULTS.label }) label: string;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) index: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) autoplay: boolean;

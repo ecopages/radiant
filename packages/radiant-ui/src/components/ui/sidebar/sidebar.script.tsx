@@ -62,10 +62,6 @@ export type RuiSidebarProps = {
 export type RuiSidebarToggleDetail = { open: boolean; state: RuiSidebarState };
 export type RuiSidebarResizeDetail = { width: number };
 
-type RuiSidebarBindings = {
-	label: string;
-};
-
 const DEFAULT_WIDTH = 256;
 const ICON_WIDTH = 48;
 const DEFAULT_MIN_WIDTH = 200;
@@ -115,7 +111,7 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  *        mobile drawer mode and inline mode. `detail` is `{ mobile: boolean }`.
  */
 @customElement('rui-sidebar')
-export class RuiSidebar extends RadiantElement<RuiSidebarBindings> {
+export class RuiSidebar extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: 'sidebar' }) variant: RuiSidebarVariant;
 	@prop({ type: String, reflect: true, defaultValue: 'left' }) side: RuiSidebarSide;
 	@prop({ type: String, reflect: true, defaultValue: 'off' }) collapsible: RuiSidebarCollapsible;

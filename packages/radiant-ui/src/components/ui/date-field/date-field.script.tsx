@@ -39,17 +39,6 @@ export type RuiDateFieldProps = {
 
 export type RuiDateFieldChangeDetail = { value: string };
 
-type RuiDateFieldBindings = {
-	value: string;
-	disabled: boolean;
-	readOnly: boolean;
-	label: string;
-	name: string;
-	placeholder: string;
-	displayValue: string;
-	open: boolean;
-};
-
 /**
  * `<rui-date-field>` — a locale-aware date text field powered by `Intl`.
  *
@@ -85,7 +74,7 @@ type RuiDateFieldBindings = {
  * @cssclass rui-date-field__popover - Calendar popup shell (`rui-popover` / `rui-floating`).
  */
 @customElement('rui-date-field')
-export class RuiDateField extends RadiantElement<RuiDateFieldBindings> {
+export class RuiDateField extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;

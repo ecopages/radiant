@@ -13,10 +13,6 @@ export type RuiTreegridChangeDetail = {
 	columnIndex: number;
 };
 
-type RuiTreegridBindings = {
-	label: string;
-};
-
 /**
  * `<rui-treegrid>` — a hierarchical grid navigated with arrow keys.
  *
@@ -45,7 +41,7 @@ type RuiTreegridBindings = {
  * cell-only roving-tabindex focus.
  */
 @customElement('rui-treegrid')
-export class RuiTreegrid extends RadiantElement<RuiTreegridBindings> {
+export class RuiTreegrid extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 

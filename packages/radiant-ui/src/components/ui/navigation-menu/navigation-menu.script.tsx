@@ -6,10 +6,6 @@ export type RuiNavigationMenuProps = {
 	label?: string;
 };
 
-type RuiNavigationMenuBindings = {
-	label: string;
-};
-
 /**
  * `<rui-navigation-menu>` — a composition-first site navigation shell.
  *
@@ -28,7 +24,7 @@ type RuiNavigationMenuBindings = {
  * @cssclass rui-navigation-menu__panels - Panel region (`aria-hidden` toggling).
  */
 @customElement('rui-navigation-menu')
-export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings> {
+export class RuiNavigationMenu extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	private openValue: string | null = null;

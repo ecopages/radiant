@@ -222,11 +222,6 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['title', 'description', 'variant', 'actionLabel', 'closeButton'])
-	onContentUpdated(): void {
-		this.requestUpdate();
-	}
-
 	@onUpdated('position')
 	onPositionUpdated(): void {
 		this.syncDomState();
