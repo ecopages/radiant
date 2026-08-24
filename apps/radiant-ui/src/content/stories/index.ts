@@ -51,4 +51,4 @@ import './treegrid';
 import './window-splitter';
 import './hover-card';
 import './pagination';
-import './table'
+import './table';
