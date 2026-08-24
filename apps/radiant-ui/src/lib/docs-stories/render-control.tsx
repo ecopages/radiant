@@ -2,7 +2,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
-import '@ecopages/radiant-ui/number-field';
+import { RuiNumberField } from '@ecopages/radiant-ui/number-field';
 import { RuiSelect } from '@ecopages/radiant-ui/select';
 import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
@@ -30,7 +30,7 @@ function renderNumberControl(name: string, raw: unknown): JsxRenderable {
 	return (
 		<>
 			<RuiLabel class="docs-story-controls__label">{name}</RuiLabel>
-			<rui-number-field
+			<RuiNumberField
 				class="docs-story-controls__number"
 				data-docs-arg={name}
 				attr:value={toDocsNumberValue(raw)}

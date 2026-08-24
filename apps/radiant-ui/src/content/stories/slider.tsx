@@ -6,24 +6,26 @@ import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 export type SliderArgs = {
 	variant: 'single' | 'range';
 	value: number;
+	rangeMin: number;
+	rangeMax: number;
 	min: number;
 	max: number;
 	step: number;
 	disabled: boolean;
+	showValue: boolean;
 };
-
-function rangeValues(args: SliderArgs): [number, number] {
-	return [Math.max(args.value - 15, args.min), Math.min(args.value + 15, args.max)];
-}
 
 export const meta = {
 	args: {
 		variant: 'single',
 		value: 50,
+		rangeMin: 25,
+		rangeMax: 75,
 		min: 0,
 		max: 100,
 		step: 1,
 		disabled: false,
+		showValue: true,
 	},
 	argTypes: {
 		variant: {
@@ -31,10 +33,13 @@ export const meta = {
 			options: ['single', 'range'] as const satisfies readonly SliderArgs['variant'][],
 		},
 		value: { control: { type: 'number' } },
+		rangeMin: { control: { type: 'number' } },
+		rangeMax: { control: { type: 'number' } },
 		min: { control: { type: 'number' } },
 		max: { control: { type: 'number' } },
 		step: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
+		showValue: { control: { type: 'boolean' } },
 	},
 	render: (args) => {
 		if (args.variant === 'range') {
@@ -47,7 +52,8 @@ export const meta = {
 						max={args.max}
 						step={args.step}
 						disabled={args.disabled}
-						values={rangeValues(args)}
+						showValue={args.showValue}
+						values={[args.rangeMin, args.rangeMax]}
 					/>
 				</RuiField>
 			);
@@ -63,6 +69,7 @@ export const meta = {
 					max={args.max}
 					step={args.step}
 					disabled={args.disabled}
+					showValue={args.showValue}
 				/>
 			</RuiField>
 		);
