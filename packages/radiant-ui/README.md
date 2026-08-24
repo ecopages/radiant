@@ -17,7 +17,7 @@ This project is **not a React app**. JSX compiles through `@ecopages/jsx`.
 Framework documentation (API, SSR contract, Vitest, limitations):  
 **[../storybook-radiant-vite/README.md](../storybook-radiant-vite/README.md)**
 
-Library overview and conventions: Storybook **Introduction** (`src/Introduction.mdx`).
+Library overview and conventions: Storybook **Introduction** (`src/Introduction.mdx`). Component authoring: [`src/components/ui/README.md`](./src/components/ui/README.md).
 
 ## Develop
 
@@ -68,7 +68,7 @@ Convenience bundle (default theme + core primitives):
 import '@ecopages/radiant-ui/radiant-ui.css';
 ```
 
-Design tokens and themes: see [`DESIGN.md`](./DESIGN.md). Component authoring: [`AGENTS.md`](./AGENTS.md).
+Design tokens and themes: see [`DESIGN.md`](./DESIGN.md). Agent working rules: [`AGENTS.md`](./AGENTS.md).
 
 ## Story map
 

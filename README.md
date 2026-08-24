@@ -4,7 +4,7 @@ Radiant is a light-DOM custom-element platform built around visible browser prim
 
 Use real custom elements, real DOM events, real attributes, and authored light-DOM children, with `@ecopages/jsx` for TSX rendering and `@ecopages/signals` for renderer-agnostic reactivity.
 
-For repository language, package boundaries, and shared platform concepts, see [CONTEXT.md](./CONTEXT.md).
+For repository language, package boundaries, and shared platform concepts, see [CONTEXT.md](./CONTEXT.md). Coding standards for agents: [AGENTS.md](./AGENTS.md).
 
 For more details, [see the docs page](https://radiant.ecopages.app/).
 
