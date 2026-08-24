@@ -99,6 +99,7 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	private wireTrigger(): void {
 		this.describedEl?.removeAttribute('aria-describedby');
 		this.describedEl = this.getAnchor();
+		if (this.tooltipTarget) this.tooltipTarget.id = this.tooltipId;
 		this.describedEl.setAttribute('aria-describedby', this.tooltipId);
 	}
 

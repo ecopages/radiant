@@ -1,5 +1,4 @@
 @reference '../../../styles/radiant-ui.css';
-@import '../shared/floating.css';
 
 rui-tooltip {
 	@apply inline-flex;
