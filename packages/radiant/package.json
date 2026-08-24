@@ -30,7 +30,7 @@
 		"test:lib:coverage": "vitest run --coverage --project node && vitest run --coverage --project node -- --legacy"
 	},
 	"dependencies": {
-		"@ecopages/signals": ">=0.3.0-rc.3"
+		"@ecopages/signals": "workspace:>=0.3.0-rc.3"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
