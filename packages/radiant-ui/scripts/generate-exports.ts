@@ -89,11 +89,11 @@ function buildStaticStyleExports(): Record<string, { default: string }> {
 				? './styles.css'
 				: file === 'primitives.css'
 					? './primitives.css'
-				: file === 'radiant-ui.css'
-					? './radiant-ui.css'
-					: file === 'radiant-ui-core.css'
-						? './radiant-ui-core.css'
-						: `./${file.replace(/\.css$/, '')}`;
+					: file === 'radiant-ui.css'
+						? './radiant-ui.css'
+						: file === 'radiant-ui-core.css'
+							? './radiant-ui-core.css'
+							: `./${file.replace(/\.css$/, '')}`;
 		exports[key] = cssExport(file);
 	}
 	exports['./style-dependencies'] = { default: './dist/styles/style-dependencies.json' };
@@ -197,7 +197,9 @@ function styleSpecifier(component: string): string {
 
 function buildStyleDependencyManifest(components: string[]): StyleDependencyManifest {
 	const componentSet = new Set(components);
-	const direct = new Map(components.map((component) => [component, directStyleDependencies(component, componentSet)]));
+	const direct = new Map(
+		components.map((component) => [component, directStyleDependencies(component, componentSet)]),
+	);
 
 	function resolve(component: string, seen = new Set<string>()): string[] {
 		if (seen.has(component)) {
@@ -218,7 +220,10 @@ function buildStyleDependencyManifest(components: string[]): StyleDependencyMani
 	return Object.fromEntries(
 		components.map((component) => {
 			const dependencies = resolve(component);
-			return [component, { direct: direct.get(component) ?? [], styles: [...dependencies, component].map(styleSpecifier) }];
+			return [
+				component,
+				{ direct: direct.get(component) ?? [], styles: [...dependencies, component].map(styleSpecifier) },
+			];
 		}),
 	);
 }
