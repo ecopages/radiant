@@ -29,9 +29,8 @@ export type RuiSidebarTriggerProps = {
  * sidebar's `data-state` in its own `aria-expanded` attribute.
  *
  * @remarks
- * Avoids a light-DOM `<slot>` inside the button. SSR hydrates the rendered
- * button as host children; projecting those back into an inner slot causes
- * `insertBefore` hierarchy errors and leaves a dead control.
+ * Button chrome and icons are authored in the `RuiSidebarTrigger` view; this host
+ * only syncs ARIA and presentation attrs on the light-DOM button.
  *
  * @element rui-sidebar-trigger
  */
@@ -50,26 +49,48 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	private sidebarListener: ((event: Event) => void) | null = null;
 	private attachedSidebar: HTMLElement | null = null;
+	private initialSyncFrame: number | null = null;
 
 	/**
-	 * @remarks JSX `.prop` bindings flush after connect when the trigger lives in a sidebar slot.
+	 * @remarks JSX `.prop` bindings flush after connect when the trigger is nested in sidebar chrome.
+	 *
+	 * The triple sync is deliberate, not redundant:
+	 * - the synchronous call covers triggers rendered outside any sidebar;
+	 * - the nested microtasks hop past the *sidebar's* own `onConnected` sync
+	 *   (connection order does not guarantee the sidebar ran first), so state
+	 *   read here is post-sync;
+	 * - the animation frame is a final pass after layout settles (mobile media
+	 *   query flips land there).
 	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.syncWithSidebar();
-		queueMicrotask(() => this.syncWithSidebar());
+		queueMicrotask(() => queueMicrotask(() => this.syncWithSidebar()));
+		this.initialSyncFrame = requestAnimationFrame(() => {
+			this.initialSyncFrame = null;
+			this.syncWithSidebar();
+		});
 	}
 
 	override disconnectedCallback(): void {
+		if (this.initialSyncFrame != null) {
+			cancelAnimationFrame(this.initialSyncFrame);
+			this.initialSyncFrame = null;
+		}
 		this.detachFromSidebar();
 		super.disconnectedCallback();
 	}
 
 	@onUpdated(['controls', 'buttonLabel', 'placement'])
-	onControlsUpdated(): void {
+	onBindingUpdated(): void {
 		this.detachFromSidebar();
 		this.syncWithSidebar();
 		this.applyState(this.attachedSidebar ? this.readState(this.attachedSidebar) : 'expanded');
+	}
+
+	@onUpdated(['variant', 'size'])
+	onPresentationUpdated(): void {
+		this.syncButtonPresentation();
 	}
 
 	private resolveSidebar(): (HTMLElement & { toggle?: () => void }) | null {
@@ -149,9 +170,17 @@ export class RuiSidebarTrigger extends RadiantElement {
 		} else if (this.controls) {
 			button.setAttribute('aria-controls', this.controls);
 		}
+		this.syncButtonPresentation();
 	}
 
-	@onEvent({ selector: 'button[data-ref="button"]', type: 'click' })
+	private syncButtonPresentation(): void {
+		const button = this.buttonTarget;
+		if (!button) return;
+		button.className =
+			`rui-button rui-button--${this.variant} rui-button--${this.size} rui-sidebar__trigger ${this.placementClass()}`.trim();
+	}
+
+	@onEvent({ selector: '[data-ref="button"]', type: 'click' })
 	onButtonClick(event: Event): void {
 		event.preventDefault();
 		event.stopPropagation();
@@ -165,111 +194,5 @@ export class RuiSidebarTrigger extends RadiantElement {
 		if (this.resolvedPlacement() === 'header') return 'rui-sidebar__trigger--header';
 		if (this.resolvedPlacement() === 'inset') return 'rui-sidebar__trigger--inset';
 		return '';
-	}
-
-	private renderMenuIcon(state: 'expanded' | 'collapsed') {
-		if (state === 'expanded') {
-			return (
-				<svg
-					class="rui-sidebar__trigger-glyph rui-sidebar__trigger-glyph--close"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M18 6 6 18" />
-					<path d="m6 6 12 12" />
-				</svg>
-			);
-		}
-
-		return (
-			<svg
-				class="rui-sidebar__trigger-glyph rui-sidebar__trigger-glyph--menu"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d="M4 6h16" />
-				<path d="M4 12h16" />
-				<path d="M4 18h16" />
-			</svg>
-		);
-	}
-
-	private renderDefaultIcon() {
-		const state = this.sidebarState;
-		const placement = this.resolvedPlacement();
-
-		if (placement === 'inset') {
-			return (
-				<span class="rui-sidebar__trigger-icon" aria-hidden="true">
-					{this.renderMenuIcon(state)}
-				</span>
-			);
-		}
-
-		const showCollapse = placement === 'header' || state === 'expanded';
-		const showExpand = placement !== 'header' && state === 'collapsed';
-
-		return (
-			<span class="rui-sidebar__trigger-icon" aria-hidden="true">
-				{showCollapse ? (
-					<svg
-						class="rui-sidebar__trigger-glyph rui-sidebar__trigger-glyph--collapse"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-						<path d="M9 3v18" />
-						<path d="m14 15 3-3-3-3" />
-					</svg>
-				) : null}
-				{showExpand ? (
-					<svg
-						class="rui-sidebar__trigger-glyph rui-sidebar__trigger-glyph--expand"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-						<path d="M9 3v18" />
-						<path d="m14 9-3 3 3 3" />
-					</svg>
-				) : null}
-			</span>
-		);
-	}
-
-	override render() {
-		const sidebar = this.resolveSidebar();
-		const controlsId = sidebar?.id || this.controls || null;
-		const state = this.sidebarState;
-		const buttonLabel = this.resolvedButtonLabel(state);
-		return (
-			<button
-				data-ref="button"
-				type="button"
-				class={`rui-button rui-button--${this.variant} rui-button--${this.size} rui-sidebar__trigger ${this.placementClass()}`.trim()}
-				data-sidebar-state={state}
-				aria-expanded={state === 'expanded' ? 'true' : 'false'}
-				aria-controls={controlsId || null}
-				aria-label={buttonLabel}
-			>
-				{this.renderDefaultIcon()}
-			</button>
-		);
 	}
 }

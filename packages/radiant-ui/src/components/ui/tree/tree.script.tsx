@@ -31,9 +31,6 @@ type RuiTreeBindings = {
  * @attr {string} label - Accessible name for the tree.
  * @attr {string} value - Selected item's `data-value` / id. Default: `''`.
  *
- * @slot - Tree items authored as `role="treeitem"` markup. Use the `RuiTree`
- *   view (`nodes`) or author light-DOM items directly.
- *
  * @fires rui-change - Emitted with `{ value }` when a tree item is selected.
  *
  * @cssclass rui-tree - Root list (`role="tree"`).
@@ -50,8 +47,6 @@ export class RuiTree extends RadiantElement<RuiTreeBindings> {
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiTreeChangeDetail>;
-
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
 
 	private getVisibleItems(): HTMLElement[] {
 		return Array.from(this.querySelectorAll<HTMLElement>('[role="treeitem"]')).filter((item) => {
@@ -120,12 +115,9 @@ export class RuiTree extends RadiantElement<RuiTreeBindings> {
 		}
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			this.syncExpanded();
-			this.syncSelection();
-		});
+	protected override onConnected(): void {
+		this.syncExpanded();
+		this.syncSelection();
 	}
 
 	@onUpdated('value')
@@ -231,13 +223,5 @@ export class RuiTree extends RadiantElement<RuiTreeBindings> {
 			default:
 				break;
 		}
-	}
-
-	override render() {
-		return (
-			<ul class="rui-tree" role="tree" aria-label={this.resolvedAriaLabel} aria-multiselectable="false">
-				<slot></slot>
-			</ul>
-		);
 	}
 }

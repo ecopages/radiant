@@ -1,0 +1,83 @@
+---
+title: Input Group
+description: Input groups combine a text input with leading or trailing addons such as prefixes, icons, and buttons.
+category: Forms
+---
+
+import { meta as InputGroupMeta, Default } from '@/content/stories/input-group';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Input Group
+
+<p class="docs-lede">Input groups combine a text input with leading or trailing addons such as prefixes, icons, and buttons.</p>
+
+## Try it
+
+<Demo of={Default} meta={InputGroupMeta} />
+
+## Usage
+
+Wrap `RuiInput` and addons inside `RuiInputGroup`. Nest the group inside `RuiField` for labels and validation.
+
+```tsx
+import { RuiField, RuiFieldDescription } from '@ecopages/radiant-ui/field';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+import {
+  RuiInputGroup,
+  RuiInputGroupAddon,
+  RuiInputGroupText,
+} from '@ecopages/radiant-ui/input-group';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="url">
+  <RuiLabel>Website URL</RuiLabel>
+  <RuiInputGroup>
+    <RuiInputGroupAddon>
+      <RuiInputGroupText>https://</RuiInputGroupText>
+    </RuiInputGroupAddon>
+    <RuiInput id="input-group-url" placeholder="example.com" />
+  </RuiInputGroup>
+  <RuiFieldDescription>Include only the domain.</RuiFieldDescription>
+</RuiField>
+```
+
+## Trailing actions
+
+<p>Use `RuiInputGroupAddon align="end"` for trailing icons or a `RuiButton` with `variant="ghost"` and `size="sm"` `square`.</p>
+
+## Field integration
+
+<p>`RuiField` still discovers the nested `RuiInput` via `data-rui-control`. Invalid and disabled states propagate to the group border via `:has()` selectors.</p>
+
+## API
+
+`RuiInputGroup`, `RuiInputGroupAddon`, and `RuiInputGroupText` are presentational JSX views, no custom elements.
+
+### `RuiInputGroupAddon` props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `align` | `start` · `end` | `start` | Inline edge for the addon. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-input-group` | Control-height bordered row (`role="group"`). |
+| `.rui-input-group__addon` | Addon cell. |
+| `.rui-input-group__addon--start` | Leading addon. |
+| `.rui-input-group__addon--end` | Trailing addon. |
+| `.rui-input-group__text` | Muted inline text in an addon. |

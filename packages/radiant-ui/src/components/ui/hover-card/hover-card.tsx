@@ -1,0 +1,49 @@
+import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
+import { cx } from '@/lib/cx';
+import {
+	HOVER_CARD_DEFAULT_CONTENT_LABEL,
+	type RuiHoverCard as RuiHoverCardElement,
+	type RuiHoverCardProps,
+} from './hover-card.script';
+import './hover-card.script';
+
+export type RuiHoverCardTriggerProps = JsxElementProps<HTMLSpanElement>;
+
+/** Anchor for the hover card preview. */
+export function RuiHoverCardTrigger({ children, class: className, ...props }: RuiHoverCardTriggerProps) {
+	return (
+		<span class="rui-hover-card__trigger">
+			<span {...props} data-hover-card-trigger class={cx(className)}>
+				{children}
+			</span>
+		</span>
+	);
+}
+
+export type RuiHoverCardContentProps = JsxElementProps<HTMLDivElement>;
+
+/** Rich preview content rendered in the floating surface. */
+export function RuiHoverCardContent({ children, class: className, ...props }: RuiHoverCardContentProps) {
+	return (
+		<div
+			{...props}
+			data-ref="content"
+			class={cx('rui-hover-card__content', 'rui-floating', className)}
+			role="dialog"
+		>
+			{children}
+		</div>
+	);
+}
+
+export function RuiHoverCard({
+	children,
+	contentLabel = HOVER_CARD_DEFAULT_CONTENT_LABEL,
+	...props
+}: JsxCustomElementAttributes<RuiHoverCardElement, RuiHoverCardProps>) {
+	return (
+		<rui-hover-card contentLabel={contentLabel} {...props}>
+			<span class="rui-hover-card">{children}</span>
+		</rui-hover-card>
+	);
+}

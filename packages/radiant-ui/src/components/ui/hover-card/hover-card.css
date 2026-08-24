@@ -1,0 +1,23 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-hover-card {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-hover-card {
+		@apply relative inline-flex;
+	}
+
+	.rui-hover-card__trigger {
+		@apply inline-flex;
+	}
+
+	.rui-hover-card__content {
+		@apply z-overlay w-80 rounded-container border border-border bg-background p-4 text-on-background shadow-overlay;
+	}
+
+	.rui-hover-card__content[hidden] {
+		display: none;
+	}
+}

@@ -60,6 +60,7 @@ export const Default: Story = {
 		await step('opens from decorator trigger', async () => {
 			await openStoryDialog(canvasElement);
 			await expect(getHost(canvasElement)).toHaveAttribute('open');
+			await expect(getHost(canvasElement).querySelector('[data-ref="root"]')).not.toHaveAttribute('hidden');
 		});
 
 		const dialog = getDialog(canvasElement);

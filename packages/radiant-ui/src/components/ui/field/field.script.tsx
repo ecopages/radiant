@@ -14,7 +14,7 @@ import {
 	findFieldError,
 	findFieldErrorElements,
 	findFieldLabel,
-	getAriaControlTarget,
+	getAriaControlTargets,
 	isNativeTextControl,
 	readControlValue,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
@@ -51,7 +51,7 @@ export type RuiFieldProps = {
 };
 
 /**
- * `<rui-field>` — connector between slotted controls and an ancestor `<rui-form>`.
+ * `<rui-field>` — connector between composed controls and an ancestor `<rui-form>`.
  *
  * Registers with the form via {@link formContext} actions, forwards control events,
  * and applies presentation (errors, ARIA) from the form-published `fields` map.
@@ -72,8 +72,6 @@ export type RuiFieldProps = {
  * @attr {string} data-default-value - JSON-serialized default value for SSR hydration.
  *   Default: `undefined`.
  *
- * @slot - Field content: label, control, description, error.
- *
  * @remarks
  * The composed surface is `.rui-field` (column). Error / description presentation
  * lives on `RuiFieldError` / `RuiFieldDescription` helpers (`@cssclass` there).
@@ -85,7 +83,7 @@ export type RuiFieldProps = {
  * apply ARIA + error text to light-DOM nodes after mount — a JSX wrapper has no
  * lifecycle hook for that.
  *
- * @cssclass rui-field - Root column; wires the slotted control, label, description,
+ * @cssclass rui-field - Root column; wires the composed control, label, description,
  *   and error into the form-published presentation.
  */
 @customElement('rui-field')
@@ -137,12 +135,8 @@ export class RuiField extends RadiantElement {
 		registerSsrPreparationCallback(this, () => this.fieldProvider.setContext({ rules: this.readFieldRules() }));
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
+	protected override onConnected(): void {
 		this.connectToForm();
-		queueMicrotask(() => {
-			this.connectToForm();
-		});
 	}
 
 	override disconnectedCallback(): void {
@@ -295,7 +289,7 @@ export class RuiField extends RadiantElement {
 
 	@onEvent({
 		selector:
-			'[data-rui-control], rui-combobox, rui-date-field, rui-date-range-picker, rui-select, rui-tag-group, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-number-field, rui-listbox',
+			'[data-rui-control], rui-combobox, rui-date-field, rui-date-range-picker, rui-select, rui-tag-group, rui-checkbox, rui-switch, rui-radio-group, rui-slider, rui-knob, rui-number-field, rui-listbox',
 		type: 'rui-change',
 	})
 	onControlChange(): void {
@@ -329,7 +323,7 @@ export class RuiField extends RadiantElement {
 		}
 	}
 
-	@onEvent({ selector: '[data-rui-control]', type: 'focusout' })
+	@onEvent({ selector: '[data-rui-control], rui-knob, rui-slider', type: 'focusout' })
 	onControlFocusOut(): void {
 		const fieldName = this.resolveFieldName();
 		if (fieldName) {
@@ -339,7 +333,8 @@ export class RuiField extends RadiantElement {
 
 	private syncField(formCtx?: FormContextValue): void {
 		const controlHost = findFieldControl(this);
-		const ariaTarget = controlHost ? getAriaControlTarget(controlHost) : null;
+		const ariaTargets = controlHost ? getAriaControlTargets(controlHost) : [];
+		const ariaTarget = ariaTargets[0] ?? null;
 		const controlId = ariaTarget?.id || `rui-field-control-${this.uid}`;
 		const descriptionId = `rui-field-desc-${this.uid}`;
 		const errorId = `rui-field-error-${this.uid}`;
@@ -350,42 +345,42 @@ export class RuiField extends RadiantElement {
 		const fieldName = this.resolveFieldName();
 		wireFieldControlName(controlHost, ariaTarget, fieldName);
 
-		if (ariaTarget) {
-			if (!ariaTarget.id) {
-				ariaTarget.id = controlId;
+		const describedBy: string[] = [];
+		const description = findFieldDescription(this);
+		if (description) {
+			description.id = descriptionId;
+			describedBy.push(descriptionId);
+		}
+		const errorEl = findFieldError(this);
+		if (errorEl) {
+			errorEl.id = errorId;
+			if (errorMessage) {
+				describedBy.push(errorId);
 			}
-			ariaTarget.setAttribute(RUI_FIELD_MANAGED_ATTR, '');
-			ariaTarget.setAttribute('aria-invalid', invalid ? 'true' : 'false');
-			if (this.isRequired()) {
-				ariaTarget.setAttribute('aria-required', 'true');
-			} else {
-				ariaTarget.removeAttribute('aria-required');
-			}
+		}
 
-			const describedBy: string[] = [];
-			const description = findFieldDescription(this);
-			if (description) {
-				description.id = descriptionId;
-				describedBy.push(descriptionId);
+		for (const [index, target] of ariaTargets.entries()) {
+			if (!target.id) {
+				target.id = index === 0 ? controlId : `${controlId}-${index}`;
 			}
-			const errorEl = findFieldError(this);
-			if (errorEl) {
-				errorEl.id = errorId;
-				if (errorMessage) {
-					describedBy.push(errorId);
-				}
+			target.setAttribute(RUI_FIELD_MANAGED_ATTR, '');
+			target.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+			if (this.isRequired()) {
+				target.setAttribute('aria-required', 'true');
+			} else {
+				target.removeAttribute('aria-required');
 			}
 
 			if (describedBy.length > 0) {
-				ariaTarget.setAttribute('aria-describedby', describedBy.join(' '));
+				target.setAttribute('aria-describedby', describedBy.join(' '));
 			} else {
-				ariaTarget.removeAttribute('aria-describedby');
+				target.removeAttribute('aria-describedby');
 			}
 
 			if (this.disabled) {
-				ariaTarget.setAttribute('aria-disabled', 'true');
-				if (isNativeTextControl(ariaTarget)) {
-					ariaTarget.disabled = true;
+				target.setAttribute('aria-disabled', 'true');
+				if (isNativeTextControl(target)) {
+					target.disabled = true;
 				}
 			}
 		}
@@ -428,13 +423,5 @@ export class RuiField extends RadiantElement {
 		}
 
 		this.fieldProvider.setContext(nextFieldContext);
-	}
-
-	override render() {
-		return (
-			<div class="rui-field">
-				<slot></slot>
-			</div>
-		);
 	}
 }

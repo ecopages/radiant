@@ -1,0 +1,110 @@
+---
+title: Knob
+description: Knobs let users make compact, rotary adjustments to a numeric value.
+category: Forms
+---
+
+import { meta as KnobMeta, Default } from '@/content/stories/knob';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+# Knob
+
+<p class="docs-lede">Knobs let users make compact, rotary adjustments to a numeric value. They are particularly useful for controls such as gain, pan, and effect parameters.</p>
+
+## Try it
+
+<Demo of={Default} meta={KnobMeta} />
+
+## Usage
+
+Set `min`, `max`, and `step` to define the range. The knob’s visible arc spans 300°, leaving a gap that clearly separates the range endpoints.
+
+```tsx
+import { RuiKnob } from '@ecopages/radiant-ui/knob';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="gain">
+  <RuiLabel>Gain</RuiLabel>
+  <RuiKnob value={0} min={-24} max={24} step={0.5} valueTemplate="{value} dB" />
+</RuiField>
+```
+
+Use `valuePosition="below"` to place the readout under the knob, or `showValue={false}` when the value is shown elsewhere. `valueTemplate` replaces the first `{value}` token with the formatted value.
+
+Set `--rui-knob-size` for CSS-controlled sizing. The numeric `size` prop overrides this variable when a specific pixel diameter is needed.
+
+```css
+rui-knob[data-size='large'] {
+  --rui-knob-size: 5rem;
+}
+```
+
+## Theming
+
+The knob consumes semantic roles by default. Override its public custom properties to adapt the ring without replacing component CSS.
+
+| Part | Default role | Custom property |
+| --- | --- | --- |
+| Track | `surface` | `--rui-knob-track-color` |
+| Progress | `primary` | `--rui-knob-value-color` |
+| Readout | `on-surface` | `--rui-knob-text-color` |
+| Diameter | `3rem` | `--rui-knob-size` |
+| Focus ring | `focus-ring` | — |
+
+## API
+
+`RuiKnob` is a custom element (`<rui-knob>`) with a JSX helper of the same name.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `number` | `50` | Selected value. |
+| `min` | `number` | `0` | Range minimum. |
+| `max` | `number` | `100` | Range maximum. |
+| `step` | `number` | `1` | Pointer and keyboard snap interval. |
+| `disabled` | `boolean` | `false` | Disables interaction. |
+| `read-only` | `boolean` | `false` | Blocks changes but allows focus. |
+| `label` | `string` | `''` | Visible and accessible name. |
+| `name` | `string` | `''` | Form field name. |
+| `size` | `number` | — | Explicit visible SVG diameter in pixels; overrides `--rui-knob-size`. |
+| `stroke-width` | `number` | `14` | Progress ring width in view-box units. |
+| `show-value` | `boolean` | `true` | Shows the value inside the ring. |
+| `value-position` | `center` · `below` | `center` | Places the value inside or below the knob. |
+| `value-template` | `string` | `'{value}'` | Readout template. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: number }` | Emitted as pointer or keyboard interaction changes the value. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-knob` | Root; wraps the label and control. |
+| `.rui-knob--value-below` | Root when the value is below the control. |
+| `.rui-knob__label` | Optional visible label. |
+| `.rui-knob__control` | Focusable slider and pointer target. |
+| `.rui-knob__svg` | SVG ring. |
+| `.rui-knob__track` | Unfilled range arc. |
+| `.rui-knob__progress` | Filled range arc. |
+| `.rui-knob__value` | Value readout inside the ring. |
+
+## Accessibility
+
+- The interactive surface exposes `role="slider"` with its current, minimum, and maximum values.
+- Arrow keys adjust by one step; Page Up/Down adjust by ten steps; Home and End move to the range endpoints.
+- The pointer target is at least 44 × 44 pixels, including when a smaller visible SVG size is requested.

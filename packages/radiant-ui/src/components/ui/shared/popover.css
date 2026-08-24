@@ -1,5 +1,4 @@
 @reference '../../../styles/radiant-ui.css';
-@import './floating.css';
 
 @layer components {
 	.rui-popover {

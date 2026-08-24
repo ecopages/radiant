@@ -1,0 +1,28 @@
+export {
+	RuiTable,
+	RuiTableBody,
+	RuiTableCell,
+	RuiTableColumn,
+	RuiTableEmptyState,
+	RuiTableFooter,
+	RuiTableHeader,
+	RuiTableRow,
+	RuiTableSelectionCell,
+	type RuiTableBodyProps,
+	type RuiTableCellProps,
+	type RuiTableColumnProps,
+	type RuiTableEmptyStateProps,
+	type RuiTableFooterProps,
+	type RuiTableHeaderProps,
+	type RuiTableRowProps,
+	type RuiTableSelectionCellProps,
+} from './table';
+export {
+	RuiTable as RuiTableElement,
+	type RuiTableChangeDetail,
+	type RuiTableProps,
+	type RuiTableRowActionDetail,
+	type RuiTableSelectionMode,
+	type RuiTableSortChangeDetail,
+	type RuiTableSortDirection,
+} from './table.script';

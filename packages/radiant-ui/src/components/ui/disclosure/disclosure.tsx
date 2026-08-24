@@ -39,7 +39,7 @@ export type RuiDisclosureTriggerProps = JsxElementProps<HTMLButtonElement> & {
 };
 
 /**
- * Disclosure button slotted into `trigger` by default.
+ * Disclosure trigger button. Place before `RuiDisclosurePanel`.
  *
  * @cssclass rui-disclosure__trigger - Trigger button; reflects `aria-expanded`.
  * @cssclass rui-disclosure__trigger--icon-end - Layout when `iconPosition="end"`.
@@ -47,7 +47,6 @@ export type RuiDisclosureTriggerProps = JsxElementProps<HTMLButtonElement> & {
  */
 export function RuiDisclosureTrigger({
 	children,
-	slot = 'trigger',
 	class: className,
 	disabled,
 	icon,
@@ -60,7 +59,6 @@ export function RuiDisclosureTrigger({
 	return (
 		<button
 			{...props}
-			slot={slot}
 			type="button"
 			data-disclosure-trigger
 			class={cx(
@@ -80,7 +78,7 @@ export function RuiDisclosureTrigger({
 export type RuiDisclosurePanelProps = JsxElementProps<HTMLDivElement>;
 
 /**
- * Disclosure panel in the default slot.
+ * Disclosure panel content. Place after `RuiDisclosureTrigger`.
  *
  * @cssclass rui-disclosure__panel - Panel content region.
  * @cssclass rui-disclosure__panel-inner - Panel padding wrapper (drives the height animation).
@@ -89,6 +87,14 @@ export function RuiDisclosurePanel({ children, class: className, ...props }: Rui
 	return (
 		<div {...props} data-disclosure-panel data-ref="panel" class={cx('rui-disclosure__panel', className)}>
 			<div class="rui-disclosure__panel-inner">{children}</div>
+		</div>
+	);
+}
+
+function DisclosureShell({ children }: { children: JsxRenderable }) {
+	return (
+		<div class="rui-disclosure" data-ref="root">
+			{children}
 		</div>
 	);
 }
@@ -106,18 +112,30 @@ export function RuiDisclosure({
 	if (trigger != null) {
 		return (
 			<rui-disclosure {...props}>
-				<RuiDisclosureTrigger>{trigger}</RuiDisclosureTrigger>
-				{children != null ? <RuiDisclosurePanel>{children}</RuiDisclosurePanel> : null}
+				<DisclosureShell>
+					<RuiDisclosureTrigger>{trigger}</RuiDisclosureTrigger>
+					{children != null ? <RuiDisclosurePanel>{children}</RuiDisclosurePanel> : null}
+				</DisclosureShell>
 			</rui-disclosure>
 		);
 	}
 
-	return <rui-disclosure {...props}>{children}</rui-disclosure>;
+	return (
+		<rui-disclosure {...props}>
+			<DisclosureShell>{children}</DisclosureShell>
+		</rui-disclosure>
+	);
 }
 
 export function RuiDisclosureGroup({
 	children,
 	...props
 }: JsxCustomElementAttributes<RuiDisclosureGroupElement, RuiDisclosureGroupProps>) {
-	return <rui-disclosure-group {...props}>{children}</rui-disclosure-group>;
+	return (
+		<rui-disclosure-group {...props}>
+			<div class="rui-disclosure-group" data-ref="root">
+				{children}
+			</div>
+		</rui-disclosure-group>
+	);
 }

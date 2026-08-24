@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
-import '../menu-button/menu-button.script';
+import {
+	RuiMenuButton,
+	RuiMenuButtonContent,
+	RuiMenuButtonItem,
+	RuiMenuButtonTrigger,
+} from '../menu-button';
 import { RuiLabel } from '../label';
 import { RuiListbox } from '../listbox';
 import {
@@ -58,6 +63,8 @@ const meta = {
 		radiant: {
 			element: RuiAutocompleteElement,
 			cssImports: [
+				'../../../styles/primitives.css',
+				'../button/button.css',
 				'./autocomplete.css',
 				'../listbox/listbox.css',
 				'../tag-group/tag-group.css',
@@ -211,43 +218,33 @@ export const WithSelect: Story = {
  */
 export const WithMenu: Story = {
 	render: () => (
-		<rui-menu-button>
-			<span slot="trigger">Add tag…</span>
-			<div class="flex max-h-64 flex-col">
+		<RuiMenuButton>
+			<RuiMenuButtonTrigger>Add tag…</RuiMenuButtonTrigger>
+			<RuiMenuButtonContent class="flex max-h-64 min-w-56 flex-col">
 				<RuiAutocomplete>
-					<RuiAutocompleteInput
-						aria-label="Search tags"
-						placeholder="Search tags"
-						class="m-1 w-[calc(100%-0.5rem)]"
-					/>
-					<RuiAutocompleteCollection class="flex-1 overflow-auto">
+					<RuiAutocompleteInput aria-label="Search tags" placeholder="Search tags" class="mb-1 w-full" />
+					<RuiAutocompleteCollection>
 						{MENU_TAGS.map((tag) => (
-							<button
-								type="button"
-								class="rui-menu-button__item"
-								role="menuitem"
-								data-value={tag.value}
-								tabindex={-1}
-							>
-								{tag.label}
-							</button>
+							<RuiMenuButtonItem value={tag.value}>{tag.label}</RuiMenuButtonItem>
 						))}
 						<RuiAutocompleteEmpty>No results.</RuiAutocompleteEmpty>
 					</RuiAutocompleteCollection>
 				</RuiAutocomplete>
-			</div>
-		</rui-menu-button>
+			</RuiMenuButtonContent>
+		</RuiMenuButton>
 	),
 	play: async ({ canvasElement, step }) => {
 		if (isStaticSsrPreview(canvasElement)) return;
 
 		const trigger = canvasElement.querySelector('[data-ref="trigger"]') as HTMLButtonElement;
 		const host = canvasElement.querySelector('rui-menu-button') as HTMLElement;
+		const menu = canvasElement.querySelector('[data-ref="menu"]') as HTMLElement;
 		const input = getInput(canvasElement);
 
 		await step('opening the menu and typing filters items', async () => {
 			await userEvent.click(trigger);
-			input.focus();
+			await expect(menu).not.toHaveAttribute('hidden');
+			await expect(input).toHaveFocus();
 			await userEvent.type(input, 'foo');
 			const items = Array.from(canvasElement.querySelectorAll('[role="menuitem"]')) as HTMLElement[];
 			const visible = items.filter((item) => !item.hidden);
@@ -264,6 +261,7 @@ export const WithMenu: Story = {
 			const food = items.find((item) => item.getAttribute('data-value') === 'food');
 			await userEvent.click(food!);
 			await expect(emissions).toEqual(['food']);
+			await expect(menu).toHaveAttribute('hidden');
 		});
 	},
 };

@@ -189,6 +189,13 @@
 		"./avatar/styles.css": {
 			"default": "./dist/components/ui/avatar/avatar.css"
 		},
+		"./badge": {
+			"types": "./dist/components/ui/badge/index.d.ts",
+			"import": "./dist/components/ui/badge/index.js"
+		},
+		"./badge/styles.css": {
+			"default": "./dist/components/ui/badge/badge.css"
+		},
 		"./breadcrumb": {
 			"types": "./dist/components/ui/breadcrumb/index.d.ts",
 			"import": "./dist/components/ui/breadcrumb/index.js"
@@ -332,12 +339,33 @@
 		"./headline/styles.css": {
 			"default": "./dist/components/ui/headline/headline.css"
 		},
+		"./hover-card": {
+			"types": "./dist/components/ui/hover-card/index.d.ts",
+			"import": "./dist/components/ui/hover-card/index.js"
+		},
+		"./hover-card/styles.css": {
+			"default": "./dist/components/ui/hover-card/hover-card.css"
+		},
 		"./input": {
 			"types": "./dist/components/ui/input/index.d.ts",
 			"import": "./dist/components/ui/input/index.js"
 		},
 		"./input/styles.css": {
 			"default": "./dist/components/ui/input/input.css"
+		},
+		"./input-group": {
+			"types": "./dist/components/ui/input-group/index.d.ts",
+			"import": "./dist/components/ui/input-group/index.js"
+		},
+		"./input-group/styles.css": {
+			"default": "./dist/components/ui/input-group/input-group.css"
+		},
+		"./knob": {
+			"types": "./dist/components/ui/knob/index.d.ts",
+			"import": "./dist/components/ui/knob/index.js"
+		},
+		"./knob/styles.css": {
+			"default": "./dist/components/ui/knob/knob.css"
 		},
 		"./label": {
 			"types": "./dist/components/ui/label/index.d.ts",
@@ -388,6 +416,13 @@
 		"./number-field/styles.css": {
 			"default": "./dist/components/ui/number-field/number-field.css"
 		},
+		"./pagination": {
+			"types": "./dist/components/ui/pagination/index.d.ts",
+			"import": "./dist/components/ui/pagination/index.js"
+		},
+		"./pagination/styles.css": {
+			"default": "./dist/components/ui/pagination/pagination.css"
+		},
 		"./popover": {
 			"types": "./dist/components/ui/popover/index.d.ts",
 			"import": "./dist/components/ui/popover/index.js"
@@ -426,12 +461,26 @@
 		"./slider/styles.css": {
 			"default": "./dist/components/ui/slider/slider.css"
 		},
+		"./spinner": {
+			"types": "./dist/components/ui/spinner/index.d.ts",
+			"import": "./dist/components/ui/spinner/index.js"
+		},
+		"./spinner/styles.css": {
+			"default": "./dist/components/ui/spinner/spinner.css"
+		},
 		"./switch": {
 			"types": "./dist/components/ui/switch/index.d.ts",
 			"import": "./dist/components/ui/switch/index.js"
 		},
 		"./switch/styles.css": {
 			"default": "./dist/components/ui/switch/switch.css"
+		},
+		"./table": {
+			"types": "./dist/components/ui/table/index.d.ts",
+			"import": "./dist/components/ui/table/index.js"
+		},
+		"./table/styles.css": {
+			"default": "./dist/components/ui/table/table.css"
 		},
 		"./tabs": {
 			"types": "./dist/components/ui/tabs/index.d.ts",

@@ -30,7 +30,7 @@ export const config = {
 
 ## Usage
 
-Set `min`, `max`, and `step` to define the range. Use `variant="range"` with `rangeMin` and `rangeMax` for dual-thumb selection.
+Set `min`, `max`, and `step` to define the range. Use `variant="range"` with `rangeMin` and `rangeMax` for dual-thumb selection. Set `orientation="vertical"` for a vertical track.
 
 ```tsx
 import { RuiSlider } from '@ecopages/radiant-ui/slider';
@@ -60,21 +60,33 @@ Slider surfaces map to **semantic surface roles**, never Tailwind palette steps:
 | Track (`.rui-slider__range-track`) | `surface` |
 | Fill (`.rui-slider__range-fill`) | `primary` |
 | Thumb (`.rui-slider__thumb`) | `background` surface, `primary` border, `shadow-sm` |
-| Native input (`.rui-slider__input`) | `primary` accent |
+| Hidden input | form value (`name`, plus `name-max` in range mode) |
 | Value readout (`.rui-slider__value`) | `on-surface` |
 | Focus ring | `focus-ring` |
 
 Range thumb positions come from `--rui-slider-min` / `--rui-slider-max`, set inline by the element from the live range, not theme tokens. Override at the theme layer, not in component CSS.
 
+Range mode also accepts presentation variables on `rui-slider`. Set track and thumb corner radii independently — they follow shape tokens such as `--radius-control` and `--radius-container`:
+
+```css
+rui-slider {
+  --rui-slider-track-radius: var(--radius-container);
+  --rui-slider-thumb-radius: var(--radius-control);
+}
+```
+
+Switching the radius pack (sharp, default, soft) updates both when they reference shape tokens.
+
 ## API
 
-`RuiSlider` is a custom element (`<rui-slider>`); the view is a thin passthrough that maps `values` to `rangeMin` / `rangeMax`.
+`RuiSlider` owns the light-DOM surface. Pass `showValue` for the default readout, `valueTitle` for hover tooltips, or compose a custom readout with `RuiSliderValue`.
 
 ### Attributes
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
 | `variant` | `single` · `range` | `single` | Single-thumb or dual-thumb range. |
+| `orientation` | `horizontal` · `vertical` | `horizontal` | Track axis. |
 | `value` | `number` | `50` | Selected value (single mode). |
 | `range-min` | `number` | `25` | Lower thumb value (range mode). |
 | `range-max` | `number` | `75` | Upper thumb value (range mode). |
@@ -83,8 +95,11 @@ Range thumb positions come from `--rui-slider-min` / `--rui-slider-max`, set inl
 | `step` | `number` | `1` | Arrow-key and pointer snap interval. |
 | `min-distance` | `number` | `0` | Minimum gap enforced between range thumbs. |
 | `disabled` | `boolean` | `false` | Disables interaction. |
+| `read-only` | `boolean` | `false` | Prevents value changes while leaving thumbs focusable. |
 | `label` | `string` | `''` | Accessible name for the slider. |
-| `name` | `string` | `''` | Form field name (single mode native input). |
+| `name` | `string` | `''` | Form field name. Range mode also submits `{name}-max`. |
+| `show-value` | `boolean` | `false` | Shows the default value readout below the track. |
+| `value-title` | `boolean` | `false` | Mirrors the live value in the control `title` on hover. |
 
 ### Events
 
@@ -100,13 +115,13 @@ Public BEM classes (documented via `@cssclass` on the element):
 | --- | --- |
 | `.rui-slider` | Root; wraps the label, track, and value readout. |
 | `.rui-slider--range` | Range-mode surface. |
+| `.rui-slider--vertical` | Vertical track layout. |
 | `.rui-slider__label` | Optional visible label. |
-| `.rui-slider__input` | Native range input (single mode). |
 | `.rui-slider__value` | Live numeric readout. |
-| `.rui-slider__range` | Range-mode track wrapper. |
-| `.rui-slider__range-track` | Track surface behind both thumbs. |
-| `.rui-slider__range-fill` | Filled span between the thumbs. |
-| `.rui-slider__thumb` | Range thumb (`role="slider"`). |
+| `.rui-slider__range` | Track wrapper. |
+| `.rui-slider__range-track` | Track surface behind the thumb(s). |
+| `.rui-slider__range-fill` | Filled span from the origin to the current value (single) or between thumbs (range). |
+| `.rui-slider__thumb` | Thumb button (`role="slider"`). |
 
 ### Theme roles
 
@@ -117,6 +132,24 @@ Public BEM classes (documented via `@cssclass` on the element):
 | Thumb surface | `--background` |
 | Value readout | `--on-surface` |
 | Focus | `--focus-ring` |
+
+### Component CSS variables
+
+Set on `rui-slider`. Defaults shown; all accept any length or shape token.
+
+| Variable | Default | Applies to |
+| --- | --- | --- |
+| `--rui-slider-track-size` | `0.375rem` | Track thickness |
+| `--rui-slider-track-length` | `12rem` | Max track length (vertical / horizontal cap) |
+| `--rui-slider-track-color` | `--surface` | Track background |
+| `--rui-slider-fill-color` | `--primary` | Selected range fill |
+| `--rui-slider-track-radius` | `--radius-control` | Track and fill corner radius |
+| `--rui-slider-thumb-size` | `1.25rem` | Thumb width and height |
+| `--rui-slider-thumb-radius` | `--radius-control` | Thumb corner radius |
+| `--rui-slider-thumb-border-width` | `2px` | Thumb border |
+| `--rui-slider-thumb-border-color` | `--primary` | Thumb border color |
+| `--rui-slider-thumb-background` | `--background` | Thumb fill |
+| `--rui-slider-thumb-shadow` | `0 2px 8px rgb(0 0 0 / 0.12)` | Thumb shadow |
 
 ## Accessibility
 

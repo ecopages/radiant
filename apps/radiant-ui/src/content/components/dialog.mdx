@@ -94,14 +94,14 @@ Body uses the `p-inset` spacing token. Override roles at the theme layer, not in
 | `alert` | `boolean` | `false` | Uses `role="alertdialog"` for workflow-interrupting confirmations. |
 | `label` | `string` | `''` | Accessible name when there is no visible title. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| `close` | Optional close control (`RuiDialogClose`). |
-| `title` | Optional visible dialog title (`RuiDialogTitle`). |
-| (default) | Dialog body (`RuiDialogBody`). |
-| `actions` | Optional action buttons (`RuiDialogActions`). |
+| `RuiDialogTitle` | Optional visible title. |
+| `RuiDialogBody` | Main dialog content. |
+| `RuiDialogActions` | Optional action button row. |
+| `RuiDialogClose` | Optional dismiss control. |
 
 ### Events
 
@@ -111,12 +111,12 @@ Body uses the `p-inset` spacing token. Override roles at the theme layer, not in
 
 ### View helpers
 
-| Component | Slots into |
+| Component | Placement |
 | --- | --- |
-| `RuiDialogTitle` | `title` |
-| `RuiDialogBody` | (default) |
-| `RuiDialogActions` | `actions` |
-| `RuiDialogClose` | `close` |
+| `RuiDialogTitle` | Inside dialog shell |
+| `RuiDialogBody` | Inside dialog shell |
+| `RuiDialogActions` | Inside dialog shell |
+| `RuiDialogClose` | Inside dialog shell |
 
 ### CSS classes
 

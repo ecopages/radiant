@@ -1,5 +1,4 @@
 @reference '../../../styles/radiant-ui.css';
-@import '../../../lib/icons/icons.css';
 
 @layer components {
 	.rui-control-toggle {
