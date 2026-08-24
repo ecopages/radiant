@@ -50,7 +50,6 @@ export const meta = {
 				readOnly={args.readOnly}
 				showValue={args.showValue}
 				valuePosition={args.valuePosition}
-				valueTemplate="{value} dB"
 			/>
 		</RuiField>
 	),

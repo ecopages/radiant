@@ -5,13 +5,15 @@ category: Forms
 ---
 
 import { meta as KnobMeta, Default } from '@/content/stories/knob';
+import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
 export const config = {
 	dependencies: {
-		components: [Demo],
+		components: [Canvas, Demo],
 		scripts: [
 			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
 			'../../components/component-docs/controls.script.tsx',
 		],
 	},

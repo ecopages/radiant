@@ -25,6 +25,7 @@ import './heading';
 import './headline';
 import './input';
 import './input-group';
+import './knob';
 import './label';
 import './listbox';
 import './menu-button';
