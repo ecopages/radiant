@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createNumericRange, valueFromSliderKey } from './numeric-range';
+import { createNumericRange, fractionDigitsFromStep, valueFromSliderKey } from './numeric-range';
 
 describe('createNumericRange', () => {
 	it('anchors steps at the lower bound', () => {
@@ -24,6 +24,36 @@ describe('createNumericRange', () => {
 		expect(range.valueFromRatio(0.44)).toBe(40);
 		expect(range.ratioFor(40)).toBe(0.4);
 		expect(range.valueFromRatio(2)).toBe(100);
+	});
+
+	it('rounds binary floating-point noise to the step precision', () => {
+		const range = createNumericRange(0, 1, 0.1);
+
+		expect(range.precision).toBe(1);
+		expect(range.clamp(0.1 + 0.2)).toBe(0.3);
+		expect(range.format(range.clamp(0.1 + 0.2))).toBe('0.3');
+
+		let value = 0;
+		for (let index = 0; index < 3; index += 1) {
+			value = range.clamp(value + range.step);
+		}
+		expect(value).toBe(0.3);
+	});
+
+	it('honors an explicit precision and parseValue transform', () => {
+		const ranged = createNumericRange(0, 1, 0.001, { precision: 2 });
+		expect(ranged.clamp(0.456)).toBe(0.46);
+
+		const parsed = createNumericRange(0, 10, 0.5, { parseValue: Math.floor });
+		expect(parsed.clamp(3.7)).toBe(3);
+	});
+});
+
+describe('fractionDigitsFromStep', () => {
+	it('reads decimal and scientific-notation steps', () => {
+		expect(fractionDigitsFromStep(1)).toBe(0);
+		expect(fractionDigitsFromStep(0.01)).toBe(2);
+		expect(fractionDigitsFromStep(1e-7)).toBe(7);
 	});
 });
 

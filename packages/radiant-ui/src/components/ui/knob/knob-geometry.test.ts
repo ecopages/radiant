@@ -10,6 +10,12 @@ describe('createKnobRing', () => {
 		expect(ring.arcLength).toBeCloseTo((KNOB_ARC_ANGLE / 360) * ring.circumference);
 		expect(ring.valueText).toBe('50%');
 	});
+
+	it('formats fractional values without binary float noise', () => {
+		const ring = createKnobRing(0.1 + 0.2, 0, 1, 0.1, 14, '{value}');
+
+		expect(ring.valueText).toBe('0.3');
+	});
 });
 
 describe('knobValueFromPointer', () => {

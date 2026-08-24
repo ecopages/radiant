@@ -1,4 +1,4 @@
-import { createNumericRange, type NumericRange } from '../shared/numeric-range';
+import { createNumericRange, type NumericRange, type NumericRangeOptions } from '../shared/numeric-range';
 
 export const KNOB_START_ANGLE = 120;
 export const KNOB_ARC_ANGLE = 300;
@@ -20,8 +20,8 @@ export function resolveKnobStrokeWidth(strokeWidth: number | undefined): number 
 	return Math.min(100, Math.max(0, Number.isFinite(strokeWidth) ? Number(strokeWidth) : KNOB_DEFAULT_STROKE_WIDTH));
 }
 
-export function formatKnobValue(value: number, step: number, template: string): string {
-	return template.replace('{value}', value.toFixed(step < 1 ? 2 : 0));
+export function formatKnobValue(value: number, precision: number, template: string): string {
+	return template.replace('{value}', value.toFixed(precision));
 }
 
 export function createKnobRing(
@@ -31,8 +31,9 @@ export function createKnobRing(
 	step: number,
 	strokeWidth: number | undefined,
 	valueTemplate: string,
+	options?: NumericRangeOptions,
 ): KnobRingGeometry {
-	const range = createNumericRange(min, max, step);
+	const range = createNumericRange(min, max, step, options);
 	const resolvedStrokeWidth = resolveKnobStrokeWidth(strokeWidth);
 	const radius = 50 - resolvedStrokeWidth / 2;
 	const circumference = 2 * Math.PI * radius;
@@ -46,7 +47,7 @@ export function createKnobRing(
 		circumference,
 		arcLength,
 		progressLength: range.ratioFor(clamped) * arcLength,
-		valueText: formatKnobValue(clamped, range.step, valueTemplate),
+		valueText: formatKnobValue(clamped, range.precision, valueTemplate),
 	};
 }
 

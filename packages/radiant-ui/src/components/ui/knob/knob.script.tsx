@@ -1,6 +1,11 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createNumericRange, valueFromSliderKey } from '../shared/numeric-range';
+import {
+	createNumericRange,
+	valueFromSliderKey,
+	type NumericRangeOptions,
+	type NumericValueParser,
+} from '../shared/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
 export type RuiKnobValuePosition = 'center' | 'below';
@@ -10,6 +15,13 @@ export type RuiKnobProps = {
 	min?: number;
 	max?: number;
 	step?: number;
+	/**
+	 * Maximum fraction digits on committed values.
+	 * Defaults to the decimal places in `step`.
+	 */
+	precision?: number;
+	/** Transforms the snapped value before it is committed. JSX `prop:` binding only. */
+	parseValue?: NumericValueParser;
 	disabled?: boolean;
 	readOnly?: boolean;
 	label?: string;
@@ -37,6 +49,7 @@ export type RuiKnobChangeDetail = { value: number };
  * @attr {number} min - Range minimum. Default: `0`.
  * @attr {number} max - Range maximum. Default: `100`.
  * @attr {number} step - Pointer and keyboard snap interval. Default: `1`.
+ * @attr {number} precision - Maximum fraction digits on committed values. Defaults to the decimal places in `step`.
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving the control focusable. Default: `false`.
  * @attr {string} label - Visible and accessible name. Default: `''`.
@@ -64,6 +77,11 @@ export type RuiKnobChangeDetail = { value: number };
  * @cssclass rui-knob__track - Unfilled 300° range arc.
  * @cssclass rui-knob__progress - Filled range arc.
  * @cssclass rui-knob__value - Value readout inside the ring.
+ *
+ * @remarks
+ * `parseValue` is a function prop and only reaches the element via `prop:` bindings.
+ * Snapped values are rounded to `precision` so binary floats such as `0.30000000000000004`
+ * are not stored, emitted, or displayed.
  */
 @customElement('rui-knob')
 export class RuiKnob extends RadiantElement {
@@ -71,6 +89,8 @@ export class RuiKnob extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
+	@prop({ type: Number, defaultValue: Number.NaN }) precision: number;
+	@prop({ type: Object }) parseValue: NumericValueParser | undefined;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -105,6 +125,8 @@ export class RuiKnob extends RadiantElement {
 		'min',
 		'max',
 		'step',
+		'precision',
+		'parseValue',
 		'disabled',
 		'readOnly',
 		'name',
@@ -119,8 +141,15 @@ export class RuiKnob extends RadiantElement {
 		this.syncPresentation();
 	}
 
+	private get rangeOptions(): NumericRangeOptions {
+		return {
+			precision: this.precision,
+			parseValue: typeof this.parseValue === 'function' ? this.parseValue : undefined,
+		};
+	}
+
 	private get numericRange() {
-		return createNumericRange(this.min, this.max, this.step);
+		return createNumericRange(this.min, this.max, this.step, this.rangeOptions);
 	}
 
 	private get resolvedSize(): number | undefined {
@@ -132,7 +161,15 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	private paint(value: number): void {
-		const ring = createKnobRing(value, this.min, this.max, this.step, this.strokeWidth, this.valueTemplate);
+		const ring = createKnobRing(
+			value,
+			this.min,
+			this.max,
+			this.step,
+			this.strokeWidth,
+			this.valueTemplate,
+			this.rangeOptions,
+		);
 		const valuePosition = this.resolvedValuePosition;
 
 		this.rootTarget?.classList.toggle('rui-knob--value-below', valuePosition === 'below');
