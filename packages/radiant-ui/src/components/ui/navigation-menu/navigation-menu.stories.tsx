@@ -61,46 +61,46 @@ export const MegamenuNavigation: Story = {
 
 				<RuiNavigationMenuPanels>
 					<RuiNavigationMenuPanel value="products">
-					<nav aria-label="Products">
-						<ul class="rui-navigation-menu__link-list">
-							{productLinks.map((link) => (
-								<li>
-									<a href={link.href}>{link.label}</a>
-								</li>
-							))}
-						</ul>
-					</nav>
-				</RuiNavigationMenuPanel>
+						<nav aria-label="Products">
+							<ul class="rui-navigation-menu__link-list">
+								{productLinks.map((link) => (
+									<li>
+										<a href={link.href}>{link.label}</a>
+									</li>
+								))}
+							</ul>
+						</nav>
+					</RuiNavigationMenuPanel>
 
-				<RuiNavigationMenuPanel value="solutions" class="rui-navigation-menu__megamenu">
-					<div class="rui-navigation-menu__link-columns">
-						<nav aria-label="By industry">
-							<p class="rui-navigation-menu__link-group-label">By industry</p>
-							<ul class="rui-navigation-menu__link-list">
-								{industryLinks.map((link) => (
-									<li>
-										<a href={link.href}>{link.label}</a>
-									</li>
-								))}
-							</ul>
-						</nav>
-						<nav aria-label="By team">
-							<p class="rui-navigation-menu__link-group-label">By team</p>
-							<ul class="rui-navigation-menu__link-list">
-								{teamLinks.map((link) => (
-									<li>
-										<a href={link.href}>{link.label}</a>
-									</li>
-								))}
-							</ul>
-						</nav>
-					</div>
-					<RuiDisclosure trigger="Why these solutions?">
-						<p class="rui-navigation-menu__disclosure-copy">
-							Decorative supporting copy — starter kits, migration guides, and customer stories.
-						</p>
-					</RuiDisclosure>
-				</RuiNavigationMenuPanel>
+					<RuiNavigationMenuPanel value="solutions" class="rui-navigation-menu__megamenu">
+						<div class="rui-navigation-menu__link-columns">
+							<nav aria-label="By industry">
+								<p class="rui-navigation-menu__link-group-label">By industry</p>
+								<ul class="rui-navigation-menu__link-list">
+									{industryLinks.map((link) => (
+										<li>
+											<a href={link.href}>{link.label}</a>
+										</li>
+									))}
+								</ul>
+							</nav>
+							<nav aria-label="By team">
+								<p class="rui-navigation-menu__link-group-label">By team</p>
+								<ul class="rui-navigation-menu__link-list">
+									{teamLinks.map((link) => (
+										<li>
+											<a href={link.href}>{link.label}</a>
+										</li>
+									))}
+								</ul>
+							</nav>
+						</div>
+						<RuiDisclosure trigger="Why these solutions?">
+							<p class="rui-navigation-menu__disclosure-copy">
+								Decorative supporting copy — starter kits, migration guides, and customer stories.
+							</p>
+						</RuiDisclosure>
+					</RuiNavigationMenuPanel>
 				</RuiNavigationMenuPanels>
 			</RuiNavigationMenu>
 		</div>
@@ -198,20 +198,20 @@ export const MixedLinksAndPanels: Story = {
 				</RuiNavigationMenuBar>
 				<RuiNavigationMenuPanels>
 					<RuiNavigationMenuPanel value="learn">
-					<nav aria-label="Learn">
-						<ul class="rui-navigation-menu__link-list">
-							<li>
-								<a href="/guides">Guides</a>
-							</li>
-							<li>
-								<a href="/tutorials">Tutorials</a>
-							</li>
-							<li>
-								<a href="/reference">API reference</a>
-							</li>
-						</ul>
-					</nav>
-				</RuiNavigationMenuPanel>
+						<nav aria-label="Learn">
+							<ul class="rui-navigation-menu__link-list">
+								<li>
+									<a href="/guides">Guides</a>
+								</li>
+								<li>
+									<a href="/tutorials">Tutorials</a>
+								</li>
+								<li>
+									<a href="/reference">API reference</a>
+								</li>
+							</ul>
+						</nav>
+					</RuiNavigationMenuPanel>
 				</RuiNavigationMenuPanels>
 			</RuiNavigationMenu>
 		</div>
@@ -227,25 +227,25 @@ export const DecorativePanelAccent: Story = {
 				</RuiNavigationMenuBar>
 				<RuiNavigationMenuPanels>
 					<RuiNavigationMenuPanel value="resources">
-					<nav aria-label="Resources">
-						<ul class="rui-navigation-menu__link-list">
-							<li>
-								<a href="/blog">Blog</a>
-							</li>
-							<li>
-								<a href="/events">Events</a>
-							</li>
-							<li>
-								<a href="/community">Community</a>
-							</li>
-						</ul>
-					</nav>
-					<RuiDisclosure trigger="About this section">
-						<p class="rui-navigation-menu__disclosure-copy">
-							Optional decorative copy for context — the primary path is still the links above.
-						</p>
-					</RuiDisclosure>
-				</RuiNavigationMenuPanel>
+						<nav aria-label="Resources">
+							<ul class="rui-navigation-menu__link-list">
+								<li>
+									<a href="/blog">Blog</a>
+								</li>
+								<li>
+									<a href="/events">Events</a>
+								</li>
+								<li>
+									<a href="/community">Community</a>
+								</li>
+							</ul>
+						</nav>
+						<RuiDisclosure trigger="About this section">
+							<p class="rui-navigation-menu__disclosure-copy">
+								Optional decorative copy for context — the primary path is still the links above.
+							</p>
+						</RuiDisclosure>
+					</RuiNavigationMenuPanel>
 				</RuiNavigationMenuPanels>
 			</RuiNavigationMenu>
 		</div>
