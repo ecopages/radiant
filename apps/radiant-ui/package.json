@@ -9,7 +9,7 @@
 		"build": "pnpm run guard:cache && pnpm run generate:llms && ecopages build && pnpm run verify:html",
 		"preview": "pnpm run guard:cache && pnpm run generate:llms && ecopages preview",
 		"test": "vitest run",
-		"test:all": "pnpm run test",
+		"test:all": "pnpm --filter @ecopages/radiant-ui build:lib && pnpm run test",
 		"generate:llms": "tsx scripts/generate-llm-docs.ts"
 	},
 	"devDependencies": {
