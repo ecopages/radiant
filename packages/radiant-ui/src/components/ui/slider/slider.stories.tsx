@@ -15,14 +15,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const getHiddenInput = (root: HTMLElement) =>
-	root.querySelector('rui-slider input[type="hidden"]') as HTMLInputElement;
+const getHiddenInput = (root: HTMLElement) => root.querySelector('rui-slider input[type="hidden"]') as HTMLInputElement;
 
 const getSingleThumb = (root: HTMLElement) =>
 	root.querySelector('rui-slider [data-thumb="value"]') as HTMLButtonElement;
 
-const getValueLabel = (root: HTMLElement) =>
-	root.querySelector('rui-slider .rui-slider__value') as HTMLElement;
+const getValueLabel = (root: HTMLElement) => root.querySelector('rui-slider .rui-slider__value') as HTMLElement;
 
 export const Default: Story = {
 	play: async ({ canvasElement: root, step }) => {
@@ -130,7 +128,9 @@ export const Vertical: Story = {
 };
 
 const getRangeThumbs = (root: HTMLElement) =>
-	Array.from(root.querySelectorAll('rui-slider [data-thumb="min"], rui-slider [data-thumb="max"]')) as HTMLButtonElement[];
+	Array.from(
+		root.querySelectorAll('rui-slider [data-thumb="min"], rui-slider [data-thumb="max"]'),
+	) as HTMLButtonElement[];
 
 export const Range: Story = {
 	args: {

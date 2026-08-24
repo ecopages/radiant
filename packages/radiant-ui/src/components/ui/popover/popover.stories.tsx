@@ -8,7 +8,9 @@ import { RuiPopover as RuiPopoverElement } from './popover.script';
 const meta = {
 	title: 'Components/Popover',
 	component: RuiPopover,
-	parameters: { radiant: { element: RuiPopoverElement, cssImports: ['../../../styles/primitives.css', './popover.css'] } },
+	parameters: {
+		radiant: { element: RuiPopoverElement, cssImports: ['../../../styles/primitives.css', './popover.css'] },
+	},
 } satisfies Meta<typeof RuiPopover>;
 
 export default meta;
