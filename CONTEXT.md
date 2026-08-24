@@ -98,6 +98,18 @@ _Avoid_: plain property, static value, one-time markup
 The projection boundary inside a render-owning Element Host that accepts matching Authored Children and can provide fallback content when none are assigned.
 _Avoid_: internal child list, shadow-only slot, query helper
 
+**View-owned Shell**:
+A composite where JSX helpers (or named view props) place chrome and Authored Children. The Element Host coordinates behavior and queries the existing tree; it does not own a `render()` slot tree for that chrome.
+_Avoid_: CE-owned chrome, slot-projected shell, bindings-driven parent DOM
+
+**Derived Tree**:
+Inner DOM generated from Element Host state, not from parent JSX ranges (toaster list, TOC links, calendar day grid). This is the case that still uses host `render()`.
+_Avoid_: view-owned shell, authored child tree, slot fallback
+
+**Composition Helper**:
+A JSX export or named view prop that places a named region of a View-owned Shell in the correct DOM position (`RuiDialogTitle`, `primary`, `trigger`).
+_Avoid_: HTML slot, named slot attribute, shadow part
+
 **Context Provider**:
 A host-attached context source that owns shared context state for matching descendant hosts.
 _Avoid_: consumer, selector field, prop drilling
@@ -149,6 +161,9 @@ _Avoid_: provider, selector field, local state copy
 - A **Slot** is the projection boundary between an **Element Host** and matching **Authored Children**
 - A **Slot** can be default or named
 - A **Slot** can render fallback content when no matching **Authored Children** are assigned
+- A **View-owned Shell** keeps **Authored Children** in parent JSX instead of projecting them through a **Slot**
+- A **Derived Tree** is host-owned render output, not **Authored Children**
+- A **Composition Helper** places a named region of a **View-owned Shell**; it is not a **Slot**
 - A **Context Provider** owns shared context state for descendant hosts
 - A **Context Consumer** resolves a matching **Context Provider** from the host tree
 - **SSR** produces the server-rendered output that **Hydration** can attach to on the client
@@ -254,6 +269,9 @@ _Avoid_: provider, selector field, local state copy
 > **Dev:** "What is a slot in Radiant?"
 > **Domain expert:** "A **Slot** is the projection boundary where an **Element Host** accepts matching **Authored Children**. It can be default or named, and it can render fallback content when nothing is assigned."
 
+> **Dev:** "Should a radiant-ui composite project chrome through `<slot>`?"
+> **Domain expert:** "No. Those composites use a **View-owned Shell**. Parent JSX owns **Authored Children**; **Composition Helpers** place named regions. Keep host `render()` for a **Derived Tree** only."
+
 > **Dev:** "What is the difference between a context provider and a consumer?"
 > **Domain expert:** "A **Context Provider** owns the shared context state. A **Context Consumer** resolves that provider from the host tree so it can read or interact with the shared state."
 
@@ -307,6 +325,8 @@ _Avoid_: provider, selector field, local state copy
 - **Attribute**, **Property**, and **Reactive Property** are distinct concepts and should not be used interchangeably
 - the root glossary can name broad concepts like decorators, but specific decorator terms should be added only when they clarify a distinct platform concept
 - **Light DOM** and **Shadow DOM** are contrasting concepts, but **Radiant** is explicitly light-DOM-first rather than neutral between them
-- **Slot** is the architectural projection boundary; helpers like `@querySlot` are later API details built on top of it
+- **Slot** is the architectural projection boundary; `@querySlot` is a later API detail built on top of it, not a catalog JSX API
+- In `@ecopages/radiant-ui` composites, **View-owned Shell** is the default; **Slot** remains the core projection concept for a **Render-owning Element Host**, not the public JSX API for those widgets
+- **Derived Tree** and **Composition Helper** are catalog authoring terms; they do not replace **Slot** in core Radiant
 - **Context Provider** and **Context Consumer** are architectural context terms; selector and update decorators are narrower mechanisms built on top of that relationship
 - narrower mechanism terms such as context selection stay out of the root glossary unless the project chooses to add the broader decorator taxonomy as well
