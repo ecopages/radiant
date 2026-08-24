@@ -1,5 +1,12 @@
 # @ecopages/jsx
 
+## 0.3.0-rc.3
+
+### Patch Changes
+
+- Updated dependencies []:
+    - @ecopages/signals@0.3.0-rc.3
+
 ## 0.3.0-rc.1
 
 ### Minor Changes
