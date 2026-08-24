@@ -347,13 +347,7 @@ export function RuiSidebar({ children, open, label, ...props }: RuiSidebarViewPr
 				<div data-ref="pane" class="rui-sidebar__pane" aria-label={label}>
 					{children}
 				</div>
-				<div
-					data-ref="handle"
-					class="rui-sidebar__handle"
-					role="separator"
-					tabindex={0}
-					hidden
-				>
+				<div data-ref="handle" class="rui-sidebar__handle" role="separator" tabindex={0} hidden>
 					<span class="rui-sidebar__handle-grip" aria-hidden="true"></span>
 				</div>
 			</div>

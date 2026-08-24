@@ -30,12 +30,7 @@ export type RuiNumberFieldInputProps = JsxElementProps<HTMLInputElement> & {
  *
  * @cssclass rui-number-field__input - Borderless text input inside the group.
  */
-export function RuiNumberFieldInput({
-	class: className,
-	disabled,
-	readOnly,
-	...props
-}: RuiNumberFieldInputProps) {
+export function RuiNumberFieldInput({ class: className, disabled, readOnly, ...props }: RuiNumberFieldInputProps) {
 	return (
 		<input
 			{...props}

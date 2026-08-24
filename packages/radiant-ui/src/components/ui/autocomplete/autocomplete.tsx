@@ -12,12 +12,7 @@ export type RuiAutocompleteInputProps = JsxElementProps<HTMLInputElement> & {
  *
  * @cssclass rui-autocomplete__input - Bordered search input.
  */
-export function RuiAutocompleteInput({
-	placeholder,
-	class: className,
-	disabled,
-	...props
-}: RuiAutocompleteInputProps) {
+export function RuiAutocompleteInput({ placeholder, class: className, disabled, ...props }: RuiAutocompleteInputProps) {
 	return (
 		<input
 			{...props}

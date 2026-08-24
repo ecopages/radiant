@@ -111,7 +111,10 @@ function isRangeSlider(host: HTMLElement): boolean {
 const sliderValueAdapter: ControlValueAdapter = {
 	read: (host) => {
 		if (isRangeSlider(host)) {
-			return [readNumberProperty(host, 'rangeMin', 'range-min'), readNumberProperty(host, 'rangeMax', 'range-max')];
+			return [
+				readNumberProperty(host, 'rangeMin', 'range-min'),
+				readNumberProperty(host, 'rangeMax', 'range-max'),
+			];
 		}
 		return numberValueAdapter.read(host);
 	},
@@ -493,4 +496,3 @@ export function getAriaControlTargets(control: HTMLElement): HTMLElement[] {
 	}
 	return [getAriaControlTarget(control)];
 }
-

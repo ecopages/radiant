@@ -1,5 +1,9 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { CHECKBOX_DEFAULT_VALUE, type RuiCheckbox as RuiCheckboxElement, type RuiCheckboxProps } from './checkbox.script';
+import {
+	CHECKBOX_DEFAULT_VALUE,
+	type RuiCheckbox as RuiCheckboxElement,
+	type RuiCheckboxProps,
+} from './checkbox.script';
 import './checkbox.script';
 
 export function RuiCheckbox({

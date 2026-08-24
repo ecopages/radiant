@@ -17,18 +17,16 @@ export function RuiWindowSplitter({
 	return (
 		<rui-window-splitter {...props} orientation={orientation}>
 			<div
-				class={cx('rui-window-splitter', horizontal ? 'rui-window-splitter--horizontal' : 'rui-window-splitter--vertical')}
+				class={cx(
+					'rui-window-splitter',
+					horizontal ? 'rui-window-splitter--horizontal' : 'rui-window-splitter--vertical',
+				)}
 				data-ref="root"
 			>
 				<div data-ref="primary" class="rui-window-splitter__pane">
 					{primary}
 				</div>
-				<div
-					data-ref="separator"
-					class="rui-window-splitter__separator"
-					role="separator"
-					tabindex={0}
-				></div>
+				<div data-ref="separator" class="rui-window-splitter__separator" role="separator" tabindex={0}></div>
 				<div data-ref="secondary" class="rui-window-splitter__pane">
 					{secondary}
 				</div>
