@@ -32,14 +32,9 @@ const Article = () => (
 );
 
 const withTocArticle: Decorator = (Story) => (
-	<section
-		class="h-[30rem] overflow-y-auto rounded-lg bg-background p-5"
-		data-toc-story-scroll-root
-	>
+	<section class="h-[30rem] overflow-y-auto rounded-lg bg-background p-5" data-toc-story-scroll-root>
 		<div class="grid gap-8 md:grid-cols-[10rem_minmax(0,1fr)]">
-			<aside class="sticky top-0 z-10 self-start bg-background py-1">
-				{Story() as JsxRenderable}
-			</aside>
+			<aside class="sticky top-0 z-10 self-start bg-background py-1">{Story() as JsxRenderable}</aside>
 			<Article />
 		</div>
 	</section>

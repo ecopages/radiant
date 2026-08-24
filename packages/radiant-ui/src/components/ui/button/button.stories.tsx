@@ -62,7 +62,15 @@ export const Variants: Story = {
 				<RuiButton size="md">Default</RuiButton>
 				<RuiButton size="lg">Large</RuiButton>
 				<RuiButton size="sm" square aria-label="Add item">
-					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+					<svg
+						viewBox="0 0 24 24"
+						width="16"
+						height="16"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"
+					>
 						<path d="M12 5v14M5 12h14" />
 					</svg>
 				</RuiButton>

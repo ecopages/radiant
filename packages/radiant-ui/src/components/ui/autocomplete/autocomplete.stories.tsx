@@ -1,12 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
-import {
-	RuiMenuButton,
-	RuiMenuButtonContent,
-	RuiMenuButtonItem,
-	RuiMenuButtonTrigger,
-} from '../menu-button';
+import { RuiMenuButton, RuiMenuButtonContent, RuiMenuButtonItem, RuiMenuButtonTrigger } from '../menu-button';
 import { RuiLabel } from '../label';
 import { RuiListbox } from '../listbox';
 import {

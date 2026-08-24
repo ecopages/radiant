@@ -380,7 +380,9 @@ rui-sidebar {
 	@apply block;
 }
 
-.rui-sidebar__trigger[data-sidebar-state='collapsed']:not(.rui-sidebar__trigger--header):not(.rui-sidebar__trigger--inset)
+.rui-sidebar__trigger[data-sidebar-state='collapsed']:not(.rui-sidebar__trigger--header):not(
+		.rui-sidebar__trigger--inset
+	)
 	.rui-sidebar__trigger-glyph--expand {
 	@apply block;
 }

@@ -29,7 +29,6 @@ rui-pagination {
 		@apply shrink-0;
 	}
 
-
 	@media (max-width: 40rem) {
 		.rui-pagination__link--previous span,
 		.rui-pagination__link--next span {
