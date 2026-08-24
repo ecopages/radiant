@@ -107,7 +107,13 @@ export function RuiButton(props: RuiButtonProps) {
 				target={target}
 				rel={rel}
 				download={download}
-				class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, square && 'rui-button--square', className)}
+				class={cx(
+					'rui-button',
+					`rui-button--${variant ?? 'filled'}`,
+					`rui-button--${size ?? 'md'}`,
+					square && 'rui-button--square',
+					className,
+				)}
 			>
 				{children}
 			</a>
@@ -142,7 +148,13 @@ export function RuiButton(props: RuiButtonProps) {
 		<button
 			{...host}
 			type={type}
-			class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, square && 'rui-button--square', className)}
+			class={cx(
+				'rui-button',
+				`rui-button--${variant ?? 'filled'}`,
+				`rui-button--${size ?? 'md'}`,
+				square && 'rui-button--square',
+				className,
+			)}
 			disabled={disabled}
 			aria-pressed={resolveAriaPressed(pressed, toggle, defaultPressed)}
 			data-toggle={toggle && pressed === undefined ? '' : undefined}

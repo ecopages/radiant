@@ -116,14 +116,7 @@ export type RuiDialogViewProps = Omit<JsxCustomElementAttributes<RuiDialogElemen
  * body, actions). When neither `title` nor `actions` is set, children are composed
  * inside the view-owned dialog shell.
  */
-export function RuiDialog({
-	title,
-	actions,
-	children,
-	open,
-	alert,
-	...props
-}: RuiDialogViewProps) {
+export function RuiDialog({ title, actions, children, open, alert, ...props }: RuiDialogViewProps) {
 	if (title != null || actions != null) {
 		return (
 			<rui-dialog {...props} open={open} alert={alert}>

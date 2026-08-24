@@ -72,12 +72,7 @@ export type RuiNavigationMenuLinkProps = JsxElementProps<HTMLAnchorElement> & {
 };
 
 /** Plain navigation link. Place inside `RuiNavigationMenuBar`. */
-export function RuiNavigationMenuLink({
-	children,
-	href,
-	class: className,
-	...props
-}: RuiNavigationMenuLinkProps) {
+export function RuiNavigationMenuLink({ children, href, class: className, ...props }: RuiNavigationMenuLinkProps) {
 	return (
 		<a
 			{...props}
@@ -95,12 +90,7 @@ export type RuiNavigationMenuPanelProps = JsxElementProps<HTMLDivElement> & {
 };
 
 /** Megamenu panel paired with a trigger by `value`. Place inside `RuiNavigationMenuPanels`. */
-export function RuiNavigationMenuPanel({
-	children,
-	value,
-	class: className,
-	...props
-}: RuiNavigationMenuPanelProps) {
+export function RuiNavigationMenuPanel({ children, value, class: className, ...props }: RuiNavigationMenuPanelProps) {
 	return (
 		<div {...props} class={className} data-navigation-panel data-value={value}>
 			{children}

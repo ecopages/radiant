@@ -413,7 +413,11 @@ export class RuiSlider extends RadiantElement {
 		this.activeThumb = thumb;
 		if (this.isRange) {
 			const current = this.pending ?? this.committedValues();
-			this.pending = this.constrainPair(thumb === 'min' ? next : current[0], thumb === 'max' ? next : current[1], thumb);
+			this.pending = this.constrainPair(
+				thumb === 'min' ? next : current[0],
+				thumb === 'max' ? next : current[1],
+				thumb,
+			);
 		} else {
 			this.pending = [this.numericRange.clamp(next)];
 		}

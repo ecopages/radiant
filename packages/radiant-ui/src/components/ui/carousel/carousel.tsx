@@ -136,13 +136,7 @@ export type RuiCarouselRotationProps = JsxElementProps<HTMLButtonElement> & {
 };
 
 /** Play/pause rotation control when `autoplay` or `show-rotation-control` is set. */
-export function RuiCarouselRotation({
-	children,
-	class: className,
-	overlay,
-	aria,
-	...props
-}: RuiCarouselRotationProps) {
+export function RuiCarouselRotation({ children, class: className, overlay, aria, ...props }: RuiCarouselRotationProps) {
 	return (
 		<button
 			{...props}

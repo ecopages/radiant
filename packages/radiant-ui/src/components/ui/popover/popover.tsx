@@ -35,11 +35,7 @@ export function RuiPopover({
 		<rui-popover {...props} variant={variant}>
 			<div class="rui-popover-host" data-ref="host">
 				{trigger != null ? <span data-popover-trigger>{trigger}</span> : null}
-				<div
-					data-ref="surface"
-					class={`rui-popover rui-floating ${variantClass}`.trim()}
-					role="dialog"
-				>
+				<div data-ref="surface" class={`rui-popover rui-floating ${variantClass}`.trim()} role="dialog">
 					{children}
 				</div>
 			</div>

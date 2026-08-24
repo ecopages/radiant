@@ -117,12 +117,7 @@ export type RuiSelectSearchProps = JsxElementProps<HTMLInputElement> & {
  *
  * @cssclass rui-select__search - Filtering input inside the popup.
  */
-export function RuiSelectSearch({
-	placeholder,
-	class: className,
-	disabled,
-	...props
-}: RuiSelectSearchProps) {
+export function RuiSelectSearch({ placeholder, class: className, disabled, ...props }: RuiSelectSearchProps) {
 	return (
 		<input
 			{...props}

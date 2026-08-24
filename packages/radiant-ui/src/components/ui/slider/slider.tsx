@@ -116,7 +116,11 @@ export function RuiSlider({
 			rangeMax={values?.[1]}
 		>
 			<div
-				class={cx('rui-slider', variant === 'range' ? 'rui-slider--range' : 'rui-slider--single', orientation === 'vertical' && 'rui-slider--vertical')}
+				class={cx(
+					'rui-slider',
+					variant === 'range' ? 'rui-slider--range' : 'rui-slider--single',
+					orientation === 'vertical' && 'rui-slider--vertical',
+				)}
 				data-ref="root"
 			>
 				<div class="rui-slider__header" data-ref="header" hidden={!label && !hasVisibleReadout}>
