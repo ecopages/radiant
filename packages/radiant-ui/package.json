@@ -2,6 +2,11 @@
 	"name": "@ecopages/radiant-ui",
 	"version": "0.1.0-rc.3",
 	"description": "Accessible light-DOM UI components built with @ecopages/radiant",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/radiant-ui"
+	},
 	"license": "MIT",
 	"type": "module",
 	"publishConfig": {

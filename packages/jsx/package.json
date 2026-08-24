@@ -1,6 +1,11 @@
 {
 	"name": "@ecopages/jsx",
 	"version": "0.3.0-rc.3",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/jsx"
+	},
 	"license": "MIT",
 	"main": "dist/index.js",
 	"module": "dist/index.js",

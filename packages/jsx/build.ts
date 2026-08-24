@@ -13,6 +13,11 @@ type PackageJsonShape = {
 	name: string;
 	version: string;
 	license: string;
+	repository?: {
+		type: string;
+		url: string;
+		directory?: string;
+	};
 	main?: string;
 	module?: string;
 	types?: string;
@@ -63,6 +68,7 @@ function createDistPackageJson(): PackageJsonShape {
 		name: packageJson.name,
 		version: packageJson.version,
 		license: packageJson.license,
+		repository: packageJson.repository,
 		main: packageJson.main ? stripDistPrefix(packageJson.main) : undefined,
 		module: packageJson.module ? stripDistPrefix(packageJson.module) : undefined,
 		types: packageJson.types ? stripDistPrefix(packageJson.types) : undefined,
