@@ -99,9 +99,9 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 | `decrement-aria-label` | `string` | `Decrement` | Accessible name for the decrement stepper. |
 | `wheel-disabled` | `boolean` | `false` | Disables scroll-wheel value changes. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
 | `group` | Input + stepper row (`RuiNumberFieldGroup`). |
 | `input` | Text input (`RuiNumberFieldInput`). |
@@ -116,7 +116,7 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 
 ### View helpers
 
-| Component | Renders | Slot |
+| Component | Renders | Placement |
 | --- | --- | --- |
 | `RuiNumberFieldGroup` | Input + stepper row | `group` |
 | `RuiNumberFieldInput` | Text input (`role="spinbutton"`) | `input` |

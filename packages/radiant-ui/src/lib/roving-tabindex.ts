@@ -7,7 +7,10 @@ export type RovingNavResult = { handled: false } | { handled: true; index: numbe
  */
 export function applyRovingTabindex(items: HTMLElement[], activeIndex: number): void {
 	items.forEach((item, index) => {
-		item.tabIndex = index === activeIndex ? 0 : -1;
+		const next = index === activeIndex ? 0 : -1;
+		if (item.tabIndex !== next) {
+			item.tabIndex = next;
+		}
 	});
 }
 

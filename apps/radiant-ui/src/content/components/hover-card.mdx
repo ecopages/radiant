@@ -1,0 +1,113 @@
+---
+title: Hover Card
+description: Hover cards preview rich content behind a link or control on hover or focus.
+category: Overlays
+---
+
+import { meta as HoverCardMeta, Default } from '@/content/stories/hover-card';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Hover Card
+
+<p class="docs-lede">Hover cards preview rich content behind a link or control on hover or focus — profiles, link previews, and other supplementary detail.</p>
+
+## Try it
+
+<Demo of={Default} meta={HoverCardMeta} />
+
+## Usage
+
+Compose a trigger and content surface. Tune `delay` and `closeDelay` so pointer movement can reach interactive content inside the card.
+
+```tsx
+import {
+  RuiHoverCard,
+  RuiHoverCardContent,
+  RuiHoverCardTrigger,
+} from '@ecopages/radiant-ui/hover-card';
+import { RuiAvatar } from '@ecopages/radiant-ui/avatar';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiHoverCard delay={600} closeDelay={200} placement="bottom-start">
+  <RuiHoverCardTrigger>
+    <RuiButton variant="link">Jane Cooper</RuiButton>
+  </RuiHoverCardTrigger>
+  <RuiHoverCardContent>
+    <div class="flex gap-3">
+      <RuiAvatar fallback="JC" alt="Jane Cooper" />
+      <div class="flex flex-col gap-1">
+        <p class="font-medium text-sm">Jane Cooper</p>
+        <p class="text-on-surface text-xs opacity-80">Product designer on the Radiant team.</p>
+      </div>
+    </div>
+  </RuiHoverCardContent>
+</RuiHoverCard>
+```
+
+## Hover card vs tooltip
+
+<p>Use `RuiTooltip` for short, non-interactive descriptions. Use `RuiHoverCard` when the preview includes links, avatars, or other focusable content.</p>
+
+## Theming
+
+| Part | CSS roles |
+| --- | --- |
+| Content (`rui-hover-card__content`) | `background`, `on-background`, `border`, `rounded-container`, `shadow-overlay` |
+| Z-order | `overlay` |
+
+## Accessibility
+
+- The same information should remain available without hover (for example via navigation to a full profile page).
+- The preview dialog has a default accessible name (`Preview`). Override with `content-label` when needed.
+- Keyboard users can Tab into card content while it is open.
+- Press Escape to dismiss.
+
+## API
+
+`RuiHoverCard` is a custom element (`<rui-hover-card>`) that shows a floating preview on hover or focus of its trigger.
+
+### Attributes (`<rui-hover-card>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the card is open (controlled). |
+| `placement` | `RuiPlacement` | `bottom-start` | Placement relative to the anchor. |
+| `delay` | `number` | `600` | Show delay in ms. |
+| `close-delay` | `number` | `200` | Hide delay in ms after pointer/focus leaves. |
+| `portal` | `boolean` | `true` | Teleport the surface to `document.body`. |
+| `disabled` | `boolean` | `false` | Suppress hover/focus preview interactions. |
+| `content-label` | `string` | `Preview` | Accessible name for the preview dialog. |
+
+### Composition
+
+| Piece | Description |
+| --- | --- |
+| `trigger` | Anchor element (link, button, or other focusable control). |
+| `content` | Rich preview content in the floating surface. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-open-change` | `{ open: boolean }` | Emitted when open state changes. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-hover-card` | Root wrapper. |
+| `.rui-hover-card__trigger` | Trigger wrapper. |
+| `.rui-hover-card__content` | Floating preview surface. |

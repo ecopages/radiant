@@ -76,14 +76,14 @@ The custom control dot is decorative (`aria-hidden`), the visually hidden native
 | --- | --- | --- | --- |
 | `value` | `string` | `''` | Selected radio value. |
 | `name` | `string` | `''` | Form field name shared by all radios in the group. |
-| `label` | `string` | `''` | Accessible name when no visible legend is slotted. |
+| `label` | `string` | `''` | Accessible name when no visible legend is composed in the view. |
 | `disabled` | `boolean` | `false` | Disables every radio in the group. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| *(default)* | One or more `<label>` children, each wrapping a radio input with a unique `value`. |
+| `children` | One or more `<label>` children, each wrapping a radio input with a unique `value`. |
 
 ### Events
 

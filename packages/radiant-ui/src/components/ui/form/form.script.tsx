@@ -144,14 +144,17 @@ export class RuiForm extends RadiantElement {
 		super.connectedCallback();
 		this.ensureStore();
 		this.publishFormContext({ force: true });
-		queueMicrotask(() => this.wireOrphanSubmitButtons());
+	}
+
+	protected override onConnected(): void {
+		this.wireOrphanSubmitButtons();
 	}
 
 	private queryNativeForm(): HTMLFormElement | null {
 		return this.getRef<HTMLFormElement>('form') ?? this.querySelector('form.rui-form');
 	}
 
-	/** Link submit buttons left on the host (outside the inner `<form>`) after slot projection. */
+	/** Link submit buttons left on the host outside the composed native `<form>`. */
 	private wireOrphanSubmitButtons(): void {
 		const formEl = this.queryNativeForm();
 		if (!formEl) {
@@ -317,13 +320,5 @@ export class RuiForm extends RadiantElement {
 	@onEvent({ ref: 'form', type: 'reset' })
 	onNativeReset(): void {
 		this.store?.reset();
-	}
-
-	override render() {
-		return (
-			<form class="rui-form" data-ref="form" noValidate action={this.action} method={this.method}>
-				<slot></slot>
-			</form>
-		);
 	}
 }

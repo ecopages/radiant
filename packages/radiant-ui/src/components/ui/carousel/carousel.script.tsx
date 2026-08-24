@@ -5,6 +5,18 @@ export type RuiCarouselTransition = 'none' | 'slide' | 'fade';
 /** Where default prev/next chrome is laid out. `toolbar` places controls below the slide; `overlay` pins them to the slide edges. */
 export type RuiCarouselControlsVariant = 'toolbar' | 'overlay';
 
+/**
+ * Defaults the SSR shell depends on.
+ *
+ * @remarks Must match the host `@prop` defaults: the view composes classes and
+ * the accessible name from these before hydration.
+ */
+export const CAROUSEL_DEFAULTS = {
+	label: 'Carousel',
+	transition: 'none',
+	controlsVariant: 'toolbar',
+} as const;
+
 export type RuiCarouselProps = {
 	label?: string;
 	index?: number;
@@ -52,11 +64,6 @@ type RuiCarouselBindings = {
  * @attr {boolean} wrap - Keep controls enabled at the ends. Default: `true`.
  * @attr {number} slide-count - Authored slide count for render-time control state. Default: `0`.
  *
- * @slot - Slides, each marked with `data-slide` (see `RuiCarouselSlide`).
- * @slot prev - Optional custom previous control. Use `data-carousel-action="prev"`.
- * @slot next - Optional custom next control. Use `data-carousel-action="next"`.
- * @slot rotation - Optional play/pause control when `show-rotation-control` is set. Use `data-carousel-action="rotation"`.
- *
  * @cssclass rui-carousel - Root region (`aria-roledescription="carousel"`).
  * @cssclass rui-carousel--none - No animation between slides.
  * @cssclass rui-carousel--slide - Horizontal slide transition.
@@ -87,12 +94,12 @@ type RuiCarouselBindings = {
  */
 @customElement('rui-carousel')
 export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {
-	@prop({ type: String, defaultValue: 'Carousel' }) label: string;
+	@prop({ type: String, defaultValue: CAROUSEL_DEFAULTS.label }) label: string;
 	@prop({ type: Number, reflect: true, defaultValue: 0 }) index: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) autoplay: boolean;
 	@prop({ type: Number, defaultValue: 4000 }) interval: number;
-	@prop({ type: String, defaultValue: 'none' }) transition: RuiCarouselTransition;
-	@prop({ type: String, defaultValue: 'toolbar', attribute: 'controls-variant' })
+	@prop({ type: String, defaultValue: CAROUSEL_DEFAULTS.transition }) transition: RuiCarouselTransition;
+	@prop({ type: String, defaultValue: CAROUSEL_DEFAULTS.controlsVariant, attribute: 'controls-variant' })
 	controlsVariant: RuiCarouselControlsVariant;
 	@prop({ type: Boolean, defaultValue: false }) showIndicators: boolean;
 	@prop({ type: Boolean, defaultValue: false }) showRotationControl: boolean;
@@ -108,17 +115,14 @@ export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {
 	private swipeStartX = 0;
 	private swipeStartY = 0;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			if (this.autoplay && this.prefersReducedMotion()) {
-				this.paused = true;
-			}
-			this.sync();
-			this.syncAutoplay();
-			this.syncIndicators();
-			this.syncAriaLive();
-		});
+	protected override onConnected(): void {
+		if (this.autoplay && this.prefersReducedMotion()) {
+			this.paused = true;
+		}
+		this.sync();
+		this.syncAutoplay();
+		this.syncIndicators();
+		this.syncAriaLive();
 	}
 
 	override disconnectedCallback(): void {
@@ -166,11 +170,6 @@ export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {
 	private tabId(index: number): string {
 		return `${this.getCarouselId()}-tab-${index}`;
 	}
-
-	private shouldShowRotationControl(): boolean {
-		return this.autoplay || this.showRotationControl;
-	}
-
 	private syncSlideAccessibility(slides: HTMLElement[], activeIndex: number): void {
 		const count = slides.length;
 
@@ -579,159 +578,5 @@ export class RuiCarousel extends RadiantElement<RuiCarouselBindings> {
 		if (this.swipePointerId === event.pointerId) {
 			this.swipePointerId = null;
 		}
-	}
-
-	/**
-	 * Only `aria-label` is bound below. Everything else in this render() stays
-	 * a plain read — audited, not an outstanding gap:
-	 * - disablePrev/disableNext must apply uniformly to the default button AND
-	 *   any consumer-supplied `[data-carousel-action="prev"/"next"]` element
-	 *   slotted in (see syncPrevNextDisabled()) — a binding only patches this
-	 *   host's own template position, not a slotted replacement.
-	 * - playing/ariaLive derive from `paused` and the live `timer` handle,
-	 *   plain instance fields mutated across pointer/focus/keyboard handlers
-	 *   and `setInterval`, not reactive members — promoting them would add an
-	 *   explicit notify step at every one of those call sites for no behavior
-	 *   change and real drift risk.
-	 * - the indicator buttons are a variable-length list built with
-	 *   `replaceChildren()` (see syncIndicators()) — bindings patch one value
-	 *   at one position, they don't reconcile a dynamic list.
-	 */
-	override render() {
-		const showRotation = this.shouldShowRotationControl();
-		const slideCount = Math.max(this.getSlides().length, this.slideCount);
-		const normalized = this.normalizeIndex(this.index, slideCount || 1);
-		const disablePrev = !this.shouldWrap && slideCount > 0 && normalized <= 0;
-		const disableNext = !this.shouldWrap && slideCount > 0 && normalized >= slideCount - 1;
-		const playing = this.autoplay && !this.paused;
-		const ariaLive = playing && this.timer !== null ? 'off' : 'polite';
-		const overlay = this.controlsVariant === 'overlay';
-
-		queueMicrotask(() => {
-			this.sync();
-			this.syncIndicators();
-			this.syncRotationControl();
-			this.syncAriaLive();
-		});
-
-		const prevControl = (
-			<slot name="prev">
-				<button
-					type="button"
-					data-carousel-action="prev"
-					data-ref="prev"
-					class={`rui-carousel__nav rui-button rui-button--outline rui-button--sm${overlay ? ' rui-carousel__nav--overlay' : ' rui-carousel__nav--toolbar'}`}
-					aria-label="Previous slide"
-					disabled={disablePrev}
-				>
-					{overlay ? (
-						<span class="rui-carousel__nav-icon" aria-hidden="true">
-							‹
-						</span>
-					) : (
-						<span class="rui-carousel__nav-label">
-							<span class="rui-carousel__nav-icon" aria-hidden="true">
-								‹
-							</span>
-							Previous
-						</span>
-					)}
-				</button>
-			</slot>
-		);
-
-		const nextControl = (
-			<slot name="next">
-				<button
-					type="button"
-					data-carousel-action="next"
-					data-ref="next"
-					class={`rui-carousel__nav rui-button rui-button--outline rui-button--sm${overlay ? ' rui-carousel__nav--overlay' : ' rui-carousel__nav--toolbar'}`}
-					aria-label="Next slide"
-					disabled={disableNext}
-				>
-					{overlay ? (
-						<span class="rui-carousel__nav-icon" aria-hidden="true">
-							›
-						</span>
-					) : (
-						<span class="rui-carousel__nav-label">
-							Next
-							<span class="rui-carousel__nav-icon" aria-hidden="true">
-								›
-							</span>
-						</span>
-					)}
-				</button>
-			</slot>
-		);
-
-		const rotationControl = showRotation ? (
-			<slot name="rotation">
-				<button
-					type="button"
-					data-carousel-action="rotation"
-					data-ref="rotation"
-					class={`rui-carousel__rotation rui-button rui-button--ghost rui-button--sm${overlay ? ' rui-carousel__rotation--overlay' : ''}`}
-					aria-pressed={playing}
-					aria-label={playing ? 'Pause rotation' : 'Start rotation'}
-				>
-					{playing ? 'Pause' : 'Play'}
-				</button>
-			</slot>
-		) : null;
-
-		const indicators = this.showIndicators ? (
-			<div
-				class={`rui-carousel__indicators${overlay ? ' rui-carousel__indicators--overlay' : ''}`}
-				data-ref="indicators"
-				role="tablist"
-				aria-label="Choose slide to display"
-			/>
-		) : null;
-
-		const toolbarControls = (
-			<div class="rui-carousel__toolbar">
-				{showRotation ? <div class="rui-carousel__toolbar-rotation">{rotationControl}</div> : null}
-				<div class="rui-carousel__toolbar-side rui-carousel__toolbar-side--start">{prevControl}</div>
-				<div class="rui-carousel__toolbar-center">{indicators}</div>
-				<div class="rui-carousel__toolbar-side rui-carousel__toolbar-side--end">{nextControl}</div>
-			</div>
-		);
-
-		const overlayChrome = overlay ? (
-			<div class="rui-carousel__overlay-chrome">
-				{showRotation ? <div class="rui-carousel__overlay-rotation">{rotationControl}</div> : null}
-				<div class="rui-carousel__controls rui-carousel__controls--overlay">
-					{prevControl}
-					{nextControl}
-				</div>
-				{indicators}
-			</div>
-		) : null;
-
-		return (
-			<section
-				class={`rui-carousel rui-carousel--${this.transition} rui-carousel--controls-${this.controlsVariant}`}
-				data-ref="root"
-				aria-roledescription="carousel"
-				aria-label={this.$.label}
-			>
-				<div class="rui-carousel__stage">
-					<div class="rui-carousel__viewport" data-ref="viewport" aria-live={ariaLive} aria-atomic={false}>
-						<div
-							class="rui-carousel__track"
-							style={
-								this.transition === 'slide' ? { '--rui-carousel-index': String(this.index) } : undefined
-							}
-						>
-							<slot></slot>
-						</div>
-						{overlayChrome}
-					</div>
-				</div>
-				{!overlay ? <div class="rui-carousel__footer">{toolbarControls}</div> : null}
-			</section>
-		);
 	}
 }

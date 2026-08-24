@@ -77,18 +77,8 @@ type RuiNumberFieldBindings = {
  * @attr {string} decrement-aria-label - Accessible name for the decrement stepper. Default: `Decrement`.
  * @attr {boolean} wheel-disabled - Disables scroll-wheel value changes. Default: `false`.
  *
- * @slot group - Input + stepper row (`RuiNumberFieldGroup`).
- * @slot input - Text input (`RuiNumberFieldInput`).
- * @slot decrement - Decrement button (`RuiNumberFieldDecrementButton`).
- * @slot increment - Increment button (`RuiNumberFieldIncrementButton`).
- *
  * @fires rui-change - Emitted when a value is committed (blur, stepper, or keyboard);
  *   `detail.value` holds the new number.
- *
- * @remarks
- * Slot content authored by the view helpers carries the BEM classes (`@cssclass` on
- * the exports). The default `render()` provides matching fallback markup so the
- * element renders identically when used standalone.
  *
  * @cssclass rui-number-field - Root field wrapper.
  */
@@ -122,7 +112,6 @@ export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {
 	private initialized = false;
 
 	private readonly uid = Math.random().toString(36).slice(2, 9);
-	private readonly nameAttr = this.$.name.map((name) => name || undefined);
 
 	private get resolvedLocale(): string | string[] | undefined {
 		return resolveLocale(this.locale);
@@ -215,12 +204,17 @@ export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {
 	}
 
 	private syncSlottedSteppers(): void {
+		const incrementLabel = this.incrementAriaLabel || 'Increment';
+		const decrementLabel = this.decrementAriaLabel || 'Decrement';
+
 		for (const button of this.querySelectorAll<HTMLButtonElement>('[data-number-field-action="decrement"]')) {
 			button.disabled = this.decreaseDisabled;
+			button.setAttribute('aria-label', decrementLabel);
 		}
 
 		for (const button of this.querySelectorAll<HTMLButtonElement>('[data-number-field-action="increment"]')) {
 			button.disabled = this.increaseDisabled;
+			button.setAttribute('aria-label', incrementLabel);
 		}
 	}
 
@@ -279,9 +273,8 @@ export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {
 		this.updateStepperState();
 	}
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => this.initialize());
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	@onUpdated([
@@ -401,58 +394,5 @@ export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {
 		} else if (event.deltaY > 0) {
 			this.decrement(event);
 		}
-	}
-
-	override render() {
-		const incrementLabel = this.incrementAriaLabel || 'Increment';
-		const decrementLabel = this.decrementAriaLabel || 'Decrement';
-
-		return (
-			<div class="rui-number-field">
-				<slot name="group">
-					<div class="rui-number-field__group" data-number-field-group>
-						<slot name="input">
-							<input
-								type="text"
-								data-number-field-input
-								data-rui-control
-								data-rui-control-type="number"
-								class="rui-number-field__input"
-								disabled={this.$.disabled}
-								readOnly={this.$.readOnly}
-								name={this.nameAttr}
-							/>
-							<input type="hidden" data-number-field-value />
-						</slot>
-						<div class="rui-number-field__steppers">
-							<slot name="decrement">
-								<button
-									type="button"
-									class="rui-number-field__stepper"
-									data-number-field-action="decrement"
-									aria-label={decrementLabel}
-									disabled={this.$.decreaseDisabled}
-									tabIndex={-1}
-								>
-									−
-								</button>
-							</slot>
-							<slot name="increment">
-								<button
-									type="button"
-									class="rui-number-field__stepper"
-									data-number-field-action="increment"
-									aria-label={incrementLabel}
-									disabled={this.$.increaseDisabled}
-									tabIndex={-1}
-								>
-									+
-								</button>
-							</slot>
-						</div>
-					</div>
-				</slot>
-			</div>
-		);
 	}
 }

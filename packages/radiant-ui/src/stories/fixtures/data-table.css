@@ -1,0 +1,111 @@
+@reference '../../styles/radiant-ui.css';
+
+/**
+ * Layout chrome for the data table example (`<rui-data-table>`).
+ *
+ * Copy-paste bundle:
+ * - data-table.tsx
+ * - data-table.css (this file)
+ * - data.ts
+ * - handlers.msw.ts (Storybook MSW only)
+ *
+ * Requires radiant-ui component styles and a theme (for example `@ecopages/radiant-ui/styles.css`
+ * plus `@ecopages/radiant-ui/themes/default`).
+ */
+rui-data-table {
+	container-type: inline-size;
+	.data-table {
+		@apply mx-auto flex max-w-5xl flex-col gap-4 p-4 sm:p-6;
+	}
+
+	.data-table__panel {
+		@apply flex flex-col gap-4;
+	}
+
+	.data-table__toolbar {
+		@apply flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between;
+	}
+
+	.data-table__search-field {
+		@apply w-full sm:max-w-sm;
+	}
+
+	.data-table__toolbar-actions {
+		@apply flex flex-wrap items-center justify-end gap-2;
+	}
+
+	.data-table__filters {
+		@apply flex w-72 flex-col gap-4 p-4 sm:w-auto;
+	}
+
+	.data-table__filters-title {
+		@apply font-semibold;
+	}
+
+	.data-table__filters-groups {
+		@apply flex flex-col gap-4 sm:flex-row sm:items-start;
+	}
+
+	.data-table__filter-group {
+		@apply flex flex-col gap-1;
+	}
+
+	.data-table__filter-group-label {
+		@apply text-sm font-medium;
+	}
+
+	.data-table__error {
+		@apply m-0 text-sm text-error;
+	}
+
+	.data-table__actions-column {
+		@apply w-32;
+	}
+
+	.data-table__actions-header {
+		@apply relative flex min-h-4 items-center pr-5;
+	}
+
+	.data-table__refresh-spinner {
+		@apply absolute right-0;
+	}
+
+	.data-table__footer {
+		display: grid;
+		gap: 0.75rem;
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-areas:
+			'summary page-size'
+			'pagination pagination';
+		@apply text-sm text-on-surface;
+	}
+
+	.data-table__summary {
+		grid-area: summary;
+		@apply min-w-0;
+	}
+
+	.data-table__pagination {
+		grid-area: pagination;
+		min-width: 0;
+		max-width: 100%;
+		@apply flex justify-center;
+	}
+
+	.data-table__page-size {
+		grid-area: page-size;
+		@apply w-32 justify-self-end;
+	}
+
+	@container (min-width: 48rem) {
+		.data-table__footer {
+			grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+			grid-template-areas: 'summary pagination page-size';
+			align-items: center;
+		}
+	}
+
+	.data-table__sr-only {
+		@apply sr-only;
+	}
+}

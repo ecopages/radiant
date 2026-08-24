@@ -24,9 +24,6 @@ type RuiGridBindings = {
  *
  * @attr {string} label - Accessible name announced when focus enters the grid.
  *
- * @slot - Grid cells authored as `role="row"` / `role="gridcell"` children. Use
- *   the `RuiGrid` view to author rows and cells with BEM classes.
- *
  * @cssclass rui-grid - Root surface (`role="grid"`).
  *
  * @remarks
@@ -37,14 +34,9 @@ type RuiGridBindings = {
 export class RuiGrid extends RadiantElement<RuiGridBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
 
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			const cells = Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]'));
-			applyRovingTabindex(cells, 0);
-		});
+	protected override onConnected(): void {
+		const cells = Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]'));
+		applyRovingTabindex(cells, 0);
 	}
 
 	private getRows(): HTMLElement[] {
@@ -95,13 +87,5 @@ export class RuiGrid extends RadiantElement<RuiGridBindings> {
 		const allCells = Array.from(this.querySelectorAll<HTMLElement>('[role="gridcell"]'));
 		applyRovingTabindex(allCells, allCells.indexOf(target));
 		target.focus();
-	}
-
-	override render() {
-		return (
-			<div class="rui-grid" role="grid" aria-label={this.resolvedAriaLabel}>
-				<slot></slot>
-			</div>
-		);
 	}
 }

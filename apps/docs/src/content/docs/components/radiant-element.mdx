@@ -152,21 +152,7 @@ Keep synchronous setup (event listeners, `MutationObserver`) in `connectedCallba
 
 `onConnected` is not `registerConnectedCallback()`. Those reactive-host callbacks run synchronously at the start of `connectedCallback`, before attribute catch-up.
 
-```typescript
-import { RadiantElement, customElement, prop } from '@ecopages/radiant';
-
-@customElement('status-chip')
-class StatusChip extends RadiantElement {
-  @prop({ type: String, defaultValue: '' }) label!: string;
-
-  protected override onConnected(): void {
-    const labelText = this.querySelector('[data-ref="label"]');
-    if (labelText) {
-      labelText.textContent = this.label;
-    }
-  }
-}
-```
+Most elements do not need this hook. Do not use it to copy a reactive value into JSX-owned DOM; use a JSX binding. Use `@onUpdated(...)` when a property change must synchronize imperative or authored DOM. Reach for `onConnected()` only when first-connect setup genuinely needs the synchronized attributes or committed DOM, and must be repeated after a reconnect. `@query(...)` is unrelated: use it only when that setup needs a live element reference.
 
 ## Bindings And Reactive Reads
 

@@ -1,0 +1,26 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-spinner {
+		@apply inline-block shrink-0 rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none;
+		animation: rui-spinner-spin 0.7s linear infinite;
+	}
+
+	.rui-spinner--sm {
+		@apply size-3;
+	}
+
+	.rui-spinner--md {
+		@apply size-4;
+	}
+
+	.rui-spinner--lg {
+		@apply size-5;
+	}
+
+	@keyframes rui-spinner-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+}

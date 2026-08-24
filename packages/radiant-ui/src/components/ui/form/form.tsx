@@ -28,7 +28,9 @@ export function RuiForm({
 					defaultValuesData ?? (defaultValues !== undefined ? JSON.stringify(defaultValues) : undefined),
 			}}
 		>
-			{children}
+			<form class="rui-form" data-ref="form" noValidate action={action} method={method}>
+				{children}
+			</form>
 		</rui-form>
 	);
 }

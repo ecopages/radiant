@@ -73,7 +73,7 @@ Label text uses `on-background`. Override roles at the theme layer, not in compo
 
 ## API
 
-`RuiCheckbox` is a custom element (`<rui-checkbox>`) rendering a native `<input type="checkbox">` inside a `<label>`, the browser owns activation and Space-to-toggle.
+`RuiCheckbox` renders a view-owned `<label>` and native `<input type="checkbox">` inside the coordinating `<rui-checkbox>` custom element. Use the JSX view or compose equivalent marked-up light DOM; the browser owns activation and Space-to-toggle.
 
 ### Attributes (`<rui-checkbox>`)
 
@@ -85,11 +85,11 @@ Label text uses `on-background`. Override roles at the theme layer, not in compo
 | `value` | `string` | `on` | Value submitted with forms when checked. |
 | `name` | `string` | `''` | Form field name. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| (default) | Visible label for the checkbox. |
+| `RuiCheckbox` children | Visible label for the checkbox. |
 
 ### Events
 

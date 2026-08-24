@@ -1,0 +1,13 @@
+@reference '../../styles/radiant-ui.css';
+
+.slider-shape-demo {
+	@apply flex justify-center p-6;
+}
+
+.slider-shape-demo rui-slider {
+	--rui-slider-track-size: 1.25rem;
+	--rui-slider-thumb-size: 0.875rem;
+	--rui-slider-thumb-border-width: 2px;
+	--rui-slider-thumb-radius: 0;
+	--rui-slider-track-radius: var(--radius-container);
+}

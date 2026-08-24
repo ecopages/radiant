@@ -26,7 +26,7 @@ const TreeNodes = ({ nodes }: { nodes: RuiTreeNode[] }) => (
 						>
 							{node.label}
 						</button>
-						<ul role="group" hidden={!(node.expanded ?? false)}>
+						<ul role="group">
 							<TreeNodes nodes={node.children} />
 						</ul>
 					</>
@@ -58,11 +58,23 @@ const TreeNodes = ({ nodes }: { nodes: RuiTreeNode[] }) => (
  */
 export function RuiTree({
 	nodes,
+	label,
+	children,
 	...props
-}: JsxCustomElementAttributes<RuiTreeElement, RuiTreeProps & { nodes: RuiTreeNode[] }>) {
+}: JsxCustomElementAttributes<RuiTreeElement, RuiTreeProps & { nodes?: RuiTreeNode[] }>) {
+	const content = nodes != null ? <TreeNodes nodes={nodes} /> : children;
+
 	return (
-		<rui-tree {...props}>
-			<TreeNodes nodes={nodes} />
+		<rui-tree {...props} label={label}>
+			<ul
+				class="rui-tree"
+				data-ref="root"
+				role="tree"
+				aria-label={label || undefined}
+				aria-multiselectable="false"
+			>
+				{content}
+			</ul>
 		</rui-tree>
 	);
 }

@@ -71,7 +71,7 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 
 ## API
 
-`RuiField` is a custom element (`<rui-field>`) connecting a slotted control to an ancestor `<rui-form>`.
+`RuiField` is a custom element (`<rui-field>`) connecting a composed control to an ancestor `<rui-form>`.
 
 ### Attributes
 
@@ -91,11 +91,11 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | `defaultValue` | `unknown` | Default value when uncontrolled. |
 | `defaultValueData` | `string` | JSON default value; falls back to `data-default-value`. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
-| *(default)* | Field content: label (`RuiLabel`), control, `RuiFieldDescription`, `RuiFieldError`. |
+| `children` | Field content: label (`RuiLabel`), control, `RuiFieldDescription`, `RuiFieldError`. |
 
 ### View helpers
 

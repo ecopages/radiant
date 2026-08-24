@@ -97,13 +97,10 @@ export class RuiToc extends RadiantElement<RuiTocBindings> {
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.attachNavigationListeners();
-		queueMicrotask(() => {
-			if (!this.isConnected) {
-				return;
-			}
+	}
 
-			this.rebuild();
-		});
+	protected override onConnected(): void {
+		this.rebuild();
 	}
 
 	override disconnectedCallback(): void {

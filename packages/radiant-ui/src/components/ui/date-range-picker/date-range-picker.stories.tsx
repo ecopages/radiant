@@ -23,12 +23,7 @@ const meta = {
 	parameters: {
 		radiant: {
 			element: RuiDateRangePickerElement,
-			cssImports: [
-				'./date-range-picker.css',
-				'../shared/control-toggle.css',
-				'../../../lib/icons/icons.css',
-				'../calendar/calendar.css',
-			],
+			cssImports: ['../../../styles/primitives.css', '../calendar/calendar.css', './date-range-picker.css'],
 		},
 	},
 	args: {

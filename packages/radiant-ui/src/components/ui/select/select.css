@@ -1,14 +1,12 @@
 @reference '../../../styles/radiant-ui.css';
-@import '../shared/control-toggle.css';
-@import '../shared/popover.css';
 
 rui-select {
-	@apply relative inline-flex w-full flex-col;
+	@apply relative inline-flex flex-col;
 }
 
 @layer components {
 	.rui-select {
-		@apply relative w-full text-sm;
+		@apply relative text-sm;
 	}
 
 	.rui-select__control {

@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiSwitchProps = {
@@ -12,12 +12,6 @@ export type RuiSwitchProps = {
 
 export type RuiSwitchChangeDetail = {
 	checked: boolean;
-};
-
-type RuiSwitchBindings = {
-	checked: boolean;
-	disabled: boolean;
-	name: string;
 };
 
 /**
@@ -40,7 +34,6 @@ type RuiSwitchBindings = {
  * - `Space`: toggle the switch
  *
  * @element rui-switch
- * @slot - Visible label for the switch. Must not change with state.
  * @fires rui-change - Emitted after the checked state changes; `detail.checked` holds the new state.
  * @cssclass rui-switch - Label row: track + thumb + visible label.
  * @cssclass rui-switch__input - Native `role="switch"` input (visually hidden).
@@ -49,44 +42,41 @@ type RuiSwitchBindings = {
  * @cssclass rui-switch__label - Light-DOM label text.
  */
 @customElement('rui-switch')
-export class RuiSwitch extends RadiantElement<RuiSwitchBindings> {
+export class RuiSwitch extends RadiantElement {
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) checked: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: String, defaultValue: '' }) name: string;
 
+	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
+
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSwitchChangeDetail>;
 
-	private readonly nameAttr = this.$.name.map((name) => name || undefined);
+	protected override onConnected(): void {
+		this.syncInputState();
+	}
+
+	@bound
+	@onUpdated(['checked', 'disabled', 'name'])
+	syncInputState(): void {
+		const input = this.inputTarget;
+		if (!input) {
+			return;
+		}
+
+		input.checked = this.checked;
+		input.disabled = this.disabled;
+		if (this.name) {
+			input.name = this.name;
+		} else {
+			input.removeAttribute('name');
+		}
+	}
 
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {
 		const input = event.target as HTMLInputElement;
 		this.checked = input.checked;
 		this.changeEvent.emit({ checked: this.checked });
-	}
-
-	override render() {
-		return (
-			<label class="rui-switch">
-				<input
-					type="checkbox"
-					role="switch"
-					data-ref="input"
-					data-rui-control
-					data-rui-control-type="boolean"
-					class="rui-switch__input"
-					prop:checked={this.$.checked}
-					disabled={this.$.disabled}
-					name={this.nameAttr}
-				/>
-				<span class="rui-switch__track" aria-hidden="true">
-					<span class="rui-switch__thumb"></span>
-				</span>
-				<span class="rui-switch__label">
-					<slot></slot>
-				</span>
-			</label>
-		);
 	}
 }

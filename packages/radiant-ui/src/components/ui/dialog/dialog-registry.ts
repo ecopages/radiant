@@ -42,7 +42,6 @@ function resolveDialog(id: string): RuiDialog | null {
 
 function createCloseButton(): HTMLButtonElement {
 	const close = document.createElement('button');
-	close.slot = 'close';
 	close.type = 'button';
 	close.setAttribute('data-dialog-close', '');
 	close.setAttribute('data-ref', 'close');
@@ -54,7 +53,6 @@ function createCloseButton(): HTMLButtonElement {
 
 function createTitle(title: string): HTMLElement {
 	const el = document.createElement('div');
-	el.slot = 'title';
 	el.setAttribute('data-dialog-title', '');
 	el.setAttribute('data-ref', 'title');
 	el.className = 'rui-dialog__title';
@@ -75,7 +73,6 @@ function createBody(body: string): HTMLElement {
 
 function createActions(actions: DialogAction[]): HTMLElement {
 	const row = document.createElement('div');
-	row.slot = 'actions';
 	row.className = 'rui-dialog__actions';
 
 	for (const action of actions) {
@@ -93,6 +90,33 @@ function createActions(actions: DialogAction[]): HTMLElement {
 	return row;
 }
 
+/**
+ * Imperative twin of `DialogShell` in `dialog.tsx` (root / backdrop / surface).
+ *
+ * @remarks Edit both together. Unlike the view — which seeds SSR visibility
+ * from the `open` prop — the registry mounts with `open = true` and lets the
+ * controller's `syncOpenState()` manage `hidden` from connect onward.
+ */
+function createDialogSurface(alert: boolean): HTMLElement {
+	const root = document.createElement('div');
+	root.dataset.ref = 'root';
+	root.className = 'rui-dialog';
+
+	const backdrop = document.createElement('div');
+	backdrop.setAttribute('data-ref', 'backdrop');
+	backdrop.className = 'rui-dialog__backdrop';
+
+	const surface = document.createElement('div');
+	surface.setAttribute('data-ref', 'dialog');
+	surface.className = 'rui-dialog__surface';
+	surface.tabIndex = -1;
+	surface.setAttribute('role', alert ? 'alertdialog' : 'dialog');
+	surface.setAttribute('aria-modal', 'true');
+
+	root.append(backdrop, surface);
+	return root;
+}
+
 function destroyHostDialog(): void {
 	hostDialog?.remove();
 	hostDialog = null;
@@ -105,17 +129,25 @@ function mountHostDialog(options: DialogHostContent): RuiDialog {
 	dialog.id = RUI_DIALOG_HOST_ID;
 	dialog.alert = Boolean(options.alert);
 	dialog.label = options.label ?? '';
+	dialog.open = true;
 
-	dialog.append(createCloseButton());
+	const shell = createDialogSurface(dialog.alert);
+	const surface = shell.querySelector<HTMLElement>('[data-ref="dialog"]');
+	if (!surface) {
+		throw new Error('Failed to create the dialog surface.');
+	}
+
+	surface.append(createCloseButton());
 	if (options.title) {
-		dialog.append(createTitle(options.title));
+		surface.append(createTitle(options.title));
 	}
 	if (options.body) {
-		dialog.append(createBody(options.body));
+		surface.append(createBody(options.body));
 	}
 	if (options.actions?.length) {
-		dialog.append(createActions(options.actions));
+		surface.append(createActions(options.actions));
 	}
+	dialog.append(shell);
 
 	(mountParent ?? document.body).appendChild(dialog);
 	hostDialog = dialog;
@@ -152,8 +184,7 @@ function openNamed(id: string): void {
 function openHost(options: DialogHostContent): void {
 	ensureInstalled();
 	closeCurrentExcept(RUI_DIALOG_HOST_ID);
-	const dialog = mountHostDialog(options);
-	dialog.open = true;
+	mountHostDialog(options);
 	openId = RUI_DIALOG_HOST_ID;
 }
 

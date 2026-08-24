@@ -1,0 +1,53 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-input-group {
+		@apply inline-flex w-full min-w-0 items-stretch overflow-hidden border border-border bg-background;
+		border-radius: var(--radius-control);
+		min-height: var(--size-control-md);
+		transition-duration: var(--duration-normal);
+	}
+
+	.rui-input-group:focus-within {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-input-group:has(.rui-input:disabled) {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-input-group:has(.rui-input[aria-invalid='true']) {
+		@apply border-error;
+	}
+
+	.rui-input-group .rui-input {
+		@apply min-w-0 flex-1 self-stretch border-0 bg-transparent shadow-none;
+		border-radius: 0;
+	}
+
+	.rui-input-group .rui-input:focus-visible {
+		@apply ring-0;
+	}
+
+	.rui-input-group__addon {
+		@apply inline-flex shrink-0 items-center text-on-surface;
+		padding-inline: var(--space-control-x);
+		font-size: var(--text-control, 0.875rem);
+	}
+
+	.rui-input-group__addon--start {
+		@apply border-r border-border;
+	}
+
+	.rui-input-group__addon--end {
+		@apply border-l border-border;
+	}
+
+	.rui-input-group__text {
+		@apply text-on-surface opacity-70;
+	}
+
+	.rui-input-group__addon .rui-button {
+		@apply -mx-1;
+	}
+}

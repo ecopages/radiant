@@ -46,6 +46,14 @@ Use `filled` for the main action, `outline` for a supporting action, and `ghost`
 
 Pass `href` when the control should navigate; `variant` only changes appearance.
 
+Use the `square` modifier for an icon-only action. It keeps the selected control size on both axes; provide an `aria-label` because it has no visible text.
+
+```tsx
+<RuiButton size="sm" square aria-label="Add item">
+	<AddIcon />
+</RuiButton>
+```
+
 <Canvas of={Destructive} meta={ButtonMeta} />
 <br />
 <Canvas of={Ghost} meta={ButtonMeta} />
@@ -86,6 +94,7 @@ Override at the theme layer (`tokens/presets/colors/*.css`), not in component CS
 | --- | --- | --- | --- |
 | `variant` | `filled` · `outline` · `destructive` · `ghost` · `link` | `filled` | Visual tone. |
 | `size` | `none` · `sm` · `md` · `lg` | `md` | Control size; `none` for inline `link` chrome. |
+| `square` | `boolean` | `false` | Makes the selected control size square for icon-only actions. |
 | `aria-label` | `string` | | Accessible name when there is no visible text. |
 
 ### Button branch props
@@ -122,6 +131,7 @@ Public BEM classes on the rendered element (documented via `@cssclass` on `RuiBu
 | `.rui-button--link` | Inline link-styled action. |
 | `.rui-button--none` | No fixed size (inline `link` chrome). |
 | `.rui-button--sm` · `.rui-button--md` · `.rui-button--lg` | Control sizes. |
+| `.rui-button--square` | Square control for icon-only actions. |
 
 ### Theme roles (per `variant`)
 

@@ -7,8 +7,10 @@ export type RuiButtonSize = 'none' | 'sm' | 'md' | 'lg';
 type RuiButtonChrome = {
 	/** Visual style. Default: `filled`. */
 	variant?: RuiButtonVariant;
-	/** Control size. Default: `md` (Default in docs). Use `none` for inline `link` chrome. */
+	/** Control size. Default: `md`. Use `none` for inline `link` chrome. */
 	size?: RuiButtonSize;
+	/** Makes a control-sized button square, for example for an icon-only action. */
+	square?: boolean;
 };
 
 export type RuiButtonControlProps = JsxElementProps<HTMLButtonElement> &
@@ -72,8 +74,10 @@ function invokeClickListener(listener: unknown, event: Event) {
  *
  * @remarks
  * Default/`md` height uses `--size-control-md`, the same token as `RuiInput`, so
- * form rows align. `none` omits fixed height and padding for inline `link`
- * actions. Styles live in `./button.css`.
+ * form rows align. Inline padding is a step above `--space-control-x` so
+ * labels are not as tight as field chrome. `none` omits fixed height and padding for inline `link`
+ * actions. `square` makes the selected control size equal on both axes, making
+ * it suitable for icon-only actions. Styles live in `./button.css`.
  *
  * Variant tones map to semantic action roles — `primary` for filled, `error`
  * (destructive) for destructive — never palette steps.
@@ -90,10 +94,11 @@ function invokeClickListener(listener: unknown, event: Event) {
  * @cssclass rui-button--sm - Small control height.
  * @cssclass rui-button--md - Default control height.
  * @cssclass rui-button--lg - Large control height.
+ * @cssclass rui-button--square - Square control for icon-only actions.
  */
 export function RuiButton(props: RuiButtonProps) {
 	if (props.href !== undefined) {
-		const { href, target, rel, download, children, class: className, variant, size, ...host } = props;
+		const { href, target, rel, download, children, class: className, variant, size, square, ...host } = props;
 
 		return (
 			<a
@@ -102,7 +107,7 @@ export function RuiButton(props: RuiButtonProps) {
 				target={target}
 				rel={rel}
 				download={download}
-				class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, className)}
+				class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, square && 'rui-button--square', className)}
 			>
 				{children}
 			</a>
@@ -112,6 +117,7 @@ export function RuiButton(props: RuiButtonProps) {
 	const {
 		variant,
 		size,
+		square,
 		class: className,
 		children,
 		type = 'button',
@@ -136,7 +142,7 @@ export function RuiButton(props: RuiButtonProps) {
 		<button
 			{...host}
 			type={type}
-			class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, className)}
+			class={cx('rui-button', `rui-button--${variant ?? 'filled'}`, `rui-button--${size ?? 'md'}`, square && 'rui-button--square', className)}
 			disabled={disabled}
 			aria-pressed={resolveAriaPressed(pressed, toggle, defaultPressed)}
 			data-toggle={toggle && pressed === undefined ? '' : undefined}

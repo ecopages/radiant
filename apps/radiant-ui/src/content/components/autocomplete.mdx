@@ -70,27 +70,27 @@ The filtered results themselves are `RuiListbox` / `RuiListboxOption` and follow
 
 ## API
 
-`RuiAutocomplete` is a custom element (`<rui-autocomplete>`) that filters its slotted collection; the view helpers own the composed input and empty-state markup.
+`RuiAutocomplete` is a custom element (`<rui-autocomplete>`) that filters its composed collection; the view helpers own the composed input and empty-state markup.
 
 ### Attributes
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
 | `sensitivity` | `base` · `case` · `accent` | `base` | Filter sensitivity for substring matching. |
-| `input-value` | `string` | `''` | Controlled filter query; when unset, reads from the slotted input. |
+| `input-value` | `string` | `''` | Controlled filter query; when unset, reads from the composed input. |
 
-### Slots
+### Composition
 
-| Slot | Description |
+| Piece | Description |
 | --- | --- |
 | `input` | Search field (`RuiAutocompleteInput`). |
-| *(default)* | Filterable collection of `[role="option"]`, `[role="menuitem"]`, or `[data-tag]` items. |
+| `children` | Filterable collection of `[role="option"]`, `[role="menuitem"]`, or `[data-tag]` items. |
 
 ### View helpers
 
 | Component | Renders |
 | --- | --- |
-| `RuiAutocompleteInput` | Bordered search input (slotted into `input`). |
+| `RuiAutocompleteInput` | Bordered search input (composed via `RuiAutocompleteInput`). |
 | `RuiAutocompleteCollection` | Scrollable wrapper for the filterable options. |
 | `RuiAutocompleteEmpty` | No-results state, hidden while matches exist. |
 

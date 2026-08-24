@@ -23,8 +23,6 @@ type RuiNavigationMenuBindings = {
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/
  * @element rui-navigation-menu
  * @attr {string} label - Accessible name for the `nav` landmark.
- * @slot triggers - Top-level navigation triggers and plain links.
- * @slot panels - Disclosure panels composed from other primitives.
  * @cssclass rui-navigation-menu - Root `nav` surface.
  * @cssclass rui-navigation-menu__bar - Top-level trigger / link bar.
  * @cssclass rui-navigation-menu__panels - Panel region (`aria-hidden` toggling).
@@ -33,16 +31,11 @@ type RuiNavigationMenuBindings = {
 export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings> {
 	@prop({ type: String, defaultValue: '' }) label: string;
 
-	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
-
 	private openValue: string | null = null;
 
-	override connectedCallback(): void {
-		super.connectedCallback();
-		queueMicrotask(() => {
-			this.syncPanels();
-			this.syncBarRovingTabindex();
-		});
+	protected override onConnected(): void {
+		this.syncPanels();
+		this.syncBarRovingTabindex();
 	}
 
 	private getBarItems(): HTMLElement[] {
@@ -106,7 +99,7 @@ export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings>
 		for (const panel of this.getPanels()) {
 			const value = panel.getAttribute('data-value') ?? '';
 			const open = this.openValue === value;
-			panel.hidden = !open;
+			panel.toggleAttribute('hidden', !open);
 			panel.dataset.state = open ? 'open' : 'closed';
 			panel.setAttribute('aria-hidden', String(!open));
 
@@ -357,18 +350,5 @@ export class RuiNavigationMenu extends RadiantElement<RuiNavigationMenuBindings>
 		}
 
 		event.preventDefault();
-	}
-
-	override render() {
-		return (
-			<nav class="rui-navigation-menu" data-ref="root" aria-label={this.resolvedAriaLabel}>
-				<div class="rui-navigation-menu__bar">
-					<slot name="triggers"></slot>
-				</div>
-				<div class="rui-navigation-menu__panels">
-					<slot name="panels"></slot>
-				</div>
-			</nav>
-		);
 	}
 }
