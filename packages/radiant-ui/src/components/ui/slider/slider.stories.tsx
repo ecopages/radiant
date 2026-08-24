@@ -288,6 +288,28 @@ export const RangeMinDistance: Story = {
 	},
 };
 
+export const FractionalStep: Story = {
+	args: {
+		label: 'Mix',
+		min: 0,
+		max: 1,
+		step: 0.1,
+		value: 0.2,
+		showValue: true,
+	},
+	play: async ({ canvasElement: root, step }) => {
+		const host = root.querySelector('rui-slider') as HTMLElement;
+		const thumb = getSingleThumb(root);
+
+		await step('keeps fractional steps free of binary float noise', async () => {
+			thumb.focus();
+			await userEvent.keyboard('{ArrowRight}');
+			await expect(host).toHaveAttribute('value', '0.3');
+			await expect(getValueLabel(root)).toHaveTextContent('0.3');
+		});
+	},
+};
+
 export const AsField: Story = {
 	render: () => (
 		<RuiField name="volume">

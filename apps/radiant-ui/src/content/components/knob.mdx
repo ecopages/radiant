@@ -44,6 +44,8 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 Use `valuePosition="below"` to place the readout under the knob, or `showValue={false}` when the value is shown elsewhere. `valueTemplate` replaces the first `{value}` token with the formatted value.
 
+Fractional `step` values are rounded to the step's decimal places so committed values stay clean (`0.3` instead of `0.30000000000000004`). Set `precision` to cap fraction digits, or pass `parseValue` for custom rounding.
+
 Set `--rui-knob-size` for CSS-controlled sizing. The numeric `size` prop overrides this variable when a specific pixel diameter is needed.
 
 ```css
@@ -76,6 +78,7 @@ The knob consumes semantic roles by default. Override its public custom properti
 | `min` | `number` | `0` | Range minimum. |
 | `max` | `number` | `100` | Range maximum. |
 | `step` | `number` | `1` | Pointer and keyboard snap interval. |
+| `precision` | `number` | decimal places in `step` | Maximum fraction digits on committed values. |
 | `disabled` | `boolean` | `false` | Disables interaction. |
 | `read-only` | `boolean` | `false` | Blocks changes but allows focus. |
 | `label` | `string` | `''` | Visible and accessible name. |
@@ -85,6 +88,8 @@ The knob consumes semantic roles by default. Override its public custom properti
 | `show-value` | `boolean` | `true` | Shows the value inside the ring. |
 | `value-position` | `center` · `below` | `center` | Places the value inside or below the knob. |
 | `value-template` | `string` | `'{value}'` | Readout template. |
+
+`parseValue` is a function prop (`(value: number) => number`), not an attribute. Pass it to `RuiKnob`.
 
 ### Events
 

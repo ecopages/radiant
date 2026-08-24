@@ -47,9 +47,19 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Use `variant="range"` for minimum/maximum filters. Set `minDistance` to prevent the thumbs from overlapping.</p>
 
-## Step size
+## Step size and precision
 
-<p>Match `step` to meaningful increments, such as whole percentages, not arbitrary fractions.</p>
+<p>Match `step` to meaningful increments. Fractional steps such as `0.1` are rounded to the step's decimal places, so committed values stay `0.3` instead of `0.30000000000000004`.</p>
+
+<p>Set `precision` when you need a different maximum number of fraction digits than `step` implies. Pass `parseValue` for custom rounding.</p>
+
+```tsx
+<RuiSlider min={0} max={1} step={0.1} value={0.3} showValue />
+
+<RuiSlider min={0} max={1} step={0.001} precision={2} showValue />
+
+<RuiSlider min={0} max={1} step={0.001} parseValue={(value) => Number(value.toPrecision(3))} showValue />
+```
 
 ## Theming
 
@@ -93,6 +103,7 @@ Switching the radius pack (sharp, default, soft) updates both when they referenc
 | `min` | `number` | `0` | Range minimum. |
 | `max` | `number` | `100` | Range maximum. |
 | `step` | `number` | `1` | Arrow-key and pointer snap interval. |
+| `precision` | `number` | decimal places in `step` | Maximum fraction digits on committed values. |
 | `min-distance` | `number` | `0` | Minimum gap enforced between range thumbs. |
 | `disabled` | `boolean` | `false` | Disables interaction. |
 | `read-only` | `boolean` | `false` | Prevents value changes while leaving thumbs focusable. |
@@ -100,6 +111,8 @@ Switching the radius pack (sharp, default, soft) updates both when they referenc
 | `name` | `string` | `''` | Form field name. Range mode also submits `{name}-max`. |
 | `show-value` | `boolean` | `false` | Shows the default value readout below the track. |
 | `value-title` | `boolean` | `false` | Mirrors the live value in the control `title` on hover. |
+
+`parseValue` is a function prop (`(value: number) => number`), not an attribute. Pass it to `RuiSlider`.
 
 ### Events
 

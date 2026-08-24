@@ -40,6 +40,22 @@ export const Default: Story = {
 	},
 };
 
+export const FractionalStep: Story = {
+	args: { label: 'Mix', value: 0.2, min: 0, max: 1, step: 0.1, name: 'mix' },
+	play: async ({ canvasElement, step }) => {
+		const host = canvasElement.querySelector('rui-knob') as HTMLElement;
+		const control = getControl(canvasElement);
+
+		await step('keeps fractional steps free of binary float noise', async () => {
+			control.focus();
+			await userEvent.keyboard('{ArrowRight}');
+			await expect(host).toHaveAttribute('value', '0.3');
+			await expect(control).toHaveAttribute('aria-valuenow', '0.3');
+			await expect(canvasElement.querySelector('.rui-knob__value')).toHaveTextContent('0.3');
+		});
+	},
+};
+
 export const ReadOnly: Story = {
 	render: () => <RuiKnob label="Gain" value={50} min={0} max={100} step={1} readOnly />,
 	play: async ({ canvasElement, step }) => {
