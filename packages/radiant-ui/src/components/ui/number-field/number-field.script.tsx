@@ -38,16 +38,6 @@ export type RuiNumberFieldProps = {
 
 export type RuiNumberFieldChangeDetail = { value: number };
 
-type RuiNumberFieldBindings = {
-	value: number;
-	disabled: boolean;
-	readOnly: boolean;
-	label: string;
-	name: string;
-	decreaseDisabled: boolean;
-	increaseDisabled: boolean;
-};
-
 /**
  * `<rui-number-field>` — a locale-aware number input with optional stepper buttons.
  *
@@ -83,7 +73,7 @@ type RuiNumberFieldBindings = {
  * @cssclass rui-number-field - Root field wrapper.
  */
 @customElement('rui-number-field')
-export class RuiNumberField extends RadiantElement<RuiNumberFieldBindings> {
+export class RuiNumberField extends RadiantElement {
 	@prop({ type: Number, reflect: true }) value: number | undefined;
 	@prop({ type: Number, attribute: 'default-value' }) defaultValue: number | undefined;
 	@prop({ type: Number, attribute: 'min-value', defaultValue: Number.NEGATIVE_INFINITY }) minValue: number;

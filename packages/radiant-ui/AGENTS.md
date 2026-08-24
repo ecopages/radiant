@@ -47,6 +47,29 @@ drift when the parent re-renders.
 - **Do not use HTML `<slot>` as the public JSX API.** Drop `slot=` on helpers
   and `@slot` TSDoc once view helpers own the layout.
 
+### Two host shapes (bindings vs imperative paint)
+
+`this.$` / `this.bindings` only patch JSX ranges the host's own `render()` or
+`hydrate()` pass created. They do not reach parent-authored light DOM inside the
+custom element. Pick one shape per component:
+
+- **View-owned shell** (most composites): no `render()` override, no
+  `RadiantElement<Bindings>` generic. The view places chrome; the CE queries
+  `data-ref` and imperatively updates volatile text, ARIA, CSS variables, and
+  `toggleAttribute` during interaction. Do not move this chrome into CE
+  `render()` to "use bindings" — that either reintroduces `<slot>` projection
+  (range drift) or drops composable children.
+- **CE-owned tree** (meter, toaster, calendar, TOC): override `render()` for
+  derived structure. Use plain reads (`this.variant`, `this.entries`) for
+  branches, lists, and `class`; use `this.$` for stable leaf text and whole
+  attribute values that should patch without a full host rerender. Do not add
+  `@onUpdated` + `requestUpdate()` for fields already bound with `this.$` —
+  tracked `render()` handles structural reads; bindings handle leaves.
+- **Never** CE `render()` + `<slot>` for parent-owned chrome.
+
+Omit the `Bindings` generic unless the script actually uses `this.$`,
+`this.bindings`, or `this.bind(...)`.
+
 ### Connect-time sync
 
 Do not write `connectedCallback` + `queueMicrotask(sync)` boilerplate. Override

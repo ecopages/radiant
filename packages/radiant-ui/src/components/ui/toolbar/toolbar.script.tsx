@@ -8,10 +8,6 @@ export type RuiToolbarProps = {
 	exclusiveToggles?: boolean;
 };
 
-type RuiToolbarBindings = {
-	label: string;
-};
-
 /**
  * `<rui-toolbar>` — a container for grouping controls.
  *
@@ -25,7 +21,7 @@ type RuiToolbarBindings = {
  * @cssclass rui-toolbar - Toolbar surface (`role="toolbar"`).
  */
 @customElement('rui-toolbar')
-export class RuiToolbar extends RadiantElement<RuiToolbarBindings> {
+export class RuiToolbar extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) exclusiveToggles: boolean;
 

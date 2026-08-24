@@ -71,6 +71,18 @@ state (toast list, TOC links, calendar cells). Popup visibility and other
 volatile attrs toggled by the CE use `toggleAttribute` so parent re-renders do
 not fight imperative updates. See `AGENTS.md` for the full rule.
 
+## Two host shapes
+
+Most composites use a **view-owned shell**: the JSX helper places chrome, the
+custom element has no `render()`, and volatile readouts update imperatively via
+`data-ref` (knob, slider, dialog, select). `this.$` bindings only patch ranges
+inside a host `render()` tree — they do not reach parent-authored light DOM.
+
+**CE-owned trees** override `render()` when the CE generates structure (meter,
+toaster, calendar, TOC). Use plain reads for branches and lists; use `this.$`
+for stable leaf text and whole attribute values. Do not combine CE `render()` with
+`<slot>` for parent-owned chrome.
+
 ## Conventions
 
 - One directory per component in `src/components/ui/<name>/`:

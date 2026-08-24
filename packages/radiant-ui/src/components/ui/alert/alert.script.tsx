@@ -27,13 +27,6 @@ export type RuiAlertCloseDetail = {
 	reason: 'dismiss';
 };
 
-type RuiAlertBindings = {
-	variant: RuiAlertVariant;
-	layout: RuiAlertLayout;
-	dismissible: boolean;
-	closeLabel: string;
-};
-
 /**
  * `<rui-alert>` — a brief, important message that attracts attention
  * without interrupting the user's task.
@@ -70,7 +63,7 @@ type RuiAlertBindings = {
  * need equivalent lifecycle wiring; the CE keeps that behavior self-contained.
  */
 @customElement('rui-alert')
-export class RuiAlert extends RadiantElement<RuiAlertBindings> {
+export class RuiAlert extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: 'info' }) variant: RuiAlertVariant;
 	@prop({ type: String, reflect: true, defaultValue: 'inline' }) layout: RuiAlertLayout;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) dismissible: boolean;

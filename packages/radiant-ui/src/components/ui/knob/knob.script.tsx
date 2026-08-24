@@ -23,8 +23,6 @@ export type RuiKnobProps = {
 
 export type RuiKnobChangeDetail = { value: number };
 
-type RuiKnobBindings = Record<string, never>;
-
 /**
  * `<rui-knob>` — select a numeric value with a rotary control.
  *
@@ -68,7 +66,7 @@ type RuiKnobBindings = Record<string, never>;
  * @cssclass rui-knob__value - Value readout inside the ring.
  */
 @customElement('rui-knob')
-export class RuiKnob extends RadiantElement<RuiKnobBindings> {
+export class RuiKnob extends RadiantElement {
 	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;

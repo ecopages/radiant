@@ -37,12 +37,6 @@ export type RuiDateRangePickerChangeDetail = {
 
 type EditingField = 'start' | 'end' | null;
 
-type RuiDateRangePickerBindings = {
-	disabled: boolean;
-	readOnly: boolean;
-	open: boolean;
-};
-
 /**
  * `<rui-date-range-picker>` — start/end date fields with a range calendar popover.
  *
@@ -81,7 +75,7 @@ type RuiDateRangePickerBindings = {
  * @cssclass rui-date-range-picker__popover - Range calendar popup shell (`rui-popover` / `rui-floating`).
  */
 @customElement('rui-date-range-picker')
-export class RuiDateRangePicker extends RadiantElement<RuiDateRangePickerBindings> {
+export class RuiDateRangePicker extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;

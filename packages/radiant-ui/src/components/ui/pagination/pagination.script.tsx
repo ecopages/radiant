@@ -19,14 +19,6 @@ export type RuiPageChangeDetail = { page: number };
  */
 export const PAGINATION_DEFAULT_LABEL = 'Pagination';
 
-type RuiPaginationBindings = {
-	label: string;
-	page: number;
-	pageCount: number;
-	disabled: boolean;
-	siblingCount: number;
-};
-
 export function clampPage(page: number, pageCount: number): number {
 	return Math.min(Math.max(1, Math.floor(page) || 1), pageCount);
 }
@@ -51,7 +43,7 @@ export function clampPage(page: number, pageCount: number): number {
  * @cssclass rui-pagination__ellipsis - Hidden range marker between page numbers.
  */
 @customElement('rui-pagination')
-export class RuiPagination extends RadiantElement<RuiPaginationBindings> {
+export class RuiPagination extends RadiantElement {
 	@prop({ type: String, defaultValue: PAGINATION_DEFAULT_LABEL }) label: string;
 	@prop({ type: Number, reflect: true, defaultValue: 1 }) page: number;
 	@prop({ type: Number, attribute: 'page-count', defaultValue: 1 }) pageCount: number;

@@ -21,14 +21,6 @@ export type RuiTableChangeDetail = { value: string };
 export type RuiTableSortChangeDetail = { column: string; direction: RuiTableSortDirection };
 export type RuiTableRowActionDetail = { rowId: string };
 
-type RuiTableBindings = {
-	label: string;
-	ariaBusy: 'true' | 'false';
-	selectionMode: RuiTableSelectionMode;
-	sortColumn: string;
-	sortDirection: RuiTableSortDirection;
-};
-
 /**
  * `<rui-table>` — a keyboard-navigable table with optional row selection and sorting.
  *
@@ -49,7 +41,7 @@ type RuiTableBindings = {
  * @fires rui-row-action - Emitted when an actionable row is activated.
  */
 @customElement('rui-table')
-export class RuiTable extends RadiantElement<RuiTableBindings> {
+export class RuiTable extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, attribute: 'aria-busy', defaultValue: 'false' }) ariaBusy: 'true' | 'false';
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'none' }) selectionMode: RuiTableSelectionMode;
