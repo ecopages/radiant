@@ -1,5 +1,51 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.3
+
+### Minor Changes
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`4f51ceb`](https://github.com/ecopages/radiant/commit/4f51cebbda41329d4629a6babe32cbed8e10e106) Thanks [@andeeplus](https://github.com/andeeplus)! - Add a `square` modifier to `RuiButton` for icon-only actions, composable with control sizes such as `sm` and `lg`.
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`0abab03`](https://github.com/ecopages/radiant/commit/0abab036d3e97af72266508d2cf026ae8b236611) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `RuiSpinner`, `RuiBadge`, and `RuiInputGroup` for loading indicators, status labels, and input addons.
+
+    **@ecopages/radiant-ui**
+
+    - `RuiSpinner` — inline loading indicator with `sm` / `md` / `lg` sizes.
+    - `RuiBadge` — compact status label with `filled`, `outline`, `destructive`, `ghost`, and `muted` variants.
+    - `RuiInputGroup` — bordered row for `RuiInput` with leading/trailing addons (`RuiInputGroupAddon`, `RuiInputGroupText`).
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`5d6adfa`](https://github.com/ecopages/radiant/commit/5d6adfa8dff3eaf414c91ba84ca90b02f8cb6fde) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `RuiHoverCard` for rich hover previews with composable trigger and content.
+
+- [#173](https://github.com/ecopages/radiant/pull/173) [`c5f5805`](https://github.com/ecopages/radiant/commit/c5f5805a2151de186d2ff6506660eae8e6bde027) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `RuiKnob`, a rotary numeric control with a 300° value arc, keyboard stepping, and optional value readout.
+
+- [#173](https://github.com/ecopages/radiant/pull/173) [`c5f5805`](https://github.com/ecopages/radiant/commit/c5f5805a2151de186d2ff6506660eae8e6bde027) Thanks [@andeeplus](https://github.com/andeeplus)! - Move composite JSX APIs to view-owned light-DOM shells so parent reconciliation no longer fights custom-element slot projection.
+
+    **@ecopages/radiant-ui**
+
+    - Composite `Rui*` views now own chrome and author children in the light DOM; coordinating custom elements query `data-ref` / `data-*` targets and toggle volatile attrs imperatively instead of re-rendering through CE `<slot>`.
+
+        This is a breaking pre-1.0 change for consumers who authored the previous slot-based markup directly: migrate to the documented `Rui*` view helpers or equivalent light-DOM structure.
+
+    - Migrated composites include table, dialog, form, field, select, listbox, checkbox, combobox, autocomplete, menu-button, tooltip, hover-card, switch, breadcrumb, popover, toolbar, grid, tree, treegrid, tag-group, menubar, disclosure (and group), window-splitter, number-field, navigation-menu, carousel, and sidebar (with trigger).
+    - Popup visibility and placeholder state use `toggleAttribute` so parent re-renders do not fight `moveRangeBefore`.
+    - Table sync narrows imperative `tabIndex` updates to structure changes and keyboard focus, avoiding churn during `aria-busy` refreshes.
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`496bf19`](https://github.com/ecopages/radiant/commit/496bf194d90ed760120b9183f3b99b67291319c5) Thanks [@andeeplus](https://github.com/andeeplus)! - Add composable Table and Pagination primitives with keyboard navigation, row selection, sorting, accessible page navigation, and responsive table layouts.
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`feab2d2`](https://github.com/ecopages/radiant/commit/feab2d23e06f1ebe7de87b05fe29d59407d83e9f) Thanks [@andeeplus](https://github.com/andeeplus)! - Range sliders now submit `[min, max]` through forms (`name` plus `name-max`), share the numeric keyboard model with knobs, and keep vertical fill positioning in CSS.
+
+### Patch Changes
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`4f51ceb`](https://github.com/ecopages/radiant/commit/4f51cebbda41329d4629a6babe32cbed8e10e106) Thanks [@andeeplus](https://github.com/andeeplus)! - Give `RuiButton` slightly more inline padding than field chrome so short labels sit more comfortably at each control size.
+
+- [#173](https://github.com/ecopages/radiant/pull/173) [`c5f5805`](https://github.com/ecopages/radiant/commit/c5f5805a2151de186d2ff6506660eae8e6bde027) Thanks [@andeeplus](https://github.com/andeeplus)! - When a menu button popup includes `[data-autocomplete-input]`, opening the menu focuses that field so items can be filtered immediately.
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`0bd6e21`](https://github.com/ecopages/radiant/commit/0bd6e21b7c28b8954ccae05f5348fb8a14b3a650) Thanks [@andeeplus](https://github.com/andeeplus)! - Make Pagination compact below 40rem: icon-only previous/next and a non-interactive `{page} / {count}` status. Numbered page controls stay on wider viewports.
+
+- [#173](https://github.com/ecopages/radiant/pull/173) [`c5f5805`](https://github.com/ecopages/radiant/commit/c5f5805a2151de186d2ff6506660eae8e6bde027) Thanks [@andeeplus](https://github.com/andeeplus)! - Pointer drags on `RuiSlider` move focus to the active thumb so keyboard follow-up and assistive tech stay on the value being adjusted.
+
+- [#179](https://github.com/ecopages/radiant/pull/179) [`4f51ceb`](https://github.com/ecopages/radiant/commit/4f51cebbda41329d4629a6babe32cbed8e10e106) Thanks [@andeeplus](https://github.com/andeeplus)! - Make the `xl` headline preset larger than `lg`.
+
 ## 0.1.0-rc.2
 
 ### Patch Changes
