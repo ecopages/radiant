@@ -140,4 +140,5 @@ Use `@apply` with theme-mapped utilities when they exist (`rounded-control`, `bg
 ## Related docs
 
 - [`README.md`](./README.md) — develop and build scripts
-- [`AGENTS.md`](./AGENTS.md) — agent guidance for component authoring
+- [`AGENTS.md`](./AGENTS.md) — agent working rules
+- [`src/components/ui/README.md`](./src/components/ui/README.md) — component authoring architecture
