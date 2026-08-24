@@ -71,8 +71,6 @@ export function clearLegacyThemeArtifacts(): void {
 	const root = document.documentElement;
 	delete root.dataset.ruiTheme;
 	delete root.dataset.theme;
-	delete root.dataset.ruiSpacing;
-	delete root.dataset.ruiRadius;
 }
 
 /**
@@ -94,6 +92,16 @@ export function applyDesignTokens(globals: DesignTokenGlobals): void {
 	const colorMode = String(globals.ruiColorMode ?? 'light');
 
 	root.dataset.ruiColors = colors;
+	if (spacing === 'default') {
+		delete root.dataset.ruiSpacing;
+	} else {
+		root.dataset.ruiSpacing = spacing;
+	}
+	if (radius === 'default') {
+		delete root.dataset.ruiRadius;
+	} else {
+		root.dataset.ruiRadius = radius;
+	}
 	root.classList.toggle('dark', colorMode === 'dark');
 	syncTokenStylesheet('spacing', SPACING_SHEETS[spacing]);
 	syncTokenStylesheet('radius', RADIUS_SHEETS[radius]);

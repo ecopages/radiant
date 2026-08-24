@@ -363,8 +363,11 @@
 			]
 		},
 		"tooltip": {
-			"direct": [],
+			"direct": [
+				"primitives"
+			],
 			"styles": [
+				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/tooltip/styles.css"
 			]
 		},
