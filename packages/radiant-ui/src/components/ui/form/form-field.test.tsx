@@ -36,7 +36,7 @@ describe('RuiField view', () => {
 	});
 });
 
-	describe('rui-field composed content discovery', () => {
+describe('rui-field composed content discovery', () => {
 	it('calls RuiForm onSubmit with validated values', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
