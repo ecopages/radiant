@@ -1,7 +1,7 @@
 export const SLIDER_PAGE_STEP_MULTIPLIER = 10;
 
 /**
- * Maximum fraction digits applied when snapping slider and knob values.
+ * Maximum fraction digits for slider and knob readouts.
  *
  * @remarks
  * IEEE-754 doubles cannot uniquely represent more than this many fraction digits,
@@ -9,32 +9,17 @@ export const SLIDER_PAGE_STEP_MULTIPLIER = 10;
  */
 export const MAX_VALUE_FRACTION_DIGITS = 15;
 
-/** Transforms a snapped numeric value before it is committed. */
-export type NumericValueParser = (value: number) => number;
-
-export type NumericRangeOptions = {
-	/**
-	 * Maximum fraction digits on committed values.
-	 * Defaults to the decimal places in `step`.
-	 */
-	precision?: number;
-	/** Transforms the snapped value before it is committed. */
-	parseValue?: NumericValueParser;
-};
-
 export type NumericRange = {
 	lowerBound: number;
 	upperBound: number;
 	step: number;
-	precision: number;
 	clamp: (value: number) => number;
-	format: (value: number) => string;
 	ratioFor: (value: number) => number;
 	valueFromRatio: (ratio: number) => number;
 };
 
 /**
- * Decimal places in a step interval, used as the default value precision.
+ * Decimal places in a step interval, used as the default readout precision.
  */
 export function fractionDigitsFromStep(step: number): number {
 	if (!Number.isFinite(step) || step <= 0) {
@@ -51,59 +36,42 @@ export function fractionDigitsFromStep(step: number): number {
 	return Math.min(MAX_VALUE_FRACTION_DIGITS, Math.max(0, decimals - exponent));
 }
 
-function resolvePrecision(step: number, precision: number | undefined): number {
-	if (typeof precision === 'number' && Number.isFinite(precision) && precision >= 0) {
-		return Math.min(MAX_VALUE_FRACTION_DIGITS, Math.round(precision));
+/**
+ * Resolves readout fraction digits from `valuePrecision` or the decimal places in `step`.
+ */
+export function resolveValuePrecision(step: number, valuePrecision: number | undefined): number {
+	if (typeof valuePrecision === 'number' && Number.isFinite(valuePrecision) && valuePrecision >= 0) {
+		return Math.min(MAX_VALUE_FRACTION_DIGITS, Math.round(valuePrecision));
 	}
 
 	return fractionDigitsFromStep(step);
 }
 
-function roundToPrecision(value: number, precision: number): number {
-	if (!Number.isFinite(value)) {
-		return value;
-	}
-
-	if (precision <= 0) {
-		return Math.round(value);
-	}
-
-	return Number(value.toFixed(precision));
+/** Formats a numeric value for readouts, tooltips, and `aria-valuetext`. */
+export function formatNumericValue(value: number, valuePrecision: number): string {
+	return Number.isFinite(value) ? value.toFixed(valuePrecision) : '';
 }
 
 /** Normalizes numeric-control bounds and step values into a stable interaction model. */
-export function createNumericRange(
-	min: number,
-	max: number,
-	step: number,
-	options: NumericRangeOptions = {},
-): NumericRange {
+export function createNumericRange(min: number, max: number, step: number): NumericRange {
 	const resolvedMin = Number.isFinite(min) ? min : 0;
 	const resolvedMax = Number.isFinite(max) ? max : 100;
 	const lowerBound = Math.min(resolvedMin, resolvedMax);
 	const upperBound = Math.max(resolvedMin, resolvedMax);
 	const resolvedStep = Number.isFinite(step) && step > 0 ? step : 1;
 	const span = upperBound - lowerBound;
-	const precision = resolvePrecision(resolvedStep, options.precision);
-	const parseValue = typeof options.parseValue === 'function' ? options.parseValue : undefined;
 
 	const clamp = (value: number): number => {
 		const candidate = Number.isFinite(value) ? value : lowerBound;
 		const stepped = lowerBound + Math.round((candidate - lowerBound) / resolvedStep) * resolvedStep;
-		const bounded = Math.min(upperBound, Math.max(lowerBound, stepped));
-		const rounded = roundToPrecision(bounded, precision);
-		const parsed = parseValue ? parseValue(rounded) : rounded;
-		const finite = Number.isFinite(parsed) ? parsed : rounded;
-		return Math.min(upperBound, Math.max(lowerBound, finite));
+		return Math.min(upperBound, Math.max(lowerBound, stepped));
 	};
 
 	return {
 		lowerBound,
 		upperBound,
 		step: resolvedStep,
-		precision,
 		clamp,
-		format: (value) => (Number.isFinite(value) ? value.toFixed(precision) : ''),
 		ratioFor: (value) => (span === 0 ? 0 : (clamp(value) - lowerBound) / span),
 		valueFromRatio: (ratio) => {
 			const unit = Math.min(1, Math.max(0, Number.isFinite(ratio) ? ratio : 0));

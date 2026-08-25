@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createNumericRange, fractionDigitsFromStep, valueFromSliderKey } from './numeric-range';
+import {
+	createNumericRange,
+	formatNumericValue,
+	fractionDigitsFromStep,
+	resolveValuePrecision,
+	valueFromSliderKey,
+} from './numeric-range';
 
 describe('createNumericRange', () => {
 	it('anchors steps at the lower bound', () => {
@@ -26,26 +32,41 @@ describe('createNumericRange', () => {
 		expect(range.valueFromRatio(2)).toBe(100);
 	});
 
-	it('rounds binary floating-point noise to the step precision', () => {
+	it('snaps to the step without rounding committed values', () => {
 		const range = createNumericRange(0, 1, 0.1);
+		const value = range.clamp(0.1 + 0.2);
 
-		expect(range.precision).toBe(1);
-		expect(range.clamp(0.1 + 0.2)).toBe(0.3);
-		expect(range.format(range.clamp(0.1 + 0.2))).toBe('0.3');
+		expect(value).toBeCloseTo(0.3, 10);
+		expect(value).not.toBe(0.3);
+		expect(formatNumericValue(value, 1)).toBe('0.3');
 
-		let value = 0;
+		let stepped = 0;
 		for (let index = 0; index < 3; index += 1) {
-			value = range.clamp(value + range.step);
+			stepped = range.clamp(stepped + range.step);
 		}
-		expect(value).toBe(0.3);
+		expect(stepped).toBeCloseTo(0.3, 10);
+		expect(formatNumericValue(stepped, 1)).toBe('0.3');
+	});
+});
+
+describe('resolveValuePrecision', () => {
+	it('defaults to the decimal places in step', () => {
+		expect(resolveValuePrecision(0.1, undefined)).toBe(1);
+		expect(resolveValuePrecision(1, undefined)).toBe(0);
 	});
 
-	it('honors an explicit precision and parseValue transform', () => {
-		const ranged = createNumericRange(0, 1, 0.001, { precision: 2 });
-		expect(ranged.clamp(0.456)).toBe(0.46);
+	it('honors an explicit readout precision', () => {
+		expect(resolveValuePrecision(0.001, 2)).toBe(2);
+	});
+});
 
-		const parsed = createNumericRange(0, 10, 0.5, { parseValue: Math.floor });
-		expect(parsed.clamp(3.7)).toBe(3);
+describe('formatNumericValue', () => {
+	it('formats readouts without changing the stored value', () => {
+		const value = 0.1 + 0.2;
+
+		expect(value).not.toBe(0.3);
+		expect(formatNumericValue(value, 1)).toBe('0.3');
+		expect(formatNumericValue(0.343493934, 2)).toBe('0.34');
 	});
 });
 

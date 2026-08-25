@@ -8,6 +8,7 @@ export type KnobArgs = {
 	min: number;
 	max: number;
 	step: number;
+	valuePrecision?: number;
 	disabled: boolean;
 	readOnly: boolean;
 	showValue: boolean;
@@ -30,6 +31,7 @@ export const meta = {
 		min: { control: { type: 'number' } },
 		max: { control: { type: 'number' } },
 		step: { control: { type: 'number' } },
+		valuePrecision: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		readOnly: { control: { type: 'boolean' } },
 		showValue: { control: { type: 'boolean' } },
@@ -46,6 +48,7 @@ export const meta = {
 				min={args.min}
 				max={args.max}
 				step={args.step}
+				valuePrecision={args.valuePrecision}
 				disabled={args.disabled}
 				readOnly={args.readOnly}
 				showValue={args.showValue}
