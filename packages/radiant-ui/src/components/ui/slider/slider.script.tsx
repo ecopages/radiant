@@ -1,11 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import {
-	createNumericRange,
-	valueFromSliderKey,
-	type NumericRangeOptions,
-	type NumericValueParser,
-} from '../shared/numeric-range';
+import { createNumericRange, formatNumericValue, resolveValuePrecision, valueFromSliderKey } from '../shared/numeric-range';
 
 export type RuiSliderVariant = 'single' | 'range';
 export type RuiSliderOrientation = 'horizontal' | 'vertical';
@@ -21,12 +16,10 @@ export type RuiSliderProps = {
 	max?: number;
 	step?: number;
 	/**
-	 * Maximum fraction digits on committed values.
+	 * Maximum fraction digits in the value readout, tooltips, and `aria-valuetext`.
 	 * Defaults to the decimal places in `step`.
 	 */
-	precision?: number;
-	/** Transforms the snapped value before it is committed. JSX `prop:` binding only. */
-	parseValue?: NumericValueParser;
+	valuePrecision?: number;
 	minDistance?: number;
 	disabled?: boolean;
 	readOnly?: boolean;
@@ -59,7 +52,7 @@ export type RuiSliderChangeDetail = { value: number } | { values: [number, numbe
  * @attr {number} min - Range minimum. Default: `0`.
  * @attr {number} max - Range maximum. Default: `100`.
  * @attr {number} step - Arrow-key and pointer snap interval. Default: `1`.
- * @attr {number} precision - Maximum fraction digits on committed values. Defaults to the decimal places in `step`.
+ * @attr {number} value-precision - Maximum fraction digits in the value readout. Defaults to the decimal places in `step`.
  * @attr {number} min-distance - Minimum gap enforced between range thumbs. Default: `0`.
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving thumbs focusable. Default: `false`.
@@ -92,9 +85,8 @@ export type RuiSliderChangeDetail = { value: number } | { values: [number, numbe
  * @remarks
  * The composed surface is authored in `RuiSlider` / `RuiSliderValue`. The element
  * queries `data-ref` targets and updates live values imperatively.
- * `parseValue` is a function prop and only reaches the element via `prop:` bindings.
- * Snapped values are rounded to `precision` so binary floats such as `0.30000000000000004`
- * are not stored, emitted, or displayed.
+ * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
+ * round or transform them in application code when needed.
  */
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement {
@@ -106,8 +98,7 @@ export class RuiSlider extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
-	@prop({ type: Number, defaultValue: Number.NaN }) precision: number;
-	@prop({ type: Object }) parseValue: NumericValueParser | undefined;
+	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Number, defaultValue: 0 }) minDistance: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
@@ -147,8 +138,7 @@ export class RuiSlider extends RadiantElement {
 		'min',
 		'max',
 		'step',
-		'precision',
-		'parseValue',
+		'valuePrecision',
 		'minDistance',
 		'variant',
 		'orientation',
@@ -176,19 +166,16 @@ export class RuiSlider extends RadiantElement {
 		return this.orientation === 'vertical';
 	}
 
-	private get rangeOptions(): NumericRangeOptions {
-		return {
-			precision: this.precision,
-			parseValue: typeof this.parseValue === 'function' ? this.parseValue : undefined,
-		};
+	private get numericRange() {
+		return createNumericRange(this.min, this.max, this.step);
 	}
 
-	private get numericRange() {
-		return createNumericRange(this.min, this.max, this.step, this.rangeOptions);
+	private get resolvedValuePrecision(): number {
+		return resolveValuePrecision(this.step, this.valuePrecision);
 	}
 
 	private formatValue(value: number): string {
-		return this.numericRange.format(value);
+		return formatNumericValue(value, this.resolvedValuePrecision);
 	}
 
 	private formatValues(values: number[]): string {
@@ -338,14 +325,17 @@ export class RuiSlider extends RadiantElement {
 
 		if (this.singleThumb) {
 			this.singleThumb.setAttribute('aria-valuenow', String(start));
+			this.singleThumb.setAttribute('aria-valuetext', this.formatValue(start));
 		}
 		if (this.rangeMinThumb) {
 			this.rangeMinThumb.setAttribute('aria-valuenow', String(start));
+			this.rangeMinThumb.setAttribute('aria-valuetext', this.formatValue(start));
 			this.rangeMinThumb.setAttribute('aria-valuemax', String(end));
 		}
 		if (this.rangeMaxThumb) {
 			this.rangeMaxThumb.setAttribute('aria-valuemin', String(start));
 			this.rangeMaxThumb.setAttribute('aria-valuenow', String(end));
+			this.rangeMaxThumb.setAttribute('aria-valuetext', this.formatValue(end));
 		}
 
 		if (this.valueTarget) {

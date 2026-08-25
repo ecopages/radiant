@@ -46,12 +46,31 @@ export const FractionalStep: Story = {
 		const host = canvasElement.querySelector('rui-knob') as HTMLElement;
 		const control = getControl(canvasElement);
 
-		await step('keeps fractional steps free of binary float noise', async () => {
+		await step('keeps the stored value and formats the readout', async () => {
 			control.focus();
 			await userEvent.keyboard('{ArrowRight}');
-			await expect(host).toHaveAttribute('value', '0.3');
-			await expect(control).toHaveAttribute('aria-valuenow', '0.3');
+			const stored = Number(host.getAttribute('value'));
+			await expect(stored).toBeCloseTo(0.3, 10);
+			await expect(stored).not.toBe(0.3);
+			await expect(control).toHaveAttribute('aria-valuenow', String(stored));
+			await expect(control).toHaveAttribute('aria-valuetext', '0.3');
 			await expect(canvasElement.querySelector('.rui-knob__value')).toHaveTextContent('0.3');
+		});
+	},
+};
+
+export const ValuePrecision: Story = {
+	args: { label: 'Mix', value: 0.343, min: 0, max: 1, step: 0.001, valuePrecision: 2, name: 'mix' },
+	play: async ({ canvasElement, step }) => {
+		const host = canvasElement.querySelector('rui-knob') as HTMLElement;
+		const control = getControl(canvasElement);
+
+		await step('shows fewer fraction digits than the stored value', async () => {
+			const stored = Number(host.getAttribute('value'));
+			await expect(stored).toBeCloseTo(0.343, 10);
+			await expect(control).toHaveAttribute('aria-valuenow', String(stored));
+			await expect(control).toHaveAttribute('aria-valuetext', '0.34');
+			await expect(canvasElement.querySelector('.rui-knob__value')).toHaveTextContent('0.34');
 		});
 	},
 };

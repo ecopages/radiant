@@ -94,7 +94,6 @@ export function RuiSlider({
 	name,
 	min,
 	max,
-	parseValue,
 	children,
 	...props
 }: RuiSliderViewProps) {
@@ -115,7 +114,6 @@ export function RuiSlider({
 			max={max}
 			rangeMin={values?.[0]}
 			rangeMax={values?.[1]}
-			prop:parseValue={parseValue}
 		>
 			<div
 				class={cx(

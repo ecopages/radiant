@@ -301,11 +301,39 @@ export const FractionalStep: Story = {
 		const host = root.querySelector('rui-slider') as HTMLElement;
 		const thumb = getSingleThumb(root);
 
-		await step('keeps fractional steps free of binary float noise', async () => {
+		await step('keeps the stored value and formats the readout', async () => {
 			thumb.focus();
 			await userEvent.keyboard('{ArrowRight}');
-			await expect(host).toHaveAttribute('value', '0.3');
+			const stored = Number(host.getAttribute('value'));
+			await expect(stored).toBeCloseTo(0.3, 10);
+			await expect(stored).not.toBe(0.3);
+			await expect(thumb).toHaveAttribute('aria-valuenow', String(stored));
+			await expect(thumb).toHaveAttribute('aria-valuetext', '0.3');
 			await expect(getValueLabel(root)).toHaveTextContent('0.3');
+		});
+	},
+};
+
+export const ValuePrecision: Story = {
+	args: {
+		label: 'Mix',
+		min: 0,
+		max: 1,
+		step: 0.001,
+		value: 0.343,
+		valuePrecision: 2,
+		showValue: true,
+	},
+	play: async ({ canvasElement: root, step }) => {
+		const host = root.querySelector('rui-slider') as HTMLElement;
+		const thumb = getSingleThumb(root);
+
+		await step('shows fewer fraction digits than the stored value', async () => {
+			const stored = Number(host.getAttribute('value'));
+			await expect(stored).toBeCloseTo(0.343, 10);
+			await expect(thumb).toHaveAttribute('aria-valuenow', String(stored));
+			await expect(thumb).toHaveAttribute('aria-valuetext', '0.34');
+			await expect(getValueLabel(root)).toHaveTextContent('0.34');
 		});
 	},
 };

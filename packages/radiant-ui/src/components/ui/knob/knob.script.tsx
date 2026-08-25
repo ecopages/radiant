@@ -1,11 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import {
-	createNumericRange,
-	valueFromSliderKey,
-	type NumericRangeOptions,
-	type NumericValueParser,
-} from '../shared/numeric-range';
+import { createNumericRange, valueFromSliderKey } from '../shared/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
 export type RuiKnobValuePosition = 'center' | 'below';
@@ -16,12 +11,10 @@ export type RuiKnobProps = {
 	max?: number;
 	step?: number;
 	/**
-	 * Maximum fraction digits on committed values.
+	 * Maximum fraction digits in the value readout and `aria-valuetext`.
 	 * Defaults to the decimal places in `step`.
 	 */
-	precision?: number;
-	/** Transforms the snapped value before it is committed. JSX `prop:` binding only. */
-	parseValue?: NumericValueParser;
+	valuePrecision?: number;
 	disabled?: boolean;
 	readOnly?: boolean;
 	label?: string;
@@ -49,7 +42,7 @@ export type RuiKnobChangeDetail = { value: number };
  * @attr {number} min - Range minimum. Default: `0`.
  * @attr {number} max - Range maximum. Default: `100`.
  * @attr {number} step - Pointer and keyboard snap interval. Default: `1`.
- * @attr {number} precision - Maximum fraction digits on committed values. Defaults to the decimal places in `step`.
+ * @attr {number} value-precision - Maximum fraction digits in the value readout. Defaults to the decimal places in `step`.
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving the control focusable. Default: `false`.
  * @attr {string} label - Visible and accessible name. Default: `''`.
@@ -79,9 +72,8 @@ export type RuiKnobChangeDetail = { value: number };
  * @cssclass rui-knob__value - Value readout inside the ring.
  *
  * @remarks
- * `parseValue` is a function prop and only reaches the element via `prop:` bindings.
- * Snapped values are rounded to `precision` so binary floats such as `0.30000000000000004`
- * are not stored, emitted, or displayed.
+ * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
+ * round or transform them in application code when needed.
  */
 @customElement('rui-knob')
 export class RuiKnob extends RadiantElement {
@@ -89,8 +81,7 @@ export class RuiKnob extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
-	@prop({ type: Number, defaultValue: Number.NaN }) precision: number;
-	@prop({ type: Object }) parseValue: NumericValueParser | undefined;
+	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -125,8 +116,7 @@ export class RuiKnob extends RadiantElement {
 		'min',
 		'max',
 		'step',
-		'precision',
-		'parseValue',
+		'valuePrecision',
 		'disabled',
 		'readOnly',
 		'name',
@@ -141,15 +131,8 @@ export class RuiKnob extends RadiantElement {
 		this.syncPresentation();
 	}
 
-	private get rangeOptions(): NumericRangeOptions {
-		return {
-			precision: this.precision,
-			parseValue: typeof this.parseValue === 'function' ? this.parseValue : undefined,
-		};
-	}
-
 	private get numericRange() {
-		return createNumericRange(this.min, this.max, this.step, this.rangeOptions);
+		return createNumericRange(this.min, this.max, this.step);
 	}
 
 	private get resolvedSize(): number | undefined {
@@ -168,7 +151,7 @@ export class RuiKnob extends RadiantElement {
 			this.step,
 			this.strokeWidth,
 			this.valueTemplate,
-			this.rangeOptions,
+			this.valuePrecision,
 		);
 		const valuePosition = this.resolvedValuePosition;
 

@@ -30,14 +30,12 @@ export function RuiKnob({
 	showValue = true,
 	valuePosition = 'center',
 	valueTemplate = '{value}',
-	parseValue,
-	precision,
+	valuePrecision,
 	...props
 }: JsxCustomElementAttributes<RuiKnobElement, RuiKnobProps>) {
-	const rangeOptions = { precision, parseValue };
-	const range = createNumericRange(min, max, step, rangeOptions);
+	const range = createNumericRange(min, max, step);
 	const resolvedValue = range.clamp(value);
-	const ring = createKnobRing(resolvedValue, min, max, step, strokeWidth, valueTemplate, rangeOptions);
+	const ring = createKnobRing(resolvedValue, min, max, step, strokeWidth, valueTemplate, valuePrecision);
 	const valueBelow = valuePosition === 'below';
 	const sizeStyle = size ? { '--rui-knob-size': `${size}px` } : undefined;
 
@@ -57,8 +55,7 @@ export function RuiKnob({
 			showValue={showValue}
 			valuePosition={valuePosition}
 			valueTemplate={valueTemplate}
-			precision={precision}
-			prop:parseValue={parseValue}
+			valuePrecision={valuePrecision}
 			style={sizeStyle}
 		>
 			<div class={valueBelow ? 'rui-knob rui-knob--value-below' : 'rui-knob'} data-ref="root">
