@@ -8,6 +8,7 @@ export type KnobArgs = {
 	min: number;
 	max: number;
 	step: number;
+	valuePrecision?: number;
 	disabled: boolean;
 	readOnly: boolean;
 	showValue: boolean;
@@ -30,6 +31,7 @@ export const meta = {
 		min: { control: { type: 'number' } },
 		max: { control: { type: 'number' } },
 		step: { control: { type: 'number' } },
+		valuePrecision: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		readOnly: { control: { type: 'boolean' } },
 		showValue: { control: { type: 'boolean' } },
@@ -46,6 +48,7 @@ export const meta = {
 				min={args.min}
 				max={args.max}
 				step={args.step}
+				valuePrecision={args.valuePrecision}
 				disabled={args.disabled}
 				readOnly={args.readOnly}
 				showValue={args.showValue}
@@ -58,3 +61,14 @@ export const meta = {
 type Story = DocsStory<KnobArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'knob/default' } } });
+
+export const ValuePrecision: Story = docsStory(meta, {
+	args: {
+		value: 0.343,
+		min: 0,
+		max: 1,
+		step: 0.001,
+		valuePrecision: 2,
+	},
+	parameters: { docs: { id: 'knob/value-precision' } },
+});

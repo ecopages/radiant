@@ -1,5 +1,14 @@
 export const SLIDER_PAGE_STEP_MULTIPLIER = 10;
 
+/**
+ * Maximum fraction digits for slider and knob readouts.
+ *
+ * @remarks
+ * IEEE-754 doubles cannot uniquely represent more than this many fraction digits,
+ * so `toFixed` beyond it only restates binary noise.
+ */
+export const MAX_VALUE_FRACTION_DIGITS = 15;
+
 export type NumericRange = {
 	lowerBound: number;
 	upperBound: number;
@@ -8,6 +17,40 @@ export type NumericRange = {
 	ratioFor: (value: number) => number;
 	valueFromRatio: (ratio: number) => number;
 };
+
+/**
+ * Decimal places in a step interval, used as the default readout precision.
+ */
+export function fractionDigitsFromStep(step: number): number {
+	if (!Number.isFinite(step) || step <= 0) {
+		return 0;
+	}
+
+	const match = step.toString().match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+	if (!match) {
+		return 0;
+	}
+
+	const decimals = match[1]?.length ?? 0;
+	const exponent = match[2] ? Number(match[2]) : 0;
+	return Math.min(MAX_VALUE_FRACTION_DIGITS, Math.max(0, decimals - exponent));
+}
+
+/**
+ * Resolves readout fraction digits from `valuePrecision` or the decimal places in `step`.
+ */
+export function resolveValuePrecision(step: number, valuePrecision: number | undefined): number {
+	if (typeof valuePrecision === 'number' && Number.isFinite(valuePrecision) && valuePrecision >= 0) {
+		return Math.min(MAX_VALUE_FRACTION_DIGITS, Math.round(valuePrecision));
+	}
+
+	return fractionDigitsFromStep(step);
+}
+
+/** Formats a numeric value for readouts, tooltips, and `aria-valuetext`. */
+export function formatNumericValue(value: number, valuePrecision: number): string {
+	return Number.isFinite(value) ? value.toFixed(valuePrecision) : '';
+}
 
 /** Normalizes numeric-control bounds and step values into a stable interaction model. */
 export function createNumericRange(min: number, max: number, step: number): NumericRange {

@@ -11,6 +11,7 @@ export type SliderArgs = {
 	min: number;
 	max: number;
 	step: number;
+	valuePrecision?: number;
 	disabled: boolean;
 	showValue: boolean;
 };
@@ -38,6 +39,7 @@ export const meta = {
 		min: { control: { type: 'number' } },
 		max: { control: { type: 'number' } },
 		step: { control: { type: 'number' } },
+		valuePrecision: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		showValue: { control: { type: 'boolean' } },
 	},
@@ -51,6 +53,7 @@ export const meta = {
 						min={args.min}
 						max={args.max}
 						step={args.step}
+						valuePrecision={args.valuePrecision}
 						disabled={args.disabled}
 						showValue={args.showValue}
 						values={[args.rangeMin, args.rangeMax]}
@@ -68,6 +71,7 @@ export const meta = {
 					min={args.min}
 					max={args.max}
 					step={args.step}
+					valuePrecision={args.valuePrecision}
 					disabled={args.disabled}
 					showValue={args.showValue}
 				/>
@@ -79,3 +83,15 @@ export const meta = {
 type Story = DocsStory<SliderArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'slider/default' } } });
+
+export const ValuePrecision: Story = docsStory(meta, {
+	args: {
+		value: 0.343,
+		min: 0,
+		max: 1,
+		step: 0.001,
+		valuePrecision: 2,
+		showValue: true,
+	},
+	parameters: { docs: { id: 'slider/value-precision' } },
+});
