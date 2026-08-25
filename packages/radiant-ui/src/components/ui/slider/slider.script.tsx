@@ -1,6 +1,11 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createNumericRange, formatNumericValue, resolveValuePrecision, valueFromSliderKey } from '../shared/numeric-range';
+import {
+	createNumericRange,
+	formatNumericValue,
+	resolveValuePrecision,
+	valueFromSliderKey,
+} from '../shared/numeric-range';
 
 export type RuiSliderVariant = 'single' | 'range';
 export type RuiSliderOrientation = 'horizontal' | 'vertical';
