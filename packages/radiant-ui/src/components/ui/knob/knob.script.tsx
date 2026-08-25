@@ -10,6 +10,11 @@ export type RuiKnobProps = {
 	min?: number;
 	max?: number;
 	step?: number;
+	/**
+	 * Maximum fraction digits in the value readout and `aria-valuetext`.
+	 * Defaults to the decimal places in `step`.
+	 */
+	valuePrecision?: number;
 	disabled?: boolean;
 	readOnly?: boolean;
 	label?: string;
@@ -37,6 +42,7 @@ export type RuiKnobChangeDetail = { value: number };
  * @attr {number} min - Range minimum. Default: `0`.
  * @attr {number} max - Range maximum. Default: `100`.
  * @attr {number} step - Pointer and keyboard snap interval. Default: `1`.
+ * @attr {number} value-precision - Maximum fraction digits in the value readout. Defaults to the decimal places in `step`.
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving the control focusable. Default: `false`.
  * @attr {string} label - Visible and accessible name. Default: `''`.
@@ -64,6 +70,10 @@ export type RuiKnobChangeDetail = { value: number };
  * @cssclass rui-knob__track - Unfilled 300° range arc.
  * @cssclass rui-knob__progress - Filled range arc.
  * @cssclass rui-knob__value - Value readout inside the ring.
+ *
+ * @remarks
+ * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
+ * round or transform them in application code when needed.
  */
 @customElement('rui-knob')
 export class RuiKnob extends RadiantElement {
@@ -71,6 +81,7 @@ export class RuiKnob extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
+	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -105,6 +116,7 @@ export class RuiKnob extends RadiantElement {
 		'min',
 		'max',
 		'step',
+		'valuePrecision',
 		'disabled',
 		'readOnly',
 		'name',
@@ -132,7 +144,15 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	private paint(value: number): void {
-		const ring = createKnobRing(value, this.min, this.max, this.step, this.strokeWidth, this.valueTemplate);
+		const ring = createKnobRing(
+			value,
+			this.min,
+			this.max,
+			this.step,
+			this.strokeWidth,
+			this.valueTemplate,
+			this.valuePrecision,
+		);
 		const valuePosition = this.resolvedValuePosition;
 
 		this.rootTarget?.classList.toggle('rui-knob--value-below', valuePosition === 'below');

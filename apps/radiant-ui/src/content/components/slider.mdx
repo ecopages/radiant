@@ -4,7 +4,7 @@ description: Sliders let users pick a numeric value or range along a track. They
 category: Forms
 ---
 
-import { meta as SliderMeta, Default } from '@/content/stories/slider';
+import { meta as SliderMeta, Default, ValuePrecision } from '@/content/stories/slider';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -47,9 +47,17 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <p>Use `variant="range"` for minimum/maximum filters. Set `minDistance` to prevent the thumbs from overlapping.</p>
 
-## Step size
+## Step size and readout
 
-<p>Match `step` to meaningful increments, such as whole percentages, not arbitrary fractions.</p>
+<p>Match `step` to meaningful increments. `valuePrecision` only formats the readout, tooltips, and `aria-valuetext`. It defaults to the decimal places in `step`, so a stored `0.30000000000000004` still displays as `0.3`. Round committed values in application code when you need a canonical number.</p>
+
+<Canvas of={ValuePrecision} meta={SliderMeta} />
+
+```tsx
+<RuiSlider min={0} max={1} step={0.1} value={0.3} showValue />
+
+<RuiSlider min={0} max={1} step={0.001} value={0.343} valuePrecision={2} showValue />
+```
 
 ## Theming
 
@@ -93,6 +101,7 @@ Switching the radius pack (sharp, default, soft) updates both when they referenc
 | `min` | `number` | `0` | Range minimum. |
 | `max` | `number` | `100` | Range maximum. |
 | `step` | `number` | `1` | Arrow-key and pointer snap interval. |
+| `value-precision` | `number` | decimal places in `step` | Maximum fraction digits in the value readout. |
 | `min-distance` | `number` | `0` | Minimum gap enforced between range thumbs. |
 | `disabled` | `boolean` | `false` | Disables interaction. |
 | `read-only` | `boolean` | `false` | Prevents value changes while leaving thumbs focusable. |
@@ -153,6 +162,6 @@ Set on `rui-slider`. Defaults shown; all accept any length or shape token.
 
 ## Accessibility
 
-- Sliders expose `role="slider"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax`.
+- Sliders expose `role="slider"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, and a formatted `aria-valuetext`.
 - Pair with a visible label and optionally a live value readout.
 - Arrow keys adjust the value; Page Up/Down jump by larger increments.

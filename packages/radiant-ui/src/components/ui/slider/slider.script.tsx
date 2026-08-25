@@ -1,6 +1,11 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createNumericRange, valueFromSliderKey } from '../shared/numeric-range';
+import {
+	createNumericRange,
+	formatNumericValue,
+	resolveValuePrecision,
+	valueFromSliderKey,
+} from '../shared/numeric-range';
 
 export type RuiSliderVariant = 'single' | 'range';
 export type RuiSliderOrientation = 'horizontal' | 'vertical';
@@ -15,6 +20,11 @@ export type RuiSliderProps = {
 	min?: number;
 	max?: number;
 	step?: number;
+	/**
+	 * Maximum fraction digits in the value readout, tooltips, and `aria-valuetext`.
+	 * Defaults to the decimal places in `step`.
+	 */
+	valuePrecision?: number;
 	minDistance?: number;
 	disabled?: boolean;
 	readOnly?: boolean;
@@ -47,6 +57,7 @@ export type RuiSliderChangeDetail = { value: number } | { values: [number, numbe
  * @attr {number} min - Range minimum. Default: `0`.
  * @attr {number} max - Range maximum. Default: `100`.
  * @attr {number} step - Arrow-key and pointer snap interval. Default: `1`.
+ * @attr {number} value-precision - Maximum fraction digits in the value readout. Defaults to the decimal places in `step`.
  * @attr {number} min-distance - Minimum gap enforced between range thumbs. Default: `0`.
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving thumbs focusable. Default: `false`.
@@ -79,6 +90,8 @@ export type RuiSliderChangeDetail = { value: number } | { values: [number, numbe
  * @remarks
  * The composed surface is authored in `RuiSlider` / `RuiSliderValue`. The element
  * queries `data-ref` targets and updates live values imperatively.
+ * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
+ * round or transform them in application code when needed.
  */
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement {
@@ -90,6 +103,7 @@ export class RuiSlider extends RadiantElement {
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
+	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Number, defaultValue: 0 }) minDistance: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
@@ -129,6 +143,7 @@ export class RuiSlider extends RadiantElement {
 		'min',
 		'max',
 		'step',
+		'valuePrecision',
 		'minDistance',
 		'variant',
 		'orientation',
@@ -158,6 +173,20 @@ export class RuiSlider extends RadiantElement {
 
 	private get numericRange() {
 		return createNumericRange(this.min, this.max, this.step);
+	}
+
+	private get resolvedValuePrecision(): number {
+		return resolveValuePrecision(this.step, this.valuePrecision);
+	}
+
+	private formatValue(value: number): string {
+		return formatNumericValue(value, this.resolvedValuePrecision);
+	}
+
+	private formatValues(values: number[]): string {
+		return values.length === 2
+			? `${this.formatValue(values[0])} – ${this.formatValue(values[1])}`
+			: this.formatValue(values[0]);
 	}
 
 	private get defaultValueTarget(): HTMLElement | null {
@@ -301,18 +330,21 @@ export class RuiSlider extends RadiantElement {
 
 		if (this.singleThumb) {
 			this.singleThumb.setAttribute('aria-valuenow', String(start));
+			this.singleThumb.setAttribute('aria-valuetext', this.formatValue(start));
 		}
 		if (this.rangeMinThumb) {
 			this.rangeMinThumb.setAttribute('aria-valuenow', String(start));
+			this.rangeMinThumb.setAttribute('aria-valuetext', this.formatValue(start));
 			this.rangeMinThumb.setAttribute('aria-valuemax', String(end));
 		}
 		if (this.rangeMaxThumb) {
 			this.rangeMaxThumb.setAttribute('aria-valuemin', String(start));
 			this.rangeMaxThumb.setAttribute('aria-valuenow', String(end));
+			this.rangeMaxThumb.setAttribute('aria-valuetext', this.formatValue(end));
 		}
 
 		if (this.valueTarget) {
-			this.valueTarget.textContent = values.length === 2 ? `${start} – ${end}` : String(start);
+			this.valueTarget.textContent = this.formatValues(values);
 		}
 
 		this.syncInputs(values);
@@ -365,7 +397,7 @@ export class RuiSlider extends RadiantElement {
 		}
 
 		if (values.length === 1) {
-			const title = String(values[0]);
+			const title = this.formatValue(values[0]);
 			this.inputTarget?.setAttribute('title', title);
 			this.maxInputTarget?.removeAttribute('title');
 			this.rangeTrack?.removeAttribute('title');
@@ -376,12 +408,12 @@ export class RuiSlider extends RadiantElement {
 		}
 
 		const [low, high] = values;
-		this.inputTarget?.setAttribute('title', String(low));
-		this.maxInputTarget?.setAttribute('title', String(high));
-		this.rangeTrack?.setAttribute('title', `${low} – ${high}`);
+		this.inputTarget?.setAttribute('title', this.formatValue(low));
+		this.maxInputTarget?.setAttribute('title', this.formatValue(high));
+		this.rangeTrack?.setAttribute('title', this.formatValues(values));
 		this.singleThumb?.removeAttribute('title');
-		this.rangeMinThumb?.setAttribute('title', String(low));
-		this.rangeMaxThumb?.setAttribute('title', String(high));
+		this.rangeMinThumb?.setAttribute('title', this.formatValue(low));
+		this.rangeMaxThumb?.setAttribute('title', this.formatValue(high));
 	}
 
 	private valueFromPointer(event: PointerEvent): number {
