@@ -61,3 +61,14 @@ export const meta = {
 type Story = DocsStory<KnobArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'knob/default' } } });
+
+export const ValuePrecision: Story = docsStory(meta, {
+	args: {
+		value: 0.343,
+		min: 0,
+		max: 1,
+		step: 0.001,
+		valuePrecision: 2,
+	},
+	parameters: { docs: { id: 'knob/value-precision' } },
+});

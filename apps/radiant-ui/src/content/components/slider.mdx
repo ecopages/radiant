@@ -4,7 +4,7 @@ description: Sliders let users pick a numeric value or range along a track. They
 category: Forms
 ---
 
-import { meta as SliderMeta, Default } from '@/content/stories/slider';
+import { meta as SliderMeta, Default, ValuePrecision } from '@/content/stories/slider';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -50,6 +50,8 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 ## Step size and readout
 
 <p>Match `step` to meaningful increments. `valuePrecision` only formats the readout, tooltips, and `aria-valuetext`. It defaults to the decimal places in `step`, so a stored `0.30000000000000004` still displays as `0.3`. Round committed values in application code when you need a canonical number.</p>
+
+<Canvas of={ValuePrecision} meta={SliderMeta} />
 
 ```tsx
 <RuiSlider min={0} max={1} step={0.1} value={0.3} showValue />

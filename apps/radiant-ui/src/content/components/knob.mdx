@@ -4,7 +4,7 @@ description: Knobs let users make compact, rotary adjustments to a numeric value
 category: Forms
 ---
 
-import { meta as KnobMeta, Default } from '@/content/stories/knob';
+import { meta as KnobMeta, Default, ValuePrecision } from '@/content/stories/knob';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -45,6 +45,8 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 Use `valuePosition="below"` to place the readout under the knob, or `showValue={false}` when the value is shown elsewhere. `valueTemplate` replaces the first `{value}` token with the formatted value.
 
 `step` is the snap interval for the stored value. `valuePrecision` only formats the readout, `aria-valuetext`, and related display text. It defaults to the decimal places in `step`, so `0.1 + 0.2` can still be stored as a binary float while the UI shows `0.3`. Round or transform committed values in application code when you need a canonical number.
+
+<Canvas of={ValuePrecision} meta={KnobMeta} />
 
 ```tsx
 <RuiKnob min={0} max={1} step={0.001} value={0.343} valuePrecision={2} />
