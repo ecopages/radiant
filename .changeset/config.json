@@ -9,9 +9,5 @@
 	"linked": [],
 	"access": "public",
 	"baseBranch": "release/v0.3.0",
-	"updateInternalDependencies": "patch",
-	"privatePackages": {
-		"version": false,
-		"tag": false
-	}
+	"updateInternalDependencies": "patch"
 }
