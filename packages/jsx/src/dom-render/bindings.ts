@@ -36,89 +36,103 @@ export function applyBindingToElement(
 
 	switch (binding.kind) {
 		case 'attr':
-			if (resolvedValue === undefined || resolvedValue === null) {
-				removeElementAttribute(element, binding.name);
-				if (livePart) livePart.previousValue = resolvedValue;
-				return;
-			}
-
-			{
-				const isStyleBinding = binding.name.toLowerCase() === 'style';
-				const nextValue = isStyleBinding ? serializeStyleSnapshot(resolvedValue) : String(resolvedValue);
-				const cachedValue = isStyleBinding ? nextValue : resolvedValue;
-
-				if (
-					!livePart ||
-					livePart.previousValue !== cachedValue ||
-					getElementAttributeValue(element, binding.name) !== nextValue
-				) {
-					setElementAttributeValue(element, binding.name, nextValue);
-				}
-
-				if (livePart) livePart.previousValue = cachedValue;
-			}
+			applyAttributeBinding(element, binding.name, resolvedValue, livePart);
 			return;
 
 		case 'bool':
-			if (resolvedValue) {
-				element.setAttribute(binding.name, '');
-			} else {
-				element.removeAttribute(binding.name);
-			}
-
-			if (livePart) livePart.previousValue = resolvedValue;
+			applyBooleanBinding(element, binding.name, resolvedValue, livePart);
 			return;
 
 		case 'event': {
-			const nextListener = asEventBindingListener(resolvedValue);
-			const previousListener = livePart ? asEventBindingListener(livePart.previousValue) : null;
-
-			if (livePart?.previousValue === resolvedValue) {
-				return;
-			}
-
-			if (previousListener) {
-				detachEventBindingListener(options.rootTarget, element, binding.name, previousListener);
-			}
-
-			if (nextListener) {
-				attachEventBindingListener(options.rootTarget, element, binding.name, nextListener);
-			}
-
-			if (livePart) livePart.previousValue = resolvedValue;
+			applyDelegatedEventBinding(element, binding.name, resolvedValue, options.rootTarget, livePart);
 			return;
 		}
 
 		case 'native-event': {
-			const nextListener = asEventBindingListener(resolvedValue);
-			const previousListener = livePart ? asEventBindingListener(livePart.previousValue) : null;
-
-			if (livePart?.previousValue === resolvedValue) {
-				return;
-			}
-
-			if (previousListener) {
-				element.removeEventListener(binding.name, previousListener);
-			}
-
-			if (nextListener) {
-				element.addEventListener(binding.name, nextListener);
-			}
-
-			if (livePart) livePart.previousValue = resolvedValue;
+			applyNativeEventBinding(element, binding.name, resolvedValue, livePart);
 			return;
 		}
 
 		case 'prop':
-			options.deferredProperties.push({
-				element,
-				name: binding.name,
-				value: resolvedValue,
-			});
-
-			if (livePart) livePart.previousValue = resolvedValue;
+			applyDeferredPropertyBinding(element, binding.name, resolvedValue, options.deferredProperties, livePart);
 			return;
 	}
+}
+
+function applyAttributeBinding(
+	element: Element,
+	name: string,
+	value: unknown,
+	livePart: LiveAttributePart | undefined,
+): void {
+	if (value === undefined || value === null) {
+		removeElementAttribute(element, name);
+		updatePreviousValue(livePart, value);
+		return;
+	}
+
+	const isStyleBinding = name.toLowerCase() === 'style';
+	const nextValue = isStyleBinding ? serializeStyleSnapshot(value) : String(value);
+	const cachedValue = isStyleBinding ? nextValue : value;
+	if (!livePart || livePart.previousValue !== cachedValue || getElementAttributeValue(element, name) !== nextValue) {
+		setElementAttributeValue(element, name, nextValue);
+	}
+	updatePreviousValue(livePart, cachedValue);
+}
+
+function applyBooleanBinding(
+	element: Element,
+	name: string,
+	value: unknown,
+	livePart: LiveAttributePart | undefined,
+): void {
+	if (value) element.setAttribute(name, '');
+	else element.removeAttribute(name);
+	updatePreviousValue(livePart, value);
+}
+
+function applyDelegatedEventBinding(
+	element: Element,
+	name: string,
+	value: unknown,
+	rootTarget: HTMLElement,
+	livePart: LiveAttributePart | undefined,
+): void {
+	if (livePart?.previousValue === value) return;
+	const previousListener = livePart ? asEventBindingListener(livePart.previousValue) : null;
+	if (previousListener) detachEventBindingListener(rootTarget, element, name, previousListener);
+	const nextListener = asEventBindingListener(value);
+	if (nextListener) attachEventBindingListener(rootTarget, element, name, nextListener);
+	updatePreviousValue(livePart, value);
+}
+
+function applyNativeEventBinding(
+	element: Element,
+	name: string,
+	value: unknown,
+	livePart: LiveAttributePart | undefined,
+): void {
+	if (livePart?.previousValue === value) return;
+	const previousListener = livePart ? asEventBindingListener(livePart.previousValue) : null;
+	if (previousListener) element.removeEventListener(name, previousListener);
+	const nextListener = asEventBindingListener(value);
+	if (nextListener) element.addEventListener(name, nextListener);
+	updatePreviousValue(livePart, value);
+}
+
+function applyDeferredPropertyBinding(
+	element: Element,
+	name: string,
+	value: unknown,
+	deferredProperties: DeferredPropertyBinding[],
+	livePart: LiveAttributePart | undefined,
+): void {
+	deferredProperties.push({ element, name, value });
+	updatePreviousValue(livePart, value);
+}
+
+function updatePreviousValue(livePart: LiveAttributePart | undefined, value: unknown): void {
+	if (livePart) livePart.previousValue = value;
 }
 
 function asEventBindingListener(value: unknown): EventListenerOrEventListenerObject | null {
