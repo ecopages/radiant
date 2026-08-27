@@ -20,14 +20,14 @@ export const meta = {
 					id: 'file',
 					label: 'File',
 					items: [
-						{ id: 'new', label: 'New' },
-						{ id: 'open', label: 'Open' },
+						{ value: 'new', label: 'New' },
+						{ value: 'open', label: 'Open' },
 					],
 				},
 				{
 					id: 'edit',
 					label: 'Edit',
-					items: [{ id: 'undo', label: 'Undo' }],
+					items: [{ value: 'undo', label: 'Undo' }],
 				},
 			]}
 		/>

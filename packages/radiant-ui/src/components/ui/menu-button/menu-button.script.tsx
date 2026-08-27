@@ -1,6 +1,7 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
+import { MenuTreeController } from '../shared/menu-tree';
 import type { RuiPlacement } from '../shared/placement';
 
 export type RuiMenuButtonProps = {
@@ -34,8 +35,13 @@ const MENU_GAP = 6;
  * Keyboard interaction (open menu):
  * - `ArrowDown` / `ArrowUp`: move between items (wraps)
  * - `Home` / `End`: first / last item
- * - `Enter` / `Space`: activate the focused item and close
+ * - `ArrowRight` / `Enter` / `Space` on a branch: open its submenu and focus its first item
+ * - `ArrowLeft` in a submenu: close it and return focus to its branch
+ * - `Enter` / `Space` on a leaf: activate it and close the tree
  * - `Escape`: close and return focus to the trigger
+ *
+ * Nested branch menus open after a 200 ms pointer-hover delay without moving
+ * keyboard focus. Pointer travel from a branch into its flyout keeps it open.
  *
  * @remarks When the menu contains `[data-autocomplete-input]`, opening focuses
  * that field so the user can filter items immediately.
@@ -44,7 +50,8 @@ const MENU_GAP = 6;
  * @attr {boolean} open - Whether the menu starts open. Default: `false`.
  * @attr {('top'|'top-start'|'top-end'|'right'|'right-start'|'right-end'|'bottom'|'bottom-start'|'bottom-end'|'left'|'left-start'|'left-end')} placement - Placement of the menu surface relative to its trigger. Default: `bottom-start`.
  * Compose with `RuiMenuButtonTrigger`, `RuiMenuButtonContent`, and
- * `RuiMenuButtonItem`. The `trigger` / `items` API supplies that composition.
+ * `RuiMenuButtonItem`; use the submenu helpers for nested menus. The
+ * `trigger` / recursive `items` API supplies that composition.
  * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
  * @fires rui-close - Emitted when the menu closes.
  * @cssclass rui-menu-button - Root wrapper around trigger and menu.
@@ -68,6 +75,7 @@ export class RuiMenuButton extends RadiantElement {
 
 	private menuId = `rui-menu-${Math.random().toString(36).slice(2, 9)}`;
 	private popoverController: PopoverController | null = null;
+	private menuTree: MenuTreeController | null = null;
 	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
 
 	protected override onConnected(): void {
@@ -75,15 +83,28 @@ export class RuiMenuButton extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
+		this.menuTree?.destroy();
+		this.menuTree = null;
 		this.popoverController?.destroy();
 		this.popoverController = null;
 		super.disconnectedCallback();
 	}
 
 	private getItems(): HTMLElement[] {
-		return Array.from(this.menuTarget?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []).filter(
-			(item) => !item.hidden && item.getAttribute('aria-disabled') !== 'true',
-		);
+		if (!this.menuTarget) return [];
+		return this.ensureMenuTree().getFocusableItems(this.menuTarget);
+	}
+
+	private ensureMenuTree(): MenuTreeController {
+		if (!this.menuTree) {
+			this.menuTree = new MenuTreeController({
+				root: this,
+				getRootMenu: () => this.menuTarget,
+				onActivate: (item) => this.activateItem(item),
+				onCloseRoot: (returnFocus) => this.setOpen(false, returnFocus ? 'trigger' : null),
+			});
+		}
+		return this.menuTree;
 	}
 
 	private getSearchInput(): HTMLInputElement | null {
@@ -114,6 +135,9 @@ export class RuiMenuButton extends RadiantElement {
 		this.triggerTarget.setAttribute('aria-haspopup', 'menu');
 		this.triggerTarget.setAttribute('aria-expanded', String(this.open));
 		this.menuTarget.toggleAttribute('hidden', !this.open);
+		const menuTree = this.ensureMenuTree();
+		menuTree.sync();
+		if (!this.open) menuTree.closeAll();
 
 		const controller = this.ensurePopoverController();
 		controller.updateConfig({
@@ -185,55 +209,27 @@ export class RuiMenuButton extends RadiantElement {
 
 	@onEvent({ ref: 'menu', type: 'keydown' })
 	onMenuKeydown(event: KeyboardEvent): void {
-		const items = this.getItems();
-		const current = document.activeElement as HTMLElement | null;
-		const index = current ? items.indexOf(current) : -1;
+		this.ensureMenuTree().handleKeydown(event);
+	}
 
-		switch (event.key) {
-			case 'ArrowDown': {
-				event.preventDefault();
-				const next = items[(index + 1) % items.length];
-				next?.focus();
-				break;
-			}
-			case 'ArrowUp': {
-				event.preventDefault();
-				const prev = items[(index - 1 + items.length) % items.length];
-				prev?.focus();
-				break;
-			}
-			case 'Home':
-				event.preventDefault();
-				items[0]?.focus();
-				break;
-			case 'End':
-				event.preventDefault();
-				items[items.length - 1]?.focus();
-				break;
-			case 'Escape':
-				event.preventDefault();
-				this.setOpen(false, 'trigger');
-				break;
-			case 'Tab':
-				this.setOpen(false);
-				break;
-			case 'Enter':
-			case ' ':
-				if (current && items.includes(current)) {
-					event.preventDefault();
-					this.activateItem(current);
-				}
-				break;
-			default:
-				break;
-		}
+	@onEvent({ ref: 'menu', type: 'pointerover' })
+	onMenuPointerOver(event: PointerEvent): void {
+		this.ensureMenuTree().handlePointerOver(event);
+	}
+
+	@onEvent({ ref: 'menu', type: 'pointerout' })
+	onMenuPointerOut(event: PointerEvent): void {
+		this.ensureMenuTree().handlePointerOut(event);
+	}
+
+	@onEvent({ ref: 'menu', type: 'focusout' })
+	onMenuFocusOut(event: FocusEvent): void {
+		this.ensureMenuTree().handleFocusOut(event);
 	}
 
 	@onEvent({ selector: '[role="menuitem"]', type: 'click' })
 	onItemClick(event: Event): void {
-		const item = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
-		if (!item || !this.contains(item)) return;
-		this.activateItem(item);
+		this.ensureMenuTree().handleClick(event);
 	}
 
 	private activateItem(item: HTMLElement): void {

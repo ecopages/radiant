@@ -30,15 +30,19 @@ export const config = {
 
 ## Usage
 
-Place toggle `RuiButton` children inside `RuiToolbar`. Enable `exclusiveToggles` when only one toggle can be active.
+Place toggle `RuiButton` children inside `RuiToolbar`. Use `RuiSeparator` to divide related control categories. Enable `exclusiveToggles` when only one toggle can be active.
 
 ```tsx
 import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
 import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiSeparator } from '@ecopages/radiant-ui/separator';
 
-<RuiToolbar label="Text formatting" exclusiveToggles>
-  <RuiButton toggle pressed variant="ghost">Bold</RuiButton>
-  <RuiButton toggle variant="ghost">Italic</RuiButton>
+<RuiToolbar label="Text formatting">
+  <RuiButton toggle variant="ghost" square aria-label="Bold"><strong aria-hidden="true">B</strong></RuiButton>
+  <RuiButton toggle variant="ghost" square aria-label="Italic"><em aria-hidden="true">I</em></RuiButton>
+  <RuiSeparator orientation="vertical" />
+  <RuiButton toggle variant="ghost" square aria-label="Underline"><u aria-hidden="true">U</u></RuiButton>
+  <RuiButton toggle variant="ghost" square aria-label="Strikethrough"><s aria-hidden="true">S</s></RuiButton>
 </RuiToolbar>
 ```
 
@@ -72,7 +76,7 @@ Geometry shares control tokens (`--size-control-*`, `--space-control-*`) with `R
 
 | Piece | Description |
 | --- | --- |
-| `children` | Toolbar controls, buttons, links, inputs, selects. |
+| `children` | Toolbar controls, buttons, links, inputs, selects, and `RuiSeparator` elements. |
 
 ### CSS classes
 
@@ -83,6 +87,8 @@ Public BEM classes on the composed surface (documented via `@cssclass`):
 | `.rui-toolbar` | Toolbar surface (`role="toolbar"`). |
 
 Pressed-toggle styling applies to `rui-button--ghost` / `rui-button--outline` inside the toolbar (see Button). Toggles expose their state via `aria-pressed`.
+
+`RuiSeparator` is a generic helper. In a toolbar, use `orientation="vertical"` to divide categories without adding a focus stop.
 
 ### Theme roles
 
@@ -96,4 +102,4 @@ Pressed-toggle styling applies to `rui-button--ghost` / `rui-button--outline` in
 
 - Toolbar renders with `role="toolbar"` and an accessible name from `label`.
 - Toggle buttons expose `aria-pressed` for their on/off state.
-- Arrow keys move between toolbar items when focus is inside the toolbar.
+- Arrow keys move between toolbar controls when focus is inside the toolbar; separators are skipped.
