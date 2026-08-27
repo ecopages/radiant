@@ -120,64 +120,69 @@ export class ListboxPopoverBehavior {
 
 	/** Handles the APG keys shared by select-only and autocomplete listboxes. */
 	handleKeydown(event: KeyboardEvent, options: ListboxKeydownConfig): void {
-		if (event.ctrlKey || event.shiftKey || event.metaKey) {
+		if (event.ctrlKey || event.shiftKey || event.metaKey) return;
+		const handler = this.keydownHandlers[event.key];
+		handler?.call(this, event, options);
+	}
+
+	private readonly keydownHandlers: Record<string, (event: KeyboardEvent, options: ListboxKeydownConfig) => void> = {
+		ArrowDown: this.handleArrowKey,
+		ArrowUp: this.handleArrowKey,
+		Escape: this.handleEscapeKey,
+		Enter: this.handleActivationKey,
+		' ': this.handleActivationKey,
+		Tab: this.handleTabKey,
+	};
+
+	private handleArrowKey(event: KeyboardEvent, options: ListboxKeydownConfig): void {
+		event.preventDefault();
+		event.stopPropagation();
+		const direction = event.key === 'ArrowDown' ? 1 : -1;
+		if (event.altKey) {
+			this.handleModifiedArrow(direction, options);
 			return;
 		}
+		this.moveActive(direction, (activation) => options.onOpen(activation));
+	}
 
-		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+	private handleModifiedArrow(direction: 1 | -1, options: ListboxKeydownConfig): void {
+		if (direction === 1 && !options.isOpen) options.onOpen();
+		if (direction === -1 && options.isOpen) options.onClose('arrow');
+	}
+
+	private handleEscapeKey(event: KeyboardEvent, options: ListboxKeydownConfig): void {
+		event.preventDefault();
+		if (options.isOpen) options.onClose('escape');
+		else options.onEscapeWhenClosed?.();
+	}
+
+	private handleActivationKey(event: KeyboardEvent, options: ListboxKeydownConfig): void {
+		if (event.key === ' ' && !options.canUseSpace) return;
+		if (!options.isOpen && options.enterWhenClosed === 'open') {
 			event.preventDefault();
-			event.stopPropagation();
-			const direction = event.key === 'ArrowDown' ? 1 : -1;
-
-			if (event.altKey) {
-				if (direction === 1 && !options.isOpen) {
-					options.onOpen();
-				} else if (direction === -1 && options.isOpen) {
-					options.onClose('arrow');
-				}
-				return;
-			}
-
-			this.moveActive(direction, (activation) => options.onOpen(activation));
+			options.onOpen();
 			return;
 		}
-
-		if (event.key === 'Escape') {
+		if (!options.isOpen) return;
+		if (this.hasActiveOption()) {
 			event.preventDefault();
-			if (options.isOpen) {
-				options.onClose('escape');
-			} else {
-				options.onEscapeWhenClosed?.();
-			}
+			options.onSelectActive();
 			return;
 		}
-
-		if (event.key === 'Enter' || (event.key === ' ' && options.canUseSpace)) {
-			if (!options.isOpen && options.enterWhenClosed === 'open') {
-				event.preventDefault();
-				options.onOpen();
-				return;
-			}
-
-			const visible = this.getVisibleOptions();
-			if (options.isOpen && this.visualFocus && visible[this.activeIndex]) {
-				event.preventDefault();
-				options.onSelectActive();
-			} else if (event.key === 'Enter' && options.isOpen && options.enterWithoutActive === 'close') {
-				event.preventDefault();
-				options.onClose('enter');
-			}
-			return;
+		if (event.key === 'Enter' && options.enterWithoutActive === 'close') {
+			event.preventDefault();
+			options.onClose('enter');
 		}
+	}
 
-		if (event.key === 'Tab' && options.isOpen) {
-			const visible = this.getVisibleOptions();
-			if (this.visualFocus && visible[this.activeIndex] && options.closesOnTab) {
-				options.onSelectActive();
-				return;
-			}
-			options.onClose('tab');
-		}
+	private handleTabKey(_event: KeyboardEvent, options: ListboxKeydownConfig): void {
+		if (!options.isOpen) return;
+		if (this.hasActiveOption() && options.closesOnTab) options.onSelectActive();
+		else options.onClose('tab');
+	}
+
+	private hasActiveOption(): boolean {
+		return this.visualFocus && Boolean(this.getVisibleOptions()[this.activeIndex]);
 	}
 
 	syncPopoverPosition(): void {

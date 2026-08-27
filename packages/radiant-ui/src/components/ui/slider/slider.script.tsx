@@ -273,44 +273,46 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private syncChrome(): void {
-		const disabled = this.disabled;
-		const range = this.isRange;
-		const tabindex = disabled ? -1 : 0;
-		const orientation = this.isVertical ? 'vertical' : 'horizontal';
-		const hasDefaultValue = Boolean(this.defaultValueTarget);
-		const hasVisibleReadout = Boolean(this.valueTarget) && (!hasDefaultValue || this.showValue);
-		const rangeBounds = this.numericRange;
+		this.syncRootChrome();
+		this.syncThumbChrome();
+	}
 
-		this.rootTarget?.classList.toggle('rui-slider--single', !range);
-		this.rootTarget?.classList.toggle('rui-slider--range', range);
+	private syncRootChrome(): void {
+		const hasVisibleReadout = Boolean(this.valueTarget) && (!this.defaultValueTarget || this.showValue);
+		this.rootTarget?.classList.toggle('rui-slider--single', !this.isRange);
+		this.rootTarget?.classList.toggle('rui-slider--range', this.isRange);
 		this.rootTarget?.classList.toggle('rui-slider--vertical', this.isVertical);
 		this.labelTarget?.toggleAttribute('hidden', !this.label);
-		if (this.labelTarget) {
-			this.labelTarget.textContent = this.label;
-		}
+		if (this.labelTarget) this.labelTarget.textContent = this.label;
 		this.defaultValueTarget?.toggleAttribute('hidden', !this.showValue);
 		this.headerTarget?.toggleAttribute('hidden', !this.label && !hasVisibleReadout);
+	}
 
-		const thumbs: Array<[RuiSliderThumb, string, boolean]> = [
-			['value', this.label || 'Value', !range],
-			['min', this.label ? `${this.label} minimum` : 'Minimum value', range],
-			['max', this.label ? `${this.label} maximum` : 'Maximum value', range],
-		];
-
-		for (const [id, ariaLabel, visible] of thumbs) {
+	private syncThumbChrome(): void {
+		const tabindex = this.disabled ? -1 : 0;
+		const orientation = this.isVertical ? 'vertical' : 'horizontal';
+		const rangeBounds = this.numericRange;
+		for (const { id, label, visible } of this.getThumbChrome()) {
 			const thumb = this.thumbFor(id);
-			if (!thumb) {
-				continue;
-			}
+			if (!thumb) continue;
 			thumb.toggleAttribute('hidden', !visible);
-			thumb.toggleAttribute('disabled', disabled || !visible);
+			thumb.toggleAttribute('disabled', this.disabled || !visible);
 			thumb.setAttribute('tabindex', String(visible ? tabindex : -1));
-			thumb.setAttribute('aria-label', ariaLabel);
+			thumb.setAttribute('aria-label', label);
 			thumb.setAttribute('aria-orientation', orientation);
 			thumb.setAttribute('aria-valuemin', String(rangeBounds.lowerBound));
 			thumb.setAttribute('aria-valuemax', String(rangeBounds.upperBound));
 			thumb.setAttribute('aria-readonly', String(this.readOnly));
 		}
+	}
+
+	private getThumbChrome(): Array<{ id: RuiSliderThumb; label: string; visible: boolean }> {
+		const range = this.isRange;
+		return [
+			{ id: 'value', label: this.label || 'Value', visible: !range },
+			{ id: 'min', label: this.label ? `${this.label} minimum` : 'Minimum value', visible: range },
+			{ id: 'max', label: this.label ? `${this.label} maximum` : 'Maximum value', visible: range },
+		];
 	}
 
 	private paint(values: number[]): void {
@@ -385,35 +387,36 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private syncValueTitle(values: number[]): void {
-		const thumbs = [this.singleThumb, this.rangeMinThumb, this.rangeMaxThumb];
-		if (!this.valueTitle) {
-			this.inputTarget?.removeAttribute('title');
-			this.maxInputTarget?.removeAttribute('title');
-			this.rangeTrack?.removeAttribute('title');
-			for (const thumb of thumbs) {
-				thumb?.removeAttribute('title');
-			}
-			return;
+		const targets = [
+			[this.inputTarget, 'input'],
+			[this.maxInputTarget, 'maxInput'],
+			[this.rangeTrack, 'track'],
+			[this.singleThumb, 'value'],
+			[this.rangeMinThumb, 'min'],
+			[this.rangeMaxThumb, 'max'],
+		] as const;
+		const titles = this.getValueTitles(values);
+		for (const [target, key] of targets) {
+			const title = titles[key];
+			if (title) target?.setAttribute('title', title);
+			else target?.removeAttribute('title');
 		}
+	}
 
+	private getValueTitles(values: number[]): Partial<Record<'input' | 'maxInput' | 'track' | RuiSliderThumb, string>> {
+		if (!this.valueTitle) return {};
 		if (values.length === 1) {
-			const title = this.formatValue(values[0]);
-			this.inputTarget?.setAttribute('title', title);
-			this.maxInputTarget?.removeAttribute('title');
-			this.rangeTrack?.removeAttribute('title');
-			this.singleThumb?.setAttribute('title', title);
-			this.rangeMinThumb?.removeAttribute('title');
-			this.rangeMaxThumb?.removeAttribute('title');
-			return;
+			const value = this.formatValue(values[0]);
+			return { input: value, value };
 		}
-
 		const [low, high] = values;
-		this.inputTarget?.setAttribute('title', this.formatValue(low));
-		this.maxInputTarget?.setAttribute('title', this.formatValue(high));
-		this.rangeTrack?.setAttribute('title', this.formatValues(values));
-		this.singleThumb?.removeAttribute('title');
-		this.rangeMinThumb?.setAttribute('title', this.formatValue(low));
-		this.rangeMaxThumb?.setAttribute('title', this.formatValue(high));
+		return {
+			input: this.formatValue(low),
+			maxInput: this.formatValue(high),
+			min: this.formatValue(low),
+			max: this.formatValue(high),
+			track: this.formatValues(values),
+		};
 	}
 
 	private valueFromPointer(event: PointerEvent): number {
