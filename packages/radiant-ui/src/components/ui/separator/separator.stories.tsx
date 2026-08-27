@@ -4,18 +4,23 @@ import { RuiSeparator, type RuiSeparatorOrientation } from './separator';
 
 type SeparatorStoryArgs = { orientation?: RuiSeparatorOrientation };
 
+function SeparatorPreview({ orientation = 'horizontal' }: SeparatorStoryArgs) {
+	const vertical = orientation === 'vertical';
+	return (
+		<div class={vertical ? 'flex h-12 items-center gap-4' : 'flex flex-col gap-3'}>
+			<span>Start</span>
+			<RuiSeparator orientation={orientation} />
+			<span>End</span>
+		</div>
+	);
+}
+
 const meta = {
 	title: 'Components/Separator',
 	component: RuiSeparator,
 	parameters: { radiant: { cssImports: ['./separator.css'] } },
 	args: { orientation: 'horizontal' },
-	render: (args) => (
-		<div class="flex h-16 w-64 items-center gap-4 rounded-container border border-border bg-surface p-4">
-			<span>Start</span>
-			<RuiSeparator orientation={args.orientation} />
-			<span>End</span>
-		</div>
-	),
+	render: (args) => <SeparatorPreview orientation={args.orientation} />,
 } satisfies Meta<SeparatorStoryArgs>;
 
 export default meta;
