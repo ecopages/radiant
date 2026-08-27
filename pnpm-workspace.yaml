@@ -4,6 +4,8 @@ packages:
     - 'playground/*'
 
 catalog:
+    # Lint rules and config typing must use the same Oxlint release.
+    oxlint: ^1.78.0
     typescript: ~7.0.2
 
 allowBuilds:

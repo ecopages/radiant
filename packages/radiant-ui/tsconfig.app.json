@@ -1,16 +1,14 @@
 {
+	"extends": "../../configs/tsconfig.base.json",
 	"compilerOptions": {
 		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
 		"target": "ES2022",
 		"lib": ["ES2023", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
 		"types": ["vite/client", "@ecopages/vite-plugin-radiant/client"],
 		"allowArbitraryExtensions": true,
-		"skipLibCheck": true,
 		"useDefineForClassFields": true,
 		"experimentalDecorators": false,
 
-		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
 		"verbatimModuleSyntax": true,
 		"moduleDetection": "force",
@@ -32,7 +30,6 @@
 			"@ecopages/storybook-radiant-vite/node": ["../storybook-radiant-vite/src/node/index.ts"]
 		},
 
-		"strict": true,
 		/* Radiant decorators (@prop/@state/@query) assign fields through the decorator
        transform; `!`/`declare` modifiers are rejected by the Vite 8 Babel pipeline. */
 		"strictPropertyInitialization": false,

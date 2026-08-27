@@ -6,6 +6,9 @@ settings:
 
 catalogs:
     default:
+        oxlint:
+            specifier: ^1.78.0
+            version: 1.78.0
         typescript:
             specifier: ~7.0.2
             version: 7.0.2
@@ -23,6 +26,9 @@ importers:
             '@changesets/cli':
                 specifier: ^3.0.0
                 version: 3.0.0
+            '@ecopages/oxlint-config':
+                specifier: workspace:*
+                version: link:packages/oxlint-config
             '@types/ws':
                 specifier: ^8.18.1
                 version: 8.18.1
@@ -30,7 +36,7 @@ importers:
                 specifier: ^1.18.1
                 version: 1.26.0
             oxlint:
-                specifier: ^1.32.0
+                specifier: 'catalog:'
                 version: 1.78.0
             playwright:
                 specifier: ^1.52.0
@@ -229,6 +235,12 @@ importers:
                 version: 4.1.10(@types/node@24.13.3)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(happy-dom@20.11.2)(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
         publishDirectory: dist
 
+    packages/oxlint-config:
+        dependencies:
+            oxlint:
+                specifier: 'catalog:'
+                version: 1.78.0
+
     packages/radiant:
         dependencies:
             '@ecopages/signals':
@@ -314,6 +326,9 @@ importers:
             '@ecopages/jsx':
                 specifier: workspace:*
                 version: link:../jsx/dist
+            '@ecopages/oxlint-config':
+                specifier: workspace:*
+                version: link:../oxlint-config
             '@ecopages/radiant':
                 specifier: workspace:*
                 version: link:../radiant/dist
@@ -366,7 +381,7 @@ importers:
                 specifier: ^3.0.0
                 version: 3.0.0(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(storybook@10.5.8(@types/react@19.2.18)(prettier@3.9.6)(react@19.2.8))
             oxlint:
-                specifier: ^1.71.0
+                specifier: 'catalog:'
                 version: 1.78.0
             playwright:
                 specifier: ^1.61.1
@@ -428,10 +443,10 @@ importers:
         dependencies:
             '@ecopages/radiant':
                 specifier: '>=0.3.0-rc.3'
-                version: link:../radiant/dist
+                version: 0.3.0-rc.3(@ecopages/jsx@packages+jsx+dist)
             '@ecopages/signals':
                 specifier: '>=0.3.0-rc.3'
-                version: link:../signals/dist
+                version: 0.3.0-rc.3
             '@ecopages/vite-plugin-radiant':
                 specifier: workspace:*
                 version: link:../vite-plugin-radiant
@@ -1128,6 +1143,14 @@ packages:
         peerDependencies:
             '@ecopages/jsx': '>=0.3.0-rc.2'
 
+    '@ecopages/radiant@0.3.0-rc.3':
+        resolution:
+            {
+                integrity: sha512-/NpnYZJeYXn9ihdMmFrF93cbtWT0An6+NnfukuKWo1FPDtmmelYopamIANJYaJTnYrkBp8spCE3Iqy5HsHwKLA==,
+            }
+        peerDependencies:
+            '@ecopages/jsx': '>=0.3.0-rc.3'
+
     '@ecopages/scripts-injector@0.1.5':
         resolution:
             {
@@ -1140,6 +1163,12 @@ packages:
         resolution:
             {
                 integrity: sha512-LJcPBtJONnVLEVOODv7tvLZQZnLTtagxoHjfgNwpnR2I95WCld/S9udQvHN5B0s2Wva91BxYVeoDLeeARHRcnA==,
+            }
+
+    '@ecopages/signals@0.3.0-rc.3':
+        resolution:
+            {
+                integrity: sha512-eJEBpyN6TRges2zl4lV/aur9veS/h0SIz/g0yCdETijmk6rehaebX+LDs/1MYuGlvRCrtYruEfPv2wkuJ4V8Fg==,
             }
 
     '@emnapi/core@1.11.2':
@@ -7978,7 +8007,7 @@ snapshots:
         dependencies:
             '@ecopages/jsx': 0.3.0-rc.2(@ecopages/signals@0.3.0-rc.2)
 
-    '@ecopages/radiant@0.3.0-rc.2(@ecopages/jsx@packages+jsx+dist)':
+    '@ecopages/radiant@0.3.0-rc.3(@ecopages/jsx@packages+jsx+dist)':
         dependencies:
             '@ecopages/jsx': link:packages/jsx/dist
 
@@ -7987,6 +8016,8 @@ snapshots:
             typescript: 7.0.2
 
     '@ecopages/signals@0.3.0-rc.2': {}
+
+    '@ecopages/signals@0.3.0-rc.3': {}
 
     '@emnapi/core@1.11.2':
         dependencies:
