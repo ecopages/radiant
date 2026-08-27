@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.4
+
+### Patch Changes
+
+- [#193](https://github.com/ecopages/radiant/pull/193) [`f4124c7`](https://github.com/ecopages/radiant/commit/f4124c7932315474adf1428f9ccc85362bb2c3e3) Thanks [@andeeplus](https://github.com/andeeplus)! - Slider and knob format readouts with `valuePrecision` (defaulting to the decimal places in `step`) without rounding the stored value.
+
 ## 0.1.0-rc.3
 
 ### Minor Changes
