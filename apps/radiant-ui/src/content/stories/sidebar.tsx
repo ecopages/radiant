@@ -37,7 +37,7 @@ export const meta = {
 			control: { type: 'select' },
 			options: ['off', 'icon', 'full'] as const satisfies readonly RuiSidebarCollapsible[],
 		},
-		side: { control: { type: 'select' }, options: ['left', 'right'] as const satisfies readonly RuiSidebarSide[] },
+		side: { control: { type: 'radio' }, options: ['left', 'right'] as const satisfies readonly RuiSidebarSide[] },
 		defaultOpen: { control: { type: 'boolean' } },
 		resizable: { control: { type: 'boolean' } },
 		defaultWidth: { control: { type: 'number' } },

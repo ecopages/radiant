@@ -3,6 +3,7 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiLabel } from '@ecopages/radiant-ui/label';
 import { RuiNumberField } from '@ecopages/radiant-ui/number-field';
+import { RuiRadioGroup } from '@ecopages/radiant-ui/radio-group';
 import { RuiSelect } from '@ecopages/radiant-ui/select';
 import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
@@ -79,6 +80,21 @@ export function renderDocsControl(control: ResolvedDocsControl, args: DocsArgs):
 			<>
 				<RuiLabel class="docs-story-controls__label">{control.name}</RuiLabel>
 				{renderSegmentedControl(control.name, control.options, String(raw ?? ''))}
+			</>,
+		);
+	}
+
+	if (control.kind === 'radio') {
+		return controlShell(
+			'radio',
+			<>
+				<RuiLabel class="docs-story-controls__label">{control.name}</RuiLabel>
+				<RuiRadioGroup
+					class="docs-story-controls__radio"
+					data-docs-arg={control.name}
+					value={String(raw ?? '')}
+					options={control.options.map((option) => ({ value: option, label: option }))}
+				/>
 			</>,
 		);
 	}

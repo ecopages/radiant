@@ -84,6 +84,14 @@ radiant-docs-canvas {
 	@apply box-border flex max-w-none min-w-0 w-full flex-col;
 }
 
+.docs-story-controls__radio {
+	@apply box-border flex max-w-none min-w-0 w-full flex-col;
+}
+
+.docs-story-controls__radio .rui-radio-group {
+	@apply gap-inline;
+}
+
 .docs-story-controls__select .rui-select__control {
 	@apply box-border max-w-none min-w-0 w-full;
 	min-height: var(--size-control-sm);

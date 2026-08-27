@@ -30,7 +30,7 @@ export const meta = {
 	},
 	argTypes: {
 		variant: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['single', 'range'] as const satisfies readonly SliderArgs['variant'][],
 		},
 		value: { control: { type: 'number' } },

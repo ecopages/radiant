@@ -12,7 +12,7 @@ export const meta = {
 	},
 	argTypes: {
 		orientation: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['horizontal', 'vertical'] as const satisfies readonly RuiButtonGroupOrientation[],
 		},
 	},

@@ -3,7 +3,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 export type DocsArgs = Record<string, unknown>;
 
 /** Author-declared control kinds in `argTypes`. Presentation is chosen by heuristics. */
-export type DocsControlType = 'select' | 'boolean' | 'text' | 'number';
+export type DocsControlType = 'select' | 'radio' | 'boolean' | 'text' | 'number';
 
 export type DocsArgType<TValue = unknown> = {
 	control?: { type?: DocsControlType };
@@ -83,9 +83,11 @@ export interface DocsStoryAny {
  * Authors declare `control.type` + `options` in `argTypes`. The docs shell never
  * picks widgets ad hoc — {@link resolveControlPresentation} does.
  * `segmented` is only for short 2–3 option enums; longer sets use `select`.
+ * `radio` is for explicit vertical radio groups when authors prefer that over segments.
  */
 export type ResolvedDocsControl =
 	| { name: string; kind: 'segmented'; options: string[] }
+	| { name: string; kind: 'radio'; options: string[] }
 	| { name: string; kind: 'select'; options: string[] }
 	| { name: string; kind: 'boolean' }
 	| { name: string; kind: 'text' }
