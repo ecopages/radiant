@@ -10,7 +10,12 @@ export type RuiCheckboxProps = {
 	 * `aria-checked="mixed"` is exposed. Default: `false`.
 	 */
 	indeterminate?: boolean;
-	/** Disable the checkbox. Default: `false`. */
+	/**
+	 * Disable the checkbox. Default: `false`.
+	 *
+	 * @remarks The view stamps `data-disabled` so a parent group can restore
+	 * item-level disabled after a group-level disable.
+	 */
 	disabled?: boolean;
 	/** Value submitted with forms when checked. */
 	value?: string;

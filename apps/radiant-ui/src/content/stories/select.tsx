@@ -23,7 +23,7 @@ export const meta = {
 		placeholder: { control: { type: 'text' } },
 		disabled: { control: { type: 'boolean' } },
 		selectionMode: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['single', 'multiple'] as const satisfies readonly RuiSelectSelectionMode[],
 		},
 	},

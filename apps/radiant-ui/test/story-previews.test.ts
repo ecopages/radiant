@@ -11,6 +11,7 @@ import { meta as dateRangePickerMeta } from '../src/content/stories/date-range-p
 import { meta as autocompleteMeta } from '../src/content/stories/autocomplete';
 import { meta as menuButtonMeta } from '../src/content/stories/menu-button';
 import { meta as radioGroupMeta } from '../src/content/stories/radio-group';
+import { meta as checkboxGroupMeta } from '../src/content/stories/checkbox-group';
 
 function serialize(element: unknown): string {
 	return JSON.stringify(element);
@@ -106,16 +107,26 @@ describe('story preview renders', () => {
 		expect(preview).toContain('rui-listbox');
 	});
 
-	test('menu button and radio group render composed controls', () => {
+	test('menu button, radio group, and checkbox group render composed controls', () => {
 		const menuButton = serialize(
 			menuButtonMeta.render!({ open: false, placement: 'bottom-start', children: 'Actions' }),
 		);
 		const radioGroup = serialize(radioGroupMeta.render!({ value: 'pro', disabled: false, label: 'Plan' }));
+		const checkboxGroup = serialize(
+			checkboxGroupMeta.render!({
+				value: 'product,security',
+				disabled: false,
+				label: 'Email notifications',
+				orientation: 'vertical',
+			}),
+		);
 
 		expect(menuButton).toContain('rui-menu-button__trigger');
 		expect(menuButton).toContain('rui-menu-button__item');
 		expect(radioGroup).toContain('rui-radio-group');
 		expect(radioGroup).toContain('rui-radio');
+		expect(checkboxGroup).toContain('rui-checkbox-group');
+		expect(checkboxGroup).toContain('rui-checkbox');
 	});
 
 	test('date range picker renders props on the host element', () => {

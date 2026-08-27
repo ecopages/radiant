@@ -23,7 +23,7 @@ export const meta = {
 		disabled: { control: { type: 'boolean' } },
 		visibleMonths: { control: { type: 'number' } },
 		pageBehavior: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['visible', 'single'] as const satisfies readonly RuiCalendarPageBehavior[],
 		},
 	},

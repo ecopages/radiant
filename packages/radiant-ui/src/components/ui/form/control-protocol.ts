@@ -13,6 +13,7 @@ const HOST_CONTROL_TAGS = new Set([
 	'rui-select',
 	'rui-tag-group',
 	'rui-checkbox',
+	'rui-checkbox-group',
 	'rui-switch',
 	'rui-radio-group',
 	'rui-slider',
@@ -146,6 +147,7 @@ const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
 	['rui-date-range-picker', stringValueAdapter],
 	['rui-select', stringValueAdapter],
 	['rui-radio-group', stringValueAdapter],
+	['rui-checkbox-group', stringValueAdapter],
 	['rui-listbox', stringValueAdapter],
 	['rui-tag-group', stringValueAdapter],
 	['rui-slider', sliderValueAdapter],
@@ -473,6 +475,10 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 
 	if (control.localName === 'rui-checkbox' || control.localName === 'rui-switch') {
 		return control.querySelector<HTMLElement>('input') ?? control;
+	}
+
+	if (control.localName === 'rui-checkbox-group') {
+		return control.querySelector<HTMLElement>('[data-checkbox-group-root]') ?? control;
 	}
 
 	if (control.localName === 'rui-radio-group') {

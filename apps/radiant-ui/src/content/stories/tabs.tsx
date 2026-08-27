@@ -17,7 +17,7 @@ export const meta = {
 	},
 	argTypes: {
 		variant: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['boxed', 'ghost'] as const satisfies readonly RuiTabsVariant[],
 		},
 		value: { control: { type: 'text' } },

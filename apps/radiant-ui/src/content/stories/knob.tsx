@@ -36,7 +36,7 @@ export const meta = {
 		readOnly: { control: { type: 'boolean' } },
 		showValue: { control: { type: 'boolean' } },
 		valuePosition: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['center', 'below'] as const satisfies readonly KnobArgs['valuePosition'][],
 		},
 	},

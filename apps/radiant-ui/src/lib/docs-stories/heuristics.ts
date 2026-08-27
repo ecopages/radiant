@@ -23,6 +23,7 @@ export type DocsControlPresentation = ResolvedDocsControl['kind'];
  * - `select` with 2…{@link DOCS_SEGMENT_OPTION_LIMIT} options → segments
  * - `select` with 1 option or more than the limit → select
  * - `select` with no options → text (fallback)
+ * - `radio` with 2+ options → radio group; otherwise select or text
  */
 export function resolveControlPresentation(
 	definition: DocsArgType | undefined,
@@ -33,6 +34,13 @@ export function resolveControlPresentation(
 	if (type === 'boolean') return 'boolean';
 	if (type === 'number') return 'number';
 	if (type === 'text') return 'text';
+
+	if (type === 'radio') {
+		if (options.length >= 2) return 'radio';
+		if (options.length > DOCS_SEGMENT_OPTION_LIMIT) return 'select';
+		if (options.length > 0) return 'select';
+		return 'text';
+	}
 
 	if (type === 'select' || options.length > 0) {
 		if (options.length === 0) return 'text';
@@ -52,7 +60,7 @@ export function listResolvedControls(meta: DocsMetaAny): ResolvedDocsControl[] {
 		}
 		const options = [...(definition.options ?? [])].map(String);
 		const kind = resolveControlPresentation(definition, options);
-		if (kind === 'segmented' || kind === 'select') {
+		if (kind === 'segmented' || kind === 'select' || kind === 'radio') {
 			controls.push({ name, kind, options });
 		} else {
 			controls.push({ name, kind });

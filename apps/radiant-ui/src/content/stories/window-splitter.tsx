@@ -16,7 +16,7 @@ export const meta = {
 	argTypes: {
 		value: { control: { type: 'number' } },
 		orientation: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['horizontal', 'vertical'] as const satisfies readonly WindowSplitterArgs['orientation'][],
 		},
 		label: { control: { type: 'text' } },

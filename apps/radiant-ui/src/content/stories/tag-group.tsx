@@ -25,7 +25,7 @@ export const meta = {
 	argTypes: {
 		value: { control: { type: 'text' } },
 		selectionMode: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['single', 'multiple'] as const satisfies readonly RuiTagGroupSelectionMode[],
 		},
 		disabled: { control: { type: 'boolean' } },

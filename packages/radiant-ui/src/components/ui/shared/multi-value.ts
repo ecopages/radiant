@@ -1,5 +1,8 @@
 /** Parses the comma-separated value protocol used by multi-select controls. */
-export function parseMultiValue(value: string): string[] {
+export function parseMultiValue(value: string | null | undefined): string[] {
+	if (!value) {
+		return [];
+	}
 	return value
 		.split(',')
 		.map((item) => item.trim())
