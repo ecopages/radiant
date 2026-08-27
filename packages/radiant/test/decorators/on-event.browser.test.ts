@@ -127,6 +127,29 @@ describe('onEvent', () => {
 		expect(element.received).toBeTruthy();
 	});
 
+	it('should fire delegated listeners when the click target is nested inside the match', () => {
+		@customElement('nested-on-event-listener')
+		class NestedOnEventListener extends RadiantElement {
+			received = false;
+
+			@onEvent({ ref: 'nested-btn', type: 'click' })
+			onNestedClick() {
+				this.received = true;
+			}
+		}
+
+		const element = document.createElement('nested-on-event-listener') as NestedOnEventListener;
+		const button = document.createElement('button');
+		button.setAttribute('data-ref', 'nested-btn');
+		const icon = document.createElement('span');
+		button.appendChild(icon);
+		element.appendChild(button);
+		document.body.appendChild(element);
+
+		icon.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(element.received).toBeTruthy();
+	});
+
 	it('should not duplicate delegated listeners across reconnects', () => {
 		@customElement('reconnect-on-event-listener')
 		class ReconnectOnEventListener extends RadiantElement {

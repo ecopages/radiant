@@ -16,6 +16,8 @@ type RenderContextWithCallbacks = RenderContext<RadiantRenderer> & {
 	showStoryDuringRender?: () => void;
 };
 
+type SsrTarget = NonNullable<ReturnType<typeof resolveSsrTarget>>;
+
 function showStoryDuringRender(context: RenderContext<RadiantRenderer>): void {
 	(context as RenderContextWithCallbacks).showStoryDuringRender?.();
 }
@@ -129,47 +131,63 @@ export async function mountSsrResult(
 	mode: 'ssr-hydrate' | 'ssr-static',
 ): Promise<void> {
 	context.showMain();
-
 	const radiant = (context.storyContext.parameters as RadiantStoryParameters).radiant;
-	const component = context.storyContext.component;
-	syncViewMetadata(component, radiant?.element);
-
-	const storyModule = radiant?.storyModule;
-	const storyExport = radiant?.storyExport ?? storyIdToExportName(context.storyContext.id);
-
-	const ssrTarget = resolveSsrTarget({
-		component,
-		radiant,
-		storyModule,
-		storyExport,
-	});
-
+	const ssrTarget = resolveContextSsrTarget(context, radiant);
 	if (!ssrTarget) {
-		mountSsrErrorBanner(
-			canvasElement,
-			`Cannot SSR story "${context.name}"`,
-			dedent`
+		mountMissingSsrTargetBanner(canvasElement, context.name);
+		return;
+	}
+	const payload = await requestSsrPayload(context, canvasElement, ssrTarget, mode);
+	if (!payload || !validateSsrPayload(canvasElement, context.name, ssrTarget, payload)) return;
+	teardownCanvas(canvasElement);
+	if (mode === 'ssr-static') {
+		uninstallRadiantHydrator();
+		mountStaticMarkup(canvasElement, payload.markup, payload.assets);
+		showStoryDuringRender(context);
+		return;
+	}
+	if (!(await mountHydratedSsr(context, canvasElement, radiant, ssrTarget, payload))) return;
+	simulatePageLoad(canvasElement);
+	showStoryDuringRender(context);
+}
+
+function resolveContextSsrTarget(
+	context: RenderContext<RadiantRenderer>,
+	radiant: RadiantStoryParameters['radiant'],
+): SsrTarget | null {
+	syncViewMetadata(context.storyContext.component, radiant?.element);
+	return resolveSsrTarget({
+		component: context.storyContext.component,
+		radiant,
+		storyModule: radiant?.storyModule,
+		storyExport: radiant?.storyExport ?? storyIdToExportName(context.storyContext.id),
+	});
+}
+
+function mountMissingSsrTargetBanner(canvasElement: HTMLElement, storyName: string): void {
+	mountSsrErrorBanner(
+		canvasElement,
+		`Cannot SSR story "${storyName}"`,
+		dedent`
         Set \`meta.component\` to a RadiantElement constructor, a view linked via
         \`parameters.radiant.element\`, or a registered custom-element tag string
         (with the \`.script\` module imported in the story file).
 
         For multi-export script modules, set \`parameters.radiant.ssrExport\`.
         For edge cases, set \`parameters.radiant.ssrModule\` explicitly.
-			`,
-		);
-		return;
-	}
+	`,
+	);
+}
 
-	let payload: RadiantSsrResponseBody;
+async function requestSsrPayload(
+	context: RenderContext<RadiantRenderer>,
+	canvasElement: HTMLElement,
+	target: SsrTarget,
+	mode: 'ssr-hydrate' | 'ssr-static',
+): Promise<RadiantSsrResponseBody | undefined> {
 	try {
-		payload = await fetchSsrPayload({
-			kind: ssrTarget.kind,
-			ssrModule: ssrTarget.ssrModule,
-			ssrExport: ssrTarget.ssrExport,
-			viewModule: ssrTarget.viewModule,
-			viewExport: ssrTarget.viewExport,
-			storyModule: ssrTarget.storyModule,
-			storyExport: ssrTarget.storyExport,
+		return await fetchSsrPayload({
+			...target,
 			args: sanitizeSsrArgs(context.storyContext.args as Record<string, unknown>),
 			mode: mode === 'ssr-hydrate' ? 'hydrate' : 'plain',
 		});
@@ -179,81 +197,97 @@ export async function mountSsrResult(
 			`Radiant SSR failed for "${context.name}"`,
 			error instanceof Error ? error.message : String(error),
 		);
-		return;
+		return undefined;
 	}
+}
 
+function validateSsrPayload(
+	canvasElement: HTMLElement,
+	storyName: string,
+	target: SsrTarget,
+	payload: RadiantSsrResponseBody,
+): boolean {
 	if (!payload.markup?.trim()) {
 		mountSsrErrorBanner(
 			canvasElement,
-			`Radiant SSR returned empty markup for "${context.name}"`,
-			`Module: ${ssrTarget.ssrModule ?? ssrTarget.storyModule}`,
+			`Radiant SSR returned empty markup for "${storyName}"`,
+			`Module: ${target.ssrModule ?? target.storyModule}`,
 		);
-		return;
+		return false;
 	}
-
-	if (payload.tagName && isEmptyHostShell(payload.markup, payload.tagName)) {
-		mountSsrErrorBanner(
-			canvasElement,
-			`Radiant SSR produced an empty host shell for "${context.name}"`,
-			dedent`
+	if (!payload.tagName || !isEmptyHostShell(payload.markup, payload.tagName)) return true;
+	mountSsrErrorBanner(
+		canvasElement,
+		`Radiant SSR produced an empty host shell for "${storyName}"`,
+		dedent`
         The SSR bridge could not render authored light-DOM content for this story.
         Use a component with a \`render()\` implementation, a view export stamped with a
         view module path, or set \`parameters.radiant.authoredContent\`.
-			`,
-		);
-		return;
-	}
+	`,
+	);
+	return false;
+}
 
-	teardownCanvas(canvasElement);
-
-	if (mode === 'ssr-static') {
-		uninstallRadiantHydrator();
-		mountStaticMarkup(canvasElement, payload.markup, payload.assets);
-		showStoryDuringRender(context);
-		return;
-	}
-
-	await loadSsrStyles(payload.assets);
-
+async function mountHydratedSsr(
+	context: RenderContext<RadiantRenderer>,
+	canvasElement: HTMLElement,
+	radiant: RadiantStoryParameters['radiant'],
+	target: SsrTarget,
+	payload: RadiantSsrResponseBody,
+): Promise<boolean> {
 	const moduleSrc = radiant?.clientModule ?? payload.clientModuleSrc;
-	let clientModule: Record<string, unknown> | undefined;
-	if (moduleSrc) {
-		try {
-			clientModule = (await import(/* @vite-ignore */ moduleSrc)) as Record<string, unknown>;
-		} catch (error) {
-			mountSsrErrorBanner(
-				canvasElement,
-				`Radiant hydration module failed for "${context.name}"`,
-				error instanceof Error ? error.message : String(error),
-			);
-			return;
-		}
-	}
-
+	const clientModule = await loadClientModule(canvasElement, context.name, moduleSrc);
+	if (moduleSrc && !clientModule) return false;
+	await loadSsrStyles(payload.assets);
 	const mountRoot = ensureSsrMountRoot(canvasElement);
 	installRadiantHydrator();
 	mountRoot.innerHTML = stripModuleScripts(payload.markup);
-	if (ssrTarget.kind === 'jsx') {
-		try {
-			const storyModule =
-				ssrTarget.storyModule === moduleSrc
-					? clientModule
-					: ((await import(/* @vite-ignore */ ssrTarget.storyModule!)) as Record<string, unknown>);
-			hydrateStoryJsx(
-				storyModule!,
-				ssrTarget.storyExport,
-				context.storyContext.args as Record<string, unknown>,
-				mountRoot,
-			);
-		} catch (error) {
-			mountSsrErrorBanner(
-				canvasElement,
-				`Radiant JSX hydration failed for "${context.name}"`,
-				error instanceof Error ? error.message : String(error),
-			);
-			return;
-		}
+	return hydrateJsxStory(context, canvasElement, target, moduleSrc, clientModule, mountRoot);
+}
+
+async function loadClientModule(
+	canvasElement: HTMLElement,
+	storyName: string,
+	moduleSrc: string | undefined,
+): Promise<Record<string, unknown> | undefined> {
+	if (!moduleSrc) return undefined;
+	try {
+		return (await import(/* @vite-ignore */ moduleSrc)) as Record<string, unknown>;
+	} catch (error) {
+		mountSsrErrorBanner(
+			canvasElement,
+			`Radiant hydration module failed for "${storyName}"`,
+			error instanceof Error ? error.message : String(error),
+		);
+		return undefined;
 	}
-	simulatePageLoad(canvasElement);
-	showStoryDuringRender(context);
+}
+
+async function hydrateJsxStory(
+	context: RenderContext<RadiantRenderer>,
+	canvasElement: HTMLElement,
+	target: SsrTarget,
+	moduleSrc: string | undefined,
+	clientModule: Record<string, unknown> | undefined,
+	mountRoot: HTMLElement,
+): Promise<boolean> {
+	if (target.kind !== 'jsx') return true;
+	try {
+		const storyModule =
+			target.storyModule === moduleSrc ? clientModule : await import(/* @vite-ignore */ target.storyModule!);
+		hydrateStoryJsx(
+			storyModule!,
+			target.storyExport,
+			context.storyContext.args as Record<string, unknown>,
+			mountRoot,
+		);
+		return true;
+	} catch (error) {
+		mountSsrErrorBanner(
+			canvasElement,
+			`Radiant JSX hydration failed for "${context.name}"`,
+			error instanceof Error ? error.message : String(error),
+		);
+		return false;
+	}
 }

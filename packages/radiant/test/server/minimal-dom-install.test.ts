@@ -224,6 +224,15 @@ describe('minimal DOM installation boundary', () => {
 		expect(globalThis.window).toBe(second);
 	});
 
+	test('installs CSS.escape without wrapping itself', async () => {
+		clearDomGlobals();
+		const { installLightDomShim } = await import('../../src/server/shim/minimal-dom/install');
+		const surface = installLightDomShim();
+
+		expect(surface.CSS.escape('1foo')).toBe('\\31 foo');
+		expect(globalThis.CSS.escape('a:b')).toBe('a\\:b');
+	});
+
 	test('fails before mutation when a required global is locked', async () => {
 		clearDomGlobals();
 		const foreignDocument = {};

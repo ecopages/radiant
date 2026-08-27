@@ -40,73 +40,51 @@ export function collectTopLevelHtmlFragments(html: string): string[] {
 	let index = 0;
 
 	while (index < html.length) {
-		const fragmentStart = index;
-
-		if (html.startsWith('<!--', index)) {
-			const commentEnd = html.indexOf('-->', index + 4);
-			index = commentEnd === -1 ? html.length : commentEnd + 3;
-			fragments.push(html.slice(fragmentStart, index));
-			continue;
-		}
-
-		if (html[index] !== '<') {
-			const nextTagIndex = html.indexOf('<', index);
-			index = nextTagIndex === -1 ? html.length : nextTagIndex;
-			fragments.push(html.slice(fragmentStart, index));
-			continue;
-		}
-
-		const token = parseHtmlTagToken(html, index);
-
-		if (!token) {
-			fragments.push(html.slice(fragmentStart));
-			break;
-		}
-
-		if (token.type !== 'open' || token.selfClosing || voidElementNames.has(token.tagName)) {
-			index = token.end;
-			fragments.push(html.slice(fragmentStart, index));
-			continue;
-		}
-
-		index = token.end;
-		let depth = 1;
-
-		while (index < html.length && depth > 0) {
-			const nextTagIndex = html.indexOf('<', index);
-
-			if (nextTagIndex === -1) {
-				index = html.length;
-				break;
-			}
-
-			const nestedToken = parseHtmlTagToken(html, nextTagIndex);
-
-			if (!nestedToken) {
-				index = html.length;
-				break;
-			}
-
-			index = nestedToken.end;
-
-			if (nestedToken.type === 'comment' || nestedToken.type === 'declaration') {
-				continue;
-			}
-
-			if (nestedToken.type === 'open' && !nestedToken.selfClosing && !voidElementNames.has(nestedToken.tagName)) {
-				depth += 1;
-				continue;
-			}
-
-			if (nestedToken.type === 'close') {
-				depth -= 1;
-			}
-		}
-
-		fragments.push(html.slice(fragmentStart, index));
+		const nextIndex = findTopLevelFragmentEnd(html, index);
+		fragments.push(html.slice(index, nextIndex));
+		index = nextIndex;
 	}
 
 	return fragments.filter((fragment) => fragment !== '');
+}
+
+function findTopLevelFragmentEnd(html: string, startIndex: number): number {
+	if (html.startsWith('<!--', startIndex)) return findCommentEnd(html, startIndex);
+	if (html[startIndex] !== '<') return findTextEnd(html, startIndex);
+	const token = parseHtmlTagToken(html, startIndex);
+	if (!token || token.type !== 'open' || token.selfClosing || voidElementNames.has(token.tagName))
+		return token?.end ?? html.length;
+	return findElementEnd(html, token.end);
+}
+
+function findCommentEnd(html: string, startIndex: number): number {
+	const commentEnd = html.indexOf('-->', startIndex + 4);
+	return commentEnd === -1 ? html.length : commentEnd + 3;
+}
+
+function findTextEnd(html: string, startIndex: number): number {
+	const nextTagIndex = html.indexOf('<', startIndex);
+	return nextTagIndex === -1 ? html.length : nextTagIndex;
+}
+
+function findElementEnd(html: string, startIndex: number): number {
+	let index = startIndex;
+	let depth = 1;
+	while (index < html.length && depth > 0) {
+		const nextTagIndex = html.indexOf('<', index);
+		if (nextTagIndex === -1) return html.length;
+		const token = parseHtmlTagToken(html, nextTagIndex);
+		if (!token) return html.length;
+		index = token.end;
+		depth += getElementDepthDelta(token);
+	}
+	return index;
+}
+
+function getElementDepthDelta(token: ParsedHtmlToken): number {
+	if (token.type === 'close') return -1;
+	if (token.type === 'open' && !token.selfClosing && !voidElementNames.has(token.tagName)) return 1;
+	return 0;
 }
 
 export function findHtmlTagEnd(html: string, startIndex: number): number {
