@@ -129,6 +129,28 @@ describe('RadiantElement', () => {
 		expect(customElement.hasEventSubscription('click:[data-ref="click-it"]')).toBeTruthy();
 	});
 
+	test('subscribeEvent fires when the click target is nested inside the match', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		const button = document.createElement('button');
+		button.setAttribute('data-ref', 'nested-btn');
+		const icon = document.createElement('span');
+		button.appendChild(icon);
+		customElement.appendChild(button);
+		document.body.appendChild(customElement);
+
+		let received = false;
+		customElement.subscribeEvent({
+			selector: '[data-ref="nested-btn"]',
+			type: 'click',
+			listener: () => {
+				received = true;
+			},
+		});
+
+		icon.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(received).toBe(true);
+	});
+
 	test('it can create a reactive property', () => {
 		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
 		document.body.appendChild(customElement);

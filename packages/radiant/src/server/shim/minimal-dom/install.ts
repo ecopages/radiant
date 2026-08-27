@@ -1,4 +1,4 @@
-import { escapeCssIdentifier } from '../../../tools/escape-css-identifier';
+import { escapeCssIdentifierFallback } from '../../../tools/escape-css-identifier';
 import { MinimalCustomElementsRegistry, MinimalDocument, type MinimalCustomElementRegistry } from './document';
 import './html';
 import {
@@ -98,7 +98,7 @@ type DomSurfaceCandidates = Pick<
 
 const minimalCssNamespace: MinimalCssNamespace = {
 	escape(value: string): string {
-		return escapeCssIdentifier(String(value));
+		return escapeCssIdentifierFallback(String(value));
 	},
 };
 

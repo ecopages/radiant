@@ -1,6 +1,6 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
+import { eventMatchesDelegatedSelector } from '../core/delegated-event';
 import { isServer } from '@ecopages/radiant/is-server';
-import { escapeCssIdentifier } from '../tools/escape-css-identifier';
 import { isControllerHost, resolveHostElement } from './resolve-host-element';
 
 /**
@@ -67,19 +67,7 @@ function addDelegatedListener(
 	listener: EventListener,
 ): () => void {
 	const delegatedListener = (event: Event) => {
-		const eventTarget = event.target;
-		if (!(eventTarget instanceof Node)) return;
-
-		// Text nodes are valid event targets; resolve to the owning element.
-		const elementTarget = eventTarget instanceof Element ? eventTarget : eventTarget.parentElement;
-		if (!elementTarget) return;
-
-		// Use closest() so clicks on descendants of the matched node still fire —
-		// matches() alone breaks buttons that wrap icons, tracks, labels, etc.
-		const matched = elementTarget.closest(selector);
-		if (matched && (matched === root || root.contains(matched))) {
-			listener(event);
-		}
+		if (eventMatchesDelegatedSelector(event, root, selector)) listener(event);
 	};
 
 	root.addEventListener(config.type, delegatedListener, config.options);
@@ -204,14 +192,14 @@ function attachMediaQueryListener(
 ): void {
 	if (
 		!('mediaQuery' in config) ||
-		cleanups.has('mediaQuery') ||
+		cleanups.has('media') ||
 		typeof window === 'undefined' ||
 		typeof window.matchMedia !== 'function'
 	)
 		return;
 	const mediaQueryList = window.matchMedia(config.mediaQuery);
 	mediaQueryList.addEventListener(config.type, listener, config.options);
-	cleanups.set('mediaQuery', () => mediaQueryList.removeEventListener(config.type, listener, config.options));
+	cleanups.set('media', () => mediaQueryList.removeEventListener(config.type, listener, config.options));
 }
 
 function attachDelegatedListeners(
@@ -221,11 +209,11 @@ function attachDelegatedListeners(
 	listener: EventListener,
 ): void {
 	if (!('selector' in config || 'ref' in config)) return;
-	const selector = 'selector' in config ? config.selector : `[data-ref='${escapeCssIdentifier(config.ref)}']`;
+	const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
 	if (config.scope !== 'shadow' && !cleanups.has('light'))
 		cleanups.set('light', addDelegatedListener(hostElement, config, selector, listener));
 	if (config.scope !== 'light' && hostElement.shadowRoot && !cleanups.has('shadow'))
 		cleanups.set('shadow', addDelegatedListener(hostElement.shadowRoot, config, selector, listener));
 }
 
-type EventListenerScope = 'document' | 'light' | 'mediaQuery' | 'shadow' | 'window';
+type EventListenerScope = 'document' | 'light' | 'media' | 'shadow' | 'window';

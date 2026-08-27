@@ -233,9 +233,7 @@ export class KeyboardPanel extends RadiantElement<{ lastKey: string }> {
 }
 ```
 
-Important: `@onEvent({ selector: ... })` and `@onEvent({ ref: ... })` currently check `event.target.matches(...)` directly. That means matching is strict against the original target, not ancestor-aware. If a nested element inside a button receives the click, the nested element must match for the handler to run.
-
-Also note that selector- and ref-based `@onEvent(...)` handlers rely on bubbling. Use `focusin` and `focusout` instead of `focus` and `blur` for that pattern.
+Selector- and ref-based `@onEvent(...)` handlers, and `subscribeEvent(...)` / `subscribeEvents(...)`, match with `Element.closest(...)` from the event target, so a click on a nested icon still reaches a wrapping `button[data-ref]` or selector match. They still rely on bubbling, so use `focusin` and `focusout` instead of `focus` and `blur` for that pattern.
 
 ### `@event(...)`
 
