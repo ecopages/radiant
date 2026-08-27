@@ -14,6 +14,7 @@ export * from './components/ui/button-group';
 export * from './components/ui/calendar';
 export * from './components/ui/carousel';
 export * from './components/ui/checkbox';
+export * from './components/ui/checkbox-group';
 export * from './components/ui/chip';
 export * from './components/ui/chip-list';
 export * from './components/ui/combobox';

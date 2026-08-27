@@ -244,6 +244,13 @@
 		"./checkbox/styles.css": {
 			"default": "./dist/components/ui/checkbox/checkbox.css"
 		},
+		"./checkbox-group": {
+			"types": "./dist/components/ui/checkbox-group/index.d.ts",
+			"import": "./dist/components/ui/checkbox-group/index.js"
+		},
+		"./checkbox-group/styles.css": {
+			"default": "./dist/components/ui/checkbox-group/checkbox-group.css"
+		},
 		"./chip": {
 			"types": "./dist/components/ui/chip/index.d.ts",
 			"import": "./dist/components/ui/chip/index.js"
