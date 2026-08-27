@@ -25,6 +25,10 @@ rui-menu-button {
 		@apply hidden;
 	}
 
+	.rui-menu-button__menu > .rui-separator {
+		@apply my-1;
+	}
+
 	.rui-menu-button__item {
 		@apply flex w-full cursor-pointer items-center rounded-control border-0 bg-transparent px-control-x py-control-y text-left text-sm;
 		@apply text-on-background;
@@ -37,5 +41,18 @@ rui-menu-button {
 
 	.rui-menu-button__item[aria-disabled='true'] {
 		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-menu-button__item[aria-haspopup='menu'] {
+		@apply justify-between;
+	}
+
+	.rui-menu-button__item[aria-haspopup='menu']::after {
+		content: '›';
+		@apply ml-auto pl-4 text-on-background;
+	}
+
+	.rui-menu-button__item[aria-expanded='true'] {
+		@apply bg-surface;
 	}
 }

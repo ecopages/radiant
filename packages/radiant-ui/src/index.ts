@@ -43,6 +43,7 @@ export * from './components/ui/pagination';
 export * from './components/ui/popover';
 export * from './components/ui/radio-group';
 export * from './components/ui/select';
+export * from './components/ui/separator';
 export * from './components/ui/sidebar';
 export * from './components/ui/slider';
 export * from './components/ui/spinner';

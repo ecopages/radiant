@@ -37,17 +37,76 @@ import {
   RuiMenuButton,
   RuiMenuButtonContent,
   RuiMenuButtonItem,
+  RuiMenuButtonSubmenuContent,
   RuiMenuButtonTrigger,
 } from '@ecopages/radiant-ui/menu-button';
+import { RuiSeparator } from '@ecopages/radiant-ui/separator';
 
 <RuiMenuButton placement="bottom-start">
   <RuiMenuButtonTrigger>Actions</RuiMenuButtonTrigger>
   <RuiMenuButtonContent>
     <RuiMenuButtonItem value="edit">Edit</RuiMenuButtonItem>
+    <RuiSeparator />
     <RuiMenuButtonItem value="delete">Delete</RuiMenuButtonItem>
   </RuiMenuButtonContent>
 </RuiMenuButton>
 ```
+
+## Submenus
+
+Place `RuiMenuButtonSubmenuContent` as the next sibling of the branch item. That sibling pair is the ARIA and positioning contract.
+
+```tsx
+<RuiMenuButton>
+  <RuiMenuButtonTrigger>Actions</RuiMenuButtonTrigger>
+  <RuiMenuButtonContent>
+    <RuiMenuButtonItem value="edit">Edit</RuiMenuButtonItem>
+    <RuiMenuButtonItem value="share" hasSubmenu>Share</RuiMenuButtonItem>
+    <RuiMenuButtonSubmenuContent>
+      <RuiMenuButtonItem value="email">Email</RuiMenuButtonItem>
+      <RuiMenuButtonItem value="copy-link">Copy link</RuiMenuButtonItem>
+    </RuiMenuButtonSubmenuContent>
+  </RuiMenuButtonContent>
+</RuiMenuButton>
+```
+
+The `items` prop provides the same structure recursively. Add `items` to a `RuiMenuItem` to make that item a branch; items without children are actions. Add `{ type: 'separator' }` to a `RuiMenuEntry[]` to divide action groups.
+
+```tsx
+import { RuiMenuButton, type RuiMenuEntry } from '@ecopages/radiant-ui/menu-button';
+
+const actions: RuiMenuEntry[] = [
+  { value: 'edit', label: 'Edit' },
+  { type: 'separator', id: 'sharing-actions' },
+  {
+    value: 'share',
+    label: 'Share',
+    items: [
+      { value: 'email', label: 'Email' },
+      { value: 'copy-link', label: 'Copy link' },
+    ],
+  },
+];
+
+<RuiMenuButton trigger="Actions" items={actions} />
+```
+
+## Interaction model
+
+Branch items open after a 200 ms pointer-hover delay. Moving from a branch into its flyout keeps that flyout open; hovering another branch closes the prior branch and starts the new delay. A branch does not emit `rui-change`; only a leaf action emits it, once, and closes the whole menu tree.
+
+| Interaction | Result |
+| --- | --- |
+| Click the trigger | Opens the menu and focuses its first enabled item. |
+| `ArrowDown`, `Enter`, or `Space` on the trigger | Opens the menu and focuses its first enabled item. |
+| `ArrowUp` on the trigger | Opens the menu and focuses its last enabled item. |
+| Hover a branch | Opens its submenu after 200 ms without moving focus. |
+| `ArrowRight`, `Enter`, or `Space` on a branch | Opens its submenu and focuses the first enabled child. |
+| `ArrowLeft` in a submenu | Closes that submenu and returns focus to its branch. |
+| `Escape` | Closes the complete tree and returns focus to the trigger. |
+| `Tab` or an outside pointer interaction | Closes the complete tree. |
+
+Pointer hover and keyboard focus are separate states. A hovered branch can open while focus remains on the previously focused menu item; style `:hover` and `[aria-expanded="true"]` independently from `:focus-visible`.
 
 ## Placement
 
@@ -67,7 +126,7 @@ The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `
 
 ## API
 
-`RuiMenuButton` is a custom element (`<rui-menu-button>`) with a composed light-DOM surface. Use the view helpers to compose the trigger and popup items, or use the convenience `trigger` / `items` props for generated content.
+`RuiMenuButton` is a custom element (`<rui-menu-button>`) with a composed light-DOM surface. Use the view helpers to compose the trigger and popup items, or use the convenience `trigger` / recursive `items` props for generated content.
 
 ### Attributes
 
@@ -81,7 +140,8 @@ The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `
 | Piece | Description |
 | --- | --- |
 | `trigger` | Label for the menu button. |
-| `children` | Menu items (`role="menuitem"`), typically buttons or anchors. |
+| `items` | Optional recursive `RuiMenuEntry[]` data source. A child `items` array makes an item a submenu branch; `{ type: 'separator' }` divides groups. |
+| `children` | Explicit trigger and menu composition helpers. |
 
 ### Events
 
@@ -97,7 +157,9 @@ The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `
 | `RuiMenuButton` | `<rui-menu-button>` | Hosts the composed trigger and menu content. The convenience `trigger` + `items` props generate the same helpers. |
 | `RuiMenuButtonTrigger` | Button | Trigger control that opens the menu. |
 | `RuiMenuButtonContent` | `<div role="menu">` | Popup surface containing menu items. |
+| `RuiMenuButtonSubmenuContent` | `<div role="menu">` | Next sibling of the branch item; right-positioned nested menu surface. |
 | `RuiMenuButtonItem` | `<button role="menuitem">` | Selectable action inside the menu. |
+| `RuiSeparator` | `<hr role="separator">` | Non-focusable divider between menu action groups. |
 
 ### CSS classes
 
@@ -109,7 +171,9 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | `.rui-menu-button__trigger` | Trigger button (composes `rui-button--primary`). |
 | `.rui-menu-button__chevron` | Chevron indicator. |
 | `.rui-menu-button__menu` | Popup menu surface (`role="menu"`, `rui-popover rui-floating`). |
+| `.rui-menu-button__submenu` | Nested popup menu surface. |
 | `.rui-menu-button__item` | Menu item (`role="menuitem"`, authored by the view helper). |
+| `.rui-separator` | Generic divider; menu surfaces add vertical spacing. |
 
 ### Theme roles
 
@@ -123,5 +187,9 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 ## Accessibility
 
 - The trigger exposes `aria-haspopup="menu"` and `aria-expanded` when open.
-- Menu items are reachable by arrow keys and activate with Enter.
-- Return focus to the trigger when the menu closes.
+- Menu items use vertical arrow-key navigation; Home and End move to the first and last enabled item.
+- Branch items expose `aria-haspopup="menu"`, `aria-expanded`, and generated `aria-controls` linkage.
+- Separators are non-focusable and are skipped by arrow-key navigation.
+- `Escape` restores focus to the trigger. `Tab` and outside pointer interaction dismiss the tree without forcing a focus move.
+
+Follows the <a href="https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/" data-wai-aria target="_blank" rel="noopener noreferrer">WAI-ARIA Menu Button</a> pattern.
