@@ -15,6 +15,16 @@ export type RadiantViewComponent<TArgs = unknown> = ((args: TArgs) => unknown) &
 	[RADIANT_VIEW_MODULE]?: string;
 };
 
+type SsrTarget = {
+	kind: 'host' | 'jsx';
+	ssrModule?: string;
+	ssrExport?: string;
+	viewModule?: string;
+	viewExport?: string;
+	storyModule?: string;
+	storyExport?: string;
+};
+
 export function getRadiantViewModule(target: CustomElementConstructor | RadiantViewComponent): string | undefined {
 	return (target as RadiantViewComponent)[RADIANT_VIEW_MODULE];
 }
@@ -96,79 +106,102 @@ export function resolveSsrTarget(options: {
 	radiant?: RadiantStoryParameters['radiant'];
 	storyModule?: string;
 	storyExport?: string;
-}): {
-	kind: 'host' | 'jsx';
-	ssrModule?: string;
-	ssrExport?: string;
-	viewModule?: string;
-	viewExport?: string;
+}): SsrTarget | null {
+	return resolveExplicitSsrTarget(options) ?? resolveViewSsrTarget(options) ?? resolveElementSsrTarget(options);
+}
+
+function resolveExplicitSsrTarget(options: {
+	radiant?: RadiantStoryParameters['radiant'];
 	storyModule?: string;
 	storyExport?: string;
-} | null {
-	const { component, radiant, storyModule, storyExport } = options;
-	if (radiant?.ssrModule) {
-		return {
-			kind: 'host',
-			ssrModule: normalizeSsrModulePath(radiant.ssrModule),
-			ssrExport: radiant.ssrExport,
-			viewModule: radiant.viewModule ? normalizeSsrModulePath(radiant.viewModule) : undefined,
-			viewExport: radiant.viewExport,
-			storyModule: radiant.storyModule ? normalizeSsrModulePath(radiant.storyModule) : storyModule,
-			storyExport: radiant.storyExport ?? storyExport,
-		};
-	}
+}): SsrTarget | undefined {
+	const { radiant, storyModule, storyExport } = options;
+	if (!radiant?.ssrModule) return undefined;
+	return {
+		kind: 'host',
+		ssrModule: normalizeSsrModulePath(radiant.ssrModule),
+		ssrExport: radiant.ssrExport,
+		viewModule: radiant.viewModule ? normalizeSsrModulePath(radiant.viewModule) : undefined,
+		viewExport: radiant.viewExport,
+		storyModule: radiant.storyModule ? normalizeSsrModulePath(radiant.storyModule) : storyModule,
+		storyExport: radiant.storyExport ?? storyExport,
+	};
+}
 
-	if (typeof component === 'function') {
-		const view = component as RadiantViewComponent;
-		const linkedElement = view[RADIANT_VIEW_ELEMENT];
-		const viewModule = getRadiantViewModule(view);
-		const viewModulePath = viewModule ? normalizeSsrModulePath(viewModule) : undefined;
-		const scriptModule =
-			getRadiantScriptModule(view) ?? (linkedElement ? getRadiantScriptModule(linkedElement) : undefined);
-		const scriptExport =
-			radiant?.ssrExport ??
-			(linkedElement ? getRadiantScriptExport(linkedElement) : undefined) ??
-			getRadiantScriptExport(view) ??
-			linkedElement?.name;
-		const viewExport = radiant?.viewExport ?? scriptExport;
+function resolveViewSsrTarget(options: {
+	component: RadiantComponent | undefined;
+	radiant?: RadiantStoryParameters['radiant'];
+	storyModule?: string;
+	storyExport?: string;
+}): SsrTarget | undefined {
+	if (typeof options.component !== 'function') return undefined;
+	const view = options.component as RadiantViewComponent;
+	const linkedElement = view[RADIANT_VIEW_ELEMENT];
+	const modules = resolveViewModules(view, linkedElement);
+	const { scriptModule, viewModulePath } = modules;
+	if (!scriptModule && !viewModulePath) return undefined;
+	if (options.storyModule) return { kind: 'jsx', storyModule: options.storyModule, storyExport: options.storyExport };
+	const scriptExport = resolveViewExport(view, linkedElement, options.radiant);
+	return {
+		kind: 'host',
+		ssrModule: scriptModule
+			? normalizeSsrModulePath(scriptModule)
+			: preferredScriptModuleFromViewModule(viewModulePath!),
+		ssrExport: scriptExport,
+		viewModule: viewModulePath,
+		viewExport: options.radiant?.viewExport ?? scriptExport,
+		storyModule: options.storyModule,
+		storyExport: options.storyExport,
+	};
+}
 
-		if (scriptModule || viewModulePath) {
-			if (storyModule) {
-				return { kind: 'jsx', storyModule, storyExport };
-			}
+function resolveViewModules(
+	view: RadiantViewComponent,
+	linkedElement: CustomElementConstructor | undefined,
+): {
+	scriptModule: string | undefined;
+	viewModulePath: string | undefined;
+} {
+	const viewModule = getRadiantViewModule(view);
+	return {
+		scriptModule:
+			getRadiantScriptModule(view) ?? (linkedElement ? getRadiantScriptModule(linkedElement) : undefined),
+		viewModulePath: viewModule ? normalizeSsrModulePath(viewModule) : undefined,
+	};
+}
 
-			return {
-				kind: 'host',
-				ssrModule: scriptModule
-					? normalizeSsrModulePath(scriptModule)
-					: viewModulePath
-						? preferredScriptModuleFromViewModule(viewModulePath)
-						: undefined,
-				ssrExport: scriptExport,
-				viewModule: viewModulePath,
-				viewExport,
-				storyModule,
-				storyExport,
-			};
-		}
-	}
+function resolveViewExport(
+	view: RadiantViewComponent,
+	linkedElement: CustomElementConstructor | undefined,
+	radiant: RadiantStoryParameters['radiant'],
+): string | undefined {
+	return (
+		radiant?.ssrExport ??
+		(linkedElement ? getRadiantScriptExport(linkedElement) : undefined) ??
+		getRadiantScriptExport(view) ??
+		linkedElement?.name
+	);
+}
 
-	const element = resolveRadiantElement(component);
-	if (!element) {
-		return typeof component === 'function' && storyModule ? { kind: 'jsx', storyModule, storyExport } : null;
-	}
-
+function resolveElementSsrTarget(options: {
+	component: RadiantComponent | undefined;
+	radiant?: RadiantStoryParameters['radiant'];
+	storyModule?: string;
+	storyExport?: string;
+}): SsrTarget | null {
+	const element = resolveRadiantElement(options.component);
+	if (!element)
+		return typeof options.component === 'function' && options.storyModule
+			? { kind: 'jsx', storyModule: options.storyModule, storyExport: options.storyExport }
+			: null;
 	const ssrModule = getRadiantScriptModule(element);
-	if (!ssrModule) {
-		return null;
-	}
-
+	if (!ssrModule) return null;
 	return {
 		kind: 'host',
 		ssrModule: normalizeSsrModulePath(ssrModule),
-		ssrExport: radiant?.ssrExport ?? getRadiantScriptExport(element) ?? element.name,
-		storyModule,
-		storyExport,
+		ssrExport: options.radiant?.ssrExport ?? getRadiantScriptExport(element) ?? element.name,
+		storyModule: options.storyModule,
+		storyExport: options.storyExport,
 	};
 }
 

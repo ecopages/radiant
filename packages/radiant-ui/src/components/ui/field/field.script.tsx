@@ -23,7 +23,7 @@ import {
 	wireFieldControlName,
 } from '../form/control-protocol';
 import { formContext, type FormContextValue } from '../form/form-context';
-import { fieldContext } from './field-context';
+import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRules } from '../form/types';
 
 /**
@@ -345,60 +345,15 @@ export class RuiField extends RadiantElement {
 		const fieldName = this.resolveFieldName();
 		wireFieldControlName(controlHost, ariaTarget, fieldName);
 
-		const describedBy: string[] = [];
-		const description = findFieldDescription(this);
-		if (description) {
-			description.id = descriptionId;
-			describedBy.push(descriptionId);
-		}
-		const errorEl = findFieldError(this);
-		if (errorEl) {
-			errorEl.id = errorId;
-			if (errorMessage) {
-				describedBy.push(errorId);
-			}
-		}
-
-		for (const [index, target] of ariaTargets.entries()) {
-			if (!target.id) {
-				target.id = index === 0 ? controlId : `${controlId}-${index}`;
-			}
-			target.setAttribute(RUI_FIELD_MANAGED_ATTR, '');
-			target.setAttribute('aria-invalid', invalid ? 'true' : 'false');
-			if (this.isRequired()) {
-				target.setAttribute('aria-required', 'true');
-			} else {
-				target.removeAttribute('aria-required');
-			}
-
-			if (describedBy.length > 0) {
-				target.setAttribute('aria-describedby', describedBy.join(' '));
-			} else {
-				target.removeAttribute('aria-describedby');
-			}
-
-			if (this.disabled) {
-				target.setAttribute('aria-disabled', 'true');
-				if (isNativeTextControl(target)) {
-					target.disabled = true;
-				}
-			}
-		}
+		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
+		this.syncAriaTargets(ariaTargets, controlId, describedBy, invalid, required);
 
 		const label = findFieldLabel(this);
 		if (label && ariaTarget) {
 			label.htmlFor = ariaTarget.id;
 		}
 
-		for (const errorEl of findFieldErrorElements(this)) {
-			errorEl.textContent = errorMessage ?? '';
-			if (errorMessage) {
-				errorEl.hidden = false;
-				errorEl.removeAttribute('hidden');
-			} else {
-				errorEl.hidden = true;
-			}
-		}
+		this.syncErrorPresentation(errorMessage);
 
 		const nextFieldContext = {
 			name: fieldName,
@@ -409,19 +364,69 @@ export class RuiField extends RadiantElement {
 			invalid,
 			required,
 		};
-		const prev = this.fieldProvider.getContext();
-		if (
-			prev.name === nextFieldContext.name &&
-			prev.controlId === nextFieldContext.controlId &&
-			prev.descriptionId === nextFieldContext.descriptionId &&
-			prev.errorId === nextFieldContext.errorId &&
-			prev.error === nextFieldContext.error &&
-			prev.invalid === nextFieldContext.invalid &&
-			prev.required === nextFieldContext.required
-		) {
-			return;
-		}
-
-		this.fieldProvider.setContext(nextFieldContext);
+		this.publishFieldContext(nextFieldContext);
 	}
+
+	private syncDescriptions(descriptionId: string, errorId: string, errorMessage: string | undefined): string[] {
+		const describedBy: string[] = [];
+		const description = findFieldDescription(this);
+		if (description) {
+			description.id = descriptionId;
+			describedBy.push(descriptionId);
+		}
+		const error = findFieldError(this);
+		if (error) error.id = errorId;
+		if (error && errorMessage) describedBy.push(errorId);
+		return describedBy;
+	}
+
+	private syncAriaTargets(
+		targets: HTMLElement[],
+		controlId: string,
+		describedBy: string[],
+		invalid: boolean,
+		required: boolean,
+	): void {
+		for (const [index, target] of targets.entries()) {
+			if (!target.id) target.id = index === 0 ? controlId : `${controlId}-${index}`;
+			target.setAttribute(RUI_FIELD_MANAGED_ATTR, '');
+			target.setAttribute('aria-invalid', String(invalid));
+			target.toggleAttribute('aria-required', required);
+			if (required) target.setAttribute('aria-required', 'true');
+			if (describedBy.length) target.setAttribute('aria-describedby', describedBy.join(' '));
+			else target.removeAttribute('aria-describedby');
+			if (this.disabled) this.disableAriaTarget(target);
+		}
+	}
+
+	private disableAriaTarget(target: HTMLElement): void {
+		target.setAttribute('aria-disabled', 'true');
+		if (isNativeTextControl(target)) target.disabled = true;
+	}
+
+	private syncErrorPresentation(errorMessage: string | undefined): void {
+		for (const error of findFieldErrorElements(this)) {
+			error.textContent = errorMessage ?? '';
+			error.hidden = !errorMessage;
+			if (errorMessage) error.removeAttribute('hidden');
+		}
+	}
+
+	private publishFieldContext(next: FieldContextValue): void {
+		const previous = this.fieldProvider.getContext();
+		if (isSameFieldContext(previous, next)) return;
+		this.fieldProvider.setContext(next);
+	}
+}
+
+function isSameFieldContext(previous: FieldContextValue, next: FieldContextValue): boolean {
+	return (
+		previous.name === next.name &&
+		previous.controlId === next.controlId &&
+		previous.descriptionId === next.descriptionId &&
+		previous.errorId === next.errorId &&
+		previous.error === next.error &&
+		previous.invalid === next.invalid &&
+		previous.required === next.required
+	);
 }

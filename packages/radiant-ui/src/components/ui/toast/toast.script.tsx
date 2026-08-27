@@ -350,88 +350,100 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	@bound
 	private onPointerMove(event: PointerEvent): void {
 		if (!this.pointerStart) return;
-		const { y, x } = splitToastPosition(this.position);
-		const deltaX = event.clientX - this.pointerStart.x;
-		const deltaY = event.clientY - this.pointerStart.y;
+		const delta = { x: event.clientX - this.pointerStart.x, y: event.clientY - this.pointerStart.y };
 
-		if (!this.swiping) {
-			if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) return;
-			this.swiping = true;
-			this.syncDomState();
-		}
+		if (!this.startSwipe(delta)) return;
+		this.swipeAxis ??= Math.abs(delta.x) > Math.abs(delta.y) ? 'x' : 'y';
+		const amount = this.swipeAxis === 'x' ? { x: delta.x, y: 0 } : { x: 0, y: delta.y };
+		if (this.isSwipeReversing(amount)) this.resetSwipeTranslation();
+		else this.setSwipeTranslation(amount);
+	}
 
-		if (!this.swipeAxis) {
-			this.swipeAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
-		}
+	private startSwipe(delta: { x: number; y: number }): boolean {
+		if (this.swiping) return true;
+		if (Math.abs(delta.x) < 8 && Math.abs(delta.y) < 8) return false;
+		this.swiping = true;
+		this.syncDomState();
+		return true;
+	}
 
-		const swipeAmountX = this.swipeAxis === 'x' ? deltaX : 0;
-		const swipeAmountY = this.swipeAxis === 'y' ? deltaY : 0;
+	private isSwipeReversing(amount: { x: number; y: number }): boolean {
+		const { x, y } = splitToastPosition(this.position);
+		if (this.swipeAxis === 'y')
+			return (y === 'bottom' ? amount.y < 0 : amount.y > 0) && Math.abs(amount.y) < TOAST_SWIPE_THRESHOLD;
+		return (
+			x !== 'center' &&
+			(x === 'start' ? amount.x > 0 : amount.x < 0) &&
+			Math.abs(amount.x) < TOAST_SWIPE_THRESHOLD
+		);
+	}
 
-		if (this.swipeAxis === 'y') {
-			const towardExit = y === 'bottom' ? swipeAmountY > 0 : swipeAmountY < 0;
-			if (!towardExit && Math.abs(swipeAmountY) < TOAST_SWIPE_THRESHOLD) {
-				this.style.setProperty('--swipe-amount-x', '0px');
-				this.style.setProperty('--swipe-amount-y', '0px');
-				return;
-			}
-		}
+	private setSwipeTranslation(amount: { x: number; y: number }): void {
+		this.style.setProperty('--swipe-amount-x', `${amount.x}px`);
+		this.style.setProperty('--swipe-amount-y', `${amount.y}px`);
+	}
 
-		if (this.swipeAxis === 'x') {
-			const towardExit = x === 'start' ? swipeAmountX < 0 : swipeAmountX > 0;
-			if (x !== 'center' && !towardExit && Math.abs(swipeAmountX) < TOAST_SWIPE_THRESHOLD) {
-				this.style.setProperty('--swipe-amount-x', '0px');
-				this.style.setProperty('--swipe-amount-y', '0px');
-				return;
-			}
-		}
-
-		this.style.setProperty('--swipe-amount-x', `${swipeAmountX}px`);
-		this.style.setProperty('--swipe-amount-y', `${swipeAmountY}px`);
+	private resetSwipeTranslation(): void {
+		this.setSwipeTranslation({ x: 0, y: 0 });
 	}
 
 	@bound
 	private onPointerUp(event: PointerEvent): void {
 		if (!this.pointerStart) return;
-		try {
-			this.releasePointerCapture(event.pointerId);
-		} catch {}
-
-		const wasSwiping = this.swiping;
+		this.releaseToastPointer(event.pointerId);
+		const swipe = this.readSwipe();
 		this.swiping = false;
+		if (swipe && this.dismissible && this.shouldDismissSwipe(swipe)) this.dismissFromSwipe(swipe);
+		else this.cancelSwipe();
+		this.clearPointerState();
+	}
 
-		if (!wasSwiping) {
-			this.pointerStart = null;
-			this.dragStartTime = null;
-			this.swipeAxis = null;
-			return;
-		}
+	private releaseToastPointer(pointerId: number): void {
+		try {
+			this.releasePointerCapture(pointerId);
+		} catch {}
+	}
 
-		const swipeAmountX = Number.parseFloat(this.style.getPropertyValue('--swipe-amount-x') || '0');
-		const swipeAmountY = Number.parseFloat(this.style.getPropertyValue('--swipe-amount-y') || '0');
-		const swipeAmount = this.swipeAxis === 'x' ? swipeAmountX : swipeAmountY;
-		const swipeTime = this.dragStartTime ? Date.now() - this.dragStartTime : 0;
-		const velocity = Math.abs(swipeAmount) / Math.max(swipeTime, 1);
-		const shouldDismiss = Math.abs(swipeAmount) >= TOAST_SWIPE_THRESHOLD || velocity > 0.11;
+	private readSwipe(): { x: number; y: number } | undefined {
+		if (!this.swiping) return undefined;
+		return {
+			x: Number.parseFloat(this.style.getPropertyValue('--swipe-amount-x') || '0'),
+			y: Number.parseFloat(this.style.getPropertyValue('--swipe-amount-y') || '0'),
+		};
+	}
 
-		if (shouldDismiss && this.dismissible) {
-			const { y, x } = splitToastPosition(this.position);
-			if (this.swipeAxis === 'x') {
-				this.swipeOutDirection = swipeAmountX < 0 ? 'left' : 'right';
-				if (x === 'start') this.swipeOutDirection = 'left';
-				if (x === 'end') this.swipeOutDirection = 'right';
-			} else {
-				this.swipeOutDirection = y === 'bottom' ? 'down' : 'up';
-			}
-			this.swipeOut = true;
-			this.syncDomState();
-			this.beginRemove();
-		} else {
-			this.style.setProperty('--swipe-amount-x', '0px');
-			this.style.setProperty('--swipe-amount-y', '0px');
-			this.swipeAxis = null;
-			this.syncDomState();
-		}
+	private shouldDismissSwipe(swipe: { x: number; y: number }): boolean {
+		const amount = this.swipeAxis === 'x' ? swipe.x : swipe.y;
+		const duration = this.dragStartTime ? Date.now() - this.dragStartTime : 0;
+		return Math.abs(amount) >= TOAST_SWIPE_THRESHOLD || Math.abs(amount) / Math.max(duration, 1) > 0.11;
+	}
 
+	private dismissFromSwipe(swipe: { x: number; y: number }): void {
+		const { x, y } = splitToastPosition(this.position);
+		this.swipeOutDirection =
+			this.swipeAxis === 'y'
+				? y === 'bottom'
+					? 'down'
+					: 'up'
+				: x === 'start'
+					? 'left'
+					: x === 'end'
+						? 'right'
+						: swipe.x < 0
+							? 'left'
+							: 'right';
+		this.swipeOut = true;
+		this.syncDomState();
+		this.beginRemove();
+	}
+
+	private cancelSwipe(): void {
+		this.resetSwipeTranslation();
+		this.swipeAxis = null;
+		this.syncDomState();
+	}
+
+	private clearPointerState(): void {
 		this.pointerStart = null;
 		this.dragStartTime = null;
 	}

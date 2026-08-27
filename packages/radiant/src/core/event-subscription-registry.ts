@@ -1,3 +1,5 @@
+import { eventMatchesDelegatedSelector } from './delegated-event';
+
 export type ElementEventListenerConfig = {
 	selector: string;
 	type: string;
@@ -21,7 +23,10 @@ export class EventSubscriptionRegistry {
 		const interactionTarget = this.getInteractionTarget();
 		const listenerContext = this.getListenerContext();
 		const delegatedListener = (delegatedEvent: Event) => {
-			if (delegatedEvent.target && (delegatedEvent.target as Element).matches(eventConfig.selector)) {
+			if (
+				interactionTarget instanceof Node &&
+				eventMatchesDelegatedSelector(delegatedEvent, interactionTarget, eventConfig.selector)
+			) {
 				eventConfig.listener.call(listenerContext, delegatedEvent);
 			}
 		};

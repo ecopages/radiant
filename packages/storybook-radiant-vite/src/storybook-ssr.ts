@@ -190,26 +190,47 @@ export async function renderStorybookSsrPayload(
 }> {
 	const args = await resolveStoryArgs(server, body.storyModule, body.storyExport, body.args ?? {});
 	const mode = body.mode ?? 'hydrate';
+	return body.kind === 'jsx'
+		? renderJsxSsrPayload(server, body, args, mode, options)
+		: renderHostSsrPayload(server, body, args, mode, options);
+}
 
-	if (body.kind === 'jsx') {
-		const markup = await renderStoryMarkup(server, body.storyModule, body.storyExport, args, mode);
-		const assets =
-			mode === 'plain' && body.storyModule
-				? await collectSsrStyleAssets(server, [body.storyModule], {
-						includeGlobalStyles: true,
-						globalStyleModules: options.globalStyleModules,
-					})
-				: [];
+async function renderJsxSsrPayload(
+	server: ViteDevServer,
+	body: RadiantSsrRequestBody,
+	args: Record<string, unknown>,
+	mode: 'hydrate' | 'plain',
+	options: { globalStyleModules?: readonly string[] },
+): Promise<{
+	markup: string;
+	tagName: string;
+	assets: RadiantSsrAsset[];
+	clientModuleSrc?: string;
+	generatedAt: string;
+}> {
+	const markup = await renderStoryMarkup(server, body.storyModule, body.storyExport, args, mode);
+	return {
+		markup,
+		tagName: '',
+		assets: await collectPlainStoryAssets(server, body.storyModule, mode, options),
+		clientModuleSrc: body.storyModule,
+		generatedAt: new Date().toISOString(),
+	};
+}
 
-		return {
-			markup,
-			tagName: '',
-			assets,
-			clientModuleSrc: body.storyModule,
-			generatedAt: new Date().toISOString(),
-		};
-	}
-
+async function renderHostSsrPayload(
+	server: ViteDevServer,
+	body: RadiantSsrRequestBody,
+	args: Record<string, unknown>,
+	mode: 'hydrate' | 'plain',
+	options: { globalStyleModules?: readonly string[] },
+): Promise<{
+	markup: string;
+	tagName: string;
+	assets: RadiantSsrAsset[];
+	clientModuleSrc?: string;
+	generatedAt: string;
+}> {
 	const { ssrModule, ssrExport } = await resolveScriptSsrModule(server, {
 		ssrModule: body.ssrModule,
 		ssrExport: body.ssrExport,
@@ -221,24 +242,7 @@ export async function renderStorybookSsrPayload(
 	const Component = pickComponentExport(mod, ssrExport);
 	const tagName = getCustomElementTagName(Component) ?? Component.name.toLowerCase();
 
-	let authoredContent: string | undefined;
-	if (body.viewModule) {
-		authoredContent = await renderViewAuthoredContent(
-			server,
-			body.viewModule,
-			body.viewExport,
-			args,
-			mode,
-			body.storyModule,
-			body.storyExport,
-		);
-		if (!authoredContent?.trim()) {
-			const itemCount = Array.isArray(args.items) ? args.items.length : 0;
-			throw new Error(
-				`View SSR produced empty authored content for ${body.viewModule} (items=${itemCount}, args=${Object.keys(args).join(',')})`,
-			);
-		}
-	}
+	const authoredContent = await resolveAuthoredContent(server, body, args, mode);
 
 	const rendered = await renderSsrComponent(Component, {
 		authoredContent,
@@ -249,14 +253,7 @@ export async function renderStorybookSsrPayload(
 		},
 	});
 
-	const styleAssets =
-		mode === 'plain'
-			? await collectSsrStyleAssets(
-					server,
-					[ssrModule, body.viewModule].filter((entry): entry is string => Boolean(entry)),
-					{ includeGlobalStyles: true, globalStyleModules: options.globalStyleModules },
-				)
-			: [];
+	const styleAssets = await collectPlainStoryAssets(server, [ssrModule, body.viewModule], mode, options);
 
 	return {
 		markup: rendered.markup,
@@ -265,6 +262,45 @@ export async function renderStorybookSsrPayload(
 		clientModuleSrc: body.viewModule ?? rendered.metadata.clientModuleUrl ?? ssrModule,
 		generatedAt: rendered.metadata.generatedAt,
 	};
+}
+
+async function resolveAuthoredContent(
+	server: ViteDevServer,
+	body: RadiantSsrRequestBody,
+	args: Record<string, unknown>,
+	mode: 'hydrate' | 'plain',
+): Promise<string | undefined> {
+	if (!body.viewModule) return undefined;
+	const authoredContent = await renderViewAuthoredContent(
+		server,
+		body.viewModule,
+		body.viewExport,
+		args,
+		mode,
+		body.storyModule,
+		body.storyExport,
+	);
+	if (authoredContent?.trim()) return authoredContent;
+	const itemCount = Array.isArray(args.items) ? args.items.length : 0;
+	throw new Error(
+		`View SSR produced empty authored content for ${body.viewModule} (items=${itemCount}, args=${Object.keys(args).join(',')})`,
+	);
+}
+
+async function collectPlainStoryAssets(
+	server: ViteDevServer,
+	modules: string | readonly (string | undefined)[] | undefined,
+	mode: 'hydrate' | 'plain',
+	options: { globalStyleModules?: readonly string[] },
+): Promise<RadiantSsrAsset[]> {
+	const modulePaths = (typeof modules === 'string' ? [modules] : (modules ?? [])).filter((entry): entry is string =>
+		Boolean(entry),
+	);
+	if (mode !== 'plain' || !modulePaths.length) return [];
+	return collectSsrStyleAssets(server, modulePaths, {
+		includeGlobalStyles: true,
+		globalStyleModules: options.globalStyleModules,
+	});
 }
 
 async function renderStoryMarkup(

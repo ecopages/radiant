@@ -24,6 +24,18 @@ const HOST_CONTROL_TAGS = new Set([
 /** Library controls only — `data-rui-control` (e.g. RuiInput) or known host tags. */
 const CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
 
+const ARIA_TARGET_SELECTORS: Readonly<Record<string, string>> = {
+	'rui-combobox': '[data-combobox-input]',
+	'rui-date-field': '[data-date-field-input]',
+	'rui-date-range-picker': '[data-range-start]',
+	'rui-select': '[data-select-trigger]',
+	'rui-tag-group': '[data-tag-list]',
+	'rui-number-field': '[data-number-field-input], input',
+	'rui-knob': '[data-knob-control]',
+	'rui-checkbox': 'input',
+	'rui-switch': 'input',
+};
+
 /**
  * Presentational text controls (`RuiInput` / `RuiTextarea`) are real `<input>` / `<textarea>`
  * nodes marked with `data-rui-control`. Detect by tag name — never `instanceof HTMLInputElement`,
@@ -443,49 +455,17 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 		return marked;
 	}
 
-	if (control.localName === 'rui-combobox') {
-		return control.querySelector<HTMLElement>('[data-combobox-input]') ?? control;
-	}
-
-	if (control.localName === 'rui-date-field') {
-		return control.querySelector<HTMLInputElement>('[data-date-field-input]') ?? control;
-	}
-
-	if (control.localName === 'rui-date-range-picker') {
-		return control.querySelector<HTMLInputElement>('[data-range-start]') ?? control;
-	}
-
-	if (control.localName === 'rui-select') {
-		return control.querySelector<HTMLElement>('[data-select-trigger]') ?? control;
-	}
-
-	if (control.localName === 'rui-tag-group') {
-		return control.querySelector<HTMLElement>('[data-tag-list]') ?? control;
-	}
-
-	if (control.localName === 'rui-number-field') {
-		return control.querySelector<HTMLElement>('[data-number-field-input], input') ?? control;
-	}
-
-	if (control.localName === 'rui-knob') {
-		return control.querySelector<HTMLElement>('[data-knob-control]') ?? control;
-	}
-
-	if (control.localName === 'rui-checkbox' || control.localName === 'rui-switch') {
-		return control.querySelector<HTMLElement>('input') ?? control;
-	}
-
 	if (control.localName === 'rui-radio-group') {
-		const radios = control.querySelectorAll<HTMLInputElement>('input[type="radio"]');
-		for (const radio of radios) {
-			if (isChecked(radio)) {
-				return radio;
-			}
-		}
-		return radios[0] ?? control;
+		return getSelectedRadio(control) ?? control;
 	}
 
-	return control;
+	const selector = ARIA_TARGET_SELECTORS[control.localName];
+	return selector ? (control.querySelector<HTMLElement>(selector) ?? control) : control;
+}
+
+function getSelectedRadio(control: HTMLElement): HTMLInputElement | undefined {
+	const radios = control.querySelectorAll<HTMLInputElement>('input[type="radio"]');
+	return Array.from(radios).find(isChecked) ?? radios[0];
 }
 
 /** Focusable surfaces that Field should wire `aria-invalid` / `aria-describedby` onto. */

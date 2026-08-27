@@ -13,6 +13,14 @@ export type RuiTreegridChangeDetail = {
 	columnIndex: number;
 };
 
+type TreegridCellContext = {
+	cell: HTMLElement;
+	columnIndex: number;
+	row: HTMLElement;
+	rowCells: HTMLElement[];
+	visibleRows: HTMLElement[];
+};
+
 /**
  * `<rui-treegrid>` — a hierarchical grid navigated with arrow keys.
  *
@@ -195,104 +203,100 @@ export class RuiTreegrid extends RadiantElement {
 	onCellKeydown(event: KeyboardEvent): void {
 		const cell = (event.target as HTMLElement).closest<HTMLElement>('[role="gridcell"]');
 		const row = cell?.closest<HTMLElement>('[role="row"][data-row-id]');
-		if (!cell || !row) {
+		if (!cell || !row) return;
+		const context = this.createCellContext(cell, row);
+		const handler = this.cellKeyHandlers[event.key];
+		if (!handler) return;
+		event.preventDefault();
+		handler.call(this, context);
+	}
+
+	private readonly cellKeyHandlers: Record<string, (context: TreegridCellContext) => void> = {
+		ArrowRight: this.moveRight,
+		ArrowLeft: this.moveLeft,
+		ArrowDown: this.moveDown,
+		ArrowUp: this.moveUp,
+		Home: this.focusFirstCell,
+		End: this.focusLastCell,
+		'*': this.expandAllRows,
+		Enter: this.toggleOrActivateCell,
+		' ': this.activateContextCell,
+	};
+
+	private createCellContext(cell: HTMLElement, row: HTMLElement): TreegridCellContext {
+		return {
+			cell,
+			columnIndex: this.getRowCells(row).indexOf(cell),
+			row,
+			rowCells: this.getRowCells(row),
+			visibleRows: this.getVisibleRows(),
+		};
+	}
+
+	private moveRight(context: TreegridCellContext): void {
+		if (this.setExpandedFromFirstCell(context, true)) return;
+		if (context.columnIndex < context.rowCells.length - 1) this.focusCell(context.row, context.columnIndex + 1);
+	}
+
+	private moveLeft(context: TreegridCellContext): void {
+		if (this.setExpandedFromFirstCell(context, false)) return;
+		if (context.columnIndex > 0) {
+			this.focusCell(context.row, context.columnIndex - 1);
 			return;
 		}
+		const parent = this.getParentRow(context.row);
+		if (parent) this.focusCell(parent, 0);
+	}
 
-		const visibleRows = this.getVisibleRows();
-		const rowIndex = visibleRows.indexOf(row);
-		const rowCells = this.getRowCells(row);
-		const colIndex = rowCells.indexOf(cell);
-		const isFirstCell = colIndex === 0;
-		const isExpandable = row.hasAttribute('aria-expanded');
-		const isExpanded = row.getAttribute('aria-expanded') === 'true';
+	private moveDown(context: TreegridCellContext): void {
+		this.focusAdjacentRow(context, 1);
+	}
 
-		switch (event.key) {
-			case 'ArrowRight': {
-				event.preventDefault();
-				if (isFirstCell && isExpandable && !isExpanded) {
-					this.setExpanded(row, true);
-					this.syncSelection();
-					return;
-				}
+	private moveUp(context: TreegridCellContext): void {
+		this.focusAdjacentRow(context, -1);
+	}
 
-				if (colIndex < rowCells.length - 1) {
-					this.focusCell(row, colIndex + 1);
-				}
-				return;
-			}
-			case 'ArrowLeft': {
-				event.preventDefault();
-				if (isFirstCell && isExpandable && isExpanded) {
-					this.setExpanded(row, false);
-					this.syncSelection();
-					return;
-				}
+	private focusAdjacentRow(context: TreegridCellContext, direction: 1 | -1): void {
+		const index = context.visibleRows.indexOf(context.row);
+		const row = context.visibleRows[index + direction];
+		if (row) this.focusCell(row, context.columnIndex);
+	}
 
-				if (colIndex > 0) {
-					this.focusCell(row, colIndex - 1);
-					return;
-				}
+	private focusFirstCell(context: TreegridCellContext): void {
+		this.focusCell(context.row, 0);
+	}
 
-				const parent = this.getParentRow(row);
-				if (parent) {
-					this.focusCell(parent, 0);
-				}
-				return;
-			}
-			case 'ArrowDown': {
-				event.preventDefault();
-				const nextRow = visibleRows[Math.min(visibleRows.length - 1, rowIndex + 1)];
-				if (nextRow && nextRow !== row) {
-					this.focusCell(nextRow, colIndex);
-				}
-				return;
-			}
-			case 'ArrowUp': {
-				event.preventDefault();
-				const prevRow = visibleRows[Math.max(0, rowIndex - 1)];
-				if (prevRow && prevRow !== row) {
-					this.focusCell(prevRow, colIndex);
-				}
-				return;
-			}
-			case 'Home': {
-				event.preventDefault();
-				this.focusCell(row, 0);
-				return;
-			}
-			case 'End': {
-				event.preventDefault();
-				this.focusCell(row, rowCells.length - 1);
-				return;
-			}
-			case '*': {
-				event.preventDefault();
-				for (const sibling of this.getDataRows()) {
-					if (sibling.hasAttribute('aria-expanded')) {
-						this.setExpanded(sibling, true);
-					}
-				}
-				this.syncSelection();
-				return;
-			}
-			case 'Enter': {
-				event.preventDefault();
-				if (isFirstCell && isExpandable) {
-					this.setExpanded(row, !isExpanded);
-					this.syncSelection();
-					return;
-				}
-				this.activateCell(cell);
-				return;
-			}
-			case ' ': {
-				event.preventDefault();
-				this.activateCell(cell);
-				return;
-			}
-			default:
-				return;
-		}
+	private focusLastCell(context: TreegridCellContext): void {
+		this.focusCell(context.row, context.rowCells.length - 1);
+	}
+
+	private expandAllRows(): void {
+		for (const row of this.getDataRows()) if (row.hasAttribute('aria-expanded')) this.setExpanded(row, true);
+		this.syncSelection();
+	}
+
+	private toggleOrActivateCell(context: TreegridCellContext): void {
+		if (this.toggleExpansionFromFirstCell(context)) return;
+		this.activateCell(context.cell);
+	}
+
+	private activateContextCell(context: TreegridCellContext): void {
+		this.activateCell(context.cell);
+	}
+
+	private setExpandedFromFirstCell(context: TreegridCellContext, expanded: boolean): boolean {
+		const isExpanded = context.row.getAttribute('aria-expanded') === 'true';
+		if (context.columnIndex !== 0 || !context.row.hasAttribute('aria-expanded') || isExpanded === expanded)
+			return false;
+		this.setExpanded(context.row, expanded);
+		this.syncSelection();
+		return true;
+	}
+
+	private toggleExpansionFromFirstCell(context: TreegridCellContext): boolean {
+		if (context.columnIndex !== 0 || !context.row.hasAttribute('aria-expanded')) return false;
+		this.setExpanded(context.row, context.row.getAttribute('aria-expanded') !== 'true');
+		this.syncSelection();
+		return true;
 	}
 }
