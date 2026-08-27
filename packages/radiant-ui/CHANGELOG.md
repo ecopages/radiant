@@ -1,5 +1,16 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.6
+
+### Minor Changes
+
+- [#199](https://github.com/ecopages/radiant/pull/199) [`b054bd0`](https://github.com/ecopages/radiant/commit/b054bd029bc1f4312efa73933a15d3b969e31e74) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `RuiCheckboxGroup` for coordinating multiple `RuiCheckbox` options as a single multi-value form field.
+
+    **@ecopages/radiant-ui**
+
+    - New `<rui-checkbox-group>` host with `RuiCheckboxGroupControl`, `options` convenience API, and `orientation` layout.
+    - Comma-separated `value` protocol matches multi-select controls; integrates with `RuiField` / `RuiForm`.
+
 ## 0.1.0-rc.5
 
 ### Minor Changes
