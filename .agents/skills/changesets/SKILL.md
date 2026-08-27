@@ -45,7 +45,7 @@ Skip it for docs-only work, internal refactors with no shipped behavior change, 
 
 ## Create the file
 
-Write `.changeset/<descriptive-name>.md` directly, with a name that describes the change (`ssr-render-scope-als.md`, not `patch.md`). `pnpm changeset` prompts interactively and generates a random name; prefer writing the file when the packages and bump are already known.
+Write `.changeset/<descriptive-name>.md` directly, with a name that describes the change (`ssr-render-scope-als.md`, not `patch.md`). Never put a new changeset in `.changeset/pre/` — that folder is only for notes already consumed by `changeset version` in the current prerelease line, and CI will treat them as already released. `pnpm changeset` prompts interactively and generates a random name; prefer writing the file when the packages and bump are already known.
 
 ```markdown
 ---
