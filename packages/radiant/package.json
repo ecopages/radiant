@@ -24,10 +24,10 @@
 		"size:check": "node --import tsx ./check-size.ts",
 		"size:report": "node --import tsx ./check-size.ts --report-only",
 		"test:all": "pnpm run test:lib && pnpm run size:check",
-		"test:standard": "vitest run",
-		"test:legacy": "vitest run -- --legacy",
+		"test:standard": "vitest run && vitest run --config vitest.browser.config.ts && vitest run --config vitest.e2e.config.ts",
+		"test:legacy": "vitest run -- --legacy && vitest run --config vitest.browser.config.ts -- --legacy && vitest run --config vitest.e2e.config.ts -- --legacy",
 		"test:lib": "pnpm run test:standard && pnpm run test:legacy",
-		"test:lib:coverage": "vitest run --coverage --project node && vitest run --coverage --project node -- --legacy"
+		"test:lib:coverage": "vitest run --coverage && vitest run --coverage -- --legacy"
 	},
 	"dependencies": {
 		"@ecopages/signals": "workspace:>=0.3.0-rc.4"
