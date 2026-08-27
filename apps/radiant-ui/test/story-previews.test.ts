@@ -10,6 +10,7 @@ import { meta as dateFieldMeta } from '../src/content/stories/date-field';
 import { meta as dateRangePickerMeta } from '../src/content/stories/date-range-picker';
 import { meta as autocompleteMeta } from '../src/content/stories/autocomplete';
 import { meta as menuButtonMeta } from '../src/content/stories/menu-button';
+import { meta as menubarMeta } from '../src/content/stories/menubar';
 import { meta as radioGroupMeta } from '../src/content/stories/radio-group';
 import { meta as checkboxGroupMeta } from '../src/content/stories/checkbox-group';
 
@@ -107,6 +108,15 @@ describe('story preview renders', () => {
 
 		expect(preview).toContain('case');
 		expect(preview).toContain('rui-listbox');
+	});
+
+	test('menubar renders a nested submenu branch', () => {
+		const preview = serialize(menubarMeta.render!({ label: 'Application menu' }));
+
+		expect(preview).toContain('rui-menubar');
+		expect(preview).toContain('Share');
+		expect(preview).toContain('Email');
+		expect(preview).toContain('rui-menubar__submenu');
 	});
 
 	test('menu button, radio group, and checkbox group render composed controls', () => {
