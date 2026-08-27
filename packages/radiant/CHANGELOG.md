@@ -1,5 +1,14 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.4
+
+### Patch Changes
+
+- [#198](https://github.com/ecopages/radiant/pull/198) [`9742d57`](https://github.com/ecopages/radiant/commit/9742d57d406d822c149a877ec1c0bed06b13ddc6) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop the SSR light-DOM shim from recursing through `CSS.escape`, and make delegated `subscribeEvent(...)` matching ancestor-aware like `@onEvent`. Client ref selectors use native `CSS.escape`.
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-rc.4
+    - @ecopages/signals@0.3.0-rc.4
+
 ## 0.3.0-rc.3
 
 ### Minor Changes

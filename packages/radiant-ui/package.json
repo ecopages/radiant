@@ -38,9 +38,9 @@
 		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-rc.3",
-		"@ecopages/radiant": ">=0.3.0-rc.3",
-		"@ecopages/signals": ">=0.3.0-rc.3"
+		"@ecopages/jsx": ">=0.3.0-rc.4",
+		"@ecopages/radiant": ">=0.3.0-rc.4",
+		"@ecopages/signals": ">=0.3.0-rc.4"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
