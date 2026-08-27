@@ -1,0 +1,109 @@
+---
+title: Checkbox Group
+description: Checkbox groups let users select any number of related options. Use them when choices are independent and more than one can be selected.
+category: Forms
+---
+
+import { meta as CheckboxGroupMeta, Default } from '@/content/stories/checkbox-group';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Checkbox Group
+
+<p class="docs-lede">Checkbox groups let users select any number of related options. Use them when choices are independent and more than one can be selected.</p>
+
+## Try it
+
+<Demo of={Default} meta={CheckboxGroupMeta} />
+
+## Usage
+
+Set `value` to a comma-separated list of selected option values. Wrap in `RuiField` for form integration.
+
+```tsx
+import { RuiCheckbox } from '@ecopages/radiant-ui/checkbox';
+import { RuiCheckboxGroup, RuiCheckboxGroupControl } from '@ecopages/radiant-ui/checkbox-group';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="topics">
+  <RuiLabel>Topics</RuiLabel>
+  <RuiCheckboxGroup value="news,travel" name="topics" label="Topics">
+    <RuiCheckboxGroupControl>
+      <RuiCheckbox value="news">News</RuiCheckbox>
+      <RuiCheckbox value="travel">Travel</RuiCheckbox>
+    </RuiCheckboxGroupControl>
+  </RuiCheckboxGroup>
+</RuiField>
+```
+
+## Independent choices
+
+<p>Use checkbox groups when users may select multiple related options. For mutually exclusive choices, use a <a href="/components/radio-group">radio group</a> instead. For a single on/off toggle, use a <a href="/components/checkbox">checkbox</a>.</p>
+
+## Theming
+
+Checkbox group layout uses the group surface only; checkbox chrome comes from `RuiCheckbox`:
+
+| Part | CSS roles |
+| --- | --- |
+| Group (`.rui-checkbox-group`) | `gap-inline`; horizontal layout via `data-orientation` |
+| Checkbox rows | See [Checkbox](/components/checkbox) theming |
+
+## API
+
+`RuiCheckboxGroup` is a custom element (`<rui-checkbox-group>`). Compose its options with `RuiCheckboxGroupControl` and `RuiCheckbox`, or use the convenience `options` prop.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Comma-separated selected values. |
+| `name` | `string` | `''` | Form field name shared by all checkboxes in the group. |
+| `label` | `string` | `''` | Accessible name when no visible legend is composed in the view. |
+| `disabled` | `boolean` | `false` | Disables every checkbox in the group. |
+| `orientation` | `'horizontal' \| 'vertical'` | `'vertical'` | Layout axis for checkbox items. |
+
+### Composition
+
+| Piece | Description |
+| --- | --- |
+| `RuiCheckboxGroupControl` | Accessible group surface (`role="group"`). |
+| `RuiCheckbox` children | One checkbox per selectable option with a unique `value`. |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted after the selection changes. |
+
+### Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `options` | `RuiCheckboxOption[]` | `{ value, label, disabled? }` entries rendered by the view. |
+| `value` | `string \| string[]` | Selected values; arrays serialize to comma-separated form. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-checkbox-group` | Group surface (`role="group"`). |
+
+## Accessibility
+
+- The group exposes `role="group"` with an accessible name from `label` or an associated `RuiLabel`.
+- Each option is a native checkbox with Space-to-toggle.
+- For required multi-select fields, validate through `RuiField` rules rather than per-checkbox `required`.
