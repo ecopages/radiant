@@ -112,11 +112,11 @@ Menubar surfaces map to **semantic surface roles**, never Tailwind palette steps
 | Part | CSS roles |
 | --- | --- |
 | Bar (`rui-menubar`) | `surface`, `border`, `rounded-container` |
-| Top-level item (`rui-menubar__item`) | `on-surface`; hover / expanded `background`, `on-background`, `shadow-sm` |
+| Top-level item (`rui-menubar__item`) | `on-surface`; hover / expanded `--rui-menu-item-hover` (`surface-container-low`), `on-background`, `shadow-sm` |
 | Popup (`rui-menubar__menu`) | `background`, `border`, `shadow-overlay`, `rounded-container` (via `rui-popover`) |
-| Menu item (`rui-menubar__menu-item`) | `on-surface`; hover `background` |
+| Menu item (`rui-menubar__menu-item`) | `on-surface`; hover / expanded `--rui-menu-item-hover` (`surface-container-low`) |
 
-Geometry shares control tokens (`--size-control-*`, `--space-control-*`, `--radius-control`) with `RuiButton`. Override roles at the theme layer, not in component CSS.
+Geometry shares control tokens (`--size-control-*`, `--space-control-*`, `--radius-control`) with `RuiButton`. Override `--rui-menu-item-hover` on the host or an ancestor to restyle hover; map other roles at the theme layer, not in component CSS.
 
 ## API
 
@@ -170,9 +170,9 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | Part | CSS variables consumed |
 | --- | --- |
 | Bar | `--surface`, `--border` |
-| Top-level item | `--on-surface`, `--background`, `--on-background` (hover / expanded), `--shadow-sm` |
+| Top-level item | `--on-surface`, `--rui-menu-item-hover` (hover / expanded; defaults to `--surface-container-low`), `--on-background`, `--shadow-sm` |
 | Popup | `--background`, `--border`, `--shadow-overlay` |
-| Menu item | `--on-surface`, `--background` (hover) |
+| Menu item | `--on-surface`, `--rui-menu-item-hover` (hover / expanded) |
 | Focus ring | `--focus-ring` |
 
 ## Accessibility
