@@ -11,6 +11,7 @@ import './button-group';
 import './calendar';
 import './carousel';
 import './checkbox';
+import './checkbox-group';
 import './chip-list';
 import './combobox';
 import './date-field';
