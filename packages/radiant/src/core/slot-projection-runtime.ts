@@ -2,6 +2,7 @@ import {
 	createMarkupNodeLike,
 	isKeyedJsxValue,
 	isSlotJsxValue,
+	type JsxNodeLike,
 	type JsxRenderable,
 	type KeyedJsxValue,
 	type SlotJsxValue,
@@ -207,11 +208,7 @@ function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined
 	}
 
 	if (typeof Node !== 'undefined' && renderable instanceof Node) {
-		if (renderable.nodeType === Node.TEXT_NODE) {
-			return renderable.textContent ?? '';
-		}
-
-		return (renderable as Element).outerHTML ?? renderable.textContent ?? undefined;
+		return renderDomNode(renderable);
 	}
 
 	if (isKeyedJsxValue(renderable)) {
@@ -222,8 +219,8 @@ function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined
 		return String(renderable);
 	}
 
-	if (typeof renderable === 'object' && renderable !== null && 'outerHTML' in renderable) {
-		return typeof renderable.outerHTML === 'string' ? renderable.outerHTML : (renderable.textContent ?? undefined);
+	if (hasOuterHtml(renderable)) {
+		return renderOuterHtmlValue(renderable);
 	}
 
 	if (isIterableRenderable(renderable)) {
@@ -231,6 +228,22 @@ function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined
 	}
 
 	return undefined;
+}
+
+function renderDomNode(node: Node): string | undefined {
+	if (node.nodeType === Node.TEXT_NODE) {
+		return node.textContent ?? '';
+	}
+
+	return (node as Element).outerHTML ?? node.textContent ?? undefined;
+}
+
+function hasOuterHtml(renderable: JsxRenderable): renderable is JsxNodeLike & { outerHTML: unknown } {
+	return typeof renderable === 'object' && renderable !== null && 'outerHTML' in renderable;
+}
+
+function renderOuterHtmlValue(renderable: JsxNodeLike & { outerHTML: unknown }): string | undefined {
+	return typeof renderable.outerHTML === 'string' ? renderable.outerHTML : (renderable.textContent ?? undefined);
 }
 
 function resolveSlotValue(
