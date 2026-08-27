@@ -6,11 +6,11 @@ Source of truth: `.changeset/config.json`. Prerelease channel: `.changeset/pre.j
 
 ## Package tiers
 
-| Tier                       | Packages                                                            | Rule                                                                                                              |
-| -------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Platform (`fixed`)         | `@ecopages/jsx`, `@ecopages/signals`, `@ecopages/radiant`           | List only those with a user-visible change. `fixed` bumps all three to the same version regardless.               |
-| Design system              | `@ecopages/radiant-ui`                                              | List when components, tokens, themes, or public exports change. Versions independently — never add it to `fixed`. |
-| Vite integration (`fixed`) | `@ecopages/vite-plugin-radiant`, `@ecopages/storybook-radiant-vite` | List when either public API changes. `fixed` bumps both to the same version. Not in the platform group.           |
+| Tier                       | Packages                                                            | Rule                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Platform (`fixed`)         | `@ecopages/jsx`, `@ecopages/signals`, `@ecopages/radiant`           | List only those with a user-visible change. `fixed` bumps all three to the same version regardless.                          |
+| Design system              | `@ecopages/radiant-ui`                                              | List when components, tokens, themes, or public exports change. Versions independently — never add it to `fixed`.            |
+| Vite integration (`fixed`) | `@ecopages/vite-plugin-radiant`, `@ecopages/storybook-radiant-vite` | List when either public API changes. `fixed` bumps both to the same version. Not in the platform group.                      |
 | Private                    | `apps/*`, `playground/*`, `@ecopages/oxlint-config`                 | Never list in changesets, never publish. Internal packages stay `"private": true` with `0.0.0` so `workspace:*` can resolve. |
 
 Do not invent a `packages/core/` layout to co-version the platform trio — `fixed` already does that.

@@ -35,17 +35,23 @@ Compose triggers, links, and panels with the sub-components. Use `RuiNavigationM
 ```tsx
 import {
   RuiNavigationMenu,
-  RuiNavigationMenuTrigger,
+  RuiNavigationMenuBar,
   RuiNavigationMenuLink,
   RuiNavigationMenuPanel,
+  RuiNavigationMenuPanels,
+  RuiNavigationMenuTrigger,
 } from '@ecopages/radiant-ui/navigation-menu';
 
 <RuiNavigationMenu label="Main">
-  <RuiNavigationMenuTrigger>Products</RuiNavigationMenuTrigger>
-  <RuiNavigationMenuPanel>
-    <RuiNavigationMenuLink href="/widgets">Widgets</RuiNavigationMenuLink>
-  </RuiNavigationMenuPanel>
-  <RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
+  <RuiNavigationMenuBar>
+    <RuiNavigationMenuTrigger value="products">Products</RuiNavigationMenuTrigger>
+    <RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
+  </RuiNavigationMenuBar>
+  <RuiNavigationMenuPanels>
+    <RuiNavigationMenuPanel value="products">
+      <a href="/widgets">Widgets</a>
+    </RuiNavigationMenuPanel>
+  </RuiNavigationMenuPanels>
 </RuiNavigationMenu>
 ```
 
