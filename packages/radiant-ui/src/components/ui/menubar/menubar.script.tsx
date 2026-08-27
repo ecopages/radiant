@@ -35,6 +35,7 @@ export type RuiMenubarChangeDetail = { value: string };
  * @attr {string} label - Accessible name for the `role="menubar"` landmark.
  * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
  * @cssclass rui-menubar - Menubar bar (`role="menubar"`).
+ * @cssprop --rui-menu-item-hover - Hover / expanded item fill. Default: `--surface-container-low`.
  */
 @customElement('rui-menubar')
 export class RuiMenubar extends RadiantElement {

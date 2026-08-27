@@ -31,12 +31,12 @@ rui-menu-button {
 
 	.rui-menu-button__item {
 		@apply flex w-full cursor-pointer items-center rounded-control border-0 bg-transparent px-control-x py-control-y text-left text-sm;
-		@apply text-on-background;
+		@apply text-on-background transition-colors duration-fast;
 	}
 
-	.rui-menu-button__item:hover,
-	.rui-menu-button__item:focus-visible {
-		@apply bg-surface outline-none;
+	.rui-menu-button__item:focus-visible:not([aria-disabled='true']) {
+		background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+		@apply outline-none;
 	}
 
 	.rui-menu-button__item[aria-disabled='true'] {
@@ -53,6 +53,12 @@ rui-menu-button {
 	}
 
 	.rui-menu-button__item[aria-expanded='true'] {
-		@apply bg-surface;
+		background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.rui-menu-button__item:hover:not([aria-disabled='true']) {
+			background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+		}
 	}
 }

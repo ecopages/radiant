@@ -120,9 +120,9 @@ Menu Button surfaces map to **semantic surface roles**, never Tailwind palette s
 | --- | --- |
 | Trigger (`rui-menu-button__trigger`) | `primary`, `on-primary` (via `rui-button--primary`), `--focus-ring` |
 | Menu surface (`rui-menu-button__menu`) | `background`, `border`, `shadow-overlay`, `rounded-container` (via `rui-popover`) |
-| Menu item (`rui-menu-button__item`) | `on-background`; hover `surface`; `--space-control-*` |
+| Menu item (`rui-menu-button__item`) | `on-background`; hover / expanded `--rui-menu-item-hover` (`surface-container-low`); `--space-control-*` |
 
-The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `--radius-button`) with `RuiButton`. Override roles at the theme layer, not in component CSS.
+The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `--radius-button`) with `RuiButton`. Override `--rui-menu-item-hover` on the host or an ancestor to restyle hover; map other roles at the theme layer, not in component CSS.
 
 ## API
 
@@ -181,7 +181,7 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | --- | --- |
 | Trigger | `--primary`, `--on-primary`, `--focus-ring` |
 | Menu surface | `--background`, `--border`, `--shadow-overlay` |
-| Menu item | `--on-background`, `--surface` (hover) |
+| Menu item | `--on-background`, `--rui-menu-item-hover` (hover / expanded; defaults to `--surface-container-low`) |
 | Geometry | `--size-control-*`, `--space-control-*`, `--radius-button` |
 
 ## Accessibility

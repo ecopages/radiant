@@ -15,18 +15,17 @@ rui-menubar {
 		@apply cursor-pointer rounded-control border-0 bg-transparent px-control-x py-control-y text-sm text-on-surface;
 		@apply transition-colors duration-fast;
 	}
-	.rui-menubar__item:hover {
-		@apply bg-background;
-	}
-	.rui-menubar__item:active {
-		@apply bg-background/80;
+	.rui-menubar__item:active:not(:disabled):not([aria-disabled='true']) {
+		background-color: var(--surface-container);
 	}
 	.rui-menubar__item[aria-expanded='true'] {
-		@apply bg-background font-medium text-on-background shadow-sm;
+		background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+		@apply font-medium text-on-background shadow-sm;
 	}
 	.rui-menubar__item:focus-visible,
 	.rui-menubar__menu-item:focus-visible {
-		@apply bg-background outline-none ring-2 ring-focus-ring;
+		background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+		@apply outline-none ring-2 ring-focus-ring;
 	}
 	.rui-menubar__menu {
 		@apply min-w-40 p-1;
@@ -39,12 +38,8 @@ rui-menubar {
 		@apply block w-full cursor-pointer rounded-control border-0 bg-transparent px-control-x py-control-y text-left text-sm text-on-surface;
 		@apply transition-colors duration-fast;
 	}
-	.rui-menubar__menu-item:hover,
-	.rui-menubar__menu-item:focus-visible {
-		@apply bg-background outline-none;
-	}
-	.rui-menubar__menu-item:active {
-		@apply bg-background/80;
+	.rui-menubar__menu-item:active:not(:disabled):not([aria-disabled='true']) {
+		background-color: var(--surface-container);
 	}
 	.rui-menubar__menu-item[aria-haspopup='menu'] {
 		@apply flex items-center justify-between;
@@ -54,6 +49,13 @@ rui-menubar {
 		@apply ml-auto pl-4;
 	}
 	.rui-menubar__menu-item[aria-expanded='true'] {
-		@apply bg-background;
+		background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.rui-menubar__item:hover:not(:disabled):not([aria-disabled='true']),
+		.rui-menubar__menu-item:hover:not(:disabled):not([aria-disabled='true']) {
+			background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+		}
 	}
 }

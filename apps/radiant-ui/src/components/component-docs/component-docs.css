@@ -9,8 +9,10 @@
 	min-height: 16rem;
 }
 
-/** Toast demos need overflow so fixed/absolute toaster chrome is not clipped. */
-.docs-story:has(.playground-toast-stage) {
+/** Overlay demos need overflow so fixed/absolute chrome is not clipped. */
+.docs-story:has(.playground-toast-stage),
+.docs-story:has(.playground-menubar),
+.docs-story:has(.playground-menu-button-demo) {
 	overflow: visible;
 }
 
@@ -141,6 +143,10 @@ radiant-docs-canvas {
 }
 
 .playground-menu-button-demo {
+	@apply flex min-h-48 w-full items-start justify-center p-8;
+}
+
+.playground-menubar {
 	@apply flex min-h-48 w-full items-start justify-center p-8;
 }
 
