@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.7
+
+### Patch Changes
+
+- [#204](https://github.com/ecopages/radiant/pull/204) [`97b8b3b`](https://github.com/ecopages/radiant/commit/97b8b3bbcd750b59d25cd0f058381795cfb0dea4) Thanks [@andeeplus](https://github.com/andeeplus)! - Give menubar and menu-button items a visible hover fill via `--rui-menu-item-hover` (defaults to `--surface-container-low`).
+
 ## 0.1.0-rc.6
 
 ### Minor Changes
