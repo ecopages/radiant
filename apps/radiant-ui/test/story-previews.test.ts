@@ -75,6 +75,8 @@ describe('story preview renders', () => {
 	test('navigation menu renders megamenu panels', () => {
 		const preview = serialize(navigationMenuMeta.render!({ label: 'Main' }));
 
+		expect(preview).toContain('rui-navigation-menu__bar');
+		expect(preview).toContain('rui-navigation-menu__panels');
 		expect(preview).toContain('rui-navigation-menu__megamenu');
 		expect(preview).toContain('Why these solutions?');
 		expect(preview).toContain('Analytics');
