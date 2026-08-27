@@ -93,7 +93,13 @@ function parseCompoundSelector(selector: string): CompoundSelector[] {
 		throw new SyntaxError(`Failed to execute 'querySelector' on 'Element': '${selector}' is not a valid selector.`);
 	}
 
-	const tokens: Array<{ type: 'child' | 'compound' | 'descendant'; value?: string }> = [];
+	return buildCompoundSelectors(tokenizeCompoundSelector(trimmed), selector);
+}
+
+type CompoundSelectorToken = { type: 'child' | 'compound' | 'descendant'; value?: string };
+
+function tokenizeCompoundSelector(trimmed: string): CompoundSelectorToken[] {
+	const tokens: CompoundSelectorToken[] = [];
 	let current = '';
 	let inBrackets = false;
 	let quote: '"' | "'" | undefined;
@@ -115,9 +121,14 @@ function parseCompoundSelector(selector: string): CompoundSelector[] {
 			continue;
 		}
 
-		const bracketState = getBracketState(character);
-		if (bracketState !== undefined) {
-			inBrackets = bracketState;
+		if (character === '[') {
+			inBrackets = true;
+			current += character;
+			continue;
+		}
+
+		if (character === ']') {
+			inBrackets = false;
 			current += character;
 			continue;
 		}
@@ -147,17 +158,11 @@ function parseCompoundSelector(selector: string): CompoundSelector[] {
 		tokens.push({ type: 'compound', value: current.trim() });
 	}
 
-	return buildCompoundSelectors(tokens, selector);
-}
-
-function getBracketState(character: string | undefined): boolean | undefined {
-	if (character === '[') return true;
-	if (character === ']') return false;
-	return undefined;
+	return tokens;
 }
 
 function buildCompoundSelectors(
-	tokens: Array<{ type: 'child' | 'compound' | 'descendant'; value?: string }>,
+	tokens: CompoundSelectorToken[],
 	selector: string,
 ): CompoundSelector[] {
 	const compounds: CompoundSelector[] = [];

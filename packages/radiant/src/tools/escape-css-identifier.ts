@@ -1,6 +1,25 @@
+/**
+ * Escapes a value for use in a CSS selector.
+ *
+ * @remarks
+ * Prefers native `CSS.escape` when the runtime already provides it. The fallback
+ * exists for the SSR light-DOM shim, which installs this function as `CSS.escape`
+ * rather than wrapping `escapeCssIdentifier` (that would recurse).
+ */
 export function escapeCssIdentifier(value: string): string {
 	const escape = globalThis.CSS?.escape;
 	if (typeof escape === 'function') return escape(value);
+	return escapeCssIdentifierFallback(value);
+}
+
+/**
+ * CSS.escape polyfill used when the runtime has no native implementation.
+ *
+ * @remarks
+ * Must not look up `globalThis.CSS.escape`. The light-DOM shim assigns this
+ * function to that slot, so a lookup here would recurse forever.
+ */
+export function escapeCssIdentifierFallback(value: string): string {
 	let escaped = '';
 	for (let index = 0; index < value.length; index += 1) escaped += escapeCharacter(value, index);
 	return escaped;
