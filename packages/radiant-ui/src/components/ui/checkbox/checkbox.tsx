@@ -23,6 +23,7 @@ export function RuiCheckbox({
 			indeterminate={indeterminate}
 			name={name}
 			value={value}
+			data-disabled={disabled ? '' : undefined}
 		>
 			<label class="rui-checkbox">
 				<input
