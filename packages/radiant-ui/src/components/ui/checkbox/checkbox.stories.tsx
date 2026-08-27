@@ -76,6 +76,8 @@ export const Disabled: Story = {
 		const input = getInput(canvasElement);
 
 		await step('a disabled checkbox cannot be activated', async () => {
+			const host = canvasElement.querySelector('rui-checkbox') as HTMLElement;
+			await expect(host).toHaveAttribute('data-disabled');
 			await expect(input).toBeDisabled();
 			await userEvent.click(input);
 			await expect(input).not.toBeChecked();
