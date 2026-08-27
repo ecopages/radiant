@@ -18,7 +18,7 @@ export const meta = {
 	args: { orientation: 'horizontal' },
 	argTypes: {
 		orientation: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['horizontal', 'vertical'],
 		},
 	},

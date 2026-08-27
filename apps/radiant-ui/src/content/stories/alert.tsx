@@ -12,7 +12,7 @@ export const meta = {
 			options: ['info', 'success', 'warning', 'error'] as const satisfies readonly RuiAlertVariant[],
 		},
 		layout: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['inline', 'banner'] as const satisfies readonly RuiAlertLayout[],
 		},
 		dismissible: {

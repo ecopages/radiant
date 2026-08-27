@@ -5,6 +5,7 @@ import '@ecopages/radiant-ui/button';
 import '@ecopages/radiant-ui/cycle-toggle';
 import '@ecopages/radiant-ui/input';
 import '@ecopages/radiant-ui/number-field';
+import '@ecopages/radiant-ui/radio-group';
 import '@ecopages/radiant-ui/select';
 import '@ecopages/radiant-ui/sidebar';
 import '@ecopages/radiant-ui/switch';
@@ -34,6 +35,16 @@ export class DocsControlsElement extends RadiantElement {
 	@onEvent({ selector: 'rui-select[data-docs-arg]', type: 'rui-change' })
 	onSelectChange(event: Event): void {
 		const target = this.resolveControl(event, 'rui-select[data-docs-arg]');
+		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
+		if (!target || typeof detail?.value !== 'string') return;
+		const propName = target.dataset.docsArg;
+		if (!propName) return;
+		this.setArg(propName, detail.value);
+	}
+
+	@onEvent({ selector: 'rui-radio-group[data-docs-arg]', type: 'rui-change' })
+	onRadioGroupChange(event: Event): void {
+		const target = this.resolveControl(event, 'rui-radio-group[data-docs-arg]');
 		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
 		if (!target || typeof detail?.value !== 'string') return;
 		const propName = target.dataset.docsArg;

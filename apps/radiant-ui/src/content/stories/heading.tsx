@@ -24,7 +24,7 @@ export const meta = {
 			options: ['sm', 'md', 'lg', 'xl'] as const satisfies readonly RuiHeadingSize[],
 		},
 		align: {
-			control: { type: 'select' },
+			control: { type: 'radio' },
 			options: ['start', 'center'] as const satisfies readonly RuiHeadingAlign[],
 		},
 	},
