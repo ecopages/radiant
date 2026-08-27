@@ -161,10 +161,7 @@ function tokenizeCompoundSelector(trimmed: string): CompoundSelectorToken[] {
 	return tokens;
 }
 
-function buildCompoundSelectors(
-	tokens: CompoundSelectorToken[],
-	selector: string,
-): CompoundSelector[] {
+function buildCompoundSelectors(tokens: CompoundSelectorToken[], selector: string): CompoundSelector[] {
 	const compounds: CompoundSelector[] = [];
 	let nextCombinator: CompoundSelector['combinator'] = null;
 
