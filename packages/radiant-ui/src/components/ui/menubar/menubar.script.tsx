@@ -2,6 +2,7 @@ import { RadiantElement, customElement, event, onEvent, prop } from '@ecopages/r
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex, navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
+import { MenuTreeController } from '../shared/menu-tree';
 
 export type RuiMenubarProps = {
 	label?: string;
@@ -15,6 +16,9 @@ export type RuiMenubarChangeDetail = { value: string };
  * Implements the APG Menubar pattern: top-level items use `role="menuitem"` with
  * `aria-haspopup` / `aria-expanded` when they own a nested `[role="menu"]`. Arrow
  * keys move across the bar; Enter/Space/ArrowDown open the popup; Escape closes it.
+ * Nested branches open after a 200 ms pointer-hover delay without changing
+ * keyboard focus. Keyboard branch activation opens the submenu and focuses its
+ * first item.
  *
  * Expected markup (also produced by the JSX view helper):
  * ```html
@@ -41,6 +45,7 @@ export class RuiMenubar extends RadiantElement {
 
 	private openRoot: HTMLElement | null = null;
 	private popoverController: PopoverController | null = null;
+	private menuTree: MenuTreeController | null = null;
 
 	private getTopItems(): HTMLElement[] {
 		return Array.from(
@@ -53,20 +58,29 @@ export class RuiMenubar extends RadiantElement {
 		return root?.querySelector<HTMLElement>(':scope > [role="menu"]') ?? null;
 	}
 
-	private getMenuItems(menu: HTMLElement): HTMLElement[] {
-		return Array.from(menu.querySelectorAll<HTMLElement>(':scope > [role="menuitem"]')).filter(
-			(item) => item.getAttribute('aria-disabled') !== 'true',
-		);
-	}
-
 	protected override onConnected(): void {
 		applyRovingTabindex(this.getTopItems(), 0);
+		this.ensureMenuTree().sync();
 	}
 
 	override disconnectedCallback(): void {
+		this.menuTree?.destroy();
+		this.menuTree = null;
 		this.popoverController?.destroy();
 		this.popoverController = null;
 		super.disconnectedCallback();
+	}
+
+	private ensureMenuTree(): MenuTreeController {
+		if (!this.menuTree) {
+			this.menuTree = new MenuTreeController({
+				root: this,
+				getRootMenu: () => this.getOpenMenuSurface(),
+				onActivate: (item) => this.activateItem(item),
+				onCloseRoot: (returnFocus) => this.closeOpenMenu(returnFocus),
+			});
+		}
+		return this.menuTree;
 	}
 
 	private getOpenMenuAnchor(): HTMLElement | null {
@@ -111,6 +125,7 @@ export class RuiMenubar extends RadiantElement {
 
 	private closeOpenMenu(returnFocus = false): void {
 		if (!this.openRoot) return;
+		this.menuTree?.closeAll();
 		const top = this.openRoot.querySelector<HTMLElement>(':scope > [role="menuitem"]');
 		const menu = this.openRoot.querySelector<HTMLElement>(':scope > [role="menu"]');
 		if (top) top.setAttribute('aria-expanded', 'false');
@@ -131,11 +146,10 @@ export class RuiMenubar extends RadiantElement {
 		menu.hidden = false;
 		this.openRoot = root;
 		this.syncOpenMenuPosition();
+		this.ensureMenuTree().sync();
 
 		if (focus === 'first') {
-			const items = this.getMenuItems(menu);
-			applyRovingTabindex(items, 0);
-			items[0]?.focus();
+			this.ensureMenuTree().getFocusableItems(menu)[0]?.focus();
 		}
 	}
 
@@ -198,51 +212,32 @@ export class RuiMenubar extends RadiantElement {
 
 		const expanded = current.getAttribute('aria-expanded') === 'true';
 		if (expanded) this.closeOpenMenu();
-		else this.openMenu(current, 'first');
+		else this.openMenu(current, null);
 	}
 
+	/**
+	 * @remarks MenuTree handles in-menu keys. Left/Right that it does not consume
+	 * switch the open top-level menu (APG menubar).
+	 */
 	@onEvent({ selector: '[role="menu"] > [role="menuitem"]', type: 'keydown' })
 	onMenuKeydown(event: KeyboardEvent): void {
 		const menu = (event.target as HTMLElement).closest('[role="menu"]') as HTMLElement | null;
 		const current = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
 		if (!menu || !current || !this.contains(menu)) return;
 
-		const items = this.getMenuItems(menu);
+		if (this.ensureMenuTree().handleKeydown(event)) return;
+		if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
 
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			this.closeOpenMenu(true);
-			return;
-		}
-
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			this.activateItem(current);
-			return;
-		}
-
-		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-			const tops = this.getTopItems();
-			const top = menu.parentElement?.querySelector<HTMLElement>(':scope > [role="menuitem"]');
-			if (!top) return;
-			event.preventDefault();
-			const result = navigateRovingTabindex({
-				items: tops,
-				current: top,
-				key: event.key,
-				orientation: 'horizontal',
-			});
-			if (result.handled && this.getMenuFor(result.item)) this.openMenu(result.item, 'first');
-			return;
-		}
-
+		const top = this.getOpenMenuAnchor();
+		if (!top) return;
+		event.preventDefault();
 		const result = navigateRovingTabindex({
-			items,
-			current,
+			items: this.getTopItems(),
+			current: top,
 			key: event.key,
-			orientation: 'vertical',
+			orientation: 'horizontal',
 		});
-		if (result.handled) event.preventDefault();
+		if (result.handled && this.getMenuFor(result.item)) this.openMenu(result.item, 'first');
 	}
 
 	/**
@@ -250,10 +245,29 @@ export class RuiMenubar extends RadiantElement {
 	 */
 	@onEvent({ selector: '[role="menu"] > [role="menuitem"]', type: 'click' })
 	onMenuItemClick(event: Event): void {
-		const item = (event.target as HTMLElement).closest('[role="menuitem"]') as HTMLElement | null;
-		if (!item || !this.contains(item)) return;
-		if (item.parentElement?.getAttribute('role') !== 'menu') return;
-		this.activateItem(item);
+		this.ensureMenuTree().handleClick(event);
+	}
+
+	@onEvent({ selector: '[role="menuitem"]', type: 'pointerover' })
+	onPointerOver(event: PointerEvent): void {
+		const target = event.target as HTMLElement | null;
+		const top = target?.closest<HTMLElement>('[data-ref="menubar-root"] > [role="menuitem"]');
+		if (top && this.getTopItems().includes(top) && this.openRoot && this.getMenuFor(top)) {
+			const currentRoot = top.closest('[data-ref="menubar-root"]');
+			if (currentRoot && currentRoot !== this.openRoot) this.openMenu(top, null);
+			return;
+		}
+		this.ensureMenuTree().handlePointerOver(event);
+	}
+
+	@onEvent({ selector: '[role="menuitem"]', type: 'pointerout' })
+	onPointerOut(event: PointerEvent): void {
+		this.ensureMenuTree().handlePointerOut(event);
+	}
+
+	@onEvent({ selector: '[role="menuitem"]', type: 'focusout' })
+	onFocusOut(event: FocusEvent): void {
+		this.ensureMenuTree().handleFocusOut(event);
 	}
 
 	private activateItem(item: HTMLElement): void {

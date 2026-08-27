@@ -134,16 +134,21 @@
 			"styles": ["@ecopages/radiant-ui/listbox/styles.css"]
 		},
 		"menu-button": {
-			"direct": ["button", "primitives"],
+			"direct": ["button", "primitives", "separator"],
 			"styles": [
 				"@ecopages/radiant-ui/button/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
+				"@ecopages/radiant-ui/separator/styles.css",
 				"@ecopages/radiant-ui/menu-button/styles.css"
 			]
 		},
 		"menubar": {
-			"direct": ["primitives"],
-			"styles": ["@ecopages/radiant-ui/primitives.css", "@ecopages/radiant-ui/menubar/styles.css"]
+			"direct": ["primitives", "separator"],
+			"styles": [
+				"@ecopages/radiant-ui/primitives.css",
+				"@ecopages/radiant-ui/separator/styles.css",
+				"@ecopages/radiant-ui/menubar/styles.css"
+			]
 		},
 		"meter": {
 			"direct": [],
@@ -180,6 +185,10 @@
 				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/select/styles.css"
 			]
+		},
+		"separator": {
+			"direct": [],
+			"styles": ["@ecopages/radiant-ui/separator/styles.css"]
 		},
 		"sidebar": {
 			"direct": ["button"],

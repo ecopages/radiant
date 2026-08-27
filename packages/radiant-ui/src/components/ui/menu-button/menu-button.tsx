@@ -2,14 +2,12 @@ import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from 
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown } from '@/lib/icons';
 import { RuiButton, type RuiButtonControlProps } from '../button';
+import { RuiSeparator } from '../separator';
+import { renderMenuEntries, type RuiMenuEntry } from '../shared/menu-entry';
 import type { RuiMenuButton as RuiMenuButtonElement, RuiMenuButtonProps } from './menu-button.script';
 import './menu-button.script';
 
-export type RuiMenuItem = {
-	value: string;
-	label: JsxRenderable;
-	disabled?: boolean;
-};
+export type { RuiMenuEntry, RuiMenuItem, RuiMenuSeparator } from '../shared/menu-entry';
 
 export type RuiMenuButtonTriggerProps = RuiButtonControlProps;
 
@@ -52,13 +50,47 @@ export function RuiMenuButtonContent({ children, class: className, ...props }: R
 	);
 }
 
+export type RuiMenuButtonSubmenuContentProps = JsxElementProps<HTMLDivElement>;
+
+/**
+ * Nested menu surface. Place it as the next sibling of the branch item so ARIA
+ * linkage and positioning can pair them.
+ *
+ * @cssclass rui-menu-button__submenu - Nested popup menu surface.
+ */
+export function RuiMenuButtonSubmenuContent({
+	children,
+	class: className,
+	...props
+}: RuiMenuButtonSubmenuContentProps) {
+	return (
+		<div
+			{...props}
+			data-ref="submenu-menu"
+			class={cx('rui-menu-button__menu', 'rui-menu-button__submenu', 'rui-popover', 'rui-floating', className)}
+			role="menu"
+			hidden
+		>
+			{children}
+		</div>
+	);
+}
+
 export type RuiMenuButtonItemProps = JsxElementProps<HTMLButtonElement> & {
 	value: string;
 	disabled?: boolean;
+	hasSubmenu?: boolean;
 };
 
 /** Action item inside `RuiMenuButtonContent`. */
-export function RuiMenuButtonItem({ children, value, disabled, class: className, ...props }: RuiMenuButtonItemProps) {
+export function RuiMenuButtonItem({
+	children,
+	value,
+	disabled,
+	hasSubmenu,
+	class: className,
+	...props
+}: RuiMenuButtonItemProps) {
 	return (
 		<button
 			{...props}
@@ -66,6 +98,7 @@ export function RuiMenuButtonItem({ children, value, disabled, class: className,
 			class={cx('rui-menu-button__item', className)}
 			role="menuitem"
 			data-value={value}
+			aria-haspopup={hasSubmenu ? 'menu' : undefined}
 			aria-disabled={disabled ? 'true' : undefined}
 			disabled={disabled}
 			tabIndex={-1}
@@ -78,8 +111,8 @@ export function RuiMenuButtonItem({ children, value, disabled, class: className,
 /**
  * Importable JSX helper around `<rui-menu-button>`.
  *
- * Accepts a `trigger` label and `items`; renders the popup items as
- * `role="menuitem"` buttons.
+ * Accepts a `trigger` label and recursive `items`; renders actions as
+ * `role="menuitem"` buttons and separator entries as non-interactive dividers.
  *
  * @cssclass rui-menu-button__item - Menu item (`role="menuitem"`).
  */
@@ -91,7 +124,7 @@ export function RuiMenuButton({
 	...props
 }: JsxCustomElementAttributes<
 	RuiMenuButtonElement,
-	RuiMenuButtonProps & { trigger?: JsxRenderable; items?: RuiMenuItem[] }
+	RuiMenuButtonProps & { trigger?: JsxRenderable; items?: RuiMenuEntry[] }
 >) {
 	if (trigger == null && items == null) {
 		return (
@@ -105,11 +138,13 @@ export function RuiMenuButton({
 		<rui-menu-button {...props} class={cx('rui-menu-button', className)}>
 			<RuiMenuButtonTrigger>{trigger}</RuiMenuButtonTrigger>
 			<RuiMenuButtonContent>
-				{items?.map((item) => (
-					<RuiMenuButtonItem value={item.value} disabled={item.disabled}>
-						{item.label}
-					</RuiMenuButtonItem>
-				))}
+				{items
+					? renderMenuEntries(items, {
+							Item: (itemProps) => <RuiMenuButtonItem {...itemProps} />,
+							Submenu: (submenuProps) => <RuiMenuButtonSubmenuContent {...submenuProps} />,
+							Separator: (separatorProps) => <RuiSeparator key={separatorProps.id} />,
+						})
+					: children}
 			</RuiMenuButtonContent>
 		</rui-menu-button>
 	);
