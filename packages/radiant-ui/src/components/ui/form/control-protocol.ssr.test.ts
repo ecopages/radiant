@@ -53,4 +53,22 @@ describe('field control protocol (SSR-safe)', () => {
 		expect(getAriaControlTarget(host).getAttribute('value')).toBe('free');
 		expect(pro!.hasAttribute('checked')).toBe(true);
 	});
+
+	it('discovers checkbox-group surface instead of inner checkbox hosts', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `
+			<div class="rui-field">
+				<rui-checkbox-group value="news">
+					<div data-checkbox-group-root data-rui-control role="group">
+						<rui-checkbox value="news" checked></rui-checkbox>
+						<rui-checkbox value="travel"></rui-checkbox>
+					</div>
+				</rui-checkbox-group>
+			</div>
+		`;
+
+		const control = findFieldControl(field);
+		expect(control?.getAttribute('data-checkbox-group-root')).not.toBeNull();
+		expect(getAriaControlTarget(control!).getAttribute('data-checkbox-group-root')).not.toBeNull();
+	});
 });

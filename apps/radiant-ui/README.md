@@ -76,6 +76,7 @@ Authors declare `control.type` and `options`. The shell picks widgets via heuris
 - `boolean` → switch
 - `text` → text input
 - `number` → number field
+- `radio` with 2+ options → radio group
 - `select` with 2–3 options → segmented buttons
 - `select` with 4+ options → select
 
