@@ -58,6 +58,7 @@ const MENU_GAP = 6;
  * @cssclass rui-menu-button__trigger - Menu button trigger (`rui-button--primary`).
  * @cssclass rui-menu-button__chevron - Chevron indicator.
  * @cssclass rui-menu-button__menu - Popup menu surface (`role="menu"`).
+ * @cssprop --rui-menu-item-hover - Hover / expanded item fill. Default: `--surface-container-low`.
  */
 @customElement('rui-menu-button')
 export class RuiMenuButton extends RadiantElement {
