@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant",
-	"version": "0.3.0-rc.3",
+	"version": "0.3.0-rc.4",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ecopages/radiant.git"
@@ -30,7 +30,7 @@
 		"test:lib:coverage": "vitest run --coverage --project node && vitest run --coverage --project node -- --legacy"
 	},
 	"dependencies": {
-		"@ecopages/signals": "workspace:>=0.3.0-rc.3"
+		"@ecopages/signals": "workspace:>=0.3.0-rc.4"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
@@ -56,7 +56,7 @@
 		"vitest": "^4.1.10"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-rc.3"
+		"@ecopages/jsx": ">=0.3.0-rc.4"
 	},
 	"files": [
 		"dist/**"
