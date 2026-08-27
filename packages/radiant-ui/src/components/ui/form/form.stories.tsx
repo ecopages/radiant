@@ -9,6 +9,7 @@ import { RuiAlertDescription, RuiAlertTitle } from '../alert';
 import { RuiAlert as RuiAlertElement, type RuiAlertProps } from '../alert/alert.script';
 import { RuiButton } from '../button/button';
 import { RuiCheckbox } from '../checkbox';
+import { RuiCheckboxGroup } from '../checkbox-group';
 import { RuiCombobox } from '../combobox';
 import { RuiDateField } from '../date-field';
 import { RuiDateRangePicker } from '../date-range-picker';
@@ -397,6 +398,44 @@ export const WithRadioGroup: Story = {
 			await waitFor(() => {
 				expect(getFieldErrorMessage(canvasElement, 'plan')).toBeNull();
 			});
+		});
+	},
+};
+
+export const WithCheckboxGroup: Story = {
+	render: () => (
+		<RuiForm defaultValues={{ topics: '' }}>
+			<RuiField name="topics" rules={{ required: 'Select at least one topic' }}>
+				<RuiLabel>Topics</RuiLabel>
+				<RuiCheckboxGroup
+					options={[
+						{ value: 'news', label: 'News' },
+						{ value: 'travel', label: 'Travel' },
+					]}
+				/>
+				<RuiFieldError />
+			</RuiField>
+			<RuiButton type="submit">Continue</RuiButton>
+		</RuiForm>
+	),
+	play: async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+		const checkboxes = Array.from(
+			canvasElement.querySelectorAll('rui-checkbox input[type="checkbox"]'),
+		) as HTMLInputElement[];
+
+		await step('submit without selection shows error', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+			await expectFieldError(canvasElement, 'topics', 'Select at least one topic');
+		});
+
+		await step('selecting a value clears the error', async () => {
+			await userEvent.click(checkboxes[0]);
+			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
+			await waitFor(() => {
+				expect(getFieldErrorMessage(canvasElement, 'topics')).toBeNull();
+			});
+			await expect(canvasElement.querySelector('rui-checkbox-group')).toHaveAttribute('value', 'news');
 		});
 	},
 };
