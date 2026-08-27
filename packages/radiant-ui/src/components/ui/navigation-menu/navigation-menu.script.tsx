@@ -235,63 +235,49 @@ export class RuiNavigationMenu extends RadiantElement {
 	@onEvent({ selector: '[data-navigation-item]', type: 'keydown' })
 	onBarItemKeydown(event: KeyboardEvent): void {
 		const item = (event.target as HTMLElement).closest<HTMLElement>('[data-navigation-item]');
-		if (!item) {
-			return;
-		}
-
-		const barItems = this.getBarItems();
-		const isTrigger = this.isBarTrigger(item);
-		const value = item.getAttribute('data-value');
-
-		if (event.key === 'Escape') {
-			if (this.openValue) {
-				event.preventDefault();
-				this.closeMenu(true);
-			}
-			return;
-		}
-
-		if (isTrigger && value && (event.key === 'Enter' || event.key === ' ')) {
-			event.preventDefault();
-			this.openPanel(value);
-			return;
-		}
-
-		if (isTrigger && value && event.key === 'ArrowDown') {
-			event.preventDefault();
-			if (this.openValue === value) {
-				this.focusPanelEntry(value);
-			} else {
-				this.openPanel(value);
-			}
-			return;
-		}
+		if (!item || this.handleBarTriggerKeydown(event, item)) return;
 
 		const result = navigateRovingTabindex({
-			items: barItems,
+			items: this.getBarItems(),
 			current: item,
 			key: event.key,
 			orientation: 'horizontal',
 			wrap: false,
 		});
 
-		if (!result.handled) {
-			return;
-		}
-
+		if (!result.handled) return;
 		event.preventDefault();
+		this.syncMenuToBarItem(result.item);
+	}
 
-		const nextItem = result.item;
-		const nextValue = nextItem.getAttribute('data-value');
-		const nextIsTrigger = this.isBarTrigger(nextItem);
-
-		if (this.openValue) {
-			if (nextIsTrigger && nextValue) {
-				this.openPanel(nextValue);
-			} else {
-				this.closeMenu(false);
+	private handleBarTriggerKeydown(event: KeyboardEvent, item: HTMLElement): boolean {
+		if (event.key === 'Escape') {
+			if (this.openValue) {
+				event.preventDefault();
+				this.closeMenu(true);
 			}
+			return true;
 		}
+
+		const value = item.getAttribute('data-value');
+		if (!this.isBarTrigger(item) || !value) return false;
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			this.openPanel(value);
+			return true;
+		}
+		if (event.key !== 'ArrowDown') return false;
+		event.preventDefault();
+		if (this.openValue === value) this.focusPanelEntry(value);
+		else this.openPanel(value);
+		return true;
+	}
+
+	private syncMenuToBarItem(item: HTMLElement): void {
+		if (!this.openValue) return;
+		const value = item.getAttribute('data-value');
+		if (this.isBarTrigger(item) && value) this.openPanel(value);
+		else this.closeMenu(false);
 	}
 
 	@onEvent({ selector: '[data-navigation-panel]', type: 'keydown' })

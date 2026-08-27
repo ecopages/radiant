@@ -98,44 +98,38 @@ function serializeTemplateResult(template: TemplateResultLike, options: Serializ
 	let html = '';
 
 	for (let index = 0; index < template.values.length; index += 1) {
-		const part = template.parts[index];
 		const childValue = resolveReactiveSnapshot(template.values[index]);
 
 		html += template.strings[index] ?? '';
-
-		if (!part || part.type === 'child') {
-			html += serializeRenderable(childValue as JsxRenderable, options);
-			continue;
-		}
-
-		const bindingIndex = hydrationState ? takeNextHydrationMarkerIndex(hydrationState) : 0;
-
-		if (options.mode === 'hydrate' && hydrationState) {
-			html += ` ${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(part.kind, part.name)}"`;
-		}
-
-		if (isClientOnlyBinding(part.kind)) {
-			continue;
-		}
-
-		if (part.kind === 'bool') {
-			if (childValue) {
-				html += ` ${part.name}`;
-			}
-			continue;
-		}
-
-		if (childValue === undefined || childValue === null || childValue === false) {
-			continue;
-		}
-
-		const attributeValue =
-			part.name.toLowerCase() === 'style' ? serializeStyleSnapshot(childValue) : String(childValue);
-		html += ` ${part.name}="${escapeAttribute(attributeValue)}"`;
+		html += serializeTemplatePart(template.parts[index], childValue, options, hydrationState);
 	}
 
 	html += template.strings[template.strings.length - 1] ?? '';
 	return html;
+}
+
+function serializeTemplatePart(
+	part: TemplateResultLike['parts'][number] | undefined,
+	value: unknown,
+	options: SerializeRenderableOptions,
+	hydrationState: SerializeRenderableOptions['hydrationBindingState'],
+): string {
+	if (!part || part.type === 'child') {
+		return serializeRenderable(value as JsxRenderable, options);
+	}
+
+	const bindingIndex = hydrationState ? takeNextHydrationMarkerIndex(hydrationState) : 0;
+	const hydrationMarker =
+		options.mode === 'hydrate' && hydrationState
+			? ` ${resolveHydrationMarkerAttributeName(bindingIndex)}="${serializeBindingDescriptor(part.kind, part.name)}"`
+			: '';
+
+	if (isClientOnlyBinding(part.kind)) return hydrationMarker;
+	if (part.kind === 'bool') return value ? `${hydrationMarker} ${part.name}` : hydrationMarker;
+	if (value === undefined || value === null || value === false) return hydrationMarker;
+
+	const attributeValue = part.name.toLowerCase() === 'style' ? serializeStyleSnapshot(value) : String(value);
+	return `${hydrationMarker} ${part.name}="${escapeAttribute(attributeValue)}"`;
 }
 
 function serializeNodeLike(node: JsxNodeLike): string {

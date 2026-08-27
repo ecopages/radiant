@@ -145,6 +145,13 @@ function collectTemplateParts(
 	fragment: DocumentFragment,
 	bindings: ReadonlyMap<number, BindingDescriptor>,
 ): TemplatePart[] {
+	return [...collectAttributeParts(fragment, bindings), ...collectChildParts(fragment, bindings)];
+}
+
+function collectAttributeParts(
+	fragment: DocumentFragment,
+	bindings: ReadonlyMap<number, BindingDescriptor>,
+): TemplatePart[] {
 	const parts: TemplatePart[] = [];
 	const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_ELEMENT);
 	let currentNode = walker.nextNode();
@@ -177,6 +184,13 @@ function collectTemplateParts(
 		currentNode = walker.nextNode();
 	}
 
+	return parts;
+}
+
+function collectChildParts(
+	fragment: DocumentFragment,
+	bindings: ReadonlyMap<number, BindingDescriptor>,
+): TemplatePart[] {
 	const childMarkers = new Map<number, Partial<ChildTemplatePart>>();
 	const commentWalker = document.createTreeWalker(fragment, NodeFilter.SHOW_COMMENT);
 	let commentNode = commentWalker.nextNode();
@@ -201,6 +215,7 @@ function collectTemplateParts(
 		commentNode = commentWalker.nextNode();
 	}
 
+	const parts: TemplatePart[] = [];
 	for (const [index, marker] of childMarkers) {
 		const binding = bindings.get(index);
 

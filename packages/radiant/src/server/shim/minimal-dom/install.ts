@@ -1,4 +1,4 @@
-import { escapeCssIdentifier } from '../../../tools/escape-css-identifier';
+import { escapeCssIdentifierFallback } from '../../../tools/escape-css-identifier';
 import { MinimalCustomElementsRegistry, MinimalDocument, type MinimalCustomElementRegistry } from './document';
 import './html';
 import {
@@ -81,9 +81,24 @@ type GlobalDomScope = typeof globalThis & {
 	cancelAnimationFrame?: typeof cancelAnimationFrame;
 };
 
+type DomSurfaceCandidates = Pick<
+	GlobalDomScope,
+	| 'CustomEvent'
+	| 'Document'
+	| 'Element'
+	| 'Event'
+	| 'EventTarget'
+	| 'HTMLElement'
+	| 'Node'
+	| 'cancelAnimationFrame'
+	| 'customElements'
+	| 'document'
+	| 'requestAnimationFrame'
+>;
+
 const minimalCssNamespace: MinimalCssNamespace = {
 	escape(value: string): string {
-		return escapeCssIdentifier(String(value));
+		return escapeCssIdentifierFallback(String(value));
 	},
 };
 
@@ -132,94 +147,105 @@ function hasUsableElementSurface(value: unknown, verifyStyleOperation = false): 
 
 function getCompleteDomSurface(): LightDomShimWindow | undefined {
 	const globalScope = globalThis as GlobalDomScope;
-	let NodeConstructor: GlobalDomScope['Node'];
-	let DocumentConstructor: GlobalDomScope['Document'];
-	let ElementConstructor: GlobalDomScope['Element'];
-	let HTMLElementConstructor: GlobalDomScope['HTMLElement'];
-	let document: GlobalDomScope['document'];
-	let customElements: GlobalDomScope['customElements'];
-	let EventConstructor: GlobalDomScope['Event'];
-	let CustomEventConstructor: GlobalDomScope['CustomEvent'];
-	let EventTargetConstructor: GlobalDomScope['EventTarget'];
-	let requestAnimationFrame: GlobalDomScope['requestAnimationFrame'];
-	let cancelAnimationFrame: GlobalDomScope['cancelAnimationFrame'];
+	const candidates = readDomSurfaceCandidates(globalScope);
+	if (!candidates || !hasCompleteDomSurface(candidates)) return undefined;
+	return createCompleteDomSurface(globalScope, candidates);
+}
 
+function readDomSurfaceCandidates(globalScope: GlobalDomScope): DomSurfaceCandidates | undefined {
 	try {
-		NodeConstructor = globalScope.Node;
-		DocumentConstructor = globalScope.Document;
-		ElementConstructor = globalScope.Element;
-		HTMLElementConstructor = globalScope.HTMLElement;
-		document = globalScope.document;
-		customElements = globalScope.customElements;
-		EventConstructor = globalScope.Event;
-		CustomEventConstructor = globalScope.CustomEvent;
-		EventTargetConstructor = globalScope.EventTarget;
-		requestAnimationFrame = globalScope.requestAnimationFrame;
-		cancelAnimationFrame = globalScope.cancelAnimationFrame;
+		const {
+			CustomEvent,
+			Document,
+			Element,
+			Event,
+			EventTarget,
+			HTMLElement,
+			Node,
+			cancelAnimationFrame,
+			customElements,
+			document,
+			requestAnimationFrame,
+		} = globalScope;
+		return {
+			CustomEvent,
+			Document,
+			Element,
+			Event,
+			EventTarget,
+			HTMLElement,
+			Node,
+			cancelAnimationFrame,
+			customElements,
+			document,
+			requestAnimationFrame,
+		};
 	} catch {
 		return undefined;
 	}
+}
 
-	if (
-		typeof NodeConstructor !== 'function' ||
-		typeof DocumentConstructor !== 'function' ||
-		typeof ElementConstructor !== 'function' ||
-		typeof HTMLElementConstructor !== 'function' ||
-		!isObjectLike(document) ||
-		!isObjectLike(customElements) ||
-		typeof EventConstructor !== 'function' ||
-		typeof CustomEventConstructor !== 'function' ||
-		typeof EventTargetConstructor !== 'function'
-	) {
-		return undefined;
-	}
+function hasCompleteDomSurface(candidates: DomSurfaceCandidates): candidates is Required<DomSurfaceCandidates> {
+	return hasDomConstructors(candidates) && hasDomCapabilities(candidates) && hasUsableDomElements(candidates);
+}
 
-	let elementProbe: unknown;
-	let customElementProbe: unknown;
+function hasDomConstructors(candidates: DomSurfaceCandidates): boolean {
+	return ['Node', 'Document', 'Element', 'HTMLElement', 'Event', 'CustomEvent', 'EventTarget'].every(
+		(key) => typeof candidates[key as keyof DomSurfaceCandidates] === 'function',
+	);
+}
 
+function hasDomCapabilities(candidates: DomSurfaceCandidates): boolean {
+	return (
+		isObjectLike(candidates.document) &&
+		isObjectLike(candidates.customElements) &&
+		typeof candidates.document.createElement === 'function' &&
+		typeof candidates.document.getElementById === 'function' &&
+		typeof candidates.customElements.define === 'function' &&
+		typeof candidates.customElements.get === 'function' &&
+		typeof candidates.requestAnimationFrame === 'function' &&
+		typeof candidates.cancelAnimationFrame === 'function'
+	);
+}
+
+function hasUsableDomElements(candidates: DomSurfaceCandidates): boolean {
 	try {
-		if (
-			typeof document.createElement !== 'function' ||
-			typeof document.getElementById !== 'function' ||
-			typeof customElements.define !== 'function' ||
-			typeof customElements.get !== 'function' ||
-			typeof requestAnimationFrame !== 'function' ||
-			typeof cancelAnimationFrame !== 'function'
-		) {
-			return undefined;
-		}
-		elementProbe = document.createElement('div');
+		if (typeof candidates.HTMLElement !== 'function' || !candidates.document) return false;
+		const elementProbe = candidates.document.createElement('div');
 		/**
 		 * @remarks Browser-like runtimes can reject direct construction of an unregistered
 		 * custom element, so the probe uses the subclass prototype without mutating the registry.
 		 */
-		class ProbeHost extends HTMLElementConstructor {}
-		customElementProbe = Object.create(ProbeHost.prototype);
+		class ProbeHost extends candidates.HTMLElement {}
+		return (
+			hasUsableElementSurface(elementProbe, true) && hasUsableElementSurface(Object.create(ProbeHost.prototype))
+		);
 	} catch {
-		return undefined;
+		return false;
 	}
+}
 
-	if (!hasUsableElementSurface(elementProbe, true) || !hasUsableElementSurface(customElementProbe)) {
-		return undefined;
-	}
-
+function createCompleteDomSurface(
+	globalScope: GlobalDomScope,
+	candidates: Required<DomSurfaceCandidates>,
+): LightDomShimWindow | undefined {
 	try {
 		return {
 			CSS: getCssNamespace(globalScope),
-			CustomEvent: CustomEventConstructor,
-			Document: DocumentConstructor,
-			Element: ElementConstructor,
-			Event: EventConstructor,
-			EventTarget: EventTargetConstructor,
+			CustomEvent: candidates.CustomEvent,
+			Document: candidates.Document,
+			Element: candidates.Element,
+			Event: candidates.Event,
+			EventTarget: candidates.EventTarget,
 			HTMLScriptElement: (typeof globalScope.HTMLScriptElement === 'function'
 				? globalScope.HTMLScriptElement
-				: HTMLElementConstructor) as typeof HTMLScriptElement,
-			HTMLElement: HTMLElementConstructor,
-			Node: NodeConstructor,
-			document,
-			customElements,
-			requestAnimationFrame,
-			cancelAnimationFrame,
+				: candidates.HTMLElement) as typeof HTMLScriptElement,
+			HTMLElement: candidates.HTMLElement,
+			Node: candidates.Node,
+			document: candidates.document,
+			customElements: candidates.customElements,
+			requestAnimationFrame: candidates.requestAnimationFrame,
+			cancelAnimationFrame: candidates.cancelAnimationFrame,
 		};
 	} catch {
 		return undefined;

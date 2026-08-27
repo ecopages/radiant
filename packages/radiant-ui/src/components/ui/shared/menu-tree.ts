@@ -11,6 +11,13 @@ type MenuTreeConfig = {
 	onCloseRoot: (returnFocus: boolean) => void;
 };
 
+type MenuKeyContext = {
+	item: HTMLElement;
+	items: HTMLElement[];
+	menu: HTMLElement;
+	submenu: HTMLElement | null;
+};
+
 /**
  * Coordinates nested menu branches shared by menu-button and menubar hosts.
  *
@@ -88,62 +95,83 @@ export class MenuTreeController {
 		const item = this.getDirectItem(event.target);
 		const menu = item?.parentElement;
 		if (!item || !menu || menu.getAttribute('role') !== 'menu') return false;
+		const handler = this.keyHandlers[event.key];
+		if (!handler) return false;
+		const handled = handler.call(this, {
+			item,
+			items: this.getFocusableItems(menu),
+			menu,
+			submenu: this.getSubmenu(item),
+		});
+		if (handled && event.key !== 'Tab') event.preventDefault();
+		return handled;
+	}
 
-		const items = this.getFocusableItems(menu);
-		const index = items.indexOf(item);
-		const submenu = this.getSubmenu(item);
+	private readonly keyHandlers: Record<string, (context: MenuKeyContext) => boolean> = {
+		ArrowDown: this.focusNextItem,
+		ArrowUp: this.focusPreviousItem,
+		Home: this.focusFirstItem,
+		End: this.focusLastItem,
+		ArrowRight: this.openNestedMenu,
+		ArrowLeft: this.closeNestedMenu,
+		Enter: this.activateOrOpenItem,
+		' ': this.activateOrOpenItem,
+		Escape: this.closeRootMenu,
+		Tab: this.closeMenuForTab,
+	};
 
-		switch (event.key) {
-			case 'ArrowDown':
-				if (index < 0 || items.length === 0) return false;
-				event.preventDefault();
-				items[(index + 1) % items.length]?.focus();
-				return true;
-			case 'ArrowUp':
-				if (index < 0 || items.length === 0) return false;
-				event.preventDefault();
-				items[(index - 1 + items.length) % items.length]?.focus();
-				return true;
-			case 'Home':
-				event.preventDefault();
-				items[0]?.focus();
-				return true;
-			case 'End':
-				event.preventDefault();
-				items[items.length - 1]?.focus();
-				return true;
-			case 'ArrowRight':
-				if (!submenu) return false;
-				event.preventDefault();
-				this.openSubmenu(item, true);
-				return true;
-			case 'ArrowLeft': {
-				if (this.getRootMenu() === menu) return false;
-				event.preventDefault();
-				const trigger = this.getTriggerForMenu(menu);
-				if (trigger) this.closeSubmenu(trigger, true);
-				return true;
-			}
-			case 'Enter':
-			case ' ':
-				if (submenu) {
-					event.preventDefault();
-					this.openSubmenu(item, true);
-					return true;
-				}
-				event.preventDefault();
-				this.config.onActivate(item);
-				return true;
-			case 'Escape':
-				event.preventDefault();
-				this.config.onCloseRoot(true);
-				return true;
-			case 'Tab':
-				this.config.onCloseRoot(false);
-				return true;
-			default:
-				return false;
-		}
+	private focusNextItem(context: MenuKeyContext): boolean {
+		return this.focusRelativeItem(context, 1);
+	}
+
+	private focusPreviousItem(context: MenuKeyContext): boolean {
+		return this.focusRelativeItem(context, -1);
+	}
+
+	private focusRelativeItem(context: MenuKeyContext, direction: 1 | -1): boolean {
+		const index = context.items.indexOf(context.item);
+		if (index < 0 || !context.items.length) return false;
+		context.items[(index + direction + context.items.length) % context.items.length]?.focus();
+		return true;
+	}
+
+	private focusFirstItem(context: MenuKeyContext): boolean {
+		context.items[0]?.focus();
+		return true;
+	}
+
+	private focusLastItem(context: MenuKeyContext): boolean {
+		context.items.at(-1)?.focus();
+		return true;
+	}
+
+	private openNestedMenu(context: MenuKeyContext): boolean {
+		if (!context.submenu) return false;
+		this.openSubmenu(context.item, true);
+		return true;
+	}
+
+	private closeNestedMenu(context: MenuKeyContext): boolean {
+		if (this.getRootMenu() === context.menu) return false;
+		const trigger = this.getTriggerForMenu(context.menu);
+		if (trigger) this.closeSubmenu(trigger, true);
+		return true;
+	}
+
+	private activateOrOpenItem(context: MenuKeyContext): boolean {
+		if (context.submenu) this.openSubmenu(context.item, true);
+		else this.config.onActivate(context.item);
+		return true;
+	}
+
+	private closeRootMenu(): boolean {
+		this.config.onCloseRoot(true);
+		return true;
+	}
+
+	private closeMenuForTab(): boolean {
+		this.config.onCloseRoot(false);
+		return true;
 	}
 
 	handleClick(event: Event): boolean {

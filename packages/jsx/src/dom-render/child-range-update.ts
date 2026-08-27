@@ -42,16 +42,9 @@ export function updateRangeContent(
 	deferredProperties: DeferredPropertyBinding[],
 ): MountedRangeContent {
 	const nextValue = unwrapKeyedValue(value);
-	let currentContent = current;
-
-	if (currentContent.kind === 'subscription') {
-		if (isReactiveChildSource(nextValue) && currentContent.source === nextValue) {
-			return currentContent;
-		}
-
-		currentContent = releaseMountedSubscription(currentContent);
-	}
-
+	if (current.kind === 'subscription' && isReactiveChildSource(nextValue) && current.source === nextValue)
+		return current;
+	const currentContent = current.kind === 'subscription' ? releaseMountedSubscription(current) : current;
 	if (isReactiveChildSource(nextValue)) {
 		return mountReactiveChildSource(
 			startMarker,
@@ -62,12 +55,11 @@ export function updateRangeContent(
 			deferredProperties,
 		);
 	}
+	const nextKind = classifyChildValue(nextValue);
 
-	const iterableChildren = getIterableChildren(nextValue);
-
-	if (iterableChildren) {
+	if (nextKind === 'iterable') {
+		const iterableChildren = getIterableChildren(nextValue)!;
 		const keyedChildren = getKeyedChildren(iterableChildren);
-
 		if (keyedChildren) {
 			return updateKeyedChildren(
 				startMarker,
@@ -89,7 +81,27 @@ export function updateRangeContent(
 		);
 	}
 
-	if (isTemplateResultLike(nextValue)) {
+	return updateSingleChildContent(
+		startMarker,
+		endMarker,
+		nextValue,
+		nextKind,
+		currentContent,
+		rootTarget,
+		deferredProperties,
+	);
+}
+
+function updateSingleChildContent(
+	startMarker: Text,
+	endMarker: Text,
+	nextValue: unknown,
+	nextKind: 'empty' | 'nodes' | 'template' | 'text',
+	currentContent: MountedRangeContent,
+	rootTarget: HTMLElement,
+	deferredProperties: DeferredPropertyBinding[],
+): MountedRangeContent {
+	if (nextKind === 'template' && isTemplateResultLike(nextValue)) {
 		if (currentContent.kind === 'template' && currentContent.instance.compiled === getCompiledTemplate(nextValue)) {
 			currentContent.instance.update(nextValue.values, deferredProperties);
 			return currentContent;
@@ -99,11 +111,11 @@ export function updateRangeContent(
 		return replaceMountedRangeWithTemplate(startMarker, endMarker, currentContent, instance);
 	}
 
-	if (nextValue === undefined || nextValue === null || nextValue === false || nextValue === true) {
+	if (nextKind === 'empty') {
 		return replaceMountedRangeWithEmpty(startMarker, endMarker, currentContent);
 	}
 
-	if (currentContent.kind === 'text' && canRenderAsTextNode(nextValue)) {
+	if (nextKind === 'text' && currentContent.kind === 'text') {
 		const nextText = String(nextValue);
 
 		if (currentContent.node.data !== nextText) {
@@ -113,7 +125,7 @@ export function updateRangeContent(
 		return currentContent;
 	}
 
-	if (canRenderAsTextNode(nextValue)) {
+	if (nextKind === 'text') {
 		const textNode = document.createTextNode(String(nextValue));
 		return replaceMountedRangeWithText(startMarker, endMarker, currentContent, textNode);
 	}
@@ -126,6 +138,13 @@ export function updateRangeContent(
 		endMarker.parentNode,
 	);
 	return replaceMountedRangeWithNodes(startMarker, endMarker, currentContent, nodes);
+}
+
+function classifyChildValue(value: unknown): 'empty' | 'iterable' | 'template' | 'text' | 'nodes' {
+	if (getIterableChildren(value)) return 'iterable';
+	if (isTemplateResultLike(value)) return 'template';
+	if (value === undefined || value === null || value === false || value === true) return 'empty';
+	return canRenderAsTextNode(value) ? 'text' : 'nodes';
 }
 
 function replaceMountedRangeWithEmpty(
