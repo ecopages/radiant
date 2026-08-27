@@ -13,24 +13,34 @@ export const meta = {
 		label: { control: { type: 'text' } },
 	},
 	render: (args) => (
-		<RuiMenubar
-			label={args.label}
-			items={[
-				{
-					id: 'file',
-					label: 'File',
-					items: [
-						{ value: 'new', label: 'New' },
-						{ value: 'open', label: 'Open' },
-					],
-				},
-				{
-					id: 'edit',
-					label: 'Edit',
-					items: [{ value: 'undo', label: 'Undo' }],
-				},
-			]}
-		/>
+		<div class="playground-menubar">
+			<RuiMenubar
+				label={args.label}
+				items={[
+					{
+						id: 'file',
+						label: 'File',
+						items: [
+							{ value: 'new', label: 'New' },
+							{ type: 'separator', id: 'sharing-actions' },
+							{
+								value: 'share',
+								label: 'Share',
+								items: [
+									{ value: 'email', label: 'Email' },
+									{ value: 'copy-link', label: 'Copy link' },
+								],
+							},
+						],
+					},
+					{
+						id: 'edit',
+						label: 'Edit',
+						items: [{ value: 'undo', label: 'Undo' }],
+					},
+				]}
+			/>
+		</div>
 	),
 } satisfies DocsMeta<MenubarArgs>;
 
