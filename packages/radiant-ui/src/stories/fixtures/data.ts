@@ -112,28 +112,39 @@ export function cloneItems(): Item[] {
 	return structuredClone(initialItems);
 }
 
+const validMilkOptions = new Set<ItemDraft['milk']>(['Cow', 'Sheep', 'Goat', 'Mixed']);
+const validTextureOptions = new Set<ItemDraft['texture']>(['Soft', 'Semi-hard', 'Hard']);
+const validOriginOptions = new Set<ItemDraft['origin']>([
+	'France',
+	'Italy',
+	'Spain',
+	'Switzerland',
+	'Netherlands',
+	'Greece',
+	'United Kingdom',
+]);
+
 export function normalizeDraft(value: unknown): ItemDraft | null {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+	if (!isRecord(value)) {
 		return null;
 	}
-	const source = value as Record<string, unknown>;
-	const name = typeof source.name === 'string' ? source.name.trim() : '';
-	const milk = source.milk;
-	const texture = source.texture;
-	const origin = source.origin;
+	const name = typeof value.name === 'string' ? value.name.trim() : '';
 	if (
 		!name ||
-		(milk !== 'Cow' && milk !== 'Sheep' && milk !== 'Goat' && milk !== 'Mixed') ||
-		(texture !== 'Soft' && texture !== 'Semi-hard' && texture !== 'Hard') ||
-		(origin !== 'France' &&
-			origin !== 'Italy' &&
-			origin !== 'Spain' &&
-			origin !== 'Switzerland' &&
-			origin !== 'Netherlands' &&
-			origin !== 'Greece' &&
-			origin !== 'United Kingdom')
+		!validMilkOptions.has(value.milk as ItemDraft['milk']) ||
+		!validTextureOptions.has(value.texture as ItemDraft['texture']) ||
+		!validOriginOptions.has(value.origin as ItemDraft['origin'])
 	) {
 		return null;
 	}
-	return { name, milk, texture, origin };
+	return {
+		name,
+		milk: value.milk as ItemDraft['milk'],
+		texture: value.texture as ItemDraft['texture'],
+		origin: value.origin as ItemDraft['origin'],
+	};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -93,7 +93,13 @@ function parseCompoundSelector(selector: string): CompoundSelector[] {
 		throw new SyntaxError(`Failed to execute 'querySelector' on 'Element': '${selector}' is not a valid selector.`);
 	}
 
-	const tokens: Array<{ type: 'child' | 'compound' | 'descendant'; value?: string }> = [];
+	return buildCompoundSelectors(tokenizeCompoundSelector(trimmed), selector);
+}
+
+type CompoundSelectorToken = { type: 'child' | 'compound' | 'descendant'; value?: string };
+
+function tokenizeCompoundSelector(trimmed: string): CompoundSelectorToken[] {
+	const tokens: CompoundSelectorToken[] = [];
 	let current = '';
 	let inBrackets = false;
 	let quote: '"' | "'" | undefined;
@@ -152,6 +158,10 @@ function parseCompoundSelector(selector: string): CompoundSelector[] {
 		tokens.push({ type: 'compound', value: current.trim() });
 	}
 
+	return tokens;
+}
+
+function buildCompoundSelectors(tokens: CompoundSelectorToken[], selector: string): CompoundSelector[] {
 	const compounds: CompoundSelector[] = [];
 	let nextCombinator: CompoundSelector['combinator'] = null;
 
@@ -185,72 +195,56 @@ function parseSelectorParts(selector: string): SelectorPart[] {
 	let index = 0;
 
 	while (index < selector.length) {
-		const character = selector[index];
-
-		if (character === ' ' || character === '\t' || character === '\n' || character === '\r') {
-			index += 1;
-			continue;
-		}
-
-		if (character === '#') {
-			const match = /^#([A-Za-z0-9_.-]+)/.exec(selector.slice(index));
-			if (!match) {
-				throwUnsupported(selector);
-			}
-			parts.push({ type: 'id', value: match[1]! });
-			index += match[0].length;
-			continue;
-		}
-
-		if (character === '.') {
-			const match = /^\.([A-Za-z0-9_-]+)/.exec(selector.slice(index));
-			if (!match) {
-				throwUnsupported(selector);
-			}
-			parts.push({ type: 'class', value: match[1]! });
-			index += match[0].length;
-			continue;
-		}
-
-		if (character === '[') {
-			const closeIndex = selector.indexOf(']', index);
-			if (closeIndex === -1) {
-				throwUnsupported(selector);
-			}
-
-			const attributeBody = selector.slice(index + 1, closeIndex);
-			const attributeMatch = /^([A-Za-z0-9_:.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s\]]+)))?$/.exec(
-				attributeBody,
-			);
-
-			if (!attributeMatch) {
-				throwUnsupported(selector);
-			}
-
-			const [, name, doubleQuoted, singleQuoted, bareValue] = attributeMatch;
-			const value = doubleQuoted ?? singleQuoted ?? bareValue;
-			parts.push(value === undefined ? { type: 'attr', name: name! } : { type: 'attr', name: name!, value });
-			index = closeIndex + 1;
-			continue;
-		}
-
-		if (character === ':' || character === '~' || character === '+') {
-			throwUnsupported(selector);
-		}
-
-		const tagMatch = /^([A-Za-z][A-Za-z0-9_:-]*|\*)/.exec(selector.slice(index));
-		if (!tagMatch) {
-			throwUnsupported(selector);
-		}
-
-		if (tagMatch[1] !== '*') {
-			parts.push({ type: 'tag', value: tagMatch[1]!.toLowerCase() });
-		}
-
-		index += tagMatch[0].length;
+		const result = parseSelectorPart(selector, index);
+		if (result.part) parts.push(result.part);
+		index = result.nextIndex;
 	}
 
 	return parts;
+}
+
+function parseSelectorPart(selector: string, index: number): { nextIndex: number; part?: SelectorPart } {
+	const character = selector[index];
+	if (character && /\s/.test(character)) return { nextIndex: index + 1 };
+	if (character === '#') return parseSimplePart(selector, index, /^#([A-Za-z0-9_.-]+)/, 'id');
+	if (character === '.') return parseSimplePart(selector, index, /^\.([A-Za-z0-9_-]+)/, 'class');
+	if (character === '[') return parseAttributePart(selector, index);
+	if (character === ':' || character === '~' || character === '+') throwUnsupported(selector);
+	return parseTagPart(selector, index);
+}
+
+function parseSimplePart(
+	selector: string,
+	index: number,
+	pattern: RegExp,
+	type: 'class' | 'id',
+): { nextIndex: number; part: SelectorPart } {
+	const match = pattern.exec(selector.slice(index));
+	if (!match) throwUnsupported(selector);
+	return { nextIndex: index + match[0].length, part: { type, value: match[1]! } };
+}
+
+function parseAttributePart(selector: string, index: number): { nextIndex: number; part: SelectorPart } {
+	const closeIndex = selector.indexOf(']', index);
+	if (closeIndex === -1) throwUnsupported(selector);
+	const match = /^([A-Za-z0-9_:.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s\]]+)))?$/.exec(
+		selector.slice(index + 1, closeIndex),
+	);
+	if (!match) throwUnsupported(selector);
+	const [, name, doubleQuoted, singleQuoted, bareValue] = match;
+	const value = doubleQuoted ?? singleQuoted ?? bareValue;
+	return {
+		nextIndex: closeIndex + 1,
+		part: value === undefined ? { type: 'attr', name: name! } : { type: 'attr', name: name!, value },
+	};
+}
+
+function parseTagPart(selector: string, index: number): { nextIndex: number; part?: SelectorPart } {
+	const match = /^([A-Za-z][A-Za-z0-9_:-]*|\*)/.exec(selector.slice(index));
+	if (!match) throwUnsupported(selector);
+	return match[1] === '*'
+		? { nextIndex: index + match[0].length }
+		: { nextIndex: index + match[0].length, part: { type: 'tag', value: match[1]!.toLowerCase() } };
 }
 
 function throwUnsupported(selector: string): never {

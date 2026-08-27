@@ -1,6 +1,6 @@
 import type { RadiantElementEventListener } from '../core/radiant-element';
+import { eventMatchesDelegatedSelector } from '../core/delegated-event';
 import { isServer } from '@ecopages/radiant/is-server';
-import { escapeCssIdentifier } from '../tools/escape-css-identifier';
 import { isControllerHost, resolveHostElement } from './resolve-host-element';
 
 /**
@@ -67,19 +67,7 @@ function addDelegatedListener(
 	listener: EventListener,
 ): () => void {
 	const delegatedListener = (event: Event) => {
-		const eventTarget = event.target;
-		if (!(eventTarget instanceof Node)) return;
-
-		// Text nodes are valid event targets; resolve to the owning element.
-		const elementTarget = eventTarget instanceof Element ? eventTarget : eventTarget.parentElement;
-		if (!elementTarget) return;
-
-		// Use closest() so clicks on descendants of the matched node still fire —
-		// matches() alone breaks buttons that wrap icons, tracks, labels, etc.
-		const matched = elementTarget.closest(selector);
-		if (matched && (matched === root || root.contains(matched))) {
-			listener(event);
-		}
+		if (eventMatchesDelegatedSelector(event, root, selector)) listener(event);
 	};
 
 	root.addEventListener(config.type, delegatedListener, config.options);
@@ -138,69 +126,16 @@ export function createEventListener(
 
 	const hostElement = resolveEventListenerHostElement(host);
 	const boundCallback = callback.bind(host);
-	let windowCleanup: (() => void) | null = null;
-	let documentCleanup: (() => void) | null = null;
-	let mediaQueryCleanup: (() => void) | null = null;
-	let lightCleanup: (() => void) | null = null;
-	let shadowCleanup: (() => void) | null = null;
+	const cleanups = new Map<EventListenerScope, () => void>();
 	let disposed = false;
 
 	const detachListeners = () => {
-		windowCleanup?.();
-		documentCleanup?.();
-		mediaQueryCleanup?.();
-		lightCleanup?.();
-		shadowCleanup?.();
-
-		windowCleanup = null;
-		documentCleanup = null;
-		mediaQueryCleanup = null;
-		lightCleanup = null;
-		shadowCleanup = null;
+		for (const cleanup of cleanups.values()) cleanup();
+		cleanups.clear();
 	};
 
 	const attachListeners = () => {
-		if (disposed) {
-			return;
-		}
-
-		if ('window' in config && !windowCleanup) {
-			window.addEventListener(config.type, boundCallback, config.options);
-			windowCleanup = () => {
-				window.removeEventListener(config.type, boundCallback, config.options);
-			};
-		}
-
-		if ('document' in config && !documentCleanup) {
-			document.addEventListener(config.type, boundCallback, config.options);
-			documentCleanup = () => {
-				document.removeEventListener(config.type, boundCallback, config.options);
-			};
-		}
-
-		if ('mediaQuery' in config && !mediaQueryCleanup) {
-			if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-				return;
-			}
-
-			const mediaQueryList = window.matchMedia(config.mediaQuery);
-			mediaQueryList.addEventListener(config.type, boundCallback, config.options);
-			mediaQueryCleanup = () => {
-				mediaQueryList.removeEventListener(config.type, boundCallback, config.options);
-			};
-		}
-
-		if ('selector' in config || 'ref' in config) {
-			const selector = 'selector' in config ? config.selector : `[data-ref='${escapeCssIdentifier(config.ref)}']`;
-
-			if (config.scope !== 'shadow' && !lightCleanup) {
-				lightCleanup = addDelegatedListener(hostElement, config, selector, boundCallback);
-			}
-
-			if (config.scope !== 'light' && hostElement.shadowRoot && !shadowCleanup) {
-				shadowCleanup = addDelegatedListener(hostElement.shadowRoot, config, selector, boundCallback);
-			}
-		}
+		if (!disposed) attachConfiguredListeners(cleanups, hostElement, config, boundCallback);
 	};
 
 	if ('selector' in config || 'ref' in config) {
@@ -225,3 +160,60 @@ export function createEventListener(
 		detachListeners();
 	};
 }
+
+function attachConfiguredListeners(
+	cleanups: Map<EventListenerScope, () => void>,
+	hostElement: Element,
+	config: OnEventConfig,
+	listener: EventListener,
+): void {
+	if ('window' in config) attachNativeListener(cleanups, 'window', window, config, listener);
+	if ('document' in config) attachNativeListener(cleanups, 'document', document, config, listener);
+	if ('mediaQuery' in config) attachMediaQueryListener(cleanups, config, listener);
+	if ('selector' in config || 'ref' in config) attachDelegatedListeners(cleanups, hostElement, config, listener);
+}
+
+function attachNativeListener(
+	cleanups: Map<EventListenerScope, () => void>,
+	key: 'document' | 'window',
+	target: Window | Document,
+	config: OnEventConfig,
+	listener: EventListener,
+): void {
+	if (cleanups.has(key)) return;
+	target.addEventListener(config.type, listener, config.options);
+	cleanups.set(key, () => target.removeEventListener(config.type, listener, config.options));
+}
+
+function attachMediaQueryListener(
+	cleanups: Map<EventListenerScope, () => void>,
+	config: OnEventConfig,
+	listener: EventListener,
+): void {
+	if (
+		!('mediaQuery' in config) ||
+		cleanups.has('media') ||
+		typeof window === 'undefined' ||
+		typeof window.matchMedia !== 'function'
+	)
+		return;
+	const mediaQueryList = window.matchMedia(config.mediaQuery);
+	mediaQueryList.addEventListener(config.type, listener, config.options);
+	cleanups.set('media', () => mediaQueryList.removeEventListener(config.type, listener, config.options));
+}
+
+function attachDelegatedListeners(
+	cleanups: Map<EventListenerScope, () => void>,
+	hostElement: Element,
+	config: OnEventConfig,
+	listener: EventListener,
+): void {
+	if (!('selector' in config || 'ref' in config)) return;
+	const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
+	if (config.scope !== 'shadow' && !cleanups.has('light'))
+		cleanups.set('light', addDelegatedListener(hostElement, config, selector, listener));
+	if (config.scope !== 'light' && hostElement.shadowRoot && !cleanups.has('shadow'))
+		cleanups.set('shadow', addDelegatedListener(hostElement.shadowRoot, config, selector, listener));
+}
+
+type EventListenerScope = 'document' | 'light' | 'media' | 'shadow' | 'window';

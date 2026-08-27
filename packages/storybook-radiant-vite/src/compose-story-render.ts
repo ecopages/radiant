@@ -26,27 +26,55 @@ export function composeStoryRender(
 ): () => JsxRenderable {
 	const meta = storyModule.default as SsrStoryDefinition | undefined;
 	const story = storyExport ? (storyModule[storyExport] as SsrStoryDefinition | undefined) : undefined;
-	const render = story?.render ?? meta?.render ?? meta?.component;
-	if (typeof render !== 'function') {
-		throw new Error(`Story "${storyExport ?? 'default'}" does not provide a JSX render function.`);
-	}
+	const render = resolveStoryRender(meta, story, storyExport);
+	return applyDecorators(
+		createStoryRender(render, args),
+		getDecorators(meta, story),
+		createDecoratorContext(meta, story, storyExport, args),
+	);
+}
 
-	let storyRender = () => (render as (nextArgs: Record<string, unknown>) => JsxRenderable)(args);
-	const decorators = [...(meta?.decorators ?? []), ...(story?.decorators ?? [])];
-	const context: SsrDecoratorContext = {
+function resolveStoryRender(
+	meta: SsrStoryDefinition | undefined,
+	story: SsrStoryDefinition | undefined,
+	storyExport: string | undefined,
+): (args: Record<string, unknown>) => JsxRenderable {
+	const render = story?.render ?? meta?.render ?? meta?.component;
+	if (typeof render !== 'function')
+		throw new Error(`Story "${storyExport ?? 'default'}" does not provide a JSX render function.`);
+	return render as (args: Record<string, unknown>) => JsxRenderable;
+}
+
+function createStoryRender(
+	render: (args: Record<string, unknown>) => JsxRenderable,
+	args: Record<string, unknown>,
+): () => JsxRenderable {
+	return () => render(args);
+}
+
+function getDecorators(meta: SsrStoryDefinition | undefined, story: SsrStoryDefinition | undefined): unknown[] {
+	return [...(meta?.decorators ?? []), ...(story?.decorators ?? [])];
+}
+
+function createDecoratorContext(
+	meta: SsrStoryDefinition | undefined,
+	story: SsrStoryDefinition | undefined,
+	storyExport: string | undefined,
+	args: Record<string, unknown>,
+): SsrDecoratorContext {
+	return {
 		args,
 		id: storyExport ?? 'default',
 		parameters: { ...(meta?.parameters ?? {}), ...(story?.parameters ?? {}) },
 	};
+}
 
-	for (const decorator of decorators.toReversed()) {
-		if (typeof decorator !== 'function') {
-			continue;
-		}
-
-		const previousRender = storyRender;
-		storyRender = () => (decorator as SsrStoryDecorator)(previousRender, context);
-	}
-
-	return storyRender;
+function applyDecorators(
+	storyRender: () => JsxRenderable,
+	decorators: unknown[],
+	context: SsrDecoratorContext,
+): () => JsxRenderable {
+	return decorators.toReversed().reduce<() => JsxRenderable>((render, decorator) => {
+		return typeof decorator === 'function' ? () => (decorator as SsrStoryDecorator)(render, context) : render;
+	}, storyRender);
 }

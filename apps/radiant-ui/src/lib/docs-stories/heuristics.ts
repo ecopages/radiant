@@ -34,21 +34,20 @@ export function resolveControlPresentation(
 	if (type === 'boolean') return 'boolean';
 	if (type === 'number') return 'number';
 	if (type === 'text') return 'text';
-
-	if (type === 'radio') {
-		if (options.length >= 2) return 'radio';
-		if (options.length > DOCS_SEGMENT_OPTION_LIMIT) return 'select';
-		if (options.length > 0) return 'select';
-		return 'text';
-	}
-
-	if (type === 'select' || options.length > 0) {
-		if (options.length === 0) return 'text';
-		if (options.length >= 2 && options.length <= DOCS_SEGMENT_OPTION_LIMIT) return 'segmented';
-		return 'select';
-	}
-
+	if (type === 'radio') return resolveRadioPresentation(options);
+	if (type === 'select' || options.length > 0) return resolveSelectPresentation(options);
 	return 'text';
+}
+
+function resolveRadioPresentation(options: readonly string[]): DocsControlPresentation {
+	if (options.length >= 2) return 'radio';
+	return options.length > 0 ? 'select' : 'text';
+}
+
+function resolveSelectPresentation(options: readonly string[]): DocsControlPresentation {
+	if (options.length === 0) return 'text';
+	if (options.length >= 2 && options.length <= DOCS_SEGMENT_OPTION_LIMIT) return 'segmented';
+	return 'select';
 }
 
 /** Flatten `meta.argTypes` into heuristic-resolved controls for the docs shell. */
