@@ -7,7 +7,7 @@ export const config = defineConfig({
 	plugins: ['typescript', 'react'],
 	ignorePatterns,
 	rules: {
-		complexity: ['error', { max: 50 }],
+		complexity: ['error', { max: 15 }],
 		'no-param-reassign': 'error',
 		'default-param-last': 'error',
 		'no-else-return': 'error',

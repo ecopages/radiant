@@ -1,6 +1,6 @@
 export function escapeCssIdentifier(value: string): string {
-	const cssNamespace = globalThis.CSS as { escape?: (value: string) => string } | undefined;
-	if (typeof cssNamespace?.escape === 'function') return cssNamespace.escape(value);
+	const escape = globalThis.CSS?.escape;
+	if (typeof escape === 'function') return escape(value);
 	let escaped = '';
 	for (let index = 0; index < value.length; index += 1) escaped += escapeCharacter(value, index);
 	return escaped;
@@ -18,20 +18,12 @@ function escapeCharacter(value: string, index: number): string {
 
 function requiresCodePointEscape(value: string, index: number, codePoint: number): boolean {
 	return (
-		(codePoint >= 0x0001 && codePoint <= 0x001f) ||
+		(codePoint > 0 && codePoint < 0x0020) ||
 		codePoint === 0x007f ||
-		(index === 0 && codePoint >= 0x0030 && codePoint <= 0x0039) ||
-		(index === 1 && codePoint >= 0x0030 && codePoint <= 0x0039 && (value[0] ?? '') === '-')
+		(codePoint >= 0x0030 && codePoint <= 0x0039 && (index === 0 || (index === 1 && value[0] === '-')))
 	);
 }
 
 function isCssIdentifierCharacter(character: string, codePoint: number): boolean {
-	return (
-		codePoint >= 0x0080 ||
-		character === '-' ||
-		character === '_' ||
-		(codePoint >= 0x0030 && codePoint <= 0x0039) ||
-		(codePoint >= 0x0041 && codePoint <= 0x005a) ||
-		(codePoint >= 0x0061 && codePoint <= 0x007a)
-	);
+	return codePoint >= 0x0080 || /[-_0-9A-Za-z]/.test(character);
 }
