@@ -154,40 +154,47 @@ export class RuiKnob extends RadiantElement {
 			this.valuePrecision,
 		);
 		const valuePosition = this.resolvedValuePosition;
+		this.syncKnobLayout(valuePosition);
+		this.syncControl(value, ring.valueText);
+		this.syncRing(ring);
+		this.syncReadout(ring.valueText, valuePosition);
+		this.syncFormValue(value);
+	}
 
+	private syncKnobLayout(valuePosition: RuiKnobValuePosition): void {
 		this.rootTarget?.classList.toggle('rui-knob--value-below', valuePosition === 'below');
 		this.labelTarget?.toggleAttribute('hidden', !this.label);
-		if (this.labelTarget) {
-			this.labelTarget.textContent = this.label;
-		}
-
+		if (this.labelTarget) this.labelTarget.textContent = this.label;
 		if (this.resolvedSize) {
 			this.style.setProperty('--rui-knob-size', `${this.resolvedSize}px`);
 		} else {
 			this.style.removeProperty('--rui-knob-size');
 		}
+	}
 
-		if (this.controlTarget) {
-			this.controlTarget.setAttribute('aria-valuemin', String(this.numericRange.lowerBound));
-			this.controlTarget.setAttribute('aria-valuemax', String(this.numericRange.upperBound));
-			this.controlTarget.setAttribute('aria-valuenow', String(value));
-			this.controlTarget.setAttribute('aria-valuetext', ring.valueText);
-			if (this.label) {
-				this.controlTarget.setAttribute('aria-label', this.label);
-			} else {
-				this.controlTarget.removeAttribute('aria-label');
-			}
-			this.controlTarget.setAttribute('aria-readonly', String(this.readOnly));
-			this.controlTarget.disabled = this.disabled;
-		}
+	private syncControl(value: number, valueText: string): void {
+		const control = this.controlTarget;
+		if (!control) return;
+		control.setAttribute('aria-valuemin', String(this.numericRange.lowerBound));
+		control.setAttribute('aria-valuemax', String(this.numericRange.upperBound));
+		control.setAttribute('aria-valuenow', String(value));
+		control.setAttribute('aria-valuetext', valueText);
+		if (this.label) control.setAttribute('aria-label', this.label);
+		else control.removeAttribute('aria-label');
+		control.setAttribute('aria-readonly', String(this.readOnly));
+		control.disabled = this.disabled;
+	}
 
+	private syncRing(ring: ReturnType<typeof createKnobRing>): void {
 		for (const circle of [this.trackTarget, this.progressTarget]) {
 			circle?.setAttribute('r', String(ring.radius));
 			circle?.setAttribute('stroke-width', String(ring.strokeWidth));
 		}
 		this.trackTarget?.setAttribute('stroke-dasharray', `${ring.arcLength} ${ring.circumference}`);
 		this.progressTarget?.setAttribute('stroke-dasharray', `${ring.progressLength} ${ring.circumference}`);
+	}
 
+	private syncReadout(valueText: string, valuePosition: RuiKnobValuePosition): void {
 		for (const [target, visible] of [
 			[this.centerValueTarget, this.showValue && valuePosition === 'center'],
 			[this.belowValueTarget, this.showValue && valuePosition === 'below'],
@@ -195,19 +202,18 @@ export class RuiKnob extends RadiantElement {
 			if (!target) {
 				continue;
 			}
-			target.textContent = ring.valueText;
+			target.textContent = valueText;
 			target.toggleAttribute('hidden', !visible);
 		}
+	}
 
-		if (this.inputTarget) {
-			this.inputTarget.value = String(value);
-			if (this.name) {
-				this.inputTarget.name = this.name;
-			} else {
-				this.inputTarget.removeAttribute('name');
-			}
-			this.inputTarget.disabled = this.disabled;
-		}
+	private syncFormValue(value: number): void {
+		const input = this.inputTarget;
+		if (!input) return;
+		input.value = String(value);
+		if (this.name) input.name = this.name;
+		else input.removeAttribute('name');
+		input.disabled = this.disabled;
 	}
 
 	private syncPresentation(): void {

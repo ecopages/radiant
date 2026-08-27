@@ -150,74 +150,81 @@ export class RuiTree extends RadiantElement {
 	onKeydown(event: KeyboardEvent): void {
 		const current = (event.target as HTMLElement).closest('[role="treeitem"]') as HTMLElement | null;
 		if (!current) return;
+		const handler = this.treeKeyHandlers[event.key];
+		if (!handler?.call(this, current, event)) return;
+		event.preventDefault();
+	}
 
-		switch (event.key) {
-			case 'ArrowDown':
-			case 'ArrowUp':
-			case 'Home':
-			case 'End': {
-				const result = navigateRovingTabindex({
-					items: this.getVisibleItems(),
-					current,
-					key: event.key,
-					orientation: 'vertical',
-					wrap: false,
-				});
-				if (!result.handled) return;
-				event.preventDefault();
-				break;
-			}
-			case 'ArrowRight': {
-				event.preventDefault();
-				if (current.getAttribute('aria-expanded') === 'false') {
-					this.setExpanded(current, true);
-					return;
-				}
-				if (current.getAttribute('aria-expanded') === 'true') {
-					const items = this.getVisibleItems();
-					const index = items.indexOf(current);
-					if (items[index + 1]) focusRovingItem(items, index + 1);
-				}
-				break;
-			}
-			case 'ArrowLeft': {
-				event.preventDefault();
-				if (current.getAttribute('aria-expanded') === 'true') {
-					this.setExpanded(current, false);
-					return;
-				}
-				const parent = this.getParentItem(current);
-				if (parent) {
-					const nextItems = this.getVisibleItems();
-					const parentIndex = nextItems.indexOf(parent);
-					if (parentIndex >= 0) focusRovingItem(nextItems, parentIndex);
-				}
-				break;
-			}
-			case '*': {
-				event.preventDefault();
-				for (const sibling of this.getSiblingItems(current)) {
-					if (sibling.hasAttribute('aria-expanded')) {
-						this.setExpanded(sibling, true);
-					}
-				}
-				break;
-			}
-			case 'Enter': {
-				event.preventDefault();
-				if (current.hasAttribute('aria-expanded')) {
-					this.setExpanded(current, current.getAttribute('aria-expanded') !== 'true');
-				}
-				this.select(current);
-				break;
-			}
-			case ' ': {
-				event.preventDefault();
-				this.select(current);
-				break;
-			}
-			default:
-				break;
+	private readonly treeKeyHandlers: Record<string, (item: HTMLElement, event: KeyboardEvent) => boolean> = {
+		ArrowDown: this.navigateTreeItem,
+		ArrowUp: this.navigateTreeItem,
+		Home: this.navigateTreeItem,
+		End: this.navigateTreeItem,
+		ArrowRight: this.expandOrEnterChild,
+		ArrowLeft: this.collapseOrFocusParent,
+		'*': this.expandSiblings,
+		Enter: this.toggleAndSelect,
+		' ': this.selectTreeItem,
+	};
+
+	private navigateTreeItem(current: HTMLElement, event: KeyboardEvent): boolean {
+		return navigateRovingTabindex({
+			items: this.getVisibleItems(),
+			current,
+			key: event.key,
+			orientation: 'vertical',
+			wrap: false,
+		}).handled;
+	}
+
+	private expandOrEnterChild(current: HTMLElement): boolean {
+		if (current.getAttribute('aria-expanded') === 'false') {
+			this.setExpanded(current, true);
+			return true;
 		}
+		if (current.getAttribute('aria-expanded') !== 'true') return false;
+		this.focusAdjacentVisibleItem(current, 1);
+		return true;
+	}
+
+	private collapseOrFocusParent(current: HTMLElement): boolean {
+		if (current.getAttribute('aria-expanded') === 'true') {
+			this.setExpanded(current, false);
+			return true;
+		}
+		const parent = this.getParentItem(current);
+		if (parent) this.focusVisibleItem(parent);
+		return Boolean(parent);
+	}
+
+	private expandSiblings(current: HTMLElement): boolean {
+		for (const sibling of this.getSiblingItems(current)) {
+			if (sibling.hasAttribute('aria-expanded')) this.setExpanded(sibling, true);
+		}
+		return true;
+	}
+
+	private toggleAndSelect(current: HTMLElement): boolean {
+		if (current.hasAttribute('aria-expanded'))
+			this.setExpanded(current, current.getAttribute('aria-expanded') !== 'true');
+		this.select(current);
+		return true;
+	}
+
+	private selectTreeItem(current: HTMLElement): boolean {
+		this.select(current);
+		return true;
+	}
+
+	private focusAdjacentVisibleItem(current: HTMLElement, direction: 1 | -1): void {
+		const items = this.getVisibleItems();
+		const index = items.indexOf(current);
+		if (items[index + direction]) focusRovingItem(items, index + direction);
+	}
+
+	private focusVisibleItem(item: HTMLElement): void {
+		const items = this.getVisibleItems();
+		const index = items.indexOf(item);
+		if (index >= 0) focusRovingItem(items, index);
 	}
 }
