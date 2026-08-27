@@ -1,4 +1,5 @@
 {
+	"extends": "../../configs/tsconfig.base.json",
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
@@ -6,14 +7,10 @@
 		"forceConsistentCasingInFileNames": true,
 		"jsx": "react-jsx",
 		"jsxImportSource": "@ecopages/jsx",
-		"module": "ESNext",
-		"moduleResolution": "bundler",
 		"noImplicitOverride": true,
 		"strictPropertyInitialization": false,
 		"outDir": "./dist",
 		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"strict": true,
 		"target": "ESNext",
 		"types": ["node"],
 		"useDefineForClassFields": true,
