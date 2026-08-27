@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.5
+
+### Minor Changes
+
+- [#195](https://github.com/ecopages/radiant/pull/195) [`a51c205`](https://github.com/ecopages/radiant/commit/a51c2058ac4fc2eda58439e79f51fbc8bf6ca9cb) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `RuiSeparator` for non-interactive horizontal and vertical dividers. Menu button and menubar now support nested submenus and `{ type: 'separator' }` entries in item trees; toolbar can divide control groups without adding a focus stop.
+
 ## 0.1.0-rc.4
 
 ### Patch Changes
