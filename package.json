@@ -1,9 +1,7 @@
 {
 	"name": "@ecopages/radiant-monorepo",
+	"private": true,
 	"description": "A minimalist web component library designed for simplicity and flexibility",
-	"publishConfig": {
-		"access": "public"
-	},
 	"packageManager": "pnpm@11.17.0",
 	"scripts": {
 		"clean": "clear && pnpm dlx npkill -D -y && rm -rf node_modules pnpm-lock.yaml && pnpm install",
