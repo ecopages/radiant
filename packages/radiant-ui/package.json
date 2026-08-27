@@ -449,6 +449,13 @@
 		"./select/styles.css": {
 			"default": "./dist/components/ui/select/select.css"
 		},
+		"./separator": {
+			"types": "./dist/components/ui/separator/index.d.ts",
+			"import": "./dist/components/ui/separator/index.js"
+		},
+		"./separator/styles.css": {
+			"default": "./dist/components/ui/separator/separator.css"
+		},
 		"./sidebar": {
 			"types": "./dist/components/ui/sidebar/index.d.ts",
 			"import": "./dist/components/ui/sidebar/index.js"

@@ -1,19 +1,24 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { RuiButton } from '../button/button';
+import { RuiSeparator } from '../separator/separator';
 import { RuiToolbar } from './toolbar';
 import { RuiToolbar as RuiToolbarElement } from './toolbar.script';
 
 const formattingButtons = (
 	<>
-		<RuiButton size="sm" variant="ghost" toggle>
-			Bold
+		<RuiButton size="sm" variant="ghost" square toggle aria-label="Bold">
+			<strong aria-hidden="true">B</strong>
 		</RuiButton>
-		<RuiButton size="sm" variant="ghost" toggle>
-			Italic
+		<RuiButton size="sm" variant="ghost" square toggle aria-label="Italic">
+			<em aria-hidden="true">I</em>
 		</RuiButton>
-		<RuiButton size="sm" variant="ghost" toggle>
-			Underline
+		<RuiSeparator orientation="vertical" />
+		<RuiButton size="sm" variant="ghost" square toggle aria-label="Underline">
+			<u aria-hidden="true">U</u>
+		</RuiButton>
+		<RuiButton size="sm" variant="ghost" square toggle aria-label="Strikethrough">
+			<s aria-hidden="true">S</s>
 		</RuiButton>
 	</>
 );
@@ -21,7 +26,9 @@ const formattingButtons = (
 const meta = {
 	title: 'Components/Toolbar',
 	component: RuiToolbar,
-	parameters: { radiant: { element: RuiToolbarElement, cssImports: ['./toolbar.css'] } },
+	parameters: {
+		radiant: { element: RuiToolbarElement, cssImports: ['./toolbar.css', '../separator/separator.css'] },
+	},
 	args: {
 		label: 'Text formatting',
 		children: formattingButtons,
@@ -113,6 +120,25 @@ export const ExclusiveToggles: Story = {
 
 			await userEvent.click(buttons[1]);
 			await expect(buttons[1]).toHaveAttribute('aria-pressed', 'false');
+		});
+	},
+};
+
+export const FormattingCategories: Story = {
+	args: { children: formattingButtons },
+	play: async ({ canvasElement, step }) => {
+		const separator = canvasElement.querySelector('[role="separator"]') as HTMLElement;
+		const buttons = Array.from(canvasElement.querySelectorAll('button')) as HTMLButtonElement[];
+
+		await step('uses a vertical separator between formatting categories', async () => {
+			await expect(separator).toHaveAttribute('aria-orientation', 'vertical');
+			await expect(separator).not.toHaveAttribute('tabindex');
+		});
+
+		await step('arrow navigation skips the separator', async () => {
+			buttons[1].focus();
+			await userEvent.keyboard('{ArrowRight}');
+			await expect(document.activeElement).toBe(buttons[2]);
 		});
 	},
 };

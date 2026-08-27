@@ -36,6 +36,7 @@ import './number-field';
 import './popover';
 import './radio-group';
 import './select';
+import './separator';
 import './sidebar';
 import './slider';
 import './spinner';
