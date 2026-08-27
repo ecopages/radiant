@@ -13,7 +13,8 @@
  * 3. Hydrates radiant-ui CE scripts used by those controls
  *
  * Control presentation is automated — do not branch on option counts in the shell.
- * Heuristics: boolean→switch, text→input, number→number field, 2–3 options→segments, else→select.
+ * Heuristics: boolean→switch, text→input, number→number field, radio with 2+ options→radio
+ * group, select with 2–3 options→segments, otherwise select.
  */
 
 export type {

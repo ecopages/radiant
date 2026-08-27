@@ -78,7 +78,8 @@ Authors declare `control.type` and `options`. The shell picks widgets via heuris
 - `number` → number field
 - `radio` with 2+ options → radio group
 - `select` with 2–3 options → segmented buttons
-- `select` with 4+ options → select
+- `select` with 1 option or 4+ options → select
+- `radio` or `select` with no options → text
 
 Do not branch on option counts in the shell or MDX.
 
