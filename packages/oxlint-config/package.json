@@ -1,0 +1,11 @@
+{
+	"name": "@ecopages/oxlint-config",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./base": "./base.js"
+	},
+	"dependencies": {
+		"oxlint": "catalog:"
+	}
+}

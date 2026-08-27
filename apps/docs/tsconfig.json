@@ -1,4 +1,5 @@
 {
+	"extends": "../../configs/tsconfig.base.json",
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
 		"allowImportingTsExtensions": true,
@@ -8,8 +9,6 @@
 		"jsx": "react-jsx",
 		"jsxImportSource": "@ecopages/jsx",
 		"lib": ["ES2021", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"moduleResolution": "Bundler",
 		"noEmit": true,
 		"noImplicitOverride": true,
 		"paths": {
@@ -18,8 +17,6 @@
 			"ecopages:content/docs/server": ["./types/ecopages-content-docs-server.d.ts"]
 		},
 		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"strict": true,
 		"target": "ES2021",
 		"types": ["node"],
 		"useDefineForClassFields": true,

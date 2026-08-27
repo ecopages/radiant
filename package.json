@@ -8,7 +8,9 @@
 	"scripts": {
 		"clean": "clear && pnpm dlx npkill -D -y && rm -rf node_modules pnpm-lock.yaml && pnpm install",
 		"format": "pnpm exec prettier --write .",
-		"lint": "pnpm exec oxlint . --fix",
+		"lint": "pnpm exec oxlint .",
+		"lint:complexity": "pnpm exec oxlint . --deny complexity --max-warnings 0",
+		"lint:fix": "pnpm exec oxlint . --fix",
 		"typecheck": "pnpm run typecheck:packages && tsc --noEmit -p apps/docs/tsconfig.json && tsc --noEmit -p apps/radiant-ui/tsconfig.json",
 		"typecheck:packages": "tsc --noEmit -p packages/jsx/tsconfig.json && tsc --noEmit -p packages/signals/tsconfig.json && tsc --noEmit -p packages/radiant/tsconfig.json && tsc --noEmit -p packages/vite-plugin-radiant/tsconfig.json && tsc --noEmit -p packages/storybook-radiant-vite/tsconfig.json && tsc --noEmit -p packages/radiant-ui/tsconfig.app.json && tsc --noEmit -p playground/vite/tsconfig.json && tsc --noEmit -p playground/vite-nitro/tsconfig.json",
 		"prepare:husky": "husky",
@@ -32,11 +34,12 @@
 		"preview:docs": "pnpm --filter radiant-docs preview"
 	},
 	"devDependencies": {
+		"@ecopages/oxlint-config": "workspace:*",
 		"@changesets/changelog-github": "^1.0.0",
 		"@changesets/cli": "^3.0.0",
 		"@types/ws": "^8.18.1",
 		"better-commits": "^1.18.1",
-		"oxlint": "^1.32.0",
+		"oxlint": "catalog:",
 		"playwright": "^1.52.0",
 		"prettier": "^3.7.4",
 		"tsx": "^4.20.6",
