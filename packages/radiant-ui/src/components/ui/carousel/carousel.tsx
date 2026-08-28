@@ -228,7 +228,9 @@ function CarouselShell({
 		>
 			<div class="rui-carousel__stage">
 				<div class="rui-carousel__viewport" data-ref="viewport">
-					<div class="rui-carousel__track">{children}</div>
+					<div class="rui-carousel__track" data-ref="track">
+						{children}
+					</div>
 					{overlayChrome}
 				</div>
 			</div>

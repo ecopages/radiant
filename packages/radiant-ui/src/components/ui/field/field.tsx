@@ -3,7 +3,7 @@ import type { RuiField as RuiFieldElement, RuiFieldProps } from './field.script'
 import './field.script';
 
 /**
- * Field wrapper. Authors a `.rui-field` column inside `<rui-field>` and passes
+ * Field wrapper. Authors `[data-ref="field"]` (`.rui-field` column) inside `<rui-field>` and passes
  * `rules` / `defaultValue` through property bindings.
  *
  * @cssclass rui-field - Root column; wires the composed control, label, description,
@@ -26,7 +26,9 @@ export function RuiField({
 					defaultValueData ?? (defaultValue !== undefined ? JSON.stringify(defaultValue) : undefined),
 			}}
 		>
-			<div class="rui-field">{children}</div>
+			<div class="rui-field" data-ref="field">
+				{children}
+			</div>
 		</rui-field>
 	);
 }

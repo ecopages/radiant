@@ -17,7 +17,9 @@ export function RuiTooltip({
 	return (
 		<rui-tooltip content={content} {...props}>
 			<span class="rui-tooltip">
-				<span class="rui-tooltip__trigger">{children}</span>
+				<span class="rui-tooltip__trigger" data-ref="trigger">
+					{children}
+				</span>
 				<span class="rui-tooltip__content rui-floating" data-ref="tooltip" role="tooltip" hidden>
 					{content}
 				</span>

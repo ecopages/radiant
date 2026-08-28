@@ -67,7 +67,7 @@ import '@ecopages/radiant-ui/hover-card';
 
 <rui-hover-card delay={600} content-label="Jane Cooper preview">
   <span class="rui-hover-card">
-    <span class="rui-hover-card__trigger">
+    <span class="rui-hover-card__trigger" data-ref="trigger">
       <span data-hover-card-trigger>
         <button type="button">Jane Cooper</button>
       </span>
@@ -79,7 +79,7 @@ import '@ecopages/radiant-ui/hover-card';
 </rui-hover-card>;
 ```
 
-The host queries `.rui-hover-card__trigger` for focus events and `[data-hover-card-trigger]` for the anchor.
+The host queries `[data-ref="trigger"]` for focus events and `[data-hover-card-trigger]` for the anchor.
 
 ## Hover card vs tooltip
 
@@ -120,7 +120,7 @@ The host queries `.rui-hover-card__trigger` for focus events and `[data-hover-ca
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-hover-card-trigger]` | yes | — | anchor wrapper |
-| `.rui-hover-card__trigger` | yes | — | focus bridge around the anchor |
+| `[data-ref="trigger"]` | yes | — | focus bridge around the anchor |
 | `[data-ref="content"]` | yes | `id`, `aria-label` | preview body; view seeds `role="dialog"` |
 | focusable anchor | per trigger | `aria-controls`, `aria-expanded` | control inside `[data-hover-card-trigger]` |
 
@@ -142,7 +142,7 @@ Do not set `aria-controls`, `aria-expanded`, or `aria-label` on the surface. Nes
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiHoverCardTrigger` | `[data-hover-card-trigger]` inside `.rui-hover-card__trigger` | Anchor for hover/focus. |
+| `RuiHoverCardTrigger` | `[data-ref="trigger"]` wrapping `[data-hover-card-trigger]` | Anchor for hover/focus. |
 | `RuiHoverCardContent` | `[data-ref="content"]` | Floating preview surface. |
 | `RuiHoverCard` | `.rui-hover-card` wrapper | Compose trigger + content as children. |
 

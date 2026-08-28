@@ -57,7 +57,7 @@ describe('field control protocol (SSR-safe)', () => {
 	it('discovers checkbox-group surface instead of inner checkbox hosts', () => {
 		const field = document.createElement('div');
 		field.innerHTML = `
-			<div class="rui-field">
+			<div class="rui-field" data-ref="field">
 				<rui-checkbox-group value="news">
 					<div data-checkbox-group-root data-rui-control role="group">
 						<rui-checkbox value="news" checked></rui-checkbox>

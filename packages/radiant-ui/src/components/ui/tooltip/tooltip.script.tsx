@@ -31,12 +31,12 @@ const TOOLTIP_GAP = 8;
  * ## Light-DOM contract
  *
  * Required:
- * - `.rui-tooltip__trigger` — trigger wrapper. Host listens for `focusin` / `focusout` here.
+ * - `[data-ref="trigger"]` — trigger wrapper. Host listens for `focusin` / `focusout` here.
  * - `[data-ref="tooltip"]` — tooltip surface (`role="tooltip"`). Host assigns `id`, toggles `hidden`,
  *   and positions the floating layer when open.
  *
  * Per trigger:
- * - First focusable descendant inside `.rui-tooltip__trigger` (or the wrapper) receives `aria-describedby`.
+ * - First focusable descendant inside `[data-ref="trigger"]` (or the wrapper) receives `aria-describedby`.
  *
  * Optional:
  * - `content` attribute — text bound into the tooltip surface when using CE `render()`.
@@ -58,8 +58,7 @@ const TOOLTIP_GAP = 8;
  * @attr {number} delay - Delay in ms before showing on hover/focus. Default: `200`.
  *
  * @remarks
- * With CE `render()`, authored children are projected into `.rui-tooltip__trigger`.
- * Only `.rui-tooltip__trigger` is queried for focus; other BEM classes are presentation.
+ * With CE `render()`, authored children are projected into `[data-ref="trigger"]`.
  */
 @customElement('rui-tooltip')
 export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
@@ -175,12 +174,12 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 		this.setOpen(false);
 	}
 
-	@onEvent({ type: 'focusin', selector: '.rui-tooltip__trigger' })
+	@onEvent({ type: 'focusin', selector: '[data-ref="trigger"]' })
 	onFocusIn(): void {
 		this.scheduleShow();
 	}
 
-	@onEvent({ type: 'focusout', selector: '.rui-tooltip__trigger' })
+	@onEvent({ type: 'focusout', selector: '[data-ref="trigger"]' })
 	onFocusOut(event: FocusEvent): void {
 		const next = event.relatedTarget as Node | null;
 		if (next && this.contains(next)) return;
@@ -200,7 +199,7 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 	override render() {
 		return (
 			<span class="rui-tooltip">
-				<span class="rui-tooltip__trigger">
+				<span class="rui-tooltip__trigger" data-ref="trigger">
 					<slot></slot>
 				</span>
 				<span

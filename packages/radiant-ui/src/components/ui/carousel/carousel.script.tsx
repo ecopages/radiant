@@ -53,7 +53,7 @@ const SWIPE_THRESHOLD_PX = 48;
  * Required:
  * - `[data-ref="root"]` — carousel region. View seeds `aria-roledescription="carousel"` and `aria-label`.
  * - `[data-ref="viewport"]` — slide window. Host sets `aria-live` and `aria-atomic`; swipe target.
- * - `.rui-carousel__track` — slide track. Host sets `--rui-carousel-index` when `transition="slide"`.
+ * - `[data-ref="track"]` — slide track. Host sets `--rui-carousel-index` when `transition="slide"`.
  * - `[data-slide]` — one slide per panel. Host sets `role`, `aria-*`, `aria-hidden`, `data-active`,
  *   `hidden` (when `transition="none"`), and `id`.
  *
@@ -88,7 +88,7 @@ const SWIPE_THRESHOLD_PX = 48;
  * @remarks
  * Autoplay pauses on hover, pointer interaction, focus, and hidden tabs, and
  * respects `prefers-reduced-motion`. `aria-live` flips to `off` while rotating.
- * BEM classes live on the view; the host queries `.rui-carousel__track` for slide transitions.
+ * BEM classes live on the view; the host queries `[data-ref="track"]` for slide transitions.
  */
 @customElement('rui-carousel')
 export class RuiCarousel extends RadiantElement {
@@ -231,7 +231,7 @@ export class RuiCarousel extends RadiantElement {
 			this.index = normalized;
 		}
 
-		const track = this.querySelector<HTMLElement>('.rui-carousel__track');
+		const track = this.querySelector<HTMLElement>('[data-ref="track"]');
 		if (track && this.transition === 'slide') {
 			track.style.setProperty('--rui-carousel-index', String(normalized));
 		}
