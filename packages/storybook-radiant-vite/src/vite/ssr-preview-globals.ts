@@ -5,15 +5,25 @@ import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 
 const require = createRequire(import.meta.url);
 
-function resolvePreviewPackage(specifier: string): string {
+type GlobalScope = typeof globalThis & Record<string, unknown>;
+
+/**
+ * Resolve a Storybook preview package from this plugin, then from `process.cwd()`.
+ *
+ * @remarks
+ * `storybook` is a peer. `require.resolve` from this file can fail under pnpm; the
+ * Storybook app's working directory is the fallback.
+ */
+export function resolvePreviewPackage(
+	specifier: string,
+	resolveImpl: NodeJS.RequireResolve = require.resolve,
+): string {
 	try {
-		return require.resolve(specifier);
+		return resolveImpl(specifier);
 	} catch {
-		return require.resolve(specifier, { paths: [process.cwd()] });
+		return resolveImpl(specifier, { paths: [process.cwd()] });
 	}
 }
-
-type GlobalScope = typeof globalThis & Record<string, unknown>;
 
 /**
  * Storybook's Vite plugin rewrites `storybook/test` (and sibling preview packages)
@@ -26,43 +36,40 @@ type GlobalScope = typeof globalThis & Record<string, unknown>;
  */
 export async function installStorybookPreviewGlobals(
 	scope: GlobalScope = globalThis as GlobalScope,
+	resolvePackage: (specifier: string) => string = resolvePreviewPackage,
 ): Promise<void> {
-	for (const [specifier, globalName] of Object.entries(globalsNameReferenceMap)) {
-		if (scope[globalName]) {
-			continue;
-		}
+	await Promise.all(
+		Object.entries(globalsNameReferenceMap).map(async ([specifier, globalName]) => {
+			if (scope[globalName] != null) {
+				return;
+			}
 
-		try {
-			const resolved = resolvePreviewPackage(specifier);
-			scope[globalName] = await import(pathToFileURL(resolved).href);
-		} catch {
-			// Optional preview packages (e.g. docs blocks) may be absent.
-		}
-	}
+			try {
+				const resolved = resolvePackage(specifier);
+				scope[globalName] = await import(pathToFileURL(resolved).href);
+			} catch {
+				// Optional preview packages (e.g. docs blocks) may be absent.
+			}
+		}),
+	);
 }
 
+/**
+ * Install preview globals on the Vite Node process before any `ssrLoadModule`.
+ *
+ * @remarks
+ * No `transform` hook — client modules keep iframe globals from preview runtime.
+ * Assignments are Node `globalThis` only and skip names that are already set.
+ */
 export function radiantSsrPreviewGlobalsPlugin(): Plugin {
-	let installed = false;
-
-	const ensureInstalled = async () => {
-		if (installed) {
-			return;
-		}
-		await installStorybookPreviewGlobals();
-		installed = true;
-	};
+	let installPromise: Promise<void> | undefined;
+	const ensureInstalled = () => (installPromise ??= installStorybookPreviewGlobals());
 
 	return {
 		name: 'ecopages:radiant-ssr-preview-globals',
 		enforce: 'pre',
-		async configResolved() {
-			await ensureInstalled();
-		},
-		async configureServer() {
-			await ensureInstalled();
-		},
-		async buildStart() {
-			await ensureInstalled();
-		},
+		configResolved: ensureInstalled,
+		configureServer: ensureInstalled,
+		buildStart: ensureInstalled,
 	};
 }
