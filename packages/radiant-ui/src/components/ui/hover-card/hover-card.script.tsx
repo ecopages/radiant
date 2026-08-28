@@ -272,12 +272,12 @@ export class RuiHoverCard extends RadiantElement {
 		this.getAnchor()?.focus();
 	}
 
-	@onEvent({ type: 'focusin', selector: '[data-ref="trigger"]' })
+	@onEvent({ type: 'focusin', ref: 'trigger' })
 	onFocusIn(): void {
 		this.scheduleShow(true);
 	}
 
-	@onEvent({ type: 'focusout', selector: '[data-ref="trigger"]' })
+	@onEvent({ type: 'focusout', ref: 'trigger' })
 	onFocusOut(event: FocusEvent): void {
 		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
 			return;
@@ -285,7 +285,7 @@ export class RuiHoverCard extends RadiantElement {
 		this.scheduleHide();
 	}
 
-	@onEvent({ type: 'keydown', selector: '[data-ref="trigger"]' })
+	@onEvent({ type: 'keydown', ref: 'trigger' })
 	onHostKeydown(event: KeyboardEvent): void {
 		if (!this.open || event.key !== 'Tab' || event.shiftKey || !this.openedByKeyboard) {
 			return;

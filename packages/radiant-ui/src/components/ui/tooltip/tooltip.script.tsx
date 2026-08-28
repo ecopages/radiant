@@ -174,12 +174,12 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 		this.setOpen(false);
 	}
 
-	@onEvent({ type: 'focusin', selector: '[data-ref="trigger"]' })
+	@onEvent({ type: 'focusin', ref: 'trigger' })
 	onFocusIn(): void {
 		this.scheduleShow();
 	}
 
-	@onEvent({ type: 'focusout', selector: '[data-ref="trigger"]' })
+	@onEvent({ type: 'focusout', ref: 'trigger' })
 	onFocusOut(event: FocusEvent): void {
 		const next = event.relatedTarget as Node | null;
 		if (next && this.contains(next)) return;

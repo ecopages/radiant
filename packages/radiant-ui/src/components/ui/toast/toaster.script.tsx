@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import {
 	DEFAULT_TOAST_POSITION,
 	RUI_TOAST_DISMISS_EVENT,
@@ -104,6 +104,8 @@ export class RuiToaster extends RadiantElement {
 	@prop({ type: Number, defaultValue: TOAST_GAP }) gap: number;
 	@prop({ type: Number, defaultValue: TOAST_VIEWPORT_OFFSET }) offset: number;
 	@prop({ type: String, reflect: true, defaultValue: '' }) container: string;
+
+	@query({ ref: 'list' }) listTarget: HTMLOListElement;
 
 	@state toasts: ToastRecord[] = [];
 
@@ -257,7 +259,7 @@ export class RuiToaster extends RadiantElement {
 		this.heights.clear();
 		this.expanded = false;
 		this.interacting = false;
-		const list = this.querySelector<HTMLOListElement>('[data-ref="list"]');
+		const list = this.listTarget;
 		if (list) {
 			list.style.height = '0px';
 			list.dataset.expanded = 'false';
@@ -282,7 +284,7 @@ export class RuiToaster extends RadiantElement {
 		this.layoutFrame = requestAnimationFrame(() => {
 			this.layoutFrame = null;
 			if (this.toasts.length > 0 && !this.interacting) {
-				const list = this.querySelector('[data-ref="list"]');
+				const list = this.listTarget;
 				const hovered = Boolean(list?.matches(':hover') || this.matches(':hover'));
 				this.expanded = hovered;
 			}
@@ -307,7 +309,7 @@ export class RuiToaster extends RadiantElement {
 		el.style.height = 'auto';
 		el.style.overflow = 'visible';
 
-		const inner = el.querySelector('[data-ref="toast"]');
+		const inner = el.getRef<HTMLElement>('toast');
 		const height = Math.round(inner instanceof HTMLElement ? inner.offsetHeight : el.offsetHeight) || 64;
 
 		el.style.height = prevHeight;
@@ -318,7 +320,7 @@ export class RuiToaster extends RadiantElement {
 	}
 
 	private observeToasts(): void {
-		const list = this.querySelector('[data-ref="list"]');
+		const list = this.listTarget;
 		if (!list) return;
 
 		const els = [...list.querySelectorAll('rui-toast')] as RuiToast[];
@@ -329,7 +331,7 @@ export class RuiToaster extends RadiantElement {
 			if (!id) continue;
 			seen.add(id);
 
-			const target = el.querySelector('[data-ref="toast"]') ?? el;
+			const target = el.getRef<HTMLElement>('toast') ?? el;
 
 			if (!this.observers.has(id)) {
 				const observer = new ResizeObserver(() => {
@@ -363,7 +365,7 @@ export class RuiToaster extends RadiantElement {
 	 * Heights are always remeasured — clipped collapsed hosts make caches stale.
 	 */
 	private patchStackLayout(): void {
-		const list = this.querySelector<HTMLOListElement>('[data-ref="list"]');
+		const list = this.listTarget;
 		if (!list) return;
 
 		const expanded = this.isStackExpanded();
@@ -468,7 +470,7 @@ export class RuiToaster extends RadiantElement {
 	private onPointerUp(): void {
 		if (!this.interacting) return;
 		this.interacting = false;
-		const list = this.querySelector('[data-ref="list"]');
+		const list = this.listTarget;
 		const hovered = Boolean(list?.matches(':hover') || this.querySelector('rui-toast:hover'));
 		if (!hovered) this.expanded = false;
 		this.syncPauseState();

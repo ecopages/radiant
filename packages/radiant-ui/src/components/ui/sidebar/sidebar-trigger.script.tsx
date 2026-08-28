@@ -188,7 +188,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 			`rui-button rui-button--${this.variant} rui-button--${this.size} rui-sidebar__trigger ${this.placementClass()}`.trim();
 	}
 
-	@onEvent({ selector: '[data-ref="button"]', type: 'click' })
+	@onEvent({ ref: 'button', type: 'click' })
 	onButtonClick(event: Event): void {
 		event.preventDefault();
 		event.stopPropagation();
