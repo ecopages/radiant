@@ -25,6 +25,7 @@ import {
 import { formContext, type FormContextValue } from '../form/form-context';
 import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRules } from '../form/types';
+import { bindVisibleLabel } from '../shared/field-label';
 
 /**
  * The JSON-safe subset of `FieldRules` for SSR hydration — a `validate` function can't
@@ -347,11 +348,7 @@ export class RuiField extends RadiantElement {
 
 		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
 		this.syncAriaTargets(ariaTargets, controlId, describedBy, invalid, required);
-
-		const label = findFieldLabel(this);
-		if (label && ariaTarget) {
-			label.htmlFor = ariaTarget.id;
-		}
+		this.syncLabel(ariaTargets, ariaTarget);
 
 		this.syncErrorPresentation(errorMessage);
 
@@ -378,6 +375,23 @@ export class RuiField extends RadiantElement {
 		if (error) error.id = errorId;
 		if (error && errorMessage) describedBy.push(errorId);
 		return describedBy;
+	}
+
+	private syncLabel(targets: HTMLElement[], ariaTarget: HTMLElement | null): void {
+		const label = findFieldLabel(this);
+		if (!label || !ariaTarget) {
+			return;
+		}
+
+		label.htmlFor = ariaTarget.id;
+		if (isNativeTextControl(ariaTarget)) {
+			return;
+		}
+
+		const labelId = label.id || `rui-field-label-${this.uid}`;
+		for (const target of targets) {
+			bindVisibleLabel(label, target, { controlId: target.id, labelId });
+		}
 	}
 
 	private syncAriaTargets(

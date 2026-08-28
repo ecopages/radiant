@@ -4,6 +4,7 @@
  */
 export { withDefaultAriaLabel } from './aria';
 export { cx } from './lib/cx';
+export * from './lib/icons';
 export * from './components/ui/alert';
 export * from './components/ui/autocomplete';
 export * from './components/ui/avatar';

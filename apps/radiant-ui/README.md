@@ -110,6 +110,8 @@ Use `<Demo of={Default} meta={ButtonMeta} />` under **Try it**. Put copy-paste e
 
 Use `<Canvas of={Destructive} meta={ButtonMeta} />` for extra stories that should preview without controls.
 
+For a **behavior host** (the script queries `data-*` / roles in light DOM), Usage shows the `Rui*` helpers. Also document the query contract: a **Custom markup** section and an API **Light-DOM contract** table so authors can stamp the same targets without the helpers. Diff every snippet against the view — do not invent props (`id` vs `value`) or nest chrome a helper already renders. Playbook: [`.agents/skills/radiant-ui-docs/`](../../.agents/skills/radiant-ui-docs/SKILL.md). Tag Group (`src/content/components/tag-group.mdx`) is the filled example.
+
 ### 4. Multiple stories
 
 Export additional stories from the same module with different `args`, `render`, or `parameters.docs.id`. See `button.tsx` and `cycle-toggle.tsx`.

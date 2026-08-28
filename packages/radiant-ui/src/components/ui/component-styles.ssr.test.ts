@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const componentDirectory = dirname(fileURLToPath(import.meta.url));
 const stylesDirectory = join(componentDirectory, '..', '..', 'styles');
-const componentImportPattern = /import\s+(?:type\s+)?\{([\s\S]*?)\}\s+from\s+'(\.\.\/[^']+)'/g;
+const componentImportPattern = /import\s+(?!type\s)\{([^}]*)\}\s+from\s+'(\.\.\/[^']+)'/g;
 const primitiveStylePattern = /rui-(?:control-toggle|popover|floating|icon)|<RuiIcon[A-Z]/;
 const classStyleDependencies = [{ pattern: /rui-button/, component: 'button' }];
 
@@ -27,8 +27,8 @@ describe('component stylesheet dependencies', () => {
 		const manifest = JSON.parse(
 			readFileSync(join(stylesDirectory, 'style-dependencies.json'), 'utf8'),
 		) as StyleDependencyManifest;
-		const componentFolders = readdirSync(componentDirectory, { withFileTypes: true }).filter((entry) =>
-			entry.isDirectory(),
+		const componentFolders = readdirSync(componentDirectory, { withFileTypes: true }).filter(
+			(entry) => entry.isDirectory() && entry.name !== 'shared',
 		);
 		const componentNames = new Set(componentFolders.map((folder) => folder.name));
 

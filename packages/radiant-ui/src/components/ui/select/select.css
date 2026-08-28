@@ -27,7 +27,7 @@ rui-select {
 	}
 
 	.rui-select__value {
-		@apply min-w-0 flex-1 truncate;
+		@apply flex min-w-0 flex-1 flex-wrap items-center gap-1;
 		/* Keep the value row painted before client sync fills the label. */
 		min-height: 1.25em;
 	}

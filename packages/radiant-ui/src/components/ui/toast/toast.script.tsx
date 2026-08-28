@@ -1,4 +1,5 @@
 import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RuiIconCheck, RuiIconX } from '@/lib/icons';
 import {
 	DEFAULT_TOAST_POSITION,
 	TOAST_EXIT_MS,
@@ -478,12 +479,12 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 		else delete this.dataset.swipeDirection;
 	}
 
-	private iconForVariant(): string {
+	private iconForVariant() {
 		switch (this.variant) {
 			case 'success':
-				return '✓';
+				return <RuiIconCheck />;
 			case 'error':
-				return '✕';
+				return <RuiIconX />;
 			case 'warning':
 				return '!';
 			case 'info':
@@ -502,7 +503,7 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 			<div ref="toast" class={`rui-toast rui-toast--${variant}`} role="status" aria-live="off" data-ref="toast">
 				{this.closeButton && variant !== 'loading' ? (
 					<button type="button" class="rui-toast__close" data-toast-close aria-label="Close toast">
-						×
+						<RuiIconX />
 					</button>
 				) : null}
 				{showIcon ? (

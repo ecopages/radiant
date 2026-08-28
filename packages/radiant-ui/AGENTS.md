@@ -15,4 +15,4 @@ When authoring behavior changes, update the README beside the code.
 - Named regions are **Composition Helpers** or named view props, not HTML slots.
 - Do not bind `hidden` in the view when the custom element toggles it with `toggleAttribute`.
 - Cross-cutting helpers: `src/lib/` → `@/lib/...`. Same-component and sibling UI: `./` and `../` only.
-- CEM: `@slot` only when HTML projection is the public API; do not add `@csspart` (light DOM). Document Composition Helpers with `@cssclass` on the view. Component docs pages live under `apps/radiant-ui`.
+- CEM: `@slot` only when HTML projection is the public API; do not add `@csspart` (light DOM). Document Composition Helpers with `@cssclass` on the view. The CE class TSDoc must include the light-DOM query contract (targets the host reads, attrs it writes). Component docs pages live under `apps/radiant-ui`. Playbook: [`.agents/skills/radiant-ui-docs/`](../../.agents/skills/radiant-ui-docs/SKILL.md).

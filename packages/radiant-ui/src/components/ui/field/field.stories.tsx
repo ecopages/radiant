@@ -13,7 +13,7 @@ import { RuiField as RuiFieldElement } from './field.script';
 const meta = {
 	title: 'Components/Field',
 	component: RuiField,
-	parameters: { radiant: { element: RuiFieldElement, cssImports: ['./field.css'] } },
+	parameters: { radiant: { element: RuiFieldElement, cssImports: ['./field.css', '../label/label.css'] } },
 	args: { name: 'email' },
 } satisfies Meta<typeof RuiField>;
 

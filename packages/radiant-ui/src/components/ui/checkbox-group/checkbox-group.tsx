@@ -1,7 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiCheckbox } from '../checkbox';
-import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
+import { parseMultiValue, serializeViewValue } from '../shared/multi-value';
 import type {
 	RuiCheckboxGroup as RuiCheckboxGroupElement,
 	RuiCheckboxGroupOrientation,
@@ -41,13 +41,6 @@ export function RuiCheckboxGroupControl({
 	);
 }
 
-function serializeGroupValue(value: string | string[] | undefined): string | undefined {
-	if (value === undefined) {
-		return undefined;
-	}
-	return Array.isArray(value) ? serializeMultiValue(value) : value;
-}
-
 /**
  * Checkbox group with an `options` convenience API; renders one `RuiCheckbox`
  * per option inside `<rui-checkbox-group>`.
@@ -62,7 +55,7 @@ export function RuiCheckboxGroup({
 	RuiCheckboxGroupElement,
 	RuiCheckboxGroupProps & { options?: RuiCheckboxOption[]; value?: string | string[] }
 >) {
-	const serializedValue = serializeGroupValue(value);
+	const serializedValue = serializeViewValue(value);
 	const selected = new Set(parseMultiValue(serializedValue ?? ''));
 
 	return (

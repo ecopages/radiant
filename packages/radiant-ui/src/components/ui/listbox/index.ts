@@ -1,2 +1,14 @@
-export { RuiListbox as RuiListboxElement, type RuiListboxProps, type RuiListboxChangeDetail } from './listbox.script';
-export { RuiListbox, RuiListboxOption, type RuiListboxOptionData, type RuiListboxOptionProps } from './listbox';
+export {
+	RuiListbox as RuiListboxElement,
+	type RuiListboxProps,
+	type RuiListboxSelectionMode,
+	type RuiListboxChangeDetail,
+} from './listbox.script';
+export {
+	RuiListbox,
+	RuiListboxOption,
+	RuiListboxOptionIndicator,
+	type RuiListboxOptionData,
+	type RuiListboxOptionIndicatorProps,
+	type RuiListboxOptionProps,
+} from './listbox';

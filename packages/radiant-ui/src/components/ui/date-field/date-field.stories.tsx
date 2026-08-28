@@ -20,7 +20,12 @@ const meta = {
 	parameters: {
 		radiant: {
 			element: RuiDateFieldElement,
-			cssImports: ['../../../styles/primitives.css', '../calendar/calendar.css', './date-field.css'],
+			cssImports: [
+				'../../../styles/primitives.css',
+				'../calendar/calendar.css',
+				'../label/label.css',
+				'./date-field.css',
+			],
 		},
 	},
 	args: {
