@@ -7,7 +7,7 @@ import './number-field.script';
 export type RuiNumberFieldGroupProps = JsxElementProps<HTMLDivElement>;
 
 /**
- * Input + stepper row. Place `RuiNumberFieldInput` and stepper buttons inside.
+ * Input + stepper row. Stamps `[data-number-field-group]` (presentation only).
  *
  * @cssclass rui-number-field__group - Control-height bordered row wrapping input and steppers.
  */
@@ -26,7 +26,8 @@ export type RuiNumberFieldInputProps = JsxElementProps<HTMLInputElement> & {
 };
 
 /**
- * Text input for the number field. Formatting is handled by `<rui-number-field>`.
+ * Text input for the number field. Stamps `[data-number-field-input]`.
+ * Formatting is handled by `<rui-number-field>`.
  *
  * @cssclass rui-number-field__input - Borderless text input inside the group.
  */
@@ -65,7 +66,7 @@ export type RuiNumberFieldStepperButtonProps = JsxElementProps<HTMLButtonElement
 };
 
 /**
- * Increment stepper button.
+ * Increment stepper button. Stamps `[data-number-field-action="increment"]`.
  *
  * @cssclass rui-number-field__stepper - Icon button cell in the steppers column.
  */
@@ -92,7 +93,7 @@ export function RuiNumberFieldIncrementButton({
 }
 
 /**
- * Decrement stepper button.
+ * Decrement stepper button. Stamps `[data-number-field-action="decrement"]`.
  *
  * @cssclass rui-number-field__stepper - Icon button cell in the steppers column.
  */
@@ -132,22 +133,10 @@ function NumberFieldDefaultGroup() {
 }
 
 /**
- * Locale-aware number field — React Aria-style API.
+ * Locale-aware number field. When `children` is omitted, renders the default group with
+ * `[data-number-field-input]`, `[data-number-field-value]`, and stepper buttons.
  *
- * ```tsx
- * <RuiNumberField value={25} minValue={0} maxValue={100}>
- *   <RuiNumberFieldGroup>
- *     <RuiNumberFieldInput />
- *     <RuiNumberFieldSteppers>
- *       <RuiNumberFieldDecrementButton />
- *       <RuiNumberFieldIncrementButton />
- *     </RuiNumberFieldSteppers>
- *   </RuiNumberFieldGroup>
- * </RuiNumberField>
- * ```
- *
- * When `children` is omitted, the view renders the default input and stepper row.
- * Pair with `RuiLabel` / `RuiField` for labeling and validation.
+ * @cssclass rui-number-field - Root field wrapper (`data-ref="root"` is presentation only).
  */
 export function RuiNumberField({
 	children,

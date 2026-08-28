@@ -6,6 +6,17 @@ import {
 } from './checkbox.script';
 import './checkbox.script';
 
+/**
+ * Checkbox view. Stamps `[data-ref="input"]` on a native checkbox inside a label row.
+ *
+ * @cssclass rui-checkbox - Label row: box + visible label.
+ * @cssclass rui-checkbox__input - Native input (visually hidden, receives focus).
+ * @cssclass rui-checkbox__control - Visible box with check / indeterminate glyph.
+ * @cssclass rui-checkbox__label - Light-DOM label text.
+ *
+ * @remarks Children render in `rui-checkbox__label`. The input always carries
+ * `data-rui-control` and `data-rui-control-type="boolean"`.
+ */
 export function RuiCheckbox({
 	children,
 	checked,

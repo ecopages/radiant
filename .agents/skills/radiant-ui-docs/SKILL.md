@@ -56,6 +56,8 @@ Treat these as the public query contract:
 | Attribute the host **writes**                         | Host-owned; authors must not fight it |
 | Attribute the host **reads** (`data-value`, `hidden`) | Author-owned                          |
 
+Do not query BEM class names. Stable regions use `[data-ref="…"]` (or a dedicated `data-*` / role already in the contract). If a script still selects a class, treat that as a bug to migrate, not a public target.
+
 Ignore private implementation markers (`data-rui-managed-list`, ephemeral ids) unless the author must not collide with them — then mention them under `@remarks`.
 
 ## Voice

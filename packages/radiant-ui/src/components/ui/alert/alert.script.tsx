@@ -28,16 +28,25 @@ export type RuiAlertCloseDetail = {
 };
 
 /**
- * `<rui-alert>` — a brief, important message that attracts attention
- * without interrupting the user's task.
+ * `<rui-alert>` — status message host with optional dismiss.
  *
- * Compose with the `RuiAlert` view (surface + optional dismiss control) and
- * `RuiAlertIcon` / `RuiAlertTitle` / `RuiAlertDescription` as needed.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiAlert` view helpers which stamp the same targets.
  *
  * Prefer injecting or revealing alerts at the moment they become relevant;
  * static copy that is always present should not use `role="alert"`.
  *
- * @summary Status message host; optional dismiss removes the element.
+ * ## Light-DOM contract
+ *
+ * Optional:
+ * - `[data-alert-close]` — dismiss control. Click calls `dismiss()` when `dismissible` is set.
+ *
+ * The host does not query alert content or the `role="alert"` surface. Authors own
+ * that markup (or use `RuiAlert`, which stamps it). Do not rely on BEM class names
+ * for behavior.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/alert/
  *
@@ -45,22 +54,23 @@ export type RuiAlertCloseDetail = {
  *
  * @attr {('info'|'success'|'warning'|'error')} variant - Visual tone. Default: `info`.
  * @attr {('inline'|'banner')} layout - Layout mode. Default: `inline`.
- * @attr {boolean} dismissible - Show dismiss control (via the view). Default: `false`.
+ * @attr {boolean} dismissible - Show dismiss control. Default: `false`.
  * @attr {string} close-label - Accessible name for dismiss. Default: `Dismiss`.
- *
- * @slot - Alert content. Prefer the `RuiAlert` view so the `role="alert"` surface
- *   and BEM classes stay in sync with `variant` / `layout` / `dismissible`.
  *
  * @fires rui-close - Emitted when the alert is dismissed; then the host is removed.
  *
  * @remarks
- * Styling classes live on the JSX view helpers (`@cssclass`). This element owns
- * dismiss behavior — default `render()` is a passthrough slot so prop updates do
- * not rebuild the composed light-DOM surface.
+ * Minimum headless tree with dismiss:
  *
- * **Why a custom element?** Dismiss emits `rui-close` and removes the host from
- * the DOM without re-projecting slot content. A presentational-only wrapper would
- * need equivalent lifecycle wiring; the CE keeps that behavior self-contained.
+ * ```html
+ * <rui-alert dismissible close-label="Dismiss">
+ *   <div role="alert">Your session will expire soon.</div>
+ *   <button type="button" data-alert-close aria-label="Dismiss"></button>
+ * </rui-alert>
+ * ```
+ *
+ * BEM classes are presentation-only; see view `@cssclass`. Dismiss emits `rui-close`
+ * and removes the host without re-building the composed surface.
  */
 @customElement('rui-alert')
 export class RuiAlert extends RadiantElement {

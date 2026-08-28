@@ -12,7 +12,7 @@ export type RuiListboxOptionProps = JsxElementProps<HTMLDivElement> & {
 	disabled?: boolean;
 };
 
-/** Option placed inside `RuiListbox`.
+/** Option placed inside `RuiListbox`. Stamps `[role="option"]`, `data-value`, and optional `data-label`.
  *
  * @cssclass rui-listbox__option - Selectable list option.
  */
@@ -96,6 +96,10 @@ function ListboxShell({ bordered, children, disabled, label, selectionMode = 'si
 	);
 }
 
+/**
+ * Listbox with an `options` convenience API or composed children. Stamps
+ * `<rui-listbox>` and a `[role="listbox"]` shell via `ListboxShell`.
+ */
 export function RuiListbox({
 	options,
 	children,

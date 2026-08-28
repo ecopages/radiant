@@ -38,6 +38,33 @@ import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 <RuiSwitch checked={enabled}>Email notifications</RuiSwitch>
 ```
 
+## Custom markup
+
+`<rui-switch>` coordinates any light-DOM tree that matches its query contract. The `RuiSwitch` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/switch';
+
+<rui-switch checked>
+  <label class="rui-switch">
+    <input
+      type="checkbox"
+      role="switch"
+      data-ref="input"
+      data-rui-control
+      data-rui-control-type="boolean"
+      class="rui-switch__input"
+    />
+    <span class="rui-switch__track" aria-hidden="true">
+      <span class="rui-switch__thumb"></span>
+    </span>
+    <span class="rui-switch__label">Email notifications</span>
+  </label>
+</rui-switch>
+```
+
+BEM classes are presentation-only. The host syncs `checked`, `disabled`, and `name` on `[data-ref="input"]`.
+
 ## Switch vs checkbox
 
 Use switches for settings that take effect immediately. Use checkboxes for options collected on form submit.
@@ -65,7 +92,7 @@ Label text uses `on-background`; track uses the `rounded-pill` radius token. Ove
 
 ## API
 
-`RuiSwitch` renders a view-owned `<label>` and native `<input type="checkbox" role="switch">` inside the coordinating `<rui-switch>` custom element. Use the JSX view or compose equivalent marked-up light DOM; the browser owns activation and Space-to-toggle.
+`RuiSwitch` renders a `<label>` and native `<input type="checkbox" role="switch">` inside the coordinating `<rui-switch>` custom element. Use the JSX view or compose equivalent marked-up light DOM; the browser owns activation and Space-to-toggle.
 
 ### Attributes (`<rui-switch>`)
 
@@ -75,17 +102,25 @@ Label text uses `on-background`; track uses the `rounded-pill` radius token. Ove
 | `disabled` | `boolean` | `false` | Disabled state. |
 | `name` | `string` | `''` | Form field name. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `RuiSwitch` children | Visible label for the switch. Must not change with state. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="input"]` | yes | `checked`, `disabled`, `name` | the input element; stamp `data-rui-control` for field wiring |
+
+Do not fight host-owned input state. Nested hosts: none.
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ checked: boolean }` | Emitted after the checked state changes. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiSwitch` | `[data-ref="input"]` on native `role="switch"` checkbox | Children render in `rui-switch__label`. Always stamps `data-rui-control`. |
 
 ### CSS classes
 

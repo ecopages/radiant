@@ -45,6 +45,30 @@ import { RuiPagination } from '@ecopages/radiant-ui/pagination';
 
 Pass `children` to replace the default navigation chrome while keeping the `rui-pagination` event contract.
 
+## Custom markup
+
+`<rui-pagination>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/pagination';
+
+<rui-pagination page={2} page-count={5} label="Search result pages">
+  <nav class="rui-pagination__nav" aria-label="Search result pages">
+    <button type="button" class="rui-pagination__link" data-pagination-page={1}>
+      Previous
+    </button>
+    <button type="button" class="rui-pagination__link" data-pagination-page={2} aria-current="page">
+      2
+    </button>
+    <button type="button" class="rui-pagination__link" data-pagination-page={3}>
+      Next
+    </button>
+  </nav>
+</rui-pagination>
+```
+
+BEM classes are presentation-only. Each navigable control needs `data-pagination-page` with a one-based page number.
+
 ## Theming
 
 | Part | CSS roles |
@@ -66,11 +90,26 @@ Pass `children` to replace the default navigation chrome while keeping the `rui-
 | `disabled` | `boolean` | `false` | Disable page navigation. |
 | `sibling-count` | `number` | `1` | Pages shown on each side of the current page. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-pagination-page]` | yes (per control) | — | `data-pagination-page` (one-based page number) |
+
+Nested hosts: none.
+
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-page-change` | `{ page: number }` | Emitted when a page control is activated. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiPagination` | `<rui-pagination>` | Renders `RuiPaginationNav` by default. |
+| `RuiPaginationNav` | `[data-pagination-page]` on each link | Previous, numbered, and next controls. |
 
 ### CSS classes
 

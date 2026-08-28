@@ -67,6 +67,24 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/date-range-picker';
+import '@ecopages/radiant-ui/calendar';
+
+<rui-date-range-picker value="2026-08-01/2026-08-14">
+  <div class="rui-date-range-picker__group">
+    <input data-range-start aria-label="Start date" />
+    <input data-range-end aria-label="End date" />
+    <button type="button" data-range-trigger data-ref="trigger"></button>
+  </div>
+  <div data-range-popover data-ref="popover" hidden>
+    <rui-calendar data-range-calendar />
+  </div>
+</rui-date-range-picker>
+```
+
 ## Calendar input
 
 Use the calendar button to select the start and end dates. After the first date is selected, the popup stays open for the second date and closes when the range is complete. Focus moves to the selected start date or the first available date when the popup opens.
@@ -118,6 +136,18 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | `date-style` | `short` · `medium` · `long` · `full` | `medium` | How committed values are displayed in the inputs. |
 | `visible-months` | `number` | `2` | Month grids shown in the range calendar popover. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-range-start]` | yes | `name`, `disabled`, `readOnly`, `placeholder` | start input |
+| `[data-range-end]` | yes | same as start | end input |
+| `[data-range-trigger]` | yes | `aria-expanded`, `disabled` | toggle (`data-ref="trigger"`) |
+| `[data-range-popover]` | yes | `hidden` | popup (`data-ref="popover"`) |
+| `[data-range-calendar]` | yes | `selection-mode="range"`, `value`, … | nested `rui-calendar` |
+
+Nested host: `rui-calendar` at `[data-range-calendar]` — parent queries `[data-calendar-day]` inside it.
+
 ### Events
 
 | Event | Detail | Description |
@@ -133,20 +163,18 @@ These props configure the default child composition rendered by the `RuiDateRang
 | `startLabel` | `string` | `Start date` | Accessible name for the default start-date input. |
 | `endLabel` | `string` | `End date` | Accessible name for the default end-date input. |
 
-### Composition helpers
+### View helpers
 
-Pass these helpers as `RuiDateRangePicker` children when the default structure is not enough:
-
-| Helper | Renders |
-| --- | --- |
-| `RuiDateRangePickerControl` | Bordered control row containing the inputs and trigger. |
-| `RuiDateRangePickerInputs` | Row containing the start input, separator, and end input. |
-| `RuiDateRangePickerStartInput` | Native text input for the range start. Give it an accessible name. |
-| `RuiDateRangePickerSeparator` | Visual separator between the two inputs. |
-| `RuiDateRangePickerEndInput` | Native text input for the range end. Give it an accessible name. |
-| `RuiDateRangePickerToggle` | Button that opens and closes the range calendar popup. |
-| `RuiDateRangePickerPopover` | Popup shell for the range calendar. |
-| `RuiDateRangePickerCalendar` | `RuiCalendar` in range-selection mode, synchronized with the picker value and constraints. |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiDateRangePickerControl` | — | Bordered control row |
+| `RuiDateRangePickerInputs` | — | Start / end row |
+| `RuiDateRangePickerStartInput` | `[data-range-start]` | Give it an accessible name |
+| `RuiDateRangePickerSeparator` | — | Visual separator |
+| `RuiDateRangePickerEndInput` | `[data-range-end]` | Give it an accessible name |
+| `RuiDateRangePickerToggle` | `[data-range-trigger]` | Opens calendar popup |
+| `RuiDateRangePickerPopover` | `[data-range-popover]` | Popup shell |
+| `RuiDateRangePickerCalendar` | `[data-range-calendar]` | Range-mode `rui-calendar` |
 
 ### CSS classes
 

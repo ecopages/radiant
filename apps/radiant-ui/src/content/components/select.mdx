@@ -4,7 +4,7 @@ description: Selects let users choose one or more known values from a list insid
 category: Forms
 ---
 
-import { meta as SelectMeta, Default } from '@/content/stories/select';
+import { meta as SelectMeta, Default, Multiple, Searchable } from '@/content/stories/select';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -30,7 +30,7 @@ export const config = {
 
 ## Mental model
 
-`<rui-select>` coordinates a **view-owned shell**: the JSX helpers place the trigger, value, and popup; the custom element owns open state, keyboard, and selection. Options live in an embedded `RuiListbox`. Named regions are Composition Helpers (`RuiSelectTrigger`, `RuiSelectClear`, …), not HTML slots.
+`<rui-select>` is a behavior host: helpers place the trigger, value, and popup; the custom element owns open state, keyboard, and selection. Options live in an embedded `RuiListbox`. Named regions are Composition Helpers (`RuiSelectTrigger`, `RuiSelectClear`, …), not HTML slots.
 
 The host `value` attribute is always a **comma-separated token string**. In JSX, pass a `string` or a `string[]` — `['draft', 'published']` serializes to `draft,published`. Commas in the host attribute are delimiters, not characters inside a token.
 
@@ -89,9 +89,39 @@ import { RuiIconX } from '@ecopages/radiant-ui/icons';
 
 Always set `embedded` on a listbox inside the popup so the select owns selection and keyboard.
 
+## Custom markup
+
+`<rui-select>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/select';
+import '@ecopages/radiant-ui/listbox';
+
+<rui-select value="cat" placeholder="Select an animal">
+  <div data-ref="root" class="rui-select">
+    <div class="rui-select__control">
+      <button type="button" data-select-trigger>
+        <span data-select-value></span>
+      </button>
+      <button type="button" data-select-toggle></button>
+    </div>
+    <div data-select-listbox hidden>
+      <rui-listbox embedded>
+        <div role="option" data-value="cat">Cat</div>
+        <div role="option" data-value="dog">Dog</div>
+      </rui-listbox>
+    </div>
+  </div>
+</rui-select>
+```
+
+BEM classes are presentation-only. Nested `rui-listbox` must have `embedded`. For multi-select chips, place `rui-tag-group` inside `[data-select-value]`.
+
 ## Multiple selection
 
 Set `selectionMode="multiple"`. The default `options` composition shows selected values as removable tags and adds a check indicator on each option. Composed layouts place a `RuiTagGroup` inside `RuiSelectValue`, and `RuiListboxOptionIndicator` inside an option to replace the check.
+
+<Canvas of={Multiple} meta={SelectMeta} />
 
 ```tsx
 <RuiSelect
@@ -110,6 +140,8 @@ The popup stays open while options are toggled. Pass `shouldCloseOnSelect` to cl
 ## Searchable lists
 
 Wrap the embedded listbox in `RuiAutocomplete` and add `RuiSelectSearch` when the collection is long. Opening the popup moves focus into the search field.
+
+<Canvas of={Searchable} meta={SelectMeta} />
 
 ## Theming
 
@@ -148,6 +180,21 @@ Customization of icons is through Composition Helper **children**, not CSS varia
 | `selection-mode` | `single` · `multiple` | `single` | Single or multi-select. |
 | `should-close-on-select` | `boolean` | | Whether selecting closes the popup (defaults to `true` for single, `false` for multiple). |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | — | shell for popover anchoring |
+| `[data-select-trigger]` | yes | `role`, `aria-expanded`, `aria-controls`, `aria-haspopup`, `id`, `disabled` | the button |
+| `[data-select-value]` | yes | `data-placeholder`, optional `[data-select-placeholder]` | content / `rui-tag-group` |
+| `[data-select-listbox]` | yes | `hidden` | popup shell |
+| `[role="option"]` | yes (in listbox) | `aria-selected`, option `id` | `data-value`, label text |
+| `[data-select-toggle]` | no | `aria-expanded`, `disabled` | the button |
+| `[data-select-clear]` | no | `hidden`, `disabled` | the button |
+| `[data-autocomplete-input]` | no | `role`, `aria-*` when popup open | search field |
+
+Do not set `role`, `aria-expanded`, or `tabIndex` on the trigger. Nested hosts: `rui-listbox` (`embedded`), `rui-tag-group` in `[data-select-value]`, optional `rui-autocomplete` in the listbox.
+
 ### Events
 
 | Event | Detail | Description |
@@ -156,15 +203,16 @@ Customization of icons is through Composition Helper **children**, not CSS varia
 
 ### View helpers
 
-| Component | Renders | Notes |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiSelectControl` | Trigger row wrapper | |
-| `RuiSelectTrigger` | Value button (`role="combobox"`) | |
-| `RuiSelectValue` | Selected value / placeholder / tags | |
-| `RuiSelectClear` | Clear button (hidden when empty) | Children replace the default close SVG |
-| `RuiSelectToggle` | Popup toggle | Children replace the default chevron SVG |
-| `RuiSelectListbox` | Popup shell (`rui-popover`) | Place an embedded `RuiListbox` inside |
-| `RuiSelectSearch` | Filtering input inside the popup | |
+| `RuiSelect` | `<rui-select>` + `[data-ref="root"]` | Accepts `options` or children |
+| `RuiSelectControl` | — | Trigger row wrapper |
+| `RuiSelectTrigger` | `[data-select-trigger]` | Place `RuiSelectValue` inside |
+| `RuiSelectValue` | `[data-select-value]` | Tags via `RuiTagGroup` in multiple mode |
+| `RuiSelectClear` | `[data-select-clear]` | Hidden when empty |
+| `RuiSelectToggle` | `[data-select-toggle]` | Children replace chevron |
+| `RuiSelectListbox` | `[data-select-listbox]` | Place embedded `RuiListbox` inside |
+| `RuiSelectSearch` | `[data-autocomplete-input]` | Inside `RuiAutocomplete` |
 
 ### CSS classes
 

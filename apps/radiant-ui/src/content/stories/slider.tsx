@@ -84,6 +84,11 @@ type Story = DocsStory<SliderArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'slider/default' } } });
 
+export const Range: Story = docsStory(meta, {
+	args: { variant: 'range' },
+	parameters: { docs: { id: 'slider/range' } },
+});
+
 export const ValuePrecision: Story = docsStory(meta, {
 	args: {
 		value: 0.343,

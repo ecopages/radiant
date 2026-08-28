@@ -28,7 +28,7 @@ export type RuiComboboxInputProps = JsxElementProps<HTMLInputElement> & {
 	disabled?: boolean;
 };
 
-/** Text input with `role="combobox"`. Place inside `RuiComboboxControl`.
+/** Text input. Stamps `[data-combobox-input]` and `[data-autocomplete-input]`. Place inside `RuiComboboxControl`.
  *
  * @cssclass rui-combobox__input - Combobox text input.
  */
@@ -53,7 +53,7 @@ export type RuiComboboxTriggerProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 };
 
-/** Toggle button for opening the listbox popup. Children replace the default chevron icon. */
+/** Toggle button for opening the listbox popup. Stamps `[data-combobox-trigger]`. Children replace the default chevron icon. */
 export function RuiComboboxTrigger({ children, class: className, aria, disabled, ...props }: RuiComboboxTriggerProps) {
 	return (
 		<button
@@ -74,7 +74,7 @@ export type RuiComboboxClearProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 };
 
-/** Clears the current selection; place next to `RuiComboboxTrigger`. Children replace the default close icon. */
+/** Clears the current selection. Stamps `[data-combobox-clear]`. Place next to `RuiComboboxTrigger`. Children replace the default close icon. */
 export function RuiComboboxClear({ children, class: className, aria, disabled, ...props }: RuiComboboxClearProps) {
 	return (
 		<button
@@ -92,7 +92,7 @@ export function RuiComboboxClear({ children, class: className, aria, disabled, .
 
 export type RuiComboboxValueProps = JsxElementProps<HTMLSpanElement>;
 
-/** Selected-value region for multiple comboboxes; place before the input. */
+/** Selected-value chip region for multiple comboboxes. Stamps `[data-combobox-value]`. Place before the input. */
 export function RuiComboboxValue({ children, class: className, ...props }: RuiComboboxValueProps) {
 	return (
 		<span {...props} data-combobox-value class={cx('rui-combobox__value', className)}>
@@ -103,7 +103,7 @@ export function RuiComboboxValue({ children, class: className, ...props }: RuiCo
 
 export type RuiComboboxListboxProps = JsxElementProps<HTMLDivElement>;
 
-/** Popup shell for the combobox listbox. Place an embedded `RuiListbox` inside.
+/** Popup shell. Stamps `[data-combobox-listbox]`. Place an embedded `RuiListbox` inside.
  *
  * @cssclass rui-combobox__listbox - Popup shell (adds `rui-popover rui-popover--listbox rui-floating`).
  */

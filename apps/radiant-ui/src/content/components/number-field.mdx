@@ -53,6 +53,25 @@ import {
 </RuiNumberField>
 ```
 
+## Custom markup
+
+`<rui-number-field>` coordinates any light-DOM tree that matches its query contract. The `RuiNumberField` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/number-field';
+
+<rui-number-field value={3} min-value={0} max-value={10}>
+  <div class="rui-number-field__group" data-number-field-group>
+    <input type="text" data-number-field-input data-rui-control data-rui-control-type="number" class="rui-number-field__input" />
+    <input type="hidden" data-number-field-value />
+    <button type="button" data-number-field-action="decrement" class="rui-number-field__stepper">−</button>
+    <button type="button" data-number-field-action="increment" class="rui-number-field__stepper">+</button>
+  </div>
+</rui-number-field>
+```
+
+BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`.
+
 ## Step and commit behavior
 
 <p>`commitBehavior` controls whether out-of-range typed values snap to bounds or reject on blur.</p>
@@ -99,14 +118,17 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 | `decrement-aria-label` | `string` | `Decrement` | Accessible name for the decrement stepper. |
 | `wheel-disabled` | `boolean` | `false` | Disables scroll-wheel value changes. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `group` | Input + stepper row (`RuiNumberFieldGroup`). |
-| `input` | Text input (`RuiNumberFieldInput`). |
-| `decrement` | Decrement button (`RuiNumberFieldDecrementButton`). |
-| `increment` | Increment button (`RuiNumberFieldIncrementButton`). |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-number-field-input]` | yes | `id`, `role`, `inputmode`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, formatted `value` | text input; stamp `data-rui-control` for field wiring |
+| `[data-number-field-value]` | no | `value`, `name`, `disabled` | hidden form input |
+| `[data-number-field-action="decrement"]` | no | `disabled`, `aria-label` | decrement button |
+| `[data-number-field-action="increment"]` | no | `disabled`, `aria-label` | increment button |
+| `[data-number-field-group]` | no | — | presentation wrapper only |
+
+Nested hosts: none.
 
 ### Events
 
@@ -116,13 +138,14 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 
 ### View helpers
 
-| Component | Renders | Placement |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiNumberFieldGroup` | Input + stepper row | `group` |
-| `RuiNumberFieldInput` | Text input (`role="spinbutton"`) | `input` |
-| `RuiNumberFieldIncrementButton` | `+` stepper | `increment` |
-| `RuiNumberFieldDecrementButton` | `−` stepper | `decrement` |
-| `RuiNumberFieldSteppers` | Trailing stepper column | |
+| `RuiNumberField` | default group when `children` omitted | Includes input, hidden value, and steppers. |
+| `RuiNumberFieldGroup` | `[data-number-field-group]` | Presentation only; not queried. |
+| `RuiNumberFieldInput` | `[data-number-field-input]` | Always stamps `data-rui-control`. |
+| `RuiNumberFieldIncrementButton` | `[data-number-field-action="increment"]` | Default label "Increment". |
+| `RuiNumberFieldDecrementButton` | `[data-number-field-action="decrement"]` | Default label "Decrement". |
+| `RuiNumberFieldSteppers` | stepper column wrapper | Presentation only. |
 
 ### CSS classes
 

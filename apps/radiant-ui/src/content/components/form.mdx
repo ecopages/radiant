@@ -48,6 +48,28 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 </RuiForm>
 ```
 
+## Custom markup
+
+`<rui-form>` coordinates validation across `rui-field` connectors and a composed native form. The `RuiForm` helper stamps `[data-ref="form"]`; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/form';
+
+<rui-form mode="onSubmit">
+  <form class="rui-form" data-ref="form" noValidate>
+    <rui-field name="name">
+      <div class="rui-field">
+        <label class="rui-label" data-rui-field-label>Name</label>
+        <input type="text" data-rui-control class="rui-input" />
+      </div>
+    </rui-field>
+    <button type="submit">Submit</button>
+  </form>
+</rui-form>
+```
+
+Submit buttons outside the native `<form>` are associated via the `form` attribute. Fields register through context — the form does not query control targets directly.
+
 Load `@ecopages/radiant-ui/styles.css` once in your app to style the form and every composed control. When bundling styles per component, import `@ecopages/radiant-ui/form/styles.css` plus the stylesheet for every component used inside the form, such as `field/styles.css`, `textarea/styles.css`, or `number-field/styles.css`.
 
 ## Validation timing
@@ -74,7 +96,7 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 
 ## API
 
-`RuiForm` renders a view-owned native `<form>` inside the coordinating `<rui-form>` custom element. The view maps `defaultValues` / `resolver` to `prop:` bindings and keeps authored children inside that native form.
+`RuiForm` renders a native `<form>` inside the coordinating `<rui-form>` custom element. The view maps `defaultValues` / `resolver` to `prop:` bindings and keeps authored children inside that native form.
 
 ### Attributes
 
@@ -94,6 +116,16 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | `resolver` | `Resolver<T>` | Custom validation resolver (e.g. from `createRulesResolver`). |
 | `onSubmit` | `(values: T) => void \| Promise<void>` | Receives validated values. When omitted, an `action` or `method` submits the native form after validation passes. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="form"]` or `form.rui-form` | yes | `id` when wiring orphan submits | native `<form noValidate>` and field children |
+| `button[type="submit"]` outside form | no | `form` attribute | submit buttons on the host |
+| `rui-field` descendants | yes (for registration) | — | each field's control tree |
+
+Nested hosts: `rui-field` and each field's control host.
+
 ### Context
 
 `formContext` exposes the current `errors` map to custom consumers. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
@@ -104,6 +136,12 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | --- | --- | --- |
 | `rui-submit` | `{ values: T }` | Emitted when validation passes. |
 | `rui-invalid` | `{ errors: Record<string, { message?: string }> }` | Emitted when validation fails on submit. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiForm` | `form.rui-form` with `[data-ref="form"]` | Passes `defaultValues`, `resolver`, `onSubmit` via `prop:` bindings. |
 
 ### CSS classes
 

@@ -30,16 +30,44 @@ export const config = {
 
 ## Usage
 
-Define rows with `RuiTreegridRow` data including `id`, `label`, and nested `children`. Bind `value` for selection.
+Define `columns` and nested `rows` with `id`, `cells`, and optional `children`. Bind `value` to the selected row id.
 
 ```tsx
 import { RuiTreegrid, type RuiTreegridRow } from '@ecopages/radiant-ui/treegrid';
 
 const rows: RuiTreegridRow[] = [
-  { id: 'docs', label: 'docs', children: [{ id: 'intro', label: 'introduction.md' }] },
+  {
+    id: 'docs',
+    cells: ['docs'],
+    children: [{ id: 'intro', cells: ['introduction.md'] }],
+  },
 ];
 
-<RuiTreegrid rows={rows} value="intro" label="Repository" />
+<RuiTreegrid columns={['Name']} rows={rows} value="intro" label="Repository" />
+```
+
+## Custom markup
+
+`<rui-treegrid>` coordinates any light-DOM tree that matches its query contract. The `RuiTreegrid` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/treegrid';
+
+<rui-treegrid value="intro" label="Repository">
+  <div role="treegrid" aria-label="Repository">
+    <div role="row">
+      <div role="columnheader">Name</div>
+    </div>
+    <div role="row" data-row-id="docs" aria-expanded="true">
+      <div role="gridcell">docs</div>
+    </div>
+    <div role="rowgroup">
+      <div role="row" data-row-id="intro">
+        <div role="gridcell">introduction.md</div>
+      </div>
+    </div>
+  </div>
+</rui-treegrid>;
 ```
 
 ## Tree vs treegrid
@@ -72,11 +100,16 @@ Override at the theme layer, not in component CSS.
 | `label` | `string` | `''` | Accessible name for the treegrid. |
 | `value` | `string` | `''` | Selected row's `data-row-id`. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | Rows and groups authored as `role="row"` / `role="rowgroup"` markup. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[role="treegrid"]` | yes | — | root surface; view sets `aria-label` |
+| `[role="row"][data-row-id]` | yes | `aria-expanded` sync | `data-row-id`, initial `aria-expanded` |
+| `[role="gridcell"]` | yes | `aria-selected`, roving `tabIndex` | cell content |
+| `[role="rowgroup"]` | for branches | `hidden` | sibling after expandable row |
+
+Header rows and `[role="columnheader"]` cells are presentation-only. Nested hosts: none.
 
 ### Events
 
@@ -92,6 +125,12 @@ Override at the theme layer, not in component CSS.
 | `rows` | `RuiTreegridRow[]` | | Nested row structure. |
 
 `RuiTreegridRow` is `{ id, cells, children?, expanded? }`.
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiTreegrid` | `[role="treegrid"]` with `data-ref="root"` | Accepts `columns` + `rows` or `children`. |
 
 ### CSS classes
 

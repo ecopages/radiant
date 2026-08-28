@@ -43,6 +43,23 @@ import { RuiAlert, RuiAlertIcon } from '@ecopages/radiant-ui/alert';
 
 Inject or reveal an alert when the status becomes relevant. Copy that is always on the page should not use `role="alert"`.
 
+## Custom markup
+
+`<rui-alert>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/alert';
+
+<rui-alert dismissible close-label="Dismiss">
+  <div role="alert" class="rui-alert rui-alert--warning rui-alert--inline">
+    Your session will expire in 5 minutes.
+    <button type="button" data-alert-close class="rui-alert__close" aria-label="Dismiss"></button>
+  </div>
+</rui-alert>
+```
+
+BEM classes are presentation-only. The host only queries `[data-alert-close]`; authors own the `role="alert"` surface.
+
 ## Theming
 
 Alert tones use **semantic status roles** from the active theme, not Tailwind palette steps (`blue-500`, `emerald-100`, …). Each `variant` maps to a role family:
@@ -128,17 +145,34 @@ Follows the <a href="https://www.w3.org/WAI/ARIA/apg/patterns/alert/" data-wai-a
 | `dismissible` | `boolean` | `false` | Show dismiss control; enables `dismiss()`. |
 | `close-label` | `string` | `Dismiss` | Accessible name for the dismiss control. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | Content inside the `role="alert"` region. `inline`: `RuiAlertIcon` + text. `banner`: `RuiAlertTitle` + `RuiAlertDescription`. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-alert-close]` | no | — | presence, `aria-label` |
+
+The host does not query alert content. Authors own the `role="alert"` surface (or use `RuiAlert`). Nested hosts: none.
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-close` | `{ reason: 'dismiss' }` | Fired when the alert is dismissed; the host is then removed. |
+
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `dismiss()` | Emit `rui-close`, then remove the host from the DOM. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiAlert` | `<rui-alert>` + inner `role="alert"` surface | Appends `[data-alert-close]` when `dismissible`. |
+| `RuiAlertIcon` | — | Presentation only (`inline` layout). |
+| `RuiAlertTitle` | — | Presentation only (`banner` layout). |
+| `RuiAlertDescription` | — | Presentation only (`banner` layout). |
 
 ### CSS classes
 

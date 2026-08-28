@@ -33,7 +33,7 @@ export function RuiDateRangePickerInputs({ children, class: className, ...props 
 
 export type RuiDateRangePickerStartInputProps = JsxElementProps<HTMLInputElement>;
 
-/** Start-date text input controlled by the range-picker host. */
+/** Start-date text input. Stamps `[data-range-start]`. */
 export function RuiDateRangePickerStartInput({ class: className, ...props }: RuiDateRangePickerStartInputProps) {
 	return (
 		<input
@@ -50,7 +50,7 @@ export function RuiDateRangePickerStartInput({ class: className, ...props }: Rui
 
 export type RuiDateRangePickerEndInputProps = JsxElementProps<HTMLInputElement>;
 
-/** End-date text input controlled by the range-picker host. */
+/** End-date text input. Stamps `[data-range-end]`. */
 export function RuiDateRangePickerEndInput({ class: className, ...props }: RuiDateRangePickerEndInputProps) {
 	return (
 		<input
@@ -82,7 +82,7 @@ export function RuiDateRangePickerSeparator({
 
 export type RuiDateRangePickerToggleProps = JsxElementProps<HTMLButtonElement>;
 
-/** Toggle button for the range calendar. */
+/** Calendar toggle. Stamps `[data-range-trigger]` and `data-ref="trigger"`. */
 export function RuiDateRangePickerToggle({
 	children,
 	class: className,
@@ -106,7 +106,7 @@ export function RuiDateRangePickerToggle({
 
 export type RuiDateRangePickerPopoverProps = JsxElementProps<HTMLDivElement>;
 
-/** Floating shell for a `RuiDateRangePickerCalendar`. */
+/** Popup shell. Stamps `[data-range-popover]` and `data-ref="popover"`. */
 export function RuiDateRangePickerPopover({ children, class: className, ...props }: RuiDateRangePickerPopoverProps) {
 	return (
 		<div
@@ -124,7 +124,7 @@ export function RuiDateRangePickerPopover({ children, class: className, ...props
 
 export type RuiDateRangePickerCalendarProps = JsxCustomElementAttributes<RuiCalendarElement, RuiCalendarProps>;
 
-/** Calendar whose range value and constraints are synchronized by the range-picker host. */
+/** Nested `rui-calendar` in range mode. Stamps `[data-range-calendar]`. */
 export function RuiDateRangePickerCalendar(props: RuiDateRangePickerCalendarProps) {
 	return <RuiCalendar {...props} data-range-calendar />;
 }

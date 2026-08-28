@@ -29,7 +29,7 @@ export type RuiSelectTriggerProps = JsxElementProps<HTMLButtonElement> & {
 };
 
 /**
- * Value button with `role="combobox"`. Place `RuiSelectValue` inside.
+ * Value button. Stamps `[data-select-trigger]`. Place `RuiSelectValue` inside.
  *
  * @cssclass rui-select__trigger - Value button; `role="combobox"` set by the controller.
  */
@@ -53,7 +53,7 @@ export type RuiSelectToggleProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 };
 
-/** Toggle button for opening the listbox popup. Children replace the default chevron icon. */
+/** Toggle button for opening the listbox popup. Stamps `[data-select-toggle]`. Children replace the default chevron icon. */
 export function RuiSelectToggle({ children, class: className, aria, disabled, ...props }: RuiSelectToggleProps) {
 	return (
 		<button
@@ -74,7 +74,7 @@ export type RuiSelectClearProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 };
 
-/** Clears the current selection; place next to `RuiSelectToggle`. Children replace the default close icon. */
+/** Clears the current selection. Stamps `[data-select-clear]`. Place next to `RuiSelectToggle`. Children replace the default close icon. */
 export function RuiSelectClear({ children, class: className, aria, disabled, ...props }: RuiSelectClearProps) {
 	return (
 		<button
@@ -93,7 +93,7 @@ export function RuiSelectClear({ children, class: className, aria, disabled, ...
 export type RuiSelectValueProps = JsxElementProps<HTMLSpanElement>;
 
 /**
- * Selected value display inside `RuiSelectTrigger`.
+ * Selected value display inside `RuiSelectTrigger`. Stamps `[data-select-value]`.
  *
  * @remarks When empty, shows the select `placeholder`. For the `options` API,
  * the view SSRs the resolved label (or placeholder) so the control height does
@@ -113,7 +113,7 @@ export function RuiSelectValue({ children, class: className, ...props }: RuiSele
 export type RuiSelectListboxProps = JsxElementProps<HTMLDivElement>;
 
 /**
- * Popup shell composed inside `listbox`. Place an embedded `RuiListbox` inside.
+ * Popup shell. Stamps `[data-select-listbox]`. Place an embedded `RuiListbox` inside.
  *
  * @cssclass rui-select__listbox - Popup shell; composes `rui-popover` surface roles.
  */
@@ -136,6 +136,7 @@ export type RuiSelectSearchProps = JsxElementProps<HTMLInputElement> & {
 
 /**
  * Search input for filtering inside `RuiAutocomplete` within a select listbox.
+ * Stamps `[data-autocomplete-input]`.
  *
  * @cssclass rui-select__search - Filtering input inside the popup.
  */
@@ -174,8 +175,8 @@ function resolveSelectDisplayText(
 }
 
 /**
- * Select view. Pair with `RuiLabel` (sibling or via `RuiField`) for the visible name —
- * do not nest a select-specific label.
+ * Select view. Wraps children in `[data-ref="root"]`. Pass `options` for the
+ * simple API, or compose `RuiSelect*` children.
  */
 export type RuiSelectViewProps = JsxCustomElementAttributes<
 	RuiSelectElement,

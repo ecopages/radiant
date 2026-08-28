@@ -4,7 +4,7 @@ description: A combobox combines a text field with a filterable popup list of kn
 category: Forms
 ---
 
-import { meta as ComboboxMeta, Default } from '@/content/stories/combobox';
+import { meta as ComboboxMeta, Default, Multiple, TriggerKindManual } from '@/content/stories/combobox';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -30,7 +30,7 @@ export const config = {
 
 ## Mental model
 
-`<rui-combobox>` coordinates a **view-owned shell**: helpers place the input row and popup; the custom element owns filtering, keyboard, and selection. Options live in an embedded `RuiListbox`, usually wrapped in `RuiAutocomplete`. Named regions are Composition Helpers, not HTML slots.
+`<rui-combobox>` is a behavior host: helpers place the input row and popup; the custom element owns filtering, keyboard, and selection. Options live in an embedded `RuiListbox`, usually wrapped in `RuiAutocomplete`. Named regions are Composition Helpers, not HTML slots.
 
 The host `value` is a **comma-separated token string**. JSX may pass a `string` or `string[]`. Commas in the host attribute are delimiters.
 
@@ -77,9 +77,34 @@ import { RuiIconX } from '@ecopages/radiant-ui/icons';
 
 Children on `RuiComboboxClear` and `RuiComboboxTrigger` replace the default SVGs. For decorated options, set `label` on `RuiListboxOption` so the committed input text stays clean of icons and indicators.
 
+## Custom markup
+
+`<rui-combobox>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/combobox';
+import '@ecopages/radiant-ui/listbox';
+
+<rui-combobox value="cat" placeholder="Choose an animal">
+  <div data-ref="root" class="rui-combobox">
+    <div class="rui-combobox__control">
+      <input type="text" data-combobox-input data-autocomplete-input />
+      <button type="button" data-combobox-trigger></button>
+    </div>
+    <div data-combobox-listbox hidden>
+      <rui-listbox embedded>
+        <div role="option" data-value="cat">Cat</div>
+      </rui-listbox>
+    </div>
+  </div>
+</rui-combobox>
+```
+
 ## Multiple selection
 
 `selectionMode="multiple"` toggles known options and keeps the popup open. Selected options render as removable chips. Typed text only filters; it is not appended as a token.
+
+<Canvas of={Multiple} meta={ComboboxMeta} />
 
 ```tsx
 <RuiCombobox
@@ -103,6 +128,8 @@ For composed layouts, place `RuiComboboxValue` (with a `RuiTagGroup`) before `Ru
 | `input` (default) | The user types a matching query, or uses the trigger / arrow keys |
 | `focus` | The input receives focus (and while typing) |
 | `manual` | The trigger button or arrow keys only; typing filters without opening |
+
+<Canvas of={TriggerKindManual} meta={ComboboxMeta} />
 
 ## Theming
 
@@ -133,6 +160,20 @@ Icon swaps are Composition Helper children, not CSS variables.
 | `should-close-on-select` | `boolean` | | Whether selection closes the popup (defaults to `true` for single, `false` for multiple). |
 | `trigger-kind` | `input` · `focus` · `manual` | `input` | Controls what opens the listbox. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | — | shell for popover anchoring |
+| `[data-combobox-input]` | yes | `role`, `aria-expanded`, `aria-controls`, `id`, `disabled` | the input |
+| `[data-combobox-listbox]` | yes | `hidden` | popup shell |
+| `[role="option"]` | yes (in listbox) | `aria-selected` | `data-value`, label text |
+| `[data-combobox-trigger]` | no | `aria-expanded`, `tabIndex="-1"` | toggle button |
+| `[data-combobox-clear]` | no | `hidden`, `disabled` | clear button |
+| `[data-combobox-value]` | no | — | chip region before input |
+
+Nested hosts: `rui-listbox` (`embedded`), `rui-tag-group` in `[data-combobox-value]`, optional `rui-autocomplete`.
+
 ### Events
 
 | Event | Detail | Description |
@@ -141,14 +182,15 @@ Icon swaps are Composition Helper children, not CSS variables.
 
 ### View helpers
 
-| Component | Renders | Notes |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiComboboxControl` | Input row wrapper | |
-| `RuiComboboxInput` | Text input (`role="combobox"`) | |
-| `RuiComboboxClear` | Clear button (hidden when empty) | Children replace the default close SVG |
-| `RuiComboboxTrigger` | Popup toggle | Children replace the default chevron SVG |
-| `RuiComboboxValue` | Chip region | Before the input in multiple mode |
-| `RuiComboboxListbox` | Popup shell (`rui-popover`) | Place an embedded `RuiListbox` inside |
+| `RuiCombobox` | `<rui-combobox>` + `[data-ref="root"]` | Accepts `options` or children |
+| `RuiComboboxControl` | — | Input row wrapper |
+| `RuiComboboxInput` | `[data-combobox-input]` | Also `[data-autocomplete-input]` |
+| `RuiComboboxClear` | `[data-combobox-clear]` | Hidden when empty |
+| `RuiComboboxTrigger` | `[data-combobox-trigger]` | Children replace chevron |
+| `RuiComboboxValue` | `[data-combobox-value]` | Before input in multiple mode |
+| `RuiComboboxListbox` | `[data-combobox-listbox]` | Place embedded `RuiListbox` inside |
 
 ### CSS classes
 

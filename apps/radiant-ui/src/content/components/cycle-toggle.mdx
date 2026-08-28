@@ -42,6 +42,24 @@ import { RuiCycleToggle, RuiCycleToggleItem } from '@ecopages/radiant-ui/cycle-t
 </RuiCycleToggle>
 ```
 
+## Custom markup
+
+`<rui-cycle-toggle>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/cycle-toggle';
+
+<rui-cycle-toggle value="light" label="Theme" variant="ghost" size="sm">
+  <button type="button" data-cycle-toggle-button class="rui-button rui-cycle-toggle__button rui-button--ghost rui-button--sm">
+    <span data-cycle-value="system" class="rui-cycle-toggle__item">System</span>
+    <span data-cycle-value="light" class="rui-cycle-toggle__item">Light</span>
+    <span data-cycle-value="dark" class="rui-cycle-toggle__item">Dark</span>
+  </button>
+</rui-cycle-toggle>
+```
+
+BEM classes are presentation-only. Do not set `hidden` on items — the host owns visibility.
+
 ## Sort order
 
 <Canvas of={SortOrder} meta={CycleToggleMeta} />
@@ -71,11 +89,14 @@ Button geometry (`--size-control-*`, `--radius-control`) is inherited from `rui-
 | `label` | `string` | `''` | Accessible name prefix for the cycle button. |
 | `disabled` | `boolean` | `false` | Disables the cycle button. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | `RuiCycleToggleItem` nodes projected into the inner button by the view. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `button[data-cycle-toggle-button]` | yes | `aria-label`, `disabled`, `rui-button--*` classes | the button element |
+| `[data-cycle-value]` | yes (per item) | `hidden` | `data-cycle-value`, `aria-disabled` |
+
+Do not set `hidden` on items. Nested hosts: none.
 
 ### Events
 
@@ -83,13 +104,19 @@ Button geometry (`--size-control-*`, `--radius-control`) is inherited from `rui-
 | --- | --- | --- |
 | `rui-change` | `{ value: string }` | Emitted after `value` advances; `detail.value` is the new id. |
 
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `resync()` | Re-apply button labeling and visible item from the current `value`. |
+
 ### View helpers
 
-| Component | Renders | Notes |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiCycleToggleItem` | One cycle option (`data-cycle-value`) | Pass `id`; only the active item is visible. |
-| `RuiCycleToggleButton` | Button chrome (`data-cycle-toggle-button`) | Composes `rui-button` variant/size classes. |
-| `ThemePreferenceIcon` / `ThemeItemLabel` | Theme preference icons / labels | Icon + screen-reader text for theme cycles. |
+| `RuiCycleToggle` | `<rui-cycle-toggle>` + `RuiCycleToggleButton` | Wraps items in the button. |
+| `RuiCycleToggleItem` | `[data-cycle-value]` | Pass `id`; maps to `data-cycle-value`. |
+| `RuiCycleToggleButton` | `button[data-cycle-toggle-button]` | Composes `rui-button` variant/size classes. |
 
 ### CSS classes
 

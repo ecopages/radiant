@@ -11,7 +11,7 @@ export type { RuiMenuEntry, RuiMenuItem, RuiMenuSeparator } from '../shared/menu
 
 export type RuiMenuButtonTriggerProps = RuiButtonControlProps;
 
-/** Trigger button for opening a menu-button popup. */
+/** Menu button trigger. Stamps `data-ref="trigger"`. */
 export function RuiMenuButtonTrigger({
 	children,
 	class: className,
@@ -36,7 +36,7 @@ export function RuiMenuButtonTrigger({
 
 export type RuiMenuButtonContentProps = JsxElementProps<HTMLDivElement>;
 
-/** Floating menu surface containing `RuiMenuButtonItem` elements. */
+/** Popup menu surface. Stamps `data-ref="menu"` and `role="menu"`. */
 export function RuiMenuButtonContent({ children, class: className, ...props }: RuiMenuButtonContentProps) {
 	return (
 		<div

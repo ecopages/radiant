@@ -91,22 +91,19 @@ Check the compiled `breadcrumb.css` for the exact roles. Override at the theme l
 | `label` | `string` | `Breadcrumb` | Accessible name for the navigation landmark. |
 | `separator` | `string` | `/` | Glyph used by empty `RuiBreadcrumbSeparator` nodes. |
 
-### Composition
-
-| Piece | Description |
-| --- | --- |
-| (default) | Authored breadcrumb list markup. |
-
 ### View helpers
 
-| Component | Renders |
-| --- | --- |
-| `RuiBreadcrumbList` | Ordered list (`<ol>`) of crumbs. |
-| `RuiBreadcrumbItem` | Single crumb (`<li>`). |
-| `RuiBreadcrumbLink` | Linked ancestor page (`<a href>`). |
-| `RuiBreadcrumbPage` | Current page (`<span aria-current="page">`). |
-| `RuiBreadcrumbSeparator` | Presentational separator (`aria-hidden`). |
-| `RuiBreadcrumbEllipsis` | Collapsed middle segment indicator. |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiBreadcrumb` | `<nav class="rui-breadcrumb">` | Sets `separator` CSS variable. |
+| `RuiBreadcrumbList` | `<ol class="rui-breadcrumb__list">` | Ordered list of crumbs. |
+| `RuiBreadcrumbItem` | `<li class="rui-breadcrumb__item">` | Wraps a link or page. |
+| `RuiBreadcrumbLink` | `<a class="rui-breadcrumb__link">` | Linked ancestor. |
+| `RuiBreadcrumbPage` | `<span aria-current="page">` | Current page (non-link). |
+| `RuiBreadcrumbSeparator` | `<li aria-hidden>` | Presentational separator. |
+| `RuiBreadcrumbEllipsis` | `<span aria-hidden>` | Collapsed middle segment. |
+
+No light-DOM query contract — the host does not coordinate authored children.
 
 ### CSS classes
 

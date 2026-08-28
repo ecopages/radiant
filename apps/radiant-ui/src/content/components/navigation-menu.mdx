@@ -55,6 +55,26 @@ import {
 </RuiNavigationMenu>
 ```
 
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/navigation-menu';
+
+<rui-navigation-menu label="Main">
+  <nav class="rui-navigation-menu">
+    <div class="rui-navigation-menu__bar">
+      <button data-navigation-item data-navigation-trigger data-value="products">Products</button>
+      <a href="/pricing" data-navigation-item>Pricing</a>
+    </div>
+    <div class="rui-navigation-menu__panels">
+      <div data-navigation-panel data-value="products" hidden>
+        <a href="/widgets">Widgets</a>
+      </div>
+    </div>
+  </nav>
+</rui-navigation-menu>
+```
+
 ## Site-wide navigation
 
 <p>Keep top-level items to five or fewer. Move secondary links into panels or the footer.</p>
@@ -82,23 +102,25 @@ Override roles at the theme layer, not in component CSS.
 | --- | --- | --- | --- |
 | `label` | `string` | `''` | Accessible name for the `nav` landmark. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `RuiNavigationMenuBar` | Top-level triggers and plain links. |
-| `RuiNavigationMenuPanels` | Megamenu panels paired with triggers by `value`. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-navigation-item]` | yes | roving `tabIndex` | bar link or trigger |
+| `[data-navigation-trigger]` | yes | `aria-expanded`, `aria-haspopup`, `id` | trigger with `data-value` |
+| `[data-navigation-panel]` | yes | `hidden`, `data-state`, `aria-hidden`, `role`, `aria-labelledby` | panel with matching `data-value` |
+| `data-value` | per pair | — | links trigger to panel |
 
 ### View helpers
 
-| Component | Renders | Placement |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiNavigationMenu` | `<rui-navigation-menu>` with view-owned `nav` shell | Root |
-| `RuiNavigationMenuBar` | Trigger / link row | Inside menu root |
-| `RuiNavigationMenuPanels` | Panel region | Inside menu root |
-| `RuiNavigationMenuTrigger` | `RuiButton` trigger | Inside `RuiNavigationMenuBar` |
-| `RuiNavigationMenuLink` | Anchor styled as a button | Inside `RuiNavigationMenuBar` |
-| `RuiNavigationMenuPanel` | Panel `div` | Inside `RuiNavigationMenuPanels` |
+| `RuiNavigationMenu` | `<rui-navigation-menu>` + `nav[data-ref="root"]` | |
+| `RuiNavigationMenuBar` | `data-ref="bar"` | Trigger / link row |
+| `RuiNavigationMenuPanels` | `data-ref="panels"` | Panel region |
+| `RuiNavigationMenuTrigger` | `[data-navigation-item]`, `[data-navigation-trigger]`, `data-value` | |
+| `RuiNavigationMenuLink` | `[data-navigation-item]` | Plain link |
+| `RuiNavigationMenuPanel` | `[data-navigation-panel]`, `data-value` | |
 
 ### CSS classes
 

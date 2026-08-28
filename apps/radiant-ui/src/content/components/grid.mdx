@@ -22,7 +22,7 @@ export const config = {
 
 # Grid
 
-<p class="docs-lede">Grid provides a semantic table-like structure for tabular data with keyboard navigation and selection built in.</p>
+<p class="docs-lede">Grid provides a semantic table-like structure for tabular data with arrow-key navigation between cells.</p>
 
 ## Try it
 
@@ -30,14 +30,39 @@ export const config = {
 
 ## Usage
 
-Populate rows and cells as light-DOM children. Set `label` to name the grid for assistive technologies.
+Pass a `rows` 2-D array or compose row and cell markup as children. Set `label` to name the grid for assistive technologies.
 
 ```tsx
 import { RuiGrid } from '@ecopages/radiant-ui/grid';
 
-<RuiGrid label="Team members">
-  {/* row and cell content */}
-</RuiGrid>
+<RuiGrid
+  label="Team members"
+  rows={[
+    ['Name', 'Role'],
+    ['Ada', 'Engineer'],
+  ]}
+/>
+```
+
+## Custom markup
+
+`<rui-grid>` coordinates any light-DOM tree that matches its query contract. The `RuiGrid` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/grid';
+
+<rui-grid label="Team members">
+  <div role="grid" aria-label="Team members">
+    <div role="row">
+      <div role="gridcell" tabindex={-1}>Name</div>
+      <div role="gridcell" tabindex={-1}>Role</div>
+    </div>
+    <div role="row">
+      <div role="gridcell" tabindex={-1}>Ada</div>
+      <div role="gridcell" tabindex={-1}>Engineer</div>
+    </div>
+  </div>
+</rui-grid>;
 ```
 
 ## Use for tabular data
@@ -69,17 +94,27 @@ Override at the theme layer, not in component CSS.
 | --- | --- | --- | --- |
 | `label` | `string` | `''` | Accessible name announced when focus enters the grid. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | Grid cells authored as `role="row"` / `role="gridcell"` children. Use the `RuiGrid` view for BEM classes. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[role="grid"]` | yes | — | root surface; view sets `aria-label` |
+| `[role="row"]` | yes | — | row container (direct parent of cells) |
+| `[role="gridcell"]` | yes | roving `tabIndex` | cell content |
+
+Selection is not modeled. Nested hosts: none.
 
 ### Props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `rows` | `JsxRenderable[][]` | | 2-D array of row/cell content for the `RuiGrid` view. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiGrid` | `[role="grid"]` with `data-ref="root"` | Accepts `rows` or `children`. |
 
 ### CSS classes
 

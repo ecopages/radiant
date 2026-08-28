@@ -19,11 +19,31 @@ type RuiTooltipBindings = {
 const TOOLTIP_GAP = 8;
 
 /**
- * `<rui-tooltip>` — a popup that describes a trigger on hover or focus.
+ * `<rui-tooltip>` — popup that describes a trigger on hover or focus.
+ *
+ * The host can render its own trigger + tooltip tree via `render()`, or you can import
+ * the script and stamp the same structure in light DOM (as `RuiTooltip` does).
  *
  * Implements the WAI-ARIA APG Tooltip pattern: the popup has `role="tooltip"`
  * and the focusable trigger references it with `aria-describedby`. The tooltip
  * itself never receives focus.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `.rui-tooltip__trigger` — trigger wrapper. Host listens for `focusin` / `focusout` here.
+ * - `[data-ref="tooltip"]` — tooltip surface (`role="tooltip"`). Host assigns `id`, toggles `hidden`,
+ *   and positions the floating layer when open.
+ *
+ * Per trigger:
+ * - First focusable descendant inside `.rui-tooltip__trigger` (or the wrapper) receives `aria-describedby`.
+ *
+ * Optional:
+ * - `content` attribute — text bound into the tooltip surface when using CE `render()`.
+ *
+ * Do not set `id`, `hidden`, or `aria-describedby` on the anchor — the host owns those.
+ *
+ * Nested hosts: none.
  *
  * Event wiring:
  * - Bubbling events (`focusin` / `focusout`, document `keydown`) use `@onEvent`.
@@ -33,10 +53,13 @@ const TOOLTIP_GAP = 8;
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
  *
  * @element rui-tooltip
- * @slot - The trigger element (typically a button or focusable control).
- * @cssclass rui-tooltip - Root wrapper.
- * @cssclass rui-tooltip__trigger - Host wrapper for the slotted trigger.
- * @cssclass rui-tooltip__content - Tooltip surface (`role="tooltip"`); `on-background` fill.
+ * @attr {string} content - Accessible description shown in the tooltip.
+ * @attr {string} placement - Placement of the tooltip surface relative to its anchor. Default: `top`.
+ * @attr {number} delay - Delay in ms before showing on hover/focus. Default: `200`.
+ *
+ * @remarks
+ * With CE `render()`, authored children are projected into `.rui-tooltip__trigger`.
+ * Only `.rui-tooltip__trigger` is queried for focus; other BEM classes are presentation.
  */
 @customElement('rui-tooltip')
 export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {

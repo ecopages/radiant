@@ -5,16 +5,16 @@ import type { RuiKnob as RuiKnobElement, RuiKnobProps } from './knob.script';
 import './knob.script';
 
 /**
- * Rotary numeric control with a 300° value arc.
+ * Rotary numeric control. Stamps the full `[data-ref]` tree under `[data-ref="root"]`.
  *
  * @cssclass rui-knob - Root; wraps the label and knob button.
  * @cssclass rui-knob--value-below - Root with the value readout below the button.
  * @cssclass rui-knob__label - Optional visible label.
- * @cssclass rui-knob__control - Focusable `role="slider"` button and pointer target.
+ * @cssclass rui-knob__control - Focusable `role="slider"` button (`data-ref="control"`).
  * @cssclass rui-knob__svg - SVG ring.
  * @cssclass rui-knob__track - Unfilled 300° range arc.
  * @cssclass rui-knob__progress - Filled range arc.
- * @cssclass rui-knob__value - Value readout inside the ring.
+ * @cssclass rui-knob__value - Value readout inside or below the ring.
  */
 export function RuiKnob({
 	value = 50,

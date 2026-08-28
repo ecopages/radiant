@@ -40,18 +40,40 @@ type EditingField = 'start' | 'end' | null;
 /**
  * `<rui-date-range-picker>` — start/end date fields with a range calendar popover.
  *
- * Canonical `value` is `YYYY-MM-DD/YYYY-MM-DD`. Pair with `RuiField` for validation.
- * Compose inputs, a toggle, popover, and calendar with the `RuiDateRangePicker*`
- * view helpers. `RuiDateRangePicker` supplies that composition when it has no children.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiDateRangePicker*` view helpers which stamp the same targets.
+ * `RuiDateRangePicker` supplies the default composition when it has no children.
  *
- * @remarks Range entry is intentionally free-text plus calendar based. Masked
- * segment editing is currently limited to `RuiDateField` so two range inputs do
- * not maintain separate partial-mask state.
+ * Canonical `value` is `YYYY-MM-DD/YYYY-MM-DD`. Pair with `RuiField` for validation.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-range-start]` — start text input. Host sets `name`, `disabled`, `readOnly`,
+ *   and `placeholder`.
+ * - `[data-range-end]` — end text input. Host sets the same attrs as the start input.
+ * - `[data-range-trigger]` — calendar toggle (`data-ref="trigger"`). Host sets
+ *   `aria-expanded` and `disabled`.
+ * - `[data-range-popover]` — popup shell (`data-ref="popover"`). Host sets `hidden`.
+ * - `[data-range-calendar]` — nested `rui-calendar` in range mode. Host syncs
+ *   `selection-mode="range"`, `visible-months`, `value`, `min`, `max`, `locale`,
+ *   and `disabled`.
+ *
+ * Nested hosts:
+ * - `rui-calendar` at `[data-range-calendar]` — parent queries
+ *   `[data-calendar-day][data-iso="…"]` and `[data-calendar-day][tabindex="0"]`
+ *   inside it when the popup opens; listens for `rui-change`.
+ *
+ * Do not set `aria-expanded` on the trigger — the host owns it.
+ *
+ * @remarks
+ * Range entry is intentionally free-text plus calendar based. Masked segment editing
+ * is currently limited to `RuiDateField` so two range inputs do not maintain separate
+ * partial-mask state. BEM classes live on the view helpers.
  *
  * @see https://react-aria.adobe.com/DateRangePicker
- *
  * @element rui-date-range-picker
- *
  * @attr {string} value - Canonical `YYYY-MM-DD/YYYY-MM-DD` range. Default: `''`.
  * @attr {string} min - Earliest selectable ISO date. Default: `''`.
  * @attr {string} max - Latest selectable ISO date. Default: `''`.
@@ -64,15 +86,7 @@ type EditingField = 'start' | 'end' | null;
  * @attr {string} end-name - Native `name` for the end input. Default: `''`.
  * @attr {string} date-style - How committed values are displayed in the inputs. Default: `medium`.
  * @attr {number} visible-months - Month grids shown in the range calendar popover. Default: `2`.
- *
  * @fires rui-change - Emitted when a valid range is committed; detail carries `value`, `start`, and `end`.
- *
- * @cssclass rui-date-range-picker - Root surface.
- * @cssclass rui-date-range-picker__group - Bordered control-height row wrapping inputs and toggle.
- * @cssclass rui-date-range-picker__values - Start / end input row.
- * @cssclass rui-date-range-picker__input - A range text input.
- * @cssclass rui-date-range-picker__separator - Em dash between the inputs.
- * @cssclass rui-date-range-picker__popover - Range calendar popup shell (`rui-popover` / `rui-floating`).
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {

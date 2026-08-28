@@ -4,7 +4,7 @@ description: Carousels cycle through a set of panels (hero images, feature highl
 category: Data display
 ---
 
-import { meta as CarouselMeta, Default } from '@/content/stories/carousel';
+import { meta as CarouselMeta, Default, OverlayControls, WithIndicators } from '@/content/stories/carousel';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -30,18 +30,47 @@ export const config = {
 
 ## Usage
 
-Place `RuiCarouselSlide` children inside `RuiCarousel`. Enable `autoplay` only when motion is not distracting and can be paused.
+Place `RuiCarouselSlide` children inside `RuiCarousel`. Each slide needs an `id`. Enable `autoplay` only when motion is not distracting and can be paused.
 
 ```tsx
-import { RuiCarousel, RuiCarouselSlide, RuiCarouselPrev, RuiCarouselNext } from '@ecopages/radiant-ui/carousel';
+import { RuiCarousel, RuiCarouselSlide } from '@ecopages/radiant-ui/carousel';
 
-<RuiCarousel index={0} transition="slide" showIndicators>
-  <RuiCarouselSlide>First panel</RuiCarouselSlide>
-  <RuiCarouselSlide>Second panel</RuiCarouselSlide>
-  <RuiCarouselPrev />
-  <RuiCarouselNext />
+<RuiCarousel index={0} transition="slide" showIndicators label="Feature highlights">
+  <RuiCarouselSlide id="first">First panel</RuiCarouselSlide>
+  <RuiCarouselSlide id="second">Second panel</RuiCarouselSlide>
 </RuiCarousel>
 ```
+
+## Custom markup
+
+`<rui-carousel>` coordinates any light-DOM tree that matches its query contract. The
+`Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/carousel';
+
+<rui-carousel index={0} transition="slide" show-indicators label="Feature highlights">
+  <section data-ref="root" class="rui-carousel rui-carousel--slide" aria-roledescription="carousel" aria-label="Feature highlights">
+    <div class="rui-carousel__stage">
+      <div data-ref="viewport" class="rui-carousel__viewport">
+        <div class="rui-carousel__track">
+          <div data-slide="first" class="rui-carousel__slide">First panel</div>
+          <div data-slide="second" class="rui-carousel__slide">Second panel</div>
+        </div>
+      </div>
+    </div>
+    <div class="rui-carousel__footer">
+      <button type="button" data-carousel-action="prev">Previous</button>
+      <div data-ref="indicators" role="tablist" aria-label="Choose slide to display"></div>
+      <button type="button" data-carousel-action="next">Next</button>
+    </div>
+  </section>
+</rui-carousel>;
+```
+
+When `show-indicators` is set, the host creates `[data-carousel-indicator]` buttons inside `[data-ref="indicators"]`.
+
+<Canvas of={WithIndicators} meta={CarouselMeta} />
 
 ## Use autoplay sparingly
 
@@ -50,6 +79,10 @@ import { RuiCarousel, RuiCarouselSlide, RuiCarouselPrev, RuiCarouselNext } from 
 ## Pick a transition
 
 <p>`slide` moves content horizontally. `fade` cross-fades panels. `none` swaps instantly and is best when motion would be gratuitous.</p>
+
+Set `controlsVariant="overlay"` to pin prev/next on the slide edges.
+
+<Canvas of={OverlayControls} meta={CarouselMeta} />
 
 ## Theming
 
@@ -86,23 +119,29 @@ Override at the theme layer, not in component CSS.
 | `wrap` | `boolean` | `true` | Keep controls enabled at the ends. |
 | `slide-count` | `number` | `0` | Authored slide count for render-time control state. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | Slides, each marked `data-slide` (see `RuiCarouselSlide`). |
-| `prev` | Custom previous control (`data-carousel-action="prev"`). |
-| `next` | Custom next control (`data-carousel-action="next"`). |
-| `rotation` | Custom play/pause control (`data-carousel-action="rotation"`). |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | — | carousel region; view seeds `aria-roledescription`, `aria-label` |
+| `[data-ref="viewport"]` | yes | `aria-live`, `aria-atomic` | slide window |
+| `.rui-carousel__track` | yes | `--rui-carousel-index` when `transition="slide"` | slide track |
+| `[data-slide]` | yes | `role`, `aria-*`, `aria-hidden`, `data-active`, `hidden`, `id` | slide `id` value and content |
+| `[data-carousel-action="prev"]` / `next` | no | `disabled` at ends | navigation buttons |
+| `[data-carousel-action="rotation"]` | no | `aria-pressed`, `aria-label` | play/pause control |
+| `[data-ref="indicators"]` | when `show-indicators` | creates `[data-carousel-indicator]` | tablist container |
+
+Do not set `aria-hidden`, `aria-selected`, or `tabIndex` on slides or indicators. Nested hosts: none.
 
 ### View helpers
 
-| Component | Renders | Notes |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiCarouselSlide` | Slide panel | Add `id`; host applies `group` / `tabpanel` roles. |
-| `RuiCarouselPrev` | Prev button | Slotted into `prev`. |
-| `RuiCarouselNext` | Next button | Slotted into `next`. |
-| `RuiCarouselRotation` | Play/pause button | Slotted into `rotation`. |
+| `RuiCarousel` | shell targets via `CarouselShell` | `slides` convenience prop or `RuiCarouselSlide` children; default prev/next/rotation chrome. |
+| `RuiCarouselSlide` | `[data-slide]` | Requires `id` prop. |
+| `RuiCarouselPrev` | `[data-carousel-action="prev"]` | Override with `prev` prop on `RuiCarousel`. |
+| `RuiCarouselNext` | `[data-carousel-action="next"]` | Override with `next` prop on `RuiCarousel`. |
+| `RuiCarouselRotation` | `[data-carousel-action="rotation"]` | Shown when `autoplay` or `showRotationControl`. |
 
 ### CSS classes
 
