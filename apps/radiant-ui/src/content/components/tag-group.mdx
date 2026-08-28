@@ -30,22 +30,41 @@ export const config = {
 
 ## Usage
 
-Bind `value` as a comma-separated list. Compose `RuiTagList`, `RuiTag`, and `RuiTagRemove` for custom tag rendering.
+Bind `value` as a comma-separated list. Pass `tags` for the simple API, or compose `RuiTagList` and `RuiTag`. `RuiTag` already includes the remove control.
 
 ```tsx
-import { RuiTagGroup, RuiTagList, RuiTag, RuiTagRemove } from '@ecopages/radiant-ui/tag-group';
+import { RuiTagGroup, RuiTagList, RuiTag } from '@ecopages/radiant-ui/tag-group';
 
 <RuiTagGroup value="react,typescript" selectionMode="multiple" label="Skills">
   <RuiTagList>
-    <RuiTag id="react">React<RuiTagRemove /></RuiTag>
-    <RuiTag id="typescript">TypeScript<RuiTagRemove /></RuiTag>
+    <RuiTag value="react" label="React">React</RuiTag>
+    <RuiTag value="typescript" label="TypeScript">TypeScript</RuiTag>
   </RuiTagList>
 </RuiTagGroup>
 ```
 
+## Custom markup
+
+`<rui-tag-group>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/tag-group';
+
+<rui-tag-group value="react" label="Skills">
+  <div data-tag-list class="rui-tag-group__list">
+    <span data-tag data-value="react" data-label="React" class="rui-tag">
+      React
+      <button type="button" data-tag-remove class="rui-tag__remove"></button>
+    </span>
+  </div>
+</rui-tag-group>
+```
+
+BEM classes are presentation-only. Omit `[data-tag-remove]` for a non-removable tag. Add `[data-ref="root"]` around the list only if you call `setItems()`.
+
 ## Embedded in selects
 
-<p>Set `embedded` when tags render inside a select or combobox trigger rather than standalone.</p>
+<p>Set `embedded` when tags render inside a select or combobox trigger rather than standalone. Selection is disabled because the parent owns the value; removal still emits `rui-remove`.</p>
 
 ## Theming
 
@@ -62,7 +81,7 @@ Override roles at the theme layer, not in component CSS.
 
 ## API
 
-`RuiTagGroup` is a custom element (`<rui-tag-group>`) wrapping a focusable list of tags. Compose `RuiTagList`, `RuiTag`, and `RuiTagRemove`, or pass `tags` to the helper for the simple API.
+`RuiTagGroup` is a custom element (`<rui-tag-group>`) wrapping a focusable list of tags. Compose `RuiTagList` and `RuiTag`, pass `tags` to the helper, or stamp the light-DOM contract directly.
 
 ### Attributes
 
@@ -74,27 +93,41 @@ Override roles at the theme layer, not in component CSS.
 | `selection-mode` | `single` · `multiple` | `multiple` | Allow one or many selected tags. |
 | `embedded` | `boolean` | `false` | Disable selection when a parent component owns the selected values. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | Tag content, `RuiTagList` / `RuiTag` / `RuiTagRemove`, or `data-tag` markup. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-tag-list]` | yes | `id`, `role="list"`, `aria-label`, `aria-disabled` | the list node |
+| `[data-tag]` | yes | `id` if missing, `role="listitem"`, `aria-selected`, roving `tabIndex` | `data-value`, `data-label`, `hidden`, `aria-disabled` |
+| `[data-value]` | per tag | — | selection identity; fallback trimmed text |
+| `[data-label]` | per tag | — | remove accessible name; fallback trimmed text |
+| `[data-tag-remove]` | no | `type="button"`, `tabIndex="-1"`, `aria-label` | presence |
+| `[data-ref="root"]` | for `setItems()` | — | wrapper around the list |
+
+Do not set `role`, `aria-selected`, or `tabIndex` on tags. Nested hosts: none.
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ value: string }` | Emitted when selection changes; `value` is comma-separated. |
-| `rui-remove` | `{ value: string }` | Emitted when a tag is removed; `value` is the removed tag's value. |
+| `rui-remove` | `{ value: string }` | Emitted when a tag is removed; `value` is the removed tag's value. Also followed by `rui-change`. |
+
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `resync()` | Re-read authored `[data-tag]` children after in-place DOM mutations. |
+| `setItems(items)` | Replace authored tags with a host-owned list. Requires `[data-ref="root"]`. |
 
 ### View helpers
 
-| Component | Renders | Notes |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiTagGroup` | `<rui-tag-group>` | Accepts `tags` (`RuiTagData[]`) or children. |
-| `RuiTagList` | Tag list `div` | Flex-wrap container. |
-| `RuiTag` | Tag `span` | `data-tag`; includes `RuiTagRemove`. |
-| `RuiTagRemove` | Remove `button` | `data-tag-remove`. |
+| `RuiTagGroup` | `<rui-tag-group>` + `[data-ref="root"]` | Accepts `tags` (`RuiTagData[]`) or children. |
+| `RuiTagList` | `[data-tag-list]` | Flex-wrap container. |
+| `RuiTag` | `[data-tag]`, `data-value`, `data-label` | Always includes `RuiTagRemove`. |
+| `RuiTagRemove` | `[data-tag-remove]` | Host fills the accessible name on connect. |
 
 ### CSS classes
 
@@ -120,5 +153,5 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 ## Accessibility
 
 - Each tag exposes its label text to screen readers.
-- Remove buttons have accessible names indicating which tag will be removed.
+- Remove buttons have accessible names indicating which tag will be removed (`Remove {label}`).
 - The group has an accessible name via `label` when not described by surrounding text.
