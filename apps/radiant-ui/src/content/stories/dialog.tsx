@@ -47,3 +47,33 @@ export const meta = {
 type Story = DocsStory<DialogArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'dialog/default' } } });
+
+export const Alert: Story = docsStory(meta, {
+	args: {
+		alert: true,
+		label: 'Delete project?',
+		open: true,
+	},
+	render: (args) => (
+		<RuiDialog
+			id={`${args.id}-alert`}
+			open={args.open}
+			alert
+			label={args.label}
+			title={args.label}
+			actions={
+				<>
+					<RuiButton variant="ghost" type="button" data-dialog-close>
+						Cancel
+					</RuiButton>
+					<RuiButton variant="destructive" type="button" data-dialog-close>
+						Delete
+					</RuiButton>
+				</>
+			}
+		>
+			This removes the project and its files. This cannot be undone.
+		</RuiDialog>
+	),
+	parameters: { docs: { id: 'dialog/alert' } },
+});

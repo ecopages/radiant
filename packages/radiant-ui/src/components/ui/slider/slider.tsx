@@ -6,8 +6,8 @@ import './slider.script';
 export type RuiSliderValueProps = JsxElementProps<HTMLSpanElement>;
 
 /**
- * Live value readout for `RuiSlider`. The element keeps this node in sync
- * imperatively while dragging.
+ * Live value readout for `RuiSlider`. Stamps `[data-ref="value"]`.
+ * The host keeps this node in sync imperatively while dragging.
  *
  * @cssclass rui-slider__value - Numeric readout (`aria-hidden="true"`).
  */
@@ -79,9 +79,20 @@ function SliderTrack({ disabled, min, max, label, variant }: Omit<RuiSliderProps
 }
 
 /**
- * Single- or dual-thumb slider styled with CSS variables on the track and thumbs.
- * When `children` is omitted, the view supplies a default `RuiSliderValue` that
- * the element shows or hides through `showValue`.
+ * Single- or dual-thumb slider. Stamps the full `[data-ref]` tree under `[data-ref="root"]`.
+ * When `children` is omitted, supplies a default `RuiSliderValue` with `[data-default-value]`
+ * that the host shows or hides through `showValue`.
+ *
+ * @cssclass rui-slider - Root; wraps the label, track, and value readout.
+ * @cssclass rui-slider--single - Single-thumb layout.
+ * @cssclass rui-slider--range - Dual-thumb layout.
+ * @cssclass rui-slider--vertical - Vertical track layout.
+ * @cssclass rui-slider__header - Label + readout row.
+ * @cssclass rui-slider__label - Optional visible label.
+ * @cssclass rui-slider__range - Track wrapper.
+ * @cssclass rui-slider__range-track - Track surface (`data-ref="rangeTrack"`).
+ * @cssclass rui-slider__range-fill - Filled span between origin and value(s).
+ * @cssclass rui-slider__thumb - Thumb button (`role="slider"`, `data-thumb`).
  */
 export function RuiSlider({
 	values,

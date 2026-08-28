@@ -30,21 +30,46 @@ export const config = {
 
 ## Usage
 
-Wrap content in `RuiPopoverTrigger` and `RuiPopoverContent`. Control `open`, `placement`, and `portal` for positioning.
+Wrap a child `RuiPopover` in `RuiPopoverTrigger`. Control `open`, `placement`, and `portal` on the trigger or popover.
 
 ```tsx
 import { RuiPopover, RuiPopoverTrigger, RuiPopoverContent } from '@ecopages/radiant-ui/popover';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 
-<RuiPopover placement="bottom-start">
-  <RuiPopoverTrigger>
-    <RuiButton variant="outline">Filter</RuiButton>
-  </RuiPopoverTrigger>
-  <RuiPopoverContent>
-    <p>Show items from the last 7 days.</p>
-  </RuiPopoverContent>
-</RuiPopover>
+<RuiPopoverTrigger trigger={<RuiButton variant="outline">Filter</RuiButton>}>
+  <RuiPopover placement="bottom-start">
+    <RuiPopoverContent>
+      <p>Show items from the last 7 days.</p>
+    </RuiPopoverContent>
+  </RuiPopover>
+</RuiPopoverTrigger>
 ```
+
+## Custom markup
+
+`<rui-popover>` coordinates any light-DOM tree that matches its query contract. Pair with
+`<rui-popover-trigger>` for click-to-toggle, or pass `anchor` for an external selector.
+
+```tsx
+import '@ecopages/radiant-ui/popover';
+
+<rui-popover-trigger>
+  <div data-ref="root" class="rui-popover-trigger">
+    <span data-popover-trigger>
+      <button type="button">Filter</button>
+    </span>
+    <rui-popover placement="bottom-start">
+      <div data-ref="host" class="rui-popover-host">
+        <div data-ref="surface" class="rui-popover rui-floating" role="dialog">
+          <p>Show items from the last 7 days.</p>
+        </div>
+      </div>
+    </rui-popover>
+  </div>
+</rui-popover-trigger>;
+```
+
+For a standalone popover anchored elsewhere, omit `rui-popover-trigger` and set `anchor="#my-button"` on `<rui-popover>`.
 
 ## Listbox variant
 
@@ -94,20 +119,45 @@ Overrides go at the theme layer, not in component CSS.
 | --- | --- | --- | --- |
 | `open` | `boolean` | `false` | Whether the popover starts open. |
 
-### Composition
+### Light-DOM contract (`<rui-popover>`)
 
-| Component | Piece | Description |
-| --- | --- | --- |
-| `RuiPopover` | `trigger` | Pressable anchor (when not using an external `anchor`). |
-| `RuiPopover` | `content` | Popover body rendered inside the floating surface. |
-| `RuiPopoverTrigger` | `trigger` | Pressable element that toggles the child popover. |
-| `RuiPopoverTrigger` | (default) | The child `<rui-popover>`. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="host"]` | yes | — | anchor + surface wrapper |
+| `[data-ref="surface"]` | yes | `id`, portal position | floating panel content |
+| `[data-popover-trigger]` | yes* | `aria-controls`, `aria-expanded` on anchor | pressable anchor wrapper |
+
+\* Or use the `anchor` attribute with a CSS selector instead of `[data-popover-trigger]`.
+
+Nested hosts: `rui-popover-trigger` (parent provides the trigger target).
+
+### Light-DOM contract (`<rui-popover-trigger>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | — | click delegate root |
+| `[data-popover-trigger]` | yes | — | pressable anchor |
+| `rui-popover` | yes | syncs `open` both ways | child popover element |
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-open-change` | `{ open: boolean }` | Emitted when open state changes. |
+
+### Methods (`<rui-popover>`)
+
+| Method | Description |
+| --- | --- |
+| `setOpen(next, emit?)` | Toggle open state. Pass `emit = false` to sync without firing `rui-open-change`. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiPopoverTrigger` | `[data-ref="root"]`, `[data-popover-trigger]` | Wraps child `rui-popover`. Requires `trigger` prop. |
+| `RuiPopover` | `[data-ref="host"]`, `[data-ref="surface"]`, optional `[data-popover-trigger]` | `trigger` prop for inline anchor; `children` are surface content. |
+| `RuiPopoverContent` | — | Body inside `[data-ref="surface"]`; not a query target. |
 
 ### CSS classes
 

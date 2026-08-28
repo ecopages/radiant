@@ -150,6 +150,12 @@ The `toast()` callable and its variants accept `(title, options?)` where `option
 | `offset` | `number` | `24` | Viewport inset in px. |
 | `container` | `string` | `''` | CSS selector for a positioning root (docs canvas). |
 
+### Derived tree
+
+`<rui-toaster>` and `<rui-toast>` are **Derived Tree** hosts: the toaster `render()`s `.rui-toaster` and `rui-toast` children; each toast `render()`s `[data-toast-close]` and `[data-toast-action]`. Use the imperative `toast()` API — do not author these targets by hand.
+
+The toaster queries `.rui-toaster` (stack list class) and `rui-toast` for layout math.
+
 ### `<rui-toast>` attributes
 
 Rendered by the toaster; listed for completeness. Documented via `@attr` on `RuiToastElement`.

@@ -20,44 +20,47 @@ const MENU_GAP = 6;
 /**
  * `<rui-menu-button>` — a button that opens a menu of actions.
  *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiMenuButton*` view helpers which stamp the same targets.
+ *
  * Implements the WAI-ARIA APG Menu Button pattern together with the Menu
- * keyboard model: the trigger exposes `aria-haspopup="menu"` and
- * `aria-expanded`, and the popup has `role="menu"` with `role="menuitem"`
- * children.
+ * keyboard model.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="trigger"]` — menu button. Host sets `aria-haspopup="menu"`,
+ *   `aria-expanded`, `aria-controls`, and `disabled`.
+ * - `[data-ref="menu"]` — popup surface (`role="menu"`). Host toggles `hidden`.
+ *
+ * Per menu item:
+ * - `[role="menuitem"]` — action or branch. Host reads `data-value` or text on activate.
+ * - `data-value` — optional identity emitted in `rui-change`.
+ *
+ * Optional:
+ * - `[data-autocomplete-input]` — inside the menu; opening focuses this field for filtering.
+ * - `[data-ref="submenu-menu"]` — nested flyout (`role="menu"`) sibling of a branch item.
+ *
+ * Branch pattern: a `[role="menuitem"]` with `aria-haspopup` followed by a sibling
+ * `[role="menu"]` or `[data-ref="submenu-menu"]`.
+ *
+ * Do not set `aria-expanded`, `aria-controls`, or `aria-haspopup` on the trigger —
+ * the host owns those.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
- *
- * Keyboard interaction (trigger):
- * - `Enter` / `Space` / `ArrowDown`: open and focus the first item
- * - `ArrowUp`: open and focus the last item
- *
- * Keyboard interaction (open menu):
- * - `ArrowDown` / `ArrowUp`: move between items (wraps)
- * - `Home` / `End`: first / last item
- * - `ArrowRight` / `Enter` / `Space` on a branch: open its submenu and focus its first item
- * - `ArrowLeft` in a submenu: close it and return focus to its branch
- * - `Enter` / `Space` on a leaf: activate it and close the tree
- * - `Escape`: close and return focus to the trigger
- *
- * Nested branch menus open after a 200 ms pointer-hover delay without moving
- * keyboard focus. Pointer travel from a branch into its flyout keeps it open.
- *
- * @remarks When the menu contains `[data-autocomplete-input]`, opening focuses
- * that field so the user can filter items immediately.
- *
  * @element rui-menu-button
  * @attr {boolean} open - Whether the menu starts open. Default: `false`.
  * @attr {('top'|'top-start'|'top-end'|'right'|'right-start'|'right-end'|'bottom'|'bottom-start'|'bottom-end'|'left'|'left-start'|'left-end')} placement - Placement of the menu surface relative to its trigger. Default: `bottom-start`.
- * Compose with `RuiMenuButtonTrigger`, `RuiMenuButtonContent`, and
- * `RuiMenuButtonItem`; use the submenu helpers for nested menus. The
- * `trigger` / recursive `items` API supplies that composition.
  * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
  * @fires rui-close - Emitted when the menu closes.
- * @cssclass rui-menu-button - Root wrapper around trigger and menu.
- * @cssclass rui-menu-button__trigger - Menu button trigger (`rui-button--primary`).
- * @cssclass rui-menu-button__chevron - Chevron indicator.
- * @cssclass rui-menu-button__menu - Popup menu surface (`role="menu"`).
+ *
+ * @remarks
+ * Nested branch menus open after a 200 ms pointer-hover delay without moving
+ * keyboard focus. BEM classes live on the view helpers.
  * @cssprop --rui-menu-item-hover - Hover / expanded item fill. Default: `--surface-container-low`.
  */
 @customElement('rui-menu-button')

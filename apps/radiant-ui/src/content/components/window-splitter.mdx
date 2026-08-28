@@ -30,16 +30,38 @@ export const config = {
 
 ## Usage
 
-Set `value` to the primary pane percentage and `orientation` for horizontal or vertical splits. Provide two child panes.
+Pass `primary` and `secondary` pane content. Set `value` to the primary pane percentage and `orientation` for horizontal or vertical splits.
 
 ```tsx
 import { RuiWindowSplitter } from '@ecopages/radiant-ui/window-splitter';
 
-<RuiWindowSplitter value={50} orientation="horizontal" label="Split view">
-  <div>Editor</div>
-  <div>Preview</div>
-</RuiWindowSplitter>
+<RuiWindowSplitter
+  value={50}
+  orientation="horizontal"
+  label="Split view"
+  primary={<div>Editor</div>}
+  secondary={<div>Preview</div>}
+/>
 ```
+
+## Custom markup
+
+`<rui-window-splitter>` coordinates any light-DOM tree that matches its query contract. The
+`RuiWindowSplitter` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/window-splitter';
+
+<rui-window-splitter value={50} orientation="horizontal" label="Split view">
+  <div data-ref="root" class="rui-window-splitter rui-window-splitter--horizontal">
+    <div data-ref="primary" class="rui-window-splitter__pane">Editor</div>
+    <div data-ref="separator" class="rui-window-splitter__separator" role="separator" tabindex={0}></div>
+    <div data-ref="secondary" class="rui-window-splitter__pane">Preview</div>
+  </div>
+</rui-window-splitter>;
+```
+
+Do not set primary pane `width` / `height` or separator `aria-valuenow` — the host owns those.
 
 ## Initial pane ratio
 
@@ -74,18 +96,28 @@ Override at the theme layer, not in component CSS.
 | `orientation` | `horizontal` · `vertical` | `horizontal` | Split axis. |
 | `label` | `string` | `Split view` | Accessible name for the separator. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `primary` | First pane content. |
-| `secondary` | Second pane content. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | orientation modifier classes | layout wrapper |
+| `[data-ref="primary"]` | yes | inline `width` or `height` from `value` | pane content |
+| `[data-ref="separator"]` | yes | `aria-orientation`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-label` | view seeds `role="separator"`, `tabIndex` |
+| `[data-ref="secondary"]` | yes | — | second pane content |
+
+Nested hosts: none.
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-splitter-change` | `{ value: number }` | Emitted when the separator moves. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiWindowSplitter` | `[data-ref="root"]`, `[data-ref="primary"]`, `[data-ref="separator"]`, `[data-ref="secondary"]` | `primary` and `secondary` props supply pane content. |
 
 ### Props
 

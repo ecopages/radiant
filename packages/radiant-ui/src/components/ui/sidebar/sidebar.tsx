@@ -332,6 +332,12 @@ export function RuiSidebarInset({ children, class: className, ...props }: RuiSid
 
 export type RuiSidebarViewProps = JsxCustomElementAttributes<RuiSidebarElement, RuiSidebarProps & { id: string }>;
 
+/**
+ * Sidebar view. Stamps `[data-ref="root"]`, `[data-ref="pane"]`, optional
+ * `[data-ref="scrim"]` and `[data-ref="handle"]`.
+ *
+ * @cssclass rui-sidebar - Pane surface.
+ */
 export function RuiSidebar({ children, open, label, ...props }: RuiSidebarViewProps) {
 	return (
 		<rui-sidebar {...props} prop:open={open} label={label}>
@@ -415,6 +421,9 @@ function RuiSidebarTriggerIcon() {
 	);
 }
 
+/**
+ * Sidebar toggle button view. Stamps `[data-ref="button"]` inside `rui-sidebar-trigger`.
+ */
 export function RuiSidebarTrigger({
 	children,
 	class: className,

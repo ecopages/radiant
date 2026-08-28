@@ -2,6 +2,11 @@ import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import type { RuiToolbar as RuiToolbarElement, RuiToolbarProps } from './toolbar.script';
 import './toolbar.script';
 
+/**
+ * Toolbar landmark wrapper. Stamps `[role="toolbar"]` with `data-ref="root"`.
+ *
+ * @cssclass rui-toolbar - Toolbar surface (`role="toolbar"`).
+ */
 export function RuiToolbar({
 	children,
 	label,

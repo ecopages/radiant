@@ -4,7 +4,7 @@ description: Dialogs interrupt the page to capture a decision or short form. The
 category: Overlays
 ---
 
-import { meta as DialogMeta, Default } from '@/content/stories/dialog';
+import { meta as DialogMeta, Alert, Default } from '@/content/stories/dialog';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -55,9 +55,33 @@ installDialogs();
 </RuiDialog>
 ```
 
+## Custom markup
+
+`<rui-dialog>` coordinates any light-DOM tree that matches its query contract. The
+`Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/dialog';
+
+<rui-dialog open label="Edit profile">
+  <div data-ref="root" class="rui-dialog">
+    <div data-ref="backdrop" class="rui-dialog__backdrop"></div>
+    <div data-ref="dialog" class="rui-dialog__surface" role="dialog" aria-modal="true" tabindex={-1}>
+      <button type="button" data-dialog-close class="rui-dialog__close"></button>
+      <div data-dialog-title class="rui-dialog__title">Edit profile</div>
+      <div data-dialog-body class="rui-dialog__body">Update your display name and email.</div>
+    </div>
+  </div>
+</rui-dialog>;
+```
+
+BEM classes are presentation-only. Set `alert` on the host for `role="alertdialog"` on `[data-ref="dialog"]`.
+
 ## Alert dialogs
 
 <p>Set `alert` to `true` for destructive confirmations. Alert dialogs limit tab order to the dialog actions.</p>
+
+<Canvas of={Alert} meta={DialogMeta} />
 
 ## Return focus on close
 
@@ -94,14 +118,18 @@ Body uses the `p-inset` spacing token. Override roles at the theme layer, not in
 | `alert` | `boolean` | `false` | Uses `role="alertdialog"` for workflow-interrupting confirmations. |
 | `label` | `string` | `''` | Accessible name when there is no visible title. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `RuiDialogTitle` | Optional visible title. |
-| `RuiDialogBody` | Main dialog content. |
-| `RuiDialogActions` | Optional action button row. |
-| `RuiDialogClose` | Optional dismiss control. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `hidden` when closed | the wrapper node |
+| `[data-ref="backdrop"]` | yes | — | the scrim node; click dismisses |
+| `[data-ref="dialog"]` | yes | `aria-labelledby`, `aria-label`, `aria-describedby` | `role`, `aria-modal`, `tabIndex` (view seeds these) |
+| `[data-dialog-title]` | no | `id`, `aria-labelledby` wiring | visible title text |
+| `[data-dialog-body]` | no | `id`, `aria-describedby` wiring | body content |
+| `[data-dialog-close]` | no | — | dismiss control; click emits `rui-close` |
+
+Do not set `hidden` on `[data-ref="root"]` or `aria-*` on `[data-ref="dialog"]`. Nested hosts: none.
 
 ### Events
 
@@ -111,12 +139,13 @@ Body uses the `p-inset` spacing token. Override roles at the theme layer, not in
 
 ### View helpers
 
-| Component | Placement |
-| --- | --- |
-| `RuiDialogTitle` | Inside dialog shell |
-| `RuiDialogBody` | Inside dialog shell |
-| `RuiDialogActions` | Inside dialog shell |
-| `RuiDialogClose` | Inside dialog shell |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiDialog` | `DialogShell` targets | Pass `title` / `actions` for composite API, or compose helpers as children. |
+| `RuiDialogTitle` | `[data-dialog-title]`, `data-ref="title"` | Visible accessible name. |
+| `RuiDialogBody` | `[data-dialog-body]`, `data-ref="description"` | `aria-describedby` target. |
+| `RuiDialogActions` | — | Action row; not queried by the host. |
+| `RuiDialogClose` | `[data-dialog-close]`, `data-ref="close"` | Emits `rui-close` with reason `dismiss`. |
 
 ### CSS classes
 

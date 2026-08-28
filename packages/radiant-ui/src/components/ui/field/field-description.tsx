@@ -6,6 +6,7 @@ export type RuiFieldDescriptionProps = JsxElementProps<HTMLParagraphElement>;
 
 /**
  * Helper text associated with a field via `aria-describedby`.
+ * Stamps `[data-rui-field-description]`.
  *
  * @cssclass rui-field__description - Helper text below the control.
  */

@@ -9,7 +9,7 @@ import './hover-card.script';
 
 export type RuiHoverCardTriggerProps = JsxElementProps<HTMLSpanElement>;
 
-/** Anchor for the hover card preview. */
+/** Anchor for the hover card preview. Stamps `[data-hover-card-trigger]` inside `.rui-hover-card__trigger`. */
 export function RuiHoverCardTrigger({ children, class: className, ...props }: RuiHoverCardTriggerProps) {
 	return (
 		<span class="rui-hover-card__trigger">
@@ -22,7 +22,7 @@ export function RuiHoverCardTrigger({ children, class: className, ...props }: Ru
 
 export type RuiHoverCardContentProps = JsxElementProps<HTMLDivElement>;
 
-/** Rich preview content rendered in the floating surface. */
+/** Rich preview content. Stamps `[data-ref="content"]` with `role="dialog"`. */
 export function RuiHoverCardContent({ children, class: className, ...props }: RuiHoverCardContentProps) {
 	return (
 		<div
@@ -36,6 +36,11 @@ export function RuiHoverCardContent({ children, class: className, ...props }: Ru
 	);
 }
 
+/**
+ * Hover card view. Compose `RuiHoverCardTrigger` and `RuiHoverCardContent` as children.
+ *
+ * @cssclass rui-hover-card - Root wrapper around trigger and content.
+ */
 export function RuiHoverCard({
 	children,
 	contentLabel = HOVER_CARD_DEFAULT_CONTENT_LABEL,

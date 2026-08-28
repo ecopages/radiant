@@ -11,6 +11,8 @@ export type RuiDialogTitleProps = JsxElementProps<HTMLDivElement>;
  * Dialog title for the visible dialog name.
  *
  * @cssclass rui-dialog__title - Dialog title; `aria-labelledby` target.
+ *
+ * @remarks Stamps `[data-dialog-title]` and `data-ref="title"`.
  */
 export function RuiDialogTitle({ children, class: className, ...props }: RuiDialogTitleProps) {
 	return (
@@ -26,6 +28,8 @@ export type RuiDialogBodyProps = JsxElementProps<HTMLDivElement>;
  * Dialog body content.
  *
  * @cssclass rui-dialog__body - Dialog body; `aria-describedby` target.
+ *
+ * @remarks Stamps `[data-dialog-body]` and `data-ref="description"`.
  */
 export function RuiDialogBody({ children, class: className, ...props }: RuiDialogBodyProps) {
 	return (
@@ -56,6 +60,8 @@ export type RuiDialogCloseProps = JsxElementProps<HTMLButtonElement>;
  * Close control for the dialog surface.
  *
  * @cssclass rui-dialog__close - Dismiss button; dispatches `data-dialog-close` click.
+ *
+ * @remarks Stamps `[data-dialog-close]` and `data-ref="close"`.
  */
 export function RuiDialogClose({ children, class: className, aria, ...props }: RuiDialogCloseProps) {
 	return (

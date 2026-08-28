@@ -40,19 +40,37 @@ export type RuiDateFieldProps = {
 export type RuiDateFieldChangeDetail = { value: string };
 
 /**
- * `<rui-date-field>` — a locale-aware date text field powered by `Intl`.
+ * `<rui-date-field>` — a locale-aware date text field with an optional calendar popup.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiDateField*` view helpers which stamp the same targets.
+ * `RuiDateField` supplies the default composition when it has no children.
  *
  * While typing, optional digit masking follows the locale pattern from `formatToParts()`.
- * On blur, values are parsed flexibly (numeric, masked, or month names like "Aug 21, 2002")
- * and displayed with `dateStyle`. Canonical `value` is ISO `YYYY-MM-DD`.
+ * On blur, values are parsed flexibly and displayed with `dateStyle`. Canonical `value`
+ * is ISO `YYYY-MM-DD`.
  *
- * Compose the input, toggle, popover, and calendar with the `RuiDateField*`
- * view helpers. `RuiDateField` supplies that composition when it has no children.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-date-field-input]` — text input. Host sets `id`, `name`, `disabled`,
+ *   `readOnly`, `inputMode`, and `placeholder`.
+ * - `[data-date-field-trigger]` — calendar toggle (`data-ref="trigger"`). Host sets
+ *   `aria-expanded` and `disabled`.
+ * - `[data-date-field-popover]` — popup shell (`data-ref="popover"`). Host sets `hidden`.
+ * - `[data-date-field-calendar]` — nested `rui-calendar`. Host syncs `selection-mode`,
+ *   `visible-months`, `value`, `min`, `max`, `locale`, and `disabled`.
+ *
+ * Nested hosts:
+ * - `rui-calendar` at `[data-date-field-calendar]` — parent queries
+ *   `[data-calendar-day][data-iso="…"]` and `[data-calendar-day][tabindex="0"]`
+ *   inside it when the popup opens; listens for `rui-change`.
+ *
+ * Do not set `aria-expanded` on the trigger — the host owns it.
  *
  * @see https://react-aria.adobe.com/DatePicker
- *
  * @element rui-date-field
- *
  * @attr {string} value - Canonical ISO `YYYY-MM-DD` value. Default: `''`.
  * @attr {string} min - Earliest selectable ISO date. Default: `''`.
  * @attr {string} max - Latest selectable ISO date. Default: `''`.
@@ -65,13 +83,10 @@ export type RuiDateFieldChangeDetail = { value: string };
  * @attr {string} date-style - How the committed value is displayed when not editing. Default: `medium`.
  * @attr {boolean} masked - Guide digits with a locale mask while typing. Default: `true`.
  * @attr {number} visible-months - Month grids shown in the calendar popover. Default: `1`.
- *
  * @fires rui-change - Emitted when a valid date is committed (typing or calendar pick).
  *
- * @cssclass rui-date-field - Root surface.
- * @cssclass rui-date-field__group - Bordered control-height row wrapping input and toggle.
- * @cssclass rui-date-field__input - The masked / formatted text input.
- * @cssclass rui-date-field__popover - Calendar popup shell (`rui-popover` / `rui-floating`).
+ * @remarks
+ * BEM classes live on the view helpers; the host never queries them.
  */
 @customElement('rui-date-field')
 export class RuiDateField extends RadiantElement {

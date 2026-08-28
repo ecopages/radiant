@@ -4,7 +4,7 @@ description: Disclosures progressively reveal content behind a trigger, such as 
 category: Layout
 ---
 
-import { meta as DisclosureMeta, Default } from '@/content/stories/disclosure';
+import { meta as DisclosureMeta, Accordion, Default } from '@/content/stories/disclosure';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -37,21 +37,53 @@ import {
   RuiDisclosure,
   RuiDisclosureTrigger,
   RuiDisclosurePanel,
-  RuiDisclosureIcon,
 } from '@ecopages/radiant-ui/disclosure';
 
 <RuiDisclosure>
-  <RuiDisclosureTrigger>
-  Shipping details
-  <RuiDisclosureIcon />
-  </RuiDisclosureTrigger>
+  <RuiDisclosureTrigger>Shipping details</RuiDisclosureTrigger>
   <RuiDisclosurePanel>Delivered in 3–5 business days.</RuiDisclosurePanel>
 </RuiDisclosure>
 ```
 
+`RuiDisclosureTrigger` includes a chevron icon by default. Pass `icon={<RuiDisclosureIcon variant="plus" />}` or `icon={null}` to customize.
+
+## Custom markup
+
+`<rui-disclosure>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/disclosure';
+
+<rui-disclosure>
+  <div class="rui-disclosure">
+    <button type="button" data-disclosure-trigger class="rui-disclosure__trigger">
+      Shipping details
+    </button>
+    <div data-disclosure-panel class="rui-disclosure__panel">
+      <div class="rui-disclosure__panel-inner">Delivered in 3–5 business days.</div>
+    </div>
+  </div>
+</rui-disclosure>
+```
+
+BEM classes are presentation-only. Do not set `aria-expanded`, `aria-controls`, `hidden`, or `data-state` — the host owns those.
+
 ## Accordion groups
 
 <p>Wrap multiple disclosures in `RuiDisclosureGroup` with `multiple=\{false}` for accordion behavior.</p>
+
+<Canvas of={Accordion} meta={DisclosureMeta} />
+
+```tsx
+import '@ecopages/radiant-ui/disclosure';
+
+<rui-disclosure-group>
+  <rui-disclosure>
+    <button type="button" data-disclosure-trigger>Shipping</button>
+    <div data-disclosure-panel hidden>Delivered in 3–5 days.</div>
+  </rui-disclosure>
+</rui-disclosure-group>
+```
 
 ## Animated panels
 
@@ -81,6 +113,15 @@ Disclosure provides two custom elements: `<rui-disclosure>` (show/hide) and `<ru
 | `value` | `string` | `''` | Optional value used when coordinating disclosures inside a group. |
 | `animated` | `boolean` | `false` | Animate panel height; also enabled inside an animated group. |
 
+### Light-DOM contract (`<rui-disclosure>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-disclosure-trigger]` | yes | `aria-expanded`, `aria-controls` | the trigger element |
+| `[data-disclosure-panel]` | yes | `id`, `data-state`, `hidden`, `aria-hidden` (when animated) | panel content |
+
+Do not set `aria-expanded`, `aria-controls`, `hidden`, or `data-state`. Nested hosts: none.
+
 ### Attributes (`<rui-disclosure-group>`)
 
 | Attribute | Type | Default | Description |
@@ -88,13 +129,14 @@ Disclosure provides two custom elements: `<rui-disclosure>` (show/hide) and `<ru
 | `multiple` | `boolean` | `false` | Allow more than one disclosure open (exclusive by default). |
 | `animated` | `boolean` | `false` | Animate panel height for child disclosures. |
 
-### Composition
+### Light-DOM contract (`<rui-disclosure-group>`)
 
-| Piece | Description |
-| --- | --- |
-| `RuiDisclosureTrigger` | Disclosure button. |
-| `RuiDisclosurePanel` | Panel content region. |
-| `rui-disclosure` children | Stacked disclosures inside `RuiDisclosureGroup`. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `rui-disclosure` | yes | `animated` propagated | one section per child |
+| `[data-disclosure-trigger]` | yes (in each child) | roving `tabIndex` across group | trigger inside each `rui-disclosure` |
+
+Nested host: `rui-disclosure` — owns `[data-disclosure-trigger]` and `[data-disclosure-panel]`.
 
 ### Events
 
@@ -104,13 +146,13 @@ Disclosure provides two custom elements: `<rui-disclosure>` (show/hide) and `<ru
 
 ### View helpers
 
-| Component | Renders |
-| --- | --- |
-| `RuiDisclosure` | `<rui-disclosure>` (adds trigger + panel when composed) |
-| `RuiDisclosureGroup` | `<rui-disclosure-group>` |
-| `RuiDisclosureTrigger` | Trigger button |
-| `RuiDisclosureIcon` | Indicator (`chevron` / `plus`) |
-| `RuiDisclosurePanel` | Panel region |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiDisclosure` | `<rui-disclosure>` + `[data-ref="root"]` shell | `trigger` prop composes trigger + panel. |
+| `RuiDisclosureGroup` | `<rui-disclosure-group>` + `[data-ref="root"]` shell | Expects `rui-disclosure` children. |
+| `RuiDisclosureTrigger` | `[data-disclosure-trigger]` | Includes chevron icon by default. |
+| `RuiDisclosureIcon` | — | Presentation only; pass via trigger `icon` prop. |
+| `RuiDisclosurePanel` | `[data-disclosure-panel]` | Wraps content in `rui-disclosure__panel-inner`. |
 
 ### CSS classes
 

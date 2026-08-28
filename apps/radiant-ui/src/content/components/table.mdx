@@ -4,7 +4,7 @@ description: Table provides a composable data grid with keyboard navigation, row
 category: Data display
 ---
 
-import { meta as TableMeta, Default } from '@/content/stories/table';
+import { meta as TableMeta, Default, MultipleSelection } from '@/content/stories/table';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -60,6 +60,42 @@ import {
 </RuiTable>
 ```
 
+## Custom markup
+
+`<rui-table>` coordinates any light-DOM tree that matches its query contract. The
+`Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/table';
+
+<rui-table label="Plants" sort-column="name" sort-direction="ascending">
+  <div class="rui-table" role="grid" aria-label="Plants">
+    <div role="rowgroup" class="rui-table__header">
+      <div role="row" class="rui-table__row">
+        <div role="columnheader" data-table-column="name">
+          <button type="button" data-table-sort="name">Plant</button>
+        </div>
+        <div role="columnheader" data-table-column="cycle">Cycle</div>
+      </div>
+    </div>
+    <div role="rowgroup" class="rui-table__body">
+      <div role="row" data-table-row="aloe" class="rui-table__row">
+        <div role="rowheader" data-table-cell class="rui-table__cell" tabindex={-1}>Aloe</div>
+        <div role="gridcell" data-table-cell class="rui-table__cell" tabindex={-1}>Perennial</div>
+      </div>
+    </div>
+  </div>
+</rui-table>;
+```
+
+Add `data-table-actionable` on a row for Enter / double-click activation. Use `rui-checkbox[data-table-select-row]` for per-row checkboxes.
+
+## Row selection
+
+Set `selectionMode="multiple"` and compose `RuiTableSelectionCell` in the header and each row.
+
+<Canvas of={MultipleSelection} meta={TableMeta} />
+
 ## Table vs grid vs treegrid
 
 <p>Use `RuiGrid` for simple read-only grids with a `rows` prop. Use `RuiTreegrid` when rows expand into hierarchies. Use `RuiTable` when you need sortable columns, row selection, and actionable row activation.</p>
@@ -88,6 +124,21 @@ import {
 | `sort-column` | `string` | `''` | Active sortable column id. |
 | `sort-direction` | `ascending` · `descending` | `ascending` | Active sort direction. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-table-row]` | yes | `aria-selected` when selecting | `data-table-row` id, `data-table-actionable`, `hidden`, `aria-disabled` |
+| `[data-table-cell]` | yes | roving `tabIndex` | cell content; direct child of a row |
+| `[data-table-column]` | per header | `aria-sort` when active | column id |
+| `[data-table-sort]` | per sortable column | — | sort button |
+| `rui-checkbox[data-table-select-row]` | no | `checked`, `disabled` | nested row checkbox |
+| `rui-checkbox[data-table-select-all]` | no | `checked`, `indeterminate`, `disabled` | nested header checkbox |
+
+Do not set `aria-selected`, `aria-sort`, or checkbox `checked` — the host owns those.
+
+Nested hosts: `rui-checkbox` with `data-table-select-row` or `data-table-select-all`.
+
 ### Events
 
 | Event | Detail | Description |
@@ -95,6 +146,16 @@ import {
 | `rui-change` | `{ value: string }` | Selected row ids changed. |
 | `rui-sort-change` | `{ column, direction }` | Sort column or direction changed. |
 | `rui-row-action` | `{ rowId: string }` | Actionable row activated (Enter / double-click). |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiTable` | `.rui-table[role="grid"]` wrapper | Not queried; hosts `label` / `aria-busy` on the grid. |
+| `RuiTableColumn` | `[data-table-column]`, optional `[data-table-sort]` | `allowsSorting` adds the sort button. |
+| `RuiTableRow` | `[data-table-row]`, optional `data-table-actionable` | Row id via `id` prop. |
+| `RuiTableCell` | `[data-table-cell]` | `isRowHeader` sets `role="rowheader"`. |
+| `RuiTableSelectionCell` | `[data-table-cell]`, `rui-checkbox[data-table-select-*]` | `scope="all"` or `"row"`. |
 
 ### CSS classes
 

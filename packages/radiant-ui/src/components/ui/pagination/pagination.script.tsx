@@ -24,7 +24,20 @@ export function clampPage(page: number, pageCount: number): number {
 }
 
 /**
- * `<rui-pagination>` — page navigation with previous/next controls and compact page ranges.
+ * `<rui-pagination>` — page navigation behavior host.
+ *
+ * The custom element is a behavior host: it does not render navigation chrome.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiPagination` view helpers which stamp the same targets.
+ *
+ * ## Light-DOM contract
+ *
+ * Required (at least one):
+ * - `[data-pagination-page]` — page control. Host reads `data-pagination-page` (one-based page number) on click.
+ *
+ * Do not rely on BEM class names for behavior.
+ *
+ * Nested hosts: none.
  *
  * @element rui-pagination
  * @attr {string} label - Accessible name for the navigation landmark. Default: `Pagination`.
@@ -32,15 +45,22 @@ export function clampPage(page: number, pageCount: number): number {
  * @attr {number} page-count - Total number of pages. Default: `1`.
  * @attr {boolean} disabled - Disable page navigation. Default: `false`.
  * @attr {number} sibling-count - Pages shown on each side of the current page. Default: `1`.
- * @slot - Navigation controls. `RuiPagination` supplies the default chrome when omitted.
  * @fires rui-page-change - Emitted when a page is requested; detail carries the one-based `page`.
- * @cssclass rui-pagination - Navigation root.
- * @cssclass rui-pagination__list - Page controls list.
- * @cssclass rui-pagination__link - Previous, next, and page control.
- * @cssclass rui-pagination__page - Page-number item; `__page--current` marks the active page.
- * @cssclass rui-pagination--compact - Force previous / `{page} / {count}` / next chrome.
- * @cssclass rui-pagination__status - Non-interactive `{page} / {count}` label in compact chrome.
- * @cssclass rui-pagination__ellipsis - Hidden range marker between page numbers.
+ *
+ * @remarks
+ * Minimum headless tree:
+ *
+ * ```html
+ * <rui-pagination page="2" page-count="5">
+ *   <nav aria-label="Pagination">
+ *     <button type="button" data-pagination-page="1">Previous</button>
+ *     <button type="button" data-pagination-page="2" aria-current="page">2</button>
+ *     <button type="button" data-pagination-page="3">Next</button>
+ *   </nav>
+ * </rui-pagination>
+ * ```
+ *
+ * BEM classes are presentation-only; see view `@cssclass`.
  */
 @customElement('rui-pagination')
 export class RuiPagination extends RadiantElement {

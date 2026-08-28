@@ -13,15 +13,31 @@ export type RuiDisclosureGroupProps = {
 /**
  * `<rui-disclosure-group>` — coordinates stacked disclosures (accordion-style).
  *
+ * The custom element is a behavior host: it does not render disclosure markup.
+ * Place `rui-disclosure` children that each implement the disclosure contract.
+ *
  * When `multiple` is `false` (default), opening one disclosure closes the others.
- * Supports APG accordion keyboard navigation between triggers (ArrowUp/Down, Home/End)
- * and optional ArrowLeft/Right to collapse/expand the focused section.
+ * Supports APG accordion keyboard navigation between triggers.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `rui-disclosure` — one disclosure per section. Host listens for
+ *   `rui-disclosure-toggle` and propagates `animated` to each child.
+ * - `[data-disclosure-trigger]` — inside each `rui-disclosure`. Host applies
+ *   roving `tabIndex` across all triggers in the group.
+ *
+ * Do not fight `open` on child disclosures when `multiple` is `false` — the
+ * host closes siblings when one opens.
+ *
+ * Nested hosts:
+ * - `rui-disclosure` — each child owns `[data-disclosure-trigger]` and
+ *   `[data-disclosure-panel]`; see `rui-disclosure` CE TSDoc.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/accordion/
  * @element rui-disclosure-group
  * @attr {boolean} multiple - Allow more than one disclosure to stay open. Default: `false` (exclusive).
  * @attr {boolean} animated - Animate panel height for child disclosures. Default: `false`.
- * @cssclass rui-disclosure-group - Group surface (bordered card around stacked disclosures).
  */
 @customElement('rui-disclosure-group')
 export class RuiDisclosureGroup extends RadiantElement {

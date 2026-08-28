@@ -106,7 +106,7 @@ import '@ecopages/radiant-ui/foo';
 
 ```
 
-Classes in that snippet are optional and presentation-only. Do not imply the host queries BEM class names unless the script actually does (rare; flag it).
+Classes in that snippet are optional and presentation-only. Do not query BEM class names. If a host currently keys off a class, migrate it to `[data-ref]` rather than documenting the class as a target.
 
 ### API: Light-DOM contract table
 

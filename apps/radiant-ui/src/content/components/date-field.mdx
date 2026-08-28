@@ -58,6 +58,23 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/date-field';
+import '@ecopages/radiant-ui/calendar';
+
+<rui-date-field value="2026-08-07">
+  <div class="rui-date-field__group">
+    <input data-date-field-input />
+    <button type="button" data-date-field-trigger data-ref="trigger"></button>
+  </div>
+  <div data-date-field-popover data-ref="popover" hidden>
+    <rui-calendar data-date-field-calendar />
+  </div>
+</rui-date-field>
+```
+
 ## Calendar input
 
 Use the calendar button to choose a date instead of typing. When the popup opens, focus moves to the selected date or the first available date. This example uses a two-month popup for dates near a month boundary.
@@ -108,23 +125,32 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | `masked` | `boolean` | `true` | Guide digits with a locale mask while typing. |
 | `visible-months` | `number` | `1` | Month grids shown in the calendar popover. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-date-field-input]` | yes | `id`, `name`, `disabled`, `readOnly`, `placeholder` | the input |
+| `[data-date-field-trigger]` | yes | `aria-expanded`, `disabled` | toggle (`data-ref="trigger"`) |
+| `[data-date-field-popover]` | yes | `hidden` | popup (`data-ref="popover"`) |
+| `[data-date-field-calendar]` | yes | `selection-mode`, `value`, `min`, `max`, … | nested `rui-calendar` |
+
+Nested host: `rui-calendar` at `[data-date-field-calendar]` — parent queries `[data-calendar-day]` inside it.
+
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ value }` | Fired when a valid date is committed (typing or calendar pick). |
 
-### Composition helpers
+### View helpers
 
-Pass these helpers as `RuiDateField` children when the default structure is not enough:
-
-| Helper | Renders |
-| --- | --- |
-| `RuiDateFieldControl` | Bordered control row containing the input and trigger. |
-| `RuiDateFieldInput` | Locale-aware text input managed by the date-field host. |
-| `RuiDateFieldToggle` | Button that opens and closes the calendar popup. |
-| `RuiDateFieldPopover` | Popup shell for the calendar. |
-| `RuiDateFieldCalendar` | `RuiCalendar` synchronized with the field value and constraints. |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiDateFieldControl` | — | Bordered control row |
+| `RuiDateFieldInput` | `[data-date-field-input]` | Locale-aware text input |
+| `RuiDateFieldToggle` | `[data-date-field-trigger]` | Opens calendar popup |
+| `RuiDateFieldPopover` | `[data-date-field-popover]` | Popup shell |
+| `RuiDateFieldCalendar` | `[data-date-field-calendar]` | Synced `rui-calendar` |
 
 ### CSS classes
 

@@ -39,7 +39,7 @@ export type RuiDisclosureTriggerProps = JsxElementProps<HTMLButtonElement> & {
 };
 
 /**
- * Disclosure trigger button. Place before `RuiDisclosurePanel`.
+ * Disclosure trigger button. Stamps `[data-disclosure-trigger]`. Place before `RuiDisclosurePanel`.
  *
  * @cssclass rui-disclosure__trigger - Trigger button; reflects `aria-expanded`.
  * @cssclass rui-disclosure__trigger--icon-end - Layout when `iconPosition="end"`.
@@ -78,7 +78,7 @@ export function RuiDisclosureTrigger({
 export type RuiDisclosurePanelProps = JsxElementProps<HTMLDivElement>;
 
 /**
- * Disclosure panel content. Place after `RuiDisclosureTrigger`.
+ * Disclosure panel content. Stamps `[data-disclosure-panel]`. Place after `RuiDisclosureTrigger`.
  *
  * @cssclass rui-disclosure__panel - Panel content region.
  * @cssclass rui-disclosure__panel-inner - Panel padding wrapper (drives the height animation).
@@ -127,6 +127,12 @@ export function RuiDisclosure({
 	);
 }
 
+/**
+ * Accordion group wrapper. Expects `rui-disclosure` children; wraps them in
+ * `[data-ref="root"]`.
+ *
+ * @cssclass rui-disclosure-group - Group surface (bordered card around stacked disclosures).
+ */
 export function RuiDisclosureGroup({
 	children,
 	...props
