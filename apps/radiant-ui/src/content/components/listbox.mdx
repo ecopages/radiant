@@ -1,6 +1,6 @@
 ---
 title: Listbox
-description: Listboxes present a scrollable set of options with single or multiple selection. They are the foundation for select, combobox, and autocomplete popups.
+description: Listboxes present a scrollable set of options with single or multiple selection. They are the option surface for select, combobox, and autocomplete popups.
 category: Forms
 ---
 
@@ -22,15 +22,21 @@ export const config = {
 
 # Listbox
 
-<p class="docs-lede">Listboxes present a scrollable set of options with single or multiple selection. They are the foundation for select, combobox, and autocomplete popups.</p>
+<p class="docs-lede">Listboxes present a scrollable set of options with single or multiple selection. Standalone, they are an inline chooser. Inside select and combobox, they are the embedded option surface for the popup.</p>
 
 ## Try it
 
 <Demo of={Default} meta={ListboxMeta} />
 
+## Mental model
+
+`<rui-listbox>` is a **view-owned shell**: `RuiListboxOption` children stay in parent JSX. The custom element coordinates `aria-selected`, roving tabindex, and `rui-change`. When `embedded` is set, the parent (select or combobox) owns selection and keyboard; the listbox only paints options.
+
+The host `value` is a **comma-separated token string**. JSX may pass a `string` or `string[]`. Commas in the host attribute are delimiters.
+
 ## Usage
 
-Add `RuiListboxOption` children with unique `value` props. Bind `value` on the listbox for controlled selection.
+Add `RuiListboxOption` children with unique `value` props, or pass `options` for the default composition.
 
 ```tsx
 import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
@@ -41,13 +47,58 @@ import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
 </RuiListbox>
 ```
 
+```tsx
+<RuiListbox
+  value="cat"
+  label="Animal"
+  options={[
+    { value: 'cat', label: 'Cat' },
+    { value: 'dog', label: 'Dog' },
+  ]}
+/>
+```
+
 ## Embedded listboxes
 
-<p>Set `embedded` when the listbox lives inside a combobox or select popup rather than inline on the page.</p>
+Set `embedded` when the listbox lives inside a select or combobox popup. The parent then owns selection; border chrome is omitted so the popup can provide it. `bordered` overrides that default.
+
+## Selection indicators
+
+The `options` API adds the default check SVG **only in multiple mode**. Single-select uses the selected-option background alone. For a composed option in either mode, place `RuiListboxOptionIndicator` as a child and pass children to replace the check. Visibility follows `aria-selected`; the indicator is decorative.
+
+```tsx
+import { RuiListboxOption, RuiListboxOptionIndicator } from '@ecopages/radiant-ui/listbox';
+import { RuiIconCheck } from '@ecopages/radiant-ui/icons';
+
+<RuiListboxOption value="cat" label="Cat">
+  Cat
+  <RuiListboxOptionIndicator>
+    <RuiIconCheck />
+  </RuiListboxOptionIndicator>
+</RuiListboxOption>
+```
+
+Set `label` when the option contains decorative nodes (emoji, icons). Without it, the accessible name is the option's text minus the indicator subtree.
+
+## Multiple selection
+
+`selectionMode="multiple"` exposes `aria-multiselectable="true"`. Click or Space/Enter toggles the focused option. Arrow keys move focus without changing the selection.
+
+```tsx
+<RuiListbox
+  selectionMode="multiple"
+  value={['apple', 'banana']}
+  label="Favorite fruit"
+  options={[
+    { value: 'apple', label: 'Apple' },
+    { value: 'banana', label: 'Banana' },
+  ]}
+/>
+```
 
 ## Theming
 
-Listbox surfaces map to **semantic surface and selection roles**, never Tailwind palette steps:
+Listbox surfaces map to **semantic surface and selection roles**, never Tailwind palette steps.
 
 | Part | CSS roles |
 | --- | --- |
@@ -59,49 +110,44 @@ Listbox surfaces map to **semantic surface and selection roles**, never Tailwind
 | Selected option | `primary`, `on-primary` |
 | Focus ring | `focus-ring` |
 
-Override at the theme layer (`tokens/presets/colors/*.css`), not in component CSS. Embedded listboxes inside combobox / select popups inherit the popup surface and shadow from the parent shell.
+Override at the theme layer (`tokens/presets/colors/*.css`). Embedded listboxes inherit the popup surface from the parent shell. Indicator layout uses `:has([data-listbox-option-indicator])`; there is no public CSS variable for the check glyph — replace it with helper children.
 
 ## API
 
-`RuiListbox` is a custom element (`<rui-listbox>`) that renders a `role="listbox"` surface around composed options.
+`RuiListbox` is a custom element (`<rui-listbox>`) around a `role="listbox"` surface.
 
 ### Attributes
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `string` | `''` | Selected option value. |
+| `value` | `string` | `''` | Selected tokens, comma-separated. JSX also accepts `string[]`. |
 | `label` | `string` | `''` | Accessible name for the list. |
 | `disabled` | `boolean` | `false` | Disable all selection. |
-| `embedded` | `boolean` | `false` | Parent-owned listbox: border chrome omitted, selection handled by the parent. |
+| `selection-mode` | `single` · `multiple` | `single` | Single or multiple selection. |
+| `embedded` | `boolean` | `false` | Parent-owned listbox: no border chrome, selection handled by the parent. |
 | `bordered` | `boolean` | follows `embedded` | Override the border (`true` standalone, `false` embedded). |
-
-### Composition
-
-| Piece | Description |
-| --- | --- |
-| `children` | Option elements (`RuiListboxOption`), each with `role="option"`. |
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value }` | Fired when an option is selected. |
+| `rui-change` | `{ value }` | Fired when an option is selected. `value` is the host token string. |
 
 ### View helpers
 
 | Component | Renders |
 | --- | --- |
 | `RuiListboxOption` | An option with `role="option"`, `data-value`, and optional `label` / `disabled`. |
+| `RuiListboxOptionIndicator` | Decorative selected-state indicator; children replace the default check SVG. |
 
 ### CSS classes
-
-Public BEM classes (documented via `@cssclass`):
 
 | Class | Description |
 | --- | --- |
 | `.rui-listbox` | Scrollable option list surface (`role="listbox"`). |
 | `.rui-listbox--bordered` | Bordered standalone listbox. |
 | `.rui-listbox__option` | Selectable list option (`RuiListboxOption`). |
+| `.rui-listbox__option-indicator` | Selected-state indicator inside an option. |
 
 ### Theme roles
 
@@ -117,5 +163,6 @@ Public BEM classes (documented via `@cssclass`):
 ## Accessibility
 
 - Options expose `role="option"` with `aria-selected` for the current choice.
-- Arrow keys move focus between options; type-ahead jumps to matching entries.
+- Multiple mode exposes `aria-multiselectable="true"`. The visual indicator is decorative; selection remains on `aria-selected`.
+- Arrow keys move focus between options. In multiple mode they do not toggle; Space or Enter does.
 - Provide a `label` or external heading so users know what the list represents.
