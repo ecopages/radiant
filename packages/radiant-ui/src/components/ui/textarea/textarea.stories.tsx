@@ -6,7 +6,7 @@ import { RuiTextarea } from './textarea';
 const meta = {
 	title: 'Components/Textarea',
 	component: RuiTextarea,
-	parameters: { radiant: { cssImports: ['./textarea.css'] } },
+	parameters: { radiant: { cssImports: ['./textarea.css', '../label/label.css'] } },
 	args: {
 		placeholder: 'Write something…',
 		rows: 4,

@@ -14,6 +14,22 @@ export function findAssociatedLabel(owner: HTMLElement): HTMLLabelElement | null
 	return owner.parentElement?.querySelector<HTMLLabelElement>('[data-rui-field-label], label.rui-label') ?? null;
 }
 
+/** Points a visible label at a composed control and prefers it over `aria-label`. */
+export function bindVisibleLabel(
+	label: HTMLLabelElement,
+	control: HTMLElement,
+	options: { controlId: string; labelId: string },
+): void {
+	if (!label.id) {
+		label.id = options.labelId;
+	}
+	if (!label.htmlFor) {
+		label.htmlFor = options.controlId;
+	}
+	control.setAttribute('aria-labelledby', label.id);
+	control.removeAttribute('aria-label');
+}
+
 /** Applies the shared label-to-control ARIA contract for an unmanaged control. */
 export function syncFieldLabel(owner: HTMLElement, control: HTMLElement | null, options: FieldLabelSyncOptions): void {
 	if (!control || control.hasAttribute('data-rui-field-managed')) {
@@ -22,14 +38,7 @@ export function syncFieldLabel(owner: HTMLElement, control: HTMLElement | null, 
 
 	const labelElement = findAssociatedLabel(owner);
 	if (labelElement) {
-		if (!labelElement.id) {
-			labelElement.id = options.labelId;
-		}
-		if (!labelElement.htmlFor) {
-			labelElement.htmlFor = options.controlId;
-		}
-		control.setAttribute('aria-labelledby', labelElement.id);
-		control.removeAttribute('aria-label');
+		bindVisibleLabel(labelElement, control, options);
 		return;
 	}
 

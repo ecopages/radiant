@@ -320,6 +320,11 @@ export const WithCombobox: Story = {
 	play: async ({ canvasElement, step }) => {
 		const canvas = within(canvasElement);
 
+		await step('field label targets the combobox input', async () => {
+			const input = canvasElement.querySelector('[data-combobox-input]') as HTMLInputElement;
+			await expect(canvas.getByText('Country')).toHaveAttribute('for', input.id);
+		});
+
 		await step('submit without selection shows field error', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
 			await expectFieldError(canvasElement, 'country', 'Choose a country');
@@ -505,6 +510,14 @@ export const WithListbox: Story = {
 	play: async ({ canvasElement, step }) => {
 		const canvas = within(canvasElement);
 
+		await step('field label targets the listbox surface', async () => {
+			const list = canvasElement.querySelector('[role="listbox"]') as HTMLElement;
+			await waitFor(async () => {
+				await expect(canvas.getByText('Framework')).toHaveAttribute('for', list.id);
+				await expect(list).toHaveAttribute('aria-labelledby');
+			});
+		});
+
 		await step('submit without selection shows error', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
 			await expectFieldError(canvasElement, 'framework', 'Pick a framework');
@@ -526,6 +539,11 @@ export const WithSelect: Story = {
 	),
 	play: async ({ canvasElement, step }) => {
 		const canvas = within(canvasElement);
+
+		await step('field label targets the select trigger', async () => {
+			const trigger = canvasElement.querySelector('[data-select-trigger]') as HTMLButtonElement;
+			await expect(canvas.getByText('Animal')).toHaveAttribute('for', trigger.id);
+		});
 
 		await step('submit without selection shows error', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));
@@ -580,6 +598,11 @@ export const WithSelectTagGroup: Story = {
 	play: async ({ canvasElement, step }) => {
 		const canvas = within(canvasElement);
 		const select = canvasElement.querySelector('rui-select') as HTMLElement;
+
+		await step('field label targets the multi-select trigger', async () => {
+			const trigger = canvasElement.querySelector('[data-select-trigger]') as HTMLButtonElement;
+			await expect(canvas.getByText('States')).toHaveAttribute('for', trigger.id);
+		});
 
 		await step('submit without selection shows error', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Continue' }));

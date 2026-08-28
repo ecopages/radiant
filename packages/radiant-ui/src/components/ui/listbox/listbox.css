@@ -37,6 +37,18 @@ rui-listbox {
 		@apply ring-2 ring-inset ring-on-primary/40;
 	}
 
+	.rui-listbox__option:has([data-listbox-option-indicator]) {
+		@apply flex items-center justify-between gap-2;
+	}
+
+	.rui-listbox__option-indicator {
+		@apply hidden shrink-0;
+	}
+
+	.rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		@apply inline-flex text-on-primary;
+	}
+
 	.rui-listbox__option:focus-visible {
 		@apply bg-surface-container outline-none ring-2 ring-focus-ring;
 	}

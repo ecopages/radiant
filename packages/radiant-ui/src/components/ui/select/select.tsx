@@ -2,8 +2,10 @@ import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from 
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { omitProps } from '@/lib/omit-props';
-import { RuiIconChevronDown } from '@/lib/icons';
+import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
+import { parseViewValue, serializeViewValue } from '../shared/multi-value';
+import { RuiTagGroup } from '../tag-group';
 import type { RuiSelect as RuiSelectElement, RuiSelectProps } from './select.script';
 import './select.script';
 
@@ -51,7 +53,7 @@ export type RuiSelectToggleProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 };
 
-/** Toggle button for opening the listbox popup. */
+/** Toggle button for opening the listbox popup. Children replace the default chevron icon. */
 export function RuiSelectToggle({ children, class: className, aria, disabled, ...props }: RuiSelectToggleProps) {
 	return (
 		<button
@@ -64,6 +66,26 @@ export function RuiSelectToggle({ children, class: className, aria, disabled, ..
 			tabIndex={-1}
 		>
 			{children ?? <RuiIconChevronDown />}
+		</button>
+	);
+}
+
+export type RuiSelectClearProps = JsxElementProps<HTMLButtonElement> & {
+	disabled?: boolean;
+};
+
+/** Clears the current selection; place next to `RuiSelectToggle`. Children replace the default close icon. */
+export function RuiSelectClear({ children, class: className, aria, disabled, ...props }: RuiSelectClearProps) {
+	return (
+		<button
+			{...props}
+			aria={withDefaultAriaLabel(aria, 'Clear selection')}
+			type="button"
+			data-select-clear
+			class={cx('rui-control-clear', className)}
+			disabled={disabled}
+		>
+			{children ?? <RuiIconX />}
 		</button>
 	);
 }
@@ -135,10 +157,10 @@ export type RuiSelectOptionData = RuiListboxOptionData;
 
 function resolveSelectDisplayText(
 	options: RuiSelectOptionData[] | undefined,
-	value: unknown,
+	value: string | string[] | undefined,
 	placeholder: unknown,
 ): string {
-	const selected = typeof value === 'string' ? value.trim() : '';
+	const selected = parseViewValue(value)[0] ?? '';
 	const fallback = typeof placeholder === 'string' ? placeholder : '';
 	if (!selected) {
 		return fallback;
@@ -157,8 +179,9 @@ function resolveSelectDisplayText(
  */
 export type RuiSelectViewProps = JsxCustomElementAttributes<
 	RuiSelectElement,
-	RuiSelectProps & {
+	Omit<RuiSelectProps, 'value'> & {
 		options?: RuiSelectOptionData[];
+		value?: string | string[];
 	}
 >;
 
@@ -170,11 +193,17 @@ function SelectShell({ children }: { children: JsxRenderable }) {
 	);
 }
 
-export function RuiSelect({ options, children, ...props }: RuiSelectViewProps) {
-	const displayText = options != null ? resolveSelectDisplayText(options, props.value, props.placeholder) : '';
+export function RuiSelect({ options, children, value, ...props }: RuiSelectViewProps) {
+	const serializedValue = serializeViewValue(value);
+	const selectedValues = parseViewValue(value);
+	const isMultiple = props.selectionMode === 'multiple';
+	const displayText = options != null ? resolveSelectDisplayText(options, value, props.placeholder) : '';
+	const selectedTags = options
+		?.filter((option) => selectedValues.includes(option.value))
+		.map((option) => ({ value: option.value, label: option.label }));
 
 	return (
-		<rui-select {...props}>
+		<rui-select {...props} value={serializedValue}>
 			<SelectShell>
 				{options == null ? (
 					children
@@ -182,12 +211,23 @@ export function RuiSelect({ options, children, ...props }: RuiSelectViewProps) {
 					<>
 						<RuiSelectControl>
 							<RuiSelectTrigger>
-								<RuiSelectValue>{displayText}</RuiSelectValue>
+								<RuiSelectValue>
+									{isMultiple ? (
+										<RuiTagGroup tags={selectedTags ?? []} label="Selected options" />
+									) : (
+										displayText
+									)}
+								</RuiSelectValue>
 							</RuiSelectTrigger>
 							<RuiSelectToggle />
 						</RuiSelectControl>
 						<RuiSelectListbox>
-							<RuiListbox embedded options={options} />
+							<RuiListbox
+								embedded
+								options={options}
+								selectionMode={props.selectionMode}
+								value={serializedValue}
+							/>
 						</RuiSelectListbox>
 					</>
 				)}

@@ -93,6 +93,10 @@
 			"types": "./dist/aria.d.ts",
 			"import": "./dist/aria.js"
 		},
+		"./icons": {
+			"types": "./dist/lib/icons/index.d.ts",
+			"import": "./dist/lib/icons/index.js"
+		},
 		"./tokens/colors/aurora": {
 			"default": "./dist/styles/tokens/colors/aurora.css"
 		},
