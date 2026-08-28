@@ -28,7 +28,7 @@ For keyboard movement within an already-rendered composite surface, update focus
 
 Parent JSX owns **Authored Children**. Do not let a custom element `render()` project that content through `<slot>` — it fights `moveRangeBefore` and causes range drift when the parent re-renders.
 
-- **View-owned Shell:** JSX helpers (or named view props) place chrome and children. The CE has no `render()` slot tree. Query with `data-ref` / `data-*` / roles. Toggle volatile attrs with `toggleAttribute`.
+- **View-owned Shell:** JSX helpers (or named view props) place chrome and children. The CE has no `render()` slot tree. Query with `data-ref` / `data-*` / roles. **Never query BEM class names.** Toggle volatile attrs with `toggleAttribute`.
 - **Composition Helper:** named regions in the right DOM position (`RuiDialogTitle`, `RuiNumberFieldInput`, `primary` / `secondary` props) — not `slot="…"` + CE `<slot name="…">`.
 - **Default chrome when children are omitted:** the view supplies defaults (for example `RuiNumberField` renders input + steppers when `children` is empty).
 - **Stylesheet ownership:** component stylesheets are atomic: never inline child or shared CSS. `style-dependencies.json` is generated from rendered default composition and lists the complete ordered stylesheet union for selective consumers. Applications should normally import `styles.css` once; it imports each atomic and primitive stylesheet exactly once.
@@ -41,7 +41,7 @@ Core Radiant still has **Slot** as the architectural projection boundary for a r
 
 `this.$` / `this.bindings` only patch JSX ranges the host's own `render()` or `hydrate()` pass created. They do not reach parent-authored light DOM inside the custom element. Pick one shape per component:
 
-- **View-owned Shell** (most composites): no `render()` override, no `RadiantElement<Bindings>` generic. The view places chrome; the CE queries `data-ref` and imperatively updates volatile text, ARIA, CSS variables, and `toggleAttribute` during interaction. Do not move this chrome into CE `render()` to "use bindings" — that either reintroduces `<slot>` projection (range drift) or drops composable children.
+- **View-owned Shell** (most composites): no `render()` override, no `RadiantElement<Bindings>` generic. The view places chrome; the CE queries `data-ref` / `data-*` / roles and imperatively updates volatile text, ARIA, CSS variables, and `toggleAttribute` during interaction. Do not query class names. Do not move this chrome into CE `render()` to "use bindings" — that either reintroduces `<slot>` projection (range drift) or drops composable children.
 - **Derived Tree** (meter, toaster, calendar, TOC): override `render()` for derived structure. Use plain reads (`this.variant`, `this.entries`) for branches, lists, and `class`; use `this.$` for stable leaf text and whole attribute values that should patch without a full host rerender. Do not add `@onUpdated` + `requestUpdate()` for fields already bound with `this.$` — tracked `render()` handles structural reads; bindings handle leaves.
 - Never CE `render()` + `<slot>` for parent-owned chrome.
 
@@ -113,8 +113,8 @@ Mirror [CEM](https://custom-elements-manifest.open-wc.org/analyzer/getting-start
 - Do not add `@csspart`. This catalog is light DOM; there are no shadow parts.
 - `@cssclass` is a catalog extension, not a standard CEM tag like `@csspart` / `@cssprop`.
 
-A View-owned Shell is a **behavior host**: it queries Authored Children through `data-ref` / `data-*` / roles. That query contract is public. The CE class TSDoc must describe the full child tree (required targets, per-item attrs, optional controls, attributes the host writes vs the author owns). Composition Helpers stamp the same targets; they are not a substitute for documenting them. Do not use `@slot` for this tree.
+A View-owned Shell is a **behavior host**: it queries Authored Children through `data-ref` / `data-*` / roles — never BEM class names. That query contract is public. The CE class TSDoc must describe the full child tree (required targets, per-item attrs, optional controls, attributes the host writes vs the author owns). Composition Helpers stamp the same targets; they are not a substitute for documenting them. Do not use `@slot` for this tree. Selector dialect: [`.agents/skills/radiant-ui-docs/references/query-targets.md`](../../../../.agents/skills/radiant-ui-docs/references/query-targets.md).
 
-Templates and a filled Tag Group example: [`.agents/skills/radiant-ui-docs/`](../../../../.agents/skills/radiant-ui-docs/SKILL.md).
+Templates and a filled Tag Group example: [`.agents/skills/radiant-ui-docs/`](../../../../.agents/skills/radiant-ui-docs/SKILL.md). Implementation playbook: [`.agents/skills/radiant-ui-authoring/`](../../../../.agents/skills/radiant-ui-authoring/SKILL.md).
 
 Consumer docs live in `apps/radiant-ui` (`src/content/components/`). Surface the same contract (attributes, light-DOM targets, Composition Helpers, events, CSS classes) and mark APG links with `data-wai-aria`. Tag Group is the composition-contract POC; Alert remains the page-structure POC.

@@ -1,10 +1,10 @@
 # Documentation contract
 
-Templates for Radiant UI behavior hosts. Fill from the script; do not paraphrase a helper's name as if it were the contract.
+Templates for Radiant UI behavior hosts. Fill from the script. Query dialect: [query-targets.md](query-targets.md). Do not paraphrase a helper's name as if it were the contract.
 
 ## CE class TSDoc
 
-Place this on the `@customElement` class. Keep CEM tags (`@element`, `@attr`, `@fires`, `@see`). Add the Light-DOM contract in the body so IDE hover shows it.
+Place this on the `@customElement` class. Keep CEM tags (`@element`, `@attr`, `@fires`, `@see`). Put the Light-DOM contract in the body so IDE hover shows it.
 
 ```ts
 /**
@@ -41,18 +41,20 @@ Place this on the `@customElement` class. Keep CEM tags (`@element`, `@attr`, `@
  * @fires rui-change - …
  *
  * @remarks
- * Derived Tree / `setItems` / `resync` / helper-always-injects-chrome.
- * BEM classes are presentation-only; behavior keys off the targets above.
- * Point at view `@cssclass` rather than listing classes on the CE.
+ * Minimum tree / `setItems` / `resync` / helper-always-injects-chrome.
+ * Query targets are the selectors above. BEM on the view is presentation (`@cssclass`).
  */
 ```
 
 Rules:
 
 - Every target in the comment must appear in the script. Every required selector in the script must appear in the comment.
-- The minimum markup example belongs in `@remarks` or immediately after the contract list when the tree is non-obvious (more than two targets). Keep it HTML/`<rui-foo>`, not JSX helpers.
-- `@cssclass` stays on the view export that authors the class. Remove stale `@cssclass` from the CE when the class is on an inner view node.
-- `@slot` only if the public API is still HTML projection.
+- No class selectors in the script. If you find one, migrate it (query-targets.md) then document `data-ref`.
+- Minimum markup in `@remarks` when the tree is non-obvious (more than two targets). HTML / `<rui-foo>`, not JSX helpers.
+- `@cssclass` on the view export that authors the class. Remove stale `@cssclass` from the CE when the class is on an inner view node.
+- `@slot` only if HTML projection is still the public API.
+- Do not claim “the host never queries BEM” unless you verified there is no class selector. Host **writes** of BEM (variant classes) belong in Host writes, not as query targets.
+- `data-ref` values must be unique inside this host. Do not reuse `root` for a parent column when a nested host already uses `root`.
 
 ## Composition Helper TSDoc
 
@@ -73,13 +75,17 @@ The primary view (`export function RuiFoo`) documents convenience props vs child
 
 Keep existing layers: Try it, Usage (hand-maintained snippets), Canvas variants, Theming, Accessibility, API.
 
-For behavior hosts, add two API pieces that `alert` (presentational dismiss host) does not need at this depth:
+Consumer copy uses **behavior host**, query contract, targets, Composition Helpers. Do not write View-owned Shell, Binding, or slot.
 
 ### Usage
 
 First snippet: convenience prop **or** helpers. Props in the snippet must exist on the helper (`value` not `id` unless `id` is real).
 
 Do not nest chrome the helper already renders.
+
+### Canvas
+
+Add a `docsStory` in `src/content/stories/<slug>.tsx` and `<Canvas of={Story} meta={Meta} />` for each distinct capability (multiple selection, searchable popup, range mode, accordion group, alert dialog, overlay chrome, …). Do not leave those as prose-only when a live preview exists in Storybook.
 
 ### Custom markup
 
@@ -95,22 +101,20 @@ After Usage (or after a short pattern section such as Embedded). Only for hosts 
 import '@ecopages/radiant-ui/foo';
 
 <rui-foo value="a" label="Example">
-	<div data-foo-list>
-		<div data-foo data-value="a" data-label="A">
-			A
-		</div>
-	</div>
-</rui-foo>;
+  <div data-foo-list>
+    <div data-foo data-value="a" data-label="A">
+      A
+    </div>
+  </div>
+</rui-foo>
 ```
 ````
 
-```
-
-Classes in that snippet are optional and presentation-only. Do not query BEM class names. If a host currently keys off a class, migrate it to `[data-ref]` rather than documenting the class as a target.
+Classes in that snippet are optional and presentation-only. Do not query BEM. Do not end the JSX example with `;`.
 
 ### API: Light-DOM contract table
 
-Place after Attributes (and before or instead of a vague `children` Composition row).
+Place after Attributes.
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
@@ -127,9 +131,11 @@ Drop the Composition row that only says `children` with no targets.
 | `RuiFooList` | `[data-foo-list]` | … |
 | `RuiFooItem` | `[data-foo]` | Always includes `RuiFooRemove`. |
 
+Helpers that are not query targets use `—` in Target stamped and say so in Notes.
+
 ### API: Methods
 
-Document public methods the script exposes (`setItems`, `resync`, `dismiss`, …). Skip private ones.
+Document public methods (`setItems`, `resync`, `dismiss`, `toggle`, `setOpen`, …) in a Methods table. Skip private ones. Do not bury them as a sentence under the contract table.
 
 ## Nested hosts
 
@@ -141,16 +147,16 @@ When the parent script queries a child custom element (`this.querySelector('rui-
 
 ## Derived Tree hosts
 
-Document that inner DOM is generated from host state. Authored children are not the inner list. If both modes exist (tag-group `setItems` vs authored list), document the switch and any hidden authored node.
+Document that inner DOM is generated from host state. Authored children are not the inner list. If both modes exist (tag-group `setItems` vs authored list), document the switch and any hidden authored node. Generated nodes still use `data-ref` / `data-*` for the host's own queries.
 
 ## Consumer-facing terms
 
 | Say | Do not say |
 | --- | --- |
-| behavior host, query contract, targets | shadow parts, slots (unless true) |
+| behavior host, query contract, targets | shadow parts, slots (unless HTML `<slot>` is the API) |
 | Composition Helpers | slots, render props |
 | Authored Children | projected content, light-DOM slot |
 | host writes / author owns | "managed internally" with no list |
+| `[data-ref="…"]` | `.rui-foo__bar` as a query target |
 
 Internal catalog terms (View-owned Shell, Binding) stay in package READMEs, not in component MDX, unless the page is teaching authoring.
-```
