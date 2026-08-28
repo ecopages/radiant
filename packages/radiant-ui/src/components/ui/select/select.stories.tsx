@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
+import { RuiIconCheck, RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { withStylesheets } from '@sb/with-stylesheets';
 import autocompleteCss from '../autocomplete/autocomplete.css?url';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
@@ -8,9 +9,10 @@ import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiTagGroup, RuiTagList } from '../tag-group';
 import tagGroupCss from '../tag-group/tag-group.css?url';
-import { RuiListbox, RuiListboxOption } from '../listbox';
+import { RuiListbox, RuiListboxOption, RuiListboxOptionIndicator } from '../listbox';
 import {
 	RuiSelect,
+	RuiSelectClear,
 	RuiSelectControl,
 	RuiSelectListbox,
 	RuiSelectSearch,
@@ -38,6 +40,8 @@ const meta = {
 			cssImports: [
 				'../../../styles/primitives.css',
 				'../listbox/listbox.css',
+				'../label/label.css',
+				'../tag-group/tag-group.css',
 				'./select.css',
 				'../field/field.css',
 			],
@@ -91,6 +95,66 @@ export const Default: Story = {
 	},
 };
 
+export const Clearable: Story = {
+	render: () => (
+		<div class="flex flex-col gap-2">
+			<RuiLabel>Animal</RuiLabel>
+			<RuiSelect value="cat" placeholder="Select an animal">
+				<RuiSelectControl>
+					<RuiSelectTrigger>
+						<RuiSelectValue />
+					</RuiSelectTrigger>
+					<RuiSelectClear aria-label="Clear animal selection">
+						<RuiIconX data-custom-clear-icon />
+					</RuiSelectClear>
+					<RuiSelectToggle>
+						<RuiIconChevronDown data-custom-toggle-icon />
+					</RuiSelectToggle>
+				</RuiSelectControl>
+				<RuiSelectListbox>
+					<RuiListbox embedded>
+						<RuiListboxOption value="cat">
+							Cat
+							<RuiListboxOptionIndicator>
+								<RuiIconCheck data-custom-selected-icon />
+							</RuiListboxOptionIndicator>
+						</RuiListboxOption>
+						<RuiListboxOption value="dog">
+							Dog
+							<RuiListboxOptionIndicator>
+								<RuiIconCheck data-custom-selected-icon />
+							</RuiListboxOptionIndicator>
+						</RuiListboxOption>
+					</RuiListbox>
+				</RuiSelectListbox>
+			</RuiSelect>
+		</div>
+	),
+	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getTrigger(canvasElement)) return;
+
+		const trigger = getTrigger(canvasElement);
+		const clear = canvasElement.querySelector('[data-select-clear]') as HTMLButtonElement;
+		const select = canvasElement.querySelector('rui-select') as HTMLElement;
+
+		await step('shows the custom clear icon for an existing selection', async () => {
+			await expect(getValue(canvasElement)).toHaveTextContent('Cat');
+			await expect(clear).not.toHaveAttribute('hidden');
+			await expect(clear.querySelector('[data-custom-clear-icon]')).toBeTruthy();
+			await expect(canvasElement.querySelector('[data-custom-toggle-icon]')).toBeTruthy();
+			await expect(canvasElement.querySelector('[data-custom-selected-icon]')).toBeTruthy();
+		});
+
+		await step('clears selection and restores focus to the trigger', async () => {
+			await userEvent.click(clear);
+			await expect(select).not.toHaveAttribute('value');
+			await expect(getValue(canvasElement)).toHaveTextContent('Select an animal');
+			await expect(clear).toHaveAttribute('hidden');
+			await expect(trigger).toHaveFocus();
+		});
+	},
+};
+
 export const Keyboard: Story = {
 	play: async ({ canvasElement, step }) => {
 		if (isStaticSsrPreview(canvasElement) || !getTrigger(canvasElement)) return;
@@ -132,6 +196,7 @@ export const Multiple: Story = {
 			await expect(canvasElement.querySelector('rui-select')).toHaveAttribute('value', 'aardvark,dog');
 			await expect(options[0]).toHaveAttribute('aria-selected', 'true');
 			await expect(options[2]).toHaveAttribute('aria-selected', 'true');
+			await expect(options[0].querySelector('[data-listbox-option-indicator]')).toBeTruthy();
 		});
 	},
 };
@@ -146,6 +211,7 @@ export const WithAutocomplete: Story = {
 					<RuiSelectTrigger>
 						<RuiSelectValue />
 					</RuiSelectTrigger>
+					<RuiSelectClear aria-label="Clear category selection" />
 					<RuiSelectToggle />
 				</RuiSelectControl>
 				<RuiSelectListbox>
@@ -216,6 +282,16 @@ export const WithAutocomplete: Story = {
 			await expect(trigger).toHaveFocus();
 			await expect(select).toHaveAttribute('value', 'food');
 			await expect(getValue(canvasElement)).toHaveTextContent('Food');
+		});
+
+		await step('clear removes the selection and restores the placeholder', async () => {
+			const clear = canvasElement.querySelector('[data-select-clear]') as HTMLButtonElement;
+			await expect(clear).not.toHaveAttribute('hidden');
+			await userEvent.click(clear);
+			await expect(select).not.toHaveAttribute('value');
+			await expect(getValue(canvasElement)).toHaveTextContent('Select a category');
+			await expect(clear).toHaveAttribute('hidden');
+			await expect(trigger).toHaveFocus();
 		});
 	},
 };

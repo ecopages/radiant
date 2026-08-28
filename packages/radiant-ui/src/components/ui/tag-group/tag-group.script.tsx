@@ -1,5 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { createRuiIconX } from '@/lib/icons/x';
 import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
 
@@ -21,8 +22,35 @@ export type RuiTagGroupRemoveDetail = { value: string };
 /**
  * `<rui-tag-group>` — a focusable list of tags with optional selection and removal.
  *
- * Compose with `data-tag` items and optional `data-tag-remove` buttons inside each tag.
- * Use inside `RuiSelectValue` to display multi-select chips.
+ * The custom element is a behavior host: it does not render tag markup. Import the
+ * script and place any light-DOM children that match the contract below, or use
+ * `RuiTagGroup` / `RuiTagList` / `RuiTag`, which stamp the same targets.
+ *
+ * Use inside `RuiSelectValue` for multi-select chips. Set `embedded` so this host
+ * does not toggle selection; the parent owns `value`.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-tag-list]` — list container. Host sets `id`, `role="list"`, `aria-label`
+ *   (from `label`, fallback `Tags`), and `aria-disabled` when `disabled`.
+ * - `[data-tag]` — one item, descendant of the list. Host sets `id` when missing,
+ *   `role="listitem"`, `aria-selected`, and roving `tabIndex`.
+ *
+ * Per tag:
+ * - `[data-value]` — selection and remove identity. Falls back to trimmed text.
+ * - `[data-label]` — used in the remove control's accessible name. Falls back to trimmed text.
+ *
+ * Optional:
+ * - `[data-tag-remove]` — control inside a tag. Host sets `type="button"`,
+ *   `tabIndex="-1"`, and `aria-label="Remove {label}"`. Omit for a non-removable tag.
+ * - `[data-ref="root"]` — wrapper required only when calling `setItems()`.
+ *
+ * Author `hidden` or `aria-disabled="true"` on a tag to exclude it from keyboard
+ * movement; `aria-disabled` also blocks selection. Do not set `role`,
+ * `aria-selected`, or `tabIndex` on tags — the host owns those.
+ *
+ * Nested hosts: none. Parent hosts (`rui-select`) query `rui-tag-group` by tag name.
  *
  * @see https://react-aria.adobe.com/TagGroup
  * @element rui-tag-group
@@ -33,7 +61,13 @@ export type RuiTagGroupRemoveDetail = { value: string };
  * @attr {boolean} embedded - Disables selection when the parent component owns the selected values. Default: `false`.
  * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is the comma-separated value.
  * @fires rui-remove - Emitted when a tag is removed; `detail.value` is the removed tag's value.
- * @cssclass rui-tag-group - Root wrapper around the tag list.
+ *
+ * @remarks
+ * Minimum tree: `[data-tag-list]` > `[data-tag][data-value][data-label]` with optional
+ * `[data-tag-remove]` inside. `setItems()` switches to a Derived Tree: it hides the
+ * authored list and paints chips into `[data-rui-managed-list]` (do not author that
+ * marker). `resync()` re-reads authored children after in-place mutations.
+ * BEM classes live on the view helpers; the host never queries them.
  */
 @customElement('rui-tag-group')
 export class RuiTagGroup extends RadiantElement {
@@ -51,7 +85,11 @@ export class RuiTagGroup extends RadiantElement {
 	removeEvent: EventEmitter<RuiTagGroupRemoveDetail>;
 
 	private readonly uid = Math.random().toString(36).slice(2, 9);
-	@state private managedItems: RuiTagGroupItem[] = [];
+	/**
+	 * CE-owned chip list. `null` means the view still owns Authored Children;
+	 * an array (including empty) means `setItems` has taken over as a Derived Tree.
+	 */
+	@state private derivedItems: RuiTagGroupItem[] | null = null;
 
 	private isMultiple(): boolean {
 		return this.selectionMode === 'multiple';
@@ -72,6 +110,9 @@ export class RuiTagGroup extends RadiantElement {
 		const managed = this.querySelector<HTMLElement>('[data-rui-managed-list]');
 		if (managed) {
 			return managed;
+		}
+		if (this.derivedItems != null) {
+			return null;
 		}
 
 		return this.querySelector<HTMLElement>('[data-tag-list]');
@@ -180,6 +221,7 @@ export class RuiTagGroup extends RadiantElement {
 	}
 
 	private initialize(): void {
+		this.syncManagedList();
 		this.ensureTagIds();
 		this.syncList();
 		this.syncTags();
@@ -189,27 +231,36 @@ export class RuiTagGroup extends RadiantElement {
 		this.initialize();
 	}
 
-	@onUpdated(['value', 'label', 'disabled', 'selectionMode', 'embedded', 'managedItems'])
+	@onUpdated(['value', 'label', 'disabled', 'selectionMode', 'embedded', 'derivedItems'])
 	onPropsUpdated(): void {
 		this.syncManagedList();
 		this.syncList();
 		this.syncTags();
 	}
 
+	/**
+	 * Re-read authored `[data-tag]` children after the parent mutates them in place.
+	 */
 	resync(): void {
 		this.ensureTagIds();
 		this.syncList();
 		this.syncTags();
 	}
 
+	/**
+	 * Replace authored tags with a CE-owned list. Requires `[data-ref="root"]`.
+	 *
+	 * @remarks Hides the authored `[data-tag-list]` and sets `value` to every
+	 * item. Pass `[]` to clear the managed list.
+	 */
 	setItems(items: RuiTagGroupItem[]): void {
-		this.managedItems = items;
+		this.derivedItems = items;
 		this.value = serializeMultiValue(items.map((item) => item.value));
 	}
 
 	/**
 	 * Imperative twin of the view's `RuiTag` / `RuiTagRemove` markup for
-	 * CE-managed items (same `data-*` hooks, classes, and remove glyph).
+	 * CE-managed items (same `data-*` hooks, classes, and remove icon).
 	 */
 	private createManagedTag(item: RuiTagGroupItem): HTMLElement {
 		const tag = document.createElement('span');
@@ -225,10 +276,7 @@ export class RuiTagGroup extends RadiantElement {
 		remove.className = 'rui-tag__remove';
 		remove.setAttribute('aria-label', `Remove ${item.label}`);
 
-		const icon = document.createElement('span');
-		icon.setAttribute('aria-hidden', 'true');
-		icon.textContent = '×';
-		remove.append(icon);
+		remove.append(createRuiIconX());
 		tag.append(remove);
 
 		return tag;
@@ -236,12 +284,15 @@ export class RuiTagGroup extends RadiantElement {
 
 	private syncManagedList(): void {
 		const root = this.querySelector<HTMLElement>('[data-ref="root"]');
-		if (!root) {
+		if (!root || this.derivedItems == null) {
 			return;
 		}
 
+		const authored = root.querySelector<HTMLElement>('[data-tag-list]:not([data-rui-managed-list])');
+		authored?.toggleAttribute('hidden', true);
+
 		let managed = root.querySelector<HTMLElement>('[data-rui-managed-list]');
-		if (this.managedItems.length === 0) {
+		if (this.derivedItems.length === 0) {
 			managed?.remove();
 			return;
 		}
@@ -254,7 +305,7 @@ export class RuiTagGroup extends RadiantElement {
 			root.appendChild(managed);
 		}
 
-		managed.replaceChildren(...this.managedItems.map((item) => this.createManagedTag(item)));
+		managed.replaceChildren(...this.derivedItems.map((item) => this.createManagedTag(item)));
 
 		this.ensureTagIds();
 		this.syncList();

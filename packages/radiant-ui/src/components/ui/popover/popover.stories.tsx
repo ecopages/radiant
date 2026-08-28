@@ -9,7 +9,7 @@ const meta = {
 	title: 'Components/Popover',
 	component: RuiPopover,
 	parameters: {
-		radiant: { element: RuiPopoverElement, cssImports: ['../../../styles/primitives.css', './popover.css'] },
+		radiant: { element: RuiPopoverElement, cssImports: ['../../../styles/primitives.css', './popover.css','../checkbox/checkbox.css'] },
 	},
 } satisfies Meta<typeof RuiPopover>;
 
@@ -21,9 +21,9 @@ export const WithTriggerWrapper: Story = {
 		<RuiPopoverTrigger trigger={<RuiButton variant="outline">Extras</RuiButton>}>
 			<RuiPopover placement="bottom-start">
 				<RuiPopoverContent class="flex flex-col gap-3 p-2">
-					<RuiCheckbox checked>Pickle</RuiCheckbox>
+					<RuiCheckbox checked>Pepperoni</RuiCheckbox>
 					<RuiCheckbox checked>Ham</RuiCheckbox>
-					<RuiCheckbox>Cheese</RuiCheckbox>
+					<RuiCheckbox>Mushroom</RuiCheckbox>
 				</RuiPopoverContent>
 			</RuiPopover>
 		</RuiPopoverTrigger>

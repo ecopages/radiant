@@ -7,7 +7,7 @@ import { RuiInput } from './input';
 const meta = {
 	title: 'Components/Input',
 	component: RuiInput,
-	parameters: { radiant: { cssImports: ['./input.css'] } },
+	parameters: { radiant: { cssImports: ['./input.css', '../label/label.css'] } },
 	args: {
 		placeholder: 'Enter text',
 	},

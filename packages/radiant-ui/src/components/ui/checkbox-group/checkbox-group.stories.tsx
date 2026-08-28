@@ -16,7 +16,10 @@ const meta = {
 	title: 'Components/Checkbox Group',
 	component: RuiCheckboxGroup,
 	parameters: {
-		radiant: { element: RuiCheckboxGroupElement, cssImports: ['./checkbox-group.css', '../checkbox/checkbox.css'] },
+		radiant: {
+			element: RuiCheckboxGroupElement,
+			cssImports: ['./checkbox-group.css', '../checkbox/checkbox.css', '../label/label.css'],
+		},
 	},
 	args: {
 		name: 'notifications',

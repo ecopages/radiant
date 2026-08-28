@@ -45,6 +45,7 @@ Presentational helpers that are not custom elements (`RuiButton`, `RuiInput`, `R
 
 - Compose published `Rui*` views. Do not subclass a custom element just to arrange its UI.
 - Keep a convenient prop-based default on the primary view, and accept children for the equivalent explicit composition.
+- Coordinating `rui-*` scripts are behavior hosts: they query light-DOM **targets** (`data-*` attributes and roles). The helpers stamp those targets; any markup with the same contract works inside the custom element. The host TSDoc lists the required tree. Prefer helpers unless you need a custom child tree.
 - Light DOM is the default: style with theme roles and BEM `.rui-*` classes, not shadow parts.
 - Rui views expose a declared DOM surface. Global attributes, `on:*`/`on-native:*`
   events, direct `aria-*`/`data-*`, structured `aria={{ ... }}`/`data={{ ... }}`,

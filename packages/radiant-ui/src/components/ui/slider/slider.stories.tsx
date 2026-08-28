@@ -8,7 +8,12 @@ import { RuiSlider as RuiSliderElement } from './slider.script';
 const meta = {
 	title: 'Components/Slider',
 	component: RuiSlider,
-	parameters: { radiant: { element: RuiSliderElement, cssImports: ['./slider.css', '../field/field.css'] } },
+	parameters: {
+		radiant: {
+			element: RuiSliderElement,
+			cssImports: ['./slider.css', '../field/field.css', '../label/label.css'],
+		},
+	},
 	args: { value: 21, min: 0, max: 100, step: 1, label: 'Opacity', showValue: true },
 } satisfies Meta<typeof RuiSlider>;
 

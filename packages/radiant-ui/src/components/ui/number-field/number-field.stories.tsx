@@ -17,7 +17,9 @@ import { RuiNumberField as RuiNumberFieldElement } from './number-field.script';
 const meta = {
 	title: 'Components/NumberField',
 	component: RuiNumberField,
-	parameters: { radiant: { element: RuiNumberFieldElement, cssImports: ['./number-field.css'] } },
+	parameters: {
+		radiant: { element: RuiNumberFieldElement, cssImports: ['./number-field.css', '../label/label.css'] },
+	},
 	args: { value: 3, minValue: 0, maxValue: 10, step: 1, label: 'Quantity' },
 } satisfies Meta<typeof RuiNumberField>;
 

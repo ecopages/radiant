@@ -1,9 +1,9 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import type { RuiTagGroup } from '../tag-group/tag-group.script';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
+import { ListboxHostController } from '../shared/listbox-host-controller';
+import { getListboxOptionValue } from '../shared/listbox-option';
 import { ListboxPopoverBehavior } from '../shared/listbox-popover-behavior';
-import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
 
@@ -54,11 +54,21 @@ export class RuiSelect extends RadiantElement {
 
 	private open = false;
 	private readonly uid = Math.random().toString(36).slice(2, 9);
+	private readonly collection = new ListboxHostController({
+		getRoot: () => this,
+		getSelectionMode: () => this.selectionMode,
+		getValue: () => this.value,
+		setValue: (value) => {
+			this.value = value;
+		},
+		getPopup: () => this.getListboxPopup(),
+		tagGroupSelector: '[data-select-value] rui-tag-group',
+	});
 	private readonly listboxBehavior = new ListboxPopoverBehavior({
 		getAnchor: () => this.rootTarget,
 		getFloating: () => this.getListboxPopup(),
 		getOpen: () => this.open,
-		getOptions: () => this.getOptions(),
+		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getActiveDescendantHost(),
 		getOptionIdPrefix: () => `rui-select-option-${this.uid}`,
 	});
@@ -82,17 +92,6 @@ export class RuiSelect extends RadiantElement {
 			return this.shouldCloseOnSelect;
 		}
 		return !this.isMultiple();
-	}
-
-	private getSelectedValues(): string[] {
-		if (!this.value) {
-			return [];
-		}
-		return parseMultiValue(this.value);
-	}
-
-	private setSelectedValues(values: string[]): void {
-		this.value = serializeMultiValue(values);
 	}
 
 	private getSearchInput(): HTMLInputElement | null {
@@ -125,7 +124,7 @@ export class RuiSelect extends RadiantElement {
 	private syncSearchInput(): void {
 		const search = this.getSearchInput();
 		const trigger = this.getTrigger();
-		const listbox = this.getListbox();
+		const listbox = this.collection.getListbox();
 		if (!search || !listbox || !trigger) {
 			return;
 		}
@@ -152,43 +151,17 @@ export class RuiSelect extends RadiantElement {
 		});
 	}
 
-	/**
-	 * Resolves the multi-select chip host inside the value slot.
-	 *
-	 * @remarks
-	 * During Storybook/SSR upgrade, `querySelector` can return the host before
-	 * `rui-tag-group` is defined — treat that as absent until `setItems` exists.
-	 */
-	private getTagGroup(): RuiTagGroup | null {
-		const tagGroup = this.querySelector<RuiTagGroup>('[data-select-value] rui-tag-group');
-
-		if (!tagGroup || typeof tagGroup.setItems !== 'function') {
-			return null;
-		}
-
-		return tagGroup;
-	}
-
 	private hasTagGroup(): boolean {
-		return this.getTagGroup() != null;
+		return this.collection.getTagGroup() != null;
 	}
 
 	private syncTagGroup(): void {
-		const tagGroup = this.getTagGroup();
 		const valueElement = this.getValueElement();
-		if (!tagGroup || !valueElement) {
+		this.collection.syncTagGroup();
+		if (!valueElement || !this.hasTagGroup()) {
 			return;
 		}
-
-		const selected = this.getSelectedValues();
-		const items = selected.flatMap((value) => {
-			const option = this.getOptions().find((item) => this.getOptionValue(item) === value);
-			return option ? [{ value, label: this.getOptionLabel(option) }] : [];
-		});
-		tagGroup.embedded = true;
-		tagGroup.setItems(items);
-		tagGroup.value = this.value;
-		this.syncTagGroupPlaceholder(valueElement, selected.length);
+		this.syncTagGroupPlaceholder(valueElement, this.collection.getSelectedValues().length);
 	}
 
 	private syncTagGroupPlaceholder(valueElement: HTMLElement, selectedCount: number): void {
@@ -210,17 +183,24 @@ export class RuiSelect extends RadiantElement {
 	}
 
 	private removeSelectedValue(value: string): void {
-		const selected = new Set(this.getSelectedValues());
-		if (!selected.has(value)) {
+		if (!this.collection.removeValue(value)) {
 			return;
 		}
-
-		selected.delete(value);
-		this.setSelectedValues([...selected]);
 		this.syncValueDisplay();
-		this.syncOptionSelection();
+		this.collection.syncOptionSelection();
 		this.syncTagGroup();
+		this.syncClear();
 		this.changeEvent.emit({ value: this.value });
+	}
+
+	private clearSelection(): void {
+		if (!this.collection.clearValues()) return;
+		this.syncValueDisplay();
+		this.collection.syncOptionSelection();
+		this.syncTagGroup();
+		this.syncClear();
+		this.changeEvent.emit({ value: '' });
+		this.getTrigger()?.focus();
 	}
 
 	private getTrigger(): HTMLButtonElement | null {
@@ -231,42 +211,16 @@ export class RuiSelect extends RadiantElement {
 		return this.querySelector<HTMLButtonElement>('[data-select-toggle]');
 	}
 
+	private getClear(): HTMLButtonElement | null {
+		return this.querySelector<HTMLButtonElement>('[data-select-clear]');
+	}
+
 	private getValueElement(): HTMLElement | null {
 		return this.querySelector<HTMLElement>('[data-select-value]');
 	}
 
 	private getListboxPopup(): HTMLElement | null {
 		return this.querySelector<HTMLElement>('[data-select-listbox]');
-	}
-
-	private getListbox(): HTMLElement | null {
-		const host = this.querySelector('rui-listbox');
-		if (host) {
-			return host.querySelector<HTMLElement>('[role="listbox"]');
-		}
-
-		return this.getListboxPopup();
-	}
-
-	private getListboxHost(): (HTMLElement & { value?: string; embedded?: boolean }) | null {
-		return this.querySelector('rui-listbox');
-	}
-
-	private getOptions(): HTMLElement[] {
-		const listbox = this.getListbox();
-		if (!listbox) {
-			return [];
-		}
-
-		return Array.from(listbox.querySelectorAll<HTMLElement>('[role="option"]'));
-	}
-
-	private getOptionLabel(option: HTMLElement): string {
-		return option.getAttribute('data-label') || option.textContent?.trim() || '';
-	}
-
-	private getOptionValue(option: HTMLElement): string {
-		return option.getAttribute('data-value') || this.getOptionLabel(option);
 	}
 
 	private ensureOptionIds(): void {
@@ -289,7 +243,7 @@ export class RuiSelect extends RadiantElement {
 
 	private syncTrigger(): void {
 		const trigger = this.getTrigger();
-		const listbox = this.getListbox();
+		const listbox = this.collection.getListbox();
 		const popup = this.getListboxPopup();
 		if (!trigger || !listbox) {
 			return;
@@ -309,12 +263,7 @@ export class RuiSelect extends RadiantElement {
 		trigger.setAttribute('aria-expanded', String(this.open));
 		trigger.setAttribute('aria-controls', this.listboxId);
 		listbox.setAttribute('aria-label', this.getAccessibleName());
-
-		if (this.isMultiple()) {
-			listbox.setAttribute('aria-multiselectable', 'true');
-		} else {
-			listbox.removeAttribute('aria-multiselectable');
-		}
+		this.collection.syncMultiselectable(listbox);
 
 		if (popup) {
 			popup.removeAttribute('role');
@@ -327,7 +276,16 @@ export class RuiSelect extends RadiantElement {
 		}
 
 		this.syncToggle();
+		this.syncClear();
 		this.syncSearchInput();
+	}
+
+	private syncClear(): void {
+		const clear = this.getClear();
+		if (!clear) return;
+
+		clear.hidden = this.collection.getSelectedValues().length === 0;
+		clear.disabled = this.disabled;
 	}
 
 	private syncToggle(): void {
@@ -338,18 +296,6 @@ export class RuiSelect extends RadiantElement {
 
 		toggle.setAttribute('aria-expanded', String(this.open));
 		toggle.disabled = this.disabled;
-	}
-
-	private syncListboxHost(): void {
-		const host = this.getListboxHost();
-		if (!host) {
-			return;
-		}
-
-		host.embedded = true;
-		if (!this.isMultiple()) {
-			host.value = this.value;
-		}
 	}
 
 	private syncValueDisplay(): void {
@@ -363,7 +309,7 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 
-		const selected = this.getSelectedValues();
+		const selected = this.collection.getSelectedValues();
 		if (selected.length === 0) {
 			valueElement.textContent = '';
 			valueElement.toggleAttribute('data-placeholder', true);
@@ -375,25 +321,11 @@ export class RuiSelect extends RadiantElement {
 
 		valueElement.toggleAttribute('data-placeholder', false);
 		if (this.isMultiple()) {
-			const labels = selected.map((value) => {
-				const match = this.getOptions().find((option) => this.getOptionValue(option) === value);
-				return match ? this.getOptionLabel(match) : value;
-			});
-			valueElement.textContent = labels.join(', ');
+			valueElement.textContent = selected.map((value) => this.collection.labelForValue(value)).join(', ');
 			return;
 		}
 
-		const match = this.getOptions().find((option) => this.getOptionValue(option) === selected[0]);
-		valueElement.textContent = match ? this.getOptionLabel(match) : selected[0];
-	}
-
-	private syncOptionSelection(): void {
-		const selected = new Set(this.getSelectedValues());
-		for (const option of this.getOptions()) {
-			const value = this.getOptionValue(option);
-			const isSelected = selected.has(value);
-			option.setAttribute('aria-selected', String(isSelected));
-		}
+		valueElement.textContent = this.collection.labelForValue(selected[0]);
 	}
 
 	private setOpen(next: boolean, options: { activate?: 'first' | 'last' | 'none' } = {}): void {
@@ -440,26 +372,14 @@ export class RuiSelect extends RadiantElement {
 	}
 
 	private selectOption(option: HTMLElement): void {
-		if (option.getAttribute('aria-disabled') === 'true') {
+		if (!this.collection.isSelectableOption(option)) {
 			return;
 		}
 
-		const optionValue = this.getOptionValue(option);
-
-		if (this.isMultiple()) {
-			const selected = new Set(this.getSelectedValues());
-			if (selected.has(optionValue)) {
-				selected.delete(optionValue);
-			} else {
-				selected.add(optionValue);
-			}
-			this.setSelectedValues([...selected]);
-		} else {
-			this.value = optionValue;
-		}
-
+		this.collection.toggleValue(getListboxOptionValue(option));
 		this.syncValueDisplay();
-		this.syncOptionSelection();
+		this.collection.syncOptionSelection();
+		this.syncClear();
 		this.changeEvent.emit({ value: this.value });
 
 		if (this.closesOnSelect()) {
@@ -500,9 +420,9 @@ export class RuiSelect extends RadiantElement {
 		this.ensureOptionIds();
 		this.syncLabel();
 		this.syncTrigger();
-		this.syncListboxHost();
+		this.collection.syncListboxHost();
 		this.syncValueDisplay();
-		this.syncOptionSelection();
+		this.collection.syncOptionSelection();
 		this.setOpen(false);
 	}
 
@@ -519,9 +439,9 @@ export class RuiSelect extends RadiantElement {
 	onPropsUpdated(): void {
 		this.syncLabel();
 		this.syncTrigger();
-		this.syncListboxHost();
+		this.collection.syncListboxHost();
 		this.syncValueDisplay();
-		this.syncOptionSelection();
+		this.collection.syncOptionSelection();
 	}
 
 	@onEvent({ selector: '[data-select-trigger], [data-select-toggle]', type: 'click' })
@@ -579,6 +499,13 @@ export class RuiSelect extends RadiantElement {
 		this.removeSelectedValue(detail.value);
 	}
 
+	@onEvent({ selector: '[data-select-clear]', type: 'click' })
+	onClearClick(event: Event): void {
+		event.preventDefault();
+		event.stopPropagation();
+		this.clearSelection();
+	}
+
 	@onEvent({ selector: '[data-select-value] [data-tag]', type: 'click' })
 	onTagClick(event: Event): void {
 		const target = event.target as HTMLElement;
@@ -595,8 +522,8 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 
-		const option = (event.target as HTMLElement).closest<HTMLElement>('[role="option"]');
-		if (!option || option.getAttribute('aria-disabled') === 'true' || option.hidden) {
+		const option = this.collection.findOption(event.target);
+		if (!this.collection.isSelectableOption(option)) {
 			return;
 		}
 
@@ -614,7 +541,7 @@ export class RuiSelect extends RadiantElement {
 
 	@onEvent({ selector: '[data-select-listbox] [role="option"]', type: 'click' })
 	onOptionClick(event: Event): void {
-		const option = (event.target as HTMLElement).closest<HTMLElement>('[role="option"]');
+		const option = this.collection.findOption(event.target);
 		if (option) {
 			this.selectOption(option);
 		}

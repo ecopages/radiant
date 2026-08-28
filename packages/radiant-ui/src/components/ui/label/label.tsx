@@ -10,7 +10,8 @@ export type RuiLabelProps = JsxElementProps<HTMLLabelElement> & {
  * Shared label styles for form fields.
  *
  * @remarks Sets `RUI_FIELD_LABEL_ATTR` so `RuiField` can discover it as the
- * field's label and wire `for` / `aria-labelledby`.
+ * field's label and wire `for`. Composed controls also set `aria-labelledby`
+ * through `syncFieldLabel`.
  *
  * @cssclass rui-label - Form field label.
  */

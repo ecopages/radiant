@@ -59,6 +59,7 @@ const meta = {
 			element: RuiAutocompleteElement,
 			cssImports: [
 				'../../../styles/primitives.css',
+				'../label/label.css',
 				'../button/button.css',
 				'./autocomplete.css',
 				'../listbox/listbox.css',
