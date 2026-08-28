@@ -244,6 +244,8 @@ export type RuiSidebarMenuButtonProps = RuiSidebarMenuButtonControlProps | RuiSi
  * collapses to icon mode, only this element remains visible; it must keep an
  * accessible name via `tooltip` or visible children.
  *
+ * Stamps `[data-ref="menu-button"]`.
+ *
  * @cssclass rui-sidebar__menu-button - Clickable menu surface (`<a>`/`<button>`).
  * @cssclass rui-sidebar__menu-button--active - Current-page marker (`aria-current="page"`).
  */
@@ -266,6 +268,7 @@ export function RuiSidebarMenuButton(props: RuiSidebarMenuButtonProps) {
 				{...omitProps(host, 'as')}
 				aria={withDefaultAriaLabel(aria, typeof children === 'string' ? undefined : tooltip)}
 				href={href}
+				data-ref="menu-button"
 				class={cx('rui-sidebar__menu-button', isActive && 'rui-sidebar__menu-button--active', className)}
 				aria-current={isActive ? 'page' : ariaCurrent}
 				title={coalesceDefined(title, tooltip)}
@@ -295,6 +298,7 @@ export function RuiSidebarMenuButton(props: RuiSidebarMenuButtonProps) {
 			{...omitProps(host, 'as', 'href')}
 			aria={withDefaultAriaLabel(aria, typeof children === 'string' ? undefined : tooltip)}
 			type={type}
+			data-ref="menu-button"
 			class={cx('rui-sidebar__menu-button', isActive && 'rui-sidebar__menu-button--active', className)}
 			aria-current={isActive ? 'page' : ariaCurrent}
 			disabled={disabled}

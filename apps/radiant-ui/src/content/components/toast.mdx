@@ -152,9 +152,9 @@ The `toast()` callable and its variants accept `(title, options?)` where `option
 
 ### Derived tree
 
-`<rui-toaster>` and `<rui-toast>` are **Derived Tree** hosts: the toaster `render()`s `.rui-toaster` and `rui-toast` children; each toast `render()`s `[data-toast-close]` and `[data-toast-action]`. Use the imperative `toast()` API — do not author these targets by hand.
+`<rui-toaster>` and `<rui-toast>` are **Derived Tree** hosts: the toaster `render()`s `[data-ref="list"]` and `rui-toast` children; each toast `render()`s `[data-ref="toast"]`, `[data-toast-close]`, and `[data-toast-action]`. Use the imperative `toast()` API — do not author these targets by hand.
 
-The toaster queries `.rui-toaster` (stack list class) and `rui-toast` for layout math.
+The toaster queries `[data-ref="list"]` and `[data-ref="toast"]` for layout math.
 
 ### `<rui-toast>` attributes
 

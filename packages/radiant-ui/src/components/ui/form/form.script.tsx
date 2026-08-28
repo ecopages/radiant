@@ -55,7 +55,7 @@ const initialFormActions: FormContextActions = {
  * ## Light-DOM contract
  *
  * Required:
- * - `[data-ref="form"]` or `form.rui-form` — native `<form noValidate>`. Host listens
+ * - `[data-ref="form"]` — native `<form noValidate>`. Host listens
  *   for `submit` and `reset` on this node.
  *
  * Optional:
@@ -79,8 +79,8 @@ const initialFormActions: FormContextActions = {
  *
  * @remarks
  * `defaultValues` and `resolver` are object props — they only reach the element via
- * `prop:` bindings from the `RuiForm` view, not plain attributes. BEM classes live on
- * the view; the host queries `form.rui-form` and `[data-ref="form"]`, not arbitrary markup.
+ * `prop:` bindings from the `RuiForm` view, not plain attributes. The host queries
+ * `[data-ref="form"]`.
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {
@@ -161,7 +161,7 @@ export class RuiForm extends RadiantElement {
 	}
 
 	private queryNativeForm(): HTMLFormElement | null {
-		return this.getRef<HTMLFormElement>('form') ?? this.querySelector('form.rui-form');
+		return this.getRef<HTMLFormElement>('form');
 	}
 
 	/** Link submit buttons left on the host outside the composed native `<form>`. */

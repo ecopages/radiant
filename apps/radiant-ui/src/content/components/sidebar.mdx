@@ -72,7 +72,7 @@ import '@ecopages/radiant-ui/sidebar';
   <div data-ref="root" class="rui-sidebar">
     <button data-ref="scrim" type="button" hidden></button>
     <div data-ref="pane" class="rui-sidebar__pane">
-      <a href="/dashboard" class="rui-sidebar__menu-button">Dashboard</a>
+      <a href="/dashboard" class="rui-sidebar__menu-button" data-ref="menu-button">Dashboard</a>
     </div>
     <div data-ref="handle" role="separator" hidden></div>
   </div>
@@ -143,7 +143,7 @@ Rounded corners use `rounded-container`; the collapsible pane in `docs` layout s
 | `[data-ref="pane"]` | yes | `aria-label`, `inert` | pane content |
 | `[data-ref="scrim"]` | no | `hidden` | mobile overlay button |
 | `[data-ref="handle"]` | no | `hidden`, `aria-valuenow`, … | resize handle |
-| `a.rui-sidebar__menu-button` | no | `aria-current`, active class | menu links |
+| `[data-ref="menu-button"]` | no | `aria-current`, active class | menu links |
 
 Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-width`, …
 
@@ -188,7 +188,7 @@ Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-
 | `RuiSidebarSeparator` | — | Horizontal rule. |
 | `RuiSidebarGroup` / `RuiSidebarGroupLabel` / `RuiSidebarGroupAction` / `RuiSidebarGroupHeader` | — | Grouped items. |
 | `RuiSidebarMenu` / `RuiSidebarMenuItem` | — | Menu list + item wrappers. |
-| `RuiSidebarMenuButton` | `a.rui-sidebar__menu-button` (and `button` variant) | Current-page target when `matchActive` is set. |
+| `RuiSidebarMenuButton` | `[data-ref="menu-button"]` on `<a>` or `<button>` | Current-page target when `matchActive` is set. |
 | `RuiSidebarMenuAction` | — | Extra control on a menu item. |
 | `RuiSidebarInset` | — | Main content area. |
 | `RuiSidebarTrigger` | `[data-ref="button"]` | Collapse/expand trigger (`rui-sidebar-trigger`). |

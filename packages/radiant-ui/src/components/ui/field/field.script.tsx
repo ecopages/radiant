@@ -66,10 +66,10 @@ export type RuiFieldProps = {
  *   writes values through the control protocol; see each host's contract for inner targets.
  *
  * Optional:
- * - `[data-rui-field-label]` or `label.rui-label` — visible label. Host sets `htmlFor`.
+ * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
  * - `[data-rui-field-description]` — helper text. Host sets `id` and wires `aria-describedby`.
  * - `[data-rui-field-error]` — error region. Host sets `id`, `textContent`, and `hidden`.
- * - `.rui-field` — presentation column wrapping children; used to locate error regions.
+ * - `[data-ref="field"]` — column wrapping children; used to locate error regions.
  *
  * On each ARIA target the host writes `id` (when missing), `data-rui-field-managed`,
  * `aria-invalid`, `aria-required`, `aria-describedby`, and `aria-disabled` (when `disabled`).
@@ -91,8 +91,7 @@ export type RuiFieldProps = {
  *
  * **Why a custom element?** The field must observe an ancestor form context and
  * apply ARIA + error text to light-DOM nodes after mount — a JSX wrapper has no
- * lifecycle hook for that. BEM classes live on the view; the host queries data attrs
- * and `.rui-field`, not class names for behavior.
+ * lifecycle hook for that. The host queries `[data-ref="field"]` and data attrs.
  */
 @customElement('rui-field')
 export class RuiField extends RadiantElement {

@@ -53,7 +53,7 @@ import '@ecopages/radiant-ui/carousel';
   <section data-ref="root" class="rui-carousel rui-carousel--slide" aria-roledescription="carousel" aria-label="Feature highlights">
     <div class="rui-carousel__stage">
       <div data-ref="viewport" class="rui-carousel__viewport">
-        <div class="rui-carousel__track">
+        <div data-ref="track" class="rui-carousel__track">
           <div data-slide="first" class="rui-carousel__slide">First panel</div>
           <div data-slide="second" class="rui-carousel__slide">Second panel</div>
         </div>
@@ -125,7 +125,7 @@ Override at the theme layer, not in component CSS.
 | --- | --- | --- | --- |
 | `[data-ref="root"]` | yes | — | carousel region; view seeds `aria-roledescription`, `aria-label` |
 | `[data-ref="viewport"]` | yes | `aria-live`, `aria-atomic` | slide window |
-| `.rui-carousel__track` | yes | `--rui-carousel-index` when `transition="slide"` | slide track |
+| `[data-ref="track"]` | yes | `--rui-carousel-index` when `transition="slide"` | slide track |
 | `[data-slide]` | yes | `role`, `aria-*`, `aria-hidden`, `data-active`, `hidden`, `id` | slide `id` value and content |
 | `[data-carousel-action="prev"]` / `next` | no | `disabled` at ends | navigation buttons |
 | `[data-carousel-action="rotation"]` | no | `aria-pressed`, `aria-label` | play/pause control |

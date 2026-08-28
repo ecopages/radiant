@@ -47,14 +47,14 @@ import { RuiInput } from '@ecopages/radiant-ui/input';
 
 ## Custom markup
 
-`<rui-field>` coordinates any light-DOM tree that matches its query contract. The `RuiField` helper authors a `.rui-field` column; it is not required.
+`<rui-field>` coordinates any light-DOM tree that matches its query contract. The `RuiField` helper stamps `[data-ref="field"]`; it is not required.
 
 ```tsx
 import '@ecopages/radiant-ui/field';
 import '@ecopages/radiant-ui/input';
 
 <rui-field name="email">
-  <div class="rui-field">
+  <div class="rui-field" data-ref="field">
     <label class="rui-label" data-rui-field-label>Email</label>
     <input type="email" data-rui-control class="rui-input" />
     <p data-rui-field-description class="rui-field__description">We will never share your email.</p>
@@ -116,10 +116,10 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-rui-control]` or control host tag | yes | `id`, `data-rui-field-managed`, `aria-invalid`, `aria-required`, `aria-describedby`, `aria-disabled` on ARIA targets | control element; see each host's inner contract |
-| `[data-rui-field-label]` or `label.rui-label` | no | `htmlFor` | label text |
+| `[data-rui-field-label]` | no | `htmlFor` | label text |
 | `[data-rui-field-description]` | no | `id` | description content |
 | `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` | error region presence |
-| `.rui-field` | no | — | presentation column |
+| `[data-ref="field"]` | no | — | presentation column |
 
 Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slider`, …).
 
@@ -127,7 +127,7 @@ Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slid
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiField` | `.rui-field` column | Passes `rules` / `defaultValue` via `prop:` bindings. |
+| `RuiField` | `[data-ref="field"]` | Passes `rules` / `defaultValue` via `prop:` bindings. |
 | `RuiFieldDescription` | `[data-rui-field-description]` | Wired into `aria-describedby`. |
 | `RuiFieldError` | `[data-rui-field-error]` | Text populated by the field; `role="alert"`. |
 

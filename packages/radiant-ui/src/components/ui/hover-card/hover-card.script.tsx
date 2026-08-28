@@ -58,7 +58,7 @@ const LONG_PRESS_MS = 500;
  * - `[data-hover-card-trigger]` — anchor wrapper. Host resolves the focusable anchor inside.
  * - `[data-ref="content"]` — floating preview surface. Host assigns `id` and `aria-label`
  *   (from `content-label`). The view seeds `role="dialog"`.
- * - `.rui-hover-card__trigger` — focus bridge wrapping the anchor. Host listens for `focusin`,
+ * - `[data-ref="trigger"]` — focus bridge wrapping the anchor. Host listens for `focusin`,
  *   `focusout`, and `keydown` here.
  *
  * Host sets `aria-controls` and `aria-expanded` on the resolved anchor.
@@ -77,7 +77,7 @@ const LONG_PRESS_MS = 500;
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
  *
  * @remarks
- * `setOpen(next, emit?)` toggles open state. Minimum tree: `.rui-hover-card__trigger` >
+ * `setOpen(next, emit?)` toggles open state. Minimum tree: `[data-ref="trigger"]` >
  * `[data-hover-card-trigger]` + `[data-ref="content"]`. BEM classes live on the view.
  */
 @customElement('rui-hover-card')
@@ -272,12 +272,12 @@ export class RuiHoverCard extends RadiantElement {
 		this.getAnchor()?.focus();
 	}
 
-	@onEvent({ type: 'focusin', selector: '.rui-hover-card__trigger' })
+	@onEvent({ type: 'focusin', selector: '[data-ref="trigger"]' })
 	onFocusIn(): void {
 		this.scheduleShow(true);
 	}
 
-	@onEvent({ type: 'focusout', selector: '.rui-hover-card__trigger' })
+	@onEvent({ type: 'focusout', selector: '[data-ref="trigger"]' })
 	onFocusOut(event: FocusEvent): void {
 		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
 			return;
@@ -285,7 +285,7 @@ export class RuiHoverCard extends RadiantElement {
 		this.scheduleHide();
 	}
 
-	@onEvent({ type: 'keydown', selector: '.rui-hover-card__trigger' })
+	@onEvent({ type: 'keydown', selector: '[data-ref="trigger"]' })
 	onHostKeydown(event: KeyboardEvent): void {
 		if (!this.open || event.key !== 'Tab' || event.shiftKey || !this.openedByKeyboard) {
 			return;

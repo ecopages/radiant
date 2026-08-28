@@ -120,7 +120,7 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
-| `[data-ref="form"]` or `form.rui-form` | yes | `id` when wiring orphan submits | native `<form noValidate>` and field children |
+| `[data-ref="form"]` | yes | `id` when wiring orphan submits | native `<form noValidate>` and field children |
 | `button[type="submit"]` outside form | no | `form` attribute | submit buttons on the host |
 | `rui-field` descendants | yes (for registration) | — | each field's control tree |
 
@@ -141,7 +141,7 @@ Nested hosts: `rui-field` and each field's control host.
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiForm` | `form.rui-form` with `[data-ref="form"]` | Passes `defaultValues`, `resolver`, `onSubmit` via `prop:` bindings. |
+| `RuiForm` | `[data-ref="form"]` on the native form | Passes `defaultValues`, `resolver`, `onSubmit` via `prop:` bindings. |
 
 ### CSS classes
 

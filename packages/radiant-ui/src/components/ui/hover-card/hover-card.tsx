@@ -9,10 +9,10 @@ import './hover-card.script';
 
 export type RuiHoverCardTriggerProps = JsxElementProps<HTMLSpanElement>;
 
-/** Anchor for the hover card preview. Stamps `[data-hover-card-trigger]` inside `.rui-hover-card__trigger`. */
+/** Anchor for the hover card preview. Stamps `[data-ref="trigger"]` wrapping `[data-hover-card-trigger]`. */
 export function RuiHoverCardTrigger({ children, class: className, ...props }: RuiHoverCardTriggerProps) {
 	return (
-		<span class="rui-hover-card__trigger">
+		<span class="rui-hover-card__trigger" data-ref="trigger">
 			<span {...props} data-hover-card-trigger class={cx(className)}>
 				{children}
 			</span>

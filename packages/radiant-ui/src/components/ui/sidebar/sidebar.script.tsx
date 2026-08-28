@@ -70,7 +70,7 @@ const DEFAULT_MOBILE_BREAKPOINT = 768;
 const KEYBOARD_SHORTCUT = 'b';
 const KEYBOARD_STEP = 8;
 const KEYBOARD_STEP_LARGE = 32;
-const MENU_LINK_SELECTOR = 'a.rui-sidebar__menu-button';
+const MENU_LINK_SELECTOR = '[data-ref="menu-button"]';
 
 function isModifierPressed(event: KeyboardEvent): boolean {
 	return event.metaKey || event.ctrlKey;
@@ -108,7 +108,7 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  * - `[data-ref="scrim"]` — mobile overlay dismiss control. Host toggles `hidden`.
  * - `[data-ref="handle"]` — resize handle (`role="separator"`). Host toggles `hidden`
  *   and sets `aria-orientation`, `aria-valuenow` / `min` / `max`, and `aria-label`.
- * - `a.rui-sidebar__menu-button` — menu links. When `matchActive` is set, host
+ * - `[data-ref="menu-button"]` — menu links. When `matchActive` is set, host
  *   toggles `rui-sidebar__menu-button--active` and `aria-current="page"`.
  *
  * Host-owned on `<rui-sidebar>`: `role="complementary"`, `aria-label`, `data-state`,
