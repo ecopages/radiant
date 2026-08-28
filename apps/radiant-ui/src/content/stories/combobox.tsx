@@ -1,4 +1,4 @@
-import { RuiCombobox } from '@ecopages/radiant-ui/combobox';
+import { RuiCombobox, type RuiComboboxTriggerKind } from '@ecopages/radiant-ui/combobox';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { ANIMAL_OPTIONS } from './demo-data';
 
@@ -6,7 +6,7 @@ export type ComboboxArgs = {
 	value: string;
 	placeholder: string;
 	disabled: boolean;
-	openOnFocus: boolean;
+	triggerKind: RuiComboboxTriggerKind;
 };
 
 export const meta = {
@@ -14,20 +14,20 @@ export const meta = {
 		value: '',
 		placeholder: 'Choose an animal',
 		disabled: false,
-		openOnFocus: false,
+		triggerKind: 'input',
 	},
 	argTypes: {
 		value: { control: { type: 'text' } },
 		placeholder: { control: { type: 'text' } },
 		disabled: { control: { type: 'boolean' } },
-		openOnFocus: { control: { type: 'boolean' } },
+		triggerKind: { control: { type: 'select' }, options: ['input', 'focus', 'manual'] },
 	},
 	render: (args) => (
 		<RuiCombobox
 			value={args.value}
 			placeholder={args.placeholder}
 			disabled={args.disabled}
-			openOnFocus={args.openOnFocus}
+			triggerKind={args.triggerKind}
 			options={ANIMAL_OPTIONS}
 		/>
 	),
