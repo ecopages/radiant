@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 
 export type RuiCarouselTransition = 'none' | 'slide' | 'fade';
 
@@ -104,6 +104,10 @@ export class RuiCarousel extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: true }) loop: boolean;
 	@prop({ type: Boolean, defaultValue: true }) wrap: boolean;
 	@prop({ type: Number, defaultValue: 0 }) slideCount: number;
+
+	@query({ ref: 'track' }) trackTarget: HTMLElement;
+	@query({ ref: 'indicators' }) indicatorsTarget: HTMLElement;
+	@query({ ref: 'viewport' }) viewportTarget: HTMLElement;
 
 	private timer: ReturnType<typeof setInterval> | null = null;
 	private paused = false;
@@ -231,7 +235,7 @@ export class RuiCarousel extends RadiantElement {
 			this.index = normalized;
 		}
 
-		const track = this.querySelector<HTMLElement>('[data-ref="track"]');
+		const track = this.trackTarget;
 		if (track && this.transition === 'slide') {
 			track.style.setProperty('--rui-carousel-index', String(normalized));
 		}
@@ -263,7 +267,7 @@ export class RuiCarousel extends RadiantElement {
 	}
 
 	private syncIndicators(): void {
-		const container = this.querySelector<HTMLElement>('[data-ref="indicators"]');
+		const container = this.indicatorsTarget;
 		if (!container) {
 			return;
 		}
@@ -310,7 +314,7 @@ export class RuiCarousel extends RadiantElement {
 	}
 
 	private syncAriaLive(): void {
-		const viewport = this.querySelector<HTMLElement>('[data-ref="viewport"]');
+		const viewport = this.viewportTarget;
 		if (!viewport) {
 			return;
 		}
@@ -494,7 +498,7 @@ export class RuiCarousel extends RadiantElement {
 		this.goTo(nextIndex);
 
 		const indicators = Array.from(
-			this.querySelectorAll<HTMLButtonElement>('[data-ref="indicators"] [data-carousel-indicator]'),
+			this.indicatorsTarget?.querySelectorAll<HTMLButtonElement>('[data-carousel-indicator]') ?? [],
 		);
 		indicators[nextIndex]?.focus();
 	}
