@@ -31,7 +31,7 @@ export type RuiCarouselProps = {
 	loop?: boolean;
 	/** When true, prev/next wrap and controls stay enabled at the ends. Default: true. */
 	wrap?: boolean;
-	/** Authored slide count for render-time control state before slot projection. */
+	/** Authored slide count for render-time control state before the view paints slides. */
 	slideCount?: number;
 };
 
@@ -40,9 +40,34 @@ const SWIPE_THRESHOLD_PX = 48;
 /**
  * `<rui-carousel>` — sequentially displays one slide at a time.
  *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiCarousel` view helpers which stamp the same targets.
+ *
  * Implements the [APG Carousel pattern](https://www.w3.org/WAI/ARIA/apg/patterns/carousel/):
  * labeled `carousel` region, slide groups or tab panels, optional tabbed pickers,
  * rotation control when autoplay is enabled, and `aria-live` on the slide container.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — carousel region. View seeds `aria-roledescription="carousel"` and `aria-label`.
+ * - `[data-ref="viewport"]` — slide window. Host sets `aria-live` and `aria-atomic`; swipe target.
+ * - `.rui-carousel__track` — slide track. Host sets `--rui-carousel-index` when `transition="slide"`.
+ * - `[data-slide]` — one slide per panel. Host sets `role`, `aria-*`, `aria-hidden`, `data-active`,
+ *   `hidden` (when `transition="none"`), and `id`.
+ *
+ * Optional:
+ * - `[data-carousel-action="prev"]` / `[data-carousel-action="next"]` — navigation buttons.
+ *   Host toggles `disabled` at the ends when `wrap` is false.
+ * - `[data-carousel-action="rotation"]` — play/pause when `autoplay` or `show-rotation-control`.
+ *   Host sets `aria-pressed` and `aria-label`.
+ * - `[data-ref="indicators"]` — tablist container when `show-indicators`. Host creates or updates
+ *   `[data-carousel-indicator]` buttons inside.
+ *
+ * Do not set `role`, `aria-hidden`, `aria-selected`, or `tabIndex` on slides or indicators — the host owns those.
+ *
+ * Nested hosts: none.
  *
  * @summary Region that cycles slides; optional autoplay, transitions, and chrome.
  *
@@ -60,33 +85,10 @@ const SWIPE_THRESHOLD_PX = 48;
  * @attr {boolean} wrap - Keep controls enabled at the ends. Default: `true`.
  * @attr {number} slide-count - Authored slide count for render-time control state. Default: `0`.
  *
- * @cssclass rui-carousel - Root region (`aria-roledescription="carousel"`).
- * @cssclass rui-carousel--none - No animation between slides.
- * @cssclass rui-carousel--slide - Horizontal slide transition.
- * @cssclass rui-carousel--fade - Cross-fade transition.
- * @cssclass rui-carousel--controls-toolbar - Controls below the viewport.
- * @cssclass rui-carousel--controls-overlay - Controls overlaid on the viewport.
- * @cssclass rui-carousel__stage - Viewport wrapper.
- * @cssclass rui-carousel__viewport - Overflow-hidden slide window (`aria-live`).
- * @cssclass rui-carousel__track - Slide track.
- * @cssclass rui-carousel__footer - Controls row below the viewport (`toolbar`).
- * @cssclass rui-carousel__toolbar - Toolbar grid.
- * @cssclass rui-carousel__toolbar-rotation - Rotation control cell.
- * @cssclass rui-carousel__toolbar-center - Indicators cell.
- * @cssclass rui-carousel__toolbar-side--start - Prev control cell.
- * @cssclass rui-carousel__toolbar-side--end - Next control cell.
- * @cssclass rui-carousel__overlay-chrome - Absolute overlay layer over the viewport.
- * @cssclass rui-carousel__overlay-rotation - Rotation control overlay position.
- * @cssclass rui-carousel__controls--overlay - Prev/next overlay row.
- * @cssclass rui-carousel__indicators - Indicator tablist.
- * @cssclass rui-carousel__indicators--overlay - Overlay pill indicator tablist.
- * @cssclass rui-carousel__indicator - Indicator button (`role="tab"`).
- *
  * @remarks
  * Autoplay pauses on hover, pointer interaction, focus, and hidden tabs, and
  * respects `prefers-reduced-motion`. `aria-live` flips to `off` while rotating.
- * Prev/next and rotation chrome classes are authored by the `RuiCarouselPrev` /
- * `RuiCarouselNext` / `RuiCarouselRotation` view helpers for custom placement.
+ * BEM classes live on the view; the host queries `.rui-carousel__track` for slide transitions.
  */
 @customElement('rui-carousel')
 export class RuiCarousel extends RadiantElement {

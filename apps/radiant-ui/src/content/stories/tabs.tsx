@@ -41,3 +41,13 @@ export const meta = {
 type Story = DocsStory<TabsArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'tabs/default' } } });
+
+export const Ghost: Story = docsStory(meta, {
+	args: { variant: 'ghost' },
+	parameters: { docs: { id: 'tabs/ghost' } },
+});
+
+export const Manual: Story = docsStory(meta, {
+	args: { automatic: false },
+	parameters: { docs: { id: 'tabs/manual' } },
+});

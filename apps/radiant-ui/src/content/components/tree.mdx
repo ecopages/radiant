@@ -42,6 +42,31 @@ const nodes: RuiTreeNode[] = [
 <RuiTree nodes={nodes} value="app" label="Project files" />
 ```
 
+## Custom markup
+
+`<rui-tree>` coordinates any light-DOM tree that matches its query contract. The `RuiTree` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/tree';
+
+<rui-tree value="app" label="Project files">
+  <ul role="tree" aria-label="Project files" aria-multiselectable="false">
+    <li>
+      <button type="button" role="treeitem" data-value="src" aria-expanded="true">
+        src
+      </button>
+      <ul role="group">
+        <li>
+          <button type="button" role="treeitem" data-value="app">
+            app.ts
+          </button>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</rui-tree>;
+```
+
 ## Node selection
 
 <p>Bind `value` to highlight the active node. Use keyboard arrows to navigate and expand branches.</p>
@@ -71,11 +96,16 @@ Override at the theme layer, not in component CSS.
 | `label` | `string` | `''` | Accessible name for the tree. |
 | `value` | `string` | `''` | Selected item's `data-value` / id. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | Tree items authored as `role="treeitem"` markup. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[role="tree"]` | yes | — | root list; view sets `aria-label`, `aria-multiselectable` |
+| `[role="treeitem"]` | yes | `aria-selected`, roving `tabIndex` | `data-value`, `aria-expanded` (branch nodes) |
+| `data-value` | per item | — | selection identity; fallback `id` or text |
+| `[role="group"]` | for branches | `hidden` | sibling after expandable treeitem |
+
+Do not set `aria-selected` or `tabIndex` on treeitems. Nested hosts: none.
 
 ### Events
 
@@ -90,6 +120,12 @@ Override at the theme layer, not in component CSS.
 | `nodes` | `RuiTreeNode[]` | | Tree structure for the `RuiTree` view. |
 
 `RuiTreeNode` is `{ id, label, children?, expanded? }`.
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiTree` | `[role="tree"]` with `data-ref="root"` | Accepts `nodes` or `children`. |
 
 ### CSS classes
 

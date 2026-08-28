@@ -57,6 +57,23 @@ import { RuiSeparator } from '@ecopages/radiant-ui/separator';
 
 Place `RuiMenubarSubmenuContent` as the next sibling of the branch item. That sibling pair is the ARIA and positioning contract.
 
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/menubar';
+
+<rui-menubar label="Application menu">
+  <div data-ref="root" role="menubar">
+    <div data-ref="menubar-root">
+      <button role="menuitem" aria-haspopup="true">File</button>
+      <div role="menu" hidden>
+        <button role="menuitem" data-value="new">New</button>
+      </div>
+    </div>
+  </div>
+</rui-menubar>
+```
+
 ## Data-driven menus
 
 The `items` prop supports recursively nested `items`. A top-level item with children becomes a menu trigger; a top-level item without children remains a direct menubar item. Within a popup, use `{ type: 'separator' }` in a `RuiMenuEntry[]` to divide action groups.
@@ -128,12 +145,16 @@ Geometry shares control tokens (`--size-control-*`, `--space-control-*`, `--radi
 | --- | --- | --- | --- |
 | `label` | `string` | `''` | Accessible name for the menubar landmark. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `items` | Optional recursive `RuiMenubarItem[]` data source. |
-| `children` | Explicit `RuiMenubarMenu` composition helpers. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `role="menubar"` | menubar shell |
+| `[data-ref="menubar-root"]` | yes | — | one top-level menu block |
+| `[role="menuitem"]` | yes | `aria-expanded`, `aria-haspopup` (top-level) | label, optional `data-value` |
+| `[role="menu"]` | yes | `hidden` | popup surface |
+
+Branch pattern: `[role="menuitem"]` with `aria-haspopup` followed by sibling `[role="menu"]`.
 
 ### Events
 
@@ -143,13 +164,12 @@ Geometry shares control tokens (`--size-control-*`, `--space-control-*`, `--radi
 
 ### View helpers
 
-| Component | Renders | Notes |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiMenubar` | `<rui-menubar>` | Accepts `items` (`RuiMenubarItem[]`); authors the `rui-menubar__*` tree. |
-| `RuiMenubarMenu` | Root block | Top-level trigger and optional popup content. |
-| `RuiMenubarMenuItem` | `<button role="menuitem">` | Popup action item. |
-| `RuiSeparator` | `<hr role="separator">` | Non-focusable divider between popup action groups. |
-| `RuiMenubarSubmenuContent` | `<div role="menu">` | Next sibling of the branch item; right-positioned nested menu surface. |
+| `RuiMenubar` | `<rui-menubar>` + `[data-ref="root"]` | Accepts `items` or children |
+| `RuiMenubarMenu` | `[data-ref="menubar-root"]` | Top-level trigger + popup |
+| `RuiMenubarMenuItem` | `[role="menuitem"]`, `data-value` | Popup action item |
+| `RuiMenubarSubmenuContent` | `[role="menu"]` | Sibling of branch item |
 
 ### CSS classes
 

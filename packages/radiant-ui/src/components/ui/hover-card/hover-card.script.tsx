@@ -38,7 +38,11 @@ const HOVER_CARD_GAP = 8;
 const LONG_PRESS_MS = 500;
 
 /**
- * `<rui-hover-card>` — a floating preview surfaced on hover or focus.
+ * `<rui-hover-card>` — floating preview surfaced on hover or focus.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiHoverCard` view helpers which stamp the same targets.
  *
  * Unlike `rui-tooltip`, the card can hold rich, interactive content (links,
  * avatars, buttons). It is not an APG tooltip: the panel does not use
@@ -48,13 +52,33 @@ const LONG_PRESS_MS = 500;
  * preview waits for `delay`, then subsequent previews open immediately until the post-close
  * cooldown elapses. Touch pointers open on long press.
  *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-hover-card-trigger]` — anchor wrapper. Host resolves the focusable anchor inside.
+ * - `[data-ref="content"]` — floating preview surface. Host assigns `id` and `aria-label`
+ *   (from `content-label`). The view seeds `role="dialog"`.
+ * - `.rui-hover-card__trigger` — focus bridge wrapping the anchor. Host listens for `focusin`,
+ *   `focusout`, and `keydown` here.
+ *
+ * Host sets `aria-controls` and `aria-expanded` on the resolved anchor.
+ * Do not set `id`, `aria-label`, `aria-controls`, or `aria-expanded` on the anchor or surface.
+ *
+ * Nested hosts: none.
+ *
  * @element rui-hover-card
+ * @attr {boolean} open - Whether the card is open (controlled). Default: `false`.
+ * @attr {string} placement - Placement relative to the anchor. Default: `bottom-start`.
+ * @attr {number} delay - Show delay in ms. Default: `600`.
+ * @attr {number} close-delay - Hide delay in ms after pointer/focus leaves. Default: `200`.
+ * @attr {boolean} portal - Teleport the surface to `document.body`. Default: `true`.
  * @attr {boolean} disabled - Suppress hover/focus preview interactions. Default: `false`.
  * @attr {string} content-label - Accessible name for the preview dialog. Default: `Preview`.
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
- * @cssclass rui-hover-card - Root wrapper.
- * @cssclass rui-hover-card__trigger - Host wrapper for the trigger.
- * @cssclass rui-hover-card__content - Floating preview surface.
+ *
+ * @remarks
+ * `setOpen(next, emit?)` toggles open state. Minimum tree: `.rui-hover-card__trigger` >
+ * `[data-hover-card-trigger]` + `[data-ref="content"]`. BEM classes live on the view.
  */
 @customElement('rui-hover-card')
 export class RuiHoverCard extends RadiantElement {

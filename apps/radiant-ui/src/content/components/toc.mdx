@@ -66,7 +66,7 @@ Override roles at the theme layer, not in component CSS.
 
 ## API
 
-`RuiToc` is a custom element (`<rui-toc>`) that renders its own link list from the headings it scans. Pass props to the JSX helper; attributes mirror the props.
+`RuiToc` is a Derived Tree host (`<rui-toc>`): the element `render()` owns the `nav` landmark and jump-link list. It scans headings in an external content root identified by `target` and `heading-selector` — not authored children of the host.
 
 ### Attributes
 
@@ -77,6 +77,13 @@ Override roles at the theme layer, not in component CSS.
 | `label` | `string` | `On this page` | Visible label above the link list. |
 | `scroll-offset` | `number` | `120` | Pixel offset from the viewport top when tracking the active section. |
 | `navigation-events` | `string` | `''` | Comma-separated document events that trigger a rebuild (e.g. `eco:page-load`). |
+
+### Scan contract
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `target` | parent element | CSS selector for the content root containing headings. |
+| `heading-selector` | `h2,h3` | Selector for headings to include; missing `id` values are assigned. |
 
 ### CSS classes
 

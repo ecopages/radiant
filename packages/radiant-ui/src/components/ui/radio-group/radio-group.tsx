@@ -11,7 +11,7 @@ export type RuiRadioOption = {
 
 export type RuiRadioGroupControlProps = JsxElementProps<HTMLDivElement>;
 
-/** Accessible surface that contains radio options. */
+/** Accessible surface that contains radio options. Stamps `[data-radio-group-root]`. */
 export function RuiRadioGroupControl({ children, class: className, ...props }: RuiRadioGroupControlProps) {
 	return (
 		<div
@@ -33,7 +33,7 @@ export type RuiRadioProps = JsxElementProps<HTMLLabelElement> & {
 	disabled?: boolean;
 };
 
-/** A label-wrapped native radio option controlled by `RuiRadioGroup`. */
+/** A label-wrapped native radio option. Stamps `input[type="radio"]` with `value` and optional `data-disabled`. */
 export function RuiRadio({ children, value, name, disabled, class: className, ...props }: RuiRadioProps) {
 	return (
 		<label {...props} class={cx('rui-radio', className)}>

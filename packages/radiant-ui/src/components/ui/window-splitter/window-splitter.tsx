@@ -3,6 +3,15 @@ import { cx } from '@/lib/cx';
 import type { RuiWindowSplitter as RuiWindowSplitterElement, RuiWindowSplitterProps } from './window-splitter.script';
 import './window-splitter.script';
 
+/**
+ * Window splitter view with `primary` and `secondary` pane props.
+ *
+ * @cssclass rui-window-splitter - Root surface (`[data-ref="root"]`).
+ * @cssclass rui-window-splitter--horizontal - Side-by-side panes.
+ * @cssclass rui-window-splitter--vertical - Stacked panes.
+ * @cssclass rui-window-splitter__pane - A pane region (`[data-ref="primary"]` / `[data-ref="secondary"]`).
+ * @cssclass rui-window-splitter__separator - Focusable separator (`[data-ref="separator"]`).
+ */
 export function RuiWindowSplitter({
 	primary,
 	secondary,

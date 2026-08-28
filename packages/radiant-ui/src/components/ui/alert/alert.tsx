@@ -90,12 +90,10 @@ export function RuiAlertDescription({ children, class: className, ...props }: Ru
 export type RuiAlertComponentProps = JsxElementProps<HTMLDivElement> & RuiAlertProps;
 
 /**
- * Status alert with optional dismiss control.
+ * Status alert with optional dismiss control. Stamps `<rui-alert>` and the inner
+ * `role="alert"` surface; appends `[data-alert-close]` when `dismissible`.
  *
  * @remarks
- * Importable JSX helper around `<rui-alert>`. Owns the `role="alert"` surface and
- * BEM classes; the host owns dismiss (`rui-close` / `dismiss()`).
- *
  * Variant tones map to semantic theme roles (`info`, `success`, `warning`, `error`)
  * via `.rui-alert--*` — not palette steps. See `alert.css` and DESIGN.md status roles.
  *

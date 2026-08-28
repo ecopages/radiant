@@ -30,32 +30,62 @@ export type RuiComboboxProps = {
 export type RuiComboboxChangeDetail = { value: string };
 
 /**
- * `<rui-combobox>` — a composition-first combobox with a listbox popup.
+ * `<rui-combobox>` — a combobox with a filterable listbox popup.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiCombobox*` view helpers which stamp the same targets.
  *
  * Implements the APG Combobox pattern (list autocomplete, manual selection).
  * DOM focus stays on the combobox input; visual focus moves into the popup via
  * `aria-activedescendant` when the user presses ArrowDown / ArrowUp.
- *
  * Pair with `RuiLabel` (sibling, or via `RuiField`) for the visible name.
- * Compose with `data-combobox-input`, optional `data-combobox-trigger`,
- * `data-combobox-listbox` (popup shell), and an embedded `RuiListbox`.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — shell for popover anchoring.
+ * - `[data-combobox-input]` — text input. Host sets `id`, `role="combobox"`,
+ *   `aria-haspopup="listbox"`, `aria-autocomplete="list"`, `aria-expanded`,
+ *   `aria-controls`, `placeholder`, and `disabled`. Also stamps `data-autocomplete-input`.
+ * - `[data-combobox-listbox]` — popup shell. Host toggles `hidden`.
+ *
+ * Per option (inside embedded listbox):
+ * - `[role="option"]` — selection identity; see `rui-listbox`.
+ *
+ * Optional:
+ * - `[data-combobox-trigger]` — popup toggle beside the input. Host sets
+ *   `aria-expanded`, `aria-controls`, and `tabIndex="-1"`.
+ * - `[data-combobox-clear]` — clears selection and input text. Host toggles
+ *   `hidden` and `disabled`.
+ * - `[data-combobox-value]` — chip region before the input in multiple mode.
+ *
+ * Do not set `role`, `aria-expanded`, `aria-controls`, or `aria-haspopup` on the
+ * input — the host owns those.
+ *
+ * Nested hosts:
+ * - `rui-listbox` (`embedded`) — options at `[role="option"]`; host drives
+ *   `aria-selected` and `aria-multiselectable` on the inner listbox.
+ * - `rui-tag-group` inside `[data-combobox-value]` — multi-select chips; host
+ *   listens for `rui-remove`.
+ * - `rui-autocomplete` (optional) — filter wrapper inside `[data-combobox-listbox]`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/
  *
  * @element rui-combobox
- *
- * @attr {string} value - Selected option value. Default: `''`.
+ * @attr {string} value - Comma-separated selected values. Default: `''`.
  * @attr {string} label - Accessible name when there is no visible `RuiLabel`. Default: `''`.
  * @attr {string} placeholder - Placeholder text for the input. Default: `''`.
  * @attr {boolean} disabled - Disable the input and trigger. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Single or multi-select. Default: `single`.
  * @attr {boolean} should-close-on-select - Whether selection closes the popup. Defaults to `true` for single and `false` for multiple.
  * @attr {('input'|'focus'|'manual')} trigger-kind - Controls what opens the listbox. Default: `input`.
- *
  * @fires rui-change - Emitted when an option is selected; detail carries `value`.
  *
- * @cssclass rui-combobox - Root surface.
+ * @remarks
+ * Minimum tree: `[data-ref="root"]` > `[data-combobox-input]` + `[data-combobox-listbox]`
+ * > `rui-listbox[embedded]` > `[role="option"]`. BEM classes live on the view helpers.
  */
 @customElement('rui-combobox')
 export class RuiCombobox extends RadiantElement {

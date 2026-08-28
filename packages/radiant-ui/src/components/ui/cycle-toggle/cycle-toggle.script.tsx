@@ -26,8 +26,25 @@ const BUTTON_SELECTOR = 'button[data-cycle-toggle-button]';
 /**
  * `<rui-cycle-toggle>` — cycles through exclusive values on each button press.
  *
- * Compose with `RuiCycleToggleItem` children inside the rendered button. Only the
- * active item is visible; click advances to the next enabled item and wraps.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiCycleToggle` view helpers which stamp the same targets.
+ *
+ * Only the active item is visible; click advances to the next enabled item and wraps.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `button[data-cycle-toggle-button]` — cycle control. Host sets `aria-label`, `disabled`, `rui-button--*` classes.
+ * - `[data-cycle-value]` — one per option inside the button. Host sets `hidden` on inactive items.
+ *
+ * Per item:
+ * - `data-cycle-value` — item identity (matches host `value`).
+ * - `aria-disabled="true"` — skip item when cycling.
+ *
+ * Do not set `hidden` on items — the host owns visibility.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/button/
  *
@@ -40,9 +57,23 @@ const BUTTON_SELECTOR = 'button[data-cycle-toggle-button]';
  * @attr {string} label - Accessible name prefix for the cycle button. Default: `''`.
  * @attr {boolean} disabled - Disables the cycle button. Default: `false`.
  *
- * @slot - `RuiCycleToggleItem` nodes projected into the inner button by the view.
- *
  * @fires rui-change - Emitted after `value` advances; `detail.value` is the new id.
+ *
+ * @remarks
+ * Minimum headless tree:
+ *
+ * ```html
+ * <rui-cycle-toggle value="light" label="Theme">
+ *   <button type="button" data-cycle-toggle-button>
+ *     <span data-cycle-value="system">System</span>
+ *     <span data-cycle-value="light">Light</span>
+ *     <span data-cycle-value="dark">Dark</span>
+ *   </button>
+ * </rui-cycle-toggle>
+ * ```
+ *
+ * The host writes `rui-button--*` variant and size classes onto the cycle button.
+ * Query targets are `button[data-cycle-toggle-button]` and `[data-cycle-value]`.
  */
 @customElement('rui-cycle-toggle')
 export class RuiCycleToggle extends RadiantElement {

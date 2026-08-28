@@ -5,8 +5,8 @@ import { RUI_FIELD_ERROR_ATTR } from '../form/control-protocol';
 export type RuiFieldErrorProps = JsxElementProps<HTMLParagraphElement>;
 
 /**
- * Error message region for a field. Text is populated by `<rui-field>` from form validation
- * or the field's `error` prop.
+ * Error message region for a field. Stamps `[data-rui-field-error]`.
+ * Text is populated by `<rui-field>` from form validation or the field's `error` prop.
  *
  * @cssclass rui-field__error - Error text; hidden until a message is set.
  *

@@ -25,27 +25,59 @@ export type RuiListboxProps = {
 export type RuiListboxChangeDetail = { value: string };
 
 /**
- * `<rui-listbox>` — a list of options with single or multiple selection.
+ * `<rui-listbox>` — listbox selection behavior host.
  *
- * Implements the APG Listbox pattern with roving tabindex on `[role="option"]`.
- * The view-owned `.rui-listbox` shell carries presentation; this host coordinates
- * selection and keyboard interaction only.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiListbox` view helpers which stamp the same targets.
+ *
+ * When `embedded` is set, a parent (select, combobox) owns selection and keyboard;
+ * this host only syncs `aria-selected` and defers interaction.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[role="listbox"]` — option list surface. Host sets `id` (if missing), `aria-multiselectable` (multiple mode).
+ *
+ * Per option (inside the listbox):
+ * - `[role="option"]` — selectable item. Host sets `aria-selected`, roving `tabIndex`.
+ * - `data-value` — selection identity; fallback trimmed label text.
+ * - `data-label` — accessible name when children include decorative nodes.
+ *
+ * Optional:
+ * - `aria-disabled="true"` on an option — opt out of selection.
+ *
+ * Do not set `aria-selected` or `tabIndex` on options — the host owns those.
+ * Author `hidden` or `aria-disabled="true"` to exclude options.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
  *
  * @element rui-listbox
  *
- * @attr {string} value - Selected option value. Default: `''`.
+ * @attr {string} value - Selected option value (comma-separated in multiple mode). Default: `''`.
  * @attr {string} label - Accessible name for the list. Default: `''`.
  * @attr {boolean} disabled - Disable all selection. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Single or multiple selection. Default: `single`.
- * @attr {boolean} embedded - Parent-owned listbox: border chrome omitted, selection handled by the parent. Default: `false`.
+ * @attr {boolean} embedded - Parent-owned listbox: selection handled by the parent. Default: `false`.
  * @attr {boolean} bordered - Override the border (`true` standalone, `false` embedded). Default: follows `embedded`.
  *
  * @fires rui-change - Emitted when an option is selected; detail carries `value`.
  *
- * @cssclass rui-listbox - Scrollable option list surface (`role="listbox"`).
- * @cssclass rui-listbox--bordered - Bordered standalone listbox.
+ * @remarks
+ * Minimum headless tree:
+ *
+ * ```html
+ * <rui-listbox value="cat" label="Animal">
+ *   <div role="listbox">
+ *     <div role="option" data-value="cat">Cat</div>
+ *     <div role="option" data-value="dog">Dog</div>
+ *   </div>
+ * </rui-listbox>
+ * ```
+ *
+ * BEM classes are presentation-only; see view `@cssclass`.
  */
 @customElement('rui-listbox')
 export class RuiListbox extends RadiantElement {

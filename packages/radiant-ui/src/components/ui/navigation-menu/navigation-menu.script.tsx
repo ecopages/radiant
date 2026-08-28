@@ -7,21 +7,40 @@ export type RuiNavigationMenuProps = {
 };
 
 /**
- * `<rui-navigation-menu>` — a composition-first site navigation shell.
+ * `<rui-navigation-menu>` — a site navigation shell with exclusive dropdown panels.
  *
- * Implements the APG Disclosure Navigation Menu interaction model: top-level
- * triggers open exclusive panels composed from other radiant-ui primitives.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiNavigationMenu*` view helpers which stamp the same targets.
  *
- * Mark triggers with `data-navigation-trigger` and `data-value`. Mark matching
- * panels with `data-navigation-panel` and the same `data-value`. Top-level bar
- * links and triggers should use `data-navigation-item` (added by the view helpers).
+ * Implements the APG Disclosure Navigation Menu interaction model.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-navigation-item]` — top-level bar link or trigger. Host applies roving
+ *   `tabIndex` across all items in the bar.
+ * - `[data-navigation-trigger]` — button trigger with a flyout panel. Host sets
+ *   `aria-expanded`, `aria-haspopup` (when a matching panel exists), and `id`.
+ * - `[data-navigation-panel]` — panel region paired with a trigger by `data-value`.
+ *   Host toggles `hidden`, `data-state`, `aria-hidden`, `role="region"`, and
+ *   `aria-labelledby`.
+ *
+ * Per trigger / panel pair:
+ * - `data-value` — identity linking a trigger to its panel.
+ *
+ * Optional:
+ * - Bar links without panels use `[data-navigation-item]` without
+ *   `[data-navigation-trigger]`.
+ *
+ * Do not set `aria-expanded`, `aria-hidden`, `hidden`, or `data-state` on triggers
+ * or panels — the host owns those.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/
  * @element rui-navigation-menu
  * @attr {string} label - Accessible name for the `nav` landmark.
- * @cssclass rui-navigation-menu - Root `nav` surface.
- * @cssclass rui-navigation-menu__bar - Top-level trigger / link bar.
- * @cssclass rui-navigation-menu__panels - Panel region (`aria-hidden` toggling).
  */
 @customElement('rui-navigation-menu')
 export class RuiNavigationMenu extends RadiantElement {

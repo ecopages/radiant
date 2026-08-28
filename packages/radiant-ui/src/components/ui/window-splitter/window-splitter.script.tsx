@@ -12,11 +12,28 @@ export type RuiWindowSplitterProps = {
 export type RuiWindowSplitterChangeDetail = { value: number };
 
 /**
- * `<rui-window-splitter>` — a movable separator between two panes.
+ * `<rui-window-splitter>` — movable separator between two panes.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiWindowSplitter` view helper which stamps the same targets.
  *
  * Implements the APG Window Splitter pattern with a focusable separator that
- * adjusts pane size via arrow keys and pointer drag. `value` and `orientation`
- * are reactive props.
+ * adjusts pane size via arrow keys and pointer drag.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — layout root. Host toggles `rui-window-splitter--horizontal` /
+ *   `rui-window-splitter--vertical` from `orientation`.
+ * - `[data-ref="primary"]` — first pane. Host sets inline `width` or `height` from `value` (clamped 20–80).
+ * - `[data-ref="separator"]` — draggable handle. Host sets `aria-orientation`, `aria-valuenow`,
+ *   `aria-valuemin`, `aria-valuemax`, and `aria-label`. The view seeds `role="separator"` and `tabIndex="0"`.
+ * - `[data-ref="secondary"]` — second pane (sibling after the separator; not queried directly).
+ *
+ * Do not set `aria-valuenow`, `aria-orientation`, or primary pane `width` / `height` — the host owns those.
+ *
+ * Nested hosts: none.
  *
  * @summary Resizable two-pane split with keyboard and pointer control.
  *
@@ -30,11 +47,8 @@ export type RuiWindowSplitterChangeDetail = { value: number };
  *
  * @fires rui-splitter-change - Emitted with `{ value }` when the separator moves.
  *
- * @cssclass rui-window-splitter - Root surface.
- * @cssclass rui-window-splitter--horizontal - Side-by-side panes.
- * @cssclass rui-window-splitter--vertical - Stacked panes.
- * @cssclass rui-window-splitter__pane - A pane region.
- * @cssclass rui-window-splitter__separator - Focusable separator (`role="separator"`).
+ * @remarks
+ * Minimum tree: `[data-ref="root"]` > primary + separator + secondary. BEM classes live on the view.
  */
 @customElement('rui-window-splitter')
 export class RuiWindowSplitter extends RadiantElement {

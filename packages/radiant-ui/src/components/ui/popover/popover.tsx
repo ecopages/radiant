@@ -10,7 +10,7 @@ import './popover.script';
 
 export type RuiPopoverContentProps = JsxElementProps<HTMLDivElement>;
 
-/** Popover body in the floating surface. */
+/** Popover body in the floating surface. Content lives inside `[data-ref="surface"]`. */
 export function RuiPopoverContent({ children, class: className, ...props }: RuiPopoverContentProps) {
 	return (
 		<div {...props} class={cx(className)}>
@@ -19,6 +19,15 @@ export function RuiPopoverContent({ children, class: className, ...props }: RuiP
 	);
 }
 
+/**
+ * Popover view with optional inline `trigger` and floating `children` as surface content.
+ *
+ * @cssclass rui-popover-host - Anchor + surface wrapper (`[data-ref="host"]`).
+ * @cssclass rui-popover - Floating surface (`[data-ref="surface"]`, `role="dialog"`).
+ * @cssclass rui-popover--listbox - Stripped padding for embedded listboxes.
+ *
+ * @remarks Stamps `[data-ref="host"]`, optional `[data-popover-trigger]`, and `[data-ref="surface"]`.
+ */
 export function RuiPopover({
 	trigger,
 	children,
@@ -43,6 +52,13 @@ export function RuiPopover({
 	);
 }
 
+/**
+ * Trigger wrapper that toggles a child `rui-popover` on click.
+ *
+ * @cssclass rui-popover-trigger - Trigger + popover wrapper (`[data-ref="root"]`).
+ *
+ * @remarks Stamps `[data-ref="root"]`, `[data-popover-trigger]`, and expects `rui-popover` as a child.
+ */
 export function RuiPopoverTrigger({
 	trigger,
 	children,
