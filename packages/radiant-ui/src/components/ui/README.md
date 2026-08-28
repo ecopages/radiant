@@ -22,7 +22,7 @@ Non-atomic components separate behavior from markup: the custom element owns sta
 
 Keep a convenient prop-based default composition on the primary view, but accept children for the equivalent explicit composition. Do not force consumers to subclass a custom element just to arrange its UI.
 
-For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances.
+For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances. Listbox-backed popovers (select, combobox) share `ListboxPopoverBehavior` for active-descendant navigation and `ListboxHostController` for the embedded listbox, the comma-separated value array, option `aria-selected`, and optional tag-group chips.
 
 ## Light-DOM ownership
 
@@ -113,4 +113,8 @@ Mirror [CEM](https://custom-elements-manifest.open-wc.org/analyzer/getting-start
 - Do not add `@csspart`. This catalog is light DOM; there are no shadow parts.
 - `@cssclass` is a catalog extension, not a standard CEM tag like `@csspart` / `@cssprop`.
 
-Consumer docs live in `apps/radiant-ui` (`src/content/components/`). Surface the same contract (attributes, Composition Helpers, events, CSS classes) and mark APG links with `data-wai-aria`. See `alert` as the POC.
+A View-owned Shell is a **behavior host**: it queries Authored Children through `data-ref` / `data-*` / roles. That query contract is public. The CE class TSDoc must describe the full child tree (required targets, per-item attrs, optional controls, attributes the host writes vs the author owns). Composition Helpers stamp the same targets; they are not a substitute for documenting them. Do not use `@slot` for this tree.
+
+Templates and a filled Tag Group example: [`.agents/skills/radiant-ui-docs/`](../../../../.agents/skills/radiant-ui-docs/SKILL.md).
+
+Consumer docs live in `apps/radiant-ui` (`src/content/components/`). Surface the same contract (attributes, light-DOM targets, Composition Helpers, events, CSS classes) and mark APG links with `data-wai-aria`. Tag Group is the composition-contract POC; Alert remains the page-structure POC.
