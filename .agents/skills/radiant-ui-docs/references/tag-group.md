@@ -33,7 +33,7 @@ Nested hosts: none. Parents (`rui-select`) query `rui-tag-group` by tag name.
 | `RuiTag`       | `[data-tag]`, `data-value`, `data-label` | **always** appends `RuiTagRemove`            |
 | `RuiTagRemove` | `[data-tag-remove]`                      | class `rui-tag__remove`                      |
 
-BEM classes are presentation-only. The host never queries `.rui-tag`.
+BEM classes are presentation-only. The host never queries `.rui-tag`. That is required, not a slogan: if a future change keys off a class, migrate to `data-ref` / `data-*` first (see [query-targets.md](query-targets.md)).
 
 ## Bugs this standard exists to catch
 
