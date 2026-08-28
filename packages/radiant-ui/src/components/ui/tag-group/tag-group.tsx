@@ -1,13 +1,14 @@
 import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderable } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
+import { RuiIconX } from '@/lib/icons';
 import type { RuiTagGroup as RuiTagGroupElement, RuiTagGroupProps } from './tag-group.script';
 import './tag-group.script';
 
 export type RuiTagListProps = JsxElementProps<HTMLDivElement>;
 
 /**
- * Flex-wrapped container for `RuiTag` children.
+ * Flex-wrapped container for `RuiTag` children. Stamps `[data-tag-list]`.
  *
  * @cssclass rui-tag-group__list - Tag row (flex-wrap container).
  */
@@ -26,12 +27,13 @@ export type RuiTagProps = JsxElementProps<HTMLSpanElement> & {
 };
 
 /**
- * A single tag with optional remove button.
+ * A single tag. Stamps `[data-tag]`, `data-value`, and `data-label`.
  *
  * @cssclass rui-tag - Tag chip; selected state via `[aria-selected='true']`.
  *
- * @remarks Tags built imperatively for CE-managed items mirror this markup in
- * `RuiTagGroup.createManagedTag` (`tag-group.script.tsx`) — edit both together.
+ * @remarks Always appends `RuiTagRemove`. For a non-removable tag, stamp
+ * `[data-tag]` yourself without `[data-tag-remove]`. Tags built in
+ * `createManagedTag` always include a remove control — edit both together.
  */
 export function RuiTag({ value, label, children, class: className, disabled, ...props }: RuiTagProps) {
 	return (
@@ -52,7 +54,7 @@ export function RuiTag({ value, label, children, class: className, disabled, ...
 export type RuiTagRemoveProps = JsxElementProps<HTMLButtonElement>;
 
 /**
- * Remove button rendered inside `RuiTag`.
+ * Remove control inside a tag. Stamps `[data-tag-remove]`.
  *
  * @cssclass rui-tag__remove - Tag remove control.
  */
@@ -65,7 +67,7 @@ export function RuiTagRemove({ children, class: className, aria, ...props }: Rui
 			data-tag-remove
 			class={cx('rui-tag__remove', className)}
 		>
-			{children ?? <span aria-hidden="true">×</span>}
+			{children ?? <RuiIconX />}
 		</button>
 	);
 }
@@ -80,6 +82,14 @@ function TagGroupShell({ children }: { children: JsxRenderable }) {
 	);
 }
 
+/**
+ * Tag group view. Pass `tags` for the simple API, or compose `RuiTagList` /
+ * `RuiTag` children. Either path wraps content in `[data-ref="root"]`.
+ *
+ * Raw markup that already matches the host contract can be passed as `children`.
+ *
+ * @cssclass rui-tag-group - Root wrapper around the tag list (`data-ref="root"`).
+ */
 export function RuiTagGroup({
 	tags,
 	children,

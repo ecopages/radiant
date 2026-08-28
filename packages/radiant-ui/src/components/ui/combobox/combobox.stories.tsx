@@ -1,11 +1,19 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
+import { RuiIconCheck, RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiLabel } from '../label';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
-import { RuiListbox, RuiListboxOption } from '../listbox';
-import { RuiCombobox, RuiComboboxControl, RuiComboboxInput, RuiComboboxListbox, RuiComboboxTrigger } from './combobox';
+import { RuiListbox, RuiListboxOption, RuiListboxOptionIndicator } from '../listbox';
+import {
+	RuiCombobox,
+	RuiComboboxClear,
+	RuiComboboxControl,
+	RuiComboboxInput,
+	RuiComboboxListbox,
+	RuiComboboxTrigger,
+} from './combobox';
 import { RuiCombobox as RuiComboboxElement } from './combobox.script';
 
 const COUNTRY_OPTIONS = [
@@ -25,6 +33,8 @@ const meta = {
 				'../autocomplete/autocomplete.css',
 				'../listbox/listbox.css',
 				'../field/field.css',
+				'../label/label.css',
+				'../tag-group/tag-group.css',
 				'./combobox.css',
 			],
 		},
@@ -106,9 +116,41 @@ export const Default: Story = {
 	},
 };
 
-export const OpenOnFocus: Story = {
+export const Multiple: Story = {
 	args: {
-		openOnFocus: true,
+		selectionMode: 'multiple',
+		placeholder: 'Choose countries',
+	},
+	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
+		const input = getInput(canvasElement);
+		const options = getOptions(canvasElement);
+		const combobox = canvasElement.querySelector('rui-combobox');
+
+		await step('selecting options toggles values and keeps the popup open', async () => {
+			await userEvent.click(getTrigger(canvasElement));
+			await userEvent.click(options[0]);
+			await userEvent.click(options[2]);
+			await expect(combobox).toHaveAttribute('value', 'at,it');
+			await expect(input).toHaveValue('');
+			await expect(input).toHaveAttribute('aria-expanded', 'true');
+			await expect(options[0]).toHaveAttribute('aria-selected', 'true');
+			await expect(options[2]).toHaveAttribute('aria-selected', 'true');
+			await expect(options[0].querySelector('[data-listbox-option-indicator]')).toBeTruthy();
+		});
+
+		await step('removing a chip updates the value', async () => {
+			const remove = canvasElement.querySelector('[data-combobox-value] [data-tag-remove]') as HTMLElement;
+			await userEvent.click(remove);
+			await expect(combobox).toHaveAttribute('value', 'it');
+		});
+	},
+};
+
+export const TriggerKindFocus: Story = {
+	args: {
+		triggerKind: 'focus',
 	},
 	play: async ({ canvasElement, step }) => {
 		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
@@ -126,6 +168,31 @@ export const OpenOnFocus: Story = {
 			await userEvent.keyboard('{ArrowDown}');
 			await expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
 			await expect(options[0]).toHaveAttribute('data-active');
+		});
+	},
+};
+
+export const TriggerKindManual: Story = {
+	args: {
+		triggerKind: 'manual',
+	},
+	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getInput(canvasElement)) return;
+
+		const input = getInput(canvasElement);
+		const listboxPopup = getListboxPopup(canvasElement);
+		const options = getOptions(canvasElement);
+
+		await step('typing filters without opening the listbox', async () => {
+			input.focus();
+			await userEvent.type(input, 'aus');
+			await expect(listboxPopup).toHaveAttribute('hidden');
+		});
+
+		await step('ArrowDown opens the filtered listbox', async () => {
+			await userEvent.keyboard('{ArrowDown}');
+			await expect(listboxPopup).not.toHaveAttribute('hidden');
+			await expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
 		});
 	},
 };
@@ -170,14 +237,19 @@ export const Keyboard: Story = {
 	},
 };
 
-export const Composed: Story = {
+export const Clearable: Story = {
 	render: () => (
 		<div class="flex flex-col gap-2">
 			<RuiLabel>Fruit</RuiLabel>
 			<RuiCombobox placeholder="Search fruit">
 				<RuiComboboxControl>
 					<RuiComboboxInput placeholder="Search fruit" />
-					<RuiComboboxTrigger aria-label="Show fruit suggestions" />
+					<RuiComboboxClear aria-label="Clear fruit selection">
+						<RuiIconX data-custom-clear-icon />
+					</RuiComboboxClear>
+					<RuiComboboxTrigger aria-label="Show fruit suggestions">
+						<RuiIconChevronDown data-custom-toggle-icon />
+					</RuiComboboxTrigger>
 				</RuiComboboxControl>
 				<RuiComboboxListbox>
 					<RuiAutocomplete>
@@ -188,18 +260,27 @@ export const Composed: Story = {
 										<span aria-hidden="true">🍎</span>
 										Apple
 									</span>
+									<RuiListboxOptionIndicator>
+										<RuiIconCheck data-custom-selected-icon />
+									</RuiListboxOptionIndicator>
 								</RuiListboxOption>
 								<RuiListboxOption value="banana" label="Banana">
 									<span class="flex items-center gap-2">
 										<span aria-hidden="true">🍌</span>
 										Banana
 									</span>
+									<RuiListboxOptionIndicator>
+										<RuiIconCheck data-custom-selected-icon />
+									</RuiListboxOptionIndicator>
 								</RuiListboxOption>
 								<RuiListboxOption value="cherry" label="Cherry">
 									<span class="flex items-center gap-2">
 										<span aria-hidden="true">🍒</span>
 										Cherry
 									</span>
+									<RuiListboxOptionIndicator>
+										<RuiIconCheck data-custom-selected-icon />
+									</RuiListboxOptionIndicator>
 								</RuiListboxOption>
 							</RuiListbox>
 							<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
@@ -232,6 +313,18 @@ export const Composed: Story = {
 			await userEvent.click(options[2]);
 			await expect(input).toHaveValue('Cherry');
 			await expect(input).toHaveAttribute('aria-expanded', 'false');
+			await expect(options[2].querySelector('[data-custom-selected-icon]')).toBeTruthy();
+		});
+
+		await step('clear removes the selection and restores the input', async () => {
+			const clear = canvasElement.querySelector('[data-combobox-clear]') as HTMLButtonElement;
+			await expect(clear).not.toHaveAttribute('hidden');
+			await expect(clear.querySelector('[data-custom-clear-icon]')).toBeTruthy();
+			await expect(canvasElement.querySelector('[data-custom-toggle-icon]')).toBeTruthy();
+			await userEvent.click(clear);
+			await expect(input).toHaveValue('');
+			await expect(clear).toHaveAttribute('hidden');
+			await expect(input).toHaveFocus();
 		});
 	},
 };

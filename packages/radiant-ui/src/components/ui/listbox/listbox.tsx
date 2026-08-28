@@ -1,6 +1,8 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiListbox as RuiListboxElement, RuiListboxProps } from './listbox.script';
+import { RuiIconCheck } from '@/lib/icons';
+import { parseViewValue, serializeViewValue } from '../shared/multi-value';
+import type { RuiListbox as RuiListboxElement, RuiListboxProps, RuiListboxSelectionMode } from './listbox.script';
 import './listbox.script';
 
 export type RuiListboxOptionProps = JsxElementProps<HTMLDivElement> & {
@@ -37,6 +39,29 @@ export function RuiListboxOption({
 	);
 }
 
+export type RuiListboxOptionIndicatorProps = JsxElementProps<HTMLSpanElement>;
+
+/**
+ * Decorative selected-state indicator within `RuiListboxOption`.
+ *
+ * Supply children to replace the default check icon. The listbox owns visibility
+ * through the option's `aria-selected` state.
+ *
+ * @cssclass rui-listbox__option-indicator - Selected-state indicator.
+ */
+export function RuiListboxOptionIndicator({ children, class: className, ...props }: RuiListboxOptionIndicatorProps) {
+	return (
+		<span
+			{...props}
+			data-listbox-option-indicator
+			aria-hidden="true"
+			class={cx('rui-listbox__option-indicator', className)}
+		>
+			{children ?? <RuiIconCheck />}
+		</span>
+	);
+}
+
 export type RuiListboxOptionData = { value: string; label: JsxRenderable; disabled?: boolean };
 
 function listboxIsBordered(embedded?: boolean, bordered?: boolean): boolean {
@@ -52,9 +77,10 @@ type ListboxShellProps = {
 	children: JsxRenderable;
 	disabled?: boolean;
 	label?: string;
+	selectionMode?: RuiListboxSelectionMode;
 };
 
-function ListboxShell({ bordered, children, disabled, label }: ListboxShellProps) {
+function ListboxShell({ bordered, children, disabled, label, selectionMode = 'single' }: ListboxShellProps) {
 	return (
 		<div
 			class={cx('rui-listbox', bordered && 'rui-listbox--bordered')}
@@ -63,6 +89,7 @@ function ListboxShell({ bordered, children, disabled, label }: ListboxShellProps
 			data-rui-control-type="text"
 			aria-label={label || undefined}
 			aria-disabled={disabled ? 'true' : undefined}
+			aria-multiselectable={selectionMode === 'multiple' ? 'true' : undefined}
 		>
 			{children}
 		</div>
@@ -72,36 +99,45 @@ function ListboxShell({ bordered, children, disabled, label }: ListboxShellProps
 export function RuiListbox({
 	options,
 	children,
+	value,
 	embedded,
 	bordered,
 	label,
 	disabled,
+	selectionMode = 'single',
 	...props
-}: JsxCustomElementAttributes<RuiListboxElement, RuiListboxProps & { options?: RuiListboxOptionData[] }>) {
+}: JsxCustomElementAttributes<
+	RuiListboxElement,
+	Omit<RuiListboxProps, 'value'> & { options?: RuiListboxOptionData[]; value?: string | string[] }
+>) {
 	const isBordered = listboxIsBordered(embedded, bordered);
-
-	if (options != null) {
-		return (
-			<rui-listbox {...props} embedded={embedded} bordered={bordered} label={label} disabled={disabled}>
-				<ListboxShell bordered={isBordered} disabled={disabled} label={label}>
-					{options.map((option) => (
-						<RuiListboxOption
-							value={option.value}
-							label={typeof option.label === 'string' ? option.label : undefined}
-							disabled={option.disabled}
-						>
-							{option.label}
-						</RuiListboxOption>
-					))}
-				</ListboxShell>
-			</rui-listbox>
-		);
-	}
+	const serializedValue = serializeViewValue(value);
+	const selected = new Set(parseViewValue(value));
 
 	return (
-		<rui-listbox {...props} embedded={embedded} bordered={bordered} label={label} disabled={disabled}>
-			<ListboxShell bordered={isBordered} disabled={disabled} label={label}>
-				{children}
+		<rui-listbox
+			{...props}
+			value={serializedValue}
+			embedded={embedded}
+			bordered={bordered}
+			label={label}
+			disabled={disabled}
+			selectionMode={selectionMode}
+		>
+			<ListboxShell bordered={isBordered} disabled={disabled} label={label} selectionMode={selectionMode}>
+				{options != null
+					? options.map((option) => (
+							<RuiListboxOption
+								value={option.value}
+								label={typeof option.label === 'string' ? option.label : undefined}
+								disabled={option.disabled}
+								aria-selected={selected.has(option.value) ? 'true' : undefined}
+							>
+								{option.label}
+								{selectionMode === 'multiple' ? <RuiListboxOptionIndicator /> : null}
+							</RuiListboxOption>
+						))
+					: children}
 			</ListboxShell>
 		</rui-listbox>
 	);

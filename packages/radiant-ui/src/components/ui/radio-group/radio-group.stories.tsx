@@ -14,7 +14,7 @@ const defaultOptions = [
 const meta = {
 	title: 'Components/Radio Group',
 	component: RuiRadioGroup,
-	parameters: { radiant: { element: RuiRadioGroupElement, cssImports: ['./radio-group.css'] } },
+	parameters: { radiant: { element: RuiRadioGroupElement, cssImports: ['./radio-group.css', '../label/label.css'] } },
 	args: {
 		name: 'channel',
 		label: 'Notification channel',

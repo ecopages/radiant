@@ -1,20 +1,24 @@
 @reference '../../../styles/radiant-ui.css';
 
 @layer components {
-	.rui-control-toggle {
+	.rui-control-toggle,
+	.rui-control-clear {
 		@apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-control border-0 bg-transparent text-on-surface;
 		@apply cursor-pointer;
 	}
 
-	.rui-control-toggle:hover:not(:disabled) {
+	.rui-control-toggle:hover:not(:disabled),
+	.rui-control-clear:hover:not(:disabled) {
 		@apply bg-surface-container-low;
 	}
 
-	.rui-control-toggle:focus-visible {
+	.rui-control-toggle:focus-visible,
+	.rui-control-clear:focus-visible {
 		@apply ring-2 ring-focus-ring outline-none;
 	}
 
-	.rui-control-toggle:disabled {
+	.rui-control-toggle:disabled,
+	.rui-control-clear:disabled {
 		@apply cursor-not-allowed opacity-muted;
 	}
 }

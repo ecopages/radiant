@@ -1,9 +1,11 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
-import { RuiIconChevronDown } from '@/lib/icons';
+import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
+import { parseViewValue, serializeViewValue } from '../shared/multi-value';
+import { RuiTagGroup } from '../tag-group';
 import type { RuiCombobox as RuiComboboxElement, RuiComboboxProps } from './combobox.script';
 import './combobox.script';
 
@@ -51,7 +53,7 @@ export type RuiComboboxTriggerProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
 };
 
-/** Toggle button for opening the listbox popup. */
+/** Toggle button for opening the listbox popup. Children replace the default chevron icon. */
 export function RuiComboboxTrigger({ children, class: className, aria, disabled, ...props }: RuiComboboxTriggerProps) {
 	return (
 		<button
@@ -65,6 +67,37 @@ export function RuiComboboxTrigger({ children, class: className, aria, disabled,
 		>
 			{children ?? <RuiIconChevronDown />}
 		</button>
+	);
+}
+
+export type RuiComboboxClearProps = JsxElementProps<HTMLButtonElement> & {
+	disabled?: boolean;
+};
+
+/** Clears the current selection; place next to `RuiComboboxTrigger`. Children replace the default close icon. */
+export function RuiComboboxClear({ children, class: className, aria, disabled, ...props }: RuiComboboxClearProps) {
+	return (
+		<button
+			{...props}
+			aria={withDefaultAriaLabel(aria, 'Clear selection')}
+			type="button"
+			data-combobox-clear
+			class={cx('rui-control-clear', className)}
+			disabled={disabled}
+		>
+			{children ?? <RuiIconX />}
+		</button>
+	);
+}
+
+export type RuiComboboxValueProps = JsxElementProps<HTMLSpanElement>;
+
+/** Selected-value region for multiple comboboxes; place before the input. */
+export function RuiComboboxValue({ children, class: className, ...props }: RuiComboboxValueProps) {
+	return (
+		<span {...props} data-combobox-value class={cx('rui-combobox__value', className)}>
+			{children}
+		</span>
 	);
 }
 
@@ -103,25 +136,43 @@ function ComboboxShell({ children }: { children: JsxRenderable }) {
 export function RuiCombobox({
 	options,
 	children,
+	value,
 	...props
 }: JsxCustomElementAttributes<
 	RuiComboboxElement,
-	RuiComboboxProps & {
+	Omit<RuiComboboxProps, 'value'> & {
 		options?: RuiComboboxOptionData[];
+		value?: string | string[];
 	}
 >) {
+	const serializedValue = serializeViewValue(value);
+	const selectedValues = parseViewValue(value);
+	const selectedTags = options
+		?.filter((option) => selectedValues.includes(option.value))
+		.map((option) => ({ value: option.value, label: option.label }));
+	const isMultiple = props.selectionMode === 'multiple';
 	if (options != null) {
 		return (
-			<rui-combobox {...props}>
+			<rui-combobox {...props} value={serializedValue}>
 				<ComboboxShell>
 					<RuiComboboxControl>
+						{isMultiple ? (
+							<RuiComboboxValue>
+								<RuiTagGroup tags={selectedTags ?? []} label="Selected options" />
+							</RuiComboboxValue>
+						) : null}
 						<RuiComboboxInput placeholder={props.placeholder} disabled={props.disabled} />
 						<RuiComboboxTrigger />
 					</RuiComboboxControl>
 					<RuiComboboxListbox>
 						<RuiAutocomplete>
 							<RuiAutocompleteCollection>
-								<RuiListbox embedded options={options} />
+								<RuiListbox
+									embedded
+									options={options}
+									selectionMode={props.selectionMode}
+									value={serializedValue}
+								/>
 								<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
 							</RuiAutocompleteCollection>
 						</RuiAutocomplete>
@@ -132,7 +183,7 @@ export function RuiCombobox({
 	}
 
 	return (
-		<rui-combobox {...props}>
+		<rui-combobox {...props} value={serializedValue}>
 			<ComboboxShell>{children}</ComboboxShell>
 		</rui-combobox>
 	);

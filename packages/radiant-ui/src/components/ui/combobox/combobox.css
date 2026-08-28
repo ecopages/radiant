@@ -10,8 +10,12 @@ rui-combobox {
 	}
 
 	.rui-combobox__control {
-		@apply flex w-full min-w-0 items-center gap-1 rounded-control border border-border bg-background px-1;
+		@apply flex w-full min-w-0 flex-wrap items-center gap-1 rounded-control border border-border bg-background px-1;
 		min-height: var(--size-control-md);
+	}
+
+	.rui-combobox__value {
+		@apply inline-flex min-w-0 max-w-full flex-wrap items-center;
 	}
 
 	.rui-combobox__control:focus-within {
@@ -19,7 +23,7 @@ rui-combobox {
 	}
 
 	.rui-combobox__input {
-		@apply min-w-0 flex-1 border-0 bg-transparent text-on-background outline-none;
+		@apply min-w-[6rem] flex-1 border-0 bg-transparent text-on-background outline-none;
 		padding-inline: var(--space-control-x);
 		padding-block: var(--space-control-y);
 		font-size: var(--text-control, 0.875rem);

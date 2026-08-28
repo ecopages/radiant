@@ -1,6 +1,7 @@
 import { type JsxCustomElementAttributes, type JsxElementProps, type JsxRenderable } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
+import { RuiIconX } from '@/lib/icons';
 import type { RuiDialog as RuiDialogElement, RuiDialogProps } from './dialog.script';
 import './dialog.script';
 
@@ -66,7 +67,7 @@ export function RuiDialogClose({ children, class: className, aria, ...props }: R
 			data-ref="close"
 			class={cx('rui-dialog__close', className)}
 		>
-			{children ?? '×'}
+			{children ?? <RuiIconX />}
 		</button>
 	);
 }

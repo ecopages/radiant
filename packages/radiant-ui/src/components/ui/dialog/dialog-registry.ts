@@ -1,5 +1,6 @@
 import type { RuiDialog } from './dialog.script';
 import './dialog.script';
+import { createRuiIconX } from '@/lib/icons/x';
 import {
 	RUI_DIALOG_ACTION_EVENT,
 	RUI_DIALOG_CLOSE_EVENT,
@@ -47,7 +48,7 @@ function createCloseButton(): HTMLButtonElement {
 	close.setAttribute('data-ref', 'close');
 	close.className = 'rui-dialog__close';
 	close.setAttribute('aria-label', 'Close');
-	close.textContent = '×';
+	close.append(createRuiIconX());
 	return close;
 }
 
