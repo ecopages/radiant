@@ -5,7 +5,7 @@ import type { FrameworkOptions } from '../types';
 import { radiantFrameworkHmrPlugin } from './framework-hmr';
 import { radiantScriptModuleStampPlugin } from './script-module-stamp';
 import { radiantSsrRuntimePlugin } from './ssr-runtime';
-import { radiantStorybookSsrShimPlugin } from './storybook-ssr-shim';
+import { radiantSsrPreviewGlobalsPlugin } from './ssr-preview-globals';
 import { radiantStorybookSsrPlugin } from './ssr-middleware';
 
 /**
@@ -18,7 +18,7 @@ export async function viteFinal(config: UserConfig, options: Options): Promise<U
 		...(config.plugins ?? []),
 		...radiantPlugins,
 		radiantSsrRuntimePlugin(),
-		radiantStorybookSsrShimPlugin(),
+		radiantSsrPreviewGlobalsPlugin(),
 		radiantScriptModuleStampPlugin(),
 		radiantStorybookSsrPlugin({ globalStyleModules: frameworkOptions?.globalStyleModules }),
 		radiantFrameworkHmrPlugin(),

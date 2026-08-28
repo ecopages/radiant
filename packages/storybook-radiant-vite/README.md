@@ -314,10 +314,11 @@ The framework registers a toolbar global `radiantRenderMode`:
 
 1. Preview calls `POST /__radiant_ssr` with `{ ssrModule, ssrExport?, viewModule?, viewExport?, storyModule?, storyExport?, args, mode }`.
 2. Vite middleware loads `@ecopages/vite-plugin-radiant/ssr` (`renderSsrComponent`) and your script/view/story modules.
-3. For stories declaring `parameters.radiant.element`, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
-4. `@ecopages/*` stay **external** in SSR (via `radiant()`) so ALS / runtime shims are singletons.
-5. `renderSsrComponent` produces markup + assets (CSS via `radiant({ elements: true })`).
-6. Preview sets `canvas.innerHTML = markup`. For `ssr-hydrate`, it imports the view/client module and relies on `install-hydrator`.
+3. Preview packages (`storybook/test` and siblings) are installed on `globalThis` so `ssrLoadModule` matches the iframe. Play helpers that import those packages run for real instead of stubbed `__STORYBOOK_MODULE_*` bindings.
+4. For stories declaring `parameters.radiant.element`, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
+5. `@ecopages/*` stay **external** in SSR (via `radiant()`) so ALS / runtime shims are singletons.
+6. `renderSsrComponent` produces markup + assets (CSS via `radiant({ elements: true })`).
+7. Preview sets `canvas.innerHTML = markup`. For `ssr-hydrate`, it imports the view/client module and relies on `install-hydrator`.
 
 Light-DOM only: Radiant SSR throws for `renderRootMode: 'shadow'`.
 
