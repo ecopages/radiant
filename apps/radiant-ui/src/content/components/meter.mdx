@@ -60,6 +60,8 @@ Meters use the **surface / text roles** from the active theme (`--on-surface` fo
 
 ## API
 
+`RuiMeter` is a Derived Tree host (`<rui-meter>`): the element `render()` owns the label, native `<meter>`, and percent readout. Pass props only; there is no authored child contract.
+
 ### Attributes
 
 | Attribute | Type | Default | Description |
@@ -68,10 +70,6 @@ Meters use the **surface / text roles** from the active theme (`--on-surface` fo
 | `min` | `number` | `0` | Range minimum. |
 | `max` | `number` | `100` | Range maximum. |
 | `label` | `string` | `''` | Text describing what is measured (accessible name). |
-
-### Composition
-
-The meter is self-contained; `label`, bar, and value are composed by the element. Pass content via props, not slotted children.
 
 ### CSS classes
 

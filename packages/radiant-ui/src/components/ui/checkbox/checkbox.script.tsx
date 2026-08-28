@@ -39,9 +39,29 @@ export const CHECKBOX_DEFAULT_VALUE = 'on';
 /**
  * `<rui-checkbox>` — a dual-state or tri-state checkbox.
  *
+ * The custom element is a behavior host: it does not render checkbox markup.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use `RuiCheckbox`, which stamps the same targets.
+ *
  * Implements the WAI-ARIA APG Checkbox pattern on a native
  * `<input type="checkbox">`. Checked state uses the HTML `checked` attribute;
  * the mixed state uses the `indeterminate` IDL property with `aria-checked="mixed"`.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="input"]` — native `<input type="checkbox">`. Host syncs `checked`,
+ *   `indeterminate`, `disabled`, `value`, `name`, and `aria-checked="mixed"` when
+ *   `indeterminate` is true.
+ *
+ * Optional:
+ * - Label row and visible label text — presentation only; the host does not query them.
+ *
+ * Do not fight host-owned input state (`checked`, `indeterminate`, `disabled`, `value`,
+ * `name`, `aria-checked`). Author `data-disabled` on the host when the view needs a
+ * stable disabled marker for group controllers.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
  *
@@ -49,11 +69,17 @@ export const CHECKBOX_DEFAULT_VALUE = 'on';
  * - `Space`: toggle checked state
  *
  * @element rui-checkbox
- * @fires rui-change - Emitted after the checked/indeterminate state changes.
- * @cssclass rui-checkbox - Label row: box + visible label.
- * @cssclass rui-checkbox__input - Native input (visually hidden, receives focus).
- * @cssclass rui-checkbox__control - Visible box with check / indeterminate glyph.
- * @cssclass rui-checkbox__label - Light-DOM label text.
+ * @attr {boolean} checked - Whether the checkbox is checked. Default: `false`.
+ * @attr {boolean} indeterminate - Partially checked (mixed) state. Default: `false`.
+ * @attr {boolean} disabled - Disable the checkbox. Default: `false`.
+ * @attr {string} value - Value submitted with forms when checked. Default: `on`.
+ * @attr {string} name - Form field name on the inner input. Default: `''`.
+ * @fires rui-change - Emitted after the checked/indeterminate state changes;
+ *   `detail.checked` and `detail.indeterminate`.
+ *
+ * @remarks
+ * Minimum tree: `<input type="checkbox" data-ref="input" data-rui-control>`.
+ * BEM classes live on the view; the host never queries them.
  */
 @customElement('rui-checkbox')
 export class RuiCheckbox extends RadiantElement {

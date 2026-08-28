@@ -41,6 +41,29 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 </RuiTooltip>
 ```
 
+## Custom markup
+
+`<rui-tooltip>` coordinates any light-DOM tree that matches its query contract. The
+`RuiTooltip` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/tooltip';
+
+<rui-tooltip content="Download report" placement="top">
+  <span class="rui-tooltip">
+    <span class="rui-tooltip__trigger">
+      <button type="button" aria-label="Download">↓</button>
+    </span>
+    <span data-ref="tooltip" class="rui-tooltip__content rui-floating" role="tooltip" hidden>
+      Download report
+    </span>
+  </span>
+</rui-tooltip>;
+```
+
+The host queries `.rui-tooltip__trigger` for focus events and `[data-ref="tooltip"]` for the surface.
+Do not set `aria-describedby` on the trigger — the host wires it.
+
 ## Supplementary information only
 
 <p>Tooltips should repeat or clarify visible labels, not introduce essential information available nowhere else.</p>
@@ -74,11 +97,21 @@ Text uses the `text-xs` token. Override roles at the theme layer, not in compone
 | `placement` | `RuiPlacement` | `top` | Placement relative to the anchor. |
 | `delay` | `number` | `200` | Show delay in ms (0 shows immediately). |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| (default) | The trigger element (typically a button or focusable control). |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `.rui-tooltip__trigger` | yes | — | trigger wrapper; focus bridge |
+| `[data-ref="tooltip"]` | yes | `id`, `hidden`, position | tooltip text / content |
+| focusable anchor | per trigger | `aria-describedby` | the control inside `.rui-tooltip__trigger` |
+
+Do not set `id`, `hidden`, or `aria-describedby` on the anchor. Nested hosts: none.
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiTooltip` | `.rui-tooltip__trigger`, `[data-ref="tooltip"]` | `content` prop mirrors tooltip text. `children` are the trigger. |
 
 ### CSS classes
 

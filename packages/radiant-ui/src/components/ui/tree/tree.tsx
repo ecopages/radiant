@@ -48,13 +48,14 @@ const TreeNodes = ({ nodes }: { nodes: RuiTreeNode[] }) => (
 );
 
 /**
- * Tree composed from a `nodes` structure.
+ * Tree view. Pass `nodes` for a data-driven tree, or `children` inside the stamped root list.
  *
+ * @cssclass rui-tree - Root list (`role="tree"`).
  * @cssclass rui-tree__item - List item wrapping a node.
  * @cssclass rui-tree__node - Node button (`role="treeitem"`).
  *
- * @remarks The host (`<rui-tree>`) owns selection, expansion, and roving-tabindex
- * navigation over the authored `role="treeitem"` markup.
+ * @remarks Stamps `[role="tree"]` with `data-ref="root"`. Branch `nodes` render
+ * `[role="treeitem"]` + optional `[role="group"]` with `data-value` and `aria-expanded`.
  */
 export function RuiTree({
 	nodes,

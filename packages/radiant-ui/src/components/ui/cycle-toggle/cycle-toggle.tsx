@@ -14,7 +14,7 @@ export type RuiCycleToggleButtonProps = JsxElementProps<HTMLButtonElement> &
 	Pick<RuiCycleToggleProps, 'disabled' | 'label' | 'size' | 'variant'>;
 
 /**
- * One cycle option. Only the active item is visible inside the button.
+ * One cycle option inside the button. Stamps `[data-cycle-value]` from `id`.
  *
  * @cssclass rui-cycle-toggle__item - Cycle option row (icon + label).
  */
@@ -40,7 +40,7 @@ export function RuiCycleToggleItem({
 }
 
 /**
- * Button chrome shared by cycle-toggle custom-element views.
+ * Button chrome for cycle-toggle views. Stamps `button[data-cycle-toggle-button]`.
  *
  * Composes `rui-button` with `rui-button--<variant> --<size>` (see button).
  *
@@ -73,6 +73,10 @@ export function RuiCycleToggleButton({
 	);
 }
 
+/**
+ * Cycle toggle view. Stamps `<rui-cycle-toggle>` and `RuiCycleToggleButton`
+ * (`button[data-cycle-toggle-button]`) wrapping `RuiCycleToggleItem` children.
+ */
 export function RuiCycleToggle({
 	children,
 	variant,

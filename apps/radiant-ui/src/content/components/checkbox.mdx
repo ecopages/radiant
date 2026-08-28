@@ -43,6 +43,30 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Custom markup
+
+`<rui-checkbox>` coordinates any light-DOM tree that matches its query contract. The `RuiCheckbox` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/checkbox';
+
+<rui-checkbox checked value="yes">
+  <label class="rui-checkbox">
+    <input
+      type="checkbox"
+      data-ref="input"
+      data-rui-control
+      data-rui-control-type="boolean"
+      class="rui-checkbox__input"
+    />
+    <span class="rui-checkbox__control" aria-hidden="true"></span>
+    <span class="rui-checkbox__label">Email me product updates</span>
+  </label>
+</rui-checkbox>
+```
+
+BEM classes are presentation-only. The host syncs `checked`, `indeterminate`, `disabled`, `value`, `name`, and `aria-checked` on `[data-ref="input"]`.
+
 ## Indeterminate selections
 
 <p>Set `indeterminate` when a parent checkbox represents a partially selected group. Clear indeterminate once the user makes an explicit choice.</p>
@@ -77,7 +101,7 @@ Label text uses `on-background`. Override roles at the theme layer, not in compo
 
 ## API
 
-`RuiCheckbox` renders a view-owned `<label>` and native `<input type="checkbox">` inside the coordinating `<rui-checkbox>` custom element. Use the JSX view or compose equivalent marked-up light DOM; the browser owns activation and Space-to-toggle.
+`RuiCheckbox` renders a `<label>` and native `<input type="checkbox">` inside the coordinating `<rui-checkbox>` custom element. Use the JSX view or compose equivalent marked-up light DOM; the browser owns activation and Space-to-toggle.
 
 ### Attributes (`<rui-checkbox>`)
 
@@ -89,17 +113,25 @@ Label text uses `on-background`. Override roles at the theme layer, not in compo
 | `value` | `string` | `on` | Value submitted with forms when checked. |
 | `name` | `string` | `''` | Form field name. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `RuiCheckbox` children | Visible label for the checkbox. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="input"]` | yes | `checked`, `indeterminate`, `disabled`, `value`, `name`, `aria-checked` | the input element; stamp `data-rui-control` for field wiring |
+
+Do not fight host-owned input state. Nested hosts: none.
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ checked: boolean, indeterminate: boolean }` | Emitted after the state changes. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiCheckbox` | `[data-ref="input"]` on native checkbox | Children render in `rui-checkbox__label`. Always stamps `data-rui-control`. |
 
 ### CSS classes
 

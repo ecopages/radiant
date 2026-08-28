@@ -17,6 +17,10 @@ export type RuiSwitchChangeDetail = {
 /**
  * `<rui-switch>` — a binary on/off control.
  *
+ * The custom element is a behavior host: it does not render switch markup.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use `RuiSwitch`, which stamps the same targets.
+ *
  * Implements the WAI-ARIA APG Switch pattern using a native
  * `<input type="checkbox" role="switch">` wrapped in a `<label>`. The browser
  * owns activation (click on label or control, Space when focused); no click
@@ -27,6 +31,19 @@ export type RuiSwitchChangeDetail = {
  *
  * Important: the accessible label must not change when the switch state changes.
  *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="input"]` — native `<input type="checkbox" role="switch">`. Host syncs
+ *   `checked`, `disabled`, and `name`.
+ *
+ * Optional:
+ * - Track, thumb, and label nodes — presentation only; the host does not query them.
+ *
+ * Do not fight host-owned input state (`checked`, `disabled`, `name`).
+ *
+ * Nested hosts: none.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/switch/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/switch/examples/switch-checkbox/
  *
@@ -34,12 +51,14 @@ export type RuiSwitchChangeDetail = {
  * - `Space`: toggle the switch
  *
  * @element rui-switch
+ * @attr {boolean} checked - Whether the switch is on. Default: `false`.
+ * @attr {boolean} disabled - Disable the switch. Default: `false`.
+ * @attr {string} name - Form field name on the inner input. Default: `''`.
  * @fires rui-change - Emitted after the checked state changes; `detail.checked` holds the new state.
- * @cssclass rui-switch - Label row: track + thumb + visible label.
- * @cssclass rui-switch__input - Native `role="switch"` input (visually hidden).
- * @cssclass rui-switch__track - Pill track; `primary` fill when checked.
- * @cssclass rui-switch__thumb - Sliding thumb.
- * @cssclass rui-switch__label - Light-DOM label text.
+ *
+ * @remarks
+ * Minimum tree: `<input type="checkbox" role="switch" data-ref="input" data-rui-control>`.
+ * BEM classes live on the view; the host never queries them.
  */
 @customElement('rui-switch')
 export class RuiSwitch extends RadiantElement {

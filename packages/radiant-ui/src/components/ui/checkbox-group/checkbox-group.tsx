@@ -19,7 +19,7 @@ export type RuiCheckboxGroupControlProps = JsxElementProps<HTMLDivElement> & {
 	orientation?: RuiCheckboxGroupOrientation;
 };
 
-/** Accessible surface that contains checkbox options. */
+/** Accessible surface that contains checkbox options. Stamps `[data-checkbox-group-root]`. */
 export function RuiCheckboxGroupControl({
 	children,
 	class: className,
@@ -44,6 +44,9 @@ export function RuiCheckboxGroupControl({
 /**
  * Checkbox group with an `options` convenience API; renders one `RuiCheckbox`
  * per option inside `<rui-checkbox-group>`.
+ *
+ * @remarks `RuiCheckboxGroupControl` stamps `[data-checkbox-group-root]`.
+ * Each `RuiCheckbox` is a nested `rui-checkbox` host.
  */
 export function RuiCheckboxGroup({
 	options,

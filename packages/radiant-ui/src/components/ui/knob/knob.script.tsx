@@ -31,8 +31,36 @@ export type RuiKnobChangeDetail = { value: number };
 /**
  * `<rui-knob>` — select a numeric value with a rotary control.
  *
+ * The custom element is a behavior host: it does not render knob markup.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use `RuiKnob`, which stamps the same targets.
+ *
  * The 300° visual arc leaves a gap below the control so its minimum and maximum
  * positions remain distinct. It implements the WAI-ARIA slider keyboard model.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — root wrapper. Host toggles `rui-knob--value-below` and may
+ *   set `--rui-knob-size` on the host element when `size` is set.
+ * - `[data-ref="control"]` — focusable `role="slider"` button and pointer target. Host
+ *   sets `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`,
+ *   `aria-label`, `aria-readonly`, and `disabled`.
+ * - `[data-ref="track"]` — SVG circle for the unfilled arc. Host sets `r`,
+ *   `stroke-width`, and `stroke-dasharray`.
+ * - `[data-ref="progress"]` — SVG circle for the filled arc. Host sets `r`,
+ *   `stroke-width`, and `stroke-dasharray`.
+ * - `[data-ref="input"]` — hidden form input. Host syncs `value`, `name`, and `disabled`.
+ *
+ * Optional:
+ * - `[data-ref="label"]` — visible label. Host toggles `hidden` and sets `textContent`.
+ * - `[data-ref="centerValue"]` — readout inside the ring. Host sets `textContent` and `hidden`.
+ * - `[data-ref="belowValue"]` — readout below the control. Host sets `textContent` and `hidden`.
+ *
+ * Do not set control `aria-valuenow` / `aria-valuetext` or ring geometry — the host owns those.
+ * Author `label`, `showValue`, and `valuePosition` on the host to drive readout placement.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/slider/
  *
@@ -49,7 +77,7 @@ export type RuiKnobChangeDetail = { value: number };
  * @attr {string} name - Form field name for the hidden numeric input. Default: `''`.
  * @attr {number} size - Explicit visible SVG diameter in pixels. Overrides `--rui-knob-size`.
  * @attr {number} stroke-width - Width of the progress ring in view-box units. Default: `14`.
- * @attr {boolean} show-value - Shows the formatted value inside the ring. Default: `true`.
+ * @attr {boolean} show-value - Shows the formatted value inside or below the ring. Default: `true`.
  * @attr {('center'|'below')} value-position - Readout placement. Default: `center`.
  * @attr {string} value-template - Readout template; `{value}` is replaced by the formatted value. Default: `'{value}'`.
  *
@@ -62,18 +90,10 @@ export type RuiKnobChangeDetail = { value: number };
  * @cssprop --rui-knob-focus-ring - Focus indicator color. Defaults to `--focus-ring`.
  * @cssprop --rui-knob-focus-ring-width - Focus indicator width. Defaults to `2px`.
  *
- * @cssclass rui-knob - Root; wraps the optional label and knob button.
- * @cssclass rui-knob--value-below - Root with the value readout below the button.
- * @cssclass rui-knob__label - Optional visible label.
- * @cssclass rui-knob__control - Focusable `role="slider"` button and pointer target.
- * @cssclass rui-knob__svg - SVG ring.
- * @cssclass rui-knob__track - Unfilled 300° range arc.
- * @cssclass rui-knob__progress - Filled range arc.
- * @cssclass rui-knob__value - Value readout inside the ring.
- *
  * @remarks
  * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
- * round or transform them in application code when needed.
+ * round or transform them in application code when needed. BEM classes live on the view;
+ * the host never queries them. The control also carries `data-knob-control` for field wiring.
  */
 @customElement('rui-knob')
 export class RuiKnob extends RadiantElement {

@@ -3,13 +3,14 @@ import type { RuiGrid as RuiGridElement, RuiGridProps } from './grid.script';
 import './grid.script';
 
 /**
- * Data grid composed from a 2-D `rows` array.
+ * Grid view. Pass `rows` for a 2-D data grid, or `children` inside the stamped root surface.
  *
+ * @cssclass rui-grid - Root surface (`role="grid"`).
  * @cssclass rui-grid__row - Table row (`role="row"`).
  * @cssclass rui-grid__cell - Table cell (`role="gridcell"`).
  *
- * @remarks The host (`<rui-grid>`) owns roving-tabindex keyboard navigation;
- * row and cell roles/classes are authored here in the view.
+ * @remarks Stamps `[role="grid"]` with `data-ref="root"`. `rows` render
+ * `[role="row"]` > `[role="gridcell"]` per cell.
  */
 export function RuiGrid({
 	rows,

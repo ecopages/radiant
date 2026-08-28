@@ -41,3 +41,31 @@ export const meta = {
 type Story = DocsStory<CalendarArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'calendar/default' } } });
+
+export const Range: Story = docsStory(meta, {
+	args: { selectionMode: 'range' },
+	render: (args) => (
+		<RuiCalendar
+			selectionMode="range"
+			disabled={args.disabled}
+			visibleMonths={2}
+			pageBehavior={args.pageBehavior}
+			value="2026-08-07/2026-08-12"
+		/>
+	),
+	parameters: { docs: { id: 'calendar/range' } },
+});
+
+export const Multiple: Story = docsStory(meta, {
+	args: { selectionMode: 'multiple' },
+	render: (args) => (
+		<RuiCalendar
+			selectionMode="multiple"
+			disabled={args.disabled}
+			visibleMonths={args.visibleMonths}
+			pageBehavior={args.pageBehavior}
+			value="2026-08-07,2026-08-11,2026-08-19"
+		/>
+	),
+	parameters: { docs: { id: 'calendar/multiple' } },
+});

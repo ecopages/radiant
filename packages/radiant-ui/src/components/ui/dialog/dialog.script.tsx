@@ -19,20 +19,46 @@ export type RuiDialogCloseDetail = {
 };
 
 /**
- * `<rui-dialog>` — a composition-first modal dialog shell.
+ * `<rui-dialog>` — modal dialog behavior: focus trap, dismiss, and accessible naming.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiDialog` view helpers which stamp the same targets.
  *
  * Implements the WAI-ARIA APG Dialog (Modal) pattern, and the Alert and Message
- * Dialogs pattern when `alert` is set. Compose title, body, actions, and close
- * controls with the view helpers.
+ * Dialogs pattern when `alert` is set.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — dialog chrome wrapper. Host toggles `hidden` when `open` is false.
+ * - `[data-ref="backdrop"]` — scrim behind the surface. Click dismisses (`rui-close` reason `backdrop`).
+ * - `[data-ref="dialog"]` — modal panel. Host sets `aria-labelledby` (from title),
+ *   `aria-label` (from `label` when there is no title), and `aria-describedby` (from body).
+ *   The view seeds `role="dialog"` or `role="alertdialog"`, `aria-modal="true"`, and `tabIndex="-1"`.
+ *
+ * Optional:
+ * - `[data-dialog-title]` — visible name. Host assigns `id` and wires `aria-labelledby` when text is present.
+ * - `[data-dialog-body]` — supplementary description. Host assigns `id` and wires `aria-describedby`.
+ * - `[data-dialog-close]` — dismiss control. Click emits `rui-close` with reason `dismiss`.
+ *
+ * Provide either `[data-dialog-title]` with text or the `label` attribute for an accessible name.
+ * Do not fight host-owned `aria-labelledby`, `aria-label`, `aria-describedby`, or `hidden` on `[data-ref="root"]`.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
  *
  * @element rui-dialog
- * @fires rui-close - Emitted when the dialog is dismissed.
- * @cssclass rui-dialog - Root; hidden until `open`.
- * @cssclass rui-dialog__backdrop - Scrim using the `overlay` role.
- * @cssclass rui-dialog__surface - Modal panel: `background` + `rounded-container` + `shadow-modal`.
+ * @attr {boolean} open - Whether the dialog is open. Default: `false`.
+ * @attr {boolean} alert - Uses `role="alertdialog"` for workflow-interrupting confirmations. Default: `false`.
+ * @attr {string} label - Accessible name when there is no visible title.
+ * @fires rui-close - Emitted when the dialog is dismissed; `detail.reason` is `escape`, `backdrop`, or `dismiss`.
+ *
+ * @remarks
+ * Minimum tree: `[data-ref="root"]` > backdrop + `[data-ref="dialog"]` with optional title, body, and close.
+ * BEM classes live on the view `DialogShell` and helpers; the host never queries them.
  */
 @customElement('rui-dialog')
 export class RuiDialog extends RadiantElement {
