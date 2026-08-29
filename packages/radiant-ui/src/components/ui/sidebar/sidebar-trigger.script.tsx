@@ -23,16 +23,24 @@ export type RuiSidebarTriggerProps = {
 /**
  * `<rui-sidebar-trigger>` — toggle button for a sibling `rui-sidebar`.
  *
- * The trigger looks up the sidebar by `id` on every click so it works even
- * when the trigger element is re-mounted independently of the sidebar. The
- * trigger also subscribes to `rui-sidebar-toggle` events to mirror the
- * sidebar's `data-state` in its own `aria-expanded` attribute.
+ * The custom element is a behavior host: button chrome is authored in the
+ * `RuiSidebarTrigger` view; this host syncs ARIA on the light-DOM button.
  *
- * @remarks
- * Button chrome and icons are authored in the `RuiSidebarTrigger` view; this host
- * only syncs ARIA and presentation attrs on the light-DOM button.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="button"]` — toggle control. Host sets `aria-expanded`,
+ *   `data-sidebar-state`, `aria-label`, and `aria-controls` (from `controls`
+ *   or the resolved sidebar `id`).
+ *
+ * Do not set `aria-expanded` or `aria-controls` on the button — the host owns those.
+ *
+ * Nested hosts: none. Resolves `rui-sidebar` by `controls` id or `closest()`.
  *
  * @element rui-sidebar-trigger
+ * @attr {string} controls - ID of the `rui-sidebar` this trigger controls.
+ * @attr {string} button-label - Accessible name for the trigger button. Default: `Toggle sidebar`.
+ * @attr {(''|'header'|'inset')} placement - Where the trigger is rendered; affects the default label.
  */
 @customElement('rui-sidebar-trigger')
 export class RuiSidebarTrigger extends RadiantElement {
@@ -180,7 +188,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 			`rui-button rui-button--${this.variant} rui-button--${this.size} rui-sidebar__trigger ${this.placementClass()}`.trim();
 	}
 
-	@onEvent({ selector: '[data-ref="button"]', type: 'click' })
+	@onEvent({ ref: 'button', type: 'click' })
 	onButtonClick(event: Event): void {
 		event.preventDefault();
 		event.stopPropagation();

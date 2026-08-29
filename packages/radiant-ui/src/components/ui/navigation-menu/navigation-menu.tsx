@@ -45,7 +45,7 @@ export type RuiNavigationMenuTriggerProps = RuiButtonControlProps & {
 	value: string;
 };
 
-/** Top-level megamenu trigger. Place inside `RuiNavigationMenuBar`. */
+/** Top-level megamenu trigger. Stamps `[data-navigation-item]`, `[data-navigation-trigger]`, and `data-value`. */
 export function RuiNavigationMenuTrigger({
 	children,
 	value,
@@ -71,7 +71,7 @@ export type RuiNavigationMenuLinkProps = JsxElementProps<HTMLAnchorElement> & {
 	href: string;
 };
 
-/** Plain navigation link. Place inside `RuiNavigationMenuBar`. */
+/** Plain navigation link. Stamps `[data-navigation-item]`. */
 export function RuiNavigationMenuLink({ children, href, class: className, ...props }: RuiNavigationMenuLinkProps) {
 	return (
 		<a
@@ -89,7 +89,7 @@ export type RuiNavigationMenuPanelProps = JsxElementProps<HTMLDivElement> & {
 	value: string;
 };
 
-/** Megamenu panel paired with a trigger by `value`. Place inside `RuiNavigationMenuPanels`. */
+/** Megamenu panel paired with a trigger by `value`. Stamps `[data-navigation-panel]` and `data-value`. */
 export function RuiNavigationMenuPanel({ children, value, class: className, ...props }: RuiNavigationMenuPanelProps) {
 	return (
 		<div {...props} class={className} data-navigation-panel data-value={value}>

@@ -6,25 +6,33 @@ export type RuiGridProps = {
 };
 
 /**
- * `<rui-grid>` — an interactive grid navigated with arrow keys.
+ * `<rui-grid>` — keyboard-navigable grid without selection.
  *
- * Implements a simplified APG Grid pattern for layout/data cells with
- * `role="grid"`, `role="row"`, and `role="gridcell"`. Row length is taken from
- * the authored markup — do not pass a separate column count.
+ * The custom element is a behavior host: it does not render cells. Import the
+ * script and place light-DOM children that match the contract below, or use
+ * `RuiGrid` with a `rows` array or authored children inside the root surface.
  *
- * @summary Keyboard-navigable grid; cells are authored light-DOM markup.
+ * Row length is taken from the authored markup — do not pass a separate column count.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[role="grid"]` — root surface. The view sets `aria-label`.
+ * - `[role="row"]` — row container (direct parent of cells for navigation).
+ * - `[role="gridcell"]` — one cell. Host sets roving `tabIndex`.
+ *
+ * Do not set `tabIndex` on gridcells — the host owns roving focus. Selection is
+ * not modeled.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/grid/
- *
  * @element rui-grid
- *
  * @attr {string} label - Accessible name announced when focus enters the grid.
  *
- * @cssclass rui-grid - Root surface (`role="grid"`).
- *
  * @remarks
- * Cells are focused with a roving `tabindex` (arrow keys, Home/End). Selection
- * is not modeled — row and cell classes live on the `RuiGrid` view.
+ * Minimum tree: `[role="grid"]` > `[role="row"]` > `[role="gridcell"]`.
+ * BEM classes live on the `RuiGrid` view; the host never queries them.
  */
 @customElement('rui-grid')
 export class RuiGrid extends RadiantElement {

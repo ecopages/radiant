@@ -46,9 +46,7 @@ describe('RuiSelect', () => {
 	});
 
 	it('keeps the popup open in multiple mode unless shouldCloseOnSelect is set', async () => {
-		const { host, cleanup } = mount(
-			<RuiSelect selectionMode="multiple" options={OPTIONS} placeholder="Animals" />,
-		);
+		const { host, cleanup } = mount(<RuiSelect selectionMode="multiple" options={OPTIONS} placeholder="Animals" />);
 		await settled();
 
 		const trigger = host.querySelector('[data-select-trigger]') as HTMLButtonElement;

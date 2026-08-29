@@ -57,6 +57,30 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 </RuiHoverCard>
 ```
 
+## Custom markup
+
+`<rui-hover-card>` coordinates any light-DOM tree that matches its query contract. The
+`Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/hover-card';
+
+<rui-hover-card delay={600} content-label="Jane Cooper preview">
+  <span class="rui-hover-card">
+    <span class="rui-hover-card__trigger" data-ref="trigger">
+      <span data-hover-card-trigger>
+        <button type="button">Jane Cooper</button>
+      </span>
+    </span>
+    <div data-ref="content" class="rui-hover-card__content rui-floating" role="dialog">
+      <p>Product designer on the Radiant team.</p>
+    </div>
+  </span>
+</rui-hover-card>;
+```
+
+The host queries `[data-ref="trigger"]` for focus events and `[data-hover-card-trigger]` for the anchor.
+
 ## Hover card vs tooltip
 
 <p>Use `RuiTooltip` for short, non-interactive descriptions. Use `RuiHoverCard` when the preview includes links, avatars, or other focusable content.</p>
@@ -91,18 +115,36 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 | `disabled` | `boolean` | `false` | Suppress hover/focus preview interactions. |
 | `content-label` | `string` | `Preview` | Accessible name for the preview dialog. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `trigger` | Anchor element (link, button, or other focusable control). |
-| `content` | Rich preview content in the floating surface. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-hover-card-trigger]` | yes | — | anchor wrapper |
+| `[data-ref="trigger"]` | yes | — | focus bridge around the anchor |
+| `[data-ref="content"]` | yes | `id`, `aria-label` | preview body; view seeds `role="dialog"` |
+| focusable anchor | per trigger | `aria-controls`, `aria-expanded` | control inside `[data-hover-card-trigger]` |
+
+Do not set `aria-controls`, `aria-expanded`, or `aria-label` on the surface. Nested hosts: none.
 
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-open-change` | `{ open: boolean }` | Emitted when open state changes. |
+
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `setOpen(next, emit?)` | Toggle open state. Pass `emit = false` to sync without firing `rui-open-change`. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiHoverCardTrigger` | `[data-ref="trigger"]` wrapping `[data-hover-card-trigger]` | Anchor for hover/focus. |
+| `RuiHoverCardContent` | `[data-ref="content"]` | Floating preview surface. |
+| `RuiHoverCard` | `.rui-hover-card` wrapper | Compose trigger + content as children. |
 
 ### CSS classes
 

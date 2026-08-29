@@ -36,20 +36,31 @@ type RuiTocBindings = {
 };
 
 /**
- * `<rui-toc>` — table of contents that tracks in-page headings and highlights the
- * section currently in view while scrolling.
+ * `<rui-toc>` — table of contents that tracks in-page headings while scrolling.
  *
- * @remarks
- * Resolves the nearest overflow scroll ancestor of the target (not always
- * `window`) so nested layout scrollers — e.g. docs inset content — drive
- * active-section tracking correctly.
+ * Derived Tree: the host `render()` owns the `nav` landmark and jump-link list.
+ * It scans headings in an external content root (not authored children of the host).
+ *
+ * ## Scan contract
+ *
+ * - `target` — CSS selector for the content root. Default: parent element.
+ * - `heading-selector` — selector for headings inside that root. Default: `h2,h3`.
+ *   Headings without `id` receive one before links are built.
+ *
+ * Resolves the nearest overflow scroll ancestor of the target (not always `window`)
+ * so nested layout scrollers drive active-section tracking correctly.
  *
  * @element rui-toc
- * @attr {string} target - CSS selector for the content root that contains headings. Default: the parent element.
+ * @attr {string} target - CSS selector for the content root that contains headings.
  * @attr {string} heading-selector - Selector for headings to include. Default: `h2,h3`.
  * @attr {string} label - Visible label above the link list. Default: `On this page`.
  * @attr {number} scroll-offset - Pixel offset from the viewport top when tracking the active section. Default: `120`.
- * @attr {string} navigation-events - Extra document event names (comma-separated) that trigger a rebuild, e.g. `eco:page-load,eco:after-swap`.
+ * @attr {string} navigation-events - Comma-separated document event names that trigger a rebuild.
+ *
+ * @remarks
+ * Renders nothing when no headings match. Link click updates the URL hash and
+ * scrolls the heading into view with `scroll-offset` applied.
+ *
  * @cssclass rui-toc - Root `nav` landmark.
  * @cssclass rui-toc__label - Section label above the list.
  * @cssclass rui-toc__list - Link list.

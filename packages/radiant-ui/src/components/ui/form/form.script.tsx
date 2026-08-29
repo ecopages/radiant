@@ -48,29 +48,39 @@ const initialFormActions: FormContextActions = {
 /**
  * `<rui-form>` — form coordinator with RHF-like validation and field registration.
  *
- * Owns the {@link FormStore}, publishes field presentation via {@link formContext},
- * and exposes registration / validation entry points for `<rui-field>` connectors.
+ * The custom element is a behavior host: it does not render field markup. It owns
+ * the {@link FormStore}, publishes field presentation via {@link formContext}, and
+ * coordinates `<rui-field>` connectors and a composed native `<form>`.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="form"]` — native `<form noValidate>`. Host listens
+ *   for `submit` and `reset` on this node.
+ *
+ * Optional:
+ * - `button[type="submit"]` outside the native form — host sets `form` to associate
+ *   orphan submit buttons with the inner form.
+ * - `rui-field` descendants — register through context; each field owns its control tree.
+ *
+ * Nested hosts: `rui-field` (and each field's control host). The form does not query
+ * control targets directly.
  *
  * @element rui-form
  *
- * @attr {('onSubmit'|'onBlur'|'onChange'|'onTouched'|'all')} mode - When validation
- *   runs. Reflects to markup. Default: `onSubmit`.
- * @attr {('onSubmit'|'onBlur'|'onChange'|'onTouched'|'all')} revalidate-mode - When
- *   fields re-validate after a failed submit. Reflects to markup. Default: `onChange`.
- * @attr {string} data-default-values - JSON-serialized default values for SSR / JSX
- *   attribute channel. Default: `undefined`.
+ * @attr {('onSubmit'|'onBlur'|'onChange'|'onTouched'|'all')} mode - When validation runs. Default: `onSubmit`.
+ * @attr {('onSubmit'|'onBlur'|'onChange'|'onTouched'|'all')} revalidate-mode - When fields re-validate after a failed submit. Default: `onChange`.
+ * @attr {string} data-default-values - JSON-serialized default values for SSR / JSX attribute channel. Default: `undefined`.
  * @attr {string} action - Native form destination when `onSubmit` is not provided.
  * @attr {string} method - Native form HTTP method when `onSubmit` is not provided.
  *
  * @fires rui-submit - Emitted when validation passes; `detail.values` holds field values.
- * @fires rui-invalid - Emitted when validation fails on submit; `detail.errors` maps
- *   field names to error messages.
+ * @fires rui-invalid - Emitted when validation fails on submit; `detail.errors` maps field names to error messages.
  *
  * @remarks
  * `defaultValues` and `resolver` are object props — they only reach the element via
- * `prop:` bindings from the `RuiForm` view, not plain attributes.
- *
- * @cssclass rui-form - Root form surface (`<form noValidate>`).
+ * `prop:` bindings from the `RuiForm` view, not plain attributes. The host queries
+ * `[data-ref="form"]`.
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {
@@ -151,7 +161,7 @@ export class RuiForm extends RadiantElement {
 	}
 
 	private queryNativeForm(): HTMLFormElement | null {
-		return this.getRef<HTMLFormElement>('form') ?? this.querySelector('form.rui-form');
+		return this.getRef<HTMLFormElement>('form');
 	}
 
 	/** Link submit buttons left on the host outside the composed native `<form>`. */

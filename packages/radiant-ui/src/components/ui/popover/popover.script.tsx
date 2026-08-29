@@ -24,7 +24,7 @@ export type RuiPopoverProps = {
 	/** Gap between anchor and surface in px. Default: `8`. */
 	offset?: number;
 	/**
-	 * CSS selector for an external anchor when not using a trigger slot or
+	 * CSS selector for an external anchor when not using `[data-popover-trigger]` or
 	 * `rui-popover-trigger`.
 	 */
 	anchor?: string;
@@ -33,16 +33,43 @@ export type RuiPopoverProps = {
 };
 
 /**
- * `<rui-popover>` — a floating overlay positioned relative to an anchor.
+ * `<rui-popover>` — floating overlay positioned relative to an anchor.
  *
- * Pair with `RuiPopoverTrigger`, a `[data-popover-trigger]` element in the
- * view-owned shell, or pass an `anchor` selector for a custom anchor element.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiPopover` view helpers which stamp the same targets.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="host"]` — anchor + surface wrapper. Focus-out on this node can dismiss when open.
+ * - `[data-ref="surface"]` — floating panel. Host assigns `id` and coordinates portal positioning.
+ *   The view seeds `role="dialog"`.
+ *
+ * Anchor (one of):
+ * - `[data-popover-trigger]` — inside this host, inside a parent `rui-popover-trigger`, or resolved
+ *   via the `anchor` attribute (CSS selector). Host sets `aria-controls` and `aria-expanded` on the
+ *   resolved focusable anchor (first `button`, link, input, or `[role="button"]` inside the trigger).
+ *
+ * Optional:
+ * - Parent `rui-popover-trigger` — when nested, the trigger is read from that host's `[data-popover-trigger]`.
+ *
+ * Nested hosts: `rui-popover-trigger` (coordinates open state; see that element's contract).
  *
  * @element rui-popover
+ * @attr {boolean} open - Whether the popover is open (controlled). Default: `false`.
+ * @attr {string} placement - Placement relative to the anchor. Default: `bottom`.
+ * @attr {boolean} portal - Teleport the surface to `document.body`. Default: `true`.
+ * @attr {boolean} match-anchor-width - Match the anchor width (dropdown menus). Default: `false`.
+ * @attr {number} offset - Gap between anchor and surface in px. Default: `8`.
+ * @attr {string} anchor - CSS selector for an external anchor when not using `[data-popover-trigger]`.
+ * @attr {('default'|'listbox')} variant - Surface variant; `listbox` strips padding. Default: `default`.
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
- * @cssclass rui-popover-host - Anchor + surface wrapper.
- * @cssclass rui-popover - Floating surface (`role="dialog"`); `background` + `rounded-container` + `shadow-overlay`.
- * @cssclass rui-popover--listbox - Stripped padding for embedded listboxes.
+ *
+ * @remarks
+ * `setOpen(next, emit?)` toggles open state. With `anchor` and no `[data-popover-trigger]`, the host
+ * toggles open on anchor click. Minimum inline-trigger tree: `[data-ref="host"]` >
+ * `[data-popover-trigger]` + `[data-ref="surface"]`. BEM classes live on the view; the host never queries them.
  */
 @customElement('rui-popover')
 export class RuiPopover extends RadiantElement {
@@ -244,10 +271,26 @@ export type RuiPopoverTriggerProps = {
 };
 
 /**
- * `<rui-popover-trigger>` — coordinates open state between a trigger and `rui-popover`.
+ * `<rui-popover-trigger>` — coordinates open state between a trigger and child `rui-popover`.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiPopoverTrigger` view helper which stamps the same targets.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — click delegate root. Toggles when the event target is inside `[data-popover-trigger]`.
+ * - `[data-popover-trigger]` — pressable anchor (often wrapping a button).
+ * - `rui-popover` — child custom element. Open state syncs both ways via `rui-open-change`.
+ *
+ * Nested hosts: `rui-popover` (see that element's contract for surface targets).
  *
  * @element rui-popover-trigger
- * @cssclass rui-popover-trigger - Trigger + popover wrapper.
+ * @attr {boolean} open - Whether the popover starts open. Default: `false`.
+ *
+ * @remarks
+ * Minimum tree: `[data-ref="root"]` > `[data-popover-trigger]` + `rui-popover`. BEM classes live on the view.
  */
 @customElement('rui-popover-trigger')
 export class RuiPopoverTrigger extends RadiantElement {

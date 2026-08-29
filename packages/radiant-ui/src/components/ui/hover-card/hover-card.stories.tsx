@@ -30,7 +30,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const getContent = (canvasElement: HTMLElement) =>
-	canvasElement.querySelector('rui-hover-card .rui-hover-card__content') as HTMLElement;
+	canvasElement.querySelector('rui-hover-card [data-ref="content"]') as HTMLElement;
 
 export const Default: Story = {
 	render: (args) => (
@@ -56,12 +56,12 @@ export const Default: Story = {
 		const trigger = host.querySelector('[data-hover-card-trigger] button') as HTMLButtonElement;
 
 		await step('card starts hidden', async () => {
-			await expect(content.hidden).toBe(true);
+			await expect(content).toHaveAttribute('hidden');
 		});
 
 		await step('pointer enter shows interactive content', async () => {
 			host.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerType: 'mouse' }));
-			await expect(content.hidden).toBe(false);
+			await expect(content).not.toHaveAttribute('hidden');
 			await expect(content).toHaveAttribute('aria-label', 'Preview');
 			await expect(content).toHaveTextContent('Jane Cooper');
 		});
@@ -69,7 +69,7 @@ export const Default: Story = {
 		await step('Escape dismisses the card', async () => {
 			trigger.focus();
 			await userEvent.keyboard('{Escape}');
-			await expect(content.hidden).toBe(true);
+			await expect(content).toHaveAttribute('hidden');
 		});
 	},
 };

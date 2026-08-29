@@ -23,18 +23,30 @@ export type RuiCheckboxGroupChangeDetail = {
 };
 
 /**
- * `<rui-checkbox-group>` — a set of checkboxes where any number of options
- * may be selected independently.
+ * `<rui-checkbox-group>` — checkbox group behavior host.
  *
- * Implements the WAI-ARIA APG Checkbox pattern using `RuiCheckbox` children
- * inside a `role="group"` container. Group `value` is the comma-separated
- * protocol shared with multi-select controls.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiCheckboxGroup` view helpers which stamp the same targets.
+ *
+ * Group `value` is the comma-separated protocol shared with multi-select controls.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-checkbox-group-root]` — group container. Host sets `aria-label`, `aria-disabled`, `data-orientation`.
+ * - `rui-checkbox` — one per option (nested host). Host sets `checked`, `disabled`, `name`.
+ *
+ * Per checkbox (`rui-checkbox`):
+ * - `value` — selection identity.
+ * - `data-disabled` — per-item disabled flag preserved when the group is enabled.
+ *
+ * Do not set `checked`, `disabled`, or `name` on `rui-checkbox` children — the host owns those.
+ * After connect, group `value` wins over per-item `checked`.
+ *
+ * Nested hosts: `rui-checkbox` (listens for `rui-change`; stops propagation and re-emits group-shaped detail).
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
- *
- * Keyboard interaction (native to each checkbox):
- * - `Tab` / `Shift+Tab`: move focus between checkboxes
- * - `Space`: toggle the focused checkbox
  *
  * @element rui-checkbox-group
  *
@@ -47,12 +59,18 @@ export type RuiCheckboxGroupChangeDetail = {
  * @fires rui-change - Emitted after the selected values change; `detail.value` holds the serialized selection.
  *
  * @remarks
- * Compose with `RuiCheckboxGroupControl` and `RuiCheckbox`, or use the `options`
- * convenience API. After connect, group `value` wins over per-item `checked`.
- * Item-level `disabled` is preserved via `data-disabled` on `RuiCheckbox`.
- * Child `rui-change` is stopped immediately so host listeners only receive group-shaped `detail.value`.
+ * Minimum headless tree:
  *
- * @cssclass rui-checkbox-group - Group surface (`role="group"`).
+ * ```html
+ * <rui-checkbox-group value="news" name="topics" label="Topics">
+ *   <div data-checkbox-group-root role="group">
+ *     <rui-checkbox value="news">News</rui-checkbox>
+ *     <rui-checkbox value="travel">Travel</rui-checkbox>
+ *   </div>
+ * </rui-checkbox-group>
+ * ```
+ *
+ * BEM classes are presentation-only; see view `@cssclass`.
  */
 @customElement('rui-checkbox-group')
 export class RuiCheckboxGroup extends RadiantElement {

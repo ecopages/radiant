@@ -42,6 +42,30 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Custom markup
+
+`<rui-knob>` coordinates any light-DOM tree that matches its query contract. The `RuiKnob` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/knob';
+
+<rui-knob value={50} min={0} max={100} label="Gain">
+  <div class="rui-knob" data-ref="root">
+    <span class="rui-knob__label" data-ref="label">Gain</span>
+    <button type="button" class="rui-knob__control" data-ref="control" data-knob-control role="slider">
+      <svg class="rui-knob__svg" viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="rui-knob__track" data-ref="track" cx="50" cy="50" fill="none" />
+        <circle class="rui-knob__progress" data-ref="progress" cx="50" cy="50" fill="none" />
+      </svg>
+      <span class="rui-knob__value" data-ref="centerValue" aria-hidden="true"></span>
+    </button>
+    <input type="hidden" data-ref="input" />
+  </div>
+</rui-knob>
+```
+
+BEM classes are presentation-only. The host owns control `aria-*`, ring geometry, and readout text.
+
 Use `valuePosition="below"` to place the readout under the knob, or `showValue={false}` when the value is shown elsewhere. `valueTemplate` replaces the first `{value}` token with the formatted value.
 
 `step` is the snap interval for the stored value. `valuePrecision` only formats the readout, `aria-valuetext`, and related display text. It defaults to the decimal places in `step`, so `0.1 + 0.2` can still be stored as a binary float while the UI shows `0.3`. Round or transform committed values in application code when you need a canonical number.
@@ -95,11 +119,32 @@ The knob consumes semantic roles by default. Override its public custom properti
 | `value-position` | `center` · `below` | `center` | Places the value inside or below the knob. |
 | `value-template` | `string` | `'{value}'` | Readout template. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `rui-knob--value-below`, `--rui-knob-size` on host | root wrapper |
+| `[data-ref="control"]` | yes | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`, `aria-label`, `aria-readonly`, `disabled` | control button; also stamp `data-knob-control` for fields |
+| `[data-ref="track"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG track circle |
+| `[data-ref="progress"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG progress circle |
+| `[data-ref="input"]` | yes | `value`, `name`, `disabled` | hidden form input |
+| `[data-ref="label"]` | no | `hidden`, `textContent` | visible label |
+| `[data-ref="centerValue"]` | no | `textContent`, `hidden` | in-ring readout |
+| `[data-ref="belowValue"]` | no | `textContent`, `hidden` | below-ring readout |
+
+Do not set control `aria-valuenow` or ring geometry. Nested hosts: none.
+
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ value: number }` | Emitted as pointer or keyboard interaction changes the value. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiKnob` | full `[data-ref]` tree under `[data-ref="root"]` | Stamps control, ring SVG, readouts, and hidden input. |
 
 ### CSS classes
 

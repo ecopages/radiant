@@ -54,38 +54,44 @@ export type RuiFieldProps = {
 /**
  * `<rui-field>` — connector between composed controls and an ancestor `<rui-form>`.
  *
- * Registers with the form via {@link formContext} actions, forwards control events,
- * and applies presentation (errors, ARIA) from the form-published `fields` map.
+ * The custom element is a behavior host: it queries authored light-DOM children,
+ * registers with the form via {@link formContext}, forwards control events, and
+ * applies presentation (errors, ARIA) from the form-published `fields` map.
  *
- * The field owns error presentation: it finds `RuiFieldError` / `RuiFieldDescription`
- * in its light DOM, wires them into the control's `aria-describedby`, and drives
- * `aria-invalid` / `aria-required`.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - One control — `[data-rui-control]` or a known host tag (`rui-checkbox`, `rui-switch`,
+ *   `rui-slider`, `rui-knob`, `rui-number-field`, `rui-select`, …). The field reads and
+ *   writes values through the control protocol; see each host's contract for inner targets.
+ *
+ * Optional:
+ * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
+ * - `[data-rui-field-description]` — helper text. Host sets `id` and wires `aria-describedby`.
+ * - `[data-rui-field-error]` — error region. Host sets `id`, `textContent`, and `hidden`.
+ * - `[data-ref="field"]` — column wrapping children; used to locate error regions.
+ *
+ * On each ARIA target the host writes `id` (when missing), `data-rui-field-managed`,
+ * `aria-invalid`, `aria-required`, `aria-describedby`, and `aria-disabled` (when `disabled`).
+ * Do not fight those attributes on controls inside a field.
+ *
+ * Nested hosts: any registered control host inside the field tree (see control protocol).
  *
  * @element rui-field
  *
  * @attr {string} name - Field name; registers with the ancestor form. Default: `''`.
- * @attr {string} error - Standalone error message when not using a form provider.
- *   Default: `''`.
- * @attr {boolean} invalid - Standalone invalid flag when not using a form provider.
- *   Default: `false`.
- * @attr {boolean} disabled - Dims the field and disables nested controls.
- *   Default: `false`.
- * @attr {string} data-default-value - JSON-serialized default value for SSR hydration.
- *   Default: `undefined`.
+ * @attr {string} error - Standalone error message when not using a form provider. Default: `''`.
+ * @attr {boolean} invalid - Standalone invalid flag when not using a form provider. Default: `false`.
+ * @attr {boolean} disabled - Dims the field and disables nested controls. Default: `false`.
+ * @attr {string} data-default-value - JSON-serialized default value for SSR hydration. Default: `undefined`.
  *
  * @remarks
- * The composed surface is `.rui-field` (column). Error / description presentation
- * lives on `RuiFieldError` / `RuiFieldDescription` helpers (`@cssclass` there).
- *
  * `rules` and `defaultValue` are object props — they only reach the element via
  * `prop:` bindings from the `RuiField` view, not plain attributes.
  *
  * **Why a custom element?** The field must observe an ancestor form context and
  * apply ARIA + error text to light-DOM nodes after mount — a JSX wrapper has no
- * lifecycle hook for that.
- *
- * @cssclass rui-field - Root column; wires the composed control, label, description,
- *   and error into the form-published presentation.
+ * lifecycle hook for that. The host queries `[data-ref="field"]` and data attrs.
  */
 @customElement('rui-field')
 export class RuiField extends RadiantElement {

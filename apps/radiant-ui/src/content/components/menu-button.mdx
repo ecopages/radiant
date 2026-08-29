@@ -52,6 +52,19 @@ import { RuiSeparator } from '@ecopages/radiant-ui/separator';
 </RuiMenuButton>
 ```
 
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/menu-button';
+
+<rui-menu-button>
+  <button data-ref="trigger">Actions</button>
+  <div data-ref="menu" role="menu" hidden>
+    <button role="menuitem" data-value="edit">Edit</button>
+  </div>
+</rui-menu-button>
+```
+
 ## Submenus
 
 Place `RuiMenuButtonSubmenuContent` as the next sibling of the branch item. That sibling pair is the ARIA and positioning contract.
@@ -133,7 +146,16 @@ The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
 | `open` | `boolean` | `false` | Whether the menu starts open. |
-| `placement` | `top` · `top-start` · `top-end` · `right` · `right-start` · `right-end` · `bottom` · `bottom-start` · `bottom-end` · `left` · `left-start` · `left-end` | `bottom-start` | Placement of the menu surface relative to its trigger. |
+| `placement` | `top` · … · `left-end` | `bottom-start` | Placement of the menu surface relative to its trigger. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="trigger"]` | yes | `aria-haspopup`, `aria-expanded`, `aria-controls` | trigger button |
+| `[data-ref="menu"]` | yes | `hidden` | popup (`role="menu"`) |
+| `[role="menuitem"]` | yes | `aria-expanded` on branches | label, optional `data-value` |
+| `[data-autocomplete-input]` | no | focus on open | filter field inside menu |
 
 ### Composition
 
@@ -152,14 +174,13 @@ The trigger shares control geometry (`--size-control-md`, `--space-control-x`, `
 
 ### View helpers
 
-| Component | Renders | Notes |
+| Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiMenuButton` | `<rui-menu-button>` | Hosts the composed trigger and menu content. The convenience `trigger` + `items` props generate the same helpers. |
-| `RuiMenuButtonTrigger` | Button | Trigger control that opens the menu. |
-| `RuiMenuButtonContent` | `<div role="menu">` | Popup surface containing menu items. |
-| `RuiMenuButtonSubmenuContent` | `<div role="menu">` | Next sibling of the branch item; right-positioned nested menu surface. |
-| `RuiMenuButtonItem` | `<button role="menuitem">` | Selectable action inside the menu. |
-| `RuiSeparator` | `<hr role="separator">` | Non-focusable divider between menu action groups. |
+| `RuiMenuButton` | `<rui-menu-button>` | `trigger` + `items` convenience API |
+| `RuiMenuButtonTrigger` | `data-ref="trigger"` | |
+| `RuiMenuButtonContent` | `data-ref="menu"`, `role="menu"` | |
+| `RuiMenuButtonSubmenuContent` | `data-ref="submenu-menu"`, `role="menu"` | Sibling of branch item |
+| `RuiMenuButtonItem` | `[role="menuitem"]`, `data-value` | |
 
 ### CSS classes
 

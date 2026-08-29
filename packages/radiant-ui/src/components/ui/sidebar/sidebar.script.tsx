@@ -70,7 +70,7 @@ const DEFAULT_MOBILE_BREAKPOINT = 768;
 const KEYBOARD_SHORTCUT = 'b';
 const KEYBOARD_STEP = 8;
 const KEYBOARD_STEP_LARGE = 32;
-const MENU_LINK_SELECTOR = 'a.rui-sidebar__menu-button';
+const MENU_LINK_SELECTOR = '[data-ref="menu-button"]';
 
 function isModifierPressed(event: KeyboardEvent): boolean {
 	return event.metaKey || event.ctrlKey;
@@ -87,28 +87,45 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
 /**
  * `<rui-sidebar>` — a resizable, collapsible side panel.
  *
- * The sidebar hosts pane content in the view-owned light-DOM shell. When the
- * parent supplies a `RuiSidebarRail` element (or the `collapsible` mode is not
- * `off`), the sidebar manages open/closed state, a focusable resize handle,
- * and keyboard navigation that follows the APG Window Splitter pattern.
+ * The custom element is a behavior host: it does not render pane content.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiSidebar*` view helpers which stamp the same targets.
  *
  * When `collapsible="off"` (the default), the pane stays open and exposes
  * a draggable resize handle. When `collapsible="icon"`, the pane collapses
  * to a narrow rail. When `collapsible="full"`, the pane is hidden until
  * toggled, and shown as an overlay drawer below the mobile breakpoint.
  *
- * The host reflects `data-state`, `data-collapsible`, `data-variant`,
- * `data-side`, and `data-mobile` so the stylesheet can drive every visual
- * mode without imperative JS.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — inner shell. Host mirrors `data-state`, `data-collapsible`,
+ *   `data-variant`, `data-side`, and `data-mobile` on the shell and the host.
+ * - `[data-ref="pane"]` — pane landmark. Host sets `aria-label`, `inert`, and
+ *   `data-side` / `data-variant`.
+ *
+ * Optional:
+ * - `[data-ref="scrim"]` — mobile overlay dismiss control. Host toggles `hidden`.
+ * - `[data-ref="handle"]` — resize handle (`role="separator"`). Host toggles `hidden`
+ *   and sets `aria-orientation`, `aria-valuenow` / `min` / `max`, and `aria-label`.
+ * - `[data-ref="menu-button"]` — menu links. When `matchActive` is set, host
+ *   toggles `rui-sidebar__menu-button--active` and `aria-current="page"`.
+ *
+ * Host-owned on `<rui-sidebar>`: `role="complementary"`, `aria-label`, `data-state`,
+ * `data-collapsible`, `data-variant`, `data-side`, `data-mobile`, `data-pane-width`.
+ *
+ * Do not set `inert` on the pane or `aria-expanded` on the handle — the host owns those.
+ *
+ * Nested hosts: none. `rui-sidebar-trigger` controls this host via `toggle()`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/
- *
  * @element rui-sidebar
- * @fires rui-sidebar-toggle - Emitted on every open/closed transition.
- *        `detail` is `{ open, state }`.
- * @fires rui-sidebar-resize - Emitted on every width change. `detail` is `{ width }`.
- * @fires rui-sidebar-mobile-change - Emitted when the host flips between
- *        mobile drawer mode and inline mode. `detail` is `{ mobile: boolean }`.
+ * @fires rui-sidebar-toggle - Emitted on every open/closed transition; `detail` is `{ open, state }`.
+ * @fires rui-sidebar-resize - Emitted on every width change; `detail` is `{ width }`.
+ * @fires rui-sidebar-mobile-change - Emitted when the host flips between mobile drawer and inline mode; `detail` is `{ mobile: boolean }`.
+ *
+ * @remarks
+ * Public methods: `toggle()`, `syncActiveLinks()`. BEM classes live on the view helpers.
  */
 @customElement('rui-sidebar')
 export class RuiSidebar extends RadiantElement {

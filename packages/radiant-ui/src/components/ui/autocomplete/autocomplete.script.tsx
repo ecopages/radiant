@@ -11,9 +11,32 @@ export type RuiAutocompleteProps = {
 /**
  * `<rui-autocomplete>` — filters a composed collection from a text input.
  *
- * Wrap a search field (`data-autocomplete-input`) and a collection
- * (`data-autocomplete-collection` or default slot) containing `[role="option"]`,
- * `[role="menuitem"]`, or `[data-tag]` items.
+ * The custom element is a behavior host: it does not render filter markup.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use `RuiAutocomplete` and its helpers, which stamp the same targets.
+ *
+ * ## Light-DOM contract
+ *
+ * Required (one of):
+ * - `[data-autocomplete-input]` — search field inside this host. Host listens for `input`.
+ * - External `[data-autocomplete-input]` on an ancestor `rui-combobox` or `rui-select`
+ *   when this host does not contain the input.
+ *
+ * Collection (one of):
+ * - `[data-autocomplete-collection]` — wrapper around filterable items.
+ * - The host element itself — when no collection wrapper is provided.
+ *
+ * Per item inside the collection:
+ * - `[role="option"]`, `[role="menuitem"]`, or `[data-tag]` — filterable rows. Host
+ *   toggles `hidden` based on the query. Text match uses `data-label` or trimmed
+ *   `textContent`.
+ *
+ * Optional:
+ * - `[data-autocomplete-empty]` — no-results state. Host toggles `hidden` when matches exist.
+ * - `[data-label]` on items — filter text; falls back to trimmed `textContent`.
+ *
+ * Nested hosts: filterable items are often `rui-listbox` options or `rui-tag` chips;
+ * this host only queries the role / data-tag selectors above, not listbox internals.
  *
  * @remarks When nested in `rui-combobox`, the combobox input acts as the filter
  * field. `rui-select` uses a dedicated search input inside the popup instead.
@@ -25,7 +48,9 @@ export type RuiAutocompleteProps = {
  * @attr {string} sensitivity - Filter sensitivity: `base` (case-insensitive contains), `case`, or `accent`. Default: `base`.
  * @attr {string} input-value - Controlled filter query; when unset, reads from the composed input. Default: `''`.
  *
- * @cssclass rui-autocomplete - Filter host.
+ * @remarks
+ * `[data-ref="root"]` on the view is presentation only; the host does not query it.
+ * BEM classes live on the view; the host never queries them.
  */
 @customElement('rui-autocomplete')
 export class RuiAutocomplete extends RadiantElement {

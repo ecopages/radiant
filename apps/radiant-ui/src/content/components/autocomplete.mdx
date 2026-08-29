@@ -48,6 +48,25 @@ import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
 </RuiAutocomplete>
 ```
 
+## Custom markup
+
+`<rui-autocomplete>` coordinates any light-DOM tree that matches its query contract. The `RuiAutocomplete` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/autocomplete';
+
+<rui-autocomplete sensitivity="base">
+  <input type="search" data-autocomplete-input class="rui-autocomplete__input" placeholder="Search animals" />
+  <div data-autocomplete-collection class="rui-autocomplete__collection">
+    <div role="option" data-label="Cat">Cat</div>
+    <div role="option" data-label="Dog">Dog</div>
+  </div>
+  <div data-autocomplete-empty class="rui-autocomplete__empty" hidden>No matches found.</div>
+</rui-autocomplete>
+```
+
+BEM classes are presentation-only. Filterable items may use `[role="option"]`, `[role="menuitem"]`, or `[data-tag]`. Match text uses `data-label` or trimmed text content.
+
 ## Tune filter sensitivity
 
 <p>Use `base` for standard substring matching. Choose `accent` or `case` when your locale or dataset requires looser or stricter comparison.</p>
@@ -79,20 +98,26 @@ The filtered results themselves are `RuiListbox` / `RuiListboxOption` and follow
 | `sensitivity` | `base` · `case` · `accent` | `base` | Filter sensitivity for substring matching. |
 | `input-value` | `string` | `''` | Controlled filter query; when unset, reads from the composed input. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `input` | Search field (`RuiAutocompleteInput`). |
-| `children` | Filterable collection of `[role="option"]`, `[role="menuitem"]`, or `[data-tag]` items. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-autocomplete-input]` | yes (or external on combobox/select) | — | search input value |
+| `[data-autocomplete-collection]` | no | — | collection wrapper; host falls back to itself |
+| `[role="option"]`, `[role="menuitem"]`, `[data-tag]` | per item | `hidden` | item content; optional `data-label` for filter text |
+| `[data-autocomplete-empty]` | no | `hidden` | no-results region |
+| `[data-label]` | per item | — | filter text; fallback trimmed `textContent` |
+
+Nested hosts: items are often listbox options or tag chips; this host queries roles / `[data-tag]` only.
 
 ### View helpers
 
-| Component | Renders |
-| --- | --- |
-| `RuiAutocompleteInput` | Bordered search input (composed via `RuiAutocompleteInput`). |
-| `RuiAutocompleteCollection` | Scrollable wrapper for the filterable options. |
-| `RuiAutocompleteEmpty` | No-results state, hidden while matches exist. |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiAutocomplete` | `[data-ref="root"]` wrapper | Presentation only on root. |
+| `RuiAutocompleteInput` | `[data-autocomplete-input]` | Bordered search input. |
+| `RuiAutocompleteCollection` | `[data-autocomplete-collection]` | Scrollable filterable region. |
+| `RuiAutocompleteEmpty` | `[data-autocomplete-empty]` | Hidden while matches exist. |
 
 ### CSS classes
 

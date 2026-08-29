@@ -48,6 +48,31 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Custom markup
+
+`<rui-radio-group>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/radio-group';
+
+<rui-radio-group value="pro" name="plan" label="Plan">
+  <div data-radio-group-root role="radiogroup" class="rui-radio-group">
+    <label class="rui-radio">
+      <input type="radio" class="rui-radio__input" value="free" />
+      <span class="rui-radio__control" aria-hidden="true"></span>
+      <span class="rui-radio__label">Free</span>
+    </label>
+    <label class="rui-radio">
+      <input type="radio" class="rui-radio__input" value="pro" />
+      <span class="rui-radio__control" aria-hidden="true"></span>
+      <span class="rui-radio__label">Pro</span>
+    </label>
+  </div>
+</rui-radio-group>
+```
+
+BEM classes are presentation-only. Do not set `name`, `checked`, or `disabled` on radios — the host owns those.
+
 ## Mutually exclusive choices
 
 <p>Use radio groups when options are mutually exclusive. For independent toggles that share one field value, use a <a href="/components/checkbox-group">checkbox group</a>; for a single on/off toggle, use a <a href="/components/checkbox">checkbox</a>.</p>
@@ -79,11 +104,14 @@ The custom control dot is decorative (`aria-hidden`), the visually hidden native
 | `label` | `string` | `''` | Accessible name when no visible legend is composed in the view. |
 | `disabled` | `boolean` | `false` | Disables every radio in the group. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | One or more `<label>` children, each wrapping a radio input with a unique `value`. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-radio-group-root]` | yes | `aria-label`, `aria-disabled` | the group node |
+| `input[type="radio"]` | yes (per option) | `name`, `checked`, `disabled` | `value`, `data-disabled` |
+
+Do not set `name`, `checked`, or `disabled` on radios. Nested hosts: none.
 
 ### Events
 
@@ -96,6 +124,14 @@ The custom control dot is decorative (`aria-hidden`), the visually hidden native
 | Prop | Type | Description |
 | --- | --- | --- |
 | `options` | `RuiRadioOption[]` | `{ value, label, disabled? }` entries rendered by the view. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiRadioGroup` | `<rui-radio-group>` | Accepts `options` or children. |
+| `RuiRadioGroupControl` | `[data-radio-group-root]` | `role="radiogroup"` container. |
+| `RuiRadio` | `input[type="radio"]` | Label-wrapped option with `value`. |
 
 ### CSS classes
 

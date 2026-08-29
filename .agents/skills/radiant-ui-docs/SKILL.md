@@ -1,10 +1,11 @@
 ---
 name: radiant-ui-docs
 description: >-
-    Documents @ecopages/radiant-ui behavior hosts: light-DOM query contracts,
-    Composition Helpers, TSDoc on rui-* custom elements, and apps/radiant-ui MDX.
-    Use when updating component TSDoc, authoring or repairing component docs
-    pages, describing data attributes / children shape, or applying the tag-group
+    Documents @ecopages/radiant-ui behavior hosts: light-DOM query contracts
+    (data-ref / data-* / roles, never BEM), Composition Helpers, TSDoc on rui-*
+    custom elements, and apps/radiant-ui MDX. Use when updating component TSDoc,
+    authoring or repairing component docs pages, describing data attributes /
+    children shape, adding Canvas variants, or applying the tag-group
     documentation standard to another catalog component.
 ---
 
@@ -17,61 +18,80 @@ Radiant UI scripts are **behavior hosts**. They query an already-rendered light-
 
 The parent custom element's TSDoc is the source of truth for (2). Helpers only stamp that contract. Docs that list JSX names without targets hide half the public API.
 
-Read [references/contract.md](references/contract.md) before editing. Use [references/tag-group.md](references/tag-group.md) as the filled example. Catalog terms: `packages/radiant-ui/src/components/ui/README.md`. Docs page mechanics: `apps/radiant-ui/README.md`.
+Read in this order:
+
+1. [references/query-targets.md](references/query-targets.md) — what hosts may query.
+2. [references/contract.md](references/contract.md) — TSDoc and MDX templates.
+3. [references/tag-group.md](references/tag-group.md) — filled example.
+
+Catalog terms: `packages/radiant-ui/src/components/ui/README.md`. Docs page mechanics: `apps/radiant-ui/README.md`. Implement or migrate hosts with [radiant-ui-authoring](../radiant-ui-authoring/SKILL.md) **before** documenting.
 
 ## When this applies
 
 **Always** for a View-owned Shell whose script uses `querySelector` / `querySelectorAll` / `@onEvent({ selector })` / `@query({ ref })`.
 
-**Skip the light-DOM contract** for Native presentational helpers with no coordinating script (`RuiButton`, `RuiInput`, `RuiChip`, …) and for Derived Tree hosts whose inner DOM is not parent-authored (document `render()` ownership instead).
+**Skip the light-DOM contract** for Native presentational helpers with no coordinating script (`RuiButton`, `RuiInput`, `RuiChip`, …). For Derived Tree hosts, document `render()` ownership and generated targets; do not tell authors to stamp the inner list.
 
 ## Protocol
 
 Work one component at a time. Do not invent targets, roles, or examples.
 
-1. Read `<name>.script.tsx` (or `.ts`). Collect every selector the host actually uses and every attribute it **writes** (`setAttribute`, `toggleAttribute`, `tabIndex`, `id`, `role`).
-2. Read `<name>.tsx`. Map each public Composition Helper to the target it stamps. Note convenience props (`tags`, `options`) vs `children`.
-3. Classify:
-    - **View-owned Shell** — authored children; host queries.
-    - **Derived Tree** — host `render()` owns inner DOM.
-    - **Nested host** — parent expects child `rui-*` elements (and those children's contracts).
-4. Replace the CE class TSDoc with the template in `references/contract.md`. The class comment must describe the **full child tree**, not only attributes on the host.
-5. Document each public helper: the target it stamps, whether it is required, and anything it always injects (for example `RuiTag` always appends `RuiTagRemove`).
-6. Put `@cssclass` on the **export that authors the class**, not on the CE, unless the CE's own `render()` paints that class.
-7. Do not add `@slot` unless HTML `<slot>` is still the public API. Light-DOM targets are not slots.
-8. Update `apps/radiant-ui/src/content/components/<slug>.mdx` with the MDX template in `references/contract.md`. Fix any example that does not match the view props (wrong prop names, duplicated chrome the helper already renders).
-9. Keep TSDoc, MDX, and helpers aligned. If they disagree, the script wins; fix the docs.
+1. Read `<name>.script.tsx` (or `.ts`). Collect every selector the host actually uses and every attribute it **writes**.
+2. If any selector is a **class name**, migrate it to `[data-ref]` (or an existing `data-*` / role) in the script **and** the view that stamps the node. Then collect again. See query-targets.md.
+3. Read `<name>.tsx`. Map each public Composition Helper to the target it stamps. Note convenience props (`tags`, `options`) vs `children`.
+4. Classify: View-owned Shell, Derived Tree, Nested host.
+5. Replace the CE class TSDoc with the template in `references/contract.md`. Describe the **full child tree**.
+6. Document each public helper: target stamped, required or not, chrome it always injects.
+7. `@cssclass` on the **export that authors the class**, not on the CE, unless CE `render()` paints that class.
+8. No `@slot` unless HTML `<slot>` is still the public API.
+9. Update `apps/radiant-ui/src/content/components/<slug>.mdx`. Usage matches real helper props. Custom markup matches the script. Extra capabilities get a **Canvas** plus a `docsStory` in `apps/radiant-ui/src/content/stories/<slug>.tsx`.
+10. Public methods get a Methods table in MDX and a mention in CE `@remarks`.
+11. TSDoc, MDX, and helpers must agree. The script wins; fix the docs.
 
 ## Extraction rules (script)
 
-Treat these as the public query contract:
+| Source in script                                   | Document as                    |
+| -------------------------------------------------- | ------------------------------ |
+| `querySelector('[data-foo]')` / `querySelectorAll` | Target `[data-foo]`            |
+| `@query({ ref: 'root' })`                          | Target `[data-ref="root"]`     |
+| `@onEvent({ selector: '[data-foo]' })`             | Same target; mention the event |
+| `[role="option"]` (no data attr)                   | Role is the target             |
+| Child tag (`rui-listbox`)                          | Nested host                    |
+| Attribute the host **writes**                      | Host-owned                     |
+| Attribute the host **reads**                       | Author-owned                   |
+| `querySelector('.rui-…')`                          | **Not a target.** Migrate.     |
 
-| Source in script                                      | Document as                           |
-| ----------------------------------------------------- | ------------------------------------- |
-| `querySelector('[data-foo]')` / `querySelectorAll`    | Target `[data-foo]`                   |
-| `@query({ ref: 'root' })`                             | Target `[data-ref="root"]`            |
-| `@onEvent({ selector: '[data-foo]' })`                | Same target; mention the event        |
-| `[role="option"]` (no data attr)                      | Role is the target                    |
-| Child tag name (`rui-listbox`, `rui-checkbox`)        | Nested host                           |
-| Attribute the host **writes**                         | Host-owned; authors must not fight it |
-| Attribute the host **reads** (`data-value`, `hidden`) | Author-owned                          |
-
-Ignore private implementation markers (`data-rui-managed-list`, ephemeral ids) unless the author must not collide with them — then mention them under `@remarks`.
+Ignore private markers (`data-rui-managed-list`, ephemeral ids) unless authors must not collide — then `@remarks` only.
 
 ## Voice
 
-- State the contract. Do not say "you should compose with helpers" as a substitute for listing targets.
-- Prefer helpers in the first Usage example; the Custom markup section is the headless path.
-- No fluff. No emoji. No `@slot` language for view-owned trees.
-- If the API is awkward (helper always injects chrome you cannot omit), say so.
+- State the contract. Do not substitute “compose with helpers” for listing targets.
+- First Usage example: helpers. Custom markup: headless path.
+- Consumer MDX: **behavior host**, query contract, targets, Composition Helpers, Authored Children. Never **View-owned Shell**, **Binding**, or **slot** (unless HTML `<slot>` is real).
+- No fluff. No emoji.
+- If a helper always injects chrome you cannot omit, say so.
+- Do not copy a closing line that contradicts the contract list above it.
+
+## MDX pages
+
+Layers stay split: Try it (`Demo`), Usage (hand-maintained tsx), Canvas (extra stories, no controls), Theming, Accessibility, API.
+
+- **Usage** — props that exist on the helper. Do not nest chrome the helper already renders.
+- **Custom markup** — import the script; stamp targets. Classes optional, presentation-only. No trailing `;` after JSX.
+- **Canvas** — every distinct capability that is easy to miss in the playground (multiple selection, searchable select, range slider, accordion group, alert dialog, …). Export `docsStory` with a unique `parameters.docs.id`.
+- **API** — Attributes, Light-DOM contract table, Methods (if any), View helpers with **Target stamped**, CSS classes, events.
+- Derived Tree pages skip Custom markup. Say the host `render()`s the inner tree.
 
 ## Done when
 
-- [ ] CE TSDoc includes **Light-DOM contract** with required / per-item / optional targets and host-owned attrs.
-- [ ] A minimum working markup example in TSDoc matches the script (copy-paste, no helper names required).
+- [ ] No class selectors in the host script (`querySelector`, `@onEvent`, `@query`).
+- [ ] CE TSDoc **Light-DOM contract**: required / per-item / optional targets; host-owned vs author-owned attrs.
+- [ ] Minimum headless markup in TSDoc matches the script when the tree is non-obvious.
 - [ ] Each public helper names the target it stamps.
-- [ ] MDX Usage example matches real helper props.
-- [ ] MDX has a **Light-DOM contract** table (behavior hosts only).
-- [ ] MDX **Custom markup** example imports the script and uses targets, not a fictional API.
-- [ ] Public methods (`setItems`, `resync`, `dismiss`, …) appear in TSDoc and MDX when they are part of the consumer API.
-- [ ] Nested hosts name the child element and the extra targets the parent queries on it.
+- [ ] MDX Usage matches real helper props.
+- [ ] MDX Light-DOM contract table (behavior hosts).
+- [ ] MDX Custom markup uses targets (behavior hosts only).
+- [ ] Public methods in TSDoc and an MDX Methods table.
+- [ ] Nested hosts: child element + extra parent selectors; no duplicated child contract.
+- [ ] Distinct capabilities have Canvas + `docsStory`.
+- [ ] Consumer MDX has no catalog jargon (View-owned Shell, Binding, slot).

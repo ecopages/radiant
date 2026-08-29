@@ -32,9 +32,7 @@ describe('RuiListbox SSR', () => {
 	});
 
 	it('omits the default indicator in single-select options usage', () => {
-		const html = renderToString(
-			<RuiListbox options={[{ value: 'apple', label: 'Apple' }]} value="apple" />,
-		);
+		const html = renderToString(<RuiListbox options={[{ value: 'apple', label: 'Apple' }]} value="apple" />);
 
 		expect(html).not.toContain('data-listbox-option-indicator');
 	});

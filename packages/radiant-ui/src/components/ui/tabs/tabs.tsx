@@ -23,9 +23,11 @@ export type RuiTabPanelProps = Omit<JsxElementProps<HTMLDivElement>, 'id' | 'hid
 };
 
 /**
- * Tab strip container. Set `aria-label` (or `label` on `RuiTabs`) for the tab list name.
+ * Tab strip container. Stamps `[role="tablist"]`.
  *
  * @cssclass rui-tabs__list - `role="tablist"` strip.
+ *
+ * @remarks Set `aria-label` here, or `label` on `RuiTabs`, for the tab list name.
  */
 export function RuiTabList({ children, class: className, ...props }: RuiTabListProps) {
 	return (
@@ -36,7 +38,7 @@ export function RuiTabList({ children, class: className, ...props }: RuiTabListP
 }
 
 /**
- * Tab control. `id` pairs with the matching `RuiTabPanel` id.
+ * Tab control. Stamps `[role="tab"]` with `data-tab-value` and `id="tab-{id}"`.
  *
  * @cssclass rui-tabs__tab - `role="tab"` button; underline/border per `variant`.
  */
@@ -60,7 +62,7 @@ export function RuiTab({ id, children, class: className, disabled, selected, ...
 }
 
 /**
- * Groups tab panels below the tab list.
+ * Groups tab panels below the tab list. Presentation wrapper only; no role target.
  *
  * @cssclass rui-tabs__panels - Panel group.
  */
@@ -73,7 +75,8 @@ export function RuiTabPanels({ children, class: className, ...props }: RuiTabPan
 }
 
 /**
- * Tab panel paired with a `RuiTab` by `id`.
+ * Tab panel paired with a `RuiTab` by `id`. Stamps `[role="tabpanel"]` with
+ * `data-tab-value` and `id="panel-{id}"`.
  *
  * @cssclass rui-tabs__panel - `role="tabpanel"`; hidden when not selected.
  */

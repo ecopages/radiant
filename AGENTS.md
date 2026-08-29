@@ -8,7 +8,7 @@ Package indexes:
 - [`packages/jsx/README.md`](./packages/jsx/README.md) — JSX and SSR entrypoints
 - [`packages/radiant-ui/README.md`](./packages/radiant-ui/README.md)
 
-Catalog authoring for `@ecopages/radiant-ui` is in [`packages/radiant-ui/src/components/ui/README.md`](./packages/radiant-ui/src/components/ui/README.md). Do not load CONTEXT.md for catalog-only edits.
+Catalog authoring for `@ecopages/radiant-ui` is in [`packages/radiant-ui/src/components/ui/README.md`](./packages/radiant-ui/src/components/ui/README.md). Playbooks: [`.agents/skills/radiant-ui-authoring/`](./.agents/skills/radiant-ui-authoring/SKILL.md) (implement), [`.agents/skills/radiant-ui-docs/`](./.agents/skills/radiant-ui-docs/SKILL.md) (document). Do not load CONTEXT.md for catalog-only edits.
 
 When behavior changes, update that folder's README and any parent index that lists it. Use CONTEXT.md terms for platform concepts; use the catalog README terms for view-owned composites.
 

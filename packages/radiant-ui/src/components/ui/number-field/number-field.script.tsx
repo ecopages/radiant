@@ -41,11 +41,31 @@ export type RuiNumberFieldChangeDetail = { value: number };
 /**
  * `<rui-number-field>` — a locale-aware number input with optional stepper buttons.
  *
+ * The custom element is a behavior host: it does not render number-field markup.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use `RuiNumberField` and its helpers, which stamp the same targets.
+ *
  * Implements the React Aria NumberField interaction model: formatted display via
  * `Intl.NumberFormat`, commit on blur/increment/decrement, and composable slots.
  *
- * Compose with `data-number-field-group`, `data-number-field-input`, and
- * `data-number-field-action` (see view helpers), or use the default markup from `RuiNumberField`.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-number-field-input]` — text input. Host sets `id`, `role="spinbutton"`,
+ *   `inputmode`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`,
+ *   `aria-valuenow`, and formatted `value` when not editing.
+ *
+ * Optional:
+ * - `[data-number-field-value]` — hidden form input. Host syncs `value`, `name`, `disabled`.
+ * - `[data-number-field-action="decrement"]` — stepper button. Host sets `disabled` and `aria-label`.
+ * - `[data-number-field-action="increment"]` — stepper button. Host sets `disabled` and `aria-label`.
+ * - `[data-number-field-group]` — presentation wrapper; not queried by the host.
+ *
+ * Do not set spinbutton `aria-valuenow` or formatted `value` while the host is driving
+ * display — it owns those. Author `disabled` / `readOnly` on the host; the host mirrors
+ * them to `data-disabled` / `data-readonly` on the input.
+ *
+ * Nested hosts: none.
  *
  * @see https://react-aria.adobe.com/NumberField
  *
@@ -70,7 +90,10 @@ export type RuiNumberFieldChangeDetail = { value: number };
  * @fires rui-change - Emitted when a value is committed (blur, stepper, or keyboard);
  *   `detail.value` holds the new number.
  *
- * @cssclass rui-number-field - Root field wrapper.
+ * @remarks
+ * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-value]`
+ * and `[data-number-field-action]` buttons. BEM classes live on the view; the host
+ * never queries them.
  */
 @customElement('rui-number-field')
 export class RuiNumberField extends RadiantElement {

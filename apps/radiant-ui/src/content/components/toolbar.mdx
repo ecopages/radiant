@@ -46,6 +46,23 @@ import { RuiSeparator } from '@ecopages/radiant-ui/separator';
 </RuiToolbar>
 ```
 
+## Custom markup
+
+`<rui-toolbar>` coordinates any light-DOM tree with focusable controls. The `RuiToolbar` helper stamps `[role="toolbar"]`; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/toolbar';
+
+<rui-toolbar label="Text formatting" exclusive-toggles>
+  <div role="toolbar" aria-label="Text formatting">
+    <button type="button" data-toggle aria-pressed="false" aria-label="Bold">B</button>
+    <button type="button" data-toggle aria-pressed="true" aria-label="Italic">I</button>
+  </div>
+</rui-toolbar>;
+```
+
+Toggle buttons need `data-toggle` and `aria-pressed`. The host updates `aria-pressed` on click.
+
 ## Exclusive toggles
 
 <p>Use `exclusiveToggles` for view modes where only one option (list vs grid) can be active at a time.</p>
@@ -72,11 +89,20 @@ Geometry shares control tokens (`--size-control-*`, `--space-control-*`) with `R
 | `label` | `string` | `''` | Accessible name for the toolbar region. |
 | `exclusive-toggles` | `boolean` | `false` | Only one toggle button stays pressed at a time. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `children` | Toolbar controls, buttons, links, inputs, selects, and `RuiSeparator` elements. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `button`, `a[href]`, `input`, `select`, `textarea`, `[tabindex]` | yes | roving `tabIndex` | control markup, `disabled` |
+| `button[data-toggle][aria-pressed]` | for toggles | `aria-pressed` | initial `aria-pressed`, `data-toggle` |
+
+Nested hosts: none.
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiToolbar` | `[role="toolbar"]` with `data-ref="root"` | Place focusable controls as children. |
 
 ### CSS classes
 

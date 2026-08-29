@@ -22,31 +22,50 @@ type TreegridCellContext = {
 };
 
 /**
- * `<rui-treegrid>` — a hierarchical grid navigated with arrow keys.
+ * `<rui-treegrid>` — hierarchical grid with cell-only keyboard navigation.
  *
- * Implements a read-only APG Treegrid: rows may expand/collapse to reveal child
- * rows, and `role="gridcell"` descendants are focused with roving tabindex.
+ * The custom element is a behavior host: it does not render rows. Import the script
+ * and place light-DOM children that match the contract below, or use `RuiTreegrid`
+ * with `columns` / `rows` or authored children inside the root surface.
  *
  * Expand/collapse with ArrowRight/ArrowLeft only from the first cell of a row
- * (APG cell-only focus). Enter or click on that cell toggles expansion; Space selects.
+ * (APG cell-only focus). Enter or click on that cell toggles expansion; Space activates.
  *
- * @summary Read-only treegrid with cell-only roving-tabindex navigation.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[role="treegrid"]` — root surface. The view sets `aria-label`.
+ * - `[role="row"][data-row-id]` — data row. Host reads `data-row-id` for selection.
+ * - `[role="gridcell"]` — direct child of a data row. Host sets `aria-selected` and
+ *   roving `tabIndex`.
+ *
+ * Per row:
+ * - `data-row-id` — row identity for `value` and `rui-change`.
+ *
+ * Optional (expandable rows):
+ * - `aria-expanded` on a data row — when present, the host toggles the adjacent
+ *   `[role="rowgroup"]` sibling's `hidden` and responds to ArrowRight/Left from
+ *   the first cell, Enter, click, and `*`.
+ * - `[role="rowgroup"]` — child rows container immediately following an expandable
+ *   row. Host writes `hidden` from `aria-expanded`.
+ *
+ * Header rows (`[role="row"]` without `data-row-id`) and `[role="columnheader"]`
+ * cells are presentation-only; the host does not query them for behavior.
+ *
+ * Do not set `aria-selected` or `tabIndex` on gridcells — the host owns those.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/
- *
  * @element rui-treegrid
- *
- * @attr {string} label - Accessible name for the treegrid.
- * @attr {string} value - Selected row's `data-row-id`. Default: `''`.
- *
+ * @attr {string} label - Accessible name for the treegrid (applied on `[role="treegrid"]` by the view).
+ * @attr {string} value - Selected row `data-row-id`. Default: `''`.
  * @fires rui-change - Emitted with `{ rowId, columnIndex }` when a cell activates.
  *
- * @cssclass rui-treegrid - Root surface (`role="treegrid"`).
- *
  * @remarks
- * Row/cell/group classes are authored by the `RuiTreegrid` view. The host owns
- * expand/collapse (`aria-expanded` + `hidden` on `role="rowgroup"`) and
- * cell-only roving-tabindex focus.
+ * Minimum tree: `[role="treegrid"]` > `[role="row"][data-row-id]` > `[role="gridcell"]`;
+ * expandable rows add `[role="rowgroup"]` > nested rows after the parent row.
+ * BEM classes live on the `RuiTreegrid` view; the host never queries them.
  */
 @customElement('rui-treegrid')
 export class RuiTreegrid extends RadiantElement {

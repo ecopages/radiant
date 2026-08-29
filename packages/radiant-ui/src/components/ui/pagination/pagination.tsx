@@ -36,7 +36,10 @@ export type RuiPaginationNavProps = {
 	siblingCount?: number;
 };
 
-/** Default previous / page / next chrome for `RuiPagination`. */
+/**
+ * Default previous / page / next chrome for `RuiPagination`. Stamps `[data-pagination-page]`
+ * on each navigable control.
+ */
 export function RuiPaginationNav({
 	label,
 	page,
@@ -112,11 +115,13 @@ export function RuiPaginationNav({
 }
 
 /**
- * Accessible page navigation for a controlled collection.
+ * Accessible page navigation for a controlled collection. Stamps `<rui-pagination>`;
+ * renders `RuiPaginationNav` by default (each link carries `[data-pagination-page]`).
  *
- * @remarks Renders `RuiPaginationNav` by default. Pass `children` to replace the
- * navigation chrome while keeping the `rui-pagination` event contract.
+ * @remarks Pass `children` to replace the navigation chrome while keeping the
+ * `rui-pagination` event contract.
  *
+ * @cssclass rui-pagination - Navigation root on the host.
  * @cssclass rui-pagination__page - Page-number item; `__page--current` marks the active page.
  * @cssclass rui-pagination--compact - Force previous / `{page} / {count}` / next chrome.
  * @cssclass rui-pagination__status - Non-interactive `{page} / {count}` label in compact chrome.

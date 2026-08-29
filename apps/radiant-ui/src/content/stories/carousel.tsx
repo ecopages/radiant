@@ -51,3 +51,29 @@ export const meta = {
 type Story = DocsStory<CarouselArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'carousel/default' } } });
+
+export const WithIndicators: Story = docsStory(meta, {
+	args: { showIndicators: true },
+	parameters: { docs: { id: 'carousel/indicators' } },
+});
+
+export const OverlayControls: Story = docsStory(meta, {
+	render: (args) => (
+		<RuiCarousel
+			index={args.index}
+			transition={args.transition}
+			autoplay={args.autoplay}
+			interval={args.interval}
+			showIndicators={args.showIndicators}
+			loop={args.loop}
+			controlsVariant="overlay"
+		>
+			<RuiCarouselSlide id="slide-1">First panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-2">Second panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-3">Third panel</RuiCarouselSlide>
+			<RuiCarouselPrev />
+			<RuiCarouselNext />
+		</RuiCarousel>
+	),
+	parameters: { docs: { id: 'carousel/overlay' } },
+});
