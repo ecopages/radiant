@@ -15,7 +15,10 @@ const meta = {
 	title: 'Components/Navigation Menu',
 	component: RuiNavigationMenu,
 	parameters: {
-		radiant: { element: RuiNavigationMenuElement, cssImports: ['../button/button.css', './navigation-menu.css'] },
+		radiant: {
+			element: RuiNavigationMenuElement,
+			cssImports: ['../button/button.css', './navigation-menu.css', '../disclosure/disclosure.css'],
+		},
 	},
 	args: {
 		label: 'Main',
