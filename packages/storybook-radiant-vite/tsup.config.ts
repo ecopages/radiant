@@ -19,6 +19,7 @@ export default defineConfig({
 	external: [
 		'storybook',
 		'storybook/internal/types',
+		'storybook/internal/preview/globals',
 		'storybook/preview-api',
 		'storybook/theming',
 		'@storybook/builder-vite',
