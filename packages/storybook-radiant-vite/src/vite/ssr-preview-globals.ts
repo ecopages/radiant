@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import type { Plugin } from 'vite';
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import { globalPackages, globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 
 const require = createRequire(import.meta.url);
 
@@ -38,17 +38,27 @@ export async function installStorybookPreviewGlobals(
 	scope: GlobalScope = globalThis as GlobalScope,
 	resolvePackage: (specifier: string) => string = resolvePreviewPackage,
 ): Promise<void> {
-	await Promise.all(
-		Object.entries(globalsNameReferenceMap).map(async ([specifier, globalName]) => {
-			if (scope[globalName] != null) {
-				return;
-			}
+	const packagesByGlobal = new Map<string, string>();
 
+	for (const specifier of globalPackages) {
+		const globalName = globalsNameReferenceMap[specifier];
+
+		if (scope[globalName] == null && !packagesByGlobal.has(globalName)) {
+			packagesByGlobal.set(globalName, specifier);
+		}
+	}
+
+	await Promise.all(
+		[...packagesByGlobal].map(async ([globalName, specifier]) => {
 			try {
 				const resolved = resolvePackage(specifier);
 				scope[globalName] = await import(pathToFileURL(resolved).href);
-			} catch {
-				// Optional preview packages (e.g. docs blocks) may be absent.
+			} catch (error) {
+				const detail = error instanceof Error ? error.message : String(error);
+				throw new Error(
+					`Could not install required Storybook preview global "${globalName}" from "${specifier}": ${detail}`,
+					{ cause: error },
+				);
 			}
 		}),
 	);

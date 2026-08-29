@@ -314,7 +314,7 @@ The framework registers a toolbar global `radiantRenderMode`:
 
 1. Preview calls `POST /__radiant_ssr` with `{ ssrModule, ssrExport?, viewModule?, viewExport?, storyModule?, storyExport?, args, mode }`.
 2. Vite middleware loads `@ecopages/vite-plugin-radiant/ssr` (`renderSsrComponent`) and your script/view/story modules.
-3. Preview packages (`storybook/test` and siblings) are installed on `globalThis` so `ssrLoadModule` matches the iframe. Play helpers that import those packages run for real instead of stubbed `__STORYBOOK_MODULE_*` bindings.
+3. Preview packages (`storybook/test` and siblings) are installed on Node `globalThis` so `ssrLoadModule` can evaluate story and shared helper modules with the same real bindings as the iframe. SSR evaluates those imports; it does not run Storybook `play` functions.
 4. For stories declaring `parameters.radiant.element`, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
 5. `@ecopages/*` stay **external** in SSR (via `radiant()`) so ALS / runtime shims are singletons.
 6. `renderSsrComponent` produces markup + assets (CSS via `radiant({ elements: true })`).
