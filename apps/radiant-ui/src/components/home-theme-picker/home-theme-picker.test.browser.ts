@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@ecopages/radiant-ui/select';
-import { DOCS_THEME_STORAGE_KEY } from '@/lib/docs-theme-preview';
+import { readDocsTokenPackCss } from '@/lib/docs-token-pack-css';
+import {
+	DOCS_THEME_STORAGE_KEY,
+	DOCS_TOKEN_PACK_GLOBAL,
+	DOCS_TOKEN_SHEET_ATTR,
+	installDocsTokenPackCss,
+} from '@/lib/docs-theme-preview';
 import { HomeThemePickerElement } from './home-theme-picker.script';
 
 async function createPicker(): Promise<HomeThemePickerElement> {
@@ -20,23 +26,25 @@ function changeToken(element: HomeThemePickerElement, token: string, value: stri
 	select?.dispatchEvent(new CustomEvent('rui-change', { detail: { value }, bubbles: true, composed: true }));
 }
 
+function resetPreview(): void {
+	document.body.innerHTML = '';
+	localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
+	const root = document.documentElement;
+	delete root.dataset.ruiColors;
+	delete root.dataset.ruiSpacing;
+	delete root.dataset.ruiRadius;
+	document.querySelectorAll(`style[${DOCS_TOKEN_SHEET_ATTR}]`).forEach((node) => node.remove());
+	delete (globalThis as typeof globalThis & { [DOCS_TOKEN_PACK_GLOBAL]?: unknown })[DOCS_TOKEN_PACK_GLOBAL];
+}
+
 describe('HomeThemePickerElement', () => {
 	beforeEach(() => {
-		document.body.innerHTML = '';
-		localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
-		const root = document.documentElement;
-		delete root.dataset.ruiColors;
-		delete root.dataset.ruiSpacing;
-		delete root.dataset.ruiRadius;
+		resetPreview();
+		installDocsTokenPackCss(readDocsTokenPackCss());
 	});
 
 	afterEach(() => {
-		document.body.innerHTML = '';
-		localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
-		const root = document.documentElement;
-		delete root.dataset.ruiColors;
-		delete root.dataset.ruiSpacing;
-		delete root.dataset.ruiRadius;
+		resetPreview();
 	});
 
 	it('writes default token values onto the selects', async () => {
@@ -78,5 +86,11 @@ describe('HomeThemePickerElement', () => {
 			spacing: 'compact',
 			radius: 'sharp',
 		});
+		expect(document.head.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="spacing"]`)?.textContent).toContain(
+			'--space-1: 0.125rem',
+		);
+		expect(document.head.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="radius"]`)?.textContent).toContain(
+			'--radius-control: 0',
+		);
 	});
 });

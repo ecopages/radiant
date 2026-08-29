@@ -1,7 +1,6 @@
 @import 'tailwindcss';
 @import '@ecopages/radiant-ui/themes/default';
 @import './theme.css';
-@import './token-preview.css';
 @import '@ecopages/radiant-ui/styles.css';
 @import './vendor/shiki.css';
 @import './fonts.css';
