@@ -1,5 +1,25 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.8
+
+### Minor Changes
+
+- [#207](https://github.com/ecopages/radiant/pull/207) [`4ef2a9f`](https://github.com/ecopages/radiant/commit/4ef2a9f3459bc1e83e6c5b8bf14d024f68bc65ff) Thanks [@andeeplus](https://github.com/andeeplus)! - Unify listbox-backed selection across select, combobox, and standalone listbox with shared host controllers and consistent field labeling.
+
+    - Add `ListboxHostController` and `listbox-option` helpers for embedded listbox sync, comma-separated values, and tag-group chips.
+    - Export `@ecopages/radiant-ui/icons` with `RuiIconCheck` and `RuiIconX`; use them in listbox, select, combobox, tag-group, dialog, and toast.
+    - Wire `RuiField` labels to composed controls through `aria-labelledby`, including listbox surfaces in form fields.
+
+### Patch Changes
+
+- [#212](https://github.com/ecopages/radiant/pull/212) [`ebc9a85`](https://github.com/ecopages/radiant/commit/ebc9a857c91c67a385b38f81154e3e7005c31918) Thanks [@andeeplus](https://github.com/andeeplus)! - Open hover-card on focus only when focus enters from outside the trigger/surface tree, and seed `hidden` on the preview surface before the host syncs.
+
+- [#212](https://github.com/ecopages/radiant/pull/212) [`0b8452c`](https://github.com/ecopages/radiant/commit/0b8452c5f77aee2e7f8f8fe96d3b6112403e888e) Thanks [@andeeplus](https://github.com/andeeplus)! - Behavior hosts query `[data-ref]` instead of BEM class names.
+
+    **@ecopages/radiant-ui**
+
+    - Headless custom markup must stamp the published `data-ref` targets (carousel track, tooltip and hover-card trigger, form, field column, sidebar menu buttons, toaster list and toast surface). Class names remain presentation-only.
+
 ## 0.1.0-rc.7
 
 ### Patch Changes
