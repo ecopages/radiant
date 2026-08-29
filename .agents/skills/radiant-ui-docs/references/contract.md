@@ -101,12 +101,12 @@ After Usage (or after a short pattern section such as Embedded). Only for hosts 
 import '@ecopages/radiant-ui/foo';
 
 <rui-foo value="a" label="Example">
-  <div data-foo-list>
-    <div data-foo data-value="a" data-label="A">
-      A
-    </div>
-  </div>
-</rui-foo>
+	<div data-foo-list>
+		<div data-foo data-value="a" data-label="A">
+			A
+		</div>
+	</div>
+</rui-foo>;
 ```
 ````
 
@@ -116,20 +116,20 @@ Classes in that snippet are optional and presentation-only. Do not query BEM. Do
 
 Place after Attributes.
 
-| Target | Required | Host writes | Author owns |
-| --- | --- | --- | --- |
-| `[data-foo-list]` | yes | `role`, `aria-label` | the element itself |
-| `[data-foo]` | yes | `role`, `aria-selected`, `tabIndex` | `data-value`, `data-label`, `hidden` |
-| `[data-foo-remove]` | no | `type`, `tabIndex`, `aria-label` | presence / label fallback |
+| Target              | Required | Host writes                         | Author owns                          |
+| ------------------- | -------- | ----------------------------------- | ------------------------------------ |
+| `[data-foo-list]`   | yes      | `role`, `aria-label`                | the element itself                   |
+| `[data-foo]`        | yes      | `role`, `aria-selected`, `tabIndex` | `data-value`, `data-label`, `hidden` |
+| `[data-foo-remove]` | no       | `type`, `tabIndex`, `aria-label`    | presence / label fallback            |
 
 Drop the Composition row that only says `children` with no targets.
 
 ### API: View helpers
 
-| Component | Target stamped | Notes |
-| --- | --- | --- |
-| `RuiFooList` | `[data-foo-list]` | … |
-| `RuiFooItem` | `[data-foo]` | Always includes `RuiFooRemove`. |
+| Component    | Target stamped    | Notes                           |
+| ------------ | ----------------- | ------------------------------- |
+| `RuiFooList` | `[data-foo-list]` | …                               |
+| `RuiFooItem` | `[data-foo]`      | Always includes `RuiFooRemove`. |
 
 Helpers that are not query targets use `—` in Target stamped and say so in Notes.
 
@@ -151,12 +151,12 @@ Document that inner DOM is generated from host state. Authored children are not 
 
 ## Consumer-facing terms
 
-| Say | Do not say |
-| --- | --- |
+| Say                                    | Do not say                                            |
+| -------------------------------------- | ----------------------------------------------------- |
 | behavior host, query contract, targets | shadow parts, slots (unless HTML `<slot>` is the API) |
-| Composition Helpers | slots, render props |
-| Authored Children | projected content, light-DOM slot |
-| host writes / author owns | "managed internally" with no list |
-| `[data-ref="…"]` | `.rui-foo__bar` as a query target |
+| Composition Helpers                    | slots, render props                                   |
+| Authored Children                      | projected content, light-DOM slot                     |
+| host writes / author owns              | "managed internally" with no list                     |
+| `[data-ref="…"]`                       | `.rui-foo__bar` as a query target                     |
 
 Internal catalog terms (View-owned Shell, Binding) stay in package READMEs, not in component MDX, unless the page is teaching authoring.

@@ -9,7 +9,10 @@ const meta = {
 	title: 'Components/Popover',
 	component: RuiPopover,
 	parameters: {
-		radiant: { element: RuiPopoverElement, cssImports: ['../../../styles/primitives.css', './popover.css','../checkbox/checkbox.css'] },
+		radiant: {
+			element: RuiPopoverElement,
+			cssImports: ['../../../styles/primitives.css', './popover.css', '../checkbox/checkbox.css'],
+		},
 	},
 } satisfies Meta<typeof RuiPopover>;
 

@@ -39,9 +39,7 @@ describe('RuiCombobox SSR', () => {
 	});
 
 	it('does not serialize the view-only options collection', () => {
-		const html = renderToString(
-			<RuiCombobox options={[{ value: 'de', label: 'Germany' }]} placeholder="Choose" />,
-		);
+		const html = renderToString(<RuiCombobox options={[{ value: 'de', label: 'Germany' }]} placeholder="Choose" />);
 
 		expect(html).not.toContain('options=');
 		expect(html).toContain('data-combobox-input');

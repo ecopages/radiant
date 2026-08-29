@@ -97,9 +97,7 @@ export class ListboxHostController {
 	}
 
 	isSelectableOption(option: HTMLElement | null): option is HTMLElement {
-		return (
-			option != null && option.getAttribute('aria-disabled') !== 'true' && !option.hidden
-		);
+		return option != null && option.getAttribute('aria-disabled') !== 'true' && !option.hidden;
 	}
 
 	syncListboxHost(): void {

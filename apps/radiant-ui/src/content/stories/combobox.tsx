@@ -1,8 +1,4 @@
-import {
-	RuiCombobox,
-	type RuiComboboxSelectionMode,
-	type RuiComboboxTriggerKind,
-} from '@ecopages/radiant-ui/combobox';
+import { RuiCombobox, type RuiComboboxSelectionMode, type RuiComboboxTriggerKind } from '@ecopages/radiant-ui/combobox';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { ANIMAL_OPTIONS } from './demo-data';
 

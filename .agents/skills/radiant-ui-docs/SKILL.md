@@ -50,16 +50,16 @@ Work one component at a time. Do not invent targets, roles, or examples.
 
 ## Extraction rules (script)
 
-| Source in script | Document as |
-| --- | --- |
-| `querySelector('[data-foo]')` / `querySelectorAll` | Target `[data-foo]` |
-| `@query({ ref: 'root' })` | Target `[data-ref="root"]` |
-| `@onEvent({ selector: '[data-foo]' })` | Same target; mention the event |
-| `[role="option"]` (no data attr) | Role is the target |
-| Child tag (`rui-listbox`) | Nested host |
-| Attribute the host **writes** | Host-owned |
-| Attribute the host **reads** | Author-owned |
-| `querySelector('.rui-…')` | **Not a target.** Migrate. |
+| Source in script                                   | Document as                    |
+| -------------------------------------------------- | ------------------------------ |
+| `querySelector('[data-foo]')` / `querySelectorAll` | Target `[data-foo]`            |
+| `@query({ ref: 'root' })`                          | Target `[data-ref="root"]`     |
+| `@onEvent({ selector: '[data-foo]' })`             | Same target; mention the event |
+| `[role="option"]` (no data attr)                   | Role is the target             |
+| Child tag (`rui-listbox`)                          | Nested host                    |
+| Attribute the host **writes**                      | Host-owned                     |
+| Attribute the host **reads**                       | Author-owned                   |
+| `querySelector('.rui-…')`                          | **Not a target.** Migrate.     |
 
 Ignore private markers (`data-rui-managed-list`, ephemeral ids) unless authors must not collide — then `@remarks` only.
 
