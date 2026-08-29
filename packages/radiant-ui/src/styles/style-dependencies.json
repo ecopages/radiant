@@ -2,98 +2,58 @@
 	"components": {
 		"alert": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/alert/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/alert/styles.css"]
 		},
 		"autocomplete": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/autocomplete/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/autocomplete/styles.css"]
 		},
 		"avatar": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/avatar/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/avatar/styles.css"]
 		},
 		"badge": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/badge/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/badge/styles.css"]
 		},
 		"breadcrumb": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/breadcrumb/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/breadcrumb/styles.css"]
 		},
 		"button": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/button/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/button/styles.css"]
 		},
 		"button-group": {
-			"direct": [
-				"button"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/button/styles.css",
-				"@ecopages/radiant-ui/button-group/styles.css"
-			]
+			"direct": ["button"],
+			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/button-group/styles.css"]
 		},
 		"calendar": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/calendar/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/calendar/styles.css"]
 		},
 		"carousel": {
-			"direct": [
-				"button"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/button/styles.css",
-				"@ecopages/radiant-ui/carousel/styles.css"
-			]
+			"direct": ["button"],
+			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/carousel/styles.css"]
 		},
 		"checkbox": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/checkbox/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/checkbox/styles.css"]
 		},
 		"checkbox-group": {
-			"direct": [
-				"checkbox"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/checkbox/styles.css",
-				"@ecopages/radiant-ui/checkbox-group/styles.css"
-			]
+			"direct": ["checkbox"],
+			"styles": ["@ecopages/radiant-ui/checkbox/styles.css", "@ecopages/radiant-ui/checkbox-group/styles.css"]
 		},
 		"chip": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/chip/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/chip/styles.css"]
 		},
 		"chip-list": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/chip-list/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/chip-list/styles.css"]
 		},
 		"combobox": {
-			"direct": [
-				"autocomplete",
-				"listbox",
-				"primitives",
-				"tag-group"
-			],
+			"direct": ["autocomplete", "listbox", "primitives", "tag-group"],
 			"styles": [
 				"@ecopages/radiant-ui/autocomplete/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
@@ -103,19 +63,11 @@
 			]
 		},
 		"cycle-toggle": {
-			"direct": [
-				"button"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/button/styles.css",
-				"@ecopages/radiant-ui/cycle-toggle/styles.css"
-			]
+			"direct": ["button"],
+			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/cycle-toggle/styles.css"]
 		},
 		"date-field": {
-			"direct": [
-				"calendar",
-				"primitives"
-			],
+			"direct": ["calendar", "primitives"],
 			"styles": [
 				"@ecopages/radiant-ui/calendar/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
@@ -123,10 +75,7 @@
 			]
 		},
 		"date-range-picker": {
-			"direct": [
-				"calendar",
-				"primitives"
-			],
+			"direct": ["calendar", "primitives"],
 			"styles": [
 				"@ecopages/radiant-ui/calendar/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
@@ -134,107 +83,63 @@
 			]
 		},
 		"dialog": {
-			"direct": [
-				"primitives"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/primitives.css",
-				"@ecopages/radiant-ui/dialog/styles.css"
-			]
+			"direct": ["primitives"],
+			"styles": ["@ecopages/radiant-ui/primitives.css", "@ecopages/radiant-ui/dialog/styles.css"]
 		},
 		"disclosure": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/disclosure/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/disclosure/styles.css"]
 		},
 		"feed": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/feed/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/feed/styles.css"]
 		},
 		"field": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/field/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/field/styles.css"]
 		},
 		"form": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/form/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/form/styles.css"]
 		},
 		"grid": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/grid/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/grid/styles.css"]
 		},
 		"heading": {
-			"direct": [
-				"headline"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/headline/styles.css",
-				"@ecopages/radiant-ui/heading/styles.css"
-			]
+			"direct": ["headline"],
+			"styles": ["@ecopages/radiant-ui/headline/styles.css", "@ecopages/radiant-ui/heading/styles.css"]
 		},
 		"headline": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/headline/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/headline/styles.css"]
 		},
 		"hover-card": {
-			"direct": [
-				"primitives"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/primitives.css",
-				"@ecopages/radiant-ui/hover-card/styles.css"
-			]
+			"direct": ["primitives"],
+			"styles": ["@ecopages/radiant-ui/primitives.css", "@ecopages/radiant-ui/hover-card/styles.css"]
 		},
 		"input": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/input/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/input/styles.css"]
 		},
 		"input-group": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/input-group/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/input-group/styles.css"]
 		},
 		"knob": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/knob/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/knob/styles.css"]
 		},
 		"label": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/label/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/label/styles.css"]
 		},
 		"listbox": {
-			"direct": [
-				"primitives"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/primitives.css",
-				"@ecopages/radiant-ui/listbox/styles.css"
-			]
+			"direct": ["primitives"],
+			"styles": ["@ecopages/radiant-ui/primitives.css", "@ecopages/radiant-ui/listbox/styles.css"]
 		},
 		"menu-button": {
-			"direct": [
-				"button",
-				"primitives",
-				"separator"
-			],
+			"direct": ["button", "primitives", "separator"],
 			"styles": [
 				"@ecopages/radiant-ui/button/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
@@ -243,10 +148,7 @@
 			]
 		},
 		"menubar": {
-			"direct": [
-				"primitives",
-				"separator"
-			],
+			"direct": ["primitives", "separator"],
 			"styles": [
 				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/separator/styles.css",
@@ -255,30 +157,18 @@
 		},
 		"meter": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/meter/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/meter/styles.css"]
 		},
 		"navigation-menu": {
-			"direct": [
-				"button"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/button/styles.css",
-				"@ecopages/radiant-ui/navigation-menu/styles.css"
-			]
+			"direct": ["button"],
+			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/navigation-menu/styles.css"]
 		},
 		"number-field": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/number-field/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/number-field/styles.css"]
 		},
 		"pagination": {
-			"direct": [
-				"button",
-				"primitives"
-			],
+			"direct": ["button", "primitives"],
 			"styles": [
 				"@ecopages/radiant-ui/button/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
@@ -286,26 +176,15 @@
 			]
 		},
 		"popover": {
-			"direct": [
-				"primitives"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/primitives.css",
-				"@ecopages/radiant-ui/popover/styles.css"
-			]
+			"direct": ["primitives"],
+			"styles": ["@ecopages/radiant-ui/primitives.css", "@ecopages/radiant-ui/popover/styles.css"]
 		},
 		"radio-group": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/radio-group/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/radio-group/styles.css"]
 		},
 		"select": {
-			"direct": [
-				"listbox",
-				"primitives",
-				"tag-group"
-			],
+			"direct": ["listbox", "primitives", "tag-group"],
 			"styles": [
 				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/listbox/styles.css",
@@ -315,111 +194,67 @@
 		},
 		"separator": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/separator/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/separator/styles.css"]
 		},
 		"sidebar": {
-			"direct": [
-				"button"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/button/styles.css",
-				"@ecopages/radiant-ui/sidebar/styles.css"
-			]
+			"direct": ["button"],
+			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/sidebar/styles.css"]
 		},
 		"slider": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/slider/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/slider/styles.css"]
 		},
 		"spinner": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/spinner/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/spinner/styles.css"]
 		},
 		"switch": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/switch/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/switch/styles.css"]
 		},
 		"table": {
-			"direct": [
-				"checkbox"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/checkbox/styles.css",
-				"@ecopages/radiant-ui/table/styles.css"
-			]
+			"direct": ["checkbox"],
+			"styles": ["@ecopages/radiant-ui/checkbox/styles.css", "@ecopages/radiant-ui/table/styles.css"]
 		},
 		"tabs": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/tabs/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/tabs/styles.css"]
 		},
 		"tag-group": {
-			"direct": [
-				"primitives"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/primitives.css",
-				"@ecopages/radiant-ui/tag-group/styles.css"
-			]
+			"direct": ["primitives"],
+			"styles": ["@ecopages/radiant-ui/primitives.css", "@ecopages/radiant-ui/tag-group/styles.css"]
 		},
 		"textarea": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/textarea/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/textarea/styles.css"]
 		},
 		"toast": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/toast/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/toast/styles.css"]
 		},
 		"toc": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/toc/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/toc/styles.css"]
 		},
 		"toolbar": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/toolbar/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/toolbar/styles.css"]
 		},
 		"tooltip": {
-			"direct": [
-				"primitives"
-			],
-			"styles": [
-				"@ecopages/radiant-ui/primitives.css",
-				"@ecopages/radiant-ui/tooltip/styles.css"
-			]
+			"direct": ["primitives"],
+			"styles": ["@ecopages/radiant-ui/primitives.css", "@ecopages/radiant-ui/tooltip/styles.css"]
 		},
 		"tree": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/tree/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/tree/styles.css"]
 		},
 		"treegrid": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/treegrid/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/treegrid/styles.css"]
 		},
 		"window-splitter": {
 			"direct": [],
-			"styles": [
-				"@ecopages/radiant-ui/window-splitter/styles.css"
-			]
+			"styles": ["@ecopages/radiant-ui/window-splitter/styles.css"]
 		}
 	}
 }

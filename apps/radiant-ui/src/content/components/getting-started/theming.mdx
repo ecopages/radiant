@@ -45,9 +45,10 @@ are not a supported application API.
 
 ## Layer spacing and shape
 
-Use `compact` where information density matters and `wide` where composition needs more air. Compact preserves control
-heights for touch and keyboard usability; it tightens rhythm and padding rather than shrinking hit areas. Choose
-`soft` for generous rounding or `sharp` for square containers. `edgy` is a stylesheet alias for the sharp radius pack.
+Use `compact` where information density matters and `wide` where composition needs more air. Both packs scale
+`--size-control-*` with `--space-8`, `--space-10`, and `--space-12`, so buttons and inputs change height as well as
+padding. Choose `soft` for generous rounding or `sharp` for square containers. `edgy` is a stylesheet alias for the
+sharp radius pack.
 
 ```css
 @import '@ecopages/radiant-ui/tokens/spacing/compact';
