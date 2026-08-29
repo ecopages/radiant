@@ -30,6 +30,7 @@ export function RuiHoverCardContent({ children, class: className, ...props }: Ru
 			data-ref="content"
 			class={cx('rui-hover-card__content', 'rui-floating', className)}
 			role="dialog"
+			hidden
 		>
 			{children}
 		</div>

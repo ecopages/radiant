@@ -268,12 +268,18 @@ export class RuiHoverCard extends RadiantElement {
 			return;
 		}
 		event.preventDefault();
+		const anchor = this.getAnchor();
 		this.setOpen(false);
-		this.getAnchor()?.focus();
+		if (anchor && document.activeElement !== anchor) {
+			anchor.focus();
+		}
 	}
 
 	@onEvent({ type: 'focusin', selector: '.rui-hover-card__trigger' })
-	onFocusIn(): void {
+	onFocusIn(event: FocusEvent): void {
+		if (!shouldDismissPopoverFocus(this.getAnchor(), this.getFloatingElement(), event.relatedTarget)) {
+			return;
+		}
 		this.scheduleShow(true);
 	}
 
