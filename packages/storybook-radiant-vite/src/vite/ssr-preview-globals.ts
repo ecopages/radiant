@@ -16,7 +16,7 @@ type GlobalScope = typeof globalThis & Record<string, unknown>;
  */
 export function resolvePreviewPackage(
 	specifier: string,
-	resolveImpl: NodeJS.RequireResolve = require.resolve,
+	resolveImpl: (id: string, options?: { paths?: string[] }) => string = require.resolve,
 ): string {
 	try {
 		return resolveImpl(specifier);
