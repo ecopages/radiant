@@ -16,7 +16,9 @@ import {
 	findFieldLabel,
 	getAriaControlTargets,
 	isNativeTextControl,
+	isPrimaryFieldControlEvent,
 	readControlValue,
+	FIELD_CONTROL_SELECTOR,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
@@ -64,6 +66,7 @@ export type RuiFieldProps = {
  * - One control — `[data-rui-control]` or a known host tag (`rui-checkbox`, `rui-switch`,
  *   `rui-slider`, `rui-knob`, `rui-number-field`, `rui-select`, …). The field reads and
  *   writes values through the control protocol; see each host's contract for inner targets.
+ *   An embedded `rui-listbox` is an option surface, not a field control.
  *
  * Optional:
  * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
@@ -131,6 +134,12 @@ export class RuiField extends RadiantElement {
 	private unregister?: () => void;
 	private unregisterPresentation?: () => void;
 	private registeredWithForm = false;
+	/**
+	 * Last form write that landed before `findFieldControl` could see a host.
+	 * JSX can add the control later without reconnecting this field.
+	 */
+	private pendingControlWrite?: { value: unknown };
+	private controlObserver?: MutationObserver;
 
 	/**
 	 * @remarks Registers SSR-prep rules on `fieldProvider` so hydrated fields recover them after a
@@ -152,6 +161,7 @@ export class RuiField extends RadiantElement {
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
+		this.clearPendingControlWrite();
 		super.disconnectedCallback();
 	}
 
@@ -248,9 +258,14 @@ export class RuiField extends RadiantElement {
 					const control = findFieldControl(this);
 					if (control) {
 						writeControlValue(control, value);
+						this.clearPendingControlWrite();
+						return;
 					}
+					this.pendingControlWrite = { value };
+					this.observeControlAppearance();
 				},
 			});
+			this.syncField();
 			return;
 		}
 
@@ -281,6 +296,7 @@ export class RuiField extends RadiantElement {
 		this.unregisterPresentation?.();
 		this.unregisterPresentation = undefined;
 		this.registeredWithForm = false;
+		this.clearPendingControlWrite();
 		this.connectToForm();
 	}
 
@@ -295,11 +311,14 @@ export class RuiField extends RadiantElement {
 	}
 
 	@onEvent({
-		selector:
-			'[data-rui-control], rui-combobox, rui-date-field, rui-date-range-picker, rui-select, rui-tag-group, rui-checkbox, rui-checkbox-group, rui-switch, rui-radio-group, rui-slider, rui-knob, rui-number-field, rui-listbox',
+		selector: FIELD_CONTROL_SELECTOR,
 		type: 'rui-change',
 	})
-	onControlChange(): void {
+	onControlChange(event: Event): void {
+		if (!isPrimaryFieldControlEvent(this, event)) {
+			return;
+		}
+
 		const fieldName = this.resolveFieldName();
 		if (fieldName) {
 			this.currentFormContext?.actions.handleFieldChange(fieldName);
@@ -340,6 +359,10 @@ export class RuiField extends RadiantElement {
 
 	private syncField(formCtx?: FormContextValue): void {
 		const controlHost = findFieldControl(this);
+		if (controlHost && this.pendingControlWrite) {
+			writeControlValue(controlHost, this.pendingControlWrite.value);
+			this.clearPendingControlWrite();
+		}
 		const ariaTargets = controlHost ? getAriaControlTargets(controlHost) : [];
 		const ariaTarget = ariaTargets[0] ?? null;
 		const controlId = ariaTarget?.id || `rui-field-control-${this.uid}`;
@@ -368,6 +391,25 @@ export class RuiField extends RadiantElement {
 			required,
 		};
 		this.publishFieldContext(nextFieldContext);
+	}
+
+	/**
+	 * @remarks JSX can insert the control after `register()` without reconnecting
+	 * the field. `syncField` applies `pendingControlWrite` once the host exists.
+	 */
+	private observeControlAppearance(): void {
+		if (this.controlObserver) {
+			return;
+		}
+
+		this.controlObserver = new MutationObserver(() => this.syncField());
+		this.controlObserver.observe(this, { childList: true, subtree: true });
+	}
+
+	private clearPendingControlWrite(): void {
+		this.pendingControlWrite = undefined;
+		this.controlObserver?.disconnect();
+		this.controlObserver = undefined;
 	}
 
 	private syncDescriptions(descriptionId: string, errorId: string, errorMessage: string | undefined): string[] {

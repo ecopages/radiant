@@ -24,7 +24,15 @@ const HOST_CONTROL_TAGS = new Set([
 ]);
 
 /** Library controls only — `data-rui-control` (e.g. RuiInput) or known host tags. */
-const CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
+export const FIELD_CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
+
+const HOST_CONTROL_SELECTOR = Array.from(HOST_CONTROL_TAGS).join(', ');
+
+function isEmbeddedListbox(node: HTMLElement): boolean {
+	return (
+		node.localName === 'rui-listbox' && (node.hasAttribute('embedded') || Reflect.get(node, 'embedded') === true)
+	);
+}
 
 const ARIA_TARGET_SELECTORS: Readonly<Record<string, string>> = {
 	'rui-combobox': '[data-combobox-input]',
@@ -223,36 +231,27 @@ function queryFieldContent(root: HTMLElement, selector: string): HTMLElement | n
 }
 
 function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null {
-	if (candidates.length === 0) {
+	const eligibleCandidates = candidates.filter((candidate) => !isEmbeddedListbox(candidate));
+	if (eligibleCandidates.length === 0) {
 		return null;
 	}
-	if (candidates.length === 1) {
-		return candidates[0];
-	}
 
-	const hostControl = candidates.find((candidate) => HOST_CONTROL_TAGS.has(candidate.localName));
-	const markedControl = candidates.find((candidate) => candidate.hasAttribute(RUI_CONTROL_ATTR));
-	if (markedControl) {
-		return markedControl;
-	}
-	if (hostControl) {
-		return hostControl;
-	}
-
-	const active = document.activeElement;
-	if (active instanceof HTMLElement) {
-		for (const candidate of candidates) {
-			if (candidate === active || candidate.contains(active)) {
-				return candidate;
-			}
-		}
-	}
-
-	const visible = candidates.filter(
-		(el) => el.isConnected && el.getClientRects().length > 0 && !el.closest('[hidden],[aria-hidden="true"]'),
+	return (
+		eligibleCandidates.find(
+			(candidate) =>
+				!eligibleCandidates.some((ancestor) => ancestor !== candidate && ancestor.contains(candidate)),
+		) ?? null
 	);
-	const pool = visible.length > 0 ? visible : candidates.filter((el) => el.isConnected);
-	return pool[pool.length - 1] ?? candidates[candidates.length - 1];
+}
+
+function collectFieldControls(root: HTMLElement): HTMLElement[] {
+	const candidates: HTMLElement[] = [];
+	forEachFieldContentNode(root, (node) => {
+		if (node instanceof HTMLElement && node.matches(FIELD_CONTROL_SELECTOR)) {
+			candidates.push(node);
+		}
+	});
+	return candidates;
 }
 
 function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
@@ -260,40 +259,39 @@ function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
 	if (!(renderRoot instanceof HTMLElement)) {
 		return [];
 	}
-	return Array.from(renderRoot.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)).filter((el) => root.contains(el));
+	return Array.from(renderRoot.querySelectorAll<HTMLElement>(FIELD_CONTROL_SELECTOR)).filter((el) =>
+		root.contains(el),
+	);
 }
 
+/**
+ * The field control is the outermost matching node. An embedded `rui-listbox` is
+ * never eligible; a host such as `rui-select` wins over inner `[data-rui-control]`
+ * markers and nested hosts.
+ */
 export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	const fromRenderTree = pickPrimaryFieldControl(listFieldControlsInRenderTree(root));
 	if (fromRenderTree) {
 		return fromRenderTree;
 	}
 
-	let found: HTMLElement | null = null;
-	forEachFieldContentNode(root, (node) => {
-		if (found) {
-			return;
-		}
-		const match = findControlInSubtree(node);
-		if (match) {
-			found = match;
-		}
-	});
-	if (found) {
-		return found;
-	}
-	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR) ?? root;
-	return findControlInSubtree(renderRoot);
+	return pickPrimaryFieldControl(collectFieldControls(root));
 }
 
-function findControlInSubtree(node: Element): HTMLElement | null {
-	if (!(node instanceof HTMLElement)) {
-		return null;
+/**
+ * Whether a bubbling `rui-change` belongs to this field's primary control, not a
+ * nested host inside it.
+ */
+export function isPrimaryFieldControlEvent(root: HTMLElement, event: Event): boolean {
+	const control = findFieldControl(root);
+	if (!control || !(event.target instanceof Element)) {
+		return false;
 	}
-	if (node.matches(`[${RUI_CONTROL_ATTR}]`) || HOST_CONTROL_TAGS.has(node.localName)) {
-		return node;
+	if (event.target !== control && !control.contains(event.target)) {
+		return false;
 	}
-	return node.querySelector<HTMLElement>(CONTROL_SELECTOR);
+	const nestedHost = event.target.closest(HOST_CONTROL_SELECTOR);
+	return nestedHost === control || nestedHost == null;
 }
 
 export function readControlValue(control: HTMLElement): unknown {
@@ -355,7 +353,7 @@ export function writeControlValue(control: HTMLElement, value: unknown): void {
 
 function resolveControlHost(control: HTMLElement): HTMLElement {
 	if (control.hasAttribute(RUI_CONTROL_ATTR)) {
-		const host = control.closest(Array.from(HOST_CONTROL_TAGS).join(',')) as HTMLElement | null;
+		const host = control.closest(HOST_CONTROL_SELECTOR) as HTMLElement | null;
 		return host ?? control;
 	}
 	return control;

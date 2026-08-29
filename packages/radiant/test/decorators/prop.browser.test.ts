@@ -196,6 +196,22 @@ describe('@prop', () => {
 			expect(host.variant).toEqual('ghost');
 			expect(host.getAttribute('variant')).toEqual('ghost');
 		});
+
+		test('keeps an authored value attribute through first-connect when defaultValue is empty', async () => {
+			@customElement('my-prop-empty-reflect')
+			class MyPropEmptyReflect extends RadiantElement {
+				@prop({ type: String, reflect: true, defaultValue: '' }) value = '';
+			}
+
+			const host = document.createElement('my-prop-empty-reflect') as MyPropEmptyReflect;
+			host.setAttribute('value', 'ts');
+			document.body.appendChild(host);
+
+			await Promise.resolve();
+
+			expect(host.value).toEqual('ts');
+			expect(host.getAttribute('value')).toEqual('ts');
+		});
 	});
 
 	describe('not reflect', () => {

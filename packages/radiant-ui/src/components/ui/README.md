@@ -24,6 +24,8 @@ Keep a convenient prop-based default composition on the primary view, but accept
 
 For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances. Listbox-backed popovers (select, combobox) share `ListboxPopoverBehavior` for active-descendant navigation and `ListboxHostController` for the embedded listbox, the comma-separated value array, option `aria-selected`, and optional tag-group chips.
 
+`RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls.
+
 ## Light-DOM ownership
 
 Parent JSX owns **Authored Children**. Do not let a custom element `render()` project that content through `<slot>` — it fights `moveRangeBefore` and causes range drift when the parent re-renders.

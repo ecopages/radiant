@@ -253,7 +253,9 @@ export class RadiantElement<Bindings extends object = {}>
 	private eventEmitters = new Map<string, EventEmitter>();
 
 	/**
-	 * A flag indicating whether the element has been connected to the DOM.
+	 * Set at the start of `connectedCallback`. Until then, `attributeChangedCallback`
+	 * ignores attribute writes so parser/JSX/`setAttribute` values wait for
+	 * `completeInitialSync`.
 	 */
 	private elementReady = false;
 	private isFirstConnectPending = false;
@@ -297,14 +299,18 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.renderRuntime?.slotProjectionVersion ?? 0;
 	}
 
+	/**
+	 * @remarks
+	 * `attributeChangedCallback` is a no-op until `elementReady`, so an attribute
+	 * set between `createElement` and `append` never reaches `reactivePropertyState`
+	 * until first connect. First-connect work (attribute adoption, hydrate/update)
+	 * is deferred one microtask so a subclass `connectedCallback` that runs after
+	 * `super()` has finished before any `@onUpdated` from catch-up can fire.
+	 */
 	connectedCallback() {
 		ensureLegacyHostReady(this, 'connect');
 		const isReconnectDuringPendingFirstConnect = this.isFirstConnectPending;
 
-		// `attributeChangedCallback` is a no-op until `elementReady` flips true, so an
-		// attribute set on this element before its first connect — e.g. the ordinary
-		// `document.createElement(tag)` -> `setAttribute(...)` -> `append(...)` sequence
-		// — never reaches `reactivePropertyState`. Catch those attributes up below, once.
 		const isFirstConnect = !this.elementReady;
 		this.elementReady = true;
 
@@ -323,12 +329,7 @@ export class RadiantElement<Bindings extends object = {}>
 				return;
 			}
 
-			// Deferred to a microtask — same as the render/hydrate calls below — so a
-			// subclass's own `connectedCallback` override (which runs its post-`super()`
-			// setup synchronously, right after this method returns) has already finished
-			// before any `@onUpdated`/reactive side effect from the catch-up can fire.
 			if (isFirstConnect) {
-				this.syncAttributesOnFirstConnect();
 				this.reactivePropertyState.completeInitialSync();
 			}
 
@@ -343,10 +344,7 @@ export class RadiantElement<Bindings extends object = {}>
 					if (this.renderScheduler.pending) {
 						this.update();
 					}
-				} else if (this.isReconnectWithLiveProjection(renderRuntime)) {
-					// Already-mounted reconnects keep their live light DOM (see
-					// `isReconnectWithLiveProjection`); no update is scheduled.
-				} else {
+				} else if (!this.isReconnectWithLiveProjection(renderRuntime)) {
 					this.update();
 				}
 			}
@@ -392,36 +390,20 @@ export class RadiantElement<Bindings extends object = {}>
 		return renderRuntime.hasMounted && renderRuntime.hasProjectedSlotContent;
 	}
 
-	/**
-	 * Replays `attributeChangedCallback` for every currently-set, registered attribute
-	 * as if it had just changed from unset.
-	 *
-	 * @remarks
-	 * Parser/JSX attributes often land after `constructor`, and
-	 * `attributeChangedCallback` is a no-op until `elementReady`. This is how
-	 * authored attributes reach `@prop` on first connect.
-	 */
-	private syncAttributesOnFirstConnect(): void {
-		for (const property of this.reactivePropertyState.getAll()) {
-			const currentValue = this.getAttribute(property.attribute);
-
-			if (currentValue !== null) {
-				this.attributeChangedCallback(property.attribute, null, currentValue);
-			}
-		}
-	}
-
 	connectedContextCallback(_contextName: UnknownContext): void {}
 
+	/**
+	 * @remarks
+	 * Keep the same `renderRuntime` instance across a disconnect/reconnect cycle —
+	 * only its transient observer/watcher get torn down (both reattach naturally on
+	 * the next render/hydrate). Discarding the instance here would reset its
+	 * slot-projection capture state too, and a light-DOM re-render that relocates a
+	 * still-connected descendant (removing then reinserting the same subtree) fires
+	 * this callback on that descendant without its authored content ever changing —
+	 * re-capturing at that point would treat the descendant's own already-rendered
+	 * output as fresh authored slot content.
+	 */
 	disconnectedCallback() {
-		// Keep the same `renderRuntime` instance across a disconnect/reconnect cycle —
-		// only its transient observer/watcher get torn down (both reattach naturally on
-		// the next render/hydrate). Discarding the instance here would reset its
-		// slot-projection capture state too, and a light-DOM re-render that relocates a
-		// still-connected descendant (removing then reinserting the same subtree) fires
-		// this callback on that descendant without its authored content ever changing —
-		// re-capturing at that point would treat the descendant's own already-rendered
-		// output as fresh authored slot content.
 		this.renderRuntime?.dispose();
 		this.eventSubscriptionRegistry.removeAll();
 		this.reactiveHost.disconnectHost();
@@ -431,6 +413,12 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactiveHost.notifyUpdate(changedProperty, oldValue, value);
 	}
 
+	/**
+	 * @remarks
+	 * Ignored until `elementReady` so construction-time and pre-connect attribute
+	 * writes are adopted once in `completeInitialSync` instead of racing the
+	 * accessor definition.
+	 */
 	attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
 		if (oldValue === newValue || !this.elementReady) return;
 
