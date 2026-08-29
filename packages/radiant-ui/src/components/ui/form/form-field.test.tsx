@@ -7,6 +7,24 @@ import { RuiTextarea } from '../textarea';
 import { RuiLabel } from '../label';
 import { RuiSwitch } from '../switch';
 import { RuiDateField } from '../date-field';
+import {
+	RuiCombobox,
+	RuiComboboxClear,
+	RuiComboboxControl,
+	RuiComboboxInput,
+	RuiComboboxListbox,
+	RuiComboboxTrigger,
+} from '../combobox';
+import { RuiListbox, RuiListboxOption } from '../listbox';
+import {
+	RuiSelect,
+	RuiSelectClear,
+	RuiSelectControl,
+	RuiSelectListbox,
+	RuiSelectToggle,
+	RuiSelectTrigger,
+	RuiSelectValue,
+} from '../select';
 import { RuiForm } from './form';
 import '../field/field.script';
 import './form.script';
@@ -17,12 +35,62 @@ import type { RuiField as RuiFieldElement } from '../field/field.script';
 import type { RuiForm as RuiFormElement } from './form.script';
 import type { FormContextValue } from './form-context';
 
+const LANGUAGE_OPTIONS = [
+	{ value: 'js', label: 'JavaScript' },
+	{ value: 'ts', label: 'TypeScript' },
+];
+
+function LanguageSelect({ value }: { value?: string }) {
+	return (
+		<RuiSelect placeholder="Select a language" value={value}>
+			<RuiSelectControl>
+				<RuiSelectTrigger>
+					<RuiSelectValue />
+				</RuiSelectTrigger>
+				<RuiSelectClear />
+				<RuiSelectToggle />
+			</RuiSelectControl>
+			<RuiSelectListbox>
+				<RuiListbox embedded>
+					{LANGUAGE_OPTIONS.map((option) => (
+						<RuiListboxOption value={option.value}>{option.label}</RuiListboxOption>
+					))}
+				</RuiListbox>
+			</RuiSelectListbox>
+		</RuiSelect>
+	);
+}
+
+function LanguageCombobox({ value }: { value?: string }) {
+	return (
+		<RuiCombobox placeholder="Select a language" value={value}>
+			<RuiComboboxControl>
+				<RuiComboboxInput />
+				<RuiComboboxClear />
+				<RuiComboboxTrigger />
+			</RuiComboboxControl>
+			<RuiComboboxListbox>
+				<RuiListbox embedded>
+					{LANGUAGE_OPTIONS.map((option) => (
+						<RuiListboxOption value={option.value}>{option.label}</RuiListboxOption>
+					))}
+				</RuiListbox>
+			</RuiComboboxListbox>
+		</RuiCombobox>
+	);
+}
+
 async function flushRender(): Promise<void> {
 	await new Promise<void>((resolve) => {
 		requestAnimationFrame(() => {
 			requestAnimationFrame(() => resolve());
 		});
 	});
+}
+
+async function flushFirstConnect(): Promise<void> {
+	await Promise.resolve();
+	await Promise.resolve();
 }
 
 describe('RuiField view', () => {
@@ -144,6 +212,122 @@ describe('rui-field composed content discovery', () => {
 		field.remove();
 	});
 
+	it('prefers a composed select host over its embedded listbox', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiField name="language">
+				<LanguageSelect />
+			</RuiField>,
+		);
+
+		await flushRender();
+
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		expect(findFieldControl(field)?.localName).toBe('rui-select');
+		root.unmount();
+		host.remove();
+	});
+
+	it.each([
+		['select', LanguageSelect, 'rui-select', '[data-select-clear]', '[data-select-value]'],
+		['combobox', LanguageCombobox, 'rui-combobox', '[data-combobox-clear]', '[data-combobox-input]'],
+	] as const)(
+		'applies a form default to a composed %s',
+		async (_name, Control, hostTag, clearSelector, valueSelector) => {
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiForm defaultValues={{ language: 'ts' }}>
+					<RuiField name="language" defaultValue="ts">
+						<Control />
+					</RuiField>
+				</RuiForm>,
+			);
+
+			await flushRender();
+			await flushFirstConnect();
+
+			const control = host.querySelector(hostTag) as HTMLElement & { value: string };
+			const clear = host.querySelector(clearSelector) as HTMLButtonElement;
+			expect(control.value).toBe('ts');
+			expect(clear.hidden).toBe(false);
+			const valueTarget = host.querySelector(valueSelector);
+			if (valueTarget instanceof HTMLInputElement) {
+				expect(valueTarget.value).toBe('TypeScript');
+			} else {
+				expect(valueTarget?.textContent).toContain('TypeScript');
+			}
+			root.unmount();
+			host.remove();
+		},
+	);
+
+	it('retries a field default when its composed select appears after registration', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<RuiForm defaultValues={{ language: 'ts' }}>
+				<RuiField name="language" />
+			</RuiForm>,
+		);
+
+		await flushRender();
+
+		root.render(
+			<RuiForm defaultValues={{ language: 'ts' }}>
+				<RuiField name="language">
+					<LanguageSelect />
+				</RuiField>
+			</RuiForm>,
+		);
+
+		await flushRender();
+		await flushFirstConnect();
+
+		const select = host.querySelector('rui-select') as HTMLElement & { value: string };
+		expect(select.value).toBe('ts');
+		expect((host.querySelector('[data-select-clear]') as HTMLButtonElement).hidden).toBe(false);
+		root.unmount();
+		host.remove();
+	});
+
+	it.each([
+		['select', LanguageSelect, 'rui-select', '[data-select-clear]', '[data-select-value]'],
+		['combobox', LanguageCombobox, 'rui-combobox', '[data-combobox-clear]', '[data-combobox-input]'],
+	] as const)(
+		'keeps a composed %s empty without a field default',
+		async (_name, Control, hostTag, clearSelector, valueSelector) => {
+			const host = document.createElement('div');
+			document.body.append(host);
+			const root = createRoot(host);
+			root.render(
+				<RuiField name="language">
+					<Control />
+				</RuiField>,
+			);
+
+			await flushRender();
+			await flushFirstConnect();
+
+			const control = host.querySelector(hostTag) as HTMLElement & { value: string };
+			const clear = host.querySelector(clearSelector) as HTMLButtonElement;
+			expect(control.value).toBe('');
+			expect(clear.hidden).toBe(true);
+			const valueTarget = host.querySelector(valueSelector);
+			if (valueTarget instanceof HTMLInputElement) {
+				expect(valueTarget.value).toBe('');
+			} else {
+				expect(valueTarget?.textContent).toContain('Select a language');
+			}
+			root.unmount();
+			host.remove();
+		},
+	);
+
 	it('shows validation message after invalid submit', async () => {
 		const form = document.createElement('rui-form') as RuiFormElement;
 		const nativeForm = document.createElement('form');
@@ -166,7 +350,7 @@ describe('rui-field composed content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await flushFirstConnect();
 
 		expect(form.getRef<HTMLFormElement>('form')).toBe(nativeForm);
 
@@ -250,7 +434,7 @@ describe('rui-field composed content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await flushFirstConnect();
 
 		const form = host.querySelector('rui-form') as RuiFormElement;
 		const field = host.querySelector('rui-field') as RuiFieldElement;
@@ -293,7 +477,7 @@ describe('rui-field composed content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await flushFirstConnect();
 
 		const field = host.querySelector('rui-field') as RuiFieldElement;
 		const email = findFieldControl(field) as HTMLInputElement;
@@ -329,7 +513,7 @@ describe('rui-field composed content discovery', () => {
 		await customElements.whenDefined('rui-form');
 		await customElements.whenDefined('rui-field');
 		await flushRender();
-		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await flushFirstConnect();
 
 		const field = host.querySelector('rui-field') as RuiFieldElement;
 		const save = host.querySelector('button') as HTMLButtonElement;
@@ -370,7 +554,7 @@ describe('rui-field composed content discovery', () => {
 		await customElements.whenDefined('rui-field');
 		await customElements.whenDefined('rui-date-field');
 		await flushRender();
-		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await flushFirstConnect();
 
 		const field = host.querySelector('rui-field') as RuiFieldElement;
 		const save = host.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -400,7 +584,7 @@ describe('rui-field composed content discovery', () => {
 		await customElements.whenDefined('rui-field');
 		await customElements.whenDefined('rui-switch');
 		await flushRender();
-		await new Promise<void>((resolve) => queueMicrotask(() => queueMicrotask(resolve)));
+		await flushFirstConnect();
 
 		const field = host.querySelector('rui-field') as RuiFieldElement;
 		expect(field.querySelectorAll('rui-switch')).toHaveLength(1);

@@ -46,6 +46,13 @@ export class ReactivePropertyState {
 		Reflect.set(this.host, config.name, transformedValue);
 	}
 
+	/**
+	 * @remarks
+	 * A pre-upgrade own-property assignment is the initial signal value. Non-reflected
+	 * attributes are consumed and dropped so a later `attributeChangedCallback` cannot
+	 * fight the property. Reflected attributes stay until {@link completeInitialSync}
+	 * so an empty `defaultValue` cannot strip an authored `value="ts"`.
+	 */
 	public create<T>(
 		propertyName: string,
 		options: ReactivePropertyOptions<T>,
@@ -64,7 +71,7 @@ export class ReactivePropertyState {
 			? preUpgradeValue
 			: resolveInitialValue(type, attributeKey, defaultValue);
 
-		if (this.host.hasAttribute(attributeKey) && (!reflect || initialValue == null || initialValue === '')) {
+		if (!reflect && this.host.hasAttribute(attributeKey)) {
 			this.host.removeAttribute(attributeKey);
 		}
 
@@ -91,16 +98,19 @@ export class ReactivePropertyState {
 	}
 
 	/**
-	 * Reflects current values and emits the initial `@onUpdated` after first-connect
-	 * attribute catch-up.
+	 * Adopts authored attributes, then reflects current values and emits the
+	 * initial `@onUpdated`.
 	 *
 	 * @remarks
 	 * Construction can run before parser/JSX attributes land. Reflecting
-	 * `defaultValue` from the constructor would overwrite e.g. `variant="ghost"`.
-	 * First-connect catch-up adopts authored attributes first; this then reflects
-	 * whatever the host actually holds.
+	 * `defaultValue` from the constructor would overwrite e.g. `variant="ghost"`
+	 * or strip an authored `value="ts"` when `defaultValue` is `""`. First-connect
+	 * adopts those attributes unless an own property was assigned before upgrade;
+	 * this then reflects whatever the host actually holds.
 	 */
 	public completeInitialSync(): void {
+		this.adoptAuthoredAttributes();
+
 		for (const property of this.properties.values()) {
 			const signal = this.host.getReactiveMember(property.name);
 			if (!signal) {
@@ -117,10 +127,32 @@ export class ReactivePropertyState {
 		}
 	}
 
+	/**
+	 * @remarks
+	 * Parser/JSX attributes often land after `constructor`. Skip properties that
+	 * already hold a pre-upgrade own-property assignment so a different or empty
+	 * attribute cannot overwrite it.
+	 */
+	private adoptAuthoredAttributes(): void {
+		for (const property of this.properties.values()) {
+			if (this.preUpgradePropertyValues.has(property.name)) {
+				continue;
+			}
+
+			const currentValue = this.host.getAttribute(property.attribute);
+			if (currentValue !== null) {
+				this.applyAttributeChange(property.attribute, null, currentValue);
+			}
+		}
+	}
+
+	/**
+	 * @remarks
+	 * Boolean attributes are presence-based: removal must yield `false`, not `null`.
+	 * Otherwise reflecting `false` → `removeAttribute` → `attributeChangedCallback`
+	 * sets the property to `null`, and callers like `String(this.open)` become `"null"`.
+	 */
 	private transformAttributeValue(value: string | null, config: ReactiveProperty): unknown {
-		// Boolean attributes are presence-based: removal must yield `false`, not `null`.
-		// Otherwise reflecting `false` → removeAttribute → attributeChangedCallback sets the
-		// property to `null`, and callers like `String(this.open)` become `"null"`.
 		if (value === null) {
 			return config.type === Boolean ? false : value;
 		}
