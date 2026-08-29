@@ -26,19 +26,59 @@ export type RuiSelectChangeDetail = { value: string };
 /**
  * `<rui-select>` — a select-only combobox with a button trigger and listbox popup.
  *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiSelect*` view helpers which stamp the same targets.
+ *
  * Implements the APG Combobox pattern (select-only variant). DOM focus stays on the
  * trigger button; visual focus moves into the popup via `aria-activedescendant`.
- *
  * Pair with `RuiLabel` (sibling, or via `RuiField`) for the visible name.
- * Compose with `data-select-trigger`, `data-select-toggle`, `data-select-value`, `data-select-listbox`
- * (popup shell), and `RuiListbox` with `embedded` for options.
  *
- * Wrap the listbox in `RuiAutocomplete` to add search filtering.
- * Use `RuiTagGroup` inside `RuiSelectValue` for multi-select chip display.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — shell for popover anchoring.
+ * - `[data-select-trigger]` — value button. Host sets `id`, `role="combobox"`,
+ *   `aria-haspopup="listbox"`, `aria-autocomplete="none"`, `aria-expanded`,
+ *   `aria-controls`, and `disabled`.
+ * - `[data-select-value]` — selected value inside the trigger. Host sets
+ *   `data-placeholder` when empty and may inject `[data-select-placeholder]`.
+ * - `[data-select-listbox]` — popup shell. Host toggles `hidden`.
+ *
+ * Per option (inside embedded listbox):
+ * - `[role="option"]` — selection identity; see `rui-listbox`.
+ *
+ * Optional:
+ * - `[data-select-toggle]` — popup toggle beside the trigger. Host sets
+ *   `aria-expanded` and `disabled`.
+ * - `[data-select-clear]` — clears selection. Host toggles `hidden` and `disabled`.
+ * - `[data-autocomplete-input]` — search field inside the listbox. When the popup
+ *   is open the host moves `role="combobox"` and related `aria-*` to this input.
+ *
+ * Do not set `role`, `aria-expanded`, `aria-controls`, `aria-haspopup`, or
+ * `tabIndex` on the trigger — the host owns those.
+ *
+ * Nested hosts:
+ * - `rui-listbox` (`embedded`) — options at `[role="option"]`; host drives
+ *   `aria-selected` and `aria-multiselectable` on the inner listbox.
+ * - `rui-tag-group` inside `[data-select-value]` — multi-select chips; host listens
+ *   for `rui-remove` and `[data-tag]` clicks.
+ * - `rui-autocomplete` (optional) — filter wrapper inside `[data-select-listbox]`.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/
  * @element rui-select
- * @fires rui-change
+ * @attr {string} value - Comma-separated selected values.
+ * @attr {string} label - Accessible name when there is no associated `RuiLabel`.
+ * @attr {string} placeholder - Shown when nothing is selected.
+ * @attr {boolean} disabled - Disable the trigger and popup. Default: `false`.
+ * @attr {('single'|'multiple')} selection-mode - Single or multi-select. Default: `single`.
+ * @attr {boolean} should-close-on-select - Whether selecting closes the popup (defaults to `true` for single, `false` for multiple).
+ * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is comma-separated.
+ *
+ * @remarks
+ * Minimum tree: `[data-ref="root"]` > `[data-select-trigger]` > `[data-select-value]`,
+ * sibling `[data-select-listbox]` > `rui-listbox[embedded]` > `[role="option"]`.
+ * BEM classes live on the view helpers; the host never queries them.
  */
 @customElement('rui-select')
 export class RuiSelect extends RadiantElement {

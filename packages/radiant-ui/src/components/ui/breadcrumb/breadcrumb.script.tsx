@@ -12,20 +12,20 @@ export type RuiBreadcrumbProps = {
 };
 
 /**
- * `<rui-breadcrumb>` — a trail of links to ancestor pages in hierarchical order.
+ * `<rui-breadcrumb>` — navigation landmark for a hierarchical page trail.
  *
- * Implements the WAI-ARIA APG Breadcrumb pattern: a `<nav>` landmark containing
- * an ordered list of links, with `aria-current="page"` on the current page item.
- *
- * Compose with the JSX helpers (`RuiBreadcrumbList`, `RuiBreadcrumbItem`,
- * `RuiBreadcrumbLink`, `RuiBreadcrumbPage`, `RuiBreadcrumbSeparator`,
- * `RuiBreadcrumbEllipsis`).
+ * The custom element holds `label` and `separator` props; it does not query
+ * authored children. Use `RuiBreadcrumb` and the breadcrumb helpers, which stamp
+ * the `<nav>` landmark and list structure.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/breadcrumb/
- *
- * Keyboard interaction: standard link navigation (`Tab`, `Enter`).
- *
  * @element rui-breadcrumb
+ * @attr {string} label - Accessible name for the navigation landmark. Default: `Breadcrumb`.
+ * @attr {string} separator - Glyph for empty `RuiBreadcrumbSeparator` nodes (CSS custom property). Default: `/`.
+ *
+ * @remarks
+ * No light-DOM query contract — keyboard interaction is standard link navigation.
+ * BEM classes live on the view helpers.
  */
 @customElement('rui-breadcrumb')
 export class RuiBreadcrumb extends RadiantElement {

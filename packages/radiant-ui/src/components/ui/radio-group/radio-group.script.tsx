@@ -17,36 +17,54 @@ export type RuiRadioGroupChangeDetail = {
 };
 
 /**
- * `<rui-radio-group>` — a set of radio buttons where only one option may
- * be selected at a time.
+ * `<rui-radio-group>` — radio group behavior host.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiRadioGroup` view helpers which stamp the same targets.
  *
  * Implements the WAI-ARIA APG Radio Group pattern using native
- * `<input type="radio">` controls inside a `role="radiogroup"` container.
- * Arrow-key navigation and Space activation are provided by the browser.
+ * `<input type="radio">` controls. Arrow-key navigation and Space activation
+ * are provided by the browser.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-radio-group-root]` — radiogroup container. Host sets `aria-label`, `aria-disabled`.
+ * - `input[type="radio"]` — one per option. Host sets `name`, `checked`, `disabled`.
+ *
+ * Per radio:
+ * - `value` — selection identity.
+ * - `data-disabled` — per-item disabled flag preserved when the group is enabled.
+ *
+ * Do not set `name`, `checked`, or `disabled` on radios — the host owns those.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/radio/
- *
- * Keyboard interaction (native radio group):
- * - `Tab` / `Shift+Tab`: move focus into and out of the group
- * - `Arrow` keys: move selection between radios
- * - `Space`: check the focused radio
  *
  * @element rui-radio-group
  *
  * @attr {string} value - Selected radio value. Reflects to markup. Default: `''`.
  * @attr {string} name - Form field name shared by all radios in the group. Default: `''`.
- * @attr {string} label - Accessible name when no visible legend is slotted. Default: `''`.
+ * @attr {string} label - Accessible name when no visible legend is composed. Default: `''`.
  * @attr {boolean} disabled - Disables every radio in the group. Default: `false`.
- *
- * @slot - One or more `<label>` children each wrapping a radio input with a unique `value`.
  *
  * @fires rui-change - Emitted after the selected value changes; `detail.value` holds the new value.
  *
  * @remarks
- * Compose with `RuiRadioGroupControl` and `RuiRadio`, or author matching native
- * radio markup directly. This element owns radio value synchronization.
+ * Minimum headless tree:
  *
- * @cssclass rui-radio-group - Group surface (`role="radiogroup"`).
+ * ```html
+ * <rui-radio-group value="pro" name="plan" label="Plan">
+ *   <div data-radio-group-root role="radiogroup">
+ *     <label><input type="radio" value="free" /> Free</label>
+ *     <label><input type="radio" value="pro" /> Pro</label>
+ *   </div>
+ * </rui-radio-group>
+ * ```
+ *
+ * BEM classes are presentation-only; see view `@cssclass`.
  */
 @customElement('rui-radio-group')
 export class RuiRadioGroup extends RadiantElement {

@@ -11,7 +11,7 @@ export function findAssociatedLabel(owner: HTMLElement): HTMLLabelElement | null
 		return previous as HTMLLabelElement;
 	}
 
-	return owner.parentElement?.querySelector<HTMLLabelElement>('[data-rui-field-label], label.rui-label') ?? null;
+	return owner.parentElement?.querySelector<HTMLLabelElement>('[data-rui-field-label]') ?? null;
 }
 
 /** Points a visible label at a composed control and prefers it over `aria-label`. */

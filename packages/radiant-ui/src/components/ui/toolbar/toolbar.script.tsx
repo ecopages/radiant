@@ -9,16 +9,36 @@ export type RuiToolbarProps = {
 };
 
 /**
- * `<rui-toolbar>` — a container for grouping controls.
+ * `<rui-toolbar>` — horizontal control group with roving keyboard navigation.
  *
- * Implements the APG Toolbar pattern with left/right arrow navigation among
- * focusable descendants.
+ * The custom element is a behavior host: it does not render toolbar chrome. Import
+ * the script and place focusable controls as light-DOM descendants, or use
+ * `RuiToolbar`, which stamps `[role="toolbar"]`.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - Focusable descendants — `button`, `a[href]`, `input`, `select`, `textarea`, or
+ *   `[tabindex]`. Host sets roving `tabIndex` among non-`disabled` matches.
+ *
+ * Optional:
+ * - `button[data-toggle][aria-pressed]` — toggle button. Host toggles `aria-pressed`
+ *   on click (capture phase, before child handlers). With `exclusive-toggles`, only
+ *   one pressed toggle stays active.
+ *
+ * Author `disabled` on controls to exclude them from roving focus. Author initial
+ * `aria-pressed` on toggles; the host owns updates after click.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/
  * @element rui-toolbar
  * @attr {string} label - Accessible name for the `role="toolbar"` region.
  * @attr {boolean} exclusive-toggles - Only one toggle button stays pressed at a time. Default: `false`.
- * @cssclass rui-toolbar - Toolbar surface (`role="toolbar"`).
+ *
+ * @remarks
+ * The view stamps `[role="toolbar"]` with `data-ref="root"`. Arrow keys navigate
+ * among focusable descendants anywhere under `<rui-toolbar>`.
  */
 @customElement('rui-toolbar')
 export class RuiToolbar extends RadiantElement {

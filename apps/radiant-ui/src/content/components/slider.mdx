@@ -4,7 +4,7 @@ description: Sliders let users pick a numeric value or range along a track. They
 category: Forms
 ---
 
-import { meta as SliderMeta, Default, ValuePrecision } from '@/content/stories/slider';
+import { meta as SliderMeta, Default, Range, ValuePrecision } from '@/content/stories/slider';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -43,9 +43,43 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Custom markup
+
+`<rui-slider>` coordinates any light-DOM tree that matches its query contract. The `RuiSlider` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/slider';
+
+<rui-slider value={50} min={0} max={100} label="Volume">
+  <div class="rui-slider rui-slider--single" data-ref="root">
+    <div class="rui-slider__header" data-ref="header">
+      <span class="rui-slider__label" data-ref="label">Volume</span>
+    </div>
+    <div class="rui-slider__range">
+      <div class="rui-slider__range-track" data-ref="rangeTrack">
+        <div class="rui-slider__range-fill" />
+        <button
+          type="button"
+          class="rui-slider__thumb"
+          data-ref="singleThumb"
+          data-thumb="value"
+          role="slider"
+        />
+      </div>
+    </div>
+    <input type="hidden" data-ref="input" />
+    <input type="hidden" data-ref="maxInput" />
+  </div>
+</rui-slider>
+```
+
+BEM classes are presentation-only. The host owns thumb `aria-*`, track CSS variables, and hidden input values.
+
 ## Range selection
 
 <p>Use `variant="range"` for minimum/maximum filters. Set `minDistance` to prevent the thumbs from overlapping.</p>
+
+<Canvas of={Range} meta={SliderMeta} />
 
 ## Step size and readout
 
@@ -110,11 +144,34 @@ Switching the radius pack (sharp, default, soft) updates both when they referenc
 | `show-value` | `boolean` | `false` | Shows the default value readout below the track. |
 | `value-title` | `boolean` | `false` | Mirrors the live value in the control `title` on hover. |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `rui-slider--*` layout classes | the root node |
+| `[data-ref="rangeTrack"]` | yes | inline `--rui-slider-*`, optional `title` | the track node |
+| `[data-thumb]` | yes | `hidden`, `disabled`, `tabindex`, `aria-*` value attrs | thumb elements (`value`, `min`, or `max`) |
+| `[data-ref="header"]` | no | `hidden` | header row |
+| `[data-ref="label"]` | no | `hidden`, `textContent` | label text |
+| `[data-ref="value"]` | no | `textContent` | readout node |
+| `[data-default-value]` | no | `hidden` (via `showValue`) | default readout when no custom value child |
+| `[data-ref="input"]` | no | `value`, `name`, `disabled`, `readOnly`, `title` | hidden primary value input |
+| `[data-ref="maxInput"]` | no | `value`, `name` (`{name}-max`), `disabled`, `readOnly`, `title` | hidden range-max input |
+
+Do not set thumb `tabindex` or `aria-valuenow`. Nested hosts: none.
+
 ### Events
 
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ value: number }` or `{ values: [number, number] }` | Emitted as the value moves; `value` in single mode, `values` in range mode. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiSlider` | full `[data-ref]` tree under `[data-ref="root"]` | Supplies default `RuiSliderValue` with `[data-default-value]` when `children` omitted. |
+| `RuiSliderValue` | `[data-ref="value"]` | Live readout; host updates `textContent` while dragging. |
 
 ### CSS classes
 

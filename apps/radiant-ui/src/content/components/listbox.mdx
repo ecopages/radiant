@@ -4,7 +4,7 @@ description: Listboxes present a scrollable set of options with single or multip
 category: Forms
 ---
 
-import { meta as ListboxMeta, Default } from '@/content/stories/listbox';
+import { meta as ListboxMeta, Default, Multiple } from '@/content/stories/listbox';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -30,7 +30,7 @@ export const config = {
 
 ## Mental model
 
-`<rui-listbox>` is a **view-owned shell**: `RuiListboxOption` children stay in parent JSX. The custom element coordinates `aria-selected`, roving tabindex, and `rui-change`. When `embedded` is set, the parent (select or combobox) owns selection and keyboard; the listbox only paints options.
+`<rui-listbox>` is a behavior host: `RuiListboxOption` children stay in parent JSX. The custom element coordinates `aria-selected`, roving tabindex, and `rui-change`. When `embedded` is set, the parent (select or combobox) owns selection and keyboard; the listbox only paints options.
 
 The host `value` is a **comma-separated token string**. JSX may pass a `string` or `string[]`. Commas in the host attribute are delimiters.
 
@@ -58,6 +58,23 @@ import { RuiListbox, RuiListboxOption } from '@ecopages/radiant-ui/listbox';
 />
 ```
 
+## Custom markup
+
+`<rui-listbox>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/listbox';
+
+<rui-listbox value="cat" label="Animal">
+  <div role="listbox" class="rui-listbox rui-listbox--bordered">
+    <div role="option" data-value="cat" class="rui-listbox__option">Cat</div>
+    <div role="option" data-value="dog" class="rui-listbox__option">Dog</div>
+  </div>
+</rui-listbox>
+```
+
+BEM classes are presentation-only. Do not set `aria-selected` or `tabIndex` on options — the host owns those.
+
 ## Embedded listboxes
 
 Set `embedded` when the listbox lives inside a select or combobox popup. The parent then owns selection; border chrome is omitted so the popup can provide it. `bordered` overrides that default.
@@ -83,6 +100,8 @@ Set `label` when the option contains decorative nodes (emoji, icons). Without it
 ## Multiple selection
 
 `selectionMode="multiple"` exposes `aria-multiselectable="true"`. Click or Space/Enter toggles the focused option. Arrow keys move focus without changing the selection.
+
+<Canvas of={Multiple} meta={ListboxMeta} />
 
 ```tsx
 <RuiListbox
@@ -127,6 +146,17 @@ Override at the theme layer (`tokens/presets/colors/*.css`). Embedded listboxes 
 | `embedded` | `boolean` | `false` | Parent-owned listbox: no border chrome, selection handled by the parent. |
 | `bordered` | `boolean` | follows `embedded` | Override the border (`true` standalone, `false` embedded). |
 
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[role="listbox"]` | yes | `id`, `aria-multiselectable` (multiple mode) | the list node |
+| `[role="option"]` | yes | `aria-selected`, roving `tabIndex` | `data-value`, `data-label`, `aria-disabled`, `hidden` |
+| `data-value` | per option | — | selection identity; fallback trimmed text |
+| `data-label` | per option | — | accessible name when children include decorative nodes |
+
+Do not set `aria-selected` or `tabIndex` on options. Nested hosts: none.
+
 ### Events
 
 | Event | Detail | Description |
@@ -135,10 +165,11 @@ Override at the theme layer (`tokens/presets/colors/*.css`). Embedded listboxes 
 
 ### View helpers
 
-| Component | Renders |
-| --- | --- |
-| `RuiListboxOption` | An option with `role="option"`, `data-value`, and optional `label` / `disabled`. |
-| `RuiListboxOptionIndicator` | Decorative selected-state indicator; children replace the default check SVG. |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiListbox` | `<rui-listbox>` + `[role="listbox"]` shell | Accepts `options` or children. |
+| `RuiListboxOption` | `[role="option"]`, `data-value`, `data-label` | — |
+| `RuiListboxOptionIndicator` | `[data-listbox-option-indicator]` | Decorative; not queried by the host. |
 
 ### CSS classes
 

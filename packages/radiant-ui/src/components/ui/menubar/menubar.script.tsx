@@ -13,28 +13,54 @@ export type RuiMenubarChangeDetail = { value: string };
 /**
  * `<rui-menubar>` — a horizontal menubar of menus.
  *
- * Implements the APG Menubar pattern: top-level items use `role="menuitem"` with
- * `aria-haspopup` / `aria-expanded` when they own a nested `[role="menu"]`. Arrow
- * keys move across the bar; Enter/Space/ArrowDown open the popup; Escape closes it.
- * Nested branches open after a 200 ms pointer-hover delay without changing
- * keyboard focus. Keyboard branch activation opens the submenu and focuses its
- * first item.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiMenubar*` view helpers which stamp the same targets.
  *
- * Expected markup (also produced by the JSX view helper):
- * ```html
- * <div class="rui-menubar__root" data-ref="menubar-root">
- *   <button role="menuitem" aria-haspopup="true" aria-expanded="false">File</button>
- *   <div role="menu" hidden>
- *     <button role="menuitem" data-value="new">New</button>
- *   </div>
- * </div>
- * ```
+ * Implements the APG Menubar pattern: top-level items use `role="menuitem"` with
+ * `aria-haspopup` / `aria-expanded` when they own a nested `[role="menu"]`.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — menubar landmark shell (`role="menubar"`).
+ * - `[data-ref="menubar-root"]` — one top-level menu block (trigger + popup).
+ * - `[role="menuitem"]` — top-level item inside each `menubar-root`. Host sets
+ *   `aria-expanded` and `aria-haspopup` when a sibling `[role="menu"]` exists.
+ * - `[role="menu"]` — popup surface, direct child of `menubar-root`. Host toggles
+ *   `hidden` and positions via popover controller.
+ *
+ * Per menu item (at any depth):
+ * - `[role="menuitem"]` — action or branch. Host reads `data-value` or text on activate.
+ * - `data-value` — optional identity emitted in `rui-change`.
+ *
+ * Branch pattern: a `[role="menuitem"]` with `aria-haspopup` followed by a sibling
+ * `[role="menu"]` (or `[data-ref="submenu-menu"]` in nested flyouts).
+ *
+ * Do not set `aria-expanded` on top-level items — the host owns it.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  * @element rui-menubar
  * @attr {string} label - Accessible name for the `role="menubar"` landmark.
  * @fires rui-change - Emitted when a menu item is activated; `detail.value` is the item's `data-value` or text.
- * @cssclass rui-menubar - Menubar bar (`role="menubar"`).
+ *
+ * @remarks
+ * Minimum tree:
+ *
+ * ```html
+ * <div data-ref="root" role="menubar">
+ *   <div data-ref="menubar-root">
+ *     <button role="menuitem" aria-haspopup="true">File</button>
+ *     <div role="menu" hidden>
+ *       <button role="menuitem" data-value="new">New</button>
+ *     </div>
+ *   </div>
+ * </div>
+ * ```
+ *
+ * BEM classes live on the view helpers; the host never queries them.
  * @cssprop --rui-menu-item-hover - Hover / expanded item fill. Default: `--surface-container-low`.
  */
 @customElement('rui-menubar')

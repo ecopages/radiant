@@ -5,6 +5,7 @@ export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
+const FIELD_COLUMN_SELECTOR = '[data-ref="field"]';
 
 const HOST_CONTROL_TAGS = new Set([
 	'rui-combobox',
@@ -168,7 +169,7 @@ const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
 	['rui-number-field', numberValueAdapter],
 ]);
 
-/** Radiant slot projection moves authored children into the render tree; search projected nodes first. */
+/** Search authored field content, including nodes Radiant has moved for hydration. */
 function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => void): void {
 	const slotHost = root as FieldSlotHost;
 	const visited = new Set<Element>();
@@ -186,7 +187,7 @@ function forEachFieldContentNode(root: HTMLElement, visit: (node: Element) => vo
 		}
 	}
 
-	const renderRoot = root.querySelector('.rui-field') ?? root;
+	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR) ?? root;
 	for (const child of Array.from(renderRoot.children)) {
 		safeVisit(child);
 	}
@@ -255,7 +256,7 @@ function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null 
 }
 
 function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
-	const renderRoot = root.querySelector('.rui-field');
+	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
 	if (!(renderRoot instanceof HTMLElement)) {
 		return [];
 	}
@@ -281,7 +282,7 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	if (found) {
 		return found;
 	}
-	const renderRoot = root.querySelector('.rui-field') ?? root;
+	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR) ?? root;
 	return findControlInSubtree(renderRoot);
 }
 
@@ -361,7 +362,7 @@ function resolveControlHost(control: HTMLElement): HTMLElement {
 }
 
 export function findFieldLabel(root: HTMLElement): HTMLLabelElement | null {
-	return queryFieldContent(root, `[${RUI_FIELD_LABEL_ATTR}], label.rui-label`) as HTMLLabelElement | null;
+	return queryFieldContent(root, `[${RUI_FIELD_LABEL_ATTR}]`) as HTMLLabelElement | null;
 }
 
 export function findFieldDescription(root: HTMLElement): HTMLElement | null {
@@ -375,7 +376,7 @@ export function findFieldError(root: HTMLElement): HTMLElement | null {
 
 /** Every error region in the field (handles duplicate slot-projection copies). */
 export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
-	const renderRoot = root.querySelector('.rui-field');
+	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
 	if (renderRoot instanceof HTMLElement) {
 		const inRender = Array.from(renderRoot.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));
 		const visible = inRender.filter((el) => el.getClientRects().length > 0);

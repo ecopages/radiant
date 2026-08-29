@@ -47,7 +47,7 @@ export type RuiTableColumnProps = JsxElementProps<HTMLDivElement> & {
 	isRowHeader?: boolean;
 };
 
-/** Column header with optional sort control. */
+/** Column header with optional sort control. Stamps `[data-table-column]` and optional `[data-table-sort]`. */
 export function RuiTableColumn({
 	id,
 	allowsSorting = false,
@@ -82,7 +82,7 @@ export type RuiTableRowProps = JsxElementProps<HTMLDivElement> & {
 	actionable?: boolean;
 };
 
-/** A selectable or actionable data row. */
+/** A selectable or actionable data row. Stamps `[data-table-row]` and optional `data-table-actionable`. */
 export function RuiTableRow({ id, disabled, actionable, children, class: className, ...props }: RuiTableRowProps) {
 	return (
 		<div
@@ -102,7 +102,7 @@ export type RuiTableCellProps = JsxElementProps<HTMLDivElement> & {
 	isRowHeader?: boolean;
 };
 
-/** A data cell, or the primary row header when `isRowHeader` is set. */
+/** A data cell, or the primary row header when `isRowHeader` is set. Stamps `[data-table-cell]`. */
 export function RuiTableCell({ isRowHeader = false, children, class: className, ...props }: RuiTableCellProps) {
 	return (
 		<div
@@ -122,7 +122,7 @@ export type RuiTableSelectionCellProps = JsxElementProps<HTMLDivElement> & {
 	label?: string;
 };
 
-/** Selection checkbox cell for the header (`all`) or a data row (`row`). */
+/** Selection checkbox cell. Stamps `[data-table-cell]` and `rui-checkbox[data-table-select-all|row]`. */
 export function RuiTableSelectionCell({ scope, label, class: className, ...props }: RuiTableSelectionCellProps) {
 	const all = scope === 'all';
 	return (

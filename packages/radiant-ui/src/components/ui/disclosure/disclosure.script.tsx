@@ -15,11 +15,24 @@ export type RuiDisclosureToggleDetail = {
 };
 
 /**
- * `<rui-disclosure>` — a composition-first show/hide control.
+ * `<rui-disclosure>` — show/hide behavior host.
  *
- * Implements the WAI-ARIA APG Disclosure (Show/Hide) pattern. Pair a trigger
- * marked with `data-disclosure-trigger` and a panel marked with
- * `data-disclosure-panel` (see the view helpers).
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiDisclosure` view helpers which stamp the same targets.
+ *
+ * Implements the WAI-ARIA APG Disclosure (Show/Hide) pattern.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-disclosure-trigger]` — disclosure button. Host sets `aria-expanded`, `aria-controls`.
+ * - `[data-disclosure-panel]` — panel content. Host sets `id`, `data-state`, `hidden`, and `aria-hidden` (when animated).
+ *
+ * Do not set `aria-expanded`, `aria-controls`, `id`, `data-state`, `hidden`, or `aria-hidden` on
+ * the trigger or panel — the host owns those.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
  *
@@ -28,7 +41,18 @@ export type RuiDisclosureToggleDetail = {
  * @attr {string} value - Optional value used when coordinating disclosures inside a group.
  * @attr {boolean} animated - Animate panel height. Also enabled when inside an animated disclosure group. Default: `false`.
  * @fires rui-disclosure-toggle - Emitted on every trigger activation; `detail` is `{ value, open }`.
- * @cssclass rui-disclosure - Root wrapper around trigger and panel.
+ *
+ * @remarks
+ * Minimum headless tree:
+ *
+ * ```html
+ * <rui-disclosure>
+ *   <button type="button" data-disclosure-trigger>Shipping details</button>
+ *   <div data-disclosure-panel>Delivered in 3–5 business days.</div>
+ * </rui-disclosure>
+ * ```
+ *
+ * BEM classes are presentation-only; see view `@cssclass`.
  */
 @customElement('rui-disclosure')
 export class RuiDisclosure extends RadiantElement {

@@ -2,6 +2,12 @@ import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import type { RuiForm as RuiFormElement, RuiFormProps } from './form.script';
 import './form.script';
 
+/**
+ * Form coordinator view. Stamps `[data-ref="form"]` on the native `<form>` and passes
+ * `defaultValues`, `resolver`, and `onSubmit` through property bindings.
+ *
+ * @cssclass rui-form - Root form surface (`<form noValidate>`).
+ */
 export function RuiForm({
 	children,
 	defaultValues,

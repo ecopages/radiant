@@ -6,11 +6,11 @@ import './breadcrumb.script';
 export type RuiBreadcrumbViewProps = JsxCustomElementAttributes<RuiBreadcrumbElement, RuiBreadcrumbProps>;
 
 /**
- * Landmark wrapper for a breadcrumb trail. Set `separator` once here (e.g. `/`
- * or `>`); empty `RuiBreadcrumbSeparator` nodes pick it up via CSS — no context.
- * Pass children into a separator to override for that instance.
+ * Landmark wrapper for a breadcrumb trail. Stamps `<nav class="rui-breadcrumb">`.
  *
  * @cssclass rui-breadcrumb - `<nav>` landmark root.
+ *
+ * @remarks `separator` sets `--rui-breadcrumb-separator` for empty separators.
  */
 export function RuiBreadcrumb({ children, label, separator, ...props }: RuiBreadcrumbViewProps) {
 	const resolvedLabel = label || 'Breadcrumb';
@@ -31,7 +31,7 @@ export function RuiBreadcrumb({ children, label, separator, ...props }: RuiBread
 export type RuiBreadcrumbListProps = JsxElementProps<HTMLOListElement>;
 
 /**
- * Ordered list of breadcrumb items and separators.
+ * Ordered list of breadcrumb items and separators. Stamps `<ol class="rui-breadcrumb__list">`.
  *
  * @cssclass rui-breadcrumb__list - Ordered list row.
  */
@@ -46,7 +46,7 @@ export function RuiBreadcrumbList({ children, class: className, ...props }: RuiB
 export type RuiBreadcrumbItemProps = JsxElementProps<HTMLLIElement>;
 
 /**
- * Single crumb (`<li>`).
+ * Single crumb list item. Stamps `<li class="rui-breadcrumb__item">`.
  *
  * @cssclass rui-breadcrumb__item - List item wrapping a crumb link/page.
  */
@@ -63,7 +63,7 @@ export type RuiBreadcrumbLinkProps = JsxElementProps<HTMLAnchorElement> & {
 };
 
 /**
- * Linked ancestor page.
+ * Linked ancestor page. Stamps `<a class="rui-breadcrumb__link">`.
  *
  * @cssclass rui-breadcrumb__link - Crumb link.
  */
@@ -78,7 +78,7 @@ export function RuiBreadcrumbLink({ children, href, class: className, ...props }
 export type RuiBreadcrumbPageProps = JsxElementProps<HTMLSpanElement>;
 
 /**
- * Current page (non-link).
+ * Current page (non-link). Stamps `<span class="rui-breadcrumb__page" aria-current="page">`.
  *
  * @cssclass rui-breadcrumb__page - Current page span (`aria-current="page"`).
  */
@@ -93,11 +93,11 @@ export function RuiBreadcrumbPage({ children, class: className, ...props }: RuiB
 export type RuiBreadcrumbSeparatorProps = JsxElementProps<HTMLLIElement>;
 
 /**
- * Visual separator between crumbs. Renders as a presentational list item.
- * With no children, uses the glyph from `RuiBreadcrumb`’s `separator` prop
- * (CSS custom property). With children, those replace the default glyph.
+ * Visual separator between crumbs. Stamps presentational `<li class="rui-breadcrumb__separator">`.
  *
  * @cssclass rui-breadcrumb__separator - Presentational separator (`aria-hidden`).
+ *
+ * @remarks With no children, uses the glyph from `RuiBreadcrumb`'s `separator` prop.
  */
 export function RuiBreadcrumbSeparator({ children, class: className, ...props }: RuiBreadcrumbSeparatorProps) {
 	return (
@@ -113,7 +113,7 @@ export type RuiBreadcrumbEllipsisProps = JsxElementProps<HTMLSpanElement> & {
 };
 
 /**
- * Collapsed middle segment indicator.
+ * Collapsed middle segment indicator. Stamps `<span class="rui-breadcrumb__ellipsis">`.
  *
  * @cssclass rui-breadcrumb__ellipsis - Collapsed segment indicator (`aria-hidden`).
  * @cssclass rui-breadcrumb__ellipsis-label - Screen-reader label for the collapsed segment.

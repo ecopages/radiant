@@ -223,7 +223,7 @@ describe('rui-toaster', () => {
 		await settled();
 
 		const toaster = host.querySelector('rui-toaster') as HTMLElement;
-		const list = toaster.querySelector('.rui-toaster') as HTMLElement;
+		const list = toaster.querySelector('[data-ref="list"]') as HTMLElement;
 		const els = toastElements(toaster);
 		expect(els.length).toBe(6);
 
@@ -274,7 +274,7 @@ describe('rui-toaster', () => {
 		expect(els.length).toBe(3);
 
 		const heights = els.map((el) => {
-			const inner = el.querySelector('.rui-toast');
+			const inner = el.querySelector('[data-ref="toast"]');
 			return Math.round(inner instanceof HTMLElement ? inner.offsetHeight : el.offsetHeight);
 		});
 

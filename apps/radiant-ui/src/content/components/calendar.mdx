@@ -4,7 +4,7 @@ description: Calendars let users pick one or more dates from a month grid. They 
 category: Data display
 ---
 
-import { meta as CalendarMeta, Default } from '@/content/stories/calendar';
+import { meta as CalendarMeta, Default, Multiple, Range } from '@/content/stories/calendar';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -43,9 +43,16 @@ import { RuiCalendar } from '@ecopages/radiant-ui/calendar';
 />
 ```
 
+## Derived tree
+
+`<rui-calendar>` is a **Derived Tree** host: it `render()`s the month grid from `value`, `min`, `max`, and `selection-mode`. You do not stamp `data-calendar-*` targets yourself. Parent hosts (`rui-date-field`, `rui-date-range-picker`) embed `<rui-calendar>` and query `[data-calendar-day]` inside it when opening a popup.
+
 ## Selection modes
 
 <p>`single` selects one date. `multiple` accepts comma-separated values. `range` expects `start/end` in `value`.</p>
+
+<Canvas of={Multiple} meta={CalendarMeta} />
+<Canvas of={Range} meta={CalendarMeta} />
 
 ## Constrain selectable dates
 
@@ -83,6 +90,17 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | `selection-mode` | `single` · `multiple` · `range` | `single` | Single, multiple, or range selection. |
 | `visible-months` | `number` | `1` | Month grids shown side by side. |
 | `page-behavior` | `visible` · `single` | `visible` | Whether paging moves by all visible months or one month. |
+
+### Internal targets (generated)
+
+| Target | Host writes | Notes |
+| --- | --- | --- |
+| `[data-calendar-prev-month]` / `[data-calendar-next-month]` | `disabled` | paging controls |
+| `[data-calendar-grid]` | `role="grid"` | month grid |
+| `[data-calendar-day]` | `data-iso`, `tabIndex`, `aria-selected`, `disabled` | day buttons |
+| `[data-calendar-today]` | `disabled` | jump to today |
+
+Parent hosts query `[data-calendar-day][data-iso="…"]` for popup focus.
 
 ### Events
 

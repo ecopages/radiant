@@ -63,6 +63,24 @@ import {
 </RuiSidebarProvider>
 ```
 
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/sidebar';
+
+<rui-sidebar id="app-sidebar" collapsible="icon" label="Navigation">
+  <div data-ref="root" class="rui-sidebar">
+    <button data-ref="scrim" type="button" hidden></button>
+    <div data-ref="pane" class="rui-sidebar__pane">
+      <a href="/dashboard" class="rui-sidebar__menu-button" data-ref="menu-button">Dashboard</a>
+    </div>
+    <div data-ref="handle" role="separator" hidden></div>
+  </div>
+</rui-sidebar>
+```
+
+`rui-sidebar-trigger` stamps `[data-ref="button"]` and syncs `aria-expanded` / `aria-controls` against the sidebar.
+
 ## Collapsible modes
 
 <p>`icon` collapses to icons only. `full` hides the sidebar entirely. `off` keeps it always visible.</p>
@@ -117,6 +135,32 @@ Rounded corners use `rounded-container`; the collapsible pane in `docs` layout s
 | `scrollActiveOnMount` | `boolean` | `false` | Scroll the active item into view on mount. |
 | `navigationEvents` | `string` | `''` | Custom navigation events to listen for. |
 
+### Light-DOM contract (`<rui-sidebar>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `data-state`, `data-collapsible`, … | inner shell |
+| `[data-ref="pane"]` | yes | `aria-label`, `inert` | pane content |
+| `[data-ref="scrim"]` | no | `hidden` | mobile overlay button |
+| `[data-ref="handle"]` | no | `hidden`, `aria-valuenow`, … | resize handle |
+| `[data-ref="menu-button"]` | no | `aria-current`, active class | menu links |
+
+Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-width`, …
+
+### Methods (`<rui-sidebar>`)
+
+| Method | Description |
+| --- | --- |
+| `toggle()` | Open or close the pane. |
+| `setOpen(next)` | Set open state. |
+| `syncActiveLinks(scroll?)` | Match menu links to the current location when `matchActive` is set. |
+
+### Light-DOM contract (`<rui-sidebar-trigger>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="button"]` | yes | `aria-expanded`, `aria-controls`, `aria-label`, `data-sidebar-state` | toggle button |
+
 ### Attributes (`<rui-sidebar-trigger>`)
 
 | Attribute | Type | Default | Description |
@@ -137,15 +181,17 @@ Rounded corners use `rounded-container`; the collapsible pane in `docs` layout s
 
 ### View helpers
 
-| Component | Renders |
-| --- | --- |
-| `RuiSidebarProvider` | Shell (`data-layout`) wrapping sidebar + inset. |
-| `RuiSidebarHeader` / `RuiSidebarContent` / `RuiSidebarFooter` | Pane sections. |
-| `RuiSidebarSeparator` | Horizontal rule. |
-| `RuiSidebarGroup` / `RuiSidebarGroupLabel` / `RuiSidebarGroupAction` / `RuiSidebarGroupHeader` | Grouped items. |
-| `RuiSidebarMenu` / `RuiSidebarMenuItem` / `RuiSidebarMenuButton` / `RuiSidebarMenuAction` | Menu list + items. |
-| `RuiSidebarInset` | Main content area. |
-| `RuiSidebarTrigger` | Collapse/expand trigger. |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiSidebarProvider` | — | Shell (`data-layout`) wrapping sidebar + inset. |
+| `RuiSidebarHeader` / `RuiSidebarContent` / `RuiSidebarFooter` | — | Pane sections; not queried. |
+| `RuiSidebarSeparator` | — | Horizontal rule. |
+| `RuiSidebarGroup` / `RuiSidebarGroupLabel` / `RuiSidebarGroupAction` / `RuiSidebarGroupHeader` | — | Grouped items. |
+| `RuiSidebarMenu` / `RuiSidebarMenuItem` | — | Menu list + item wrappers. |
+| `RuiSidebarMenuButton` | `[data-ref="menu-button"]` on `<a>` or `<button>` | Current-page target when `matchActive` is set. |
+| `RuiSidebarMenuAction` | — | Extra control on a menu item. |
+| `RuiSidebarInset` | — | Main content area. |
+| `RuiSidebarTrigger` | `[data-ref="button"]` | Collapse/expand trigger (`rui-sidebar-trigger`). |
 
 ### CSS classes
 

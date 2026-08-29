@@ -11,30 +11,43 @@ export type RuiTreeProps = {
 export type RuiTreeChangeDetail = { value: string };
 
 /**
- * `<rui-tree>` — a hierarchical list of tree items.
+ * `<rui-tree>` — single-select hierarchical list with expand/collapse.
  *
- * Implements a single-select APG Tree View with Arrow key navigation,
- * Home/End, parent navigation on ArrowLeft, and Enter/Space to select.
- * Expand/collapse is handled with ArrowRight/ArrowLeft (and `*` for siblings);
- * click or Enter on a parent also toggles expansion.
+ * The custom element is a behavior host: it does not render the tree. Import the
+ * script and place light-DOM children that match the contract below, or use
+ * `RuiTree` with a `nodes` structure or authored children inside the root list.
  *
- * @summary Single-select tree with roving-tabindex keyboard navigation.
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[role="tree"]` — root list container. Host reads it for sibling scoping; the
+ *   view sets `aria-label` and `aria-multiselectable="false"`.
+ * - `[role="treeitem"]` — one node. Host sets `aria-selected` and roving `tabIndex`.
+ *
+ * Per item:
+ * - `data-value` — selection identity. Falls back to `id`, then trimmed text.
+ *
+ * Optional (branch nodes):
+ * - `aria-expanded` on a treeitem — when present, the host toggles the adjacent
+ *   `[role="group"]` sibling's `hidden` and responds to ArrowRight/Left and `*`.
+ * - `[role="group"]` — child list container immediately following an expandable
+ *   treeitem. Host writes `hidden` from `aria-expanded`.
+ *
+ * Do not set `aria-selected` or `tabIndex` on treeitems — the host owns those.
+ * Author initial `aria-expanded` and `hidden` on groups for the starting state.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/treeview/
- *
  * @element rui-tree
- *
- * @attr {string} label - Accessible name for the tree.
- * @attr {string} value - Selected item's `data-value` / id. Default: `''`.
- *
+ * @attr {string} label - Accessible name for the tree (applied on `[role="tree"]` by the view).
+ * @attr {string} value - Selected item `data-value` / id. Default: `''`.
  * @fires rui-change - Emitted with `{ value }` when a tree item is selected.
  *
- * @cssclass rui-tree - Root list (`role="tree"`).
- *
  * @remarks
- * Item-level classes (`rui-tree__item`, `rui-tree__node`) are authored by the
- * `RuiTree` view. Expand/collapse mutates `aria-expanded` and `hidden` on the
- * authored `role="group"` containers.
+ * Minimum tree: `[role="tree"]` > `li` > `[role="treeitem"][data-value]`; branch
+ * nodes add `[role="group"]` > nested items after the expandable treeitem.
+ * BEM classes live on the `RuiTree` view; the host never queries them.
  */
 @customElement('rui-tree')
 export class RuiTree extends RadiantElement {

@@ -41,8 +41,42 @@ export type RuiSliderChangeDetail = { value: number } | { values: [number, numbe
 /**
  * `<rui-slider>` — select a value from a continuous or discrete range.
  *
+ * The custom element is a behavior host: it does not render slider markup.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use `RuiSlider` / `RuiSliderValue`, which stamp the same targets.
+ *
  * Single and range modes use a DOM track and `role="slider"` thumbs styled via CSS
  * variables — no `<canvas>` rendering.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-ref="root"]` — root wrapper. Host toggles `rui-slider--single`,
+ *   `rui-slider--range`, and `rui-slider--vertical` classes.
+ * - `[data-ref="rangeTrack"]` — pointer target and fill geometry host. Host sets
+ *   inline `--rui-slider-*` CSS variables and optional `title` when `valueTitle`.
+ * - `[data-thumb]` — thumb buttons inside the track (`value`, `min`, or `max`).
+ *   Host sets `hidden`, `disabled`, `tabindex`, `aria-label`, `aria-orientation`,
+ *   `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`,
+ *   `aria-readonly`, and range-specific `aria-valuemin` / `aria-valuemax` on thumbs.
+ *
+ * Optional:
+ * - `[data-ref="header"]` — label + readout row. Host toggles `hidden`.
+ * - `[data-ref="label"]` — visible label. Host sets `hidden` and `textContent` from `label`.
+ * - `[data-ref="value"]` — live readout. Host updates `textContent`.
+ * - `[data-default-value]` — default readout stamped by the view when `children` is omitted.
+ *   Host toggles `hidden` via `showValue`.
+ * - `[data-ref="input"]` — hidden form input for the primary value. Host syncs `value`,
+ *   `name`, `disabled`, `readOnly`, and optional `title`.
+ * - `[data-ref="maxInput"]` — hidden form input for range max. Host syncs `value`,
+ *   `name` (`{name}-max`), `disabled`, `readOnly`, and optional `title`.
+ * - `[data-ref="singleThumb"]`, `[data-ref="rangeMinThumb"]`, `[data-ref="rangeMaxThumb"]`
+ *   — map to `[data-thumb]` targets above.
+ *
+ * Do not set thumb `tabindex`, `aria-*` value attrs, or track CSS variables — the host
+ * owns those. Author `label` on the host for accessible names when no visible label node.
+ *
+ * Nested hosts: none.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/slider/
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/slider-multithumb/
@@ -88,10 +122,9 @@ export type RuiSliderChangeDetail = { value: number } | { values: [number, numbe
  *   `detail.values` `[min, max]` (range). Pointer drags emit on each distinct snap.
  *
  * @remarks
- * The composed surface is authored in `RuiSlider` / `RuiSliderValue`. The element
- * queries `data-ref` targets and updates live values imperatively.
  * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
- * round or transform them in application code when needed.
+ * round or transform them in application code when needed. BEM classes live on the view;
+ * the host never queries them.
  */
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement {

@@ -49,6 +49,24 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 </RuiField>
 ```
 
+## Custom markup
+
+`<rui-checkbox-group>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/checkbox-group';
+import '@ecopages/radiant-ui/checkbox';
+
+<rui-checkbox-group value="news,travel" name="topics" label="Topics">
+  <div data-checkbox-group-root role="group" class="rui-checkbox-group">
+    <rui-checkbox value="news">News</rui-checkbox>
+    <rui-checkbox value="travel">Travel</rui-checkbox>
+  </div>
+</rui-checkbox-group>
+```
+
+BEM classes are presentation-only. Do not set `checked`, `disabled`, or `name` on `rui-checkbox` children — the host owns those.
+
 ## Independent choices
 
 <p>Use checkbox groups when users may select multiple related options. For mutually exclusive choices, use a <a href="/components/radio-group">radio group</a> instead. For a single on/off toggle, use a <a href="/components/checkbox">checkbox</a>.</p>
@@ -76,12 +94,14 @@ Checkbox group layout uses the group surface only; checkbox chrome comes from `R
 | `disabled` | `boolean` | `false` | Disables every checkbox in the group. |
 | `orientation` | `'horizontal' \| 'vertical'` | `'vertical'` | Layout axis for checkbox items. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| `RuiCheckboxGroupControl` | Accessible group surface (`role="group"`). |
-| `RuiCheckbox` children | One checkbox per selectable option with a unique `value`. |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-checkbox-group-root]` | yes | `aria-label`, `aria-disabled`, `data-orientation` | the group node |
+| `rui-checkbox` | yes (per option) | `checked`, `disabled`, `name` | `value`, `data-disabled` |
+
+Do not set `checked`, `disabled`, or `name` on checkboxes. Nested hosts: `rui-checkbox`.
 
 ### Events
 
@@ -95,6 +115,14 @@ Checkbox group layout uses the group surface only; checkbox chrome comes from `R
 | --- | --- | --- |
 | `options` | `RuiCheckboxOption[]` | `{ value, label, disabled? }` entries rendered by the view. |
 | `value` | `string \| string[]` | Selected values; arrays serialize to comma-separated form. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiCheckboxGroup` | `<rui-checkbox-group>` | Accepts `options` or children. |
+| `RuiCheckboxGroupControl` | `[data-checkbox-group-root]` | `role="group"` container. |
+| `RuiCheckbox` | `rui-checkbox` | One per option; see [Checkbox](/components/checkbox). |
 
 ### CSS classes
 

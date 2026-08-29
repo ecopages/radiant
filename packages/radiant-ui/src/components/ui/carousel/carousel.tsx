@@ -17,9 +17,11 @@ export type RuiCarouselSlideProps = Omit<JsxElementProps<HTMLDivElement>, 'id'> 
 };
 
 /**
- * Slide in the carousel track (APG `group` / `tabpanel` roles are applied by the host).
+ * Slide in the carousel track. Host applies `group` / `tabpanel` roles and visibility.
  *
  * @cssclass rui-carousel__slide - Slide surface.
+ *
+ * @remarks Stamps `[data-slide]` with the slide `id`.
  */
 export function RuiCarouselSlide({ id, children, class: className, ...props }: RuiCarouselSlideProps) {
 	return (
@@ -61,6 +63,8 @@ function toolbarNextLabel() {
  * Previous carousel control.
  *
  * @cssclass rui-carousel__nav - Prev nav button (composed with `rui-button`).
+ *
+ * @remarks Stamps `[data-carousel-action="prev"]` and `data-ref="prev"`.
  */
 export function RuiCarouselPrev({
 	children,
@@ -96,7 +100,7 @@ export function RuiCarouselPrev({
 	);
 }
 
-/** Next carousel control. */
+/** Next carousel control. Stamps `[data-carousel-action="next"]` and `data-ref="next"`. */
 export function RuiCarouselNext({
 	children,
 	class: className,
@@ -135,7 +139,7 @@ export type RuiCarouselRotationProps = JsxElementProps<HTMLButtonElement> & {
 	overlay?: boolean;
 };
 
-/** Play/pause rotation control when `autoplay` or `show-rotation-control` is set. */
+/** Play/pause rotation control. Stamps `[data-carousel-action="rotation"]` and `data-ref="rotation"`. */
 export function RuiCarouselRotation({ children, class: className, overlay, aria, ...props }: RuiCarouselRotationProps) {
 	return (
 		<button
@@ -224,7 +228,9 @@ function CarouselShell({
 		>
 			<div class="rui-carousel__stage">
 				<div class="rui-carousel__viewport" data-ref="viewport">
-					<div class="rui-carousel__track">{children}</div>
+					<div class="rui-carousel__track" data-ref="track">
+						{children}
+					</div>
 					{overlayChrome}
 				</div>
 			</div>

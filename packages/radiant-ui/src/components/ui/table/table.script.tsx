@@ -22,11 +22,35 @@ export type RuiTableSortChangeDetail = { column: string; direction: RuiTableSort
 export type RuiTableRowActionDetail = { rowId: string };
 
 /**
- * `<rui-table>` — a keyboard-navigable table with optional row selection and sorting.
+ * `<rui-table>` — keyboard-navigable table with optional row selection and sorting.
  *
- * @remarks Use the `RuiTable` view to compose header, body, and rows in JSX. The host
- * coordinates selection, sorting, and APG keyboard behavior over that authored tree
- * without re-rendering it through a slot.
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiTable` view helpers which stamp the same targets.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-table-row]` — data row. Host sets `aria-selected` when `selection-mode` is not `none`.
+ * - `[data-table-cell]` — cell, direct child of a row. Host applies roving `tabIndex`.
+ *   Click, double-click, and keydown on cells drive selection and navigation.
+ *
+ * Per row:
+ * - `data-table-row` — row id (selection and `rui-row-action` identity).
+ * - `data-table-actionable` — enables Enter / double-click row activation.
+ * - `hidden`, `aria-disabled="true"` — exclude from selection and keyboard movement.
+ *
+ * Per column header:
+ * - `[data-table-column]` — column header region. Host sets `aria-sort` when `sort-column` matches.
+ * - `[data-table-sort]` — sort button inside a sortable column. Click updates sort state.
+ *
+ * Optional:
+ * - `rui-checkbox[data-table-select-row]` — per-row selection checkbox (nested host).
+ * - `rui-checkbox[data-table-select-all]` — select-all checkbox in the header (nested host).
+ *
+ * Do not set `aria-selected` on rows, `aria-sort` on columns, or `checked` on selection checkboxes — the host owns those.
+ *
+ * Nested hosts: `rui-checkbox` with `data-table-select-row` or `data-table-select-all`.
  *
  * @see https://react-aria.adobe.com/Table
  * @element rui-table
@@ -39,6 +63,10 @@ export type RuiTableRowActionDetail = { rowId: string };
  * @fires rui-change - Emitted after the selected row ids change.
  * @fires rui-sort-change - Emitted after a sortable header changes direction.
  * @fires rui-row-action - Emitted when an actionable row is activated.
+ *
+ * @remarks
+ * Callers retain ownership of the collection and reorder it after `rui-sort-change`.
+ * BEM classes live on the view; the host never queries them.
  */
 @customElement('rui-table')
 export class RuiTable extends RadiantElement {

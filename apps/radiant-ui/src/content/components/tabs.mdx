@@ -4,7 +4,7 @@ description: Tabs organize related content into panels where only one is visible
 category: Navigation
 ---
 
-import { meta as TabsMeta, Default } from '@/content/stories/tabs';
+import { meta as TabsMeta, Default, Ghost, Manual } from '@/content/stories/tabs';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -47,13 +47,42 @@ import { RuiTabs, RuiTabList, RuiTab, RuiTabPanels, RuiTabPanel } from '@ecopage
 </RuiTabs>
 ```
 
+## Custom markup
+
+`<rui-tabs>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/tabs';
+
+<rui-tabs value="account">
+  <div role="tablist" aria-label="Settings">
+    <button type="button" role="tab" id="tab-account" data-tab-value="account" aria-controls="panel-account">
+      Account
+    </button>
+    <button type="button" role="tab" id="tab-security" data-tab-value="security" aria-controls="panel-security">
+      Security
+    </button>
+  </div>
+  <div role="tabpanel" id="panel-account" data-tab-value="account" aria-labelledby="tab-account">
+    Account settings
+  </div>
+  <div role="tabpanel" id="panel-security" data-tab-value="security" aria-labelledby="tab-security" hidden>
+    Security settings
+  </div>
+</rui-tabs>;
+```
+
 ## Boxed or ghost
 
 <p>`boxed` tabs have a contained background and work well in settings panels. `ghost` tabs sit flush with the page header.</p>
 
+<Canvas of={Ghost} meta={TabsMeta} />
+
 ## Manual activation
 
 <p>Set `automatic=\{false}` when switching tabs should require an explicit Enter/Space press.</p>
+
+<Canvas of={Manual} meta={TabsMeta} />
 
 ## Theming
 
@@ -89,11 +118,15 @@ Overrides go at the theme layer, not in component CSS.
 | `label` | `string` | `''` | Accessible name for the tab list (prefer `aria-label` on `RuiTabList`). |
 | `automatic` | `boolean` | `true` | Automatic (focus activates) vs manual (Enter/Space) activation. |
 
-### Composition
+### Light-DOM contract
 
-| Piece | Description |
-| --- | --- |
-| (default) | `RuiTabList` and `RuiTabPanels` (or matching tablist / tabpanel markup). |
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[role="tablist"]` | yes | `aria-label` (from `label` when absent) | `aria-label` (preferred) |
+| `[role="tab"]` | yes | `aria-selected`, `tabIndex` | `data-tab-value` or `id`, `aria-disabled` |
+| `[role="tabpanel"]` | yes | `hidden`, `tabIndex` when unset | `data-tab-value` or `id` |
+
+Do not set `aria-selected`, `tabIndex`, or `hidden` after connect — the host owns those via `resync()`. Nested hosts: none.
 
 ### Events
 
@@ -101,14 +134,20 @@ Overrides go at the theme layer, not in component CSS.
 | --- | --- | --- |
 | `rui-change` | `{ value: string }` | Emitted when the selected tab changes. |
 
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `resync()` | Re-applies tablist labeling and selected/hidden state from `value`. |
+
 ### View helpers
 
-| Component | Renders |
-| --- | --- |
-| `RuiTabList` | `role="tablist"` strip. |
-| `RuiTab` | `role="tab"` button; `id` pairs with a `RuiTabPanel`. |
-| `RuiTabPanels` | Panel group below the tab list. |
-| `RuiTabPanel` | `role="tabpanel"`; `id` pairs with a `RuiTab`. |
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiTabList` | `[role="tablist"]` | Set `aria-label` here when possible. |
+| `RuiTab` | `[role="tab"]`, `data-tab-value`, `id="tab-{id}"` | Pairs with `RuiTabPanel` by `id`. |
+| `RuiTabPanels` | — | Presentation wrapper only. |
+| `RuiTabPanel` | `[role="tabpanel"]`, `data-tab-value`, `id="panel-{id}"` | Hidden when not selected. |
 
 ### CSS classes
 
