@@ -33,8 +33,8 @@ Useful scripts:
 ```bash
 pnpm run test            # Vitest (storybook + unit browser projects)
 pnpm run test:storybook  # Story interaction/render tests (CI)
-pnpm run test:ssr:smoke  # Local SSR smoke (6 stories × client/ssr-static/ssr-hydrate)
-pnpm run test:ssr        # Full Components/* SSR matrix (nightly)
+pnpm run test:ssr:smoke  # SSR smoke (6 stories × client/ssr-static/ssr-hydrate; runs on PRs)
+pnpm run test:ssr        # Full Components/* SSR matrix (run on demand)
 pnpm run typecheck
 pnpm run lint
 pnpm run build:lib       # generate exports + build JS/types + compile CSS
