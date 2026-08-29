@@ -114,14 +114,11 @@ describe('radiantSsrPreviewGlobalsPlugin', () => {
 
 describe('viteFinal', () => {
 	it('registers the preview globals plugin and not a transform shim', async () => {
-		const config = await viteFinal(
-			{ plugins: [] },
-			{
-				presets: {
-					apply: async () => ({}),
-				},
-			} as unknown as Options,
-		);
+		const config = await viteFinal({ plugins: [] }, {
+			presets: {
+				apply: async () => ({}),
+			},
+		} as unknown as Options);
 
 		const names = (config.plugins ?? []).map((plugin) =>
 			plugin && typeof plugin === 'object' && 'name' in plugin ? plugin.name : undefined,

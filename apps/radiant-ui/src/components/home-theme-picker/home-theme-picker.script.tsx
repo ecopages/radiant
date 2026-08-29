@@ -15,7 +15,8 @@ import {
  * `rui-select` instances SSR; this class only syncs and persists selection.
  *
  * @remarks Selections write the same docs-only `data-rui-*` attrs as the
- * theming panel. Those attributes are not an application API.
+ * theming panel and inject published spacing/radius pack stylesheets. Those
+ * attributes are not an application API.
  */
 @customElement('radiant-home-theme-picker')
 export class HomeThemePickerElement extends RadiantElement {

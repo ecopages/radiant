@@ -1,5 +1,8 @@
 /**
  * Structural system tokens (Tier 3) — shared across all themes.
+ *
+ * `--size-control-*` aliases `--space-8/10/12` so compact and wide packs
+ * change button and input height with padding. Icon sizes stay fixed.
  */
 :root {
 	--color-black: oklch(0% 0 0);
@@ -21,9 +24,9 @@
 	--z-modal: 40;
 	--z-toast: 50;
 
-	--size-control-sm: 2rem;
-	--size-control-md: 2.5rem;
-	--size-control-lg: 3rem;
+	--size-control-sm: var(--space-8, 2rem);
+	--size-control-md: var(--space-10, 2.5rem);
+	--size-control-lg: var(--space-12, 3rem);
 	--size-icon-sm: 1rem;
 	--size-icon-md: 1.25rem;
 }

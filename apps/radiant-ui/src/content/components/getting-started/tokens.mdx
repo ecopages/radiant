@@ -51,7 +51,7 @@ Click a swatch to copy the CSS variable name. Colour, spacing, and radius swatch
 | --- | --- | --- |
 | 1. Packs | Raw scales: colour palettes, `--space-*`, `--border-radius-*`, elevation, type, motion | Import a pack stylesheet. Do not target palette steps from component CSS. |
 | 2. Semantic | `--primary`, `--surface`, `--error`, … plus the Tailwind `@theme` bridge (`bg-primary`) | This is what components use. |
-| 3. System | Absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity, z-index, control sizes | Shared by every theme; not a mood pack. |
+| 3. System | Absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity, z-index, control and icon sizes | Shared by every theme; not a mood pack. `--size-control-*` aliases the spacing scale. |
 
 A theme file is only an import graph. The default foundation loads palettes, default spacing, default radius, elevation,
 typography, motion, system tokens, and semantic roles.
@@ -121,6 +121,9 @@ Roles are what component CSS should use for control padding and stack rhythm:
 | `--space-inline` | `--space-2` | `--space-2` | `--space-3` | `--spacing-inline` |
 | `--space-stack` | `--space-4` | `--space-3` | `--space-6` | `--spacing-stack` |
 | `--space-inset` | `--space-4` | `--space-4` | `--space-6` | `--spacing-inset` |
+
+`--size-control-sm`, `--size-control-md`, and `--size-control-lg` alias `--space-8`, `--space-10`, and `--space-12`, so
+compact and wide change button and input height on the block axis as well as `--space-control-x` padding.
 
 Important: `--space-10`, `--space-12`, and `--space-16` exist as CSS variables but are not mapped in the spacing
 `@theme` bridge. `p-10` is not the Radiant pack step; use `var(--space-10)` or a role token when the value must follow
@@ -215,9 +218,9 @@ white live here so colour presets can reference them without depending on the Au
 | `--z-overlay` | 30 |
 | `--z-modal` | 40 |
 | `--z-toast` | 50 |
-| `--size-control-sm` | 2rem |
-| `--size-control-md` | 2.5rem |
-| `--size-control-lg` | 3rem |
+| `--size-control-sm` | `var(--space-8)` (2rem / 1.5rem / 2.5rem) |
+| `--size-control-md` | `var(--space-10)` (2.5rem / 2rem / 3rem) |
+| `--size-control-lg` | `var(--space-12)` (3rem / 2.5rem / 3.75rem) |
 | `--size-icon-sm` | 1rem |
 | `--size-icon-md` | 1.25rem |
 

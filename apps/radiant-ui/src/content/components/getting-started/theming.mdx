@@ -39,14 +39,16 @@ The live preview includes Glacier, Basalt, Ember, and Aurora. Aurora is the vivi
 profiles are more restrained. Ember remaps Glacier neutrals to a warm accent; it is a preset, not a separate palette
 file.
 
-Important: this preview is documentation-only. It uses `data-rui-colors` to switch profiles at runtime so you can
-compare combinations. Those attributes are not a supported application API.
+Important: this preview is documentation-only. Colour profiles switch with `data-rui-colors`. Spacing and radius
+inject the published pack stylesheets at runtime, the same files an application would `@import`. Those attributes
+are not a supported application API.
 
 ## Layer spacing and shape
 
-Use `compact` where information density matters and `wide` where composition needs more air. Compact preserves control
-heights for touch and keyboard usability; it tightens rhythm and padding rather than shrinking hit areas. Choose
-`soft` for generous rounding or `sharp` for square containers. `edgy` is a stylesheet alias for the sharp radius pack.
+Use `compact` where information density matters and `wide` where composition needs more air. Both packs scale
+`--size-control-*` with `--space-8`, `--space-10`, and `--space-12`, so buttons and inputs change height as well as
+padding. Choose `soft` for generous rounding or `sharp` for square containers. `edgy` is a stylesheet alias for the
+sharp radius pack.
 
 ```css
 @import '@ecopages/radiant-ui/tokens/spacing/compact';
