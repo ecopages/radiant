@@ -20,13 +20,13 @@
 		"**/index.js"
 	],
 	"scripts": {
-		"build:framework": "pnpm --filter @ecopages/storybook-radiant-vite build",
+		"build:framework": "pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm --filter @ecopages/storybook-radiant-vite build",
 		"lint": "oxlint",
 		"storybook": "pnpm run build:framework && pnpm --filter @ecopages/storybook-radiant-vite exec storybook dev -p 6006 -c ../radiant-ui/.storybook",
 		"build-storybook": "pnpm run build:framework && pnpm --filter @ecopages/storybook-radiant-vite exec storybook build -c ../radiant-ui/.storybook",
 		"test": "vitest run",
-		"test:all": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm run build:framework && vitest run",
-		"test:storybook": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm run build:framework && vitest run --project=storybook",
+		"test:all": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && vitest run",
+		"test:storybook": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && vitest run --project=storybook",
 		"test:ssr": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && vitest run --project=ssr && node --import tsx ./scripts/test-storybook-ssr.ts",
 		"test:ssr:smoke": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm run build:framework && node --import tsx ./scripts/test-storybook-ssr.ts --smoke",
 		"clean": "rm -rf dist",

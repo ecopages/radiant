@@ -11,7 +11,7 @@ npm install -D @ecopages/storybook-radiant-vite @ecopages/vite-plugin-radiant st
   @ecopages/radiant @ecopages/jsx @ecopages/signals
 ```
 
-Peer ranges: `storybook ^10.5`, `@ecopages/* >=0.3.0-beta.3 <1.0.0`, `vite ^5 || ^6 || ^7 || ^8` (optional).
+Peer ranges: `storybook ^10.5.2`, `@ecopages/jsx`, `@ecopages/radiant`, and `@ecopages/signals` `>=0.3.0-rc.4`, and `vite ^8` (optional).
 
 ## Configure Storybook
 
@@ -33,6 +33,23 @@ export default config;
 ```
 
 `defineMain(config)` is available as an identity helper if you prefer that style; it does not add runtime behavior.
+
+### Framework options
+
+Use `globalStyleModules` when static SSR needs a stylesheet that is not reachable from the
+story, view, or element modules. These modules are added to the sandboxed static-preview
+iframe only; normal and hydrated previews continue to load their browser styles normally.
+
+```ts
+const config: StorybookConfig = {
+	framework: {
+		name: '@ecopages/storybook-radiant-vite',
+		options: {
+			globalStyleModules: ['/src/styles/tailwind.css'],
+		},
+	},
+};
+```
 
 ### TypeScript (required for JSX)
 
@@ -74,8 +91,8 @@ The framework’s renderer preset already loads `install-hydrator` via its entry
 Story CSF
   └─ parameters.radiant.renderMode
         ├─ client        → render() → renderToCanvas mounts JSX / DOM in the iframe
-        ├─ ssr-hydrate   → POST /__radiant_ssr → inject markup → import client module → hydrate
-        └─ ssr-static    → POST /__radiant_ssr → inject markup only (no client module)
+	├─ ssr-hydrate   → POST /__radiant_ssr → inject markup → import client module → hydrate
+	└─ ssr-static    → POST /__radiant_ssr → sandboxed iframe with markup (no client module)
 ```
 
 | Layer                      | Package entry              | Runs where                   |
@@ -226,7 +243,13 @@ export const Default: Story = {};
 
 ### SSR hydrate / static
 
-SSR modes require a Vite-loadable **script module** that exports the element class. Args are applied on the server as host properties (JSON only — no function hooks).
+Host SSR needs a Vite-loadable **script module** that exports the element class. When
+`meta.component` is a stamped Radiant element or a linked JSX view, the framework infers that
+module and its export; set `ssrModule` and `ssrExport` only for an override. Args are applied on
+the server as host properties (JSON only — no function hooks).
+
+Pure JSX stories use their stamped CSF story module instead and do not need an element script
+module. The server replays the story render function with its resolved args.
 
 ```ts
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
@@ -273,31 +296,31 @@ export const SsrStatic: StoryObj<typeof meta> = {
 
 ### `parameters.radiant` contract
 
-| Field          | Required     | Notes                                                                                |
-| -------------- | ------------ | ------------------------------------------------------------------------------------ |
-| `renderMode`   | no           | `'client'` \| `'ssr-hydrate'` \| `'ssr-static'` (default `client`)                   |
-| `ssrModule`    | for host SSR | Absolute Vite URL, e.g. `/src/components/foo.script.tsx`                             |
-| `ssrExport`    | no           | Named class export; otherwise first export with `@customElement` metadata            |
-| `clientModule` | no           | Module to `import()` after markup inject; defaults to SSR response `clientModuleSrc` |
-| `viewModule`   | no           | View module for authored light-DOM SSR on host stories                               |
-| `viewExport`   | no           | Named view export in `viewModule`                                                    |
-| `storyModule`  | auto-stamped | CSF module path; enables JSX story SSR when present                                  |
-| `storyExport`  | no           | Story export name (e.g. `Default`)                                                   |
+| Field          | Required     | Notes                                                                                     |
+| -------------- | ------------ | ----------------------------------------------------------------------------------------- |
+| `renderMode`   | no           | `'client'` \| `'ssr-hydrate'` \| `'ssr-static'` (default `client`)                        |
+| `ssrModule`    | no           | Host SSR module; inferred from stamped `meta.component`, or an absolute Vite URL override |
+| `ssrExport`    | no           | Named class export; otherwise first export with `@customElement` metadata                 |
+| `clientModule` | no           | Module to `import()` after markup inject; defaults to SSR response `clientModuleSrc`      |
+| `viewModule`   | no           | View module for authored light-DOM SSR on host stories                                    |
+| `viewExport`   | no           | Named view export in `viewModule`                                                         |
+| `storyModule`  | auto-stamped | CSF module path; enables JSX story SSR when present                                       |
+| `storyExport`  | no           | Story export name (e.g. `Default`)                                                        |
 
 There is **no** `initialize` callback. SSR goes over HTTP; only serializable `args` cross the boundary. Put host state in `args`.
 
 ### CSF features replayed during SSR
 
-| Feature                                                      | SSR support                        |
-| ------------------------------------------------------------ | ---------------------------------- |
-| `meta.render` / story `render` / `component` as JSX function | Yes (`composeStoryRender`)         |
-| CSF `decorators` that wrap `() => JsxRenderable`             | Yes (reversed apply)               |
-| Stage helpers inside `render`                                | Preferred for composition stories  |
-| `args` via stamped story module                              | Yes                                |
-| `parameters.radiant.*`                                       | Yes                                |
-| Storybook loaders                                            | No                                 |
-| Storybook `<Story />` decorators                             | No                                 |
-| `play` interactions on `ssr-static`                          | No (static preview is markup-only) |
+| Feature                                                      | SSR support                                                                                                              |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `meta.render` / story `render` / `component` as JSX function | Yes (`composeStoryRender`)                                                                                               |
+| CSF `decorators` that wrap `() => JsxRenderable`             | Yes (reversed apply)                                                                                                     |
+| Stage helpers inside `render`                                | Preferred for composition stories                                                                                        |
+| `args` via stamped story module                              | Yes                                                                                                                      |
+| `parameters.radiant.*`                                       | Yes                                                                                                                      |
+| Storybook loaders                                            | No                                                                                                                       |
+| Storybook `<Story />` decorators                             | No                                                                                                                       |
+| `play` interactions on `ssr-static`                          | Storybook runs them in the browser, but static markup is inside a sandboxed iframe; treat static previews as visual-only |
 
 For composed stories (dialog chrome, toast stage, etc.), put layout in `render` helpers rather than Storybook decorators that SSR cannot replay.
 
@@ -314,11 +337,11 @@ The framework registers a toolbar global `radiantRenderMode`:
 
 1. Preview calls `POST /__radiant_ssr` with `{ ssrModule, ssrExport?, viewModule?, viewExport?, storyModule?, storyExport?, args, mode }`.
 2. Vite middleware loads `@ecopages/vite-plugin-radiant/ssr` (`renderSsrComponent`) and your script/view/story modules.
-3. Preview packages (`storybook/test` and siblings) are installed on Node `globalThis` so `ssrLoadModule` can evaluate story and shared helper modules with the same real bindings as the iframe. SSR evaluates those imports; it does not run Storybook `play` functions.
+3. Preview packages (`storybook/test` and siblings) are installed on Node `globalThis` so `ssrLoadModule` can evaluate story and shared helper modules with the same real bindings as the iframe. Server SSR evaluates those imports; it does not invoke Storybook `play` functions.
 4. For stories declaring `parameters.radiant.element`, the view is server-rendered with CSF args (including JSX children) and injected as `authoredContent`.
 5. `@ecopages/*` stay **external** in SSR (via `radiant()`) so ALS / runtime shims are singletons.
 6. `renderSsrComponent` produces markup + assets (CSS via `radiant({ elements: true })`).
-7. Preview sets `canvas.innerHTML = markup`. For `ssr-hydrate`, it imports the view/client module and relies on `install-hydrator`.
+7. For `ssr-hydrate`, preview inserts markup into its mount root, imports the view/client module, and relies on `install-hydrator`. For `ssr-static`, preview puts markup and its styles in a sandboxed iframe; no client module runs there.
 
 Light-DOM only: Radiant SSR throws for `renderRootMode: 'shadow'`.
 
@@ -355,7 +378,7 @@ play: async ({ canvasElement }) => {
 
 Controller SSR (`renderController`) is not wired in v1 — use client mode for controller demos.
 
-## Package exports
+## Public entrypoints
 
 | Export                                             | Purpose                                                          |
 | -------------------------------------------------- | ---------------------------------------------------------------- |
@@ -364,6 +387,9 @@ Controller SSR (`renderController`) is not wired in v1 — use client mode for c
 | `@ecopages/storybook-radiant-vite/preset`          | Framework preset (`core`, `viteFinal`) — resolved by Storybook   |
 | `@ecopages/storybook-radiant-vite/renderer-preset` | Renderer preset (`previewAnnotations`) — resolved by Storybook   |
 | `@ecopages/storybook-radiant-vite/preview`         | Default `parameters` + toolbar `globalTypes`                     |
+
+The root entry also exports `definePreview`, `defineRadiantComponent`, and `radiantSsr`, plus
+the `Meta`, `StoryObj`, `Preview`, renderer, and `parameters.radiant` contract types.
 
 ## Known limitations
 

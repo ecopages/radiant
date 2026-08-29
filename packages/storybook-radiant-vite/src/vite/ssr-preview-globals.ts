@@ -30,8 +30,8 @@ export function resolvePreviewPackage(
  * to free identifiers such as `__STORYBOOK_MODULE_TEST__`. The preview iframe
  * assigns those on `globalThis` from `storybook/preview/runtime`.
  *
- * Radiant SSR evaluates story modules in Node via `ssrLoadModule`, including
- * play helpers that import `storybook/test`. Install the same real packages on
+ * Radiant SSR evaluates story modules and shared helper modules in Node via
+ * `ssrLoadModule`. Install the same real packages on
  * `globalThis` so SSR matches the browser instead of stubbing or rewriting files.
  */
 export async function installStorybookPreviewGlobals(
