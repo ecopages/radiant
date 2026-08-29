@@ -4,7 +4,10 @@
  * Those fight Storybook's `layout: 'fullscreen' | 'padded'` and break `h-full` / `h-svh` stories.
  */
 @import './radiant-ui.css';
-@import '../../.storybook/token-preview.css';
+/**
+ * Storybook decorators (`withDialogTrigger`, `ToastTrigger`) render `RuiButton`
+ * outside the story tree, so `parameters.radiant.cssImports` never loads it.
+ */
 @import '../components/ui/button/button.css';
 
 html,

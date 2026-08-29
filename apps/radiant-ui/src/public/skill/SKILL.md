@@ -72,8 +72,6 @@ Start from the default foundation, then layer only the packs the product needs:
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-`data-rui-colors`, `data-rui-spacing`, and `data-rui-radius` are documentation preview attributes. They are not an application API. Do not add them to production markup.
-
 Dark mode remaps colours (including overlay). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme documents otherwise.
 
 ## Critical rules
