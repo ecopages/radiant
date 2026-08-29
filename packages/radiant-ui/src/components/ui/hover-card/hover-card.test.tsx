@@ -92,6 +92,33 @@ describe('RuiHoverCard', () => {
 		cleanup();
 	});
 
+	it('does not reopen from focusin after Escape', async () => {
+		const { host, cleanup } = mount(
+			<RuiHoverCard delay={0} closeDelay={0}>
+				<RuiHoverCardTrigger>
+					<button type="button">Trigger</button>
+				</RuiHoverCardTrigger>
+				<RuiHoverCardContent>Preview</RuiHoverCardContent>
+			</RuiHoverCard>,
+		);
+		await settled();
+
+		const card = getCard(host);
+		const content = getContent(host);
+		const trigger = getTriggerButton(host);
+
+		card.dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerType: 'mouse' }));
+		await settled();
+		trigger.focus();
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget: trigger }));
+		await settled();
+
+		expect(content.hidden).toBe(true);
+
+		cleanup();
+	});
+
 	it('respects open delay before showing', async () => {
 		const { host, cleanup } = mount(
 			<RuiHoverCard delay={50} closeDelay={0}>
