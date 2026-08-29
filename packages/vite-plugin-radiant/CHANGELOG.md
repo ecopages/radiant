@@ -1,5 +1,7 @@
 # @ecopages/vite-plugin-radiant
 
+## 0.1.0-rc.1
+
 ## 0.1.0-rc.0
 
 ### Patch Changes
