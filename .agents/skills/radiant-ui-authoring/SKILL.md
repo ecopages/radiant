@@ -48,14 +48,14 @@ Update the README beside the code when behavior or ownership changes.
 
 ## Reuse before inventing
 
-| Need | Use |
-| --- | --- |
-| Nested menus | `shared/menu-tree.ts` |
-| Listbox in a popup (select, combobox) | `ListboxPopoverBehavior` + `ListboxHostController` |
-| Portaled overlay | `PopoverController` |
-| Field label / control protocol | `shared/field-label.ts`, `form/control-protocol.ts` |
-| Comma-separated multi value | `shared/multi-value.ts` |
-| Numeric range / slider math | `shared/numeric-range.ts` |
+| Need                                  | Use                                                 |
+| ------------------------------------- | --------------------------------------------------- |
+| Nested menus                          | `shared/menu-tree.ts`                               |
+| Listbox in a popup (select, combobox) | `ListboxPopoverBehavior` + `ListboxHostController`  |
+| Portaled overlay                      | `PopoverController`                                 |
+| Field label / control protocol        | `shared/field-label.ts`, `form/control-protocol.ts` |
+| Comma-separated multi value           | `shared/multi-value.ts`                             |
+| Numeric range / slider math           | `shared/numeric-range.ts`                           |
 
 ## Done when
 

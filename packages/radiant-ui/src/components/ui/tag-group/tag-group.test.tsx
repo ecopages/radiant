@@ -31,7 +31,12 @@ describe('RuiTagGroup', () => {
 
 	it('leaves authored tags in place until setItems takes over', async () => {
 		const { host, cleanup } = mount(
-			<RuiTagGroup tags={[{ value: 'ca', label: 'California' }, { value: 'tx', label: 'Texas' }]} />,
+			<RuiTagGroup
+				tags={[
+					{ value: 'ca', label: 'California' },
+					{ value: 'tx', label: 'Texas' },
+				]}
+			/>,
 		);
 		await settled();
 

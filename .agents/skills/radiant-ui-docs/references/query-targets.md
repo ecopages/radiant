@@ -4,12 +4,12 @@ Hard rule for Radiant UI behavior hosts. Docs, TSDoc, and scripts share this dia
 
 ## What a host may query
 
-| Kind | When | Example |
-| --- | --- | --- |
-| `[data-ref="…"]` | Stable region of the composed tree (shell, track, trigger wrapper, column). | `[data-ref="track"]`, `[data-ref="trigger"]`, `[data-ref="field"]` |
-| Dedicated `data-*` | Semantic identity or a named control the author opts into. | `[data-tag]`, `[data-select-trigger]`, `[data-value]` |
-| Role | APG item identity when that is the real target (no extra data attr). | `[role="option"]`, `[role="menuitem"]`, `[role="tab"]` |
-| Child tag | Nested host. Name extra selectors the **parent** reads on that child's tree. | `rui-listbox`, `[data-select-value] rui-tag-group` |
+| Kind               | When                                                                         | Example                                                            |
+| ------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `[data-ref="…"]`   | Stable region of the composed tree (shell, track, trigger wrapper, column).  | `[data-ref="track"]`, `[data-ref="trigger"]`, `[data-ref="field"]` |
+| Dedicated `data-*` | Semantic identity or a named control the author opts into.                   | `[data-tag]`, `[data-select-trigger]`, `[data-value]`              |
+| Role               | APG item identity when that is the real target (no extra data attr).         | `[role="option"]`, `[role="menuitem"]`, `[role="tab"]`             |
+| Child tag          | Nested host. Name extra selectors the **parent** reads on that child's tree. | `rui-listbox`, `[data-select-value] rui-tag-group`                 |
 
 `@query({ ref: 'root' })` is `[data-ref="root"]`. Prefer `data-ref` for any node that is only a structural hook.
 

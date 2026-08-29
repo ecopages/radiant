@@ -2,14 +2,14 @@
 
 One directory: `packages/radiant-ui/src/components/ui/<name>/`.
 
-| File | Role |
-| --- | --- |
-| `<name>.script.tsx` (or `.ts`) | Custom element: state, APG, queries, events. |
-| `<name>.tsx` | `Rui*` view and Composition Helpers. |
-| `<name>.css` | Atomic BEM. No theme `@import`. |
-| `<name>.stories.tsx` | `parameters.radiant.element` + `cssImports`. |
-| `<name>.test.tsx` / `*.ssr.test.tsx` | Behavior and range ownership. |
-| `index.ts` | Re-export CE types from script, views from tsx. |
+| File                                 | Role                                            |
+| ------------------------------------ | ----------------------------------------------- |
+| `<name>.script.tsx` (or `.ts`)       | Custom element: state, APG, queries, events.    |
+| `<name>.tsx`                         | `Rui*` view and Composition Helpers.            |
+| `<name>.css`                         | Atomic BEM. No theme `@import`.                 |
+| `<name>.stories.tsx`                 | `parameters.radiant.element` + `cssImports`.    |
+| `<name>.test.tsx` / `*.ssr.test.tsx` | Behavior and range ownership.                   |
+| `index.ts`                           | Re-export CE types from script, views from tsx. |
 
 Optional: extra scripts for nested hosts (`disclosure-group.script.tsx`, `sidebar-trigger.script.tsx`).
 

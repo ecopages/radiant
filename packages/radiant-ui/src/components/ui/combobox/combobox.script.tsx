@@ -228,8 +228,7 @@ export class RuiCombobox extends RadiantElement {
 		}
 
 		if (this.placeholder) {
-			input.placeholder =
-				this.isMultiple() && this.collection.getSelectedValues().length ? '' : this.placeholder;
+			input.placeholder = this.isMultiple() && this.collection.getSelectedValues().length ? '' : this.placeholder;
 		}
 
 		if (this.disabled) {
