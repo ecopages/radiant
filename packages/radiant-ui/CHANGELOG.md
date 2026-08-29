@@ -1,5 +1,11 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.9
+
+### Patch Changes
+
+- [#215](https://github.com/ecopages/radiant/pull/215) [`25a547b`](https://github.com/ecopages/radiant/commit/25a547b75e19f07a54d5dd6d41c82c92e8ae7774) Thanks [@andeeplus](https://github.com/andeeplus)! - Scale button and input control heights with the spacing pack so compact and wide density change both axes, not only inline padding.
+
 ## 0.1.0-rc.8
 
 ### Minor Changes
