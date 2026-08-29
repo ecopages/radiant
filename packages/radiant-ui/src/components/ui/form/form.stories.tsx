@@ -33,7 +33,7 @@ import {
 import { RuiSwitch } from '../switch';
 import { RuiTagGroup, RuiTagList } from '../tag-group';
 import { RuiTextarea } from '../textarea';
-import { findFieldControl, findFieldError, isNativeTextControl } from './control-protocol';
+import { findFieldControl, findFieldError, getAriaControlTarget, isNativeTextControl } from './control-protocol';
 import { RuiForm as RuiFormElement } from './form.script';
 import { formContext, type FormContextValue } from './form-context';
 import '../field/field.script';
@@ -672,7 +672,8 @@ export const WithDateField: Story = {
 	play: async ({ canvasElement, step }) => {
 		const canvas = within(canvasElement);
 		const field = getFieldHost(canvasElement, 'appointment');
-		const input = field ? (findFieldControl(field) as HTMLInputElement) : null;
+		const control = field ? findFieldControl(field) : null;
+		const input = control ? getAriaControlTarget(control) : null;
 
 		await step('submit without a date shows error', async () => {
 			await userEvent.click(canvas.getByRole('button', { name: 'Book' }));

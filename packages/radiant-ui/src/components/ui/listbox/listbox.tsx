@@ -76,17 +76,18 @@ type ListboxShellProps = {
 	bordered: boolean;
 	children: JsxRenderable;
 	disabled?: boolean;
+	embedded?: boolean;
 	label?: string;
 	selectionMode?: RuiListboxSelectionMode;
 };
 
-function ListboxShell({ bordered, children, disabled, label, selectionMode = 'single' }: ListboxShellProps) {
+function ListboxShell({ bordered, children, disabled, embedded, label, selectionMode = 'single' }: ListboxShellProps) {
 	return (
 		<div
 			class={cx('rui-listbox', bordered && 'rui-listbox--bordered')}
 			role="listbox"
-			data-rui-control
-			data-rui-control-type="text"
+			data-rui-control={embedded ? undefined : true}
+			data-rui-control-type={embedded ? undefined : 'text'}
 			aria-label={label || undefined}
 			aria-disabled={disabled ? 'true' : undefined}
 			aria-multiselectable={selectionMode === 'multiple' ? 'true' : undefined}
@@ -128,7 +129,13 @@ export function RuiListbox({
 			disabled={disabled}
 			selectionMode={selectionMode}
 		>
-			<ListboxShell bordered={isBordered} disabled={disabled} label={label} selectionMode={selectionMode}>
+			<ListboxShell
+				bordered={isBordered}
+				disabled={disabled}
+				embedded={embedded}
+				label={label}
+				selectionMode={selectionMode}
+			>
 				{options != null
 					? options.map((option) => (
 							<RuiListboxOption
