@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { findFieldControl, getAriaControlTarget, isNativeTextControl } from '../form/control-protocol';
+import {
+	findFieldControl,
+	getAriaControlTarget,
+	isNativeTextControl,
+	isPrimaryFieldControlEvent,
+} from '../form/control-protocol';
 
 describe('field control protocol (SSR-safe)', () => {
 	it('discovers marked inputs and host tags, not bare natives', () => {
@@ -54,7 +59,7 @@ describe('field control protocol (SSR-safe)', () => {
 		expect(pro!.hasAttribute('checked')).toBe(true);
 	});
 
-	it('discovers checkbox-group surface instead of inner checkbox hosts', () => {
+	it('discovers the checkbox-group host, not inner checkbox hosts', () => {
 		const field = document.createElement('div');
 		field.innerHTML = `
 			<div class="rui-field" data-ref="field">
@@ -68,7 +73,71 @@ describe('field control protocol (SSR-safe)', () => {
 		`;
 
 		const control = findFieldControl(field);
-		expect(control?.getAttribute('data-checkbox-group-root')).not.toBeNull();
+		expect(control?.localName).toBe('rui-checkbox-group');
 		expect(getAriaControlTarget(control!).getAttribute('data-checkbox-group-root')).not.toBeNull();
+	});
+
+	it('prefers a select host over an embedded listbox', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `
+			<rui-select>
+				<button data-rui-control type="button"></button>
+				<rui-listbox embedded>
+					<div role="listbox"></div>
+				</rui-listbox>
+			</rui-select>
+		`;
+
+		expect(findFieldControl(field)?.localName).toBe('rui-select');
+	});
+
+	it('discovers a standalone listbox as the field control', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `
+			<rui-listbox>
+				<div role="listbox" data-rui-control></div>
+			</rui-listbox>
+		`;
+
+		expect(findFieldControl(field)?.localName).toBe('rui-listbox');
+	});
+
+	it('does not discover an embedded listbox as a field control', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `<rui-listbox embedded></rui-listbox>`;
+
+		expect(findFieldControl(field)).toBeNull();
+	});
+
+	it('treats a standalone listbox change as the field control event', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `<rui-listbox></rui-listbox>`;
+		const listbox = field.querySelector('rui-listbox')!;
+		let seen: Event | undefined;
+		field.addEventListener('rui-change', (event) => {
+			seen = event;
+		});
+		listbox.dispatchEvent(new Event('rui-change', { bubbles: true }));
+
+		expect(seen).toBeDefined();
+		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(true);
+	});
+
+	it('ignores rui-change from an embedded listbox inside select', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `
+			<rui-select>
+				<rui-listbox embedded></rui-listbox>
+			</rui-select>
+		`;
+		const listbox = field.querySelector('rui-listbox')!;
+		let seen: Event | undefined;
+		field.addEventListener('rui-change', (event) => {
+			seen = event;
+		});
+		listbox.dispatchEvent(new Event('rui-change', { bubbles: true }));
+
+		expect(seen).toBeDefined();
+		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(false);
 	});
 });
