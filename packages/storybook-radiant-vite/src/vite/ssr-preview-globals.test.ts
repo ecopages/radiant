@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Options } from 'storybook/internal/types';
-import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import { globalPackages, globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import { viteFinal } from './vite-final';
 import {
 	installStorybookPreviewGlobals,
@@ -15,6 +15,8 @@ vi.mock('@ecopages/vite-plugin-radiant', () => ({
 type GlobalScope = typeof globalThis & Record<string, unknown>;
 
 const previewGlobalNames = Object.values(globalsNameReferenceMap);
+const docsBlocksSpecifier = '@storybook/addon-docs/blocks';
+const docsBlocksGlobal = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
 
 describe('resolvePreviewPackage', () => {
 	it('uses the cwd path when the first require.resolve fails', () => {
@@ -66,16 +68,31 @@ describe('installStorybookPreviewGlobals', () => {
 		expect(scope.__STORYBOOK_MODULE_TEST__).toBe(sentinel);
 	});
 
-	it('does not throw when optional packages cannot be resolved', async () => {
+	it('rejects when a required preview package cannot be resolved', async () => {
 		const scope = Object.create(null) as GlobalScope;
 
 		await expect(
 			installStorybookPreviewGlobals(scope, () => {
-				throw new Error('missing optional package');
+				throw new Error('missing preview package');
 			}),
-		).resolves.toBeUndefined();
+		).rejects.toThrow('Could not install required Storybook preview global');
+	});
 
-		expect(scope.__STORYBOOK_MODULE_TEST__).toBeUndefined();
+	it('ignores builder-only globals added after the preview package list loads', async () => {
+		const scope = Object.create(null) as GlobalScope;
+		const previewGlobals = globalsNameReferenceMap as Record<string, string>;
+		previewGlobals[docsBlocksSpecifier] = docsBlocksGlobal;
+		const resolvePackage = vi.fn(resolvePreviewPackage);
+
+		try {
+			await installStorybookPreviewGlobals(scope, resolvePackage);
+		} finally {
+			Reflect.deleteProperty(previewGlobals, docsBlocksSpecifier);
+		}
+
+		expect(globalPackages).not.toContain(docsBlocksSpecifier);
+		expect(resolvePackage).not.toHaveBeenCalledWith(docsBlocksSpecifier);
+		expect(scope[docsBlocksGlobal]).toBeUndefined();
 	});
 
 	it('evaluates rewritten storybook/test bindings after install', async () => {
