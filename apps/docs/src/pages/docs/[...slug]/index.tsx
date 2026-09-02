@@ -14,6 +14,7 @@ import type { Entry } from 'ecopages:content/docs';
 import { CopyForLlm } from '@/components/copy-for-llm';
 import { DocsLayout } from '@/layouts/docs-layout';
 import { docsNav } from '@/lib/content-nav';
+import { getDocsLlmUrl } from '@/lib/docs/docs-llm-url';
 
 const DocsBreadcrumb = ({ entry }: { entry: Entry }) => {
 	const group = docsNav.groups.find((navGroup) => navGroup.items.some((item) => item.slug === entry.slug));
@@ -77,15 +78,17 @@ export default eco.page<{ entry: Entry }, JsxRenderable>({
 	metadata: ({ props: { entry } }) => ({
 		title: `Docs | ${entry.title}`,
 		description: entry.description,
+		url: `/docs/${entry.slug}`,
 	}),
 	render: async ({ entry }) => {
 		const Content = await getComponent(entry.slug);
+		const llmUrl = getDocsLlmUrl(entry.slug);
 
 		return (
 			<section class="docs-page">
 				<div class="docs-bar unstyled">
 					<DocsBreadcrumb entry={entry} />
-					<CopyForLlm llmUrl={`/llms-content/${entry.slug}.txt`} />
+					<CopyForLlm llmUrl={llmUrl} />
 				</div>
 				<Content />
 			</section>

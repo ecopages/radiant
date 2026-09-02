@@ -499,6 +499,7 @@ export default eco.page({
 	metadata: () => ({
 		title: 'Radiant UI',
 		description: 'Accessible light-DOM components for building interfaces with Radiant hosts.',
+		url: '/',
 	}),
 	render: HomePage,
 });

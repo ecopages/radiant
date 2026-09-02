@@ -7,11 +7,17 @@ import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
 import { compareEntriesByField } from '@ecopages/content-processor';
 import { createDocsMdxPlugins } from './src/mdx/plugins';
 import { docsFrontmatterSchema } from './src/content/docs';
+import { configuredSiteOrigin } from './src/lib/docs/site-meta';
 import { devToolbar } from '@ecopages/dev-toolbar/config';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dirname)
-	.setBaseUrl(process.env.ECOPAGES_BASE_URL ?? 'http://localhost:3000')
+	.setBaseUrl(configuredSiteOrigin())
+	.setSitemap({
+		enabled: true,
+		extraUrls: ['/llms.txt', '/skill.txt'],
+		exclude: ['/404', '/500'],
+	})
 	.setIntegrations([
 		ecopagesJsxPlugin({
 			mdx: {
@@ -30,7 +36,7 @@ const config = await new ConfigBuilder()
 	.setDefaultMetadata({
 		title: 'Radiant | Docs',
 		description: 'Radiant is a minimalist web component library designed for simplicity and flexibility.',
-		image: 'public/assets/images/default-og.webp',
+		image: '/assets/images/default-og.png',
 		keywords: ['typescript', 'framework', 'static'],
 	})
 	.setProcessors([
