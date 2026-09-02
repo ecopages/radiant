@@ -14,7 +14,8 @@
 		"build": "pnpm run guard:cache && pnpm run generate:llms && ecopages build && tsx scripts/create-clean-url-aliases.ts && pnpm run verify:html",
 		"preview": "pnpm run guard:cache && pnpm run generate:llms && ecopages preview && tsx scripts/create-clean-url-aliases.ts",
 		"watch:dev": "pnpm run guard:cache && ecopages watch:dev",
-		"test:all": "pnpm run test:e2e",
+		"test": "vitest run",
+		"test:all": "pnpm run test && pnpm run test:e2e",
 		"test:e2e": "node --test ./test/*.e2e.test.mjs",
 		"generate:llms": "tsx scripts/generate-llm-docs.ts"
 	},
@@ -43,6 +44,7 @@
 		"typescript": "catalog:",
 		"unified": "^11.0.5",
 		"unist-util-visit": "^5.1.0",
+		"vitest": "^4.1.10",
 		"zod": "^4.4.3"
 	}
 }

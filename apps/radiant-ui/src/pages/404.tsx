@@ -1,10 +1,10 @@
 import { eco, type Error404TemplateProps } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
-import { BaseLayout } from '@/layouts/base-layout';
+import { DocsLayout } from '@/layouts/docs-layout';
 
 export default eco.page<Error404TemplateProps, JsxRenderable>({
-	layout: BaseLayout,
+	layout: DocsLayout,
 	dependencies: {
 		stylesheets: ['./404.css'],
 	},
@@ -13,16 +13,30 @@ export default eco.page<Error404TemplateProps, JsxRenderable>({
 		description: 'The requested Radiant UI documentation page could not be found.',
 	}),
 	render: () => (
-		<div class="error404">
+		<div class="error404 unstyled">
 			<div class="error404__content">
 				<div class="error404__code" aria-hidden="true">
 					404
 				</div>
-				<h1 class="error404__title">Page not found</h1>
-				<p class="error404__message">The page you requested does not exist or has moved.</p>
+				<h1 class="error404__title">Page Not Found</h1>
+				<p class="error404__message">
+					We couldn't find the page you're looking for. It might have been moved or deleted.
+				</p>
 				<div class="error404__actions">
-					<RuiButton href="/">Return home</RuiButton>
+					<RuiButton href="/" variant="outline">
+						Return Home
+					</RuiButton>
+					<RuiButton href="/docs/getting-started/introduction" variant="ghost">
+						Docs
+					</RuiButton>
 				</div>
+				<p class="error404__hint">
+					Next: <a href="/llms.txt">llms.txt</a>
+					{' · '}
+					<a href="/sitemap.xml">sitemap.xml</a>
+					{' · '}
+					<a href="/docs/getting-started/introduction">documentation index</a>
+				</p>
 			</div>
 		</div>
 	),
