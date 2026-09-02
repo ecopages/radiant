@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { calendarDayButton, monthDayIso } from '@sb/calendar-dates';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { RuiField, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
@@ -32,7 +33,7 @@ const meta = {
 		},
 	},
 	args: {
-		value: '2026-08-05/2026-08-20',
+		value: `${monthDayIso(5)}/${monthDayIso(20)}`,
 		locale: 'en-US',
 	},
 } satisfies Meta<typeof RuiDateRangePicker>;
@@ -45,7 +46,7 @@ export const Default: Story = {
 		const host = canvasElement.querySelector('rui-date-range-picker') as HTMLElement;
 
 		await step('shows formatted start and end values', async () => {
-			await expect(host).toHaveAttribute('value', '2026-08-05/2026-08-20');
+			await expect(host).toHaveAttribute('value', `${monthDayIso(5)}/${monthDayIso(20)}`);
 			const start = canvasElement.querySelector('[data-range-start]') as HTMLInputElement;
 			await expect(start.value.length).toBeGreaterThan(0);
 		});
@@ -81,10 +82,12 @@ export const WithCalendar: Story = {
 			await waitFor(() => {
 				expect(document.activeElement?.matches('[data-calendar-day]')).toBe(true);
 			});
-			await userEvent.click(canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-03"]')!);
-			await userEvent.click(canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-14"]')!);
+			const rangeStart = monthDayIso(3);
+			const rangeEnd = monthDayIso(14);
+			await userEvent.click(calendarDayButton(canvasElement, rangeStart));
+			await userEvent.click(calendarDayButton(canvasElement, rangeEnd));
 			await waitFor(() => {
-				expect(host.getAttribute('value')).toBe('2026-08-03/2026-08-14');
+				expect(host.getAttribute('value')).toBe(`${rangeStart}/${rangeEnd}`);
 			});
 			await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 		});
