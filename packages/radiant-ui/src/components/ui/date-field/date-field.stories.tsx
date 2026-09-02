@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { addDaysIso, calendarDayButton, endOfMonthIso, monthDayIso, todayIso } from '@sb/calendar-dates';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { RuiField, RuiFieldDescription, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
@@ -29,7 +30,7 @@ const meta = {
 		},
 	},
 	args: {
-		value: '2026-08-02',
+		value: todayIso(),
 		label: 'Appointment date',
 	},
 } satisfies Meta<typeof RuiDateField>;
@@ -47,7 +48,7 @@ export const Default: Story = {
 		await step('shows a locale placeholder and formatted value', async () => {
 			await expect(input.placeholder.length).toBeGreaterThan(0);
 			await expect(input.value.length).toBeGreaterThan(0);
-			await expect(host).toHaveAttribute('value', '2026-08-02');
+			await expect(host).toHaveAttribute('value', todayIso());
 		});
 	},
 };
@@ -111,9 +112,10 @@ export const WithCalendar: Story = {
 			await waitFor(() => {
 				expect(document.activeElement?.matches('[data-calendar-day]')).toBe(true);
 			});
-			await userEvent.click(canvasElement.querySelector('[data-calendar-day][data-iso="2026-08-21"]')!);
+			const selected = monthDayIso(21);
+			await userEvent.click(calendarDayButton(canvasElement, selected));
 			await waitFor(() => {
-				expect(host.getAttribute('value')).toBe('2026-08-21');
+				expect(host.getAttribute('value')).toBe(selected);
 			});
 			await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 		});
@@ -122,19 +124,20 @@ export const WithCalendar: Story = {
 
 export const KeyboardCalendar: Story = {
 	args: {
-		value: '2026-08-31',
+		value: endOfMonthIso(),
 	},
 	play: async ({ canvasElement, step }) => {
 		const trigger = canvasElement.querySelector('[data-date-field-trigger]') as HTMLButtonElement;
+		const monthEnd = endOfMonthIso();
 
 		await step('the opened calendar accepts day-arrow navigation', async () => {
 			await userEvent.click(trigger);
 			await waitFor(() => {
-				expect(document.activeElement).toHaveAttribute('data-iso', '2026-08-31');
+				expect(document.activeElement).toHaveAttribute('data-iso', monthEnd);
 			});
 			await userEvent.keyboard('{ArrowRight}');
 			await waitFor(() => {
-				expect(document.activeElement).toHaveAttribute('data-iso', '2026-09-01');
+				expect(document.activeElement).toHaveAttribute('data-iso', addDaysIso(monthEnd, 1));
 			});
 		});
 	},
@@ -143,10 +146,10 @@ export const KeyboardCalendar: Story = {
 export const DateStyles: Story = {
 	render: () => (
 		<div class="flex flex-col gap-4">
-			<RuiDateField value="2026-08-02" dateStyle="short" label="Short" />
-			<RuiDateField value="2026-08-02" dateStyle="medium" label="Medium" />
-			<RuiDateField value="2026-08-02" dateStyle="long" label="Long" />
-			<RuiDateField value="2026-08-02" dateStyle="full" label="Full" />
+			<RuiDateField value={todayIso()} dateStyle="short" label="Short" />
+			<RuiDateField value={todayIso()} dateStyle="medium" label="Medium" />
+			<RuiDateField value={todayIso()} dateStyle="long" label="Long" />
+			<RuiDateField value={todayIso()} dateStyle="full" label="Full" />
 		</div>
 	),
 };
