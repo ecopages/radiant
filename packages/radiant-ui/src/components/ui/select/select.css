@@ -23,7 +23,7 @@ rui-select {
 		font-size: var(--text-control, 0.875rem);
 	}
 
-	.rui-select__trigger:disabled {
+	.rui-select__trigger[aria-disabled='true'] {
 		@apply cursor-not-allowed opacity-muted;
 	}
 
