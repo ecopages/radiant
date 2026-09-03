@@ -3,6 +3,7 @@
 rui-knob {
 	@apply inline-block;
 	--rui-knob-size: 3rem;
+	--rui-knob-track-color: var(--rui-track-color, var(--rui-track-fill));
 }
 
 @layer components {
@@ -45,7 +46,7 @@ rui-knob {
 	}
 
 	.rui-knob__track {
-		stroke: var(--rui-knob-track-color, var(--surface));
+		stroke: var(--rui-knob-track-color, var(--rui-track-fill));
 	}
 
 	.rui-knob__progress {

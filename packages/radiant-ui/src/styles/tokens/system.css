@@ -3,6 +3,8 @@
  *
  * `--size-control-*` aliases `--space-8/10/12` so compact and wide packs
  * change button and input height with padding. Icon sizes stay fixed.
+ * `--rui-track-mix` / `--rui-track-fill` size the unfilled slider and knob
+ * track against `--on-background`. Optional `--rui-track-color` replaces the fill.
  */
 :root {
 	--color-black: oklch(0% 0 0);
@@ -11,6 +13,9 @@
 	--border-width-hairline: 1px;
 	--border-width-thin: 1px;
 	--border-width-thick: 2px;
+
+	--rui-track-mix: 22%;
+	--rui-track-fill: color-mix(in oklab, var(--on-background) var(--rui-track-mix), transparent);
 
 	--focus-ring-width: 2px;
 	--focus-ring-offset: 2px;

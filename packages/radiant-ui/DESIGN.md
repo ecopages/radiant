@@ -54,7 +54,7 @@ Filled status surfaces (alerts) use `*-container` backgrounds. Lightweight notif
 
 ### Tier 3 — system (`tokens/system.css`)
 
-Shared structural tokens: absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes. Imported by every theme; not a swappable mood pack in v1. `--size-control-sm/md/lg` alias `--space-8/10/12` (with rem fallbacks) so compact and wide change control height along with padding. `--size-icon-*` stay fixed.
+Shared structural tokens: absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes, and range-track fill (`--rui-track-mix`, `--rui-track-fill`). Imported by every theme; not a swappable mood pack in v1. `--size-control-sm/md/lg` alias `--space-8/10/12` (with rem fallbacks) so compact and wide change control height along with padding. `--size-icon-*` stay fixed. Set `--rui-track-color` on an ancestor to replace `--rui-track-fill` for slider and knob together.
 
 ## Themes
 

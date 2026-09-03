@@ -1,7 +1,7 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { createNumericRange } from '../shared/numeric-range';
 import { createKnobRing } from './knob-geometry';
-import type { RuiKnob as RuiKnobElement, RuiKnobProps } from './knob.script';
+import { KNOB_DEFAULT_VALUE, type RuiKnob as RuiKnobElement, type RuiKnobProps } from './knob.script';
 import './knob.script';
 
 /**
@@ -17,7 +17,7 @@ import './knob.script';
  * @cssclass rui-knob__value - Value readout inside or below the ring.
  */
 export function RuiKnob({
-	value = 50,
+	value = KNOB_DEFAULT_VALUE,
 	min = 0,
 	max = 100,
 	step = 1,
