@@ -1,5 +1,15 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.11
+
+### Patch Changes
+
+- [#222](https://github.com/ecopages/radiant/pull/222) [`4a38cd3`](https://github.com/ecopages/radiant/commit/4a38cd323fcded9348ff92569f6c43a10a971613) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop multi-select chip remove buttons from nesting inside a native trigger button, which aborted HTML parsing on the select docs page.
+
+- [#221](https://github.com/ecopages/radiant/pull/221) [`29cb6df`](https://github.com/ecopages/radiant/commit/29cb6dfd9bd5610cad2a8c6ad4873ed4dabd54da) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop slider and knob from rewriting reflected `value` when clamp only differs by IEEE rounding, which stacked overflow on the docs page.
+
+- [#221](https://github.com/ecopages/radiant/pull/221) [`29cb6df`](https://github.com/ecopages/radiant/commit/29cb6dfd9bd5610cad2a8c6ad4873ed4dabd54da) Thanks [@andeeplus](https://github.com/andeeplus)! - Slider and knob unfilled tracks use `--rui-track-fill` (a mix of `--on-background`) so they stay visible on matching surfaces. `RuiSlider` and `RuiKnob` seed readout text and range geometry during SSR.
+
 ## 0.1.0-rc.10
 
 ### Patch Changes
