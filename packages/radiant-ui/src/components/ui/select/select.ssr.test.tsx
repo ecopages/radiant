@@ -83,6 +83,8 @@ describe('RuiSelect SSR', () => {
 		expect(html).toContain('Published');
 		expect(html).toContain('data-listbox-option-indicator');
 		expect(html).toContain('class="rui-icon"');
+		expect(html).toMatch(/<div[^>]*data-select-trigger/);
+		expect(html).not.toMatch(/<button[^>]*data-select-trigger/);
 	});
 
 	it('gives the composable clear control an accessible default label', () => {

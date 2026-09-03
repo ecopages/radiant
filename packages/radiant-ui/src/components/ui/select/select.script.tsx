@@ -38,9 +38,11 @@ export type RuiSelectChangeDetail = { value: string };
  *
  * Required:
  * - `[data-ref="root"]` — shell for popover anchoring.
- * - `[data-select-trigger]` — value button. Host sets `id`, `role="combobox"`,
- *   `aria-haspopup="listbox"`, `aria-autocomplete="none"`, `aria-expanded`,
- *   `aria-controls`, and `disabled`.
+ * - `[data-select-trigger]` — combobox surface (a `div`, not a native button).
+ *   Host sets `id`, `role="combobox"`, `aria-haspopup="listbox"`,
+ *   `aria-autocomplete="none"`, `aria-expanded`, `aria-controls`, `tabIndex`,
+ *   and `aria-disabled`. Do not use a `<button>` here: multi-select chips include
+ *   remove buttons, and `<button>` in `<button>` aborts HTML parsing.
  * - `[data-select-value]` — selected value inside the trigger. Host sets
  *   `data-placeholder` when empty and may inject `[data-select-placeholder]`.
  * - `[data-select-listbox]` — popup shell. Host toggles `hidden`.
@@ -55,8 +57,9 @@ export type RuiSelectChangeDetail = { value: string };
  * - `[data-autocomplete-input]` — search field inside the listbox. When the popup
  *   is open the host moves `role="combobox"` and related `aria-*` to this input.
  *
- * Do not set `role`, `aria-expanded`, `aria-controls`, `aria-haspopup`, or
- * `tabIndex` on the trigger — the host owns those.
+ * Do not set `role`, `aria-expanded`, `aria-controls`, or `aria-haspopup` on
+ * the trigger — the host owns those. The trigger must be a `div`, not a
+ * `<button>`: multi-select chips render remove buttons inside it.
  *
  * Nested hosts:
  * - `rui-listbox` (`embedded`) — options at `[role="option"]`; host drives
@@ -243,8 +246,8 @@ export class RuiSelect extends RadiantElement {
 		this.getTrigger()?.focus();
 	}
 
-	private getTrigger(): HTMLButtonElement | null {
-		return this.querySelector<HTMLButtonElement>('[data-select-trigger]');
+	private getTrigger(): HTMLElement | null {
+		return this.querySelector<HTMLElement>('[data-select-trigger]');
 	}
 
 	private getToggle(): HTMLButtonElement | null {
@@ -311,9 +314,8 @@ export class RuiSelect extends RadiantElement {
 			popup.removeAttribute('aria-multiselectable');
 		}
 
-		if (this.disabled) {
-			trigger.disabled = true;
-		}
+		trigger.tabIndex = this.disabled ? -1 : 0;
+		trigger.toggleAttribute('aria-disabled', this.disabled);
 
 		this.syncToggle();
 		this.syncClear();
@@ -488,7 +490,7 @@ export class RuiSelect extends RadiantElement {
 	onTriggerClick(event: Event): void {
 		event.preventDefault();
 		const trigger = this.getTrigger();
-		if (!trigger || trigger.disabled) {
+		if (!trigger || this.disabled) {
 			return;
 		}
 

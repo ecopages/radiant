@@ -49,10 +49,11 @@ describe('RuiSelect', () => {
 		const { host, cleanup } = mount(<RuiSelect selectionMode="multiple" options={OPTIONS} placeholder="Animals" />);
 		await settled();
 
-		const trigger = host.querySelector('[data-select-trigger]') as HTMLButtonElement;
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
 		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
 		const options = Array.from(host.querySelectorAll('[data-select-listbox] [role="option"]')) as HTMLElement[];
 
+		expect(trigger.tagName).toBe('DIV');
 		trigger.click();
 		await settled();
 		expect(popup.hidden).toBe(false);
@@ -70,7 +71,7 @@ describe('RuiSelect', () => {
 		);
 		await settled();
 
-		const trigger = host.querySelector('[data-select-trigger]') as HTMLButtonElement;
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
 		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
 		const options = Array.from(host.querySelectorAll('[data-select-listbox] [role="option"]')) as HTMLElement[];
 
@@ -105,7 +106,7 @@ describe('RuiSelect', () => {
 		await settled();
 
 		const select = host.querySelector('rui-select') as RuiSelectElement;
-		const trigger = host.querySelector('[data-select-trigger]') as HTMLButtonElement;
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
 		const clear = host.querySelector('[data-select-clear]') as HTMLButtonElement;
 
 		expect(select.value).toBe('cat');
