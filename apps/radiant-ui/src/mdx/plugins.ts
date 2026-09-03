@@ -2,7 +2,6 @@ import rehypePrettyCode, { type Options as RehypePrettyCodeOptions } from 'rehyp
 import remarkGfm from 'remark-gfm';
 import type { PluggableList } from 'unified';
 import { withContentMdxPlugins } from '@ecopages/content-processor/mdx';
-import { rehypeSimpleTableWrapper } from './rehype-simple-table-wrapper';
 
 export type DocsMdxPluginsOptions = {
 	rehypePrettyCode: RehypePrettyCodeOptions;
@@ -19,6 +18,6 @@ export function createDocsMdxPlugins(options: DocsMdxPluginsOptions) {
 
 	return withContentMdxPlugins({
 		remarkPlugins: [remarkGfm, ...(options.remarkPlugins ?? [])],
-		rehypePlugins: [prettyCodePlugin, rehypeSimpleTableWrapper, ...(options.rehypePlugins ?? [])],
+		rehypePlugins: [prettyCodePlugin, ...(options.rehypePlugins ?? [])],
 	});
 }
