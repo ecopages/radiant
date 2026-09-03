@@ -6,7 +6,7 @@ rui-slider {
 	--rui-slider-width: 100%;
 	--rui-slider-height: auto;
 	--rui-slider-gap: var(--space-inline);
-	--rui-slider-track-color: var(--surface);
+	--rui-slider-track-color: var(--rui-track-color, var(--rui-track-fill));
 	--rui-slider-fill-color: var(--primary);
 	--rui-slider-track-radius: var(--radius-control);
 	--rui-slider-thumb-size: 1.25rem;
@@ -73,7 +73,7 @@ rui-slider:has(.rui-slider--vertical) {
 	.rui-slider__range-track {
 		@apply relative min-w-0;
 		border-radius: var(--rui-slider-track-radius, var(--radius-control));
-		background: var(--rui-slider-track-color, var(--surface));
+		background: var(--rui-slider-track-color, var(--rui-track-fill));
 		block-size: var(--rui-slider-track-size, 0.375rem);
 		inline-size: 100%;
 		max-inline-size: var(--rui-slider-track-length, 100%);

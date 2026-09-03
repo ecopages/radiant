@@ -74,6 +74,7 @@ Tertiary has fill and container roles only. It does not ship `--tertiary-light` 
 | Status | `--error`, `--on-error`, `--error-container`, `--on-error-container`, `--error-light`, `--error-dark`, `--success`, `--on-success`, `--success-container`, `--on-success-container`, `--success-light`, `--success-dark`, `--info`, `--on-info`, `--info-container`, `--on-info-container`, `--info-light`, `--info-dark`, `--warning`, `--on-warning`, `--warning-container`, `--on-warning-container`, `--warning-light`, `--warning-dark` |
 | Surfaces | `--background`, `--on-background`, `--surface`, `--on-surface`, `--surface-container-lowest`, `--on-surface-container-lowest`, `--surface-container-low`, `--on-surface-container-low`, `--surface-container`, `--on-surface-container`, `--surface-container-high`, `--on-surface-container-high`, `--surface-container-highest`, `--on-surface-container-highest` |
 | Supporting | `--border`, `--focus-ring`, `--link`, `--overlay`, `--neutral`, `--background-code`, `--on-background-code` |
+| Range tracks | `--rui-track-mix` (`22%`), `--rui-track-fill`; optional `--rui-track-color` |
 
 ## Gray scale
 
@@ -209,6 +210,8 @@ white live here so colour presets can reference them without depending on the Au
 | `--border-width-hairline` | 1px |
 | `--border-width-thin` | 1px |
 | `--border-width-thick` | 2px |
+| `--rui-track-mix` | `22%` |
+| `--rui-track-fill` | `color-mix` of `--on-background` at `--rui-track-mix` |
 | `--focus-ring-width` | 2px |
 | `--focus-ring-offset` | 2px |
 | `--opacity-disabled` | 0.5 |
