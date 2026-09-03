@@ -12,12 +12,10 @@ Radiant UI is a light-DOM component library on the Radiant reactive host model. 
 
 ## When to use this skill
 
-Read this skill when the task involves:
-
 - Installing or composing `@ecopages/radiant-ui` components in an application
 - Loading themes and the aggregate stylesheet
 - Choosing colour, spacing, or radius token packs
-- Styling or theming against semantic roles instead of palette steps
+- Styling against semantic roles instead of palette steps
 
 For exhaustive generated docs, use [/llms.txt](/llms.txt). For `RadiantElement` / `RadiantController` authoring, use the [Radiant skill](https://radiant.ecopages.app/skill/SKILL.md).
 
@@ -27,9 +25,7 @@ For exhaustive generated docs, use [/llms.txt](/llms.txt). For `RadiantElement` 
 pnpm add @ecopages/radiant-ui
 ```
 
-Radiant, JSX, and Signals install as peers.
-
-Load a theme and the aggregate stylesheet before registering elements. Import focused modules; do not pull the root entry unless the app needs every custom element.
+Radiant, JSX, and Signals install as peers. Load a theme and the aggregate stylesheet before registering elements. Import focused modules; do not pull the root entry unless the app needs every custom element.
 
 ```ts
 import '@ecopages/radiant-ui/themes/default';
@@ -41,38 +37,14 @@ import { RuiButton } from '@ecopages/radiant-ui/button';
 
 Presentational helpers that are not custom elements (`RuiButton`, `RuiInput`, `RuiTextarea`, `RuiLabel`, `RuiHeading`, `RuiChip`, and similar) still come from their subpath.
 
-## Composition
+## Reference modules
 
-- Compose published `Rui*` views. Do not subclass a custom element just to arrange its UI.
-- Keep a convenient prop-based default on the primary view, and accept children for the equivalent explicit composition.
-- Coordinating `rui-*` scripts are behavior hosts: they query light-DOM **targets** (`data-*` attributes and roles). The helpers stamp those targets; any markup with the same contract works inside the custom element. The host TSDoc lists the required tree. Prefer helpers unless you need a custom child tree.
-- Light DOM is the default: style with theme roles and BEM `.rui-*` classes, not shadow parts.
-- Rui views expose a declared DOM surface. Global attributes, `on:*`/`on-native:*`
-  events, direct `aria-*`/`data-*`, structured `aria={{ ... }}`/`data={{ ... }}`,
-  and `attr:`/`prop:` bindings are forwarded to that surface. Direct kebab-case
-  attributes win when both forms name the same value. Collection item `id`
-  values (tabs, carousel slides, and cycle-toggle items) are semantic keys, not
-  literal DOM ids; non-collection `id` props are DOM ids.
-- For an overridable accessible-name default, keep direct `aria-label` in the
-  forwarded props and use `withDefaultAriaLabel(aria, fallback)` from
-  `@ecopages/radiant-ui/aria`. The helper fills only a missing structured
-  `aria.label`; direct `aria-label` remains canonical. Keep managed ARIA state
-  explicit rather than passing it through a defaults helper.
+Read only the modules relevant to the task. Each file is one level deep from this entry.
 
-## Tokens and themes
-
-Radiant UI separates colour, spacing, and radius into token packs. Components consume semantic roles (`--primary`, `--surface`, `--radius-control`, …). They must never target palette steps such as `--color-havelock-blue-800`.
-
-Start from the default foundation, then layer only the packs the product needs:
-
-```css
-@import '@ecopages/radiant-ui/themes/default';
-@import '@ecopages/radiant-ui/tokens/spacing/compact';
-@import '@ecopages/radiant-ui/tokens/radius/soft';
-@import '@ecopages/radiant-ui/styles.css';
-```
-
-Dark mode remaps colours (including overlay). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme documents otherwise.
+| Module                                               | Read when                                                              |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| [reference/composition.md](reference/composition.md) | Views vs hosts, light-DOM targets, attribute forwarding, ARIA defaults |
+| [reference/theming.md](reference/theming.md)         | Token packs, semantic roles vs palette steps, dark mode                |
 
 ## Critical rules
 
@@ -84,7 +56,7 @@ Dark mode remaps colours (including overlay). Spacing, radius, elevation, typogr
 
 ## Resources
 
-Start with this skill pack for application work. For the full docs index see [llms.txt](/llms.txt); page exports live under `/llms-content/.../*.txt`.
+Start with this skill pack for application work. Full docs index: [llms.txt](/llms.txt); page exports under `/llms-content/.../*.txt`.
 
 - [Introduction](/docs/getting-started/introduction)
 - [Themes and tokens](/docs/getting-started/theming)

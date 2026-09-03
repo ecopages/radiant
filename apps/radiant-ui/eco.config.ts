@@ -6,10 +6,16 @@ import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
 import { createDocsMdxPlugins } from './src/mdx/plugins';
 import { componentDocsFrontmatterSchema } from './src/content/components';
+import { configuredSiteOrigin } from './src/lib/docs/site-meta';
 
 const config = await new ConfigBuilder()
 	.setRootDir(import.meta.dirname)
-	.setBaseUrl(process.env.ECOPAGES_BASE_URL ?? 'http://localhost:3000')
+	.setBaseUrl(configuredSiteOrigin())
+	.setSitemap({
+		enabled: true,
+		extraUrls: ['/llms.txt', '/skill.txt'],
+		exclude: ['/404', '/500'],
+	})
 	.setIntegrations([
 		ecopagesJsxPlugin({
 			extensions: ['.tsx'],
@@ -29,6 +35,7 @@ const config = await new ConfigBuilder()
 	.setDefaultMetadata({
 		title: 'Radiant UI',
 		description: 'Accessible UI components for the web.',
+		image: '/assets/images/default-og.png',
 	})
 	.setProcessors([
 		postcssProcessorPlugin(

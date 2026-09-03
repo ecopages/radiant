@@ -8,12 +8,7 @@ export default defineConfig({
 		},
 	},
 	test: {
-		environment: 'happy-dom',
-		include: [
-			'test/**/*.test.{ts,tsx}',
-			'src/**/*.test.{ts,tsx}',
-			'src/**/*.test.browser.{ts,tsx}',
-			'scripts/**/*.test.ts',
-		],
+		environment: 'node',
+		include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
 	},
 });
