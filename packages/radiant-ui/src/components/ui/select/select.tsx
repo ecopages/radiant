@@ -1,7 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
-import { omitProps } from '@/lib/omit-props';
 import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
 import { parseViewValue, serializeViewValue } from '../shared/multi-value';
@@ -24,28 +23,31 @@ export function RuiSelectControl({ children, class: className, ...props }: RuiSe
 	);
 }
 
-export type RuiSelectTriggerProps = JsxElementProps<HTMLButtonElement> & {
+export type RuiSelectTriggerProps = JsxElementProps<HTMLDivElement> & {
 	disabled?: boolean;
 };
 
 /**
- * Value button. Stamps `[data-select-trigger]`. Place `RuiSelectValue` inside.
+ * Combobox surface. Stamps `[data-select-trigger]`. Place `RuiSelectValue` inside.
  *
- * @cssclass rui-select__trigger - Value button; `role="combobox"` set by the controller.
+ * @remarks A native `<button>` cannot wrap multi-select chip remove controls
+ * (`<button>` in `<button>`). The host sets `role="combobox"`.
+ *
+ * @cssclass rui-select__trigger - Combobox surface; `role="combobox"` set by the controller.
  */
 export function RuiSelectTrigger({ children, class: className, disabled, ...props }: RuiSelectTriggerProps) {
 	return (
-		<button
-			{...omitProps(props, 'attr:type')}
-			type="button"
+		<div
+			{...props}
 			data-select-trigger
 			data-rui-control
 			data-rui-control-type="text"
 			class={cx('rui-select__trigger', className)}
-			disabled={disabled}
+			tabIndex={disabled ? -1 : 0}
+			aria-disabled={disabled ? 'true' : undefined}
 		>
 			{children}
-		</button>
+		</div>
 	);
 }
 
@@ -211,7 +213,7 @@ export function RuiSelect({ options, children, value, ...props }: RuiSelectViewP
 				) : (
 					<>
 						<RuiSelectControl>
-							<RuiSelectTrigger>
+							<RuiSelectTrigger disabled={props.disabled}>
 								<RuiSelectValue>
 									{isMultiple ? (
 										<RuiTagGroup tags={selectedTags ?? []} label="Selected options" />

@@ -100,9 +100,9 @@ import '@ecopages/radiant-ui/listbox';
 <rui-select value="cat" placeholder="Select an animal">
   <div data-ref="root" class="rui-select">
     <div class="rui-select__control">
-      <button type="button" data-select-trigger>
+      <div data-select-trigger tabindex="0">
         <span data-select-value></span>
-      </button>
+      </div>
       <button type="button" data-select-toggle></button>
     </div>
     <div data-select-listbox hidden>
@@ -185,7 +185,7 @@ Customization of icons is through Composition Helper **children**, not CSS varia
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-ref="root"]` | yes | — | shell for popover anchoring |
-| `[data-select-trigger]` | yes | `role`, `aria-expanded`, `aria-controls`, `aria-haspopup`, `id`, `disabled` | the button |
+| `[data-select-trigger]` | yes | `role`, `aria-expanded`, `aria-controls`, `aria-haspopup`, `id`, `tabIndex`, `aria-disabled` | combobox `div` (not a native `<button>` when chips with remove controls are inside) |
 | `[data-select-value]` | yes | `data-placeholder`, optional `[data-select-placeholder]` | content / `rui-tag-group` |
 | `[data-select-listbox]` | yes | `hidden` | popup shell |
 | `[role="option"]` | yes (in listbox) | `aria-selected`, option `id` | `data-value`, label text |
@@ -207,7 +207,7 @@ Do not set `role`, `aria-expanded`, or `tabIndex` on the trigger. Nested hosts: 
 | --- | --- | --- |
 | `RuiSelect` | `<rui-select>` + `[data-ref="root"]` | Accepts `options` or children |
 | `RuiSelectControl` | — | Trigger row wrapper |
-| `RuiSelectTrigger` | `[data-select-trigger]` | Place `RuiSelectValue` inside |
+| `RuiSelectTrigger` | `[data-select-trigger]` | Combobox `div`; place `RuiSelectValue` inside |
 | `RuiSelectValue` | `[data-select-value]` | Tags via `RuiTagGroup` in multiple mode |
 | `RuiSelectClear` | `[data-select-clear]` | Hidden when empty |
 | `RuiSelectToggle` | `[data-select-toggle]` | Children replace chevron |
@@ -219,7 +219,7 @@ Do not set `role`, `aria-expanded`, or `tabIndex` on the trigger. Nested hosts: 
 | Class | Description |
 | --- | --- |
 | `.rui-select__control` | Trigger row: bordered control-height surface. |
-| `.rui-select__trigger` | Value button with `role="combobox"`. |
+| `.rui-select__trigger` | Combobox surface (`role="combobox"`). |
 | `.rui-select__value` | Selected value / placeholder text. |
 | `.rui-select__listbox` | Popup shell (adds `rui-popover rui-popover--listbox rui-floating`). |
 | `.rui-select__search` | Filtering input inside the popup. |
