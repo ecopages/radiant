@@ -112,7 +112,7 @@
 	}
 
 	table:not(.unstyled, .unstyled *) {
-		@apply w-full text-left border-collapse my-8 text-sm overflow-hidden rounded-xl border border-border/30 block md:table ring-1 ring-border/20;
+		@apply w-full text-left border-collapse my-8 text-sm overflow-x-auto rounded-xl border border-border/30 block ring-1 ring-border/20;
 
 		thead {
 			@apply border-b border-border/50 bg-background-accent/20;
