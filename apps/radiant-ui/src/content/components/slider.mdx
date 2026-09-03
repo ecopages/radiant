@@ -95,18 +95,32 @@ BEM classes are presentation-only. The host owns thumb `aria-*`, track CSS varia
 
 ## Theming
 
-Slider surfaces map to **semantic surface roles**, never Tailwind palette steps:
+Slider surfaces map to **semantic roles**, never Tailwind palette steps:
 
 | Part | CSS roles |
 | --- | --- |
-| Track (`.rui-slider__range-track`) | `surface` |
+| Track (`.rui-slider__range-track`) | `--rui-track-fill` (`--rui-track-mix` of `--on-background`) |
 | Fill (`.rui-slider__range-fill`) | `primary` |
 | Thumb (`.rui-slider__thumb`) | `background` surface, `primary` border, `shadow-sm` |
 | Hidden input | form value (`name`, plus `name-max` in range mode) |
 | Value readout (`.rui-slider__value`) | `on-surface` |
 | Focus ring | `focus-ring` |
 
-Range thumb positions come from `--rui-slider-min` / `--rui-slider-max`, set inline by the element from the live range, not theme tokens. Override at the theme layer, not in component CSS.
+Range thumb positions come from `--rui-slider-min` / `--rui-slider-max`. The `RuiSlider` view seeds those inline variables (and the value readout) during SSR; the host updates them while dragging.
+
+Unfilled track contrast is shared with knobs. Set the mix or a solid color on an ancestor:
+
+```css
+:root {
+  --rui-track-mix: 28%;
+}
+
+.panel {
+  --rui-track-color: var(--surface-container-high);
+}
+```
+
+Override `--rui-slider-track-color` on `rui-slider` when only the slider should change.
 
 Range mode also accepts presentation variables on `rui-slider`. Set track and thumb corner radii independently — they follow shape tokens such as `--radius-control` and `--radius-container`:
 
@@ -149,16 +163,16 @@ Switching the radius pack (sharp, default, soft) updates both when they referenc
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-ref="root"]` | yes | `rui-slider--*` layout classes | the root node |
-| `[data-ref="rangeTrack"]` | yes | inline `--rui-slider-*`, optional `title` | the track node |
-| `[data-thumb]` | yes | `hidden`, `disabled`, `tabindex`, `aria-*` value attrs | thumb elements (`value`, `min`, or `max`) |
+| `[data-ref="rangeTrack"]` | yes | inline `--rui-slider-*`, optional `title` | the track node; view seeds geometry |
+| `[data-thumb]` | yes | `hidden`, `disabled`, `tabindex`, `aria-*` value attrs | thumb elements (`value`, `min`, or `max`); view seeds `aria-valuenow` |
 | `[data-ref="header"]` | no | `hidden` | header row |
 | `[data-ref="label"]` | no | `hidden`, `textContent` | label text |
-| `[data-ref="value"]` | no | `textContent` | readout node |
+| `[data-ref="value"]` | no | `textContent` | readout node; view seeds the formatted value |
 | `[data-default-value]` | no | `hidden` (via `showValue`) | default readout when no custom value child |
 | `[data-ref="input"]` | no | `value`, `name`, `disabled`, `readOnly`, `title` | hidden primary value input |
 | `[data-ref="maxInput"]` | no | `value`, `name` (`{name}-max`), `disabled`, `readOnly`, `title` | hidden range-max input |
 
-Do not set thumb `tabindex` or `aria-valuenow`. Nested hosts: none.
+Do not set thumb `tabindex`. Nested hosts: none. The `RuiSlider` view seeds readout text, track CSS variables, and `aria-valuenow` so the first paint matches the hydrated control.
 
 ### Events
 
@@ -170,8 +184,8 @@ Do not set thumb `tabindex` or `aria-valuenow`. Nested hosts: none.
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiSlider` | full `[data-ref]` tree under `[data-ref="root"]` | Supplies default `RuiSliderValue` with `[data-default-value]` when `children` omitted. |
-| `RuiSliderValue` | `[data-ref="value"]` | Live readout; host updates `textContent` while dragging. |
+| `RuiSlider` | full `[data-ref]` tree under `[data-ref="root"]` | Supplies default `RuiSliderValue` with `[data-default-value]` when `children` omitted. Seeds readout text and track geometry for SSR. |
+| `RuiSliderValue` | `[data-ref="value"]` | Live readout; view seeds the formatted value, host updates `textContent` while dragging. |
 
 ### CSS classes
 
@@ -193,7 +207,7 @@ Public BEM classes (documented via `@cssclass` on the element):
 
 | Part | CSS variables consumed |
 | --- | --- |
-| Track | `--surface` |
+| Track | `--rui-track-color` / `--rui-track-mix` |
 | Fill / thumb | `--primary` |
 | Thumb surface | `--background` |
 | Value readout | `--on-surface` |
@@ -207,7 +221,7 @@ Set on `rui-slider`. Defaults shown; all accept any length or shape token.
 | --- | --- | --- |
 | `--rui-slider-track-size` | `0.375rem` | Track thickness |
 | `--rui-slider-track-length` | `12rem` | Max track length (vertical / horizontal cap) |
-| `--rui-slider-track-color` | `--surface` | Track background |
+| `--rui-slider-track-color` | `--rui-track-color` or `--rui-track-fill` | Track background |
 | `--rui-slider-fill-color` | `--primary` | Selected range fill |
 | `--rui-slider-track-radius` | `--radius-control` | Track and fill corner radius |
 | `--rui-slider-thumb-size` | `1.25rem` | Thumb width and height |

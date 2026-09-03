@@ -52,6 +52,24 @@ export function formatNumericValue(value: number, valuePrecision: number): strin
 	return Number.isFinite(value) ? value.toFixed(valuePrecision) : '';
 }
 
+/**
+ * Whether two values sit on the same step tick after binary rounding.
+ *
+ * @remarks IEEE-754 noise can make `clamp(x) !== x` even when both stringify to
+ * the same step. Writing the clamped number back into a reflected `value`
+ * attribute then oscillates forever (`0.3` ↔ `0.30000000000000004`).
+ */
+export function valuesAlignOnStep(left: number, right: number, step: number): boolean {
+	if (Object.is(left, right)) {
+		return true;
+	}
+	if (!Number.isFinite(left) || !Number.isFinite(right)) {
+		return false;
+	}
+
+	return left.toFixed(fractionDigitsFromStep(step)) === right.toFixed(fractionDigitsFromStep(step));
+}
+
 /** Normalizes numeric-control bounds and step values into a stable interaction model. */
 export function createNumericRange(min: number, max: number, step: number): NumericRange {
 	const resolvedMin = Number.isFinite(min) ? min : 0;

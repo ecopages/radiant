@@ -5,6 +5,7 @@ import {
 	fractionDigitsFromStep,
 	resolveValuePrecision,
 	valueFromSliderKey,
+	valuesAlignOnStep,
 } from './numeric-range';
 
 describe('createNumericRange', () => {
@@ -39,6 +40,9 @@ describe('createNumericRange', () => {
 		expect(value).toBeCloseTo(0.3, 10);
 		expect(value).not.toBe(0.3);
 		expect(formatNumericValue(value, 1)).toBe('0.3');
+		expect(valuesAlignOnStep(value, 0.3, 0.1)).toBe(true);
+		expect(valuesAlignOnStep(0.343, createNumericRange(0, 1, 0.001).clamp(0.343), 0.001)).toBe(true);
+		expect(valuesAlignOnStep(0.343, 0.344, 0.001)).toBe(false);
 
 		let stepped = 0;
 		for (let index = 0; index < 3; index += 1) {
