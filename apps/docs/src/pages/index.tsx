@@ -431,5 +431,10 @@ export default eco.page({
 		components: [CodeTabs, RadiantCounterDemo],
 		stylesheets: ['./index.css'],
 	},
+	metadata: () => ({
+		title: 'Radiant | Docs',
+		description: 'Radiant is a minimalist web component library designed for simplicity and flexibility.',
+		url: '/',
+	}),
 	render: HomePage,
 });

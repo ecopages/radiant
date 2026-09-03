@@ -1,0 +1,41 @@
+# Authoring
+
+## Contents
+
+- Rules
+- Review checklist
+- Output expectations
+
+## Rules
+
+1. **Prefer semantic decorators** — `@prop(...)` for public API, `@state` for internal mutable state. Reach for lower-level names only with a deliberate reason.
+2. **Keep public props narrow** — do not leak internal state into the JSX contract unless that API is intentional.
+3. **Reassign arrays and objects** — do not rely on in-place mutation to trigger updates.
+4. **Keep event code plain** — ordinary methods or arrow functions; use the browser event object directly.
+5. **Keep JSX intentional** — avoid extra wrapper components, memoization-style patterns without need, and assuming cached JSX nodes with plain props stay live automatically.
+6. **Use slots deliberately** — literal `<slot>` tags and the Radiant projection model for authored content regions.
+7. **Document important APIs** — meaningful TSDoc for new public APIs or significant architecture. No noisy inline comments.
+8. **Keep docs examples minimal** — smallest number of hosts that still demonstrates the target API. A second custom element only when provider/consumer boundaries or leaf ownership is the lesson.
+
+## Review checklist
+
+1. Should this be `RadiantElement` or `RadiantController`?
+2. Are public props separated from internal bindings when they should be?
+3. Are plain reads used for control flow and class/style composition?
+4. Are bindings used where fine-grained patching is desirable?
+5. Is any `Bindings` generic present only from habit rather than actual usage?
+6. If render reads `provider.getContext()`, what causes the host to rerender when that context changes?
+7. Are object or array updates using reassignment instead of mutation?
+8. If this is docs or example code, does it teach the Radiant model clearly?
+
+## Output expectations
+
+Code:
+
+- one host class per file
+- exported component classes
+- explicit public props types when JSX consumers need them
+- internal bindings types only when the code uses binding APIs
+- minimal examples that teach one intended model
+
+Docs and explanations: what works, and why one choice is better in Radiant specifically.

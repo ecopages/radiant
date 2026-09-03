@@ -1,6 +1,8 @@
+import { rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileSystem } from '@ecopages/file-system';
 import { ContentScanner, type ContentEntry } from '@ecopages/content-processor';
+import { normalizeSiteOrigin } from './docs/site-meta';
 
 export type LlmDocsOptions<T extends Record<string, unknown> = Record<string, unknown>> = {
 	/** Directory where each document's raw content is written. */
@@ -31,7 +33,37 @@ function defaultFormatTitle(value: string): string {
 		.join(' ');
 }
 
-/** Generates an `llms.txt` index and per-document text files from scanned content. */
+function isEnoent(error: unknown): boolean {
+	return (error as NodeJS.ErrnoException | undefined)?.code === 'ENOENT';
+}
+
+/**
+ * Replaces generated exports only after staging succeeds, preserving the previous tree on failure.
+ */
+async function replaceDirectory(target: string, source: string): Promise<void> {
+	const previous = `${target}.previous`;
+	await rm(previous, { recursive: true, force: true });
+
+	try {
+		await rename(target, previous);
+	} catch (error) {
+		if (!isEnoent(error)) {
+			throw error;
+		}
+	}
+
+	await rename(source, target);
+	await rm(previous, { recursive: true, force: true });
+}
+
+/**
+ * Generates an `llms.txt` index and per-document text files from scanned content.
+ *
+ * @remarks Everything is written to staging paths first; the content tree and the index are
+ * swapped in only after generation succeeds. The two renames are not a single atomic step,
+ * so the content tree is swapped first — until the index rename lands, the previous index
+ * keeps resolving against the new exports (same URLs).
+ */
 export async function generateLlmDocs<T extends Record<string, unknown>>(
 	scanner: ContentScanner<T>,
 	options: LlmDocsOptions<T>,
@@ -47,6 +79,7 @@ export async function generateLlmDocs<T extends Record<string, unknown>>(
 		formatSectionTitle = defaultFormatTitle,
 	} = options;
 
+	const normalizedBaseUrl = normalizeSiteOrigin(baseUrl);
 	const posts = await scanner.getManifest();
 
 	const sections = new Map<string, ContentEntry<T>[]>();
@@ -65,9 +98,9 @@ export async function generateLlmDocs<T extends Record<string, unknown>>(
 
 	const outputLines = [...headerLines];
 
-	await fileSystem.ensureDirAsync(outputDir);
-	await fileSystem.emptyDirAsync(outputDir);
-
+	const stagingDir = `${outputDir}.staging`;
+	const stagedIndexPath = `${indexPath}.staging`;
+	await fileSystem.emptyDirAsync(stagingDir);
 	for (const section of orderedSections) {
 		const sectionPosts = sections.get(section);
 		if (!sectionPosts || sectionPosts.length === 0) continue;
@@ -75,15 +108,17 @@ export async function generateLlmDocs<T extends Record<string, unknown>>(
 		outputLines.push(`## ${formatSectionTitle(section)}`);
 
 		for (const post of sectionPosts.sort((a, b) => a.slug.localeCompare(b.slug))) {
-			const destFile = join(outputDir, `${post.slug}.txt`);
+			const destFile = join(stagingDir, `${post.slug}.txt`);
 			const raw = await scanner.getRawContent(post.slug);
 			await fileSystem.writeAsync(destFile, raw);
 
-			outputLines.push(`- [${post.title}](${baseUrl}/${publicPath}/${post.slug}.txt)`);
+			outputLines.push(`- [${post.title}](${normalizedBaseUrl}/${publicPath}/${post.slug}.txt)`);
 		}
 
 		outputLines.push('');
 	}
 
-	await fileSystem.writeAsync(indexPath, outputLines.join('\n'));
+	await fileSystem.writeAsync(stagedIndexPath, outputLines.join('\n'));
+	await replaceDirectory(outputDir, stagingDir);
+	await rename(stagedIndexPath, indexPath);
 }

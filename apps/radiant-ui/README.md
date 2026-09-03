@@ -135,3 +135,5 @@ pnpm --filter @ecopages/radiant-ui-docs generate:llms
 ```
 
 Runs before `build` and `preview`.
+
+The command writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.

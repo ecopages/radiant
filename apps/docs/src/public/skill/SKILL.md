@@ -1,132 +1,57 @@
 ---
 name: radiant-reactive-host-author
-description: "Author, refactor, review, or explain Radiant reactive hosts built with @ecopages/radiant. Use this whenever the user asks for a RadiantElement or RadiantController, custom elements with @prop/@state/@signal, controller-attached authored DOM, JSX-host rendering, slot projection, SSR hydration, internal bindings, or guidance about when to use plain reactive reads versus this.$ / this.bindings / this.bind(...). Also use it when updating docs, examples, or playground code so the output follows Radiant's current shared reactive host model rather than generic web-component or React habits."
+description: >-
+    Author, refactor, review, or explain Radiant reactive hosts built with
+    @ecopages/radiant. Use when the user asks for a RadiantElement or
+    RadiantController, custom elements with @prop/@state/@signal, controller-attached
+    authored DOM, JSX-host rendering, slot projection, SSR hydration, internal
+    bindings, or when to use plain reactive reads versus this.$ / this.bindings /
+    this.bind(...). Also use when updating docs, examples, or playground code so
+    the output follows Radiant's shared reactive host model.
 ---
 
 # Radiant Reactive Host Author
 
-Author and review Radiant hosts according to the framework's intended rendering model.
-
-Start with the canonical references:
+Author Radiant hosts against the framework's rendering model. Start here; read a reference module only when the task needs it.
 
 - Docs: https://radiant.ecopages.app/docs
 - Skill index: https://radiant.ecopages.app/skill.txt
 - LLM index: https://radiant.ecopages.app/llms.txt
 
-Use `llms.txt` first when you need a compact machine-oriented map of the framework, then follow through to the full docs for API details and examples.
+Use `llms.txt` for a compact map, then the full docs for API details.
 
-Import-path rule:
+## When to use this skill
 
-- import `RadiantElement`, `RadiantController`, `@customElement(...)`, `@controller(...)`, and the common host decorators from `@ecopages/radiant`
-- import context APIs such as `createContext(...)`, `@provideContext(...)`, `@consumeContext(...)`, `@contextSelector(...)`, and `@onContextUpdate(...)` from `@ecopages/radiant/context`
-- import SSR helpers from explicit `@ecopages/radiant/server/*` entrypoints
-- import JSX SSR helpers such as `renderToString(...)`, `withServerCustomElementRenderHook(...)`, `getActiveSsrScopeValue(...)`, and `withActiveSsrScopeValue(...)` from `@ecopages/jsx/server` when the task is about framework SSR integration rather than ordinary host authoring alone
+- Creating or editing a `RadiantElement` or `RadiantController`
+- Choosing `@prop` / `@state` / `@signal`, or `@customElement` / `@controller`
+- Choosing plain reads (`this.count`) vs bindings (`this.$.count`)
+- Wiring SSR, hydration, host rendering, or slot projection
+- Reviewing docs or examples so they teach the Radiant model, not React habits
 
-Base assumptions:
+## Import paths
 
-- Use `RadiantElement` when the host owns a custom-element view, whether the implementation is JSX-first or more imperative.
-- Use `RadiantController` when behavior should attach to authored DOM instead of a custom-element host.
-- `RadiantElement` and `RadiantController` share the same reactive host contract.
-- Plain reactive reads and JSX bindings are both valid and should be chosen intentionally.
-- Bindings are subscribable JSX values used for fine-grained patching.
-- Radiant SSR composes on top of `@ecopages/jsx/server` rather than teaching JSX core about Radiant-specific host models directly.
-- Shared SSR runtime state should flow through the active JSX SSR render scope with `Symbol.for(...)` keys instead of ad hoc module-global storage.
-- Prefer explicit SSR output modes with `mode: 'plain'` or `mode: 'hydrate'` when authoring or reviewing server-rendering code.
+| Surface                                                                                       | From                         |
+| --------------------------------------------------------------------------------------------- | ---------------------------- |
+| Hosts, `@customElement`, `@controller`, common host decorators                                | `@ecopages/radiant`          |
+| `createContext`, `@provideContext`, `@consumeContext`, `@contextSelector`, `@onContextUpdate` | `@ecopages/radiant/context`  |
+| SSR helpers                                                                                   | `@ecopages/radiant/server/*` |
+| `renderToString`, `withServerCustomElementRenderHook`, SSR scope helpers                      | `@ecopages/jsx/server`       |
 
-## When To Use This Skill
+## Host choice
 
-Use this skill whenever the task involves any of the following:
+- `RadiantElement` — the host owns a custom-element view (JSX-first or imperative).
+- `RadiantController` — behavior attaches to authored DOM; no custom-element host.
 
-- creating or editing a `RadiantElement` or `RadiantController`
-- choosing between `@prop(...)`, `@state`, or `@signal`
-- deciding whether a host needs `@customElement(...)` or `@controller(...)`
-- deciding whether code should use plain reads like `this.count` or bindings like `this.$.count`
-- defining public props versus internal bindings types
-- wiring SSR, hydration, host rendering, or slot projection for Radiant hosts
-- adapting custom-element SSR bridges or render-scoped SSR runtime state
-- reviewing docs or examples to ensure they teach the intended Radiant model
-- translating React-like instincts into the Radiant model without accidentally importing React assumptions
+Same reactive contract. The choice is ownership of the outer host, not a different state model.
 
-## Core Model
+## Core model
 
-Treat these as different tools, not interchangeable syntax:
+Not interchangeable:
 
-- `this.count`: raw reactive value read
-- `this.$.count`: subscribable JSX binding value
-- `this.bindings.count`: same as `this.$.count`, but explicit
-- `this.bind('count')`: string-key version of the same binding
+- `this.count` — raw reactive read; tracked in `render()`; drives host rerenders
+- `this.$.count` / `this.bindings.count` / `this.bind('count')` — subscribable JSX binding; patches a stable child or attribute without a full host rerender
 
-### Plain Reads
-
-Plain reads such as `this.count` or `this.isExpanded` are tracked when used during `render()` on a render-owning host.
-
-They are correct and reactive by default, but they participate in host rerenders.
-
-Use plain reads when render logic genuinely needs the raw value, especially for:
-
-- conditional branches
-- comparisons
-- derived strings used to decide structure
-- list shape
-- slot fallback logic
-- `class` composition
-- `style` composition
-- imperative code and event handlers outside JSX binding positions
-
-### Bindings
-
-Bindings such as `this.$.count` or `this.bindings.count` are for fine-grained JSX updates.
-
-They let the JSX runtime subscribe directly to a stable child or attribute position and patch it without requiring the whole host component to rerender for that value.
-
-Prefer bindings for:
-
-- leaf text like `{this.$.count}`
-- stable child content that should patch in place
-- whole attribute values such as `data-status={this.$.status}`
-- structured `data` and `aria` entries when the bound value is the whole entry
-- boolean attributes such as `disabled={this.$.busy}`
-- `prop:*` bindings such as `prop:value={this.$.draft}`
-
-Do not treat bindings as raw values for comparisons or control flow. If logic needs a boolean, string, or number, use the plain property.
-
-### Derived Bindings
-
-Use derived bindings when JSX needs a projection of a reactive value.
-
-**Member access** — simple object keys, inline in JSX:
-
-```tsx
-render() {
-  return <p>{this.$.config.label}</p>;
-}
-```
-
-Equivalent to `map`, but memoized per key on the binding. No field initializer needed for normal use.
-
-**`map`** — transforms, record lookups, non-property reads. Hoist to a create-once field:
-
-```tsx
-private readonly themeLabel = this.$.preference.map((preference) => THEME_CONFIG[preference].label);
-```
-
-Do not call `.map(...)` inside `render()` — each call creates a new derived binding.
-
-Rules:
-
-- member access inline in JSX is fine for simple object keys
-- hoist `map` to a field initializer or cached host field
-- object props are shallow — projections update on whole-object replacement, not in-place nested mutation
-- bracket lookups need `map`: `this.$.preference.map((p) => THEME_CONFIG[p].label)`, never `THEME_CONFIG[this.$.preference]`
-
-## Performance Rule
-
-Use this rule to choose the update strategy:
-
-- if the value controls host render logic, use a plain read
-- if the value is just feeding a stable JSX output position, prefer a binding
-
-**Good split:**
+Use a **plain read** when the value shapes render logic (branches, comparisons, list shape, slot fallback, `class` / `style` composition, handlers). Use a **binding** for leaf text, whole attribute values, boolean attrs, and `prop:*`. Never use a binding as a raw value in control flow.
 
 ```tsx
 <article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'} data={{ state: this.$.isExpanded }}>
@@ -134,342 +59,31 @@ Use this rule to choose the update strategy:
 </article>
 ```
 
-Why this is good:
+Keep `class` and `style` as render-time composition. To style without a host rerender, bind a state attribute (`data={{ state: this.$.status }}`) and key CSS off it.
 
-- the `class` expression needs the raw boolean, so it stays a plain read
-- the heading and `data-state` can patch in place, so they use bindings
+## Reference modules
 
-## Binding Guidance For Attributes, Properties, Classes, And Styles
+Read only the modules relevant to the task. Each file is one level deep from this entry.
 
-Use bindings confidently for:
+| Module                                                     | Read when                                                                             |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads, derived `.map`, class/style                                  |
+| [reference/hosts.md](reference/hosts.md)                   | Element vs controller, public props vs internal bindings types                        |
+| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@state` / `@signal`, `@query`, `@onEvent`, `@event`, `@bound`, `@debounce` |
+| [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`                             |
+| [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, render scope                                       |
+| [reference/authoring.md](reference/authoring.md)           | Authoring rules, review checklist, output shape                                       |
 
-- child text
-- whole `data-*` values
-- whole `aria-*` values when the API accepts them cleanly
-- boolean attributes
-- `prop:*` values
+## Critical rules
 
-Treat `class` and `style` as render-time composition by default.
+1. Plain reads for control flow and `class`/`style`; bindings for stable JSX output positions.
+2. Do not call `.map(...)` inside `render()` — hoist derived bindings to a field.
+3. Reassign arrays and objects; in-place mutation does not trigger updates.
+4. Omit the `Bindings` generic unless the host uses `this.$`, `this.bindings`, or `this.bind(...)`.
+5. `@query` is for DOM the host does not own in its own `render()` — not for writing into nodes it just rendered.
+6. Import context from `@ecopages/radiant/context`, not the root entry.
+7. Radiant SSR is light-DOM only. Prefer explicit `mode: 'plain'` or `mode: 'hydrate'`.
 
-Reason:
+## Resources
 
-- class and style are normalized eagerly
-- they usually express host render logic
-- plain expressions keep the code easier to read and align with the current framework intent
-
-If styling should react without host rerender, prefer a bound state attribute such as `data={{ state: this.$.status }}` and let CSS key off that.
-
-## Choosing The Base Class
-
-Default to `RadiantElement` when the host should own a custom-element view.
-
-Choose `RadiantController` when behavior should attach to existing DOM without defining a custom element.
-
-Both hosts share the same decorator-driven reactive model. The main choice is ownership of the outer host contract, not a different state model.
-
-Choose a simpler `RadiantElement` shape when the host is mainly:
-
-- imperative
-- string-template based
-- a lower-level custom element embedded inside another JSX tree
-
-## SSR And Hydration Model
-
-Use the server pipeline as the integration boundary, not a host-owned bag of SSR-only escape hatches.
-
-- Prefer explicit server entrypoints from `@ecopages/radiant/server/*` and `@ecopages/jsx/server` instead of custom globals or implicit ambient state. `@ecopages/jsx/server` is Node-only. Outside the browser, import `@ecopages/radiant/server/install-ssr-runtime` (or another Radiant server SSR entry) before rendering hosts so the light-DOM shim and scope adapters are installed.
-- For Radiant Element Hosts, prefer `renderComponent(...)` / `renderComponentToString(...)` from `@ecopages/radiant/server/render-component`, or `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr`. There is no durable Element Host instance API named `renderHostToString()`.
-- JSX still understands a generic third-party custom-element contract: instances that implement `renderHostToString(options?)`. Radiant does not rely on that instance method; it adapts hosts through `withServerCustomElementRenderHook(...)` / the installed Radiant SSR runtime instead.
-- Radiant SSR is light-DOM only. Hosts with `renderRootMode = 'shadow'` throw during server serialization; client shadow rendering remains valid.
-- When a framework-owned custom element needs richer SSR behavior, adapt it through `withServerCustomElementRenderHook(...)` instead of adding framework-specific branches to generic JSX guidance.
-- When server code needs shared runtime state across nested renders or split entrypoints, store it on the active JSX SSR scope with `withActiveSsrScopeValue(...)` and read it with `getActiveSsrScopeValue(...)`. Use `Symbol.for(...)` keys so the state survives entrypoint boundaries. Radiant SSR context providers use the same scope. When you only need to share hydrate binding indexes across sibling `renderToString(...)` calls, use `withServerHydrationBindingState(...)` instead.
-- SSR bundlers must externalize `@ecopages/*` so Node resolves one module instance (do not inline duplicate copies of ALS or adapters).
-- Await async I/O (module loading, asset resolution) outside SSR scope helpers. Keep `withActiveSsrScopeValue(...)` / `withRadiantElementSsrRuntime(...)` callbacks synchronous around the render snapshot.
-- When authoring SSR examples or reviewing server code, prefer `renderToString(view, { mode: 'plain' })` or `renderToString(view, { mode: 'hydrate' })` over relying on the legacy `hydrate: true` shape alone.
-- If code wraps, clones, or transforms JSX template results during SSR work, preserve template metadata such as `rootLocalName` and `ssrIntrinsicProps` so intrinsic custom-element SSR specialization still works.
-
-## API Selection Guide
-
-Choose decorators and context APIs by purpose.
-
-### Host Definition
-
-- `@customElement(...)`: register the custom element class
-- `@controller(...)`: register a controller identifier for DOM-attached hosts
-
-Selection rule:
-
-- use `@customElement(...)` once per custom-element host class
-- use `@controller(...)` once per controller class when the host should attach through `data-controller="..."` registration metadata
-
-### Reactive Data
-
-- `@prop(...)`: public custom-element API with attribute conversion, reflection, and optional bindings
-- `@state`: internal mutable state for the host
-- `@signal` or `@signal(options)`: signal-backed host state when signal semantics or signal interop are desirable
-
-Selection rule:
-
-- choose `@prop(...)` for values owned by the element's external API
-- choose `@state` for internal UI state
-- choose `@signal` when the host field should behave like a signal and participate in the same update model
-
-`@signal` accepts an optional options object with:
-
-- `bind`: create a JSX binding companion (`true`, or a custom name string)
-- `initial`: default value when the field initializer is not provided
-- `source`: connect to an existing shared `WritableSignal` or a factory `(host) => WritableSignal`
-- `hydrate`: attribute type constant to enable SSR hydration via keyed JSON script
-
-Bare `@signal` (no parentheses) is valid and creates a host-owned signal with default behavior.
-
-### Side Effects And Derived Updates
-
-- `@onUpdated(...)`: run side effects or maintain derived state when a reactive member changes
-
-Use `@onUpdated(...)` for:
-
-- DOM synchronization outside JSX binding positions
-- derived state updates
-- storage, analytics, or external side effects
-
-Avoid updating the same watched property directly inside its own `@onUpdated(...)` callback unless the logic guarantees it will settle.
-
-### DOM Queries
-
-- `@query(...)`: read rendered descendants by `data-ref` or selector
-- `@querySlot(...)`: read projected slot-assigned elements from a `RadiantElement`
-
-`@query` options:
-
-- `ref` or `selector`: target by `data-ref` attribute or CSS selector
-- `all`: return all matches (`Element[]`) instead of the first match
-- `cache`: cache the result (`false` by default)
-- `scope`: `'light'` (default), `'shadow'`, or `'both'`
-
-Selection rule:
-
-- use `@query(...)` for rendered subtree lookups
-- use `@querySlot(...)` for projected slot content
-
-Prefer `ref` lookups over broad selectors when practical.
-
-`@query` vs bindings:
-
-- use `@query(...)` only for DOM the host does not own in its own `render()` output — slot-projected/consumer-authored content, `RadiantController`-attached DOM, or a live `Element` handle needed by a third-party imperative API (positioning, focus management, observers)
-- if a `@query` ref exists only so an `@onUpdated` callback can write a value into it (`.textContent =`, `.setAttribute(...)`, a boolean/property write), that value should be a JSX binding (`this.$.foo`) instead — querying a node the host's own `render()` just produced in order to write into it imperatively is redundant with `render()`'s own reactivity and defeats fine-grained patching
-
-### Events
-
-- `@onEvent(...)`: declarative event subscription
-- `@event(...)`: typed custom-event emitter for host-to-parent communication
-
-Use `@onEvent(...)` when the host should own event subscription lifecycle declaratively.
-
-`@onEvent` targets are a union — exactly one of:
-
-- `{ ref: string }`: match by `data-ref`
-- `{ selector: string }`: match by CSS selector with event delegation
-- `{ window: true }`: listen on `window`
-- `{ document: true }`: listen on `document`
-
-The `scope` option (`'light'` | `'shadow'` | `'both'`) controls which DOM tree is observed. Default is `'light'`.
-
-`@onEvent` uses event delegation and requires bubbling events. Non-bubbling events like `focus` and `blur` will not work — use `focusin` and `focusout` instead.
-
-Prefer:
-
-- `ref` targets for internal element wiring
-- `selector` only when delegation is intentional
-- `window` or `document` only when the event source is truly global
-
-Use `@event(...)` when a component needs to emit a typed custom event instead of mutating parent state directly.
-
-### Callback Utilities
-
-- `@bound`: bind a prototype method to the instance on access
-- `@debounce(ms)`: delay bursty method execution until the quiet period passes
-
-Selection rule:
-
-- use `@bound` for methods passed manually as callbacks, especially timers, manual listeners, or callback-style APIs
-- use arrow-function fields when instance-local function allocation is acceptable and the code is simpler that way
-- use `@debounce(...)` when timing behavior must be delayed, such as search, resize, autosave, or bursty analytics
-
-`@bound` and `@debounce(...)` solve different problems and can be combined on the same method when both callback identity and delayed execution matter.
-
-## Context Guide
-
-Use context to share typed state or services across component boundaries without threading props through every intermediate host.
-
-Import all context APIs from `@ecopages/radiant/context`, not from the root `@ecopages/radiant` entrypoint.
-
-Core pieces:
-
-- `createContext(...)`: define the typed context token
-- `@provideContext(...)`: attach a provider to a host
-- `@consumeContext(...)`: inject the nearest matching provider object onto a field
-- `@contextSelector(...)`: bind a **field** to the whole context value or a selected slice — auto-rerenders `RadiantElement` hosts on change
-- `@onContextUpdate(...)`: run a **method** when the context changes — use for imperative side effects
-
-### When To Provide Context
-
-Use `@provideContext(...)` on a host that owns shared state for descendants, such as:
-
-- theme
-- auth state
-- cart or todo models
-- service objects or stores
-
-Use `hydrate` and `serialize` options when SSR output must restore provider state on the client.
-
-### When To Consume Context
-
-Use `@consumeContext(...)` when the host needs the provider object itself, for example to call `getContext()` or `setContext(...)` directly.
-
-`@consumeContext(...)` does not make later `provider.getContext()` reads reactive by itself. Treat those reads as snapshots for the current render or callback.
-
-Use `@contextSelector(...)` on a field when the host should render from the current context value. The field holds the selected value and render-owning hosts rerender automatically when it changes. `render()` reads `this.myField` directly — no empty method body, no `this.update()` call.
-
-Use `@onContextUpdate(...)` on a method when a context change should trigger imperative work: DOM mutations, attribute writes, logging, or side-effect orchestration.
-
-When choosing whether to use `select`, prefer the narrowest subscription that covers the render:
-
-- If the derived value can be computed purely from the context object, use `select` to bind the result directly to the field.
-- If the derived value also depends on instance state (like a `@prop`), bind the full context to a field and compute the derived value inside `render()`. Do not introduce an intermediate `@state` field or an `@onContextUpdate` callback just to copy data.
-
-The two decorators are complementary. A host can use `@contextSelector` for render-driven fields and `@onContextUpdate` for imperative side effects at the same time.
-
-Avoid `@consumeContext` + `@onContextUpdate` + `@state` as a three-part pattern when a single `@contextSelector` field would suffice. The three-part pattern is only justified when the host genuinely needs to call `setContext(...)`.
-
-When the provider is intended to own shared UI state such as the active selection, keep that state authoritative in context and render from context consistently. Avoid splitting the same render decision across both a local signal and `provider.getContext()` unless one of them is clearly just an implementation detail for async sourcing.
-
-### Context Performance Rule
-
-For context-driven rendering:
-
-- do not assume a plain `provider.getContext()` read will rerender the host when the provider changes
-- use `@contextSelector(...)` on a field to bind the host to a context value — the field is updated and `requestUpdate()` is scheduled automatically
-- read `this.myField` directly in `render()` instead of calling `provider.getContext()` for render-critical values
-- when a derived view value depends on the context **and** a `@prop`, bind the full context to a field and compute the derivation in `render()` — do not reach for `@state` + `@onContextUpdate` as a workaround
-- use `@onContextUpdate(...)` only when the reaction is genuinely imperative (attribute writes, logging, external side effects) rather than a render-driven derivation
-- avoid mirroring context fields into local `@state` only to make rendering work; let the `@contextSelector` field be the single source of truth and derive everything else in `render()`
-- when stale display should persist across refetches or selection changes, prefer storing one explicit display value in context (such as `visibleReport`) rather than juggling local copies
-
-## Public Props Vs Internal Bindings
-
-Treat these as separate surfaces:
-
-- public props: what consumers may pass from JSX or attributes
-- internal bindings: what `this.$`, `this.bindings`, and `this.bind(...)` expose inside the component
-
-If the external API and internal reactive surface differ, use separate types.
-
-**Pattern:**
-
-```tsx
-export type UserCardProps = {
-	name?: string;
-	avatarUrl?: string;
-};
-
-type UserCardBindings = UserCardProps & {
-	isExpanded: boolean;
-};
-
-export class UserCard extends RadiantElement<UserCardBindings> {
-	@prop({ type: String, defaultValue: 'Anonymous' }) declare name: string;
-	@prop({ type: String, defaultValue: '' }) declare avatarUrl: string;
-	@state isExpanded = false;
-}
-```
-
-If the component never uses `this.$`, `this.bindings`, or `this.bind(...)`, the generic can often be omitted entirely.
-
-## Authoring Rules
-
-When writing or refactoring Radiant components, follow these rules.
-
-### 1. Prefer Semantic Decorators
-
-Use:
-
-- `@prop(...)` for public custom-element API
-- `@state` for internal mutable state
-
-Only reach for lower-level decorator names when there is a deliberate reason.
-
-### 2. Keep Public Props Narrow
-
-Do not leak internal state into the public JSX contract unless the user explicitly wants that API.
-
-### 3. Use Reference Reassignment For Arrays And Objects
-
-Do not rely on in-place mutation to trigger updates.
-
-### 4. Keep Event Code Plain
-
-Use ordinary methods or arrow functions for handlers.
-Use the browser event object directly.
-
-### 5. Keep JSX Intentional
-
-Avoid patterns that add structure without improving clarity or update granularity, such as:
-
-- overusing derived wrapper components for simple output
-- introducing memoization-style patterns without a real need
-- assuming cached JSX nodes with plain props remain live automatically
-
-### 6. Use Slots Deliberately
-
-When the host should project authored content regions, use literal `<slot>` tags and the Radiant projection model.
-
-### 7. Document Important APIs And Architecture
-
-When introducing new public APIs or significant internal architecture changes, add meaningful TSDoc where it helps future maintainers understand intent.
-
-Do not add noisy inline comments.
-
-### 8. Keep Docs Examples Minimal
-
-For docs and playground examples, use the smallest number of hosts that still demonstrates the target API clearly.
-
-- if the point is host-owned JSX, a single `RadiantElement` is often enough
-- add a second custom element only when provider or consumer boundaries, leaf ownership, or lower-level composition is part of the lesson
-
-## Review Checklist
-
-When reviewing a Radiant component, check these questions:
-
-1. Should this be `RadiantElement` or `RadiantController`?
-2. Are public props separated from internal bindings when they should be?
-3. Are plain reads being used for control flow and class/style composition?
-4. Are bindings being used where fine-grained patching is desirable?
-5. Is any `Bindings` generic present only because of habit rather than actual usage?
-6. If render reads `provider.getContext()`, what is causing the host to rerender when that context changes?
-7. Are object or array updates using reassignment instead of mutation?
-8. Is the output teaching the Radiant model clearly if this is docs or example code?
-
-## Output Expectations
-
-When producing code, aim for:
-
-- one host class per file
-- exported component classes
-- explicit public props types when JSX consumers need them
-- internal bindings types only when the code uses binding APIs
-- minimal, intentional examples that teach the intended model instead of showing every possible feature at once
-
-When producing docs or explanations, explain:
-
-- what works
-- why one choice is better than another in Radiant specifically
-
-## Default Recommendation
-
-Default to this guidance unless the task requires something more specific:
-
-- use plain reads when a value shapes host render logic
-- use bindings when a value only feeds a stable JSX output location and finer-grained updates are desirable
-- keep `class` and `style` as plain render expressions
-- use bound attributes such as `data-*`, `aria-*`, boolean attributes, and `prop:*` when they improve patch granularity
+Start with this skill pack. Full docs index: [llms.txt](/llms.txt); page exports under `/llms-content/.../*.txt`.
