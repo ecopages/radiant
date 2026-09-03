@@ -57,14 +57,14 @@ import '@ecopages/radiant-ui/knob';
         <circle class="rui-knob__track" data-ref="track" cx="50" cy="50" fill="none" />
         <circle class="rui-knob__progress" data-ref="progress" cx="50" cy="50" fill="none" />
       </svg>
-      <span class="rui-knob__value" data-ref="centerValue" aria-hidden="true"></span>
+      <span class="rui-knob__value" data-ref="centerValue" aria-hidden="true">50</span>
     </button>
     <input type="hidden" data-ref="input" />
   </div>
 </rui-knob>
 ```
 
-BEM classes are presentation-only. The host owns control `aria-*`, ring geometry, and readout text.
+BEM classes are presentation-only. The host owns control `aria-*`, ring geometry, and readout text. The `RuiKnob` view seeds those so SSR matches the hydrated control.
 
 Use `valuePosition="below"` to place the readout under the knob, or `showValue={false}` when the value is shown elsewhere. `valueTemplate` replaces the first `{value}` token with the formatted value.
 
@@ -86,15 +86,27 @@ rui-knob[data-size='large'] {
 
 ## Theming
 
-The knob consumes semantic roles by default. Override its public custom properties to adapt the ring without replacing component CSS.
+The knob consumes semantic roles by default. Override its public custom properties to adapt the ring without replacing component CSS. Unfilled track contrast is shared with sliders (`--rui-track-mix`, `--rui-track-fill`, `--rui-track-color`).
 
 | Part | Default role | Custom property |
 | --- | --- | --- |
-| Track | `surface` | `--rui-knob-track-color` |
+| Track | `--rui-track-fill` | `--rui-knob-track-color` |
 | Progress | `primary` | `--rui-knob-value-color` |
 | Readout | `on-surface` | `--rui-knob-text-color` |
 | Diameter | `3rem` | `--rui-knob-size` |
 | Focus ring | `focus-ring` | — |
+
+Set the mix or a solid color on an ancestor to theme slider and knob together:
+
+```css
+:root {
+  --rui-track-mix: 28%;
+}
+
+.panel {
+  --rui-track-color: var(--surface-container-high);
+}
+```
 
 ## API
 
@@ -124,15 +136,15 @@ The knob consumes semantic roles by default. Override its public custom properti
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-ref="root"]` | yes | `rui-knob--value-below`, `--rui-knob-size` on host | root wrapper |
-| `[data-ref="control"]` | yes | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`, `aria-label`, `aria-readonly`, `disabled` | control button; also stamp `data-knob-control` for fields |
-| `[data-ref="track"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG track circle |
-| `[data-ref="progress"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG progress circle |
-| `[data-ref="input"]` | yes | `value`, `name`, `disabled` | hidden form input |
+| `[data-ref="control"]` | yes | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`, `aria-label`, `aria-readonly`, `disabled` | control button; also stamp `data-knob-control` for fields. View seeds `aria-valuenow` |
+| `[data-ref="track"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG track circle; view seeds geometry |
+| `[data-ref="progress"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG progress circle; view seeds geometry |
+| `[data-ref="input"]` | yes | `value`, `name`, `disabled` | hidden form input; view seeds `value` |
 | `[data-ref="label"]` | no | `hidden`, `textContent` | visible label |
-| `[data-ref="centerValue"]` | no | `textContent`, `hidden` | in-ring readout |
-| `[data-ref="belowValue"]` | no | `textContent`, `hidden` | below-ring readout |
+| `[data-ref="centerValue"]` | no | `textContent`, `hidden` | in-ring readout; view seeds the formatted value |
+| `[data-ref="belowValue"]` | no | `textContent`, `hidden` | below-ring readout; view seeds the formatted value |
 
-Do not set control `aria-valuenow` or ring geometry. Nested hosts: none.
+Do not set control `tabindex`. Nested hosts: none. The `RuiKnob` view seeds readout text, ring geometry, and `aria-valuenow` so the first paint matches the hydrated control.
 
 ### Events
 
@@ -144,7 +156,7 @@ Do not set control `aria-valuenow` or ring geometry. Nested hosts: none.
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiKnob` | full `[data-ref]` tree under `[data-ref="root"]` | Stamps control, ring SVG, readouts, and hidden input. |
+| `RuiKnob` | full `[data-ref]` tree under `[data-ref="root"]` | Stamps control, ring SVG, readouts, and hidden input. Seeds readout text and ring geometry for SSR. |
 
 ### CSS classes
 

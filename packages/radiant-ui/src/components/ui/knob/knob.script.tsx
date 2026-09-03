@@ -1,6 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { createNumericRange, valueFromSliderKey } from '../shared/numeric-range';
+import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
 export type RuiKnobValuePosition = 'center' | 'below';
@@ -27,6 +27,14 @@ export type RuiKnobProps = {
 };
 
 export type RuiKnobChangeDetail = { value: number };
+
+/**
+ * Default selected value.
+ *
+ * @remarks Must match the host `@prop` default so the view can seed SSR readout
+ * and ring geometry before hydration.
+ */
+export const KNOB_DEFAULT_VALUE = 50;
 
 /**
  * `<rui-knob>` — select a numeric value with a rotary control.
@@ -83,7 +91,10 @@ export type RuiKnobChangeDetail = { value: number };
  *
  * @fires rui-change - Emitted as the pointer or keyboard changes the value; `detail.value` holds the new number.
  *
- * @cssprop --rui-knob-track-color - Ring color behind the selected value. Defaults to `--surface`.
+ * @cssprop --rui-track-mix - Unfilled ring mix against `--on-background`. Inherited. Default: `22%`.
+ * @cssprop --rui-track-fill - Unfilled ring color from that mix. Inherited.
+ * @cssprop --rui-track-color - Unfilled ring color for slider and knob. Inherited; unset uses `--rui-track-fill`.
+ * @cssprop --rui-knob-track-color - Ring color behind the selected value. Default: `--rui-track-color` or `--rui-track-fill`.
  * @cssprop --rui-knob-value-color - Selected ring color. Defaults to `--primary`.
  * @cssprop --rui-knob-text-color - Value readout color. Defaults to `--on-surface`.
  * @cssprop --rui-knob-size - Visible SVG diameter. Defaults to `3rem`.
@@ -97,7 +108,7 @@ export type RuiKnobChangeDetail = { value: number };
  */
 @customElement('rui-knob')
 export class RuiKnob extends RadiantElement {
-	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;
+	@prop({ type: Number, reflect: true, defaultValue: KNOB_DEFAULT_VALUE }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
@@ -239,7 +250,7 @@ export class RuiKnob extends RadiantElement {
 	private syncPresentation(): void {
 		const value = this.numericRange.clamp(this.value);
 		this.paint(value);
-		if (this.value !== value) {
+		if (!valuesAlignOnStep(this.value, value, this.step)) {
 			this.value = value;
 		}
 	}
@@ -251,7 +262,7 @@ export class RuiKnob extends RadiantElement {
 
 		const value = this.numericRange.clamp(next);
 		this.paint(value);
-		if (value === this.value) {
+		if (valuesAlignOnStep(value, this.value, this.step)) {
 			return;
 		}
 
