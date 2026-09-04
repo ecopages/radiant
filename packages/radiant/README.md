@@ -31,15 +31,17 @@ Application code does not need to import JSX helpers or Signals primitives direc
 - `update()` reruns `render()` and commits the current view into the host immediately.
 - `requestUpdate()` schedules one rerender in a microtask and coalesces repeated requests.
 - `@prop(...)`, `@state`, and `@signal(...)` define reactive members.
-- `@onUpdated(...)` is the bridge from reactive member changes to `update()` or `requestUpdate()` when the rendered structure needs to be recomputed.
+- `@bindTo(...)` copies a reactive field onto existing DOM when the host does not own a `render()` tree.
+- `@onUpdated(...)` is for procedures, and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change.
 - `this.bindings.key`, `this.$.key`, and `this.bind('key')` expose stable JSX bindings for reactive members.
-- If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged.
+- If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged. Copy fields onto that DOM with `@bindTo(...)`.
 - `onConnected()` runs after every connection, once attribute catch-up and (when `render()` is overridden) the initial hydrate/update have finished. Use it instead of `connectedCallback` + `queueMicrotask(sync)`. It is not `registerConnectedCallback()`, which runs synchronously before catch-up.
 - Literal `<slot>` tags project authored light-DOM content, and `getSlotElement(...)`, `getSlotElements(...)`, or `@querySlot(...)` let component logic read the assigned elements.
 
 The key distinction is this:
 
-- Use bindings such as `this.$.count` when the shape of the view stays the same and only child values need to change.
+- Use `@bindTo` when the host keeps authored DOM and a field should appear as an attribute, property, or text.
+- Use bindings such as `this.$.count` when the host owns `render()`, the shape of the view stays the same, and only child values need to change.
 - Use `update()` or `requestUpdate()` when a reactive change affects the structure of the JSX tree.
 
 Signal and store reads performed directly inside `render()` also participate in rerender invalidation, so shared reactive data can drive `RadiantElement` views without an extra wrapper layer.

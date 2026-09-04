@@ -18,16 +18,18 @@ To copy a field onto an attribute, boolean attribute, DOM property, or text node
 ## Usage
 
 ```typescript
-import { RadiantElement, customElement, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, customElement, onUpdated, prop, query } from '@ecopages/radiant';
 
-@customElement('user-greeting')
-export class UserGreeting extends RadiantElement {
-	@prop({ type: String }) declare name: string;
-	
-	@onUpdated('name')
-	updateGreeting() {
-		// Receives no arguments; access the new value via this.name
-		this.textContent = `Hello, ${this.name}!`;
+@customElement('search-field')
+export class SearchField extends RadiantElement {
+	@prop({ type: Boolean, defaultValue: false }) declare open: boolean;
+	@query({ ref: 'input' }) input?: HTMLInputElement;
+
+	@onUpdated('open')
+	focusInput() {
+		if (this.open) {
+			this.input?.focus();
+		}
 	}
 }
 ```
@@ -48,7 +50,7 @@ A single method can watch multiple properties by applying the decorator multiple
 @onUpdated('firstName')
 @onUpdated('lastName')
 updateFullName() {
-	this.fullNameElement.textContent = `${this.firstName} ${this.lastName}`;
+	this.fullName = `${this.firstName} ${this.lastName}`;
 }
 ```
 
@@ -80,17 +82,19 @@ applyTheme() {
 
 ### RadiantController usage
 
-`@onUpdated(...)` also works on `RadiantController`, which makes it useful for synchronizing host attributes or imperative DOM after controller state changes.
+`@onUpdated(...)` also works on `RadiantController`. Copy a field onto the host or a descendant with [@bindTo](/docs/decorators/bind-to). Keep `@onUpdated` for a procedure on that same field:
 
 ```typescript
-import { RadiantController, onUpdated, state } from '@ecopages/radiant';
+import { RadiantController, bindTo, onUpdated, state } from '@ecopages/radiant';
 
 export class ThemeController extends RadiantController {
-	@state theme = 'light';
+	@bindTo({ attr: 'data-theme' })
+	@state
+	theme = 'light';
 
 	@onUpdated('theme')
-	applyTheme() {
-		this.host.setAttribute('data-theme', this.theme);
+	persistTheme() {
+		localStorage.setItem('theme', this.theme);
 	}
 }
 ```
