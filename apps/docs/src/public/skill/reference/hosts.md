@@ -13,7 +13,7 @@ Choose `RadiantController` when behavior should attach to existing DOM without d
 
 Both share the same decorator-driven reactive model.
 
-Choose a simpler `RadiantElement` shape when the host is mainly imperative, string-template based, or a lower-level custom element embedded inside another JSX tree.
+Choose a simpler `RadiantElement` shape when the host is mainly authored light DOM, string-template based, or a lower-level custom element embedded inside another JSX tree. Copy fields onto that DOM with `@bindTo`. `this.$` is for hosts that override `render()`. `@onUpdated` is for procedures, not those copies.
 
 ## Public props vs internal bindings
 

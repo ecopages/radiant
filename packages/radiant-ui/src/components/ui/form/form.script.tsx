@@ -11,6 +11,7 @@ import {
 import { FormStore } from './form-store';
 import type { FieldValues, Resolver, ValidationMode } from './types';
 import { RUI_FORM_DEFAULT_VALUES_ATTR } from './control-protocol';
+import { uniqueId } from '@/lib/unique-id';
 
 export type RuiFormProps<T extends FieldValues = FieldValues> = {
 	defaultValues?: Partial<T>;
@@ -114,7 +115,7 @@ export class RuiForm extends RadiantElement {
 
 	private store: FormStore | undefined;
 	private unsubscribeStore?: () => void;
-	private readonly nativeFormId = `rui-form-native-${Math.random().toString(36).slice(2, 9)}`;
+	private readonly nativeFormId = uniqueId('rui-form');
 	private lastPublishedRevision = -1;
 	private lastPublishedContext: FormContextValue | undefined;
 	private readonly presentationListeners = new Set<(value: FormContextValue) => void>();

@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { cycleValue } from '@/lib/cycle-value';
 import type { RuiButtonSize, RuiButtonVariant } from '../button/button';
@@ -81,7 +81,10 @@ export class RuiCycleToggle extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: 'filled' }) variant: RuiButtonVariant;
 	@prop({ type: String, reflect: true, defaultValue: 'md' }) size: RuiButtonSize;
 	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ selector: 'button[data-cycle-toggle-button]', prop: 'disabled' })
+	disabled: boolean;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiCycleToggleChangeDetail>;
@@ -147,7 +150,6 @@ export class RuiCycleToggle extends RadiantElement {
 		const button = this.querySelector<HTMLButtonElement>(BUTTON_SELECTOR);
 		if (!button) return;
 
-		button.disabled = this.disabled;
 		for (const className of Array.from(button.classList)) {
 			if (className.startsWith('rui-button--')) button.classList.remove(className);
 		}

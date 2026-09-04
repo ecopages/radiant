@@ -88,15 +88,16 @@ export class RadiantCounter extends RadiantElement<RadiantCounterProps> {
 </counter-element>
 ```
 
-The script attaches to existing markup using `data-ref` queries and decorator-driven event listeners.
+The script attaches to existing markup. `@onEvent` handles clicks. `@bindTo` copies `value` onto the authored count node.
 
 ```ts
-import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, prop } from '@ecopages/radiant';
 
 @customElement('counter-element')
 export class CounterElement extends RadiantElement {
-	@prop({ type: Number, reflect: true, defaultValue: 0 }) declare value: number;
-	@query({ ref: 'count' }) countText!: HTMLSpanElement;
+	@prop({ type: Number, reflect: true, defaultValue: 0 })
+	@bindTo({ ref: 'count', text: true })
+	declare value: number;
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {
@@ -108,11 +109,6 @@ export class CounterElement extends RadiantElement {
 	@onEvent({ ref: 'increment', type: 'click' })
 	increment() {
 		this.value += 1;
-	}
-
-	@onUpdated('value')
-	syncCount() {
-		this.countText.textContent = String(this.value);
 	}
 }
 ```

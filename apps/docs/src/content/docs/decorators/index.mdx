@@ -10,7 +10,7 @@ order: 999
 Radiant decorators fall into a few groups:
 
 - host registration and HTML input: [@customElement](/docs/decorators/custom-element), [@controller](/docs/decorators/controller), [@attr](/docs/decorators/attr), [@prop](/docs/decorators/prop)
-- reactive state and bindings: [@state](/docs/decorators/state), [@signal](/docs/decorators/signal), [@onUpdated](/docs/decorators/on-updated)
+- reactive state and bindings: [@state](/docs/decorators/state), [@signal](/docs/decorators/signal), [@bindTo](/docs/decorators/bind-to), [@onUpdated](/docs/decorators/on-updated)
 - DOM and event wiring: [@onEvent](/docs/decorators/on-event), [@event](/docs/decorators/event), [@query](/docs/decorators/query), [@querySlot](/docs/decorators/query-slot)
 - method helpers: [@bound](/docs/decorators/bound), [@debounce](/docs/decorators/debounce)
 
@@ -31,6 +31,7 @@ For the controller capability matrix, see [RadiantController](/docs/components/r
 ## Recommended Reading Order
 
 1. Start with [@attr](/docs/decorators/attr), [@state](/docs/decorators/state), and [@signal](/docs/decorators/signal).
-2. If the host renders, read [@onUpdated](/docs/decorators/on-updated) and [@onEvent](/docs/decorators/on-event).
-3. For custom-element public API, add [@prop](/docs/decorators/prop).
-4. For controller discovery, add [@controller](/docs/decorators/controller).
+2. If the host keeps authored light DOM, read [@bindTo](/docs/decorators/bind-to) for value-to-DOM paint and [@onEvent](/docs/decorators/on-event) for events.
+3. If the host renders, read [@onUpdated](/docs/decorators/on-updated) only for procedures that are not a straight DOM copy, and use `this.$` for leaves in `render()`.
+4. For custom-element public API, add [@prop](/docs/decorators/prop).
+5. For controller discovery, add [@controller](/docs/decorators/controller).

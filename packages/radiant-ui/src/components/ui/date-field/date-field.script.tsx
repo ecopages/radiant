@@ -1,8 +1,9 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { dateToIso, formatDisplayDate, isoToDate, parseLocaleDateString } from '@/lib/intl-date';
 import type { DateDisplayStyle } from '@/lib/intl-date';
 import { resolveLocale } from '@/lib/intl/locale';
+import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
 import { PopoverController, shouldDismissPopoverFocus } from '../shared/popover-controller';
 import { syncFieldLabel } from '../shared/field-label';
@@ -93,10 +94,24 @@ export class RuiDateField extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ selector: '[data-date-field-input]', prop: 'disabled' },
+		{ selector: '[data-date-field-calendar]', bool: 'disabled' },
+	])
+	disabled: boolean;
+
+	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
+	@bindTo({ selector: '[data-date-field-input]', prop: 'readOnly' })
+	readOnly: boolean;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: String, defaultValue: '' }) name: string;
+
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: '[data-date-field-input]', prop: 'name' })
+	name: string;
+
 	@prop({ type: String, defaultValue: '' }) placeholder: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
 	@prop({ type: String, attribute: 'date-style', defaultValue: 'medium' }) dateStyle: DateDisplayStyle;
@@ -108,9 +123,12 @@ export class RuiDateField extends RadiantElement {
 
 	@state displayValue = '';
 	@state editing = false;
-	@state open = false;
 
-	private readonly uid = Math.random().toString(36).slice(2, 9);
+	@state
+	@bindTo({ selector: '[data-date-field-trigger]', attr: 'aria-expanded' })
+	open = false;
+
+	private readonly uid = uniqueId('rui-date-field');
 	private popoverController: PopoverController | null = null;
 	private suppressPopoverDismiss = false;
 
@@ -125,7 +143,7 @@ export class RuiDateField extends RadiantElement {
 	}
 
 	private get inputId(): string {
-		return `rui-date-field-input-${this.uid}`;
+		return `${this.uid}-input`;
 	}
 
 	private get resolvedPlaceholder(): string {
@@ -149,7 +167,7 @@ export class RuiDateField extends RadiantElement {
 		syncFieldLabel(this, input, {
 			controlId: this.inputId,
 			label: this.label,
-			labelId: `rui-date-field-label-${this.uid}`,
+			labelId: `${this.uid}-label`,
 		});
 	}
 
@@ -163,9 +181,6 @@ export class RuiDateField extends RadiantElement {
 			input.id = this.inputId;
 		}
 
-		input.name = this.name;
-		input.disabled = this.disabled;
-		input.readOnly = this.readOnly;
 		input.inputMode = this.masked ? 'numeric' : 'text';
 
 		const placeholder = this.resolvedPlaceholder;
@@ -181,7 +196,6 @@ export class RuiDateField extends RadiantElement {
 		}
 
 		toggle.disabled = this.disabled || this.readOnly;
-		toggle.setAttribute('aria-expanded', String(this.open));
 	}
 
 	private syncCalendar(): void {
@@ -196,7 +210,6 @@ export class RuiDateField extends RadiantElement {
 		calendar.setAttribute('min', this.min);
 		calendar.setAttribute('max', this.max);
 		calendar.setAttribute('locale', this.locale);
-		calendar.toggleAttribute('disabled', this.disabled);
 	}
 
 	private formatForDisplay(iso: string): string {

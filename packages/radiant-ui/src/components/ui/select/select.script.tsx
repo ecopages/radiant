@@ -1,5 +1,6 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { uniqueId } from '@/lib/unique-id';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHostController } from '../shared/listbox-host-controller';
 import { getListboxOptionValue } from '../shared/listbox-option';
@@ -88,7 +89,16 @@ export class RuiSelect extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) placeholder: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ selector: '[data-select-trigger]', attr: 'aria-disabled', map: (disabled) => (disabled ? 'true' : undefined) },
+		{ selector: '[data-select-trigger]', prop: 'tabIndex', map: (disabled) => (disabled ? -1 : 0) },
+		{ selector: '[data-select-toggle]', prop: 'disabled' },
+		{ selector: '[data-select-clear]', prop: 'disabled' },
+	])
+	disabled: boolean;
+
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'single' }) selectionMode: RuiSelectSelectionMode;
 	@prop({ type: Boolean, attribute: 'should-close-on-select' }) shouldCloseOnSelect: boolean | undefined;
 
@@ -96,7 +106,7 @@ export class RuiSelect extends RadiantElement {
 	changeEvent: EventEmitter<RuiSelectChangeDetail>;
 
 	private open = false;
-	private readonly uid = Math.random().toString(36).slice(2, 9);
+	private readonly uid = uniqueId('rui-select');
 	private readonly collection = new ListboxHostController({
 		getRoot: () => this,
 		getSelectionMode: () => this.selectionMode,
@@ -113,17 +123,17 @@ export class RuiSelect extends RadiantElement {
 		getOpen: () => this.open,
 		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getActiveDescendantHost(),
-		getOptionIdPrefix: () => `rui-select-option-${this.uid}`,
+		getOptionIdPrefix: () => `${this.uid}-option`,
 	});
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement;
 
 	private get listboxId(): string {
-		return `rui-select-list-${this.uid}`;
+		return `${this.uid}-list`;
 	}
 
 	private get triggerId(): string {
-		return `rui-select-trigger-${this.uid}`;
+		return `${this.uid}-trigger`;
 	}
 
 	private isMultiple(): boolean {
@@ -280,7 +290,7 @@ export class RuiSelect extends RadiantElement {
 		syncFieldLabel(this, trigger, {
 			controlId: this.triggerId,
 			label: this.label,
-			labelId: `rui-select-label-${this.uid}`,
+			labelId: `${this.uid}-label`,
 		});
 	}
 
@@ -314,9 +324,6 @@ export class RuiSelect extends RadiantElement {
 			popup.removeAttribute('aria-multiselectable');
 		}
 
-		trigger.tabIndex = this.disabled ? -1 : 0;
-		trigger.toggleAttribute('aria-disabled', this.disabled);
-
 		this.syncToggle();
 		this.syncClear();
 		this.syncSearchInput();
@@ -327,7 +334,6 @@ export class RuiSelect extends RadiantElement {
 		if (!clear) return;
 
 		clear.hidden = this.collection.getSelectedValues().length === 0;
-		clear.disabled = this.disabled;
 	}
 
 	private syncToggle(): void {
@@ -337,7 +343,6 @@ export class RuiSelect extends RadiantElement {
 		}
 
 		toggle.setAttribute('aria-expanded', String(this.open));
-		toggle.disabled = this.disabled;
 	}
 
 	private syncValueDisplay(): void {

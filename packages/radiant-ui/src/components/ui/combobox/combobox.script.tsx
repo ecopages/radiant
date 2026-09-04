@@ -1,6 +1,7 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { textContains } from '@/lib/text-filter';
+import { uniqueId } from '@/lib/unique-id';
 import type { RuiAutocomplete } from '../autocomplete/autocomplete.script';
 import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHostController } from '../shared/listbox-host-controller';
@@ -104,7 +105,7 @@ export class RuiCombobox extends RadiantElement {
 
 	private open = false;
 	private skipNextFocusOpen = false;
-	private readonly uid = Math.random().toString(36).slice(2, 9);
+	private readonly uid = uniqueId('rui-combobox');
 	private readonly collection = new ListboxHostController({
 		getRoot: () => this,
 		getSelectionMode: () => this.selectionMode,
@@ -121,17 +122,17 @@ export class RuiCombobox extends RadiantElement {
 		getOpen: () => this.open,
 		getOptions: () => this.collection.getOptions(),
 		getActiveDescendantHost: () => this.getInput(),
-		getOptionIdPrefix: () => `rui-combobox-option-${this.uid}`,
+		getOptionIdPrefix: () => `${this.uid}-option`,
 	});
 
 	@query({ ref: 'root' }) rootTarget: HTMLElement;
 
 	private get listboxId(): string {
-		return `rui-combobox-list-${this.uid}`;
+		return `${this.uid}-list`;
 	}
 
 	private get inputId(): string {
-		return `rui-combobox-input-${this.uid}`;
+		return `${this.uid}-input`;
 	}
 
 	private isMultiple(): boolean {
@@ -178,7 +179,7 @@ export class RuiCombobox extends RadiantElement {
 		syncFieldLabel(this, input, {
 			controlId: this.inputId,
 			label: this.label,
-			labelId: `rui-combobox-label-${this.uid}`,
+			labelId: `${this.uid}-label`,
 		});
 	}
 

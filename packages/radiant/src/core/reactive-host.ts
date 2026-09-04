@@ -12,6 +12,11 @@ import type {
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
 
+type UpdateSubscription = {
+	signal: ReactiveState<unknown>;
+	unsubscribe: () => void;
+};
+
 /**
  * Shared reactive-host contract consumed by decorators and host adapters.
  *
@@ -36,6 +41,7 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
 	registerCleanupCallback(callback: () => void): void;
 	registerConnectedCallback(callback: () => void): void;
+	registerPostSyncCallback(callback: () => void): void;
 	registerUpdateCallback(property: string, update: () => void): () => void;
 }
 
@@ -58,10 +64,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 
 	private reactiveMembers = new Map<string, ReactiveState<unknown>>();
 	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
-	/** `onUpdated` callbacks keyed by property; values are signal unsubscribe disposers when subscribed. */
-	private updateCallbacks = new Map<string, Map<() => void, (() => void) | undefined>>();
+	/** `onUpdated` callbacks keyed by property; values track the subscribed signal so replacements can resubscribe. */
+	private updateCallbacks = new Map<string, Map<() => void, UpdateSubscription | undefined>>();
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
+	private postSyncCallbacks: (() => void)[] = [];
 
 	constructor(
 		private readonly host: Host,
@@ -103,6 +110,26 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.onConnectedCallbacks.push(callback);
+	}
+
+	/**
+	 * Registers a callback that runs after attribute catch-up (and the initial
+	 * hydrate/update when the host owns `render()`), before user `onConnected()`.
+	 *
+	 * Used by `@bindTo` so the first paint can see parent-authored or just-rendered
+	 * `data-ref` nodes. Callbacks persist across disconnect and run again on reconnect.
+	 */
+	public registerPostSyncCallback(callback: () => void): void {
+		this.postSyncCallbacks.push(callback);
+	}
+
+	/**
+	 * Runs every post-sync callback registered on this host.
+	 */
+	public flushPostSyncCallbacks(): void {
+		for (const callback of this.postSyncCallbacks) {
+			callback();
+		}
 	}
 
 	/**
@@ -167,18 +194,31 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 
 	/**
 	 * Subscribes an `onUpdated` callback to the member state if the member is
-	 * already registered and not yet subscribed.
+	 * already registered.
+	 *
+	 * Re-subscribes only when the member signal identity changes (for example
+	 * `registerReactiveMember` replacing a previous state). Same-signal calls
+	 * keep the existing subscription.
 	 */
 	private subscribeCallback(propertyName: string, update: () => void): void {
 		const callbacks = this.updateCallbacks.get(propertyName);
 		const signal = this.reactiveMembers.get(propertyName);
 
-		if (!callbacks || !signal || callbacks.get(update)) {
+		if (!callbacks || !signal) {
 			return;
 		}
 
-		const unsubscribe = signal.subscribe(() => update());
-		callbacks.set(update, unsubscribe);
+		const current = callbacks.get(update);
+
+		if (current?.signal === signal) {
+			return;
+		}
+
+		current?.unsubscribe();
+		callbacks.set(update, {
+			signal,
+			unsubscribe: signal.subscribe(() => update()),
+		});
 	}
 
 	/**
@@ -226,12 +266,15 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 			this.updateCallbacks.set(property, callbacks);
 		}
 
-		callbacks.set(update, undefined);
+		if (!callbacks.has(update)) {
+			callbacks.set(update, undefined);
+		}
+
 		this.subscribeCallback(property, update);
 
 		return () => {
 			const perProperty = this.updateCallbacks.get(property);
-			perProperty?.get(update)?.();
+			perProperty?.get(update)?.unsubscribe();
 			perProperty?.delete(update);
 
 			if (perProperty && perProperty.size === 0) {

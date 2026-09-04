@@ -85,4 +85,66 @@ describe('ReactiveHost member state', () => {
 		element.value = 'done';
 		expect(member!.get()).toBe('done');
 	});
+
+	test('registerUpdateCallback does not double-subscribe the same callback on the same signal', () => {
+		let updateCount = 0;
+
+		class RepeatCallbackElement extends RadiantElement {
+			declare count: number;
+
+			constructor() {
+				super();
+				this.createReactiveField('count', 0);
+			}
+		}
+
+		customElements.define('reactive-host-repeat-callback', RepeatCallbackElement);
+
+		const element = document.createElement('reactive-host-repeat-callback') as RepeatCallbackElement;
+		document.body.appendChild(element);
+
+		const update = () => {
+			updateCount++;
+		};
+
+		element.registerUpdateCallback('count', update);
+		element.registerUpdateCallback('count', update);
+
+		updateCount = 0;
+		element.count = 1;
+		expect(updateCount).toBe(1);
+	});
+
+	test('registerUpdateCallback moves to a replaced member signal', () => {
+		let updateCount = 0;
+
+		class ReplacedMemberElement extends RadiantElement {
+			declare count: number;
+
+			constructor() {
+				super();
+				this.createReactiveField('count', 0);
+			}
+		}
+
+		customElements.define('reactive-host-replaced-member', ReplacedMemberElement);
+
+		const element = document.createElement('reactive-host-replaced-member') as ReplacedMemberElement;
+		document.body.appendChild(element);
+
+		element.registerUpdateCallback('count', () => {
+			updateCount++;
+		});
+
+		const previous = element.getReactiveMember('count');
+		expect(previous).toBeDefined();
+
+		const next = element.createReactiveMember('count', 10);
+		updateCount = 0;
+		previous!.set(99);
+		expect(updateCount).toBe(0);
+
+		next.set(11);
+		expect(updateCount).toBe(1);
+	});
 });

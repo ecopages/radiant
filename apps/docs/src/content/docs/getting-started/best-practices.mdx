@@ -204,11 +204,12 @@ Practical rule of thumb:
 
 In that example, the `class` expression still belongs to the host render pass, while the bound `data-state` and heading text can patch in place.
 
-### @query vs Bindings
+### @query vs paint
 
-`@query` and `@querySlot` are for DOM you don't own from `render()` — slotted/consumer-authored content, a `RadiantController` enhancing existing markup, or a live `Element` handle needed by a third-party imperative API. They are not a substitute for binding a value your own `render()` JSX already produces.
+`@query` and `@querySlot` are live element handles — slotted/consumer-authored content, a `RadiantController` enhancing existing markup, or a node needed by a third-party imperative API. They are not a substitute for copying a reactive field into a node.
 
-If a `@query` ref exists only to be written to from an `@onUpdated` callback with a value that could instead be expressed directly in JSX, prefer the binding:
+- Host owns `render()`: bind the value in JSX (`{this.$.count}`).
+- Host keeps authored light DOM: copy the field with `@bindTo`.
 
 ```tsx
 // Avoid
@@ -219,10 +220,14 @@ syncCount() {
   this.countEl.textContent = String(this.count);
 }
 
-// Prefer
+// Prefer — host-owned JSX
 override render() {
   return <span>{this.$.count}</span>;
 }
+
+// Prefer — authored light DOM
+@bindTo({ ref: 'count', text: true })
+count = 0;
 ```
 
 ### Derived Bindings

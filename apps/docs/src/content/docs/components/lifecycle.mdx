@@ -15,9 +15,9 @@ This is the normal connection path, not every internal branch. A host that does 
 
 ## Reactive updates
 
-Connection is only the first pass. After a host is connected, a property or observed attribute can trigger both an imperative `@onUpdated()` callback and, for render-owning hosts, a scheduled `update()`.
+Connection is only the first pass. After a host is connected, a property or observed attribute can trigger `@bindTo` paint, an `@onUpdated()` callback, and, for render-owning hosts, a scheduled `update()`.
 
-The two branches are independent. Use `@onUpdated()` for an imperative side effect; use JSX bindings and the render scheduler for DOM your host owns. A plain `RadiantElement` that keeps authored children does not enter the render branch unless it overrides `render()`. During first-connect `@prop` synchronization, `@onUpdated()` can run before `onConnected()`.
+The branches are independent. Use `@bindTo` to copy a field onto existing DOM. Use `@onUpdated()` for a procedure. Use JSX bindings and the render scheduler for DOM your host owns in `render()`. A plain `RadiantElement` that keeps authored children does not enter the render branch unless it overrides `render()`. During first-connect `@prop` synchronization, `@onUpdated()` and `@bindTo` can run before `onConnected()`. `@bindTo` also flushes after catch-up (and the initial hydrate/update) so parent-authored `data-ref` nodes are visible.
 
 ## Disconnect and reconnect
 
@@ -32,7 +32,8 @@ Disconnect tears down connection-scoped resources. The same instance can later r
 | `registerConnectedCallback()` | Synchronously from `connectedCallback()`, on each connection | Low-level decorator and host-integration plumbing. It runs before attribute catch-up, so application code should not use it when it needs final property values. |
 | `attributeChangedCallback()` | When an observed attribute changes after the host is ready | Radiant's internal attribute-to-property bridge. Most components should not override it; authored first-connect attributes are replayed during the connection microtask. |
 | `onConnected()` | In the connection microtask, after catch-up and initial render or hydration | Post-sync setup that needs reactive properties or rendered `data-ref` elements. It runs again after reconnect. |
-| `@onUpdated(...)` | When the named reactive property changes, including the initial `@prop` sync | Synchronize imperative DOM, storage, analytics, or other external state with a property. |
+| `@bindTo(...)` | After catch-up and whenever the named field changes | Copy the field onto host or descendant attributes, properties, or text. |
+| `@onUpdated(...)` | When the named reactive property changes, including the initial `@prop` sync | Procedures: focus, timers, joined ARIA, derived state, storage. |
 | `requestUpdate()` / `update()` | For render-owning hosts | Schedule or immediately flush a JSX view update. Most components should let reactive JSX bindings schedule this automatically. |
 | `disconnectedCallback()` | When the browser disconnects the element | Tear down resources owned by the connection and call `super.disconnectedCallback()`. |
 | `registerCleanupCallback()` | Registered during setup; invoked during disconnect | Register cleanup for decorator or host integrations that use the lower-level reactive-host API. |
@@ -46,7 +47,7 @@ The browser or JSX can set attributes before a custom element has connected. Rad
 2. Radiant runs registered connection callbacks immediately.
 3. Radiant queues the connection work and catches up authored attributes.
 4. If `render()` is overridden, Radiant hydrates or renders the initial view; otherwise it keeps the authored light DOM.
-5. Radiant calls `onConnected()`.
+5. Radiant flushes `@bindTo` paint, then calls `onConnected()`.
 
 This ordering prevents a constructor default from overwriting an authored attribute and gives `onConnected()` a stable point for post-sync work. If the host is removed before the microtask runs, Radiant aborts the pending work and does not call `onConnected()`.
 
@@ -54,8 +55,9 @@ This ordering prevents a constructor default from overwriting an authored attrib
 
 Use the smallest lifecycle surface that matches the job:
 
-- Render your own UI with JSX bindings. Do not query a node only to copy a reactive value into it.
-- Use `@onUpdated('property')` when an imperative side effect must follow property changes.
+- Keep authored light DOM in place and copy fields with [@bindTo](/docs/decorators/bind-to). Do not query a node only to copy a reactive value into it.
+- Use `@onUpdated('property')` when a procedure must follow property changes (focus, joined ARIA, derived state).
+- Render your own UI with JSX bindings when the host owns `render()`.
 - Use `onConnected()` when setup needs the final initial property values or the initial rendered view, and repeat that setup after reconnect.
 - Use `@query(...)` only when that setup needs a live element handle—for example, to focus an element, observe it, or pass it to an imperative browser API.
 - Put connection-scoped teardown in `disconnectedCallback()` and always call `super.disconnectedCallback()`.
@@ -63,6 +65,7 @@ Use the smallest lifecycle surface that matches the job:
 ## Related documentation
 
 - [RadiantElement](/docs/components/radiant-element) for host modes and render ownership
+- [@bindTo](/docs/decorators/bind-to) for copying fields onto existing DOM
 - [RadiantController](/docs/components/radiant-controller) for attaching the same reactive model to existing HTML
-- [Slots](/docs/components/slots) for authored light-DOM projection
+- [Slots](/docs/components/slots) for HTML-first light-DOM projection
 - [Hydration](/docs/ssr/hydration) for server-rendered host behavior

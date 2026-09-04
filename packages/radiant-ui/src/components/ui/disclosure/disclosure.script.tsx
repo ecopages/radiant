@@ -1,4 +1,5 @@
-import { RadiantElement, bound, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { uniqueId } from '@/lib/unique-id';
 
 export type RuiDisclosureProps = {
 	/** Whether the disclosure content starts expanded. Default: `false`. */
@@ -56,19 +57,28 @@ export type RuiDisclosureToggleDetail = {
  */
 @customElement('rui-disclosure')
 export class RuiDisclosure extends RadiantElement {
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) animated: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ selector: '[data-disclosure-trigger]', attr: 'aria-expanded' },
+		{
+			selector: '[data-disclosure-panel]',
+			attr: 'data-state',
+			map: (open) => (open ? 'open' : 'closed'),
+		},
+	])
+	open: boolean;
 
-	private panelId = `rui-disclosure-${Math.random().toString(36).slice(2, 9)}`;
+	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ bool: 'data-animated' })
+	animated: boolean;
+
+	private readonly panelId = uniqueId('rui-disclosure');
 
 	protected override onConnected(): void {
-		this.syncAnimated();
+		this.syncPanelRelationship();
 		this.syncExpanded();
-	}
-
-	private syncAnimated(): void {
-		this.toggleAttribute('data-animated', this.animated);
 	}
 
 	@onEvent({ selector: '[data-disclosure-trigger]', type: 'click' })
@@ -89,21 +99,24 @@ export class RuiDisclosure extends RadiantElement {
 		);
 	}
 
-	@bound
-	@onUpdated(['open', 'animated'])
-	syncExpanded(): void {
-		this.syncAnimated();
-
+	private syncPanelRelationship(): void {
 		const trigger = this.querySelector<HTMLElement>('[data-disclosure-trigger]');
 		const panel = this.querySelector<HTMLElement>('[data-disclosure-panel]');
 		if (!trigger || !panel) {
 			return;
 		}
 
-		trigger.setAttribute('aria-expanded', String(this.open));
 		trigger.setAttribute('aria-controls', this.panelId);
 		panel.id = this.panelId;
-		panel.dataset.state = this.open ? 'open' : 'closed';
+	}
+
+	@bound
+	@onUpdated(['open', 'animated'])
+	syncExpanded(): void {
+		const panel = this.querySelector<HTMLElement>('[data-disclosure-panel]');
+		if (!panel) {
+			return;
+		}
 
 		if (this.animated) {
 			panel.toggleAttribute('hidden', false);

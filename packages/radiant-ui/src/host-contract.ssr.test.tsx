@@ -121,12 +121,13 @@ describe('class composition and locked invariants', () => {
 		expect(html).toMatch(/<div[^>]*role="alert"/);
 	});
 
-	it('locks the select trigger type without binding popup visibility in the view', () => {
-		const trigger = renderToString(<RuiSelectTrigger attr:type="submit">Value</RuiSelectTrigger>);
+	it('keeps the select trigger a tabbable combobox surface without binding popup visibility in the view', () => {
+		const trigger = renderToString(<RuiSelectTrigger>Value</RuiSelectTrigger>);
 		const listbox = renderToString(<RuiSelectListbox hidden={false}>Options</RuiSelectListbox>);
 
-		expect(trigger).toContain('type="button"');
-		expect(trigger).not.toContain('type="submit"');
+		expect(trigger).toMatch(/<div[^>]*data-select-trigger/);
+		expect(trigger).toContain('tabIndex="0"');
+		expect(trigger).not.toContain('type="button"');
 		expect(listbox).not.toContain(' hidden');
 	});
 

@@ -4,6 +4,7 @@ export {
 	RadiantElement,
 	controller,
 	createResource,
+	bindTo,
 	onUpdated,
 	onEvent,
 	query,

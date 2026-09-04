@@ -4,6 +4,7 @@
 
 - Plain reads
 - Bindings
+- Existing DOM (`@bindTo`)
 - Derived bindings
 - Class and style
 - Performance rule
@@ -34,6 +35,20 @@ Prefer bindings for:
 - `prop:*` bindings `prop:value={this.$.draft}`
 
 Do not treat bindings as raw values. If logic needs a boolean, string, or number, use the plain property.
+
+## Existing DOM (`@bindTo`)
+
+`this.$` only patches ranges the host's own `render()` / `hydrate()` created. When the parent (or a view helper) already owns the markup, copy the field with `@bindTo`:
+
+```ts
+@prop({ type: Boolean, defaultValue: false })
+@bindTo({ ref: 'trigger', attr: 'aria-expanded' })
+open = false;
+```
+
+Exactly one of `attr`, `bool`, `prop`, or `text`. `ref` and `selector` are mutually exclusive; omit both to patch the host. Sit `@bindTo` on a `@prop` / `@state` / `@signal` field. Missing nodes and non-reactive fields are skipped. Two write kinds, or both `ref` and `selector`, throw when the decorator is applied.
+
+`@onUpdated` does not replace this. Use it for procedures (focus, timers, joined ARIA, derived state).
 
 ## Derived bindings
 
@@ -70,6 +85,7 @@ Use bindings confidently for child text, whole `data-*` / `aria-*` values, boole
 
 - Value controls host render logic → plain read
 - Value only feeds a stable JSX output position → binding
+- Value copies onto existing DOM the host does not `render()` → `@bindTo`
 
 ```tsx
 <article class={this.isExpanded ? 'user-card user-card--expanded' : 'user-card'} data={{ state: this.$.isExpanded }}>

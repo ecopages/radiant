@@ -281,6 +281,7 @@ These decorators are part of the `RadiantController` authoring model today:
 - `@query(...)`
 - `@state`
 - `@signal`
+- `@bindTo(...)`
 - `@provideContext(...)`
 - `@consumeContext(...)`
 - `@contextSelector(...)`
@@ -299,7 +300,7 @@ These remain tied to `RadiantElement` because they depend on custom-element prop
 
 For render-owned controller markup, prefer normal JSX bindings and direct event handlers.
 
-For authored DOM inside controllers, prefer `@query(...)` for stable refs and `getRef(...)` for one-off lookups.
+For authored DOM inside controllers, copy 1:1 field values with `@bindTo(...)`. Use `@query(...)` when you need a live element handle, and `getRef(...)` for one-off lookups.
 
 ## Tooling And HMR
 
@@ -317,6 +318,7 @@ For the current docs-app integration and the planned `@ecopages/ecopages-jsx` pl
 - [Controller Tooling & HMR](/docs/tools/controller-tooling-hmr)
 - [@attr](/docs/decorators/attr)
 - [@query](/docs/decorators/query)
+- [@bindTo](/docs/decorators/bind-to)
 - [Context](/docs/context/context)
 - [@onUpdated](/docs/decorators/on-updated)
 - [@onEvent](/docs/decorators/on-event)

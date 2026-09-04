@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import {
 	dateToIso,
@@ -93,13 +93,48 @@ export class RuiDateRangePicker extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ selector: '[data-range-start]', prop: 'disabled' },
+		{ selector: '[data-range-end]', prop: 'disabled' },
+		{ selector: '[data-range-calendar]', bool: 'disabled' },
+	])
+	disabled: boolean;
+
+	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
+	@bindTo([
+		{ selector: '[data-range-start]', prop: 'readOnly' },
+		{ selector: '[data-range-end]', prop: 'readOnly' },
+	])
+	readOnly: boolean;
+
 	@prop({ type: String, defaultValue: '' }) locale: string;
-	@prop({ type: String, attribute: 'placeholder-start', defaultValue: '' }) placeholderStart: string;
-	@prop({ type: String, attribute: 'placeholder-end', defaultValue: '' }) placeholderEnd: string;
-	@prop({ type: String, attribute: 'start-name', defaultValue: '' }) startName: string;
-	@prop({ type: String, attribute: 'end-name', defaultValue: '' }) endName: string;
+
+	@prop({ type: String, attribute: 'placeholder-start', defaultValue: '' })
+	@bindTo({
+		selector: '[data-range-start]',
+		prop: 'placeholder',
+		map: (value) => value || 'Start date',
+	})
+	placeholderStart: string;
+
+	@prop({ type: String, attribute: 'placeholder-end', defaultValue: '' })
+	@bindTo({
+		selector: '[data-range-end]',
+		prop: 'placeholder',
+		map: (value) => value || 'End date',
+	})
+	placeholderEnd: string;
+
+	@prop({ type: String, attribute: 'start-name', defaultValue: '' })
+	@bindTo({ selector: '[data-range-start]', prop: 'name' })
+	startName: string;
+
+	@prop({ type: String, attribute: 'end-name', defaultValue: '' })
+	@bindTo({ selector: '[data-range-end]', prop: 'name' })
+	endName: string;
+
 	@prop({ type: String, defaultValue: '' }) name: string;
 	@prop({ type: String, attribute: 'date-style', defaultValue: 'medium' }) dateStyle: DateDisplayStyle;
 	@prop({ type: Number, attribute: 'visible-months', defaultValue: 2 }) visibleMonths: number;
@@ -107,7 +142,10 @@ export class RuiDateRangePicker extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiDateRangePickerChangeDetail>;
 
-	@state open = false;
+	@state
+	@bindTo({ selector: '[data-range-trigger]', attr: 'aria-expanded' })
+	open = false;
+
 	@state startDisplay = '';
 	@state endDisplay = '';
 	@state editing: EditingField = null;
@@ -288,7 +326,6 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 
 		toggle.disabled = this.disabled || this.readOnly;
-		toggle.setAttribute('aria-expanded', String(this.open));
 	}
 
 	private syncCalendar(): void {
@@ -303,28 +340,9 @@ export class RuiDateRangePicker extends RadiantElement {
 		calendar.setAttribute('min', this.min);
 		calendar.setAttribute('max', this.max);
 		calendar.setAttribute('locale', this.locale);
-		calendar.toggleAttribute('disabled', this.disabled);
-	}
-
-	private wireInputNames(): void {
-		const startInput = this.getStartInput();
-		const endInput = this.getEndInput();
-		if (startInput) {
-			startInput.name = this.startName;
-			startInput.disabled = this.disabled;
-			startInput.readOnly = this.readOnly;
-			startInput.placeholder = this.placeholderStart || 'Start date';
-		}
-		if (endInput) {
-			endInput.name = this.endName;
-			endInput.disabled = this.disabled;
-			endInput.readOnly = this.readOnly;
-			endInput.placeholder = this.placeholderEnd || 'End date';
-		}
 	}
 
 	private initialize(): void {
-		this.wireInputNames();
 		this.syncDisplayValues();
 		this.syncToggle();
 		this.syncCalendar();
@@ -341,20 +359,8 @@ export class RuiDateRangePicker extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated([
-		'value',
-		'min',
-		'max',
-		'disabled',
-		'readOnly',
-		'locale',
-		'dateStyle',
-		'startName',
-		'endName',
-		'visibleMonths',
-	])
+	@onUpdated(['value', 'min', 'max', 'disabled', 'readOnly', 'locale', 'dateStyle', 'visibleMonths'])
 	onPropsUpdated(): void {
-		this.wireInputNames();
 		this.syncDisplayValues();
 		this.syncToggle();
 		this.syncCalendar();
