@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiWindowSplitterProps = {
@@ -10,6 +10,16 @@ export type RuiWindowSplitterProps = {
 };
 
 export type RuiWindowSplitterChangeDetail = { value: number };
+
+/** Minimum primary pane size as a percentage. */
+export const WINDOW_SPLITTER_MIN = 20;
+
+/** Maximum primary pane size as a percentage. */
+export const WINDOW_SPLITTER_MAX = 80;
+
+function isHorizontalSplit(orientation: string): boolean {
+	return orientation !== 'vertical';
+}
 
 /**
  * `<rui-window-splitter>` — movable separator between two panes.
@@ -28,7 +38,7 @@ export type RuiWindowSplitterChangeDetail = { value: number };
  *   `rui-window-splitter--vertical` from `orientation`.
  * - `[data-ref="primary"]` — first pane. Host sets inline `width` or `height` from `value` (clamped 20–80).
  * - `[data-ref="separator"]` — draggable handle. Host sets `aria-orientation`, `aria-valuenow`,
- *   `aria-valuemin`, `aria-valuemax`, and `aria-label`. The view seeds `role="separator"` and `tabIndex="0"`.
+ *   and `aria-label`. The view seeds `role="separator"`, `tabIndex="0"`, `aria-valuemin`, and `aria-valuemax`.
  * - `[data-ref="secondary"]` — second pane (sibling after the separator; not queried directly).
  *
  * Do not set `aria-valuenow`, `aria-orientation`, or primary pane `width` / `height` — the host owns those.
@@ -52,9 +62,21 @@ export type RuiWindowSplitterChangeDetail = { value: number };
  */
 @customElement('rui-window-splitter')
 export class RuiWindowSplitter extends RadiantElement {
-	@prop({ type: Number, reflect: true, defaultValue: 50 }) value: number;
-	@prop({ type: String, defaultValue: 'horizontal' }) orientation: NonNullable<RuiWindowSplitterProps['orientation']>;
-	@prop({ type: String, defaultValue: 'Split view' }) label: string;
+	@prop({ type: Number, reflect: true, defaultValue: 50 })
+	@bindTo({ ref: 'separator', attr: 'aria-valuenow' })
+	value: number;
+
+	@prop({ type: String, defaultValue: 'horizontal' })
+	@bindTo({
+		ref: 'separator',
+		attr: 'aria-orientation',
+		map: (orientation) => (isHorizontalSplit(orientation) ? 'vertical' : 'horizontal'),
+	})
+	orientation: NonNullable<RuiWindowSplitterProps['orientation']>;
+
+	@prop({ type: String, defaultValue: 'Split view' })
+	@bindTo({ ref: 'separator', attr: 'aria-label' })
+	label: string;
 
 	@query({ ref: 'primary' }) primaryTarget: HTMLElement;
 	@query({ ref: 'separator' }) separatorTarget: HTMLElement;
@@ -75,32 +97,26 @@ export class RuiWindowSplitter extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['value', 'orientation', 'label'])
+	@onUpdated(['value', 'orientation'])
 	onPropsUpdated(): void {
 		this.syncSeparatorPresentation();
 		this.applySize();
 	}
 
 	private syncSeparatorPresentation(): void {
-		const separator = this.separatorTarget;
 		const root = this.querySelector<HTMLElement>('[data-ref="root"]');
-		if (!separator || !root) {
+		if (!root) {
 			return;
 		}
 
-		const horizontal = this.orientation !== 'vertical';
+		const horizontal = isHorizontalSplit(this.orientation);
 		root.classList.toggle('rui-window-splitter--horizontal', horizontal);
 		root.classList.toggle('rui-window-splitter--vertical', !horizontal);
-		separator.setAttribute('aria-orientation', horizontal ? 'vertical' : 'horizontal');
-		separator.setAttribute('aria-valuenow', String(this.value));
-		separator.setAttribute('aria-valuemin', '20');
-		separator.setAttribute('aria-valuemax', '80');
-		separator.setAttribute('aria-label', this.label);
 	}
 
 	private applySize(): void {
 		if (!this.primaryTarget) return;
-		const size = `${Math.min(80, Math.max(20, this.value))}%`;
+		const size = `${Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, this.value))}%`;
 		if (this.orientation === 'vertical') {
 			this.primaryTarget.style.height = size;
 			this.primaryTarget.style.width = '';
@@ -113,19 +129,19 @@ export class RuiWindowSplitter extends RadiantElement {
 	@onEvent({ ref: 'separator', type: 'keydown' })
 	onKeydown(event: KeyboardEvent): void {
 		const delta = event.shiftKey ? 10 : 2;
-		const horizontal = this.orientation !== 'vertical';
+		const horizontal = isHorizontalSplit(this.orientation);
 		if ((horizontal && event.key === 'ArrowLeft') || (!horizontal && event.key === 'ArrowUp')) {
 			event.preventDefault();
-			this.updateValue(Math.max(20, this.value - delta));
+			this.updateValue(Math.max(WINDOW_SPLITTER_MIN, this.value - delta));
 		} else if ((horizontal && event.key === 'ArrowRight') || (!horizontal && event.key === 'ArrowDown')) {
 			event.preventDefault();
-			this.updateValue(Math.min(80, this.value + delta));
+			this.updateValue(Math.min(WINDOW_SPLITTER_MAX, this.value + delta));
 		} else if (event.key === 'Home') {
 			event.preventDefault();
-			this.updateValue(20);
+			this.updateValue(WINDOW_SPLITTER_MIN);
 		} else if (event.key === 'End') {
 			event.preventDefault();
-			this.updateValue(80);
+			this.updateValue(WINDOW_SPLITTER_MAX);
 		}
 	}
 
@@ -148,9 +164,9 @@ export class RuiWindowSplitter extends RadiantElement {
 		if (!this.dragging) return;
 		const rect = this.getBoundingClientRect();
 		if (this.orientation === 'vertical') {
-			this.updateValue(Math.min(80, Math.max(20, ((event.clientY - rect.top) / rect.height) * 100)));
+			this.updateValue(Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, ((event.clientY - rect.top) / rect.height) * 100)));
 		} else {
-			this.updateValue(Math.min(80, Math.max(20, ((event.clientX - rect.left) / rect.width) * 100)));
+			this.updateValue(Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, ((event.clientX - rect.left) / rect.width) * 100)));
 		}
 	}
 

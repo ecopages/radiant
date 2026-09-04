@@ -20,10 +20,10 @@ How `RadiantController` turns authored HTML into a reactive surface: attributes 
 Wire a host with `data-controller`. The controller then:
 
 - reads host attributes with `@attr(...)`
-- resolves authored refs with `@query(...)`
+- copies reactive fields onto authored nodes with `@bindTo(...)`
+- resolves authored refs with `@query(...)` when it needs a live handle
 - reacts to button input with `@onEvent(...)`
 - stores controller-local values with `@state`
-- mirrors changes back into the DOM with `@onUpdated(...)`
 
 <ControllerDecoratorVisualizer />
 

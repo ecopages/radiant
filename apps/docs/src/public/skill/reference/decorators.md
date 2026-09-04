@@ -4,7 +4,7 @@
 
 - Host definition
 - Reactive data
-- Side effects
+- Paint and side effects
 - DOM queries
 - Events
 - Callback utilities
@@ -29,24 +29,23 @@
 
 Bare `@signal` (no parentheses) creates a host-owned signal with defaults.
 
-## Side effects
+## Paint and side effects
 
-`@onUpdated(...)` — side effects or derived state when a reactive member changes.
+- `@bindTo(...)` — copy a reactive field onto existing DOM (host or `ref`/`selector` descendant). One of `attr` | `bool` | `prop` | `text`; optional `invert`, `map`; array of targets to fan out. Missing nodes and non-reactive fields are skipped. A target with zero or several write kinds, or both `ref` and `selector`, throws at decoration. Not events, not focus, not node creation.
+- `@onUpdated(...)` — procedures or derived state when a reactive member changes (focus, timers, joined ARIA, storage, analytics).
 
-Use for DOM sync outside JSX binding positions, derived state, storage, analytics, or external effects.
+On a host that does **not** override `render()`, `@bindTo` is the paint API. `this.$` only patches ranges the host's own `render()` / `hydrate()` created.
 
 Avoid updating the same watched property inside its own `@onUpdated(...)` unless the logic is guaranteed to settle.
 
 ## DOM queries
 
 - `@query(...)` — rendered descendants by `data-ref` or selector
-- `@querySlot(...)` — projected slot-assigned elements from a `RadiantElement`
+- `@querySlot(...)` — projected slot-assigned elements from an HTML-first `RadiantElement`
 
 `@query` options: `ref` or `selector`; `all` for `Element[]`; `cache` (default `false`); `scope` `'light'` (default) | `'shadow'` | `'both'`. Prefer `ref` over broad selectors.
 
-Use `@query` only for DOM the host does **not** own in its own `render()` — slot-projected or consumer-authored content, controller-attached DOM, or a live `Element` handle for a third-party imperative API.
-
-If a `@query` exists only so `@onUpdated` can write into it (`.textContent`, `.setAttribute`, boolean/property writes), use a JSX binding (`this.$.foo`) instead. Querying a node `render()` just produced in order to write into it is redundant and defeats fine-grained patching.
+Use `@query` for a live element handle (focus, observers, third-party APIs). If a `@query` exists only so you can copy a field into `.textContent` / `.setAttribute` / `toggleAttribute`, use `@bindTo` instead. If the host owns `render()` and the node is a leaf in that view, use `this.$`.
 
 ## Events
 

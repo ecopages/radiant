@@ -28,6 +28,7 @@ import { formContext, type FormContextValue } from '../form/form-context';
 import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRules } from '../form/types';
 import { bindVisibleLabel } from '../shared/field-label';
+import { uniqueId } from '@/lib/unique-id';
 
 /**
  * The JSON-safe subset of `FieldRules` for SSR hydration — a `validate` function can't
@@ -125,7 +126,7 @@ export class RuiField extends RadiantElement {
 	@consumeContext(formContext)
 	private formContextProvider?: ContextProvider<typeof formContext>;
 
-	private uid = Math.random().toString(36).slice(2, 9);
+	private readonly uid = uniqueId('rui-field');
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
@@ -365,9 +366,9 @@ export class RuiField extends RadiantElement {
 		}
 		const ariaTargets = controlHost ? getAriaControlTargets(controlHost) : [];
 		const ariaTarget = ariaTargets[0] ?? null;
-		const controlId = ariaTarget?.id || `rui-field-control-${this.uid}`;
-		const descriptionId = `rui-field-desc-${this.uid}`;
-		const errorId = `rui-field-error-${this.uid}`;
+		const controlId = ariaTarget?.id || `${this.uid}-control`;
+		const descriptionId = `${this.uid}-desc`;
+		const errorId = `${this.uid}-error`;
 		const errorMessage = this.resolveErrorMessage(formCtx);
 		const invalid = this.resolveInvalid(formCtx);
 		const required = this.isRequired();
@@ -436,7 +437,7 @@ export class RuiField extends RadiantElement {
 			return;
 		}
 
-		const labelId = label.id || `rui-field-label-${this.uid}`;
+		const labelId = label.id || `${this.uid}-label`;
 		for (const target of targets) {
 			bindVisibleLabel(label, target, { controlId: target.id, labelId });
 		}

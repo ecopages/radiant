@@ -16,6 +16,8 @@ Platform vocabulary (Radiant, JSX, SSR) lives in root [`CONTEXT.md`](../../../..
 
 **Binding** — `this.$` / `this.bindings` / `this.bind(...)`. Patches JSX ranges created by the host's own `render()` or `hydrate()` pass. Does not reach parent-authored light DOM.
 
+**bindTo** — `@bindTo`. Copies a reactive field onto the host or a `data-ref` / selector descendant without a `render()` tree. Use this for shell paint (`hidden`, `aria-expanded`, text). Not an event API and not a slot.
+
 ## Composition
 
 Non-atomic components separate behavior from markup: the custom element owns state, accessibility, and coordination; JSX helpers expose the structural parts.
@@ -39,11 +41,21 @@ Parent JSX owns **Authored Children**. Do not let a custom element `render()` pr
 
 Core Radiant still has **Slot** as the architectural projection boundary for a render-owning host. Catalog composites do not expose HTML `<slot>` as the JSX API.
 
+## Generated descendant ids
+
+ARIA relationships (`aria-controls`, `aria-labelledby`, option ids) need a document-unique `id` on a descendant. That string is not a public query target — authors still query `data-ref` / `data-*` / roles. Host `id` stays on the host; do not copy or stem from it.
+
+Use `@/lib/unique-id`:
+
+- Mint once per instance: `private readonly uid = uniqueId('rui-select')`. Suffix slots (`${this.uid}-list`).
+- One descendant: `private readonly panelId = uniqueId('rui-disclosure')`.
+- Do not pass `this`. Do not use `Math.random` or a page-global constant (`'rui-carousel'`).
+
 ## Two host shapes (bindings vs imperative paint)
 
 `this.$` / `this.bindings` only patch JSX ranges the host's own `render()` or `hydrate()` pass created. They do not reach parent-authored light DOM inside the custom element. Pick one shape per component:
 
-- **View-owned Shell** (most composites): no `render()` override, no `RadiantElement<Bindings>` generic. The view places chrome; the CE queries `data-ref` / `data-*` / roles and imperatively updates volatile text, ARIA, CSS variables, and `toggleAttribute` during interaction. Do not query class names. Do not move this chrome into CE `render()` to "use bindings" — that either reintroduces `<slot>` projection (range drift) or drops composable children.
+- **View-owned Shell** (most composites): no `render()` override, no `RadiantElement<Bindings>` generic. The view places chrome; the CE queries `data-ref` / `data-*` / roles. Copy 1:1 field values with `@bindTo`. Keep `@onUpdated` for procedures (focus, joined ARIA, branching). Do not query class names. Do not move this chrome into CE `render()` to "use bindings" — that either reintroduces `<slot>` projection (range drift) or drops composable children.
 - **Derived Tree** (meter, toaster, calendar, TOC): override `render()` for derived structure. Use plain reads (`this.variant`, `this.entries`) for branches, lists, and `class`; use `this.$` for stable leaf text and whole attribute values that should patch without a full host rerender. Do not add `@onUpdated` + `requestUpdate()` for fields already bound with `this.$` — tracked `render()` handles structural reads; bindings handle leaves.
 - Never CE `render()` + `<slot>` for parent-owned chrome.
 

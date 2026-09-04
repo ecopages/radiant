@@ -10,9 +10,9 @@ Read only the module relevant to your task:
 
 | Module | URL | Read when |
 | --- | --- | --- |
-| Reactive model | [/skill/reference/reactive-model.md](/skill/reference/reactive-model.md) | Bindings vs plain reads, derived `.map`, class/style |
+| Reactive model | [/skill/reference/reactive-model.md](/skill/reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, derived `.map`, class/style |
 | Hosts | [/skill/reference/hosts.md](/skill/reference/hosts.md) | Element vs controller, public props vs bindings types |
-| Decorators | [/skill/reference/decorators.md](/skill/reference/decorators.md) | `@prop`, `@query`, `@onEvent`, `@bound`, `@debounce` |
+| Decorators | [/skill/reference/decorators.md](/skill/reference/decorators.md) | `@prop`, `@bindTo`, `@query`, `@onEvent`, `@onUpdated`, `@bound`, `@debounce` |
 | Context | [/skill/reference/context.md](/skill/reference/context.md) | Provide/consume, selectors vs update callbacks |
 | SSR | [/skill/reference/ssr.md](/skill/reference/ssr.md) | Server entrypoints, hydrate modes, render scope |
 | Authoring | [/skill/reference/authoring.md](/skill/reference/authoring.md) | Rules, review checklist, output shape |

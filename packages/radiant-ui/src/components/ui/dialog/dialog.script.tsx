@@ -1,6 +1,7 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { queryFocusableCandidates } from '@/lib/focusable-elements';
+import { uniqueId } from '@/lib/unique-id';
 
 export type RuiDialogProps = {
 	/** Whether the dialog is open. Default: `false`. */
@@ -62,11 +63,13 @@ export type RuiDialogCloseDetail = {
  */
 @customElement('rui-dialog')
 export class RuiDialog extends RadiantElement {
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ ref: 'root', bool: 'hidden', invert: true })
+	open: boolean;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) alert: boolean;
 	@prop({ type: String, defaultValue: '' }) label: string;
 
-	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'dialog' }) dialogTarget: HTMLElement;
 	@query({ selector: '[data-dialog-title]' }) titleTarget: HTMLElement;
 	@query({ selector: '[data-dialog-body]' }) descriptionTarget: HTMLElement;
@@ -75,8 +78,15 @@ export class RuiDialog extends RadiantElement {
 	closeEvent: EventEmitter<RuiDialogCloseDetail>;
 
 	private previouslyFocused: HTMLElement | null = null;
-	private titleId = `rui-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
-	private descriptionId = `rui-dialog-desc-${Math.random().toString(36).slice(2, 9)}`;
+	private readonly uid = uniqueId('rui-dialog');
+
+	private get titleId(): string {
+		return `${this.uid}-title`;
+	}
+
+	private get descriptionId(): string {
+		return `${this.uid}-desc`;
+	}
 
 	protected override onConnected(): void {
 		this.syncOpenState();
@@ -85,8 +95,6 @@ export class RuiDialog extends RadiantElement {
 	@bound
 	@onUpdated(['open', 'label'])
 	syncOpenState(): void {
-		this.rootTarget?.toggleAttribute('hidden', !this.open);
-
 		if (!this.dialogTarget) {
 			return;
 		}

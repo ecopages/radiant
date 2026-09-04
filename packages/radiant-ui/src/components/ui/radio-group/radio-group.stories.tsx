@@ -58,6 +58,21 @@ export const Default: Story = {
 	},
 };
 
+export const FallbackName: Story = {
+	args: { name: '', label: 'Notification channel' },
+	play: async ({ canvasElement, step }) => {
+		const radios = getRadios(canvasElement);
+
+		await step('radios share a fallback name when the group name is empty', async () => {
+			await expect(radios.length).toBeGreaterThan(1);
+			await expect(radios[0].name).toBe('rui-radio-group');
+			for (const radio of radios) {
+				await expect(radio.name).toBe('rui-radio-group');
+			}
+		});
+	},
+};
+
 export const WithValue: Story = {
 	args: { value: 'sms' },
 };

@@ -2,6 +2,7 @@ import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state }
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createRuiIconX } from '@/lib/icons/x';
 import { navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { uniqueId } from '@/lib/unique-id';
 import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
 
 export type RuiTagGroupSelectionMode = 'single' | 'multiple';
@@ -84,7 +85,7 @@ export class RuiTagGroup extends RadiantElement {
 	@event({ name: 'rui-remove', bubbles: true, composed: true })
 	removeEvent: EventEmitter<RuiTagGroupRemoveDetail>;
 
-	private readonly uid = Math.random().toString(36).slice(2, 9);
+	private readonly uid = uniqueId('rui-tag-group');
 	/**
 	 * CE-owned chip list. `null` means the view still owns Authored Children;
 	 * an array (including empty) means `setItems` has taken over as a Derived Tree.
@@ -142,7 +143,7 @@ export class RuiTagGroup extends RadiantElement {
 	private ensureTagIds(): void {
 		this.getTags().forEach((tag, index) => {
 			if (!tag.id) {
-				tag.id = `rui-tag-${this.uid}-${index}`;
+				tag.id = `${this.uid}-tag-${index}`;
 			}
 		});
 	}
@@ -154,7 +155,7 @@ export class RuiTagGroup extends RadiantElement {
 		}
 
 		if (!list.id) {
-			list.id = `rui-tag-list-${this.uid}`;
+			list.id = `${this.uid}-list`;
 		}
 
 		list.setAttribute('role', 'list');

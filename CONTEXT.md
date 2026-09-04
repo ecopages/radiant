@@ -91,8 +91,12 @@ The Node-only ambient provider stack used during SSR so nested hosts resolve Con
 _Avoid_: separate ALS for providers, browser fallback stack, enterWith restore pattern, DOM event bubbling on the server, globalThis ambient store
 
 **Binding**:
-The connection between reactive runtime values and rendered output so targeted updates can flow into the DOM without rebuilding everything.
-_Avoid_: plain property, static value, one-time markup
+A JSX subscription (`this.$` / `this.bindings` / `this.bind(...)`) that patches a stable position in a host-owned `render()` / `hydrate()` tree.
+_Avoid_: bindTo, onUpdated, query-and-write, plain property
+
+**bindTo**:
+A decorator that copies a reactive field onto existing DOM (the host or a descendant) without a host `render()` tree.
+_Avoid_: Binding, onUpdated glue, query-and-write
 
 **Slot**:
 The projection boundary inside a render-owning Element Host that accepts matching Authored Children and can provide fallback content when none are assigned.
@@ -164,13 +168,16 @@ _Avoid_: provider, selector field, local state copy
 - A **View-owned Shell** keeps **Authored Children** in parent JSX instead of projecting them through a **Slot**
 - A **Derived Tree** is host-owned render output, not **Authored Children**
 - A **Composition Helper** places a named region of a **View-owned Shell**; it is not a **Slot**
+- A **Binding** patches JSX ranges a **Render-owning Element Host** created
+- **bindTo** copies a **Reactive Property** onto existing **Light DOM** the host does not `render()`
 - A **Context Provider** owns shared context state for descendant hosts
 - A **Context Consumer** resolves a matching **Context Provider** from the host tree
 - **SSR** produces the server-rendered output that **Hydration** can attach to on the client
 - **Hydration** consumes server-authored markup and markers, not a required per-render hydration program
 - **Ecopages JSX** provides the rendering and marker model used for **Hydration**
 - **Radiant** uses **Hydration** to attach live host behavior to existing rendered DOM
-- A **Binding** connects runtime values to rendered output in **Ecopages JSX** and **Radiant**
+- A **Binding** connects runtime values to host-owned JSX output in **Ecopages JSX** and **Radiant**
+- **bindTo** copies **Reactive Properties** onto existing **Light DOM** when the host does not own `render()`
 - **Reactive Properties** can expose **Bindings** for targeted DOM updates
 - **SSR Context Stack** is stored on **SSR Render Scope**; both require Node `AsyncLocalStorage` and have no sync fallback
 - SSR scope adapters are module-local; SSR bundlers must externalize `@ecopages/*` so Node resolves one instance
@@ -208,6 +215,9 @@ _Avoid_: provider, selector field, local state copy
 
 > **Dev:** "What are authored children in this platform?"
 > **Domain expert:** "They are the consumer-provided child nodes at the host boundary. In **Radiant**, those **Authored Children** stay visible in the light-DOM structure instead of being treated as hidden internal implementation detail."
+
+> **Dev:** "Should I `@query` a node and write it from `@onUpdated`?"
+> **Domain expert:** "Not for a 1:1 field copy. That is **bindTo**. Use a **Binding** when the host owns `render()`. Use `@onUpdated` for a procedure."
 
 > **Dev:** "What does hydration mean here?"
 > **Domain expert:** "**Hydration** means attaching live client behavior to server-rendered DOM that already exists, instead of discarding it and starting from a fresh client render."

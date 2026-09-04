@@ -1,5 +1,5 @@
 import type { JsxCustomElementAttributes } from '@ecopages/jsx';
-import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, prop } from '@ecopages/radiant';
 
 export type RadiantElementCounterProps = {
 	value?: number;
@@ -7,8 +7,9 @@ export type RadiantElementCounterProps = {
 
 @customElement('radiant-element-counter')
 export class RadiantElementCounter extends RadiantElement {
-	@prop({ type: Number, reflect: true, defaultValue: 0 }) declare value: number;
-	@query({ ref: 'count' }) countText!: HTMLSpanElement;
+	@prop({ type: Number, reflect: true, defaultValue: 0 })
+	@bindTo({ ref: 'count', text: true })
+	declare value: number;
 
 	@onEvent({ ref: 'decrement', type: 'click' })
 	decrement() {
@@ -20,11 +21,6 @@ export class RadiantElementCounter extends RadiantElement {
 	@onEvent({ ref: 'increment', type: 'click' })
 	increment() {
 		this.value += 1;
-	}
-
-	@onUpdated('value')
-	syncCount() {
-		this.countText.textContent = String(this.value);
 	}
 }
 

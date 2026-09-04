@@ -1,5 +1,6 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { nonEmpty } from '@/lib/non-empty';
 
 export type RuiRadioGroupProps = {
 	/** Currently selected value. Reflects to markup. */
@@ -46,7 +47,7 @@ export type RuiRadioGroupChangeDetail = {
  * @element rui-radio-group
  *
  * @attr {string} value - Selected radio value. Reflects to markup. Default: `''`.
- * @attr {string} name - Form field name shared by all radios in the group. Default: `''`.
+ * @attr {string} name - Form field name shared by all radios in the group. Empty falls back to `rui-radio-group` on each radio. Default: `''`.
  * @attr {string} label - Accessible name when no visible legend is composed. Default: `''`.
  * @attr {boolean} disabled - Disables every radio in the group. Default: `false`.
  *
@@ -70,8 +71,24 @@ export type RuiRadioGroupChangeDetail = {
 export class RuiRadioGroup extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
-	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({
+		selector: '[data-radio-group-root]',
+		attr: 'aria-label',
+		map: nonEmpty,
+	})
+	label: string;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({
+		selector: '[data-radio-group-root]',
+		attr: 'aria-disabled',
+		map: (disabled) => (disabled ? 'true' : undefined),
+	})
+	disabled: boolean;
+
+	@query({ selector: 'input[type="radio"]', all: true, cache: false }) radioTargets: HTMLInputElement[];
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiRadioGroupChangeDetail>;
@@ -80,25 +97,11 @@ export class RuiRadioGroup extends RadiantElement {
 		this.syncRadios();
 	}
 
-	@onUpdated(['value', 'name', 'label', 'disabled'])
+	@onUpdated(['value', 'name', 'disabled'])
 	syncRadios(): void {
-		const group = this.querySelector<HTMLElement>('[data-radio-group-root]');
-		if (group) {
-			if (this.label) {
-				group.setAttribute('aria-label', this.label);
-			} else {
-				group.removeAttribute('aria-label');
-			}
-			if (this.disabled) {
-				group.setAttribute('aria-disabled', 'true');
-			} else {
-				group.removeAttribute('aria-disabled');
-			}
-		}
-
-		const radios = this.querySelectorAll<HTMLInputElement>('input[type="radio"]');
 		const groupName = this.name || this.getAttribute('name') || 'rui-radio-group';
-		for (const radio of radios) {
+
+		for (const radio of this.radioTargets) {
 			radio.name = groupName;
 			radio.disabled = this.disabled || radio.hasAttribute('data-disabled');
 			radio.checked = this.value !== '' && radio.value === this.value;

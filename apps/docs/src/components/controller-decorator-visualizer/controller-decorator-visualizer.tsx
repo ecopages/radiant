@@ -19,7 +19,7 @@ export const ControllerDecoratorVisualizer = eco.component<{}, JsxRenderable>({
 					<p class="m-0 text-sm font-semibold">Controller decorators</p>
 					<p class="m-0 text-sm text-on-background/70">
 						A single <code>RadiantController</code> reads host attributes, resolves DOM refs, handles
-						delegated events, and pushes reactive updates back into authored markup.
+						delegated events, and copies reactive fields onto authored markup with <code>@bindTo</code>.
 					</p>
 				</div>
 
@@ -28,7 +28,7 @@ export const ControllerDecoratorVisualizer = eco.component<{}, JsxRenderable>({
 						Initial hydrate
 					</p>
 					<p class="m-0 text-sm text-on-background/70" data={{ ref: 'flow-description' }}>
-						The host attribute seeded controller state and all queried nodes resolved on connect.
+						The host attribute seeded controller state and @bindTo painted the authored nodes.
 					</p>
 				</div>
 
@@ -54,7 +54,7 @@ export const ControllerDecoratorVisualizer = eco.component<{}, JsxRenderable>({
 						<div class="grid gap-1">
 							<p class="m-0 text-sm font-semibold">Host attributes</p>
 							<p class="m-0 text-sm text-on-background/70">
-								<code>@controller</code> · <code>@attr</code>
+								<code>@attr</code> · <code>@bindTo</code>
 							</p>
 						</div>
 						<dl class="m-0 grid grid-cols-2 gap-3 text-sm text-on-background/70">
@@ -107,7 +107,7 @@ export const ControllerDecoratorVisualizer = eco.component<{}, JsxRenderable>({
 						<div class="grid gap-1">
 							<p class="m-0 text-sm font-semibold">State and updates</p>
 							<p class="m-0 text-sm text-on-background/70">
-								<code>@state</code> · <code>@onUpdated</code>
+								<code>@state</code> · <code>@bindTo</code>
 							</p>
 						</div>
 						<dl class="m-0 grid grid-cols-2 gap-3 text-sm text-on-background/70">

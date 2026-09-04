@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import {
 	formatNumber,
@@ -8,6 +8,7 @@ import {
 	snapToStep,
 	type NumberFormatOptions,
 } from '@/lib/intl-number';
+import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
@@ -99,17 +100,43 @@ export type RuiNumberFieldChangeDetail = { value: number };
 export class RuiNumberField extends RadiantElement {
 	@prop({ type: Number, reflect: true }) value: number | undefined;
 	@prop({ type: Number, attribute: 'default-value' }) defaultValue: number | undefined;
-	@prop({ type: Number, attribute: 'min-value', defaultValue: Number.NEGATIVE_INFINITY }) minValue: number;
-	@prop({ type: Number, attribute: 'max-value', defaultValue: Number.POSITIVE_INFINITY }) maxValue: number;
+
+	@prop({ type: Number, attribute: 'min-value', defaultValue: Number.NEGATIVE_INFINITY })
+	@bindTo({
+		selector: '[data-number-field-input]',
+		attr: 'aria-valuemin',
+		map: (value) => (Number.isFinite(value) ? String(value) : undefined),
+	})
+	minValue: number;
+
+	@prop({ type: Number, attribute: 'max-value', defaultValue: Number.POSITIVE_INFINITY })
+	@bindTo({
+		selector: '[data-number-field-input]',
+		attr: 'aria-valuemax',
+		map: (value) => (Number.isFinite(value) ? String(value) : undefined),
+	})
+	maxValue: number;
+
 	@prop({ type: Number, defaultValue: 1 }) step: number;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ selector: '[data-number-field-input]', bool: 'data-disabled' },
+		{ selector: '[data-number-field-value]', prop: 'disabled' },
+	])
+	disabled: boolean;
+
+	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
+	@bindTo({ selector: '[data-number-field-input]', bool: 'data-readonly' })
+	readOnly: boolean;
+
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
 	@prop({ type: String, attribute: 'format-options', defaultValue: '' }) formatOptions: string;
 	@prop({ type: String, attribute: 'commit-behavior', defaultValue: 'snap' })
 	commitBehavior: RuiNumberFieldCommitBehavior;
+
 	@prop({ type: String, attribute: 'increment-aria-label', defaultValue: '' }) incrementAriaLabel: string;
 	@prop({ type: String, attribute: 'decrement-aria-label', defaultValue: '' }) decrementAriaLabel: string;
 	@prop({ type: Boolean, attribute: 'wheel-disabled', defaultValue: false }) wheelDisabled: boolean;
@@ -124,7 +151,7 @@ export class RuiNumberField extends RadiantElement {
 	private draftValue = '';
 	private initialized = false;
 
-	private readonly uid = Math.random().toString(36).slice(2, 9);
+	private readonly uid = uniqueId('rui-number-field');
 
 	private get resolvedLocale(): string | string[] | undefined {
 		return resolveLocale(this.locale);
@@ -135,7 +162,7 @@ export class RuiNumberField extends RadiantElement {
 	}
 
 	private get inputId(): string {
-		return `rui-number-field-input-${this.uid}`;
+		return `${this.uid}-input`;
 	}
 
 	private getNumericValue(): number {
@@ -161,7 +188,7 @@ export class RuiNumberField extends RadiantElement {
 		syncFieldLabel(this, input, {
 			controlId: this.inputId,
 			label: this.label,
-			labelId: `rui-number-field-label-${this.uid}`,
+			labelId: `${this.uid}-label`,
 		});
 	}
 
@@ -179,21 +206,6 @@ export class RuiNumberField extends RadiantElement {
 		const numericValue = this.getNumericValue();
 		input.setAttribute('role', 'spinbutton');
 		input.setAttribute('inputmode', 'decimal');
-		input.toggleAttribute('data-disabled', this.disabled);
-		input.toggleAttribute('data-readonly', this.readOnly);
-
-		if (!Number.isFinite(this.minValue)) {
-			input.removeAttribute('aria-valuemin');
-		} else {
-			input.setAttribute('aria-valuemin', String(this.minValue));
-		}
-
-		if (!Number.isFinite(this.maxValue)) {
-			input.removeAttribute('aria-valuemax');
-		} else {
-			input.setAttribute('aria-valuemax', String(this.maxValue));
-		}
-
 		input.setAttribute('aria-valuenow', String(numericValue));
 
 		if (!this.editing) {
@@ -205,7 +217,6 @@ export class RuiNumberField extends RadiantElement {
 			if (this.name) {
 				hidden.name = this.name;
 			}
-			hidden.disabled = this.disabled;
 		}
 	}
 
