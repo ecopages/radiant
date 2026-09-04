@@ -93,6 +93,8 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		if (this.shouldRunRenderLifecycle()) {
 			this.update();
 		}
+
+		this.reactiveHost.flushPostSyncCallbacks();
 	}
 
 	/**
@@ -279,6 +281,10 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 	public registerConnectedCallback(callback: () => void): void {
 		this.reactiveHost.registerConnectedCallback(callback);
+	}
+
+	public registerPostSyncCallback(callback: () => void): void {
+		this.reactiveHost.registerPostSyncCallback(callback);
 	}
 
 	public createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {

@@ -160,6 +160,12 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	registerConnectedCallback(callback: () => void): void;
 
 	/**
+	 * Registers a callback that runs after attribute catch-up and the initial
+	 * hydrate/update, before `onConnected()`.
+	 */
+	registerPostSyncCallback(callback: () => void): void;
+
+	/**
 	 * Creates a new reactive member state and registers it under `propertyName`.
 	 */
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
@@ -349,6 +355,7 @@ export class RadiantElement<Bindings extends object = {}>
 				}
 			}
 
+			this.reactiveHost.flushPostSyncCallbacks();
 			this.onConnected();
 		});
 	}
@@ -651,6 +658,14 @@ export class RadiantElement<Bindings extends object = {}>
 	 */
 	public registerConnectedCallback(callback: () => void): void {
 		this.reactiveHost.registerConnectedCallback(callback);
+	}
+
+	/**
+	 * Registers a callback that runs after attribute catch-up and the initial
+	 * hydrate/update, before `onConnected()`, including on reconnect.
+	 */
+	public registerPostSyncCallback(callback: () => void): void {
+		this.reactiveHost.registerPostSyncCallback(callback);
 	}
 
 	public registerEventEmitter(name: string, emitter: EventEmitter) {

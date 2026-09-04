@@ -78,6 +78,8 @@ Use TypeScript's non-null assertion operator (`!`) for required elements, or the
 
 `@query` is for reading DOM you do not directly control from `render()` — content projected into a slot by a consumer, DOM enhanced by a `RadiantController`, or a live `Element` handle needed by a third-party imperative API (positioning libraries, focus management, observers).
 
+If the host does **not** override `render()`, copy the field with [@bindTo](/docs/decorators/bind-to) instead of querying a node only to write into it.
+
 If the element is one your own `render()` JSX produces, prefer a binding instead of querying it back out to write into it:
 
 ```tsx
