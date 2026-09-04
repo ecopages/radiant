@@ -1,17 +1,17 @@
 ---
 title: "Slots"
-description: "Project authored light-DOM content through default and named slots in a render-owning RadiantElement host."
+description: "HTML-first light-DOM projection for render-owning RadiantElement hosts. JSX libraries compose with helpers instead."
 group: Components
 order: 4
 ---
 
 # Slots
 
-Render-owning `RadiantElement` hosts support default and named slots through literal `<slot>` tags in `render()`.
+Literal `<slot>` tags in `render()` project **direct host children** into a render-owning `RadiantElement`. That path is for **HTML-first** hosts: the consumer writes unordered children in markup, and nothing else will keep reconciling those nodes.
 
-This gives you a composition model that feels familiar from Vue or native web components, while still rendering in the light DOM.
+A live node can only have one parent. If a parent JSX tree still owns those children as ranges, host `render()` plus `<slot>` moves them and the next parent pass breaks. JSX libraries (including Radiant UI) therefore do **not** use CE `<slot>` as the public API.
 
-## Authoring Slots
+## HTML-first projection
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -37,26 +37,30 @@ export class ShellCard extends RadiantElement {
 }
 ```
 
-## Providing Content
-
-```tsx
+```html
 <shell-card>
 	<h2 slot="heading">Projected heading</h2>
 	<p>Projected body content</p>
 </shell-card>
 ```
 
-## JSX-authored composites
+Use this when consumers author HTML and will not re-render those children from a parent JSX list or conditional.
 
-When a framework view (for example a `Rui*` helper in Radiant UI) owns the
-light-DOM shell, **do not** route parent JSX children through CE `<slot>` tags.
-Place chrome and author content in the view, query with `data-ref` / `data-*`,
-and toggle volatile visibility with `toggleAttribute`. Reserve CE slots for
-HTML-first hosts where consumers author unordered direct children.
+## JSX libraries: compose the parts
+
+When a view helper owns the shell, put chrome and children in the **parent tree**. Named helpers (or named props) occupy a region; `{children ?? default}` fills a default icon or control. The custom element queries `data-ref` / `data-*` and paints with [@bindTo](/docs/decorators/bind-to). It does not `render()` a `<slot>` around those children.
+
+```tsx
+<RuiDialog title={<>Edit plant</>}>Body</RuiDialog>
+
+<RuiSelectToggle>
+	<StarIcon />
+</RuiSelectToggle>
+```
 
 See [RadiantElement](/docs/components/radiant-element#authored-light-dom-host) and the Radiant UI composition guide.
 
-## Semantics
+## Semantics (HTML-first)
 
 - Slots are resolved from direct host children.
 - The default slot receives direct host children without a `slot` attribute.
@@ -66,4 +70,4 @@ See [RadiantElement](/docs/components/radiant-element#authored-light-dom-host) a
 
 ## Querying Assigned Content
 
-Use [@querySlot](/docs/decorators/query-slot) when component logic needs the assigned elements for a default or named slot.
+Use [@querySlot](/docs/decorators/query-slot) when component logic needs the assigned elements for a default or named slot on an HTML-first host.

@@ -172,6 +172,10 @@
 			"types": "./dist/server/project-root.d.ts",
 			"import": "./dist/server/project-root.js"
 		},
+		"./decorators/bind-to": {
+			"types": "./dist/decorators/bind-to.d.ts",
+			"import": "./dist/decorators/bind-to.js"
+		},
 		"./decorators/bound": {
 			"types": "./dist/decorators/bound.d.ts",
 			"import": "./dist/decorators/bound.js"

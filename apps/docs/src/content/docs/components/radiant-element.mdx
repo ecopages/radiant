@@ -23,7 +23,8 @@ It gives you one consistent host API:
 
 - reactive properties and fields
 - reactive attribute-backed fields through `@attr(...)`
-- update callbacks
+- `@bindTo` for copying fields onto existing light DOM
+- update callbacks for procedures that are not a straight DOM copy
 - delegated event wiring
 - context integration
 - JSX bindings through `bind(...)`, `bindings`, and `$`
@@ -36,19 +37,20 @@ Use [RadiantController](/docs/components/radiant-controller) instead when you wa
 
 ### 1. Authored Light-DOM Host
 
-This mode keeps the HTML in the document and uses decorators plus imperative DOM reads to wire behavior.
+This mode keeps the HTML in the document. Use `@bindTo` to copy reactive fields onto the host or `data-ref` nodes. Keep `@onEvent` for clicks and `@onUpdated` for procedures such as focus.
 
 ```typescript
-import { RadiantElement, customElement, onEvent, onUpdated, query, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, prop } from '@ecopages/radiant';
 
 type CounterProps = {
   value?: number;
 };
 
 @customElement('radiant-counter')
-class RadiantCounter extends RadiantElement<CounterProps> {
-  @prop({ type: Number, reflect: true, defaultValue: 0 }) value!: number;
-  @query({ ref: 'count' }) countText!: HTMLSpanElement;
+class RadiantCounter extends RadiantElement {
+  @prop({ type: Number, reflect: true, defaultValue: 0 })
+  @bindTo({ ref: 'count', text: true })
+  value!: number;
 
   @onEvent({ ref: 'decrement', type: 'click' })
   decrement() {
@@ -60,11 +62,6 @@ class RadiantCounter extends RadiantElement<CounterProps> {
   @onEvent({ ref: 'increment', type: 'click' })
   increment() {
     this.value += 1;
-  }
-
-  @onUpdated('value')
-  updateCount() {
-    this.countText.textContent = String(this.value);
   }
 }
 ```
@@ -152,7 +149,7 @@ Keep synchronous setup (event listeners, `MutationObserver`) in `connectedCallba
 
 `onConnected` is not `registerConnectedCallback()`. Those reactive-host callbacks run synchronously at the start of `connectedCallback`, before attribute catch-up.
 
-Most elements do not need this hook. Do not use it to copy a reactive value into JSX-owned DOM; use a JSX binding. Use `@onUpdated(...)` when a property change must synchronize imperative or authored DOM. Reach for `onConnected()` only when first-connect setup genuinely needs the synchronized attributes or committed DOM, and must be repeated after a reconnect. `@query(...)` is unrelated: use it only when that setup needs a live element reference.
+Most elements do not need this hook. Do not use it to copy a reactive value into JSX-owned DOM; use a JSX binding. Do not use it to copy a value onto parent-authored `data-ref` nodes; use [@bindTo](/docs/decorators/bind-to). Use `@onUpdated(...)` when a property change must run a procedure (focus, timers, joined ARIA). Reach for `onConnected()` only when first-connect setup genuinely needs the synchronized attributes or committed DOM, and must be repeated after a reconnect. `@query(...)` is unrelated: use it only when that setup needs a live element handle.
 
 ## Bindings And Reactive Reads
 
@@ -162,7 +159,7 @@ Most elements do not need this hook. Do not use it to copy a reactive value into
 - `this.bind('value')` for an explicit JSX binding
 - `this.bindings.value` or `this.$.value` for property-style JSX bindings
 
-Use the raw value in imperative code and render logic. Use bindings in stable JSX leaf positions such as text, attributes, `aria`, `data`, and boolean props.
+Use the raw value in imperative code and render logic. Use bindings in stable JSX leaf positions such as text, attributes, `aria`, `data`, and boolean props. On hosts that do not override `render()`, use [@bindTo](/docs/decorators/bind-to) for the same leaf writes against existing DOM.
 
 ## Derived Bindings
 

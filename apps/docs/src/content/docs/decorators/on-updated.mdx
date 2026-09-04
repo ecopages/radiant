@@ -11,7 +11,9 @@ import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-
 
 # @onUpdated
 
-The `@onUpdated` decorator registers a callback method that executes automatically whenever a specific reactive property or field changes. It is the primary way to perform side effects on Radiant hosts.
+The `@onUpdated` decorator registers a callback method that executes automatically whenever a specific reactive property or field changes. Use it for **procedures**: derived state, focus, timers, joined ARIA, storage, analytics.
+
+To copy a field onto an attribute, boolean attribute, DOM property, or text node, use [@bindTo](/docs/decorators/bind-to) instead.
 
 ## Usage
 
@@ -66,7 +68,7 @@ calculateTotals() {
 
 ### DOM Synchronization
 
-Keep the DOM or external state in sync with component properties.
+Keep external state in sync with component properties. Do not use `@onUpdated` only to copy a value into `textContent` or `toggleAttribute` on a stable node — that is [@bindTo](/docs/decorators/bind-to).
 
 ```typescript
 @onUpdated('theme')
@@ -102,6 +104,7 @@ export class ThemeController extends RadiantController {
 
 ## Learn More
 
+- [@bindTo](/docs/decorators/bind-to) - Copy a field onto existing DOM.
 - [@prop](/docs/decorators/prop) - Define public reactive properties.
 - [@state](/docs/decorators/state) - Define internal reactive state.
 - [@debounce](/docs/decorators/debounce) - Debounce frequent updates.
