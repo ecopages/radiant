@@ -1,8 +1,9 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { PopoverController, shouldDismissPopoverPointer } from '../shared/popover-controller';
 import { MenuTreeController } from '../shared/menu-tree';
 import type { RuiPlacement } from '../shared/placement';
+import { uniqueId } from '@/lib/unique-id';
 
 export type RuiMenuButtonProps = {
 	/** Whether the menu starts open. Default: `false`. */
@@ -65,7 +66,13 @@ const MENU_GAP = 6;
  */
 @customElement('rui-menu-button')
 export class RuiMenuButton extends RadiantElement {
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) open: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ ref: 'trigger', attr: 'aria-expanded' },
+		{ ref: 'menu', bool: 'hidden', invert: true },
+	])
+	open: boolean;
+
 	@prop({ type: String, defaultValue: 'bottom-start' }) placement: RuiPlacement;
 
 	@query({ ref: 'trigger' }) triggerTarget: HTMLButtonElement;
@@ -77,7 +84,7 @@ export class RuiMenuButton extends RadiantElement {
 	@event({ name: 'rui-close', bubbles: true, composed: true })
 	closeEvent: EventEmitter<void>;
 
-	private menuId = `rui-menu-${Math.random().toString(36).slice(2, 9)}`;
+	private readonly menuId = uniqueId('rui-menu');
 	private popoverController: PopoverController | null = null;
 	private menuTree: MenuTreeController | null = null;
 	private pendingFocus: 'first' | 'last' | 'trigger' | null = null;
@@ -137,8 +144,6 @@ export class RuiMenuButton extends RadiantElement {
 		this.menuTarget.id = this.menuId;
 		this.triggerTarget.setAttribute('aria-controls', this.menuId);
 		this.triggerTarget.setAttribute('aria-haspopup', 'menu');
-		this.triggerTarget.setAttribute('aria-expanded', String(this.open));
-		this.menuTarget.toggleAttribute('hidden', !this.open);
 		const menuTree = this.ensureMenuTree();
 		menuTree.sync();
 		if (!this.open) menuTree.closeAll();

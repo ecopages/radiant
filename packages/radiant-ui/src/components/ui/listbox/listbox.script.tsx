@@ -1,6 +1,7 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { navigateRovingTabindex } from '@/lib/roving-tabindex';
+import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { getListboxOptionValue } from '../shared/listbox-option';
 import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
@@ -84,14 +85,22 @@ export class RuiListbox extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'single' }) selectionMode: RuiListboxSelectionMode;
+
+	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'single' })
+	@bindTo({
+		selector: '[role="listbox"]',
+		attr: 'aria-multiselectable',
+		map: (mode) => (mode === 'multiple' ? 'true' : undefined),
+	})
+	selectionMode: RuiListboxSelectionMode;
+
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) embedded: boolean;
 	@prop({ type: Boolean, reflect: true }) bordered: boolean | undefined;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiListboxChangeDetail>;
 
-	private readonly uid = Math.random().toString(36).slice(2, 9);
+	private readonly uid = uniqueId('rui-listbox');
 
 	protected override onConnected(): void {
 		this.syncLabel();
@@ -112,11 +121,11 @@ export class RuiListbox extends RadiantElement {
 		if (this.embedded) return;
 		const list = this.querySelector<HTMLElement>('[role="listbox"]');
 		if (!list) return;
-		if (!list.id) list.id = `rui-listbox-${this.uid}`;
+		if (!list.id) list.id = `${this.uid}-list`;
 		syncFieldLabel(this, list, {
 			controlId: list.id,
 			label: this.label,
-			labelId: `rui-listbox-label-${this.uid}`,
+			labelId: `${this.uid}-label`,
 		});
 	}
 
@@ -139,11 +148,6 @@ export class RuiListbox extends RadiantElement {
 		const options = this.getOptions();
 		const selected = new Set(this.getSelectedValues());
 		const tabStop = options.find((option) => selected.has(getListboxOptionValue(option))) ?? options[0];
-		const list = this.querySelector<HTMLElement>('[role="listbox"]');
-		if (list) {
-			if (this.selectionMode === 'multiple') list.setAttribute('aria-multiselectable', 'true');
-			else list.removeAttribute('aria-multiselectable');
-		}
 		for (const option of options) {
 			const isSelected = selected.has(getListboxOptionValue(option));
 			option.setAttribute('aria-selected', String(isSelected));

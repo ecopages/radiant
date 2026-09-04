@@ -1,6 +1,7 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
+import { uniqueId } from '@/lib/unique-id';
 import { notePreviewClosed, notePreviewOpened, resolvePreviewOpenDelay } from '../shared/preview-timing';
 import { PopoverController, shouldDismissPopoverFocus } from '../shared/popover-controller';
 import type { RuiPlacement } from '../shared/placement';
@@ -88,7 +89,9 @@ export class RuiHoverCard extends RadiantElement {
 	@prop({ type: Number, defaultValue: 200 }) closeDelay: number;
 	@prop({ type: Boolean, defaultValue: true }) portal: boolean;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+
 	@prop({ type: String, attribute: 'content-label', reflect: true, defaultValue: HOVER_CARD_DEFAULT_CONTENT_LABEL })
+	@bindTo({ ref: 'content', attr: 'aria-label' })
 	contentLabel: string;
 
 	@query({ ref: 'content' }) contentTarget: HTMLElement;
@@ -96,7 +99,7 @@ export class RuiHoverCard extends RadiantElement {
 	@event({ name: 'rui-open-change', bubbles: true, composed: true })
 	openChangeEvent: EventEmitter<RuiHoverCardOpenChangeDetail>;
 
-	private readonly contentId = `rui-hover-card-${Math.random().toString(36).slice(2, 9)}`;
+	private readonly contentId = uniqueId('rui-hover-card');
 	private controller: PopoverController | null = null;
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -167,14 +170,13 @@ export class RuiHoverCard extends RadiantElement {
 	}
 
 	@bound
-	@onUpdated(['open', 'placement', 'portal', 'disabled', 'contentLabel'])
+	@onUpdated(['open', 'placement', 'portal', 'disabled'])
 	syncCard(): void {
 		const anchor = this.getAnchor();
 		const surface = this.contentTarget;
 
 		if (surface) {
 			surface.id = this.contentId;
-			surface.setAttribute('aria-label', this.contentLabel);
 		}
 		if (anchor) {
 			anchor.setAttribute('aria-controls', this.contentId);

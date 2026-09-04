@@ -1,6 +1,7 @@
 import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { uniqueId } from '@/lib/unique-id';
 import {
 	PopoverController,
 	shouldDismissPopoverFocus,
@@ -87,7 +88,7 @@ export class RuiPopover extends RadiantElement {
 	@event({ name: 'rui-open-change', bubbles: true, composed: true })
 	openChangeEvent: EventEmitter<RuiPopoverOpenChangeDetail>;
 
-	private readonly surfaceId = `rui-popover-${Math.random().toString(36).slice(2, 9)}`;
+	private readonly surfaceId = uniqueId('rui-popover');
 	private controller: PopoverController | null = null;
 	private anchorClickTarget: HTMLElement | null = null;
 

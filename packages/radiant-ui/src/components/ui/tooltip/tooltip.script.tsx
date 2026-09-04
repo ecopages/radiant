@@ -1,5 +1,6 @@
 import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { findFirstFocusableCandidate } from '@/lib/focusable-elements';
+import { uniqueId } from '@/lib/unique-id';
 import { applyFloatingPosition, attachFloating } from '../shared/floating-position';
 import type { RuiPlacement } from '../shared/placement';
 
@@ -78,7 +79,7 @@ export class RuiTooltip extends RadiantElement<RuiTooltipBindings> {
 
 	private showTimer: ReturnType<typeof setTimeout> | null = null;
 	private hideTimer: ReturnType<typeof setTimeout> | null = null;
-	private tooltipId = `rui-tooltip-${Math.random().toString(36).slice(2, 9)}`;
+	private readonly tooltipId = uniqueId('rui-tooltip');
 	private describedEl: HTMLElement | null = null;
 	private cleanupFloating: (() => void) | null = null;
 

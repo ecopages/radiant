@@ -1,4 +1,5 @@
 import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { uniqueId } from '@/lib/unique-id';
 
 export type RuiCarouselTransition = 'none' | 'slide' | 'fade';
 
@@ -111,6 +112,7 @@ export class RuiCarousel extends RadiantElement {
 
 	private timer: ReturnType<typeof setInterval> | null = null;
 	private paused = false;
+	private readonly uid = uniqueId('rui-carousel');
 	/** User explicitly resumed rotation (e.g. via rotation control) despite reduced motion. */
 	private userOverrideReducedMotion = false;
 	private swipePointerId: number | null = null;
@@ -158,19 +160,15 @@ export class RuiCarousel extends RadiantElement {
 		);
 	}
 
-	private getCarouselId(): string {
-		return this.id || 'rui-carousel';
-	}
-
 	private slidePanelId(slide: HTMLElement, index: number): string {
 		const key = slide.getAttribute('data-slide') ?? String(index);
-		const panelId = `${this.getCarouselId()}-panel-${key}`;
+		const panelId = `${this.uid}-panel-${key}`;
 		slide.id = panelId;
 		return panelId;
 	}
 
 	private tabId(index: number): string {
-		return `${this.getCarouselId()}-tab-${index}`;
+		return `${this.uid}-tab-${index}`;
 	}
 	private syncSlideAccessibility(slides: HTMLElement[], activeIndex: number): void {
 		const count = slides.length;

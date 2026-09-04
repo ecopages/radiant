@@ -1,5 +1,6 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
 import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
 
@@ -76,9 +77,26 @@ export type RuiCheckboxGroupChangeDetail = {
 export class RuiCheckboxGroup extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) name: string;
-	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: String, reflect: true, defaultValue: 'vertical' }) orientation: RuiCheckboxGroupOrientation;
+
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({
+		selector: '[data-checkbox-group-root]',
+		attr: 'aria-label',
+		map: nonEmpty,
+	})
+	label: string;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({
+		selector: '[data-checkbox-group-root]',
+		attr: 'aria-disabled',
+		map: (disabled) => (disabled ? 'true' : undefined),
+	})
+	disabled: boolean;
+
+	@prop({ type: String, reflect: true, defaultValue: 'vertical' })
+	@bindTo({ selector: '[data-checkbox-group-root]', attr: 'data-orientation' })
+	orientation: RuiCheckboxGroupOrientation;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiCheckboxGroupChangeDetail>;
@@ -87,23 +105,8 @@ export class RuiCheckboxGroup extends RadiantElement {
 		this.syncCheckboxes();
 	}
 
-	@onUpdated(['value', 'name', 'label', 'disabled', 'orientation'])
+	@onUpdated(['value', 'name', 'disabled'])
 	syncCheckboxes(): void {
-		const group = this.querySelector<HTMLElement>('[data-checkbox-group-root]');
-		if (group) {
-			if (this.label) {
-				group.setAttribute('aria-label', this.label);
-			} else {
-				group.removeAttribute('aria-label');
-			}
-			if (this.disabled) {
-				group.setAttribute('aria-disabled', 'true');
-			} else {
-				group.removeAttribute('aria-disabled');
-			}
-			group.setAttribute('data-orientation', this.orientation);
-		}
-
 		const selected = new Set(parseMultiValue(this.value));
 		const groupName = this.name || this.getAttribute('name') || '';
 
