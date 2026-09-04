@@ -1,5 +1,6 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { nonEmpty } from '@/lib/non-empty';
 
 export type RuiCheckboxProps = {
 	/** Whether the checkbox is checked. Default: `false`. */
@@ -83,45 +84,39 @@ export const CHECKBOX_DEFAULT_VALUE = 'on';
  */
 @customElement('rui-checkbox')
 export class RuiCheckbox extends RadiantElement {
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) checked: boolean;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) indeterminate: boolean;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: String, defaultValue: CHECKBOX_DEFAULT_VALUE }) value: string;
-	@prop({ type: String, defaultValue: '' }) name: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ ref: 'input', prop: 'checked' })
+	checked: boolean;
 
-	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ ref: 'input', prop: 'indeterminate' },
+		{
+			ref: 'input',
+			attr: 'aria-checked',
+			map: (value) => (value ? 'mixed' : undefined),
+		},
+	])
+	indeterminate: boolean;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ ref: 'input', prop: 'disabled' })
+	disabled: boolean;
+
+	@prop({ type: String, defaultValue: CHECKBOX_DEFAULT_VALUE })
+	@bindTo({ ref: 'input', prop: 'value' })
+	value: string;
+
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({
+		ref: 'input',
+		attr: 'name',
+		map: nonEmpty,
+	})
+	name: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiCheckboxChangeDetail>;
-
-	protected override onConnected(): void {
-		this.syncInputState();
-	}
-
-	@bound
-	@onUpdated(['checked', 'indeterminate', 'disabled', 'value', 'name'])
-	syncInputState(): void {
-		const input = this.inputTarget;
-		if (!input) {
-			return;
-		}
-
-		input.checked = this.checked;
-		input.indeterminate = this.indeterminate;
-		input.disabled = this.disabled;
-		input.value = this.value;
-		if (this.name) {
-			input.name = this.name;
-		} else {
-			input.removeAttribute('name');
-		}
-
-		if (this.indeterminate) {
-			input.setAttribute('aria-checked', 'mixed');
-		} else {
-			input.removeAttribute('aria-checked');
-		}
-	}
 
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {

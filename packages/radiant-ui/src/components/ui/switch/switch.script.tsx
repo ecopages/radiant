@@ -1,5 +1,6 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { nonEmpty } from '@/lib/non-empty';
 
 export type RuiSwitchProps = {
 	/** Whether the switch is on. Reflects to markup. Default: `false`. */
@@ -62,35 +63,24 @@ export type RuiSwitchChangeDetail = {
  */
 @customElement('rui-switch')
 export class RuiSwitch extends RadiantElement {
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) checked: boolean;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: String, defaultValue: '' }) name: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ ref: 'input', prop: 'checked' })
+	checked: boolean;
 
-	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ ref: 'input', prop: 'disabled' })
+	disabled: boolean;
+
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({
+		ref: 'input',
+		attr: 'name',
+		map: nonEmpty,
+	})
+	name: string;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSwitchChangeDetail>;
-
-	protected override onConnected(): void {
-		this.syncInputState();
-	}
-
-	@bound
-	@onUpdated(['checked', 'disabled', 'name'])
-	syncInputState(): void {
-		const input = this.inputTarget;
-		if (!input) {
-			return;
-		}
-
-		input.checked = this.checked;
-		input.disabled = this.disabled;
-		if (this.name) {
-			input.name = this.name;
-		} else {
-			input.removeAttribute('name');
-		}
-	}
 
 	@onEvent({ ref: 'input', type: 'change' })
 	onInputChange(event: Event): void {

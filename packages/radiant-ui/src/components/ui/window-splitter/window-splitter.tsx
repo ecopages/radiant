@@ -1,6 +1,11 @@
 import type { JsxCustomElementAttributes, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
-import type { RuiWindowSplitter as RuiWindowSplitterElement, RuiWindowSplitterProps } from './window-splitter.script';
+import {
+	WINDOW_SPLITTER_MAX,
+	WINDOW_SPLITTER_MIN,
+	type RuiWindowSplitter as RuiWindowSplitterElement,
+	type RuiWindowSplitterProps,
+} from './window-splitter.script';
 import './window-splitter.script';
 
 /**
@@ -35,7 +40,14 @@ export function RuiWindowSplitter({
 				<div data-ref="primary" class="rui-window-splitter__pane">
 					{primary}
 				</div>
-				<div data-ref="separator" class="rui-window-splitter__separator" role="separator" tabindex={0}></div>
+				<div
+					data-ref="separator"
+					class="rui-window-splitter__separator"
+					role="separator"
+					tabindex={0}
+					aria-valuemin={WINDOW_SPLITTER_MIN}
+					aria-valuemax={WINDOW_SPLITTER_MAX}
+				></div>
 				<div data-ref="secondary" class="rui-window-splitter__pane">
 					{secondary}
 				</div>

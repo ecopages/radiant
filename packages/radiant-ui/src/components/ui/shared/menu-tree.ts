@@ -1,4 +1,5 @@
 import { PopoverController } from './popover-controller';
+import { uniqueId } from '@/lib/unique-id';
 
 const SUBMENU_DELAY = 200;
 const SUBMENU_CLOSE_DELAY = 250;
@@ -43,7 +44,7 @@ export class MenuTreeController {
 				if (!submenu) continue;
 				item.setAttribute('aria-haspopup', 'menu');
 				if (!item.hasAttribute('aria-expanded')) item.setAttribute('aria-expanded', 'false');
-				if (!submenu.id) submenu.id = `rui-submenu-${Math.random().toString(36).slice(2, 9)}`;
+				if (!submenu.id) submenu.id = uniqueId('rui-submenu');
 				item.setAttribute('aria-controls', submenu.id);
 				submenu.hidden = item.getAttribute('aria-expanded') !== 'true';
 			}
