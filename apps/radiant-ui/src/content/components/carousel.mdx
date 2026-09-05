@@ -1,10 +1,10 @@
 ---
 title: Carousel
-description: Carousels cycle through a set of panels (hero images, feature highlights, or onboarding steps) while keeping one slide in focus.
+description: Carousels cycle through a set of panels (hero images, feature highlights, or onboarding steps) while keeping a window of slides in focus.
 category: Data display
 ---
 
-import { meta as CarouselMeta, Default, OverlayControls, WithIndicators } from '@/content/stories/carousel';
+import { meta as CarouselMeta, Default, OverlayControls, WithIndicators, WithSlidesPerView } from '@/content/stories/carousel';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -22,7 +22,7 @@ export const config = {
 
 # Carousel
 
-<p class="docs-lede">Carousels cycle through a set of panels (hero images, feature highlights, or onboarding steps) while keeping one slide in focus.</p>
+<p class="docs-lede">Carousels cycle through a set of panels (hero images, feature highlights, or onboarding steps). `index` is the first visible slide; `slidesPerView` controls how many fill the viewport.</p>
 
 ## Try it
 
@@ -49,13 +49,14 @@ import { RuiCarousel, RuiCarouselSlide } from '@ecopages/radiant-ui/carousel';
 ```tsx
 import '@ecopages/radiant-ui/carousel';
 
-<rui-carousel index={0} transition="slide" show-indicators label="Feature highlights">
-  <section data-ref="root" class="rui-carousel rui-carousel--slide" aria-roledescription="carousel" aria-label="Feature highlights">
+<rui-carousel index={0} transition="slide" slides-per-view={3} show-indicators label="Feature highlights">
+  <section data-ref="root" class="rui-carousel rui-carousel--slide" data-carousel-track="window" data-carousel-surface="cards" aria-roledescription="carousel" aria-label="Feature highlights">
     <div class="rui-carousel__stage">
       <div data-ref="viewport" class="rui-carousel__viewport">
         <div data-ref="track" class="rui-carousel__track">
           <div data-slide="first" class="rui-carousel__slide">First panel</div>
           <div data-slide="second" class="rui-carousel__slide">Second panel</div>
+          <div data-slide="third" class="rui-carousel__slide">Third panel</div>
         </div>
       </div>
     </div>
@@ -65,12 +66,35 @@ import '@ecopages/radiant-ui/carousel';
       <button type="button" data-carousel-action="next">Next</button>
     </div>
   </section>
-</rui-carousel>;
+</rui-carousel>
 ```
 
 When `show-indicators` is set, the host creates `[data-carousel-indicator]` buttons inside `[data-ref="indicators"]`.
 
 <Canvas of={WithIndicators} meta={CarouselMeta} />
+
+## Show several slides
+
+Set `slidesPerView` to how many slides fill the viewport (`1.2` peeks the next slide at the start, and the previous slide at the end so the last full card sits on the right). `slidesPerGroup` is how far prev/next/autoplay move. `index` stays the first visible slide. One pane keeps chrome on the viewport; more than one slide paints each slide as a card. Space between cards is `--rui-carousel-gap` (default `--space-inline`):
+
+```css
+rui-carousel {
+  --rui-carousel-gap: 1.5rem;
+}
+```
+
+```tsx
+<RuiCarousel transition="slide" slidesPerView={3} slidesPerGroup={3} label="Featured products">
+  <RuiCarouselSlide id="one">One</RuiCarouselSlide>
+  <RuiCarouselSlide id="two">Two</RuiCarouselSlide>
+  <RuiCarouselSlide id="three">Three</RuiCarouselSlide>
+  <RuiCarouselSlide id="four">Four</RuiCarouselSlide>
+  <RuiCarouselSlide id="five">Five</RuiCarouselSlide>
+  <RuiCarouselSlide id="six">Six</RuiCarouselSlide>
+</RuiCarousel>
+```
+
+<Canvas of={WithSlidesPerView} meta={CarouselMeta} />
 
 ## Use autoplay sparingly
 
@@ -90,25 +114,26 @@ Carousel maps to **semantic surface and border roles**, never Tailwind palette s
 
 | Part | CSS roles |
 | --- | --- |
-| Viewport (`rui-carousel__viewport`) | `surface`, `border`, `radius-container` |
+| Viewport / card (`rui-carousel__viewport` or `rui-carousel__slide`) | `surface`, `border`, `radius-container` |
+| Card gap | `--rui-carousel-gap` → `--space-inline` |
 | Indicators | `background`, `border` |
 | Active indicator | `primary` |
 | Overlay chrome | `surface`, `border`, `shadow-sm` (blurred pills) |
 | Focus | `focus-ring` |
 | Geometry | `--space-inline`, `--space-stack`, `--space-inset` |
 
-Override at the theme layer, not in component CSS.
+Override the `--rui-carousel-*` custom properties on `rui-carousel`. Theme roles stay the defaults behind those properties.
 
 ## API
 
-`RuiCarousel` is a custom element (`<rui-carousel>`) that owns slide state, autoplay, transitions, and control chrome. The `RuiCarouselSlide` and control helpers compose the surface.
+`RuiCarousel` is a custom element (`<rui-carousel>`) that owns slide state, autoplay, transitions, and control chrome. The `RuiCarouselSlide` and control helpers compose the surface. `index` is the first visible slide.
 
 ### Attributes
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
 | `label` | `string` | `Carousel` | Accessible name for the carousel region. |
-| `index` | `number` | `0` | Active slide index. |
+| `index` | `number` | `0` | First visible slide index. |
 | `autoplay` | `boolean` | `false` | Advance automatically. |
 | `interval` | `number` | `4000` | Autoplay interval in ms. |
 | `transition` | `none` · `slide` · `fade` | `none` | Slide swap animation. |
@@ -117,16 +142,30 @@ Override at the theme layer, not in component CSS.
 | `show-rotation-control` | `boolean` | `false` | Render play/pause control. |
 | `loop` | `boolean` | `true` | Allow looping past the last slide. |
 | `wrap` | `boolean` | `true` | Keep controls enabled at the ends. |
+| `slides-per-view` | `number` | `1` | Slides that fill the viewport. Values `>= 1`; fractional peek is allowed. At the end the last card sits on the right and the previous card peeks. |
+| `slides-per-group` | `number` | `1` | Slides moved per prev/next/autoplay/swipe. |
 | `slide-count` | `number` | `0` | Authored slide count for render-time control state. |
+
+### CSS properties
+
+Set these on `rui-carousel`. Each defaults to a theme token.
+
+| Property | Default | Used for |
+| --- | --- | --- |
+| `--rui-carousel-gap` | `--space-inline` | Space between cards (`slides-per-view` > 1) |
+| `--rui-carousel-radius` | `--radius-container` | Shell viewport or each card |
+| `--rui-carousel-border-color` | `--border` | Shell viewport or each card |
+| `--rui-carousel-surface` | `--surface` | Shell viewport or each card |
+| `--rui-carousel-padding` | `--space-inset` | Shell viewport (toolbar) or each card |
 
 ### Light-DOM contract
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
-| `[data-ref="root"]` | yes | — | carousel region; view seeds `aria-roledescription`, `aria-label` |
+| `[data-ref="root"]` | yes | `data-carousel-track` (`swap` · `stack` · `window`), `data-carousel-surface` (`shell` · `cards`) | carousel region; view seeds `aria-roledescription`, `aria-label` |
 | `[data-ref="viewport"]` | yes | `aria-live`, `aria-atomic` | slide window |
-| `[data-ref="track"]` | yes | `--rui-carousel-index` when `transition="slide"` | slide track |
-| `[data-slide]` | yes | `role`, `aria-*`, `aria-hidden`, `data-active`, `hidden`, `id` | slide `id` value and content |
+| `[data-ref="track"]` | yes | `--rui-carousel-index`, `--rui-carousel-slides-per-view`, `--rui-carousel-gap-count`, `--rui-carousel-slide-count` | slide track |
+| `[data-slide]` | yes | `role`, `aria-*`, `aria-hidden`, `data-active`, `hidden` (swap), `id` | slide `id` value and content |
 | `[data-carousel-action="prev"]` / `next` | no | `disabled` at ends | navigation buttons |
 | `[data-carousel-action="rotation"]` | no | `aria-pressed`, `aria-label` | play/pause control |
 | `[data-ref="indicators"]` | when `show-indicators` | creates `[data-carousel-indicator]` | tablist container |
@@ -137,7 +176,7 @@ Do not set `aria-hidden`, `aria-selected`, or `tabIndex` on slides or indicators
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiCarousel` | shell targets via `CarouselShell` | `slides` convenience prop or `RuiCarouselSlide` children; default prev/next/rotation chrome. |
+| `RuiCarousel` | shell targets via `CarouselShell` | `slides` convenience prop or `RuiCarouselSlide` children; default prev/next/rotation chrome. Stamps `data-carousel-track` and `data-carousel-surface` on `[data-ref="root"]`. |
 | `RuiCarouselSlide` | `[data-slide]` | Requires `id` prop. |
 | `RuiCarouselPrev` | `[data-carousel-action="prev"]` | Override with `prev` prop on `RuiCarousel`. |
 | `RuiCarouselNext` | `[data-carousel-action="next"]` | Override with `next` prop on `RuiCarousel`. |
@@ -183,7 +222,8 @@ Public BEM classes (documented via `@cssclass` on the element and view helpers):
 
 | Part | CSS variables consumed |
 | --- | --- |
-| Viewport | `--surface`, `--border`, `--radius-container` |
+| Viewport / card | `--rui-carousel-surface`, `--rui-carousel-border-color`, `--rui-carousel-radius`, `--rui-carousel-padding` |
+| Card gap | `--rui-carousel-gap` |
 | Indicators | `--background`, `--border` |
 | Active indicator | `--primary` |
 | Overlay chrome | `--surface`, `--border`, `--shadow-control` |
@@ -194,4 +234,5 @@ Public BEM classes (documented via `@cssclass` on the element and view helpers):
 
 - Provide a descriptive `label` so screen readers identify the carousel region.
 - Prev/next controls must be keyboard reachable and expose their purpose in the accessible name.
+- Slides outside the visible window are `aria-hidden`. `data-active` marks the first visible slide.
 - Respect `prefers-reduced-motion` and avoid autoplay when users request reduced motion.

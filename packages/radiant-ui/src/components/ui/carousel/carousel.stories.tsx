@@ -9,6 +9,15 @@ const slides = [
 	{ id: '3', children: <p>Slide three</p> },
 ];
 
+const productSlides = [
+	{ id: '1', children: <p>Slide one</p> },
+	{ id: '2', children: <p>Slide two</p> },
+	{ id: '3', children: <p>Slide three</p> },
+	{ id: '4', children: <p>Slide four</p> },
+	{ id: '5', children: <p>Slide five</p> },
+	{ id: '6', children: <p>Slide six</p> },
+];
+
 const meta = {
 	title: 'Components/Carousel',
 	component: RuiCarousel,
@@ -37,6 +46,10 @@ export const Default: Story = {
 		const slideEls = getSlides(canvasElement);
 
 		await step('next reveals the following slide', async () => {
+			await expect(canvasElement.querySelector('[data-ref="root"]')).toHaveAttribute(
+				'data-carousel-surface',
+				'shell',
+			);
 			await expect(slideEls[0]).not.toHaveAttribute('hidden');
 			await userEvent.click(next);
 			await expect(slideEls[1]).not.toHaveAttribute('hidden');
@@ -256,6 +269,94 @@ export const CustomControls: Story = {
 			const prevAgain = getPrevButton(canvasElement);
 			await userEvent.click(prevAgain);
 			await waitFor(() => expect(getSlides(canvasElement)[0]).toHaveAttribute('data-active', 'true'));
+		});
+	},
+};
+
+export const WithSlidesPerView: Story = {
+	args: {
+		transition: 'slide',
+		slidesPerView: 3,
+		wrap: false,
+		slides: productSlides,
+	},
+	play: async ({ canvasElement, step }) => {
+		const host = canvasElement.querySelector('rui-carousel') as HTMLElement;
+		const root = canvasElement.querySelector('[data-ref="root"]') as HTMLElement;
+		const next = getNextButton(canvasElement);
+		const slideEls = getSlides(canvasElement);
+
+		await step('three slides fill the viewport as separate cards', async () => {
+			await expect(root).toHaveAttribute('data-carousel-track', 'window');
+			await expect(root).toHaveAttribute('data-carousel-surface', 'cards');
+			await expect(slideEls[0]).toHaveAttribute('data-active', 'true');
+			await expect(slideEls[0]).toHaveAttribute('aria-hidden', 'false');
+			await expect(slideEls[1]).toHaveAttribute('aria-hidden', 'false');
+			await expect(slideEls[2]).toHaveAttribute('aria-hidden', 'false');
+			await expect(slideEls[3]).toHaveAttribute('aria-hidden', 'true');
+			await expect(slideEls[1]).toHaveAttribute('data-active', 'false');
+		});
+
+		await step('next moves the window by one slide', async () => {
+			await userEvent.click(next);
+			await expect(host).toHaveAttribute('index', '1');
+			await expect(slideEls[0]).toHaveAttribute('aria-hidden', 'true');
+			await expect(slideEls[3]).toHaveAttribute('aria-hidden', 'false');
+		});
+	},
+};
+
+export const WithSlidesPerGroup: Story = {
+	args: {
+		transition: 'slide',
+		slidesPerView: 3,
+		slidesPerGroup: 3,
+		wrap: false,
+		slides: productSlides,
+	},
+	play: async ({ canvasElement, step }) => {
+		const host = canvasElement.querySelector('rui-carousel') as HTMLElement;
+		const next = getNextButton(canvasElement);
+		const slideEls = getSlides(canvasElement);
+
+		await step('next advances by a full group and disables at the end', async () => {
+			await userEvent.click(next);
+			await expect(host).toHaveAttribute('index', '3');
+			await expect(slideEls[3]).toHaveAttribute('data-active', 'true');
+			await expect(slideEls[3]).toHaveAttribute('aria-hidden', 'false');
+			await expect(slideEls[5]).toHaveAttribute('aria-hidden', 'false');
+			await expect(next).toBeDisabled();
+		});
+	},
+};
+
+export const WithPeek: Story = {
+	args: {
+		transition: 'slide',
+		slidesPerView: 1.2,
+		wrap: false,
+		slides: productSlides,
+	},
+	play: async ({ canvasElement, step }) => {
+		const next = getNextButton(canvasElement);
+		const slideEls = getSlides(canvasElement);
+
+		await step('the following slide stays in view for a peek', async () => {
+			await expect(slideEls[0]).toHaveAttribute('aria-hidden', 'false');
+			await expect(slideEls[1]).toHaveAttribute('aria-hidden', 'false');
+			await expect(slideEls[2]).toHaveAttribute('aria-hidden', 'true');
+		});
+
+		await step('the last card sits on the right with a peek of the previous', async () => {
+			while (!next.disabled) {
+				await userEvent.click(next);
+			}
+
+			const last = getSlides(canvasElement);
+			await expect(last[5]).toHaveAttribute('data-active', 'true');
+			await expect(last[5]).toHaveAttribute('aria-hidden', 'false');
+			await expect(last[4]).toHaveAttribute('aria-hidden', 'false');
+			await expect(last[3]).toHaveAttribute('aria-hidden', 'true');
 		});
 	},
 };
