@@ -173,3 +173,29 @@ test('Docs controller decorator visualizer example keeps authored DOM wiring in 
 		await waitForLocatorText(flowTitle, 'Ref pulse');
 	});
 });
+
+test('Docs code examples copy their source', browserTestOptions, async () => {
+	await withBrowserPage(async (page) => {
+		await page.goto(`${origin}/docs/getting-started/installation`, { waitUntil: 'load' });
+
+		const copyButton = page.locator('[data-rehype-pretty-copy]').first();
+		const source = await copyButton.getAttribute('data-rehype-pretty-copy');
+		assert.ok(source);
+
+		await page.evaluate(() => {
+			Object.defineProperty(navigator, 'clipboard', {
+				configurable: true,
+				value: {
+					writeText: (value) => {
+						document.documentElement.dataset.docsCopiedCode = value;
+						return Promise.resolve();
+					},
+				},
+			});
+		});
+		await copyButton.click();
+
+		await waitForLocatorText(copyButton, 'Copied');
+		assert.equal(await page.locator('html').getAttribute('data-docs-copied-code'), source);
+	});
+});

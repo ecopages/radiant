@@ -106,7 +106,7 @@ export const config = {
 };
 ```
 
-Use `<Demo of={Default} meta={ButtonMeta} />` under **Try it**. Put copy-paste examples in **Usage** as fenced `tsx` blocks (highlighted by `rehype-pretty-code`).
+Use `<Demo of={Default} meta={ButtonMeta} />` under **Try it**. Put copy-paste examples in **Usage** as fenced `tsx` blocks. `rehype-pretty-code` highlights every fenced block and its `transformerCopyButton` adds the Copy button automatically; do not add one in MDX.
 
 Use `<Canvas of={Destructive} meta={ButtonMeta} />` for extra stories that should preview without controls.
 
