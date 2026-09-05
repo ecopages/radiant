@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { transformerCopyButton } from '@rehype-pretty/transformers';
 import type { Root } from 'hast';
-import { rehypePrettyCopyButtonCompatibility } from '../src/mdx/plugins';
+import { rehypePrettyCopyCompatibility } from '../src/mdx/rehype-pretty-copy-compatibility';
 import '../src/layouts/docs-layout/docs-layout.script';
 
 describe('transformerCopyButton', () => {
@@ -18,7 +18,7 @@ describe('transformerCopyButton', () => {
 	});
 });
 
-describe('rehypePrettyCopyButtonCompatibility', () => {
+describe('rehypePrettyCopyCompatibility', () => {
 	test('preserves native transformer source in a renderer-safe data attribute', () => {
 		const tree: Root = {
 			type: 'root',
@@ -29,15 +29,25 @@ describe('rehypePrettyCopyButtonCompatibility', () => {
 					properties: { className: ['rehype-pretty-copy'], data: 'const answer = 42;', onClick: 'copy()' },
 					children: [],
 				},
-				{ type: 'element', tagName: 'style', properties: {}, children: [] },
+				{
+					type: 'element',
+					tagName: 'style',
+					properties: {},
+					children: [{ type: 'text', value: 'pre button.rehype-pretty-copy { opacity: 0; }' }],
+				},
 			],
 		};
 
-		rehypePrettyCopyButtonCompatibility()(tree);
+		rehypePrettyCopyCompatibility()(tree);
 
 		expect(tree.children[0]).toMatchObject({
 			type: 'element',
-			properties: { dataRehypePrettyCopy: 'const answer = 42;' },
+			properties: {
+				type: 'button',
+				title: 'Copy code',
+				'aria-label': 'Copy code',
+				'data-rehype-pretty-copy': 'const answer = 42;',
+			},
 			children: [{ type: 'text', value: 'Copy' }],
 		});
 		expect(tree.children).toHaveLength(1);
