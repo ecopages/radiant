@@ -87,10 +87,19 @@ The host queries `[data-ref="trigger"]` for focus events and `[data-hover-card-t
 
 ## Theming
 
-| Part | CSS roles |
-| --- | --- |
-| Content (`rui-hover-card__content`) | `background`, `on-background`, `border`, `rounded-container`, `shadow-overlay` |
-| Z-order | `overlay` |
+The preview panel is often portaled; override `--rui-hover-card-*` on `.rui-hover-card__content`.
+
+| Part | Default | Override |
+| --- | --- | --- |
+| Width / padding | `20rem`, `--space-inset` | `--rui-hover-card-width`, `--rui-hover-card-padding` |
+| Fill / border / radius / shadow | `--background`, `--border`, `--radius-container`, `--shadow-overlay` | `--rui-hover-card-surface`, `--rui-hover-card-border-color`, `--rui-hover-card-radius`, `--rui-hover-card-shadow` |
+| Z-order | `overlay` | theme z-index |
+
+```css
+.rui-hover-card__content {
+  --rui-hover-card-width: 24rem;
+}
+```
 
 ## Accessibility
 

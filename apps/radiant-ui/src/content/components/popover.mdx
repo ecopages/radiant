@@ -81,15 +81,19 @@ For a standalone popover anchored elsewhere, omit `rui-popover-trigger` and set 
 
 ## Theming
 
-The popover surface maps to **semantic surface roles**, never Tailwind palette steps:
+The popover surface maps to **semantic surface roles**, never Tailwind palette steps. The panel is often portaled; override `--rui-popover-*` on `.rui-popover`.
 
-| Part | CSS roles |
-| --- | --- |
-| Surface (`rui-popover`) | `background`, `on-background`, `border`, `rounded-container`, `shadow-overlay` |
-| Listbox variant | Stripped padding for embedded listboxes |
-| Z-order | `popover` (below dialogs, above page content) |
+| Part | Default | Override |
+| --- | --- | --- |
+| Fill / border / radius / shadow | `--background`, `--border`, `--radius-container`, `--shadow-overlay` | `--rui-popover-surface`, `--rui-popover-border-color`, `--rui-popover-radius`, `--rui-popover-shadow` |
+| Listbox variant | Stripped padding for embedded listboxes | class `rui-popover--listbox` |
+| Z-order | `popover` | theme z-index |
 
-Overrides go at the theme layer, not in component CSS.
+```css
+.rui-popover {
+  --rui-popover-radius: var(--radius-control);
+}
+```
 
 ## Accessibility
 
