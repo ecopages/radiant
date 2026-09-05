@@ -1,10 +1,30 @@
 import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { uniqueId } from '@/lib/unique-id';
+import { CarouselAutoplay } from './carousel-autoplay';
+import { CarouselSwipe } from './carousel-swipe';
+import {
+	advanceIndex,
+	carouselGapCount,
+	isSlideInView,
+	resolveCarouselSurface,
+	resolveCarouselTrackMode,
+	resolveCarouselWindow,
+	type CarouselTrackMode,
+	type CarouselWindow,
+	type CarouselWindowParams,
+} from './carousel-window';
 
 export type RuiCarouselTransition = 'none' | 'slide' | 'fade';
 
 /** Where default prev/next chrome is laid out. `toolbar` places controls below the slide; `overlay` pins them to the slide edges. */
 export type RuiCarouselControlsVariant = 'toolbar' | 'overlay';
+
+export {
+	resolveCarouselSurface,
+	resolveCarouselTrackMode,
+	type CarouselSurface,
+	type CarouselTrackMode,
+} from './carousel-window';
 
 /**
  * Defaults the SSR shell depends on.
@@ -16,6 +36,8 @@ export const CAROUSEL_DEFAULTS = {
 	label: 'Carousel',
 	transition: 'none',
 	controlsVariant: 'toolbar',
+	slidesPerView: 1,
+	slidesPerGroup: 1,
 } as const;
 
 export type RuiCarouselProps = {
@@ -32,14 +54,16 @@ export type RuiCarouselProps = {
 	loop?: boolean;
 	/** When true, prev/next wrap and controls stay enabled at the ends. Default: true. */
 	wrap?: boolean;
+	/** How many slides fill the viewport. Values `>= 1`; fractional peek is allowed. Default: `1`. */
+	slidesPerView?: number;
+	/** How many slides prev/next/autoplay/swipe move. Default: `1`. */
+	slidesPerGroup?: number;
 	/** Authored slide count for render-time control state before the view paints slides. */
 	slideCount?: number;
 };
 
-const SWIPE_THRESHOLD_PX = 48;
-
 /**
- * `<rui-carousel>` — sequentially displays one slide at a time.
+ * `<rui-carousel>` — sequentially displays a window of slides.
  *
  * The custom element is a behavior host: it does not render the composed tree.
  * Import the script and place light-DOM children that match the contract below,
@@ -53,10 +77,13 @@ const SWIPE_THRESHOLD_PX = 48;
  *
  * Required:
  * - `[data-ref="root"]` — carousel region. View seeds `aria-roledescription="carousel"` and `aria-label`.
+ *   Host sets `data-carousel-track` (`swap` | `stack` | `window`) and `data-carousel-surface`
+ *   (`shell` | `cards`).
  * - `[data-ref="viewport"]` — slide window. Host sets `aria-live` and `aria-atomic`; swipe target.
- * - `[data-ref="track"]` — slide track. Host sets `--rui-carousel-index` when `transition="slide"`.
+ * - `[data-ref="track"]` — slide track. Host sets `--rui-carousel-index`,
+ *   `--rui-carousel-slides-per-view`, `--rui-carousel-gap-count`, and `--rui-carousel-slide-count`.
  * - `[data-slide]` — one slide per panel. Host sets `role`, `aria-*`, `aria-hidden`, `data-active`,
- *   `hidden` (when `transition="none"`), and `id`.
+ *   `hidden` (when track mode is `swap`), and `id`.
  *
  * Optional:
  * - `[data-carousel-action="prev"]` / `[data-carousel-action="next"]` — navigation buttons.
@@ -70,12 +97,12 @@ const SWIPE_THRESHOLD_PX = 48;
  *
  * Nested hosts: none.
  *
- * @summary Region that cycles slides; optional autoplay, transitions, and chrome.
+ * @summary Region that cycles a window of slides; optional autoplay, transitions, and chrome.
  *
  * @element rui-carousel
  *
  * @attr {string} label - Accessible name for the carousel. Default: `Carousel`.
- * @attr {number} index - Active slide index. Default: `0`.
+ * @attr {number} index - First visible slide index. Default: `0`.
  * @attr {boolean} autoplay - Advance automatically. Default: `false`.
  * @attr {number} interval - Autoplay interval in ms. Default: `4000`.
  * @attr {('none'|'slide'|'fade')} transition - Slide swap animation. Default: `none`.
@@ -84,12 +111,25 @@ const SWIPE_THRESHOLD_PX = 48;
  * @attr {boolean} show-rotation-control - Render play/pause control. Default: `false`.
  * @attr {boolean} loop - Allow looping past the last slide. Default: `true`.
  * @attr {boolean} wrap - Keep controls enabled at the ends. Default: `true`.
+ * @attr {number} slides-per-view - Slides that fill the viewport. Default: `1`.
+ * @attr {number} slides-per-group - Slides moved per prev/next/autoplay/swipe. Default: `1`.
  * @attr {number} slide-count - Authored slide count for render-time control state. Default: `0`.
  *
+ * @cssprop --rui-carousel-gap - Space between cards when `slides-per-view` is greater than 1. Default: `--space-inline`.
+ * @cssprop --rui-carousel-radius - Corner radius on the shell viewport or each card. Default: `--radius-container`.
+ * @cssprop --rui-carousel-border-color - Border on the shell viewport or each card. Default: `--border`.
+ * @cssprop --rui-carousel-surface - Fill on the shell viewport or each card. Default: `--surface`.
+ * @cssprop --rui-carousel-padding - Inset on the shell viewport (toolbar) or each card. Default: `--space-inset`.
+ *
+ * @see https://www.w3.org/WAI/ARIA/apg/patterns/carousel/
+ *
  * @remarks
- * Autoplay pauses on hover, pointer interaction, focus, and hidden tabs, and
- * respects `prefers-reduced-motion`. `aria-live` flips to `off` while rotating.
- * BEM classes live on the view; the host queries `[data-ref="track"]` for slide transitions.
+ * `index` is the first visible slide. `slides-per-view` greater than 1 paints a sliding
+ * track of separate cards even when `transition` is `none` or `fade`. A single pane keeps
+ * chrome on the viewport. Override `--rui-carousel-*` on `rui-carousel`. Autoplay pauses on
+ * hover, pointer interaction, focus, and hidden tabs, and respects `prefers-reduced-motion`.
+ * `aria-live` flips to `off` while rotating. BEM classes live on the view; the host queries
+ * `[data-ref="track"]` for slide transitions.
  */
 @customElement('rui-carousel')
 export class RuiCarousel extends RadiantElement {
@@ -104,20 +144,27 @@ export class RuiCarousel extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: false }) showRotationControl: boolean;
 	@prop({ type: Boolean, defaultValue: true }) loop: boolean;
 	@prop({ type: Boolean, defaultValue: true }) wrap: boolean;
+	@prop({ type: Number, defaultValue: CAROUSEL_DEFAULTS.slidesPerView, attribute: 'slides-per-view' })
+	slidesPerView: number;
+	@prop({ type: Number, defaultValue: CAROUSEL_DEFAULTS.slidesPerGroup, attribute: 'slides-per-group' })
+	slidesPerGroup: number;
 	@prop({ type: Number, defaultValue: 0 }) slideCount: number;
 
+	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'track' }) trackTarget: HTMLElement;
 	@query({ ref: 'indicators' }) indicatorsTarget: HTMLElement;
 	@query({ ref: 'viewport' }) viewportTarget: HTMLElement;
 
-	private timer: ReturnType<typeof setInterval> | null = null;
 	private paused = false;
 	private readonly uid = uniqueId('rui-carousel');
 	/** User explicitly resumed rotation (e.g. via rotation control) despite reduced motion. */
 	private userOverrideReducedMotion = false;
-	private swipePointerId: number | null = null;
-	private swipeStartX = 0;
-	private swipeStartY = 0;
+	private readonly swipe = new CarouselSwipe();
+	private readonly autoplayController = new CarouselAutoplay({
+		getInterval: () => this.interval,
+		canRotate: () => this.canAutoplayRotate(),
+		onTick: () => this.onAutoplayTick(),
+	});
 
 	protected override onConnected(): void {
 		if (this.autoplay && this.prefersReducedMotion()) {
@@ -130,11 +177,11 @@ export class RuiCarousel extends RadiantElement {
 	}
 
 	override disconnectedCallback(): void {
-		this.stop();
+		this.autoplayController.stop();
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['index', 'transition', 'loop', 'wrap', 'controlsVariant'])
+	@onUpdated(['index', 'transition', 'loop', 'wrap', 'controlsVariant', 'slidesPerView', 'slidesPerGroup'])
 	onSlideStateUpdated(): void {
 		this.sync();
 		this.syncIndicators();
@@ -170,11 +217,40 @@ export class RuiCarousel extends RadiantElement {
 	private tabId(index: number): string {
 		return `${this.uid}-tab-${index}`;
 	}
-	private syncSlideAccessibility(slides: HTMLElement[], activeIndex: number): void {
+
+	private getSlides(): HTMLElement[] {
+		return Array.from(this.querySelectorAll<HTMLElement>('[data-slide]'));
+	}
+
+	private get shouldWrap(): boolean {
+		return this.wrap && this.loop;
+	}
+
+	private windowParams(count: number, index: number = this.index): CarouselWindowParams {
+		return {
+			index,
+			count,
+			slidesPerView: this.slidesPerView,
+			slidesPerGroup: this.slidesPerGroup,
+			wrap: this.shouldWrap,
+		};
+	}
+
+	private windowFor(count: number): CarouselWindow {
+		return resolveCarouselWindow(this.windowParams(count));
+	}
+
+	private trackMode(): CarouselTrackMode {
+		return resolveCarouselTrackMode(this.transition, this.slidesPerView);
+	}
+
+	private syncSlideAccessibility(slides: HTMLElement[], activeIndex: number, slidesPerView: number): void {
 		const count = slides.length;
+		const trackMode = this.trackMode();
 
 		slides.forEach((slide, i) => {
 			const active = i === activeIndex;
+			const inView = isSlideInView(i, activeIndex, count, slidesPerView);
 			const positionLabel = `${i + 1} of ${count}`;
 
 			if (this.showIndicators) {
@@ -191,35 +267,10 @@ export class RuiCarousel extends RadiantElement {
 				slide.removeAttribute('tabindex');
 			}
 
-			if (this.transition === 'none') {
-				slide.hidden = !active;
-			} else {
-				slide.hidden = false;
-			}
-
-			slide.setAttribute('aria-hidden', String(!active));
+			slide.hidden = trackMode === 'swap' && !active;
+			slide.setAttribute('aria-hidden', String(!inView));
 			slide.setAttribute('data-active', active ? 'true' : 'false');
 		});
-	}
-
-	private getSlides(): HTMLElement[] {
-		return Array.from(this.querySelectorAll<HTMLElement>('[data-slide]'));
-	}
-
-	private get shouldWrap(): boolean {
-		return this.wrap && this.loop;
-	}
-
-	private normalizeIndex(raw: number, count: number): number {
-		if (count <= 0) {
-			return 0;
-		}
-
-		if (!this.shouldWrap) {
-			return Math.min(Math.max(raw, 0), count - 1);
-		}
-
-		return ((raw % count) + count) % count;
 	}
 
 	private sync(): void {
@@ -228,24 +279,32 @@ export class RuiCarousel extends RadiantElement {
 			return;
 		}
 
-		const normalized = this.normalizeIndex(this.index, slides.length);
-		if (normalized !== this.index) {
-			this.index = normalized;
+		const next = this.windowFor(slides.length);
+		if (next.index !== this.index) {
+			this.index = next.index;
+		}
+
+		const root = this.rootTarget;
+		if (root) {
+			root.setAttribute('data-carousel-track', this.trackMode());
+			root.setAttribute('data-carousel-surface', resolveCarouselSurface(this.slidesPerView));
 		}
 
 		const track = this.trackTarget;
-		if (track && this.transition === 'slide') {
-			track.style.setProperty('--rui-carousel-index', String(normalized));
+		if (track) {
+			track.style.setProperty('--rui-carousel-index', String(next.index));
+			track.style.setProperty('--rui-carousel-slides-per-view', String(next.slidesPerView));
+			track.style.setProperty('--rui-carousel-gap-count', String(carouselGapCount(next.slidesPerView)));
+			track.style.setProperty('--rui-carousel-slide-count', String(slides.length));
 		}
 
-		this.syncSlideAccessibility(slides, normalized);
-
-		this.syncPrevNextDisabled(slides.length, normalized);
+		this.syncSlideAccessibility(slides, next.index, next.slidesPerView);
+		this.syncPrevNextDisabled(next);
 	}
 
-	private syncPrevNextDisabled(count: number, normalized: number): void {
-		const disablePrev = !this.shouldWrap && count > 0 && normalized <= 0;
-		const disableNext = !this.shouldWrap && count > 0 && normalized >= count - 1;
+	private syncPrevNextDisabled(window: CarouselWindow): void {
+		const disablePrev = !this.shouldWrap && !window.canGoPrev;
+		const disableNext = !this.shouldWrap && !window.canGoNext;
 
 		for (const button of this.querySelectorAll<HTMLButtonElement>('[data-carousel-action="prev"]')) {
 			if (this.shouldWrap) {
@@ -271,7 +330,7 @@ export class RuiCarousel extends RadiantElement {
 		}
 
 		const slides = this.getSlides();
-		const normalized = this.normalizeIndex(this.index, slides.length);
+		const next = this.windowFor(slides.length);
 		const existing = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-carousel-indicator]'));
 
 		if (existing.length !== slides.length) {
@@ -292,7 +351,7 @@ export class RuiCarousel extends RadiantElement {
 
 		const indicators = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-carousel-indicator]'));
 		indicators.forEach((indicator, i) => {
-			const selected = i === normalized;
+			const selected = i === next.index;
 			const slide = slides[i];
 			if (slide) {
 				indicator.id = this.tabId(i);
@@ -317,7 +376,7 @@ export class RuiCarousel extends RadiantElement {
 			return;
 		}
 
-		const rotating = this.autoplay && !this.paused && this.timer !== null;
+		const rotating = this.autoplay && !this.paused && this.autoplayController.isRunning;
 		viewport.setAttribute('aria-live', rotating ? 'off' : 'polite');
 		viewport.setAttribute('aria-atomic', 'false');
 	}
@@ -331,56 +390,33 @@ export class RuiCarousel extends RadiantElement {
 			return false;
 		}
 
-		return true;
-	}
-
-	private syncAutoplay(): void {
-		if (this.canAutoplayRotate()) {
-			this.start();
-		} else {
-			this.stop();
+		const slides = this.getSlides();
+		if (!slides.length) {
+			return false;
 		}
 
-		this.syncRotationControl();
-		this.syncAriaLive();
+		return this.windowFor(slides.length).canGoNext;
 	}
 
-	private start(): void {
+	private onAutoplayTick(): void {
 		const slides = this.getSlides();
 		if (!slides.length) {
 			return;
 		}
 
-		if (!this.shouldWrap && this.index >= slides.length - 1) {
-			this.stop();
+		const next = this.windowFor(slides.length);
+		if (!next.canGoNext) {
+			this.autoplayController.stop();
+			this.syncAriaLive();
 			return;
 		}
 
-		this.stop();
-		const ms = Math.max(0, this.interval);
-		this.timer = setInterval(() => {
-			const currentSlides = this.getSlides();
-			if (!currentSlides.length) {
-				return;
-			}
-
-			if (!this.shouldWrap && this.index >= currentSlides.length - 1) {
-				this.stop();
-				this.syncAriaLive();
-				return;
-			}
-
-			this.goTo(this.index + 1);
-		}, ms);
-		this.syncAriaLive();
+		this.goTo(advanceIndex(this.windowParams(slides.length), 1));
 	}
 
-	private stop(): void {
-		if (this.timer) {
-			clearInterval(this.timer);
-		}
-
-		this.timer = null;
+	private syncAutoplay(): void {
+		this.autoplayController.sync();
+		this.syncRotationControl();
 		this.syncAriaLive();
 	}
 
@@ -390,15 +426,20 @@ export class RuiCarousel extends RadiantElement {
 			return;
 		}
 
-		this.index = this.normalizeIndex(next, slides.length);
+		this.index = resolveCarouselWindow(this.windowParams(slides.length, next)).index;
 		this.sync();
 		this.syncIndicators();
 	}
 
-	private userNavigate(delta: number): void {
+	private userNavigate(deltaGroups: number): void {
 		this.paused = true;
-		this.stop();
-		this.goTo(this.index + delta);
+		this.autoplayController.stop();
+		const slides = this.getSlides();
+		if (!slides.length) {
+			return;
+		}
+
+		this.goTo(advanceIndex(this.windowParams(slides.length), deltaGroups));
 	}
 
 	private isSwipeExcludedTarget(target: EventTarget | null): boolean {
@@ -450,7 +491,7 @@ export class RuiCarousel extends RadiantElement {
 		}
 
 		this.paused = true;
-		this.stop();
+		this.autoplayController.stop();
 		this.goTo(indicatorIndex);
 		button.focus();
 	}
@@ -473,9 +514,9 @@ export class RuiCarousel extends RadiantElement {
 		}
 
 		if (event.key === 'ArrowRight') {
-			nextIndex = this.normalizeIndex(nextIndex + 1, slides.length);
+			nextIndex = advanceIndex({ ...this.windowParams(slides.length, nextIndex), slidesPerGroup: 1 }, 1);
 		} else if (event.key === 'ArrowLeft') {
-			nextIndex = this.normalizeIndex(nextIndex - 1, slides.length);
+			nextIndex = advanceIndex({ ...this.windowParams(slides.length, nextIndex), slidesPerGroup: 1 }, -1);
 		} else if (event.key === 'Home') {
 			nextIndex = 0;
 		} else if (event.key === 'End') {
@@ -483,7 +524,7 @@ export class RuiCarousel extends RadiantElement {
 		} else if (event.key === ' ' || event.key === 'Enter') {
 			event.preventDefault();
 			this.paused = true;
-			this.stop();
+			this.autoplayController.stop();
 			this.goTo(nextIndex);
 			return;
 		} else {
@@ -492,19 +533,19 @@ export class RuiCarousel extends RadiantElement {
 
 		event.preventDefault();
 		this.paused = true;
-		this.stop();
+		this.autoplayController.stop();
 		this.goTo(nextIndex);
 
 		const indicators = Array.from(
 			this.indicatorsTarget?.querySelectorAll<HTMLButtonElement>('[data-carousel-indicator]') ?? [],
 		);
-		indicators[nextIndex]?.focus();
+		indicators[this.index]?.focus();
 	}
 
 	@onEvent({ ref: 'root', type: 'pointerenter' })
 	onRootPointerEnter(event: PointerEvent): void {
 		if (this.autoplay && event.pointerType === 'mouse') {
-			this.stop();
+			this.autoplayController.stop();
 		}
 	}
 
@@ -518,7 +559,7 @@ export class RuiCarousel extends RadiantElement {
 	@onEvent({ ref: 'root', type: 'focusin' })
 	onRootFocusIn(): void {
 		if (this.autoplay) {
-			this.stop();
+			this.autoplayController.stop();
 		}
 	}
 
@@ -536,47 +577,21 @@ export class RuiCarousel extends RadiantElement {
 
 	@onEvent({ ref: 'viewport', type: 'pointerdown' })
 	onViewportPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.isSwipeExcludedTarget(event.target)) {
-			return;
-		}
-
-		this.swipePointerId = event.pointerId;
-		this.swipeStartX = event.clientX;
-		this.swipeStartY = event.clientY;
-	}
-
-	@onEvent({ ref: 'viewport', type: 'pointermove' })
-	onViewportPointerMove(event: PointerEvent): void {
-		if (this.swipePointerId !== event.pointerId) {
-			return;
-		}
+		this.swipe.onPointerDown(event, this.isSwipeExcludedTarget(event.target));
 	}
 
 	@onEvent({ ref: 'viewport', type: 'pointerup' })
 	onViewportPointerUp(event: PointerEvent): void {
-		if (this.swipePointerId !== event.pointerId) {
-			return;
-		}
-
-		const dx = event.clientX - this.swipeStartX;
-		const dy = event.clientY - this.swipeStartY;
-		this.swipePointerId = null;
-
-		if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) <= Math.abs(dy)) {
-			return;
-		}
-
-		if (dx < 0) {
+		const direction = this.swipe.onPointerUp(event);
+		if (direction === 'next') {
 			this.next();
-		} else {
+		} else if (direction === 'prev') {
 			this.prev();
 		}
 	}
 
 	@onEvent({ ref: 'viewport', type: 'pointercancel' })
 	onViewportPointerCancel(event: PointerEvent): void {
-		if (this.swipePointerId === event.pointerId) {
-			this.swipePointerId = null;
-		}
+		this.swipe.onPointerCancel(event);
 	}
 }
