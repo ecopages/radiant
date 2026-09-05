@@ -55,7 +55,7 @@ The helper uses random UUIDs in secure contexts and random bytes on HTTP origins
 
 ## Numeric controls
 
-Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value.
+Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value. Knob waits until range props in the same turn have landed before snapping, so a fractional value is not rounded against the default step.
 
 ## Two host shapes (bindings vs imperative paint)
 

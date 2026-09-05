@@ -137,6 +137,7 @@ export class RuiKnob extends RadiantElement {
 
 	private activePointerId: number | null = null;
 	private lastEmitted: number | null = null;
+	private rangeCommitQueued = false;
 
 	protected override onConnected(): void {
 		this.syncPresentation();
@@ -248,11 +249,25 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	private syncPresentation(): void {
-		const value = this.numericRange.clamp(this.value);
-		this.paint(value);
-		if (!valuesAlignOnStep(this.value, value, this.step)) {
-			this.value = value;
-		}
+		this.paint(this.numericRange.clamp(this.value));
+		this.queueNormalizedValueCommit();
+	}
+
+	/**
+	 * @remarks JSX and Storybook can set `value` before `step` / `max`. Snapping in
+	 * that same turn would round `0.2` onto the default step of `1`.
+	 */
+	private queueNormalizedValueCommit(): void {
+		if (this.rangeCommitQueued) return;
+		this.rangeCommitQueued = true;
+		queueMicrotask(() => {
+			this.rangeCommitQueued = false;
+			const value = this.numericRange.clamp(this.value);
+			this.paint(value);
+			if (!valuesAlignOnStep(this.value, value, this.step)) {
+				this.value = value;
+			}
+		});
 	}
 
 	private commitValue(next: number): void {
