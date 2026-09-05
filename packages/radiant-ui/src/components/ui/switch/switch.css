@@ -1,6 +1,15 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-switch {
+	--rui-switch-width: 2.5rem;
+	--rui-switch-height: 1.5rem;
+	--rui-switch-thumb-size: 1rem;
+	--rui-switch-track: color-mix(in oklab, var(--on-background) 20%, transparent);
+	--rui-switch-track-hover: color-mix(in oklab, var(--on-background) 30%, transparent);
+	--rui-switch-track-on: var(--primary);
+	--rui-switch-track-on-hover: color-mix(in oklab, var(--primary) 80%, transparent);
+	--rui-switch-thumb: var(--on-background);
+	--rui-switch-thumb-on: var(--on-primary);
 	@apply inline-flex;
 }
 
@@ -23,33 +32,36 @@ rui-switch {
 	}
 
 	.rui-switch__track {
-		--rui-switch-width: 2.5rem;
-		--rui-switch-height: 1.5rem;
-		--rui-switch-thumb-size: 1rem;
-
-		@apply relative inline-flex h-(--rui-switch-height) w-(--rui-switch-width) shrink-0 items-center rounded-pill p-1;
-		@apply bg-on-background/20 transition-colors duration-normal;
+		@apply relative inline-flex shrink-0 items-center rounded-pill p-1;
+		@apply transition-colors duration-normal;
+		block-size: var(--rui-switch-height);
+		inline-size: var(--rui-switch-width);
+		background-color: var(--rui-switch-track);
 	}
 
 	.rui-switch__track:hover {
-		@apply bg-on-background/30;
+		background-color: var(--rui-switch-track-hover);
 	}
 
 	.rui-switch__input:checked + .rui-switch__track {
-		@apply bg-primary;
+		background-color: var(--rui-switch-track-on);
 	}
 
 	.rui-switch__input:checked + .rui-switch__track:hover {
-		@apply bg-primary/80;
+		background-color: var(--rui-switch-track-on-hover);
 	}
 
 	.rui-switch__thumb {
-		@apply pointer-events-none absolute top-1/2 left-1 size-(--rui-switch-thumb-size) -translate-y-1/2 rounded-full bg-on-background;
+		@apply pointer-events-none absolute top-1/2 left-1 -translate-y-1/2 rounded-full;
 		@apply transition-[left,right,transform] duration-normal ease-in-out;
+		inline-size: var(--rui-switch-thumb-size);
+		block-size: var(--rui-switch-thumb-size);
+		background-color: var(--rui-switch-thumb);
 	}
 
 	.rui-switch__input:checked + .rui-switch__track .rui-switch__thumb {
-		@apply right-1 left-auto bg-on-primary;
+		@apply right-1 left-auto;
+		background-color: var(--rui-switch-thumb-on);
 	}
 
 	.rui-switch__label {
