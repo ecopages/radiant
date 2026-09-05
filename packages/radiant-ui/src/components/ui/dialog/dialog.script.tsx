@@ -57,6 +57,13 @@ export type RuiDialogCloseDetail = {
  * @attr {string} label - Accessible name when there is no visible title.
  * @fires rui-close - Emitted when the dialog is dismissed; `detail.reason` is `escape`, `backdrop`, or `dismiss`.
  *
+ * @cssprop --rui-dialog-max-width - Surface max inline size. Default: `28rem`.
+ * @cssprop --rui-dialog-padding - Surface padding. Default: `--space-inset`.
+ * @cssprop --rui-dialog-radius - Surface corner radius. Default: `--radius-container`.
+ * @cssprop --rui-dialog-surface - Surface fill. Default: `--background`.
+ * @cssprop --rui-dialog-shadow - Surface shadow. Default: `--shadow-modal`.
+ * @cssprop --rui-dialog-inset-x - Viewport inline inset below 600px. Default: `1rem`.
+ *
  * @remarks
  * Minimum tree: `[data-ref="root"]` > backdrop + `[data-ref="dialog"]` with optional title, body, and close.
  * BEM classes live on the view `DialogShell` and helpers; the host never queries them.

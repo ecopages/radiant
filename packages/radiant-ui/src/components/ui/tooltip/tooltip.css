@@ -1,6 +1,13 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-tooltip {
+	--rui-tooltip-max-width: 20rem;
+	--rui-tooltip-padding-x: var(--space-2);
+	--rui-tooltip-padding-y: var(--space-1);
+	--rui-tooltip-radius: var(--radius-container);
+	--rui-tooltip-surface: var(--on-background);
+	--rui-tooltip-color: var(--background);
+	--rui-tooltip-shadow: var(--shadow-overlay);
 	@apply inline-flex;
 }
 
@@ -14,8 +21,15 @@ rui-tooltip {
 	}
 
 	.rui-tooltip__content {
-		@apply z-overlay max-w-xs rounded-container bg-on-background px-2 py-1 text-xs text-background shadow-overlay;
+		@apply z-overlay text-xs;
 		width: max-content;
+		max-inline-size: var(--rui-tooltip-max-width);
+		padding-inline: var(--rui-tooltip-padding-x);
+		padding-block: var(--rui-tooltip-padding-y);
+		border-radius: var(--rui-tooltip-radius);
+		background-color: var(--rui-tooltip-surface);
+		color: var(--rui-tooltip-color);
+		box-shadow: var(--rui-tooltip-shadow);
 		pointer-events: none;
 	}
 
