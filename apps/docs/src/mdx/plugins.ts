@@ -1,7 +1,9 @@
 import rehypePrettyCode, { type Options as RehypePrettyCodeOptions } from 'rehype-pretty-code';
 import remarkGfm from 'remark-gfm';
+import { transformerCopyButton } from '@rehype-pretty/transformers';
 import type { PluggableList } from 'unified';
 import { withContentMdxPlugins } from '@ecopages/content-processor/mdx';
+import { rehypePrettyCopyCompatibility } from './rehype-pretty-copy-compatibility';
 
 export type DocsMdxPluginsOptions = {
 	rehypePrettyCode: RehypePrettyCodeOptions;
@@ -13,11 +15,14 @@ export type DocsMdxPluginsOptions = {
 export function createDocsMdxPlugins(options: DocsMdxPluginsOptions) {
 	const prettyCodePlugin: [typeof rehypePrettyCode, RehypePrettyCodeOptions] = [
 		rehypePrettyCode,
-		options.rehypePrettyCode,
+		{
+			...options.rehypePrettyCode,
+			transformers: [transformerCopyButton(), ...(options.rehypePrettyCode.transformers ?? [])],
+		},
 	];
 
 	return withContentMdxPlugins({
 		remarkPlugins: [remarkGfm, ...(options.remarkPlugins ?? [])],
-		rehypePlugins: [prettyCodePlugin, ...(options.rehypePlugins ?? [])],
+		rehypePlugins: [prettyCodePlugin, rehypePrettyCopyCompatibility, ...(options.rehypePlugins ?? [])],
 	});
 }
