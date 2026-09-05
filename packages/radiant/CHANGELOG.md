@@ -1,5 +1,25 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.6
+
+### Minor Changes
+
+- [#226](https://github.com/ecopages/radiant/pull/226) [`a68c13a`](https://github.com/ecopages/radiant/commit/a68c13ad59c80b88d4792fc58eeb76f992de09f8) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `@bindTo` to copy a reactive field onto the host or a `data-ref` / selector descendant without a `render()` tree.
+
+    **@ecopages/radiant**
+
+    - `@bindTo(target)` or `@bindTo(target[])` writes `attr`, `bool`, `prop`, or `text` (optional `invert` / `map`). Omit `ref` and `selector` to patch the host (`this` / `this.element`).
+    - Flushes after attribute catch-up and the initial hydrate/update, before `onConnected()`, including on reconnect. Missing nodes and non-reactive fields are skipped.
+    - A target with zero or several write kinds, or both `ref` and `selector`, throws when the decorator is applied.
+    - Events stay `@onEvent`; procedures and derived state stay `@onUpdated`. Import from `@ecopages/radiant` or `@ecopages/radiant/decorators/bind-to`.
+
+### Patch Changes
+
+- [#230](https://github.com/ecopages/radiant/pull/230) [`9f1419b`](https://github.com/ecopages/radiant/commit/9f1419b8c2c80522f67f2e9b1eaf6531f0e8d9b3) Thanks [@andeeplus](https://github.com/andeeplus)! - Reflect the normalized property value when a synchronous update callback changes an assignment.
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-rc.6
+    - @ecopages/signals@0.3.0-rc.6
+
 ## 0.3.0-rc.5
 
 ### Patch Changes
