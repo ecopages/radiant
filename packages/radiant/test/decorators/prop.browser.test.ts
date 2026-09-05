@@ -157,6 +157,23 @@ describe('@prop', () => {
 	});
 
 	describe('reflect', () => {
+		test('reflects the value retained by a synchronous update callback', async () => {
+			@customElement('my-prop-normalized-reflect')
+			class NormalizedReflect extends RadiantElement {
+				@prop({ type: Number, reflect: true, defaultValue: 0 }) value: number;
+			}
+			const host = new NormalizedReflect();
+			document.body.append(host);
+			await Promise.resolve();
+			host.registerUpdateCallback('value', () => {
+				const normalized = Math.round(host.value);
+				if (normalized !== host.value) host.value = normalized;
+			});
+			host.value = 20.3;
+			expect(host.value).toBe(20);
+			expect(host.getAttribute('value')).toBe('20');
+		});
+
 		@customElement('my-reactive-reflect')
 		class MyReactiveReflect extends RadiantElement {
 			@prop({ type: Number, reflect: true, defaultValue: 5 }) value: number;
