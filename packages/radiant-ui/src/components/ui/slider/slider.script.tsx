@@ -252,7 +252,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @cssprop --rui-slider-thumb-border-width - Range thumb border width. Default: `2px`.
  * @cssprop --rui-slider-thumb-border-color - Range thumb border color. Default: `--primary`.
  * @cssprop --rui-slider-thumb-background - Range thumb fill. Default: `--background`.
- * @cssprop --rui-slider-thumb-shadow - Range thumb shadow. Default: `0 2px 8px rgb(0 0 0 / 0.12)`.
+ * @cssprop --rui-slider-thumb-shadow - Range thumb shadow. Default: `--shadow-control`.
  * @cssprop --rui-slider-thumb-radius - Thumb corner radius. Default: `--radius-control`.
  * @cssprop --rui-slider-value-color - Value readout color. Default: `--on-surface`.
  * @cssprop --rui-slider-focus-ring - Focus ring color. Default: `--focus-ring`.

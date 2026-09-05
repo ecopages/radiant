@@ -13,7 +13,7 @@ rui-slider {
 	--rui-slider-thumb-border-width: 2px;
 	--rui-slider-thumb-border-color: var(--primary);
 	--rui-slider-thumb-background: var(--background);
-	--rui-slider-thumb-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+	--rui-slider-thumb-shadow: var(--shadow-control);
 	--rui-slider-thumb-radius: var(--radius-control);
 	--rui-slider-value-color: var(--on-surface);
 	--rui-slider-focus-ring: var(--focus-ring);
@@ -110,7 +110,7 @@ rui-slider:has(.rui-slider--vertical) {
 		border: var(--rui-slider-thumb-border-width, 2px) solid var(--rui-slider-thumb-border-color, var(--primary));
 		border-radius: var(--rui-slider-thumb-radius, var(--radius-control));
 		background: var(--rui-slider-thumb-background, var(--background));
-		box-shadow: var(--rui-slider-thumb-shadow, 0 2px 8px rgb(0 0 0 / 0.12));
+		box-shadow: var(--rui-slider-thumb-shadow, var(--shadow-control));
 	}
 
 	.rui-slider__thumb::before {
@@ -125,7 +125,7 @@ rui-slider:has(.rui-slider--vertical) {
 	.rui-slider__thumb:focus-visible {
 		@apply outline-hidden;
 		box-shadow:
-			var(--rui-slider-thumb-shadow, 0 2px 8px rgb(0 0 0 / 0.12)),
+			var(--rui-slider-thumb-shadow, var(--shadow-control)),
 			0 0 0 var(--rui-slider-focus-ring-width, 2px) var(--rui-slider-focus-ring, var(--focus-ring));
 	}
 
