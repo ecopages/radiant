@@ -62,14 +62,14 @@ import '@ecopages/radiant-ui/carousel';
     </div>
     <div class="rui-carousel__footer">
       <button type="button" data-carousel-action="prev">Previous</button>
-      <div data-ref="indicators" role="tablist" aria-label="Choose slide to display"></div>
+      <div data-ref="indicators" role="group" aria-label="Choose slide window"></div>
       <button type="button" data-carousel-action="next">Next</button>
     </div>
   </section>
 </rui-carousel>
 ```
 
-When `show-indicators` is set, the host creates `[data-carousel-indicator]` buttons inside `[data-ref="indicators"]`.
+When `show-indicators` is set, the host creates `[data-carousel-indicator]` buttons inside `[data-ref="indicators"]`. One slide per view uses a tab for each slide. Multiple slides per view use one button per valid window start, with `aria-current` identifying the current window. Five slides with `slidesPerView={3}` have three window buttons. Arrow keys, Home, and End navigate those windows.
 
 <Canvas of={WithIndicators} meta={CarouselMeta} />
 
@@ -138,7 +138,7 @@ Override the `--rui-carousel-*` custom properties on `rui-carousel`. Theme roles
 | `interval` | `number` | `4000` | Autoplay interval in ms. |
 | `transition` | `none` · `slide` · `fade` | `none` | Slide swap animation. |
 | `controls-variant` | `toolbar` · `overlay` | `toolbar` | Chrome layout. |
-| `show-indicators` | `boolean` | `false` | Render tabbed indicator pickers. |
+| `show-indicators` | `boolean` | `false` | Render slide tabs or multi-slide window buttons. |
 | `show-rotation-control` | `boolean` | `false` | Render play/pause control. |
 | `loop` | `boolean` | `true` | Allow looping past the last slide. |
 | `wrap` | `boolean` | `true` | Keep controls enabled at the ends. |
@@ -168,7 +168,7 @@ Set these on `rui-carousel`. Each defaults to a theme token.
 | `[data-slide]` | yes | `role`, `aria-*`, `aria-hidden`, `data-active`, `hidden` (swap), `id` | slide `id` value and content |
 | `[data-carousel-action="prev"]` / `next` | no | `disabled` at ends | navigation buttons |
 | `[data-carousel-action="rotation"]` | no | `aria-pressed`, `aria-label` | play/pause control |
-| `[data-ref="indicators"]` | when `show-indicators` | creates `[data-carousel-indicator]` | tablist container |
+| `[data-ref="indicators"]` | when `show-indicators` | `role`, `aria-label`; creates `[data-carousel-indicator]` | indicator container |
 
 Do not set `aria-hidden`, `aria-selected`, or `tabIndex` on slides or indicators. Nested hosts: none.
 

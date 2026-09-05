@@ -200,8 +200,8 @@ function CarouselShell({
 		<div
 			class={cx('rui-carousel__indicators', overlay && 'rui-carousel__indicators--overlay')}
 			data-ref="indicators"
-			role="tablist"
-			aria-label="Choose slide to display"
+			role={surface === 'shell' ? 'tablist' : 'group'}
+			aria-label={surface === 'shell' ? 'Choose slide to display' : 'Choose slide window'}
 		/>
 	) : null;
 
