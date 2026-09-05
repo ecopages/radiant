@@ -29,8 +29,15 @@ function cssSafePrefix(prefix: string): string {
 /**
  * Mint a document-unique, CSS-safe id: `${prefix}-${uuid}`.
  *
- * @remarks Uses `crypto.randomUUID()`. Prefix so the id never starts with a digit.
+ * @remarks Uses `crypto.randomUUID()` in secure contexts and random bytes on HTTP.
+ * Prefix so the id never starts with a digit.
  */
 export function uniqueId(prefix: string): string {
-	return `${cssSafePrefix(prefix)}-${crypto.randomUUID().replace(/-/g, '')}`;
+	const token =
+		typeof crypto.randomUUID === 'function'
+			? crypto.randomUUID().replace(/-/g, '')
+			: Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, '0')).join(
+					'',
+				);
+	return `${cssSafePrefix(prefix)}-${token}`;
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { isCssSafeId, uniqueId } from './unique-id';
 
 describe('isCssSafeId', () => {
@@ -19,6 +19,17 @@ describe('isCssSafeId', () => {
 });
 
 describe('uniqueId', () => {
+	it('mints distinct CSS-safe ids without the secure-context UUID API', () => {
+		vi.stubGlobal('crypto', { getRandomValues: crypto.getRandomValues.bind(crypto) });
+		try {
+			const first = uniqueId('rui-select');
+			expect(first).toMatch(/^rui-select-[0-9a-f]{32}$/);
+			expect(uniqueId('rui-select')).not.toBe(first);
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
 	it('returns a CSS-safe id with a 32-character hex token', () => {
 		const id = uniqueId('rui-select');
 		expect(isCssSafeId(id)).toBe(true);
