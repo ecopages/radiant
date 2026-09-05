@@ -77,6 +77,13 @@ const LONG_PRESS_MS = 500;
  * @attr {string} content-label - Accessible name for the preview dialog. Default: `Preview`.
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
  *
+ * @cssprop --rui-hover-card-width - Panel width. Default: `20rem`. Override on `.rui-hover-card__content`.
+ * @cssprop --rui-hover-card-padding - Panel padding. Default: `--space-inset`.
+ * @cssprop --rui-hover-card-radius - Panel corner radius. Default: `--radius-container`.
+ * @cssprop --rui-hover-card-surface - Panel fill. Default: `--background`.
+ * @cssprop --rui-hover-card-border-color - Panel border. Default: `--border`.
+ * @cssprop --rui-hover-card-shadow - Panel shadow. Default: `--shadow-overlay`.
+ *
  * @remarks
  * `setOpen(next, emit?)` toggles open state. Minimum tree: `[data-ref="trigger"]` >
  * `[data-hover-card-trigger]` + `[data-ref="content"]`. BEM classes live on the view.
