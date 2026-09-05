@@ -47,9 +47,15 @@ ARIA relationships (`aria-controls`, `aria-labelledby`, option ids) need a docum
 
 Use `@/lib/unique-id`:
 
+The helper uses random UUIDs in secure contexts and random bytes on HTTP origins.
+
 - Mint once per instance: `private readonly uid = uniqueId('rui-select')`. Suffix slots (`${this.uid}-list`).
 - One descendant: `private readonly panelId = uniqueId('rui-disclosure')`.
 - Do not pass `this`. Do not use `Math.random` or a page-global constant (`'rui-carousel'`).
+
+## Numeric controls
+
+Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value.
 
 ## Two host shapes (bindings vs imperative paint)
 

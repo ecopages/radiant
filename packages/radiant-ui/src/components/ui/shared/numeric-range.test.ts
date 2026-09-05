@@ -9,6 +9,13 @@ import {
 } from './numeric-range';
 
 describe('createNumericRange', () => {
+	it('distinguishes off-step values from floating-point noise', () => {
+		expect(valuesAlignOnStep(50.4, 50, 1)).toBe(false);
+		expect(valuesAlignOnStep(0.34, 0.3, 0.1)).toBe(false);
+		expect(valuesAlignOnStep(1e-16, 2e-16, 1e-16)).toBe(false);
+		expect(valuesAlignOnStep(0.1 + 0.2, 0.3, 0.1)).toBe(true);
+	});
+
 	it('anchors steps at the lower bound', () => {
 		const range = createNumericRange(5, 35, 10);
 

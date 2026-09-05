@@ -67,7 +67,9 @@ export function valuesAlignOnStep(left: number, right: number, step: number): bo
 		return false;
 	}
 
-	return left.toFixed(fractionDigitsFromStep(step)) === right.toFixed(fractionDigitsFromStep(step));
+	const resolvedStep = Number.isFinite(step) && step > 0 ? step : 1;
+	const roundingNoise = Number.EPSILON * Math.max(Math.abs(left), Math.abs(right), resolvedStep) * 4;
+	return Math.abs(left - right) <= Math.min(roundingNoise, resolvedStep * 1e-6);
 }
 
 /** Normalizes numeric-control bounds and step values into a stable interaction model. */
