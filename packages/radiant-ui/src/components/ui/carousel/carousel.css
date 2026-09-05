@@ -1,16 +1,27 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-carousel {
+	--rui-carousel-gap: var(--space-inline);
+	--rui-carousel-radius: var(--radius-container);
+	--rui-carousel-border-color: var(--border);
+	--rui-carousel-surface: var(--surface);
+	--rui-carousel-padding: var(--space-inset);
 	@apply block w-full max-w-full min-w-0;
 }
 
 @layer components {
 	.rui-carousel {
+		--rui-carousel-track-gap: 0px;
 		@apply flex w-full min-w-0 max-w-full flex-col gap-stack;
 	}
 
+	.rui-carousel[data-carousel-surface='cards'] {
+		--rui-carousel-track-gap: var(--rui-carousel-gap);
+	}
+
 	.rui-carousel:focus-visible {
-		@apply outline-hidden ring-2 ring-focus-ring rounded-container;
+		@apply outline-hidden ring-2 ring-focus-ring;
+		border-radius: var(--rui-carousel-radius);
 	}
 
 	.rui-carousel__stage {
@@ -18,16 +29,30 @@ rui-carousel {
 	}
 
 	.rui-carousel__viewport {
-		@apply relative w-full min-w-0 overflow-hidden rounded-container border border-border bg-surface text-sm;
+		@apply relative w-full min-w-0 overflow-hidden text-sm;
 		touch-action: pan-y;
 	}
 
-	.rui-carousel--controls-toolbar .rui-carousel__viewport {
-		@apply p-inset;
+	.rui-carousel[data-carousel-surface='shell'] .rui-carousel__viewport,
+	.rui-carousel:not([data-carousel-surface]) .rui-carousel__viewport {
+		@apply border;
+		border-color: var(--rui-carousel-border-color);
+		border-radius: var(--rui-carousel-radius);
+		background-color: var(--rui-carousel-surface);
+	}
+
+	.rui-carousel--controls-toolbar[data-carousel-surface='shell'] .rui-carousel__viewport,
+	.rui-carousel--controls-toolbar:not([data-carousel-surface]) .rui-carousel__viewport {
+		padding: var(--rui-carousel-padding);
 	}
 
 	.rui-carousel--controls-overlay .rui-carousel__viewport {
-		@apply p-0;
+		padding: 0;
+	}
+
+	.rui-carousel[data-carousel-surface='cards'] .rui-carousel__viewport {
+		@apply border-0 bg-transparent p-0;
+		border-radius: 0;
 	}
 
 	.rui-carousel__track {
@@ -36,6 +61,14 @@ rui-carousel {
 
 	.rui-carousel__slide {
 		@apply flex w-full min-w-0 min-h-[clamp(8rem,40vw,16rem)] items-center justify-center;
+	}
+
+	.rui-carousel[data-carousel-surface='cards'] .rui-carousel__slide {
+		@apply border;
+		border-color: var(--rui-carousel-border-color);
+		border-radius: var(--rui-carousel-radius);
+		background-color: var(--rui-carousel-surface);
+		padding: var(--rui-carousel-padding);
 	}
 
 	.rui-carousel__footer {
@@ -140,30 +173,57 @@ rui-carousel {
 		@apply rounded-full;
 	}
 
-	.rui-carousel--none .rui-carousel__slide[hidden] {
+	.rui-carousel--none .rui-carousel__slide[hidden],
+	.rui-carousel[data-carousel-track='swap'] .rui-carousel__slide[hidden] {
 		display: none;
 	}
 
+	.rui-carousel--slide .rui-carousel__track,
+	.rui-carousel[data-carousel-track='window'] .rui-carousel__track {
+		--rui-carousel-slide-size: calc(
+			(100% - (var(--rui-carousel-track-gap) * var(--rui-carousel-gap-count, 0))) /
+				var(--rui-carousel-slides-per-view, 1)
+		);
+		--rui-carousel-step: calc(var(--rui-carousel-slide-size) + var(--rui-carousel-track-gap));
+		--rui-carousel-track-extent: calc(
+			var(--rui-carousel-slide-count, 1) * var(--rui-carousel-slide-size) +
+				(var(--rui-carousel-slide-count, 1) - 1) * var(--rui-carousel-track-gap)
+		);
+		--rui-carousel-max-shift: max(0px, var(--rui-carousel-track-extent) - 100%);
+		--rui-carousel-shift: min(
+			calc(var(--rui-carousel-index, 0) * var(--rui-carousel-step)),
+			var(--rui-carousel-max-shift)
+		);
+		@apply flex w-full;
+		gap: var(--rui-carousel-track-gap);
+		transform: translateX(calc(-1 * var(--rui-carousel-shift)));
+	}
+
 	.rui-carousel--slide .rui-carousel__track {
-		@apply flex w-full transition-transform duration-slow ease-in-out;
-		transform: translateX(calc(var(--rui-carousel-index, 0) * -100%));
+		@apply transition-transform duration-slow ease-in-out;
 	}
 
-	.rui-carousel--slide .rui-carousel__slide {
-		@apply min-w-full w-full shrink-0;
+	.rui-carousel--slide .rui-carousel__slide,
+	.rui-carousel[data-carousel-track='window'] .rui-carousel__slide {
+		@apply min-w-0 shrink-0;
+		flex: 0 0 var(--rui-carousel-slide-size, 100%);
+		width: var(--rui-carousel-slide-size, 100%);
 	}
 
-	.rui-carousel--fade .rui-carousel__track {
+	.rui-carousel--fade[data-carousel-track='stack'] .rui-carousel__track,
+	.rui-carousel--fade:not([data-carousel-track]) .rui-carousel__track {
 		@apply grid w-full;
 	}
 
-	.rui-carousel--fade .rui-carousel__slide {
+	.rui-carousel--fade[data-carousel-track='stack'] .rui-carousel__slide,
+	.rui-carousel--fade:not([data-carousel-track]) .rui-carousel__slide {
 		@apply col-start-1 row-start-1 w-full transition-opacity duration-slow ease-in-out;
 		opacity: 0;
 		pointer-events: none;
 	}
 
-	.rui-carousel--fade .rui-carousel__slide[data-active='true'] {
+	.rui-carousel--fade[data-carousel-track='stack'] .rui-carousel__slide[data-active='true'],
+	.rui-carousel--fade:not([data-carousel-track]) .rui-carousel__slide[data-active='true'] {
 		opacity: 1;
 		pointer-events: auto;
 	}
