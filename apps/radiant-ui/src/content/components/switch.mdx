@@ -73,16 +73,26 @@ Use switches for settings that take effect immediately. Use checkboxes for optio
 
 ## Theming
 
-Switch chrome maps to **semantic surface roles**, never Tailwind palette steps:
+Switch chrome maps to **semantic surface roles**, never Tailwind palette steps. Override `--rui-switch-*` on `rui-switch`.
 
-| Part / state | CSS roles |
-| --- | --- |
-| Track (`rui-switch__track`) | `on-background` at reduced alpha (off), `primary` (on) |
-| Thumb (`rui-switch__thumb`) | `on-background` (off), `on-primary` (on) |
-| Focus | `focus-ring` |
-| Disabled | `opacity-disabled` |
+| Part / state | Default | Override |
+| --- | --- | --- |
+| Track size | `2.5rem` × `1.5rem` | `--rui-switch-width`, `--rui-switch-height` |
+| Thumb | `1rem` | `--rui-switch-thumb-size` |
+| Track off / hover | `--on-background` at 20% / 30% | `--rui-switch-track`, `--rui-switch-track-hover` |
+| Track on / hover | `--primary` | `--rui-switch-track-on`, `--rui-switch-track-on-hover` |
+| Thumb off / on | `--on-background` / `--on-primary` | `--rui-switch-thumb`, `--rui-switch-thumb-on` |
+| Focus | `focus-ring` | theme `--focus-ring` |
+| Disabled | `opacity-disabled` | theme `--opacity-disabled` |
 
-Label text uses `on-background`; track uses the `rounded-pill` radius token. Override roles at the theme layer, not in component CSS.
+```css
+rui-switch {
+  --rui-switch-width: 3rem;
+  --rui-switch-track-on: var(--success);
+}
+```
+
+Label text uses `on-background`; track uses the `rounded-pill` radius token. Remap theme roles for global mood.
 
 ## Accessibility
 

@@ -86,18 +86,24 @@ import '@ecopages/radiant-ui/tabs';
 
 ## Theming
 
-Tabs map to **semantic surface + primary roles**, never Tailwind palette steps:
+Tabs map to **semantic surface + primary roles**, never Tailwind palette steps. Override `--rui-tabs-*` on `rui-tabs`. Variants (`boxed` / `ghost`) stay; they set layout recipes, not a parallel color API.
 
-| Part / variant | CSS roles |
-| --- | --- |
-| Tab text | `on-background` |
-| Active indicator | `primary` border (underline / top of boxed card) |
-| Focus | `focus-ring` at reduced alpha |
-| Boxed card | `background` + `border` + `rounded-container` + `shadow-sm` |
-| Boxed tab strip | `surface-container-low` background |
-| Panels | `background` + `p-inset` body |
+| Part / variant | Default | Override |
+| --- | --- | --- |
+| Tab text | `on-background` | theme |
+| Active indicator | `2px` `--primary` | `--rui-tabs-indicator-width`, `--rui-tabs-indicator-color` |
+| Tab padding | `--space-control-x` / `--space-control-y` | `--rui-tabs-tab-padding-x`, `--rui-tabs-tab-padding-y` |
+| Boxed card | `--background` + `--border` + `--rui-tabs-radius` | `--rui-tabs-radius` |
+| Boxed tab strip | `surface-container-low` | theme |
+| Panels | `--space-inset` | `--rui-tabs-panel-padding` |
+| Focus | `focus-ring` at reduced alpha | theme |
 
-Overrides go at the theme layer, not in component CSS.
+```css
+rui-tabs {
+  --rui-tabs-indicator-color: var(--secondary);
+  --rui-tabs-panel-padding: var(--space-2);
+}
+```
 
 ## Accessibility
 
