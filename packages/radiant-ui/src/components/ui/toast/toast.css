@@ -3,16 +3,19 @@
 /*
  * Fixed toaster host by default. When `container` is set, `data-contained`
  * switches the host to absolute positioning inside that root.
- * Stack transforms are written by JS onto `--y` (Sonner-style).
+ * Stack transforms are written by JS onto `--rui-toast-y`.
  */
 rui-toaster {
-	--toast-offset-x: 16px;
-	--toast-offset-bottom: 16px;
+	--rui-toaster-width: 356px;
+	--rui-toaster-gap: 14px;
+	--rui-toaster-offset: 24px;
+	--rui-toaster-inset-x: 16px;
+	--rui-toaster-inset-bottom: 16px;
 	position: fixed;
 	z-index: var(--z-toast, 50);
 	pointer-events: none;
 	box-sizing: border-box;
-	width: var(--width, 356px);
+	width: var(--rui-toaster-width);
 	margin: 0;
 	padding: 0;
 }
@@ -22,23 +25,23 @@ rui-toaster[data-contained='true'] {
 }
 
 rui-toaster[data-y-position='top'] {
-	top: var(--viewport-offset, 24px);
+	top: var(--rui-toaster-offset, 24px);
 	bottom: auto;
 }
 
 rui-toaster[data-y-position='bottom'] {
-	bottom: var(--viewport-offset, 24px);
+	bottom: var(--rui-toaster-offset, 24px);
 	top: auto;
 }
 
 rui-toaster[data-x-position='end'] {
-	right: var(--viewport-offset, 24px);
+	right: var(--rui-toaster-offset, 24px);
 	left: auto;
 	transform: none;
 }
 
 rui-toaster[data-x-position='start'] {
-	left: var(--viewport-offset, 24px);
+	left: var(--rui-toaster-offset, 24px);
 	right: auto;
 	transform: none;
 }
@@ -50,20 +53,20 @@ rui-toaster[data-x-position='center'] {
 }
 
 rui-toast {
-	--y: translateY(0);
-	--z-index: 1;
+	--rui-toast-y: translateY(0);
+	--rui-toast-z: 1;
 	position: absolute;
 	left: 0;
 	width: 100%;
 	opacity: 0;
-	transform: var(--y);
+	transform: var(--rui-toast-y);
 	touch-action: none;
 	box-sizing: border-box;
 	outline: none;
 	overflow-wrap: anywhere;
 	overflow: hidden;
 	pointer-events: auto;
-	z-index: var(--z-index);
+	z-index: var(--rui-toast-z);
 	transition:
 		transform 400ms ease,
 		opacity 400ms ease,
@@ -82,17 +85,17 @@ rui-toaster[data-y-position='top'] rui-toast {
 	transform-origin: center top;
 }
 
-/* Enter from off-screen until JS mounts + patches --y */
+/* Enter from off-screen until JS mounts + patches --rui-toast-y */
 rui-toast:not([data-mounted='true']) {
 	opacity: 0;
 }
 
 rui-toaster[data-y-position='bottom'] rui-toast:not([data-mounted='true']) {
-	--y: translateY(100%);
+	--rui-toast-y: translateY(100%);
 }
 
 rui-toaster[data-y-position='top'] rui-toast:not([data-mounted='true']) {
-	--y: translateY(-100%);
+	--rui-toast-y: translateY(-100%);
 }
 
 rui-toast[data-mounted='true'] {
@@ -109,7 +112,7 @@ rui-toast[data-expanded='false'][data-front='false'] {
 }
 
 rui-toast[data-swiping='true'] {
-	transform: var(--y) translateY(var(--swipe-amount-y, 0px)) translateX(var(--swipe-amount-x, 0px));
+	transform: var(--rui-toast-y) translateY(var(--rui-toast-swipe-y, 0px)) translateX(var(--rui-toast-swipe-x, 0px));
 	transition: none;
 }
 
@@ -122,11 +125,11 @@ rui-toast[data-removed='true'][data-swipe-out='false'] {
 }
 
 rui-toaster[data-y-position='bottom'] rui-toast[data-removed='true'][data-swipe-out='false'] {
-	--y: translateY(100%);
+	--rui-toast-y: translateY(100%);
 }
 
 rui-toaster[data-y-position='top'] rui-toast[data-removed='true'][data-swipe-out='false'] {
-	--y: translateY(-100%);
+	--rui-toast-y: translateY(-100%);
 }
 
 rui-toast[data-swipe-out='true'] {
@@ -157,7 +160,7 @@ rui-toaster[data-y-position='bottom'] rui-toast[data-expanded='true']::after {
 	position: absolute;
 	left: 0;
 	width: 100%;
-	height: calc(var(--gap, 14px) + 1px);
+	height: calc(var(--rui-toaster-gap) + 1px);
 	bottom: 100%;
 }
 
@@ -166,7 +169,7 @@ rui-toaster[data-y-position='top'] rui-toast[data-expanded='true']::after {
 	position: absolute;
 	left: 0;
 	width: 100%;
-	height: calc(var(--gap, 14px) + 1px);
+	height: calc(var(--rui-toaster-gap) + 1px);
 	top: 100%;
 }
 
@@ -267,73 +270,73 @@ rui-toaster[data-y-position='top'] rui-toast[data-expanded='true']::after {
 
 @keyframes rui-toast-swipe-out-left {
 	from {
-		transform: var(--y) translateX(var(--swipe-amount-x));
+		transform: var(--rui-toast-y) translateX(var(--rui-toast-swipe-x));
 		opacity: 1;
 	}
 
 	to {
-		transform: var(--y) translateX(calc(var(--swipe-amount-x) - 100%));
+		transform: var(--rui-toast-y) translateX(calc(var(--rui-toast-swipe-x) - 100%));
 		opacity: 0;
 	}
 }
 
 @keyframes rui-toast-swipe-out-right {
 	from {
-		transform: var(--y) translateX(var(--swipe-amount-x));
+		transform: var(--rui-toast-y) translateX(var(--rui-toast-swipe-x));
 		opacity: 1;
 	}
 
 	to {
-		transform: var(--y) translateX(calc(var(--swipe-amount-x) + 100%));
+		transform: var(--rui-toast-y) translateX(calc(var(--rui-toast-swipe-x) + 100%));
 		opacity: 0;
 	}
 }
 
 @keyframes rui-toast-swipe-out-up {
 	from {
-		transform: var(--y) translateY(var(--swipe-amount-y));
+		transform: var(--rui-toast-y) translateY(var(--rui-toast-swipe-y));
 		opacity: 1;
 	}
 
 	to {
-		transform: var(--y) translateY(calc(var(--swipe-amount-y) - 100%));
+		transform: var(--rui-toast-y) translateY(calc(var(--rui-toast-swipe-y) - 100%));
 		opacity: 0;
 	}
 }
 
 @keyframes rui-toast-swipe-out-down {
 	from {
-		transform: var(--y) translateY(var(--swipe-amount-y));
+		transform: var(--rui-toast-y) translateY(var(--rui-toast-swipe-y));
 		opacity: 1;
 	}
 
 	to {
-		transform: var(--y) translateY(calc(var(--swipe-amount-y) + 100%));
+		transform: var(--rui-toast-y) translateY(calc(var(--rui-toast-swipe-y) + 100%));
 		opacity: 0;
 	}
 }
 
 @media (max-width: 600px) {
 	rui-toaster {
-		left: var(--toast-offset-x);
-		right: var(--toast-offset-x);
+		left: var(--rui-toaster-inset-x);
+		right: var(--rui-toaster-inset-x);
 		width: auto;
 		transform: none;
 	}
 
 	rui-toaster[data-y-position='bottom'] {
-		bottom: var(--toast-offset-bottom);
+		bottom: var(--rui-toaster-inset-bottom);
 	}
 
 	rui-toaster[data-y-position='top'] {
-		top: var(--toast-offset-x);
+		top: var(--rui-toaster-inset-x);
 	}
 
 	rui-toaster[data-x-position='end'],
 	rui-toaster[data-x-position='start'],
 	rui-toaster[data-x-position='center'] {
-		left: var(--toast-offset-x);
-		right: var(--toast-offset-x);
+		left: var(--rui-toaster-inset-x);
+		right: var(--rui-toaster-inset-x);
 		transform: none;
 	}
 }
