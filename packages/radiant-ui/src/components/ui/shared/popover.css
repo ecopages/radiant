@@ -1,3 +1,5 @@
+@reference '../../../styles/radiant-ui.css';
+
 @layer components {
 	/* Portaled panel: override `--rui-popover-*` on this class. */
 	.rui-popover {
