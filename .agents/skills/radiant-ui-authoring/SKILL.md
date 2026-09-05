@@ -27,7 +27,7 @@ Work one component at a time. Copy a neighbor of the same **tier** (Native / Com
 3. **Lay out files** — see [references/files.md](references/files.md).
 4. **Stamp, then query** — the view (or CE `render()` for Derived Tree) places `data-ref` / `data-*` / roles. The script queries those nodes. Never `querySelector('.rui-…')`. Prefer existing shared controllers (`MenuTreeController`, `ListboxHostController`, `ListboxPopoverBehavior`, `PopoverController`) over a one-off keyboard/popover stack.
 5. **Connect** — post-sync work in `onConnected()`, not `connectedCallback` + `queueMicrotask(sync)`. Tear down in `disconnectedCallback` what `onConnected` rebuilds.
-6. **Style** — one `<name>.css`; `@reference` the theme entry; semantic tokens only. Do not `import './<name>.css'` from the view. Storybook: `parameters.radiant.cssImports`.
+6. **Style** — one `<name>.css`; `@reference` the theme entry; semantic tokens only. Public `--rui-*` knobs: defaults on the host (or portaled surface root), never on a BEM grain ([`DESIGN.md`](../../../packages/radiant-ui/DESIGN.md)). Do not `import './<name>.css'` from the view. Storybook: `parameters.radiant.cssImports`.
 7. **Stories + tests** — `*.stories.tsx` with `parameters.radiant.element`. Tests cover behavior, not BEM as a query contract. Visual asserts on classes are fine.
 8. **Public surface** — `index.ts` + package export. Events `rui-*`. Collection item `id` is a semantic key, not a DOM `id`.
 9. **Docs** — follow radiant-ui-docs (TSDoc contract, MDX, Canvas for extra capabilities).
