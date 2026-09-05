@@ -22,6 +22,7 @@
 		"@ecopages/postcss-processor": "0.2.0-rc.1",
 		"@ecopages/radiant": "workspace:*",
 		"@ecopages/radiant-ui": "workspace:*",
+		"@rehype-pretty/transformers": "^0.13.2",
 		"@types/hast": "^3.0.4",
 		"@types/node": "^24.13.2",
 		"ecopages": "0.2.0-rc.1",
