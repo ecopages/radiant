@@ -2,6 +2,8 @@ export type CarouselAutoplayConfig = {
 	getInterval: () => number;
 	canRotate: () => boolean;
 	onTick: () => void;
+	/** Called after the timer starts or stops so the host can sync live-region state. */
+	onRunningChange: () => void;
 };
 
 /**
@@ -35,14 +37,14 @@ export class CarouselAutoplay {
 
 			this.config.onTick();
 		}, ms);
+		this.config.onRunningChange();
 	}
 
 	stop(): void {
-		if (this.timer) {
-			clearInterval(this.timer);
-		}
-
+		if (this.timer === null) return;
+		clearInterval(this.timer);
 		this.timer = null;
+		this.config.onRunningChange();
 	}
 
 	sync(): void {

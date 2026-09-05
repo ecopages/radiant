@@ -89,7 +89,7 @@ export const OverlayControls: Story = docsStory(meta, {
 });
 
 export const WithSlidesPerView: Story = docsStory(meta, {
-	args: { transition: 'slide', slidesPerView: 3, slidesPerGroup: 3, loop: false },
+	args: { transition: 'slide', slidesPerView: 3, slidesPerGroup: 3, loop: false, showIndicators: true },
 	render: (args) => (
 		<RuiCarousel
 			index={args.index}

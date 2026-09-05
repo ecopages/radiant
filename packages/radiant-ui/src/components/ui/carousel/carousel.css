@@ -161,7 +161,8 @@ rui-carousel {
 		@apply h-2.5 w-2.5 shrink-0 rounded-full border border-border bg-background transition-[background-color,border-color] focus:rounded-full;
 	}
 
-	.rui-carousel__indicator[aria-selected='true'] {
+	.rui-carousel__indicator[aria-selected='true'],
+	.rui-carousel__indicator[aria-current='true'] {
 		@apply rounded-full bg-primary border-primary;
 	}
 

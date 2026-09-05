@@ -90,8 +90,11 @@ export type RuiCarouselProps = {
  *   Host toggles `disabled` at the ends when `wrap` is false.
  * - `[data-carousel-action="rotation"]` — play/pause when `autoplay` or `show-rotation-control`.
  *   Host sets `aria-pressed` and `aria-label`.
- * - `[data-ref="indicators"]` — tablist container when `show-indicators`. Host creates or updates
- *   `[data-carousel-indicator]` buttons inside.
+ * - `[data-ref="indicators"]` — indicator container when `show-indicators`. Host sets `role="tablist"`
+ *   for one slide per view, or `role="group"` for multiple slides, and its `aria-label`.
+ *   Creates one `[data-carousel-indicator]` per valid window start. Single-slide indicators
+ *   use `role="tab"` and `aria-selected`; window buttons use `aria-current`. Both set
+ *   `aria-controls`, `aria-label`, `id`, and roving `tabIndex`.
  *
  * Do not set `role`, `aria-hidden`, `aria-selected`, or `tabIndex` on slides or indicators — the host owns those.
  *
@@ -107,7 +110,7 @@ export type RuiCarouselProps = {
  * @attr {number} interval - Autoplay interval in ms. Default: `4000`.
  * @attr {('none'|'slide'|'fade')} transition - Slide swap animation. Default: `none`.
  * @attr {('toolbar'|'overlay')} controls-variant - Chrome layout. Default: `toolbar`.
- * @attr {boolean} show-indicators - Render tabbed indicator pickers. Default: `false`.
+ * @attr {boolean} show-indicators - Render slide tabs or multi-slide window buttons. Default: `false`.
  * @attr {boolean} show-rotation-control - Render play/pause control. Default: `false`.
  * @attr {boolean} loop - Allow looping past the last slide. Default: `true`.
  * @attr {boolean} wrap - Keep controls enabled at the ends. Default: `true`.
@@ -128,7 +131,8 @@ export type RuiCarouselProps = {
  * track of separate cards even when `transition` is `none` or `fade`. A single pane keeps
  * chrome on the viewport. Override `--rui-carousel-*` on `rui-carousel`. Autoplay pauses on
  * hover, pointer interaction, focus, and hidden tabs, and respects `prefers-reduced-motion`.
- * `aria-live` flips to `off` while rotating. BEM classes live on the view; the host queries
+ * `aria-live` is `off` while the timer runs and `polite` when it stops. Indicators use the
+ * same valid window starts as navigation. BEM classes live on the view; the host queries
  * `[data-ref="track"]` for slide transitions.
  */
 @customElement('rui-carousel')
@@ -164,6 +168,7 @@ export class RuiCarousel extends RadiantElement {
 		getInterval: () => this.interval,
 		canRotate: () => this.canAutoplayRotate(),
 		onTick: () => this.onAutoplayTick(),
+		onRunningChange: () => this.syncAriaLive(),
 	});
 
 	protected override onConnected(): void {
@@ -196,6 +201,7 @@ export class RuiCarousel extends RadiantElement {
 
 	@onUpdated(['showIndicators'])
 	onIndicatorsUpdated(): void {
+		this.sync();
 		this.syncIndicators();
 	}
 
@@ -253,7 +259,7 @@ export class RuiCarousel extends RadiantElement {
 			const inView = isSlideInView(i, activeIndex, count, slidesPerView);
 			const positionLabel = `${i + 1} of ${count}`;
 
-			if (this.showIndicators) {
+			if (this.showIndicators && slidesPerView === 1) {
 				this.slidePanelId(slide, i);
 				slide.setAttribute('role', 'tabpanel');
 				slide.setAttribute('aria-labelledby', this.tabId(i));
@@ -331,33 +337,47 @@ export class RuiCarousel extends RadiantElement {
 
 		const slides = this.getSlides();
 		const next = this.windowFor(slides.length);
+		const tabbed = next.slidesPerView === 1;
+		const windows = slides.slice(0, next.maxStartIndex + 1);
+		container.setAttribute('role', tabbed ? 'tablist' : 'group');
+		container.setAttribute('aria-label', tabbed ? 'Choose slide to display' : 'Choose slide window');
 		const existing = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-carousel-indicator]'));
 
-		if (existing.length !== slides.length) {
+		if (existing.length !== windows.length) {
 			container.replaceChildren(
-				...slides.map((slide, i) => {
+				...windows.map((_slide, i) => {
 					const button = document.createElement('button');
 					button.type = 'button';
 					button.className = 'rui-carousel__indicator';
 					button.id = this.tabId(i);
-					button.setAttribute('role', 'tab');
 					button.setAttribute('data-carousel-indicator', String(i));
-					button.setAttribute('aria-controls', this.slidePanelId(slide, i));
-					button.setAttribute('aria-label', `Slide ${i + 1}`);
 					return button;
 				}),
 			);
 		}
 
 		const indicators = Array.from(container.querySelectorAll<HTMLButtonElement>('[data-carousel-indicator]'));
+		const panelIds = slides.map((slide, i) => this.slidePanelId(slide, i));
 		indicators.forEach((indicator, i) => {
 			const selected = i === next.index;
-			const slide = slides[i];
-			if (slide) {
-				indicator.id = this.tabId(i);
-				indicator.setAttribute('aria-controls', this.slidePanelId(slide, i));
+			indicator.id = this.tabId(i);
+			indicator.setAttribute('aria-label', tabbed ? `Slide ${i + 1}` : `Slide window ${i + 1}`);
+			indicator.setAttribute(
+				'aria-controls',
+				panelIds
+					.filter((_id, slideIndex) => isSlideInView(slideIndex, i, slides.length, next.slidesPerView))
+					.join(' '),
+			);
+			if (tabbed) {
+				indicator.setAttribute('role', 'tab');
+				indicator.setAttribute('aria-selected', String(selected));
+				indicator.removeAttribute('aria-current');
+			} else {
+				indicator.removeAttribute('role');
+				indicator.removeAttribute('aria-selected');
+				if (selected) indicator.setAttribute('aria-current', 'true');
+				else indicator.removeAttribute('aria-current');
 			}
-			indicator.setAttribute('aria-selected', String(selected));
 			indicator.tabIndex = selected ? 0 : -1;
 		});
 	}
@@ -520,7 +540,7 @@ export class RuiCarousel extends RadiantElement {
 		} else if (event.key === 'Home') {
 			nextIndex = 0;
 		} else if (event.key === 'End') {
-			nextIndex = slides.length - 1;
+			nextIndex = this.windowFor(slides.length).maxStartIndex;
 		} else if (event.key === ' ' || event.key === 'Enter') {
 			event.preventDefault();
 			this.paused = true;
