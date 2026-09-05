@@ -1,7 +1,12 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-dialog {
-	--dialog-offset-x: 16px;
+	--rui-dialog-max-width: 28rem;
+	--rui-dialog-padding: var(--space-inset);
+	--rui-dialog-radius: var(--radius-container);
+	--rui-dialog-surface: var(--background);
+	--rui-dialog-shadow: var(--shadow-modal);
+	--rui-dialog-inset-x: 1rem;
 	@apply contents;
 }
 
@@ -19,8 +24,12 @@ rui-dialog {
 	}
 
 	.rui-dialog__surface {
-		@apply relative z-modal w-full max-w-md rounded-container bg-background p-inset text-on-background shadow-modal;
-		@apply outline-none;
+		@apply relative z-modal w-full text-on-background outline-none;
+		max-inline-size: var(--rui-dialog-max-width);
+		padding: var(--rui-dialog-padding);
+		border-radius: var(--rui-dialog-radius);
+		background-color: var(--rui-dialog-surface);
+		box-shadow: var(--rui-dialog-shadow);
 	}
 
 	.rui-dialog__close {
@@ -55,6 +64,6 @@ rui-dialog {
 
 @media (max-width: 600px) {
 	.rui-dialog {
-		padding-inline: var(--dialog-offset-x);
+		padding-inline: var(--rui-dialog-inset-x);
 	}
 }

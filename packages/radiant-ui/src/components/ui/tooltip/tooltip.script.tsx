@@ -58,6 +58,14 @@ const TOOLTIP_GAP = 8;
  * @attr {string} placement - Placement of the tooltip surface relative to its anchor. Default: `top`.
  * @attr {number} delay - Delay in ms before showing on hover/focus. Default: `200`.
  *
+ * @cssprop --rui-tooltip-max-width - Surface max inline size. Default: `20rem`.
+ * @cssprop --rui-tooltip-padding-x - Surface inline padding. Default: `--space-2`.
+ * @cssprop --rui-tooltip-padding-y - Surface block padding. Default: `--space-1`.
+ * @cssprop --rui-tooltip-radius - Surface corner radius. Default: `--radius-container`.
+ * @cssprop --rui-tooltip-surface - Surface fill. Default: `--on-background`.
+ * @cssprop --rui-tooltip-color - Surface text. Default: `--background`.
+ * @cssprop --rui-tooltip-shadow - Surface shadow. Default: `--shadow-overlay`.
+ *
  * @remarks
  * With CE `render()`, authored children are projected into `[data-ref="trigger"]`.
  */

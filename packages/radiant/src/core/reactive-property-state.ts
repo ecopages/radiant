@@ -93,7 +93,7 @@ export class ReactivePropertyState {
 		defineReactiveAccessor(propertyName, {
 			bind: options.bind,
 			signal,
-			onSet: (value) => this.reflectValue(attributeKey, propertyMapping.reflect, propertyMapping, value),
+			onSet: () => this.reflectValue(attributeKey, propertyMapping.reflect, propertyMapping, signal.get()),
 		});
 	}
 

@@ -57,6 +57,16 @@ export type RuiSwitchChangeDetail = {
  * @attr {string} name - Form field name on the inner input. Default: `''`.
  * @fires rui-change - Emitted after the checked state changes; `detail.checked` holds the new state.
  *
+ * @cssprop --rui-switch-width - Track width. Default: `2.5rem`.
+ * @cssprop --rui-switch-height - Track height. Default: `1.5rem`.
+ * @cssprop --rui-switch-thumb-size - Thumb diameter. Default: `1rem`.
+ * @cssprop --rui-switch-track - Off-track fill. Default: `--on-background` at 20%.
+ * @cssprop --rui-switch-track-hover - Off-track hover fill.
+ * @cssprop --rui-switch-track-on - On-track fill. Default: `--primary`.
+ * @cssprop --rui-switch-track-on-hover - On-track hover fill.
+ * @cssprop --rui-switch-thumb - Off-thumb fill. Default: `--on-background`.
+ * @cssprop --rui-switch-thumb-on - On-thumb fill. Default: `--on-primary`.
+ *
  * @remarks
  * Minimum tree: `<input type="checkbox" role="switch" data-ref="input" data-rui-control>`.
  * BEM classes live on the view; the host never queries them.

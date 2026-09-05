@@ -4,6 +4,10 @@ rui-knob {
 	@apply inline-block;
 	--rui-knob-size: 3rem;
 	--rui-knob-track-color: var(--rui-track-color, var(--rui-track-fill));
+	--rui-knob-value-color: var(--primary);
+	--rui-knob-text-color: var(--on-surface);
+	--rui-knob-focus-ring: var(--focus-ring);
+	--rui-knob-focus-ring-width: 2px;
 }
 
 @layer components {

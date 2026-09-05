@@ -13,8 +13,21 @@ rui-hover-card {
 		@apply inline-flex;
 	}
 
+	/* Portaled panel: override `--rui-hover-card-*` on this class. */
 	.rui-hover-card__content {
-		@apply z-overlay w-80 rounded-container border border-border bg-background p-4 text-on-background shadow-overlay;
+		--rui-hover-card-width: 20rem;
+		--rui-hover-card-padding: var(--space-inset);
+		--rui-hover-card-radius: var(--radius-container);
+		--rui-hover-card-surface: var(--background);
+		--rui-hover-card-border-color: var(--border);
+		--rui-hover-card-shadow: var(--shadow-overlay);
+		@apply z-overlay text-on-background;
+		inline-size: var(--rui-hover-card-width);
+		padding: var(--rui-hover-card-padding);
+		border-radius: var(--rui-hover-card-radius);
+		border: 1px solid var(--rui-hover-card-border-color);
+		background-color: var(--rui-hover-card-surface);
+		box-shadow: var(--rui-hover-card-shadow);
 	}
 
 	.rui-hover-card__content[hidden] {

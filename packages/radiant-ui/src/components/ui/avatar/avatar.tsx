@@ -28,7 +28,9 @@ function initialsFrom(label: string): string {
  * @remarks When `src` is omitted or fails to load, initials derived from `alt`
  * (or the explicit `fallback`) are shown in a `role="img"` span. There is no
  * runtime image-error listener — pass `fallback` for reliable SSR of the
- * fallback state.
+ * fallback state. Override `--rui-avatar-size`, `--rui-avatar-radius`, and
+ * `--rui-avatar-surface` on `.rui-avatar`. Size modifiers set `--rui-avatar-size`
+ * (`sm` `--space-8`, `md` `--space-10`, `lg` `--space-12`).
  *
  * @cssclass rui-avatar - Avatar root; `role="img"` when image-less.
  * @cssclass rui-avatar--sm - Small size.

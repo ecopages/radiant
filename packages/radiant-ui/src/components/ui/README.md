@@ -35,7 +35,7 @@ Parent JSX owns **Authored Children**. Do not let a custom element `render()` pr
 - **View-owned Shell:** JSX helpers (or named view props) place chrome and children. The CE has no `render()` slot tree. Query with `data-ref` / `data-*` / roles. **Never query BEM class names.** Toggle volatile attrs with `toggleAttribute`.
 - **Composition Helper:** named regions in the right DOM position (`RuiDialogTitle`, `RuiNumberFieldInput`, `primary` / `secondary` props) — not `slot="…"` + CE `<slot name="…">`.
 - **Default chrome when children are omitted:** the view supplies defaults (for example `RuiNumberField` renders input + steppers when `children` is empty).
-- **Stylesheet ownership:** component stylesheets are atomic: never inline child or shared CSS. `style-dependencies.json` is generated from rendered default composition and lists the complete ordered stylesheet union for selective consumers. Applications should normally import `styles.css` once; it imports each atomic and primitive stylesheet exactly once.
+- **Stylesheet ownership:** component stylesheets are atomic: never inline child or shared CSS. `style-dependencies.json` is generated from rendered default composition and lists the complete ordered stylesheet union for selective consumers. Applications should normally import `styles.css` once; it imports each atomic and primitive stylesheet exactly once. Public `--rui-*` knobs: defaults on the host (or portaled surface root), never on an inner BEM grain — [`DESIGN.md`](../../../DESIGN.md).
 - **Derived Tree:** keep `render()` when inner DOM is generated from CE state and is not parent JSX ranges (toaster list, TOC heading list, calendar day grid).
 - Do not use HTML `<slot>` as the public JSX API. Drop `slot=` on helpers and `@slot` TSDoc once view helpers own the layout.
 
@@ -47,9 +47,15 @@ ARIA relationships (`aria-controls`, `aria-labelledby`, option ids) need a docum
 
 Use `@/lib/unique-id`:
 
+The helper uses random UUIDs in secure contexts and random bytes on HTTP origins.
+
 - Mint once per instance: `private readonly uid = uniqueId('rui-select')`. Suffix slots (`${this.uid}-list`).
 - One descendant: `private readonly panelId = uniqueId('rui-disclosure')`.
 - Do not pass `this`. Do not use `Math.random` or a page-global constant (`'rui-carousel'`).
+
+## Numeric controls
+
+Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value. Knob waits until range props in the same turn have landed before snapping, so a fractional value is not rounded against the default step.
 
 ## Two host shapes (bindings vs imperative paint)
 

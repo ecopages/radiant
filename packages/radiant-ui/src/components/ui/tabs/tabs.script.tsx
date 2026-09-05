@@ -60,6 +60,13 @@ export type RuiTabsChangeDetail = {
  * @attr {boolean} automatic - When `true`, focusing a tab activates it. Default: `true`.
  * @fires rui-change - Emitted when the selected tab changes; `detail.value` is the tab id.
  *
+ * @cssprop --rui-tabs-radius - Boxed card corner radius. Default: `--radius-container`.
+ * @cssprop --rui-tabs-indicator-width - Selected-tab underline thickness. Default: `2px`.
+ * @cssprop --rui-tabs-indicator-color - Selected-tab underline. Default: `--primary`.
+ * @cssprop --rui-tabs-tab-padding-x - Tab inline padding. Default: `--space-control-x`.
+ * @cssprop --rui-tabs-tab-padding-y - Tab block padding. Default: `--space-control-y`.
+ * @cssprop --rui-tabs-panel-padding - Panel padding. Default: `--space-inset`.
+ *
  * @remarks
  * `resync()` re-applies tablist labeling and selected/hidden state from `value`.
  * Observes `childList` so replaced children (e.g. parent re-render) stay in sync.

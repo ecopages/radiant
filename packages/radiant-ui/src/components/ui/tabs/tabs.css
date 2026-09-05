@@ -1,6 +1,12 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-tabs {
+	--rui-tabs-radius: var(--radius-container);
+	--rui-tabs-indicator-width: 2px;
+	--rui-tabs-indicator-color: var(--primary);
+	--rui-tabs-tab-padding-x: var(--space-control-x);
+	--rui-tabs-tab-padding-y: var(--space-control-y);
+	--rui-tabs-panel-padding: var(--space-inset);
 	@apply flex w-full min-w-0 max-w-full flex-col;
 }
 
@@ -14,11 +20,14 @@ rui-tabs {
 	}
 
 	.rui-tabs__tab {
-		@apply inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-0 border-b-2 border-transparent bg-transparent text-on-background transition-colors;
+		@apply inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap border-0 border-transparent bg-transparent text-on-background transition-colors;
+		border-bottom-style: solid;
+		border-bottom-width: var(--rui-tabs-indicator-width);
 	}
 
 	.rui-tabs__tab[aria-selected='true'] {
-		@apply border-primary font-medium text-on-background;
+		@apply font-medium text-on-background;
+		border-bottom-color: var(--rui-tabs-indicator-color);
 	}
 
 	.rui-tabs__tab:focus-visible {
@@ -30,7 +39,8 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='boxed'] {
-		@apply overflow-hidden rounded-container border border-border bg-background shadow-sm;
+		@apply overflow-hidden border border-border bg-background shadow-sm;
+		border-radius: var(--rui-tabs-radius);
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__list {
@@ -38,8 +48,10 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__tab {
-		@apply px-control-x py-control-y text-center text-xs text-on-surface-container-low;
+		@apply text-center text-xs text-on-surface-container-low;
 		@apply hover:opacity-100;
+		padding-inline: var(--rui-tabs-tab-padding-x);
+		padding-block: var(--rui-tabs-tab-padding-y);
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__tab:not([aria-selected='true']) {
@@ -47,11 +59,13 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
-		@apply border-primary font-medium text-on-surface-container-low opacity-100;
+		@apply font-medium text-on-surface-container-low opacity-100;
+		border-bottom-color: var(--rui-tabs-indicator-color);
 	}
 
 	rui-tabs[variant='boxed'] .rui-tabs__panel {
-		@apply bg-background p-inset;
+		@apply bg-background;
+		padding: var(--rui-tabs-panel-padding);
 	}
 
 	rui-tabs[variant='ghost'] {
@@ -63,10 +77,13 @@ rui-tabs {
 	}
 
 	rui-tabs[variant='ghost'] .rui-tabs__tab {
-		@apply rounded-t-control px-control-x py-control-y text-sm;
+		@apply rounded-t-control text-sm;
+		padding-inline: var(--rui-tabs-tab-padding-x);
+		padding-block: var(--rui-tabs-tab-padding-y);
 	}
 
 	rui-tabs[variant='ghost'] .rui-tabs__panel {
-		@apply px-1 py-inset;
+		padding-inline: var(--space-1);
+		padding-block: var(--rui-tabs-panel-padding);
 	}
 }
