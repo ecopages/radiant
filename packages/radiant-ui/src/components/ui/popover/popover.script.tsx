@@ -67,6 +67,11 @@ export type RuiPopoverProps = {
  * @attr {('default'|'listbox')} variant - Surface variant; `listbox` strips padding. Default: `default`.
  * @fires rui-open-change - Emitted when open state changes; `detail.open`.
  *
+ * @cssprop --rui-popover-radius - Panel corner radius. Default: `--radius-container`. Override on `.rui-popover`.
+ * @cssprop --rui-popover-surface - Panel fill. Default: `--background`.
+ * @cssprop --rui-popover-border-color - Panel border. Default: `--border`.
+ * @cssprop --rui-popover-shadow - Panel shadow. Default: `--shadow-overlay`.
+ *
  * @remarks
  * `setOpen(next, emit?)` toggles open state. With `anchor` and no `[data-popover-trigger]`, the host
  * toggles open on anchor click. Minimum inline-trigger tree: `[data-ref="host"]` >

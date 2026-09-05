@@ -1,8 +1,15 @@
-@reference '../../../styles/radiant-ui.css';
-
 @layer components {
+	/* Portaled panel: override `--rui-popover-*` on this class. */
 	.rui-popover {
-		@apply z-popover overflow-auto rounded-container border border-border bg-background shadow-overlay;
+		--rui-popover-radius: var(--radius-container);
+		--rui-popover-surface: var(--background);
+		--rui-popover-border-color: var(--border);
+		--rui-popover-shadow: var(--shadow-overlay);
+		@apply z-popover overflow-auto;
+		border-radius: var(--rui-popover-radius);
+		border: 1px solid var(--rui-popover-border-color);
+		background-color: var(--rui-popover-surface);
+		box-shadow: var(--rui-popover-shadow);
 	}
 
 	.rui-popover--listbox {
