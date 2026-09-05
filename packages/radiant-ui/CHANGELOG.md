@@ -1,5 +1,43 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.12
+
+### Minor Changes
+
+- [#230](https://github.com/ecopages/radiant/pull/230) [`c0128ad`](https://github.com/ecopages/radiant/commit/c0128ad36b5a06dbe93d16ea15a6d8197a6ea34e) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `slidesPerView` and `slidesPerGroup` so a carousel can show a window of slides.
+
+    **@ecopages/radiant-ui**
+
+    - `slides-per-view` (`>= 1`, fractional peek allowed) is how many slides fill the viewport. `index` is the first visible slide.
+    - `slides-per-group` is how far prev/next/autoplay/swipe move. A window of more than one slide paints separate cards; a single pane keeps chrome on the viewport.
+    - Card gap, radius, border, fill, and padding are `--rui-carousel-*` custom properties with theme-token defaults. Override them on `rui-carousel`.
+    - Multi-slide indicators select valid windows, including the last window. Pausing autoplay restores live-region announcements.
+
+- [#226](https://github.com/ecopages/radiant/pull/226) [`dd21362`](https://github.com/ecopages/radiant/commit/dd213624055eb26712df1715a10735d5c88cbbfe) Thanks [@andeeplus](https://github.com/andeeplus)! - Paint 1:1 field-to-DOM copies on catalog hosts with `@bindTo` instead of `@onUpdated` glue.
+
+    **@ecopages/radiant-ui**
+
+    - Straight attribute, boolean, property, and text sync (hidden, aria-expanded, aria-label, input `checked` / `disabled`, and similar) now uses `@bindTo`.
+    - `@onUpdated` remains for procedures: focus, describedby joins, pointer math, and any branched write.
+
+- [#230](https://github.com/ecopages/radiant/pull/230) [`14c3710`](https://github.com/ecopages/radiant/commit/14c3710b6a1328407146e29efc3e36f8e5f04300) Thanks [@andeeplus](https://github.com/andeeplus)! - Expose host-level `--rui-*` CSS knobs with catalog defaults so instances can be restyled in CSS without a JS theme object.
+
+    **@ecopages/radiant-ui**
+
+    - Public knobs are declared on the host (or the portaled surface). Do not set them on an inner grain — that blocks inheritance.
+    - Switch, dialog, tooltip, tabs, knob, and avatar declare defaults on the host or root class. Popover and hover-card declare them on the portaled panel class.
+    - Toaster stack variables are prefixed (`--rui-toaster-width`, `--rui-toast-y`, …). `gap` and `offset` attributes still win over CSS.
+
+### Patch Changes
+
+- [#230](https://github.com/ecopages/radiant/pull/230) [`a1083c1`](https://github.com/ecopages/radiant/commit/a1083c1ae7ce3d7c79b7697ac08c68eb717e4e17) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep components working on HTTP origins without `crypto.randomUUID()`, and normalize off-step slider and knob values without decimal reflection loops.
+
+- [#226](https://github.com/ecopages/radiant/pull/226) [`dd21362`](https://github.com/ecopages/radiant/commit/dd213624055eb26712df1715a10735d5c88cbbfe) Thanks [@andeeplus](https://github.com/andeeplus)! - Generated descendant ids (`aria-controls`, labelledby, option ids) are minted per instance and no longer reuse an authored host `id`.
+- Updated dependencies [[`a68c13a`](https://github.com/ecopages/radiant/commit/a68c13ad59c80b88d4792fc58eeb76f992de09f8), [`9f1419b`](https://github.com/ecopages/radiant/commit/9f1419b8c2c80522f67f2e9b1eaf6531f0e8d9b3)]:
+    - @ecopages/radiant@0.3.0-rc.6
+    - @ecopages/jsx@0.3.0-rc.6
+    - @ecopages/signals@0.3.0-rc.6
+
 ## 0.1.0-rc.11
 
 ### Patch Changes
