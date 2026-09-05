@@ -288,8 +288,8 @@ describe('rui-toaster', () => {
 			let heightBefore = 0;
 			for (let i = 0; i < index; i += 1) heightBefore += heights[i] ?? 0;
 			const expectedOffset = heightBefore + index * TOAST_GAP;
-			expect(el.style.getPropertyValue('--offset')).toBe(`${expectedOffset}px`);
-			expect(el.style.getPropertyValue('--y')).toBe(`translateY(${-expectedOffset}px)`);
+			expect(el.style.getPropertyValue('--rui-toast-offset')).toBe(`${expectedOffset}px`);
+			expect(el.style.getPropertyValue('--rui-toast-y')).toBe(`translateY(${-expectedOffset}px)`);
 		}
 
 		cleanup();

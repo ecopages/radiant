@@ -1,5 +1,7 @@
 # Radiant Core
 
+Reflected properties serialize the current member state after synchronous update callbacks finish. If a callback normalizes an assignment, the attribute retains the normalized value.
+
 ## RadiantElement Flow
 
 `RadiantElement` is the JSX-first custom-element base for explicit client rendering and opt-in hydration. Host HTML serialization belongs to the **server pipeline** (`@ecopages/radiant/server/*`), not to instance methods on the element.

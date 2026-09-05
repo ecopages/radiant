@@ -2,19 +2,29 @@
 
 @layer components {
 	.rui-avatar {
-		@apply relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-pill bg-surface-container font-medium text-on-surface;
+		--rui-avatar-size: var(--space-10);
+		--rui-avatar-radius: var(--radius-pill);
+		--rui-avatar-surface: var(--surface-container);
+		@apply relative inline-flex shrink-0 items-center justify-center overflow-hidden font-medium text-on-surface;
+		inline-size: var(--rui-avatar-size);
+		block-size: var(--rui-avatar-size);
+		border-radius: var(--rui-avatar-radius);
+		background-color: var(--rui-avatar-surface);
 	}
 
 	.rui-avatar--sm {
-		@apply size-8 text-xs;
+		--rui-avatar-size: var(--space-8);
+		@apply text-xs;
 	}
 
 	.rui-avatar--md {
-		@apply size-10 text-sm;
+		--rui-avatar-size: var(--space-10);
+		@apply text-sm;
 	}
 
 	.rui-avatar--lg {
-		@apply size-12 text-body;
+		--rui-avatar-size: var(--space-12);
+		@apply text-body;
 	}
 
 	.rui-avatar__image {

@@ -89,16 +89,23 @@ BEM classes are presentation-only. Set `alert` on the host for `role="alertdialo
 
 ## Theming
 
-Dialog surfaces map to **semantic surface roles**, never Tailwind palette steps:
+Dialog surfaces map to **semantic surface roles**, never Tailwind palette steps. Override `--rui-dialog-*` on `rui-dialog`.
 
-| Part | CSS roles |
-| --- | --- |
-| Backdrop | `overlay` scrim |
-| Surface | `background`, `on-background`, `rounded-container`, `shadow-modal` |
-| Title | `on-background` |
-| Close button | `on-surface` |
+| Part | Default | Override |
+| --- | --- | --- |
+| Backdrop | `overlay` scrim | theme `--color-overlay` |
+| Surface fill / radius / shadow | `--background`, `--radius-container`, `--shadow-modal` | `--rui-dialog-surface`, `--rui-dialog-radius`, `--rui-dialog-shadow` |
+| Surface padding / max width | `--space-inset`, `28rem` | `--rui-dialog-padding`, `--rui-dialog-max-width` |
+| Narrow viewport inset | `1rem` | `--rui-dialog-inset-x` |
+| Title | `on-background` | theme |
+| Close button | `on-surface` | theme |
 
-Body uses the `p-inset` spacing token. Override roles at the theme layer, not in component CSS.
+```css
+rui-dialog {
+  --rui-dialog-max-width: 40rem;
+  --rui-dialog-padding: var(--space-6);
+}
+```
 
 ## Accessibility
 

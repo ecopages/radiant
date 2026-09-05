@@ -48,15 +48,19 @@ import { RuiAvatar } from '@ecopages/radiant-ui/avatar';
 
 ## Theming
 
-Avatar chrome maps to **semantic surface roles**, never Tailwind palette steps:
+Avatar chrome maps to **semantic surface roles**, never Tailwind palette steps. Override `--rui-avatar-*` on `.rui-avatar`. Size classes set `--rui-avatar-size`.
 
-| Part | CSS roles |
-| --- | --- |
-| Root | `surface-container` fill, `on-surface` fallback text, `rounded-pill` |
-| Image | `object-cover` fill |
-| Sizes | `size-8` (sm) · `size-10` (md) · `size-12` (lg) |
+| Part | Default | Override |
+| --- | --- | --- |
+| Size | `--space-10` (`md`); `sm` `--space-8`; `lg` `--space-12` | `--rui-avatar-size` |
+| Fill / radius | `--surface-container`, `--radius-pill` | `--rui-avatar-surface`, `--rui-avatar-radius` |
+| Fallback text | `on-surface` | theme |
 
-Override at the theme layer, not in component CSS.
+```css
+.rui-avatar {
+  --rui-avatar-size: 2.25rem;
+}
+```
 
 ## Accessibility
 

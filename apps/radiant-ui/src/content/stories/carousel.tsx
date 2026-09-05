@@ -8,6 +8,8 @@ export type CarouselArgs = {
 	interval: number;
 	showIndicators: boolean;
 	loop: boolean;
+	slidesPerView: number;
+	slidesPerGroup: number;
 };
 
 export const meta = {
@@ -18,6 +20,8 @@ export const meta = {
 		interval: 4000,
 		showIndicators: false,
 		loop: true,
+		slidesPerView: 1,
+		slidesPerGroup: 1,
 	},
 	argTypes: {
 		index: { control: { type: 'number' } },
@@ -29,6 +33,8 @@ export const meta = {
 		interval: { control: { type: 'number' } },
 		showIndicators: { control: { type: 'boolean' } },
 		loop: { control: { type: 'boolean' } },
+		slidesPerView: { control: { type: 'number' } },
+		slidesPerGroup: { control: { type: 'number' } },
 	},
 	render: (args) => (
 		<RuiCarousel
@@ -38,6 +44,8 @@ export const meta = {
 			interval={args.interval}
 			showIndicators={args.showIndicators}
 			loop={args.loop}
+			slidesPerView={args.slidesPerView}
+			slidesPerGroup={args.slidesPerGroup}
 		>
 			<RuiCarouselSlide id="slide-1">First panel</RuiCarouselSlide>
 			<RuiCarouselSlide id="slide-2">Second panel</RuiCarouselSlide>
@@ -66,6 +74,8 @@ export const OverlayControls: Story = docsStory(meta, {
 			interval={args.interval}
 			showIndicators={args.showIndicators}
 			loop={args.loop}
+			slidesPerView={args.slidesPerView}
+			slidesPerGroup={args.slidesPerGroup}
 			controlsVariant="overlay"
 		>
 			<RuiCarouselSlide id="slide-1">First panel</RuiCarouselSlide>
@@ -76,4 +86,28 @@ export const OverlayControls: Story = docsStory(meta, {
 		</RuiCarousel>
 	),
 	parameters: { docs: { id: 'carousel/overlay' } },
+});
+
+export const WithSlidesPerView: Story = docsStory(meta, {
+	args: { transition: 'slide', slidesPerView: 3, slidesPerGroup: 3, loop: false, showIndicators: true },
+	render: (args) => (
+		<RuiCarousel
+			index={args.index}
+			transition={args.transition}
+			autoplay={args.autoplay}
+			interval={args.interval}
+			showIndicators={args.showIndicators}
+			loop={args.loop}
+			slidesPerView={args.slidesPerView}
+			slidesPerGroup={args.slidesPerGroup}
+		>
+			<RuiCarouselSlide id="slide-1">One</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-2">Two</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-3">Three</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-4">Four</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-5">Five</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-6">Six</RuiCarouselSlide>
+		</RuiCarousel>
+	),
+	parameters: { docs: { id: 'carousel/slides-per-view' } },
 });

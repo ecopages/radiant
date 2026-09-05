@@ -7,6 +7,8 @@ import {
 	type RuiCarouselControlsVariant,
 	type RuiCarouselProps,
 	type RuiCarouselTransition,
+	resolveCarouselSurface,
+	resolveCarouselTrackMode,
 } from './carousel.script';
 import './carousel.script';
 
@@ -170,6 +172,7 @@ type CarouselShellProps = {
 	rotation?: JsxRenderable;
 	showIndicators?: boolean;
 	showRotationControl?: boolean;
+	slidesPerView: number;
 	transition: RuiCarouselTransition;
 };
 
@@ -183,6 +186,7 @@ function CarouselShell({
 	rotation,
 	showIndicators,
 	showRotationControl,
+	slidesPerView,
 	transition,
 }: CarouselShellProps) {
 	const overlay = controlsVariant === 'overlay';
@@ -190,12 +194,14 @@ function CarouselShell({
 	const prevControl = prev ?? <RuiCarouselPrev overlay={overlay} />;
 	const nextControl = next ?? <RuiCarouselNext overlay={overlay} />;
 	const rotationControl = showRotation ? (rotation ?? <RuiCarouselRotation overlay={overlay} />) : null;
+	const trackMode = resolveCarouselTrackMode(transition, slidesPerView);
+	const surface = resolveCarouselSurface(slidesPerView);
 	const indicators = showIndicators ? (
 		<div
 			class={cx('rui-carousel__indicators', overlay && 'rui-carousel__indicators--overlay')}
 			data-ref="indicators"
-			role="tablist"
-			aria-label="Choose slide to display"
+			role={surface === 'shell' ? 'tablist' : 'group'}
+			aria-label={surface === 'shell' ? 'Choose slide to display' : 'Choose slide window'}
 		/>
 	) : null;
 
@@ -223,6 +229,8 @@ function CarouselShell({
 		<section
 			class={cx('rui-carousel', `rui-carousel--${transition}`, `rui-carousel--controls-${controlsVariant}`)}
 			data-ref="root"
+			data-carousel-track={trackMode}
+			data-carousel-surface={surface}
 			aria-roledescription="carousel"
 			aria-label={label}
 		>
@@ -251,6 +259,8 @@ export function RuiCarousel({
 	showIndicators,
 	showRotationControl,
 	autoplay,
+	slidesPerView = CAROUSEL_DEFAULTS.slidesPerView,
+	slidesPerGroup = CAROUSEL_DEFAULTS.slidesPerGroup,
 	...props
 }: JsxCustomElementAttributes<
 	RuiCarouselElement,
@@ -276,6 +286,8 @@ export function RuiCarousel({
 			showIndicators={showIndicators}
 			showRotationControl={showRotationControl}
 			autoplay={autoplay}
+			slidesPerView={slidesPerView}
+			slidesPerGroup={slidesPerGroup}
 			slideCount={slideList.length}
 		>
 			<CarouselShell
@@ -287,6 +299,7 @@ export function RuiCarousel({
 				rotation={rotation}
 				showIndicators={showIndicators}
 				showRotationControl={showRotationControl}
+				slidesPerView={slidesPerView}
 				transition={transition}
 			>
 				{slideContent}

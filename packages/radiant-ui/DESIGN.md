@@ -5,7 +5,7 @@ Design-system contract: tokens, themes, and component styling for `packages/radi
 ## CSS architecture (two layers)
 
 1. **Theme** — CSS variables (packs + semantic roles). Loaded by the app or Storybook, not by individual component stylesheets.
-2. **Components** — BEM-style `.rui-*` classes that consume theme roles only.
+2. **Components** — BEM-style `.rui-*` classes that consume theme roles, plus a small public `--rui-*` override set per component.
 
 Component CSS must **not** `@import` a theme file.
 
@@ -97,8 +97,9 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
 
 - Importing theme CSS inside component CSS.
 - Hardcoded themed geometry (`rounded-md`, `px-4`, `py-2`, `gap-2`) on controls and containers.
-- New one-off CSS variables that duplicate an existing role.
+- Private one-off CSS variables that copy a theme role with no public override story.
 - Targeting palette tokens from component CSS.
+- Declaring a public `--rui-*` default on a BEM descendant (that resets inheritance from the host / surface root).
 
 ### Preferred patterns
 
@@ -117,7 +118,59 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
 }
 ```
 
-Use `@apply` with theme-mapped utilities when they exist (`rounded-control`, `bg-primary`, …).
+Use `@apply` with theme-mapped utilities when they exist (`rounded-control`, `bg-primary`, …) for **structure**. Themable values that are public knobs use `var(--rui-…)` instead of `@apply bg-primary`.
+
+## Component custom properties
+
+A component may expose a **small** `--rui-<name>-*` set so consumers restyle an instance in CSS without a JS theme object. Defaults live in the stylesheet; omitted overrides keep the catalog look.
+
+### Where to declare defaults
+
+Declare public defaults on the **subtree root that owns the chrome**, never on an inner grain:
+
+| Tree | Default on | Override on |
+| --- | --- | --- |
+| Chrome stays inside the host (`rui-switch`, `rui-dialog`, `rui-slider`) | the custom-element tag | that tag (or a more specific host selector) |
+| Portaled surface (`rui-popover`, hover-card panel) | the portaled surface class (`.rui-popover`, `.rui-hover-card__content`) | that surface class |
+| Presentational helper with no CE (`RuiAvatar`) | the root BEM class (`.rui-avatar`) | that class |
+
+Size variants should **set** the same variable on that root (`--rui-avatar-size`), not restyle width/height directly.
+
+Do not declare the same public property on a descendant: that assignment wins over an inherited host override.
+
+`:root` remaps of `--rui-*` knobs do **not** win when the host/surface also assigns the property. Tell consumers to override on the host or surface. Global mood still goes through theme roles (`--primary`, `--space-inset`).
+
+### What to expose
+
+Typical public set is **5–12** knobs: surface, border, radius, padding or gap, and one or two widget sizes. Alias theme roles; do not invent a parallel palette.
+
+```css
+rui-dialog {
+	--rui-dialog-max-width: 28rem;
+	--rui-dialog-padding: var(--space-inset);
+	--rui-dialog-radius: var(--radius-container);
+	--rui-dialog-surface: var(--background);
+	--rui-dialog-shadow: var(--shadow-modal);
+}
+```
+
+Do **not** add knobs for every descendant property, for focus rings (use `--focus-ring`), or for disabled opacity (use `--opacity-disabled`). Native controls (button, input, badge) should keep consuming semantic roles; do not explode per-state color variables.
+
+Shared family tokens (`--rui-track-color`, `--rui-menu-item-hover`) live once and are inherited. Prefix everything `--rui-`. Unprefixed names (`--width`, `--y`) are not allowed.
+
+### Public vs runtime
+
+| Kind | Document | Example |
+| --- | --- | --- |
+| Public theming | `@cssprop` on the CE + MDX Theming | `--rui-slider-thumb-size` |
+| Host-written state | Light-DOM contract “host writes”, not `@cssprop` | `--rui-slider-fill-size`, `--rui-toast-y` |
+| Family | `DESIGN.md` + each consumer `@cssprop` | `--rui-track-color` |
+
+JS may write a public knob when a **prop** owns that value (`gap` on `rui-toaster`). Document that the attribute wins over CSS. Do not write a constant from JS onto a public knob if CSS should remain the override path.
+
+### Documenting
+
+`@cssprop` lists only public theming knobs and their defaults. MDX Theming names the override target (host tag or surface class) and says theme-role remaps are for global mood.
 
 ## Adding a token
 

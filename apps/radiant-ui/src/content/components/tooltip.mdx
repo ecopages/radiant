@@ -70,14 +70,20 @@ Do not set `aria-describedby` on the trigger — the host wires it.
 
 ## Theming
 
-The tooltip surface maps to **semantic surface roles**, never Tailwind palette steps:
+The tooltip surface maps to **semantic surface roles**, never Tailwind palette steps. Override `--rui-tooltip-*` on `rui-tooltip`.
 
-| Part | CSS roles |
-| --- | --- |
-| Content (`rui-tooltip__content`) | `on-background` fill, `background` text (inverted surface), `rounded-container`, `shadow-overlay` |
-| Z-order | `overlay` (above dialogs/menus) |
+| Part | Default | Override |
+| --- | --- | --- |
+| Fill / text | `--on-background` / `--background` (inverted) | `--rui-tooltip-surface`, `--rui-tooltip-color` |
+| Radius / shadow | `--radius-container`, `--shadow-overlay` | `--rui-tooltip-radius`, `--rui-tooltip-shadow` |
+| Padding / max width | `--space-2` / `--space-1`, `20rem` | `--rui-tooltip-padding-x`, `--rui-tooltip-padding-y`, `--rui-tooltip-max-width` |
+| Z-order | `overlay` | theme z-index |
 
-Text uses the `text-xs` token. Override roles at the theme layer, not in component CSS.
+```css
+rui-tooltip {
+  --rui-tooltip-max-width: 16rem;
+}
+```
 
 ## Accessibility
 
