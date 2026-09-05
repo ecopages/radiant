@@ -8,7 +8,6 @@ import {
 	TOAST_LIFETIME,
 	TOAST_VIEWPORT_OFFSET,
 	TOAST_VISIBLE_AMOUNT,
-	TOAST_WIDTH,
 	type ToastDismissDetail,
 	type ToastPosition,
 	type ToastRecord,
@@ -88,6 +87,12 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  * @attr {number} gap - Gap between expanded toasts in px. Default: `14`.
  * @attr {number} offset - Viewport inset in px. Default: `24`.
  * @attr {string} container - CSS selector for a positioning root. Default: `''`.
+ *
+ * @cssprop --rui-toaster-width - Stack width. Default: `356px`. Override on `rui-toaster`.
+ * @cssprop --rui-toaster-gap - Expanded stack gap. Default: `14px`. The `gap` attribute writes this and wins.
+ * @cssprop --rui-toaster-offset - Viewport inset. Default: `24px`. The `offset` attribute writes this and wins.
+ * @cssprop --rui-toaster-inset-x - Inline inset below 600px. Default: `16px`.
+ * @cssprop --rui-toaster-inset-bottom - Bottom inset below 600px. Default: `16px`.
  *
  * @remarks
  * `container` switches the host from `position: fixed` to absolute inside a
@@ -199,9 +204,8 @@ export class RuiToaster extends RadiantElement {
 		const { y, x } = splitToastPosition(this.position);
 		this.dataset.yPosition = y;
 		this.dataset.xPosition = x;
-		this.style.setProperty('--width', `${TOAST_WIDTH}px`);
-		this.style.setProperty('--gap', `${this.gap}px`);
-		this.style.setProperty('--viewport-offset', `${this.offset}px`);
+		this.style.setProperty('--rui-toaster-gap', `${this.gap}px`);
+		this.style.setProperty('--rui-toaster-offset', `${this.offset}px`);
 	}
 
 	/**
@@ -375,8 +379,8 @@ export class RuiToaster extends RadiantElement {
 
 		this.dataset.expanded = String(expanded);
 		list.dataset.expanded = String(expanded);
-		this.style.setProperty('--lift', String(lift));
-		list.style.setProperty('--gap', `${this.gap}px`);
+		this.style.setProperty('--rui-toaster-lift', String(lift));
+		list.style.setProperty('--rui-toaster-gap', `${this.gap}px`);
 
 		const els = ([...list.querySelectorAll('rui-toast')] as RuiToast[]).filter(
 			(el) => el.dataset.mounted === 'true' && el.dataset.removed !== 'true',
@@ -393,7 +397,7 @@ export class RuiToaster extends RadiantElement {
 			return measured;
 		});
 		const frontHeight = heights[0] ?? 64;
-		this.style.setProperty('--front-toast-height', `${frontHeight}px`);
+		this.style.setProperty('--rui-toaster-front-height', `${frontHeight}px`);
 
 		for (let index = 0; index < els.length; index += 1) {
 			const el = els[index];
@@ -407,27 +411,27 @@ export class RuiToaster extends RadiantElement {
 			el.dataset.front = String(isFront);
 			el.dataset.expanded = String(expanded);
 			el.dataset.visible = String(expanded || inCollapsedPeek);
-			el.style.setProperty('--z-index', String(els.length - index));
-			el.style.setProperty('--index', String(index));
-			el.style.setProperty('--offset', `${offset}px`);
-			el.style.setProperty('--initial-height', `${height}px`);
-			el.style.setProperty('--gap', `${this.gap}px`);
+			el.style.setProperty('--rui-toast-z', String(els.length - index));
+			el.style.setProperty('--rui-toast-index', String(index));
+			el.style.setProperty('--rui-toast-offset', `${offset}px`);
+			el.style.setProperty('--rui-toast-initial-height', `${height}px`);
+			el.style.setProperty('--rui-toaster-gap', `${this.gap}px`);
 
 			if (expanded) {
-				el.style.setProperty('--y', `translateY(${lift * offset}px)`);
+				el.style.setProperty('--rui-toast-y', `translateY(${lift * offset}px)`);
 				el.style.height = `${height}px`;
 				el.style.overflow = 'visible';
 			} else if (!inCollapsedPeek) {
-				el.style.setProperty('--y', `translateY(${lift * (peekLimit - 1) * this.gap}px) scale(0.7)`);
+				el.style.setProperty('--rui-toast-y', `translateY(${lift * (peekLimit - 1) * this.gap}px) scale(0.7)`);
 				el.style.height = `${frontHeight}px`;
 				el.style.overflow = 'hidden';
 			} else if (isFront) {
-				el.style.setProperty('--y', 'translateY(0px)');
+				el.style.setProperty('--rui-toast-y', 'translateY(0px)');
 				el.style.height = `${height}px`;
 				el.style.overflow = 'visible';
 			} else {
 				const scale = Math.max(0.7, 1 - index * 0.05);
-				el.style.setProperty('--y', `translateY(${lift * index * this.gap}px) scale(${scale})`);
+				el.style.setProperty('--rui-toast-y', `translateY(${lift * index * this.gap}px) scale(${scale})`);
 				el.style.height = `${frontHeight}px`;
 				el.style.overflow = 'hidden';
 			}

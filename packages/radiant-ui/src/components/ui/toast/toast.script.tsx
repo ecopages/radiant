@@ -112,7 +112,8 @@ type RuiToastBindings = {
  * @remarks
  * Styling lives on the composed surface. Variants map to semantic status roles in
  * `toast.css`. The toast owns dismiss lifetime bookkeeping (pause on hover /
- * hidden tab, swipe-to-dismiss).
+ * hidden tab, swipe-to-dismiss). Stack motion uses host-written `--rui-toast-y`,
+ * `--rui-toast-z`, and `--rui-toast-swipe-*` (not theming knobs).
  */
 @customElement('rui-toast')
 export class RuiToast extends RadiantElement<RuiToastBindings> {
@@ -365,8 +366,8 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	}
 
 	private setSwipeTranslation(amount: { x: number; y: number }): void {
-		this.style.setProperty('--swipe-amount-x', `${amount.x}px`);
-		this.style.setProperty('--swipe-amount-y', `${amount.y}px`);
+		this.style.setProperty('--rui-toast-swipe-x', `${amount.x}px`);
+		this.style.setProperty('--rui-toast-swipe-y', `${amount.y}px`);
 	}
 
 	private resetSwipeTranslation(): void {
@@ -393,8 +394,8 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	private readSwipe(): { x: number; y: number } | undefined {
 		if (!this.swiping) return undefined;
 		return {
-			x: Number.parseFloat(this.style.getPropertyValue('--swipe-amount-x') || '0'),
-			y: Number.parseFloat(this.style.getPropertyValue('--swipe-amount-y') || '0'),
+			x: Number.parseFloat(this.style.getPropertyValue('--rui-toast-swipe-x') || '0'),
+			y: Number.parseFloat(this.style.getPropertyValue('--rui-toast-swipe-y') || '0'),
 		};
 	}
 
