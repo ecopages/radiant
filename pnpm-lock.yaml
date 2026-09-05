@@ -159,6 +159,9 @@ importers:
       '@ecopages/radiant-ui':
         specifier: workspace:*
         version: link:../../packages/radiant-ui
+      '@rehype-pretty/transformers':
+        specifier: ^0.13.2
+        version: 0.13.2
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.5
@@ -2009,6 +2012,10 @@ packages:
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
+
+  '@rehype-pretty/transformers@0.13.2':
+    resolution: {integrity: sha512-p2ciQSwqy5Ip8aNUa9q6rdS/hJZXrxHYYfDVOHvKOsBu3t9HDmQ65YX6r9Qbl19vi160OAxmGF7MIoCRDJrRhg==}
+    engines: {node: '>=18'}
 
   '@rolldown/binding-android-arm-eabi@1.2.7':
     resolution: {integrity: sha512-EypzgnYCwyVY4NDHKzGmNJT5b+XaQEBniHxsMdeIQLB/tcCzZnhqrzHpZFbX9iaxx+5RiB8caATBtfvZP7zVxQ==}
@@ -6051,6 +6058,8 @@ snapshots:
   '@pnpm/deps.graph-sequencer@1100.0.1': {}
 
   '@polka/url@1.0.0-next.29': {}
+
+  '@rehype-pretty/transformers@0.13.2': {}
 
   '@rolldown/binding-android-arm-eabi@1.2.7':
     optional: true
