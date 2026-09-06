@@ -314,8 +314,9 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 		this.access.defineProperty(this.host, propertyName, {
 			get: () => options.signal.get(),
 			set: (newValue: T) => {
-				options.signal.set(newValue);
-				options.onSet?.(newValue);
+				const next = options.fromProperty ? options.fromProperty(newValue) : newValue;
+				options.signal.set(next);
+				options.onSet?.(next);
 			},
 			enumerable: true,
 			configurable: true,

@@ -2,14 +2,19 @@ import type { JsxBindingSourceValue, JsxRenderable, SubscribableJsxValueWithAcce
 import type { ReactiveState } from './reactivity-contract';
 import {
 	type AttributeTypeConstant,
-	type ReadAttributeValueReturnType,
-	type WriteAttributeValueReturnType,
 	isValueOfType,
 	readAttributeValue,
 	writeAttributeValue,
 } from '../utils/attribute-utils';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
+
+/** Custom attribute ↔ property conversion for `@prop`. */
+export type PropTransform<T> = {
+	fromAttribute?: (value: string | null) => T;
+	toAttribute?: (value: T) => string | null;
+	fromProperty?: (value: unknown) => T;
+};
 
 export interface ReactiveProperty<T = unknown> {
 	type: AttributeTypeConstant;
@@ -18,8 +23,8 @@ export interface ReactiveProperty<T = unknown> {
 	attribute: string;
 	reflect: boolean;
 	converter: {
-		fromAttribute: (value: string) => ReadAttributeValueReturnType;
-		toAttribute: (value: any) => WriteAttributeValueReturnType;
+		fromAttribute: (value: string | null) => unknown;
+		toAttribute: (value: unknown) => string | null;
 	};
 }
 
@@ -29,6 +34,8 @@ export type ReactivePropertyOptions<T> = {
 	attribute?: string;
 	defaultValue?: T;
 	bind?: boolean | string;
+	/** Overrides default type converters for the attribute channel and optional JS writes. */
+	transform?: PropTransform<T>;
 };
 
 export type ReactiveBindingOption = boolean | string;
@@ -54,6 +61,8 @@ export type ReactiveAccessorDefinition<T> = {
 	bind?: ReactiveBindingOption;
 	signal: ReactiveState<T>;
 	onSet?: (value: T) => void;
+	/** Normalizes JS property writes before the reactive member is updated. */
+	fromProperty?: (value: unknown) => T;
 };
 
 export function validateReactivePropertyDefault(type: AttributeTypeConstant, defaultValue: unknown): void {
@@ -62,12 +71,45 @@ export function validateReactivePropertyDefault(type: AttributeTypeConstant, def
 	}
 }
 
+/**
+ * Builds the runtime attribute converter for a `@prop`.
+ *
+ * @remarks `PropTransform` is declaration-time. This converter is what
+ * construction, `attributeChangedCallback`, reflection, and SSR consult.
+ */
+export function createPropConverter<T>(
+	type: AttributeTypeConstant,
+	transform?: PropTransform<T>,
+): ReactiveProperty<T>['converter'] {
+	return {
+		fromAttribute: (value) => {
+			if (transform?.fromAttribute) {
+				return transform.fromAttribute(value);
+			}
+			if (value === null) {
+				return type === Boolean ? false : value;
+			}
+			if (type === Boolean && value === '') {
+				return true;
+			}
+			return readAttributeValue(value, type);
+		},
+		toAttribute: (value) => {
+			const serialized = transform?.toAttribute
+				? transform.toAttribute(value as T)
+				: writeAttributeValue(value, type);
+			return serialized == null || serialized === '' ? null : String(serialized);
+		},
+	};
+}
+
 export function createReactivePropertyMapping<T>(
 	propertyName: string,
 	attributeKey: string,
 	type: AttributeTypeConstant,
 	initialValue: T | undefined,
 	reflect = false,
+	transform?: PropTransform<T>,
 ): ReactiveProperty<T> {
 	return {
 		type,
@@ -75,9 +117,6 @@ export function createReactivePropertyMapping<T>(
 		initialValue,
 		attribute: attributeKey,
 		reflect,
-		converter: {
-			fromAttribute: (value) => readAttributeValue(value, type),
-			toAttribute: (value) => writeAttributeValue(value, type),
-		},
+		converter: createPropConverter(type, transform),
 	};
 }

@@ -30,7 +30,7 @@ Application code does not need to import JSX helpers or Signals primitives direc
 - First connect automatically chooses between hydration and a fresh client render.
 - `update()` reruns `render()` and commits the current view into the host immediately.
 - `requestUpdate()` schedules one rerender in a microtask and coalesces repeated requests.
-- `@prop(...)`, `@state`, and `@signal(...)` define reactive members.
+- `@prop(...)`, `@state`, and `@signal(...)` define reactive members. Pass `transform` on `@prop` to override default converters (`type: Array` is JSON unless you supply `fromAttribute` / `toAttribute`). `fromProperty` normalizes JS/JSX writes. `toAttribute` returning `null` or `''` omits the reflected attribute.
 - Reflected properties serialize the current value after synchronous update callbacks, including any normalization performed by those callbacks.
 - `@bindTo(...)` copies a reactive field onto existing DOM when the host does not own a `render()` tree.
 - `@onUpdated(...)` is for procedures, and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change.

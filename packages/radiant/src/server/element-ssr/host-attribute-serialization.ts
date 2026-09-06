@@ -83,7 +83,12 @@ function appendReactivePropertyAttributes(
 			continue;
 		}
 
-		attributes[property.attribute] = String(property.converter.toAttribute(currentValue));
+		const serialized = property.converter.toAttribute(currentValue);
+		if (serialized == null || serialized === '') {
+			continue;
+		}
+
+		attributes[property.attribute] = String(serialized);
 		seenAttributes.add(property.attribute);
 	}
 }
