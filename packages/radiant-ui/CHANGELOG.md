@@ -1,5 +1,23 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.13
+
+### Patch Changes
+
+- [#234](https://github.com/ecopages/radiant/pull/234) [`fdaa242`](https://github.com/ecopages/radiant/commit/fdaa24217cebdef0d20b9600d717cae99838e9ed) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep comma-separated HTML `value` attributes on multi-select hosts, and expose the live JS property and `rui-change` detail as arrays.
+
+    HTML `value="ca,tx"` is unchanged. JSX may still pass a string. If you read `element.value` or `event.detail.value` as a string, update:
+
+    - `select.value === 'cat'` → `select.value[0] === 'cat'` or `select.value.includes('cat')`
+    - `event.detail.value.split(',')` → `event.detail.value` is already `string[]`
+    - Slider `value` is `number[]` (`[50]` or `[25, 75]`). Drop `values` / `rangeMin` / `rangeMax` view props; pass `value={[25, 75]}`.
+    - Form `defaultValues` / `onSubmit` for those fields: prefer arrays (`{ language: ['ts'] }`, `{ volume: [50] }`). Strings and numbers still write because the host coerces them.
+
+- Updated dependencies [[`74bc685`](https://github.com/ecopages/radiant/commit/74bc68577bdd5b61a8d9689cbedc774b3bfc4608)]:
+    - @ecopages/radiant@0.3.0-rc.7
+    - @ecopages/jsx@0.3.0-rc.7
+    - @ecopages/signals@0.3.0-rc.7
+
 ## 0.1.0-rc.12
 
 ### Minor Changes
