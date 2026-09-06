@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import type { JsxRenderable } from '../src/index.ts';
 import {
 	HYDRATE_ADJACENT_FIELDS_HTML,
 	HYDRATE_BUTTON_ALPHA_HTML,
@@ -1284,7 +1285,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
-		const viewSubscribers = new Set<(value: unknown) => void>();
+		const viewSubscribers = new Set<(value: JsxRenderable) => void>();
 		const childSubscribers = new Set<(value: number) => void>();
 		let count = 15;
 		const boundCount = createSubscribableJsxValue({
@@ -1329,10 +1330,38 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.querySelector('p')).toBe(paragraph);
 		expect(paragraph?.textContent).toBe('Count: 16');
 
+		const nextChildSubscribers = new Set<(value: number) => void>();
+		let nextCount = 20;
+		const nextBoundCount = createSubscribableJsxValue({
+			getValue: () => nextCount,
+			subscribe: (notify) => {
+				nextChildSubscribers.add(notify);
+				return () => {
+					nextChildSubscribers.delete(notify);
+				};
+			},
+		});
+
+		for (const subscriber of viewSubscribers) {
+			subscriber(
+				jsxs('p', {
+					class: 'component-metric',
+					children: ['Count: ', nextBoundCount],
+				}),
+			);
+		}
+		await Promise.resolve();
+
+		expect(childSubscribers.size).toBe(0);
+		expect(nextChildSubscribers.size).toBe(1);
+		expect(viewSubscribers.size).toBe(1);
+		expect(container.querySelector('p')?.textContent).toBe('Count: 20');
+
 		root.unmount();
 
 		expect(viewSubscribers.size).toBe(0);
 		expect(childSubscribers.size).toBe(0);
+		expect(nextChildSubscribers.size).toBe(0);
 	});
 
 	test('hydrating a non-template root falls back to a client render', async () => {
