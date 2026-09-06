@@ -1,4 +1,14 @@
-import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	bound,
+	customElement,
+	event,
+	onEvent,
+	onUpdated,
+	prop,
+	query,
+} from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { queryFocusableCandidates } from '@/lib/focusable-elements';
 import { uniqueId } from '@/lib/unique-id';
