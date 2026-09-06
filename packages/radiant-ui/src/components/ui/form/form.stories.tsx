@@ -302,7 +302,7 @@ export const ValidationOnChange: Story = {
 
 export const WithCombobox: Story = {
 	render: () => (
-		<RuiForm defaultValues={{ country: '' }}>
+		<RuiForm defaultValues={{ country: [] }}>
 			<RuiField name="country" rules={{ required: 'Choose a country' }}>
 				<RuiLabel>Country</RuiLabel>
 				<RuiCombobox
@@ -409,7 +409,7 @@ export const WithRadioGroup: Story = {
 
 export const WithCheckboxGroup: Story = {
 	render: () => (
-		<RuiForm defaultValues={{ topics: '' }}>
+		<RuiForm defaultValues={{ topics: [] }}>
 			<RuiField name="topics" rules={{ required: 'Select at least one topic' }}>
 				<RuiLabel>Topics</RuiLabel>
 				<RuiCheckboxGroup
@@ -447,7 +447,7 @@ export const WithCheckboxGroup: Story = {
 
 export const WithSlider: Story = {
 	render: () => (
-		<RuiForm defaultValues={{ volume: 50 }}>
+		<RuiForm defaultValues={{ volume: [50] }}>
 			<RuiField name="volume">
 				<RuiLabel>Volume</RuiLabel>
 				<RuiSlider min={0} max={100} value={50} />
@@ -492,7 +492,7 @@ export const WithNumberField: Story = {
 
 export const WithListbox: Story = {
 	render: () => (
-		<RuiForm defaultValues={{ framework: '' }}>
+		<RuiForm defaultValues={{ framework: [] }}>
 			<RuiField name="framework" rules={{ required: 'Pick a framework' }}>
 				<RuiLabel>Framework</RuiLabel>
 				<RuiListbox
@@ -527,7 +527,7 @@ export const WithListbox: Story = {
 
 export const WithSelect: Story = {
 	render: () => (
-		<RuiForm defaultValues={{ animal: '' }}>
+		<RuiForm defaultValues={{ animal: [] }}>
 			<RuiField name="animal" rules={{ required: 'Choose an animal' }}>
 				<RuiLabel>Animal</RuiLabel>
 				<RuiSelect placeholder="Select an animal" options={ANIMAL_OPTIONS} />
@@ -566,7 +566,7 @@ export const WithSelect: Story = {
 
 export const WithSelectTagGroup: Story = {
 	render: () => (
-		<RuiForm defaultValues={{ states: '' }}>
+		<RuiForm defaultValues={{ states: [] }}>
 			<RuiField name="states" rules={{ required: 'Select at least one state' }}>
 				<RuiLabel>States</RuiLabel>
 				<RuiSelect selectionMode="multiple" placeholder="Select states">
@@ -626,7 +626,7 @@ export const WithSelectTagGroup: Story = {
 
 export const WithTagGroup: Story = {
 	render: () => (
-		<RuiForm defaultValues={{ categories: '' }}>
+		<RuiForm defaultValues={{ categories: [] }}>
 			<RuiField name="categories" rules={{ required: 'Select at least one category' }}>
 				<RuiLabel>Categories</RuiLabel>
 				<RuiTagGroup label="Categories" selectionMode="multiple" tags={CATEGORY_TAGS} />

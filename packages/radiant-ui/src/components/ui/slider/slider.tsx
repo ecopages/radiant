@@ -1,11 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { formatNumericValue } from '../shared/numeric-range';
-import {
-	seedSliderView,
-	type RuiSlider as RuiSliderElement,
-	type RuiSliderProps,
-} from './slider.script';
+import { seedSliderView, type RuiSlider as RuiSliderElement, type RuiSliderProps } from './slider.script';
 import './slider.script';
 
 export type RuiSliderValueProps = JsxElementProps<HTMLSpanElement>;
@@ -24,12 +20,7 @@ export function RuiSliderValue({ children, class: className, ...props }: RuiSlid
 	);
 }
 
-export type RuiSliderViewProps = JsxCustomElementAttributes<
-	RuiSliderElement,
-	RuiSliderProps & {
-		values?: [number, number];
-	}
->;
+export type RuiSliderViewProps = JsxCustomElementAttributes<RuiSliderElement, RuiSliderProps>;
 
 type SliderTrackProps = Omit<RuiSliderProps, 'value'> & {
 	committed: number[];
@@ -126,7 +117,6 @@ function SliderTrack({
  * @cssclass rui-slider__thumb - Thumb button (`role="slider"`, `data-thumb`).
  */
 export function RuiSlider({
-	values,
 	variant,
 	orientation = 'horizontal',
 	label,
@@ -140,17 +130,12 @@ export function RuiSlider({
 	value,
 	valuePrecision,
 	minDistance,
-	rangeMin,
-	rangeMax,
 	children,
 	...props
 }: RuiSliderViewProps) {
 	const seed = seedSliderView({
 		variant,
-		values,
 		value,
-		rangeMin,
-		rangeMax,
 		min,
 		max,
 		step,
@@ -177,10 +162,8 @@ export function RuiSlider({
 			min={seed.min}
 			max={seed.max}
 			step={seed.step}
-			value={seed.value}
+			value={seed.committed}
 			minDistance={seed.minDistance}
-			rangeMin={seed.resolvedRangeMin}
-			rangeMax={seed.resolvedRangeMax}
 			valuePrecision={seed.valuePrecision}
 		>
 			<SliderRoot

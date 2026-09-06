@@ -1,13 +1,12 @@
 import type { RuiListbox, RuiListboxSelectionMode } from '../listbox/listbox.script';
 import type { RuiTagGroup } from '../tag-group/tag-group.script';
 import { getListboxOptionLabel, getListboxOptionValue } from './listbox-option';
-import { parseMultiValue, serializeMultiValue } from './multi-value';
 
 export type ListboxHostControllerConfig = {
 	getRoot: () => ParentNode | null;
 	getSelectionMode: () => RuiListboxSelectionMode;
-	getValue: () => string;
-	setValue: (value: string) => void;
+	getValue: () => string[];
+	setValue: (value: string[]) => void;
 	/** Popup shell used when no `rui-listbox` host is present. */
 	getPopup?: () => HTMLElement | null;
 	/** Selector for an optional chip host, e.g. `[data-select-value] rui-tag-group`. */
@@ -19,8 +18,9 @@ export type ListboxHostControllerConfig = {
  *
  * @remarks Popup open state, filtering, and trigger-kind policy stay on the
  * owning custom element. This controller owns the contract both hosts must
- * agree on: the embedded listbox, the comma-separated value array, option
- * `aria-selected`, and optional tag-group chips.
+ * agree on: the embedded listbox, the `string[]` value property, option
+ * `aria-selected`, and optional tag-group chips. The comma-separated attribute
+ * protocol is handled by `multiValueTransform` on each host.
  */
 export class ListboxHostController {
 	private readonly config: ListboxHostControllerConfig;
@@ -50,11 +50,11 @@ export class ListboxHostController {
 	}
 
 	getSelectedValues(): string[] {
-		return parseMultiValue(this.config.getValue());
+		return this.config.getValue();
 	}
 
 	setSelectedValues(values: string[]): void {
-		this.config.setValue(serializeMultiValue(values));
+		this.config.setValue(values);
 	}
 
 	toggleValue(optionValue: string): void {
@@ -81,7 +81,7 @@ export class ListboxHostController {
 	}
 
 	clearValues(): boolean {
-		if (!this.config.getValue()) {
+		if (this.getSelectedValues().length === 0) {
 			return false;
 		}
 		this.setSelectedValues([]);

@@ -18,7 +18,7 @@ describe('RuiSlider SSR', () => {
 
 	it('seeds a range readout and fill between thumbs', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
-			renderToString(<RuiSlider variant="range" values={[25, 75]} min={0} max={100} showValue />),
+			renderToString(<RuiSlider variant="range" value={[25, 75]} min={0} max={100} showValue />),
 		);
 
 		expect(html).toContain('>25 – 75</span>');

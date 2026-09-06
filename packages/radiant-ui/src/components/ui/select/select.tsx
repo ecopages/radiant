@@ -3,7 +3,7 @@ import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
-import { parseViewValue, serializeViewValue } from '../shared/multi-value';
+import { parseViewValue, type ViewMultiValue } from '../shared/multi-value';
 import { RuiTagGroup } from '../tag-group';
 import type { RuiSelect as RuiSelectElement, RuiSelectProps } from './select.script';
 import './select.script';
@@ -160,7 +160,7 @@ export type RuiSelectOptionData = RuiListboxOptionData;
 
 function resolveSelectDisplayText(
 	options: RuiSelectOptionData[] | undefined,
-	value: string | string[] | undefined,
+	value: ViewMultiValue,
 	placeholder: unknown,
 ): string {
 	const selected = parseViewValue(value)[0] ?? '';
@@ -182,9 +182,8 @@ function resolveSelectDisplayText(
  */
 export type RuiSelectViewProps = JsxCustomElementAttributes<
 	RuiSelectElement,
-	Omit<RuiSelectProps, 'value'> & {
+	RuiSelectProps & {
 		options?: RuiSelectOptionData[];
-		value?: string | string[];
 	}
 >;
 
@@ -197,7 +196,6 @@ function SelectShell({ children }: { children: JsxRenderable }) {
 }
 
 export function RuiSelect({ options, children, value, ...props }: RuiSelectViewProps) {
-	const serializedValue = serializeViewValue(value);
 	const selectedValues = parseViewValue(value);
 	const isMultiple = props.selectionMode === 'multiple';
 	const displayText = options != null ? resolveSelectDisplayText(options, value, props.placeholder) : '';
@@ -206,7 +204,7 @@ export function RuiSelect({ options, children, value, ...props }: RuiSelectViewP
 		.map((option) => ({ value: option.value, label: option.label }));
 
 	return (
-		<rui-select {...props} value={serializedValue}>
+		<rui-select {...props} value={selectedValues}>
 			<SelectShell>
 				{options == null ? (
 					children
@@ -229,7 +227,7 @@ export function RuiSelect({ options, children, value, ...props }: RuiSelectViewP
 								embedded
 								options={options}
 								selectionMode={props.selectionMode}
-								value={serializedValue}
+								value={selectedValues}
 							/>
 						</RuiSelectListbox>
 					</>

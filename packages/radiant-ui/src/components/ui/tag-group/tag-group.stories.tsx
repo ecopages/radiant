@@ -38,8 +38,8 @@ export const Default: Story = {
 			const remove = tags[0].querySelector('[data-tag-remove]') as HTMLButtonElement;
 			await userEvent.click(remove);
 			await expect(
-				(canvasElement.querySelector('rui-tag-group') as HTMLElement & { value?: string }).value ?? '',
-			).toBe('');
+				(canvasElement.querySelector('rui-tag-group') as HTMLElement & { value?: string[] }).value ?? [],
+			).toEqual([]);
 		});
 	},
 };

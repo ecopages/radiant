@@ -4,12 +4,12 @@ import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
 import { getListboxOptionValue } from '../shared/listbox-option';
-import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiListboxSelectionMode = 'single' | 'multiple';
 
 export type RuiListboxProps = {
-	value?: string;
+	value?: ViewMultiValue;
 	label?: string;
 	disabled?: boolean;
 	selectionMode?: RuiListboxSelectionMode;
@@ -23,7 +23,7 @@ export type RuiListboxProps = {
 	bordered?: boolean;
 };
 
-export type RuiListboxChangeDetail = { value: string };
+export type RuiListboxChangeDetail = { value: string[] };
 
 /**
  * `<rui-listbox>` — listbox selection behavior host.
@@ -57,14 +57,14 @@ export type RuiListboxChangeDetail = { value: string };
  *
  * @element rui-listbox
  *
- * @attr {string} value - Selected option value (comma-separated in multiple mode). Default: `''`.
+ * @attr {string} value - Comma-separated selected values in markup; the property is `string[]`. Default: `[]`.
  * @attr {string} label - Accessible name for the list. Default: `''`.
  * @attr {boolean} disabled - Disable all selection. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Single or multiple selection. Default: `single`.
  * @attr {boolean} embedded - Parent-owned listbox: selection handled by the parent. Default: `false`.
  * @attr {boolean} bordered - Override the border (`true` standalone, `false` embedded). Default: follows `embedded`.
  *
- * @fires rui-change - Emitted when an option is selected; detail carries `value`.
+ * @fires rui-change - Emitted when an option is selected; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum headless tree:
@@ -82,7 +82,8 @@ export type RuiListboxChangeDetail = { value: string };
  */
 @customElement('rui-listbox')
 export class RuiListbox extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 
@@ -130,11 +131,11 @@ export class RuiListbox extends RadiantElement {
 	}
 
 	private getSelectedValues(): string[] {
-		return parseMultiValue(this.value);
+		return this.value;
 	}
 
 	private setSelectedValues(values: string[]): void {
-		this.value = serializeMultiValue(values);
+		this.value = values;
 	}
 
 	private tabIndexFor(option: HTMLElement, tabStop: HTMLElement | undefined): number {

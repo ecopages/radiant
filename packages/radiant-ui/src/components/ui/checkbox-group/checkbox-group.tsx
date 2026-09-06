@@ -1,7 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiCheckbox } from '../checkbox';
-import { parseMultiValue, serializeViewValue } from '../shared/multi-value';
+import { parseViewValue } from '../shared/multi-value';
 import type {
 	RuiCheckboxGroup as RuiCheckboxGroupElement,
 	RuiCheckboxGroupOrientation,
@@ -54,15 +54,12 @@ export function RuiCheckboxGroup({
 	value,
 	orientation = 'vertical',
 	...props
-}: JsxCustomElementAttributes<
-	RuiCheckboxGroupElement,
-	RuiCheckboxGroupProps & { options?: RuiCheckboxOption[]; value?: string | string[] }
->) {
-	const serializedValue = serializeViewValue(value);
-	const selected = new Set(parseMultiValue(serializedValue ?? ''));
+}: JsxCustomElementAttributes<RuiCheckboxGroupElement, RuiCheckboxGroupProps & { options?: RuiCheckboxOption[] }>) {
+	const selectedValues = parseViewValue(value);
+	const selected = new Set(selectedValues);
 
 	return (
-		<rui-checkbox-group {...props} value={serializedValue} orientation={orientation}>
+		<rui-checkbox-group {...props} value={selectedValues} orientation={orientation}>
 			{options == null ? (
 				children
 			) : (

@@ -79,19 +79,19 @@ describe('RuiListbox', () => {
 		options[1].click();
 		await settled();
 
-		expect(list.value).toBe('apple,banana');
+		expect(list.value).toEqual(['apple', 'banana']);
 		expect(options[1].getAttribute('aria-selected')).toBe('true');
 
 		options[1].focus();
 		options[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
 		await settled();
 
-		expect(list.value).toBe('apple,banana');
+		expect(list.value).toEqual(['apple', 'banana']);
 		expect(document.activeElement).toBe(options[0]);
 
 		options[0].dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
 		await settled();
-		expect(list.value).toBe('banana');
+		expect(list.value).toEqual(['banana']);
 		cleanup();
 	});
 });

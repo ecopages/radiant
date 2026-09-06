@@ -27,6 +27,12 @@ const getSingleThumb = (root: HTMLElement) =>
 
 const getValueLabel = (root: HTMLElement) => root.querySelector('rui-slider .rui-slider__value') as HTMLElement;
 
+const parseSliderValue = (host: HTMLElement): number[] =>
+	host
+		.getAttribute('value')
+		?.split(',')
+		.map((entry) => Number(entry)) ?? [];
+
 export const Default: Story = {
 	play: async ({ canvasElement: root, step }) => {
 		const host = root.querySelector('rui-slider') as HTMLElement;
@@ -51,10 +57,10 @@ export const Default: Story = {
 			const midY = rect.top + rect.height / 2;
 			const startX = rect.left + rect.width * 0.1;
 			const endX = rect.left + rect.width * 0.9;
-			const emissions: number[] = [];
+			const emissions: number[][] = [];
 
 			host.addEventListener('rui-change', (event) =>
-				emissions.push((event as CustomEvent<{ value: number }>).detail.value),
+				emissions.push((event as CustomEvent<{ value: number[] }>).detail.value),
 			);
 
 			thumb.focus();
@@ -144,7 +150,7 @@ export const Range: Story = {
 		min: 0,
 		max: 100,
 		step: 1,
-		values: [20, 80],
+		value: [20, 80],
 		showValue: true,
 	},
 	play: async ({ canvasElement: root, step }) => {
@@ -152,8 +158,7 @@ export const Range: Story = {
 		const [minThumb, maxThumb] = getRangeThumbs(root);
 
 		await step('shows the current range', async () => {
-			await expect(host).toHaveAttribute('range-min', '20');
-			await expect(host).toHaveAttribute('range-max', '80');
+			await expect(host).toHaveAttribute('value', '20,80');
 			await expect(getValueLabel(root)).toHaveTextContent('20 – 80');
 			await expect(root.querySelector('rui-slider [data-ref="input"]')).toHaveValue('20');
 			await expect(root.querySelector('rui-slider [data-ref="maxInput"]')).toHaveValue('80');
@@ -162,13 +167,13 @@ export const Range: Story = {
 		await step('keyboard nudges the minimum thumb', async () => {
 			minThumb.focus();
 			await userEvent.keyboard('{ArrowRight}');
-			await expect(host).toHaveAttribute('range-min', '21');
+			await expect(host).toHaveAttribute('value', '21,80');
 		});
 
 		await step('keyboard nudges the maximum thumb', async () => {
 			maxThumb.focus();
 			await userEvent.keyboard('{ArrowLeft}');
-			await expect(host).toHaveAttribute('range-max', '79');
+			await expect(host).toHaveAttribute('value', '21,79');
 		});
 
 		await step('pointer drag moves the minimum thumb', async () => {
@@ -188,7 +193,7 @@ export const Range: Story = {
 			]);
 
 			await expect(minThumb).toHaveFocus();
-			await expect(Number(host.getAttribute('range-min'))).toBeGreaterThan(21);
+			await expect(parseSliderValue(host)[0]).toBeGreaterThan(21);
 		});
 	},
 };
@@ -201,7 +206,7 @@ export const VerticalRange: Story = {
 		min: 0,
 		max: 100,
 		step: 1,
-		values: [20, 80],
+		value: [20, 80],
 		showValue: true,
 	},
 	render: (args) => (
@@ -231,7 +236,7 @@ export const VerticalRange: Story = {
 				{ keys: '[/MouseLeft]' },
 			]);
 
-			await expect(Number(host.getAttribute('range-min'))).toBeGreaterThan(20);
+			await expect(parseSliderValue(host)[0]).toBeGreaterThan(20);
 		});
 	},
 };
@@ -245,7 +250,7 @@ export const Customized: Story = {
 	},
 	render: () => (
 		<div class="slider-shape-demo">
-			<RuiSlider variant="range" min={0} max={100} values={[28, 72]} showValue valueTitle />
+			<RuiSlider variant="range" min={0} max={100} value={[28, 72]} showValue valueTitle />
 		</div>
 	),
 	play: async ({ canvasElement: root, step }) => {
@@ -275,7 +280,7 @@ export const RangeMinDistance: Story = {
 		max: 100,
 		step: 5,
 		minDistance: 20,
-		values: [30, 60],
+		value: [30, 60],
 	},
 	play: async ({ canvasElement: root, step }) => {
 		const host = root.querySelector('rui-slider') as HTMLElement;
@@ -286,9 +291,7 @@ export const RangeMinDistance: Story = {
 			for (let index = 0; index < 10; index += 1) {
 				await userEvent.keyboard('{ArrowRight}');
 			}
-			await expect(
-				Number(host.getAttribute('range-max')) - Number(host.getAttribute('range-min')),
-			).toBeGreaterThanOrEqual(20);
+			await expect(parseSliderValue(host)[1] - parseSliderValue(host)[0]).toBeGreaterThanOrEqual(20);
 		});
 	},
 };
