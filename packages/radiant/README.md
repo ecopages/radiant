@@ -238,6 +238,8 @@ export class KeyboardPanel extends RadiantElement<{ lastKey: string }> {
 
 Selector- and ref-based `@onEvent(...)` handlers, and `subscribeEvent(...)` / `subscribeEvents(...)`, match with `Element.closest(...)` from the event target, so a click on a nested icon still reaches a wrapping `button[data-ref]` or selector match. They still rely on bubbling, so use `focusin` and `focusout` instead of `focus` and `blur` for that pattern.
 
+Each `subscribeEvent(...)` registration is independent, including duplicate `type` and `selector` pairs. Unsubscribing one listener does not remove another, and disconnect removes every remaining registration.
+
 ### `@event(...)`
 
 Outgoing component events use `@event(...)`, which gives the class a typed `EventEmitter`. Calling `.emit(detail)` dispatches a real `CustomEvent` from the host element.

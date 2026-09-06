@@ -101,4 +101,6 @@ By default, server host serialization includes:
 - reactive property metadata registered through `@prop(...)`
 - attributes already present on the element instance
 
+Reactive prop metadata is stored per constructor. Subclass `@prop` registrations copy inherited definitions before writing, so sibling and parent classes keep class-specific registries and SSR host attributes.
+
 See [../server/README.md](../server/README.md) for adapter-facing SSR helpers.
