@@ -1,11 +1,16 @@
-import { updateRangeContent } from './dom-render/child-range-update.ts';
+import { mountReactiveChildSource, updateRangeContent } from './dom-render/child-range-update.ts';
 import { createBoundaryMarker } from './dom-render/dom-operations.ts';
 import { captureFocusSnapshot, restoreFocusSnapshot } from './dom-render/focus-snapshot.ts';
-import { hydrateFlatBindings } from './dom-render/hydration-flat.ts';
 import { hydrateIterableRoot } from './dom-render/hydration-iterable.ts';
 import { hydrateTemplateInstance } from './dom-render/hydration.ts';
 import { disposeMountedRoot } from './dom-render/mounted-disposal.ts';
-import { flushDeferredProperties, isTemplateResultLike, unwrapKeyedValue } from './dom-render/runtime-helpers.ts';
+import {
+	flushDeferredProperties,
+	isReactiveChildSource,
+	isTemplateResultLike,
+	readReactiveChildSourceValue,
+	unwrapKeyedValue,
+} from './dom-render/runtime-helpers.ts';
 import type { DeferredPropertyBinding, MountedRangeContent, MountedRoot } from './dom-render/types.ts';
 import { visitHydrationBindingMarkers } from './hydration/hydration-bindings.ts';
 import { isIterableRenderable } from './types/renderable-guards.ts';
@@ -67,25 +72,42 @@ export function hydrate(element: JsxRenderable, target: HTMLElement): void {
 
 	const focusSnapshot = captureFocusSnapshot(target);
 	const deferredProperties: DeferredPropertyBinding[] = [];
-	const reconnectedContent = reconnectSsrRoot(element, target, deferredProperties);
+	const rootValue = unwrapKeyedValue(element);
+	const reconnectValue = isReactiveChildSource(rootValue)
+		? (readReactiveChildSourceValue(rootValue) as JsxRenderable)
+		: element;
+	const reconnectedContent = reconnectSsrRoot(reconnectValue, target, deferredProperties);
 
 	if (!reconnectedContent) {
 		render(element, target);
 		return;
 	}
 
-	ROOT_RENDER_STATE.set(target, adoptHydratedRootRange(target, reconnectedContent));
-	flushDeferredProperties(deferredProperties);
+	const root = adoptHydratedRootRange(target, reconnectedContent);
+
+	if (isReactiveChildSource(rootValue)) {
+		root.mounted = mountReactiveChildSource(
+			root.start,
+			root.end,
+			rootValue,
+			reconnectedContent,
+			target,
+			deferredProperties,
+		);
+	} else {
+		flushDeferredProperties(deferredProperties);
+	}
+
+	ROOT_RENDER_STATE.set(target, root);
 	restoreFocusSnapshot(target, focusSnapshot);
 }
 
 /**
- * Reconnects SSR DOM for whichever root shape `element` describes.
+ * Reconnects SSR DOM for a template or iterable root.
  *
- * The three shapes — a single template result, an iterable of children, and the
- * flat marker-walk fallback — differ only in how they locate bindings, so each
- * reports the same way: mounted content on success, `undefined` to fall back to a
- * full client render.
+ * Other shapes — including primitives and leftover marker trees — return
+ * `undefined` so {@link hydrate} can fall back to a full client render. Reactive
+ * wrappers are unwrapped by the caller before this runs.
  *
  * @returns The reconnected range content, or `undefined` when the DOM cannot be recovered.
  */
@@ -113,9 +135,7 @@ function reconnectSsrRoot(
 		return hydrateIterableRoot(nextValue, target, deferredProperties, { rootTarget: target });
 	}
 
-	return hydrateFlatBindings(element, target, deferredProperties)
-		? { kind: 'nodes', nodes: Array.from(target.childNodes) }
-		: undefined;
+	return undefined;
 }
 
 function getOrCreateMountedRoot(target: HTMLElement): MountedRoot {

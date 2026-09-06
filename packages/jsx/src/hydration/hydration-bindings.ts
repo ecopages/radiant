@@ -7,7 +7,7 @@
  *    {@link resolveHydrationMarkerAttributeName}.
  * 2. {@link collectHydrationBindings} and {@link planTemplateHydrationIndices}
  *    resolve the same global namespace for nested templates and list children.
- * 3. `hydrate(...)` walks markers back to live bindings via template, iterable, or flat paths.
+ * 3. `hydrate(...)` walks markers back to live bindings via the template or iterable path.
  *
  * See `packages/jsx/README.md` → "SSR Marker Lifecycle" for the full walkthrough.
  */
@@ -310,7 +310,7 @@ function collectValueBindings(
 	}
 
 	if (isIterableRenderable(value)) {
-		for (const child of value) {
+		for (const child of materializeIterableChildren(value)) {
 			collectValueBindings(child as JsxRenderable, bindings, state, options);
 		}
 	}
