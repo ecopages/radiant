@@ -1,25 +1,35 @@
 @reference '../../../styles/radiant-ui.css';
 
 rui-navigation-menu {
-	@apply block w-full;
+	--rui-navigation-menu-panel-min-width: 12rem;
+	--rui-navigation-menu-panel-padding: var(--space-inset);
+	--rui-navigation-menu-bar-surface: transparent;
+	--rui-navigation-menu-bar-border-color: transparent;
+	--rui-navigation-menu-bar-shadow: none;
+	--rui-navigation-menu-bar-radius: var(--radius-container);
+	--rui-navigation-menu-bar-padding-x: 0px;
+	--rui-navigation-menu-bar-padding-y: 0px;
+	@apply relative block w-full;
 }
 
 @layer components {
 	.rui-navigation-menu {
-		@apply flex flex-col overflow-hidden rounded-container border border-border bg-surface shadow-sm;
+		@apply relative flex flex-col;
 	}
 
 	.rui-navigation-menu__bar {
-		@apply flex flex-wrap items-center gap-1 border-b border-border bg-background px-control-x py-control-y;
+		@apply flex flex-wrap items-center gap-1;
+		background-color: var(--rui-navigation-menu-bar-surface);
+		border: 1px solid var(--rui-navigation-menu-bar-border-color);
+		border-radius: var(--rui-navigation-menu-bar-radius);
+		box-shadow: var(--rui-navigation-menu-bar-shadow);
+		padding-inline: var(--rui-navigation-menu-bar-padding-x);
+		padding-block: var(--rui-navigation-menu-bar-padding-y);
 	}
 
 	.rui-navigation-menu__bar .rui-button,
 	.rui-navigation-menu__bar a.rui-button {
 		@apply rounded-container no-underline;
-	}
-
-	.rui-navigation-menu [data-navigation-trigger] {
-		@apply relative;
 	}
 
 	.rui-navigation-menu [data-navigation-trigger][aria-expanded='true'] {
@@ -28,34 +38,36 @@ rui-navigation-menu {
 	}
 
 	.rui-navigation-menu__panels {
-		@apply bg-background;
+		display: contents;
 	}
 
-	.rui-navigation-menu__panels [data-navigation-panel] {
-		@apply block px-5 py-5 text-sm text-on-background;
+	.rui-navigation-menu__panel {
+		@apply text-sm text-on-background;
+		min-inline-size: var(--rui-navigation-menu-panel-min-width);
+		padding: var(--rui-navigation-menu-panel-padding);
 	}
 
-	.rui-navigation-menu__panels [data-navigation-panel][hidden] {
+	.rui-navigation-menu__panel[hidden] {
 		display: none;
 	}
 
-	.rui-navigation-menu__panels [data-navigation-panel] > p {
+	.rui-navigation-menu__panel > p {
 		@apply m-0 leading-relaxed text-on-surface;
 	}
 
-	.rui-navigation-menu__panels [data-navigation-panel] rui-grid {
+	.rui-navigation-menu__panel rui-grid {
 		@apply max-w-3xl;
 	}
 
-	.rui-navigation-menu__panels [data-navigation-panel] rui-disclosure {
+	.rui-navigation-menu__panel rui-disclosure {
 		@apply mt-4 block border-t border-border pt-3;
 	}
 
-	.rui-navigation-menu__panels [data-navigation-panel] rui-disclosure + rui-disclosure {
+	.rui-navigation-menu__panel rui-disclosure + rui-disclosure {
 		@apply mt-1 border-t border-border pt-1;
 	}
 
-	.rui-navigation-menu__panels [data-navigation-panel] .rui-disclosure__panel:not([hidden]) {
+	.rui-navigation-menu__panel .rui-disclosure__panel:not([hidden]) {
 		display: block;
 	}
 

@@ -81,16 +81,25 @@ import '@ecopages/radiant-ui/navigation-menu';
 
 ## Theming
 
-Navigation Menu surfaces map to **semantic surface roles**, never Tailwind palette steps:
+The trigger bar is unboxed by default: fill, border, and shadow are transparent. Override `--rui-navigation-menu-bar-*` on `rui-navigation-menu` to paint chrome. Flyout panels use the shared `--rui-popover-*` surface knobs.
 
-| Part | CSS roles |
-| --- | --- |
-| Root (`rui-navigation-menu`) | `surface`, `border`, `shadow-sm`, `rounded-container` |
-| Bar (`rui-navigation-menu__bar`) | `background`, `border` |
-| Open trigger (`[data-navigation-trigger][aria-expanded='true']`) | `primary-container`, `on-primary-container`, `primary` ring |
-| Panel region (`rui-navigation-menu__panels`) | `background`, `on-background`; `on-surface` / `link` (text) |
+| Part | Default | Override |
+| --- | --- | --- |
+| Bar fill / border / shadow | `transparent`, `transparent`, `none` | `--rui-navigation-menu-bar-surface`, `--rui-navigation-menu-bar-border-color`, `--rui-navigation-menu-bar-shadow` |
+| Bar radius / padding | `--radius-container`, `0px` | `--rui-navigation-menu-bar-radius`, `--rui-navigation-menu-bar-padding-x`, `--rui-navigation-menu-bar-padding-y` |
+| Panel size / padding | `12rem`, `--space-inset` | `--rui-navigation-menu-panel-min-width`, `--rui-navigation-menu-panel-padding` |
+| Panel fill / border / radius / shadow | `--background`, `--border`, `--radius-container`, `--shadow-overlay` | `--rui-popover-surface`, `--rui-popover-border-color`, `--rui-popover-radius`, `--rui-popover-shadow` |
+| Open trigger | `primary-container` fill and ring | theme roles |
 
-Override roles at the theme layer, not in component CSS.
+```css
+rui-navigation-menu {
+  --rui-navigation-menu-bar-surface: var(--surface);
+  --rui-navigation-menu-bar-border-color: var(--border);
+  --rui-navigation-menu-bar-shadow: var(--shadow-sm);
+  --rui-navigation-menu-bar-padding-x: var(--space-control-x);
+  --rui-navigation-menu-bar-padding-y: var(--space-control-y);
+}
+```
 
 ## API
 
@@ -146,9 +155,9 @@ Content helper classes authored in consumer markup (see stories):
 
 | Part | CSS variables consumed |
 | --- | --- |
-| Root | `--surface`, `--border`, `--shadow-sm` |
-| Bar | `--background`, `--border` |
+| Bar (when painted) | `--surface`, `--border`, `--shadow-sm`, `--radius-container`, `--space-control-x`, `--space-control-y` |
 | Open trigger | `--primary-container`, `--on-primary-container`, `--primary`, `--focus-ring` |
+| Panel | `--background`, `--border`, `--radius-container`, `--shadow-overlay`, `--space-inset` |
 | Panel text | `--on-background`, `--on-surface`, `--link` |
 
 ## Accessibility
