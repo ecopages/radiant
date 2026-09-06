@@ -36,10 +36,11 @@ export class DocsControlsElement extends RadiantElement {
 	onSelectChange(event: Event): void {
 		const target = this.resolveControl(event, 'rui-select[data-docs-arg]');
 		const detail = (event as CustomEvent<{ value?: unknown }>).detail;
-		if (!target || typeof detail?.value !== 'string') return;
+		const value = Array.isArray(detail?.value) ? detail.value[0] : undefined;
+		if (!target || typeof value !== 'string') return;
 		const propName = target.dataset.docsArg;
 		if (!propName) return;
-		this.setArg(propName, detail.value);
+		this.setArg(propName, value);
 	}
 
 	@onEvent({ selector: 'rui-radio-group[data-docs-arg]', type: 'rui-change' })

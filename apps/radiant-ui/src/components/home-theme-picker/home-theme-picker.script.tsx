@@ -45,7 +45,8 @@ export class HomeThemePickerElement extends RadiantElement {
 	onTokenChange(event: Event): void {
 		const group = event.target;
 		const token = group instanceof HTMLElement ? group.dataset.token : undefined;
-		const value = (event as CustomEvent<{ value?: unknown }>).detail?.value;
+		const selected = (event as CustomEvent<{ value?: unknown }>).detail?.value;
+		const value = Array.isArray(selected) ? selected[0] : undefined;
 		if (!isDocsThemeTokenName(token) || typeof value !== 'string') return;
 
 		this.selection = updateDocsThemeSelection(this.selection, token, value);
@@ -55,9 +56,9 @@ export class HomeThemePickerElement extends RadiantElement {
 
 	private syncSelectValues(): void {
 		for (const token of docsThemeTokenNames) {
-			const select = this.querySelector<HTMLElement & { value?: string }>(`rui-select[data-token="${token}"]`);
-			if (select && select.value !== this.selection[token]) {
-				select.value = this.selection[token];
+			const select = this.querySelector<HTMLElement & { value?: string[] }>(`rui-select[data-token="${token}"]`);
+			if (select && select.value?.[0] !== this.selection[token]) {
+				select.value = [this.selection[token]];
 			}
 		}
 	}

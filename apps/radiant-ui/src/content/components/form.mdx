@@ -82,7 +82,7 @@ Load `@ecopages/radiant-ui/styles.css` once in your app to style the form and ev
 
 ## Default values
 
-<p>Pass `defaultValues` to pre-populate edit forms. Fields read their initial state from the form store.</p>
+<p>Pass `defaultValues` to pre-populate edit forms. Fields read their initial state from the form store. Multi-value controls (`RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiCheckboxGroup`, `RuiTagGroup`) store `string[]` — seed them with an array (`{ language: ['ts'] }`). A CSV string still writes because the host parses it; after that the stored value is an array. `RuiSlider` stores `number[]`.</p>
 
 ## Theming
 
