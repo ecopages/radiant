@@ -1,5 +1,19 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.14
+
+### Minor Changes
+
+- [#240](https://github.com/ecopages/radiant/pull/240) [`b8abbac`](https://github.com/ecopages/radiant/commit/b8abbac9c162317233eb8b172a559fc80faf7b21) Thanks [@andeeplus](https://github.com/andeeplus)! - Open navigation-menu flyouts as popovers under each trigger, keep the trigger bar unboxed by default, and add `openOnHover` with `hoverDelay` / `closeDelay`.
+
+### Patch Changes
+
+- [#240](https://github.com/ecopages/radiant/pull/240) [`ffb342e`](https://github.com/ecopages/radiant/commit/ffb342e887b442631abcd608d07433cf5abf5051) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop table row selection from double-toggling when a row checkbox is clicked, so checking a row selects it and clicking again unselects it.
+- Updated dependencies [[`c551ecf`](https://github.com/ecopages/radiant/commit/c551ecf17aa743055e11f1c4ffc51fc923e9d2bd), [`9a3cf16`](https://github.com/ecopages/radiant/commit/9a3cf16e49f2d20c4441f74c71549545d0fa9277), [`a864e06`](https://github.com/ecopages/radiant/commit/a864e06b2fb66a2afa645ed09f524d2521bf6ac8)]:
+    - @ecopages/radiant@0.3.0-rc.8
+    - @ecopages/jsx@0.3.0-rc.8
+    - @ecopages/signals@0.3.0-rc.8
+
 ## 0.1.0-rc.13
 
 ### Patch Changes

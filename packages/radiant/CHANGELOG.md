@@ -1,5 +1,14 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.8
+
+### Patch Changes
+
+- [#239](https://github.com/ecopages/radiant/pull/239) [`c551ecf`](https://github.com/ecopages/radiant/commit/c551ecf17aa743055e11f1c4ffc51fc923e9d2bd) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep inherited decorator setup, reactive prop metadata, event subscriptions, and context updates isolated so subclassing and overlapping listeners no longer multiply or skip work.
+- Updated dependencies [[`9a3cf16`](https://github.com/ecopages/radiant/commit/9a3cf16e49f2d20c4441f74c71549545d0fa9277), [`a864e06`](https://github.com/ecopages/radiant/commit/a864e06b2fb66a2afa645ed09f524d2521bf6ac8)]:
+    - @ecopages/jsx@0.3.0-rc.8
+    - @ecopages/signals@0.3.0-rc.8
+
 ## 0.3.0-rc.7
 
 ### Patch Changes
