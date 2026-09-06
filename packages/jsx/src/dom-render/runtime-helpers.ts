@@ -1,4 +1,11 @@
-import { isIterableRenderable, isJsxNodeLike, isKeyedJsxValue, isSignalLikeValue, isSubscribableJsxValue, isTemplateResultLike } from '../types/renderable-guards.ts';
+import {
+	isIterableRenderable,
+	isJsxNodeLike,
+	isKeyedJsxValue,
+	isSignalLikeValue,
+	isSubscribableJsxValue,
+	isTemplateResultLike,
+} from '../types/renderable-guards.ts';
 import type { KeyedJsxValue, TemplateResultLike } from '../types/index.ts';
 import { createNodesFromJsxNodeLike } from './dom-operations.ts';
 import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
