@@ -1,5 +1,15 @@
 # @ecopages/jsx
 
+## 0.3.0-rc.8
+
+### Patch Changes
+
+- [#238](https://github.com/ecopages/radiant/pull/238) [`9a3cf16`](https://github.com/ecopages/radiant/commit/9a3cf16e49f2d20c4441f74c71549545d0fa9277) Thanks [@andeeplus](https://github.com/andeeplus)! - Hydrate template and iterable roots in place, including when the root is a reactive wrapper around the current snapshot. Other shapes fall back to a client render instead of a marker-only scan that attached no live parts.
+
+- [#236](https://github.com/ecopages/radiant/pull/236) [`a864e06`](https://github.com/ecopages/radiant/commit/a864e06b2fb66a2afa645ed09f524d2521bf6ac8) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep fragment hydration subscriptions owned through unmount, preserve keyed fragment identity when every child has a key, render `textarea`/`title`/`style`/`script` children as character data without clobbering unchanged textarea edits, and snapshot one-shot generator children by iterator identity so mount, hydrate, and later renders can read them without a second consume.
+- Updated dependencies []:
+    - @ecopages/signals@0.3.0-rc.8
+
 ## 0.3.0-rc.7
 
 ### Patch Changes
