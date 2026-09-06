@@ -128,11 +128,11 @@ A component may expose a **small** `--rui-<name>-*` set so consumers restyle an 
 
 Declare public defaults on the **subtree root that owns the chrome**, never on an inner grain:
 
-| Tree | Default on | Override on |
-| --- | --- | --- |
-| Chrome stays inside the host (`rui-switch`, `rui-dialog`, `rui-slider`) | the custom-element tag | that tag (or a more specific host selector) |
-| Portaled surface (`rui-popover`, hover-card panel) | the portaled surface class (`.rui-popover`, `.rui-hover-card__content`) | that surface class |
-| Presentational helper with no CE (`RuiAvatar`) | the root BEM class (`.rui-avatar`) | that class |
+| Tree                                                                    | Default on                                                              | Override on                                 |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------- |
+| Chrome stays inside the host (`rui-switch`, `rui-dialog`, `rui-slider`) | the custom-element tag                                                  | that tag (or a more specific host selector) |
+| Portaled surface (`rui-popover`, hover-card panel)                      | the portaled surface class (`.rui-popover`, `.rui-hover-card__content`) | that surface class                          |
+| Presentational helper with no CE (`RuiAvatar`)                          | the root BEM class (`.rui-avatar`)                                      | that class                                  |
 
 Size variants should **set** the same variable on that root (`--rui-avatar-size`), not restyle width/height directly.
 
@@ -160,11 +160,11 @@ Shared family tokens (`--rui-track-color`, `--rui-menu-item-hover`) live once an
 
 ### Public vs runtime
 
-| Kind | Document | Example |
-| --- | --- | --- |
-| Public theming | `@cssprop` on the CE + MDX Theming | `--rui-slider-thumb-size` |
+| Kind               | Document                                         | Example                                   |
+| ------------------ | ------------------------------------------------ | ----------------------------------------- |
+| Public theming     | `@cssprop` on the CE + MDX Theming               | `--rui-slider-thumb-size`                 |
 | Host-written state | Light-DOM contract “host writes”, not `@cssprop` | `--rui-slider-fill-size`, `--rui-toast-y` |
-| Family | `DESIGN.md` + each consumer `@cssprop` | `--rui-track-color` |
+| Family             | `DESIGN.md` + each consumer `@cssprop`           | `--rui-track-color`                       |
 
 JS may write a public knob when a **prop** owns that value (`gap` on `rui-toaster`). Document that the attribute wins over CSS. Do not write a constant from JS onto a public knob if CSS should remain the override path.
 

@@ -7,10 +7,7 @@ import { fieldDecoratorBridge } from './bridge';
 export type { BindToTarget } from './shared/bind-to';
 
 type BindToDecorator<T> = {
-	<THost extends BindToHost>(
-		protoOrTarget: undefined,
-		nameOrContext: ClassFieldDecoratorContext<THost, T>,
-	): void;
+	<THost extends BindToHost>(protoOrTarget: undefined, nameOrContext: ClassFieldDecoratorContext<THost, T>): void;
 	(protoOrTarget: BindToHost, nameOrContext: string): void;
 };
 

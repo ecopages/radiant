@@ -18,20 +18,14 @@ describe('CarouselSwipe', () => {
 		const swipe = new CarouselSwipe();
 		swipe.onPointerDown({ button: 0, pointerId: 1, clientX: 200, clientY: 80 } as PointerEvent, false);
 
-		expect(
-			swipe.onPointerUp({ pointerId: 2, clientX: 60, clientY: 80 } as PointerEvent),
-		).toBeNull();
-		expect(
-			swipe.onPointerUp({ pointerId: 1, clientX: 60, clientY: 80 } as PointerEvent),
-		).toBe('next');
+		expect(swipe.onPointerUp({ pointerId: 2, clientX: 60, clientY: 80 } as PointerEvent)).toBeNull();
+		expect(swipe.onPointerUp({ pointerId: 1, clientX: 60, clientY: 80 } as PointerEvent)).toBe('next');
 	});
 
 	it('ignores excluded targets', () => {
 		const swipe = new CarouselSwipe();
 		swipe.onPointerDown({ button: 0, pointerId: 1, clientX: 200, clientY: 80 } as PointerEvent, true);
 
-		expect(
-			swipe.onPointerUp({ pointerId: 1, clientX: 60, clientY: 80 } as PointerEvent),
-		).toBeNull();
+		expect(swipe.onPointerUp({ pointerId: 1, clientX: 60, clientY: 80 } as PointerEvent)).toBeNull();
 	});
 });

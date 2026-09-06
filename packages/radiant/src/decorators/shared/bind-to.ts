@@ -26,9 +26,7 @@ type BindToWrite<T> = BindToTransform<T> & BindToKind;
  * does not reject a key that exists on another union member.
  */
 export type BindToTarget<T = unknown> =
-	| (BindToWrite<T> & { ref: string })
-	| (BindToWrite<T> & { selector: string })
-	| BindToWrite<T>;
+	(BindToWrite<T> & { ref: string }) | (BindToWrite<T> & { selector: string }) | BindToWrite<T>;
 
 /**
  * Host surface `@bindTo` needs: reactive-member reads plus the decorator
@@ -94,9 +92,7 @@ function assertValidBindToTarget(target: BindToTarget): void {
 		Number('attr' in target) + Number('bool' in target) + Number('prop' in target) + Number('text' in target);
 
 	if (kinds !== 1) {
-		throw new TypeError(
-			'[@ecopages/radiant] @bindTo() requires exactly one of `attr`, `bool`, `prop`, or `text`.',
-		);
+		throw new TypeError('[@ecopages/radiant] @bindTo() requires exactly one of `attr`, `bool`, `prop`, or `text`.');
 	}
 }
 
