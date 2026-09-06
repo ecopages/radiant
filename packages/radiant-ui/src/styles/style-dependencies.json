@@ -160,8 +160,12 @@
 			"styles": ["@ecopages/radiant-ui/meter/styles.css"]
 		},
 		"navigation-menu": {
-			"direct": ["button"],
-			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/navigation-menu/styles.css"]
+			"direct": ["button", "primitives"],
+			"styles": [
+				"@ecopages/radiant-ui/button/styles.css",
+				"@ecopages/radiant-ui/primitives.css",
+				"@ecopages/radiant-ui/navigation-menu/styles.css"
+			]
 		},
 		"number-field": {
 			"direct": [],

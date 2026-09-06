@@ -7,7 +7,14 @@ import { RuiButton, type RuiButtonControlProps } from '../button/button';
 
 export type RuiNavigationMenuBarProps = JsxElementProps<HTMLDivElement>;
 
-/** Top-level trigger and link row inside `RuiNavigationMenu`. */
+/**
+ * Top-level trigger and link row inside `RuiNavigationMenu`. Stamps `[data-ref="bar"]`.
+ *
+ * @cssclass rui-navigation-menu__bar - Presentation class; not a query target.
+ *
+ * @remarks Bar chrome (fill, border, shadow, padding) defaults to transparent.
+ * Override `--rui-navigation-menu-bar-*` on `rui-navigation-menu` to paint a box.
+ */
 export function RuiNavigationMenuBar({ children, class: className, ...props }: RuiNavigationMenuBarProps) {
 	return (
 		<div {...props} data-ref="bar" class={cx('rui-navigation-menu__bar', className)}>
@@ -18,7 +25,14 @@ export function RuiNavigationMenuBar({ children, class: className, ...props }: R
 
 export type RuiNavigationMenuPanelsProps = JsxElementProps<HTMLDivElement>;
 
-/** Megamenu panel region inside `RuiNavigationMenu`. */
+/**
+ * Grouping wrapper for flyout panels. Stamps `[data-ref="panels"]`.
+ *
+ * @cssclass rui-navigation-menu__panels - Presentation class; not a query target.
+ *
+ * @remarks Does not create a layout box (`display: contents`). Panels are
+ * positioned as popovers against their matching trigger.
+ */
 export function RuiNavigationMenuPanels({ children, class: className, ...props }: RuiNavigationMenuPanelsProps) {
 	return (
 		<div {...props} data-ref="panels" class={cx('rui-navigation-menu__panels', className)}>
@@ -27,6 +41,12 @@ export function RuiNavigationMenuPanels({ children, class: className, ...props }
 	);
 }
 
+/**
+ * Navigation menu view. Compose `RuiNavigationMenuBar`, triggers, links, and
+ * panels as children. Children are wrapped in `nav[data-ref="root"]`.
+ *
+ * @cssclass rui-navigation-menu - Root `nav` surface (`[data-ref="root"]`).
+ */
 export function RuiNavigationMenu({
 	children,
 	label,
@@ -45,7 +65,9 @@ export type RuiNavigationMenuTriggerProps = RuiButtonControlProps & {
 	value: string;
 };
 
-/** Top-level megamenu trigger. Stamps `[data-navigation-item]`, `[data-navigation-trigger]`, and `data-value`. */
+/**
+ * Top-level megamenu trigger. Stamps `[data-navigation-item]`, `[data-navigation-trigger]`, and `data-value`.
+ */
 export function RuiNavigationMenuTrigger({
 	children,
 	value,
@@ -89,10 +111,22 @@ export type RuiNavigationMenuPanelProps = JsxElementProps<HTMLDivElement> & {
 	value: string;
 };
 
-/** Megamenu panel paired with a trigger by `value`. Stamps `[data-navigation-panel]` and `data-value`. */
+/**
+ * Flyout panel paired with a trigger by `value`. Stamps `[data-navigation-panel]` and `data-value`.
+ *
+ * @cssclass rui-navigation-menu__panel - Panel layout on top of `rui-popover`.
+ *
+ * @remarks Always includes `rui-popover` and `rui-floating` chrome. The host
+ * positions the open panel relative to its trigger.
+ */
 export function RuiNavigationMenuPanel({ children, value, class: className, ...props }: RuiNavigationMenuPanelProps) {
 	return (
-		<div {...props} class={className} data-navigation-panel data-value={value}>
+		<div
+			{...props}
+			class={cx('rui-navigation-menu__panel', 'rui-popover', 'rui-floating', className)}
+			data-navigation-panel
+			data-value={value}
+		>
 			{children}
 		</div>
 	);

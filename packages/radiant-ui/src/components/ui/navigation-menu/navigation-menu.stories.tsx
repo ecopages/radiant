@@ -17,7 +17,12 @@ const meta = {
 	parameters: {
 		radiant: {
 			element: RuiNavigationMenuElement,
-			cssImports: ['../button/button.css', './navigation-menu.css', '../disclosure/disclosure.css'],
+			cssImports: [
+				'../../../styles/primitives.css',
+				'../button/button.css',
+				'./navigation-menu.css',
+				'../disclosure/disclosure.css',
+			],
 		},
 	},
 	args: {
