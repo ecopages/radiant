@@ -1,9 +1,9 @@
 /**
- * Snapshots of one-shot iterators (generators) so count, key detection, hydrate,
- * and reconcile can all read the same children.
+ * Snapshots of one-shot iterators (generators), keyed by iterator identity.
  *
- * Arrays and other reusable iterables are not cached: they can be walked again
- * and their contents may change between updates.
+ * The entry remains while that iterator is reachable, including across later
+ * renders. Arrays and other reusable iterables are not cached: they can be
+ * walked again and their contents may change between updates.
  */
 const ONE_SHOT_ITERABLE_SNAPSHOTS = new WeakMap<object, unknown[]>();
 
@@ -22,9 +22,11 @@ function isOneShotIterable(value: Iterable<unknown>): boolean {
 /**
  * Materialises iterable children, reusing arrays and snapshotting one-shot iterators.
  *
- * @remarks A generator is consumed on the first call. Later calls in the same
- * hydrate or update pass return that snapshot so `countHydrationMarkers`,
- * `countHydratedRangeNodes`, and reconciliation do not see an empty iterator.
+ * @remarks A generator is consumed on the first call. Later calls with the same
+ * iterator object return that snapshot — including count, key detection, hydrate,
+ * reconcile, and later renders. JSX `children` flattening consumes the iterator
+ * when the element is created and does not use this cache; produce a new iterator
+ * for each `jsx()` call if those children should be yielded again.
  */
 export function materializeIterableChildren(value: Iterable<unknown>): unknown[] {
 	if (Array.isArray(value)) {

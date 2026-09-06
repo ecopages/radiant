@@ -175,8 +175,7 @@ export function getKeyedChildren(children: readonly unknown[]): KeyedJsxValue[] 
  *
  * @remarks Callers that only need to know whether a value is iterable must use
  * {@link isIterableRenderable}. One-shot iterators are snapshotted by
- * {@link materializeIterableChildren} so a later count or hydrate pass can still
- * read the children.
+ * {@link materializeIterableChildren} for the lifetime of that iterator object.
  *
  * @param value Value to inspect.
  */
