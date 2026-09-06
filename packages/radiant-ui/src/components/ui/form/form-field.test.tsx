@@ -240,8 +240,8 @@ describe('rui-field composed content discovery', () => {
 			document.body.append(host);
 			const root = createRoot(host);
 			root.render(
-				<RuiForm defaultValues={{ language: 'ts' }}>
-					<RuiField name="language" defaultValue="ts">
+				<RuiForm defaultValues={{ language: ['ts'] }}>
+					<RuiField name="language" defaultValue={['ts']}>
 						<Control />
 					</RuiField>
 				</RuiForm>,
@@ -250,9 +250,9 @@ describe('rui-field composed content discovery', () => {
 			await flushRender();
 			await flushFirstConnect();
 
-			const control = host.querySelector(hostTag) as HTMLElement & { value: string };
+			const control = host.querySelector(hostTag) as HTMLElement & { value: string[] };
 			const clear = host.querySelector(clearSelector) as HTMLButtonElement;
-			expect(control.value).toBe('ts');
+			expect(control.value).toEqual(['ts']);
 			expect(clear.hidden).toBe(false);
 			const valueTarget = host.querySelector(valueSelector);
 			if (valueTarget instanceof HTMLInputElement) {
@@ -270,7 +270,7 @@ describe('rui-field composed content discovery', () => {
 		document.body.append(host);
 		const root = createRoot(host);
 		root.render(
-			<RuiForm defaultValues={{ language: 'ts' }}>
+			<RuiForm defaultValues={{ language: ['ts'] }}>
 				<RuiField name="language" />
 			</RuiForm>,
 		);
@@ -278,7 +278,7 @@ describe('rui-field composed content discovery', () => {
 		await flushRender();
 
 		root.render(
-			<RuiForm defaultValues={{ language: 'ts' }}>
+			<RuiForm defaultValues={{ language: ['ts'] }}>
 				<RuiField name="language">
 					<LanguageSelect />
 				</RuiField>
@@ -288,8 +288,8 @@ describe('rui-field composed content discovery', () => {
 		await flushRender();
 		await flushFirstConnect();
 
-		const select = host.querySelector('rui-select') as HTMLElement & { value: string };
-		expect(select.value).toBe('ts');
+		const select = host.querySelector('rui-select') as HTMLElement & { value: string[] };
+		expect(select.value).toEqual(['ts']);
 		expect((host.querySelector('[data-select-clear]') as HTMLButtonElement).hidden).toBe(false);
 		root.unmount();
 		host.remove();
@@ -313,9 +313,9 @@ describe('rui-field composed content discovery', () => {
 			await flushRender();
 			await flushFirstConnect();
 
-			const control = host.querySelector(hostTag) as HTMLElement & { value: string };
+			const control = host.querySelector(hostTag) as HTMLElement & { value: string[] };
 			const clear = host.querySelector(clearSelector) as HTMLButtonElement;
-			expect(control.value).toBe('');
+			expect(control.value).toEqual([]);
 			expect(clear.hidden).toBe(true);
 			const valueTarget = host.querySelector(valueSelector);
 			if (valueTarget instanceof HTMLInputElement) {

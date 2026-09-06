@@ -30,7 +30,7 @@ function createRoot(options: HTMLElement[]) {
 describe('ListboxHostController', () => {
 	it('treats the host value as a token array in both selection modes', () => {
 		const { root } = createRoot([createOption('draft', 'Draft'), createOption('published', 'Published')]);
-		let value = 'draft,published';
+		let value: string[] = ['draft', 'published'];
 		const collection = new ListboxHostController({
 			getRoot: () => root,
 			getSelectionMode: () => 'single',
@@ -48,7 +48,7 @@ describe('ListboxHostController', () => {
 
 	it('toggles tokens in multiple mode and replaces in single mode', () => {
 		const { root } = createRoot([createOption('a', 'A'), createOption('b', 'B')]);
-		let value = 'a';
+		let value: string[] = ['a'];
 		let mode: 'single' | 'multiple' = 'multiple';
 		const collection = new ListboxHostController({
 			getRoot: () => root,
@@ -60,18 +60,18 @@ describe('ListboxHostController', () => {
 		});
 
 		collection.toggleValue('b');
-		expect(value).toBe('a,b');
+		expect(value).toEqual(['a', 'b']);
 		collection.toggleValue('a');
-		expect(value).toBe('b');
+		expect(value).toEqual(['b']);
 
 		mode = 'single';
 		collection.toggleValue('a');
-		expect(value).toBe('a');
+		expect(value).toEqual(['a']);
 	});
 
 	it('syncs the embedded listbox host and skips indicator text in labels', () => {
 		const { root, host } = createRoot([createOption('cherry', 'Cherry', true)]);
-		let value = 'cherry';
+		let value: string[] = ['cherry'];
 		const collection = new ListboxHostController({
 			getRoot: () => root,
 			getSelectionMode: () => 'multiple',
@@ -84,13 +84,13 @@ describe('ListboxHostController', () => {
 		collection.syncListboxHost();
 		expect((host as HTMLElement & { embedded?: boolean }).embedded).toBe(true);
 		expect((host as HTMLElement & { selectionMode?: string }).selectionMode).toBe('multiple');
-		expect((host as HTMLElement & { value?: string }).value).toBe('cherry');
+		expect((host as HTMLElement & { value?: string[] }).value).toEqual(['cherry']);
 		expect(collection.labelForValue('cherry')).toBe('Cherry');
 	});
 
 	it('clears and removes values through the host protocol', () => {
 		const { root } = createRoot([createOption('a', 'A'), createOption('b', 'B')]);
-		let value = 'a,b';
+		let value: string[] = ['a', 'b'];
 		const collection = new ListboxHostController({
 			getRoot: () => root,
 			getSelectionMode: () => 'multiple',
@@ -101,10 +101,10 @@ describe('ListboxHostController', () => {
 		});
 
 		expect(collection.removeValue('a')).toBe(true);
-		expect(value).toBe('b');
+		expect(value).toEqual(['b']);
 		expect(collection.removeValue('missing')).toBe(false);
 		expect(collection.clearValues()).toBe(true);
-		expect(value).toBe('');
+		expect(value).toEqual([]);
 		expect(collection.clearValues()).toBe(false);
 	});
 });

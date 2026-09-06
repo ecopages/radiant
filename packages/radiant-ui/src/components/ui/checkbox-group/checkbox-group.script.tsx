@@ -2,13 +2,13 @@ import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop 
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { nonEmpty } from '@/lib/non-empty';
 import { RuiCheckbox } from '../checkbox/checkbox.script';
-import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
 
 export type RuiCheckboxGroupProps = {
-	/** Comma-separated selected checkbox values. Reflects to markup. */
-	value?: string;
+	/** Selected checkbox values. The attribute is comma-separated. */
+	value?: ViewMultiValue;
 	/** Form field name shared by all checkboxes in the group. */
 	name?: string;
 	/** Accessible name for the group when no visible legend is composed. */
@@ -20,7 +20,7 @@ export type RuiCheckboxGroupProps = {
 };
 
 export type RuiCheckboxGroupChangeDetail = {
-	value: string;
+	value: string[];
 };
 
 /**
@@ -30,7 +30,7 @@ export type RuiCheckboxGroupChangeDetail = {
  * Import the script and place light-DOM children that match the contract below,
  * or use the `RuiCheckboxGroup` view helpers which stamp the same targets.
  *
- * Group `value` is the comma-separated protocol shared with multi-select controls.
+ * Group `value` is a `string[]` property; the attribute is comma-separated.
  *
  * ## Light-DOM contract
  *
@@ -51,13 +51,13 @@ export type RuiCheckboxGroupChangeDetail = {
  *
  * @element rui-checkbox-group
  *
- * @attr {string} value - Comma-separated selected values. Reflects to markup. Default: `''`.
+ * @attr {string} value - Comma-separated selected values in markup; the property is `string[]`. Default: `[]`.
  * @attr {string} name - Form field name shared by all checkboxes in the group. Default: `''`.
  * @attr {string} label - Accessible name when no visible legend is composed. Default: `''`.
  * @attr {boolean} disabled - Disables every checkbox in the group. Default: `false`.
  * @attr {('horizontal'|'vertical')} orientation - Layout axis for checkbox items. Default: `vertical`.
  *
- * @fires rui-change - Emitted after the selected values change; `detail.value` holds the serialized selection.
+ * @fires rui-change - Emitted after the selected values change; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum headless tree:
@@ -75,7 +75,8 @@ export type RuiCheckboxGroupChangeDetail = {
  */
 @customElement('rui-checkbox-group')
 export class RuiCheckboxGroup extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	value: string[];
 	@prop({ type: String, defaultValue: '' }) name: string;
 
 	@prop({ type: String, defaultValue: '' })
@@ -107,7 +108,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 
 	@onUpdated(['value', 'name', 'disabled'])
 	syncCheckboxes(): void {
-		const selected = new Set(parseMultiValue(this.value));
+		const selected = new Set(this.value);
 		const groupName = this.name || this.getAttribute('name') || '';
 
 		for (const checkbox of this.getCheckboxes()) {
@@ -125,7 +126,7 @@ export class RuiCheckboxGroup extends RadiantElement {
 		const values = this.getCheckboxes()
 			.filter((checkbox) => checkbox.checked)
 			.map((checkbox) => checkbox.value);
-		this.value = serializeMultiValue(values);
+		this.value = values;
 		this.changeEvent.emit({ value: this.value });
 	}
 

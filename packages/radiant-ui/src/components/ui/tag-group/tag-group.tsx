@@ -93,6 +93,7 @@ function TagGroupShell({ children }: { children: JsxRenderable }) {
 export function RuiTagGroup({
 	tags,
 	children,
+	value,
 	...props
 }: JsxCustomElementAttributes<
 	RuiTagGroupElement,
@@ -102,7 +103,7 @@ export function RuiTagGroup({
 >) {
 	if (tags != null) {
 		return (
-			<rui-tag-group {...props}>
+			<rui-tag-group {...props} value={value}>
 				<TagGroupShell>
 					<RuiTagList>
 						{tags.map((tag) => (
@@ -121,7 +122,7 @@ export function RuiTagGroup({
 	}
 
 	return (
-		<rui-tag-group {...props}>
+		<rui-tag-group {...props} value={value}>
 			<TagGroupShell>{children}</TagGroupShell>
 		</rui-tag-group>
 	);
