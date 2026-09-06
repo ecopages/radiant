@@ -31,7 +31,7 @@ function comparePlants(left: Plant, right: Plant, column: string, direction: Rui
  * the pattern consumers must follow.
  */
 @customElement('rui-table-docs-sort-demo')
-class RuiTableDocsSortDemo extends RadiantElement {
+export class RuiTableDocsSortDemo extends RadiantElement {
 	@state sortColumn = 'name';
 	@state sortDirection: RuiTableSortDirection = 'ascending';
 	@state plants = [...PLANTS].sort((left, right) => comparePlants(left, right, 'name', 'ascending'));
