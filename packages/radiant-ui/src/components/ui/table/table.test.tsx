@@ -80,9 +80,9 @@ describe('RuiTable selection checkboxes', () => {
 
 		expect(table.value).toEqual(['aloe']);
 		expect(host.querySelector('[data-table-row="aloe"]')?.getAttribute('aria-selected')).toBe('true');
-		expect(host.querySelector<HTMLInputElement>('[data-table-row="aloe"] [data-table-select-row] input')?.checked).toBe(
-			true,
-		);
+		expect(
+			host.querySelector<HTMLInputElement>('[data-table-row="aloe"] [data-table-select-row] input')?.checked,
+		).toBe(true);
 		cleanup();
 	});
 
@@ -103,9 +103,9 @@ describe('RuiTable selection checkboxes', () => {
 
 		expect(table.value).toEqual([]);
 		expect(host.querySelector('[data-table-row="aloe"]')?.getAttribute('aria-selected')).toBe('false');
-		expect(host.querySelector<HTMLInputElement>('[data-table-row="aloe"] [data-table-select-row] input')?.checked).toBe(
-			false,
-		);
+		expect(
+			host.querySelector<HTMLInputElement>('[data-table-row="aloe"] [data-table-select-row] input')?.checked,
+		).toBe(false);
 		cleanup();
 	});
 });

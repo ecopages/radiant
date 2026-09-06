@@ -207,9 +207,7 @@ export const Sorting: Story = {
 
 		try {
 			await step('sortable column toggles its direction and reorders the collection', async () => {
-				await waitFor(() =>
-					expect(canvasElement.querySelector('[data-table-sort="name"]')).toBeTruthy(),
-				);
+				await waitFor(() => expect(canvasElement.querySelector('[data-table-sort="name"]')).toBeTruthy());
 				await userEvent.click(canvasElement.querySelector<HTMLButtonElement>('[data-table-sort="name"]')!);
 				await expect(canvasElement.querySelector('[data-table-column="name"]')).toHaveAttribute(
 					'aria-sort',
