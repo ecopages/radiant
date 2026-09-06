@@ -4,7 +4,8 @@ import { hydrateTemplateInstance } from './hydration.ts';
 import type { JsxKey, JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { mountReactiveChildSource, updateRangeContent } from './child-range-update.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
-import { createHydratedRangeRecord } from './range-records.ts';
+import { disposeMountedRangeContent } from './mounted-disposal.ts';
+import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
 import {
 	canRenderAsTextNode,
 	flushDeferredProperties,
@@ -46,7 +47,7 @@ export function hydrateMountedRangeContent(
 			startMarker,
 			endMarker,
 			nextValue,
-			createHydratedBootstrapMounted(existingNodes),
+			mountedContentFromNodes(existingNodes),
 			rootTarget,
 			[],
 		);
@@ -70,7 +71,7 @@ function hydrateMountedRangeContentSnapshot(
 	rootTarget: HTMLElement,
 	bindingBaseIndex: number,
 ): MountedRangeContent {
-	const bootstrapMounted = createHydratedBootstrapMounted(existingNodes);
+	const bootstrapMounted = mountedContentFromNodes(existingNodes);
 
 	// A custom-element child owns its own hydration: SSR produced its markup through
 	// the render hook, and the element reconnects its host itself. Reconnecting it
@@ -140,18 +141,6 @@ function flushWithDeferredProperties<T>(mount: (deferredProperties: DeferredProp
 	return result;
 }
 
-function createHydratedBootstrapMounted(existingNodes: readonly Node[]): MountedRangeContent {
-	if (existingNodes.length === 0) {
-		return { kind: 'empty' };
-	}
-
-	if (existingNodes.length === 1 && existingNodes[0] instanceof Text) {
-		return { kind: 'text', node: existingNodes[0] };
-	}
-
-	return { kind: 'nodes', nodes: existingNodes };
-}
-
 /**
  * Reconnects one template child of a range against the SSR nodes it already owns.
  *
@@ -189,7 +178,9 @@ function hydrateTemplateRange(
  * is decided once, up front.
  *
  * @returns The mounted list state, or `undefined` when the SSR nodes do not line up
- *   with the child values, in which case the caller falls back to reconciliation.
+ *   with the child values. Partial work is disposed before the caller falls back
+ *   to reconciliation, including boundary markers already inserted around recovered
+ *   siblings.
  */
 function hydrateListRangeContent(
 	endMarker: Text,
@@ -201,6 +192,7 @@ function hydrateListRangeContent(
 	const keyedChildren = getKeyedChildren(children);
 	const indexedRecords: MountedRangeRecord[] = [];
 	const keyedRecords = new Map<JsxKey, MountedRangeRecord>();
+	const adopted: MountedRangeRecord[] = [];
 	let nextNodeIndex = 0;
 	let nextBindingIndex = bindingBaseIndex;
 
@@ -211,6 +203,7 @@ function hydrateListRangeContent(
 		const childNodes = existingNodes.slice(nextNodeIndex, nextNodeIndex + childNodeCount);
 
 		if (childNodes.length !== childNodeCount) {
+			disposeHydratedListRecords(adopted);
 			return undefined;
 		}
 
@@ -230,6 +223,7 @@ function hydrateListRangeContent(
 		// Children are laid out in SSR order, so each consumes the slice of the global
 		// marker namespace that its own subtree emitted.
 		nextBindingIndex += countHydrationMarkers(childValue as JsxRenderable);
+		adopted.push(record);
 
 		if (keyedChild) {
 			keyedRecords.set(keyedChild.key, record);
@@ -240,10 +234,19 @@ function hydrateListRangeContent(
 	}
 
 	if (nextNodeIndex !== existingNodes.length) {
+		disposeHydratedListRecords(adopted);
 		return undefined;
 	}
 
 	return keyedChildren
 		? { kind: 'keyed-list', records: keyedRecords }
 		: { kind: 'indexed-list', records: indexedRecords };
+}
+
+function disposeHydratedListRecords(records: readonly MountedRangeRecord[]): void {
+	for (const record of records) {
+		record.start.remove();
+		record.end.remove();
+		disposeMountedRangeContent(record.mounted);
+	}
 }

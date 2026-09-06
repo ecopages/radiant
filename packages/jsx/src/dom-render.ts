@@ -110,9 +110,7 @@ function reconnectSsrRoot(
 			return undefined;
 		}
 
-		return hydrateIterableRoot(nextValue, target, deferredProperties, { rootTarget: target })
-			? { kind: 'nodes', nodes: Array.from(target.childNodes) }
-			: undefined;
+		return hydrateIterableRoot(nextValue, target, deferredProperties, { rootTarget: target });
 	}
 
 	return hydrateFlatBindings(element, target, deferredProperties)

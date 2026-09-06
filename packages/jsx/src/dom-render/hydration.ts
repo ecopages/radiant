@@ -2,12 +2,17 @@ import type { TemplateResultLike } from '../types/index.ts';
 import { planTemplateHydrationIndices, resolveHydrationMarkerAttributeName } from '../hydration/hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
-import { collectHydratedChildRanges, isolateHydratedTextRange, type HydratedChildRange } from './hydration-planning.ts';
+import {
+	collectHydratedChildRanges,
+	countHydratedRangeNodes,
+	isolateHydratedTextRange,
+	type HydratedChildRange,
+} from './hydration-planning.ts';
 import { updateLiveAttributePart } from './live-attribute-update.ts';
+import { disposeLiveTemplateParts } from './mounted-disposal.ts';
 import { getNodeAtPath, getPathKey } from './path-utils.ts';
 import { getCompiledTemplate } from './template-compiler.ts';
 import { createTemplateInstanceUpdate } from './template-instance.ts';
-import { countHydratedRangeNodes } from './hydration-planning.ts';
 import type { TemplateHydrationIndexPlan } from '../hydration/hydration-bindings.ts';
 import type {
 	ChildTemplatePart,
@@ -28,12 +33,11 @@ export type HydrateTemplateInstanceOptions = {
 	/**
 	 * Root nodes this template already owns in the host DOM, in blueprint order.
 	 *
-	 * Supplying them resolves blueprint paths directly against those nodes. The
-	 * `pathRootOffset` form has to index into `target.childNodes`, which is O(host
-	 * children) per call and therefore quadratic when hydrating a long list.
+	 * Supplying them resolves blueprint paths directly against those nodes, which
+	 * stays O(1) per part when hydrating a long list. When omitted, the hydrator
+	 * reads `target.childNodes` in blueprint order instead.
 	 */
 	hostRoots?: readonly Node[];
-	pathRootOffset?: number;
 	rootTarget?: HTMLElement;
 };
 
@@ -45,7 +49,9 @@ type HostPathResolver = (path: readonly number[]) => Node | undefined;
  *
  * Hydration succeeds only when the DOM shape still matches the compiled
  * blueprint closely enough to recover every dynamic part. Callers fall back to
- * a full client render when any required part cannot be recovered.
+ * a full client render when any required part cannot be recovered. Parts that
+ * already subscribed before that failure are disposed here so they cannot leak
+ * past the fallback render.
  */
 export function hydrateTemplateInstance(
 	template: TemplateResultLike,
@@ -53,10 +59,10 @@ export function hydrateTemplateInstance(
 	deferredProperties: DeferredPropertyBinding[],
 	options: HydrateTemplateInstanceOptions = {},
 ): TemplateInstance | undefined {
-	const pathRootOffset = options.pathRootOffset ?? 0;
 	const rootTarget = options.rootTarget ?? target;
+	const hostRoots = options.hostRoots ?? collectHostChildNodes(target, countHydratedRangeNodes(template));
 	const indexPlan = planTemplateHydrationIndices(template, options.bindingBaseIndex ?? 0);
-	const resolveHostNode = createHostPathResolver(target, options.hostRoots, pathRootOffset);
+	const resolveHostNode = createHostPathResolver(hostRoots);
 	const compiledTemplate = getCompiledTemplate(template);
 	const childParts = compiledTemplate.parts.filter((part): part is ChildTemplatePart => part.type === 'child');
 	const hydratedChildRanges = collectHydratedChildRanges(
@@ -77,15 +83,15 @@ export function hydrateTemplateInstance(
 	);
 
 	if (parts.length !== compiledTemplate.parts.length) {
+		disposeLiveTemplateParts(parts);
 		return undefined;
 	}
 
-	const nodeCount = countHydratedRangeNodes(template);
 	const instance: TemplateInstance = {
 		compiled: compiledTemplate,
 		parts,
 		rootTarget,
-		rootNodes: collectRootNodes(target, options.hostRoots, pathRootOffset, nodeCount),
+		rootNodes: hostRoots,
 		update: createTemplateInstanceUpdate(parts, rootTarget),
 	};
 
@@ -103,48 +109,28 @@ export function hydrateTemplateInstance(
 /**
  * Builds the path resolver for one hydration pass.
  *
- * `hostRoots` addresses the template's root nodes directly, which supports
- * templates owning more than one. The offset form locates a single root
- * positionally, for callers that only know where the slice begins.
+ * The first path segment selects a host root; the rest resolves inside that
+ * node. An empty path is the parent of those roots — the blueprint fragment —
+ * not the first root itself.
  */
-function createHostPathResolver(
-	target: HTMLElement,
-	hostRoots: readonly Node[] | undefined,
-	pathRootOffset: number,
-): HostPathResolver {
-	if (hostRoots) {
-		return (path) => {
-			// The empty path is the blueprint fragment itself, which corresponds to the
-			// element containing the roots — not to the first root.
-			if (path.length === 0) {
-				return hostRoots[0]?.parentNode ?? undefined;
-			}
+function createHostPathResolver(hostRoots: readonly Node[]): HostPathResolver {
+	return (path) => {
+		if (path.length === 0) {
+			return hostRoots[0]?.parentNode ?? undefined;
+		}
 
-			// Otherwise the first segment selects a root and the rest resolves inside it.
-			const root = hostRoots[path[0] ?? 0];
+		const root = hostRoots[path[0] ?? 0];
 
-			return !root || path.length === 1 ? root : getNodeAtPath(root, path.slice(1));
-		};
-	}
-
-	return (path) => getNodeAtPath(target, path.length === 0 ? [pathRootOffset] : [pathRootOffset, ...path.slice(1)]);
+		return !root || path.length === 1 ? root : getNodeAtPath(root, path.slice(1));
+	};
 }
 
-/** Collects a template's root nodes without materializing the host's whole child list. */
-function collectRootNodes(
-	target: HTMLElement,
-	hostRoots: readonly Node[] | undefined,
-	pathRootOffset: number,
-	nodeCount: number,
-): Node[] {
-	if (hostRoots) {
-		return [...hostRoots];
-	}
-
+/** Collects a template's root nodes from `target` in blueprint order. */
+function collectHostChildNodes(target: HTMLElement, nodeCount: number): Node[] {
 	const rootNodes: Node[] = [];
 
 	for (let index = 0; index < nodeCount; index += 1) {
-		const node = target.childNodes[pathRootOffset + index];
+		const node = target.childNodes[index];
 
 		if (node) {
 			rootNodes.push(node);
@@ -167,106 +153,165 @@ function createHydratedLiveTemplateParts(
 ): LiveTemplatePart[] {
 	const { indexPlan, resolveHostNode, rootTarget } = options;
 	const liveParts = new Map<number, LiveTemplatePart>();
+
+	for (const [partIndex, part] of parts.entries()) {
+		const livePart = hydrateElementBoundPart(part, resolveHostNode, indexPlan, rootTarget);
+
+		if (livePart) {
+			liveParts.set(partIndex, livePart);
+		}
+	}
+
 	const childPartEntries = parts
 		.map((part, partIndex) => ({ part, partIndex }))
 		.filter((entry): entry is { part: ChildTemplatePart; partIndex: number } => entry.part.type === 'child')
-		.sort((left, right) => {
-			const leftRange = hydratedChildRanges.get(left.part.index);
-			const rightRange = hydratedChildRanges.get(right.part.index);
-
-			if (!leftRange || !rightRange) {
-				return 0;
-			}
-
-			const parentKeyOrder = getPathKey(leftRange.parentPath).localeCompare(getPathKey(rightRange.parentPath));
-
-			if (parentKeyOrder !== 0) {
-				return parentKeyOrder;
-			}
-
-			return rightRange.actualStartIndex - leftRange.actualStartIndex;
-		});
-
-	for (const [partIndex, part] of parts.entries()) {
-		if (part.type === 'attribute') {
-			const targetNode = resolveHostNode(part.path);
-
-			if (!(targetNode instanceof Element)) {
-				continue;
-			}
-
-			// Marker names are global, so they come from the index plan rather than the
-			// blueprint's local numbering.
-			const globalIndex = indexPlan.attributeIndices.get(part.index);
-
-			targetNode.removeAttribute(
-				globalIndex === undefined ? part.markerName : resolveHydrationMarkerAttributeName(globalIndex),
-			);
-			liveParts.set(partIndex, {
-				binding: part.binding,
-				element: targetNode,
-				index: part.index,
-				rootTarget,
-				subscriptionSerial: 0,
-				type: 'attribute',
-			});
-		}
-	}
+		.sort((left, right) => compareHydratedChildPartOrder(left.part, right.part, hydratedChildRanges));
 
 	for (const { part, partIndex } of childPartEntries) {
-		const hydratedRange = hydratedChildRanges.get(part.index);
-
-		if (!hydratedRange) {
-			continue;
-		}
-
-		const parentNode = resolveHostNode(hydratedRange.parentPath);
-
-		// A child range needs a parent that can actually hold nodes. Resolving to
-		// anything else means the DOM no longer matches the blueprint, so leave the
-		// part unrecovered and let the caller fall back to a client render rather
-		// than attempting an insert the node type cannot support.
-		if (!(parentNode instanceof Element)) {
-			continue;
-		}
-
-		isolateHydratedTextRange(parentNode, blueprint, hydratedRange, values[part.index]);
-
-		const existingNodes = Array.from(parentNode.childNodes).slice(
-			hydratedRange.actualStartIndex,
-			hydratedRange.actualStartIndex + hydratedRange.nodeCount,
+		const liveChildPart = hydrateChildRangePart(
+			part,
+			blueprint,
+			values,
+			hydratedChildRanges,
+			resolveHostNode,
+			rootTarget,
+			indexPlan,
 		);
-		const startMarker = createBoundaryMarker();
-		const endMarker = createBoundaryMarker();
 
-		if (existingNodes.length === 0) {
-			const referenceNode = parentNode.childNodes[hydratedRange.actualStartIndex] ?? null;
-			if (referenceNode) {
-				referenceNode.before(startMarker, endMarker);
-			} else {
-				parentNode.insertBefore(startMarker, null);
-				parentNode.insertBefore(endMarker, null);
-			}
-		} else {
-			existingNodes[0]?.before(startMarker);
-			existingNodes[existingNodes.length - 1]?.after(endMarker);
+		if (liveChildPart) {
+			liveParts.set(partIndex, liveChildPart);
 		}
-
-		liveParts.set(partIndex, {
-			endMarker,
-			index: part.index,
-			mounted: hydrateMountedRangeContent(
-				startMarker,
-				endMarker,
-				values[part.index],
-				existingNodes,
-				rootTarget,
-				indexPlan.childBaseIndices.get(part.index) ?? 0,
-			),
-			startMarker,
-			type: 'child',
-		});
 	}
 
 	return parts.map((_, index) => liveParts.get(index)).filter((part): part is LiveTemplatePart => part !== undefined);
+}
+
+/** Resolves attribute and text-content parts against the host; child ranges are handled separately. */
+function hydrateElementBoundPart(
+	part: TemplatePart,
+	resolveHostNode: HostPathResolver,
+	indexPlan: TemplateHydrationIndexPlan,
+	rootTarget: HTMLElement,
+): LiveTemplatePart | undefined {
+	if (part.type !== 'attribute' && part.type !== 'text-content') {
+		return undefined;
+	}
+
+	const targetNode = resolveHostNode(part.path);
+
+	if (!(targetNode instanceof Element)) {
+		return undefined;
+	}
+
+	if (part.type === 'text-content') {
+		return {
+			committedText: '',
+			element: targetNode,
+			index: part.index,
+			subscriptionSerial: 0,
+			type: 'text-content',
+		};
+	}
+
+	const globalIndex = indexPlan.attributeIndices.get(part.index);
+
+	targetNode.removeAttribute(
+		globalIndex === undefined ? part.markerName : resolveHydrationMarkerAttributeName(globalIndex),
+	);
+
+	return {
+		binding: part.binding,
+		element: targetNode,
+		index: part.index,
+		rootTarget,
+		subscriptionSerial: 0,
+		type: 'attribute',
+	};
+}
+
+function compareHydratedChildPartOrder(
+	left: ChildTemplatePart,
+	right: ChildTemplatePart,
+	hydratedChildRanges: ReadonlyMap<number, HydratedChildRange>,
+): number {
+	const leftRange = hydratedChildRanges.get(left.index);
+	const rightRange = hydratedChildRanges.get(right.index);
+
+	if (!leftRange || !rightRange) {
+		return 0;
+	}
+
+	const parentKeyOrder = getPathKey(leftRange.parentPath).localeCompare(getPathKey(rightRange.parentPath));
+
+	if (parentKeyOrder !== 0) {
+		return parentKeyOrder;
+	}
+
+	return rightRange.actualStartIndex - leftRange.actualStartIndex;
+}
+
+/**
+ * Reconnects one compiled child range against SSR DOM.
+ *
+ * @remarks The parent must be an Element. Any other node type means the tree no
+ * longer matches the blueprint, so the part is left unrecovered and the caller
+ * falls back to a client render.
+ */
+function hydrateChildRangePart(
+	part: ChildTemplatePart,
+	blueprint: DocumentFragment,
+	values: readonly unknown[],
+	hydratedChildRanges: ReadonlyMap<number, HydratedChildRange>,
+	resolveHostNode: HostPathResolver,
+	rootTarget: HTMLElement,
+	indexPlan: TemplateHydrationIndexPlan,
+): LiveTemplatePart | undefined {
+	const hydratedRange = hydratedChildRanges.get(part.index);
+
+	if (!hydratedRange) {
+		return undefined;
+	}
+
+	const parentNode = resolveHostNode(hydratedRange.parentPath);
+
+	if (!(parentNode instanceof Element)) {
+		return undefined;
+	}
+
+	isolateHydratedTextRange(parentNode, blueprint, hydratedRange, values[part.index]);
+
+	const existingNodes = Array.from(parentNode.childNodes).slice(
+		hydratedRange.actualStartIndex,
+		hydratedRange.actualStartIndex + hydratedRange.nodeCount,
+	);
+	const startMarker = createBoundaryMarker();
+	const endMarker = createBoundaryMarker();
+
+	if (existingNodes.length === 0) {
+		const referenceNode = parentNode.childNodes[hydratedRange.actualStartIndex] ?? null;
+		if (referenceNode) {
+			referenceNode.before(startMarker, endMarker);
+		} else {
+			parentNode.insertBefore(startMarker, null);
+			parentNode.insertBefore(endMarker, null);
+		}
+	} else {
+		existingNodes[0]?.before(startMarker);
+		existingNodes[existingNodes.length - 1]?.after(endMarker);
+	}
+
+	return {
+		endMarker,
+		index: part.index,
+		mounted: hydrateMountedRangeContent(
+			startMarker,
+			endMarker,
+			values[part.index],
+			existingNodes,
+			rootTarget,
+			indexPlan.childBaseIndices.get(part.index) ?? 0,
+		),
+		startMarker,
+		type: 'child',
+	};
 }

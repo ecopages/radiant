@@ -2,7 +2,12 @@ import { ATTRIBUTE_BINDING_PREFIX } from '../hydration/hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { getElementNamespace, HTML_NAMESPACE_URI, setElementAttributeValue } from './namespaces.ts';
 import { getNodeAtPath, getNodePath } from './path-utils.ts';
-import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
+import {
+	CHILD_BINDING_END_PREFIX,
+	CHILD_BINDING_START_PREFIX,
+	TEXT_CONTENT_LOCATOR_PREFIX,
+} from './constants.ts';
+import { endsWithTextContentOpenTag } from './text-content.ts';
 import type { TemplateResultLike } from '../types/index.ts';
 import type {
 	BindingDescriptor,
@@ -10,6 +15,7 @@ import type {
 	CompiledTemplate,
 	LiveTemplatePart,
 	TemplatePart,
+	TextContentTemplatePart,
 } from './types.ts';
 
 /**
@@ -31,6 +37,7 @@ export function getCompiledTemplate(template: TemplateResultLike): CompiledTempl
 
 	const htmlParts: string[] = [];
 	const bindings = new Map<number, BindingDescriptor>();
+	const textContentBindingIndices: number[] = [];
 
 	for (let index = 0; index < template.values.length; index += 1) {
 		const part = template.parts[index];
@@ -40,6 +47,13 @@ export function getCompiledTemplate(template: TemplateResultLike): CompiledTempl
 		if (part?.type === 'attribute') {
 			htmlParts.push(` ${ATTRIBUTE_BINDING_PREFIX}${index}="${part.kind}:${part.name}"`);
 			bindings.set(index, { kind: part.kind, name: part.name });
+			continue;
+		}
+
+		if (endsWithTextContentOpenTag(htmlParts.join(''))) {
+			insertTextContentLocator(htmlParts, index);
+			bindings.set(index, { kind: 'child' });
+			textContentBindingIndices.push(index);
 			continue;
 		}
 
@@ -54,7 +68,7 @@ export function getCompiledTemplate(template: TemplateResultLike): CompiledTempl
 
 	const compiledTemplate = {
 		blueprint,
-		parts: collectTemplateParts(blueprint.content, bindings),
+		parts: collectTemplateParts(blueprint.content, bindings, textContentBindingIndices),
 	};
 
 	TEMPLATE_CACHE_BY_SHAPE.set(template.shapeKey, compiledTemplate);
@@ -117,6 +131,23 @@ export function createLiveTemplateParts(
 			continue;
 		}
 
+		if (part.type === 'text-content') {
+			const targetNode = getNodeAtPath(fragment, part.path);
+
+			if (!(targetNode instanceof Element)) {
+				continue;
+			}
+
+			liveParts.push({
+				committedText: '',
+				element: targetNode,
+				index: part.index,
+				subscriptionSerial: 0,
+				type: 'text-content',
+			});
+			continue;
+		}
+
 		const startNode = getNodeAtPath(fragment, part.startPath);
 		const endNode = getNodeAtPath(fragment, part.endPath);
 
@@ -144,8 +175,13 @@ export function createLiveTemplateParts(
 function collectTemplateParts(
 	fragment: DocumentFragment,
 	bindings: ReadonlyMap<number, BindingDescriptor>,
+	textContentBindingIndices: readonly number[],
 ): TemplatePart[] {
-	return [...collectAttributeParts(fragment, bindings), ...collectChildParts(fragment, bindings)];
+	return [
+		...collectAttributeParts(fragment, bindings),
+		...collectChildParts(fragment, bindings),
+		...collectTextContentParts(fragment, textContentBindingIndices),
+	];
 }
 
 function collectAttributeParts(
@@ -232,6 +268,67 @@ function collectChildParts(
 	}
 
 	return parts;
+}
+
+function collectTextContentParts(
+	fragment: DocumentFragment,
+	textContentBindingIndices: readonly number[],
+): TextContentTemplatePart[] {
+	if (textContentBindingIndices.length === 0) {
+		return [];
+	}
+
+	const locatorIndices = new Map(
+		textContentBindingIndices.map((index) => [`${TEXT_CONTENT_LOCATOR_PREFIX}${index}`, index]),
+	);
+	const parts: TextContentTemplatePart[] = [];
+	const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_ELEMENT);
+	let currentNode = walker.nextNode();
+
+	while (currentNode) {
+		const element = currentNode as Element;
+
+		for (const attribute of Array.from(element.attributes)) {
+			const index = locatorIndices.get(attribute.name);
+
+			if (index === undefined) {
+				continue;
+			}
+
+			parts.push({
+				index,
+				path: getNodePath(fragment, element),
+				type: 'text-content',
+			});
+			element.removeAttribute(attribute.name);
+		}
+
+		currentNode = walker.nextNode();
+	}
+
+	parts.sort((left, right) => left.index - right.index);
+	return parts;
+}
+
+function insertTextContentLocator(htmlParts: string[], index: number): void {
+	const marker = ` ${TEXT_CONTENT_LOCATOR_PREFIX}${index}=""`;
+
+	for (let partIndex = htmlParts.length - 1; partIndex >= 0; partIndex -= 1) {
+		const part = htmlParts[partIndex];
+
+		if (part === undefined) {
+			continue;
+		}
+
+		const closingBracket = part.lastIndexOf('>');
+
+		if (closingBracket === -1) {
+			continue;
+		}
+
+		htmlParts[partIndex] = `${part.slice(0, closingBracket)}${marker}${part.slice(closingBracket)}`;
+		return;
+	}
 }
 
 function recreateElementInNamespace(element: Element, namespace: string, localName: string): Element {

@@ -1,5 +1,23 @@
 import { createBoundaryMarker } from './dom-operations.ts';
-import type { MountedRangeRecord } from './types.ts';
+import type { MountedRangeContent, MountedRangeRecord } from './types.ts';
+
+/**
+ * Classifies SSR nodes as the mounted content they already represent.
+ *
+ * Empty slices stay empty, a lone text node stays a text part, and anything else
+ * is tracked as an opaque node list until a later pass reconciles it.
+ */
+export function mountedContentFromNodes(nodes: readonly Node[]): MountedRangeContent {
+	if (nodes.length === 0) {
+		return { kind: 'empty' };
+	}
+
+	if (nodes.length === 1 && nodes[0] instanceof Text) {
+		return { kind: 'text', node: nodes[0] };
+	}
+
+	return { kind: 'nodes', nodes };
+}
 
 /**
  * Allocates a new empty {@link MountedRangeRecord} with fresh boundary markers
