@@ -22,13 +22,25 @@ function resolveConstructor(target: object): RadiantConstructorWithReactiveProps
 	return target.constructor as RadiantConstructorWithReactiveProps;
 }
 
+/**
+ * Records a `@prop` definition on the target constructor.
+ *
+ * @remarks
+ * Inherited registries are copied before a subclass writes to them. Pushing
+ * into the looked-up array would mutate the superclass (and any sibling that
+ * still shares that array), which then leaks into `observedAttributes` and SSR
+ * host serialization.
+ */
 export function registerReactivePropDefinition(
 	target: object,
 	propertyName: string,
 	options: ReactivePropertyOptions<unknown>,
 ): void {
 	const constructor = resolveConstructor(target);
-	const definitions = constructor[REACTIVE_PROP_DEFINITIONS] ?? [];
+	const inheritedDefinitions = constructor[REACTIVE_PROP_DEFINITIONS] ?? [];
+	const definitions = Object.hasOwn(constructor, REACTIVE_PROP_DEFINITIONS)
+		? inheritedDefinitions
+		: inheritedDefinitions.slice();
 
 	if (definitions.some((definition) => definition.name === propertyName)) {
 		return;

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { RadiantElement } from '../../src/core/radiant-element';
+import { getReactivePropDefinitions } from '../../src/core/reactive-prop-metadata';
 import { customElement } from '../../src/decorators/custom-element';
 import { prop } from '../../src/decorators/prop';
 
@@ -226,13 +227,48 @@ describe('@prop', () => {
 				@prop({ type: String, defaultValue: '' }) label: string;
 			}
 
+			@customElement('my-reactive-prop-sibling')
+			class MyReactivePropSibling extends MyReactivePropBase {
+				@prop({ type: Boolean, defaultValue: false }) enabled: boolean;
+			}
+
 			expect(observedAttributesOf(MyReactivePropBase)).toEqual(baseObservedBefore);
 			expect(observedAttributesOf(MyReactivePropBase)).toContain('count');
 			expect(observedAttributesOf(MyReactivePropBase)).not.toContain('label');
+			expect(observedAttributesOf(MyReactivePropBase)).not.toContain('enabled');
 
 			const childObserved = observedAttributesOf(MyReactivePropChild);
 			expect(childObserved).toContain('count');
 			expect(childObserved).toContain('label');
+			expect(childObserved).not.toContain('enabled');
+
+			const siblingObserved = observedAttributesOf(MyReactivePropSibling);
+			expect(siblingObserved).toContain('count');
+			expect(siblingObserved).toContain('enabled');
+			expect(siblingObserved).not.toContain('label');
+
+			expect(getReactivePropDefinitions(MyReactivePropBase).map((definition) => definition.name)).toEqual([
+				'count',
+			]);
+			expect(getReactivePropDefinitions(MyReactivePropChild).map((definition) => definition.name)).toEqual([
+				'count',
+				'label',
+			]);
+			expect(getReactivePropDefinitions(MyReactivePropSibling).map((definition) => definition.name)).toEqual([
+				'count',
+				'enabled',
+			]);
+
+			const child = document.createElement('my-reactive-prop-child') as MyReactivePropChild;
+			const sibling = document.createElement('my-reactive-prop-sibling') as MyReactivePropSibling;
+			const base = document.createElement('my-reactive-prop-base') as MyReactivePropBase;
+
+			expect(base.getReactivePropDefinitions().map((definition) => definition.name)).toEqual(['count']);
+			expect(child.getReactivePropDefinitions().map((definition) => definition.name)).toEqual(['count', 'label']);
+			expect(sibling.getReactivePropDefinitions().map((definition) => definition.name)).toEqual([
+				'count',
+				'enabled',
+			]);
 		});
 	});
 

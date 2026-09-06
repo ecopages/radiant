@@ -94,6 +94,7 @@ describe('legacy post-construction decorator setup', () => {
 
 		class BaseHost {}
 		class DerivedHost extends BaseHost {}
+		class GrandchildHost extends DerivedHost {}
 
 		registerLegacyPostConstructionInitializer(BaseHost.prototype, () => {
 			calls.push('base');
@@ -107,6 +108,10 @@ describe('legacy post-construction decorator setup', () => {
 
 		calls.length = 0;
 		runLegacyPostConstructionInitializers(new DerivedHost(), 'ssr');
+		expect(calls).toEqual(['base', 'derived']);
+
+		calls.length = 0;
+		runLegacyPostConstructionInitializers(new GrandchildHost(), 'ssr');
 		expect(calls).toEqual(['base', 'derived']);
 	});
 

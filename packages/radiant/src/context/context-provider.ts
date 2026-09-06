@@ -24,6 +24,7 @@ type ActiveContextSubscription<T extends UnknownContext> = {
 	hasChanged(newContext: ContextType<T>, prevContext: ContextType<T> | undefined): boolean;
 	notify(context: ContextType<T>): void;
 	unsubscribe: () => void;
+	active: boolean;
 };
 
 export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
@@ -59,6 +60,13 @@ export interface IContextProvider<T extends Context<unknown, unknown>> {
 	 * Subscribes to context updates.
 	 *
 	 * @param subscription - The subscription object that defines the callback function to be invoked on context updates.
+	 * @returns A function that removes this subscription.
+	 *
+	 * @remarks
+	 * Notification snapshots the current subscriber list. Unsubscribing during
+	 * delivery cannot skip later subscribers. Subscribers added during delivery
+	 * wait for a later update. Removing another subscriber before its turn skips
+	 * that subscriber for the current update.
 	 */
 	subscribe: <Selected = ContextType<T>>(subscription: ContextSubscription<T, Selected>) => () => void;
 }
@@ -232,12 +240,18 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 				subscriptionSpec.callback(context, subscription.unsubscribe);
 			},
 			unsubscribe: () => {
+				if (!subscription.active) {
+					return;
+				}
+
+				subscription.active = false;
 				const index = this.subscriptions.indexOf(subscription);
 
 				if (index !== -1) {
 					this.subscriptions.splice(index, 1);
 				}
 			},
+			active: true,
 		};
 		this.subscriptions.push(subscription);
 
@@ -284,8 +298,24 @@ export class ContextProvider<T extends Context<unknown, unknown>>
 		return findHydrationScript(resolveContextHydrationHost(this.host), 'context', this.hydrationKey);
 	}
 
+	/**
+	 * Delivers a context update to the subscribers present at the start of this
+	 * notification.
+	 *
+	 * @remarks
+	 * Delivery uses a snapshot of `subscriptions`. Subscribers added during a
+	 * callback are not notified until a later update. A subscriber removed before
+	 * its turn is skipped via that subscription's `active` flag. Self-unsubscription
+	 * therefore cannot prevent later subscribers from receiving the same update.
+	 */
 	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T> | undefined) => {
-		for (const sub of this.subscriptions) {
+		const snapshot = this.subscriptions.slice();
+
+		for (const sub of snapshot) {
+			if (!sub.active) {
+				continue;
+			}
+
 			if (sub.hasChanged(newContext, prevContext)) {
 				sub.notify(newContext);
 			}

@@ -129,6 +129,118 @@ describe('RadiantElement', () => {
 		expect(customElement.hasEventSubscription('click:[data-ref="click-it"]')).toBeTruthy();
 	});
 
+	test('duplicate subscribeEvent registrations with the same selector stay independent', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		const button = document.createElement('button');
+		button.setAttribute('data-ref', 'click-me');
+		customElement.appendChild(button);
+		document.body.appendChild(customElement);
+
+		let aCount = 0;
+		let bCount = 0;
+		const unsubscribeA = customElement.subscribeEvent({
+			selector: '[data-ref="click-me"]',
+			type: 'click',
+			listener: () => {
+				aCount += 1;
+			},
+		});
+		const unsubscribeB = customElement.subscribeEvent({
+			selector: '[data-ref="click-me"]',
+			type: 'click',
+			listener: () => {
+				bCount += 1;
+			},
+		});
+
+		expect(customElement.hasEventSubscription('click:[data-ref="click-me"]')).toBeTruthy();
+
+		button.click();
+		expect(aCount).toBe(1);
+		expect(bCount).toBe(1);
+
+		unsubscribeA();
+		expect(customElement.hasEventSubscription('click:[data-ref="click-me"]')).toBeTruthy();
+
+		button.click();
+		expect(aCount).toBe(1);
+		expect(bCount).toBe(2);
+
+		unsubscribeB();
+		expect(customElement.hasEventSubscription('click:[data-ref="click-me"]')).toBeFalsy();
+
+		button.click();
+		expect(aCount).toBe(1);
+		expect(bCount).toBe(2);
+	});
+
+	test('repeating a stale subscribeEvent cleanup does not remove a later registration', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		const button = document.createElement('button');
+		button.setAttribute('data-ref', 'click-me');
+		customElement.appendChild(button);
+		document.body.appendChild(customElement);
+
+		let aCount = 0;
+		let cCount = 0;
+		const unsubscribeA = customElement.subscribeEvent({
+			selector: '[data-ref="click-me"]',
+			type: 'click',
+			listener: () => {
+				aCount += 1;
+			},
+		});
+
+		unsubscribeA();
+		customElement.subscribeEvent({
+			selector: '[data-ref="click-me"]',
+			type: 'click',
+			listener: () => {
+				cCount += 1;
+			},
+		});
+
+		unsubscribeA();
+		button.click();
+
+		expect(aCount).toBe(0);
+		expect(cCount).toBe(1);
+		expect(customElement.hasEventSubscription('click:[data-ref="click-me"]')).toBeTruthy();
+	});
+
+	test('disconnect removes every duplicate subscribeEvent registration', () => {
+		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
+		const button = document.createElement('button');
+		button.setAttribute('data-ref', 'click-me');
+		customElement.appendChild(button);
+		document.body.appendChild(customElement);
+
+		let aCount = 0;
+		let bCount = 0;
+		customElement.subscribeEvent({
+			selector: '[data-ref="click-me"]',
+			type: 'click',
+			listener: () => {
+				aCount += 1;
+			},
+		});
+		customElement.subscribeEvent({
+			selector: '[data-ref="click-me"]',
+			type: 'click',
+			listener: () => {
+				bCount += 1;
+			},
+		});
+
+		button.click();
+		customElement.remove();
+		button.click();
+
+		expect(aCount).toBe(1);
+		expect(bCount).toBe(1);
+		expect(customElement.hasEventSubscription('click:[data-ref="click-me"]')).toBeFalsy();
+	});
+
 	test('subscribeEvent fires when the click target is nested inside the match', () => {
 		const customElement = document.createElement('my-radiant-element') as MyRadiantElement;
 		const button = document.createElement('button');
