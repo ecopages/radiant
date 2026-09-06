@@ -1,4 +1,14 @@
-import { RadiantElement, bindTo, bound, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	bound,
+	customElement,
+	event,
+	onEvent,
+	onUpdated,
+	prop,
+	query,
+} from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 
 export type RuiWindowSplitterProps = {
@@ -164,9 +174,19 @@ export class RuiWindowSplitter extends RadiantElement {
 		if (!this.dragging) return;
 		const rect = this.getBoundingClientRect();
 		if (this.orientation === 'vertical') {
-			this.updateValue(Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, ((event.clientY - rect.top) / rect.height) * 100)));
+			this.updateValue(
+				Math.min(
+					WINDOW_SPLITTER_MAX,
+					Math.max(WINDOW_SPLITTER_MIN, ((event.clientY - rect.top) / rect.height) * 100),
+				),
+			);
 		} else {
-			this.updateValue(Math.min(WINDOW_SPLITTER_MAX, Math.max(WINDOW_SPLITTER_MIN, ((event.clientX - rect.left) / rect.width) * 100)));
+			this.updateValue(
+				Math.min(
+					WINDOW_SPLITTER_MAX,
+					Math.max(WINDOW_SPLITTER_MIN, ((event.clientX - rect.left) / rect.width) * 100),
+				),
+			);
 		}
 	}
 
