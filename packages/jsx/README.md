@@ -327,7 +327,7 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
-Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once per render or hydration snapshot. Produce a new iterator if that list should appear again.
+Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` flattening consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
 
 ## Empty Values And Removal
 

@@ -979,6 +979,27 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.textContent).toBe('firstsecond');
 	});
 
+	test('reuses a generator snapshot across later renders of the same iterator', async () => {
+		const [{ createRoot }] = await Promise.all([loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		function* children() {
+			yield 'first';
+			yield 'second';
+		}
+
+		const items = children();
+
+		root.render(items);
+		expect(container.textContent).toBe('firstsecond');
+		const firstNodes = Array.from(container.childNodes);
+
+		root.render(items);
+		expect(container.textContent).toBe('firstsecond');
+		expect(Array.from(container.childNodes)).toEqual(firstNodes);
+	});
+
 	test('hydrates generator list children without rebuilding SSR nodes', async () => {
 		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');

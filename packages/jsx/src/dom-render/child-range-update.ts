@@ -143,8 +143,7 @@ function updateSingleChildContent(
 
 /**
  * @remarks Uses {@link isIterableRenderable} rather than materializing the value.
- * {@link getIterableChildren} then snapshots one-shot iterators so later hydrate
- * counts can reuse the same children.
+ * {@link getIterableChildren} then snapshots one-shot iterators by identity.
  */
 function classifyChildValue(value: unknown): 'empty' | 'iterable' | 'template' | 'text' | 'nodes' {
 	if (isIterableRenderable(value)) return 'iterable';

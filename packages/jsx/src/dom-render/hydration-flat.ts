@@ -19,8 +19,10 @@ import type { JsxRenderable } from '../types/index.ts';
  * reconstructing a template instance.
  *
  * This is the fallback root shape: it handles values that are neither a single
- * template result nor an iterable, and it recovers bindings positionally from the
- * marker indexes embedded during SSR.
+ * template result nor an iterable. Ordinary `hydrate()` inputs of that shape
+ * collect no bindings — {@link collectHydrationBindings} only descends into
+ * templates and iterables, including when the root is a reactive wrapper — so
+ * this walk mainly drops leftover SSR markers.
  *
  * Markers that cannot be resolved are reported and skipped rather than failing the
  * whole pass, because a single stale marker should not force a full client render.
