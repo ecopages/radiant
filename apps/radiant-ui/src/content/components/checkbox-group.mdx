@@ -30,7 +30,7 @@ export const config = {
 
 ## Usage
 
-Set `value` to a comma-separated list of selected option values. Wrap in `RuiField` for form integration.
+The live `value` property is always a `string[]` (`[]` when nothing is selected). The HTML attribute is those tokens as a comma-separated string. JSX may pass a string or an array; a string is parsed as CSV. `rui-change` emits `{ value: string[] }`. Wrap in `RuiField` for form integration.
 
 ```tsx
 import { RuiCheckbox } from '@ecopages/radiant-ui/checkbox';
@@ -40,7 +40,7 @@ import { RuiLabel } from '@ecopages/radiant-ui/label';
 
 <RuiField name="topics">
   <RuiLabel>Topics</RuiLabel>
-  <RuiCheckboxGroup value="news,travel" name="topics" label="Topics">
+  <RuiCheckboxGroup value={['news', 'travel']} name="topics" label="Topics">
     <RuiCheckboxGroupControl>
       <RuiCheckbox value="news">News</RuiCheckbox>
       <RuiCheckbox value="travel">Travel</RuiCheckbox>
@@ -88,7 +88,7 @@ Checkbox group layout uses the group surface only; checkbox chrome comes from `R
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `string` | `''` | Comma-separated selected values. |
+| `value` | `string` | omitted | Comma-separated selected tokens. Empty selection removes the attribute. The JS property is `string[]`. |
 | `name` | `string` | `''` | Form field name shared by all checkboxes in the group. |
 | `label` | `string` | `''` | Accessible name when no visible legend is composed in the view. |
 | `disabled` | `boolean` | `false` | Disables every checkbox in the group. |
@@ -107,14 +107,14 @@ Do not set `checked`, `disabled`, or `name` on checkboxes. Nested hosts: `rui-ch
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value: string }` | Emitted after the selection changes. |
+| `rui-change` | `{ value: string[] }` | Emitted after the selection changes. |
 
 ### Props
 
 | Prop | Type | Description |
 | --- | --- | --- |
 | `options` | `RuiCheckboxOption[]` | `{ value, label, disabled? }` entries rendered by the view. |
-| `value` | `string \| string[]` | Selected values; arrays serialize to comma-separated form. |
+| `value` | `string \| string[]` | Selected tokens. A string is parsed as CSV; the host stores `string[]`. |
 
 ### View helpers
 
