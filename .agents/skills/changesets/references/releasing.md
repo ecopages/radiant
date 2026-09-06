@@ -106,6 +106,8 @@ Use `changesets/action@v2` with Changesets CLI v3. v1 only works with CLI v2.
 
 Inputs: `version-script`, `publish-script`, `github-token` (not `GITHUB_TOKEN` env). The action needs `contents: write`, `pull-requests: write`, and `id-token: write` for trusted publishing. Checkout with `fetch-depth: 0`.
 
+`version-script` must refresh `pnpm-lock.yaml` after bumping so frozen-lockfile installs succeed. Follow-up lockfile commits on the Version Packages branch disappear the next time the action force-pushes it.
+
 `publish-script` must be `changeset publish` (or the repo's equivalent). A raw `npm publish` does not write `CHANGESETS_OUTPUT`, so the action skips git tags and GitHub releases.
 
 ## Verify afterwards

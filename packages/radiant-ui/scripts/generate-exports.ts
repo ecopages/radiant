@@ -199,6 +199,21 @@ function styleSpecifier(component: string): string {
 		: `@ecopages/radiant-ui/${component}/styles.css`;
 }
 
+/**
+ * @remarks `JSON.stringify` with indent wraps short arrays; Prettier keeps them
+ * on one line. Skipping an unchanged manifest avoids that whitespace showing up
+ * in Version Packages commits after `build:all`.
+ */
+function writeStyleDependenciesIfChanged(value: { components: StyleDependencyManifest }): void {
+	if (existsSync(STYLE_DEPENDENCIES_PATH)) {
+		const previous = JSON.parse(readFileSync(STYLE_DEPENDENCIES_PATH, 'utf8')) as unknown;
+		if (JSON.stringify(previous) === JSON.stringify(value)) {
+			return;
+		}
+	}
+	writeFileSync(STYLE_DEPENDENCIES_PATH, `${JSON.stringify(value, null, '\t')}\n`);
+}
+
 function buildStyleDependencyManifest(components: string[]): StyleDependencyManifest {
 	const componentSet = new Set(components);
 	const direct = new Map(
@@ -247,9 +262,6 @@ writeFileSync(PACKAGE_JSON_PATH, `${JSON.stringify(packageJson, null, '\t')}\n`)
 
 writeFileSync(BARREL_PATH, buildBarrel(components));
 writeFileSync(STYLES_CSS_PATH, buildStylesEntry(components));
-writeFileSync(
-	STYLE_DEPENDENCIES_PATH,
-	`${JSON.stringify({ components: buildStyleDependencyManifest(components) }, null, '\t')}\n`,
-);
+writeStyleDependenciesIfChanged({ components: buildStyleDependencyManifest(components) });
 
 console.log(`[generate-exports] ${components.length} components: ${components.join(', ')}`);

@@ -47,7 +47,7 @@ jobs:
               uses: changesets/action@v2
               with:
                   github-token: ${{ github.token }}
-                  version-script: pnpm changeset version
+                  version-script: pnpm changeset version && pnpm install --lockfile-only && pnpm exec prettier --write pnpm-lock.yaml
                   publish-script: pnpm changeset publish
               env:
                   NPM_CONFIG_PROVENANCE: true
