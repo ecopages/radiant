@@ -1,13 +1,7 @@
-import {
-	isIterableRenderable,
-	isJsxNodeLike,
-	isKeyedJsxValue,
-	isSignalLikeValue,
-	isSubscribableJsxValue,
-	isTemplateResultLike,
-} from '../types/renderable-guards.ts';
+import { isIterableRenderable, isJsxNodeLike, isKeyedJsxValue, isSignalLikeValue, isSubscribableJsxValue, isTemplateResultLike } from '../types/renderable-guards.ts';
 import type { KeyedJsxValue, TemplateResultLike } from '../types/index.ts';
 import { createNodesFromJsxNodeLike } from './dom-operations.ts';
+import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
 
 export {
@@ -173,8 +167,9 @@ export function getKeyedChildren(children: readonly unknown[]): KeyedJsxValue[] 
  * otherwise returns `undefined`.
  *
  * @remarks Callers that only need to know whether a value is iterable must use
- * {@link isIterableRenderable}. This helper consumes the iterator, so using it
- * to classify would empty one-shot generators before the update pass reads them.
+ * {@link isIterableRenderable}. One-shot iterators are snapshotted by
+ * {@link materializeIterableChildren} so a later count or hydrate pass can still
+ * read the children.
  *
  * @param value Value to inspect.
  */
@@ -183,7 +178,7 @@ export function getIterableChildren(value: unknown): unknown[] | undefined {
 		return undefined;
 	}
 
-	return Array.from(value);
+	return materializeIterableChildren(value);
 }
 
 export function isReactiveAttributeSource(value: unknown): value is ReactiveAttributeSource {

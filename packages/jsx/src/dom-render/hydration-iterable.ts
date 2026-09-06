@@ -6,6 +6,7 @@ import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './
 import { createBoundaryMarker } from './dom-operations.ts';
 import { disposeTemplateInstance } from './mounted-disposal.ts';
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
+import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import { getKeyedChildren, unwrapKeyedValue } from './runtime-helpers.ts';
 import type { DeferredPropertyBinding, MountedRangeContent, MountedRangeRecord, TemplateInstance } from './types.ts';
 
@@ -46,7 +47,7 @@ export function hydrateIterableRoot(
 	deferredProperties: DeferredPropertyBinding[],
 	options: HydrateTemplateInstanceOptions = {},
 ): MountedRangeContent | undefined {
-	const jsxChildren = Array.from(value);
+	const jsxChildren = materializeIterableChildren(value);
 	const keyedChildren = getKeyedChildren(jsxChildren);
 	const domChildren = getHydratableChildNodes(target);
 	const hydratedChildren: HydratedIterableChild[] = [];

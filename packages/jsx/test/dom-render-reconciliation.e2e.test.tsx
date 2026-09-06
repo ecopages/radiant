@@ -979,6 +979,29 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(container.textContent).toBe('firstsecond');
 	});
 
+	test('hydrates generator list children without rebuilding SSR nodes', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		function* items() {
+			yield jsx('li', { class: 'item', 'data-id': 'a', children: 'Alpha' });
+			yield jsx('li', { class: 'item', 'data-id': 'b', children: 'Beta' });
+		}
+
+		container.innerHTML = HYDRATE_DYNAMIC_LIST_HTML;
+		const serverItems = Array.from(container.querySelectorAll('li'));
+
+		root.hydrate(jsx('ul', { class: 'list', children: items() }));
+
+		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
+		expect(container.querySelector('li')?.textContent).toBe('Alpha');
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.unmount();
+		expect(container.childNodes).toHaveLength(0);
+	});
+
 	test('consumes a root iterable exactly once', async () => {
 		const [{ createRoot }] = await Promise.all([loadJsxModule()]);
 		const container = document.createElement('div');
