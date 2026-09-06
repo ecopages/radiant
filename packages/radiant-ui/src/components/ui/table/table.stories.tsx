@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
+import { RadiantElement, customElement, onEvent, state } from '@ecopages/radiant';
 import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { applyDesignTokens } from '../../../../.storybook/apply-design-tokens';
 import type { ViewMultiValue } from '../shared/multi-value';
@@ -12,7 +13,12 @@ import {
 	RuiTableRow,
 	RuiTableSelectionCell,
 } from './table';
-import { RuiTable as RuiTableElement, type RuiTableSelectionMode } from './table.script';
+import {
+	RuiTable as RuiTableElement,
+	type RuiTableSelectionMode,
+	type RuiTableSortChangeDetail,
+	type RuiTableSortDirection,
+} from './table.script';
 
 function watchRangeDriftWarnings() {
 	const warnings: string[] = [];
@@ -38,11 +44,15 @@ function PlantTable({
 	value = '',
 	sortColumn = '',
 	sortDirection = 'ascending',
+	allowsSorting = false,
+	plants = rows,
 }: {
 	selectionMode?: RuiTableSelectionMode;
 	value?: ViewMultiValue;
 	sortColumn?: string;
 	sortDirection?: 'ascending' | 'descending';
+	allowsSorting?: boolean;
+	plants?: typeof rows;
 }) {
 	return (
 		<RuiTable
@@ -54,16 +64,16 @@ function PlantTable({
 		>
 			<RuiTableHeader>
 				{selectionMode !== 'none' ? <RuiTableSelectionCell scope="all" /> : null}
-				<RuiTableColumn id="name" allowsSorting isRowHeader>
+				<RuiTableColumn id="name" allowsSorting={allowsSorting} isRowHeader>
 					Plant
 				</RuiTableColumn>
-				<RuiTableColumn id="sunlight" allowsSorting>
+				<RuiTableColumn id="sunlight" allowsSorting={allowsSorting}>
 					Sunlight
 				</RuiTableColumn>
 				<RuiTableColumn id="watering">Watering</RuiTableColumn>
 			</RuiTableHeader>
 			<RuiTableBody>
-				{rows.map((row) => (
+				{plants.map((row) => (
 					<RuiTableRow id={row.id} actionable={row.id === 'ivy'}>
 						{selectionMode !== 'none' ? (
 							<RuiTableSelectionCell scope="row" label={`Select ${row.name}`} />
@@ -76,6 +86,44 @@ function PlantTable({
 			</RuiTableBody>
 		</RuiTable>
 	);
+}
+
+function comparePlantColumn(
+	left: (typeof rows)[number],
+	right: (typeof rows)[number],
+	column: string,
+	direction: RuiTableSortDirection,
+): number {
+	const key = column === 'sunlight' ? 'sunlight' : column === 'watering' ? 'watering' : 'name';
+	const order = left[key].localeCompare(right[key]);
+	return direction === 'descending' ? -order : order;
+}
+
+@customElement('rui-table-sort-demo')
+export class RuiTableSortDemo extends RadiantElement {
+	@state sortColumn = 'name';
+	@state sortDirection: RuiTableSortDirection = 'ascending';
+	@state plants = [...rows].sort((left, right) => comparePlantColumn(left, right, 'name', 'ascending'));
+
+	@onEvent({ selector: 'rui-table', type: 'rui-sort-change' })
+	onSortChange(event: CustomEvent<RuiTableSortChangeDetail>): void {
+		this.sortColumn = event.detail.column;
+		this.sortDirection = event.detail.direction;
+		this.plants = [...this.plants].sort((left, right) =>
+			comparePlantColumn(left, right, event.detail.column, event.detail.direction),
+		);
+	}
+
+	override render() {
+		return (
+			<PlantTable
+				allowsSorting
+				sortColumn={this.sortColumn}
+				sortDirection={this.sortDirection}
+				plants={this.plants}
+			/>
+		);
+	}
 }
 
 const meta = {
@@ -123,7 +171,7 @@ export const MultipleSelection: Story = {
 
 		await step('Radiant row checkbox updates the serialized selected value', async () => {
 			await expect(rowCheckboxes[0]).toBeInstanceOf(HTMLElement);
-			await userEvent.click(canvasElement.querySelector<HTMLInputElement>('[data-table-select-row] input')!);
+			await userEvent.click(canvasElement.querySelector('[data-table-select-row] label')!);
 			await expect(table).toHaveAttribute('value', 'aloe');
 			await expect(canvasElement.querySelector('[data-table-row="aloe"]')).toHaveAttribute(
 				'aria-selected',
@@ -131,8 +179,17 @@ export const MultipleSelection: Story = {
 			);
 		});
 
+		await step('clicking the same checkbox again unselects the row', async () => {
+			await userEvent.click(canvasElement.querySelector('[data-table-select-row] label')!);
+			await expect(table).not.toHaveAttribute('value');
+			await expect(canvasElement.querySelector('[data-table-row="aloe"]')).toHaveAttribute(
+				'aria-selected',
+				'false',
+			);
+		});
+
 		await step('Radiant select-all checkbox checks every selectable row', async () => {
-			await userEvent.click(canvasElement.querySelector<HTMLInputElement>('[data-table-select-all] input')!);
+			await userEvent.click(canvasElement.querySelector('[data-table-select-all] label')!);
 			await expect([...table.value].sort()).toEqual(['aloe', 'fern', 'ivy']);
 			await expect(canvasElement.querySelector<HTMLInputElement>('[data-table-select-all] input')).toBeChecked();
 		});
@@ -140,23 +197,30 @@ export const MultipleSelection: Story = {
 };
 
 export const Sorting: Story = {
-	render: () => <PlantTable sortColumn="name" />,
+	render: () => <rui-table-sort-demo />,
 	play: async ({ canvasElement, step }) => {
 		const drift = watchRangeDriftWarnings();
-		const table = canvasElement.querySelector('rui-table') as HTMLElement;
 		const sortEvents: Array<{ column: string; direction: string }> = [];
-		table.addEventListener('rui-sort-change', (event) => {
+		canvasElement.addEventListener('rui-sort-change', (event) => {
 			sortEvents.push((event as CustomEvent<{ column: string; direction: string }>).detail);
 		});
 
 		try {
-			await step('sortable column toggles its direction and exposes aria-sort', async () => {
+			await step('sortable column toggles its direction and reorders the collection', async () => {
+				await waitFor(() => expect(canvasElement.querySelector('[data-table-sort="name"]')).toBeTruthy());
 				await userEvent.click(canvasElement.querySelector<HTMLButtonElement>('[data-table-sort="name"]')!);
 				await expect(canvasElement.querySelector('[data-table-column="name"]')).toHaveAttribute(
 					'aria-sort',
 					'descending',
 				);
 				await expect(sortEvents).toEqual([{ column: 'name', direction: 'descending' }]);
+				await waitFor(() =>
+					expect(
+						Array.from(canvasElement.querySelectorAll('[data-table-row]')).map((row) =>
+							row.getAttribute('data-table-row'),
+						),
+					).toEqual(['fern', 'ivy', 'aloe']),
+				);
 			});
 		} finally {
 			drift.assertClean();
@@ -262,3 +326,9 @@ export const DesignTokens: Story = {
 		}
 	},
 };
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'rui-table-sort-demo': Record<string, never>;
+	}
+}

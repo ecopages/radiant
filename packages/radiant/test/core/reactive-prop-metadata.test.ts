@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-	getReactivePropDefinitions,
-	registerReactivePropDefinition,
-} from '../../src/core/reactive-prop-metadata';
+import { getReactivePropDefinitions, registerReactivePropDefinition } from '../../src/core/reactive-prop-metadata';
 
 describe('reactive prop metadata registry', () => {
 	test('does not leak subclass definitions into a related sibling or the base class', () => {
