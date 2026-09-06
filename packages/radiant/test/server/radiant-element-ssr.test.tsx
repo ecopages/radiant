@@ -171,6 +171,48 @@ describe('RadiantElement SSR', () => {
 		);
 	});
 
+	test('renderRadiantElementHostToString() keeps subclass and sibling host attributes class-specific', () => {
+		installLightDomShim();
+
+		@customElement('ssr-prop-base-card-test')
+		class SsrPropBaseCard extends RadiantElement {
+			@prop({ type: String, reflect: true, defaultValue: 'from-base' }) shared!: string;
+		}
+
+		@customElement('ssr-prop-child-card-test')
+		class SsrPropChildCard extends SsrPropBaseCard {
+			@prop({ type: String, reflect: true, defaultValue: 'from-child' }) childLabel!: string;
+		}
+
+		@customElement('ssr-prop-sibling-card-test')
+		class SsrPropSiblingCard extends SsrPropBaseCard {
+			@prop({ type: String, reflect: true, defaultValue: 'from-sibling' }) siblingLabel!: string;
+		}
+
+		const base = new SsrPropBaseCard();
+		base.shared = 'from-base';
+		const child = new SsrPropChildCard();
+		child.shared = 'from-base';
+		child.childLabel = 'from-child';
+		const sibling = new SsrPropSiblingCard();
+		sibling.shared = 'from-base';
+		sibling.siblingLabel = 'from-sibling';
+
+		const baseHtml = renderRadiantElementHostToString(base);
+		const childHtml = renderRadiantElementHostToString(child);
+		const siblingHtml = renderRadiantElementHostToString(sibling);
+
+		expect(baseHtml).toContain('shared="from-base"');
+		expect(baseHtml).not.toContain('childLabel');
+		expect(baseHtml).not.toContain('siblingLabel');
+		expect(childHtml).toContain('shared="from-base"');
+		expect(childHtml).toContain('childLabel="from-child"');
+		expect(childHtml).not.toContain('siblingLabel');
+		expect(siblingHtml).toContain('shared="from-base"');
+		expect(siblingHtml).toContain('siblingLabel="from-sibling"');
+		expect(siblingHtml).not.toContain('childLabel');
+	});
+
 	test('renderRadiantElementHostToString() preserves nested registered Radiant consumer hosts and finalized parent context hydration state', () => {
 		const nestedSsrBoardContext = createContext<{ commits: number; owner: string; stage: string; tempo: string }>(
 			Symbol('nested-radiant-board-context'),

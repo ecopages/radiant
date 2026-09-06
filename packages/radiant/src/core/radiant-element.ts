@@ -102,9 +102,15 @@ export interface IRadiantElement<Bindings extends object = {}> {
 
 	/**
 	 * Subscribes to a Radiant element event.
-	 * @param event - The event listener to subscribe to.
+	 *
+	 * @returns A cleanup that removes this registration only.
+	 *
+	 * @remarks
+	 * Each call installs its own listener. Two subscriptions with the same
+	 * `type` and `selector` stay independent: unsubscribing one does not remove
+	 * the other, and disconnect still removes every remaining registration.
 	 */
-	subscribeEvent(event: RadiantElementEventListener): void;
+	subscribeEvent(event: RadiantElementEventListener): () => void;
 
 	/**
 	 * Registers a callback to be invoked when a reactive property or field changes.
@@ -143,9 +149,10 @@ export interface IRadiantElement<Bindings extends object = {}> {
 
 	/**
 	 * Subscribes to multiple Radiant element events.
-	 * @param events - The array of event listeners to subscribe to.
+	 *
+	 * @returns A cleanup function for each registration, in the same order.
 	 */
-	subscribeEvents(events: RadiantElementEventListener[]): void;
+	subscribeEvents(events: RadiantElementEventListener[]): Array<() => void>;
 
 	/**
 	 * It adds a callback to be executed when the Radiant element is disconnected from the DOM.
