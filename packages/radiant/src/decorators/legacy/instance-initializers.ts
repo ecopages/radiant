@@ -44,6 +44,11 @@ export function registerLegacyPostConstructionInitializer<T extends object>(
  *
  * Initializers are collected from the prototype chain and executed from base to
  * derived class so inherited setup remains stable.
+ *
+ * @remarks
+ * Only initializer collections owned by each prototype are visited. Inherited
+ * collections are not re-read through prototype lookup, so a Base → Child →
+ * Grandchild chain runs a Base initializer once per instance.
  */
 export function runLegacyInstanceInitializers<T extends object>(instance: T): void {
 	runLegacyInitializers(instance, LEGACY_INSTANCE_INITIALIZERS);
@@ -89,12 +94,20 @@ function registerInitializer<T extends object>(
 	});
 }
 
+function getOwnInitializerList<T>(prototype: object, key: symbol): T[] | undefined {
+	if (!Object.prototype.hasOwnProperty.call(prototype, key)) {
+		return undefined;
+	}
+
+	const initializers = (prototype as Record<PropertyKey, unknown>)[key];
+	return Array.isArray(initializers) ? (initializers as T[]) : undefined;
+}
+
 function runLegacyInitializers<T extends object>(instance: T, key: symbol): void {
 	walkPrototypeChain(instance, (prototype) => {
-		const initializers = (prototype as Record<PropertyKey, unknown>)[key] as
-			LegacyInstanceInitializer<T>[] | undefined;
+		const initializers = getOwnInitializerList<LegacyInstanceInitializer<T>>(prototype, key);
 
-		if (!Array.isArray(initializers)) {
+		if (!initializers) {
 			return;
 		}
 
@@ -110,10 +123,12 @@ function runLegacyPostConstructionInitializersOnPrototypeChain<T extends object>
 	executedInitializers: Set<LegacyPostConstructionInitializer<T>>,
 ): void {
 	for (const prototype of collectPrototypeChain(instance)) {
-		const initializers = (prototype as Record<PropertyKey, unknown>)[LEGACY_POST_CONSTRUCTION_INITIALIZERS] as
-			LegacyPostConstructionInitializer<T>[] | undefined;
+		const initializers = getOwnInitializerList<LegacyPostConstructionInitializer<T>>(
+			prototype,
+			LEGACY_POST_CONSTRUCTION_INITIALIZERS,
+		);
 
-		if (!Array.isArray(initializers)) {
+		if (!initializers) {
 			continue;
 		}
 

@@ -175,6 +175,39 @@ describe('onEvent', () => {
 		expect(element.clickCount).toBe(2);
 	});
 
+	it('fires an inherited event handler once, including after reconnect', () => {
+		@customElement('inherited-on-event-base')
+		class InheritedOnEventBase extends RadiantElement {
+			clickCount = 0;
+
+			@onEvent({ ref: 'inherited-btn', type: 'click' })
+			onInheritedClick() {
+				this.clickCount += 1;
+			}
+		}
+
+		@customElement('inherited-on-event-child')
+		class InheritedOnEventChild extends InheritedOnEventBase {}
+
+		@customElement('inherited-on-event-grandchild')
+		class InheritedOnEventGrandchild extends InheritedOnEventChild {}
+
+		const element = document.createElement('inherited-on-event-grandchild') as InheritedOnEventGrandchild;
+		const button = document.createElement('button');
+		button.setAttribute('data-ref', 'inherited-btn');
+		element.appendChild(button);
+		document.body.appendChild(element);
+
+		button.click();
+		expect(element.clickCount).toBe(1);
+
+		element.remove();
+		document.body.appendChild(element);
+		button.click();
+
+		expect(element.clickCount).toBe(2);
+	});
+
 	it('rejects shadow-scoped delegated listeners for controllers', () => {
 		const host = document.createElement('section');
 		host.attachShadow({ mode: 'open' }).innerHTML = '<button data-ref="shadow-btn">Shadow</button>';
