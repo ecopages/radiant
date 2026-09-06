@@ -23,7 +23,7 @@ async function createPicker(): Promise<HomeThemePickerElement> {
 
 function changeToken(element: HomeThemePickerElement, token: string, value: string): void {
 	const select = element.querySelector(`[data-token="${token}"]`);
-	select?.dispatchEvent(new CustomEvent('rui-change', { detail: { value }, bubbles: true, composed: true }));
+	select?.dispatchEvent(new CustomEvent('rui-change', { detail: { value: [value] }, bubbles: true, composed: true }));
 }
 
 function resetPreview(): void {
@@ -51,15 +51,15 @@ describe('HomeThemePickerElement', () => {
 		const element = await createPicker();
 
 		await vi.waitFor(() => {
-			expect(element.querySelector<HTMLElement & { value: string }>('[data-token="colors"]')?.value).toBe(
+			expect(element.querySelector<HTMLElement & { value: string[] }>('[data-token="colors"]')?.value).toEqual([
 				'glacier',
-			);
-			expect(element.querySelector<HTMLElement & { value: string }>('[data-token="spacing"]')?.value).toBe(
+			]);
+			expect(element.querySelector<HTMLElement & { value: string[] }>('[data-token="spacing"]')?.value).toEqual([
 				'default',
-			);
-			expect(element.querySelector<HTMLElement & { value: string }>('[data-token="radius"]')?.value).toBe(
+			]);
+			expect(element.querySelector<HTMLElement & { value: string[] }>('[data-token="radius"]')?.value).toEqual([
 				'default',
-			);
+			]);
 		});
 	});
 

@@ -109,13 +109,13 @@ describe('RuiSelect', () => {
 		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
 		const clear = host.querySelector('[data-select-clear]') as HTMLButtonElement;
 
-		expect(select.value).toBe('cat');
+		expect(select.value).toEqual(['cat']);
 		expect(clear.hidden).toBe(false);
 
 		clear.click();
 		await settled();
 
-		expect(select.value ?? '').toBe('');
+		expect(select.value).toEqual([]);
 		expect(clear.hidden).toBe(true);
 		expect(document.activeElement).toBe(trigger);
 		cleanup();

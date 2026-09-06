@@ -178,10 +178,11 @@ export function RuiTable({
 	label,
 	ariaBusy,
 	selectionMode,
+	value,
 	...props
 }: JsxCustomElementAttributes<RuiTableElement, RuiTableProps>) {
 	return (
-		<rui-table {...props} label={label} ariaBusy={ariaBusy} selectionMode={selectionMode}>
+		<rui-table {...props} value={value} label={label} ariaBusy={ariaBusy} selectionMode={selectionMode}>
 			<div
 				class="rui-table"
 				role="grid"

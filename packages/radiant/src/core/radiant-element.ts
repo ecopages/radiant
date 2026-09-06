@@ -27,6 +27,7 @@ import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 import { getInitialValue } from '../utils/attribute-utils';
 
 export type {
+	PropTransform,
 	ReactiveBindingOption,
 	ReactiveBindingValue,
 	ReactiveBindings,

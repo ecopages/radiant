@@ -64,7 +64,7 @@ describe('RuiCombobox', () => {
 		await settled();
 
 		expect(popup.hidden).toBe(false);
-		expect(combobox.value).toBe('de,it');
+		expect(combobox.value).toEqual(['de', 'it']);
 		cleanup();
 	});
 });

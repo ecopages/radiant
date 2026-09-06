@@ -1,3 +1,6 @@
+import type { PropTransform } from '@ecopages/radiant';
+import { multiValueTransform, numberArrayTransform } from '../shared/multi-value';
+
 export const RUI_CONTROL_ATTR = 'data-rui-control';
 export const RUI_FIELD_MANAGED_ATTR = 'data-rui-field-managed';
 export const RUI_FIELD_LABEL_ATTR = 'data-rui-field-label';
@@ -117,61 +120,42 @@ const booleanValueAdapter: ControlValueAdapter = {
 	},
 };
 
-function readNumberProperty(host: HTMLElement, property: string, attribute: string): number | '' {
-	const value = Reflect.get(host, property);
-	if (typeof value === 'number' && Number.isFinite(value)) {
-		return value;
+function readHostValue<T>(host: HTMLElement, transform: PropTransform<T>): T {
+	const value = Reflect.get(host, 'value');
+	if (value !== undefined && transform.fromProperty) {
+		return transform.fromProperty(value);
 	}
-	const raw = host.getAttribute(attribute);
-	return raw == null || raw === '' ? '' : Number(raw);
+	if (transform.fromAttribute) {
+		return transform.fromAttribute(host.getAttribute('value'));
+	}
+	return value as T;
 }
 
-function isRangeSlider(host: HTMLElement): boolean {
-	const variant = Reflect.get(host, 'variant');
-	return variant === 'range' || host.getAttribute('variant') === 'range';
+function writeHostValue(host: HTMLElement, value: unknown): void {
+	Reflect.set(host, 'value', value);
 }
+
+const stringArrayValueAdapter: ControlValueAdapter = {
+	read: (host) => readHostValue(host, multiValueTransform),
+	write: writeHostValue,
+};
 
 const sliderValueAdapter: ControlValueAdapter = {
-	read: (host) => {
-		if (isRangeSlider(host)) {
-			return [
-				readNumberProperty(host, 'rangeMin', 'range-min'),
-				readNumberProperty(host, 'rangeMax', 'range-max'),
-			];
-		}
-		return numberValueAdapter.read(host);
-	},
-	write: (host, value) => {
-		if (Array.isArray(value) && value.length >= 2) {
-			host.setAttribute('variant', 'range');
-			if ('variant' in host) {
-				Reflect.set(host, 'variant', 'range');
-			}
-			host.setAttribute('range-min', String(value[0]));
-			host.setAttribute('range-max', String(value[1]));
-			if ('rangeMin' in host) {
-				Reflect.set(host, 'rangeMin', value[0]);
-			}
-			if ('rangeMax' in host) {
-				Reflect.set(host, 'rangeMax', value[1]);
-			}
-			return;
-		}
-		numberValueAdapter.write(host, value);
-	},
+	read: (host) => readHostValue(host, numberArrayTransform),
+	write: writeHostValue,
 };
 
 const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
 	['rui-checkbox', booleanValueAdapter],
 	['rui-switch', booleanValueAdapter],
-	['rui-combobox', stringValueAdapter],
+	['rui-combobox', stringArrayValueAdapter],
 	['rui-date-field', stringValueAdapter],
 	['rui-date-range-picker', stringValueAdapter],
-	['rui-select', stringValueAdapter],
+	['rui-select', stringArrayValueAdapter],
 	['rui-radio-group', stringValueAdapter],
-	['rui-checkbox-group', stringValueAdapter],
-	['rui-listbox', stringValueAdapter],
-	['rui-tag-group', stringValueAdapter],
+	['rui-checkbox-group', stringArrayValueAdapter],
+	['rui-listbox', stringArrayValueAdapter],
+	['rui-tag-group', stringArrayValueAdapter],
 	['rui-slider', sliderValueAdapter],
 	['rui-knob', numberValueAdapter],
 	['rui-number-field', numberValueAdapter],

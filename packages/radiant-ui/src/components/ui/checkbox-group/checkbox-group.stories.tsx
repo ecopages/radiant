@@ -24,7 +24,7 @@ const meta = {
 	args: {
 		name: 'notifications',
 		label: 'Email notifications',
-		value: '',
+		value: [],
 		disabled: false,
 		orientation: 'vertical',
 		options: defaultOptions,
@@ -61,13 +61,13 @@ export const Default: Story = {
 			await expect(host).toHaveAttribute('value', 'security');
 		});
 
-		await step('a rui-change event carries the serialized value', async () => {
-			const emissions: string[] = [];
+		await step('a rui-change event carries the selected values', async () => {
+			const emissions: string[][] = [];
 			host.addEventListener('rui-change', (event) =>
-				emissions.push((event as CustomEvent<{ value: string }>).detail.value),
+				emissions.push((event as CustomEvent<{ value: string[] }>).detail.value),
 			);
 			await userEvent.click(checkboxes[2]);
-			await expect(emissions).toEqual(['security,marketing']);
+			await expect(emissions).toEqual([['security', 'marketing']]);
 		});
 	},
 };

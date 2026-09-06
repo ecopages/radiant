@@ -30,7 +30,7 @@ export const config = {
 
 ## Usage
 
-Compose header, body, columns, and rows as light-DOM children. The table owns keyboard focus, selection, and sort state; your app owns the collection and updates it after `rui-sort-change`.
+Compose header, body, columns, and rows as light-DOM children. The table owns keyboard focus, selection, and sort state; your app owns the collection and updates it after `rui-sort-change`. Selected row ids live on `value` as `string[]`; the HTML attribute is comma-separated. JSX may pass a string or an array. `rui-change` emits `{ value: string[] }`.
 
 ```tsx
 import {
@@ -120,7 +120,7 @@ Set `selectionMode="multiple"` and compose `RuiTableSelectionCell` in the header
 | `label` | `string` | `''` | Accessible name for the grid. |
 | `aria-busy` | `'true'` · `'false'` | `'false'` | Whether the collection is updating. |
 | `selection-mode` | `none` · `single` · `multiple` | `none` | Row selection mode. |
-| `value` | `string` | `''` | Selected row ids (comma-separated for multiple). |
+| `value` | `string` | omitted | Comma-separated selected row ids. Empty selection removes the attribute. The JS property is `string[]`. |
 | `sort-column` | `string` | `''` | Active sortable column id. |
 | `sort-direction` | `ascending` · `descending` | `ascending` | Active sort direction. |
 
@@ -143,7 +143,7 @@ Nested hosts: `rui-checkbox` with `data-table-select-row` or `data-table-select-
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value: string }` | Selected row ids changed. |
+| `rui-change` | `{ value: string[] }` | Selected row ids changed. |
 | `rui-sort-change` | `{ column, direction }` | Sort column or direction changed. |
 | `rui-row-action` | `{ rowId: string }` | Actionable row activated (Enter / double-click). |
 

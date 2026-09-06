@@ -6,9 +6,7 @@ describe('resolveSliderValues', () => {
 	it('clamps a single thumb', () => {
 		expect(
 			resolveSliderValues({
-				value: 150,
-				rangeMin: 25,
-				rangeMax: 75,
+				values: [150],
 				min: 0,
 				max: 100,
 				step: 1,
@@ -16,13 +14,10 @@ describe('resolveSliderValues', () => {
 		).toEqual([100]);
 	});
 
-	it('orders inverted range thumbs', () => {
+	it('treats a two-value array as range without variant', () => {
 		expect(
 			resolveSliderValues({
-				variant: 'range',
-				value: 50,
-				rangeMin: 80,
-				rangeMax: 20,
+				values: [80, 20],
 				min: 0,
 				max: 100,
 				step: 1,
@@ -34,9 +29,7 @@ describe('resolveSliderValues', () => {
 		expect(
 			resolveSliderValues({
 				variant: 'range',
-				value: 50,
-				rangeMin: 40,
-				rangeMax: 45,
+				values: [40, 45],
 				min: 0,
 				max: 100,
 				step: 1,
@@ -53,13 +46,9 @@ describe('formatSliderReadout', () => {
 });
 
 describe('seedSliderView', () => {
-	it('prefers the values tuple over rangeMin/rangeMax', () => {
+	it('uses a two-value array as the range', () => {
 		const seed = seedSliderView({
-			variant: 'range',
-			values: [10, 90],
-			value: 50,
-			rangeMin: 25,
-			rangeMax: 75,
+			value: [10, 90],
 			min: 0,
 			max: 100,
 			step: 1,
@@ -68,6 +57,20 @@ describe('seedSliderView', () => {
 		expect(seed.committed).toEqual([10, 90]);
 		expect(seed.isRange).toBe(true);
 		expect(seed.readoutText).toBe('10 – 90');
+		expect(seed.variant).toBe('range');
+	});
+
+	it('seeds the default range pair from variant when value is omitted', () => {
+		const seed = seedSliderView({
+			variant: 'range',
+			min: 0,
+			max: 100,
+			step: 1,
+		});
+
+		expect(seed.committed).toEqual([25, 75]);
+		expect(seed.isRange).toBe(true);
+		expect(seed.variant).toBe('range');
 	});
 });
 

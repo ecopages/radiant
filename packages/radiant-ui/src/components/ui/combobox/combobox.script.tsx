@@ -7,12 +7,13 @@ import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHostController } from '../shared/listbox-host-controller';
 import { getListboxOptionLabel, getListboxOptionValue } from '../shared/listbox-option';
 import { ListboxPopoverBehavior } from '../shared/listbox-popover-behavior';
+import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiComboboxSelectionMode = 'single' | 'multiple';
 export type RuiComboboxTriggerKind = 'input' | 'focus' | 'manual';
 
 export type RuiComboboxProps = {
-	value?: string;
+	value?: ViewMultiValue;
 	/** Accessible name when there is no visible `RuiLabel` associated with the input. */
 	label?: string;
 	placeholder?: string;
@@ -28,7 +29,7 @@ export type RuiComboboxProps = {
 	triggerKind?: RuiComboboxTriggerKind;
 };
 
-export type RuiComboboxChangeDetail = { value: string };
+export type RuiComboboxChangeDetail = { value: string[] };
 
 /**
  * `<rui-combobox>` — a combobox with a filterable listbox popup.
@@ -75,14 +76,14 @@ export type RuiComboboxChangeDetail = { value: string };
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/
  *
  * @element rui-combobox
- * @attr {string} value - Comma-separated selected values. Default: `''`.
+ * @attr {string} value - Comma-separated selected values in markup; the property is `string[]`. Default: `[]`.
  * @attr {string} label - Accessible name when there is no visible `RuiLabel`. Default: `''`.
  * @attr {string} placeholder - Placeholder text for the input. Default: `''`.
  * @attr {boolean} disabled - Disable the input and trigger. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Single or multi-select. Default: `single`.
  * @attr {boolean} should-close-on-select - Whether selection closes the popup. Defaults to `true` for single and `false` for multiple.
  * @attr {('input'|'focus'|'manual')} trigger-kind - Controls what opens the listbox. Default: `input`.
- * @fires rui-change - Emitted when an option is selected; detail carries `value`.
+ * @fires rui-change - Emitted when an option is selected; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum tree: `[data-ref="root"]` > `[data-combobox-input]` + `[data-combobox-listbox]`
@@ -90,7 +91,8 @@ export type RuiComboboxChangeDetail = { value: string };
  */
 @customElement('rui-combobox')
 export class RuiCombobox extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) placeholder: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
@@ -370,7 +372,7 @@ export class RuiCombobox extends RadiantElement {
 
 	private clearSelection(): void {
 		const input = this.getInput();
-		const hadValue = this.value !== '';
+		const hadValue = this.value.length > 0;
 		const hadInput = Boolean(input?.value);
 		this.collection.clearValues();
 		if (input) input.value = '';
@@ -378,7 +380,7 @@ export class RuiCombobox extends RadiantElement {
 		this.syncInput();
 		this.collection.syncTagGroup();
 		this.collection.syncOptionSelection();
-		if (hadValue) this.changeEvent.emit({ value: '' });
+		if (hadValue) this.changeEvent.emit({ value: [] });
 		if (hadInput || hadValue) input?.focus();
 	}
 
@@ -515,8 +517,8 @@ export class RuiCombobox extends RadiantElement {
 				const input = this.getInput();
 				if (input && input.value) {
 					input.value = '';
-					this.value = '';
-					this.changeEvent.emit({ value: '' });
+					this.value = [];
+					this.changeEvent.emit({ value: [] });
 					this.syncFilter();
 				}
 			},

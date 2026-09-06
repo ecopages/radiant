@@ -1,7 +1,7 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { applyRovingTabindex } from '@/lib/roving-tabindex';
-import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 import type { RuiCheckbox, RuiCheckboxChangeDetail } from '../checkbox/checkbox.script';
 
 export type RuiTableSelectionMode = 'none' | 'single' | 'multiple';
@@ -11,13 +11,13 @@ export type RuiTableProps = {
 	label?: string;
 	ariaBusy?: 'true' | 'false';
 	selectionMode?: RuiTableSelectionMode;
-	/** Selected row ids. Multiple selections are comma-separated. */
-	value?: string;
+	/** Selected row ids. The attribute is comma-separated. */
+	value?: ViewMultiValue;
 	sortColumn?: string;
 	sortDirection?: RuiTableSortDirection;
 };
 
-export type RuiTableChangeDetail = { value: string };
+export type RuiTableChangeDetail = { value: string[] };
 export type RuiTableSortChangeDetail = { column: string; direction: RuiTableSortDirection };
 export type RuiTableRowActionDetail = { rowId: string };
 
@@ -57,10 +57,10 @@ export type RuiTableRowActionDetail = { rowId: string };
  * @attr {string} label - Accessible name for the table.
  * @attr {('true'|'false')} aria-busy - Whether the collection is currently updating.
  * @attr {('none'|'single'|'multiple')} selection-mode - Row selection mode. Default: `none`.
- * @attr {string} value - Selected row ids, comma-separated for multiple selection.
+ * @attr {string} value - Comma-separated selected row ids in markup; the property is `string[]`. Default: `[]`.
  * @attr {string} sort-column - Active sortable column id.
  * @attr {('ascending'|'descending')} sort-direction - Active sorting direction. Default: `ascending`.
- * @fires rui-change - Emitted after the selected row ids change.
+ * @fires rui-change - Emitted after the selected row ids change; `detail.value` is `string[]`.
  * @fires rui-sort-change - Emitted after a sortable header changes direction.
  * @fires rui-row-action - Emitted when an actionable row is activated.
  *
@@ -73,7 +73,8 @@ export class RuiTable extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, attribute: 'aria-busy', defaultValue: 'false' }) ariaBusy: 'true' | 'false';
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'none' }) selectionMode: RuiTableSelectionMode;
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	value: string[];
 	@prop({ type: String, attribute: 'sort-column', reflect: true, defaultValue: '' }) sortColumn: string;
 	@prop({ type: String, attribute: 'sort-direction', reflect: true, defaultValue: 'ascending' })
 	sortDirection: RuiTableSortDirection;
@@ -160,11 +161,18 @@ export class RuiTable extends RadiantElement {
 	}
 
 	private selectedIds(): string[] {
-		return this.selectionMode === 'multiple' ? parseMultiValue(this.value) : this.value ? [this.value] : [];
+		if (this.selectionMode === 'single') {
+			return this.value.length > 0 ? [this.value[0]] : [];
+		}
+		return this.value;
 	}
 
 	private setSelectedIds(ids: string[]): void {
-		this.value = this.selectionMode === 'multiple' ? serializeMultiValue(ids) : (ids[0] ?? '');
+		if (this.selectionMode === 'single') {
+			this.value = ids.length > 0 ? [ids[0]] : [];
+		} else {
+			this.value = ids;
+		}
 		this.syncSelectionState();
 		this.changeEvent.emit({ value: this.value });
 	}

@@ -3,13 +3,13 @@ import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createRuiIconX } from '@/lib/icons/x';
 import { navigateRovingTabindex } from '@/lib/roving-tabindex';
 import { uniqueId } from '@/lib/unique-id';
-import { parseMultiValue, serializeMultiValue } from '../shared/multi-value';
+import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiTagGroupSelectionMode = 'single' | 'multiple';
 export type RuiTagGroupItem = { value: string; label: string };
 
 export type RuiTagGroupProps = {
-	value?: string;
+	value?: ViewMultiValue;
 	label?: string;
 	disabled?: boolean;
 	selectionMode?: RuiTagGroupSelectionMode;
@@ -17,7 +17,7 @@ export type RuiTagGroupProps = {
 	embedded?: boolean;
 };
 
-export type RuiTagGroupChangeDetail = { value: string };
+export type RuiTagGroupChangeDetail = { value: string[] };
 export type RuiTagGroupRemoveDetail = { value: string };
 
 /**
@@ -55,12 +55,12 @@ export type RuiTagGroupRemoveDetail = { value: string };
  *
  * @see https://react-aria.adobe.com/TagGroup
  * @element rui-tag-group
- * @attr {string} value - Comma-separated selected values.
+ * @attr {string} value - Comma-separated selected values in markup; the property is `string[]`. Default: `[]`.
  * @attr {string} label - Accessible name for the tag list.
  * @attr {boolean} disabled - Disable selection and removal. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Allow one or many selected tags. Default: `multiple`.
  * @attr {boolean} embedded - Disables selection when the parent component owns the selected values. Default: `false`.
- * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is the comma-separated value.
+ * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is `string[]`.
  * @fires rui-remove - Emitted when a tag is removed; `detail.value` is the removed tag's value.
  *
  * @remarks
@@ -72,7 +72,8 @@ export type RuiTagGroupRemoveDetail = { value: string };
  */
 @customElement('rui-tag-group')
 export class RuiTagGroup extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'multiple' })
@@ -97,14 +98,11 @@ export class RuiTagGroup extends RadiantElement {
 	}
 
 	private getSelectedValues(): string[] {
-		if (!this.value) {
-			return [];
-		}
-		return parseMultiValue(this.value);
+		return this.value;
 	}
 
 	private setSelectedValues(values: string[]): void {
-		this.value = serializeMultiValue(values);
+		this.value = values;
 	}
 
 	private getList(): HTMLElement | null {
@@ -204,7 +202,7 @@ export class RuiTagGroup extends RadiantElement {
 			}
 			this.setSelectedValues([...selected]);
 		} else {
-			this.value = tagValue;
+			this.value = [tagValue];
 		}
 
 		this.syncTags();
@@ -256,7 +254,7 @@ export class RuiTagGroup extends RadiantElement {
 	 */
 	setItems(items: RuiTagGroupItem[]): void {
 		this.derivedItems = items;
-		this.value = serializeMultiValue(items.map((item) => item.value));
+		this.value = items.map((item) => item.value);
 	}
 
 	/**

@@ -32,7 +32,7 @@ export const config = {
 
 `<rui-listbox>` is a behavior host: `RuiListboxOption` children stay in parent JSX. The custom element coordinates `aria-selected`, roving tabindex, and `rui-change`. When `embedded` is set, the parent (select or combobox) owns selection and keyboard; the listbox only paints options.
 
-The host `value` is a **comma-separated token string**. JSX may pass a `string` or `string[]`. Commas in the host attribute are delimiters.
+The live `value` property is always a `string[]` (`[]` when nothing is selected). The HTML attribute is those tokens as a comma-separated string. JSX may pass a string or an array; a string is parsed as CSV. `rui-change` emits `{ value: string[] }`. Commas in the attribute are delimiters.
 
 ## Usage
 
@@ -139,7 +139,7 @@ Override at the theme layer (`tokens/presets/colors/*.css`). Embedded listboxes 
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
-| `value` | `string` | `''` | Selected tokens, comma-separated. JSX also accepts `string[]`. |
+| `value` | `string` | omitted | Comma-separated selected tokens. Empty selection removes the attribute. The JS property is `string[]`. |
 | `label` | `string` | `''` | Accessible name for the list. |
 | `disabled` | `boolean` | `false` | Disable all selection. |
 | `selection-mode` | `single` · `multiple` | `single` | Single or multiple selection. |
@@ -161,7 +161,7 @@ Do not set `aria-selected` or `tabIndex` on options. Nested hosts: none.
 
 | Event | Detail | Description |
 | --- | --- | --- |
-| `rui-change` | `{ value }` | Fired when an option is selected. `value` is the host token string. |
+| `rui-change` | `{ value: string[] }` | Fired when an option is selected. |
 
 ### View helpers
 
