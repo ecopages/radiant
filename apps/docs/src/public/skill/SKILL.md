@@ -75,14 +75,14 @@ open = false;
 
 Read only the modules relevant to the task. Each file is one level deep from this entry.
 
-| Module                                                     | Read when                                                                             |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, derived `.map`, class/style                     |
-| [reference/hosts.md](reference/hosts.md)                   | Element vs controller, public props vs internal bindings types                        |
-| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@state` / `@signal`, `@bindTo`, `@query`, `@onEvent`, `@onUpdated`         |
-| [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`                             |
-| [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, render scope                                       |
-| [reference/authoring.md](reference/authoring.md)           | Authoring rules, review checklist, output shape                                       |
+| Module                                                     | Read when                                                                     |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [reference/reactive-model.md](reference/reactive-model.md) | Bindings vs plain reads vs `@bindTo`, derived `.map`, class/style             |
+| [reference/hosts.md](reference/hosts.md)                   | Element vs controller, public props vs internal bindings types                |
+| [reference/decorators.md](reference/decorators.md)         | `@prop` / `@state` / `@signal`, `@bindTo`, `@query`, `@onEvent`, `@onUpdated` |
+| [reference/context.md](reference/context.md)               | Provide/consume, `@contextSelector` vs `@onContextUpdate`                     |
+| [reference/ssr.md](reference/ssr.md)                       | Server entrypoints, hydrate modes, render scope                               |
+| [reference/authoring.md](reference/authoring.md)           | Authoring rules, review checklist, output shape                               |
 
 ## Critical rules
 

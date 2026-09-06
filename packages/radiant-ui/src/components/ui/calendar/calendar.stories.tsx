@@ -1,12 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import {
-	addDaysIso,
-	addMonthsIso,
-	calendarDayButton,
-	endOfMonthIso,
-	monthDayIso,
-	todayIso,
-} from '@sb/calendar-dates';
+import { addDaysIso, addMonthsIso, calendarDayButton, endOfMonthIso, monthDayIso, todayIso } from '@sb/calendar-dates';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { RuiCalendar } from './calendar';
 import { RuiCalendar as RuiCalendarElement } from './calendar.script';
