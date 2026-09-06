@@ -172,6 +172,10 @@ export function getKeyedChildren(children: readonly unknown[]): KeyedJsxValue[] 
  * Returns the value materialised as a plain array when it is an iterable,
  * otherwise returns `undefined`.
  *
+ * @remarks Callers that only need to know whether a value is iterable must use
+ * {@link isIterableRenderable}. This helper consumes the iterator, so using it
+ * to classify would empty one-shot generators before the update pass reads them.
+ *
  * @param value Value to inspect.
  */
 export function getIterableChildren(value: unknown): unknown[] | undefined {

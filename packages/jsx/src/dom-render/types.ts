@@ -59,8 +59,20 @@ export type ChildTemplatePart = {
 	type: 'child';
 };
 
+/**
+ * Static metadata for a child binding that maps to an element's character data.
+ *
+ * Used for `textarea`, `title`, `style`, and `script`, where HTML comments are not
+ * parsed as comment nodes and therefore cannot bookend a child range.
+ */
+export type TextContentTemplatePart = {
+	index: number;
+	path: number[];
+	type: 'text-content';
+};
+
 /** Union of all static template part descriptors produced during compilation. */
-export type TemplatePart = AttributeTemplatePart | ChildTemplatePart;
+export type TemplatePart = AttributeTemplatePart | ChildTemplatePart | TextContentTemplatePart;
 
 /**
  * Runtime state for a dynamic attribute binding attached to a live DOM element.
@@ -110,8 +122,24 @@ export type LiveChildPart = {
 	type: 'child';
 };
 
+/**
+ * Runtime state for a child binding that writes an element's character data.
+ *
+ * `committedText` is the last stringified snapshot for this slot so multiple
+ * text-content parts on the same element can concatenate without rereading DOM.
+ */
+export type LiveTextContentPart = {
+	committedText: string;
+	element: Element;
+	index: number;
+	source?: ReactiveChildSource;
+	subscriptionSerial: number;
+	type: 'text-content';
+	unsubscribe?: () => void;
+};
+
 /** Union of all live template part state records attached to a mounted template instance. */
-export type LiveTemplatePart = LiveAttributePart | LiveChildPart;
+export type LiveTemplatePart = LiveAttributePart | LiveChildPart | LiveTextContentPart;
 
 export type ReactiveAttributeSource = ReactiveChildSource;
 

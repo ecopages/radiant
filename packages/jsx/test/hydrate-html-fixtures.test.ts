@@ -12,6 +12,13 @@ import {
 	HYDRATE_METRIC_HTML,
 	HYDRATE_NESTED_SVG_ICON_HTML,
 	HYDRATE_TODO_ICON_BUTTON_HTML,
+	HYDRATE_ITERABLE_NATIVE_CLICK_HTML,
+	HYDRATE_TEXTAREA_HTML,
+	HYDRATE_TEXTAREA_ESCAPED_HTML,
+	HYDRATE_TITLE_HTML,
+	HYDRATE_STYLE_HTML,
+	HYDRATE_SCRIPT_HTML,
+	HYDRATE_KEYED_INPUTS_HTML,
 	PLAIN_BUTTON_ALPHA_HTML,
 	TRUE_CHILDREN_HTML,
 } from './fixtures/hydrate-html.ts';
@@ -198,5 +205,50 @@ describe('hydrate HTML fixtures', () => {
 		});
 
 		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_TODO_ICON_BUTTON_HTML);
+	});
+
+	test('HYDRATE_ITERABLE_NATIVE_CLICK_HTML matches renderToString', () => {
+		const tree = [
+			jsx('button', { 'on-native:click': () => undefined, children: 'Alpha' }),
+			jsx('button', { 'on-native:click': () => undefined, children: 'Beta' }),
+		];
+
+		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_ITERABLE_NATIVE_CLICK_HTML);
+	});
+
+	test('HYDRATE_TEXTAREA_HTML matches renderToString', () => {
+		expect(renderToString(jsx('textarea', { id: 'draft', children: 'hello' }), { mode: 'hydrate' })).toBe(
+			HYDRATE_TEXTAREA_HTML,
+		);
+	});
+
+	test('HYDRATE_TEXTAREA_ESCAPED_HTML matches renderToString', () => {
+		expect(renderToString(jsx('textarea', { id: 'draft', children: 'a < b & "c"' }), { mode: 'hydrate' })).toBe(
+			HYDRATE_TEXTAREA_ESCAPED_HTML,
+		);
+	});
+
+	test('HYDRATE_TITLE_HTML matches renderToString', () => {
+		expect(renderToString(jsx('title', { id: 'page', children: 'hello' }), { mode: 'hydrate' })).toBe(
+			HYDRATE_TITLE_HTML,
+		);
+	});
+
+	test('HYDRATE_STYLE_HTML matches renderToString', () => {
+		expect(renderToString(jsx('style', { id: 'theme', children: 'hello' }), { mode: 'hydrate' })).toBe(
+			HYDRATE_STYLE_HTML,
+		);
+	});
+
+	test('HYDRATE_SCRIPT_HTML matches renderToString', () => {
+		expect(renderToString(jsx('script', { type: 'application/json', children: 'hello' }), { mode: 'hydrate' })).toBe(
+			HYDRATE_SCRIPT_HTML,
+		);
+	});
+
+	test('HYDRATE_KEYED_INPUTS_HTML matches renderToString', () => {
+		const tree = ['a', 'b'].map((id) => jsx('input', { key: id, id, type: 'text' }));
+
+		expect(renderToString(tree, { mode: 'hydrate' })).toBe(HYDRATE_KEYED_INPUTS_HTML);
 	});
 });
