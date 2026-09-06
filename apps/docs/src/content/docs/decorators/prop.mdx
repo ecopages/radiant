@@ -81,11 +81,42 @@ Prefer `@ecopages/radiant/controller-registry` for `startControllers(...)` when 
 
 | Option | Type | Description |
 | :----- | :--- | :---------- |
-| `type` | `String \| Number \| Boolean \| Object \| Array` | Attribute conversion strategy. |
+| `type` | `String \| Number \| Boolean \| Object \| Array` | Default attribute conversion strategy. `Array` and `Object` use JSON. |
 | `reflect` | `boolean` | Reflect property changes back to the host attribute. |
 | `attribute` | `string` | Override the attribute name. |
-| `defaultValue` | `T` | Default property value when the attribute is absent. |
+| `defaultValue` | `T` | Default property value when the attribute is absent. Pass a fresh array or object on each decorator call. |
 | `bind` | `boolean \| string` | Expose a JSX binding companion such as `$count` or a custom binding name. |
+| `transform` | `PropTransform<T>` | Override attribute conversion and optional JS writes. |
+
+## Custom converters
+
+Default `type: Array` / `type: Object` attributes are JSON (`value='["a","b"]'`). Use `transform` when the markup protocol is different, such as comma-separated tokens:
+
+```typescript
+import { RadiantElement, customElement, prop, type PropTransform } from '@ecopages/radiant';
+
+const csvStrings: PropTransform<string[]> = {
+	fromAttribute: (value) => (value ? value.split(',').map((token) => token.trim()).filter(Boolean) : []),
+	toAttribute: (values) => (values.length > 0 ? values.join(',') : null),
+	fromProperty: (value) => {
+		if (Array.isArray(value)) return value.map(String);
+		if (typeof value === 'string') return value ? value.split(',') : [];
+		return [];
+	},
+};
+
+@customElement('token-select')
+export class TokenSelect extends RadiantElement {
+	@prop({ type: Array, reflect: true, transform: csvStrings, defaultValue: [] })
+	value: string[];
+}
+```
+
+- `fromAttribute` runs when the HTML attribute is present, including first connect.
+- `fromProperty` runs on JS and JSX assignment, including values set before upgrade.
+- `toAttribute` returning `null` or `''` **omits** the reflected attribute. That is how an empty selection stays off the host tag.
+
+Without `transform`, `element.value = ['a', 'b']` still works as a JS property write; reflection would stringify JSON, not CSV.
 
 ## How It Works
 

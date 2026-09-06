@@ -154,6 +154,104 @@ describe('@prop', () => {
 			document.body.appendChild(customElement);
 			expect(customElement.names).toEqual(['Frank']);
 		});
+
+		test('reflects JSON array attributes without a transform', async () => {
+			@customElement('my-reactive-array-json-attr')
+			class MyReactiveArrayJsonAttr extends RadiantElement {
+				@prop({ type: Array, reflect: true, defaultValue: [] }) names: string[];
+			}
+
+			const host = document.createElement('my-reactive-array-json-attr') as MyReactiveArrayJsonAttr;
+			host.setAttribute('names', '["John","Jane"]');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			expect(host.names).toEqual(['John', 'Jane']);
+			host.names = ['Zoe'];
+			expect(host.getAttribute('names')).toBe('["Zoe"]');
+		});
+	});
+
+	describe('transform', () => {
+		const commaSeparatedTransform = {
+			fromAttribute: (value: string | null) =>
+				value
+					? value
+							.split(',')
+							.map((item) => item.trim())
+							.filter(Boolean)
+					: [],
+			toAttribute: (values: string[]) => (values.length > 0 ? values.join(',') : null),
+			fromProperty: (value: unknown) => {
+				if (Array.isArray(value)) {
+					return value.map(String);
+				}
+				if (typeof value === 'string') {
+					return value
+						? value
+								.split(',')
+								.map((item) => item.trim())
+								.filter(Boolean)
+						: [];
+				}
+				return [];
+			},
+		};
+
+		@customElement('my-prop-transform-array')
+		class MyPropTransformArray extends RadiantElement {
+			@prop({ type: Array, reflect: true, defaultValue: [], transform: commaSeparatedTransform })
+			value: string[];
+		}
+
+		test('parses comma-separated attributes before connect', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			host.setAttribute('value', 'a,b');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			expect(host.value).toEqual(['a', 'b']);
+		});
+
+		test('reflects array assignments as comma-separated attributes', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			host.value = ['a', 'b'];
+			expect(host.getAttribute('value')).toBe('a,b');
+		});
+
+		test('coerces string property writes through fromProperty', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			Reflect.set(host, 'value', 'a,b');
+			expect(host.value).toEqual(['a', 'b']);
+			expect(host.getAttribute('value')).toBe('a,b');
+		});
+
+		test('removes the attribute when the transformed value is empty', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			host.setAttribute('value', 'a');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			host.value = [];
+			expect(host.value).toEqual([]);
+			expect(host.hasAttribute('value')).toBe(false);
+		});
+
+		test('parses attribute removal through fromAttribute(null)', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			host.setAttribute('value', 'a,b');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			host.removeAttribute('value');
+			expect(host.value).toEqual([]);
+		});
 	});
 
 	describe('reflect', () => {

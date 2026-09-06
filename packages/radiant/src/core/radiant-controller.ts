@@ -200,17 +200,18 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * structured values such as arrays or objects directly on `controller.host`.
 	 */
 	public createReactiveProp<T = unknown>(propertyName: string, options: ReactivePropertyOptions<T>): void {
-		const { type, defaultValue, bind } = options;
+		const { type, defaultValue, bind, transform } = options;
 
 		validateReactivePropertyDefault(type, defaultValue);
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
 		const initialHostValue = hostPropertyBridge.getInitialValue();
-		const initialValue = (initialHostValue ?? defaultValue ?? defaultValueForType(type)) as T;
+		const rawInitial = initialHostValue ?? defaultValue ?? defaultValueForType(type);
+		const initialValue = (transform?.fromProperty ? transform.fromProperty(rawInitial) : rawInitial) as T;
 
 		const signal = this.reactiveHost.createReactiveMember(propertyName, initialValue);
 
-		this.reactiveHost.defineReactiveAccessor(propertyName, { bind, signal });
+		this.reactiveHost.defineReactiveAccessor(propertyName, { bind, signal, fromProperty: transform?.fromProperty });
 
 		hostPropertyBridge.install();
 

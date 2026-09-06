@@ -16,7 +16,7 @@
 
 ## Reactive data
 
-- `@prop(...)` — public custom-element API: attribute conversion, reflection, optional bindings
+- `@prop(...)` — public custom-element API: attribute conversion, reflection, optional bindings. Pass `transform` to override default converters (`type: Array` is JSON). `fromProperty` normalizes JS/JSX writes; `toAttribute` returning `null` or `''` omits the reflected attribute.
 - `@state` — internal mutable UI state
 - `@signal` or `@signal(options)` — signal-backed host state / signal interop
 
