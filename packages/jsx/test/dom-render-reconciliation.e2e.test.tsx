@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import type { JsxRenderable } from '../src/index.ts';
 import {
 	HYDRATE_ADJACENT_FIELDS_HTML,
 	HYDRATE_BUTTON_ALPHA_HTML,
@@ -1275,6 +1276,107 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		root.unmount();
 
 		expect(subscribers.size).toBe(0);
+	});
+
+	test('hydrates a reactive root snapshot and unsubscribes on unmount', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const viewSubscribers = new Set<(value: JsxRenderable) => void>();
+		const childSubscribers = new Set<(value: number) => void>();
+		let count = 15;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				childSubscribers.add(notify);
+				return () => {
+					childSubscribers.delete(notify);
+				};
+			},
+		});
+		const view = createSubscribableJsxValue({
+			getValue: () =>
+				jsxs('p', {
+					class: 'component-metric',
+					children: ['Count: ', boundCount],
+				}),
+			subscribe: (notify) => {
+				viewSubscribers.add(notify);
+				return () => {
+					viewSubscribers.delete(notify);
+				};
+			},
+		});
+
+		container.innerHTML = HYDRATE_METRIC_HTML;
+		const paragraph = container.querySelector('p');
+
+		root.hydrate(view);
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph?.textContent).toBe('Count: 15');
+		expect(viewSubscribers.size).toBe(1);
+		expect(childSubscribers.size).toBe(1);
+
+		count = 16;
+		for (const subscriber of childSubscribers) {
+			subscriber(count);
+		}
+		await Promise.resolve();
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph?.textContent).toBe('Count: 16');
+
+		const nextChildSubscribers = new Set<(value: number) => void>();
+		let nextCount = 20;
+		const nextBoundCount = createSubscribableJsxValue({
+			getValue: () => nextCount,
+			subscribe: (notify) => {
+				nextChildSubscribers.add(notify);
+				return () => {
+					nextChildSubscribers.delete(notify);
+				};
+			},
+		});
+
+		for (const subscriber of viewSubscribers) {
+			subscriber(
+				jsxs('p', {
+					class: 'component-metric',
+					children: ['Count: ', nextBoundCount],
+				}),
+			);
+		}
+		await Promise.resolve();
+
+		expect(childSubscribers.size).toBe(0);
+		expect(nextChildSubscribers.size).toBe(1);
+		expect(viewSubscribers.size).toBe(1);
+		expect(container.querySelector('p')?.textContent).toBe('Count: 20');
+
+		root.unmount();
+
+		expect(viewSubscribers.size).toBe(0);
+		expect(childSubscribers.size).toBe(0);
+		expect(nextChildSubscribers.size).toBe(0);
+	});
+
+	test('hydrating a non-template root falls back to a client render', async () => {
+		const [{ createRoot }] = await Promise.all([loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		container.innerHTML = HYDRATE_BUTTON_ALPHA_HTML;
+		const serverButton = container.querySelector('button');
+
+		root.hydrate('hello');
+
+		expect(container.textContent).toBe('hello');
+		expect(container.querySelector('button')).toBeNull();
+		expect(serverButton && container.contains(serverButton)).toBe(false);
 	});
 
 	test('hydrated fragment subscribable child values patch without rerendering the parent tree', async () => {
