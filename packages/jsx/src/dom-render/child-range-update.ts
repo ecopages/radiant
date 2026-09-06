@@ -142,8 +142,9 @@ function updateSingleChildContent(
 }
 
 /**
- * @remarks Uses {@link isIterableRenderable} rather than materializing the value, so
- * one-shot iterators still have items when the iterable update path reads them.
+ * @remarks Uses {@link isIterableRenderable} rather than materializing the value.
+ * {@link getIterableChildren} then snapshots one-shot iterators so later hydrate
+ * counts can reuse the same children.
  */
 function classifyChildValue(value: unknown): 'empty' | 'iterable' | 'template' | 'text' | 'nodes' {
 	if (isIterableRenderable(value)) return 'iterable';

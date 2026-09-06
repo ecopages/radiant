@@ -15,6 +15,7 @@ import { isIterableRenderable, isTemplateResultLike } from '../types/renderable-
 import type { JsxRenderable, TemplateResultLike } from '../types/index.ts';
 import { shouldSkipHydrationSubtree } from './hydration-subtree-policy.ts';
 import type { BindingKind } from '../types/renderable-types.ts';
+import { materializeIterableChildren } from './iterable-snapshot.ts';
 
 /** Attribute prefix used for emitted SSR hydration markers. */
 export const ATTRIBUTE_BINDING_PREFIX = 'data-radiant-jsx-bind-';
@@ -106,7 +107,7 @@ export function countHydrationMarkers(value: JsxRenderable): number {
 	if (isIterableRenderable(value)) {
 		let total = 0;
 
-		for (const child of value) {
+		for (const child of materializeIterableChildren(value)) {
 			total += countHydrationMarkers(child as JsxRenderable);
 		}
 
