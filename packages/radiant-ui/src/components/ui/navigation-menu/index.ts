@@ -9,4 +9,9 @@ export {
 	type RuiNavigationMenuLinkProps,
 	type RuiNavigationMenuPanelProps,
 } from './navigation-menu';
-export { RuiNavigationMenu as RuiNavigationMenuElement, type RuiNavigationMenuProps } from './navigation-menu.script';
+export {
+	NAVIGATION_MENU_DEFAULT_CLOSE_DELAY,
+	NAVIGATION_MENU_DEFAULT_HOVER_DELAY,
+	RuiNavigationMenu as RuiNavigationMenuElement,
+	type RuiNavigationMenuProps,
+} from './navigation-menu.script';

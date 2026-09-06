@@ -12,7 +12,8 @@
 /** Overlay demos need overflow so fixed/absolute chrome is not clipped. */
 .docs-story:has(.playground-toast-stage),
 .docs-story:has(.playground-menubar),
-.docs-story:has(.playground-menu-button-demo) {
+.docs-story:has(.playground-menu-button-demo),
+.docs-story:has(.playground-navigation-menu) {
 	overflow: visible;
 }
 
@@ -151,7 +152,7 @@ radiant-docs-canvas {
 }
 
 .playground-navigation-menu {
-	@apply w-full max-w-5xl;
+	@apply flex min-h-48 w-full max-w-5xl items-start;
 }
 
 .playground-toc-demo {
