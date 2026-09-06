@@ -1,5 +1,6 @@
 import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
 import {
 	createNumericRange,
 	formatNumericValue,
@@ -16,9 +17,7 @@ export type RuiSliderThumb = 'value' | 'min' | 'max';
 export type RuiSliderProps = {
 	variant?: RuiSliderVariant;
 	orientation?: RuiSliderOrientation;
-	value?: number;
-	rangeMin?: number;
-	rangeMax?: number;
+	value?: ViewNumericValue;
 	min?: number;
 	max?: number;
 	step?: number;
@@ -38,7 +37,7 @@ export type RuiSliderProps = {
 	valueTitle?: boolean;
 };
 
-export type RuiSliderChangeDetail = { value: number } | { values: [number, number] };
+export type RuiSliderChangeDetail = { value: number[] };
 
 /**
  * Host `@prop` defaults. The view reuses these so SSR readout and track
@@ -74,22 +73,39 @@ function constrainSliderPair(
 	return [nextLow, nextHigh];
 }
 
+/** Normalizes view-level slider value inputs into a numeric array. */
+export function normalizeSliderInputValues(options: {
+	variant?: RuiSliderVariant;
+	value?: ViewNumericValue;
+}): number[] {
+	if (Array.isArray(options.value)) {
+		return [...options.value];
+	}
+	if (typeof options.value === 'number') {
+		return [options.value];
+	}
+	if (options.variant === 'range') {
+		return [SLIDER_DEFAULT_RANGE_MIN, SLIDER_DEFAULT_RANGE_MAX];
+	}
+	return [SLIDER_DEFAULT_VALUE];
+}
+
 /** Clamped values the view stamps for SSR and the host paints from props. */
 export function resolveSliderValues(options: {
 	variant?: RuiSliderVariant;
-	value: number;
-	rangeMin: number;
-	rangeMax: number;
+	values: number[];
 	min: number;
 	max: number;
 	step: number;
 	minDistance?: number;
 }): number[] {
 	const range = createNumericRange(options.min, options.max, options.step);
-	if (options.variant === 'range') {
-		return constrainSliderPair(range, options.rangeMin, options.rangeMax, options.minDistance ?? 0);
+	if (options.variant === 'range' || options.values.length >= 2) {
+		const low = options.values[0] ?? SLIDER_DEFAULT_RANGE_MIN;
+		const high = options.values[1] ?? SLIDER_DEFAULT_RANGE_MAX;
+		return constrainSliderPair(range, low, high, options.minDistance ?? 0);
 	}
-	return [range.clamp(options.value)];
+	return [range.clamp(options.values[0] ?? SLIDER_DEFAULT_VALUE)];
 }
 
 /** Formats the live readout, tooltips, and `aria-valuetext`. */
@@ -104,10 +120,7 @@ export function formatSliderReadout(values: number[], step: number, valuePrecisi
 /** Clamped values, readout, and track CSS vars the view stamps for SSR. */
 export function seedSliderView(options: {
 	variant?: RuiSliderVariant;
-	values?: [number, number];
-	value?: number;
-	rangeMin?: number;
-	rangeMax?: number;
+	value?: ViewNumericValue;
 	min?: number;
 	max?: number;
 	step?: number;
@@ -118,38 +131,30 @@ export function seedSliderView(options: {
 	const min = options.min ?? 0;
 	const max = options.max ?? SLIDER_DEFAULT_MAX;
 	const step = options.step ?? 1;
-	const value = options.value ?? SLIDER_DEFAULT_VALUE;
 	const minDistance = options.minDistance ?? 0;
-	const rangeMin = options.rangeMin ?? SLIDER_DEFAULT_RANGE_MIN;
-	const rangeMax = options.rangeMax ?? SLIDER_DEFAULT_RANGE_MAX;
-	const resolvedRangeMin = options.values?.[0] ?? rangeMin;
-	const resolvedRangeMax = options.values?.[1] ?? rangeMax;
+	const inputValues = normalizeSliderInputValues(options);
 	const committed = resolveSliderValues({
 		variant,
-		value,
-		rangeMin: resolvedRangeMin,
-		rangeMax: resolvedRangeMax,
+		values: inputValues,
 		min,
 		max,
 		step,
 		minDistance,
 	});
 	const range = createNumericRange(min, max, step);
+	const resolvedVariant: RuiSliderVariant = committed.length === 2 ? 'range' : 'single';
 
 	return {
-		variant,
+		variant: resolvedVariant,
 		min,
 		max,
 		step,
-		value,
 		minDistance,
-		resolvedRangeMin,
-		resolvedRangeMax,
 		committed,
 		readoutPrecision: resolveValuePrecision(step, options.valuePrecision),
 		readoutText: formatSliderReadout(committed, step, options.valuePrecision),
 		trackStyle: sliderTrackCssVars(committed, range),
-		isRange: variant === 'range',
+		isRange: committed.length === 2,
 		valuePrecision:
 			typeof options.valuePrecision === 'number' && Number.isFinite(options.valuePrecision)
 				? options.valuePrecision
@@ -222,9 +227,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  *
  * @attr {('single'|'range')} variant - Single-thumb or dual-thumb range. Default: `single`.
  * @attr {('horizontal'|'vertical')} orientation - Track axis. Default: `horizontal`.
- * @attr {number} value - Selected value (single mode). Reflects to markup. Default: `50`.
- * @attr {number} range-min - Lower thumb value (range mode). Reflects to markup. Default: `25`.
- * @attr {number} range-max - Upper thumb value (range mode). Reflects to markup. Default: `75`.
+ * @attr {string} value - Comma-separated thumb values (`50` or `25,75`). Property is `number[]`.
  * @attr {number} min - Range minimum. Default: `0`.
  * @attr {number} max - Range maximum. Default: `100`.
  * @attr {number} step - Arrow-key and pointer snap interval. Default: `1`.
@@ -258,8 +261,8 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @cssprop --rui-slider-focus-ring - Focus ring color. Default: `--focus-ring`.
  * @cssprop --rui-slider-focus-ring-width - Focus ring width. Default: `2px`.
  *
- * @fires rui-change - Emitted when the committed value changes; `detail.value` (single) or
- *   `detail.values` `[min, max]` (range). Pointer drags emit on each distinct snap.
+ * @fires rui-change - Emitted when the committed value changes; `detail.value` is `number[]`
+ *   (`[50]` single, `[25, 75]` range). Pointer drags emit on each distinct snap.
  *
  * @remarks
  * `valuePrecision` formats the readout only. Committed values stay on the stepped model;
@@ -270,11 +273,8 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
 export class RuiSlider extends RadiantElement {
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
-	@prop({ type: Number, reflect: true, defaultValue: SLIDER_DEFAULT_VALUE }) value: number;
-	@prop({ type: Number, reflect: true, attribute: 'range-min', defaultValue: SLIDER_DEFAULT_RANGE_MIN })
-	rangeMin: number;
-	@prop({ type: Number, reflect: true, attribute: 'range-max', defaultValue: SLIDER_DEFAULT_RANGE_MAX })
-	rangeMax: number;
+	@prop({ type: Array, reflect: true, defaultValue: [SLIDER_DEFAULT_VALUE], transform: numberArrayTransform })
+	value: number[];
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: SLIDER_DEFAULT_MAX }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
@@ -307,14 +307,30 @@ export class RuiSlider extends RadiantElement {
 	private lastEmitted = '';
 
 	protected override onConnected(): void {
+		this.adoptLegacyRangeAttributes();
 		this.syncChrome();
 		this.syncValues(this.committedValues());
 	}
 
+	/** Reads authored `range-min` / `range-max` once when `value` is absent. */
+	private adoptLegacyRangeAttributes(): void {
+		if (this.hasAttribute('value')) {
+			return;
+		}
+
+		const rangeMinAttr = this.getAttribute('range-min');
+		const rangeMaxAttr = this.getAttribute('range-max');
+		if (rangeMinAttr === null && rangeMaxAttr === null) {
+			return;
+		}
+
+		const low = rangeMinAttr !== null ? Number(rangeMinAttr) : SLIDER_DEFAULT_RANGE_MIN;
+		const high = rangeMaxAttr !== null ? Number(rangeMaxAttr) : SLIDER_DEFAULT_RANGE_MAX;
+		this.value = [low, high];
+	}
+
 	@onUpdated([
 		'value',
-		'rangeMin',
-		'rangeMax',
 		'min',
 		'max',
 		'step',
@@ -339,7 +355,7 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private get isRange(): boolean {
-		return this.variant === 'range';
+		return this.liveValues().length === 2;
 	}
 
 	private get isVertical(): boolean {
@@ -387,9 +403,7 @@ export class RuiSlider extends RadiantElement {
 	private committedValues(): number[] {
 		return resolveSliderValues({
 			variant: this.variant,
-			value: this.value,
-			rangeMin: this.rangeMin,
-			rangeMax: this.rangeMax,
+			values: this.value,
 			min: this.min,
 			max: this.max,
 			step: this.step,
@@ -402,7 +416,7 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private changeDetail(values: number[]): RuiSliderChangeDetail {
-		return values.length === 2 ? { values: [values[0], values[1]] } : { value: values[0] };
+		return { value: values };
 	}
 
 	private emitIfChanged(values: number[]): void {
@@ -415,24 +429,22 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private reflectValues(values: number[]): void {
-		if (values.length === 2) {
-			if (!valuesAlignOnStep(this.rangeMin, values[0], this.step)) {
-				this.rangeMin = values[0];
-			}
-			if (!valuesAlignOnStep(this.rangeMax, values[1], this.step)) {
-				this.rangeMax = values[1];
-			}
-			return;
-		}
-
-		if (!valuesAlignOnStep(this.value, values[0], this.step)) {
-			this.value = values[0];
+		const current = this.value;
+		const sameLength = current.length === values.length;
+		const aligned =
+			sameLength && values.every((entry, index) => valuesAlignOnStep(current[index], entry, this.step));
+		if (!aligned) {
+			this.value = values;
 		}
 	}
 
 	private syncValues(values: number[]): void {
 		this.paint(values);
 		this.reflectValues(values);
+		const nextVariant: RuiSliderVariant = values.length >= 2 ? 'range' : 'single';
+		if (this.variant !== nextVariant) {
+			this.variant = nextVariant;
+		}
 	}
 
 	private syncChrome(): void {

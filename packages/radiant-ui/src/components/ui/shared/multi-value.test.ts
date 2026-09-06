@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { parseMultiValue, parseViewValue, serializeMultiValue, serializeViewValue } from './multi-value';
+import {
+	multiValuePropOptions,
+	multiValueTransform,
+	numberArrayTransform,
+	parseMultiValue,
+	parseViewValue,
+	serializeMultiValue,
+} from './multi-value';
 
 describe('parseMultiValue', () => {
 	it('splits, trims, and uniques comma-separated tokens', () => {
@@ -9,23 +16,6 @@ describe('parseMultiValue', () => {
 	it('returns an empty array for empty input', () => {
 		expect(parseMultiValue(undefined)).toEqual([]);
 		expect(parseMultiValue('')).toEqual([]);
-	});
-});
-
-describe('serializeViewValue', () => {
-	it('passes strings through as the host protocol', () => {
-		expect(serializeViewValue('draft')).toBe('draft');
-		expect(serializeViewValue('draft,published')).toBe('draft,published');
-	});
-
-	it('joins arrays into the host protocol', () => {
-		expect(serializeViewValue(['draft', 'published'])).toBe('draft,published');
-		expect(serializeViewValue([' draft ', 'published', 'draft'])).toBe('draft,published');
-	});
-
-	it('omits undefined', () => {
-		expect(serializeViewValue(undefined)).toBeUndefined();
-		expect(serializeViewValue([])).toBe('');
 	});
 });
 
@@ -39,5 +29,30 @@ describe('parseViewValue', () => {
 describe('serializeMultiValue', () => {
 	it('joins tokens without re-trimming', () => {
 		expect(serializeMultiValue(['draft', 'published'])).toBe('draft,published');
+	});
+});
+
+describe('multiValueTransform', () => {
+	it('round-trips comma-separated attributes and property writes', () => {
+		expect(multiValueTransform.fromAttribute?.('ca,tx')).toEqual(['ca', 'tx']);
+		expect(multiValueTransform.toAttribute?.(['ca', 'tx'])).toBe('ca,tx');
+		expect(multiValueTransform.toAttribute?.([])).toBeNull();
+		expect(multiValueTransform.fromProperty?.('ca,tx')).toEqual(['ca', 'tx']);
+		expect(multiValueTransform.fromProperty?.(['ca', 'tx'])).toEqual(['ca', 'tx']);
+	});
+});
+
+describe('multiValuePropOptions', () => {
+	it('uses the shared transform and empty default', () => {
+		expect(multiValuePropOptions.transform).toBe(multiValueTransform);
+		expect(multiValuePropOptions.reflect).toBe(true);
+	});
+});
+
+describe('numberArrayTransform', () => {
+	it('round-trips comma-separated numeric attributes and property writes', () => {
+		expect(numberArrayTransform.fromAttribute?.('25,75')).toEqual([25, 75]);
+		expect(numberArrayTransform.toAttribute?.([25, 75])).toBe('25,75');
+		expect(numberArrayTransform.fromProperty?.(50)).toEqual([50]);
 	});
 });

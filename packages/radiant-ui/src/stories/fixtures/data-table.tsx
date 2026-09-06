@@ -600,8 +600,8 @@ export class RuiDataTable extends RadiantElement {
 	}
 
 	@onEvent({ selector: 'rui-select[data-page-size]', type: 'rui-change' })
-	onPageSizeChange(event: CustomEvent<{ value: string }>): void {
-		const pageSize = Number(event.detail.value);
+	onPageSizeChange(event: CustomEvent<{ value: string[] }>): void {
+		const pageSize = Number(event.detail.value[0]);
 		if (pageSize === 5 || pageSize === 10 || pageSize === 20) {
 			this.updateFilters({ pageSize }, true);
 		}

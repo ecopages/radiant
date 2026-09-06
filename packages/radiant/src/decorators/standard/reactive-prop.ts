@@ -1,4 +1,8 @@
-import { type ReactivePropertyOptions, validateReactivePropertyDefault } from '../../core/reactive-prop-core.js';
+import {
+	type PropTransform,
+	type ReactivePropertyOptions,
+	validateReactivePropertyDefault,
+} from '../../core/reactive-prop-core.js';
 import {
 	REACTIVE_PROP_METADATA,
 	type ReactivePropDefinition,
@@ -25,6 +29,7 @@ export function reactiveProp<P = unknown>({
 	reflect,
 	defaultValue,
 	bind,
+	transform,
 }: ReactivePropertyOptions<P>) {
 	validateReactivePropertyDefault(type, defaultValue);
 	return function <T extends ReactivePropHost<P>, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
@@ -37,6 +42,7 @@ export function reactiveProp<P = unknown>({
 			attribute: attributeKey,
 			defaultValue,
 			bind,
+			transform: transform as PropTransform<unknown> | undefined,
 		};
 
 		const metadata = context.metadata as Record<symbol, ReactivePropDefinition[]> | null;
@@ -64,6 +70,7 @@ export function reactiveProp<P = unknown>({
 				attribute: attributeKey,
 				defaultValue: resolvedDefaultValue,
 				bind,
+				transform,
 			});
 		});
 

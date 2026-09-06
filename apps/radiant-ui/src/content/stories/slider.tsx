@@ -56,7 +56,7 @@ export const meta = {
 						valuePrecision={args.valuePrecision}
 						disabled={args.disabled}
 						showValue={args.showValue}
-						values={[args.rangeMin, args.rangeMax]}
+						value={[args.rangeMin, args.rangeMax]}
 					/>
 				</RuiField>
 			);

@@ -20,7 +20,7 @@ type SelectHostBindingsAccepted = Assert<
 			'data-state': string;
 			'on:click': (event: Event) => void;
 			'attr:inert': true;
-			'prop:value': string;
+			'prop:value': string[];
 		},
 		RuiSelectViewProps
 	>

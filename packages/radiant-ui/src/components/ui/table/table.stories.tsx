@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { applyDesignTokens } from '../../../../.storybook/apply-design-tokens';
+import type { ViewMultiValue } from '../shared/multi-value';
 import {
 	RuiTable,
 	RuiTableBody,
@@ -39,7 +40,7 @@ function PlantTable({
 	sortDirection = 'ascending',
 }: {
 	selectionMode?: RuiTableSelectionMode;
-	value?: string;
+	value?: ViewMultiValue;
 	sortColumn?: string;
 	sortDirection?: 'ascending' | 'descending';
 }) {
@@ -117,7 +118,7 @@ export const KeyboardNavigation: Story = {
 export const MultipleSelection: Story = {
 	render: () => <PlantTable selectionMode="multiple" />,
 	play: async ({ canvasElement, step }) => {
-		const table = canvasElement.querySelector('rui-table') as HTMLElement & { value: string };
+		const table = canvasElement.querySelector('rui-table') as HTMLElement & { value: string[] };
 		const rowCheckboxes = Array.from(canvasElement.querySelectorAll('rui-checkbox[data-table-select-row]'));
 
 		await step('Radiant row checkbox updates the serialized selected value', async () => {
@@ -132,7 +133,7 @@ export const MultipleSelection: Story = {
 
 		await step('Radiant select-all checkbox checks every selectable row', async () => {
 			await userEvent.click(canvasElement.querySelector<HTMLInputElement>('[data-table-select-all] input')!);
-			await expect(table.value.split(',').sort()).toEqual(['aloe', 'fern', 'ivy']);
+			await expect([...table.value].sort()).toEqual(['aloe', 'fern', 'ivy']);
 			await expect(canvasElement.querySelector<HTMLInputElement>('[data-table-select-all] input')).toBeChecked();
 		});
 	},

@@ -4,7 +4,7 @@ import { cx } from '@/lib/cx';
 import { RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { RuiAutocomplete, RuiAutocompleteCollection, RuiAutocompleteEmpty } from '../autocomplete';
 import { RuiListbox, type RuiListboxOptionData } from '../listbox';
-import { parseViewValue, serializeViewValue } from '../shared/multi-value';
+import { parseViewValue } from '../shared/multi-value';
 import { RuiTagGroup } from '../tag-group';
 import type { RuiCombobox as RuiComboboxElement, RuiComboboxProps } from './combobox.script';
 import './combobox.script';
@@ -140,12 +140,10 @@ export function RuiCombobox({
 	...props
 }: JsxCustomElementAttributes<
 	RuiComboboxElement,
-	Omit<RuiComboboxProps, 'value'> & {
+	RuiComboboxProps & {
 		options?: RuiComboboxOptionData[];
-		value?: string | string[];
 	}
 >) {
-	const serializedValue = serializeViewValue(value);
 	const selectedValues = parseViewValue(value);
 	const selectedTags = options
 		?.filter((option) => selectedValues.includes(option.value))
@@ -153,7 +151,7 @@ export function RuiCombobox({
 	const isMultiple = props.selectionMode === 'multiple';
 	if (options != null) {
 		return (
-			<rui-combobox {...props} value={serializedValue}>
+			<rui-combobox {...props} value={selectedValues}>
 				<ComboboxShell>
 					<RuiComboboxControl>
 						{isMultiple ? (
@@ -171,7 +169,7 @@ export function RuiCombobox({
 									embedded
 									options={options}
 									selectionMode={props.selectionMode}
-									value={serializedValue}
+									value={selectedValues}
 								/>
 								<RuiAutocompleteEmpty>No results found.</RuiAutocompleteEmpty>
 							</RuiAutocompleteCollection>
@@ -183,7 +181,7 @@ export function RuiCombobox({
 	}
 
 	return (
-		<rui-combobox {...props} value={serializedValue}>
+		<rui-combobox {...props} value={selectedValues}>
 			<ComboboxShell>{children}</ComboboxShell>
 		</rui-combobox>
 	);

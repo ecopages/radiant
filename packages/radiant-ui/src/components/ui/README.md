@@ -24,9 +24,22 @@ Non-atomic components separate behavior from markup: the custom element owns sta
 
 Keep a convenient prop-based default composition on the primary view, but accept children for the equivalent explicit composition. Do not force consumers to subclass a custom element just to arrange its UI.
 
-For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances. Listbox-backed popovers (select, combobox) share `ListboxPopoverBehavior` for active-descendant navigation and `ListboxHostController` for the embedded listbox, the comma-separated value array, option `aria-selected`, and optional tag-group chips.
+For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances. Listbox-backed popovers (select, combobox) share `ListboxPopoverBehavior` for active-descendant navigation and `ListboxHostController` for the embedded listbox, the `string[]` value property (comma-separated on the attribute), option `aria-selected`, and optional tag-group chips.
 
 `RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls.
+
+## Multi-value `value`
+
+Token-select hosts (`rui-select`, `rui-combobox`, `rui-listbox`, `rui-checkbox-group`, `rui-tag-group`, `rui-table`) share one protocol:
+
+- **HTML attribute:** comma-separated tokens (`value="ca,tx"`). Empty selection **omits** the attribute.
+- **JS property:** always `string[]` (`[]` when empty).
+- **JSX / `Rui*` views:** `string | readonly string[] | undefined`. A string is parsed as CSV; the host still stores an array.
+- **`rui-change`:** `{ value: string[] }`.
+
+`rui-slider` is the numeric variant: attribute `50` or `25,75`, property `number[]`, JSX `number | readonly number[]`, events `{ value: number[] }`. Two numbers are range mode.
+
+Default `@prop({ type: Array })` serializes attributes as JSON. These hosts pass `transform` (`multiValuePropOptions` / `numberArrayTransform` in `shared/multi-value.ts`) so the attribute stays CSV. Pass `defaultValue: []` (or `[50]` on slider) on each decorator call so classes do not share one array.
 
 ## Light-DOM ownership
 
@@ -94,7 +107,7 @@ Self-closing hosts can spread the full props object (`<rui-meter {...props} />`)
 Peel props only when the view must transform or filter them:
 
 - View-only data (`options`, `articles`, …) that must not reach the host
-- `prop:` / `attr:` bindings or renamed props (`triggerLabel` → `prop:buttonLabel`, `values` → `rangeMin` / `rangeMax`). Peel every CE prop that needs an explicit `prop:` / `attr:` prefix; spread the rest.
+- `prop:` / `attr:` bindings or renamed props (`triggerLabel` → `prop:buttonLabel`). Peel every CE prop that needs an explicit `prop:` / `attr:` prefix; spread the rest.
 - `class` composition with `cx()` on the same node — spread first, then `class={cx('rui-foo', className)}`. Import `cx` from `@ecopages/radiant-ui/cx` in apps; use `@/lib/cx` inside this package.
 - Host vs inner-node split when the view owns the composed surface (e.g. `RuiAlert` puts `role="alert"` and BEM classes on an inner div; the CE handles dismiss)
 

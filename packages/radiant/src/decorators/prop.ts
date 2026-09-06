@@ -22,6 +22,10 @@ type LegacyReactivePropHost<T> = StandardReactivePropHost<T>;
  * keeps JSX bindings in sync. Render invalidation happens through the reactive
  * render path when `render()` reads reactive members.
  *
+ * Pass `transform` to override the default attribute type converters and normalize
+ * JS property writes (`fromProperty`). On `RadiantController`, only `fromProperty`
+ * applies — attribute conversion is an Element Host concern.
+ *
  * @param options {@link ReactivePropertyOptions} The options for the reactive property.
  */
 export function prop<T = unknown>(options: ReactivePropertyOptions<T>) {

@@ -1,7 +1,7 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
 import { RuiIconCheck } from '@/lib/icons';
-import { parseViewValue, serializeViewValue } from '../shared/multi-value';
+import { parseViewValue } from '../shared/multi-value';
 import type { RuiListbox as RuiListboxElement, RuiListboxProps, RuiListboxSelectionMode } from './listbox.script';
 import './listbox.script';
 
@@ -111,18 +111,15 @@ export function RuiListbox({
 	disabled,
 	selectionMode = 'single',
 	...props
-}: JsxCustomElementAttributes<
-	RuiListboxElement,
-	Omit<RuiListboxProps, 'value'> & { options?: RuiListboxOptionData[]; value?: string | string[] }
->) {
+}: JsxCustomElementAttributes<RuiListboxElement, RuiListboxProps & { options?: RuiListboxOptionData[] }>) {
 	const isBordered = listboxIsBordered(embedded, bordered);
-	const serializedValue = serializeViewValue(value);
-	const selected = new Set(parseViewValue(value));
+	const selectedValues = parseViewValue(value);
+	const selected = new Set(selectedValues);
 
 	return (
 		<rui-listbox
 			{...props}
-			value={serializedValue}
+			value={selectedValues}
 			embedded={embedded}
 			bordered={bordered}
 			label={label}

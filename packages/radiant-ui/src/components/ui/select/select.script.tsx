@@ -5,11 +5,12 @@ import { findAssociatedLabel, syncFieldLabel } from '../shared/field-label';
 import { ListboxHostController } from '../shared/listbox-host-controller';
 import { getListboxOptionValue } from '../shared/listbox-option';
 import { ListboxPopoverBehavior } from '../shared/listbox-popover-behavior';
+import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
 
 export type RuiSelectProps = {
-	value?: string;
+	value?: ViewMultiValue;
 	/** Accessible name when there is no visible `RuiLabel` associated with the trigger. */
 	label?: string;
 	placeholder?: string;
@@ -22,7 +23,7 @@ export type RuiSelectProps = {
 	shouldCloseOnSelect?: boolean;
 };
 
-export type RuiSelectChangeDetail = { value: string };
+export type RuiSelectChangeDetail = { value: string[] };
 
 /**
  * `<rui-select>` — a select-only combobox with a button trigger and listbox popup.
@@ -71,13 +72,13 @@ export type RuiSelectChangeDetail = { value: string };
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/
  * @element rui-select
- * @attr {string} value - Comma-separated selected values.
+ * @attr {string} value - Comma-separated selected values in markup; the property is `string[]`. Default: `[]`.
  * @attr {string} label - Accessible name when there is no associated `RuiLabel`.
  * @attr {string} placeholder - Shown when nothing is selected.
  * @attr {boolean} disabled - Disable the trigger and popup. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Single or multi-select. Default: `single`.
  * @attr {boolean} should-close-on-select - Whether selecting closes the popup (defaults to `true` for single, `false` for multiple).
- * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is comma-separated.
+ * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is `string[]`.
  *
  * @remarks
  * Minimum tree: `[data-ref="root"]` > `[data-select-trigger]` > `[data-select-value]`,
@@ -86,13 +87,18 @@ export type RuiSelectChangeDetail = { value: string };
  */
 @customElement('rui-select')
 export class RuiSelect extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
+	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) placeholder: string;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo([
-		{ selector: '[data-select-trigger]', attr: 'aria-disabled', map: (disabled) => (disabled ? 'true' : undefined) },
+		{
+			selector: '[data-select-trigger]',
+			attr: 'aria-disabled',
+			map: (disabled) => (disabled ? 'true' : undefined),
+		},
 		{ selector: '[data-select-trigger]', prop: 'tabIndex', map: (disabled) => (disabled ? -1 : 0) },
 		{ selector: '[data-select-toggle]', prop: 'disabled' },
 		{ selector: '[data-select-clear]', prop: 'disabled' },
@@ -252,7 +258,7 @@ export class RuiSelect extends RadiantElement {
 		this.collection.syncOptionSelection();
 		this.syncTagGroup();
 		this.syncClear();
-		this.changeEvent.emit({ value: '' });
+		this.changeEvent.emit({ value: [] });
 		this.getTrigger()?.focus();
 	}
 

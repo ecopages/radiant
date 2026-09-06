@@ -15,7 +15,7 @@ export type ReactivePropertyStateHost = HTMLElement & {
 };
 
 export class ReactivePropertyState {
-	private readonly properties = new Map<string, ReactiveProperty>();
+	private readonly properties = new Map<string, ReactiveProperty<unknown>>();
 	private readonly preUpgradePropertyValues = new Map<string, unknown>();
 
 	constructor(private readonly host: ReactivePropertyStateHost) {
@@ -24,11 +24,11 @@ export class ReactivePropertyState {
 		}
 	}
 
-	public register(config: ReactiveProperty): void {
+	public register(config: ReactiveProperty<unknown>): void {
 		this.properties.set(config.name, config);
 	}
 
-	public getAll(): ReactiveProperty[] {
+	public getAll(): ReactiveProperty<unknown>[] {
 		return Array.from(this.properties.values());
 	}
 
@@ -41,9 +41,7 @@ export class ReactivePropertyState {
 			return;
 		}
 
-		const transformedValue = this.transformAttributeValue(newValue, config);
-
-		Reflect.set(this.host, config.name, transformedValue);
+		Reflect.set(this.host, config.name, config.converter.fromAttribute(newValue));
 	}
 
 	/**
@@ -60,16 +58,32 @@ export class ReactivePropertyState {
 		defineReactiveAccessor: (propertyName: string, config: ReactiveAccessorDefinition<T>) => void,
 		createReactiveMember: <U>(propertyName: string, initialValue: U) => ReactiveState<U>,
 	): void {
-		const { type, attribute, reflect, defaultValue } = options;
+		const { type, attribute, reflect, defaultValue, transform } = options;
 		const attributeKey = attribute ?? propertyName;
 		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
-		const preUpgradeValue = hasPreUpgradeValue ? (this.preUpgradePropertyValues.get(propertyName) as T) : undefined;
+		const preUpgradeValue = hasPreUpgradeValue ? this.preUpgradePropertyValues.get(propertyName) : undefined;
 
 		validateReactivePropertyDefault(type, defaultValue);
 
-		const initialValue: T | undefined = hasPreUpgradeValue
-			? preUpgradeValue
-			: resolveInitialValue(type, attributeKey, defaultValue);
+		const propertyMapping = createReactivePropertyMapping(
+			propertyName,
+			attributeKey,
+			type,
+			undefined,
+			reflect,
+			transform,
+		);
+
+		let initialValue: T | undefined;
+		if (hasPreUpgradeValue) {
+			initialValue = (transform?.fromProperty ? transform.fromProperty(preUpgradeValue) : preUpgradeValue) as T;
+		} else if (this.host.hasAttribute(attributeKey)) {
+			initialValue = propertyMapping.converter.fromAttribute(this.host.getAttribute(attributeKey)) as T;
+		} else {
+			initialValue = resolveInitialValue(type, attributeKey, defaultValue);
+		}
+
+		propertyMapping.initialValue = initialValue;
 
 		if (!reflect && this.host.hasAttribute(attributeKey)) {
 			this.host.removeAttribute(attributeKey);
@@ -79,9 +93,7 @@ export class ReactivePropertyState {
 			Reflect.deleteProperty(this.host, propertyName);
 		}
 
-		const propertyMapping = createReactivePropertyMapping(propertyName, attributeKey, type, initialValue, reflect);
-
-		this.register(propertyMapping);
+		this.register(propertyMapping as ReactiveProperty<unknown>);
 
 		const existingMember = this.host.getReactiveMember<T>(propertyName);
 		const signal = existingMember ?? createReactiveMember(propertyName, initialValue as T);
@@ -93,6 +105,7 @@ export class ReactivePropertyState {
 		defineReactiveAccessor(propertyName, {
 			bind: options.bind,
 			signal,
+			fromProperty: transform?.fromProperty,
 			onSet: () => this.reflectValue(attributeKey, propertyMapping.reflect, propertyMapping, signal.get()),
 		});
 	}
@@ -148,23 +161,16 @@ export class ReactivePropertyState {
 
 	/**
 	 * @remarks
-	 * Boolean attributes are presence-based: removal must yield `false`, not `null`.
-	 * Otherwise reflecting `false` → `removeAttribute` → `attributeChangedCallback`
-	 * sets the property to `null`, and callers like `String(this.open)` become `"null"`.
+	 * Boolean `false` and empty/null values omit the attribute (HTML presence).
+	 * Custom `toAttribute` returning null or `''` omits as well, so an empty
+	 * array codec can drop `value` without a transform-specific branch.
 	 */
-	private transformAttributeValue(value: string | null, config: ReactiveProperty): unknown {
-		if (value === null) {
-			return config.type === Boolean ? false : value;
-		}
-
-		if (config.type === Boolean && value === '') {
-			return true;
-		}
-
-		return config.converter.fromAttribute(value);
-	}
-
-	private reflectValue<T>(attributeKey: string, reflect: boolean, property: ReactiveProperty<T>, value: T): void {
+	private reflectValue(
+		attributeKey: string,
+		reflect: boolean,
+		property: ReactiveProperty<unknown>,
+		value: unknown,
+	): void {
 		if (!reflect) {
 			return;
 		}
@@ -175,6 +181,10 @@ export class ReactivePropertyState {
 		}
 
 		const attributeValue = property.converter.toAttribute(value);
+		if (attributeValue == null) {
+			this.host.removeAttribute(attributeKey);
+			return;
+		}
 		this.host.setAttribute(attributeKey, attributeValue);
 	}
 }
