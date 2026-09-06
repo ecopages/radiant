@@ -33,7 +33,11 @@ export type RuiTableRowActionDetail = { rowId: string };
  * Required:
  * - `[data-table-row]` — data row. Host sets `aria-selected` when `selection-mode` is not `none`.
  * - `[data-table-cell]` — cell, direct child of a row. Host applies roving `tabIndex`.
- *   Click, double-click, and keydown on cells drive selection and navigation.
+ *   When `selection-mode` is `single` or `multiple`, a click on a non-interactive cell
+ *   selects that row. There is no separate prop for click-to-select.
+ *   Space toggles selection. Nested controls (`button`, `input`, `a[href]`,
+ *   `rui-checkbox`, …) do not select. Double-click and Enter activate
+ *   `data-table-actionable` rows (`rui-row-action`).
  *
  * Per row:
  * - `data-table-row` — row id (selection and `rui-row-action` identity).
@@ -42,7 +46,9 @@ export type RuiTableRowActionDetail = { rowId: string };
  *
  * Per column header:
  * - `[data-table-column]` — column header region. Host sets `aria-sort` when `sort-column` matches.
- * - `[data-table-sort]` — sort button inside a sortable column. Click updates sort state.
+ * - `[data-table-sort]` — sort button inside a sortable column. Click updates `sort-column`,
+ *   `sort-direction`, and `aria-sort`, then emits `rui-sort-change`. The host does not
+ *   reorder rows.
  *
  * Optional:
  * - `rui-checkbox[data-table-select-row]` — per-row selection checkbox (nested host).
@@ -61,10 +67,11 @@ export type RuiTableRowActionDetail = { rowId: string };
  * @attr {string} sort-column - Active sortable column id.
  * @attr {('ascending'|'descending')} sort-direction - Active sorting direction. Default: `ascending`.
  * @fires rui-change - Emitted after the selected row ids change; `detail.value` is `string[]`.
- * @fires rui-sort-change - Emitted after a sortable header changes direction.
- * @fires rui-row-action - Emitted when an actionable row is activated.
+ * @fires rui-sort-change - Emitted after a sortable header changes direction. The table does not reorder rows.
+ * @fires rui-row-action - Emitted when an actionable row is activated (Enter / double-click).
  *
  * @remarks
+ * Click-to-select is implied by `selection-mode`; it is not a separate attribute.
  * Callers retain ownership of the collection and reorder it after `rui-sort-change`.
  * BEM classes live on the view; the host never queries them.
  */
@@ -267,8 +274,17 @@ export class RuiTable extends RadiantElement {
 		}
 	}
 
+	/**
+	 * @remarks
+	 * `rui-checkbox` paints a visible control that is not an `input`. Clicks on
+	 * that control still bubble to the cell; treating the nested host as
+	 * interactive keeps the cell handler from toggling the row again after
+	 * `rui-change`.
+	 */
 	private isInteractiveTarget(target: HTMLElement): boolean {
-		return Boolean(target.closest('button, input, select, textarea, a[href], [contenteditable="true"]'));
+		return Boolean(
+			target.closest('button, input, select, textarea, a[href], [contenteditable="true"], rui-checkbox'),
+		);
 	}
 
 	private selectRow(row: HTMLElement, toggle = false): void {

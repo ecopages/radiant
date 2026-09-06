@@ -167,8 +167,10 @@ export function RuiTableEmptyState({ colSpan, children, class: className, ...pro
 /**
  * React Aria–inspired composable data table.
  *
- * @remarks The table owns keyboard navigation, row selection, and sorting state.
- * Callers retain ownership of their collection and reorder it after `rui-sort-change`.
+ * @remarks The table owns keyboard navigation, row selection, and sort state
+ * (`sort-column`, `sort-direction`, `aria-sort`). Clicking a data cell selects
+ * the row when `selectionMode` is `single` or `multiple`; nested controls do not.
+ * Callers retain the collection and reorder it after `rui-sort-change`.
  * Prefer `RuiGrid` for simple read-only grids and `RuiTreegrid` for expandable hierarchies.
  *
  * @cssclass rui-table - Table surface (`role="grid"`).

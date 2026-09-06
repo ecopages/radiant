@@ -8,6 +8,7 @@ import {
 	RuiTableSelectionCell,
 } from '@ecopages/radiant-ui/table';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
+import './table.script';
 
 export type TableArgs = {
 	label: string;
@@ -65,4 +66,9 @@ export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'table
 export const MultipleSelection: Story = docsStory(meta, {
 	args: { selectionMode: 'multiple' },
 	parameters: { docs: { id: 'table/multiple' } },
+});
+
+export const Sorting: Story = docsStory(meta, {
+	render: () => <rui-table-docs-sort-demo />,
+	parameters: { docs: { id: 'table/sorting' } },
 });
