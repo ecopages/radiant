@@ -6,6 +6,7 @@ import {
 } from './template-compiler.ts';
 import { updateRangeContent } from './child-range-update.ts';
 import { updateLiveAttributePart } from './live-attribute-update.ts';
+import { updateLiveTextContentParts } from './live-text-content-update.ts';
 import type { DeferredPropertyBinding, LiveTemplatePart, TemplateInstance } from './types.ts';
 
 /**
@@ -60,6 +61,10 @@ export function createTemplateInstanceUpdate(
 				continue;
 			}
 
+			if (part.type === 'text-content') {
+				continue;
+			}
+
 			part.mounted = updateRangeContent(
 				part.startMarker,
 				part.endMarker,
@@ -69,5 +74,7 @@ export function createTemplateInstanceUpdate(
 				deferredProperties,
 			);
 		}
+
+		updateLiveTextContentParts(parts, values);
 	};
 }

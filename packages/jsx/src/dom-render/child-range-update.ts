@@ -10,6 +10,7 @@ import {
 	flushDeferredProperties,
 	getIterableChildren,
 	getKeyedChildren,
+	isIterableRenderable,
 	isReactiveChildSource,
 	isTemplateResultLike,
 	readReactiveChildSourceValue,
@@ -140,8 +141,12 @@ function updateSingleChildContent(
 	return replaceMountedRangeWithNodes(startMarker, endMarker, currentContent, nodes);
 }
 
+/**
+ * @remarks Uses {@link isIterableRenderable} rather than materializing the value.
+ * {@link getIterableChildren} then snapshots one-shot iterators by identity.
+ */
 function classifyChildValue(value: unknown): 'empty' | 'iterable' | 'template' | 'text' | 'nodes' {
-	if (getIterableChildren(value)) return 'iterable';
+	if (isIterableRenderable(value)) return 'iterable';
 	if (isTemplateResultLike(value)) return 'template';
 	if (value === undefined || value === null || value === false || value === true) return 'empty';
 	return canRenderAsTextNode(value) ? 'text' : 'nodes';

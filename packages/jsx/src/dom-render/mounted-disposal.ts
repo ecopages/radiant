@@ -1,6 +1,8 @@
 import { clearDelegationRoot, detachEventBindingListener, isEventListenerObject } from './event-delegation.ts';
 import type {
 	LiveAttributePart,
+	LiveTemplatePart,
+	LiveTextContentPart,
 	MountedRangeContent,
 	MountedRoot,
 	MountedSubscription,
@@ -30,9 +32,24 @@ export function disposeMountedRoot(root: MountedRoot): void {
  * @param instance Template instance to dispose.
  */
 export function disposeTemplateInstance(instance: TemplateInstance): void {
-	for (const part of instance.parts) {
+	disposeLiveTemplateParts(instance.parts);
+}
+
+/**
+ * Releases live parts recovered during hydration or mount.
+ *
+ * Shared by full template teardown and incomplete hydration, so subscriptions
+ * created for recovered parts do not survive a fallback client render.
+ */
+export function disposeLiveTemplateParts(parts: readonly LiveTemplatePart[]): void {
+	for (const part of parts) {
 		if (part.type === 'attribute') {
 			disposeLiveAttributePart(part);
+			continue;
+		}
+
+		if (part.type === 'text-content') {
+			releaseLiveAttributeSubscription(part);
 			continue;
 		}
 
@@ -69,8 +86,8 @@ export function disposeLiveAttributePart(part: LiveAttributePart): void {
 	part.previousValue = undefined;
 }
 
-/** Ends the current reactive ownership epoch for a live attribute part. */
-export function releaseLiveAttributeSubscription(part: LiveAttributePart): void {
+/** Ends the current reactive ownership epoch for a live attribute or text-content part. */
+export function releaseLiveAttributeSubscription(part: LiveAttributePart | LiveTextContentPart): void {
 	const unsubscribe = part.unsubscribe;
 	part.subscriptionSerial += 1;
 	part.unsubscribe = undefined;
