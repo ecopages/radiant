@@ -1277,6 +1277,79 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(subscribers.size).toBe(0);
 	});
 
+	test('hydrates a reactive root snapshot and unsubscribes on unmount', async () => {
+		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const viewSubscribers = new Set<(value: unknown) => void>();
+		const childSubscribers = new Set<(value: number) => void>();
+		let count = 15;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				childSubscribers.add(notify);
+				return () => {
+					childSubscribers.delete(notify);
+				};
+			},
+		});
+		const view = createSubscribableJsxValue({
+			getValue: () =>
+				jsxs('p', {
+					class: 'component-metric',
+					children: ['Count: ', boundCount],
+				}),
+			subscribe: (notify) => {
+				viewSubscribers.add(notify);
+				return () => {
+					viewSubscribers.delete(notify);
+				};
+			},
+		});
+
+		container.innerHTML = HYDRATE_METRIC_HTML;
+		const paragraph = container.querySelector('p');
+
+		root.hydrate(view);
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph?.textContent).toBe('Count: 15');
+		expect(viewSubscribers.size).toBe(1);
+		expect(childSubscribers.size).toBe(1);
+
+		count = 16;
+		for (const subscriber of childSubscribers) {
+			subscriber(count);
+		}
+		await Promise.resolve();
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(paragraph?.textContent).toBe('Count: 16');
+
+		root.unmount();
+
+		expect(viewSubscribers.size).toBe(0);
+		expect(childSubscribers.size).toBe(0);
+	});
+
+	test('hydrating a non-template root falls back to a client render', async () => {
+		const [{ createRoot }] = await Promise.all([loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		container.innerHTML = HYDRATE_BUTTON_ALPHA_HTML;
+		const serverButton = container.querySelector('button');
+
+		root.hydrate('hello');
+
+		expect(container.textContent).toBe('hello');
+		expect(container.querySelector('button')).toBeNull();
+		expect(serverButton && container.contains(serverButton)).toBe(false);
+	});
+
 	test('hydrated fragment subscribable child values patch without rerendering the parent tree', async () => {
 		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([
 			loadJsxRuntime(),
