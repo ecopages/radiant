@@ -997,10 +997,7 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 	});
 
 	test('reactive sources that emit a fresh generator are consumed once per snapshot', async () => {
-		const [{ createSubscribableJsxValue }, { createRoot }] = await Promise.all([
-			loadJsxRuntime(),
-			loadJsxModule(),
-		]);
+		const [{ createSubscribableJsxValue }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
 		const root = createRoot(container);
 		const subscribers = new Set<(value: Iterable<string>) => void>();

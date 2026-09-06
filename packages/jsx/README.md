@@ -425,11 +425,11 @@ Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an
 
 `hydrate(...)` chooses one of three recovery paths based on the JSX root shape:
 
-| Root shape                                 | Recovery path      | Notes                                                          |
-| ------------------------------------------ | ------------------ | -------------------------------------------------------------- |
-| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place                  |
-| Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each child into the mounted ownership tree            |
-| Other values with markers                  | Flat marker scan   | Reconnects attribute bindings only                             |
+| Root shape                                 | Recovery path      | Notes                                               |
+| ------------------------------------------ | ------------------ | --------------------------------------------------- |
+| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place       |
+| Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each child into the mounted ownership tree |
+| Other values with markers                  | Flat marker scan   | Reconnects attribute bindings only                  |
 
 Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
 
@@ -721,12 +721,12 @@ That object is an internal contract between the JSX runtime and the Radiant rend
 
 ### What the package does
 
-| Path                                                      | Behavior                                                                 |
-| --------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Text children                                             | Escaped on SSR; mounted as text nodes on the client                      |
-| Text children in `textarea`, `title`, `style`, `script`   | Written as the element's character data; comment anchors are not used    |
-| Ordinary attributes                                       | Escaped for HTML attribute context (including `"`)                       |
-| Plain `{ nodeType, outerHTML }` objects                   | Treated as text (escaped / text node), not raw HTML                      |
+| Path                                                    | Behavior                                                              |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| Text children                                           | Escaped on SSR; mounted as text nodes on the client                   |
+| Text children in `textarea`, `title`, `style`, `script` | Written as the element's character data; comment anchors are not used |
+| Ordinary attributes                                     | Escaped for HTML attribute context (including `"`)                    |
+| Plain `{ nodeType, outerHTML }` objects                 | Treated as text (escaped / text node), not raw HTML                   |
 
 ### Trusted paths (author / framework data only)
 

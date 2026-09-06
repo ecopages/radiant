@@ -2,11 +2,7 @@ import { ATTRIBUTE_BINDING_PREFIX } from '../hydration/hydration-bindings.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
 import { getElementNamespace, HTML_NAMESPACE_URI, setElementAttributeValue } from './namespaces.ts';
 import { getNodeAtPath, getNodePath } from './path-utils.ts';
-import {
-	CHILD_BINDING_END_PREFIX,
-	CHILD_BINDING_START_PREFIX,
-	TEXT_CONTENT_LOCATOR_PREFIX,
-} from './constants.ts';
+import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX, TEXT_CONTENT_LOCATOR_PREFIX } from './constants.ts';
 import { endsWithTextContentOpenTag } from './text-content.ts';
 import type { TemplateResultLike } from '../types/index.ts';
 import type {
