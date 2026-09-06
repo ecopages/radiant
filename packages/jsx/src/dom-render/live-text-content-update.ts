@@ -69,9 +69,6 @@ function writeGroupedTextContent(parts: readonly LiveTextContentPart[], element?
 	}
 
 	for (const [host, group] of groups) {
-		writeTextContentElement(
-			host,
-			group.map((part) => part.committedText).join(''),
-		);
+		writeTextContentElement(host, group.map((part) => part.committedText).join(''));
 	}
 }

@@ -241,9 +241,9 @@ describe('hydrate HTML fixtures', () => {
 	});
 
 	test('HYDRATE_SCRIPT_HTML matches renderToString', () => {
-		expect(renderToString(jsx('script', { type: 'application/json', children: 'hello' }), { mode: 'hydrate' })).toBe(
-			HYDRATE_SCRIPT_HTML,
-		);
+		expect(
+			renderToString(jsx('script', { type: 'application/json', children: 'hello' }), { mode: 'hydrate' }),
+		).toBe(HYDRATE_SCRIPT_HTML);
 	});
 
 	test('HYDRATE_KEYED_INPUTS_HTML matches renderToString', () => {
