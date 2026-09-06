@@ -423,19 +423,20 @@ Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an
 
 ### Hydration Root Shapes
 
-`hydrate(...)` chooses one of three recovery paths based on the JSX root shape:
+`hydrate(...)` reconnects a template or iterable root in place. A reactive wrapper hydrates its current snapshot, then subscribes. Any other shape falls back to a full client render.
 
 | Root shape                                 | Recovery path      | Notes                                               |
 | ------------------------------------------ | ------------------ | --------------------------------------------------- |
 | Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place       |
 | Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each child into the mounted ownership tree |
-| Other values with markers                  | Flat marker scan   | Reconnects attribute bindings only                  |
+| Reactive wrapper around either shape       | Inner snapshot     | Reconnects the current value, then subscribes       |
+| Anything else                              | Client render      | Full mount; leftover SSR markers are replaced       |
 
 Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
 
 Keyed identity is retained only when **every** child in the list has a key. A mixed keyed/unkeyed list hydrates as an indexed list and can rebuild nodes on the next render. Nested fragments, bare reactive children at the fragment root, and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
 
-Global SSR marker indexes are shared across all three paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
+Global SSR marker indexes are shared across both recovery paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
 List children inside a hydrated range reconnect through the same path as a root template, so a child carrying dynamic content — `<li>{item.name}</li>` — keeps its SSR elements rather than being rebuilt. A child whose template owns several root nodes reconnects too. Both element and text-node identity are preserved, so listeners, focus, and selection survive hydration. `pnpm run bench:hydrate` measures these shapes.
 
@@ -466,10 +467,10 @@ flowchart TD
   Dispatch --> Path{"Root shape?"}
   Path -->|single template| Template["hydrateTemplateInstance"]
   Path -->|fragment / iterable| Iterable["hydrateIterableRoot"]
-  Path -->|other roots| Flat["hydrateFlatBindings"]
+  Path -->|other roots| Render["render() fallback"]
   Template --> Live["Live template parts + subscriptions"]
   Iterable --> Live
-  Flat --> Attrs["Attribute bindings only"]
+  Render --> Live
 ```
 
 **1. Serialize.** `serializeRenderable(...)` walks the JSX tree depth-first. Each attribute interpolation that needs a marker calls `takeNextHydrationMarkerIndex(...)` and writes `data-radiant-jsx-bind-N="kind:name"` through `resolveHydrationMarkerAttributeName(...)`.
