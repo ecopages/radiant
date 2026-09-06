@@ -8,6 +8,7 @@ import {
 } from '../types/renderable-guards.ts';
 import type { KeyedJsxValue, TemplateResultLike } from '../types/index.ts';
 import { createNodesFromJsxNodeLike } from './dom-operations.ts';
+import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import type { DeferredPropertyBinding, ReactiveAttributeSource, ReactiveChildSource } from './types.ts';
 
 export {
@@ -172,6 +173,10 @@ export function getKeyedChildren(children: readonly unknown[]): KeyedJsxValue[] 
  * Returns the value materialised as a plain array when it is an iterable,
  * otherwise returns `undefined`.
  *
+ * @remarks Callers that only need to know whether a value is iterable must use
+ * {@link isIterableRenderable}. One-shot iterators are snapshotted by
+ * {@link materializeIterableChildren} for the lifetime of that iterator object.
+ *
  * @param value Value to inspect.
  */
 export function getIterableChildren(value: unknown): unknown[] | undefined {
@@ -179,7 +184,7 @@ export function getIterableChildren(value: unknown): unknown[] | undefined {
 		return undefined;
 	}
 
-	return Array.from(value);
+	return materializeIterableChildren(value);
 }
 
 export function isReactiveAttributeSource(value: unknown): value is ReactiveAttributeSource {

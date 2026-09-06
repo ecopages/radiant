@@ -327,6 +327,8 @@ for (const subscriber of subscribers) {
 
 That contract is intentionally small. The package does not impose a single state container, computed graph, or scheduler. It just gives the renderer a stable subscription surface for either signal-like values or explicit subscribable wrappers.
 
+Arrays and other iterables render as a list of children. A generator, or any other one-shot iterator, is consumed once for that iterator object; the runtime reuses that snapshot while the object remains reachable, including across later renders. JSX `children` flattening consumes the iterator when the element is created, so pass a new iterator to each `jsx()` call if those children should be yielded again.
+
 ## Empty Values And Removal
 
 Most code should use normal JavaScript values for empty output and removal semantics.
@@ -365,6 +367,18 @@ return (
 ```
 
 Important consequence: removing a binding by switching to `null`, `undefined`, or `false` follows normal template update semantics. If that changes the template shape, the renderer may replace the affected DOM node instead of preserving the previously committed instance.
+
+### Textarea children
+
+`textarea` children are default content, not a controlled `value`. The renderer compares the authored string to `.defaultValue`:
+
+- The first mount, and any later render whose authored children changed, writes both `.defaultValue` and `.value`.
+- Re-rendering the same authored children leaves user edits in `.value`.
+- Form reset still returns to the last authored children via `.defaultValue`.
+
+`title`, `style`, and `script` also receive children as character data, but they write `textContent` whenever the authored string changes. They have no separate user-edit field to preserve.
+
+To drive a textarea from application state, pass a new child string when that state changes, or bind `prop:value`.
 
 ## Dev Warnings
 
@@ -411,13 +425,15 @@ Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an
 
 `hydrate(...)` chooses one of three recovery paths based on the JSX root shape:
 
-| Root shape                                 | Recovery path      | Notes                                                          |
-| ------------------------------------------ | ------------------ | -------------------------------------------------------------- |
-| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place                  |
-| Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each single-root template child against its DOM slice |
-| Other values with markers                  | Flat marker scan   | Reconnects attribute bindings only                             |
+| Root shape                                 | Recovery path      | Notes                                               |
+| ------------------------------------------ | ------------------ | --------------------------------------------------- |
+| Single template (`<section>...</section>`) | Template hydration | Reconnects attribute and child parts in place       |
+| Iterable / fragment (`<>...</>`)           | Iterable hydration | Hydrates each child into the mounted ownership tree |
+| Other values with markers                  | Flat marker scan   | Reconnects attribute bindings only                  |
 
-Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Nested fragments, bare reactive children at the fragment root, and DOM/script child mismatches fall back to a full client render.
+Iterable fragment hydration supports flat lists of intrinsic template children (for example `<> <button/> <span/> </>`), including subscribable child bindings inside those templates. Each recovered child template stays in the root's ownership tree, so `unmount()` and later replacement renders dispose subscriptions and native listeners.
+
+Keyed identity is retained only when **every** child in the list has a key. A mixed keyed/unkeyed list hydrates as an indexed list and can rebuild nodes on the next render. Nested fragments, bare reactive children at the fragment root, and DOM/script child-count mismatches fall back to a full client render. If an earlier sibling had already subscribed when that fallback happens, that sibling is disposed first. Incomplete recovery inside a single template disposes parts that already subscribed before falling back.
 
 Global SSR marker indexes are shared across all three paths via the binding collection helpers in `hydration-bindings.ts`, so fragment children resolve `data-radiant-jsx-bind-*` attributes against the same namespace used by `renderToString(..., { mode: 'hydrate' })`.
 
@@ -450,7 +466,7 @@ flowchart TD
   Dispatch --> Path{"Root shape?"}
   Path -->|single template| Template["hydrateTemplateInstance"]
   Path -->|fragment / iterable| Iterable["hydrateIterableRoot"]
-  Path -->|leftover markers| Flat["visitHydrationBindingMarkers"]
+  Path -->|other roots| Flat["hydrateFlatBindings"]
   Template --> Live["Live template parts + subscriptions"]
   Iterable --> Live
   Flat --> Attrs["Attribute bindings only"]
@@ -458,9 +474,9 @@ flowchart TD
 
 **1. Serialize.** `serializeRenderable(...)` walks the JSX tree depth-first. Each attribute interpolation that needs a marker calls `takeNextHydrationMarkerIndex(...)` and writes `data-radiant-jsx-bind-N="kind:name"` through `resolveHydrationMarkerAttributeName(...)`.
 
-**2. Index contract.** `hydration-bindings.ts` owns the marker prefix, descriptor format, index advancement, and DOM walks. Iterable hydration uses `collectTemplateAttributeMarkerIndices(...)` per single-root child so fragment siblings stay aligned with the same global namespace.
+**2. Index contract.** `hydration-bindings.ts` owns the marker prefix, descriptor format, index advancement, and DOM walks. Iterable hydration advances `nextBindingIndex` with `countHydrationMarkers(...)` per child. Each recovered child template then calls `planTemplateHydrationIndices(template, bindingBaseIndex)` so fragment siblings stay aligned with the same global namespace.
 
-**3. Recover.** `hydrate(...)` picks a recovery path from the root shape. Template and iterable paths rebuild live parts in place. Unsupported shapes, or DOM/script mismatches, return a recoverable mismatch and fall back to a full client render.
+**3. Recover.** `hydrate(...)` dispatches on root shape as in [Hydration Root Shapes](#hydration-root-shapes). Failed recovery disposes any parts that already subscribed, then falls back to a full client render.
 
 **Counter-shaped fragment example:**
 
@@ -506,9 +522,9 @@ For that fragment, attribute markers are allocated like this:
 | `1`          | `<span id="metric">` | `attr:id` |
 | `2`          | `<button id="inc">`  | `attr:id` |
 
-Iterable hydration resolves each child with `collectTemplateAttributeMarkerIndices(child, startIndex)` so sibling templates reuse the same numbering that `renderToString(..., { mode: 'hydrate' })` wrote into the HTML.
+Iterable hydration assigns each child `bindingBaseIndex` by counting prior siblings with `countHydrationMarkers(...)`, so sibling templates reuse the same numbering that `renderToString(..., { mode: 'hydrate' })` wrote into the HTML.
 
-Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`.
+Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
 Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook.
 
@@ -705,11 +721,12 @@ That object is an internal contract between the JSX runtime and the Radiant rend
 
 ### What the package does
 
-| Path                                    | Behavior                                            |
-| --------------------------------------- | --------------------------------------------------- |
-| Text children                           | Escaped on SSR; mounted as text nodes on the client |
-| Ordinary attributes                     | Escaped for HTML attribute context (including `"`)  |
-| Plain `{ nodeType, outerHTML }` objects | Treated as text (escaped / text node), not raw HTML |
+| Path                                                    | Behavior                                                              |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| Text children                                           | Escaped on SSR; mounted as text nodes on the client                   |
+| Text children in `textarea`, `title`, `style`, `script` | Written as the element's character data; comment anchors are not used |
+| Ordinary attributes                                     | Escaped for HTML attribute context (including `"`)                    |
+| Plain `{ nodeType, outerHTML }` objects                 | Treated as text (escaped / text node), not raw HTML                   |
 
 ### Trusted paths (author / framework data only)
 

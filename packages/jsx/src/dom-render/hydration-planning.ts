@@ -10,6 +10,7 @@ import {
 	unwrapKeyedValue,
 } from './runtime-helpers.ts';
 import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX } from './constants.ts';
+import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import type { ChildTemplatePart } from './types.ts';
 
 /** Mapping between a compiled child binding and the concrete node slice found in hydrated DOM. */
@@ -164,7 +165,7 @@ export function countHydratedRangeNodes(value: unknown): number {
 	if (isIterableRenderable(resolvedValue)) {
 		let total = 0;
 
-		for (const child of resolvedValue) {
+		for (const child of materializeIterableChildren(resolvedValue)) {
 			total += countHydratedRangeNodes(child);
 		}
 

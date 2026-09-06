@@ -6,8 +6,10 @@ import {
 	HYDRATE_DYNAMIC_LIST_HTML,
 	HYDRATE_FRAGMENT_COUNTER_HTML,
 	HYDRATE_GRADIENT_ICON_HTML,
+	HYDRATE_ITERABLE_NATIVE_CLICK_HTML,
 	HYDRATE_ITERABLE_ROOT_HTML,
 	HYDRATE_ITERABLE_ROOT_SINGLE_HTML,
+	HYDRATE_KEYED_INPUTS_HTML,
 	HYDRATE_METRIC_HTML,
 	HYDRATE_NESTED_SVG_ICON_HTML,
 	PLAIN_BUTTON_ALPHA_HTML,
@@ -963,6 +965,120 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		]);
 	});
 
+	test('renders a generator used as a direct root value', async () => {
+		const [{ createRoot }] = await Promise.all([loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		function* children() {
+			yield 'first';
+			yield 'second';
+		}
+
+		root.render(children());
+		expect(container.textContent).toBe('firstsecond');
+	});
+
+	test('reuses a generator snapshot across later renders of the same iterator', async () => {
+		const [{ createRoot }] = await Promise.all([loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		function* children() {
+			yield 'first';
+			yield 'second';
+		}
+
+		const items = children();
+
+		root.render(items);
+		expect(container.textContent).toBe('firstsecond');
+		const firstNodes = Array.from(container.childNodes);
+
+		root.render(items);
+		expect(container.textContent).toBe('firstsecond');
+		expect(Array.from(container.childNodes)).toEqual(firstNodes);
+	});
+
+	test('hydrates generator list children without rebuilding SSR nodes', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		function* items() {
+			yield jsx('li', { class: 'item', 'data-id': 'a', children: 'Alpha' });
+			yield jsx('li', { class: 'item', 'data-id': 'b', children: 'Beta' });
+		}
+
+		container.innerHTML = HYDRATE_DYNAMIC_LIST_HTML;
+		const serverItems = Array.from(container.querySelectorAll('li'));
+
+		root.hydrate(jsx('ul', { class: 'list', children: items() }));
+
+		expect(Array.from(container.querySelectorAll('li'))).toEqual(serverItems);
+		expect(container.querySelector('li')?.textContent).toBe('Alpha');
+		expect(container.innerHTML).not.toContain('data-radiant-jsx-bind-');
+
+		root.unmount();
+		expect(container.childNodes).toHaveLength(0);
+	});
+
+	test('consumes a root iterable exactly once', async () => {
+		const [{ createRoot }] = await Promise.all([loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		let consumeCount = 0;
+		const iterable = {
+			[Symbol.iterator]() {
+				consumeCount += 1;
+				return ['first', 'second'][Symbol.iterator]();
+			},
+		};
+
+		root.render(iterable);
+		expect(consumeCount).toBe(1);
+		expect(container.textContent).toBe('firstsecond');
+	});
+
+	test('reactive sources that emit a fresh generator are consumed once per snapshot', async () => {
+		const [{ createSubscribableJsxValue }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: Iterable<string>) => void>();
+		let round = 0;
+		let consumeCount = 0;
+		const boundChildren = createSubscribableJsxValue({
+			getValue: (): Iterable<string> => {
+				const items = [`a${round}`, `b${round}`];
+				return {
+					[Symbol.iterator]() {
+						consumeCount += 1;
+						return items[Symbol.iterator]();
+					},
+				};
+			},
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		root.render(boundChildren);
+		expect(consumeCount).toBe(1);
+		expect(container.textContent).toBe('a0b0');
+
+		round = 1;
+		for (const subscriber of subscribers) {
+			subscriber(boundChildren.getValue());
+		}
+		await Promise.resolve();
+
+		expect(consumeCount).toBe(2);
+		expect(container.textContent).toBe('a1b1');
+	});
+
 	test('counter-style updates only mutate the reactive text node', async () => {
 		const [{ jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
 		const container = document.createElement('div');
@@ -1202,6 +1318,203 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		await Promise.resolve();
 
 		expect(container.querySelector('#metric')?.textContent).toBe('3');
+	});
+
+	test('unmount of a hydrated fragment releases reactive child subscriptions', async () => {
+		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		let count = 2;
+		const boundCount = createSubscribableJsxValue({
+			getValue: () => count,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		container.innerHTML = HYDRATE_FRAGMENT_COUNTER_HTML;
+		root.hydrate(
+			jsxs(Fragment, {
+				children: [
+					jsx('button', { id: 'dec', children: '-' }),
+					jsx('span', { id: 'metric', children: boundCount }),
+					jsx('button', { id: 'inc', children: '+' }),
+				],
+			}),
+		);
+
+		expect(subscribers.size).toBe(1);
+		root.unmount();
+		expect(subscribers.size).toBe(0);
+	});
+
+	test('replacement render of a hydrated fragment disposes the previous subscription', async () => {
+		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const firstSubscribers = new Set<(value: number) => void>();
+		const secondSubscribers = new Set<(value: string) => void>();
+		const boundCount = createSubscribableJsxValue({
+			getValue: (): number => 2,
+			subscribe: (notify) => {
+				firstSubscribers.add(notify);
+				return () => {
+					firstSubscribers.delete(notify);
+				};
+			},
+		});
+		const boundLabel = createSubscribableJsxValue({
+			getValue: (): string => 'ready',
+			subscribe: (notify) => {
+				secondSubscribers.add(notify);
+				return () => {
+					secondSubscribers.delete(notify);
+				};
+			},
+		});
+
+		container.innerHTML = HYDRATE_FRAGMENT_COUNTER_HTML;
+		root.hydrate(
+			jsxs(Fragment, {
+				children: [
+					jsx('button', { id: 'dec', children: '-' }),
+					jsx('span', { id: 'metric', children: boundCount }),
+					jsx('button', { id: 'inc', children: '+' }),
+				],
+			}),
+		);
+		expect(firstSubscribers.size).toBe(1);
+
+		root.render(jsx('p', { children: boundLabel }));
+		expect(firstSubscribers.size).toBe(0);
+		expect(secondSubscribers.size).toBe(1);
+		expect(container.querySelector('p')?.textContent).toBe('ready');
+
+		root.unmount();
+		expect(secondSubscribers.size).toBe(0);
+	});
+
+	test('unmount releases native listeners attached during iterable-root hydration', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		document.body.append(container);
+		const root = createRoot(container);
+		let clickTotal = 0;
+		const increment = () => {
+			clickTotal += 1;
+		};
+
+		container.innerHTML = HYDRATE_ITERABLE_NATIVE_CLICK_HTML;
+		root.hydrate([
+			jsx('button', { 'on-native:click': increment, children: 'Alpha' }),
+			jsx('button', { 'on-native:click': increment, children: 'Beta' }),
+		]);
+
+		const hydratedButton = container.querySelector('button');
+		hydratedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clickTotal).toBe(1);
+
+		root.unmount();
+		container.append(hydratedButton!);
+		hydratedButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(clickTotal).toBe(1);
+
+		container.remove();
+	});
+
+	test('iterable hydration disposes an earlier sibling subscription when a later child fails', async () => {
+		const [{ createSubscribableJsxValue, jsx }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		const boundCount = createSubscribableJsxValue({
+			getValue: (): number => 2,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+
+		container.innerHTML = '<span data-radiant-jsx-bind-0="attr:id" id="metric">2</span><button>nested</button>';
+		root.hydrate([jsx('span', { id: 'metric', children: boundCount }), [jsx('button', { children: 'nested' })]]);
+
+		expect(subscribers.size).toBe(1);
+		expect(container.querySelector('#metric')?.textContent).toBe('2');
+		expect(container.querySelector('button')?.textContent).toBe('nested');
+
+		root.unmount();
+		expect(subscribers.size).toBe(0);
+	});
+
+	test('incomplete template hydration disposes parts that already subscribed', async () => {
+		const [{ createSubscribableJsxValue, toTemplateResultLike }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const subscribers = new Set<(value: number) => void>();
+		const boundCount = createSubscribableJsxValue({
+			getValue: (): number => 2,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		const mismatchedTemplate = toTemplateResultLike({
+			strings: ['<p id=', '>', '</p><span class=', '>gone</span>'],
+			values: ['m', boundCount, 'missing'],
+		});
+
+		container.innerHTML = '<p data-radiant-jsx-bind-0="attr:id" id="m">2</p>';
+		root.hydrate(mismatchedTemplate);
+
+		expect(container.querySelector('span')?.textContent).toBe('gone');
+		expect(subscribers.size).toBe(1);
+
+		root.unmount();
+		expect(subscribers.size).toBe(0);
+	});
+
+	test('hydrated keyed fragment children keep identity and field state on the next render', async () => {
+		const [{ jsx }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const renderFields = (ids: string[]) => ids.map((id) => jsx('input', { key: id, id, type: 'text' }));
+
+		container.innerHTML = HYDRATE_KEYED_INPUTS_HTML;
+		root.hydrate(renderFields(['a', 'b']));
+
+		const inputA = container.querySelector('#a');
+		const inputB = container.querySelector('#b');
+		expect(inputA).toBeInstanceOf(HTMLInputElement);
+		(inputA as HTMLInputElement).value = 'typed';
+
+		root.render(renderFields(['a', 'b']));
+		expect(container.querySelector('#a')).toBe(inputA);
+		expect(container.querySelector('#b')).toBe(inputB);
+		expect((inputA as HTMLInputElement).value).toBe('typed');
+
+		root.render(renderFields(['b', 'a']));
+		expect(Array.from(container.querySelectorAll('input'))).toEqual([inputB, inputA]);
+		expect((inputA as HTMLInputElement).value).toBe('typed');
 	});
 
 	test('signal-like child values patch their own text node without rerendering the parent tree', async () => {
@@ -1919,5 +2232,90 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		signalStyle.set({ backgroundColor: 'maroon', marginTop: '4px' });
 		await Promise.resolve();
 		expect(sigHost.getAttribute('style')).toBe('background-color: maroon; margin-top: 4px');
+	});
+
+	test('lifecycle matrix: mount or hydrate, then update or replace, then unmount', async () => {
+		const [{ createSubscribableJsxValue, Fragment, jsx, jsxs }, { createRoot }] = await Promise.all([
+			loadJsxRuntime(),
+			loadJsxModule(),
+		]);
+
+		const templateView = (label: string) => jsx('p', { id: 'item', children: label });
+		const fragmentView = (label: string) =>
+			jsxs(Fragment, {
+				children: [jsx('span', { id: 'left', children: label }), jsx('span', { id: 'right', children: 'ok' })],
+			});
+
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		root.render(templateView('alpha'));
+		expect(container.querySelector('#item')?.textContent).toBe('alpha');
+		root.render(templateView('beta'));
+		expect(container.querySelector('#item')?.textContent).toBe('beta');
+		root.unmount();
+		expect(container.childNodes).toHaveLength(0);
+
+		root.render(fragmentView('one'));
+		expect(container.querySelector('#left')?.textContent).toBe('one');
+		root.render(fragmentView('two'));
+		expect(container.querySelector('#left')?.textContent).toBe('two');
+		root.unmount();
+		expect(container.childNodes).toHaveLength(0);
+
+		const subscribers = new Set<(value: string) => void>();
+		let label = 'idle';
+		const boundLabel = createSubscribableJsxValue({
+			getValue: () => label,
+			subscribe: (notify) => {
+				subscribers.add(notify);
+				return () => {
+					subscribers.delete(notify);
+				};
+			},
+		});
+		root.render(boundLabel);
+		expect(container.textContent).toBe('idle');
+		expect(subscribers.size).toBe(1);
+		label = 'busy';
+		for (const subscriber of subscribers) {
+			subscriber(label);
+		}
+		await Promise.resolve();
+		expect(container.textContent).toBe('busy');
+		root.unmount();
+		expect(subscribers.size).toBe(0);
+
+		container.innerHTML = HYDRATE_METRIC_HTML;
+		root.hydrate(jsxs('p', { class: 'component-metric', children: ['Count: ', 15] }));
+		expect(container.querySelector('p')?.textContent).toBe('Count: 15');
+		root.render(jsxs('p', { class: 'component-metric', children: ['Count: ', 16] }));
+		expect(container.querySelector('p')?.textContent).toBe('Count: 16');
+		root.unmount();
+		expect(container.childNodes).toHaveLength(0);
+
+		container.innerHTML = HYDRATE_FRAGMENT_COUNTER_HTML;
+		root.hydrate(
+			jsxs(Fragment, {
+				children: [
+					jsx('button', { id: 'dec', children: '-' }),
+					jsx('span', { id: 'metric', children: '2' }),
+					jsx('button', { id: 'inc', children: '+' }),
+				],
+			}),
+		);
+		expect(container.querySelector('#metric')?.textContent).toBe('2');
+		root.render(
+			jsxs(Fragment, {
+				children: [
+					jsx('button', { id: 'dec', children: '-' }),
+					jsx('span', { id: 'metric', children: '3' }),
+					jsx('button', { id: 'inc', children: '+' }),
+				],
+			}),
+		);
+		expect(container.querySelector('#metric')?.textContent).toBe('3');
+		root.unmount();
+		expect(container.childNodes).toHaveLength(0);
 	});
 });

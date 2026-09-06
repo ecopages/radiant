@@ -37,3 +37,21 @@ export const HYDRATE_DYNAMIC_LIST_HTML =
 	'<li data-radiant-jsx-bind-1="attr:class" class="item" data-radiant-jsx-bind-2="attr:data-id" data-id="a">Alpha</li>' +
 	'<li data-radiant-jsx-bind-3="attr:class" class="item" data-radiant-jsx-bind-4="attr:data-id" data-id="b">Beta</li>' +
 	'</ul>';
+
+export const HYDRATE_ITERABLE_NATIVE_CLICK_HTML =
+	'<button data-radiant-jsx-bind-0="native-event:click">Alpha</button><button data-radiant-jsx-bind-1="native-event:click">Beta</button>';
+
+export const HYDRATE_TEXTAREA_HTML = '<textarea data-radiant-jsx-bind-0="attr:id" id="draft">hello</textarea>';
+
+export const HYDRATE_TEXTAREA_ESCAPED_HTML =
+	'<textarea data-radiant-jsx-bind-0="attr:id" id="draft">a &lt; b &amp; "c"</textarea>';
+
+export const HYDRATE_TITLE_HTML = '<title data-radiant-jsx-bind-0="attr:id" id="page">hello</title>';
+
+export const HYDRATE_STYLE_HTML = '<style data-radiant-jsx-bind-0="attr:id" id="theme">hello</style>';
+
+export const HYDRATE_SCRIPT_HTML = '<script data-radiant-jsx-bind-0="attr:type" type="application/json">hello</script>';
+
+export const HYDRATE_KEYED_INPUTS_HTML =
+	'<input data-radiant-jsx-bind-0="attr:id" id="a" data-radiant-jsx-bind-1="attr:type" type="text">' +
+	'<input data-radiant-jsx-bind-2="attr:id" id="b" data-radiant-jsx-bind-3="attr:type" type="text">';
