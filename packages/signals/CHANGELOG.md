@@ -1,5 +1,7 @@
 # @ecopages/signals
 
+## 0.3.0-rc.7
+
 ## 0.3.0-rc.6
 
 ## 0.3.0-rc.5

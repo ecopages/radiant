@@ -1,5 +1,14 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.7
+
+### Patch Changes
+
+- [#234](https://github.com/ecopages/radiant/pull/234) [`74bc685`](https://github.com/ecopages/radiant/commit/74bc68577bdd5b61a8d9689cbedc774b3bfc4608) Thanks [@andeeplus](https://github.com/andeeplus)! - Add optional `transform` to `@prop` for custom attribute ↔ property conversion, including `fromProperty` normalization on JS writes and omission of reflected attributes when `toAttribute` returns null or an empty string.
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-rc.7
+    - @ecopages/signals@0.3.0-rc.7
+
 ## 0.3.0-rc.6
 
 ### Minor Changes
