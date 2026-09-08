@@ -268,6 +268,7 @@ export class RuiTagGroup extends RadiantElement {
 		tag.setAttribute('data-label', item.label);
 		tag.className = 'rui-tag';
 		tag.textContent = item.label;
+		tag.setAttribute('aria-label', item.label);
 
 		const remove = document.createElement('button');
 		remove.type = 'button';
