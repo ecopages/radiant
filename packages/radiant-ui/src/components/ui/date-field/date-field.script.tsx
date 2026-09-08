@@ -101,9 +101,15 @@ export type RuiDateFieldChangeDetail = { value: string };
  */
 @customElement('rui-date-field')
 export class RuiDateField extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
-	@prop({ type: String, defaultValue: '' }) min: string;
-	@prop({ type: String, defaultValue: '' }) max: string;
+	@prop({ type: String, reflect: true, defaultValue: '' })
+	@bindTo({ selector: '[data-date-field-calendar]', attr: 'value' })
+	value: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: '[data-date-field-calendar]', attr: 'min' })
+	min: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: '[data-date-field-calendar]', attr: 'max' })
+	max: string;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo([
@@ -123,10 +129,16 @@ export class RuiDateField extends RadiantElement {
 	name: string;
 
 	@prop({ type: String, defaultValue: '' }) placeholder: string;
-	@prop({ type: String, defaultValue: '' }) locale: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: '[data-date-field-calendar]', attr: 'locale' })
+	locale: string;
 	@prop({ type: String, attribute: 'date-style', defaultValue: 'medium' }) dateStyle: DateDisplayStyle;
-	@prop({ type: Boolean, reflect: true, defaultValue: true }) masked: boolean;
-	@prop({ type: Number, attribute: 'visible-months', defaultValue: 1 }) visibleMonths: number;
+	@prop({ type: Boolean, reflect: true, defaultValue: true })
+	@bindTo({ selector: '[data-date-field-input]', prop: 'inputMode', map: (masked) => (masked ? 'numeric' : 'text') })
+	masked: boolean;
+	@prop({ type: Number, attribute: 'visible-months', defaultValue: 1 })
+	@bindTo({ selector: '[data-date-field-calendar]', attr: 'visible-months' })
+	visibleMonths: number;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiDateFieldChangeDetail>;
@@ -191,8 +203,6 @@ export class RuiDateField extends RadiantElement {
 			input.id = this.inputId;
 		}
 
-		input.inputMode = this.masked ? 'numeric' : 'text';
-
 		const placeholder = this.resolvedPlaceholder;
 		if (placeholder) {
 			input.placeholder = placeholder;
@@ -206,20 +216,6 @@ export class RuiDateField extends RadiantElement {
 		}
 
 		toggle.disabled = this.disabled || this.readOnly;
-	}
-
-	private syncCalendar(): void {
-		const calendar = this.getCalendar();
-		if (!calendar) {
-			return;
-		}
-
-		calendar.setAttribute('selection-mode', 'single');
-		calendar.setAttribute('visible-months', String(this.visibleMonths));
-		calendar.setAttribute('value', this.isoValue);
-		calendar.setAttribute('min', this.min);
-		calendar.setAttribute('max', this.max);
-		calendar.setAttribute('locale', this.locale);
 	}
 
 	private formatForDisplay(iso: string): string {
@@ -317,14 +313,13 @@ export class RuiDateField extends RadiantElement {
 		this.syncInput();
 		this.syncDisplayValue();
 		this.syncToggle();
-		this.syncCalendar();
+		this.getCalendar()?.setAttribute('selection-mode', 'single');
 		this.setOpen(false);
 	}
 
 	private setOpen(next: boolean): void {
 		this.open = next;
 		queueMicrotask(() => {
-			this.syncCalendar();
 			this.syncPopoverPosition();
 			if (next) {
 				this.focusCalendarDay();
@@ -409,7 +404,6 @@ export class RuiDateField extends RadiantElement {
 		this.syncInput();
 		this.syncDisplayValue();
 		this.syncToggle();
-		this.syncCalendar();
 	}
 
 	@onUpdated(['open'])
