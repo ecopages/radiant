@@ -57,6 +57,29 @@ describe('RuiTagGroup', () => {
 		cleanup();
 	});
 
+	it('gives managed and authored chips an accessible name', async () => {
+		const { host, cleanup } = mount(
+			<RuiTagGroup
+				tags={[
+					{ value: 'js', label: 'JavaScript' },
+					{ value: 'ts', label: 'TypeScript' },
+				]}
+			/>,
+		);
+		await settled();
+
+		const group = host.querySelector('rui-tag-group') as RuiTagGroupElement;
+		const authoredTags = Array.from(host.querySelectorAll<HTMLElement>('[data-tag-list] [data-tag]'));
+		expect(authoredTags.map((tag) => tag.getAttribute('aria-label'))).toEqual(['JavaScript', 'TypeScript']);
+
+		group.setItems([{ value: 'rs', label: 'Rust' }]);
+		await settled();
+
+		const managed = host.querySelector('[data-rui-managed-list]') as HTMLElement;
+		expect(managed.querySelector('[data-tag]')?.getAttribute('aria-label')).toBe('Rust');
+		cleanup();
+	});
+
 	it('does not remove an empty authored list when setItems has never run', async () => {
 		const { host, cleanup } = mount(
 			<RuiTagGroup>
