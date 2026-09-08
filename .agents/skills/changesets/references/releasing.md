@@ -19,7 +19,7 @@ While in prerelease mode, `pre.json` holds only `mode` and `tag`. Changesets tha
 
 1. Land changes together with their changeset files.
 2. Run the repo's verification gate (typecheck, build, test) before versioning.
-3. Version: `pnpm changeset version`. This consumes pending `.changeset/*.md`, rewrites versions, and writes CHANGELOGs.
+3. Version: `pnpm run version-packages` (or `pnpm changeset version` locally, then `pnpm install --lockfile-only`). This consumes pending `.changeset/*.md`, rewrites versions, writes CHANGELOGs, and refreshes `pnpm-lock.yaml` when workspace `>=` specifiers move.
 4. Publish: `pnpm changeset publish`. This publishes every package whose version is not yet on the registry, then creates git tags.
 
 Do not commit between steps 3 and 4 — `publish` acts on the versions `version` just wrote.
@@ -104,7 +104,7 @@ When a package sets `publishConfig.directory`, publish from that built directory
 
 Use `changesets/action@v2` with Changesets CLI v3. v1 only works with CLI v2.
 
-Inputs: `version-script`, `publish-script`, `github-token` (not `GITHUB_TOKEN` env). The action needs `contents: write`, `pull-requests: write`, and `id-token: write` for trusted publishing. Checkout with `fetch-depth: 0`.
+Inputs: `version-script`, `publish-script`, `github-token` (not `GITHUB_TOKEN` env). Point `version-script` at a script that runs `changeset version` and refreshes the lockfile (`pnpm install --lockfile-only`) when workspace `>=` specifiers change. The action needs `contents: write`, `pull-requests: write`, and `id-token: write` for trusted publishing. Checkout with `fetch-depth: 0`.
 
 `publish-script` must be `changeset publish` (or the repo's equivalent). A raw `npm publish` does not write `CHANGESETS_OUTPUT`, so the action skips git tags and GitHub releases.
 
