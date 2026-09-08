@@ -33,7 +33,7 @@ GITHUB_TOKEN="$(gh auth token)" pnpm changeset version
 
 ## CI
 
-`.github/workflows/release.yml` runs on `main` and `release/v0.3.0`: install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm changeset version` and `pnpm changeset publish`. The token is `github-token: ${{ secrets.CI_GITHUB_TOKEN }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
+`.github/workflows/release.yml` runs on `main` and `release/v0.3.0`: install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm run version-packages` and `pnpm changeset publish`. `version-packages` runs `changeset version` then `pnpm install --lockfile-only` so workspace `>=` specifiers and `pnpm-lock.yaml` stay in sync on the Version Packages PR. The token is `github-token: ${{ secrets.CI_GITHUB_TOKEN }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
 
 `baseBranch` is `release/v0.3.0` — that is the active prerelease line. `changeset add` and `status` compare against it.
 

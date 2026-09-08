@@ -17,6 +17,7 @@
 		"size:check": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:check",
 		"size:report": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:report",
 		"changeset": "changeset",
+		"version-packages": "changeset version && pnpm install --lockfile-only",
 		"commit": "better-commits",
 		"prerelease": "pnpm run typecheck && pnpm run build:all && pnpm run test:all",
 		"release": "changeset publish",
