@@ -1,4 +1,15 @@
-import { RadiantElement, bound, customElement, event, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	bound,
+	customElement,
+	event,
+	onEvent,
+	onUpdated,
+	prop,
+	query,
+	state,
+} from '@ecopages/radiant';
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { parseCommaSeparated } from '@/lib/comma-separated';
@@ -129,9 +140,15 @@ function isHorizontalSide(side: RuiSidebarSide): boolean {
  */
 @customElement('rui-sidebar')
 export class RuiSidebar extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: 'sidebar' }) variant: RuiSidebarVariant;
-	@prop({ type: String, reflect: true, defaultValue: 'left' }) side: RuiSidebarSide;
-	@prop({ type: String, reflect: true, defaultValue: 'off' }) collapsible: RuiSidebarCollapsible;
+	@prop({ type: String, reflect: true, defaultValue: 'sidebar' })
+	@bindTo([{ attr: 'data-variant' }, { ref: 'root', attr: 'data-variant' }, { ref: 'pane', attr: 'data-variant' }])
+	variant: RuiSidebarVariant;
+	@prop({ type: String, reflect: true, defaultValue: 'left' })
+	@bindTo([{ attr: 'data-side' }, { ref: 'root', attr: 'data-side' }, { ref: 'pane', attr: 'data-side' }])
+	side: RuiSidebarSide;
+	@prop({ type: String, reflect: true, defaultValue: 'off' })
+	@bindTo([{ attr: 'data-collapsible' }, { ref: 'root', attr: 'data-collapsible' }])
+	collapsible: RuiSidebarCollapsible;
 	@prop({ type: Number, defaultValue: DEFAULT_WIDTH }) defaultWidth: number;
 	@prop({ type: Number, reflect: true, attribute: 'width' }) width: number | undefined;
 	@prop({ type: Number, defaultValue: DEFAULT_MIN_WIDTH }) minWidth: number;
@@ -141,7 +158,9 @@ export class RuiSidebar extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: false }) mobileDefaultOpen: boolean;
 	@prop({ type: Boolean, attribute: 'open' }) open: boolean | undefined;
 	@prop({ type: Number, defaultValue: DEFAULT_MOBILE_BREAKPOINT }) mobileBreakpoint: number;
-	@prop({ type: String, defaultValue: 'Sidebar' }) label: string;
+	@prop({ type: String, defaultValue: 'Sidebar' })
+	@bindTo([{ attr: 'aria-label' }, { ref: 'pane', attr: 'aria-label' }])
+	label: string;
 	@prop({ type: Boolean, reflect: true, attribute: 'match-active' }) matchActive = false;
 	@prop({ type: String, defaultValue: 'pathname' }) matchMode: RuiSidebarMatchMode;
 	@prop({ type: Boolean, attribute: 'scroll-active-on-mount' }) scrollActiveOnMount = false;
@@ -161,7 +180,9 @@ export class RuiSidebar extends RadiantElement {
 	@event({ name: 'rui-sidebar-mobile-change', bubbles: true, composed: true })
 	mobileChangeEvent: EventEmitter<{ mobile: boolean }>;
 
-	@state isMobile = false;
+	@state
+	@bindTo([{ attr: 'data-mobile' }, { ref: 'root', attr: 'data-mobile' }])
+	isMobile = false;
 	private mediaQuery: MediaQueryList | null = null;
 	private readonly mediaListener = (event: MediaQueryListEvent): void => this.setMobile(event.matches);
 
@@ -192,7 +213,6 @@ export class RuiSidebar extends RadiantElement {
 		this.ensureWidthInitialized();
 
 		this.setAttribute('role', 'complementary');
-		this.setAttribute('aria-label', this.label);
 		this.syncPresentation();
 		this.attachNavigationListeners();
 	}
@@ -253,7 +273,6 @@ export class RuiSidebar extends RadiantElement {
 	 * `:has(> rui-sidebar[...])`; inner `.rui-sidebar` drives visual styles.
 	 */
 	private syncPresentation(): void {
-		const horizontal = isHorizontalSide(this.side);
 		const open = this.isOpen();
 		const paneState: RuiSidebarState = open ? 'expanded' : 'collapsed';
 		const showHandle = this.resizable && this.collapsible === 'off' && open && !this.isMobile;
@@ -261,19 +280,11 @@ export class RuiSidebar extends RadiantElement {
 		const paneWidth = this.paneWidth();
 
 		this.setAttribute('data-state', paneState);
-		this.setAttribute('data-collapsible', this.collapsible);
-		this.setAttribute('data-variant', this.variant);
-		this.setAttribute('data-side', this.side);
-		this.setAttribute('data-mobile', String(this.isMobile));
 		this.setAttribute('data-pane-width', String(paneWidth));
 
 		const root = this.rootTarget;
 		if (root) {
 			root.dataset.state = paneState;
-			root.dataset.collapsible = this.collapsible;
-			root.dataset.variant = this.variant;
-			root.dataset.side = this.side;
-			root.dataset.mobile = String(this.isMobile);
 		}
 
 		const scrim = this.scrimTarget;
@@ -283,9 +294,6 @@ export class RuiSidebar extends RadiantElement {
 
 		const pane = this.paneTarget;
 		if (pane) {
-			pane.dataset.side = this.side;
-			pane.dataset.variant = this.variant;
-			pane.setAttribute('aria-label', this.label);
 			if (paneInert) {
 				pane.setAttribute('inert', '');
 			} else {
@@ -293,17 +301,25 @@ export class RuiSidebar extends RadiantElement {
 			}
 		}
 
+		this.syncHandlePresentation(showHandle, paneWidth);
+	}
+
+	private syncHandlePresentation(showHandle: boolean, paneWidth: number): void {
 		const handle = this.handleTarget;
-		if (handle) {
-			handle.toggleAttribute('hidden', !showHandle);
-			if (showHandle) {
-				handle.setAttribute('aria-orientation', horizontal ? 'vertical' : 'horizontal');
-				handle.setAttribute('aria-valuenow', String(paneWidth));
-				handle.setAttribute('aria-valuemin', String(this.minWidth));
-				handle.setAttribute('aria-valuemax', String(this.maxWidth));
-				handle.setAttribute('aria-label', `${this.label} resize handle`);
-			}
+		if (!handle) {
+			return;
 		}
+
+		handle.toggleAttribute('hidden', !showHandle);
+		if (!showHandle) {
+			return;
+		}
+
+		handle.setAttribute('aria-orientation', isHorizontalSide(this.side) ? 'vertical' : 'horizontal');
+		handle.setAttribute('aria-valuenow', String(paneWidth));
+		handle.setAttribute('aria-valuemin', String(this.minWidth));
+		handle.setAttribute('aria-valuemax', String(this.maxWidth));
+		handle.setAttribute('aria-label', `${this.label} resize handle`);
 	}
 
 	private isOpen(): boolean {

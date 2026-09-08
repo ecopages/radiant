@@ -1,4 +1,14 @@
-import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	bound,
+	customElement,
+	onEvent,
+	onUpdated,
+	prop,
+	query,
+	state,
+} from '@ecopages/radiant';
 import {
 	DEFAULT_TOAST_POSITION,
 	RUI_TOAST_DISMISS_EVENT,
@@ -101,7 +111,12 @@ function isInsideToaster(node: EventTarget | null, root: Element): boolean {
  */
 @customElement('rui-toaster')
 export class RuiToaster extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: DEFAULT_TOAST_POSITION }) position: ToastPosition;
+	@prop({ type: String, reflect: true, defaultValue: DEFAULT_TOAST_POSITION })
+	@bindTo([
+		{ attr: 'data-y-position', map: (position) => splitToastPosition(position).y },
+		{ attr: 'data-x-position', map: (position) => splitToastPosition(position).x },
+	])
+	position: ToastPosition;
 	@prop({ type: Number, defaultValue: TOAST_LIFETIME }) duration: number;
 	@prop({ type: Number, defaultValue: TOAST_VISIBLE_AMOUNT }) visibleToasts: number;
 	@prop({ type: Boolean, defaultValue: false }) closeButton: boolean;
@@ -201,9 +216,6 @@ export class RuiToaster extends RadiantElement {
 	}
 
 	private syncHostPosition(): void {
-		const { y, x } = splitToastPosition(this.position);
-		this.dataset.yPosition = y;
-		this.dataset.xPosition = x;
 		this.style.setProperty('--rui-toaster-gap', `${this.gap}px`);
 		this.style.setProperty('--rui-toaster-offset', `${this.offset}px`);
 	}

@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 import type { RuiSidebarToggleDetail } from './sidebar.script';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
@@ -53,7 +53,12 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	@query({ ref: 'button' }) buttonTarget: HTMLButtonElement;
 
-	@state private sidebarState: 'expanded' | 'collapsed' = 'expanded';
+	@state
+	@bindTo([
+		{ ref: 'button', attr: 'aria-expanded', map: (state) => String(state === 'expanded') },
+		{ ref: 'button', attr: 'data-sidebar-state' },
+	])
+	private sidebarState: 'expanded' | 'collapsed' = 'expanded';
 
 	private sidebarListener: ((event: Event) => void) | null = null;
 	private attachedSidebar: HTMLElement | null = null;
@@ -169,10 +174,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 		const button = this.buttonTarget;
 		if (!button) return;
 		const sidebar = this.resolveSidebar();
-		const buttonLabel = this.resolvedButtonLabel(state);
-		button.setAttribute('aria-expanded', String(state === 'expanded'));
-		button.setAttribute('data-sidebar-state', state);
-		button.setAttribute('aria-label', buttonLabel);
+		button.setAttribute('aria-label', this.resolvedButtonLabel(state));
 		if (sidebar?.id) {
 			button.setAttribute('aria-controls', sidebar.id);
 		} else if (this.controls) {

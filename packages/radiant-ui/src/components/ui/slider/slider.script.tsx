@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
 import {
@@ -280,11 +280,30 @@ export class RuiSlider extends RadiantElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Number, defaultValue: 0 }) minDistance: number;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
-	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: String, defaultValue: '' }) name: string;
-	@prop({ type: Boolean, attribute: 'show-value', defaultValue: false }) showValue: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ ref: 'input', prop: 'disabled' },
+		{ ref: 'maxInput', prop: 'disabled' },
+	])
+	disabled: boolean;
+	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
+	@bindTo([
+		{ ref: 'input', prop: 'readOnly' },
+		{ ref: 'maxInput', prop: 'readOnly' },
+	])
+	readOnly: boolean;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo([
+		{ ref: 'label', bool: 'hidden', invert: true },
+		{ ref: 'label', text: true },
+	])
+	label: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ ref: 'input', attr: 'name', map: (name) => name || undefined })
+	name: string;
+	@prop({ type: Boolean, attribute: 'show-value', defaultValue: false })
+	@bindTo({ selector: '[data-default-value]', bool: 'hidden', invert: true })
+	showValue: boolean;
 	@prop({ type: Boolean, attribute: 'value-title', defaultValue: false }) valueTitle: boolean;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
@@ -457,9 +476,6 @@ export class RuiSlider extends RadiantElement {
 		this.rootTarget?.classList.toggle('rui-slider--single', !this.isRange);
 		this.rootTarget?.classList.toggle('rui-slider--range', this.isRange);
 		this.rootTarget?.classList.toggle('rui-slider--vertical', this.isVertical);
-		this.labelTarget?.toggleAttribute('hidden', !this.label);
-		if (this.labelTarget) this.labelTarget.textContent = this.label;
-		this.defaultValueTarget?.toggleAttribute('hidden', !this.showValue);
 		this.headerTarget?.toggleAttribute('hidden', !this.label && !hasVisibleReadout);
 	}
 
@@ -519,28 +535,18 @@ export class RuiSlider extends RadiantElement {
 			this.valueTarget.textContent = this.formatValues(values);
 		}
 
-		this.syncInputs(values);
+		this.syncInputValues(values);
 		this.syncValueTitle(values);
 	}
 
-	private syncInputs(values: number[]): void {
+	private syncInputValues(values: number[]): void {
 		if (this.inputTarget) {
-			this.inputTarget.disabled = this.disabled;
-			this.inputTarget.readOnly = this.readOnly;
 			this.inputTarget.value = String(values[0]);
-			if (this.name) {
-				this.inputTarget.name = this.name;
-			} else {
-				this.inputTarget.removeAttribute('name');
-			}
 		}
 
 		if (!this.maxInputTarget) {
 			return;
 		}
-
-		this.maxInputTarget.disabled = this.disabled;
-		this.maxInputTarget.readOnly = this.readOnly;
 
 		if (values.length === 2) {
 			this.maxInputTarget.value = String(values[1]);
