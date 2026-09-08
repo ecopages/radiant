@@ -27,15 +27,18 @@ export type RuiTagProps = JsxElementProps<HTMLSpanElement> & {
 };
 
 /**
- * A single tag. Stamps `[data-tag]`, `data-value`, and `data-label`.
+ * A single tag. Stamps `[data-tag]`, `data-value`, `data-label`, and `aria-label`
+ * (from `label`).
  *
  * @cssclass rui-tag - Tag chip; selected state via `[aria-selected='true']`.
  *
- * @remarks Always appends `RuiTagRemove`. For a non-removable tag, stamp
+ * @remarks `listitem` has an author-only accessible name, so the chip needs
+ * `aria-label` for assistive tech and `getByRole('listitem', { name })`.
+ * Always appends `RuiTagRemove`. For a non-removable tag, stamp
  * `[data-tag]` yourself without `[data-tag-remove]`. Tags built in
  * `createManagedTag` always include a remove control — edit both together.
  */
-export function RuiTag({ value, label, children, class: className, disabled, ...props }: RuiTagProps) {
+export function RuiTag({ value, label, children, class: className, disabled, aria, ...props }: RuiTagProps) {
 	return (
 		<span
 			{...props}
@@ -43,6 +46,7 @@ export function RuiTag({ value, label, children, class: className, disabled, ...
 			data-value={value}
 			data-label={label}
 			class={cx('rui-tag', className)}
+			aria={withDefaultAriaLabel(aria, label)}
 			aria-disabled={disabled ? 'true' : undefined}
 		>
 			{children}
