@@ -1,5 +1,10 @@
 import type { Method } from '../types';
-import type { DelegatedEventType, EventListenerHost, OnEventConfig, OnEventScope } from '../helpers/create-event-listener';
+import type {
+	DelegatedEventType,
+	EventListenerHost,
+	OnEventConfig,
+	OnEventScope,
+} from '../helpers/create-event-listener';
 import { onEvent as legacyOnEvent } from './legacy/on-event';
 import { onEvent as standardOnEvent } from './standard/on-event';
 import { methodDecoratorBridge } from './bridge';
