@@ -395,7 +395,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.setOpen(!this.open);
 	}
 
-	@onEvent({ selector: '[data-range-start]', type: 'focus' })
+	@onEvent({ selector: '[data-range-start]', type: 'focusin' })
 	onStartFocus(): void {
 		this.editing = 'start';
 		const range = parseIsoRange(this.isoValue);
@@ -405,7 +405,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 	}
 
-	@onEvent({ selector: '[data-range-end]', type: 'focus' })
+	@onEvent({ selector: '[data-range-end]', type: 'focusin' })
 	onEndFocus(): void {
 		this.editing = 'end';
 		const range = parseIsoRange(this.isoValue);
@@ -415,7 +415,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 	}
 
-	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'blur' })
+	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'focusout' })
 	onInputBlur(): void {
 		this.editing = null;
 		this.commitFromInputs();
