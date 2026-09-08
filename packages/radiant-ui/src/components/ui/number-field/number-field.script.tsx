@@ -338,7 +338,7 @@ export class RuiNumberField extends RadiantElement {
 		this.commitValue(this.getNumericValue() + this.step, true);
 	}
 
-	@onEvent({ selector: '[data-number-field-input]', type: 'focus' })
+	@onEvent({ selector: '[data-number-field-input]', type: 'focusin' })
 	onInputFocus(event: Event): void {
 		if (this.disabled || this.readOnly) {
 			return;
@@ -351,7 +351,7 @@ export class RuiNumberField extends RadiantElement {
 		input.select();
 	}
 
-	@onEvent({ selector: '[data-number-field-input]', type: 'blur' })
+	@onEvent({ selector: '[data-number-field-input]', type: 'focusout' })
 	onInputBlur(): void {
 		if (!this.editing) {
 			return;
