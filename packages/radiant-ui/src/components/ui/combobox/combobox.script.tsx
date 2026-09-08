@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { textContains } from '@/lib/text-filter';
 import { uniqueId } from '@/lib/unique-id';
@@ -95,7 +95,9 @@ export class RuiCombobox extends RadiantElement {
 	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) placeholder: string;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ selector: '[data-combobox-clear]', prop: 'disabled' })
+	disabled: boolean;
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'single' })
 	selectionMode: RuiComboboxSelectionMode;
 	@prop({ type: Boolean, attribute: 'should-close-on-select' }) shouldCloseOnSelect: boolean | undefined;
@@ -247,7 +249,6 @@ export class RuiCombobox extends RadiantElement {
 		if (!clear) return;
 
 		clear.hidden = this.collection.getSelectedValues().length === 0 && !(this.getInput()?.value ?? '');
-		clear.disabled = this.disabled;
 	}
 
 	private setVisualFocusCombobox(): void {

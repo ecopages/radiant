@@ -1,4 +1,4 @@
-import { RadiantElement, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, bound, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { RuiIconCheck, RuiIconX } from '@/lib/icons';
 import {
 	DEFAULT_TOAST_POSITION,
@@ -120,12 +120,21 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	@prop({ type: String, reflect: true, defaultValue: '' }) toastId: string;
 	@prop({ type: String, defaultValue: '' }) title: string;
 	@prop({ type: String, defaultValue: '' }) description: string;
-	@prop({ type: String, reflect: true, defaultValue: 'default' }) variant: ToastVariant;
+	@prop({ type: String, reflect: true, defaultValue: 'default' })
+	@bindTo({ attr: 'data-variant', map: (variant) => variant ?? 'default' })
+	variant: ToastVariant;
 	@prop({ type: Number, defaultValue: TOAST_LIFETIME }) duration: number;
-	@prop({ type: Boolean, defaultValue: true }) dismissible: boolean;
+	@prop({ type: Boolean, defaultValue: true })
+	@bindTo({ attr: 'data-dismissible' })
+	dismissible: boolean;
 	@prop({ type: Boolean, defaultValue: false }) closeButton: boolean;
 	@prop({ type: String, defaultValue: '' }) actionLabel: string;
-	@prop({ type: String, defaultValue: DEFAULT_TOAST_POSITION }) position: ToastPosition;
+	@prop({ type: String, defaultValue: DEFAULT_TOAST_POSITION })
+	@bindTo([
+		{ attr: 'data-y-position', map: (position) => splitToastPosition(position).y },
+		{ attr: 'data-x-position', map: (position) => splitToastPosition(position).x },
+	])
+	position: ToastPosition;
 	@prop({ type: Boolean, defaultValue: false }) markedDelete: boolean;
 
 	@query({ ref: 'toast' }) toastTarget: HTMLElement;
@@ -451,16 +460,11 @@ export class RuiToast extends RadiantElement<RuiToastBindings> {
 	}
 
 	private syncDomState(): void {
-		const { y, x } = splitToastPosition(this.position);
 		this.setAttribute('role', 'listitem');
 		this.dataset.mounted = String(this.mounted);
 		this.dataset.removed = String(this.removed);
 		this.dataset.swiping = String(this.swiping);
 		this.dataset.swipeOut = String(this.swipeOut);
-		this.dataset.dismissible = String(this.dismissible);
-		this.dataset.yPosition = y;
-		this.dataset.xPosition = x;
-		this.dataset.variant = this.variant ?? 'default';
 		if (this.swipeOutDirection) this.dataset.swipeDirection = this.swipeOutDirection;
 		else delete this.dataset.swipeDirection;
 	}

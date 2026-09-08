@@ -100,9 +100,15 @@ type EditingField = 'start' | 'end' | null;
  */
 @customElement('rui-date-range-picker')
 export class RuiDateRangePicker extends RadiantElement {
-	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
-	@prop({ type: String, defaultValue: '' }) min: string;
-	@prop({ type: String, defaultValue: '' }) max: string;
+	@prop({ type: String, reflect: true, defaultValue: '' })
+	@bindTo({ selector: '[data-range-calendar]', attr: 'value' })
+	value: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: '[data-range-calendar]', attr: 'min' })
+	min: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: '[data-range-calendar]', attr: 'max' })
+	max: string;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo([
@@ -119,7 +125,9 @@ export class RuiDateRangePicker extends RadiantElement {
 	])
 	readOnly: boolean;
 
-	@prop({ type: String, defaultValue: '' }) locale: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ selector: '[data-range-calendar]', attr: 'locale' })
+	locale: string;
 
 	@prop({ type: String, attribute: 'placeholder-start', defaultValue: '' })
 	@bindTo({
@@ -147,7 +155,9 @@ export class RuiDateRangePicker extends RadiantElement {
 
 	@prop({ type: String, defaultValue: '' }) name: string;
 	@prop({ type: String, attribute: 'date-style', defaultValue: 'medium' }) dateStyle: DateDisplayStyle;
-	@prop({ type: Number, attribute: 'visible-months', defaultValue: 2 }) visibleMonths: number;
+	@prop({ type: Number, attribute: 'visible-months', defaultValue: 2 })
+	@bindTo({ selector: '[data-range-calendar]', attr: 'visible-months' })
+	visibleMonths: number;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiDateRangePickerChangeDetail>;
@@ -273,7 +283,6 @@ export class RuiDateRangePicker extends RadiantElement {
 	private setOpen(next: boolean): void {
 		this.open = next;
 		queueMicrotask(() => {
-			this.syncCalendar();
 			this.syncPopoverPosition();
 			if (next) {
 				this.focusCalendarDay();
@@ -339,17 +348,7 @@ export class RuiDateRangePicker extends RadiantElement {
 	}
 
 	private syncCalendar(): void {
-		const calendar = this.getCalendar();
-		if (!calendar) {
-			return;
-		}
-
-		calendar.setAttribute('selection-mode', 'range');
-		calendar.setAttribute('visible-months', String(this.visibleMonths));
-		calendar.setAttribute('value', this.isoValue);
-		calendar.setAttribute('min', this.min);
-		calendar.setAttribute('max', this.max);
-		calendar.setAttribute('locale', this.locale);
+		this.getCalendar()?.setAttribute('selection-mode', 'range');
 	}
 
 	private initialize(): void {
@@ -373,7 +372,6 @@ export class RuiDateRangePicker extends RadiantElement {
 	onPropsUpdated(): void {
 		this.syncDisplayValues();
 		this.syncToggle();
-		this.syncCalendar();
 	}
 
 	@onUpdated(['open'])
@@ -395,7 +393,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		this.setOpen(!this.open);
 	}
 
-	@onEvent({ selector: '[data-range-start]', type: 'focus' })
+	@onEvent({ selector: '[data-range-start]', type: 'focusin' })
 	onStartFocus(): void {
 		this.editing = 'start';
 		const range = parseIsoRange(this.isoValue);
@@ -405,7 +403,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 	}
 
-	@onEvent({ selector: '[data-range-end]', type: 'focus' })
+	@onEvent({ selector: '[data-range-end]', type: 'focusin' })
 	onEndFocus(): void {
 		this.editing = 'end';
 		const range = parseIsoRange(this.isoValue);
@@ -415,7 +413,7 @@ export class RuiDateRangePicker extends RadiantElement {
 		}
 	}
 
-	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'blur' })
+	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'focusout' })
 	onInputBlur(): void {
 		this.editing = null;
 		this.commitFromInputs();

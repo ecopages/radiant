@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
@@ -113,10 +113,25 @@ export class RuiKnob extends RadiantElement {
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
-	@prop({ type: Boolean, reflect: true, defaultValue: false }) disabled: boolean;
-	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false }) readOnly: boolean;
-	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: String, defaultValue: '' }) name: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo([
+		{ ref: 'control', prop: 'disabled' },
+		{ ref: 'input', prop: 'disabled' },
+	])
+	disabled: boolean;
+	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
+	@bindTo({ ref: 'control', attr: 'aria-readonly', map: (readOnly) => String(readOnly) })
+	readOnly: boolean;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo([
+		{ ref: 'label', bool: 'hidden', invert: true },
+		{ ref: 'label', text: true },
+		{ ref: 'control', attr: 'aria-label', map: (label) => label || undefined },
+	])
+	label: string;
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({ ref: 'input', attr: 'name', map: (name) => name || undefined })
+	name: string;
 	@prop({ type: Number }) size: number | undefined;
 	@prop({ type: Number, attribute: 'stroke-width', defaultValue: 14 }) strokeWidth: number;
 	@prop({ type: Boolean, attribute: 'show-value', defaultValue: true }) showValue: boolean;
@@ -187,16 +202,14 @@ export class RuiKnob extends RadiantElement {
 		);
 		const valuePosition = this.resolvedValuePosition;
 		this.syncKnobLayout(valuePosition);
-		this.syncControl(value, ring.valueText);
+		this.syncControlValues(value, ring.valueText);
 		this.syncRing(ring);
 		this.syncReadout(ring.valueText, valuePosition);
-		this.syncFormValue(value);
+		this.syncInputValue(value);
 	}
 
 	private syncKnobLayout(valuePosition: RuiKnobValuePosition): void {
 		this.rootTarget?.classList.toggle('rui-knob--value-below', valuePosition === 'below');
-		this.labelTarget?.toggleAttribute('hidden', !this.label);
-		if (this.labelTarget) this.labelTarget.textContent = this.label;
 		if (this.resolvedSize) {
 			this.style.setProperty('--rui-knob-size', `${this.resolvedSize}px`);
 		} else {
@@ -204,17 +217,13 @@ export class RuiKnob extends RadiantElement {
 		}
 	}
 
-	private syncControl(value: number, valueText: string): void {
+	private syncControlValues(value: number, valueText: string): void {
 		const control = this.controlTarget;
 		if (!control) return;
 		control.setAttribute('aria-valuemin', String(this.numericRange.lowerBound));
 		control.setAttribute('aria-valuemax', String(this.numericRange.upperBound));
 		control.setAttribute('aria-valuenow', String(value));
 		control.setAttribute('aria-valuetext', valueText);
-		if (this.label) control.setAttribute('aria-label', this.label);
-		else control.removeAttribute('aria-label');
-		control.setAttribute('aria-readonly', String(this.readOnly));
-		control.disabled = this.disabled;
 	}
 
 	private syncRing(ring: ReturnType<typeof createKnobRing>): void {
@@ -239,13 +248,10 @@ export class RuiKnob extends RadiantElement {
 		}
 	}
 
-	private syncFormValue(value: number): void {
+	private syncInputValue(value: number): void {
 		const input = this.inputTarget;
 		if (!input) return;
 		input.value = String(value);
-		if (this.name) input.name = this.name;
-		else input.removeAttribute('name');
-		input.disabled = this.disabled;
 	}
 
 	private syncPresentation(): void {
