@@ -1,10 +1,10 @@
 import type { Method } from '../types';
-import type { EventListenerHost, OnEventConfig, OnEventScope } from '../helpers/create-event-listener';
+import type { DelegatedEventType, EventListenerHost, OnEventConfig, OnEventScope } from '../helpers/create-event-listener';
 import { onEvent as legacyOnEvent } from './legacy/on-event';
 import { onEvent as standardOnEvent } from './standard/on-event';
 import { methodDecoratorBridge } from './bridge';
 
-export type { OnEventConfig, OnEventScope };
+export type { DelegatedEventType, OnEventConfig, OnEventScope };
 
 /**
  * A decorator to subscribe to an event on the target element.
