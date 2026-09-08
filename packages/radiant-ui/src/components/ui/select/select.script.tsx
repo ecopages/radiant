@@ -88,6 +88,7 @@ export type RuiSelectChangeDetail = { value: string[] };
 @customElement('rui-select')
 export class RuiSelect extends RadiantElement {
 	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	@bindTo({ selector: '[data-select-clear]', bool: 'hidden', map: (value) => value.length === 0 })
 	value: string[];
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) placeholder: string;
@@ -248,7 +249,6 @@ export class RuiSelect extends RadiantElement {
 		this.syncValueDisplay();
 		this.collection.syncOptionSelection();
 		this.syncTagGroup();
-		this.syncClear();
 		this.changeEvent.emit({ value: this.value });
 	}
 
@@ -257,7 +257,6 @@ export class RuiSelect extends RadiantElement {
 		this.syncValueDisplay();
 		this.collection.syncOptionSelection();
 		this.syncTagGroup();
-		this.syncClear();
 		this.changeEvent.emit({ value: [] });
 		this.getTrigger()?.focus();
 	}
@@ -268,10 +267,6 @@ export class RuiSelect extends RadiantElement {
 
 	private getToggle(): HTMLButtonElement | null {
 		return this.querySelector<HTMLButtonElement>('[data-select-toggle]');
-	}
-
-	private getClear(): HTMLButtonElement | null {
-		return this.querySelector<HTMLButtonElement>('[data-select-clear]');
 	}
 
 	private getValueElement(): HTMLElement | null {
@@ -331,15 +326,7 @@ export class RuiSelect extends RadiantElement {
 		}
 
 		this.syncToggle();
-		this.syncClear();
 		this.syncSearchInput();
-	}
-
-	private syncClear(): void {
-		const clear = this.getClear();
-		if (!clear) return;
-
-		clear.hidden = this.collection.getSelectedValues().length === 0;
 	}
 
 	private syncToggle(): void {
@@ -432,7 +419,6 @@ export class RuiSelect extends RadiantElement {
 		this.collection.toggleValue(getListboxOptionValue(option));
 		this.syncValueDisplay();
 		this.collection.syncOptionSelection();
-		this.syncClear();
 		this.changeEvent.emit({ value: this.value });
 
 		if (this.closesOnSelect()) {
