@@ -1,4 +1,4 @@
-import { RadiantElement, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import { uniqueId } from '@/lib/unique-id';
 import { CarouselAutoplay } from './carousel-autoplay';
 import { CarouselSwipe } from './carousel-swipe';
@@ -149,6 +149,11 @@ export class RuiCarousel extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: true }) loop: boolean;
 	@prop({ type: Boolean, defaultValue: true }) wrap: boolean;
 	@prop({ type: Number, defaultValue: CAROUSEL_DEFAULTS.slidesPerView, attribute: 'slides-per-view' })
+	@bindTo({
+		ref: 'root',
+		attr: 'data-carousel-surface',
+		map: (slidesPerView) => resolveCarouselSurface(slidesPerView),
+	})
 	slidesPerView: number;
 	@prop({ type: Number, defaultValue: CAROUSEL_DEFAULTS.slidesPerGroup, attribute: 'slides-per-group' })
 	slidesPerGroup: number;
@@ -293,7 +298,6 @@ export class RuiCarousel extends RadiantElement {
 		const root = this.rootTarget;
 		if (root) {
 			root.setAttribute('data-carousel-track', this.trackMode());
-			root.setAttribute('data-carousel-surface', resolveCarouselSurface(this.slidesPerView));
 		}
 
 		const track = this.trackTarget;
