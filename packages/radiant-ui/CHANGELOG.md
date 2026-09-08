@@ -1,5 +1,28 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.15
+
+### Patch Changes
+
+- [#244](https://github.com/ecopages/radiant/pull/244) [`5ddcf3e`](https://github.com/ecopages/radiant/commit/5ddcf3e4be3ea075c145d0ed2fdf73ca8faad0e1) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix number-field commit on blur and give tag chips an accessible name.
+
+    **@ecopages/radiant-ui**
+
+    - `rui-number-field`: typed input now commits on blur. The focus/blur listeners were registered through delegation, which cannot observe non-bubbling events, so the committed `value` stayed empty after typing; they now use `focusin` / `focusout`.
+    - `rui-date-range-picker`: same fix for the start/end input focus and blur handlers.
+    - `rui-tag-group`: managed and authored tag chips now set `aria-label` from the item label. `listitem` has an author-only accessible name, so chips were unnamed for assistive tech and unreachable via `getByRole('listitem', { name })`.
+
+- [#244](https://github.com/ecopages/radiant/pull/244) [`f6ba022`](https://github.com/ecopages/radiant/commit/f6ba022b3adbcc66c9abc25c37a34e51f4a562b9) Thanks [@andeeplus](https://github.com/andeeplus)! - Bind more catalog fields to light DOM declaratively.
+
+    **@ecopages/radiant-ui**
+
+    - More fields bind to light DOM declaratively via `@bindTo` (slider, knob, sidebar, sidebar-trigger, toast, toaster, date-field, date-range-picker, combobox, select, carousel). Note: `rui-toast` `dismissible` and `variant` changes now also re-sync their `data-*` attributes at update time, which previously required a remount.
+
+- Updated dependencies [[`60abe6d`](https://github.com/ecopages/radiant/commit/60abe6d3f15b98f6bcab5b0088b8f2e7e2431e6d)]:
+    - @ecopages/radiant@0.3.0-rc.9
+    - @ecopages/jsx@0.3.0-rc.9
+    - @ecopages/signals@0.3.0-rc.9
+
 ## 0.1.0-rc.14
 
 ### Minor Changes

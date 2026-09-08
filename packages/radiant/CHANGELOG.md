@@ -1,5 +1,20 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.9
+
+### Patch Changes
+
+- [#244](https://github.com/ecopages/radiant/pull/244) [`60abe6d`](https://github.com/ecopages/radiant/commit/60abe6d3f15b98f6bcab5b0088b8f2e7e2431e6d) Thanks [@andeeplus](https://github.com/andeeplus)! - Warn in dev when a delegated `@onEvent` subscribes to a non-bubbling event.
+
+    **@ecopages/radiant**
+
+    - Delegated `selector` / `ref` listeners attach on the host in the bubble phase, so `focus`, `blur`, `mouseenter`, and `mouseleave` never reach them. Registering one without `options: { capture: true }` now logs a dev warning suggesting the bubbling twin (`focusin`, `focusout`, `mouseover`, `mouseout`).
+    - `onEvent` event names now autocomplete bubbling event names while still accepting custom event strings; the union is exported as `DelegatedEventType`.
+
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-rc.9
+    - @ecopages/signals@0.3.0-rc.9
+
 ## 0.3.0-rc.8
 
 ### Patch Changes
