@@ -1,4 +1,3 @@
-import type { RadiantElementEventListener } from '../core/radiant-element';
 import { eventMatchesDelegatedSelector } from '../core/delegated-event';
 import { isServer } from '@ecopages/radiant/is-server';
 import { isControllerHost, resolveHostElement } from './resolve-host-element';
@@ -8,10 +7,96 @@ import { isControllerHost, resolveHostElement } from './resolve-host-element';
  */
 export type OnEventScope = 'light' | 'shadow' | 'both';
 
-type BaseOnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> & {
+/**
+ * Event names known to reach a delegated listener on the host in the bubble phase.
+ *
+ * @remarks
+ * Delegated listeners attach with `addEventListener(type, fn)` on the host, so
+ * non-bubbling types never reach them. Use the bubbling twins (`focusin`,
+ * `focusout`, `pointerover`, `pointerout`) or pass `options: { capture: true }`.
+ * The open `(string & {})` branch keeps custom event names valid — `@event()`
+ * emits with `bubbles: true, composed: true`.
+ */
+export type DelegatedEventType =
+	| 'click'
+	| 'dblclick'
+	| 'input'
+	| 'change'
+	| 'submit'
+	| 'reset'
+	| 'focusin'
+	| 'focusout'
+	| 'keydown'
+	| 'keyup'
+	| 'pointerdown'
+	| 'pointerup'
+	| 'pointermove'
+	| 'pointerover'
+	| 'pointerout'
+	| 'mousedown'
+	| 'mouseup'
+	| 'mousemove'
+	| 'mouseover'
+	| 'mouseout'
+	| 'touchstart'
+	| 'touchend'
+	| 'touchmove'
+	| 'touchcancel'
+	| 'wheel'
+	| (string & {});
+
+/**
+ * Bubbling replacements suggested for native events that never bubble.
+ *
+ * @remarks `load` / `unload` have no bubbling twin — callers should attach them
+ * on `window` / `document` or pass `options: { capture: true }`.
+ */
+const NON_BUBBLING_DELEGATED_EVENTS = new Map<string, string>([
+	['focus', 'focusin'],
+	['blur', 'focusout'],
+	['mouseenter', 'mouseover or pointerover'],
+	['mouseleave', 'mouseout or pointerout'],
+]);
+
+const warnedNonBubblingEvents = new Set<string>();
+
+/**
+ * @remarks Development-only. Production builds (`NODE_ENV === "production"`) skip the diagnostic.
+ */
+function warnNonBubblingDelegatedEvent(type: string, options?: AddEventListenerOptions): void {
+	if (process.env.NODE_ENV === 'production') {
+		return;
+	}
+
+	const replacement = NON_BUBBLING_DELEGATED_EVENTS.get(type);
+	if (!replacement || options?.capture || warnedNonBubblingEvents.has(type)) {
+		return;
+	}
+	warnedNonBubblingEvents.add(type);
+
+	if (typeof console === 'undefined') {
+		return;
+	}
+
+	console.warn(
+		`[@ecopages/radiant] Delegated @onEvent listens on the host in the bubble phase, so "${type}" will never reach it. Use "${replacement}" or pass \`options: { capture: true }\`.`,
+	);
+}
+
+type BaseOnEventConfig = {
+	type: DelegatedEventType;
+	options?: AddEventListenerOptions;
 	scope?: OnEventScope;
 };
 
+/**
+ * Configuration for `@onEvent` / `createEventListener`.
+ *
+ * @remarks
+ * `selector` / `ref` delegate on the host in the bubble phase, so the `type`
+ * must bubble (see {@link DelegatedEventType}). `window`, `document`, and
+ * `mediaQuery` attach directly and accept any event name.
+ */
 export type OnEventConfig = BaseOnEventConfig &
 	(
 		| {
@@ -66,6 +151,8 @@ function addDelegatedListener(
 	selector: string,
 	listener: EventListener,
 ): () => void {
+	warnNonBubblingDelegatedEvent(config.type, config.options);
+
 	const delegatedListener = (event: Event) => {
 		if (eventMatchesDelegatedSelector(event, root, selector)) listener(event);
 	};
