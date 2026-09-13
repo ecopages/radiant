@@ -132,6 +132,141 @@ export function isolateHydratedTextRange(
 }
 
 /**
+ * Splits SSR text nodes the browser collapsed across adjacent child bindings.
+ *
+ * @remarks
+ * The SSR serializer emits each child value without separators, so a run of
+ * adjacent text-like children serializes into a single text node. Hydration
+ * planning assumes one node per text child, so every member of the run would
+ * otherwise claim the whole merged node and scramble each other on update.
+ * When the merged node's text is exactly the concatenation of the run's
+ * serialized values, it is split once per member so each range owns its slice.
+ * Runs may bridge empty children (`null`, `undefined`, booleans), which
+ * contribute no nodes. Anything that does not match the expected
+ * concatenation — merged static text, templates, markup nodes — is left for
+ * {@link isolateHydratedTextRange} or the reconciliation fallback.
+ */
+export function isolateCollapsedAdjacentTextRuns(
+	childParts: readonly ChildTemplatePart[],
+	values: readonly unknown[],
+	ranges: ReadonlyMap<number, HydratedChildRange>,
+	resolveParentNode: (path: readonly number[]) => Node | undefined,
+): void {
+	type RunEntry = { part: ChildTemplatePart; range: HydratedChildRange };
+
+	const partsByParent = new Map<string, RunEntry[]>();
+
+	for (const part of childParts) {
+		const range = ranges.get(part.index);
+
+		if (!range) {
+			continue;
+		}
+
+		const parentKey = getPathKey(range.parentPath);
+		const entries = partsByParent.get(parentKey);
+
+		if (entries) {
+			entries.push({ part, range });
+		} else {
+			partsByParent.set(parentKey, [{ part, range }]);
+		}
+	}
+
+	for (const [parentKey, entries] of partsByParent) {
+		const parentPath = parentKey === '' ? [] : parentKey.split('.').map((segment) => Number(segment));
+		const parentNode = resolveParentNode(parentPath);
+
+		if (!(parentNode instanceof Element)) {
+			continue;
+		}
+
+		const ordered = [...entries].sort((left, right) => left.range.actualStartIndex - right.range.actualStartIndex);
+		let run: RunEntry[] = [];
+
+		const flushRun = (): void => {
+			if (run.length > 1) {
+				splitCollapsedTextRun(parentNode, run, values);
+			}
+			run = [];
+		};
+
+		for (const entry of ordered) {
+			const nodeCount = entry.range.nodeCount;
+			const isSingleText = nodeCount === 1 && isTextRenderableValue(values[entry.part.index]);
+			const isEmpty = nodeCount === 0 && isEmptyRenderableValue(values[entry.part.index]);
+
+			if (!isSingleText && !isEmpty) {
+				flushRun();
+				continue;
+			}
+
+			const previous = run[run.length - 1];
+
+			if (previous && entry.range.actualStartIndex !== previous.range.actualStartIndex + previous.range.nodeCount) {
+				flushRun();
+			}
+
+			run.push(entry);
+		}
+
+		flushRun();
+	}
+}
+
+/**
+ * Splits one collapsed text node so each member of the run owns exactly one node.
+ *
+ * @remarks Runs only when the candidate node's text equals the concatenation of
+ * the run's serialized text values, which makes the split lossless by
+ * construction; the resulting node positions match the planned ranges.
+ */
+function splitCollapsedTextRun(
+	parentNode: Element,
+	run: { part: ChildTemplatePart; range: HydratedChildRange }[],
+	values: readonly unknown[],
+): void {
+	const textEntries = run.filter((entry) => entry.range.nodeCount === 1);
+	const segments = textEntries.map((entry) => serializedChildText(values[entry.part.index]));
+
+	if (segments.some((segment) => segment === null)) {
+		return;
+	}
+
+	const first = textEntries[0];
+
+	if (!first) {
+		return;
+	}
+
+	const candidate = parentNode.childNodes[first.range.actualStartIndex];
+
+	if (!(candidate instanceof Text) || candidate.data !== segments.join('')) {
+		return;
+	}
+
+	let currentNode = candidate;
+
+	for (let index = 1; index < textEntries.length; index += 1) {
+		currentNode = currentNode.splitText((segments[index - 1] as string).length);
+	}
+}
+
+function serializedChildText(value: unknown): string | null {
+	const resolved = resolveHydratedRangeValue(value);
+	return canRenderAsTextNode(resolved) ? String(resolved) : null;
+}
+
+function isTextRenderableValue(value: unknown): boolean {
+	return canRenderAsTextNode(resolveHydratedRangeValue(value));
+}
+
+function isEmptyRenderableValue(value: unknown): boolean {
+	const resolved = resolveHydratedRangeValue(value);
+	return resolved === undefined || resolved === null || typeof resolved === 'boolean';
+}
+
+/**
  * Counts the DOM nodes `value` produces when mounted, for hydration slice planning.
  *
  * This is a pure structural measurement: it never builds the subtree it measures.
