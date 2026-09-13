@@ -34,6 +34,15 @@ type Story = DocsStory<DisclosureArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'disclosure/default' } } });
 
+export const IconEnd: Story = docsStory(meta, {
+	render: () => (
+		<RuiDisclosure trigger="Return policy" iconPosition="end">
+			Items can be returned within 30 days of delivery.
+		</RuiDisclosure>
+	),
+	parameters: { docs: { id: 'disclosure/icon-end' } },
+});
+
 export const Accordion: Story = docsStory(meta, {
 	render: () => (
 		<RuiDisclosureGroup>

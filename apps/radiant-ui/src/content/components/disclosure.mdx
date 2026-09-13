@@ -4,7 +4,7 @@ description: Disclosures progressively reveal content behind a trigger, such as 
 category: Layout
 ---
 
-import { meta as DisclosureMeta, Accordion, Default } from '@/content/stories/disclosure';
+import { meta as DisclosureMeta, Accordion, Default, IconEnd } from '@/content/stories/disclosure';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -45,7 +45,23 @@ import {
 </RuiDisclosure>
 ```
 
-`RuiDisclosureTrigger` includes a chevron icon by default. Pass `icon={<RuiDisclosureIcon variant="plus" />}` or `icon={null}` to customize.
+`RuiDisclosureTrigger` renders an indicator arrow defaulting to `RuiIconChevronDown`. It points downward when collapsed and rotates 180° when expanded.
+
+Set `iconPosition="end"` to position the arrow at the trailing edge (default is `"start"`). Pass `iconPosition` and `icon` directly to `RuiDisclosure` when using the `trigger` prop, or configure them on `RuiDisclosureTrigger`. Pass `icon={<RuiDisclosureIcon variant="plus" />}` or `icon={null}` to customize.
+
+## Indicator position
+
+<p>Place the toggle arrow at the start or trailing end using `iconPosition="end"`.</p>
+
+<Canvas of={IconEnd} meta={DisclosureMeta} />
+
+```tsx
+import { RuiDisclosure } from '@ecopages/radiant-ui/disclosure';
+
+<RuiDisclosure trigger="Return policy" iconPosition="end">
+  Items can be returned within 30 days of delivery.
+</RuiDisclosure>
+```
 
 ## Custom markup
 
@@ -148,10 +164,10 @@ Nested host: `rui-disclosure` — owns `[data-disclosure-trigger]` and `[data-di
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiDisclosure` | `<rui-disclosure>` + `[data-ref="root"]` shell | `trigger` prop composes trigger + panel. |
+| `RuiDisclosure` | `<rui-disclosure>` + `[data-ref="root"]` shell | `trigger` prop composes trigger + panel; accepts `icon` and `iconPosition`. |
 | `RuiDisclosureGroup` | `<rui-disclosure-group>` + `[data-ref="root"]` shell | Expects `rui-disclosure` children. |
-| `RuiDisclosureTrigger` | `[data-disclosure-trigger]` | Includes chevron icon by default. |
-| `RuiDisclosureIcon` | — | Presentation only; pass via trigger `icon` prop. |
+| `RuiDisclosureTrigger` | `[data-disclosure-trigger]` | Includes chevron down icon by default; accepts `icon` and `iconPosition`. |
+| `RuiDisclosureIcon` | — | Presentation only; renders `RuiIconChevronDown` by default. |
 | `RuiDisclosurePanel` | `[data-disclosure-panel]` | Wraps content in `rui-disclosure__panel-inner`. |
 
 ### CSS classes
@@ -164,7 +180,7 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | `.rui-disclosure__trigger` | Trigger button; reflects `aria-expanded`. |
 | `.rui-disclosure__trigger--icon-end` | Layout when `iconPosition="end"`. |
 | `.rui-disclosure__icon` | Indicator wrapper (decorative, `aria-hidden`). |
-| `.rui-disclosure__icon--chevron` | Rotates 90° when open. |
+| `.rui-disclosure__icon--chevron` | Rotates 180° when open. |
 | `.rui-disclosure__icon--plus` | Toggles between `+` and `×`. |
 | `.rui-disclosure__label` | Trigger text. |
 | `.rui-disclosure__panel` | Panel content region. |

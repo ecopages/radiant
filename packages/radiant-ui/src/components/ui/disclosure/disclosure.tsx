@@ -1,5 +1,6 @@
 import type { JsxCustomElementAttributes, JsxElementProps, JsxRenderable } from '@ecopages/jsx';
 import { cx } from '@/lib/cx';
+import { RuiIconChevronDown } from '@/lib/icons';
 import type {
 	RuiDisclosureGroup as RuiDisclosureGroupElement,
 	RuiDisclosureGroupProps,
@@ -17,23 +18,29 @@ export type RuiDisclosureIconProps = JsxElementProps<HTMLSpanElement> & {
  * Default disclosure indicator. Override via `RuiDisclosureTrigger` `icon` prop.
  *
  * @cssclass rui-disclosure__icon - Indicator wrapper (decorative, `aria-hidden`).
- * @cssclass rui-disclosure__icon--chevron - Rotates 90° when the disclosure is open.
+ * @cssclass rui-disclosure__icon--chevron - Rotates 180° when the disclosure is open.
  * @cssclass rui-disclosure__icon--plus - Toggles between `+` and `×`.
  */
-export function RuiDisclosureIcon({ variant = 'chevron', class: className, ...props }: RuiDisclosureIconProps) {
+export function RuiDisclosureIcon({
+	variant = 'chevron',
+	class: className,
+	children,
+	...props
+}: RuiDisclosureIconProps) {
 	return (
 		<span
 			{...props}
 			class={cx('rui-disclosure__icon', `rui-disclosure__icon--${variant}`, className)}
 			data-disclosure-icon
 			aria-hidden="true"
-		></span>
+		>
+			{children ?? (variant === 'chevron' ? <RuiIconChevronDown /> : null)}
+		</span>
 	);
 }
 
 export type RuiDisclosureTriggerProps = JsxElementProps<HTMLButtonElement> & {
 	disabled?: boolean;
-	/** Custom indicator. Pass `null` to hide. Defaults to chevron. */
 	icon?: JsxRenderable | null;
 	iconPosition?: 'start' | 'end';
 };
@@ -99,21 +106,37 @@ function DisclosureShell({ children }: { children: JsxRenderable }) {
 	);
 }
 
+export type RuiDisclosureViewProps = {
+	trigger?: JsxRenderable;
+	icon?: JsxRenderable | null;
+	iconPosition?: 'start' | 'end';
+};
+
+/**
+ * Importable JSX helper around `<rui-disclosure>`.
+ *
+ * Renders a show/hide disclosure region. Pass `trigger` to compose a default trigger
+ * and panel, or compose with `RuiDisclosureTrigger` and `RuiDisclosurePanel`.
+ *
+ * @cssclass rui-disclosure - Root wrapper around trigger and panel regions.
+ */
 export function RuiDisclosure({
 	trigger,
+	icon,
+	iconPosition,
 	children,
 	...props
 }: JsxCustomElementAttributes<
 	RuiDisclosureElement,
-	RuiDisclosureProps & {
-		trigger?: JsxRenderable;
-	}
+	RuiDisclosureProps & RuiDisclosureViewProps
 >) {
 	if (trigger != null) {
 		return (
 			<rui-disclosure {...props}>
 				<DisclosureShell>
-					<RuiDisclosureTrigger>{trigger}</RuiDisclosureTrigger>
+					<RuiDisclosureTrigger icon={icon} iconPosition={iconPosition}>
+						{trigger}
+					</RuiDisclosureTrigger>
 					{children != null ? <RuiDisclosurePanel>{children}</RuiDisclosurePanel> : null}
 				</DisclosureShell>
 			</rui-disclosure>
