@@ -421,8 +421,6 @@ Hydrated SSR adds binding markers so `hydrate(...)` can attach listeners and dyn
 
 Property bindings are client-only in generic JSX SSR. A `prop:*` value may be an object, function, DOM node, or framework instance, so JSX emits a hydration marker but does not stringify the value into HTML. If a custom element's pre-hydration state matters, represent that state through a reflected/serializable attribute or the owning framework's SSR bridge, and keep the custom element's default aligned with the server output.
 
-Adjacent text child bindings that SSR collapses into one text node are split into independent ranges during hydration. Empty reactive children between text bindings retain their position when they later produce content.
-
 ### Hydration Root Shapes
 
 `hydrate(...)` reconnects a template or iterable root in place. A reactive wrapper hydrates its current snapshot, then subscribes. Any other shape falls back to a full client render.
