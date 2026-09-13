@@ -1236,6 +1236,77 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(counterNode?.textContent).toBe('Step 3 of 4');
 	});
 
+	test.each([null, undefined, false, true, ''])(
+		'hydrates collapsed text around a reactive empty child (%s)',
+		async (initialValue) => {
+			const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
+				loadJsxRuntime(),
+				loadJsxModule(),
+			]);
+			const container = document.createElement('div');
+			const root = createRoot(container);
+			let value: string | boolean | null | undefined = initialValue;
+			const subscribers = new Set<(value: string | boolean | null | undefined) => void>();
+			const boundValue = createSubscribableJsxValue({
+				getValue: () => value,
+				subscribe: (notify) => {
+					subscribers.add(notify);
+					return () => {
+						subscribers.delete(notify);
+					};
+				},
+			});
+
+			container.innerHTML = '<p data-radiant-jsx-bind-0="attr:class" class="text-runs">BeforeAfter</p>';
+			const paragraph = container.querySelector('p');
+			root.hydrate(jsxs('p', { class: 'text-runs', children: ['Before', boundValue, 'After'] }));
+
+			expect(container.querySelector('p')).toBe(paragraph);
+			expect(container.textContent).toBe('BeforeAfter');
+
+			for (const nextValue of [' middle ', '', ' again ']) {
+				value = nextValue;
+				for (const subscriber of subscribers) {
+					subscriber(value);
+				}
+				await Promise.resolve();
+
+				expect(container.querySelector('p')).toBe(paragraph);
+				expect(container.textContent).toBe(`Before${nextValue}After`);
+			}
+
+			root.unmount();
+			expect(subscribers.size).toBe(0);
+		},
+	);
+
+	test('hydrates multiple collapsed text runs separated by an element', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+		const view = (current: number, total: number) =>
+			jsxs('p', {
+				class: 'text-runs',
+				children: ['Step ', current, jsx('b', { children: ' / ' }), 'Total ', total],
+			});
+
+		container.innerHTML = '<p data-radiant-jsx-bind-0="attr:class" class="text-runs">Step 1<b> / </b>Total 2</p>';
+		const paragraph = container.querySelector('p');
+		const separator = container.querySelector('b');
+		root.hydrate(view(1, 2));
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(container.querySelector('b')).toBe(separator);
+		expect(container.textContent).toBe('Step 1 / Total 2');
+
+		root.render(view(3, 40));
+
+		expect(container.querySelector('p')).toBe(paragraph);
+		expect(container.querySelector('b')).toBe(separator);
+		expect(container.textContent).toBe('Step 3 / Total 40');
+		root.unmount();
+	});
+
 	test('hydrated subscribable child values patch without rerendering the parent tree', async () => {
 		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
 			loadJsxRuntime(),
