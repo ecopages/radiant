@@ -203,7 +203,10 @@ export function isolateCollapsedAdjacentTextRuns(
 
 			const previous = run[run.length - 1];
 
-			if (previous && entry.range.actualStartIndex !== previous.range.actualStartIndex + previous.range.nodeCount) {
+			if (
+				previous &&
+				entry.range.actualStartIndex !== previous.range.actualStartIndex + previous.range.nodeCount
+			) {
 				flushRun();
 			}
 

@@ -126,10 +126,7 @@ export function RuiDisclosure({
 	iconPosition,
 	children,
 	...props
-}: JsxCustomElementAttributes<
-	RuiDisclosureElement,
-	RuiDisclosureProps & RuiDisclosureViewProps
->) {
+}: JsxCustomElementAttributes<RuiDisclosureElement, RuiDisclosureProps & RuiDisclosureViewProps>) {
 	if (trigger != null) {
 		return (
 			<rui-disclosure {...props}>
