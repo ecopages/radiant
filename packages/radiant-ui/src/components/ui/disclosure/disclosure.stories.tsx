@@ -118,6 +118,28 @@ export const Composed: Story = {
 	},
 };
 
+export const IconEnd: Story = {
+	render: () => (
+		<RuiDisclosure trigger="Order details" iconPosition="end">
+			<p>Chevron down indicator placed on the right end.</p>
+		</RuiDisclosure>
+	),
+	play: async ({ canvasElement, step }) => {
+		const trigger = getTrigger(canvasElement);
+
+		await step('trigger has icon-end layout and chevron icon', async () => {
+			await expect(trigger).toHaveClass('rui-disclosure__trigger--icon-end');
+			await expect(trigger.querySelector('[data-disclosure-icon]')).toBeTruthy();
+			await expect(trigger.querySelector('svg')).toBeTruthy();
+		});
+
+		await step('click expands the panel', async () => {
+			await userEvent.click(trigger);
+			await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+		});
+	},
+};
+
 export const CustomIcon: Story = {
 	render: () => (
 		<RuiDisclosureGroup>

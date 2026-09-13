@@ -13,4 +13,8 @@ export {
 	RuiDisclosureIcon,
 	RuiDisclosurePanel,
 	RuiDisclosureTrigger,
+	type RuiDisclosureIconProps,
+	type RuiDisclosurePanelProps,
+	type RuiDisclosureTriggerProps,
+	type RuiDisclosureViewProps,
 } from './disclosure';

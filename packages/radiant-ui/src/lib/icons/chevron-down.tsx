@@ -1,7 +1,6 @@
 import { cx } from '@/lib/cx';
 import type { RuiIconProps } from './types';
 
-/** Chevron-down indicator for listbox and combobox toggles. */
 export function RuiIconChevronDown({ class: className, size = 'sm', ...props }: RuiIconProps) {
 	return (
 		<svg

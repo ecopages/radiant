@@ -32,15 +32,11 @@ rui-disclosure {
 	}
 
 	.rui-disclosure__icon--chevron {
-		width: 0;
-		height: 0;
-		border-top: 4px solid transparent;
-		border-bottom: 4px solid transparent;
-		border-left: 6px solid currentColor;
+		@apply size-4;
 	}
 
 	.rui-disclosure__trigger[aria-expanded='true'] .rui-disclosure__icon--chevron {
-		transform: rotate(90deg);
+		transform: rotate(180deg);
 	}
 
 	.rui-disclosure__icon--plus {
