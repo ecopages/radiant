@@ -231,10 +231,6 @@ function hydrateElementBoundPart(
 	};
 }
 
-/**
- * @remarks Empty children share the following child's DOM index. Recover that
- * following child first so its boundary markers cannot become part of its text slice.
- */
 function compareHydratedChildPartOrder(
 	left: ChildTemplatePart,
 	right: ChildTemplatePart,
@@ -253,10 +249,7 @@ function compareHydratedChildPartOrder(
 		return parentKeyOrder;
 	}
 
-	return (
-		rightRange.actualStartIndex - leftRange.actualStartIndex ||
-		rightRange.blueprintStartIndex - leftRange.blueprintStartIndex
-	);
+	return rightRange.actualStartIndex - leftRange.actualStartIndex;
 }
 
 /**
