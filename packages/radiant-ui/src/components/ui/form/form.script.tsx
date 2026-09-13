@@ -82,6 +82,9 @@ const initialFormActions: FormContextActions = {
  * `defaultValues` and `resolver` are object props — they only reach the element via
  * `prop:` bindings from the `RuiForm` view, not plain attributes. The host queries
  * `[data-ref="form"]`.
+ *
+ * `formContext.store` exposes the live store to scoped consumers once ready.
+ * Hydration payloads contain presentation only, never the store or its actions.
  */
 @customElement('rui-form')
 export class RuiForm extends RadiantElement {
@@ -89,11 +92,14 @@ export class RuiForm extends RadiantElement {
 		context: formContext,
 		initialValue: {
 			ready: false,
+			store: undefined,
 			revision: 0,
 			fields: {},
 			errors: {},
 			actions: initialFormActions,
 		},
+		hydrate: Object,
+		serialize: ({ revision, fields, errors }) => ({ ready: false, revision, fields, errors }),
 	})
 	formProvider: ContextProvider<typeof formContext>;
 
@@ -247,17 +253,15 @@ export class RuiForm extends RadiantElement {
 	}
 
 	private ensureStore(): FormStore {
-		if (this.store) {
-			return this.store;
+		if (!this.store) {
+			this.store = new FormStore({
+				defaultValues: this.resolveDefaultValues(),
+				resolver: typeof this.resolver === 'function' ? this.resolver : undefined,
+				mode: this.resolveMode(),
+				reValidateMode: this.resolveReValidateMode(),
+			});
 		}
-
-		this.store = new FormStore({
-			defaultValues: this.resolveDefaultValues(),
-			resolver: typeof this.resolver === 'function' ? this.resolver : undefined,
-			mode: this.resolveMode(),
-			reValidateMode: this.resolveReValidateMode(),
-		});
-		this.unsubscribeStore = this.store.subscribe(() => this.publishFormContext());
+		this.unsubscribeStore ??= this.store.subscribe(() => this.publishFormContext());
 		return this.store;
 	}
 
@@ -286,6 +290,7 @@ export class RuiForm extends RadiantElement {
 		this.lastPublishedRevision = revision;
 		const nextContext = {
 			ready: true,
+			store,
 			revision,
 			fields: this.buildFieldPresentations(store),
 			errors: { ...store.errors },
