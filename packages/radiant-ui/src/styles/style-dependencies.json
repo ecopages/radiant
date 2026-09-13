@@ -143,8 +143,11 @@
 			]
 		},
 		"disclosure": {
-			"direct": [],
+			"direct": [
+				"primitives"
+			],
 			"styles": [
+				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/disclosure/styles.css"
 			]
 		},
