@@ -1,5 +1,22 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.16
+
+### Patch Changes
+
+- [#251](https://github.com/ecopages/radiant/pull/251) [`a3abae1`](https://github.com/ecopages/radiant/commit/a3abae15ab6144a9e4fc8e2d3d65b5fe938a92d4) Thanks [@andeeplus](https://github.com/andeeplus)! - Support customizable indicator position on disclosure triggers and default to chevron-down icon.
+
+    **@ecopages/radiant-ui**
+
+    - Add `icon` and `iconPosition` (`'start' | 'end'`) props to `RuiDisclosure` when using `trigger`.
+    - Update `RuiDisclosureIcon` default chevron variant to render `RuiIconChevronDown`.
+    - Export `RuiDisclosureIconProps`, `RuiDisclosurePanelProps`, `RuiDisclosureTriggerProps`, and `RuiDisclosureViewProps` from `@ecopages/radiant-ui/disclosure`.
+
+- Updated dependencies [[`9d04586`](https://github.com/ecopages/radiant/commit/9d04586eff13d60b045162eef24301ecd2bf0016)]:
+    - @ecopages/jsx@0.3.0-rc.10
+    - @ecopages/radiant@0.3.0-rc.10
+    - @ecopages/signals@0.3.0-rc.10
+
 ## 0.1.0-rc.15
 
 ### Patch Changes
