@@ -5,6 +5,7 @@ import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
 import {
 	collectHydratedChildRanges,
 	countHydratedRangeNodes,
+	isolateCollapsedAdjacentTextRuns,
 	isolateHydratedTextRange,
 	type HydratedChildRange,
 } from './hydration-planning.ts';
@@ -70,6 +71,7 @@ export function hydrateTemplateInstance(
 		childParts,
 		template.values,
 	);
+	isolateCollapsedAdjacentTextRuns(childParts, template.values, hydratedChildRanges, resolveHostNode);
 	const parts = createHydratedLiveTemplateParts(
 		compiledTemplate.blueprint.content,
 		compiledTemplate.parts,
