@@ -1,5 +1,13 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.17
+
+### Patch Changes
+
+- [#254](https://github.com/ecopages/radiant/pull/254) [`4c2d47f`](https://github.com/ecopages/radiant/commit/4c2d47faf1a86e5a472020d31cd9a924b91a567e) Thanks [@andeeplus](https://github.com/andeeplus)! - Publish the live `FormStore` on `formContext.store` so scoped consumers can read and mutate values without reaching into the host.
+
+    Hydration payloads still contain presentation only (`ready`, `revision`, `fields`, `errors`).
+
 ## 0.1.0-rc.16
 
 ### Patch Changes
