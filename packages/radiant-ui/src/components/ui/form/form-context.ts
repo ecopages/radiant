@@ -1,4 +1,5 @@
 import { createContext } from '@ecopages/radiant/context';
+import type { FormStore } from './form-store';
 import type { FieldError, FieldRegistration, RegisterOptions } from './types';
 
 /** UI slice for one field, computed by `<rui-form>` from the store. */
@@ -19,6 +20,8 @@ export type FormContextActions = {
 export type FormContextValue = {
 	/** False until `<rui-form>` has created its store and bound real actions. */
 	ready: boolean;
+	/** The live form store, available when ready; never serialized into hydration markup. */
+	store: FormStore | undefined;
 	/** Bumps when form store state changes. */
 	revision: number;
 	/** Per-field messages and invalid flags; only the form writes this map. */
