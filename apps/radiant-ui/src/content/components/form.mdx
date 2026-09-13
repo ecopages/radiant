@@ -128,7 +128,7 @@ Nested hosts: `rui-field` and each field's control host.
 
 ### Context
 
-`formContext` exposes the current `errors` map to custom consumers. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
+`formContext` exposes `ready`, `revision`, `fields`, `errors`, `actions`, and the live `store` once the form is ready. Scoped consumers resolve the nearest provider (`@consumeContext` / `ContextSubscriptionRequestEvent`) and use `context.store` for value reads/writes, `reset`, `subscribe`, and validation. Nested forms still resolve the nearest provider. Hydration payloads contain presentation only (`ready`, `revision`, `fields`, `errors`); they never include the store or its actions. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
 
 ### Events
 
