@@ -1199,6 +1199,43 @@ describe('Radiant JSX DOM reconciliation behavior', () => {
 		expect(mutations.find((mutation) => mutation.type === 'characterData')?.oldValue).toBe('15');
 	});
 
+	test('hydrates adjacent dynamic text children the browser collapsed into one text node', async () => {
+		const [{ jsx, jsxs }, { createRoot }] = await Promise.all([loadJsxRuntime(), loadJsxModule()]);
+		const container = document.createElement('div');
+		const root = createRoot(container);
+
+		const renderCounter = (current: number, total: number) =>
+			jsxs('div', {
+				'data-active': current === 1,
+				children: [
+					jsx('p', { children: 'Heading' }),
+					jsxs('span', {
+						class: 'counter',
+						children: ['Step ', current, ' of ', total],
+					}),
+				],
+			});
+
+		container.innerHTML =
+			'<div data-radiant-jsx-bind-0="attr:data-active" data-active="true"><p>Heading</p><span data-radiant-jsx-bind-1="attr:class" class="counter">Step 1 of 2</span></div>';
+		const counterNode = container.querySelector('.counter');
+
+		root.hydrate(renderCounter(1, 2));
+
+		expect(container.querySelector('.counter')).toBe(counterNode);
+		expect(counterNode?.textContent).toBe('Step 1 of 2');
+
+		root.render(renderCounter(2, 2));
+
+		expect(container.querySelector('.counter')).toBe(counterNode);
+		expect(counterNode?.textContent).toBe('Step 2 of 2');
+
+		root.render(renderCounter(3, 4));
+
+		expect(container.querySelector('.counter')).toBe(counterNode);
+		expect(counterNode?.textContent).toBe('Step 3 of 4');
+	});
+
 	test('hydrated subscribable child values patch without rerendering the parent tree', async () => {
 		const [{ createSubscribableJsxValue, jsxs }, { createRoot }] = await Promise.all([
 			loadJsxRuntime(),
