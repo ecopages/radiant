@@ -3,6 +3,7 @@ import '@ecopages/radiant-ui/alert';
 import '@ecopages/radiant-ui/breadcrumb';
 import '@ecopages/radiant-ui/sidebar';
 import '@ecopages/radiant-ui/toc';
+import { isServer } from '@ecopages/radiant/is-server';
 
 const docsContentSelector = '.docs-layout__content';
 const codeCopySelector = '[data-rehype-pretty-copy]';
@@ -43,23 +44,25 @@ function setCodeCopyFeedback(button: HTMLButtonElement, isError = false): void {
 	}, codeCopyFeedbackMs);
 }
 
-document.addEventListener('click', (event) => {
-	const target = event.target instanceof Element ? event.target.closest(codeCopySelector) : null;
-	if (!(target instanceof HTMLButtonElement)) return;
+if (!isServer) {
+	document.addEventListener('click', (event) => {
+		const target = event.target instanceof Element ? event.target.closest(codeCopySelector) : null;
+		if (!(target instanceof HTMLButtonElement)) return;
 
-	const source = target.dataset.rehypePrettyCopy;
-	if (!source) return;
+		const source = target.dataset.rehypePrettyCopy;
+		if (!source) return;
 
-	void copyTextToClipboard(source)
-		.then(() => setCodeCopyFeedback(target))
-		.catch(() => setCodeCopyFeedback(target, true));
-});
+		void copyTextToClipboard(source)
+			.then(() => setCodeCopyFeedback(target))
+			.catch(() => setCodeCopyFeedback(target, true));
+	});
 
-document.addEventListener('eco:after-swap', (event) => {
-	const { url } = (event as DocsNavigationEvent).detail;
-	if (url.hash) {
-		return;
-	}
+	document.addEventListener('eco:after-swap', (event) => {
+		const { url } = (event as DocsNavigationEvent).detail;
+		if (url.hash) {
+			return;
+		}
 
-	scrollDocsToTop();
-});
+		scrollDocsToTop();
+	});
+}
