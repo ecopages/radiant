@@ -206,6 +206,8 @@ The shim supports a focused query surface for component lifecycle code that runs
 
 **Animation frames:** SSR installs no-op `requestAnimationFrame` / `cancelAnimationFrame` so layout-aware `connectedCallback` code does not throw. Deferred work scheduled through rAF does not run during serialization; hydration must own client-side layout effects.
 
+**Document event listeners:** Radiant mounts a singleton `MinimalDocument` on `globalThis.document` during SSR. Because `document` is defined on the server, `typeof document !== 'undefined'` checks evaluate to `true` during SSR. Top-level event listeners on `document` or `window` must be guarded with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR.
+
 **Supported selector syntax (v1):**
 
 - Tag names, including custom elements (`rui-disclosure`, `button`)
