@@ -1,8 +1,8 @@
 ---
-title: "Docs | JSX Event Handling"
+title: "JSX Event Handling"
 description: "How event binding works in @ecopages/jsx."
-group: Packages
-order: 999
+group: JSX
+order: 4
 ---
 
 # JSX Event Handling
@@ -39,7 +39,12 @@ That is why delegated event support is limited to a documented allowlist of bubb
 
 `beforeinput`, `click`, `contextmenu`, `dblclick`, `focusin`, `focusout`, `input`, `keydown`, `keyup`, `mousedown`, `mouseout`, `mouseover`, `mouseup`, `pointerdown`, `pointerout`, `pointerover`, `pointerup`, `touchend`, `touchmove`, and `touchstart`.
 
-Events outside that allowlist already attach directly when authored with `on:*`.
+Events outside that allowlist already attach directly when authored with `on:*`. For example, `on:focus`, `on:blur`, `on:scroll`, `on:load`, and `on:dragstart` attach on the element even though you authored `on:*`, not `on-native:*`.
+
+```tsx
+<input on:focus={handleFocus} on:blur={handleBlur} />
+<div on:scroll={handleScroll} />
+```
 
 ## When To Use on-native:*
 

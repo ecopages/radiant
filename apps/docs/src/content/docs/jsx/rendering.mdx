@@ -1,13 +1,13 @@
 ---
-title: "Docs | JSX Rendering"
+title: "JSX Client Rendering"
 description: "Client-side DOM rendering and hydration entrypoints in @ecopages/jsx."
-group: Packages
-order: 999
+group: JSX
+order: 5
 ---
 
 # JSX Client Rendering
 
-This page is about the client entrypoints.
+This page is about the client entrypoints. Import from `@ecopages/jsx` or `@ecopages/jsx/client`; keep `@ecopages/jsx/server` in server-only modules.
 
 - mount new DOM with `createRoot(...).render(...)`
 - hydrate existing SSR markup with `hydrate(...)` or `createRoot(...).hydrate(...)`
@@ -108,15 +108,40 @@ Child values can update without rerendering the parent tree when they expose `ge
 
 That makes this package useful both as a plain JSX runtime and as a renderer that can consume signal-like values directly.
 
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { createRoot, createSubscribableJsxValue } from '@ecopages/jsx';
+
+let count = 0;
+const subscribers = new Set<(value: number) => void>();
+
+const boundCount = createSubscribableJsxValue({
+	getValue: () => count,
+	subscribe: (notify) => {
+		subscribers.add(notify);
+
+		return () => {
+			subscribers.delete(notify);
+		};
+	},
+});
+
+const root = createRoot(document.querySelector('#app') as HTMLElement);
+root.render(<p>Count: {boundCount}</p>);
+
+count += 1;
+
+for (const subscriber of subscribers) {
+	subscriber(count);
+}
+```
+
+Pass signal-like children directly when they already expose `get()` and `subscribe(...)`. Use `createSubscribableJsxValue(...)` when the source has its own update notifications but does not match that shape.
+
 ## Empty Values During Updates
 
-Use normal JavaScript values for removals and empty output:
-
-- `null`, `undefined`, and `false` clear child content
-- `null` and `undefined` remove standard attributes
-- `false` removes boolean attributes
-- `null` removes event listeners
-- `undefined` clears property bindings
+See [JSX Overview — Empty Values And Removal](/docs/jsx/overview#empty-values-and-removal) for the full rules. The sign-in button below applies them across two client updates:
 
 ```tsx
 /** @jsxImportSource @ecopages/jsx */
@@ -125,28 +150,36 @@ import { createRoot } from '@ecopages/jsx';
 
 const root = createRoot(document.querySelector('#app') as HTMLElement);
 
-const handleTogglePin = () => {
-	console.log('toggle pin');
+type SignInState = {
+	username: string;
+	busy: boolean;
 };
 
-const renderPinAction = (phase: 'idle' | 'saving') => (
+const signIn = () => console.log('sign in');
+
+const renderSignInButton = (state: SignInState) => (
 	<button
-		class={phase === 'saving' ? 'toolbar-action toolbar-action--saving' : null}
-		aria={{ pressed: phase === 'saving' ? false : true }}
-		data={{ phase }}
-		disabled={phase === 'saving'}
-		on:click={phase === 'saving' ? null : handleTogglePin}
-		prop:payload={phase === 'saving' ? undefined : { phase }}
+		type="button"
+		disabled={state.busy || state.username === ''}
+		on:click={state.busy ? null : signIn}
+		title={state.username === '' ? 'Enter your username first' : null}
 	>
-		{phase === 'saving' ? 'Saving pin state...' : 'Pinned'}
+		{state.busy ? 'Signing in...' : 'Sign in'}
 	</button>
 );
 
-root.render(renderPinAction('idle'));
-root.render(renderPinAction('saving'));
+root.render(renderSignInButton({ username: '', busy: false }));
+root.render(renderSignInButton({ username: 'ada', busy: true }));
 ```
 
-These updates go through the normal renderer path. If the template shape changes, the client renderer may replace the affected node rather than preserve the previously committed instance.
+How each removal rule applies between those two renders:
+
+- `disabled={...}` — evaluates to `true` while the username is empty or a request is in flight; when it evaluates to `false`, the boolean attribute is removed
+- `title={... ? '...' : null}` — `null` removes the attribute once a username exists
+- `on:click={... ? null : signIn}` — `null` detaches the handler while a sign-in request is in flight
+- child text swaps between the two states as normal content
+
+The template shape is the same in both renders, so the renderer preserves the committed button node and only patches bindings. That is the general rule: if a later render changes the template shape, the client renderer may replace the affected node instead of preserving the previous instance.
 
 ## Runtime Output Contract
 

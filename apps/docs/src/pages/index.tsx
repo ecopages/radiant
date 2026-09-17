@@ -147,7 +147,7 @@ const HOME_FOOTER_COLUMNS: HomeFooterColumnData[] = [
 			{ label: 'Introduction', href: '/docs/getting-started/introduction' },
 			{ label: 'Installation', href: '/docs/getting-started/installation' },
 			{ label: 'Signals', href: '/docs/packages/signals-overview' },
-			{ label: 'JSX', href: '/docs/packages/jsx-overview' },
+			{ label: 'JSX', href: '/docs/jsx/overview' },
 		],
 	},
 	{

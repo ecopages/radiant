@@ -1,0 +1,97 @@
+---
+title: "JSX Custom Element Types"
+description: "Typing and binding defaults for custom elements in @ecopages/jsx."
+group: JSX
+order: 3
+---
+
+# JSX Custom Element Types
+
+When `jsxImportSource` points at `@ecopages/jsx`, custom elements should augment the runtime module instead of the global `JSX` namespace.
+
+## Augmenting The Runtime
+
+```tsx
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+type UserCardProps = {
+	name: string;
+	isAdmin: boolean;
+};
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'user-card': JsxCustomElementAttributes<HTMLElement, UserCardProps>;
+	}
+}
+```
+
+`JsxCustomElementAttributes<Host, Props>` types the element in two layers:
+
+- **`Props`** holds the public, unprefixed JSX props. It keeps its own required and optional fields, so required props stay required.
+- **the host type** backs explicit `prop:*` bindings, which are typed from the element class properties.
+
+## Binding Defaults For Custom Elements
+
+Unprefixed names on custom elements default to **property bindings**. A fixed set of names keeps attribute semantics because they describe obvious HTML markup:
+
+`class`, `dir`, `hidden`, `id`, `lang`, `part`, `role`, `slot`, `style`, `tabindex`, `title` — plus every `data-*` and `aria-*` name.
+
+This split is deliberate: markup names serialize so SSR output stays meaningful, while everything else passes real values as properties. Use `attr:*` to force serialization of any other name, and `prop:*` to override the attribute defaults explicitly.
+
+## Worked Example
+
+```tsx
+<user-grid id="people" class="panel" items={rows} selection={currentRow} attr:status="ready" prop:api={gridApi} />
+```
+
+```tsx
+import type { JsxCustomElementAttributes } from '@ecopages/jsx';
+
+type UserGridRow = {
+	id: string;
+};
+
+type UserGridProps = {
+	items: UserGridRow[];
+	selection?: UserGridRow;
+};
+
+class UserGridElement extends HTMLElement {
+	api?: UserGridApi;
+}
+
+type UserGridApi = {
+	focusRow(id: string): void;
+};
+
+declare module '@ecopages/jsx/jsx-runtime' {
+	interface JsxCustomIntrinsicElements {
+		'user-grid': JsxCustomElementAttributes<UserGridElement, UserGridProps>;
+	}
+}
+
+const rows: UserGridRow[] = [{ id: '1' }];
+const currentRow = rows[0];
+const gridApi: UserGridApi = {
+	focusRow: (_id) => undefined,
+};
+
+<user-grid items={rows} selection={currentRow} prop:api={gridApi} />;
+```
+
+In that example:
+
+- `items` and `selection` are typed from `UserGridProps` (defaults to property binding on the instance)
+- `id` and `class` are typed and serialized as attributes
+- `attr:status` serializes to markup even though `status` is not an attribute default
+- `prop:api` is typed from `UserGridElement.api` and never serializes to HTML
+
+## Design Note: Custom Elements Versus Radiant Hosts
+
+JSX itself has two escape seams for custom elements, not Radiant-specific branches:
+
+- **Generic SSR contract.** Any registered tag containing `-` whose element implements `renderHostToString(options?)` can be serialized directly by `@ecopages/jsx/server`. This contract is for third-party custom elements that opt into JSX SSR directly.
+- **Framework render hook.** `RadiantElement` hosts do **not** expose a durable instance method named `renderHostToString()`. Radiant installs a server custom-element render hook and serializes hosts through its own pipeline.
+
+See [JSX SSR](/docs/ssr/jsx-ssr) for the serialization rules and scope helpers, and [Component SSR](/docs/ssr/component-ssr) for the Radiant adapter path.
