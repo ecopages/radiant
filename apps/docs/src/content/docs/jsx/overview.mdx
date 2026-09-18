@@ -1,8 +1,8 @@
 ---
-title: "Docs | JSX Overview"
+title: "JSX Overview"
 description: "What @ecopages/jsx provides and how it fits into the Radiant ecosystem."
-group: Packages
-order: 999
+group: JSX
+order: 1
 ---
 
 import { CodeTabs } from '@/components/code-tabs';
@@ -38,6 +38,18 @@ This is the key split:
 - `@ecopages/jsx` owns TSX syntax, template creation, DOM mounting, hydration, and SSR serialization.
 - `@ecopages/radiant` owns component behavior and decides when a host should render.
 - Both the DOM and SSR flows consume the same template result shape.
+
+## Entrypoints
+
+Choose the narrowest import path for the environment you are writing in. Prefer subpaths in environment-specific modules so bundlers keep browser and server code separate.
+
+| Entrypoint | Use it for |
+| :-- | :-- |
+| `@ecopages/jsx` | Shared app code: JSX primitives, `createRoot(...)`, hydration helpers, and types |
+| `@ecopages/jsx/client` | Browser-only entry files (same mounting surface as the root barrel) |
+| `@ecopages/jsx/server` | Node or Bun SSR: `renderToString(...)`, custom-element render hooks, and SSR scope helpers |
+| `@ecopages/jsx/jsx-runtime` | Automatic JSX runtime wiring (`jsx`, `jsxs`, `Fragment`) |
+| `@ecopages/jsx/jsx-dev-runtime` | Development runtime when the toolchain emits `jsxDEV(...)` |
 
 ## Install And Configure
 
@@ -105,28 +117,6 @@ return (
 
 Removing a binding this way follows the normal renderer path. If the next render changes the template shape, the DOM renderer may replace the affected node rather than preserve the previous instance.
 
-## Derived Bindings
-
-`SubscribableJsxValue` bindings can be projected in two ways:
-
-**Member access** — for object keys, use inline in JSX:
-
-```tsx
-<p>{this.$.config.label}</p>
-```
-
-The runtime memoizes each key on the binding, so this is identity-stable across renders.
-
-**`map`** — for transforms, record lookups, and non-property projections:
-
-```tsx
-const themeLabel = boundPreference.map((preference) => THEME_CONFIG[preference].label);
-```
-
-On Radiant hosts: `this.$.field.map(...)`. Hoist `map` to a create-once host field. Do not call `.map(...)` inside `render()` — each call creates a new derived binding.
-
-Derived bindings reuse the source `getValue` / `subscribe` contract and mount through the same reactive engines as any other binding.
-
 ## Quick Start With RadiantElement
 
 ```tsx
@@ -155,8 +145,34 @@ export class CounterCard extends RadiantElement {
 }
 ```
 
+## Derived Bindings (Radiant Hosts)
+
+On `RadiantElement` and `RadiantController`, `this.$` exposes stable `SubscribableJsxValue` bindings for reactive members. Skip this section if you only use plain `createRoot(...)` mounting.
+
+**Member access** — for object keys, use inline in JSX:
+
+```tsx
+<p>{this.$.config.label}</p>
+```
+
+The runtime memoizes each key on the binding, so this is identity-stable across renders.
+
+**`map`** — for transforms, record lookups, and non-property projections:
+
+```tsx
+const themeLabel = this.$.preference.map((preference) => THEME_CONFIG[preference].label);
+```
+
+Hoist `.map(...)` to a create-once host field. Do not call `.map(...)` inside `render()` — each call creates a new derived binding.
+
+Derived bindings reuse the source `getValue` / `subscribe` contract and mount through the same reactive engines as any other binding.
+
 ## Next Pages
 
-- See [JSX Event Handling](/docs/packages/jsx-events) for `on:*` and `on-native:*`.
-- See [JSX Rendering](/docs/packages/jsx-rendering) for `createRoot(...)`, `renderToString(...)`, and hydration.
+- See [Authoring With JSX](/docs/jsx/authoring) for intrinsics, components, fragments, and attribute normalization.
+- See [JSX Custom Element Types](/docs/jsx/custom-element-types) for type augmentation and `attr:*` / `prop:*` defaults.
+- See [JSX Event Handling](/docs/jsx/events) for `on:*` and `on-native:*`.
+- See [JSX Client Rendering](/docs/jsx/rendering) for `createRoot(...)`, `hydrate(...)`, and container-level hydration.
+- See [JSX SSR](/docs/ssr/jsx-ssr) for `renderToString(...)` and SSR scope helpers.
+- See [Trusted Markup And Security](/docs/jsx/trusted-markup) for the escaping model and `unsafeHtml(...)`.
 - See [RadiantElement](/docs/components/radiant-element) for the host render lifecycle.
