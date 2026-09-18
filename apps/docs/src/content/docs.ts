@@ -24,6 +24,7 @@ export const LLM_SECTION_ORDER = [
 	'components',
 	'decorators',
 	'context',
+	'jsx',
 	'packages',
 	'examples',
 	'tools',
