@@ -150,9 +150,17 @@ export namespace JSX {
 		key?: import('./types/index.ts').JsxKey;
 	}
 
+	/**
+	 * HTML/SVG tags, then registered custom elements, then an unknown-tag fallback.
+	 *
+	 * @remarks
+	 * The fallback keeps an open string index, matching HTML tags. A closed
+	 * `JsxIntrinsicAttributes<Element>` catch-all intersects every tag name and
+	 * strips public custom-element props such as `label` or `tabs`.
+	 */
 	export type IntrinsicElements = JsxDomIntrinsicElements &
 		JsxCustomIntrinsicElements & {
-			[elementName: string]: JsxIntrinsicAttributes<globalThis.Element>;
+			[elementName: string]: JsxDomIntrinsicAttributes<globalThis.Element>;
 		};
 }
 
