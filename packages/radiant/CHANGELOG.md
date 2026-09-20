@@ -1,5 +1,13 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.11
+
+### Patch Changes
+
+- Updated dependencies [[`df92a7b`](https://github.com/ecopages/radiant/commit/df92a7b32b5b98bf5cd9a1205fe408b367fe639f)]:
+    - @ecopages/jsx@0.3.0-rc.11
+    - @ecopages/signals@0.3.0-rc.11
+
 ## 0.3.0-rc.10
 
 ### Patch Changes
