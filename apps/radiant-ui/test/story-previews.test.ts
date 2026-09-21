@@ -87,11 +87,10 @@ describe('story preview renders', () => {
 		const preview = serialize(
 			dateFieldMeta.render!({
 				value: '2026-12-25',
-				dateStyle: 'long',
 				visibleMonths: 1,
 				disabled: true,
 				readOnly: false,
-				masked: false,
+				locale: 'en-US',
 			}),
 		);
 
@@ -99,7 +98,6 @@ describe('story preview renders', () => {
 		expect(preview).toContain('data-date-field-calendar');
 		expect(preview).toContain('data-date-field-trigger');
 		expect(preview).toContain('2026-12-25');
-		expect(preview).toContain('long');
 		expect(preview).not.toContain('rui-field');
 	});
 
@@ -145,10 +143,10 @@ describe('story preview renders', () => {
 		const preview = serialize(
 			dateRangePickerMeta.render!({
 				value: '2026-08-01/2026-08-14',
-				dateStyle: 'medium',
 				visibleMonths: 2,
 				disabled: false,
 				readOnly: true,
+				locale: 'en-US',
 			}),
 		);
 
@@ -158,5 +156,7 @@ describe('story preview renders', () => {
 		expect(preview).toContain('End date');
 		expect(preview).toContain('2026-08-01/2026-08-14');
 		expect(preview).toContain('Trip dates');
+		expect(preview).toContain('"value":"2026-08-01"');
+		expect(preview).toContain('"value":"2026-08-14"');
 	});
 });

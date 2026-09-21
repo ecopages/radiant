@@ -10,21 +10,12 @@ import {
 	state,
 } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
-import { dateToIso, formatDisplayDate, isoToDate, parseLocaleDateString } from '@/lib/intl-date';
-import type { DateDisplayStyle } from '@/lib/intl-date';
-import { resolveLocale } from '@/lib/intl/locale';
+import { effectiveVisibleMonths, listenMobileLayoutViewport } from '@/lib/viewport/mobile-layout';
 import { uniqueId } from '@/lib/unique-id';
 import type { RuiCalendarChangeDetail } from '../calendar/calendar.script';
-import { PopoverController, shouldDismissPopoverFocus } from '../shared/popover-controller';
+import type { RuiDateInputChangeDetail } from '../date-input/date-input.script';
+import { CalendarPopoverBehavior } from '../shared/calendar-popover-behavior';
 import { syncFieldLabel } from '../shared/field-label';
-import {
-	applyDateMask,
-	buildDateMaskPattern,
-	extractDateMaskDigits,
-	getDefaultDatePlaceholder,
-	getNumericPartOrder,
-	maskDigitCapacity,
-} from '@/lib/mask';
 
 export type RuiDateFieldProps = {
 	value?: string;
@@ -34,16 +25,8 @@ export type RuiDateFieldProps = {
 	readOnly?: boolean;
 	label?: string;
 	name?: string;
-	placeholder?: string;
 	/** BCP 47 locale tag, or comma-separated fallback list (e.g. `en-US,en`). */
 	locale?: string;
-	/** How the committed value is shown when the field is not being edited. */
-	dateStyle?: DateDisplayStyle;
-	/**
-	 * When true (default), digits are guided by a locale mask while typing (`08/21/2002`).
-	 * When false, free text is accepted (`Aug 21, 2002`, `2022/08/22`, …) and parsed on blur.
-	 */
-	masked?: boolean;
 	/** Month grids shown in the calendar popover. @default 1 */
 	visibleMonths?: number;
 };
@@ -51,22 +34,20 @@ export type RuiDateFieldProps = {
 export type RuiDateFieldChangeDetail = { value: string };
 
 /**
- * `<rui-date-field>` — a locale-aware date text field with an optional calendar popup.
+ * `<rui-date-field>` — locale-aware date segments with an optional calendar popup.
  *
  * The custom element is a behavior host: it does not render the composed tree.
  * Import the script and place light-DOM children that match the contract below,
  * or use the `RuiDateField*` view helpers which stamp the same targets.
  * `RuiDateField` supplies the default composition when it has no children.
  *
- * While typing, optional digit masking follows the locale pattern from `formatToParts()`.
- * On blur, values are parsed flexibly and displayed with `dateStyle`. Canonical `value`
- * is ISO `YYYY-MM-DD`.
+ * Canonical `value` is ISO `YYYY-MM-DD`.
  *
  * ## Light-DOM contract
  *
  * Required:
- * - `[data-date-field-input]` — text input. Host sets `id`, `name`, `disabled`,
- *   `readOnly`, `inputMode`, and `placeholder`.
+ * - `[data-date-field-input]` — nested `rui-date-input`. Host syncs `value`, `name`,
+ *   `locale`, `min`, `max`, `disabled`, and `read-only`.
  * - `[data-date-field-trigger]` — calendar toggle (`data-ref="trigger"`). Host sets
  *   `aria-expanded` and `disabled`.
  * - `[data-date-field-popover]` — popup shell (`data-ref="popover"`). Host sets `hidden`.
@@ -74,9 +55,8 @@ export type RuiDateFieldChangeDetail = { value: string };
  *   `visible-months`, `value`, `min`, `max`, `locale`, and `disabled`.
  *
  * Nested hosts:
- * - `rui-calendar` at `[data-date-field-calendar]` — parent queries
- *   `[data-calendar-day][data-iso="…"]` and `[data-calendar-day][tabindex="0"]`
- *   inside it when the popup opens; listens for `rui-change`.
+ * - `rui-date-input` at `[data-date-field-input]` — segment editor; listen for `rui-change`.
+ * - `rui-calendar` at `[data-date-field-calendar]` — parent queries day targets when the popup opens.
  *
  * Do not set `aria-expanded` on the trigger — the host owns it.
  *
@@ -88,12 +68,9 @@ export type RuiDateFieldChangeDetail = { value: string };
  * @attr {boolean} disabled - Disable the field and calendar. Default: `false`.
  * @attr {boolean} read-only - Disable editing while keeping the value visible. Default: `false`.
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
- * @attr {string} name - Native `name` for the underlying input. Default: `''`.
- * @attr {string} placeholder - Overrides the locale-derived placeholder. Default: `''`.
+ * @attr {string} name - Native `name` for the hidden input inside `rui-date-input`. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
- * @attr {string} date-style - How the committed value is displayed when not editing. Default: `medium`.
- * @attr {boolean} masked - Guide digits with a locale mask while typing. Default: `true`.
- * @attr {number} visible-months - Month grids shown in the calendar popover. Default: `1`.
+ * @attr {number} visible-months - Month grids in the popover (adapts to 1 on screens under 640px when greater than 1). Default: `1`.
  * @fires rui-change - Emitted when a valid date is committed (typing or calendar pick).
  *
  * @remarks
@@ -102,78 +79,87 @@ export type RuiDateFieldChangeDetail = { value: string };
 @customElement('rui-date-field')
 export class RuiDateField extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' })
-	@bindTo({ selector: '[data-date-field-calendar]', attr: 'value' })
+	@bindTo([
+		{ selector: '[data-date-field-input]', attr: 'value' },
+		{ selector: '[data-date-field-calendar]', attr: 'value' },
+	])
 	value: string;
 	@prop({ type: String, defaultValue: '' })
-	@bindTo({ selector: '[data-date-field-calendar]', attr: 'min' })
+	@bindTo([
+		{ selector: '[data-date-field-input]', attr: 'min' },
+		{ selector: '[data-date-field-calendar]', attr: 'min' },
+	])
 	min: string;
 	@prop({ type: String, defaultValue: '' })
-	@bindTo({ selector: '[data-date-field-calendar]', attr: 'max' })
+	@bindTo([
+		{ selector: '[data-date-field-input]', attr: 'max' },
+		{ selector: '[data-date-field-calendar]', attr: 'max' },
+	])
 	max: string;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
 	@bindTo([
-		{ selector: '[data-date-field-input]', prop: 'disabled' },
+		{ selector: '[data-date-field-input]', bool: 'disabled' },
 		{ selector: '[data-date-field-calendar]', bool: 'disabled' },
 	])
 	disabled: boolean;
 
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
-	@bindTo({ selector: '[data-date-field-input]', prop: 'readOnly' })
+	@bindTo({ selector: '[data-date-field-input]', bool: 'read-only' })
 	readOnly: boolean;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
 
 	@prop({ type: String, defaultValue: '' })
-	@bindTo({ selector: '[data-date-field-input]', prop: 'name' })
+	@bindTo({ selector: '[data-date-field-input]', attr: 'name' })
 	name: string;
 
-	@prop({ type: String, defaultValue: '' }) placeholder: string;
 	@prop({ type: String, defaultValue: '' })
-	@bindTo({ selector: '[data-date-field-calendar]', attr: 'locale' })
+	@bindTo([
+		{ selector: '[data-date-field-input]', attr: 'locale' },
+		{ selector: '[data-date-field-calendar]', attr: 'locale' },
+	])
 	locale: string;
-	@prop({ type: String, attribute: 'date-style', defaultValue: 'medium' }) dateStyle: DateDisplayStyle;
-	@prop({ type: Boolean, reflect: true, defaultValue: true })
-	@bindTo({ selector: '[data-date-field-input]', prop: 'inputMode', map: (masked) => (masked ? 'numeric' : 'text') })
-	masked: boolean;
 	@prop({ type: Number, attribute: 'visible-months', defaultValue: 1 })
-	@bindTo({ selector: '[data-date-field-calendar]', attr: 'visible-months' })
 	visibleMonths: number;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiDateFieldChangeDetail>;
-
-	@state displayValue = '';
-	@state editing = false;
 
 	@state
 	@bindTo({ selector: '[data-date-field-trigger]', attr: 'aria-expanded' })
 	open = false;
 
 	private readonly uid = uniqueId('rui-date-field');
-	private popoverController: PopoverController | null = null;
-	private suppressPopoverDismiss = false;
+	private readonly calendarPopover = new CalendarPopoverBehavior({
+		getHost: () => this,
+		getAnchor: () => this.getToggle()?.parentElement ?? this,
+		getFloating: () => this.popoverTarget,
+		getOpen: () => this.open,
+		getCalendar: () => this.getCalendar(),
+		getFocusIso: () => this.isoValue || undefined,
+	});
+	private disposeMobileLayoutListener: (() => void) | null = null;
 
 	@query({ ref: 'popover' }) popoverTarget: HTMLElement;
 
+	private readonly onMediaChange = (): void => {
+		this.syncCalendar();
+		if (this.open) {
+			this.calendarPopover.syncPopover();
+		}
+	};
+
 	private get isoValue(): string {
 		return this.value ?? '';
-	}
-
-	private get resolvedLocale(): string | string[] | undefined {
-		return resolveLocale(this.locale);
 	}
 
 	private get inputId(): string {
 		return `${this.uid}-input`;
 	}
 
-	private get resolvedPlaceholder(): string {
-		return this.placeholder || getDefaultDatePlaceholder(this.resolvedLocale);
-	}
-
-	private getInput(): HTMLInputElement | null {
-		return this.querySelector<HTMLInputElement>('[data-date-field-input]');
+	private getDateInput(): HTMLElement | null {
+		return this.querySelector<HTMLElement>('[data-date-field-input]');
 	}
 
 	private getToggle(): HTMLButtonElement | null {
@@ -185,7 +171,7 @@ export class RuiDateField extends RadiantElement {
 	}
 
 	private syncLabel(): void {
-		const input = this.getInput();
+		const input = this.getDateInput();
 		syncFieldLabel(this, input, {
 			controlId: this.inputId,
 			label: this.label,
@@ -194,18 +180,9 @@ export class RuiDateField extends RadiantElement {
 	}
 
 	private syncInput(): void {
-		const input = this.getInput();
-		if (!input) {
-			return;
-		}
-
-		if (!input.id) {
-			input.id = this.inputId;
-		}
-
-		const placeholder = this.resolvedPlaceholder;
-		if (placeholder) {
-			input.placeholder = placeholder;
+		const input = this.getDateInput();
+		if (!input?.id) {
+			input?.setAttribute('id', this.inputId);
 		}
 	}
 
@@ -218,242 +195,76 @@ export class RuiDateField extends RadiantElement {
 		toggle.disabled = this.disabled || this.readOnly;
 	}
 
-	private formatForDisplay(iso: string): string {
-		if (!iso) {
-			return '';
-		}
-		const date = isoToDate(iso);
-		if (!date) {
-			return '';
-		}
-		return formatDisplayDate(date, this.resolvedLocale, this.dateStyle);
-	}
-
-	private formatForEditing(iso: string): string {
-		if (!iso) {
-			return '';
-		}
-		if (!this.masked) {
-			return this.formatForDisplay(iso);
-		}
-		const date = isoToDate(iso);
-		if (!date) {
-			return '';
-		}
-		const pattern = buildDateMaskPattern(this.resolvedLocale);
-		const digits = dateToMaskDigits(date, this.resolvedLocale);
-		return applyDateMask(digits, pattern);
-	}
-
-	private syncDisplayValue(): void {
-		if (this.editing) {
-			return;
-		}
-		this.displayValue = this.formatForDisplay(this.isoValue);
-		const input = this.getInput();
-		if (input) {
-			input.value = this.displayValue;
-		}
-	}
-
-	private isIsoAllowed(iso: string): boolean {
-		if (this.min && iso < this.min) {
-			return false;
-		}
-		if (this.max && iso > this.max) {
-			return false;
-		}
-		return true;
-	}
-
 	private commitValue(iso: string): void {
-		if (iso && !this.isIsoAllowed(iso)) {
-			this.syncDisplayValue();
-			return;
-		}
-
 		if (iso === this.isoValue) {
-			this.syncDisplayValue();
 			return;
 		}
 
 		this.value = iso;
 		this.changeEvent.emit({ value: iso });
-		this.syncDisplayValue();
 	}
 
-	private parseAndCommit(raw: string | null | undefined): void {
-		const trimmed = (raw ?? '').trim();
-		if (!trimmed) {
-			this.commitValue('');
+	private syncCalendar(): void {
+		const calendar = this.getCalendar();
+		if (!calendar) {
 			return;
 		}
-
-		const parsed = parseLocaleDateString(trimmed, this.resolvedLocale);
-		if (!parsed) {
-			this.syncDisplayValue();
-			return;
-		}
-
-		this.commitValue(dateToIso(parsed));
-	}
-
-	private handleMaskedInput(raw: string): string {
-		const pattern = buildDateMaskPattern(this.resolvedLocale);
-		const digits = extractDateMaskDigits(raw);
-		const masked = applyDateMask(digits, pattern);
-		if (digits.length >= maskDigitCapacity(pattern)) {
-			this.parseAndCommit(masked);
-		}
-		return masked;
+		calendar.setAttribute('selection-mode', 'single');
+		calendar.setAttribute('visible-months', String(effectiveVisibleMonths(this.visibleMonths)));
 	}
 
 	private initialize(): void {
 		this.syncLabel();
 		this.syncInput();
-		this.syncDisplayValue();
 		this.syncToggle();
-		this.getCalendar()?.setAttribute('selection-mode', 'single');
+		this.syncCalendar();
 		this.setOpen(false);
 	}
 
 	private setOpen(next: boolean): void {
 		this.open = next;
 		queueMicrotask(() => {
-			this.syncPopoverPosition();
+			this.calendarPopover.syncPopover();
 			if (next) {
-				this.focusCalendarDay();
+				this.calendarPopover.focusCalendarDay();
 			}
 		});
-	}
-
-	/** Focus the calendar's roving day, falling back to its first available day. */
-	private focusCalendarDay(): void {
-		requestAnimationFrame(() => {
-			if (!this.open) {
-				return;
-			}
-
-			const calendar = this.getCalendar();
-			const selectedDay = this.isoValue
-				? calendar?.querySelector<HTMLButtonElement>(
-						`[data-calendar-day][data-iso="${this.isoValue}"]:not(:disabled)`,
-					)
-				: null;
-			(
-				selectedDay ??
-				calendar?.querySelector<HTMLButtonElement>(
-					'[data-calendar-day][tabindex="0"]:not(:disabled), [data-calendar-day]:not(:disabled)',
-				)
-			)?.focus();
-		});
-	}
-
-	private ensurePopoverController(): PopoverController {
-		if (!this.popoverController) {
-			this.popoverController = new PopoverController({
-				getAnchor: () => this.getToggle()?.parentElement ?? this,
-				getFloating: () => this.popoverTarget,
-				getOpen: () => this.open,
-				getPlacement: () => 'bottom-start',
-				gap: 4,
-				portal: false,
-			});
-		}
-		return this.popoverController;
-	}
-
-	private syncPopoverPosition(): void {
-		const popover = this.popoverTarget;
-		if (!popover) {
-			return;
-		}
-		popover.hidden = !this.open;
-		const controller = this.ensurePopoverController();
-		controller.updateConfig({
-			getOpen: () => this.open,
-		});
-		controller.sync();
 	}
 
 	protected override onConnected(): void {
+		this.disposeMobileLayoutListener = listenMobileLayoutViewport(this.onMediaChange);
 		this.initialize();
 	}
 
 	override disconnectedCallback(): void {
-		this.popoverController?.destroy();
-		this.popoverController = null;
+		this.disposeMobileLayoutListener?.();
+		this.disposeMobileLayoutListener = null;
+		this.calendarPopover.destroy();
 		super.disconnectedCallback();
 	}
 
-	@onUpdated([
-		'value',
-		'min',
-		'max',
-		'label',
-		'placeholder',
-		'disabled',
-		'readOnly',
-		'locale',
-		'dateStyle',
-		'masked',
-		'visibleMonths',
-	])
+	@onUpdated(['value', 'min', 'max', 'label', 'disabled', 'readOnly', 'locale', 'visibleMonths'])
 	onPropsUpdated(): void {
 		this.syncLabel();
 		this.syncInput();
-		this.syncDisplayValue();
 		this.syncToggle();
+		this.syncCalendar();
 	}
 
 	@onUpdated(['open'])
 	onOpenUpdated(): void {
 		this.syncToggle();
-		this.syncPopoverPosition();
+		this.calendarPopover.syncPopover();
 	}
 
-	@onEvent({ selector: '[data-date-field-input]', type: 'focusin' })
-	onInputFocus(): void {
-		this.editing = true;
-		const input = this.getInput();
-		if (!input) {
+	@onEvent({ selector: '[data-date-field-input]', type: 'rui-change' })
+	onDateInputChange(event: Event): void {
+		const target = event.target;
+		if (!(target instanceof HTMLElement) || !target.matches('[data-date-field-input]')) {
 			return;
 		}
-		input.value = this.isoValue ? this.formatForEditing(this.isoValue) : '';
-		this.displayValue = input.value;
-	}
-
-	@onEvent({ selector: '[data-date-field-input]', type: 'input' })
-	onInput(event: Event): void {
-		const input = event.target as HTMLInputElement;
-		if (this.masked) {
-			const masked = this.handleMaskedInput(input.value);
-			input.value = masked;
-			this.displayValue = masked;
-			return;
-		}
-		this.displayValue = input.value;
-	}
-
-	@onEvent({ selector: '[data-date-field-input]', type: 'change' })
-	onInputChange(): void {
-		const input = this.getInput();
-		if (input) {
-			this.parseAndCommit(input.value);
-		}
-	}
-
-	@onEvent({ selector: '[data-date-field-input]', type: 'keydown' })
-	onInputKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape') {
-			if (this.open) {
-				event.preventDefault();
-				this.setOpen(false);
-				return;
-			}
-			this.editing = false;
-			this.syncDisplayValue();
-		}
+		const detail = (event as CustomEvent<RuiDateInputChangeDetail>).detail;
+		this.commitValue(detail?.value ?? '');
 	}
 
 	@onEvent({
@@ -461,41 +272,12 @@ export class RuiDateField extends RadiantElement {
 		type: 'focusout',
 	})
 	onRootFocusOut(event: FocusEvent): void {
-		const target = event.target as HTMLElement;
-		const relatedTarget = event.relatedTarget;
-
-		if (target.matches('[data-date-field-input]') && target.localName === 'input') {
-			const input = target as HTMLInputElement;
-			queueMicrotask(() => {
-				if (!this.editing) {
-					return;
-				}
-				this.editing = false;
-				this.parseAndCommit(input.value);
-			});
-		}
-
-		queueMicrotask(() => {
-			if (this.suppressPopoverDismiss) {
-				this.suppressPopoverDismiss = false;
-				return;
-			}
-
-			if (!this.open) {
-				return;
-			}
-
-			const next = relatedTarget instanceof Node ? relatedTarget : document.activeElement;
-			if (!shouldDismissPopoverFocus(this, this.popoverTarget, next)) {
-				return;
-			}
-			this.setOpen(false);
-		});
+		this.calendarPopover.handleFocusOut(event, () => this.setOpen(false));
 	}
 
 	@onEvent({ ref: 'trigger', type: 'pointerdown' })
 	onTriggerPointerDown(): void {
-		this.suppressPopoverDismiss = true;
+		this.calendarPopover.suppressDismiss();
 	}
 
 	@onEvent({ ref: 'trigger', type: 'click' })
@@ -536,14 +318,4 @@ export class RuiDateField extends RadiantElement {
 			this.setOpen(false);
 		}
 	}
-}
-
-function dateToMaskDigits(date: Date, locale: string | string[] | undefined): string {
-	const order = getNumericPartOrder(locale);
-	const values = {
-		month: String(date.getMonth() + 1).padStart(2, '0'),
-		day: String(date.getDate()).padStart(2, '0'),
-		year: String(date.getFullYear()),
-	};
-	return order.map((part) => values[part]).join('');
 }
