@@ -363,7 +363,7 @@ export class RadiantElement<Bindings extends object = {}>
 				}
 			}
 
-			this.reactiveHost.flushPostSyncCallbacks();
+			this.flushPostSyncCallbacks();
 			this.onConnected();
 		});
 	}
@@ -491,6 +491,13 @@ export class RadiantElement<Bindings extends object = {}>
 		return Reflect.get(this, name);
 	}
 
+	/**
+	 * Serializes the JSX view through the installed server runtime.
+	 *
+	 * @remarks Flushes `@bindTo` after `render()` so targets created by a Derived
+	 * Tree exist before serialization. `prepareForSsr` still flushes authored
+	 * light-DOM children that exist before render.
+	 */
 	public renderViewToString(options: RadiantElementRenderToStringOptions = {}): string {
 		if (!this.shouldRunRenderLifecycle()) {
 			return this.innerHTML;
@@ -499,7 +506,9 @@ export class RadiantElement<Bindings extends object = {}>
 		ensureLegacyHostReady(this, 'ssr');
 		this.prepareForSsr();
 
-		return requireRadiantElementSsrRuntime().renderView(this, options);
+		const html = requireRadiantElementSsrRuntime().renderView(this, options);
+		this.flushPostSyncCallbacks();
+		return html;
 	}
 
 	public hydrate(): void {
@@ -565,6 +574,12 @@ export class RadiantElement<Bindings extends object = {}>
 	 */
 	protected prepareForSsr(): void {
 		runSsrPreparationCallbacks(this);
+		this.flushPostSyncCallbacks();
+	}
+
+	/** Runs `@bindTo` and other post-sync callbacks registered on this host. */
+	public flushPostSyncCallbacks(): void {
+		this.reactiveHost.flushPostSyncCallbacks();
 	}
 
 	/**

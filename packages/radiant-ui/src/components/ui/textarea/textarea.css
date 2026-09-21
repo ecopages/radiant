@@ -6,7 +6,7 @@
 		border-radius: var(--radius-control);
 		padding-inline: var(--space-control-x);
 		padding-block: var(--space-control-y);
-		font-size: var(--text-control, 0.875rem);
+		font-size: var(--text-control-input);
 		min-height: calc(var(--space-control-y) * 2 + 1.25rem * 3);
 		transition-duration: var(--duration-normal);
 	}

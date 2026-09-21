@@ -27,18 +27,22 @@ export function extractTextContent(html: string): string {
 }
 
 export function parseHtmlToNodes(html: string, ownerDocument: Document | null = getInstalledDocumentLike()): Node[] {
-	return collectTopLevelHtmlFragments(html).map((fragment) => {
+	return collectTopLevelHtmlFragments(html).flatMap((fragment) => {
 		if (!fragment.startsWith('<')) {
-			return new MinimalTextNode(fragment, ownerDocument) as unknown as Node;
+			return [new MinimalTextNode(fragment, ownerDocument) as unknown as Node];
 		}
 
 		const tag = parseHtmlTagToken(fragment, 0);
 
-		if (!tag || tag.type !== 'open') {
-			return new MinimalTextNode(fragment, ownerDocument) as unknown as Node;
+		if (tag?.type === 'close') {
+			return [];
 		}
 
-		return createElementFromFragment(fragment, tag, ownerDocument);
+		if (!tag || tag.type !== 'open') {
+			return [new MinimalTextNode(fragment, ownerDocument) as unknown as Node];
+		}
+
+		return [createElementFromFragment(fragment, tag, ownerDocument)];
 	});
 }
 

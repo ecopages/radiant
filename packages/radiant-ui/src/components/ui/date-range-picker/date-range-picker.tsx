@@ -1,13 +1,16 @@
+import { parseIsoRange } from '@/lib/intl-date';
 import type { JsxCustomElementAttributes, JsxElementProps } from '@ecopages/jsx';
 import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconCalendar } from '@/lib/icons';
 import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
+import { RuiDateInput, type RuiDateInputElement, type RuiDateInputProps } from '../date-input';
 import type {
 	RuiDateRangePicker as RuiDateRangePickerElement,
 	RuiDateRangePickerProps,
 } from './date-range-picker.script';
 import './date-range-picker.script';
+import '../date-input/date-input.script';
 
 export type RuiDateRangePickerControlProps = JsxElementProps<HTMLDivElement>;
 
@@ -15,7 +18,9 @@ export type RuiDateRangePickerControlProps = JsxElementProps<HTMLDivElement>;
 export function RuiDateRangePickerControl({ children, class: className, ...props }: RuiDateRangePickerControlProps) {
 	return (
 		<div {...props} class={cx('rui-date-range-picker', className)}>
-			<div class="rui-date-range-picker__group">{children}</div>
+			<div class="rui-date-range-picker__group" data-ref="control">
+				{children}
+			</div>
 		</div>
 	);
 }
@@ -25,44 +30,24 @@ export type RuiDateRangePickerInputsProps = JsxElementProps<HTMLDivElement>;
 /** Input row for `RuiDateRangePickerStartInput` and `RuiDateRangePickerEndInput`. */
 export function RuiDateRangePickerInputs({ children, class: className, ...props }: RuiDateRangePickerInputsProps) {
 	return (
-		<div {...props} class={cx('rui-date-range-picker__values', className)}>
+		<div {...props} class={cx('rui-date-range-picker__values', className)} data-ref="values">
 			{children}
 		</div>
 	);
 }
 
-export type RuiDateRangePickerStartInputProps = JsxElementProps<HTMLInputElement>;
+export type RuiDateRangePickerStartInputProps = JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps>;
 
-/** Start-date text input. Stamps `[data-range-start]`. */
+/** Start-date segments. Stamps `[data-range-start]`. */
 export function RuiDateRangePickerStartInput({ class: className, ...props }: RuiDateRangePickerStartInputProps) {
-	return (
-		<input
-			{...props}
-			type="text"
-			data-range-start
-			data-rui-control
-			data-rui-control-type="text"
-			class={cx('rui-date-range-picker__input', className)}
-			autocomplete="off"
-		/>
-	);
+	return <RuiDateInput {...props} data-range-start class={cx('rui-date-range-picker__input', className)} />;
 }
 
-export type RuiDateRangePickerEndInputProps = JsxElementProps<HTMLInputElement>;
+export type RuiDateRangePickerEndInputProps = JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps>;
 
-/** End-date text input. Stamps `[data-range-end]`. */
+/** End-date segments. Stamps `[data-range-end]`. */
 export function RuiDateRangePickerEndInput({ class: className, ...props }: RuiDateRangePickerEndInputProps) {
-	return (
-		<input
-			{...props}
-			type="text"
-			data-range-end
-			data-rui-control
-			data-rui-control-type="text"
-			class={cx('rui-date-range-picker__input', className)}
-			autocomplete="off"
-		/>
-	);
+	return <RuiDateInput {...props} data-range-end class={cx('rui-date-range-picker__input', className)} />;
 }
 
 export type RuiDateRangePickerSeparatorProps = JsxElementProps<HTMLSpanElement>;
@@ -140,25 +125,56 @@ export type RuiDateRangePickerViewProps = JsxCustomElementAttributes<
 };
 
 /**
- * Locale-aware date range picker with text inputs and a range calendar popover.
+ * Locale-aware date range picker with segment inputs and a range calendar popover.
  *
  * Pair with `RuiLabel` / `RuiField` for labeling and validation.
  */
-export function RuiDateRangePicker({
-	children,
-	startLabel = 'Start date',
-	endLabel = 'End date',
-	...props
-}: RuiDateRangePickerViewProps) {
+export function RuiDateRangePicker(props: RuiDateRangePickerViewProps) {
+	const {
+		children,
+		startLabel = 'Start date',
+		endLabel = 'End date',
+		value,
+		min,
+		max,
+		disabled,
+		readOnly,
+		locale,
+		startName,
+		endName,
+	} = props;
+	const range = parseIsoRange(value ?? '');
+
 	return (
-		<rui-date-range-picker {...props}>
+		<rui-date-range-picker
+			data-rui-aria-targets='[data-range-start] [data-ref="root"],[data-range-end] [data-ref="root"]'
+			{...props}
+		>
 			{children ?? (
 				<>
 					<RuiDateRangePickerControl>
 						<RuiDateRangePickerInputs>
-							<RuiDateRangePickerStartInput aria-label={startLabel} />
+							<RuiDateRangePickerStartInput
+								aria-label={startLabel}
+								value={range?.start}
+								min={min}
+								max={max}
+								disabled={disabled}
+								readOnly={readOnly}
+								locale={locale}
+								name={startName}
+							/>
 							<RuiDateRangePickerSeparator />
-							<RuiDateRangePickerEndInput aria-label={endLabel} />
+							<RuiDateRangePickerEndInput
+								aria-label={endLabel}
+								value={range?.end}
+								min={min}
+								max={max}
+								disabled={disabled}
+								readOnly={readOnly}
+								locale={locale}
+								name={endName}
+							/>
 						</RuiDateRangePickerInputs>
 						<RuiDateRangePickerToggle />
 					</RuiDateRangePickerControl>

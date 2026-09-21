@@ -24,9 +24,9 @@ Non-atomic components separate behavior from markup: the custom element owns sta
 
 Keep a convenient prop-based default composition on the primary view, but accept children for the equivalent explicit composition. Do not force consumers to subclass a custom element just to arrange its UI.
 
-For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances. Listbox-backed popovers (select, combobox) share `ListboxPopoverBehavior` for active-descendant navigation and `ListboxHostController` for the embedded listbox, the `string[]` value property (comma-separated on the attribute), option `aria-selected`, and optional tag-group chips.
+For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances. Listbox-backed popovers (select, combobox) share `ListboxPopoverBehavior` for active-descendant navigation and `ListboxHostController` for the embedded listbox, the `string[]` value property (comma-separated on the attribute), option `aria-selected`, and optional tag-group chips. Calendar-backed date pickers share `CalendarPopoverBehavior` for popover positioning, focus-out dismissal, and day focus.
 
-`RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls.
+`RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls. For `RuiField` wiring, stamp `data-rui-control` (or use a known host tag), stamp `data-rui-aria-target` or `data-rui-aria-targets` when the ARIA node is not the control host itself, and fire bubbling `rui-change`.
 
 ## Multi-value `value`
 
@@ -50,6 +50,7 @@ Parent JSX owns **Authored Children**. Do not let a custom element `render()` pr
 - **Default chrome when children are omitted:** the view supplies defaults (for example `RuiNumberField` renders input + steppers when `children` is empty).
 - **Stylesheet ownership:** component stylesheets are atomic: never inline child or shared CSS. `style-dependencies.json` is generated from rendered default composition and lists the complete ordered stylesheet union for selective consumers. Applications should normally import `styles.css` once; it imports each atomic and primitive stylesheet exactly once. Public `--rui-*` knobs: defaults on the host (or portaled surface root), never on an inner BEM grain — [`DESIGN.md`](../../../DESIGN.md).
 - **Derived Tree:** keep `render()` when inner DOM is generated from CE state and is not parent JSX ranges (toaster list, TOC heading list, calendar day grid).
+- **SSR preparation:** when a Derived Tree depends on state normally initialized in `onConnected()`, register an SSR preparation callback too. Calendar prepares its month panels from the supplied value and locale before server serialization; client connection still initializes interactive state.
 - Do not use HTML `<slot>` as the public JSX API. Drop `slot=` on helpers and `@slot` TSDoc once view helpers own the layout.
 
 Core Radiant still has **Slot** as the architectural projection boundary for a render-owning host. Catalog composites do not expose HTML `<slot>` as the JSX API.

@@ -3,35 +3,29 @@ import { withDefaultAriaLabel } from '@/aria';
 import { cx } from '@/lib/cx';
 import { RuiIconCalendar } from '@/lib/icons';
 import { RuiCalendar, type RuiCalendarElement, type RuiCalendarProps } from '../calendar';
+import { RuiDateInput, type RuiDateInputElement, type RuiDateInputProps } from '../date-input';
 import type { RuiDateField as RuiDateFieldElement, RuiDateFieldProps } from './date-field.script';
 import './date-field.script';
+import '../date-input/date-input.script';
 
 export type RuiDateFieldControlProps = JsxElementProps<HTMLDivElement>;
 
-/** Bordered control row containing the date input and calendar toggle. */
+/** Bordered control row containing the date segments and calendar toggle. */
 export function RuiDateFieldControl({ children, class: className, ...props }: RuiDateFieldControlProps) {
 	return (
 		<div {...props} class={cx('rui-date-field', className)}>
-			<div class="rui-date-field__group">{children}</div>
+			<div class="rui-date-field__group" data-ref="control">
+				{children}
+			</div>
 		</div>
 	);
 }
 
-export type RuiDateFieldInputProps = JsxElementProps<HTMLInputElement>;
+export type RuiDateFieldInputProps = JsxCustomElementAttributes<RuiDateInputElement, RuiDateInputProps>;
 
-/** Text input. Stamps `[data-date-field-input]`. */
+/** Nested `rui-date-input`. Stamps `[data-date-field-input]`. */
 export function RuiDateFieldInput({ class: className, ...props }: RuiDateFieldInputProps) {
-	return (
-		<input
-			{...props}
-			type="text"
-			data-date-field-input
-			data-rui-control
-			data-rui-control-type="text"
-			class={cx('rui-date-field__input', className)}
-			autocomplete="off"
-		/>
-	);
+	return <RuiDateInput {...props} data-date-field-input class={cx('rui-date-field__input', className)} />;
 }
 
 export type RuiDateFieldToggleProps = JsxElementProps<HTMLButtonElement>;
@@ -79,20 +73,28 @@ export function RuiDateFieldCalendar(props: RuiDateFieldCalendarProps) {
 }
 
 /**
- * Locale-aware date field with optional digit masking, flexible parsing, and a calendar popover.
+ * Locale-aware date field with segment editing and a calendar popover.
  *
  * Pair with `RuiLabel` / `RuiField` for labeling and validation.
  */
-export function RuiDateField({
-	children,
-	...props
-}: JsxCustomElementAttributes<RuiDateFieldElement, RuiDateFieldProps>) {
+export function RuiDateField(props: JsxCustomElementAttributes<RuiDateFieldElement, RuiDateFieldProps>) {
+	const { children, value, min, max, disabled, readOnly, label, name, locale } = props;
+
 	return (
-		<rui-date-field {...props}>
+		<rui-date-field data-rui-aria-target='[data-date-field-input] [data-ref="root"]' {...props}>
 			{children ?? (
 				<>
 					<RuiDateFieldControl>
-						<RuiDateFieldInput />
+						<RuiDateFieldInput
+							value={value}
+							min={min}
+							max={max}
+							disabled={disabled}
+							readOnly={readOnly}
+							label={label}
+							name={name}
+							locale={locale}
+						/>
 						<RuiDateFieldToggle />
 					</RuiDateFieldControl>
 					<RuiDateFieldPopover>

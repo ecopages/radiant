@@ -1,4 +1,13 @@
-import { RadiantElement, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	customElement,
+	event,
+	onEvent,
+	onUpdated,
+	prop,
+	registerSsrPreparationCallback,
+	state,
+} from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { resolveLocale } from '@/lib/intl/locale';
 import {
@@ -360,6 +369,11 @@ export class RuiCalendar extends RadiantElement {
 	private initialize(): void {
 		this.syncViewFromValue();
 		this.refreshGrid();
+	}
+
+	constructor() {
+		super();
+		registerSsrPreparationCallback(this, () => this.initialize());
 	}
 
 	protected override onConnected(): void {

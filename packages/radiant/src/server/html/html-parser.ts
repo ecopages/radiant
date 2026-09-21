@@ -11,12 +11,18 @@ export type ParsedHtmlToken =
 	| ParsedHtmlTag
 	| {
 			end: number;
+			tagName: string;
 			type: 'close';
 	  }
 	| {
 			end: number;
 			type: 'comment' | 'declaration';
 	  };
+
+export type ParseHtmlTagTokenOptions = {
+	/** When false, open tags omit `innerHtml` (for linear stack walks). Default true. */
+	includeInnerHtml?: boolean;
+};
 
 export const voidElementNames = new Set([
 	'area',
@@ -48,13 +54,22 @@ export function collectTopLevelHtmlFragments(html: string): string[] {
 	return fragments.filter((fragment) => fragment !== '');
 }
 
+/**
+ * Exclusive end index of the fragment that starts at `startIndex`.
+ *
+ * @remarks Open elements close on a matching tag name. A generic tag-depth count
+ * treats a void `</input>` as closing an ancestor `<div>`, after which the leftover
+ * `</div>` is parsed as a text node and shows up in the page.
+ */
 function findTopLevelFragmentEnd(html: string, startIndex: number): number {
 	if (html.startsWith('<!--', startIndex)) return findCommentEnd(html, startIndex);
 	if (html[startIndex] !== '<') return findTextEnd(html, startIndex);
-	const token = parseHtmlTagToken(html, startIndex);
-	if (!token || token.type !== 'open' || token.selfClosing || voidElementNames.has(token.tagName))
+	const token = parseHtmlTagToken(html, startIndex, { includeInnerHtml: false });
+	if (!token || token.type !== 'open' || token.selfClosing || voidElementNames.has(token.tagName)) {
 		return token?.end ?? html.length;
-	return findElementEnd(html, token.end);
+	}
+
+	return findElementCloseEnd(html, token.end, token.tagName);
 }
 
 function findCommentEnd(html: string, startIndex: number): number {
@@ -65,26 +80,6 @@ function findCommentEnd(html: string, startIndex: number): number {
 function findTextEnd(html: string, startIndex: number): number {
 	const nextTagIndex = html.indexOf('<', startIndex);
 	return nextTagIndex === -1 ? html.length : nextTagIndex;
-}
-
-function findElementEnd(html: string, startIndex: number): number {
-	let index = startIndex;
-	let depth = 1;
-	while (index < html.length && depth > 0) {
-		const nextTagIndex = html.indexOf('<', index);
-		if (nextTagIndex === -1) return html.length;
-		const token = parseHtmlTagToken(html, nextTagIndex);
-		if (!token) return html.length;
-		index = token.end;
-		depth += getElementDepthDelta(token);
-	}
-	return index;
-}
-
-function getElementDepthDelta(token: ParsedHtmlToken): number {
-	if (token.type === 'close') return -1;
-	if (token.type === 'open' && !token.selfClosing && !voidElementNames.has(token.tagName)) return 1;
-	return 0;
 }
 
 export function findHtmlTagEnd(html: string, startIndex: number): number {
@@ -130,7 +125,32 @@ export function parseAttributes(rawAttributes: string): Record<string, string> {
 	return attributes;
 }
 
-export function parseHtmlTagToken(html: string, startIndex: number): ParsedHtmlToken | undefined {
+function parseOpenTag(html: string, endIndex: number, rawToken: string, includeInnerHtml: boolean): ParsedHtmlTag {
+	const selfClosing = /\/\s*$/.test(rawToken);
+	const tagBody = selfClosing ? rawToken.replace(/\/\s*$/, '').trim() : rawToken;
+	const tagName = tagBody.split(/[\s/>]/, 1)[0]?.toLowerCase() ?? '';
+	const attributesStart = tagName.length;
+	const rawAttributes = tagBody.slice(attributesStart).trim();
+	const innerHtml =
+		!includeInnerHtml || selfClosing || voidElementNames.has(tagName)
+			? ''
+			: extractInnerHtmlFragment(html, endIndex, tagName);
+
+	return {
+		attributes: parseAttributes(rawAttributes),
+		end: endIndex,
+		innerHtml,
+		selfClosing,
+		tagName,
+		type: 'open',
+	};
+}
+
+export function parseHtmlTagToken(
+	html: string,
+	startIndex: number,
+	options: ParseHtmlTagTokenOptions = {},
+): ParsedHtmlToken | undefined {
 	if (html.startsWith('<!--', startIndex)) {
 		const endIndex = html.indexOf('-->', startIndex + 4);
 		return {
@@ -154,80 +174,77 @@ export function parseHtmlTagToken(html: string, startIndex: number): ParsedHtmlT
 	}
 
 	if (rawToken.startsWith('/')) {
+		const tagName = rawToken.slice(1).trim().split(/[\s>]/, 1)[0]?.toLowerCase() ?? '';
 		return {
 			end: endIndex,
+			tagName,
 			type: 'close',
 		};
 	}
 
-	const selfClosing = /\/\s*$/.test(rawToken);
-	const tagBody = selfClosing ? rawToken.replace(/\/\s*$/, '').trim() : rawToken;
-	const tagName = tagBody.split(/[\s/>]/, 1)[0]?.toLowerCase() ?? '';
-	const attributesStart = tagName.length;
-	const rawAttributes = tagBody.slice(attributesStart).trim();
-	const innerHtml =
-		selfClosing || voidElementNames.has(tagName)
-			? ''
-			: extractInnerHtmlFragment(html, startIndex, endIndex, tagName);
-
-	return {
-		attributes: parseAttributes(rawAttributes),
-		end: endIndex,
-		innerHtml,
-		selfClosing,
-		tagName,
-		type: 'open',
-	};
+	return parseOpenTag(html, endIndex, rawToken, options.includeInnerHtml ?? true);
 }
 
-export function extractInnerHtmlFragment(
-	html: string,
-	startIndex: number,
-	tagEndIndex: number,
-	tagName: string,
-): string {
-	let index = tagEndIndex;
-	let depth = 1;
+/**
+ * Inner HTML between an open tag's `>` and its matching close, using a tag-name stack.
+ *
+ * @remarks Void and self-closing opens never push. Stray `</input>` closes are ignored.
+ */
+export function extractInnerHtmlFragment(html: string, openTagEndIndex: number, rootTagName: string): string {
+	const bounds = findElementContentBounds(html, openTagEndIndex, rootTagName);
+	return bounds ? html.slice(openTagEndIndex, bounds.closeTagStart) : html.slice(openTagEndIndex);
+}
 
-	while (index < html.length && depth > 0) {
+function findElementCloseEnd(html: string, openTagEndIndex: number, rootTagName: string): number {
+	const bounds = findElementContentBounds(html, openTagEndIndex, rootTagName);
+	return bounds ? bounds.closeTagEnd : html.length;
+}
+
+type ElementContentBounds = {
+	closeTagEnd: number;
+	closeTagStart: number;
+};
+
+function findElementContentBounds(
+	html: string,
+	openTagEndIndex: number,
+	rootTagName: string,
+): ElementContentBounds | undefined {
+	const stack = [rootTagName];
+	let index = openTagEndIndex;
+
+	while (index < html.length) {
 		const nextTagIndex = html.indexOf('<', index);
 
 		if (nextTagIndex === -1) {
-			return html.slice(tagEndIndex);
+			return undefined;
 		}
 
-		const nextTag = parseHtmlTagToken(html, nextTagIndex);
+		const token = parseHtmlTagToken(html, nextTagIndex, { includeInnerHtml: false });
 
-		if (!nextTag) {
-			return html.slice(tagEndIndex);
+		if (!token) {
+			return undefined;
 		}
 
-		if (
-			nextTag.type === 'open' &&
-			nextTag.tagName === tagName &&
-			!nextTag.selfClosing &&
-			!voidElementNames.has(tagName)
-		) {
-			depth += 1;
-		}
+		if (token.type === 'close') {
+			if (!voidElementNames.has(token.tagName) && token.tagName === stack[stack.length - 1]) {
+				stack.pop();
 
-		if (nextTag.type === 'close') {
-			const closingName = html
-				.slice(nextTagIndex + 2, nextTag.end - 1)
-				.trim()
-				.toLowerCase();
-
-			if (closingName === tagName) {
-				depth -= 1;
-
-				if (depth === 0) {
-					return html.slice(tagEndIndex, nextTagIndex);
+				if (stack.length === 0) {
+					return { closeTagStart: nextTagIndex, closeTagEnd: token.end };
 				}
 			}
+
+			index = token.end;
+			continue;
 		}
 
-		index = nextTag.end;
+		if (token.type === 'open' && !token.selfClosing && !voidElementNames.has(token.tagName)) {
+			stack.push(token.tagName);
+		}
+
+		index = token.end;
 	}
 
-	return html.slice(tagEndIndex);
+	return undefined;
 }

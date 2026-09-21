@@ -3,7 +3,6 @@ import type { DateGranularity, DatePartType, IntlLocale } from './types';
 
 export type DateSegmentType = DatePartType | 'literal';
 
-/** @experimental Segment model reserved for a future segment-editor field. */
 export type DateSegmentModel = {
 	type: DateSegmentType;
 	/** Visible text for literals; numeric string for editable segments. */
@@ -49,7 +48,6 @@ function formatPartValue(type: DatePartType, date: Date, locale: IntlLocale): st
  * Builds locale-ordered date segments from `Intl.DateTimeFormat.prototype.formatToParts()`.
  *
  * @remarks Mirrors the React Aria `DateInput` segment list — literals plus editable fields.
- * @experimental Reserved for a future segment-editor field.
  */
 export function buildDateSegments(
 	date: Date | null,
@@ -112,7 +110,6 @@ function normalizeYear(value: number): number {
 /**
  * Converts editable segment values into a local calendar `Date`, or `null` when incomplete.
  *
- * @experimental Reserved for a future segment-editor field.
  */
 export function segmentsToDate(segments: DateSegmentModel[]): Date | null {
 	const values: Partial<Record<DatePartType, number>> = {};
@@ -140,7 +137,6 @@ export function segmentsToDate(segments: DateSegmentModel[]): Date | null {
 	return date;
 }
 
-/** @experimental Reserved for a future segment-editor field. */
 export function getEditableSegmentIndices(segments: DateSegmentModel[]): number[] {
 	return segments.map((segment, index) => (segment.editable ? index : -1)).filter((index) => index >= 0);
 }
