@@ -38,9 +38,9 @@
 		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": ">=0.3.0-rc.11",
-		"@ecopages/radiant": ">=0.3.0-rc.11",
-		"@ecopages/signals": ">=0.3.0-rc.11"
+		"@ecopages/jsx": ">=0.3.0-rc.10",
+		"@ecopages/radiant": ">=0.3.0-rc.10",
+		"@ecopages/signals": ">=0.3.0-rc.10"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.0",
@@ -289,6 +289,13 @@
 		},
 		"./date-field/styles.css": {
 			"default": "./dist/components/ui/date-field/date-field.css"
+		},
+		"./date-input": {
+			"types": "./dist/components/ui/date-input/index.d.ts",
+			"import": "./dist/components/ui/date-input/index.js"
+		},
+		"./date-input/styles.css": {
+			"default": "./dist/components/ui/date-input/date-input.css"
 		},
 		"./date-range-picker": {
 			"types": "./dist/components/ui/date-range-picker/index.d.ts",

@@ -1,0 +1,38 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-date-input {
+	@apply inline-flex min-w-0 flex-1;
+}
+
+@layer components {
+	.rui-date-input {
+		@apply min-w-0 flex-1;
+	}
+
+	.rui-date-input__segments {
+		@apply flex min-w-0 flex-1 items-center overflow-x-clip overflow-y-clip whitespace-nowrap;
+		padding-inline: var(--space-control-x);
+		padding-block: var(--space-control-y);
+		font-size: var(--text-control-input);
+		font-variant-numeric: tabular-nums;
+		cursor: text;
+	}
+
+	.rui-date-input__segment {
+		@apply rounded-xs px-0.5 text-end text-on-background outline-none;
+		caret-color: transparent;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.rui-date-input__segment--placeholder {
+		@apply text-on-surface opacity-muted;
+	}
+
+	.rui-date-input__segment--focused {
+		@apply bg-focus-ring text-on-background outline-none;
+	}
+
+	.rui-date-input__literal {
+		@apply text-on-background;
+	}
+}
