@@ -1,5 +1,16 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.12
+
+### Patch Changes
+
+- [#259](https://github.com/ecopages/radiant/pull/259) [`ac0c874`](https://github.com/ecopages/radiant/commit/ac0c87487de99b1239968e015887f9d9a40745d1) Thanks [@andeeplus](https://github.com/andeeplus)! - Flush post-sync callbacks during custom-element SSR so `@bindTo` copies reactive fields onto light-DOM targets before serialization.
+
+- [#259](https://github.com/ecopages/radiant/pull/259) [`5327ee5`](https://github.com/ecopages/radiant/commit/5327ee5e0bda108dbea6591ff1cb962cdb0064cc) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop leftover `</div>` text from appearing next to date fields during SSR. Void inputs no longer serialize as `</input>`, and the HTML tokenizer matches element bounds with a tag-name stack so stray void closing tags do not split ancestor wrappers. Stack walks skip eager `innerHtml` extraction so boundary scans stay linear.
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-rc.12
+    - @ecopages/signals@0.3.0-rc.12
+
 ## 0.3.0-rc.11
 
 ### Patch Changes
