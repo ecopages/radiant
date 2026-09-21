@@ -34,6 +34,22 @@ export {
 	maxSegmentLength,
 	segmentsToDate,
 } from './segments';
+export {
+	allSegmentsEmpty,
+	applyBackspaceToSegment,
+	applyDigitToSegment,
+	clearSegmentValue,
+	getSegmentBounds,
+	firstEmptyOrFirstPart,
+	focusPartAfter,
+	getEditablePartTypes,
+	incrementSegmentValue,
+	segmentAriaName,
+	segmentDisplayText,
+	segmentNumericValue,
+	setSegmentNumeric,
+} from './segment-editing';
+export type { SegmentDigitResult } from './segment-editing';
 export type {
 	CalendarDayCell,
 	CalendarWeek,
