@@ -13,6 +13,7 @@ import {
 import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { parseCommaSeparated } from '@/lib/comma-separated';
+import { SIDEBAR_MOBILE_BREAKPOINT_PX } from '@/lib/viewport/breakpoints';
 
 export type RuiSidebarVariant = 'sidebar' | 'inset';
 export type RuiSidebarSide = 'left' | 'right';
@@ -77,7 +78,6 @@ const DEFAULT_WIDTH = 256;
 const ICON_WIDTH = 48;
 const DEFAULT_MIN_WIDTH = 200;
 const DEFAULT_MAX_WIDTH = 480;
-const DEFAULT_MOBILE_BREAKPOINT = 768;
 const KEYBOARD_SHORTCUT = 'b';
 const KEYBOARD_STEP = 8;
 const KEYBOARD_STEP_LARGE = 32;
@@ -157,7 +157,7 @@ export class RuiSidebar extends RadiantElement {
 	@prop({ type: Boolean, defaultValue: true }) defaultOpen: boolean;
 	@prop({ type: Boolean, defaultValue: false }) mobileDefaultOpen: boolean;
 	@prop({ type: Boolean, attribute: 'open' }) open: boolean | undefined;
-	@prop({ type: Number, defaultValue: DEFAULT_MOBILE_BREAKPOINT }) mobileBreakpoint: number;
+	@prop({ type: Number, defaultValue: SIDEBAR_MOBILE_BREAKPOINT_PX }) mobileBreakpoint: number;
 	@prop({ type: String, defaultValue: 'Sidebar' })
 	@bindTo([{ attr: 'aria-label' }, { ref: 'pane', attr: 'aria-label' }])
 	label: string;
@@ -207,13 +207,18 @@ export class RuiSidebar extends RadiantElement {
 	 */
 	private mobileReady = false;
 
+	/**
+	 * @remarks Skip `syncPresentation` here — it runs in `onConnected` after
+	 * viewport and uncontrolled `open` defaults apply. An early sync used
+	 * `defaultOpen` while `isMobile` was still false, which flashed the mobile
+	 * drawer on docs-style layouts before the connect microtask closed it.
+	 */
 	override connectedCallback(): void {
 		super.connectedCallback();
 
 		this.ensureWidthInitialized();
 
 		this.setAttribute('role', 'complementary');
-		this.syncPresentation();
 		this.attachNavigationListeners();
 	}
 

@@ -90,6 +90,7 @@ rui-sidebar {
 		}
 	}
 
+	/* Sync with SIDEBAR_MOBILE_MAX_WIDTH_PX in src/lib/viewport/breakpoints.ts */
 	@media (max-width: 767px) {
 		/*
 		 * Do not force `display` on the host — placement rules (`header` vs `inset`)
@@ -404,11 +405,13 @@ rui-sidebar {
 .rui-sidebar-provider:has(
 	> .rui-sidebar-provider__body > rui-sidebar[data-collapsible='off']:not([data-mobile='true'])
 ) {
-	rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
-	rui-sidebar-trigger[data-placement='header'],
-	rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
-	rui-sidebar-trigger[data-placement='inset'] {
-		@apply hidden;
+	@media (min-width: 768px) {
+		rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
+		rui-sidebar-trigger[data-placement='header'],
+		rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
+		rui-sidebar-trigger[data-placement='inset'] {
+			@apply hidden;
+		}
 	}
 }
 
@@ -416,9 +419,11 @@ rui-sidebar {
 .rui-sidebar-provider:has(
 	> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded']:not([data-mobile='true'])
 ) {
-	rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
-	rui-sidebar-trigger[data-placement='inset'] {
-		@apply hidden;
+	@media (min-width: 768px) {
+		rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
+		rui-sidebar-trigger[data-placement='inset'] {
+			@apply hidden;
+		}
 	}
 }
 
@@ -426,9 +431,11 @@ rui-sidebar {
 .rui-sidebar-provider:has(
 	> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed']:not([data-mobile='true'])
 ) {
-	rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
-	rui-sidebar-trigger[data-placement='header'] {
-		@apply hidden;
+	@media (min-width: 768px) {
+		rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
+		rui-sidebar-trigger[data-placement='header'] {
+			@apply hidden;
+		}
 	}
 }
 
@@ -448,9 +455,35 @@ rui-sidebar {
 	}
 }
 
+@media (max-width: 767px) {
+	/*
+	 * SSR and the pre-upgrade paint have no `data-mobile`. Assume the drawer is
+	 * closed so the inset (open) trigger is visible and the header (close) one is not.
+	 */
+	.rui-sidebar-provider:has(> rui-sidebar:not([data-mobile='true'])),
+	.rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar:not([data-mobile='true'])) {
+		rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
+		rui-sidebar-trigger[data-placement='header'] {
+			@apply hidden;
+		}
+	}
+}
+
 /* -------------------------------------------------------------------------- */
-/* Mobile drawer                                                              */
+/* Mobile drawer (sync with SIDEBAR_MOBILE_MAX_WIDTH_PX in breakpoints.ts)   */
 /* -------------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+	/*
+	 * Hide the pane until the host flips `data-mobile` during connect. SSR and
+	 * the pre-microtask client paint still reflect desktop `defaultOpen`.
+	 */
+	rui-sidebar:not([data-mobile='true']) .rui-sidebar__pane {
+		@apply pointer-events-none w-0 min-w-0 overflow-hidden opacity-0;
+		width: 0;
+		flex: 0 0 auto;
+	}
+}
 
 .rui-sidebar[data-mobile='true'] {
 	@apply fixed inset-0 z-(--z-modal) flex min-w-0 bg-transparent;

@@ -293,7 +293,7 @@ export const CollapsibleIcon: Story = {
 		await userEvent.click(collapseTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 
-		const openTrigger = canvas.getByRole('button', { name: 'Open navigation' });
+		const openTrigger = canvas.getByRole('button', { name: 'Open sidebar' });
 		await userEvent.click(openTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'expanded');
 	},
@@ -354,7 +354,7 @@ export const TriggerToggle: Story = {
 		await userEvent.click(collapseTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'collapsed');
 
-		const openTrigger = canvas.getByRole('button', { name: 'Open navigation' });
+		const openTrigger = canvas.getByRole('button', { name: 'Open sidebar' });
 		await userEvent.click(openTrigger);
 		expect(sidebar).toHaveAttribute('data-state', 'expanded');
 	},
@@ -447,7 +447,7 @@ export const Responsive: Story = {
 		expect(scrim().hidden).toBe(true);
 		expect(root().style.getPropertyValue('--rui-sidebar-pane-width')).toBe('0px');
 
-		const openTrigger = canvas.getByRole('button', { name: 'Open navigation' });
+		const openTrigger = canvas.getByRole('button', { name: 'Open sidebar' });
 		await userEvent.click(openTrigger);
 		await new Promise((resolve) => setTimeout(resolve, 0));
 		expect(sidebar).toHaveAttribute('data-state', 'expanded');
