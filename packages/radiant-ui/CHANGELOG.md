@@ -1,5 +1,31 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.18
+
+### Minor Changes
+
+- [#259](https://github.com/ecopages/radiant/pull/259) [`7cfa0e5`](https://github.com/ecopages/radiant/commit/7cfa0e5187e7b5abe910677c3c9dd32be175ef95) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `rui-date-input` / `@ecopages/radiant-ui/date-input` with per-unit locale segments, a hidden ISO form value, and spinbutton accessibility. Default markup stamps `data-rui-control` and `data-rui-control-type="date"` so standalone `RuiField` discovery works without extra attributes.
+
+- [#259](https://github.com/ecopages/radiant/pull/259) [`8cb1f83`](https://github.com/ecopages/radiant/commit/8cb1f832e3085c0402f3766e30058e06b6f0df31) Thanks [@andeeplus](https://github.com/andeeplus)! - Date fields and range pickers now use React Aria-style locale segments instead of a single formatted text box, so tapping a unit replaces just that part and mobile keyboards stay numeric.
+
+    **@ecopages/radiant-ui**
+
+    - `RuiDateField` and `RuiDateRangePicker` embed `rui-date-input`; removed `dateStyle`, `masked`, and string `placeholder` props from those hosts.
+    - Nested range inputs keep in-progress dates until both sides are valid; the host `value` is the committed `start/end` range only.
+    - Light-DOM contract: `[data-date-field-input]` and `[data-range-start]` / `[data-range-end]` are nested `rui-date-input` hosts, not `<input type="text">`.
+
+### Patch Changes
+
+- [#259](https://github.com/ecopages/radiant/pull/259) [`167b43c`](https://github.com/ecopages/radiant/commit/167b43cfe131cbaaa0d6a88af90cf7ee6c4fe212) Thanks [@andeeplus](https://github.com/andeeplus)! - Field ARIA wiring reads `data-rui-aria-target` / `data-rui-aria-targets` from the control host instead of a hardcoded date-field selector map. Floating surfaces keep a viewport-padded cross-axis and restore `matchAnchorWidth` styles when that option is turned off.
+
+- [#259](https://github.com/ecopages/radiant/pull/259) [`8cb1f83`](https://github.com/ecopages/radiant/commit/8cb1f832e3085c0402f3766e30058e06b6f0df31) Thanks [@andeeplus](https://github.com/andeeplus)! - Preserve nested custom-element registration in component bundles and initialize calendar grids during SSR so date controls include their generated markup before client JavaScript runs.
+
+- [#259](https://github.com/ecopages/radiant/pull/259) [`1b7aaa5`](https://github.com/ecopages/radiant/commit/1b7aaa5035bb15b35a53a16edd84442b2a98dfba) Thanks [@andeeplus](https://github.com/andeeplus)! - Server-render `rui-sidebar-trigger` from the view that creates it so docs layouts include the toggle button, ARIA, and glyph before client JavaScript runs. The trigger host owns button presentation during SSR preparation and uses a stable accessible name (`triggerLabel`, defaulting to `Toggle sidebar`) across all placements.
+- Updated dependencies [[`ac0c874`](https://github.com/ecopages/radiant/commit/ac0c87487de99b1239968e015887f9d9a40745d1), [`5327ee5`](https://github.com/ecopages/radiant/commit/5327ee5e0bda108dbea6591ff1cb962cdb0064cc)]:
+    - @ecopages/radiant@0.3.0-rc.12
+    - @ecopages/jsx@0.3.0-rc.12
+    - @ecopages/signals@0.3.0-rc.12
+
 ## 0.1.0-rc.17
 
 ### Patch Changes
