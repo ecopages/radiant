@@ -67,17 +67,23 @@
 			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/cycle-toggle/styles.css"]
 		},
 		"date-field": {
-			"direct": ["calendar", "primitives"],
+			"direct": ["calendar", "date-input", "primitives"],
 			"styles": [
 				"@ecopages/radiant-ui/calendar/styles.css",
+				"@ecopages/radiant-ui/date-input/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/date-field/styles.css"
 			]
 		},
+		"date-input": {
+			"direct": [],
+			"styles": ["@ecopages/radiant-ui/date-input/styles.css"]
+		},
 		"date-range-picker": {
-			"direct": ["calendar", "primitives"],
+			"direct": ["calendar", "date-input", "primitives"],
 			"styles": [
 				"@ecopages/radiant-ui/calendar/styles.css",
+				"@ecopages/radiant-ui/date-input/styles.css",
 				"@ecopages/radiant-ui/primitives.css",
 				"@ecopages/radiant-ui/date-range-picker/styles.css"
 			]
@@ -201,8 +207,8 @@
 			"styles": ["@ecopages/radiant-ui/separator/styles.css"]
 		},
 		"sidebar": {
-			"direct": ["button"],
-			"styles": ["@ecopages/radiant-ui/button/styles.css", "@ecopages/radiant-ui/sidebar/styles.css"]
+			"direct": [],
+			"styles": ["@ecopages/radiant-ui/sidebar/styles.css"]
 		},
 		"slider": {
 			"direct": [],

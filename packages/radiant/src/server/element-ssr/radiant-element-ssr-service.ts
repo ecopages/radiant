@@ -31,6 +31,7 @@ export class RadiantElementSsrService {
 		alignMinimalDomHostTagName(this.component, getCustomElementTagName(this.host.constructor));
 		ensureLegacyHostReady(this.component, 'ssr');
 		runSsrPreparationCallbacks(this.component);
+		this.host.flushPostSyncCallbacks();
 	}
 
 	public renderHost(): JsxRenderable {
@@ -65,9 +66,12 @@ export class RadiantElementSsrService {
 					.join('')
 			: '';
 
+		const hostContent = this.renderView(this.host, options);
+		this.host.flushPostSyncCallbacks();
+
 		return composeHostContent(
 			{
-				hostContent: this.renderView(this.host, options),
+				hostContent,
 				authoredHydrationMarkup: this.host.getAuthoredHydrationScriptMarkup?.() ?? '',
 				slotProjectionScript: this.host.getSlotProjectionScriptTag?.() ?? '',
 				hydrationScripts,

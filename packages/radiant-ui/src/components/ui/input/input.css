@@ -7,7 +7,7 @@
 		height: var(--size-control-md);
 		padding-inline: var(--space-control-x);
 		padding-block: 0;
-		font-size: var(--text-control, 0.875rem);
+		font-size: var(--text-control-input);
 		transition-duration: var(--duration-normal);
 	}
 

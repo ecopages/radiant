@@ -24,6 +24,7 @@ const meta = {
 			cssImports: [
 				'../../../styles/primitives.css',
 				'../calendar/calendar.css',
+				'../date-input/date-input.css',
 				'../label/label.css',
 				'./date-field.css',
 			],
@@ -32,56 +33,44 @@ const meta = {
 	args: {
 		value: todayIso(),
 		label: 'Appointment date',
+		locale: 'en-US',
 	},
 } satisfies Meta<typeof RuiDateField>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const getInput = (root: HTMLElement) => root.querySelector('[data-date-field-input]') as HTMLInputElement;
+const getDateInput = (root: HTMLElement) => root.querySelector('[data-date-field-input]') as HTMLElement;
+
+const getDaySegment = (root: HTMLElement) =>
+	root.querySelector('[data-date-field-input] [data-date-segment][data-type="day"]') as HTMLElement;
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
 		const host = canvasElement.querySelector('rui-date-field') as HTMLElement;
-		const input = getInput(canvasElement);
+		const input = getDateInput(canvasElement);
 
-		await step('shows a locale placeholder and formatted value', async () => {
-			await expect(input.placeholder.length).toBeGreaterThan(0);
-			await expect(input.value.length).toBeGreaterThan(0);
+		await step('shows locale segment placeholders and a committed value', async () => {
+			await expect(input.querySelector('[data-date-segment][data-placeholder="true"]')).toBeNull();
 			await expect(host).toHaveAttribute('value', todayIso());
 		});
 	},
 };
 
-export const MaskedTyping: Story = {
-	render: () => <RuiDateField locale="en-US" masked />,
-	play: async ({ canvasElement, step }) => {
-		const host = canvasElement.querySelector('rui-date-field') as HTMLElement;
-		const input = getInput(canvasElement);
-
-		await step('mask guides digit entry', async () => {
-			await userEvent.click(input);
-			await userEvent.type(input, '08212002');
-			await userEvent.click(document.body);
-			await waitFor(() => {
-				expect((host as HTMLElement & { value?: string }).value).toBe('2002-08-21');
-			});
-		});
+export const SegmentTyping: Story = {
+	args: {
+		value: monthDayIso(20),
 	},
-};
-
-export const FreeText: Story = {
-	render: () => <RuiDateField locale="en-US" masked={false} dateStyle="medium" />,
 	play: async ({ canvasElement, step }) => {
 		const host = canvasElement.querySelector('rui-date-field') as HTMLElement;
-		const input = getInput(canvasElement);
+		const day = getDaySegment(canvasElement);
 
-		await step('accepts natural language month names', async () => {
-			await userEvent.click(input);
-			await userEvent.type(input, 'Aug 21, 2002');
+		await step('replaces the day segment without clearing month and year', async () => {
+			await userEvent.click(day);
+			await userEvent.keyboard('15');
 			await userEvent.click(document.body);
 			await waitFor(() => {
-				expect((host as HTMLElement & { value?: string }).value).toBe('2002-08-21');
+				expect(host.getAttribute('value')).toBe(monthDayIso(15));
 			});
 		});
 	},
@@ -143,24 +132,13 @@ export const KeyboardCalendar: Story = {
 	},
 };
 
-export const DateStyles: Story = {
-	render: () => (
-		<div class="flex flex-col gap-4">
-			<RuiDateField value={todayIso()} dateStyle="short" label="Short" />
-			<RuiDateField value={todayIso()} dateStyle="medium" label="Medium" />
-			<RuiDateField value={todayIso()} dateStyle="long" label="Long" />
-			<RuiDateField value={todayIso()} dateStyle="full" label="Full" />
-		</div>
-	),
-};
-
 export const AsField: Story = {
 	render: () => (
 		<RuiForm defaultValues={{ appointment: '' }} mode="onSubmit">
 			<RuiField name="appointment" rules={{ required: 'Pick a date' }}>
 				<RuiLabel>Appointment</RuiLabel>
-				<RuiDateField placeholder="mm/dd/yyyy" />
-				<RuiFieldDescription>Masked while typing; formatted with Intl on blur.</RuiFieldDescription>
+				<RuiDateField locale="en-US" />
+				<RuiFieldDescription>Type each date unit or use the calendar button.</RuiFieldDescription>
 				<RuiFieldError />
 			</RuiField>
 			<RuiButton type="submit">Book</RuiButton>

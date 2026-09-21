@@ -14,9 +14,9 @@ export {
 	type RuiSidebarTriggerProps,
 	type RuiSidebarTriggerPlacement,
 } from './sidebar-trigger.script';
+export { RuiSidebarTrigger, type RuiSidebarTriggerViewProps } from './sidebar-trigger';
 export {
 	RuiSidebar,
-	RuiSidebarTrigger,
 	RuiSidebarProvider,
 	RuiSidebarHeader,
 	RuiSidebarContent,
@@ -48,5 +48,4 @@ export {
 	type RuiSidebarMenuActionProps,
 	type RuiSidebarInsetProps,
 	type RuiSidebarViewProps,
-	type RuiSidebarTriggerViewProps,
 } from './sidebar';

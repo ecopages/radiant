@@ -17,6 +17,20 @@ const OPPOSITE: Record<Side, Side> = {
 
 const DEFAULT_VIEWPORT_PADDING = 8;
 
+const matchAnchorWidthStylesApplied = new WeakMap<HTMLElement, true>();
+
+function clearMatchAnchorWidthStyles(floating: HTMLElement): void {
+	if (!matchAnchorWidthStylesApplied.has(floating)) {
+		return;
+	}
+
+	floating.style.width = '';
+	floating.style.minWidth = '';
+	floating.style.maxWidth = '';
+	floating.style.boxSizing = '';
+	matchAnchorWidthStylesApplied.delete(floating);
+}
+
 function parsePlacement(placement: RuiPlacement): { side: Side; align: Align } {
 	const dash = placement.indexOf('-');
 	if (dash === -1) return { side: placement as Side, align: 'center' };
@@ -94,10 +108,16 @@ function clampCrossAxis(
 	const { padding, width: vw, height: vh } = viewport;
 	if (primaryAxis(side) === 'y') {
 		const maxX = Math.max(padding, vw - padding - size.width);
-		return { x: Math.min(Math.max(coords.x, padding), maxX), y: coords.y };
+		return {
+			x: Math.min(Math.max(coords.x, padding), maxX),
+			y: Math.max(padding, coords.y),
+		};
 	}
 	const maxY = Math.max(padding, vh - padding - size.height);
-	return { x: coords.x, y: Math.min(Math.max(coords.y, padding), maxY) };
+	return {
+		x: Math.max(padding, coords.x),
+		y: Math.min(Math.max(coords.y, padding), maxY),
+	};
 }
 
 /**
@@ -168,9 +188,25 @@ export function applyFloatingPosition(
 	gap: number,
 	options: { matchAnchorWidth?: boolean } = {},
 ): RuiPlacement {
+	const matchAnchorWidth = options.matchAnchorWidth === true;
+	const anchorWidth = anchor.offsetWidth;
+	const size = matchAnchorWidth
+		? { width: anchorWidth, height: floating.offsetHeight }
+		: { width: floating.offsetWidth, height: floating.offsetHeight };
+
+	if (matchAnchorWidth) {
+		floating.style.width = `${anchorWidth}px`;
+		floating.style.minWidth = `${anchorWidth}px`;
+		floating.style.maxWidth = `${anchorWidth}px`;
+		floating.style.boxSizing = 'border-box';
+		matchAnchorWidthStylesApplied.set(floating, true);
+	} else {
+		clearMatchAnchorWidthStyles(floating);
+	}
+
 	const { coords, placement: resolved } = computeFloatingPosition(
 		anchor.getBoundingClientRect(),
-		{ width: floating.offsetWidth, height: floating.offsetHeight },
+		size,
 		placement,
 		gap,
 	);
@@ -182,9 +218,6 @@ export function applyFloatingPosition(
 		bottom: 'auto',
 		visibility: 'visible',
 	});
-	if (options.matchAnchorWidth) {
-		floating.style.width = `${anchor.offsetWidth}px`;
-	}
 	floating.setAttribute('data-placement', resolved);
 	return resolved;
 }

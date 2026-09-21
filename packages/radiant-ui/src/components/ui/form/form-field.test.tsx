@@ -543,7 +543,7 @@ describe('rui-field composed content discovery', () => {
 			<RuiForm defaultValues={{ appointment: '' }} mode="onSubmit">
 				<RuiField name="appointment" rules={{ required: 'Pick a date' }}>
 					<RuiLabel>Appointment</RuiLabel>
-					<RuiDateField placeholder="mm/dd/yyyy" />
+					<RuiDateField locale="en-US" />
 					<RuiFieldError />
 				</RuiField>
 				<RuiButton type="submit">Book</RuiButton>

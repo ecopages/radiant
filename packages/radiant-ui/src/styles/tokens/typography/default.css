@@ -18,6 +18,8 @@
 	--text-5xl: 3rem;
 	--text-label: 0.875rem;
 	--text-control: 0.875rem;
+	/* 16px on narrow viewports avoids iOS Safari focus zoom; desktop uses --text-control. */
+	--text-control-input: 1rem;
 
 	--leading-body: 1.5;
 	--leading-relaxed: 1.625;
@@ -28,6 +30,12 @@
 	--weight-semibold: 600;
 
 	--tracking-wide: 0.025em;
+}
+
+@media (min-width: 640px) {
+	:root {
+		--text-control-input: var(--text-control);
+	}
 }
 
 @theme {

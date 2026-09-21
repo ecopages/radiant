@@ -8,6 +8,8 @@
 		--rui-popover-border-color: var(--border);
 		--rui-popover-shadow: var(--shadow-overlay);
 		@apply z-popover overflow-auto;
+		max-height: var(--rui-popover-max-height, calc(100dvh - 1rem));
+		max-width: var(--rui-popover-max-width, calc(100vw - 1rem));
 		border-radius: var(--rui-popover-radius);
 		border: 1px solid var(--rui-popover-border-color);
 		background-color: var(--rui-popover-surface);

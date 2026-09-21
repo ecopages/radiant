@@ -84,7 +84,7 @@ A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styl
     - Geometry: spacing roles, radius roles (not `p-4`, `gap-2`, `rounded-md` for themed controls).
     - Color: semantic colors (not palette steps).
     - Depth: `--shadow-*` roles (not raw `shadow-md`).
-    - Type: `--text-*` / typography utilities (not ad-hoc `text-sm` where a role exists).
+    - Type: `--text-*` / typography utilities (not ad-hoc `text-sm` where a role exists). Native text controls use `--text-control-input` (mobile 16px / desktop `--text-control`) for iOS focus-zoom safety.
     - Motion: `--duration-*` / `--ease-*` (not raw `duration-150`).
     - State: `--opacity-disabled`, z-index roles from `system.css`.
 3. Structural layout (flex, grid, `min-w-0`, positioning) may use Tailwind as needed.
