@@ -1,4 +1,5 @@
 import { serializeHtmlAttribute } from '../../../utils/serialize-html-attribute';
+import { voidElementNames } from '../../html/html-parser';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import * as selectors from './selectors';
 
@@ -435,6 +436,11 @@ export class MinimalElement extends MinimalNode {
 		this.fragmentInnerHtml = undefined;
 	}
 
+	/**
+	 * @remarks Void elements (`input`, `img`, …) must not emit a closing tag.
+	 * `</input>` in serialized SSR HTML makes the fragment splitter close ancestor
+	 * `<div>`s too early.
+	 */
 	get outerHTML(): string {
 		if (this.fragmentHtml !== undefined) {
 			return this.fragmentHtml;
@@ -443,6 +449,10 @@ export class MinimalElement extends MinimalNode {
 		const attributes = Array.from(this.#attributeStore.entries())
 			.map(([name, value]) => serializeHtmlAttribute(name, value))
 			.join('');
+
+		if (voidElementNames.has(this.localName)) {
+			return `<${this.localName}${attributes}>`;
+		}
 
 		return `<${this.localName}${attributes}>${this.innerHTML}</${this.localName}>`;
 	}

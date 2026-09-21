@@ -22,6 +22,13 @@ describe('collectTopLevelHtmlFragments', () => {
 
 		expect(collectTopLevelHtmlFragments(html)).toEqual(['<!--lead-->', '<img src="hero.png">', '<p>body</p>']);
 	});
+
+	test('does not close a wrapper early when a nested void input has a closing tag', () => {
+		const html =
+			'<div class="field"><label>Trip</label><rui-date-input><div><input type="hidden" value="x"></input></div></rui-date-input></div>';
+
+		expect(collectTopLevelHtmlFragments(html)).toEqual([html]);
+	});
 });
 
 describe('parseAttributes', () => {
@@ -53,13 +60,29 @@ describe('parseHtmlTagToken', () => {
 	test('parses comment, declaration, close, and self-closing tokens', () => {
 		expect(parseHtmlTagToken('<!--note-->', 0)).toEqual({ end: '<!--note-->'.length, type: 'comment' });
 		expect(parseHtmlTagToken('<!doctype html>', 0)).toEqual({ end: '<!doctype html>'.length, type: 'declaration' });
-		expect(parseHtmlTagToken('</dialog>', 0)).toEqual({ end: '</dialog>'.length, type: 'close' });
+		expect(parseHtmlTagToken('</dialog>', 0)).toEqual({
+			end: '</dialog>'.length,
+			tagName: 'dialog',
+			type: 'close',
+		});
 		expect(parseHtmlTagToken('<input value="x">', 0)).toEqual({
 			attributes: { value: 'x' },
 			end: '<input value="x">'.length,
 			innerHtml: '',
 			selfClosing: false,
 			tagName: 'input',
+			type: 'open',
+		});
+	});
+
+	test('skips innerHtml extraction when includeInnerHtml is false', () => {
+		const html = '<div><p>nested</p></div>';
+		expect(parseHtmlTagToken(html, 0, { includeInnerHtml: false })).toEqual({
+			attributes: {},
+			end: '<div>'.length,
+			innerHtml: '',
+			selfClosing: false,
+			tagName: 'div',
 			type: 'open',
 		});
 	});
