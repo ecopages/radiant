@@ -662,8 +662,8 @@ export const WithDateField: Story = {
 		<RuiForm defaultValues={{ appointment: '' }} mode="onSubmit">
 			<RuiField name="appointment" rules={{ required: 'Pick a date' }}>
 				<RuiLabel>Appointment</RuiLabel>
-				<RuiDateField placeholder="mm/dd/yyyy" />
-				<RuiFieldDescription>Masked while typing; formatted with Intl on blur.</RuiFieldDescription>
+				<RuiDateField locale="en-US" />
+				<RuiFieldDescription>Type each date unit or use the calendar button.</RuiFieldDescription>
 				<RuiFieldError />
 			</RuiField>
 			<RuiButton type="submit">Book</RuiButton>
@@ -694,7 +694,7 @@ export const WithDateRangePicker: Story = {
 		<RuiForm defaultValues={{ trip: '' }} mode="onSubmit">
 			<RuiField name="trip" rules={{ required: 'Pick trip dates' }}>
 				<RuiLabel>Trip dates</RuiLabel>
-				<RuiDateRangePicker placeholderStart="Start" placeholderEnd="End" />
+				<RuiDateRangePicker locale="en-US" />
 				<RuiFieldError />
 			</RuiField>
 			<RuiButton type="submit">Book</RuiButton>

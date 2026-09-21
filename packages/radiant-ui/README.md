@@ -28,6 +28,12 @@ pnpm run storybook
 
 Open the URL Storybook prints (default port `6006`).
 
+### Checking layout and styles
+
+- **Automated (CI-friendly):** `pnpm run test:storybook` runs each story’s `play` function in a real browser (Vitest + Playwright). Layout helpers live in `.storybook/layout-assertions.ts` (overflow, `--text-control-input` font size, popover viewport bounds) — see `Components/DateRangePicker` → **NarrowLayout**. Input typography uses the `--text-control-input` token in `tokens/typography/default.css` (16px below `640px`, `--text-control` at `sm` and up).
+- **Manual:** run `pnpm run storybook` and use the browser’s responsive mode or resize the preview; no third-party visual service required.
+- **Pixel snapshots (optional):** Vitest browser mode supports Playwright `toHaveScreenshot()` with baselines committed in the repo if you want image diffs without Chromatic.
+
 Useful scripts:
 
 ```bash
@@ -43,6 +49,8 @@ pnpm run build:lib       # generate exports + build JS/types + compile CSS
 `test:storybook` runs stories through the Vitest addon (no Storybook dev server). `test:ssr:smoke` and `test:ssr` spawn Storybook, visit stories in Playwright, and fail on `.radiant-ssr-error` banners or disallowed page errors. Empty mounts fail only for stories listed in `scripts/storybook-ssr-harness.ts` (`expectsMount` / `allowEmptyMount`).
 
 Published CSS under `dist/` is **already compiled** (Tailwind `@apply` resolved). Theme and token values remain CSS custom properties so apps can swap themes at runtime. The package does not minify CSS.
+
+Component entries register their nested custom elements as well as their own host. The package's `sideEffects` list preserves source `*.script.ts` / `*.script.tsx` registration modules during the library build and built `index.js` entries during consumer bundling. Removing those source side effects can leave nested Derived Trees as empty tags during SSR. `build:lib` runs `test:package` against isolated imports of the built date compositions to verify nested-host registration and server-rendered markup.
 
 ## Using radiant-ui
 

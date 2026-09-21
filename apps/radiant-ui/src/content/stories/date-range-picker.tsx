@@ -15,54 +15,68 @@ import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 
 export type DateRangePickerArgs = {
 	value: string;
-	dateStyle: 'short' | 'medium' | 'long' | 'full';
 	visibleMonths: number;
 	disabled: boolean;
 	readOnly: boolean;
+	locale: string;
 };
 
 export const meta = {
 	args: {
 		value: '2026-08-01/2026-08-14',
-		dateStyle: 'medium',
 		visibleMonths: 2,
 		disabled: false,
 		readOnly: false,
+		locale: 'en-US',
 	},
 	argTypes: {
 		value: { control: { type: 'text' } },
-		dateStyle: {
-			control: { type: 'select' },
-			options: ['short', 'medium', 'long', 'full'] as const satisfies readonly DateRangePickerArgs['dateStyle'][],
-		},
 		visibleMonths: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		readOnly: { control: { type: 'boolean' } },
+		locale: { control: { type: 'text' } },
 	},
-	render: (args) => (
-		<RuiField name="trip" rules={{ required: 'Pick trip dates' }}>
-			<RuiLabel>Trip dates</RuiLabel>
-			<RuiDateRangePicker
-				value={args.value}
-				dateStyle={args.dateStyle}
-				visibleMonths={args.visibleMonths}
-				disabled={args.disabled}
-				readOnly={args.readOnly}
-			>
-				<RuiDateRangePickerControl>
-					<RuiDateRangePickerInputs>
-						<RuiDateRangePickerStartInput aria-label="Start date" />
-						<RuiDateRangePickerSeparator />
-						<RuiDateRangePickerEndInput aria-label="End date" />
-					</RuiDateRangePickerInputs>
-					<RuiDateRangePickerToggle />
-				</RuiDateRangePickerControl>
-				<RuiDateRangePickerPopover>
-					<RuiDateRangePickerCalendar />
-				</RuiDateRangePickerPopover>
-			</RuiDateRangePicker>
-		</RuiField>
-	),
+	render: (args) => {
+		const range = args.value ? args.value.split('/') : ['', ''];
+		const [start = '', end = ''] = range;
+
+		return (
+			<RuiField name="trip" rules={{ required: 'Pick trip dates' }}>
+				<RuiLabel>Trip dates</RuiLabel>
+				<RuiDateRangePicker
+					value={args.value}
+					locale={args.locale}
+					visibleMonths={args.visibleMonths}
+					disabled={args.disabled}
+					readOnly={args.readOnly}
+				>
+					<RuiDateRangePickerControl>
+						<RuiDateRangePickerInputs>
+							<RuiDateRangePickerStartInput
+								aria-label="Start date"
+								value={start}
+								locale={args.locale}
+								disabled={args.disabled}
+								readOnly={args.readOnly}
+							/>
+							<RuiDateRangePickerSeparator />
+							<RuiDateRangePickerEndInput
+								aria-label="End date"
+								value={end}
+								locale={args.locale}
+								disabled={args.disabled}
+								readOnly={args.readOnly}
+							/>
+						</RuiDateRangePickerInputs>
+						<RuiDateRangePickerToggle />
+					</RuiDateRangePickerControl>
+					<RuiDateRangePickerPopover>
+						<RuiDateRangePickerCalendar />
+					</RuiDateRangePickerPopover>
+				</RuiDateRangePicker>
+			</RuiField>
+		);
+	},
 } satisfies DocsMeta<DateRangePickerArgs>;
 
 type Story = DocsStory<DateRangePickerArgs>;

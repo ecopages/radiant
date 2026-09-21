@@ -17,6 +17,8 @@
 	],
 	"sideEffects": [
 		"**/*.css",
+		"**/*.script.ts",
+		"**/*.script.tsx",
 		"**/index.js"
 	],
 	"scripts": {
@@ -33,7 +35,8 @@
 		"generate:exports": "node --import tsx ./scripts/generate-exports.ts",
 		"build:files": "node --import tsx ./scripts/build.ts",
 		"build:types": "tsc -p tsconfig.build.json",
-		"build:lib": "pnpm run generate:exports && pnpm run clean && pnpm run build:files && pnpm run build:types && pnpm run copy-styles",
+		"build:lib": "pnpm run generate:exports && pnpm run clean && pnpm run build:files && pnpm run build:types && pnpm run copy-styles && pnpm run test:package",
+		"test:package": "node --test scripts/package-registration.test.mjs",
 		"copy-styles": "node --import tsx ./scripts/copy-styles.ts",
 		"typecheck": "tsc --noEmit -p tsconfig.app.json"
 	},

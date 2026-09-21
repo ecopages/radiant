@@ -10,45 +10,44 @@ import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 
 export type DateFieldArgs = {
 	value: string;
-	dateStyle: 'short' | 'medium' | 'long' | 'full';
 	visibleMonths: number;
 	disabled: boolean;
 	readOnly: boolean;
-	masked: boolean;
+	locale: string;
 };
 
 export const meta = {
 	args: {
 		value: '2026-08-07',
-		dateStyle: 'medium',
 		visibleMonths: 1,
 		disabled: false,
 		readOnly: false,
-		masked: true,
+		locale: 'en-US',
 	},
 	argTypes: {
 		value: { control: { type: 'text' } },
-		dateStyle: {
-			control: { type: 'select' },
-			options: ['short', 'medium', 'long', 'full'] as const satisfies readonly DateFieldArgs['dateStyle'][],
-		},
 		visibleMonths: { control: { type: 'number' } },
 		disabled: { control: { type: 'boolean' } },
 		readOnly: { control: { type: 'boolean' } },
-		masked: { control: { type: 'boolean' } },
+		locale: { control: { type: 'text' } },
 	},
 	render: (args) => (
 		<RuiDateField
 			label="Start date"
 			value={args.value}
-			dateStyle={args.dateStyle}
+			locale={args.locale}
 			visibleMonths={args.visibleMonths}
 			disabled={args.disabled}
 			readOnly={args.readOnly}
-			masked={args.masked}
 		>
 			<RuiDateFieldControl>
-				<RuiDateFieldInput />
+				<RuiDateFieldInput
+					value={args.value}
+					label="Start date"
+					locale={args.locale}
+					disabled={args.disabled}
+					readOnly={args.readOnly}
+				/>
 				<RuiDateFieldToggle />
 			</RuiDateFieldControl>
 			<RuiDateFieldPopover>
