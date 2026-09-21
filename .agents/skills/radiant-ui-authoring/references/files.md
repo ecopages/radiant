@@ -11,7 +11,7 @@ One directory: `packages/radiant-ui/src/components/ui/<name>/`.
 | `<name>.test.tsx` / `*.ssr.test.tsx` | Behavior and range ownership.                   |
 | `index.ts`                           | Re-export CE types from script, views from tsx. |
 
-Optional: extra scripts for nested hosts (`disclosure-group.script.tsx`, `sidebar-trigger.script.tsx`).
+Optional: extra scripts for nested hosts (`disclosure-group.script.tsx`, `sidebar-trigger.script.tsx`). Pair an extra view file (`sidebar-trigger.tsx`) when that nested host is created as its own JSX helper.
 
 ## Package export
 

@@ -2,6 +2,7 @@ import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { RuiChip } from '@ecopages/radiant-ui/chip';
+import '@ecopages/radiant-ui/sidebar';
 import {
 	RuiSidebar,
 	RuiSidebarContent,
@@ -15,6 +16,7 @@ import {
 	RuiSidebarSeparator,
 	RuiSidebarTrigger,
 } from '@ecopages/radiant-ui/sidebar';
+import '@ecopages/radiant-ui/toc';
 import { RuiToc } from '@ecopages/radiant-ui/toc';
 import { docsNav, flattenContentNav } from '@/lib/content-nav';
 import { CodeTabs } from '@/components/code-tabs';

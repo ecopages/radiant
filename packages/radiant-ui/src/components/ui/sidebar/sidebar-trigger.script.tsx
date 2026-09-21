@@ -1,12 +1,24 @@
-import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
+import {
+	RadiantElement,
+	bindTo,
+	customElement,
+	onEvent,
+	onUpdated,
+	prop,
+	query,
+	registerSsrPreparationCallback,
+	state,
+} from '@ecopages/radiant';
 import type { RuiSidebarToggleDetail } from './sidebar.script';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
 
+export const SIDEBAR_TRIGGER_DEFAULT_LABEL = 'Toggle sidebar';
+
 export type RuiSidebarTriggerProps = {
 	/** ID of the `rui-sidebar` this trigger controls. */
 	controls?: string;
-	/** Accessible name for the trigger button. Default: `Toggle sidebar`. */
+	/** Accessible name for the trigger button. Default: {@link SIDEBAR_TRIGGER_DEFAULT_LABEL}. */
 	triggerLabel?: string;
 	/**
 	 * Where the trigger is rendered. `header` is shown while the sidebar is expanded;
@@ -19,6 +31,31 @@ export type RuiSidebarTriggerProps = {
 	/** Size passed through to the rendered button. */
 	size?: 'sm' | 'md' | 'lg';
 };
+
+export function sidebarTriggerButtonClass({
+	variant,
+	size,
+	placement,
+}: {
+	variant: NonNullable<RuiSidebarTriggerProps['variant']>;
+	size: NonNullable<RuiSidebarTriggerProps['size']>;
+	placement?: RuiSidebarTriggerPlacement | '';
+}): string {
+	const placementClass =
+		placement === 'header'
+			? 'rui-sidebar__trigger--header'
+			: placement === 'inset'
+				? 'rui-sidebar__trigger--inset'
+				: '';
+	return `rui-button rui-button--${variant} rui-button--${size} rui-sidebar__trigger ${placementClass}`.trim();
+}
+
+/** @remarks Used for SSR preparation before a sibling `rui-sidebar` is resolved. */
+export function initialSidebarStateForPlacement(
+	placement: RuiSidebarTriggerPlacement | '' | undefined,
+): 'expanded' | 'collapsed' {
+	return placement === 'inset' ? 'collapsed' : 'expanded';
+}
 
 /**
  * `<rui-sidebar-trigger>` — toggle button for a sibling `rui-sidebar`.
@@ -33,32 +70,40 @@ export type RuiSidebarTriggerProps = {
  *   `data-sidebar-state`, `aria-label`, and `aria-controls` (from `controls`
  *   or the resolved sidebar `id`).
  *
- * Do not set `aria-expanded` or `aria-controls` on the button — the host owns those.
+ * Do not set `aria-expanded`, `aria-controls`, `aria-label`, or `data-sidebar-state`
+ * on the button — the host owns those. Presentation classes on the button may be
+ * stamped by the view; the host re-applies them when `variant`, `size`, or
+ * `placement` change.
  *
  * Nested hosts: none. Resolves `rui-sidebar` by `controls` id or `closest()`.
  *
  * @element rui-sidebar-trigger
  * @attr {string} controls - ID of the `rui-sidebar` this trigger controls.
  * @attr {string} button-label - Accessible name for the trigger button. Default: `Toggle sidebar`.
- * @attr {(''|'header'|'inset')} placement - Where the trigger is rendered; affects the default label.
+ * @attr {(''|'header'|'inset')} placement - Where the trigger is rendered; affects CSS placement classes.
  */
 @customElement('rui-sidebar-trigger')
 export class RuiSidebarTrigger extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) controls: string;
 	/** `label` is not a safe reactive attribute name in the DOM; bind via `button-label`. */
-	@prop({ type: String, attribute: 'button-label', defaultValue: 'Toggle sidebar' }) buttonLabel: string;
+	@prop({ type: String, attribute: 'button-label', defaultValue: SIDEBAR_TRIGGER_DEFAULT_LABEL }) buttonLabel: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) placement: RuiSidebarTriggerPlacement | '';
 	@prop({ type: String, defaultValue: 'ghost' }) variant: NonNullable<RuiSidebarTriggerProps['variant']>;
 	@prop({ type: String, defaultValue: 'md' }) size: NonNullable<RuiSidebarTriggerProps['size']>;
 
 	@query({ ref: 'button' }) buttonTarget: HTMLButtonElement;
 
+	constructor() {
+		super();
+		registerSsrPreparationCallback(this, () => this.syncPresentationForSsr());
+	}
+
 	@state
 	@bindTo([
 		{ ref: 'button', attr: 'aria-expanded', map: (state) => String(state === 'expanded') },
 		{ ref: 'button', attr: 'data-sidebar-state' },
 	])
-	private sidebarState: 'expanded' | 'collapsed' = 'expanded';
+	sidebarState: 'expanded' | 'collapsed' = 'expanded';
 
 	private sidebarListener: ((event: Event) => void) | null = null;
 	private attachedSidebar: HTMLElement | null = null;
@@ -158,15 +203,20 @@ export class RuiSidebarTrigger extends RadiantElement {
 		return this.placement;
 	}
 
-	private resolvedButtonLabel(state = this.sidebarState): string {
-		if (this.resolvedPlacement() === 'inset') {
-			return state === 'expanded' ? 'Close navigation' : 'Open navigation';
-		}
+	private resolvedButtonLabel(): string {
 		const fromData = this.getAttribute('data-button-label')?.trim();
 		if (fromData) return fromData;
-		const fromAttribute = this.getAttribute('button-label')?.trim();
-		if (fromAttribute) return fromAttribute;
-		return this.buttonLabel || 'Toggle sidebar';
+		const fromProp = this.buttonLabel?.trim();
+		if (fromProp) return fromProp;
+		return SIDEBAR_TRIGGER_DEFAULT_LABEL;
+	}
+
+	/**
+	 * @remarks Authored children are applied before SSR preparation. Paint host-owned
+	 * button presentation so the first HTML includes glyphs and ARIA.
+	 */
+	private syncPresentationForSsr(): void {
+		this.applyState(initialSidebarStateForPlacement(this.resolvedPlacement()));
 	}
 
 	private applyState(state: 'expanded' | 'collapsed'): void {
@@ -174,7 +224,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 		const button = this.buttonTarget;
 		if (!button) return;
 		const sidebar = this.resolveSidebar();
-		button.setAttribute('aria-label', this.resolvedButtonLabel(state));
+		button.setAttribute('aria-label', this.resolvedButtonLabel());
 		if (sidebar?.id) {
 			button.setAttribute('aria-controls', sidebar.id);
 		} else if (this.controls) {
@@ -186,8 +236,11 @@ export class RuiSidebarTrigger extends RadiantElement {
 	private syncButtonPresentation(): void {
 		const button = this.buttonTarget;
 		if (!button) return;
-		button.className =
-			`rui-button rui-button--${this.variant} rui-button--${this.size} rui-sidebar__trigger ${this.placementClass()}`.trim();
+		button.className = sidebarTriggerButtonClass({
+			variant: this.variant,
+			size: this.size,
+			placement: this.resolvedPlacement(),
+		});
 	}
 
 	@onEvent({ ref: 'button', type: 'click' })
@@ -198,11 +251,5 @@ export class RuiSidebarTrigger extends RadiantElement {
 		if (sidebar && typeof sidebar.toggle === 'function') {
 			sidebar.toggle();
 		}
-	}
-
-	private placementClass(): string {
-		if (this.resolvedPlacement() === 'header') return 'rui-sidebar__trigger--header';
-		if (this.resolvedPlacement() === 'inset') return 'rui-sidebar__trigger--inset';
-		return '';
 	}
 }

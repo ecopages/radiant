@@ -50,7 +50,7 @@ pnpm run build:lib       # generate exports + build JS/types + compile CSS
 
 Published CSS under `dist/` is **already compiled** (Tailwind `@apply` resolved). Theme and token values remain CSS custom properties so apps can swap themes at runtime. The package does not minify CSS.
 
-Component entries register their nested custom elements as well as their own host. The package's `sideEffects` list preserves source `*.script.ts` / `*.script.tsx` registration modules during the library build and built `index.js` entries during consumer bundling. Removing those source side effects can leave nested Derived Trees as empty tags during SSR. `build:lib` runs `test:package` against isolated imports of the built date compositions to verify nested-host registration and server-rendered markup.
+Component entries register their nested custom elements as well as their own host. The package's `sideEffects` list preserves source `*.script.ts` / `*.script.tsx` registration modules during the library build and built `index.js` entries during consumer bundling. Removing those source side effects can leave nested Derived Trees as empty tags during SSR. `build:lib` runs `test:package` against isolated imports of the built date compositions and sidebar trigger to verify registration and server-rendered markup.
 
 ## Using radiant-ui
 

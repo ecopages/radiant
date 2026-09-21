@@ -39,3 +39,31 @@ for (const [input] of inputs) {
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 	});
 }
+
+test('sidebar registers and server-renders rui-sidebar-trigger from the built package', () => {
+	const result = spawnSync(
+		process.execPath,
+		[
+			'--input-type=module',
+			'-e',
+			`
+import assert from 'node:assert/strict';
+import '@ecopages/radiant/server/install-ssr-runtime';
+import { renderToString } from '@ecopages/jsx/server';
+import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
+const { RuiSidebarTrigger } = await import('@ecopages/radiant-ui/sidebar');
+assert.ok(customElements.get('rui-sidebar'));
+assert.ok(customElements.get('rui-sidebar-trigger'));
+const html = withRadiantServerCustomElementRenderBridge(() =>
+    renderToString(RuiSidebarTrigger({ controls: 'docs-sidebar', placement: 'inset', triggerLabel: 'Open navigation' })),
+);
+assert.ok(html.includes('data-ref="button"'));
+assert.ok(html.includes('rui-sidebar__trigger--inset'));
+assert.ok(html.includes('>Open navigation') || html.includes('aria-label="Open navigation"'));
+`,
+		],
+		{ cwd: new URL('..', import.meta.url), encoding: 'utf8' },
+	);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+});
