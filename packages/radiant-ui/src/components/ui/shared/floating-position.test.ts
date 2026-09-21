@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeFloatingCoords } from './floating-position';
+import { applyFloatingPosition, computeFloatingCoords } from './floating-position';
 import type { RuiPlacement } from './placement';
 
 function rect(left: number, top: number, width: number, height: number): DOMRect {
@@ -60,5 +60,31 @@ describe('computeFloatingCoords', () => {
 	it('does not clamp the primary axis onto the anchor after a top flip', () => {
 		const coords = computeFloatingCoords(rect(200, 16, 80, 32), size, 'top', gap, viewport);
 		expect(coords.y).toBeGreaterThanOrEqual(16 + 32);
+	});
+
+	it('does not clear author width styles when matchAnchorWidth is false', () => {
+		const anchor = document.createElement('div');
+		const floating = document.createElement('div');
+		floating.style.width = '240px';
+		document.body.append(anchor, floating);
+		anchor.getBoundingClientRect = () => rect(0, 0, 100, 32);
+
+		applyFloatingPosition(anchor, floating, 'bottom-start', 4, { matchAnchorWidth: false });
+
+		expect(floating.style.width).toBe('240px');
+		anchor.remove();
+		floating.remove();
+	});
+
+	it('clamps vertical coords within viewport padding when flipped above with limited space', () => {
+		const tallSize = { width: 280, height: 400 };
+		const coords = computeFloatingCoords(
+			rect(100, 300, 80, 32),
+			tallSize,
+			'bottom-start' satisfies RuiPlacement,
+			gap,
+			viewport,
+		);
+		expect(coords.y).toBe(viewport.padding);
 	});
 });
