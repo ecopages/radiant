@@ -8,6 +8,8 @@ export const RUI_FIELD_DESCRIPTION_ATTR = 'data-rui-field-description';
 export const RUI_FIELD_ERROR_ATTR = 'data-rui-field-error';
 export const RUI_FIELD_DEFAULT_VALUE_ATTR = 'data-default-value';
 export const RUI_FORM_DEFAULT_VALUES_ATTR = 'data-default-values';
+export const RUI_ARIA_TARGET_ATTR = 'data-rui-aria-target';
+export const RUI_ARIA_TARGETS_ATTR = 'data-rui-aria-targets';
 const FIELD_COLUMN_SELECTOR = '[data-ref="field"]';
 
 const HOST_CONTROL_TAGS = new Set([
@@ -39,8 +41,6 @@ function isEmbeddedListbox(node: HTMLElement): boolean {
 
 const ARIA_TARGET_SELECTORS: Readonly<Record<string, string>> = {
 	'rui-combobox': '[data-combobox-input]',
-	'rui-date-field': '[data-date-field-input]',
-	'rui-date-range-picker': '[data-range-start]',
 	'rui-select': '[data-select-trigger]',
 	'rui-tag-group': '[data-tag-list]',
 	'rui-number-field': '[data-number-field-input], input',
@@ -422,10 +422,52 @@ function isChecked(input: HTMLInputElement): boolean {
 	return typeof checked === 'boolean' ? checked : input.hasAttribute('checked');
 }
 
+function resolveDeclaredAriaTarget(control: HTMLElement): HTMLElement | null {
+	const multi = control.getAttribute(RUI_ARIA_TARGETS_ATTR);
+	if (multi) {
+		const firstSelector = multi.split(',')[0]?.trim();
+		if (firstSelector) {
+			return control.querySelector<HTMLElement>(firstSelector);
+		}
+	}
+
+	const single = control.getAttribute(RUI_ARIA_TARGET_ATTR);
+	if (single) {
+		return control.querySelector<HTMLElement>(single);
+	}
+
+	return null;
+}
+
+function resolveDeclaredAriaTargets(control: HTMLElement): HTMLElement[] {
+	const multi = control.getAttribute(RUI_ARIA_TARGETS_ATTR);
+	if (multi) {
+		return multi
+			.split(',')
+			.map((selector) => selector.trim())
+			.filter((selector) => selector !== '')
+			.map((selector) => control.querySelector<HTMLElement>(selector))
+			.filter((node): node is HTMLElement => node != null);
+	}
+
+	const single = control.getAttribute(RUI_ARIA_TARGET_ATTR);
+	if (single) {
+		const target = control.querySelector<HTMLElement>(single);
+		return target ? [target] : [];
+	}
+
+	return [];
+}
+
 /** Element that receives `id`, `aria-invalid`, and `aria-describedby` from Field. */
 export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 	if (isNativeTextControl(control)) {
 		return control;
+	}
+
+	const declared = resolveDeclaredAriaTarget(control);
+	if (declared) {
+		return declared;
 	}
 
 	if (control.hasAttribute(RUI_CONTROL_ATTR)) {
@@ -456,6 +498,11 @@ function getSelectedRadio(control: HTMLElement): HTMLInputElement | undefined {
 
 /** Focusable surfaces that Field should wire `aria-invalid` / `aria-describedby` onto. */
 export function getAriaControlTargets(control: HTMLElement): HTMLElement[] {
+	const declared = resolveDeclaredAriaTargets(control);
+	if (declared.length > 0) {
+		return declared;
+	}
+
 	if (control.localName === 'rui-slider') {
 		const thumbs = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]:not([hidden])'));
 		return thumbs.length > 0 ? thumbs : [control];

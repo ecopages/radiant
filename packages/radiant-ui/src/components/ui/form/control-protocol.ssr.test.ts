@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	findFieldControl,
 	getAriaControlTarget,
+	getAriaControlTargets,
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
 } from '../form/control-protocol';
@@ -121,6 +122,36 @@ describe('field control protocol (SSR-safe)', () => {
 
 		expect(seen).toBeDefined();
 		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(true);
+	});
+
+	it('discovers standalone rui-date-input stamped with data-rui-control', () => {
+		const field = document.createElement('div');
+		field.innerHTML = `
+			<rui-date-input data-rui-control data-rui-control-type="date" data-rui-aria-target='[data-ref="root"]'>
+				<div data-ref="root" id="segments"></div>
+			</rui-date-input>
+		`;
+
+		const control = findFieldControl(field);
+		expect(control?.localName).toBe('rui-date-input');
+		expect(getAriaControlTarget(control!).id).toBe('segments');
+	});
+
+	it('honors data-rui-aria-target on the control host', () => {
+		const host = document.createElement('rui-date-field');
+		host.setAttribute('data-rui-aria-target', '[data-segment-root]');
+		host.innerHTML = '<div data-segment-root id="segments"></div>';
+
+		expect(getAriaControlTarget(host).id).toBe('segments');
+	});
+
+	it('honors data-rui-aria-targets for multi-surface hosts', () => {
+		const host = document.createElement('rui-date-range-picker');
+		host.setAttribute('data-rui-aria-targets', '[data-start],[data-end]');
+		host.innerHTML = '<div data-start id="start"></div><div data-end id="end"></div>';
+
+		const targets = getAriaControlTargets(host);
+		expect(targets.map((node) => node.id)).toEqual(['start', 'end']);
 	});
 
 	it('ignores rui-change from an embedded listbox inside select', () => {

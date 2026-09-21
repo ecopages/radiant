@@ -26,7 +26,7 @@ Keep a convenient prop-based default composition on the primary view, but accept
 
 For keyboard movement within an already-rendered composite surface, update focus and roving attributes imperatively. Re-render only when visible structure or semantic state changes. Nested `role="menu"` trees (menu-button, menubar) share `MenuTreeController`: the ARIA relationship is an immediate menuitem/menu sibling pair in light DOM, and the controller owns submenu timers, keyboard, and unportaled `PopoverController` instances. Listbox-backed popovers (select, combobox) share `ListboxPopoverBehavior` for active-descendant navigation and `ListboxHostController` for the embedded listbox, the `string[]` value property (comma-separated on the attribute), option `aria-selected`, and optional tag-group chips.
 
-`RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls.
+`RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls. For `RuiField` wiring, stamp `data-rui-control` (or use a known host tag), stamp `data-rui-aria-target` or `data-rui-aria-targets` when the ARIA node is not the control host itself, and fire bubbling `rui-change`.
 
 ## Multi-value `value`
 
