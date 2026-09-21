@@ -274,4 +274,22 @@ describe('minimal-dom selectors SSR integration', () => {
 
 		expect(host.innerHTML).toBe('a &lt; b &amp; c &gt; d');
 	});
+
+	test('does not serialize a closing tag for void elements', () => {
+		const input = new MinimalHTMLElement('input');
+		input.setAttribute('type', 'hidden');
+		input.setAttribute('value', '2026-08-01');
+
+		expect(input.outerHTML).toBe('<input type="hidden" value="2026-08-01">');
+	});
+
+	test('does not turn a leftover closing tag into visible text', () => {
+		const host = new MinimalHTMLElement('rui-field');
+		host.innerHTML =
+			'<div class="field"><label>Trip</label><rui-date-input><div><input type="hidden" value="x"></input></div></rui-date-input></div>';
+
+		expect(host.innerHTML).not.toContain('&lt;/div&gt;');
+		expect(host.textContent).not.toContain('</div>');
+		expect(host.querySelector('.field')).not.toBeNull();
+	});
 });
