@@ -22,8 +22,8 @@ export type RuiSidebarTriggerProps = {
 	triggerLabel?: string;
 	/**
 	 * Where the trigger is rendered. `header` is shown while the sidebar is expanded;
-	 * `inset` while collapsed (desktop icon rail / mobile drawer closed). CSS on
-	 * `.rui-sidebar-provider` hides the inactive placement.
+	 * `inset` while collapsed (desktop icon rail / mobile drawer closed). The host
+	 * reflects its controlled sidebar state for local placement styling.
 	 */
 	placement?: RuiSidebarTriggerPlacement;
 	/** Variant passed through to the rendered button. */
@@ -81,6 +81,10 @@ export function initialSidebarStateForPlacement(
  * @attr {string} controls - ID of the `rui-sidebar` this trigger controls.
  * @attr {string} button-label - Accessible name for the trigger button. Default: `Toggle sidebar`.
  * @attr {(''|'header'|'inset')} placement - Where the trigger is rendered; affects CSS placement classes.
+ *
+ * @remarks
+ * The host reflects `data-sidebar-placement`, `data-sidebar-state`,
+ * `data-sidebar-mobile`, and `data-sidebar-collapsible` for placement styling.
  */
 @customElement('rui-sidebar-trigger')
 export class RuiSidebarTrigger extends RadiantElement {
@@ -106,6 +110,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 	sidebarState: 'expanded' | 'collapsed' = 'expanded';
 
 	private sidebarListener: ((event: Event) => void) | null = null;
+	private sidebarMobileListener: ((event: Event) => void) | null = null;
+	private sidebarObserver: MutationObserver | null = null;
 	private attachedSidebar: HTMLElement | null = null;
 	private initialSyncFrame: number | null = null;
 
@@ -179,7 +185,14 @@ export class RuiSidebarTrigger extends RadiantElement {
 			const detail = (event as CustomEvent<RuiSidebarToggleDetail>).detail;
 			this.applyState(detail.state);
 		};
+		this.sidebarMobileListener = () => this.applyState(this.readState(sidebar));
+		this.sidebarObserver = new MutationObserver(() => this.applyState(this.readState(sidebar)));
+		this.sidebarObserver.observe(sidebar, {
+			attributes: true,
+			attributeFilter: ['data-state', 'data-mobile', 'data-collapsible'],
+		});
 		sidebar.addEventListener('rui-sidebar-toggle', this.sidebarListener);
+		sidebar.addEventListener('rui-sidebar-mobile-change', this.sidebarMobileListener);
 		this.applyState(this.readState(sidebar));
 	}
 
@@ -187,8 +200,14 @@ export class RuiSidebarTrigger extends RadiantElement {
 		if (this.attachedSidebar && this.sidebarListener) {
 			this.attachedSidebar.removeEventListener('rui-sidebar-toggle', this.sidebarListener);
 		}
+		if (this.attachedSidebar && this.sidebarMobileListener) {
+			this.attachedSidebar.removeEventListener('rui-sidebar-mobile-change', this.sidebarMobileListener);
+		}
+		this.sidebarObserver?.disconnect();
 		this.attachedSidebar = null;
 		this.sidebarListener = null;
+		this.sidebarMobileListener = null;
+		this.sidebarObserver = null;
 	}
 
 	private readState(sidebar: HTMLElement): 'expanded' | 'collapsed' {
@@ -221,6 +240,18 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	private applyState(state: 'expanded' | 'collapsed'): void {
 		this.sidebarState = state;
+		this.setAttribute('data-sidebar-state', state);
+		this.setAttribute('data-sidebar-placement', this.resolvedPlacement());
+		if (this.attachedSidebar) {
+			this.setAttribute('data-sidebar-mobile', this.attachedSidebar.getAttribute('data-mobile') ?? 'false');
+			this.setAttribute(
+				'data-sidebar-collapsible',
+				this.attachedSidebar.getAttribute('data-collapsible') ?? 'off',
+			);
+		} else {
+			this.removeAttribute('data-sidebar-mobile');
+			this.removeAttribute('data-sidebar-collapsible');
+		}
 		const button = this.buttonTarget;
 		if (!button) return;
 		const sidebar = this.resolveSidebar();
