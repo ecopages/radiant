@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import { expect, userEvent } from 'storybook/test';
+import { expect, userEvent, waitFor } from 'storybook/test';
 import { RuiPagination } from './pagination';
 import { RuiPagination as RuiPaginationElement } from './pagination.script';
 
@@ -55,4 +55,24 @@ export const Disabled: Story = {
  */
 export const Compact: Story = {
 	render: () => <RuiPagination class="rui-pagination--compact" label="Search result pages" page={4} pageCount={12} />,
+	play: async ({ canvasElement, step }) => {
+		await step('announces the compact page position politely', async () => {
+			const status = canvasElement.querySelector('.rui-pagination__status') as HTMLElement;
+			await expect(status.getAttribute('aria-live')).toBe('polite');
+			await expect(status.textContent?.trim()).toBe('Page 4 of 12');
+		});
+		await step('requests navigation while preserving the controlled page', async () => {
+			const pagination = canvasElement.querySelector('rui-pagination') as HTMLElement;
+			const change = new Promise<number>((resolve) => {
+				pagination.addEventListener(
+					'rui-page-change',
+					(event) => resolve((event as CustomEvent<{ page: number }>).detail.page),
+					{ once: true },
+				);
+			});
+			await userEvent.click(canvasElement.querySelector<HTMLButtonElement>('[aria-label="Go to next page"]')!);
+			await expect(await change).toBe(5);
+			await waitFor(() => expect(pagination.getAttribute('page')).toBe('4'));
+		});
+	},
 };
