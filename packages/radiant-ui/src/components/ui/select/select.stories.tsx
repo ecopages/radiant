@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import { expect, userEvent } from 'storybook/test';
+import { expect, userEvent, waitFor } from 'storybook/test';
 import { isStaticSsrPreview } from '@/lib/storybook-ssr';
 import { RuiIconCheck, RuiIconChevronDown, RuiIconX } from '@/lib/icons';
 import { withStylesheets } from '@sb/with-stylesheets';
@@ -71,6 +71,46 @@ const getOptions = (canvasElement: HTMLElement) =>
 	Array.from(canvasElement.querySelectorAll('[data-select-listbox] [role="option"]')) as HTMLElement[];
 const getVisibleOptions = (canvasElement: HTMLElement) => getOptions(canvasElement).filter((option) => !option.hidden);
 const getValue = (canvasElement: HTMLElement) => canvasElement.querySelector('[data-select-value]') as HTMLElement;
+
+export const TriggerKindFocus: Story = {
+	args: {
+		triggerKind: 'focus',
+	},
+	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getTrigger(canvasElement)) return;
+
+		const trigger = getTrigger(canvasElement);
+		const options = getOptions(canvasElement);
+
+		await step('focus opens the listbox without moving visual focus into it', async () => {
+			trigger.focus();
+			await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'true'));
+			await expect(trigger).not.toHaveAttribute('aria-activedescendant');
+		});
+
+		await step('ArrowDown jumps visual focus onto the first option', async () => {
+			await userEvent.keyboard('{ArrowDown}');
+			await expect(trigger).toHaveAttribute('aria-activedescendant', options[0].id);
+			await expect(options[0]).toHaveAttribute('data-active');
+		});
+	},
+};
+
+export const TriggerKindManual: Story = {
+	args: {
+		triggerKind: 'manual',
+	},
+	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getTrigger(canvasElement)) return;
+
+		const trigger = getTrigger(canvasElement);
+
+		await step('focus alone does not open the listbox', async () => {
+			trigger.focus();
+			await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+		});
+	},
+};
 
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'storybook/test';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import {
 	RuiSelect,
@@ -82,6 +83,119 @@ describe('RuiSelect', () => {
 
 		expect(popup.hidden).toBe(true);
 		expect(document.activeElement).toBe(trigger);
+		cleanup();
+	});
+
+	it('opens on trigger focus when triggerKind is focus', async () => {
+		const { host, cleanup } = mount(
+			<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />,
+		);
+		await settled();
+
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+
+		trigger.focus();
+		await settled();
+
+		expect(popup.hidden).toBe(false);
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+		expect(trigger.hasAttribute('aria-activedescendant')).toBe(false);
+		cleanup();
+	});
+
+	it('opens on click when triggerKind is focus without closing from focus-open', async () => {
+		const { host, cleanup } = mount(
+			<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />,
+		);
+		await settled();
+
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+
+		await userEvent.click(trigger);
+		await settled();
+
+		expect(popup.hidden).toBe(false);
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+		cleanup();
+	});
+
+	it('opens on Tab when triggerKind is focus', async () => {
+		const { host, cleanup } = mount(
+			<>
+				<button type="button">Before</button>
+				<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />
+			</>,
+		);
+		await settled();
+
+		const before = host.querySelector('button') as HTMLButtonElement;
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+
+		before.focus();
+		await userEvent.tab();
+		await settled();
+
+		expect(document.activeElement).toBe(trigger);
+		expect(popup.hidden).toBe(false);
+		cleanup();
+	});
+
+	it('does not open on trigger focus when triggerKind is manual', async () => {
+		const { host, cleanup } = mount(<RuiSelect options={OPTIONS} placeholder="Animals" />);
+		await settled();
+
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+
+		trigger.focus();
+		await settled();
+
+		expect(popup.hidden).toBe(true);
+		expect(trigger.getAttribute('aria-expanded')).toBe('false');
+		cleanup();
+	});
+
+	it('opens on the next Tab after a focused click closes the listbox', async () => {
+		const { host, cleanup } = mount(
+			<>
+				<button type="button">Before</button>
+				<RuiSelect triggerKind="focus" options={OPTIONS} />
+			</>,
+		);
+		await settled();
+
+		const before = host.querySelector('button') as HTMLButtonElement;
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+
+		trigger.focus();
+		await settled();
+		await userEvent.click(trigger);
+		await settled();
+		expect(popup.hidden).toBe(true);
+
+		before.focus();
+		await userEvent.tab();
+		await settled();
+		expect(document.activeElement).toBe(trigger);
+		expect(popup.hidden).toBe(false);
+		cleanup();
+	});
+
+	it('does not suppress focus after an aborted pointer interaction', async () => {
+		const { host, cleanup } = mount(<RuiSelect triggerKind="focus" options={OPTIONS} />);
+		await settled();
+
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+		trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+		trigger.focus();
+		await settled();
+
+		expect(popup.hidden).toBe(false);
 		cleanup();
 	});
 

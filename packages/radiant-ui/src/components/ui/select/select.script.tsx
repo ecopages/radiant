@@ -8,6 +8,7 @@ import { ListboxPopoverBehavior } from '../shared/listbox-popover-behavior';
 import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
 
 export type RuiSelectSelectionMode = 'single' | 'multiple';
+export type RuiSelectTriggerKind = 'focus' | 'manual';
 
 export type RuiSelectProps = {
 	value?: ViewMultiValue;
@@ -21,6 +22,11 @@ export type RuiSelectProps = {
 	 * Defaults to false for multiple and true for single.
 	 */
 	shouldCloseOnSelect?: boolean;
+	/**
+	 * Controls what opens the listbox. `focus` opens when the trigger receives focus;
+	 * `manual` requires a click, the toggle, or arrow keys (the default).
+	 */
+	triggerKind?: RuiSelectTriggerKind;
 };
 
 export type RuiSelectChangeDetail = { value: string[] };
@@ -78,6 +84,7 @@ export type RuiSelectChangeDetail = { value: string[] };
  * @attr {boolean} disabled - Disable the trigger and popup. Default: `false`.
  * @attr {('single'|'multiple')} selection-mode - Single or multi-select. Default: `single`.
  * @attr {boolean} should-close-on-select - Whether selecting closes the popup (defaults to `true` for single, `false` for multiple).
+ * @attr {('focus'|'manual')} trigger-kind - Controls what opens the listbox. Default: `manual`.
  * @fires rui-change - Emitted when the selected `value` changes; `detail.value` is `string[]`.
  *
  * @remarks
@@ -108,11 +115,14 @@ export class RuiSelect extends RadiantElement {
 
 	@prop({ type: String, attribute: 'selection-mode', defaultValue: 'single' }) selectionMode: RuiSelectSelectionMode;
 	@prop({ type: Boolean, attribute: 'should-close-on-select' }) shouldCloseOnSelect: boolean | undefined;
+	@prop({ type: String, attribute: 'trigger-kind', reflect: true, defaultValue: 'manual' })
+	triggerKind: RuiSelectTriggerKind;
 
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSelectChangeDetail>;
 
 	private open = false;
+	private refocusingTrigger = false;
 	private readonly uid = uniqueId('rui-select');
 	private readonly collection = new ListboxHostController({
 		getRoot: () => this,
@@ -258,11 +268,48 @@ export class RuiSelect extends RadiantElement {
 		this.collection.syncOptionSelection();
 		this.syncTagGroup();
 		this.changeEvent.emit({ value: [] });
-		this.getTrigger()?.focus();
+		this.refocusTrigger();
 	}
 
 	private getTrigger(): HTMLElement | null {
 		return this.querySelector<HTMLElement>('[data-select-trigger]');
+	}
+
+	private isTriggerFocusTarget(target: EventTarget | null): boolean {
+		const trigger = this.getTrigger();
+		if (!trigger || !(target instanceof Node)) {
+			return false;
+		}
+		if (!trigger.contains(target)) {
+			return false;
+		}
+		return !(target instanceof Element && target.closest('[data-tag-remove]'));
+	}
+
+	private shouldOpenListboxOnFocus(): boolean {
+		return this.triggerKind === 'focus' && !this.refocusingTrigger;
+	}
+
+	private scheduleFocusOpen(): void {
+		queueMicrotask(() => {
+			if (this.disabled || !this.shouldOpenListboxOnFocus()) {
+				return;
+			}
+			const trigger = this.getTrigger();
+			if (!trigger?.contains(document.activeElement)) {
+				return;
+			}
+			this.setOpen(true);
+		});
+	}
+
+	private refocusTrigger(): void {
+		this.refocusingTrigger = true;
+		try {
+			this.getTrigger()?.focus();
+		} finally {
+			this.refocusingTrigger = false;
+		}
 	}
 
 	private getToggle(): HTMLButtonElement | null {
@@ -424,7 +471,7 @@ export class RuiSelect extends RadiantElement {
 		if (this.closesOnSelect()) {
 			this.resetSearchFilter();
 			this.setOpen(false);
-			this.getTrigger()?.focus();
+			this.refocusTrigger();
 		}
 	}
 
@@ -439,7 +486,7 @@ export class RuiSelect extends RadiantElement {
 			onClose: (reason) => {
 				this.setOpen(false);
 				if (reason === 'arrow' || reason === 'escape') {
-					this.getTrigger()?.focus();
+					this.refocusTrigger();
 				}
 			},
 			onSelectActive: () => {
@@ -474,13 +521,20 @@ export class RuiSelect extends RadiantElement {
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['value', 'label', 'placeholder', 'disabled', 'selectionMode', 'shouldCloseOnSelect'])
+	@onUpdated(['value', 'label', 'placeholder', 'disabled', 'triggerKind', 'selectionMode', 'shouldCloseOnSelect'])
 	onPropsUpdated(): void {
 		this.syncLabel();
 		this.syncTrigger();
 		this.collection.syncListboxHost();
 		this.syncValueDisplay();
 		this.collection.syncOptionSelection();
+	}
+
+	@onEvent({ selector: '[data-select-trigger], [data-select-toggle]', type: 'pointerdown' })
+	onTriggerPointerDown(event: PointerEvent): void {
+		if (this.triggerKind === 'focus') {
+			event.preventDefault();
+		}
 	}
 
 	@onEvent({ selector: '[data-select-trigger], [data-select-toggle]', type: 'click' })
@@ -502,7 +556,7 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 
-		trigger.focus();
+		this.refocusTrigger();
 	}
 
 	@onEvent({ selector: '[data-select-trigger]', type: 'keydown', options: { capture: true } })
@@ -584,6 +638,19 @@ export class RuiSelect extends RadiantElement {
 		if (option) {
 			this.selectOption(option);
 		}
+	}
+
+	@onEvent({ ref: 'root', type: 'focusin' })
+	onRootFocusIn(event: FocusEvent): void {
+		if (this.disabled || !this.isTriggerFocusTarget(event.target)) {
+			return;
+		}
+
+		if (!this.shouldOpenListboxOnFocus()) {
+			return;
+		}
+
+		this.scheduleFocusOpen();
 	}
 
 	@onEvent({ ref: 'root', type: 'focusout' })

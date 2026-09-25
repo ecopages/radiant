@@ -23,6 +23,7 @@ describe('RuiSelect SSR', () => {
 						placeholder="Choose a status"
 						disabled={false}
 						selectionMode="multiple"
+						triggerKind="focus"
 					/>
 				</RuiAlert>,
 			),
@@ -34,6 +35,7 @@ describe('RuiSelect SSR', () => {
 		expect(html).toMatch(/<rui-select[^>]*placeholder="Choose a status"/);
 		expect(html).toMatch(/<rui-select[^>]*disabled="false"/);
 		expect(html).toMatch(/<rui-select[^>]*selection-mode="multiple"/);
+		expect(html).toMatch(/<rui-select[^>]*trigger-kind="focus"/);
 	});
 
 	it('forwards global, structured, and direct data/aria props to the host', () => {
