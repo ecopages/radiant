@@ -93,8 +93,10 @@ export function RuiPaginationNav({
 						</li>
 					),
 				)}
-				<li class="rui-pagination__status">
-					{resolvedPage} / {resolvedPageCount}
+				<li class="rui-pagination__status" aria-live="polite">
+					<span class="rui-pagination__status-label">
+						Page {resolvedPage} of {resolvedPageCount}
+					</span>
 				</li>
 				<li>
 					<RuiButton
@@ -123,8 +125,9 @@ export function RuiPaginationNav({
  *
  * @cssclass rui-pagination - Navigation root on the host.
  * @cssclass rui-pagination__page - Page-number item; `__page--current` marks the active page.
- * @cssclass rui-pagination--compact - Force previous / `{page} / {count}` / next chrome.
- * @cssclass rui-pagination__status - Non-interactive `{page} / {count}` label in compact chrome.
+ * @cssclass rui-pagination--compact - Force previous / page position / next chrome.
+ * @cssclass rui-pagination__status - Non-interactive page position in compact chrome.
+ * @cssclass rui-pagination__status-label - Muted “Page {n} of {m}” copy; hidden with full page list.
  * @cssclass rui-pagination__ellipsis - Hidden range marker between page numbers.
  */
 export function RuiPagination({
