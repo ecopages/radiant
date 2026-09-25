@@ -506,6 +506,10 @@ export const DocsNavigation: Story = {
 		expect(provider).toHaveAttribute('data-layout', 'docs');
 		expect(triggers[0]).toHaveClass('rui-sidebar-trigger-placement--header');
 		expect(triggers[1]).toHaveClass('rui-sidebar-trigger-placement--inset');
+		expect(triggers[0]).toHaveAttribute('data-sidebar-collapsible', 'off');
+		expect(triggers[1]).toHaveAttribute('data-sidebar-collapsible', 'off');
+		expect(getComputedStyle(triggers[0]).display).toBe('none');
+		expect(getComputedStyle(triggers[1]).display).toBe('none');
 		expect(canvasElement.querySelector('.rui-sidebar-provider__site-header')).toBeInTheDocument();
 		expect(canvas.getByTitle('Radiant')).toBeInTheDocument();
 		expect(canvas.getByText('Getting Started')).toBeInTheDocument();
