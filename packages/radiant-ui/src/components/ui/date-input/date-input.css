@@ -28,8 +28,13 @@ rui-date-input {
 		@apply text-on-surface opacity-muted;
 	}
 
-	.rui-date-input__segment--focused {
-		@apply bg-focus-ring text-on-background outline-none;
+	.rui-date-input__segment--focused,
+	.rui-date-input__segment[data-focused='true'] {
+		background-color: var(--focus-ring);
+		color: var(--on-primary);
+		-webkit-text-fill-color: currentColor;
+		opacity: 1;
+		outline: none;
 	}
 
 	.rui-date-input__literal {
