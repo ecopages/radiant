@@ -12,6 +12,6 @@ describe('RuiPagination SSR', () => {
 		expect(html).toContain('Go to page 2');
 		expect(html).toContain('rui-pagination__page--current');
 		expect(html).toContain('rui-pagination__status');
-		expect(html).toContain('2 / 4');
+		expect(html).toContain('Page 2 of 4');
 	});
 });

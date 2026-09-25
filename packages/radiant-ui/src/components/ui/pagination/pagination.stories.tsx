@@ -51,7 +51,7 @@ export const Disabled: Story = {
 };
 
 /**
- * Previous / `{page} / {count}` / next. Same chrome as viewports below 40rem.
+ * Previous / page position / next. Same chrome as viewports below 40rem.
  */
 export const Compact: Story = {
 	render: () => <RuiPagination class="rui-pagination--compact" label="Search result pages" page={4} pageCount={12} />,
