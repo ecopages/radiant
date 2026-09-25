@@ -5,9 +5,11 @@ describe('radiant-ui 500 page copy action', () => {
 	let writeText: ReturnType<typeof vi.fn>;
 	let button: HTMLButtonElement;
 	let label: HTMLSpanElement;
+	let clipboardDescriptor: PropertyDescriptor | undefined;
 
 	beforeEach(() => {
 		document.body.innerHTML = '';
+		clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
 		writeText = vi.fn().mockResolvedValue(undefined);
 		Object.defineProperty(navigator, 'clipboard', {
 			configurable: true,
@@ -33,7 +35,11 @@ describe('radiant-ui 500 page copy action', () => {
 	afterEach(() => {
 		window.clearTimeout(Number(button.dataset.error500CopyTimer));
 		document.body.innerHTML = '';
-		delete (navigator as Navigator & { clipboard?: Clipboard }).clipboard;
+		if (clipboardDescriptor) {
+			Object.defineProperty(navigator, 'clipboard', clipboardDescriptor);
+		} else {
+			Reflect.deleteProperty(navigator, 'clipboard');
+		}
 		vi.restoreAllMocks();
 	});
 
