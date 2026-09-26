@@ -25,7 +25,7 @@ import {
 import { resolveLocale } from '@/lib/intl/locale';
 import { uniqueId } from '@/lib/unique-id';
 import { getSegmentDomProps } from './date-input-segment-dom';
-import { FormAssociation, formAssociated } from '../form/form-association';
+import { FormAssociation } from '../form/form-association';
 
 export type RuiDateInputProps = {
 	value?: string;
@@ -90,9 +90,12 @@ function isIosDevice(): boolean {
  * A delayed selection collapse runs only while that segment is still
  * `document.activeElement`.
  */
-@formAssociated
 @customElement('rui-date-input')
 export class RuiDateInput extends RadiantElement {
+	static get formAssociated(): boolean {
+		return true;
+	}
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
