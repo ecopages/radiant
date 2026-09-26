@@ -219,6 +219,30 @@ describe('field control protocol (SSR-safe)', () => {
 		expect(input.hasAttribute('name')).toBe(false);
 	});
 
+	it('does not name the inner input of a form-associated host', () => {
+		if (!customElements.get('x-face-default')) {
+			customElements.define(
+				'x-face-default',
+				class extends HTMLElement {
+					static formAssociated = true;
+				},
+			);
+		}
+		registerFieldControl('x-face-default', {
+			read: (host) => host.getAttribute('value') ?? '',
+			write: (host, value) => host.setAttribute('value', value == null ? '' : String(value)),
+		});
+		const host = document.createElement('x-face-default');
+		const input = document.createElement('input');
+		input.setAttribute('name', 'stale');
+		host.append(input);
+
+		wireFieldControlName(host, input, 'quantity');
+
+		expect(host.getAttribute('name')).toBe('quantity');
+		expect(input.hasAttribute('name')).toBe(false);
+	});
+
 	it('names a registered host through its native input by default', () => {
 		registerFieldControl('x-native-control', {
 			read: (host) => host.getAttribute('value') ?? '',

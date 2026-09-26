@@ -3,13 +3,7 @@ import { page } from 'vitest/browser';
 import './sidebar.css';
 import { createRoot, type JsxRenderable, type JsxRoot } from '@ecopages/jsx';
 import { userEvent } from 'storybook/test';
-import {
-	RuiSidebar,
-	RuiSidebarHeader,
-	RuiSidebarInset,
-	RuiSidebarProvider,
-	RuiSidebarTrigger,
-} from './sidebar';
+import { RuiSidebar, RuiSidebarHeader, RuiSidebarInset, RuiSidebarProvider, RuiSidebarTrigger } from './sidebar';
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');

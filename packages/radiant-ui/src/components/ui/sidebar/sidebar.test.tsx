@@ -748,7 +748,6 @@ describe('RuiSidebar mobile drawer', () => {
 	});
 });
 
-
 describe('RuiSidebar matchActive', () => {
 	it('marks the link matching the current pathname as active', async () => {
 		const originalPath = window.location.pathname;
