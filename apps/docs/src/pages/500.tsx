@@ -1,6 +1,6 @@
 import { eco } from '@ecopages/core';
 import { DocsLayout } from '@/layouts/docs-layout';
-import { Error500View } from './500-view';
+import { Error500View } from '@/components/error-500-view';
 import type { Error500TemplateProps } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 
