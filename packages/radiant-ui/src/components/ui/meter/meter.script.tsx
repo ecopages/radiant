@@ -33,7 +33,7 @@ type RuiMeterBindings = {
  * The visually hidden native `<meter>` retains range semantics. The track and fill
  * are presentational and follow the derived percent;
  * the numeric readout beside it is `aria-hidden`. Percent is derived reactively
- * from `value` / `min` / `max`.
+ * from `value` / `min` / `max` and clamped to 0..100, matching the native `<meter>`.
  *
  * @cssclass rui-meter - Root row (label, bar, value).
  * @cssclass rui-meter__label - Text describing the measurement.
@@ -58,13 +58,12 @@ export class RuiMeter extends RadiantElement<RuiMeterBindings> {
 	@state percent = 0;
 
 	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
-	private readonly trackStyle = this.$.percent.map((percent) => ({
-		'--rui-meter-percent': `${Math.min(100, Math.max(0, percent))}%`,
-	}));
+	private readonly trackStyle = this.$.percent.map((percent) => ({ '--rui-meter-percent': `${percent}%` }));
 
 	@onUpdated(['value', 'min', 'max'])
 	onRangeUpdated(): void {
-		this.percent = this.max === this.min ? 0 : Math.round(((this.value - this.min) / (this.max - this.min)) * 100);
+		const percent = this.max === this.min ? 0 : Math.round(((this.value - this.min) / (this.max - this.min)) * 100);
+		this.percent = Math.min(100, Math.max(0, percent));
 	}
 
 	override render() {
