@@ -856,7 +856,7 @@ describe('RuiSidebarTrigger', () => {
 
 		expect(headerTrigger.getAttribute('aria-controls')).toBe('primary-sidebar');
 		expect(headerTrigger.getAttribute('aria-label')).toBe('Collapse sidebar');
-		expect(headerHost.getAttribute('data-sidebar-placement')).toBe('header');
+		expect(headerHost.getAttribute('placement')).toBe('header');
 		expect(headerHost.getAttribute('data-sidebar-state')).toBe('expanded');
 		expect(headerHost.getAttribute('data-sidebar-mobile')).toBe('false');
 		expect(insetHost.getAttribute('data-sidebar-state')).toBe('expanded');
