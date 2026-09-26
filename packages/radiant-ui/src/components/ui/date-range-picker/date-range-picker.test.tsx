@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
+import { typeIsoIntoDateInput } from '@sb/date-input-typing';
 import { userEvent } from 'storybook/test';
 import { RuiDateRangePicker } from './date-range-picker';
 import './date-range-picker.script';
@@ -17,16 +18,6 @@ async function flushRender(): Promise<void> {
 async function flushFirstConnect(): Promise<void> {
 	await Promise.resolve();
 	await Promise.resolve();
-}
-
-async function typeIsoIntoDateInput(input: HTMLElement, iso: string): Promise<void> {
-	const [year, month, day] = iso.split('-');
-	await userEvent.click(input.querySelector('[data-date-segment][data-type="month"]') as HTMLElement);
-	await userEvent.keyboard(month ?? '');
-	await userEvent.click(input.querySelector('[data-date-segment][data-type="day"]') as HTMLElement);
-	await userEvent.keyboard(day ?? '');
-	await userEvent.click(input.querySelector('[data-date-segment][data-type="year"]') as HTMLElement);
-	await userEvent.keyboard(year ?? '');
 }
 
 afterEach(() => {

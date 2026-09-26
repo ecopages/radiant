@@ -27,15 +27,16 @@ export {
 export { dateToIso, isoToDate, isIsoInRange } from './iso';
 export { getDatePartOrder, getDateSeparators, parseLocaleDateString } from './parts';
 export {
+	allSegmentsEmpty,
 	buildDateSegments,
 	clampSegmentValue,
+	draftStatus,
 	getEditableSegmentIndices,
 	incrementSegment,
 	maxSegmentLength,
 	segmentsToDate,
 } from './segments';
 export {
-	allSegmentsEmpty,
 	applyBackspaceToSegment,
 	applyDigitToSegment,
 	clearSegmentValue,
@@ -58,4 +59,4 @@ export type {
 	DatePartType,
 	IntlLocale,
 } from './types';
-export type { DateSegmentModel, DateSegmentType } from './segments';
+export type { DateSegmentModel, DateSegmentType, DraftStatus } from './segments';

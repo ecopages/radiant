@@ -73,8 +73,8 @@ The helper uses random UUIDs in secure contexts and random bytes on HTTP origins
 
 `rui-meter` keeps a native `<meter>` for range semantics and renders its visual track and fill from the derived percent. This avoids browser-specific meter pseudo-elements.
 `rui-sidebar-trigger` mirrors its controlled sidebar's state, mobile mode, and collapse mode onto the trigger host through one `MutationObserver`. Placement CSS reads those local attributes and the reflected `placement` attribute so nested providers do not affect one another. Until a trigger attaches (no `data-sidebar-mobile`), desktop CSS falls back to the provider's primary sidebar SSR attributes.
-`rui-date-input` keeps typed digits in the visible segment draft until the unit completes, focus moves, or the control blurs. `value` and the hidden input stay on the last committed ISO date during that draft. A delayed selection collapse must not pull focus back from a later segment. See [`date-input/README.md`](./date-input/README.md).
-Focused `rui-date-input` segments use the focus-ring color with on-primary text to keep the selected segment legible.
+`rui-date-input` keeps typed digits in the visible segment draft until the unit completes, focus moves, or the control blurs. `value` and the hidden input stay on the last committed ISO date during that draft; only a `value` or `locale` change replaces it. A delayed selection collapse must not pull focus back from a later segment. See [`date-input/README.md`](./date-input/README.md).
+Focused `rui-date-input` segments use `--focus-ring` with `--on-focus-ring` text to keep the selected segment legible.
 Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value. Knob waits until range props in the same turn have landed before snapping, so a fractional value is not rounded against the default step.
 
 ## Two host shapes (bindings vs imperative paint)
