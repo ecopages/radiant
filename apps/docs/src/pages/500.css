@@ -1,28 +1,32 @@
+.docs-layout__content:has(.error500) {
+	@apply flex flex-col;
+}
+
+.docs-layout__content:has(.error500) > .prose {
+	@apply flex w-full flex-1 flex-col;
+}
+
 .error500 {
-	@apply min-h-[calc(100vh-64px)] flex items-center justify-center p-8;
+	@apply m-auto flex w-full min-h-0 min-w-0 flex-col text-left;
+	max-height: 50vh;
 
-	&__content {
-		@apply max-w-xl w-full text-center;
+	&__header {
+		@apply mb-3 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2;
 	}
 
-	&__code {
-		@apply font-bold font-heading mb-4 select-none tracking-tighter text-on-background/30 text-8xl;
-		line-height: 0.85;
-	}
-
-	&__title {
-		@apply text-2xl md:text-3xl font-bold font-heading text-on-background mb-3 tracking-tight;
-	}
-
-	&__message {
-		@apply text-base md:text-lg text-on-background/60 mb-8 leading-relaxed font-sans max-w-prose mx-auto;
-	}
-
-	&__stack {
-		@apply text-left text-xs md:text-sm font-mono text-on-background/70 bg-on-background/5 border border-on-background/10 rounded-md p-4 mb-8 overflow-x-auto whitespace-pre-wrap max-h-80;
+	&__heading {
+		@apply min-w-0 flex-1;
 	}
 
 	&__actions {
-		@apply flex justify-center;
+		@apply ml-auto flex shrink-0 items-center gap-2;
 	}
+
+	&__detail {
+		@apply m-0 min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background-accent/30 p-3 text-left font-mono text-xs leading-5 text-on-background/80;
+	}
+}
+
+.docs-layout__content:has(.error500) .docs-layout__pagination {
+	@apply hidden;
 }
