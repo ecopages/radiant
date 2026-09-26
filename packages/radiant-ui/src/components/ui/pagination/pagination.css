@@ -13,6 +13,10 @@ rui-pagination {
 		@apply flex shrink-0 items-center;
 	}
 
+	.rui-pagination__list > li.rui-pagination__status {
+		@apply hidden;
+	}
+
 	.rui-pagination__link {
 		@apply gap-1;
 	}
@@ -21,8 +25,10 @@ rui-pagination {
 		@apply inline-flex min-h-8 min-w-6 items-center justify-center text-sm text-on-surface;
 	}
 
-	.rui-pagination__status {
-		@apply hidden;
+	.rui-pagination__status-label {
+		@apply text-sm text-on-surface opacity-muted;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
 	}
 
 	.rui-pagination__link .rui-icon {
@@ -47,14 +53,23 @@ rui-pagination {
 			display: none;
 		}
 
-		.rui-pagination__status {
-			display: flex;
-			align-items: center;
+		.rui-pagination__list > li.rui-pagination__status {
+			@apply flex;
 			min-height: var(--size-control-sm);
 			padding-inline: var(--space-control-x);
-			white-space: nowrap;
-			font-variant-numeric: tabular-nums;
-			@apply text-sm text-on-surface;
+			margin-inline: var(--space-1);
 		}
+	}
+
+	.rui-pagination--compact .rui-pagination__page,
+	.rui-pagination--compact .rui-pagination__ellipsis {
+		display: none;
+	}
+
+	.rui-pagination--compact .rui-pagination__list > li.rui-pagination__status {
+		@apply flex;
+		min-height: var(--size-control-sm);
+		padding-inline: var(--space-control-x);
+		margin-inline: var(--space-1);
 	}
 }

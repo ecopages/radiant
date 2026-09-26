@@ -80,6 +80,7 @@ import '@ecopages/radiant-ui/sidebar';
 ```
 
 `rui-sidebar-trigger` stamps `[data-ref="button"]` and syncs `aria-expanded` / `aria-controls` against the sidebar.
+Each trigger also reflects its controlled sidebar's state, mobile mode, and collapse mode on the trigger host. Placement styles use those local attributes, including when providers are nested.
 
 ## Collapsible modes
 
@@ -167,9 +168,11 @@ Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-
 | --- | --- | --- | --- |
 | `controls` | `string` | `''` | `aria-controls` target (sidebar id). |
 | `button-label` | `string` | `Toggle sidebar` | Accessible trigger name. |
-| `placement` | `''` · `side` · … | `''` | Trigger placement. |
+| `placement` | `''` · `header` · `inset` | `''` | Trigger placement. |
 | `variant` | `ghost` · … | `ghost` | Button tone (reuses `RuiButton` variants). |
 | `size` | `sm` · `md` · `lg` | `md` | Button size. |
+
+The host writes `data-sidebar-placement`, `data-sidebar-state`, `data-sidebar-mobile`, and `data-sidebar-collapsible` on `<rui-sidebar-trigger>`.
 
 ### Events
 

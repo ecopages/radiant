@@ -18,7 +18,7 @@ type RuiMeterBindings = {
 /**
  * `<rui-meter>` — graphical display of a numeric value within a range.
  *
- * Derived Tree: the host `render()` owns the label, native `<meter>`, and percent
+ * Derived Tree: the host `render()` owns the label, native `<meter>`, visual track, and percent
  * readout. Pass `value`, `min`, `max`, and `label` as attributes or props; there
  * is no authored light-DOM child contract.
  *
@@ -30,14 +30,23 @@ type RuiMeterBindings = {
  * @attr {string} label - Text describing what is measured (accessible name). Default: `''`.
  *
  * @remarks
- * The bar is the native `<meter>` (`role="meter"` with `aria-valuenow/min/max`);
+ * The visually hidden native `<meter>` retains range semantics. The track and fill
+ * are presentational and follow the derived percent;
  * the numeric readout beside it is `aria-hidden`. Percent is derived reactively
  * from `value` / `min` / `max`.
  *
  * @cssclass rui-meter - Root row (label, bar, value).
  * @cssclass rui-meter__label - Text describing the measurement.
- * @cssclass rui-meter__bar - The native `<meter>`.
+ * @cssclass rui-meter__bar - The visually hidden native `<meter>`.
+ * @cssclass rui-meter__track - Presentational track.
+ * @cssclass rui-meter__fill - Presentational fill.
  * @cssclass rui-meter__value - Numeric readout (`aria-hidden`).
+ *
+ * @cssprop --rui-meter-track-color - Bar track background. Default: `--rui-track-color` / `--rui-track-fill`.
+ * @cssprop --rui-meter-fill-color - Filled portion. Default: `--primary`.
+ * @cssprop --rui-meter-radius - Track and fill corner radius. Default: `--radius-control`.
+ * @cssprop --rui-meter-height - Bar block size. Default: `0.75rem`.
+ * @cssprop --rui-meter-width - Bar inline size. Default: `12rem`.
  */
 @customElement('rui-meter')
 export class RuiMeter extends RadiantElement<RuiMeterBindings> {
@@ -49,6 +58,9 @@ export class RuiMeter extends RadiantElement<RuiMeterBindings> {
 	@state percent = 0;
 
 	private readonly resolvedAriaLabel = this.$.label.map((label) => label || undefined);
+	private readonly trackStyle = this.$.percent.map((percent) => ({
+		'--rui-meter-percent': `${Math.min(100, Math.max(0, percent))}%`,
+	}));
 
 	@onUpdated(['value', 'min', 'max'])
 	onRangeUpdated(): void {
@@ -68,6 +80,9 @@ export class RuiMeter extends RadiantElement<RuiMeterBindings> {
 				>
 					{this.$.percent}%
 				</meter>
+				<div class="rui-meter__track" style={this.trackStyle} aria-hidden="true">
+					<div class="rui-meter__fill" />
+				</div>
 				<span class="rui-meter__value" aria-hidden="true">
 					{this.$.percent}%
 				</span>

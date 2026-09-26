@@ -269,3 +269,27 @@ describe('RuiDateInput segment editing', () => {
 		cleanup();
 	});
 });
+
+describe('RuiDateInput styles', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('keeps focused segment text legible against its focus fill', async () => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-09-25" locale="en-US" />);
+		await customElements.whenDefined('rui-date-input');
+		await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+		const host = container.querySelector('rui-date-input') as HTMLElement;
+		const focusedSegment = host.querySelector('[data-date-segment]') as HTMLElement;
+		host.style.setProperty('--focus-ring', 'rgb(1, 2, 3)');
+		host.style.setProperty('--on-primary', 'rgb(4, 5, 6)');
+		focusedSegment.setAttribute('data-focused', 'true');
+		const styles = getComputedStyle(focusedSegment);
+		expect(styles.backgroundColor).toBe('rgb(1, 2, 3)');
+		expect(styles.color).toBe('rgb(4, 5, 6)');
+		expect(styles.webkitTextFillColor).toBe('rgb(4, 5, 6)');
+		expect(styles.opacity).toBe('1');
+		cleanup();
+	});
+});

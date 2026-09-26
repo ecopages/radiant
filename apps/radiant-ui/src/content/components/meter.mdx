@@ -46,7 +46,16 @@ The percent readout is derived from `value` / `min` / `max` and shown next to th
 
 ## Theming
 
-Meters use the **surface / text roles** from the active theme (`--on-surface` for the value readout) and the native `<meter>`'s own appearance for the bar. No status role is applied; the meter is a neutral scalar display, not a status indicator.
+Meters use **primary** for the filled bar, **track** tokens for the unfilled track (`--rui-track-fill`, overridable with `--rui-track-color` on an ancestor), and **`--radius-control`** for corner rounding so the bar follows the active radius pack (default, soft, or sharp). The value readout uses `--on-surface`. No status role is applied; the meter is a neutral scalar display, not a status indicator.
+
+Override bar chrome on the host:
+
+```css
+rui-meter {
+	--rui-meter-fill-color: var(--primary);
+	--rui-meter-radius: var(--radius-control);
+}
+```
 
 ```tsx
 <RuiMeter value={72} min={0} max={100} label="Storage used" />
@@ -79,11 +88,26 @@ Public BEM classes on the composed light-DOM surface (documented via `@cssclass`
 | --- | --- |
 | `.rui-meter` | Root row (label, bar, value). |
 | `.rui-meter__label` | Text describing the measurement. |
-| `.rui-meter__bar` | The native `<meter>`. |
+| `.rui-meter__bar` | The visually hidden native `<meter>`. |
+| `.rui-meter__track` | Presentational track. |
+| `.rui-meter__fill` | Presentational filled portion. |
 | `.rui-meter__value` | Numeric readout (`aria-hidden`). |
+
+### CSS custom properties
+
+| Property | Default | Description |
+| --- | --- | --- |
+| `--rui-meter-track-color` | `--rui-track-color` / `--rui-track-fill` | Unfilled track. |
+| `--rui-meter-fill-color` | `--primary` | Filled portion. |
+| `--rui-meter-radius` | `--radius-control` | Track and fill corner radius. |
+| `--rui-meter-height` | `0.75rem` | Bar block size. |
+| `--rui-meter-width` | `12rem` | Bar inline size. |
 
 ### Theme roles
 
 | Role | CSS variables consumed |
 | --- | --- |
+| primary | `--primary` (bar fill) |
+| track | `--rui-track-fill` (bar track) |
+| control radius | `--radius-control` (bar shape) |
 | surface text | `--on-surface` (value readout) |
