@@ -78,10 +78,6 @@ rui-sidebar {
 		rui-sidebar .rui-sidebar > .rui-sidebar__pane {
 			@apply h-full;
 		}
-
-		rui-sidebar-trigger {
-			@apply hidden;
-		}
 	}
 
 	@media (min-width: 1280px) {
@@ -397,75 +393,23 @@ rui-sidebar {
 /* Alternate header (collapse) vs inset (open) triggers                       */
 /* -------------------------------------------------------------------------- */
 
-/*
- * Primary sidebar is either a direct provider child (`default`/`full`) or the
- * first `rui-sidebar` under `__body` (`docs`). Do not match nested sidebars.
- */
-.rui-sidebar-provider:has(> rui-sidebar[data-collapsible='off']:not([data-mobile='true'])),
-.rui-sidebar-provider:has(
-	> .rui-sidebar-provider__body > rui-sidebar[data-collapsible='off']:not([data-mobile='true'])
-) {
-	@media (min-width: 768px) {
-		rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
-		rui-sidebar-trigger[data-placement='header'],
-		rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
-		rui-sidebar-trigger[data-placement='inset'] {
-			@apply hidden;
-		}
-	}
+rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='expanded'][data-sidebar-placement='inset'],
+rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='collapsed'][data-sidebar-placement='header'] {
+	@apply hidden;
 }
 
-.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true'])),
-.rui-sidebar-provider:has(
-	> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded']:not([data-mobile='true'])
-) {
-	@media (min-width: 768px) {
-		rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
-		rui-sidebar-trigger[data-placement='inset'] {
-			@apply hidden;
-		}
-	}
-}
-
-.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true'])),
-.rui-sidebar-provider:has(
-	> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed']:not([data-mobile='true'])
-) {
-	@media (min-width: 768px) {
-		rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
-		rui-sidebar-trigger[data-placement='header'] {
-			@apply hidden;
-		}
-	}
-}
-
-.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded'][data-mobile='true']),
-.rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded'][data-mobile='true']) {
-	rui-sidebar-trigger.rui-sidebar-trigger-placement--inset,
-	rui-sidebar-trigger[data-placement='inset'] {
-		@apply hidden;
-	}
-}
-
-.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed'][data-mobile='true']),
-.rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed'][data-mobile='true']) {
-	rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
-	rui-sidebar-trigger[data-placement='header'] {
+@media (min-width: 768px) {
+	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-collapsible='off'][data-sidebar-placement],
+	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='expanded'][data-sidebar-placement='inset'],
+	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='collapsed'][data-sidebar-placement='header'] {
 		@apply hidden;
 	}
 }
 
 @media (max-width: 767px) {
-	/*
-	 * SSR and the pre-upgrade paint have no `data-mobile`. Assume the drawer is
-	 * closed so the inset (open) trigger is visible and the header (close) one is not.
-	 */
-	.rui-sidebar-provider:has(> rui-sidebar:not([data-mobile='true'])),
-	.rui-sidebar-provider:has(> .rui-sidebar-provider__body > rui-sidebar:not([data-mobile='true'])) {
-		rui-sidebar-trigger.rui-sidebar-trigger-placement--header,
-		rui-sidebar-trigger[data-placement='header'] {
-			@apply hidden;
-		}
+	/* SSR has no mobile state yet. Start with the drawer closed. */
+	rui-sidebar-trigger:not([data-sidebar-mobile='true'])[data-sidebar-placement='header'] {
+		@apply hidden;
 	}
 }
 

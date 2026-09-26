@@ -51,6 +51,7 @@ export const meta = {
 						collapsible={args.collapsible}
 						side={args.side}
 						defaultOpen={args.defaultOpen}
+						mobileDefaultOpen={args.defaultOpen}
 						resizable={args.resizable}
 						defaultWidth={args.defaultWidth}
 						mobileBreakpoint={768}

@@ -851,19 +851,28 @@ describe('RuiSidebarTrigger', () => {
 		const headerTrigger = host.querySelector(
 			'.rui-sidebar__header rui-sidebar-trigger button',
 		) as HTMLButtonElement;
+		const headerHost = headerTrigger.closest('rui-sidebar-trigger') as HTMLElement;
+		const insetHost = host.querySelector('.rui-sidebar__inset rui-sidebar-trigger') as HTMLElement;
 
 		expect(headerTrigger.getAttribute('aria-controls')).toBe('primary-sidebar');
 		expect(headerTrigger.getAttribute('aria-label')).toBe('Collapse sidebar');
+		expect(headerHost.getAttribute('data-sidebar-placement')).toBe('header');
+		expect(headerHost.getAttribute('data-sidebar-state')).toBe('expanded');
+		expect(headerHost.getAttribute('data-sidebar-mobile')).toBe('false');
+		expect(insetHost.getAttribute('data-sidebar-state')).toBe('expanded');
 
 		await userEvent.click(headerTrigger);
 		await settled();
 		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
 		expect(headerTrigger.getAttribute('aria-expanded')).toBe('false');
+		expect(headerHost.getAttribute('data-sidebar-state')).toBe('collapsed');
+		expect(insetHost.getAttribute('data-sidebar-state')).toBe('collapsed');
 
 		const expandTrigger = host.querySelector('.rui-sidebar__inset rui-sidebar-trigger button') as HTMLButtonElement;
 		await userEvent.click(expandTrigger);
 		await settled();
 		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+		expect(insetHost.getAttribute('data-sidebar-state')).toBe('expanded');
 
 		cleanup();
 	});

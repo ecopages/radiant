@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
-import { expect } from 'storybook/test';
+import { expect, waitFor } from 'storybook/test';
 import { RuiMeter } from './meter';
 import { RuiMeter as RuiMeterElement } from './meter.script';
 
@@ -19,6 +19,21 @@ export const Default: Story = {
 			const meter = canvasElement.querySelector('meter') as HTMLMeterElement;
 			await expect(meter).toBeInTheDocument();
 			await expect(meter.value).toBe(72);
+			const track = canvasElement.querySelector('.rui-meter__track') as HTMLElement;
+			const fill = canvasElement.querySelector('.rui-meter__fill') as HTMLElement;
+			await expect(track.getAttribute('aria-hidden')).toBe('true');
+			await waitFor(() => expect(track.style.getPropertyValue('--rui-meter-percent')).toBe('72%'));
+			await expect(Math.round(fill.getBoundingClientRect().width)).toBe(
+				Math.round(track.getBoundingClientRect().width * 0.72),
+			);
+		});
+		await step('updates the visual fill with the native value', async () => {
+			const host = canvasElement.querySelector('rui-meter') as RuiMeterElement;
+			const meter = host.querySelector('meter') as HTMLMeterElement;
+			const track = host.querySelector('.rui-meter__track') as HTMLElement;
+			host.value = 25;
+			await waitFor(() => expect(meter.value).toBe(25));
+			await waitFor(() => expect(track.style.getPropertyValue('--rui-meter-percent')).toBe('25%'));
 		});
 	},
 };
