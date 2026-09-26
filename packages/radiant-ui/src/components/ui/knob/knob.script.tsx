@@ -152,6 +152,11 @@ export class RuiKnob extends FormAssociatedElement {
 		return this.name ? String(this.numericRange.clamp(this.value)) : null;
 	}
 
+	/** @remarks The reset value must survive a name assigned after first connect. */
+	protected override formState(): FormValue {
+		return String(this.value);
+	}
+
 	protected override restoreFormState(state: FormValue): void {
 		this.value = Number(state);
 		this.syncPresentation();

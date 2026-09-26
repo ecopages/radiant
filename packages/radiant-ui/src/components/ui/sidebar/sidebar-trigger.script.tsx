@@ -58,7 +58,9 @@ export function initialSidebarStateForPlacement(
  * `rui-button--{variant}` and `rui-button--{size}` modifiers when `variant` or
  * `size` change.
  *
- * Nested hosts: none. Resolves `rui-sidebar` by `controls` id or `closest()`.
+ * Nested hosts: none. Resolves `rui-sidebar` by `controls` id, or by `closest()`
+ * when `controls` is absent. An unresolved explicit id never falls back to an
+ * ancestor sidebar.
  *
  * @element rui-sidebar-trigger
  * @attr {string} controls - ID of the `rui-sidebar` this trigger controls.
@@ -136,9 +138,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 		const id = this.controls?.trim();
 		if (id) {
 			const byId = document.getElementById(id);
-			if (byId) {
-				return byId as HTMLElement & { toggle?: () => void };
-			}
+			return byId?.localName === 'rui-sidebar' ? (byId as HTMLElement & { toggle?: () => void }) : null;
 		}
 		const host = this.closest('rui-sidebar');
 		if (host?.id) {
@@ -165,6 +165,8 @@ export class RuiSidebarTrigger extends RadiantElement {
 		const controls = sidebar?.id || this.controls;
 		if (controls) {
 			this.buttonTarget?.setAttribute('aria-controls', controls);
+		} else {
+			this.buttonTarget?.removeAttribute('aria-controls');
 		}
 		this.applyState();
 	}

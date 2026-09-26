@@ -114,7 +114,7 @@ export class TokenSelect extends RadiantElement {
 
 - `fromAttribute` runs when the HTML attribute is present, including first connect.
 - `fromProperty` runs on JS and JSX assignment, including values set before upgrade.
-- `toAttribute` returning `null` or `''` **omits** the reflected attribute. That is how an empty selection stays off the host tag.
+- `toAttribute` returning `null` or `''` **omits** the reflected attribute. That is how an empty selection stays off the host tag. Reflection does not write the resulting attribute removal back into the property: `element.value = []` remains `[]`.
 
 Without `transform`, `element.value = ['a', 'b']` still works as a JS property write; reflection would stringify JSON, not CSV.
 

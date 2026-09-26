@@ -303,6 +303,11 @@ export class RuiDateInput extends FormAssociatedElement {
 		return this.name ? this.isoValue : null;
 	}
 
+	/** @remarks The reset value must survive a name assigned after first connect. */
+	protected override formState(): FormValue {
+		return this.value;
+	}
+
 	protected override restoreFormState(state: FormValue): void {
 		this.value = typeof state === 'string' ? state : '';
 		this.syncSegmentsFromValue();
