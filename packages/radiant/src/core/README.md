@@ -59,6 +59,8 @@ Client rendering works like this:
 
 Writes in the same turn share one update cycle. `@onUpdated` runs once for the members it watches, a pending render commits, then `updated(changed)` runs. `await updateComplete` waits for that cycle, including the first connect render.
 
+Automatic updates run for connected browser DOM hosts, including browser-like DOMs in Node. Radiant's minimal SSR DOM skips automatic flushes; server rendering drains pending `@onUpdated` callbacks during host preparation.
+
 `render()` describes the view. `update()` runs the cycle that commits it into the host.
 
 ## SSR Flow
