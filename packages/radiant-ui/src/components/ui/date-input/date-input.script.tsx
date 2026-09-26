@@ -88,8 +88,8 @@ function isIosDevice(): boolean {
  * committed ISO date until a unit completes, focus moves, or the control blurs.
  * An in-progress digit buffer is not published just because the draft parses as
  * a date. Only a `value` or `locale` change rebuilds the draft; other props keep it.
- * A delayed selection collapse runs only while that segment is still
- * `document.activeElement`.
+ * After a cycle that moves `focusedPart` or rebuilds `segments`, `updated()` moves
+ * focus and the caret to `focusedPart` while focus is still inside the control.
  */
 @customElement('rui-date-input')
 export class RuiDateInput extends RadiantElement {
@@ -125,6 +125,12 @@ export class RuiDateInput extends RadiantElement {
 	/** Digits typed into `focusedPart` that have not completed the unit yet. */
 	private buffer = '';
 	private useTextboxRole = isIosDevice();
+	/**
+	 * Part `updated()` still has to move DOM focus to.
+	 *
+	 * @remarks The render commit can restore focus to the old segment first; that
+	 * `focusin` is ignored so it does not take editing back.
+	 */
 	private pendingFocus: DatePartType | null = null;
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -142,8 +148,8 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	/**
-	 * @remarks Segment `@state` is filled in `onConnected` / `@onUpdated`, which run
-	 * after the first client render and not during SSR. Derive from `value` until synced.
+	 * @remarks SSR preparation and the connect-time `@onUpdated` both fill `segments`
+	 * before the first render; this derives from `value` only for a render before either.
 	 */
 	private get displaySegments(): DateSegmentModel[] {
 		if (this.segments.length > 0) {
@@ -162,18 +168,20 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	/**
-	 * Moves editing to `part` and commits the draft the previous part left behind.
+	 * Moves editing to `part` and commits the draft once, as `trigger`.
 	 *
-	 * @remarks Nothing commits when no part was focused, so first focus never publishes.
+	 * @remarks A `leave` commits nothing when no part was focused, so first focus never
+	 * publishes. A `blur` always commits: an edge arrow or a completed last unit clears
+	 * `focusedPart` while focus stays inside, and that draft still gets the Blur column.
 	 */
-	private setFocusedPart(part: DatePartType | null): void {
+	private setFocusedPart(part: DatePartType | null, trigger: CommitTrigger = 'leave'): void {
 		const previous = this.focusedPart;
-		if (part === previous) {
+		if (part === previous && trigger === 'leave') {
 			return;
 		}
 		this.buffer = '';
-		if (previous != null) {
-			this.commit('leave');
+		if (previous != null || trigger === 'blur') {
+			this.commit(trigger);
 		}
 		this.focusedPart = part;
 	}
@@ -181,37 +189,31 @@ export class RuiDateInput extends RadiantElement {
 	private focusPart(type: DatePartType | null): void {
 		this.setFocusedPart(type);
 		this.pendingFocus = type;
-		if (!type) {
-			return;
-		}
-		this.scheduleFocusedSegmentSync(type);
 	}
 
 	/**
-	 * Restores focus and caret after a render only when this part should still own them.
+	 * Moves focus and the caret to `focusedPart` after a cycle that changed it or rebuilt `segments`.
 	 *
-	 * @remarks A queued `selection.collapse()` on a segment that is no longer
-	 * `focusedPart` would pull focus back (day ↔ year). Ignore `focusin` on the
-	 * previous segment until this microtask has moved focus.
+	 * @remarks Skipped once focus has left the control, so a rebuild in the turn focus
+	 * moved elsewhere (before the blur commit clears `focusedPart`) cannot pull it back.
 	 */
-	private scheduleFocusedSegmentSync(type: DatePartType): void {
-		queueMicrotask(() => {
-			if (this.pendingFocus === type) {
-				this.pendingFocus = null;
-			}
-			const segment = this.getSegmentElement(type);
-			if (!segment || this.focusedPart !== type) {
-				return;
-			}
-
-			if (document.activeElement !== segment) {
-				segment.focus();
-			}
-
-			if (document.activeElement === segment) {
-				window.getSelection()?.collapse(segment, 0);
-			}
-		});
+	protected override updated(changed: ReadonlySet<string>): void {
+		super.updated(changed);
+		this.pendingFocus = null;
+		const part = this.focusedPart;
+		if (!part || !(changed.has('focusedPart') || changed.has('segments')) || !this.matches(':focus-within')) {
+			return;
+		}
+		const segment = this.getSegmentElement(part);
+		if (!segment) {
+			return;
+		}
+		if (document.activeElement !== segment) {
+			segment.focus();
+		}
+		if (document.activeElement === segment) {
+			window.getSelection()?.collapse(segment, 0);
+		}
 	}
 
 	/**
@@ -247,8 +249,9 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	/**
-	 * @remarks Writing `value` resyncs `segments` through its `@onUpdated`. An unchanged
-	 * value still resyncs so the display normalizes (`1` becomes `01`).
+	 * @remarks A changed `value` rebuilds `segments` through its `@onUpdated` in the next
+	 * update cycle, so `segments` still holds the draft until then. An unchanged value
+	 * rebuilds now so the display normalizes (`1` becomes `01`).
 	 */
 	private publish(iso: string): void {
 		if (iso === this.isoValue) {
@@ -271,17 +274,17 @@ export class RuiDateInput extends RadiantElement {
 		return null;
 	}
 
+	/** @remarks A completed unit commits once, as the `leave` of the focus move it triggers. */
 	private handleDigit(part: DatePartType, key: string): void {
 		this.setFocusedPart(part);
 		const result = applyDigitToSegment(this.segments, part, key, this.buffer);
 		this.segments = result.segments;
 		this.buffer = result.enteredKeys;
-		this.commit('edit');
 		if (result.focusNext) {
 			this.focusPart(focusPartAfter(this.segments, part, 1));
 			return;
 		}
-		this.scheduleFocusedSegmentSync(part);
+		this.commit('edit');
 	}
 
 	private handleBackspace(part: DatePartType): void {
@@ -295,7 +298,6 @@ export class RuiDateInput extends RadiantElement {
 		this.segments = result.segments;
 		this.buffer = result.enteredKeys;
 		this.commit('edit');
-		this.scheduleFocusedSegmentSync(part);
 	}
 
 	private handleIncrement(part: DatePartType, delta: number): void {
@@ -303,7 +305,6 @@ export class RuiDateInput extends RadiantElement {
 		this.buffer = '';
 		this.segments = incrementSegmentValue(this.segments, part, delta);
 		this.commit('edit');
-		this.scheduleFocusedSegmentSync(part);
 	}
 
 	protected override onConnected(): void {
@@ -366,7 +367,6 @@ export class RuiDateInput extends RadiantElement {
 			return;
 		}
 		this.setFocusedPart(part);
-		this.scheduleFocusedSegmentSync(part);
 	}
 
 	@onEvent({ selector: '[data-date-segment]', type: 'focusout' })
@@ -375,8 +375,7 @@ export class RuiDateInput extends RadiantElement {
 			if (this.matches(':focus-within')) {
 				return;
 			}
-			this.setFocusedPart(null);
-			this.commit('blur');
+			this.setFocusedPart(null, 'blur');
 		});
 	}
 
