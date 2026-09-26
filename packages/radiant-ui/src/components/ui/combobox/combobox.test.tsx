@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { RuiCombobox } from './combobox';
 import type { RuiCombobox as RuiComboboxElement } from './combobox.script';
@@ -65,6 +66,37 @@ describe('RuiCombobox', () => {
 
 		expect(popup.hidden).toBe(false);
 		expect(combobox.value).toEqual(['de', 'it']);
+		cleanup();
+	});
+
+	it('opens on the next Tab after selecting closes the listbox with the input focused', async () => {
+		const { host, cleanup } = mount(
+			<>
+				<button type="button">Before</button>
+				<RuiCombobox triggerKind="focus" options={OPTIONS} placeholder="Country" />
+			</>,
+		);
+		await settled();
+
+		const before = host.querySelector('button') as HTMLButtonElement;
+		const input = host.querySelector('[data-combobox-input]') as HTMLInputElement;
+		const popup = host.querySelector('[data-combobox-listbox]') as HTMLElement;
+		const options = Array.from(host.querySelectorAll('[data-combobox-listbox] [role="option"]')) as HTMLElement[];
+
+		await userEvent.click(input);
+		await settled();
+		expect(popup.hidden).toBe(false);
+
+		await userEvent.click(options[0]);
+		await settled();
+		expect(popup.hidden).toBe(true);
+		expect(document.activeElement).toBe(input);
+
+		before.focus();
+		await userEvent.tab();
+		await settled();
+		expect(document.activeElement).toBe(input);
+		expect(popup.hidden).toBe(false);
 		cleanup();
 	});
 });

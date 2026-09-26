@@ -108,7 +108,6 @@ export class RuiCombobox extends RadiantElement {
 	changeEvent: EventEmitter<RuiComboboxChangeDetail>;
 
 	private open = false;
-	private skipNextFocusOpen = false;
 	private readonly uid = uniqueId('rui-combobox');
 	private readonly collection = new ListboxHostController({
 		getRoot: () => this,
@@ -341,7 +340,6 @@ export class RuiCombobox extends RadiantElement {
 		this.collection.syncOptionSelection();
 		this.changeEvent.emit({ value: this.value });
 		if (this.closesOnSelect()) {
-			this.skipNextFocusOpen = true;
 			this.setOpen(false);
 		}
 		this.syncFilter();
@@ -415,18 +413,18 @@ export class RuiCombobox extends RadiantElement {
 		this.collection.syncTagGroup();
 	}
 
+	/**
+	 * @remarks With `trigger-kind="focus"`, only focus arriving from outside the host
+	 * opens the listbox. Focus the host moves back itself (option select, clear,
+	 * trigger, tag remove) comes from a descendant and never reopens it.
+	 */
 	@onEvent({ ref: 'root', type: 'focusin' })
 	onRootFocusIn(event: FocusEvent): void {
-		if (!this.isComboboxInput(event.target)) {
+		if (this.triggerKind !== 'focus' || !this.isComboboxInput(event.target)) {
 			return;
 		}
 
-		if (this.skipNextFocusOpen) {
-			this.skipNextFocusOpen = false;
-			return;
-		}
-
-		if (this.triggerKind !== 'focus') {
+		if (event.relatedTarget instanceof Node && this.contains(event.relatedTarget)) {
 			return;
 		}
 
@@ -535,7 +533,6 @@ export class RuiCombobox extends RadiantElement {
 		}
 
 		if (this.open) {
-			this.skipNextFocusOpen = true;
 			this.setOpen(false);
 		} else {
 			this.syncFilter();
