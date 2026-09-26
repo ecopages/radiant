@@ -1,3 +1,4 @@
+import '@ecopages/radiant-ui/radio-group';
 import { attr, bindTo, controller, onEvent, query, RadiantController, state } from '@/utils/radiant-browser-runtime';
 import { ensureDocsControllersStarted } from '@/utils/start-docs-controllers';
 
