@@ -1,3 +1,4 @@
+import { isServer } from '@ecopages/radiant/is-server';
 import type { EventEmitter } from '../tools';
 import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { HostSsrRegistry } from './host-ssr-registry';
@@ -260,12 +261,20 @@ export class RadiantElement<Bindings extends object = {}>
 	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
 
+	/**
+	 * @remarks SSR never auto-flushes. The light-DOM shim can report `isConnected`
+	 * while still lacking browser methods; {@link prepareForSsr} drains `@onUpdated`.
+	 */
+	private canFlushUpdateCycle(): boolean {
+		return !isServer && this.isConnected && !this.isFirstConnectPending;
+	}
+
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
 		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
 		this.updateCycle = new UpdateCycle({
-			canFlush: () => this.isConnected && !this.isFirstConnectPending,
+			canFlush: () => this.canFlushUpdateCycle(),
 			runCallbacks: (changed) => this.reactiveHost.runUpdatedCallbacks(changed),
 			commit: () => this.getOrCreateRenderRuntime().render(this),
 			updated: (changed) => this.updated(changed),
