@@ -21,6 +21,7 @@ export type RadiantElementSsrHostSource = {
 	getSlotProjectionScriptTag(): string | undefined;
 	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
 	flushPostSyncCallbacks(): void;
+	prepareForSsr(): void;
 };
 
 export type BrandedRadiantElementSsrHost = RadiantElementSsrHostSource & {

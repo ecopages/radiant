@@ -28,12 +28,12 @@ Application code does not need to import JSX helpers or Signals primitives direc
 
 - `render()` returns the current JSX view.
 - First connect automatically chooses between hydration and a fresh client render.
-- `update()` reruns `render()` and commits the current view into the host immediately.
-- `requestUpdate()` schedules one rerender in a microtask and coalesces repeated requests.
+- `update()` runs the update cycle now: batched `@onUpdated` callbacks, the render, then `updated()`.
+- `requestUpdate()` schedules that cycle in a microtask and coalesces repeated requests. `updateComplete` resolves when the cycle finishes.
 - `@prop(...)`, `@state`, and `@signal(...)` define reactive members. Pass `transform` on `@prop` to override default converters (`type: Array` is JSON unless you supply `fromAttribute` / `toAttribute`). `fromProperty` normalizes JS/JSX writes. `toAttribute` returning `null` or `''` omits the reflected attribute.
-- Reflected properties serialize the current value after synchronous update callbacks, including any normalization performed by those callbacks.
+- Reflected properties serialize the current value on each write. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes the assignment is reflected too.
 - `@bindTo(...)` copies a reactive field onto existing DOM when the host does not own a `render()` tree.
-- `@onUpdated(...)` is for procedures, and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change.
+- `@onUpdated(...)` runs once per update cycle, before the render commits, for procedures and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change. `updated()` is for work that needs the committed DOM.
 - `this.bindings.key`, `this.$.key`, and `this.bind('key')` expose stable JSX bindings for reactive members.
 - If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged. Copy fields onto that DOM with `@bindTo(...)`.
 - `onConnected()` runs after every connection, once attribute catch-up and (when `render()` is overridden) the initial hydrate/update have finished. Use it instead of `connectedCallback` + `queueMicrotask(sync)`. It is not `registerConnectedCallback()`, which runs synchronously before catch-up.

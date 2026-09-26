@@ -1,47 +1,22 @@
-type LegacyUpdatedHost = {
-	registerCleanupCallback(callback: () => void): void;
-	registerConnectedCallback(callback: () => void): void;
-	registerUpdateCallback(key: string, update: () => void): () => void;
-};
-
+import type { UpdatedCallback } from '../../core/reactive-host';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
+type LegacyUpdatedHost = {
+	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
+};
+
 /**
- * A decorator to subscribe to an updated callback when a reactive field or property changes.
- * @param eventConfig The event configuration.
+ * Legacy-decorator implementation for `@onUpdated(...)`.
+ *
+ * @param keyOrKeys - Reactive members whose changes run the method once per update cycle.
  */
 export function onUpdated(keyOrKeys: string | string[]) {
+	const keys = Array.isArray(keyOrKeys) ? keyOrKeys : [keyOrKeys];
+
 	return (target: LegacyUpdatedHost, methodName: string) => {
-		const cleanupKey = Symbol(`@ecopages/radiant/on-updated:${methodName}:cleanup`);
-
 		registerLegacyInstanceInitializer(target, (element) => {
-			element.registerConnectedCallback(() => {
-				const boundedMethod = (element as any)[methodName].bind(element);
-				const cleanups: Array<() => void> = [];
-
-				if (Array.isArray(keyOrKeys)) {
-					for (const key of keyOrKeys) {
-						cleanups.push(element.registerUpdateCallback(key, boundedMethod));
-					}
-				} else if (typeof keyOrKeys === 'string') {
-					cleanups.push(element.registerUpdateCallback(keyOrKeys, boundedMethod));
-				}
-
-				(element as unknown as Record<PropertyKey, unknown>)[cleanupKey] = () => {
-					for (const cleanup of cleanups) {
-						cleanup();
-					}
-				};
-			});
-
-			element.registerCleanupCallback(() => {
-				const cleanup = (element as unknown as Record<PropertyKey, unknown>)[cleanupKey];
-
-				if (typeof cleanup === 'function') {
-					cleanup();
-					delete (element as unknown as Record<PropertyKey, unknown>)[cleanupKey];
-				}
-			});
+			const method = (element as unknown as Record<string, UpdatedCallback>)[methodName];
+			element.registerUpdatedCallback(keys, method.bind(element));
 		});
 	};
 }

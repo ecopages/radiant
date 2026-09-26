@@ -23,4 +23,5 @@ export type InternalRadiantSsrHost = {
 	getSlotProjectionScriptTag?: () => string | undefined;
 	resolveTrackedRenderOutput: () => { containsSlots: boolean; value: JsxRenderable };
 	flushPostSyncCallbacks: () => void;
+	prepareForSsr: () => void;
 };

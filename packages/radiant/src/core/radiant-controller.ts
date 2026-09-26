@@ -3,7 +3,7 @@ import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } 
 import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { ReactiveHost, type ReactiveHostLike } from './reactive-host';
+import { ReactiveHost, type ReactiveHostLike, type UpdatedCallback } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import type {
 	ReactiveBindingOption,
@@ -14,7 +14,7 @@ import type {
 } from './reactive-prop-core';
 import { HostSsrRegistry } from './host-ssr-registry';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
-import { RenderScheduler } from './render-scheduler';
+import { UpdateCycle } from './update-cycle';
 import { defaultValueForType } from '../utils/attribute-utils';
 import { validateReactivePropertyDefault } from './reactive-prop-core';
 
@@ -42,7 +42,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
 	private connected = false;
-	private readonly renderScheduler: RenderScheduler;
+	private readonly updateCycle: UpdateCycle;
 	private isSsrLifecycle = false;
 	private readonly hostSsrRegistry = new HostSsrRegistry();
 	private renderSignal?: ReactiveComputed<JsxRenderable>;
@@ -53,19 +53,9 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	constructor(host: Element) {
 		this.host = host;
 		this.element = host;
-		this.reactiveHost = new ReactiveHost<this, Bindings>(
-			this,
-			{
-				defineProperty: (target, property, descriptor) => Object.defineProperty(target, property, descriptor),
-				hasProperty: (target, property) => property in target,
-				readProperty: (target, property) => (target as Record<string, unknown>)[property],
-			},
-			() => this.shouldAutoBindReactiveMembers(),
-		);
-		this.bindings = this.reactiveHost.bindings;
-		this.$ = this.reactiveHost.$;
-		this.renderScheduler = new RenderScheduler({
-			canFlush: () => this.connected && !this.renderScheduler.rendering,
+		this.updateCycle = new UpdateCycle({
+			canFlush: () => this.connected,
+			runCallbacks: (changed) => this.reactiveHost.runUpdatedCallbacks(changed),
 			commit: () => {
 				const renderTarget = this.getRenderTarget();
 
@@ -75,26 +65,44 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 				renderJsx(this.resolveTrackedRenderOutput(), renderTarget);
 			},
+			updated: (changed) => this.updated(changed),
 		});
+		this.reactiveHost = new ReactiveHost<this, Bindings>(
+			this,
+			{
+				defineProperty: (target, property, descriptor) => Object.defineProperty(target, property, descriptor),
+				hasProperty: (target, property) => property in target,
+				readProperty: (target, property) => (target as Record<string, unknown>)[property],
+			},
+			() => this.shouldAutoBindReactiveMembers(),
+			(propertyName) => this.updateCycle.markChanged(propertyName),
+		);
+		this.bindings = this.reactiveHost.bindings;
+		this.$ = this.reactiveHost.$;
 		ensureLegacyHostReady(this, 'construct');
 	}
 
 	/**
 	 * Connects the controller to its host and starts reactive subscriptions.
 	 *
-	 * If the controller owns a render lifecycle by overriding `render()`, the
-	 * first update runs immediately after connection.
+	 * @remarks Runs the first update cycle synchronously: batched `@onUpdated`
+	 * callbacks for changes queued before connection, the first render when the
+	 * controller overrides `render()`, `@bindTo`, then `updated(changed)`.
 	 */
 	public connect(): void {
 		ensureLegacyHostReady(this, 'connect');
 		this.connected = true;
 		this.reactiveHost.connectHost();
 
-		if (this.shouldRunRenderLifecycle()) {
-			this.update();
-		}
+		this.updateCycle.flush(() => {
+			this.updateCycle.runCallbacks();
 
-		this.reactiveHost.flushPostSyncCallbacks();
+			if (this.shouldRunRenderLifecycle()) {
+				this.update();
+			}
+
+			this.reactiveHost.flushPostSyncCallbacks();
+		});
 	}
 
 	/**
@@ -145,25 +153,41 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 			return;
 		}
 
-		this.renderScheduler.requestUpdate();
+		this.updateCycle.requestRender();
 	}
 
 	/**
-	 * Flushes the current render output into the attached host element.
+	 * Runs the update cycle now: pending `@onUpdated` callbacks, the render, then `updated()`.
 	 *
-	 * This is a no-op unless the controller overrides `render()`.
+	 * @remarks A no-op unless the controller overrides `render()`. Called from
+	 * inside a running cycle, it commits the render immediately.
 	 */
 	public update(): void {
-		if (!this.shouldRunRenderLifecycle()) {
+		if (!this.shouldRunRenderLifecycle() || !this.getRenderTarget()) {
 			return;
 		}
 
-		if (!this.getRenderTarget()) {
+		this.updateCycle.requestRender();
+
+		if (this.updateCycle.flushing) {
+			this.updateCycle.commit();
 			return;
 		}
 
-		this.renderScheduler.markPending();
-		this.renderScheduler.flush();
+		this.updateCycle.flush();
+	}
+
+	/**
+	 * Lifecycle hook invoked after each update cycle, once batched `@onUpdated`
+	 * callbacks ran and any pending render committed.
+	 *
+	 * @param changed - Reactive members that changed during the cycle.
+	 */
+	protected updated(_changed: ReadonlySet<string>): void {}
+
+	/** Resolves after the pending update cycle finishes; stays pending while disconnected with queued work. */
+	public get updateComplete(): Promise<void> {
+		return this.updateCycle.updateComplete;
 	}
 
 	/**
@@ -233,6 +257,10 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		return this.reactiveHost.registerUpdateCallback(property, update);
+	}
+
+	public registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void {
+		return this.reactiveHost.registerUpdatedCallback(keys, callback);
 	}
 
 	/**

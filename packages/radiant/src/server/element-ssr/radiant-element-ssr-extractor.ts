@@ -25,5 +25,6 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 		getSlotProjectionScriptTag: () => component.getSlotProjectionScriptTag(),
 		resolveTrackedRenderOutput: () => component.resolveTrackedRenderOutput(),
 		flushPostSyncCallbacks: () => component.flushPostSyncCallbacks(),
+		prepareForSsr: () => component.prepareForSsr(),
 	};
 }

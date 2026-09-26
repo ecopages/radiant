@@ -16,9 +16,9 @@ import {
 import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
-import { RenderScheduler } from './render-scheduler';
+import { UpdateCycle } from './update-cycle';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
-import { ReactiveHost } from './reactive-host';
+import { ReactiveHost, type UpdatedCallback } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
@@ -257,21 +257,18 @@ export class RadiantElement<Bindings extends object = {}>
 	 */
 	private elementReady = false;
 	private isFirstConnectPending = false;
-	private readonly renderScheduler: RenderScheduler;
+	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
 
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
 		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
-		this.renderScheduler = new RenderScheduler({
-			canFlush: () =>
-				this.isConnected &&
-				!this.renderScheduler.rendering &&
-				!(this.isFirstConnectPending && shouldHydrateOnConnect(this)),
-			commit: () => {
-				this.getOrCreateRenderRuntime().render(this);
-			},
+		this.updateCycle = new UpdateCycle({
+			canFlush: () => this.isConnected && !this.isFirstConnectPending,
+			runCallbacks: (changed) => this.reactiveHost.runUpdatedCallbacks(changed),
+			commit: () => this.getOrCreateRenderRuntime().render(this),
+			updated: (changed) => this.updated(changed),
 		});
 
 		this.reactiveHost = new ReactiveHost<this, Bindings>(
@@ -283,6 +280,7 @@ export class RadiantElement<Bindings extends object = {}>
 				readProperty: (target, property) => (target as Record<string, unknown>)[property],
 			},
 			() => this.shouldAutoBindReactiveMembers(),
+			(propertyName) => this.updateCycle.markChanged(propertyName),
 		);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
@@ -300,6 +298,10 @@ export class RadiantElement<Bindings extends object = {}>
 	 * until first connect. First-connect work (attribute adoption, hydrate/update)
 	 * is deferred one microtask so a subclass `connectedCallback` that runs after
 	 * `super()` has finished before any `@onUpdated` from catch-up can fire.
+	 *
+	 * The update cycle stays blocked until that microtask: it runs the batched
+	 * `@onUpdated` callbacks for everything adopted, renders or hydrates, flushes
+	 * `@bindTo`, calls `onConnected()`, and finishes with `updated(changed)`.
 	 */
 	connectedCallback() {
 		ensureLegacyHostReady(this, 'connect');
@@ -315,27 +317,37 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 
 		this.isFirstConnectPending = true;
+		const releaseConnectSync = this.updateCycle.hold();
 
 		queueMicrotask(() => {
 			this.isFirstConnectPending = false;
 
-			if (!this.isConnected) {
-				return;
+			try {
+				if (this.isConnected) {
+					this.runConnectSync(isFirstConnect);
+				}
+			} finally {
+				releaseConnectSync();
 			}
+		});
+	}
 
+	private runConnectSync(isFirstConnect: boolean): void {
+		this.updateCycle.flush(() => {
 			if (isFirstConnect) {
 				this.reactivePropertyState.completeInitialSync();
 			}
+
+			this.updateCycle.runCallbacks();
 
 			if (this.shouldRunRenderLifecycle()) {
 				const renderRuntime = this.getOrCreateRenderRuntime();
 				renderRuntime.observeSlotProjection();
 
 				if (this.needsInitialHydration(renderRuntime)) {
-					this.renderScheduler.clearPending();
 					this.hydrate();
 
-					if (this.renderScheduler.pending) {
+					if (this.updateCycle.renderPending) {
 						this.update();
 					}
 				} else if (!this.isReconnectWithLiveProjection(renderRuntime)) {
@@ -367,6 +379,28 @@ export class RadiantElement<Bindings extends object = {}>
 	 * before attribute catch-up. Override this hook for post-sync work.
 	 */
 	protected onConnected(): void {}
+
+	/**
+	 * Lifecycle hook invoked after each update cycle, once batched `@onUpdated`
+	 * callbacks ran and any pending render committed.
+	 *
+	 * @param changed - Reactive members that changed during the cycle.
+	 *
+	 * @remarks
+	 * Use it for work that needs the committed DOM: focus, selection, measuring.
+	 * The first cycle ends after `onConnected()`. State written here schedules
+	 * another cycle.
+	 */
+	protected updated(_changed: ReadonlySet<string>): void {}
+
+	/**
+	 * Resolves after the pending update cycle (and, on connect, the first render) finishes.
+	 *
+	 * @remarks Stays pending while the host is disconnected with queued work.
+	 */
+	public get updateComplete(): Promise<void> {
+		return this.updateCycle.updateComplete;
+	}
 
 	/**
 	 * @remarks A host can disconnect and reconnect while keeping the same instance (e.g. SPA
@@ -492,32 +526,42 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public hydrate(): void {
-		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.renderScheduler.rendering) {
+		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.updateCycle.rendering) {
 			return;
 		}
 
 		const renderRuntime = this.getOrCreateRenderRuntime();
-
-		this.renderScheduler.runExclusive(() => {
-			renderRuntime.hydrate(this);
-		});
+		this.updateCycle.commit(() => renderRuntime.hydrate(this));
 	}
 
+	/** Schedules one render in the next update cycle; repeated calls coalesce. */
 	public requestUpdate(): void {
 		if (!this.shouldRunRenderLifecycle()) {
 			return;
 		}
 
-		this.renderScheduler.requestUpdate();
+		this.updateCycle.requestRender();
 	}
 
+	/**
+	 * Runs the update cycle now: pending `@onUpdated` callbacks, the render, then `updated()`.
+	 *
+	 * @remarks Called from inside a running cycle (for example an `@onUpdated`
+	 * callback), it commits the render immediately and leaves the rest to that cycle.
+	 */
 	public update(): void {
 		if (!this.shouldRunRenderLifecycle()) {
 			return;
 		}
 
-		this.renderScheduler.markPending();
-		this.renderScheduler.flush();
+		this.updateCycle.requestRender();
+
+		if (this.updateCycle.flushing) {
+			this.updateCycle.commit();
+			return;
+		}
+
+		this.updateCycle.flush();
 	}
 
 	public registerReactiveProperty(config: ReactiveProperty) {
@@ -548,11 +592,16 @@ export class RadiantElement<Bindings extends object = {}>
 	 * Flushes any deferred SSR-only preparation work before the host is
 	 * serialized.
 	 *
-	 * Radiant uses this to reapply SSR consumer state after construction so the
+	 * @remarks
+	 * Hosts never connect on the server, so the batched `@onUpdated` callbacks
+	 * queued by prop writes run here, before and after the SSR preparation
+	 * callbacks (which may write state too). Then `@bindTo` flushes, so the
 	 * first server render sees finalized fields, props, and authored content.
 	 */
-	protected prepareForSsr(): void {
+	public prepareForSsr(): void {
+		this.updateCycle.runCallbacks();
 		runSsrPreparationCallbacks(this);
+		this.updateCycle.runCallbacks();
 		this.flushPostSyncCallbacks();
 	}
 
@@ -581,6 +630,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		return this.reactiveHost.registerUpdateCallback(property, update);
+	}
+
+	public registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void {
+		return this.reactiveHost.registerUpdatedCallback(keys, callback);
 	}
 
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
