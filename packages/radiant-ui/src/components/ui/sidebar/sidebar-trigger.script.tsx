@@ -1,18 +1,11 @@
-import {
-	RadiantElement,
-	bindTo,
-	customElement,
-	onEvent,
-	onUpdated,
-	prop,
-	query,
-	registerSsrPreparationCallback,
-	state,
-} from '@ecopages/radiant';
+import { RadiantElement, bindTo, customElement, onEvent, onUpdated, prop, query, state } from '@ecopages/radiant';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
 
 export const SIDEBAR_TRIGGER_DEFAULT_LABEL = 'Toggle sidebar';
+
+const TRIGGER_VARIANTS = ['filled', 'outline', 'ghost'] as const;
+const TRIGGER_SIZES = ['sm', 'md', 'lg'] as const;
 
 export type RuiSidebarTriggerProps = {
 	/** ID of the `rui-sidebar` this trigger controls. */
@@ -26,30 +19,22 @@ export type RuiSidebarTriggerProps = {
 	 */
 	placement?: RuiSidebarTriggerPlacement;
 	/** Variant passed through to the rendered button. */
-	variant?: 'filled' | 'outline' | 'ghost';
+	variant?: (typeof TRIGGER_VARIANTS)[number];
 	/** Size passed through to the rendered button. */
-	size?: 'sm' | 'md' | 'lg';
+	size?: (typeof TRIGGER_SIZES)[number];
 };
 
 export function sidebarTriggerButtonClass({
 	variant,
 	size,
-	placement,
 }: {
 	variant: NonNullable<RuiSidebarTriggerProps['variant']>;
 	size: NonNullable<RuiSidebarTriggerProps['size']>;
-	placement?: RuiSidebarTriggerPlacement | '';
 }): string {
-	const placementClass =
-		placement === 'header'
-			? 'rui-sidebar__trigger--header'
-			: placement === 'inset'
-				? 'rui-sidebar__trigger--inset'
-				: '';
-	return `rui-button rui-button--${variant} rui-button--${size} rui-sidebar__trigger ${placementClass}`.trim();
+	return `rui-button rui-button--${variant} rui-button--${size} rui-sidebar__trigger`;
 }
 
-/** @remarks Used for SSR preparation before a sibling `rui-sidebar` is resolved. */
+/** @remarks State a trigger reports while no sidebar is attached: during SSR and when `controls` resolves nothing. */
 export function initialSidebarStateForPlacement(
 	placement: RuiSidebarTriggerPlacement | '' | undefined,
 ): 'expanded' | 'collapsed' {
@@ -66,13 +51,12 @@ export function initialSidebarStateForPlacement(
  *
  * Required:
  * - `[data-ref="button"]` — toggle control. Host sets `aria-expanded`,
- *   `data-sidebar-state`, `aria-label`, and `aria-controls` (from `controls`
- *   or the resolved sidebar `id`).
+ *   `aria-label`, and `aria-controls` (from `controls` or the resolved sidebar `id`).
  *
- * Do not set `aria-expanded`, `aria-controls`, `aria-label`, or `data-sidebar-state`
- * on the button — the host owns those. Presentation classes on the button may be
- * stamped by the view; the host re-applies them when `variant`, `size`, or
- * `placement` change.
+ * Do not set `aria-expanded`, `aria-controls`, or `aria-label` on the button — the
+ * host owns those. Other button classes are author-owned; the host only swaps the
+ * `rui-button--{variant}` and `rui-button--{size}` modifiers when `variant` or
+ * `size` change.
  *
  * Nested hosts: none. Resolves `rui-sidebar` by `controls` id or `closest()`.
  *
@@ -83,31 +67,28 @@ export function initialSidebarStateForPlacement(
  *
  * @remarks
  * The host mirrors its controlled sidebar as `data-sidebar-state`,
- * `data-sidebar-mobile`, and `data-sidebar-collapsible`. The last two are absent
- * until the trigger attaches to a sidebar, which placement CSS uses to detect
- * the pre-hydration paint.
+ * `data-sidebar-mobile`, and `data-sidebar-collapsible`; placement and glyph CSS
+ * read only the host. The last two are absent until the trigger attaches to a
+ * sidebar, which placement CSS uses to detect the pre-hydration paint. While
+ * detached, `data-sidebar-state` is {@link initialSidebarStateForPlacement}.
  */
 @customElement('rui-sidebar-trigger')
 export class RuiSidebarTrigger extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) controls: string;
 	/** `label` is not a safe reactive attribute name in the DOM; bind via `button-label`. */
-	@prop({ type: String, attribute: 'button-label', defaultValue: SIDEBAR_TRIGGER_DEFAULT_LABEL }) buttonLabel: string;
+	@prop({ type: String, attribute: 'button-label', defaultValue: SIDEBAR_TRIGGER_DEFAULT_LABEL })
+	@bindTo({ ref: 'button', attr: 'aria-label', map: (label) => label?.trim() || SIDEBAR_TRIGGER_DEFAULT_LABEL })
+	buttonLabel: string;
 	@prop({ type: String, reflect: true, defaultValue: '' }) placement: RuiSidebarTriggerPlacement | '';
 	@prop({ type: String, defaultValue: 'ghost' }) variant: NonNullable<RuiSidebarTriggerProps['variant']>;
 	@prop({ type: String, defaultValue: 'md' }) size: NonNullable<RuiSidebarTriggerProps['size']>;
 
 	@query({ ref: 'button' }) buttonTarget: HTMLButtonElement;
 
-	constructor() {
-		super();
-		registerSsrPreparationCallback(this, () => this.syncPresentationForSsr());
-	}
-
 	@state
 	@bindTo([
 		{ attr: 'data-sidebar-state' },
 		{ ref: 'button', attr: 'aria-expanded', map: (state) => String(state === 'expanded') },
-		{ ref: 'button', attr: 'data-sidebar-state' },
 	])
 	sidebarState: 'expanded' | 'collapsed' = 'expanded';
 
@@ -120,48 +101,35 @@ export class RuiSidebarTrigger extends RadiantElement {
 	/** @remarks Single sync channel: covers toggles, mobile flips, and collapsible changes. */
 	private sidebarObserver: MutationObserver | null = null;
 	private attachedSidebar: HTMLElement | null = null;
-	private initialSyncFrame: number | null = null;
 
 	/**
-	 * @remarks JSX `.prop` bindings flush after connect when the trigger is nested in sidebar chrome.
-	 *
-	 * The triple sync is deliberate, not redundant:
-	 * - the synchronous call covers triggers rendered outside any sidebar;
-	 * - the nested microtasks hop past the *sidebar's* own `onConnected` sync
-	 *   (connection order does not guarantee the sidebar ran first), so state
-	 *   read here is post-sync;
-	 * - the animation frame is a final pass after layout settles (mobile media
-	 *   query flips land there).
+	 * @remarks A trigger connected before its sidebar attaches to a host whose
+	 * `data-*` is not synced yet; the observer picks up that sync.
 	 */
-	override connectedCallback(): void {
-		super.connectedCallback();
+	protected override onConnected(): void {
 		this.syncWithSidebar();
-		queueMicrotask(() => queueMicrotask(() => this.syncWithSidebar()));
-		this.initialSyncFrame = requestAnimationFrame(() => {
-			this.initialSyncFrame = null;
-			this.syncWithSidebar();
-		});
 	}
 
 	override disconnectedCallback(): void {
-		if (this.initialSyncFrame != null) {
-			cancelAnimationFrame(this.initialSyncFrame);
-			this.initialSyncFrame = null;
-		}
 		this.detachFromSidebar();
 		super.disconnectedCallback();
 	}
 
-	@onUpdated(['controls', 'buttonLabel', 'placement'])
-	onBindingUpdated(): void {
-		this.detachFromSidebar();
+	@onUpdated(['controls', 'placement'])
+	onTargetUpdated(): void {
 		this.syncWithSidebar();
-		this.applyState(this.attachedSidebar ? this.readState(this.attachedSidebar) : 'expanded');
 	}
 
 	@onUpdated(['variant', 'size'])
 	onPresentationUpdated(): void {
-		this.syncButtonPresentation();
+		const classes = this.buttonTarget?.classList;
+		if (!classes) return;
+		for (const variant of TRIGGER_VARIANTS) {
+			classes.toggle(`rui-button--${variant}`, variant === this.variant);
+		}
+		for (const size of TRIGGER_SIZES) {
+			classes.toggle(`rui-button--${size}`, size === this.size);
+		}
 	}
 
 	private resolveSidebar(): (HTMLElement & { toggle?: () => void }) | null {
@@ -181,19 +149,24 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	private syncWithSidebar(): void {
 		const sidebar = this.resolveSidebar();
-		if (sidebar === this.attachedSidebar) {
-			if (sidebar) this.applyState(this.readState(sidebar));
-			return;
+		if (sidebar !== this.attachedSidebar) {
+			this.detachFromSidebar();
+			if (sidebar) {
+				this.attachedSidebar = sidebar;
+				if (typeof MutationObserver === 'function') {
+					this.sidebarObserver = new MutationObserver(() => this.applyState());
+					this.sidebarObserver.observe(sidebar, {
+						attributes: true,
+						attributeFilter: ['data-state', 'data-mobile', 'data-collapsible'],
+					});
+				}
+			}
 		}
-		this.detachFromSidebar();
-		if (!sidebar) return;
-		this.attachedSidebar = sidebar;
-		this.sidebarObserver = new MutationObserver(() => this.applyState(this.readState(sidebar)));
-		this.sidebarObserver.observe(sidebar, {
-			attributes: true,
-			attributeFilter: ['data-state', 'data-mobile', 'data-collapsible'],
-		});
-		this.applyState(this.readState(sidebar));
+		const controls = sidebar?.id || this.controls;
+		if (controls) {
+			this.buttonTarget?.setAttribute('aria-controls', controls);
+		}
+		this.applyState();
 	}
 
 	private detachFromSidebar(): void {
@@ -202,51 +175,17 @@ export class RuiSidebarTrigger extends RadiantElement {
 		this.sidebarObserver = null;
 	}
 
-	private readState(sidebar: HTMLElement): 'expanded' | 'collapsed' {
-		return (sidebar.getAttribute('data-state') as 'expanded' | 'collapsed' | null) ?? 'expanded';
-	}
-
-	private resolvedButtonLabel(): string {
-		const fromData = this.getAttribute('data-button-label')?.trim();
-		if (fromData) return fromData;
-		const fromProp = this.buttonLabel?.trim();
-		if (fromProp) return fromProp;
-		return SIDEBAR_TRIGGER_DEFAULT_LABEL;
-	}
-
-	/**
-	 * @remarks Authored children are applied before SSR preparation. Paint host-owned
-	 * button presentation so the first HTML includes glyphs and ARIA.
-	 */
-	private syncPresentationForSsr(): void {
-		this.applyState(initialSidebarStateForPlacement(this.placement));
-	}
-
-	private applyState(state: 'expanded' | 'collapsed'): void {
-		this.sidebarState = state;
-		const attached = this.attachedSidebar;
-		this.sidebarMobile = attached ? attached.getAttribute('data-mobile') === 'true' : null;
-		this.sidebarCollapsible = attached ? (attached.getAttribute('data-collapsible') ?? 'off') : null;
-		const button = this.buttonTarget;
-		if (!button) return;
-		const sidebar = this.resolveSidebar();
-		button.setAttribute('aria-label', this.resolvedButtonLabel());
-		if (sidebar?.id) {
-			button.setAttribute('aria-controls', sidebar.id);
-		} else if (this.controls) {
-			button.setAttribute('aria-controls', this.controls);
+	private applyState(): void {
+		const sidebar = this.attachedSidebar;
+		if (!sidebar) {
+			this.sidebarState = initialSidebarStateForPlacement(this.placement);
+			this.sidebarMobile = null;
+			this.sidebarCollapsible = null;
+			return;
 		}
-		this.syncButtonPresentation();
-	}
-
-	private syncButtonPresentation(): void {
-		const button = this.buttonTarget;
-		if (!button) return;
-		button.className = sidebarTriggerButtonClass({
-			variant: this.variant,
-			size: this.size,
-			placement: this.placement,
-		});
+		this.sidebarState = sidebar.getAttribute('data-state') === 'collapsed' ? 'collapsed' : 'expanded';
+		this.sidebarMobile = sidebar.getAttribute('data-mobile') === 'true';
+		this.sidebarCollapsible = sidebar.getAttribute('data-collapsible') ?? 'off';
 	}
 
 	@onEvent({ ref: 'button', type: 'click' })

@@ -191,7 +191,7 @@ export class RuiSidebar extends RadiantElement {
 	private dragStartSize = 0;
 	private navigationCleanups: Array<() => void> = [];
 
-	/** @remarks Remains `false` until a projected active link has been scrolled. */
+	/** @remarks Set by the first update cycle so later cycles never scroll. */
 	private didScrollActiveOnMount = false;
 
 	/**
@@ -232,29 +232,21 @@ export class RuiSidebar extends RadiantElement {
 
 		this.syncPresentation();
 		this.syncPaneWidthVar();
-		this.syncActiveLinksAfterRender(true);
 		this.mobileReady = true;
 	}
 
 	/**
-	 * @remarks Light-DOM hydrate/update can recreate menu links after the connect
-	 * microtask sync. Re-apply active classes once the render commits.
+	 * @remarks Re-renders that recreate menu links need their active classes
+	 * back. The first cycle ends after `onConnected()`, so it covers the
+	 * initial sync and `scrollActiveOnMount`.
 	 */
-	override hydrate(): void {
-		super.hydrate();
-		this.syncActiveLinksAfterRender(true);
-	}
-
-	override update(): void {
-		super.update();
-		this.syncActiveLinksAfterRender(false);
-	}
-
-	override requestUpdate(): void {
-		super.requestUpdate();
-		queueMicrotask(() => {
-			this.syncActiveLinksAfterRender(false);
-		});
+	protected override updated(changed: ReadonlySet<string>): void {
+		super.updated(changed);
+		const shouldScroll = this.scrollActiveOnMount && !this.didScrollActiveOnMount;
+		this.syncActiveLinks(shouldScroll);
+		if (shouldScroll) {
+			this.didScrollActiveOnMount = true;
+		}
 	}
 
 	override disconnectedCallback(): void {
@@ -263,14 +255,6 @@ export class RuiSidebar extends RadiantElement {
 		this.detachNavigationListeners();
 		this.mobileReady = false;
 		super.disconnectedCallback();
-	}
-
-	private syncActiveLinksAfterRender(allowScrollOnMount: boolean): void {
-		const shouldScroll = allowScrollOnMount && this.scrollActiveOnMount && !this.didScrollActiveOnMount;
-		this.syncActiveLinks(shouldScroll);
-		if (shouldScroll) {
-			this.didScrollActiveOnMount = true;
-		}
 	}
 
 	/**
@@ -370,7 +354,6 @@ export class RuiSidebar extends RadiantElement {
 	onMatchSettingsUpdated(): void {
 		this.detachNavigationListeners();
 		this.attachNavigationListeners();
-		this.syncActiveLinks(false);
 	}
 
 	/** Re-applies active classes on descendant menu links from the current URL. */

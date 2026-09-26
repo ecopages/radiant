@@ -69,9 +69,9 @@ function RuiSidebarTriggerIcon() {
 /**
  * Sidebar toggle button view. Stamps `[data-ref="button"]` inside `rui-sidebar-trigger`.
  *
- * @remarks The host paints `aria-*` and `data-sidebar-state` during SSR preparation
- * and after connect. Button classes come from view props; the host re-syncs them when
- * `variant`, `size`, or `placement` change.
+ * @remarks The host paints `aria-*` on the button and `data-sidebar-state` on itself
+ * during SSR preparation and after connect. Button classes come from view props; the
+ * host only swaps the variant and size modifiers when those props change.
  */
 export function RuiSidebarTrigger({
 	children,
@@ -86,13 +86,12 @@ export function RuiSidebarTrigger({
 		<rui-sidebar-trigger
 			{...props}
 			prop:buttonLabel={triggerLabel}
-			button-label={triggerLabel}
 			placement={placement}
 			variant={variant}
 			size={size}
 			controls={controls}
 		>
-			<button data-ref="button" type="button" class={sidebarTriggerButtonClass({ variant, size, placement })}>
+			<button data-ref="button" type="button" class={sidebarTriggerButtonClass({ variant, size })}>
 				{children ?? <RuiSidebarTriggerIcon />}
 			</button>
 		</rui-sidebar-trigger>

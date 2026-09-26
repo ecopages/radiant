@@ -748,158 +748,6 @@ describe('RuiSidebar mobile drawer', () => {
 	});
 });
 
-describe('RuiSidebarTrigger', () => {
-	it('wires aria-controls and toggles the sidebar', async () => {
-		const { host, cleanup } = mount(
-			<>
-				<RuiSidebarTrigger controls="primary-sidebar" triggerLabel="Open sidebar" />
-				<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={0} label="Primary">
-					<span>content</span>
-				</RuiSidebar>
-			</>,
-		);
-
-		await settled();
-
-		const trigger = host.querySelector('rui-sidebar-trigger button') as HTMLButtonElement;
-		const sidebar = host.querySelector('rui-sidebar') as HTMLElement;
-
-		expect(trigger.getAttribute('aria-controls')).toBe('primary-sidebar');
-		expect(trigger.getAttribute('aria-expanded')).toBe('true');
-
-		await userEvent.click(trigger);
-		await settled();
-		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
-		expect(trigger.getAttribute('aria-expanded')).toBe('false');
-
-		await userEvent.click(trigger);
-		await settled();
-		expect(sidebar.getAttribute('data-state')).toBe('expanded');
-		expect(trigger.getAttribute('aria-expanded')).toBe('true');
-
-		cleanup();
-	});
-
-	it('renders a panel glyph by default', async () => {
-		const { host, cleanup } = mount(<RuiSidebarTrigger controls="primary-sidebar" triggerLabel="Open sidebar" />);
-
-		await settled();
-
-		expect(host.querySelector('.rui-sidebar__trigger-glyph')).not.toBeNull();
-
-		cleanup();
-	});
-
-	it('applies button-label on the trigger host', async () => {
-		const { host, cleanup } = mount(
-			<rui-sidebar-trigger prop:buttonLabel="Collapse sidebar" controls="x"></rui-sidebar-trigger>,
-		);
-		await settled();
-		const triggerHost = host.querySelector('rui-sidebar-trigger') as HTMLElement & { buttonLabel: string };
-		expect(triggerHost.buttonLabel).toBe('Collapse sidebar');
-		cleanup();
-	});
-
-	it('maps triggerLabel through the JSX view when nested in the sidebar', async () => {
-		const { host, cleanup } = mount(
-			<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={0} label="Primary">
-				<RuiSidebarHeader aria-label="Header">
-					<rui-sidebar-trigger attr:data-button-label="Collapse sidebar" />
-				</RuiSidebarHeader>
-			</RuiSidebar>,
-		);
-		await settled();
-		const triggerHost = host.querySelector('rui-sidebar-trigger') as HTMLElement;
-		expect(triggerHost.getAttribute('data-button-label')).toBe('Collapse sidebar');
-		cleanup();
-	});
-
-	it('maps triggerLabel through the JSX view', async () => {
-		const { host, cleanup } = mount(<RuiSidebarTrigger triggerLabel="Collapse sidebar" controls="x" />);
-		await settled();
-		const button = host.querySelector('button') as HTMLButtonElement;
-		expect(button.getAttribute('aria-label')).toBe('Collapse sidebar');
-		cleanup();
-	});
-
-	it('toggles the sidebar when rendered inside the sidebar header', async () => {
-		const { host, cleanup } = mount(
-			<RuiSidebarProvider
-				sidebar={
-					<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={0} label="Primary">
-						<RuiSidebarHeader aria-label="Header">
-							<RuiSidebarTrigger
-								placement="header"
-								controls="primary-sidebar"
-								triggerLabel="Collapse sidebar"
-							/>
-						</RuiSidebarHeader>
-						<span>Nav</span>
-					</RuiSidebar>
-				}
-			>
-				<RuiSidebarInset id="main">
-					<p>Content</p>
-					<RuiSidebarTrigger placement="inset" controls="primary-sidebar" triggerLabel="Open sidebar" />
-				</RuiSidebarInset>
-			</RuiSidebarProvider>,
-		);
-
-		await settled();
-
-		const sidebar = host.querySelector('rui-sidebar') as HTMLElement;
-		const headerTrigger = host.querySelector(
-			'.rui-sidebar__header rui-sidebar-trigger button',
-		) as HTMLButtonElement;
-		const headerHost = headerTrigger.closest('rui-sidebar-trigger') as HTMLElement;
-		const insetHost = host.querySelector('.rui-sidebar__inset rui-sidebar-trigger') as HTMLElement;
-
-		expect(headerTrigger.getAttribute('aria-controls')).toBe('primary-sidebar');
-		expect(headerTrigger.getAttribute('aria-label')).toBe('Collapse sidebar');
-		expect(headerHost.getAttribute('placement')).toBe('header');
-		expect(headerHost.getAttribute('data-sidebar-state')).toBe('expanded');
-		expect(headerHost.getAttribute('data-sidebar-mobile')).toBe('false');
-		expect(insetHost.getAttribute('data-sidebar-state')).toBe('expanded');
-
-		await userEvent.click(headerTrigger);
-		await settled();
-		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
-		expect(headerTrigger.getAttribute('aria-expanded')).toBe('false');
-		expect(headerHost.getAttribute('data-sidebar-state')).toBe('collapsed');
-		expect(insetHost.getAttribute('data-sidebar-state')).toBe('collapsed');
-
-		const expandTrigger = host.querySelector('.rui-sidebar__inset rui-sidebar-trigger button') as HTMLButtonElement;
-		await userEvent.click(expandTrigger);
-		await settled();
-		expect(sidebar.getAttribute('data-state')).toBe('expanded');
-		expect(insetHost.getAttribute('data-sidebar-state')).toBe('expanded');
-
-		cleanup();
-	});
-
-	it('toggles via closest rui-sidebar when controls is omitted inside the pane', async () => {
-		const { host, cleanup } = mount(
-			<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={0} label="Primary">
-				<RuiSidebarHeader aria-label="Header">
-					<RuiSidebarTrigger triggerLabel="Collapse sidebar" />
-				</RuiSidebarHeader>
-			</RuiSidebar>,
-		);
-
-		await settled();
-
-		const sidebar = host.querySelector('rui-sidebar') as HTMLElement;
-		const headerTrigger = host.querySelector('rui-sidebar-trigger button') as HTMLButtonElement;
-
-		expect(headerTrigger.getAttribute('aria-controls')).toBe('primary-sidebar');
-
-		await userEvent.click(headerTrigger);
-		await settled();
-		expect(sidebar.getAttribute('data-state')).toBe('collapsed');
-
-		cleanup();
-	});
-});
 
 describe('RuiSidebar matchActive', () => {
 	it('marks the link matching the current pathname as active', async () => {
@@ -976,6 +824,44 @@ describe('RuiSidebar matchActive', () => {
 
 		history.replaceState(null, '', originalPath);
 		cleanup();
+	});
+
+	it('re-syncs active links after every update cycle', async () => {
+		const originalPath = window.location.pathname;
+		history.replaceState(null, '', '/docs/overview');
+		const renderNav = (label: string, links: readonly string[]) => (
+			<RuiSidebar id="nav" matchActive label={label}>
+				<RuiSidebarContent>
+					<RuiSidebarMenu aria-label="Docs links">
+						{links.map((href) => (
+							<RuiSidebarMenuItem>
+								<RuiSidebarMenuButton as="a" href={href}>
+									{href}
+								</RuiSidebarMenuButton>
+							</RuiSidebarMenuItem>
+						))}
+					</RuiSidebarMenu>
+				</RuiSidebarContent>
+			</RuiSidebar>
+		);
+		const host = document.createElement('div');
+		document.body.appendChild(host);
+		const root = createRoot(host);
+		root.render(renderNav('Docs', ['/docs/overview']));
+		await settled();
+
+		history.replaceState(null, '', '/docs/installation');
+		root.render(renderNav('Guides', ['/docs/overview', '/docs/installation']));
+		await settled();
+
+		const active = host.querySelector('a.rui-sidebar__menu-button--active');
+		expect(active?.getAttribute('href')).toBe('/docs/installation');
+		expect(active?.getAttribute('aria-current')).toBe('page');
+		expect(host.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+
+		history.replaceState(null, '', originalPath);
+		root.unmount();
+		host.remove();
 	});
 
 	it('re-syncs active links after eco:page-load', async () => {

@@ -371,21 +371,13 @@ rui-sidebar {
 	@apply hidden size-4 shrink-0;
 }
 
-.rui-sidebar__trigger[data-sidebar-state='expanded']:not(.rui-sidebar__trigger--inset)
+rui-sidebar-trigger[placement='header'] .rui-sidebar__trigger-glyph--collapse,
+rui-sidebar-trigger:not([placement='header'], [placement='inset'])[data-sidebar-state='expanded']
 	.rui-sidebar__trigger-glyph--collapse,
-.rui-sidebar__trigger--header .rui-sidebar__trigger-glyph--collapse {
-	@apply block;
-}
-
-.rui-sidebar__trigger[data-sidebar-state='collapsed']:not(.rui-sidebar__trigger--header):not(
-		.rui-sidebar__trigger--inset
-	)
-	.rui-sidebar__trigger-glyph--expand {
-	@apply block;
-}
-
-.rui-sidebar__trigger--inset[data-sidebar-state='expanded'] .rui-sidebar__trigger-glyph--close,
-.rui-sidebar__trigger--inset[data-sidebar-state='collapsed'] .rui-sidebar__trigger-glyph--menu {
+rui-sidebar-trigger:not([placement='header'], [placement='inset'])[data-sidebar-state='collapsed']
+	.rui-sidebar__trigger-glyph--expand,
+rui-sidebar-trigger[placement='inset'][data-sidebar-state='expanded'] .rui-sidebar__trigger-glyph--close,
+rui-sidebar-trigger[placement='inset'][data-sidebar-state='collapsed'] .rui-sidebar__trigger-glyph--menu {
 	@apply block;
 }
 
@@ -393,54 +385,68 @@ rui-sidebar {
 /* Alternate header (collapse) vs inset (open) triggers                       */
 /* -------------------------------------------------------------------------- */
 
-rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='expanded'][placement='inset'],
-rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='collapsed'][placement='header'] {
+/* Attached: the trigger mirrors its sidebar's mode, so the viewport does not matter. */
+rui-sidebar-trigger[data-sidebar-mobile][data-sidebar-state='expanded'][placement='inset'],
+rui-sidebar-trigger[data-sidebar-mobile][data-sidebar-state='collapsed'][placement='header'],
+rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-collapsible='off'] {
 	@apply hidden;
 }
 
+/*
+ * Pre-hydration: no `data-sidebar-mobile` yet. Pane triggers read their sidebar.
+ * Inset / site-header triggers read the provider's only sidebar; child combinators
+ * keep nested providers independent. Two sidebars in one provider stay visible.
+ */
 @media (min-width: 768px) {
-	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-collapsible='off'],
-	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='expanded'][placement='inset'],
-	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='collapsed'][placement='header'] {
+	rui-sidebar[data-collapsible='off'] rui-sidebar-trigger:not([data-sidebar-mobile]),
+	rui-sidebar[data-state='expanded'] rui-sidebar-trigger:not([data-sidebar-mobile])[placement='inset'],
+	rui-sidebar[data-state='collapsed'] rui-sidebar-trigger:not([data-sidebar-mobile])[placement='header'],
+	.rui-sidebar-provider:has(
+			> rui-sidebar:only-of-type[data-collapsible='off'],
+			> .rui-sidebar-provider__body > rui-sidebar:only-of-type[data-collapsible='off']
+		)
+		> :is(.rui-sidebar__inset, .rui-sidebar-provider__site-header)
+		> rui-sidebar-trigger:not([data-sidebar-mobile]),
+	.rui-sidebar-provider:has(
+			> rui-sidebar:only-of-type[data-collapsible='off'],
+			> .rui-sidebar-provider__body > rui-sidebar:only-of-type[data-collapsible='off']
+		)
+		> .rui-sidebar-provider__body
+		> .rui-sidebar__inset
+		> rui-sidebar-trigger:not([data-sidebar-mobile]),
+	.rui-sidebar-provider:has(
+			> rui-sidebar:only-of-type[data-state='expanded'],
+			> .rui-sidebar-provider__body > rui-sidebar:only-of-type[data-state='expanded']
+		)
+		> :is(.rui-sidebar__inset, .rui-sidebar-provider__site-header)
+		> rui-sidebar-trigger:not([data-sidebar-mobile])[placement='inset'],
+	.rui-sidebar-provider:has(
+			> rui-sidebar:only-of-type[data-state='expanded'],
+			> .rui-sidebar-provider__body > rui-sidebar:only-of-type[data-state='expanded']
+		)
+		> .rui-sidebar-provider__body
+		> .rui-sidebar__inset
+		> rui-sidebar-trigger:not([data-sidebar-mobile])[placement='inset'],
+	.rui-sidebar-provider:has(
+			> rui-sidebar:only-of-type[data-state='collapsed'],
+			> .rui-sidebar-provider__body > rui-sidebar:only-of-type[data-state='collapsed']
+		)
+		> :is(.rui-sidebar__inset, .rui-sidebar-provider__site-header)
+		> rui-sidebar-trigger:not([data-sidebar-mobile])[placement='header'],
+	.rui-sidebar-provider:has(
+			> rui-sidebar:only-of-type[data-state='collapsed'],
+			> .rui-sidebar-provider__body > rui-sidebar:only-of-type[data-state='collapsed']
+		)
+		> .rui-sidebar-provider__body
+		> .rui-sidebar__inset
+		> rui-sidebar-trigger:not([data-sidebar-mobile])[placement='header'] {
 		@apply hidden;
-	}
-
-	/*
-	 * Pre-hydration fallback. A trigger has no `data-sidebar-mobile` until it
-	 * attaches to its sidebar, so read the SSR attributes of the provider's
-	 * primary sidebar: a direct child (`default`/`full`) or under `__body` (`docs`).
-	 */
-	.rui-sidebar-provider:has(> rui-sidebar[collapsible='off']:not([data-mobile='true'])),
-	.rui-sidebar-provider:has(
-		> .rui-sidebar-provider__body > rui-sidebar[collapsible='off']:not([data-mobile='true'])
-	) {
-		rui-sidebar-trigger:not([data-sidebar-mobile]) {
-			@apply hidden;
-		}
-	}
-
-	.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true'])),
-	.rui-sidebar-provider:has(
-		> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded']:not([data-mobile='true'])
-	) {
-		rui-sidebar-trigger:not([data-sidebar-mobile])[placement='inset'] {
-			@apply hidden;
-		}
-	}
-
-	.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true'])),
-	.rui-sidebar-provider:has(
-		> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed']:not([data-mobile='true'])
-	) {
-		rui-sidebar-trigger:not([data-sidebar-mobile])[placement='header'] {
-			@apply hidden;
-		}
 	}
 }
 
 @media (max-width: 767px) {
-	/* SSR has no mobile state yet. Start with the drawer closed. */
-	rui-sidebar-trigger:not([data-sidebar-mobile='true'])[placement='header'] {
+	/* Pre-hydration: assume the mobile drawer starts closed. */
+	rui-sidebar-trigger:not([data-sidebar-mobile])[placement='header'] {
 		@apply hidden;
 	}
 }
