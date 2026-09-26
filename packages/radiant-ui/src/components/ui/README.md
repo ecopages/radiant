@@ -28,7 +28,7 @@ For keyboard movement within an already-rendered composite surface, update focus
 
 `RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls. For `RuiField` wiring, stamp `data-rui-control` (or use a known host tag), stamp `data-rui-aria-target` or `data-rui-aria-targets` when the ARIA node is not the control host itself, and fire bubbling `rui-change`.
 
-Native `FormData` comes from the listed control, not from `RuiField`. Named `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` are form-associated (`name` on the host, like `<input name>`). `RuiField` copies its `name` onto that host. `registerFieldControl` is the `RuiForm` store adapter only; a third-party host still needs `FormAssociation` to join a native form.
+Native `FormData` comes from the listed control, not from `RuiField`. Named `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` are form-associated (`name` on the host, like `<input name>`). `RuiField` copies its `name` onto that host. `registerFieldControl` is the `RuiForm` store adapter only; a third-party host still needs `@formAssociated` and `FormAssociation` to join a native form.
 
 ## Multi-value `value`
 

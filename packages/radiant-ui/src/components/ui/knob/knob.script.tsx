@@ -1,7 +1,7 @@
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
-import { FormAssociation } from '../form/form-association';
+import { FormAssociation, formAssociated } from '../form/form-association';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
 export type RuiKnobValuePosition = 'center' | 'below';
@@ -106,10 +106,9 @@ export const KNOB_DEFAULT_VALUE = 50;
  * round or transform them in application code when needed. BEM classes live on the view;
  * the host never queries them. The control also carries `data-knob-control` for field wiring.
  */
+@formAssociated
 @customElement('rui-knob')
 export class RuiKnob extends RadiantElement {
-	static formAssociated = true;
-
 	@prop({ type: Number, reflect: true, defaultValue: KNOB_DEFAULT_VALUE }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;

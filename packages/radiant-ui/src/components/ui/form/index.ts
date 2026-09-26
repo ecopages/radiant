@@ -22,4 +22,4 @@ export {
 	RUI_FIELD_MANAGED_ATTR,
 } from './control-protocol';
 export type { FieldControlAdapter } from './control-protocol';
-export { FormAssociation, type FormAssociationHost } from './form-association';
+export { FormAssociation, formAssociated, type FormAssociationHost } from './form-association';
