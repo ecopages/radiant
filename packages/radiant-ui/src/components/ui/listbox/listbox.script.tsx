@@ -79,6 +79,7 @@ export type RuiListboxChangeDetail = { value: string[] };
  * ```
  *
  * BEM classes are presentation-only; see view `@cssclass`.
+ * Not form-associated. An `embedded` listbox is the parent's option surface, not a field control.
  */
 @customElement('rui-listbox')
 export class RuiListbox extends RadiantElement {

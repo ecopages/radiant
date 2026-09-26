@@ -88,6 +88,8 @@ export type RuiComboboxChangeDetail = { value: string[] };
  * @remarks
  * Minimum tree: `[data-ref="root"]` > `[data-combobox-input]` + `[data-combobox-listbox]`
  * > `rui-listbox[embedded]` > `[role="option"]`. BEM classes live on the view helpers.
+ * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
+ * Typed filter text is not a form value and is not listed in native `FormData`.
  */
 @customElement('rui-combobox')
 export class RuiCombobox extends RadiantElement {

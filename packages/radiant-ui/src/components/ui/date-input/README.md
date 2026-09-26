@@ -1,6 +1,6 @@
 # Date input
 
-`rui-date-input` is a Derived Tree: the host `render()`s locale-ordered segments. Set `name` on the host to submit the committed ISO value like a native `<input type="date">`.
+`rui-date-input` is a Derived Tree: the host `render()`s locale-ordered segments. Set `name` on the host to submit the committed ISO value like a native `<input type="date">`. Empty values are omitted from `FormData`.
 
 ## Editing and commit
 

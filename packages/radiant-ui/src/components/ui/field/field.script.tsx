@@ -314,7 +314,12 @@ export class RuiField extends RadiantElement {
 		this.syncField();
 	}
 
+	/**
+	 * @remarks `selector: '*'` because `rui-change` can originate on a host tag
+	 * that is not `[data-rui-control]`. `isPrimaryFieldControlEvent` drops nested hosts.
+	 */
 	@onEvent({
+		selector: '*',
 		type: 'rui-change',
 	})
 	onControlChange(event: Event): void {

@@ -1,0 +1,121 @@
+---
+title: Date Input
+description: Date inputs edit a single calendar date as locale-ordered month, day, and year segments. Set `name` on the host to submit the committed ISO value like a native date input.
+category: Forms
+---
+
+import { meta as DateInputMeta, Default, Locale } from '@/content/stories/date-input';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Date Input
+
+<p class="docs-lede">Date inputs edit a single calendar date as locale-ordered month, day, and year segments. Set `name` on the host to submit the committed ISO value like a native date input. Use Date Field when you also need a calendar popup.</p>
+
+## Try it
+
+<Demo of={Default} meta={DateInputMeta} />
+
+## Usage
+
+Bind `value` as ISO `YYYY-MM-DD`. `locale` controls segment order. The host is form-associated: `name` submits the committed ISO string through native `FormData`. Empty values are omitted.
+
+```tsx
+import { RuiDateInput } from '@ecopages/radiant-ui/date-input';
+
+<RuiDateInput name="when" value="2026-08-20" locale="en-US" label="Start date" />
+```
+
+## Derived tree
+
+`<rui-date-input>` `render()`s the segment group. Do not stamp `[data-date-segment]` yourself. Date Field and Date Range Picker nest this host and copy `name` onto it.
+
+## Locale order
+
+Segment order follows the locale. `en-US` is month/day/year; `ja-JP` is year/month/day.
+
+<Canvas of={Locale} meta={DateInputMeta} />
+
+## Draft vs committed value
+
+Typed digits stay in the focused segment until that unit completes, focus moves to another segment, or the control blurs. `value` and the form value stay on the last committed ISO date during that draft. An in-progress buffer is not published just because the draft happens to parse as a date.
+
+## Theming
+
+Date Input surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Segments | `--text-control-input`, `--space-control-*` |
+| Segment text | `on-background` |
+| Placeholder | `on-surface` + `opacity-muted` |
+| Focused segment | `--focus-ring` fill, `--on-focus-ring` text |
+| Literal separators | `on-background` |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiDateInput` is a custom element (`<rui-date-input>`). It is form-associated: `name` on this host lists the committed ISO value. Wrap in `RuiField` to register with `RuiForm`.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Canonical ISO `YYYY-MM-DD`. |
+| `min` | `string` | `''` | Earliest allowed ISO date. |
+| `max` | `string` | `''` | Latest allowed ISO date. |
+| `disabled` | `boolean` | `false` | Disable editing. |
+| `read-only` | `boolean` | `false` | Show value without editing. |
+| `name` | `string` | `''` | Form field name on this host. Empty values are omitted from `FormData`. |
+| `label` | `string` | `''` | Accessible name when there is no associated `RuiLabel`. |
+| `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
+
+### Internal targets (generated)
+
+| Target | Host writes | Notes |
+| --- | --- | --- |
+| `[data-ref="root"]` | `id` when labelled, `role="group"` | segment group |
+| `[data-date-segment]` | `data-focused`, `aria-*`, `contenteditable` | editable month, day, or year unit |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted when a complete valid date is committed, or when all segments are cleared. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiDateInput` | `data-rui-control`, `data-rui-aria-target` | Segment tree is host-rendered. |
+
+### CSS classes
+
+Public BEM classes on the generated tree:
+
+| Class | Description |
+| --- | --- |
+| `.rui-date-input` | Root column around the segment row. |
+| `.rui-date-input__segments` | Segment row. |
+| `.rui-date-input__segment` | Editable month, day, or year unit. |
+| `.rui-date-input__segment--placeholder` | Empty unit. |
+| `.rui-date-input__literal` | Locale separator between units. |
+
+## Accessibility
+
+- Each unit is a spinbutton (textbox on iOS). Provide a visible `RuiLabel` or `label` on the host.
+- Arrow keys increment the focused unit or move between units. Digit keys replace the focused unit.
+- Disabled inputs leave the tab order.
