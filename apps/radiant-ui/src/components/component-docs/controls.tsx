@@ -12,6 +12,9 @@ const Controls = eco.component<ControlsProps, JsxRenderable>({
 		const args = getStoryArgs(meta, of);
 		const id = getStoryId(of);
 		const controls = listResolvedControls(meta);
+		if (controls.length === 0) {
+			return null;
+		}
 		return (
 			<radiant-docs-controls data={{ storyId: id }}>
 				<aside class="docs-story-controls" aria-label="Story controls">
