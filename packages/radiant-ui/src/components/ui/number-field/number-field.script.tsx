@@ -10,7 +10,7 @@ import {
 } from '@/lib/intl-number';
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
-import { FormAssociation, formAssociated } from '../form/form-association';
+import { FormAssociation } from '../form/form-association';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -95,9 +95,12 @@ export type RuiNumberFieldChangeDetail = { value: number };
  * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
  * never queries them.
  */
-@formAssociated
 @customElement('rui-number-field')
 export class RuiNumberField extends RadiantElement {
+	static get formAssociated(): boolean {
+		return true;
+	}
+
 	@prop({ type: Number, reflect: true }) value: number | undefined;
 	@prop({ type: Number, attribute: 'default-value' }) defaultValue: number | undefined;
 

@@ -1,7 +1,7 @@
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
-import { FormAssociation, formAssociated } from '../form/form-association';
+import { FormAssociation } from '../form/form-association';
 import {
 	createNumericRange,
 	formatNumericValue,
@@ -266,9 +266,12 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * round or transform them in application code when needed. BEM classes live on the view;
  * the host never queries them.
  */
-@formAssociated
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement {
+	static get formAssociated(): boolean {
+		return true;
+	}
+
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
 	@prop({ type: Array, reflect: true, defaultValue: [SLIDER_DEFAULT_VALUE], transform: numberArrayTransform })

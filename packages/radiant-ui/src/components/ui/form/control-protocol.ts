@@ -271,7 +271,7 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	return pickPrimaryFieldControl(collectFieldControls(root));
 }
 
-/** Register a custom host tag so RuiField can read and write its value for the `RuiForm` store. Stamp `data-rui-control` and fire bubbling `rui-change`. This does not list the host on a native form; use `@formAssociated` and `FormAssociation` for that. */
+/** Register a custom host tag so RuiField can read and write its value for the `RuiForm` store. Stamp `data-rui-control` and fire bubbling `rui-change`. This does not list the host on a native form; set `formAssociated` on the constructor and use `FormAssociation` for that. */
 export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
 	const tag = tagName.toLowerCase();
 	HOST_CONTROL_TAGS.add(tag);
