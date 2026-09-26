@@ -1,4 +1,4 @@
-import type { ReactiveProperty } from '../../core/reactive-prop-core';
+import { reflectsBooleanAsValue, type ReactiveProperty } from '../../core/reactive-prop-core';
 import type { ReactivePropDefinition } from '../../core/reactive-prop-metadata';
 import { writeAttributeValue, type AttributeTypeConstant } from '../../utils/attribute-utils';
 import { serializeHtmlAttribute } from '../../utils/serialize-html-attribute';
@@ -24,10 +24,11 @@ export type HostAttributeSource = {
  *
  * 1. **Reactive properties** — legacy attribute reflection via `property.converter`.
  *    These are already-registered reactive properties with established converters.
- *    `undefined` and `null` are omitted. Typed Boolean `false` is emitted as
- *    `"false"` so client upgrade can restore explicit false before hydration.
- *    Emitted Boolean attributes use value semantics (`name="true"` / `name="false"`),
- *    not HTML presence-boolean semantics — do not style with bare `[name]` selectors.
+ *    `undefined` and `null` are omitted. Boolean `false` is omitted unless the
+ *    declared default is `true`, in which case `"false"` is emitted so upgrade
+ *    can restore explicit false before hydration. True-default booleans use
+ *    value semantics (`name="true"` / `name="false"`); false-default booleans
+ *    use HTML presence. Do not style true-default props with bare `[name]`.
  *
  * 2. **Reactive prop definitions** — decorator-based definitions. Skipped when the
  *    target attribute name was already emitted by source 1 (dedup via `seenAttributes`).
@@ -70,7 +71,7 @@ export function stringifyHostAttributes(attributes: Record<string, string>): str
 /**
  * Source 1: Reactive properties with established converters.
  *
- * Nullish runtime values are omitted. Typed Boolean `false` is preserved.
+ * Nullish runtime values are omitted. Boolean `false` is omitted unless the default is `true`.
  */
 function appendReactivePropertyAttributes(
 	host: HostAttributeSource,
@@ -79,7 +80,7 @@ function appendReactivePropertyAttributes(
 ): void {
 	for (const property of host.getReactiveProperties()) {
 		const currentValue = host.getPropertyValue(property.name);
-		if (shouldOmitReactivePropValue(currentValue, property.type)) {
+		if (shouldOmitReactivePropValue(currentValue, property.type, property.defaultValue)) {
 			continue;
 		}
 
@@ -113,7 +114,7 @@ function appendReactivePropDefinitionAttributes(
 
 		const currentValue = host.getPropertyValue(definition.name);
 
-		if (shouldOmitReactivePropValue(currentValue, definition.options.type)) {
+		if (shouldOmitReactivePropValue(currentValue, definition.options.type, definition.options.defaultValue)) {
 			continue;
 		}
 
@@ -140,19 +141,18 @@ function appendAuthoredAttributes(host: HostAttributeSource, attributes: Record<
 /**
  * Omits values that have no useful host-attribute representation.
  *
- * @remarks HTML presence-booleans collapse `false` to "absent". Typed Radiant
- * Boolean props instead need an explicit `"false"` transport so a client
- * upgrade cannot restore a true default before hydration applies state.
- *
- * That transport is a **value boolean** (`enabled="false"` / `enabled="true"`),
- * not HTML presence-boolean semantics. Selectors such as `[enabled]` mean
- * “the value was serialized”, not “enabled is true”. Prefer
- * `[enabled="true"]` / `[enabled="false"]` or component state attributes/classes.
+ * @remarks False-default booleans follow HTML presence (omit `false`). True-default
+ * booleans emit `"false"` so a client upgrade cannot restore the default before
+ * hydration. Style those with `[name="true"]` / `[name="false"]`, not bare `[name]`.
  */
-function shouldOmitReactivePropValue(value: unknown, type: AttributeTypeConstant): boolean {
+function shouldOmitReactivePropValue(value: unknown, type: AttributeTypeConstant, defaultValue?: unknown): boolean {
 	if (value === undefined || value === null) {
 		return true;
 	}
 
-	return value === false && type !== Boolean;
+	if (value !== false) {
+		return false;
+	}
+
+	return !reflectsBooleanAsValue({ type, defaultValue });
 }

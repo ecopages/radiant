@@ -28,10 +28,9 @@ rui-date-input {
 		@apply text-on-surface opacity-muted;
 	}
 
-	.rui-date-input__segment--focused,
 	.rui-date-input__segment[data-focused='true'] {
 		background-color: var(--focus-ring);
-		color: var(--on-primary);
+		color: var(--on-focus-ring);
 		-webkit-text-fill-color: currentColor;
 		opacity: 1;
 		outline: none;

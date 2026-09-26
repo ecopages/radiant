@@ -51,15 +51,6 @@ class RenderComponentCard extends RadiantElement {
 	}
 }
 
-@customElement('render-component-shadow-card-test')
-class RenderComponentShadowCard extends RadiantElement {
-	override readonly renderRootMode = 'shadow';
-
-	override render() {
-		return <p>shadow only</p>;
-	}
-}
-
 @customElement('render-component-loader-card-test')
 class RenderComponentLoaderCard extends RadiantElement {
 	message = 'loader default';
@@ -264,10 +255,6 @@ describe('render-component server helpers', () => {
 		expect(renderToString(<render-component-card-test />)).toBe(
 			'<render-component-card-test></render-component-card-test>',
 		);
-	});
-
-	test('renderComponent() rejects shadow renderRootMode hosts (light-DOM SSR only)', async () => {
-		await expect(renderComponent(RenderComponentShadowCard)).rejects.toThrow(/light-DOM only/);
 	});
 
 	test('concurrent renderComponent() calls keep SSR ambient providers isolated', async () => {

@@ -43,10 +43,12 @@ describe('carousel indicators', () => {
 		const host = await mountCarousel(1);
 		expect(host.querySelectorAll('[role="tab"]')).toHaveLength(5);
 		host.slidesPerView = 3;
+		await host.updateComplete;
 		expect(host.querySelectorAll('[data-carousel-indicator]')).toHaveLength(3);
 		expect(host.querySelector('[role="tabpanel"]')).toBeNull();
 		expect(host.querySelector('[data-slide]')?.hasAttribute('aria-labelledby')).toBe(false);
 		host.slidesPerView = 1;
+		await host.updateComplete;
 		expect(host.querySelectorAll('[role="tab"]')).toHaveLength(5);
 		for (const panel of host.querySelectorAll('[role="tabpanel"]')) {
 			expect(document.getElementById(panel.getAttribute('aria-labelledby') ?? '')).not.toBeNull();

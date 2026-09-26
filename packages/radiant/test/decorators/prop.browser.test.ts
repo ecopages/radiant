@@ -297,6 +297,19 @@ describe('@prop', () => {
 			expect(customElement.value).toEqual(5);
 		});
 
+		test('reflects false as "false" when the declared boolean default is true', async () => {
+			@customElement('my-prop-true-default-reflect')
+			class TrueDefaultReflect extends RadiantElement {
+				@prop({ type: Boolean, reflect: true, defaultValue: true }) enabled: boolean;
+			}
+
+			const host = document.createElement('my-prop-true-default-reflect') as TrueDefaultReflect;
+			document.body.appendChild(host);
+			await Promise.resolve();
+			host.enabled = false;
+			expect(host.getAttribute('enabled')).toBe('false');
+		});
+
 		test('does not overwrite an authored reflected attribute with defaultValue after innerHTML', async () => {
 			@customElement('my-prop-reflect-ghost-html')
 			class MyPropReflectGhostHtml extends RadiantElement {

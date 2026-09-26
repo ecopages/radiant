@@ -9,7 +9,6 @@ import {
 	registerSsrPreparationCallback,
 	state,
 } from '@ecopages/radiant';
-import type { RuiSidebarToggleDetail } from './sidebar.script';
 
 export type RuiSidebarTriggerPlacement = 'header' | 'inset';
 
@@ -22,8 +21,8 @@ export type RuiSidebarTriggerProps = {
 	triggerLabel?: string;
 	/**
 	 * Where the trigger is rendered. `header` is shown while the sidebar is expanded;
-	 * `inset` while collapsed (desktop icon rail / mobile drawer closed). The host
-	 * reflects its controlled sidebar state for local placement styling.
+	 * `inset` while collapsed (desktop icon rail / mobile drawer closed). Reflected
+	 * as the `placement` attribute, which placement CSS reads.
 	 */
 	placement?: RuiSidebarTriggerPlacement;
 	/** Variant passed through to the rendered button. */
@@ -80,11 +79,13 @@ export function initialSidebarStateForPlacement(
  * @element rui-sidebar-trigger
  * @attr {string} controls - ID of the `rui-sidebar` this trigger controls.
  * @attr {string} button-label - Accessible name for the trigger button. Default: `Toggle sidebar`.
- * @attr {(''|'header'|'inset')} placement - Where the trigger is rendered; affects CSS placement classes.
+ * @attr {(''|'header'|'inset')} placement - Where the trigger is rendered; reflected for placement CSS.
  *
  * @remarks
- * The host reflects `data-sidebar-placement`, `data-sidebar-state`,
- * `data-sidebar-mobile`, and `data-sidebar-collapsible` for placement styling.
+ * The host mirrors its controlled sidebar as `data-sidebar-state`,
+ * `data-sidebar-mobile`, and `data-sidebar-collapsible`. The last two are absent
+ * until the trigger attaches to a sidebar, which placement CSS uses to detect
+ * the pre-hydration paint.
  */
 @customElement('rui-sidebar-trigger')
 export class RuiSidebarTrigger extends RadiantElement {
@@ -104,13 +105,19 @@ export class RuiSidebarTrigger extends RadiantElement {
 
 	@state
 	@bindTo([
+		{ attr: 'data-sidebar-state' },
 		{ ref: 'button', attr: 'aria-expanded', map: (state) => String(state === 'expanded') },
 		{ ref: 'button', attr: 'data-sidebar-state' },
 	])
 	sidebarState: 'expanded' | 'collapsed' = 'expanded';
 
-	private sidebarListener: ((event: Event) => void) | null = null;
-	private sidebarMobileListener: ((event: Event) => void) | null = null;
+	/** Controlled sidebar's `data-mobile`; `null` while detached. */
+	@state @bindTo({ attr: 'data-sidebar-mobile' }) sidebarMobile: boolean | null = null;
+
+	/** Controlled sidebar's `data-collapsible`; `null` while detached. */
+	@state @bindTo({ attr: 'data-sidebar-collapsible' }) sidebarCollapsible: string | null = null;
+
+	/** @remarks Single sync channel: covers toggles, mobile flips, and collapsible changes. */
 	private sidebarObserver: MutationObserver | null = null;
 	private attachedSidebar: HTMLElement | null = null;
 	private initialSyncFrame: number | null = null;
@@ -181,45 +188,22 @@ export class RuiSidebarTrigger extends RadiantElement {
 		this.detachFromSidebar();
 		if (!sidebar) return;
 		this.attachedSidebar = sidebar;
-		this.sidebarListener = (event: Event) => {
-			const detail = (event as CustomEvent<RuiSidebarToggleDetail>).detail;
-			this.applyState(detail.state);
-		};
-		this.sidebarMobileListener = () => this.applyState(this.readState(sidebar));
 		this.sidebarObserver = new MutationObserver(() => this.applyState(this.readState(sidebar)));
 		this.sidebarObserver.observe(sidebar, {
 			attributes: true,
 			attributeFilter: ['data-state', 'data-mobile', 'data-collapsible'],
 		});
-		sidebar.addEventListener('rui-sidebar-toggle', this.sidebarListener);
-		sidebar.addEventListener('rui-sidebar-mobile-change', this.sidebarMobileListener);
 		this.applyState(this.readState(sidebar));
 	}
 
 	private detachFromSidebar(): void {
-		if (this.attachedSidebar && this.sidebarListener) {
-			this.attachedSidebar.removeEventListener('rui-sidebar-toggle', this.sidebarListener);
-		}
-		if (this.attachedSidebar && this.sidebarMobileListener) {
-			this.attachedSidebar.removeEventListener('rui-sidebar-mobile-change', this.sidebarMobileListener);
-		}
 		this.sidebarObserver?.disconnect();
 		this.attachedSidebar = null;
-		this.sidebarListener = null;
-		this.sidebarMobileListener = null;
 		this.sidebarObserver = null;
 	}
 
 	private readState(sidebar: HTMLElement): 'expanded' | 'collapsed' {
 		return (sidebar.getAttribute('data-state') as 'expanded' | 'collapsed' | null) ?? 'expanded';
-	}
-
-	private resolvedPlacement(): RuiSidebarTriggerPlacement | '' {
-		if (this.classList.contains('rui-sidebar-trigger-placement--header')) return 'header';
-		if (this.classList.contains('rui-sidebar-trigger-placement--inset')) return 'inset';
-		const placement = this.getAttribute('data-placement');
-		if (placement === 'header' || placement === 'inset') return placement;
-		return this.placement;
 	}
 
 	private resolvedButtonLabel(): string {
@@ -235,23 +219,14 @@ export class RuiSidebarTrigger extends RadiantElement {
 	 * button presentation so the first HTML includes glyphs and ARIA.
 	 */
 	private syncPresentationForSsr(): void {
-		this.applyState(initialSidebarStateForPlacement(this.resolvedPlacement()));
+		this.applyState(initialSidebarStateForPlacement(this.placement));
 	}
 
 	private applyState(state: 'expanded' | 'collapsed'): void {
 		this.sidebarState = state;
-		this.setAttribute('data-sidebar-state', state);
-		this.setAttribute('data-sidebar-placement', this.resolvedPlacement());
-		if (this.attachedSidebar) {
-			this.setAttribute('data-sidebar-mobile', this.attachedSidebar.getAttribute('data-mobile') ?? 'false');
-			this.setAttribute(
-				'data-sidebar-collapsible',
-				this.attachedSidebar.getAttribute('data-collapsible') ?? 'off',
-			);
-		} else {
-			this.removeAttribute('data-sidebar-mobile');
-			this.removeAttribute('data-sidebar-collapsible');
-		}
+		const attached = this.attachedSidebar;
+		this.sidebarMobile = attached ? attached.getAttribute('data-mobile') === 'true' : null;
+		this.sidebarCollapsible = attached ? (attached.getAttribute('data-collapsible') ?? 'off') : null;
 		const button = this.buttonTarget;
 		if (!button) return;
 		const sidebar = this.resolveSidebar();
@@ -270,7 +245,7 @@ export class RuiSidebarTrigger extends RadiantElement {
 		button.className = sidebarTriggerButtonClass({
 			variant: this.variant,
 			size: this.size,
-			placement: this.resolvedPlacement(),
+			placement: this.placement,
 		});
 	}
 

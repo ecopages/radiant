@@ -79,6 +79,7 @@ html[data-rui-colors='basalt'] {
 
 	--border: var(--color-basalt-400);
 	--focus-ring: var(--color-carbon-blue-500);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-carbon-blue-600);
 	--overlay: oklch(0% 0 0 / 0.5);
 
@@ -146,6 +147,7 @@ html.dark[data-rui-colors='basalt'] {
 
 	--border: var(--color-basalt-700);
 	--focus-ring: var(--color-carbon-blue-400);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-carbon-blue-400);
 	--overlay: oklch(0% 0 0 / 0.7);
 

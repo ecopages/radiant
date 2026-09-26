@@ -2,6 +2,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import type { Decorator, Meta, StoryObj } from '@ecopages/storybook-radiant-vite';
 import { expectControlInputFontSize, expectFitsHorizontally, expectWithinViewport } from '@sb/layout-assertions';
 import { calendarDayButton, monthDayIso } from '@sb/calendar-dates';
+import { typeIsoIntoDateInput } from '@sb/date-input-typing';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { RuiField, RuiFieldError } from '../field';
 import { RuiForm } from '../form';
@@ -60,16 +61,6 @@ export const Default: Story = {
 			).toBeGreaterThan(0);
 		});
 	},
-};
-
-const typeIsoIntoDateInput = async (input: HTMLElement, iso: string): Promise<void> => {
-	const [year, month, day] = iso.split('-');
-	await userEvent.click(input.querySelector('[data-date-segment][data-type="month"]') as HTMLElement);
-	await userEvent.keyboard(month ?? '');
-	await userEvent.click(input.querySelector('[data-date-segment][data-type="day"]') as HTMLElement);
-	await userEvent.keyboard(day ?? '');
-	await userEvent.click(input.querySelector('[data-date-segment][data-type="year"]') as HTMLElement);
-	await userEvent.keyboard(year ?? '');
 };
 
 export const SegmentTyping: Story = {

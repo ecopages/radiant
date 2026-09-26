@@ -4,7 +4,7 @@ Radiant is a light-DOM platform for custom elements and DOM-attached controllers
 
 It keeps browser primitives visible instead of wrapping them in a synthetic component model. You work with real custom elements, real DOM events, real attributes, and real light-DOM children. Use `RadiantElement` when you want reactive fields, JSX-backed rendering, SSR host serialization, and hydration on a real custom element. Use `RadiantController` when you want behavior attached to existing DOM instead of defining a custom element.
 
-Radiant deliberately does not use shadow DOM by default. That makes styling, DOM inspection, and authored child content simpler, while giving up some of the encapsulation that conventional custom-element guidance usually prefers.
+Radiant deliberately renders into light DOM only; it has no shadow render mode. That keeps styling, DOM inspection, authored child content, and ARIA id references between host-owned and authored nodes simple, while giving up the encapsulation that conventional custom-element guidance usually prefers.
 
 For the full docs site, see [radiant.ecopages.app](https://radiant.ecopages.app/).
 
@@ -28,12 +28,13 @@ Application code does not need to import JSX helpers or Signals primitives direc
 
 - `render()` returns the current JSX view.
 - First connect automatically chooses between hydration and a fresh client render.
-- `update()` reruns `render()` and commits the current view into the host immediately.
-- `requestUpdate()` schedules one rerender in a microtask and coalesces repeated requests.
+- `update()` runs the update cycle now: batched `@onUpdated` callbacks, the render, then `updated()`.
+- `requestUpdate()` schedules that cycle in a microtask and coalesces repeated requests. `updateComplete` resolves when the cycle finishes.
+- Connected browser DOM hosts also flush in Node test environments; Radiant's minimal SSR DOM drains updates during host preparation instead.
 - `@prop(...)`, `@state`, and `@signal(...)` define reactive members. Pass `transform` on `@prop` to override default converters (`type: Array` is JSON unless you supply `fromAttribute` / `toAttribute`). `fromProperty` normalizes JS/JSX writes. `toAttribute` returning `null` or `''` omits the reflected attribute.
-- Reflected properties serialize the current value after synchronous update callbacks, including any normalization performed by those callbacks.
+- Reflected properties serialize the current value on each write. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes the assignment is reflected too.
 - `@bindTo(...)` copies a reactive field onto existing DOM when the host does not own a `render()` tree.
-- `@onUpdated(...)` is for procedures, and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change.
+- `@onUpdated(...)` runs once per update cycle, before the render commits, for procedures and for asking a render-owning host to `update()` / `requestUpdate()` when the view structure must change. `updated()` is for work that needs the committed DOM.
 - `this.bindings.key`, `this.$.key`, and `this.bind('key')` expose stable JSX bindings for reactive members.
 - If `render()` is omitted, the base implementation behaves like `<slot />`, so authored light-DOM children pass through unchanged. Copy fields onto that DOM with `@bindTo(...)`.
 - `onConnected()` runs after every connection, once attribute catch-up and (when `render()` is overridden) the initial hydrate/update have finished. Use it instead of `connectedCallback` + `queueMicrotask(sync)`. It is not `registerConnectedCallback()`, which runs synchronously before catch-up.
@@ -157,11 +158,9 @@ Prefer the server pipeline for host HTML:
 
 There is no durable Element Host instance API named `renderHostToString()`.
 
-Radiant SSR is light-DOM only. Shadow `renderRootMode` hosts throw during server serialization; client shadow rendering remains valid.
-
 `mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 
-Because Radiant's SSR environment shims `window` and `document`, global checks like `typeof window !== 'undefined'` or `typeof document !== 'undefined'` evaluate to `true` on the server. Guard top-level event listeners on `document` or `window` with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR.
+Because Radiant's SSR environment shims `window` and `document`, global checks like `typeof window !== 'undefined'` or `typeof document !== 'undefined'` evaluate to `true` on the server. Guard top-level event listeners on `document` or `window` with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR. This flag follows the package export condition: Node tests using a browser-like DOM also read `true`. Use a DOM capability check for code that depends on specific DOM methods.
 
 Server runtime setup, fragment rendering helpers, and SSR-specific import guidance live in [src/server/README.md](src/server/README.md).
 

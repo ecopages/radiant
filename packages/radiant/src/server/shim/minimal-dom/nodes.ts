@@ -1,4 +1,5 @@
 import { serializeHtmlAttribute } from '../../../utils/serialize-html-attribute';
+import { MINIMAL_DOM_ELEMENT } from '../../../core/minimal-dom-identity';
 import { voidElementNames } from '../../html/html-parser';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import * as selectors from './selectors';
@@ -431,6 +432,29 @@ export class MinimalElement extends MinimalNode {
 		return selectors.matches(this, selector);
 	}
 
+	getBoundingClientRect(): DOMRect {
+		return {
+			x: 0,
+			y: 0,
+			width: 0,
+			height: 0,
+			top: 0,
+			right: 0,
+			bottom: 0,
+			left: 0,
+			toJSON() {
+				return this;
+			},
+		} as DOMRect;
+	}
+
+	getClientRects(): DOMRectList {
+		const rect = this.getBoundingClientRect();
+		return Object.assign([rect], {
+			item: (index: number) => (index === 0 ? rect : null),
+		}) as unknown as DOMRectList;
+	}
+
 	private clearFragmentCache(): void {
 		this.fragmentHtml = undefined;
 		this.fragmentInnerHtml = undefined;
@@ -515,6 +539,7 @@ export class MinimalCustomEvent<T = unknown> extends MinimalEvent {
 }
 
 export class MinimalHTMLElement extends MinimalElement {
+	readonly [MINIMAL_DOM_ELEMENT] = true;
 	public isConnected = false;
 
 	constructor(tagName = 'div', ownerDocument: Document | null = getInstalledDocumentLike()) {
@@ -524,6 +549,10 @@ export class MinimalHTMLElement extends MinimalElement {
 	insertAdjacentHTML(_position: InsertPosition, html: string): void {
 		this.append(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
 	}
+
+	focus(): void {}
+
+	blur(): void {}
 
 	connectedCallback?(): void;
 	attributeChangedCallback?(name: string, oldValue: string | null, newValue: string | null): void;

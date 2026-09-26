@@ -4,7 +4,7 @@ import './field.script';
 
 /**
  * Field wrapper. Authors `[data-ref="field"]` (`.rui-field` column) inside `<rui-field>` and passes
- * `rules` / `defaultValue` through property bindings.
+ * `rules` / `defaultValue` through property bindings. Not a listed form control; the child is.
  *
  * @cssclass rui-field - Root column; wires the composed control, label, description,
  *   and error into the form-published presentation.

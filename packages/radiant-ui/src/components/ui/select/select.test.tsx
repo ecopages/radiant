@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'storybook/test';
+import { userEvent as browserUserEvent } from 'vitest/browser';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import {
 	RuiSelect,
@@ -196,6 +197,22 @@ describe('RuiSelect', () => {
 		await settled();
 
 		expect(popup.hidden).toBe(false);
+		cleanup();
+	});
+
+	it('opens once and stays open on a real pointer click when triggerKind is focus', async () => {
+		const { host, cleanup } = mount(<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />);
+		await settled();
+
+		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
+		const popup = host.querySelector('[data-select-listbox]') as HTMLElement;
+
+		await browserUserEvent.click(trigger);
+		await settled();
+
+		expect(document.activeElement).toBe(trigger);
+		expect(popup.hidden).toBe(false);
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
 		cleanup();
 	});
 

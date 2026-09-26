@@ -7,17 +7,10 @@ export type ElementEventListenerConfig = {
 	options?: AddEventListenerOptions;
 };
 
-type RadiantElementEventSubscription = ElementEventListenerConfig & {
-	target: EventTarget;
-};
-
 export class EventSubscriptionRegistry {
-	private readonly subscriptions = new Map<string, RadiantElementEventSubscription[]>();
+	private readonly subscriptions = new Map<string, ElementEventListenerConfig[]>();
 
-	constructor(
-		private readonly getInteractionTarget: () => EventTarget,
-		private readonly getListenerContext: () => object,
-	) {}
+	constructor(private readonly host: HTMLElement) {}
 
 	/**
 	 * Installs a delegated listener and returns a cleanup for that registration.
@@ -28,23 +21,18 @@ export class EventSubscriptionRegistry {
 	 * remove another that happens to share the same lookup key.
 	 */
 	public subscribe(eventConfig: ElementEventListenerConfig): () => void {
-		const interactionTarget = this.getInteractionTarget();
-		const listenerContext = this.getListenerContext();
+		const host = this.host;
 		const delegatedListener = (delegatedEvent: Event) => {
-			if (
-				interactionTarget instanceof Node &&
-				eventMatchesDelegatedSelector(delegatedEvent, interactionTarget, eventConfig.selector)
-			) {
-				eventConfig.listener.call(listenerContext, delegatedEvent);
+			if (eventMatchesDelegatedSelector(delegatedEvent, host, eventConfig.selector)) {
+				eventConfig.listener.call(host, delegatedEvent);
 			}
 		};
 		const subscriptionId = `${eventConfig.type}:${eventConfig.selector}`;
-		const subscription: RadiantElementEventSubscription = {
+		const subscription: ElementEventListenerConfig = {
 			...eventConfig,
 			listener: delegatedListener,
-			target: interactionTarget,
 		};
-		interactionTarget.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
+		host.addEventListener(eventConfig.type, delegatedListener, eventConfig.options);
 		const registrations = this.subscriptions.get(subscriptionId);
 		if (registrations) {
 			registrations.push(subscription);
@@ -74,7 +62,7 @@ export class EventSubscriptionRegistry {
 		this.subscriptions.clear();
 	}
 
-	private unsubscribe(subscription: RadiantElementEventSubscription): void {
+	private unsubscribe(subscription: ElementEventListenerConfig): void {
 		const subscriptionId = `${subscription.type}:${subscription.selector}`;
 		const registrations = this.subscriptions.get(subscriptionId);
 		if (!registrations) {
@@ -94,8 +82,8 @@ export class EventSubscriptionRegistry {
 		}
 	}
 
-	private removeListener(eventSubscription: RadiantElementEventSubscription): void {
-		eventSubscription.target.removeEventListener(
+	private removeListener(eventSubscription: ElementEventListenerConfig): void {
+		this.host.removeEventListener(
 			eventSubscription.type,
 			eventSubscription.listener,
 			eventSubscription.options,

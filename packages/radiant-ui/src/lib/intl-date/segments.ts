@@ -1,4 +1,5 @@
 import { getDateTimeFormat } from './formatters';
+import { dateToIso, isIsoInRange } from './iso';
 import type { DateGranularity, DatePartType, IntlLocale } from './types';
 
 export type DateSegmentType = DatePartType | 'literal';
@@ -135,6 +136,45 @@ export function segmentsToDate(segments: DateSegmentModel[]): Date | null {
 	}
 
 	return date;
+}
+
+export function allSegmentsEmpty(segments: DateSegmentModel[]): boolean {
+	return segments.every((segment) => !segment.editable || segment.isPlaceholder || segment.value === '');
+}
+
+export type DraftStatus =
+	| { kind: 'partial-year' }
+	| { kind: 'empty' }
+	| { kind: 'incomplete' }
+	| { kind: 'out-of-range' }
+	| { kind: 'date'; iso: string };
+
+/**
+ * Classifies an edited segment draft so a date input can decide whether to publish, keep, or restore it.
+ *
+ * @remarks
+ * Checks run in order: `partial-year` (a typed year with fewer than four digits), `empty`,
+ * `incomplete` (a missing unit or an impossible date such as Feb 30), `out-of-range`, then `date`.
+ * The four-digit rule lives here rather than in `segmentsToDate`, which still reads `1` as 2001
+ * for callers that parse two-digit years.
+ */
+export function draftStatus(segments: DateSegmentModel[], range: { min?: string; max?: string } = {}): DraftStatus {
+	const year = segments.find((segment) => segment.editable && segment.type === 'year');
+	if (year && !year.isPlaceholder && year.value !== '' && year.value.replace(/\D/g, '').length < 4) {
+		return { kind: 'partial-year' };
+	}
+	if (allSegmentsEmpty(segments)) {
+		return { kind: 'empty' };
+	}
+	const date = segmentsToDate(segments);
+	if (!date) {
+		return { kind: 'incomplete' };
+	}
+	const iso = dateToIso(date);
+	if (!isIsoInRange(iso, range.min, range.max)) {
+		return { kind: 'out-of-range' };
+	}
+	return { kind: 'date', iso };
 }
 
 export function getEditableSegmentIndices(segments: DateSegmentModel[]): number[] {

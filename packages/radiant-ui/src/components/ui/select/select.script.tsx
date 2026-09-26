@@ -91,6 +91,8 @@ export type RuiSelectChangeDetail = { value: string[] };
  * Minimum tree: `[data-ref="root"]` > `[data-select-trigger]` > `[data-select-value]`,
  * sibling `[data-select-listbox]` > `rui-listbox[embedded]` > `[role="option"]`.
  * BEM classes live on the view helpers; the host never queries them.
+ * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
+ * The selected value does not appear in native `FormData`.
  */
 @customElement('rui-select')
 export class RuiSelect extends RadiantElement {
@@ -122,7 +124,6 @@ export class RuiSelect extends RadiantElement {
 	changeEvent: EventEmitter<RuiSelectChangeDetail>;
 
 	private open = false;
-	private refocusingTrigger = false;
 	private readonly uid = uniqueId('rui-select');
 	private readonly collection = new ListboxHostController({
 		getRoot: () => this,
@@ -268,7 +269,7 @@ export class RuiSelect extends RadiantElement {
 		this.collection.syncOptionSelection();
 		this.syncTagGroup();
 		this.changeEvent.emit({ value: [] });
-		this.refocusTrigger();
+		this.getTrigger()?.focus();
 	}
 
 	private getTrigger(): HTMLElement | null {
@@ -284,32 +285,6 @@ export class RuiSelect extends RadiantElement {
 			return false;
 		}
 		return !(target instanceof Element && target.closest('[data-tag-remove]'));
-	}
-
-	private shouldOpenListboxOnFocus(): boolean {
-		return this.triggerKind === 'focus' && !this.refocusingTrigger;
-	}
-
-	private scheduleFocusOpen(): void {
-		queueMicrotask(() => {
-			if (this.disabled || !this.shouldOpenListboxOnFocus()) {
-				return;
-			}
-			const trigger = this.getTrigger();
-			if (!trigger?.contains(document.activeElement)) {
-				return;
-			}
-			this.setOpen(true);
-		});
-	}
-
-	private refocusTrigger(): void {
-		this.refocusingTrigger = true;
-		try {
-			this.getTrigger()?.focus();
-		} finally {
-			this.refocusingTrigger = false;
-		}
 	}
 
 	private getToggle(): HTMLButtonElement | null {
@@ -471,7 +446,7 @@ export class RuiSelect extends RadiantElement {
 		if (this.closesOnSelect()) {
 			this.resetSearchFilter();
 			this.setOpen(false);
-			this.refocusTrigger();
+			this.getTrigger()?.focus();
 		}
 	}
 
@@ -486,7 +461,7 @@ export class RuiSelect extends RadiantElement {
 			onClose: (reason) => {
 				this.setOpen(false);
 				if (reason === 'arrow' || reason === 'escape') {
-					this.refocusTrigger();
+					this.getTrigger()?.focus();
 				}
 			},
 			onSelectActive: () => {
@@ -556,7 +531,7 @@ export class RuiSelect extends RadiantElement {
 			return;
 		}
 
-		this.refocusTrigger();
+		trigger.focus();
 	}
 
 	@onEvent({ selector: '[data-select-trigger]', type: 'keydown', options: { capture: true } })
@@ -640,17 +615,22 @@ export class RuiSelect extends RadiantElement {
 		}
 	}
 
+	/**
+	 * @remarks With `trigger-kind="focus"`, only focus arriving from outside the host
+	 * opens the listbox. Focus the host moves back itself (option select, clear,
+	 * toggle, search input) comes from a descendant and never reopens it.
+	 */
 	@onEvent({ ref: 'root', type: 'focusin' })
 	onRootFocusIn(event: FocusEvent): void {
-		if (this.disabled || !this.isTriggerFocusTarget(event.target)) {
+		if (this.triggerKind !== 'focus' || this.disabled || this.open || !this.isTriggerFocusTarget(event.target)) {
 			return;
 		}
 
-		if (!this.shouldOpenListboxOnFocus()) {
+		if (event.relatedTarget instanceof Node && this.contains(event.relatedTarget)) {
 			return;
 		}
 
-		this.scheduleFocusOpen();
+		this.setOpen(true);
 	}
 
 	@onEvent({ ref: 'root', type: 'focusout' })

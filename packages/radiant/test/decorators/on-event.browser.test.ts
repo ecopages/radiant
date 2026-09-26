@@ -1,17 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RadiantController } from '../../src/core/radiant-controller';
 import { RadiantElement } from '../../src/core/radiant-element';
 import { customElement } from '../../src/decorators/custom-element';
 import { onEvent } from '../../src/decorators/on-event';
-
-class ShadowOnEventController extends RadiantController {
-	received = false;
-
-	@onEvent({ ref: 'shadow-btn', type: 'click', scope: 'shadow' })
-	onShadowClick() {
-		this.received = true;
-	}
-}
 
 describe('onEvent', () => {
 	beforeEach(() => {
@@ -99,34 +89,6 @@ describe('onEvent', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('should listen to delegated events in shadow DOM when scope is shadow', () => {
-		@customElement('shadow-on-event-listener')
-		class ShadowOnEventListener extends RadiantElement {
-			received = false;
-
-			constructor() {
-				super();
-				const shadowRoot = this.attachShadow({ mode: 'open' });
-				const button = document.createElement('button');
-				button.setAttribute('data-ref', 'shadow-btn');
-				button.textContent = 'Shadow';
-				shadowRoot.appendChild(button);
-			}
-
-			@onEvent({ ref: 'shadow-btn', type: 'click', scope: 'shadow' })
-			onShadowClick() {
-				this.received = true;
-			}
-		}
-
-		const element = document.createElement('shadow-on-event-listener') as ShadowOnEventListener;
-		document.body.appendChild(element);
-		element.shadowRoot
-			?.querySelector('[data-ref="shadow-btn"]')
-			?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
-		expect(element.received).toBeTruthy();
-	});
-
 	it('should fire delegated listeners when the click target is nested inside the match', () => {
 		@customElement('nested-on-event-listener')
 		class NestedOnEventListener extends RadiantElement {
@@ -208,12 +170,4 @@ describe('onEvent', () => {
 		expect(element.clickCount).toBe(2);
 	});
 
-	it('rejects shadow-scoped delegated listeners for controllers', () => {
-		const host = document.createElement('section');
-		host.attachShadow({ mode: 'open' }).innerHTML = '<button data-ref="shadow-btn">Shadow</button>';
-
-		expect(() => new ShadowOnEventController(host)).toThrowError(
-			'RadiantController event listeners only support light DOM scope.',
-		);
-	});
 });

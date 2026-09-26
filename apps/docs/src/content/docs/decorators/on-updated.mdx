@@ -11,7 +11,7 @@ import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-
 
 # @onUpdated
 
-The `@onUpdated` decorator registers a callback method that executes automatically whenever a specific reactive property or field changes. Use it for **procedures**: derived state, focus, timers, joined ARIA, storage, analytics.
+The `@onUpdated` decorator registers a callback method that runs once per update cycle when a watched reactive property or field changed. Use it for **procedures**: derived state, timers, joined ARIA, storage, analytics. Work that needs the DOM after the render commits belongs in `updated()`.
 
 To copy a field onto an attribute, boolean attribute, DOM property, or text node, use [@bindTo](/docs/decorators/bind-to) instead.
 
@@ -38,17 +38,16 @@ export class SearchField extends RadiantElement {
 
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
-| `propertyName` | `string` | Yes | Name of the property or field to watch. |
+| `propertyName` | `string` or `string[]` | Yes | Member or members that trigger the method. An array watches several members in one registration, so the method runs once per cycle. |
 
 ## Feature Highlight
 
 ### Watching Multiple Properties
 
-A single method can watch multiple properties by applying the decorator multiple times.
+Pass every member to one decorator. Writes in the same turn batch into one cycle, and the method runs once with all of them applied. It receives the set of members changed in that cycle.
 
 ```typescript
-@onUpdated('firstName')
-@onUpdated('lastName')
+@onUpdated(['firstName', 'lastName'])
 updateFullName() {
 	this.fullName = `${this.firstName} ${this.lastName}`;
 }
@@ -102,7 +101,7 @@ export class ThemeController extends RadiantController {
 <RuiAlert variant="error" layout="banner" class="unstyled">
   <RuiAlertTitle>CAUTION</RuiAlertTitle>
   <RuiAlertDescription>
-    <p>Avoid updating the same property you're watching, as this will trigger an infinite loop.</p>
+    <p>A method may write a watched member, and those writes settle in the same cycle. A method that keeps writing forever throws after 100 rounds.</p>
   </RuiAlertDescription>
 </RuiAlert>
 

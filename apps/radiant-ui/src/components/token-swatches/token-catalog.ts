@@ -91,7 +91,7 @@ export const semanticColorFamilies: readonly ColorFamily[] = [
 		description: 'Chrome, focus, links, overlays, and code surfaces.',
 		swatches: [
 			{ token: '--border' },
-			{ token: '--focus-ring' },
+			{ token: '--focus-ring', onToken: '--on-focus-ring' },
 			{ token: '--link' },
 			{ token: '--overlay' },
 			{ token: '--neutral' },

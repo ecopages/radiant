@@ -34,10 +34,6 @@ function segment(host: HTMLElement, type: 'month' | 'day' | 'year'): HTMLElement
 	return host.querySelector(`[data-date-segment][data-type="${type}"]`) as HTMLElement;
 }
 
-function hiddenInput(host: HTMLElement): HTMLInputElement {
-	return host.querySelector('[data-date-input-hidden]') as HTMLInputElement;
-}
-
 function listenChanges(host: HTMLElement): string[] {
 	const values: string[] = [];
 	host.addEventListener('rui-change', (event) => {
@@ -74,7 +70,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'day').textContent).toBe('1');
 		expect(host.value).toBe('2026-08-20');
-		expect(hiddenInput(host).value).toBe('2026-08-20');
 		expect(changes).toEqual([]);
 		expect(document.activeElement).toBe(segment(host, 'day'));
 		expect(yearFocusIns).toBe(0);
@@ -84,11 +79,31 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'day').textContent).toBe('15');
 		expect(host.value).toBe('2026-08-15');
-		expect(hiddenInput(host).value).toBe('2026-08-15');
 		expect(changes).toEqual(['2026-08-15']);
 		expect(document.activeElement).toBe(segment(host, 'year'));
 		expect(dayFocusIns).toBeLessThan(8);
 		expect(yearFocusIns).toBeLessThan(8);
+		cleanup();
+	});
+
+	it('clears an uncommitted draft on native form reset', async () => {
+		const { container, cleanup } = mount(
+			<form>
+				<RuiDateInput name="when" value="2026-08-20" locale="en-US" />
+			</form>,
+		);
+		const host = await connected(container);
+		await userEvent.click(segment(host, 'day'));
+		await userEvent.keyboard('1');
+		await settle();
+		expect(segment(host, 'day').textContent).toBe('1');
+		expect(host.value).toBe('2026-08-20');
+
+		const form = container.querySelector('form')!;
+		form.reset();
+		await settle();
+		expect(segment(host, 'day').textContent).toBe('20');
+		expect(new FormData(form).get('when')).toBe('2026-08-20');
 		cleanup();
 	});
 
@@ -103,7 +118,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'year').textContent).toBe('1');
 		expect(host.value).toBe('2026-08-20');
-		expect(hiddenInput(host).value).toBe('2026-08-20');
 		expect(changes).toEqual([]);
 		expect(document.activeElement).toBe(segment(host, 'year'));
 
@@ -112,7 +126,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'year').textContent).toBe('1999');
 		expect(host.value).toBe('1999-08-20');
-		expect(hiddenInput(host).value).toBe('1999-08-20');
 		expect(changes).toEqual(['1999-08-20']);
 		cleanup();
 	});
@@ -147,7 +160,6 @@ describe('RuiDateInput segment editing', () => {
 		await settle();
 
 		expect(host.value).toBe('2026-08-01');
-		expect(hiddenInput(host).value).toBe('2026-08-01');
 		expect(changes).toEqual(['2026-08-01']);
 		cleanup();
 	});
@@ -228,7 +240,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'year').textContent).toBe('2026');
 		expect(host.value).toBe('2026-08-07');
-		expect(hiddenInput(host).value).toBe('2026-08-07');
 		expect(changes).toEqual(['2026-08-07']);
 		cleanup();
 	});
@@ -265,7 +276,52 @@ describe('RuiDateInput segment editing', () => {
 		expect(segment(host, 'day').textContent).toBe('01');
 		expect(segment(host, 'month').textContent).toBe('09');
 		expect(host.value).toBe('2026-09-01');
-		expect(hiddenInput(host).value).toBe('2026-09-01');
+		cleanup();
+	});
+
+	it('keeps an in-progress draft when label changes', async () => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-08-20" locale="en-US" />);
+		const host = await connected(container);
+		const changes = listenChanges(host);
+
+		await userEvent.click(segment(host, 'day'));
+		await userEvent.keyboard('1');
+		await settle();
+		host.label = 'Start date';
+		await settle();
+
+		expect(segment(host, 'day').textContent).toBe('1');
+		expect(host.querySelector('[data-ref="root"]')?.getAttribute('aria-label')).toBe('Start date');
+
+		await userEvent.keyboard('5');
+		await settle();
+
+		expect(host.value).toBe('2026-08-15');
+		expect(changes).toEqual(['2026-08-15']);
+		cleanup();
+	});
+
+	it('keeps an in-progress draft while read-only toggles', async () => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-08-20" locale="en-US" />);
+		const host = await connected(container);
+		const changes = listenChanges(host);
+
+		await userEvent.click(segment(host, 'day'));
+		await userEvent.keyboard('1');
+		await settle();
+		host.readOnly = true;
+		await settle();
+
+		expect(segment(host, 'day').getAttribute('contenteditable')).toBeNull();
+		expect(segment(host, 'day').textContent).toBe('1');
+
+		host.readOnly = false;
+		await settle();
+		await userEvent.keyboard('5');
+		await settle();
+
+		expect(host.value).toBe('2026-08-15');
+		expect(changes).toEqual(['2026-08-15']);
 		cleanup();
 	});
 });
@@ -283,7 +339,7 @@ describe('RuiDateInput styles', () => {
 		const host = container.querySelector('rui-date-input') as HTMLElement;
 		const focusedSegment = host.querySelector('[data-date-segment]') as HTMLElement;
 		host.style.setProperty('--focus-ring', 'rgb(1, 2, 3)');
-		host.style.setProperty('--on-primary', 'rgb(4, 5, 6)');
+		host.style.setProperty('--on-focus-ring', 'rgb(4, 5, 6)');
 		focusedSegment.setAttribute('data-focused', 'true');
 		const styles = getComputedStyle(focusedSegment);
 		expect(styles.backgroundColor).toBe('rgb(1, 2, 3)');

@@ -1,10 +1,13 @@
+import type { UpdatedCallback } from '../../core/reactive-host';
 import type { Method } from '../../types';
 
 type UpdatedHost = {
-	registerUpdateCallback(key: string, update: (...args: unknown[]) => unknown): () => void;
+	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
 };
 
 export function onUpdated(keyOrKeys: string | string[]) {
+	const keys = Array.isArray(keyOrKeys) ? keyOrKeys : [keyOrKeys];
+
 	return function <THost extends UpdatedHost, T extends Method>(
 		originalMethod: T,
 		context: ClassMethodDecoratorContext<THost, T>,
@@ -18,13 +21,7 @@ export function onUpdated(keyOrKeys: string | string[]) {
 				writable: true,
 			});
 
-			if (Array.isArray(keyOrKeys)) {
-				for (const key of keyOrKeys) {
-					this.registerUpdateCallback(key, boundMethod);
-				}
-			} else if (typeof keyOrKeys === 'string') {
-				this.registerUpdateCallback(keyOrKeys, boundMethod);
-			}
+			this.registerUpdatedCallback(keys, boundMethod);
 		});
 	};
 }

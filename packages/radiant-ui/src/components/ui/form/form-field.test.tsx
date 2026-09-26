@@ -7,6 +7,10 @@ import { RuiTextarea } from '../textarea';
 import { RuiLabel } from '../label';
 import { RuiSwitch } from '../switch';
 import { RuiDateField } from '../date-field';
+import { RuiDateInput } from '../date-input';
+import { RuiNumberField } from '../number-field';
+import { RuiSlider } from '../slider';
+import { RuiKnob } from '../knob';
 import {
 	RuiCombobox,
 	RuiComboboxClear,
@@ -30,7 +34,11 @@ import '../field/field.script';
 import './form.script';
 import '../switch/switch.script';
 import '../date-field/date-field.script';
-import { findFieldControl, findFieldError } from './control-protocol';
+import '../date-input/date-input.script';
+import '../number-field/number-field.script';
+import '../slider/slider.script';
+import '../knob/knob.script';
+import { findFieldControl, findFieldError, registerFieldControl } from './control-protocol';
 import type { RuiField as RuiFieldElement } from '../field/field.script';
 import type { RuiForm as RuiFormElement } from './form.script';
 import type { FormContextValue } from './form-context';
@@ -167,6 +175,307 @@ describe('rui-field composed content discovery', () => {
 		expect(nativeForm.action).toContain('/accounts');
 		expect(nativeForm.method).toBe('post');
 		expect(submit).toHaveBeenCalledOnce();
+		host.remove();
+	});
+
+	it('publishes a custom host onto native FormData', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="when">
+					<RuiDateInput value="2026-08-20" />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-date-input');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).get('when')).toBe('2026-08-20');
+		host.remove();
+	});
+
+	it('submits a named date-input without RuiField', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiDateInput name="when" value="2026-08-20" />
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-date-input');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).get('when')).toBe('2026-08-20');
+		host.remove();
+	});
+
+	it('submits an empty named date as an empty value', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<form>
+				<RuiDateInput name="when" value="" />
+			</form>,
+		);
+		await customElements.whenDefined('rui-date-input');
+		await flushRender();
+		await flushFirstConnect();
+
+		expect(new FormData(host.querySelector('form')!).getAll('when')).toEqual(['']);
+		host.remove();
+	});
+
+	it('keeps fieldset disability separate from the authored disabled attribute', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<form>
+				<fieldset>
+					<RuiDateInput name="when" value="2026-08-20" />
+					<RuiNumberField name="quantity" value={3} />
+					<RuiSlider name="level" value={25} />
+					<RuiKnob name="gain" value={25} />
+				</fieldset>
+			</form>,
+		);
+		await customElements.whenDefined('rui-date-input');
+		await customElements.whenDefined('rui-number-field');
+		await customElements.whenDefined('rui-slider');
+		await customElements.whenDefined('rui-knob');
+		await flushRender();
+		await flushFirstConnect();
+
+		const fieldset = host.querySelector('fieldset')!;
+		const date = host.querySelector('rui-date-input')!;
+		const quantity = host.querySelector('rui-number-field')!;
+		const slider = host.querySelector('rui-slider')!;
+		const knob = host.querySelector('rui-knob')!;
+		fieldset.disabled = true;
+		await flushRender();
+		expect(date.hasAttribute('disabled')).toBe(false);
+		expect(quantity.hasAttribute('disabled')).toBe(false);
+		expect(slider.hasAttribute('disabled')).toBe(false);
+		expect(knob.hasAttribute('disabled')).toBe(false);
+		expect((quantity.querySelector('[data-number-field-input]') as HTMLInputElement).disabled).toBe(true);
+		expect((slider.querySelector('[data-thumb="value"]') as HTMLButtonElement).disabled).toBe(true);
+		expect((knob.querySelector('[data-ref="control"]') as HTMLButtonElement).disabled).toBe(true);
+		fieldset.disabled = false;
+		await flushRender();
+		expect((quantity.querySelector('[data-number-field-input]') as HTMLInputElement).disabled).toBe(false);
+		expect((slider.querySelector('[data-thumb="value"]') as HTMLButtonElement).disabled).toBe(false);
+		expect((knob.querySelector('[data-ref="control"]') as HTMLButtonElement).disabled).toBe(false);
+		expect(new FormData(host.querySelector('form')!).get('when')).toBe('2026-08-20');
+		expect(new FormData(host.querySelector('form')!).get('level')).toBe('25');
+		expect(new FormData(host.querySelector('form')!).get('gain')).toBe('25');
+		host.remove();
+	});
+
+	it('clears a field name from native submission', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<form>
+				<RuiField name="when">
+					<RuiDateInput value="2026-08-20" />
+				</RuiField>
+			</form>,
+		);
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-date-input');
+		await flushRender();
+		await flushFirstConnect();
+
+		const field = host.querySelector('rui-field') as RuiFieldElement;
+		const nativeForm = host.querySelector('form')!;
+		expect(new FormData(nativeForm).get('when')).toBe('2026-08-20');
+		field.name = '';
+		await flushRender();
+		expect(new FormData(nativeForm).get('when')).toBeNull();
+		host.remove();
+	});
+
+	it('submits a registered third-party FACE once through its host', async () => {
+		class ReviewFace extends HTMLElement {
+			static get formAssociated(): boolean {
+				return true;
+			}
+			private readonly internals = this.attachInternals();
+			connectedCallback(): void {
+				this.internals.setFormValue(this.getAttribute('value') ?? '');
+			}
+		}
+		if (!customElements.get('x-review-face')) customElements.define('x-review-face', ReviewFace);
+		registerFieldControl('x-review-face', {
+			submission: 'host',
+			read: (host) => host.getAttribute('value') ?? '',
+			write: (host, value) => host.setAttribute('value', String(value)),
+		});
+
+		const form = document.createElement('form');
+		const field = document.createElement('rui-field');
+		field.setAttribute('name', 'tone');
+		const control = document.createElement('x-review-face');
+		control.setAttribute('value', 'blue');
+		control.setAttribute('data-rui-aria-target', 'input');
+		const input = document.createElement('input');
+		input.setAttribute('name', 'stale');
+		control.append(input);
+		field.append(control);
+		form.append(field);
+		document.body.append(form);
+		await flushFirstConnect();
+
+		expect(new FormData(form).getAll('tone')).toEqual(['blue']);
+		expect(input.hasAttribute('name')).toBe(false);
+		form.remove();
+	});
+
+	it('resets a date field parent with its form-associated child', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<form>
+				<RuiDateField name="when" value="2026-08-20" />
+			</form>,
+		);
+		await customElements.whenDefined('rui-date-field');
+		await customElements.whenDefined('rui-date-input');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form')!;
+		const date = host.querySelector('rui-date-field') as HTMLElement & { value: string };
+		date.value = '2026-09-01';
+		await flushRender();
+		nativeForm.reset();
+		await flushRender();
+		expect(date.value).toBe('2026-08-20');
+		expect(new FormData(nativeForm).get('when')).toBe('2026-08-20');
+		host.remove();
+	});
+
+	it('restores the authored value on form reset', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiDateInput name="when" value="2026-08-20" />
+				<RuiNumberField name="quantity" value={3} />
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-date-input');
+		await customElements.whenDefined('rui-number-field');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		const date = host.querySelector('rui-date-input') as HTMLElement & { value: string };
+		const quantity = host.querySelector('rui-number-field') as HTMLElement & { value: number };
+		date.value = '1999-01-01';
+		quantity.value = 9;
+		nativeForm.reset();
+
+		expect(date.value).toBe('2026-08-20');
+		expect(quantity.value).toBe(3);
+		host.remove();
+	});
+
+	it('submits a number-field once through the host', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="quantity">
+					<RuiNumberField value={3} />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-number-field');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).getAll('quantity')).toEqual(['3']);
+		expect(host.querySelector('[data-number-field-input]')?.getAttribute('name')).toBeNull();
+		host.remove();
+	});
+
+	it('does not double-submit a native text control', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="email">
+					<RuiInput type="email" value="hello@example.com" />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).getAll('email')).toEqual(['hello@example.com']);
+		host.remove();
+	});
+
+	it('lists a switch through the host name', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="notifications">
+					<RuiSwitch />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-switch');
+		await flushRender();
+		await flushFirstConnect();
+
+		expect(host.querySelector('input')?.getAttribute('name')).toBe('notifications');
+		host.remove();
+	});
+
+	it('does not list a combobox filter input on native FormData', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="language">
+					<LanguageCombobox />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-combobox');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).get('language')).toBeNull();
 		host.remove();
 	});
 

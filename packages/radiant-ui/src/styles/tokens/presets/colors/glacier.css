@@ -80,6 +80,7 @@ html:not([data-rui-colors]) {
 
 	--border: color-mix(in oklab, var(--color-glacier-white-900) 15%, transparent);
 	--focus-ring: var(--color-night-sky-500);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-navy-blue-700);
 	--overlay: oklch(0% 0 0 / 0.45);
 
@@ -150,6 +151,7 @@ html.dark:not([data-rui-colors]) {
 
 	--border: color-mix(in oklab, var(--color-glacier-white-50) 18%, transparent);
 	--focus-ring: var(--color-night-sky-400);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-navy-blue-400);
 	--overlay: oklch(0% 0 0 / 0.65);
 

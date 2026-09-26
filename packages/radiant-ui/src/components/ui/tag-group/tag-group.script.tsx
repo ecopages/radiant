@@ -69,6 +69,7 @@ export type RuiTagGroupRemoveDetail = { value: string };
  * authored list and paints chips into `[data-rui-managed-list]` (do not author that
  * marker). `resync()` re-reads authored children after in-place mutations.
  * BEM classes live on the view helpers; the host never queries them.
+ * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
  */
 @customElement('rui-tag-group')
 export class RuiTagGroup extends RadiantElement {

@@ -79,6 +79,7 @@ html[data-rui-colors='aurora'] {
 
 	--border: var(--color-pale-sky-400);
 	--focus-ring: var(--color-havelock-blue-500);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-havelock-blue-700);
 	--overlay: oklch(0% 0 0 / 0.4);
 
@@ -146,6 +147,7 @@ html.dark[data-rui-colors='aurora'] {
 
 	--border: var(--color-pale-sky-700);
 	--focus-ring: var(--color-havelock-blue-400);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-havelock-blue-300);
 	--overlay: oklch(0% 0 0 / 0.6);
 

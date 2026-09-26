@@ -38,7 +38,7 @@ import { RuiMeter } from '@ecopages/radiant-ui/meter';
 <RuiMeter value={72} min={0} max={100} label="Storage used" />
 ```
 
-The percent readout is derived from `value` / `min` / `max` and shown next to the bar. `value` below `min` or above `max` is clamped by the native element.
+The percent readout is derived from `value` / `min` / `max` and shown next to the bar. `value` below `min` or above `max` is clamped to the range, so the bar and readout stop at `0%` / `100%` like the native element.
 
 ## Meter vs progress bar
 

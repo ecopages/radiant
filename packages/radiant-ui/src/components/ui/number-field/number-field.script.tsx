@@ -10,6 +10,7 @@ import {
 } from '@/lib/intl-number';
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
+import { FormAssociation } from '../form/form-association';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -57,7 +58,6 @@ export type RuiNumberFieldChangeDetail = { value: number };
  *   `aria-valuenow`, and formatted `value` when not editing.
  *
  * Optional:
- * - `[data-number-field-value]` — hidden form input. Host syncs `value`, `name`, `disabled`.
  * - `[data-number-field-action="decrement"]` — stepper button. Host sets `disabled` and `aria-label`.
  * - `[data-number-field-action="increment"]` — stepper button. Host sets `disabled` and `aria-label`.
  * - `[data-number-field-group]` — presentation wrapper; not queried by the host.
@@ -80,7 +80,7 @@ export type RuiNumberFieldChangeDetail = { value: number };
  * @attr {boolean} disabled - Disables input and steppers. Default: `false`.
  * @attr {boolean} read-only - Blocks editing; the value still displays formatted. Default: `false`.
  * @attr {string} label - Accessible name when there is no visible `RuiLabel`. Default: `''`.
- * @attr {string} name - Form field name on the hidden value input. Default: `''`.
+ * @attr {string} name - Form field name on this host. Submits the raw number, not the formatted display. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @attr {string} format-options - JSON-serialized `Intl.NumberFormatOptions`. Default: `''`.
  * @attr {('snap'|'validate')} commit-behavior - Blur behavior after editing. Default: `snap`.
@@ -92,12 +92,15 @@ export type RuiNumberFieldChangeDetail = { value: number };
  *   `detail.value` holds the new number.
  *
  * @remarks
- * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-value]`
- * and `[data-number-field-action]` buttons. BEM classes live on the view; the host
+ * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
  * never queries them.
  */
 @customElement('rui-number-field')
 export class RuiNumberField extends RadiantElement {
+	static get formAssociated(): boolean {
+		return true;
+	}
+
 	@prop({ type: Number, reflect: true }) value: number | undefined;
 	@prop({ type: Number, attribute: 'default-value' }) defaultValue: number | undefined;
 
@@ -120,10 +123,6 @@ export class RuiNumberField extends RadiantElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo([
-		{ selector: '[data-number-field-input]', bool: 'data-disabled' },
-		{ selector: '[data-number-field-value]', prop: 'disabled' },
-	])
 	disabled: boolean;
 
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
@@ -131,7 +130,7 @@ export class RuiNumberField extends RadiantElement {
 	readOnly: boolean;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: String, defaultValue: '' }) name: string;
+	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
 	@prop({ type: String, attribute: 'format-options', defaultValue: '' }) formatOptions: string;
 	@prop({ type: String, attribute: 'commit-behavior', defaultValue: 'snap' })
@@ -150,7 +149,8 @@ export class RuiNumberField extends RadiantElement {
 	private editing = false;
 	private draftValue = '';
 	private initialized = false;
-
+	private readonly form = new FormAssociation<number | undefined>(this);
+	private disabledByForm = false;
 	private readonly uid = uniqueId('rui-number-field');
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -179,10 +179,6 @@ export class RuiNumberField extends RadiantElement {
 		return this.querySelector<HTMLInputElement>('[data-number-field-input]');
 	}
 
-	private getHiddenInput(): HTMLInputElement | null {
-		return this.querySelector<HTMLInputElement>('[data-number-field-value]');
-	}
-
 	private syncLabel(): void {
 		const input = this.getInput();
 		syncFieldLabel(this, input, {
@@ -194,7 +190,6 @@ export class RuiNumberField extends RadiantElement {
 
 	private syncInput(): void {
 		const input = this.getInput();
-		const hidden = this.getHiddenInput();
 		if (!input) {
 			return;
 		}
@@ -204,6 +199,8 @@ export class RuiNumberField extends RadiantElement {
 		}
 
 		const numericValue = this.getNumericValue();
+		input.disabled = this.disabled || this.disabledByForm;
+		input.toggleAttribute('data-disabled', input.disabled);
 		input.setAttribute('role', 'spinbutton');
 		input.setAttribute('inputmode', 'decimal');
 		input.setAttribute('aria-valuenow', String(numericValue));
@@ -212,18 +209,13 @@ export class RuiNumberField extends RadiantElement {
 			input.value = formatNumber(numericValue, this.resolvedLocale, this.resolvedFormatOptions);
 		}
 
-		if (hidden) {
-			hidden.value = String(numericValue);
-			if (this.name) {
-				hidden.name = this.name;
-			}
-		}
+		this.form.set(this.name ? String(numericValue) : null);
 	}
 
 	private updateStepperState(): void {
 		const value = this.getNumericValue();
-		this.decreaseDisabled = this.disabled || this.readOnly || value <= this.minValue;
-		this.increaseDisabled = this.disabled || this.readOnly || value >= this.maxValue;
+		this.decreaseDisabled = this.disabled || this.disabledByForm || this.readOnly || value <= this.minValue;
+		this.increaseDisabled = this.disabled || this.disabledByForm || this.readOnly || value >= this.maxValue;
 		queueMicrotask(() => this.syncSlottedSteppers());
 	}
 
@@ -299,6 +291,21 @@ export class RuiNumberField extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		this.form.remember(this.value);
+	}
+
+	formDisabledCallback(disabled: boolean): void {
+		this.disabledByForm = disabled;
+		this.syncInput();
+		this.updateStepperState();
+	}
+
+	formResetCallback(): void {
+		this.value = this.form.initial;
+		this.editing = false;
+		this.draftValue = '';
+		this.syncInput();
+		this.updateStepperState();
 	}
 
 	@onUpdated([
@@ -308,6 +315,7 @@ export class RuiNumberField extends RadiantElement {
 		'maxValue',
 		'step',
 		'label',
+		'name',
 		'disabled',
 		'readOnly',
 		'locale',
@@ -340,7 +348,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'focusin' })
 	onInputFocus(event: Event): void {
-		if (this.disabled || this.readOnly) {
+		if (this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
@@ -361,7 +369,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'input' })
 	onInput(event: Event): void {
-		if (this.disabled || this.readOnly) {
+		if (this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 		this.editing = true;
@@ -370,7 +378,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'keydown' })
 	onKeydown(event: KeyboardEvent): void {
-		if (this.disabled || this.readOnly) {
+		if (this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
@@ -403,7 +411,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'wheel' })
 	onWheel(event: WheelEvent): void {
-		if (this.wheelDisabled || this.disabled || this.readOnly) {
+		if (this.wheelDisabled || this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 

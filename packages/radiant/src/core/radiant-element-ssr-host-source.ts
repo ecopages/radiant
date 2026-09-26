@@ -12,7 +12,6 @@ import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
  */
 export type RadiantElementSsrHostSource = {
 	constructor: Function;
-	readonly renderRootMode: 'light' | 'shadow';
 	getAttribute(name: string): string | null;
 	getAttributeNames(): string[];
 	getAuthoredHydrationScriptMarkup(): string | undefined;
@@ -22,16 +21,14 @@ export type RadiantElementSsrHostSource = {
 	getSlotProjectionScriptTag(): string | undefined;
 	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
 	flushPostSyncCallbacks(): void;
+	prepareForSsr(): void;
 };
 
 export type BrandedRadiantElementSsrHost = RadiantElementSsrHostSource & {
 	readonly [RADIANT_ELEMENT_BRAND]: true;
 };
 
-export type RadiantElementViewRenderSource = Pick<
-	RadiantElementSsrHostSource,
-	'resolveTrackedRenderOutput' | 'renderRootMode'
->;
+export type RadiantElementViewRenderSource = Pick<RadiantElementSsrHostSource, 'resolveTrackedRenderOutput'>;
 
 /** True when the value is a branded Radiant Element Host the server can serialize. */
 export function isRadiantElementSsrHost(component: unknown): component is BrandedRadiantElementSsrHost {

@@ -19,6 +19,8 @@ export type PropTransform<T> = {
 export interface ReactiveProperty<T = unknown> {
 	type: AttributeTypeConstant;
 	initialValue?: T;
+	/** Declared `@prop` default; `true` booleans serialize as `"true"` / `"false"` instead of HTML presence. */
+	defaultValue?: T;
 	name: string;
 	attribute: string;
 	reflect: boolean;
@@ -26,6 +28,11 @@ export interface ReactiveProperty<T = unknown> {
 		fromAttribute: (value: string | null) => unknown;
 		toAttribute: (value: unknown) => string | null;
 	};
+}
+
+/** True-default booleans must round-trip `"false"` through SSR and client reflection. */
+export function reflectsBooleanAsValue(property: Pick<ReactiveProperty, 'type' | 'defaultValue'>): boolean {
+	return property.type === Boolean && property.defaultValue === true;
 }
 
 export type ReactivePropertyOptions<T> = {
