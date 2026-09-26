@@ -1,5 +1,5 @@
 import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
-import { MINIMAL_DOM_ELEMENT } from './minimal-dom-identity';
+import { isMinimalDomElement } from './minimal-dom-identity';
 import {
 	createReactiveComputed,
 	createReactiveWatcher,
@@ -180,7 +180,7 @@ export class RenderRuntime {
 		if (
 			!this.#hasMounted &&
 			this.#host.childNodes.length > 0 &&
-			(MINIMAL_DOM_ELEMENT in this.#host || !hasHydrationMarkers(this.#host))
+			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
 		) {
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;

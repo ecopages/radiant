@@ -1,4 +1,4 @@
-import { MINIMAL_DOM_ELEMENT } from './minimal-dom-identity';
+import { isMinimalDomElement } from './minimal-dom-identity';
 import type { EventEmitter } from '../tools';
 import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { HostSsrRegistry } from './host-ssr-registry';
@@ -267,7 +267,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 * a browser-like DOM still need normal update cycles.
 	 */
 	private canFlushUpdateCycle(): boolean {
-		return !(MINIMAL_DOM_ELEMENT in this) && this.isConnected && !this.isFirstConnectPending;
+		return !isMinimalDomElement(this) && this.isConnected && !this.isFirstConnectPending;
 	}
 
 	constructor() {
