@@ -233,7 +233,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving thumbs focusable. Default: `false`.
  * @attr {string} label - Accessible name for the slider. Default: `''`.
- * @attr {string} name - Form field name. Range mode also writes `{name}-max`. Default: `''`.
+ * @attr {string} name - Form field name on this host. Range mode also submits `{name}-max`. Default: `''`.
  * @attr {boolean} show-value - Shows the default value readout below the track. Default: `false`.
  * @attr {boolean} value-title - Mirrors the live value in control `title` tooltips on hover. Default: `false`.
  *

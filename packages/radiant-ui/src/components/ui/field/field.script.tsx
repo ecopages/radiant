@@ -54,14 +54,14 @@ export type RuiFieldProps = {
 };
 
 /**
- * `<rui-field>` — plug a control into `<rui-form>` and native `<form>` `FormData`.
+ * `<rui-field>` — connect a control to `<rui-form>` (store, validation, label, error).
  *
  * The custom element is a behavior host: it queries authored light-DOM children,
  * registers with the form via {@link formContext}, forwards control events, and
  * applies presentation (errors, ARIA) from the form-published `fields` map.
- * Named date-input / number-field / slider / knob hosts submit themselves
- * (`name` on the control, like `<input>`). The field is the label/error connector,
- * not a listed control.
+ * It is not a listed form control. Native `FormData` comes from the child: `name` on
+ * a form-associated host (`rui-date-input`, `rui-number-field`, `rui-slider`,
+ * `rui-knob`) or on an inner native input. The field copies its `name` onto that child.
  *
  * ## Light-DOM contract
  *
@@ -86,7 +86,7 @@ export type RuiFieldProps = {
  *
  * @element rui-field
  *
- * @attr {string} name - Field name; registers with the ancestor form. Default: `''`.
+ * @attr {string} name - Field name; registers with `RuiForm` and is copied onto the listed control. Default: `''`.
  * @attr {string} error - Standalone error message when not using a form provider. Default: `''`.
  * @attr {boolean} invalid - Standalone invalid flag when not using a form provider. Default: `false`.
  * @attr {boolean} disabled - Dims the field and disables nested controls. Default: `false`.

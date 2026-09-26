@@ -82,7 +82,7 @@ export const KNOB_DEFAULT_VALUE = 50;
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving the control focusable. Default: `false`.
  * @attr {string} label - Visible and accessible name. Default: `''`.
- * @attr {string} name - Form field name. Default: `''`.
+ * @attr {string} name - Form field name on this host. Default: `''`.
  * @attr {number} size - Explicit visible SVG diameter in pixels. Overrides `--rui-knob-size`.
  * @attr {number} stroke-width - Width of the progress ring in view-box units. Default: `14`.
  * @attr {boolean} show-value - Shows the formatted value inside or below the ring. Default: `true`.

@@ -68,7 +68,7 @@ export type RuiDateFieldChangeDetail = { value: string };
  * @attr {boolean} disabled - Disable the field and calendar. Default: `false`.
  * @attr {boolean} read-only - Disable editing while keeping the value visible. Default: `false`.
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
- * @attr {string} name - Native `name` for the hidden input inside `rui-date-input`. Default: `''`.
+ * @attr {string} name - Form field name on the nested `rui-date-input`. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @attr {number} visible-months - Month grids in the popover (adapts to 1 on screens under 640px when greater than 1). Default: `1`.
  * @fires rui-change - Emitted when a valid date is committed (typing or calendar pick).

@@ -83,6 +83,10 @@ const initialFormActions: FormContextActions = {
  * `prop:` bindings from the `RuiForm` view, not plain attributes. The host queries
  * `[data-ref="form"]`.
  *
+ * Two channels: `onSubmit` / `rui-submit` receive the store; native `FormData` and
+ * `action` / `method` navigation receive listed controls only. `onSubmit` skips
+ * native navigation.
+ *
  * `formContext.store` exposes the live store to scoped consumers once ready.
  * Hydration payloads contain presentation only, never the store or its actions.
  */

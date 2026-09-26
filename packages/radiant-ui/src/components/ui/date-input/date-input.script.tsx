@@ -70,7 +70,7 @@ function isIosDevice(): boolean {
  * @attr {string} max - Latest allowed ISO date. Default: `''`.
  * @attr {boolean} disabled - Disable editing. Default: `false`.
  * @attr {boolean} read-only - Show value without editing. Default: `false`.
- * @attr {string} name - Form field name. Default: `''`.
+ * @attr {string} name - Form field name on this host. Empty values are omitted from `FormData`. Default: `''`.
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @fires rui-change - Emitted when a complete valid date is committed, or when all segments are cleared.

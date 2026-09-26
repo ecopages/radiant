@@ -107,7 +107,7 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 
 ## API
 
-`RuiDateField` is a custom element (`<rui-date-field>`) that coordinates its light-DOM input, toggle button, and calendar popover.
+`RuiDateField` is a custom element (`<rui-date-field>`) that coordinates its light-DOM input, toggle button, and calendar popover. It is not form-associated; `name` lands on the nested `rui-date-input`.
 
 ### Attributes
 
@@ -119,7 +119,7 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | `disabled` | `boolean` | `false` | Disable the field and calendar. |
 | `read-only` | `boolean` | `false` | Disable editing while keeping the value visible. |
 | `label` | `string` | `''` | Accessible name when there is no associated `RuiLabel`. |
-| `name` | `string` | `''` | Form `name` on the hidden ISO input inside `rui-date-input`. |
+| `name` | `string` | `''` | Form field name on the nested `rui-date-input`. |
 | `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
 | `visible-months` | `number` | `1` | Month grids shown in the calendar popover. |
 

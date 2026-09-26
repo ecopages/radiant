@@ -30,7 +30,7 @@ export const config = {
 
 ## Usage
 
-Set `name` on `RuiField` to wire validation through `RuiForm`. Place a Radiant control (`RuiInput`, `RuiSelect`, `RuiSwitch`, …) as the child; Field discovers controls via `data-rui-control` and known host tags, not bare `<input>` elements. Use `RuiFieldDescription` and `RuiFieldError` for helper and error text.
+Set `name` on `RuiField` to register with `RuiForm` and to copy onto the listed control. Place a Radiant control (`RuiInput`, `RuiSelect`, `RuiSwitch`, …) as the child; Field discovers controls via `data-rui-control` and known host tags, not bare `<input>` elements. Use `RuiFieldDescription` and `RuiFieldError` for helper and error text.
 
 ```tsx
 import { RuiField, RuiFieldDescription, RuiFieldError } from '@ecopages/radiant-ui/field';
@@ -65,6 +65,8 @@ import '@ecopages/radiant-ui/input';
 
 The field wires `aria-describedby`, `aria-invalid`, and error text on the control. Use a library control host or `[data-rui-control]` — bare native inputs without the marker are ignored.
 
+Set `name` on the field (or on a form-associated host) so a native `<form>` can submit. `RuiInput` / `RuiTextarea` / checkbox / switch / radio / checkbox-group / radio-group submit through their inner input. `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` submit through `name` on the host. `RuiDateField` is not listed; it copies `name` onto the nested `rui-date-input`. `RuiDateRangePicker` is not listed; `start-name` / `end-name` land on the nested `rui-date-input` hosts. `RuiSelect` and similar hosts are not form-associated; their values are available to `RuiForm` `onSubmit`, not to `new FormData(form)`.
+
 ## Use Radiant controls
 
 <p>`RuiField` only wires library controls: presentational ones marked with `data-rui-control` (`RuiInput`, `RuiTextarea`, select triggers) and host elements such as `rui-select`, `rui-switch`, and `rui-date-field`. An embedded `rui-listbox` is the parent select or combobox's option surface, not a separate field control. Bare `<input>` / `<textarea>` without the marker are ignored.</p>
@@ -91,13 +93,13 @@ The nested control keeps its own control tokens (`--size-control-*`, `--radius-c
 
 ## API
 
-`RuiField` is a custom element (`<rui-field>`) connecting a composed control to an ancestor `<rui-form>`.
+`RuiField` is a custom element (`<rui-field>`) connecting a composed control to an ancestor `<rui-form>`. It is not listed in native `FormData`; the child control is.
 
 ### Attributes
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
-| `name` | `string` | `''` | Field name; registers with the ancestor form. |
+| `name` | `string` | `''` | Field name; registers with `RuiForm` and is copied onto the listed control. |
 | `error` | `string` | `''` | Standalone error message when not using a form provider. |
 | `invalid` | `boolean` | `false` | Standalone invalid flag when not using a form provider. |
 | `disabled` | `boolean` | `false` | Dims the field and disables nested controls. |

@@ -171,7 +171,6 @@ export function RuiSlider({
 				orientation={orientation}
 				label={label}
 				disabled={disabled}
-				name={name}
 				hasVisibleReadout={hasVisibleReadout}
 				valueReadout={valueReadout}
 			/>
@@ -184,7 +183,6 @@ function SliderRoot({
 	orientation,
 	label,
 	disabled,
-	name,
 	hasVisibleReadout,
 	valueReadout,
 }: {
@@ -192,7 +190,6 @@ function SliderRoot({
 	orientation: RuiSliderViewProps['orientation'];
 	label: RuiSliderViewProps['label'];
 	disabled: RuiSliderViewProps['disabled'];
-	name: RuiSliderViewProps['name'];
 	hasVisibleReadout: boolean;
 	valueReadout: RuiSliderValueProps['children'];
 }) {
