@@ -320,5 +320,4 @@ describe('decorators vs plain JS parity', () => {
 			expect(emitter.messageEvent).toBe(firstEmitter);
 		});
 	});
-
 });

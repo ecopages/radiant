@@ -144,7 +144,6 @@ describe('@query', () => {
 		customElement.addElement();
 		expect(customElement.myRefsCache.length).toEqual(2);
 	});
-
 });
 
 describe('RadiantController @query', () => {
@@ -164,5 +163,4 @@ describe('RadiantController @query', () => {
 		expect(controller.emailInput.value).toBe('ada@example.com');
 		expect(controller.statusNode.textContent).toBe('Ready');
 	});
-
 });

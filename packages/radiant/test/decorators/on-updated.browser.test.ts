@@ -140,7 +140,11 @@ describe('@onUpdated', () => {
 		document.body.appendChild(customElement3);
 		customElement1[REACTIVE_PROP] = 15;
 		customElement2[REACTIVE_PROP] = 20;
-		await Promise.all([customElement1.updateComplete, customElement2.updateComplete, customElement3.updateComplete]);
+		await Promise.all([
+			customElement1.updateComplete,
+			customElement2.updateComplete,
+			customElement3.updateComplete,
+		]);
 		expect(customElement1.countText.innerHTML).toEqual('15');
 		expect(customElement2.countText.innerHTML).toEqual('20');
 		expect(customElement3.countText.innerHTML).toEqual('3');

@@ -23,14 +23,9 @@ type ReactivePropHost<P> = {
  * Prop metadata is written to `context.metadata` during class evaluation so
  * `@customElement` can populate `observedAttributes` before `customElements.define`.
  */
-export function reactiveProp<P = unknown>({
-	type,
-	attribute,
-	reflect,
-	defaultValue,
-	bind,
-	transform,
-}: ReactivePropertyOptions<P>) {
+export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P>) {
+	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
+	const hasDefaultValue = 'defaultValue' in propOptions;
 	validateReactivePropertyDefault(type, defaultValue);
 	return function <T extends ReactivePropHost<P>, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
 		const propertyName = String(context.name);
@@ -68,9 +63,9 @@ export function reactiveProp<P = unknown>({
 				type,
 				reflect,
 				attribute: attributeKey,
-				defaultValue: resolvedDefaultValue,
 				bind,
 				transform,
+				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),
 			});
 		});
 

@@ -233,7 +233,8 @@ function attachDelegatedListeners(
 ): void {
 	if (!('selector' in config || 'ref' in config)) return;
 	const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
-	if (!cleanups.has('delegated')) cleanups.set('delegated', addDelegatedListener(hostElement, config, selector, listener));
+	if (!cleanups.has('delegated'))
+		cleanups.set('delegated', addDelegatedListener(hostElement, config, selector, listener));
 }
 
 type EventListenerScope = 'delegated' | 'document' | 'media' | 'window';
