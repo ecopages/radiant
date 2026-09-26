@@ -1,6 +1,6 @@
 # Date input
 
-`rui-date-input` is a Derived Tree: the host `render()`s locale-ordered segments. Set `name` on the host to submit the committed ISO value like a native `<input type="date">`. An empty named value submits an empty string. Native reset restores the original value and clears an uncommitted segment draft; a nested Date Field or Date Range Picker receives `rui-form-reset` to restore its parent value.
+`rui-date-input` is a Derived Tree: the host `render()`s locale-ordered segments. Set `name` on the host to submit the committed ISO value like a native `<input type="date">`. An empty named value submits an empty string. Native reset restores the original value even if `name` is assigned after the first connect, and clears an uncommitted segment draft; a nested Date Field or Date Range Picker receives `rui-form-reset` to restore its parent value.
 
 ## Editing and commit
 

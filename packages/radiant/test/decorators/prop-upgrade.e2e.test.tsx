@@ -77,4 +77,16 @@ describe('custom-element property upgrade in Chromium', () => {
 		expect(element.getAttribute('value')).toBe('ts');
 		element.remove();
 	});
+
+	test('keeps an empty property write after Chromium removes its reflected attribute', async () => {
+		const element = document.createElement('prop-upgrade-jsx') as JsxValueHost;
+		element.setAttribute('value', 'ts');
+		document.body.append(element);
+		await element.updateComplete;
+
+		element.value = '';
+		expect(element.value).toBe('');
+		expect(element.hasAttribute('value')).toBe(false);
+		element.remove();
+	});
 });

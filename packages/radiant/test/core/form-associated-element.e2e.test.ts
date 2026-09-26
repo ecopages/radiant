@@ -192,6 +192,22 @@ describe('FormAssociatedElement in Chromium', () => {
 		expect(new FormData(form).get('tone')).toBe('teal');
 	});
 
+	test('an immediate reset does not replace the authored reset value before first sync', async () => {
+		const form = document.createElement('form');
+		form.innerHTML = '<fae-tone name="tone" value="teal"></fae-tone>';
+		document.body.append(form);
+		const host = form.querySelector('fae-tone') as ToneControl;
+
+		form.reset();
+		await host.updateComplete;
+		host.value = 'red';
+		await host.updateComplete;
+		form.reset();
+
+		expect(host.value).toBe('teal');
+		expect(new FormData(form).get('tone')).toBe('teal');
+	});
+
 	test('exposes its single ElementInternals to subclasses for validity', async () => {
 		const form = await mount('<fae-tone name="tone"></fae-tone>');
 		const host = form.querySelector('fae-tone') as ToneControl;

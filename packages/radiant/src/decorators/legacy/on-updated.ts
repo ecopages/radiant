@@ -8,7 +8,7 @@ type LegacyUpdatedHost = {
 /**
  * Legacy-decorator implementation for `@onUpdated(...)`.
  *
- * @param keyOrKeys - Reactive members whose changes run the method once per update cycle.
+ * @param keyOrKeys - Reactive members whose changes run the method once per changed batch.
  */
 export function onUpdated(keyOrKeys: string | string[]) {
 	const keys = Array.isArray(keyOrKeys) ? keyOrKeys : [keyOrKeys];

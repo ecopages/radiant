@@ -272,4 +272,47 @@ describe('RuiSidebarTrigger', () => {
 
 		cleanup();
 	});
+
+	it('does not toggle an ancestor sidebar when controls names a missing target', async () => {
+		const { host, cleanup } = mount(
+			<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={0} label="Primary">
+				<RuiSidebarHeader aria-label="Header">
+					<RuiSidebarTrigger controls="missing-sidebar" placement="inset" />
+				</RuiSidebarHeader>
+			</RuiSidebar>,
+		);
+		await settled();
+
+		const sidebar = host.querySelector('rui-sidebar') as HTMLElement;
+		const triggerHost = host.querySelector('rui-sidebar-trigger') as HTMLElement;
+		const button = triggerHost.querySelector('button') as HTMLButtonElement;
+		expect(triggerHost.getAttribute('data-sidebar-state')).toBe('collapsed');
+		expect(button.getAttribute('aria-controls')).toBe('missing-sidebar');
+
+		await userEvent.click(button);
+		await settled();
+		expect(sidebar.getAttribute('data-state')).toBe('expanded');
+		cleanup();
+	});
+
+	it('clears a stale aria-controls when an external target is removed', async () => {
+		const { host, cleanup } = mount(
+			<>
+				<RuiSidebarTrigger controls="primary-sidebar" />
+				<RuiSidebar id="primary-sidebar" collapsible="icon" mobileBreakpoint={0} label="Primary" />
+			</>,
+		);
+		await settled();
+		const trigger = host.querySelector('rui-sidebar-trigger') as HTMLElement & {
+			controls: string;
+			updateComplete: Promise<void>;
+		};
+		const button = trigger.querySelector('button') as HTMLButtonElement;
+		expect(button.getAttribute('aria-controls')).toBe('primary-sidebar');
+
+		trigger.controls = '';
+		await trigger.updateComplete;
+		expect(button.hasAttribute('aria-controls')).toBe(false);
+		cleanup();
+	});
 });

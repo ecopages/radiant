@@ -340,6 +340,47 @@ describe('@prop', () => {
 			expect(host.value).toEqual('ts');
 			expect(host.getAttribute('value')).toEqual('ts');
 		});
+
+		test('keeps an empty reflected string as the property value', async () => {
+			@customElement('my-prop-empty-after-write')
+			class MyPropEmptyAfterWrite extends RadiantElement {
+				@prop({ type: String, reflect: true, defaultValue: '' }) value = '';
+			}
+
+			const host = document.createElement('my-prop-empty-after-write') as MyPropEmptyAfterWrite;
+			host.setAttribute('value', 'filled');
+			document.body.appendChild(host);
+			await host.updateComplete;
+
+			host.value = '';
+			expect(host.value).toBe('');
+			expect(host.hasAttribute('value')).toBe(false);
+		});
+
+		test('does not replace a property when its custom reflection omits an attribute', async () => {
+			@customElement('my-prop-empty-array-after-write')
+			class MyPropEmptyArrayAfterWrite extends RadiantElement {
+				@prop({
+					type: Array,
+					reflect: true,
+					defaultValue: ['initial'],
+					transform: {
+						fromAttribute: (value) => (value ? value.split(',') : []),
+						toAttribute: (value) => value.join(',') || null,
+					},
+				})
+				values: string[];
+			}
+
+			const host = document.createElement('my-prop-empty-array-after-write') as MyPropEmptyArrayAfterWrite;
+			document.body.appendChild(host);
+			await host.updateComplete;
+			const empty: string[] = [];
+
+			host.values = empty;
+			expect(host.values).toBe(empty);
+			expect(host.hasAttribute('values')).toBe(false);
+		});
 	});
 
 	describe('not reflect', () => {
