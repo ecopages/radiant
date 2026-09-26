@@ -28,7 +28,25 @@ function getPageItems(page: number, pageCount: number, siblingCount: number): Pa
 	return items;
 }
 
-export type RuiPaginationNavProps = {
+/**
+ * Copy for the default navigation chrome. Defaults are English; pass translations to localize.
+ */
+export type RuiPaginationLabels = {
+	/** Visible previous-control text (visually hidden in compact chrome). Default: `Previous`. */
+	previousText?: string;
+	/** Accessible name of the previous control. Default: `Go to previous page`. */
+	previousLabel?: string;
+	/** Visible next-control text (visually hidden in compact chrome). Default: `Next`. */
+	nextText?: string;
+	/** Accessible name of the next control. Default: `Go to next page`. */
+	nextLabel?: string;
+	/** Accessible name of a page-number control. Default: `Go to page {page}`. */
+	pageLabel?: (page: number) => string;
+	/** Page position shown in compact chrome. Default: `Page {page} of {pageCount}`. */
+	statusLabel?: (page: number, pageCount: number) => string;
+};
+
+export type RuiPaginationNavProps = RuiPaginationLabels & {
 	label: string;
 	page: number;
 	pageCount: number;
@@ -46,6 +64,12 @@ export function RuiPaginationNav({
 	pageCount,
 	disabled = false,
 	siblingCount = 1,
+	previousText = 'Previous',
+	previousLabel = 'Go to previous page',
+	nextText = 'Next',
+	nextLabel = 'Go to next page',
+	pageLabel = (item) => `Go to page ${item}`,
+	statusLabel = (current, count) => `Page ${current} of ${count}`,
 }: RuiPaginationNavProps) {
 	const resolvedPageCount = Math.max(1, Math.floor(pageCount) || 1);
 	const resolvedPage = clampPage(page, resolvedPageCount);
@@ -61,11 +85,11 @@ export function RuiPaginationNav({
 						size="sm"
 						class="rui-pagination__link rui-pagination__link--previous"
 						data-pagination-page={resolvedPage - 1}
-						aria-label="Go to previous page"
+						aria-label={previousLabel}
 						disabled={disabled || resolvedPage <= 1}
 					>
 						<RuiIconChevronLeft />
-						<span>Previous</span>
+						<span>{previousText}</span>
 					</RuiButton>
 				</li>
 				{items.map((item) =>
@@ -80,7 +104,7 @@ export function RuiPaginationNav({
 								square
 								class="rui-pagination__link"
 								data-pagination-page={item}
-								aria-label={`Go to page ${item}`}
+								aria-label={pageLabel(item)}
 								aria-current={item === resolvedPage ? 'page' : undefined}
 								disabled={disabled}
 							>
@@ -94,9 +118,7 @@ export function RuiPaginationNav({
 					),
 				)}
 				<li class="rui-pagination__status" aria-live="polite">
-					<span class="rui-pagination__status-label">
-						Page {resolvedPage} of {resolvedPageCount}
-					</span>
+					<span class="rui-pagination__status-label">{statusLabel(resolvedPage, resolvedPageCount)}</span>
 				</li>
 				<li>
 					<RuiButton
@@ -104,10 +126,10 @@ export function RuiPaginationNav({
 						size="sm"
 						class="rui-pagination__link rui-pagination__link--next"
 						data-pagination-page={resolvedPage + 1}
-						aria-label="Go to next page"
+						aria-label={nextLabel}
 						disabled={disabled || resolvedPage >= resolvedPageCount}
 					>
-						<span>Next</span>
+						<span>{nextText}</span>
 						<RuiIconChevronRight />
 					</RuiButton>
 				</li>
@@ -121,11 +143,12 @@ export function RuiPaginationNav({
  * renders `RuiPaginationNav` by default (each link carries `[data-pagination-page]`).
  *
  * @remarks Pass `children` to replace the navigation chrome while keeping the
- * `rui-pagination` event contract.
+ * `rui-pagination` event contract. `RuiPaginationLabels` props localize the default
+ * chrome; they are view-only and never reach the host element.
  *
  * @cssclass rui-pagination - Navigation root on the host.
  * @cssclass rui-pagination__page - Page-number item; `__page--current` marks the active page.
- * @cssclass rui-pagination--compact - Force previous / page position / next chrome.
+ * @cssclass rui-pagination--compact - Force the narrow chrome used below `40rem`: icon-only previous / next around the page position.
  * @cssclass rui-pagination__status - Non-interactive page position in compact chrome.
  * @cssclass rui-pagination__status-label - Muted “Page {n} of {m}” copy; hidden with full page list.
  * @cssclass rui-pagination__ellipsis - Hidden range marker between page numbers.
@@ -137,11 +160,18 @@ export function RuiPagination({
 	pageCount = 1,
 	disabled = false,
 	siblingCount = 1,
+	previousText,
+	previousLabel,
+	nextText,
+	nextLabel,
+	pageLabel,
+	statusLabel,
 	class: className,
 	...props
-}: JsxCustomElementAttributes<RuiPaginationElement, RuiPaginationProps> & {
-	children?: JsxRenderable;
-}) {
+}: JsxCustomElementAttributes<RuiPaginationElement, RuiPaginationProps> &
+	RuiPaginationLabels & {
+		children?: JsxRenderable;
+	}) {
 	const resolvedPageCount = Math.max(1, Math.floor(pageCount) || 1);
 	const resolvedPage = clampPage(page, resolvedPageCount);
 	const resolvedSiblingCount = Math.max(0, Math.floor(siblingCount) || 0);
@@ -163,6 +193,12 @@ export function RuiPagination({
 					pageCount={resolvedPageCount}
 					disabled={disabled}
 					siblingCount={resolvedSiblingCount}
+					previousText={previousText}
+					previousLabel={previousLabel}
+					nextText={nextText}
+					nextLabel={nextLabel}
+					pageLabel={pageLabel}
+					statusLabel={statusLabel}
 				/>
 			)}
 		</rui-pagination>
