@@ -7,6 +7,7 @@ import { meta as treegridMeta } from '../src/content/stories/treegrid';
 import { meta as tocMeta } from '../src/content/stories/toc';
 import { meta as navigationMenuMeta } from '../src/content/stories/navigation-menu';
 import { meta as dateFieldMeta } from '../src/content/stories/date-field';
+import { meta as dateInputMeta } from '../src/content/stories/date-input';
 import { meta as dateRangePickerMeta } from '../src/content/stories/date-range-picker';
 import { meta as autocompleteMeta } from '../src/content/stories/autocomplete';
 import { meta as menuButtonMeta } from '../src/content/stories/menu-button';
@@ -99,6 +100,24 @@ describe('story preview renders', () => {
 		expect(preview).toContain('data-date-field-trigger');
 		expect(preview).toContain('2026-12-25');
 		expect(preview).not.toContain('rui-field');
+	});
+
+	test('date input renders a named form-associated host', () => {
+		const preview = serialize(
+			dateInputMeta.render!({
+				value: '2026-08-20',
+				locale: 'en-US',
+				disabled: false,
+				readOnly: false,
+				min: '',
+				max: '',
+			}),
+		);
+
+		expect(preview).toContain('rui-date-input');
+		expect(preview).toContain('when');
+		expect(preview).toContain('2026-08-20');
+		expect(preview).not.toContain('rui-date-field');
 	});
 
 	test('autocomplete render reflects sensitivity arg', () => {

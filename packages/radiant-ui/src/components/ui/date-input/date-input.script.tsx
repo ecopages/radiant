@@ -54,7 +54,8 @@ function isIosDevice(): boolean {
  * `<rui-date-input>` — locale-ordered date segments for keyboard and touch entry.
  *
  * Derived Tree: the host `render()`s locale-ordered segments. Set `name` to submit
- * the committed ISO value like a native `<input type="date">`.
+ * the committed ISO value like a native `<input type="date">`. Empty values are
+ * omitted from `FormData`.
  *
  * ## Light-DOM contract
  *
@@ -74,6 +75,12 @@ function isIosDevice(): boolean {
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @fires rui-change - Emitted when a complete valid date is committed, or when all segments are cleared.
+ *
+ * @cssclass rui-date-input - Root around the segment row.
+ * @cssclass rui-date-input__segments - Segment row.
+ * @cssclass rui-date-input__segment - Editable month, day, or year unit.
+ * @cssclass rui-date-input__segment--placeholder - Empty unit.
+ * @cssclass rui-date-input__literal - Locale separator between units.
  *
  * @remarks
  * `segments` is the visible draft. `value` stays on the last

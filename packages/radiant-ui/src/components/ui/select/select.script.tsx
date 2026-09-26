@@ -91,6 +91,8 @@ export type RuiSelectChangeDetail = { value: string[] };
  * Minimum tree: `[data-ref="root"]` > `[data-select-trigger]` > `[data-select-value]`,
  * sibling `[data-select-listbox]` > `rui-listbox[embedded]` > `[role="option"]`.
  * BEM classes live on the view helpers; the host never queries them.
+ * Not form-associated: wrap in `rui-field` and read `RuiForm` `onSubmit`.
+ * The selected value does not appear in native `FormData`.
  */
 @customElement('rui-select')
 export class RuiSelect extends RadiantElement {
