@@ -1,3 +1,4 @@
+import type { REACTIVE_HOST, ReactiveHostInternals } from '../core/reactive-host';
 import type { UnknownContext } from './types';
 import { resolveHostElementOrNull } from '../helpers/resolve-host-element';
 
@@ -16,7 +17,7 @@ type ContextHostApi = {
 	registerConnectedCallback(callback: () => void): void;
 	registerCleanupCallback(callback: () => void): void;
 	connectedContextCallback(context: UnknownContext): void;
-	registerContextProvider(name: string, provider: unknown): void;
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 };
 
 type SsrHydrationContainer = {

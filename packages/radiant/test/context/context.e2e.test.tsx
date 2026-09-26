@@ -86,7 +86,7 @@ class OptOutAutoUpdatingConsumer extends RadiantElement {
 	contextChangeCount = 0;
 
 	@onContextUpdate({ context: testContext, requestUpdate: false })
-	onContextChanged(_: TestContext) {
+	onContextChanged() {
 		this.contextChangeCount += 1;
 	}
 
@@ -101,7 +101,7 @@ class SelectedSliceEffectConsumer extends RadiantElement {
 	changeCount = 0;
 
 	@onContextUpdate({ context: loggerContext, select: (context) => context.value })
-	onValueChanged(_: number) {
+	onValueChanged() {
 		this.changeCount += 1;
 	}
 }

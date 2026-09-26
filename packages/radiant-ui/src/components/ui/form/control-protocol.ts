@@ -54,6 +54,11 @@ function isNativeTextarea(node: Element): node is HTMLTextAreaElement {
 	return node.localName === 'textarea';
 }
 
+/** True when the constructor opted into the form-associated custom element lifecycle. */
+export function isFormAssociatedHost(host: HTMLElement): boolean {
+	return Reflect.get(host.constructor, 'formAssociated') === true;
+}
+
 type FieldSlotHost = HTMLElement & { getSlotElements?: (name?: string) => Element[] };
 
 type ControlValueAdapter = {
@@ -366,10 +371,6 @@ export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
 	const renderRoot = root.querySelector(FIELD_COLUMN_SELECTOR);
 	if (renderRoot instanceof HTMLElement) {
 		const inRender = Array.from(renderRoot.querySelectorAll<HTMLElement>(`[${RUI_FIELD_ERROR_ATTR}]`));
-		const visible = inRender.filter((el) => el.getClientRects().length > 0);
-		if (visible.length > 0) {
-			return visible;
-		}
 		if (inRender.length > 0) {
 			return inRender;
 		}
@@ -397,7 +398,9 @@ export function wireFieldControlName(
 	if (ariaTarget && isNativeTextControl(ariaTarget)) {
 		const submission = controlHost && CONTROL_VALUE_ADAPTERS.get(controlHost.localName)?.submission;
 		const namesInner =
-			controlHost == null || controlHost === ariaTarget || (submission !== 'host' && submission !== 'none');
+			controlHost == null ||
+			controlHost === ariaTarget ||
+			(!isFormAssociatedHost(controlHost) && submission !== 'host' && submission !== 'none');
 		if (namesInner && name) {
 			ariaTarget.name = name;
 		} else {

@@ -19,14 +19,9 @@ type ReactivePropHost<T> = {
  * lets both `RadiantElement` and `RadiantController` share the same public
  * decorator while keeping their runtime channels different.
  */
-export function reactiveProp<T = unknown>({
-	type,
-	attribute,
-	reflect,
-	defaultValue,
-	bind,
-	transform,
-}: ReactivePropertyOptions<T>) {
+export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
+	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
+	const hasDefaultValue = 'defaultValue' in propOptions;
 	validateReactivePropertyDefault(type, defaultValue);
 
 	return (target: ReactivePropHost<T>, propertyName: string) => {
@@ -83,9 +78,9 @@ export function reactiveProp<T = unknown>({
 				type,
 				reflect,
 				attribute: attributeKey,
-				defaultValue: resolvedDefaultValue,
 				bind,
 				transform,
+				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),
 			});
 		});
 	};

@@ -36,7 +36,7 @@ export function setAppStore(store: AppStore): void {
 	currentStore.set(store);
 }
 
-export function useAppStore(): AppStore {
+export function getAppStore(): AppStore {
 	const store = currentStore.get();
 
 	if (!store) {

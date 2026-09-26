@@ -2,6 +2,7 @@ import type { JsxBindingSourceValue, JsxRenderable, SubscribableJsxValueWithAcce
 import type { ReactiveState } from './reactivity-contract';
 import {
 	type AttributeTypeConstant,
+	defaultValueForType,
 	isValueOfType,
 	readAttributeValue,
 	writeAttributeValue,
@@ -39,6 +40,12 @@ export type ReactivePropertyOptions<T> = {
 	type: AttributeTypeConstant;
 	reflect?: boolean;
 	attribute?: string;
+	/**
+	 * Value used when no attribute or earlier property write supplies one.
+	 *
+	 * @remarks Omit it for the type default (`0`, `''`, `null`). Pass
+	 * `defaultValue: undefined` for a property that stays `undefined` until set.
+	 */
 	defaultValue?: T;
 	bind?: boolean | string;
 	/** Overrides default type converters for the attribute channel and optional JS writes. */
@@ -71,6 +78,20 @@ export type ReactiveAccessorDefinition<T> = {
 	/** Normalizes JS property writes before the reactive member is updated. */
 	fromProperty?: (value: unknown) => T;
 };
+
+/**
+ * Default used when no attribute or earlier write supplies a value.
+ *
+ * @remarks Omit `defaultValue` for the type default (`0`, `''`, `null`).
+ * Booleans stay `undefined` until set unless `defaultValue` is passed.
+ * `defaultValue: undefined` stays `undefined` instead of the type default.
+ */
+export function resolveReactiveDefault<T>(options: ReactivePropertyOptions<T>): T | undefined {
+	if ('defaultValue' in options || options.type === Boolean) {
+		return options.defaultValue;
+	}
+	return defaultValueForType(options.type) as T;
+}
 
 export function validateReactivePropertyDefault(type: AttributeTypeConstant, defaultValue: unknown): void {
 	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {

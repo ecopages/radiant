@@ -58,7 +58,7 @@ const html = withRadiantServerCustomElementRenderBridge(() =>
     renderToString(RuiSidebarTrigger({ controls: 'docs-sidebar', placement: 'inset', triggerLabel: 'Open navigation' })),
 );
 assert.ok(html.includes('data-ref="button"'));
-assert.ok(html.includes('rui-sidebar__trigger--inset'));
+assert.ok(html.includes('placement="inset"'));
 assert.ok(html.includes('>Open navigation') || html.includes('aria-label="Open navigation"'));
 `,
 		],

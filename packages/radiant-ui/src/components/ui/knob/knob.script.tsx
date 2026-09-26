@@ -1,7 +1,7 @@
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
-import { FormAssociation } from '../form/form-association';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
 export type RuiKnobValuePosition = 'center' | 'below';
@@ -107,18 +107,12 @@ export const KNOB_DEFAULT_VALUE = 50;
  * the host never queries them. The control also carries `data-knob-control` for field wiring.
  */
 @customElement('rui-knob')
-export class RuiKnob extends RadiantElement {
-	static get formAssociated(): boolean {
-		return true;
-	}
-
+export class RuiKnob extends FormAssociatedElement {
 	@prop({ type: Number, reflect: true, defaultValue: KNOB_DEFAULT_VALUE }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
-	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	@bindTo({ ref: 'control', attr: 'aria-readonly', map: (readOnly) => String(readOnly) })
 	readOnly: boolean;
@@ -129,9 +123,7 @@ export class RuiKnob extends RadiantElement {
 		{ ref: 'control', attr: 'aria-label', map: (label) => label || undefined },
 	])
 	label: string;
-	@prop({ type: String, reflect: true, defaultValue: '' })
-	name: string;
-	@prop({ type: Number }) size: number | undefined;
+	@prop({ type: Number, defaultValue: undefined }) size: number | undefined;
 	@prop({ type: Number, attribute: 'stroke-width', defaultValue: 14 }) strokeWidth: number;
 	@prop({ type: Boolean, attribute: 'show-value', defaultValue: true }) showValue: boolean;
 	@prop({ type: String, attribute: 'value-position', defaultValue: 'center' }) valuePosition: RuiKnobValuePosition;
@@ -151,21 +143,17 @@ export class RuiKnob extends RadiantElement {
 	private activePointerId: number | null = null;
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;
-	private readonly form = new FormAssociation<number>(this);
-	private disabledByForm = false;
 
 	protected override onConnected(): void {
-		this.form.remember(this.value);
 		this.syncPresentation();
 	}
 
-	formDisabledCallback(disabled: boolean): void {
-		this.disabledByForm = disabled;
-		this.syncPresentation();
+	protected override formValue(): FormValue {
+		return this.name ? String(this.numericRange.clamp(this.value)) : null;
 	}
 
-	formResetCallback(): void {
-		this.value = this.form.initial;
+	protected override restoreFormState(state: FormValue): void {
+		this.value = Number(state);
 		this.syncPresentation();
 	}
 
@@ -177,6 +165,7 @@ export class RuiKnob extends RadiantElement {
 		'valuePrecision',
 		'disabled',
 		'readOnly',
+		'effectiveDisabled',
 		'name',
 		'label',
 		'size',
@@ -216,7 +205,6 @@ export class RuiKnob extends RadiantElement {
 		this.syncControlValues(value, ring.valueText);
 		this.syncRing(ring);
 		this.syncReadout(ring.valueText, valuePosition);
-		this.form.set(this.name ? String(value) : null);
 	}
 
 	private syncKnobLayout(valuePosition: RuiKnobValuePosition): void {
@@ -260,7 +248,7 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	private syncPresentation(): void {
-		if (this.controlTarget) this.controlTarget.disabled = this.disabled || this.disabledByForm;
+		if (this.controlTarget) this.controlTarget.disabled = this.effectiveDisabled;
 		this.paint(this.numericRange.clamp(this.value));
 		this.queueNormalizedValueCommit();
 	}
@@ -283,7 +271,7 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	private commitValue(next: number): void {
-		if (this.disabled || this.disabledByForm || this.readOnly) {
+		if (this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 
@@ -302,7 +290,7 @@ export class RuiKnob extends RadiantElement {
 
 	@onEvent({ ref: 'control', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.disabled || this.disabledByForm || this.readOnly) {
+		if (event.button !== 0 || this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 
@@ -354,7 +342,7 @@ export class RuiKnob extends RadiantElement {
 
 	@onEvent({ ref: 'control', type: 'keydown' })
 	onKeydown(event: KeyboardEvent): void {
-		if (this.disabled || this.disabledByForm || this.readOnly) {
+		if (this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 

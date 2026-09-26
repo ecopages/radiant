@@ -200,9 +200,13 @@ The shim supports a focused query surface for component lifecycle code that runs
 - `document.getElementById(id)`
 - `element.style` (`setProperty`, property assignment, serializes to the `style` attribute)
 - `element.children` (non-live snapshot array of element children; unlike browser `HTMLCollection`)
+- `element.focus()` / `element.blur()` (no-op during SSR)
+- `element.getBoundingClientRect()` / `element.getClientRects()` (zero-sized rects; no layout)
 - `requestAnimationFrame` / `cancelAnimationFrame` (no-op during SSR; callbacks are not invoked)
 
 **`children` semantics:** `element.children` returns a fresh array snapshot of current element children. It is not a live `HTMLCollection`. Holding a reference after DOM mutations does not update the cached array; re-read `element.children` after changes.
+
+**Focus and layout:** the shim provides no-op `focus()` / `blur()` and zero-sized `getBoundingClientRect()` / `getClientRects()`. `@onUpdated` runs during SSR preparation, and hosts may `queueMicrotask` from there, so those calls must not throw. The methods do not move focus or compute layout; hydration owns real focus and geometry. `updated()` still never runs on the server.
 
 **Animation frames:** SSR installs no-op `requestAnimationFrame` / `cancelAnimationFrame` so layout-aware `connectedCallback` code does not throw. Deferred work scheduled through rAF does not run during serialization; hydration must own client-side layout effects.
 

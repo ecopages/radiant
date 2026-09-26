@@ -17,6 +17,7 @@ import { state } from '../../src/decorators/state';
 import { signal } from '../../src/decorators/signal';
 import { renderController } from '../../src/server/render-controller';
 import { installLightDomShim } from '../../src/server/light-dom-shim';
+import { REACTIVE_HOST } from '../../src/core/reactive-host';
 
 const postConstructionContext = createContext<{ count: number }>(Symbol('post-construction-context'));
 
@@ -55,8 +56,8 @@ describe('legacy post-construction decorator setup', () => {
 
 		ensureLegacyHostReady(element, 'ssr');
 
-		const providers = element.getContextProviders();
-		const bindings = element.getHydrationBindings();
+		const providers = element[REACTIVE_HOST].ssrRegistry.getContextProviders();
+		const bindings = element[REACTIVE_HOST].ssrRegistry.getHydrationBindings();
 
 		expect(providers).toHaveLength(1);
 		expect(providers[0]).toBe(element.provider);
@@ -72,14 +73,14 @@ describe('legacy post-construction decorator setup', () => {
 
 		ensureLegacyHostReady(element, 'ssr');
 
-		const firstProviders = element.getContextProviders();
-		const firstBindings = element.getHydrationBindings();
+		const firstProviders = element[REACTIVE_HOST].ssrRegistry.getContextProviders();
+		const firstBindings = element[REACTIVE_HOST].ssrRegistry.getHydrationBindings();
 		const firstProvider = element.provider;
 
 		document.body.appendChild(element);
 
-		const secondProviders = element.getContextProviders();
-		const secondBindings = element.getHydrationBindings();
+		const secondProviders = element[REACTIVE_HOST].ssrRegistry.getContextProviders();
+		const secondBindings = element[REACTIVE_HOST].ssrRegistry.getHydrationBindings();
 
 		expect(firstProviders).toHaveLength(1);
 		expect(secondProviders).toHaveLength(1);

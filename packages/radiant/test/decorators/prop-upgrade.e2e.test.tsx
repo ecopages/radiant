@@ -15,11 +15,13 @@ class JsxValueHost extends RadiantElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value = '';
 }
 
-function defineValueHost(tagName: string): void {
+function defineValueHost(tagName: string): CustomElementConstructor {
 	@customElement(tagName)
 	class ValueHost extends RadiantElement {
 		@prop({ type: String, reflect: true, defaultValue: '' }) value = '';
 	}
+
+	return ValueHost;
 }
 
 describe('custom-element property upgrade in Chromium', () => {

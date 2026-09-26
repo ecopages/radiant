@@ -11,6 +11,10 @@ import type { AppState } from './store';
 
 export const DEFAULT_SSR_ENDPOINT = '/api/ssr/radiant-counter';
 
+export function incrementClicks(store: AppState): void {
+	store.clicks += 1;
+}
+
 export async function loadServerMessage(store: AppState) {
 	if (store.status === 'loading') {
 		return;

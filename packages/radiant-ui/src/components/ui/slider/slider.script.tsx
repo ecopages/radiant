@@ -1,7 +1,7 @@
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
+import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
-import { FormAssociation } from '../form/form-association';
 import {
 	createNumericRange,
 	formatNumericValue,
@@ -267,11 +267,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * the host never queries them.
  */
 @customElement('rui-slider')
-export class RuiSlider extends RadiantElement {
-	static get formAssociated(): boolean {
-		return true;
-	}
-
+export class RuiSlider extends FormAssociatedElement {
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
 	@prop({ type: Array, reflect: true, defaultValue: [SLIDER_DEFAULT_VALUE], transform: numberArrayTransform })
@@ -281,8 +277,6 @@ export class RuiSlider extends RadiantElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Number, defaultValue: 0 }) minDistance: number;
-	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	readOnly: boolean;
 	@prop({ type: String, defaultValue: '' })
@@ -291,8 +285,6 @@ export class RuiSlider extends RadiantElement {
 		{ ref: 'label', text: true },
 	])
 	label: string;
-	@prop({ type: String, reflect: true, defaultValue: '' })
-	name: string;
 	@prop({ type: Boolean, attribute: 'show-value', defaultValue: false })
 	@bindTo({ selector: '[data-default-value]', bool: 'hidden', invert: true })
 	showValue: boolean;
@@ -314,23 +306,36 @@ export class RuiSlider extends RadiantElement {
 	private activePointerId: number | null = null;
 	private pending: number[] | null = null;
 	private lastEmitted = '';
-	private readonly form = new FormAssociation<number[]>(this);
-	private disabledByForm = false;
 
 	protected override onConnected(): void {
 		this.adoptLegacyRangeAttributes();
-		this.form.remember(this.value);
 		this.syncChrome();
 		this.syncValues(this.committedValues());
 	}
 
-	formDisabledCallback(disabled: boolean): void {
-		this.disabledByForm = disabled;
-		this.syncChrome();
+	protected override formValue(): FormValue {
+		if (!this.name) {
+			return null;
+		}
+		const values = this.liveValues();
+		if (values.length === 2) {
+			const data = new FormData();
+			data.append(this.name, String(values[0]));
+			data.append(`${this.name}-max`, String(values[1]));
+			return data;
+		}
+		return String(values[0] ?? '');
 	}
 
-	formResetCallback(): void {
-		this.value = [...this.form.initial];
+	protected override formState(): FormValue {
+		return this.committedValues().join(',');
+	}
+
+	protected override restoreFormState(state: FormValue): void {
+		this.value = String(state)
+			.split(',')
+			.map(Number)
+			.filter((entry) => Number.isFinite(entry));
 		this.syncValues(this.committedValues());
 	}
 
@@ -362,6 +367,7 @@ export class RuiSlider extends RadiantElement {
 		'orientation',
 		'disabled',
 		'readOnly',
+		'effectiveDisabled',
 		'label',
 		'name',
 		'showValue',
@@ -483,14 +489,14 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private syncThumbChrome(): void {
-		const tabindex = this.disabled || this.disabledByForm ? -1 : 0;
+		const tabindex = this.effectiveDisabled ? -1 : 0;
 		const orientation = this.isVertical ? 'vertical' : 'horizontal';
 		const rangeBounds = this.numericRange;
 		for (const { id, label, visible } of this.getThumbChrome()) {
 			const thumb = this.thumbFor(id);
 			if (!thumb) continue;
 			thumb.toggleAttribute('hidden', !visible);
-			thumb.toggleAttribute('disabled', this.disabled || this.disabledByForm || !visible);
+			thumb.toggleAttribute('disabled', this.effectiveDisabled || !visible);
 			thumb.setAttribute('tabindex', String(visible ? tabindex : -1));
 			thumb.setAttribute('aria-label', label);
 			thumb.setAttribute('aria-orientation', orientation);
@@ -538,25 +544,8 @@ export class RuiSlider extends RadiantElement {
 			this.valueTarget.textContent = this.formatValues(values);
 		}
 
-		this.syncFormValue(values);
+		this.syncFormValue();
 		this.syncValueTitle(values);
-	}
-
-	private syncFormValue(values: number[]): void {
-		if (!this.name) {
-			this.form.set(null);
-			return;
-		}
-
-		if (values.length === 2) {
-			const data = new FormData();
-			data.append(this.name, String(values[0]));
-			data.append(`${this.name}-max`, String(values[1]));
-			this.form.set(data);
-			return;
-		}
-
-		this.form.set(String(values[0] ?? ''));
 	}
 
 	private syncValueTitle(values: number[]): void {
@@ -657,7 +646,7 @@ export class RuiSlider extends RadiantElement {
 
 	@onEvent({ ref: 'rangeTrack', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.disabled || this.disabledByForm || this.readOnly) {
+		if (event.button !== 0 || this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 
@@ -712,7 +701,7 @@ export class RuiSlider extends RadiantElement {
 
 	@onEvent({ selector: '[data-thumb]', type: 'keydown' })
 	onThumbKeydown(event: KeyboardEvent): void {
-		if (this.disabled || this.disabledByForm || this.readOnly) {
+		if (this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 

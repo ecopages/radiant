@@ -1,4 +1,5 @@
 import type { ContextHostLike } from '../../context-host';
+import { REACTIVE_HOST } from '../../../core/reactive-host';
 import { ContextProvider } from '../../context-provider';
 import type { UnknownContext } from '../../types';
 import type { ProvideContextOptions } from '../provide-context';
@@ -22,7 +23,7 @@ export function provideContext<T extends UnknownContext>({
 				serialize,
 			});
 			hostRecord[contextName] = provider;
-			this.registerContextProvider(contextName, provider);
+			this[REACTIVE_HOST].ssrRegistry.registerContextProvider(contextName, provider);
 			this.connectedContextCallback(context);
 		});
 	};
