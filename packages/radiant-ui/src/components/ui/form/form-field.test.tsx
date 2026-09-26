@@ -8,6 +8,7 @@ import { RuiLabel } from '../label';
 import { RuiSwitch } from '../switch';
 import { RuiDateField } from '../date-field';
 import { RuiDateInput } from '../date-input';
+import { RuiNumberField } from '../number-field';
 import {
 	RuiCombobox,
 	RuiComboboxClear,
@@ -32,6 +33,7 @@ import './form.script';
 import '../switch/switch.script';
 import '../date-field/date-field.script';
 import '../date-input/date-input.script';
+import '../number-field/number-field.script';
 import { findFieldControl, findFieldError } from './control-protocol';
 import type { RuiField as RuiFieldElement } from '../field/field.script';
 import type { RuiForm as RuiFormElement } from './form.script';
@@ -210,6 +212,29 @@ describe('rui-field composed content discovery', () => {
 
 		const nativeForm = host.querySelector('form') as HTMLFormElement;
 		expect(new FormData(nativeForm).get('when')).toBe('2026-08-20');
+		host.remove();
+	});
+
+	it('submits a number-field once through the host', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="quantity">
+					<RuiNumberField value={3} />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-number-field');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).getAll('quantity')).toEqual(['3']);
+		expect(host.querySelector('[data-number-field-input]')?.getAttribute('name')).toBeNull();
 		host.remove();
 	});
 

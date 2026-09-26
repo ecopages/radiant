@@ -74,8 +74,8 @@ export type RuiDateRangePickerChangeDetail = {
  * @attr {boolean} disabled - Disable both inputs and the calendar. Default: `false`.
  * @attr {boolean} read-only - Disable editing while keeping values visible. Default: `false`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
- * @attr {string} start-name - Native `name` for the start hidden input. Default: `''`.
- * @attr {string} end-name - Native `name` for the end hidden input. Default: `''`.
+ * @attr {string} start-name - Form field name on the nested start `rui-date-input`. Default: `''`.
+ * @attr {string} end-name - Form field name on the nested end `rui-date-input`. Default: `''`.
  * @attr {number} visible-months - Month grids shown in the range calendar popover (adapts to 1 on screens under 640px). Default: `2`.
  * @fires rui-change - Emitted when a valid range is committed, or when a committed range is cleared; detail carries `value`, `start`, and `end`.
  */

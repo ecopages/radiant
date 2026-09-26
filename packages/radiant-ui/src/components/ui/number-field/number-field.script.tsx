@@ -80,7 +80,7 @@ export type RuiNumberFieldChangeDetail = { value: number };
  * @attr {boolean} disabled - Disables input and steppers. Default: `false`.
  * @attr {boolean} read-only - Blocks editing; the value still displays formatted. Default: `false`.
  * @attr {string} label - Accessible name when there is no visible `RuiLabel`. Default: `''`.
- * @attr {string} name - Form field name. Default: `''`.
+ * @attr {string} name - Form field name on this host. Submits the raw number, not the formatted display. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @attr {string} format-options - JSON-serialized `Intl.NumberFormatOptions`. Default: `''`.
  * @attr {('snap'|'validate')} commit-behavior - Blur behavior after editing. Default: `snap`.

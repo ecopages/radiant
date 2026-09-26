@@ -7,6 +7,7 @@ import {
 	isPrimaryFieldControlEvent,
 	readControlValue,
 	registerFieldControl,
+	wireFieldControlName,
 	writeControlValue,
 } from '../form/control-protocol';
 
@@ -189,5 +190,41 @@ describe('field control protocol (SSR-safe)', () => {
 		expect(readControlValue(control!)).toBe('ff00aa');
 		writeControlValue(control!, '00ffaa');
 		expect(control?.getAttribute('hex')).toBe('00ffaa');
+	});
+
+	it('names a form-associated host and clears its inner input', () => {
+		if (!customElements.get('x-face-control')) {
+			customElements.define(
+				'x-face-control',
+				class extends HTMLElement {
+					static formAssociated = true;
+				},
+			);
+		}
+		registerFieldControl('x-face-control', {
+			read: (host) => host.getAttribute('value') ?? '',
+			write: (host, value) => {
+				host.setAttribute('value', value == null ? '' : String(value));
+			},
+		});
+		const host = document.createElement('x-face-control');
+		const input = document.createElement('input');
+		input.setAttribute('name', 'stale');
+		host.append(input);
+
+		wireFieldControlName(host, input, 'quantity');
+
+		expect(host.getAttribute('name')).toBe('quantity');
+		expect(input.hasAttribute('name')).toBe(false);
+	});
+
+	it('names the inner input when the host does not submit itself', () => {
+		const host = document.createElement('rui-combobox');
+		const input = document.createElement('input');
+
+		wireFieldControlName(host, input, 'country');
+
+		expect(input.name).toBe('country');
+		expect(host.getAttribute('name')).toBe('country');
 	});
 });

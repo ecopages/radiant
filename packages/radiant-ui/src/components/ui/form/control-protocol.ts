@@ -81,7 +81,6 @@ type ControlValueAdapter = {
 export type FieldControlAdapter = ControlValueAdapter;
 
 const NATIVE_LISTED_HOSTS = new Set(['rui-checkbox', 'rui-switch', 'rui-radio-group', 'rui-checkbox-group']);
-const FORM_ASSOCIATED_HOSTS = new Set(['rui-date-input', 'rui-number-field', 'rui-slider', 'rui-knob']);
 
 const stringValueAdapter: ControlValueAdapter = {
 	read: (host) => {
@@ -272,20 +271,24 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	return pickPrimaryFieldControl(collectFieldControls(root));
 }
 
-/** Register a custom host tag so RuiField can read and write its value. Stamp `data-rui-control` and fire bubbling `rui-change`. */
+/** Register a custom host tag so RuiField can read and write its value for the `RuiForm` store. Stamp `data-rui-control` and fire bubbling `rui-change`. This does not list the host on a native form; set `static formAssociated = true` and use `FormAssociation` for that. */
 export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
 	const tag = tagName.toLowerCase();
 	HOST_CONTROL_TAGS.add(tag);
 	CONTROL_VALUE_ADAPTERS.set(tag, adapter);
 }
 
-/** Native listed controls and FACE hosts already submit; RuiField must not double-submit them. */
-export function controlSubmitsNatively(control: HTMLElement): boolean {
-	if (isNativeTextControl(control)) {
+/**
+ * Form-associated hosts submit through `ElementInternals`. The flag lives on the
+ * custom-element constructor (`static formAssociated`), including before upgrade
+ * when the tag is already defined.
+ */
+function hostSubmitsItself(host: HTMLElement): boolean {
+	const defined = globalThis.customElements?.get(host.localName) as { formAssociated?: boolean } | undefined;
+	if (defined?.formAssociated === true) {
 		return true;
 	}
-	const tag = resolveControlHost(control).localName;
-	return NATIVE_LISTED_HOSTS.has(tag) || FORM_ASSOCIATED_HOSTS.has(tag);
+	return (host.constructor as { formAssociated?: boolean }).formAssociated === true;
 }
 
 /**
@@ -403,7 +406,13 @@ export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
 	return single ? [single] : [];
 }
 
-/** Syncs the field name onto the native control and custom-element hosts. */
+/**
+ * Copies `name` onto the listed node.
+ *
+ * Form-associated hosts submit themselves — inner inputs stay unnamed.
+ * Checkbox, switch, and radio groups list through inner natives.
+ * Store-only hosts (select, combobox) do not name an inner textbox.
+ */
 export function wireFieldControlName(
 	controlHost: HTMLElement | null,
 	ariaTarget: HTMLElement | null,
@@ -413,12 +422,15 @@ export function wireFieldControlName(
 		return;
 	}
 
-	if (
-		ariaTarget &&
-		isNativeTextControl(ariaTarget) &&
-		(!controlHost || controlHost === ariaTarget || controlSubmitsNatively(controlHost))
-	) {
-		ariaTarget.name = name;
+	if (ariaTarget && isNativeTextControl(ariaTarget)) {
+		const wrapper = controlHost != null && controlHost !== ariaTarget;
+		if (wrapper && hostSubmitsItself(controlHost)) {
+			ariaTarget.removeAttribute('name');
+		} else if (!wrapper || NATIVE_LISTED_HOSTS.has(controlHost.localName)) {
+			ariaTarget.name = name;
+		} else {
+			ariaTarget.removeAttribute('name');
+		}
 	}
 
 	if (controlHost && HOST_CONTROL_TAGS.has(controlHost.localName)) {

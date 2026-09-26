@@ -119,7 +119,7 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 
 ## API
 
-`RuiDateRangePicker` is a custom element (`<rui-date-range-picker>`) that coordinates its light-DOM inputs, toggle button, and range calendar popover.
+`RuiDateRangePicker` is a custom element (`<rui-date-range-picker>`) that coordinates its light-DOM inputs, toggle button, and range calendar popover. It is not form-associated; `start-name` / `end-name` land on the nested `rui-date-input` hosts. `RuiField` `name` is the store key for the combined `start/end` value.
 
 ### Attributes
 
@@ -131,8 +131,8 @@ Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space
 | `disabled` | `boolean` | `false` | Disable both inputs and the calendar. |
 | `read-only` | `boolean` | `false` | Disable editing while keeping values visible. |
 | `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
-| `start-name` | `string` | `''` | Form `name` on the start hidden ISO input. |
-| `end-name` | `string` | `''` | Form `name` on the end hidden ISO input. |
+| `start-name` | `string` | `''` | Form `name` on the nested start `rui-date-input`. |
+| `end-name` | `string` | `''` | Form `name` on the nested end `rui-date-input`. |
 | `name` | `string` | `''` | Reserved; use `start-name` / `end-name` for discrete fields. |
 | `visible-months` | `number` | `2` | Month grids shown in the range calendar popover. |
 
