@@ -1,5 +1,5 @@
 export type UpdateCycleOptions = {
-	/** Whether queued work may run now (live browser host past its first-connect sync). */
+	/** Whether queued work may run now (browser DOM host past its first-connect sync). */
 	canFlush: () => boolean;
 	/** Runs batched `@onUpdated` callbacks for one set of changed members. */
 	runCallbacks: (changed: ReadonlySet<string>) => void;

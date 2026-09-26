@@ -1,4 +1,4 @@
-import { isServer } from '@ecopages/radiant/is-server';
+import { MINIMAL_DOM_ELEMENT } from './minimal-dom-identity';
 import type { EventEmitter } from '../tools';
 import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { HostSsrRegistry } from './host-ssr-registry';
@@ -262,11 +262,12 @@ export class RadiantElement<Bindings extends object = {}>
 	private renderRuntime?: RenderRuntime;
 
 	/**
-	 * @remarks SSR never auto-flushes. The light-DOM shim can report `isConnected`
-	 * while still lacking browser methods; {@link prepareForSsr} drains `@onUpdated`.
+	 * @remarks The light-DOM shim can report `isConnected` while still lacking
+	 * browser methods; {@link prepareForSsr} drains `@onUpdated`. Node tests with
+	 * a browser-like DOM still need normal update cycles.
 	 */
 	private canFlushUpdateCycle(): boolean {
-		return !isServer && this.isConnected && !this.isFirstConnectPending;
+		return !(MINIMAL_DOM_ELEMENT in this) && this.isConnected && !this.isFirstConnectPending;
 	}
 
 	constructor() {

@@ -1,4 +1,5 @@
 import { serializeHtmlAttribute } from '../../../utils/serialize-html-attribute';
+import { MINIMAL_DOM_ELEMENT } from '../../../core/minimal-dom-identity';
 import { voidElementNames } from '../../html/html-parser';
 import { toDataAttributeName, toDatasetPropertyName } from './dataset';
 import * as selectors from './selectors';
@@ -538,6 +539,7 @@ export class MinimalCustomEvent<T = unknown> extends MinimalEvent {
 }
 
 export class MinimalHTMLElement extends MinimalElement {
+	readonly [MINIMAL_DOM_ELEMENT] = true;
 	public isConnected = false;
 
 	constructor(tagName = 'div', ownerDocument: Document | null = getInstalledDocumentLike()) {
