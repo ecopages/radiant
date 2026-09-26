@@ -80,11 +80,14 @@ export const Default: Story = {
 		await step('switches between single and range presentation without replacing its view', async () => {
 			const slider = host as unknown as RuiSliderElement;
 			slider.showValue = false;
+			await slider.updateComplete;
 			await expect(getValueLabel(root)).toHaveAttribute('hidden');
 			slider.showValue = true;
+			await slider.updateComplete;
 			await expect(getValueLabel(root)).not.toHaveAttribute('hidden');
 
 			slider.variant = 'range';
+			await slider.updateComplete;
 			const [minThumb, maxThumb] = getRangeThumbs(root);
 
 			await expect(getSingleThumb(root)).toHaveAttribute('hidden');
