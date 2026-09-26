@@ -204,6 +204,8 @@ The shim supports a focused query surface for component lifecycle code that runs
 
 **`children` semantics:** `element.children` returns a fresh array snapshot of current element children. It is not a live `HTMLCollection`. Holding a reference after DOM mutations does not update the cached array; re-read `element.children` after changes.
 
+**No layout or focus:** the shim has no `focus()`, `blur()`, `getBoundingClientRect()`, or `getClientRects()`. Hosts never connect on the server and `updated()` never runs there, so DOM work that needs layout or focus belongs in `updated()`. `@onUpdated` callbacks run during SSR preparation and must not depend on layout.
+
 **Animation frames:** SSR installs no-op `requestAnimationFrame` / `cancelAnimationFrame` so layout-aware `connectedCallback` code does not throw. Deferred work scheduled through rAF does not run during serialization; hydration must own client-side layout effects.
 
 **Document event listeners:** Radiant mounts a singleton `MinimalDocument` on `globalThis.document` during SSR. Because `document` is defined on the server, `typeof document !== 'undefined'` checks evaluate to `true` during SSR. Top-level event listeners on `document` or `window` must be guarded with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR. `isServer` follows the package export condition; it remains `true` in Node tests that install a browser-like DOM. Check the DOM implementation when choosing DOM-specific behavior.
