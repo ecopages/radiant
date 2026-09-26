@@ -475,7 +475,10 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 	}
 
 	if (control.localName === 'rui-slider') {
-		return control.querySelector<HTMLElement>('[data-thumb]:not([hidden])') ?? control;
+		const thumb = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]')).find(
+			(node) => !node.hasAttribute('hidden'),
+		);
+		return thumb ?? control;
 	}
 
 	const marked = control.querySelector<HTMLElement>(`[${RUI_CONTROL_ATTR}]`);
@@ -504,7 +507,9 @@ export function getAriaControlTargets(control: HTMLElement): HTMLElement[] {
 	}
 
 	if (control.localName === 'rui-slider') {
-		const thumbs = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]:not([hidden])'));
+		const thumbs = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]')).filter(
+			(node) => !node.hasAttribute('hidden'),
+		);
 		return thumbs.length > 0 ? thumbs : [control];
 	}
 	return [getAriaControlTarget(control)];
