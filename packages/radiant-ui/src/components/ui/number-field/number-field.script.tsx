@@ -148,7 +148,7 @@ export class RuiNumberField extends RadiantElement {
 	private editing = false;
 	private draftValue = '';
 	private initialized = false;
-	private readonly form = new FormAssociation(this);
+	private readonly form = new FormAssociation<number | undefined>(this);
 	private readonly uid = uniqueId('rui-number-field');
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -287,6 +287,7 @@ export class RuiNumberField extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.initialize();
+		this.form.remember(this.value);
 	}
 
 	formDisabledCallback(disabled: boolean): void {
@@ -294,7 +295,7 @@ export class RuiNumberField extends RadiantElement {
 	}
 
 	formResetCallback(): void {
-		this.value = this.defaultValue;
+		this.value = this.form.initial;
 	}
 
 	@onUpdated([

@@ -312,10 +312,11 @@ export class RuiSlider extends RadiantElement {
 	private activePointerId: number | null = null;
 	private pending: number[] | null = null;
 	private lastEmitted = '';
-	private readonly form = new FormAssociation(this);
+	private readonly form = new FormAssociation<number[]>(this);
 
 	protected override onConnected(): void {
 		this.adoptLegacyRangeAttributes();
+		this.form.remember(this.value);
 		this.syncChrome();
 		this.syncValues(this.committedValues());
 	}
@@ -325,7 +326,7 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	formResetCallback(): void {
-		this.value = [SLIDER_DEFAULT_VALUE];
+		this.value = this.form.initial;
 	}
 
 	/** Reads authored `range-min` / `range-max` once when `value` is absent. */

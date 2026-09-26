@@ -150,9 +150,10 @@ export class RuiKnob extends RadiantElement {
 	private activePointerId: number | null = null;
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;
-	private readonly form = new FormAssociation(this);
+	private readonly form = new FormAssociation<number>(this);
 
 	protected override onConnected(): void {
+		this.form.remember(this.value);
 		this.syncPresentation();
 	}
 
@@ -161,7 +162,7 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	formResetCallback(): void {
-		this.value = KNOB_DEFAULT_VALUE;
+		this.value = this.form.initial;
 	}
 
 	@onUpdated([
