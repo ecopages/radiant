@@ -194,6 +194,25 @@ describe('rui-field composed content discovery', () => {
 		host.remove();
 	});
 
+	it('submits a named date-input without RuiField', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiDateInput name="when" value="2026-08-20" />
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-date-input');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).get('when')).toBe('2026-08-20');
+		host.remove();
+	});
+
 	it('does not double-submit a native text control', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
