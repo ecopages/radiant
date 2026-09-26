@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import './500.script';
+import '../pages/500.script';
 
 describe('radiant-ui 500 page copy action', () => {
 	let writeText: ReturnType<typeof vi.fn>;
