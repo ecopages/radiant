@@ -141,6 +141,7 @@ test('Docs controller decorator visualizer example keeps authored DOM wiring in 
 		const statePulses = visualizer.locator('[data-ref="state-pulses"]');
 		const stateLastAction = visualizer.locator('[data-ref="state-last-action"]');
 		const flowTitle = visualizer.locator('[data-ref="flow-title"]');
+		const radios = visualizer.locator('rui-radio-group input[type="radio"]');
 
 		await waitForLocatorText(hostSignal, 'ready');
 		await waitForLocatorText(hostBusy, 'false');
@@ -154,22 +155,37 @@ test('Docs controller decorator visualizer example keeps authored DOM wiring in 
 		assert.equal(Number.isNaN(initialQueryCount), false);
 		assert.ok(initialQueryCount > 0);
 
-		await visualizer.locator('input[value="alert"]').evaluate((input) => {
-			input.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-		});
+		await visualizer.locator('label.rui-radio').filter({ hasText: 'Ready' }).click();
+		await visualizer.locator('label.rui-radio').filter({ hasText: 'Focus' }).click();
+		await waitForLocatorText(hostSignal, 'focus');
+		assert.deepEqual(
+			await radios.evaluateAll((inputs) => inputs.filter((input) => input.checked).map((input) => input.value)),
+			['focus'],
+		);
+		assert.deepEqual(await radios.evaluateAll((inputs) => inputs.map((input) => input.name)), [
+			'controller-signal',
+			'controller-signal',
+			'controller-signal',
+		]);
+
+		await visualizer.locator('label.rui-radio').filter({ hasText: 'Alert' }).click();
 
 		await waitForLocatorText(hostSignal, 'alert');
+		assert.deepEqual(
+			await radios.evaluateAll((inputs) => inputs.filter((input) => input.checked).map((input) => input.value)),
+			['alert'],
+		);
 		await waitForLocatorText(hostBusy, 'true');
 		await waitForLocatorText(eventAction, 'change:alert');
 		await waitForLocatorText(stateSignal, 'alert');
-		await waitForLocatorText(statePulses, '1');
+		await waitForLocatorText(statePulses, '2');
 		await waitForLocatorText(stateLastAction, 'Host attribute changed to data-signal="alert"');
 		await waitForLocatorText(flowTitle, 'Signal rerouted');
 
 		await visualizer.getByRole('button', { name: 'Ping refs' }).click();
 
 		await waitForLocatorText(eventAction, 'click:ping');
-		await waitForLocatorText(statePulses, '2');
+		await waitForLocatorText(statePulses, '3');
 		await waitForLocatorText(flowTitle, 'Ref pulse');
 	});
 });
