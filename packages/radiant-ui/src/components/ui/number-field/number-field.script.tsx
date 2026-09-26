@@ -1,4 +1,5 @@
-import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { bindTo, customElement, event, onEvent, onUpdated, prop, state } from '@ecopages/radiant';
+import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import {
 	formatNumber,
@@ -10,7 +11,6 @@ import {
 } from '@/lib/intl-number';
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
-import { FormAssociation } from '../form/form-association';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -96,13 +96,9 @@ export type RuiNumberFieldChangeDetail = { value: number };
  * never queries them.
  */
 @customElement('rui-number-field')
-export class RuiNumberField extends RadiantElement {
-	static get formAssociated(): boolean {
-		return true;
-	}
-
-	@prop({ type: Number, reflect: true }) value: number | undefined;
-	@prop({ type: Number, attribute: 'default-value' }) defaultValue: number | undefined;
+export class RuiNumberField extends FormAssociatedElement {
+	@prop({ type: Number, reflect: true, defaultValue: undefined }) value: number | undefined;
+	@prop({ type: Number, attribute: 'default-value', defaultValue: undefined }) defaultValue: number | undefined;
 
 	@prop({ type: Number, attribute: 'min-value', defaultValue: Number.NEGATIVE_INFINITY })
 	@bindTo({
@@ -122,15 +118,11 @@ export class RuiNumberField extends RadiantElement {
 
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 
-	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	disabled: boolean;
-
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	@bindTo({ selector: '[data-number-field-input]', bool: 'data-readonly' })
 	readOnly: boolean;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
 	@prop({ type: String, attribute: 'format-options', defaultValue: '' }) formatOptions: string;
 	@prop({ type: String, attribute: 'commit-behavior', defaultValue: 'snap' })
@@ -149,8 +141,6 @@ export class RuiNumberField extends RadiantElement {
 	private editing = false;
 	private draftValue = '';
 	private initialized = false;
-	private readonly form = new FormAssociation<number | undefined>(this);
-	private disabledByForm = false;
 	private readonly uid = uniqueId('rui-number-field');
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -199,7 +189,7 @@ export class RuiNumberField extends RadiantElement {
 		}
 
 		const numericValue = this.getNumericValue();
-		input.disabled = this.disabled || this.disabledByForm;
+		input.disabled = this.effectiveDisabled;
 		input.toggleAttribute('data-disabled', input.disabled);
 		input.setAttribute('role', 'spinbutton');
 		input.setAttribute('inputmode', 'decimal');
@@ -208,14 +198,12 @@ export class RuiNumberField extends RadiantElement {
 		if (!this.editing) {
 			input.value = formatNumber(numericValue, this.resolvedLocale, this.resolvedFormatOptions);
 		}
-
-		this.form.set(this.name ? String(numericValue) : null);
 	}
 
 	private updateStepperState(): void {
 		const value = this.getNumericValue();
-		this.decreaseDisabled = this.disabled || this.disabledByForm || this.readOnly || value <= this.minValue;
-		this.increaseDisabled = this.disabled || this.disabledByForm || this.readOnly || value >= this.maxValue;
+		this.decreaseDisabled = this.effectiveDisabled || this.readOnly || value <= this.minValue;
+		this.increaseDisabled = this.effectiveDisabled || this.readOnly || value >= this.maxValue;
 		queueMicrotask(() => this.syncSlottedSteppers());
 	}
 
@@ -289,23 +277,24 @@ export class RuiNumberField extends RadiantElement {
 		this.updateStepperState();
 	}
 
-	protected override onConnected(): void {
-		this.initialize();
-		this.form.remember(this.value);
+	protected override formValue(): FormValue {
+		return this.name ? String(this.getNumericValue()) : null;
 	}
 
-	formDisabledCallback(disabled: boolean): void {
-		this.disabledByForm = disabled;
-		this.syncInput();
-		this.updateStepperState();
+	protected override formState(): FormValue {
+		return this.value == null ? '' : String(this.value);
 	}
 
-	formResetCallback(): void {
-		this.value = this.form.initial;
+	protected override restoreFormState(state: FormValue): void {
+		this.value = state === '' || state == null ? undefined : Number(state);
 		this.editing = false;
 		this.draftValue = '';
 		this.syncInput();
 		this.updateStepperState();
+	}
+
+	protected override onConnected(): void {
+		this.initialize();
 	}
 
 	@onUpdated([
@@ -318,6 +307,7 @@ export class RuiNumberField extends RadiantElement {
 		'name',
 		'disabled',
 		'readOnly',
+		'effectiveDisabled',
 		'locale',
 		'formatOptions',
 		'commitBehavior',
@@ -348,7 +338,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'focusin' })
 	onInputFocus(event: Event): void {
-		if (this.disabled || this.disabledByForm || this.readOnly) {
+		if (this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 
@@ -369,7 +359,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'input' })
 	onInput(event: Event): void {
-		if (this.disabled || this.disabledByForm || this.readOnly) {
+		if (this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 		this.editing = true;
@@ -378,7 +368,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'keydown' })
 	onKeydown(event: KeyboardEvent): void {
-		if (this.disabled || this.disabledByForm || this.readOnly) {
+		if (this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 
@@ -411,7 +401,7 @@ export class RuiNumberField extends RadiantElement {
 
 	@onEvent({ selector: '[data-number-field-input]', type: 'wheel' })
 	onWheel(event: WheelEvent): void {
-		if (this.wheelDisabled || this.disabled || this.disabledByForm || this.readOnly) {
+		if (this.wheelDisabled || this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 

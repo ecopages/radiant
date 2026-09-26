@@ -17,6 +17,7 @@ import {
 	getAriaControlTargets,
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
+	isFormAssociatedHost,
 	readControlValue,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
@@ -375,7 +376,7 @@ export class RuiField extends RadiantElement {
 		wireFieldControlName(controlHost, ariaTarget, fieldName);
 
 		const describedBy = this.syncDescriptions(descriptionId, errorId, errorMessage);
-		this.syncAriaTargets(ariaTargets, controlId, describedBy, invalid, required);
+		this.syncAriaTargets(controlHost, ariaTargets, controlId, describedBy, invalid, required);
 		this.syncLabel(ariaTargets, ariaTarget);
 
 		this.syncErrorPresentation(errorMessage);
@@ -449,6 +450,7 @@ export class RuiField extends RadiantElement {
 	}
 
 	private syncAriaTargets(
+		controlHost: HTMLElement | null,
 		targets: HTMLElement[],
 		controlId: string,
 		describedBy: string[],
@@ -464,6 +466,9 @@ export class RuiField extends RadiantElement {
 			if (describedBy.length) target.setAttribute('aria-describedby', describedBy.join(' '));
 			else target.removeAttribute('aria-describedby');
 			if (this.disabled) this.disableAriaTarget(target);
+		}
+		if (this.disabled && controlHost && isFormAssociatedHost(controlHost)) {
+			Reflect.set(controlHost, 'disabled', true);
 		}
 	}
 

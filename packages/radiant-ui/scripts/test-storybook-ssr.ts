@@ -145,7 +145,11 @@ try {
 			if (expectsMount(id, smoke)) {
 				try {
 					await page.waitForFunction(
-						() => Boolean(document.querySelector('#storybook-root')?.innerHTML.trim() || document.querySelector('.radiant-ssr-error')),
+						() =>
+							Boolean(
+								document.querySelector('#storybook-root')?.innerHTML.trim() ||
+								document.querySelector('.radiant-ssr-error'),
+							),
 						undefined,
 						{ timeout: 5000 },
 					);

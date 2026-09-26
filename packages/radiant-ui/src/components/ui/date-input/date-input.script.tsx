@@ -1,5 +1,4 @@
 import {
-	RadiantElement,
 	customElement,
 	event,
 	onEvent,
@@ -8,6 +7,7 @@ import {
 	registerSsrPreparationCallback,
 	state,
 } from '@ecopages/radiant';
+import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import {
 	applyBackspaceToSegment,
@@ -25,7 +25,6 @@ import {
 import { resolveLocale } from '@/lib/intl/locale';
 import { uniqueId } from '@/lib/unique-id';
 import { getSegmentDomProps } from './date-input-segment-dom';
-import { FormAssociation } from '../form/form-association';
 
 export type RuiDateInputProps = {
 	value?: string;
@@ -92,23 +91,13 @@ function isIosDevice(): boolean {
  * focus and the caret to `focusedPart` while focus is still inside the control.
  */
 @customElement('rui-date-input')
-export class RuiDateInput extends RadiantElement {
-	static get formAssociated(): boolean {
-		return true;
-	}
-
+export class RuiDateInput extends FormAssociatedElement {
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
 
-	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	disabled: boolean;
-
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	readOnly: boolean;
-
-	@prop({ type: String, reflect: true, defaultValue: '' })
-	name: string;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
@@ -120,8 +109,6 @@ export class RuiDateInput extends RadiantElement {
 	@state focusedPart: DatePartType | null = null;
 
 	private readonly uid = uniqueId('rui-date-input');
-	private readonly form = new FormAssociation<string>(this);
-	private disabledByForm = false;
 	/** Digits typed into `focusedPart` that have not completed the unit yet. */
 	private buffer = '';
 	private useTextboxRole = isIosDevice();
@@ -308,28 +295,22 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
-		this.form.remember(this.value);
 		this.syncSegmentsFromValue();
 		this.syncGroupLabel();
-		this.syncFormValue();
 	}
 
-	formDisabledCallback(disabled: boolean): void {
-		this.disabledByForm = disabled;
-		this.requestUpdate();
+	protected override formValue(): FormValue {
+		return this.name ? this.isoValue : null;
 	}
 
-	formResetCallback(): void {
-		this.value = this.form.initial;
+	protected override restoreFormState(state: FormValue): void {
+		this.value = typeof state === 'string' ? state : '';
 		this.syncSegmentsFromValue();
-		this.syncFormValue();
-		this.requestUpdate();
-		this.dispatchEvent(new Event('rui-form-reset', { bubbles: true }));
 	}
 
-	@onUpdated(['value', 'name'])
-	private syncFormValue(): void {
-		this.form.set(this.name ? this.isoValue : null);
+	override formResetCallback(): void {
+		super.formResetCallback();
+		this.dispatchEvent(new Event('rui-form-reset', { bubbles: true }));
 	}
 
 	@onUpdated('label')
@@ -382,7 +363,7 @@ export class RuiDateInput extends RadiantElement {
 	@onEvent({ selector: '[data-date-segment]', type: 'keydown' })
 	onSegmentKeyDown(event: KeyboardEvent): void {
 		const part = this.partFromTarget(event.target);
-		if (!part || this.disabled || this.disabledByForm || this.readOnly) {
+		if (!part || this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 
@@ -416,7 +397,7 @@ export class RuiDateInput extends RadiantElement {
 	@onEvent({ selector: '[data-date-segment]', type: 'beforeinput' })
 	onSegmentBeforeInput(event: InputEvent): void {
 		const part = this.partFromTarget(event.target);
-		if (!part || this.disabled || this.disabledByForm || this.readOnly) {
+		if (!part || this.effectiveDisabled || this.readOnly) {
 			return;
 		}
 		event.preventDefault();
@@ -451,7 +432,7 @@ export class RuiDateInput extends RadiantElement {
 		const type = segment.type as DatePartType;
 		const focused = this.focusedPart === type;
 		const dom = getSegmentDomProps(segment, {
-			disabled: this.disabled || this.disabledByForm,
+			disabled: this.effectiveDisabled,
 			locale: this.resolvedLocale,
 			readOnly: this.readOnly,
 			segments: this.displaySegments,
