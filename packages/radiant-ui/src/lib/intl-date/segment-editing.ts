@@ -182,10 +182,6 @@ export function applyDigitToSegment(
 	};
 }
 
-export function allSegmentsEmpty(segments: DateSegmentModel[]): boolean {
-	return segments.every((segment) => !segment.editable || segment.isPlaceholder || segment.value === '');
-}
-
 export function getEditablePartTypes(segments: DateSegmentModel[]): DatePartType[] {
 	return segments
 		.filter((segment): segment is DateSegmentModel & { type: DatePartType } => segment.editable)

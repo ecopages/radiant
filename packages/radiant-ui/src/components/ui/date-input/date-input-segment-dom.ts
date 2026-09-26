@@ -10,7 +10,6 @@ import {
 
 type SegmentDomPropsContext = {
 	disabled: boolean;
-	focused: boolean;
 	locale: string | string[] | undefined;
 	readOnly: boolean;
 	segments: DateSegmentModel[];
@@ -34,11 +33,7 @@ export function getSegmentDomProps(segment: DateSegmentModel, context: SegmentDo
 		ariaValuemin: spinbutton ? bounds.min : undefined,
 		ariaValuenow: spinbutton && numeric != null ? numeric : undefined,
 		ariaValuetext: spinbutton ? segmentDisplayText(segment) : undefined,
-		className: cx(
-			'rui-date-input__segment',
-			context.focused && 'rui-date-input__segment--focused',
-			segment.isPlaceholder && 'rui-date-input__segment--placeholder',
-		),
+		className: cx('rui-date-input__segment', segment.isPlaceholder && 'rui-date-input__segment--placeholder'),
 		contenteditable: editable ? 'true' : undefined,
 		inputmode: editable ? 'numeric' : undefined,
 		suppresscontenteditablewarning: editable ? 'true' : undefined,
