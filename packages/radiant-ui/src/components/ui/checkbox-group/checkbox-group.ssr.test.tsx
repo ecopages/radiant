@@ -30,7 +30,7 @@ describe('RuiCheckboxGroup SSR', () => {
 		expect(html).toMatch(/<rui-checkbox-group[^>]*value="product,security"/);
 		expect(html).toMatch(/<rui-checkbox-group[^>]*name="notifications"/);
 		expect(html).toMatch(/<rui-checkbox-group[^>]*label="Email notifications"/);
-		expect(html).toMatch(/<rui-checkbox-group[^>]*disabled="false"/);
+		expect(html).not.toMatch(/<rui-checkbox-group[^>]*\bdisabled=/);
 		expect(html).toMatch(/<rui-checkbox-group[^>]*orientation="horizontal"/);
 	});
 

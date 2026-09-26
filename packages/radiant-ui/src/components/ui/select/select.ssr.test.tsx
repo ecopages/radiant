@@ -33,7 +33,7 @@ describe('RuiSelect SSR', () => {
 		expect(html).toMatch(/<rui-select[^>]*value="published"/);
 		expect(html).toMatch(/<rui-select[^>]*label="Status"/);
 		expect(html).toMatch(/<rui-select[^>]*placeholder="Choose a status"/);
-		expect(html).toMatch(/<rui-select[^>]*disabled="false"/);
+		expect(html).not.toMatch(/<rui-select[^>]*\bdisabled=/);
 		expect(html).toMatch(/<rui-select[^>]*selection-mode="multiple"/);
 		expect(html).toMatch(/<rui-select[^>]*trigger-kind="focus"/);
 	});

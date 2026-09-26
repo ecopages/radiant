@@ -21,6 +21,6 @@ describe('RuiRadioGroup SSR', () => {
 		expect(html).toMatch(/<rui-radio-group[^>]*value="email"/);
 		expect(html).toMatch(/<rui-radio-group[^>]*name="contact"/);
 		expect(html).toMatch(/<rui-radio-group[^>]*label="Preferred contact method"/);
-		expect(html).toMatch(/<rui-radio-group[^>]*disabled="false"/);
+		expect(html).not.toMatch(/<rui-radio-group[^>]*\bdisabled=/);
 	});
 });

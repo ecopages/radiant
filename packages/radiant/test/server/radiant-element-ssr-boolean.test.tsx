@@ -48,7 +48,7 @@ describe('RadiantElement SSR boolean host attributes', () => {
 		);
 	});
 
-	test('serializes boolean false even when the declared default is false', () => {
+	test('omits boolean false when the declared default is false', () => {
 		@customElement('server-host-boolean-false-default-test')
 		class ServerHostBooleanFalseDefault extends RadiantElement {
 			@prop({ type: Boolean, defaultValue: false }) enabled!: boolean;
@@ -61,7 +61,7 @@ describe('RadiantElement SSR boolean host attributes', () => {
 		const element = new ServerHostBooleanFalseDefault();
 
 		expect(renderRadiantElementHostToString(element)).toBe(
-			'<server-host-boolean-false-default-test enabled="false"><p>false</p></server-host-boolean-false-default-test>',
+			'<server-host-boolean-false-default-test><p>false</p></server-host-boolean-false-default-test>',
 		);
 	});
 });
