@@ -1,6 +1,7 @@
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { createNumericRange, valueFromSliderKey, valuesAlignOnStep } from '../shared/numeric-range';
+import { FormAssociation } from '../form/form-association';
 import { createKnobRing, knobValueFromPointer } from './knob-geometry';
 
 export type RuiKnobValuePosition = 'center' | 'below';
@@ -107,6 +108,8 @@ export const KNOB_DEFAULT_VALUE = 50;
  */
 @customElement('rui-knob')
 export class RuiKnob extends RadiantElement {
+	static formAssociated = true;
+
 	@prop({ type: Number, reflect: true, defaultValue: KNOB_DEFAULT_VALUE }) value: number;
 	@prop({ type: Number, defaultValue: 0 }) min: number;
 	@prop({ type: Number, defaultValue: 100 }) max: number;
@@ -147,9 +150,18 @@ export class RuiKnob extends RadiantElement {
 	private activePointerId: number | null = null;
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;
+	private readonly form = new FormAssociation(this);
 
 	protected override onConnected(): void {
 		this.syncPresentation();
+	}
+
+	formDisabledCallback(disabled: boolean): void {
+		this.disabled = disabled;
+	}
+
+	formResetCallback(): void {
+		this.value = KNOB_DEFAULT_VALUE;
 	}
 
 	@onUpdated([
@@ -199,6 +211,7 @@ export class RuiKnob extends RadiantElement {
 		this.syncControlValues(value, ring.valueText);
 		this.syncRing(ring);
 		this.syncReadout(ring.valueText, valuePosition);
+		this.form.set(this.name ? String(value) : null);
 	}
 
 	private syncKnobLayout(valuePosition: RuiKnobValuePosition): void {

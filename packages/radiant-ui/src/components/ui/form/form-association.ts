@@ -3,11 +3,11 @@ export type FormAssociationHost = HTMLElement & {
 };
 
 /**
- * Wraps `ElementInternals` so `RuiField` (or a listed custom host) can join a native `<form>`.
+ * Wraps `ElementInternals` so a named catalog host joins a native `<form>` like `<input name>`.
  *
  * @remarks The custom-element class still sets `static formAssociated = true`;
  * the browser reads that on the constructor. `attachInternals` is skipped when
- * missing (SSR). Wrap controls in `RuiField` instead of calling this from each input.
+ * missing (SSR). The listed catalog host is the form control, like `<input name>`.
  */
 export class FormAssociation {
 	#internals?: ElementInternals;

@@ -25,6 +25,7 @@ import {
 import { resolveLocale } from '@/lib/intl/locale';
 import { uniqueId } from '@/lib/unique-id';
 import { getSegmentDomProps } from './date-input-segment-dom';
+import { FormAssociation } from '../form/form-association';
 
 export type RuiDateInputProps = {
 	value?: string;
@@ -52,8 +53,8 @@ function isIosDevice(): boolean {
 /**
  * `<rui-date-input>` — locale-ordered date segments for keyboard and touch entry.
  *
- * Derived Tree: the host `render()`s locale-ordered segments. Wrap in `RuiField`
- * to submit the committed ISO value.
+ * Derived Tree: the host `render()`s locale-ordered segments. Set `name` to submit
+ * the committed ISO value like a native `<input type="date">`.
  *
  * ## Light-DOM contract
  *
@@ -84,6 +85,8 @@ function isIosDevice(): boolean {
  */
 @customElement('rui-date-input')
 export class RuiDateInput extends RadiantElement {
+	static formAssociated = true;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) value: string;
 	@prop({ type: String, defaultValue: '' }) min: string;
 	@prop({ type: String, defaultValue: '' }) max: string;
@@ -94,7 +97,7 @@ export class RuiDateInput extends RadiantElement {
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	readOnly: boolean;
 
-	@prop({ type: String, defaultValue: '' })
+	@prop({ type: String, reflect: true, defaultValue: '' })
 	name: string;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -107,6 +110,7 @@ export class RuiDateInput extends RadiantElement {
 	@state focusedPart: DatePartType | null = null;
 
 	private readonly uid = uniqueId('rui-date-input');
+	private readonly form = new FormAssociation(this);
 	/** Digits typed into `focusedPart` that have not completed the unit yet. */
 	private buffer = '';
 	private useTextboxRole = isIosDevice();
@@ -294,6 +298,20 @@ export class RuiDateInput extends RadiantElement {
 	protected override onConnected(): void {
 		this.syncSegmentsFromValue();
 		this.syncGroupLabel();
+		this.syncFormValue();
+	}
+
+	formDisabledCallback(disabled: boolean): void {
+		this.disabled = disabled;
+	}
+
+	formResetCallback(): void {
+		this.value = '';
+	}
+
+	@onUpdated(['value', 'name'])
+	private syncFormValue(): void {
+		this.form.set(this.name && this.isoValue ? this.isoValue : null);
 	}
 
 	@onUpdated('label')

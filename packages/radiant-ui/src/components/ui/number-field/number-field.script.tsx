@@ -10,6 +10,7 @@ import {
 } from '@/lib/intl-number';
 import { uniqueId } from '@/lib/unique-id';
 import { syncFieldLabel } from '../shared/field-label';
+import { FormAssociation } from '../form/form-association';
 
 export type RuiNumberFieldCommitBehavior = 'snap' | 'validate';
 
@@ -96,6 +97,8 @@ export type RuiNumberFieldChangeDetail = { value: number };
  */
 @customElement('rui-number-field')
 export class RuiNumberField extends RadiantElement {
+	static formAssociated = true;
+
 	@prop({ type: Number, reflect: true }) value: number | undefined;
 	@prop({ type: Number, attribute: 'default-value' }) defaultValue: number | undefined;
 
@@ -145,6 +148,7 @@ export class RuiNumberField extends RadiantElement {
 	private editing = false;
 	private draftValue = '';
 	private initialized = false;
+	private readonly form = new FormAssociation(this);
 	private readonly uid = uniqueId('rui-number-field');
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -200,6 +204,8 @@ export class RuiNumberField extends RadiantElement {
 		if (!this.editing) {
 			input.value = formatNumber(numericValue, this.resolvedLocale, this.resolvedFormatOptions);
 		}
+
+		this.form.set(this.name ? String(numericValue) : null);
 	}
 
 	private updateStepperState(): void {
@@ -283,6 +289,14 @@ export class RuiNumberField extends RadiantElement {
 		this.initialize();
 	}
 
+	formDisabledCallback(disabled: boolean): void {
+		this.disabled = disabled;
+	}
+
+	formResetCallback(): void {
+		this.value = this.defaultValue;
+	}
+
 	@onUpdated([
 		'value',
 		'defaultValue',
@@ -290,6 +304,7 @@ export class RuiNumberField extends RadiantElement {
 		'maxValue',
 		'step',
 		'label',
+		'name',
 		'disabled',
 		'readOnly',
 		'locale',

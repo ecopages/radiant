@@ -1,6 +1,7 @@
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
+import { FormAssociation } from '../form/form-association';
 import {
 	createNumericRange,
 	formatNumericValue,
@@ -232,7 +233,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving thumbs focusable. Default: `false`.
  * @attr {string} label - Accessible name for the slider. Default: `''`.
- * @attr {string} name - Form field name. Default: `''`.
+ * @attr {string} name - Form field name. Range mode also writes `{name}-max`. Default: `''`.
  * @attr {boolean} show-value - Shows the default value readout below the track. Default: `false`.
  * @attr {boolean} value-title - Mirrors the live value in control `title` tooltips on hover. Default: `false`.
  *
@@ -267,6 +268,8 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  */
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement {
+	static formAssociated = true;
+
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
 	@prop({ type: Array, reflect: true, defaultValue: [SLIDER_DEFAULT_VALUE], transform: numberArrayTransform })
@@ -309,11 +312,20 @@ export class RuiSlider extends RadiantElement {
 	private activePointerId: number | null = null;
 	private pending: number[] | null = null;
 	private lastEmitted = '';
+	private readonly form = new FormAssociation(this);
 
 	protected override onConnected(): void {
 		this.adoptLegacyRangeAttributes();
 		this.syncChrome();
 		this.syncValues(this.committedValues());
+	}
+
+	formDisabledCallback(disabled: boolean): void {
+		this.disabled = disabled;
+	}
+
+	formResetCallback(): void {
+		this.value = [SLIDER_DEFAULT_VALUE];
 	}
 
 	/** Reads authored `range-min` / `range-max` once when `value` is absent. */
@@ -520,7 +532,25 @@ export class RuiSlider extends RadiantElement {
 			this.valueTarget.textContent = this.formatValues(values);
 		}
 
+		this.syncFormValue(values);
 		this.syncValueTitle(values);
+	}
+
+	private syncFormValue(values: number[]): void {
+		if (!this.name) {
+			this.form.set(null);
+			return;
+		}
+
+		if (values.length === 2) {
+			const data = new FormData();
+			data.append(this.name, String(values[0]));
+			data.append(`${this.name}-max`, String(values[1]));
+			this.form.set(data);
+			return;
+		}
+
+		this.form.set(String(values[0] ?? ''));
 	}
 
 	private syncValueTitle(values: number[]): void {

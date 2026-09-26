@@ -81,6 +81,7 @@ type ControlValueAdapter = {
 export type FieldControlAdapter = ControlValueAdapter;
 
 const NATIVE_LISTED_HOSTS = new Set(['rui-checkbox', 'rui-switch', 'rui-radio-group', 'rui-checkbox-group']);
+const FORM_ASSOCIATED_HOSTS = new Set(['rui-date-input', 'rui-number-field', 'rui-slider', 'rui-knob']);
 
 const stringValueAdapter: ControlValueAdapter = {
 	read: (host) => {
@@ -278,12 +279,13 @@ export function registerFieldControl(tagName: string, adapter: FieldControlAdapt
 	CONTROL_VALUE_ADAPTERS.set(tag, adapter);
 }
 
-/** Native listed controls already submit through their inner `<input>`; RuiField must not double-submit them. */
+/** Native listed controls and FACE hosts already submit; RuiField must not double-submit them. */
 export function controlSubmitsNatively(control: HTMLElement): boolean {
 	if (isNativeTextControl(control)) {
 		return true;
 	}
-	return NATIVE_LISTED_HOSTS.has(resolveControlHost(control).localName);
+	const tag = resolveControlHost(control).localName;
+	return NATIVE_LISTED_HOSTS.has(tag) || FORM_ASSOCIATED_HOSTS.has(tag);
 }
 
 /**
@@ -419,12 +421,9 @@ export function wireFieldControlName(
 		ariaTarget.name = name;
 	}
 
-	if (!controlHost || controlHost === ariaTarget) {
-		return;
-	}
-
-	if (HOST_CONTROL_TAGS.has(controlHost.localName)) {
+	if (controlHost && HOST_CONTROL_TAGS.has(controlHost.localName)) {
 		controlHost.setAttribute('name', name);
+		Reflect.set(controlHost, 'name', name);
 	}
 }
 

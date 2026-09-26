@@ -2,4 +2,4 @@
 '@ecopages/radiant-ui': minor
 ---
 
-`RuiField` is form-associated and submits custom hosts through native `FormData`. Wrap a control in `RuiField` to plug it into `RuiForm` and a native form; call `registerFieldControl` for a custom value shape. Date-input, knob, slider, and number-field no longer render hidden form inputs.
+Named `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` are form-associated custom elements: `name` on the host submits through native `FormData` like `<input>`. Wrap in `RuiField` for `RuiForm`. Hidden form inputs on those hosts are gone.
