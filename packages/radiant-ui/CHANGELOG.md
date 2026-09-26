@@ -1,5 +1,45 @@
 # @ecopages/radiant-ui
 
+## 0.1.0-rc.19
+
+### Minor Changes
+
+- [#287](https://github.com/ecopages/radiant/pull/287) [`0190865`](https://github.com/ecopages/radiant/commit/0190865052ef78782f38d245bb0f489a28d23c06) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` extend `FormAssociatedElement`. `FormAssociation` is removed; third-party hosts should extend the platform base. `RuiField` copies `disabled` onto a form-associated child and never names that host's inner input.
+
+- [#271](https://github.com/ecopages/radiant/pull/271) [`0b05f53`](https://github.com/ecopages/radiant/commit/0b05f53c45747f6792e6a21218ca34bfcc7fc454) Thanks [@andeeplus](https://github.com/andeeplus)! - Render meter fill consistently across browsers and expose CSS properties for its track color, fill color, radius, height, and width.
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`371b93c`](https://github.com/ecopages/radiant/commit/371b93cbf39b4a71d0e034d8023e425c03941fcf) Thanks [@andeeplus](https://github.com/andeeplus)! - Named `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` are form-associated: `name` on the host submits through native `FormData` like `<input>`. Form reset restores the value the control was given. `RuiField` copies `name` onto that host and remains the `RuiForm` connector. Hidden form inputs on those hosts are gone.
+
+    Registered custom controls can declare whether the host, a native input, or neither submits. Fieldset disability no longer changes an authored `disabled` attribute, and clearing a field name removes it from native submission. Empty named dates submit an empty string.
+
+- [#270](https://github.com/ecopages/radiant/pull/270) [`9c0763e`](https://github.com/ecopages/radiant/commit/9c0763ec3789e47d07f3e358f1223798552538c3) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `trigger-kind` (`focus` | `manual`) on `<rui-select>` to opt into opening the listbox when the trigger receives focus, aligned with combobox `triggerKind`.
+
+### Patch Changes
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`83565f8`](https://github.com/ecopages/radiant/commit/83565f8968c2447db4eb1604f2404796b2fe0cda) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep a partly typed `rui-date-input` date when props other than `value` or `locale` change. Before this fix, setting `label`, `min`, `max`, `disabled`, `read-only`, or `name` mid-entry threw away the typed digits. Add the `--on-focus-ring` color token (Tailwind `on-focus-ring`), paired with `--focus-ring` and defaulting to `--on-primary`, for text on a focus-ring fill.
+
+- [#271](https://github.com/ecopages/radiant/pull/271) [`2062c0a`](https://github.com/ecopages/radiant/commit/2062c0a995f8b1bdc7741a7862421ac73fdcc4a1) Thanks [@andeeplus](https://github.com/andeeplus)! - Improve focused date input segment contrast across browser text rendering.
+
+- [#287](https://github.com/ecopages/radiant/pull/287) [`5aed321`](https://github.com/ecopages/radiant/commit/5aed3210c1b3211ef44f2e46c3b4be14a2802192) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-date-input` commits the draft once per keystroke, focus move, or blur. Blurring no longer runs the leave and blur passes back to back, and completing a unit no longer rebuilds the segments twice. Focus reaches the next unit by the time `updateComplete` resolves, and a segment rebuild no longer pulls focus back after it has left the control.
+
+- [#277](https://github.com/ecopages/radiant/pull/277) [`9108c56`](https://github.com/ecopages/radiant/commit/9108c568af8739bb2f672214f3a73c2341fa436a) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep date-input segment typing in a local draft until the unit completes, and stop delayed selection from stealing focus between segments.
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`7562d9e`](https://github.com/ecopages/radiant/commit/7562d9e7957fbd08311a5fbc2382aeb973c9d243) Thanks [@andeeplus](https://github.com/andeeplus)! - `<rui-combobox trigger-kind="focus">` no longer ignores the next focus after it refocuses its own input. Select and combobox now share one focus-open rule: only focus arriving from outside the host opens the listbox.
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`b0e40ef`](https://github.com/ecopages/radiant/commit/b0e40ef41333997cdb940ef84b5c643b2fde310d) Thanks [@andeeplus](https://github.com/andeeplus)! - Clamp the meter percent readout to `0%`–`100%` so out-of-range values match the native `<meter>` and the visual fill.
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`cbaf8b1`](https://github.com/ecopages/radiant/commit/cbaf8b159d63612ba72f75a431f485740f85f182) Thanks [@andeeplus](https://github.com/andeeplus)! - Apply the full narrow pagination chrome (icon-only previous / next, hidden page numbers) both below `40rem` and with `.rui-pagination--compact`, and add `previousText`, `previousLabel`, `nextText`, `nextLabel`, `pageLabel`, and `statusLabel` view props to localize the default copy.
+
+- [#271](https://github.com/ecopages/radiant/pull/271) [`32bf820`](https://github.com/ecopages/radiant/commit/32bf8204640645170c50225d17fbcc1999f0d0f9) Thanks [@andeeplus](https://github.com/andeeplus)! - Announce the compact pagination position as “Page n of m” when the current page changes.
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`38a55a2`](https://github.com/ecopages/radiant/commit/38a55a2535ed63d9f3826827b62c5624082f8aa9) Thanks [@andeeplus](https://github.com/andeeplus)! - Hide the inactive sidebar trigger again before hydration, and read trigger placement only from the `placement` attribute (the `rui-sidebar-trigger-placement--*` class and `data-placement` are no longer read, and the class is no longer emitted).
+
+- [#271](https://github.com/ecopages/radiant/pull/271) [`d7ef14a`](https://github.com/ecopages/radiant/commit/d7ef14a89d89c31742dc8347442e25d5b08a21d5) Thanks [@andeeplus](https://github.com/andeeplus)! - `rui-sidebar-trigger` follows the sidebar's mobile mode once it attaches, including a breakpoint below 768px. Before hydration, trigger visibility uses the 768px viewport and only the sidebar that owns the trigger.
+- Updated dependencies [[`0f56507`](https://github.com/ecopages/radiant/commit/0f565075d056e7dca32ab525be2460c683cff6dd), [`86cafb6`](https://github.com/ecopages/radiant/commit/86cafb674cd14daaf43389b8357e7073a53fd056), [`98646b9`](https://github.com/ecopages/radiant/commit/98646b99034500d7ccf67e373baf23b615fee7cb), [`74cebba`](https://github.com/ecopages/radiant/commit/74cebba03780009d80e9963f7b6882486b9a18a4), [`8006f98`](https://github.com/ecopages/radiant/commit/8006f98f45dc5559ea928d767b3cc54743f33828)]:
+    - @ecopages/radiant@0.3.0-rc.13
+    - @ecopages/jsx@0.3.0-rc.13
+    - @ecopages/signals@0.3.0-rc.13
+
 ## 0.1.0-rc.18
 
 ### Minor Changes
