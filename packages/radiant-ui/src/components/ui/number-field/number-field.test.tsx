@@ -19,7 +19,6 @@ describe('RuiNumberField commit', () => {
 		document.body.innerHTML = `
 			<rui-number-field name="quantity">
 				<input data-number-field-input />
-				<input type="hidden" data-number-field-value />
 			</rui-number-field>
 		`;
 
@@ -36,14 +35,12 @@ describe('RuiNumberField commit', () => {
 		await settled();
 
 		expect(host.value).toBe(3);
-		expect(host.querySelector<HTMLInputElement>('[data-number-field-value]')?.value).toBe('3');
 	});
 
 	it('keeps the formatted display value in sync after commit', async () => {
 		document.body.innerHTML = `
 			<rui-number-field name="quantity">
 				<input data-number-field-input />
-				<input type="hidden" data-number-field-value />
 			</rui-number-field>
 		`;
 

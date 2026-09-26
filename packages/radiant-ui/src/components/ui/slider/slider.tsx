@@ -221,13 +221,6 @@ function SliderRoot({
 				readoutPrecision={seed.readoutPrecision}
 				trackStyle={seed.trackStyle}
 			/>
-			<input type="hidden" data-ref="input" name={name || undefined} value={String(seed.committed[0])} />
-			<input
-				type="hidden"
-				data-ref="maxInput"
-				name={seed.isRange && name ? `${name}-max` : undefined}
-				value={seed.isRange ? String(seed.committed[1]) : undefined}
-			/>
 		</div>
 	);
 }

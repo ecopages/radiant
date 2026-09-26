@@ -124,7 +124,6 @@ function KnobBody({
 			>
 				{ring.valueText}
 			</span>
-			<input data-ref="input" type="hidden" name={knob.name || undefined} value={knob.value} />
 		</div>
 	);
 }

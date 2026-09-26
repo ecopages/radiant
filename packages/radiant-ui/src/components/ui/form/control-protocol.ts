@@ -15,6 +15,7 @@ const FIELD_COLUMN_SELECTOR = '[data-ref="field"]';
 const HOST_CONTROL_TAGS = new Set([
 	'rui-combobox',
 	'rui-date-field',
+	'rui-date-input',
 	'rui-date-range-picker',
 	'rui-select',
 	'rui-tag-group',
@@ -28,10 +29,13 @@ const HOST_CONTROL_TAGS = new Set([
 	'rui-listbox',
 ]);
 
-/** Library controls only — `data-rui-control` (e.g. RuiInput) or known host tags. */
-export const FIELD_CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
+function fieldControlSelector(): string {
+	return `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
+}
 
-const HOST_CONTROL_SELECTOR = Array.from(HOST_CONTROL_TAGS).join(', ');
+function hostControlSelector(): string {
+	return Array.from(HOST_CONTROL_TAGS).join(', ');
+}
 
 function isEmbeddedListbox(node: HTMLElement): boolean {
 	return (
@@ -73,6 +77,10 @@ type ControlValueAdapter = {
 	read: (host: HTMLElement) => unknown;
 	write: (host: HTMLElement, value: unknown) => void;
 };
+
+export type FieldControlAdapter = ControlValueAdapter;
+
+const NATIVE_LISTED_HOSTS = new Set(['rui-checkbox', 'rui-switch', 'rui-radio-group', 'rui-checkbox-group']);
 
 const stringValueAdapter: ControlValueAdapter = {
 	read: (host) => {
@@ -150,6 +158,7 @@ const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
 	['rui-switch', booleanValueAdapter],
 	['rui-combobox', stringArrayValueAdapter],
 	['rui-date-field', stringValueAdapter],
+	['rui-date-input', stringValueAdapter],
 	['rui-date-range-picker', stringValueAdapter],
 	['rui-select', stringArrayValueAdapter],
 	['rui-radio-group', stringValueAdapter],
@@ -231,7 +240,7 @@ function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null 
 function collectFieldControls(root: HTMLElement): HTMLElement[] {
 	const candidates: HTMLElement[] = [];
 	forEachFieldContentNode(root, (node) => {
-		if (node instanceof HTMLElement && node.matches(FIELD_CONTROL_SELECTOR)) {
+		if (node instanceof HTMLElement && node.matches(fieldControlSelector())) {
 			candidates.push(node);
 		}
 	});
@@ -243,7 +252,7 @@ function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
 	if (!(renderRoot instanceof HTMLElement)) {
 		return [];
 	}
-	return Array.from(renderRoot.querySelectorAll<HTMLElement>(FIELD_CONTROL_SELECTOR)).filter((el) =>
+	return Array.from(renderRoot.querySelectorAll<HTMLElement>(fieldControlSelector())).filter((el) =>
 		root.contains(el),
 	);
 }
@@ -262,6 +271,21 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	return pickPrimaryFieldControl(collectFieldControls(root));
 }
 
+/** Register a custom host tag so RuiField can read and write its value. Stamp `data-rui-control` and fire bubbling `rui-change`. */
+export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
+	const tag = tagName.toLowerCase();
+	HOST_CONTROL_TAGS.add(tag);
+	CONTROL_VALUE_ADAPTERS.set(tag, adapter);
+}
+
+/** Native listed controls already submit through their inner `<input>`; RuiField must not double-submit them. */
+export function controlSubmitsNatively(control: HTMLElement): boolean {
+	if (isNativeTextControl(control)) {
+		return true;
+	}
+	return NATIVE_LISTED_HOSTS.has(resolveControlHost(control).localName);
+}
+
 /**
  * Whether a bubbling `rui-change` belongs to this field's primary control, not a
  * nested host inside it.
@@ -274,7 +298,7 @@ export function isPrimaryFieldControlEvent(root: HTMLElement, event: Event): boo
 	if (event.target !== control && !control.contains(event.target)) {
 		return false;
 	}
-	const nestedHost = event.target.closest(HOST_CONTROL_SELECTOR);
+	const nestedHost = event.target.closest(hostControlSelector());
 	return nestedHost === control || nestedHost == null;
 }
 
@@ -337,7 +361,7 @@ export function writeControlValue(control: HTMLElement, value: unknown): void {
 
 function resolveControlHost(control: HTMLElement): HTMLElement {
 	if (control.hasAttribute(RUI_CONTROL_ATTR)) {
-		const host = control.closest(HOST_CONTROL_SELECTOR) as HTMLElement | null;
+		const host = control.closest(hostControlSelector()) as HTMLElement | null;
 		return host ?? control;
 	}
 	return control;
@@ -387,15 +411,15 @@ export function wireFieldControlName(
 		return;
 	}
 
-	if (ariaTarget && isNativeTextControl(ariaTarget)) {
+	if (
+		ariaTarget &&
+		isNativeTextControl(ariaTarget) &&
+		(!controlHost || controlHost === ariaTarget || controlSubmitsNatively(controlHost))
+	) {
 		ariaTarget.name = name;
 	}
 
-	if (!controlHost) {
-		return;
-	}
-
-	if (controlHost === ariaTarget) {
+	if (!controlHost || controlHost === ariaTarget) {
 		return;
 	}
 

@@ -123,7 +123,6 @@ function NumberFieldDefaultGroup() {
 	return (
 		<RuiNumberFieldGroup>
 			<RuiNumberFieldInput />
-			<input type="hidden" data-number-field-value />
 			<RuiNumberFieldSteppers>
 				<RuiNumberFieldDecrementButton />
 				<RuiNumberFieldIncrementButton />
@@ -134,7 +133,7 @@ function NumberFieldDefaultGroup() {
 
 /**
  * Locale-aware number field. When `children` is omitted, renders the default group with
- * `[data-number-field-input]`, `[data-number-field-value]`, and stepper buttons.
+ * `[data-number-field-input]`, and stepper buttons.
  *
  * @cssclass rui-number-field - Root field wrapper (`data-ref="root"` is presentation only).
  */

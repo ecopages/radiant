@@ -208,10 +208,6 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  *   the formatted value for SSR.
  * - `[data-default-value]` — default readout stamped by the view when `children` is omitted.
  *   Host toggles `hidden` via `showValue`.
- * - `[data-ref="input"]` — hidden form input for the primary value. Host syncs `value`,
- *   `name`, `disabled`, `readOnly`, and optional `title`.
- * - `[data-ref="maxInput"]` — hidden form input for range max. Host syncs `value`,
- *   `name` (`{name}-max`), `disabled`, `readOnly`, and optional `title`.
  * - `[data-ref="singleThumb"]`, `[data-ref="rangeMinThumb"]`, `[data-ref="rangeMaxThumb"]`
  *   — map to `[data-thumb]` targets above.
  *
@@ -236,7 +232,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving thumbs focusable. Default: `false`.
  * @attr {string} label - Accessible name for the slider. Default: `''`.
- * @attr {string} name - Form field name. Range mode also writes `{name}-max`. Default: `''`.
+ * @attr {string} name - Form field name. Default: `''`.
  * @attr {boolean} show-value - Shows the default value readout below the track. Default: `false`.
  * @attr {boolean} value-title - Mirrors the live value in control `title` tooltips on hover. Default: `false`.
  *
@@ -281,16 +277,8 @@ export class RuiSlider extends RadiantElement {
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Number, defaultValue: 0 }) minDistance: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo([
-		{ ref: 'input', prop: 'disabled' },
-		{ ref: 'maxInput', prop: 'disabled' },
-	])
 	disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
-	@bindTo([
-		{ ref: 'input', prop: 'readOnly' },
-		{ ref: 'maxInput', prop: 'readOnly' },
-	])
 	readOnly: boolean;
 	@prop({ type: String, defaultValue: '' })
 	@bindTo([
@@ -298,8 +286,7 @@ export class RuiSlider extends RadiantElement {
 		{ ref: 'label', text: true },
 	])
 	label: string;
-	@prop({ type: String, defaultValue: '' })
-	@bindTo({ ref: 'input', attr: 'name', map: (name) => name || undefined })
+	@prop({ type: String, reflect: true, defaultValue: '' })
 	name: string;
 	@prop({ type: Boolean, attribute: 'show-value', defaultValue: false })
 	@bindTo({ selector: '[data-default-value]', bool: 'hidden', invert: true })
@@ -309,8 +296,6 @@ export class RuiSlider extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSliderChangeDetail>;
 
-	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
-	@query({ ref: 'maxInput' }) maxInputTarget: HTMLInputElement;
 	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'header' }) headerTarget: HTMLElement;
 	@query({ ref: 'label' }) labelTarget: HTMLElement;
@@ -535,37 +520,11 @@ export class RuiSlider extends RadiantElement {
 			this.valueTarget.textContent = this.formatValues(values);
 		}
 
-		this.syncInputValues(values);
 		this.syncValueTitle(values);
-	}
-
-	private syncInputValues(values: number[]): void {
-		if (this.inputTarget) {
-			this.inputTarget.value = String(values[0]);
-		}
-
-		if (!this.maxInputTarget) {
-			return;
-		}
-
-		if (values.length === 2) {
-			this.maxInputTarget.value = String(values[1]);
-			if (this.name) {
-				this.maxInputTarget.name = `${this.name}-max`;
-			} else {
-				this.maxInputTarget.removeAttribute('name');
-			}
-			return;
-		}
-
-		this.maxInputTarget.value = '';
-		this.maxInputTarget.removeAttribute('name');
 	}
 
 	private syncValueTitle(values: number[]): void {
 		const targets = [
-			[this.inputTarget, 'input'],
-			[this.maxInputTarget, 'maxInput'],
 			[this.rangeTrack, 'track'],
 			[this.singleThumb, 'value'],
 			[this.rangeMinThumb, 'min'],
@@ -579,16 +538,14 @@ export class RuiSlider extends RadiantElement {
 		}
 	}
 
-	private getValueTitles(values: number[]): Partial<Record<'input' | 'maxInput' | 'track' | RuiSliderThumb, string>> {
+	private getValueTitles(values: number[]): Partial<Record<'track' | RuiSliderThumb, string>> {
 		if (!this.valueTitle) return {};
 		if (values.length === 1) {
 			const value = this.formatValue(values[0]);
-			return { input: value, value };
+			return { value };
 		}
 		const [low, high] = values;
 		return {
-			input: this.formatValue(low),
-			maxInput: this.formatValue(high),
 			min: this.formatValue(low),
 			max: this.formatValue(high),
 			track: this.formatValues(values),
