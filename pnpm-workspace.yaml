@@ -12,3 +12,14 @@ allowBuilds:
     esbuild: true
     '@swc/core': true
     msw: false
+
+minimumReleaseAgeExclude:
+    - '@ecopages/browser-router@0.2.0-rc.11'
+    - '@ecopages/content-processor@0.2.0-rc.11'
+    - '@ecopages/core@0.2.0-rc.11'
+    - '@ecopages/dev-toolbar@0.2.0-rc.11'
+    - '@ecopages/ecopages-jsx@0.2.0-rc.11'
+    - '@ecopages/file-system@0.2.0-rc.11'
+    - '@ecopages/mdx@0.2.0-rc.11'
+    - '@ecopages/postcss-processor@0.2.0-rc.11'
+    - ecopages@0.2.0-rc.11
