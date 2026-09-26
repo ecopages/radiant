@@ -218,13 +218,24 @@ describe('field control protocol (SSR-safe)', () => {
 		expect(input.hasAttribute('name')).toBe(false);
 	});
 
-	it('names the inner input when the host does not submit itself', () => {
+	it('does not name a store-only host inner textbox', () => {
 		const host = document.createElement('rui-combobox');
 		const input = document.createElement('input');
 
 		wireFieldControlName(host, input, 'country');
 
-		expect(input.name).toBe('country');
+		expect(input.hasAttribute('name')).toBe(false);
 		expect(host.getAttribute('name')).toBe('country');
+	});
+
+	it('names the inner input for a checkbox host', () => {
+		const host = document.createElement('rui-checkbox');
+		const input = document.createElement('input');
+		input.type = 'checkbox';
+
+		wireFieldControlName(host, input, 'tos');
+
+		expect(input.name).toBe('tos');
+		expect(host.getAttribute('name')).toBe('tos');
 	});
 });

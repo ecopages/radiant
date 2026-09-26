@@ -279,19 +279,6 @@ export function registerFieldControl(tagName: string, adapter: FieldControlAdapt
 }
 
 /**
- * Form-associated hosts submit through `ElementInternals`. The flag lives on the
- * custom-element constructor (`static formAssociated`), including before upgrade
- * when the tag is already defined.
- */
-function hostSubmitsItself(host: HTMLElement): boolean {
-	const defined = globalThis.customElements?.get(host.localName) as { formAssociated?: boolean } | undefined;
-	if (defined?.formAssociated === true) {
-		return true;
-	}
-	return (host.constructor as { formAssociated?: boolean }).formAssociated === true;
-}
-
-/**
  * Whether a bubbling `rui-change` belongs to this field's primary control, not a
  * nested host inside it.
  */
@@ -423,10 +410,9 @@ export function wireFieldControlName(
 	}
 
 	if (ariaTarget && isNativeTextControl(ariaTarget)) {
-		const wrapper = controlHost != null && controlHost !== ariaTarget;
-		if (wrapper && hostSubmitsItself(controlHost)) {
-			ariaTarget.removeAttribute('name');
-		} else if (!wrapper || NATIVE_LISTED_HOSTS.has(controlHost.localName)) {
+		const namesInner =
+			controlHost == null || controlHost === ariaTarget || NATIVE_LISTED_HOSTS.has(controlHost.localName);
+		if (namesInner) {
 			ariaTarget.name = name;
 		} else {
 			ariaTarget.removeAttribute('name');
