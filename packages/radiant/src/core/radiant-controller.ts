@@ -1,9 +1,8 @@
 import { render as renderJsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { createReactiveComputed, createReactiveWatcher, type ReactiveComputed } from './reactivity-adapter';
-import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import { ReactiveHost, type ReactiveHostLike, type UpdatedCallback } from './reactive-host';
+import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import type {
 	ReactiveBindingOption,
@@ -12,8 +11,6 @@ import type {
 	ReactiveBindings,
 	ReactiveFieldOptions,
 } from './reactive-prop-core';
-import { HostSsrRegistry } from './host-ssr-registry';
-import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
 import { UpdateCycle } from './update-cycle';
 import { defaultValueForType } from '../utils/attribute-utils';
 import { validateReactivePropertyDefault } from './reactive-prop-core';
@@ -44,7 +41,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	private connected = false;
 	private readonly updateCycle: UpdateCycle;
 	private isSsrLifecycle = false;
-	private readonly hostSsrRegistry = new HostSsrRegistry();
 	private renderSignal?: ReactiveComputed<JsxRenderable>;
 	private readonly renderWatcher = createReactiveWatcher(() => {
 		this.requestUpdate();
@@ -157,24 +153,18 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	}
 
 	/**
-	 * Runs the update cycle now: pending `@onUpdated` callbacks, the render, then `updated()`.
+	 * Runs the update cycle now: pending `@onUpdated` callbacks, the render when
+	 * the controller overrides `render()`, then `updated()`.
 	 *
-	 * @remarks A no-op unless the controller overrides `render()`. Called from
-	 * inside a running cycle, it commits the render immediately.
+	 * @remarks Called from inside a running cycle, it commits the render
+	 * immediately and leaves the rest to that cycle.
 	 */
 	public update(): void {
-		if (!this.shouldRunRenderLifecycle() || !this.getRenderTarget()) {
-			return;
+		if (this.shouldRunRenderLifecycle()) {
+			this.updateCycle.requestRender();
 		}
 
-		this.updateCycle.requestRender();
-
-		if (this.updateCycle.flushing) {
-			this.updateCycle.commit();
-			return;
-		}
-
-		this.updateCycle.flush();
+		this.updateCycle.update();
 	}
 
 	/**
@@ -194,15 +184,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 * Returns a subscribable JSX binding for a selected reactive member.
 	 */
 	public bind<Property extends StringPropertyKey<Bindings>>(
-		property: Property,
-	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
-		return this.reactiveHost.getReactiveBinding(property);
-	}
-
-	/**
-	 * Returns the cached binding object for a selected reactive member.
-	 */
-	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
 		return this.reactiveHost.getReactiveBinding(property);
@@ -251,16 +232,8 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 		this.reactiveHost.defineReactiveBinding(property, bind);
 	}
 
-	public notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void {
-		this.reactiveHost.notifyUpdate(changedProperty, oldValue, value);
-	}
-
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		return this.reactiveHost.registerUpdateCallback(property, update);
-	}
-
-	public registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void {
-		return this.reactiveHost.registerUpdatedCallback(keys, callback);
 	}
 
 	/**
@@ -272,36 +245,9 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 	 */
 	public connectedContextCallback(_contextName: UnknownContext): void {}
 
-	/**
-	 * Registers a decorated context provider on the controller host.
-	 *
-	 * Controller providers participate in the same client-side event-based context
-	 * flow as `RadiantElement` providers. During SSR, the registered providers are
-	 * also exposed to descendant consumers and hydration payload collection.
-	 */
-	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
-		this.hostSsrRegistry.registerContextProvider(name, provider);
-	}
-
-	/**
-	 * Registers a keyed SSR hydration binding for the controller host.
-	 */
-	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
-		this.hostSsrRegistry.registerHydrationBinding(name, binding);
-	}
-
-	/**
-	 * Returns SSR-visible context providers registered on this controller.
-	 */
-	public getSsrContextProviders(): SsrSerializableContextProvider[] {
-		return this.hostSsrRegistry.getContextProviders();
-	}
-
-	/**
-	 * Returns keyed hydration payload producers registered on this controller.
-	 */
-	public getSsrHydrationBindings(): SsrSerializableHydrationBinding[] {
-		return this.hostSsrRegistry.getHydrationBindings();
+	/** Framework plumbing for decorators and SSR adapters; not part of the authoring API. */
+	public get [REACTIVE_HOST](): ReactiveHostInternals {
+		return this.reactiveHost;
 	}
 
 	public registerCleanupCallback(callback: () => void): void {
@@ -310,10 +256,6 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 	public registerConnectedCallback(callback: () => void): void {
 		this.reactiveHost.registerConnectedCallback(callback);
-	}
-
-	public registerPostSyncCallback(callback: () => void): void {
-		this.reactiveHost.registerPostSyncCallback(callback);
 	}
 
 	public createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T> {

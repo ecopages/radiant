@@ -28,9 +28,9 @@ Application code does not need to import JSX helpers or Signals primitives direc
 
 - `render()` returns the current JSX view.
 - First connect automatically chooses between hydration and a fresh client render.
-- `update()` runs the update cycle now: batched `@onUpdated` callbacks, the render, then `updated()`.
-- `requestUpdate()` schedules that cycle in a microtask and coalesces repeated requests. `updateComplete` resolves when the cycle finishes.
-- Connected browser DOM hosts also flush in Node test environments; Radiant's minimal SSR DOM drains updates during host preparation instead.
+- `update()` runs the update cycle now: batched `@onUpdated` callbacks, the render when the host overrides `render()`, then `updated()`. It works on every host, so it also flushes `@onUpdated` synchronously on hosts without `render()`.
+- `requestUpdate()` schedules that cycle in a microtask and coalesces repeated requests. `updateComplete` resolves when the cycle finishes and rejects when an `@onUpdated` callback, render, or `updated()` in it throws.
+- Hosts observe their reactive members only while connected. Changes made before connect or while detached are reported on the next connect, so a shared `@signal` source never keeps a removed host alive. Server rendering never connects hosts; it drains pending `@onUpdated` callbacks during host preparation and never calls `updated()`.
 - `@prop(...)`, `@state`, and `@signal(...)` define reactive members. Pass `transform` on `@prop` to override default converters (`type: Array` is JSON unless you supply `fromAttribute` / `toAttribute`). `fromProperty` normalizes JS/JSX writes. `toAttribute` returning `null` or `''` omits the reflected attribute.
 - Reflected properties serialize the current value on each write. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes the assignment is reflected too.
 - `@bindTo(...)` copies a reactive field onto existing DOM when the host does not own a `render()` tree.

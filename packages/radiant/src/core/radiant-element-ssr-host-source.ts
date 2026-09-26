@@ -1,7 +1,6 @@
 import type { JsxRenderable } from '@ecopages/jsx';
-import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { ReactiveProperty } from './reactive-prop-core';
-import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
+import type { REACTIVE_HOST, ReactiveHostInternals } from './reactive-host';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
 /**
@@ -15,13 +14,11 @@ export type RadiantElementSsrHostSource = {
 	getAttribute(name: string): string | null;
 	getAttributeNames(): string[];
 	getAuthoredHydrationScriptMarkup(): string | undefined;
-	getContextProviders(): SsrSerializableContextProvider[];
-	getHydrationBindings(): SsrSerializableHydrationBinding[];
 	getReactiveProperties(): ReactiveProperty[];
 	getSlotProjectionScriptTag(): string | undefined;
 	resolveTrackedRenderOutput(): { containsSlots: boolean; value: JsxRenderable };
-	flushPostSyncCallbacks(): void;
 	prepareForSsr(): void;
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 };
 
 export type BrandedRadiantElementSsrHost = RadiantElementSsrHostSource & {

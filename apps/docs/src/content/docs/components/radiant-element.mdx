@@ -121,7 +121,7 @@ export class RadiantCounter extends RadiantElement<CounterBindings> {
 
 Once `render()` is overridden, `RadiantElement` exposes the full host render lifecycle:
 
-- `update()` to run the update cycle now: batched `@onUpdated` callbacks, the current JSX view, then `updated()`
+- `update()` to run the update cycle now: batched `@onUpdated` callbacks, the current JSX view, then `updated()` (without a `render()` override it still flushes `@onUpdated` and `updated()`)
 - `requestUpdate()` to schedule that cycle in a microtask
 - `updateComplete` to wait until the cycle, including the first connect render, finishes
 - `renderViewToString()` for the rendered view only (requires a Radiant server SSR entry import)

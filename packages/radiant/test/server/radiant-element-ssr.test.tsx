@@ -20,6 +20,7 @@ import {
 } from '../../src/server/radiant-element-ssr';
 import { renderComponentToString } from '../../src/server/render-component';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
+import { REACTIVE_HOST } from '../../src/core/reactive-host';
 
 declare const __LEGACY_ENVIRONMENT__: boolean;
 
@@ -511,7 +512,7 @@ describe('RadiantElement SSR', () => {
 					initialValue: { label: 'SSR context', level: 4 },
 					hydrate: Object,
 				});
-				this.registerContextProvider('context', this.context);
+				this[REACTIVE_HOST].ssrRegistry.registerContextProvider('context', this.context);
 			}
 
 			override render() {
@@ -548,7 +549,7 @@ describe('RadiantElement SSR', () => {
 					initialValue: { count: 0, label: 'Pending' },
 					hydrate: Object,
 				});
-				this.registerContextProvider('provider', this.provider);
+				this[REACTIVE_HOST].ssrRegistry.registerContextProvider('provider', this.provider);
 			}
 
 			override render() {
@@ -636,7 +637,7 @@ describe('RadiantElement SSR', () => {
 					initialValue: { label: 'Nitro SSR context', level: 2 },
 					hydrate: Object,
 				});
-				this.registerContextProvider('context', this.context);
+				this[REACTIVE_HOST].ssrRegistry.registerContextProvider('context', this.context);
 			}
 
 			override render() {

@@ -6,11 +6,12 @@ import {
 	type ReactivePropertyOptions,
 	validateReactivePropertyDefault,
 } from './reactive-prop-core';
+import { REACTIVE_HOST, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import type { AttributeTypeConstant } from '../utils/attribute-utils';
 
 export type ReactivePropertyStateHost = HTMLElement & {
-	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
 	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
 };
@@ -148,7 +149,7 @@ export class ReactivePropertyState {
 			}
 
 			this.reflectValue(property.attribute, property.reflect, property, currentValue);
-			this.host.notifyUpdate(property.name, undefined, currentValue);
+			this.host[REACTIVE_HOST].notifyUpdate(property.name, undefined, currentValue);
 		}
 	}
 

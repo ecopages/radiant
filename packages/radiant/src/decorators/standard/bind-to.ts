@@ -1,3 +1,4 @@
+import { REACTIVE_HOST } from '../../core/reactive-host';
 import { applyBindToTargets, type BindToHost, type CompiledBindToTarget } from '../shared/bind-to';
 
 export function bindTo(targets: readonly CompiledBindToTarget[]) {
@@ -10,7 +11,7 @@ export function bindTo(targets: readonly CompiledBindToTarget[]) {
 		context.addInitializer(function (this: THost) {
 			const apply = () => applyBindToTargets(this, propertyName, targets);
 			this.registerUpdateCallback(propertyName, apply);
-			this.registerPostSyncCallback(apply);
+			this[REACTIVE_HOST].registerPostSyncCallback(apply);
 		});
 	};
 }

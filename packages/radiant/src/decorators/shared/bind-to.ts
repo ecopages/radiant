@@ -1,4 +1,4 @@
-import type { ReactiveHostLike } from '../../core/reactive-host';
+import type { REACTIVE_HOST, ReactiveHostLike } from '../../core/reactive-host';
 import { createQuery, type QueryHostTarget } from '../../helpers/create-query';
 import { resolveHostElementOrNull } from '../../helpers/resolve-host-element';
 
@@ -32,10 +32,7 @@ export type BindToTarget<T = unknown> =
  * Host surface `@bindTo` needs: reactive-member reads plus the decorator
  * registration hooks, on an element or controller query target.
  */
-export type BindToHost = Pick<
-	ReactiveHostLike,
-	'getReactiveMember' | 'registerPostSyncCallback' | 'registerUpdateCallback'
-> &
+export type BindToHost = Pick<ReactiveHostLike, 'getReactiveMember' | 'registerUpdateCallback' | typeof REACTIVE_HOST> &
 	QueryHostTarget;
 
 export type CompiledBindToTarget = (host: BindToHost, value: unknown) => void;

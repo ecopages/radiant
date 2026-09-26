@@ -1,8 +1,8 @@
-import type { UpdatedCallback } from '../../core/reactive-host';
+import { REACTIVE_HOST, type ReactiveHostInternals, type UpdatedCallback } from '../../core/reactive-host';
 import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 type LegacyUpdatedHost = {
-	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 };
 
 /**
@@ -16,7 +16,7 @@ export function onUpdated(keyOrKeys: string | string[]) {
 	return (target: LegacyUpdatedHost, methodName: string) => {
 		registerLegacyInstanceInitializer(target, (element) => {
 			const method = (element as unknown as Record<string, UpdatedCallback>)[methodName];
-			element.registerUpdatedCallback(keys, method.bind(element));
+			element[REACTIVE_HOST].registerUpdatedCallback(keys, method.bind(element));
 		});
 	};
 }
