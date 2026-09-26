@@ -3,12 +3,13 @@ export type FormAssociationHost = HTMLElement & {
 };
 
 /**
- * Wraps `ElementInternals` so a named catalog host joins a native `<form>` like `<input name>`.
+ * Wraps `ElementInternals` submission values and the initial value used by native reset.
  *
  * @remarks The constructor must be form-associated before `customElements.define`.
  * Use `static get formAssociated()` next to `@customElement` — a static field
  * leaves the class name unbound in Storybook's decorator transform.
- * `attachInternals` is skipped when missing (SSR).
+ * `attachInternals` is skipped when missing (SSR). Hosts own their validity and
+ * browser state restoration behavior when they need those native features.
  */
 export class FormAssociation<T = unknown> {
 	#internals?: ElementInternals;

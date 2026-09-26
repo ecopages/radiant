@@ -202,6 +202,7 @@ describe('field control protocol (SSR-safe)', () => {
 			);
 		}
 		registerFieldControl('x-face-control', {
+			submission: 'host',
 			read: (host) => host.getAttribute('value') ?? '',
 			write: (host, value) => {
 				host.setAttribute('value', value == null ? '' : String(value));
@@ -216,6 +217,22 @@ describe('field control protocol (SSR-safe)', () => {
 
 		expect(host.getAttribute('name')).toBe('quantity');
 		expect(input.hasAttribute('name')).toBe(false);
+	});
+
+	it('names a registered host through its native input by default', () => {
+		registerFieldControl('x-native-control', {
+			read: (host) => host.getAttribute('value') ?? '',
+			write: (host, value) => host.setAttribute('value', String(value)),
+		});
+		const host = document.createElement('x-native-control');
+		const input = document.createElement('input');
+		host.append(input);
+
+		wireFieldControlName(host, input, 'quantity');
+		expect(input.name).toBe('quantity');
+		wireFieldControlName(host, input, '');
+		expect(input.hasAttribute('name')).toBe(false);
+		expect(host.hasAttribute('name')).toBe(false);
 	});
 
 	it('does not name a store-only host inner textbox', () => {

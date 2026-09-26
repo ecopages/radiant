@@ -92,14 +92,14 @@ Load `@ecopages/radiant-ui/styles.css` once in your app to style the form and ev
 Listed:
 
 - Inner native controls: `RuiInput`, `RuiTextarea`, `RuiCheckbox`, `RuiSwitch`, `RuiRadioGroup`, `RuiCheckboxGroup`
-- Form-associated hosts (`name` on the host): `rui-date-input`, `rui-number-field`, `rui-slider`, `rui-knob`. Empty date values are omitted. A range slider also submits `{name}-max`. Number-field submits the raw number, not the formatted display
+- Form-associated hosts (`name` on the host): `rui-date-input`, `rui-number-field`, `rui-slider`, `rui-knob`. An empty named date submits `''`. A range slider also submits `{name}-max`. Number-field submits the raw number, not the formatted display
 - `RuiDateField` is not listed; it copies `name` onto the nested `rui-date-input`
 - `RuiDateRangePicker` is not listed; `start-name` / `end-name` land on the nested `rui-date-input` hosts
 - `RuiField` copies its `name` onto that control. The field element itself is not listed
 
 Store-only (not in `FormData`): `RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiTagGroup`.
 
-Custom hosts: `registerFieldControl` for the store. `FormAssociation` plus `static get formAssociated()` to list on a native form. Import `FormAssociation` from `@ecopages/radiant-ui/form`. Named form-associated hosts reset and disable with the native `<form>` like `<input>`.
+Custom hosts: call `registerFieldControl(tag, { read, write, submission })` before connecting a field. `submission` is `native` by default (name the native ARIA target), `host` for a form-associated host, or `none` for a store-only control. Set `data-rui-aria-target` on the host when the native input is inside it. Registration does not make a host form-associated: the host must set `formAssociated`, call `attachInternals()`, and update `setFormValue()`; `FormAssociation` from `@ecopages/radiant-ui/form` wraps the latter two steps. The catalog hosts support native submission, fieldset disability, and reset. Browser validity and state restoration require separate host behavior; `RuiForm` rules validate through its store.
 
 ## Default values
 

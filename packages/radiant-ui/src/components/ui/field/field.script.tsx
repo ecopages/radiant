@@ -70,7 +70,8 @@ export type RuiFieldProps = {
  *   `rui-slider`, `rui-knob`, `rui-number-field`, `rui-select`, …). The field reads and
  *   writes values through the control protocol; see each host's contract for inner targets.
  *   An embedded `rui-listbox` is an option surface, not a field control.
- *   Third-party hosts: stamp `data-rui-control` and fire bubbling `rui-change`.
+ *   Third-party hosts: register a value adapter with `registerFieldControl` before
+ *   connection, stamp `data-rui-control`, and fire bubbling `rui-change`.
  *
  * Optional:
  * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.

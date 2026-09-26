@@ -86,6 +86,27 @@ describe('RuiDateInput segment editing', () => {
 		cleanup();
 	});
 
+	it('clears an uncommitted draft on native form reset', async () => {
+		const { container, cleanup } = mount(
+			<form>
+				<RuiDateInput name="when" value="2026-08-20" locale="en-US" />
+			</form>,
+		);
+		const host = await connected(container);
+		await userEvent.click(segment(host, 'day'));
+		await userEvent.keyboard('1');
+		await settle();
+		expect(segment(host, 'day').textContent).toBe('1');
+		expect(host.value).toBe('2026-08-20');
+
+		const form = container.querySelector('form')!;
+		form.reset();
+		await settle();
+		expect(segment(host, 'day').textContent).toBe('20');
+		expect(new FormData(form).get('when')).toBe('2026-08-20');
+		cleanup();
+	});
+
 	it('does not commit a partial year while digits are still being entered', async () => {
 		const { container, cleanup } = mount(<RuiDateInput value="2026-08-20" locale="en-US" />);
 		const host = await connected(container);

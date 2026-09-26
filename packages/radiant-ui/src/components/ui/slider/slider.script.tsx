@@ -315,6 +315,7 @@ export class RuiSlider extends RadiantElement {
 	private pending: number[] | null = null;
 	private lastEmitted = '';
 	private readonly form = new FormAssociation<number[]>(this);
+	private disabledByForm = false;
 
 	protected override onConnected(): void {
 		this.adoptLegacyRangeAttributes();
@@ -324,11 +325,13 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	formDisabledCallback(disabled: boolean): void {
-		this.disabled = disabled;
+		this.disabledByForm = disabled;
+		this.syncChrome();
 	}
 
 	formResetCallback(): void {
-		this.value = this.form.initial;
+		this.value = [...this.form.initial];
+		this.syncValues(this.committedValues());
 	}
 
 	/** Reads authored `range-min` / `range-max` once when `value` is absent. */
@@ -480,14 +483,14 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private syncThumbChrome(): void {
-		const tabindex = this.disabled ? -1 : 0;
+		const tabindex = this.disabled || this.disabledByForm ? -1 : 0;
 		const orientation = this.isVertical ? 'vertical' : 'horizontal';
 		const rangeBounds = this.numericRange;
 		for (const { id, label, visible } of this.getThumbChrome()) {
 			const thumb = this.thumbFor(id);
 			if (!thumb) continue;
 			thumb.toggleAttribute('hidden', !visible);
-			thumb.toggleAttribute('disabled', this.disabled || !visible);
+			thumb.toggleAttribute('disabled', this.disabled || this.disabledByForm || !visible);
 			thumb.setAttribute('tabindex', String(visible ? tabindex : -1));
 			thumb.setAttribute('aria-label', label);
 			thumb.setAttribute('aria-orientation', orientation);
@@ -654,7 +657,7 @@ export class RuiSlider extends RadiantElement {
 
 	@onEvent({ ref: 'rangeTrack', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.disabled || this.readOnly) {
+		if (event.button !== 0 || this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
@@ -709,7 +712,7 @@ export class RuiSlider extends RadiantElement {
 
 	@onEvent({ selector: '[data-thumb]', type: 'keydown' })
 	onThumbKeydown(event: KeyboardEvent): void {
-		if (this.disabled || this.readOnly) {
+		if (this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 

@@ -118,7 +118,6 @@ export class RuiKnob extends RadiantElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo({ ref: 'control', prop: 'disabled' })
 	disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	@bindTo({ ref: 'control', attr: 'aria-readonly', map: (readOnly) => String(readOnly) })
@@ -153,6 +152,7 @@ export class RuiKnob extends RadiantElement {
 	private lastEmitted: number | null = null;
 	private rangeCommitQueued = false;
 	private readonly form = new FormAssociation<number>(this);
+	private disabledByForm = false;
 
 	protected override onConnected(): void {
 		this.form.remember(this.value);
@@ -160,11 +160,13 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	formDisabledCallback(disabled: boolean): void {
-		this.disabled = disabled;
+		this.disabledByForm = disabled;
+		this.syncPresentation();
 	}
 
 	formResetCallback(): void {
 		this.value = this.form.initial;
+		this.syncPresentation();
 	}
 
 	@onUpdated([
@@ -258,6 +260,7 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	private syncPresentation(): void {
+		if (this.controlTarget) this.controlTarget.disabled = this.disabled || this.disabledByForm;
 		this.paint(this.numericRange.clamp(this.value));
 		this.queueNormalizedValueCommit();
 	}
@@ -280,7 +283,7 @@ export class RuiKnob extends RadiantElement {
 	}
 
 	private commitValue(next: number): void {
-		if (this.disabled || this.readOnly) {
+		if (this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
@@ -299,7 +302,7 @@ export class RuiKnob extends RadiantElement {
 
 	@onEvent({ ref: 'control', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.disabled || this.readOnly) {
+		if (event.button !== 0 || this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
@@ -351,7 +354,7 @@ export class RuiKnob extends RadiantElement {
 
 	@onEvent({ ref: 'control', type: 'keydown' })
 	onKeydown(event: KeyboardEvent): void {
-		if (this.disabled || this.readOnly) {
+		if (this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
