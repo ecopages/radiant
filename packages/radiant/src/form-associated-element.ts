@@ -22,12 +22,14 @@ export type FormValue = File | string | FormData | null;
  *
  * The submission value is synced from {@link updated} after every update cycle
  * and after a reset. A subclass that overrides `updated()` must call
- * `super.updated(changed)`.
+ * `super.updated(changed)`. Overrides of `formDisabledCallback()` and
+ * `formResetCallback()` must call their `super` method to preserve the base's
+ * effective disabled state and reset behavior.
  *
  * Reset follows the native `defaultValue` model. The reset value is the
- * {@link formState} the host holds when its first update cycle after connecting
- * finishes, so authored attributes, JSX props, and writes made before that cycle
- * count. Later writes, like `input.value = x` on a native input, do not move it.
+ * {@link formState} captured by the first {@link syncFormValue} call, normally
+ * in the first connect update cycle after authored attributes and JSX props
+ * arrive. Later writes, like `input.value = x` on a native input, do not move it.
  *
  * `attachInternals()` is skipped when the DOM lacks it (the SSR DOM shim), so
  * {@link internals} is `undefined` on the server.
@@ -91,7 +93,9 @@ export abstract class FormAssociatedElement extends RadiantElement {
 	 * The restoration state passed as `setFormValue(value, state)` and kept as the reset value.
 	 *
 	 * @remarks Defaults to {@link formValue}. Override it when the submission value
-	 * cannot be parsed back, such as `FormData` with several entries.
+	 * cannot be parsed back, such as `FormData` with several entries, or when
+	 * {@link formValue} returns `null` while the host has no name. Reset must still
+	 * restore an unnamed control after it receives a name later.
 	 */
 	protected formState(): FormValue {
 		return this.formValue();
@@ -105,10 +109,12 @@ export abstract class FormAssociatedElement extends RadiantElement {
 		this.syncFormValue();
 	}
 
+	/** @remarks Override with `super.formDisabledCallback(disabled)` to retain fieldset state. */
 	formDisabledCallback(disabled: boolean): void {
 		this.#formDisabled.set(disabled);
 	}
 
+	/** @remarks Override with `super.formResetCallback()` to retain the captured reset value. */
 	formResetCallback(): void {
 		if (this.#reset) {
 			this.restoreFormState(this.#reset.state);

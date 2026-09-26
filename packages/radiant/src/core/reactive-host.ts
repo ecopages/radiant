@@ -18,7 +18,7 @@ type UpdateSubscription = {
 	unsubscribe: () => void;
 };
 
-/** Batched `@onUpdated` callback: runs once per update cycle when any of `keys` changed. */
+/** Batched `@onUpdated` callback: runs once per changed batch when any of `keys` changed. */
 export type UpdatedCallback = (changed: ReadonlySet<string>) => void;
 
 type UpdatedRegistration = {
@@ -229,7 +229,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> imp
 	}
 
 	/**
-	 * Registers a batched callback that runs once per update cycle when any of
+	 * Registers a batched callback that runs once per changed batch when any of
 	 * `keys` changed, receiving every member changed in that cycle.
 	 */
 	public registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void {

@@ -80,7 +80,7 @@ import '@ecopages/radiant-ui/sidebar';
 ```
 
 `rui-sidebar-trigger` stamps `[data-ref="button"]` and syncs `aria-expanded` / `aria-controls` against the sidebar.
-Each trigger also reflects its controlled sidebar's state, mobile mode, and collapse mode on the trigger host. Placement and glyph styles read only the trigger host and its `placement` attribute, so an attached trigger follows the sidebar's `mobileBreakpoint` rather than the viewport width, including when providers are nested.
+Each trigger also reflects its controlled sidebar's state, mobile mode, and collapse mode on the trigger host. An explicit `controls` id targets only that `rui-sidebar`; if it does not resolve, the trigger stays unattached and does not toggle a nearby sidebar. Without `controls`, a trigger inside a sidebar uses that ancestor. Placement and glyph styles read only the trigger host and its `placement` attribute, so an attached trigger follows the sidebar's `mobileBreakpoint` rather than the viewport width, including when providers are nested.
 
 Before a trigger attaches (the server-rendered paint), placement styles treat viewports below 768px as mobile and read the sidebar whose pane holds the trigger, else the only sidebar of its nearest provider (child combinators, so nested providers stay independent). Other triggers, such as inset triggers shared by two sidebars in one provider, stay visible until they attach.
 
@@ -168,7 +168,7 @@ Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
-| `controls` | `string` | `''` | `aria-controls` target (sidebar id). |
+| `controls` | `string` | `''` | Exact sidebar id. An unresolved id does not fall back to an ancestor sidebar. |
 | `button-label` | `string` | `Toggle sidebar` | Accessible trigger name (`triggerLabel` on `RuiSidebarTrigger`). |
 | `placement` | `''` · `header` · `inset` | `''` | Trigger placement; reflected for placement styles. |
 | `variant` | `ghost` · … | `ghost` | Button tone (reuses `RuiButton` variants). |

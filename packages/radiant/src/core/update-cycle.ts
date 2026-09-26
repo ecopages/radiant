@@ -19,14 +19,16 @@ const MAX_ROUNDS = 100;
  * in the same turn flush together in a single microtask.
  *
  * @remarks
- * A flush runs `@onUpdated` callbacks once per method for everything that
- * changed, then commits the render if one is pending, repeating while those
- * steps queue more work, and finally calls `updated(changed)` and resolves
+ * A flush runs each matching `@onUpdated` method once for the current batch,
+ * then commits the render if one is pending. A callback that changes a watched
+ * member can run again in a later batch of the same cycle. Once work settles,
+ * the cycle calls `updated(changed)` and resolves
  * {@link updateComplete}. Nothing runs while {@link UpdateCycleOptions.canFlush}
  * is false; changes accumulate until the host connects. SSR drains callbacks
  * explicitly with {@link runCallbacks}.
  *
- * A flush that throws drops its changed set and rejects {@link updateComplete}.
+ * A flush that throws drops its pending changes and render request, then rejects
+ * {@link updateComplete}. A later write can start a fresh cycle.
  * Work run from a microtask ({@link defer} or a scheduled flush) reports its
  * error through that rejection when a caller is awaiting it, and as an uncaught
  * error otherwise.
@@ -199,7 +201,9 @@ export class UpdateCycle {
 				this.options.updated(changed);
 			}
 		} catch (error) {
+			this.#changed.clear();
 			this.#cycleChanged = new Set();
+			this.#renderPending = false;
 			this.#didWork = false;
 			this.#rejectCompletion(error);
 			throw error;

@@ -71,6 +71,45 @@ class ThrowingHost extends RadiantElement {
 	}
 }
 
+@customElement('update-cycle-failed-cascade-host')
+class FailedCascadeHost extends RadiantElement {
+	@state value = 0;
+	@state other = 0;
+	otherRuns = 0;
+	renderRuns = 0;
+
+	@onUpdated('value')
+	onValue(): void {
+		if (this.value === 1) {
+			this.other = 1;
+			this.requestUpdate();
+			throw new Error('failed cascade');
+		}
+	}
+
+	@onUpdated('other')
+	onOther(): void {
+		this.otherRuns += 1;
+	}
+
+	override render() {
+		this.renderRuns += 1;
+		return null;
+	}
+}
+
+@customElement('update-cycle-unbounded-host')
+class UnboundedHost extends RadiantElement {
+	@state value = 0;
+	runs = 0;
+
+	@onUpdated('value')
+	onValue(): void {
+		this.runs += 1;
+		this.value += 1;
+	}
+}
+
 @customElement('update-cycle-plain-host')
 class PlainHost extends RadiantElement {
 	@state label = 'a';
@@ -186,6 +225,29 @@ describe('UpdateCycle', () => {
 			await host.updateComplete;
 
 			expect(host.cycles).toEqual(['other']);
+		});
+
+		test('a failed callback drops changes and renders it queued before throwing', async () => {
+			const host = await mount<FailedCascadeHost>('update-cycle-failed-cascade-host');
+			const renderRunsBeforeFailure = host.renderRuns;
+			host.value = 1;
+
+			expect(await settled(host.updateComplete)).toBe('rejected');
+			await host.updateComplete;
+			expect(host.other).toBe(1);
+			expect(host.otherRuns).toBe(0);
+			expect(host.renderRuns).toBe(renderRunsBeforeFailure);
+		});
+
+		test('a non-settling updater stops at the cycle limit', async () => {
+			const host = await mount<UnboundedHost>('update-cycle-unbounded-host');
+			host.value = 1;
+
+			expect(() => host.update()).toThrow('did not settle after 100 rounds');
+			const runsAtFailure = host.runs;
+			await host.updateComplete;
+			expect(runsAtFailure).toBe(100);
+			expect(host.runs).toBe(runsAtFailure);
 		});
 
 		test('update() throws a callback error to its caller', async () => {
