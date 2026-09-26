@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRoot, type JsxRenderable } from '@ecopages/jsx';
 import { userEvent } from 'storybook/test';
 import { RuiDateInput } from './date-input';
@@ -322,6 +322,98 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(host.value).toBe('2026-08-15');
 		expect(changes).toEqual(['2026-08-15']);
+		cleanup();
+	});
+});
+
+describe('RuiDateInput commit passes', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+		document.body.innerHTML = '';
+	});
+
+	it('restores a partial year on blur with a single rebuild', async () => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-08-20" locale="en-US" />);
+		const host = await connected(container);
+		const changes = listenChanges(host);
+
+		await userEvent.click(segment(host, 'year'));
+		await userEvent.keyboard('1');
+		await settle();
+		const segmentWrites = vi.spyOn(host, 'segments', 'set');
+		segment(host, 'year').blur();
+		await settle();
+
+		expect(segmentWrites).toHaveBeenCalledTimes(1);
+		expect(segment(host, 'year').textContent).toBe('2026');
+		expect(host.value).toBe('2026-08-20');
+		expect(changes).toEqual([]);
+		cleanup();
+	});
+
+	it('publishes a completed draft on blur with a single rebuild', async () => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-08-20" locale="en-US" />);
+		const host = await connected(container);
+		const changes = listenChanges(host);
+
+		await userEvent.click(segment(host, 'day'));
+		await userEvent.keyboard('1');
+		await settle();
+		const segmentWrites = vi.spyOn(host, 'segments', 'set');
+		segment(host, 'day').blur();
+		await settle();
+
+		expect(segmentWrites).toHaveBeenCalledTimes(1);
+		expect(segment(host, 'day').textContent).toBe('01');
+		expect(host.value).toBe('2026-08-01');
+		expect(changes).toEqual(['2026-08-01']);
+		cleanup();
+	});
+
+	it.each([
+		['a changed', '5', '2026-08-25'],
+		['an unchanged', '0', '2026-08-20'],
+	])('rebuilds once when completing a unit commits %s date', async (_, digit, iso) => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-08-20" locale="en-US" />);
+		const host = await connected(container);
+
+		await userEvent.click(segment(host, 'day'));
+		await userEvent.keyboard('2');
+		await settle();
+		const segmentWrites = vi.spyOn(host, 'segments', 'set');
+		await userEvent.keyboard(digit);
+		await settle();
+
+		expect(segmentWrites, 'one draft write plus one rebuild').toHaveBeenCalledTimes(2);
+		expect(host.value).toBe(iso);
+		expect(document.activeElement).toBe(segment(host, 'year'));
+		cleanup();
+	});
+});
+
+describe('RuiDateInput focus restore', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+		document.body.innerHTML = '';
+	});
+
+	it('moves focus to the next unit within the update cycle, not a later microtask', async () => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-08-20" locale="en-US" />);
+		const host = await connected(container);
+
+		await userEvent.click(segment(host, 'day'));
+		await settle();
+		vi.spyOn(window, 'queueMicrotask').mockImplementation((callback) => void setTimeout(callback));
+		segment(host, 'day').dispatchEvent(
+			new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowRight' }),
+		);
+		await host.updateComplete;
+
+		expect(document.activeElement, 'focused once updateComplete resolves').toBe(segment(host, 'year'));
+		expect(segment(host, 'year').getAttribute('data-focused')).toBe('true');
+		vi.restoreAllMocks();
+		await settle();
+		expect(document.activeElement).toBe(segment(host, 'year'));
 		cleanup();
 	});
 });
