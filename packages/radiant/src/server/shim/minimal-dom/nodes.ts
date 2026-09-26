@@ -432,6 +432,36 @@ export class MinimalElement extends MinimalNode {
 		return selectors.matches(this, selector);
 	}
 
+	/**
+	 * @remarks Zero-sized no-op. `@onUpdated` runs during SSR preparation, so
+	 * catalog hosts can read geometry without throwing. Hydration owns real layout.
+	 */
+	getBoundingClientRect(): DOMRect {
+		return {
+			x: 0,
+			y: 0,
+			width: 0,
+			height: 0,
+			top: 0,
+			right: 0,
+			bottom: 0,
+			left: 0,
+			toJSON() {
+				return this;
+			},
+		} as DOMRect;
+	}
+
+	/**
+	 * @remarks Returns the same zero rect as `getBoundingClientRect()`.
+	 */
+	getClientRects(): DOMRectList {
+		const rect = this.getBoundingClientRect();
+		return Object.assign([rect], {
+			item: (index: number) => (index === 0 ? rect : null),
+		}) as unknown as DOMRectList;
+	}
+
 	private clearFragmentCache(): void {
 		this.fragmentHtml = undefined;
 		this.fragmentInnerHtml = undefined;
@@ -526,6 +556,18 @@ export class MinimalHTMLElement extends MinimalElement {
 	insertAdjacentHTML(_position: InsertPosition, html: string): void {
 		this.append(...ensureHtmlParsers().parseHtmlToNodes(html, this.ownerDocument));
 	}
+
+	/**
+	 * @remarks No-op on the SSR DOM. `@onUpdated` (and microtasks it queues) run
+	 * during server preparation, so catalog hosts can call `focus()` without
+	 * throwing. Real focus is a client concern.
+	 */
+	focus(): void {}
+
+	/**
+	 * @remarks No-op on the SSR DOM. Same rationale as `focus()`.
+	 */
+	blur(): void {}
 
 	connectedCallback?(): void;
 	attributeChangedCallback?(name: string, oldValue: string | null, newValue: string | null): void;

@@ -68,6 +68,25 @@ class SsrSharedSourceHost extends RadiantElement {
 	}
 }
 
+@customElement('ssr-focus-layout-host')
+class SsrFocusLayoutHost extends RadiantElement {
+	@prop({ type: Boolean, defaultValue: true }) open!: boolean;
+
+	@onUpdated('open')
+	onOpen(): void {
+		this.getBoundingClientRect();
+		this.getClientRects();
+		queueMicrotask(() => {
+			(this.querySelector('button') ?? this).focus();
+			this.blur();
+		});
+	}
+
+	override render() {
+		return <button type="button">ok</button>;
+	}
+}
+
 function renderHost(element: unknown): string {
 	return withRadiantServerCustomElementRenderBridge(() => renderToString(element as never));
 }
@@ -81,7 +100,8 @@ describe('UpdateCycle SSR', () => {
 		expect([
 			customElements.get('ssr-update-cycle-host'),
 			customElements.get('ssr-update-cycle-shared-host'),
-		]).toEqual([SsrUpdateCycleHost, SsrSharedSourceHost]);
+			customElements.get('ssr-focus-layout-host'),
+		]).toEqual([SsrUpdateCycleHost, SsrSharedSourceHost, SsrFocusLayoutHost]);
 	});
 
 	it('runs cascading @onUpdated callbacks during preparation and never calls updated()', () => {
@@ -100,12 +120,15 @@ describe('UpdateCycle SSR', () => {
 		expect(calls).toEqual(afterRender);
 	});
 
-	it('offers no fake layout or focus in the SSR DOM, since updated() never runs on the server', () => {
+	it('offers no-op focus and layout so @onUpdated can call them during SSR', async () => {
 		const element = document.createElement('div');
+		const rect = element.getBoundingClientRect();
 
-		expect(
-			['focus', 'blur', 'getBoundingClientRect', 'getClientRects'].filter((method) => method in element),
-		).toEqual([]);
+		expect(rect).toMatchObject({ x: 0, y: 0, width: 0, height: 0, top: 0, right: 0, bottom: 0, left: 0 });
+		expect(element.getClientRects().item(0)).toMatchObject({ x: 0, y: 0, width: 0, height: 0 });
+
+		expect(() => renderHost(<ssr-focus-layout-host open />)).not.toThrow();
+		await new Promise<void>((resolve) => queueMicrotask(resolve));
 	});
 
 	it('leaves no subscriptions on a shared @signal source after rendering', () => {
