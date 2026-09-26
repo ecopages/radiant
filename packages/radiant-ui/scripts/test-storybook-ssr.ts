@@ -1,9 +1,10 @@
 import { execFile } from 'node:child_process';
 import { spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { chromium } from 'playwright';
+import { chromium, errors } from 'playwright';
 import {
 	evaluateStoryResult,
+	expectsMount,
 	formatFailure,
 	parseHarnessOptions,
 	resolveStoryIds,
@@ -141,6 +142,17 @@ try {
 			await page.goto(`${origin}/iframe.html?id=${id}&globals=radiantRenderMode:${mode}`, {
 				waitUntil: 'networkidle',
 			});
+			if (expectsMount(id, smoke)) {
+				try {
+					await page.waitForFunction(
+						() => Boolean(document.querySelector('#storybook-root')?.innerHTML.trim() || document.querySelector('.radiant-ssr-error')),
+						undefined,
+						{ timeout: 5000 },
+					);
+				} catch (error) {
+					if (!(error instanceof errors.TimeoutError)) throw error;
+				}
+			}
 			const errorBanner = page.locator('.radiant-ssr-error');
 			const banner =
 				(await errorBanner.count()) > 0 ? ((await errorBanner.textContent()) ?? 'ssr error banner') : null;
