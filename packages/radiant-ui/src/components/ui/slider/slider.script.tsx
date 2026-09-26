@@ -1,6 +1,7 @@
 import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop, query } from '@ecopages/radiant';
 import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
 import { numberArrayTransform, type ViewNumericValue } from '../shared/multi-value';
+import { FormAssociation } from '../form/form-association';
 import {
 	createNumericRange,
 	formatNumericValue,
@@ -208,10 +209,6 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  *   the formatted value for SSR.
  * - `[data-default-value]` — default readout stamped by the view when `children` is omitted.
  *   Host toggles `hidden` via `showValue`.
- * - `[data-ref="input"]` — hidden form input for the primary value. Host syncs `value`,
- *   `name`, `disabled`, `readOnly`, and optional `title`.
- * - `[data-ref="maxInput"]` — hidden form input for range max. Host syncs `value`,
- *   `name` (`{name}-max`), `disabled`, `readOnly`, and optional `title`.
  * - `[data-ref="singleThumb"]`, `[data-ref="rangeMinThumb"]`, `[data-ref="rangeMaxThumb"]`
  *   — map to `[data-thumb]` targets above.
  *
@@ -236,7 +233,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving thumbs focusable. Default: `false`.
  * @attr {string} label - Accessible name for the slider. Default: `''`.
- * @attr {string} name - Form field name. Range mode also writes `{name}-max`. Default: `''`.
+ * @attr {string} name - Form field name on this host. Range mode also submits `{name}-max`. Default: `''`.
  * @attr {boolean} show-value - Shows the default value readout below the track. Default: `false`.
  * @attr {boolean} value-title - Mirrors the live value in control `title` tooltips on hover. Default: `false`.
  *
@@ -271,6 +268,10 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  */
 @customElement('rui-slider')
 export class RuiSlider extends RadiantElement {
+	static get formAssociated(): boolean {
+		return true;
+	}
+
 	@prop({ type: String, defaultValue: 'single' }) variant: RuiSliderVariant;
 	@prop({ type: String, defaultValue: 'horizontal' }) orientation: RuiSliderOrientation;
 	@prop({ type: Array, reflect: true, defaultValue: [SLIDER_DEFAULT_VALUE], transform: numberArrayTransform })
@@ -281,16 +282,8 @@ export class RuiSlider extends RadiantElement {
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Number, defaultValue: 0 }) minDistance: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo([
-		{ ref: 'input', prop: 'disabled' },
-		{ ref: 'maxInput', prop: 'disabled' },
-	])
 	disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
-	@bindTo([
-		{ ref: 'input', prop: 'readOnly' },
-		{ ref: 'maxInput', prop: 'readOnly' },
-	])
 	readOnly: boolean;
 	@prop({ type: String, defaultValue: '' })
 	@bindTo([
@@ -298,8 +291,7 @@ export class RuiSlider extends RadiantElement {
 		{ ref: 'label', text: true },
 	])
 	label: string;
-	@prop({ type: String, defaultValue: '' })
-	@bindTo({ ref: 'input', attr: 'name', map: (name) => name || undefined })
+	@prop({ type: String, reflect: true, defaultValue: '' })
 	name: string;
 	@prop({ type: Boolean, attribute: 'show-value', defaultValue: false })
 	@bindTo({ selector: '[data-default-value]', bool: 'hidden', invert: true })
@@ -309,8 +301,6 @@ export class RuiSlider extends RadiantElement {
 	@event({ name: 'rui-change', bubbles: true, composed: true })
 	changeEvent: EventEmitter<RuiSliderChangeDetail>;
 
-	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
-	@query({ ref: 'maxInput' }) maxInputTarget: HTMLInputElement;
 	@query({ ref: 'root' }) rootTarget: HTMLElement;
 	@query({ ref: 'header' }) headerTarget: HTMLElement;
 	@query({ ref: 'label' }) labelTarget: HTMLElement;
@@ -324,10 +314,23 @@ export class RuiSlider extends RadiantElement {
 	private activePointerId: number | null = null;
 	private pending: number[] | null = null;
 	private lastEmitted = '';
+	private readonly form = new FormAssociation<number[]>(this);
+	private disabledByForm = false;
 
 	protected override onConnected(): void {
 		this.adoptLegacyRangeAttributes();
+		this.form.remember(this.value);
 		this.syncChrome();
+		this.syncValues(this.committedValues());
+	}
+
+	formDisabledCallback(disabled: boolean): void {
+		this.disabledByForm = disabled;
+		this.syncChrome();
+	}
+
+	formResetCallback(): void {
+		this.value = [...this.form.initial];
 		this.syncValues(this.committedValues());
 	}
 
@@ -480,14 +483,14 @@ export class RuiSlider extends RadiantElement {
 	}
 
 	private syncThumbChrome(): void {
-		const tabindex = this.disabled ? -1 : 0;
+		const tabindex = this.disabled || this.disabledByForm ? -1 : 0;
 		const orientation = this.isVertical ? 'vertical' : 'horizontal';
 		const rangeBounds = this.numericRange;
 		for (const { id, label, visible } of this.getThumbChrome()) {
 			const thumb = this.thumbFor(id);
 			if (!thumb) continue;
 			thumb.toggleAttribute('hidden', !visible);
-			thumb.toggleAttribute('disabled', this.disabled || !visible);
+			thumb.toggleAttribute('disabled', this.disabled || this.disabledByForm || !visible);
 			thumb.setAttribute('tabindex', String(visible ? tabindex : -1));
 			thumb.setAttribute('aria-label', label);
 			thumb.setAttribute('aria-orientation', orientation);
@@ -535,37 +538,29 @@ export class RuiSlider extends RadiantElement {
 			this.valueTarget.textContent = this.formatValues(values);
 		}
 
-		this.syncInputValues(values);
+		this.syncFormValue(values);
 		this.syncValueTitle(values);
 	}
 
-	private syncInputValues(values: number[]): void {
-		if (this.inputTarget) {
-			this.inputTarget.value = String(values[0]);
-		}
-
-		if (!this.maxInputTarget) {
+	private syncFormValue(values: number[]): void {
+		if (!this.name) {
+			this.form.set(null);
 			return;
 		}
 
 		if (values.length === 2) {
-			this.maxInputTarget.value = String(values[1]);
-			if (this.name) {
-				this.maxInputTarget.name = `${this.name}-max`;
-			} else {
-				this.maxInputTarget.removeAttribute('name');
-			}
+			const data = new FormData();
+			data.append(this.name, String(values[0]));
+			data.append(`${this.name}-max`, String(values[1]));
+			this.form.set(data);
 			return;
 		}
 
-		this.maxInputTarget.value = '';
-		this.maxInputTarget.removeAttribute('name');
+		this.form.set(String(values[0] ?? ''));
 	}
 
 	private syncValueTitle(values: number[]): void {
 		const targets = [
-			[this.inputTarget, 'input'],
-			[this.maxInputTarget, 'maxInput'],
 			[this.rangeTrack, 'track'],
 			[this.singleThumb, 'value'],
 			[this.rangeMinThumb, 'min'],
@@ -579,16 +574,14 @@ export class RuiSlider extends RadiantElement {
 		}
 	}
 
-	private getValueTitles(values: number[]): Partial<Record<'input' | 'maxInput' | 'track' | RuiSliderThumb, string>> {
+	private getValueTitles(values: number[]): Partial<Record<'track' | RuiSliderThumb, string>> {
 		if (!this.valueTitle) return {};
 		if (values.length === 1) {
 			const value = this.formatValue(values[0]);
-			return { input: value, value };
+			return { value };
 		}
 		const [low, high] = values;
 		return {
-			input: this.formatValue(low),
-			maxInput: this.formatValue(high),
 			min: this.formatValue(low),
 			max: this.formatValue(high),
 			track: this.formatValues(values),
@@ -664,7 +657,7 @@ export class RuiSlider extends RadiantElement {
 
 	@onEvent({ ref: 'rangeTrack', type: 'pointerdown' })
 	onPointerDown(event: PointerEvent): void {
-		if (event.button !== 0 || this.disabled || this.readOnly) {
+		if (event.button !== 0 || this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
@@ -719,7 +712,7 @@ export class RuiSlider extends RadiantElement {
 
 	@onEvent({ selector: '[data-thumb]', type: 'keydown' })
 	onThumbKeydown(event: KeyboardEvent): void {
-		if (this.disabled || this.readOnly) {
+		if (this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 

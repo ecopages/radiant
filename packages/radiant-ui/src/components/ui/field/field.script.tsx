@@ -18,7 +18,6 @@ import {
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
 	readControlValue,
-	FIELD_CONTROL_SELECTOR,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
@@ -55,11 +54,14 @@ export type RuiFieldProps = {
 };
 
 /**
- * `<rui-field>` — connector between composed controls and an ancestor `<rui-form>`.
+ * `<rui-field>` — connect a control to `<rui-form>` (store, validation, label, error).
  *
  * The custom element is a behavior host: it queries authored light-DOM children,
  * registers with the form via {@link formContext}, forwards control events, and
  * applies presentation (errors, ARIA) from the form-published `fields` map.
+ * It is not a listed form control. Native `FormData` comes from the child: `name` on
+ * a form-associated host (`rui-date-input`, `rui-number-field`, `rui-slider`,
+ * `rui-knob`) or on an inner native input. The field copies its `name` onto that child.
  *
  * ## Light-DOM contract
  *
@@ -68,6 +70,8 @@ export type RuiFieldProps = {
  *   `rui-slider`, `rui-knob`, `rui-number-field`, `rui-select`, …). The field reads and
  *   writes values through the control protocol; see each host's contract for inner targets.
  *   An embedded `rui-listbox` is an option surface, not a field control.
+ *   Third-party hosts: register a value adapter with `registerFieldControl` before
+ *   connection, stamp `data-rui-control`, and fire bubbling `rui-change`.
  *
  * Optional:
  * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
@@ -83,7 +87,7 @@ export type RuiFieldProps = {
  *
  * @element rui-field
  *
- * @attr {string} name - Field name; registers with the ancestor form. Default: `''`.
+ * @attr {string} name - Field name; registers with `RuiForm` and is copied onto the listed control. Default: `''`.
  * @attr {string} error - Standalone error message when not using a form provider. Default: `''`.
  * @attr {boolean} invalid - Standalone invalid flag when not using a form provider. Default: `false`.
  * @attr {boolean} disabled - Dims the field and disables nested controls. Default: `false`.
@@ -311,19 +315,19 @@ export class RuiField extends RadiantElement {
 		this.syncField();
 	}
 
+	/**
+	 * @remarks `selector: '*'` because `rui-change` can originate on a host tag
+	 * that is not `[data-rui-control]`. `isPrimaryFieldControlEvent` drops nested hosts.
+	 */
 	@onEvent({
-		selector: FIELD_CONTROL_SELECTOR,
+		selector: '*',
 		type: 'rui-change',
 	})
 	onControlChange(event: Event): void {
 		if (!isPrimaryFieldControlEvent(this, event)) {
 			return;
 		}
-
-		const fieldName = this.resolveFieldName();
-		if (fieldName) {
-			this.currentFormContext?.actions.handleFieldChange(fieldName);
-		}
+		this.syncControlToForm();
 	}
 
 	@onEvent({
@@ -332,10 +336,7 @@ export class RuiField extends RadiantElement {
 		options: { capture: true },
 	})
 	onControlInput(): void {
-		const fieldName = this.resolveFieldName();
-		if (fieldName) {
-			this.currentFormContext?.actions.handleFieldChange(fieldName);
-		}
+		this.syncControlToForm();
 	}
 
 	@onEvent({
@@ -344,10 +345,7 @@ export class RuiField extends RadiantElement {
 		options: { capture: true },
 	})
 	onControlNativeChange(): void {
-		const fieldName = this.resolveFieldName();
-		if (fieldName) {
-			this.currentFormContext?.actions.handleFieldChange(fieldName);
-		}
+		this.syncControlToForm();
 	}
 
 	@onEvent({ selector: '[data-rui-control], rui-knob, rui-slider', type: 'focusout' })
@@ -392,6 +390,13 @@ export class RuiField extends RadiantElement {
 			required,
 		};
 		this.publishFieldContext(nextFieldContext);
+	}
+
+	private syncControlToForm(): void {
+		const fieldName = this.resolveFieldName();
+		if (fieldName) {
+			this.currentFormContext?.actions.handleFieldChange(fieldName);
+		}
 	}
 
 	/**

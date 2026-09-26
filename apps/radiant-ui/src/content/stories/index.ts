@@ -15,6 +15,7 @@ import './checkbox-group';
 import './chip-list';
 import './combobox';
 import './date-field';
+import './date-input';
 import './date-range-picker';
 import './dialog';
 import './disclosure';

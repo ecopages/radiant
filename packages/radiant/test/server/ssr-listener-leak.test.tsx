@@ -128,19 +128,6 @@ describe('SSR navigation listener leak', () => {
 		).toHaveLength(0);
 	});
 
-	test('createEventListener preserves controller scope validation during SSR', () => {
-		const host = {
-			host: document.createElement('div'),
-			isConnected: false,
-			registerCleanupCallback: () => {},
-			registerConnectedCallback: () => {},
-		};
-
-		expect(() =>
-			createEventListener(host, { selector: '.target', scope: 'shadow', type: 'click' }, () => {}),
-		).toThrow('RadiantController event listeners only support light DOM scope.');
-	});
-
 	test('nested SSR context providers still resolve while navigation listeners are suppressed', async () => {
 		documentAddSpy.mockRestore();
 

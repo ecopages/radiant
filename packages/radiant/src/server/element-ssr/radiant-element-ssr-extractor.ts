@@ -14,7 +14,6 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 
 	return {
 		constructor: component.constructor as CustomElementConstructor,
-		renderRootMode: component.renderRootMode,
 		getAttribute: (name) => component.getAttribute(name),
 		getAttributeNames: () => component.getAttributeNames(),
 		getAuthoredHydrationScriptMarkup: () => component.getAuthoredHydrationScriptMarkup(),
@@ -26,5 +25,6 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 		getSlotProjectionScriptTag: () => component.getSlotProjectionScriptTag(),
 		resolveTrackedRenderOutput: () => component.resolveTrackedRenderOutput(),
 		flushPostSyncCallbacks: () => component.flushPostSyncCallbacks(),
+		prepareForSsr: () => component.prepareForSsr(),
 	};
 }

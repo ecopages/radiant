@@ -1,3 +1,4 @@
+import { isMinimalDomElement } from './minimal-dom-identity';
 import type { EventEmitter } from '../tools';
 import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
 import { HostSsrRegistry } from './host-ssr-registry';
@@ -16,9 +17,9 @@ import {
 import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
-import { RenderScheduler } from './render-scheduler';
+import { UpdateCycle } from './update-cycle';
 import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
-import { ReactiveHost } from './reactive-host';
+import { ReactiveHost, type UpdatedCallback } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
@@ -37,14 +38,6 @@ export type {
 } from './reactive-prop-core';
 
 const RadiantElementBase = resolveRadiantElementBase();
-
-type RadiantRenderTarget = HTMLElement | ShadowRoot;
-type RadiantInteractionTarget = HTMLElement | ShadowRoot;
-type RadiantRenderSurface = {
-	renderTarget: RadiantRenderTarget;
-	interactionTarget: RadiantInteractionTarget;
-	queryRoot: ParentNode;
-};
 
 function resolveRadiantElementBase(): typeof HTMLElement {
 	if (typeof HTMLElement !== 'undefined') {
@@ -242,14 +235,6 @@ export class RadiantElement<Bindings extends object = {}>
 	implements IRadiantElement<Bindings>
 {
 	declare readonly [RADIANT_ELEMENT_BRAND]: true;
-	/**
-	 * Controls where the JSX render lifecycle mounts the component view.
-	 *
-	 * Subclasses can override this with `'shadow'` to force an internal open
-	 * shadow root for client-side rendering. Host SSR helpers remain light-DOM
-	 * only and throw when shadow render mode is enabled.
-	 */
-	readonly renderRootMode: 'light' | 'shadow' = 'light';
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
@@ -273,25 +258,27 @@ export class RadiantElement<Bindings extends object = {}>
 	 */
 	private elementReady = false;
 	private isFirstConnectPending = false;
-	private readonly renderScheduler: RenderScheduler;
+	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
+
+	/**
+	 * @remarks The light-DOM shim can report `isConnected` while still lacking
+	 * browser methods; {@link prepareForSsr} drains `@onUpdated`. Node tests with
+	 * a browser-like DOM still need normal update cycles.
+	 */
+	private canFlushUpdateCycle(): boolean {
+		return !isMinimalDomElement(this) && this.isConnected && !this.isFirstConnectPending;
+	}
 
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
-		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(
-			() => this.resolveRenderSurface().interactionTarget,
-			() => this,
-		);
-		this.renderScheduler = new RenderScheduler({
-			canFlush: () =>
-				this.isConnected &&
-				!this.renderScheduler.rendering &&
-				!(this.isFirstConnectPending && shouldHydrateOnConnect(this)),
-			commit: () => {
-				const { renderTarget } = this.resolveRenderSurface();
-				this.getOrCreateRenderRuntime().render(renderTarget as HTMLElement);
-			},
+		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
+		this.updateCycle = new UpdateCycle({
+			canFlush: () => this.canFlushUpdateCycle(),
+			runCallbacks: (changed) => this.reactiveHost.runUpdatedCallbacks(changed),
+			commit: () => this.getOrCreateRenderRuntime().render(this),
+			updated: (changed) => this.updated(changed),
 		});
 
 		this.reactiveHost = new ReactiveHost<this, Bindings>(
@@ -303,6 +290,7 @@ export class RadiantElement<Bindings extends object = {}>
 				readProperty: (target, property) => (target as Record<string, unknown>)[property],
 			},
 			() => this.shouldAutoBindReactiveMembers(),
+			(propertyName) => this.updateCycle.markChanged(propertyName),
 		);
 		this.bindings = this.reactiveHost.bindings;
 		this.$ = this.reactiveHost.$;
@@ -320,6 +308,10 @@ export class RadiantElement<Bindings extends object = {}>
 	 * until first connect. First-connect work (attribute adoption, hydrate/update)
 	 * is deferred one microtask so a subclass `connectedCallback` that runs after
 	 * `super()` has finished before any `@onUpdated` from catch-up can fire.
+	 *
+	 * The update cycle stays blocked until that microtask: it runs the batched
+	 * `@onUpdated` callbacks for everything adopted, renders or hydrates, flushes
+	 * `@bindTo`, calls `onConnected()`, and finishes with `updated(changed)`.
 	 */
 	connectedCallback() {
 		ensureLegacyHostReady(this, 'connect');
@@ -335,27 +327,37 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 
 		this.isFirstConnectPending = true;
+		const releaseConnectSync = this.updateCycle.hold();
 
 		queueMicrotask(() => {
 			this.isFirstConnectPending = false;
 
-			if (!this.isConnected) {
-				return;
+			try {
+				if (this.isConnected) {
+					this.runConnectSync(isFirstConnect);
+				}
+			} finally {
+				releaseConnectSync();
 			}
+		});
+	}
 
+	private runConnectSync(isFirstConnect: boolean): void {
+		this.updateCycle.flush(() => {
 			if (isFirstConnect) {
 				this.reactivePropertyState.completeInitialSync();
 			}
+
+			this.updateCycle.runCallbacks();
 
 			if (this.shouldRunRenderLifecycle()) {
 				const renderRuntime = this.getOrCreateRenderRuntime();
 				renderRuntime.observeSlotProjection();
 
 				if (this.needsInitialHydration(renderRuntime)) {
-					this.renderScheduler.clearPending();
 					this.hydrate();
 
-					if (this.renderScheduler.pending) {
+					if (this.updateCycle.renderPending) {
 						this.update();
 					}
 				} else if (!this.isReconnectWithLiveProjection(renderRuntime)) {
@@ -387,6 +389,28 @@ export class RadiantElement<Bindings extends object = {}>
 	 * before attribute catch-up. Override this hook for post-sync work.
 	 */
 	protected onConnected(): void {}
+
+	/**
+	 * Lifecycle hook invoked after each update cycle, once batched `@onUpdated`
+	 * callbacks ran and any pending render committed.
+	 *
+	 * @param changed - Reactive members that changed during the cycle.
+	 *
+	 * @remarks
+	 * Use it for work that needs the committed DOM: focus, selection, measuring.
+	 * The first cycle ends after `onConnected()`. State written here schedules
+	 * another cycle.
+	 */
+	protected updated(_changed: ReadonlySet<string>): void {}
+
+	/**
+	 * Resolves after the pending update cycle (and, on connect, the first render) finishes.
+	 *
+	 * @remarks Stays pending while the host is disconnected with queued work.
+	 */
+	public get updateComplete(): Promise<void> {
+		return this.updateCycle.updateComplete;
+	}
 
 	/**
 	 * @remarks A host can disconnect and reconnect while keeping the same instance (e.g. SPA
@@ -512,33 +536,42 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	public hydrate(): void {
-		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.renderScheduler.rendering) {
+		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.updateCycle.rendering) {
 			return;
 		}
 
-		const { renderTarget } = this.resolveRenderSurface();
 		const renderRuntime = this.getOrCreateRenderRuntime();
-
-		this.renderScheduler.runExclusive(() => {
-			renderRuntime.hydrate(renderTarget as HTMLElement);
-		});
+		this.updateCycle.commit(() => renderRuntime.hydrate(this));
 	}
 
+	/** Schedules one render in the next update cycle; repeated calls coalesce. */
 	public requestUpdate(): void {
 		if (!this.shouldRunRenderLifecycle()) {
 			return;
 		}
 
-		this.renderScheduler.requestUpdate();
+		this.updateCycle.requestRender();
 	}
 
+	/**
+	 * Runs the update cycle now: pending `@onUpdated` callbacks, the render, then `updated()`.
+	 *
+	 * @remarks Called from inside a running cycle (for example an `@onUpdated`
+	 * callback), it commits the render immediately and leaves the rest to that cycle.
+	 */
 	public update(): void {
 		if (!this.shouldRunRenderLifecycle()) {
 			return;
 		}
 
-		this.renderScheduler.markPending();
-		this.renderScheduler.flush();
+		this.updateCycle.requestRender();
+
+		if (this.updateCycle.flushing) {
+			this.updateCycle.commit();
+			return;
+		}
+
+		this.updateCycle.flush();
 	}
 
 	public registerReactiveProperty(config: ReactiveProperty) {
@@ -569,11 +602,16 @@ export class RadiantElement<Bindings extends object = {}>
 	 * Flushes any deferred SSR-only preparation work before the host is
 	 * serialized.
 	 *
-	 * Radiant uses this to reapply SSR consumer state after construction so the
+	 * @remarks
+	 * Hosts never connect on the server, so the batched `@onUpdated` callbacks
+	 * queued by prop writes run here, before and after the SSR preparation
+	 * callbacks (which may write state too). Then `@bindTo` flushes, so the
 	 * first server render sees finalized fields, props, and authored content.
 	 */
-	protected prepareForSsr(): void {
+	public prepareForSsr(): void {
+		this.updateCycle.runCallbacks();
 		runSsrPreparationCallbacks(this);
+		this.updateCycle.runCallbacks();
 		this.flushPostSyncCallbacks();
 	}
 
@@ -600,25 +638,12 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.render !== RadiantElement.prototype.render;
 	}
 
-	/** Returns the DOM root used by client-side render and hydrate work. */
-	protected getRenderTarget(): RadiantRenderTarget {
-		if (this.renderRootMode !== 'shadow') {
-			return this;
-		}
-
-		if (this.shadowRoot) {
-			return this.shadowRoot;
-		}
-
-		if (typeof this.attachShadow !== 'function') {
-			throw new Error('RadiantElement shadow render mode requires attachShadow().');
-		}
-
-		return this.attachShadow({ mode: 'open' });
-	}
-
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		return this.reactiveHost.registerUpdateCallback(property, update);
+	}
+
+	public registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void {
+		return this.reactiveHost.registerUpdatedCallback(keys, callback);
 	}
 
 	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
@@ -699,11 +724,10 @@ export class RadiantElement<Bindings extends object = {}>
 	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
 		const selector = `[data-ref="${ref}"]`;
-		const { queryRoot } = this.resolveRenderSurface();
 		if (all) {
-			return Array.from(queryRoot.querySelectorAll(selector)) as T[];
+			return Array.from(this.querySelectorAll(selector)) as T[];
 		}
-		return (queryRoot.querySelector(selector) as T) ?? null;
+		return (this.querySelector(selector) as T) ?? null;
 	}
 
 	public getSlotElement<T extends Element = Element>(name?: string): T | null {
@@ -756,18 +780,6 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost);
 		return this.renderRuntime;
-	}
-
-	private resolveRenderSurface(): RadiantRenderSurface {
-		const renderTarget = this.getRenderTarget();
-		const interactionTarget =
-			typeof ShadowRoot !== 'undefined' && renderTarget instanceof ShadowRoot ? renderTarget : this;
-
-		return {
-			interactionTarget,
-			queryRoot: interactionTarget,
-			renderTarget,
-		};
 	}
 }
 

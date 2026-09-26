@@ -69,13 +69,11 @@ import '@ecopages/radiant-ui/slider';
         />
       </div>
     </div>
-    <input type="hidden" data-ref="input" />
-    <input type="hidden" data-ref="maxInput" />
   </div>
 </rui-slider>
 ```
 
-BEM classes are presentation-only. The host owns thumb `aria-*`, track CSS variables, and hidden input values.
+BEM classes are presentation-only. The host owns thumb `aria-*` and track CSS variables. Set `name` on the host to submit with a native form.
 
 ## Range selection
 
@@ -104,7 +102,6 @@ Slider surfaces map to **semantic roles**, never Tailwind palette steps:
 | Track (`.rui-slider__range-track`) | `--rui-track-fill` (`--rui-track-mix` of `--on-background`) |
 | Fill (`.rui-slider__range-fill`) | `primary` |
 | Thumb (`.rui-slider__thumb`) | `background` surface, `primary` border, `--shadow-control` (`--rui-slider-thumb-shadow`) |
-| Hidden input | form value (`name`, plus `name-max` in range mode) |
 | Value readout (`.rui-slider__value`) | `on-surface` |
 | Focus ring | `focus-ring` |
 
@@ -154,7 +151,7 @@ Switching the radius pack (sharp, default, soft) updates both when they referenc
 | `disabled` | `boolean` | `false` | Disables interaction. |
 | `read-only` | `boolean` | `false` | Prevents value changes while leaving thumbs focusable. |
 | `label` | `string` | `''` | Accessible name for the slider. |
-| `name` | `string` | `''` | Form field name. Range mode also submits `{name}-max`. |
+| `name` | `string` | `''` | Form field name on this host. Range mode also submits `{name}-max`. |
 | `show-value` | `boolean` | `false` | Shows the default value readout below the track. |
 | `value-title` | `boolean` | `false` | Mirrors the live value in the control `title` on hover. |
 
@@ -169,8 +166,6 @@ Switching the radius pack (sharp, default, soft) updates both when they referenc
 | `[data-ref="label"]` | no | `hidden`, `textContent` | label text |
 | `[data-ref="value"]` | no | `textContent` | readout node; view seeds the formatted value |
 | `[data-default-value]` | no | `hidden` (via `showValue`) | default readout when no custom value child |
-| `[data-ref="input"]` | no | `value`, `name`, `disabled`, `readOnly`, `title` | hidden primary value input |
-| `[data-ref="maxInput"]` | no | `value`, `name` (`{name}-max`), `disabled`, `readOnly`, `title` | hidden range-max input |
 
 Do not set thumb `tabindex`. Nested hosts: none. The `RuiSlider` view seeds readout text, track CSS variables, and `aria-valuenow` so the first paint matches the hydrated control.
 

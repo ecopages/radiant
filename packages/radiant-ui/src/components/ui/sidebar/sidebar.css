@@ -393,22 +393,54 @@ rui-sidebar {
 /* Alternate header (collapse) vs inset (open) triggers                       */
 /* -------------------------------------------------------------------------- */
 
-rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='expanded'][data-sidebar-placement='inset'],
-rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='collapsed'][data-sidebar-placement='header'] {
+rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='expanded'][placement='inset'],
+rui-sidebar-trigger[data-sidebar-mobile='true'][data-sidebar-state='collapsed'][placement='header'] {
 	@apply hidden;
 }
 
 @media (min-width: 768px) {
-	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-collapsible='off'][data-sidebar-placement],
-	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='expanded'][data-sidebar-placement='inset'],
-	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='collapsed'][data-sidebar-placement='header'] {
+	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-collapsible='off'],
+	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='expanded'][placement='inset'],
+	rui-sidebar-trigger[data-sidebar-mobile='false'][data-sidebar-state='collapsed'][placement='header'] {
 		@apply hidden;
+	}
+
+	/*
+	 * Pre-hydration fallback. A trigger has no `data-sidebar-mobile` until it
+	 * attaches to its sidebar, so read the SSR attributes of the provider's
+	 * primary sidebar: a direct child (`default`/`full`) or under `__body` (`docs`).
+	 */
+	.rui-sidebar-provider:has(> rui-sidebar[collapsible='off']:not([data-mobile='true'])),
+	.rui-sidebar-provider:has(
+		> .rui-sidebar-provider__body > rui-sidebar[collapsible='off']:not([data-mobile='true'])
+	) {
+		rui-sidebar-trigger:not([data-sidebar-mobile]) {
+			@apply hidden;
+		}
+	}
+
+	.rui-sidebar-provider:has(> rui-sidebar[data-state='expanded']:not([data-mobile='true'])),
+	.rui-sidebar-provider:has(
+		> .rui-sidebar-provider__body > rui-sidebar[data-state='expanded']:not([data-mobile='true'])
+	) {
+		rui-sidebar-trigger:not([data-sidebar-mobile])[placement='inset'] {
+			@apply hidden;
+		}
+	}
+
+	.rui-sidebar-provider:has(> rui-sidebar[data-state='collapsed']:not([data-mobile='true'])),
+	.rui-sidebar-provider:has(
+		> .rui-sidebar-provider__body > rui-sidebar[data-state='collapsed']:not([data-mobile='true'])
+	) {
+		rui-sidebar-trigger:not([data-sidebar-mobile])[placement='header'] {
+			@apply hidden;
+		}
 	}
 }
 
 @media (max-width: 767px) {
 	/* SSR has no mobile state yet. Start with the drawer closed. */
-	rui-sidebar-trigger:not([data-sidebar-mobile='true'])[data-sidebar-placement='header'] {
+	rui-sidebar-trigger:not([data-sidebar-mobile='true'])[placement='header'] {
 		@apply hidden;
 	}
 }

@@ -28,6 +28,8 @@ For keyboard movement within an already-rendered composite surface, update focus
 
 `RuiField` discovers one control: the outermost `[data-rui-control]` or known host tag. Nested hosts (an embedded `rui-listbox` inside `rui-select`) are not field controls. For `RuiField` wiring, stamp `data-rui-control` (or use a known host tag), stamp `data-rui-aria-target` or `data-rui-aria-targets` when the ARIA node is not the control host itself, and fire bubbling `rui-change`.
 
+Native `FormData` comes from the listed control, not from `RuiField`. Named `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` are form-associated (`name` on the host, like `<input name>`). `RuiField` copies its `name` to the control. `registerFieldControl` supplies value access and a submission policy: `native` (default, name the ARIA target when it is a native input), `host` (form-associated host), or `none` (store only). Register a third-party host before connecting its field; form-associated hosts must also call `attachInternals()` and `setFormValue()` themselves, or use `FormAssociation`. Native validity and browser state restoration are separate from this submission protocol; `RuiForm` validates through its store.
+
 ## Multi-value `value`
 
 Token-select hosts (`rui-select`, `rui-combobox`, `rui-listbox`, `rui-checkbox-group`, `rui-tag-group`, `rui-table`) share one protocol:
@@ -69,12 +71,12 @@ The helper uses random UUIDs in secure contexts and random bytes on HTTP origins
 
 ## Numeric controls
 
-`rui-select` opens on genuine trigger focus only when `trigger-kind="focus"`; pointer clicks handle their own focus and open state.
+With `trigger-kind="focus"`, `rui-select` and `rui-combobox` open the listbox only when focus arrives from outside the host (`relatedTarget` is not a descendant). Focus the host moves back itself after select, clear, toggle, or tag remove never reopens it. Select trigger and toggle clicks prevent pointer focus and open through the click handler.
 
 `rui-meter` keeps a native `<meter>` for range semantics and renders its visual track and fill from the derived percent. This avoids browser-specific meter pseudo-elements.
-`rui-sidebar-trigger` mirrors its controlled sidebar's state, mobile mode, and collapse mode onto the trigger host. Placement CSS reads those local attributes so nested providers do not affect one another.
-`rui-date-input` keeps typed digits in the visible segment draft until the unit completes, focus moves, or the control blurs. `value` and the hidden input stay on the last committed ISO date during that draft. A delayed selection collapse must not pull focus back from a later segment. See [`date-input/README.md`](./date-input/README.md).
-Focused `rui-date-input` segments use the focus-ring color with on-primary text to keep the selected segment legible.
+`rui-sidebar-trigger` mirrors its controlled sidebar's state, mobile mode, and collapse mode onto the trigger host through one `MutationObserver`. Placement CSS reads those local attributes and the reflected `placement` attribute so nested providers do not affect one another. Until a trigger attaches (no `data-sidebar-mobile`), desktop CSS falls back to the provider's primary sidebar SSR attributes.
+`rui-date-input` keeps typed digits in the visible segment draft until the unit completes, focus moves, or the control blurs. `value` and the form value stay on the last committed ISO date during that draft; only a `value` or `locale` change replaces it. A delayed selection collapse must not pull focus back from a later segment. See [`date-input/README.md`](./date-input/README.md).
+Focused `rui-date-input` segments use `--focus-ring` with `--on-focus-ring` text to keep the selected segment legible.
 Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value. Knob waits until range props in the same turn have landed before snapping, so a fractional value is not rounded against the default step.
 
 ## Two host shapes (bindings vs imperative paint)

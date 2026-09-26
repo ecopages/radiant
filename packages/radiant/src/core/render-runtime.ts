@@ -1,5 +1,5 @@
 import { hasHydrationMarkers, hydrate as hydrateJsx, render as renderJsx, type JsxRenderable } from '@ecopages/jsx';
-import { isServer } from '@ecopages/radiant/is-server';
+import { isMinimalDomElement } from './minimal-dom-identity';
 import {
 	createReactiveComputed,
 	createReactiveWatcher,
@@ -161,8 +161,8 @@ export class RenderRuntime {
 	 * `#hasMounted` alone misses SSR hydration: the host already holds its server-rendered
 	 * markup while the flag is false. Client-side, {@link hasHydrationMarkers} is the
 	 * positive signal to skip capture (authored SSR content arrives via the script above).
-	 * Server-side the children *are* authored and there are no markers yet, so the marker
-	 * walk is skipped via {@link isServer} — the minimal SSR DOM cannot back it.
+	 * In the minimal SSR DOM the children *are* authored and there are no markers yet,
+	 * so the marker walk is skipped for those hosts.
 	 */
 	private ensureSlotProjectionState(): void {
 		if (this.#projectedSlotContent.size > 0) {
@@ -177,7 +177,11 @@ export class RenderRuntime {
 			return;
 		}
 
-		if (!this.#hasMounted && this.#host.childNodes.length > 0 && (isServer || !hasHydrationMarkers(this.#host))) {
+		if (
+			!this.#hasMounted &&
+			this.#host.childNodes.length > 0 &&
+			(isMinimalDomElement(this.#host) || !hasHydrationMarkers(this.#host))
+		) {
 			this.#projectedSlotContent = captureProjectedSlotRenderables(this.#host);
 			this.#slotProjectionVersion += 1;
 		}

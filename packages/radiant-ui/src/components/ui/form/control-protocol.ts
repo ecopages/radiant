@@ -12,26 +12,13 @@ export const RUI_ARIA_TARGET_ATTR = 'data-rui-aria-target';
 export const RUI_ARIA_TARGETS_ATTR = 'data-rui-aria-targets';
 const FIELD_COLUMN_SELECTOR = '[data-ref="field"]';
 
-const HOST_CONTROL_TAGS = new Set([
-	'rui-combobox',
-	'rui-date-field',
-	'rui-date-range-picker',
-	'rui-select',
-	'rui-tag-group',
-	'rui-checkbox',
-	'rui-checkbox-group',
-	'rui-switch',
-	'rui-radio-group',
-	'rui-slider',
-	'rui-knob',
-	'rui-number-field',
-	'rui-listbox',
-]);
+function fieldControlSelector(): string {
+	return `[${RUI_CONTROL_ATTR}], ${hostControlSelector()}`;
+}
 
-/** Library controls only — `data-rui-control` (e.g. RuiInput) or known host tags. */
-export const FIELD_CONTROL_SELECTOR = `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
-
-const HOST_CONTROL_SELECTOR = Array.from(HOST_CONTROL_TAGS).join(', ');
+function hostControlSelector(): string {
+	return Array.from(CONTROL_VALUE_ADAPTERS.keys()).join(', ');
+}
 
 function isEmbeddedListbox(node: HTMLElement): boolean {
 	return (
@@ -72,6 +59,11 @@ type FieldSlotHost = HTMLElement & { getSlotElements?: (name?: string) => Elemen
 type ControlValueAdapter = {
 	read: (host: HTMLElement) => unknown;
 	write: (host: HTMLElement, value: unknown) => void;
+};
+
+export type FieldControlAdapter = ControlValueAdapter & {
+	/** Where a native text target gets its submission name. Defaults to `native`. */
+	submission?: 'host' | 'native' | 'none';
 };
 
 const stringValueAdapter: ControlValueAdapter = {
@@ -145,20 +137,21 @@ const sliderValueAdapter: ControlValueAdapter = {
 	write: writeHostValue,
 };
 
-const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
+const CONTROL_VALUE_ADAPTERS = new Map<string, FieldControlAdapter>([
 	['rui-checkbox', booleanValueAdapter],
 	['rui-switch', booleanValueAdapter],
-	['rui-combobox', stringArrayValueAdapter],
+	['rui-combobox', { ...stringArrayValueAdapter, submission: 'none' }],
 	['rui-date-field', stringValueAdapter],
+	['rui-date-input', { ...stringValueAdapter, submission: 'host' }],
 	['rui-date-range-picker', stringValueAdapter],
-	['rui-select', stringArrayValueAdapter],
+	['rui-select', { ...stringArrayValueAdapter, submission: 'none' }],
 	['rui-radio-group', stringValueAdapter],
 	['rui-checkbox-group', stringArrayValueAdapter],
 	['rui-listbox', stringArrayValueAdapter],
 	['rui-tag-group', stringArrayValueAdapter],
-	['rui-slider', sliderValueAdapter],
-	['rui-knob', numberValueAdapter],
-	['rui-number-field', numberValueAdapter],
+	['rui-slider', { ...sliderValueAdapter, submission: 'host' }],
+	['rui-knob', { ...numberValueAdapter, submission: 'host' }],
+	['rui-number-field', { ...numberValueAdapter, submission: 'host' }],
 ]);
 
 /** Search authored field content, including nodes Radiant has moved for hydration. */
@@ -231,7 +224,7 @@ function pickPrimaryFieldControl(candidates: HTMLElement[]): HTMLElement | null 
 function collectFieldControls(root: HTMLElement): HTMLElement[] {
 	const candidates: HTMLElement[] = [];
 	forEachFieldContentNode(root, (node) => {
-		if (node instanceof HTMLElement && node.matches(FIELD_CONTROL_SELECTOR)) {
+		if (node instanceof HTMLElement && node.matches(fieldControlSelector())) {
 			candidates.push(node);
 		}
 	});
@@ -243,7 +236,7 @@ function listFieldControlsInRenderTree(root: HTMLElement): HTMLElement[] {
 	if (!(renderRoot instanceof HTMLElement)) {
 		return [];
 	}
-	return Array.from(renderRoot.querySelectorAll<HTMLElement>(FIELD_CONTROL_SELECTOR)).filter((el) =>
+	return Array.from(renderRoot.querySelectorAll<HTMLElement>(fieldControlSelector())).filter((el) =>
 		root.contains(el),
 	);
 }
@@ -263,6 +256,18 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 }
 
 /**
+ * Register a custom host for `RuiField` discovery, value access, and name wiring.
+ *
+ * @remarks `submission` chooses where a native text target gets its name. A host
+ * with `submission: 'host'` must implement FACE itself; registration only connects
+ * it to the `RuiForm` store.
+ */
+export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
+	const tag = tagName.toLowerCase();
+	CONTROL_VALUE_ADAPTERS.set(tag, adapter);
+}
+
+/**
  * Whether a bubbling `rui-change` belongs to this field's primary control, not a
  * nested host inside it.
  */
@@ -274,7 +279,7 @@ export function isPrimaryFieldControlEvent(root: HTMLElement, event: Event): boo
 	if (event.target !== control && !control.contains(event.target)) {
 		return false;
 	}
-	const nestedHost = event.target.closest(HOST_CONTROL_SELECTOR);
+	const nestedHost = event.target.closest(hostControlSelector());
 	return nestedHost === control || nestedHost == null;
 }
 
@@ -337,7 +342,7 @@ export function writeControlValue(control: HTMLElement, value: unknown): void {
 
 function resolveControlHost(control: HTMLElement): HTMLElement {
 	if (control.hasAttribute(RUI_CONTROL_ATTR)) {
-		const host = control.closest(HOST_CONTROL_SELECTOR) as HTMLElement | null;
+		const host = control.closest(hostControlSelector()) as HTMLElement | null;
 		return host ?? control;
 	}
 	return control;
@@ -377,30 +382,33 @@ export function findFieldErrorElements(root: HTMLElement): HTMLElement[] {
 	return single ? [single] : [];
 }
 
-/** Syncs the field name onto the native control and custom-element hosts. */
+/**
+ * Copies `name` onto the listed node.
+ *
+ * Form-associated hosts submit themselves — inner inputs stay unnamed.
+ * Checkbox, switch, and radio groups list through inner natives.
+ * Store-only hosts (select, combobox) do not name an inner textbox.
+ */
 export function wireFieldControlName(
 	controlHost: HTMLElement | null,
 	ariaTarget: HTMLElement | null,
 	name: string,
 ): void {
-	if (!name) {
-		return;
-	}
-
 	if (ariaTarget && isNativeTextControl(ariaTarget)) {
-		ariaTarget.name = name;
+		const submission = controlHost && CONTROL_VALUE_ADAPTERS.get(controlHost.localName)?.submission;
+		const namesInner =
+			controlHost == null || controlHost === ariaTarget || (submission !== 'host' && submission !== 'none');
+		if (namesInner && name) {
+			ariaTarget.name = name;
+		} else {
+			ariaTarget.removeAttribute('name');
+		}
 	}
 
-	if (!controlHost) {
-		return;
-	}
-
-	if (controlHost === ariaTarget) {
-		return;
-	}
-
-	if (HOST_CONTROL_TAGS.has(controlHost.localName)) {
-		controlHost.setAttribute('name', name);
+	if (controlHost && CONTROL_VALUE_ADAPTERS.has(controlHost.localName)) {
+		Reflect.set(controlHost, 'name', name);
+		if (name) controlHost.setAttribute('name', name);
+		else controlHost.removeAttribute('name');
 	}
 }
 
@@ -475,7 +483,10 @@ export function getAriaControlTarget(control: HTMLElement): HTMLElement {
 	}
 
 	if (control.localName === 'rui-slider') {
-		return control.querySelector<HTMLElement>('[data-thumb]:not([hidden])') ?? control;
+		const thumb = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]')).find(
+			(node) => !node.hasAttribute('hidden'),
+		);
+		return thumb ?? control;
 	}
 
 	const marked = control.querySelector<HTMLElement>(`[${RUI_CONTROL_ATTR}]`);
@@ -504,7 +515,9 @@ export function getAriaControlTargets(control: HTMLElement): HTMLElement[] {
 	}
 
 	if (control.localName === 'rui-slider') {
-		const thumbs = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]:not([hidden])'));
+		const thumbs = Array.from(control.querySelectorAll<HTMLElement>('[data-thumb]')).filter(
+			(node) => !node.hasAttribute('hidden'),
+		);
 		return thumbs.length > 0 ? thumbs : [control];
 	}
 	return [getAriaControlTarget(control)];

@@ -1,4 +1,9 @@
-export { RuiPagination, RuiPaginationNav, type RuiPaginationNavProps } from './pagination';
+export {
+	RuiPagination,
+	RuiPaginationNav,
+	type RuiPaginationLabels,
+	type RuiPaginationNavProps,
+} from './pagination';
 export {
 	RuiPagination as RuiPaginationElement,
 	type RuiPageChangeDetail,

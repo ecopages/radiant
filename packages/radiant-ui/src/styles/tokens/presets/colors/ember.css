@@ -79,6 +79,7 @@ html[data-rui-colors='ember'] {
 
 	--border: color-mix(in oklab, var(--color-glacier-white-900) 12%, transparent);
 	--focus-ring: var(--color-scarlet-500);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-scarlet-700);
 	--overlay: oklch(0% 0 0 / 0.42);
 
@@ -154,6 +155,7 @@ html.dark[data-rui-colors='ember'] {
 
 	--border: color-mix(in oklab, var(--color-glacier-white-50) 16%, transparent);
 	--focus-ring: var(--color-scarlet-400);
+	--on-focus-ring: var(--on-primary);
 	--link: var(--color-scarlet-400);
 	--overlay: oklch(0% 0 0 / 0.62);
 

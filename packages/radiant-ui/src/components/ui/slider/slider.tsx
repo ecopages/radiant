@@ -171,7 +171,6 @@ export function RuiSlider({
 				orientation={orientation}
 				label={label}
 				disabled={disabled}
-				name={name}
 				hasVisibleReadout={hasVisibleReadout}
 				valueReadout={valueReadout}
 			/>
@@ -184,7 +183,6 @@ function SliderRoot({
 	orientation,
 	label,
 	disabled,
-	name,
 	hasVisibleReadout,
 	valueReadout,
 }: {
@@ -192,7 +190,6 @@ function SliderRoot({
 	orientation: RuiSliderViewProps['orientation'];
 	label: RuiSliderViewProps['label'];
 	disabled: RuiSliderViewProps['disabled'];
-	name: RuiSliderViewProps['name'];
 	hasVisibleReadout: boolean;
 	valueReadout: RuiSliderValueProps['children'];
 }) {
@@ -220,13 +217,6 @@ function SliderRoot({
 				committed={seed.committed}
 				readoutPrecision={seed.readoutPrecision}
 				trackStyle={seed.trackStyle}
-			/>
-			<input type="hidden" data-ref="input" name={name || undefined} value={String(seed.committed[0])} />
-			<input
-				type="hidden"
-				data-ref="maxInput"
-				name={seed.isRange && name ? `${name}-max` : undefined}
-				value={seed.isRange ? String(seed.committed[1]) : undefined}
 			/>
 		</div>
 	);

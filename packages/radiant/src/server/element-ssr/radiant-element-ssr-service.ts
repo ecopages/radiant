@@ -2,12 +2,10 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getCustomElementTagName } from '../../core/custom-element-metadata';
-import { runSsrPreparationCallbacks } from '../../core/ssr-preparation';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { withSsrContextProviders } from '../context-ssr';
 import { alignMinimalDomHostTagName } from '../shim/minimal-dom/align-host-tag-name';
-import { assertLightDomSsrSupported } from './assert-light-dom-ssr';
 import { composeHostContent } from './host-script-composition';
 import { resolveHostAttributes, stringifyHostAttributes } from './host-attribute-serialization';
 import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
@@ -27,11 +25,9 @@ export class RadiantElementSsrService {
 	}
 
 	private ensureReady(): void {
-		assertLightDomSsrSupported(this.host);
 		alignMinimalDomHostTagName(this.component, getCustomElementTagName(this.host.constructor));
 		ensureLegacyHostReady(this.component, 'ssr');
-		runSsrPreparationCallbacks(this.component);
-		this.host.flushPostSyncCallbacks();
+		this.host.prepareForSsr();
 	}
 
 	public renderHost(): JsxRenderable {

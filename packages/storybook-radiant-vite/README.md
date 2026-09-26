@@ -343,8 +343,6 @@ The framework registers a toolbar global `radiantRenderMode`:
 6. `renderSsrComponent` produces markup + assets (CSS via `radiant({ elements: true })`).
 7. For `ssr-hydrate`, preview inserts markup into its mount root, imports the view/client module, and relies on `install-hydrator`. For `ssr-static`, preview puts markup and its styles in a sandboxed iframe; no client module runs there.
 
-Light-DOM only: Radiant SSR throws for `renderRootMode: 'shadow'`.
-
 ## Vitest / portable stories
 
 ```ts

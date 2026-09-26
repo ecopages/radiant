@@ -1,5 +1,6 @@
 import {
 	createReactivePropertyMapping,
+	reflectsBooleanAsValue,
 	type ReactiveAccessorDefinition,
 	type ReactiveProperty,
 	type ReactivePropertyOptions,
@@ -17,6 +18,9 @@ export type ReactivePropertyStateHost = HTMLElement & {
 export class ReactivePropertyState {
 	private readonly properties = new Map<string, ReactiveProperty<unknown>>();
 	private readonly preUpgradePropertyValues = new Map<string, unknown>();
+	/** Properties assigned through the accessor before {@link completeInitialSync}; their authored attributes are not adopted. */
+	private readonly writtenBeforeSync = new Set<string>();
+	private initialSyncComplete = false;
 
 	constructor(private readonly host: ReactivePropertyStateHost) {
 		for (const propertyName of Object.getOwnPropertyNames(host)) {
@@ -73,6 +77,7 @@ export class ReactivePropertyState {
 			reflect,
 			transform,
 		);
+		propertyMapping.defaultValue = defaultValue;
 
 		let initialValue: T | undefined;
 		if (hasPreUpgradeValue) {
@@ -106,7 +111,12 @@ export class ReactivePropertyState {
 			bind: options.bind,
 			signal,
 			fromProperty: transform?.fromProperty,
-			onSet: () => this.reflectValue(attributeKey, propertyMapping.reflect, propertyMapping, signal.get()),
+			onSet: () => {
+				if (!this.initialSyncComplete) {
+					this.writtenBeforeSync.add(propertyName);
+				}
+				this.reflectValue(attributeKey, propertyMapping.reflect, propertyMapping, signal.get());
+			},
 		});
 	}
 
@@ -118,11 +128,13 @@ export class ReactivePropertyState {
 	 * Construction can run before parser/JSX attributes land. Reflecting
 	 * `defaultValue` from the constructor would overwrite e.g. `variant="ghost"`
 	 * or strip an authored `value="ts"` when `defaultValue` is `""`. First-connect
-	 * adopts those attributes unless an own property was assigned before upgrade;
-	 * this then reflects whatever the host actually holds.
+	 * adopts those attributes unless the property was assigned before upgrade or
+	 * through its accessor since; this then reflects whatever the host actually holds.
 	 */
 	public completeInitialSync(): void {
 		this.adoptAuthoredAttributes();
+		this.initialSyncComplete = true;
+		this.writtenBeforeSync.clear();
 
 		for (const property of this.properties.values()) {
 			const signal = this.host.getReactiveMember(property.name);
@@ -143,12 +155,12 @@ export class ReactivePropertyState {
 	/**
 	 * @remarks
 	 * Parser/JSX attributes often land after `constructor`. Skip properties that
-	 * already hold a pre-upgrade own-property assignment so a different or empty
-	 * attribute cannot overwrite it.
+	 * already hold a pre-upgrade own-property assignment, or were assigned after
+	 * upgrade but before this sync, so an older attribute cannot overwrite them.
 	 */
 	private adoptAuthoredAttributes(): void {
 		for (const property of this.properties.values()) {
-			if (this.preUpgradePropertyValues.has(property.name)) {
+			if (this.preUpgradePropertyValues.has(property.name) || this.writtenBeforeSync.has(property.name)) {
 				continue;
 			}
 
@@ -175,7 +187,7 @@ export class ReactivePropertyState {
 			return;
 		}
 
-		if (value == null || value === '' || value === false) {
+		if (value == null || value === '' || (value === false && !reflectsBooleanAsValue(property))) {
 			this.host.removeAttribute(attributeKey);
 			return;
 		}

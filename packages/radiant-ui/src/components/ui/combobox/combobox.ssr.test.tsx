@@ -33,7 +33,7 @@ describe('RuiCombobox SSR', () => {
 		expect(html).toMatch(/<rui-combobox[^>]*value="de"/);
 		expect(html).toMatch(/<rui-combobox[^>]*label="Country"/);
 		expect(html).toMatch(/<rui-combobox[^>]*placeholder="Choose a country"/);
-		expect(html).toMatch(/<rui-combobox[^>]*disabled="false"/);
+		expect(html).not.toMatch(/<rui-combobox[^>]*\bdisabled=/);
 		expect(html).toMatch(/<rui-combobox[^>]*selection-mode="multiple"/);
 		expect(html).toMatch(/<rui-combobox[^>]*trigger-kind="focus"/);
 	});

@@ -19,7 +19,6 @@ describe('RuiNumberField commit', () => {
 		document.body.innerHTML = `
 			<rui-number-field name="quantity">
 				<input data-number-field-input />
-				<input type="hidden" data-number-field-value />
 			</rui-number-field>
 		`;
 
@@ -36,14 +35,28 @@ describe('RuiNumberField commit', () => {
 		await settled();
 
 		expect(host.value).toBe(3);
-		expect(host.querySelector<HTMLInputElement>('[data-number-field-value]')?.value).toBe('3');
+	});
+
+	it('submits the raw number through a named host', async () => {
+		document.body.innerHTML = `
+			<form>
+				<rui-number-field name="quantity" value="3">
+					<input data-number-field-input />
+				</rui-number-field>
+			</form>
+		`;
+
+		await customElements.whenDefined('rui-number-field');
+		await settled();
+
+		const form = document.querySelector('form') as HTMLFormElement;
+		expect(new FormData(form).get('quantity')).toBe('3');
 	});
 
 	it('keeps the formatted display value in sync after commit', async () => {
 		document.body.innerHTML = `
 			<rui-number-field name="quantity">
 				<input data-number-field-input />
-				<input type="hidden" data-number-field-value />
 			</rui-number-field>
 		`;
 

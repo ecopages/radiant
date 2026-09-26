@@ -51,7 +51,7 @@ server/
 
 ## SSR Surfaces
 
-Radiant SSR is **light-DOM only**. Hosts with `renderRootMode = 'shadow'` throw during server serialization — the pipeline does not emit declarative shadow roots. Client-side shadow rendering remains supported; skip SSR for those hosts.
+Radiant SSR is **light-DOM only**, like the client render path. The pipeline does not emit declarative shadow roots.
 
 For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Prefer `render-component` unless you are writing a renderer integration.
 
@@ -206,7 +206,7 @@ The shim supports a focused query surface for component lifecycle code that runs
 
 **Animation frames:** SSR installs no-op `requestAnimationFrame` / `cancelAnimationFrame` so layout-aware `connectedCallback` code does not throw. Deferred work scheduled through rAF does not run during serialization; hydration must own client-side layout effects.
 
-**Document event listeners:** Radiant mounts a singleton `MinimalDocument` on `globalThis.document` during SSR. Because `document` is defined on the server, `typeof document !== 'undefined'` checks evaluate to `true` during SSR. Top-level event listeners on `document` or `window` must be guarded with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR.
+**Document event listeners:** Radiant mounts a singleton `MinimalDocument` on `globalThis.document` during SSR. Because `document` is defined on the server, `typeof document !== 'undefined'` checks evaluate to `true` during SSR. Top-level event listeners on `document` or `window` must be guarded with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR. `isServer` follows the package export condition; it remains `true` in Node tests that install a browser-like DOM. Check the DOM implementation when choosing DOM-specific behavior.
 
 **Supported selector syntax (v1):**
 

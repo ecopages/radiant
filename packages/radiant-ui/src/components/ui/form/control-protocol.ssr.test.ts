@@ -5,6 +5,10 @@ import {
 	getAriaControlTargets,
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
+	readControlValue,
+	registerFieldControl,
+	wireFieldControlName,
+	writeControlValue,
 } from '../form/control-protocol';
 
 describe('field control protocol (SSR-safe)', () => {
@@ -170,5 +174,85 @@ describe('field control protocol (SSR-safe)', () => {
 
 		expect(seen).toBeDefined();
 		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(false);
+	});
+
+	it('discovers a host registered with registerFieldControl', () => {
+		registerFieldControl('my-swatch', {
+			read: (host) => host.getAttribute('hex') ?? '',
+			write: (host, value) => {
+				host.setAttribute('hex', value == null ? '' : String(value));
+			},
+		});
+		const field = document.createElement('div');
+		field.innerHTML = `<my-swatch hex="ff00aa"></my-swatch>`;
+		const control = findFieldControl(field);
+		expect(control?.localName).toBe('my-swatch');
+		expect(readControlValue(control!)).toBe('ff00aa');
+		writeControlValue(control!, '00ffaa');
+		expect(control?.getAttribute('hex')).toBe('00ffaa');
+	});
+
+	it('names a form-associated host and clears its inner input', () => {
+		if (!customElements.get('x-face-control')) {
+			customElements.define(
+				'x-face-control',
+				class extends HTMLElement {
+					static formAssociated = true;
+				},
+			);
+		}
+		registerFieldControl('x-face-control', {
+			submission: 'host',
+			read: (host) => host.getAttribute('value') ?? '',
+			write: (host, value) => {
+				host.setAttribute('value', value == null ? '' : String(value));
+			},
+		});
+		const host = document.createElement('x-face-control');
+		const input = document.createElement('input');
+		input.setAttribute('name', 'stale');
+		host.append(input);
+
+		wireFieldControlName(host, input, 'quantity');
+
+		expect(host.getAttribute('name')).toBe('quantity');
+		expect(input.hasAttribute('name')).toBe(false);
+	});
+
+	it('names a registered host through its native input by default', () => {
+		registerFieldControl('x-native-control', {
+			read: (host) => host.getAttribute('value') ?? '',
+			write: (host, value) => host.setAttribute('value', String(value)),
+		});
+		const host = document.createElement('x-native-control');
+		const input = document.createElement('input');
+		host.append(input);
+
+		wireFieldControlName(host, input, 'quantity');
+		expect(input.name).toBe('quantity');
+		wireFieldControlName(host, input, '');
+		expect(input.hasAttribute('name')).toBe(false);
+		expect(host.hasAttribute('name')).toBe(false);
+	});
+
+	it('does not name a store-only host inner textbox', () => {
+		const host = document.createElement('rui-combobox');
+		const input = document.createElement('input');
+
+		wireFieldControlName(host, input, 'country');
+
+		expect(input.hasAttribute('name')).toBe(false);
+		expect(host.getAttribute('name')).toBe('country');
+	});
+
+	it('names the inner input for a checkbox host', () => {
+		const host = document.createElement('rui-checkbox');
+		const input = document.createElement('input');
+		input.type = 'checkbox';
+
+		wireFieldControlName(host, input, 'tos');
+
+		expect(input.name).toBe('tos');
+		expect(host.getAttribute('name')).toBe('tos');
 	});
 });

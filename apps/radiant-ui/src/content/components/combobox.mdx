@@ -36,6 +36,8 @@ The live `value` property is always a `string[]` (`[]` when nothing is selected)
 
 **Important:** typing does not create a custom value. Enter with no active option closes the popup. Escape while closed clears the committed value and the input. If only predefined options are valid, that is already the runtime contract — do not expect free-text to be stored on `value`.
 
+Not form-associated. Wrap in `RuiField` and read the selected tokens from `RuiForm` `onSubmit`. The filter textbox is not listed in `new FormData(form)`.
+
 ## Usage
 
 Pass `options` for the default composition, or compose the helpers explicitly. Always set `embedded` on the listbox inside the popup.
@@ -146,7 +148,7 @@ Icon swaps are Composition Helper children, not CSS variables.
 
 ## API
 
-`RuiCombobox` is a custom element (`<rui-combobox>`) that coordinates a composed input row and listbox popup.
+`RuiCombobox` is a custom element (`<rui-combobox>`) that coordinates a composed input row and listbox popup. It is not form-associated.
 
 ### Attributes
 

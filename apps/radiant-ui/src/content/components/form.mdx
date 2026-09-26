@@ -78,7 +78,28 @@ Load `@ecopages/radiant-ui/styles.css` once in your app to style the form and ev
 
 ## Compose with Radiant controls
 
-<p>Every `RuiField` child should be a Radiant control (`RuiInput`, `RuiSelect`, `RuiDateField`, …). The form store discovers values through the Field control protocol, unmarked native inputs are not registered.</p>
+<p>Every `RuiField` child should be a Radiant control (`RuiInput`, `RuiSelect`, `RuiDateInput`, …). The form store discovers values through the Field control protocol; unmarked native inputs are not registered.</p>
+
+## Native form submission
+
+`RuiForm` always contains a native `<form>`. These are two channels:
+
+- **Store** (`onSubmit` / `rui-submit`): every `RuiField` value
+- **Listed controls** (`new FormData(form)` and `action` / `method` navigation): only what the browser lists
+
+`onSubmit` skips native navigation. `action` / `method` without `onSubmit` POSTs listed controls only.
+
+Listed:
+
+- Inner native controls: `RuiInput`, `RuiTextarea`, `RuiCheckbox`, `RuiSwitch`, `RuiRadioGroup`, `RuiCheckboxGroup`
+- Form-associated hosts (`name` on the host): `rui-date-input`, `rui-number-field`, `rui-slider`, `rui-knob`. An empty named date submits `''`. A range slider also submits `{name}-max`. Number-field submits the raw number, not the formatted display
+- `RuiDateField` is not listed; it copies `name` onto the nested `rui-date-input`
+- `RuiDateRangePicker` is not listed; `start-name` / `end-name` land on the nested `rui-date-input` hosts
+- `RuiField` copies its `name` onto that control. The field element itself is not listed
+
+Store-only (not in `FormData`): `RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiTagGroup`.
+
+Custom hosts: call `registerFieldControl(tag, { read, write, submission })` before connecting a field. `submission` is `native` by default (name the native ARIA target), `host` for a form-associated host, or `none` for a store-only control. Set `data-rui-aria-target` on the host when the native input is inside it. Registration does not make a host form-associated: the host must set `formAssociated`, call `attachInternals()`, and update `setFormValue()`; `FormAssociation` from `@ecopages/radiant-ui/form` wraps the latter two steps. The catalog hosts support native submission, fieldset disability, and reset. Browser validity and state restoration require separate host behavior; `RuiForm` rules validate through its store.
 
 ## Default values
 
@@ -114,7 +135,7 @@ The form itself carries no color roles; fields, labels, and controls inside keep
 | --- | --- | --- |
 | `defaultValues` | `Partial<FieldValues>` | Initial values; fields read their state from the form store. |
 | `resolver` | `Resolver<T>` | Custom validation resolver (e.g. from `createRulesResolver`). |
-| `onSubmit` | `(values: T) => void \| Promise<void>` | Receives validated values. When omitted, an `action` or `method` submits the native form after validation passes. |
+| `onSubmit` | `(values: T) => void \| Promise<void>` | Receives the store. Skips native navigation. When omitted, `action` or `method` POSTs listed controls after validation passes. |
 
 ### Light-DOM contract
 

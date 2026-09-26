@@ -1,5 +1,4 @@
 import { type JsxCustomElementAttributes } from '@ecopages/jsx';
-import { cx } from '@/lib/cx';
 import {
 	sidebarTriggerButtonClass,
 	type RuiSidebarTrigger as RuiSidebarTriggerElement,
@@ -76,7 +75,6 @@ function RuiSidebarTriggerIcon() {
  */
 export function RuiSidebarTrigger({
 	children,
-	class: className,
 	triggerLabel,
 	placement,
 	variant = 'ghost',
@@ -87,7 +85,6 @@ export function RuiSidebarTrigger({
 	return (
 		<rui-sidebar-trigger
 			{...props}
-			class={cx(className, placement && `rui-sidebar-trigger-placement--${placement}`)}
 			prop:buttonLabel={triggerLabel}
 			button-label={triggerLabel}
 			placement={placement}

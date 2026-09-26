@@ -17,7 +17,7 @@ Use the server pipeline as the integration boundary. Prefer explicit server entr
 - JSX still understands a generic third-party contract: instances that implement `renderHostToString(options?)`. Radiant does not rely on that instance method; it adapts hosts through `withServerCustomElementRenderHook(...)` / the installed Radiant SSR runtime.
 - Adapt richer framework-owned custom-element SSR through `withServerCustomElementRenderHook(...)` instead of adding framework-specific branches to generic JSX guidance.
 
-Radiant SSR is light-DOM only. Hosts with `renderRootMode = 'shadow'` throw during server serialization; client shadow rendering remains valid.
+Radiant SSR is light-DOM only, like the client render path.
 
 SSR bundlers must externalize `@ecopages/*` so Node resolves one module instance (do not inline duplicate copies of ALS or adapters).
 

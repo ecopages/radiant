@@ -20,28 +20,10 @@ class MyQueryElement extends RadiantElement {
 
 customElements.define('my-query-element', MyQueryElement);
 
-class ShadowQueryDecoratorElement extends RadiantElement {
-	@query({ ref: 'shadow-ref', scope: 'shadow' }) shadowRef: HTMLDivElement;
-	@query({ selector: '.shared-class', all: true, scope: 'both' }) sharedClasses: HTMLDivElement[];
-
-	constructor() {
-		super();
-		const shadowRoot = this.attachShadow({ mode: 'open' });
-		shadowRoot.appendChild(createElementWithRef('Shadow Ref', 'shadow-ref'));
-		shadowRoot.appendChild(createElementWithClass('Shadow Class', 'shared-class'));
-	}
-}
-
-customElements.define('shadow-query-decorator-element', ShadowQueryDecoratorElement);
-
 class QueryController extends RadiantController {
 	@query({ ref: 'form' }) form!: HTMLFormElement;
 	@query({ ref: 'email' }) emailInput!: HTMLInputElement;
 	@query({ ref: 'status' }) statusNode!: HTMLParagraphElement;
-}
-
-class ShadowQueryController extends RadiantController {
-	@query({ ref: 'shadow-ref', scope: 'shadow' }) shadowRef!: HTMLDivElement;
 }
 
 const createElementWithRef = (text: string, dataRef: string) => {
@@ -104,13 +86,6 @@ const createTemplate = () => {
 	return customElement as MyQueryElement;
 };
 
-const createShadowTemplate = () => {
-	const customElement = document.createElement('shadow-query-decorator-element') as ShadowQueryDecoratorElement;
-	customElement.appendChild(createElementWithClass('Light Class', 'shared-class'));
-	document.body.appendChild(customElement);
-	return customElement;
-};
-
 describe('@query', () => {
 	beforeEach(() => {
 		document.body.innerHTML = '';
@@ -170,19 +145,6 @@ describe('@query', () => {
 		expect(customElement.myRefsCache.length).toEqual(2);
 	});
 
-	test('decorator queries shadow DOM when scope is shadow', () => {
-		const customElement = createShadowTemplate();
-		expect(customElement.shadowRef.textContent).toEqual('Shadow Ref');
-	});
-
-	test('decorator queries light and shadow DOM when scope is both', () => {
-		const customElement = createShadowTemplate();
-		expect(customElement.sharedClasses).toHaveLength(2);
-		expect(customElement.sharedClasses.map((element) => element.textContent)).toEqual([
-			'Light Class',
-			'Shadow Class',
-		]);
-	});
 });
 
 describe('RadiantController @query', () => {
@@ -203,13 +165,4 @@ describe('RadiantController @query', () => {
 		expect(controller.statusNode.textContent).toBe('Ready');
 	});
 
-	test('rejects shadow-scoped queries for controllers', () => {
-		const host = document.createElement('section');
-		host.attachShadow({ mode: 'open' }).innerHTML = '<div data-ref="shadow-ref">Shadow Ref</div>';
-
-		expect(() => {
-			const controller = new ShadowQueryController(host);
-			controller.connect();
-		}).toThrowError('RadiantController queries only support light DOM scope.');
-	});
 });

@@ -60,17 +60,16 @@ import {
 ```tsx
 import '@ecopages/radiant-ui/number-field';
 
-<rui-number-field value={3} min-value={0} max-value={10}>
+<rui-number-field name="quantity" value={3} min-value={0} max-value={10}>
   <div class="rui-number-field__group" data-number-field-group>
     <input type="text" data-number-field-input data-rui-control data-rui-control-type="number" class="rui-number-field__input" />
-    <input type="hidden" data-number-field-value />
     <button type="button" data-number-field-action="decrement" class="rui-number-field__stepper">−</button>
     <button type="button" data-number-field-action="increment" class="rui-number-field__stepper">+</button>
   </div>
 </rui-number-field>
 ```
 
-BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`.
+BEM classes are presentation-only. The host owns formatted input `value` and spinbutton `aria-*`. Set `name` on the host to submit the raw number with a native form (not the formatted display string).
 
 ## Step and commit behavior
 
@@ -110,7 +109,7 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 | `disabled` | `boolean` | `false` | Disables input and steppers. |
 | `read-only` | `boolean` | `false` | Blocks editing; the value still displays formatted. |
 | `label` | `string` | `''` | Accessible name when there is no visible `RuiLabel`. |
-| `name` | `string` | `''` | Form field name on the hidden value input. |
+| `name` | `string` | `''` | Form field name on this host. Submits the raw number, not the formatted display. |
 | `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
 | `format-options` | `string` | `''` | JSON-serialized `Intl.NumberFormatOptions`. |
 | `commit-behavior` | `snap` · `validate` | `snap` | Blur behavior after editing. |
@@ -123,7 +122,6 @@ Geometry shares control tokens (`--size-control-sm`, `--space-control-*`, `--rad
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
 | `[data-number-field-input]` | yes | `id`, `role`, `inputmode`, `data-disabled`, `data-readonly`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, formatted `value` | text input; stamp `data-rui-control` for field wiring |
-| `[data-number-field-value]` | no | `value`, `name`, `disabled` | hidden form input |
 | `[data-number-field-action="decrement"]` | no | `disabled`, `aria-label` | decrement button |
 | `[data-number-field-action="increment"]` | no | `disabled`, `aria-label` | increment button |
 | `[data-number-field-group]` | no | — | presentation wrapper only |
@@ -140,7 +138,7 @@ Nested hosts: none.
 
 | Component | Target stamped | Notes |
 | --- | --- | --- |
-| `RuiNumberField` | default group when `children` omitted | Includes input, hidden value, and steppers. |
+| `RuiNumberField` | default group when `children` omitted | Includes input and steppers. |
 | `RuiNumberFieldGroup` | `[data-number-field-group]` | Presentation only; not queried. |
 | `RuiNumberFieldInput` | `[data-number-field-input]` | Always stamps `data-rui-control`. |
 | `RuiNumberFieldIncrementButton` | `[data-number-field-action="increment"]` | Default label "Increment". |

@@ -45,6 +45,24 @@ import { RuiPagination } from '@ecopages/radiant-ui/pagination';
 
 Pass `children` to replace the default navigation chrome while keeping the `rui-pagination` event contract.
 
+Below `40rem`, or with `class="rui-pagination--compact"`, the default chrome collapses to icon-only previous / next controls around a `Page n of m` position.
+
+The default chrome copy is English. Pass the label view props to localize it:
+
+```tsx
+<RuiPagination
+  label="Seiten"
+  page={page}
+  pageCount={pageCount}
+  previousText="Zurück"
+  previousLabel="Vorherige Seite"
+  nextText="Weiter"
+  nextLabel="Nächste Seite"
+  pageLabel={(page) => `Seite ${page}`}
+  statusLabel={(page, pageCount) => `Seite ${page} von ${pageCount}`}
+/>
+```
+
 ## Custom markup
 
 `<rui-pagination>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
@@ -90,6 +108,19 @@ BEM classes are presentation-only. Each navigable control needs `data-pagination
 | `disabled` | `boolean` | `false` | Disable page navigation. |
 | `sibling-count` | `number` | `1` | Pages shown on each side of the current page. |
 
+### JSX view props
+
+These props configure the default `RuiPaginationNav` chrome rendered by `RuiPagination` (and accepted by `RuiPaginationNav` directly). They are not custom-element attributes.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `previousText` | `string` | `Previous` | Visible previous-control text; visually hidden in compact chrome. |
+| `previousLabel` | `string` | `Go to previous page` | Accessible name of the previous control. |
+| `nextText` | `string` | `Next` | Visible next-control text; visually hidden in compact chrome. |
+| `nextLabel` | `string` | `Go to next page` | Accessible name of the next control. |
+| `pageLabel` | `(page: number) => string` | `Go to page n` | Accessible name of each page-number control. |
+| `statusLabel` | `(page: number, pageCount: number) => string` | `Page n of m` | Page position announced (`aria-live="polite"`) in compact chrome. |
+
 ### Light-DOM contract
 
 | Target | Required | Host writes | Author owns |
@@ -119,7 +150,7 @@ Nested hosts: none.
 | `.rui-pagination__list` | Page controls list. |
 | `.rui-pagination__link` | Previous, next, and page control. |
 | `.rui-pagination__page` | Page-number item; `__page--current` marks the active page. |
-| `.rui-pagination--compact` | Force previous / page position / next chrome (also used below `40rem`). |
+| `.rui-pagination--compact` | Force the chrome used below `40rem`: icon-only previous / next around the page position. |
 | `.rui-pagination__status` | Wrapper for the compact page-position label. |
-| `.rui-pagination__status-label` | Muted compact label (`Page n of m`); hidden when numbered pages are shown. |
+| `.rui-pagination__status-label` | Muted compact label (`statusLabel`, default `Page n of m`); hidden when numbered pages are shown. |
 | `.rui-pagination__ellipsis` | Hidden range marker between page numbers. |

@@ -92,6 +92,7 @@
 
 	--color-border: var(--border);
 	--color-focus-ring: var(--focus-ring);
+	--color-on-focus-ring: var(--on-focus-ring);
 	--color-link: var(--link);
 	--color-overlay: var(--overlay);
 

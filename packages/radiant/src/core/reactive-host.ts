@@ -17,6 +17,14 @@ type UpdateSubscription = {
 	unsubscribe: () => void;
 };
 
+/** Batched `@onUpdated` callback: runs once per update cycle when any of `keys` changed. */
+export type UpdatedCallback = (changed: ReadonlySet<string>) => void;
+
+type UpdatedRegistration = {
+	keys: ReadonlySet<string>;
+	callback: UpdatedCallback;
+};
+
 /**
  * Shared reactive-host contract consumed by decorators and host adapters.
  *
@@ -43,6 +51,7 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
 	registerConnectedCallback(callback: () => void): void;
 	registerPostSyncCallback(callback: () => void): void;
 	registerUpdateCallback(property: string, update: () => void): () => void;
+	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
 }
 
 /**
@@ -51,9 +60,9 @@ export interface ReactiveHostLike<Bindings extends object = {}> {
  *
  * Every reactive host member owns a single signals-backed `ReactiveState`
  * (a `State` for fields/props/attributes, or a user `signal()` for the signal
- * decorator). The jsx binding, `onUpdated` callbacks, and `ReactiveComputed`
- * tracking all read that one state directly, so there is no parallel
- * notification bus or dependency shim.
+ * decorator). The jsx binding, `@bindTo` writes, and `ReactiveComputed`
+ * tracking read that one state directly. Every change is also reported to the
+ * host update cycle, which runs batched `@onUpdated` callbacks once per turn.
  *
  * Host-specific concerns such as attribute reflection, render lifecycles, and
  * custom-element APIs stay in the outer host classes.
@@ -64,8 +73,10 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 
 	private reactiveMembers = new Map<string, ReactiveState<unknown>>();
 	private jsxBindings = new Map<string, SubscribableJsxValueWithAccess<JsxBindingSourceValue>>();
-	/** `onUpdated` callbacks keyed by property; values track the subscribed signal so replacements can resubscribe. */
+	/** Synchronous per-member callbacks keyed by property; values track the subscribed signal so replacements can resubscribe. */
 	private updateCallbacks = new Map<string, Map<() => void, UpdateSubscription | undefined>>();
+	private updatedCallbacks: UpdatedRegistration[] = [];
+	private changeSubscriptions = new Map<string, () => void>();
 	private onConnectedCallbacks: (() => void)[] = [];
 	private onDisconnectedCallback: (() => void)[] = [];
 	private postSyncCallbacks: (() => void)[] = [];
@@ -74,6 +85,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 		private readonly host: Host,
 		private readonly access: ReactiveHostAccess<Host>,
 		private readonly shouldAutoBind: () => boolean,
+		private readonly onMemberChanged: (propertyName: string) => void,
 	) {
 		const bindingNamespace = this.createReactiveBindingNamespace();
 		this.bindings = bindingNamespace;
@@ -133,21 +145,47 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	}
 
 	/**
-	 * Fires the `onUpdated` callbacks registered for a member.
+	 * Emits an initial update for a member without a value change.
 	 *
-	 * This is the only remaining use of the update-callback bus: an initial
-	 * emit for members that want one (currently `@prop`). Change notifications
-	 * flow through the member `State`'s own subscription, not through here.
+	 * @remarks Runs the synchronous callbacks (`@bindTo`) now and queues the
+	 * member for the next batched cycle. Used for the first-connect emit of
+	 * `@prop` members. Value changes flow through the member `State`'s own
+	 * subscription instead.
 	 */
 	public notifyUpdate(changedProperty: string, _oldValue: unknown, _value: unknown): void {
 		const callbacks = this.updateCallbacks.get(changedProperty);
 
-		if (!callbacks) {
-			return;
+		if (callbacks) {
+			for (const update of [...callbacks.keys()]) {
+				update();
+			}
 		}
 
-		for (const update of [...callbacks.keys()]) {
-			update();
+		this.onMemberChanged(changedProperty);
+	}
+
+	/**
+	 * Registers a batched callback that runs once per update cycle when any of
+	 * `keys` changed, receiving every member changed in that cycle.
+	 */
+	public registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void {
+		const registration: UpdatedRegistration = { keys: new Set(keys), callback };
+		this.updatedCallbacks.push(registration);
+
+		return () => {
+			this.updatedCallbacks = this.updatedCallbacks.filter((entry) => entry !== registration);
+		};
+	}
+
+	/** Runs every batched callback whose keys intersect `changed`, in registration order. */
+	public runUpdatedCallbacks(changed: ReadonlySet<string>): void {
+		for (const { keys, callback } of [...this.updatedCallbacks]) {
+			for (const key of keys) {
+				if (changed.has(key)) {
+					callback(changed);
+					break;
+				}
+			}
 		}
 	}
 
@@ -176,12 +214,18 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	}
 
 	/**
-	 * Stores the member state and subscribes any `onUpdated` callbacks that were
-	 * registered before the member existed (decorator initializer ordering).
+	 * Stores the member state, reports its changes to the host update cycle, and
+	 * subscribes synchronous callbacks registered before the member existed
+	 * (decorator initializer ordering).
 	 */
 	private registerMember(propertyName: string, signal: ReactiveState<unknown>): void {
 		this.reactiveMembers.set(propertyName, signal);
 		this.jsxBindings.delete(propertyName);
+		this.changeSubscriptions.get(propertyName)?.();
+		this.changeSubscriptions.set(
+			propertyName,
+			signal.subscribe(() => this.onMemberChanged(propertyName)),
+		);
 
 		const callbacks = this.updateCallbacks.get(propertyName);
 
@@ -193,7 +237,7 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	}
 
 	/**
-	 * Subscribes an `onUpdated` callback to the member state if the member is
+	 * Subscribes a synchronous callback to the member state if the member is
 	 * already registered.
 	 *
 	 * Re-subscribes only when the member signal identity changes (for example
@@ -252,11 +296,11 @@ export class ReactiveHost<Host extends object, Bindings extends object = {}> {
 	}
 
 	/**
-	 * Registers an `onUpdated`-style callback for a named reactive member.
+	 * Registers a synchronous callback for a named reactive member.
 	 *
-	 * Change notifications flow through the member `State`'s own subscription
-	 * (D1). The callback is also kept in the update-callback bus so an initial
-	 * emit (currently `@prop`) can still reach it once after definition.
+	 * @remarks Runs on every write of the member, before the batched cycle. Used
+	 * by `@bindTo`, whose DOM writes must land with the value like `$` bindings.
+	 * Use {@link registerUpdatedCallback} for procedures.
 	 */
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		let callbacks = this.updateCallbacks.get(property);

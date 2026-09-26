@@ -65,7 +65,6 @@ Use it with authored light DOM:
 | :---- | :--- | :------- | :---------- |
 | `type` | `string` | Yes | Event type (e.g., `'click'`, `'input'`, `'keydown'`). |
 | `options` | `AddEventListenerOptions` | No | Standard options like `{ passive: true, once: true }`. |
-| `scope` | `'light' \| 'shadow' \| 'both'` | No | Which DOM tree to observe for delegated events (default: `'light'`). |
 
 ## Return Value
 
@@ -83,32 +82,6 @@ cleanup();
 When using `selector` or `ref`, the listener is delegated to the host element. Events bubble up from the target, and the handler fires only when `event.target` matches the selector.
 
 Because delegation relies on bubbling, it does not work with events that do not bubble (e.g., `focus`, `blur`). Use their bubbling alternatives (`focusin`, `focusout`).
-
-## Shadow DOM Scope
-
-Use `scope` to control where delegated listeners are attached.
-
-```typescript
-createEventListener(
-	host,
-	{ ref: 'shadow-btn', type: 'click', scope: 'shadow' },
-	() => console.log('clicked inside shadow root'),
-);
-
-createEventListener(
-	host,
-	{ ref: 'shared-btn', type: 'click', scope: 'both' },
-	() => console.log('clicked in either tree'),
-);
-```
-
-| Scope | Behavior |
-| :---- | :------- |
-| `'light'` | Delegates on the host element (default). |
-| `'shadow'` | Delegates on the host's shadow root. |
-| `'both'` | Delegates on both the host and its shadow root. |
-
-If the shadow root does not exist at registration time but is created later via `attachShadow`, the listener is attached automatically.
 
 ## Window and Document Events
 

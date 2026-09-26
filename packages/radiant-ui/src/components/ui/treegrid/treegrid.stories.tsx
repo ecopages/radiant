@@ -96,7 +96,9 @@ export const FileBrowser: Story = {
 		});
 
 		await step('setting .value programmatically updates aria-selected and roving tabindex', async () => {
-			(host as HTMLElement & { value: string }).value = 'readme';
+			const grid = host as RuiTreegridElement;
+			grid.value = 'readme';
+			await grid.updateComplete;
 			const readmeRowCells = Array.from(
 				canvasElement.querySelectorAll('[data-row-id="readme"] [role="gridcell"]'),
 			) as HTMLElement[];
