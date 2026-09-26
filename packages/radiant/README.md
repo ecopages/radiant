@@ -160,7 +160,7 @@ There is no durable Element Host instance API named `renderHostToString()`.
 
 `mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 
-Because Radiant's SSR environment shims `window` and `document`, global checks like `typeof window !== 'undefined'` or `typeof document !== 'undefined'` evaluate to `true` on the server. Guard top-level event listeners on `document` or `window` with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR.
+Because Radiant's SSR environment shims `window` and `document`, global checks like `typeof window !== 'undefined'` or `typeof document !== 'undefined'` evaluate to `true` on the server. Guard top-level event listeners on `document` or `window` with `!isServer` from `@ecopages/radiant/is-server` so browser navigation and event listeners do not attach during SSR. This flag follows the package export condition: Node tests using a browser-like DOM also read `true`. Use a DOM capability check for code that depends on specific DOM methods.
 
 Server runtime setup, fragment rendering helpers, and SSR-specific import guidance live in [src/server/README.md](src/server/README.md).
 
