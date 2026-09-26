@@ -136,6 +136,10 @@
 			"types": "./dist/client/install-hydrator.d.ts",
 			"import": "./dist/client/install-hydrator.js"
 		},
+		"./form-associated-element": {
+			"types": "./dist/form-associated-element.d.ts",
+			"import": "./dist/form-associated-element.js"
+		},
 		"./signals/host-resource": {
 			"types": "./dist/signals/host-resource.d.ts",
 			"import": "./dist/signals/host-resource.js"

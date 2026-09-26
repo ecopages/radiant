@@ -4,16 +4,16 @@ import type { UnknownContext } from '../context/types';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
 import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals, type ReactiveHostLike } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
-import type {
-	ReactiveBindingOption,
-	ReactivePropertyOptions,
-	ReactiveBindingValue,
-	ReactiveBindings,
-	ReactiveFieldOptions,
+import {
+	resolveReactiveDefault,
+	validateReactivePropertyDefault,
+	type ReactiveBindingOption,
+	type ReactivePropertyOptions,
+	type ReactiveBindingValue,
+	type ReactiveBindings,
+	type ReactiveFieldOptions,
 } from './reactive-prop-core';
 import { UpdateCycle } from './update-cycle';
-import { defaultValueForType } from '../utils/attribute-utils';
-import { validateReactivePropertyDefault } from './reactive-prop-core';
 
 type StringPropertyKey<Value> = Extract<keyof Value, string>;
 
@@ -211,7 +211,7 @@ export class RadiantController<Bindings extends object = {}> implements Reactive
 
 		const hostPropertyBridge = new ControllerHostPropertyBridge<T>(this.host, this, propertyName);
 		const initialHostValue = hostPropertyBridge.getInitialValue();
-		const rawInitial = initialHostValue ?? defaultValue ?? defaultValueForType(type);
+		const rawInitial = initialHostValue ?? resolveReactiveDefault(options);
 		const initialValue = (transform?.fromProperty ? transform.fromProperty(rawInitial) : rawInitial) as T;
 
 		const signal = this.reactiveHost.createReactiveMember(propertyName, initialValue);

@@ -83,10 +83,6 @@ export class EventSubscriptionRegistry {
 	}
 
 	private removeListener(eventSubscription: ElementEventListenerConfig): void {
-		this.host.removeEventListener(
-			eventSubscription.type,
-			eventSubscription.listener,
-			eventSubscription.options,
-		);
+		this.host.removeEventListener(eventSubscription.type, eventSubscription.listener, eventSubscription.options);
 	}
 }

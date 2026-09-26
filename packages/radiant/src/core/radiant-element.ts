@@ -20,7 +20,6 @@ import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
-import { getInitialValue } from '../utils/attribute-utils';
 
 export type {
 	PropTransform,
@@ -650,7 +649,6 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactivePropertyState.create(
 			propertyName,
 			options,
-			(type, attributeKey, defaultValue) => getInitialValue(this, type, attributeKey, defaultValue) as T,
 			(name, config) => {
 				this.reactiveHost.defineReactiveAccessor(name, config);
 			},
