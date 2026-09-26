@@ -24,6 +24,7 @@ export function reactiveField(target: ReactiveHostLike, propertyKey: string) {
 	registerLegacyPostConstructionInitializer(target, (element) => {
 		element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
 			bind: resolveHostAutoBind(element),
+			suppressInitialNotify: true,
 		});
 	});
 }

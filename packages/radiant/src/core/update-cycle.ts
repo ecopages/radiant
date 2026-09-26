@@ -1,5 +1,5 @@
 export type UpdateCycleOptions = {
-	/** Whether queued work may run now (browser DOM host past its first-connect sync). */
+	/** Whether queued work may run now (connected host past its first-connect sync). */
 	canFlush: () => boolean;
 	/** Runs batched `@onUpdated` callbacks for one set of changed members. */
 	runCallbacks: (changed: ReadonlySet<string>) => void;
@@ -8,6 +8,8 @@ export type UpdateCycleOptions = {
 	/** Runs after the cycle's callbacks and commit, with every member that changed in it. */
 	updated: (changed: ReadonlySet<string>) => void;
 };
+
+type Completion = { promise: Promise<void>; resolve: () => void; reject: (error: unknown) => void };
 
 /** Bounds member writes that keep re-triggering their own callbacks within one flush. */
 const MAX_ROUNDS = 100;
@@ -23,6 +25,11 @@ const MAX_ROUNDS = 100;
  * {@link updateComplete}. Nothing runs while {@link UpdateCycleOptions.canFlush}
  * is false; changes accumulate until the host connects. SSR drains callbacks
  * explicitly with {@link runCallbacks}.
+ *
+ * A flush that throws drops its changed set and rejects {@link updateComplete}.
+ * Work run from a microtask ({@link defer} or a scheduled flush) reports its
+ * error through that rejection when a caller is awaiting it, and as an uncaught
+ * error otherwise.
  */
 export class UpdateCycle {
 	#changed = new Set<string>();
@@ -32,8 +39,8 @@ export class UpdateCycle {
 	#flushing = false;
 	#scheduled = false;
 	#didWork = false;
-	#holds = 0;
-	#completion?: { promise: Promise<void>; resolve: () => void };
+	#deferred = 0;
+	#completion?: Completion;
 
 	constructor(private readonly options: UpdateCycleOptions) {}
 
@@ -45,14 +52,11 @@ export class UpdateCycle {
 		return this.#renderPending;
 	}
 
-	public get flushing(): boolean {
-		return this.#flushing;
-	}
-
 	/**
 	 * Resolves once no member change or render is pending and the last flush has finished.
 	 *
-	 * @remarks Stays pending while the host is disconnected with queued work.
+	 * @remarks Stays pending while the host is disconnected with queued work, and
+	 * rejects when the flush it waits for throws.
 	 */
 	public get updateComplete(): Promise<void> {
 		if (this.#isIdle()) {
@@ -61,34 +65,32 @@ export class UpdateCycle {
 
 		if (!this.#completion) {
 			let resolve!: () => void;
-			const promise = new Promise<void>((done) => {
+			let reject!: (error: unknown) => void;
+			const promise = new Promise<void>((done, fail) => {
 				resolve = done;
+				reject = fail;
 			});
-			this.#completion = { promise, resolve };
+			this.#completion = { promise, resolve, reject };
 		}
 
 		return this.#completion.promise;
 	}
 
 	/**
-	 * Keeps {@link updateComplete} pending until the returned release runs.
+	 * Runs `work` in a microtask, keeping {@link updateComplete} pending until it finishes.
 	 *
-	 * @remarks Hosts hold the cycle across their deferred connect sync, which
-	 * renders outside a flush, so awaiting callers see the first render.
+	 * @remarks Hosts defer their connect sync this way, so awaiting callers see the first render.
 	 */
-	public hold(): () => void {
-		this.#holds += 1;
-		let released = false;
-
-		return () => {
-			if (released) {
-				return;
+	public defer(work: () => void): void {
+		this.#deferred += 1;
+		queueMicrotask(() => {
+			try {
+				this.#runReported(work);
+			} finally {
+				this.#deferred -= 1;
+				this.#resolveIfIdle();
 			}
-
-			released = true;
-			this.#holds -= 1;
-			this.#resolveIfIdle();
-		};
+		});
 	}
 
 	public markChanged(key: string): void {
@@ -99,10 +101,6 @@ export class UpdateCycle {
 	public requestRender(): void {
 		this.#renderPending = true;
 		this.#schedule();
-	}
-
-	public clearRender(): void {
-		this.#renderPending = false;
 	}
 
 	/**
@@ -151,10 +149,26 @@ export class UpdateCycle {
 	}
 
 	/**
+	 * Runs the cycle now, or commits a requested render when called from inside a running flush.
+	 *
+	 * @remarks Inside a flush, the running flush still owns callbacks and `updated()`.
+	 */
+	public update(): void {
+		if (!this.#flushing) {
+			this.flush();
+			return;
+		}
+
+		if (this.#renderPending) {
+			this.commit();
+		}
+	}
+
+	/**
 	 * Runs everything queued: callbacks, commit, then `updated(changed)`.
 	 *
 	 * @param work - Host work that belongs to this cycle, such as the connect
-	 * sync; it runs first, while {@link flushing} is true.
+	 * sync; it runs first, inside the flush.
 	 *
 	 * @remarks Re-entrant calls (from a callback or `updated`) are ignored; the
 	 * running flush picks up their work, and work queued by `updated` schedules
@@ -184,6 +198,11 @@ export class UpdateCycle {
 				this.#didWork = false;
 				this.options.updated(changed);
 			}
+		} catch (error) {
+			this.#cycleChanged = new Set();
+			this.#didWork = false;
+			this.#rejectCompletion(error);
+			throw error;
 		} finally {
 			this.#flushing = false;
 		}
@@ -193,7 +212,11 @@ export class UpdateCycle {
 
 	#isIdle(): boolean {
 		return (
-			this.#holds === 0 && !this.#flushing && !this.#scheduled && !this.#renderPending && this.#changed.size === 0
+			this.#deferred === 0 &&
+			!this.#flushing &&
+			!this.#scheduled &&
+			!this.#renderPending &&
+			this.#changed.size === 0
 		);
 	}
 
@@ -205,6 +228,27 @@ export class UpdateCycle {
 		}
 	}
 
+	#rejectCompletion(error: unknown): void {
+		const completion = this.#completion;
+		this.#completion = undefined;
+		completion?.reject(error);
+	}
+
+	/** Runs microtask work, leaving an error to awaiting callers when there are any. */
+	#runReported(work: () => void): void {
+		const awaited = this.#completion !== undefined;
+
+		try {
+			work();
+		} catch (error) {
+			this.#rejectCompletion(error);
+
+			if (!awaited) {
+				throw error;
+			}
+		}
+	}
+
 	#schedule(): void {
 		if (this.#scheduled) {
 			return;
@@ -213,7 +257,7 @@ export class UpdateCycle {
 		this.#scheduled = true;
 		queueMicrotask(() => {
 			this.#scheduled = false;
-			this.flush();
+			this.#runReported(() => this.flush());
 		});
 	}
 }

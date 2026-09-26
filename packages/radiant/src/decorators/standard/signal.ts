@@ -1,9 +1,8 @@
 import type { WritableSignal } from '@ecopages/signals';
 import type { ReactiveBindingOption } from '../../core/reactive-prop-core';
-import type { ReactiveHostLike } from '../../core/reactive-host';
+import { REACTIVE_HOST, type ReactiveHostLike } from '../../core/reactive-host';
 import { resolveHostAutoBind } from '../shared/auto-bind';
 import { createHostSignal, isWritableSignalLike } from '../../signals/host-signal';
-import { isHydrationCapableHost } from '../../core/hydration-capable-host';
 import type { AttributeTypeConstant } from '../../utils/attribute-utils';
 
 /** Options for the `@signal` decorator. */
@@ -73,8 +72,8 @@ export function signal<Value = unknown>(options: SignalDecoratorOptions<Value> =
 				hostSignal.disconnectFromSource();
 			});
 
-			if (options.hydrate && isHydrationCapableHost(this)) {
-				this.registerHydrationBinding(propertyName, hostSignal);
+			if (options.hydrate) {
+				this[REACTIVE_HOST].ssrRegistry.registerHydrationBinding(propertyName, hostSignal);
 			}
 
 			return hostSignal as unknown as WritableSignal<Value>;

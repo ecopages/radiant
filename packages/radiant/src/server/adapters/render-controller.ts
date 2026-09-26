@@ -4,6 +4,7 @@ import { renderToString as renderJsxToString, type RenderToStringOptions } from 
 import { getControllerIdentifier } from '../../core/controller-metadata';
 import { withRadiantElementSsrRuntime } from '../../core/radiant-element-ssr-registry';
 import type { RadiantController } from '../../core/radiant-controller';
+import { REACTIVE_HOST } from '../../core/reactive-host';
 import { CONTROLLER_ATTRIBUTE } from '../../controller-registry';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlAttributeName, assertValidHtmlTagName } from '../../utils/html-names';
@@ -314,14 +315,16 @@ function renderRenderedControllerHost(
 	tagName: string,
 	options: RenderToStringOptions,
 ): string {
-	return withSsrContextProviders(controller.getSsrContextProviders(), () => {
+	const { ssrRegistry } = controller[REACTIVE_HOST];
+
+	return withSsrContextProviders(ssrRegistry.getContextProviders(), () => {
 		const hostContent = withRadiantServerCustomElementRenderBridge(() =>
 			renderJsxToString(controller.render(), options),
 		);
 		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
 		const hydrationScripts = hydrate
-			? controller
-					.getSsrHydrationBindings()
+			? ssrRegistry
+					.getHydrationBindings()
 					.map((binding) => binding.renderHydrationScriptTag())
 					.filter((markup): markup is string => typeof markup === 'string')
 					.join('')

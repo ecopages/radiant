@@ -59,7 +59,9 @@ Client rendering works like this:
 
 Writes in the same turn share one update cycle. `@onUpdated` runs once for the members it watches, a pending render commits, then `updated(changed)` runs. `await updateComplete` waits for that cycle, including the first connect render.
 
-Automatic updates run for connected browser DOM hosts, including browser-like DOMs in Node. Radiant's minimal SSR DOM skips automatic flushes; server rendering drains pending `@onUpdated` callbacks during host preparation.
+Hosts observe their members only while connected, snapshotting values on disconnect and reporting what changed on the next connect. Automatic updates run for connected hosts in any DOM. Server rendering never connects hosts: it observes members only while preparing a host, drains pending `@onUpdated` callbacks, and never calls `updated()`. A cycle that throws drops its changes and rejects `updateComplete`.
+
+Decorators and SSR adapters reach host plumbing (post-sync and batched callback registration, the SSR provider and hydration registry, initial update emits) through the `REACTIVE_HOST` symbol, not through public host methods.
 
 `render()` describes the view. `update()` runs the cycle that commits it into the host.
 
@@ -85,7 +87,7 @@ When slot-aware SSR needs authored light DOM, adapters prepare the host through 
 ## Public API
 
 - `render()` returns the current JSX tree.
-- `update()` rerenders the host using the current JSX tree.
+- `update()` runs the update cycle now and rerenders the host from the current JSX tree when `render()` is overridden.
 - `hydrate()` hydrates SSR markup already present in the host.
 - `renderViewToString()` asks the installed server runtime to serialize the view (server entry must be imported first).
 
