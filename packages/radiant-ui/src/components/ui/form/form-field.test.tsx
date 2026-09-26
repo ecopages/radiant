@@ -259,6 +259,49 @@ describe('rui-field composed content discovery', () => {
 		host.remove();
 	});
 
+	it('lists a switch through the host name', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="notifications">
+					<RuiSwitch />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-switch');
+		await flushRender();
+		await flushFirstConnect();
+
+		expect(host.querySelector('input')?.getAttribute('name')).toBe('notifications');
+		host.remove();
+	});
+
+	it('does not list a combobox filter input on native FormData', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="language">
+					<LanguageCombobox />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-combobox');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).get('language')).toBeNull();
+		host.remove();
+	});
+
 	it('finds control and error nodes after Radiant slot projection', async () => {
 		const form = document.createElement('rui-form') as RuiFormElement;
 		const field = document.createElement('rui-field') as RuiFieldElement;
