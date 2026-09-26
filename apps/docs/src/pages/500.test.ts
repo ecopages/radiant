@@ -2,7 +2,7 @@ import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
 import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { describe, expect, it } from 'vitest';
-import { Error500View } from './500-view';
+import { Error500View } from '@/components/error-500-view';
 
 describe('docs 500 page', () => {
 	it('renders stack details and a copy action', () => {

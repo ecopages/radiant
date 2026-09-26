@@ -1,7 +1,7 @@
 import { eco, type Error500TemplateProps } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { DocsLayout } from '@/layouts/docs-layout';
-import { Error500View } from './500-view';
+import { Error500View } from '@/components/error-500-view';
 
 export default eco.page<Error500TemplateProps, JsxRenderable>({
 	layout: DocsLayout,
