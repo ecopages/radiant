@@ -42,6 +42,14 @@ class BindToSsrTextHost extends RadiantElement {
 }
 
 describe('@bindTo SSR', () => {
+	it('registers each host under its tag', () => {
+		expect([
+			customElements.get('bind-to-ssr-attr-host'),
+			customElements.get('bind-to-ssr-bool-host'),
+			customElements.get('bind-to-ssr-text-host'),
+		]).toEqual([BindToSsrAttrHost, BindToSsrBoolHost, BindToSsrTextHost]);
+	});
+
 	it('copies a reactive field onto a light-DOM child attribute', () => {
 		const html = withRadiantServerCustomElementRenderBridge(() =>
 			renderToString(

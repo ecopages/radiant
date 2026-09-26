@@ -99,7 +99,7 @@ Listed:
 
 Store-only (not in `FormData`): `RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiTagGroup`.
 
-Custom hosts: call `registerFieldControl(tag, { read, write, submission })` before connecting a field. `submission` is `native` by default (name the native ARIA target), `host` for a form-associated host, or `none` for a store-only control. Set `data-rui-aria-target` on the host when the native input is inside it. Registration does not make a host form-associated: the host must set `formAssociated`, call `attachInternals()`, and update `setFormValue()`; `FormAssociation` from `@ecopages/radiant-ui/form` wraps the latter two steps. The catalog hosts support native submission, fieldset disability, and reset. Browser validity and state restoration require separate host behavior; `RuiForm` rules validate through its store.
+Custom hosts: call `registerFieldControl(tag, { read, write, submission })` before connecting a field. `submission` is `native` by default (name the native ARIA target), `host` for a form-associated host, or `none` for a store-only control. Set `data-rui-aria-target` on the host when the native input is inside it. Registration does not make a host form-associated: extend `FormAssociatedElement` from `@ecopages/radiant/form-associated-element`. The catalog hosts support native submission, fieldset disability, and reset. Browser validity and state restoration require separate host behavior; `RuiForm` rules validate through its store.
 
 ## Default values
 

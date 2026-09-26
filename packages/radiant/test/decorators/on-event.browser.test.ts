@@ -169,5 +169,4 @@ describe('onEvent', () => {
 
 		expect(element.clickCount).toBe(2);
 	});
-
 });

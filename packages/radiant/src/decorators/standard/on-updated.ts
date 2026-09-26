@@ -1,8 +1,8 @@
-import type { UpdatedCallback } from '../../core/reactive-host';
+import { REACTIVE_HOST, type ReactiveHostInternals } from '../../core/reactive-host';
 import type { Method } from '../../types';
 
 type UpdatedHost = {
-	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 };
 
 export function onUpdated(keyOrKeys: string | string[]) {
@@ -21,7 +21,7 @@ export function onUpdated(keyOrKeys: string | string[]) {
 				writable: true,
 			});
 
-			this.registerUpdatedCallback(keys, boundMethod);
+			this[REACTIVE_HOST].registerUpdatedCallback(keys, boundMethod);
 		});
 	};
 }

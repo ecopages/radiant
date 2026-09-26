@@ -1,11 +1,11 @@
-import type { UpdatedCallback } from '../core/reactive-host';
+import type { REACTIVE_HOST, ReactiveHostInternals } from '../core/reactive-host';
 import type { Method } from '../types';
 import { onUpdated as legacyOnUpdated } from './legacy/on-updated';
 import { onUpdated as standardOnUpdated } from './standard/on-updated';
 import { methodDecoratorBridge } from './bridge';
 
 type UpdatedHost = {
-	registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void;
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 };
 
 /**

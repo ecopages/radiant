@@ -80,7 +80,9 @@ import '@ecopages/radiant-ui/sidebar';
 ```
 
 `rui-sidebar-trigger` stamps `[data-ref="button"]` and syncs `aria-expanded` / `aria-controls` against the sidebar.
-Each trigger also reflects its controlled sidebar's state, mobile mode, and collapse mode on the trigger host. Placement styles read those local attributes and the `placement` attribute, including when providers are nested. Before a trigger attaches to its sidebar (the server-rendered paint), placement styles fall back to the provider's primary sidebar.
+Each trigger also reflects its controlled sidebar's state, mobile mode, and collapse mode on the trigger host. Placement and glyph styles read only the trigger host and its `placement` attribute, so an attached trigger follows the sidebar's `mobileBreakpoint` rather than the viewport width, including when providers are nested.
+
+Before a trigger attaches (the server-rendered paint), placement styles treat viewports below 768px as mobile and read the sidebar whose pane holds the trigger, else the only sidebar of its nearest provider (child combinators, so nested providers stay independent). Other triggers, such as inset triggers shared by two sidebars in one provider, stay visible until they attach.
 
 ## Collapsible modes
 
@@ -160,19 +162,19 @@ Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-
 
 | Target | Required | Host writes | Author owns |
 | --- | --- | --- | --- |
-| `[data-ref="button"]` | yes | `aria-expanded`, `aria-controls`, `aria-label`, `data-sidebar-state` | toggle button |
+| `[data-ref="button"]` | yes | `aria-expanded`, `aria-controls`, `aria-label`; swaps `rui-button--{variant}` / `--{size}` | toggle button and its other classes |
 
 ### Attributes (`<rui-sidebar-trigger>`)
 
 | Attribute | Type | Default | Description |
 | --- | --- | --- | --- |
 | `controls` | `string` | `''` | `aria-controls` target (sidebar id). |
-| `button-label` | `string` | `Toggle sidebar` | Accessible trigger name. |
+| `button-label` | `string` | `Toggle sidebar` | Accessible trigger name (`triggerLabel` on `RuiSidebarTrigger`). |
 | `placement` | `''` · `header` · `inset` | `''` | Trigger placement; reflected for placement styles. |
 | `variant` | `ghost` · … | `ghost` | Button tone (reuses `RuiButton` variants). |
 | `size` | `sm` · `md` · `lg` | `md` | Button size. |
 
-The host writes `data-sidebar-state`, `data-sidebar-mobile`, and `data-sidebar-collapsible` on `<rui-sidebar-trigger>`. `data-sidebar-mobile` and `data-sidebar-collapsible` appear once the trigger attaches to its sidebar.
+The host writes `data-sidebar-state`, `data-sidebar-mobile`, and `data-sidebar-collapsible` on `<rui-sidebar-trigger>`. `data-sidebar-mobile` and `data-sidebar-collapsible` appear once the trigger attaches to its sidebar. Until then, `data-sidebar-state` matches the server render: `collapsed` for `inset`, `expanded` otherwise.
 
 ### Events
 

@@ -1,10 +1,6 @@
-import { isMinimalDomElement } from './minimal-dom-identity';
-import type { EventEmitter } from '../tools';
 import { hasHydrationMarkers, jsx, type JsxRenderable, type SubscribableJsxValueWithAccess } from '@ecopages/jsx';
-import { HostSsrRegistry } from './host-ssr-registry';
 import { getReactivePropDefinitions, type ReactivePropDefinition } from './reactive-prop-metadata';
 import { ensureLegacyHostReady } from '../decorators/legacy/host-readiness';
-import type { SsrSerializableContextProvider } from '../context/context-provider';
 import type { UnknownContext } from '../context/types';
 import {
 	type ReactiveBindingOption,
@@ -18,14 +14,12 @@ import { EventSubscriptionRegistry } from './event-subscription-registry';
 import { ReactivePropertyState } from './reactive-property-state';
 import { RenderRuntime, type RenderRuntimeHost } from './render-runtime';
 import { UpdateCycle } from './update-cycle';
-import type { SsrSerializableHydrationBinding } from './ssr-hydration-binding';
-import { ReactiveHost, type UpdatedCallback } from './reactive-host';
+import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
 import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
-import { getInitialValue } from '../utils/attribute-utils';
 
 export type {
 	PropTransform,
@@ -86,14 +80,6 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	readonly $: ReactiveBindings<Bindings>;
 
 	/**
-	 * Called when a property of the element is updated.
-	 * @param changedProperty - The name of the changed property.
-	 * @param oldValue - The old value of the property.
-	 * @param newValue - The new value of the property.
-	 */
-	notifyUpdate(changedProperty: string, oldValue: unknown, newValue: unknown): void;
-
-	/**
 	 * Subscribes to a Radiant element event.
 	 *
 	 * @returns A cleanup that removes this registration only.
@@ -119,15 +105,6 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 * property access syntax without string literals.
 	 */
 	bind<Property extends StringPropertyKey<Bindings>>(
-		property: Property,
-	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
-
-	/**
-	 * Returns a subscribable JSX child binding for a reactive property or field.
-	 *
-	 * This is the primitive lookup used by `bind()`, `bindings.key`, and `$.key`.
-	 */
-	getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
 		property: Property,
 	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>>;
 
@@ -159,12 +136,6 @@ export interface IRadiantElement<Bindings extends object = {}> {
 	 * after the host is already connected does not invoke it immediately.
 	 */
 	registerConnectedCallback(callback: () => void): void;
-
-	/**
-	 * Registers a callback that runs after attribute catch-up and the initial
-	 * hydrate/update, before `onConnected()`.
-	 */
-	registerPostSyncCallback(callback: () => void): void;
 
 	/**
 	 * Creates a new reactive member state and registers it under `propertyName`.
@@ -242,16 +213,6 @@ export class RadiantElement<Bindings extends object = {}>
 	private readonly eventSubscriptionRegistry: EventSubscriptionRegistry;
 
 	/**
-	 * Registered context providers and hydration bindings for SSR.
-	 */
-	private readonly hostSsrRegistry = new HostSsrRegistry();
-
-	/**
-	 * A map for event emitters
-	 */
-	private eventEmitters = new Map<string, EventEmitter>();
-
-	/**
 	 * Set at the start of `connectedCallback`. Until then, `attributeChangedCallback`
 	 * ignores attribute writes so parser/JSX/`setAttribute` values wait for
 	 * `completeInitialSync`.
@@ -261,21 +222,12 @@ export class RadiantElement<Bindings extends object = {}>
 	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
 
-	/**
-	 * @remarks The light-DOM shim can report `isConnected` while still lacking
-	 * browser methods; {@link prepareForSsr} drains `@onUpdated`. Node tests with
-	 * a browser-like DOM still need normal update cycles.
-	 */
-	private canFlushUpdateCycle(): boolean {
-		return !isMinimalDomElement(this) && this.isConnected && !this.isFirstConnectPending;
-	}
-
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
 		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
 		this.updateCycle = new UpdateCycle({
-			canFlush: () => this.canFlushUpdateCycle(),
+			canFlush: () => this.isConnected && !this.isFirstConnectPending,
 			runCallbacks: (changed) => this.reactiveHost.runUpdatedCallbacks(changed),
 			commit: () => this.getOrCreateRenderRuntime().render(this),
 			updated: (changed) => this.updated(changed),
@@ -327,17 +279,11 @@ export class RadiantElement<Bindings extends object = {}>
 		}
 
 		this.isFirstConnectPending = true;
-		const releaseConnectSync = this.updateCycle.hold();
-
-		queueMicrotask(() => {
+		this.updateCycle.defer(() => {
 			this.isFirstConnectPending = false;
 
-			try {
-				if (this.isConnected) {
-					this.runConnectSync(isFirstConnect);
-				}
-			} finally {
-				releaseConnectSync();
+			if (this.isConnected) {
+				this.runConnectSync(isFirstConnect);
 			}
 		});
 	}
@@ -365,7 +311,7 @@ export class RadiantElement<Bindings extends object = {}>
 				}
 			}
 
-			this.flushPostSyncCallbacks();
+			this.reactiveHost.flushPostSyncCallbacks();
 			this.onConnected();
 		});
 	}
@@ -448,10 +394,6 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactiveHost.disconnectHost();
 	}
 
-	public notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown) {
-		this.reactiveHost.notifyUpdate(changedProperty, oldValue, value);
-	}
-
 	/**
 	 * @remarks
 	 * Ignored until `elementReady` so construction-time and pre-connect attribute
@@ -484,22 +426,11 @@ export class RadiantElement<Bindings extends object = {}>
 		sanitize?: (html: string) => string;
 	}) {
 		const html = sanitize ? sanitize(template) : template;
-		switch (insert) {
-			case 'replace':
-				target.innerHTML = html;
-				break;
-			case 'beforeend':
-				target.insertAdjacentHTML('beforeend', html);
-				break;
-			case 'afterbegin':
-				target.insertAdjacentHTML('afterbegin', html);
-				break;
-			case 'beforebegin':
-				target.insertAdjacentHTML('beforebegin', html);
-				break;
-			case 'afterend':
-				target.insertAdjacentHTML('afterend', html);
-				break;
+
+		if (insert === 'replace') {
+			target.innerHTML = html;
+		} else {
+			target.insertAdjacentHTML(insert, html);
 		}
 	}
 
@@ -531,12 +462,12 @@ export class RadiantElement<Bindings extends object = {}>
 		this.prepareForSsr();
 
 		const html = requireRadiantElementSsrRuntime().renderView(this, options);
-		this.flushPostSyncCallbacks();
+		this.reactiveHost.flushPostSyncCallbacks();
 		return html;
 	}
 
 	public hydrate(): void {
-		if (!this.shouldRunRenderLifecycle() || !this.isConnected || this.updateCycle.rendering) {
+		if (!this.shouldRunRenderLifecycle() || !this.isConnected) {
 			return;
 		}
 
@@ -554,24 +485,18 @@ export class RadiantElement<Bindings extends object = {}>
 	}
 
 	/**
-	 * Runs the update cycle now: pending `@onUpdated` callbacks, the render, then `updated()`.
+	 * Runs the update cycle now: pending `@onUpdated` callbacks, the render when
+	 * the host overrides `render()`, then `updated()`.
 	 *
 	 * @remarks Called from inside a running cycle (for example an `@onUpdated`
 	 * callback), it commits the render immediately and leaves the rest to that cycle.
 	 */
 	public update(): void {
-		if (!this.shouldRunRenderLifecycle()) {
-			return;
+		if (this.shouldRunRenderLifecycle()) {
+			this.updateCycle.requestRender();
 		}
 
-		this.updateCycle.requestRender();
-
-		if (this.updateCycle.flushing) {
-			this.updateCycle.commit();
-			return;
-		}
-
-		this.updateCycle.flush();
+		this.updateCycle.update();
 	}
 
 	public registerReactiveProperty(config: ReactiveProperty) {
@@ -582,42 +507,35 @@ export class RadiantElement<Bindings extends object = {}>
 		return this.reactivePropertyState.getAll();
 	}
 
-	public registerContextProvider(name: string, provider: SsrSerializableContextProvider): void {
-		this.hostSsrRegistry.registerContextProvider(name, provider);
-	}
-
-	public registerHydrationBinding(name: string, binding: SsrSerializableHydrationBinding): void {
-		this.hostSsrRegistry.registerHydrationBinding(name, binding);
-	}
-
-	public getContextProviders(): SsrSerializableContextProvider[] {
-		return this.hostSsrRegistry.getContextProviders();
-	}
-
-	public getHydrationBindings(): SsrSerializableHydrationBinding[] {
-		return this.hostSsrRegistry.getHydrationBindings();
-	}
-
 	/**
 	 * Flushes any deferred SSR-only preparation work before the host is
 	 * serialized.
 	 *
 	 * @remarks
-	 * Hosts never connect on the server, so the batched `@onUpdated` callbacks
-	 * queued by prop writes run here, before and after the SSR preparation
-	 * callbacks (which may write state too). Then `@bindTo` flushes, so the
-	 * first server render sees finalized fields, props, and authored content.
+	 * Hosts never connect on the server, so members are observed only for the
+	 * duration of this call: writes made since construction (JSX props) and the
+	 * writes callbacks make in turn run the batched `@onUpdated` callbacks here,
+	 * before and after the SSR preparation callbacks. Then `@bindTo` flushes, so
+	 * the first server render sees finalized fields, props, and authored content.
+	 * `updated()` never runs on the server.
 	 */
 	public prepareForSsr(): void {
-		this.updateCycle.runCallbacks();
-		runSsrPreparationCallbacks(this);
-		this.updateCycle.runCallbacks();
-		this.flushPostSyncCallbacks();
+		const stopObserving = this.reactiveHost.observeMembers();
+
+		try {
+			this.updateCycle.runCallbacks();
+			runSsrPreparationCallbacks(this);
+			this.updateCycle.runCallbacks();
+		} finally {
+			stopObserving();
+		}
+
+		this.reactiveHost.flushPostSyncCallbacks();
 	}
 
-	/** Runs `@bindTo` and other post-sync callbacks registered on this host. */
-	public flushPostSyncCallbacks(): void {
-		this.reactiveHost.flushPostSyncCallbacks();
+	/** Framework plumbing for decorators and SSR adapters; not part of the authoring API. */
+	public get [REACTIVE_HOST](): ReactiveHostInternals {
+		return this.reactiveHost;
 	}
 
 	/**
@@ -640,16 +558,6 @@ export class RadiantElement<Bindings extends object = {}>
 
 	public registerUpdateCallback(property: string, update: () => void): () => void {
 		return this.reactiveHost.registerUpdateCallback(property, update);
-	}
-
-	public registerUpdatedCallback(keys: readonly string[], callback: UpdatedCallback): () => void {
-		return this.reactiveHost.registerUpdatedCallback(keys, callback);
-	}
-
-	public getReactiveBinding<Property extends StringPropertyKey<Bindings>>(
-		property: Property,
-	): SubscribableJsxValueWithAccess<ReactiveBindingValue<Bindings, Property>> {
-		return this.reactiveHost.getReactiveBinding(property);
 	}
 
 	public bind<Property extends StringPropertyKey<Bindings>>(
@@ -708,18 +616,6 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactiveHost.registerConnectedCallback(callback);
 	}
 
-	/**
-	 * Registers a callback that runs after attribute catch-up and the initial
-	 * hydrate/update, before `onConnected()`, including on reconnect.
-	 */
-	public registerPostSyncCallback(callback: () => void): void {
-		this.reactiveHost.registerPostSyncCallback(callback);
-	}
-
-	public registerEventEmitter(name: string, emitter: EventEmitter) {
-		this.eventEmitters.set(name, emitter);
-	}
-
 	public getRef<T extends Element = Element>(ref: string, all: true): T[];
 	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
@@ -753,7 +649,6 @@ export class RadiantElement<Bindings extends object = {}>
 		this.reactivePropertyState.create(
 			propertyName,
 			options,
-			(type, attributeKey, defaultValue) => getInitialValue(this, type, attributeKey, defaultValue) as T,
 			(name, config) => {
 				this.reactiveHost.defineReactiveAccessor(name, config);
 			},

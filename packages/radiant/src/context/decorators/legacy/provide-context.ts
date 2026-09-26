@@ -1,6 +1,7 @@
 import { ContextProvider } from '../../../context/context-provider';
 import type { UnknownContext } from '../../../context/types';
 import type { ContextHostLike } from '../../context-host';
+import { REACTIVE_HOST } from '../../../core/reactive-host';
 import { registerLegacyPostConstructionInitializer } from '../../../decorators/legacy/instance-initializers';
 import type { ProvideContextOptions } from '../provide-context';
 
@@ -24,7 +25,7 @@ export function provideContext<T extends UnknownContext>({
 				serialize,
 			});
 			(element as any)[propertyKey] = provider;
-			element.registerContextProvider(propertyKey, provider);
+			element[REACTIVE_HOST].ssrRegistry.registerContextProvider(propertyKey, provider);
 			element.connectedContextCallback(context);
 		};
 

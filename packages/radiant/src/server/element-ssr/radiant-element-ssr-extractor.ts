@@ -1,4 +1,5 @@
 import { getReactivePropDefinitions } from '../../core/reactive-prop-metadata';
+import { REACTIVE_HOST } from '../../core/reactive-host';
 import { isRadiantElementSsrHost } from '../../core/radiant-element-ssr-host-source';
 import type { InternalRadiantSsrHost } from '../../core/radiant-element-ssr-host';
 /**
@@ -12,19 +13,21 @@ export function toInternalRadiantSsrHost(component: object): InternalRadiantSsrH
 		);
 	}
 
+	const internals = component[REACTIVE_HOST];
+
 	return {
 		constructor: component.constructor as CustomElementConstructor,
 		getAttribute: (name) => component.getAttribute(name),
 		getAttributeNames: () => component.getAttributeNames(),
 		getAuthoredHydrationScriptMarkup: () => component.getAuthoredHydrationScriptMarkup(),
-		getContextProviders: () => component.getContextProviders(),
-		getHydrationBindings: () => component.getHydrationBindings(),
+		getContextProviders: () => internals.ssrRegistry.getContextProviders(),
+		getHydrationBindings: () => internals.ssrRegistry.getHydrationBindings(),
 		getReactiveProperties: () => component.getReactiveProperties(),
 		getReactivePropDefinitions: () => getReactivePropDefinitions(component),
 		getPropertyValue: (name) => Reflect.get(component, name),
 		getSlotProjectionScriptTag: () => component.getSlotProjectionScriptTag(),
 		resolveTrackedRenderOutput: () => component.resolveTrackedRenderOutput(),
-		flushPostSyncCallbacks: () => component.flushPostSyncCallbacks(),
+		flushPostSyncCallbacks: () => internals.flushPostSyncCallbacks(),
 		prepareForSsr: () => component.prepareForSsr(),
 	};
 }

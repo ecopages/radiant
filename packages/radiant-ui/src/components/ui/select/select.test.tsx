@@ -88,9 +88,7 @@ describe('RuiSelect', () => {
 	});
 
 	it('opens on trigger focus when triggerKind is focus', async () => {
-		const { host, cleanup } = mount(
-			<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />,
-		);
+		const { host, cleanup } = mount(<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />);
 		await settled();
 
 		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;
@@ -106,9 +104,7 @@ describe('RuiSelect', () => {
 	});
 
 	it('opens on click when triggerKind is focus without closing from focus-open', async () => {
-		const { host, cleanup } = mount(
-			<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />,
-		);
+		const { host, cleanup } = mount(<RuiSelect triggerKind="focus" options={OPTIONS} placeholder="Animals" />);
 		await settled();
 
 		const trigger = host.querySelector('[data-select-trigger]') as HTMLDivElement;

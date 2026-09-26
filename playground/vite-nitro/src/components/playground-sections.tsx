@@ -1,6 +1,12 @@
 import { computed } from '@ecopages/signals';
-import { createClientPreview, DEFAULT_SSR_ENDPOINT, loadServerMessage, loadSsrMarkup } from '../store/actions';
-import { useAppStore } from '../store/store';
+import {
+	createClientPreview,
+	DEFAULT_SSR_ENDPOINT,
+	incrementClicks,
+	loadServerMessage,
+	loadSsrMarkup,
+} from '../store/actions';
+import { getAppStore } from '../store/store';
 import { RadiantControllerContextVisualizer } from './radiant-controller-context-visualizer';
 import { RadiantControllerDecoratorVisualizer } from './radiant-controller-decorator-visualizer';
 
@@ -71,7 +77,7 @@ export function RadiantElementLabSection() {
 }
 
 export function SsrRouteSection() {
-	const store = useAppStore();
+	const store = getAppStore();
 	const assetItems = computed(() => {
 		if (store.ssrAssets.length === 0) {
 			return [<li>No fragment assets recorded yet.</li>];
@@ -173,18 +179,14 @@ export function SsrRouteSection() {
 }
 
 export function ClientStateSection() {
-	const store = useAppStore();
+	const store = getAppStore();
 	const clicks = computed(() => store.clicks);
-
-	function incrementClicks() {
-		store.clicks += 1;
-	}
 
 	return (
 		<section class="panel">
 			<div class="panel-header">
 				<h2>Client state</h2>
-				<button type="button" on:click={incrementClicks}>
+				<button type="button" on:click={() => incrementClicks(store)}>
 					Increment
 				</button>
 			</div>
@@ -196,7 +198,7 @@ export function ClientStateSection() {
 }
 
 export function NitroRouteSection() {
-	const store = useAppStore();
+	const store = getAppStore();
 	const status = computed(() => store.status);
 	const message = computed(() => store.message);
 	const serverTime = computed(() => store.serverTime);

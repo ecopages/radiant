@@ -92,5 +92,4 @@ describe('createQuery', () => {
 		host.appendChild(createElementWithRef('Ref 3', 'my-ref'));
 		expect(accessor.value).toHaveLength(3);
 	});
-
 });

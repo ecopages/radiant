@@ -67,6 +67,17 @@ describe('@prop', () => {
 			document.body.appendChild(customElement);
 			expect(customElement.num).toEqual(0);
 		});
+
+		test('keeps an explicit undefined default instead of the type default', () => {
+			@customElement('my-reactive-optional-number')
+			class MyReactiveOptionalNumber extends RadiantElement {
+				@prop({ type: Number, defaultValue: undefined }) value: number | undefined;
+			}
+
+			const host = document.createElement('my-reactive-optional-number') as MyReactiveOptionalNumber;
+			document.body.appendChild(host);
+			expect(host.value).toBeUndefined();
+		});
 	});
 
 	describe('boolean', () => {

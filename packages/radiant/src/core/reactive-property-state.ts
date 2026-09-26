@@ -1,16 +1,17 @@
 import {
 	createReactivePropertyMapping,
 	reflectsBooleanAsValue,
+	resolveReactiveDefault,
 	type ReactiveAccessorDefinition,
 	type ReactiveProperty,
 	type ReactivePropertyOptions,
 	validateReactivePropertyDefault,
 } from './reactive-prop-core';
+import { REACTIVE_HOST, type ReactiveHostInternals } from './reactive-host';
 import type { ReactiveState } from './reactivity-contract';
-import type { AttributeTypeConstant } from '../utils/attribute-utils';
 
 export type ReactivePropertyStateHost = HTMLElement & {
-	notifyUpdate(changedProperty: string, oldValue: unknown, value: unknown): void;
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
 	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
 	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
 };
@@ -54,18 +55,20 @@ export class ReactivePropertyState {
 	 * attributes are consumed and dropped so a later `attributeChangedCallback` cannot
 	 * fight the property. Reflected attributes stay until {@link completeInitialSync}
 	 * so an empty `defaultValue` cannot strip an authored `value="ts"`.
+	 *
+	 * Without an attribute, an omitted `defaultValue` falls back to the type default
+	 * (`0`, `''`, `null`; booleans stay `undefined`), while an explicit
+	 * `defaultValue: undefined` keeps the property `undefined`.
 	 */
 	public create<T>(
 		propertyName: string,
 		options: ReactivePropertyOptions<T>,
-		resolveInitialValue: (type: AttributeTypeConstant, attributeKey: string, defaultValue: unknown) => T,
 		defineReactiveAccessor: (propertyName: string, config: ReactiveAccessorDefinition<T>) => void,
 		createReactiveMember: <U>(propertyName: string, initialValue: U) => ReactiveState<U>,
 	): void {
 		const { type, attribute, reflect, defaultValue, transform } = options;
 		const attributeKey = attribute ?? propertyName;
 		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
-		const preUpgradeValue = hasPreUpgradeValue ? this.preUpgradePropertyValues.get(propertyName) : undefined;
 
 		validateReactivePropertyDefault(type, defaultValue);
 
@@ -78,16 +81,7 @@ export class ReactivePropertyState {
 			transform,
 		);
 		propertyMapping.defaultValue = defaultValue;
-
-		let initialValue: T | undefined;
-		if (hasPreUpgradeValue) {
-			initialValue = (transform?.fromProperty ? transform.fromProperty(preUpgradeValue) : preUpgradeValue) as T;
-		} else if (this.host.hasAttribute(attributeKey)) {
-			initialValue = propertyMapping.converter.fromAttribute(this.host.getAttribute(attributeKey)) as T;
-		} else {
-			initialValue = resolveInitialValue(type, attributeKey, defaultValue);
-		}
-
+		const initialValue = this.resolveInitialValue(propertyName, options, attributeKey, propertyMapping.converter);
 		propertyMapping.initialValue = initialValue;
 
 		if (!reflect && this.host.hasAttribute(attributeKey)) {
@@ -120,6 +114,24 @@ export class ReactivePropertyState {
 		});
 	}
 
+	private resolveInitialValue<T>(
+		propertyName: string,
+		options: ReactivePropertyOptions<T>,
+		attributeKey: string,
+		converter: ReactiveProperty<T>['converter'],
+	): T | undefined {
+		if (this.preUpgradePropertyValues.has(propertyName)) {
+			const preUpgradeValue = this.preUpgradePropertyValues.get(propertyName);
+			return (
+				options.transform?.fromProperty ? options.transform.fromProperty(preUpgradeValue) : preUpgradeValue
+			) as T;
+		}
+		if (this.host.hasAttribute(attributeKey)) {
+			return converter.fromAttribute(this.host.getAttribute(attributeKey)) as T;
+		}
+		return resolveReactiveDefault(options);
+	}
+
 	/**
 	 * Adopts authored attributes, then reflects current values and emits the
 	 * initial `@onUpdated`.
@@ -148,7 +160,7 @@ export class ReactivePropertyState {
 			}
 
 			this.reflectValue(property.attribute, property.reflect, property, currentValue);
-			this.host.notifyUpdate(property.name, undefined, currentValue);
+			this.host[REACTIVE_HOST].notifyUpdate(property.name, undefined, currentValue);
 		}
 	}
 

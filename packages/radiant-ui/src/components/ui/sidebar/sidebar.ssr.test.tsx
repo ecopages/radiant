@@ -1,7 +1,12 @@
 import '@ecopages/radiant/server/install-ssr-runtime';
 import '@ecopages/radiant/client/install-hydrator';
-import { renderRadiantElementHostToString } from '@ecopages/radiant/server/radiant-element-ssr';
+import { renderToString } from '@ecopages/jsx/server';
+import {
+	renderRadiantElementHostToString,
+	withRadiantServerCustomElementRenderBridge,
+} from '@ecopages/radiant/server/radiant-element-ssr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RuiSidebar, RuiSidebarMenuButton } from './sidebar';
 import { RuiSidebar as RuiSidebarElement } from './sidebar.script';
 
 async function settled(): Promise<void> {
@@ -33,6 +38,31 @@ describe('RuiSidebar SSR boolean host attributes', () => {
 		expect(sidebar.querySelector('[data-ref="handle"]')).toBeNull();
 
 		document.body.innerHTML = '';
+	});
+});
+
+describe('RuiSidebar SSR active links', () => {
+	it('marks the current link once server markup upgrades', async () => {
+		const originalPath = window.location.pathname;
+		history.replaceState(null, '', '/docs/installation');
+		const html = withRadiantServerCustomElementRenderBridge(() =>
+			renderToString(
+				<RuiSidebar id="docs-nav" matchActive mobileBreakpoint={0} label="Docs">
+					<RuiSidebarMenuButton href="/docs/overview">Overview</RuiSidebarMenuButton>
+					<RuiSidebarMenuButton href="/docs/installation">Installation</RuiSidebarMenuButton>
+				</RuiSidebar>,
+			),
+		);
+		expect(html).not.toContain('aria-current');
+
+		document.body.innerHTML = html;
+		await customElements.whenDefined('rui-sidebar');
+		await settled();
+
+		expect(document.querySelector('[aria-current="page"]')?.getAttribute('href')).toBe('/docs/installation');
+
+		document.body.innerHTML = '';
+		history.replaceState(null, '', originalPath);
 	});
 });
 

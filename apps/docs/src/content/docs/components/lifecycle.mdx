@@ -33,10 +33,10 @@ Disconnect tears down connection-scoped resources. The same instance can later r
 | `attributeChangedCallback()` | When an observed attribute changes after the host is ready | Radiant's internal attribute-to-property bridge. Most components should not override it; authored first-connect attributes are replayed during the connection microtask. |
 | `onConnected()` | In the connection microtask, after catch-up and initial render or hydration | Post-sync setup that needs reactive properties or rendered `data-ref` elements. It runs again after reconnect. |
 | `updated(changed)` | After each update cycle, once `@onUpdated` ran and any pending render committed | Work that needs the committed DOM, such as focus or measuring. State written here schedules another cycle. |
-| `updateComplete` | Resolves when no member change or render is pending | Tests and callers that must wait for the cycle, including the first connect render. |
+| `updateComplete` | Resolves when no member change or render is pending; rejects when the cycle throws | Tests and callers that must wait for the cycle, including the first connect render. |
 | `@bindTo(...)` | After catch-up and on every write of the named field | Copy the field onto host or descendant attributes, properties, or text. |
 | `@onUpdated(...)` | Once per update cycle when a watched member changed, before the render commits, including the initial `@prop` sync | Procedures: timers, joined ARIA, derived state, storage. |
-| `requestUpdate()` / `update()` | For render-owning hosts | Schedule the update cycle, or run it now. Most components should let reactive JSX bindings schedule this automatically. |
+| `requestUpdate()` / `update()` | `requestUpdate()` for render-owning hosts; `update()` on any host | Schedule the update cycle, or run it now. Most components should let reactive JSX bindings schedule this automatically. |
 | `disconnectedCallback()` | When the browser disconnects the element | Tear down resources owned by the connection and call `super.disconnectedCallback()`. |
 | `registerCleanupCallback()` | Registered during setup; invoked during disconnect | Register cleanup for decorator or host integrations that use the lower-level reactive-host API. |
 | `adoptedCallback()` | When the browser moves an element to another document | An advanced native custom-element hook; Radiant does not add behavior here. |
