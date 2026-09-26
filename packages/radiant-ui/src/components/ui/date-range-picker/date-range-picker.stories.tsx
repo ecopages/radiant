@@ -64,14 +64,11 @@ export const Default: Story = {
 
 const typeIsoIntoDateInput = async (input: HTMLElement, iso: string): Promise<void> => {
 	const [year, month, day] = iso.split('-');
-	const monthSegment = input.querySelector('[data-date-segment][data-type="month"]') as HTMLElement;
-	const daySegment = input.querySelector('[data-date-segment][data-type="day"]') as HTMLElement;
-	const yearSegment = input.querySelector('[data-date-segment][data-type="year"]') as HTMLElement;
-	await userEvent.click(monthSegment);
+	await userEvent.click(input.querySelector('[data-date-segment][data-type="month"]') as HTMLElement);
 	await userEvent.keyboard(month ?? '');
-	await userEvent.click(daySegment);
+	await userEvent.click(input.querySelector('[data-date-segment][data-type="day"]') as HTMLElement);
 	await userEvent.keyboard(day ?? '');
-	await userEvent.click(yearSegment);
+	await userEvent.click(input.querySelector('[data-date-segment][data-type="year"]') as HTMLElement);
 	await userEvent.keyboard(year ?? '');
 };
 

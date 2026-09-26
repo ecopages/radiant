@@ -71,6 +71,7 @@ The helper uses random UUIDs in secure contexts and random bytes on HTTP origins
 
 `rui-select` opens on genuine trigger focus only when `trigger-kind="focus"`; pointer clicks handle their own focus and open state.
 
+`rui-date-input` keeps typed digits in the visible segment draft until the unit completes, focus moves, or the control blurs. `value` and the hidden input stay on the last committed ISO date during that draft. A delayed selection collapse must not pull focus back from a later segment. See [`date-input/README.md`](./date-input/README.md).
 Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value. Knob waits until range props in the same turn have landed before snapping, so a fractional value is not rounded against the default step.
 
 ## Two host shapes (bindings vs imperative paint)
