@@ -14,10 +14,7 @@ function createHostWithButton(): { host: HTMLDivElement; button: HTMLButtonEleme
 describe('EventSubscriptionRegistry', () => {
 	test('keeps duplicate type and selector registrations independent', () => {
 		const { host, button } = createHostWithButton();
-		const registry = new EventSubscriptionRegistry(
-			() => host,
-			() => host,
-		);
+		const registry = new EventSubscriptionRegistry(host);
 		const selector = '[data-ref="click-me"]';
 		let aCount = 0;
 		let bCount = 0;
@@ -62,10 +59,7 @@ describe('EventSubscriptionRegistry', () => {
 
 	test('repeating a stale cleanup does not remove a later registration with the same selector', () => {
 		const { host, button } = createHostWithButton();
-		const registry = new EventSubscriptionRegistry(
-			() => host,
-			() => host,
-		);
+		const registry = new EventSubscriptionRegistry(host);
 		const selector = '[data-ref="click-me"]';
 		let aCount = 0;
 		let cCount = 0;
@@ -99,10 +93,7 @@ describe('EventSubscriptionRegistry', () => {
 
 	test('removeAll unsubscribes every duplicate registration', () => {
 		const { host, button } = createHostWithButton();
-		const registry = new EventSubscriptionRegistry(
-			() => host,
-			() => host,
-		);
+		const registry = new EventSubscriptionRegistry(host);
 		const selector = '[data-ref="click-me"]';
 		let aCount = 0;
 		let bCount = 0;

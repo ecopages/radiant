@@ -18,7 +18,6 @@ import {
 	renderRadiantElementHostToString,
 	renderRadiantElementViewToString,
 } from '../../src/server/radiant-element-ssr';
-import { assertLightDomSsrSupported } from '../../src/server/element-ssr/assert-light-dom-ssr';
 import { renderComponentToString } from '../../src/server/render-component';
 import { createServerRenderEnvironment, installLightDomShim } from '../../src/server/light-dom-shim';
 
@@ -77,45 +76,6 @@ describe('RadiantElement SSR', () => {
 		const element = createCustomElement<ServerGreetingCard>('server-greeting-card-test');
 
 		expect(renderRadiantElementViewToString(element)).toBe('<p data-ref="message">Hello SSR</p>');
-	});
-
-	test('renderRadiantElementHostToString() rejects shadow renderRootMode hosts', () => {
-		@customElement('server-shadow-host-card-test')
-		class ServerShadowHostCard extends RadiantElement {
-			override readonly renderRootMode = 'shadow';
-
-			override render() {
-				return <p>shadow</p>;
-			}
-		}
-
-		const element = createCustomElement<ServerShadowHostCard>('server-shadow-host-card-test');
-
-		expect(() => renderRadiantElementHostToString(element)).toThrow(/light-DOM only/);
-	});
-
-	test('renderRadiantElementViewToString() rejects shadow renderRootMode hosts', () => {
-		@customElement('server-shadow-view-card-test')
-		class ServerShadowViewCard extends RadiantElement {
-			override readonly renderRootMode = 'shadow';
-
-			override render() {
-				return <p>shadow</p>;
-			}
-		}
-
-		const element = createCustomElement<ServerShadowViewCard>('server-shadow-view-card-test');
-
-		expect(() => renderRadiantElementViewToString(element)).toThrow(/light-DOM only/);
-	});
-
-	test('assertLightDomSsrSupported() rejects InternalRadiantSsrHost snapshots with shadow mode', () => {
-		expect(() =>
-			assertLightDomSsrSupported({
-				constructor: class ShadowSnapshotHost {},
-				renderRootMode: 'shadow',
-			}),
-		).toThrow(/light-DOM only/);
 	});
 
 	test('renderRadiantElementHostToString() serializes the host and current view', () => {

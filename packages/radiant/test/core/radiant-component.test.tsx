@@ -51,59 +51,6 @@ describe('RadiantElement', () => {
 		});
 	});
 
-	test('renders into an internal shadow root when renderRootMode is shadow', async () => {
-		class ShadowGreetingCard extends RadiantElement {
-			override readonly renderRootMode = 'shadow';
-			declare count: number;
-
-			constructor() {
-				super();
-				this.createReactiveField('count', 0);
-			}
-
-			override connectedCallback(): void {
-				super.connectedCallback();
-				this.subscribeEvent({
-					selector: '[data-ref="increment"]',
-					type: 'click',
-					listener: () => {
-						this.count += 1;
-					},
-				});
-			}
-
-			override render() {
-				return (
-					<section>
-						<p data-ref="message">Count: {this.count}</p>
-						<button type="button" data-ref="increment">
-							Increment
-						</button>
-					</section>
-				);
-			}
-		}
-
-		customElements.define('shadow-greeting-card-test', ShadowGreetingCard);
-
-		const element = createCustomElement<ShadowGreetingCard>('shadow-greeting-card-test');
-		document.body.appendChild(element);
-
-		await waitFor(() => {
-			expect(element.shadowRoot?.querySelector('[data-ref="message"]')?.textContent).toBe('Count: 0');
-		});
-
-		expect(element.getRef('message')?.textContent).toBe('Count: 0');
-		expect(element.querySelector('[data-ref="message"]')).toBeNull();
-
-		const incrementButton = element.getRef<HTMLButtonElement>('increment');
-		incrementButton?.click();
-
-		await waitFor(() => {
-			expect(element.shadowRoot?.querySelector('[data-ref="message"]')?.textContent).toBe('Count: 1');
-		});
-	});
-
 	test('projects direct host children by default when render() is omitted', async () => {
 		class PassthroughCard extends RadiantElement {}
 

@@ -4,7 +4,7 @@ Radiant is a light-DOM platform for custom elements and DOM-attached controllers
 
 It keeps browser primitives visible instead of wrapping them in a synthetic component model. You work with real custom elements, real DOM events, real attributes, and real light-DOM children. Use `RadiantElement` when you want reactive fields, JSX-backed rendering, SSR host serialization, and hydration on a real custom element. Use `RadiantController` when you want behavior attached to existing DOM instead of defining a custom element.
 
-Radiant deliberately does not use shadow DOM by default. That makes styling, DOM inspection, and authored child content simpler, while giving up some of the encapsulation that conventional custom-element guidance usually prefers.
+Radiant deliberately renders into light DOM only; it has no shadow render mode. That keeps styling, DOM inspection, authored child content, and ARIA id references between host-owned and authored nodes simple, while giving up the encapsulation that conventional custom-element guidance usually prefers.
 
 For the full docs site, see [radiant.ecopages.app](https://radiant.ecopages.app/).
 
@@ -156,8 +156,6 @@ Prefer the server pipeline for host HTML:
 - `renderViewToString()` on the element only serializes the JSX view through the installed server runtime
 
 There is no durable Element Host instance API named `renderHostToString()`.
-
-Radiant SSR is light-DOM only. Shadow `renderRootMode` hosts throw during server serialization; client shadow rendering remains valid.
 
 `mode: 'hydrate'` adds hydration markers for the component view. First-connect hydration is explicit: SSR pages should import `@ecopages/radiant/client/install-hydrator` before loading component modules, or call `installRadiantHydrator()` from `@ecopages/radiant/client/hydrator` before custom elements upgrade. Without that client hydrator gate, SSR hosts fall back to a fresh client render on first connect.
 

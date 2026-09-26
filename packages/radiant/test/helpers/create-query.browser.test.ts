@@ -5,17 +5,6 @@ import { createQuery } from '../../src/helpers/create-query';
 class QueryHelperElement extends RadiantElement {}
 customElements.define('query-helper-element', QueryHelperElement);
 
-class ShadowQueryHelperElement extends RadiantElement {
-	constructor() {
-		super();
-		const shadowRoot = this.attachShadow({ mode: 'open' });
-		shadowRoot.appendChild(createElementWithRef('Shadow Ref 1', 'shadow-ref'));
-		shadowRoot.appendChild(createElementWithClass('Shadow Class 1', 'shadow-class'));
-	}
-}
-
-customElements.define('shadow-query-helper-element', ShadowQueryHelperElement);
-
 const createElementWithRef = (text: string, dataRef: string) => {
 	const div = document.createElement('div');
 	div.textContent = text;
@@ -39,14 +28,6 @@ const createHost = () => {
 	host.appendChild(createElementWithClass('Class 2', 'my-class'));
 	host.appendChild(createElementWithClass('Class 3', 'my-class'));
 
-	document.body.appendChild(host);
-	return host;
-};
-
-const createShadowHost = () => {
-	const host = document.createElement('shadow-query-helper-element') as ShadowQueryHelperElement;
-	host.appendChild(createElementWithRef('Light Ref 1', 'shadow-ref'));
-	host.appendChild(createElementWithClass('Light Class 1', 'shadow-class'));
 	document.body.appendChild(host);
 	return host;
 };
@@ -112,20 +93,4 @@ describe('createQuery', () => {
 		expect(accessor.value).toHaveLength(3);
 	});
 
-	test('queries shadow DOM when scope is shadow', () => {
-		const host = createShadowHost();
-		const accessor = createQuery<HTMLDivElement>(host, { ref: 'shadow-ref', scope: 'shadow' });
-		expect(accessor.value?.textContent).toBe('Shadow Ref 1');
-	});
-
-	test('queries both light and shadow DOM when scope is both', () => {
-		const host = createShadowHost();
-		const accessor = createQuery<HTMLDivElement[]>(host, {
-			selector: '.shadow-class',
-			all: true,
-			scope: 'both',
-		});
-		expect(accessor.value).toHaveLength(2);
-		expect(accessor.value?.map((element) => element.textContent)).toEqual(['Light Class 1', 'Shadow Class 1']);
-	});
 });

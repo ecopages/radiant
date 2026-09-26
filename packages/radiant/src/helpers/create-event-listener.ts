@@ -1,11 +1,6 @@
 import { eventMatchesDelegatedSelector } from '../core/delegated-event';
 import { isServer } from '@ecopages/radiant/is-server';
-import { isControllerHost, resolveHostElement } from './resolve-host-element';
-
-/**
- * Selects which DOM tree delegated event listeners should observe.
- */
-export type OnEventScope = 'light' | 'shadow' | 'both';
+import { resolveHostElement } from './resolve-host-element';
 
 /**
  * Event names known to reach a delegated listener on the host in the bubble phase.
@@ -86,7 +81,6 @@ function warnNonBubblingDelegatedEvent(type: string, options?: AddEventListenerO
 type BaseOnEventConfig = {
 	type: DelegatedEventType;
 	options?: AddEventListenerOptions;
-	scope?: OnEventScope;
 };
 
 /**
@@ -116,8 +110,6 @@ export type OnEventConfig = BaseOnEventConfig &
 		  }
 	);
 
-type DelegatedEventRoot = Element | ShadowRoot;
-
 type EventListenerLifecycleHost = {
 	registerConnectedCallback(callback: () => void): void;
 	registerCleanupCallback(callback: () => void): void;
@@ -129,24 +121,8 @@ export type EventListenerHost =
 	| (EventListenerLifecycleHost & { host: Element })
 	| (EventListenerLifecycleHost & { element: Element });
 
-const shadowRootListenerHooksKey = Symbol('radiant.shadowRootListenerHooks');
-const patchedAttachShadowKey = Symbol('radiant.patchedAttachShadow');
-
-type ShadowRootHookHost = Element & {
-	[patchedAttachShadowKey]?: true;
-	[shadowRootListenerHooksKey]?: Set<() => void>;
-};
-
-function resolveEventListenerHostElement(host: EventListenerHost): Element {
-	return resolveHostElement(host);
-}
-
-function isControllerEventHost(host: EventListenerHost): host is EventListenerLifecycleHost & { host: Element } {
-	return isControllerHost(host);
-}
-
 function addDelegatedListener(
-	root: DelegatedEventRoot,
+	root: Element,
 	config: Pick<OnEventConfig, 'type' | 'options'>,
 	selector: string,
 	listener: EventListener,
@@ -164,32 +140,6 @@ function addDelegatedListener(
 	};
 }
 
-function registerShadowRootHook(host: EventListenerHost, hook: () => void): void {
-	const shadowAwareHost = resolveEventListenerHostElement(host) as ShadowRootHookHost;
-
-	if (!shadowAwareHost[shadowRootListenerHooksKey]) {
-		shadowAwareHost[shadowRootListenerHooksKey] = new Set();
-	}
-
-	shadowAwareHost[shadowRootListenerHooksKey].add(hook);
-
-	if (shadowAwareHost[patchedAttachShadowKey]) {
-		return;
-	}
-
-	const originalAttachShadow = shadowAwareHost.attachShadow;
-
-	shadowAwareHost.attachShadow = function patchedAttachShadow(init: ShadowRootInit): ShadowRoot {
-		const shadowRoot = originalAttachShadow.call(this, init);
-		for (const shadowRootHook of shadowAwareHost[shadowRootListenerHooksKey] ?? []) {
-			shadowRootHook();
-		}
-		return shadowRoot;
-	};
-
-	shadowAwareHost[patchedAttachShadowKey] = true;
-}
-
 /**
  * Subscribes to a DOM event with delegation, window, or document targeting.
  * Functional equivalent of the `@onEvent` decorator for vanilla JS usage.
@@ -203,15 +153,11 @@ export function createEventListener(
 	config: OnEventConfig,
 	callback: (event: Event) => void,
 ): () => void {
-	if (isControllerEventHost(host) && 'scope' in config && config.scope && config.scope !== 'light') {
-		throw new Error('RadiantController event listeners only support light DOM scope.');
-	}
-
 	if (isServer) {
 		return () => {};
 	}
 
-	const hostElement = resolveEventListenerHostElement(host);
+	const hostElement = resolveHostElement(host);
 	const boundCallback = callback.bind(host);
 	const cleanups = new Map<EventListenerScope, () => void>();
 	let disposed = false;
@@ -224,16 +170,6 @@ export function createEventListener(
 	const attachListeners = () => {
 		if (!disposed) attachConfiguredListeners(cleanups, hostElement, config, boundCallback);
 	};
-
-	if ('selector' in config || 'ref' in config) {
-		if (config.scope !== 'light') {
-			registerShadowRootHook(host, () => {
-				if (host.isConnected) {
-					attachListeners();
-				}
-			});
-		}
-	}
 
 	host.registerConnectedCallback(attachListeners);
 	host.registerCleanupCallback(detachListeners);
@@ -297,10 +233,7 @@ function attachDelegatedListeners(
 ): void {
 	if (!('selector' in config || 'ref' in config)) return;
 	const selector = 'selector' in config ? config.selector : `[data-ref='${CSS.escape(config.ref)}']`;
-	if (config.scope !== 'shadow' && !cleanups.has('light'))
-		cleanups.set('light', addDelegatedListener(hostElement, config, selector, listener));
-	if (config.scope !== 'light' && hostElement.shadowRoot && !cleanups.has('shadow'))
-		cleanups.set('shadow', addDelegatedListener(hostElement.shadowRoot, config, selector, listener));
+	if (!cleanups.has('delegated')) cleanups.set('delegated', addDelegatedListener(hostElement, config, selector, listener));
 }
 
-type EventListenerScope = 'document' | 'light' | 'media' | 'shadow' | 'window';
+type EventListenerScope = 'delegated' | 'document' | 'media' | 'window';

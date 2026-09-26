@@ -38,14 +38,6 @@ export type {
 
 const RadiantElementBase = resolveRadiantElementBase();
 
-type RadiantRenderTarget = HTMLElement | ShadowRoot;
-type RadiantInteractionTarget = HTMLElement | ShadowRoot;
-type RadiantRenderSurface = {
-	renderTarget: RadiantRenderTarget;
-	interactionTarget: RadiantInteractionTarget;
-	queryRoot: ParentNode;
-};
-
 function resolveRadiantElementBase(): typeof HTMLElement {
 	if (typeof HTMLElement !== 'undefined') {
 		return HTMLElement;
@@ -242,14 +234,6 @@ export class RadiantElement<Bindings extends object = {}>
 	implements IRadiantElement<Bindings>
 {
 	declare readonly [RADIANT_ELEMENT_BRAND]: true;
-	/**
-	 * Controls where the JSX render lifecycle mounts the component view.
-	 *
-	 * Subclasses can override this with `'shadow'` to force an internal open
-	 * shadow root for client-side rendering. Host SSR helpers remain light-DOM
-	 * only and throw when shadow render mode is enabled.
-	 */
-	readonly renderRootMode: 'light' | 'shadow' = 'light';
 	public readonly bindings: ReactiveBindings<Bindings>;
 	public readonly $: ReactiveBindings<Bindings>;
 	private readonly reactiveHost: ReactiveHost<this, Bindings>;
@@ -279,18 +263,14 @@ export class RadiantElement<Bindings extends object = {}>
 	constructor() {
 		super();
 		this.reactivePropertyState = new ReactivePropertyState(this);
-		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(
-			() => this.resolveRenderSurface().interactionTarget,
-			() => this,
-		);
+		this.eventSubscriptionRegistry = new EventSubscriptionRegistry(this);
 		this.renderScheduler = new RenderScheduler({
 			canFlush: () =>
 				this.isConnected &&
 				!this.renderScheduler.rendering &&
 				!(this.isFirstConnectPending && shouldHydrateOnConnect(this)),
 			commit: () => {
-				const { renderTarget } = this.resolveRenderSurface();
-				this.getOrCreateRenderRuntime().render(renderTarget as HTMLElement);
+				this.getOrCreateRenderRuntime().render(this);
 			},
 		});
 
@@ -516,11 +496,10 @@ export class RadiantElement<Bindings extends object = {}>
 			return;
 		}
 
-		const { renderTarget } = this.resolveRenderSurface();
 		const renderRuntime = this.getOrCreateRenderRuntime();
 
 		this.renderScheduler.runExclusive(() => {
-			renderRuntime.hydrate(renderTarget as HTMLElement);
+			renderRuntime.hydrate(this);
 		});
 	}
 
@@ -598,23 +577,6 @@ export class RadiantElement<Bindings extends object = {}>
 
 	protected shouldRunRenderLifecycle(): boolean {
 		return this.render !== RadiantElement.prototype.render;
-	}
-
-	/** Returns the DOM root used by client-side render and hydrate work. */
-	protected getRenderTarget(): RadiantRenderTarget {
-		if (this.renderRootMode !== 'shadow') {
-			return this;
-		}
-
-		if (this.shadowRoot) {
-			return this.shadowRoot;
-		}
-
-		if (typeof this.attachShadow !== 'function') {
-			throw new Error('RadiantElement shadow render mode requires attachShadow().');
-		}
-
-		return this.attachShadow({ mode: 'open' });
 	}
 
 	public registerUpdateCallback(property: string, update: () => void): () => void {
@@ -699,11 +661,10 @@ export class RadiantElement<Bindings extends object = {}>
 	public getRef<T extends Element = Element>(ref: string, all?: false): T | null;
 	public getRef<T extends Element = Element>(ref: string, all = false): T | T[] | null {
 		const selector = `[data-ref="${ref}"]`;
-		const { queryRoot } = this.resolveRenderSurface();
 		if (all) {
-			return Array.from(queryRoot.querySelectorAll(selector)) as T[];
+			return Array.from(this.querySelectorAll(selector)) as T[];
 		}
-		return (queryRoot.querySelector(selector) as T) ?? null;
+		return (this.querySelector(selector) as T) ?? null;
 	}
 
 	public getSlotElement<T extends Element = Element>(name?: string): T | null {
@@ -756,18 +717,6 @@ export class RadiantElement<Bindings extends object = {}>
 
 		this.renderRuntime = new RenderRuntime(this as RenderRuntimeHost);
 		return this.renderRuntime;
-	}
-
-	private resolveRenderSurface(): RadiantRenderSurface {
-		const renderTarget = this.getRenderTarget();
-		const interactionTarget =
-			typeof ShadowRoot !== 'undefined' && renderTarget instanceof ShadowRoot ? renderTarget : this;
-
-		return {
-			interactionTarget,
-			queryRoot: interactionTarget,
-			renderTarget,
-		};
 	}
 }
 

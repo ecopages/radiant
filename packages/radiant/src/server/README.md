@@ -51,7 +51,7 @@ server/
 
 ## SSR Surfaces
 
-Radiant SSR is **light-DOM only**. Hosts with `renderRootMode = 'shadow'` throw during server serialization — the pipeline does not emit declarative shadow roots. Client-side shadow rendering remains supported; skip SSR for those hosts.
+Radiant SSR is **light-DOM only**, like the client render path. The pipeline does not emit declarative shadow roots.
 
 For adapters, fragment responses, and framework integrations, prefer the explicit helpers from `@ecopages/radiant/server/render-component` (for example `renderComponent()` / `renderComponentToString()`). Prefer `render-component` unless you are writing a renderer integration.
 
