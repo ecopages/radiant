@@ -10,7 +10,7 @@ async function settled(): Promise<void> {
 }
 
 describe('RuiSidebar SSR boolean host attributes', () => {
-	it('emits resizable="false" through the Radiant host SSR bridge and upgrades without a handle', async () => {
+	it('omits a false resizable attribute through the Radiant host SSR bridge and upgrades without a handle', async () => {
 		const serverElement = new RuiSidebarElement();
 		serverElement.id = 'primary-sidebar';
 		serverElement.collapsible = 'off';
@@ -21,7 +21,7 @@ describe('RuiSidebar SSR boolean host attributes', () => {
 
 		const html = renderRadiantElementHostToString(serverElement, { mode: 'hydrate' });
 
-		expect(html).toContain('resizable="false"');
+		expect(html).not.toContain('resizable=');
 		expect(html).not.toContain('data-ref="handle"');
 
 		document.body.innerHTML = html;
