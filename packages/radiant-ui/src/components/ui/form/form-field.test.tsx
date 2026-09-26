@@ -215,6 +215,34 @@ describe('rui-field composed content discovery', () => {
 		host.remove();
 	});
 
+	it('restores the authored value on form reset', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiDateInput name="when" value="2026-08-20" />
+				<RuiNumberField name="quantity" value={3} />
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-date-input');
+		await customElements.whenDefined('rui-number-field');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		const date = host.querySelector('rui-date-input') as HTMLElement & { value: string };
+		const quantity = host.querySelector('rui-number-field') as HTMLElement & { value: number };
+		date.value = '1999-01-01';
+		quantity.value = 9;
+		nativeForm.reset();
+
+		expect(date.value).toBe('2026-08-20');
+		expect(quantity.value).toBe(3);
+		host.remove();
+	});
+
 	it('submits a number-field once through the host', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);

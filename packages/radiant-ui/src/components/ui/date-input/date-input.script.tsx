@@ -110,7 +110,7 @@ export class RuiDateInput extends RadiantElement {
 	@state focusedPart: DatePartType | null = null;
 
 	private readonly uid = uniqueId('rui-date-input');
-	private readonly form = new FormAssociation(this);
+	private readonly form = new FormAssociation<string>(this);
 	/** Digits typed into `focusedPart` that have not completed the unit yet. */
 	private buffer = '';
 	private useTextboxRole = isIosDevice();
@@ -296,6 +296,7 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	protected override onConnected(): void {
+		this.form.remember(this.value);
 		this.syncSegmentsFromValue();
 		this.syncGroupLabel();
 		this.syncFormValue();
@@ -306,7 +307,7 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	formResetCallback(): void {
-		this.value = '';
+		this.value = this.form.initial;
 	}
 
 	@onUpdated(['value', 'name'])
