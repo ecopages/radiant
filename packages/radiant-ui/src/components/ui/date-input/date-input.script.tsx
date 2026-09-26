@@ -71,6 +71,13 @@ function isIosDevice(): boolean {
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @fires rui-change - Emitted when a complete valid date is committed, or when all segments are cleared.
+ *
+ * @remarks
+ * `segments` is the visible draft. `value` and the hidden input stay on the last
+ * committed ISO date until a unit completes, focus moves, or the control blurs.
+ * An in-progress digit buffer is not published just because the draft parses as
+ * a date. A delayed selection collapse runs only while that segment is still
+ * `document.activeElement`.
  */
 @customElement('rui-date-input')
 export class RuiDateInput extends RadiantElement {
@@ -102,6 +109,7 @@ export class RuiDateInput extends RadiantElement {
 	private readonly uid = uniqueId('rui-date-input');
 	private enteredKeys: Partial<Record<DatePartType, string>> = {};
 	private useTextboxRole = isIosDevice();
+	private pendingFocus: DatePartType | null = null;
 
 	private get resolvedLocale(): string | string[] | undefined {
 		return resolveLocale(this.locale);
@@ -143,45 +151,111 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	private focusPart(type: DatePartType | null): void {
+		this.leaveEditedPart(type);
 		this.focusedPart = type;
+		this.pendingFocus = type;
 		if (!type) {
 			return;
 		}
+		this.scheduleFocusedSegmentSync(type);
+	}
+
+	/**
+	 * Restores focus and caret after a render only when this part should still own them.
+	 *
+	 * @remarks A queued `selection.collapse()` on a segment that is no longer
+	 * `focusedPart` would pull focus back (day ↔ year). Ignore `focusin` on the
+	 * previous segment until this microtask has moved focus.
+	 */
+	private scheduleFocusedSegmentSync(type: DatePartType): void {
 		queueMicrotask(() => {
-			this.getSegmentElement(type)?.focus();
+			if (this.pendingFocus === type) {
+				this.pendingFocus = null;
+			}
+			const segment = this.getSegmentElement(type);
+			if (!segment || this.focusedPart !== type) {
+				return;
+			}
+
+			if (document.activeElement !== segment) {
+				segment.focus();
+			}
+
+			if (document.activeElement === segment) {
+				window.getSelection()?.collapse(segment, 0);
+			}
 		});
 	}
 
-	private tryCommit(): void {
+	private hasInProgressEntry(): boolean {
+		const part = this.focusedPart;
+		return part != null && Boolean(this.enteredKeys[part]);
+	}
+
+	private yearDigitsComplete(): boolean {
+		const year = this.segments.find((segment) => segment.editable && segment.type === 'year');
+		if (!year || year.isPlaceholder || year.value === '') {
+			return true;
+		}
+		return year.value.replace(/\D/g, '').length >= 4;
+	}
+
+	private leaveEditedPart(next: DatePartType | null): void {
+		const previous = this.focusedPart;
+		if (previous == null || previous === next) {
+			return;
+		}
+		this.enteredKeys[previous] = '';
+		if (!this.tryCommit() && !this.yearDigitsComplete()) {
+			this.syncSegmentsFromValue();
+		}
+	}
+
+	private restoreDraftIfInvalid(): void {
+		if (allSegmentsEmpty(this.segments)) {
+			return;
+		}
+		if (segmentsToDate(this.segments) && this.yearDigitsComplete()) {
+			return;
+		}
+		this.syncSegmentsFromValue();
+	}
+
+	private tryCommit(): boolean {
+		if (this.hasInProgressEntry() || !this.yearDigitsComplete()) {
+			return false;
+		}
+
 		if (allSegmentsEmpty(this.segments)) {
 			if (this.isoValue !== '') {
 				this.value = '';
 				this.hiddenValue = '';
 				this.changeEvent.emit({ value: '' });
 			}
-			return;
+			return true;
 		}
 
 		const date = segmentsToDate(this.segments);
 		if (!date) {
-			return;
+			return false;
 		}
 
 		const iso = dateToIso(date);
 		if (!isIsoInRange(iso, this.min || undefined, this.max || undefined)) {
 			this.syncSegmentsFromValue();
-			return;
+			return false;
 		}
 
 		if (iso === this.isoValue) {
 			this.hiddenValue = iso;
-			return;
+			return true;
 		}
 
 		this.value = iso;
 		this.hiddenValue = iso;
 		this.changeEvent.emit({ value: iso });
 		this.syncSegmentsFromValue();
+		return true;
 	}
 
 	private partFromTarget(target: EventTarget | null): DatePartType | null {
@@ -197,6 +271,7 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	private handleDigit(part: DatePartType, key: string): void {
+		this.focusedPart = part;
 		const entered = this.enteredKeys[part] ?? '';
 		const result = applyDigitToSegment(this.segments, part, key, entered);
 		this.segments = result.segments;
@@ -204,10 +279,13 @@ export class RuiDateInput extends RadiantElement {
 		this.tryCommit();
 		if (result.focusNext) {
 			this.focusPart(focusPartAfter(this.segments, part, 1));
+			return;
 		}
+		this.scheduleFocusedSegmentSync(part);
 	}
 
 	private handleBackspace(part: DatePartType): void {
+		this.focusedPart = part;
 		const result = applyBackspaceToSegment(this.segments, part);
 		if (result.kind === 'focus-previous') {
 			this.focusPart(focusPartAfter(this.segments, part, -1));
@@ -217,6 +295,15 @@ export class RuiDateInput extends RadiantElement {
 		this.segments = result.segments;
 		this.enteredKeys[part] = result.enteredKeys;
 		this.tryCommit();
+		this.scheduleFocusedSegmentSync(part);
+	}
+
+	private handleIncrement(part: DatePartType, delta: number): void {
+		this.focusedPart = part;
+		this.enteredKeys[part] = '';
+		this.segments = incrementSegmentValue(this.segments, part, delta);
+		this.tryCommit();
+		this.scheduleFocusedSegmentSync(part);
 	}
 
 	protected override onConnected(): void {
@@ -260,12 +347,15 @@ export class RuiDateInput extends RadiantElement {
 		if (!part) {
 			return;
 		}
+		if (this.pendingFocus && this.pendingFocus !== part) {
+			return;
+		}
+		this.leaveEditedPart(part);
+		if (this.focusedPart !== part) {
+			this.enteredKeys[part] = '';
+		}
 		this.focusedPart = part;
-		this.enteredKeys[part] = '';
-		queueMicrotask(() => {
-			const selection = window.getSelection();
-			selection?.collapse(this.getSegmentElement(part) ?? null, 0);
-		});
+		this.scheduleFocusedSegmentSync(part);
 	}
 
 	@onEvent({ selector: '[data-date-segment]', type: 'focusout' })
@@ -274,10 +364,12 @@ export class RuiDateInput extends RadiantElement {
 			if (this.matches(':focus-within')) {
 				return;
 			}
+			if (this.focusedPart) {
+				this.enteredKeys[this.focusedPart] = '';
+			}
 			this.focusedPart = null;
-			this.tryCommit();
-			if (!allSegmentsEmpty(this.segments) && !segmentsToDate(this.segments)) {
-				this.syncSegmentsFromValue();
+			if (!this.tryCommit()) {
+				this.restoreDraftIfInvalid();
 			}
 		});
 	}
@@ -301,14 +393,12 @@ export class RuiDateInput extends RadiantElement {
 		}
 		if (event.key === 'ArrowUp') {
 			event.preventDefault();
-			this.segments = incrementSegmentValue(this.segments, part, 1);
-			this.tryCommit();
+			this.handleIncrement(part, 1);
 			return;
 		}
 		if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			this.segments = incrementSegmentValue(this.segments, part, -1);
-			this.tryCommit();
+			this.handleIncrement(part, -1);
 			return;
 		}
 		if (event.key === 'Backspace' || event.key === 'Delete') {

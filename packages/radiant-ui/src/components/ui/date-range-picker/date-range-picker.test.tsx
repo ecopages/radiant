@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createRoot } from '@ecopages/jsx';
+import { userEvent } from 'storybook/test';
 import { RuiDateRangePicker } from './date-range-picker';
 import './date-range-picker.script';
 import '../date-input/date-input.script';
+import '../date-input/date-input.css';
 
 async function flushRender(): Promise<void> {
 	await new Promise<void>((resolve) => {
@@ -16,6 +18,20 @@ async function flushFirstConnect(): Promise<void> {
 	await Promise.resolve();
 	await Promise.resolve();
 }
+
+async function typeIsoIntoDateInput(input: HTMLElement, iso: string): Promise<void> {
+	const [year, month, day] = iso.split('-');
+	await userEvent.click(input.querySelector('[data-date-segment][data-type="month"]') as HTMLElement);
+	await userEvent.keyboard(month ?? '');
+	await userEvent.click(input.querySelector('[data-date-segment][data-type="day"]') as HTMLElement);
+	await userEvent.keyboard(day ?? '');
+	await userEvent.click(input.querySelector('[data-date-segment][data-type="year"]') as HTMLElement);
+	await userEvent.keyboard(year ?? '');
+}
+
+afterEach(() => {
+	document.body.innerHTML = '';
+});
 
 describe('RuiDateRangePicker draft range', () => {
 	it('keeps a completed start date while the end is still empty', async () => {
@@ -77,5 +93,29 @@ describe('RuiDateRangePicker draft range', () => {
 		expect(start.value).toBe('2026-08-07');
 
 		host.remove();
+	});
+
+	it('keeps typed start segments while the end is still empty', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(<RuiDateRangePicker value="" locale="en-US" />);
+
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-date-input');
+		await flushFirstConnect();
+		await flushRender();
+
+		const picker = host.querySelector('rui-date-range-picker') as HTMLElement;
+		const start = host.querySelector('[data-range-start]') as HTMLElement & { value: string };
+
+		await typeIsoIntoDateInput(start, '2026-08-07');
+		await userEvent.click(document.body);
+		await flushRender();
+
+		expect(start.querySelector('[data-date-segment][data-type="year"]')?.textContent).toBe('2026');
+		expect(start.querySelector('[data-date-segment][data-placeholder="true"]')).toBeNull();
+		expect(picker.getAttribute('value') ?? '').toBe('');
+		expect(start.value).toBe('2026-08-07');
 	});
 });
