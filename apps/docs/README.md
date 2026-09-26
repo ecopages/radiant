@@ -9,3 +9,5 @@ The aim is to offer users a clear understanding of how to effectively utilize @e
 ## Agent-facing exports
 
 `pnpm --filter radiant-docs generate:llms` writes `llms.txt` and one raw-MDX text export per page under `src/public/llms-content/`. The export tree is generator-owned and staged before replacement, so a failed generation preserves the previous complete tree. `ECOPAGES_BASE_URL` is the canonical origin for configuration, generated links, and page metadata.
+
+Server-rendered catalog views do not register their custom elements in the browser. A docs example that uses a behavior host must import its package in a client script. The [controller decorator visualizer](./src/components/controller-decorator-visualizer/README.md) shows this boundary and tests native radio exclusivity after hydration.

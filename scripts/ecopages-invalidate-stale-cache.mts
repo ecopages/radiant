@@ -1,15 +1,14 @@
 /**
- * Drops an Ecopages app's `.eco` build cache when a workspace dependency has been rebuilt
- * since the cache was written.
+ * Drops an Ecopages app's `.eco` build cache when app source changes or a workspace
+ * dependency is rebuilt after the cache was written.
  *
  * @remarks
  * `.eco/.server-modules` holds pre-bundled page, layout and template modules, and each bundle
- * inlines the `@ecopages/jsx` runtime it was compiled against. The cache keys on app source
- * only, so `pnpm build:all` followed by an app build leaves modules from *both* runtimes in
- * one render pass. Renderables built by the older runtime lack the fields the newer
- * `renderToString` matches on, so they serialize as `[object Object]` — silently, with a
- * successful exit code. See {@link ../scripts/ecopages-assert-rendered-html.mts} for the
- * post-build check that catches whatever slips past this one.
+ * inlines the `@ecopages/jsx` runtime it was compiled against. A rebuilt workspace dependency
+ * can leave modules from both runtimes in one render pass. A changed app script can also get a
+ * new bundle while cached page HTML still points at the old one. Generated LLM text exports
+ * are excluded because their timestamps advance on every docs build. See
+ * {@link ../scripts/ecopages-assert-rendered-html.mts} for the post-build render check.
  *
  * Usage: `tsx ../../scripts/ecopages-invalidate-stale-cache.mts` from the app directory.
  */
@@ -22,7 +21,10 @@ const repoRoot = path.resolve(import.meta.dirname, '..');
 const cacheDirectory = path.join(appDirectory, '.eco');
 
 /** Newest mtime under `directory`, or `undefined` when it does not exist. */
-async function newestMtime(directory: string): Promise<number | undefined> {
+async function newestMtime(
+	directory: string,
+	includeFile: (filePath: string) => boolean = () => true,
+): Promise<number | undefined> {
 	let entries: Awaited<ReturnType<typeof readdir>>;
 	try {
 		entries = await readdir(directory, { recursive: true, withFileTypes: true });
@@ -33,10 +35,20 @@ async function newestMtime(directory: string): Promise<number | undefined> {
 	let newest: number | undefined;
 	for (const entry of entries) {
 		if (!entry.isFile()) continue;
-		const { mtimeMs } = statSync(path.join(entry.parentPath, entry.name));
+		const filePath = path.join(entry.parentPath, entry.name);
+		if (!includeFile(filePath)) continue;
+		const { mtimeMs } = statSync(filePath);
 		if (newest === undefined || mtimeMs > newest) newest = mtimeMs;
 	}
 	return newest;
+}
+
+function isGeneratedLlmExport(filePath: string): boolean {
+	const publicDirectory = path.join(appDirectory, 'src', 'public');
+	return (
+		filePath === path.join(publicDirectory, 'llms.txt') ||
+		filePath.startsWith(`${path.join(publicDirectory, 'llms-content')}${path.sep}`)
+	);
 }
 
 /** Oldest mtime under `directory`, or `undefined` when it does not exist. */
@@ -76,6 +88,16 @@ function workspaceDistDirectories(): string[] {
  */
 const oldestCached = await oldestMtime(path.join(cacheDirectory, '.server-modules'));
 if (oldestCached === undefined) {
+	process.exit(0);
+}
+
+const newestAppSource = await newestMtime(
+	path.join(appDirectory, 'src'),
+	(filePath) => !isGeneratedLlmExport(filePath),
+);
+if (newestAppSource !== undefined && newestAppSource > oldestCached) {
+	rmSync(cacheDirectory, { recursive: true, force: true });
+	console.log(`[ecopages] dropped ${path.relative(repoRoot, cacheDirectory)}: app source is newer`);
 	process.exit(0);
 }
 

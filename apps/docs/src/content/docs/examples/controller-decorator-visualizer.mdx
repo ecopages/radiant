@@ -27,6 +27,8 @@ Wire a host with `data-controller`. The controller then:
 
 <ControllerDecoratorVisualizer />
 
+The selector is a `rui-radio-group`. Its browser registration gives the radios a shared name and keeps one option selected; the controller uses each change to update the authored status nodes.
+
 ## The Pattern
 
 `RadiantController` sits on markup you already have — server templates, CMS output, hand-written HTML — and keeps attributes, events, refs, and reactive state synchronized.
