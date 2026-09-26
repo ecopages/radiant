@@ -1,5 +1,34 @@
 # @ecopages/radiant
 
+## 0.3.0-rc.13
+
+### Minor Changes
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`0f56507`](https://github.com/ecopages/radiant/commit/0f565075d056e7dca32ab525be2460c683cff6dd) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize false-default booleans as HTML presence on SSR and the client. Booleans that default to `true` still emit `"true"` / `"false"` so an explicit false survives upgrade.
+
+- [#287](https://github.com/ecopages/radiant/pull/287) [`86cafb6`](https://github.com/ecopages/radiant/commit/86cafb674cd14daaf43389b8357e7073a53fd056) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `FormAssociatedElement` for custom elements that list on native `FormData`. Import it from `@ecopages/radiant/form-associated-element`; subclasses supply `formValue()` and `restoreFormState()`, and the base owns `name`, `disabled`, fieldset disability, reset, and `setFormValue()`. An explicit `defaultValue: undefined` on `@prop` stays `undefined` instead of falling back to the type default (`0` for `Number`).
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`98646b9`](https://github.com/ecopages/radiant/commit/98646b99034500d7ccf67e373baf23b615fee7cb) Thanks [@andeeplus](https://github.com/andeeplus)! - Remove shadow render mode: `renderRootMode` and the `scope` option on `@query`, `@onEvent`, `createQuery`, and `createEventListener` are gone. Radiant renders into light DOM only.
+
+- [#287](https://github.com/ecopages/radiant/pull/287) [`74cebba`](https://github.com/ecopages/radiant/commit/74cebba03780009d80e9963f7b6882486b9a18a4) Thanks [@andeeplus](https://github.com/andeeplus)! - Harden the update cycle and keep framework plumbing off the public host API.
+
+    - A removed host no longer stays subscribed to a shared `@signal` source, and server rendering no longer adds subscribers to one. Changes made while a host is detached still run `@onUpdated` once when it reconnects.
+    - `updateComplete` rejects when an `@onUpdated` callback, render, or `updated()` throws, and the next cycle no longer receives the failed cycle's changes.
+    - `update()` runs the update cycle on every host, so hosts without `render()` can flush `@onUpdated` and `updated()` synchronously.
+    - Legacy decorators no longer run `@onUpdated` for a `@state` initializer on first connect, matching standard decorators.
+    - `RadiantElement` and `RadiantController` no longer expose `notifyUpdate`, `getReactiveBinding` (use `bind`), `registerPostSyncCallback`, `registerUpdatedCallback`, `registerContextProvider`, `registerHydrationBinding`, `getContextProviders`, `getHydrationBindings`, `getSsrContextProviders`, `getSsrHydrationBindings`, `flushPostSyncCallbacks`, or `registerEventEmitter`. Decorators and SSR adapters reach that plumbing through `REACTIVE_HOST`.
+
+- [#278](https://github.com/ecopages/radiant/pull/278) [`8006f98`](https://github.com/ecopages/radiant/commit/8006f98f45dc5559ea928d767b3cc54743f33828) Thanks [@andeeplus](https://github.com/andeeplus)! - Batch `@onUpdated` into one update cycle per host, and keep a property write made before first-connect sync from being replaced by the authored attribute.
+
+    - `@onUpdated` runs once per cycle for the members it watches, before the render commits. `updated(changed)` runs after the commit. `updateComplete` resolves when the cycle finishes, including the first connect render.
+    - A property assigned before upgrade, or through its accessor before the connect sync, wins over the authored attribute.
+
+### Patch Changes
+
+- Updated dependencies []:
+    - @ecopages/jsx@0.3.0-rc.13
+    - @ecopages/signals@0.3.0-rc.13
+
 ## 0.3.0-rc.12
 
 ### Patch Changes
