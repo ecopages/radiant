@@ -1,6 +1,6 @@
 # Radiant Core
 
-Reflected properties serialize the current member state on each write. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes an assignment is reflected too. `@onUpdated` does not run at that moment; it waits for the update cycle.
+Reflected properties serialize the current member state on each write. A reflected attribute change is not fed back into the property: setting a string property to `''`, or an array transform to a value that omits the attribute, keeps the assigned property value. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes an assignment is reflected too. `@onUpdated` does not run at that moment; it waits for the update cycle.
 
 ## RadiantElement Flow
 
@@ -9,7 +9,7 @@ Reflected properties serialize the current member state on each write. A synchro
 Its main responsibilities are:
 
 - `connectedCallback()` decides whether first connect should hydrate or do a fresh client render.
-- `update()` is the explicit rerender entrypoint.
+- `update()` explicitly flushes callbacks and commits a pending render.
 - `hydrate()` is the explicit SSR-to-client entrypoint.
 - `renderViewToString()` is the narrow host hook that asks the installed server runtime to serialize the JSX view (requires a server SSR entry import).
 
@@ -26,14 +26,15 @@ flowchart TD
     H --> I[hydrateJsx attaches listeners and property bindings in place]
     G --> J[render returns JSX]
     J --> K[renderJsx replaces host children with light DOM]
-    I --> L[Component is live on the client]
-    K --> L
+    I --> W[Run updated]
+    K --> W
+    W --> L[Component is live on the client]
     L --> M[Reactive prop or field changes]
-    M --> N{Who triggers rerender?}
-    N -->|User code| O[call update]
-    N -->|Decorator bridge| P[onUpdated decorator calls update]
-    O --> G
-    P --> G
+    M --> N[Queue batched update cycle]
+    N --> O[Run matching onUpdated callbacks]
+    O --> P{Render pending?}
+    P -->|Yes| G
+    P -->|No| W
 
     B -->|SSR| Q[Create component instance in server runtime]
     Q --> R[Set props fields and attributes]
@@ -55,11 +56,11 @@ Client rendering works like this:
 2. `RadiantElement` waits one microtask, then `completeInitialSync()` adopts authored attributes and reflects the values the host actually holds. A property assigned before upgrade, or through its accessor before that sync, wins over the authored attribute.
 3. If the host already contains hydration markers and the explicit client hydrator is installed, `hydrate()` attaches behavior to that DOM in place.
 4. Otherwise `update()` renders fresh light DOM into the host.
-5. Later state changes do nothing automatically unless user code calls `update()` directly or a decorator such as `@onUpdated(...)` calls it.
+5. Later reactive changes schedule matching `@onUpdated` callbacks. A render commits when code requests it or a tracked render dependency invalidates the view.
 
-Writes in the same turn share one update cycle. `@onUpdated` runs once for the members it watches, a pending render commits, then `updated(changed)` runs. `await updateComplete` waits for that cycle, including the first connect render.
+Writes in the same turn share one update cycle. `@onUpdated` runs once for each batch of watched members; if a callback changes one of them, it can run again in the same cycle. A pending render commits, then `updated(changed)` runs. `await updateComplete` waits for that cycle, including the first connect render.
 
-Hosts observe their members only while connected, snapshotting values on disconnect and reporting what changed on the next connect. Automatic updates run for connected hosts in any DOM. Server rendering never connects hosts: it observes members only while preparing a host, drains pending `@onUpdated` callbacks, and never calls `updated()`. A cycle that throws drops its changes and rejects `updateComplete`.
+Hosts observe their members only while connected, snapshotting values on disconnect and reporting what changed on the next connect. Automatic updates run for connected hosts in any DOM. Server rendering never connects hosts: it observes members only while preparing a host, drains pending `@onUpdated` callbacks, and never calls `updated()`. A cycle that throws drops pending member changes and render requests, then rejects `updateComplete`; a later write starts a new cycle. This also stops a self-updater that reaches the 100-round limit.
 
 Decorators and SSR adapters reach host plumbing (post-sync and batched callback registration, the SSR provider and hydration registry, initial update emits) through the `REACTIVE_HOST` symbol, not through public host methods.
 

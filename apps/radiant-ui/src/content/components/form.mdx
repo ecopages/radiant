@@ -99,7 +99,40 @@ Listed:
 
 Store-only (not in `FormData`): `RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiTagGroup`.
 
-Custom hosts: call `registerFieldControl(tag, { read, write, submission })` before connecting a field. `submission` is `native` by default (name the native ARIA target), `host` for a form-associated host, or `none` for a store-only control. Set `data-rui-aria-target` on the host when the native input is inside it. Registration does not make a host form-associated: extend `FormAssociatedElement` from `@ecopages/radiant/form-associated-element`. The catalog hosts support native submission, fieldset disability, and reset. Browser validity and state restoration require separate host behavior; `RuiForm` rules validate through its store.
+### Custom form-associated hosts
+
+`RuiField` connects a control to the `RuiForm` store. Native forms use a separate channel: the browser lists a control in `FormData` only when a native form control has a name or a form-associated custom element supplies a value through `ElementInternals`. Register a third-party host before its field connects. Registration supplies store value access and name wiring; it does not make the host form-associated.
+
+```ts
+import { customElement, prop } from '@ecopages/radiant';
+import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
+import { registerFieldControl } from '@ecopages/radiant-ui/form';
+
+@customElement('x-tone')
+class ToneControl extends FormAssociatedElement {
+  @prop({ type: String, reflect: true, defaultValue: '' }) value!: string;
+
+  protected override formValue(): FormValue {
+    return this.value;
+  }
+
+  protected override restoreFormState(state: FormValue): void {
+    this.value = typeof state === 'string' ? state : '';
+  }
+}
+
+registerFieldControl('x-tone', {
+  read: (host) => (host as ToneControl).value,
+  write: (host, value) => { (host as ToneControl).value = String(value ?? ''); },
+  submission: 'host',
+});
+```
+
+`FormAssociatedElement` extends `RadiantElement`. Each concrete subclass has its own constructor, so several controls can inherit the base and register under different tags. The base owns the single `ElementInternals`, `name`, `disabled`, effective fieldset disability, submission syncing, and reset. Its inherited static `formAssociated` getter is read when the concrete class is registered. Keep `super.updated(changed)` if you override `updated()`; that call syncs the form value after reactive writes. Likewise, call `super.formDisabledCallback(disabled)` or `super.formResetCallback()` when overriding those browser callbacks.
+
+The first form value sync records the reset state, normally during the first connect update cycle. By default, that state comes from `formValue()`. Override `formState()` when `formValue()` can be `null` for an unnamed host or returns a multi-entry `FormData`; return a value that `restoreFormState()` can read even if the name changes later. For visual disability caused by a parent `<fieldset disabled>`, read `effectiveDisabled` and watch `@onUpdated('effectiveDisabled')`. The catalog hosts support native submission, fieldset disability, and reset. Implement browser constraint validity through `this.internals?.setValidity(...)` and browser state restoration through `formStateRestoreCallback()` when the control needs them; `RuiForm` rules validate through its store.
+
+For other hosts, `submission` is `native` by default (name the native ARIA target), or `none` for a store-only control. Set `data-rui-aria-target` on the host when that native input is inside it.
 
 ## Default values
 

@@ -392,6 +392,36 @@ describe('rui-field composed content discovery', () => {
 		host.remove();
 	});
 
+	it('resets a FACE host after it receives its name later', async () => {
+		const form = document.createElement('form');
+		const date = document.createElement('rui-date-input') as HTMLElement & {
+			value: string;
+			name: string;
+			updateComplete: Promise<void>;
+		};
+		const knob = document.createElement('rui-knob') as HTMLElement & {
+			value: number;
+			name: string;
+			updateComplete: Promise<void>;
+		};
+		date.setAttribute('value', '2026-08-20');
+		knob.setAttribute('value', '25');
+		form.append(date, knob);
+		document.body.append(form);
+		await Promise.all([date.updateComplete, knob.updateComplete]);
+
+		date.name = 'when';
+		knob.name = 'gain';
+		date.value = '2026-09-01';
+		knob.value = 75;
+		await Promise.all([date.updateComplete, knob.updateComplete]);
+		form.reset();
+
+		expect(date.value).toBe('2026-08-20');
+		expect(knob.value).toBe(25);
+		form.remove();
+	});
+
 	it('submits a number-field once through the host', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);

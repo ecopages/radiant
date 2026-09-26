@@ -11,7 +11,7 @@ import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-
 
 # @onUpdated
 
-The `@onUpdated` decorator registers a callback method that runs once per update cycle when a watched reactive property or field changed. Use it for **procedures**: derived state, timers, joined ARIA, storage, analytics. Work that needs the DOM after the render commits belongs in `updated()`.
+The `@onUpdated` decorator registers a callback method that runs once for a batch of watched reactive changes. Writes made in the same turn normally share one batch. If the callback itself changes a watched member, it can run again within the same update cycle until the state settles. Use it for **procedures**: derived state, timers, joined ARIA, storage, analytics. Work that needs the DOM after the render commits belongs in `updated()`.
 
 To copy a field onto an attribute, boolean attribute, DOM property, or text node, use [@bindTo](/docs/decorators/bind-to) instead.
 
@@ -38,13 +38,13 @@ export class SearchField extends RadiantElement {
 
 | Parameter | Type | Required | Description |
 | :-------- | :--- | :------- | :---------- |
-| `propertyName` | `string` or `string[]` | Yes | Member or members that trigger the method. An array watches several members in one registration, so the method runs once per cycle. |
+| `propertyName` | `string` or `string[]` | Yes | Member or members that trigger the method. An array watches several members in one registration, so the method runs once per changed batch. |
 
 ## Feature Highlight
 
 ### Watching Multiple Properties
 
-Pass every member to one decorator. Writes in the same turn batch into one cycle, and the method runs once with all of them applied. It receives the set of members changed in that cycle.
+Pass every member to one decorator. Writes in the same turn batch into one cycle, and the method runs once for the batch with all of them applied. It receives that batch's changed members. A callback that changes a watched member starts another batch in the same cycle.
 
 ```typescript
 @onUpdated(['firstName', 'lastName'])

@@ -16,11 +16,23 @@ export type ReactivePropertyStateHost = HTMLElement & {
 	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
 };
 
+function reflectedAttributeValue(property: ReactiveProperty<unknown>, value: unknown): string | null {
+	if (value == null || value === '') {
+		return null;
+	}
+	if (value === false && !reflectsBooleanAsValue(property)) {
+		return null;
+	}
+	return property.converter.toAttribute(value);
+}
+
 export class ReactivePropertyState {
 	private readonly properties = new Map<string, ReactiveProperty<unknown>>();
 	private readonly preUpgradePropertyValues = new Map<string, unknown>();
 	/** Properties assigned through the accessor before {@link completeInitialSync}; their authored attributes are not adopted. */
 	private readonly writtenBeforeSync = new Set<string>();
+	/** Attribute reactions caused by the host's own property reflection. */
+	private readonly reflectingAttributes = new Set<string>();
 	private initialSyncComplete = false;
 
 	constructor(private readonly host: ReactivePropertyStateHost) {
@@ -38,6 +50,10 @@ export class ReactivePropertyState {
 	}
 
 	public applyAttributeChange(name: string, oldValue: string | null, newValue: string | null): void {
+		if (this.reflectingAttributes.has(name)) {
+			return;
+		}
+
 		const config =
 			this.properties.get(name) ??
 			Array.from(this.properties.values()).find((property) => property.attribute === name);
@@ -188,6 +204,8 @@ export class ReactivePropertyState {
 	 * Boolean `false` and empty/null values omit the attribute (HTML presence).
 	 * Custom `toAttribute` returning null or `''` omits as well, so an empty
 	 * array codec can drop `value` without a transform-specific branch.
+	 * Reactions caused by this reflection are ignored so omitting an empty string
+	 * does not feed `null` back into its property.
 	 */
 	private reflectValue(
 		attributeKey: string,
@@ -199,16 +217,20 @@ export class ReactivePropertyState {
 			return;
 		}
 
-		if (value == null || value === '' || (value === false && !reflectsBooleanAsValue(property))) {
-			this.host.removeAttribute(attributeKey);
+		const attributeValue = reflectedAttributeValue(property, value);
+		if (this.host.getAttribute(attributeKey) === attributeValue) {
 			return;
 		}
 
-		const attributeValue = property.converter.toAttribute(value);
-		if (attributeValue == null) {
-			this.host.removeAttribute(attributeKey);
-			return;
+		this.reflectingAttributes.add(attributeKey);
+		try {
+			if (attributeValue == null) {
+				this.host.removeAttribute(attributeKey);
+			} else {
+				this.host.setAttribute(attributeKey, attributeValue);
+			}
+		} finally {
+			this.reflectingAttributes.delete(attributeKey);
 		}
-		this.host.setAttribute(attributeKey, attributeValue);
 	}
 }
