@@ -35,5 +35,16 @@ export const Default: Story = {
 			await waitFor(() => expect(meter.value).toBe(25));
 			await waitFor(() => expect(track.style.getPropertyValue('--rui-meter-percent')).toBe('25%'));
 		});
+		await step('clamps the fill and readout to the range', async () => {
+			const host = canvasElement.querySelector('rui-meter') as RuiMeterElement;
+			const track = host.querySelector('.rui-meter__track') as HTMLElement;
+			const readout = host.querySelector('.rui-meter__value') as HTMLElement;
+			host.value = 120;
+			await waitFor(() => expect(readout.textContent?.trim()).toBe('100%'));
+			await expect(track.style.getPropertyValue('--rui-meter-percent')).toBe('100%');
+			host.value = -20;
+			await waitFor(() => expect(readout.textContent?.trim()).toBe('0%'));
+			await expect(track.style.getPropertyValue('--rui-meter-percent')).toBe('0%');
+		});
 	},
 };
