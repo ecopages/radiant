@@ -72,7 +72,7 @@ SSR works like this:
 7. The browser receives `<my-element ...>...</my-element>` markup.
 8. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.
 
-Radiant SSR is **light-DOM only**. Hosts with `renderRootMode = 'shadow'` throw during server serialization.
+Radiant renders into the host's light DOM only, on the client and on the server.
 
 `renderRadiantElementViewToString(...)` / `renderViewToString()` serialize only the component view.
 `renderRadiantElementHostToString(...)` from `@ecopages/radiant/server/radiant-element-ssr` / `renderComponent(...)` serialize the full custom-element host together with the view.

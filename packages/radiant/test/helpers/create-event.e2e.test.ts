@@ -32,59 +32,6 @@ class EventListenerHelperElement extends RadiantElement {
 
 customElements.define('event-listener-helper-element', EventListenerHelperElement);
 
-class ShadowListenerHelperElement extends RadiantElement {
-	shadowClicks = 0;
-	bothClicks = 0;
-
-	constructor() {
-		super();
-		const shadowRoot = this.attachShadow({ mode: 'open' });
-		const shadowButton = document.createElement('button');
-		shadowButton.setAttribute('data-ref', 'shadow-btn');
-		shadowButton.textContent = 'Shadow';
-		const sharedShadowButton = document.createElement('button');
-		sharedShadowButton.setAttribute('data-ref', 'shared-btn');
-		sharedShadowButton.textContent = 'Shared Shadow';
-		shadowRoot.append(shadowButton, sharedShadowButton);
-	}
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		createEventListener(this, { ref: 'shadow-btn', type: 'click', scope: 'shadow' }, () => {
-			this.shadowClicks += 1;
-		});
-		createEventListener(this, { ref: 'shared-btn', type: 'click', scope: 'both' }, () => {
-			this.bothClicks += 1;
-		});
-	}
-}
-
-customElements.define('shadow-listener-helper-element', ShadowListenerHelperElement);
-
-class LateShadowListenerHelperElement extends RadiantElement {
-	lateShadowClicks = 0;
-
-	constructor() {
-		super();
-		createEventListener(this, { ref: 'late-shadow-btn', type: 'click', scope: 'shadow' }, () => {
-			this.lateShadowClicks += 1;
-		});
-	}
-
-	override connectedCallback(): void {
-		super.connectedCallback();
-		if (!this.shadowRoot) {
-			const shadowRoot = this.attachShadow({ mode: 'open' });
-			const button = document.createElement('button');
-			button.setAttribute('data-ref', 'late-shadow-btn');
-			button.textContent = 'Late Shadow';
-			shadowRoot.appendChild(button);
-		}
-	}
-}
-
-customElements.define('late-shadow-listener-helper-element', LateShadowListenerHelperElement);
-
 function createMatchMediaMock() {
 	const instances: Array<
 		MediaQueryList & {
@@ -220,41 +167,6 @@ describe('createEventListener', () => {
 		cleanup();
 		button.click();
 		expect(clickCount).toBe(1);
-	});
-
-	test('subscribes to events in shadow DOM when scope is shadow', () => {
-		const host = document.createElement('shadow-listener-helper-element') as ShadowListenerHelperElement;
-		document.body.appendChild(host);
-
-		const shadowButton = host.shadowRoot?.querySelector('[data-ref="shadow-btn"]');
-		shadowButton?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
-
-		expect(host.shadowClicks).toBe(1);
-	});
-
-	test('subscribes across light and shadow DOM when scope is both', () => {
-		const host = document.createElement('shadow-listener-helper-element') as ShadowListenerHelperElement;
-		const lightButton = document.createElement('button');
-		lightButton.setAttribute('data-ref', 'shared-btn');
-		host.appendChild(lightButton);
-		document.body.appendChild(host);
-
-		const shadowButton = host.shadowRoot?.querySelector('[data-ref="shared-btn"]');
-		lightButton.click();
-		shadowButton?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
-
-		expect(host.bothClicks).toBe(2);
-	});
-
-	test('attaches shadow listeners when the shadow root is created after connect', () => {
-		const host = document.createElement('late-shadow-listener-helper-element') as LateShadowListenerHelperElement;
-		document.body.appendChild(host);
-
-		host.shadowRoot
-			?.querySelector('[data-ref="late-shadow-btn"]')
-			?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
-
-		expect(host.lateShadowClicks).toBe(1);
 	});
 
 	test('cleanup permanently unsubscribes the helper listener', () => {
