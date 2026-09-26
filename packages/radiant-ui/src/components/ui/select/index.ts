@@ -3,6 +3,7 @@ export {
 	type RuiSelectProps,
 	type RuiSelectChangeDetail,
 	type RuiSelectSelectionMode,
+	type RuiSelectTriggerKind,
 } from './select.script';
 export {
 	RuiSelect,
