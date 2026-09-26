@@ -54,8 +54,8 @@ function isIosDevice(): boolean {
  * `<rui-date-input>` — locale-ordered date segments for keyboard and touch entry.
  *
  * Derived Tree: the host `render()`s locale-ordered segments. Set `name` to submit
- * the committed ISO value like a native `<input type="date">`. Empty values are
- * omitted from `FormData`.
+ * the committed ISO value like a native `<input type="date">`. An empty named
+ * value submits an empty string.
  *
  * ## Light-DOM contract
  *
@@ -71,10 +71,11 @@ function isIosDevice(): boolean {
  * @attr {string} max - Latest allowed ISO date. Default: `''`.
  * @attr {boolean} disabled - Disable editing. Default: `false`.
  * @attr {boolean} read-only - Show value without editing. Default: `false`.
- * @attr {string} name - Form field name on this host. Empty values are omitted from `FormData`. Default: `''`.
+ * @attr {string} name - Form field name on this host. An empty value submits `''`. Default: `''`.
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @fires rui-change - Emitted when a complete valid date is committed, or when all segments are cleared.
+ * @fires rui-form-reset - Emitted after a native form reset so a composite parent can restore its value.
  *
  * @cssclass rui-date-input - Root around the segment row.
  * @cssclass rui-date-input__segments - Segment row.
@@ -120,6 +121,7 @@ export class RuiDateInput extends RadiantElement {
 
 	private readonly uid = uniqueId('rui-date-input');
 	private readonly form = new FormAssociation<string>(this);
+	private disabledByForm = false;
 	/** Digits typed into `focusedPart` that have not completed the unit yet. */
 	private buffer = '';
 	private useTextboxRole = isIosDevice();
@@ -312,16 +314,21 @@ export class RuiDateInput extends RadiantElement {
 	}
 
 	formDisabledCallback(disabled: boolean): void {
-		this.disabled = disabled;
+		this.disabledByForm = disabled;
+		this.requestUpdate();
 	}
 
 	formResetCallback(): void {
 		this.value = this.form.initial;
+		this.syncSegmentsFromValue();
+		this.syncFormValue();
+		this.requestUpdate();
+		this.dispatchEvent(new Event('rui-form-reset', { bubbles: true }));
 	}
 
 	@onUpdated(['value', 'name'])
 	private syncFormValue(): void {
-		this.form.set(this.name && this.isoValue ? this.isoValue : null);
+		this.form.set(this.name ? this.isoValue : null);
 	}
 
 	@onUpdated('label')
@@ -376,7 +383,7 @@ export class RuiDateInput extends RadiantElement {
 	@onEvent({ selector: '[data-date-segment]', type: 'keydown' })
 	onSegmentKeyDown(event: KeyboardEvent): void {
 		const part = this.partFromTarget(event.target);
-		if (!part || this.disabled || this.readOnly) {
+		if (!part || this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 
@@ -410,7 +417,7 @@ export class RuiDateInput extends RadiantElement {
 	@onEvent({ selector: '[data-date-segment]', type: 'beforeinput' })
 	onSegmentBeforeInput(event: InputEvent): void {
 		const part = this.partFromTarget(event.target);
-		if (!part || this.disabled || this.readOnly) {
+		if (!part || this.disabled || this.disabledByForm || this.readOnly) {
 			return;
 		}
 		event.preventDefault();
@@ -445,7 +452,7 @@ export class RuiDateInput extends RadiantElement {
 		const type = segment.type as DatePartType;
 		const focused = this.focusedPart === type;
 		const dom = getSegmentDomProps(segment, {
-			disabled: this.disabled,
+			disabled: this.disabled || this.disabledByForm,
 			locale: this.resolvedLocale,
 			readOnly: this.readOnly,
 			segments: this.displaySegments,

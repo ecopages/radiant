@@ -30,7 +30,7 @@ export const config = {
 
 ## Usage
 
-Bind `value` as ISO `YYYY-MM-DD`. `locale` controls segment order. The host is form-associated: `name` submits the committed ISO string through native `FormData`. Empty values are omitted.
+Bind `value` as ISO `YYYY-MM-DD`. `locale` controls segment order. The host is form-associated: `name` submits the committed ISO string through native `FormData`. An empty named value submits an empty string.
 
 ```tsx
 import { RuiDateInput } from '@ecopages/radiant-ui/date-input';
@@ -79,7 +79,7 @@ Override at the theme layer, not in component CSS.
 | `max` | `string` | `''` | Latest allowed ISO date. |
 | `disabled` | `boolean` | `false` | Disable editing. |
 | `read-only` | `boolean` | `false` | Show value without editing. |
-| `name` | `string` | `''` | Form field name on this host. Empty values are omitted from `FormData`. |
+| `name` | `string` | `''` | Form field name on this host. An empty value submits `''`. |
 | `label` | `string` | `''` | Accessible name when there is no associated `RuiLabel`. |
 | `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
 
@@ -95,6 +95,7 @@ Override at the theme layer, not in component CSS.
 | Event | Detail | Description |
 | --- | --- | --- |
 | `rui-change` | `{ value: string }` | Emitted when a complete valid date is committed, or when all segments are cleared. |
+| `rui-form-reset` | — | Emitted after native reset so a parent Date Field or Date Range Picker can restore its value. |
 
 ### View helpers
 

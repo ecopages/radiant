@@ -12,29 +12,12 @@ export const RUI_ARIA_TARGET_ATTR = 'data-rui-aria-target';
 export const RUI_ARIA_TARGETS_ATTR = 'data-rui-aria-targets';
 const FIELD_COLUMN_SELECTOR = '[data-ref="field"]';
 
-const HOST_CONTROL_TAGS = new Set([
-	'rui-combobox',
-	'rui-date-field',
-	'rui-date-input',
-	'rui-date-range-picker',
-	'rui-select',
-	'rui-tag-group',
-	'rui-checkbox',
-	'rui-checkbox-group',
-	'rui-switch',
-	'rui-radio-group',
-	'rui-slider',
-	'rui-knob',
-	'rui-number-field',
-	'rui-listbox',
-]);
-
 function fieldControlSelector(): string {
-	return `[${RUI_CONTROL_ATTR}], ${Array.from(HOST_CONTROL_TAGS).join(', ')}`;
+	return `[${RUI_CONTROL_ATTR}], ${hostControlSelector()}`;
 }
 
 function hostControlSelector(): string {
-	return Array.from(HOST_CONTROL_TAGS).join(', ');
+	return Array.from(CONTROL_VALUE_ADAPTERS.keys()).join(', ');
 }
 
 function isEmbeddedListbox(node: HTMLElement): boolean {
@@ -78,9 +61,10 @@ type ControlValueAdapter = {
 	write: (host: HTMLElement, value: unknown) => void;
 };
 
-export type FieldControlAdapter = ControlValueAdapter;
-
-const NATIVE_LISTED_HOSTS = new Set(['rui-checkbox', 'rui-switch', 'rui-radio-group', 'rui-checkbox-group']);
+export type FieldControlAdapter = ControlValueAdapter & {
+	/** Where a native text target gets its submission name. Defaults to `native`. */
+	submission?: 'host' | 'native' | 'none';
+};
 
 const stringValueAdapter: ControlValueAdapter = {
 	read: (host) => {
@@ -153,21 +137,21 @@ const sliderValueAdapter: ControlValueAdapter = {
 	write: writeHostValue,
 };
 
-const CONTROL_VALUE_ADAPTERS = new Map<string, ControlValueAdapter>([
+const CONTROL_VALUE_ADAPTERS = new Map<string, FieldControlAdapter>([
 	['rui-checkbox', booleanValueAdapter],
 	['rui-switch', booleanValueAdapter],
-	['rui-combobox', stringArrayValueAdapter],
+	['rui-combobox', { ...stringArrayValueAdapter, submission: 'none' }],
 	['rui-date-field', stringValueAdapter],
-	['rui-date-input', stringValueAdapter],
+	['rui-date-input', { ...stringValueAdapter, submission: 'host' }],
 	['rui-date-range-picker', stringValueAdapter],
-	['rui-select', stringArrayValueAdapter],
+	['rui-select', { ...stringArrayValueAdapter, submission: 'none' }],
 	['rui-radio-group', stringValueAdapter],
 	['rui-checkbox-group', stringArrayValueAdapter],
 	['rui-listbox', stringArrayValueAdapter],
 	['rui-tag-group', stringArrayValueAdapter],
-	['rui-slider', sliderValueAdapter],
-	['rui-knob', numberValueAdapter],
-	['rui-number-field', numberValueAdapter],
+	['rui-slider', { ...sliderValueAdapter, submission: 'host' }],
+	['rui-knob', { ...numberValueAdapter, submission: 'host' }],
+	['rui-number-field', { ...numberValueAdapter, submission: 'host' }],
 ]);
 
 /** Search authored field content, including nodes Radiant has moved for hydration. */
@@ -271,10 +255,15 @@ export function findFieldControl(root: HTMLElement): HTMLElement | null {
 	return pickPrimaryFieldControl(collectFieldControls(root));
 }
 
-/** Register a custom host tag so RuiField can read and write its value for the `RuiForm` store. Stamp `data-rui-control` and fire bubbling `rui-change`. This does not list the host on a native form; set `formAssociated` on the constructor and use `FormAssociation` for that. */
+/**
+ * Register a custom host for `RuiField` discovery, value access, and name wiring.
+ *
+ * @remarks `submission` chooses where a native text target gets its name. A host
+ * with `submission: 'host'` must implement FACE itself; registration only connects
+ * it to the `RuiForm` store.
+ */
 export function registerFieldControl(tagName: string, adapter: FieldControlAdapter): void {
 	const tag = tagName.toLowerCase();
-	HOST_CONTROL_TAGS.add(tag);
 	CONTROL_VALUE_ADAPTERS.set(tag, adapter);
 }
 
@@ -405,23 +394,21 @@ export function wireFieldControlName(
 	ariaTarget: HTMLElement | null,
 	name: string,
 ): void {
-	if (!name) {
-		return;
-	}
-
 	if (ariaTarget && isNativeTextControl(ariaTarget)) {
+		const submission = controlHost && CONTROL_VALUE_ADAPTERS.get(controlHost.localName)?.submission;
 		const namesInner =
-			controlHost == null || controlHost === ariaTarget || NATIVE_LISTED_HOSTS.has(controlHost.localName);
-		if (namesInner) {
+			controlHost == null || controlHost === ariaTarget || (submission !== 'host' && submission !== 'none');
+		if (namesInner && name) {
 			ariaTarget.name = name;
 		} else {
 			ariaTarget.removeAttribute('name');
 		}
 	}
 
-	if (controlHost && HOST_CONTROL_TAGS.has(controlHost.localName)) {
-		controlHost.setAttribute('name', name);
+	if (controlHost && CONTROL_VALUE_ADAPTERS.has(controlHost.localName)) {
 		Reflect.set(controlHost, 'name', name);
+		if (name) controlHost.setAttribute('name', name);
+		else controlHost.removeAttribute('name');
 	}
 }
 

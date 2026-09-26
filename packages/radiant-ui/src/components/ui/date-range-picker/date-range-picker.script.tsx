@@ -60,8 +60,8 @@ export type RuiDateRangePickerChangeDetail = {
  *   and `disabled`.
  *
  * Nested hosts:
- * - `rui-date-input` at start/end — listen for `rui-change`. Nested inputs own
- *   in-progress segment state until both sides are a valid ISO date.
+ * - `rui-date-input` at start/end — listen for `rui-change` and `rui-form-reset`.
+ *   Nested inputs own in-progress segment state until both sides are a valid ISO date.
  * - `rui-calendar` at `[data-range-calendar]` — parent queries day targets when the popup opens.
  *
  * Do not set `aria-expanded` on the trigger — the host owns it.
@@ -301,6 +301,15 @@ export class RuiDateRangePicker extends RadiantElement {
 			return;
 		}
 		this.commitFromInputs();
+	}
+
+	@onEvent({ selector: '[data-range-start], [data-range-end]', type: 'rui-form-reset' })
+	onDateInputReset(): void {
+		queueMicrotask(() => {
+			const start = this.readInputIso('start');
+			const end = this.readInputIso('end');
+			this.value = start && end ? serializeIsoRange({ start, end }) : '';
+		});
 	}
 
 	@onEvent({ ref: 'trigger', type: 'pointerdown' })

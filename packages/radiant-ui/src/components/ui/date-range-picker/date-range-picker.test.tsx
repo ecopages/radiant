@@ -25,6 +25,32 @@ afterEach(() => {
 });
 
 describe('RuiDateRangePicker draft range', () => {
+	it('restores the parent value when the native form resets both date inputs', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		createRoot(host).render(
+			<form>
+				<RuiDateRangePicker value="2026-08-07/2026-08-14" startName="start" endName="end" />
+			</form>,
+		);
+		await customElements.whenDefined('rui-date-range-picker');
+		await customElements.whenDefined('rui-date-input');
+		await flushFirstConnect();
+		await flushRender();
+
+		const picker = host.querySelector('rui-date-range-picker') as HTMLElement & { value: string };
+		picker.value = '2026-09-01/2026-09-10';
+		await flushRender();
+		const form = host.querySelector('form')!;
+		form.reset();
+		await flushRender();
+
+		expect(picker.value).toBe('2026-08-07/2026-08-14');
+		expect(new FormData(form).get('start')).toBe('2026-08-07');
+		expect(new FormData(form).get('end')).toBe('2026-08-14');
+		host.remove();
+	});
+
 	it('keeps a completed start date while the end is still empty', async () => {
 		const host = document.createElement('div');
 		document.body.append(host);
