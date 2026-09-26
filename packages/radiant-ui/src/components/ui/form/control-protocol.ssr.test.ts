@@ -5,6 +5,9 @@ import {
 	getAriaControlTargets,
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
+	readControlValue,
+	registerFieldControl,
+	writeControlValue,
 } from '../form/control-protocol';
 
 describe('field control protocol (SSR-safe)', () => {
@@ -170,5 +173,21 @@ describe('field control protocol (SSR-safe)', () => {
 
 		expect(seen).toBeDefined();
 		expect(isPrimaryFieldControlEvent(field, seen!)).toBe(false);
+	});
+
+	it('discovers a host registered with registerFieldControl', () => {
+		registerFieldControl('my-swatch', {
+			read: (host) => host.getAttribute('hex') ?? '',
+			write: (host, value) => {
+				host.setAttribute('hex', value == null ? '' : String(value));
+			},
+		});
+		const field = document.createElement('div');
+		field.innerHTML = `<my-swatch hex="ff00aa"></my-swatch>`;
+		const control = findFieldControl(field);
+		expect(control?.localName).toBe('my-swatch');
+		expect(readControlValue(control!)).toBe('ff00aa');
+		writeControlValue(control!, '00ffaa');
+		expect(control?.getAttribute('hex')).toBe('00ffaa');
 	});
 });

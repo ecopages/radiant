@@ -7,6 +7,7 @@ import { RuiTextarea } from '../textarea';
 import { RuiLabel } from '../label';
 import { RuiSwitch } from '../switch';
 import { RuiDateField } from '../date-field';
+import { RuiDateInput } from '../date-input';
 import {
 	RuiCombobox,
 	RuiComboboxClear,
@@ -30,6 +31,7 @@ import '../field/field.script';
 import './form.script';
 import '../switch/switch.script';
 import '../date-field/date-field.script';
+import '../date-input/date-input.script';
 import { findFieldControl, findFieldError } from './control-protocol';
 import type { RuiField as RuiFieldElement } from '../field/field.script';
 import type { RuiForm as RuiFormElement } from './form.script';
@@ -167,6 +169,49 @@ describe('rui-field composed content discovery', () => {
 		expect(nativeForm.action).toContain('/accounts');
 		expect(nativeForm.method).toBe('post');
 		expect(submit).toHaveBeenCalledOnce();
+		host.remove();
+	});
+
+	it('publishes a custom host onto native FormData', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="when">
+					<RuiDateInput value="2026-08-20" />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await customElements.whenDefined('rui-date-input');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).get('when')).toBe('2026-08-20');
+		host.remove();
+	});
+
+	it('does not double-submit a native text control', async () => {
+		const host = document.createElement('div');
+		document.body.append(host);
+		const root = createRoot(host);
+		root.render(
+			<form>
+				<RuiField name="email">
+					<RuiInput type="email" value="hello@example.com" />
+				</RuiField>
+			</form>,
+		);
+
+		await customElements.whenDefined('rui-field');
+		await flushRender();
+		await flushFirstConnect();
+
+		const nativeForm = host.querySelector('form') as HTMLFormElement;
+		expect(new FormData(nativeForm).getAll('email')).toEqual(['hello@example.com']);
 		host.remove();
 	});
 

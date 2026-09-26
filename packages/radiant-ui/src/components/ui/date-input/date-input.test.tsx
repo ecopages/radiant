@@ -34,10 +34,6 @@ function segment(host: HTMLElement, type: 'month' | 'day' | 'year'): HTMLElement
 	return host.querySelector(`[data-date-segment][data-type="${type}"]`) as HTMLElement;
 }
 
-function hiddenInput(host: HTMLElement): HTMLInputElement {
-	return host.querySelector('[data-date-input-hidden]') as HTMLInputElement;
-}
-
 function listenChanges(host: HTMLElement): string[] {
 	const values: string[] = [];
 	host.addEventListener('rui-change', (event) => {
@@ -74,7 +70,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'day').textContent).toBe('1');
 		expect(host.value).toBe('2026-08-20');
-		expect(hiddenInput(host).value).toBe('2026-08-20');
 		expect(changes).toEqual([]);
 		expect(document.activeElement).toBe(segment(host, 'day'));
 		expect(yearFocusIns).toBe(0);
@@ -84,7 +79,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'day').textContent).toBe('15');
 		expect(host.value).toBe('2026-08-15');
-		expect(hiddenInput(host).value).toBe('2026-08-15');
 		expect(changes).toEqual(['2026-08-15']);
 		expect(document.activeElement).toBe(segment(host, 'year'));
 		expect(dayFocusIns).toBeLessThan(8);
@@ -103,7 +97,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'year').textContent).toBe('1');
 		expect(host.value).toBe('2026-08-20');
-		expect(hiddenInput(host).value).toBe('2026-08-20');
 		expect(changes).toEqual([]);
 		expect(document.activeElement).toBe(segment(host, 'year'));
 
@@ -112,7 +105,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'year').textContent).toBe('1999');
 		expect(host.value).toBe('1999-08-20');
-		expect(hiddenInput(host).value).toBe('1999-08-20');
 		expect(changes).toEqual(['1999-08-20']);
 		cleanup();
 	});
@@ -147,7 +139,6 @@ describe('RuiDateInput segment editing', () => {
 		await settle();
 
 		expect(host.value).toBe('2026-08-01');
-		expect(hiddenInput(host).value).toBe('2026-08-01');
 		expect(changes).toEqual(['2026-08-01']);
 		cleanup();
 	});
@@ -228,7 +219,6 @@ describe('RuiDateInput segment editing', () => {
 
 		expect(segment(host, 'year').textContent).toBe('2026');
 		expect(host.value).toBe('2026-08-07');
-		expect(hiddenInput(host).value).toBe('2026-08-07');
 		expect(changes).toEqual(['2026-08-07']);
 		cleanup();
 	});
@@ -265,7 +255,6 @@ describe('RuiDateInput segment editing', () => {
 		expect(segment(host, 'day').textContent).toBe('01');
 		expect(segment(host, 'month').textContent).toBe('09');
 		expect(host.value).toBe('2026-09-01');
-		expect(hiddenInput(host).value).toBe('2026-09-01');
 		cleanup();
 	});
 

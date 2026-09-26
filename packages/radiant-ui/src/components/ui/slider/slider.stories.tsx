@@ -20,8 +20,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const getHiddenInput = (root: HTMLElement) => root.querySelector('rui-slider input[type="hidden"]') as HTMLInputElement;
-
 const getSingleThumb = (root: HTMLElement) =>
 	root.querySelector('rui-slider [data-thumb="value"]') as HTMLButtonElement;
 
@@ -36,11 +34,10 @@ const parseSliderValue = (host: HTMLElement): number[] =>
 export const Default: Story = {
 	play: async ({ canvasElement: root, step }) => {
 		const host = root.querySelector('rui-slider') as HTMLElement;
-		const input = getHiddenInput(root);
 		const thumb = getSingleThumb(root);
 
 		await step('exposes the current value', async () => {
-			await expect(input).toHaveValue('21');
+			await expect(host).toHaveAttribute('value', '21');
 			await expect(getValueLabel(root)).toHaveTextContent('21');
 		});
 
@@ -163,8 +160,6 @@ export const Range: Story = {
 		await step('shows the current range', async () => {
 			await expect(host).toHaveAttribute('value', '20,80');
 			await expect(getValueLabel(root)).toHaveTextContent('20 – 80');
-			await expect(root.querySelector('rui-slider [data-ref="input"]')).toHaveValue('20');
-			await expect(root.querySelector('rui-slider [data-ref="maxInput"]')).toHaveValue('80');
 		});
 
 		await step('keyboard nudges the minimum thumb', async () => {

@@ -57,7 +57,6 @@ export type RuiNumberFieldChangeDetail = { value: number };
  *   `aria-valuenow`, and formatted `value` when not editing.
  *
  * Optional:
- * - `[data-number-field-value]` — hidden form input. Host syncs `value`, `name`, `disabled`.
  * - `[data-number-field-action="decrement"]` — stepper button. Host sets `disabled` and `aria-label`.
  * - `[data-number-field-action="increment"]` — stepper button. Host sets `disabled` and `aria-label`.
  * - `[data-number-field-group]` — presentation wrapper; not queried by the host.
@@ -80,7 +79,7 @@ export type RuiNumberFieldChangeDetail = { value: number };
  * @attr {boolean} disabled - Disables input and steppers. Default: `false`.
  * @attr {boolean} read-only - Blocks editing; the value still displays formatted. Default: `false`.
  * @attr {string} label - Accessible name when there is no visible `RuiLabel`. Default: `''`.
- * @attr {string} name - Form field name on the hidden value input. Default: `''`.
+ * @attr {string} name - Form field name. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @attr {string} format-options - JSON-serialized `Intl.NumberFormatOptions`. Default: `''`.
  * @attr {('snap'|'validate')} commit-behavior - Blur behavior after editing. Default: `snap`.
@@ -92,8 +91,7 @@ export type RuiNumberFieldChangeDetail = { value: number };
  *   `detail.value` holds the new number.
  *
  * @remarks
- * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-value]`
- * and `[data-number-field-action]` buttons. BEM classes live on the view; the host
+ * Minimum tree: `[data-number-field-input]` with optional `[data-number-field-action]` buttons. BEM classes live on the view; the host
  * never queries them.
  */
 @customElement('rui-number-field')
@@ -120,10 +118,7 @@ export class RuiNumberField extends RadiantElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo([
-		{ selector: '[data-number-field-input]', bool: 'data-disabled' },
-		{ selector: '[data-number-field-value]', prop: 'disabled' },
-	])
+	@bindTo({ selector: '[data-number-field-input]', bool: 'data-disabled' })
 	disabled: boolean;
 
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
@@ -131,7 +126,7 @@ export class RuiNumberField extends RadiantElement {
 	readOnly: boolean;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
-	@prop({ type: String, defaultValue: '' }) name: string;
+	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
 	@prop({ type: String, defaultValue: '' }) locale: string;
 	@prop({ type: String, attribute: 'format-options', defaultValue: '' }) formatOptions: string;
 	@prop({ type: String, attribute: 'commit-behavior', defaultValue: 'snap' })
@@ -150,7 +145,6 @@ export class RuiNumberField extends RadiantElement {
 	private editing = false;
 	private draftValue = '';
 	private initialized = false;
-
 	private readonly uid = uniqueId('rui-number-field');
 
 	private get resolvedLocale(): string | string[] | undefined {
@@ -179,10 +173,6 @@ export class RuiNumberField extends RadiantElement {
 		return this.querySelector<HTMLInputElement>('[data-number-field-input]');
 	}
 
-	private getHiddenInput(): HTMLInputElement | null {
-		return this.querySelector<HTMLInputElement>('[data-number-field-value]');
-	}
-
 	private syncLabel(): void {
 		const input = this.getInput();
 		syncFieldLabel(this, input, {
@@ -194,7 +184,6 @@ export class RuiNumberField extends RadiantElement {
 
 	private syncInput(): void {
 		const input = this.getInput();
-		const hidden = this.getHiddenInput();
 		if (!input) {
 			return;
 		}
@@ -210,13 +199,6 @@ export class RuiNumberField extends RadiantElement {
 
 		if (!this.editing) {
 			input.value = formatNumber(numericValue, this.resolvedLocale, this.resolvedFormatOptions);
-		}
-
-		if (hidden) {
-			hidden.value = String(numericValue);
-			if (this.name) {
-				hidden.name = this.name;
-			}
 		}
 	}
 

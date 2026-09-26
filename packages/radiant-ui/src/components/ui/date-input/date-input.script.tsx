@@ -1,6 +1,5 @@
 import {
 	RadiantElement,
-	bindTo,
 	customElement,
 	event,
 	onEvent,
@@ -53,7 +52,8 @@ function isIosDevice(): boolean {
 /**
  * `<rui-date-input>` — locale-ordered date segments for keyboard and touch entry.
  *
- * Derived Tree: the host `render()` paints editable segments and a hidden ISO input.
+ * Derived Tree: the host `render()`s locale-ordered segments. Wrap in `RuiField`
+ * to submit the committed ISO value.
  *
  * ## Light-DOM contract
  *
@@ -61,7 +61,6 @@ function isIosDevice(): boolean {
  * - `[data-ref="root"]` — segment group (`role="group"`). Host sets `id` when labelled.
  * - `[data-date-segment][data-type="month|day|year"]` — editable units (`contenteditable`).
  *   `data-focused="true"` marks the unit being edited.
- * - `[data-date-input-hidden]` — hidden form value (`YYYY-MM-DD`).
  *
  * @see https://react-aria.adobe.com/DateField
  * @element rui-date-input
@@ -70,13 +69,13 @@ function isIosDevice(): boolean {
  * @attr {string} max - Latest allowed ISO date. Default: `''`.
  * @attr {boolean} disabled - Disable editing. Default: `false`.
  * @attr {boolean} read-only - Show value without editing. Default: `false`.
- * @attr {string} name - Form name on the hidden input. Default: `''`.
+ * @attr {string} name - Form field name. Default: `''`.
  * @attr {string} label - Accessible name when there is no associated label. Default: `''`.
  * @attr {string} locale - BCP 47 locale tag, or comma-separated fallback list. Default: `''`.
  * @fires rui-change - Emitted when a complete valid date is committed, or when all segments are cleared.
  *
  * @remarks
- * `segments` is the visible draft. `value` and the hidden input stay on the last
+ * `segments` is the visible draft. `value` stays on the last
  * committed ISO date until a unit completes, focus moves, or the control blurs.
  * An in-progress digit buffer is not published just because the draft parses as
  * a date. Only a `value` or `locale` change rebuilds the draft; other props keep it.
@@ -90,14 +89,12 @@ export class RuiDateInput extends RadiantElement {
 	@prop({ type: String, defaultValue: '' }) max: string;
 
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo({ selector: '[data-date-input-hidden]', prop: 'disabled' })
 	disabled: boolean;
 
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	readOnly: boolean;
 
 	@prop({ type: String, defaultValue: '' })
-	@bindTo({ selector: '[data-date-input-hidden]', prop: 'name' })
 	name: string;
 
 	@prop({ type: String, defaultValue: '' }) label: string;
@@ -459,7 +456,6 @@ export class RuiDateInput extends RadiantElement {
 				<div class="rui-date-input__segments">
 					{this.displaySegments.map((segment, index) => this.renderSegment(segment, index))}
 				</div>
-				<input type="hidden" data-date-input-hidden value={this.isoValue} />
 			</div>
 		);
 	}

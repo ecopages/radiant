@@ -9,6 +9,7 @@ import {
 import { consumeContext, onContextUpdate, provideContext } from '@ecopages/radiant/context';
 import type { ContextProvider } from '@ecopages/radiant/context';
 import {
+	controlSubmitsNatively,
 	findFieldControl,
 	findFieldDescription,
 	findFieldError,
@@ -18,12 +19,12 @@ import {
 	isNativeTextControl,
 	isPrimaryFieldControlEvent,
 	readControlValue,
-	FIELD_CONTROL_SELECTOR,
 	RUI_FIELD_DEFAULT_VALUE_ATTR,
 	RUI_FIELD_MANAGED_ATTR,
 	writeControlValue,
 	wireFieldControlName,
 } from '../form/control-protocol';
+import { FormAssociation, serializeFormValue } from '../form/form-association';
 import { formContext, type FormContextValue } from '../form/form-context';
 import { fieldContext, type FieldContextValue } from './field-context';
 import type { FieldRules } from '../form/types';
@@ -55,11 +56,15 @@ export type RuiFieldProps = {
 };
 
 /**
- * `<rui-field>` — connector between composed controls and an ancestor `<rui-form>`.
+ * `<rui-field>` — plug a control into `<rui-form>` and native `<form>` `FormData`.
  *
  * The custom element is a behavior host: it queries authored light-DOM children,
  * registers with the form via {@link formContext}, forwards control events, and
  * applies presentation (errors, ARIA) from the form-published `fields` map.
+ * It is form-associated: wrap a custom host here instead of adding a hidden input.
+ * Native listed controls (input, textarea, checkbox, switch, radio) already submit;
+ * the field does not double-submit them. Call `registerFieldControl` for a custom
+ * host whose value is not a string `value` attribute.
  *
  * ## Light-DOM contract
  *
@@ -68,6 +73,7 @@ export type RuiFieldProps = {
  *   `rui-slider`, `rui-knob`, `rui-number-field`, `rui-select`, …). The field reads and
  *   writes values through the control protocol; see each host's contract for inner targets.
  *   An embedded `rui-listbox` is an option surface, not a field control.
+ *   Third-party hosts: stamp `data-rui-control` and fire bubbling `rui-change`.
  *
  * Optional:
  * - `[data-rui-field-label]` — visible label. Host sets `htmlFor`.
@@ -99,6 +105,8 @@ export type RuiFieldProps = {
  */
 @customElement('rui-field')
 export class RuiField extends RadiantElement {
+	static formAssociated = true;
+
 	@prop({ type: String, reflect: true, defaultValue: '' }) name: string;
 	@prop({ type: Object }) rules?: FieldRules;
 	@prop({ type: Object }) defaultValue?: unknown;
@@ -127,6 +135,7 @@ export class RuiField extends RadiantElement {
 	private formContextProvider?: ContextProvider<typeof formContext>;
 
 	private readonly uid = uniqueId('rui-field');
+	private readonly nativeForm = new FormAssociation(this);
 	/** Resolved field name from property or `name` attribute (Storybook can hydrate props after connect). */
 	private resolveFieldName(): string {
 		return (this.name || this.getAttribute('name') || '').trim();
@@ -154,6 +163,22 @@ export class RuiField extends RadiantElement {
 
 	protected override onConnected(): void {
 		this.connectToForm();
+	}
+
+	formDisabledCallback(disabled: boolean): void {
+		this.disabled = disabled;
+	}
+
+	formResetCallback(): void {
+		const control = findFieldControl(this);
+		if (control && !controlSubmitsNatively(control)) {
+			writeControlValue(control, this.readDefaultValue());
+		}
+		const fieldName = this.resolveFieldName();
+		if (fieldName) {
+			this.currentFormContext?.actions.handleFieldChange(fieldName);
+		}
+		this.publishNativeValue();
 	}
 
 	override disconnectedCallback(): void {
@@ -312,18 +337,13 @@ export class RuiField extends RadiantElement {
 	}
 
 	@onEvent({
-		selector: FIELD_CONTROL_SELECTOR,
 		type: 'rui-change',
 	})
 	onControlChange(event: Event): void {
 		if (!isPrimaryFieldControlEvent(this, event)) {
 			return;
 		}
-
-		const fieldName = this.resolveFieldName();
-		if (fieldName) {
-			this.currentFormContext?.actions.handleFieldChange(fieldName);
-		}
+		this.syncControlToForm();
 	}
 
 	@onEvent({
@@ -332,10 +352,7 @@ export class RuiField extends RadiantElement {
 		options: { capture: true },
 	})
 	onControlInput(): void {
-		const fieldName = this.resolveFieldName();
-		if (fieldName) {
-			this.currentFormContext?.actions.handleFieldChange(fieldName);
-		}
+		this.syncControlToForm();
 	}
 
 	@onEvent({
@@ -344,10 +361,7 @@ export class RuiField extends RadiantElement {
 		options: { capture: true },
 	})
 	onControlNativeChange(): void {
-		const fieldName = this.resolveFieldName();
-		if (fieldName) {
-			this.currentFormContext?.actions.handleFieldChange(fieldName);
-		}
+		this.syncControlToForm();
 	}
 
 	@onEvent({ selector: '[data-rui-control], rui-knob, rui-slider', type: 'focusout' })
@@ -392,6 +406,25 @@ export class RuiField extends RadiantElement {
 			required,
 		};
 		this.publishFieldContext(nextFieldContext);
+		this.publishNativeValue();
+	}
+
+	private syncControlToForm(): void {
+		const fieldName = this.resolveFieldName();
+		if (fieldName) {
+			this.currentFormContext?.actions.handleFieldChange(fieldName);
+		}
+		this.publishNativeValue();
+	}
+
+	private publishNativeValue(): void {
+		const name = this.resolveFieldName();
+		const control = findFieldControl(this);
+		if (!name || !control || controlSubmitsNatively(control)) {
+			this.nativeForm.set(null);
+			return;
+		}
+		this.nativeForm.set(serializeFormValue(readControlValue(control)));
 	}
 
 	/**

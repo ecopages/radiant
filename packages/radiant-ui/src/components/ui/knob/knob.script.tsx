@@ -58,7 +58,6 @@ export const KNOB_DEFAULT_VALUE = 50;
  *   `stroke-width`, and `stroke-dasharray`.
  * - `[data-ref="progress"]` — SVG circle for the filled arc. Host sets `r`,
  *   `stroke-width`, and `stroke-dasharray`.
- * - `[data-ref="input"]` — hidden form input. Host syncs `value`, `name`, and `disabled`.
  *
  * Optional:
  * - `[data-ref="label"]` — visible label. Host toggles `hidden` and sets `textContent`.
@@ -82,7 +81,7 @@ export const KNOB_DEFAULT_VALUE = 50;
  * @attr {boolean} disabled - Disables interaction. Default: `false`.
  * @attr {boolean} read-only - Blocks value changes while leaving the control focusable. Default: `false`.
  * @attr {string} label - Visible and accessible name. Default: `''`.
- * @attr {string} name - Form field name for the hidden numeric input. Default: `''`.
+ * @attr {string} name - Form field name. Default: `''`.
  * @attr {number} size - Explicit visible SVG diameter in pixels. Overrides `--rui-knob-size`.
  * @attr {number} stroke-width - Width of the progress ring in view-box units. Default: `14`.
  * @attr {boolean} show-value - Shows the formatted value inside or below the ring. Default: `true`.
@@ -114,10 +113,7 @@ export class RuiKnob extends RadiantElement {
 	@prop({ type: Number, defaultValue: 1 }) step: number;
 	@prop({ type: Number, attribute: 'value-precision', defaultValue: Number.NaN }) valuePrecision: number;
 	@prop({ type: Boolean, reflect: true, defaultValue: false })
-	@bindTo([
-		{ ref: 'control', prop: 'disabled' },
-		{ ref: 'input', prop: 'disabled' },
-	])
+	@bindTo({ ref: 'control', prop: 'disabled' })
 	disabled: boolean;
 	@prop({ type: Boolean, attribute: 'read-only', reflect: true, defaultValue: false })
 	@bindTo({ ref: 'control', attr: 'aria-readonly', map: (readOnly) => String(readOnly) })
@@ -129,8 +125,7 @@ export class RuiKnob extends RadiantElement {
 		{ ref: 'control', attr: 'aria-label', map: (label) => label || undefined },
 	])
 	label: string;
-	@prop({ type: String, defaultValue: '' })
-	@bindTo({ ref: 'input', attr: 'name', map: (name) => name || undefined })
+	@prop({ type: String, reflect: true, defaultValue: '' })
 	name: string;
 	@prop({ type: Number }) size: number | undefined;
 	@prop({ type: Number, attribute: 'stroke-width', defaultValue: 14 }) strokeWidth: number;
@@ -148,7 +143,6 @@ export class RuiKnob extends RadiantElement {
 	@query({ ref: 'progress' }) progressTarget: SVGCircleElement;
 	@query({ ref: 'centerValue' }) centerValueTarget: HTMLElement;
 	@query({ ref: 'belowValue' }) belowValueTarget: HTMLElement;
-	@query({ ref: 'input' }) inputTarget: HTMLInputElement;
 
 	private activePointerId: number | null = null;
 	private lastEmitted: number | null = null;
@@ -205,7 +199,6 @@ export class RuiKnob extends RadiantElement {
 		this.syncControlValues(value, ring.valueText);
 		this.syncRing(ring);
 		this.syncReadout(ring.valueText, valuePosition);
-		this.syncInputValue(value);
 	}
 
 	private syncKnobLayout(valuePosition: RuiKnobValuePosition): void {
@@ -246,12 +239,6 @@ export class RuiKnob extends RadiantElement {
 			target.textContent = valueText;
 			target.toggleAttribute('hidden', !visible);
 		}
-	}
-
-	private syncInputValue(value: number): void {
-		const input = this.inputTarget;
-		if (!input) return;
-		input.value = String(value);
 	}
 
 	private syncPresentation(): void {
