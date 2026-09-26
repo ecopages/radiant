@@ -69,7 +69,7 @@ The helper uses random UUIDs in secure contexts and random bytes on HTTP origins
 
 ## Numeric controls
 
-`rui-select` opens on genuine trigger focus only when `trigger-kind="focus"`; pointer clicks handle their own focus and open state.
+With `trigger-kind="focus"`, `rui-select` and `rui-combobox` open the listbox only when focus arrives from outside the host (`relatedTarget` is not a descendant). Focus the host moves back itself after select, clear, toggle, or tag remove never reopens it. Select trigger and toggle clicks prevent pointer focus and open through the click handler.
 
 `rui-meter` keeps a native `<meter>` for range semantics and renders its visual track and fill from the derived percent. This avoids browser-specific meter pseudo-elements.
 `rui-sidebar-trigger` mirrors its controlled sidebar's state, mobile mode, and collapse mode onto the trigger host through one `MutationObserver`. Placement CSS reads those local attributes and the reflected `placement` attribute so nested providers do not affect one another. Until a trigger attaches (no `data-sidebar-mobile`), desktop CSS falls back to the provider's primary sidebar SSR attributes.
