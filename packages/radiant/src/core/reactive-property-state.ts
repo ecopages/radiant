@@ -1,5 +1,6 @@
 import {
 	createReactivePropertyMapping,
+	reflectsBooleanAsValue,
 	type ReactiveAccessorDefinition,
 	type ReactiveProperty,
 	type ReactivePropertyOptions,
@@ -76,6 +77,7 @@ export class ReactivePropertyState {
 			reflect,
 			transform,
 		);
+		propertyMapping.defaultValue = defaultValue;
 
 		let initialValue: T | undefined;
 		if (hasPreUpgradeValue) {
@@ -185,7 +187,7 @@ export class ReactivePropertyState {
 			return;
 		}
 
-		if (value == null || value === '' || value === false) {
+		if (value == null || value === '' || (value === false && !reflectsBooleanAsValue(property))) {
 			this.host.removeAttribute(attributeKey);
 			return;
 		}
