@@ -1,6 +1,6 @@
 # Radiant Core
 
-Reflected properties serialize the current member state after synchronous update callbacks finish. If a callback normalizes an assignment, the attribute retains the normalized value.
+Reflected properties serialize the current member state on each write. A synchronous callback (`@bindTo`, `registerUpdateCallback`) that normalizes an assignment is reflected too. `@onUpdated` does not run at that moment; it waits for the update cycle.
 
 ## RadiantElement Flow
 
@@ -52,12 +52,14 @@ flowchart TD
 Client rendering works like this:
 
 1. The browser upgrades the custom element and calls `connectedCallback()`.
-2. `RadiantElement` waits one microtask, then `completeInitialSync()` adopts authored attributes (unless an own property was written before upgrade) and reflects the values the host actually holds.
+2. `RadiantElement` waits one microtask, then `completeInitialSync()` adopts authored attributes and reflects the values the host actually holds. A property assigned before upgrade, or through its accessor before that sync, wins over the authored attribute.
 3. If the host already contains hydration markers and the explicit client hydrator is installed, `hydrate()` attaches behavior to that DOM in place.
 4. Otherwise `update()` renders fresh light DOM into the host.
 5. Later state changes do nothing automatically unless user code calls `update()` directly or a decorator such as `@onUpdated(...)` calls it.
 
-`render()` describes the view. `update()` is the method that commits it into the host.
+Writes in the same turn share one update cycle. `@onUpdated` runs once for the members it watches, a pending render commits, then `updated(changed)` runs. `await updateComplete` waits for that cycle, including the first connect render.
+
+`render()` describes the view. `update()` runs the cycle that commits it into the host.
 
 ## SSR Flow
 

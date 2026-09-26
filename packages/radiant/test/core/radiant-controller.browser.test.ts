@@ -253,12 +253,13 @@ describeWhenStandard('RadiantController', () => {
 		expect(controller.isConnected).toBe(false);
 	});
 
-	test('supports @onUpdated callbacks', () => {
+	test('supports @onUpdated callbacks', async () => {
 		const host = document.createElement('div');
 		const controller = new OnUpdatedController(host);
 
 		controller.connect();
 		controller.count = 3;
+		await controller.updateComplete;
 
 		expect(host.getAttribute('data-count')).toBe('3');
 	});
