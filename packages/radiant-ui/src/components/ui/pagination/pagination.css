@@ -1,5 +1,16 @@
 @reference '../../../styles/radiant-ui.css';
 
+/* Narrow chrome: viewports below 40rem, or forced by `.rui-pagination--compact` on the host. */
+@custom-variant rui-pagination-compact {
+	@media (max-width: 40rem) {
+		@slot;
+	}
+
+	.rui-pagination--compact & {
+		@slot;
+	}
+}
+
 rui-pagination {
 	@apply flex max-w-full min-w-0;
 }
@@ -35,41 +46,35 @@ rui-pagination {
 		@apply shrink-0;
 	}
 
-	@media (max-width: 40rem) {
-		.rui-pagination__link--previous span,
-		.rui-pagination__link--next span {
+	.rui-pagination__link--previous span,
+	.rui-pagination__link--next span {
+		@variant rui-pagination-compact {
 			@apply sr-only;
 		}
+	}
 
-		.rui-pagination__link--previous,
-		.rui-pagination__link--next {
+	.rui-pagination__link--previous,
+	.rui-pagination__link--next {
+		@variant rui-pagination-compact {
 			width: var(--size-control-sm);
 			padding-inline: 0;
 			aspect-ratio: 1;
 		}
+	}
 
-		.rui-pagination__page,
-		.rui-pagination__ellipsis {
+	.rui-pagination__list > li.rui-pagination__page,
+	.rui-pagination__list > li.rui-pagination__ellipsis {
+		@variant rui-pagination-compact {
 			display: none;
 		}
+	}
 
-		.rui-pagination__list > li.rui-pagination__status {
+	.rui-pagination__list > li.rui-pagination__status {
+		@variant rui-pagination-compact {
 			@apply flex;
 			min-height: var(--size-control-sm);
 			padding-inline: var(--space-control-x);
 			margin-inline: var(--space-1);
 		}
-	}
-
-	.rui-pagination--compact .rui-pagination__page,
-	.rui-pagination--compact .rui-pagination__ellipsis {
-		display: none;
-	}
-
-	.rui-pagination--compact .rui-pagination__list > li.rui-pagination__status {
-		@apply flex;
-		min-height: var(--size-control-sm);
-		padding-inline: var(--space-control-x);
-		margin-inline: var(--space-1);
 	}
 }

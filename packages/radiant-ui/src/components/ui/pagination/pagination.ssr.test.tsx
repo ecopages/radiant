@@ -14,4 +14,29 @@ describe('RuiPagination SSR', () => {
 		expect(html).toContain('rui-pagination__status');
 		expect(html).toContain('Page 2 of 4');
 	});
+
+	it('renders localized labels without forwarding them to the host', () => {
+		const html = renderToString(
+			<RuiPagination
+				label="Seiten"
+				page={2}
+				pageCount={4}
+				previousText="Zurück"
+				previousLabel="Vorherige Seite"
+				nextText="Weiter"
+				nextLabel="Nächste Seite"
+				pageLabel={(page) => `Seite ${page}`}
+				statusLabel={(page, pageCount) => `Seite ${page} von ${pageCount}`}
+			/>,
+		);
+
+		expect(html).toContain('aria-label="Vorherige Seite"');
+		expect(html).toContain('aria-label="Nächste Seite"');
+		expect(html).toContain('aria-label="Seite 3"');
+		expect(html).toContain('>Zurück</span>');
+		expect(html).toContain('>Weiter</span>');
+		expect(html).toContain('Seite 2 von 4');
+		expect(html).not.toContain('Go to');
+		expect(html).not.toMatch(/previous-?label|pageLabel|page-label/i);
+	});
 });
