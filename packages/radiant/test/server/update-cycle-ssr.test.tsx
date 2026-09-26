@@ -77,6 +77,13 @@ describe('UpdateCycle SSR', () => {
 		calls.length = 0;
 	});
 
+	it('registers each host under its tag', () => {
+		expect([
+			customElements.get('ssr-update-cycle-host'),
+			customElements.get('ssr-update-cycle-shared-host'),
+		]).toEqual([SsrUpdateCycleHost, SsrSharedSourceHost]);
+	});
+
 	it('runs cascading @onUpdated callbacks during preparation and never calls updated()', () => {
 		const html = renderHost(<ssr-update-cycle-host label="hello" />);
 
@@ -93,6 +100,14 @@ describe('UpdateCycle SSR', () => {
 		expect(calls).toEqual(afterRender);
 	});
 
+	it('offers no fake layout or focus in the SSR DOM, since updated() never runs on the server', () => {
+		const element = document.createElement('div');
+
+		expect(
+			['focus', 'blur', 'getBoundingClientRect', 'getClientRects'].filter((method) => method in element),
+		).toEqual([]);
+	});
+
 	it('leaves no subscriptions on a shared @signal source after rendering', () => {
 		renderHost(<ssr-update-cycle-shared-host />);
 		renderHost(<ssr-update-cycle-shared-host />);
@@ -100,5 +115,3 @@ describe('UpdateCycle SSR', () => {
 		expect(subscriptions).toBe(0);
 	});
 });
-
-export type { SsrSharedSourceHost, SsrUpdateCycleHost };
