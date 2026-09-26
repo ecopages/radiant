@@ -4,7 +4,7 @@ description: Selects let users choose one or more known values from a list insid
 category: Forms
 ---
 
-import { meta as SelectMeta, Default, Multiple, Searchable } from '@/content/stories/select';
+import { meta as SelectMeta, Default, Multiple, Searchable, TriggerKindFocus } from '@/content/stories/select';
 import Canvas from '@/components/component-docs/canvas';
 import Demo from '@/components/component-docs/demo';
 
@@ -143,6 +143,17 @@ Wrap the embedded listbox in `RuiAutocomplete` and add `RuiSelectSearch` when th
 
 <Canvas of={Searchable} meta={SelectMeta} />
 
+## Trigger kind
+
+`triggerKind` controls what opens the listbox (same attribute name as `RuiCombobox`; select supports only `focus` and `manual`):
+
+| Value | Opens when |
+| --- | --- |
+| `manual` (default) | Click, toggle, or arrow keys on the trigger |
+| `focus` | The trigger receives focus (plus click, toggle, and arrow keys) |
+
+<Canvas of={TriggerKindFocus} meta={SelectMeta} />
+
 ## Theming
 
 Select surfaces map to **semantic surface roles**, never Tailwind palette steps. Override at the theme layer, not in component CSS.
@@ -179,6 +190,7 @@ Customization of icons is through Composition Helper **children**, not CSS varia
 | `disabled` | `boolean` | `false` | Disabled state. |
 | `selection-mode` | `single` · `multiple` | `single` | Single or multi-select. |
 | `should-close-on-select` | `boolean` | | Whether selecting closes the popup (defaults to `true` for single, `false` for multiple). |
+| `trigger-kind` | `focus` · `manual` | `manual` | Controls what opens the listbox. |
 
 ### Light-DOM contract
 

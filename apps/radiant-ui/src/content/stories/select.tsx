@@ -12,6 +12,7 @@ import {
 	RuiSelectTrigger,
 	RuiSelectValue,
 	type RuiSelectSelectionMode,
+	type RuiSelectTriggerKind,
 } from '@ecopages/radiant-ui/select';
 import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
 import { ANIMAL_OPTIONS } from './demo-data';
@@ -21,6 +22,7 @@ export type SelectArgs = {
 	placeholder: string;
 	disabled: boolean;
 	selectionMode: RuiSelectSelectionMode;
+	triggerKind: RuiSelectTriggerKind;
 };
 
 export const meta = {
@@ -29,6 +31,7 @@ export const meta = {
 		placeholder: 'Select an animal',
 		disabled: false,
 		selectionMode: 'single',
+		triggerKind: 'manual',
 	},
 	argTypes: {
 		value: { control: { type: 'text' } },
@@ -38,6 +41,7 @@ export const meta = {
 			control: { type: 'radio' },
 			options: ['single', 'multiple'] as const satisfies readonly RuiSelectSelectionMode[],
 		},
+		triggerKind: { control: { type: 'select' }, options: ['focus', 'manual'] },
 	},
 	render: (args) => (
 		<RuiField name="preview">
@@ -47,6 +51,7 @@ export const meta = {
 				placeholder={args.placeholder}
 				disabled={args.disabled}
 				selectionMode={args.selectionMode}
+				triggerKind={args.triggerKind}
 				options={ANIMAL_OPTIONS}
 			/>
 		</RuiField>
@@ -56,6 +61,11 @@ export const meta = {
 type Story = DocsStory<SelectArgs>;
 
 export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'select/default' } } });
+
+export const TriggerKindFocus: Story = docsStory(meta, {
+	args: { triggerKind: 'focus' },
+	parameters: { docs: { id: 'select/trigger-kind-focus' } },
+});
 
 export const Multiple: Story = docsStory(meta, {
 	args: {
