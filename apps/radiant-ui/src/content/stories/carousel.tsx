@@ -1,0 +1,113 @@
+import { RuiCarousel, RuiCarouselNext, RuiCarouselPrev, RuiCarouselSlide } from '@ecopages/radiant-ui/carousel';
+import { docsStory, type DocsMeta, type DocsStory } from '@/lib/docs-stories';
+
+export type CarouselArgs = {
+	index: number;
+	transition: 'none' | 'slide' | 'fade';
+	autoplay: boolean;
+	interval: number;
+	showIndicators: boolean;
+	loop: boolean;
+	slidesPerView: number;
+	slidesPerGroup: number;
+};
+
+export const meta = {
+	args: {
+		index: 0,
+		transition: 'slide',
+		autoplay: false,
+		interval: 4000,
+		showIndicators: false,
+		loop: true,
+		slidesPerView: 1,
+		slidesPerGroup: 1,
+	},
+	argTypes: {
+		index: { control: { type: 'number' } },
+		transition: {
+			control: { type: 'select' },
+			options: ['none', 'slide', 'fade'] as const satisfies readonly CarouselArgs['transition'][],
+		},
+		autoplay: { control: { type: 'boolean' } },
+		interval: { control: { type: 'number' } },
+		showIndicators: { control: { type: 'boolean' } },
+		loop: { control: { type: 'boolean' } },
+		slidesPerView: { control: { type: 'number' } },
+		slidesPerGroup: { control: { type: 'number' } },
+	},
+	render: (args) => (
+		<RuiCarousel
+			index={args.index}
+			transition={args.transition}
+			autoplay={args.autoplay}
+			interval={args.interval}
+			showIndicators={args.showIndicators}
+			loop={args.loop}
+			slidesPerView={args.slidesPerView}
+			slidesPerGroup={args.slidesPerGroup}
+		>
+			<RuiCarouselSlide id="slide-1">First panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-2">Second panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-3">Third panel</RuiCarouselSlide>
+			<RuiCarouselPrev />
+			<RuiCarouselNext />
+		</RuiCarousel>
+	),
+} satisfies DocsMeta<CarouselArgs>;
+
+type Story = DocsStory<CarouselArgs>;
+
+export const Default: Story = docsStory(meta, { parameters: { docs: { id: 'carousel/default' } } });
+
+export const WithIndicators: Story = docsStory(meta, {
+	args: { showIndicators: true },
+	parameters: { docs: { id: 'carousel/indicators' } },
+});
+
+export const OverlayControls: Story = docsStory(meta, {
+	render: (args) => (
+		<RuiCarousel
+			index={args.index}
+			transition={args.transition}
+			autoplay={args.autoplay}
+			interval={args.interval}
+			showIndicators={args.showIndicators}
+			loop={args.loop}
+			slidesPerView={args.slidesPerView}
+			slidesPerGroup={args.slidesPerGroup}
+			controlsVariant="overlay"
+		>
+			<RuiCarouselSlide id="slide-1">First panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-2">Second panel</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-3">Third panel</RuiCarouselSlide>
+			<RuiCarouselPrev />
+			<RuiCarouselNext />
+		</RuiCarousel>
+	),
+	parameters: { docs: { id: 'carousel/overlay' } },
+});
+
+export const WithSlidesPerView: Story = docsStory(meta, {
+	args: { transition: 'slide', slidesPerView: 3, slidesPerGroup: 3, loop: false, showIndicators: true },
+	render: (args) => (
+		<RuiCarousel
+			index={args.index}
+			transition={args.transition}
+			autoplay={args.autoplay}
+			interval={args.interval}
+			showIndicators={args.showIndicators}
+			loop={args.loop}
+			slidesPerView={args.slidesPerView}
+			slidesPerGroup={args.slidesPerGroup}
+		>
+			<RuiCarouselSlide id="slide-1">One</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-2">Two</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-3">Three</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-4">Four</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-5">Five</RuiCarouselSlide>
+			<RuiCarouselSlide id="slide-6">Six</RuiCarouselSlide>
+		</RuiCarousel>
+	),
+	parameters: { docs: { id: 'carousel/slides-per-view' } },
+});

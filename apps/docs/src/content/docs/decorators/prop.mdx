@@ -1,0 +1,158 @@
+---
+title: "@prop"
+description: "Use @prop for public reactive host inputs."
+group: Decorators
+order: 3
+---
+
+# @prop
+
+`@prop(...)` declares a reactive property on a Radiant host.
+
+On `RadiantElement`, use it for values that belong to the custom element's external API and may need attribute sync, type conversion, reflection, or JSX bindings.
+
+On `RadiantController`, `@prop(...)` instead exposes a host property channel. That lets surrounding JS assign real values like objects or arrays directly on the attached host element without serializing them into attributes.
+
+## Example
+
+```typescript
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+
+@customElement('user-card')
+export class UserCard extends RadiantElement {
+	@prop({ type: String }) declare name: string;
+	@prop({ type: Number, defaultValue: 0 }) declare visits: number;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) declare active: boolean;
+}
+```
+
+## SSR Property Staging
+
+Before the first server render, assign properties through `renderComponent` (or on a disconnected host before calling `renderRadiantElementHostToString`):
+
+```typescript
+import { renderComponentToString } from '@ecopages/radiant/server/render-component';
+
+const html = await renderComponentToString(UserCard, {
+	initialize: (element) => {
+		element.visits = 7;
+	},
+});
+```
+
+Those staged values are serialized into the SSR host tag and used for the first render. This is the supported way to pass non-default props into SSR without attributes.
+
+## Controller Host Props
+
+`RadiantController` can use the same decorator when the input should come from a real host property instead of markup.
+
+```typescript
+import { RadiantController, controller, prop } from '@ecopages/radiant';
+import { startControllers } from '@ecopages/radiant/controller-registry';
+
+type ResultsListProps = {
+	items: Array<{ id: string; label: string }>;
+};
+
+@controller('results-list')
+export class ResultsListController extends RadiantController {
+	@prop({ type: Array, defaultValue: [] }) declare items: ResultsListProps;
+
+	override render() {
+		return <ul>{this.items.map((item) => <li key={item.id}>{item.label}</li>)}</ul>;
+	}
+}
+
+document.body.innerHTML = '<section data-controller="results-list"></section>';
+
+const host = document.querySelector('[data-controller="results-list"]') as HTMLElement & ResultsListProps
+
+host.items = [
+	{ id: '1', label: 'Alpha' },
+	{ id: '2', label: 'Beta' },
+];
+
+startControllers(document);
+```
+
+Prefer `@ecopages/radiant/controller-registry` for `startControllers(...)` when a module only needs controller activation.
+
+## Options
+
+| Option | Type | Description |
+| :----- | :--- | :---------- |
+| `type` | `String \| Number \| Boolean \| Object \| Array` | Default attribute conversion strategy. `Array` and `Object` use JSON. |
+| `reflect` | `boolean` | Reflect property changes back to the host attribute. |
+| `attribute` | `string` | Override the attribute name. |
+| `defaultValue` | `T` | Default property value when the attribute is absent. Pass a fresh array or object on each decorator call. |
+| `bind` | `boolean \| string` | Expose a JSX binding companion such as `$count` or a custom binding name. |
+| `transform` | `PropTransform<T>` | Override attribute conversion and optional JS writes. |
+
+## Custom converters
+
+Default `type: Array` / `type: Object` attributes are JSON (`value='["a","b"]'`). Use `transform` when the markup protocol is different, such as comma-separated tokens:
+
+```typescript
+import { RadiantElement, customElement, prop, type PropTransform } from '@ecopages/radiant';
+
+const csvStrings: PropTransform<string[]> = {
+	fromAttribute: (value) => (value ? value.split(',').map((token) => token.trim()).filter(Boolean) : []),
+	toAttribute: (values) => (values.length > 0 ? values.join(',') : null),
+	fromProperty: (value) => {
+		if (Array.isArray(value)) return value.map(String);
+		if (typeof value === 'string') return value ? value.split(',') : [];
+		return [];
+	},
+};
+
+@customElement('token-select')
+export class TokenSelect extends RadiantElement {
+	@prop({ type: Array, reflect: true, transform: csvStrings, defaultValue: [] })
+	value: string[];
+}
+```
+
+- `fromAttribute` runs when the HTML attribute is present, including first connect.
+- `fromProperty` runs on JS and JSX assignment, including values set before upgrade.
+- `toAttribute` returning `null` or `''` **omits** the reflected attribute. That is how an empty selection stays off the host tag. Reflection does not write the resulting attribute removal back into the property: `element.value = []` remains `[]`.
+
+Without `transform`, `element.value = ['a', 'b']` still works as a JS property write; reflection would stringify JSON, not CSV.
+
+## How It Works
+
+`@prop(...)` uses the property reactivity machinery underneath:
+
+- reads the attribute into the declared property type
+- writes the property back through the converter when reflection is enabled
+- stores reactive metadata for SSR host serialization
+- notifies `@onUpdated` listeners when the member state changes
+- can expose a subscribable JSX binding companion
+
+On `RadiantController`, the same decorator reads and writes a real property on the attached host element instead of going through attribute serialization.
+
+That means this split is intentional:
+
+- use `@attr(...)` when the value should stay in markup
+- use `@prop(...)` when JS code should pass structured values directly
+
+## JSX Binding Defaults
+
+When you omit `bind`, Radiant exposes companion bindings by default.
+
+So this:
+
+```typescript
+class CounterCard extends RadiantElement {
+	@prop({ type: Number, defaultValue: 0 }) count!: number;
+}
+```
+
+automatically gives you `this.$.count` and `this.bindings.count`.
+
+## When To Use It
+
+- Use `@prop(...)` for public custom-element API.
+- Use `@prop(...)` on `RadiantController` when surrounding JS should pass values through the host element as real properties.
+- Use `@state` for internal mutable component state.
+
+See [@state](/docs/decorators/state) and [@attr](/docs/decorators/attr).

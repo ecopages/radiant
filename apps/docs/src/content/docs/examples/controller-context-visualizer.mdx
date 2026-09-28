@@ -1,0 +1,31 @@
+---
+title: "Controller Context Visualizer"
+description: "An interactive example showing one RadiantController provider sharing context with both controller and RadiantElement consumers."
+group: Examples
+order: 3
+---
+
+import { ControllerContextVisualizer } from '@/components/controller-context-visualizer';
+
+export const config = {
+	dependencies: {
+		components: [ControllerContextVisualizer],
+	},
+};
+
+# Controller Context Visualizer
+
+One context token shared across a mixed tree: a `RadiantController` provider on authored HTML, consumed by both another controller and a nested `RadiantElement`.
+
+The provider host is plain DOM with `data-controller`. From there:
+
+- a `RadiantController` updates authored markup imperatively with `@onContextUpdate`
+- a nested `RadiantElement` re-renders from a selected slice with `@contextSelector`
+
+<ControllerContextVisualizer />
+
+## The Pattern
+
+Context is not tied to custom-element hosts. A controller can `@provideContext`, descendants can consume it whether they are controllers or elements, and each consumer reacts in its own way — imperative DOM updates on one side, selected re-renders on the other.
+
+That is the mixed-tree model: enhance authored markup with controllers, use custom elements where isolated rendering helps, keep one context graph across both.

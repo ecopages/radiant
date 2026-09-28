@@ -1,42 +1,32 @@
-import type {
-	LegacyFieldDecoratorArgs,
-	StandardFieldDecoratorArgs,
-	StandardOrLegacyFieldDecoratorArgs,
-} from '../types';
+import type { QueryConfig } from '../helpers/create-query';
 import { query as legacyQuery } from './legacy/query';
 import { query as standardQuery } from './standard/query';
+import { fieldDecoratorBridge } from './bridge';
 
-type BaseQueryConfig = {
-	all?: boolean;
-	cache?: boolean;
+export type { QueryConfig };
+
+type QueryDecoratorHost = (Element | { host: Element }) & {
+	registerConnectedCallback(callback: () => void): void;
 };
-
-type QueryBySelector = { selector: string };
-
-type QueryByRef = { ref: string };
-
-export type QueryConfig = BaseQueryConfig & (QueryBySelector | QueryByRef);
 
 /**
  * A decorator to query by CSS selector or data-ref attribute.
  * By default it queries for the first element that matches the selector, but it can be configured to query for all elements.
- * It cache the result by default, but it can be configured to not cache it.
+ * It caches the result only when `cache` is enabled.
  * @param options {@link QueryConfig} The options for the reactive property.
  */
 export function query<T extends Element | Element[]>(options: QueryConfig) {
-	return function (
-		protoOrTarget: StandardOrLegacyFieldDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyFieldDecoratorArgs['nameOrContext'],
-	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardQuery(options)(
-				protoOrTarget as StandardFieldDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardFieldDecoratorArgs<HTMLElement, Element | Element[]>['nameOrContext'],
-			);
-		}
-		return legacyQuery<T>(options)(
-			protoOrTarget as LegacyFieldDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyFieldDecoratorArgs['nameOrContext'],
-		);
-	};
+	function decorator<Host extends QueryDecoratorHost>(
+		protoOrTarget: undefined,
+		nameOrContext: ClassFieldDecoratorContext<Host, T>,
+	): void;
+	function decorator(protoOrTarget: QueryDecoratorHost, nameOrContext: string): void;
+	function decorator(
+		protoOrTarget: QueryDecoratorHost | undefined,
+		nameOrContext: string | ClassFieldDecoratorContext<QueryDecoratorHost, T>,
+	): void {
+		return fieldDecoratorBridge(standardQuery(options), legacyQuery<T>(options), protoOrTarget, nameOrContext);
+	}
+
+	return decorator;
 }

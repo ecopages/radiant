@@ -1,0 +1,137 @@
+---
+title: Tooltip
+description: Tooltips show supplementary text on hover or focus, such as icon button labels, truncated text, or field hints.
+category: Overlays
+---
+
+import { meta as TooltipMeta, Default } from '@/content/stories/tooltip';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Tooltip
+
+<p class="docs-lede">Tooltips show supplementary text on hover or focus, such as icon button labels, truncated text, or field hints.</p>
+
+## Try it
+
+<Demo of={Default} meta={TooltipMeta} />
+
+## Usage
+
+Wrap the trigger element and pass `content` with the tooltip text. Adjust `placement` and `delay` for positioning.
+
+```tsx
+import { RuiTooltip } from '@ecopages/radiant-ui/tooltip';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiTooltip content="Download report" placement="top" delay={200}>
+  <RuiButton variant="ghost" aria-label="Download">↓</RuiButton>
+</RuiTooltip>
+```
+
+## Custom markup
+
+`<rui-tooltip>` coordinates any light-DOM tree that matches its query contract. The
+`RuiTooltip` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/tooltip';
+
+<rui-tooltip content="Download report" placement="top">
+  <span class="rui-tooltip">
+    <span class="rui-tooltip__trigger" data-ref="trigger">
+      <button type="button" aria-label="Download">↓</button>
+    </span>
+    <span data-ref="tooltip" class="rui-tooltip__content rui-floating" role="tooltip" hidden>
+      Download report
+    </span>
+  </span>
+</rui-tooltip>;
+```
+
+The host queries `[data-ref="trigger"]` for focus events and `[data-ref="tooltip"]` for the surface.
+Do not set `aria-describedby` on the trigger — the host wires it.
+
+## Supplementary information only
+
+<p>Tooltips should repeat or clarify visible labels, not introduce essential information available nowhere else.</p>
+
+## Theming
+
+The tooltip surface maps to **semantic surface roles**, never Tailwind palette steps. Override `--rui-tooltip-*` on `rui-tooltip`.
+
+| Part | Default | Override |
+| --- | --- | --- |
+| Fill / text | `--on-background` / `--background` (inverted) | `--rui-tooltip-surface`, `--rui-tooltip-color` |
+| Radius / shadow | `--radius-container`, `--shadow-overlay` | `--rui-tooltip-radius`, `--rui-tooltip-shadow` |
+| Padding / max width | `--space-2` / `--space-1`, `20rem` | `--rui-tooltip-padding-x`, `--rui-tooltip-padding-y`, `--rui-tooltip-max-width` |
+| Z-order | `overlay` | theme z-index |
+
+```css
+rui-tooltip {
+  --rui-tooltip-max-width: 16rem;
+}
+```
+
+## Accessibility
+
+- Tooltips appear on keyboard focus as well as hover.
+- Do not put interactive content inside tooltips, use a popover instead.
+- Icon-only buttons should have `aria-label`; the tooltip provides redundant confirmation.
+
+## API
+
+`RuiTooltip` is a custom element (`<rui-tooltip>`) that shows a `role="tooltip"` surface on hover or focus of its composed trigger, referenced via `aria-describedby`.
+
+### Attributes (`<rui-tooltip>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `content` | `string` | `''` | Accessible description shown in the tooltip. |
+| `placement` | `RuiPlacement` | `top` | Placement relative to the anchor. |
+| `delay` | `number` | `200` | Show delay in ms (0 shows immediately). |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="trigger"]` | yes | — | trigger wrapper; focus bridge |
+| `[data-ref="tooltip"]` | yes | `id`, `hidden`, position | tooltip text / content |
+| focusable anchor | per trigger | `aria-describedby` | the control inside `[data-ref="trigger"]` |
+
+Do not set `id`, `hidden`, or `aria-describedby` on the anchor. Nested hosts: none.
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiTooltip` | `[data-ref="trigger"]`, `[data-ref="tooltip"]` | `content` prop mirrors tooltip text. `children` are the trigger. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-tooltip` | Root wrapper. |
+| `.rui-tooltip__trigger` | Host wrapper for the composed trigger. |
+| `.rui-tooltip__content` | Tooltip surface (`role="tooltip"`); `on-background` fill. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Content | `--on-background`, `--background`, `--shadow-overlay`, `--radius-container` |
+| Z-order | `--z-overlay` |

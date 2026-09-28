@@ -1,0 +1,155 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Introduction" />
+
+# radiant-ui
+
+Accessible light-DOM UI components built with [`@ecopages/radiant`](https://radiant.ecopages.app) and `@ecopages/jsx`.
+
+Package: **`@ecopages/radiant-ui`**. Custom elements use the **`rui-*`** tag prefix. Public TypeScript types and JSX helpers use the **`Rui*`** prefix (for example `RuiDisclosure`, `RuiButton`).
+
+This is not a React Storybook. Stories use Radiant custom elements and `@ecopages/jsx`.
+
+## Component tiers
+
+Not every entry under **Components/** is a full APG widget. Read the component TSDoc before treating it as a complete pattern:
+
+<table>
+  <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Meaning</th>
+      <th>Examples</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Native</strong></td>
+      <td>Thin styling / wiring around platform controls</td>
+      <td>
+        <code>RuiButton</code>, <code>RuiInput</code>, <code>RuiTextarea</code>, Switch, Checkbox, Checkbox Group, Slider (single + range), Meter, Radio Group,
+        <code>RuiHeading</code>, <code>RuiHeadline</code>, <code>RuiFeed</code>, <code>RuiAvatar</code>, <code>RuiChip</code>, <code>RuiButtonGroup</code>, Cycle Toggle
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Composite</strong></td>
+      <td>Custom element implements APG roles, states, and keyboard model</td>
+      <td>
+        Tabs, Dialog, Disclosure (+ Disclosure Group), Menu Button, Menubar, Listbox, Combobox, Select, Autocomplete, Popover, Tag Group, Tree, Treegrid, Toolbar, Grid, Carousel (transitions, indicators, rotation control), Window Splitter, Tooltip
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Form</strong></td>
+      <td>Composition for labels, validation, and submit — controls stay control-only</td>
+      <td>
+        <code>RuiForm</code>, <code>RuiField</code>, <code>RuiLabel</code>, <code>RuiFieldDescription</code>, <code>RuiFieldError</code>
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Shell</strong></td>
+      <td>Coordinator / structure — consumers compose content or own interaction beyond labeling</td>
+      <td>Navigation Menu (exclusive disclosure panels for megamenus)</td>
+    </tr>
+  </tbody>
+</table>
+
+Each composite component's TSDoc links the [WAI-ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/) pattern it targets.
+
+## Authoring
+
+Most composites are a **View-owned Shell**: parent JSX owns **Authored Children**;
+helpers or named props place chrome. Keep host `render()` for a **Derived Tree**
+only (toaster, TOC, calendar, meter). Full rules:
+`src/components/ui/README.md`.
+
+## Conventions
+
+- One directory per component in `src/components/ui/<name>/`:
+  - `<name>.script.ts` or `<name>.script.tsx` — custom element
+  - `<name>.tsx` — plain JSX view (`export function Rui…`) or presentational helper
+  - `<name>.css`, `<name>.stories.tsx` (`parameters.radiant` for SSR + Storybook CSS), `index.ts`
+- Events use the `rui-*` namespace (`rui-change`, `rui-close`).
+- Stateful props (`open`, `value`, `index`, `autoplay`, …) are reactive via `@onUpdated` unless a component documents them as initial-only.
+- Stories are render-mode agnostic. Use the toolbar **Radiant render** control to spot-check SSR (`ssr-hydrate` / `ssr-static`) on any story.
+
+<table>
+  <thead>
+    <tr>
+      <th>Mode</th>
+      <th>Behavior</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>client</code></td>
+      <td>Mount JSX / custom elements in the browser</td>
+    </tr>
+    <tr>
+      <td><code>ssr-hydrate</code></td>
+      <td><code>renderComponent</code> on the Vite server, inject markup, load client module, hydrate</td>
+    </tr>
+    <tr>
+      <td><code>ssr-static</code></td>
+      <td>Server markup in a sandboxed iframe; no client module runs</td>
+    </tr>
+  </tbody>
+</table>
+
+## Using the library
+
+Load a **theme** and **component styles** before registering elements:
+
+```ts
+import '@ecopages/radiant-ui/themes/default';
+import '@ecopages/radiant-ui/styles.css';
+import '@ecopages/radiant-ui/disclosure';
+import { RuiDisclosure, RuiDisclosureGroup } from '@ecopages/radiant-ui/disclosure';
+```
+
+The root entry registers every custom element (still import theme + styles):
+
+```ts
+import '@ecopages/radiant-ui/themes/default';
+import '@ecopages/radiant-ui/styles.css';
+import '@ecopages/radiant-ui';
+```
+
+Presentational helpers that are not custom elements (today: `RuiButton`, `RuiInput`, `RuiTextarea`, `RuiLabel`, `RuiFieldDescription`, `RuiFieldError`, `RuiHeading`, `RuiHeadline`, `RuiFeed`, `RuiAvatar`, `RuiChip`, `RuiChipList`, `RuiButtonGroup`) are still imported from their subpath:
+
+```ts
+import { RuiButton } from '@ecopages/radiant-ui/button';
+```
+
+## JSX view props
+
+Each `Rui*` view forwards global DOM attributes, events, bindings, and direct or
+structured ARIA/data props to its documented public surface. For example,
+`RuiSelect` forwards `id` to `<rui-select>`, while `RuiAlert` forwards global
+surface props to its inner `role="alert"` element.
+
+```tsx
+<RuiButton id="save" aria-label="Save changes" data-state="ready">
+	Save
+</RuiButton>
+
+<RuiButton aria={{ label: 'Save changes' }} data={{ state: 'ready' }}>
+	Save
+</RuiButton>
+```
+
+When direct and structured forms name the same attribute, the direct kebab-case
+form wins. Collection component IDs are the exception: `RuiTab`,
+`RuiTabPanel`, `RuiCarouselSlide`, and `RuiCycleToggleItem` use `id` as a
+semantic item key and generate or manage their DOM linkage internally.
+
+Component authors can import `withDefaultAriaLabel` from
+`@ecopages/radiant-ui/aria` when a view needs an overridable accessible-name
+default, such as an icon-only control. It preserves structured ARIA, while
+direct `aria-label` remains canonical during JSX normalization. Managed ARIA
+state remains an explicit component invariant rather than a default.
+
+Token and theme rules: see **DESIGN.md** in this package repo folder.
+
+## Docs-only APG guidance
+
+Link, Table, and Landmarks are not shipped as widgets here — use native HTML and document landmarks in app layouts.

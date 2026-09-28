@@ -1,0 +1,26 @@
+# Date input
+
+`rui-date-input` is a Derived Tree: the host `render()`s locale-ordered segments. Set `name` on the host to submit the committed ISO value like a native `<input type="date">`. An empty named value submits an empty string. Native reset restores the original value even if `name` is assigned after the first connect, and clears an uncommitted segment draft; a nested Date Field or Date Range Picker receives `rui-form-reset` to restore its parent value.
+
+## Editing and commit
+
+`segments` is the visible draft. `value` stays on the last committed `YYYY-MM-DD` until a unit is complete, focus moves to another segment, or the control blurs.
+
+- A nonempty digit buffer on the focused part is still in progress. Do not publish `value` just because the draft happens to parse as a date (day `1` of `2026-08-20` is not `2026-08-01` until the unit finishes or focus leaves).
+- Completing a month or day, or entering four year digits, validates the whole draft and commits a changed in-range date once (`rui-change`). An incomplete year (fewer than four digits) is not committed; leaving that year or the control restores the prior value. Moving to another empty unit does not wipe units already entered.
+- Arrow increment and backspace replace that buffer explicitly.
+- Only an outside assignment to `value` or `locale` replaces the draft. `label`, `min`, `max`, `disabled`, `read-only`, and `name` keep it: `min` / `max` are read when the draft commits. Disabling removes the segment from the tab order, so the browser blurs it and the Blur column below applies.
+- `updated()` moves focus and the caret to `focusedPart` after an update cycle that moved it or rebuilt `segments`, and only while focus is still inside the control. A `focusin` on the previous segment during that render (the renderer restoring focus) does not take editing back.
+
+`draftStatus()` in `@/lib/intl-date` classifies the draft. The element's `commit(trigger)` acts on it, once per trigger: completing a unit commits as the Leave of the focus move it causes, and a blur runs only the Blur column, not Leave then Blur.
+
+| Draft                                        | Edit (digit, backspace, arrow) | Leave (focus moves to another segment) | Blur (focus leaves the control) |
+| -------------------------------------------- | ------------------------------ | -------------------------------------- | ------------------------------- |
+| Buffer in progress on the focused part       | keep                           | buffer cleared first                   | buffer cleared first            |
+| `partial-year`                               | keep                           | restore                                | restore                         |
+| `empty`                                      | publish `''`                   | publish `''`                           | publish `''`                    |
+| `incomplete` (missing unit, impossible date) | keep                           | keep                                   | restore                         |
+| `out-of-range`                               | restore                        | restore                                | restore                         |
+| `date`                                       | publish ISO                    | publish ISO                            | publish ISO                     |
+
+Restore rebuilds `segments` from `value`. Publish sets `value` and emits `rui-change` only when the ISO changes, and `segments` rebuilds from the new value in the next update cycle; an unchanged value rebuilds `segments` at once so the display normalizes (`1` becomes `01`).

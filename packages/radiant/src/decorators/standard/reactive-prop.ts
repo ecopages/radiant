@@ -1,12 +1,77 @@
-import type { RadiantElement, ReactivePropertyOptions } from '../../core/radiant-element.js';
+import {
+	type PropTransform,
+	type ReactivePropertyOptions,
+	validateReactivePropertyDefault,
+} from '../../core/reactive-prop-core.js';
+import {
+	REACTIVE_PROP_METADATA,
+	type ReactivePropDefinition,
+	registerReactivePropDefinition,
+} from '../../core/reactive-prop-metadata';
 
-export function reactiveProp<P = unknown>({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions<P>) {
-	return function <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
+type ReactivePropHost<P> = {
+	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<P>): void;
+};
+
+/**
+ * Standard-decorator implementation for `@prop(...)`.
+ *
+ * The decorated host is expected to expose `createReactiveProp(...)`, which
+ * lets both `RadiantElement` and `RadiantController` share the same public
+ * decorator while keeping their runtime channels different.
+ *
+ * Prop metadata is written to `context.metadata` during class evaluation so
+ * `@customElement` can populate `observedAttributes` before `customElements.define`.
+ */
+export function reactiveProp<P = unknown>(propOptions: ReactivePropertyOptions<P>) {
+	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
+	const hasDefaultValue = 'defaultValue' in propOptions;
+	validateReactivePropertyDefault(type, defaultValue);
+	return function <T extends ReactivePropHost<P>, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) {
 		const propertyName = String(context.name);
 		const attributeKey = attribute ?? propertyName;
+		const initializerValueKey = Symbol(`@ecopages/radiant/reactive-prop:${propertyName}:initializer`);
+		const options: ReactivePropertyOptions<unknown> = {
+			type,
+			reflect,
+			attribute: attributeKey,
+			defaultValue,
+			bind,
+			transform: transform as PropTransform<unknown> | undefined,
+		};
+
+		const metadata = context.metadata as Record<symbol, ReactivePropDefinition[]> | null;
+		if (metadata) {
+			let definitions = metadata[REACTIVE_PROP_METADATA];
+			if (!Object.hasOwn(metadata, REACTIVE_PROP_METADATA)) {
+				definitions = definitions ? [...definitions] : [];
+				metadata[REACTIVE_PROP_METADATA] = definitions;
+			}
+
+			if (!definitions.some((definition) => definition.name === propertyName)) {
+				definitions.push({ name: propertyName, options });
+			}
+		}
 
 		context.addInitializer(function (this: T) {
-			this.createReactiveProp(propertyName, { type, reflect, attribute: attributeKey, defaultValue });
+			const initializerValue = (this as T & Record<PropertyKey, V | undefined>)[initializerValueKey];
+			const resolvedDefaultValue = (defaultValue === undefined ? initializerValue : defaultValue) as
+				P | undefined;
+
+			registerReactivePropDefinition(this, propertyName, options);
+			this.createReactiveProp(propertyName, {
+				type,
+				reflect,
+				attribute: attributeKey,
+				bind,
+				transform,
+				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),
+			});
 		});
+
+		return function (this: T, value: V) {
+			(this as Record<PropertyKey, V | undefined>)[initializerValueKey] = value;
+			return value;
+		};
 	};
 }

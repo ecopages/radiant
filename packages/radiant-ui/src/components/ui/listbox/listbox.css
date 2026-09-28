@@ -1,0 +1,59 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-listbox {
+	@apply block;
+}
+
+@layer components {
+	.rui-listbox {
+		@apply grid max-h-60 gap-0.5 overflow-auto bg-background p-1;
+	}
+
+	.rui-listbox--bordered {
+		@apply rounded-container border border-border;
+	}
+
+	.rui-listbox__option {
+		@apply cursor-pointer rounded-control px-control-x py-control-y text-sm text-on-background;
+	}
+
+	.rui-listbox__option[aria-disabled='true'] {
+		@apply cursor-not-allowed opacity-muted;
+	}
+
+	.rui-listbox__option:hover:not([aria-disabled='true']):not([data-active]):not([aria-selected='true']) {
+		@apply bg-surface-container-low;
+	}
+
+	.rui-listbox__option[data-active]:not([aria-selected='true']):not([aria-disabled='true']) {
+		@apply bg-surface-container text-on-background;
+	}
+
+	.rui-listbox__option[aria-selected='true']:not([aria-disabled='true']) {
+		@apply bg-primary text-on-primary rui-sheen;
+	}
+
+	.rui-listbox__option[aria-selected='true'][data-active]:not([aria-disabled='true']) {
+		@apply ring-2 ring-inset ring-on-primary/40;
+	}
+
+	.rui-listbox__option:has([data-listbox-option-indicator]) {
+		@apply flex items-center justify-between gap-2;
+	}
+
+	.rui-listbox__option-indicator {
+		@apply hidden shrink-0;
+	}
+
+	.rui-listbox__option[aria-selected='true'] .rui-listbox__option-indicator {
+		@apply inline-flex text-on-primary;
+	}
+
+	.rui-listbox__option:focus-visible {
+		@apply bg-surface-container outline-none ring-2 ring-focus-ring;
+	}
+
+	.rui-listbox__option[aria-selected='true']:focus-visible {
+		@apply bg-primary text-on-primary ring-focus-ring;
+	}
+}

@@ -1,0 +1,19 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"outDir": "./dist",
+		"rootDir": ".",
+		"strict": true,
+		"strictPropertyInitialization": false,
+		"target": "ESNext",
+		"types": ["node"],
+		"verbatimModuleSyntax": true
+	},
+	"include": ["**/*"],
+	"exclude": ["dist", "node_modules"]
+}

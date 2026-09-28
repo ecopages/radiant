@@ -1,16 +1,27 @@
 export * from './core/radiant-element';
+export * from './core/radiant-controller';
+export { registerSsrPreparationCallback, runSsrPreparationCallbacks } from './core/ssr-preparation';
+export * from './controller-registry';
+export * from './decorators/attr';
+export * from './decorators/bind-to';
+export * from './decorators/bound';
+export * from './decorators/controller';
 export * from './decorators/custom-element';
+export * from './decorators/debounce';
 export * from './decorators/event';
 export * from './decorators/on-event';
 export * from './decorators/on-updated';
+export * from './decorators/prop';
 export * from './decorators/query';
-export * from './decorators/reactive-prop';
-export * from './decorators/reactive-field';
-export * from './context/context-provider';
-export * from './context/create-context';
-export * from './context/decorators/consume-context';
-export * from './context/decorators/context-selector';
-export * from './context/decorators/provide-context';
-export * from './mixins/with-kita';
-export * from './tools';
-export * from './utils';
+export * from './decorators/query-slot';
+export * from './decorators/signal';
+export * from './decorators/state';
+export {
+	createHostResource,
+	createResource,
+	HostResource,
+	type HostResourceConfig,
+	type HostResourceSourcedConfig,
+	type ResourceContext,
+	type ResourceRequestContext,
+} from './signals/host-resource';

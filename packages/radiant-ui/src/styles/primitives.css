@@ -1,0 +1,10 @@
+/**
+ * Shared structural styles used by composed component views.
+ *
+ * Generated aggregate entries import this once. Selective consumers include it
+ * when listed by `style-dependencies`.
+ */
+@import '../lib/icons/icons.css';
+@import '../components/ui/shared/control-toggle.css';
+@import '../components/ui/shared/floating.css';
+@import '../components/ui/shared/popover.css';

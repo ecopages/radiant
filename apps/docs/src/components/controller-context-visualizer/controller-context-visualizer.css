@@ -1,0 +1,7 @@
+.controller-context-visualizer {
+	@apply my-6;
+}
+
+.controller-context-visualizer code {
+	@apply font-mono text-[0.875em];
+}

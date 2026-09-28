@@ -1,0 +1,77 @@
+---
+title: "@bindTo"
+description: "Copy a reactive field onto existing DOM without a host render() tree."
+group: Decorators
+order: 10
+---
+
+# @bindTo
+
+`@bindTo` patches attributes, boolean attributes, DOM properties, or text on nodes that already exist. Use it on authored light-DOM hosts and catalog shells where the parent (or a view helper) owns the markup.
+
+It does not create nodes, move children, or attach event listeners. For those jobs use composition helpers, `@onEvent`, and `@onUpdated`.
+
+## Usage
+
+```typescript
+import { RadiantElement, bindTo, customElement, prop } from '@ecopages/radiant';
+
+@customElement('rui-dialog')
+export class RuiDialog extends RadiantElement {
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({ ref: 'root', bool: 'hidden', invert: true })
+	open = false;
+}
+```
+
+Omit `ref` / `selector` to patch the host element itself (`this` on `RadiantElement`, `this.element` on `RadiantController`).
+
+## One value, several writes
+
+Pass an array to fan one field out to several DOM facts:
+
+```typescript
+@prop({ type: Boolean, defaultValue: false })
+@bindTo([
+	{ selector: '[data-disclosure-trigger]', attr: 'aria-expanded' },
+	{ selector: '[data-disclosure-panel]', attr: 'data-state', map: (open) => (open ? 'open' : 'closed') },
+])
+open = false;
+```
+
+## Parameters
+
+Each target sets exactly one of `attr`, `bool`, `prop`, or `text`. `ref` and `selector` are mutually exclusive. A target that violates that throws when the decorator is applied.
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `ref` | `string` | No | `data-ref` of a descendant. Omit both `ref` and `selector` to patch the host. |
+| `selector` | `string` | No | CSS selector of a descendant. |
+| `attr` | `string` | One write kind | `setAttribute` / `removeAttribute` (`null`/`undefined` removes). |
+| `bool` | `string` | One write kind | `toggleAttribute` from a boolean value. |
+| `prop` | `string` | One write kind | DOM property write (`input.value`, `meter.value`). |
+| `text` | `true` | One write kind | `textContent`. |
+| `invert` | `true` | No | Negate the value before writing (`open` → `hidden`). |
+| `map` | `(value: T) => unknown` | No | Transform the value before writing. `T` is the decorated field; do not annotate the parameter. |
+
+Missing descendants are skipped. A field that is not `@prop`, `@state`, or `@signal` is skipped too. The first paint runs after attribute catch-up (and the initial `render()` / `hydrate()` when the host owns a view), so parent-authored `data-ref` nodes are visible.
+
+A target with no write kind is a type error. Two write kinds, or both `ref` and `selector`, still typecheck — excess-property checking against the union treats a key on any member as known — and throw `TypeError` when the decorator is applied.
+
+## What not to put on `@bindTo`
+
+| Job | Use |
+| --- | --- |
+| Click, keydown, Escape | [@onEvent](/docs/decorators/on-event) |
+| Focus trap, timers, joined `aria-describedby` | [@onUpdated](/docs/decorators/on-updated) |
+| Host-owned JSX leaves | `this.$` inside `render()` |
+| Replaceable title / icon / chrome | View helpers and `{children ?? default}` |
+
+Unrelated fields stay on separate `@bindTo` declarations. Branching (`if (this.animated)`) stays in a method.
+
+## Learn More
+
+- [@onUpdated](/docs/decorators/on-updated) — procedures and derived state
+- [@onEvent](/docs/decorators/on-event) — DOM events
+- [RadiantElement](/docs/components/radiant-element) — authored light-DOM vs `render()` hosts
+- [Slots](/docs/components/slots) — HTML-first projection, not the JSX library API

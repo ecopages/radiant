@@ -1,0 +1,80 @@
+---
+title: Badge
+description: Badges display compact status, counts, or inline labels next to headings and controls.
+category: Data display
+---
+
+import { meta as BadgeMeta, Default, Destructive } from '@/content/stories/badge';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Badge
+
+<p class="docs-lede">Badges display compact status, counts, or inline labels next to headings and controls.</p>
+
+## Try it
+
+<Demo of={Default} meta={BadgeMeta} />
+
+## Usage
+
+```tsx
+import { RuiBadge } from '@ecopages/radiant-ui/badge';
+
+<RuiBadge variant="outline">Beta</RuiBadge>
+```
+
+## Badge vs chip
+
+<p>Use `RuiBadge` for status and counts (`Beta`, `3`, `Error`). Use `RuiChip` for category tags and filter entities in pill-shaped containers.</p>
+
+## With spinner
+
+<p>Place `RuiSpinner` inside a badge to show a syncing or processing state.</p>
+
+## Variants
+
+<Canvas of={Destructive} meta={BadgeMeta} />
+
+## Theming
+
+| `variant` | Semantic roles |
+| --- | --- |
+| `filled` | `primary-container`, `on-primary-container` |
+| `outline` | `border`, `background`, `on-background` |
+| `destructive` | `error`, `on-error` |
+| `ghost` | `on-surface` |
+| `muted` | `surface-container`, `on-surface` |
+
+## API
+
+`RuiBadge` is a presentational JSX view over a `<span>`, no custom element.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `variant` | `filled` · `outline` · `destructive` · `ghost` · `muted` | `filled` | Visual tone. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-badge` | Badge root. |
+| `.rui-badge--filled` | Primary emphasis on `primary-container`. |
+| `.rui-badge--outline` | Bordered badge on `background`. |
+| `.rui-badge--destructive` | Error emphasis. |
+| `.rui-badge--ghost` | Subtle text-only badge. |
+| `.rui-badge--muted` | Muted surface badge. |

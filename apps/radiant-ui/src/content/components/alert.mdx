@@ -1,0 +1,205 @@
+---
+title: Alert
+description: Alerts surface time-sensitive status without blocking the interface.
+category: Feedback
+---
+
+import { meta as AlertMeta, Default, InlineWarning, Banner, Dismissible } from '@/content/stories/alert';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Alert
+
+<p class="docs-lede">Alerts surface time-sensitive status without blocking the interface. Use them for session warnings, sync failures, or confirmations that do not warrant a modal.</p>
+
+## Try it
+
+<Demo of={Default} meta={AlertMeta} />
+
+## Usage
+
+Compose `RuiAlert` with `RuiAlertIcon` and short text for `layout="inline"`, or `RuiAlertTitle` and `RuiAlertDescription` for `layout="banner"`. Banner layouts omit the icon. `RuiAlert` owns the `role="alert"` surface; the host handles dismiss.
+
+```tsx
+import { RuiAlert, RuiAlertIcon } from '@ecopages/radiant-ui/alert';
+
+<RuiAlert variant="warning" layout="inline">
+	<RuiAlertIcon variant="warning" />
+	<span>Your session will expire in 5 minutes.</span>
+</RuiAlert>
+```
+
+Inject or reveal an alert when the status becomes relevant. Copy that is always on the page should not use `role="alert"`.
+
+## Custom markup
+
+`<rui-alert>` coordinates any light-DOM tree that matches its query contract. The `Rui*` helpers stamp these targets; they are not required.
+
+```tsx
+import '@ecopages/radiant-ui/alert';
+
+<rui-alert dismissible close-label="Dismiss">
+  <div role="alert" class="rui-alert rui-alert--warning rui-alert--inline">
+    Your session will expire in 5 minutes.
+    <button type="button" data-alert-close class="rui-alert__close" aria-label="Dismiss"></button>
+  </div>
+</rui-alert>
+```
+
+BEM classes are presentation-only. The host only queries `[data-alert-close]`; authors own the `role="alert"` surface.
+
+## Theming
+
+Alert tones use **semantic status roles** from the active theme, not Tailwind palette steps (`blue-500`, `emerald-100`, …). Each `variant` maps to a role family:
+
+| `variant` | Semantic role | Typical utilities on `.rui-alert--*` |
+| --- | --- | --- |
+| `info` | `info` | `bg-info-container`, `text-on-info-container`, `border-info/30` |
+| `success` | `success` | `bg-success-container`, `text-on-success-container` |
+| `warning` | `warning` | `bg-warning-container`, `text-on-warning-container` |
+| `error` | `error` (destructive) | `bg-error-container`, `text-on-error-container` |
+
+Banner layouts paint the left accent rail with the role accent (`bg-info`, `bg-warning`, …). Brand color packs remap all roles for light and dark mode.
+
+Override at the theme layer (`tokens/presets/colors/*.css`), not in component CSS. Toasts and other notification UI should reuse the same `info` / `warning` / `success` / `error` families.
+
+## Why a custom element?
+
+`<rui-alert>` is justified when the alert can **dismiss itself**: it emits `rui-close` and removes the host from the DOM without re-building the composed light-DOM surface. The `RuiAlert` view owns `role="alert"`, BEM classes, and the dismiss button markup; the CE owns dismiss behavior and event delegation.
+
+For static, non-dismissible copy that is always visible, prefer plain markup without `role="alert"`; see Usage above.
+
+## Match severity to variant
+
+Reserve `error` for blocking problems the user must address. Use `warning` for recoverable risk, `success` for completed operations, and `info` for neutral context.
+
+<Canvas of={InlineWarning} meta={AlertMeta} />
+
+```tsx
+<RuiAlert variant="warning" layout="inline">
+	<RuiAlertIcon variant="warning" />
+	<span>Disk space is running low.</span>
+</RuiAlert>
+```
+
+## Inline or banner layout
+
+`inline` pairs `RuiAlertIcon` with a short message for compact status inside forms or page flow. `banner` spans the full width of a region with `RuiAlertTitle` and `RuiAlertDescription`.
+
+<Canvas of={Banner} meta={AlertMeta} />
+
+```tsx
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
+
+<RuiAlert variant="info" layout="banner">
+	<RuiAlertTitle>Documentation preview</RuiAlertTitle>
+	<RuiAlertDescription>
+		<p>This release includes breaking changes to the routing API.</p>
+	</RuiAlertDescription>
+</RuiAlert>
+```
+
+## Dismissible alerts
+
+Set `dismissible` when the user can clear the message. The host emits `rui-close` and then removes itself from the DOM.
+
+<Canvas of={Dismissible} meta={AlertMeta} />
+
+```tsx
+<RuiAlert variant="warning" layout="inline" dismissible>
+	<RuiAlertIcon variant="warning" />
+	<span>Your session will expire in 5 minutes.</span>
+</RuiAlert>
+```
+
+## Accessibility
+
+Follows the <a href="https://www.w3.org/WAI/ARIA/apg/patterns/alert/" data-wai-aria target="_blank" rel="noopener noreferrer">Alert</a> pattern.
+
+- The view renders an inner surface with `role="alert"` so screen readers announce the message when it appears.
+- For inline alerts, pair `RuiAlertIcon` with text; do not rely on color or the icon alone to convey severity. The default icon is decorative (`aria-hidden="true"`).
+- For banner alerts, use `RuiAlertTitle` for the headline and `RuiAlertDescription` for supporting detail.
+- Prefer alerts for interruptions that do not require an immediate response. Use a dialog when the user must decide before continuing.
+- When `dismissible`, the close control is a labeled button (`close-label`, default `Dismiss`).
+
+## API
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `variant` | `info` · `success` · `warning` · `error` | `info` | Visual tone. |
+| `layout` | `inline` · `banner` | `inline` | Compact row vs full-width advisory. |
+| `dismissible` | `boolean` | `false` | Show dismiss control; enables `dismiss()`. |
+| `close-label` | `string` | `Dismiss` | Accessible name for the dismiss control. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-alert-close]` | no | — | presence, `aria-label` |
+
+The host does not query alert content. Authors own the `role="alert"` surface (or use `RuiAlert`). Nested hosts: none.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-close` | `{ reason: 'dismiss' }` | Fired when the alert is dismissed; the host is then removed. |
+
+### Methods
+
+| Method | Description |
+| --- | --- |
+| `dismiss()` | Emit `rui-close`, then remove the host from the DOM. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiAlert` | `<rui-alert>` + inner `role="alert"` surface | Appends `[data-alert-close]` when `dismissible`. |
+| `RuiAlertIcon` | — | Presentation only (`inline` layout). |
+| `RuiAlertTitle` | — | Presentation only (`banner` layout). |
+| `RuiAlertDescription` | — | Presentation only (`banner` layout). |
+
+### CSS classes
+
+Public BEM classes on the light-DOM surface (documented via `@cssclass` on the JSX view helpers):
+
+| Class | Description |
+| --- | --- |
+| `.rui-alert` | Root surface inside the host (`role="alert"`). |
+| `.rui-alert--info` | Info tone (default). |
+| `.rui-alert--success` | Success tone. |
+| `.rui-alert--warning` | Warning tone. |
+| `.rui-alert--error` | Error tone. |
+| `.rui-alert--inline` | Compact row layout (icon + text). |
+| `.rui-alert--banner` | Full-width advisory with left accent rail. |
+| `.rui-alert--dismissible` | Layout adjustments for the dismiss control. |
+| `.rui-alert__icon` | Icon wrapper (`RuiAlertIcon`, `inline` only). |
+| `.rui-alert__title` | Banner headline (`RuiAlertTitle`). |
+| `.rui-alert__description` | Banner body (`RuiAlertDescription`). |
+| `.rui-alert__close` | Dismiss button when `dismissible` is set. |
+
+### Theme roles (per `variant`)
+
+| Variant | CSS variables consumed |
+| --- | --- |
+| `info` | `--info`, `--info-container`, `--on-info-container` |
+| `success` | `--success`, `--success-container`, `--on-success-container` |
+| `warning` | `--warning`, `--warning-container`, `--on-warning-container` |
+| `error` | `--error`, `--error-container`, `--on-error-container` |
+
+`error` is the destructive status role (same family as destructive buttons).

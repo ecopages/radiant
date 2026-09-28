@@ -1,19 +1,49 @@
-import type { RadiantElement } from '../../../core/radiant-element';
-import { ContextRequestEvent } from '../../events';
+import type { ContextHostLike } from '../../context-host';
+import { registerLegacyPostConstructionInitializer } from '../../../decorators/legacy/instance-initializers';
+import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
-export function consumeContext(contextToProvide: UnknownContext) {
-	return (proto: RadiantElement, propertyKey: string) => {
-		const originalConnectedCallback = proto.connectedCallback;
+export function consumeContext(context: UnknownContext) {
+	return (proto: ContextHostLike, propertyKey: string) => {
+		const assignContextProvider = (element: ContextHostLike, provider: unknown) => {
+			(element as any)[propertyKey] = provider;
+		};
+		const initializeConsumedContextForHost = (
+			element: ContextHostLike,
+			options: { emitMounted?: boolean } = {},
+		) => {
+			if ((element as any)[propertyKey]) {
+				return true;
+			}
 
-		proto.connectedCallback = function (this: RadiantElement) {
-			originalConnectedCallback.call(this);
-			this.dispatchEvent(
-				new ContextRequestEvent(contextToProvide, (context) => {
-					(this as any)[propertyKey] = context;
-					this.connectedContextCallback(contextToProvide);
-				}),
+			return connectConsumedContext(
+				element,
+				context,
+				(provider) => {
+					assignContextProvider(element, provider);
+				},
+				options,
 			);
 		};
+
+		registerLegacyPostConstructionInitializer(proto, (element) => {
+			if (
+				bootstrapSsrConsumedContext(element, context, (provider) => {
+					assignContextProvider(element, provider);
+				})
+			) {
+				return;
+			}
+
+			element.registerConnectedCallback(() => {
+				if (initializeConsumedContextForHost(element, { emitMounted: true })) {
+					return;
+				}
+
+				queueMicrotask(() => {
+					initializeConsumedContextForHost(element, { emitMounted: true });
+				});
+			});
+		});
 	};
 }

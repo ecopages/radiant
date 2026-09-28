@@ -1,0 +1,14 @@
+@reference '../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-icon {
+		width: var(--size-icon-sm);
+		height: var(--size-icon-sm);
+		flex-shrink: 0;
+	}
+
+	.rui-icon--md {
+		width: var(--size-icon-md);
+		height: var(--size-icon-md);
+	}
+}

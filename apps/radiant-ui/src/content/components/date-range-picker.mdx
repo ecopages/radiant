@@ -1,0 +1,208 @@
+---
+title: Date Range Picker
+description: Date range pickers collect a start and end date in one control, such as bookings, reporting periods, and availability filters.
+category: Forms
+---
+
+import { meta as DateRangePickerMeta, Default, WithCalendar } from '@/content/stories/date-range-picker';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Date Range Picker
+
+<p class="docs-lede">Date range pickers collect a start and end date in one control, such as bookings, reporting periods, and availability filters.</p>
+
+## Try it
+
+<Demo of={Default} meta={DateRangePickerMeta} />
+
+## Usage
+
+Compose the two inputs, separator, calendar trigger, popup, and calendar as children of `RuiDateRangePicker`. When no children are supplied, `RuiDateRangePicker` renders this same composition for you. Pass `value` as `start/end` ISO dates and give each input its own accessible name.
+
+The default composition accepts `startLabel` and `endLabel` view props for the two segment editors. Use those props when the default structure is sufficient; set `aria-label` directly on `RuiDateRangePickerStartInput` and `RuiDateRangePickerEndInput` when composing the children yourself.
+
+Typing one side does not commit the range. The host `value` updates when both start and end are valid ISO dates, or when a previously committed range is cleared.
+
+```tsx
+import {
+  RuiDateRangePicker,
+  RuiDateRangePickerCalendar,
+  RuiDateRangePickerControl,
+  RuiDateRangePickerEndInput,
+  RuiDateRangePickerInputs,
+  RuiDateRangePickerPopover,
+  RuiDateRangePickerSeparator,
+  RuiDateRangePickerStartInput,
+  RuiDateRangePickerToggle,
+} from '@ecopages/radiant-ui/date-range-picker';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="tripDates">
+  <RuiLabel>Trip dates</RuiLabel>
+  <RuiDateRangePicker value="2026-08-01/2026-08-14" visibleMonths={2}>
+    <RuiDateRangePickerControl>
+      <RuiDateRangePickerInputs>
+        <RuiDateRangePickerStartInput aria-label="Start date" />
+        <RuiDateRangePickerSeparator />
+        <RuiDateRangePickerEndInput aria-label="End date" />
+      </RuiDateRangePickerInputs>
+      <RuiDateRangePickerToggle />
+    </RuiDateRangePickerControl>
+    <RuiDateRangePickerPopover>
+      <RuiDateRangePickerCalendar />
+    </RuiDateRangePickerPopover>
+  </RuiDateRangePicker>
+</RuiField>
+```
+
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/date-range-picker';
+import '@ecopages/radiant-ui/date-input';
+import '@ecopages/radiant-ui/calendar';
+
+<rui-date-range-picker value="2026-08-01/2026-08-14">
+  <div class="rui-date-range-picker__group">
+    <rui-date-input data-range-start aria-label="Start date"></rui-date-input>
+    <rui-date-input data-range-end aria-label="End date"></rui-date-input>
+    <button type="button" data-range-trigger data-ref="trigger"></button>
+  </div>
+  <div data-range-popover data-ref="popover" hidden>
+    <rui-calendar data-range-calendar />
+  </div>
+</rui-date-range-picker>
+```
+
+## Calendar input
+
+Use the calendar button to select the start and end dates. After the first date is selected, the popup stays open for the second date and closes when the range is complete. Focus moves to the selected start date or the first available date when the popup opens.
+
+<Canvas of={WithCalendar} meta={DateRangePickerMeta} />
+
+## Two-month view
+
+<p>Set `visibleMonths` to `2` so users can span month boundaries without extra navigation clicks.</p>
+
+## Separate form names
+
+<p>Use `startName` and `endName` when the backend expects discrete fields instead of a combined range value.</p>
+
+## Theming
+
+Date Range Picker surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Control group (`rui-date-range-picker__group`) | `border`, `background`, `radius-control`; `focus-ring` ring on focus-within |
+| Input text | `on-background`, `--text-control`, `--space-control-*` |
+| Placeholder | `on-surface` + `opacity-muted` |
+| Separator | `on-surface` |
+| Disabled | `opacity-disabled` |
+| Popup (`rui-date-range-picker__popover`) | `popover` surface + `shadow-overlay` (via `rui-popover`) |
+
+Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space-control-*`) with `RuiInput` and `RuiButton` so form rows align. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiDateRangePicker` is a custom element (`<rui-date-range-picker>`) that coordinates its light-DOM inputs, toggle button, and range calendar popover. It is not form-associated; `start-name` / `end-name` land on the nested `rui-date-input` hosts. `RuiField` `name` is the store key for the combined `start/end` value.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Canonical `YYYY-MM-DD/YYYY-MM-DD` range. |
+| `min` | `string` | `''` | Earliest selectable ISO date. |
+| `max` | `string` | `''` | Latest selectable ISO date. |
+| `disabled` | `boolean` | `false` | Disable both inputs and the calendar. |
+| `read-only` | `boolean` | `false` | Disable editing while keeping values visible. |
+| `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
+| `start-name` | `string` | `''` | Form `name` on the nested start `rui-date-input`. |
+| `end-name` | `string` | `''` | Form `name` on the nested end `rui-date-input`. |
+| `name` | `string` | `''` | Reserved; use `start-name` / `end-name` for discrete fields. |
+| `visible-months` | `number` | `2` | Month grids shown in the range calendar popover. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-range-start]` | yes | `name`, `locale`, `min`, `max`, `disabled`, `read-only`; `value` only for a complete range | nested `rui-date-input` |
+| `[data-range-end]` | yes | same as start | nested `rui-date-input` |
+| `[data-range-trigger]` | yes | `aria-expanded`, `disabled` | toggle (`data-ref="trigger"`) |
+| `[data-range-popover]` | yes | `hidden` | popup (`data-ref="popover"`) |
+| `[data-range-calendar]` | yes | `selection-mode="range"`, `value`, … | nested `rui-calendar` |
+
+Nested host: `rui-calendar` at `[data-range-calendar]` — parent queries `[data-calendar-day]` inside it.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value, start, end }` | Fired when a valid range is committed, or when a committed range is cleared. |
+
+### JSX view props
+
+These props configure the default child composition rendered by the `RuiDateRangePicker` JSX view. They are not custom-element attributes.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `startLabel` | `string` | `Start date` | Accessible name for the default start-date input. |
+| `endLabel` | `string` | `End date` | Accessible name for the default end-date input. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiDateRangePickerControl` | — | Bordered control row |
+| `RuiDateRangePickerInputs` | — | Start / end row |
+| `RuiDateRangePickerStartInput` | `[data-range-start]` | Give it an accessible name |
+| `RuiDateRangePickerSeparator` | — | Visual separator |
+| `RuiDateRangePickerEndInput` | `[data-range-end]` | Give it an accessible name |
+| `RuiDateRangePickerToggle` | `[data-range-trigger]` | Opens calendar popup |
+| `RuiDateRangePickerPopover` | `[data-range-popover]` | Popup shell |
+| `RuiDateRangePickerCalendar` | `[data-range-calendar]` | Range-mode `rui-calendar` |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on `RuiDateRangePicker`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-date-range-picker` | Root surface. |
+| `.rui-date-range-picker__group` | Bordered control-height row wrapping inputs and toggle. |
+| `.rui-date-range-picker__values` | Start / end input row. |
+| `.rui-date-range-picker__input` | Host for nested `rui-date-input`. |
+| `.rui-date-range-picker__separator` | Em dash between the inputs. |
+| `.rui-date-range-picker__popover` | Range calendar popup shell (`rui-popover` / `rui-floating`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Control group | `--border`, `--background`, `--radius-control`, `--focus-ring` |
+| Input text | `--on-background`, `--text-control`, `--space-control-x`, `--space-control-y` |
+| Placeholder | `--on-surface`, `--opacity-muted` |
+| Separator | `--on-surface` |
+| Disabled | `--opacity-disabled` |
+| Popup | `--shadow-overlay` (via `rui-popover`) |
+
+## Accessibility
+
+- Give both segment groups distinct accessible names (`aria-label` or `startLabel` / `endLabel` on the default composition).
+- Segments use spinbutton semantics with numeric keypads on touch devices.
+- The calendar trigger opens the popup and moves focus to the selected start date or first available date; arrow keys move between days, Page Up / Page Down change months, and Escape closes the popup.
+- Surface validation errors for incomplete ranges before form submission.

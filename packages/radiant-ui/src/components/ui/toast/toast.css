@@ -1,0 +1,359 @@
+@reference '../../../styles/radiant-ui.css';
+
+/*
+ * Fixed toaster host by default. When `container` is set, `data-contained`
+ * switches the host to absolute positioning inside that root.
+ * Stack transforms are written by JS onto `--rui-toast-y`.
+ */
+rui-toaster {
+	--rui-toaster-width: 356px;
+	--rui-toaster-gap: 14px;
+	--rui-toaster-offset: 24px;
+	--rui-toaster-inset-x: 16px;
+	--rui-toaster-inset-bottom: 16px;
+	position: fixed;
+	z-index: var(--z-toast, 50);
+	pointer-events: none;
+	box-sizing: border-box;
+	width: var(--rui-toaster-width);
+	margin: 0;
+	padding: 0;
+}
+
+rui-toaster[data-contained='true'] {
+	position: absolute;
+}
+
+rui-toaster[data-y-position='top'] {
+	top: var(--rui-toaster-offset, 24px);
+	bottom: auto;
+}
+
+rui-toaster[data-y-position='bottom'] {
+	bottom: var(--rui-toaster-offset, 24px);
+	top: auto;
+}
+
+rui-toaster[data-x-position='end'] {
+	right: var(--rui-toaster-offset, 24px);
+	left: auto;
+	transform: none;
+}
+
+rui-toaster[data-x-position='start'] {
+	left: var(--rui-toaster-offset, 24px);
+	right: auto;
+	transform: none;
+}
+
+rui-toaster[data-x-position='center'] {
+	left: 50%;
+	right: auto;
+	transform: translateX(-50%);
+}
+
+rui-toast {
+	--rui-toast-y: translateY(0);
+	--rui-toast-z: 1;
+	position: absolute;
+	left: 0;
+	width: 100%;
+	opacity: 0;
+	transform: var(--rui-toast-y);
+	touch-action: none;
+	box-sizing: border-box;
+	outline: none;
+	overflow-wrap: anywhere;
+	overflow: hidden;
+	pointer-events: auto;
+	z-index: var(--rui-toast-z);
+	transition:
+		transform 400ms ease,
+		opacity 400ms ease,
+		height 400ms ease;
+}
+
+rui-toaster[data-y-position='bottom'] rui-toast {
+	bottom: 0;
+	top: auto;
+	transform-origin: center bottom;
+}
+
+rui-toaster[data-y-position='top'] rui-toast {
+	top: 0;
+	bottom: auto;
+	transform-origin: center top;
+}
+
+/* Enter from off-screen until JS mounts + patches --rui-toast-y */
+rui-toast:not([data-mounted='true']) {
+	opacity: 0;
+}
+
+rui-toaster[data-y-position='bottom'] rui-toast:not([data-mounted='true']) {
+	--rui-toast-y: translateY(100%);
+}
+
+rui-toaster[data-y-position='top'] rui-toast:not([data-mounted='true']) {
+	--rui-toast-y: translateY(-100%);
+}
+
+rui-toast[data-mounted='true'] {
+	opacity: 1;
+}
+
+rui-toast[data-mounted='true'][data-visible='false'] {
+	opacity: 0;
+	pointer-events: none;
+}
+
+rui-toast[data-expanded='false'][data-front='false'] {
+	pointer-events: none;
+}
+
+rui-toast[data-swiping='true'] {
+	transform: var(--rui-toast-y) translateY(var(--rui-toast-swipe-y, 0px)) translateX(var(--rui-toast-swipe-x, 0px));
+	transition: none;
+}
+
+rui-toast[data-removed='true'][data-swipe-out='false'] {
+	opacity: 0;
+	transition:
+		transform 400ms ease,
+		opacity 200ms ease,
+		height 400ms ease;
+}
+
+rui-toaster[data-y-position='bottom'] rui-toast[data-removed='true'][data-swipe-out='false'] {
+	--rui-toast-y: translateY(100%);
+}
+
+rui-toaster[data-y-position='top'] rui-toast[data-removed='true'][data-swipe-out='false'] {
+	--rui-toast-y: translateY(-100%);
+}
+
+rui-toast[data-swipe-out='true'] {
+	animation-duration: 200ms;
+	animation-timing-function: ease-out;
+	animation-fill-mode: forwards;
+}
+
+rui-toast[data-swipe-out='true'][data-swipe-direction='left'] {
+	animation-name: rui-toast-swipe-out-left;
+}
+
+rui-toast[data-swipe-out='true'][data-swipe-direction='right'] {
+	animation-name: rui-toast-swipe-out-right;
+}
+
+rui-toast[data-swipe-out='true'][data-swipe-direction='up'] {
+	animation-name: rui-toast-swipe-out-up;
+}
+
+rui-toast[data-swipe-out='true'][data-swipe-direction='down'] {
+	animation-name: rui-toast-swipe-out-down;
+}
+
+/* Hover bridge between expanded toasts (fills the gap toward the next toast). */
+rui-toaster[data-y-position='bottom'] rui-toast[data-expanded='true']::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	width: 100%;
+	height: calc(var(--rui-toaster-gap) + 1px);
+	bottom: 100%;
+}
+
+rui-toaster[data-y-position='top'] rui-toast[data-expanded='true']::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	width: 100%;
+	height: calc(var(--rui-toaster-gap) + 1px);
+	top: 100%;
+}
+
+@layer components {
+	.rui-toaster-region {
+		display: contents;
+	}
+
+	.rui-toaster {
+		@apply relative m-0 list-none p-0;
+		width: 100%;
+		outline: none;
+		box-sizing: border-box;
+		pointer-events: auto;
+	}
+
+	rui-toast .rui-toast > * {
+		transition: opacity 400ms ease;
+	}
+
+	rui-toast[data-expanded='false'][data-front='false'] .rui-toast > * {
+		opacity: 0;
+	}
+
+	.rui-toast {
+		@apply relative flex w-full items-center gap-inline rounded-container border px-control-x py-control-y text-sm shadow-overlay rui-sheen;
+		@apply border-border bg-surface text-on-surface;
+	}
+
+	.rui-toast--info {
+		@apply border-info/40 bg-surface text-info;
+	}
+
+	.rui-toast--success {
+		@apply border-success/40 bg-surface text-success;
+	}
+
+	.rui-toast--warning {
+		@apply border-warning/40 bg-surface text-warning;
+	}
+
+	.rui-toast--error {
+		@apply border-error/40 bg-surface text-error;
+	}
+
+	.rui-toast--loading {
+		@apply border-border bg-surface text-on-surface;
+	}
+
+	.rui-toast__icon {
+		@apply inline-flex size-5 shrink-0 items-center justify-center text-sm font-semibold;
+	}
+
+	.rui-toast__loader {
+		@apply size-4 rounded-full border-2 border-current border-r-transparent;
+		animation: rui-toast-spin 0.7s linear infinite;
+	}
+
+	.rui-toast__content {
+		@apply flex min-w-0 flex-1 flex-col gap-0.5;
+	}
+
+	.rui-toast__title {
+		@apply font-medium leading-snug text-inherit;
+	}
+
+	.rui-toast__description {
+		@apply text-xs leading-snug opacity-80;
+	}
+
+	.rui-toast__action {
+		@apply shrink-0;
+	}
+
+	.rui-toast__close {
+		@apply absolute -top-2 -left-2 inline-flex size-5 items-center justify-center rounded-full border border-border bg-surface text-xs text-on-surface;
+		@apply cursor-pointer leading-none;
+	}
+
+	.rui-toast__close:hover {
+		@apply bg-background;
+	}
+
+	.rui-toast__close:focus-visible {
+		@apply ring-2 ring-focus-ring outline-hidden;
+	}
+
+	rui-toast:focus-visible .rui-toast {
+		@apply ring-2 ring-focus-ring;
+	}
+}
+
+@keyframes rui-toast-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes rui-toast-swipe-out-left {
+	from {
+		transform: var(--rui-toast-y) translateX(var(--rui-toast-swipe-x));
+		opacity: 1;
+	}
+
+	to {
+		transform: var(--rui-toast-y) translateX(calc(var(--rui-toast-swipe-x) - 100%));
+		opacity: 0;
+	}
+}
+
+@keyframes rui-toast-swipe-out-right {
+	from {
+		transform: var(--rui-toast-y) translateX(var(--rui-toast-swipe-x));
+		opacity: 1;
+	}
+
+	to {
+		transform: var(--rui-toast-y) translateX(calc(var(--rui-toast-swipe-x) + 100%));
+		opacity: 0;
+	}
+}
+
+@keyframes rui-toast-swipe-out-up {
+	from {
+		transform: var(--rui-toast-y) translateY(var(--rui-toast-swipe-y));
+		opacity: 1;
+	}
+
+	to {
+		transform: var(--rui-toast-y) translateY(calc(var(--rui-toast-swipe-y) - 100%));
+		opacity: 0;
+	}
+}
+
+@keyframes rui-toast-swipe-out-down {
+	from {
+		transform: var(--rui-toast-y) translateY(var(--rui-toast-swipe-y));
+		opacity: 1;
+	}
+
+	to {
+		transform: var(--rui-toast-y) translateY(calc(var(--rui-toast-swipe-y) + 100%));
+		opacity: 0;
+	}
+}
+
+@media (max-width: 600px) {
+	rui-toaster {
+		left: var(--rui-toaster-inset-x);
+		right: var(--rui-toaster-inset-x);
+		width: auto;
+		transform: none;
+	}
+
+	rui-toaster[data-y-position='bottom'] {
+		bottom: var(--rui-toaster-inset-bottom);
+	}
+
+	rui-toaster[data-y-position='top'] {
+		top: var(--rui-toaster-inset-x);
+	}
+
+	rui-toaster[data-x-position='end'],
+	rui-toaster[data-x-position='start'],
+	rui-toaster[data-x-position='center'] {
+		left: var(--rui-toaster-inset-x);
+		right: var(--rui-toaster-inset-x);
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	rui-toast,
+	.rui-toast__loader,
+	rui-toast .rui-toast > * {
+		transition: none !important;
+		animation: none !important;
+	}
+
+	rui-toast[data-mounted='true'] {
+		opacity: 1;
+	}
+
+	rui-toast[data-swipe-out='true'] {
+		opacity: 0;
+	}
+}

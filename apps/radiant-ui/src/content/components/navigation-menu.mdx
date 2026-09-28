@@ -1,0 +1,167 @@
+---
+title: Navigation Menu
+description: Navigation menus organize site sections with optional dropdown panels for nested links.
+category: Navigation
+---
+
+import { meta as NavigationMenuMeta, Default } from '@/content/stories/navigation-menu';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Navigation Menu
+
+<p class="docs-lede">Navigation menus organize site sections with optional dropdown panels for nested links.</p>
+
+## Try it
+
+<Demo of={Default} meta={NavigationMenuMeta} />
+
+## Usage
+
+Compose triggers, links, and panels with the sub-components. Use `RuiNavigationMenuTrigger` for sections with flyout content.
+
+```tsx
+import {
+  RuiNavigationMenu,
+  RuiNavigationMenuBar,
+  RuiNavigationMenuLink,
+  RuiNavigationMenuPanel,
+  RuiNavigationMenuPanels,
+  RuiNavigationMenuTrigger,
+} from '@ecopages/radiant-ui/navigation-menu';
+
+<RuiNavigationMenu label="Main">
+  <RuiNavigationMenuBar>
+    <RuiNavigationMenuTrigger value="products">Products</RuiNavigationMenuTrigger>
+    <RuiNavigationMenuLink href="/pricing">Pricing</RuiNavigationMenuLink>
+  </RuiNavigationMenuBar>
+  <RuiNavigationMenuPanels>
+    <RuiNavigationMenuPanel value="products">
+      <a href="/widgets">Widgets</a>
+    </RuiNavigationMenuPanel>
+  </RuiNavigationMenuPanels>
+</RuiNavigationMenu>
+```
+
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/navigation-menu';
+
+<rui-navigation-menu label="Main">
+  <nav class="rui-navigation-menu">
+    <div class="rui-navigation-menu__bar">
+      <button data-navigation-item data-navigation-trigger data-value="products">Products</button>
+      <a href="/pricing" data-navigation-item>Pricing</a>
+    </div>
+    <div class="rui-navigation-menu__panels">
+      <div data-navigation-panel data-value="products" hidden>
+        <a href="/widgets">Widgets</a>
+      </div>
+    </div>
+  </nav>
+</rui-navigation-menu>
+```
+
+## Site-wide navigation
+
+<p>Keep top-level items to five or fewer. Move secondary links into panels or the footer.</p>
+
+## Theming
+
+The trigger bar is unboxed by default: fill, border, and shadow are transparent. Override `--rui-navigation-menu-bar-*` on `rui-navigation-menu` to paint chrome. Flyout panels use the shared `--rui-popover-*` surface knobs.
+
+| Part | Default | Override |
+| --- | --- | --- |
+| Bar fill / border / shadow | `transparent`, `transparent`, `none` | `--rui-navigation-menu-bar-surface`, `--rui-navigation-menu-bar-border-color`, `--rui-navigation-menu-bar-shadow` |
+| Bar radius / padding | `--radius-container`, `0px` | `--rui-navigation-menu-bar-radius`, `--rui-navigation-menu-bar-padding-x`, `--rui-navigation-menu-bar-padding-y` |
+| Panel size / padding | `12rem`, `--space-inset` | `--rui-navigation-menu-panel-min-width`, `--rui-navigation-menu-panel-padding` |
+| Panel fill / border / radius / shadow | `--background`, `--border`, `--radius-container`, `--shadow-overlay` | `--rui-popover-surface`, `--rui-popover-border-color`, `--rui-popover-radius`, `--rui-popover-shadow` |
+| Open trigger | `primary-container` fill and ring | theme roles |
+
+```css
+rui-navigation-menu {
+  --rui-navigation-menu-bar-surface: var(--surface);
+  --rui-navigation-menu-bar-border-color: var(--border);
+  --rui-navigation-menu-bar-shadow: var(--shadow-sm);
+  --rui-navigation-menu-bar-padding-x: var(--space-control-x);
+  --rui-navigation-menu-bar-padding-y: var(--space-control-y);
+}
+```
+
+## API
+
+`RuiNavigationMenu` is a custom element (`<rui-navigation-menu>`) rendering a `nav` landmark. Compose the view helpers for triggers, links, and panels, using `RuiNavigationMenuBar` and `RuiNavigationMenuPanels`.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the `nav` landmark. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-navigation-item]` | yes | roving `tabIndex` | bar link or trigger |
+| `[data-navigation-trigger]` | yes | `aria-expanded`, `aria-haspopup`, `id` | trigger with `data-value` |
+| `[data-navigation-panel]` | yes | `hidden`, `data-state`, `aria-hidden`, `role`, `aria-labelledby` | panel with matching `data-value` |
+| `data-value` | per pair | — | links trigger to panel |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiNavigationMenu` | `<rui-navigation-menu>` + `nav[data-ref="root"]` | |
+| `RuiNavigationMenuBar` | `data-ref="bar"` | Trigger / link row |
+| `RuiNavigationMenuPanels` | `data-ref="panels"` | Panel region |
+| `RuiNavigationMenuTrigger` | `[data-navigation-item]`, `[data-navigation-trigger]`, `data-value` | |
+| `RuiNavigationMenuLink` | `[data-navigation-item]` | Plain link |
+| `RuiNavigationMenuPanel` | `[data-navigation-panel]`, `data-value` | |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-navigation-menu` | Root `nav` surface. |
+| `.rui-navigation-menu__bar` | Top-level trigger / link bar. |
+| `.rui-navigation-menu__panels` | Panel region. |
+
+Content helper classes authored in consumer markup (see stories):
+
+| Class | Description |
+| --- | --- |
+| `.rui-navigation-menu__megamenu` | Panel content grid. |
+| `.rui-navigation-menu__link-columns` | Two-column link group layout. |
+| `.rui-navigation-menu__link-group-label` | Link group heading. |
+| `.rui-navigation-menu__link-list` | Link list. |
+| `.rui-navigation-menu__disclosure-copy` | Paragraph copy inside disclosure panels. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Bar (when painted) | `--surface`, `--border`, `--shadow-sm`, `--radius-container`, `--space-control-x`, `--space-control-y` |
+| Open trigger | `--primary-container`, `--on-primary-container`, `--primary`, `--focus-ring` |
+| Panel | `--background`, `--border`, `--radius-container`, `--shadow-overlay`, `--space-inset` |
+| Panel text | `--on-background`, `--on-surface`, `--link` |
+
+## Accessibility
+
+- The menu renders as a `nav` landmark with an accessible name from `label`.
+- Expanded panels are associated with their triggers via `aria-controls`.
+- Current page links should use `aria-current="page"`.

@@ -1,0 +1,121 @@
+---
+title: "Authoring With JSX"
+description: "Intrinsics, function components, fragments, attribute normalization, and binding prefixes in @ecopages/jsx."
+group: JSX
+order: 2
+---
+
+# Authoring With JSX
+
+This page covers what you write in a TSX file and what the runtime turns it into. Event bindings and rendering entrypoints have their own pages.
+
+## Intrinsic Elements
+
+HTML and SVG elements are typed by the runtime. No imports are needed for tags; the `jsxImportSource` setting wires the compiler to `@ecopages/jsx/jsx-runtime`.
+
+```tsx
+const view = (
+	<section>
+		<h2>Status</h2>
+		<svg viewBox="0 0 24 24" aria={{ hidden: true }}>
+			<circle cx="12" cy="12" r="10" />
+		</svg>
+	</section>
+);
+```
+
+## Function Components And Fragments
+
+Components are plain functions that take typed props and return JSX.
+
+```tsx
+type CardProps = {
+	title: string;
+	children?: import('@ecopages/jsx').JsxRenderable;
+};
+
+const Card = ({ title, children }: CardProps) => (
+	<>
+		<article class="card">
+			<h2>{title}</h2>
+			{children}
+		</article>
+	</>
+);
+```
+
+Fragments (`<>...</>`) and `<slot>` element wrappers are runtime-supported. Slot projection follows the [Slots](/docs/components/slots) model.
+
+## Keyed Children
+
+A `key` prop on a function component or fragment preserves child ownership across renders.
+
+```tsx
+<Row key={item.id} item={item} />
+```
+
+`key` is consumed by the runtime and is never rendered as an attribute.
+
+## Binding Prefixes
+
+Unprefixed names follow element-aware defaults. Prefixes make intent explicit:
+
+| Prefix | Binding | Use when |
+| :-- | :-- | :-- |
+| (none) | attribute for HTML elements; attribute or property for custom elements | normal authoring |
+| `attr:` | attribute serialization | force markup serialization for a custom-element prop |
+| `prop:` | element property assignment | non-string values (objects, functions, DOM nodes) |
+| `on:` | delegated-or-direct event | normal event authoring |
+| `on-native:` | direct `addEventListener(...)` | exact element-level listener semantics |
+
+See [JSX Event Handling](/docs/jsx/events) and [JSX Custom Element Types](/docs/jsx/custom-element-types) for full contracts.
+
+## Attribute Normalization
+
+The runtime normalizes the most common authoring patterns before anything reaches the DOM. Verified behavior:
+
+### `class` and `classes`
+
+`class` and `classes` merge into one token list. Each accepts a string, number, array (nested), or an object map where a truthy value includes the key. `null`, `undefined`, and booleans contribute nothing.
+
+```tsx
+<section
+	class={isActive && 'panel--active'}
+	classes={['surface', { interactive: isInteractive }]}
+/>
+```
+
+### `style`
+
+An object stylesheet is serialized to a kebab-case CSS declaration string. Null and empty declarations are dropped. Reactive style values are passed through untouched so the renderer can keep tracking them.
+
+```tsx
+<section style={{ backgroundColor: 'white', fontSize: '14px' }} />
+```
+
+### `data` and `aria` objects
+
+`data={{ ... }}` and `aria={{ ... }}` spread their object entries into `data-*` and `aria-*` attributes. Object keys convert camelCase to kebab-case. A directly written `data-*` or `aria-*` attribute always wins over the object entry with the same name.
+
+```tsx
+<section data={{ state: 'ready', maxLoad: 3 }} aria={{ live: 'polite' }} />
+```
+
+That JSX emits `data-state="ready"`, `data-max-load="3"`, and `aria-live="polite"`.
+
+### Boolean attributes
+
+Names such as `disabled`, `hidden`, `checked`, `readonly`, `selected`, and the rest of the standard HTML boolean attribute set keep boolean-attribute binding semantics when written without a prefix. `false` removes them; see [JSX Overview](/docs/jsx/overview#empty-values-and-removal).
+
+## Child Values
+
+A child position accepts any `JsxRenderable`: strings, numbers, booleans, template results from nested components, live `Node` instances, trusted-markup wrappers, and iterables of those. `null`, `undefined`, and `false` render nothing.
+
+Two behavior notes that are easy to get wrong:
+
+- Iterables render as a list of children, but a one-shot iterator (for example a generator) is consumed once. The runtime keeps that snapshot while the iterator object stays reachable. Pass a fresh iterator per render if children must be re-yielded.
+- Signal-like and subscribable values become live child bindings and update their DOM range without a parent rerender. See [JSX Client Rendering](/docs/jsx/rendering#fine-grained-child-updates).
+
+## What The Runtime Escapes
+
+Text children and ordinary attribute values are escaped by default. Raw HTML is always an explicit opt-in through `unsafeHtml(...)` — see [Trusted Markup And Security](/docs/jsx/trusted-markup).

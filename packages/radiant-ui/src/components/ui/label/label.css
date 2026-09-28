@@ -1,0 +1,8 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-label {
+		@apply block font-medium text-on-background;
+		font-size: var(--text-control, 0.875rem);
+	}
+}

@@ -1,0 +1,113 @@
+---
+title: "@onUpdated"
+description: "React to state changes with declarative callbacks on RadiantElement or RadiantController hosts."
+group: Decorators
+order: 11
+---
+
+import { RuiAlert, RuiAlertDescription, RuiAlertTitle } from '@ecopages/radiant-ui/alert';
+
+
+
+# @onUpdated
+
+The `@onUpdated` decorator registers a callback method that runs once for a batch of watched reactive changes. Writes made in the same turn normally share one batch. If the callback itself changes a watched member, it can run again within the same update cycle until the state settles. Use it for **procedures**: derived state, timers, joined ARIA, storage, analytics. Work that needs the DOM after the render commits belongs in `updated()`.
+
+To copy a field onto an attribute, boolean attribute, DOM property, or text node, use [@bindTo](/docs/decorators/bind-to) instead.
+
+## Usage
+
+```typescript
+import { RadiantElement, customElement, onUpdated, prop, query } from '@ecopages/radiant';
+
+@customElement('search-field')
+export class SearchField extends RadiantElement {
+	@prop({ type: Boolean, defaultValue: false }) declare open: boolean;
+	@query({ ref: 'input' }) input?: HTMLInputElement;
+
+	@onUpdated('open')
+	focusInput() {
+		if (this.open) {
+			this.input?.focus();
+		}
+	}
+}
+```
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+| :-------- | :--- | :------- | :---------- |
+| `propertyName` | `string` or `string[]` | Yes | Member or members that trigger the method. An array watches several members in one registration, so the method runs once per changed batch. |
+
+## Feature Highlight
+
+### Watching Multiple Properties
+
+Pass every member to one decorator. Writes in the same turn batch into one cycle, and the method runs once for the batch with all of them applied. It receives that batch's changed members. A callback that changes a watched member starts another batch in the same cycle.
+
+```typescript
+@onUpdated(['firstName', 'lastName'])
+updateFullName() {
+	this.fullName = `${this.firstName} ${this.lastName}`;
+}
+```
+
+### Derived State
+
+Calculate and update internal state derived from public properties.
+
+```typescript
+@prop({ type: Array }) declare items: CartItem[];
+@state total = 0;
+
+@onUpdated('items')
+calculateTotals() {
+	this.total = this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+}
+```
+
+### DOM Synchronization
+
+Keep external state in sync with component properties. Do not use `@onUpdated` only to copy a value into `textContent` or `toggleAttribute` on a stable node — that is [@bindTo](/docs/decorators/bind-to).
+
+```typescript
+@onUpdated('theme')
+applyTheme() {
+	document.documentElement.setAttribute('data-theme', this.theme);
+	localStorage.setItem('theme', this.theme);
+}
+```
+
+### RadiantController usage
+
+`@onUpdated(...)` also works on `RadiantController`. Copy a field onto the host or a descendant with [@bindTo](/docs/decorators/bind-to). Keep `@onUpdated` for a procedure on that same field:
+
+```typescript
+import { RadiantController, bindTo, onUpdated, state } from '@ecopages/radiant';
+
+export class ThemeController extends RadiantController {
+	@bindTo({ attr: 'data-theme' })
+	@state
+	theme = 'light';
+
+	@onUpdated('theme')
+	persistTheme() {
+		localStorage.setItem('theme', this.theme);
+	}
+}
+```
+
+<RuiAlert variant="error" layout="banner" class="unstyled">
+  <RuiAlertTitle>CAUTION</RuiAlertTitle>
+  <RuiAlertDescription>
+    <p>A method may write a watched member, and those writes settle in the same cycle. A method that keeps writing forever throws after 100 rounds.</p>
+  </RuiAlertDescription>
+</RuiAlert>
+
+## Learn More
+
+- [@bindTo](/docs/decorators/bind-to) - Copy a field onto existing DOM.
+- [@prop](/docs/decorators/prop) - Define public reactive properties.
+- [@state](/docs/decorators/state) - Define internal reactive state.
+- [@debounce](/docs/decorators/debounce) - Debounce frequent updates.

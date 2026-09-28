@@ -1,0 +1,236 @@
+import {
+	createReactivePropertyMapping,
+	reflectsBooleanAsValue,
+	resolveReactiveDefault,
+	type ReactiveAccessorDefinition,
+	type ReactiveProperty,
+	type ReactivePropertyOptions,
+	validateReactivePropertyDefault,
+} from './reactive-prop-core';
+import { REACTIVE_HOST, type ReactiveHostInternals } from './reactive-host';
+import type { ReactiveState } from './reactivity-contract';
+
+export type ReactivePropertyStateHost = HTMLElement & {
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
+	createReactiveMember<T>(propertyName: string, initialValue: T): ReactiveState<T>;
+	getReactiveMember<T = unknown>(propertyName: string): ReactiveState<T> | undefined;
+};
+
+function reflectedAttributeValue(property: ReactiveProperty<unknown>, value: unknown): string | null {
+	if (value == null || value === '') {
+		return null;
+	}
+	if (value === false && !reflectsBooleanAsValue(property)) {
+		return null;
+	}
+	return property.converter.toAttribute(value);
+}
+
+export class ReactivePropertyState {
+	private readonly properties = new Map<string, ReactiveProperty<unknown>>();
+	private readonly preUpgradePropertyValues = new Map<string, unknown>();
+	/** Properties assigned through the accessor before {@link completeInitialSync}; their authored attributes are not adopted. */
+	private readonly writtenBeforeSync = new Set<string>();
+	/** Attribute reactions caused by the host's own property reflection. */
+	private readonly reflectingAttributes = new Set<string>();
+	private initialSyncComplete = false;
+
+	constructor(private readonly host: ReactivePropertyStateHost) {
+		for (const propertyName of Object.getOwnPropertyNames(host)) {
+			this.preUpgradePropertyValues.set(propertyName, Reflect.get(host, propertyName));
+		}
+	}
+
+	public register(config: ReactiveProperty<unknown>): void {
+		this.properties.set(config.name, config);
+	}
+
+	public getAll(): ReactiveProperty<unknown>[] {
+		return Array.from(this.properties.values());
+	}
+
+	public applyAttributeChange(name: string, oldValue: string | null, newValue: string | null): void {
+		if (this.reflectingAttributes.has(name)) {
+			return;
+		}
+
+		const config =
+			this.properties.get(name) ??
+			Array.from(this.properties.values()).find((property) => property.attribute === name);
+
+		if (!config) {
+			return;
+		}
+
+		Reflect.set(this.host, config.name, config.converter.fromAttribute(newValue));
+	}
+
+	/**
+	 * @remarks
+	 * A pre-upgrade own-property assignment is the initial signal value. Non-reflected
+	 * attributes are consumed and dropped so a later `attributeChangedCallback` cannot
+	 * fight the property. Reflected attributes stay until {@link completeInitialSync}
+	 * so an empty `defaultValue` cannot strip an authored `value="ts"`.
+	 *
+	 * Without an attribute, an omitted `defaultValue` falls back to the type default
+	 * (`0`, `''`, `null`; booleans stay `undefined`), while an explicit
+	 * `defaultValue: undefined` keeps the property `undefined`.
+	 */
+	public create<T>(
+		propertyName: string,
+		options: ReactivePropertyOptions<T>,
+		defineReactiveAccessor: (propertyName: string, config: ReactiveAccessorDefinition<T>) => void,
+		createReactiveMember: <U>(propertyName: string, initialValue: U) => ReactiveState<U>,
+	): void {
+		const { type, attribute, reflect, defaultValue, transform } = options;
+		const attributeKey = attribute ?? propertyName;
+		const hasPreUpgradeValue = this.preUpgradePropertyValues.has(propertyName);
+
+		validateReactivePropertyDefault(type, defaultValue);
+
+		const propertyMapping = createReactivePropertyMapping(
+			propertyName,
+			attributeKey,
+			type,
+			undefined,
+			reflect,
+			transform,
+		);
+		propertyMapping.defaultValue = defaultValue;
+		const initialValue = this.resolveInitialValue(propertyName, options, attributeKey, propertyMapping.converter);
+		propertyMapping.initialValue = initialValue;
+
+		if (!reflect && this.host.hasAttribute(attributeKey)) {
+			this.host.removeAttribute(attributeKey);
+		}
+
+		if (hasPreUpgradeValue && Object.prototype.hasOwnProperty.call(this.host, propertyName)) {
+			Reflect.deleteProperty(this.host, propertyName);
+		}
+
+		this.register(propertyMapping as ReactiveProperty<unknown>);
+
+		const existingMember = this.host.getReactiveMember<T>(propertyName);
+		const signal = existingMember ?? createReactiveMember(propertyName, initialValue as T);
+
+		if (existingMember && initialValue !== undefined) {
+			existingMember.set(initialValue as T);
+		}
+
+		defineReactiveAccessor(propertyName, {
+			bind: options.bind,
+			signal,
+			fromProperty: transform?.fromProperty,
+			onSet: () => {
+				if (!this.initialSyncComplete) {
+					this.writtenBeforeSync.add(propertyName);
+				}
+				this.reflectValue(attributeKey, propertyMapping.reflect, propertyMapping, signal.get());
+			},
+		});
+	}
+
+	private resolveInitialValue<T>(
+		propertyName: string,
+		options: ReactivePropertyOptions<T>,
+		attributeKey: string,
+		converter: ReactiveProperty<T>['converter'],
+	): T | undefined {
+		if (this.preUpgradePropertyValues.has(propertyName)) {
+			const preUpgradeValue = this.preUpgradePropertyValues.get(propertyName);
+			return (
+				options.transform?.fromProperty ? options.transform.fromProperty(preUpgradeValue) : preUpgradeValue
+			) as T;
+		}
+		if (this.host.hasAttribute(attributeKey)) {
+			return converter.fromAttribute(this.host.getAttribute(attributeKey)) as T;
+		}
+		return resolveReactiveDefault(options);
+	}
+
+	/**
+	 * Adopts authored attributes, then reflects current values and emits the
+	 * initial `@onUpdated`.
+	 *
+	 * @remarks
+	 * Construction can run before parser/JSX attributes land. Reflecting
+	 * `defaultValue` from the constructor would overwrite e.g. `variant="ghost"`
+	 * or strip an authored `value="ts"` when `defaultValue` is `""`. First-connect
+	 * adopts those attributes unless the property was assigned before upgrade or
+	 * through its accessor since; this then reflects whatever the host actually holds.
+	 */
+	public completeInitialSync(): void {
+		this.adoptAuthoredAttributes();
+		this.initialSyncComplete = true;
+		this.writtenBeforeSync.clear();
+
+		for (const property of this.properties.values()) {
+			const signal = this.host.getReactiveMember(property.name);
+			if (!signal) {
+				continue;
+			}
+
+			const currentValue = signal.get();
+			if (currentValue === undefined) {
+				continue;
+			}
+
+			this.reflectValue(property.attribute, property.reflect, property, currentValue);
+			this.host[REACTIVE_HOST].notifyUpdate(property.name, undefined, currentValue);
+		}
+	}
+
+	/**
+	 * @remarks
+	 * Parser/JSX attributes often land after `constructor`. Skip properties that
+	 * already hold a pre-upgrade own-property assignment, or were assigned after
+	 * upgrade but before this sync, so an older attribute cannot overwrite them.
+	 */
+	private adoptAuthoredAttributes(): void {
+		for (const property of this.properties.values()) {
+			if (this.preUpgradePropertyValues.has(property.name) || this.writtenBeforeSync.has(property.name)) {
+				continue;
+			}
+
+			const currentValue = this.host.getAttribute(property.attribute);
+			if (currentValue !== null) {
+				this.applyAttributeChange(property.attribute, null, currentValue);
+			}
+		}
+	}
+
+	/**
+	 * @remarks
+	 * Boolean `false` and empty/null values omit the attribute (HTML presence).
+	 * Custom `toAttribute` returning null or `''` omits as well, so an empty
+	 * array codec can drop `value` without a transform-specific branch.
+	 * Reactions caused by this reflection are ignored so omitting an empty string
+	 * does not feed `null` back into its property.
+	 */
+	private reflectValue(
+		attributeKey: string,
+		reflect: boolean,
+		property: ReactiveProperty<unknown>,
+		value: unknown,
+	): void {
+		if (!reflect) {
+			return;
+		}
+
+		const attributeValue = reflectedAttributeValue(property, value);
+		if (this.host.getAttribute(attributeKey) === attributeValue) {
+			return;
+		}
+
+		this.reflectingAttributes.add(attributeKey);
+		try {
+			if (attributeValue == null) {
+				this.host.removeAttribute(attributeKey);
+			} else {
+				this.host.setAttribute(attributeKey, attributeValue);
+			}
+		} finally {
+			this.reflectingAttributes.delete(attributeKey);
+		}
+	}
+}

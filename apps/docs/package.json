@@ -1,28 +1,50 @@
 {
 	"name": "radiant-docs",
 	"private": true,
+	"type": "module",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/ecopages/radiant"
 	},
 	"scripts": {
-		"start": "bun run app.ts",
-		"dev": "bun run app.ts --dev",
-		"build": "bun run app.ts --build",
-		"preview": "bun run app.ts --preview",
-		"watch:dev": "bun --watch run app.ts --dev"
+		"start": "ecopages start",
+		"dev": "pnpm run guard:cache && ecopages dev",
+		"guard:cache": "tsx ../../scripts/ecopages-invalidate-stale-cache.mts",
+		"verify:html": "tsx ../../scripts/ecopages-assert-rendered-html.mts dist",
+		"build": "pnpm run guard:cache && pnpm run generate:llms && ecopages build && tsx scripts/create-clean-url-aliases.ts && pnpm run verify:html",
+		"preview": "pnpm run guard:cache && pnpm run generate:llms && ecopages preview && tsx scripts/create-clean-url-aliases.ts",
+		"watch:dev": "pnpm run guard:cache && ecopages watch:dev",
+		"test": "vitest run",
+		"test:all": "pnpm run test && pnpm run test:e2e",
+		"test:e2e": "node --test ./test/*.e2e.test.mjs",
+		"generate:llms": "tsx scripts/generate-llm-docs.ts"
 	},
 	"devDependencies": {
-		"@ecopages/core": "npm:@jsr/ecopages__core@latest",
+		"ecopages": "0.2.0-rc.13",
+		"@ecopages/browser-router": "0.2.0-rc.13",
+		"@ecopages/core": "0.2.0-rc.13",
+		"@ecopages/file-system": "0.2.0-rc.13",
+		"@ecopages/ecopages-jsx": "0.2.0-rc.13",
+		"@ecopages/dev-toolbar": "0.2.0-rc.13",
+		"@ecopages/jsx": "workspace:*",
+		"@ecopages/postcss-processor": "0.2.0-rc.13",
+		"@ecopages/content-processor": "0.2.0-rc.13",
 		"@ecopages/radiant": "workspace:*",
-		"@ecopages/postcss-processor": "npm:@jsr/ecopages__postcss-processor@latest",
-		"@ecopages/browser-router": "npm:@jsr/ecopages__browser-router@latest",
-		"@ecopages/kitajs": "npm:@jsr/ecopages__kitajs@latest",
-		"@ecopages/mdx": "npm:@jsr/ecopages__mdx@latest",
-		"@ecopages/scripts-injector": "latest",
+		"@ecopages/radiant-ui": "workspace:*",
+		"@ecopages/scripts-injector": "^0.1.5",
+		"@mdx-js/esbuild": "^3.1.1",
+		"@mdx-js/mdx": "^3.1.1",
+		"@rehype-pretty/transformers": "^0.13.2",
 		"@tailwindcss/postcss": "^4.0.0",
+		"@types/hast": "^3.0.4",
+		"@types/node": "^24.13.2",
 		"remark-gfm": "^4.0.1",
 		"shiki": "^3.20.0",
-		"tailwindcss": "^4.1.18"
+		"tailwindcss": "^4.1.18",
+		"tsx": "^4.20.6",
+		"typescript": "catalog:",
+		"unified": "^11.0.5",
+		"vitest": "^4.1.10",
+		"zod": "^4.4.3"
 	}
 }

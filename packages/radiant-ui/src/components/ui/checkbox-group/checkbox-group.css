@@ -1,0 +1,15 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-checkbox-group {
+	@apply block;
+}
+
+@layer components {
+	.rui-checkbox-group {
+		@apply flex flex-col gap-inline;
+	}
+
+	.rui-checkbox-group[data-orientation='horizontal'] {
+		@apply flex-row flex-wrap;
+	}
+}

@@ -1,0 +1,345 @@
+import { ATTRIBUTE_BINDING_PREFIX } from '../hydration/hydration-bindings.ts';
+import { createBoundaryMarker } from './dom-operations.ts';
+import { getElementNamespace, HTML_NAMESPACE_URI, setElementAttributeValue } from './namespaces.ts';
+import { getNodeAtPath, getNodePath } from './path-utils.ts';
+import { CHILD_BINDING_END_PREFIX, CHILD_BINDING_START_PREFIX, TEXT_CONTENT_LOCATOR_PREFIX } from './constants.ts';
+import { endsWithTextContentOpenTag } from './text-content.ts';
+import type { TemplateResultLike } from '../types/index.ts';
+import type {
+	BindingDescriptor,
+	ChildTemplatePart,
+	CompiledTemplate,
+	LiveTemplatePart,
+	TemplatePart,
+	TextContentTemplatePart,
+} from './types.ts';
+
+/**
+ * Compiled blueprints keyed by template shape.
+ *
+ * Every `jsx(...)` call allocates a fresh `strings` array, so identity-based caching
+ * would never hit across calls — the shape key is what makes reuse possible. The key
+ * is computed once by the factory and carried on the result.
+ */
+const TEMPLATE_CACHE_BY_SHAPE = new Map<string, CompiledTemplate>();
+
+/** Returns compiled metadata for a template shape, compiling and caching on first use. */
+export function getCompiledTemplate(template: TemplateResultLike): CompiledTemplate {
+	const cachedTemplate = TEMPLATE_CACHE_BY_SHAPE.get(template.shapeKey);
+
+	if (cachedTemplate) {
+		return cachedTemplate;
+	}
+
+	const htmlParts: string[] = [];
+	const bindings = new Map<number, BindingDescriptor>();
+	const textContentBindingIndices: number[] = [];
+
+	for (let index = 0; index < template.values.length; index += 1) {
+		const part = template.parts[index];
+
+		htmlParts.push(template.strings[index] ?? '');
+
+		if (part?.type === 'attribute') {
+			htmlParts.push(` ${ATTRIBUTE_BINDING_PREFIX}${index}="${part.kind}:${part.name}"`);
+			bindings.set(index, { kind: part.kind, name: part.name });
+			continue;
+		}
+
+		if (endsWithTextContentOpenTag(htmlParts.join(''))) {
+			insertTextContentLocator(htmlParts, index);
+			bindings.set(index, { kind: 'child' });
+			textContentBindingIndices.push(index);
+			continue;
+		}
+
+		htmlParts.push(`<!--${CHILD_BINDING_START_PREFIX}${index}-->`, `<!--${CHILD_BINDING_END_PREFIX}${index}-->`);
+		bindings.set(index, { kind: 'child' });
+	}
+
+	htmlParts.push(template.strings[template.strings.length - 1] ?? '');
+
+	const blueprint = document.createElement('template');
+	blueprint.innerHTML = htmlParts.join('');
+
+	const compiledTemplate = {
+		blueprint,
+		parts: collectTemplateParts(blueprint.content, bindings, textContentBindingIndices),
+	};
+
+	TEMPLATE_CACHE_BY_SHAPE.set(template.shapeKey, compiledTemplate);
+	return compiledTemplate;
+}
+
+/** Repairs the namespace of a cloned template root before live part resolution. */
+export function normalizeTemplateFragmentNamespaces(
+	fragment: DocumentFragment,
+	contextParent: Node | null,
+	rootLocalName: string | undefined,
+): void {
+	const contextElement = contextParent instanceof Element ? contextParent : contextParent?.parentElement;
+	const contextNamespace = contextElement?.namespaceURI ?? HTML_NAMESPACE_URI;
+	const contextLocalName = contextElement?.localName;
+	const rootElement = fragment.firstElementChild;
+
+	if (!rootElement) {
+		return;
+	}
+
+	const authoredRootLocalName = rootLocalName ?? rootElement.localName;
+	const expectedAuthoredNamespace = getElementNamespace(contextNamespace, contextLocalName, authoredRootLocalName);
+
+	if (rootElement.namespaceURI === expectedAuthoredNamespace && rootElement.localName === authoredRootLocalName) {
+		return;
+	}
+
+	fragment.replaceChild(
+		recreateElementInNamespace(rootElement, expectedAuthoredNamespace, authoredRootLocalName),
+		rootElement,
+	);
+}
+
+/** Resolves blueprint part metadata into live DOM references for a freshly cloned fragment. */
+export function createLiveTemplateParts(
+	fragment: DocumentFragment,
+	parts: readonly TemplatePart[],
+	rootTarget: HTMLElement,
+): LiveTemplatePart[] {
+	const liveParts: LiveTemplatePart[] = [];
+
+	for (const part of parts) {
+		if (part.type === 'attribute') {
+			const targetNode = getNodeAtPath(fragment, part.path);
+
+			if (!(targetNode instanceof Element)) {
+				continue;
+			}
+
+			targetNode.removeAttribute(part.markerName);
+			liveParts.push({
+				binding: part.binding,
+				element: targetNode,
+				index: part.index,
+				rootTarget,
+				subscriptionSerial: 0,
+				type: 'attribute',
+			});
+			continue;
+		}
+
+		if (part.type === 'text-content') {
+			const targetNode = getNodeAtPath(fragment, part.path);
+
+			if (!(targetNode instanceof Element)) {
+				continue;
+			}
+
+			liveParts.push({
+				committedText: '',
+				element: targetNode,
+				index: part.index,
+				subscriptionSerial: 0,
+				type: 'text-content',
+			});
+			continue;
+		}
+
+		const startNode = getNodeAtPath(fragment, part.startPath);
+		const endNode = getNodeAtPath(fragment, part.endPath);
+
+		if (!(startNode instanceof Comment) || !(endNode instanceof Comment)) {
+			continue;
+		}
+
+		const startMarker = createBoundaryMarker();
+		const endMarker = createBoundaryMarker();
+		startNode.replaceWith(startMarker);
+		endNode.replaceWith(endMarker);
+
+		liveParts.push({
+			endMarker,
+			index: part.index,
+			mounted: { kind: 'empty' },
+			startMarker,
+			type: 'child',
+		});
+	}
+
+	return liveParts;
+}
+
+function collectTemplateParts(
+	fragment: DocumentFragment,
+	bindings: ReadonlyMap<number, BindingDescriptor>,
+	textContentBindingIndices: readonly number[],
+): TemplatePart[] {
+	return [
+		...collectAttributeParts(fragment, bindings),
+		...collectChildParts(fragment, bindings),
+		...collectTextContentParts(fragment, textContentBindingIndices),
+	];
+}
+
+function collectAttributeParts(
+	fragment: DocumentFragment,
+	bindings: ReadonlyMap<number, BindingDescriptor>,
+): TemplatePart[] {
+	const parts: TemplatePart[] = [];
+	const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_ELEMENT);
+	let currentNode = walker.nextNode();
+
+	while (currentNode) {
+		const element = currentNode as Element;
+		const attributes = Array.from(element.attributes);
+
+		for (const attribute of attributes) {
+			if (!attribute.name.startsWith(ATTRIBUTE_BINDING_PREFIX)) {
+				continue;
+			}
+
+			const index = Number(attribute.name.slice(ATTRIBUTE_BINDING_PREFIX.length));
+			const binding = bindings.get(index);
+
+			if (!binding || binding.kind === 'child') {
+				continue;
+			}
+
+			parts.push({
+				binding,
+				index,
+				markerName: attribute.name,
+				path: getNodePath(fragment, element),
+				type: 'attribute',
+			});
+		}
+
+		currentNode = walker.nextNode();
+	}
+
+	return parts;
+}
+
+function collectChildParts(
+	fragment: DocumentFragment,
+	bindings: ReadonlyMap<number, BindingDescriptor>,
+): TemplatePart[] {
+	const childMarkers = new Map<number, Partial<ChildTemplatePart>>();
+	const commentWalker = document.createTreeWalker(fragment, NodeFilter.SHOW_COMMENT);
+	let commentNode = commentWalker.nextNode();
+
+	while (commentNode) {
+		const comment = commentNode as Comment;
+
+		if (comment.data.startsWith(CHILD_BINDING_START_PREFIX)) {
+			const index = Number(comment.data.slice(CHILD_BINDING_START_PREFIX.length));
+			const marker = childMarkers.get(index) ?? { index, type: 'child' };
+			marker.startPath = getNodePath(fragment, comment);
+			childMarkers.set(index, marker);
+		}
+
+		if (comment.data.startsWith(CHILD_BINDING_END_PREFIX)) {
+			const index = Number(comment.data.slice(CHILD_BINDING_END_PREFIX.length));
+			const marker = childMarkers.get(index) ?? { index, type: 'child' };
+			marker.endPath = getNodePath(fragment, comment);
+			childMarkers.set(index, marker);
+		}
+
+		commentNode = commentWalker.nextNode();
+	}
+
+	const parts: TemplatePart[] = [];
+	for (const [index, marker] of childMarkers) {
+		const binding = bindings.get(index);
+
+		if (binding?.kind !== 'child' || !marker.startPath || !marker.endPath) {
+			continue;
+		}
+
+		parts.push({
+			endPath: marker.endPath,
+			index,
+			startPath: marker.startPath,
+			type: 'child',
+		});
+	}
+
+	return parts;
+}
+
+function collectTextContentParts(
+	fragment: DocumentFragment,
+	textContentBindingIndices: readonly number[],
+): TextContentTemplatePart[] {
+	if (textContentBindingIndices.length === 0) {
+		return [];
+	}
+
+	const locatorIndices = new Map(
+		textContentBindingIndices.map((index) => [`${TEXT_CONTENT_LOCATOR_PREFIX}${index}`, index]),
+	);
+	const parts: TextContentTemplatePart[] = [];
+	const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_ELEMENT);
+	let currentNode = walker.nextNode();
+
+	while (currentNode) {
+		const element = currentNode as Element;
+
+		for (const attribute of Array.from(element.attributes)) {
+			const index = locatorIndices.get(attribute.name);
+
+			if (index === undefined) {
+				continue;
+			}
+
+			parts.push({
+				index,
+				path: getNodePath(fragment, element),
+				type: 'text-content',
+			});
+			element.removeAttribute(attribute.name);
+		}
+
+		currentNode = walker.nextNode();
+	}
+
+	parts.sort((left, right) => left.index - right.index);
+	return parts;
+}
+
+function insertTextContentLocator(htmlParts: string[], index: number): void {
+	const marker = ` ${TEXT_CONTENT_LOCATOR_PREFIX}${index}=""`;
+
+	for (let partIndex = htmlParts.length - 1; partIndex >= 0; partIndex -= 1) {
+		const part = htmlParts[partIndex];
+
+		if (part === undefined) {
+			continue;
+		}
+
+		const closingBracket = part.lastIndexOf('>');
+
+		if (closingBracket === -1) {
+			continue;
+		}
+
+		htmlParts[partIndex] = `${part.slice(0, closingBracket)}${marker}${part.slice(closingBracket)}`;
+		return;
+	}
+}
+
+function recreateElementInNamespace(element: Element, namespace: string, localName: string): Element {
+	const replacement = document.createElementNS(namespace, localName);
+
+	for (const attribute of Array.from(element.attributes)) {
+		if (attribute.namespaceURI) {
+			replacement.setAttributeNS(attribute.namespaceURI, attribute.name, attribute.value);
+			continue;
+		}
+
+		setElementAttributeValue(replacement, attribute.name, attribute.value);
+	}
+
+	replacement.append(...element.childNodes);
+
+	return replacement;
+}

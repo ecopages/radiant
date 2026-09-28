@@ -1,0 +1,48 @@
+---
+title: "State & Computed"
+description: "Writable and derived signals in @ecopages/signals."
+group: Signals
+order: 2
+---
+
+# Signals State & Computed
+
+`State<T>` is the writable signal primitive. `Computed<T>` is the lazy derived signal primitive.
+
+## State
+
+Use `State<T>` when a value should be set directly.
+
+```ts
+import { State } from '@ecopages/signals';
+
+const count = new State(0);
+
+count.set(1);
+count.update((value) => value + 1);
+```
+
+## Computed
+
+Use `Computed<T>` when a value should derive from other signals.
+
+```ts
+import { Computed, State } from '@ecopages/signals';
+
+const count = new State(0);
+const parity = new Computed(() => ((count.get() & 1) === 0 ? 'even' : 'odd'));
+
+console.log(parity.get());
+```
+
+Dependencies are discovered automatically from the signals read during evaluation.
+
+## Equality And Caching
+
+Both writable and computed signals support custom equality functions through options. Computed signals cache their last successful value and only publish when the exposed value actually changes under that equality function.
+
+## Advanced Helpers
+
+- `currentComputed()` returns the computed currently being evaluated, if any
+- `peek(signal)` reads without tracking
+- `untrack(read)` runs a block without collecting dependencies

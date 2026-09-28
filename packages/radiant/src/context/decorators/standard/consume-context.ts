@@ -1,18 +1,55 @@
-import type { RadiantElement } from '../../../core/radiant-element';
-import { ContextEventsTypes, ContextRequestEvent } from '../../events';
+import type { ContextHostLike } from '../../context-host';
+import { bootstrapSsrConsumedContext, connectConsumedContext } from '../../context-consumer-bootstrap';
 import type { UnknownContext } from '../../types';
 
-export function consumeContext(contextToProvide: UnknownContext) {
-	return <T extends RadiantElement, V>(_: undefined, context: ClassFieldDecoratorContext<T, V>) => {
+export function consumeContext(consumedContext: UnknownContext) {
+	return <T extends ContextHostLike, V>(target: undefined, context: ClassFieldDecoratorContext<T, V>) => {
+		void target;
 		const contextName = String(context.name);
-		context.addInitializer(function (this: T) {
-			this.dispatchEvent(
-				new ContextRequestEvent(contextToProvide, (context) => {
-					(this as any)[contextName] = context;
-					this.connectedContextCallback(contextToProvide);
-					this.dispatchEvent(new CustomEvent(ContextEventsTypes.MOUNTED, { detail: context }));
-				}),
+		const assignContextProvider = (host: T, provider: unknown) => {
+			const hostRecord = host as T & Record<string, unknown>;
+			hostRecord[contextName] = provider;
+		};
+		const initializeConsumedContextForHost = (host: T, options: { emitMounted?: boolean } = {}) => {
+			const hostRecord = host as T & Record<string, unknown>;
+
+			if (hostRecord[contextName]) {
+				return true;
+			}
+
+			return connectConsumedContext(
+				host,
+				consumedContext,
+				(provider) => {
+					assignContextProvider(host, provider);
+				},
+				options,
 			);
+		};
+
+		context.addInitializer(function (this: T) {
+			if (
+				bootstrapSsrConsumedContext(
+					this,
+					consumedContext,
+					(provider) => {
+						assignContextProvider(this, provider);
+					},
+					{ emitMounted: true },
+				)
+			) {
+				return;
+			}
+
+			this.registerConnectedCallback(() => {
+				if (initializeConsumedContextForHost(this, { emitMounted: true })) {
+					return;
+				}
+
+				queueMicrotask(() => {
+					initializeConsumedContextForHost(this, { emitMounted: true });
+				});
+			});
 		});
 	};
 }

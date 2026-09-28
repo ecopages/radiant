@@ -1,0 +1,30 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	/* Portaled panel: override `--rui-popover-*` on this class. */
+	.rui-popover {
+		--rui-popover-radius: var(--radius-container);
+		--rui-popover-surface: var(--background);
+		--rui-popover-border-color: var(--border);
+		--rui-popover-shadow: var(--shadow-overlay);
+		@apply z-popover overflow-auto;
+		max-height: var(--rui-popover-max-height, calc(100dvh - 1rem));
+		max-width: var(--rui-popover-max-width, calc(100vw - 1rem));
+		border-radius: var(--rui-popover-radius);
+		border: 1px solid var(--rui-popover-border-color);
+		background-color: var(--rui-popover-surface);
+		box-shadow: var(--rui-popover-shadow);
+	}
+
+	.rui-popover--listbox {
+		@apply flex w-full flex-col overflow-hidden p-0;
+	}
+
+	.rui-popover[hidden] {
+		display: none;
+	}
+
+	.rui-popover-trigger {
+		@apply inline-flex;
+	}
+}

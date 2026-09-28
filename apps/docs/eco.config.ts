@@ -1,60 +1,65 @@
 import path from 'node:path';
-import { ConfigBuilder } from '@ecopages/core';
-import { kitajsPlugin } from '@ecopages/kitajs';
-import { mdxPlugin } from '@ecopages/mdx';
-import { postcssProcessorPlugin } from '@ecopages/postcss-processor';
+import { ConfigBuilder } from '@ecopages/core/config-builder';
+import { postcssProcessorPlugin } from '@ecopages/postcss-processor/plugin';
 import { tailwindV4Preset } from '@ecopages/postcss-processor/presets/tailwind-v4';
-import remarkGfm from 'remark-gfm';
-import rehypePrettyCode from 'rehype-pretty-code';
-import { rehypeSimpleTableWrapper } from './src/plugins/rehype-simple-table-wrapper';
-import { transformerEscapeHtml } from './src/plugins/transformer-escape-html';
+import { ecopagesJsxPlugin } from '@ecopages/ecopages-jsx';
+import { contentProcessorPlugin } from '@ecopages/content-processor/plugin';
+import { compareEntriesByField } from '@ecopages/content-processor';
+import { createDocsMdxPlugins } from './src/mdx/plugins';
+import { docsFrontmatterSchema } from './src/content/docs';
+import { configuredSiteOrigin } from './src/lib/docs/site-meta';
+import { devToolbar } from '@ecopages/dev-toolbar/config';
 
 const config = await new ConfigBuilder()
-	.setRootDir(import.meta.dir)
-	.setBaseUrl(import.meta.env.ECOPAGES_BASE_URL)
+	.setRootDir(import.meta.dirname)
+	.setBaseUrl(configuredSiteOrigin())
+	.setSitemap({
+		enabled: true,
+		extraUrls: ['/llms.txt', '/skill.txt'],
+		exclude: ['/404', '/500'],
+	})
 	.setIntegrations([
-		kitajsPlugin(),
-		mdxPlugin({
-			compilerOptions: {
-				jsxImportSource: '@kitajs/html',
-				remarkPlugins: [remarkGfm],
-				rehypePlugins: [
-					[
-						rehypePrettyCode,
-						{
-							theme: {
-								light: 'light-plus',
-								dark: 'dark-plus',
-							},
-							transformers: [transformerEscapeHtml],
+		ecopagesJsxPlugin({
+			mdx: {
+				enabled: true,
+				...createDocsMdxPlugins({
+					rehypePrettyCode: {
+						theme: {
+							light: 'light-plus',
+							dark: 'dark-plus',
 						},
-					],
-					rehypeSimpleTableWrapper,
-				],
+					},
+				}),
 			},
 		}),
 	])
-
-	.setIncludesTemplates({
-		head: 'head.kita.tsx',
-		html: 'html.kita.tsx',
-		seo: 'seo.kita.tsx',
-	})
-	.setError404Template('404.kita.tsx')
 	.setDefaultMetadata({
 		title: 'Radiant | Docs',
 		description: 'Radiant is a minimalist web component library designed for simplicity and flexibility.',
-		image: 'public/assets/images/default-og.webp',
+		image: '/assets/images/default-og.png',
 		keywords: ['typescript', 'framework', 'static'],
 	})
 	.setProcessors([
 		postcssProcessorPlugin(
 			tailwindV4Preset({
-				referencePath: path.resolve(import.meta.dir, 'src/styles/tailwind.css'),
+				referencePath: path.resolve(import.meta.dirname, 'src/styles/tailwind.css'),
 			}),
 		),
+		contentProcessorPlugin({
+			options: {
+				collections: {
+					docs: {
+						contentDir: 'content/docs',
+						orderBy: compareEntriesByField('order'),
+						schema: docsFrontmatterSchema,
+						entryType: './src/content/docs#DocsFrontmatter',
+					},
+				},
+			},
+		}),
 	])
-	.setAdditionalWatchPaths(['src/data'])
+	.setAdditionalWatchPaths(['src/data', 'src/content'])
+	.setDevToolbar(devToolbar())
 	.build();
 
 export default config;

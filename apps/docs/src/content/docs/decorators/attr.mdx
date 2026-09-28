@@ -1,0 +1,98 @@
+---
+title: "@attr"
+description: "Bind a reactive field to a host HTML attribute on a RadiantElement or RadiantController."
+group: Decorators
+order: 2
+---
+
+# @attr
+
+`@attr(...)` binds a reactive field to a host HTML attribute.
+
+Use it when a value should come from authored host markup rather than from JSX property transport.
+
+That makes it the right fit for:
+
+- `data-*` configuration on `RadiantController`
+- ordinary host attributes such as `title`, `lang`, `hidden`, or `aria-*`
+- HTML-authored custom elements that should read plain host attributes reactively
+- interoperable values that should stay visible on the host markup
+
+Use [@prop](/docs/decorators/prop) when the field is part of a custom element's property API and should participate in JSX `prop:` transport.
+
+Important: `@attr(...)` binds the decorated field to the host attribute channel. It is not the primary tool for setting attributes on child elements inside `render()`.
+
+## Example
+
+```ts
+import { RadiantElement, attr, customElement } from '@ecopages/radiant';
+
+@customElement('status-pill')
+export class StatusPill extends RadiantElement {
+	@attr({ source: 'data-status' }) declare status: string | undefined;
+	@attr({ source: 'aria-label' }) declare label: string | undefined;
+
+	override render() {
+		return <span>{this.status ?? 'unknown'}</span>;
+	}
+}
+```
+
+```html
+<status-pill data-status="ready" aria-label="Server status"></status-pill>
+```
+
+In this example:
+
+- `status` reads from the host `data-status` attribute
+- `label` reads from the host `aria-label` attribute
+- assigning either field writes back through that same host attribute channel
+
+When `type` is provided, `@attr(...)` uses the same built-in attribute codec family as `@prop(...)` for `String`, `Number`, `Boolean`, `Object`, and `Array`.
+
+## Options
+
+| Option | Type | Meaning |
+| --- | --- | --- |
+| `source` | `string` | Attribute name to read and write. Defaults to the kebab-cased field name. |
+| `type` | `String \| Number \| Boolean \| Object \| Array` | Built-in attribute codec to use when no custom converter is provided. |
+| `defaultValue` | `T` | Value used before the attribute is present. |
+| `bind` | `boolean \| string` | Companion JSX binding accessor to expose. |
+| `converter` | `{ fromAttribute, toAttribute }` | Custom conversion hooks for parsing and serializing attribute values. Overrides `type` when provided. |
+
+## Default Conversion
+
+Use `type` for the common cases where the host attribute should behave like a typed `@prop(...)` value without becoming part of the custom element's public property API.
+
+```ts
+import { RadiantController, attr } from '@ecopages/radiant';
+
+class SearchController extends RadiantController {
+	@attr({ source: 'data-page', type: Number }) page = 1;
+	@attr({ source: 'data-enabled', type: Boolean }) enabled = false;
+	@attr({ source: 'title' }) title?: string;
+}
+```
+
+Use `converter` only when the built-in codecs are not enough.
+
+## Element vs Controller Usage
+
+- On `RadiantElement`, `@attr(...)` is useful for host markup-visible configuration.
+- On `RadiantController`, it is the preferred way to read host-authored controller inputs, often through `data-*` but not limited to them.
+
+## Important
+
+`@attr(...)` is host-attribute-driven. It does not replace `@prop(...)` for JSX property APIs.
+
+If a custom element needs both channels, keep them explicit:
+
+- `@prop(...)` for JSX and property-driven composition
+- `@attr(...)` for host-authored attributes
+
+If you need to set attributes on child nodes produced by `render()`, use normal JSX attributes or the `data={{ ... }}` / `aria={{ ... }}` object forms instead of `@attr(...)`.
+
+## See Also
+
+- [@prop](/docs/decorators/prop)
+- [RadiantController](/docs/components/radiant-controller)

@@ -1,31 +1,35 @@
-import type {
-	LegacyMethodDecoratorArgs,
-	StandardMethodDecoratorArgs,
-	StandardOrLegacyMethodDecoratorArgs,
-} from '../types';
+import type { Method } from '../types';
 import { debounce as legacyDebounce } from './legacy/debounce';
 import { debounce as standardDebounce } from './standard/debounce';
+import { methodDecoratorBridge } from './bridge';
 
 /**
  * A decorator to debounce a method.
  * @param timeout The debounce timeout in milliseconds.
  */
 export function debounce(timeout: number) {
-	return function (
-		protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
-		descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
-	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardDebounce(timeout)(
-				protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyDebounce(timeout)(
-			protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
-			descriptor as LegacyMethodDecoratorArgs['descriptor'],
+	function decorator<Host extends object, TMethod extends Method>(
+		protoOrTarget: TMethod,
+		nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
+	): Method;
+	function decorator(
+		protoOrTarget: object,
+		nameOrContext: string,
+		descriptor: TypedPropertyDescriptor<Method>,
+	): TypedPropertyDescriptor<Method> | void;
+	function decorator(
+		protoOrTarget: object | Method,
+		nameOrContext: string | ClassMethodDecoratorContext<object, Method>,
+		descriptor?: TypedPropertyDescriptor<Method>,
+	): Method | TypedPropertyDescriptor<Method> | void {
+		return methodDecoratorBridge(
+			standardDebounce(timeout),
+			legacyDebounce(timeout),
+			protoOrTarget,
+			nameOrContext,
+			descriptor,
 		);
-	};
+	}
+
+	return decorator;
 }

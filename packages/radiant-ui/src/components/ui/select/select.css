@@ -1,0 +1,64 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-select {
+	@apply relative inline-flex flex-col;
+}
+
+@layer components {
+	.rui-select {
+		@apply relative text-sm;
+	}
+
+	.rui-select__control {
+		@apply flex w-full min-w-0 items-center gap-1 rounded-control border border-border bg-background px-1;
+		min-height: var(--size-control-md);
+	}
+
+	.rui-select__control:focus-within {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-select__trigger {
+		@apply inline-flex min-h-8 min-w-0 flex-1 cursor-pointer items-center gap-inline border-0 bg-transparent px-control-x py-control-y text-start text-on-background outline-none;
+		font-size: var(--text-control-input);
+	}
+
+	.rui-select__trigger[aria-disabled='true'] {
+		@apply cursor-not-allowed opacity-muted;
+	}
+
+	.rui-select__value {
+		@apply flex min-w-0 flex-1 flex-wrap items-center gap-1;
+		/* Keep the value row painted before client sync fills the label. */
+		min-height: 1.25em;
+	}
+
+	.rui-select__value[data-placeholder] {
+		@apply text-on-surface;
+	}
+
+	.rui-select__value [data-select-placeholder] {
+		@apply text-on-surface;
+	}
+
+	.rui-select__listbox {
+		@apply min-w-0;
+	}
+
+	.rui-select__listbox[hidden] {
+		display: none;
+	}
+
+	.rui-select__listbox > rui-listbox {
+		@apply min-w-0;
+	}
+
+	.rui-select__search {
+		@apply m-1 min-w-0 rounded-control border border-border bg-background px-control-x py-control-y text-on-background outline-none;
+		font-size: var(--text-control-input);
+	}
+
+	.rui-select__search:focus-visible {
+		@apply ring-2 ring-focus-ring;
+	}
+}

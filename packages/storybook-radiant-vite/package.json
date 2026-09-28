@@ -1,0 +1,93 @@
+{
+	"name": "@ecopages/storybook-radiant-vite",
+	"version": "0.1.0",
+	"description": "Storybook framework for @ecopages/radiant — Vite builder, Radiant JSX renderer, and SSR story modes",
+	"keywords": [
+		"storybook",
+		"storybook-framework",
+		"radiant",
+		"ecopages",
+		"web-components",
+		"vite",
+		"ssr"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/storybook-radiant-vite"
+	},
+	"license": "MIT",
+	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./preset": {
+			"types": "./dist/preset.d.ts",
+			"default": "./dist/preset.js"
+		},
+		"./renderer-preset": {
+			"types": "./dist/renderer-preset.d.ts",
+			"default": "./dist/renderer-preset.js"
+		},
+		"./preview": {
+			"types": "./dist/preview.d.ts",
+			"default": "./dist/preview.js"
+		},
+		"./node": {
+			"types": "./dist/node/index.d.ts",
+			"default": "./dist/node/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist/**/*",
+		"preset.js",
+		"renderer-preset.js",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "tsup && tsc -p tsconfig.build.json --noCheck",
+		"dev": "tsup --watch",
+		"clean": "rm -rf dist",
+		"test": "vitest run",
+		"test:all": "pnpm run test"
+	},
+	"dependencies": {
+		"@ecopages/vite-plugin-radiant": "workspace:*",
+		"@storybook/builder-vite": "^10.5.2",
+		"@storybook/global": "^5.0.0",
+		"esbuild": "^0.28.1",
+		"ts-dedent": "^2.2.0"
+	},
+	"devDependencies": {
+		"@ecopages/jsx": "workspace:*",
+		"@types/node": "^24.13.2",
+		"tsup": "^8.5.0",
+		"typescript": "catalog:",
+		"vite": "^8.1.1",
+		"vitest": "^4.1.10"
+	},
+	"peerDependencies": {
+		"@ecopages/jsx": "workspace:>=0.3.0",
+		"@ecopages/radiant": "workspace:>=0.3.0",
+		"@ecopages/signals": "workspace:>=0.3.0",
+		"storybook": "^10.5.2",
+		"vite": "^8.0.0"
+	},
+	"peerDependenciesMeta": {
+		"vite": {
+			"optional": true
+		}
+	},
+	"sideEffects": [
+		"./dist/preview.js",
+		"./dist/index.js",
+		"./dist/entry-preview.js"
+	]
+}

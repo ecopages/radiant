@@ -6,6 +6,8 @@
 
 # build
 public/js
+src/public/llms.txt
+src/public/llms-content/
 
 # misc
 .DS_Store

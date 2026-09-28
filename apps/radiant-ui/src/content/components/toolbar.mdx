@@ -1,0 +1,131 @@
+---
+title: Toolbar
+description: Toolbars group formatting or view controls that affect a shared context, such as rich text editors, chart controls, or data tables.
+category: Actions
+---
+
+import { meta as ToolbarMeta, Default } from '@/content/stories/toolbar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Toolbar
+
+<p class="docs-lede">Toolbars group formatting or view controls that affect a shared context, such as rich text editors, chart controls, or data tables.</p>
+
+## Try it
+
+<Demo of={Default} meta={ToolbarMeta} />
+
+## Usage
+
+Place toggle `RuiButton` children inside `RuiToolbar`. Use `RuiSeparator` to divide related control categories. Enable `exclusiveToggles` when only one toggle can be active.
+
+```tsx
+import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiSeparator } from '@ecopages/radiant-ui/separator';
+
+<RuiToolbar label="Text formatting">
+  <RuiButton toggle variant="ghost" square aria-label="Bold"><strong aria-hidden="true">B</strong></RuiButton>
+  <RuiButton toggle variant="ghost" square aria-label="Italic"><em aria-hidden="true">I</em></RuiButton>
+  <RuiSeparator orientation="vertical" />
+  <RuiButton toggle variant="ghost" square aria-label="Underline"><u aria-hidden="true">U</u></RuiButton>
+  <RuiButton toggle variant="ghost" square aria-label="Strikethrough"><s aria-hidden="true">S</s></RuiButton>
+</RuiToolbar>
+```
+
+## Custom markup
+
+`<rui-toolbar>` coordinates any light-DOM tree with focusable controls. The `RuiToolbar` helper stamps `[role="toolbar"]`; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/toolbar';
+
+<rui-toolbar label="Text formatting" exclusive-toggles>
+  <div role="toolbar" aria-label="Text formatting">
+    <button type="button" data-toggle aria-pressed="false" aria-label="Bold">B</button>
+    <button type="button" data-toggle aria-pressed="true" aria-label="Italic">I</button>
+  </div>
+</rui-toolbar>;
+```
+
+Toggle buttons need `data-toggle` and `aria-pressed`. The host updates `aria-pressed` on click.
+
+## Exclusive toggles
+
+<p>Use `exclusiveToggles` for view modes where only one option (list vs grid) can be active at a time.</p>
+
+## Theming
+
+Toolbar surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Bar (`rui-toolbar`) | `surface`, `border`, `rounded-container` |
+| Pressed toggle (`rui-button--ghost` / `--outline[aria-pressed='true']`) | `background`, `on-background`, `shadow-sm` |
+
+Geometry shares control tokens (`--size-control-*`, `--space-control-*`) with `RuiButton`. Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiToolbar` is a custom element (`<rui-toolbar>`) rendering a `role="toolbar"` container. Place `RuiButton` toggles or other focusable controls as children.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the toolbar region. |
+| `exclusive-toggles` | `boolean` | `false` | Only one toggle button stays pressed at a time. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `button`, `a[href]`, `input`, `select`, `textarea`, `[tabindex]` | yes | roving `tabIndex` | control markup, `disabled` |
+| `button[data-toggle][aria-pressed]` | for toggles | `aria-pressed` | initial `aria-pressed`, `data-toggle` |
+
+Nested hosts: none.
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiToolbar` | `[role="toolbar"]` with `data-ref="root"` | Place focusable controls as children. |
+
+### CSS classes
+
+Public BEM classes on the composed surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-toolbar` | Toolbar surface (`role="toolbar"`). |
+
+Pressed-toggle styling applies to `rui-button--ghost` / `rui-button--outline` inside the toolbar (see Button). Toggles expose their state via `aria-pressed`.
+
+`RuiSeparator` is a generic helper. In a toolbar, use `orientation="vertical"` to divide categories without adding a focus stop.
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Bar | `--surface`, `--border` |
+| Pressed toggle | `--background`, `--on-background`, `--shadow-sm` |
+| Focus ring | `--focus-ring` |
+
+## Accessibility
+
+- Toolbar renders with `role="toolbar"` and an accessible name from `label`.
+- Toggle buttons expose `aria-pressed` for their on/off state.
+- Arrow keys move between toolbar controls when focus is inside the toolbar; separators are skipped.

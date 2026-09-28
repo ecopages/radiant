@@ -1,0 +1,207 @@
+---
+title: Menubar
+description: Menubars provide persistent top-level menus (File, Edit, View) with keyboard traversal across items.
+category: Navigation
+---
+
+import { meta as MenubarMeta, Default } from '@/content/stories/menubar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Menubar
+
+<p class="docs-lede">Menubars provide persistent top-level menus (File, Edit, View) with keyboard traversal across items.</p>
+
+## Try it
+
+<Demo of={Default} meta={MenubarMeta} />
+
+<p>Open File, then hover Share to open its submenu without moving keyboard focus.</p>
+
+## Usage
+
+Use `RuiMenubarMenu` for each top-level menu. Set `label` to name the menubar landmark.
+
+```tsx
+import {
+  RuiMenubar,
+  RuiMenubarMenu,
+  RuiMenubarMenuItem,
+  RuiMenubarSubmenuContent,
+} from '@ecopages/radiant-ui/menubar';
+import { RuiSeparator } from '@ecopages/radiant-ui/separator';
+
+<RuiMenubar label="Application menu">
+  <RuiMenubarMenu label="File">
+    <RuiMenubarMenuItem value="new">New</RuiMenubarMenuItem>
+    <RuiSeparator />
+    <RuiMenubarMenuItem value="share" hasSubmenu>Share</RuiMenubarMenuItem>
+    <RuiMenubarSubmenuContent>
+      <RuiMenubarMenuItem value="email">Email</RuiMenubarMenuItem>
+    </RuiMenubarSubmenuContent>
+  </RuiMenubarMenu>
+</RuiMenubar>
+```
+
+Place `RuiMenubarSubmenuContent` as the next sibling of the branch item. That sibling pair is the ARIA and positioning contract.
+
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/menubar';
+
+<rui-menubar label="Application menu">
+  <div data-ref="root" role="menubar">
+    <div data-ref="menubar-root">
+      <button role="menuitem" aria-haspopup="true">File</button>
+      <div role="menu" hidden>
+        <button role="menuitem" data-value="new">New</button>
+      </div>
+    </div>
+  </div>
+</rui-menubar>
+```
+
+## Data-driven menus
+
+The `items` prop supports recursively nested `items`. A top-level item with children becomes a menu trigger; a top-level item without children remains a direct menubar item. Within a popup, use `{ type: 'separator' }` in a `RuiMenuEntry[]` to divide action groups.
+
+```tsx
+import { RuiMenubar, type RuiMenubarItem } from '@ecopages/radiant-ui/menubar';
+
+const applicationMenus: RuiMenubarItem[] = [
+  {
+    id: 'file',
+    label: 'File',
+    items: [
+      { value: 'new', label: 'New' },
+      { type: 'separator', id: 'sharing-actions' },
+      {
+        value: 'share',
+        label: 'Share',
+        items: [{ value: 'email', label: 'Email' }],
+      },
+    ],
+  },
+];
+
+<RuiMenubar label="Application menu" items={applicationMenus} />
+```
+
+## Interaction model
+
+The menubar keeps pointer state and keyboard focus separate. Pointer interaction opens a menu surface without moving focus into it. Keyboard interaction opens the same surface and moves focus to its first enabled item. This lets a user move the pointer through nested flyouts without an unexpected focus change.
+
+| Interaction | Result |
+| --- | --- |
+| Click a top-level menu | Opens its menu; focus remains on that top-level trigger. |
+| Hover a top-level menu while another is open | Switches to that menu without moving focus. A closed menubar does not open from hover. |
+| `ArrowDown`, `Enter`, or `Space` on a top-level menu | Opens its menu and focuses the first enabled item. |
+| Hover a branch | Opens its submenu after 200 ms without moving focus. |
+| `ArrowRight`, `Enter`, or `Space` on a branch | Opens its submenu and focuses the first enabled child. |
+| `ArrowLeft` in a submenu | Closes that submenu and restores focus to its branch. |
+| `ArrowLeft` or `ArrowRight` on a leaf | Closes the tree and opens the previous or next top-level menu. |
+| `Escape` | Closes the complete tree and restores focus to the top-level trigger. |
+| `Tab` or an outside pointer interaction | Closes the complete tree. |
+
+When a branch opens from pointer hover, focus may remain on a previous item such as `New`. This is intentional: hover and focus convey different input modalities. Style `:hover` and `[aria-expanded="true"]` independently from `:focus-visible` so the open branch is clear without implying it has keyboard focus.
+
+## Desktop application patterns
+
+<p>Menubars suit desktop-style apps. For site navigation, prefer `RuiNavigationMenu` or `RuiSidebar`.</p>
+
+## Theming
+
+Menubar surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Bar (`rui-menubar`) | `surface`, `border`, `rounded-container` |
+| Top-level item (`rui-menubar__item`) | `on-surface`; hover / expanded `--rui-menu-item-hover` (`surface-container-low`), `on-background`, `shadow-sm` |
+| Popup (`rui-menubar__menu`) | `background`, `border`, `shadow-overlay`, `rounded-container` (via `rui-popover`) |
+| Menu item (`rui-menubar__menu-item`) | `on-surface`; hover / expanded `--rui-menu-item-hover` (`surface-container-low`) |
+
+Geometry shares control tokens (`--size-control-*`, `--space-control-*`, `--radius-control`) with `RuiButton`. Override `--rui-menu-item-hover` on the host or an ancestor to restyle hover; map other roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiMenubar` is a custom element (`<rui-menubar>`) rendering a `role="menubar"` landmark. The JSX helper renders `items` as top-level items with optional popups. For explicit markup, compose the exported menu helpers rather than hand-authoring `data-ref` structure.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name for the menubar landmark. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `role="menubar"` | menubar shell |
+| `[data-ref="menubar-root"]` | yes | — | one top-level menu block |
+| `[role="menuitem"]` | yes | `aria-expanded`, `aria-haspopup` (top-level) | label, optional `data-value` |
+| `[role="menu"]` | yes | `hidden` | popup surface |
+
+Branch pattern: `[role="menuitem"]` with `aria-haspopup` followed by sibling `[role="menu"]`.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: string }` | Emitted when a menu item is activated; `value` is the item's `data-value` or text. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiMenubar` | `<rui-menubar>` + `[data-ref="root"]` | Accepts `items` or children |
+| `RuiMenubarMenu` | `[data-ref="menubar-root"]` | Top-level trigger + popup |
+| `RuiMenubarMenuItem` | `[role="menuitem"]`, `data-value` | Popup action item |
+| `RuiMenubarSubmenuContent` | `[role="menu"]` | Sibling of branch item |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-menubar` | Menubar bar (`role="menubar"`). |
+| `.rui-menubar__root` | Top-level menu root (trigger + optional popup). |
+| `.rui-menubar__item` | Top-level item (`role="menuitem"`). |
+| `.rui-menubar__menu` | Popup menu surface (`role="menu"`, `rui-popover rui-floating`). |
+| `.rui-menubar__submenu` | Nested popup menu surface. |
+| `.rui-menubar__menu-item` | Item inside a popup (`role="menuitem"`). |
+| `.rui-separator` | Generic divider; popup menus add vertical spacing. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Bar | `--surface`, `--border` |
+| Top-level item | `--on-surface`, `--rui-menu-item-hover` (hover / expanded; defaults to `--surface-container-low`), `--on-background`, `--shadow-sm` |
+| Popup | `--background`, `--border`, `--shadow-overlay` |
+| Menu item | `--on-surface`, `--rui-menu-item-hover` (hover / expanded) |
+| Focus ring | `--focus-ring` |
+
+## Accessibility
+
+- Menubar renders with `role="menubar"` and supports horizontal arrow-key traversal between top-level items.
+- Popup menus use vertical arrow-key navigation; Home and End move to the first and last enabled item.
+- Branches expose `aria-haspopup="menu"`, `aria-expanded`, and generated `aria-controls` linkage.
+- Separators are non-focusable and are skipped by arrow-key navigation.
+- Menus dismiss with Escape, Tab, outside pointer interaction, or leaf activation.
+- Provide `label` so the region is announced to screen reader users.
+
+Follows the <a href="https://www.w3.org/WAI/ARIA/apg/patterns/menubar/" data-wai-aria target="_blank" rel="noopener noreferrer">WAI-ARIA Menubar</a> pattern.

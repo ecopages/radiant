@@ -1,0 +1,78 @@
+---
+title: Spinner
+description: Spinners indicate a loading or processing state inline in buttons, badges, and empty states.
+category: Feedback
+---
+
+import { meta as SpinnerMeta, Default } from '@/content/stories/spinner';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Spinner
+
+<p class="docs-lede">Spinners indicate a loading or processing state inline in buttons, badges, and empty states.</p>
+
+## Try it
+
+<Demo of={Default} meta={SpinnerMeta} />
+
+## Usage
+
+```tsx
+import { RuiSpinner } from '@ecopages/radiant-ui/spinner';
+
+<RuiSpinner />
+```
+
+Place a spinner before button label text to indicate an in-flight action:
+
+```tsx
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiSpinner } from '@ecopages/radiant-ui/spinner';
+
+<RuiButton variant="filled" disabled>
+  <RuiSpinner size="sm" class="mr-2" />
+  Loading...
+</RuiButton>
+```
+
+## Sizes
+
+<p>Use `sm` inside buttons and badges, `md` for standalone status, and `lg` for prominent loading regions.</p>
+
+## Accessibility
+
+- `RuiSpinner` renders `role="status"` with a default `aria-label` of `Loading`.
+- Pair with visible text when the loading context is not obvious.
+
+## API
+
+`RuiSpinner` is a presentational JSX view over a `<span>`, no custom element.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `size` | `sm` · `md` · `lg` | `md` | Spinner diameter. |
+| `aria` | `{ label?: string }` | `{ label: 'Loading' }` | Accessible name. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-spinner` | Spinner root (`role="status"`). |
+| `.rui-spinner--sm` | Small spinner (12px). |
+| `.rui-spinner--md` | Medium spinner (16px). |
+| `.rui-spinner--lg` | Large spinner (20px). |

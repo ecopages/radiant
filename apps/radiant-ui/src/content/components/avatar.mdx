@@ -1,0 +1,98 @@
+---
+title: Avatar
+description: Avatars identify people or entities with a photo, initials, or generic fallback. Size variants keep them proportional in lists, bylines, and toolbars.
+category: Data display
+---
+
+import { meta as AvatarMeta, Default } from '@/content/stories/avatar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Avatar
+
+<p class="docs-lede">Avatars identify people or entities with a photo, initials, or generic fallback. Size variants keep them proportional in lists, bylines, and toolbars.</p>
+
+## Try it
+
+<Demo of={Default} meta={AvatarMeta} />
+
+## Usage
+
+Set `src` and `alt` when a photo is available. Use `fallback` for initials when the image fails to load or is not provided.
+
+```tsx
+import { RuiAvatar } from '@ecopages/radiant-ui/avatar';
+
+<RuiAvatar src="/avatars/jane.jpg" alt="Jane Cooper" fallback="JC" size="md" />
+```
+
+## Meaningful fallback text
+
+<p>Limit fallback to one or two characters derived from the person's name. Avoid arbitrary symbols that do not identify the subject.</p>
+
+## Pick size for context
+
+<p>Use `sm` in dense tables and comment threads, `md` in bylines and menus, and `lg` in profile headers.</p>
+
+## Theming
+
+Avatar chrome maps to **semantic surface roles**, never Tailwind palette steps. Override `--rui-avatar-*` on `.rui-avatar`. Size classes set `--rui-avatar-size`.
+
+| Part | Default | Override |
+| --- | --- | --- |
+| Size | `--space-10` (`md`); `sm` `--space-8`; `lg` `--space-12` | `--rui-avatar-size` |
+| Fill / radius | `--surface-container`, `--radius-pill` | `--rui-avatar-surface`, `--rui-avatar-radius` |
+| Fallback text | `on-surface` | theme |
+
+```css
+.rui-avatar {
+  --rui-avatar-size: 2.25rem;
+}
+```
+
+## Accessibility
+
+- Always provide `alt` text when `src` is set so the image is described to screen readers.
+- When showing only initials, ensure surrounding text names the person; the avatar itself may be decorative.
+- Do not use avatar color as the sole indicator of user role or status.
+
+## API
+
+`RuiAvatar` is a presentational JSX view, no custom element. Pass `src` for an image, or `fallback` / `alt` for initials.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `src` | `string` | | Image URL. When omitted, initials from `alt` / `fallback` are shown. |
+| `alt` | `string` | `''` | Accessible name for the image; also derives initials. |
+| `fallback` | `string` | | Explicit fallback initials / text when there is no image. |
+| `size` | `sm` · `md` · `lg` | `md` | Avatar size. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-avatar` · `--sm` · `--md` · `--lg` | Root + size variants. |
+| `.rui-avatar__image` | `<img>` fill. |
+| `.rui-avatar__fallback` | Initials / text fallback. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Fallback | `--surface-container`, `--on-surface`, `--radius-pill` |

@@ -1,0 +1,12 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-form {
+	@apply block;
+}
+
+@layer components {
+	.rui-form {
+		@apply flex flex-col;
+		gap: var(--space-stack);
+	}
+}

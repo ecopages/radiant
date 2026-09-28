@@ -1,29 +1,49 @@
-import type {
-	LegacyMethodDecoratorArgs,
-	StandardMethodDecoratorArgs,
-	StandardOrLegacyMethodDecoratorArgs,
-} from '../types';
+import type { REACTIVE_HOST, ReactiveHostInternals } from '../core/reactive-host';
+import type { Method } from '../types';
 import { onUpdated as legacyOnUpdated } from './legacy/on-updated';
 import { onUpdated as standardOnUpdated } from './standard/on-updated';
+import { methodDecoratorBridge } from './bridge';
+
+type UpdatedHost = {
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
+};
 
 /**
- * A decorator to bind a method to the instance.
+ * Runs the decorated method once per changed batch when any named reactive member changed.
+ *
+ * @param keyOrKeys - Member names that trigger the method.
+ *
+ * @remarks
+ * Writes in the same turn batch into one cycle (a microtask), so a method
+ * watching several members runs once with all of them applied. If it writes a
+ * watched member, it can run again in the same cycle until changes settle.
+ * It receives the set of members changed in that batch, runs before the render commit, and
+ * nothing runs before the host connects (SSR runs pending callbacks before
+ * serializing). Use `updated()` for work that needs the committed DOM.
  */
 export function onUpdated(keyOrKeys: string | string[]) {
-	return function (
-		protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
-		nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
-		_descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
-	): any {
-		if (typeof nameOrContext === 'object') {
-			return standardOnUpdated(keyOrKeys)(
-				protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-				nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-			);
-		}
-		return legacyOnUpdated(keyOrKeys)(
-			protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-			nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
+	function decorator<THost extends UpdatedHost, TMethod extends Method>(
+		protoOrTarget: TMethod,
+		nameOrContext: ClassMethodDecoratorContext<THost, TMethod>,
+	): void;
+	function decorator(
+		protoOrTarget: UpdatedHost,
+		nameOrContext: string,
+		descriptor: TypedPropertyDescriptor<Method>,
+	): TypedPropertyDescriptor<Method> | void;
+	function decorator(
+		protoOrTarget: UpdatedHost | Method,
+		nameOrContext: string | ClassMethodDecoratorContext<UpdatedHost, Method>,
+		descriptor?: TypedPropertyDescriptor<Method>,
+	): TypedPropertyDescriptor<Method> | void {
+		return methodDecoratorBridge(
+			standardOnUpdated(keyOrKeys),
+			legacyOnUpdated(keyOrKeys),
+			protoOrTarget,
+			nameOrContext,
+			descriptor,
 		);
-	};
+	}
+
+	return decorator;
 }

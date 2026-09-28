@@ -1,0 +1,68 @@
+---
+title: Separator
+description: Separators are non-interactive visual dividers between related groups of content, controls, or menu actions.
+category: Layout
+---
+
+import { meta as SeparatorMeta, Default } from '@/content/stories/separator';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Separator
+
+<p class="docs-lede">Separators are non-interactive visual dividers between related groups of content, controls, or menu actions.</p>
+
+## Try it
+
+<Demo of={Default} meta={SeparatorMeta} />
+
+## Usage
+
+Use the default horizontal separator to divide stacked content. Use a vertical separator between control groups in a horizontal toolbar.
+
+```tsx
+import { RuiSeparator } from '@ecopages/radiant-ui/separator';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+import { RuiToolbar } from '@ecopages/radiant-ui/toolbar';
+
+<RuiToolbar label="Text formatting">
+  <RuiButton toggle variant="ghost" square aria-label="Bold"><strong aria-hidden="true">B</strong></RuiButton>
+  <RuiButton toggle variant="ghost" square aria-label="Italic"><em aria-hidden="true">I</em></RuiButton>
+  <RuiSeparator orientation="vertical" />
+  <RuiButton toggle variant="ghost" square aria-label="Underline"><u aria-hidden="true">U</u></RuiButton>
+  <RuiButton toggle variant="ghost" square aria-label="Strikethrough"><s aria-hidden="true">S</s></RuiButton>
+</RuiToolbar>
+```
+
+## API
+
+`RuiSeparator` renders an `<hr role="separator">`; it is a JSX helper, not a custom element.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `orientation` | `horizontal` · `vertical` | `horizontal` | Visual direction and `aria-orientation` value. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-separator` | Generic horizontal or vertical separator. |
+
+## Accessibility
+
+- Separators have `role="separator"` and an `aria-orientation` matching their visual direction.
+- They are not focusable or interactive. Do not use them to convey essential information.
+
+Follows the <a href="https://www.w3.org/WAI/ARIA/apg/patterns/menubar/" data-wai-aria target="_blank" rel="noopener noreferrer">WAI-ARIA guidance for separators in composite menus</a>.

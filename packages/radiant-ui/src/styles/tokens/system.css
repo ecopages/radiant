@@ -1,0 +1,47 @@
+/**
+ * Structural system tokens (Tier 3) — shared across all themes.
+ *
+ * `--size-control-*` aliases `--space-8/10/12` so compact and wide packs
+ * change button and input height with padding. Icon sizes stay fixed.
+ * `--rui-track-mix` / `--rui-track-fill` size the unfilled slider and knob
+ * track against `--on-background`. Optional `--rui-track-color` replaces the fill.
+ */
+:root {
+	--color-black: oklch(0% 0 0);
+	--color-white: oklch(100% 0 0);
+
+	--border-width-hairline: 1px;
+	--border-width-thin: 1px;
+	--border-width-thick: 2px;
+
+	--rui-track-mix: 22%;
+	--rui-track-fill: color-mix(in oklab, var(--on-background) var(--rui-track-mix), transparent);
+
+	--focus-ring-width: 2px;
+	--focus-ring-offset: 2px;
+
+	--opacity-disabled: 0.5;
+	--opacity-muted: 0.6;
+
+	--z-dropdown: 10;
+	--z-popover: 20;
+	--z-overlay: 30;
+	--z-modal: 40;
+	--z-toast: 50;
+
+	--size-control-sm: var(--space-8, 2rem);
+	--size-control-md: var(--space-10, 2.5rem);
+	--size-control-lg: var(--space-12, 3rem);
+	--size-icon-sm: 1rem;
+	--size-icon-md: 1.25rem;
+}
+
+@theme {
+	--opacity-disabled: var(--opacity-disabled);
+	--opacity-muted: var(--opacity-muted);
+	--z-index-dropdown: var(--z-dropdown);
+	--z-index-popover: var(--z-popover);
+	--z-index-overlay: var(--z-overlay);
+	--z-index-modal: var(--z-modal);
+	--z-index-toast: var(--z-toast);
+}

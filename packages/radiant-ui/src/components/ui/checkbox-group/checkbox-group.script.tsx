@@ -1,0 +1,138 @@
+import { RadiantElement, bindTo, customElement, event, onEvent, onUpdated, prop } from '@ecopages/radiant';
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { nonEmpty } from '@/lib/non-empty';
+import { RuiCheckbox } from '../checkbox/checkbox.script';
+import { multiValuePropOptions, type ViewMultiValue } from '../shared/multi-value';
+
+export type RuiCheckboxGroupOrientation = 'horizontal' | 'vertical';
+
+export type RuiCheckboxGroupProps = {
+	/** Selected checkbox values. The attribute is comma-separated. */
+	value?: ViewMultiValue;
+	/** Form field name shared by all checkboxes in the group. */
+	name?: string;
+	/** Accessible name for the group when no visible legend is composed. */
+	label?: string;
+	/** Disable every checkbox in the group. Default: `false`. */
+	disabled?: boolean;
+	/** Layout axis for checkbox items. Default: `vertical`. */
+	orientation?: RuiCheckboxGroupOrientation;
+};
+
+export type RuiCheckboxGroupChangeDetail = {
+	value: string[];
+};
+
+/**
+ * `<rui-checkbox-group>` — checkbox group behavior host.
+ *
+ * The custom element is a behavior host: it does not render the composed tree.
+ * Import the script and place light-DOM children that match the contract below,
+ * or use the `RuiCheckboxGroup` view helpers which stamp the same targets.
+ *
+ * Group `value` is a `string[]` property; the attribute is comma-separated.
+ *
+ * ## Light-DOM contract
+ *
+ * Required:
+ * - `[data-checkbox-group-root]` — group container. Host sets `aria-label`, `aria-disabled`, `data-orientation`.
+ * - `rui-checkbox` — one per option (nested host). Host sets `checked`, `disabled`, `name`.
+ *
+ * Per checkbox (`rui-checkbox`):
+ * - `value` — selection identity.
+ * - `data-disabled` — per-item disabled flag preserved when the group is enabled.
+ *
+ * Do not set `checked`, `disabled`, or `name` on `rui-checkbox` children — the host owns those.
+ * After connect, group `value` wins over per-item `checked`.
+ *
+ * Nested hosts: `rui-checkbox` (listens for `rui-change`; stops propagation and re-emits group-shaped detail).
+ *
+ * @see https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
+ *
+ * @element rui-checkbox-group
+ *
+ * @attr {string} value - Comma-separated selected values in markup; the property is `string[]`. Default: `[]`.
+ * @attr {string} name - Form field name shared by all checkboxes in the group. Default: `''`.
+ * @attr {string} label - Accessible name when no visible legend is composed. Default: `''`.
+ * @attr {boolean} disabled - Disables every checkbox in the group. Default: `false`.
+ * @attr {('horizontal'|'vertical')} orientation - Layout axis for checkbox items. Default: `vertical`.
+ *
+ * @fires rui-change - Emitted after the selected values change; `detail.value` is `string[]`.
+ *
+ * @remarks
+ * Minimum headless tree:
+ *
+ * ```html
+ * <rui-checkbox-group value="news" name="topics" label="Topics">
+ *   <div data-checkbox-group-root role="group">
+ *     <rui-checkbox value="news">News</rui-checkbox>
+ *     <rui-checkbox value="travel">Travel</rui-checkbox>
+ *   </div>
+ * </rui-checkbox-group>
+ * ```
+ *
+ * BEM classes are presentation-only; see view `@cssclass`.
+ */
+@customElement('rui-checkbox-group')
+export class RuiCheckboxGroup extends RadiantElement {
+	@prop({ ...multiValuePropOptions, defaultValue: [] })
+	value: string[];
+	@prop({ type: String, defaultValue: '' }) name: string;
+
+	@prop({ type: String, defaultValue: '' })
+	@bindTo({
+		selector: '[data-checkbox-group-root]',
+		attr: 'aria-label',
+		map: nonEmpty,
+	})
+	label: string;
+
+	@prop({ type: Boolean, reflect: true, defaultValue: false })
+	@bindTo({
+		selector: '[data-checkbox-group-root]',
+		attr: 'aria-disabled',
+		map: (disabled) => (disabled ? 'true' : undefined),
+	})
+	disabled: boolean;
+
+	@prop({ type: String, reflect: true, defaultValue: 'vertical' })
+	@bindTo({ selector: '[data-checkbox-group-root]', attr: 'data-orientation' })
+	orientation: RuiCheckboxGroupOrientation;
+
+	@event({ name: 'rui-change', bubbles: true, composed: true })
+	changeEvent: EventEmitter<RuiCheckboxGroupChangeDetail>;
+
+	protected override onConnected(): void {
+		this.syncCheckboxes();
+	}
+
+	@onUpdated(['value', 'name', 'disabled'])
+	syncCheckboxes(): void {
+		const selected = new Set(this.value);
+		const groupName = this.name || this.getAttribute('name') || '';
+
+		for (const checkbox of this.getCheckboxes()) {
+			checkbox.checked = selected.has(checkbox.value);
+			checkbox.disabled = this.disabled || checkbox.hasAttribute('data-disabled');
+			if (groupName) {
+				checkbox.name = groupName;
+			}
+		}
+	}
+
+	@onEvent({ selector: 'rui-checkbox', type: 'rui-change' })
+	onCheckboxChange(event: Event): void {
+		event.stopImmediatePropagation();
+		const values = this.getCheckboxes()
+			.filter((checkbox) => checkbox.checked)
+			.map((checkbox) => checkbox.value);
+		this.value = values;
+		this.changeEvent.emit({ value: this.value });
+	}
+
+	private getCheckboxes(): RuiCheckbox[] {
+		return Array.from(this.querySelectorAll('rui-checkbox')).filter(
+			(node): node is RuiCheckbox => node instanceof RuiCheckbox,
+		);
+	}
+}

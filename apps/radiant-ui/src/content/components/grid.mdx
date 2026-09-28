@@ -1,0 +1,144 @@
+---
+title: Grid
+description: Grid provides a semantic table-like structure for tabular data with keyboard navigation and selection built in.
+category: Layout
+---
+
+import { meta as GridMeta, Default } from '@/content/stories/grid';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Grid
+
+<p class="docs-lede">Grid provides a semantic table-like structure for tabular data with arrow-key navigation between cells.</p>
+
+## Try it
+
+<Demo of={Default} meta={GridMeta} />
+
+## Usage
+
+Pass a `rows` 2-D array or compose row and cell markup as children. Set `label` to name the grid for assistive technologies.
+
+```tsx
+import { RuiGrid } from '@ecopages/radiant-ui/grid';
+
+<RuiGrid
+  label="Team members"
+  rows={[
+    ['Name', 'Role'],
+    ['Ada', 'Engineer'],
+  ]}
+/>
+```
+
+## Custom markup
+
+`<rui-grid>` coordinates any light-DOM tree that matches its query contract. The `RuiGrid` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/grid';
+
+<rui-grid label="Team members">
+  <div role="grid" aria-label="Team members">
+    <div role="row">
+      <div role="gridcell" tabindex={-1}>Name</div>
+      <div role="gridcell" tabindex={-1}>Role</div>
+    </div>
+    <div role="row">
+      <div role="gridcell" tabindex={-1}>Ada</div>
+      <div role="gridcell" tabindex={-1}>Engineer</div>
+    </div>
+  </div>
+</rui-grid>;
+```
+
+## Use for tabular data
+
+<p>Prefer Grid when data has rows and columns with comparable values. Use Treegrid when rows can expand into hierarchies.</p>
+
+## Theming
+
+Grid maps to **semantic surface and border roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Surface (`rui-grid`) | `border`, `background`, `on-background`, `radius-container`, `shadow-sm` |
+| Header row | `surface`, `on-background` |
+| Cell hover | `surface` |
+| Cell focus | `focus-ring`, `z-dropdown` |
+| Cell links | `link` |
+| Geometry | `--space-control-x` (cell padding) |
+
+Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiGrid` is a custom element (`<rui-grid>`) with roving-tabindex keyboard navigation; the `RuiGrid` JSX view authors rows and cells.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Accessible name announced when focus enters the grid. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[role="grid"]` | yes | — | root surface; view sets `aria-label` |
+| `[role="row"]` | yes | — | row container (direct parent of cells) |
+| `[role="gridcell"]` | yes | roving `tabIndex` | cell content |
+
+Selection is not modeled. Nested hosts: none.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `rows` | `JsxRenderable[][]` | | 2-D array of row/cell content for the `RuiGrid` view. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiGrid` | `[role="grid"]` with `data-ref="root"` | Accepts `rows` or `children`. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-grid` | Root surface inside the host (`role="grid"`). |
+| `.rui-grid__row` | Table row (`role="row"`). |
+| `.rui-grid__cell` | Table cell (`role="gridcell"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Surface | `--border`, `--background`, `--on-background`, `--radius-container`, `--shadow-control` |
+| Header row | `--surface`, `--on-background` |
+| Cell hover | `--surface` |
+| Cell focus | `--focus-ring`, `--z-dropdown` |
+| Cell links | `--link` |
+| Cell padding | `--space-control-x` |
+
+## Accessibility
+
+- Provide a descriptive `label` so screen readers announce it when focus enters the grid.
+- Column headers should be marked so users understand cell context.
+- Support arrow-key navigation between focusable cells.

@@ -1,0 +1,176 @@
+---
+title: Knob
+description: Knobs let users make compact, rotary adjustments to a numeric value.
+category: Forms
+---
+
+import { meta as KnobMeta, Default, ValuePrecision } from '@/content/stories/knob';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+# Knob
+
+<p class="docs-lede">Knobs let users make compact, rotary adjustments to a numeric value. They are particularly useful for controls such as gain, pan, and effect parameters.</p>
+
+## Try it
+
+<Demo of={Default} meta={KnobMeta} />
+
+## Usage
+
+Set `min`, `max`, and `step` to define the range. The knob’s visible arc spans 300°, leaving a gap that clearly separates the range endpoints.
+
+```tsx
+import { RuiKnob } from '@ecopages/radiant-ui/knob';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="gain">
+  <RuiLabel>Gain</RuiLabel>
+  <RuiKnob value={0} min={-24} max={24} step={0.5} valueTemplate="{value} dB" />
+</RuiField>
+```
+
+## Custom markup
+
+`<rui-knob>` coordinates any light-DOM tree that matches its query contract. The `RuiKnob` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/knob';
+
+<rui-knob value={50} min={0} max={100} label="Gain">
+  <div class="rui-knob" data-ref="root">
+    <span class="rui-knob__label" data-ref="label">Gain</span>
+    <button type="button" class="rui-knob__control" data-ref="control" data-knob-control role="slider">
+      <svg class="rui-knob__svg" viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="rui-knob__track" data-ref="track" cx="50" cy="50" fill="none" />
+        <circle class="rui-knob__progress" data-ref="progress" cx="50" cy="50" fill="none" />
+      </svg>
+      <span class="rui-knob__value" data-ref="centerValue" aria-hidden="true">50</span>
+    </button>
+  </div>
+</rui-knob>
+```
+
+BEM classes are presentation-only. The host owns control `aria-*`, ring geometry, and readout text. The `RuiKnob` view seeds those so SSR matches the hydrated control. Set `name` on the host to submit with a native form.
+
+Use `valuePosition="below"` to place the readout under the knob, or `showValue={false}` when the value is shown elsewhere. `valueTemplate` replaces the first `{value}` token with the formatted value.
+
+`step` is the snap interval for the stored value. `valuePrecision` only formats the readout, `aria-valuetext`, and related display text. It defaults to the decimal places in `step`, so `0.1 + 0.2` can still be stored as a binary float while the UI shows `0.3`. Round or transform committed values in application code when you need a canonical number.
+
+<Canvas of={ValuePrecision} meta={KnobMeta} />
+
+```tsx
+<RuiKnob min={0} max={1} step={0.001} value={0.343} valuePrecision={2} />
+```
+
+Set `--rui-knob-size` for CSS-controlled sizing. The numeric `size` prop overrides this variable when a specific pixel diameter is needed.
+
+```css
+rui-knob[data-size='large'] {
+  --rui-knob-size: 5rem;
+}
+```
+
+## Theming
+
+The knob consumes semantic roles by default. Override its public custom properties to adapt the ring without replacing component CSS. Unfilled track contrast is shared with sliders (`--rui-track-mix`, `--rui-track-fill`, `--rui-track-color`).
+
+| Part | Default role | Custom property |
+| --- | --- | --- |
+| Track | `--rui-track-fill` | `--rui-knob-track-color` |
+| Progress | `primary` | `--rui-knob-value-color` |
+| Readout | `on-surface` | `--rui-knob-text-color` |
+| Diameter | `3rem` | `--rui-knob-size` |
+| Focus ring | `focus-ring` | — |
+
+Set the mix or a solid color on an ancestor to theme slider and knob together:
+
+```css
+:root {
+  --rui-track-mix: 28%;
+}
+
+.panel {
+  --rui-track-color: var(--surface-container-high);
+}
+```
+
+## API
+
+`RuiKnob` is a custom element (`<rui-knob>`) with a JSX helper of the same name.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `number` | `50` | Selected value. |
+| `min` | `number` | `0` | Range minimum. |
+| `max` | `number` | `100` | Range maximum. |
+| `step` | `number` | `1` | Pointer and keyboard snap interval. |
+| `value-precision` | `number` | decimal places in `step` | Maximum fraction digits in the value readout. |
+| `disabled` | `boolean` | `false` | Disables interaction. |
+| `read-only` | `boolean` | `false` | Blocks changes but allows focus. |
+| `label` | `string` | `''` | Visible and accessible name. |
+| `name` | `string` | `''` | Form field name on this host. |
+| `size` | `number` | — | Explicit visible SVG diameter in pixels; overrides `--rui-knob-size`. |
+| `stroke-width` | `number` | `14` | Progress ring width in view-box units. |
+| `show-value` | `boolean` | `true` | Shows the value inside the ring. |
+| `value-position` | `center` · `below` | `center` | Places the value inside or below the knob. |
+| `value-template` | `string` | `'{value}'` | Readout template. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `rui-knob--value-below`, `--rui-knob-size` on host | root wrapper |
+| `[data-ref="control"]` | yes | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`, `aria-label`, `aria-readonly`, `disabled` | control button; also stamp `data-knob-control` for fields. View seeds `aria-valuenow` |
+| `[data-ref="track"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG track circle; view seeds geometry |
+| `[data-ref="progress"]` | yes | `r`, `stroke-width`, `stroke-dasharray` | SVG progress circle; view seeds geometry |
+| `[data-ref="label"]` | no | `hidden`, `textContent` | visible label |
+| `[data-ref="centerValue"]` | no | `textContent`, `hidden` | in-ring readout; view seeds the formatted value |
+| `[data-ref="belowValue"]` | no | `textContent`, `hidden` | below-ring readout; view seeds the formatted value |
+
+Do not set control `tabindex`. Nested hosts: none. The `RuiKnob` view seeds readout text, ring geometry, and `aria-valuenow` so the first paint matches the hydrated control.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: number }` | Emitted as pointer or keyboard interaction changes the value. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiKnob` | full `[data-ref]` tree under `[data-ref="root"]` | Stamps control, ring SVG, and readouts. Seeds readout text and ring geometry for SSR. |
+
+### CSS classes
+
+| Class | Description |
+| --- | --- |
+| `.rui-knob` | Root; wraps the label and control. |
+| `.rui-knob--value-below` | Root when the value is below the control. |
+| `.rui-knob__label` | Optional visible label. |
+| `.rui-knob__control` | Focusable slider and pointer target. |
+| `.rui-knob__svg` | SVG ring. |
+| `.rui-knob__track` | Unfilled range arc. |
+| `.rui-knob__progress` | Filled range arc. |
+| `.rui-knob__value` | Value readout inside the ring. |
+
+## Accessibility
+
+- The interactive surface exposes `role="slider"` with its current, minimum, and maximum values.
+- Arrow keys adjust by one step; Page Up/Down adjust by ten steps; Home and End move to the range endpoints.
+- The pointer target is at least 44 × 44 pixels, including when a smaller visible SVG size is requested.

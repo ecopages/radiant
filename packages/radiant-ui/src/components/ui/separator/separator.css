@@ -1,0 +1,15 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-separator {
+		@apply m-0 shrink-0 border-0 bg-border;
+	}
+
+	.rui-separator[data-orientation='horizontal'] {
+		@apply h-px w-full;
+	}
+
+	.rui-separator[data-orientation='vertical'] {
+		@apply h-auto w-px self-stretch;
+	}
+}

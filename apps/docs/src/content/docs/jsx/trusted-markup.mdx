@@ -1,0 +1,62 @@
+---
+title: "Trusted Markup And Security"
+description: "The escaping model of @ecopages/jsx and the trusted paths that opt out of it."
+group: JSX
+order: 6
+---
+
+# Trusted Markup And Security
+
+`@ecopages/jsx` escapes ordinary text and attribute values by default. It is **not** an HTML sanitizer and does not filter URLs, CSS, or user-generated markup.
+
+**Consumer responsibility:** sanitize or allowlist anything from users, APIs, CMS content, or wire formats **before** it reaches a trusted path. The package protects against accidental unescaped interpolation; it does not own application threat models.
+
+## What The Runtime Escapes
+
+| Path | Behavior |
+| :-- | :-- |
+| Text children | Escaped on SSR; mounted as text nodes on the client |
+| Text children in `textarea`, `title`, `style`, `script` | Written as the element's character data; comment anchors are not used |
+| Ordinary attributes | Escaped for HTML attribute context (including `"`) |
+| Plain `{ nodeType, outerHTML }` objects | Treated as text (escaped / text node), not raw HTML |
+
+## Trusted Paths (Author And Framework Data Only)
+
+These surfaces emit or parse raw HTML by design. Pass only content you already trust.
+
+| Surface | Contract |
+| :-- | :-- |
+| Compiled JSX / template `strings[]` | Static author HTML; emitted raw |
+| Transported `{ strings, values }` | Only via `toTemplateResultLike(...)` from `@ecopages/jsx/jsx-runtime`; `strings` are trusted author HTML, dynamic `values` are still escaped |
+| `unsafeHtml(...)` / `createMarkupNodeLike(...)` | Branded markup; `outerHTML` emitted and parsed raw |
+| Live `Node` instances | `outerHTML` emitted raw (slot projection / host passthrough) |
+| Custom-element `renderHostToString` / server render hooks | Host HTML is trusted; return branded markup via `createMarkupNodeLike(...)` |
+| `<script>` children | Raw element text; only the `</script` closing sequence is escaped, so executable content stays valid |
+| `prop:*` (including `prop:innerHTML`) | Live property assignment; no sanitization |
+| `href` / `src` / `style` | Escaped as attribute text only — no URL-scheme or CSS sanitization |
+
+Two entries deserve emphasis:
+
+- `href` and `src` are **not** sanitized. A `javascript:` URL goes straight through; validate schemes at your boundary.
+- `prop:innerHTML` is live property assignment, so it bypasses escaping entirely.
+
+## Trusted Markup API
+
+Use `unsafeHtml(...)` only when you already have final, trusted HTML:
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { unsafeHtml } from '@ecopages/jsx';
+
+const trustedSnippet = unsafeHtml('<strong>Trusted</strong>');
+const view = <p>{trustedSnippet}</p>;
+```
+
+Notes:
+
+- Opt-in escape hatch: not sanitized, not escaped again
+- Do not pass untrusted input through this helper
+- Trusted markup is opaque HTML for mount/SSR; it is not a hydratable JSX template boundary
+
+For user-generated HTML, sanitize at the application boundary (or avoid `unsafeHtml` entirely) and keep using normal JSX children so values stay escaped.

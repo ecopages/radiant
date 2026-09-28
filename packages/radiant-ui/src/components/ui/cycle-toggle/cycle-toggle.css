@@ -1,0 +1,15 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-cycle-toggle__button {
+		@apply gap-inline;
+	}
+
+	.rui-cycle-toggle__item {
+		@apply inline-flex items-center gap-inline;
+	}
+
+	.rui-cycle-toggle__item > svg {
+		@apply pointer-events-none shrink-0;
+	}
+}

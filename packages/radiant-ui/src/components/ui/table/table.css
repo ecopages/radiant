@@ -1,0 +1,117 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-table {
+	border-radius: var(--radius-container);
+	@apply block max-w-full overflow-x-auto border border-border shadow-sm;
+}
+
+@layer components {
+	.rui-table {
+		@apply min-w-full text-sm;
+		display: table;
+		border-collapse: separate;
+		border-spacing: 0;
+	}
+
+	.rui-table__header,
+	.rui-table__body,
+	.rui-table__footer {
+		display: table-row-group;
+	}
+
+	.rui-table__row {
+		display: table-row;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.rui-table__body
+			.rui-table__row:not([aria-disabled='true']):not(.rui-table__row--empty):hover
+			> .rui-table__cell,
+		.rui-table__body
+			.rui-table__row:not([aria-disabled='true']):not(.rui-table__row--empty):hover
+			> .rui-table__selection-cell {
+			@apply bg-surface/60;
+		}
+	}
+
+	.rui-table__column,
+	.rui-table__cell,
+	.rui-table__selection-cell,
+	.rui-table__empty-state,
+	.rui-table__empty-state-spacer {
+		display: table-cell;
+		padding-block: var(--space-control-y);
+		padding-inline: var(--space-control-x);
+		@apply border-b border-r border-border bg-background align-middle text-on-background;
+	}
+
+	.rui-table__column {
+		@apply bg-surface font-semibold;
+	}
+
+	.rui-table__row > :last-child {
+		@apply border-r-0;
+	}
+
+	.rui-table__footer .rui-table__row:last-child > *,
+	.rui-table__body .rui-table__row:last-child > * {
+		@apply border-b-0;
+	}
+
+	.rui-table__selection-cell {
+		@apply w-11 p-0 text-center;
+	}
+
+	.rui-table__selection-cell rui-checkbox {
+		@apply flex min-h-11 items-center justify-center;
+	}
+
+	.rui-table__sort {
+		@apply -my-control-y flex min-h-11 w-full items-center gap-inline py-control-y text-left font-semibold text-on-background outline-none;
+	}
+
+	.rui-table__sort:focus-visible,
+	.rui-table__cell:focus-visible {
+		@apply relative z-dropdown outline-none ring-2 ring-inset ring-focus-ring;
+	}
+
+	.rui-table__sort-indicator::before {
+		content: '↕';
+		@apply text-on-surface;
+	}
+
+	.rui-table__column[aria-sort='ascending'] .rui-table__sort-indicator::before {
+		content: '↑';
+	}
+
+	.rui-table__column[aria-sort='descending'] .rui-table__sort-indicator::before {
+		content: '↓';
+	}
+
+	.rui-table__row[aria-selected='true'] > .rui-table__cell,
+	.rui-table__row[aria-selected='true'] > .rui-table__selection-cell {
+		@apply bg-primary-container text-on-primary-container;
+	}
+
+	.rui-table__row[aria-disabled='true'] > .rui-table__cell,
+	.rui-table__row[aria-disabled='true'] > .rui-table__selection-cell {
+		@apply cursor-not-allowed text-on-surface opacity-60;
+	}
+
+	.rui-table__empty-state {
+		@apply py-8 text-on-surface;
+	}
+
+	.rui-table__row--empty {
+		position: relative;
+	}
+
+	.rui-table__row--empty > .rui-table__empty-state,
+	.rui-table__row--empty > .rui-table__empty-state-spacer {
+		@apply border-r-0;
+	}
+
+	.rui-table__empty-state-message {
+		@apply absolute inset-0 flex items-center justify-center px-control-x text-center;
+	}
+}

@@ -1,0 +1,158 @@
+---
+title: Field
+description: Fields wrap a single form control with label, description, and error messaging in a consistent layout.
+category: Forms
+---
+
+import { meta as FieldMeta, Default } from '@/content/stories/field';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Field
+
+<p class="docs-lede">Fields wrap a single form control with label, description, and error messaging in a consistent layout.</p>
+
+## Try it
+
+<Demo of={Default} meta={FieldMeta} />
+
+## Usage
+
+Set `name` on `RuiField` to register with `RuiForm` and to copy onto the listed control. Place a Radiant control (`RuiInput`, `RuiSelect`, `RuiSwitch`, …) as the child; Field discovers controls via `data-rui-control` and known host tags, not bare `<input>` elements. Use `RuiFieldDescription` and `RuiFieldError` for helper and error text.
+
+```tsx
+import { RuiField, RuiFieldDescription, RuiFieldError } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+
+<RuiField name="email" invalid={!!errors.email} error={errors.email?.message}>
+  <RuiLabel>Email</RuiLabel>
+  <RuiInput type="email" placeholder="you@example.com" />
+  <RuiFieldDescription>We will never share your email.</RuiFieldDescription>
+  <RuiFieldError />
+</RuiField>
+```
+
+## Custom markup
+
+`<rui-field>` coordinates any light-DOM tree that matches its query contract. The `RuiField` helper stamps `[data-ref="field"]`; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/field';
+import '@ecopages/radiant-ui/input';
+
+<rui-field name="email">
+  <div class="rui-field" data-ref="field">
+    <label class="rui-label" data-rui-field-label>Email</label>
+    <input type="email" data-rui-control class="rui-input" />
+    <p data-rui-field-description class="rui-field__description">We will never share your email.</p>
+    <p data-rui-field-error class="rui-field__error" role="alert" hidden></p>
+  </div>
+</rui-field>
+```
+
+The field wires `aria-describedby`, `aria-invalid`, and error text on the control. Use a library control host or `[data-rui-control]` — bare native inputs without the marker are ignored.
+
+Set `name` on the field (or on a form-associated host) so a native `<form>` can submit. `RuiInput` / `RuiTextarea` / checkbox / switch / radio / checkbox-group / radio-group submit through their inner input. `rui-date-input`, `rui-number-field`, `rui-slider`, and `rui-knob` submit through `name` on the host. `RuiDateField` is not listed; it copies `name` onto the nested `rui-date-input`. `RuiDateRangePicker` is not listed; `start-name` / `end-name` land on the nested `rui-date-input` hosts. `RuiSelect` and similar hosts are not form-associated; their values are available to `RuiForm` `onSubmit`, not to `new FormData(form)`.
+
+## Use Radiant controls
+
+<p>`RuiField` only wires library controls: presentational ones marked with `data-rui-control` (`RuiInput`, `RuiTextarea`, select triggers) and host elements such as `rui-select`, `rui-switch`, and `rui-date-input`. An embedded `rui-listbox` is the parent select or combobox's option surface, not a separate field control. Bare `<input>` / `<textarea>` without the marker are ignored.</p>
+
+## Surface errors inline
+
+<p>Set `invalid` and pass the error message so `RuiFieldError` renders below the control with `aria-live` semantics.</p>
+
+## Disabled fields
+
+<p>Set `disabled` on the field to dim the label and prevent interaction with nested controls.</p>
+
+## Theming
+
+Field surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Root (`.rui-field`) | `space-inline` gap |
+| Description (`.rui-field__description`) | `on-surface`, `text-body-sm` |
+| Error (`.rui-field__error`) | `error`, `text-body-sm` |
+
+The nested control keeps its own control tokens (`--size-control-*`, `--radius-control`) so fields stack consistently. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiField` is a custom element (`<rui-field>`) connecting a composed control to an ancestor `<rui-form>`. It is not listed in native `FormData`; the child control is.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | `string` | `''` | Field name; registers with `RuiForm` and is copied onto the listed control. |
+| `error` | `string` | `''` | Standalone error message when not using a form provider. |
+| `invalid` | `boolean` | `false` | Standalone invalid flag when not using a form provider. |
+| `disabled` | `boolean` | `false` | Dims the field and disables nested controls. |
+| `data-default-value` | `string` | | JSON-serialized default value for SSR hydration. |
+
+### Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `rules` | `FieldRules` | Validation rules (required, min/max, pattern, validate…). |
+| `defaultValue` | `unknown` | Default value when uncontrolled. |
+| `defaultValueData` | `string` | JSON default value; falls back to `data-default-value`. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-rui-control]` or control host tag | yes | `id`, `data-rui-field-managed`, `aria-invalid`, `aria-required`, `aria-describedby`, `aria-disabled` on ARIA targets | control element; see each host's inner contract |
+| `[data-rui-field-label]` | no | `htmlFor` | label text |
+| `[data-rui-field-description]` | no | `id` | description content |
+| `[data-rui-field-error]` | no | `id`, `textContent`, `hidden` | error region presence |
+| `[data-ref="field"]` | no | — | presentation column |
+
+Nested hosts: registered control hosts inside the field (`rui-switch`, `rui-slider`, …).
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiField` | `[data-ref="field"]` | Passes `rules` / `defaultValue` via `prop:` bindings. |
+| `RuiFieldDescription` | `[data-rui-field-description]` | Wired into `aria-describedby`. |
+| `RuiFieldError` | `[data-rui-field-error]` | Text populated by the field; `role="alert"`. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-field` | Root column (authored by the element). |
+| `.rui-field__description` | Helper text below the control. |
+| `.rui-field__error` | Error text; hidden until a message is set. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Root | `--space-inline` |
+| Description | `--on-surface`, `--text-body-sm` |
+| Error | `--error`, `--text-body-sm` |
+
+## Accessibility
+
+- Associate labels with controls using `RuiLabel`; do not rely on placeholder text alone.
+- Error messages are linked to the input via `aria-describedby`.
+- Descriptions provide supplementary context without replacing the label.

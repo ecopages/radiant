@@ -1,0 +1,15 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-button-group {
+		@apply flex gap-inline;
+	}
+
+	.rui-button-group--horizontal {
+		@apply flex-row flex-wrap items-center;
+	}
+
+	.rui-button-group--vertical {
+		@apply flex-col items-stretch;
+	}
+}

@@ -1,37 +1,27 @@
 {
+	"extends": "../../configs/tsconfig.base.json",
 	"compilerOptions": {
 		"target": "ES2022",
 		"useDefineForClassFields": true,
-		"module": "ESNext",
 		"lib": ["ES2020", "DOM", "DOM.Iterable"],
-		"skipLibCheck": true,
-		"experimentalDecorators": false,
+		"experimentalDecorators": true,
 
 		"jsx": "react-jsx",
-		"jsxImportSource": "@kitajs/html",
-		"plugins": [
-			{
-				"name": "@kitajs/ts-html-plugin"
-			}
-		],
+		"jsxImportSource": "@ecopages/jsx",
 
-		"moduleResolution": "bundler",
 		"allowImportingTsExtensions": true,
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"moduleDetection": "force",
 		"noEmit": true,
 
-		"baseUrl": ".",
-		"rootDir": ".",
 		"paths": {
 			"@/*": ["./src/*"]
 		},
 
-		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true
 	},
-	"include": ["src"]
+	"include": ["src", "vite.config.ts"]
 }

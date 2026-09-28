@@ -1,36 +1,20 @@
+import { createQuery, type QueryHostTarget } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
 
 export function query(options: QueryConfig) {
-	return function <T extends HTMLElement, V extends Element | Element[]>(
-		_: undefined,
+	return function <T extends QueryHostTarget, V extends Element | Element[]>(
+		target: undefined,
 		context: ClassFieldDecoratorContext<T, V>,
 	) {
+		void target;
 		const propertyName = String(context.name);
-		const privatePropertyKey = Symbol(`__${String(propertyName)}__cache`);
-
-		const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
-
-		const executeQuery = (instance: T) => {
-			let result: V | V[] = [];
-			if (options?.all) {
-				const queried = instance.querySelectorAll(selector);
-				result = queried.length ? (Array.from(queried) as V) : [];
-				return result;
-			}
-
-			return instance.querySelector(selector);
-		};
 
 		context.addInitializer(function (this: T) {
+			const accessor = createQuery<V>(this, options);
+
 			Object.defineProperty(this, propertyName, {
 				get() {
-					if (options?.cache) {
-						if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
-							this[privatePropertyKey] = executeQuery(this);
-						}
-						return this[privatePropertyKey];
-					}
-					return executeQuery(this) as V;
+					return accessor.value;
 				},
 				enumerable: true,
 				configurable: true,
