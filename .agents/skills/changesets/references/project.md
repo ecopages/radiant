@@ -2,7 +2,16 @@
 
 Repo-specific companion to [SKILL.md](../SKILL.md). Portable mechanics are in [releasing.md](releasing.md); this file covers only what is particular to this repo.
 
-Source of truth: `.changeset/config.json`. Prerelease channel: `.changeset/pre.json` (`mode`, `tag`). Versioned prerelease changesets: `.changeset/pre/`.
+Source of truth: `.changeset/config.json`. While a line is in prerelease, `.changeset/pre.json` holds `mode` and `tag`, and versioned notes live under `.changeset/pre/`.
+
+## Branches
+
+| Branch    | Role                                                                                                            |
+| --------- | --------------------------------------------------------------------------------------------------------------- |
+| `develop` | Default integration branch. Features land here. `changeset add` and `status` compare against it (`baseBranch`). |
+| `main`    | Production. Merge `develop` into `main` when a release is ready. Publish runs only from here.                   |
+
+Do not cut `release/*` branches. The next stable cut is a merge (or PR) of `develop` into `main`.
 
 ## Package tiers
 
@@ -33,13 +42,15 @@ GITHUB_TOKEN="$(gh auth token)" pnpm changeset version
 
 ## CI
 
-`.github/workflows/release.yml` runs on `main` and `release/v0.3.0`: install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm run version-packages` and `pnpm changeset publish`. `version-packages` runs `changeset version` then `pnpm install --lockfile-only` so workspace `>=` specifiers and `pnpm-lock.yaml` stay in sync on the Version Packages PR. The token is `github-token: ${{ secrets.CI_GITHUB_TOKEN }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
+`.github/workflows/ci.yml` runs on pull requests and on pushes to `main` and `develop`.
 
-`baseBranch` is `release/v0.3.0` — that is the active prerelease line. `changeset add` and `status` compare against it.
+`.github/workflows/release.yml` runs only on `main`: install, `pnpm run build:all`, then `changesets/action@v2` with `pnpm run version-packages` and `pnpm changeset publish`. `version-packages` runs `changeset version` then `pnpm install --lockfile-only` so workspace `>=` specifiers and `pnpm-lock.yaml` stay in sync on the Version Packages PR. The token is `github-token: ${{ github.token }}`. Provenance is `NPM_CONFIG_PROVENANCE`.
 
-## `latest` is pinned
+Pending changesets stay on `develop`. Merging `develop` into `main` either publishes already-versioned packages or opens a Version Packages PR against `main`; merging that PR publishes.
 
-`latest` stays on `0.2.0` until there is an explicit decision to move it. The active line ships under the prerelease tag in `.changeset/pre.json`. Do not run the stable flow without that decision.
+## Dist tags
+
+`latest` is the stable default (`npm install <pkg>`). Prerelease lines use the tag in `.changeset/pre.json` (`alpha` / `beta` / `rc`). Moving `latest` is the decision to ship a stable cut from `main`.
 
 ## Publish layout
 

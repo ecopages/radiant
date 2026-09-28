@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/storybook-radiant-vite",
-	"version": "0.1.0-rc.1",
+	"version": "0.1.0",
 	"description": "Storybook framework for @ecopages/radiant — Vite builder, Radiant JSX renderer, and SSR story modes",
 	"keywords": [
 		"storybook",
@@ -74,9 +74,9 @@
 		"vitest": "^4.1.10"
 	},
 	"peerDependencies": {
-		"@ecopages/jsx": "workspace:>=0.3.0-rc.13",
-		"@ecopages/radiant": "workspace:>=0.3.0-rc.13",
-		"@ecopages/signals": "workspace:>=0.3.0-rc.13",
+		"@ecopages/jsx": "workspace:>=0.3.0",
+		"@ecopages/radiant": "workspace:>=0.3.0",
+		"@ecopages/signals": "workspace:>=0.3.0",
 		"storybook": "^10.5.2",
 		"vite": "^8.0.0"
 	},

@@ -1,14 +1,53 @@
 # @ecopages/radiant
 
-## 0.3.0-rc.13
+## 0.3.0
+
+First stable of the light-DOM platform. Custom elements render into authored light DOM, host state is signals-backed, and SSR keeps the JSX server entry off the client.
+
+### Breaking Changes
+
+- Light DOM only: `renderRootMode` and the `scope` option on `@query`, `@onEvent`, `createQuery`, and `createEventListener` are gone.
+- `RadiantElement` and `RadiantController` no longer expose `notifyUpdate`, `getReactiveBinding` (use `bind`), `registerPostSyncCallback`, `registerUpdatedCallback`, `registerContextProvider`, `registerHydrationBinding`, `getContextProviders`, `getHydrationBindings`, `getSsrContextProviders`, `getSsrHydrationBindings`, `flushPostSyncCallbacks`, or `registerEventEmitter`. Decorators and SSR adapters use `REACTIVE_HOST`.
+- Removed `trackReactiveRead`, `registerReactiveDependencyReader`, and the exported `ReactiveField` type. Use `createReactiveField` / `@state`. Host members are `State`; tracking is `State.get()`.
+- Removed the legacy internal-state and property decorator aliases. Use `@state` and `@prop(...)`.
+- SSR boot is `@ecopages/radiant/server/install-ssr-runtime`. Deep imports of `install-ssr-scope-adapters` and `withForcedServerCustomElementRendering` are gone.
+- Removed `@ecopages/radiant/core/reactive-jsx-value` and `@ecopages/radiant/tools/render-jsx-template`. `@ecopages/radiant/server/radiant-element-ssr-bridge` is a deprecated alias of `radiant-element-ssr`.
+- `render-component` no longer ships fragment HTTP header constants or header-builder helpers.
+
+| Old                                                               | Use instead                                        |
+| ----------------------------------------------------------------- | -------------------------------------------------- |
+| `install-ssr-scope-adapters`                                      | `@ecopages/radiant/server/install-ssr-runtime`     |
+| `bindReactiveValue` / `@ecopages/radiant/core/reactive-jsx-value` | `this.bind(...)` / `this.$.key`                    |
+| `@ecopages/radiant/tools/render-jsx-template`                     | `@ecopages/jsx` `render(...)` or `renderComponent` |
+| `@ecopages/radiant/server/radiant-element-ssr-bridge` (new code)  | `@ecopages/radiant/server/radiant-element-ssr`     |
 
 ### Minor Changes
+
+- [#65](https://github.com/ecopages/radiant/pull/65) [`ba60c0a`](https://github.com/ecopages/radiant/commit/ba60c0a4336d47ede31d6540c4fb15fcc284733a) Thanks [@andeeplus](https://github.com/andeeplus)! - Move SSR ambient render state to Node `AsyncLocalStorage` and keep client bundles free of the JSX server entry. Import `@ecopages/radiant/server/install-ssr-runtime` before rendering hosts outside the browser. Bundlers must resolve a single `@ecopages/*` instance.
+
+- [#60](https://github.com/ecopages/radiant/pull/60) [`017f705`](https://github.com/ecopages/radiant/commit/017f70500dbf86d0e8912e8840f8775a7eada9c4) Thanks [@andeeplus](https://github.com/andeeplus)! - Back reactive host members with `@ecopages/signals` `State`, and wire JSX derived bindings through `computed`. `@ecopages/signals` is a direct dependency. Legacy `@state` / `@prop` register `State` during post-construction. `createReactiveMember`, `registerReactiveMember`, and `getReactiveMember` support advanced host integrations.
+
+- [#226](https://github.com/ecopages/radiant/pull/226) [`a68c13a`](https://github.com/ecopages/radiant/commit/a68c13ad59c80b88d4792fc58eeb76f992de09f8) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `@bindTo` to copy a reactive field onto the host or a `data-ref` / selector descendant without a `render()` tree.
+
+    **@ecopages/radiant**
+
+    - `@bindTo(target)` or `@bindTo(target[])` writes `attr`, `bool`, `prop`, or `text` (optional `invert` / `map`). Omit `ref` and `selector` to patch the host (`this` / `this.element`).
+    - Flushes after attribute catch-up and the initial hydrate/update, before `onConnected()`, including on reconnect. Missing nodes and non-reactive fields are skipped.
+    - A target with zero or several write kinds, or both `ref` and `selector`, throws when the decorator is applied.
+    - Events stay `@onEvent`; procedures and derived state stay `@onUpdated`. Import from `@ecopages/radiant` or `@ecopages/radiant/decorators/bind-to`.
 
 - [#278](https://github.com/ecopages/radiant/pull/278) [`0f56507`](https://github.com/ecopages/radiant/commit/0f565075d056e7dca32ab525be2460c683cff6dd) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize false-default booleans as HTML presence on SSR and the client. Booleans that default to `true` still emit `"true"` / `"false"` so an explicit false survives upgrade.
 
 - [#287](https://github.com/ecopages/radiant/pull/287) [`86cafb6`](https://github.com/ecopages/radiant/commit/86cafb674cd14daaf43389b8357e7073a53fd056) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `FormAssociatedElement` for custom elements that list on native `FormData`. Import it from `@ecopages/radiant/form-associated-element`; subclasses supply `formValue()` and `restoreFormState()`, and the base owns `name`, `disabled`, fieldset disability, reset, and `setFormValue()`. An explicit `defaultValue: undefined` on `@prop` stays `undefined` instead of falling back to the type default (`0` for `Number`).
 
 - [#278](https://github.com/ecopages/radiant/pull/278) [`98646b9`](https://github.com/ecopages/radiant/commit/98646b99034500d7ccf67e373baf23b615fee7cb) Thanks [@andeeplus](https://github.com/andeeplus)! - Remove shadow render mode: `renderRootMode` and the `scope` option on `@query`, `@onEvent`, `createQuery`, and `createEventListener` are gone. Radiant renders into light DOM only.
+
+- [#168](https://github.com/ecopages/radiant/pull/168) [`0b8bb9e`](https://github.com/ecopages/radiant/commit/0b8bb9ed513f95b557d9f24fcd45cbad5b0a6c76) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `protected onConnected()` on `RadiantElement` for post-catch-up connect work. Override it instead of `connectedCallback` + `queueMicrotask(sync)` so authored attributes and the initial hydrate/update are visible; it runs on every connection.
+
+    **@ecopages/radiant**
+
+    - `onConnected()` fires after first-connect attribute catch-up and, when `render()` is overridden, after the initial hydrate/update. Rebuild work torn down in `disconnectedCallback` here; guard once-only bootstrapping with an explicit flag.
+    - This is not `registerConnectedCallback()`, which still runs synchronously at the start of `connectedCallback`.
 
 - [#287](https://github.com/ecopages/radiant/pull/287) [`74cebba`](https://github.com/ecopages/radiant/commit/74cebba03780009d80e9963f7b6882486b9a18a4) Thanks [@andeeplus](https://github.com/andeeplus)! - Harden the update cycle and keep framework plumbing off the public host API.
 
@@ -25,43 +64,7 @@
 
 ### Patch Changes
 
-- [#294](https://github.com/ecopages/radiant/pull/294) [`6213258`](https://github.com/ecopages/radiant/commit/621325874450fc8892b78f91ec381c94d19e0c01) Thanks [@andeeplus](https://github.com/andeeplus)! - Preserve assigned empty strings and arrays when reflected attributes are omitted, instead of feeding the attribute removal back into the property.
-
-- [#294](https://github.com/ecopages/radiant/pull/294) [`6213258`](https://github.com/ecopages/radiant/commit/621325874450fc8892b78f91ec381c94d19e0c01) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop failed update cycles from running changes or renders that a throwing callback queued, including self-updaters that reach the cycle limit.
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.13
-    - @ecopages/signals@0.3.0-rc.13
-
-## 0.3.0-rc.12
-
-### Patch Changes
-
-- [#259](https://github.com/ecopages/radiant/pull/259) [`ac0c874`](https://github.com/ecopages/radiant/commit/ac0c87487de99b1239968e015887f9d9a40745d1) Thanks [@andeeplus](https://github.com/andeeplus)! - Flush post-sync callbacks during custom-element SSR so `@bindTo` copies reactive fields onto light-DOM targets before serialization.
-
-- [#259](https://github.com/ecopages/radiant/pull/259) [`5327ee5`](https://github.com/ecopages/radiant/commit/5327ee5e0bda108dbea6591ff1cb962cdb0064cc) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop leftover `</div>` text from appearing next to date fields during SSR. Void inputs no longer serialize as `</input>`, and the HTML tokenizer matches element bounds with a tag-name stack so stray void closing tags do not split ancestor wrappers. Stack walks skip eager `innerHtml` extraction so boundary scans stay linear.
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.12
-    - @ecopages/signals@0.3.0-rc.12
-
-## 0.3.0-rc.11
-
-### Patch Changes
-
-- Updated dependencies [[`df92a7b`](https://github.com/ecopages/radiant/commit/df92a7b32b5b98bf5cd9a1205fe408b367fe639f)]:
-    - @ecopages/jsx@0.3.0-rc.11
-    - @ecopages/signals@0.3.0-rc.11
-
-## 0.3.0-rc.10
-
-### Patch Changes
-
-- Updated dependencies [[`9d04586`](https://github.com/ecopages/radiant/commit/9d04586eff13d60b045162eef24301ecd2bf0016)]:
-    - @ecopages/jsx@0.3.0-rc.10
-    - @ecopages/signals@0.3.0-rc.10
-
-## 0.3.0-rc.9
-
-### Patch Changes
+- [#198](https://github.com/ecopages/radiant/pull/198) [`9742d57`](https://github.com/ecopages/radiant/commit/9742d57d406d822c149a877ec1c0bed06b13ddc6) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop the SSR light-DOM shim from recursing through `CSS.escape`, and make delegated `subscribeEvent(...)` matching ancestor-aware like `@onEvent`. Client ref selectors use native `CSS.escape`.
 
 - [#244](https://github.com/ecopages/radiant/pull/244) [`60abe6d`](https://github.com/ecopages/radiant/commit/60abe6d3f15b98f6bcab5b0088b8f2e7e2431e6d) Thanks [@andeeplus](https://github.com/andeeplus)! - Warn in dev when a delegated `@onEvent` subscribes to a non-bubbling event.
 
@@ -70,229 +73,29 @@
     - Delegated `selector` / `ref` listeners attach on the host in the bubble phase, so `focus`, `blur`, `mouseenter`, and `mouseleave` never reach them. Registering one without `options: { capture: true }` now logs a dev warning suggesting the bubbling twin (`focusin`, `focusout`, `mouseover`, `mouseout`).
     - `onEvent` event names now autocomplete bubbling event names while still accepting custom event strings; the union is exported as `DelegatedEventType`.
 
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.9
-    - @ecopages/signals@0.3.0-rc.9
-
-## 0.3.0-rc.8
-
-### Patch Changes
-
 - [#239](https://github.com/ecopages/radiant/pull/239) [`c551ecf`](https://github.com/ecopages/radiant/commit/c551ecf17aa743055e11f1c4ffc51fc923e9d2bd) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep inherited decorator setup, reactive prop metadata, event subscriptions, and context updates isolated so subclassing and overlapping listeners no longer multiply or skip work.
-- Updated dependencies [[`9a3cf16`](https://github.com/ecopages/radiant/commit/9a3cf16e49f2d20c4441f74c71549545d0fa9277), [`a864e06`](https://github.com/ecopages/radiant/commit/a864e06b2fb66a2afa645ed09f524d2521bf6ac8)]:
-    - @ecopages/jsx@0.3.0-rc.8
-    - @ecopages/signals@0.3.0-rc.8
-
-## 0.3.0-rc.7
-
-### Patch Changes
-
-- [#234](https://github.com/ecopages/radiant/pull/234) [`74bc685`](https://github.com/ecopages/radiant/commit/74bc68577bdd5b61a8d9689cbedc774b3bfc4608) Thanks [@andeeplus](https://github.com/andeeplus)! - Add optional `transform` to `@prop` for custom attribute ↔ property conversion, including `fromProperty` normalization on JS writes and omission of reflected attributes when `toAttribute` returns null or an empty string.
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.7
-    - @ecopages/signals@0.3.0-rc.7
-
-## 0.3.0-rc.6
-
-### Minor Changes
-
-- [#226](https://github.com/ecopages/radiant/pull/226) [`a68c13a`](https://github.com/ecopages/radiant/commit/a68c13ad59c80b88d4792fc58eeb76f992de09f8) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `@bindTo` to copy a reactive field onto the host or a `data-ref` / selector descendant without a `render()` tree.
-
-    **@ecopages/radiant**
-
-    - `@bindTo(target)` or `@bindTo(target[])` writes `attr`, `bool`, `prop`, or `text` (optional `invert` / `map`). Omit `ref` and `selector` to patch the host (`this` / `this.element`).
-    - Flushes after attribute catch-up and the initial hydrate/update, before `onConnected()`, including on reconnect. Missing nodes and non-reactive fields are skipped.
-    - A target with zero or several write kinds, or both `ref` and `selector`, throws when the decorator is applied.
-    - Events stay `@onEvent`; procedures and derived state stay `@onUpdated`. Import from `@ecopages/radiant` or `@ecopages/radiant/decorators/bind-to`.
-
-### Patch Changes
 
 - [#230](https://github.com/ecopages/radiant/pull/230) [`9f1419b`](https://github.com/ecopages/radiant/commit/9f1419b8c2c80522f67f2e9b1eaf6531f0e8d9b3) Thanks [@andeeplus](https://github.com/andeeplus)! - Reflect the normalized property value when a synchronous update callback changes an assignment.
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.6
-    - @ecopages/signals@0.3.0-rc.6
 
-## 0.3.0-rc.5
+- [#217](https://github.com/ecopages/radiant/pull/217) [`a960b90`](https://github.com/ecopages/radiant/commit/a960b90220221bf34b792cdd57abb0941f0ee9de) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep an authored `value` through custom-element first-connect. A property assigned before upgrade, or an attribute set before first connect, is no longer replaced by an empty reflected `defaultValue`.
 
-### Patch Changes
+- [#234](https://github.com/ecopages/radiant/pull/234) [`74bc685`](https://github.com/ecopages/radiant/commit/74bc68577bdd5b61a8d9689cbedc774b3bfc4608) Thanks [@andeeplus](https://github.com/andeeplus)! - Add optional `transform` to `@prop` for custom attribute ↔ property conversion, including `fromProperty` normalization on JS writes and omission of reflected attributes when `toAttribute` returns null or an empty string.
 
-- [#217](https://github.com/ecopages/radiant/pull/217) [`a960b90`](https://github.com/ecopages/radiant/commit/a960b90220221bf34b792cdd57abb0941f0ee9de) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep an authored `value` through custom-element first-connect, and apply field defaults to composed select and combobox.
+- [#294](https://github.com/ecopages/radiant/pull/294) [`6213258`](https://github.com/ecopages/radiant/commit/621325874450fc8892b78f91ec381c94d19e0c01) Thanks [@andeeplus](https://github.com/andeeplus)! - Preserve assigned empty strings and arrays when reflected attributes are omitted, instead of feeding the attribute removal back into the property.
 
-    **@ecopages/radiant**
+- [#259](https://github.com/ecopages/radiant/pull/259) [`ac0c874`](https://github.com/ecopages/radiant/commit/ac0c87487de99b1239968e015887f9d9a40745d1) Thanks [@andeeplus](https://github.com/andeeplus)! - Flush post-sync callbacks during custom-element SSR so `@bindTo` copies reactive fields onto light-DOM targets before serialization.
 
-    - A property assigned before upgrade, or an attribute set before first connect, is no longer replaced by an empty reflected `defaultValue`.
+- [#259](https://github.com/ecopages/radiant/pull/259) [`5327ee5`](https://github.com/ecopages/radiant/commit/5327ee5e0bda108dbea6591ff1cb962cdb0064cc) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop leftover `</div>` text from appearing next to date fields during SSR. Void inputs no longer serialize as `</input>`, and the HTML tokenizer matches element bounds with a tag-name stack so stray void closing tags do not split ancestor wrappers. Stack walks skip eager `innerHtml` extraction so boundary scans stay linear.
 
-    **@ecopages/radiant-ui**
+- [#294](https://github.com/ecopages/radiant/pull/294) [`6213258`](https://github.com/ecopages/radiant/commit/621325874450fc8892b78f91ec381c94d19e0c01) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop failed update cycles from running changes or renders that a throwing callback queued, including self-updaters that reach the cycle limit.
 
-    - `RuiField` writes defaults to the composed select or combobox host. An embedded listbox is the parent's option surface, not a separate field control.
+- Removing a reflected boolean attribute now sets the property to `false`, not `null`.
+- Restored automatic `observedAttributes` registration for `@prop` so attribute ↔ property sync works without a manual `static observedAttributes`.
+- Fixed light-DOM slot projection dropping assigned nodes when they move under an inner render wrapper.
 
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.5
-    - @ecopages/signals@0.3.0-rc.5
-
-## 0.3.0-rc.4
-
-### Patch Changes
-
-- [#198](https://github.com/ecopages/radiant/pull/198) [`9742d57`](https://github.com/ecopages/radiant/commit/9742d57d406d822c149a877ec1c0bed06b13ddc6) Thanks [@andeeplus](https://github.com/andeeplus)! - Stop the SSR light-DOM shim from recursing through `CSS.escape`, and make delegated `subscribeEvent(...)` matching ancestor-aware like `@onEvent`. Client ref selectors use native `CSS.escape`.
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.4
-    - @ecopages/signals@0.3.0-rc.4
-
-## 0.3.0-rc.3
-
-### Minor Changes
-
-- [#168](https://github.com/ecopages/radiant/pull/168) [`0b8bb9e`](https://github.com/ecopages/radiant/commit/0b8bb9ed513f95b557d9f24fcd45cbad5b0a6c76) Thanks [@andeeplus](https://github.com/andeeplus)! - Add `protected onConnected()` on `RadiantElement` for post-catch-up connect work. Override it instead of `connectedCallback` + `queueMicrotask(sync)` so authored attributes and the initial hydrate/update are visible; it runs on every connection.
-
-    **@ecopages/radiant**
-
-    - `onConnected()` fires after first-connect attribute catch-up and, when `render()` is overridden, after the initial hydrate/update. Rebuild work torn down in `disconnectedCallback` here; guard once-only bootstrapping with an explicit flag.
-    - This is not `registerConnectedCallback()`, which still runs synchronously at the start of `connectedCallback`.
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.3
-    - @ecopages/signals@0.3.0-rc.3
-
-## 0.3.0-rc.2
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-rc.2
-    - @ecopages/signals@0.3.0-rc.2
-
-## 0.3.0-rc.1
-
-### Patch Changes
-
-- Updated dependencies [[`9d74aac`](https://github.com/ecopages/radiant/commit/9d74aacc9b9325840a6548ae7c2d7b36e605ae78)]:
-    - @ecopages/jsx@0.3.0-rc.1
-    - @ecopages/signals@0.3.0-rc.1
-
-## 0.3.0-rc.0
-
-### Patch Changes
-
-- Start the rc channel from the current beta line.
-
-- [#146](https://github.com/ecopages/radiant/pull/146) [`61c6bfb`](https://github.com/ecopages/radiant/commit/61c6bfbd381f0890e13d19605e292b147602e407) Thanks [@andeeplus](https://github.com/andeeplus)! - Adopt authored reflected attributes before applying `defaultValue` on first connect.
-
-    **@ecopages/radiant**
-
-    - First-connect catch-up now runs before initial reflect/`@onUpdated`, so an authored attribute such as `variant="ghost"` is not overwritten by `defaultValue`.
-
-- Updated dependencies [[`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f)]:
-    - @ecopages/jsx@0.3.0-rc.0
-    - @ecopages/signals@0.3.0-rc.0
-
-## 0.3.0-beta.8
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-- Updated dependencies []:
-    - @ecopages/jsx@0.3.0-beta.8
-    - @ecopages/signals@0.3.0-beta.8
-
-## 0.3.0-beta.6
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-beta.6
-    - @ecopages/jsx@0.3.0-beta.6
-
-## 0.3.0-beta.5
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-beta.5
-    - @ecopages/jsx@0.3.0-beta.5
-
-## 0.3.0-beta.4
-
-### Patch Changes
-
-- [#65](https://github.com/ecopages/radiant/pull/65) [`ba60c0a`](https://github.com/ecopages/radiant/commit/ba60c0a4336d47ede31d6540c4fb15fcc284733a) Thanks [@andeeplus](https://github.com/andeeplus)! - Move SSR ambient render state to Node `AsyncLocalStorage` and keep client bundles free of the JSX server entry.
-
-    **@ecopages/jsx**
-
-    - `@ecopages/jsx/server` is Node-only and stores active SSR render scope in `AsyncLocalStorage` (no sync / browser fallback stack).
-    - Add `getActiveSsrScopeValue` / `withActiveSsrScopeValue` for framework-scoped SSR state on the active render scope.
-    - `withForcedServerCustomElementRendering` has been removed; custom-element SSR is handled by the server-render pipeline directly.
-
-    **@ecopages/radiant**
-
-    - Server SSR entries install scope adapters into core so client code never imports `@ecopages/jsx/server`.
-    - SSR context provider stack lives on the JSX SSR render scope (symbol-keyed); import `@ecopages/radiant/server/install-ssr-runtime` (or another server SSR entry) before rendering hosts outside the browser.
-    - SSR bundlers must resolve a single `@ecopages/*` instance (do not inline duplicate copies); the Vite Nitro playground externalizes these packages and installs the SSR runtime at server boot.
-
-- [#60](https://github.com/ecopages/radiant/pull/60) [`017f705`](https://github.com/ecopages/radiant/commit/017f70500dbf86d0e8912e8840f8775a7eada9c4) Thanks [@andeeplus](https://github.com/andeeplus)! - Back reactive host members with signals `State` and wire jsx derived bindings through signals `computed`.
-
-    **@ecopages/jsx**
-
-    - Add `@ecopages/signals` as a peer dependency.
-    - `mapSubscribable` now builds signal-backed derivations with `computed` when the source is a `SignalLike` (pull/push remains for `SubscribableJsxValue` adapters).
-
-    **@ecopages/radiant**
-
-    - Add `@ecopages/signals` as a direct dependency (no longer peer-only).
-    - Removed `trackReactiveRead` and `registerReactiveDependencyReader` from `RadiantElement` and `RadiantController`. Host members are now signals-backed; dependency tracking is native via `State.get()`.
-    - Legacy `@state` / `@prop` decorators now register member `State` during post-construction (SSR and connect), matching standard decorator timing.
-    - Legacy `@prop` SSR staging honors pre-render property assignments while connect-time initialization still prefers explicit `defaultValue` over class field initializers.
-    - Added `createReactiveMember`, `registerReactiveMember`, and `getReactiveMember` for advanced host integrations.
-    - Removed exported `ReactiveField` metadata type; use `createReactiveField` / `@state` instead.
-
-    Decorator APIs (`@state`, `@prop`, `@attr`, `@onUpdated`, `signal()`, `registerUpdateCallback`) are unchanged.
-
-- Updated dependencies [[`beffbbd`](https://github.com/ecopages/radiant/commit/beffbbdf72b6d8353b687e8015089b6d643b867f), [`ba60c0a`](https://github.com/ecopages/radiant/commit/ba60c0a4336d47ede31d6540c4fb15fcc284733a), [`017f705`](https://github.com/ecopages/radiant/commit/017f70500dbf86d0e8912e8840f8775a7eada9c4)]:
-    - @ecopages/jsx@0.3.0-beta.4
-    - @ecopages/signals@0.3.0-beta.4
-
-## 0.3.0-beta.3
-
-First beta prerelease of the 0.3.0 line.
-
-## Unreleased
-
-### Patch Changes
-
-- Fixed reflected boolean `@prop` values: removing the attribute now sets the property to `false` (not `null`), so `String(el.open)` stays `"false"` and UI state stays coherent.
-- Restored automatic `observedAttributes` registration for `@prop` (lost in the Stage 3 decorator migration) so attribute ↔ property sync works again without manually declaring `static observedAttributes`.
-- Fixed light-DOM slot projection dropping assigned nodes when they are moved under an inner render wrapper, which could duplicate slotted content on the next update.
-
-### Breaking Changes
-
-- Removed the legacy internal-state decorator alias. Use `@state` instead (drop-in replacement).
-- Removed the legacy property decorator alias. Use `@prop(...)` instead (drop-in replacement).
-- Removed the legacy decorator alias subpath exports.
-- SSR boot is centralized on `@ecopages/radiant/server/install-ssr-runtime`. Deep imports of `install-ssr-scope-adapters` are removed.
-- Removed public exports `@ecopages/radiant/core/reactive-jsx-value` and `@ecopages/radiant/tools/render-jsx-template`.
-- `@ecopages/radiant/server/radiant-element-ssr-bridge` remains as a deprecated alias of `radiant-element-ssr` for existing integrators.
-- `render-component` no longer ships fragment HTTP header constants or header-builder helpers; map `RenderedComponent` metadata in your adapter.
-
-### Migration
-
-| Old                                                               | Use instead                                         |
-| ----------------------------------------------------------------- | --------------------------------------------------- |
-| `install-ssr-scope-adapters`                                      | `@ecopages/radiant/server/install-ssr-runtime`      |
-| `bindReactiveValue` / `@ecopages/radiant/core/reactive-jsx-value` | `this.bind(...)` / `this.$.key` on `RadiantElement` |
-| `@ecopages/radiant/tools/render-jsx-template`                     | `@ecopages/jsx` `render(...)` or `renderComponent`  |
-| `@ecopages/radiant/server/radiant-element-ssr-bridge` (new code)  | `@ecopages/radiant/server/radiant-element-ssr`      |
-
-### Features
-
-- Added `scope` option to `@query(...)` and `createQuery(...)`: query light DOM (`'light'`, default), shadow DOM (`'shadow'`), or both (`'both'`).
-- Added normalized SSR fragment asset metadata in `@ecopages/radiant/server/render-component`, including transport-friendly asset descriptors for script, preload, and stylesheet dependencies.
+- Updated dependencies:
+    - `@ecopages/jsx@0.3.0`
+    - `@ecopages/signals@0.3.0`
 
 ## 0.2.0
 
