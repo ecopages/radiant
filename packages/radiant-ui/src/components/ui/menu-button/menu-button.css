@@ -1,0 +1,64 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-menu-button {
+	@apply inline-flex;
+}
+
+@layer components {
+	.rui-menu-button {
+		@apply relative inline-flex;
+	}
+
+	.rui-menu-button__trigger {
+		@apply gap-inline;
+	}
+
+	.rui-menu-button__chevron {
+		@apply shrink-0;
+	}
+
+	.rui-menu-button__menu {
+		@apply min-w-40 p-1;
+	}
+
+	.rui-menu-button__menu[hidden] {
+		@apply hidden;
+	}
+
+	.rui-menu-button__menu > .rui-separator {
+		@apply my-1;
+	}
+
+	.rui-menu-button__item {
+		@apply flex w-full cursor-pointer items-center rounded-control border-0 bg-transparent px-control-x py-control-y text-left text-sm;
+		@apply text-on-background transition-colors duration-fast;
+	}
+
+	.rui-menu-button__item:focus-visible:not([aria-disabled='true']) {
+		background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+		@apply outline-none;
+	}
+
+	.rui-menu-button__item[aria-disabled='true'] {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-menu-button__item[aria-haspopup='menu'] {
+		@apply justify-between;
+	}
+
+	.rui-menu-button__item[aria-haspopup='menu']::after {
+		content: '›';
+		@apply ml-auto pl-4 text-on-background;
+	}
+
+	.rui-menu-button__item[aria-expanded='true'] {
+		background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.rui-menu-button__item:hover:not([aria-disabled='true']) {
+			background-color: var(--rui-menu-item-hover, var(--surface-container-low));
+		}
+	}
+}

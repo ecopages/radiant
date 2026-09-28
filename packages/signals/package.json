@@ -1,0 +1,60 @@
+{
+	"name": "@ecopages/signals",
+	"version": "0.3.0",
+	"description": "Renderer-agnostic signal primitives based on the TC39 Signals proposal",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/signals"
+	},
+	"homepage": "https://github.com/ecopages/radiant/tree/main/packages/signals#readme",
+	"bugs": {
+		"url": "https://github.com/ecopages/radiant/issues"
+	},
+	"author": "Andrea Zanenghi",
+	"license": "MIT",
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"type": "module",
+	"publishConfig": {
+		"access": "public",
+		"directory": "dist"
+	},
+	"sideEffects": false,
+	"files": [
+		"dist/**"
+	],
+	"keywords": [
+		"signals",
+		"reactivity",
+		"tc39",
+		"state-management",
+		"radiant"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build:lib": "pnpm run clean && pnpm run build:files && pnpm run build:types",
+		"build:files": "node --import tsx ./build.ts",
+		"build:types": "tsc -p tsconfig.build.json",
+		"clean": "rm -rf ./dist",
+		"size:check": "node --import tsx ./check-size.ts",
+		"size:report": "node --import tsx ./check-size.ts --report-only",
+		"test:all": "pnpm run test:lib && pnpm run size:check",
+		"test:lib": "vitest run"
+	},
+	"devDependencies": {
+		"@types/node": "^24.13.3",
+		"@vitest/coverage-v8": "^4.1.10",
+		"esbuild": "^0.28.1",
+		"tsx": "^4.20.6",
+		"typescript": "catalog:",
+		"vitest": "^4.1.10"
+	}
+}

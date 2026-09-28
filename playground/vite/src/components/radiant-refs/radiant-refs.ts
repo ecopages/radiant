@@ -51,11 +51,3 @@ export class RadiantRefs extends RadiantElement {
 		this.renderCount();
 	}
 }
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-refs': HtmlTag;
-		}
-	}
-}

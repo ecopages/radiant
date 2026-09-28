@@ -1,0 +1,31 @@
+---
+title: "Docs | Context APIs"
+description: "Overview of Radiant context providers, consumers, selectors, and update hooks."
+group: Context
+order: 999
+---
+
+# Context APIs
+
+Radiant context lets related hosts share state without manually threading props through every intermediate layer.
+
+The core pieces are:
+
+- [Context Overview](/docs/context/context)
+- [@provideContext](/docs/context/provide-context)
+- [@consumeContext](/docs/context/consume-context)
+- [@contextSelector](/docs/context/context-selector)
+- [@onContextUpdate](/docs/context/on-context-update)
+
+## Choosing The Right Tool
+
+- Use [@provideContext](/docs/context/provide-context) when a host owns shared state for descendants.
+- Use [@consumeContext](/docs/context/consume-context) when the host needs the provider object itself.
+- Use [@contextSelector](/docs/context/context-selector) when a field should stay in sync with a value or selected slice.
+- Use [@onContextUpdate](/docs/context/on-context-update) when context changes should trigger imperative work.
+
+## Host Support
+
+These context decorators now work on both `RadiantElement` and `RadiantController`.
+
+Use `RadiantElement` when the provider or consumer is a custom element. Use `RadiantController` when the same context logic should attach to existing DOM.

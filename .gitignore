@@ -13,6 +13,7 @@ lerna-debug.log*
 # Caches
 
 .cache
+.pnpm-store
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 
@@ -173,3 +174,7 @@ dist
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# AI
+.agent
+.audit/

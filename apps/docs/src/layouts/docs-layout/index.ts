@@ -1,1 +1,1 @@
-export * from './docs-layout.kita';
+export { DocsLayout as default, DocsLayout } from './docs-layout';

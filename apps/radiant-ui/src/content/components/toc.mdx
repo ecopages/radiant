@@ -1,0 +1,114 @@
+---
+title: Toc
+description: Table of contents components scan a page for headings and render jump links that track the reader's scroll position.
+category: Navigation
+---
+
+import { meta as TocMeta, Default } from '@/content/stories/toc';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Toc
+
+<p class="docs-lede">Table of contents components scan a page for headings and render jump links that track the reader's scroll position.</p>
+
+## Try it
+
+<Demo of={Default} meta={TocMeta} />
+
+## Usage
+
+Point `target` at the content root selector. Adjust `headingSelector` to match the heading levels you want to include.
+
+```tsx
+import { RuiToc } from '@ecopages/radiant-ui/toc';
+
+<RuiToc
+  target=".docs-content"
+  headingSelector="h2,h3"
+  label="On this page"
+  scrollOffset={120}
+/>
+```
+
+## Heading levels
+
+<p>Default `h2,h3` suits most docs pages. Include `h4` only when the page has deep nesting worth navigating.</p>
+
+## Scroll offset
+
+<p>Set `scrollOffset` to account for a fixed header so jumped headings are not hidden beneath it.</p>
+
+## Theming
+
+Toc maps to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Label (`rui-toc__label`) | `on-background` |
+| List (`rui-toc__list`) | `border` (left rule) |
+| Link (`rui-toc__link`) | `on-background`; hover `on-background` |
+| Active link (`rui-toc__link--active`) | `primary` (text + left rail) |
+
+Override roles at the theme layer, not in component CSS.
+
+## API
+
+`RuiToc` is a Derived Tree host (`<rui-toc>`): the element `render()` owns the `nav` landmark and jump-link list. It scans headings in an external content root identified by `target` and `heading-selector` — not authored children of the host.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `target` | `string` | `''` | CSS selector for the content root that contains headings. Defaults to the parent element. |
+| `heading-selector` | `string` | `h2,h3` | Selector for headings to include. |
+| `label` | `string` | `On this page` | Visible label above the link list. |
+| `scroll-offset` | `number` | `120` | Pixel offset from the viewport top when tracking the active section. |
+| `navigation-events` | `string` | `''` | Comma-separated document events that trigger a rebuild (e.g. `eco:page-load`). |
+
+### Scan contract
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `target` | parent element | CSS selector for the content root containing headings. |
+| `heading-selector` | `h2,h3` | Selector for headings to include; missing `id` values are assigned. |
+
+### CSS classes
+
+Public BEM classes on the rendered link list (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-toc` | Root `nav` landmark. |
+| `.rui-toc__label` | Section label above the list. |
+| `.rui-toc__list` | Link list. |
+| `.rui-toc__item` | List item. |
+| `.rui-toc__item--depth-3` | Indented item for `h3` headings. |
+| `.rui-toc__link` | Heading jump link. |
+| `.rui-toc__link--active` | Link for the section currently in view. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Label | `--on-background` |
+| List rule | `--border` |
+| Link | `--on-background`; active `--primary` |
+
+## Accessibility
+
+- The TOC renders as a `nav` landmark with `label` as its accessible name.
+- Current section is indicated visually and for assistive technologies during scroll.
+- Nested headings use indentation to convey hierarchy.

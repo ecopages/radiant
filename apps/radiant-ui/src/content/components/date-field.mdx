@@ -1,0 +1,181 @@
+---
+title: Date Field
+description: Date fields capture a single calendar date with locale-aware formatting and an optional calendar popup for pointer input.
+category: Forms
+---
+
+import { meta as DateFieldMeta, Default, WithCalendar } from '@/content/stories/date-field';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Date Field
+
+<p class="docs-lede">Date fields capture a single calendar date with locale-ordered editable segments and an optional calendar popup for pointer input.</p>
+
+## Try it
+
+<Demo of={Default} meta={DateFieldMeta} />
+
+## Usage
+
+Compose the segment input, calendar trigger, popup, and calendar as children of `RuiDateField`. When no children are supplied, `RuiDateField` renders this same composition for you. Bind `value` as an ISO `YYYY-MM-DD` string. For the segment editor without a calendar popup, use Date Input.
+
+```tsx
+import {
+  RuiDateField,
+  RuiDateFieldCalendar,
+  RuiDateFieldControl,
+  RuiDateFieldInput,
+  RuiDateFieldPopover,
+  RuiDateFieldToggle,
+} from '@ecopages/radiant-ui/date-field';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="startDate">
+  <RuiLabel>Start date</RuiLabel>
+  <RuiDateField value="2026-08-07" locale="en-US">
+    <RuiDateFieldControl>
+      <RuiDateFieldInput />
+      <RuiDateFieldToggle />
+    </RuiDateFieldControl>
+    <RuiDateFieldPopover>
+      <RuiDateFieldCalendar />
+    </RuiDateFieldPopover>
+  </RuiDateField>
+</RuiField>
+```
+
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/date-field';
+import '@ecopages/radiant-ui/date-input';
+import '@ecopages/radiant-ui/calendar';
+
+<rui-date-field value="2026-08-07">
+  <div class="rui-date-field__group">
+    <rui-date-input data-date-field-input></rui-date-input>
+    <button type="button" data-date-field-trigger data-ref="trigger"></button>
+  </div>
+  <div data-date-field-popover data-ref="popover" hidden>
+    <rui-calendar data-date-field-calendar />
+  </div>
+</rui-date-field>
+```
+
+## Calendar input
+
+Use the calendar button to choose a date instead of typing. When the popup opens, focus moves to the selected date or the first available date. This example uses a two-month popup for dates near a month boundary.
+
+<Canvas of={WithCalendar} meta={DateFieldMeta} />
+
+## Segment entry
+
+<p>Each month, day, and year unit is focusable and editable with the keyboard or a numeric keypad. Typing replaces the focused unit; arrow keys move between units or increment values.</p>
+
+## Bound the range
+
+<p>Set `min` and `max` to prevent invalid bookings. The embedded calendar inherits the same constraints.</p>
+
+## Theming
+
+Date Field surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Control group (`rui-date-field__group`) | `border`, `background`, `radius-control`; `focus-ring` ring on focus-within |
+| Input text | `on-background`, `--text-control`, `--space-control-*` |
+| Segment placeholder | `on-surface` + `opacity-muted` |
+| Disabled | `opacity-disabled` |
+| Invalid (`aria-invalid`) | `error` border |
+| Popup (`rui-date-field__popover`) | `popover` surface + `shadow-overlay` (via `rui-popover`) |
+
+Geometry shares control tokens (`--size-control-*`, `--radius-control`, `--space-control-*`) with `RuiInput` and `RuiButton` so form rows align. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiDateField` is a custom element (`<rui-date-field>`) that coordinates its light-DOM input, toggle button, and calendar popover. It is not form-associated; `name` lands on the nested `rui-date-input`.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` | `''` | Canonical ISO `YYYY-MM-DD` value. |
+| `min` | `string` | `''` | Earliest selectable ISO date. |
+| `max` | `string` | `''` | Latest selectable ISO date. |
+| `disabled` | `boolean` | `false` | Disable the field and calendar. |
+| `read-only` | `boolean` | `false` | Disable editing while keeping the value visible. |
+| `label` | `string` | `''` | Accessible name when there is no associated `RuiLabel`. |
+| `name` | `string` | `''` | Form field name on the nested `rui-date-input`. |
+| `locale` | `string` | `''` | BCP 47 locale tag, or comma-separated fallback list. |
+| `visible-months` | `number` | `1` | Month grids shown in the calendar popover. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-date-field-input]` | yes | `value`, `name`, `locale`, `min`, `max`, `disabled`, `read-only` | nested `rui-date-input` |
+| `[data-date-field-trigger]` | yes | `aria-expanded`, `disabled` | toggle (`data-ref="trigger"`) |
+| `[data-date-field-popover]` | yes | `hidden` | popup (`data-ref="popover"`) |
+| `[data-date-field-calendar]` | yes | `selection-mode`, `value`, `min`, `max`, … | nested `rui-calendar` |
+
+Nested host: `rui-calendar` at `[data-date-field-calendar]` — parent queries `[data-calendar-day]` inside it.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value }` | Fired when a valid date is committed (typing or calendar pick). |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiDateFieldControl` | — | Bordered control row |
+| `RuiDateFieldInput` | `[data-date-field-input]` | Nested `rui-date-input` segment editor |
+| `RuiDateFieldToggle` | `[data-date-field-trigger]` | Opens calendar popup |
+| `RuiDateFieldPopover` | `[data-date-field-popover]` | Popup shell |
+| `RuiDateFieldCalendar` | `[data-date-field-calendar]` | Synced `rui-calendar` |
+
+### CSS classes
+
+Public BEM classes on the composed light-DOM surface (documented via `@cssclass` on `RuiDateField`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-date-field` | Root surface. |
+| `.rui-date-field__group` | Bordered control-height row wrapping input and toggle. |
+| `.rui-date-field__input` | Host for nested `rui-date-input`. |
+| `.rui-date-field__popover` | Calendar popup shell (`rui-popover` / `rui-floating`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Control group | `--border`, `--background`, `--radius-control`, `--focus-ring` |
+| Input text | `--on-background`, `--text-control`, `--space-control-x`, `--space-control-y` |
+| Placeholder | `--on-surface`, `--opacity-muted` |
+| Disabled | `--opacity-disabled` |
+| Invalid | `--error` |
+| Popup | `--shadow-overlay` (via `rui-popover`) |
+
+## Accessibility
+
+- Pair every date field with a visible `RuiLabel` or `label` / `aria-label` on the segment group.
+- Invalid dates should surface through `RuiField` error text, not color alone.
+- Segments expose spinbutton semantics (or textbox on iOS VoiceOver) with `inputmode="numeric"` for touch keyboards.
+- The calendar button is optional; focus the field to type, or open the popup to pick from the grid.
+- The trigger opens the popup and moves focus to the selected date or first available date; arrow keys move between days, Page Up / Page Down change months, and Escape closes the popup.

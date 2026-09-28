@@ -1,0 +1,16 @@
+{
+	"extends": "../../configs/tsconfig.base.json",
+	"compilerOptions": {
+		"target": "ES2022",
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx",
+		"experimentalDecorators": false,
+		"useDefineForClassFields": true,
+		"types": ["node"]
+	},
+	"include": ["src/**/*", "src/client.d.ts"]
+}

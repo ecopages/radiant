@@ -13,7 +13,7 @@ export function bound(target: RadiantElement, propertyKey: string, descriptor: P
 	return {
 		configurable: true,
 		get() {
-			if (this === (target as any).prototype || Object.hasOwn(this, propertyKey)) {
+			if (this === (target as any).prototype || Object.prototype.hasOwnProperty.call(this, propertyKey)) {
 				return originalMethod;
 			}
 

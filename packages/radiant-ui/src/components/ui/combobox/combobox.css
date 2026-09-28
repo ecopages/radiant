@@ -1,0 +1,47 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-combobox {
+	@apply relative inline-flex w-full flex-col;
+}
+
+@layer components {
+	.rui-combobox {
+		@apply relative w-full text-sm;
+	}
+
+	.rui-combobox__control {
+		@apply flex w-full min-w-0 flex-wrap items-center gap-1 rounded-control border border-border bg-background px-1;
+		min-height: var(--size-control-md);
+	}
+
+	.rui-combobox__value {
+		@apply inline-flex min-w-0 max-w-full flex-wrap items-center;
+	}
+
+	.rui-combobox__control:focus-within {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-combobox__input {
+		@apply min-w-0 flex-1 border-0 bg-transparent text-on-background outline-none;
+		padding-inline: var(--space-control-x);
+		padding-block: var(--space-control-y);
+		font-size: var(--text-control-input);
+	}
+
+	.rui-combobox__input:disabled {
+		@apply cursor-not-allowed opacity-muted;
+	}
+
+	.rui-combobox__listbox {
+		@apply min-w-0;
+	}
+
+	.rui-combobox__listbox[hidden] {
+		display: none;
+	}
+
+	.rui-combobox__listbox > rui-listbox {
+		@apply min-w-0;
+	}
+}

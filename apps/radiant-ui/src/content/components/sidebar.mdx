@@ -1,0 +1,223 @@
+---
+title: Sidebar
+description: Sidebars provide persistent app navigation with collapsible, resizable, and mobile-responsive layouts.
+category: Navigation
+---
+
+import { meta as SidebarMeta, Default } from '@/content/stories/sidebar';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Sidebar
+
+<p class="docs-lede">Sidebars provide persistent app navigation with collapsible, resizable, and mobile-responsive layouts.</p>
+
+## Try it
+
+<Demo of={Default} meta={SidebarMeta} />
+
+## Usage
+
+Wrap the layout in `RuiSidebarProvider`. Compose header, content, groups, and menu items with the sidebar sub-components.
+
+```tsx
+import {
+  RuiSidebarProvider,
+  RuiSidebar,
+  RuiSidebarHeader,
+  RuiSidebarContent,
+  RuiSidebarMenu,
+  RuiSidebarMenuItem,
+  RuiSidebarMenuButton,
+  RuiSidebarInset,
+  RuiSidebarTrigger,
+} from '@ecopages/radiant-ui/sidebar';
+
+<RuiSidebarProvider>
+  <RuiSidebar collapsible="icon" defaultOpen>
+    <RuiSidebarHeader>Acme</RuiSidebarHeader>
+    <RuiSidebarContent>
+      <RuiSidebarMenu>
+        <RuiSidebarMenuItem>
+          <RuiSidebarMenuButton href="/dashboard">Dashboard</RuiSidebarMenuButton>
+        </RuiSidebarMenuItem>
+      </RuiSidebarMenu>
+    </RuiSidebarContent>
+  </RuiSidebar>
+  <RuiSidebarInset>
+    <RuiSidebarTrigger />
+    <main>Page content</main>
+  </RuiSidebarInset>
+</RuiSidebarProvider>
+```
+
+## Custom markup
+
+```tsx
+import '@ecopages/radiant-ui/sidebar';
+
+<rui-sidebar id="app-sidebar" collapsible="icon" label="Navigation">
+  <div data-ref="root" class="rui-sidebar">
+    <button data-ref="scrim" type="button" hidden></button>
+    <div data-ref="pane" class="rui-sidebar__pane">
+      <a href="/dashboard" class="rui-sidebar__menu-button" data-ref="menu-button">Dashboard</a>
+    </div>
+    <div data-ref="handle" role="separator" hidden></div>
+  </div>
+</rui-sidebar>
+```
+
+`rui-sidebar-trigger` stamps `[data-ref="button"]` and syncs `aria-expanded` / `aria-controls` against the sidebar.
+Each trigger also reflects its controlled sidebar's state, mobile mode, and collapse mode on the trigger host. An explicit `controls` id targets only that `rui-sidebar`; if it does not resolve, the trigger stays unattached and does not toggle a nearby sidebar. Without `controls`, a trigger inside a sidebar uses that ancestor. Placement and glyph styles read only the trigger host and its `placement` attribute, so an attached trigger follows the sidebar's `mobileBreakpoint` rather than the viewport width, including when providers are nested.
+
+Before a trigger attaches (the server-rendered paint), placement styles treat viewports below 768px as mobile and read the sidebar whose pane holds the trigger, else the only sidebar of its nearest provider (child combinators, so nested providers stay independent). Other triggers, such as inset triggers shared by two sidebars in one provider, stay visible until they attach.
+
+## Collapsible modes
+
+<p>`icon` collapses to icons only. `full` hides the sidebar entirely. `off` keeps it always visible.</p>
+
+## Active route matching
+
+<p>Enable `matchActive` with `matchMode` to highlight the current page in the menu automatically.</p>
+
+## Theming
+
+Sidebar surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Pane (`rui-sidebar`) | `background` |
+| Header / content / footer | `border` between sections |
+| Menu buttons | `on-background` text |
+| Active menu button | `primary` indicator |
+| Resize handle | `border` + `on-surface` grip, `primary` on hover |
+| Inset | `background` |
+
+Rounded corners use `rounded-container`; the collapsible pane in `docs` layout sits on `surface-container-low`. Overrides go at the theme layer, not in component CSS.
+
+## Accessibility
+
+- The sidebar renders as a `nav` landmark with `label` as its accessible name.
+- Collapsed icon-only mode preserves accessible names on menu buttons.
+- The trigger button exposes whether the sidebar is expanded or collapsed.
+
+## API
+
+`RuiSidebar` (`<rui-sidebar>`) coordinates the pane, resize, collapse, and active-route matching. Compose sections with the view helpers; `RuiSidebarProvider` wires the shell.
+
+### Attributes (`<rui-sidebar>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `variant` | `sidebar` · `inset` · `floating` | `sidebar` | Pane treatment. |
+| `side` | `left` · `right` | `left` | Which side the pane sits on. |
+| `collapsible` | `off` · `icon` · `full` | `off` | Collapse behavior. |
+| `defaultWidth` | `number` | | Initial width in px. |
+| `width` | `number` | | Controlled width. |
+| `minWidth` / `maxWidth` | `number` | | Width bounds. |
+| `resizable` | `boolean` | `false` | Draggable resize handle. |
+| `defaultOpen` | `boolean` | `true` | Initial open state (desktop). |
+| `mobileDefaultOpen` | `boolean` | `false` | Open state on mobile when uncontrolled (mount and when the viewport crosses into mobile). |
+| `open` | `boolean` | | Controlled open state. Viewport crossings do not override this. |
+| `mobileBreakpoint` | `number` | | Width below which the mobile rail applies. |
+| `label` | `string` | `Sidebar` | Accessible name for the `nav` landmark. |
+| `matchActive` | `boolean` | `false` | Highlight the current route in the menu. |
+| `matchMode` | `pathname` · … | `pathname` | Route matching mode. |
+| `scrollActiveOnMount` | `boolean` | `false` | Scroll the active item into view on mount. |
+| `navigationEvents` | `string` | `''` | Custom navigation events to listen for. |
+
+### Light-DOM contract (`<rui-sidebar>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `data-state`, `data-collapsible`, … | inner shell |
+| `[data-ref="pane"]` | yes | `aria-label`, `inert` | pane content |
+| `[data-ref="scrim"]` | no | `hidden` | mobile overlay button |
+| `[data-ref="handle"]` | no | `hidden`, `aria-valuenow`, … | resize handle |
+| `[data-ref="menu-button"]` | no | `aria-current`, active class | menu links |
+
+Host-owned on `<rui-sidebar>`: `role="complementary"`, `data-state`, `data-pane-width`, …
+
+### Methods (`<rui-sidebar>`)
+
+| Method | Description |
+| --- | --- |
+| `toggle()` | Open or close the pane. |
+| `setOpen(next)` | Set open state. |
+| `syncActiveLinks(scroll?)` | Match menu links to the current location when `matchActive` is set. |
+
+### Light-DOM contract (`<rui-sidebar-trigger>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="button"]` | yes | `aria-expanded`, `aria-controls`, `aria-label`; swaps `rui-button--{variant}` / `--{size}` | toggle button and its other classes |
+
+### Attributes (`<rui-sidebar-trigger>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `controls` | `string` | `''` | Exact sidebar id. An unresolved id does not fall back to an ancestor sidebar. |
+| `button-label` | `string` | `Toggle sidebar` | Accessible trigger name (`triggerLabel` on `RuiSidebarTrigger`). |
+| `placement` | `''` · `header` · `inset` | `''` | Trigger placement; reflected for placement styles. |
+| `variant` | `ghost` · … | `ghost` | Button tone (reuses `RuiButton` variants). |
+| `size` | `sm` · `md` · `lg` | `md` | Button size. |
+
+The host writes `data-sidebar-state`, `data-sidebar-mobile`, and `data-sidebar-collapsible` on `<rui-sidebar-trigger>`. `data-sidebar-mobile` and `data-sidebar-collapsible` appear once the trigger attaches to its sidebar. Until then, `data-sidebar-state` matches the server render: `collapsed` for `inset`, `expanded` otherwise.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-sidebar-toggle` | | Emitted on every open/closed transition. |
+| `rui-sidebar-resize` | `{ width }` | Emitted on every width change. |
+| `rui-sidebar-mobile-change` | | Emitted when the host flips mobile rail state. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiSidebarProvider` | — | Shell (`data-layout`) wrapping sidebar + inset. |
+| `RuiSidebarHeader` / `RuiSidebarContent` / `RuiSidebarFooter` | — | Pane sections; not queried. |
+| `RuiSidebarSeparator` | — | Horizontal rule. |
+| `RuiSidebarGroup` / `RuiSidebarGroupLabel` / `RuiSidebarGroupAction` / `RuiSidebarGroupHeader` | — | Grouped items. |
+| `RuiSidebarMenu` / `RuiSidebarMenuItem` | — | Menu list + item wrappers. |
+| `RuiSidebarMenuButton` | `[data-ref="menu-button"]` on `<a>` or `<button>` | Current-page target when `matchActive` is set. |
+| `RuiSidebarMenuAction` | — | Extra control on a menu item. |
+| `RuiSidebarInset` | — | Main content area. |
+| `RuiSidebarTrigger` | `[data-ref="button"]` | Collapse/expand trigger (`rui-sidebar-trigger`). |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-sidebar` · `.rui-sidebar__header` · `.rui-sidebar__content` · `.rui-sidebar__footer` | Pane structure. |
+| `.rui-sidebar__separator` | Horizontal rule. |
+| `.rui-sidebar__group` · `.rui-sidebar__group-label` · `.rui-sidebar__group-action` · `.rui-sidebar__group-header` | Group structure. |
+| `.rui-sidebar__menu` · `.rui-sidebar__menu-item` · `.rui-sidebar__menu-button` · `.rui-sidebar__menu-action` | Menu structure. |
+| `.rui-sidebar__menu-button--active` | Current-page marker. |
+| `.rui-sidebar__inset` | Main content area. |
+| `.rui-sidebar-provider` · `.rui-sidebar-provider__site-header` · `.rui-sidebar-provider__body` | Shell structure. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Pane / inset | `--background` |
+| Active marker | `--primary` |
+| Resize handle | `--border`, `--on-surface`, `--primary` |
+| Surface container (docs) | `--surface-container-low` |
+| Rounded corners | `--radius-container` |

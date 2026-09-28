@@ -1,0 +1,32 @@
+.docs-layout__content:has(.error500) {
+	@apply flex flex-col;
+}
+
+.docs-layout__content:has(.error500) > .prose {
+	@apply flex w-full flex-1 flex-col;
+}
+
+.error500 {
+	@apply m-auto flex w-full min-h-0 min-w-0 flex-col text-left;
+	max-height: 50vh;
+
+	&__header {
+		@apply mb-3 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2;
+	}
+
+	&__heading {
+		@apply min-w-0 flex-1;
+	}
+
+	&__actions {
+		@apply ml-auto flex shrink-0 items-center gap-2;
+	}
+
+	&__detail {
+		@apply m-0 min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background-accent/30 p-3 text-left font-mono text-xs leading-5 text-on-background/80;
+	}
+}
+
+.docs-layout__content:has(.error500) .docs-layout__pagination {
+	@apply hidden;
+}

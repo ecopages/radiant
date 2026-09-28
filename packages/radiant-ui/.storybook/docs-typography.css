@@ -1,0 +1,10 @@
+/**
+ * Docs-app font families for Storybook — matches apps/docs/src/styles/theme.css.
+ */
+@import 'tailwindcss';
+
+@theme {
+	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'Karla', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

@@ -1,0 +1,31 @@
+{
+	"extends": "../../configs/tsconfig.base.json",
+	"compilerOptions": {
+		// Environment setup & latest features
+		"lib": ["DOM", "DOM.Iterable", "ESNext"],
+		"target": "ESNext",
+		"module": "Preserve",
+		"moduleDetection": "force",
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx",
+		"allowJs": true,
+
+		// Bundler mode
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
+		"noEmit": true,
+
+		// Best practices
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+
+		// Some stricter flags (disabled by default)
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noPropertyAccessFromIndexSignature": false,
+
+		"types": ["node"]
+	},
+	"exclude": ["dist", "node_modules"]
+}

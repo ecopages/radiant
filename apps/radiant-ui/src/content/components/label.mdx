@@ -1,0 +1,88 @@
+---
+title: Label
+description: Labels name form controls so users and assistive technologies know what data to enter.
+category: Forms
+---
+
+import { meta as LabelMeta, Default } from '@/content/stories/label';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Label
+
+<p class="docs-lede">Labels name form controls so users and assistive technologies know what data to enter.</p>
+
+## Try it
+
+<Demo of={Default} meta={LabelMeta} />
+
+## Usage
+
+Place `RuiLabel` as the first child of `RuiField`. It automatically associates with the nested control.
+
+```tsx
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+
+<RuiField name="username">
+  <RuiLabel>Username</RuiLabel>
+  <RuiInput />
+</RuiField>
+```
+
+## Always visible
+
+<p>Labels should remain visible when the field is focused. Do not rely on placeholder text as a label replacement.</p>
+
+## Theming
+
+Label text maps to the **`on-background`** role, never a palette step:
+
+| Part | CSS roles |
+| --- | --- |
+| Root | `on-background`, `font-medium`, `--text-control` size |
+
+Override at the theme layer, not in component CSS.
+
+## Accessibility
+
+- Labels are linked to controls via `for` / `id` wiring inside `RuiField`.
+- Write labels as nouns or short phrases, such as "Email address", not "Enter your email".
+- Required fields should indicate requirement in the label or with adjacent text, not color alone.
+
+## API
+
+`RuiLabel` is a presentational JSX view over a native `<label>`, no custom element. It sets the field-label attribute so `RuiField` discovers it and wires `for` / `aria-labelledby`.
+
+### Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `htmlFor` | `string` | | Explicitly associates the label with a control id. |
+
+### CSS classes
+
+Public classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-label` | Form field label. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Text | `--on-background`, `--text-control` |

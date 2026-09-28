@@ -1,80 +1,68 @@
-import { RadiantElement } from '@ecopages/radiant/core/radiant-element';
-import { customElement } from '@ecopages/radiant/decorators/custom-element';
-import { onEvent } from '@ecopages/radiant/decorators/on-event';
-import { BurgerEvents } from '@/components/burger/burger.events';
-import type { RadiantSwitchEvent } from '@/components/switch/switch.script';
-import '@ecopages/scripts-injector';
+/** Registers the Radiant UI custom elements rendered by the docs shell. */
+import '@ecopages/radiant-ui/alert';
+import '@ecopages/radiant-ui/breadcrumb';
+import '@ecopages/radiant-ui/sidebar';
+import '@ecopages/radiant-ui/toc';
+import { isServer } from '@ecopages/radiant/is-server';
 
-document.addEventListener('DOMContentLoaded', () => {
-	const darkModeToggle = document.querySelector('#toggle-dark-mode') as HTMLInputElement;
-	if (darkModeToggle) {
-		const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-		const storedTheme = localStorage.getItem('theme');
+const docsContentSelector = '.docs-layout__content';
+const codeCopySelector = '[data-rehype-pretty-copy]';
+const codeCopyFeedbackMs = 1200;
 
-		darkModeToggle.checked = storedTheme ? storedTheme === 'dark' : prefersDarkScheme.matches;
+type DocsNavigationEvent = CustomEvent<{ url: URL }>;
 
-		const setTheme = (isDark: boolean) => {
-			const theme = isDark ? 'dark' : 'light';
-			document.documentElement.setAttribute('data-theme', theme);
-			if (isDark) document.documentElement.classList.add('dark');
-			else document.documentElement.classList.remove('dark');
-
-			localStorage.setItem('theme', theme);
-		};
-
-		setTheme(darkModeToggle.checked);
-
-		darkModeToggle.addEventListener('change', (event) => {
-			const customEvent = event as CustomEvent<RadiantSwitchEvent>;
-			setTheme(customEvent.detail.checked);
-		});
-
-		prefersDarkScheme.addEventListener('change', (event) => {
-			if (!localStorage.getItem('theme')) {
-				darkModeToggle.checked = event.matches;
-				setTheme(event.matches);
-			}
-		});
-	}
-});
-
-@customElement('radiant-navigation')
-export class RadiantCounter extends RadiantElement {
-	override connectedCallback(): void {
-		super.connectedCallback();
-		this.highlightActiveLink();
-	}
-
-	highlightActiveLink(): void {
-		const links = this.querySelectorAll<HTMLAnchorElement>('[data-nav-link]');
-		const currentPath = window.location.pathname;
-
-		links.forEach((link) => {
-			if (link.pathname === currentPath) {
-				link.classList.add('active');
-				// Scroll into view if needed
-				link.scrollIntoView({ block: 'nearest' });
-			} else {
-				link.classList.remove('active');
-			}
-		});
-	}
-
-	@onEvent({ window: true, type: BurgerEvents.TOGGLE_MENU })
-	toggleNavigation(): void {
-		this.classList.toggle('hidden');
-	}
-
-	@onEvent({ window: true, type: BurgerEvents.CLOSE_MENU })
-	closeNavigation(): void {
-		this.classList.add('hidden');
-	}
+function scrollDocsToTop(): void {
+	document.querySelector<HTMLElement>(docsContentSelector)?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 }
 
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-navigation': HtmlTag;
-		}
+async function copyTextToClipboard(text: string): Promise<void> {
+	if (navigator.clipboard?.writeText) {
+		await navigator.clipboard.writeText(text);
+		return;
 	}
+
+	const textarea = document.createElement('textarea');
+	textarea.value = text;
+	textarea.setAttribute('readonly', '');
+	textarea.style.position = 'fixed';
+	textarea.style.opacity = '0';
+	document.body.append(textarea);
+	textarea.select();
+	document.execCommand('copy');
+	textarea.remove();
+}
+
+function setCodeCopyFeedback(button: HTMLButtonElement, isError = false): void {
+	button.dataset.copyError = String(isError);
+	button.textContent = isError ? 'Try again' : 'Copied';
+	button.setAttribute('aria-label', isError ? 'Could not copy code' : 'Code copied to clipboard');
+
+	window.setTimeout(() => {
+		button.removeAttribute('data-copy-error');
+		button.textContent = 'Copy';
+		button.setAttribute('aria-label', 'Copy code');
+	}, codeCopyFeedbackMs);
+}
+
+if (!isServer) {
+	document.addEventListener('click', (event) => {
+		const target = event.target instanceof Element ? event.target.closest(codeCopySelector) : null;
+		if (!(target instanceof HTMLButtonElement)) return;
+
+		const source = target.dataset.rehypePrettyCopy;
+		if (!source) return;
+
+		void copyTextToClipboard(source)
+			.then(() => setCodeCopyFeedback(target))
+			.catch(() => setCodeCopyFeedback(target, true));
+	});
+
+	document.addEventListener('eco:after-swap', (event) => {
+		const { url } = (event as DocsNavigationEvent).detail;
+		if (url.hash) {
+			return;
+		}
+
+		scrollDocsToTop();
+	});
 }

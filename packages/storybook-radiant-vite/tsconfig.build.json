@@ -1,0 +1,13 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": false,
+		"emitDeclarationOnly": true,
+		"outDir": "dist",
+		"rootDir": "src"
+	},
+	/* Tests are excluded from the emitted declarations: they are development-only, and
+     emitting them shipped `dist/*.test-d.d.ts` as part of the package's public type surface. */
+	"include": ["src/**/*"],
+	"exclude": ["src/**/*.test.ts", "src/**/*.test-d.ts"]
+}

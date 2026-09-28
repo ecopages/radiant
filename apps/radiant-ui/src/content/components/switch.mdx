@@ -1,0 +1,153 @@
+---
+title: Switch
+description: Switches toggle a single setting on or off with immediate effect.
+category: Forms
+---
+
+import { meta as SwitchMeta, Default, On } from '@/content/stories/switch';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Switch
+
+<p class="docs-lede">Switches toggle a single setting on or off with immediate effect, such as notifications, dark mode, or feature flags.</p>
+
+## Try it
+
+<Demo of={Default} meta={SwitchMeta} />
+
+## Usage
+
+Bind `checked` for controlled state. Place inside `RuiField` with a `RuiLabel` that describes what the switch controls when composing forms.
+
+```tsx
+import { RuiSwitch } from '@ecopages/radiant-ui/switch';
+
+<RuiSwitch checked={enabled}>Email notifications</RuiSwitch>
+```
+
+## Custom markup
+
+`<rui-switch>` coordinates any light-DOM tree that matches its query contract. The `RuiSwitch` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/switch';
+
+<rui-switch checked>
+  <label class="rui-switch">
+    <input
+      type="checkbox"
+      role="switch"
+      data-ref="input"
+      data-rui-control
+      data-rui-control-type="boolean"
+      class="rui-switch__input"
+    />
+    <span class="rui-switch__track" aria-hidden="true">
+      <span class="rui-switch__thumb"></span>
+    </span>
+    <span class="rui-switch__label">Email notifications</span>
+  </label>
+</rui-switch>
+```
+
+BEM classes are presentation-only. The host syncs `checked`, `disabled`, and `name` on `[data-ref="input"]`.
+
+## Switch vs checkbox
+
+Use switches for settings that take effect immediately. Use checkboxes for options collected on form submit.
+
+<Canvas of={On} meta={SwitchMeta} />
+
+## Theming
+
+Switch chrome maps to **semantic surface roles**, never Tailwind palette steps. Override `--rui-switch-*` on `rui-switch`.
+
+| Part / state | Default | Override |
+| --- | --- | --- |
+| Track size | `2.5rem` × `1.5rem` | `--rui-switch-width`, `--rui-switch-height` |
+| Thumb | `1rem` | `--rui-switch-thumb-size` |
+| Track off / hover | `--on-background` at 20% / 30% | `--rui-switch-track`, `--rui-switch-track-hover` |
+| Track on / hover | `--primary` | `--rui-switch-track-on`, `--rui-switch-track-on-hover` |
+| Thumb off / on | `--on-background` / `--on-primary` | `--rui-switch-thumb`, `--rui-switch-thumb-on` |
+| Focus | `focus-ring` | theme `--focus-ring` |
+| Disabled | `opacity-disabled` | theme `--opacity-disabled` |
+
+```css
+rui-switch {
+  --rui-switch-width: 3rem;
+  --rui-switch-track-on: var(--success);
+}
+```
+
+Label text uses `on-background`; track uses the `rounded-pill` radius token. Remap theme roles for global mood.
+
+## Accessibility
+
+- Switches expose `role="switch"` with `aria-checked`.
+- Labels must describe the setting, not the control (for example, "Email notifications", not "Toggle").
+- Space toggles the switch when focused.
+
+## API
+
+`RuiSwitch` renders a `<label>` and native `<input type="checkbox" role="switch">` inside the coordinating `<rui-switch>` custom element. Use the JSX view or compose equivalent marked-up light DOM; the browser owns activation and Space-to-toggle.
+
+### Attributes (`<rui-switch>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `checked` | `boolean` | `false` | On state; reflects to markup. |
+| `disabled` | `boolean` | `false` | Disabled state. |
+| `name` | `string` | `''` | Form field name on the inner input. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="input"]` | yes | `checked`, `disabled`, `name` | the input element; stamp `data-rui-control` for field wiring |
+
+Do not fight host-owned input state. Nested hosts: none.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ checked: boolean }` | Emitted after the checked state changes. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiSwitch` | `[data-ref="input"]` on native `role="switch"` checkbox | Children render in `rui-switch__label`. Always stamps `data-rui-control`. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-switch` | Label row: track + thumb + visible label. |
+| `.rui-switch__input` | Native input (visually hidden, receives focus). |
+| `.rui-switch__track` | Pill track; `primary` fill when checked. |
+| `.rui-switch__thumb` | Sliding thumb. |
+| `.rui-switch__label` | Light-DOM label text. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Track | `--on-background` (off, alpha), `--primary` (on) |
+| Thumb | `--on-background` (off), `--on-primary` (on) |
+| Focus ring | `--focus-ring` |

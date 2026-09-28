@@ -1,0 +1,68 @@
+import type { JsxRenderable } from '@ecopages/jsx';
+import type { RadiantElementSsrHostSource, RadiantElementViewRenderSource } from './radiant-element-ssr-host-source';
+
+/** Core-local render options so client code never imports `@ecopages/jsx/server`. */
+export type RadiantElementRenderToStringOptions = {
+	hydrate?: boolean;
+	mode?: 'plain' | 'hydrate';
+};
+
+export type RadiantElementRenderBridge = {
+	renderHost?: () => JsxRenderable;
+	renderHostToString?: (options?: RadiantElementRenderToStringOptions) => string;
+};
+
+/** Branded Element Host accepted by the server SSR pipeline. */
+export type RadiantElementServerRenderSsrCapable = RadiantElementSsrHostSource;
+
+export type { RadiantElementViewRenderSource };
+
+export type RadiantElementSsrRuntime = {
+	getHostAttributes(component: RadiantElementServerRenderSsrCapable): Record<string, string>;
+	renderHost(component: RadiantElementServerRenderSsrCapable): JsxRenderable;
+	renderHostToString(
+		component: RadiantElementServerRenderSsrCapable,
+		options?: RadiantElementRenderToStringOptions,
+	): string;
+	resolveRenderBridge(component: object): RadiantElementRenderBridge | undefined;
+	renderView(component: RadiantElementServerRenderSsrCapable, options?: RadiantElementRenderToStringOptions): string;
+};
+
+/** JSX SSR scope adapters installed by the server layer into client-safe core. */
+export type RadiantElementSsrScopeAdapters = {
+	get<T>(key: symbol): T | undefined;
+	withValue<TValue, T>(key: symbol, value: TValue, render: () => T): T;
+};
+
+const RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL = Symbol.for('@ecopages/radiant.element-ssr-runtime');
+
+let scopeAdapters: RadiantElementSsrScopeAdapters | undefined;
+
+/**
+ * Wires Radiant core SSR runtime lookups to `@ecopages/jsx/server` ALS scope.
+ *
+ * @remarks
+ * Called from {@link ../server/install-ssr-runtime.ts} only in normal apps. Client bundles
+ * never call this. Requires a single server module instance (see server esbuild splitting).
+ */
+export function installRadiantElementSsrScopeAdapters(adapters: RadiantElementSsrScopeAdapters): void {
+	scopeAdapters = adapters;
+}
+
+export function getRadiantElementSsrRuntime(): RadiantElementSsrRuntime | undefined {
+	return scopeAdapters?.get<RadiantElementSsrRuntime>(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL);
+}
+
+export function withRadiantElementSsrRuntime<T>(runtime: RadiantElementSsrRuntime, render: () => T): T {
+	if (!scopeAdapters) {
+		throw new Error(
+			'Radiant element SSR runtime requires the server scope adapters. Import a Radiant server SSR entrypoint before rendering.',
+		);
+	}
+
+	if (scopeAdapters.get<RadiantElementSsrRuntime>(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL) === runtime) {
+		return render();
+	}
+
+	return scopeAdapters.withValue(RADIANT_ELEMENT_SSR_RUNTIME_SYMBOL, runtime, render);
+}

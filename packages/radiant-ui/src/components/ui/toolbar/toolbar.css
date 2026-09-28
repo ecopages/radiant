@@ -1,0 +1,16 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-toolbar {
+	@apply block;
+}
+
+@layer components {
+	.rui-toolbar {
+		@apply inline-flex items-center gap-1 rounded-container border border-border bg-surface p-1;
+	}
+
+	.rui-toolbar .rui-button--ghost[aria-pressed='true'],
+	.rui-toolbar .rui-button--outline[aria-pressed='true'] {
+		@apply bg-background font-medium text-on-background shadow-sm;
+	}
+}

@@ -1,0 +1,7 @@
+.controller-decorator-visualizer {
+	@apply my-6;
+}
+
+.controller-decorator-visualizer code {
+	@apply font-mono text-[0.875em];
+}

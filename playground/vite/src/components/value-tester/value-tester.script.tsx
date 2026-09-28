@@ -3,8 +3,7 @@ import { customElement } from '@ecopages/radiant/decorators/custom-element';
 import { onEvent } from '@ecopages/radiant/decorators/on-event';
 import { onUpdated } from '@ecopages/radiant/decorators/on-updated';
 import { query } from '@ecopages/radiant/decorators/query';
-import { reactiveProp } from '@ecopages/radiant/decorators/reactive-prop';
-import { stringifyTyped } from '@ecopages/radiant/tools/stringify-typed';
+import { prop } from '@ecopages/radiant/decorators/prop';
 
 export type RadiantValueTesterProps = {
 	number?: number;
@@ -16,11 +15,11 @@ export type RadiantValueTesterProps = {
 
 @customElement('radiant-tester')
 export class RadiantValueTester extends RadiantElement {
-	@reactiveProp({ type: Number, reflect: true, defaultValue: 0 }) number!: number;
-	@reactiveProp({ type: String, reflect: true, defaultValue: 'string' }) string!: string;
-	@reactiveProp({ type: Boolean, reflect: true, defaultValue: false }) boolean!: boolean;
-	@reactiveProp({ type: Object, reflect: true, defaultValue: { key: 'value' } }) object!: Record<string, unknown>;
-	@reactiveProp({ type: Array, reflect: true, defaultValue: ['value'] }) array!: unknown[];
+	@prop({ type: Number, reflect: true, defaultValue: 0 }) number!: number;
+	@prop({ type: String, reflect: true, defaultValue: 'string' }) string!: string;
+	@prop({ type: Boolean, reflect: true, defaultValue: false }) boolean!: boolean;
+	@prop({ type: Object, reflect: true, defaultValue: { key: 'value' } }) object!: Record<string, unknown>;
+	@prop({ type: Array, reflect: true, defaultValue: ['value'] }) array!: unknown[];
 
 	@query({ ref: 'number' }) numberText!: HTMLElement;
 	@query({ ref: 'string' }) stringText!: HTMLElement;
@@ -85,8 +84,8 @@ export const ValueTester = ({ number, string, boolean, object, array }: RadiantV
 			number={number}
 			string={string}
 			boolean={boolean}
-			object={stringifyTyped(object)}
-			array={stringifyTyped(array)}
+			object={object}
+			array={array}
 			class="grid grid-cols-5 gap-4 w-full"
 		>
 			<button class="rui-button rui-button--md rui-button--primary" type="button" data-ref="increment-number">
@@ -112,11 +111,3 @@ export const ValueTester = ({ number, string, boolean, object, array }: RadiantV
 		</radiant-tester>
 	);
 };
-
-declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-tester': HtmlTag & RadiantValueTesterProps;
-		}
-	}
-}

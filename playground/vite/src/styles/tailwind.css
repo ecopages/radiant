@@ -1,16 +1,39 @@
-@import './tokens/colors.css';
-@import './tokens/misc.css';
-@import './components/button.css';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/**
+ * Playground canvas styles.
+ * Local Tailwind for playground `@apply`; compiled radiant-ui theme for CSS variables.
+ * Re-map semantic roles into `@theme` so local `@apply` can use them against dist CSS.
+ */
+@import 'tailwindcss';
+@import '@ecopages/radiant-ui/themes/default';
+
+@theme {
+	--color-background: var(--background);
+	--color-on-background: var(--on-background);
+	--color-surface: var(--surface);
+	--color-on-surface: var(--on-surface);
+	--color-border: var(--border);
+	--color-focus-ring: var(--focus-ring);
+}
+
+:root {
+	color-scheme: light;
+}
 
 body {
-	@apply container mx-auto p-4;
+	width: min(100% - 2 * var(--space-inset), 80rem);
+	margin-inline: auto;
+	padding: var(--space-inset);
+	background-color: var(--background);
+	color: var(--on-background);
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 main {
-	@apply flex flex-col gap-4;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-stack);
 }
 
 a,
@@ -20,6 +43,7 @@ select,
 textarea {
 	&:focus,
 	&:focus-visible {
-		@apply outline outline-2 outline-focus-ring rounded-sm;
+		outline: 2px solid var(--focus-ring);
+		border-radius: var(--border-radius-xs, 0.125rem);
 	}
 }

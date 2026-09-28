@@ -1,13 +1,29 @@
-import type { RadiantElement } from '../../../core/radiant-element';
+import type { ContextHostLike } from '../../context-host';
+import { REACTIVE_HOST } from '../../../core/reactive-host';
 import { ContextProvider } from '../../context-provider';
 import type { UnknownContext } from '../../types';
 import type { ProvideContextOptions } from '../provide-context';
 
-export function provideContext<T extends UnknownContext>({ context, initialValue, hydrate }: ProvideContextOptions<T>) {
-	return <C extends RadiantElement, V>(_: undefined, targetContext: ClassFieldDecoratorContext<C, V>) => {
+export function provideContext<T extends UnknownContext>({
+	context,
+	initialValue,
+	hydrate,
+	serialize,
+}: ProvideContextOptions<T>) {
+	return <C extends ContextHostLike, V>(target: undefined, targetContext: ClassFieldDecoratorContext<C, V>) => {
+		void target;
 		const contextName = String(targetContext.name);
 		targetContext.addInitializer(function (this: C) {
-			(this as any)[contextName] = new ContextProvider<T>(this, { context, initialValue, hydrate });
+			const hostRecord = this as C & Record<string, unknown>;
+			const provider = new ContextProvider<T>(this, {
+				context,
+				hydrationKey: contextName,
+				initialValue,
+				hydrate,
+				serialize,
+			});
+			hostRecord[contextName] = provider;
+			this[REACTIVE_HOST].ssrRegistry.registerContextProvider(contextName, provider);
 			this.connectedContextCallback(context);
 		});
 	};

@@ -1,3 +1,5 @@
 **/*.mdx
 # all .eco directories
 **/*.eco
+# vitest file snapshots are compared byte for byte
+**/__snapshots__/

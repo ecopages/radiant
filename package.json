@@ -1,45 +1,49 @@
 {
 	"name": "@ecopages/radiant-monorepo",
+	"private": true,
 	"description": "A minimalist web component library designed for simplicity and flexibility",
-	"publishConfig": {
-		"access": "public"
-	},
+	"packageManager": "pnpm@11.17.0",
 	"scripts": {
-		"clean": "clear && bunx npkill -D -y && rm -rf bun.lock && bun install",
-		"format": "bunx prettier --write .",
-		"lint": "bunx oxlint . --fix",
-		"lint-staged": "lint-staged",
+		"clean": "clear && pnpm dlx npkill -D -y && rm -rf node_modules pnpm-lock.yaml && pnpm install",
+		"format": "pnpm exec prettier --write .",
+		"lint": "pnpm exec oxlint .",
+		"lint:complexity": "pnpm exec oxlint . --deny complexity --max-warnings 0",
+		"lint:fix": "pnpm exec oxlint . --fix",
+		"typecheck": "pnpm run typecheck:packages && tsc --noEmit -p apps/docs/tsconfig.json && tsc --noEmit -p apps/radiant-ui/tsconfig.json",
+		"typecheck:packages": "tsc --noEmit -p packages/jsx/tsconfig.json && tsc --noEmit -p packages/signals/tsconfig.json && tsc --noEmit -p packages/radiant/tsconfig.json && tsc --noEmit -p packages/vite-plugin-radiant/tsconfig.json && tsc --noEmit -p packages/storybook-radiant-vite/tsconfig.json && tsc --noEmit -p packages/radiant-ui/tsconfig.app.json && tsc --noEmit -p playground/vite/tsconfig.json && tsc --noEmit -p playground/vite-nitro/tsconfig.json",
 		"prepare:husky": "husky",
-		"build:all": "bun run --filter '*' build:lib | tee /dev/null",
-		"test:all": "bun run --filter '*' test:lib | tee /dev/null",
+		"build:all": "pnpm --filter @ecopages/signals build:lib && pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/vite-plugin-radiant build:lib && pnpm --filter @ecopages/storybook-radiant-vite build && pnpm --filter @ecopages/radiant-ui build:lib",
+		"test:all": "pnpm -r --sequential test:all",
+		"size:check": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:check",
+		"size:report": "pnpm -r --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run size:report",
 		"changeset": "changeset",
+		"version-packages": "changeset version && pnpm install --lockfile-only",
 		"commit": "better-commits",
-		"prerelease": "bun run build:all && bun run test:all",
+		"prerelease": "pnpm run typecheck && pnpm run build:all && pnpm run test:all",
 		"release": "changeset publish",
-		"dev:docs": "bun run --filter radiant-docs dev | tee /dev/null",
-		"watch:lib": "bun run --filter '*' watch:lib | tee /dev/null",
-		"dev:playground-vite": "bun run --filter playground-vite dev | tee /dev/null & bun run watch:lib ",
-		"dev:playground-vite:legacy": "bun run --filter playground-vite dev:legacy | tee /dev/null & bun run watch:lib | tee /dev/null",
-		"build:docs": "bun run --filter radiant-docs build | tee /dev/null",
-		"preview:docs": "bun run --filter radiant-docs preview"
+		"dev:docs": "pnpm --filter radiant-docs dev",
+		"dev:ui": "pnpm --filter @ecopages/radiant-ui storybook",
+		"watch:lib": "pnpm -r --parallel --filter \"@ecopages/jsx\" --filter \"@ecopages/signals\" --filter \"@ecopages/radiant\" run watch:lib",
+		"dev:playground-vite": "pnpm --filter playground-vite dev & pnpm run watch:lib",
+		"dev:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro dev & pnpm run watch:lib",
+		"dev:radiant-ui-docs": "pnpm --filter @ecopages/radiant-ui-docs dev",
+		"build:radiant-ui-docs": "pnpm --filter @ecopages/radiant-ui-docs build",
+		"build:kitchen-sink-vite-nitro": "pnpm --filter kitchen-sink-vite-nitro build",
+		"build:docs": "pnpm --filter @ecopages/radiant-ui build:lib && pnpm --filter radiant-docs build",
+		"preview:docs": "pnpm --filter radiant-docs preview"
 	},
 	"devDependencies": {
-		"@changesets/changelog-github": "^0.5.0",
-		"@changesets/cli": "^2.27.7",
-		"@types/bun": "latest",
+		"@ecopages/oxlint-config": "workspace:*",
+		"@changesets/changelog-github": "^1.0.0",
+		"@changesets/cli": "^3.0.0",
+		"@types/ws": "^8.18.1",
 		"better-commits": "^1.18.1",
-		"lint-staged": "^15.2.2",
-		"oxlint": "^1.32.0",
-		"prettier": "^3.7.4"
+		"oxlint": "catalog:",
+		"playwright": "^1.52.0",
+		"prettier": "^3.7.4",
+		"tsx": "^4.20.6",
+		"typescript": "catalog:"
 	},
-	"peerDependencies": {
-		"typescript": "^5.5.3"
-	},
-	"workspaces": [
-		"apps/*",
-		"packages/*",
-		"playground/*"
-	],
 	"dependencies": {
 		"rehype-pretty-code": "^0.14.1"
 	}

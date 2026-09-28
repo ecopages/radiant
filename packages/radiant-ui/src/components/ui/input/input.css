@@ -1,0 +1,25 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-input {
+		@apply w-full border border-border bg-background text-on-background outline-none;
+		border-radius: var(--radius-control);
+		height: var(--size-control-md);
+		padding-inline: var(--space-control-x);
+		padding-block: 0;
+		font-size: var(--text-control-input);
+		transition-duration: var(--duration-normal);
+	}
+
+	.rui-input:focus-visible {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-input:disabled {
+		@apply cursor-not-allowed opacity-disabled;
+	}
+
+	.rui-input[aria-invalid='true'] {
+		@apply border-error;
+	}
+}

@@ -13,7 +13,7 @@ export const TodoItem = ({ id, complete, text }: Todo) => {
 		<radiant-todo-item complete={complete} class="todo__item" id={id}>
 			<label for={`todo-${id}`}>
 				<input id={`todo-${id}`} name={id} type="checkbox" checked={complete} />
-				{text as 'safe'}
+				{text}
 			</label>
 			<button type="button" data-ref="remove-todo" aria-label={`Remove todo: ${id}`} class="todo__item-remove">
 				<svg

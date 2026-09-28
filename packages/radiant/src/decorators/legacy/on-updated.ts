@@ -1,23 +1,22 @@
-import type { RadiantElement } from '../../core/radiant-element';
+import { REACTIVE_HOST, type ReactiveHostInternals, type UpdatedCallback } from '../../core/reactive-host';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
+
+type LegacyUpdatedHost = {
+	readonly [REACTIVE_HOST]: ReactiveHostInternals;
+};
 
 /**
- * A decorator to subscribe to an updated callback when a reactive field or property changes.
- * @param eventConfig The event configuration.
+ * Legacy-decorator implementation for `@onUpdated(...)`.
+ *
+ * @param keyOrKeys - Reactive members whose changes run the method once per changed batch.
  */
 export function onUpdated(keyOrKeys: string | string[]) {
-	return (target: RadiantElement, methodName: string) => {
-		const originalConnectedCallback = target.connectedCallback;
+	const keys = Array.isArray(keyOrKeys) ? keyOrKeys : [keyOrKeys];
 
-		target.connectedCallback = function (this: RadiantElement) {
-			const boundedMethod = (this as any)[methodName].bind(this);
-			if (Array.isArray(keyOrKeys)) {
-				for (const key of keyOrKeys) {
-					(this as RadiantElement).registerUpdateCallback(key, boundedMethod);
-				}
-			} else if (typeof keyOrKeys === 'string') {
-				(this as RadiantElement).registerUpdateCallback(keyOrKeys, boundedMethod);
-			}
-			originalConnectedCallback.call(this);
-		};
+	return (target: LegacyUpdatedHost, methodName: string) => {
+		registerLegacyInstanceInitializer(target, (element) => {
+			const method = (element as unknown as Record<string, UpdatedCallback>)[methodName];
+			element[REACTIVE_HOST].registerUpdatedCallback(keys, method.bind(element));
+		});
 	};
 }

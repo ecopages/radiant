@@ -1,21 +1,6 @@
-import type { RadiantElement, RadiantElementEventListener } from '../../core/radiant-element';
+import { createEventListener, type EventListenerHost } from '../../helpers/create-event-listener';
+import type { OnEventConfig } from '../on-event';
 import type { Method } from '../../types';
-
-type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
-	(
-		| {
-				selector: string;
-		  }
-		| {
-				ref: string;
-		  }
-		| {
-				window: boolean;
-		  }
-		| {
-				document: boolean;
-		  }
-	);
 
 /**
  * A decorator to subscribe to an event on the target element.
@@ -32,37 +17,12 @@ type OnEventConfig = Pick<RadiantElementEventListener, 'type' | 'options'> &
  * @param eventConfig.options Optional. An options object that specifies characteristics about the event listener.
  */
 export function onEvent(eventConfig: OnEventConfig) {
-	return function <T extends Method>(originalMethod: T, context: ClassMethodDecoratorContext): void {
-		context.addInitializer(function (this: any) {
-			const boundMethod = originalMethod.bind(this);
-
-			if ('window' in eventConfig) {
-				window.addEventListener(eventConfig.type, boundMethod, eventConfig.options);
-				(this as RadiantElement).registerCleanupCallback(() => {
-					window.removeEventListener(eventConfig.type, boundMethod, eventConfig.options);
-				});
-			}
-
-			if ('document' in eventConfig) {
-				document.addEventListener(eventConfig.type, boundMethod, eventConfig.options);
-				(this as RadiantElement).registerCleanupCallback(() => {
-					document.removeEventListener(eventConfig.type, boundMethod, eventConfig.options);
-				});
-			}
-
-			const selector =
-				'selector' in eventConfig
-					? eventConfig.selector
-					: 'ref' in eventConfig && `[data-ref="${eventConfig.ref}"]`;
-
-			if (selector) {
-				(this as RadiantElement).subscribeEvent({
-					selector: selector,
-					type: eventConfig.type,
-					listener: boundMethod,
-					options: eventConfig?.options ?? undefined,
-				});
-			}
+	return function <Host extends EventListenerHost, T extends Method>(
+		originalMethod: T,
+		context: ClassMethodDecoratorContext<Host, T>,
+	): void {
+		context.addInitializer(function (this: Host) {
+			createEventListener(this, eventConfig, originalMethod.bind(this));
 		});
 	};
 }

@@ -1,0 +1,182 @@
+---
+title: Popover
+description: Popovers anchor rich content to a trigger element (filters, mini forms, or contextual details) without modal focus trapping.
+category: Overlays
+---
+
+import { meta as PopoverMeta, Default } from '@/content/stories/popover';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Popover
+
+<p class="docs-lede">Popovers anchor rich content to a trigger element (filters, mini forms, or contextual details) without modal focus trapping.</p>
+
+## Try it
+
+<Demo of={Default} meta={PopoverMeta} />
+
+## Usage
+
+Wrap a child `RuiPopover` in `RuiPopoverTrigger`. Control `open`, `placement`, and `portal` on the trigger or popover.
+
+```tsx
+import { RuiPopover, RuiPopoverTrigger, RuiPopoverContent } from '@ecopages/radiant-ui/popover';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiPopoverTrigger trigger={<RuiButton variant="outline">Filter</RuiButton>}>
+  <RuiPopover placement="bottom-start">
+    <RuiPopoverContent>
+      <p>Show items from the last 7 days.</p>
+    </RuiPopoverContent>
+  </RuiPopover>
+</RuiPopoverTrigger>
+```
+
+## Custom markup
+
+`<rui-popover>` coordinates any light-DOM tree that matches its query contract. Pair with
+`<rui-popover-trigger>` for click-to-toggle, or pass `anchor` for an external selector.
+
+```tsx
+import '@ecopages/radiant-ui/popover';
+
+<rui-popover-trigger>
+  <div data-ref="root" class="rui-popover-trigger">
+    <span data-popover-trigger>
+      <button type="button">Filter</button>
+    </span>
+    <rui-popover placement="bottom-start">
+      <div data-ref="host" class="rui-popover-host">
+        <div data-ref="surface" class="rui-popover rui-floating" role="dialog">
+          <p>Show items from the last 7 days.</p>
+        </div>
+      </div>
+    </rui-popover>
+  </div>
+</rui-popover-trigger>;
+```
+
+For a standalone popover anchored elsewhere, omit `rui-popover-trigger` and set `anchor="#my-button"` on `<rui-popover>`.
+
+## Listbox variant
+
+<p>Set `variant="listbox"` when the popover hosts a `RuiListbox`; width and focus behavior adapt automatically.</p>
+
+## Match anchor width
+
+<p>Enable `matchAnchorWidth` for select-style popovers so the panel aligns with the trigger.</p>
+
+## Theming
+
+The popover surface maps to **semantic surface roles**, never Tailwind palette steps. The panel is often portaled; override `--rui-popover-*` on `.rui-popover`.
+
+| Part | Default | Override |
+| --- | --- | --- |
+| Fill / border / radius / shadow | `--background`, `--border`, `--radius-container`, `--shadow-overlay` | `--rui-popover-surface`, `--rui-popover-border-color`, `--rui-popover-radius`, `--rui-popover-shadow` |
+| Listbox variant | Stripped padding for embedded listboxes | class `rui-popover--listbox` |
+| Z-order | `popover` | theme z-index |
+
+```css
+.rui-popover {
+  --rui-popover-radius: var(--radius-control);
+}
+```
+
+## Accessibility
+
+- Triggers expose `aria-expanded` when the popover is open.
+- Content is focusable and dismissible with Escape.
+- Do not trap focus; users should reach surrounding content without closing first.
+
+## API
+
+`RuiPopover` is a custom element (`<rui-popover>`) positioning a floating `role="dialog"` surface. `RuiPopoverTrigger` (`<rui-popover-trigger>`) coordinates open state with the trigger click.
+
+### Attributes (`<rui-popover>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the popover is open (controlled). |
+| `placement` | `RuiPlacement` | `bottom` | Placement relative to the anchor. |
+| `portal` | `boolean` | `true` | Teleport the surface to `document.body`. |
+| `match-anchor-width` | `boolean` | `false` | Match the anchor width (dropdown menus). |
+| `offset` | `number` | `8` | Gap between anchor and surface in px. |
+| `anchor` | `string` | `''` | CSS selector for an external anchor. |
+| `variant` | `default` · `listbox` | `default` | Surface variant; `listbox` strips padding. |
+
+### Attributes (`<rui-popover-trigger>`)
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `open` | `boolean` | `false` | Whether the popover starts open. |
+
+### Light-DOM contract (`<rui-popover>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="host"]` | yes | — | anchor + surface wrapper |
+| `[data-ref="surface"]` | yes | `id`, portal position | floating panel content |
+| `[data-popover-trigger]` | yes* | `aria-controls`, `aria-expanded` on anchor | pressable anchor wrapper |
+
+\* Or use the `anchor` attribute with a CSS selector instead of `[data-popover-trigger]`.
+
+Nested hosts: `rui-popover-trigger` (parent provides the trigger target).
+
+### Light-DOM contract (`<rui-popover-trigger>`)
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | — | click delegate root |
+| `[data-popover-trigger]` | yes | — | pressable anchor |
+| `rui-popover` | yes | syncs `open` both ways | child popover element |
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-open-change` | `{ open: boolean }` | Emitted when open state changes. |
+
+### Methods (`<rui-popover>`)
+
+| Method | Description |
+| --- | --- |
+| `setOpen(next, emit?)` | Toggle open state. Pass `emit = false` to sync without firing `rui-open-change`. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiPopoverTrigger` | `[data-ref="root"]`, `[data-popover-trigger]` | Wraps child `rui-popover`. Requires `trigger` prop. |
+| `RuiPopover` | `[data-ref="host"]`, `[data-ref="surface"]`, optional `[data-popover-trigger]` | `trigger` prop for inline anchor; `children` are surface content. |
+| `RuiPopoverContent` | — | Body inside `[data-ref="surface"]`; not a query target. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-popover-host` | Anchor + surface wrapper. |
+| `.rui-popover` | Floating surface (`role="dialog"`); `background` + `rounded-container` + `shadow-overlay`. |
+| `.rui-popover--listbox` | Stripped padding for embedded listboxes. |
+| `.rui-popover-trigger` | Trigger + popover wrapper. |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Surface | `--background`, `--on-background`, `--border`, `--radius-container`, `--shadow-overlay` |
+| Z-order | `--z-popover` |

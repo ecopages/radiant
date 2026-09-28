@@ -1,40 +1,87 @@
-import type { RadiantElement } from '../../core/radiant-element';
-import { type AttributeTypeConstant, isValueOfType } from '../../utils/attribute-utils';
+import {
+	type PropTransform,
+	type ReactivePropertyOptions,
+	validateReactivePropertyDefault,
+} from '../../core/reactive-prop-core';
+import type { ReactiveHostLike } from '../../core/reactive-host';
+import { registerReactivePropDefinition } from '../../core/reactive-prop-metadata';
+import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
+import { bootstrapReactiveMemberBinding } from './member-bootstrap';
 
-type ReactivePropertyOptions<T> = {
-	type: AttributeTypeConstant;
-	reflect?: boolean;
-	attribute?: string;
-	defaultValue?: T;
+type ReactivePropHost<T> = {
+	createReactiveProp(propertyName: string, options: ReactivePropertyOptions<T>): void;
 };
 
 /**
- * A decorator to define a reactive property.
- * Every time the property changes, the `updated` method will be called.
- * @param options The options for the reactive property.
- * @param options.type The type of the property value.
- * @param options.reflect Whether to reflect the property to the attribute.
- * @param options.attribute The name of the attribute.
- * @param options.defaultValue The default value of the property.
+ * Legacy-decorator implementation for `@prop(...)`.
+ *
+ * The decorated host is expected to expose `createReactiveProp(...)`, which
+ * lets both `RadiantElement` and `RadiantController` share the same public
+ * decorator while keeping their runtime channels different.
  */
-export function reactiveProp<T = unknown>({ type, attribute, reflect, defaultValue }: ReactivePropertyOptions<T>) {
-	if (defaultValue !== undefined && !isValueOfType(type, defaultValue)) {
-		throw new Error(`defaultValue does not match the expected type for ${type.name}`);
-	}
+export function reactiveProp<T = unknown>(propOptions: ReactivePropertyOptions<T>) {
+	const { type, attribute, reflect, defaultValue, bind, transform } = propOptions;
+	const hasDefaultValue = 'defaultValue' in propOptions;
+	validateReactivePropertyDefault(type, defaultValue);
 
-	return (target: RadiantElement, propertyName: string) => {
+	return (target: ReactivePropHost<T>, propertyName: string) => {
 		const attributeKey = attribute ?? propertyName;
+		const options: ReactivePropertyOptions<unknown> = {
+			type,
+			reflect,
+			attribute: attributeKey,
+			defaultValue,
+			bind,
+			transform: transform as PropTransform<unknown> | undefined,
+		};
 
-		const originalConnectedCallback = target.connectedCallback;
+		registerReactivePropDefinition(target, propertyName, options);
 
-		target.connectedCallback = function (this: RadiantElement) {
-			originalConnectedCallback.call(this);
-			this.createReactiveProp(propertyName, {
+		const ssrStoreKey = Symbol.for(`@ecopages/radiant.ssr-prop:${propertyName}`);
+		const ssrAssignedKey = Symbol.for(`@ecopages/radiant.ssr-prop-assigned:${propertyName}`);
+
+		Object.defineProperty(target, propertyName, {
+			get(this: ReactivePropHost<T> & Record<PropertyKey, unknown>) {
+				return this[ssrStoreKey] ?? defaultValue;
+			},
+			set(this: ReactivePropHost<T> & Record<PropertyKey, unknown>, value: T) {
+				this[ssrStoreKey] = value;
+				this[ssrAssignedKey] = true;
+			},
+			configurable: true,
+			enumerable: true,
+		});
+
+		registerLegacyInstanceInitializer(target, (element) => {
+			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+			const bootstrapValue = (initializerValue ?? defaultValue) as T;
+			bootstrapReactiveMemberBinding(element as unknown as ReactiveHostLike, propertyName, bootstrapValue, bind);
+		});
+
+		registerLegacyPostConstructionInitializer(target, (element, phase) => {
+			const host = element as ReactivePropHost<T> & Record<PropertyKey, unknown>;
+			const initializerValue = element[propertyName as keyof typeof element] as T | undefined;
+			const wasAssigned = host[ssrAssignedKey] === true;
+			const hasOwnStagingValue = Object.prototype.hasOwnProperty.call(element, propertyName);
+			const ownStagingValue = hasOwnStagingValue
+				? ((element as Record<PropertyKey, unknown>)[propertyName] as T)
+				: undefined;
+			const resolvedDefaultValue = wasAssigned
+				? initializerValue
+				: phase === 'ssr' && hasOwnStagingValue && ownStagingValue !== defaultValue
+					? ownStagingValue
+					: defaultValue === undefined
+						? initializerValue
+						: defaultValue;
+
+			element.createReactiveProp(propertyName, {
 				type,
 				reflect,
 				attribute: attributeKey,
-				defaultValue,
+				bind,
+				transform,
+				...((hasDefaultValue || resolvedDefaultValue !== undefined) && { defaultValue: resolvedDefaultValue }),
 			});
-		};
+		});
 	};
 }

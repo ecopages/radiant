@@ -1,0 +1,37 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-avatar {
+		--rui-avatar-size: var(--space-10);
+		--rui-avatar-radius: var(--radius-pill);
+		--rui-avatar-surface: var(--surface-container);
+		@apply relative inline-flex shrink-0 items-center justify-center overflow-hidden font-medium text-on-surface;
+		inline-size: var(--rui-avatar-size);
+		block-size: var(--rui-avatar-size);
+		border-radius: var(--rui-avatar-radius);
+		background-color: var(--rui-avatar-surface);
+	}
+
+	.rui-avatar--sm {
+		--rui-avatar-size: var(--space-8);
+		@apply text-xs;
+	}
+
+	.rui-avatar--md {
+		--rui-avatar-size: var(--space-10);
+		@apply text-sm;
+	}
+
+	.rui-avatar--lg {
+		--rui-avatar-size: var(--space-12);
+		@apply text-body;
+	}
+
+	.rui-avatar__image {
+		@apply size-full object-cover;
+	}
+
+	.rui-avatar__fallback {
+		@apply flex size-full items-center justify-center uppercase;
+	}
+}

@@ -1,5 +1,7 @@
 import type { RadiantElement } from '../../core/radiant-element';
-import { EventEmitter, type EventEmitterConfig } from '../../tools/event-emitter';
+import { createEvent } from '../../helpers/create-event';
+import type { EventEmitterConfig } from '../../tools/event-emitter';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
 
 /**
  * Decorator that attaches an EventEmitter to the class field property.
@@ -9,18 +11,18 @@ import { EventEmitter, type EventEmitterConfig } from '../../tools/event-emitter
  */
 export function event(eventConfig: EventEmitterConfig) {
 	return (proto: RadiantElement, propertyKey: string) => {
-		const originalConnectedCallback = proto.connectedCallback;
-		proto.connectedCallback = function () {
-			this.registerEventEmitter(eventConfig.name, new EventEmitter(this, eventConfig));
+		registerLegacyInstanceInitializer(proto, (element) => {
+			const emitter = createEvent(element, eventConfig);
 
-			Object.defineProperty(this, propertyKey, {
-				get() {
-					return this.eventEmitters.get(eventConfig.name);
-				},
-				enumerable: true,
-				configurable: true,
+			element.registerConnectedCallback(() => {
+				Object.defineProperty(element, propertyKey, {
+					get() {
+						return emitter;
+					},
+					enumerable: true,
+					configurable: true,
+				});
 			});
-			originalConnectedCallback.call(this);
-		};
+		});
 	};
 }

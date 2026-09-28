@@ -1,4 +1,5 @@
-import { type EventEmitter, RadiantElement, customElement, event, onEvent, query } from '@ecopages/radiant';
+import type { EventEmitter } from '@ecopages/radiant/tools/event-emitter';
+import { RadiantElement, customElement, event, onEvent, query } from '@ecopages/radiant';
 import { debounce } from '@ecopages/radiant/decorators/debounce';
 
 enum RadiantEventEvents {
@@ -74,14 +75,5 @@ setTimeout(() => {
 declare global {
 	interface HTMLElementEventMap {
 		[RadiantEventEvents.CustomEvent]: CustomEvent<RadiantEventDetail>;
-	}
-
-	namespace JSX {
-		interface IntrinsicElements {
-			'radiant-event-emitter': HtmlTag;
-			'radiant-event-listener': HtmlTag;
-			'radiant-keyboard-keys': HtmlTag;
-			'radiant-sizer': HtmlTag;
-		}
 	}
 }

@@ -1,0 +1,26 @@
+{
+	"extends": "../../configs/tsconfig.base.json",
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"allowImportingTsExtensions": true,
+		"esModuleInterop": true,
+		"experimentalDecorators": true,
+		"forceConsistentCasingInFileNames": true,
+		"jsx": "react-jsx",
+		"jsxImportSource": "@ecopages/jsx",
+		"lib": ["ES2023", "DOM", "DOM.Iterable"],
+		"noEmit": true,
+		"noImplicitOverride": true,
+		"paths": {
+			"@/*": ["./src/*"],
+			"ecopages:content/components": ["./types/ecopages-content-components.d.ts"],
+			"ecopages:content/components/server": ["./types/ecopages-content-components-server.d.ts"]
+		},
+		"resolveJsonModule": true,
+		"target": "ES2022",
+		"types": ["node"],
+		"useDefineForClassFields": true,
+		"verbatimModuleSyntax": true
+	},
+	"include": ["src", "eco.config.ts", "modules.d.ts", "types"]
+}

@@ -1,77 +1,41 @@
 @import 'tailwindcss';
+@import '@ecopages/radiant-ui/themes/default';
 @import './theme.css';
+@import '@ecopages/radiant-ui/styles.css';
 @import './vendor/shiki.css';
 @import './fonts.css';
+@import './components/prose.css';
 
-body {
-	@apply bg-background-accent text-on-background min-h-svh w-screen overflow-x-hidden font-sans;
+@source inline("sr-only");
+
+html {
+	scrollbar-gutter: stable;
 }
 
-.prose {
-	h1 {
-		@apply text-4xl font-bold text-on-background-accent my-6 font-heading;
-	}
+* {
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in oklab, var(--color-on-background) 30%, transparent) var(--color-background-accent);
+}
 
-	h2 {
-		@apply text-3xl font-bold text-on-background-accent my-6 font-heading;
-	}
+*::-webkit-scrollbar {
+	width: 0.75rem;
+	height: 0.75rem;
+}
 
-	h3 {
-		@apply text-2xl font-bold text-on-background-accent my-5 font-heading;
-	}
+*::-webkit-scrollbar-track {
+	background: var(--color-background-accent);
+}
 
-	h4 {
-		@apply text-xl font-bold text-on-background-accent my-5 font-heading;
-	}
+*::-webkit-scrollbar-thumb {
+	background: color-mix(in oklab, var(--color-on-background) 30%, transparent);
+	border: 0.1875rem solid var(--color-background-accent);
+	border-radius: 999px;
+}
 
-	h5 {
-		@apply text-lg font-bold text-on-background-accent my-4 font-heading;
-	}
+*::-webkit-scrollbar-thumb:hover {
+	background: color-mix(in oklab, var(--color-on-background) 42%, transparent);
+}
 
-	h6 {
-		@apply text-base font-bold text-on-background-accent my-4 font-heading;
-	}
-
-	p {
-		@apply text-base text-on-background my-4;
-	}
-
-	a {
-		@apply text-link underline;
-	}
-
-	ul,
-	ol {
-		@apply list-disc pl-8 my-4 text-on-background;
-	}
-
-	table {
-		@apply w-full text-left border-collapse my-8 text-sm;
-
-		thead {
-			@apply border-b border-border bg-background-accent/50;
-
-			th {
-				@apply py-3 px-4 font-semibold text-on-background-accent;
-			}
-		}
-
-		tbody {
-			tr {
-				@apply border-b border-border/50 transition-colors hover:bg-background-accent/30;
-
-				td {
-					@apply py-3 px-4 text-on-background align-top;
-
-					code {
-						@apply whitespace-nowrap;
-					}
-				}
-
-				&:last-child {
-					@apply border-0;
-				}
-			}
-		}
-	}
+body {
+	@apply text-on-background min-h-svh w-screen overflow-x-hidden font-sans relative z-0;
 }

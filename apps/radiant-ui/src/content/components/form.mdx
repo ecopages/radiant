@@ -1,0 +1,218 @@
+---
+title: Form
+description: Forms coordinate validation, default values, and submission across `RuiField` children without external form libraries.
+category: Forms
+---
+
+import { meta as FormMeta, Default } from '@/content/stories/form';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Form
+
+<p class="docs-lede">Forms coordinate validation, default values, and submission across `RuiField` children without external form libraries.</p>
+
+## Try it
+
+<Demo of={Default} meta={FormMeta} />
+
+## Usage
+
+Wrap fields in `RuiForm` and handle validated values with `onSubmit`. Choose `mode` to control when validation runs.
+
+```tsx
+import { RuiForm } from '@ecopages/radiant-ui/form';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+import { RuiInput } from '@ecopages/radiant-ui/input';
+import { RuiButton } from '@ecopages/radiant-ui/button';
+
+<RuiForm mode="onSubmit" onSubmit={handleSubmit}>
+  <RuiField name="name" rules={{ required: 'Name is required' }}>
+    <RuiLabel>Full name</RuiLabel>
+    <RuiInput />
+  </RuiField>
+  <RuiButton type="submit">Create account</RuiButton>
+</RuiForm>
+```
+
+## Custom markup
+
+`<rui-form>` coordinates validation across `rui-field` connectors and a composed native form. The `RuiForm` helper stamps `[data-ref="form"]`; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/form';
+
+<rui-form mode="onSubmit">
+  <form class="rui-form" data-ref="form" noValidate>
+    <rui-field name="name">
+      <div class="rui-field">
+        <label class="rui-label" data-rui-field-label>Name</label>
+        <input type="text" data-rui-control class="rui-input" />
+      </div>
+    </rui-field>
+    <button type="submit">Submit</button>
+  </form>
+</rui-form>
+```
+
+Submit buttons outside the native `<form>` are associated via the `form` attribute. Fields register through context — the form does not query control targets directly.
+
+Load `@ecopages/radiant-ui/styles.css` once in your app to style the form and every composed control. When bundling styles per component, import `@ecopages/radiant-ui/form/styles.css` plus the stylesheet for every component used inside the form, such as `field/styles.css`, `textarea/styles.css`, or `number-field/styles.css`.
+
+## Validation timing
+
+<p>`onSubmit` validates once on submit and is best for short forms. Use `onBlur` or `onChange` when immediate feedback helps data entry.</p>
+
+## Compose with Radiant controls
+
+<p>Every `RuiField` child should be a Radiant control (`RuiInput`, `RuiSelect`, `RuiDateInput`, …). The form store discovers values through the Field control protocol; unmarked native inputs are not registered.</p>
+
+## Native form submission
+
+`RuiForm` always contains a native `<form>`. These are two channels:
+
+- **Store** (`onSubmit` / `rui-submit`): every `RuiField` value
+- **Listed controls** (`new FormData(form)` and `action` / `method` navigation): only what the browser lists
+
+`onSubmit` skips native navigation. `action` / `method` without `onSubmit` POSTs listed controls only.
+
+Listed:
+
+- Inner native controls: `RuiInput`, `RuiTextarea`, `RuiCheckbox`, `RuiSwitch`, `RuiRadioGroup`, `RuiCheckboxGroup`
+- Form-associated hosts (`name` on the host): `rui-date-input`, `rui-number-field`, `rui-slider`, `rui-knob`. An empty named date submits `''`. A range slider also submits `{name}-max`. Number-field submits the raw number, not the formatted display
+- `RuiDateField` is not listed; it copies `name` onto the nested `rui-date-input`
+- `RuiDateRangePicker` is not listed; `start-name` / `end-name` land on the nested `rui-date-input` hosts
+- `RuiField` copies its `name` onto that control. The field element itself is not listed
+
+Store-only (not in `FormData`): `RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiTagGroup`.
+
+### Custom form-associated hosts
+
+`RuiField` connects a control to the `RuiForm` store. Native forms use a separate channel: the browser lists a control in `FormData` only when a native form control has a name or a form-associated custom element supplies a value through `ElementInternals`. Register a third-party host before its field connects. Registration supplies store value access and name wiring; it does not make the host form-associated.
+
+```ts
+import { customElement, prop } from '@ecopages/radiant';
+import { FormAssociatedElement, type FormValue } from '@ecopages/radiant/form-associated-element';
+import { registerFieldControl } from '@ecopages/radiant-ui/form';
+
+@customElement('x-tone')
+class ToneControl extends FormAssociatedElement {
+  @prop({ type: String, reflect: true, defaultValue: '' }) value!: string;
+
+  protected override formValue(): FormValue {
+    return this.value;
+  }
+
+  protected override restoreFormState(state: FormValue): void {
+    this.value = typeof state === 'string' ? state : '';
+  }
+}
+
+registerFieldControl('x-tone', {
+  read: (host) => (host as ToneControl).value,
+  write: (host, value) => { (host as ToneControl).value = String(value ?? ''); },
+  submission: 'host',
+});
+```
+
+`FormAssociatedElement` extends `RadiantElement`. Each concrete subclass has its own constructor, so several controls can inherit the base and register under different tags. The base owns the single `ElementInternals`, `name`, `disabled`, effective fieldset disability, submission syncing, and reset. Its inherited static `formAssociated` getter is read when the concrete class is registered. Keep `super.updated(changed)` if you override `updated()`; that call syncs the form value after reactive writes. Likewise, call `super.formDisabledCallback(disabled)` or `super.formResetCallback()` when overriding those browser callbacks.
+
+The first form value sync records the reset state, normally during the first connect update cycle. By default, that state comes from `formValue()`. Override `formState()` when `formValue()` can be `null` for an unnamed host or returns a multi-entry `FormData`; return a value that `restoreFormState()` can read even if the name changes later. For visual disability caused by a parent `<fieldset disabled>`, read `effectiveDisabled` and watch `@onUpdated('effectiveDisabled')`. The catalog hosts support native submission, fieldset disability, and reset. Implement browser constraint validity through `this.internals?.setValidity(...)` and browser state restoration through `formStateRestoreCallback()` when the control needs them; `RuiForm` rules validate through its store.
+
+For other hosts, `submission` is `native` by default (name the native ARIA target), or `none` for a store-only control. Set `data-rui-aria-target` on the host when that native input is inside it.
+
+## Default values
+
+<p>Pass `defaultValues` to pre-populate edit forms. Fields read their initial state from the form store. Multi-value controls (`RuiSelect`, `RuiCombobox`, `RuiListbox`, `RuiCheckboxGroup`, `RuiTagGroup`) store `string[]` — seed them with an array (`{ language: ['ts'] }`). A CSV string still writes because the host parses it; after that the stored value is an array. `RuiSlider` stores `number[]`.</p>
+
+## Theming
+
+Form surfaces map to **semantic surface roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Root (`.rui-form`) | `space-stack` gap |
+
+The form itself carries no color roles; fields, labels, and controls inside keep their own surface / control tokens. Override at the theme layer, not in component CSS.
+
+## API
+
+`RuiForm` renders a native `<form>` inside the coordinating `<rui-form>` custom element. The view maps `defaultValues` / `resolver` to `prop:` bindings and keeps authored children inside that native form.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `mode` | `onSubmit` · `onBlur` · `onChange` · `onTouched` · `all` | `onSubmit` | When validation runs. |
+| `revalidate-mode` | `onSubmit` · `onBlur` · `onChange` · `onTouched` · `all` | `onChange` | When fields re-validate after a failed submit. |
+| `data-default-values` | `string` | | JSON-serialized default values for SSR / JSX attribute channel. |
+| `action` | `string` | | Native form destination when `onSubmit` is not provided. |
+| `method` | `string` | | Native form HTTP method when `onSubmit` is not provided. |
+
+### Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `defaultValues` | `Partial<FieldValues>` | Initial values; fields read their state from the form store. |
+| `resolver` | `Resolver<T>` | Custom validation resolver (e.g. from `createRulesResolver`). |
+| `onSubmit` | `(values: T) => void \| Promise<void>` | Receives the store. Skips native navigation. When omitted, `action` or `method` POSTs listed controls after validation passes. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="form"]` | yes | `id` when wiring orphan submits | native `<form noValidate>` and field children |
+| `button[type="submit"]` outside form | no | `form` attribute | submit buttons on the host |
+| `rui-field` descendants | yes (for registration) | — | each field's control tree |
+
+Nested hosts: `rui-field` and each field's control host.
+
+### Context
+
+`formContext` exposes `ready`, `revision`, `fields`, `errors`, `actions`, and the live `store` once the form is ready. Scoped consumers resolve the nearest provider (`@consumeContext` / `ContextSubscriptionRequestEvent`) and use `context.store` for value reads/writes, `reset`, `subscribe`, and validation. Nested forms still resolve the nearest provider. Hydration payloads contain presentation only (`ready`, `revision`, `fields`, `errors`); they never include the store or its actions. `RuiField` reads the matching field state and applies it to its control as `aria-invalid`; use `fieldContext` for a control's local `error` and `invalid` values.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-submit` | `{ values: T }` | Emitted when validation passes. |
+| `rui-invalid` | `{ errors: Record<string, { message?: string }> }` | Emitted when validation fails on submit. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiForm` | `[data-ref="form"]` on the native form | Passes `defaultValues`, `resolver`, `onSubmit` via `prop:` bindings. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass`):
+
+| Class | Description |
+| --- | --- |
+| `.rui-form` | Root form surface (`<form noValidate>`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Root | `--space-stack` |
+
+## Accessibility
+
+- Submit buttons should use `type="submit"` inside the form for keyboard submission.
+- Announce form-level errors at the top when multiple fields fail validation.
+- Focus the first invalid field after a failed submit attempt.

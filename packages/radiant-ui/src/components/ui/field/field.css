@@ -1,0 +1,26 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-field {
+	@apply block;
+}
+
+@layer components {
+	.rui-field {
+		@apply flex flex-col;
+		gap: var(--space-inline);
+	}
+
+	.rui-field__description {
+		@apply text-on-surface;
+		font-size: var(--text-body-sm, 0.875rem);
+	}
+
+	.rui-field__error {
+		@apply text-error;
+		font-size: var(--text-body-sm, 0.875rem);
+	}
+
+	.rui-field__error[hidden] {
+		display: none;
+	}
+}

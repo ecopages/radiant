@@ -1,5 +1,10 @@
-import type { RadiantElement } from '../../core/radiant-element';
+import { createQuery } from '../../helpers/create-query';
 import type { QueryConfig } from '../query';
+import { registerLegacyInstanceInitializer } from './instance-initializers';
+
+type QueryDecoratorInstance = (Element | { host: Element }) & {
+	registerConnectedCallback(callback: () => void): void;
+};
 
 /**
  * A decorator to query by CSS selector or data-ref attribute.
@@ -24,40 +29,23 @@ import type { QueryConfig } from '../query';
 export function query<T extends Element | Element[]>({
 	cache: shouldBeCached = true,
 	...options
-}: QueryConfig): (proto: RadiantElement, propertyName: string | symbol) => void {
-	return (proto: RadiantElement, propertyKey: string | symbol) => {
-		const privatePropertyKey = Symbol(`__${String(propertyKey)}__cache`);
+}: QueryConfig): (proto: QueryDecoratorInstance, propertyName: string | symbol) => void {
+	return (proto: QueryDecoratorInstance, propertyKey: string | symbol) => {
+		registerLegacyInstanceInitializer(proto, (element) => {
+			element.registerConnectedCallback(() => {
+				const accessor = createQuery<T>(element, {
+					cache: shouldBeCached,
+					...options,
+				});
 
-		const selector = 'selector' in options ? options.selector : `[data-ref="${options.ref}"]`;
-
-		const executeQuery = (instance: RadiantElement) => {
-			let result: T | T[] = [];
-			if (options?.all) {
-				const queried = instance.querySelectorAll(selector);
-				result = queried.length ? (Array.from(queried) as T) : [];
-				return result;
-			}
-
-			return instance.querySelector(selector);
-		};
-
-		const originalConnectedCallback = proto.connectedCallback;
-
-		proto.connectedCallback = function (this: RadiantElement) {
-			Object.defineProperty(this, propertyKey, {
-				get() {
-					if (shouldBeCached) {
-						if (!this[privatePropertyKey] || (options?.all && !this[privatePropertyKey].length)) {
-							this[privatePropertyKey] = executeQuery(this);
-						}
-						return this[privatePropertyKey];
-					}
-					return executeQuery(this) as T;
-				},
-				enumerable: true,
-				configurable: true,
+				Object.defineProperty(element, propertyKey, {
+					get() {
+						return accessor.value;
+					},
+					enumerable: true,
+					configurable: true,
+				});
 			});
-			originalConnectedCallback.call(this);
-		};
+		});
 	};
 }

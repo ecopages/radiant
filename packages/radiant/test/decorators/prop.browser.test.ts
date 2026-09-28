@@ -1,0 +1,589 @@
+import { beforeEach, describe, expect, test } from 'vitest';
+import { RadiantController } from '../../src/core/radiant-controller';
+import { RadiantElement } from '../../src/core/radiant-element';
+import { customElement } from '../../src/decorators/custom-element';
+import { prop } from '../../src/decorators/prop';
+
+describe('@prop', () => {
+	beforeEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	describe('string', () => {
+		@customElement('my-reactive-string')
+		class MyReactiveString extends RadiantElement {
+			@prop({ type: String, defaultValue: 'Frank' }) name: string;
+
+			changeName(name: string) {
+				this.name = name;
+			}
+		}
+
+		test('decorator updates the string correctly', () => {
+			const customElement = document.createElement('my-reactive-string') as MyReactiveString;
+			document.body.appendChild(customElement);
+			customElement.changeName('John');
+			expect(customElement.name).toEqual('John');
+			customElement.changeName('Jane');
+			expect(customElement.name).toEqual('Jane');
+		});
+
+		test('decorator has the correct default string value', () => {
+			const customElement = document.createElement('my-reactive-string') as MyReactiveString;
+			document.body.appendChild(customElement);
+			expect(customElement.name).toEqual('Frank');
+		});
+
+		test('honors an attribute set before the element is first connected', async () => {
+			const customElement = document.createElement('my-reactive-string') as MyReactiveString;
+			customElement.setAttribute('name', 'Zoe');
+			document.body.appendChild(customElement);
+
+			await Promise.resolve();
+
+			expect(customElement.name).toEqual('Zoe');
+		});
+	});
+
+	describe('number', () => {
+		@customElement('my-reactive-number')
+		class MyReactiveNumber extends RadiantElement {
+			@prop({ type: Number }) num: number;
+
+			add() {
+				this.num++;
+			}
+		}
+
+		test('decorator updates the number correctly', () => {
+			const customElement = document.createElement('my-reactive-number') as MyReactiveNumber;
+			document.body.appendChild(customElement);
+			customElement.num = 1;
+			expect(customElement.num).toEqual(1);
+			customElement.add();
+			expect(customElement.num).toEqual(2);
+		});
+
+		test('decorator has the correct default number value', () => {
+			const customElement = document.createElement('my-reactive-number') as MyReactiveNumber;
+			document.body.appendChild(customElement);
+			expect(customElement.num).toEqual(0);
+		});
+	});
+
+	describe('boolean', () => {
+		@customElement('my-reactive-boolean')
+		class MyReactiveBoolean extends RadiantElement {
+			@prop({ type: Boolean, defaultValue: false }) bool: boolean;
+
+			toggleBoolean() {
+				this.bool = !this.bool;
+			}
+		}
+		test('decorator updates the boolean correctly', () => {
+			const customElement = document.createElement('my-reactive-boolean') as MyReactiveBoolean;
+			document.body.appendChild(customElement);
+			customElement.bool = true;
+			expect(customElement.bool).toEqual(true);
+			customElement.toggleBoolean();
+			expect(customElement.bool).toEqual(false);
+		});
+
+		test('decorator has the correct default boolean value', () => {
+			const customElement = document.createElement('my-reactive-boolean') as MyReactiveBoolean;
+			document.body.appendChild(customElement);
+			expect(customElement.bool).toEqual(false);
+		});
+
+		test('decorator reads an explicit false attribute value as false on connect', () => {
+			const customElement = document.createElement('my-reactive-boolean') as MyReactiveBoolean;
+			customElement.setAttribute('bool', 'false');
+			document.body.appendChild(customElement);
+
+			expect(customElement.bool).toEqual(false);
+		});
+	});
+
+	describe('object', () => {
+		@customElement('my-reactive-object')
+		class MyReactiveObject extends RadiantElement {
+			@prop({ type: Object, defaultValue: { name: 'Frank' } }) obj: { name: string };
+
+			changeName(name: string) {
+				this.obj.name = name;
+			}
+		}
+
+		test('decorator updates the object correctly', () => {
+			const customElement = document.createElement('my-reactive-object') as MyReactiveObject;
+			document.body.appendChild(customElement);
+			customElement.obj = { name: 'John' };
+			expect(customElement.obj.name).toEqual('John');
+			customElement.changeName('Jane');
+			expect(customElement.obj.name).toEqual('Jane');
+		});
+
+		test('decorator has the correct default object value', () => {
+			const customElement = document.createElement('my-reactive-object') as MyReactiveObject;
+			document.body.appendChild(customElement);
+			expect(customElement.obj.name).toEqual('Frank');
+		});
+	});
+
+	describe('array', () => {
+		@customElement('my-reactive-array')
+		class MyReactiveArray extends RadiantElement {
+			@prop({ type: Array, defaultValue: ['Frank'] }) names: string[];
+
+			addName(name: string) {
+				this.names.push(name);
+			}
+		}
+
+		test('decorator updates the array correctly', () => {
+			const customElement = document.createElement('my-reactive-array') as MyReactiveArray;
+			document.body.appendChild(customElement);
+			customElement.names = ['John'];
+			expect(customElement.names).toEqual(['John']);
+			customElement.addName('Jane');
+			expect(customElement.names).toEqual(['John', 'Jane']);
+		});
+
+		test('decorator has the correct default array value', () => {
+			const customElement = document.createElement('my-reactive-array') as MyReactiveArray;
+			document.body.appendChild(customElement);
+			expect(customElement.names).toEqual(['Frank']);
+		});
+
+		test('reflects JSON array attributes without a transform', async () => {
+			@customElement('my-reactive-array-json-attr')
+			class MyReactiveArrayJsonAttr extends RadiantElement {
+				@prop({ type: Array, reflect: true, defaultValue: [] }) names: string[];
+			}
+
+			const host = document.createElement('my-reactive-array-json-attr') as MyReactiveArrayJsonAttr;
+			host.setAttribute('names', '["John","Jane"]');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			expect(host.names).toEqual(['John', 'Jane']);
+			host.names = ['Zoe'];
+			expect(host.getAttribute('names')).toBe('["Zoe"]');
+		});
+	});
+
+	describe('transform', () => {
+		const commaSeparatedTransform = {
+			fromAttribute: (value: string | null) =>
+				value
+					? value
+							.split(',')
+							.map((item) => item.trim())
+							.filter(Boolean)
+					: [],
+			toAttribute: (values: string[]) => (values.length > 0 ? values.join(',') : null),
+			fromProperty: (value: unknown) => {
+				if (Array.isArray(value)) {
+					return value.map(String);
+				}
+				if (typeof value === 'string') {
+					return value
+						? value
+								.split(',')
+								.map((item) => item.trim())
+								.filter(Boolean)
+						: [];
+				}
+				return [];
+			},
+		};
+
+		@customElement('my-prop-transform-array')
+		class MyPropTransformArray extends RadiantElement {
+			@prop({ type: Array, reflect: true, defaultValue: [], transform: commaSeparatedTransform })
+			value: string[];
+		}
+
+		test('parses comma-separated attributes before connect', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			host.setAttribute('value', 'a,b');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			expect(host.value).toEqual(['a', 'b']);
+		});
+
+		test('reflects array assignments as comma-separated attributes', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			host.value = ['a', 'b'];
+			expect(host.getAttribute('value')).toBe('a,b');
+		});
+
+		test('coerces string property writes through fromProperty', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			Reflect.set(host, 'value', 'a,b');
+			expect(host.value).toEqual(['a', 'b']);
+			expect(host.getAttribute('value')).toBe('a,b');
+		});
+
+		test('removes the attribute when the transformed value is empty', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			host.setAttribute('value', 'a');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			host.value = [];
+			expect(host.value).toEqual([]);
+			expect(host.hasAttribute('value')).toBe(false);
+		});
+
+		test('parses attribute removal through fromAttribute(null)', async () => {
+			const host = document.createElement('my-prop-transform-array') as MyPropTransformArray;
+			host.setAttribute('value', 'a,b');
+			document.body.appendChild(host);
+			await Promise.resolve();
+
+			host.removeAttribute('value');
+			expect(host.value).toEqual([]);
+		});
+	});
+
+	describe('reflect', () => {
+		test('reflects the value retained by a synchronous update callback', async () => {
+			@customElement('my-prop-normalized-reflect')
+			class NormalizedReflect extends RadiantElement {
+				@prop({ type: Number, reflect: true, defaultValue: 0 }) value: number;
+			}
+			const host = new NormalizedReflect();
+			document.body.append(host);
+			await Promise.resolve();
+			host.registerUpdateCallback('value', () => {
+				const normalized = Math.round(host.value);
+				if (normalized !== host.value) host.value = normalized;
+			});
+			host.value = 20.3;
+			expect(host.value).toBe(20);
+			expect(host.getAttribute('value')).toBe('20');
+		});
+
+		@customElement('my-reactive-reflect')
+		class MyReactiveReflect extends RadiantElement {
+			@prop({ type: Number, reflect: true, defaultValue: 5 }) value: number;
+
+			increment() {
+				this.value++;
+			}
+		}
+
+		test('decorator updates the reflect correctly', () => {
+			const customElement = document.createElement('my-reactive-reflect') as MyReactiveReflect;
+			document.body.appendChild(customElement);
+			customElement.value = 1;
+			expect(customElement.value).toEqual(1);
+			customElement.increment();
+			expect(customElement.value).toEqual(2);
+			expect(customElement.getAttribute('value')).toEqual('2');
+		});
+
+		test('decorator has the correct default reflect value', () => {
+			const customElement = document.createElement('my-reactive-reflect') as MyReactiveReflect;
+			document.body.appendChild(customElement);
+			expect(customElement.value).toEqual(5);
+		});
+
+		test('reflects false as "false" when the declared boolean default is true', async () => {
+			@customElement('my-prop-true-default-reflect')
+			class TrueDefaultReflect extends RadiantElement {
+				@prop({ type: Boolean, reflect: true, defaultValue: true }) enabled: boolean;
+			}
+
+			const host = document.createElement('my-prop-true-default-reflect') as TrueDefaultReflect;
+			document.body.appendChild(host);
+			await Promise.resolve();
+			host.enabled = false;
+			expect(host.getAttribute('enabled')).toBe('false');
+		});
+
+		test('does not overwrite an authored reflected attribute with defaultValue after innerHTML', async () => {
+			@customElement('my-prop-reflect-ghost-html')
+			class MyPropReflectGhostHtml extends RadiantElement {
+				@prop({ type: String, reflect: true, defaultValue: 'filled' }) variant: string;
+			}
+
+			document.body.innerHTML = '<my-prop-reflect-ghost-html variant="ghost"></my-prop-reflect-ghost-html>';
+			await Promise.resolve();
+			await Promise.resolve();
+
+			const host = document.querySelector('my-prop-reflect-ghost-html') as MyPropReflectGhostHtml;
+			expect(host.variant).toEqual('ghost');
+			expect(host.getAttribute('variant')).toEqual('ghost');
+		});
+
+		test('keeps an authored value attribute through first-connect when defaultValue is empty', async () => {
+			@customElement('my-prop-empty-reflect')
+			class MyPropEmptyReflect extends RadiantElement {
+				@prop({ type: String, reflect: true, defaultValue: '' }) value = '';
+			}
+
+			const host = document.createElement('my-prop-empty-reflect') as MyPropEmptyReflect;
+			host.setAttribute('value', 'ts');
+			document.body.appendChild(host);
+
+			await Promise.resolve();
+
+			expect(host.value).toEqual('ts');
+			expect(host.getAttribute('value')).toEqual('ts');
+		});
+
+		test('keeps an empty reflected string as the property value', async () => {
+			@customElement('my-prop-empty-after-write')
+			class MyPropEmptyAfterWrite extends RadiantElement {
+				@prop({ type: String, reflect: true, defaultValue: '' }) value = '';
+			}
+
+			const host = document.createElement('my-prop-empty-after-write') as MyPropEmptyAfterWrite;
+			host.setAttribute('value', 'filled');
+			document.body.appendChild(host);
+			await host.updateComplete;
+
+			host.value = '';
+			expect(host.value).toBe('');
+			expect(host.hasAttribute('value')).toBe(false);
+		});
+
+		test('does not replace a property when its custom reflection omits an attribute', async () => {
+			@customElement('my-prop-empty-array-after-write')
+			class MyPropEmptyArrayAfterWrite extends RadiantElement {
+				@prop({
+					type: Array,
+					reflect: true,
+					defaultValue: ['initial'],
+					transform: {
+						fromAttribute: (value) => (value ? value.split(',') : []),
+						toAttribute: (value) => value.join(',') || null,
+					},
+				})
+				values: string[];
+			}
+
+			const host = document.createElement('my-prop-empty-array-after-write') as MyPropEmptyArrayAfterWrite;
+			document.body.appendChild(host);
+			await host.updateComplete;
+			const empty: string[] = [];
+
+			host.values = empty;
+			expect(host.values).toBe(empty);
+			expect(host.hasAttribute('values')).toBe(false);
+		});
+	});
+
+	describe('not reflect', () => {
+		@customElement('my-reactive-not-reflect')
+		class MyReactiveNotReflect extends RadiantElement {
+			@prop({ type: Number, reflect: false, defaultValue: 5 }) value: number;
+
+			increment() {
+				this.value++;
+			}
+		}
+
+		test('decorator updates the value correctly but does not reflect it to the attribute', () => {
+			const customElement = document.createElement('my-reactive-not-reflect') as MyReactiveNotReflect;
+			document.body.appendChild(customElement);
+			customElement.value = 1;
+			expect(customElement.value).toEqual(1);
+			customElement.increment();
+			expect(customElement.value).toEqual(2);
+			expect(customElement.getAttribute('value')).toEqual(null);
+		});
+
+		test('decorator do not reflect the value to the attribute by default', () => {
+			const customElement = document.createElement('my-reactive-not-reflect') as MyReactiveNotReflect;
+			document.body.appendChild(customElement);
+			expect(customElement.value).toEqual(5);
+			expect(customElement.getAttribute('value')).toEqual(null);
+		});
+	});
+
+	describe('@prop alias', () => {
+		@customElement('my-prop-alias-element')
+		class MyPropAliasElement extends RadiantElement {
+			@prop({ type: Number, reflect: true, defaultValue: 2 }) count: number;
+		}
+
+		test('alias exposes the same reactive behavior without implicit binding on RadiantElement', () => {
+			const customElement = document.createElement('my-prop-alias-element') as MyPropAliasElement;
+			document.body.appendChild(customElement);
+
+			expect(customElement.count).toEqual(2);
+			expect(Object.prototype.hasOwnProperty.call(customElement, '$count')).toBe(false);
+
+			customElement.count = 7;
+
+			expect(customElement.count).toEqual(7);
+			expect(customElement.getAttribute('count')).toEqual('7');
+		});
+	});
+
+	describe('@prop on RadiantElement', () => {
+		@customElement('my-component-prop-element')
+		class MyComponentPropElement extends RadiantElement {
+			@prop({ type: Number, reflect: true, defaultValue: 3 }) count: number;
+			@prop({ type: Number, defaultValue: 9, bind: false }) silent: number;
+		}
+
+		test('alias enables a bound companion accessor by default', () => {
+			const customElement = document.createElement('my-component-prop-element') as MyComponentPropElement;
+			document.body.appendChild(customElement);
+
+			expect(customElement.count).toEqual(3);
+			expect(
+				(
+					customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }
+				).$count.getValue(),
+			).toEqual(3);
+			expect(Object.prototype.hasOwnProperty.call(customElement, '$silent')).toBe(false);
+
+			customElement.count = 8;
+
+			expect(customElement.count).toEqual(8);
+			expect(customElement.getAttribute('count')).toEqual('8');
+			expect(
+				(
+					customElement as MyComponentPropElement & { $count: ReturnType<MyComponentPropElement['bind']> }
+				).$count.getValue(),
+			).toEqual(8);
+		});
+	});
+
+	describe('field initializers', () => {
+		@customElement('my-inferred-reactive-prop')
+		class MyInferredReactiveProp extends RadiantElement {
+			@prop({ type: Number, reflect: true }) count = 4;
+			@prop({ type: String }) label = 'Hello Radiant';
+			@prop({ type: Boolean }) enabled = false;
+		}
+
+		test('uses the field initializer as the reactive default when no decorator default is provided', async () => {
+			const customElement = document.createElement('my-inferred-reactive-prop') as MyInferredReactiveProp;
+			document.body.appendChild(customElement);
+
+			await Promise.resolve();
+
+			expect(customElement.count).toEqual(4);
+			expect(customElement.label).toEqual('Hello Radiant');
+			expect(customElement.enabled).toEqual(false);
+			expect(customElement.getAttribute('count')).toEqual('4');
+			expect(
+				(
+					customElement as MyInferredReactiveProp & { $count: ReturnType<MyInferredReactiveProp['bind']> }
+				).$count.getValue(),
+			).toEqual(4);
+			expect(
+				(
+					customElement as MyInferredReactiveProp & { $label: ReturnType<MyInferredReactiveProp['bind']> }
+				).$label.getValue(),
+			).toEqual('Hello Radiant');
+			expect(
+				(
+					customElement as MyInferredReactiveProp & { $enabled: ReturnType<MyInferredReactiveProp['bind']> }
+				).$enabled.getValue(),
+			).toEqual(false);
+		});
+
+		@customElement('my-inferred-reactive-prop-with-explicit-default')
+		class MyInferredReactivePropWithExplicitDefault extends RadiantElement {
+			@prop({ type: Number, defaultValue: 9 }) count = 4;
+		}
+
+		test('keeps the decorator default value authoritative when one is provided', () => {
+			const customElement = document.createElement(
+				'my-inferred-reactive-prop-with-explicit-default',
+			) as MyInferredReactivePropWithExplicitDefault;
+			document.body.appendChild(customElement);
+
+			expect(customElement.count).toEqual(9);
+		});
+	});
+});
+
+describe('RadiantController @prop', () => {
+	class PropController extends RadiantController<{ model: { id: number; name: string } | null; count: number }> {
+		@prop({ type: Object }) model!: { id: number; name: string } | null;
+		@prop({ type: Number, defaultValue: 0 }) count!: number;
+	}
+
+	test('reads an initial host property without attribute serialization', () => {
+		const host = document.createElement('section') as HTMLElement & {
+			model?: { id: number; name: string };
+			count?: number;
+		};
+		host.model = { id: 1, name: 'Ada' };
+
+		const controller = new PropController(host);
+		controller.connect();
+
+		expect(controller.model).toEqual({ id: 1, name: 'Ada' });
+		expect(host.model).toEqual({ id: 1, name: 'Ada' });
+		expect(host.hasAttribute('model')).toBe(false);
+	});
+
+	test('keeps the host property and controller field in sync', () => {
+		const host = document.createElement('section') as HTMLElement & {
+			model?: { id: number; name: string } | null;
+			count?: number;
+		};
+		const controller = new PropController(host);
+		controller.connect();
+
+		host.model = { id: 2, name: 'Grace' };
+		host.count = 4;
+
+		expect(controller.model).toEqual({ id: 2, name: 'Grace' });
+		expect(controller.count).toBe(4);
+		expect(controller.bindings.count.getValue()).toBe(4);
+
+		controller.model = { id: 3, name: 'Lin' };
+		controller.count = 7;
+
+		expect(host.model).toEqual({ id: 3, name: 'Lin' });
+		expect(host.count).toBe(7);
+		expect(host.hasAttribute('count')).toBe(false);
+	});
+
+	test('restores inherited host accessors on disconnect', () => {
+		const host = document.createElement('section') as HTMLElement & { count?: number };
+		let storedCount = 2;
+		const originalPrototype = Object.getPrototypeOf(host);
+		const prototypeWithAccessor = Object.create(originalPrototype, {
+			count: {
+				get() {
+					return storedCount;
+				},
+				set(value: number) {
+					storedCount = value;
+				},
+				configurable: true,
+				enumerable: true,
+			},
+		});
+
+		Object.setPrototypeOf(host, prototypeWithAccessor);
+
+		const controller = new PropController(host);
+		controller.connect();
+		controller.count = 5;
+		controller.disconnect();
+
+		expect(host.count).toBe(5);
+		host.count = 9;
+		expect(storedCount).toBe(9);
+		expect(Object.prototype.hasOwnProperty.call(host, 'count')).toBe(false);
+	});
+});

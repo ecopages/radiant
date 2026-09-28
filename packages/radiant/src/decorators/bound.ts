@@ -1,28 +1,25 @@
-import type {
-	LegacyMethodDecoratorArgs,
-	StandardMethodDecoratorArgs,
-	StandardOrLegacyMethodDecoratorArgs,
-} from '../types';
+import type { Method } from '../types';
+import type { RadiantElement } from '../core/radiant-element';
 import { bound as legacyBound } from './legacy/bound';
 import { bound as standardBound } from './standard/bound';
+import { methodDecoratorBridge } from './bridge';
 
 /**
  * A decorator to bind a method to the instance.
  */
+export function bound<Host extends object, TMethod extends Method>(
+	protoOrTarget: TMethod,
+	nameOrContext: ClassMethodDecoratorContext<Host, TMethod>,
+): void;
 export function bound(
-	protoOrTarget: StandardOrLegacyMethodDecoratorArgs['protoOrTarget'],
-	nameOrContext: StandardOrLegacyMethodDecoratorArgs['nameOrContext'],
-	descriptor?: StandardOrLegacyMethodDecoratorArgs['descriptor'],
-): any {
-	if (typeof nameOrContext === 'object') {
-		return standardBound(
-			protoOrTarget as StandardMethodDecoratorArgs['protoOrTarget'],
-			nameOrContext as StandardMethodDecoratorArgs['nameOrContext'],
-		);
-	}
-	return legacyBound(
-		protoOrTarget as LegacyMethodDecoratorArgs['protoOrTarget'],
-		nameOrContext as LegacyMethodDecoratorArgs['nameOrContext'],
-		descriptor as LegacyMethodDecoratorArgs['descriptor'],
-	);
+	protoOrTarget: RadiantElement,
+	nameOrContext: string,
+	descriptor: TypedPropertyDescriptor<Method>,
+): TypedPropertyDescriptor<Method> | void;
+export function bound(
+	protoOrTarget: RadiantElement | Method,
+	nameOrContext: string | ClassMethodDecoratorContext<RadiantElement, Method>,
+	descriptor?: TypedPropertyDescriptor<Method>,
+): TypedPropertyDescriptor<Method> | void {
+	return methodDecoratorBridge(standardBound, legacyBound, protoOrTarget, nameOrContext, descriptor);
 }

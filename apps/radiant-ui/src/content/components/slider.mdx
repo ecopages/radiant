@@ -1,0 +1,233 @@
+---
+title: Slider
+description: Sliders let users pick a numeric value or range along a track. They work well when the approximate value matters more than precise typing.
+category: Forms
+---
+
+import { meta as SliderMeta, Default, Range, ValuePrecision } from '@/content/stories/slider';
+import Canvas from '@/components/component-docs/canvas';
+import Demo from '@/components/component-docs/demo';
+
+export const config = {
+	dependencies: {
+		components: [Canvas, Demo],
+		scripts: [
+			'../../components/component-docs/demo.script.tsx',
+			'../../components/component-docs/canvas.script.tsx',
+			'../../components/component-docs/controls.script.tsx',
+		],
+	},
+};
+
+
+# Slider
+
+<p class="docs-lede">Sliders let users pick a numeric value or range along a track. They work well when the approximate value matters more than precise typing.</p>
+
+## Try it
+
+<Demo of={Default} meta={SliderMeta} />
+
+## Usage
+
+The live `value` property is always a `number[]`. The HTML attribute is comma-separated (`value="50"` or `value="25,75"`). JSX may pass a number or an array. Two numbers are range mode; `variant="range"` only seeds `[25, 75]` when `value` is not already a pair.
+
+Set `min`, `max`, and `step` for the numeric domain. Set `orientation="vertical"` for a vertical track.
+
+```tsx
+import { RuiSlider } from '@ecopages/radiant-ui/slider';
+import { RuiField } from '@ecopages/radiant-ui/field';
+import { RuiLabel } from '@ecopages/radiant-ui/label';
+
+<RuiField name="volume">
+  <RuiLabel>Volume</RuiLabel>
+  <RuiSlider variant="single" value={50} min={0} max={100} step={1} />
+</RuiField>
+```
+
+## Custom markup
+
+`<rui-slider>` coordinates any light-DOM tree that matches its query contract. The `RuiSlider` helper stamps these targets; it is not required.
+
+```tsx
+import '@ecopages/radiant-ui/slider';
+
+<rui-slider value="50" min={0} max={100} label="Volume">
+  <div class="rui-slider rui-slider--single" data-ref="root">
+    <div class="rui-slider__header" data-ref="header">
+      <span class="rui-slider__label" data-ref="label">Volume</span>
+    </div>
+    <div class="rui-slider__range">
+      <div class="rui-slider__range-track" data-ref="rangeTrack">
+        <div class="rui-slider__range-fill" />
+        <button
+          type="button"
+          class="rui-slider__thumb"
+          data-ref="singleThumb"
+          data-thumb="value"
+          role="slider"
+        />
+      </div>
+    </div>
+  </div>
+</rui-slider>
+```
+
+BEM classes are presentation-only. The host owns thumb `aria-*` and track CSS variables. Set `name` on the host to submit with a native form.
+
+## Range selection
+
+<p>Pass `value={[25, 75]}` for minimum/maximum filters. Set `minDistance` to prevent the thumbs from overlapping.</p>
+
+<Canvas of={Range} meta={SliderMeta} />
+
+## Step size and readout
+
+<p>Match `step` to meaningful increments. `valuePrecision` only formats the readout, tooltips, and `aria-valuetext`. It defaults to the decimal places in `step`, so a stored `0.30000000000000004` still displays as `0.3`. Round committed values in application code when you need a canonical number.</p>
+
+<Canvas of={ValuePrecision} meta={SliderMeta} />
+
+```tsx
+<RuiSlider min={0} max={1} step={0.1} value={0.3} showValue />
+
+<RuiSlider min={0} max={1} step={0.001} value={0.343} valuePrecision={2} showValue />
+```
+
+## Theming
+
+Slider surfaces map to **semantic roles**, never Tailwind palette steps:
+
+| Part | CSS roles |
+| --- | --- |
+| Track (`.rui-slider__range-track`) | `--rui-track-fill` (`--rui-track-mix` of `--on-background`) |
+| Fill (`.rui-slider__range-fill`) | `primary` |
+| Thumb (`.rui-slider__thumb`) | `background` surface, `primary` border, `--shadow-control` (`--rui-slider-thumb-shadow`) |
+| Value readout (`.rui-slider__value`) | `on-surface` |
+| Focus ring | `focus-ring` |
+
+Range thumb positions come from `--rui-slider-min` / `--rui-slider-max`. The `RuiSlider` view seeds those inline variables (and the value readout) during SSR; the host updates them while dragging.
+
+Unfilled track contrast is shared with knobs. Set the mix or a solid color on an ancestor:
+
+```css
+:root {
+  --rui-track-mix: 28%;
+}
+
+.panel {
+  --rui-track-color: var(--surface-container-high);
+}
+```
+
+Override `--rui-slider-track-color` on `rui-slider` when only the slider should change.
+
+Range mode also accepts presentation variables on `rui-slider`. Set track and thumb corner radii independently — they follow shape tokens such as `--radius-control` and `--radius-container`:
+
+```css
+rui-slider {
+  --rui-slider-track-radius: var(--radius-container);
+  --rui-slider-thumb-radius: var(--radius-control);
+}
+```
+
+Switching the radius pack (sharp, default, soft) updates both when they reference shape tokens.
+
+## API
+
+`RuiSlider` owns the light-DOM surface. Pass `showValue` for the default readout, `valueTitle` for hover tooltips, or compose a custom readout with `RuiSliderValue`.
+
+### Attributes
+
+| Attribute | Type | Default | Description |
+| --- | --- | --- | --- |
+| `variant` | `single` · `range` | `single` | Single-thumb or dual-thumb range. |
+| `orientation` | `horizontal` · `vertical` | `horizontal` | Track axis. |
+| `value` | `string` | `50` | Comma-separated thumb values (`50` or `25,75`). The JS property is `number[]`. |
+| `min` | `number` | `0` | Range minimum. |
+| `max` | `number` | `100` | Range maximum. |
+| `step` | `number` | `1` | Arrow-key and pointer snap interval. |
+| `value-precision` | `number` | decimal places in `step` | Maximum fraction digits in the value readout. |
+| `min-distance` | `number` | `0` | Minimum gap enforced between range thumbs. |
+| `disabled` | `boolean` | `false` | Disables interaction. |
+| `read-only` | `boolean` | `false` | Prevents value changes while leaving thumbs focusable. |
+| `label` | `string` | `''` | Accessible name for the slider. |
+| `name` | `string` | `''` | Form field name on this host. Range mode also submits `{name}-max`. |
+| `show-value` | `boolean` | `false` | Shows the default value readout below the track. |
+| `value-title` | `boolean` | `false` | Mirrors the live value in the control `title` on hover. |
+
+### Light-DOM contract
+
+| Target | Required | Host writes | Author owns |
+| --- | --- | --- | --- |
+| `[data-ref="root"]` | yes | `rui-slider--*` layout classes | the root node |
+| `[data-ref="rangeTrack"]` | yes | inline `--rui-slider-*`, optional `title` | the track node; view seeds geometry |
+| `[data-thumb]` | yes | `hidden`, `disabled`, `tabindex`, `aria-*` value attrs | thumb elements (`value`, `min`, or `max`); view seeds `aria-valuenow` |
+| `[data-ref="header"]` | no | `hidden` | header row |
+| `[data-ref="label"]` | no | `hidden`, `textContent` | label text |
+| `[data-ref="value"]` | no | `textContent` | readout node; view seeds the formatted value |
+| `[data-default-value]` | no | `hidden` (via `showValue`) | default readout when no custom value child |
+
+Do not set thumb `tabindex`. Nested hosts: none. The `RuiSlider` view seeds readout text, track CSS variables, and `aria-valuenow` so the first paint matches the hydrated control.
+
+### Events
+
+| Event | Detail | Description |
+| --- | --- | --- |
+| `rui-change` | `{ value: number[] }` | Emitted as the value moves; `[50]` in single mode, `[25, 75]` in range mode. |
+
+### View helpers
+
+| Component | Target stamped | Notes |
+| --- | --- | --- |
+| `RuiSlider` | full `[data-ref]` tree under `[data-ref="root"]` | Supplies default `RuiSliderValue` with `[data-default-value]` when `children` omitted. Seeds readout text and track geometry for SSR. |
+| `RuiSliderValue` | `[data-ref="value"]` | Live readout; view seeds the formatted value, host updates `textContent` while dragging. |
+
+### CSS classes
+
+Public BEM classes (documented via `@cssclass` on the element):
+
+| Class | Description |
+| --- | --- |
+| `.rui-slider` | Root; wraps the label, track, and value readout. |
+| `.rui-slider--range` | Range-mode surface. |
+| `.rui-slider--vertical` | Vertical track layout. |
+| `.rui-slider__label` | Optional visible label. |
+| `.rui-slider__value` | Live numeric readout. |
+| `.rui-slider__range` | Track wrapper. |
+| `.rui-slider__range-track` | Track surface behind the thumb(s). |
+| `.rui-slider__range-fill` | Filled span from the origin to the current value (single) or between thumbs (range). |
+| `.rui-slider__thumb` | Thumb button (`role="slider"`). |
+
+### Theme roles
+
+| Part | CSS variables consumed |
+| --- | --- |
+| Track | `--rui-track-color` / `--rui-track-mix` |
+| Fill / thumb | `--primary` |
+| Thumb surface | `--background` |
+| Value readout | `--on-surface` |
+| Focus | `--focus-ring` |
+
+### Component CSS variables
+
+Set on `rui-slider`. Defaults shown; all accept any length or shape token.
+
+| Variable | Default | Applies to |
+| --- | --- | --- |
+| `--rui-slider-track-size` | `0.375rem` | Track thickness |
+| `--rui-slider-track-length` | `12rem` | Max track length (vertical / horizontal cap) |
+| `--rui-slider-track-color` | `--rui-track-color` or `--rui-track-fill` | Track background |
+| `--rui-slider-fill-color` | `--primary` | Selected range fill |
+| `--rui-slider-track-radius` | `--radius-control` | Track and fill corner radius |
+| `--rui-slider-thumb-size` | `1.25rem` | Thumb width and height |
+| `--rui-slider-thumb-radius` | `--radius-control` | Thumb corner radius |
+| `--rui-slider-thumb-border-width` | `2px` | Thumb border |
+| `--rui-slider-thumb-border-color` | `--primary` | Thumb border color |
+| `--rui-slider-thumb-background` | `--background` | Thumb fill |
+| `--rui-slider-thumb-shadow` | `0 2px 8px rgb(0 0 0 / 0.12)` | Thumb shadow |
+
+## Accessibility
+
+- Sliders expose `role="slider"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, and a formatted `aria-valuetext`.
+- Pair with a visible label and optionally a live value readout.
+- Arrow keys adjust the value; Page Up/Down jump by larger increments.

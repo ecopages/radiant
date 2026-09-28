@@ -1,0 +1,43 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-date-range-picker {
+	@apply relative inline-flex w-full;
+}
+
+@layer components {
+	.rui-date-range-picker {
+		@apply w-full text-sm;
+	}
+
+	.rui-date-range-picker__group {
+		@apply flex w-full min-w-0 items-center gap-1 overflow-hidden rounded-control border border-border bg-background px-1;
+	}
+
+	.rui-date-range-picker__group:focus-within {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-date-range-picker__values {
+		@apply grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-inline;
+	}
+
+	.rui-date-range-picker__input {
+		@apply w-full min-w-0 border-0 bg-transparent p-0 outline-none;
+	}
+
+	.rui-date-range-picker__separator {
+		@apply shrink-0 text-on-surface;
+	}
+
+	.rui-date-range-picker__popover {
+		@apply box-border min-w-0 max-w-[calc(100vw-1rem)] p-0;
+	}
+
+	.rui-date-range-picker__popover .rui-calendar {
+		@apply w-auto max-w-full border-0 shadow-none;
+	}
+
+	.rui-date-range-picker__popover[hidden] {
+		@apply hidden;
+	}
+}

@@ -1,1 +1,5 @@
 dist
+
+# Test
+.vitest-attachments/
+**/__screenshots__/

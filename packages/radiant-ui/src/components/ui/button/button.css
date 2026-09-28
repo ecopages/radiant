@@ -1,0 +1,156 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-button {
+		@apply inline-flex items-center justify-center w-fit;
+		@apply font-medium rounded-button border border-transparent;
+		@apply transition-[background-color,color,box-shadow] duration-300 ease-out;
+		@apply cursor-pointer;
+		@apply whitespace-nowrap;
+		gap: var(--space-inline);
+	}
+
+	.rui-button > svg {
+		@apply pointer-events-none;
+	}
+
+	.rui-button:focus-visible {
+		@apply ring-2 ring-focus-ring outline-hidden;
+	}
+
+	.rui-button:disabled {
+		@apply opacity-50 cursor-not-allowed;
+	}
+
+	/* Variants */
+	.rui-button--filled {
+		@apply bg-primary text-on-primary rui-sheen;
+	}
+
+	.rui-button--filled:hover:not(:disabled) {
+		@apply bg-primary/90;
+	}
+
+	.rui-button--filled:active:not(:disabled) {
+		@apply bg-primary-dark;
+	}
+
+	.rui-button--filled[aria-pressed='true'] {
+		@apply bg-primary-dark ring-2 ring-focus-ring;
+	}
+
+	.rui-button--outline {
+		@apply bg-transparent text-on-background border-border;
+	}
+
+	.rui-button--outline:hover:not(:disabled) {
+		@apply bg-surface;
+	}
+
+	.rui-button--outline:active:not(:disabled) {
+		@apply bg-surface/80;
+	}
+
+	.rui-button--outline[aria-pressed='true'] {
+		@apply bg-background font-medium text-on-background shadow-sm ring-2 ring-focus-ring rui-sheen;
+	}
+
+	.rui-button--ghost {
+		@apply bg-transparent text-on-surface;
+	}
+
+	.rui-button--ghost:hover:not(:disabled) {
+		@apply bg-surface-container-low;
+	}
+
+	.rui-button--ghost:active:not(:disabled) {
+		@apply bg-surface-container;
+	}
+
+	.rui-button--ghost[aria-pressed='true'] {
+		@apply bg-background font-medium text-on-background shadow-sm ring-2 ring-inset ring-border;
+	}
+
+	.rui-button--destructive {
+		@apply bg-error text-on-error rui-sheen;
+	}
+
+	.rui-button--destructive:hover:not(:disabled) {
+		@apply bg-error/90;
+	}
+
+	.rui-button--destructive:active:not(:disabled) {
+		@apply bg-error-dark;
+	}
+
+	.rui-button--link {
+		@apply bg-transparent font-normal text-link no-underline underline-offset-2;
+	}
+
+	.rui-button--link:hover:not(:disabled),
+	.rui-button--link:focus-visible:not(:disabled) {
+		@apply underline;
+	}
+
+	.rui-button--link:active:not(:disabled) {
+		@apply underline;
+	}
+
+	.rui-button--link[aria-pressed='true'] {
+		@apply underline;
+	}
+
+	/* Heights share `--size-control-*` with input so form rows align.
+	   Inline padding is a step above `--space-control-x` so short labels
+	   are not as tight as field chrome. */
+	.rui-button--none {
+		@apply h-auto min-h-0;
+		padding-inline: 0;
+		padding-block: 0;
+	}
+
+	.rui-button--sm {
+		height: var(--size-control-sm);
+		padding-inline: var(--space-control-x);
+		font-size: var(--text-xs);
+	}
+
+	.rui-button--md {
+		height: var(--size-control-md);
+		padding-inline: calc(var(--space-control-x) * 1.25);
+		font-size: var(--text-control, 0.875rem);
+	}
+
+	.rui-button--lg {
+		height: var(--size-control-lg);
+		padding-inline: calc(var(--space-control-x) * 1.5);
+		font-size: var(--text-body);
+	}
+
+	.rui-button--square {
+		padding-inline: 0;
+		aspect-ratio: 1;
+		font-size: var(--text-control, 0.875rem);
+	}
+
+	.rui-button--link.rui-button--sm,
+	.rui-button--link.rui-button--md,
+	.rui-button--link.rui-button--lg {
+		height: auto;
+		padding-inline: 0;
+		padding-block: 0;
+	}
+
+	/* Back-compat aliases used by earlier stories */
+	.rui-button--primary {
+		@apply bg-primary text-on-primary rui-sheen;
+	}
+
+	.rui-button--secondary {
+		@apply bg-secondary text-on-secondary rui-sheen;
+	}
+
+	.rui-button--error {
+		@apply bg-error text-on-error rui-sheen;
+	}
+}

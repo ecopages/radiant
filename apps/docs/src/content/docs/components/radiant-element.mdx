@@ -1,0 +1,237 @@
+---
+title: "RadiantElement"
+description: "RadiantElement is the main base class for reactive Radiant custom elements."
+group: Components
+order: 1
+---
+
+# RadiantElement
+
+`RadiantElement` is the main base class for Radiant custom elements.
+
+It covers both common host styles:
+
+- imperative hosts that enhance authored light DOM
+- JSX-owned hosts that override `render()` and let Radiant own the host view
+
+The distinction is no longer the base class. It is whether the class overrides `render()`.
+
+- If you **do not** override `render()`, the host behaves like an authored light-DOM custom element and keeps its children visible.
+- If you **do** override `render()`, Radiant enables the host render lifecycle: `update()`, `requestUpdate()`, SSR helpers, hydration, and slot projection.
+
+It gives you one consistent host API:
+
+- reactive properties and fields
+- reactive attribute-backed fields through `@attr(...)`
+- `@bindTo` for copying fields onto existing light DOM
+- update callbacks for procedures that are not a straight DOM copy
+- delegated event wiring
+- context integration
+- JSX bindings through `bind(...)`, `bindings`, and `$`
+- optional string-template rendering through `renderTemplate(...)`
+- host rendering, hydration, and SSR when `render()` is overridden
+
+Use [RadiantController](/docs/components/radiant-controller) instead when you want Radiant reactivity attached to existing HTML without defining a custom element.
+
+## Two Host Modes
+
+### 1. Authored Light-DOM Host
+
+This mode keeps the HTML in the document. Use `@bindTo` to copy reactive fields onto the host or `data-ref` nodes. Keep `@onEvent` for clicks and `@onUpdated` for procedures such as focus.
+
+```typescript
+import { RadiantElement, bindTo, customElement, onEvent, prop } from '@ecopages/radiant';
+
+type CounterProps = {
+  value?: number;
+};
+
+@customElement('radiant-counter')
+class RadiantCounter extends RadiantElement {
+  @prop({ type: Number, reflect: true, defaultValue: 0 })
+  @bindTo({ ref: 'count', text: true })
+  value!: number;
+
+  @onEvent({ ref: 'decrement', type: 'click' })
+  decrement() {
+    if (this.value > 0) {
+      this.value -= 1;
+    }
+  }
+
+  @onEvent({ ref: 'increment', type: 'click' })
+  increment() {
+    this.value += 1;
+  }
+}
+```
+
+Authored HTML stays in place:
+
+```html
+<radiant-counter value="5">
+  <button type="button" data-ref="decrement" aria-label="Decrement">-</button>
+  <span data-ref="count">5</span>
+  <button type="button" data-ref="increment" aria-label="Increment">+</button>
+</radiant-counter>
+```
+
+### 2. JSX-Owned Host
+
+This mode overrides `render()` so the custom element owns its host view directly.
+
+```tsx
+/** @jsxImportSource @ecopages/jsx */
+
+import { RadiantElement, customElement, prop } from '@ecopages/radiant';
+
+type CounterBindings = {
+  value: number;
+};
+
+@customElement('radiant-counter')
+export class RadiantCounter extends RadiantElement<CounterBindings> {
+  @prop({ type: Number, reflect: true, defaultValue: 0 }) value = 0;
+
+  private readonly decrement = () => {
+    if (this.value > 0) {
+      this.value -= 1;
+    }
+  };
+
+  private readonly increment = () => {
+    this.value += 1;
+  };
+
+  override render() {
+    return (
+      <>
+        <button type="button" on:click={this.decrement} aria-label="Decrement">
+          -
+        </button>
+        <span>{this.$.value}</span>
+        <button type="button" on:click={this.increment} aria-label="Increment">
+          +
+        </button>
+      </>
+    );
+  }
+}
+```
+
+Once `render()` is overridden, `RadiantElement` exposes the full host render lifecycle:
+
+- `update()` to run the update cycle now: batched `@onUpdated` callbacks, the current JSX view, then `updated()` (without a `render()` override it still flushes `@onUpdated` and `updated()`)
+- `requestUpdate()` to schedule that cycle in a microtask
+- `updateComplete` to wait until the cycle, including the first connect render, finishes
+- `renderViewToString()` for the rendered view only (requires a Radiant server SSR entry import)
+- `hydrate()` when SSR markers exist and the explicit client hydrator is installed
+- light-DOM slot projection through literal `<slot>` tags
+
+Full host HTML (`<my-element>...</my-element>`) is produced by the server pipeline — prefer `renderComponent(...)` from `@ecopages/radiant/server/render-component`. See [Component SSR](/docs/ssr/component-ssr).
+
+## Render Lifecycle Gate
+
+`RadiantElement` only runs the host render lifecycle when `render()` is overridden.
+
+- The base `render()` returns `<slot />`.
+- A plain `RadiantElement` instance with no override keeps authored children visible and does not call `update()` on first connect.
+- An overridden `render()` opt-in turns the host into a JSX-owned render boundary.
+
+This means the correct question is not "element or component?" anymore. The question is whether the host should keep authored DOM or own a JSX view.
+
+## Connect-time sync
+
+Override `protected onConnected()` for work that must wait until authored attributes are visible and (when the host owns `render()`) the initial hydrate/update has committed.
+
+Do not queue a `queueMicrotask` from `connectedCallback` for that. `onConnected` is invoked at that same point, on every connection — not once per instance. Rebuild controllers, observers, and listeners here if `disconnectedCallback` tears them down. Guard once-only bootstrapping with an explicit flag.
+
+Keep synchronous setup (event listeners, `MutationObserver`) in `connectedCallback`. Work that needs the committed DOM, such as moving focus, belongs in `updated()`.
+
+`onConnected` is not `registerConnectedCallback()`. Those reactive-host callbacks run synchronously at the start of `connectedCallback`, before attribute catch-up.
+
+Most elements do not need this hook. Do not use it to copy a reactive value into JSX-owned DOM; use a JSX binding. Do not use it to copy a value onto parent-authored `data-ref` nodes; use [@bindTo](/docs/decorators/bind-to). Use `@onUpdated(...)` when a property change must run a procedure (focus, timers, joined ARIA). Reach for `onConnected()` only when first-connect setup genuinely needs the synchronized attributes or committed DOM, and must be repeated after a reconnect. `@query(...)` is unrelated: use it only when that setup needs a live element handle.
+
+## Bindings And Reactive Reads
+
+`RadiantElement` exposes three ways to wire reactive values into JSX:
+
+- `this.value` for the raw value
+- `this.bind('value')` for an explicit JSX binding
+- `this.bindings.value` or `this.$.value` for property-style JSX bindings
+
+Use the raw value in imperative code and render logic. Use bindings in stable JSX leaf positions such as text, attributes, `aria`, `data`, and boolean props. On hosts that do not override `render()`, use [@bindTo](/docs/decorators/bind-to) for the same leaf writes against existing DOM.
+
+## Derived Bindings
+
+Bindings expose the current reactive value, but sometimes JSX needs a **projection** of that value — a record lookup, an object key, or a transform.
+
+### Member access in JSX
+
+For object-like bindings, use member access directly in `render()`:
+
+```tsx
+render() {
+  return <p>{this.$.config.label}</p>;
+}
+```
+
+This is sugar for `this.$.config.map((config) => config.label)`. The runtime memoizes each key on the binding, so repeated reads in `render()` reuse the same derived binding identity.
+
+Use this for simple object-key reads. You do not need a field initializer for `{this.$.config.label}` in normal components.
+
+### `map` for transforms and lookups
+
+Use `map` when the projection is not a plain property read — record lookups, computed strings, or method calls:
+
+```tsx
+private readonly themeLabel = this.$.preference.map((preference) => THEME_CONFIG[preference].label);
+
+render() {
+  return <p>Theme: {this.themeLabel}</p>;
+}
+```
+
+**Create `map` results once** (field initializer or cached host field). Calling `.map(...)` inside `render()` creates a new binding on every pass, which breaks the live-subscription fast path.
+
+```tsx
+// Avoid — new derived binding every render
+render() {
+  return <p>{this.$.preference.map((p) => THEME_CONFIG[p].label)}</p>;
+}
+```
+
+### Rules
+
+- **Member access** (`this.$.config.label`) — fine inline in JSX for simple keys.
+- **`map`** — hoist transforms and lookups to a create-once host field.
+- **Object props are shallow** — projections update when the whole object is replaced (`this.config = { ... }`), not when nested keys are mutated in place.
+- **Bracket lookups need `map`** — use `this.$.preference.map((p) => THEME_CONFIG[p].label)`, not `THEME_CONFIG[this.$.preference]`.
+
+## Advanced Host Integration
+
+Every reactive host member (`@state`, `@prop`, `@attr`, and `signal()`) is backed by a signals `State` inside the host. Decorator APIs are unchanged, but advanced integrations can work with that member registry directly:
+
+- `createReactiveMember(name, initialValue)` — create and register host-owned member state
+- `registerReactiveMember(name, signal)` — register externally owned state, such as a user `signal()`
+- `getReactiveMember(name)` — read the member state registered for a property name
+
+Use these when you build host adapters, tests, or custom decorators. Prefer `@state`, `@prop`, `@attr`, and `signal()` in application code.
+
+**Removed in 0.3.0:** `trackReactiveRead(...)`, `registerReactiveDependencyReader(...)`, and the exported `ReactiveField` metadata type. Dependency tracking now flows through member `State.get()` and JSX bindings adapted from that state.
+
+## When To Use RadiantElement
+
+- Use `RadiantElement` when you want a custom element host, whether the host is imperative or JSX-owned.
+- Override `render()` when the host itself should own a JSX view.
+- Skip `render()` when the host should enhance authored light DOM instead.
+- Override `onConnected()` for post-catch-up connect work; keep listeners in `connectedCallback`.
+- In JSX-authored composite libraries, keep parent-owned children in the view shell; do not re-project them through `<slot>` (see [Slots — JSX-authored composites](/docs/components/slots#jsx-authored-composites)).
+- Use [RadiantController](/docs/components/radiant-controller) when the DOM is authored elsewhere and a custom element wrapper would be unnecessary.
+
+## See Also
+
+- [RadiantController](/docs/components/radiant-controller)
+- [Slots](/docs/components/slots)
+- [Counter](/docs/examples/counter)
+- [Hydration](/docs/ssr/hydration)

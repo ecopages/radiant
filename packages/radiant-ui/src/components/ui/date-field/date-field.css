@@ -1,0 +1,35 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-date-field {
+	@apply relative inline-flex w-full;
+}
+
+@layer components {
+	.rui-date-field {
+		@apply w-full text-sm;
+	}
+
+	.rui-date-field__group {
+		@apply flex w-full min-w-0 items-center gap-1 rounded-control border border-border bg-background px-1;
+	}
+
+	.rui-date-field__group:focus-within {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-date-field__input {
+		@apply min-w-0 flex-1 border-0 bg-transparent p-0 outline-none;
+	}
+
+	.rui-date-field__popover {
+		@apply box-border min-w-0 max-w-[calc(100vw-1rem)] p-0;
+	}
+
+	.rui-date-field__popover .rui-calendar {
+		@apply w-auto max-w-full border-0 shadow-none;
+	}
+
+	.rui-date-field__popover[hidden] {
+		@apply hidden;
+	}
+}

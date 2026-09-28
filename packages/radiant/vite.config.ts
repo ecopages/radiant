@@ -1,26 +1,29 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
-import standardConfig from './tsconfig.json';
-import legacyConfig from './tsconfig.legacy.json';
+import { fileURLToPath } from 'node:url';
+import { defineConfig, mergeConfig } from 'vitest/config';
+import legacyConfig from './tsconfig.legacy.json' with { type: 'json' };
+import { createRadiantVitestBase } from './vitest.shared.js';
 
-const LEGACY_ENVIRONMENT = process.argv.includes('--legacy');
-const tsconfigRaw = LEGACY_ENVIRONMENT ? JSON.stringify(legacyConfig) : JSON.stringify(standardConfig);
-
-const exclude = LEGACY_ENVIRONMENT
-	? ['src/decorators/standard', 'src/context/decorators/standard']
-	: ['src/decorators/legacy', 'src/context/decorators/legacy'];
-
-export default defineConfig({
-	esbuild: {
-		target: 'es2022',
-		tsconfigRaw,
-	},
-	test: {
-		environmentMatchGlobs: [['test/**/*.test.*', 'happy-dom']],
-		coverage: {
-			provider: 'istanbul',
-			include: ['src'],
-			exclude: ['src/playground.tsx', 'src/types.ts'].concat(exclude),
-		},
-	},
+const base = await createRadiantVitestBase({
+	signalsEntry: new URL('../signals/index.ts', import.meta.url),
+	legacyTsconfig: legacyConfig,
 });
+
+export default mergeConfig(
+	base,
+	defineConfig({
+		resolve: {
+			conditions: ['node', 'import', 'default'],
+			alias: {
+				'@ecopages/radiant/is-server': fileURLToPath(new URL('./src/is-server-node.ts', import.meta.url)),
+			},
+		},
+		test: {
+			name: 'node',
+			environment: 'node',
+			testTimeout: 15_000,
+			include: ['test/**/*.test.{ts,tsx}'],
+			exclude: ['test/**/*.browser.test.{ts,tsx}', 'test/**/*.e2e.test.{ts,tsx}'],
+		},
+	}),
+);

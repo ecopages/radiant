@@ -1,0 +1,34 @@
+/**
+ * Soft radius pack — generous rounding.
+ */
+:root {
+	--border-radius-none: 0;
+	--border-radius-xs: 0.25rem;
+	--border-radius-sm: 0.5rem;
+	--border-radius-md: 0.75rem;
+	--border-radius-lg: 1rem;
+	--border-radius-xl: 1.25rem;
+	--border-radius-2xl: 1.5rem;
+	--border-radius-3xl: 2rem;
+	--border-radius-full: 9999px;
+
+	--radius-control: var(--border-radius-md);
+	--radius-container: var(--border-radius-lg);
+	--radius-pill: var(--border-radius-full);
+}
+
+@theme {
+	--radius-none: var(--border-radius-none);
+	--radius-xs: var(--border-radius-xs);
+	--radius-sm: var(--border-radius-sm);
+	--radius-md: var(--border-radius-md);
+	--radius-lg: var(--border-radius-lg);
+	--radius-xl: var(--border-radius-xl);
+	--radius-2xl: var(--border-radius-2xl);
+	--radius-3xl: var(--border-radius-3xl);
+	--radius-full: var(--border-radius-full);
+	--radius-control: var(--radius-control);
+	--radius-container: var(--radius-container);
+	--radius-pill: var(--radius-pill);
+	--radius-button: var(--radius-control);
+}

@@ -1,0 +1,27 @@
+@reference '../../../styles/radiant-ui.css';
+
+@layer components {
+	.rui-badge {
+		@apply inline-flex items-center gap-1 rounded-control px-2 py-0.5 font-medium text-xs;
+	}
+
+	.rui-badge--filled {
+		@apply bg-primary-container text-on-primary-container;
+	}
+
+	.rui-badge--outline {
+		@apply border border-border bg-background text-on-background;
+	}
+
+	.rui-badge--destructive {
+		@apply bg-error text-on-error;
+	}
+
+	.rui-badge--ghost {
+		@apply text-on-surface;
+	}
+
+	.rui-badge--muted {
+		@apply bg-surface-container text-on-surface;
+	}
+}

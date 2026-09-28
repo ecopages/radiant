@@ -1,0 +1,69 @@
+@reference '../../../styles/radiant-ui.css';
+
+rui-dialog {
+	--rui-dialog-max-width: 28rem;
+	--rui-dialog-padding: var(--space-inset);
+	--rui-dialog-radius: var(--radius-container);
+	--rui-dialog-surface: var(--background);
+	--rui-dialog-shadow: var(--shadow-modal);
+	--rui-dialog-inset-x: 1rem;
+	@apply contents;
+}
+
+@layer components {
+	.rui-dialog {
+		@apply fixed inset-0 z-modal flex items-center justify-center;
+	}
+
+	.rui-dialog[hidden] {
+		@apply hidden;
+	}
+
+	.rui-dialog__backdrop {
+		@apply absolute inset-0 bg-overlay;
+	}
+
+	.rui-dialog__surface {
+		@apply relative z-modal w-full text-on-background outline-none;
+		max-inline-size: var(--rui-dialog-max-width);
+		padding: var(--rui-dialog-padding);
+		border-radius: var(--rui-dialog-radius);
+		background-color: var(--rui-dialog-surface);
+		box-shadow: var(--rui-dialog-shadow);
+	}
+
+	.rui-dialog__close {
+		@apply absolute right-3 top-3 inline-flex size-8 items-center justify-center;
+		@apply cursor-pointer rounded-button border-0 bg-transparent text-xl text-on-surface;
+	}
+
+	.rui-dialog__close:focus-visible {
+		@apply ring-2 ring-focus-ring;
+	}
+
+	.rui-dialog__title {
+		@apply pr-8 text-lg font-semibold;
+	}
+
+	.rui-dialog__title:empty {
+		@apply hidden;
+	}
+
+	.rui-dialog__body {
+		@apply mt-3 text-sm;
+	}
+
+	.rui-dialog__actions {
+		@apply mt-6 flex justify-end gap-inline;
+	}
+
+	.rui-dialog__actions:empty {
+		@apply hidden;
+	}
+}
+
+@media (max-width: 600px) {
+	.rui-dialog {
+		padding-inline: var(--rui-dialog-inset-x);
+	}
+}

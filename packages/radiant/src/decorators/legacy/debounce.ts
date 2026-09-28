@@ -1,21 +1,24 @@
 import type { RadiantElement } from '../../core/radiant-element';
+import { debounce as debounceFunction } from '../../helpers/debounce';
 
 export function debounce(
 	timeout: number,
 ): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor {
-	let timeoutRef: ReturnType<typeof setTimeout> | null = null;
-
 	return (_target: RadiantElement, _propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor => {
 		const originalMethod = descriptor.value;
+		const debouncedByInstance = new WeakMap<object, ReturnType<typeof debounceFunction<typeof originalMethod>>>();
 
-		descriptor.value = function debounce(...args: any[]) {
-			if (timeoutRef !== null) {
-				clearTimeout(timeoutRef);
+		descriptor.value = function debounce(this: object, ...args: Parameters<typeof originalMethod>) {
+			let debounced = debouncedByInstance.get(this);
+
+			if (!debounced) {
+				debounced = debounceFunction((...innerArgs: Parameters<typeof originalMethod>) => {
+					return originalMethod.apply(this, innerArgs);
+				}, timeout);
+				debouncedByInstance.set(this, debounced);
 			}
 
-			timeoutRef = setTimeout(() => {
-				originalMethod.apply(this, args);
-			}, timeout);
+			debounced(...args);
 		};
 
 		return descriptor;

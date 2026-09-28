@@ -1,5 +1,6 @@
-import type { RadiantElement } from '../core/radiant-element';
-import { type AttributeTypeConstant, readAttributeValue } from '../utils/attribute-utils';
+import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
+import type { SsrSerializableHydrationBinding } from '../core/ssr-hydration-binding';
+import type { AttributeTypeConstant } from '../utils/attribute-utils';
 import {
 	ContextEventsTypes,
 	ContextOnMountEvent,
@@ -7,13 +8,31 @@ import {
 	type ContextSubscription,
 	type ContextSubscriptionRequestEvent,
 } from './events';
+import { createHydrationScriptTag, findHydrationScript, parseHydrationPayload } from '../core/hydration-codec';
 import type { Context, ContextType, UnknownContext } from './types';
+import { resolveContextHydrationHost, type ContextHostLike } from './context-host';
 
 type ContextProviderOptions<T extends UnknownContext> = {
 	context: UnknownContext;
+	hydrationKey?: string;
 	initialValue?: T['__context__'];
 	hydrate?: AttributeTypeConstant;
+	serialize?: (value: ContextType<T>) => unknown;
 };
+
+type ActiveContextSubscription<T extends UnknownContext> = {
+	hasChanged(newContext: ContextType<T>, prevContext: ContextType<T> | undefined): boolean;
+	notify(context: ContextType<T>): void;
+	unsubscribe: () => void;
+	active: boolean;
+};
+
+export interface SsrSerializableContextProvider extends SsrSerializableHydrationBinding {
+	/** Returns the current context payload that should be visible to descendants. */
+	getContext(): unknown;
+	/** Returns the context token used to match nested SSR consumers and providers. */
+	getContextKey(): UnknownContext;
+}
 
 /**
  * Represents a context provider that allows setting and getting the context,
@@ -41,8 +60,15 @@ export interface IContextProvider<T extends Context<unknown, unknown>> {
 	 * Subscribes to context updates.
 	 *
 	 * @param subscription - The subscription object that defines the callback function to be invoked on context updates.
+	 * @returns A function that removes this subscription.
+	 *
+	 * @remarks
+	 * Notification snapshots the current subscriber list. Unsubscribing during
+	 * delivery cannot skip later subscribers. Subscribers added during delivery
+	 * wait for a later update. Removing another subscriber before its turn skips
+	 * that subscriber for the current update.
 	 */
-	subscribe: (subscription: ContextSubscription<T>) => void;
+	subscribe: <Selected = ContextType<T>>(subscription: ContextSubscription<T, Selected>) => () => void;
 }
 
 /**
@@ -63,12 +89,18 @@ export interface IContextProvider<T extends Context<unknown, unknown>> {
  * });
  * ```
  */
-export class ContextProvider<T extends Context<unknown, unknown>> implements IContextProvider<T> {
-	private host: RadiantElement;
+export class ContextProvider<T extends Context<unknown, unknown>>
+	implements IContextProvider<T>, SsrSerializableContextProvider
+{
+	private host: ContextHostLike;
 	private context: UnknownContext;
+	private hydrationKey?: string;
+	private hydrate?: AttributeTypeConstant;
+	private serialize?: (value: ContextType<T>) => unknown;
+	private pendingHostHydration: boolean;
 	private value: ContextType<T> | undefined;
 
-	subscriptions: ContextSubscription<T>[] = [];
+	subscriptions: ActiveContextSubscription<T>[] = [];
 
 	/**
 	 * Creates a new instance of the ContextProvider.
@@ -76,40 +108,33 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
 	 * @param host - The host element that will contain the context provider.
 	 * @param options - The options to configure the context provider.
 	 */
-	constructor(host: RadiantElement, options: ContextProviderOptions<T>) {
+	constructor(host: ContextHostLike, options: ContextProviderOptions<T>) {
 		this.host = host;
 		this.context = options.context;
-		let contextValue: T['__context__'] | undefined = options.initialValue;
-
-		if (options.hydrate) {
-			const hydrationScriptElement = this.host.querySelector('script[data-hydration]');
-			if (hydrationScriptElement?.textContent) {
-				const hydrationValue = hydrationScriptElement.textContent;
-				const parsedHydrationValue = readAttributeValue(hydrationValue, options.hydrate) as ContextType<T>;
-
-				if (
-					options.hydrate === Object &&
-					this.isObject(parsedHydrationValue) &&
-					(this.isObject(contextValue) || typeof contextValue === 'undefined')
-				) {
-					contextValue = {
-						...(contextValue ?? {}),
-						...parsedHydrationValue,
-					};
-				} else {
-					contextValue = parsedHydrationValue;
-				}
-			}
-		}
-
-		this.value = contextValue as ContextType<T>;
+		this.hydrationKey = options.hydrationKey;
+		this.hydrate = options.hydrate;
+		this.serialize = options.serialize;
+		this.pendingHostHydration = Boolean(options.hydrate);
+		this.value = options.initialValue as ContextType<T>;
+		this.tryHydrateFromHost();
 
 		this.registerEvents();
 		this.host.dispatchEvent(new ContextOnMountEvent(this.context));
 	}
 
 	setContext = (update: Partial<ContextType<T>>, callback?: (context: ContextType<T>) => void) => {
-		if (typeof this.value === 'object') {
+		this.tryHydrateFromHost();
+		this.pendingHostHydration = false;
+
+		if (typeof this.value === 'undefined' && this.isObject(update)) {
+			const oldContext = this.value;
+			this.value = { ...update } as ContextType<T>;
+			if (callback) callback(this.value);
+			this.notifySubscribers(this.value, oldContext);
+			return;
+		}
+
+		if (this.isObject(this.value) && this.isObject(update)) {
 			const oldContext = { ...this.value };
 			this.value = { ...this.value, ...update };
 			if (callback) callback(this.value);
@@ -118,73 +143,243 @@ export class ContextProvider<T extends Context<unknown, unknown>> implements ICo
 	};
 
 	getContext = () => {
+		this.tryHydrateFromHost();
 		return this.value as ContextType<T>;
 	};
 
-	subscribe = ({ select, callback }: ContextSubscription<T>) => {
-		this.subscriptions.push({ select, callback });
+	/**
+	 * Returns the provider's logical context token.
+	 *
+	 * SSR helpers use this token to resolve the closest matching provider while a
+	 * host subtree is being serialized.
+	 */
+	getContextKey = () => {
+		return this.context;
 	};
+
+	/**
+	 * Serializes the current provider value for inclusion in a hydration script.
+	 *
+	 * Returns raw `JSON.stringify` output. Escaping for safe embedding inside a
+	 * `<script type="application/json">` tag happens in `createHydrationScriptTag`.
+	 */
+	serializeHydrationValue = (): string | undefined => {
+		this.tryHydrateFromHost();
+
+		if (!this.hydrate || typeof this.value === 'undefined') {
+			return undefined;
+		}
+
+		const hydrationValue = this.serialize ? this.serialize(this.value) : this.value;
+
+		if (typeof hydrationValue === 'undefined') {
+			return undefined;
+		}
+
+		const serializedValue = JSON.stringify(hydrationValue);
+
+		if (typeof serializedValue !== 'string') {
+			return undefined;
+		}
+
+		return serializedValue;
+	};
+
+	/**
+	 * Builds the raw HTML hydration script for this provider.
+	 *
+	 * When `hydrationKey` is present, the marker is scoped so sibling or nested
+	 * providers can recover their own payloads without accidentally reading a
+	 * descendant script.
+	 */
+	renderHydrationScriptTag = (): string | undefined => {
+		const serializedValue = this.serializeHydrationValue();
+
+		if (!serializedValue) {
+			return undefined;
+		}
+
+		return createHydrationScriptTag({
+			type: 'context',
+			hydrationKey: this.hydrationKey,
+			serializedValue,
+		});
+	};
+
+	/**
+	 * Wraps the provider hydration script in a minimal JSX node-like value.
+	 *
+	 * This lets JSX-based host renderers append the script without needing a real
+	 * DOM element instance during SSR.
+	 */
+	renderHydrationScript = (): JsxRenderable | undefined => {
+		const outerHTML = this.renderHydrationScriptTag();
+
+		if (!outerHTML) {
+			return undefined;
+		}
+
+		return createMarkupNodeLike(outerHTML);
+	};
+
+	subscribe = <Selected = ContextType<T>>(subscriptionSpec: ContextSubscription<T, Selected>) => {
+		const subscription: ActiveContextSubscription<T> = {
+			hasChanged: (newContext, prevContext) => {
+				if (typeof prevContext === 'undefined' || !subscriptionSpec.select) {
+					return true;
+				}
+
+				return subscriptionSpec.select(newContext) !== subscriptionSpec.select(prevContext);
+			},
+			notify: (context) => {
+				if (subscriptionSpec.select) {
+					subscriptionSpec.callback(subscriptionSpec.select(context), subscription.unsubscribe);
+					return;
+				}
+
+				subscriptionSpec.callback(context, subscription.unsubscribe);
+			},
+			unsubscribe: () => {
+				if (!subscription.active) {
+					return;
+				}
+
+				subscription.active = false;
+				const index = this.subscriptions.indexOf(subscription);
+
+				if (index !== -1) {
+					this.subscriptions.splice(index, 1);
+				}
+			},
+			active: true,
+		};
+		this.subscriptions.push(subscription);
+
+		return subscription.unsubscribe;
+	};
+
+	private tryHydrateFromHost(): void {
+		if (!this.pendingHostHydration) {
+			return;
+		}
+
+		const hydrationScriptElement = this.findHydrationScriptElement();
+
+		if (!hydrationScriptElement) {
+			return;
+		}
+
+		this.value = this.mergeHydrationValue(
+			parseHydrationPayload(hydrationScriptElement, this.value) as ContextType<T>,
+		);
+		this.pendingHostHydration = false;
+	}
+
+	private mergeHydrationValue(parsedHydrationValue: ContextType<T>): ContextType<T> {
+		if (
+			this.hydrate === Object &&
+			this.isObject(parsedHydrationValue) &&
+			(this.isObject(this.value) || typeof this.value === 'undefined')
+		) {
+			return {
+				...(this.value ?? {}),
+				...parsedHydrationValue,
+			} as ContextType<T>;
+		}
+
+		return parsedHydrationValue;
+	}
 
 	private isObject(value: unknown): value is Record<string, unknown> {
 		return typeof value === 'object' && !Array.isArray(value) && value !== null;
 	}
 
-	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T>) => {
-		for (const sub of this.subscriptions) {
-			if (!sub.select) return this.sendSubscriptionUpdate(sub, newContext);
-			const newSelected = sub.select(newContext);
-			const prevSelected = sub.select(prevContext);
-			if (newSelected !== prevSelected) {
-				this.sendSubscriptionUpdate(sub, newContext);
+	private findHydrationScriptElement(): Element | null {
+		return findHydrationScript(resolveContextHydrationHost(this.host), 'context', this.hydrationKey);
+	}
+
+	/**
+	 * Delivers a context update to the subscribers present at the start of this
+	 * notification.
+	 *
+	 * @remarks
+	 * Delivery uses a snapshot of `subscriptions`. Subscribers added during a
+	 * callback are not notified until a later update. A subscriber removed before
+	 * its turn is skipped via that subscription's `active` flag. Self-unsubscription
+	 * therefore cannot prevent later subscribers from receiving the same update.
+	 */
+	private notifySubscribers = (newContext: ContextType<T>, prevContext: ContextType<T> | undefined) => {
+		const snapshot = this.subscriptions.slice();
+
+		for (const sub of snapshot) {
+			if (!sub.active) {
+				continue;
+			}
+
+			if (sub.hasChanged(newContext, prevContext)) {
+				sub.notify(newContext);
 			}
 		}
 	};
 
-	private sendSubscriptionUpdate = ({ select, callback }: ContextSubscription<T>, context: ContextType<T>) => {
-		if (!select) callback(context);
-		else callback(select(context));
-	};
+	private handleSubscriptionRequest = (
+		subscription: ContextSubscription<T, unknown>,
+		{
+			subscribe,
+			onSubscribe,
+		}: {
+			subscribe?: boolean;
+			onSubscribe?: (unsubscribe: () => void) => void;
+		},
+	) => {
+		this.tryHydrateFromHost();
+		const unsubscribe = subscribe ? this.subscribe(subscription) : undefined;
 
-	private handleSubscriptionRequest = ({
-		select,
-		callback,
-		subscribe,
-	}: {
-		select?: ContextSubscription<T>['select'];
-		callback: ContextSubscription<T>['callback'];
-		subscribe?: boolean;
-	}) => {
-		if (subscribe) this.subscribe({ select, callback });
+		if (unsubscribe) {
+			onSubscribe?.(unsubscribe);
+		}
 
-		if (!this.value) return;
+		if (typeof this.value === 'undefined') return;
 
-		if (select) {
-			callback(select(this.value));
+		if (subscription.select) {
+			subscription.callback(subscription.select(this.value), unsubscribe);
 		} else {
-			callback(this.value as ContextType<T>);
+			subscription.callback(this.value, unsubscribe);
 		}
 	};
 
 	private onSubscriptionRequest = (event: ContextSubscriptionRequestEvent<UnknownContext>) => {
-		const { context, callback, subscribe, select, target } = event;
+		const { context, callback, subscribe, select, target, onSubscribe } = event;
 		if (context !== this.context) return;
 
+		event.markHandled();
 		event.stopPropagation();
 
-		(target as HTMLElement).dispatchEvent(new ContextOnMountEvent(this.context));
+		if (target instanceof EventTarget) {
+			target.dispatchEvent(new ContextOnMountEvent(this.context));
+		}
 
-		this.handleSubscriptionRequest({ select, callback, subscribe });
+		if (select) {
+			this.handleSubscriptionRequest({ select, callback }, { subscribe, onSubscribe });
+			return;
+		}
+
+		this.handleSubscriptionRequest({ callback }, { subscribe, onSubscribe });
 	};
 
 	private onContextRequest = (event: ContextRequestEvent<UnknownContext>) => {
 		const { context, callback } = event;
 		if (context !== this.context) return;
+		event.markHandled();
 		event.stopPropagation();
 		callback(this);
 	};
 
 	private registerEvents = () => {
-		this.host.addEventListener(ContextEventsTypes.SUBSCRIPTION_REQUEST, this.onSubscriptionRequest);
-		this.host.addEventListener(ContextEventsTypes.CONTEXT_REQUEST, this.onContextRequest);
+		this.host.addEventListener(
+			ContextEventsTypes.SUBSCRIPTION_REQUEST,
+			this.onSubscriptionRequest as EventListener,
+		);
+		this.host.addEventListener(ContextEventsTypes.CONTEXT_REQUEST, this.onContextRequest as EventListener);
 	};
 }

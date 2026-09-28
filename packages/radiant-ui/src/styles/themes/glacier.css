@@ -1,0 +1,19 @@
+/**
+ * Glacier — default brand (aligned with apps/docs).
+ */
+@import '../tokens/colors/palettes.css';
+@import '../tokens/spacing/default.css';
+@import '../tokens/radius/default.css';
+@import '../tokens/elevation/default.css';
+@import '../tokens/typography/default.css';
+@import '../tokens/motion/default.css';
+@import '../tokens/system.css';
+@import '../tokens/semantic.css';
+
+:root {
+	color-scheme: light;
+}
+
+.dark {
+	color-scheme: dark;
+}

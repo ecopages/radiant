@@ -1,4 +1,7 @@
-import type { RadiantElement } from '../../core/radiant-element';
+import type { ReactiveHostLike } from '../../core/reactive-host';
+import { resolveHostAutoBind } from '../shared/auto-bind';
+import { registerLegacyInstanceInitializer, registerLegacyPostConstructionInitializer } from './instance-initializers';
+import { bootstrapReactiveMemberBinding } from './member-bootstrap';
 
 /**
  * A decorator to define a reactive field.
@@ -8,11 +11,20 @@ import type { RadiantElement } from '../../core/radiant-element';
  * @param target The target element.
  * @param propertyKey The property key.
  */
-export function reactiveField(target: RadiantElement, propertyKey: string) {
-	const originalConnectedCallback = target.connectedCallback;
+export function reactiveField(target: ReactiveHostLike, propertyKey: string) {
+	registerLegacyInstanceInitializer(target, (element) => {
+		bootstrapReactiveMemberBinding(
+			element,
+			propertyKey,
+			element[propertyKey as keyof typeof element],
+			resolveHostAutoBind(element),
+		);
+	});
 
-	target.connectedCallback = function (this: RadiantElement) {
-		this.createReactiveField(propertyKey, this[propertyKey as keyof typeof this]);
-		originalConnectedCallback.call(this);
-	};
+	registerLegacyPostConstructionInitializer(target, (element) => {
+		element.createReactiveField(propertyKey, element[propertyKey as keyof typeof element], {
+			bind: resolveHostAutoBind(element),
+			suppressInitialNotify: true,
+		});
+	});
 }

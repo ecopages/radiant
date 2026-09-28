@@ -1,0 +1,19 @@
+/**
+ * Default motion pack.
+ */
+:root {
+	--duration-fast: 150ms;
+	--duration-normal: 200ms;
+	--duration-slow: 300ms;
+	--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+@theme {
+	--transition-duration-fast: var(--duration-fast);
+	--transition-duration-normal: var(--duration-normal);
+	--transition-duration-slow: var(--duration-slow);
+	--duration-150: var(--duration-fast);
+	--duration-200: var(--duration-normal);
+	--duration-300: var(--duration-slow);
+}
