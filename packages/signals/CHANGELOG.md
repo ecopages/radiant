@@ -1,53 +1,5 @@
 # @ecopages/signals
 
-## 0.3.0-rc.13
+## 0.3.0
 
-## 0.3.0-rc.12
-
-## 0.3.0-rc.11
-
-## 0.3.0-rc.10
-
-## 0.3.0-rc.9
-
-## 0.3.0-rc.8
-
-## 0.3.0-rc.7
-
-## 0.3.0-rc.6
-
-## 0.3.0-rc.5
-
-## 0.3.0-rc.4
-
-## 0.3.0-rc.3
-
-## 0.3.0-rc.2
-
-## 0.3.0-rc.1
-
-## 0.3.0-rc.0
-
-### Patch Changes
-
-- Start the rc channel from the current beta line.
-
-## 0.3.0-beta.8
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-## 0.3.0-beta.6
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-## 0.3.0-beta.5
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-## 0.3.0-beta.4
+First stable. Radiant hosts and JSX derivations use `State` and `computed` from this package. `@ecopages/radiant` depends on it directly; `@ecopages/jsx` takes it as a peer.

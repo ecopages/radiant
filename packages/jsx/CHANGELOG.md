@@ -1,93 +1,14 @@
 # @ecopages/jsx
 
-## 0.3.0-rc.13
+## 0.3.0
 
-### Patch Changes
+First stable. Server rendering is Node-only (`AsyncLocalStorage` on `@ecopages/jsx/server`), and host contracts type native plus custom-element JSX without shipping the server entry to the client.
 
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.13
+### Breaking Changes
 
-## 0.3.0-rc.12
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.12
-
-## 0.3.0-rc.11
-
-### Patch Changes
-
-- [#257](https://github.com/ecopages/radiant/pull/257) [`df92a7b`](https://github.com/ecopages/radiant/commit/df92a7b32b5b98bf5cd9a1205fe408b367fe639f) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep registered custom-element JSX props (`label`, `tabs`, …) instead of dropping them on the unknown-tag fallback.
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.11
-
-## 0.3.0-rc.10
-
-### Patch Changes
-
-- [#250](https://github.com/ecopages/radiant/pull/250) [`9d04586`](https://github.com/ecopages/radiant/commit/9d04586eff13d60b045162eef24301ecd2bf0016) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix hydration of adjacent dynamic text children collapsed into one SSR text node.
-
-    The SSR serializer emits each child value without separators, so `Step {n} of {m}` serializes to `Step 1 of 2` as a single text node. Hydration planning assumed one node per text child, so every child part in the run claimed the whole merged node and scrambled each other's content on the first update (`Step 12 of`). Hydration now splits the merged text node once per child when its text equals the concatenation of the run's serialized values, so each range owns its slice and updates patch in place.
-
-    Preserve empty reactive child positions between adjacent text bindings without duplicating trailing text during hydration.
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.10
-
-## 0.3.0-rc.9
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.9
-
-## 0.3.0-rc.8
-
-### Patch Changes
-
-- [#238](https://github.com/ecopages/radiant/pull/238) [`9a3cf16`](https://github.com/ecopages/radiant/commit/9a3cf16e49f2d20c4441f74c71549545d0fa9277) Thanks [@andeeplus](https://github.com/andeeplus)! - Hydrate template and iterable roots in place, including when the root is a reactive wrapper around the current snapshot. Other shapes fall back to a client render instead of a marker-only scan that attached no live parts.
-
-- [#236](https://github.com/ecopages/radiant/pull/236) [`a864e06`](https://github.com/ecopages/radiant/commit/a864e06b2fb66a2afa645ed09f524d2521bf6ac8) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep fragment hydration subscriptions owned through unmount, preserve keyed fragment identity when every child has a key, render `textarea`/`title`/`style`/`script` children as character data without clobbering unchanged textarea edits, and snapshot one-shot generator children by iterator identity so mount, hydrate, and later renders can read them without a second consume.
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.8
-
-## 0.3.0-rc.7
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.7
-
-## 0.3.0-rc.6
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.6
-
-## 0.3.0-rc.5
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.5
-
-## 0.3.0-rc.4
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.4
-
-## 0.3.0-rc.3
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.3
-
-## 0.3.0-rc.1
+- JSX host contracts expose typed direct `aria-*` and `data-*` channels in addition to structured `aria` / `data` utilities. Direct values take precedence independent of source order. `JsxElementProps<ElementType>` is the native helper contract, including typed `prop:*` bindings. HTML tag names win when HTML and SVG share a name (`a`, `title`). The partial `JsxHtmlProps` and `JsxHtmlPropsWithChildren` aliases are gone; views must declare a native or custom-element host contract.
+- `@ecopages/jsx/server` is Node-only. `withForcedServerCustomElementRendering` is gone; custom-element SSR is handled by the server-render pipeline.
+- `@ecopages/signals` is a peer dependency. `mapSubscribable` builds signal-backed derivations with `computed` when the source is a `SignalLike`.
 
 ### Minor Changes
 
@@ -95,98 +16,23 @@
 
 ### Patch Changes
 
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.1
+- [#257](https://github.com/ecopages/radiant/pull/257) [`df92a7b`](https://github.com/ecopages/radiant/commit/df92a7b32b5b98bf5cd9a1205fe408b367fe639f) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep registered custom-element JSX props (`label`, `tabs`, …) instead of dropping them on the unknown-tag fallback.
 
-## 0.3.0-rc.0
+- [#250](https://github.com/ecopages/radiant/pull/250) [`9d04586`](https://github.com/ecopages/radiant/commit/9d04586eff13d60b045162eef24301ecd2bf0016) Thanks [@andeeplus](https://github.com/andeeplus)! - Fix hydration of adjacent dynamic text children collapsed into one SSR text node.
 
-### Breaking Changes
+    The SSR serializer emits each child value without separators, so `Step {n} of {m}` serializes to `Step 1 of 2` as a single text node. Hydration planning assumed one node per text child, so every child part in the run claimed the whole merged node and scrambled each other's content on the first update (`Step 12 of`). Hydration now splits the merged text node once per child when its text equals the concatenation of the run's serialized values, so each range owns its slice and updates patch in place.
 
-- JSX host contracts now expose typed direct `aria-*` and `data-*` channels in
-  addition to structured `aria`/`data` utilities. Direct values take precedence
-  independent of source order. `JsxElementProps<ElementType>` is the native
-  helper contract, including typed `prop:*` bindings. HTML tag names win when
-  HTML and SVG share a name (`a`, `title`). The partial `JsxHtmlProps` and
-  `JsxHtmlPropsWithChildren` aliases have been removed; views must declare a
-  native or custom-element host contract.
+    Preserve empty reactive child positions between adjacent text bindings without duplicating trailing text during hydration.
 
-### Patch Changes
+- [#238](https://github.com/ecopages/radiant/pull/238) [`9a3cf16`](https://github.com/ecopages/radiant/commit/9a3cf16e49f2d20c4441f74c71549545d0fa9277) Thanks [@andeeplus](https://github.com/andeeplus)! - Hydrate template and iterable roots in place, including when the root is a reactive wrapper around the current snapshot. Other shapes fall back to a client render instead of a marker-only scan that attached no live parts.
 
-- [#147](https://github.com/ecopages/radiant/pull/147) [`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize nested custom-element light DOM with the active SSR renderer.
+- [#236](https://github.com/ecopages/radiant/pull/236) [`a864e06`](https://github.com/ecopages/radiant/commit/a864e06b2fb66a2afa645ed09f524d2521bf6ac8) Thanks [@andeeplus](https://github.com/andeeplus)! - Keep fragment hydration subscriptions owned through unmount, preserve keyed fragment identity when every child has a key, render `textarea`/`title`/`style`/`script` children as character data without clobbering unchanged textarea edits, and snapshot one-shot generator children by iterator identity so mount, hydrate, and later renders can read them without a second consume.
 
-    **@ecopages/jsx**
-
-    - Registered custom elements inside another server-rendered custom element now preserve the active SSR custom-element renderer and hydration state.
-
-    **@ecopages/radiant-ui**
-
-    - `RuiCycleToggle`, `RuiRadioGroup`, and `RuiSelect` no longer need `attr:` prefixes for ordinary host props during nested SSR.
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-rc.0
-
-## 0.3.0-beta.8
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-beta.8
-
-## 0.3.0-beta.6
-
-### Patch Changes
-
-- Prepare the next beta release.
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-beta.6
-
-## 0.3.0-beta.5
-
-### Patch Changes
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-beta.5
-
-## 0.3.0-beta.4
-
-### Patch Changes
+- [#147](https://github.com/ecopages/radiant/pull/147) [`263295c`](https://github.com/ecopages/radiant/commit/263295c44755e8516a49b5b913922b10355f307f) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize nested custom-element light DOM with the active SSR renderer so registered custom elements inside another server-rendered custom element keep the active renderer and hydration state.
 
 - [#74](https://github.com/ecopages/radiant/pull/74) [`beffbbd`](https://github.com/ecopages/radiant/commit/beffbbdf72b6d8353b687e8015089b6d643b867f) Thanks [@andeeplus](https://github.com/andeeplus)! - Serialize reactive `style` object snapshots when applying attributes and during SSR, so callers can bind object styles through signals and subscribables without manual CSS strings.
 
-- [#65](https://github.com/ecopages/radiant/pull/65) [`ba60c0a`](https://github.com/ecopages/radiant/commit/ba60c0a4336d47ede31d6540c4fb15fcc284733a) Thanks [@andeeplus](https://github.com/andeeplus)! - Move SSR ambient render state to Node `AsyncLocalStorage` and keep client bundles free of the JSX server entry.
+- [#65](https://github.com/ecopages/radiant/pull/65) [`ba60c0a`](https://github.com/ecopages/radiant/commit/ba60c0a4336d47ede31d6540c4fb15fcc284733a) Thanks [@andeeplus](https://github.com/andeeplus)! - Store active SSR render scope in `AsyncLocalStorage`. `getActiveSsrScopeValue` / `withActiveSsrScopeValue` hold framework-scoped SSR state on the active render.
 
-    **@ecopages/jsx**
-
-    - `@ecopages/jsx/server` is Node-only and stores active SSR render scope in `AsyncLocalStorage` (no sync / browser fallback stack).
-    - Add `getActiveSsrScopeValue` / `withActiveSsrScopeValue` for framework-scoped SSR state on the active render scope.
-    - `withForcedServerCustomElementRendering` has been removed; custom-element SSR is handled by the server-render pipeline directly.
-
-    **@ecopages/radiant**
-
-    - Server SSR entries install scope adapters into core so client code never imports `@ecopages/jsx/server`.
-    - SSR context provider stack lives on the JSX SSR render scope (symbol-keyed); import `@ecopages/radiant/server/install-ssr-runtime` (or another server SSR entry) before rendering hosts outside the browser.
-    - SSR bundlers must resolve a single `@ecopages/*` instance (do not inline duplicate copies); the Vite Nitro playground externalizes these packages and installs the SSR runtime at server boot.
-
-- [#60](https://github.com/ecopages/radiant/pull/60) [`017f705`](https://github.com/ecopages/radiant/commit/017f70500dbf86d0e8912e8840f8775a7eada9c4) Thanks [@andeeplus](https://github.com/andeeplus)! - Back reactive host members with signals `State` and wire jsx derived bindings through signals `computed`.
-
-    **@ecopages/jsx**
-
-    - Add `@ecopages/signals` as a peer dependency.
-    - `mapSubscribable` now builds signal-backed derivations with `computed` when the source is a `SignalLike` (pull/push remains for `SubscribableJsxValue` adapters).
-
-    **@ecopages/radiant**
-
-    - Add `@ecopages/signals` as a direct dependency (no longer peer-only).
-    - Removed `trackReactiveRead` and `registerReactiveDependencyReader` from `RadiantElement` and `RadiantController`. Host members are now signals-backed; dependency tracking is native via `State.get()`.
-    - Legacy `@state` / `@prop` decorators now register member `State` during post-construction (SSR and connect), matching standard decorator timing.
-    - Legacy `@prop` SSR staging honors pre-render property assignments while connect-time initialization still prefers explicit `defaultValue` over class field initializers.
-    - Added `createReactiveMember`, `registerReactiveMember`, and `getReactiveMember` for advanced host integrations.
-    - Removed exported `ReactiveField` metadata type; use `createReactiveField` / `@state` instead.
-
-    Decorator APIs (`@state`, `@prop`, `@attr`, `@onUpdated`, `signal()`, `registerUpdateCallback`) are unchanged.
-
-- Updated dependencies []:
-    - @ecopages/signals@0.3.0-beta.4
+- Updated dependencies:
+    - `@ecopages/signals@0.3.0`

@@ -8,6 +8,6 @@
 	],
 	"linked": [],
 	"access": "public",
-	"baseBranch": "release/v0.3.0",
+	"baseBranch": "develop",
 	"updateInternalDependencies": "patch"
 }
