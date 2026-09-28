@@ -126,6 +126,8 @@ class RuiTableSortDemo extends RadiantElement {
 	}
 }
 
+void RuiTableSortDemo;
+
 const meta = {
 	title: 'Components/Table',
 	component: RuiTable,

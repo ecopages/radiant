@@ -6,6 +6,7 @@ on:
         branches:
             - main
             - develop
+            # - 'release/**'  # re-enable if a prerelease line needs CI on push, not only PRs
 
 concurrency:
     group: ci-${{ github.workflow }}-${{ github.ref }}

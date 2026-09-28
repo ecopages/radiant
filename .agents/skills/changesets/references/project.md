@@ -11,7 +11,7 @@ Source of truth: `.changeset/config.json`. While a line is in prerelease, `.chan
 | `develop` | Default integration branch. Features land here. `changeset add` and `status` compare against it (`baseBranch`). |
 | `main`    | Production. Merge `develop` into `main` when a release is ready. Publish runs only from here.                   |
 
-Do not cut `release/*` branches. The next stable cut is a merge (or PR) of `develop` into `main`.
+Stable cuts are a merge (or PR) of `develop` into `main`. A `release/*` branch is only for an active prerelease channel: uncomment it in `.github/workflows/release.yml` (and optionally `ci.yml`) while `pre.json` is in `pre` mode, then comment it again when that line ships.
 
 ## Package tiers
 
