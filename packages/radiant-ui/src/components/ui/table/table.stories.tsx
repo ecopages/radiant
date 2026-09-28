@@ -100,7 +100,7 @@ function comparePlantColumn(
 }
 
 @customElement('rui-table-sort-demo')
-export class RuiTableSortDemo extends RadiantElement {
+class RuiTableSortDemo extends RadiantElement {
 	@state sortColumn = 'name';
 	@state sortDirection: RuiTableSortDirection = 'ascending';
 	@state plants = [...rows].sort((left, right) => comparePlantColumn(left, right, 'name', 'ascending'));
