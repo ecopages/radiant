@@ -2,6 +2,8 @@
 
 Documentation app for Radiant UI: landing page at `/`, component reference under `/docs`.
 
+The default Open Graph and Twitter preview is `src/public/assets/images/default-og.png`. It uses the site logo, Karla heading font, and the homepage hook; `src/lib/docs/site-meta.ts` supplies its public URL when a page has no custom image.
+
 ## Local development
 
 ```bash
