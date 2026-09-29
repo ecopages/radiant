@@ -6,10 +6,10 @@ Source of truth: `.changeset/config.json`. While a line is in prerelease, `.chan
 
 ## Branches
 
-| Branch    | Role                                                                                                            |
-| --------- | --------------------------------------------------------------------------------------------------------------- |
-| `develop` | Default integration branch. Features land here. `changeset add` and `status` compare against it (`baseBranch`). |
-| `main`    | Production. Merge `develop` into `main` when a release is ready. Publish runs only from here.                   |
+| Branch    | Role                                                                                                           |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| `main`    | GitHub default and production. Visitors clone this. Merge `develop` here to ship. Publish runs only from here. |
+| `develop` | Integration. Feature PRs land here. `changeset add` and `status` compare against it (`baseBranch`).            |
 
 Stable cuts are a merge (or PR) of `develop` into `main`. A `release/*` branch is only for an active prerelease channel: uncomment it in `.github/workflows/release.yml` (and optionally `ci.yml`) while `pre.json` is in `pre` mode, then comment it again when that line ships.
 
