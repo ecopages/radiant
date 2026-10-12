@@ -89,6 +89,10 @@
 	--color-on-background-code: var(--color-laser-lemon-800);
 }
 
+.rui-headline {
+	font-family: var(--font-heading);
+}
+
 [data-theme='dark'] {
 	--color-background: var(--color-glacier-white-950);
 	--color-on-background: var(--color-glacier-white-50);
