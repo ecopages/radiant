@@ -91,6 +91,7 @@
 
 .rui-headline {
 	font-family: var(--font-heading);
+	font-weight: 800;
 }
 
 [data-theme='dark'] {
