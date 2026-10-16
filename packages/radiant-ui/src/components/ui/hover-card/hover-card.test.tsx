@@ -7,6 +7,9 @@ import './hover-card.script';
 
 function mount(element: JsxRenderable): { host: HTMLElement; cleanup: () => void } {
 	const host = document.createElement('div');
+	host.style.position = 'fixed';
+	host.style.left = '-10000px';
+	host.style.top = '-10000px';
 	document.body.appendChild(host);
 	const root = createRoot(host);
 	root.render(element);
