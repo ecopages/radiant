@@ -67,7 +67,7 @@ Toast variants reuse the **semantic status roles** from the active theme (the sa
 | `error` | `error` (destructive) | `border-error/40`, `text-error` |
 | `loading` | neutral surface | `border-border`, `text-on-surface` |
 
-The surface stays `bg-surface text-on-surface` with a per-variant border and text accent, so toasts read as floating chrome rather than filled status blocks. Remap status roles at the theme layer (`tokens/presets/colors/*.css`) for global mood.
+The surface stays `bg-surface text-on-surface` with a per-variant border and text accent, so toasts read as floating chrome rather than filled status blocks. Remap status roles at the theme layer (`theme role layer`) for global mood.
 
 Toaster geometry uses `--rui-toaster-*` on `rui-toaster`. `gap` and `offset` attributes write `--rui-toaster-gap` and `--rui-toaster-offset` and win over CSS.
 

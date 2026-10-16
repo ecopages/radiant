@@ -1,8 +1,4 @@
-/**
- * Semantic color roles — brand presets + tree-shakable Tailwind utility bridge.
- * Load `colors/palettes.css` before this file (palette scales are `:root`, not `@theme`).
- */
-@import './presets/colors/index.css';
+/** Tree-shakable Tailwind utility bridge for the semantic color contract. */
 
 @theme {
 	--color-transparent: transparent;

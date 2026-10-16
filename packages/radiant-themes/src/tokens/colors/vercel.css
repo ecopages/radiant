@@ -1,0 +1,71 @@
+:where(:root) {
+	--color-vercel-gray-50: #fafafa;
+	--color-vercel-gray-100: #f2f2f2;
+	--color-vercel-gray-200: #eaeaea;
+	--color-vercel-gray-300: #e1e1e1;
+	--color-vercel-gray-400: #c7c7c7;
+	--color-vercel-gray-500: #a1a1a1;
+	--color-vercel-gray-600: #666666;
+	--color-vercel-gray-700: #444444;
+	--color-vercel-gray-800: #333333;
+	--color-vercel-gray-900: #111111;
+	--color-vercel-gray-950: #000000;
+
+	--color-vercel-blue: #0070f3;
+	--color-vercel-blue-light: #3291ff;
+	--color-vercel-red: #ee0000;
+	--color-vercel-amber: #f5a623;
+	--color-vercel-green: #0cce6b;
+	--color-vercel-teal: #50e3c2;
+	--color-vercel-purple: #8e4ec6;
+	--color-vercel-pink: #ff0080;
+
+	--color-vercel-background-1: #ffffff;
+	--color-vercel-background-2: #fafafa;
+	--color-vercel-component-1: #ffffff;
+	--color-vercel-component-2: #fafafa;
+	--color-vercel-component-3: #eaeaea;
+	--color-vercel-border-4: #eaeaea;
+	--color-vercel-border-5: #999999;
+	--color-vercel-border-6: #666666;
+	--color-vercel-high-contrast-1: #000000;
+	--color-vercel-high-contrast-2: #333333;
+	--color-vercel-text-secondary: #666666;
+	--color-vercel-text-primary: #000000;
+}
+
+:where(.dark) {
+	--color-vercel-gray-50: #1a1a1a;
+	--color-vercel-gray-100: #222222;
+	--color-vercel-gray-200: #2a2a2a;
+	--color-vercel-gray-300: #333333;
+	--color-vercel-gray-400: #444444;
+	--color-vercel-gray-500: #666666;
+	--color-vercel-gray-600: #888888;
+	--color-vercel-gray-700: #999999;
+	--color-vercel-gray-800: #cccccc;
+	--color-vercel-gray-900: #eeeeee;
+	--color-vercel-gray-950: #ffffff;
+
+	--color-vercel-blue: #3291ff;
+	--color-vercel-blue-light: #52a8ff;
+	--color-vercel-red: #ff1a1a;
+	--color-vercel-amber: #f5a623;
+	--color-vercel-green: #50e3c2;
+	--color-vercel-teal: #50e3c2;
+	--color-vercel-purple: #a76ad7;
+	--color-vercel-pink: #ff0080;
+
+	--color-vercel-background-1: #000000;
+	--color-vercel-background-2: #111111;
+	--color-vercel-component-1: #111111;
+	--color-vercel-component-2: #1a1a1a;
+	--color-vercel-component-3: #333333;
+	--color-vercel-border-4: #333333;
+	--color-vercel-border-5: #666666;
+	--color-vercel-border-6: #888888;
+	--color-vercel-high-contrast-1: #ffffff;
+	--color-vercel-high-contrast-2: #cccccc;
+	--color-vercel-text-secondary: #888888;
+	--color-vercel-text-primary: #ffffff;
+}

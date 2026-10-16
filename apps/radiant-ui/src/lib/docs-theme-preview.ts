@@ -1,16 +1,16 @@
 export const DOCS_THEME_STORAGE_KEY = 'radiant-ui-docs:theme';
 
-/** Boot script and `applyDocumentTokens` share this handle for pack CSS. */
+/** Boot script and `applyDocumentTokens` share this handle for packaged theme CSS. */
 export const DOCS_TOKEN_PACK_GLOBAL = '__RUI_DOCS_TOKEN_PACKS';
 
-/** Marks injected spacing/radius pack `<style>` nodes. */
+/** Marks injected theme and axis pack `<style>` nodes. */
 export const DOCS_TOKEN_SHEET_ATTR = 'data-rui-docs-token';
 
 export const docsThemeColorOptions = [
-	{ value: 'glacier', label: 'Glacier', description: 'Cool, editorial' },
-	{ value: 'basalt', label: 'Basalt', description: 'Carbon-inspired' },
-	{ value: 'ember', label: 'Ember', description: 'Warm accent' },
-	{ value: 'aurora', label: 'Aurora', description: 'Vivid and expressive' },
+	{ value: 'basalt', label: 'Basalt', description: 'Radiant default, cool and quiet' },
+	{ value: 'github', label: 'GitHub', description: 'Clean surfaces and clear status colors' },
+	{ value: 'vscode', label: 'VS Code', description: 'Editor-inspired light and dark modes' },
+	{ value: 'vercel', label: 'Vercel', description: 'Layered monochrome surfaces and clear component states' },
 ] as const;
 
 export const docsThemeSpacingOptions = [
@@ -20,8 +20,7 @@ export const docsThemeSpacingOptions = [
 ] as const;
 
 export const docsThemeRadiusOptions = [
-	{ value: 'default', label: 'Default', description: 'Subtle rounding' },
-	{ value: 'soft', label: 'Soft', description: 'Generous rounding' },
+	{ value: 'default', label: 'Soft', description: 'Radiant default radius' },
 	{ value: 'sharp', label: 'Sharp', description: 'Square surfaces' },
 ] as const;
 
@@ -43,12 +42,13 @@ export type DocsThemeSelection = {
  * already on the page — only non-default packs are layered.
  */
 export type DocsTokenPackCss = {
+	themes: { github: string; vscode: string; vercel: string };
 	spacing: { compact: string; wide: string };
-	radius: { soft: string; sharp: string };
+	radius: { sharp: string };
 };
 
 export const defaultDocsThemeSelection: DocsThemeSelection = {
-	colors: 'glacier',
+	colors: 'basalt',
 	spacing: 'default',
 	radius: 'default',
 };
@@ -117,10 +117,10 @@ export function updateDocsThemeSelection(
  * missing boot script.
  */
 export function readDocsThemeSelection(): DocsThemeSelection {
-	const { ruiColors, ruiSpacing, ruiRadius } = document.documentElement.dataset;
-	if (ruiColors || ruiSpacing || ruiRadius) {
+	const { ruiTheme, ruiSpacing, ruiRadius } = document.documentElement.dataset;
+	if (ruiTheme || ruiSpacing || ruiRadius) {
 		return {
-			colors: isDocsThemeColor(ruiColors) ? ruiColors : defaultDocsThemeSelection.colors,
+			colors: isDocsThemeColor(ruiTheme) ? ruiTheme : defaultDocsThemeSelection.colors,
 			spacing: isDocsThemeSpacing(ruiSpacing) ? ruiSpacing : defaultDocsThemeSelection.spacing,
 			radius: isDocsThemeRadius(ruiRadius) ? ruiRadius : defaultDocsThemeSelection.radius,
 		};
@@ -144,10 +144,10 @@ export function installDocsTokenPackCss(packs: DocsTokenPackCss): void {
  * @remarks Inline `<style>` injection applies the published pack files
  * synchronously, matching application `@import` composition.
  */
-function syncTokenStylesheet(kind: 'spacing' | 'radius', css: string | null): void {
+function syncTokenStylesheet(kind: 'theme' | 'spacing' | 'radius', css: string | null): void {
 	if (typeof document === 'undefined') return;
 
-	const root = document.head ?? document.documentElement;
+	const root = document.documentElement;
 	const existing = root.querySelector<HTMLStyleElement>(`style[${DOCS_TOKEN_SHEET_ATTR}="${kind}"]`);
 	if (!css) {
 		existing?.remove();
@@ -164,17 +164,26 @@ function syncTokenStylesheet(kind: 'spacing' | 'radius', css: string | null): vo
 	const style = document.createElement('style');
 	style.setAttribute(DOCS_TOKEN_SHEET_ATTR, kind);
 	style.textContent = css;
-	root.append(style);
+	const firstAxisSheet = root.querySelector(
+		`style[${DOCS_TOKEN_SHEET_ATTR}="spacing"], style[${DOCS_TOKEN_SHEET_ATTR}="radius"]`,
+	);
+	if (kind === 'theme' && firstAxisSheet) {
+		root.insertBefore(style, firstAxisSheet);
+	} else {
+		root.append(style);
+	}
 }
 
 function syncTokenPackStylesheets(selection: DocsThemeSelection, packs: DocsTokenPackCss): void {
+	const themeCss = selection.colors === 'basalt' ? null : packs.themes[selection.colors];
+	syncTokenStylesheet('theme', themeCss);
 	syncTokenStylesheet('spacing', selection.spacing === 'default' ? null : packs.spacing[selection.spacing]);
 	syncTokenStylesheet('radius', selection.radius === 'default' ? null : packs.radius[selection.radius]);
 }
 
 export function applyDocumentTokens(selection: DocsThemeSelection): void {
 	const root = document.documentElement;
-	root.dataset.ruiColors = selection.colors;
+	root.dataset.ruiTheme = selection.colors;
 	root.dataset.ruiSpacing = selection.spacing;
 	root.dataset.ruiRadius = selection.radius;
 	localStorage.setItem(DOCS_THEME_STORAGE_KEY, JSON.stringify(selection));
@@ -191,5 +200,5 @@ export function applyDocumentTokens(selection: DocsThemeSelection): void {
  */
 export function createDocsThemeBootScript(packs: DocsTokenPackCss): string {
 	const packsLiteral = JSON.stringify(packs).replaceAll('<', '\\u003c');
-	return `(function(){try{const r=document.documentElement,s=localStorage.getItem('theme'),p=s==='light'||s==='dark'||s==='system'?s:'system',t=p==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p,v=localStorage.getItem(${JSON.stringify(DOCS_THEME_STORAGE_KEY)}),d=v?JSON.parse(v):{},c=d.colors==='basalt'||d.colors==='ember'||d.colors==='aurora'||d.colors==='glacier'?d.colors:'glacier',g=d.spacing==='compact'||d.spacing==='wide'?d.spacing:'default',a=d.radius==='soft'||d.radius==='sharp'?d.radius:'default',packs=${packsLiteral};r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');r.dataset.ruiColors=c;r.dataset.ruiSpacing=g;r.dataset.ruiRadius=a;globalThis[${JSON.stringify(DOCS_TOKEN_PACK_GLOBAL)}]=packs;var attr=${JSON.stringify(DOCS_TOKEN_SHEET_ATTR)};function sync(kind,css){var root=document.head||document.documentElement,sel='style['+attr+'="'+kind+'"]',el=root.querySelector(sel);if(!css){if(el)el.remove();return}if(el){el.textContent=css;return}var style=document.createElement('style');style.setAttribute(attr,kind);style.textContent=css;root.appendChild(style)}sync('spacing',g==='default'?null:packs.spacing[g]);sync('radius',a==='default'?null:packs.radius[a])}catch{}})();`;
+	return `(function(){try{const r=document.documentElement,s=localStorage.getItem('theme'),p=s==='light'||s==='dark'||s==='system'?s:'system',t=p==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p,v=localStorage.getItem(${JSON.stringify(DOCS_THEME_STORAGE_KEY)}),d=v?JSON.parse(v):{},c=${JSON.stringify(docsThemeColorOptions.map((option) => option.value))}.includes(d.colors)?d.colors:'basalt',g=d.spacing==='compact'||d.spacing==='wide'?d.spacing:'default',a=d.radius==='sharp'?'sharp':'default',packs=${packsLiteral};r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');r.dataset.ruiTheme=c;r.dataset.ruiSpacing=g;r.dataset.ruiRadius=a;globalThis[${JSON.stringify(DOCS_TOKEN_PACK_GLOBAL)}]=packs;var attr=${JSON.stringify(DOCS_TOKEN_SHEET_ATTR)};function sync(kind,css){var root=document.documentElement,sel='style['+attr+'="'+kind+'"]',el=root.querySelector(sel);if(!css){if(el)el.remove();return}if(el){el.textContent=css;return}var style=document.createElement('style');style.setAttribute(attr,kind);style.textContent=css;var axis=root.querySelector('style['+attr+'="spacing"],style['+attr+'="radius"]');if(kind==='theme'&&axis)root.insertBefore(style,axis);else root.appendChild(style)}sync('theme',c==='basalt'?null:packs.themes[c]);sync('spacing',g==='default'?null:packs.spacing[g]);sync('radius',a==='default'?null:packs.radius[a])}catch{}})();`;
 }

@@ -71,9 +71,10 @@ Alert tones use **semantic status roles** from the active theme, not Tailwind pa
 | `warning` | `warning` | `bg-warning-container`, `text-on-warning-container` |
 | `error` | `error` (destructive) | `bg-error-container`, `text-on-error-container` |
 
-Banner layouts paint the left accent rail with the role accent (`bg-info`, `bg-warning`, …). Brand color packs remap all roles for light and dark mode.
+Banner layouts paint the left accent rail with the role accent (`bg-info`, `bg-warning`, …). The active theme role map
+assigns these semantic roles from its palette for light and dark mode.
 
-Override at the theme layer (`tokens/presets/colors/*.css`), not in component CSS. Toasts and other notification UI should reuse the same `info` / `warning` / `success` / `error` families.
+Override at the theme layer (`theme role layer`), not in component CSS. Toasts and other notification UI should reuse the same `info` / `warning` / `success` / `error` families.
 
 ## Why a custom element?
 

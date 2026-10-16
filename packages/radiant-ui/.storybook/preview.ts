@@ -38,21 +38,6 @@ const setupMswWorker = async () => {
 const preview: Preview = {
 	loaders: [mswLoader(setupMswWorker)],
 	globalTypes: {
-		ruiColors: {
-			name: 'Colors',
-			description: 'Brand palette',
-			defaultValue: 'glacier',
-			toolbar: {
-				icon: 'paintbrush',
-				items: [
-					{ value: 'glacier', title: 'Glacier (docs)' },
-					{ value: 'aurora', title: 'Aurora' },
-					{ value: 'basalt', title: 'Basalt' },
-					{ value: 'ember', title: 'Ember' },
-				],
-				dynamicTitle: true,
-			},
-		},
 		ruiSpacing: {
 			name: 'Spacing',
 			defaultValue: 'default',
@@ -72,8 +57,7 @@ const preview: Preview = {
 			toolbar: {
 				icon: 'circlehollow',
 				items: [
-					{ value: 'default', title: 'Default' },
-					{ value: 'soft', title: 'Soft' },
+					{ value: 'default', title: 'Soft (default)' },
 					{ value: 'sharp', title: 'Sharp' },
 				],
 				dynamicTitle: true,

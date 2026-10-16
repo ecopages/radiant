@@ -43,7 +43,7 @@ export const config = {
 </p>
 
 Click a swatch to copy the CSS variable name. Colour, spacing, and radius swatches follow the live docs preview
-(colour profile, spacing pack, radius pack, and light or dark). Change packs on [Theming](/docs/getting-started/theming).
+(theme, spacing pack, radius pack, and light or dark). Change packs on [Theming](/docs/getting-started/theming).
 
 ## Token tiers
 
@@ -53,8 +53,8 @@ Click a swatch to copy the CSS variable name. Colour, spacing, and radius swatch
 | 2. Semantic | `--primary`, `--surface`, `--error`, … plus the Tailwind `@theme` bridge (`bg-primary`) | This is what components use. |
 | 3. System | Absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity, z-index, control and icon sizes | Shared by every theme; not a mood pack. `--size-control-*` aliases the spacing scale. |
 
-A theme file is only an import graph. The default foundation loads palettes, default spacing, default radius, elevation,
-typography, motion, system tokens, and semantic roles.
+`themes/default.css` is the default import graph. It loads the Basalt palette, default spacing and radius, elevation,
+typography, motion, system tokens, and semantic roles. `tokens/foundation.css` contains the shared foundation tokens.
 
 ## Colour roles
 
@@ -78,19 +78,20 @@ Tertiary has fill and container roles only. It does not ship `--tertiary-light` 
 
 ## Gray scale
 
-`--gray-50` through `--gray-950` are the only numeric colour scale exposed as Tailwind utilities (`bg-gray-50`, …).
-Presets remap this scale onto a pack's neutrals (Glacier White, Pale Sky, Basalt, …).
+`--gray-50` through `--gray-950` are the neutral scale exposed as Tailwind utilities (`bg-gray-50`, …). Each theme
+maps this scale to its own neutral family; Radiant UI's default uses Basalt.
 
 <GrayScaleSwatches />
 
 ## Source palettes
 
-Palette files put raw scales on `:root`. Colour presets then assign those steps to semantic roles. Component CSS must
-not reference palette steps such as `--color-night-sky-500` or `--color-havelock-blue-800`.
+Palette files put raw colors on `:root`. Theme role files assign them to semantic roles. Component CSS must not
+reference palette values such as `--color-carbon-blue-500` or `--color-github-blue`.
 
-All three packs load together via `@ecopages/radiant-ui/tokens/colors/palettes`. Every named hue ships steps
-50–975. `--color-black` and `--color-white` are system tokens, not a hue pack. The gray utility scale above is a
-separate contract (50–950, remapped per colour profile).
+The default Basalt scales are derived from OKLCH seed variables in `@ecopages/radiant-ui/themes/default`. Optional
+palettes such as GitHub, VS Code, and Vercel are provided by `@ecopages/radiant-themes`. Hue scales that include step 975
+ship steps 50–975; Vercel gray and the semantic gray scale end at 950. `--color-black` and `--color-white` are system
+tokens, not a hue pack.
 
 <PaletteSwatches />
 
@@ -199,7 +200,7 @@ Size tokens plus `--font-sans`, `--font-mono`, `--leading-*`, `--weight-*`, and 
 ## System
 
 Shared structural tokens from `@ecopages/radiant-ui/tokens/system`. Not a swappable mood pack. Absolute black and
-white live here so colour presets can reference them without depending on the Aurora pack.
+white live here so theme roles can reference them without depending on a palette pack.
 
 <AbsoluteColorSwatches />
 

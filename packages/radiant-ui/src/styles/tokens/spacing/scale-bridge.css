@@ -15,3 +15,7 @@
 	--spacing-stack: var(--space-stack);
 	--spacing-inset: var(--space-inset);
 }
+
+:where(:root) {
+	--rui-density: 1;
+}

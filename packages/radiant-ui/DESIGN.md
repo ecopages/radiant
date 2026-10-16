@@ -15,24 +15,24 @@ Component CSS must **not** `@import` a theme file.
 
 | Directory               | Purpose                                                                  |
 | ----------------------- | ------------------------------------------------------------------------ |
-| `colors/<name>.css`     | Raw scales on `:root` only (always emitted; no `@theme` utilities)       |
+| `colors/basalt.css`     | Radiant UI's seed-derived Basalt color scales                            |
 | `spacing/<name>.css`    | `--space-*` scale + spacing roles                                        |
 | `radius/<name>.css`     | Radius scale + `--radius-control`, `--radius-container`, `--radius-pill` |
 | `elevation/<name>.css`  | `--shadow-control`, `--shadow-overlay`, `--shadow-modal`                 |
 | `typography/<name>.css` | Font family, text sizes, weights, leading roles                          |
 | `motion/<name>.css`     | `--duration-*`, `--ease-*`                                               |
 
-Named hue scales ship steps **50–975** (12 stops). `--color-black` and `--color-white` live in `system.css` (absolute anchors, not a hue pack). The semantic gray utility scale stays **50–950** (Tailwind-shaped); presets remap it onto a pack neutral.
+The default Basalt neutral, primary, and secondary scales ship steps **50–975** and derive from three OKLCH seed variables (`--rui-neutral`, `--rui-primary`, and `--rui-secondary`). Error and warning scales use fixed red and amber seeds; info and success roles follow the primary and secondary seeds. `--color-black` and `--color-white` live in `system.css` (absolute anchors, not a hue pack). The semantic gray utility scale stays **50–950** (Tailwind-shaped); the default theme maps it to Basalt neutrals. Optional palettes and their semantic role maps are owned by `@ecopages/radiant-themes`.
 
 Components must **never** reference palette steps (e.g. `--color-havelock-blue-800`) directly.
 
 **Color packs vs `@theme`:** Put palette scales on `:root`, not `@theme`. Tailwind v4 tree-shakes unused `@theme` vars; brand presets only reference palettes via nested `var(--color-*)`, which does not keep them alive. Spacing already follows this split (`:root` values + `@theme` bridge).
 
-**Exports:** Token/theme sources in `dist/` stay authoring CSS for Tailwind apps (semantic `@theme` remains tree-shakable). Compiled entries (`radiant-ui.css`, `styles.css`) bake in `:root` palettes for drop-in consumers.
+**Exports:** Radiant UI exposes one complete theme, `themes/default`, plus foundational tokens and axes. Token/theme sources in `dist/` stay authoring CSS for Tailwind apps (semantic `@theme` remains tree-shakable). The compiled `radiant-ui.css` includes the Basalt default; `styles.css` contains component styles only and assumes a theme import.
 
 ### Tier 2 — semantic (`tokens/semantic.css`)
 
-- Brand presets assign plain roles (`--primary`, …) on `html[data-rui-colors]` / `.dark`.
+- Theme role maps assign plain roles (`--primary`, …) on `:root` / `.dark`.
 - `@theme` block maps those roles to tree-shakable Tailwind color utilities (`bg-primary`, `text-on-surface`, …).
 - There is no separate `semantic.dark.css`.
 
@@ -58,24 +58,21 @@ Shared structural tokens: absolute colours (`--color-black`, `--color-white`), b
 
 ## Themes
 
-A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styles/themes/default.css):
+A theme is an import graph, e.g. [`src/styles/themes/default.css`](src/styles/themes/default.css):
 
 ```css
-@import '../tokens/colors/palettes.css';
+@import '../tokens/foundation.css';
 @import '../tokens/spacing/default.css';
 @import '../tokens/radius/default.css';
-@import '../tokens/elevation/default.css';
-@import '../tokens/typography/default.css';
-@import '../tokens/motion/default.css';
-@import '../tokens/system.css';
-@import '../tokens/semantic.css';
+@import '../tokens/colors/basalt.css';
+@import '../tokens/presets/colors/basalt.css';
 ```
 
-**Naming:** Short names highlight swapped axes (`aurora-compact-soft`). Omitted axes use the **`default`** pack.
+Radiant UI ships only the `default` theme: Basalt colors, comfortable spacing, and soft radius. Optional ready-made themes and variants live in `@ecopages/radiant-themes`. Its entries (such as `github/compact`) compose the shared foundation and axes instead of copying token definitions. Apps can layer a spacing or radius pack after any theme.
 
-**Storybook and docs preview:** colour, spacing, and radius come from the same pack stylesheets applications import. Storybook injects the selected spacing/radius pack into the preview document; the docs app does the same for its live preview. `data-rui-*` attributes are preview markers only (colour switching plus MutationObserver hooks). They are not an application API.
+**Storybook and docs preview:** theme, spacing, and radius come from the same published stylesheets applications import. Storybook and the docs playground load optional themes from `@ecopages/radiant-themes`; the docs preview injects those entries at runtime. `data-rui-*` attributes are docs-preview markers only and are not an application API.
 
-**Brands (`data-rui-colors`):** `glacier` (docs), `aurora`, `basalt`, `ember`. **Spacing:** `default` · `compact` · `wide`. **Radius:** `default` · `soft` · **sharp** (square; `radius/sharp.css`).
+**Basalt seeds:** `--rui-primary`, `--rui-secondary`, and `--rui-neutral` generate the default theme's OKLCH scales. **Geometry:** `--rui-density` scales spacing, `--rui-radius-scale` scales soft radii, and `--rui-border-alpha` sets translucent border strength. **Spacing:** `default` · `compact` · `wide`. **Radius:** `default` (soft) · **sharp** (square; `radius/sharp.css`).
 
 ## Component stylesheet rules
 

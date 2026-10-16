@@ -80,8 +80,8 @@ const EXPLORE_ARTICLES: HomeFeedArticleData[] = [
 	{
 		href: '/docs/getting-started/theming',
 		label: 'Theming',
-		title: 'Compose packs, not palettes',
-		description: 'Choose a colour profile, then layer spacing and radius. Components consume semantic roles.',
+		title: 'Pick a theme, compose its axes',
+		description: 'Start with the Basalt default or add a composable theme. Components consume semantic roles.',
 	},
 	{
 		href: '/docs/getting-started/tokens',
@@ -99,7 +99,7 @@ const EXPLORE_ARTICLES: HomeFeedArticleData[] = [
 
 const PATH_STEPS = [
 	'Read the overview, then install `@ecopages/radiant-ui`. Radiant, JSX, and Signals come along as peers.',
-	'Load a theme and the component stylesheet. Start with Glacier, then compose spacing and radius packs.',
+	'Load the Basalt default or a Radiant Themes entry, then compose spacing and radius packs.',
 	'Import a focused module and compose the public JSX helpers in light DOM.',
 	'Use the playgrounds to inspect props, states, and accessibility notes.',
 ];
@@ -114,7 +114,7 @@ const PATH_CARDS: HomePathCardData[] = [
 	{
 		href: '/docs/getting-started/theming',
 		title: 'Compose a theme',
-		description: 'Import the default foundation, then layer the spacing and radius packs the product needs.',
+		description: 'Import the Basalt default, then layer the spacing and radius packs the product needs.',
 	},
 	{
 		href: '/docs/getting-started/tokens',
@@ -134,7 +134,13 @@ const AGENT_LINKS = [
 	{ href: '/llms.txt', label: 'llms.txt' },
 ];
 
-const ECOSYSTEM_PACKAGES = ['@ecopages/radiant-ui', '@ecopages/radiant', '@ecopages/jsx', '@ecopages/signals'];
+const ECOSYSTEM_PACKAGES = [
+	'@ecopages/radiant-ui',
+	'@ecopages/radiant-themes',
+	'@ecopages/radiant',
+	'@ecopages/jsx',
+	'@ecopages/signals',
+];
 
 type HomeFooterLink = {
 	label: string;

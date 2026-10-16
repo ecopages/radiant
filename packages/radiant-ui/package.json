@@ -100,17 +100,14 @@
 			"types": "./dist/lib/icons/index.d.ts",
 			"import": "./dist/lib/icons/index.js"
 		},
-		"./tokens/colors/aurora": {
-			"default": "./dist/styles/tokens/colors/aurora.css"
-		},
-		"./tokens/colors/glacier": {
-			"default": "./dist/styles/tokens/colors/glacier.css"
-		},
 		"./tokens/colors/basalt": {
 			"default": "./dist/styles/tokens/colors/basalt.css"
 		},
-		"./tokens/colors/palettes": {
-			"default": "./dist/styles/tokens/colors/palettes.css"
+		"./tokens/foundation": {
+			"default": "./dist/styles/tokens/foundation.css"
+		},
+		"./tokens/semantic": {
+			"default": "./dist/styles/tokens/semantic.css"
 		},
 		"./tokens/spacing/compact": {
 			"default": "./dist/styles/tokens/spacing/compact.css"
@@ -151,20 +148,8 @@
 		"./tokens/system": {
 			"default": "./dist/styles/tokens/system.css"
 		},
-		"./tokens/semantic": {
-			"default": "./dist/styles/tokens/semantic.css"
-		},
 		"./themes/default": {
 			"default": "./dist/styles/themes/default.css"
-		},
-		"./themes/glacier": {
-			"default": "./dist/styles/themes/glacier.css"
-		},
-		"./themes/aurora": {
-			"default": "./dist/styles/themes/aurora.css"
-		},
-		"./themes/default-compact-soft": {
-			"default": "./dist/styles/themes/default-compact-soft.css"
 		},
 		"./styles.css": {
 			"default": "./dist/styles/styles.css"

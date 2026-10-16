@@ -24,11 +24,11 @@ export const HomeThemePicker = eco.component<{}, JsxRenderable>({
 				<div class="home-theme-picker__groups">
 					<div class="home-theme-picker__group">
 						<p class="home-theme-picker__label" aria-hidden="true">
-							Colour
+							Theme
 						</p>
 						<RuiSelect
 							value={defaultDocsThemeSelection.colors}
-							label="Colour"
+							label="Theme"
 							data-token="colors"
 							options={selectOptions(docsThemeColorOptions)}
 						/>

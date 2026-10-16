@@ -8,10 +8,10 @@
 	},
 	"scripts": {
 		"start": "ecopages start",
-		"dev": "pnpm run guard:cache && ecopages dev",
+		"dev": "pnpm run guard:cache && pnpm --filter @ecopages/radiant-ui build:lib && ecopages dev",
 		"guard:cache": "tsx ../../scripts/ecopages-invalidate-stale-cache.mts",
 		"verify:html": "tsx ../../scripts/ecopages-assert-rendered-html.mts dist",
-		"build": "pnpm run guard:cache && pnpm run generate:llms && ecopages build && tsx scripts/create-clean-url-aliases.ts && pnpm run verify:html",
+		"build": "pnpm run guard:cache && pnpm --filter @ecopages/radiant-ui build:lib && pnpm run generate:llms && ecopages build && tsx scripts/create-clean-url-aliases.ts && pnpm run verify:html",
 		"preview": "pnpm run guard:cache && pnpm run generate:llms && ecopages preview && tsx scripts/create-clean-url-aliases.ts",
 		"watch:dev": "pnpm run guard:cache && ecopages watch:dev",
 		"test": "vitest run",

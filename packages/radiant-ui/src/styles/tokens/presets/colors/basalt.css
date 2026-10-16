@@ -1,5 +1,5 @@
-/* Basalt (Carbon-inspired) — `data-rui-colors="basalt"` */
-html[data-rui-colors='basalt'] {
+/* Basalt — Radiant UI's single, seed-derived default theme. */
+:where(:root) {
 	--gray-50: var(--color-basalt-50);
 	--gray-100: var(--color-basalt-100);
 	--gray-200: var(--color-basalt-200);
@@ -12,19 +12,19 @@ html[data-rui-colors='basalt'] {
 	--gray-900: var(--color-basalt-900);
 	--gray-950: var(--color-basalt-950);
 
-	--primary: var(--color-carbon-blue-500);
+	--primary: var(--color-carbon-blue-600);
 	--on-primary: var(--color-white);
 	--primary-container: var(--color-carbon-blue-100);
 	--on-primary-container: var(--color-carbon-blue-800);
-	--primary-light: var(--color-carbon-blue-400);
-	--primary-dark: var(--color-carbon-blue-700);
+	--primary-light: var(--color-carbon-blue-500);
+	--primary-dark: var(--color-carbon-blue-800);
 
-	--secondary: var(--color-carbon-teal-600);
+	--secondary: var(--color-carbon-teal-700);
 	--on-secondary: var(--color-white);
 	--secondary-container: var(--color-basalt-200);
 	--on-secondary-container: var(--color-basalt-900);
-	--secondary-light: var(--color-carbon-teal-400);
-	--secondary-dark: var(--color-basalt-800);
+	--secondary-light: var(--color-carbon-teal-500);
+	--secondary-dark: var(--color-carbon-teal-800);
 
 	--tertiary: var(--color-basalt-700);
 	--on-tertiary: var(--color-white);
@@ -38,12 +38,12 @@ html[data-rui-colors='basalt'] {
 	--error-light: var(--color-carbon-red-500);
 	--error-dark: var(--color-carbon-red-800);
 
-	--success: var(--color-carbon-teal-600);
+	--success: var(--color-carbon-teal-700);
 	--on-success: var(--color-white);
 	--success-container: var(--color-basalt-200);
 	--on-success-container: var(--color-basalt-900);
-	--success-light: var(--color-carbon-teal-400);
-	--success-dark: var(--color-basalt-800);
+	--success-light: var(--color-carbon-teal-500);
+	--success-dark: var(--color-carbon-teal-800);
 
 	--info: var(--color-carbon-blue-600);
 	--on-info: var(--color-white);
@@ -52,12 +52,12 @@ html[data-rui-colors='basalt'] {
 	--info-light: var(--color-carbon-blue-400);
 	--info-dark: var(--color-carbon-blue-800);
 
-	--warning: var(--color-basalt-700);
+	--warning: var(--color-carbon-amber-700);
 	--on-warning: var(--color-white);
-	--warning-container: var(--color-basalt-200);
-	--on-warning-container: var(--color-basalt-900);
-	--warning-light: var(--color-basalt-500);
-	--warning-dark: var(--color-basalt-900);
+	--warning-container: var(--color-carbon-amber-100);
+	--on-warning-container: var(--color-carbon-amber-900);
+	--warning-light: var(--color-carbon-amber-500);
+	--warning-dark: var(--color-carbon-amber-900);
 
 	--neutral: var(--color-basalt-500);
 
@@ -77,8 +77,8 @@ html[data-rui-colors='basalt'] {
 	--background: var(--color-basalt-50);
 	--on-background: var(--color-basalt-900);
 
-	--border: var(--color-basalt-400);
-	--focus-ring: var(--color-carbon-blue-500);
+	--border: oklch(from var(--color-basalt-900) l c h / var(--rui-border-alpha));
+	--focus-ring: var(--color-carbon-blue-600);
 	--on-focus-ring: var(--on-primary);
 	--link: var(--color-carbon-blue-600);
 	--overlay: oklch(0% 0 0 / 0.5);
@@ -87,47 +87,47 @@ html[data-rui-colors='basalt'] {
 	--on-background-code: var(--color-carbon-teal-400);
 }
 
-html.dark[data-rui-colors='basalt'] {
-	--primary: var(--color-carbon-blue-400);
-	--on-primary: var(--color-basalt-950);
+:where(.dark) {
+	--primary: var(--color-carbon-blue-300);
+	--on-primary: var(--color-basalt-975);
 	--primary-container: var(--color-carbon-blue-800);
 	--on-primary-container: var(--color-carbon-blue-100);
-	--primary-light: var(--color-carbon-blue-300);
+	--primary-light: var(--color-carbon-blue-200);
 	--primary-dark: var(--color-carbon-blue-700);
 
-	--secondary: var(--color-carbon-teal-400);
-	--on-secondary: var(--color-basalt-950);
+	--secondary: var(--color-carbon-teal-300);
+	--on-secondary: var(--color-basalt-975);
 	--secondary-container: var(--color-basalt-800);
 	--on-secondary-container: var(--color-basalt-100);
 
 	--tertiary: var(--color-basalt-300);
-	--on-tertiary: var(--color-basalt-950);
+	--on-tertiary: var(--color-basalt-975);
 	--tertiary-container: var(--color-basalt-800);
 	--on-tertiary-container: var(--color-basalt-100);
 
-	--error: var(--color-carbon-red-500);
-	--on-error: var(--color-basalt-950);
+	--error: var(--color-carbon-red-300);
+	--on-error: var(--color-basalt-975);
 	--error-container: var(--color-carbon-red-800);
 	--on-error-container: var(--color-carbon-red-100);
 
-	--success: var(--color-carbon-teal-400);
-	--on-success: var(--color-basalt-950);
+	--success: var(--color-carbon-teal-300);
+	--on-success: var(--color-basalt-975);
 	--success-container: var(--color-basalt-800);
 	--on-success-container: var(--color-basalt-100);
 
-	--info: var(--color-carbon-blue-400);
-	--on-info: var(--color-basalt-950);
+	--info: var(--color-carbon-blue-300);
+	--on-info: var(--color-basalt-975);
 	--info-container: var(--color-carbon-blue-800);
 	--on-info-container: var(--color-carbon-blue-100);
 	--info-light: var(--color-carbon-blue-300);
 	--info-dark: var(--color-carbon-blue-700);
 
-	--warning: var(--color-basalt-300);
-	--on-warning: var(--color-basalt-950);
-	--warning-container: var(--color-basalt-800);
-	--on-warning-container: var(--color-basalt-100);
-	--warning-light: var(--color-basalt-400);
-	--warning-dark: var(--color-basalt-700);
+	--warning: var(--color-carbon-amber-300);
+	--on-warning: var(--color-basalt-975);
+	--warning-container: var(--color-carbon-amber-900);
+	--on-warning-container: var(--color-carbon-amber-100);
+	--warning-light: var(--color-carbon-amber-200);
+	--warning-dark: var(--color-carbon-amber-700);
 
 	--surface: var(--color-basalt-975);
 	--on-surface: var(--color-basalt-50);
@@ -145,7 +145,7 @@ html.dark[data-rui-colors='basalt'] {
 	--background: var(--color-basalt-950);
 	--on-background: var(--color-basalt-50);
 
-	--border: var(--color-basalt-700);
+	--border: oklch(from var(--color-basalt-50) l c h / var(--rui-border-alpha));
 	--focus-ring: var(--color-carbon-blue-400);
 	--on-focus-ring: var(--on-primary);
 	--link: var(--color-carbon-blue-400);

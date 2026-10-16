@@ -5,6 +5,7 @@ import {
 	DOCS_THEME_STORAGE_KEY,
 	DOCS_TOKEN_PACK_GLOBAL,
 	DOCS_TOKEN_SHEET_ATTR,
+	docsThemeColorOptions,
 	installDocsTokenPackCss,
 } from '@/lib/docs-theme-preview';
 import { HomeThemePickerElement } from './home-theme-picker.script';
@@ -30,7 +31,8 @@ function resetPreview(): void {
 	document.body.innerHTML = '';
 	localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
 	const root = document.documentElement;
-	delete root.dataset.ruiColors;
+	root.classList.remove('dark');
+	delete root.dataset.ruiTheme;
 	delete root.dataset.ruiSpacing;
 	delete root.dataset.ruiRadius;
 	document.querySelectorAll(`style[${DOCS_TOKEN_SHEET_ATTR}]`).forEach((node) => node.remove());
@@ -47,12 +49,16 @@ describe('HomeThemePickerElement', () => {
 		resetPreview();
 	});
 
+	it('offers Basalt and each optional Radiant Theme', () => {
+		expect(docsThemeColorOptions.map(({ value }) => value)).toEqual(['basalt', 'github', 'vscode', 'vercel']);
+	});
+
 	it('writes default token values onto the selects', async () => {
 		const element = await createPicker();
 
 		await vi.waitFor(() => {
 			expect(element.querySelector<HTMLElement & { value: string[] }>('[data-token="colors"]')?.value).toEqual([
-				'glacier',
+				'basalt',
 			]);
 			expect(element.querySelector<HTMLElement & { value: string[] }>('[data-token="spacing"]')?.value).toEqual([
 				'default',
@@ -63,7 +69,7 @@ describe('HomeThemePickerElement', () => {
 		});
 	});
 
-	it('applies colour, spacing, and shape packs to the document', async () => {
+	it('keeps theme styles ahead of active spacing and radius packs', async () => {
 		const element = await createPicker();
 
 		await vi.waitFor(() => {
@@ -72,25 +78,49 @@ describe('HomeThemePickerElement', () => {
 			expect(element.querySelector('[data-token="radius"]')).not.toBeNull();
 		});
 
-		changeToken(element, 'colors', 'aurora');
 		changeToken(element, 'spacing', 'compact');
 		changeToken(element, 'radius', 'sharp');
+		changeToken(element, 'colors', 'github');
 
 		await vi.waitFor(() => {
-			expect(document.documentElement.dataset.ruiColors).toBe('aurora');
+			expect(document.documentElement.dataset.ruiTheme).toBe('github');
 			expect(document.documentElement.dataset.ruiSpacing).toBe('compact');
 			expect(document.documentElement.dataset.ruiRadius).toBe('sharp');
 		});
+		const themeStyle = document.documentElement.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="theme"]`);
+		const spacingStyle = document.documentElement.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="spacing"]`);
+		expect(themeStyle?.textContent).toContain('--color-github-canvas: #ffffff');
+		expect(themeStyle?.compareDocumentPosition(spacingStyle ?? document.body)).toBe(
+			Node.DOCUMENT_POSITION_FOLLOWING,
+		);
 		expect(JSON.parse(localStorage.getItem(DOCS_THEME_STORAGE_KEY) ?? '')).toMatchObject({
-			colors: 'aurora',
+			colors: 'github',
 			spacing: 'compact',
 			radius: 'sharp',
 		});
-		expect(document.head.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="spacing"]`)?.textContent).toContain(
-			'--space-1: 0.125rem',
+		expect(
+			document.documentElement.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="spacing"]`)?.textContent,
+		).toContain('--space-1: calc(0.125rem * var(--rui-density))');
+		expect(
+			document.documentElement.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="radius"]`)?.textContent,
+		).toContain('--radius-control: 0');
+
+		changeToken(element, 'colors', 'vscode');
+
+		await vi.waitFor(() => {
+			expect(document.documentElement.dataset.ruiTheme).toBe('vscode');
+		});
+		expect(themeStyle?.textContent).toContain('--color-vscode-blue: #006bb3');
+		expect(themeStyle?.compareDocumentPosition(spacingStyle ?? document.body)).toBe(
+			Node.DOCUMENT_POSITION_FOLLOWING,
 		);
-		expect(document.head.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="radius"]`)?.textContent).toContain(
-			'--radius-control: 0',
-		);
+
+		changeToken(element, 'colors', 'basalt');
+
+		await vi.waitFor(() => {
+			expect(document.documentElement.dataset.ruiTheme).toBe('basalt');
+		});
+		expect(document.documentElement.querySelector(`style[${DOCS_TOKEN_SHEET_ATTR}="theme"]`)).toBeNull();
 	});
+
 });

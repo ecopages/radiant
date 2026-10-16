@@ -2,7 +2,7 @@ import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 
 const COPY_FEEDBACK_MS = 1200;
-const ROOT_TOKEN_ATTRIBUTES = ['class', 'data-rui-colors', 'data-rui-spacing', 'data-rui-radius'] as const;
+const ROOT_TOKEN_ATTRIBUTES = ['class', 'data-rui-theme', 'data-rui-spacing', 'data-rui-radius'] as const;
 
 async function copyTextToClipboard(text: string): Promise<void> {
 	if (navigator.clipboard?.writeText) {

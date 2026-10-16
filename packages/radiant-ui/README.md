@@ -62,6 +62,12 @@ import { RuiDisclosure, RuiDisclosureGroup } from '@ecopages/radiant-ui/disclosu
 import { RuiButton } from '@ecopages/radiant-ui/button';
 ```
 
+Radiant UI ships one default theme: Basalt with soft radius and comfortable spacing. Optional ready-made themes and
+composable variants such as GitHub Compact live in [`@ecopages/radiant-themes`](../radiant-themes/README.md). The
+default's OKLCH color families can be retuned by overriding `--rui-primary`, `--rui-secondary`, and `--rui-neutral`
+after importing the theme. `--rui-density`, `--rui-radius-scale`, and `--rui-border-alpha` tune geometry and border
+strength.
+
 Or register every custom element from the root entry (still load theme + styles separately):
 
 ```ts

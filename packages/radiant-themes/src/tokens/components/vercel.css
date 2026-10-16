@@ -1,0 +1,9 @@
+:where(:root) {
+	--rui-control-background: var(--color-vercel-component-1);
+	--rui-control-background-hover: var(--color-vercel-component-2);
+	--rui-control-background-active: var(--color-vercel-component-3);
+	--rui-control-border: var(--color-vercel-border-4);
+	--rui-control-border-hover: var(--color-vercel-border-5);
+	--rui-control-border-active: var(--color-vercel-border-6);
+	--rui-text-secondary: var(--color-vercel-text-secondary);
+}

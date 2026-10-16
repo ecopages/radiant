@@ -95,6 +95,9 @@ export const semanticColorFamilies: readonly ColorFamily[] = [
 			{ token: '--link' },
 			{ token: '--overlay' },
 			{ token: '--neutral' },
+			{ token: '--rui-primary' },
+			{ token: '--rui-secondary' },
+			{ token: '--rui-neutral' },
 			{ token: '--background-code', onToken: '--on-background-code' },
 		],
 	},
@@ -106,30 +109,6 @@ export const absoluteColorTokens: readonly string[] = ['--color-black', '--color
 
 export const palettePacks: readonly PalettePack[] = [
 	{
-		id: 'glacier',
-		label: 'Glacier',
-		packFile: '@ecopages/radiant-ui/tokens/colors/glacier',
-		scales: [
-			colorScale('night-sky', STEPS_50_975),
-			colorScale('scarlet', STEPS_50_975),
-			colorScale('glacier-white', STEPS_50_975),
-			colorScale('laser-lemon', STEPS_50_975),
-			colorScale('navy-blue', STEPS_50_975),
-		],
-	},
-	{
-		id: 'aurora',
-		label: 'Aurora',
-		packFile: '@ecopages/radiant-ui/tokens/colors/aurora',
-		scales: [
-			colorScale('havelock-blue', STEPS_50_975),
-			colorScale('hit-pink', STEPS_50_975),
-			colorScale('fruit-salad', STEPS_50_975),
-			colorScale('pale-sky', STEPS_50_975),
-			colorScale('cardinal', STEPS_50_975),
-		],
-	},
-	{
 		id: 'basalt',
 		label: 'Basalt',
 		packFile: '@ecopages/radiant-ui/tokens/colors/basalt',
@@ -138,6 +117,77 @@ export const palettePacks: readonly PalettePack[] = [
 			colorScale('carbon-blue', STEPS_50_975),
 			colorScale('carbon-teal', STEPS_50_975),
 			colorScale('carbon-red', STEPS_50_975),
+			colorScale('carbon-amber', STEPS_50_975),
+		],
+	},
+	{
+		id: 'github',
+		label: 'GitHub',
+		packFile: '@ecopages/radiant-themes/tokens/colors/github',
+		scales: [
+			{
+				name: 'GitHub colors',
+				tokens: [
+					'--color-github-white',
+					'--color-github-canvas',
+					'--color-github-subtle',
+					'--color-github-muted',
+					'--color-github-border',
+					'--color-github-fg',
+					'--color-github-muted-fg',
+					'--color-github-blue',
+					'--color-github-blue-light',
+					'--color-github-green',
+					'--color-github-red',
+					'--color-github-orange',
+					'--color-github-purple',
+				],
+			},
+		],
+	},
+	{
+		id: 'vscode',
+		label: 'VS Code',
+		packFile: '@ecopages/radiant-themes/tokens/colors/vscode',
+		scales: [
+			{
+				name: 'VS Code colors',
+				tokens: [
+					'--color-vscode-canvas',
+					'--color-vscode-subtle',
+					'--color-vscode-muted',
+					'--color-vscode-border',
+					'--color-vscode-fg',
+					'--color-vscode-muted-fg',
+					'--color-vscode-blue',
+					'--color-vscode-blue-light',
+					'--color-vscode-green',
+					'--color-vscode-red',
+					'--color-vscode-orange',
+					'--color-vscode-purple',
+				],
+			},
+		],
+	},
+	{
+		id: 'vercel',
+		label: 'Vercel',
+		packFile: '@ecopages/radiant-themes/tokens/colors/vercel',
+		scales: [
+			colorScale('vercel-gray', STEPS_50_950),
+			{
+				name: 'Vercel colors',
+				tokens: [
+					'--color-vercel-blue',
+					'--color-vercel-blue-light',
+					'--color-vercel-red',
+					'--color-vercel-amber',
+					'--color-vercel-green',
+					'--color-vercel-teal',
+					'--color-vercel-purple',
+					'--color-vercel-pink',
+				],
+			},
 		],
 	},
 ];

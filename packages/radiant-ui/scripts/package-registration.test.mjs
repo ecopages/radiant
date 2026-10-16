@@ -1,6 +1,32 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
+
+test('published default theme keeps its Basalt color and geometry controls', () => {
+	const readStyle = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+	const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+	const theme = readStyle('../dist/styles/themes/default.css');
+	const colors = readStyle('../dist/styles/tokens/colors/basalt.css');
+	const roles = readStyle('../dist/styles/tokens/presets/colors/basalt.css');
+	const spacing = readStyle('../dist/styles/tokens/spacing/default.css');
+	const spacingScale = readStyle('../dist/styles/tokens/spacing/scale-bridge.css');
+	const radius = readStyle('../dist/styles/tokens/radius/default.css');
+	const themeExports = Object.keys(packageJson.exports).filter((key) => key.startsWith('./themes/'));
+
+	assert.deepEqual(themeExports, ['./themes/default']);
+	assert.match(theme, /--rui-border-alpha:\s*18%/);
+	assert.match(colors, /--rui-neutral:\s*oklch/);
+	assert.match(colors, /--rui-primary:\s*oklch/);
+	assert.match(colors, /oklch\(from var\(--rui-primary\)/);
+	assert.match(colors, /--rui-secondary:\s*oklch/);
+	assert.match(colors, /oklch\(from var\(--rui-secondary\)/);
+	assert.match(roles, /--border:\s*oklch\(from var\(--color-basalt-900\) l c h \/ var\(--rui-border-alpha\)\)/);
+	assert.match(spacingScale, /--rui-density:\s*1/);
+	assert.match(spacing, /--space-1:\s*calc\(0\.25rem \* var\(--rui-density\)\)/);
+	assert.match(radius, /--rui-radius-scale:\s*1/);
+	assert.match(radius, /--border-radius-md:\s*calc\(0\.75rem \* var\(--rui-radius-scale\)\)/);
+});
 
 for (const [entry, view, value, expectedInputs] of [
 	['date-field', 'RuiDateField', '2026-08-07', 1],

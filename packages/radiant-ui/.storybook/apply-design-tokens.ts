@@ -2,12 +2,10 @@ import { GLOBALS_UPDATED } from 'storybook/internal/core-events';
 import { addons } from 'storybook/preview-api';
 import compactSpacingCss from '../src/styles/tokens/spacing/compact.css?inline';
 import wideSpacingCss from '../src/styles/tokens/spacing/wide.css?inline';
-import softRadiusCss from '../src/styles/tokens/radius/soft.css?inline';
 import sharpRadiusCss from '../src/styles/tokens/radius/sharp.css?inline';
 
-const COLOR_PACKS = ['glacier', 'aurora', 'basalt', 'ember'] as const;
 const SPACING_PACKS = ['default', 'compact', 'wide'] as const;
-const RADIUS_PACKS = ['default', 'soft', 'sharp'] as const;
+const RADIUS_PACKS = ['default', 'sharp'] as const;
 
 const LEGACY_THEME_LINK_ID = 'rui-storybook-theme';
 const TOKEN_SHEET_ATTR = 'data-rui-storybook-token';
@@ -24,12 +22,10 @@ const SPACING_SHEETS = {
 
 const RADIUS_SHEETS = {
 	default: null,
-	soft: softRadiusCss,
 	sharp: sharpRadiusCss,
 } as const satisfies Record<(typeof RADIUS_PACKS)[number], string | null>;
 
 export type DesignTokenGlobals = {
-	ruiColors?: string;
 	ruiSpacing?: string;
 	ruiRadius?: string;
 	ruiColorMode?: string;
@@ -69,6 +65,7 @@ export function clearLegacyThemeArtifacts(): void {
 	document.head.querySelectorAll(`link[${TOKEN_SHEET_ATTR}]`).forEach((node) => node.remove());
 
 	const root = document.documentElement;
+	delete root.dataset.ruiColors;
 	delete root.dataset.ruiTheme;
 	delete root.dataset.theme;
 }
@@ -76,9 +73,8 @@ export function clearLegacyThemeArtifacts(): void {
 /**
  * Sync Storybook toolbar globals onto the preview document.
  *
- * @remarks Spacing and radius follow the application import graph: inject only the
- * selected pack stylesheet. Colour presets stay on `data-rui-colors` because the
- * semantic layer loads every brand for comparison; that attribute is not an app API.
+ * @remarks Storybook previews the sole Radiant UI default and lets optional
+ * shape and density packs be composed on top of it.
  */
 export function applyDesignTokens(globals: DesignTokenGlobals): void {
 	if (typeof document === 'undefined') return;
@@ -86,12 +82,10 @@ export function applyDesignTokens(globals: DesignTokenGlobals): void {
 	clearLegacyThemeArtifacts();
 
 	const root = document.documentElement;
-	const colors = pick(String(globals.ruiColors ?? 'glacier'), COLOR_PACKS, 'glacier');
 	const spacing = pick(String(globals.ruiSpacing ?? 'default'), SPACING_PACKS, 'default');
 	const radius = pick(String(globals.ruiRadius ?? 'default'), RADIUS_PACKS, 'default');
 	const colorMode = String(globals.ruiColorMode ?? 'light');
 
-	root.dataset.ruiColors = colors;
 	if (spacing === 'default') {
 		delete root.dataset.ruiSpacing;
 	} else {

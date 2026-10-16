@@ -1,2 +1,15 @@
-/** Default theme alias — glacier (docs brand). */
-@import './glacier.css';
+/** Radiant UI's single default: derived Basalt colors, comfortable density, soft radius. */
+@import '../tokens/foundation.css';
+@import '../tokens/spacing/default.css';
+@import '../tokens/radius/default.css';
+@import '../tokens/colors/basalt.css';
+@import '../tokens/presets/colors/basalt.css';
+
+:where(:root) {
+	--rui-border-alpha: 18%;
+	color-scheme: light;
+}
+
+:where(.dark) {
+	color-scheme: dark;
+}

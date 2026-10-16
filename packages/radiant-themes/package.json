@@ -1,0 +1,96 @@
+{
+	"name": "@ecopages/radiant-themes",
+	"version": "0.0.0",
+	"description": "Composable color themes and variants for @ecopages/radiant-ui",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/radiant-themes"
+	},
+	"license": "MIT",
+	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"dist"
+	],
+	"sideEffects": [
+		"**/*.css"
+	],
+	"scripts": {
+		"build:lib": "node ./scripts/build.mjs",
+		"test": "node --test ./scripts/*.test.mjs",
+		"test:all": "pnpm run build:lib && pnpm run test"
+	},
+	"peerDependencies": {
+		"@ecopages/radiant-ui": ">=0.1.0"
+	},
+	"devDependencies": {
+		"@ecopages/radiant-ui": "workspace:*",
+		"postcss": "^8.5.24"
+	},
+	"exports": {
+		"./package.json": "./package.json",
+		"./foundation": {
+			"default": "./dist/foundation.css"
+		},
+		"./compiled/github.css": {
+			"default": "./dist/compiled/themes/github.css"
+		},
+		"./compiled/github/compact.css": {
+			"default": "./dist/compiled/themes/github/compact.css"
+		},
+		"./compiled/vscode.css": {
+			"default": "./dist/compiled/themes/vscode.css"
+		},
+		"./compiled/vscode/compact.css": {
+			"default": "./dist/compiled/themes/vscode/compact.css"
+		},
+		"./compiled/vercel.css": {
+			"default": "./dist/compiled/themes/vercel.css"
+		},
+		"./compiled/vercel/compact.css": {
+			"default": "./dist/compiled/themes/vercel/compact.css"
+		},
+		"./github": {
+			"default": "./dist/themes/github.css"
+		},
+		"./github/compact": {
+			"default": "./dist/themes/github/compact.css"
+		},
+		"./vscode": {
+			"default": "./dist/themes/vscode.css"
+		},
+		"./vscode/compact": {
+			"default": "./dist/themes/vscode/compact.css"
+		},
+		"./vercel": {
+			"default": "./dist/themes/vercel.css"
+		},
+		"./vercel/compact": {
+			"default": "./dist/themes/vercel/compact.css"
+		},
+		"./tokens/colors/github": {
+			"default": "./dist/tokens/colors/github.css"
+		},
+		"./tokens/colors/vscode": {
+			"default": "./dist/tokens/colors/vscode.css"
+		},
+		"./tokens/colors/vercel": {
+			"default": "./dist/tokens/colors/vercel.css"
+		},
+		"./tokens/roles/github": {
+			"default": "./dist/tokens/roles/github.css"
+		},
+		"./tokens/roles/vscode": {
+			"default": "./dist/tokens/roles/vscode.css"
+		},
+		"./tokens/roles/vercel": {
+			"default": "./dist/tokens/roles/vercel.css"
+		},
+		"./tokens/components/vercel": {
+			"default": "./dist/tokens/components/vercel.css"
+		}
+	}
+}

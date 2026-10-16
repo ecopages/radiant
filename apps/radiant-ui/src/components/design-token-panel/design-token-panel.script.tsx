@@ -95,13 +95,8 @@ export class DesignTokenPanelElement extends RadiantElement {
 				<RuiFeed class="design-token-panel__groups" label="Theme options">
 					<RuiFeedArticle class="design-token-panel__group" posinset={1} setsize={3} tabindex={-1}>
 						<RuiFeedArticleContent>
-							<RuiLabel>Colour profile</RuiLabel>
-							<RuiRadioGroup
-								value={colors}
-								name="docs-color-theme"
-								label="Colour profile"
-								data-token="colors"
-							>
+							<RuiLabel>Theme</RuiLabel>
+							<RuiRadioGroup value={colors} name="docs-color-theme" label="Theme" data-token="colors">
 								<TokenOptions name="docs-color-theme" options={docsThemeColorOptions} />
 							</RuiRadioGroup>
 						</RuiFeedArticleContent>

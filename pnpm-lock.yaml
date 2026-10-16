@@ -161,6 +161,9 @@ importers:
             '@ecopages/radiant-ui':
                 specifier: workspace:*
                 version: link:../../packages/radiant-ui
+            '@ecopages/radiant-themes':
+                specifier: workspace:*
+                version: link:../../packages/radiant-themes
             '@rehype-pretty/transformers':
                 specifier: ^0.13.2
                 version: 0.13.2
@@ -419,6 +422,15 @@ importers:
             vitest:
                 specifier: ^4.1.10
                 version: 4.1.11(@types/node@24.13.3)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-istanbul@4.1.11)(@vitest/coverage-v8@4.1.11)(happy-dom@20.13.2)(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+
+    packages/radiant-themes:
+        devDependencies:
+            '@ecopages/radiant-ui':
+                specifier: workspace:*
+                version: link:../radiant-ui
+            postcss:
+                specifier: ^8.5.24
+                version: 8.5.28
 
     packages/signals:
         devDependencies:
