@@ -1,0 +1,41 @@
+:where(:root) {
+	--macos-classic-canvas: #f2f2f2;
+	--macos-classic-surface: #d7d7d7;
+	--macos-classic-container: #c5c5c5;
+	--macos-classic-light: #ffffff;
+	--macos-classic-titlebar-stripe: #ffffff;
+	--macos-classic-shadow: #777777;
+	--macos-classic-dark: #222222;
+	--macos-classic-text: #111111;
+	--macos-classic-muted: #383838;
+	--macos-classic-blue: #244a9b;
+	--macos-classic-blue-light: #315fc0;
+	--macos-classic-green: #176b42;
+	--macos-classic-red: #8c1c1c;
+	--macos-classic-amber: #644100;
+}
+
+:where(.dark) {
+	--macos-classic-canvas: #171717;
+	--macos-classic-surface: #292929;
+	--macos-classic-container: #3a3a3a;
+	--macos-classic-light: #f5f5f5;
+	--macos-classic-titlebar-stripe: #626262;
+	--macos-classic-shadow: #111111;
+	--macos-classic-dark: #000000;
+	--macos-classic-text: #ffffff;
+	--macos-classic-muted: #e0e0e0;
+	--macos-classic-blue: #8db2ff;
+	--macos-classic-blue-light: #a9c5ff;
+	--macos-classic-green: #80d9a2;
+	--macos-classic-red: #ffaaa0;
+	--macos-classic-amber: #ffd27a;
+}
+
+@theme inline {
+	--color-macos-classic-canvas: var(--macos-classic-canvas);
+	--color-macos-classic-surface: var(--macos-classic-surface);
+	--color-macos-classic-container: var(--macos-classic-container);
+	--color-macos-classic-text: var(--macos-classic-text);
+	--color-macos-classic-blue: var(--macos-classic-blue);
+}

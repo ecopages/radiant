@@ -309,18 +309,17 @@ export const DesignTokens: Story = {
 	render: () => <PlantTable />,
 	play: async ({ canvasElement, step }) => {
 		const table = canvasElement.querySelector('rui-table')!;
-		const cell = canvasElement.querySelector<HTMLElement>('[data-table-row] [data-table-cell]')!;
 
 		try {
-			await step('compact spacing and sharp radius update the table surface', async () => {
-				applyDesignTokens({ ruiSpacing: 'compact', ruiRadius: 'sharp' });
-				await waitFor(() => expect(getComputedStyle(cell).paddingTop).toBe('4px'));
+			await step('Windows 95 applies its square table treatment as a complete theme', async () => {
+				applyDesignTokens({ ruiTheme: 'windows95' });
+				await waitFor(() => expect(document.documentElement.dataset.ruiTheme).toBe('windows95'));
 				await waitFor(() => expect(getComputedStyle(table).borderTopLeftRadius).toBe('0px'));
 			});
 
-			await step('wide spacing and soft radius update the table surface', async () => {
-				applyDesignTokens({ ruiSpacing: 'wide', ruiRadius: 'soft' });
-				await waitFor(() => expect(getComputedStyle(cell).paddingTop).toBe('14px'));
+			await step('Material Design applies its rounded table treatment as a complete theme', async () => {
+				applyDesignTokens({ ruiTheme: 'material' });
+				await waitFor(() => expect(document.documentElement.dataset.ruiTheme).toBe('material'));
 				await waitFor(() => expect(getComputedStyle(table).borderTopLeftRadius).toBe('16px'));
 			});
 		} finally {

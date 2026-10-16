@@ -1,0 +1,108 @@
+@reference 'tailwindcss';
+
+:root {
+	--font-sans: ui-sans-serif, system-ui, sans-serif;
+	--font-heading: var(--font-sans);
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--border-radius-xs: 0;
+	--border-radius-sm: 0;
+	--border-radius-md: 0;
+	--border-radius-lg: 0;
+	--border-radius-xl: 0;
+	--border-radius-2xl: 0;
+	--border-radius-3xl: 0;
+	--radius-control: 0;
+	--radius-container: 0;
+	--rui-border-alpha: 100%;
+	--focus-ring-width: 3px;
+	--focus-ring-offset: 3px;
+	--opacity-disabled: 1;
+}
+
+@layer components {
+	:root .rui-button {
+		@apply rounded-none border-2 font-semibold shadow-none;
+		transition: none;
+	}
+
+	:root .rui-button--outline,
+	:root .rui-button--ghost {
+		@apply border-2 border-on-background bg-background text-on-background;
+	}
+
+	:root .rui-button:disabled,
+	:root .rui-input:disabled,
+	:root .rui-textarea:disabled,
+	:root .rui-select[aria-disabled='true'] {
+		@apply border-2 border-on-background text-on-background;
+		opacity: 1;
+	}
+
+	:root .rui-input,
+	:root .rui-textarea,
+	:root .rui-autocomplete__input,
+	:root .rui-combobox__input,
+	:root .rui-date-field__input,
+	:root .rui-date-input__segment,
+	:root .rui-number-field__input,
+	:root .rui-select__control {
+		@apply rounded-none border-2 border-on-background bg-background text-on-background;
+	}
+
+	:root .rui-checkbox__control,
+	:root .rui-radio__control,
+	:root .rui-switch__track {
+		@apply rounded-none border-2 border-on-background bg-background;
+	}
+
+	:root .rui-checkbox__input:checked + .rui-checkbox__control,
+	:root .rui-radio__input:checked + .rui-radio__control,
+	:root .rui-switch__input:checked + .rui-switch__track {
+		@apply border-2 border-primary bg-primary;
+	}
+
+	:root .rui-listbox__option[aria-selected='true'],
+	:root .rui-menu-button__item[aria-checked='true'],
+	:root .rui-menubar__menu-item[aria-checked='true'],
+	:root .rui-tree__node[aria-selected='true'],
+	:root .rui-calendar__day[aria-selected='true'] {
+		@apply border-2 border-primary bg-primary text-on-primary font-semibold;
+	}
+
+	:root .rui-tabs__tab[aria-selected='true'],
+	:root .rui-button[aria-pressed='true'],
+	:root .rui-pagination__link[aria-current='page'] {
+		@apply font-bold underline decoration-2 underline-offset-4;
+	}
+
+	:root .rui-alert,
+	:root .rui-toast__content,
+	:root .rui-dialog__surface,
+	:root .rui-popover-host,
+	:root .rui-hover-card__content,
+	:root .rui-calendar,
+	:root .rui-tabs[variant='boxed'] {
+		@apply rounded-none border-2 border-on-background bg-background text-on-background shadow-none;
+	}
+
+	:root .rui-badge,
+	:root .rui-chip,
+	:root .rui-separator,
+	:root .rui-meter__track,
+	:root .rui-slider__range-track,
+	:root .rui-window-splitter__separator {
+		@apply border border-on-background;
+	}
+
+	:root .rui-table__header,
+	:root .rui-treegrid__row--header,
+	:root .rui-calendar__weekdays {
+		@apply border-b-2 border-on-background font-bold;
+	}
+
+	:root .rui-checkbox:has(input:disabled),
+	:root .rui-radio:has(input:disabled),
+	:root .rui-switch:has(input:disabled) {
+		opacity: 1;
+	}
+}

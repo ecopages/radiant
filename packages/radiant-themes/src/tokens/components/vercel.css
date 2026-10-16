@@ -1,9 +1,15 @@
 :where(:root) {
-	--rui-control-background: var(--color-vercel-component-1);
-	--rui-control-background-hover: var(--color-vercel-component-2);
-	--rui-control-background-active: var(--color-vercel-component-3);
-	--rui-control-border: var(--color-vercel-border-4);
-	--rui-control-border-hover: var(--color-vercel-border-5);
-	--rui-control-border-active: var(--color-vercel-border-6);
-	--rui-text-secondary: var(--color-vercel-text-secondary);
+	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Geist Mono', ui-monospace, monospace;
+	--rui-border-alpha: 100%;
+	--border-radius-xs: 0.125rem;
+	--border-radius-sm: 0.25rem;
+	--border-radius-md: 0.375rem;
+	--border-radius-lg: 0.5rem;
+	--border-radius-xl: 0.75rem;
+	--border-radius-2xl: 1rem;
+	--border-radius-3xl: 1.25rem;
+	--radius-control: var(--border-radius-md);
+	--radius-container: var(--border-radius-lg);
 }

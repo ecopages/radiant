@@ -440,4 +440,20 @@ describe('RuiDateInput styles', () => {
 		expect(styles.opacity).toBe('1');
 		cleanup();
 	});
+
+	it('shows a visible control surface when used without a date field wrapper', async () => {
+		const { container, cleanup } = mount(<RuiDateInput value="2026-09-25" locale="en-US" />);
+		await customElements.whenDefined('rui-date-input');
+		await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+		const host = container.querySelector('rui-date-input') as HTMLElement;
+		host.style.setProperty('--color-border', 'rgb(100, 100, 100)');
+		host.style.setProperty('--color-background', 'rgb(250, 250, 252)');
+		const styles = getComputedStyle(host);
+		expect(styles.borderTopWidth).toBe('1px');
+		expect(styles.borderTopStyle).toBe('solid');
+		expect(styles.borderTopColor).toBe('rgb(100, 100, 100)');
+		expect(styles.backgroundColor).toBe('rgb(250, 250, 252)');
+		cleanup();
+	});
 });

@@ -1,0 +1,181 @@
+radiant-theme-palette-picker {
+	display: block;
+}
+
+.theme-picker {
+	position: relative;
+}
+
+.theme-picker__trigger {
+	display: grid;
+	width: 2.5rem;
+	height: 2.5rem;
+	place-items: center;
+	border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+	border-radius: var(--radius-control);
+	background: color-mix(in srgb, var(--surface-container-lowest) 55%, transparent);
+	color: var(--on-background);
+	cursor: pointer;
+	list-style: none;
+}
+
+.theme-picker__trigger::-webkit-details-marker {
+	display: none;
+}
+
+.theme-picker__trigger:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+@media (hover: hover) {
+	.theme-picker__trigger:hover {
+		background: color-mix(in srgb, var(--surface-container-lowest) 88%, transparent);
+	}
+}
+
+.theme-picker__menu {
+	position: absolute;
+	z-index: var(--z-popover);
+	top: calc(100% + 0.5rem);
+	right: 0;
+	width: min(21rem, calc(100vw - 2rem));
+	max-height: min(34rem, calc(100svh - 6rem));
+	overflow-y: auto;
+	padding: var(--space-3);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-container);
+	background: var(--surface);
+	box-shadow: var(--shadow-overlay);
+}
+
+.theme-picker__menu fieldset {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.theme-picker__menu legend {
+	margin-bottom: var(--space-2);
+	padding-inline: var(--space-1);
+	color: color-mix(in srgb, var(--on-background) 72%, transparent);
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-semibold);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+}
+
+.theme-picker__option {
+	display: grid;
+	grid-template-columns: auto 0.875rem minmax(0, 1fr);
+	align-items: center;
+	gap: var(--space-2);
+	min-height: 2.75rem;
+	padding: 0.375rem 0.5rem;
+	border-radius: var(--radius-control);
+	cursor: pointer;
+}
+
+.theme-picker__option:has(input:checked) {
+	background: var(--primary-container);
+}
+
+.theme-picker__option:focus-within {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 1px;
+}
+
+.theme-picker__option input {
+	width: 1rem;
+	height: 1rem;
+	margin: 0;
+	accent-color: var(--primary);
+}
+
+.theme-picker__swatch {
+	width: 0.75rem;
+	height: 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--on-background) 20%, transparent);
+	border-radius: 50%;
+	background: var(--theme-picker-swatch, var(--primary));
+}
+
+.theme-picker__swatch[data-theme-swatch='rui-default'] {
+	--theme-picker-swatch: oklch(52% 0.19 264);
+}
+.theme-picker__swatch[data-theme-swatch='github'] {
+	--theme-picker-swatch: #0969da;
+}
+.theme-picker__swatch[data-theme-swatch='vscode'] {
+	--theme-picker-swatch: #007acc;
+}
+.theme-picker__swatch[data-theme-swatch='vercel'] {
+	--theme-picker-swatch: #000000;
+}
+.theme-picker__swatch[data-theme-swatch='material'] {
+	--theme-picker-swatch: #6750a4;
+}
+.theme-picker__swatch[data-theme-swatch='high-contrast'] {
+	--theme-picker-swatch: #0000a8;
+}
+.theme-picker__swatch[data-theme-swatch='windows95'] {
+	--theme-picker-swatch: #000080;
+}
+.theme-picker__swatch[data-theme-swatch='macos-classic'] {
+	--theme-picker-swatch: #244a9b;
+}
+.theme-picker__swatch[data-theme-swatch='macos'] {
+	--theme-picker-swatch: #007aff;
+}
+
+.theme-picker__option-copy {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+}
+
+.theme-picker__option-label {
+	color: var(--on-surface);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+}
+
+.theme-picker__option:has(input:checked) .theme-picker__option-label,
+.theme-picker__option:has(input:checked) .theme-picker__option-description {
+	color: var(--on-primary-container);
+}
+
+.theme-picker__option-description {
+	margin-top: 0.125rem;
+	color: color-mix(in srgb, var(--on-surface) 82%, transparent);
+	font-size: var(--text-xs);
+	line-height: var(--leading-compact);
+}
+
+.theme-picker__note {
+	margin: var(--space-3) var(--space-1) 0;
+	padding-top: var(--space-2);
+	border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+	color: color-mix(in srgb, var(--on-surface) 65%, transparent);
+	font-size: var(--text-xs);
+}
+
+.theme-picker__note a {
+	color: var(--on-surface);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.theme-picker__sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}

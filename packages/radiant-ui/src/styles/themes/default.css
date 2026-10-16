@@ -1,12 +1,17 @@
-/** Radiant UI's single default: derived Basalt colors, comfortable density, soft radius. */
+/** Radiant UI's single default: derived Radiant Default colors, comfortable density, soft radius. */
 @import '../tokens/foundation.css';
 @import '../tokens/spacing/default.css';
 @import '../tokens/radius/default.css';
-@import '../tokens/colors/basalt.css';
-@import '../tokens/presets/colors/basalt.css';
+@import '../tokens/colors/rui-default.css';
+@import '../tokens/presets/colors/rui-default.css';
 
 :where(:root) {
-	--rui-border-alpha: 18%;
+	--font-sans:
+		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+		sans-serif;
+	--font-heading: var(--font-sans);
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	--rui-border-alpha: 48%;
 	color-scheme: light;
 }
 

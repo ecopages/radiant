@@ -1,0 +1,79 @@
+@reference 'tailwindcss';
+
+:root {
+	--font-sans: Roboto, 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: Roboto, 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Roboto Mono', ui-monospace, monospace;
+	--rui-border-alpha: 100%;
+	--border-radius-xs: 0.25rem;
+	--border-radius-sm: 0.5rem;
+	--border-radius-md: 0.75rem;
+	--border-radius-lg: 1rem;
+	--border-radius-xl: 1.75rem;
+	--border-radius-2xl: 2rem;
+	--border-radius-3xl: 2.5rem;
+	--radius-control: var(--border-radius-xl);
+	--radius-container: var(--border-radius-lg);
+}
+
+@layer components {
+	:root .rui-button {
+		@apply rounded-control border border-transparent font-medium shadow-sm;
+	}
+
+	:root .rui-button--filled,
+	:root .rui-button--destructive {
+		@apply shadow-md;
+	}
+
+	:root .rui-button--outline {
+		@apply border-border bg-surface text-on-surface shadow-none;
+	}
+
+	:root .rui-button--ghost:hover:not(:disabled),
+	:root .rui-button--outline:hover:not(:disabled) {
+		@apply bg-surface-container-low;
+	}
+
+	:root .rui-input,
+	:root .rui-textarea,
+	:root .rui-autocomplete__input,
+	:root .rui-combobox__input,
+	:root .rui-date-field__input,
+	:root .rui-date-input__segment,
+	:root .rui-number-field__input,
+	:root .rui-select__control {
+		@apply rounded-control border-border bg-surface text-on-surface shadow-none;
+	}
+
+	:root .rui-checkbox__control,
+	:root .rui-radio__control {
+		@apply border-border bg-surface;
+	}
+
+	:root .rui-checkbox__control {
+		@apply rounded-xs;
+	}
+
+	:root .rui-dialog__surface,
+	:root .rui-popover-host,
+	:root .rui-hover-card__content,
+	:root .rui-select__listbox,
+	:root .rui-combobox__listbox,
+	:root .rui-calendar {
+		@apply rounded-container border border-border bg-surface shadow-lg;
+	}
+
+	:root .rui-listbox__option[aria-selected='true'],
+	:root .rui-menu-button__item[aria-checked='true'],
+	:root .rui-calendar__day[aria-selected='true'],
+	:root .rui-sidebar__menu-button--active {
+		@apply rounded-control bg-primary-container text-on-primary-container;
+	}
+
+	:root .rui-badge,
+	:root .rui-chip,
+	:root .rui-pagination__link {
+		@apply rounded-pill;
+	}
+}

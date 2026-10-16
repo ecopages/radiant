@@ -500,6 +500,7 @@ export const DocsNavigation: Story = {
 		const canvas = within(canvasElement);
 		const sidebar = canvasElement.querySelector('rui-sidebar') as HTMLElement;
 		const provider = canvasElement.querySelector('.rui-sidebar-provider') as HTMLElement;
+		const siteHeader = canvasElement.querySelector('.rui-sidebar-provider__site-header') as HTMLElement;
 		const triggers = Array.from(canvasElement.querySelectorAll('rui-sidebar-trigger'));
 
 		expect(sidebar).toHaveAttribute('role', 'complementary');
@@ -511,6 +512,11 @@ export const DocsNavigation: Story = {
 		expect(getComputedStyle(triggers[0]).display).toBe('none');
 		expect(getComputedStyle(triggers[1]).display).toBe('none');
 		expect(canvasElement.querySelector('.rui-sidebar-provider__site-header')).toBeInTheDocument();
+		const surfaceProbe = document.createElement('div');
+		surfaceProbe.style.backgroundColor = 'var(--surface)';
+		canvasElement.append(surfaceProbe);
+		expect(getComputedStyle(siteHeader).backgroundColor).toBe(getComputedStyle(surfaceProbe).backgroundColor);
+		surfaceProbe.remove();
 		expect(canvas.getByTitle('Radiant')).toBeInTheDocument();
 		expect(canvas.getByText('Getting Started')).toBeInTheDocument();
 		expect(canvas.getByText('Components')).toBeInTheDocument();

@@ -1,18 +1,18 @@
-/** Basalt's neutral, accent, and status families, derived from editable OKLCH seeds. */
+/** Radiant Default's neutral, accent, and status families, derived from editable OKLCH seeds. */
 :root {
 	--rui-neutral: oklch(62% 0.014 265);
-	--color-basalt-50: oklch(from var(--rui-neutral) 98.2% calc(c * 0.29) h);
-	--color-basalt-100: oklch(from var(--rui-neutral) 96% calc(c * 0.43) h);
-	--color-basalt-200: oklch(from var(--rui-neutral) 91.5% calc(c * 0.57) h);
-	--color-basalt-300: oklch(from var(--rui-neutral) 85% calc(c * 0.71) h);
-	--color-basalt-400: oklch(from var(--rui-neutral) 74% calc(c * 0.86) h);
-	--color-basalt-500: var(--rui-neutral);
-	--color-basalt-600: oklch(from var(--rui-neutral) 50% c h);
-	--color-basalt-700: oklch(from var(--rui-neutral) 40% calc(c * 0.86) h);
-	--color-basalt-800: oklch(from var(--rui-neutral) 30% calc(c * 0.71) h);
-	--color-basalt-900: oklch(from var(--rui-neutral) 22% calc(c * 0.57) h);
-	--color-basalt-950: oklch(from var(--rui-neutral) 16% calc(c * 0.43) h);
-	--color-basalt-975: oklch(from var(--rui-neutral) 13% calc(c * 0.36) h);
+	--color-rui-default-50: oklch(from var(--rui-neutral) 98.2% calc(c * 0.29) h);
+	--color-rui-default-100: oklch(from var(--rui-neutral) 96% calc(c * 0.43) h);
+	--color-rui-default-200: oklch(from var(--rui-neutral) 91.5% calc(c * 0.57) h);
+	--color-rui-default-300: oklch(from var(--rui-neutral) 85% calc(c * 0.71) h);
+	--color-rui-default-400: oklch(from var(--rui-neutral) 74% calc(c * 0.86) h);
+	--color-rui-default-500: var(--rui-neutral);
+	--color-rui-default-600: oklch(from var(--rui-neutral) 50% c h);
+	--color-rui-default-700: oklch(from var(--rui-neutral) 40% calc(c * 0.86) h);
+	--color-rui-default-800: oklch(from var(--rui-neutral) 30% calc(c * 0.71) h);
+	--color-rui-default-900: oklch(from var(--rui-neutral) 22% calc(c * 0.57) h);
+	--color-rui-default-950: oklch(from var(--rui-neutral) 16% calc(c * 0.43) h);
+	--color-rui-default-975: oklch(from var(--rui-neutral) 13% calc(c * 0.36) h);
 
 	--rui-primary: oklch(52% 0.19 264);
 	--color-carbon-blue-50: oklch(from var(--rui-primary) 97% calc(c * 0.1) h);

@@ -4,7 +4,7 @@ import { setupWorker } from 'msw/browser';
 import { mswLoader } from 'msw-storybook-addon/csf3';
 import '../src/styles/tailwind.css';
 import './fonts.css';
-import { applyDesignTokens, registerDesignTokenGlobalsSync } from './apply-design-tokens';
+import { applyDesignTokens, registerDesignTokenGlobalsSync, type DesignTokenGlobals } from './apply-design-tokens';
 import { radiantUiTheme } from './theme.ts';
 import { clearStylesheetsDecorator } from './with-stylesheets';
 
@@ -38,27 +38,21 @@ const setupMswWorker = async () => {
 const preview: Preview = {
 	loaders: [mswLoader(setupMswWorker)],
 	globalTypes: {
-		ruiSpacing: {
-			name: 'Spacing',
-			defaultValue: 'default',
+		ruiTheme: {
+			name: 'Theme',
+			defaultValue: 'rui-default',
 			toolbar: {
-				icon: 'component',
+				icon: 'paintbrush',
 				items: [
-					{ value: 'default', title: 'Default' },
-					{ value: 'compact', title: 'Compact' },
-					{ value: 'wide', title: 'Wide' },
-				],
-				dynamicTitle: true,
-			},
-		},
-		ruiRadius: {
-			name: 'Radius',
-			defaultValue: 'default',
-			toolbar: {
-				icon: 'circlehollow',
-				items: [
-					{ value: 'default', title: 'Soft (default)' },
-					{ value: 'sharp', title: 'Sharp' },
+					{ value: 'rui-default', title: 'Radiant Default' },
+					{ value: 'github', title: 'GitHub' },
+					{ value: 'vscode', title: 'VS Code' },
+					{ value: 'material', title: 'Material Design' },
+					{ value: 'vercel', title: 'Vercel' },
+					{ value: 'high-contrast', title: 'High Contrast' },
+					{ value: 'windows95', title: 'Windows 95' },
+					{ value: 'macos-classic', title: 'Mac OS Classic' },
+					{ value: 'macos', title: 'macOS' },
 				],
 				dynamicTitle: true,
 			},
@@ -78,7 +72,7 @@ const preview: Preview = {
 	},
 	decorators: [
 		(Story, context) => {
-			applyDesignTokens(context.globals as Record<string, string>);
+			applyDesignTokens(context.globals as DesignTokenGlobals);
 			return Story();
 		},
 		clearStylesheetsDecorator,

@@ -1,0 +1,52 @@
+@reference 'tailwindcss';
+
+:root {
+	--font-sans: 'Segoe UI', system-ui, sans-serif;
+	--font-heading: 'Segoe UI', system-ui, sans-serif;
+	--font-mono: 'Cascadia Code', Consolas, monospace;
+	--rui-border-alpha: 100%;
+	--border-radius-xs: 0.125rem;
+	--border-radius-sm: 0.1875rem;
+	--border-radius-md: 0.25rem;
+	--border-radius-lg: 0.375rem;
+	--border-radius-xl: 0.5rem;
+	--border-radius-2xl: 0.75rem;
+	--border-radius-3xl: 1rem;
+	--radius-control: var(--border-radius-sm);
+	--radius-container: var(--border-radius-md);
+}
+
+@layer components {
+	:root .rui-button {
+		@apply rounded-control border border-transparent font-medium shadow-none;
+	}
+
+	:root .rui-button--outline,
+	:root .rui-input,
+	:root .rui-textarea,
+	:root .rui-select__control {
+		@apply border-border bg-surface text-on-surface shadow-none;
+	}
+
+	:root .rui-button--outline:hover:not(:disabled),
+	:root .rui-button--ghost:hover:not(:disabled) {
+		@apply bg-surface-container-low;
+	}
+
+	:root .rui-checkbox__control {
+		@apply rounded-xs border-border bg-surface;
+	}
+
+	:root .rui-listbox__option[aria-selected='true'],
+	:root .rui-menu-button__item[aria-checked='true'],
+	:root .rui-sidebar__menu-button--active {
+		@apply bg-primary-container text-on-primary-container;
+	}
+
+	:root .rui-dialog__surface,
+	:root .rui-popover-host,
+	:root .rui-select__listbox,
+	:root .rui-calendar {
+		@apply rounded-container border border-border bg-surface shadow-lg;
+	}
+}

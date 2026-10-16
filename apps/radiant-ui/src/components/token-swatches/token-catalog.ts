@@ -109,11 +109,11 @@ export const absoluteColorTokens: readonly string[] = ['--color-black', '--color
 
 export const palettePacks: readonly PalettePack[] = [
 	{
-		id: 'basalt',
-		label: 'Basalt',
-		packFile: '@ecopages/radiant-ui/tokens/colors/basalt',
+		id: 'rui-default',
+		label: 'Radiant Default',
+		packFile: '@ecopages/radiant-ui/tokens/colors/rui-default',
 		scales: [
-			colorScale('basalt', STEPS_50_975),
+			colorScale('rui-default', STEPS_50_975),
 			colorScale('carbon-blue', STEPS_50_975),
 			colorScale('carbon-teal', STEPS_50_975),
 			colorScale('carbon-red', STEPS_50_975),
@@ -121,9 +121,30 @@ export const palettePacks: readonly PalettePack[] = [
 		],
 	},
 	{
+		id: 'material',
+		label: 'Material Design',
+		packFile: '@ecopages/radiant-themes/material',
+		scales: [
+			{
+				name: 'Material Design role seeds',
+				tokens: ['--material-primary', '--material-secondary', '--material-tertiary', '--material-error'],
+			},
+			{
+				name: 'Material Design surfaces',
+				tokens: [
+					'--material-canvas',
+					'--material-surface',
+					'--material-surface-container',
+					'--material-outline',
+					'--material-text',
+				],
+			},
+		],
+	},
+	{
 		id: 'github',
 		label: 'GitHub',
-		packFile: '@ecopages/radiant-themes/tokens/colors/github',
+		packFile: '@ecopages/radiant-themes/github',
 		scales: [
 			{
 				name: 'GitHub colors',
@@ -148,7 +169,7 @@ export const palettePacks: readonly PalettePack[] = [
 	{
 		id: 'vscode',
 		label: 'VS Code',
-		packFile: '@ecopages/radiant-themes/tokens/colors/vscode',
+		packFile: '@ecopages/radiant-themes/vscode',
 		scales: [
 			{
 				name: 'VS Code colors',
@@ -172,7 +193,7 @@ export const palettePacks: readonly PalettePack[] = [
 	{
 		id: 'vercel',
 		label: 'Vercel',
-		packFile: '@ecopages/radiant-themes/tokens/colors/vercel',
+		packFile: '@ecopages/radiant-themes/vercel',
 		scales: [
 			colorScale('vercel-gray', STEPS_50_950),
 			{
@@ -186,6 +207,101 @@ export const palettePacks: readonly PalettePack[] = [
 					'--color-vercel-teal',
 					'--color-vercel-purple',
 					'--color-vercel-pink',
+				],
+			},
+		],
+	},
+	{
+		id: 'high-contrast',
+		label: 'High Contrast',
+		packFile: '@ecopages/radiant-themes/high-contrast',
+		scales: [
+			{
+				name: 'High Contrast colors',
+				tokens: [
+					'--contrast-canvas',
+					'--contrast-surface',
+					'--contrast-container',
+					'--contrast-text',
+					'--contrast-primary',
+					'--contrast-secondary',
+					'--contrast-error',
+					'--contrast-success',
+					'--contrast-warning',
+					'--contrast-focus',
+				],
+			},
+		],
+	},
+	{
+		id: 'windows95',
+		label: 'Windows 95',
+		packFile: '@ecopages/radiant-themes/windows95',
+		scales: [
+			{
+				name: 'Windows 95 colors',
+				tokens: [
+					'--windows95-canvas',
+					'--windows95-face',
+					'--windows95-light',
+					'--windows95-highlight',
+					'--windows95-shadow',
+					'--windows95-dark',
+					'--windows95-text',
+					'--windows95-blue',
+					'--windows95-blue-light',
+					'--windows95-green',
+					'--windows95-red',
+					'--windows95-amber',
+				],
+			},
+		],
+	},
+	{
+		id: 'macos-classic',
+		label: 'Mac OS Classic',
+		packFile: '@ecopages/radiant-themes/macos-classic',
+		scales: [
+			{
+				name: 'Mac OS Classic colors',
+				tokens: [
+					'--macos-classic-canvas',
+					'--macos-classic-surface',
+					'--macos-classic-container',
+					'--macos-classic-light',
+					'--macos-classic-shadow',
+					'--macos-classic-dark',
+					'--macos-classic-text',
+					'--macos-classic-muted',
+					'--macos-classic-blue',
+					'--macos-classic-blue-light',
+					'--macos-classic-green',
+					'--macos-classic-red',
+					'--macos-classic-amber',
+				],
+			},
+		],
+	},
+	{
+		id: 'macos',
+		label: 'macOS',
+		packFile: '@ecopages/radiant-themes/macos',
+		scales: [
+			{
+				name: 'macOS colors',
+				tokens: [
+					'--macos-canvas',
+					'--macos-surface',
+					'--macos-subtle',
+					'--macos-border',
+					'--macos-text',
+					'--macos-muted',
+					'--macos-blue',
+					'--macos-blue-light',
+					'--macos-green',
+					'--macos-red',
+					'--macos-amber',
+					'--macos-purple',
 				],
 			},
 		],

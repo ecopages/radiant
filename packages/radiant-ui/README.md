@@ -30,7 +30,7 @@ Open the URL Storybook prints (default port `6006`).
 
 ### Checking layout and styles
 
-- **Automated (CI-friendly):** `pnpm run test:storybook` runs each story’s `play` function in a real browser (Vitest + Playwright). Layout helpers live in `.storybook/layout-assertions.ts` (overflow, `--text-control-input` font size, popover viewport bounds) — see `Components/DateRangePicker` → **NarrowLayout**. Input typography uses the `--text-control-input` token in `tokens/typography/default.css` (16px below `640px`, `--text-control` at `sm` and up).
+- **Automated (CI-friendly):** `pnpm run test:storybook` runs each story’s `play` function in a real browser (Vitest + Playwright). Layout helpers live in `.storybook/layout-assertions.ts` (overflow, `--text-control-input` font size, popover viewport bounds) — see `Components/DateRangePicker` → **NarrowLayout**. The shared typography file defines the type scale and input sizing; each complete theme supplies `--font-sans`, `--font-heading`, and `--font-mono`.
 - **Manual:** run `pnpm run storybook` and use the browser’s responsive mode or resize the preview; no third-party visual service required.
 - **Pixel snapshots (optional):** Vitest browser mode supports Playwright `toHaveScreenshot()` with baselines committed in the repo if you want image diffs without Chromatic.
 
@@ -62,11 +62,14 @@ import { RuiDisclosure, RuiDisclosureGroup } from '@ecopages/radiant-ui/disclosu
 import { RuiButton } from '@ecopages/radiant-ui/button';
 ```
 
-Radiant UI ships one default theme: Basalt with soft radius and comfortable spacing. Optional ready-made themes and
-composable variants such as GitHub Compact live in [`@ecopages/radiant-themes`](../radiant-themes/README.md). The
-default's OKLCH color families can be retuned by overriding `--rui-primary`, `--rui-secondary`, and `--rui-neutral`
-after importing the theme. `--rui-density`, `--rui-radius-scale`, and `--rui-border-alpha` tune geometry and border
-strength.
+Radiant UI ships one accessible default theme: Radiant Default with comfortable spacing, a softly squared control shape,
+and clear translucent borders. Optional complete themes and named compact variants such as GitHub Compact, Vercel,
+Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS live in
+[`@ecopages/radiant-themes`](../radiant-themes/README.md). The default's OKLCH color families can be retuned by
+overriding `--rui-primary`, `--rui-secondary`, and `--rui-neutral` after importing the theme. `--rui-density`,
+`--rui-radius-scale`, and `--rui-border-alpha` complete its six-input tuning surface. Optional themes set their own
+shape, spacing, typography, and component details. The default responds to reduced-motion, increased-contrast, and
+forced-colors preferences.
 
 Or register every custom element from the root entry (still load theme + styles separately):
 

@@ -1,6 +1,6 @@
 ---
 title: Tokens
-description: Colour, spacing, radius, and supporting token scales that Radiant UI components consume.
+description: Theme-aware color, spacing, radius, and supporting token scales used by Radiant UI components.
 group: Getting started
 ---
 
@@ -16,10 +16,12 @@ import {
 	SpacingSwatches,
 	TypographySwatches,
 } from '@/components/token-swatches/token-swatches';
+import { DesignTokenPanel } from '@/components/design-token-panel/design-token-panel';
 
 export const config = {
 	dependencies: {
 		components: [
+			DesignTokenPanel,
 			AbsoluteColorSwatches,
 			ElevationSwatches,
 			GrayScaleSwatches,
@@ -38,12 +40,24 @@ export const config = {
 # Tokens
 
 <p class="docs-lede">
-	Radiant UI tokens are CSS custom properties in three tiers. Components consume semantic roles and geometry roles.
-	Palette steps exist so colour presets can remap those roles; they are not a component API.
+	Radiant UI tokens are CSS custom properties in three tiers. Components consume semantic and geometry roles. Each
+	complete theme supplies the palette and shape values behind those roles.
 </p>
 
-Click a swatch to copy the CSS variable name. Colour, spacing, and radius swatches follow the live docs preview
-(theme, spacing pack, radius pack, and light or dark). Change packs on [Theming](/docs/getting-started/theming).
+Click a swatch to copy its CSS variable. Values follow the selected complete theme and light/dark mode. Choose a
+palette from the button beside the mode toggle, or use the gallery below.
+
+## Theme gallery
+
+Each theme brings its own palette and component treatment. Choose one here to preview its tokens and components across
+this page, then open the [Theming guide](/docs/getting-started/theming) for package imports and the Radiant Default
+color controls.
+
+<DesignTokenPanel />
+
+Available themes include Radiant Default, GitHub, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS
+Classic, and macOS. Each complete theme also has an individually exported compact variant, such as
+`@ecopages/radiant-themes/github/compact`.
 
 ## Token tiers
 
@@ -53,7 +67,7 @@ Click a swatch to copy the CSS variable name. Colour, spacing, and radius swatch
 | 2. Semantic | `--primary`, `--surface`, `--error`, … plus the Tailwind `@theme` bridge (`bg-primary`) | This is what components use. |
 | 3. System | Absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity, z-index, control and icon sizes | Shared by every theme; not a mood pack. `--size-control-*` aliases the spacing scale. |
 
-`themes/default.css` is the default import graph. It loads the Basalt palette, default spacing and radius, elevation,
+`themes/default.css` is the default import graph. It loads the Radiant Default palette, spacing and radius, elevation,
 typography, motion, system tokens, and semantic roles. `tokens/foundation.css` contains the shared foundation tokens.
 
 ## Colour roles
@@ -74,12 +88,12 @@ Tertiary has fill and container roles only. It does not ship `--tertiary-light` 
 | Status | `--error`, `--on-error`, `--error-container`, `--on-error-container`, `--error-light`, `--error-dark`, `--success`, `--on-success`, `--success-container`, `--on-success-container`, `--success-light`, `--success-dark`, `--info`, `--on-info`, `--info-container`, `--on-info-container`, `--info-light`, `--info-dark`, `--warning`, `--on-warning`, `--warning-container`, `--on-warning-container`, `--warning-light`, `--warning-dark` |
 | Surfaces | `--background`, `--on-background`, `--surface`, `--on-surface`, `--surface-container-lowest`, `--on-surface-container-lowest`, `--surface-container-low`, `--on-surface-container-low`, `--surface-container`, `--on-surface-container`, `--surface-container-high`, `--on-surface-container-high`, `--surface-container-highest`, `--on-surface-container-highest` |
 | Supporting | `--border`, `--focus-ring`, `--on-focus-ring`, `--link`, `--overlay`, `--neutral`, `--background-code`, `--on-background-code` |
-| Range tracks | `--rui-track-mix` (`22%`), `--rui-track-fill`; optional `--rui-track-color` |
+| Range tracks | `--rui-track-mix` (`45%`), `--rui-track-fill`; optional `--rui-track-color` |
 
 ## Gray scale
 
 `--gray-50` through `--gray-950` are the neutral scale exposed as Tailwind utilities (`bg-gray-50`, …). Each theme
-maps this scale to its own neutral family; Radiant UI's default uses Basalt.
+maps this scale to its own neutral family; Radiant UI's default uses Radiant Default.
 
 <GrayScaleSwatches />
 
@@ -88,8 +102,9 @@ maps this scale to its own neutral family; Radiant UI's default uses Basalt.
 Palette files put raw colors on `:root`. Theme role files assign them to semantic roles. Component CSS must not
 reference palette values such as `--color-carbon-blue-500` or `--color-github-blue`.
 
-The default Basalt scales are derived from OKLCH seed variables in `@ecopages/radiant-ui/themes/default`. Optional
-palettes such as GitHub, VS Code, and Vercel are provided by `@ecopages/radiant-themes`. Hue scales that include step 975
+The Radiant Default scales are derived from OKLCH seed variables in `@ecopages/radiant-ui/themes/default`. Optional
+palettes such as GitHub, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS are provided by
+`@ecopages/radiant-themes`. Hue scales that include step 975
 ship steps 50–975; Vercel gray and the semantic gray scale end at 950. `--color-black` and `--color-white` are system
 tokens, not a hue pack.
 
@@ -97,8 +112,9 @@ tokens, not a hue pack.
 
 ## Spacing
 
-Spacing packs set `--space-1` through `--space-16` and five roles. Bars show the live computed size, so compact and
-wide change the preview.
+Spacing uses `--space-1` through `--space-16` and five roles. Bars show the live computed size for the selected theme.
+Radiant Default scales with its density control; each Radiant Themes compact export composes a denser spacing scale
+while preserving the theme's own color, shape, and typography.
 
 <SpacingSwatches />
 
@@ -106,50 +122,40 @@ Roles are what component CSS should use for control padding and stack rhythm:
 
 <SpacingRoleSwatches />
 
-| Token | Default | Compact | Wide | Tailwind `@theme` |
-| --- | --- | --- | --- | --- |
-| `--space-1` | 0.25rem | 0.125rem | 0.375rem | `--spacing-1` |
-| `--space-2` | 0.5rem | 0.25rem | 0.625rem | `--spacing-2` |
-| `--space-3` | 0.75rem | 0.5rem | 0.875rem | `--spacing-3` |
-| `--space-4` | 1rem | 0.75rem | 1.25rem | `--spacing-4` |
-| `--space-5` | 1.25rem | 1rem | 1.5rem | `--spacing-5` |
-| `--space-6` | 1.5rem | 1.25rem | 1.875rem | `--spacing-6` |
-| `--space-8` | 2rem | 1.5rem | 2.5rem | `--spacing-8` |
-| `--space-10` | 2.5rem | 2rem | 3rem | not bridged |
-| `--space-12` | 3rem | 2.5rem | 3.75rem | not bridged |
-| `--space-16` | 4rem | 3rem | 5rem | not bridged |
-| `--space-control-x` | `--space-3` | `--space-3` | `--space-4` | `--spacing-control-x` |
-| `--space-control-y` | `--space-2` | `--space-2` | `--space-3` | `--spacing-control-y` |
-| `--space-inline` | `--space-2` | `--space-2` | `--space-3` | `--spacing-inline` |
-| `--space-stack` | `--space-4` | `--space-3` | `--space-6` | `--spacing-stack` |
-| `--space-inset` | `--space-4` | `--space-4` | `--space-6` | `--spacing-inset` |
+| Token | Radiant Default | Tailwind `@theme` |
+| --- | --- | --- |
+| `--space-1` | 0.25rem | `--spacing-1` |
+| `--space-2` | 0.5rem | `--spacing-2` |
+| `--space-3` | 0.75rem | `--spacing-3` |
+| `--space-4` | 1rem | `--spacing-4` |
+| `--space-5` | 1.25rem | `--spacing-5` |
+| `--space-6` | 1.5rem | `--spacing-6` |
+| `--space-8` | 2rem | `--spacing-8` |
+| `--space-10` | 2.5rem | not bridged |
+| `--space-12` | 3rem | not bridged |
+| `--space-16` | 4rem | not bridged |
+| `--space-control-x` | `--space-3` | `--spacing-control-x` |
+| `--space-control-y` | `--space-2` | `--spacing-control-y` |
+| `--space-inline` | `--space-2` | `--spacing-inline` |
+| `--space-stack` | `--space-4` | `--spacing-stack` |
+| `--space-inset` | `--space-4` | `--spacing-inset` |
 
 `--size-control-sm`, `--size-control-md`, and `--size-control-lg` alias `--space-8`, `--space-10`, and `--space-12`, so
-compact and wide change button and input height on the block axis as well as `--space-control-x` padding.
+the selected theme's density affects button and input height as well as `--space-control-x` padding.
 
-Important: `--space-10`, `--space-12`, and `--space-16` exist as CSS variables but are not mapped in the spacing
-`@theme` bridge. `p-10` is not the Radiant pack step; use `var(--space-10)` or a role token when the value must follow
-compact or wide.
-
-```css
-@import '@ecopages/radiant-ui/tokens/spacing/compact';
-```
+`--space-10`, `--space-12`, and `--space-16` exist as CSS variables but are not mapped in the spacing `@theme` bridge.
+Use `var(--space-10)` or a role token when a value should follow the selected theme's density.
 
 ## Radius
 
-Radius packs set `--border-radius-*` and three roles: `--radius-control`, `--radius-container`, `--radius-pill`.
-The `@theme` bridge exposes `rounded-sm`, `rounded-control`, `rounded-container`, and `rounded-pill`. `rounded-button`
+Radius tokens set `--border-radius-*` and three roles: `--radius-control`, `--radius-container`, `--radius-pill`.
+The `@theme` bridge exposes `rounded-sm`, `rounded-control`, `rounded-container`, and `rounded-pill`. Complete themes
+provide their own shape values; only Radiant Default exposes `--rui-radius-scale` as a tuning input. `rounded-button`
 aliases `--radius-control`.
 
 <RadiusSwatches />
 
 <RadiusRoleSwatches />
-
-| Pack | Import |
-| --- | --- |
-| Default | `@ecopages/radiant-ui/tokens/radius/default` |
-| Soft | `@ecopages/radiant-ui/tokens/radius/soft` |
-| Sharp | `@ecopages/radiant-ui/tokens/radius/sharp` (`edgy` is the same pack) |
 
 ## Elevation
 
@@ -165,8 +171,9 @@ The `flat` pack sets all three shadows to `none`: `@ecopages/radiant-ui/tokens/e
 
 ## Typography
 
-Size tokens plus `--font-sans`, `--font-mono`, `--leading-*`, `--weight-*`, and `--tracking-wide`. Default pack:
-`@ecopages/radiant-ui/tokens/typography/default`.
+The shared type scale includes size, leading, weight, and tracking tokens. Complete themes provide `--font-sans`,
+`--font-heading`, and `--font-mono`; the selected theme controls those stacks. Load the shared scale with
+`@ecopages/radiant-ui/tokens/typography/default`, or import a complete theme to get its matching font families too.
 
 <TypographySwatches />
 
@@ -211,7 +218,7 @@ white live here so theme roles can reference them without depending on a palette
 | `--border-width-hairline` | 1px |
 | `--border-width-thin` | 1px |
 | `--border-width-thick` | 2px |
-| `--rui-track-mix` | `22%` |
+| `--rui-track-mix` | `45%` |
 | `--rui-track-fill` | `color-mix` of `--on-background` at `--rui-track-mix` |
 | `--focus-ring-width` | 2px |
 | `--focus-ring-offset` | 2px |
@@ -227,5 +234,10 @@ white live here so theme roles can reference them without depending on a palette
 | `--size-control-lg` | `var(--space-12)` (3rem / 2.5rem / 3.75rem) |
 | `--size-icon-sm` | 1rem |
 | `--size-icon-md` | 1.25rem |
+
+`accessibility.css` is part of the default foundation. It adds a base visible focus outline that component themes can
+customize, honors `prefers-reduced-motion`, strengthens borders when `prefers-contrast: more` is enabled, and maps semantic colors to system colors under
+`forced-colors: active`. High Contrast is available from [Theming](/docs/getting-started/theming) and targets AAA
+contrast for the published semantic text pairs in light and dark modes.
 
 Compose packs in the application stylesheet. See [Theming](/docs/getting-started/theming).

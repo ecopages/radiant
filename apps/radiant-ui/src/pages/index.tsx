@@ -14,7 +14,6 @@ import { RuiHeading, RuiHeadingDescription, RuiHeadingEyebrow, RuiHeadingTitle }
 import { RuiInput } from '@ecopages/radiant-ui/input';
 import { RuiSwitch } from '@ecopages/radiant-ui/switch';
 import { CodeTabs } from '@/components/code-tabs';
-import { HomeThemePicker } from '@/components/home-theme-picker/home-theme-picker';
 import { previewExampleCode } from '@/data/home-code-examples';
 import { BaseLayout } from '@/layouts/base-layout';
 import { componentNavEntries, firstComponentHref, groupedComponentNavEntries } from '@/lib/component-nav';
@@ -80,8 +79,9 @@ const EXPLORE_ARTICLES: HomeFeedArticleData[] = [
 	{
 		href: '/docs/getting-started/theming',
 		label: 'Theming',
-		title: 'Pick a theme, compose its axes',
-		description: 'Start with the Basalt default or add a composable theme. Components consume semantic roles.',
+		title: 'Find a theme for your interface',
+		description:
+			'Choose Radiant Default or a complete theme from Radiant Themes. Components consume semantic roles.',
 	},
 	{
 		href: '/docs/getting-started/tokens',
@@ -99,7 +99,7 @@ const EXPLORE_ARTICLES: HomeFeedArticleData[] = [
 
 const PATH_STEPS = [
 	'Read the overview, then install `@ecopages/radiant-ui`. Radiant, JSX, and Signals come along as peers.',
-	'Load the Basalt default or a Radiant Themes entry, then compose spacing and radius packs.',
+	'Load Radiant Default or choose a complete visual system from Radiant Themes.',
 	'Import a focused module and compose the public JSX helpers in light DOM.',
 	'Use the playgrounds to inspect props, states, and accessibility notes.',
 ];
@@ -113,8 +113,9 @@ type HomePathCardData = {
 const PATH_CARDS: HomePathCardData[] = [
 	{
 		href: '/docs/getting-started/theming',
-		title: 'Compose a theme',
-		description: 'Import the Basalt default, then layer the spacing and radius packs the product needs.',
+		title: 'Choose a theme',
+		description:
+			'Start with Radiant Default and its color controls, or import a complete theme from Radiant Themes.',
 	},
 	{
 		href: '/docs/getting-started/tokens',
@@ -420,21 +421,6 @@ const HomeExplore = () => (
 	</section>
 );
 
-const HomeTheme = () => (
-	<section class="home-theme" aria-labelledby="home-theme-title">
-		<RuiHeading size="sm">
-			<RuiHeadingEyebrow>Theming</RuiHeadingEyebrow>
-			<RuiHeadingTitle id="home-theme-title" as="h2">
-				Remap this page
-			</RuiHeadingTitle>
-			<RuiHeadingDescription>
-				Colour, spacing, and radius are packs. They restyle this document; the hero JSX stays the same.
-			</RuiHeadingDescription>
-		</RuiHeading>
-		<HomeThemePicker />
-	</section>
-);
-
 const HomeSpecimenGroup = ({ category, items }: { category: string; items: { href: string; title: string }[] }) => (
 	<div class="home-specimen__group">
 		<p class="home-specimen__category">{category}</p>
@@ -486,7 +472,6 @@ const HomePage = () => (
 		<HomeHero />
 		<main class="home-main">
 			<HomeExplore />
-			<HomeTheme />
 			<HomeSpecimen />
 			<HomePath />
 		</main>
@@ -498,7 +483,7 @@ const HomePage = () => (
 export default eco.page({
 	layout: BaseLayout,
 	dependencies: {
-		components: [CodeTabs, HomeThemePicker],
+		components: [CodeTabs],
 		scripts: ['./index.script.ts'],
 		stylesheets: ['./index.css'],
 	},

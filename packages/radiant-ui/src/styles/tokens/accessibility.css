@@ -1,0 +1,118 @@
+@layer base {
+	:where(a[href], button, input:not([type='hidden']):not(.sr-only), select, textarea, [tabindex]):not(
+			[data-rui-focus-managed]
+		):focus-visible {
+		outline: var(--focus-ring-width, 3px) solid var(--focus-ring);
+		outline-offset: var(--focus-ring-offset, 2px);
+	}
+}
+
+@media (prefers-contrast: more) {
+	html:root {
+		--rui-border-alpha: 100%;
+		--border: color-mix(in oklab, var(--rui-border-color) 45%, var(--on-background));
+		--opacity-disabled: 0.78;
+		--opacity-muted: 0.78;
+		--focus-ring-width: 3px;
+		--focus-ring-offset: 2px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-fast: 0ms;
+		--duration-normal: 0ms;
+		--duration-slow: 0ms;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+@media (forced-colors: active) {
+	html:root,
+	html:root.dark {
+		--primary: Highlight;
+		--on-primary: HighlightText;
+		--primary-container: Highlight;
+		--on-primary-container: HighlightText;
+		--primary-light: LinkText;
+		--primary-dark: Highlight;
+		--secondary: ButtonText;
+		--on-secondary: ButtonFace;
+		--secondary-container: ButtonFace;
+		--on-secondary-container: ButtonText;
+		--tertiary: ButtonText;
+		--on-tertiary: ButtonFace;
+		--tertiary-container: ButtonFace;
+		--on-tertiary-container: ButtonText;
+		--error: CanvasText;
+		--on-error: Canvas;
+		--error-container: Canvas;
+		--on-error-container: CanvasText;
+		--success: CanvasText;
+		--on-success: Canvas;
+		--success-container: Canvas;
+		--on-success-container: CanvasText;
+		--info: LinkText;
+		--on-info: Canvas;
+		--info-container: Canvas;
+		--on-info-container: CanvasText;
+		--warning: CanvasText;
+		--on-warning: Canvas;
+		--warning-container: Canvas;
+		--on-warning-container: CanvasText;
+		--neutral: GrayText;
+		--surface: Canvas;
+		--on-surface: CanvasText;
+		--surface-container-lowest: Canvas;
+		--on-surface-container-lowest: CanvasText;
+		--surface-container-low: Canvas;
+		--on-surface-container-low: CanvasText;
+		--surface-container: Canvas;
+		--on-surface-container: CanvasText;
+		--surface-container-high: Canvas;
+		--on-surface-container-high: CanvasText;
+		--surface-container-highest: Canvas;
+		--on-surface-container-highest: CanvasText;
+		--background: Canvas;
+		--on-background: CanvasText;
+		--border: ButtonText;
+		--focus-ring: Highlight;
+		--on-focus-ring: HighlightText;
+		--link: LinkText;
+		--overlay: Canvas;
+		--background-code: Canvas;
+		--on-background-code: CanvasText;
+	}
+
+	:where(.rui-button, .rui-input, .rui-textarea, .rui-select, .rui-checkbox__control, .rui-radio__control) {
+		forced-color-adjust: auto;
+		border-color: ButtonText;
+	}
+
+	:where([aria-selected='true'], [aria-checked='true'], [aria-pressed='true'], [aria-current='page']) {
+		border-color: Highlight;
+	}
+
+	@layer base {
+		:where(a[href], button, input:not([type='hidden']):not(.sr-only), select, textarea, [tabindex]):not(
+				[data-rui-focus-managed]
+			):focus-visible {
+			outline: 3px solid Highlight !important;
+			outline-offset: 2px !important;
+		}
+	}
+
+	:disabled,
+	[aria-disabled='true'] {
+		color: GrayText;
+		opacity: 1;
+	}
+}

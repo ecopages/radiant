@@ -2,6 +2,7 @@ import { eco } from '@ecopages/core';
 import type { JsxRenderable } from '@ecopages/jsx';
 import { RuiButton } from '@ecopages/radiant-ui/button';
 import { Logo } from '@/components/logo/logo';
+import { ThemePalettePicker } from '@/components/theme-palette-picker/theme-palette-picker';
 import { ThemeToggle } from '@/components/theme-toggle/theme-toggle';
 import radiantUiJson from '../../../../../packages/radiant-ui/package.json';
 import { RuiChip } from '@ecopages/radiant-ui/chip';
@@ -29,7 +30,7 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 	dependencies: {
 		stylesheets: ['./base-layout.css'],
 		scripts: ['./base-layout.script.ts'],
-		components: [Logo, ThemeToggle],
+		components: [ThemePalettePicker, Logo, ThemeToggle],
 	},
 	render: ({ children, class: className, showHeader = true }) => (
 		<body>
@@ -60,6 +61,9 @@ export const BaseLayout = eco.component<BaseLayoutProps, JsxRenderable>({
 									>
 										<GitHubIcon />
 									</RuiButton>
+								</li>
+								<li>
+									<ThemePalettePicker />
 								</li>
 								<li>
 									<ThemeToggle id="toggle-dark-mode" label="Theme" />

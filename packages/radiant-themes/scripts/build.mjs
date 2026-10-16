@@ -13,6 +13,7 @@ mkdirSync(output, { recursive: true });
 cpSync(source, output, { recursive: true });
 
 const require = createRequire(import.meta.url);
+const tailwindcss = require('@tailwindcss/postcss');
 const themeSource = path.join(source, 'themes');
 const compiledRoot = path.join(output, 'compiled', 'themes');
 
@@ -36,7 +37,6 @@ function inlineImports(file, seen = new Set()) {
 		if (!specifier) throw new Error(`Unsupported theme import: ${rule.params}`);
 		rule.replaceWith(postcss.parse(inlineImports(resolveImport(specifier, file), seen)));
 	});
-	root.walkAtRules('theme', (rule) => rule.remove());
 	return root.toString();
 }
 
@@ -44,7 +44,9 @@ for (const file of listCssFiles(themeSource)) {
 	const relative = path.relative(themeSource, file);
 	const compiledFile = path.join(compiledRoot, relative);
 	mkdirSync(path.dirname(compiledFile), { recursive: true });
-	writeFileSync(compiledFile, inlineImports(file));
+	const authored = postcss.parse(inlineImports(file), { from: file });
+	const compiled = await postcss([tailwindcss()]).process(authored.toString(), { from: file, map: false });
+	writeFileSync(compiledFile, compiled.css);
 }
 
-console.log('[radiant-themes] copied composable CSS sources to dist/');
+console.log('[radiant-themes] copied composable sources and compiled browser-ready theme CSS to dist/');

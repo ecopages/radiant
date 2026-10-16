@@ -27,14 +27,14 @@
 		"@ecopages/radiant-ui": ">=0.1.0"
 	},
 	"devDependencies": {
+		"@tailwindcss/postcss": "^4.3.3",
 		"@ecopages/radiant-ui": "workspace:*",
-		"postcss": "^8.5.24"
+		"playwright": "^1.62.1",
+		"postcss": "^8.5.24",
+		"tailwindcss": "^4.3.0"
 	},
 	"exports": {
 		"./package.json": "./package.json",
-		"./foundation": {
-			"default": "./dist/foundation.css"
-		},
 		"./compiled/github.css": {
 			"default": "./dist/compiled/themes/github.css"
 		},
@@ -47,11 +47,41 @@
 		"./compiled/vscode/compact.css": {
 			"default": "./dist/compiled/themes/vscode/compact.css"
 		},
+		"./compiled/material.css": {
+			"default": "./dist/compiled/themes/material.css"
+		},
+		"./compiled/material/compact.css": {
+			"default": "./dist/compiled/themes/material/compact.css"
+		},
 		"./compiled/vercel.css": {
 			"default": "./dist/compiled/themes/vercel.css"
 		},
 		"./compiled/vercel/compact.css": {
 			"default": "./dist/compiled/themes/vercel/compact.css"
+		},
+		"./compiled/high-contrast.css": {
+			"default": "./dist/compiled/themes/high-contrast.css"
+		},
+		"./compiled/high-contrast/compact.css": {
+			"default": "./dist/compiled/themes/high-contrast/compact.css"
+		},
+		"./compiled/windows95.css": {
+			"default": "./dist/compiled/themes/windows95.css"
+		},
+		"./compiled/windows95/compact.css": {
+			"default": "./dist/compiled/themes/windows95/compact.css"
+		},
+		"./compiled/macos-classic.css": {
+			"default": "./dist/compiled/themes/macos-classic.css"
+		},
+		"./compiled/macos-classic/compact.css": {
+			"default": "./dist/compiled/themes/macos-classic/compact.css"
+		},
+		"./compiled/macos.css": {
+			"default": "./dist/compiled/themes/macos.css"
+		},
+		"./compiled/macos/compact.css": {
+			"default": "./dist/compiled/themes/macos/compact.css"
 		},
 		"./github": {
 			"default": "./dist/themes/github.css"
@@ -65,32 +95,41 @@
 		"./vscode/compact": {
 			"default": "./dist/themes/vscode/compact.css"
 		},
+		"./material": {
+			"default": "./dist/themes/material.css"
+		},
+		"./material/compact": {
+			"default": "./dist/themes/material/compact.css"
+		},
 		"./vercel": {
 			"default": "./dist/themes/vercel.css"
 		},
 		"./vercel/compact": {
 			"default": "./dist/themes/vercel/compact.css"
 		},
-		"./tokens/colors/github": {
-			"default": "./dist/tokens/colors/github.css"
+		"./high-contrast": {
+			"default": "./dist/themes/high-contrast.css"
 		},
-		"./tokens/colors/vscode": {
-			"default": "./dist/tokens/colors/vscode.css"
+		"./high-contrast/compact": {
+			"default": "./dist/themes/high-contrast/compact.css"
 		},
-		"./tokens/colors/vercel": {
-			"default": "./dist/tokens/colors/vercel.css"
+		"./windows95": {
+			"default": "./dist/themes/windows95.css"
 		},
-		"./tokens/roles/github": {
-			"default": "./dist/tokens/roles/github.css"
+		"./windows95/compact": {
+			"default": "./dist/themes/windows95/compact.css"
 		},
-		"./tokens/roles/vscode": {
-			"default": "./dist/tokens/roles/vscode.css"
+		"./macos-classic": {
+			"default": "./dist/themes/macos-classic.css"
 		},
-		"./tokens/roles/vercel": {
-			"default": "./dist/tokens/roles/vercel.css"
+		"./macos-classic/compact": {
+			"default": "./dist/themes/macos-classic/compact.css"
 		},
-		"./tokens/components/vercel": {
-			"default": "./dist/tokens/components/vercel.css"
+		"./macos": {
+			"default": "./dist/themes/macos.css"
+		},
+		"./macos/compact": {
+			"default": "./dist/themes/macos/compact.css"
 		}
 	}
 }

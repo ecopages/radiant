@@ -1,0 +1,42 @@
+:where(:root) {
+	--windows95-canvas: #c0c0c0;
+	--windows95-face: #c0c0c0;
+	--windows95-light: #ffffff;
+	--windows95-highlight: #dfdfdf;
+	--windows95-shadow: #808080;
+	--windows95-dark: #404040;
+	--windows95-text: #000000;
+	--windows95-muted: #404040;
+	--windows95-blue: #000080;
+	--windows95-blue-light: #0000a8;
+	--windows95-green: #005000;
+	--windows95-red: #800000;
+	--windows95-amber: #634000;
+}
+
+:where(.dark) {
+	--windows95-canvas: #303030;
+	--windows95-face: #3c3c3c;
+	--windows95-light: #ffffff;
+	--windows95-highlight: #707070;
+	--windows95-shadow: #1b1b1b;
+	--windows95-dark: #000000;
+	--windows95-text: #ffffff;
+	--windows95-muted: #d8d8d8;
+	--windows95-blue: #000080;
+	--windows95-blue-light: #4f8cff;
+	--windows95-green: #66d17a;
+	--windows95-red: #ff8a80;
+	--windows95-amber: #ffce65;
+}
+
+@theme inline {
+	--color-windows95-canvas: var(--windows95-canvas);
+	--color-windows95-face: var(--windows95-face);
+	--color-windows95-light: var(--windows95-light);
+	--color-windows95-highlight: var(--windows95-highlight);
+	--color-windows95-shadow: var(--windows95-shadow);
+	--color-windows95-dark: var(--windows95-dark);
+	--color-windows95-text: var(--windows95-text);
+	--color-windows95-blue: var(--windows95-blue);
+}

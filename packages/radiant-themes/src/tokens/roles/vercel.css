@@ -70,7 +70,8 @@
 	--on-surface-container-highest: var(--color-vercel-text-primary);
 	--background: var(--color-vercel-background-1);
 	--on-background: var(--color-vercel-text-primary);
-	--border: var(--color-vercel-border-4);
+	--rui-border-color: var(--color-vercel-border-6);
+	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-vercel-blue);
 	--on-focus-ring: white;
 	--link: var(--color-vercel-blue);
@@ -124,7 +125,8 @@
 	--on-surface-container-highest: var(--color-vercel-text-primary);
 	--background: var(--color-vercel-background-1);
 	--on-background: var(--color-vercel-text-primary);
-	--border: var(--color-vercel-border-4);
+	--rui-border-color: var(--color-vercel-border-6);
+	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-vercel-blue);
 	--on-focus-ring: #00152e;
 	--link: var(--color-vercel-blue);

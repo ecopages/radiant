@@ -2,7 +2,7 @@ import type { JsxCustomElementAttributes } from '@ecopages/jsx';
 import { RadiantElement, customElement, onEvent } from '@ecopages/radiant';
 
 const COPY_FEEDBACK_MS = 1200;
-const ROOT_TOKEN_ATTRIBUTES = ['class', 'data-rui-theme', 'data-rui-spacing', 'data-rui-radius'] as const;
+const ROOT_TOKEN_ATTRIBUTES = ['class', 'style', 'data-rui-theme'] as const;
 
 async function copyTextToClipboard(text: string): Promise<void> {
 	if (navigator.clipboard?.writeText) {
@@ -68,8 +68,8 @@ export class TokenSwatchesElement extends RadiantElement {
 	}
 
 	/**
-	 * @remarks Spacing, radius, and type samples use CSS variables that the docs
-	 * preview remaps. Read computed values from `:root` so labels stay honest.
+	 * @remarks Samples use CSS variables that the selected theme and default
+	 * theme tuner can remap. Read values from `:root` so labels stay honest.
 	 */
 	private refreshComputedValues(): void {
 		const styles = getComputedStyle(document.documentElement);

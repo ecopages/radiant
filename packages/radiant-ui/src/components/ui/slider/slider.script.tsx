@@ -242,7 +242,7 @@ export function sliderTrackCssVars(values: number[], range: NumericRange): Recor
  * @cssprop --rui-slider-width - Root control width. Default: `100%` (`auto` when vertical).
  * @cssprop --rui-slider-height - Root control height. Default: `auto`.
  * @cssprop --rui-slider-gap - Spacing between label, track, and value. Default: `--space-inline`.
- * @cssprop --rui-track-mix - Unfilled track mix against `--on-background`. Inherited. Default: `22%`.
+ * @cssprop --rui-track-mix - Unfilled track mix against `--on-background`. Inherited. Default: `45%`.
  * @cssprop --rui-track-fill - Unfilled track color from that mix. Inherited.
  * @cssprop --rui-track-color - Unfilled track color for slider and knob. Inherited; unset uses `--rui-track-fill`.
  * @cssprop --rui-slider-track-color - Range track background. Default: `--rui-track-color` or `--rui-track-fill`.

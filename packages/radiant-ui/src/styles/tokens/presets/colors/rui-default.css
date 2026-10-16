@@ -1,0 +1,158 @@
+/* Radiant Default — Radiant UI's single, seed-derived default theme. */
+:where(:root) {
+	--gray-50: var(--color-rui-default-50);
+	--gray-100: var(--color-rui-default-100);
+	--gray-200: var(--color-rui-default-200);
+	--gray-300: var(--color-rui-default-300);
+	--gray-400: var(--color-rui-default-400);
+	--gray-500: var(--color-rui-default-500);
+	--gray-600: var(--color-rui-default-600);
+	--gray-700: var(--color-rui-default-700);
+	--gray-800: var(--color-rui-default-800);
+	--gray-900: var(--color-rui-default-900);
+	--gray-950: var(--color-rui-default-950);
+
+	--primary: var(--color-carbon-blue-600);
+	--on-primary: var(--color-white);
+	--primary-container: var(--color-carbon-blue-100);
+	--on-primary-container: var(--color-carbon-blue-800);
+	--primary-light: var(--color-carbon-blue-500);
+	--primary-dark: var(--color-carbon-blue-800);
+
+	--secondary: var(--color-carbon-teal-700);
+	--on-secondary: var(--color-white);
+	--secondary-container: var(--color-rui-default-200);
+	--on-secondary-container: var(--color-rui-default-900);
+	--secondary-light: var(--color-carbon-teal-500);
+	--secondary-dark: var(--color-carbon-teal-800);
+
+	--tertiary: var(--color-rui-default-700);
+	--on-tertiary: var(--color-white);
+	--tertiary-container: var(--color-rui-default-200);
+	--on-tertiary-container: var(--color-rui-default-900);
+
+	--error: var(--color-carbon-red-800);
+	--on-error: var(--color-white);
+	--error-container: var(--color-carbon-red-100);
+	--on-error-container: var(--color-carbon-red-800);
+	--error-light: var(--color-carbon-red-500);
+	--error-dark: var(--color-carbon-red-800);
+
+	--success: var(--color-carbon-teal-700);
+	--on-success: var(--color-white);
+	--success-container: var(--color-rui-default-200);
+	--on-success-container: var(--color-rui-default-900);
+	--success-light: var(--color-carbon-teal-500);
+	--success-dark: var(--color-carbon-teal-800);
+
+	--info: var(--color-carbon-blue-600);
+	--on-info: var(--color-white);
+	--info-container: var(--color-carbon-blue-100);
+	--on-info-container: var(--color-carbon-blue-800);
+	--info-light: var(--color-carbon-blue-400);
+	--info-dark: var(--color-carbon-blue-800);
+
+	--warning: var(--color-carbon-amber-800);
+	--on-warning: var(--color-white);
+	--warning-container: var(--color-carbon-amber-100);
+	--on-warning-container: var(--color-carbon-amber-900);
+	--warning-light: var(--color-carbon-amber-500);
+	--warning-dark: var(--color-carbon-amber-900);
+
+	--neutral: var(--color-rui-default-500);
+
+	--surface: var(--color-rui-default-100);
+	--on-surface: var(--color-rui-default-900);
+	--surface-container-lowest: var(--color-rui-default-100);
+	--on-surface-container-lowest: var(--color-rui-default-900);
+	--surface-container-low: var(--color-rui-default-200);
+	--on-surface-container-low: var(--color-rui-default-900);
+	--surface-container: var(--color-rui-default-300);
+	--on-surface-container: var(--color-rui-default-900);
+	--surface-container-high: var(--color-rui-default-400);
+	--on-surface-container-high: var(--color-rui-default-950);
+	--surface-container-highest: var(--color-rui-default-500);
+	--on-surface-container-highest: var(--color-rui-default-950);
+
+	--background: var(--color-rui-default-50);
+	--on-background: var(--color-rui-default-900);
+
+	--rui-border-color: oklch(from var(--color-rui-default-900) l c h);
+	--border: oklch(from var(--rui-border-color) l c h / var(--rui-border-alpha));
+	--focus-ring: var(--color-carbon-blue-600);
+	--on-focus-ring: var(--on-primary);
+	--link: var(--color-carbon-blue-600);
+	--overlay: oklch(0% 0 0 / 0.5);
+
+	--background-code: var(--color-rui-default-900);
+	--on-background-code: var(--color-carbon-teal-400);
+}
+
+:where(.dark) {
+	--primary: var(--color-carbon-blue-300);
+	--on-primary: var(--color-rui-default-975);
+	--primary-container: var(--color-carbon-blue-800);
+	--on-primary-container: var(--color-carbon-blue-100);
+	--primary-light: var(--color-carbon-blue-200);
+	--primary-dark: var(--color-carbon-blue-700);
+
+	--secondary: var(--color-carbon-teal-300);
+	--on-secondary: var(--color-rui-default-975);
+	--secondary-container: var(--color-rui-default-800);
+	--on-secondary-container: var(--color-rui-default-100);
+
+	--tertiary: var(--color-rui-default-300);
+	--on-tertiary: var(--color-rui-default-975);
+	--tertiary-container: var(--color-rui-default-800);
+	--on-tertiary-container: var(--color-rui-default-100);
+
+	--error: var(--color-carbon-red-300);
+	--on-error: var(--color-rui-default-975);
+	--error-container: var(--color-carbon-red-800);
+	--on-error-container: var(--color-carbon-red-100);
+
+	--success: var(--color-carbon-teal-300);
+	--on-success: var(--color-rui-default-975);
+	--success-container: var(--color-rui-default-800);
+	--on-success-container: var(--color-rui-default-100);
+
+	--info: var(--color-carbon-blue-300);
+	--on-info: var(--color-rui-default-975);
+	--info-container: var(--color-carbon-blue-800);
+	--on-info-container: var(--color-carbon-blue-100);
+	--info-light: var(--color-carbon-blue-300);
+	--info-dark: var(--color-carbon-blue-700);
+
+	--warning: var(--color-carbon-amber-300);
+	--on-warning: var(--color-rui-default-975);
+	--warning-container: var(--color-carbon-amber-900);
+	--on-warning-container: var(--color-carbon-amber-100);
+	--warning-light: var(--color-carbon-amber-200);
+	--warning-dark: var(--color-carbon-amber-700);
+
+	--surface: var(--color-rui-default-975);
+	--on-surface: var(--color-rui-default-50);
+	--surface-container-lowest: var(--color-rui-default-950);
+	--on-surface-container-lowest: var(--color-rui-default-50);
+	--surface-container-low: var(--color-rui-default-900);
+	--on-surface-container-low: var(--color-rui-default-50);
+	--surface-container: var(--color-rui-default-800);
+	--on-surface-container: var(--color-rui-default-50);
+	--surface-container-high: var(--color-rui-default-700);
+	--on-surface-container-high: var(--color-rui-default-50);
+	--surface-container-highest: var(--color-rui-default-600);
+	--on-surface-container-highest: var(--color-rui-default-50);
+
+	--background: var(--color-rui-default-950);
+	--on-background: var(--color-rui-default-50);
+
+	--rui-border-color: oklch(from var(--color-rui-default-50) l c h);
+	--border: oklch(from var(--rui-border-color) l c h / var(--rui-border-alpha));
+	--focus-ring: var(--color-carbon-blue-400);
+	--on-focus-ring: var(--on-primary);
+	--link: var(--color-carbon-blue-400);
+	--overlay: oklch(0% 0 0 / 0.7);
+
+	--background-code: var(--color-rui-default-975);
+	--on-background-code: var(--color-carbon-teal-400);
+}

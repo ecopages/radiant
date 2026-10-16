@@ -1,0 +1,4 @@
+@import '../foundation.css';
+@import '../tokens/colors/high-contrast.css';
+@import '../tokens/roles/high-contrast.css';
+@import '../tokens/components/high-contrast.css';

@@ -54,7 +54,7 @@ function buildComponentStyleExports(name: string): Record<string, { default: str
 
 function buildStaticStyleExports(): Record<string, { default: string }> {
 	const tokenPaths = [
-		'tokens/colors/basalt.css',
+		'tokens/colors/rui-default.css',
 		'tokens/foundation.css',
 		'tokens/semantic.css',
 		'tokens/spacing/compact.css',

@@ -40,6 +40,7 @@ export function RuiSelectTrigger({ children, class: className, disabled, ...prop
 		<div
 			{...props}
 			data-select-trigger
+			data-rui-focus-managed
 			data-rui-control
 			data-rui-control-type="text"
 			class={cx('rui-select__trigger', className)}
