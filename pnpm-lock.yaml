@@ -325,7 +325,7 @@ importers:
                 version: link:../radiant-ui
             '@tailwindcss/postcss':
                 specifier: ^4.3.3
-                version: 4.3.3(tailwindcss@4.3.3)
+                version: 4.3.3
             playwright:
                 specifier: ^1.62.1
                 version: 1.62.1
