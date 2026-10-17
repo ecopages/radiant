@@ -32,10 +32,6 @@ radiant-theme-palette-picker {
 	min-height: var(--size-control-sm);
 	justify-content: center;
 	padding-block: 0;
-	border: 1px solid transparent;
-	border-radius: var(--radius-button);
-	color: var(--on-surface);
-	font-size: var(--text-xs);
 }
 
 .theme-picker .theme-picker__value {
