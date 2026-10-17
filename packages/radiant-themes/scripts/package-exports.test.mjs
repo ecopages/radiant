@@ -71,8 +71,8 @@ test('GitHub follows Primer action roles and Cloudflare leads with its orange', 
 	const cloudflare = readFileSync(path.join(packageRoot, 'dist/compiled/themes/cloudflare.css'), 'utf8');
 	const cloudflareRoot = declarationsForSelector(cloudflare, ":where(:root), :root[data-rui-theme='cloudflare']");
 	const cloudflareDark = declarationsForSelector(cloudflare, ":where(.dark), :root.dark[data-rui-theme='cloudflare']");
-	assert.equal(cloudflareRoot.get('--color-cloudflare-orange-bright'), '#f6821f');
-	assert.equal(cloudflareDark.get('--color-cloudflare-orange'), '#f6821f');
+	assert.equal(cloudflareRoot.get('--color-cloudflare-orange-bright'), '#ff5e1e');
+	assert.equal(cloudflareDark.get('--color-cloudflare-orange'), '#ff5e1e');
 	assert.equal(cloudflareRoot.get('--primary'), 'var(--color-cloudflare-orange)');
 	assert.equal(cloudflareRoot.get('--link'), 'var(--color-cloudflare-blue)');
 	assert.equal(cloudflareRoot.get('--secondary'), 'var(--color-cloudflare-recessed)');

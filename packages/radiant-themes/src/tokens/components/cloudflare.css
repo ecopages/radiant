@@ -13,27 +13,33 @@
 	--border-radius-xl: 0.75rem;
 	--border-radius-2xl: 1rem;
 	--border-radius-3xl: 1.25rem;
-	--radius-control: var(--border-radius-sm);
-	--radius-container: var(--border-radius-md);
+	--radius-control: var(--border-radius-lg);
+	--radius-container: var(--border-radius-xl);
 }
 
 @layer components {
 	/**
-	 * @remarks `#f6821f` with dark text reaches 6.7:1, so the primary action keeps Cloudflare's brand orange in light
-	 * mode too. `--primary` stays the deeper orange because other roles use it as text on white.
+	 * @remarks Kumo draws the primary action with white text in both modes, a ring one tenth darker than the fill, and
+	 * `shadow-xs`. `#cc3a00` keeps cloudflare.com's orange hue at 5:1 against white, where the marketing orange
+	 * `#ff5e1e` reaches only 3:1. `--primary` stays the lighter orange in dark mode for text and icons.
 	 */
-	:root:not(.dark) .rui-button--filled {
-		background-color: var(--color-cloudflare-orange-bright);
-		color: #1a1a1a;
+	:root .rui-button--filled {
+		background-color: var(--color-cloudflare-orange-fill);
+		color: #ffffff;
+		box-shadow:
+			0 0 0 1px color-mix(in oklch, var(--color-cloudflare-orange-fill), black 10%),
+			0 1px 2px oklch(0% 0 0 / 5%);
 	}
 
-	:root:not(.dark) .rui-button--filled:hover:not(:disabled) {
-		background-color: #e8761a;
+	:root .rui-button--filled:hover:not(:disabled) {
+		background-color: #b83400;
+		color: #ffffff;
 	}
 
-	:root:not(.dark) .rui-button--filled:active:not(:disabled),
-	:root:not(.dark) .rui-button--filled[aria-pressed='true'] {
-		background-color: #d96a10;
+	:root .rui-button--filled:active:not(:disabled),
+	:root .rui-button--filled[aria-pressed='true'] {
+		background-color: #a32e00;
+		color: #ffffff;
 	}
 
 	/**
@@ -53,16 +59,12 @@
 		background-color: #ae1f25;
 	}
 
+	/**
+	 * @remarks Kumo changes hover colors immediately instead of transitioning them.
+	 */
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
-	}
-
-	:root .rui-button--filled {
-		@apply bg-primary text-on-primary;
-	}
-
-	:root .rui-button--filled:hover:not(:disabled) {
-		@apply bg-primary-light text-on-primary;
+		transition: none;
 	}
 
 	:root .rui-button--secondary {
@@ -89,12 +91,18 @@
 		border-color: var(--rui-control-border-color);
 	}
 
+	/**
+	 * @remarks Kumo does not combine a border with a drop shadow. Floating surfaces use a 1px edge ring plus a soft drop.
+	 */
 	:root .rui-dialog__surface,
 	:root .rui-popover-host,
 	:root .rui-hover-card__content,
 	:root .rui-select__listbox,
 	:root .rui-calendar {
-		@apply rounded-container border border-border bg-surface shadow-md;
+		@apply rounded-container border-0 bg-surface;
+		box-shadow:
+			0 0 0 1px var(--color-cloudflare-shadow-edge),
+			0 4px 12px var(--color-cloudflare-shadow-drop);
 	}
 
 	:root rui-tabs[variant='boxed'] {
@@ -102,7 +110,15 @@
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__list {
-		@apply border-b border-border bg-transparent px-2 pt-2;
+		@apply border-b bg-transparent px-2 pt-2;
+		border-color: var(--color-cloudflare-hairline);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab:hover:not([aria-selected='true']) {
+		background-color: var(--color-cloudflare-tint);
+		color: var(--color-cloudflare-fg);
+		opacity: 1;
+		transition: none;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {

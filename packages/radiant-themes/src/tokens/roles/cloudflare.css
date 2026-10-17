@@ -70,7 +70,7 @@
 	--rui-border-color: var(--color-cloudflare-border);
 	--rui-control-border-color: var(--color-cloudflare-border-strong);
 	--border: var(--rui-border-color);
-	--focus-ring: var(--color-cloudflare-blue);
+	--focus-ring: var(--color-cloudflare-blue-bright);
 	--on-focus-ring: white;
 	--link: var(--color-cloudflare-blue);
 	--overlay: oklch(0% 0 0 / 0.45);
