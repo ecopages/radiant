@@ -1,0 +1,66 @@
+/**
+ * Mac OS 9 Platinum. The seven greys, black frame, white bevel highlight, and 1px title-bar stripes follow the Mac OS 8
+ * Human Interface Guidelines and the Appearance Manager's default theme: system greys #eeeeee, #dddddd, #cccccc,
+ * #aaaaaa, #808080, #393939, #202020, with the default blue accent #6666cc.
+ */
+:where(:root), :root[data-rui-theme='macos-classic'] {
+	--macos-classic-canvas: #dddddd;
+	--macos-classic-surface: #dddddd;
+	--macos-classic-container: #cccccc;
+	--macos-classic-face: #dddddd;
+	--macos-classic-face-pressed: #666666;
+	--macos-classic-light: #ffffff;
+	--macos-classic-mid: #aaaaaa;
+	--macos-classic-shadow: #808080;
+	--macos-classic-dark: #000000;
+	--macos-classic-titlebar-stripe: #ffffff;
+	--macos-classic-titlebar-line: #787878;
+	--macos-classic-text: #000000;
+	--macos-classic-muted: #393939;
+	--macos-classic-field: #ffffff;
+	--macos-classic-field-text: #000000;
+	--macos-classic-selection: #6666cc;
+	--macos-classic-selection-text: #ffffff;
+	--macos-classic-blue: #333399;
+	--macos-classic-blue-light: #6666cc;
+	--macos-classic-green: #176b42;
+	--macos-classic-red: #8c1c1c;
+	--macos-classic-amber: #644100;
+}
+
+/**
+ * @remarks Mac OS 8 and 9 had no dark appearance. This scheme keeps Platinum's black frames, bevels, and striped title
+ * bars on darker faces and fields.
+ */
+:where(.dark), :root.dark[data-rui-theme='macos-classic'] {
+	--macos-classic-canvas: #262626;
+	--macos-classic-surface: #2e2e2e;
+	--macos-classic-container: #3a3a3a;
+	--macos-classic-face: #4a4a4a;
+	--macos-classic-face-pressed: #2a2a2a;
+	--macos-classic-light: #b0b0b0;
+	--macos-classic-mid: #858585;
+	--macos-classic-shadow: #777777;
+	--macos-classic-dark: #000000;
+	--macos-classic-titlebar-stripe: #555555;
+	--macos-classic-titlebar-line: #1a1a1a;
+	--macos-classic-text: #f2f2f2;
+	--macos-classic-muted: #d0d0d0;
+	--macos-classic-field: #1a1a1a;
+	--macos-classic-field-text: #f2f2f2;
+	--macos-classic-selection: #5a5ac8;
+	--macos-classic-selection-text: #ffffff;
+	--macos-classic-blue: #a9a9ff;
+	--macos-classic-blue-light: #c4c4ff;
+	--macos-classic-green: #80d9a2;
+	--macos-classic-red: #ffaaa0;
+	--macos-classic-amber: #ffd27a;
+}
+
+@theme inline {
+	--color-macos-classic-canvas: var(--macos-classic-canvas);
+	--color-macos-classic-surface: var(--macos-classic-surface);
+	--color-macos-classic-container: var(--macos-classic-container);
+	--color-macos-classic-text: var(--macos-classic-text);
+	--color-macos-classic-blue: var(--macos-classic-blue);
+}

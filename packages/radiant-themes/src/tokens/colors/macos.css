@@ -1,0 +1,40 @@
+:where(:root), :root[data-rui-theme='macos'] {
+	--macos-canvas: #f5f5f7;
+	--macos-surface: #ffffff;
+	--macos-subtle: #e9e9ed;
+	--macos-border: #7f7f84;
+	--macos-separator: #d1d1d6;
+	--macos-text: #1d1d1f;
+	--macos-muted: #55555b;
+	--macos-blue: #005fcc;
+	--macos-blue-light: #004da8;
+	--macos-green: #176b35;
+	--macos-red: #a51d2d;
+	--macos-amber: #704500;
+	--macos-purple: #6e3bb5;
+}
+
+:where(.dark), :root.dark[data-rui-theme='macos'] {
+	--macos-canvas: #1c1c1e;
+	--macos-surface: #2c2c2e;
+	--macos-subtle: #3a3a3c;
+	--macos-border: #8e8e93;
+	--macos-separator: #3a3a3c;
+	--macos-text: #f5f5f7;
+	--macos-muted: #d1d1d6;
+	--macos-blue: #55a6ff;
+	--macos-blue-light: #8cc2ff;
+	--macos-green: #63d982;
+	--macos-red: #ff7a83;
+	--macos-amber: #ffd166;
+	--macos-purple: #c8a1ff;
+}
+
+@theme inline {
+	--color-macos-canvas: var(--macos-canvas);
+	--color-macos-surface: var(--macos-surface);
+	--color-macos-subtle: var(--macos-subtle);
+	--color-macos-text: var(--macos-text);
+	--color-macos-blue: var(--macos-blue);
+	--color-macos-purple: var(--macos-purple);
+}

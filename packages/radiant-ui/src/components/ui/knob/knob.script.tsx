@@ -91,7 +91,7 @@ export const KNOB_DEFAULT_VALUE = 50;
  *
  * @fires rui-change - Emitted as the pointer or keyboard changes the value; `detail.value` holds the new number.
  *
- * @cssprop --rui-track-mix - Unfilled ring mix against `--on-background`. Inherited. Default: `22%`.
+ * @cssprop --rui-track-mix - Unfilled ring mix against `--on-background`. Inherited. Default: `45%`.
  * @cssprop --rui-track-fill - Unfilled ring color from that mix. Inherited.
  * @cssprop --rui-track-color - Unfilled ring color for slider and knob. Inherited; unset uses `--rui-track-fill`.
  * @cssprop --rui-knob-track-color - Ring color behind the selected value. Default: `--rui-track-color` or `--rui-track-fill`.

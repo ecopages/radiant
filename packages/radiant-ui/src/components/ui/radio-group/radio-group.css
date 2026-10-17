@@ -29,7 +29,7 @@ rui-radio-group {
 		@apply ring-2 ring-focus-ring ring-offset-2;
 	}
 
-	.rui-radio__input:checked + .rui-radio__control {
+	:root .rui-radio__input:checked + .rui-radio__control {
 		@apply border-primary;
 	}
 

@@ -34,6 +34,7 @@ export function getSegmentDomProps(segment: DateSegmentModel, context: SegmentDo
 		ariaValuenow: spinbutton && numeric != null ? numeric : undefined,
 		ariaValuetext: spinbutton ? segmentDisplayText(segment) : undefined,
 		className: cx('rui-date-input__segment', segment.isPlaceholder && 'rui-date-input__segment--placeholder'),
+		dataRuiFocusManaged: true,
 		contenteditable: editable ? 'true' : undefined,
 		inputmode: editable ? 'numeric' : undefined,
 		suppresscontenteditablewarning: editable ? 'true' : undefined,

@@ -178,3 +178,6 @@ dist
 # AI
 .agent
 .audit/
+
+# Generated docs theme assets, copied from @ecopages/radiant-themes during app builds
+apps/radiant-ui/src/public/assets/themes/

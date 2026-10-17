@@ -8,8 +8,6 @@ import {
 	applyDocumentTokens,
 	defaultDocsThemeSelection,
 	docsThemeColorOptions,
-	docsThemeRadiusOptions,
-	docsThemeSpacingOptions,
 	isDocsThemeTokenName,
 	readDocsThemeSelection,
 	updateDocsThemeSelection,
@@ -44,12 +42,30 @@ function TokenOptions({
 @customElement('radiant-design-token-panel')
 export class DesignTokenPanelElement extends RadiantElement {
 	private selection: DocsThemeSelection = defaultDocsThemeSelection;
+	private rootObserver: MutationObserver | null = null;
 
 	override connectedCallback(): void {
 		super.connectedCallback();
 		this.selection = readDocsThemeSelection();
-		applyDocumentTokens(this.selection);
+		applyDocumentTokens(this.selection, { persist: false });
+		const root = typeof document === 'undefined' ? null : document.documentElement;
+		if (root && typeof MutationObserver !== 'undefined') {
+			this.rootObserver = new MutationObserver(() => {
+				this.selection = readDocsThemeSelection();
+				this.requestUpdate();
+			});
+			this.rootObserver.observe(root, {
+				attributes: true,
+				attributeFilter: ['data-rui-theme'],
+			});
+		}
 		this.requestUpdate();
+	}
+
+	override disconnectedCallback(): void {
+		this.rootObserver?.disconnect();
+		this.rootObserver = null;
+		super.disconnectedCallback();
 	}
 
 	@onEvent({ selector: 'rui-radio-group[data-token]', type: 'rui-change' })
@@ -80,45 +96,24 @@ export class DesignTokenPanelElement extends RadiantElement {
 	}
 
 	override render() {
-		const { colors, spacing, radius } = this.selection;
+		const { colors } = this.selection;
 		return (
 			<section class="design-token-panel" aria-labelledby="design-token-panel-title">
 				<div class="design-token-panel__intro">
 					<RuiHeading size="sm">
 						<RuiHeadingEyebrow>Live token preview</RuiHeadingEyebrow>
-						<RuiHeadingTitle id="design-token-panel-title">Try a token combination</RuiHeadingTitle>
+						<RuiHeadingTitle id="design-token-panel-title">Choose a visual theme</RuiHeadingTitle>
 						<RuiHeadingDescription>
-							Selections apply to the complete docs page immediately and persist between visits.
+							Preview each theme with its own colors, typography, spacing, shape, and component details.
 						</RuiHeadingDescription>
 					</RuiHeading>
 				</div>
-				<RuiFeed class="design-token-panel__groups" label="Theme options">
-					<RuiFeedArticle class="design-token-panel__group" posinset={1} setsize={3} tabindex={-1}>
+				<RuiFeed class="design-token-panel__groups" label="Theme selection">
+					<RuiFeedArticle class="design-token-panel__group" posinset={1} setsize={1} tabindex={-1}>
 						<RuiFeedArticleContent>
-							<RuiLabel>Colour profile</RuiLabel>
-							<RuiRadioGroup
-								value={colors}
-								name="docs-color-theme"
-								label="Colour profile"
-								data-token="colors"
-							>
+							<RuiLabel>Theme</RuiLabel>
+							<RuiRadioGroup value={colors} name="docs-color-theme" label="Theme" data-token="colors">
 								<TokenOptions name="docs-color-theme" options={docsThemeColorOptions} />
-							</RuiRadioGroup>
-						</RuiFeedArticleContent>
-					</RuiFeedArticle>
-					<RuiFeedArticle class="design-token-panel__group" posinset={2} setsize={3} tabindex={-1}>
-						<RuiFeedArticleContent>
-							<RuiLabel>Spacing</RuiLabel>
-							<RuiRadioGroup value={spacing} name="docs-spacing" label="Spacing" data-token="spacing">
-								<TokenOptions name="docs-spacing" options={docsThemeSpacingOptions} />
-							</RuiRadioGroup>
-						</RuiFeedArticleContent>
-					</RuiFeedArticle>
-					<RuiFeedArticle class="design-token-panel__group" posinset={3} setsize={3} tabindex={-1}>
-						<RuiFeedArticleContent>
-							<RuiLabel>Shape</RuiLabel>
-							<RuiRadioGroup value={radius} name="docs-radius" label="Shape" data-token="radius">
-								<TokenOptions name="docs-radius" options={docsThemeRadiusOptions} />
 							</RuiRadioGroup>
 						</RuiFeedArticleContent>
 					</RuiFeedArticle>

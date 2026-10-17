@@ -1,0 +1,53 @@
+:where(:root), :root[data-rui-theme='high-contrast'] {
+	--contrast-canvas: #ffffff;
+	--contrast-surface: #ffffff;
+	--contrast-container: #f2f2f2;
+	--contrast-text: #000000;
+	--contrast-primary: #0033cc;
+	--contrast-secondary: #005050;
+	--contrast-tertiary: #000000;
+	--contrast-error: #780000;
+	--contrast-success: #005000;
+	--contrast-info: #0033cc;
+	--contrast-warning: #4a3600;
+	--contrast-primary-container: #dce8ff;
+	--contrast-secondary-container: #d9f4ef;
+	--contrast-error-container: #ffe2dd;
+	--contrast-success-container: #e0f5dd;
+	--contrast-info-container: #dce8ff;
+	--contrast-warning-container: #fff0b8;
+	--contrast-focus: #0000a8;
+}
+
+:where(.dark), :root.dark[data-rui-theme='high-contrast'] {
+	--contrast-canvas: #000000;
+	--contrast-surface: #000000;
+	--contrast-container: #1a1a1a;
+	--contrast-text: #ffffff;
+	--contrast-primary: #ffff00;
+	--contrast-secondary: #00ffff;
+	--contrast-tertiary: #ffffff;
+	--contrast-error: #ff9a91;
+	--contrast-success: #8bff70;
+	--contrast-info: #80dfff;
+	--contrast-warning: #ffff00;
+	--contrast-primary-container: #ffff00;
+	--contrast-secondary-container: #00ffff;
+	--contrast-error-container: #ffb4ab;
+	--contrast-success-container: #aaff90;
+	--contrast-info-container: #8ee6ff;
+	--contrast-warning-container: #ffff00;
+	--contrast-focus: #ffff00;
+}
+
+@theme inline {
+	--color-contrast-canvas: var(--contrast-canvas);
+	--color-contrast-surface: var(--contrast-surface);
+	--color-contrast-container: var(--contrast-container);
+	--color-contrast-text: var(--contrast-text);
+	--color-contrast-primary: var(--contrast-primary);
+	--color-contrast-secondary: var(--contrast-secondary);
+	--color-contrast-error: var(--contrast-error);
+	--color-contrast-success: var(--contrast-success);
+	--color-contrast-warning: var(--contrast-warning);
+}

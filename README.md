@@ -14,6 +14,7 @@ For more details, [see the docs page](https://radiant.ecopages.app/).
 - [@ecopages/jsx](./packages/jsx/README.md)
 - [@ecopages/signals](./packages/signals/README.md)
 - [@ecopages/radiant-ui](./packages/radiant-ui/README.md)
+- [@ecopages/radiant-themes](./packages/radiant-themes/README.md)
 - [@ecopages/vite-plugin-radiant](./packages/vite-plugin-radiant/README.md)
 - [@ecopages/storybook-radiant-vite](./packages/storybook-radiant-vite/README.md)
 

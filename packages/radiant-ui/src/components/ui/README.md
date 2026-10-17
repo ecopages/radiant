@@ -75,8 +75,11 @@ With `trigger-kind="focus"`, `rui-select` and `rui-combobox` open the listbox on
 
 `rui-meter` keeps a native `<meter>` for range semantics and renders its visual track and fill from the derived percent. This avoids browser-specific meter pseudo-elements.
 `rui-sidebar-trigger` mirrors its controlled sidebar's state, mobile mode, and collapse mode onto the trigger host through one `MutationObserver`, attached in `onConnected()`. An explicit `controls` id must resolve to a `rui-sidebar`; only a trigger without `controls` uses its closest sidebar. Placement and glyph CSS read only those host attributes and the reflected `placement` attribute, so an attached trigger follows the sidebar's `mobileBreakpoint`, not the viewport. Until a trigger attaches (no `data-sidebar-mobile`), CSS guesses mobile from a 768px viewport and reads the SSR attributes of the sidebar whose pane holds the trigger, else of the only sidebar of its nearest provider (child combinators keep nested providers independent); other triggers stay visible until they attach. Detached, the trigger reports the SSR placement guess (`inset` collapsed, otherwise expanded).
+
+The `RuiSidebarProvider` docs layout site header uses `--surface` with a `--border` divider so it matches site chrome that uses the surface role; the pane and inset use `--background`.
 `rui-date-input` keeps typed digits in the visible segment draft until the unit completes, focus moves, or the control blurs. `value` and the form value stay on the last committed ISO date during that draft; only a `value` or `locale` change replaces it. A delayed selection collapse must not pull focus back from a later segment. See [`date-input/README.md`](./date-input/README.md).
 Focused `rui-date-input` segments use `--focus-ring` with `--on-focus-ring` text to keep the selected segment legible.
+Standalone `rui-date-input` applies its own bordered surface; Date Field and Date Range Picker keep the shared surface on their composed control row.
 Slider and knob normalize off-step values. Only floating-point noise is ignored when reflecting a normalized value; display precision does not determine the committed value. Knob waits until range props in the same turn have landed before snapping, so a fractional value is not rounded against the default step.
 
 ## Two host shapes (bindings vs imperative paint)

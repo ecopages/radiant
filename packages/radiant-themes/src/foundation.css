@@ -1,0 +1,11 @@
+@import '@ecopages/radiant-ui/tokens/foundation';
+@import '@ecopages/radiant-ui/tokens/spacing/default';
+@import '@ecopages/radiant-ui/tokens/radius/default';
+
+:where(:root) {
+	color-scheme: light;
+}
+
+:where(.dark) {
+	color-scheme: dark;
+}

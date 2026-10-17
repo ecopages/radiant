@@ -19,7 +19,7 @@
 		@apply cursor-not-allowed opacity-disabled;
 	}
 
-	.rui-textarea[aria-invalid='true'] {
+	:root .rui-textarea[aria-invalid='true'] {
 		@apply border-error;
 	}
 }

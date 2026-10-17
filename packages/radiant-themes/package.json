@@ -1,0 +1,147 @@
+{
+	"name": "@ecopages/radiant-themes",
+	"version": "0.0.0",
+	"description": "Composable color themes and variants for @ecopages/radiant-ui",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ecopages/radiant.git",
+		"directory": "packages/radiant-themes"
+	},
+	"license": "MIT",
+	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"dist"
+	],
+	"sideEffects": [
+		"**/*.css"
+	],
+	"scripts": {
+		"build:lib": "node ./scripts/build.mjs",
+		"test": "node --test ./scripts/*.test.mjs",
+		"test:all": "pnpm --filter @ecopages/jsx build:lib && pnpm --filter @ecopages/radiant build:lib && pnpm --filter @ecopages/radiant-ui build:lib && pnpm run build:lib && pnpm run test"
+	},
+	"peerDependencies": {
+		"@ecopages/radiant-ui": ">=0.2.0"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "^4.3.3",
+		"@ecopages/radiant-ui": "workspace:*",
+		"playwright": "^1.62.1",
+		"postcss": "^8.5.24",
+		"tailwindcss": "^4.3.0"
+	},
+	"exports": {
+		"./package.json": "./package.json",
+		"./compiled/cloudflare.css": {
+			"default": "./dist/compiled/themes/cloudflare.css"
+		},
+		"./compiled/cloudflare/compact.css": {
+			"default": "./dist/compiled/themes/cloudflare/compact.css"
+		},
+		"./compiled/github.css": {
+			"default": "./dist/compiled/themes/github.css"
+		},
+		"./compiled/github/compact.css": {
+			"default": "./dist/compiled/themes/github/compact.css"
+		},
+		"./compiled/vscode.css": {
+			"default": "./dist/compiled/themes/vscode.css"
+		},
+		"./compiled/vscode/compact.css": {
+			"default": "./dist/compiled/themes/vscode/compact.css"
+		},
+		"./compiled/material.css": {
+			"default": "./dist/compiled/themes/material.css"
+		},
+		"./compiled/material/compact.css": {
+			"default": "./dist/compiled/themes/material/compact.css"
+		},
+		"./compiled/vercel.css": {
+			"default": "./dist/compiled/themes/vercel.css"
+		},
+		"./compiled/vercel/compact.css": {
+			"default": "./dist/compiled/themes/vercel/compact.css"
+		},
+		"./compiled/high-contrast.css": {
+			"default": "./dist/compiled/themes/high-contrast.css"
+		},
+		"./compiled/high-contrast/compact.css": {
+			"default": "./dist/compiled/themes/high-contrast/compact.css"
+		},
+		"./compiled/windows95.css": {
+			"default": "./dist/compiled/themes/windows95.css"
+		},
+		"./compiled/windows95/compact.css": {
+			"default": "./dist/compiled/themes/windows95/compact.css"
+		},
+		"./compiled/macos-classic.css": {
+			"default": "./dist/compiled/themes/macos-classic.css"
+		},
+		"./compiled/macos-classic/compact.css": {
+			"default": "./dist/compiled/themes/macos-classic/compact.css"
+		},
+		"./compiled/macos.css": {
+			"default": "./dist/compiled/themes/macos.css"
+		},
+		"./compiled/macos/compact.css": {
+			"default": "./dist/compiled/themes/macos/compact.css"
+		},
+		"./github": {
+			"default": "./dist/themes/github.css"
+		},
+		"./github/compact": {
+			"default": "./dist/themes/github/compact.css"
+		},
+		"./cloudflare": {
+			"default": "./dist/themes/cloudflare.css"
+		},
+		"./cloudflare/compact": {
+			"default": "./dist/themes/cloudflare/compact.css"
+		},
+		"./vscode": {
+			"default": "./dist/themes/vscode.css"
+		},
+		"./vscode/compact": {
+			"default": "./dist/themes/vscode/compact.css"
+		},
+		"./material": {
+			"default": "./dist/themes/material.css"
+		},
+		"./material/compact": {
+			"default": "./dist/themes/material/compact.css"
+		},
+		"./vercel": {
+			"default": "./dist/themes/vercel.css"
+		},
+		"./vercel/compact": {
+			"default": "./dist/themes/vercel/compact.css"
+		},
+		"./high-contrast": {
+			"default": "./dist/themes/high-contrast.css"
+		},
+		"./high-contrast/compact": {
+			"default": "./dist/themes/high-contrast/compact.css"
+		},
+		"./windows95": {
+			"default": "./dist/themes/windows95.css"
+		},
+		"./windows95/compact": {
+			"default": "./dist/themes/windows95/compact.css"
+		},
+		"./macos-classic": {
+			"default": "./dist/themes/macos-classic.css"
+		},
+		"./macos-classic/compact": {
+			"default": "./dist/themes/macos-classic/compact.css"
+		},
+		"./macos": {
+			"default": "./dist/themes/macos.css"
+		},
+		"./macos/compact": {
+			"default": "./dist/themes/macos/compact.css"
+		}
+	}
+}

@@ -1,16 +1,27 @@
 # Theming
 
-Radiant UI separates colour, spacing, and radius into token packs. Components consume semantic roles (`--primary`, `--surface`, `--radius-control`, …). They must never target palette steps such as `--color-havelock-blue-800`.
-
-## Token packs
-
-Start from the default foundation, then layer only the packs the product needs:
+Radiant UI ships one accessible default theme, Radiant Default. Components consume semantic roles (`--primary`,
+`--surface`, `--radius-control`, …), not palette values.
 
 ```css
 @import '@ecopages/radiant-ui/themes/default';
-@import '@ecopages/radiant-ui/tokens/spacing/compact';
-@import '@ecopages/radiant-ui/tokens/radius/soft';
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-Dark mode remaps colours (including overlay). Spacing, radius, elevation, typography, and motion stay mode-independent unless a theme documents otherwise.
+Optional complete themes are published from `@ecopages/radiant-themes`: GitHub, Cloudflare, VS Code, Vercel, Material Design, High
+Contrast, Windows 95, Mac OS Classic, and macOS. Each owns its shape, spacing, typography, and component styling.
+
+```css
+@import '@ecopages/radiant-themes/github';
+@import '@ecopages/radiant-ui/styles.css';
+```
+
+Named variants such as `@ecopages/radiant-themes/github/compact` use the same internal composition with compact
+spacing; the public API remains a complete theme import.
+
+The default's neutral, primary, and secondary scales derive from the OKLCH seeds `--rui-neutral`, `--rui-primary`, and
+`--rui-secondary`; secondary defaults to primary's hue plus 40 degrees. Error, warning, and success scales use fixed
+red, amber, and green seeds; info follows primary through the semantic role map. `--rui-density`, `--rui-radius-scale`, and `--rui-border-alpha` tune its
+geometry and border strength. Interactive controls share the `--border` role. The foundation also
+honors reduced motion, increased contrast, keyboard focus, and Windows forced-colors preferences. Dark mode remaps
+colors; geometry and other foundational tokens remain mode-independent unless a theme documents otherwise.

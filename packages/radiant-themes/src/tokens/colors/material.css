@@ -1,0 +1,25 @@
+:where(:root), :root[data-rui-theme='material'] {
+	--material-primary: oklch(46% 0.17 293);
+	--material-secondary: oklch(48% 0.045 286);
+	--material-tertiary: oklch(48% 0.11 340);
+	--material-error: oklch(48% 0.18 25);
+	--material-canvas: oklch(99% 0.006 285);
+	--material-surface: oklch(98% 0.009 285);
+	--material-surface-container: oklch(95% 0.015 285);
+	--material-outline: oklch(53% 0.018 285);
+	--material-outline-variant: oklch(86% 0.012 300);
+	--material-text: oklch(18% 0.018 285);
+}
+
+:where(.dark), :root.dark[data-rui-theme='material'] {
+	--material-primary: oklch(82% 0.11 293);
+	--material-secondary: oklch(80% 0.04 286);
+	--material-tertiary: oklch(82% 0.09 340);
+	--material-error: oklch(82% 0.12 25);
+	--material-canvas: oklch(17% 0.012 285);
+	--material-surface: oklch(20% 0.014 285);
+	--material-surface-container: oklch(25% 0.018 285);
+	--material-outline: oklch(70% 0.018 285);
+	--material-outline-variant: oklch(36% 0.012 300);
+	--material-text: oklch(91% 0.01 285);
+}

@@ -1,0 +1,147 @@
+@reference 'tailwindcss';
+
+:root,
+:root[data-rui-theme='cloudflare'] {
+	--font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	--font-heading: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--rui-border-alpha: 100%;
+	--border-radius-xs: 0.125rem;
+	--border-radius-sm: 0.25rem;
+	--border-radius-md: 0.375rem;
+	--border-radius-lg: 0.5rem;
+	--border-radius-xl: 0.75rem;
+	--border-radius-2xl: 1rem;
+	--border-radius-3xl: 1.25rem;
+	--radius-control: var(--border-radius-lg);
+	--radius-container: var(--border-radius-xl);
+}
+
+@layer components {
+	/**
+	 * @remarks Kumo draws the primary action with white text in both modes, a ring one tenth darker than the fill, and
+	 * `shadow-xs`. `#cc3a00` keeps cloudflare.com's orange hue at 5:1 against white, where the marketing orange
+	 * `#ff5e1e` reaches only 3:1. `--primary` stays the lighter orange in dark mode for text and icons.
+	 */
+	:root .rui-button--filled {
+		background-color: var(--color-cloudflare-orange-fill);
+		color: #ffffff;
+		box-shadow:
+			0 0 0 1px color-mix(in oklch, var(--color-cloudflare-orange-fill), black 10%),
+			0 1px 2px oklch(0% 0 0 / 5%);
+	}
+
+	:root .rui-button--filled:hover:not(:disabled) {
+		background-color: #b83400;
+		color: #ffffff;
+	}
+
+	:root .rui-button--filled:active:not(:disabled),
+	:root .rui-button--filled[aria-pressed='true'] {
+		background-color: #a32e00;
+		color: #ffffff;
+	}
+
+	/**
+	 * @remarks Cloudflare fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
+	 * red used for error text on dark surfaces.
+	 */
+	:root.dark .rui-button--destructive {
+		background-color: #d1242f;
+		color: #ffffff;
+	}
+
+	:root.dark .rui-button--destructive:hover:not(:disabled) {
+		background-color: #c3272d;
+	}
+
+	:root.dark .rui-button--destructive:active:not(:disabled) {
+		background-color: #ae1f25;
+	}
+
+	/**
+	 * @remarks Kumo changes hover colors immediately instead of transitioning them.
+	 */
+	:root .rui-button {
+		@apply rounded-control border border-transparent font-medium shadow-none;
+		transition: none;
+	}
+
+	:root .rui-button--secondary {
+		@apply border border-border bg-secondary text-on-secondary shadow-none;
+	}
+
+	:root .rui-button--secondary:hover:not(:disabled),
+	:root .rui-button--outline:hover:not(:disabled),
+	:root .rui-button--ghost:hover:not(:disabled) {
+		@apply bg-surface-container-high;
+	}
+
+	:root .rui-button--outline,
+	:root .rui-input,
+	:root .rui-textarea,
+	:root .rui-select__control {
+		@apply border-border bg-surface text-on-surface shadow-none;
+		border-color: var(--rui-control-border-color);
+	}
+
+	:root .rui-checkbox__control,
+	:root .rui-radio__control {
+		@apply border-border bg-surface;
+		border-color: var(--rui-control-border-color);
+	}
+
+	/**
+	 * @remarks Kumo does not combine a border with a drop shadow. Floating surfaces use a 1px edge ring plus a soft drop.
+	 */
+	:root .rui-dialog__surface,
+	:root .rui-popover-host,
+	:root .rui-hover-card__content,
+	:root .rui-select__listbox,
+	:root .rui-calendar {
+		@apply rounded-container border-0 bg-surface;
+		box-shadow:
+			0 0 0 1px var(--color-cloudflare-shadow-edge),
+			0 4px 12px var(--color-cloudflare-shadow-drop);
+	}
+
+	:root rui-tabs[variant='boxed'] {
+		@apply rounded-container border border-border bg-surface shadow-none;
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__list {
+		@apply border-b bg-transparent px-2 pt-2;
+		border-color: var(--color-cloudflare-hairline);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab:hover:not([aria-selected='true']) {
+		background-color: var(--color-cloudflare-tint);
+		color: var(--color-cloudflare-fg);
+		opacity: 1;
+		transition: none;
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
+		@apply text-on-surface;
+		border-bottom-color: var(--primary);
+	}
+
+	:root .rui-listbox__option[aria-selected='true'],
+	:root .rui-menu-button__item[aria-checked='true'],
+	:root .rui-sidebar__menu-button--active {
+		@apply bg-primary-container text-on-primary-container;
+	}
+
+	:root .rui-alert {
+		@apply rounded-control shadow-none;
+	}
+
+	:root .rui-toast__content {
+		@apply rounded-control border border-border bg-surface text-on-surface shadow-none;
+	}
+
+	:root .rui-separator,
+	:root .rui-sidebar__separator {
+		@apply bg-border;
+	}
+}

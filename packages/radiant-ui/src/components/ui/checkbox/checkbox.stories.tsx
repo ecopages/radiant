@@ -31,6 +31,14 @@ export const Default: Story = {
 			await expect(input).not.toBeChecked();
 		});
 
+		await step('the control keeps softly squared corners', async () => {
+			const control = canvasElement.querySelector('.rui-checkbox__control') as HTMLElement;
+			const styles = getComputedStyle(control);
+			const cornerRadius = Number.parseFloat(styles.borderTopLeftRadius);
+			const controlSize = Number.parseFloat(styles.width);
+			expect(cornerRadius).toBeLessThan(controlSize / 2);
+		});
+
 		await step('click checks the box and reflects on the host', async () => {
 			await userEvent.click(input);
 			await expect(input).toBeChecked();

@@ -1,60 +1,165 @@
+import {
+	applyDefaultThemeTuning,
+	clearDefaultThemeTuning,
+	DOCS_DEFAULT_THEME_TUNING,
+	DOCS_DEFAULT_TUNING_SCHEMA,
+	parseDocsDefaultThemeTuning,
+	type DocsDefaultThemeTuning,
+} from './docs-default-theme-tuning';
+
+export const DOCS_APPEARANCE_STORAGE_KEY = 'radiant-ui-docs:appearance';
+
+/**
+ * @remarks Records store only the tuning values a visitor changed, so a changed default reaches everyone who has not
+ * customized it. Records without this version were written when every value, defaults included, was persisted, and
+ * their tuning is ignored.
+ */
+export const DOCS_APPEARANCE_VERSION = 2;
+/** Legacy theme-only key; read during migration and removed after a write. */
 export const DOCS_THEME_STORAGE_KEY = 'radiant-ui-docs:theme';
+export const DOCS_THEME_QUERY_KEY = 'rui-theme';
+export const DOCS_MODE_QUERY_KEY = 'rui-mode';
+export const DOCS_THEME_BOOT_PENDING_GLOBAL = '__RUI_DOCS_THEME_BOOT_PENDING';
 
-/** Boot script and `applyDocumentTokens` share this handle for pack CSS. */
-export const DOCS_TOKEN_PACK_GLOBAL = '__RUI_DOCS_TOKEN_PACKS';
+/** Boot script and `applyDocumentTokens` share theme asset URLs. */
+export const DOCS_THEME_STYLESHEETS_GLOBAL = '__RUI_DOCS_THEME_STYLESHEETS';
 
-/** Marks injected spacing/radius pack `<style>` nodes. */
-export const DOCS_TOKEN_SHEET_ATTR = 'data-rui-docs-token';
+/** Marks the currently loaded optional theme stylesheet. */
+export const DOCS_THEME_STYLESHEET_ATTR = 'data-rui-docs-theme';
+export const DOCS_THEME_STYLESHEET_LOAD_EVENT = 'radiant-ui-docs:theme-stylesheet-load';
 
 export const docsThemeColorOptions = [
-	{ value: 'glacier', label: 'Glacier', description: 'Cool, editorial' },
-	{ value: 'basalt', label: 'Basalt', description: 'Carbon-inspired' },
-	{ value: 'ember', label: 'Ember', description: 'Warm accent' },
-	{ value: 'aurora', label: 'Aurora', description: 'Vivid and expressive' },
+	{ value: 'rui-default', label: 'Radiant Default', description: 'Radiant default, cool and quiet' },
+	{ value: 'github', label: 'GitHub', description: 'Clean surfaces and clear status colors' },
+	{ value: 'cloudflare', label: 'Cloudflare', description: 'Quiet neutral layers, blue actions, and amber accents' },
+	{ value: 'vscode', label: 'VS Code', description: 'Editor-inspired light and dark modes' },
+	{ value: 'vercel', label: 'Vercel', description: 'Layered monochrome surfaces and clear component states' },
+	{
+		value: 'material',
+		label: 'Material Design',
+		description: 'Expressive color, rounded controls, and tonal surfaces',
+	},
+	{ value: 'high-contrast', label: 'High Contrast', description: 'Black and white surfaces with AAA text contrast' },
+	{
+		value: 'windows95',
+		label: 'Windows 95',
+		description: 'Classic raised controls, title bars, and selection states',
+	},
+	{ value: 'macos-classic', label: 'Mac OS Classic', description: 'Platinum controls and striped title bars' },
+	{ value: 'macos', label: 'macOS', description: 'Layered native-inspired surfaces and accent states' },
 ] as const;
 
-export const docsThemeSpacingOptions = [
-	{ value: 'default', label: 'Default', description: 'Comfortable rhythm' },
-	{ value: 'compact', label: 'Compact', description: 'Dense controls' },
-	{ value: 'wide', label: 'Wide', description: 'Generous rhythm' },
-] as const;
-
-export const docsThemeRadiusOptions = [
-	{ value: 'default', label: 'Default', description: 'Subtle rounding' },
-	{ value: 'soft', label: 'Soft', description: 'Generous rounding' },
-	{ value: 'sharp', label: 'Sharp', description: 'Square surfaces' },
-] as const;
-
-export const docsThemeTokenNames = ['colors', 'spacing', 'radius'] as const;
+export const docsThemeTokenNames = ['colors'] as const;
 
 export type DocsThemeColor = (typeof docsThemeColorOptions)[number]['value'];
-export type DocsThemeSpacing = (typeof docsThemeSpacingOptions)[number]['value'];
-export type DocsThemeRadius = (typeof docsThemeRadiusOptions)[number]['value'];
 export type DocsThemeTokenName = (typeof docsThemeTokenNames)[number];
 
 export type DocsThemeSelection = {
 	colors: DocsThemeColor;
-	spacing: DocsThemeSpacing;
-	radius: DocsThemeRadius;
 };
 
+export type DocsThemeMode = 'system' | 'light' | 'dark';
+
 /**
- * Published pack CSS inlined for runtime injection. `default` is the foundation
- * already on the page — only non-default packs are layered.
+ * Public theme stylesheet URLs. `rui-default` is already part of the page's
+ * base CSS, so only optional themes need a separate asset.
  */
-export type DocsTokenPackCss = {
-	spacing: { compact: string; wide: string };
-	radius: { soft: string; sharp: string };
+export type DocsThemeStylesheets = {
+	themes: Record<Exclude<DocsThemeColor, 'rui-default'>, string>;
 };
 
 export const defaultDocsThemeSelection: DocsThemeSelection = {
-	colors: 'glacier',
-	spacing: 'default',
-	radius: 'default',
+	colors: 'rui-default',
 };
 
-type DocsTokenPackGlobal = typeof globalThis & {
-	[DOCS_TOKEN_PACK_GLOBAL]?: DocsTokenPackCss;
+const TUNING_QUERY_KEYS: Record<keyof DocsDefaultThemeTuning, string> = {
+	primaryHue: 'rui-primary-hue',
+	secondaryOffset: 'rui-secondary-offset',
+	neutralHue: 'rui-neutral-hue',
+	density: 'rui-density',
+	radiusScale: 'rui-radius',
+	borderAlpha: 'rui-border-alpha',
+};
+
+type DocsAppearance = {
+	colors: DocsThemeColor;
+	tuning: DocsDefaultThemeTuning;
+};
+
+function readSearchParams(): URLSearchParams | undefined {
+	const location = typeof window === 'undefined' ? undefined : window.location;
+	if (!location || typeof location.search !== 'string') return undefined;
+	return new URLSearchParams(location.search);
+}
+
+function readStoredAppearance(): DocsAppearance {
+	try {
+		const stored = localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY);
+		if (stored) {
+			const record = JSON.parse(stored) as Record<string, unknown>;
+			return {
+				colors: parseDocsThemeSelection(record).colors,
+				tuning:
+					record.v === DOCS_APPEARANCE_VERSION
+						? parseDocsDefaultThemeTuning(record.tuning)
+						: DOCS_DEFAULT_THEME_TUNING,
+			};
+		}
+		return {
+			colors: parseDocsThemeSelection(localStorage.getItem(DOCS_THEME_STORAGE_KEY)).colors,
+			tuning: DOCS_DEFAULT_THEME_TUNING,
+		};
+	} catch {
+		return { colors: defaultDocsThemeSelection.colors, tuning: DOCS_DEFAULT_THEME_TUNING };
+	}
+}
+
+function writeStoredAppearance(appearance: DocsAppearance): void {
+	try {
+		const overrides = Object.fromEntries(
+			Object.entries(appearance.tuning).filter(
+				([key, value]) => value !== DOCS_DEFAULT_THEME_TUNING[key as keyof DocsDefaultThemeTuning],
+			),
+		);
+		localStorage.setItem(
+			DOCS_APPEARANCE_STORAGE_KEY,
+			JSON.stringify({ v: DOCS_APPEARANCE_VERSION, colors: appearance.colors, tuning: overrides }),
+		);
+		localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
+	} catch {}
+}
+
+function writeAppearanceUrl(appearance: DocsAppearance, mode?: DocsThemeMode): void {
+	const location = typeof window === 'undefined' ? undefined : window.location;
+	if (!location?.href || !window.history?.replaceState) return;
+	const url = new URL(location.href);
+	const setOrDelete = (key: string, value: string | undefined) => {
+		if (value) url.searchParams.set(key, value);
+		else url.searchParams.delete(key);
+	};
+	setOrDelete(DOCS_THEME_QUERY_KEY, appearance.colors === 'rui-default' ? undefined : appearance.colors);
+	if (mode !== undefined) setOrDelete(DOCS_MODE_QUERY_KEY, mode === 'system' ? undefined : mode);
+	for (const [key, queryKey] of Object.entries(TUNING_QUERY_KEYS) as [keyof DocsDefaultThemeTuning, string][]) {
+		const value = appearance.tuning[key];
+		setOrDelete(queryKey, value === DOCS_DEFAULT_THEME_TUNING[key] ? undefined : String(value));
+	}
+	window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+function readUrlTuning(base: DocsDefaultThemeTuning): DocsDefaultThemeTuning {
+	const params = readSearchParams();
+	if (!params) return base;
+	const overrides: Partial<DocsDefaultThemeTuning> = {};
+	for (const [key, queryKey] of Object.entries(TUNING_QUERY_KEYS) as [keyof DocsDefaultThemeTuning, string][]) {
+		const value = params.get(queryKey);
+		if (value !== null && value.trim() && Number.isFinite(Number(value))) overrides[key] = Number(value);
+	}
+	return parseDocsDefaultThemeTuning({ ...base, ...overrides });
+}
+
+type DocsThemeStylesheetsGlobal = typeof globalThis & {
+	[DOCS_THEME_STYLESHEETS_GLOBAL]?: DocsThemeStylesheets;
+	[DOCS_THEME_BOOT_PENDING_GLOBAL]?: boolean;
 };
 
 function isOptionValue<T extends string>(value: unknown, options: readonly { value: T }[]): value is T {
@@ -69,14 +174,6 @@ export function isDocsThemeColor(value: unknown): value is DocsThemeColor {
 	return isOptionValue(value, docsThemeColorOptions);
 }
 
-export function isDocsThemeSpacing(value: unknown): value is DocsThemeSpacing {
-	return isOptionValue(value, docsThemeSpacingOptions);
-}
-
-export function isDocsThemeRadius(value: unknown): value is DocsThemeRadius {
-	return isOptionValue(value, docsThemeRadiusOptions);
-}
-
 /**
  * Parses stored docs preview state. Unknown or partial payloads fall back per field.
  */
@@ -85,7 +182,7 @@ export function parseDocsThemeSelection(value: unknown): DocsThemeSelection {
 		try {
 			return parseDocsThemeSelection(JSON.parse(value) as unknown);
 		} catch {
-			return defaultDocsThemeSelection;
+			return isDocsThemeColor(value) ? { colors: value } : defaultDocsThemeSelection;
 		}
 	}
 
@@ -96,8 +193,6 @@ export function parseDocsThemeSelection(value: unknown): DocsThemeSelection {
 	const record = value as Record<string, unknown>;
 	return {
 		colors: isDocsThemeColor(record.colors) ? record.colors : defaultDocsThemeSelection.colors,
-		spacing: isDocsThemeSpacing(record.spacing) ? record.spacing : defaultDocsThemeSelection.spacing,
-		radius: isDocsThemeRadius(record.radius) ? record.radius : defaultDocsThemeSelection.radius,
 	};
 }
 
@@ -110,86 +205,260 @@ export function updateDocsThemeSelection(
 }
 
 /**
- * Reads the live docs preview attrs, then persisted storage, then defaults.
+ * Resolves URL overrides, the live docs preview attrs, persisted state, and defaults in order.
  *
- * @remarks The HTML boot script writes `data-rui-*` before paint, so connected
- * hosts usually see document attrs. Storage is the fallback for tests and a
- * missing boot script.
+ * @remarks URL state takes precedence so shared links remain reproducible. The
+ * HTML boot script writes `data-rui-*` before paint; storage covers visits with
+ * no explicit URL selection and environments without the boot script.
  */
 export function readDocsThemeSelection(): DocsThemeSelection {
-	const { ruiColors, ruiSpacing, ruiRadius } = document.documentElement.dataset;
-	if (ruiColors || ruiSpacing || ruiRadius) {
-		return {
-			colors: isDocsThemeColor(ruiColors) ? ruiColors : defaultDocsThemeSelection.colors,
-			spacing: isDocsThemeSpacing(ruiSpacing) ? ruiSpacing : defaultDocsThemeSelection.spacing,
-			radius: isDocsThemeRadius(ruiRadius) ? ruiRadius : defaultDocsThemeSelection.radius,
-		};
+	const root = typeof document === 'undefined' ? null : document.documentElement;
+	const { ruiTheme } = root?.dataset ?? {};
+	const urlTheme = readSearchParams()?.get(DOCS_THEME_QUERY_KEY);
+	if (isDocsThemeColor(urlTheme)) return { colors: urlTheme };
+	if (ruiTheme) {
+		return { colors: isDocsThemeColor(ruiTheme) ? ruiTheme : defaultDocsThemeSelection.colors };
 	}
-
-	return parseDocsThemeSelection(localStorage.getItem(DOCS_THEME_STORAGE_KEY));
+	return { colors: readStoredAppearance().colors };
 }
 
-function readInstalledTokenPackCss(): DocsTokenPackCss | undefined {
-	return (globalThis as DocsTokenPackGlobal)[DOCS_TOKEN_PACK_GLOBAL];
+export function readDocsThemeMode(): DocsThemeMode {
+	const urlMode = readSearchParams()?.get(DOCS_MODE_QUERY_KEY);
+	if (urlMode === 'light' || urlMode === 'dark' || urlMode === 'system') return urlMode;
+	try {
+		const stored = localStorage.getItem('theme');
+		return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+	} catch {
+		return 'system';
+	}
+}
+
+export function writeDocsThemeMode(mode: DocsThemeMode): void {
+	try {
+		localStorage.setItem('theme', mode);
+	} catch {}
+	const appearance = { colors: readDocsThemeSelection().colors, tuning: readDocsDefaultThemeTuning() };
+	writeAppearanceUrl(appearance, mode);
+}
+
+function readInstalledThemeStylesheets(): DocsThemeStylesheets | undefined {
+	return (globalThis as DocsThemeStylesheetsGlobal)[DOCS_THEME_STYLESHEETS_GLOBAL];
 }
 
 /**
- * Registers pack CSS for injection. The HTML boot script does this before paint.
+ * Registers theme asset URLs. The HTML boot script does this before paint.
  */
-export function installDocsTokenPackCss(packs: DocsTokenPackCss): void {
-	(globalThis as DocsTokenPackGlobal)[DOCS_TOKEN_PACK_GLOBAL] = packs;
+export function installDocsThemeStylesheets(stylesheets: DocsThemeStylesheets): void {
+	(globalThis as DocsThemeStylesheetsGlobal)[DOCS_THEME_STYLESHEETS_GLOBAL] = stylesheets;
 }
 
 /**
- * @remarks Inline `<style>` injection applies the published pack files
- * synchronously, matching application `@import` composition.
+ * Loads an optional theme from a cacheable public stylesheet and keeps the
+ * previous theme active until the new file is ready.
  */
-function syncTokenStylesheet(kind: 'spacing' | 'radius', css: string | null): void {
+function syncThemeStylesheet(href: string | null, theme: DocsThemeColor): void {
 	if (typeof document === 'undefined') return;
 
-	const root = document.head ?? document.documentElement;
-	const existing = root.querySelector<HTMLStyleElement>(`style[${DOCS_TOKEN_SHEET_ATTR}="${kind}"]`);
-	if (!css) {
-		existing?.remove();
+	if (!href) {
+		document.head.querySelectorAll(`link[${DOCS_THEME_STYLESHEET_ATTR}]`).forEach((link) => link.remove());
 		return;
 	}
 
-	if (existing) {
-		if (existing.textContent !== css) {
-			existing.textContent = css;
-		}
-		return;
+	const absoluteHref = new URL(href, document.baseURI).href;
+	const existing = Array.from(
+		document.head.querySelectorAll<HTMLLinkElement>(`link[${DOCS_THEME_STYLESHEET_ATTR}]`),
+	).find((link) => link.href === absoluteHref);
+	if (existing) return;
+
+	const stylesheet = document.createElement('link');
+	stylesheet.rel = 'stylesheet';
+	stylesheet.href = href;
+	stylesheet.setAttribute(DOCS_THEME_STYLESHEET_ATTR, theme);
+	stylesheet.addEventListener(
+		'load',
+		() => {
+			if (document.documentElement.dataset.ruiTheme !== theme) {
+				stylesheet.remove();
+				return;
+			}
+			document.head.querySelectorAll(`link[${DOCS_THEME_STYLESHEET_ATTR}]`).forEach((link) => {
+				if (link !== stylesheet) link.remove();
+			});
+			document.defaultView?.dispatchEvent(new Event(DOCS_THEME_STYLESHEET_LOAD_EVENT));
+		},
+		{ once: true },
+	);
+	stylesheet.addEventListener(
+		'error',
+		() => {
+			stylesheet.remove();
+			if (document.documentElement.dataset.ruiTheme === theme) {
+				applyDocumentTokens(defaultDocsThemeSelection);
+			}
+		},
+		{ once: true },
+	);
+	const appendStylesheet = () => {
+		if (document.documentElement.dataset.ruiTheme !== theme) return;
+		const active = Array.from(
+			document.head.querySelectorAll<HTMLLinkElement>(`link[${DOCS_THEME_STYLESHEET_ATTR}]`),
+		).find((link) => link.href === absoluteHref);
+		if (!active) document.head.append(stylesheet);
+	};
+	if (
+		document.readyState === 'loading' ||
+		(globalThis as DocsThemeStylesheetsGlobal)[DOCS_THEME_BOOT_PENDING_GLOBAL] === true
+	) {
+		document.addEventListener('DOMContentLoaded', appendStylesheet, { once: true });
+	} else {
+		appendStylesheet();
 	}
-
-	const style = document.createElement('style');
-	style.setAttribute(DOCS_TOKEN_SHEET_ATTR, kind);
-	style.textContent = css;
-	root.append(style);
 }
 
-function syncTokenPackStylesheets(selection: DocsThemeSelection, packs: DocsTokenPackCss): void {
-	syncTokenStylesheet('spacing', selection.spacing === 'default' ? null : packs.spacing[selection.spacing]);
-	syncTokenStylesheet('radius', selection.radius === 'default' ? null : packs.radius[selection.radius]);
+function syncThemeStylesheetForSelection(selection: DocsThemeSelection, stylesheets: DocsThemeStylesheets): void {
+	const href = selection.colors === 'rui-default' ? null : stylesheets.themes[selection.colors];
+	syncThemeStylesheet(href, selection.colors);
 }
 
-export function applyDocumentTokens(selection: DocsThemeSelection): void {
+/**
+ * @remarks With persistence on, which is how a visitor's choice reaches this function, picking a different theme resets
+ * Radiant Default's tuning, so returning to it starts from the defaults and shared tuning parameters leave the URL.
+ */
+export function applyDocumentTokens(selection: DocsThemeSelection, options: { persist?: boolean } = {}): void {
+	if (typeof document === 'undefined' || !document.documentElement) return;
 	const root = document.documentElement;
-	root.dataset.ruiColors = selection.colors;
-	root.dataset.ruiSpacing = selection.spacing;
-	root.dataset.ruiRadius = selection.radius;
-	localStorage.setItem(DOCS_THEME_STORAGE_KEY, JSON.stringify(selection));
+	if (options.persist !== false) {
+		const themeChanged = readDocsThemeSelection().colors !== selection.colors;
+		const appearance = {
+			...readStoredAppearance(),
+			colors: selection.colors,
+			tuning: themeChanged ? DOCS_DEFAULT_THEME_TUNING : readDocsDefaultThemeTuning(),
+		};
+		writeStoredAppearance(appearance);
+		writeAppearanceUrl(appearance);
+	}
+	root.dataset.ruiTheme = selection.colors;
+	if (selection.colors === 'rui-default') applyDefaultThemeTuning(root, readDocsDefaultThemeTuning());
+	else clearDefaultThemeTuning(root);
 
-	const packs = readInstalledTokenPackCss();
-	if (packs) {
-		syncTokenPackStylesheets(selection, packs);
+	const stylesheets = readInstalledThemeStylesheets();
+	if (stylesheets) {
+		syncThemeStylesheetForSelection(selection, stylesheets);
 	}
 }
 
 /**
- * Blocking head script: colour attrs, light/dark, and pack stylesheet injection
- * before first paint.
+ * Blocking head script applies appearance before paint and appends optional
+ * theme CSS after the document's regular stylesheets have loaded.
  */
-export function createDocsThemeBootScript(packs: DocsTokenPackCss): string {
-	const packsLiteral = JSON.stringify(packs).replaceAll('<', '\\u003c');
-	return `(function(){try{const r=document.documentElement,s=localStorage.getItem('theme'),p=s==='light'||s==='dark'||s==='system'?s:'system',t=p==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p,v=localStorage.getItem(${JSON.stringify(DOCS_THEME_STORAGE_KEY)}),d=v?JSON.parse(v):{},c=d.colors==='basalt'||d.colors==='ember'||d.colors==='aurora'||d.colors==='glacier'?d.colors:'glacier',g=d.spacing==='compact'||d.spacing==='wide'?d.spacing:'default',a=d.radius==='soft'||d.radius==='sharp'?d.radius:'default',packs=${packsLiteral};r.setAttribute('data-theme',t);r.classList.toggle('dark',t==='dark');r.dataset.ruiColors=c;r.dataset.ruiSpacing=g;r.dataset.ruiRadius=a;globalThis[${JSON.stringify(DOCS_TOKEN_PACK_GLOBAL)}]=packs;var attr=${JSON.stringify(DOCS_TOKEN_SHEET_ATTR)};function sync(kind,css){var root=document.head||document.documentElement,sel='style['+attr+'="'+kind+'"]',el=root.querySelector(sel);if(!css){if(el)el.remove();return}if(el){el.textContent=css;return}var style=document.createElement('style');style.setAttribute(attr,kind);style.textContent=css;root.appendChild(style)}sync('spacing',g==='default'?null:packs.spacing[g]);sync('radius',a==='default'?null:packs.radius[a])}catch{}})();`;
+export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): string {
+	const stylesheetsLiteral = JSON.stringify(stylesheets).replaceAll('<', '\\u003c');
+	const tuningLiteral = JSON.stringify(DOCS_DEFAULT_THEME_TUNING);
+	const tuningSchemaLiteral = JSON.stringify(DOCS_DEFAULT_TUNING_SCHEMA).replaceAll('<', '\\u003c');
+	return `(() => {
+	try {
+		const root = document.documentElement;
+	const params = new URLSearchParams(window.location.search);
+	const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+	let appearance = {};
+	try { appearance = JSON.parse(read(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}) || 'null') || {}; } catch {}
+	let legacyTheme = {};
+	try { legacyTheme = JSON.parse(read(${JSON.stringify(DOCS_THEME_STORAGE_KEY)}) || '{}'); } catch {}
+	const requestedMode = params.get(${JSON.stringify(DOCS_MODE_QUERY_KEY)});
+	const preference = requestedMode === 'light' || requestedMode === 'dark' || requestedMode === 'system'
+		? requestedMode
+		: read('theme');
+	const mode = preference === 'light' || preference === 'dark' || preference === 'system' ? preference : 'system';
+		const resolvedMode = mode === 'system'
+			? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+			: mode;
+	const savedTheme = appearance.colors || legacyTheme.colors;
+	const urlTheme = params.get(${JSON.stringify(DOCS_THEME_QUERY_KEY)});
+	const requestedTheme = ${JSON.stringify(docsThemeColorOptions.map((option) => option.value))}.includes(urlTheme) ? urlTheme : savedTheme;
+	const colors = ${JSON.stringify(docsThemeColorOptions.map((option) => option.value))}.includes(requestedTheme) ? requestedTheme : 'rui-default';
+		const stylesheets = ${stylesheetsLiteral};
+		const defaults = ${tuningLiteral};
+		const tuningSchema = ${tuningSchemaLiteral};
+		const storedTuning = appearance.v === ${DOCS_APPEARANCE_VERSION} ? appearance.tuning || {} : {};
+		const tuning = { ...storedTuning };
+		const clamp = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.min(max, Math.max(min, Number(value))) : fallback;
+	for (const [key, queryKey] of Object.entries(${JSON.stringify(TUNING_QUERY_KEYS)})) {
+		const value = params.get(queryKey);
+		if (value?.trim() && Number.isFinite(Number(value))) tuning[key] = Number(value);
+	}
+		const applyDefaultTuning = () => {
+			for (const [key, setting] of Object.entries(tuningSchema)) {
+				const value = clamp(tuning[key], setting.min, setting.max, defaults[key]);
+				root.style.setProperty(setting.cssVariable, setting.cssValueTemplate.replace('{{value}}', String(value)));
+			}
+		};
+		const clearDefaultTuning = () => {
+			for (const setting of Object.values(tuningSchema)) root.style.removeProperty(setting.cssVariable);
+		};
+		root.setAttribute('data-theme', resolvedMode);
+		root.classList.toggle('dark', resolvedMode === 'dark');
+		root.dataset.ruiTheme = colors;
+		if (colors === 'rui-default') applyDefaultTuning();
+		else clearDefaultTuning();
+		globalThis[${JSON.stringify(DOCS_THEME_STYLESHEETS_GLOBAL)}] = stylesheets;
+	if (!read(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)})) {
+		try { localStorage.setItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}, JSON.stringify({ v: ${DOCS_APPEARANCE_VERSION}, colors: savedTheme || 'rui-default', tuning: {} })); } catch {}
+	}
+		const attr = ${JSON.stringify(DOCS_THEME_STYLESHEET_ATTR)};
+		const href = colors === 'rui-default' ? null : stylesheets.themes[colors];
+	globalThis[${JSON.stringify(DOCS_THEME_BOOT_PENDING_GLOBAL)}] = Boolean(href);
+	if (href) root.style.visibility = 'hidden';
+		const existing = document.head.querySelector('link[' + attr + ']');
+	if (!href) {
+		globalThis[${JSON.stringify(DOCS_THEME_BOOT_PENDING_GLOBAL)}] = false;
+		document.head.querySelectorAll('link[' + attr + ']').forEach((link) => link.remove());
+	}
+		else if (existing?.getAttribute(attr) !== colors) {
+			const attachTheme = () => {
+			globalThis[${JSON.stringify(DOCS_THEME_BOOT_PENDING_GLOBAL)}] = false;
+				if (root.dataset.ruiTheme !== colors) return;
+			const active = document.head.querySelector('link[' + attr + ']');
+			if (active?.getAttribute(attr) === colors) {
+				active.addEventListener('load', () => root.style.removeProperty('visibility'), { once: true });
+				active.addEventListener('error', () => root.style.removeProperty('visibility'), { once: true });
+				return;
+			}
+				const stylesheet = document.createElement('link');
+				stylesheet.rel = 'stylesheet';
+				stylesheet.href = href;
+				stylesheet.setAttribute(attr, colors);
+				stylesheet.addEventListener('load', () => {
+					if (root.dataset.ruiTheme !== colors) stylesheet.remove();
+					root.style.removeProperty('visibility');
+				}, { once: true });
+				stylesheet.addEventListener('error', () => {
+					stylesheet.remove();
+					if (root.dataset.ruiTheme === colors) {
+						root.dataset.ruiTheme = 'rui-default';
+						applyDefaultTuning();
+						appearance.colors = 'rui-default';
+						try { localStorage.setItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}, JSON.stringify(appearance)); } catch {}
+					}
+					root.style.removeProperty('visibility');
+				}, { once: true });
+				document.head.append(stylesheet);
+			};
+			if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attachTheme, { once: true });
+			else attachTheme();
+		}
+	} catch {}
+})();`;
+}
+
+export function readDocsDefaultThemeTuning(): DocsDefaultThemeTuning {
+	return readUrlTuning(readStoredAppearance().tuning);
+}
+
+export function writeDocsDefaultThemeTuning(tuning: DocsDefaultThemeTuning): void {
+	const appearance = {
+		colors: readDocsThemeSelection().colors,
+		tuning: parseDocsDefaultThemeTuning(tuning),
+	};
+	writeStoredAppearance(appearance);
+	writeAppearanceUrl(appearance);
 }

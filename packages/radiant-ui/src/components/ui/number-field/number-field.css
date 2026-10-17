@@ -24,7 +24,7 @@ rui-number-field {
 		@apply cursor-not-allowed opacity-disabled;
 	}
 
-	.rui-number-field__group[aria-invalid='true'] {
+	:root .rui-number-field__group[aria-invalid='true'] {
 		@apply border-error;
 	}
 

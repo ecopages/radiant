@@ -5,6 +5,7 @@ import {
 	type ThemePreference,
 	type RuiCycleToggleProps,
 } from '@ecopages/radiant-ui/cycle-toggle';
+import { readDocsThemeMode, writeDocsThemeMode } from '@/lib/docs-theme-preview';
 
 type ThemeChangeDetail = {
 	theme: ThemePreference;
@@ -14,7 +15,6 @@ type ThemeChangeDetail = {
 const THEME_TOGGLE_TAG = 'theme-toggle';
 const DARK_THEME_QUERY = '(prefers-color-scheme: dark)';
 const THEME_CHANGE_EVENT = 'eco:theme-change';
-const STORAGE_KEY = 'theme';
 
 function normalizePreference(stored: string | null): ThemePreference {
 	if (stored === 'light' || stored === 'dark' || stored === 'system') {
@@ -78,7 +78,7 @@ export class ThemeToggle extends RuiCycleToggleElement {
 
 	private handlePreferenceChange() {
 		const preference = normalizePreference(this.value);
-		localStorage.setItem(STORAGE_KEY, preference);
+		writeDocsThemeMode(preference);
 		this.applyEffectiveTheme();
 		window.dispatchEvent(
 			new CustomEvent<ThemeChangeDetail>(THEME_CHANGE_EVENT, {
@@ -88,7 +88,7 @@ export class ThemeToggle extends RuiCycleToggleElement {
 	}
 
 	private syncWithStoredPreference() {
-		const preference = normalizePreference(localStorage.getItem(STORAGE_KEY));
+		const preference = readDocsThemeMode();
 		this.value = preference;
 		this.resync();
 		this.applyEffectiveTheme();

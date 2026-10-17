@@ -1,0 +1,61 @@
+/**
+ * Site header, adapted to the selected theme so the docs preview reads like the product it is borrowing from. Radiant
+ * Default keeps the shared header from the layouts.
+ */
+
+/**
+ * GitHub's app header: 64px tall on the inset surface, with a 1px divider, bordered 32px icon buttons, and semibold
+ * navigation text.
+ */
+:root[data-rui-theme='github'] {
+	--site-header-bg: #f6f8fa;
+	--site-header-border: #d1d9e0;
+	--site-header-button-hover: rgb(129 139 152 / 12%);
+}
+
+:root.dark[data-rui-theme='github'] {
+	--site-header-bg: #010409;
+	--site-header-border: #3d444d;
+}
+
+:root[data-rui-theme='github'] :is(.site-header, .rui-sidebar-provider__site-header) {
+	background-color: var(--site-header-bg);
+	border-bottom: 1px solid var(--site-header-border);
+}
+
+:root[data-rui-theme='github']
+	:is(.site-header, .rui-sidebar-provider__site-header)
+	:is(.rui-button--ghost[aria-label], .rui-sidebar__trigger, .theme-picker__trigger) {
+	width: 2rem;
+	height: 2rem;
+	min-width: 2rem;
+	padding: 0;
+	border: 1px solid var(--site-header-border);
+	border-radius: 6px;
+	background-color: transparent;
+}
+
+:root[data-rui-theme='github']
+	:is(.site-header, .rui-sidebar-provider__site-header)
+	:is(.rui-button--ghost[aria-label], .rui-sidebar__trigger, .theme-picker__trigger):hover {
+	background-color: var(--site-header-button-hover);
+}
+
+:root[data-rui-theme='github']
+	:is(.site-header__nav, .rui-sidebar-provider__site-header-nav)
+	a.rui-button--ghost:not([aria-label]) {
+	font-weight: 600;
+}
+
+/**
+ * The classic themes bevel every select, but the picker trigger sits among plain icon buttons in the header, so it drops
+ * its frame to match them.
+ */
+:root:is([data-rui-theme='windows95'], [data-rui-theme='macos-classic'])
+	:is(.site-header, .rui-sidebar-provider__site-header)
+	.theme-picker__control {
+	border-color: transparent;
+	background-color: transparent;
+	background-image: none;
+	box-shadow: none;
+}

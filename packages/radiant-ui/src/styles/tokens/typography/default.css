@@ -1,12 +1,7 @@
 /**
- * Default typography pack.
+ * Shared type scale. Complete themes provide their own font families.
  */
 :root {
-	--font-sans:
-		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-		sans-serif;
-	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-
 	--text-xs: 0.75rem;
 	--text-sm: 0.875rem;
 	--text-body: 1rem;
@@ -40,6 +35,7 @@
 
 @theme {
 	--font-sans: var(--font-sans);
+	--font-heading: var(--font-heading);
 	--font-mono: var(--font-mono);
 	--text-xs: var(--text-xs);
 	--text-sm: var(--text-sm);

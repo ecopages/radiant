@@ -58,6 +58,7 @@ Date Input surfaces map to **semantic surface roles**, never Tailwind palette st
 
 | Part | CSS roles |
 | --- | --- |
+| Standalone control surface | `--border`, `--background`, and the control radius |
 | Segments | `--text-control-input`, `--space-control-*` |
 | Segment text | `on-background` |
 | Placeholder | `on-surface` + `opacity-muted` |
@@ -65,6 +66,8 @@ Date Input surfaces map to **semantic surface roles**, never Tailwind palette st
 | Literal separators | `on-background` |
 
 Override at the theme layer, not in component CSS.
+
+When Date Input is nested in Date Field or Date Range Picker, the parent owns the shared control surface.
 
 ## API
 
