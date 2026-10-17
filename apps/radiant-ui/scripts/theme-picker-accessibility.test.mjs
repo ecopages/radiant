@@ -23,7 +23,7 @@ const optionalThemes = [
 
 async function measureThemeRendering(page, css, mode, theme) {
 	const markup = `
-		<div class="rui-select__listbox rui-popover rui-popover--listbox theme-picker__menu">
+		<div data-select-listbox class="rui-select__listbox rui-popover rui-popover--listbox theme-picker__menu">
 			<p class="theme-picker__menu-heading">Documentation theme</p>
 			<div class="rui-listbox" role="listbox" aria-label="Documentation theme">
 			<div class="rui-listbox__option theme-picker__option" role="option" aria-selected="true">
@@ -163,6 +163,7 @@ test('theme picker text stays AA with persisted themes in runtime stylesheet ord
 					assert.match(rendered.tabs.inactive.boxShadow, /inset/, 'inactive tab is bevelled');
 					assert.match(rendered.tabs.panel.boxShadow, /inset/, 'tab page is bevelled');
 					assert.match(rendered.tabs.selected.fontFamily, /Tahoma/);
+					if (mode === 'light') assert.equal(rendered.picker[0].background, 'rgb(192, 192, 192)');
 				}
 				if (theme === 'macos-classic') {
 					assert.notEqual(rendered.tabs.selected.background, rendered.tabs.inactive.background);
