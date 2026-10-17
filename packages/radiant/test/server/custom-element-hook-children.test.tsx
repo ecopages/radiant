@@ -16,7 +16,7 @@ import {
 const hookContext = createContext<{ owner: string }>(Symbol('custom-hook-provider-children'));
 
 @customElement('hook-children-consumer')
-class HookChildrenConsumer extends RadiantElement {
+class HookChildrenConsumer extends RadiantElement<{ owner: string }> {
 	@state owner = 'Awaiting provider';
 
 	@onContextUpdate({ context: hookContext })
@@ -63,8 +63,10 @@ describe('a custom render hook and context consumers passed as children of a pro
 		const html = withServerRadiantElementSsrRuntime(() =>
 			withServerCustomElementRenderHook(
 				({ instance }) => {
-					const bridge = instance ? resolveRadiantElementRenderBridge(instance) : undefined;
-					return bridge ? createMarkupNodeLike(bridge.renderHostToString({ mode: 'hydrate' })) : undefined;
+					const markup = instance
+						? resolveRadiantElementRenderBridge(instance)?.renderHostToString?.({ mode: 'hydrate' })
+						: undefined;
+					return markup === undefined ? undefined : createMarkupNodeLike(markup);
 				},
 				() => renderToString(page),
 			),
