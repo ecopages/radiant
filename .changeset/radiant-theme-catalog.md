@@ -10,3 +10,4 @@ Refresh the unreleased Radiant theme catalog with stronger control boundaries, q
 - Make composite fields draw one frame in every theme, including their classic-theme field treatments.
 - Align Cloudflare and GitHub semantic palettes with their product systems, including consistent Cloudflare orange and Primer action roles.
 - Add compact variants, component-specific styling, visible focus states, and the remaining theme control polish.
+- Refine treegrid surfaces for VS Code, GitHub, macOS, Mac OS Classic, and Windows 95, including per-level indentation and native disclosure affordances.

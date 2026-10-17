@@ -37,6 +37,9 @@ Compact variants have their own export, for example:
 Each compact entry applies the theme's shared compact spacing composition while keeping the same theme-owned palette,
 font stacks, shape, and component treatment. The full and compact entries follow the document's `.dark` class.
 
+Treegrid surfaces follow the same file-browser treatments: VS Code is flat and compact, GitHub and macOS use quiet
+list separators, and Mac OS Classic and Windows 95 use their native-style triangle or square disclosure affordances.
+
 Radiant Default (`@ecopages/radiant-ui/themes/default`) uses three OKLCH seed colors plus density, corner radius, and
 border opacity inputs. The docs tuner shows the six values and produces copyable CSS. Those controls only apply to
 Radiant Default; branded themes keep their own values.

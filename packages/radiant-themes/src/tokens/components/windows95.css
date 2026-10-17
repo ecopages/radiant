@@ -367,6 +367,68 @@
 		color: var(--windows95-field-text);
 	}
 
+	/**
+	 * @remarks Windows 95 tree views are recessed white work areas with raised column headers, compact rows, and
+	 * square plus/minus disclosure boxes instead of modern chevrons.
+	 */
+	:root .rui-treegrid {
+		@apply rounded-none border-0;
+		background-color: var(--windows95-field);
+		color: var(--windows95-field-text);
+		box-shadow: var(--windows95-sunken);
+		--rui-treegrid-indent: 0.875rem;
+	}
+
+	:root .rui-treegrid__cell {
+		@apply border-0 bg-transparent px-1.5 py-1;
+		color: var(--windows95-field-text);
+	}
+
+	:root .rui-treegrid__row--header .rui-treegrid__cell {
+		@apply font-normal;
+		background-color: var(--windows95-face);
+		color: var(--windows95-text);
+		box-shadow: var(--windows95-raised-thin);
+	}
+
+	:root .rui-treegrid__row:not(.rui-treegrid__row--header):hover .rui-treegrid__cell:not([aria-selected='true']) {
+		background-color: var(--windows95-highlight);
+	}
+
+	:root .rui-treegrid__cell[aria-selected='true'] {
+		background-color: var(--windows95-selection);
+		color: var(--windows95-selection-text);
+	}
+
+	:root .rui-treegrid__cell:focus-visible {
+		outline: 1px dotted var(--windows95-field-text);
+		outline-offset: -2px;
+		--tw-ring-shadow: 0 0 #0000;
+		box-shadow: none;
+	}
+
+	:root .rui-treegrid__row[aria-expanded='false'] .rui-treegrid__cell:first-child::before,
+	:root .rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		content: '+';
+		width: 0.75rem;
+		height: 0.75rem;
+		margin-inline-end: 0.25rem;
+		border: 1px solid var(--windows95-shadow);
+		background-color: var(--windows95-field);
+		color: var(--windows95-field-text);
+		font:
+			0.625rem/0.625rem 'MS Sans Serif',
+			Tahoma,
+			sans-serif;
+		text-align: center;
+		transform: none;
+		vertical-align: -0.05rem;
+	}
+
+	:root .rui-treegrid__row[aria-expanded='true'] .rui-treegrid__cell:first-child::before {
+		content: '-';
+	}
+
 	:root .rui-badge,
 	:root .rui-chip,
 	:root .rui-pagination__link {
