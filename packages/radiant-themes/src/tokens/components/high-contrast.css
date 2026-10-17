@@ -1,6 +1,7 @@
 @reference 'tailwindcss';
 
-:root, :root[data-rui-theme='high-contrast'] {
+:root,
+:root[data-rui-theme='high-contrast'] {
 	--font-sans: ui-sans-serif, system-ui, sans-serif;
 	--font-heading: var(--font-sans);
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -57,6 +58,10 @@
 		@apply rounded-none border-2 border-on-background bg-background;
 	}
 
+	:root .rui-switch__thumb {
+		@apply rounded-none;
+	}
+
 	:root .rui-checkbox__input:checked + .rui-checkbox__control,
 	:root .rui-radio__input:checked + .rui-radio__control,
 	:root .rui-switch__input:checked + .rui-switch__track {
@@ -83,7 +88,7 @@
 	:root .rui-popover-host,
 	:root .rui-hover-card__content,
 	:root .rui-calendar,
-		:root rui-tabs[variant='boxed'] {
+	:root rui-tabs[variant='boxed'] {
 		@apply rounded-none border-2 border-on-background bg-background text-on-background shadow-none;
 	}
 

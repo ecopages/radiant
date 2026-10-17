@@ -5,7 +5,8 @@
  * outline and a two-pixel bevel (white and #aaaaaa highlight, #808080 and #aaaaaa shade), a three-layer ring around the
  * default button, 12px check boxes and radio buttons, trapezoid tabs, and 1px alternating title-bar stripes.
  */
-:root, :root[data-rui-theme='macos-classic'] {
+:root,
+:root[data-rui-theme='macos-classic'] {
 	--font-sans: Charcoal, Geneva, 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
 	--font-heading: Charcoal, Geneva, 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
 	--font-mono: Monaco, Menlo, 'Courier New', monospace;
@@ -34,6 +35,18 @@
 	--macos-classic-well: inset 1px 1px 0 var(--macos-classic-shadow), inset -1px -1px 0 var(--macos-classic-light);
 	--macos-classic-tab-shape: polygon(13.7% 0, 86.3% 0, 100% 100%, 0 100%);
 	--macos-classic-tab-outline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 75.31 23.44' preserveAspectRatio='none'%3E%3Cpath d='M0,23.44 L10.32,0 H64.98 L75.31,23.44' fill='none' stroke='black' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+	--macos-classic-scrollbar-thumb: #9b9bf9;
+	--macos-classic-scrollbar-highlight: #cdcdfc;
+	--macos-classic-scrollbar-shadow: #353594;
+	--macos-classic-scrollbar-edge: #555655;
+}
+
+:where(.dark),
+:root.dark[data-rui-theme='macos-classic'] {
+	--macos-classic-scrollbar-thumb: var(--macos-classic-selection);
+	--macos-classic-scrollbar-highlight: var(--macos-classic-blue-light);
+	--macos-classic-scrollbar-shadow: var(--macos-classic-blue);
+	--macos-classic-scrollbar-edge: var(--macos-classic-shadow);
 }
 
 @layer components {
@@ -586,4 +599,236 @@
 			box-shadow: none;
 		}
 	}
+}
+
+/**
+ * WebKit Platinum scrollbars keep the 16px gutter, end-positioned arrow pair, grey bevelled track, and striped blue
+ * scroll box used by the classic Mac OS reference treatment. Firefox receives the native fallback declared above.
+ */
+@supports (-moz-appearance: none) {
+	:root,
+	:root * {
+		scrollbar-width: auto;
+		scrollbar-color: var(--macos-classic-scrollbar-thumb) var(--macos-classic-mid);
+	}
+}
+
+:root::-webkit-scrollbar,
+:root *::-webkit-scrollbar {
+	width: 16px;
+	height: 16px;
+}
+
+:root::-webkit-scrollbar-button:end,
+:root *::-webkit-scrollbar-button:end {
+	display: block;
+	width: 16px;
+	height: 16px;
+	box-sizing: border-box;
+	border: 1px solid var(--macos-classic-dark);
+	background-color: var(--macos-classic-face);
+	box-shadow:
+		inset 1px 1px 0 var(--macos-classic-light),
+		inset -1px -1px 0 var(--macos-classic-mid);
+}
+
+:root::-webkit-scrollbar-button:start,
+:root *::-webkit-scrollbar-button:start {
+	display: none;
+}
+
+:root::-webkit-scrollbar-button:end:vertical,
+:root *::-webkit-scrollbar-button:end:vertical {
+	border-left: 1px solid var(--macos-classic-dark);
+	border-right: 1px solid var(--macos-classic-dark);
+	border-bottom: 1px solid var(--macos-classic-dark);
+}
+
+:root::-webkit-scrollbar-button:end:vertical:decrement,
+:root *::-webkit-scrollbar-button:end:vertical:decrement {
+	background:
+		linear-gradient(transparent 75%, var(--macos-classic-dark) 0) 50% / 8px 4px no-repeat,
+		linear-gradient(transparent 50%, var(--macos-classic-dark) 0) 50% / 6px 4px no-repeat,
+		linear-gradient(transparent 25%, var(--macos-classic-dark) 0) 50% / 4px 4px no-repeat,
+		linear-gradient(var(--macos-classic-dark) 50%, var(--macos-classic-dark) 0) 50% / 2px 4px no-repeat,
+		var(--macos-classic-face);
+}
+
+:root::-webkit-scrollbar-button:end:vertical:increment,
+:root *::-webkit-scrollbar-button:end:vertical:increment {
+	height: 15px;
+	border-bottom: 0;
+	background:
+		linear-gradient(0deg, transparent 75%, var(--macos-classic-dark) 0) 50% / 8px 4px no-repeat,
+		linear-gradient(0deg, transparent 50%, var(--macos-classic-dark) 0) 50% / 6px 4px no-repeat,
+		linear-gradient(0deg, transparent 25%, var(--macos-classic-dark) 0) 50% / 4px 4px no-repeat,
+		linear-gradient(0deg, var(--macos-classic-dark) 50%, var(--macos-classic-dark) 0) 50% / 2px 4px no-repeat,
+		var(--macos-classic-face);
+}
+
+:root::-webkit-scrollbar-button:end:horizontal,
+:root *::-webkit-scrollbar-button:end:horizontal {
+	border-top: 1px solid var(--macos-classic-dark);
+	border-bottom: 1px solid var(--macos-classic-dark);
+	border-right: 1px solid var(--macos-classic-dark);
+}
+
+:root::-webkit-scrollbar-button:end:horizontal:decrement,
+:root *::-webkit-scrollbar-button:end:horizontal:decrement {
+	background:
+		linear-gradient(90deg, transparent 75%, var(--macos-classic-dark) 0) 50% / 4px 8px no-repeat,
+		linear-gradient(90deg, transparent 50%, var(--macos-classic-dark) 0) 50% / 4px 6px no-repeat,
+		linear-gradient(90deg, transparent 25%, var(--macos-classic-dark) 0) 50% / 4px 4px no-repeat,
+		linear-gradient(90deg, var(--macos-classic-dark) 50%, var(--macos-classic-dark) 0) 50% / 4px 2px no-repeat,
+		var(--macos-classic-face);
+}
+
+:root::-webkit-scrollbar-button:end:horizontal:increment,
+:root *::-webkit-scrollbar-button:end:horizontal:increment {
+	width: 15px;
+	border-right: 0;
+	background:
+		linear-gradient(270deg, transparent 75%, var(--macos-classic-dark) 0) 50% / 4px 8px no-repeat,
+		linear-gradient(270deg, transparent 50%, var(--macos-classic-dark) 0) 50% / 4px 6px no-repeat,
+		linear-gradient(270deg, transparent 25%, var(--macos-classic-dark) 0) 50% / 4px 4px no-repeat,
+		linear-gradient(270deg, var(--macos-classic-dark) 50%, var(--macos-classic-dark) 0) 50% / 4px 2px no-repeat,
+		var(--macos-classic-face);
+}
+
+:root::-webkit-scrollbar-track,
+:root *::-webkit-scrollbar-track {
+	background:
+		radial-gradient(circle at 0.5px 0.5px, var(--macos-classic-shadow) 0.5px, transparent 0) 0 / 4px 2px repeat,
+		radial-gradient(circle at 2.5px 1.5px, var(--macos-classic-shadow) 0.5px, transparent 0) 0 / 4px 2px repeat,
+		var(--macos-classic-mid);
+}
+
+:root::-webkit-scrollbar-track:vertical,
+:root *::-webkit-scrollbar-track:vertical {
+	border-left: 1px solid var(--macos-classic-dark);
+	border-right: 1px solid var(--macos-classic-dark);
+	box-shadow:
+		inset 1px 1px 0 var(--macos-classic-shadow),
+		inset -1px 2px 0 var(--macos-classic-light),
+		inset 2px 0 0 var(--macos-classic-shadow),
+		inset -2px 0 0 var(--macos-classic-mid);
+}
+
+:root::-webkit-scrollbar-track:horizontal,
+:root *::-webkit-scrollbar-track:horizontal {
+	border-top: 1px solid var(--macos-classic-dark);
+	border-bottom: 1px solid var(--macos-classic-dark);
+	box-shadow:
+		inset 1px 1px 0 var(--macos-classic-shadow),
+		inset 2px -1px 0 var(--macos-classic-light),
+		inset 0 2px 0 var(--macos-classic-shadow),
+		inset 0 -2px 0 var(--macos-classic-mid);
+}
+
+:root::-webkit-scrollbar-thumb,
+:root *::-webkit-scrollbar-thumb {
+	box-sizing: border-box;
+	width: 14px;
+	background-color: var(--macos-classic-scrollbar-thumb);
+	border: 1px solid var(--macos-classic-dark);
+	border-radius: 0;
+	box-shadow:
+		inset 1px 1px 0 var(--macos-classic-scrollbar-highlight),
+		inset -1px -1px 0 var(--macos-classic-scrollbar-shadow);
+}
+
+:root::-webkit-scrollbar-thumb:vertical,
+:root *::-webkit-scrollbar-thumb:vertical {
+	border-left: 1px solid var(--macos-classic-dark);
+	border-right: 1px solid var(--macos-classic-dark);
+	border-top: 1px solid var(--macos-classic-scrollbar-edge);
+	background:
+		linear-gradient(
+				transparent 12.5%,
+				var(--macos-classic-scrollbar-shadow) 0,
+				var(--macos-classic-scrollbar-shadow) 25%,
+				transparent 0,
+				transparent 37.5%,
+				var(--macos-classic-scrollbar-shadow) 0,
+				var(--macos-classic-scrollbar-shadow) 50%,
+				transparent 0,
+				transparent 62.5%,
+				var(--macos-classic-scrollbar-shadow) 0,
+				var(--macos-classic-scrollbar-shadow) 75%,
+				transparent 0,
+				transparent 87.5%,
+				var(--macos-classic-scrollbar-shadow) 0
+			)
+			50% / 7px 8px no-repeat,
+		linear-gradient(
+				var(--macos-classic-scrollbar-highlight) 12.5%,
+				transparent 0,
+				transparent 25%,
+				var(--macos-classic-scrollbar-highlight) 0,
+				var(--macos-classic-scrollbar-highlight) 37.5%,
+				transparent 0,
+				transparent 50%,
+				var(--macos-classic-scrollbar-highlight) 0,
+				var(--macos-classic-scrollbar-highlight) 62.5%,
+				transparent 0,
+				transparent 75%,
+				var(--macos-classic-scrollbar-highlight) 0,
+				var(--macos-classic-scrollbar-highlight) 87.5%,
+				transparent 0
+			)
+			49% / 7px 8px no-repeat,
+		var(--macos-classic-scrollbar-thumb);
+}
+
+:root::-webkit-scrollbar-thumb:horizontal,
+:root *::-webkit-scrollbar-thumb:horizontal {
+	border-top: 1px solid var(--macos-classic-dark);
+	border-bottom: 1px solid var(--macos-classic-dark);
+	border-left: 1px solid var(--macos-classic-scrollbar-edge);
+	background:
+		linear-gradient(
+				90deg,
+				transparent 12.5%,
+				var(--macos-classic-scrollbar-shadow) 0,
+				var(--macos-classic-scrollbar-shadow) 25%,
+				transparent 0,
+				transparent 37.5%,
+				var(--macos-classic-scrollbar-shadow) 0,
+				var(--macos-classic-scrollbar-shadow) 50%,
+				transparent 0,
+				transparent 62.5%,
+				var(--macos-classic-scrollbar-shadow) 0,
+				var(--macos-classic-scrollbar-shadow) 75%,
+				transparent 0,
+				transparent 87.5%,
+				var(--macos-classic-scrollbar-shadow) 0
+			)
+			50% / 8px 7px no-repeat,
+		linear-gradient(
+				90deg,
+				var(--macos-classic-scrollbar-highlight) 12.5%,
+				transparent 0,
+				transparent 25%,
+				var(--macos-classic-scrollbar-highlight) 0,
+				var(--macos-classic-scrollbar-highlight) 37.5%,
+				transparent 0,
+				transparent 50%,
+				var(--macos-classic-scrollbar-highlight) 0,
+				var(--macos-classic-scrollbar-highlight) 62.5%,
+				transparent 0,
+				transparent 75%,
+				var(--macos-classic-scrollbar-highlight) 0,
+				var(--macos-classic-scrollbar-highlight) 87.5%,
+				transparent 0
+			)
+			center 49% / 8px 7px no-repeat,
+		var(--macos-classic-scrollbar-thumb);
+}
+
+:root::-webkit-scrollbar-corner,
+:root *::-webkit-scrollbar-corner {
+	border-top: 1px solid var(--macos-classic-dark);
+	border-left: 1px solid var(--macos-classic-dark);
+	box-shadow: inset 1px 1px 0 var(--macos-classic-light);
+	background: var(--macos-classic-container);
 }
