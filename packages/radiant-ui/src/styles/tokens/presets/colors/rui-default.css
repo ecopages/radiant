@@ -31,7 +31,7 @@
 	--tertiary-container: var(--color-rui-default-200);
 	--on-tertiary-container: var(--color-rui-default-900);
 
-	--error: var(--color-carbon-red-800);
+	--error: var(--color-carbon-red-600);
 	--on-error: var(--color-white);
 	--error-container: var(--color-carbon-red-100);
 	--on-error-container: var(--color-carbon-red-800);
