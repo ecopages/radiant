@@ -58,18 +58,20 @@ in dark mode. Material Design uses tonal surfaces, a purple accent family, and r
 controls. These are original implementations written with Radiant semantic roles, Tailwind `@apply`, and catalog
 selectors; they do not copy third-party CSS.
 
-The Cloudflare theme leads with Cloudflare orange on restrained neutral layers inspired by Cloudflare Kumo. Dark mode
-uses the brand orange `#f6821f` with dark text; light mode uses a deeper orange so primary text and fills keep AA
-contrast on white. Links and focus stay blue, and warnings use a yellow amber that stays distinct from the primary.
+The Cloudflare theme leads with Cloudflare orange on restrained neutral layers inspired by Cloudflare Kumo. Its
+semantic primary role uses deeper orange `#cc3a00` in light mode and brighter orange `#ff5e1e` in dark mode. Filled
+primary buttons use the contrast-safe `#cc3a00` with white text in both modes. Links and focus stay blue, and warnings
+use a yellow amber that stays distinct from the primary.
 GitHub maps Primer's functional roles: green marks the primary action, blue is for links and focus, the selected tab
 uses Primer's coral underline, and neutral surfaces are used for secondary actions.
 
 The Vercel theme uses Background 2 for the light canvas and Background 1 for primary surfaces. Its component colors
 drive hover and active fills, Colors 4–6 drive default, hover, and active borders, and blue stays focused on links and
 keyboard focus. Control boundaries are strengthened for visibility. VS Code maps editor surfaces and accent states,
-with Dark Modern's `#0078d4` button fill. In dark mode, the product themes fill primary and destructive buttons with
-the product's own saturated color and white text, while `--primary` and `--error` stay the lighter tones used for
-text. These palettes adapt product cues to Radiant UI roles without reproducing the products pixel for pixel.
+with Dark Modern's `#0078d4` fill for dark-mode filled buttons. Button treatments vary by theme: Cloudflare uses a
+contrast-safe orange primary fill, while Cloudflare, GitHub, and Vercel use saturated fills with white text for
+dark-mode destructive buttons. Other variants follow each theme's semantic roles. These palettes adapt product cues to
+Radiant UI roles without reproducing the products pixel for pixel.
 
 ## Design references
 

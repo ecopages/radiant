@@ -25,10 +25,10 @@
 :where(.dark), :root.dark[data-rui-theme='windows95'] {
 	--windows95-canvas: #2b2b2b;
 	--windows95-face: #3a3a3a;
-	--windows95-light: #8a8a8a;
-	--windows95-highlight: #5a5a5a;
-	--windows95-shadow: #222222;
-	--windows95-dark: #000000;
+	--windows95-light: #d0d0d0;
+	--windows95-highlight: #a5a5a5;
+	--windows95-shadow: #858585;
+	--windows95-dark: #6f6f6f;
 	--windows95-text: #f0f0f0;
 	--windows95-muted: #c8c8c8;
 	--windows95-field: #1c1c1c;

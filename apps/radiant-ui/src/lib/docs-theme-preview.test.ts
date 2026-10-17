@@ -1,15 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { docsThemeStylesheets } from './docs-theme-stylesheets';
 import {
-	DOCS_APPEARANCE_STORAGE_KEY,
-	DOCS_APPEARANCE_VERSION,
 	applyDefaultThemeTuning,
-	applyDocumentTokens,
 	clearDefaultThemeTuning,
 	createDocsDefaultThemeTuningCss,
+	DOCS_DEFAULT_THEME_TUNING,
+	parseDocsDefaultThemeTuning,
+} from './docs-default-theme-tuning';
+import {
+	DOCS_APPEARANCE_STORAGE_KEY,
+	DOCS_APPEARANCE_VERSION,
+	applyDocumentTokens,
 	createDocsThemeBootScript,
 	defaultDocsThemeSelection,
-	DOCS_DEFAULT_THEME_TUNING,
 	DOCS_THEME_STORAGE_KEY,
 	DOCS_THEME_QUERY_KEY,
 	DOCS_MODE_QUERY_KEY,
@@ -17,7 +20,6 @@ import {
 	DOCS_THEME_STYLESHEETS_GLOBAL,
 	DOCS_THEME_STYLESHEET_ATTR,
 	installDocsThemeStylesheets,
-	parseDocsDefaultThemeTuning,
 	readDocsThemeSelection,
 	readDocsDefaultThemeTuning,
 	readDocsThemeMode,
