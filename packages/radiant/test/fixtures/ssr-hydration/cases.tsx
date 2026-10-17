@@ -11,6 +11,7 @@ import {
 	HydratedCounterBinding,
 	HydratedFragmentSlotParent,
 	HydratedMarkerSlotParent,
+	HydratedStaticView,
 	HydratedSlotCard,
 	NonHydratedCounter,
 } from './components';
@@ -29,6 +30,7 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 		return renderRadiantElementHostToString(element, { mode: 'hydrate' });
 	},
 	'marker-slot-parent': () => renderRadiantElementHostToString(new HydratedMarkerSlotParent(), { mode: 'hydrate' }),
+	'static-view': () => renderRadiantElementHostToString(new HydratedStaticView(), { mode: 'hydrate' }),
 	'fragment-slot-parent': () =>
 		renderRadiantElementHostToString(new HydratedFragmentSlotParent(), { mode: 'hydrate' }),
 	'complex-slot-card': () => {
