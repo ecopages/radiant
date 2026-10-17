@@ -454,6 +454,28 @@ describe('RadiantElement SSR', () => {
 		expect(html).toContain('data-radiant-slot-projection');
 	});
 
+	test('slot projection payload keeps escaped text escaped', () => {
+		@customElement('server-host-slot-escape-test')
+		class ServerHostSlotEscape extends RadiantElement {
+			override render() {
+				return (
+					<section>
+						<slot />
+					</section>
+				);
+			}
+		}
+
+		const element = new ServerHostSlotEscape();
+		element.innerHTML = 'Tom &amp; Jerry &lt;img src=x onerror=alert(1)&gt;';
+
+		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
+
+		expect(html).toContain('<section>Tom &amp; Jerry &lt;img src=x onerror=alert(1)&gt;</section>');
+		expect(html).not.toContain('<img');
+		expect(html).not.toContain('"Tom & Jerry');
+	});
+
 	describeWhenStandard('SSR ordering with generated hydration scripts', () => {
 		test("renderRadiantElementHostToString({ mode: 'hydrate' }) emits host content before slot projection and hydration scripts", () => {
 			@customElement('server-host-ordering-card-test')

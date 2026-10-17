@@ -402,8 +402,12 @@ export class MinimalElement extends MinimalNode {
 		return createMinimalHtmlCollection(elements);
 	}
 
+	/**
+	 * @remarks `script` and `style` keep their cached raw fragment: their content is raw text, so parsing it
+	 * into entity-decoded child nodes and re-escaping it would corrupt it.
+	 */
 	materializeChildren(): void {
-		if (this.fragmentInnerHtml === undefined) {
+		if (this.fragmentInnerHtml === undefined || this.localName === 'script' || this.localName === 'style') {
 			return;
 		}
 

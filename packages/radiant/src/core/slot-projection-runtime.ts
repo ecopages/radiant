@@ -9,6 +9,7 @@ import {
 	type TemplateResultLike,
 } from '@ecopages/jsx';
 
+import { escapeHtmlText } from '../utils/escape-html-text';
 import { HYDRATION_ATTRIBUTE } from './hydration-codec';
 
 export const DEFAULT_SLOT_NAME = '';
@@ -232,7 +233,7 @@ function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined
 
 function renderDomNode(node: Node): string | undefined {
 	if (node.nodeType === Node.TEXT_NODE) {
-		return node.textContent ?? '';
+		return escapeHtmlText(node.textContent ?? '');
 	}
 
 	return (node as Element).outerHTML ?? node.textContent ?? undefined;

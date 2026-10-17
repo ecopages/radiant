@@ -228,6 +228,8 @@ The shim supports a focused query surface for component lifecycle code that runs
 
 Fragment-backed nodes materialize children lazily when a query traverses descendants, so nested selectors such as `header > h2` work after `innerHTML` assignment without paying full tree materialization cost during plain serialization.
 
+`innerHTML` and `insertAdjacentHTML` decode entities in parsed text, attribute values and `textContent`, so serializers escape exactly once. Only `&amp; &lt; &gt; &quot; &apos; &nbsp; &copy; &reg; &ndash; &mdash; &hellip;` and numeric references are decoded; other named entities such as `&euro;` stay literal and are escaped again when the tree is re-serialized, so prefer the real character in raw HTML strings. `script` and `style` content is raw text and is never decoded.
+
 SSR hosts created with `new Component()` also align `localName` / `tagName` to the `@customElement` metadata before host preparation and serialization, so in-memory queries like `closest('my-element')` match the tag names used in the rendered HTML.
 
 ### SSR gap registry
