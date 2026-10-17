@@ -259,7 +259,9 @@ export class RadiantElement<Bindings extends object = {}>
 	 * content (for example light-DOM children its parent view authored) can rely on it. It says nothing about
 	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
 	 * does not stamp hosts, so those report `false`. The attribute is removed once read, so markup copied from a
-	 * connected host does not carry it.
+	 * connected host does not carry it. Slot-projection payloads embed host markup as written, stamps included, so
+	 * a host the client rebuilds from a payload also reports `true`; a host replaced by a client-made instance
+	 * (for example a server host passed as a child of another custom element in a view) reports `false`.
 	 */
 	public get isServerRendered(): boolean {
 		return this.serverRendered;

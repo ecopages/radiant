@@ -58,8 +58,9 @@ For adapters, fragment responses, and framework integrations, prefer the explici
 Lower-level host serialization lives on `@ecopages/radiant/server/radiant-element-ssr`, not as Element Host instance methods:
 
 - **Adapter default:** `renderRadiantElementHostToString`
-- **View-only:** `renderRadiantElementViewToString`
+- **View-only:** `renderRadiantElementViewToString`. It returns the view without a host tag, so it never stamps; a caller that writes the host tag itself adds `SERVER_RENDERED_HOST_ATTRIBUTE`.
 - **JSX / custom-element SSR integration:** `withRadiantServerCustomElementRenderBridge`, `renderRegisteredRadiantElementHost`, `renderRegisteredRadiantElementHostToString`
+- **Host stamp:** `SERVER_RENDERED_HOST_ATTRIBUTE` (`data-radiant-ssr`). Hydrate-mode host serialization writes it on every host, and the client host reads and removes it at first connect into `isServerRendered`. Plain mode does not write it.
 - **Advanced / runtime:** `getOrCreateRadiantElementSsrRuntime`, `withServerRadiantElementSsrRuntime`, `createRadiantElementSsrService`, `getRadiantElementHostSsrAttributes`, `resolveRadiantElementRenderBridge`
 
 When a component renders literal `<slot>` tags, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.

@@ -111,6 +111,11 @@ describe('hydrating server-rendered markup', () => {
 		document.body.append(created);
 		await waitFor(() => expect(created.querySelector('p')).not.toBeNull());
 		expect(created.isServerRendered).toBe(false);
+
+		rendered.remove();
+		document.body.append(rendered);
+		await waitFor(() => expect(rendered.isConnected).toBe(true));
+		expect(rendered.isServerRendered).toBe(true);
 	});
 
 	test('hydrates reactive JSX children of a nested host under a fragment root', async () => {
