@@ -123,19 +123,3 @@ Define semantic color roles in a stylesheet loaded after the base theme. Compone
 
 Dark mode changes theme colors and semantic role mappings. Toggle light/dark mode in the docs header to inspect every
 theme in both schemes. See [Tokens](/docs/getting-started/tokens) for the semantic roles and scales.
-
-## Migrate from the previous theme imports
-
-Radiant UI now exports one complete theme at `@ecopages/radiant-ui/themes/default`; its neutral palette is named
-Radiant Default and its seed variables are `--rui-primary`, `--rui-secondary`, and `--rui-neutral`. The palette token
-entry is `@ecopages/radiant-ui/tokens/colors/rui-default`. If your app imported an earlier built-in palette, remove
-that import and load `@ecopages/radiant-ui/themes/default`; adjust the three seed variables to create your own palette,
-or install `@ecopages/radiant-themes` for a complete optional theme. For compact Radiant Default, import
-`@ecopages/radiant-ui/tokens/spacing/compact` after `@ecopages/radiant-ui/themes/default` or tune `--rui-density`. For
-a compact optional theme, import its theme-specific entry, such as `@ecopages/radiant-themes/github/compact`.
-
-| Removed export | Replacement |
-| --- | --- |
-| `@ecopages/radiant-ui/themes/glacier`, `@ecopages/radiant-ui/themes/aurora` | `@ecopages/radiant-ui/themes/default`, then tune the seed variables |
-| `@ecopages/radiant-ui/themes/default-compact-soft` | `@ecopages/radiant-ui/themes/default` followed by `@ecopages/radiant-ui/tokens/spacing/compact` |
-| `@ecopages/radiant-ui/tokens/colors/aurora`, `tokens/colors/glacier`, `tokens/colors/basalt`, `tokens/colors/palettes` | `@ecopages/radiant-ui/tokens/colors/rui-default`, or a complete theme from `@ecopages/radiant-themes` |
