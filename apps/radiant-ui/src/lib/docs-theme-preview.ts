@@ -345,7 +345,7 @@ export const DOCS_DEFAULT_TUNING_SCHEMA: Record<DocsDefaultThemeTuningKey, DocsD
 	borderAlpha: {
 		label: 'Border opacity',
 		min: 32,
-		max: 65,
+		max: 100,
 		step: 1,
 		unit: '%',
 		defaultValue: 48,

@@ -163,15 +163,16 @@ describe('docs-theme-preview', () => {
 
 	it('parses and bounds the six default theme inputs', () => {
 		expect(parseDocsDefaultThemeTuning('{invalid')).toEqual(DOCS_DEFAULT_THEME_TUNING);
-		expect(parseDocsDefaultThemeTuning({ primaryHue: 400, density: 0.4, borderAlpha: 90 })).toEqual({
+		expect(parseDocsDefaultThemeTuning({ primaryHue: 400, density: 0.4, borderAlpha: 120 })).toEqual({
 			...DOCS_DEFAULT_THEME_TUNING,
 			primaryHue: 360,
 			density: 0.85,
-			borderAlpha: 65,
+			borderAlpha: 100,
 		});
 		const tuning = { ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 280, borderAlpha: 56 };
 		expect(createDocsDefaultThemeTuningCss(tuning)).toContain('--rui-primary: oklch(52% 0.19 280)');
 		expect(createDocsDefaultThemeTuningCss(tuning)).toContain('--rui-border-alpha: 56%');
+		expect(createDocsDefaultThemeTuningCss({ ...tuning, borderAlpha: 100 })).toContain('--rui-border-alpha: 100%');
 	});
 
 	it('applies stored theme and tuning preferences in a compact boot script', () => {
