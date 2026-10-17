@@ -19,6 +19,41 @@
 }
 
 @layer components {
+	/**
+	 * @remarks macOS fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
+	 * red used for error text on dark surfaces.
+	 */
+	:root.dark .rui-button--destructive {
+		background-color: #d93036;
+		color: #ffffff;
+	}
+
+	:root.dark .rui-button--destructive:hover:not(:disabled) {
+		background-color: #c9302c;
+	}
+
+	:root.dark .rui-button--destructive:active:not(:disabled) {
+		background-color: #b62324;
+	}
+
+	/**
+	 * @remarks macOS dark push buttons use the accent blue with white text. `#0a6cd6` keeps the system blue's hue at
+	 * 5:1 contrast, and `--primary` stays the lighter accent for primary text.
+	 */
+	:root.dark .rui-button--filled {
+		background-color: #0a6cd6;
+		color: #ffffff;
+	}
+
+	:root.dark .rui-button--filled:hover:not(:disabled) {
+		background-color: #0a64c8;
+	}
+
+	:root.dark .rui-button--filled:active:not(:disabled),
+	:root.dark .rui-button--filled[aria-pressed='true'] {
+		background-color: #0a5bb5;
+	}
+
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
 		transition-duration: var(--duration-fast);
@@ -50,13 +85,25 @@
 	}
 
 	:root .rui-checkbox__control,
-	:root .rui-radio__control,
-	:root .rui-switch__track {
+	:root .rui-radio__control {
 		@apply border-border bg-surface;
+	}
+
+	:root .rui-switch {
+		--rui-switch-track: color-mix(in oklab, var(--on-background) 14%, transparent);
+		--rui-switch-track-hover: color-mix(in oklab, var(--on-background) 20%, transparent);
+		--rui-switch-thumb: #ffffff;
+		--rui-switch-thumb-on: #ffffff;
 	}
 
 	:root .rui-switch__track {
 		@apply rounded-pill;
+	}
+
+	:root .rui-switch__thumb {
+		box-shadow:
+			0 0 0 0.5px rgb(0 0 0 / 0.12),
+			0 1px 2px rgb(0 0 0 / 0.24);
 	}
 
 	:root .rui-checkbox__control {
@@ -125,6 +172,22 @@
 	:root .rui-alert,
 	:root .rui-toast__content {
 		@apply rounded-container border border-border bg-surface text-on-surface shadow-md;
+	}
+
+	:root .rui-alert--info .rui-alert__icon {
+		color: var(--info);
+	}
+
+	:root .rui-alert--success .rui-alert__icon {
+		color: var(--success);
+	}
+
+	:root .rui-alert--warning .rui-alert__icon {
+		color: var(--warning);
+	}
+
+	:root .rui-alert--error .rui-alert__icon {
+		color: var(--error);
 	}
 
 	:root .rui-badge,

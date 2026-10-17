@@ -18,6 +18,31 @@
 }
 
 @layer components {
+	/**
+	 * @remarks Primer fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
+	 * red used for error text on dark surfaces.
+	 */
+	:root.dark .rui-button--destructive {
+		background-color: #da3633;
+		color: #ffffff;
+	}
+
+	:root.dark .rui-button--destructive:hover:not(:disabled) {
+		background-color: #b62324;
+	}
+
+	:root.dark .rui-button--destructive:active:not(:disabled) {
+		background-color: #a40e26;
+	}
+
+	:root rui-tabs {
+		--rui-tabs-indicator-color: #fd8c73;
+	}
+
+	:root.dark rui-tabs {
+		--rui-tabs-indicator-color: #f78166;
+	}
+
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
 	}
@@ -60,8 +85,8 @@
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
-		@apply text-on-surface;
-		border-bottom-color: var(--info);
+		@apply text-on-surface font-semibold;
+		border-bottom-color: var(--rui-tabs-indicator-color);
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {

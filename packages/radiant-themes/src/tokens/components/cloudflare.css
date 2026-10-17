@@ -18,6 +18,23 @@
 }
 
 @layer components {
+	/**
+	 * @remarks Cloudflare fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
+	 * red used for error text on dark surfaces.
+	 */
+	:root.dark .rui-button--destructive {
+		background-color: #d1242f;
+		color: #ffffff;
+	}
+
+	:root.dark .rui-button--destructive:hover:not(:disabled) {
+		background-color: #c3272d;
+	}
+
+	:root.dark .rui-button--destructive:active:not(:disabled) {
+		background-color: #ae1f25;
+	}
+
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
 	}
@@ -49,8 +66,7 @@
 	}
 
 	:root .rui-checkbox__control,
-	:root .rui-radio__control,
-	:root .rui-switch__track {
+	:root .rui-radio__control {
 		@apply border-border bg-surface;
 		border-color: var(--rui-control-border-color);
 	}
@@ -82,7 +98,10 @@
 		@apply bg-primary-container text-on-primary-container;
 	}
 
-	:root .rui-alert,
+	:root .rui-alert {
+		@apply rounded-control shadow-none;
+	}
+
 	:root .rui-toast__content {
 		@apply rounded-control border border-border bg-surface text-on-surface shadow-none;
 	}

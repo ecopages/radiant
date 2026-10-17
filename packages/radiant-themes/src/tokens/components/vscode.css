@@ -3,7 +3,7 @@
 :root, :root[data-rui-theme='vscode'] {
 	--font-sans: 'Segoe UI', system-ui, sans-serif;
 	--font-heading: 'Segoe UI', system-ui, sans-serif;
-	--font-mono: 'Cascadia Code', Consolas, monospace;
+	--font-mono: 'Cascadia Code', Consolas, Menlo, Monaco, 'Courier New', monospace;
 	--rui-border-alpha: 100%;
 	--border-radius-xs: 0.125rem;
 	--border-radius-sm: 0.1875rem;
@@ -17,6 +17,24 @@
 }
 
 @layer components {
+	/**
+	 * @remarks VS Code's dark buttons pair `#0078d4` with white text. `--primary` stays the lighter link blue so primary
+	 * text keeps its contrast on the editor background.
+	 */
+	:root.dark .rui-button--filled {
+		background-color: #0078d4;
+		color: #ffffff;
+	}
+
+	:root.dark .rui-button--filled:hover:not(:disabled) {
+		background-color: #026ec1;
+	}
+
+	:root.dark .rui-button--filled:active:not(:disabled),
+	:root.dark .rui-button--filled[aria-pressed='true'] {
+		background-color: #005ba4;
+	}
+
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
 	}

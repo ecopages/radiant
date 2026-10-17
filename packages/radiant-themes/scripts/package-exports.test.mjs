@@ -60,7 +60,7 @@ test('GitHub and VS Code palettes apply dark colors and light gray ramps', () =>
 	}
 });
 
-test('GitHub follows Primer action roles and Cloudflare keeps its Kumo-inspired layer mapping', () => {
+test('GitHub follows Primer action roles and Cloudflare leads with its orange', () => {
 	const github = readFileSync(path.join(packageRoot, 'dist/compiled/themes/github.css'), 'utf8');
 	const githubRoles = declarationsForSelector(github, ":where(:root), :root[data-rui-theme='github']");
 	assert.equal(githubRoles.get('--primary'), 'var(--color-github-green)');
@@ -69,15 +69,15 @@ test('GitHub follows Primer action roles and Cloudflare keeps its Kumo-inspired 
 	assert.equal(githubRoles.get('--info'), 'var(--color-github-blue)');
 
 	const cloudflare = readFileSync(path.join(packageRoot, 'dist/compiled/themes/cloudflare.css'), 'utf8');
-	const cloudflareColors = declarationsForSelector(cloudflare, ":where(:root), :root[data-rui-theme='cloudflare']");
-	const cloudflareRoles = declarationsForSelector(cloudflare, ":where(:root), :root[data-rui-theme='cloudflare']");
-	assert.equal(cloudflareColors.get('--color-cloudflare-canvas'), 'oklch(98.75% 0 0)');
-	assert.equal(cloudflareColors.get('--color-cloudflare-blue'), 'oklch(47% 0.19 257)');
-	assert.equal(cloudflareColors.get('--color-cloudflare-amber'), '#f6821f');
-	assert.equal(cloudflareRoles.get('--primary'), 'var(--color-cloudflare-blue)');
-	assert.equal(cloudflareRoles.get('--secondary'), 'var(--color-cloudflare-recessed)');
-	assert.equal(cloudflareRoles.get('--success'), 'var(--color-cloudflare-green)');
-	assert.equal(cloudflareRoles.get('--warning'), 'var(--color-cloudflare-amber-text)');
+	const cloudflareRoot = declarationsForSelector(cloudflare, ":where(:root), :root[data-rui-theme='cloudflare']");
+	const cloudflareDark = declarationsForSelector(cloudflare, ":where(.dark), :root.dark[data-rui-theme='cloudflare']");
+	assert.equal(cloudflareRoot.get('--color-cloudflare-orange-bright'), '#f6821f');
+	assert.equal(cloudflareDark.get('--color-cloudflare-orange'), '#f6821f');
+	assert.equal(cloudflareRoot.get('--primary'), 'var(--color-cloudflare-orange)');
+	assert.equal(cloudflareRoot.get('--link'), 'var(--color-cloudflare-blue)');
+	assert.equal(cloudflareRoot.get('--secondary'), 'var(--color-cloudflare-recessed)');
+	assert.equal(cloudflareRoot.get('--success'), 'var(--color-cloudflare-green)');
+	assert.equal(cloudflareRoot.get('--warning'), 'var(--color-cloudflare-amber-text)');
 });
 
 test('Radiant UI exposes one complete theme entry', () => {

@@ -3,7 +3,7 @@
 :root, :root[data-rui-theme='material'] {
 	--font-sans: Roboto, 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
 	--font-heading: Roboto, 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Roboto Mono', ui-monospace, monospace;
+	--font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--rui-border-alpha: 100%;
 	--border-radius-xs: 0.25rem;
 	--border-radius-sm: 0.5rem;

@@ -45,21 +45,28 @@ High Contrast targets at least 7:1 contrast for published semantic text pairs in
 indicators. Radiant UI's shared foundation supports reduced motion, increased contrast, visible keyboard focus, and
 Windows forced colors. Verify non-text boundaries and application content after custom overrides.
 
-Windows 95 uses raised inactive property tabs, a selected tab joined to a recessed page, blue title bars, and navy
-selection states. Mac OS Classic follows Platinum-era folder tabs and compact beveled controls, with striped window
-headers and a circular close control on dismissible inline alerts. macOS uses moderate control corners, grouped tab
-segments, and softer layered surfaces. Material Design uses tonal surfaces, a purple accent family, and rounded action
+Windows 95 draws every control with the two-tone 2px bevel: gray push buttons with a black frame on the default
+action, sunken white fields, check boxes, and radio wells, raised property tabs joined to their page, navy title bars,
+and navy selection. Mac OS Classic follows Platinum: gradient push buttons with black outlines and the thick ring
+around the default button, bevelled check boxes and radios with black marks, striped title bars, and folder tabs. Both
+dark modes keep the same bevel structure on darker faces and fields, since neither system shipped one. macOS uses
+moderate control corners, grouped tab segments, softer layered surfaces, and accent-blue push buttons with white text
+in dark mode. Material Design uses tonal surfaces, a purple accent family, and rounded action
 controls. These are original implementations written with Radiant semantic roles, Tailwind `@apply`, and catalog
 selectors; they do not copy third-party CSS.
 
-The Cloudflare theme uses restrained neutral layers and blue actions inspired by Cloudflare Kumo. Cloudflare orange is
-an accent rather than a small text color, preserving readable contrast. GitHub maps Primer's functional roles: green
-marks the primary action, blue is for links, focus, and selection, and neutral surfaces are used for secondary actions.
+The Cloudflare theme leads with Cloudflare orange on restrained neutral layers inspired by Cloudflare Kumo. Dark mode
+uses the brand orange `#f6821f` with dark text; light mode uses a deeper orange so primary text and fills keep AA
+contrast on white. Links and focus stay blue, and warnings use a yellow amber that stays distinct from the primary.
+GitHub maps Primer's functional roles: green marks the primary action, blue is for links and focus, the selected tab
+uses Primer's coral underline, and neutral surfaces are used for secondary actions.
 
 The Vercel theme uses Background 2 for the light canvas and Background 1 for primary surfaces. Its component colors
 drive hover and active fills, Colors 4–6 drive default, hover, and active borders, and blue stays focused on links and
-keyboard focus. Control boundaries are strengthened for visibility. VS Code maps editor surfaces and accent states. These palettes adapt product cues to Radiant UI roles without
-reproducing the products pixel for pixel.
+keyboard focus. Control boundaries are strengthened for visibility. VS Code maps editor surfaces and accent states,
+with Dark Modern's `#0078d4` button fill. In dark mode, the product themes fill primary and destructive buttons with
+the product's own saturated color and white text, while `--primary` and `--error` stay the lighter tones used for
+text. These palettes adapt product cues to Radiant UI roles without reproducing the products pixel for pixel.
 
 ## Design references
 

@@ -11,8 +11,11 @@
 	--color-cloudflare-muted-fg: oklch(47% 0 0);
 	--color-cloudflare-blue: oklch(47% 0.19 257);
 	--color-cloudflare-blue-bright: oklch(55% 0.2 257);
-	--color-cloudflare-amber: #f6821f;
-	--color-cloudflare-amber-text: #974700;
+	--color-cloudflare-orange: #b84a00;
+	--color-cloudflare-orange-bright: #f6821f;
+	--color-cloudflare-orange-deep: #973c00;
+	--color-cloudflare-amber: #f5b400;
+	--color-cloudflare-amber-text: #7a5200;
 	--color-cloudflare-green: #1a7f37;
 	--color-cloudflare-red: #cf222e;
 	--color-cloudflare-purple: #8250df;
@@ -31,8 +34,11 @@
 	--color-cloudflare-muted-fg: oklch(72% 0 0);
 	--color-cloudflare-blue: oklch(72% 0.15 255);
 	--color-cloudflare-blue-bright: oklch(80% 0.13 255);
-	--color-cloudflare-amber: #ff9c45;
-	--color-cloudflare-amber-text: #ffb36d;
+	--color-cloudflare-orange: #f6821f;
+	--color-cloudflare-orange-bright: #fbad41;
+	--color-cloudflare-orange-deep: #e06d10;
+	--color-cloudflare-amber: #f5c04a;
+	--color-cloudflare-amber-text: #f5c04a;
 	--color-cloudflare-green: #3fb950;
 	--color-cloudflare-red: #ff7b72;
 	--color-cloudflare-purple: #b392f0;

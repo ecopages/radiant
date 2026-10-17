@@ -1,7 +1,7 @@
 :where(:root), :root[data-rui-theme='vercel'] {
 	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
 	--font-heading: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'Geist Mono', ui-monospace, monospace;
+	--font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--rui-border-alpha: 100%;
 	--border-radius-xs: 0.125rem;
 	--border-radius-sm: 0.25rem;
@@ -15,6 +15,23 @@
 }
 
 @layer components {
+	/**
+	 * @remarks Geist fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
+	 * red used for error text on dark surfaces.
+	 */
+	:root.dark .rui-button--destructive {
+		background-color: #d93036;
+		color: #ffffff;
+	}
+
+	:root.dark .rui-button--destructive:hover:not(:disabled) {
+		background-color: #c9302c;
+	}
+
+	:root.dark .rui-button--destructive:active:not(:disabled) {
+		background-color: #b62324;
+	}
+
 	:root .rui-button {
 		@apply rounded-control border border-transparent font-medium shadow-none;
 	}
@@ -70,8 +87,7 @@
 	}
 
 	:root .rui-checkbox__control,
-	:root .rui-radio__control,
-	:root .rui-switch__track {
+	:root .rui-radio__control {
 		@apply border-border bg-surface;
 		border-color: var(--rui-control-border-color);
 	}
@@ -118,7 +134,10 @@
 		@apply bg-surface-container-low text-on-surface font-medium;
 	}
 
-	:root .rui-alert,
+	:root .rui-alert {
+		@apply rounded-control shadow-none;
+	}
+
 	:root .rui-toast__content {
 		@apply rounded-control border border-border bg-surface text-on-surface shadow-none;
 	}
