@@ -473,6 +473,56 @@ test('shared focus styles yield to a theme component focus treatment', async () 
 	}
 });
 
+test('composite controls draw one frame in every theme', async () => {
+	const componentCss = await readFile(path.join(uiRoot, 'dist/styles/styles.css'), 'utf8');
+	const browser = await chromium.launch({ headless: true });
+	try {
+		const page = await browser.newPage();
+		for (const theme of ['rui-default', ...optionalThemes]) {
+			await page.setContent(
+				`<style>${componentCss}\n${await readThemeCss(theme)}</style>
+				<input class="rui-input" id="plain">
+				<rui-date-input id="host"><div class="rui-date-input"><div class="rui-date-input__segments"><span class="rui-date-input__segment" id="segment">08</span></div></div></rui-date-input>
+				<div class="rui-combobox__control"><input class="rui-combobox__input" id="combobox"></div>
+				<div class="rui-number-field__group"><input class="rui-number-field__input" id="number"></div>
+				<div class="rui-input-group"><input class="rui-input" id="group-input"></div>`,
+			);
+			await page.evaluate((theme) => (document.documentElement.dataset.ruiTheme = theme), theme);
+			const frames = await page.evaluate(() => {
+				const style = (id) => getComputedStyle(document.getElementById(id));
+				const framed = (id) => ({
+					border: style(id).borderTopWidth,
+					background: style(id).backgroundColor,
+					shadow: style(id).boxShadow,
+				});
+				return {
+					segment: framed('segment'),
+					combobox: framed('combobox'),
+					number: framed('number'),
+					groupInput: framed('group-input'),
+					hostBorder: style('host').borderTopColor,
+					hostWidth: style('host').borderTopWidth,
+					plainBorder: style('plain').borderTopColor,
+				};
+			});
+			for (const part of ['segment', 'combobox', 'number', 'groupInput']) {
+				assert.equal(frames[part].border, '0px', `${theme} ${part} has no frame of its own`);
+				assert.equal(frames[part].background, 'rgba(0, 0, 0, 0)', `${theme} ${part} has no fill of its own`);
+				const visibleShadow = frames[part].shadow
+					.replaceAll('rgba(0, 0, 0, 0) 0px 0px 0px 0px', '')
+					.replaceAll('none', '')
+					.replaceAll(',', '')
+					.trim();
+				assert.equal(visibleShadow, '', `${theme} ${part} has no shadow of its own (${frames[part].shadow})`);
+			}
+			assert.notEqual(frames.hostWidth, '0px', `${theme} standalone date input has a frame`);
+			assert.equal(frames.hostBorder, frames.plainBorder, `${theme} date input matches the plain input border`);
+		}
+	} finally {
+		await browser.close();
+	}
+});
+
 test('component states keep their border color over theme control styling', async () => {
 	const componentCss = await readFile(path.join(uiRoot, 'dist/styles/styles.css'), 'utf8');
 	const browser = await chromium.launch({ headless: true });
