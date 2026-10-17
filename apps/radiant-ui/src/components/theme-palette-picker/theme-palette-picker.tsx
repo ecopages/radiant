@@ -25,7 +25,10 @@ export const ThemePalettePicker = eco.component<{}, JsxRenderable>({
 				data-theme-picker
 			>
 				<RuiSelectControl class="theme-picker__control">
-					<RuiSelectTrigger class="theme-picker__trigger" title="Choose a color theme">
+					<RuiSelectTrigger
+						class="theme-picker__trigger rui-button rui-button--ghost rui-button--sm"
+						title="Choose a color theme"
+					>
 						<svg
 							viewBox="0 0 24 24"
 							width="20"

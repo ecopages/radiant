@@ -5,44 +5,41 @@ radiant-theme-palette-picker {
 .theme-picker {
 	position: relative;
 	display: block;
-	width: var(--size-control-sm);
+	width: fit-content;
 }
 
 .theme-picker .rui-select {
-	width: 100%;
+	width: auto;
 }
 
 .theme-picker .theme-picker__control {
 	box-sizing: border-box;
-	width: var(--size-control-sm);
-	height: var(--size-control-sm);
-	min-height: var(--size-control-sm);
-	justify-content: center;
+	width: fit-content;
+	min-height: 0;
+	gap: 0;
 	padding: 0;
-	border-color: transparent;
-	border-radius: var(--radius-button);
+	border: 0;
 	background: transparent;
 }
 
+.theme-picker .theme-picker__control:focus-within {
+	box-shadow: none;
+}
+
 .theme-picker .theme-picker__trigger {
-	width: 100%;
-	min-height: 100%;
+	flex: none;
+	width: auto;
+	min-height: var(--size-control-sm);
 	justify-content: center;
-	padding: 0;
+	padding-block: 0;
+	border: 1px solid transparent;
+	border-radius: var(--radius-button);
+	color: var(--on-surface);
+	font-size: var(--text-xs);
 }
 
 .theme-picker .theme-picker__value {
 	flex: none;
-}
-
-.theme-picker .theme-picker__trigger:focus-visible {
-	outline: none;
-}
-
-@media (hover: hover) {
-	.theme-picker .theme-picker__control:hover {
-		background: var(--surface-container-low);
-	}
 }
 
 .theme-picker__menu {
