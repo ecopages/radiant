@@ -41,8 +41,22 @@ export function createElementFromFragment(fragment: string, tag: ParsedHtmlTag, 
 	const attributes = Object.fromEntries(
 		Object.entries(tag.attributes).map(([name, value]) => [name, decodeHtmlAttribute(normalizeNewlines(value))]),
 	);
-	element.setSerializedFragment(openTag, attributes, tag.innerHtml);
+	element.setSerializedFragment(openTag, attributes, tag.innerHtml, !hasNestedSelfClosingTag(tag.innerHtml));
 	return element as unknown as Node;
+}
+
+const SELF_CLOSING_OPEN_TAG_PATTERN = /<([a-z][^\s/>]*)(?:\s[^>]*)?\/>/gi;
+
+/**
+ * @remarks A self-closing tag is only an empty element when it is void or foreign. Browsers parse
+ * `<x-card/>` as an open tag, so verbatim source that contains one would re-parse into a different tree.
+ */
+function hasNestedSelfClosingTag(innerHtml: string): boolean {
+	for (const match of innerHtml.matchAll(SELF_CLOSING_OPEN_TAG_PATTERN)) {
+		if (!voidElementNames.has((match[1] ?? '').toLowerCase())) return true;
+	}
+
+	return false;
 }
 
 /**
@@ -158,12 +172,37 @@ export function parseHtmlToNodes(
 	return nodes;
 }
 
+const AMBIGUOUS_SOURCE_END_PATTERN = /&[#a-z0-9]*$/i;
+const faithfulSources = new WeakMap<MinimalTextNode, boolean>();
+
 /**
- * @remarks A text node from parsed HTML is emitted from its source.
+ * @remarks Source text is only emitted when it spells the node's current value on its own: it decodes back to
+ * the value (it may have moved out of a raw text parent), holds no `<` that could open markup, and does not
+ * end in a partial character reference that a following text node could complete.
+ */
+function hasFaithfulSource(node: MinimalTextNode): boolean {
+	const source = node.sourceHtml;
+	if (source === undefined) return false;
+
+	let faithful = faithfulSources.get(node);
+	if (faithful === undefined) {
+		faithful =
+			!source.includes('<') &&
+			!AMBIGUOUS_SOURCE_END_PATTERN.test(source) &&
+			decodeHtmlText(normalizeNewlines(source)) === node.textContent;
+		faithfulSources.set(node, faithful);
+	}
+
+	return faithful;
+}
+
+/**
+ * @remarks A text node from parsed HTML is emitted from its source when that is faithful, so entities the
+ * decoder does not need to rewrite keep their spelling.
  */
 function serializeTextNode(node: Node): string {
-	if (node instanceof MinimalTextNode && node.sourceHtml !== undefined) {
-		return node.sourceHtml;
+	if (node instanceof MinimalTextNode && hasFaithfulSource(node)) {
+		return node.sourceHtml as string;
 	}
 
 	const text = node.textContent ?? '';
@@ -187,9 +226,8 @@ export function serializeNodeHtml(node: Node): string {
 		return `<!--${node.textContent ?? ''}-->`;
 	}
 
-	return 'outerHTML' in node && typeof node.outerHTML === 'string'
-		? node.outerHTML
-		: escapeHtmlText(node.textContent ?? '');
+	const outerHtml = 'outerHTML' in node ? node.outerHTML : undefined;
+	return typeof outerHtml === 'string' ? outerHtml : escapeHtmlText(node.textContent ?? '');
 }
 
 registerMinimalDomHtmlParsers({

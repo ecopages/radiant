@@ -718,12 +718,19 @@ export class MinimalElement extends MinimalNode {
 	 * Backs a parsed element with its source HTML, building child nodes only when they are read.
 	 *
 	 * @param attributes Entity-decoded attribute values.
+	 * @param keepInnerSource Whether `innerHtml` is also serialized verbatim. Pass `false` when it is not a
+	 * faithful spelling of the parsed children, so they are serialized from the nodes instead.
 	 */
-	setSerializedFragment(openTagHtml: string, attributes: Record<string, string>, innerHtml = ''): void {
+	setSerializedFragment(
+		openTagHtml: string,
+		attributes: Record<string, string>,
+		innerHtml = '',
+		keepInnerSource = true,
+	): void {
 		this.replaceChildren();
 		this.#attributeStore = new Map(Object.entries(attributes));
 		this.openTagHtml = openTagHtml;
-		this.innerHtmlSource = innerHtml;
+		this.innerHtmlSource = keepInnerSource ? innerHtml : undefined;
 		this.pendingChildHtml = innerHtml;
 	}
 }

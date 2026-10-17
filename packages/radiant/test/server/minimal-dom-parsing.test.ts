@@ -74,4 +74,56 @@ describe('minimal DOM parsing follows the HTML spec', () => {
 		item.insertAdjacentHTML('beforeend', ']');
 		expect(el.innerHTML).toBe('<ul><li>a</li><li>[b]</li><li>c</li></ul>');
 	});
+
+	test('serializing a mutated deep tree takes linear time', () => {
+		const depth = 200;
+		const el = parse(`${'<div>'.repeat(depth)}x${'</div>'.repeat(depth)}`);
+		let leaf: MinimalHTMLElement = el;
+		while (leaf.children.length > 0) leaf = leaf.children[0] as unknown as MinimalHTMLElement;
+		leaf.setAttribute('data-leaf', '');
+
+		const start = performance.now();
+		expect(el.innerHTML).toContain('<div data-leaf>x</div>');
+		expect(performance.now() - start).toBeLessThan(500);
+	});
+
+	test('a self-closing custom element nested in parsed markup serializes as an open tag with its siblings after it', () => {
+		const el = parse('<section><x-card/><p>after</p></section>');
+		const section = child(el);
+
+		expect(section.children).toHaveLength(2);
+		expect(section.outerHTML).toBe('<section><x-card></x-card><p>after</p></section>');
+	});
+
+	test('kept text source never merges with appended text into markup or entities', () => {
+		const lessThan = child(parse('<p>Price <</p>'));
+		lessThan.append('img src=x onerror=alert(1) x=');
+		expect(lessThan.outerHTML).not.toContain('<img');
+
+		const ampersand = child(parse('<p>Terms &</p>'));
+		ampersand.append('not a word');
+		expect(ampersand.outerHTML).toBe('<p>Terms &amp;not a word</p>');
+	});
+
+	test('parsed text keeps its spelling only while it still means the same thing', () => {
+		expect(child(parse('<p>a &amp; b &nbsp;</p>')).outerHTML).toBe('<p>a &amp; b &nbsp;</p>');
+
+		const el = parse('<script>var a = "&amp;";</script><div></div>');
+		const script = child(el, 0);
+		const div = child(el, 1);
+		div.append(script.childNodes[0] as unknown as Node);
+		expect(div.outerHTML).toBe('<div>var a = "&amp;amp;";</div>');
+	});
+
+	test('a newline written as a character reference after a pre start tag is dropped from the source too', () => {
+		const pre = child(parse('<pre>&#10;x</pre>'));
+		expect(pre.textContent).toBe('x');
+		expect(pre.innerHTML).toBe('x');
+	});
+
+	test('markup set through innerHTML on a title or textarea is not written back as markup', () => {
+		const title = child(parse('<title></title>'));
+		title.textContent = '</title><img src=x onerror=alert(1)>';
+		expect(title.outerHTML).not.toContain('<img');
+	});
 });
