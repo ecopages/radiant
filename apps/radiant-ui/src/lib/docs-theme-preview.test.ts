@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { docsThemeStylesheets } from './docs-theme-stylesheets';
 import {
 	DOCS_APPEARANCE_STORAGE_KEY,
+	DOCS_APPEARANCE_VERSION,
 	applyDefaultThemeTuning,
 	applyDocumentTokens,
 	clearDefaultThemeTuning,
@@ -140,18 +141,18 @@ describe('docs-theme-preview', () => {
 	it('falls back to the default theme and restores tuning when an optional stylesheet fails', () => {
 		installDocsThemeStylesheets(docsThemeStylesheets);
 		const tuning = { ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 310 };
-		localStorage.setItem(DOCS_APPEARANCE_STORAGE_KEY, JSON.stringify({ colors: 'rui-default', tuning }));
+		localStorage.setItem(
+			DOCS_APPEARANCE_STORAGE_KEY,
+			JSON.stringify({ v: DOCS_APPEARANCE_VERSION, colors: 'rui-default', tuning: { primaryHue: 310 } }),
+		);
+		document.documentElement.dataset.ruiTheme = 'rui-default';
 		applyDefaultThemeTuning(document.documentElement, tuning);
 		applyDocumentTokens({ colors: 'material' });
 		appendedThemeLinks[0].dispatchEvent(new Event('error'));
 
 		expect(activeThemeLinks.size).toBe(0);
 		expect(document.documentElement.dataset.ruiTheme).toBe('rui-default');
-		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 310)');
-		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toMatchObject({
-			colors: 'rui-default',
-			tuning,
-		});
+		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
 	});
 
 	it('loads the selected theme stylesheet when tokens are applied', () => {
@@ -241,7 +242,7 @@ describe('docs-theme-preview', () => {
 	it('falls back to Radiant Default when the boot stylesheet fails', () => {
 		localStorage.setItem(
 			DOCS_APPEARANCE_STORAGE_KEY,
-			JSON.stringify({ colors: 'material', tuning: { ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 310 } }),
+			JSON.stringify({ v: DOCS_APPEARANCE_VERSION, colors: 'material', tuning: { primaryHue: 310 } }),
 		);
 		runBootScript();
 		appendedThemeLinks[0].dispatchEvent(new Event('error'));
@@ -266,10 +267,7 @@ describe('docs-theme-preview', () => {
 		localStorage.setItem('theme', 'light');
 		localStorage.setItem(
 			DOCS_APPEARANCE_STORAGE_KEY,
-			JSON.stringify({
-				colors: 'github',
-				tuning: { ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 285, density: 1.1 },
-			}),
+			JSON.stringify({ v: DOCS_APPEARANCE_VERSION, colors: 'github', tuning: { primaryHue: 285, density: 1.1 } }),
 		);
 		history.replaceState(
 			history.state,
@@ -335,9 +333,54 @@ describe('docs-theme-preview', () => {
 		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 310)');
 		expect(document.documentElement.style.getPropertyValue('--rui-border-alpha')).toBe('80%');
 		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toEqual({
+			v: DOCS_APPEARANCE_VERSION,
 			colors: 'github',
-			tuning: DOCS_DEFAULT_THEME_TUNING,
+			tuning: {},
 		});
+	});
+
+	it('persists only the tuning values a visitor changed', () => {
+		writeDocsDefaultThemeTuning({ ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 300 });
+		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toEqual({
+			v: DOCS_APPEARANCE_VERSION,
+			colors: 'rui-default',
+			tuning: { primaryHue: 300 },
+		});
+
+		writeDocsDefaultThemeTuning(DOCS_DEFAULT_THEME_TUNING);
+		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '').tuning).toEqual({});
+	});
+
+	it('ignores tuning saved before only changed values were persisted', () => {
+		localStorage.setItem(
+			DOCS_APPEARANCE_STORAGE_KEY,
+			JSON.stringify({ colors: 'rui-default', tuning: { ...DOCS_DEFAULT_THEME_TUNING, borderAlpha: 48 } }),
+		);
+
+		expect(readDocsDefaultThemeTuning().borderAlpha).toBe(DOCS_DEFAULT_THEME_TUNING.borderAlpha);
+		runBootScript();
+		expect(document.documentElement.style.getPropertyValue('--rui-border-alpha')).toBe(
+			`${DOCS_DEFAULT_THEME_TUNING.borderAlpha}%`,
+		);
+	});
+
+	it('resets Radiant Default tuning when another theme is chosen', () => {
+		installDocsThemeStylesheets(docsThemeStylesheets);
+		document.documentElement.dataset.ruiTheme = 'rui-default';
+		writeDocsDefaultThemeTuning({ ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 300, borderAlpha: 60 });
+		expect(new URLSearchParams(window.location.search).get('rui-primary-hue')).toBe('300');
+
+		applyDocumentTokens({ colors: 'github' });
+		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toEqual({
+			v: DOCS_APPEARANCE_VERSION,
+			colors: 'github',
+			tuning: {},
+		});
+		expect(new URLSearchParams(window.location.search).has('rui-primary-hue')).toBe(false);
+
+		applyDocumentTokens({ colors: 'rui-default' });
+		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
+		expect(readDocsDefaultThemeTuning()).toEqual(DOCS_DEFAULT_THEME_TUNING);
 	});
 
 	it('waits to append a shared theme until after parsed stylesheets, then reveals the page after load', () => {

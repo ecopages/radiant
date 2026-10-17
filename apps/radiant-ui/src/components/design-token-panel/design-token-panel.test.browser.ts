@@ -2,7 +2,7 @@ import '@ecopages/radiant/server/install-ssr-runtime';
 import { renderToString } from '@ecopages/jsx/server';
 import { withRadiantServerCustomElementRenderBridge } from '@ecopages/radiant/server/radiant-element-ssr';
 import { afterEach, describe, expect, it } from 'vitest';
-import { DOCS_APPEARANCE_STORAGE_KEY, DOCS_DEFAULT_THEME_TUNING, DOCS_THEME_QUERY_KEY } from '@/lib/docs-theme-preview';
+import { DOCS_APPEARANCE_STORAGE_KEY, DOCS_APPEARANCE_VERSION, DOCS_THEME_QUERY_KEY } from '@/lib/docs-theme-preview';
 import { DesignTokenPanel } from './design-token-panel';
 import type { DesignTokenPanelElement } from './design-token-panel.script';
 
@@ -28,8 +28,9 @@ describe('DesignTokenPanelElement', () => {
 
 	it('applies shared URL overrides without saving them as personal preferences on connect', async () => {
 		const savedAppearance = {
+			v: DOCS_APPEARANCE_VERSION,
 			colors: 'github',
-			tuning: { ...DOCS_DEFAULT_THEME_TUNING, primaryHue: 285 },
+			tuning: { primaryHue: 285 },
 		};
 		localStorage.setItem(DOCS_APPEARANCE_STORAGE_KEY, JSON.stringify(savedAppearance));
 		history.replaceState(

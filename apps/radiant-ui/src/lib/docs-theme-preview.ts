@@ -1,4 +1,11 @@
 export const DOCS_APPEARANCE_STORAGE_KEY = 'radiant-ui-docs:appearance';
+
+/**
+ * @remarks Records store only the tuning values a visitor changed, so a changed default reaches everyone who has not
+ * customized it. Records without this version were written when every value, defaults included, was persisted, and
+ * their tuning is ignored.
+ */
+export const DOCS_APPEARANCE_VERSION = 2;
 /** Legacy theme-only key; read during migration and removed after a write. */
 export const DOCS_THEME_STORAGE_KEY = 'radiant-ui-docs:theme';
 export const DOCS_THEME_QUERY_KEY = 'rui-theme';
@@ -83,7 +90,10 @@ function readStoredAppearance(): DocsAppearance {
 			const record = JSON.parse(stored) as Record<string, unknown>;
 			return {
 				colors: parseDocsThemeSelection(record).colors,
-				tuning: parseDocsDefaultThemeTuning(record.tuning),
+				tuning:
+					record.v === DOCS_APPEARANCE_VERSION
+						? parseDocsDefaultThemeTuning(record.tuning)
+						: DOCS_DEFAULT_THEME_TUNING,
 			};
 		}
 		return {
@@ -97,7 +107,15 @@ function readStoredAppearance(): DocsAppearance {
 
 function writeStoredAppearance(appearance: DocsAppearance): void {
 	try {
-		localStorage.setItem(DOCS_APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
+		const overrides = Object.fromEntries(
+			Object.entries(appearance.tuning).filter(
+				([key, value]) => value !== DOCS_DEFAULT_THEME_TUNING[key as keyof DocsDefaultThemeTuning],
+			),
+		);
+		localStorage.setItem(
+			DOCS_APPEARANCE_STORAGE_KEY,
+			JSON.stringify({ v: DOCS_APPEARANCE_VERSION, colors: appearance.colors, tuning: overrides }),
+		);
 		localStorage.removeItem(DOCS_THEME_STORAGE_KEY);
 	} catch {}
 }
@@ -293,21 +311,26 @@ function syncThemeStylesheetForSelection(selection: DocsThemeSelection, styleshe
 	syncThemeStylesheet(href, selection.colors);
 }
 
+/**
+ * @remarks With persistence on, which is how a visitor's choice reaches this function, picking a different theme resets
+ * Radiant Default's tuning, so returning to it starts from the defaults and shared tuning parameters leave the URL.
+ */
 export function applyDocumentTokens(selection: DocsThemeSelection, options: { persist?: boolean } = {}): void {
 	if (typeof document === 'undefined' || !document.documentElement) return;
 	const root = document.documentElement;
-	root.dataset.ruiTheme = selection.colors;
-	if (selection.colors === 'rui-default') applyDefaultThemeTuning(root, readDocsDefaultThemeTuning());
-	else clearDefaultThemeTuning(root);
 	if (options.persist !== false) {
+		const themeChanged = readDocsThemeSelection().colors !== selection.colors;
 		const appearance = {
 			...readStoredAppearance(),
 			colors: selection.colors,
-			tuning: readDocsDefaultThemeTuning(),
+			tuning: themeChanged ? DOCS_DEFAULT_THEME_TUNING : readDocsDefaultThemeTuning(),
 		};
 		writeStoredAppearance(appearance);
 		writeAppearanceUrl(appearance);
 	}
+	root.dataset.ruiTheme = selection.colors;
+	if (selection.colors === 'rui-default') applyDefaultThemeTuning(root, readDocsDefaultThemeTuning());
+	else clearDefaultThemeTuning(root);
 
 	const stylesheets = readInstalledThemeStylesheets();
 	if (stylesheets) {
@@ -347,7 +370,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		const stylesheets = ${stylesheetsLiteral};
 		const defaults = ${tuningLiteral};
 		const tuningSchema = ${tuningSchemaLiteral};
-		const storedTuning = appearance.tuning || {};
+		const storedTuning = appearance.v === ${DOCS_APPEARANCE_VERSION} ? appearance.tuning || {} : {};
 		const tuning = { ...storedTuning };
 		const clamp = (value, min, max, fallback) => Number.isFinite(Number(value)) ? Math.min(max, Math.max(min, Number(value))) : fallback;
 	for (const [key, queryKey] of Object.entries(${JSON.stringify(TUNING_QUERY_KEYS)})) {
@@ -370,9 +393,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		else clearDefaultTuning();
 		globalThis[${JSON.stringify(DOCS_THEME_STYLESHEETS_GLOBAL)}] = stylesheets;
 	if (!read(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)})) {
-		const migratedTuning = {};
-		for (const [key, setting] of Object.entries(tuningSchema)) migratedTuning[key] = clamp(storedTuning[key], setting.min, setting.max, defaults[key]);
-		try { localStorage.setItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}, JSON.stringify({ colors: savedTheme || 'rui-default', tuning: migratedTuning })); } catch {}
+		try { localStorage.setItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}, JSON.stringify({ v: ${DOCS_APPEARANCE_VERSION}, colors: savedTheme || 'rui-default', tuning: {} })); } catch {}
 	}
 		const attr = ${JSON.stringify(DOCS_THEME_STYLESHEET_ATTR)};
 		const href = colors === 'rui-default' ? null : stylesheets.themes[colors];

@@ -70,9 +70,7 @@ describe('DefaultThemeTunerElement', () => {
 		tuner.querySelector<HTMLButtonElement>('button[data-reset-default-tuning]')?.click();
 		await vi.advanceTimersByTimeAsync(0);
 		expect(document.documentElement.style.getPropertyValue('--rui-primary')).toBe('oklch(52% 0.19 264)');
-		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '')).toMatchObject({
-			tuning: DOCS_DEFAULT_THEME_TUNING,
-		});
+		expect(JSON.parse(localStorage.getItem(DOCS_APPEARANCE_STORAGE_KEY) ?? '').tuning).toEqual({});
 		expect(primaryThumb.getAttribute('aria-valuenow')).toBe('264');
 		expect(tuner.querySelector('output[data-default-tuning-value="primaryHue"]')?.textContent).toBe('264°');
 		expect(tuner.querySelector('rui-slider[data-default-tuning="borderAlpha"]')?.getAttribute('value')).toBe('20');
