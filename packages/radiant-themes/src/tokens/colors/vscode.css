@@ -1,0 +1,31 @@
+:where(:root), :root[data-rui-theme='vscode'] {
+	--color-vscode-canvas: #ffffff;
+	--color-vscode-subtle: #f8f8f8;
+	--color-vscode-muted: #ececec;
+	--color-vscode-border: #cecece;
+	--color-vscode-border-strong: #808080;
+	--color-vscode-fg: #3b3b3b;
+	--color-vscode-muted-fg: #616161;
+	--color-vscode-blue: #006bb3;
+	--color-vscode-blue-light: #3794ff;
+	--color-vscode-green: #16825d;
+	--color-vscode-red: #d32f2f;
+	--color-vscode-orange: #a15c00;
+	--color-vscode-purple: #af00db;
+}
+
+:where(.dark), :root.dark[data-rui-theme='vscode'] {
+	--color-vscode-canvas: #1f1f1f;
+	--color-vscode-subtle: #181818;
+	--color-vscode-muted: #2b2b2b;
+	--color-vscode-border: #393939;
+	--color-vscode-border-strong: #6e6e6e;
+	--color-vscode-fg: #cccccc;
+	--color-vscode-muted-fg: #9d9d9d;
+	--color-vscode-blue: #0078d4;
+	--color-vscode-blue-light: #4daafc;
+	--color-vscode-green: #4ec9b0;
+	--color-vscode-red: #f14c4c;
+	--color-vscode-orange: #cca700;
+	--color-vscode-purple: #c586c0;
+}

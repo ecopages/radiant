@@ -54,10 +54,9 @@ function buildComponentStyleExports(name: string): Record<string, { default: str
 
 function buildStaticStyleExports(): Record<string, { default: string }> {
 	const tokenPaths = [
-		'tokens/colors/aurora.css',
-		'tokens/colors/glacier.css',
-		'tokens/colors/basalt.css',
-		'tokens/colors/palettes.css',
+		'tokens/colors/rui-default.css',
+		'tokens/foundation.css',
+		'tokens/semantic.css',
 		'tokens/spacing/compact.css',
 		'tokens/spacing/default.css',
 		'tokens/spacing/wide.css',
@@ -71,11 +70,7 @@ function buildStaticStyleExports(): Record<string, { default: string }> {
 		'tokens/motion/default.css',
 		'tokens/motion/snappy.css',
 		'tokens/system.css',
-		'tokens/semantic.css',
 		'themes/default.css',
-		'themes/glacier.css',
-		'themes/aurora.css',
-		'themes/default-compact-soft.css',
 		'styles.css',
 		'primitives.css',
 		'radiant-ui.css',

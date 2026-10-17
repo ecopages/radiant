@@ -16,7 +16,7 @@
 		@apply cursor-not-allowed opacity-disabled;
 	}
 
-	.rui-input-group:has(.rui-input[aria-invalid='true']) {
+	:root .rui-input-group:has(.rui-input[aria-invalid='true']) {
 		@apply border-error;
 	}
 

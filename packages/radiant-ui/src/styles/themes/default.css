@@ -1,2 +1,44 @@
-/** Default theme alias — glacier (docs brand). */
-@import './glacier.css';
+/** Radiant UI's single default: derived Radiant Default colors, comfortable density, soft radius. */
+@import '../tokens/foundation.css';
+@import '../tokens/spacing/default.css';
+@import '../tokens/radius/default.css';
+@import '../tokens/colors/rui-default.css';
+@import '../tokens/presets/colors/rui-default.css';
+
+:where(:root) {
+	--font-sans:
+		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+		sans-serif;
+	--font-heading: var(--font-sans);
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+	--rui-border-alpha: 20%;
+	color-scheme: light;
+}
+
+:where(.dark) {
+	color-scheme: dark;
+}
+
+/**
+ * @remarks The `:root` guard keeps this at (0,2,0), like the optional themes, so component state rules
+ * such as `aria-invalid` and `:checked` (prefixed with `:root`) still win.
+ */
+@layer components {
+	:root:where(:not([data-rui-theme]), [data-rui-theme='rui-default']) :is(
+		.rui-input,
+		.rui-textarea,
+		.rui-autocomplete__input,
+		.rui-combobox__control,
+		.rui-date-field__group,
+		.rui-date-range-picker__group,
+		.rui-input-group,
+		.rui-number-field__group,
+		.rui-select__control,
+		.rui-select__search,
+		.rui-checkbox__control,
+		.rui-radio__control,
+		.rui-switch__track
+	) {
+		border-color: var(--rui-control-border-color);
+	}
+}

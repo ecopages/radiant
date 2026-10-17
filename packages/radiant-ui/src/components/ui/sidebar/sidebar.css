@@ -33,7 +33,7 @@ rui-sidebar {
 	@apply flex h-svh min-h-0 flex-col overflow-clip;
 
 	.rui-sidebar-provider__site-header {
-		@apply sticky top-0 z-50 w-full shrink-0 border-b border-border bg-surface-container-low;
+		@apply sticky top-0 z-50 w-full shrink-0 border-b border-border bg-surface;
 	}
 
 	.rui-sidebar-provider__site-header-inner {

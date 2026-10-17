@@ -459,6 +459,7 @@ export class RuiDateInput extends FormAssociatedElement {
 				aria-valuenow={dom.ariaValuenow}
 				aria-valuetext={dom.ariaValuetext}
 				aria-readonly={dom.ariaReadonly}
+				data-rui-focus-managed={dom.dataRuiFocusManaged}
 				contenteditable={dom.contenteditable}
 				suppresscontenteditablewarning={dom.suppresscontenteditablewarning}
 				spellcheck="false"

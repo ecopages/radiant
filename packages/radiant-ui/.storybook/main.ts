@@ -14,7 +14,7 @@ const config: StorybookConfig = {
 	framework: {
 		name: '@ecopages/storybook-radiant-vite',
 		options: {
-			globalStyleModules: ['/src/styles/tailwind.css', '/.storybook/docs-typography.css'],
+			globalStyleModules: ['/src/styles/tailwind.css'],
 		},
 	},
 	async viteFinal(config) {

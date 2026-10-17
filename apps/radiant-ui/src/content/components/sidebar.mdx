@@ -98,6 +98,7 @@ Sidebar surfaces map to **semantic surface roles**, never Tailwind palette steps
 
 | Part | CSS roles |
 | --- | --- |
+| Site header (`RuiSidebarProvider` docs layout) | `surface`, `border` |
 | Pane (`rui-sidebar`) | `background` |
 | Header / content / footer | `border` between sections |
 | Menu buttons | `on-background` text |
@@ -105,7 +106,7 @@ Sidebar surfaces map to **semantic surface roles**, never Tailwind palette steps
 | Resize handle | `border` + `on-surface` grip, `primary` on hover |
 | Inset | `background` |
 
-Rounded corners use `rounded-container`; the collapsible pane in `docs` layout sits on `surface-container-low`. Overrides go at the theme layer, not in component CSS.
+Rounded corners use `rounded-container`; the docs site header uses `surface`, matching the main site header, and the collapsible pane sits on `background`. Overrides go at the theme layer, not in component CSS.
 
 ## Accessibility
 

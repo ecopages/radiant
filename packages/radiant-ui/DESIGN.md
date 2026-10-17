@@ -13,26 +13,26 @@ Component CSS must **not** `@import` a theme file.
 
 ### Tier 1 — composable packs (`src/styles/tokens/`)
 
-| Directory               | Purpose                                                                  |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `colors/<name>.css`     | Raw scales on `:root` only (always emitted; no `@theme` utilities)       |
-| `spacing/<name>.css`    | `--space-*` scale + spacing roles                                        |
-| `radius/<name>.css`     | Radius scale + `--radius-control`, `--radius-container`, `--radius-pill` |
-| `elevation/<name>.css`  | `--shadow-control`, `--shadow-overlay`, `--shadow-modal`                 |
-| `typography/<name>.css` | Font family, text sizes, weights, leading roles                          |
-| `motion/<name>.css`     | `--duration-*`, `--ease-*`                                               |
+| Directory                | Purpose                                                                  |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `colors/rui-default.css` | Radiant UI's seed-derived Radiant Default color scales                   |
+| `spacing/<name>.css`     | `--space-*` scale + spacing roles                                        |
+| `radius/<name>.css`      | Radius scale + `--radius-control`, `--radius-container`, `--radius-pill` |
+| `elevation/<name>.css`   | `--shadow-control`, `--shadow-overlay`, `--shadow-modal`                 |
+| `typography/<name>.css`  | Font family, text sizes, weights, leading roles                          |
+| `motion/<name>.css`      | `--duration-*`, `--ease-*`                                               |
 
-Named hue scales ship steps **50–975** (12 stops). `--color-black` and `--color-white` live in `system.css` (absolute anchors, not a hue pack). The semantic gray utility scale stays **50–950** (Tailwind-shaped); presets remap it onto a pack neutral.
+The default Radiant Default neutral, primary, and secondary scales ship steps **50–975** and derive from three OKLCH seed variables (`--rui-neutral`, `--rui-primary`, and `--rui-secondary`). `--rui-secondary` defaults to primary's hue plus 40 degrees, an analogous offset that stays clear of the status hues. Error, warning, and success scales use fixed red, amber, and green seeds, so status colors stay recognizable when the seeds change; the info role follows the primary seed. `--color-black` and `--color-white` live in `system.css` (absolute anchors, not a hue pack). The semantic gray utility scale stays **50–950** (Tailwind-shaped); the default theme maps it to Radiant Default neutrals. Optional palettes and their semantic role maps are owned by `@ecopages/radiant-themes`.
 
 Components must **never** reference palette steps (e.g. `--color-havelock-blue-800`) directly.
 
 **Color packs vs `@theme`:** Put palette scales on `:root`, not `@theme`. Tailwind v4 tree-shakes unused `@theme` vars; brand presets only reference palettes via nested `var(--color-*)`, which does not keep them alive. Spacing already follows this split (`:root` values + `@theme` bridge).
 
-**Exports:** Token/theme sources in `dist/` stay authoring CSS for Tailwind apps (semantic `@theme` remains tree-shakable). Compiled entries (`radiant-ui.css`, `styles.css`) bake in `:root` palettes for drop-in consumers.
+**Exports:** Radiant UI exposes one complete theme, `themes/default`, plus foundational tokens. Token/theme sources in `dist/` stay authoring CSS for Tailwind apps (semantic `@theme` remains tree-shakable). The compiled `radiant-ui.css` includes the Radiant Default theme; `styles.css` contains component styles only and assumes a theme import.
 
 ### Tier 2 — semantic (`tokens/semantic.css`)
 
-- Brand presets assign plain roles (`--primary`, …) on `html[data-rui-colors]` / `.dark`.
+- Theme role maps assign plain roles (`--primary`, …) on `:root` / `.dark`.
 - `@theme` block maps those roles to tree-shakable Tailwind color utilities (`bg-primary`, `text-on-surface`, …).
 - There is no separate `semantic.dark.css`.
 
@@ -54,28 +54,25 @@ Filled status surfaces (alerts) use `*-container` backgrounds. Lightweight notif
 
 ### Tier 3 — system (`tokens/system.css`)
 
-Shared structural tokens: absolute colours (`--color-black`, `--color-white`), border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes, and range-track fill (`--rui-track-mix`, `--rui-track-fill`). Imported by every theme; not a swappable mood pack in v1. `--size-control-sm/md/lg` alias `--space-8/10/12` (with rem fallbacks) so compact and wide change control height along with padding. `--size-icon-*` stay fixed. Set `--rui-track-color` on an ancestor to replace `--rui-track-fill` for slider and knob together.
+Shared structural tokens: absolute colours (`--color-black`, `--color-white`), border roles, border widths, focus ring geometry, opacity roles, z-index stack, control/icon sizes, and range-track fill (`--rui-track-mix`, `--rui-track-fill`). Imported by every theme; not a swappable mood pack in v1. `--size-control-sm/md/lg` alias `--space-8/10/12` (with rem fallbacks) so compact and wide change control height along with padding. `--size-icon-*` stay fixed. Set `--rui-track-color` on an ancestor to replace `--rui-track-fill` for slider and knob together. `accessibility.css` provides a base focus outline that component styles may customize, increases boundary and focus visibility for `prefers-contrast: more`, reduces motion when requested, and maps semantic roles and focus to system colors in forced-colors mode.
 
 ## Themes
 
-A theme is an import graph only, e.g. [`src/styles/themes/default.css`](src/styles/themes/default.css):
+A theme is an import graph, e.g. [`src/styles/themes/default.css`](src/styles/themes/default.css):
 
 ```css
-@import '../tokens/colors/palettes.css';
+@import '../tokens/foundation.css';
 @import '../tokens/spacing/default.css';
 @import '../tokens/radius/default.css';
-@import '../tokens/elevation/default.css';
-@import '../tokens/typography/default.css';
-@import '../tokens/motion/default.css';
-@import '../tokens/system.css';
-@import '../tokens/semantic.css';
+@import '../tokens/colors/rui-default.css';
+@import '../tokens/presets/colors/rui-default.css';
 ```
 
-**Naming:** Short names highlight swapped axes (`aurora-compact-soft`). Omitted axes use the **`default`** pack.
+Radiant UI ships only the `default` theme: Radiant Default colors, comfortable spacing, and soft-square controls. Optional complete themes and named compact variants live in `@ecopages/radiant-themes`. Each entry owns its typography, spacing, component shape, and component-specific treatment. The source theme layers compose behind the package's simple theme imports.
 
-**Storybook and docs preview:** colour, spacing, and radius come from the same pack stylesheets applications import. Storybook injects the selected spacing/radius pack into the preview document; the docs app does the same for its live preview. `data-rui-*` attributes are preview markers only (colour switching plus MutationObserver hooks). They are not an application API.
+**Storybook and docs preview:** the theme preview uses the same published stylesheets applications import. The docs header palette menu and Storybook expose Radiant Default, GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS Classic, and macOS. Docs preview injects the compiled full-theme entries at runtime; named compact variants remain separate package imports. `data-rui-*` attributes are preview markers only and are not an application API.
 
-**Brands (`data-rui-colors`):** `glacier` (docs), `aurora`, `basalt`, `ember`. **Spacing:** `default` · `compact` · `wide`. **Radius:** `default` · `soft` · **sharp** (square; `radius/sharp.css`).
+**Radiant Default tuning:** `--rui-primary`, `--rui-secondary`, and `--rui-neutral` generate the default theme's OKLCH scales. `--rui-density`, `--rui-radius-scale`, and `--rui-border-alpha` tune spacing, corner size, and semantic border strength. The docs tuner shows all six inputs. Controls use a separate solid border role that keeps their boundaries at or above 3:1 contrast in light and dark modes. These controls are for Radiant Default; each optional theme sets its own values.
 
 ## Component stylesheet rules
 
@@ -179,16 +176,18 @@ JS may write a public knob when a **prop** owns that value (`gap` on `rui-toaste
 3. For new **color** roles: add preset remaps + the `@theme` bridge in `semantic.css`.
 4. Document the role in this file if it is part of the public contract.
 
-## Adding a theme
+## Adding an optional theme
 
-1. Create `src/styles/themes/<name>.css` that imports one pack per family (non-default packs as needed) + `system.css` + `semantic.css`.
-2. Do not duplicate semantic or system logic in the theme file.
-3. Add a package export in `package.json`.
+1. Add the theme entry, token roles, and any component-specific styles under `packages/radiant-themes/src/`.
+2. Compose compact variants from the same theme-owned tokens and component styles.
+3. Add the theme and variant exports in `packages/radiant-themes/package.json` and verify the compiled package output.
+
+Radiant UI owns only `src/styles/themes/default.css`. Optional visual systems belong to `@ecopages/radiant-themes` so the core package keeps one crafted default while the companion package can grow independently.
 
 ## Storybook
 
 - Global styles: `src/styles/tailwind.css` → `radiant-ui.css` → `themes/default.css`.
-- Toggle dark mode by adding/removing `.dark` on a root element (future toolbar).
+- The Theme toolbar applies a complete optional theme, and the Mode toolbar toggles `.dark` on a root element.
 
 ## Related docs
 

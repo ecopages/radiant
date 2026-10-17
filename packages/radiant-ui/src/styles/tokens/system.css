@@ -14,7 +14,7 @@
 	--border-width-thin: 1px;
 	--border-width-thick: 2px;
 
-	--rui-track-mix: 22%;
+	--rui-track-mix: 45%;
 	--rui-track-fill: color-mix(in oklab, var(--on-background) var(--rui-track-mix), transparent);
 
 	--focus-ring-width: 2px;

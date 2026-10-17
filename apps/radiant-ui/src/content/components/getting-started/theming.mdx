@@ -1,14 +1,15 @@
 ---
 title: Theming
-description: Compose colour, spacing, and radius packs into a Radiant UI foundation.
+description: Start with Radiant UI's accessible default theme or add curated themes from Radiant Themes.
 group: Getting started
 ---
 
 import { DesignTokenPanel } from '@/components/design-token-panel/design-token-panel';
+import { DefaultThemeTuner } from '@/components/default-theme-tuner/default-theme-tuner';
 
 export const config = {
 	dependencies: {
-		components: [DesignTokenPanel],
+		components: [DesignTokenPanel, DefaultThemeTuner],
 		scripts: ['./theming.script.ts'],
 	},
 };
@@ -16,82 +17,120 @@ export const config = {
 # Theming
 
 <p class="docs-lede">
-	A Radiant UI theme is an import graph: colour, spacing, radius, elevation, typography, and motion packs plus
-	semantic roles. Choose the combination once in the application stylesheet. Components consume the resulting roles,
-	not a named palette.
+	Radiant UI ships one accessible, carefully tuned default. The optional Radiant Themes package adds complete visual
+	presets, each with its own palette, typography, spacing, shape, and component styling.
 </p>
 
 <DesignTokenPanel />
 
-## Start with the foundation
+## Start with Radiant Default
 
-Import the default foundation and the component stylesheet in the application entry stylesheet. The default theme is
-Glacier with the default spacing and radius packs.
+Import the default theme and the component stylesheet in the application entry stylesheet. The default uses a cool,
+soft neutral palette, comfortable spacing, soft-square checkboxes, and visible translucent borders.
 
 ```css
+@import 'tailwindcss';
 @import '@ecopages/radiant-ui/themes/default';
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-## Explore colour profiles
+## Install a complete theme
 
-The live preview includes Glacier, Basalt, Ember, and Aurora. Aurora is the vivid, expressive option; the other
-profiles are more restrained. Ember remaps Glacier neutrals to a warm accent; it is a preset, not a separate palette
-file.
-
-Important: this preview is documentation-only. Colour profiles switch with `data-rui-colors`. Spacing and radius
-inject the published pack stylesheets at runtime, the same files an application would `@import`. Those attributes
-are not a supported application API.
-
-## Layer spacing and shape
-
-Use `compact` where information density matters and `wide` where composition needs more air. Both packs scale
-`--size-control-*` with `--space-8`, `--space-10`, and `--space-12`, so buttons and inputs change height as well as
-padding. Choose `soft` for generous rounding or `sharp` for square containers. `edgy` is a stylesheet alias for the
-sharp radius pack.
+Install `@ecopages/radiant-themes` to use GitHub, Cloudflare, VS Code, Vercel, Material Design, High Contrast, Windows 95, Mac OS
+Classic, or macOS. Each theme owns its component shape, typography, spacing, colors, and any component-specific details.
 
 ```css
-@import '@ecopages/radiant-ui/tokens/spacing/compact';
-@import '@ecopages/radiant-ui/tokens/radius/soft';
-```
-
-## Compose the packs you need
-
-Layer a spacing or radius pack after the foundation when a product needs a distinct density or shape. Select only the
-packs the product needs rather than starting from a named full preset.
-
-```css
-@import '@ecopages/radiant-ui/themes/default';
-@import '@ecopages/radiant-ui/tokens/spacing/compact';
-@import '@ecopages/radiant-ui/tokens/radius/soft';
+@import 'tailwindcss';
+@import '@ecopages/radiant-themes/github';
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-## Build a custom colour theme
-
-Define semantic colour roles in a stylesheet loaded after the base token packs. Components consume these roles (`bg-primary`,
-`text-on-surface`, …), not palette steps such as `night-sky-500`.
-
-Override the roles your product needs. A complete list, with live swatches, is on the [Tokens](/docs/getting-started/tokens)
-page.
+Compact entries are named per optional theme, such as `github/compact` and `windows95/compact`. For Radiant Default,
+import `@ecopages/radiant-ui/tokens/spacing/compact` after `@ecopages/radiant-ui/themes/default`. Optional theme
+entries reuse that theme's layer composition internally and apply the compact spacing preset; shared density changes
+do not alter a branded theme's shape.
 
 ```css
+@import 'tailwindcss';
+@import '@ecopages/radiant-themes/material/compact';
+@import '@ecopages/radiant-ui/styles.css';
+```
+
+The theme picker beside the light/dark control previews every full theme across the index and component docs. Theme,
+mode, and Radiant Default tuner values are saved in the browser and can be shared with `rui-theme`, `rui-mode`, and
+`rui-*` tuning query parameters. URL parameters override saved values, so reloading a shared link keeps the same
+appearance. The six tuner parameters are `rui-primary-hue`, `rui-secondary-offset`, `rui-neutral-hue`, `rui-density`,
+`rui-radius`, and `rui-border-alpha`. Each theme import sets its own `--font-sans`, `--font-heading`, and `--font-mono`
+stacks. Radiant does not bundle font files;
+to use a custom licensed font, load it in your app and override those three variables:
+
+```css
+@font-face {
+	font-family: 'Product Sans';
+	src: url('/fonts/product-sans.woff2') format('woff2');
+	font-display: swap;
+}
+
 :root {
-  --primary: oklch(52% 0.19 264);
-  --on-primary: oklch(100% 0 0);
-  --primary-container: oklch(93% 0.04 264);
-  --on-primary-container: oklch(30% 0.11 264);
-
-  --background: oklch(98.2% 0.004 265);
-  --on-background: oklch(22% 0.008 265);
-  --surface: oklch(96% 0.006 265);
-  --on-surface: var(--on-background);
-  --border: oklch(74% 0.012 265);
-  --focus-ring: var(--primary);
+	--font-sans: 'Product Sans', system-ui, sans-serif;
+	--font-heading: var(--font-sans);
+	--font-mono: ui-monospace, monospace;
 }
 ```
 
-Dark mode remaps colour roles only. Spacing, radius, elevation, typography, and motion stay mode-independent unless a
-theme documents otherwise. Toggle dark mode in the docs header to preview the current profile's dark remaps.
+High Contrast targets AAA contrast for published semantic text pairs and strengthens focus indicators. The default
+also responds to reduced-motion, increased-contrast, and Windows forced-colors preferences. Check the whole interface
+after custom role overrides, especially non-text boundaries and content supplied by your application.
 
-See [Tokens](/docs/getting-started/tokens) for the spacing scale, radius scale, and every semantic colour role.
+## Tune Radiant Default
+
+The default derives matching OKLCH color scales from three seed colors. Secondary follows primary at a 40° analogous
+hue offset, which keeps it clear of the red, amber, and green status hues. Adjust the primary and neutral hues, the
+secondary offset, density, corner radius, and border opacity (8–100%) below. The page preview updates live, and the
+generated CSS copies the six small inputs needed to create a different palette and geometry.
+
+<DefaultThemeTuner />
+
+The seed colors preserve the scale's lightness and chroma pattern, so semantic roles move together instead of needing
+individual color overrides. The text and focus pairs keep their tested defaults; check contrast again when using the
+generated values in your own interface.
+
+## Make a custom theme
+
+Define semantic color roles in a stylesheet loaded after the base theme. Components consume semantic roles such as
+`--primary` and `--on-surface`, not raw palette steps.
+
+```css
+:root {
+	--primary: oklch(52% 0.19 264);
+	--on-primary: oklch(100% 0 0);
+	--primary-container: oklch(93% 0.04 264);
+	--on-primary-container: oklch(30% 0.11 264);
+
+	--background: oklch(98.2% 0.004 265);
+	--on-background: oklch(22% 0.008 265);
+	--surface: oklch(96% 0.006 265);
+	--on-surface: var(--on-background);
+	--border: oklch(74% 0.012 265 / 20%);
+	--focus-ring: var(--primary);
+}
+```
+
+Dark mode changes theme colors and semantic role mappings. Toggle light/dark mode in the docs header to inspect every
+theme in both schemes. See [Tokens](/docs/getting-started/tokens) for the semantic roles and scales.
+
+## Migrate from the previous theme imports
+
+Radiant UI now exports one complete theme at `@ecopages/radiant-ui/themes/default`; its neutral palette is named
+Radiant Default and its seed variables are `--rui-primary`, `--rui-secondary`, and `--rui-neutral`. The palette token
+entry is `@ecopages/radiant-ui/tokens/colors/rui-default`. If your app imported an earlier built-in palette, remove
+that import and load `@ecopages/radiant-ui/themes/default`; adjust the three seed variables to create your own palette,
+or install `@ecopages/radiant-themes` for a complete optional theme. For compact Radiant Default, import
+`@ecopages/radiant-ui/tokens/spacing/compact` after `@ecopages/radiant-ui/themes/default` or tune `--rui-density`. For
+a compact optional theme, import its theme-specific entry, such as `@ecopages/radiant-themes/github/compact`.
+
+| Removed export | Replacement |
+| --- | --- |
+| `@ecopages/radiant-ui/themes/glacier`, `@ecopages/radiant-ui/themes/aurora` | `@ecopages/radiant-ui/themes/default`, then tune the seed variables |
+| `@ecopages/radiant-ui/themes/default-compact-soft` | `@ecopages/radiant-ui/themes/default` followed by `@ecopages/radiant-ui/tokens/spacing/compact` |
+| `@ecopages/radiant-ui/tokens/colors/aurora`, `tokens/colors/glacier`, `tokens/colors/basalt`, `tokens/colors/palettes` | `@ecopages/radiant-ui/tokens/colors/rui-default`, or a complete theme from `@ecopages/radiant-themes` |

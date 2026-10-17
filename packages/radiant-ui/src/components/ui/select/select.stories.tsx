@@ -112,6 +112,21 @@ export const TriggerKindManual: Story = {
 	},
 };
 
+export const FocusAppearance: Story = {
+	play: async ({ canvasElement, step }) => {
+		if (isStaticSsrPreview(canvasElement) || !getTrigger(canvasElement)) return;
+
+		const trigger = getTrigger(canvasElement);
+
+		await step('shows one focus indicator around the select control', async () => {
+			await userEvent.tab();
+			await expect(trigger).toHaveFocus();
+			expect(getComputedStyle(trigger).outlineStyle).toBe('none');
+			expect(getComputedStyle(trigger.parentElement as HTMLElement).boxShadow).not.toBe('none');
+		});
+	},
+};
+
 export const Default: Story = {
 	play: async ({ canvasElement, step }) => {
 		if (isStaticSsrPreview(canvasElement) || !getTrigger(canvasElement)) return;

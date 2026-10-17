@@ -158,6 +158,9 @@ importers:
             '@ecopages/radiant':
                 specifier: workspace:*
                 version: link:../../packages/radiant/dist
+            '@ecopages/radiant-themes':
+                specifier: workspace:*
+                version: link:../../packages/radiant-themes
             '@ecopages/radiant-ui':
                 specifier: workspace:*
                 version: link:../../packages/radiant-ui
@@ -176,6 +179,9 @@ importers:
             happy-dom:
                 specifier: ^20.0.0
                 version: 20.13.2
+            playwright:
+                specifier: ^1.62.1
+                version: 1.62.1
             rehype-pretty-code:
                 specifier: ^0.14.1
                 version: 0.14.5(shiki@3.23.0)
@@ -312,6 +318,24 @@ importers:
                 version: 4.1.11(@types/node@24.13.3)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-istanbul@4.1.11)(@vitest/coverage-v8@4.1.11)(happy-dom@20.13.2)(msw@2.15.0(@types/node@24.13.3)(typescript@7.0.2))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
         publishDirectory: dist
 
+    packages/radiant-themes:
+        devDependencies:
+            '@ecopages/radiant-ui':
+                specifier: workspace:*
+                version: link:../radiant-ui
+            '@tailwindcss/postcss':
+                specifier: ^4.3.3
+                version: 4.3.3
+            playwright:
+                specifier: ^1.62.1
+                version: 1.62.1
+            postcss:
+                specifier: ^8.5.24
+                version: 8.5.28
+            tailwindcss:
+                specifier: ^4.3.0
+                version: 4.3.3
+
     packages/radiant-ui:
         devDependencies:
             '@babel/core':
@@ -335,6 +359,9 @@ importers:
             '@ecopages/radiant':
                 specifier: workspace:*
                 version: link:../radiant/dist
+            '@ecopages/radiant-themes':
+                specifier: workspace:*
+                version: link:../radiant-themes
             '@ecopages/signals':
                 specifier: workspace:*
                 version: link:../signals/dist

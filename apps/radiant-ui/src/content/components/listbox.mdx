@@ -131,7 +131,7 @@ Listbox surfaces map to **semantic surface and selection roles**, never Tailwind
 | Selected option | `primary`, `on-primary` |
 | Focus ring | `focus-ring` |
 
-Override at the theme layer (`tokens/presets/colors/*.css`). Embedded listboxes inherit the popup surface from the parent shell. Indicator layout uses `:has([data-listbox-option-indicator])`; there is no public CSS variable for the check glyph — replace it with helper children.
+Set the listed semantic custom properties in your app's theme stylesheet, such as `--primary` and `--on-primary` for selected options. Embedded listboxes inherit the popup surface from the parent shell. Indicator layout uses `:has([data-listbox-option-indicator])`; there is no public CSS variable for the check glyph — replace it with helper children.
 
 ## API
 

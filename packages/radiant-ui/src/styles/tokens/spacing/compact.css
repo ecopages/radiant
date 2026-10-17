@@ -4,16 +4,16 @@
  * Compact spacing pack.
  */
 :root {
-	--space-1: 0.125rem;
-	--space-2: 0.25rem;
-	--space-3: 0.5rem;
-	--space-4: 0.75rem;
-	--space-5: 1rem;
-	--space-6: 1.25rem;
-	--space-8: 1.5rem;
-	--space-10: 2rem;
-	--space-12: 2.5rem;
-	--space-16: 3rem;
+	--space-1: calc(0.125rem * var(--rui-density));
+	--space-2: calc(0.25rem * var(--rui-density));
+	--space-3: calc(0.5rem * var(--rui-density));
+	--space-4: calc(0.75rem * var(--rui-density));
+	--space-5: calc(1rem * var(--rui-density));
+	--space-6: calc(1.25rem * var(--rui-density));
+	--space-8: calc(1.5rem * var(--rui-density));
+	--space-10: calc(2rem * var(--rui-density));
+	--space-12: calc(2.5rem * var(--rui-density));
+	--space-16: calc(3rem * var(--rui-density));
 
 	--space-control-x: var(--space-3);
 	--space-control-y: var(--space-2);
