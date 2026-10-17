@@ -8,6 +8,7 @@ import {
 	type HydratedComplexSlotCard,
 	type HydratedCounter,
 	type HydratedCounterBinding,
+	type HydratedFragmentSlotParent,
 	type HydratedMarkerSlotParent,
 	type HydratedSlotCard,
 	type NonHydratedCounter,
@@ -91,6 +92,21 @@ describe('hydrating server-rendered markup', () => {
 
 		await waitFor(() => {
 			expect(element.querySelector('i')?.getAttribute('title')).toBe('after-1');
+			expect(element.querySelector('b')?.getAttribute('title')).toBe('inside-1');
+		});
+	});
+
+	test('hydrates reactive JSX children of a nested host under a fragment root', async () => {
+		installRadiantHydrator();
+		const element = mount<HydratedFragmentSlotParent>('fragment-slot-parent', 'hydrated-fragment-slot-parent-test');
+
+		await waitFor(() => expect(hasHydrationMarkers(element)).toBe(false));
+
+		element.leading = 'before-1';
+		element.inside = 'inside-1';
+
+		await waitFor(() => {
+			expect(element.querySelector('i')?.getAttribute('title')).toBe('before-1');
 			expect(element.querySelector('b')?.getAttribute('title')).toBe('inside-1');
 		});
 	});

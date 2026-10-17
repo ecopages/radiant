@@ -9,6 +9,7 @@ import {
 	HydratedComplexSlotCard,
 	HydratedCounter,
 	HydratedCounterBinding,
+	HydratedFragmentSlotParent,
 	HydratedMarkerSlotParent,
 	HydratedSlotCard,
 	NonHydratedCounter,
@@ -28,6 +29,8 @@ export const SSR_HYDRATION_CASES: Record<string, () => string> = {
 		return renderRadiantElementHostToString(element, { mode: 'hydrate' });
 	},
 	'marker-slot-parent': () => renderRadiantElementHostToString(new HydratedMarkerSlotParent(), { mode: 'hydrate' }),
+	'fragment-slot-parent': () =>
+		renderRadiantElementHostToString(new HydratedFragmentSlotParent(), { mode: 'hydrate' }),
 	'complex-slot-card': () => {
 		const element = new HydratedComplexSlotCard();
 		element.innerHTML =
