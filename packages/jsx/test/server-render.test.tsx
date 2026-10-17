@@ -987,6 +987,62 @@ describe('Radiant JSX server render', () => {
 		}
 	});
 
+	test('keeps custom-element light DOM out of the hydrate marker namespace', async () => {
+		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		class DemoSlotElement extends EventTarget {
+			children = '';
+
+			setAttribute(_name: string, _value: unknown) {}
+			removeAttribute(_name: string) {}
+
+			renderHostToString() {
+				return `<demo-slot>${this.children}</demo-slot>`;
+			}
+		}
+
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			forceServerCustomElementRenderSymbol
+		];
+
+		Object.defineProperty(globalThis, 'customElements', {
+			configurable: true,
+			value: {
+				get(name: string) {
+					return name === 'demo-slot' ? (DemoSlotElement as unknown as CustomElementConstructor) : undefined;
+				},
+			},
+		});
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
+
+		try {
+			const template = jsx('div', {
+				children: [jsx('demo-slot', { children: jsx('b', { title: 'inside' }) }), jsx('i', { title: 'after' })],
+			});
+
+			expect(renderToString(template, { mode: 'hydrate' })).toBe(
+				'<div><demo-slot><b title="inside"></b></demo-slot><i data-radiant-jsx-bind-0="attr:title" title="after"></i></div>',
+			);
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+			} else {
+				Reflect.deleteProperty(globalThis, 'customElements');
+			}
+
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					forceServerCustomElementRenderSymbol
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
+					previousForceServerCustomElementRender;
+			}
+		}
+	});
+
 	test('suppresses boolean true children inside SSR-capable intrinsic custom elements', async () => {
 		const [{ jsx }, { renderToString }] = await Promise.all([loadJsxRuntime(), loadServerRender()]);
 

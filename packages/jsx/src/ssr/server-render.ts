@@ -71,7 +71,7 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	const ssr: SsrRenderContext = {
 		hydrate,
 		customElementRenderHook: activeSsrContext?.customElementRenderHook,
-		renderChild: (child) => renderChild(child, context),
+		renderChild: renderCustomElementLightDom,
 		scopeValues: hydrationBindingScope.scopeValues,
 	};
 	const context: RenderContext = {
@@ -166,6 +166,24 @@ function renderChild(value: JsxRenderable, context: RenderContext): string {
 	return serializeRenderable(value, {
 		mode: context.ssr.hydrate ? 'hydrate' : 'plain',
 		hydrationBindingState: context.hydrationBindingState,
+		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
+	});
+}
+
+/**
+ * Serializes JSX children handed to a nested custom element as its light DOM.
+ *
+ * @remarks
+ * Always plain: client hydration skips custom-element subtrees
+ * (`countHydrationMarkers`), so markers here would take indexes from the
+ * enclosing render's namespace and shift every later sibling marker. They would
+ * also make the nested host mistake authored light DOM for its own SSR output.
+ * Nested hosts inside the children still render through the custom-element
+ * hook, which follows the active hydrate policy with a fresh namespace.
+ */
+function renderCustomElementLightDom(value: JsxRenderable): string {
+	return serializeRenderable(value, {
+		mode: 'plain',
 		renderCustomElementTemplate: (template) => renderIntrinsicCustomElementTemplate(template),
 	});
 }

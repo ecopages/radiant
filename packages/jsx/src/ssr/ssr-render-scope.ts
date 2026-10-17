@@ -8,7 +8,7 @@ import { createLazyNodeAsyncLocalStorage } from './lazy-async-local-storage.ts';
 export type SsrRenderContext = {
 	hydrate: boolean;
 	customElementRenderHook?: ServerCustomElementRenderHook;
-	/** Serializes nested custom-element light DOM with this render's active SSR policy. */
+	/** Serializes nested custom-element light DOM as plain markup, still server-rendering nested custom elements. */
 	renderChild?: (value: JsxRenderable) => string;
 	scopeValues?: Map<symbol, unknown>;
 };

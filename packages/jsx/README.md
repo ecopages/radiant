@@ -529,7 +529,7 @@ Iterable hydration assigns each child `bindingBaseIndex` by counting prior sibli
 
 Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
-Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook.
+Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children passed to a nested custom element are serialized as plain light DOM without markers, because parent hydration skips custom-element subtrees; custom elements inside those children still render through the hook.
 
 ### SSR-Capable Custom Elements
 
