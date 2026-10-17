@@ -4,7 +4,9 @@ import type { JsxRenderable, KeyedJsxValue } from '../types/index.ts';
 import { countHydratedRangeNodes } from './hydration-planning.ts';
 import { hydrateTemplateInstance, type HydrateTemplateInstanceOptions } from './hydration.ts';
 import { createBoundaryMarker } from './dom-operations.ts';
-import { disposeTemplateInstance } from './mounted-disposal.ts';
+import { shouldSkipHydrationSubtree } from '../hydration/hydration-subtree-policy.ts';
+import { hydrateMountedRangeContent } from './hydration-mounted-range.ts';
+import { disposeMountedRangeContent, disposeTemplateInstance } from './mounted-disposal.ts';
 import { createHydratedRangeRecord, mountedContentFromNodes } from './range-records.ts';
 import { materializeIterableChildren } from '../hydration/iterable-snapshot.ts';
 import { getKeyedChildren, unwrapKeyedValue } from './runtime-helpers.ts';
@@ -12,6 +14,7 @@ import type { DeferredPropertyBinding, MountedRangeContent, MountedRangeRecord, 
 
 type HydratedIterableChild = {
 	instance?: TemplateInstance;
+	mounted?: MountedRangeContent;
 	nodes: readonly Node[];
 };
 
@@ -64,7 +67,11 @@ export function hydrateIterableRoot(
 			return undefined;
 		}
 
-		if (isTemplateResultLike(childValue)) {
+		if (isTemplateResultLike(childValue) && shouldSkipHydrationSubtree(childValue.rootLocalName ?? '')) {
+			hydratedChildren.push(
+				reconcileCustomElementChild(childValue, slice, options.rootTarget ?? target, nextBindingIndex),
+			);
+		} else if (isTemplateResultLike(childValue)) {
 			const instance = hydrateTemplateInstance(childValue, target, deferredProperties, {
 				...options,
 				bindingBaseIndex: nextBindingIndex,
@@ -102,10 +109,51 @@ export function hydrateIterableRoot(
 	return adoptHydratedIterableRoot(hydratedChildren, target, keyedChildren);
 }
 
+/**
+ * Reconciles a custom-element template child the way a ranged child is reconciled, so both root shapes treat it
+ * alike.
+ *
+ * @remarks The element reconnects its own host, so the parent does not hydrate into it. Boundary markers give
+ * the range reconciliation the start and end it works between; they are removed once the range holds its final
+ * nodes.
+ */
+function reconcileCustomElementChild(
+	value: unknown,
+	existingNodes: readonly ChildNode[],
+	rootTarget: HTMLElement,
+	bindingBaseIndex: number,
+): HydratedIterableChild {
+	const startMarker = createBoundaryMarker();
+	const endMarker = createBoundaryMarker();
+	existingNodes[0]?.before(startMarker);
+	existingNodes[existingNodes.length - 1]?.after(endMarker);
+
+	const mounted = hydrateMountedRangeContent(
+		startMarker,
+		endMarker,
+		value,
+		existingNodes,
+		rootTarget,
+		bindingBaseIndex,
+	);
+
+	const nodes: ChildNode[] = [];
+	for (let node = startMarker.nextSibling; node && node !== endMarker; node = node.nextSibling) {
+		nodes.push(node);
+	}
+
+	startMarker.remove();
+	endMarker.remove();
+
+	return { mounted, nodes };
+}
+
 function disposeHydratedIterableChildren(children: readonly HydratedIterableChild[]): void {
 	for (const child of children) {
 		if (child.instance) {
 			disposeTemplateInstance(child.instance);
+		} else if (child.mounted) {
+			disposeMountedRangeContent(child.mounted);
 		}
 	}
 }
@@ -122,9 +170,9 @@ function adoptHydratedIterableRoot(
 
 	for (const [index, child] of children.entries()) {
 		const record = createHydratedRangeRecord(child.nodes, children[index + 1]?.nodes[0] ?? endMarker);
-		record.mounted = child.instance
-			? { instance: child.instance, kind: 'template' }
-			: mountedContentFromNodes(child.nodes);
+		record.mounted =
+			child.mounted ??
+			(child.instance ? { instance: child.instance, kind: 'template' } : mountedContentFromNodes(child.nodes));
 		records.push(record);
 	}
 

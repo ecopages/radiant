@@ -140,6 +140,7 @@
 	:root .rui-date-range-picker__group,
 	:root .rui-input-group,
 	:root .rui-number-field__group,
+	:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 	:root .rui-select__control {
 		@apply rounded-none;
 		border-color: transparent;
@@ -415,6 +416,7 @@
 		:root .rui-date-range-picker__group,
 		:root .rui-input-group,
 		:root .rui-number-field__group,
+		:root rui-date-input:where(:not([data-date-field-input], [data-range-start], [data-range-end])),
 		:root .rui-select__control,
 		:root .rui-checkbox__control,
 		:root .rui-radio__control,

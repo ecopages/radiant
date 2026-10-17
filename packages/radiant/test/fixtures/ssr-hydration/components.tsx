@@ -79,6 +79,23 @@ export class HydratedMarkerSlotParent extends RadiantElement<{ inside: string; t
 	}
 }
 
+@customElement('hydrated-fragment-slot-parent-test')
+export class HydratedFragmentSlotParent extends RadiantElement<{ inside: string; leading: string }> {
+	@state inside = 'inside-0';
+	@state leading = 'before-0';
+
+	override render() {
+		return (
+			<>
+				<i title={this.$.leading}>I</i>
+				<hydrated-marker-slot-child-test>
+					<b title={this.$.inside}>B</b>
+				</hydrated-marker-slot-child-test>
+			</>
+		);
+	}
+}
+
 @customElement('hydrated-complex-slot-card-test')
 export class HydratedComplexSlotCard extends RadiantElement {
 	count = 0;
