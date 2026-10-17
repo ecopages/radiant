@@ -529,7 +529,7 @@ Iterable hydration assigns each child `bindingBaseIndex` by counting prior sibli
 
 Attribute markers cover dynamic attributes and listeners. Subscribable child text such as `{boundCount}` does not use `data-radiant-jsx-bind-*`; template compilation places comment markers around the child range, and iterable hydration reconnects those ranges during `hydrateTemplateInstance(...)`. Children of `textarea`, `title`, `style`, and `script` cannot use comment anchors — Chromium treats those comments as literal text — so compilation uses a locator attribute that is stripped from the blueprint, and hydration reconnects those slots as text-content parts.
 
-Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook.
+Nested custom-element hosts fork a fresh binding namespace during SSR so each host hydrates independently. See `withServerHydrationBindingState(...)` and framework bridges such as Radiant's element SSR hook. JSX children passed to a nested custom element are serialized as plain light DOM without markers, because parent hydration skips custom-element subtrees; custom elements inside those children still render through the hook.
 
 ### SSR-Capable Custom Elements
 
@@ -556,6 +556,8 @@ type ServerRenderableCustomElement = {
 That means JSX itself does not distinguish between "Radiant custom element" and "standard custom element" as first-class renderer categories. Instead, it understands one generic SSR-capable shape plus one hook seam for frameworks that need richer host rendering.
 
 Use `withServerCustomElementRenderHook(...)` from `@ecopages/jsx/server` when a framework wants to intercept a registered custom-element instance and replace the default generic SSR path with framework-aware host rendering.
+
+The element's JSX children are applied as light DOM (`innerHTML`) before the hook runs. A framework that needs to choose _when_ they serialize, for example inside the host's context providers, registers the hook with `{ ownsChildren: true }`. A hook that then returns a render must call `context.applyChildren()` itself; `context.children` holds the raw JSX. Elements the hook does not claim still get their children applied.
 
 ## Authoring Patterns
 

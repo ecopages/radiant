@@ -90,28 +90,38 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
 /**
  * Installs the JSX custom-element render hook so nested CEs serialize through
  * {@link renderRadiantElementHostToString} (same path as `renderComponent`).
+ *
+ * @remarks The hook owns JSX children so a host applies them inside its own context providers: a consumer
+ * passed as a child of a provider host resolves that provider while it serializes.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
-	return withServerCustomElementRenderHook(({ instance }) => {
-		if (!isRadiantElementSsrHost(instance)) {
-			return undefined;
-		}
+	return withServerCustomElementRenderHook(
+		({ applyChildren, instance }) => {
+			if (!isRadiantElementSsrHost(instance)) {
+				return undefined;
+			}
 
-		return createMarkupNodeLike(serializeNestedCustomElementHost(instance));
-	}, render);
+			return createMarkupNodeLike(serializeNestedCustomElementHost(instance, applyChildren));
+		},
+		render,
+		{ ownsChildren: true },
+	);
 }
 
-function serializeNestedCustomElementHost(instance: RadiantElementServerRenderSsrCapable): string {
+function serializeNestedCustomElementHost(
+	instance: RadiantElementServerRenderSsrCapable,
+	applyChildren: () => void,
+): string {
 	const hydrate = isServerRenderHydrationActive();
 	const options: RenderToStringOptions = { hydrate, mode: hydrate ? 'hydrate' : 'plain' };
+	const render = () =>
+		withServerRadiantElementSsrRuntime(() => {
+			const service = createRadiantElementSsrService(instance);
+			service.applyLightDom(applyChildren);
+			return service.renderHostToString(options, service.getHostAttributes());
+		});
 
-	if (!hydrate) {
-		return renderRadiantElementHostToString(instance, options);
-	}
-
-	return withServerHydrationBindingState(createServerHydrationBindingState(), () =>
-		renderRadiantElementHostToString(instance, options),
-	);
+	return hydrate ? withServerHydrationBindingState(createServerHydrationBindingState(), render) : render();
 }
 
 export function getOrCreateRadiantElementSsrRuntime(): RadiantElementSsrRuntime {

@@ -253,6 +253,57 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('Stage: Pending');
 	});
 
+	test('renderRadiantElementHostToString() resolves context for consumers passed as JSX children of a provider host', () => {
+		const slottedSsrContext = createContext<{ owner: string }>(Symbol('slotted-radiant-provider-context'));
+
+		@customElement('slotted-ssr-consumer-card-test')
+		class SlottedSsrConsumerCard extends RadiantElement<{ owner: string }> {
+			@state owner = 'Awaiting provider';
+
+			@onContextUpdate({ context: slottedSsrContext })
+			protected syncOwner(currentContext: { owner: string }): void {
+				this.owner = currentContext.owner;
+			}
+
+			override render() {
+				return <p class="slotted-owner">{this.$.owner}</p>;
+			}
+		}
+
+		@customElement('slotted-ssr-provider-card-test')
+		class SlottedSsrProviderCard extends RadiantElement {
+			@provideContext({ context: slottedSsrContext, initialValue: { owner: 'Provider owner' } })
+			context!: ContextProvider<typeof slottedSsrContext>;
+
+			override render() {
+				return (
+					<section>
+						<slot />
+					</section>
+				);
+			}
+		}
+
+		@customElement('slotted-ssr-page-test')
+		class SlottedSsrPage extends RadiantElement {
+			override render() {
+				return (
+					<slotted-ssr-provider-card-test>
+						<slotted-ssr-consumer-card-test />
+					</slotted-ssr-provider-card-test>
+				);
+			}
+		}
+
+		expect(SlottedSsrConsumerCard).toBeDefined();
+		expect(SlottedSsrProviderCard).toBeDefined();
+
+		const html = renderRadiantElementHostToString(new SlottedSsrPage(), { mode: 'hydrate' });
+
+		expect(html).toMatch(/<p[^>]*class="slotted-owner"[^>]*>Provider owner<\/p>/);
+		expect(html).not.toContain('Awaiting provider');
+	});
+
 	test('renderComponentToString() applies array @prop values before the first server render', async () => {
 		const html = await renderComponentToString<SsrArrayPropCard>(SsrArrayPropCard, {
 			initialize: (component) => {
@@ -847,6 +898,62 @@ describe('RadiantElement SSR', () => {
 
 		await waitFor(() => {
 			expect(element.querySelector('button')?.textContent).toBe('Count 1');
+		});
+	});
+
+	test('hydrates parent bindings that follow a nested host with reactive JSX children', async () => {
+		@customElement('hydrated-marker-slot-child-test')
+		class HydratedMarkerSlotChild extends RadiantElement {
+			override render() {
+				return (
+					<div class="child">
+						<slot />
+					</div>
+				);
+			}
+		}
+
+		@customElement('hydrated-marker-slot-parent-test')
+		class HydratedMarkerSlotParent extends RadiantElement<{ inside: string; trailing: string }> {
+			@state inside = 'inside-0';
+			@state trailing = 'after-0';
+
+			override render() {
+				return (
+					<div>
+						<hydrated-marker-slot-child-test>
+							<b title={this.$.inside}>B</b>
+						</hydrated-marker-slot-child-test>
+						<i title={this.$.trailing}>I</i>
+					</div>
+				);
+			}
+		}
+
+		expect(HydratedMarkerSlotChild).toBeDefined();
+
+		const serverMarkup = renderRadiantElementHostToString(new HydratedMarkerSlotParent(), { mode: 'hydrate' });
+
+		expect(serverMarkup).toContain('<b title="inside-0">B</b>');
+		expect(serverMarkup).toContain('<i data-radiant-jsx-bind-0="attr:title" title="after-0">I</i>');
+
+		installRadiantHydrator();
+		document.body.innerHTML = serverMarkup;
+
+		const element = document.querySelector('hydrated-marker-slot-parent-test') as HydratedMarkerSlotParent;
+		const serverAfter = element.querySelector('i');
+
+		await waitFor(() => {
+			expect(element.innerHTML).not.toContain('data-radiant-jsx-bind-');
+		});
+		expect(element.querySelector('i')).toBe(serverAfter);
+
+		element.trailing = 'after-1';
+		element.inside = 'inside-1';
+
+		await waitFor(() => {
+			expect(element.querySelector('i')?.getAttribute('title')).toBe('after-1');
+			expect(element.querySelector('b')?.getAttribute('title')).toBe('inside-1');
 		});
 	});
 

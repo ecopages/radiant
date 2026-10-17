@@ -13,5 +13,6 @@ export { getActiveSsrScopeValue, withActiveSsrScopeValue } from './ssr/ssr-rende
 export {
 	type ServerCustomElementRenderHook,
 	type ServerCustomElementRenderHookContext,
+	type ServerCustomElementRenderHookOptions,
 	type ServerRenderableCustomElement,
 } from './types/index.ts';

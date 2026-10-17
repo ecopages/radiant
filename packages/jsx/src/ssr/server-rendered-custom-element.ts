@@ -75,11 +75,22 @@ function resolveServerRenderedCustomElementRender(
 ): JsxRenderable | undefined {
 	const instance = new constructor();
 	const ssr = getActiveSsrRenderContext();
+	let childrenApplied = false;
+	const applyChildren = () => {
+		if (childrenApplied) return;
+		childrenApplied = true;
+		applyServerCustomElementChildren(instance, children);
+	};
 
 	applyServerCustomElementAttributes(instance, attributes);
-	applyServerCustomElementChildren(instance, children);
+
+	if (!ssr?.customElementRenderHookOwnsChildren) {
+		applyChildren();
+	}
 
 	const hookRender = ssr?.customElementRenderHook?.({
+		applyChildren,
+		children,
 		constructor,
 		hydrate: ssr?.hydrate === true,
 		instance,
@@ -90,6 +101,8 @@ function resolveServerRenderedCustomElementRender(
 	if (hookRender) {
 		return hookRender;
 	}
+
+	applyChildren();
 
 	if (!isServerRenderableCustomElement(instance)) {
 		return undefined;
