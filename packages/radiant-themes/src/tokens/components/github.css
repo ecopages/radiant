@@ -1,6 +1,6 @@
 @reference 'tailwindcss';
 
-:root {
+:root, :root[data-rui-theme='github'] {
 	--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	--font-heading: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -26,6 +26,7 @@
 	:root .rui-textarea,
 	:root .rui-select__control {
 		@apply border-border bg-surface text-on-surface shadow-none;
+		border-color: var(--rui-control-border-color);
 	}
 
 	:root .rui-button--outline:hover:not(:disabled),
@@ -35,6 +36,7 @@
 
 	:root .rui-checkbox__control {
 		@apply rounded-xs border-border bg-surface;
+		border-color: var(--rui-control-border-color);
 	}
 
 	:root .rui-dialog__surface,

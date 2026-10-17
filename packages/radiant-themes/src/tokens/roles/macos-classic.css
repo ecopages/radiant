@@ -1,4 +1,4 @@
-:where(:root) {
+:where(:root), :root[data-rui-theme='macos-classic'] {
 	--gray-50: #ffffff;
 	--gray-100: #f2f2f2;
 	--gray-200: #d7d7d7;
@@ -49,7 +49,7 @@
 	--neutral: var(--macos-classic-muted);
 	--surface: var(--macos-classic-surface);
 	--on-surface: var(--macos-classic-text);
-	--surface-container-lowest: #ffffff;
+	--surface-container-lowest: var(--macos-classic-surface);
 	--on-surface-container-lowest: #000000;
 	--surface-container-low: #f2f2f2;
 	--on-surface-container-low: #000000;
@@ -62,6 +62,7 @@
 	--background: var(--macos-classic-canvas);
 	--on-background: var(--macos-classic-text);
 	--rui-border-color: var(--macos-classic-shadow);
+	--rui-control-border-color: var(--macos-classic-shadow);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--macos-classic-blue);
 	--on-focus-ring: #ffffff;
@@ -71,7 +72,7 @@
 	--on-background-code: #000000;
 }
 
-:where(.dark) {
+:where(.dark), :root.dark[data-rui-theme='macos-classic'] {
 	--gray-50: #ffffff;
 	--gray-100: #eeeeee;
 	--gray-200: #d0d0d0;
@@ -127,6 +128,7 @@
 	--background: var(--macos-classic-canvas);
 	--on-background: var(--macos-classic-text);
 	--rui-border-color: #888888;
+	--rui-control-border-color: #b0b0b0;
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: #ffff00;
 	--on-focus-ring: #000000;

@@ -1,4 +1,4 @@
-:where(:root) {
+:where(:root), :root[data-rui-theme='macos'] {
 	--macos-canvas: #f5f5f7;
 	--macos-surface: #ffffff;
 	--macos-subtle: #e9e9ed;
@@ -13,7 +13,7 @@
 	--macos-purple: #6e3bb5;
 }
 
-:where(.dark) {
+:where(.dark), :root.dark[data-rui-theme='macos'] {
 	--macos-canvas: #1c1c1e;
 	--macos-surface: #2c2c2e;
 	--macos-subtle: #3a3a3c;

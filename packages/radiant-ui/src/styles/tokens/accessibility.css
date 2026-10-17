@@ -10,6 +10,7 @@
 @media (prefers-contrast: more) {
 	html:root {
 		--rui-border-alpha: 100%;
+		--rui-control-border-color: var(--on-background);
 		--border: color-mix(in oklab, var(--rui-border-color) 45%, var(--on-background));
 		--opacity-disabled: 0.78;
 		--opacity-muted: 0.78;

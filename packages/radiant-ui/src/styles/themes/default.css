@@ -11,10 +11,41 @@
 		sans-serif;
 	--font-heading: var(--font-sans);
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-	--rui-border-alpha: 48%;
+	--rui-border-alpha: 40%;
 	color-scheme: light;
 }
 
 :where(.dark) {
 	color-scheme: dark;
+}
+
+@layer components {
+	:root:not([data-rui-theme]) :is(
+		.rui-input,
+		.rui-textarea,
+		.rui-autocomplete__input,
+		.rui-combobox__input,
+		.rui-date-input__segment,
+		.rui-number-field__input,
+		.rui-select__control,
+		.rui-select__search,
+		.rui-checkbox__control,
+		.rui-radio__control,
+		.rui-switch__track
+	),
+	:root[data-rui-theme='rui-default'] :is(
+		.rui-input,
+		.rui-textarea,
+		.rui-autocomplete__input,
+		.rui-combobox__input,
+		.rui-date-input__segment,
+		.rui-number-field__input,
+		.rui-select__control,
+		.rui-select__search,
+		.rui-checkbox__control,
+		.rui-radio__control,
+		.rui-switch__track
+	) {
+		border-color: var(--rui-control-border-color);
+	}
 }

@@ -46,8 +46,8 @@ test('GitHub and VS Code palettes apply dark colors and light gray ramps', () =>
 		['vscode', '#1f1f1f'],
 	]) {
 		const css = readFileSync(path.join(packageRoot, `dist/compiled/themes/${name}.css`), 'utf8');
-		const light = declarationsForSelector(css, ':where(:root)');
-		const dark = declarationsForSelector(css, ':where(.dark)');
+		const light = declarationsForSelector(css, `:where(:root), :root[data-rui-theme='${name}']`);
+		const dark = declarationsForSelector(css, `:where(.dark), :root.dark[data-rui-theme='${name}']`);
 		const canvas = `--color-${name}-canvas`;
 
 		assert.equal(light.get(canvas), '#ffffff');

@@ -45,9 +45,10 @@ Classic, or macOS. Each theme owns its component shape, typography, spacing, col
 @import '@ecopages/radiant-ui/styles.css';
 ```
 
-Compact entries are named per theme, such as `github/compact` and `windows95/compact`. They reuse the theme's layer
-composition internally and apply the compact spacing preset; no shared shape selector can accidentally change a
-branded theme.
+Compact entries are named per optional theme, such as `github/compact` and `windows95/compact`. For Radiant Default,
+import `@ecopages/radiant-ui/tokens/spacing/compact` after `@ecopages/radiant-ui/themes/default`. Optional theme
+entries reuse that theme's layer composition internally and apply the compact spacing preset; shared density changes
+do not alter a branded theme's shape.
 
 ```css
 @import 'tailwindcss';
@@ -105,7 +106,7 @@ Define semantic color roles in a stylesheet loaded after the base theme. Compone
 	--on-background: oklch(22% 0.008 265);
 	--surface: oklch(96% 0.006 265);
 	--on-surface: var(--on-background);
-	--border: oklch(74% 0.012 265 / 48%);
+	--border: oklch(74% 0.012 265 / 40%);
 	--focus-ring: var(--primary);
 }
 ```
@@ -119,5 +120,6 @@ Radiant UI now exports one complete theme at `@ecopages/radiant-ui/themes/defaul
 Radiant Default and its seed variables are `--rui-primary`, `--rui-secondary`, and `--rui-neutral`. The palette token
 entry is `@ecopages/radiant-ui/tokens/colors/rui-default`. If your app imported an earlier built-in palette, remove
 that import and load `@ecopages/radiant-ui/themes/default`; adjust the three seed variables to create your own palette,
-or install `@ecopages/radiant-themes` for a complete optional theme. For a compact variant, import the matching
-theme-specific entry, such as `@ecopages/radiant-themes/github/compact`.
+or install `@ecopages/radiant-themes` for a complete optional theme. For compact Radiant Default, import
+`@ecopages/radiant-ui/tokens/spacing/compact` after `@ecopages/radiant-ui/themes/default` or tune `--rui-density`. For
+a compact optional theme, import its theme-specific entry, such as `@ecopages/radiant-themes/github/compact`.

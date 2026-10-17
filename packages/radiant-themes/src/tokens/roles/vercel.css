@@ -1,4 +1,4 @@
-:where(:root) {
+:where(:root), :root[data-rui-theme='vercel'] {
 	--gray-50: var(--color-vercel-gray-50);
 	--gray-100: var(--color-vercel-gray-100);
 	--gray-200: var(--color-vercel-gray-200);
@@ -56,31 +56,34 @@
 	--on-warning-container: color-mix(in oklab, var(--color-vercel-amber), black 60%);
 
 	--neutral: var(--color-vercel-text-secondary);
-	--surface: var(--color-vercel-background-2);
+	--surface: var(--color-vercel-background-1);
 	--on-surface: var(--color-vercel-text-primary);
 	--surface-container-lowest: var(--color-vercel-background-1);
 	--on-surface-container-lowest: var(--color-vercel-text-primary);
-	--surface-container-low: var(--color-vercel-component-1);
+	--surface-container-low: var(--color-vercel-component-2);
 	--on-surface-container-low: var(--color-vercel-text-primary);
-	--surface-container: var(--color-vercel-component-2);
+	--surface-container: var(--color-vercel-component-1);
 	--on-surface-container: var(--color-vercel-text-primary);
 	--surface-container-high: var(--color-vercel-component-3);
 	--on-surface-container-high: var(--color-vercel-text-primary);
 	--surface-container-highest: var(--color-vercel-border-4);
 	--on-surface-container-highest: var(--color-vercel-text-primary);
-	--background: var(--color-vercel-background-1);
+	--background: var(--color-vercel-background-2);
 	--on-background: var(--color-vercel-text-primary);
-	--rui-border-color: var(--color-vercel-border-6);
+	--rui-border-color: var(--color-vercel-border-4);
+	--rui-control-border-color: #888888;
+	--rui-border-hover-color: var(--color-vercel-border-5);
+	--rui-border-active-color: var(--color-vercel-border-6);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-vercel-blue);
 	--on-focus-ring: white;
-	--link: var(--color-vercel-blue);
+	--link: color-mix(in srgb, var(--color-vercel-blue) 85%, black);
 	--overlay: oklch(0% 0 0 / 0.45);
-	--background-code: var(--color-vercel-background-2);
+	--background-code: var(--color-vercel-background-1);
 	--on-background-code: var(--color-vercel-text-primary);
 }
 
-:where(.dark) {
+:where(.dark), :root.dark[data-rui-theme='vercel'] {
 	--primary: var(--color-vercel-high-contrast-1);
 	--on-primary: var(--color-vercel-background-1);
 	--primary-light: var(--color-vercel-high-contrast-2);
@@ -125,7 +128,10 @@
 	--on-surface-container-highest: var(--color-vercel-text-primary);
 	--background: var(--color-vercel-background-1);
 	--on-background: var(--color-vercel-text-primary);
-	--rui-border-color: var(--color-vercel-border-6);
+	--rui-border-color: var(--color-vercel-border-4);
+	--rui-control-border-color: #888888;
+	--rui-border-hover-color: var(--color-vercel-border-5);
+	--rui-border-active-color: var(--color-vercel-border-6);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-vercel-blue);
 	--on-focus-ring: #00152e;

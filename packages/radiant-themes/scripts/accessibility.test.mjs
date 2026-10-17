@@ -9,6 +9,8 @@ import test from 'node:test';
 const packageRoot = path.resolve(import.meta.dirname, '..');
 const require = createRequire(import.meta.url);
 const uiRoot = path.resolve(packageRoot, '../radiant-ui');
+const inputCssPath = path.join(uiRoot, 'dist/components/ui/input/input.css');
+const tailwindCssPath = path.join(uiRoot, 'dist/styles/tailwind.css');
 const optionalThemes = [
 	'github',
 	'vscode',
@@ -19,6 +21,8 @@ const optionalThemes = [
 	'macos-classic',
 	'macos',
 ];
+const listboxCssPath = path.join(uiRoot, 'dist/components/ui/listbox/listbox.css');
+const tabsCssPath = path.join(uiRoot, 'dist/components/ui/tabs/tabs.css');
 const contrastPairs = [
 	['on-background', 'background'],
 	['on-surface', 'surface'],
@@ -103,12 +107,11 @@ async function measureContrast(page, css, mode, pairs) {
 }
 
 async function measureBorderContrast(page, css, mode) {
-	await page.setContent(`<style>${css}</style><div id="probe">Control</div>`);
+	const inputCss = await readFile(inputCssPath, 'utf8');
+	await page.setContent(`<style>${css}\n${inputCss}</style><input id="probe" class="rui-input" value="Control">`);
 	return page.evaluate((mode) => {
 		document.documentElement.classList.toggle('dark', mode === 'dark');
 		const probe = document.querySelector('#probe');
-		probe.style.color = 'var(--border)';
-		probe.style.backgroundColor = 'var(--background)';
 		const styles = getComputedStyle(probe);
 		const canvas = document.createElement('canvas');
 		canvas.width = 1;
@@ -129,7 +132,15 @@ async function measureBorderContrast(page, css, mode) {
 				.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
 		};
 		const background = luminance(styles.backgroundColor);
-		const border = luminance(styles.color, styles.backgroundColor);
+		context.fillStyle = styles.backgroundColor;
+		context.fillRect(0, 0, 1, 1);
+		context.fillStyle = styles.borderTopColor;
+		context.fillRect(0, 0, 1, 1);
+		const [red, green, blue] = Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3), (value) => value / 255);
+		const linear = (value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+		const border = [red, green, blue]
+			.map(linear)
+			.reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
 		return Number(((Math.max(background, border) + 0.05) / (Math.min(background, border) + 0.05)).toFixed(2));
 	}, mode);
 }
@@ -459,6 +470,94 @@ test('increased contrast strengthens semantic borders across all themes', async 
 					);
 				}
 			}
+		}
+	} finally {
+		await browser.close();
+	}
+});
+
+test('classic boxed tabs scroll horizontally without widening the page', async () => {
+	const browser = await chromium.launch({ headless: true });
+	try {
+		const page = await browser.newPage({ viewport: { width: 375, height: 760 } });
+		const tabsCss = await readFile(tabsCssPath, 'utf8');
+		const tailwindCss = await readFile(tailwindCssPath, 'utf8');
+		const markup = `
+			<main>
+				<rui-tabs variant="boxed">
+					<div class="rui-tabs__list" role="tablist">
+						${Array.from({ length: 8 }, (_, index) => `<button class="rui-tabs__tab" role="tab" aria-selected="${index === 0}">Window ${index + 1}</button>`).join('')}
+					</div>
+					<div class="rui-tabs__panel" role="tabpanel">Classic tab page.</div>
+				</rui-tabs>
+			</main>
+		`;
+		for (const theme of ['windows95', 'macos-classic']) {
+			const css = await readThemeCss(theme);
+			await page.setContent(`<style>${tailwindCss}\n${css}\n${tabsCss}</style>${markup}`);
+			const layout = await page.evaluate(() => {
+				const list = document.querySelector('.rui-tabs__list');
+				return {
+					listClientWidth: list.clientWidth,
+					listScrollWidth: list.scrollWidth,
+					overflowX: getComputedStyle(list).overflowX,
+					tabsClientWidth: list.closest('rui-tabs').clientWidth,
+					tabsScrollWidth: list.closest('rui-tabs').scrollWidth,
+					pageScrollWidth: document.documentElement.scrollWidth,
+				};
+			});
+			assert.equal(layout.overflowX, 'auto', `${theme} keeps the tab row horizontally scrollable`);
+			assert.ok(layout.listScrollWidth > layout.listClientWidth, `${theme} tab labels exceed the narrow viewport`);
+			assert.ok(layout.pageScrollWidth <= 375, `${theme} tab overflow stays inside the page: ${JSON.stringify(layout)}`);
+		}
+	} finally {
+		await browser.close();
+	}
+});
+
+test('Vercel keeps selected listbox contrast when its theme CSS loads last', async () => {
+	const browser = await chromium.launch({ headless: true });
+	try {
+		const page = await browser.newPage();
+		const tailwindCss = await readFile(tailwindCssPath, 'utf8');
+		const listboxCss = await readFile(listboxCssPath, 'utf8');
+		const css = await readThemeCss('vercel');
+		for (const mode of ['light', 'dark']) {
+			await page.setContent(`
+				<style>${tailwindCss}\n${listboxCss}\n${css}</style>
+				<div class="rui-listbox" role="listbox" aria-label="Vercel theme">
+					<div class="rui-listbox__option" role="option" aria-selected="true">Selected option</div>
+				</div>
+			`);
+			await page.evaluate((selectedMode) => {
+				document.documentElement.classList.toggle('dark', selectedMode === 'dark');
+			}, mode);
+			await page.locator('.rui-listbox__option').hover();
+			const contrast = await page.locator('.rui-listbox__option').evaluate((element) => {
+				const style = getComputedStyle(element);
+				const canvas = document.createElement('canvas');
+				canvas.width = 1;
+				canvas.height = 1;
+				const context = canvas.getContext('2d');
+				const luminance = (color) => {
+					context.fillStyle = color;
+					context.fillRect(0, 0, 1, 1);
+					const [red, green, blue] = Array.from(
+						context.getImageData(0, 0, 1, 1).data.slice(0, 3),
+						(value) => value / 255,
+					);
+					const linear = (value) =>
+						value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+					const [r, g, b] = [red, green, blue].map(linear);
+					return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+				};
+				const foreground = luminance(style.color);
+				const background = luminance(style.backgroundColor);
+				return Number(
+					((Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)).toFixed(2),
+				);
+			});
+			assert.ok(contrast >= 4.5, `Vercel ${mode} selected option hover has ${contrast}:1 contrast`);
 		}
 	} finally {
 		await browser.close();

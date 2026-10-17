@@ -348,7 +348,7 @@ export const DOCS_DEFAULT_TUNING_SCHEMA: Record<DocsDefaultThemeTuningKey, DocsD
 		max: 100,
 		step: 1,
 		unit: '%',
-		defaultValue: 48,
+		defaultValue: 40,
 		cssVariable: '--rui-border-alpha',
 		cssValueTemplate: '{{value}}%',
 	},

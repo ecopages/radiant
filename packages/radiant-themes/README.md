@@ -45,20 +45,23 @@ High Contrast targets at least 7:1 contrast for published semantic text pairs in
 indicators. Radiant UI's shared foundation supports reduced motion, increased contrast, visible keyboard focus, and
 Windows forced colors. Verify non-text boundaries and application content after custom overrides.
 
-Windows 95 uses raised and pressed controls, full-width dialog title bars, and desktop-era selection cues. Mac OS
-Classic uses compact Platinum-inspired bevels, striped title bars with readable light and dark text, and raised close
-controls; macOS uses calmer layered surfaces and rounded controls. Material Design uses tonal surfaces, a purple accent
-family, and rounded action controls. These are original implementations written with Radiant semantic roles, Tailwind
-`@apply`, and catalog selectors; they do not copy third-party CSS.
+Windows 95 uses raised inactive property tabs, a selected tab joined to a recessed page, blue title bars, and navy
+selection states. Mac OS Classic follows Platinum-era folder tabs and compact beveled controls, with striped window
+headers and a circular close control on dismissible inline alerts. macOS uses moderate control corners, grouped tab
+segments, and softer layered surfaces. Material Design uses tonal surfaces, a purple accent family, and rounded action
+controls. These are original implementations written with Radiant semantic roles, Tailwind `@apply`, and catalog
+selectors; they do not copy third-party CSS.
 
-The Vercel theme uses a monochrome surface hierarchy, a restrained blue accent, and a clear border role through the
-shared semantic tokens. The GitHub, VS Code, and Vercel palettes map product cues into Radiant UI roles without
-reproducing those products pixel for pixel.
+The Vercel theme uses Background 2 for the light canvas and Background 1 for primary surfaces. Its component colors
+drive hover and active fills, Colors 4–6 drive default, hover, and active borders, and blue stays focused on links and
+keyboard focus. Control boundaries are strengthened for visibility. GitHub maps Primer-style functional roles, while
+VS Code maps editor surfaces and accent states. These palettes adapt product cues to Radiant UI roles without
+reproducing the products pixel for pixel.
 
 ## Design references
 
 The themes draw on public guidance for role mapping and component behavior: [Material Design 3 color
-roles](https://m3.material.io/styles/color/the-color-system), [Primer's color token layers](https://primer.style/product/getting-started/foundations/color-usage/), [VS Code theme color roles](https://code.visualstudio.com/api/references/theme-color), [Apple's Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/), and [Microsoft's Windows interface guideline references](https://learn.microsoft.com/en-us/windows/win32/appuistart/other-resources). These sources informed the design decisions; all theme CSS is authored for Radiant's tokens and components.
+roles](https://m3.material.io/styles/color/the-color-system), [Primer's color token layers](https://primer.style/product/getting-started/foundations/color-usage/), [Vercel Geist colors](https://vercel.com/geist/colors), [VS Code theme color roles](https://code.visualstudio.com/api/references/theme-color), [Apple's Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/), [the Mac OS 8 Platinum guidelines](https://dev.os9.ca/techpubs/mac/pdf/HIGOS8Guidelines.pdf), and [Microsoft property sheet guidance](https://learn.microsoft.com/en-us/windows/win32/controls/property-sheets). These sources informed the design decisions; all theme CSS is authored for Radiant's tokens and components.
 
 ## Browser-ready CSS
 

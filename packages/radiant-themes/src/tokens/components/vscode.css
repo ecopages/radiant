@@ -1,6 +1,6 @@
 @reference 'tailwindcss';
 
-:root {
+:root, :root[data-rui-theme='vscode'] {
 	--font-sans: 'Segoe UI', system-ui, sans-serif;
 	--font-heading: 'Segoe UI', system-ui, sans-serif;
 	--font-mono: 'Cascadia Code', Consolas, monospace;

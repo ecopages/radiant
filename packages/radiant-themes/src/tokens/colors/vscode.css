@@ -1,4 +1,4 @@
-:where(:root) {
+:where(:root), :root[data-rui-theme='vscode'] {
 	--color-vscode-canvas: #ffffff;
 	--color-vscode-subtle: #f8f8f8;
 	--color-vscode-muted: #ececec;
@@ -14,7 +14,7 @@
 	--color-vscode-purple: #af00db;
 }
 
-:where(.dark) {
+:where(.dark), :root.dark[data-rui-theme='vscode'] {
 	--color-vscode-canvas: #1f1f1f;
 	--color-vscode-subtle: #181818;
 	--color-vscode-muted: #2b2b2b;

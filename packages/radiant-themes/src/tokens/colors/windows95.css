@@ -1,4 +1,4 @@
-:where(:root) {
+:where(:root), :root[data-rui-theme='windows95'] {
 	--windows95-canvas: #c0c0c0;
 	--windows95-face: #c0c0c0;
 	--windows95-light: #ffffff;
@@ -14,7 +14,7 @@
 	--windows95-amber: #634000;
 }
 
-:where(.dark) {
+:where(.dark), :root.dark[data-rui-theme='windows95'] {
 	--windows95-canvas: #303030;
 	--windows95-face: #3c3c3c;
 	--windows95-light: #ffffff;

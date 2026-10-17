@@ -1,4 +1,4 @@
-:where(:root) {
+:where(:root), :root[data-rui-theme='material'] {
 	--gray-50: oklch(98% 0.008 285);
 	--gray-100: oklch(95% 0.012 285);
 	--gray-200: oklch(89% 0.015 285);
@@ -68,6 +68,7 @@
 	--background: var(--material-canvas);
 	--on-background: var(--material-text);
 	--rui-border-color: var(--material-outline);
+	--rui-control-border-color: var(--material-outline);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: oklch(46% 0.17 293);
 	--on-focus-ring: white;
@@ -77,7 +78,7 @@
 	--on-background-code: var(--material-text);
 }
 
-:where(.dark) {
+:where(.dark), :root.dark[data-rui-theme='material'] {
 	--gray-50: oklch(95% 0.008 285);
 	--gray-100: oklch(90% 0.01 285);
 	--gray-200: oklch(82% 0.012 285);
@@ -133,6 +134,7 @@
 	--background: var(--material-canvas);
 	--on-background: var(--material-text);
 	--rui-border-color: var(--material-outline);
+	--rui-control-border-color: var(--material-outline);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--material-primary);
 	--on-focus-ring: oklch(24% 0.08 293);

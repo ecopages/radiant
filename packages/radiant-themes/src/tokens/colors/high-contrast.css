@@ -1,4 +1,4 @@
-:where(:root) {
+:where(:root), :root[data-rui-theme='high-contrast'] {
 	--contrast-canvas: #ffffff;
 	--contrast-surface: #ffffff;
 	--contrast-container: #f2f2f2;
@@ -19,7 +19,7 @@
 	--contrast-focus: #0000a8;
 }
 
-:where(.dark) {
+:where(.dark), :root.dark[data-rui-theme='high-contrast'] {
 	--contrast-canvas: #000000;
 	--contrast-surface: #000000;
 	--contrast-container: #1a1a1a;

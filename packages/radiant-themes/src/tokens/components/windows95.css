@@ -1,6 +1,6 @@
 @reference 'tailwindcss';
 
-:root {
+:root, :root[data-rui-theme='windows95'] {
 	--font-sans: Tahoma, 'MS Sans Serif', Arial, sans-serif;
 	--font-heading: Tahoma, 'MS Sans Serif', Arial, sans-serif;
 	--font-mono: 'Lucida Console', Consolas, monospace;
@@ -108,6 +108,17 @@
 		@apply rounded-none;
 	}
 
+	:root .rui-feed__article {
+		@apply rounded-none border-2 bg-surface-container-lowest text-on-surface shadow-none;
+		border-style: outset;
+		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
+	}
+
+	:root .rui-feed__article:hover {
+		background-color: var(--windows95-face);
+		box-shadow: none;
+	}
+
 	:root .rui-radio__control {
 		@apply rounded-full;
 	}
@@ -165,17 +176,44 @@
 		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
 	}
 
-	:root .rui-tabs[variant='boxed'],
-	:root .rui-tabs__panel,
+	:root rui-tabs[variant='boxed'] {
+		@apply overflow-visible rounded-none border-0 bg-transparent shadow-none;
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__list {
+		@apply min-w-0 max-w-full overflow-x-auto overflow-y-clip border-0 bg-transparent px-0 pt-0;
+		gap: 0;
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
+		@apply relative rounded-none border-2 bg-surface text-on-surface font-normal;
+		z-index: 0;
+		margin-bottom: -2px;
+		background-color: var(--windows95-face);
+		border-style: outset;
+		border-color: var(--windows95-light) var(--windows95-dark) var(--windows95-dark) var(--windows95-light);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {
+		@apply font-normal;
+		z-index: 1;
+		border-bottom-color: var(--windows95-face);
+	}
+
+	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
+		@apply rounded-none border-2 bg-surface text-on-surface shadow-none;
+		position: relative;
+		z-index: 0;
+		border-style: inset;
+		border-color: var(--windows95-dark) var(--windows95-light) var(--windows95-light) var(--windows95-dark);
+		background-color: var(--windows95-face);
+		padding: var(--rui-tabs-panel-padding);
+	}
+
 	:root .rui-alert,
 	:root .rui-toast__content {
 		@apply rounded-none border border-border bg-surface text-on-surface shadow-none;
 		border-style: outset;
-	}
-
-	:root .rui-tabs__tab[aria-selected='true'] {
-		@apply border border-border bg-surface font-bold;
-		border-bottom-color: var(--windows95-face);
 	}
 
 	:root .rui-table__header,
@@ -222,5 +260,29 @@
 	:root .rui-meter__fill,
 	:root .rui-slider__range-fill {
 		@apply rounded-none bg-primary;
+	}
+}
+
+@media (prefers-contrast: more) {
+	@layer components {
+		:root .rui-input,
+		:root .rui-textarea,
+		:root .rui-autocomplete__input,
+		:root .rui-combobox__input,
+		:root .rui-date-field__input,
+		:root .rui-date-input__segment,
+		:root .rui-number-field__input,
+		:root .rui-select__control,
+		:root .rui-checkbox__control,
+		:root .rui-radio__control,
+		:root .rui-switch__track {
+			border-color: var(--windows95-dark);
+			box-shadow: none;
+		}
+
+		:root .rui-button {
+			border-color: var(--on-background);
+			box-shadow: none;
+		}
 	}
 }
