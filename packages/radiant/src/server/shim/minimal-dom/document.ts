@@ -1,4 +1,10 @@
-import { MinimalHtmlScriptElement, MinimalHTMLElement, MinimalNode, MinimalTextNode } from './nodes';
+import {
+	MinimalCommentNode,
+	MinimalHtmlScriptElement,
+	MinimalHTMLElement,
+	MinimalNode,
+	MinimalTextNode,
+} from './nodes';
 import * as selectors from './selectors';
 
 export type MinimalCustomElementRegistry = {
@@ -17,8 +23,19 @@ export class MinimalDocument extends MinimalNode {
 			: new MinimalHTMLElement(tagName, this as unknown as Document)) as unknown as HTMLElement;
 	}
 
+	/**
+	 * @remarks The minimal DOM has no namespaces: SVG and MathML elements are plain elements, which serialize the same.
+	 */
+	createElementNS(_namespaceURI: string | null, qualifiedName: string): Element {
+		return this.createElement(qualifiedName) as unknown as Element;
+	}
+
 	createTextNode(value: string): Text {
 		return new MinimalTextNode(value, this as unknown as Document) as unknown as Text;
+	}
+
+	createComment(data: string): Comment {
+		return new MinimalCommentNode(data, this as unknown as Document) as unknown as Comment;
 	}
 
 	querySelector(selector: string): Element | null {

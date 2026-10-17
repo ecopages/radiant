@@ -135,13 +135,9 @@ export function withServerHydrationBindingState<T>(state: ServerHydrationBinding
 function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render: () => T): T {
 	const parentContext = getActiveSsrRenderContext();
 	const nextContext: SsrRenderContext = {
+		...parentContext,
+		...overrides,
 		hydrate: overrides.hydrate ?? parentContext?.hydrate ?? false,
-		customElementRenderHook: overrides.customElementRenderHook ?? parentContext?.customElementRenderHook,
-		customElementRenderHookOwnsChildren: overrides.customElementRenderHook
-			? overrides.customElementRenderHookOwnsChildren
-			: parentContext?.customElementRenderHookOwnsChildren,
-		renderChild: parentContext?.renderChild,
-		scopeValues: parentContext?.scopeValues,
 	};
 
 	return withActiveSsrRenderContext(nextContext, render);
@@ -209,7 +205,8 @@ function renderCustomElementLightDom(value: JsxRenderable): string {
 	});
 }
 
-function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
+/** Renders a registered custom element template through the active hook or its own host renderer. */
+export function renderIntrinsicCustomElementTemplate(template: TemplateResultLike): string | undefined {
 	if (!template.rootLocalName?.includes('-') || !template.ssrIntrinsicProps) {
 		return undefined;
 	}

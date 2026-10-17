@@ -559,6 +559,14 @@ Use `withServerCustomElementRenderHook(...)` from `@ecopages/jsx/server` when a 
 
 The element's JSX children are applied as light DOM (`innerHTML`) before the hook runs. A framework that needs to choose _when_ they serialize, for example inside the host's context providers, registers the hook with `{ ownsChildren: true }`. A hook that then returns a render must call `context.applyChildren()` itself; `context.children` holds the raw JSX. Elements the hook does not claim still get their children applied.
 
+Such a hook can apply the children as nodes, not a string, with `renderServerLightDom(children, ownerDocument)` from `@ecopages/jsx/server`. It returns DOM nodes built with `ownerDocument`:
+
+- **Values:** text becomes text nodes and attribute values are set as values, so no value is escaped and parsed back.
+- **Static markup:** parsed once per template shape with the document's own parser, as the client template compiler does.
+- **Nested custom elements:** they render through the active hook.
+- **Text-only elements:** `script`, `style`, `textarea` and `title` get their text verbatim.
+- **Markers:** the output carries no hydration markers, matching the plain light-DOM serialization.
+
 ## Authoring Patterns
 
 ### Intrinsic Elements

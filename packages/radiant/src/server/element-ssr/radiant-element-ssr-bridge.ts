@@ -1,7 +1,7 @@
 import '../install/install-ssr-runtime';
 import { createMarkupNodeLike, type JsxRenderable } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
-import { renderToString as renderJsxToString } from '@ecopages/jsx/server';
+import { renderServerLightDom, renderToString as renderJsxToString } from '@ecopages/jsx/server';
 import {
 	createServerHydrationBindingState,
 	isServerRenderHydrationActive,
@@ -91,15 +91,22 @@ export function resolveRadiantElementRenderBridge(component: object): RadiantEle
  * Installs the JSX custom-element render hook so nested CEs serialize through
  * {@link renderRadiantElementHostToString} (same path as `renderComponent`).
  *
- * @remarks The hook owns JSX children so a host applies them inside its own context providers: a consumer
- * passed as a child of a provider host resolves that provider while it serializes.
+ * @remarks The hook owns JSX children: a host builds them as light-DOM nodes (`renderServerLightDom`, so no
+ * value is escaped and parsed back) inside its own context providers, where a consumer passed as a child of a
+ * provider host resolves that provider.
  */
 export function withRadiantServerCustomElementRenderBridge<T>(render: () => T): T {
 	return withServerCustomElementRenderHook(
-		({ applyChildren, instance }) => {
+		({ children, instance }) => {
 			if (!isRadiantElementSsrHost(instance)) {
 				return undefined;
 			}
+
+			const applyChildren = () => {
+				if (children === undefined) return;
+				const ownerDocument = (instance.ownerDocument ?? globalThis.document) as Document;
+				instance.replaceChildren(...renderServerLightDom(children, ownerDocument));
+			};
 
 			return createMarkupNodeLike(serializeNestedCustomElementHost(instance, applyChildren));
 		},
