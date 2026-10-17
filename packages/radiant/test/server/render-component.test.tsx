@@ -583,7 +583,7 @@ describe('render-component server helpers', () => {
 			assets: [{ kind: 'script-module', src: '/assets/loader-card.js', stage: 'hydrate' }],
 			clientModuleSrc: '/assets/loader-card.js',
 			generatedAt: expect.any(String),
-			markup: '<render-component-loader-card-test><p>Loaded message</p></render-component-loader-card-test>',
+			markup: '<render-component-loader-card-test data-radiant-ssr><p>Loaded message</p></render-component-loader-card-test>',
 			tagName: 'render-component-loader-card-test',
 		});
 	});
@@ -628,7 +628,9 @@ describe('render-component server helpers', () => {
 		const markup = await renderComponentToString(RenderComponentNestedParent);
 
 		const childMatches = Array.from(
-			markup.matchAll(/<render-component-nested-child-test>([\s\S]*?)<\/render-component-nested-child-test>/g),
+			markup.matchAll(
+				/<render-component-nested-child-test data-radiant-ssr>([\s\S]*?)<\/render-component-nested-child-test>/g,
+			),
 		).map((match) => match[1] ?? '');
 
 		expect(childMatches).toHaveLength(2);

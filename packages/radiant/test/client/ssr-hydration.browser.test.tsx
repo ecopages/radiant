@@ -96,6 +96,20 @@ describe('hydrating server-rendered markup', () => {
 		});
 	});
 
+	test('reports server-rendered hosts through isServerRendered', async () => {
+		installRadiantHydrator();
+		const rendered = mount<HydratedSlotCard>('slot-card', 'hydrated-slot-card-test');
+		const created = document.createElement('hydrated-slot-card-test') as HydratedSlotCard;
+
+		expect(created.isServerRendered).toBe(false);
+
+		document.body.append(created);
+		await waitFor(() => expect(created.hasAttribute('data-radiant-ssr')).toBe(false));
+		expect(rendered.isServerRendered).toBe(true);
+		expect(created.isServerRendered).toBe(false);
+		expect(rendered.hasAttribute('data-radiant-ssr')).toBe(true);
+	});
+
 	test('hydrates reactive JSX children of a nested host under a fragment root', async () => {
 		installRadiantHydrator();
 		const element = mount<HydratedFragmentSlotParent>('fragment-slot-parent', 'hydrated-fragment-slot-parent-test');

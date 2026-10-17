@@ -18,6 +18,7 @@ import { REACTIVE_HOST, ReactiveHost, type ReactiveHostInternals } from './react
 import type { ReactiveState } from './reactivity-contract';
 import { runSsrPreparationCallbacks } from './ssr-preparation';
 import { isRadiantHydratorInstalled } from './radiant-hydrator-state';
+import { SERVER_RENDERED_HOST_ATTRIBUTE } from './server-rendered-host';
 import { getRadiantElementSsrRuntime, type RadiantElementRenderToStringOptions } from './radiant-element-ssr-registry';
 import { RADIANT_ELEMENT_BRAND } from './radiant-element-brand';
 
@@ -219,6 +220,7 @@ export class RadiantElement<Bindings extends object = {}>
 	 */
 	private elementReady = false;
 	private isFirstConnectPending = false;
+	private serverRendered = false;
 	private readonly updateCycle: UpdateCycle;
 	private renderRuntime?: RenderRuntime;
 
@@ -249,6 +251,18 @@ export class RadiantElement<Bindings extends object = {}>
 		ensureLegacyHostReady(this, 'construct');
 	}
 
+	/**
+	 * Whether this instance was first connected from markup that hydrate-mode SSR produced.
+	 *
+	 * @remarks Fixed at first connect and `false` before it. Unlike `hasHydrationMarkers`, it does not depend on
+	 * the view having bindings or on how the host's children were rendered, so a host that adopts server-rendered
+	 * content (for example light-DOM children its parent view authored) can rely on it. It says nothing about
+	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters.
+	 */
+	public get isServerRendered(): boolean {
+		return this.serverRendered;
+	}
+
 	public get slotProjectionVersion(): number {
 		return this.renderRuntime?.slotProjectionVersion ?? 0;
 	}
@@ -271,6 +285,10 @@ export class RadiantElement<Bindings extends object = {}>
 
 		const isFirstConnect = !this.elementReady;
 		this.elementReady = true;
+
+		if (isFirstConnect) {
+			this.serverRendered = this.hasAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+		}
 
 		this.reactiveHost.connectHost();
 

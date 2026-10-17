@@ -26,7 +26,7 @@ describeWhenStandard('pre-connect signal and SSR', () => {
 		element.status.set('ready');
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-		expect(html).toContain('<signal-component-test>');
+		expect(html).toContain('<signal-component-test data-radiant-ssr>');
 		expect(html).toContain(
 			'<script type="application/json" data-hydration data-hydration-type="signal" data-hydration-key="status">"ready"</script>',
 		);

@@ -2,6 +2,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getCustomElementTagName } from '../../core/custom-element-metadata';
+import { SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { withSsrContextProviders } from '../context-ssr';
@@ -55,10 +56,14 @@ export class RadiantElementSsrService {
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
 		this.ensureReady();
 		const tagName = this.getTagName();
+		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
+
+		const hostAttributes = hydrate ? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: '' } : attributes;
 
 		return withSsrContextProviders(
 			this.host.getContextProviders(),
-			() => `<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`,
+			() =>
+				`<${tagName}${stringifyHostAttributes(hostAttributes)}>${this.renderHostContent(options)}</${tagName}>`,
 		);
 	}
 
