@@ -83,18 +83,33 @@
 		color: var(--macos-classic-red);
 	}
 
+	/**
+	 * @remarks Ghost, link, and bare buttons are text and icons, not push buttons: no frame, bevel, or minimum width.
+	 */
 	:root .rui-button--ghost,
-	:root .rui-button--link {
+	:root .rui-button--link,
+	:root .rui-button--none {
 		min-width: 0;
 		border-radius: 6px;
+		border-color: transparent;
 		background-color: transparent;
+		background-image: none;
 		color: var(--macos-classic-text);
 		box-shadow: none;
 		transition: none;
 	}
 
-	:root .rui-button--link {
+	:root .rui-button--link,
+	:root .rui-button--link:hover:not(:disabled),
+	:root .rui-button--link:active:not(:disabled) {
+		border-radius: 0;
+		background-color: transparent;
 		color: var(--macos-classic-blue);
+		box-shadow: none;
+	}
+
+	:root .rui-button--link:hover:not(:disabled) {
+		text-decoration: underline;
 	}
 
 	:root .rui-button:hover:not(:disabled),
