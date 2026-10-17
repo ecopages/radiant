@@ -7,5 +7,6 @@ Refresh the unreleased Radiant theme catalog with stronger control boundaries, q
 
 - Add the Radiant Default, High Contrast, Windows 95, Mac OS Classic, macOS, Material Design, Cloudflare, GitHub, VS Code, and Vercel theme presets.
 - Refine the classic themes with native bevels, Platinum controls, striped title bars, and theme-specific scrollbars.
+- Make composite fields draw one frame in every theme, including their classic-theme field treatments.
 - Align Cloudflare and GitHub semantic palettes with their product systems, including consistent Cloudflare orange and Primer action roles.
 - Add compact variants, component-specific styling, visible focus states, and the remaining theme control polish.
