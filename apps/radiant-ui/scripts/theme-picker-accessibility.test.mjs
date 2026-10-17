@@ -70,6 +70,7 @@ async function measureThemeRendering(page, css, mode, theme) {
 				borderBottom: style.borderBottomColor,
 				borderRadius: style.borderRadius,
 				borderStyle: style.borderStyle,
+				clipPath: style.clipPath,
 				boxShadow: style.boxShadow,
 				color: style.color,
 				fontFamily: style.fontFamily,
@@ -165,8 +166,8 @@ test('theme picker text stays AA with persisted themes in runtime stylesheet ord
 				}
 				if (theme === 'macos-classic') {
 					assert.notEqual(rendered.tabs.selected.background, rendered.tabs.inactive.background);
-					assert.match(rendered.tabs.selected.borderRadius, /^4px 4px 0px 0px$/);
-					assert.equal(rendered.tabs.selected.borderStyle, 'solid');
+					assert.match(rendered.tabs.selected.clipPath, /^polygon\(/, 'tabs are trapezoids');
+					assert.equal(rendered.tabs.selected.background, rendered.tabs.panel.background);
 				}
 				const failures = rendered.contrast.filter((result) => result.ratio < 4.5);
 				assert.deepEqual(

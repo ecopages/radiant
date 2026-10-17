@@ -47,8 +47,11 @@ Windows forced colors. Verify non-text boundaries and application content after 
 
 Windows 95 draws every control with the two-tone 2px bevel: gray push buttons with a black frame on the default
 action, sunken white fields, check boxes, and radio wells, raised property tabs joined to their page, navy title bars,
-and navy selection. Mac OS Classic follows Platinum: gradient push buttons with black outlines and the thick ring
-around the default button, bevelled check boxes and radios with black marks, striped title bars, and folder tabs. Both
+and navy selection. Mac OS Classic is Mac OS 9 Platinum, built from the Mac OS 8 Human Interface Guidelines and the Appearance Manager's
+default theme: the seven system greys `#eeeeee` to `#202020`, grey push buttons with a black outline and a two-pixel
+bevel, a three-layer ring around the default button, 12px bevelled check boxes, shaded radio spheres, sunken white
+fields, trapezoid tabs that merge into a black-framed page, and 1px striped title bars. Selection and focus use the
+default `#6666cc` accent. Both
 dark modes keep the same bevel structure on darker faces and fields, since neither system shipped one. macOS uses
 moderate control corners, grouped tab segments, softer layered surfaces, and accent-blue push buttons with white text
 in dark mode. Material Design uses tonal surfaces, a purple accent family, and rounded action
