@@ -75,8 +75,8 @@ describe('DefaultThemeTunerElement', () => {
 		});
 		expect(primaryThumb.getAttribute('aria-valuenow')).toBe('264');
 		expect(tuner.querySelector('output[data-default-tuning-value="primaryHue"]')?.textContent).toBe('264°');
-		expect(tuner.querySelector('rui-slider[data-default-tuning="borderAlpha"]')?.getAttribute('value')).toBe('24');
-		expect(document.documentElement.style.getPropertyValue('--rui-border-alpha')).toBe('24%');
+		expect(tuner.querySelector('rui-slider[data-default-tuning="borderAlpha"]')?.getAttribute('value')).toBe('20');
+		expect(document.documentElement.style.getPropertyValue('--rui-border-alpha')).toBe('20%');
 
 		document.documentElement.dataset.ruiTheme = 'github';
 		await vi.advanceTimersByTimeAsync(0);

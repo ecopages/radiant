@@ -110,7 +110,8 @@
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab {
-		@apply rounded-control text-on-surface-container-low;
+		@apply rounded-none text-on-surface-container-low;
+		margin-bottom: -1px;
 	}
 
 	:root rui-tabs[variant='boxed'] .rui-tabs__tab[aria-selected='true'] {

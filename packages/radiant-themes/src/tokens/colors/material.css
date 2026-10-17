@@ -7,7 +7,7 @@
 	--material-surface: oklch(98% 0.009 285);
 	--material-surface-container: oklch(95% 0.015 285);
 	--material-outline: oklch(53% 0.018 285);
-	--material-outline-variant: oklch(84% 0.014 300);
+	--material-outline-variant: oklch(86% 0.012 300);
 	--material-text: oklch(18% 0.018 285);
 }
 
@@ -20,6 +20,6 @@
 	--material-surface: oklch(20% 0.014 285);
 	--material-surface-container: oklch(25% 0.018 285);
 	--material-outline: oklch(70% 0.018 285);
-	--material-outline-variant: oklch(40% 0.014 300);
+	--material-outline-variant: oklch(36% 0.012 300);
 	--material-text: oklch(91% 0.01 285);
 }

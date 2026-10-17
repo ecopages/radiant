@@ -89,8 +89,12 @@
 		border-bottom-color: var(--rui-tabs-indicator-color);
 	}
 
+	/**
+	 * @remarks Primer's underline nav has no panel, but Radiant tabs own one. A subtle surface with a divider border keeps
+	 * the panel distinct from the white page.
+	 */
 	:root rui-tabs[variant='boxed'] .rui-tabs__panel {
-		@apply bg-transparent;
+		@apply mt-3 rounded-container border border-border bg-surface;
 	}
 
 	:root .rui-listbox__option[aria-selected='true'],
