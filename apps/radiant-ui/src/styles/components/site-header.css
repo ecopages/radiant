@@ -59,3 +59,13 @@
 	background-image: none;
 	box-shadow: none;
 }
+
+/**
+ * Classic toolbar buttons are square, so hover fills and focus rings in the header follow square corners instead of the
+ * default 6px push-button radius.
+ */
+:root:is([data-rui-theme='windows95'], [data-rui-theme='macos-classic'])
+	:is(.site-header, .rui-sidebar-provider__site-header)
+	:is(.rui-button--ghost, .rui-sidebar__trigger, .theme-picker__control, .theme-picker__trigger) {
+	border-radius: 0;
+}
