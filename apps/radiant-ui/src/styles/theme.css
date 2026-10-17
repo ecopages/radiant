@@ -6,6 +6,14 @@
 	--color-muted: var(--surface-container-low);
 }
 
+/** @remarks Docs brand type while Radiant Default is active; optional themes keep their own font stacks. */
+:root:not([data-rui-theme]),
+:root[data-rui-theme='rui-default'] {
+	--font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'Karla', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Inconsolata', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 .rui-headline {
 	font-family: var(--font-heading);
 }
