@@ -5,6 +5,7 @@
 @import './vendor/shiki.css';
 @import './fonts.css';
 @import './components/prose.css';
+@import './components/site-header.css';
 
 html {
 	scrollbar-gutter: stable;
