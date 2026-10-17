@@ -1,6 +1,6 @@
 {
 	"name": "@ecopages/radiant-themes",
-	"version": "0.0.0",
+	"version": "0.2.0",
 	"description": "Composable color themes and variants for @ecopages/radiant-ui",
 	"repository": {
 		"type": "git",
