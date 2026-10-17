@@ -67,7 +67,7 @@
 	--on-surface-container-highest: var(--color-github-fg);
 	--background: var(--color-github-canvas);
 	--on-background: var(--color-github-fg);
-	--rui-border-color: var(--color-github-border-strong);
+	--rui-border-color: var(--color-github-border);
 	--rui-control-border-color: color-mix(in srgb, var(--color-github-border-strong) 75%, var(--color-github-fg));
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-github-blue);
@@ -138,7 +138,7 @@
 	--on-surface-container-highest: var(--color-github-fg);
 	--background: var(--color-github-canvas);
 	--on-background: var(--color-github-fg);
-	--rui-border-color: var(--color-github-border-strong);
+	--rui-border-color: var(--color-github-border);
 	--rui-control-border-color: color-mix(in srgb, var(--color-github-border-strong) 75%, var(--color-github-fg));
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-github-blue-light);

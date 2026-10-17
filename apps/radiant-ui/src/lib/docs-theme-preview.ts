@@ -497,11 +497,11 @@ export const DOCS_DEFAULT_TUNING_SCHEMA: Record<DocsDefaultThemeTuningKey, DocsD
 	},
 	borderAlpha: {
 		label: 'Border opacity',
-		min: 32,
+		min: 8,
 		max: 100,
 		step: 1,
 		unit: '%',
-		defaultValue: 48,
+		defaultValue: 24,
 		cssVariable: '--rui-border-alpha',
 		cssValueTemplate: '{{value}}%',
 	},

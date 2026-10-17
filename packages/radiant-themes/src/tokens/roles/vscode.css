@@ -65,7 +65,7 @@
 	--on-surface-container-highest: var(--color-vscode-fg);
 	--background: var(--color-vscode-canvas);
 	--on-background: var(--color-vscode-fg);
-	--rui-border-color: var(--color-vscode-border-strong);
+	--rui-border-color: var(--color-vscode-border);
 	--rui-control-border-color: var(--color-vscode-border-strong);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-vscode-blue);
@@ -132,7 +132,7 @@
 	--on-surface-container-highest: var(--color-vscode-fg);
 	--background: var(--color-vscode-canvas);
 	--on-background: var(--color-vscode-fg);
-	--rui-border-color: var(--color-vscode-border-strong);
+	--rui-border-color: var(--color-vscode-border);
 	--rui-control-border-color: var(--color-vscode-border-strong);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--color-vscode-blue-light);

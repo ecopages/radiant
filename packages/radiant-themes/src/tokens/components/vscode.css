@@ -44,6 +44,7 @@
 	:root .rui-textarea,
 	:root .rui-select__control {
 		@apply border-border bg-surface text-on-surface shadow-none;
+		border-color: var(--rui-control-border-color);
 	}
 
 	:root .rui-button--outline:hover:not(:disabled),
@@ -53,6 +54,7 @@
 
 	:root .rui-checkbox__control {
 		@apply rounded-xs border-border bg-surface;
+		border-color: var(--rui-control-border-color);
 	}
 
 	:root .rui-listbox__option[aria-selected='true'],

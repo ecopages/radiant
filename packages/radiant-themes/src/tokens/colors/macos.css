@@ -3,6 +3,7 @@
 	--macos-surface: #ffffff;
 	--macos-subtle: #e9e9ed;
 	--macos-border: #7f7f84;
+	--macos-separator: #d1d1d6;
 	--macos-text: #1d1d1f;
 	--macos-muted: #55555b;
 	--macos-blue: #005fcc;
@@ -18,6 +19,7 @@
 	--macos-surface: #2c2c2e;
 	--macos-subtle: #3a3a3c;
 	--macos-border: #8e8e93;
+	--macos-separator: #3a3a3c;
 	--macos-text: #f5f5f7;
 	--macos-muted: #d1d1d6;
 	--macos-blue: #55a6ff;

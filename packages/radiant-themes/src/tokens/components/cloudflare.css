@@ -19,6 +19,24 @@
 
 @layer components {
 	/**
+	 * @remarks `#f6821f` with dark text reaches 6.7:1, so the primary action keeps Cloudflare's brand orange in light
+	 * mode too. `--primary` stays the deeper orange because other roles use it as text on white.
+	 */
+	:root:not(.dark) .rui-button--filled {
+		background-color: var(--color-cloudflare-orange-bright);
+		color: #1a1a1a;
+	}
+
+	:root:not(.dark) .rui-button--filled:hover:not(:disabled) {
+		background-color: #e8761a;
+	}
+
+	:root:not(.dark) .rui-button--filled:active:not(:disabled),
+	:root:not(.dark) .rui-button--filled[aria-pressed='true'] {
+		background-color: #d96a10;
+	}
+
+	/**
 	 * @remarks Cloudflare fills dark destructive buttons with a saturated red and white text; `--error` stays the lighter
 	 * red used for error text on dark surfaces.
 	 */

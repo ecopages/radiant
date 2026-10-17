@@ -18,7 +18,7 @@ test('published default theme keeps its Radiant Default color and geometry contr
 	assert.match(theme, /--font-sans:/);
 	assert.match(theme, /--font-heading:/);
 	assert.match(theme, /--font-mono:/);
-	assert.match(theme, /--rui-border-alpha:\s*48%/);
+	assert.match(theme, /--rui-border-alpha:\s*24%/);
 	assert.match(roles, /--rui-control-border-color:\s*var\(--color-rui-default-500\)/);
 	assert.match(colors, /--rui-neutral:\s*oklch/);
 	assert.match(colors, /--rui-primary:\s*oklch/);

@@ -67,7 +67,7 @@
 	--on-surface-container-highest: var(--material-text);
 	--background: var(--material-canvas);
 	--on-background: var(--material-text);
-	--rui-border-color: var(--material-outline);
+	--rui-border-color: var(--material-outline-variant);
 	--rui-control-border-color: var(--material-outline);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: oklch(46% 0.17 293);
@@ -133,7 +133,7 @@
 	--on-surface-container-highest: var(--material-text);
 	--background: var(--material-canvas);
 	--on-background: var(--material-text);
-	--rui-border-color: var(--material-outline);
+	--rui-border-color: var(--material-outline-variant);
 	--rui-control-border-color: var(--material-outline);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--material-primary);

@@ -1,5 +1,6 @@
 ---
 '@ecopages/radiant-ui': minor
+'@ecopages/radiant-themes': minor
 ---
 
-Raise Radiant Default's semantic border alpha from 40% to 48%, while keeping control borders solid for accessible contrast.
+Make decorative borders recede. Radiant Default's semantic border alpha drops from 40% to 24%, and GitHub, VS Code, Material Design, and macOS use their subtle divider colors for `--border` instead of the strong control-border color. Control borders stay solid for accessible contrast.

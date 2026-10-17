@@ -86,7 +86,7 @@ after custom role overrides, especially non-text boundaries and content supplied
 
 The default derives matching OKLCH color scales from three seed colors. Secondary follows primary at a 40° analogous
 hue offset, which keeps it clear of the red, amber, and green status hues. Adjust the primary and neutral hues, the
-secondary offset, density, corner radius, and border opacity (32–100%) below. The page preview updates live, and the
+secondary offset, density, corner radius, and border opacity (8–100%) below. The page preview updates live, and the
 generated CSS copies the six small inputs needed to create a different palette and geometry.
 
 <DefaultThemeTuner />
@@ -111,7 +111,7 @@ Define semantic color roles in a stylesheet loaded after the base theme. Compone
 	--on-background: oklch(22% 0.008 265);
 	--surface: oklch(96% 0.006 265);
 	--on-surface: var(--on-background);
-	--border: oklch(74% 0.012 265 / 48%);
+	--border: oklch(74% 0.012 265 / 24%);
 	--focus-ring: var(--primary);
 }
 ```

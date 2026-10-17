@@ -65,7 +65,7 @@
 	--on-surface-container-highest: #1d1d1f;
 	--background: var(--macos-canvas);
 	--on-background: var(--macos-text);
-	--rui-border-color: var(--macos-border);
+	--rui-border-color: var(--macos-separator);
 	--rui-control-border-color: var(--macos-border);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--macos-blue);
@@ -143,7 +143,7 @@
 	--on-surface-container-highest: #ffffff;
 	--background: var(--macos-canvas);
 	--on-background: var(--macos-text);
-	--rui-border-color: var(--macos-border);
+	--rui-border-color: var(--macos-separator);
 	--rui-control-border-color: var(--macos-border);
 	--border: color-mix(in srgb, var(--rui-border-color) var(--rui-border-alpha), transparent);
 	--focus-ring: var(--macos-blue-light);

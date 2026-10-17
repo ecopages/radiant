@@ -28,6 +28,7 @@
 
 	:root .rui-button--outline {
 		@apply border-border bg-surface text-on-surface shadow-none;
+		border-color: var(--rui-control-border-color);
 	}
 
 	:root .rui-button--ghost:hover:not(:disabled),
@@ -44,11 +45,13 @@
 	:root .rui-number-field__input,
 	:root .rui-select__control {
 		@apply rounded-control border-border bg-surface text-on-surface shadow-none;
+		border-color: var(--rui-control-border-color);
 	}
 
 	:root .rui-checkbox__control,
 	:root .rui-radio__control {
 		@apply border-border bg-surface;
+		border-color: var(--rui-control-border-color);
 	}
 
 	:root .rui-checkbox__control {
