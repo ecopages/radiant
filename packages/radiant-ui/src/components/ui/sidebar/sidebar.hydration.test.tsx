@@ -1,5 +1,5 @@
 import '@ecopages/radiant/client/install-hydrator';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import './sidebar.script';
 import type { RuiSidebar as RuiSidebarElement } from './sidebar.script';
 
@@ -24,6 +24,13 @@ async function settled(): Promise<void> {
 }
 
 describe('RuiSidebar hydrating server markup', () => {
+	const originalPath = window.location.pathname;
+
+	afterEach(() => {
+		document.body.innerHTML = '';
+		history.replaceState(null, '', originalPath);
+	});
+
 	it('upgrades without a handle when resizable is false', async () => {
 		paint('resizable-false');
 		await customElements.whenDefined('rui-sidebar');
@@ -32,20 +39,14 @@ describe('RuiSidebar hydrating server markup', () => {
 		const sidebar = document.querySelector('rui-sidebar') as RuiSidebarElement;
 		expect(sidebar.resizable).toBe(false);
 		expect(sidebar.querySelector('[data-ref="handle"]')).toBeNull();
-
-		document.body.innerHTML = '';
 	});
 
 	it('marks the current link once server markup upgrades', async () => {
-		const originalPath = window.location.pathname;
 		history.replaceState(null, '', '/docs/installation');
 		paint('active-links');
 		await customElements.whenDefined('rui-sidebar');
 		await settled();
 
 		expect(document.querySelector('[aria-current="page"]')?.getAttribute('href')).toBe('/docs/installation');
-
-		document.body.innerHTML = '';
-		history.replaceState(null, '', originalPath);
 	});
 });

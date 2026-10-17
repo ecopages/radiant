@@ -292,17 +292,17 @@ _Avoid_: provider, selector field, local state copy
 > **Domain expert:** "Await I/O outside the scope. Enter **SSR Render Scope** only for the synchronous render snapshot so abandoned async work cannot leak ambient state."
 
 > **Dev:** "Where should `renderToString` tests live?"
-> **Domain expert:** "In Node `*.test.*` files. Browser `*.browser.test.*` and Playwright `*.e2e.test.*` files hydrate from fixtures or client-only trees; they do not import the JSX server entry to perform SSR."
+> **Domain expert:** "In Node test files. Chromium and Playwright test files hydrate from fixtures or client-only trees; they do not import the JSX server entry to perform SSR."
 
 > **Dev:** "What do the test file suffixes mean?"
-> **Domain expert:** "`*.test.*` runs on Node and owns **SSR**. `*.browser.test.*` runs in Chromium through Vitest browser mode for DOM behavior. `*.e2e.test.*` runs in Playwright Chromium for full-page flows."
+> **Domain expert:** "A test that renders on the server runs on Node; a test that needs real DOM behavior runs in Chromium through Vitest browser mode; full-page flows run in Playwright. The suffix that selects each differs by package: `@ecopages/radiant` and `@ecopages/jsx` use `*.test.*` for Node and `*.browser.test.*` for Chromium, `@ecopages/radiant-ui` uses `*.ssr.test.*` for Node and `*.test.*` for Chromium, and the docs app uses `*.test.*` for Node and `*.test.browser.*` for Chromium."
 
 ## Flagged ambiguities
 
 - "context" is overloaded in this repository: the product already uses **Context** for runtime state-sharing APIs inside Radiant, while this file uses context in the domain-modeling sense for the whole **Radiant Platform**
 - "standalone" does not mean "separate product context" here: **Ecopages JSX** and **Ecopages Signals** are standalone-capable packages inside the same **Radiant Platform**
 - docs apps and playgrounds are support surfaces for the **Radiant Platform**, not glossary concepts in this context file
-- test file suffixes are contributor conventions, not product glossary terms, but they encode the **SSR** / **Hydration** boundary: `*.test.*` = Node (**SSR**), `*.browser.test.*` = Chromium (Vitest browser mode), `*.e2e.test.*` = Playwright
+- test file suffixes are contributor conventions, not product glossary terms, but they encode the **SSR** / **Hydration** boundary: Node tests own **SSR**, Chromium tests (Vitest browser mode) own DOM behavior and hydration from fixtures, and Playwright tests own full-page flows
 - Node files that need a DOM use the minimal light-DOM shim from `@ecopages/radiant/server/install-ssr-runtime`; there is no third-party DOM emulation
 - browser and Playwright suites must not import `@ecopages/jsx/server` as an **SSR** writer; hydrate tests use fixtures or client-only trees
 - Node is the source of truth for server runtime; do not document or branch on Bun as a separate SSR ambient model

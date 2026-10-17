@@ -24,22 +24,21 @@
  * such as `aria-invalid` and `:checked` (prefixed with `:root`) still win.
  */
 @layer components {
-	:root:where(:not([data-rui-theme]), [data-rui-theme='rui-default'])
-		:is(
-			.rui-input,
-			.rui-textarea,
-			.rui-autocomplete__input,
-			.rui-combobox__control,
-			.rui-date-field__group,
-			.rui-date-range-picker__group,
-			.rui-input-group,
-			.rui-number-field__group,
-			.rui-select__control,
-			.rui-select__search,
-			.rui-checkbox__control,
-			.rui-radio__control,
-			.rui-switch__track
-		) {
+	:root:where(:not([data-rui-theme]), [data-rui-theme='rui-default']) :is(
+		.rui-input,
+		.rui-textarea,
+		.rui-autocomplete__input,
+		.rui-combobox__control,
+		.rui-date-field__group,
+		.rui-date-range-picker__group,
+		.rui-input-group,
+		.rui-number-field__group,
+		.rui-select__control,
+		.rui-select__search,
+		.rui-checkbox__control,
+		.rui-radio__control,
+		.rui-switch__track
+	) {
 		border-color: var(--rui-control-border-color);
 	}
 }

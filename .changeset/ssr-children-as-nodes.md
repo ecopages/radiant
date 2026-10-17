@@ -9,5 +9,3 @@ New in jsx:
 
 - **`renderServerLightDom(value, ownerDocument)`** is exported from `@ecopages/jsx/server`.
 - **Text-only element helpers** for `script`, `style`, `textarea` and `title` now live in a DOM-free module that the server and the client share.
-
-Fixed: `withActiveSsrScopeValue` dropped `ownsChildren`. Under a nested hydration scope, children were therefore rendered twice, the first time outside the host's context providers.

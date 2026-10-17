@@ -185,13 +185,13 @@ function describeTree(node: DomNode): unknown[] {
 	);
 }
 
+type Mutation = { applies: (element: DomElement) => boolean; run: (element: DomElement) => void };
+
 /**
  * @remarks Set text never starts with a newline. The minimal DOM restores the newline the parser drops after a
  * `pre`, `listing` or `textarea` start tag when it serializes the element; Chromium does not, so its own round
  * trip loses that newline. `minimal-dom-parsing.test.ts` pins the minimal-DOM behaviour.
  */
-type Mutation = { applies: (element: DomElement) => boolean; run: (element: DomElement) => void };
-
 function createMutation(random: Random, generator: HtmlGenerator): Mutation {
 	const roll = random();
 	const rawText = `x${repeat(random, 3, () => pick(random, ['x', ' & ', '<b>', '"q"', "'", '>', '&amp;', '\n']))}`;
