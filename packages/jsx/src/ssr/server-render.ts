@@ -135,13 +135,9 @@ export function withServerHydrationBindingState<T>(state: ServerHydrationBinding
 function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render: () => T): T {
 	const parentContext = getActiveSsrRenderContext();
 	const nextContext: SsrRenderContext = {
+		...parentContext,
+		...overrides,
 		hydrate: overrides.hydrate ?? parentContext?.hydrate ?? false,
-		customElementRenderHook: overrides.customElementRenderHook ?? parentContext?.customElementRenderHook,
-		customElementRenderHookOwnsChildren: overrides.customElementRenderHook
-			? overrides.customElementRenderHookOwnsChildren
-			: parentContext?.customElementRenderHookOwnsChildren,
-		renderChild: parentContext?.renderChild,
-		scopeValues: parentContext?.scopeValues,
 	};
 
 	return withActiveSsrRenderContext(nextContext, render);

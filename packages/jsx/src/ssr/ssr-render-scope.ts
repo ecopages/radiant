@@ -47,12 +47,7 @@ export function withActiveSsrScopeValue<TValue, T>(key: symbol, value: TValue, r
 	scopeValues.set(key, value);
 
 	return withActiveSsrRenderContext(
-		{
-			hydrate: parentContext?.hydrate ?? false,
-			customElementRenderHook: parentContext?.customElementRenderHook,
-			renderChild: parentContext?.renderChild,
-			scopeValues,
-		},
+		{ ...parentContext, hydrate: parentContext?.hydrate ?? false, scopeValues },
 		render,
 	);
 }
