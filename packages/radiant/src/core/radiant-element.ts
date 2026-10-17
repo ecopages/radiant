@@ -258,8 +258,8 @@ export class RadiantElement<Bindings extends object = {}>
 	 * the view having bindings or on how the host's children were rendered, so a host that adopts server-rendered
 	 * content (for example light-DOM children its parent view authored) can rely on it. It says nothing about
 	 * whether the hydrator is installed; combine it with `hasRadiantHydrator()` when that matters. Plain-mode SSR
-	 * does not stamp hosts, so those report `false`. The stamp is an attribute, so markup copied from a stamped
-	 * host (`cloneNode`, `outerHTML`) carries it too.
+	 * does not stamp hosts, so those report `false`. The attribute is removed once read, so markup copied from a
+	 * connected host does not carry it.
 	 */
 	public get isServerRendered(): boolean {
 		return this.serverRendered;
@@ -290,6 +290,7 @@ export class RadiantElement<Bindings extends object = {}>
 
 		if (isFirstConnect) {
 			this.serverRendered = this.hasAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
+			this.removeAttribute(SERVER_RENDERED_HOST_ATTRIBUTE);
 		}
 
 		this.reactiveHost.connectHost();

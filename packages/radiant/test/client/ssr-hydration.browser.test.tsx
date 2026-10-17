@@ -104,6 +104,8 @@ describe('hydrating server-rendered markup', () => {
 
 		expect(hasHydrationMarkers(rendered)).toBe(false);
 		expect(rendered.isServerRendered).toBe(true);
+		expect(rendered.hasAttribute('data-radiant-ssr')).toBe(false);
+		expect((rendered.cloneNode(true) as Element).hasAttribute('data-radiant-ssr')).toBe(false);
 		expect(created.isServerRendered).toBe(false);
 
 		document.body.append(created);
