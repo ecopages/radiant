@@ -7,7 +7,12 @@ import {
 	withActiveSsrRenderContext,
 	withActiveSsrScopeValue,
 } from './ssr-render-scope.ts';
-import type { JsxRenderable, ServerCustomElementRenderHook, TemplateResultLike } from '../types/index.ts';
+import type {
+	JsxRenderable,
+	ServerCustomElementRenderHook,
+	ServerCustomElementRenderHookOptions,
+	TemplateResultLike,
+} from '../types/index.ts';
 
 /** Public vocabulary for the SSR output modes supported by `renderToString(...)`. */
 export type RenderToStringMode = 'hydrate' | 'plain';
@@ -71,6 +76,7 @@ export function renderToString(value: JsxRenderable, options: RenderToStringOpti
 	const ssr: SsrRenderContext = {
 		hydrate,
 		customElementRenderHook: activeSsrContext?.customElementRenderHook,
+		customElementRenderHookOwnsChildren: activeSsrContext?.customElementRenderHookOwnsChildren,
 		renderChild: renderCustomElementLightDom,
 		scopeValues: hydrationBindingScope.scopeValues,
 	};
@@ -93,9 +99,21 @@ export function isServerRenderHydrationActive(): boolean {
  * Frameworks use this to adapt richer host rendering models, such as
  * `RadiantElement`, without teaching the core JSX renderer about framework-
  * specific element classes.
+ *
+ * @remarks By default the element's JSX children are applied as light DOM before the hook runs. With
+ * `ownsChildren`, they are not: a hook that returns a render must call `context.applyChildren()` itself, at the
+ * point where the children should serialize (for example inside the host's context providers). Elements the
+ * hook does not claim get their children applied as usual.
  */
-export function withServerCustomElementRenderHook<T>(hook: ServerCustomElementRenderHook, render: () => T): T {
-	return withSsrRenderOverrides({ customElementRenderHook: hook }, render);
+export function withServerCustomElementRenderHook<T>(
+	hook: ServerCustomElementRenderHook,
+	render: () => T,
+	options: ServerCustomElementRenderHookOptions = {},
+): T {
+	return withSsrRenderOverrides(
+		{ customElementRenderHook: hook, customElementRenderHookOwnsChildren: options.ownsChildren === true },
+		render,
+	);
 }
 
 /** Creates a fresh hydrate binding namespace for one server-owned hydration root. */
@@ -119,6 +137,9 @@ function withSsrRenderOverrides<T>(overrides: Partial<SsrRenderContext>, render:
 	const nextContext: SsrRenderContext = {
 		hydrate: overrides.hydrate ?? parentContext?.hydrate ?? false,
 		customElementRenderHook: overrides.customElementRenderHook ?? parentContext?.customElementRenderHook,
+		customElementRenderHookOwnsChildren: overrides.customElementRenderHook
+			? overrides.customElementRenderHookOwnsChildren
+			: parentContext?.customElementRenderHookOwnsChildren,
 		renderChild: parentContext?.renderChild,
 		scopeValues: parentContext?.scopeValues,
 	};

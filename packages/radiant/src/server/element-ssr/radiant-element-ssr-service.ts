@@ -25,9 +25,25 @@ export class RadiantElementSsrService {
 	}
 
 	private ensureReady(): void {
+		this.ensureProvidersReady();
+		this.host.prepareForSsr();
+	}
+
+	private ensureProvidersReady(): void {
 		alignMinimalDomHostTagName(this.component, getCustomElementTagName(this.host.constructor));
 		ensureLegacyHostReady(this.component, 'ssr');
-		this.host.prepareForSsr();
+	}
+
+	/**
+	 * Applies the host's JSX children as light DOM inside its context providers, before preparation.
+	 *
+	 * @remarks Consumers among the children resolve context while they serialize, so they see provider values
+	 * set by construction or decorators. Values a provider only sets during `prepareForSsr` are not visible to
+	 * them; preparation runs after so it still sees the children.
+	 */
+	public applyLightDom(apply: () => void): void {
+		this.ensureProvidersReady();
+		withSsrContextProviders(this.host.getContextProviders(), apply);
 	}
 
 	public renderHost(): JsxRenderable {

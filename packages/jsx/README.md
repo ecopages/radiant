@@ -557,6 +557,8 @@ That means JSX itself does not distinguish between "Radiant custom element" and 
 
 Use `withServerCustomElementRenderHook(...)` from `@ecopages/jsx/server` when a framework wants to intercept a registered custom-element instance and replace the default generic SSR path with framework-aware host rendering.
 
+The element's JSX children are applied as light DOM (`innerHTML`) before the hook runs. A framework that needs to choose _when_ they serialize, for example inside the host's context providers, registers the hook with `{ ownsChildren: true }`. A hook that then returns a render must call `context.applyChildren()` itself; `context.children` holds the raw JSX. Elements the hook does not claim still get their children applied.
+
 ## Authoring Patterns
 
 ### Intrinsic Elements

@@ -64,6 +64,8 @@ Lower-level host serialization lives on `@ecopages/radiant/server/radiant-elemen
 
 When a component renders literal `<slot>` tags, host serialization also emits the slot-projection payload needed to reconstruct default and named light-DOM assignments on the client.
 
+Under `withRadiantServerCustomElementRenderBridge`, a nested host applies its JSX children inside its own context providers, after construction and legacy decorator setup but before `prepareForSsr`. A context consumer passed as a child of a provider host therefore resolves that provider during SSR. It sees values set by construction or decorators (`initialValue`), but not values the provider only sets during preparation.
+
 `RadiantElement.renderViewToString()` remains the narrow host hook that asks the installed server runtime to serialize the JSX view only.
 
 ### Typed Boolean host attributes

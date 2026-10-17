@@ -787,6 +787,85 @@ describe('Radiant JSX server render', () => {
 		}
 	});
 
+	test('applies JSX children before the hook unless the hook owns them', async () => {
+		const [{ jsx, createMarkupNodeLike }, { renderToString, withServerCustomElementRenderHook }] =
+			await Promise.all([loadJsxRuntime(), loadServerRender()]);
+
+		class ChildAwareElement extends EventTarget {
+			innerHTML = '';
+
+			setAttribute(_name: string, _value: unknown) {}
+			removeAttribute(_name: string) {}
+
+			renderHostToString() {
+				return `<child-aware-element>${this.innerHTML}</child-aware-element>`;
+			}
+		}
+
+		const previousCustomElementsDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'customElements');
+		const previousForceServerCustomElementRender = (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+			forceServerCustomElementRenderSymbol
+		];
+
+		Object.defineProperty(globalThis, 'customElements', {
+			configurable: true,
+			value: {
+				get(name: string) {
+					return name === 'child-aware-element'
+						? (ChildAwareElement as unknown as CustomElementConstructor)
+						: undefined;
+				},
+			},
+		});
+
+		(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] = true;
+
+		const render = () => renderToString(jsx('child-aware-element', { children: jsx('b', { children: 'x' }) }));
+
+		try {
+			const seenByDefaultHook: string[] = [];
+			const defaultHtml = withServerCustomElementRenderHook(({ instance }) => {
+				seenByDefaultHook.push(instance.innerHTML);
+				return undefined;
+			}, render);
+
+			const seenByOwningHook: string[] = [];
+			const owningHtml = withServerCustomElementRenderHook(
+				({ applyChildren, children, instance }) => {
+					seenByOwningHook.push(instance.innerHTML, typeof children);
+					applyChildren();
+					applyChildren();
+					return createMarkupNodeLike(`<claimed>${instance.innerHTML}</claimed>`);
+				},
+				render,
+				{ ownsChildren: true },
+			);
+
+			const unclaimedHtml = withServerCustomElementRenderHook(() => undefined, render, { ownsChildren: true });
+
+			expect(seenByDefaultHook).toEqual(['<b>x</b>']);
+			expect(defaultHtml).toBe('<child-aware-element><b>x</b></child-aware-element>');
+			expect(seenByOwningHook).toEqual(['', 'object']);
+			expect(owningHtml).toBe('<claimed><b>x</b></claimed>');
+			expect(unclaimedHtml).toBe('<child-aware-element><b>x</b></child-aware-element>');
+		} finally {
+			if (previousCustomElementsDescriptor) {
+				Object.defineProperty(globalThis, 'customElements', previousCustomElementsDescriptor);
+			} else {
+				Reflect.deleteProperty(globalThis, 'customElements');
+			}
+
+			if (previousForceServerCustomElementRender === undefined) {
+				delete (globalThis as typeof globalThis & Record<PropertyKey, unknown>)[
+					forceServerCustomElementRenderSymbol
+				];
+			} else {
+				(globalThis as typeof globalThis & Record<PropertyKey, unknown>)[forceServerCustomElementRenderSymbol] =
+					previousForceServerCustomElementRender;
+			}
+		}
+	});
+
 	test('lets the server custom-element render hook replace the default SSR wrapper', async () => {
 		const [{ jsx, createMarkupNodeLike }, { renderToString, withServerCustomElementRenderHook }] =
 			await Promise.all([loadJsxRuntime(), loadServerRender()]);

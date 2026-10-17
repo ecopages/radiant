@@ -253,59 +253,56 @@ describe('RadiantElement SSR', () => {
 		expect(html).not.toContain('Stage: Pending');
 	});
 
-	test.fails(
-		'renderRadiantElementHostToString() resolves context for consumers passed as JSX children of a provider host',
-		() => {
-			const slottedSsrContext = createContext<{ owner: string }>(Symbol('slotted-radiant-provider-context'));
+	test('renderRadiantElementHostToString() resolves context for consumers passed as JSX children of a provider host', () => {
+		const slottedSsrContext = createContext<{ owner: string }>(Symbol('slotted-radiant-provider-context'));
 
-			@customElement('slotted-ssr-consumer-card-test')
-			class SlottedSsrConsumerCard extends RadiantElement<{ owner: string }> {
-				@state owner = 'Awaiting provider';
+		@customElement('slotted-ssr-consumer-card-test')
+		class SlottedSsrConsumerCard extends RadiantElement<{ owner: string }> {
+			@state owner = 'Awaiting provider';
 
-				@onContextUpdate({ context: slottedSsrContext })
-				protected syncOwner(currentContext: { owner: string }): void {
-					this.owner = currentContext.owner;
-				}
-
-				override render() {
-					return <p class="slotted-owner">{this.$.owner}</p>;
-				}
+			@onContextUpdate({ context: slottedSsrContext })
+			protected syncOwner(currentContext: { owner: string }): void {
+				this.owner = currentContext.owner;
 			}
 
-			@customElement('slotted-ssr-provider-card-test')
-			class SlottedSsrProviderCard extends RadiantElement {
-				@provideContext({ context: slottedSsrContext, initialValue: { owner: 'Provider owner' } })
-				context!: ContextProvider<typeof slottedSsrContext>;
-
-				override render() {
-					return (
-						<section>
-							<slot />
-						</section>
-					);
-				}
+			override render() {
+				return <p class="slotted-owner">{this.$.owner}</p>;
 			}
+		}
 
-			@customElement('slotted-ssr-page-test')
-			class SlottedSsrPage extends RadiantElement {
-				override render() {
-					return (
-						<slotted-ssr-provider-card-test>
-							<slotted-ssr-consumer-card-test />
-						</slotted-ssr-provider-card-test>
-					);
-				}
+		@customElement('slotted-ssr-provider-card-test')
+		class SlottedSsrProviderCard extends RadiantElement {
+			@provideContext({ context: slottedSsrContext, initialValue: { owner: 'Provider owner' } })
+			context!: ContextProvider<typeof slottedSsrContext>;
+
+			override render() {
+				return (
+					<section>
+						<slot />
+					</section>
+				);
 			}
+		}
 
-			expect(SlottedSsrConsumerCard).toBeDefined();
-			expect(SlottedSsrProviderCard).toBeDefined();
+		@customElement('slotted-ssr-page-test')
+		class SlottedSsrPage extends RadiantElement {
+			override render() {
+				return (
+					<slotted-ssr-provider-card-test>
+						<slotted-ssr-consumer-card-test />
+					</slotted-ssr-provider-card-test>
+				);
+			}
+		}
 
-			const html = renderRadiantElementHostToString(new SlottedSsrPage(), { mode: 'hydrate' });
+		expect(SlottedSsrConsumerCard).toBeDefined();
+		expect(SlottedSsrProviderCard).toBeDefined();
 
-			expect(html).toContain('<p class="slotted-owner">Provider owner</p>');
-			expect(html).not.toContain('Awaiting provider');
-		},
-	);
+		const html = renderRadiantElementHostToString(new SlottedSsrPage(), { mode: 'hydrate' });
+
+		expect(html).toMatch(/<p[^>]*class="slotted-owner"[^>]*>Provider owner<\/p>/);
+		expect(html).not.toContain('Awaiting provider');
+	});
 
 	test('renderComponentToString() applies array @prop values before the first server render', async () => {
 		const html = await renderComponentToString<SsrArrayPropCard>(SsrArrayPropCard, {
