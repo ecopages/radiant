@@ -69,3 +69,23 @@
 	:is(.rui-button--ghost, .rui-sidebar__trigger, .theme-picker__control, .theme-picker__trigger) {
 	border-radius: 0;
 }
+
+/**
+ * Phones have room for the logo, the navigation trigger, and a link or two. The theme picker and the light, dark, and
+ * system toggle are desktop previews, so they hide below the `md` breakpoint; a saved or system theme still applies.
+ */
+@media (width < 48rem) {
+	:is(.site-header__nav, .rui-sidebar-provider__site-header-nav)
+		:is(
+			radiant-theme-palette-picker,
+			theme-toggle,
+			li:has(> radiant-theme-palette-picker),
+			li:has(> theme-toggle)
+		) {
+		display: none;
+	}
+}
+
+:is(.site-header, .rui-sidebar-provider__site-header) .ui-logo {
+	white-space: nowrap;
+}
