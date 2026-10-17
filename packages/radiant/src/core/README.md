@@ -53,7 +53,7 @@ flowchart TD
 Client rendering works like this:
 
 1. The browser upgrades the custom element and calls `connectedCallback()`.
-2. `RadiantElement` waits one microtask, then `completeInitialSync()` adopts authored attributes and reflects the values the host actually holds. A property assigned before upgrade, or through its accessor before that sync, wins over the authored attribute.
+2. The first connect reads the `data-radiant-ssr` stamp into `isServerRendered` and removes the attribute. `RadiantElement` then waits one microtask, then `completeInitialSync()` adopts authored attributes and reflects the values the host actually holds. A property assigned before upgrade, or through its accessor before that sync, wins over the authored attribute.
 3. If the host already contains hydration markers and the explicit client hydrator is installed, `hydrate()` attaches behavior to that DOM in place.
 4. Otherwise `update()` renders fresh light DOM into the host.
 5. Later reactive changes schedule matching `@onUpdated` callbacks. A render commits when code requests it or a tracked render dependency invalidates the view.
@@ -75,7 +75,7 @@ SSR works like this:
 3. When authored light DOM is needed, a server render environment prepares the host before rendering.
 4. Prefer `@ecopages/radiant/server/render-component` for adapters and fragment responses.
 5. The JSX server renderer turns `render()` output into HTML.
-6. When hydration is requested, hydration markers are emitted into the rendered view.
+6. When hydration is requested, hydration markers are emitted into the rendered view and the host tag is stamped with `data-radiant-ssr`.
 7. The browser receives `<my-element ...>...</my-element>` markup.
 8. On first connect, the same component instance logic decides whether to hydrate or do a fresh render.
 
@@ -90,6 +90,7 @@ When slot-aware SSR needs authored light DOM, adapters prepare the host through 
 - `render()` returns the current JSX tree.
 - `update()` runs the update cycle now and rerenders the host from the current JSX tree when `render()` is overridden.
 - `hydrate()` hydrates SSR markup already present in the host.
+- `isServerRendered` is `true` when the instance was first connected from markup that hydrate-mode SSR produced. Hosts that adopt server-rendered content check it instead of `hasHydrationMarkers`.
 - `renderViewToString()` asks the installed server runtime to serialize the view (server entry must be imported first).
 
 Host attribute serialization and full host HTML composition live in the server pipeline. They are not Element Host instance APIs.

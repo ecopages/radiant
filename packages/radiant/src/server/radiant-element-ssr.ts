@@ -1,3 +1,4 @@
+export { SERVER_RENDERED_HOST_ATTRIBUTE } from '../core/server-rendered-host';
 export {
 	createRadiantElementSsrService,
 	getOrCreateRadiantElementSsrRuntime,

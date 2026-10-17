@@ -2,6 +2,7 @@ import type { JsxRenderable } from '@ecopages/jsx';
 import { createMarkupNodeLike } from '@ecopages/jsx';
 import type { RenderToStringOptions } from '@ecopages/jsx/server';
 import { getCustomElementTagName } from '../../core/custom-element-metadata';
+import { SERVER_RENDERED_HOST_ATTRIBUTE } from '../../core/server-rendered-host';
 import { ensureLegacyHostReady } from '../../decorators/legacy/host-readiness';
 import { assertValidHtmlTagName } from '../../utils/html-names';
 import { withSsrContextProviders } from '../context-ssr';
@@ -12,6 +13,10 @@ import { toInternalRadiantSsrHost } from './radiant-element-ssr-extractor';
 import type { InternalRadiantSsrHost } from '../../core/radiant-element-ssr-host';
 
 export type RadiantElementViewRenderer = (host: InternalRadiantSsrHost, options?: RenderToStringOptions) => string;
+
+function isHydrateMode(options: RenderToStringOptions): boolean {
+	return options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
+}
 
 export class RadiantElementSsrService {
 	private readonly component: object;
@@ -55,10 +60,13 @@ export class RadiantElementSsrService {
 	public renderHostToString(options: RenderToStringOptions = {}, attributes = this.getHostAttributes()): string {
 		this.ensureReady();
 		const tagName = this.getTagName();
+		const hydrate = isHydrateMode(options);
+		const hostAttributes = hydrate ? { ...attributes, [SERVER_RENDERED_HOST_ATTRIBUTE]: '' } : attributes;
 
 		return withSsrContextProviders(
 			this.host.getContextProviders(),
-			() => `<${tagName}${stringifyHostAttributes(attributes)}>${this.renderHostContent(options)}</${tagName}>`,
+			() =>
+				`<${tagName}${stringifyHostAttributes(hostAttributes)}>${this.renderHostContent(options, hydrate)}</${tagName}>`,
 		);
 	}
 
@@ -67,9 +75,7 @@ export class RadiantElementSsrService {
 		return resolveHostAttributes(this.host);
 	}
 
-	private renderHostContent(options: RenderToStringOptions): string {
-		const hydrate = options.mode === 'hydrate' || (options.mode === undefined && options.hydrate === true);
-
+	private renderHostContent(options: RenderToStringOptions, hydrate: boolean): string {
 		const hydrationScripts = hydrate
 			? this.host
 					.getHydrationBindings()

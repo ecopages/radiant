@@ -231,10 +231,10 @@ describe('RadiantElement SSR', () => {
 
 		const html = renderRadiantElementHostToString(new NestedSsrBoardCard(), { mode: 'hydrate' });
 
-		expect(html).toContain('<nested-ssr-board-card-test>');
-		expect(html).toContain('<nested-ssr-summary-card-test>');
+		expect(html).toContain('<nested-ssr-board-card-test data-radiant-ssr>');
+		expect(html).toContain('<nested-ssr-summary-card-test data-radiant-ssr>');
 		expect(html).toContain('Design systems is steering build with 3 commits.');
-		expect(html).toContain('<nested-ssr-insight-card-test>');
+		expect(html).toContain('<nested-ssr-insight-card-test data-radiant-ssr>');
 		expect(html).toContain('Stage: Build / Calm / 3');
 		expect(html).toContain(
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
@@ -365,7 +365,9 @@ describe('RadiantElement SSR', () => {
 
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-		expect(html).toContain('<server-host-hydrate-card-test count="28" label="SSR counter rendered in Nitro">');
+		expect(html).toContain(
+			'<server-host-hydrate-card-test count="28" label="SSR counter rendered in Nitro" data-radiant-ssr>',
+		);
 		expect(html).toContain('class="component-tag">RadiantElement</p>');
 		expect(html).toContain('<h3>SSR counter rendered in Nitro</h3>');
 		expect(html).toContain('class="component-metric">Count: 28</p>');
@@ -402,7 +404,7 @@ describe('RadiantElement SSR', () => {
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
 		expect(html).toContain(
-			'<server-host-bound-hydrate-card-test count="28" label="SSR counter rendered in Nitro">',
+			'<server-host-bound-hydrate-card-test count="28" label="SSR counter rendered in Nitro" data-radiant-ssr>',
 		);
 		expect(html).toContain('<h3>SSR counter rendered in Nitro</h3>');
 		expect(html).toContain('class="component-metric">Count: 28</p>');
@@ -603,7 +605,7 @@ describe('RadiantElement SSR', () => {
 		const element = new ServerHostContextCard();
 		const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-		expect(html).toContain('<server-host-context-card-test>');
+		expect(html).toContain('<server-host-context-card-test data-radiant-ssr>');
 		expect(html).toContain('<p>Provider host</p>');
 		expect(html).toContain(
 			'<script type="application/json" data-hydration data-hydration-type="context" data-hydration-key="context">',
@@ -737,8 +739,8 @@ describe('RadiantElement SSR', () => {
 		const parent = new NestedRadiantParentHost();
 		const nestedHtml = renderRadiantElementHostToString(parent, { mode: 'hydrate' });
 
-		expect(nestedHtml).toContain(`<${parentTagName}>`);
-		expect(nestedHtml).toContain(`<${childTagName}>`);
+		expect(nestedHtml).toContain(`<${parentTagName} data-radiant-ssr>`);
+		expect(nestedHtml).toContain(`<${childTagName} data-radiant-ssr>`);
 		expect(nestedHtml).toContain('class="nested-child-card"');
 		expect(nestedHtml).toContain('<h3>Nested child SSR</h3>');
 		expect(nestedHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
@@ -750,8 +752,8 @@ describe('RadiantElement SSR', () => {
 
 		const parentHostHtml = renderRadiantElementHostToString(parent, { mode: 'hydrate' });
 
-		expect(parentHostHtml).toContain(`<${parentTagName}>`);
-		expect(parentHostHtml).toContain(`<${childTagName}>`);
+		expect(parentHostHtml).toContain(`<${parentTagName} data-radiant-ssr>`);
+		expect(parentHostHtml).toContain(`<${childTagName} data-radiant-ssr>`);
 		expect(parentHostHtml).toContain('class="nested-child-card"');
 		expect(parentHostHtml).toContain('<h3>Nested child SSR</h3>');
 		expect(parentHostHtml).toContain('<p>Context: <strong>Nitro SSR context / 2</strong></p>');
@@ -790,7 +792,7 @@ describe('RadiantElement SSR', () => {
 			element.status.set('ready');
 			const html = renderRadiantElementHostToString(element, { mode: 'hydrate' });
 
-			expect(html).toContain('<server-host-signal-card-test>');
+			expect(html).toContain('<server-host-signal-card-test data-radiant-ssr>');
 			expect(html).toContain('<p>ready</p>');
 			expect(html).toContain(
 				'<script type="application/json" data-hydration data-hydration-type="signal" data-hydration-key="status">"ready"</script>',
