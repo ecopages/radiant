@@ -238,6 +238,18 @@ describe('docs-theme-preview', () => {
 		expect(document.documentElement.dataset.ruiTheme).toBe('material');
 	});
 
+	it('applies the URL theme when storage reads throw', () => {
+		const getItem = vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
+			throw new DOMException('Blocked', 'SecurityError');
+		});
+		history.replaceState(history.state, '', `/?${DOCS_THEME_QUERY_KEY}=github`);
+		runBootScript();
+		getItem.mockRestore();
+
+		expect(document.documentElement.dataset.ruiTheme).toBe('github');
+		expect(appendedThemeLinks[0]?.getAttribute(DOCS_THEME_STYLESHEET_ATTR)).toBe('github');
+	});
+
 	it('falls back to Radiant Default when the boot stylesheet fails', () => {
 		localStorage.setItem(
 			DOCS_APPEARANCE_STORAGE_KEY,

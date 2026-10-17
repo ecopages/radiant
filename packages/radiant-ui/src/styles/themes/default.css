@@ -19,27 +19,20 @@
 	color-scheme: dark;
 }
 
+/**
+ * @remarks The `:root` guard keeps this at (0,2,0), like the optional themes, so component state rules
+ * such as `aria-invalid` and `:checked` (prefixed with `:root`) still win.
+ */
 @layer components {
-	:root:not([data-rui-theme]) :is(
+	:root:where(:not([data-rui-theme]), [data-rui-theme='rui-default']) :is(
 		.rui-input,
 		.rui-textarea,
 		.rui-autocomplete__input,
-		.rui-combobox__input,
-		.rui-date-input__segment,
-		.rui-number-field__input,
-		.rui-select__control,
-		.rui-select__search,
-		.rui-checkbox__control,
-		.rui-radio__control,
-		.rui-switch__track
-	),
-	:root[data-rui-theme='rui-default'] :is(
-		.rui-input,
-		.rui-textarea,
-		.rui-autocomplete__input,
-		.rui-combobox__input,
-		.rui-date-input__segment,
-		.rui-number-field__input,
+		.rui-combobox__control,
+		.rui-date-field__group,
+		.rui-date-range-picker__group,
+		.rui-input-group,
+		.rui-number-field__group,
 		.rui-select__control,
 		.rui-select__search,
 		.rui-checkbox__control,

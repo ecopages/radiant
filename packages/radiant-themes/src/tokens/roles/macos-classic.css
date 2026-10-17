@@ -34,6 +34,8 @@
 	--on-error-container: #000000;
 	--success: var(--macos-classic-green);
 	--on-success: #ffffff;
+	--success-light: color-mix(in oklab, var(--macos-classic-green), white 30%);
+	--success-dark: color-mix(in oklab, var(--macos-classic-green), black 30%);
 	--success-container: #dcefe4;
 	--on-success-container: #000000;
 	--info: var(--macos-classic-blue);
@@ -44,6 +46,8 @@
 	--on-info-container: #000000;
 	--warning: var(--macos-classic-amber);
 	--on-warning: #ffffff;
+	--warning-light: color-mix(in oklab, var(--macos-classic-amber), white 30%);
+	--warning-dark: color-mix(in oklab, var(--macos-classic-amber), black 30%);
 	--warning-container: #fff0c4;
 	--on-warning-container: #000000;
 	--neutral: var(--macos-classic-muted);

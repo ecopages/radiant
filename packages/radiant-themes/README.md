@@ -58,8 +58,7 @@ marks the primary action, blue is for links, focus, and selection, and neutral s
 
 The Vercel theme uses Background 2 for the light canvas and Background 1 for primary surfaces. Its component colors
 drive hover and active fills, Colors 4–6 drive default, hover, and active borders, and blue stays focused on links and
-keyboard focus. Control boundaries are strengthened for visibility. GitHub maps Primer-style functional roles, while
-VS Code maps editor surfaces and accent states. These palettes adapt product cues to Radiant UI roles without
+keyboard focus. Control boundaries are strengthened for visibility. VS Code maps editor surfaces and accent states. These palettes adapt product cues to Radiant UI roles without
 reproducing the products pixel for pixel.
 
 ## Design references

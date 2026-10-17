@@ -7,8 +7,11 @@
 	}
 }
 
+/** @remarks The `[data-rui-theme]` selectors outrank theme role maps so user preferences always win. */
 @media (prefers-contrast: more) {
-	html:root {
+	html:root,
+	html:root[data-rui-theme],
+	html:root.dark[data-rui-theme] {
 		--rui-border-alpha: 100%;
 		--rui-control-border-color: var(--on-background);
 		--border: color-mix(in oklab, var(--rui-border-color) 45%, var(--on-background));
@@ -38,7 +41,9 @@
 
 @media (forced-colors: active) {
 	html:root,
-	html:root.dark {
+	html:root.dark,
+	html:root[data-rui-theme],
+	html:root.dark[data-rui-theme] {
 		--primary: Highlight;
 		--on-primary: HighlightText;
 		--primary-container: Highlight;

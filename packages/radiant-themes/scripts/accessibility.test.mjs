@@ -391,32 +391,109 @@ test('shared focus styles yield to a theme component focus treatment', async () 
 	}
 });
 
+test('component states keep their border color over theme control styling', async () => {
+	const componentCss = await readFile(path.join(uiRoot, 'dist/styles/styles.css'), 'utf8');
+	const browser = await chromium.launch({ headless: true });
+	try {
+		const page = await browser.newPage();
+		for (const theme of ['rui-default', ...optionalThemes]) {
+			await page.setContent(
+				`<style>${componentCss}\n${await readThemeCss(theme)}</style>
+				<input class="rui-input" aria-invalid="true">
+				<textarea class="rui-textarea" aria-invalid="true"></textarea>
+				<label><input class="rui-radio__input" type="radio" checked><span class="rui-radio__control"></span></label>
+				<i id="error" style="color: var(--error)"></i><i id="primary" style="color: var(--primary)"></i>`,
+			);
+			await page.evaluate((theme) => (document.documentElement.dataset.ruiTheme = theme), theme);
+			const colors = await page.evaluate(() => {
+				const border = (selector) => getComputedStyle(document.querySelector(selector)).borderTopColor;
+				const color = (selector) => getComputedStyle(document.querySelector(selector)).color;
+				return {
+					input: border('.rui-input'),
+					textarea: border('.rui-textarea'),
+					radio: border('.rui-radio__control'),
+					error: color('#error'),
+					primary: color('#primary'),
+				};
+			});
+			assert.equal(colors.input, colors.error, `${theme} invalid input shows the error border`);
+			assert.equal(colors.textarea, colors.error, `${theme} invalid textarea shows the error border`);
+			assert.equal(colors.radio, colors.primary, `${theme} checked radio shows the primary border`);
+		}
+	} finally {
+		await browser.close();
+	}
+});
+
+test('every theme defines each semantic color role in light and dark', async () => {
+	const semanticCss = await readFile(path.join(uiRoot, 'src/styles/tokens/semantic.css'), 'utf8');
+	const roles = [
+		...new Set(Array.from(semanticCss.matchAll(/--color-[\w-]+:\s*var\(--([\w-]+)\)/g), ([, role]) => role)),
+	];
+	assert.ok(roles.length > 0, 'expected semantic color roles');
+	const browser = await chromium.launch({ headless: true });
+	try {
+		const page = await browser.newPage();
+		for (const theme of ['rui-default', ...optionalThemes]) {
+			await page.setContent(`<style>${await readThemeCss(theme)}</style>`);
+			for (const mode of ['light', 'dark']) {
+				const missing = await page.evaluate(
+					({ mode, roles }) => {
+						document.documentElement.classList.toggle('dark', mode === 'dark');
+						const styles = getComputedStyle(document.documentElement);
+						return roles.filter((role) => styles.getPropertyValue(`--${role}`).trim() === '');
+					},
+					{ mode, roles },
+				);
+				assert.deepEqual(missing, [], `${theme} ${mode} leaves semantic roles undefined`);
+			}
+		}
+	} finally {
+		await browser.close();
+	}
+});
+
 test('shared styles respect contrast, reduced motion, and Windows forced colors', async () => {
 	const browser = await chromium.launch({ headless: true });
 	try {
 		const increasedContrast = await browser.newPage();
 		await increasedContrast.emulateMedia({ contrast: 'more' });
-		for (const theme of [
-			'rui-default',
-			'github',
-			'vscode',
-			'vercel',
-			'material',
-			'high-contrast',
-			'windows95',
-			'macos-classic',
-			'macos',
-		]) {
+		for (const theme of ['rui-default', ...optionalThemes]) {
 			const css = await readThemeCss(theme);
 			await increasedContrast.setContent(`<style>${css}</style><button>Continue</button>`);
-			const contrastPreferences = await increasedContrast.evaluate(() => ({
-				requested: matchMedia('(prefers-contrast: more)').matches,
-				borderAlpha: getComputedStyle(document.documentElement).getPropertyValue('--rui-border-alpha').trim(),
-				focusWidth: getComputedStyle(document.documentElement).getPropertyValue('--focus-ring-width').trim(),
-			}));
-			assert.equal(contrastPreferences.requested, true);
-			assert.equal(contrastPreferences.borderAlpha, '100%', `${theme} increases border contrast`);
-			assert.equal(contrastPreferences.focusWidth, '3px', `${theme} increases focus-ring width`);
+			for (const dark of [false, true]) {
+				const contrastPreferences = await increasedContrast.evaluate(
+					({ theme, dark }) => {
+						document.documentElement.dataset.ruiTheme = theme;
+						document.documentElement.classList.toggle('dark', dark);
+						return {
+							requested: matchMedia('(prefers-contrast: more)').matches,
+							borderAlpha: getComputedStyle(document.documentElement)
+								.getPropertyValue('--rui-border-alpha')
+								.trim(),
+							focusWidth: getComputedStyle(document.documentElement)
+								.getPropertyValue('--focus-ring-width')
+								.trim(),
+							controlBorder: getComputedStyle(document.documentElement)
+								.getPropertyValue('--rui-control-border-color')
+								.trim(),
+							onBackground: getComputedStyle(document.documentElement)
+								.getPropertyValue('--on-background')
+								.trim(),
+						};
+					},
+					{ theme, dark },
+				);
+				const mode = dark ? 'dark' : 'light';
+				assert.equal(contrastPreferences.requested, true);
+				assert.equal(contrastPreferences.borderAlpha, '100%', `${theme} ${mode} increases border contrast`);
+				assert.equal(contrastPreferences.focusWidth, '3px', `${theme} ${mode} increases focus-ring width`);
+				assert.equal(
+					contrastPreferences.controlBorder,
+					contrastPreferences.onBackground,
+					`${theme} ${mode} strengthens control borders`,
+				);
+			}
 			if (theme === 'rui-default') {
 				const border = await measureContrast(increasedContrast, css, 'light', [['border', 'background']]);
 				assert.ok(border[0].ratio >= 3, `increased contrast border has ${border[0].ratio}:1 contrast`);

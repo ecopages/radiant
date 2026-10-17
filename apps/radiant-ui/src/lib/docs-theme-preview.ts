@@ -330,14 +330,15 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 	try {
 		const root = document.documentElement;
 	const params = new URLSearchParams(window.location.search);
+	const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
 	let appearance = {};
-	try { appearance = JSON.parse(localStorage.getItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}) || 'null') || {}; } catch {}
+	try { appearance = JSON.parse(read(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}) || 'null') || {}; } catch {}
 	let legacyTheme = {};
-	try { legacyTheme = JSON.parse(localStorage.getItem(${JSON.stringify(DOCS_THEME_STORAGE_KEY)}) || '{}'); } catch {}
+	try { legacyTheme = JSON.parse(read(${JSON.stringify(DOCS_THEME_STORAGE_KEY)}) || '{}'); } catch {}
 	const requestedMode = params.get(${JSON.stringify(DOCS_MODE_QUERY_KEY)});
 	const preference = requestedMode === 'light' || requestedMode === 'dark' || requestedMode === 'system'
 		? requestedMode
-		: localStorage.getItem('theme');
+		: read('theme');
 	const mode = preference === 'light' || preference === 'dark' || preference === 'system' ? preference : 'system';
 		const resolvedMode = mode === 'system'
 			? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
@@ -351,7 +352,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		const tuningSchema = ${tuningSchemaLiteral};
 		let storedTuning = {};
 	try {
-		const legacyTuning = JSON.parse(localStorage.getItem(${JSON.stringify(DOCS_DEFAULT_TUNING_STORAGE_KEY)}) || '{}');
+		const legacyTuning = JSON.parse(read(${JSON.stringify(DOCS_DEFAULT_TUNING_STORAGE_KEY)}) || '{}');
 		storedTuning = appearance.tuning || legacyTuning;
 	} catch { storedTuning = appearance.tuning || {}; }
 		const tuning = { ...storedTuning };
@@ -377,7 +378,7 @@ export function createDocsThemeBootScript(stylesheets: DocsThemeStylesheets): st
 		if (colors === 'rui-default') applyDefaultTuning();
 		else clearDefaultTuning();
 		globalThis[${JSON.stringify(DOCS_THEME_STYLESHEETS_GLOBAL)}] = stylesheets;
-	if (!localStorage.getItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)})) {
+	if (!read(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)})) {
 		const migratedTuning = {};
 		for (const [key, setting] of Object.entries(tuningSchema)) migratedTuning[key] = clamp(storedTuning[key], setting.min, setting.max, defaults[key]);
 		try { localStorage.setItem(${JSON.stringify(DOCS_APPEARANCE_STORAGE_KEY)}, JSON.stringify({ colors: savedTheme || 'rui-default', tuning: migratedTuning })); } catch {}

@@ -127,3 +127,9 @@ that import and load `@ecopages/radiant-ui/themes/default`; adjust the three see
 or install `@ecopages/radiant-themes` for a complete optional theme. For compact Radiant Default, import
 `@ecopages/radiant-ui/tokens/spacing/compact` after `@ecopages/radiant-ui/themes/default` or tune `--rui-density`. For
 a compact optional theme, import its theme-specific entry, such as `@ecopages/radiant-themes/github/compact`.
+
+| Removed export | Replacement |
+| --- | --- |
+| `@ecopages/radiant-ui/themes/glacier`, `@ecopages/radiant-ui/themes/aurora` | `@ecopages/radiant-ui/themes/default`, then tune the seed variables |
+| `@ecopages/radiant-ui/themes/default-compact-soft` | `@ecopages/radiant-ui/themes/default` followed by `@ecopages/radiant-ui/tokens/spacing/compact` |
+| `@ecopages/radiant-ui/tokens/colors/aurora`, `tokens/colors/glacier`, `tokens/colors/basalt`, `tokens/colors/palettes` | `@ecopages/radiant-ui/tokens/colors/rui-default`, or a complete theme from `@ecopages/radiant-themes` |
