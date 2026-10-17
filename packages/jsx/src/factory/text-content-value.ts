@@ -7,10 +7,27 @@ import {
 
 const OPEN_TAG_NAME_PATTERN = /<([a-z][a-z0-9-]*)(?:\s[^>]*)?>$/i;
 
+/**
+ * Elements whose content the HTML parser reads as text rather than markup.
+ *
+ * @remarks Mirrors the raw text and escapable raw text elements of the HTML spec. A comment marker inside any
+ * of them would be literal text, so their children are bound as text instead.
+ */
+export const TEXT_CONTENT_ELEMENT_NAMES: ReadonlySet<string> = new Set([
+	'script',
+	'style',
+	'textarea',
+	'title',
+	'xmp',
+	'iframe',
+	'noembed',
+	'noframes',
+]);
+
 /** Returns whether compiled HTML currently ends inside a text-content element's opening tag. */
 export function endsWithTextContentOpenTag(html: string): boolean {
 	const name = OPEN_TAG_NAME_PATTERN.exec(html)?.[1]?.toLowerCase();
-	return name === 'textarea' || name === 'title' || name === 'style' || name === 'script';
+	return name !== undefined && TEXT_CONTENT_ELEMENT_NAMES.has(name);
 }
 
 /**

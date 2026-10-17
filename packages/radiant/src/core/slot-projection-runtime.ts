@@ -231,9 +231,17 @@ function renderableToHtmlFragment(renderable: JsxRenderable): string | undefined
 	return undefined;
 }
 
+/**
+ * @remarks Comment nodes render nothing: the payload becomes trusted markup on the client, and comment data
+ * is not escaped by serialization.
+ */
 function renderDomNode(node: Node): string | undefined {
 	if (node.nodeType === Node.TEXT_NODE) {
 		return escapeHtmlText(node.textContent ?? '');
+	}
+
+	if (node.nodeType === Node.COMMENT_NODE) {
+		return '';
 	}
 
 	return (node as Element).outerHTML ?? node.textContent ?? undefined;

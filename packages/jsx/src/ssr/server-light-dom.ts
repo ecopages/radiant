@@ -1,5 +1,9 @@
 import { serializeStyleSnapshot } from '../factory/attribute-normalize.ts';
-import { endsWithTextContentOpenTag, stringifyTextContentValue } from '../factory/text-content-value.ts';
+import {
+	endsWithTextContentOpenTag,
+	stringifyTextContentValue,
+	TEXT_CONTENT_ELEMENT_NAMES,
+} from '../factory/text-content-value.ts';
 import { getElementNamespace, HTML_NAMESPACE_URI } from '../dom-render/namespaces.ts';
 import { isClientOnlyBinding } from '../hydration/hydration-marker-policy.ts';
 import {
@@ -19,7 +23,7 @@ const ATTRIBUTE_PART_PREFIX = 'data-radiant-ssr-part-';
 const TEXT_PART_PREFIX = 'data-radiant-ssr-text-';
 const CHILD_PART_COMMENT_PREFIX = 'radiant-ssr-part:';
 const CHILD_PART_IN_TEXT_PATTERN = /<!--radiant-ssr-part:(\d+)-->/;
-const TEXT_ONLY_ELEMENT_NAMES = new Set(['script', 'style', 'textarea', 'title']);
+const MAX_CACHED_BLUEPRINTS = 1000;
 
 type BlueprintElement = {
 	readonly type: 'element';
@@ -27,7 +31,7 @@ type BlueprintElement = {
 	readonly namespaceURI: string;
 	readonly attributes: ReadonlyArray<readonly [string, string]>;
 	readonly attributeParts: readonly number[];
-	/** Text of a `script`, `style`, `textarea` or `title`: literal chunks and child part indexes. */
+	/** Text of a text-content element such as `script` or `textarea`: literal chunks and child part indexes. */
 	readonly text?: ReadonlyArray<string | number>;
 	readonly children: readonly BlueprintNode[];
 };
@@ -41,7 +45,9 @@ type BlueprintNode =
 /**
  * Blueprints keyed by template shape.
  *
- * @remarks Plain data, not DOM, so one cache serves every document implementation.
+ * @remarks Plain data, not DOM, so one cache serves every document implementation. The shape includes tag and
+ * attribute names, so templates built from data would grow an unbounded cache in a long-running server; entries
+ * are evicted least recently used beyond `MAX_CACHED_BLUEPRINTS`.
  */
 const BLUEPRINTS_BY_SHAPE = new Map<string, readonly BlueprintNode[]>();
 
@@ -127,9 +133,17 @@ function parseHtml(html: string, ownerDocument: Document): Node[] {
 function getBlueprint(template: TemplateResultLike, ownerDocument: Document): readonly BlueprintNode[] {
 	let blueprint = BLUEPRINTS_BY_SHAPE.get(template.shapeKey);
 
-	if (!blueprint) {
+	if (blueprint) {
+		BLUEPRINTS_BY_SHAPE.delete(template.shapeKey);
+	} else {
 		blueprint = toBlueprint(parseHtml(createBlueprintHtml(template), ownerDocument), HTML_NAMESPACE_URI, undefined);
-		BLUEPRINTS_BY_SHAPE.set(template.shapeKey, blueprint);
+	}
+
+	BLUEPRINTS_BY_SHAPE.set(template.shapeKey, blueprint);
+
+	if (BLUEPRINTS_BY_SHAPE.size > MAX_CACHED_BLUEPRINTS) {
+		const oldest = BLUEPRINTS_BY_SHAPE.keys().next();
+		if (!oldest.done) BLUEPRINTS_BY_SHAPE.delete(oldest.value);
 	}
 
 	return blueprint;
@@ -204,7 +218,7 @@ function toBlueprintElement(
 		}
 	}
 
-	if (TEXT_ONLY_ELEMENT_NAMES.has(localName)) {
+	if (TEXT_CONTENT_ELEMENT_NAMES.has(localName)) {
 		const content = (element.textContent ?? '')
 			.split(CHILD_PART_IN_TEXT_PATTERN)
 			.map((chunk, index) => (index % 2 === 1 ? Number(chunk) : chunk))

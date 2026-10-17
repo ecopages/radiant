@@ -1,6 +1,7 @@
 // @vitest-environment node
 import '../../src/server/install-ssr-runtime';
-import { renderToString, withServerHydrationBindingState } from '@ecopages/jsx/server';
+import { jsx } from '@ecopages/jsx';
+import { renderServerLightDom, renderToString, withServerHydrationBindingState } from '@ecopages/jsx/server';
 import { describe, expect, it } from 'vitest';
 import { withRadiantServerCustomElementRenderBridge } from '../../src/server/element-ssr/radiant-element-ssr-bridge';
 import { RadiantElement } from '../../src/core/radiant-element';
@@ -65,5 +66,31 @@ describe('JSX children of nested hosts on the minimal DOM', () => {
 			expect(html).toContain('Toggle &amp; more</button>');
 			expect(html).not.toContain('&amp;amp;');
 		}
+	});
+});
+
+describe('renderServerLightDom edge cases', () => {
+	it('keeps children of every text-only element, not just script and textarea', () => {
+		for (const tag of ['iframe', 'xmp', 'noembed', 'noframes'] as const) {
+			const host = document.createElement('div');
+			host.replaceChildren(...renderServerLightDom(jsx(tag, { children: 'Hello <b>' }), document));
+
+			expect(host.innerHTML).not.toContain('radiant-ssr-part');
+			expect(host.textContent).toBe('Hello <b>');
+		}
+	});
+
+	it('stays correct once more template shapes than the cache holds have been rendered', () => {
+		const render = (name: string) => {
+			const host = document.createElement('div');
+			host.replaceChildren(...renderServerLightDom(jsx('div', { [name]: 'v', children: 'x' }), document));
+			return host.innerHTML;
+		};
+
+		for (let index = 0; index < 1100; index++) {
+			expect(render(`data-shape-${index}`)).toBe(`<div data-shape-${index}="v">x</div>`);
+		}
+
+		expect(render('data-shape-0')).toBe('<div data-shape-0="v">x</div>');
 	});
 });
