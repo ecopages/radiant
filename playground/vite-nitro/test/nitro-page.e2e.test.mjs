@@ -101,7 +101,7 @@ test('Nitro signal-board fragment serializes hydrated signal state', async () =>
 	assert.equal(response.status, 200);
 
 	const html = await response.text();
-	assert.match(html, /<radiant-signal-release-board>/);
+	assert.match(html, /<radiant-signal-release-board data-radiant-ssr>/);
 	assert.match(html, /Board: ready/);
 	assert.match(html, /data-hydration data-hydration-type="signal" data-hydration-key="boardSeed">/);
 	assert.match(html, /"filter":"launch-ready"/);
